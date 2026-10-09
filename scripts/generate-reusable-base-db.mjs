@@ -15,6 +15,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpat
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { runReportingChild } from './project-composer-child-failure.mjs';
 import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMenus, schemaSnapshotHash,
   schemaSnapshotSql, selectSchemaSnapshot, assertDeclaredCrossDomainForeignKeys,
   assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
@@ -27,6 +28,9 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base');
+
+/** 생성기 엔진이 이 자식을 부르는 단계 이름. 실패 보고는 이 단계에 허용된 코드만 쓴다. */
+export const CHILD_STAGE = 'database';
 
 function fail(message) {
   throw new Error(message);
@@ -61,13 +65,19 @@ export function parseDbGenerationArgs(argv) {
     else if (arg === '--allow-dirty') args.allowDirty = true;
     else if (arg === '--allow-non-release-ref') args.allowNonReleaseRef = true;
     else if (arg === '--write-menu-snapshot') args.writeMenuSnapshot = true;
+    else if (arg === '--failure-report') {
+      // 생성기 엔진이 넘기는 실패 보고 경로(코드가 붙은 실패만 쓴다). 경로 검증은 시작할 때 따로 한다.
+      if ('failureReport' in args) fail('--failure-report may only be supplied once.');
+      args.failureReport = argv[++index];
+      if (!args.failureReport || args.failureReport.startsWith('--')) fail('--failure-report requires a path.');
+    }
     else fail(`알 수 없는 인자: ${arg}`);
   }
   if (args.writeMenuSnapshot) {
     // 스냅숏 갱신은 원본 마이그레이션을 적용해 메뉴·그룹 배정만 읽는다. 카탈로그는 이 스냅숏으로 탭 메뉴를
     // 검증하므로, 번들 생성과 묶으면 새 메뉴 행과 그 선언을 함께 넣는 변경에서 갱신 명령이 스스로 막힌다.
-    if (args.profile || args.composition || args.output || args.layout) {
-      fail('--write-menu-snapshot은 단독으로 쓴다(--profile·--composition·--output·--layout 없이).');
+    if (args.profile || args.composition || args.output || args.layout || 'failureReport' in args) {
+      fail('--write-menu-snapshot은 단독으로 쓴다(--profile·--composition·--output·--layout·--failure-report 없이).');
     }
     return args;
   }
@@ -110,6 +120,19 @@ export function generatedMigrationSessionSql({ baseline, metaSeed, frameworkSeed
     if ((!Buffer.isBuffer(sql) && typeof sql !== 'string') || !sql.length) fail('Generated migration session requires every baseline and seed.');
     return sql.toString();
   }).join('\n');
+}
+
+/**
+ * 임시 DB 를 각각 지운다. 하나를 지우다 실패해도 나머지를 지운다. 원래 실패가 있으면(completed=false) 정리 실패는 한 줄로 남기고
+ * 원래 실패(코드가 붙은 실패 포함)를 가리지 않는다. 생성이 끝났으면 첫 정리 실패를 다시 던진다(성공 경로의 종전 의미).
+ */
+export function dropTemporaryDatabases(drop, databases, { completed, report = message => console.error(message) }) {
+  let cleanupError;
+  for (const database of databases) {
+    try { drop(database); } catch (error) { cleanupError ??= error; }
+  }
+  if (cleanupError && completed) throw cleanupError;
+  if (cleanupError) report(`[base-db] 임시 DB 를 지우지 못했습니다: ${cleanupError.message}`);
 }
 
 export function safeDbOutputPath(requested, profile, shortSha) {
@@ -168,6 +191,8 @@ async function main() {
 
   let workingCreated = false;
   let verifyCreated = false;
+  // 실패를 잡아 표시한다(스냅숏 갱신처럼 중간에 돌아가는 성공 경로도 완료로 본다).
+  let failed = false;
   try {
     console.log(`[base-db] ${args.profile ?? 'menu-snapshot'}: 현재 versioned migration을 빈 임시 DB에 적용한다.`);
     createDatabase(args.container, user, workingDb);
@@ -384,15 +409,15 @@ async function main() {
     ]));
     writeFileSync(join(output, 'profile-lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
     console.log(`[base-db] PASS: ${relative(ROOT, output).split(sep).join('/')}`);
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
-    if (verifyCreated) dropTemporaryDatabase(args.container, user, verifyDb);
-    if (workingCreated) dropTemporaryDatabase(args.container, user, workingDb);
+    dropTemporaryDatabases(database => dropTemporaryDatabase(args.container, user, database),
+      [verifyCreated && verifyDb, workingCreated && workingDb].filter(Boolean), { completed: !failed });
   }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(SCRIPT_PATH)) {
-  main().catch(error => {
-    console.error(`[base-db] FAIL: ${error.message}`);
-    process.exitCode = 1;
-  });
+  runReportingChild({ argv: process.argv.slice(2), root: ROOT, stage: CHILD_STAGE, label: 'base-db', main });
 }

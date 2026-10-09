@@ -17,6 +17,12 @@ export class ComposerError extends Error {
 
 /** 요청 응답으로 보낼 수 있는 코드. 문장·상태·행동은 서버 표가 정한다. */
 export const REQUEST_ERROR_CODES = Object.freeze(['INVALID_NAME', 'INVALID_RECIPE', 'SOURCE_CHANGED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'TOOL_UNAVAILABLE']);
+/**
+ * 생성 작업 실패로 보낼 수 있는 코드(E4b). 엔진이 실패가 생긴 지점에서 판정해 단다. 서버는 이 목록 밖의 코드와
+ * ComposerError 가 아닌 오류를 모두 일반 실패(GENERATION_FAILED)로 말한다. 작업 취소(CANCELLED)는 E6 에서 더한다.
+ */
+export const JOB_ERROR_CODES = Object.freeze(['SOURCE_CHANGED', 'TOOL_UNAVAILABLE', 'DB_NOT_READY', 'OUTPUT_CONFLICT', 'SOURCE_SURVIVAL',
+  'VERIFY_FAILED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT']);
 /** 메뉴 미리보기 자료를 갱신하는 명령. 화면은 이 문자열만 보이고, 생성기 서버는 명령을 실행하지 않는다. */
 export const MENUS_REFRESH_COMMAND = 'npm run project:menus:refresh';
 
@@ -24,15 +30,16 @@ const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /**
  * 오류 문장의 이 컴퓨터 절대 경로(사용자 폴더 이름)를 저장소 기준 경로로 바꾼다.
  * 구분자(\ 와 /, JSON 이 두 겹으로 쓴 \\ 포함)와 대소문자가 달라도 같은 루트로 본다.
+ * replacement 는 루트 자리에 넣을 글자다(사용자 폴더는 '~' 로 바꿔 저장소 경로와 헷갈리지 않게 한다).
  */
-export function withoutRoot(root, text) {
+export function withoutRoot(root, text, replacement = '.') {
   return [...new Set([root, resolve(root)])].reduce((value, form) => {
     const parts = form.split(/[\\/]+/).filter(Boolean).map(escapeRegExp);
     if (!parts.length) return value;
     // 경로 글자 바로 뒤에서 시작하는 일치는 저장소 안 경로의 일부다(루트가 /app 이면 frontend/src/app 의 /app). 바꾸지 않는다.
     // 드라이브만인 루트(E:\)는 뒤에 구분자가 와야 경로다('file:' 같은 글자는 경로가 아니다).
     const driveOnly = parts.length === 1 && /^[A-Za-z]:$/.test(parts[0]);
-    return value.replace(new RegExp(`(?<![\\w.\\-])${/^[\\/]/.test(form) ? '[\\\\/]+' : ''}${parts.join('[\\\\/]+')}${driveOnly ? '(?=[\\\\/])' : ''}`, 'gi'), '.');
+    return value.replace(new RegExp(`(?<![\\w.\\-])${/^[\\/]/.test(form) ? '[\\\\/]+' : ''}${parts.join('[\\\\/]+')}${driveOnly ? '(?=[\\\\/])' : ''}`, 'gi'), () => replacement);
   }, text);
 }
 /**

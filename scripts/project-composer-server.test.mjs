@@ -2,8 +2,10 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { request } from 'node:http';
 import test from 'node:test';
-import { createComposerServer, validateComposerRequestRecipe } from './project-composer-server.mjs';
-import { ComposerError, MENUS_REFRESH_COMMAND, REQUEST_ERROR_CODES } from './project-composer-errors.mjs';
+import { VERIFY_STEP_LABELS, createComposerServer, validateComposerRequestRecipe } from './project-composer-server.mjs';
+import { ComposerError, JOB_ERROR_CODES, MENUS_REFRESH_COMMAND, REQUEST_ERROR_CODES } from './project-composer-errors.mjs';
+import { VERIFICATION_STEP_IDS } from './verify-reusable-artifact.mjs';
+import { CHILD_FAILURE_CODES } from './project-composer-child-failure.mjs';
 import { NAME_RULE_MESSAGE } from './project-composer-name.mjs';
 import { ProjectRecipeError } from './project-composer-recipe.mjs';
 
@@ -67,7 +69,7 @@ test('local server binds only loopback and serves explicit static assets with a 
   assert.match(session.csrfToken, /^[a-f0-9]{64}$/);
   assert.deepEqual(session.catalog, catalog);
   assert.equal(session.job, null);
-  for (const path of ['/', '/app.js', '/confirm.js', '/styles.css']) {
+  for (const path of ['/', '/app.js', '/confirm.js', '/job.js', '/styles.css']) {
     const result = await send(origin, path);
     assert.equal(result.status, 200, path);
     assert.equal(result.headers['cache-control'], 'no-store');
@@ -193,24 +195,153 @@ test('engine validation and generation errors preserve input without exposing ex
   assert.deepEqual(job.recipe, recipe());
   assert.doesNotMatch(JSON.stringify(job), /private-/);
   assert.equal(job.error.code, 'GENERATION_FAILED');
+  assert.doesNotMatch(job.error.message, /Docker/, 'an unclassified failure does not blame Docker');
   assert.equal(job.failure, undefined, 'an error without a structured failure shows only the generic message');
   const retry = await failure.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
   assert.equal(retry.status, 202);
 });
 
-test('a structured generation failure exposes only stage, command identity, exit code and log location', async t => {
-  const log = 'D:/work/build/project-composer/jobs/demo-0123456789abcdef/logs/verify.log';
+test('a structured generation failure exposes only stage, command identity, exit code and repository locations', async t => {
+  const log = 'build/project-composer/jobs/demo-0123456789abcdef/logs/verify.log';
+  const report = 'build/project-composer/jobs/demo-0123456789abcdef/report.json';
   const detailed = await fixture(t, { generate: () => { throw Object.assign(new Error('postgresql://u:private-password@h/db'), {
-    failure: { stage: 'verify', code: 'COMMAND_FAILED', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, durationMs: 9,
-      log, message: 'private-password', output: 'private-password' } }); } });
+    failure: { stage: 'verify', code: 'COMMAND_FAILED', causeCode: 'COMMAND_FAILED', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1,
+      durationMs: 9, log, report, sourceCommit: 'c'.repeat(40), message: 'private-password', output: 'private-password',
+      logTail: ['private-password'] } }); } });
   const created = await detailed.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
   const job = await finished(detailed.origin, created.body.job.id);
-  assert.deepEqual(job.failure, { stage: 'verify', stageLabel: '생성 프로젝트 검증', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, log });
+  assert.deepEqual(job.failure, { stage: 'verify', stageLabel: '생성 프로젝트 검증', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1,
+    log, report, sourceCommit: 'c'.repeat(40) });
+  assert.equal(job.error.code, 'GENERATION_FAILED', 'an unbranded failure code is not a job code');
   assert.doesNotMatch(JSON.stringify(job), /private-/);
+  // 이 컴퓨터의 경로를 흘릴 수 있는 위치는 버린다.
+  for (const [unsafeLog, unsafeReport] of [['D:/work/build/x/verify.log', 'D:/work/build/project-composer/jobs/demo/report.json'],
+    ['/home/me/build/x.log', '../build/project-composer/jobs/demo/report.json'], ['build\\x\\verify.log', 'build/project-composer/jobs/demo/other.json']]) {
+    const absolute = await fixture(t, { generate: () => { throw Object.assign(new Error('x'), {
+      failure: { stage: 'verify', log: unsafeLog, report: unsafeReport, sourceCommit: 'not-a-commit' } }); } });
+    const started = await absolute.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+    assert.deepEqual((await finished(absolute.origin, started.body.job.id)).failure, { stage: 'verify', stageLabel: '생성 프로젝트 검증' }, unsafeLog);
+  }
   const unsafe = await fixture(t, { generate: () => { throw Object.assign(new Error('x'), {
     failure: { stage: 'complete', commandId: 'node -e "steal()"', exitCode: 'one', log: 'a\nb' } }); } });
   const rejected = await unsafe.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
   assert.equal((await finished(unsafe.origin, rejected.body.job.id)).failure, undefined, 'unsafe failure fields are dropped');
+});
+
+/*
+ * 생성 작업 오류(E4b). 서버는 작업 허용 목록의 코드가 붙은 ComposerError 이고 그 코드가 나올 수 있는 단계일 때만 그 코드로 말한다.
+ * 검증 실패는 검증 명령의 실패이고 단계 id 가 단계 표에 있어야 한다. 로그 끝부분은 검증 실패에서만, 다시 걸러 보낸다.
+ */
+const jobFailureFixture = async (t, error, failure) => {
+  const app = await fixture(t, { generate: () => { throw Object.assign(error, { failure }); } });
+  const created = await app.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  return finished(app.origin, created.body.job.id);
+};
+const coded = (code, details = {}) => new ComposerError(code, details, `internal ${code} private-detail`);
+const verifyFailure = (extra = {}) => ({ stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, ...extra });
+
+test('every job code has a rule, a Korean sentence and a stage, and verification steps match the verifier exactly', async t => {
+  assert.deepEqual(Object.keys(VERIFY_STEP_LABELS), [...VERIFICATION_STEP_IDS]);
+  const cases = {
+    SOURCE_CHANGED: [{}, { stage: 'source' }, 'reload-source'],
+    TOOL_UNAVAILABLE: [{ tool: 'docker' }, { stage: 'database' }, 'recheck'],
+    DB_NOT_READY: [{}, { stage: 'database' }, 'regenerate'],
+    OUTPUT_CONFLICT: [{ path: 'build/reusable-base/source/x' }, { stage: 'source' }, 'regenerate'],
+    SOURCE_SURVIVAL: [{ files: ['frontend/src/a.tsx'] }, { stage: 'source' }, 'copy-diagnostics'],
+    VERIFY_FAILED: [{ step: 'lint' }, verifyFailure(), 'copy-diagnostics'],
+    MENU_SNAPSHOT_STALE: [{}, { stage: 'database' }, 'copy-command'],
+    CATALOG_DRIFT: [{ violations: ['first'] }, { stage: 'database' }, 'show-violations'],
+  };
+  assert.deepEqual(Object.keys(cases).sort(), [...JOB_ERROR_CODES].sort(), 'the table covers every job code');
+  for (const [code, [details, failure, action]] of Object.entries(cases)) {
+    const job = await jobFailureFixture(t, coded(code, details), failure);
+    assert.equal(job.error.code, code);
+    assert.equal(job.error.action, action, code);
+    assert.equal(job.message, job.error.message);
+    assert.doesNotMatch(job.error.message, /[A-Z]+_[A-Z_]+|catalog|Error|private-/, code);
+    assert.match(job.error.message, /[가-힣]/);
+  }
+});
+
+test('a job code is trusted only when branded, allowed and raised at a stage that can produce it', async t => {
+  const plain = await jobFailureFixture(t, Object.assign(new Error('x'), { code: 'DB_NOT_READY' }), { stage: 'database' });
+  assert.equal(plain.error.code, 'GENERATION_FAILED', 'an unbranded look-alike');
+  assert.equal((await jobFailureFixture(t, coded('INVALID_RECIPE'), { stage: 'resolve' })).error.code, 'GENERATION_FAILED', 'a request code after planning');
+  assert.equal((await jobFailureFixture(t, coded('DB_NOT_READY'), { stage: 'verify' })).error.code, 'GENERATION_FAILED', 'a stage mismatch');
+  assert.equal((await jobFailureFixture(t, coded('SOURCE_SURVIVAL', { files: ['a'] }), { stage: 'install' })).error.code, 'GENERATION_FAILED');
+  for (const [details, failure] of [[{ step: 'lint' }, verifyFailure({ stage: 'database' })], [{ step: 'lint' }, verifyFailure({ commandId: 'docker' })],
+    [{ step: 'rm -rf' }, verifyFailure()], [{ step: 'unknown' }, verifyFailure()], [{ step: 'constructor' }, verifyFailure()], [{}, verifyFailure()]]) {
+    assert.equal((await jobFailureFixture(t, coded('VERIFY_FAILED', details), failure)).error.code, 'GENERATION_FAILED', JSON.stringify([details, failure]));
+  }
+  // Docker 는 DB 단계, git 은 구성 확인 단계다. 모르는 도구는 일반 실패다. git 에는 '다시 점검' 을 주지 않는다.
+  const git = await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'git' }), { stage: 'resolve' });
+  assert.equal(git.error.code, 'TOOL_UNAVAILABLE');
+  assert.equal(git.error.action, undefined);
+  assert.match(git.error.message, /Git/);
+  assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'docker' }), { stage: 'resolve' })).error.code, 'GENERATION_FAILED');
+  assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'pnpm' }), { stage: 'database' })).error.code, 'GENERATION_FAILED');
+  const docker = await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'docker' }), { stage: 'database' });
+  assert.match(docker.error.message, /Linux 컨테이너 모드/);
+});
+
+test('every code a generator child may report is accepted at that child\u2019s stage', async t => {
+  for (const [stage, codes] of Object.entries(CHILD_FAILURE_CODES)) {
+    for (const code of codes) {
+      const job = await jobFailureFixture(t, coded(code), { stage, commandId: `scripts/generate-reusable-base-${stage === 'database' ? 'db' : 'source'}.mjs`, exitCode: 1 });
+      assert.equal(job.error.code, code, `${stage}:${code}`);
+    }
+  }
+});
+
+test('a command without an exit code is "not started" only when the tool itself was missing', async t => {
+  const missing = await jobFailureFixture(t, new Error('x'), { stage: 'install', causeCode: 'TOOL_UNAVAILABLE', commandId: 'pnpm', exitCode: null });
+  assert.equal(missing.failure.notStarted, true);
+  const killed = await jobFailureFixture(t, new Error('x'), { stage: 'install', causeCode: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: null });
+  assert.equal(killed.failure.notStarted, undefined, 'a signal or time limit is not a missing tool');
+  const exited = await jobFailureFixture(t, new Error('x'), { stage: 'install', causeCode: 'TOOL_UNAVAILABLE', commandId: 'pnpm', exitCode: 1 });
+  assert.equal(exited.failure.notStarted, undefined);
+  assert.match(killed.error.message, /작업 보고서/, 'the generic sentence points at the job report too');
+});
+
+test('job details are re-filtered per code and never carry engine sentences or local paths', async t => {
+  const survival = await jobFailureFixture(t, coded('SOURCE_SURVIVAL', { files: Array.from({ length: 25 }, (_, n) => `frontend/src/${n}.tsx`) }), { stage: 'source' });
+  assert.equal(survival.error.details.files.length, 20);
+  assert.equal(survival.error.details.fileCount, 25);
+  const absolute = await jobFailureFixture(t, coded('SOURCE_SURVIVAL', { files: ['D:/work/x.tsx'] }), { stage: 'source' });
+  assert.equal(absolute.error.details, undefined, 'an absolute file list is dropped');
+  const drift = await jobFailureFixture(t, coded('CATALOG_DRIFT', { violations: ['bad key in D:\\Users\\me\\egov\\config\\x.json'] }), { stage: 'database' });
+  assert.deepEqual(drift.error.details, { violations: ['bad key in <로컬 경로>'] });
+  const stale = await jobFailureFixture(t, coded('MENU_SNAPSHOT_STALE', { command: 'rm -rf /' }), { stage: 'database' });
+  assert.deepEqual(stale.error.details, { command: MENUS_REFRESH_COMMAND });
+  const conflict = await jobFailureFixture(t, coded('OUTPUT_CONFLICT', { path: 'D:/x' }), { stage: 'source' });
+  assert.equal(conflict.error.details, undefined, 'the output path is not shown (the job report has it)');
+  assert.doesNotMatch(JSON.stringify([survival, absolute, drift, stale, conflict]), /private-detail|D:\/work|Users/);
+});
+
+test('a verification failure names its step and keeps a cleaned log tail; other codes never carry a tail', async t => {
+  const tail = ['\u001b[31merror\u001b[39m TS2322 at C:\\Users\\John Smith\\egov\\a.ts', 'see https://nextjs.org/docs/messages/x and file:///D:/egov/b.ts',
+    'carriage\rreturn\ttab', 'password=hunter2hunter2', '', 'at /home/runner/work/egov/x.ts and https://example.com/home/y', 'L'.repeat(400)];
+  const job = await jobFailureFixture(t, coded('VERIFY_FAILED', { step: 'typecheck' }), verifyFailure({ logTail: tail }));
+  assert.equal(job.error.code, 'VERIFY_FAILED');
+  assert.equal(job.failure.step, 'typecheck');
+  assert.equal(job.failure.stepLabel, '타입 검사');
+  assert.match(job.error.message, /「타입 검사」/);
+  assert.equal(job.failure.logTail[0], 'error TS2322 at <로컬 경로> Smith\\egov\\a.ts', 'the server is only a safety net; the engine hides the home folder first');
+  assert.equal(job.failure.logTail[1], 'see https://nextjs.org/docs/messages/x and file:///<로컬 경로>', 'a URL is kept');
+  assert.equal(job.failure.logTail[2], 'carriagereturn tab');
+  assert.equal(job.failure.logTail[3], 'password=***', 'secret shapes are masked again');
+  assert.equal(job.failure.logTail[4], '', 'an empty line is kept');
+  assert.equal(job.failure.logTail[5], 'at <로컬 경로> and https://example.com/home/y');
+  assert.equal(job.failure.logTail[6].length, 300);
+  const build = await jobFailureFixture(t, coded('VERIFY_FAILED', { step: 'build' }), verifyFailure({ logTail: ['x'] }));
+  assert.equal(build.error.action, 'regenerate', 'an environment-sensitive step may be generated again');
+  for (const logTail of [Array.from({ length: 41 }, () => 'x'), ['ok', 7], [], 'flat', ['ok', , 'hole']]) {
+    const dropped = await jobFailureFixture(t, coded('VERIFY_FAILED', { step: 'lint' }), verifyFailure({ logTail }));
+    assert.equal(dropped.failure.logTail, undefined, JSON.stringify(logTail));
+  }
+  const other = await jobFailureFixture(t, coded('DB_NOT_READY'), { stage: 'database', logTail: ['private-detail'] });
+  assert.equal(other.failure.logTail, undefined);
+  assert.equal(other.failure.step, undefined);
 });
 
 /*

@@ -1,8 +1,10 @@
 import { createFinalConfirmation } from './confirm.js';
+import { createJobPanel } from './job.js';
 import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
 const $ = id => document.getElementById(id);
-const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null,
+// planPending: 구성 확인을 기다리는 중(변경 직후 대기·요청 중). '다시 생성' 이 막힌 이유를 말할 때 쓴다.
+const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null, planPending: true,
   version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map(), notice: '' };
 // 계획 단계 검사가 붙이는 요청 오류 코드(서버 REQUEST_ERRORS 와 같다 — 시험이 대조한다). 생성 요청이 이 코드로 거부되면
 // 보이던 계획이 더는 맞지 않는다.
@@ -278,6 +280,7 @@ function changed() {
   $('generate').disabled = true; $('download-recipe').disabled = true;
   $('plan-status').textContent = '변경한 구성을 확인하고 있습니다…';
   $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
+  state.planPending = true; onPlanChange();
   $('summary-heading').textContent = $('project-name').value.trim() || '구성을 확인하세요';
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => preview(false), 250);
@@ -372,8 +375,9 @@ function renderPlan() {
 async function preview(focus) {
   clearTimeout(previewTimer);
   if (state.busy || !state.catalog) return;
-  if (!validateName(focus)) { $('plan-status').textContent = '프로젝트 이름을 확인해 주세요.'; return; }
+  if (!validateName(focus)) { state.planPending = false; $('plan-status').textContent = '프로젝트 이름을 확인해 주세요.'; return; }
   const version = state.version;
+  state.planPending = true;
   $('preview').disabled = true;
   $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
   try {
@@ -387,7 +391,9 @@ async function preview(focus) {
       $('plan-status').textContent = withNotice(error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message);
       renderFailureActions($('plan-actions'), error, { focus });
     }
-  } finally { if (version === state.version) $('preview').disabled = false; }
+  } finally {
+    if (version === state.version) { $('preview').disabled = false; state.planPending = false; onPlanChange(); }
+  }
 }
 function busy(value) {
   state.busy = value;
@@ -405,92 +411,6 @@ function restoreRecipe(value) {
   state.selected = new Set(value.selection.domains ?? state.catalog.presets.find(item => item.id === state.preset)?.domains ?? []);
   document.querySelector(`input[name="layout"][value="${value.backendLayout}"]`).checked = true;
   renderFeatures();
-}
-function renderJob(job) {
-  state.job = job;
-  $('job-panel').hidden = false; $('job-error').hidden = true; $('retry-status').hidden = true;
-  $('job-message').textContent = job.message;
-  $('job-progress').value = job.progress ?? 0;
-  $('job-result').hidden = true;
-  if (job.status === 'running') { $('job-heading').textContent = '프로젝트 준비 중'; busy(true); return; }
-  busy(false);
-  if (job.status === 'failed') {
-    state.requestId = null;
-    $('job-heading').textContent = '생성을 완료하지 못했습니다';
-    $('job-error').replaceChildren(text('p', job.error?.message ?? '입력은 유지됩니다. 상태를 확인한 뒤 다시 생성해 주세요.'));
-    const failure = job.failure;
-    if (failure?.stageLabel) $('job-error').append(text('p', `실패 단계: ${failure.stageLabel}`, 'mt-2'));
-    if (failure?.commandId) {
-      $('job-error').append(text('p', `실패 명령: ${failure.commandId} (${Number.isInteger(failure.exitCode) ? `종료 코드 ${failure.exitCode}` : '실행하지 못함'})`, 'mt-1'));
-    }
-    if (failure?.log) {
-      const log = text('p', '실행 로그(비밀값은 가림)', 'mt-2 font-semibold');
-      log.append(text('code', failure.log, 'mt-1 block break-all font-mono text-xs font-normal'));
-      $('job-error').append(log);
-    }
-    $('job-error').hidden = false;
-  } else if (job.status === 'succeeded') {
-    $('job-heading').textContent = '프로젝트가 준비되었습니다';
-    $('job-result').replaceChildren(); $('job-result').hidden = false;
-    for (const [key, title] of [['projectDirectory', '프로젝트 폴더'], ['databaseDirectory', 'DB 스키마 폴더'], ['reportPath', '검증 보고서']]) {
-      if (!job.result?.[key]) continue;
-      const paragraph = text('p', title, 'font-semibold');
-      paragraph.append(text('code', job.result[key], 'mt-1 block break-all font-mono text-xs font-normal text-muted'));
-      $('job-result').append(paragraph);
-    }
-    $('job-result').append(text('p', job.result?.verified ? '생성 프로젝트의 기술 검증을 통과했습니다. 실행할 DB와 기관 환경은 별도로 설정하세요.' : '검증 완료 여부는 보고서에서 확인해 주세요.', 'text-xs text-muted'));
-    $('download-recipe').disabled = false;
-  }
-}
-async function pollJob() {
-  clearTimeout(state.polling);
-  if (!state.job) return;
-  try {
-    const { job } = await api(`/api/jobs/${state.job.id}`);
-    renderJob(job);
-    if (job.status === 'running') state.polling = setTimeout(pollJob, 1000);
-    else if (!state.plan) await preview(false);
-  } catch {
-    $('job-error').textContent = '진행 상태에 연결하지 못했습니다. 생성이 계속 진행 중일 수 있습니다. 상태를 다시 확인해 주세요.';
-    $('job-error').hidden = false; $('retry-status').hidden = false;
-  }
-}
-async function generate() {
-  if (state.busy || !state.plan || !validateName(true)) return;
-  const selectedRecipe = recipe();
-  state.requestId ??= crypto.randomUUID();
-  const requestId = state.requestId;
-  busy(true); $('job-panel').hidden = false; $('job-result').hidden = true; $('job-error').hidden = true;
-  $('job-heading').textContent = '프로젝트 준비 중'; $('job-message').textContent = '생성을 요청하고 있습니다…';
-  try {
-    const { job } = await api('/api/jobs', { recipe: selectedRecipe, requestId });
-    renderJob(job); if (job.status === 'running') await pollJob();
-  } catch (error) {
-    // Recover only this accepted request. A different tab's BUSY job must not replace the form.
-    try {
-      const session = await api('/api/session');
-      if (session.job?.requestId === requestId) {
-        restoreRecipe(session.job.recipe); renderJob(session.job);
-        if (session.job.status === 'running') await pollJob();
-        return;
-      }
-    } catch { /* The original form and request ID remain available for retry. */ }
-    busy(false);
-    // 계획 단계 검사가 거부했으면 보이던 계획이 더는 맞지 않는다. 계획을 거두고 문장은 계획 상태 줄에, 행동은 그 옆에 둔다.
-    // 작업은 시작되지 않았으므로 작업 영역은 닫는다(이전 작업의 결과·실패를 이번 요청의 결과처럼 다시 알리지 않게).
-    if (PLAN_REJECTION_CODES.has(error.code)) {
-      withdrawPlan();
-      $('job-panel').hidden = true;
-      $('plan-status').textContent = error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message;
-      // 확인 창의 생성 시작에서 돌아온 포커스(프로젝트 생성)가 잠기므로 요약 제목으로 옮긴다. 이름 오류는 이름 칸으로 간다.
-      if (error.action !== 'focus-name') $('summary-heading').focus();
-      renderFailureActions($('plan-actions'), error, { focus: true });
-      return;
-    }
-    $('job-heading').textContent = '생성 요청을 확인해 주세요';
-    $('job-error').textContent = error.action === 'focus-name' ? '프로젝트 이름을 확인해 주세요.' : error.message; $('job-error').hidden = false;
-    renderFailureActions($('plan-actions'), error, { focus: true });
-  }
 }
 function downloadRecipe() {
   const value = state.job?.status === 'succeeded' && !state.plan ? state.job.recipe : recipe();
@@ -530,6 +450,9 @@ $('preset').addEventListener('change', () => {
   changed(); renderFeatures();
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
+// 작업 영역(진행·결과·실패와 그 행동). 실패의 다시 생성·다시 점검은 아래 확인 창을 연다(창은 그 뒤에 만들어진다).
+const { renderJob, pollJob, generate, onPlanChange } = createJobPanel({ $, text, api, state, busy, preview, recipe, validateName, withdrawPlan, restoreRecipe,
+  renderFailureActions, planRejectionCodes: PLAN_REJECTION_CODES, openConfirmation: () => confirmation.open() });
 // 생성 버튼은 곧바로 생성하지 않고 최종 확인 창(환경 점검·소스 정밀 점검·구성 요약)을 연다.
 const confirmation = createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate, renderFailureActions, reloadCatalog });
 $('generate').addEventListener('click', () => confirmation.open());

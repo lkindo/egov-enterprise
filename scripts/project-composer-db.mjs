@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
+import { ComposerError } from './project-composer-errors.mjs';
 
 const sorted = values => [...values].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 const canonical = value => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const equal = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 const fail = message => { throw new Error(message); };
+// 적용 스키마가 카탈로그 선언과 다르면 선언 불일치다(생성기 화면은 개발자 정보에 첫 위반을 보인다).
+const drift = message => { throw new ComposerError('CATALOG_DRIFT', { violations: [message] }, message); };
 const identifier = value => typeof value === 'string' && /^[a-z][a-z0-9_]*$/.test(value);
 const literal = value => value === null || value === undefined ? 'NULL' : `'${String(value).replaceAll("'", "''")}'`;
 
@@ -82,14 +85,14 @@ export function assertDeclaredCrossDomainForeignKeys(snapshot, catalog) {
   if (!Array.isArray(snapshot?.constraints)) fail('Physical schema snapshot is missing constraints.');
   const actual = snapshot.constraints.filter(row => row.type === 'f').filter(row => {
     const child = owners.get(row.table_name), parent = owners.get(row.referenced_table);
-    if (!child || !parent) fail(`Foreign key touches a table without catalog ownership: ${row.table_name}.${row.name}`);
+    if (!child || !parent) drift(`Foreign key touches a table without catalog ownership: ${row.table_name}.${row.name}`);
     return !parent.has('core') && ![...child].some(owner => parent.has(owner));
   }).map(row => `${row.name} ${row.table_name}->${row.referenced_table}`).sort();
   const declared = [...catalog.requiredForeignKeys, ...catalog.optionalForeignKeys]
     .map(contract => `${contract.name} ${contract.childTable}->${contract.parentTable}`).sort();
   const undeclared = actual.filter(key => !declared.includes(key));
   const stale = declared.filter(key => !actual.includes(key));
-  if (undeclared.length || stale.length) fail(`Cross-domain foreign keys differ from the composer catalog `
+  if (undeclared.length || stale.length) drift(`Cross-domain foreign keys differ from the composer catalog `
     + `(undeclared: ${undeclared.join(', ') || '-'}; stale: ${stale.join(', ') || '-'}).`);
   return actual;
 }

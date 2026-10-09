@@ -32,7 +32,10 @@ test('unsupported, missing and ambiguous layout inputs fail before any generatio
     [...base, '--layout', 'single'], [...base, '--layout', 'single-module', '--layout', 'multi-module'],
     [...base, '--output'], ['--profile', '--db-bundle', 'build/bundle'],
     [...base, '--database', 'oracle'],
+    [...base, '--failure-report'], [...base, '--failure-report', '--allow-dirty'],
+    [...base, '--failure-report', 'build/a.json', '--failure-report', 'build/b.json'],
   ]) assert.throws(() => parseSourceArgs(args));
+  assert.equal(parseSourceArgs([...base, '--failure-report', 'build/x/failures/source.json']).failureReport, 'build/x/failures/source.json');
 });
 
 test('generated Git boundary stops parent build ignores without staging, committing or changing the producer', t => {

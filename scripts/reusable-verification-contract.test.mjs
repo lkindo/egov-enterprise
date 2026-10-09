@@ -3,7 +3,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
-import { verificationCommands, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { VERIFICATION_STEP_IDS, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { parseBaseVerificationArgs, verifyReusableBase } from './verify-reusable-base.mjs';
 import { parseWorkflowJobs, validateStaticContract } from './required-checks-contract.mjs';
 import { installReusableVerification } from './generate-reusable-base-source.mjs';
@@ -62,10 +62,11 @@ test('the verification report records each step and names the failed command wit
   } }), /tsc failed/);
   const failed = report();
   assert.equal(failed.result, 'failed');
-  assert.deepEqual(failed.failure, { command: commands[4].flat().join(' '), exitCode: 3, durationMs: failed.failure.durationMs });
+  assert.deepEqual(failed.failure, { step: 'typecheck', command: commands[4].flat().join(' '), exitCode: 3, durationMs: failed.failure.durationMs });
   assert.ok(Number.isInteger(failed.failure.durationMs) && failed.failure.durationMs >= 0);
   assert.deepEqual(failed.steps.map(step => [step.command, step.result]),
     [...commands.slice(0, 4).map(command => [command.flat().join(' '), 'passed']), [commands[4].flat().join(' '), 'failed']]);
+  assert.deepEqual(failed.steps.map(step => step.step), ['governance', 'ui-governance', 'entrypoints', 'backend', 'typecheck']);
   verifyReusableArtifact({ root, run: () => {} });
   const passed = report();
   assert.equal(passed.result, 'passed');
@@ -304,4 +305,26 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
     value => value.replace('reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}', 'reusable-matrix: {}'),
   ]) assert.ok(validatePipeline(mutate(workflow), manifest).length);
   assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]'), manifest).length);
+});
+
+/*
+ * 검증 단계 id 는 생성기 화면이 실패한 단계를 이름으로 말하는 근거다. 명령 목록은 같은 표에서 만들고, 생성물 하네스
+ * (WorkflowManifestLinterTest)가 정확히 일치를 요구하는 명령 그래프와 같아야 한다 — 원본 CI 에서는 그 하네스가 돌지 않으므로 여기서도 본다.
+ */
+test('verification steps carry stable ids and still produce the exact command graph the generated harness expects', () => {
+  const common = [['node', ['scripts/verify-reusable-governance.mjs']],
+    ['node', ['--test', 'scripts/reusable-ui-governance-contract.test.mjs']],
+    ['node', ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs']]];
+  const backend = prefix => ['gradle', ['compileJava', 'compileTestJava', `${prefix}harnessTest`, `${prefix}schemaValidationTest`,
+    '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']];
+  const frontend = [['pnpm', ['-C', 'frontend', 'exec', 'tsc', '--noEmit']], ['pnpm', ['-C', 'frontend', 'run', 'lint']],
+    ['pnpm', ['-C', 'frontend', 'run', 'build']]];
+  for (const [layout, prefix] of [['multi-module', ':api-server:'], ['single-module', '']]) {
+    assert.deepEqual(verificationCommands('full', layout), [...common, backend(prefix), ...frontend], layout);
+    assert.deepEqual(verificationSteps('full', layout).map(step => step.id), [...VERIFICATION_STEP_IDS], layout);
+  }
+  assert.deepEqual(verificationSteps('contracts').map(step => step.id), ['governance', 'ui-governance', 'entrypoints']);
+  assert.deepEqual(verificationSteps('backend').map(step => step.id), ['governance', 'ui-governance', 'entrypoints', 'backend']);
+  assert.deepEqual(verificationSteps('frontend').map(step => step.id), ['governance', 'ui-governance', 'entrypoints', 'typecheck', 'lint', 'build']);
+  assert.ok(Object.isFrozen(VERIFICATION_STEP_IDS));
 });

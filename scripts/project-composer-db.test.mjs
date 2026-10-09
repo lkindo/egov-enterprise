@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { assertDeclaredCrossDomainForeignKeys, assertSchemaPreserved, buildCompositionAdminSeed, canEnterMenuRoute, projectCompositionNavigation, canonicalConstraintDefinition, projectCompositionMenus,
   schemaSnapshotHash, schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
-import { assertCompositionOperationGrants, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath } from './generate-reusable-base-db.mjs';
+import { assertCompositionOperationGrants, dropTemporaryDatabases, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath } from './generate-reusable-base-db.mjs';
 import { sanitizePgDump } from './reusable-db-postgres.mjs';
 
 test('composition DB requires exact default group/code grants and keeps available unassigned capabilities ungranted', () => {
@@ -40,13 +40,32 @@ test('DB CLI resolves a preset or a composition per layout and keeps the menu sn
   assert.equal(parseDbGenerationArgs(['--profile', 'core', '--layout', 'single-module']).layout, 'single-module');
   assert.equal(parseDbGenerationArgs(['--composition', 'build/request.json']).composition, 'build/request.json');
   assert.equal(parseDbGenerationArgs(['--write-menu-snapshot', '--container', 'owned']).writeMenuSnapshot, true);
+  assert.equal(parseDbGenerationArgs(['--composition', 'build/request.json', '--failure-report', 'build/x/failures/database.json']).failureReport,
+    'build/x/failures/database.json');
   for (const args of [[], ['--composition'], ['--composition', '--allow-dirty'],
     ['--profile', 'core', '--composition', 'request.json'], ['--composition', 'a.json', '--composition', 'b.json'], ['--database', 'oracle'],
     ['--profile', 'core', '--layout', 'single'], ['--profile', 'core', '--layout'], ['--profile', 'core', '--layout', 'multi-module', '--layout', 'single-module'],
     ['--write-menu-snapshot', '--profile', 'demo'], ['--write-menu-snapshot', '--output', 'build/reusable-base/x'],
-    ['--write-menu-snapshot', '--layout', 'multi-module'], ['--write-menu-snapshot', '--composition', 'request.json']]) {
+    ['--write-menu-snapshot', '--layout', 'multi-module'], ['--write-menu-snapshot', '--composition', 'request.json'],
+    // 실패 보고 경로는 생성 실행에만 쓴다. 값이 없거나 두 번이면 거부한다.
+    ['--write-menu-snapshot', '--failure-report', 'build/x/failures/database.json'], ['--profile', 'core', '--failure-report'],
+    ['--profile', 'core', '--failure-report', '--allow-dirty'],
+    ['--profile', 'core', '--failure-report', 'build/a.json', '--failure-report', 'build/b.json']]) {
     assert.throws(() => parseDbGenerationArgs(args), undefined, JSON.stringify(args));
   }
+});
+
+test('temporary database cleanup drops every database and never hides the original failure', () => {
+  const dropped = [];
+  const reports = [];
+  const drop = database => { dropped.push(database); if (database === 'verify') throw new Error('drop verify failed'); };
+  // 원래 실패가 있을 때: 둘 다 지우려 하고, 정리 실패는 한 줄로만 남긴다(던지지 않는다).
+  assert.doesNotThrow(() => dropTemporaryDatabases(drop, ['verify', 'working'], { completed: false, report: message => reports.push(message) }));
+  assert.deepEqual(dropped, ['verify', 'working'], 'a failed drop does not skip the next database');
+  assert.match(reports[0], /임시 DB 를 지우지 못했습니다: drop verify failed/);
+  // 생성이 끝났으면 첫 정리 실패를 그대로 알린다.
+  assert.throws(() => dropTemporaryDatabases(drop, ['verify'], { completed: true, report: () => {} }), /drop verify failed/);
+  assert.doesNotThrow(() => dropTemporaryDatabases(() => {}, [], { completed: true }));
 });
 
 test('pg_dump preserves the caller search path and all migrations share one ordered reapply session', () => {
@@ -136,6 +155,11 @@ test('migrated cross-domain foreign keys must equal the declared required and op
   assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints: base.slice(1) }, catalog), /stale: fk_comment_item/);
   assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints: [...base, fk('tb_unknown', 'fk_x', 'tb_bbs_item')] }, catalog),
     /without catalog ownership/);
+  // 두 불일치는 생성 단계가 선언 불일치(CATALOG_DRIFT)로 엔진에 알리는 실패다. 첫 위반 한 줄을 세부 정보로 싣는다.
+  for (const constraints of [[...base, fk('tb_cmnty_info', 'fk_new', 'tb_bbs_comment')], [...base, fk('tb_unknown', 'fk_x', 'tb_bbs_item')]]) {
+    assert.throws(() => assertDeclaredCrossDomainForeignKeys({ constraints }, catalog),
+      error => error.code === 'CATALOG_DRIFT' && error.details.violations.length === 1 && error.details.violations[0] === error.message);
+  }
 });
 
 test('only the exact reviewed optional foreign key can disappear; shared/selected constraints survive', () => {

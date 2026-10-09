@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
@@ -239,6 +240,9 @@ test('API support is removed or survives with its exact consumer and cannot sile
   assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
   rmSync(join(output, file));
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source was removed: api-server/);
+  // 생성 단계는 이 실패를 코드로 엔진에 알린다. 세부 정보는 저장소 기준 '/' 경로다.
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest),
+    error => error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details) === JSON.stringify({ files: [file.split(sep).join('/')] }));
 });
 
 test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
@@ -488,7 +492,10 @@ test('missing integrity gate ownership is red for a custom composition', async (
   for (const [file, owner] of integrityGates) {
     const declaration = `  '${file}': [${gateDomains(owner).map(domain => `'${domain}'`).join(', ')}],\n`;
     assert.ok(source.includes(declaration), `${file}: owner declaration is present before mutation`);
-    const mutant = await import(`data:text/javascript;base64,${Buffer.from(source.replace(declaration, '')).toString('base64')}`);
+    // data: URL 은 상대 import 를 풀지 못한다. 변이본의 형제 모듈 import 를 절대 파일 URL 로 바꿔 같은 모듈을 쓰게 한다.
+    const siblings = `${pathToFileURL(join(root, 'scripts')).href}/`;
+    const mutated = source.replace(declaration, '').replaceAll("from './", `from '${siblings}`);
+    const mutant = await import(`data:text/javascript;base64,${Buffer.from(mutated).toString('base64')}`);
     assert.throws(() => assertIntegrityGateAcknowledgements(mutant.composerProfile(manifest, composition), []), /acknowledged removal/);
   }
 });

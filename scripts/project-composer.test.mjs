@@ -116,6 +116,9 @@ function runner({ verificationResult = 'passed', wrongOwner = false, failStart =
       if (command === 'docker') {
         // Docker 엔진에 닿지 않는 경우: 모든 docker 호출이 실패한다.
         if (dockerDown) throw Object.assign(new Error(`Command failed: docker ${args[0]}`), { code: 'COMMAND_FAILED', exitCode: 1 });
+        // 실패 분류의 탐침: 엔진은 Linux 컨테이너로 응답하고, 이 작업의 컨테이너는 실행 중이다.
+        if (args[0] === 'version') return 'linux';
+        if (args[0] === 'inspect' && args[2] === '{{.State.Running}}') return 'true';
         if (args[0] === 'run') {
           token = args[args.indexOf('--label') + 1].split('=')[1];
           // 만들기는 됐지만 시작이 실패한 경우: ID 를 돌려주지 않는다.
@@ -203,10 +206,11 @@ test('a selection that violates a required foreign key is explained in the plan 
 
 test('a database container that was created but never started is found by its own label and removed', async () => {
   const mock = runner({ failStart: true });
+  // 엔진이 응답하는데 시작이 실패했으면(이미지·이름 충돌 등) Docker 를 쓸 수 없다고 말하지 않는다 — 분류하지 않는다.
   await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
-    error => error.code === 'COMMAND_FAILED');
+    error => error.code === 'COMMAND_FAILED' && error.failure.code === undefined && error.failure.causeCode === 'COMMAND_FAILED');
   const docker = mock.calls.filter(call => call.command === 'docker').map(call => call.args);
-  assert.deepEqual(docker.slice(1).map(args => args[0]), ['ps', 'inspect', 'rm']);
+  assert.deepEqual(docker.slice(1).map(args => args[0]), ['version', 'ps', 'inspect', 'rm']);
   assert.deepEqual(docker.at(-1), ['rm', '--force', '--volumes', 'a'.repeat(64)]);
 });
 
@@ -223,15 +227,16 @@ test('cleanup refuses a container whose ownership label differs and does not hid
 test('when Docker cannot be reached the failed cleanup does not replace the original database-stage failure', async () => {
   const mock = runner({ dockerDown: true });
   await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
-    error => error.message === 'Command failed: docker run' && error.failure?.stage === 'database' && error.failure?.code === 'COMMAND_FAILED');
-  assert.deepEqual(mock.calls.filter(call => call.command === 'docker').map(call => call.args[0]), ['run', 'ps']);
+    error => error.message === 'Command failed: docker run' && error.failure?.stage === 'database'
+      && error.failure?.code === 'TOOL_UNAVAILABLE' && error.details?.tool === 'docker' && error.failure.causeCode === 'COMMAND_FAILED');
+  assert.deepEqual(mock.calls.filter(call => call.command === 'docker').map(call => call.args[0]), ['run', 'version', 'ps']);
 });
 
 test('a source mutation during generation stops before install, verification or publication', async () => {
   const mock = runner();
   let reads = 0;
   const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => (++reads === 1 ? 'a' : 'b').repeat(64) });
-  await assert.rejects(() => engine.generate(recipe()), /Source checkout changed/);
+  await assert.rejects(() => engine.generate(recipe()), error => /Source checkout changed/.test(error.message) && error.failure.code === 'SOURCE_CHANGED');
   assert.ok(!mock.calls.some(call => call.command === 'npm' || call.args[0] === 'scripts/verify-reusable-artifact.mjs'));
   assert.equal(existsSync(mock.staging.replace('.pending-', '')), false);
 });
@@ -316,10 +321,16 @@ test('a failed command records its stage, command, exit code and stage log witho
   const engine = createComposerEngine({ outputRoot, run, fingerprint: () => 'a'.repeat(64) });
   const failed = await engine.generate(recipe()).then(() => assert.fail('generation must fail'), error => error);
   const job = resolve(outputRoot, 'build/project-composer/jobs', mock.staging.replace('.pending-', '').split(/[\\/]/).at(-1));
-  const installLog = join(job, 'logs', 'install.log');
-  assert.deepEqual(failed.failure, { stage: 'install', code: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: 1, durationMs: 5, log: installLog });
+  // 로그·보고서 위치는 원본 저장소 기준 '/' 경로다(이 컴퓨터의 절대 경로를 화면으로 보내지 않는다).
+  // 명령 실패는 작업 코드가 아니다(설치 단계는 Windows·POSIX 모두 분류하지 않는다). 원래 코드는 causeCode 로만 남는다.
+  const jobPath = `build/project-composer/jobs/${job.split(/[\\/]/).at(-1)}`;
+  const composed = JSON.parse(readFileSync(join(job, 'composition.json'), 'utf8'));
+  assert.deepEqual(failed.failure, { stage: 'install', causeCode: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: 1, durationMs: 5,
+    log: `${jobPath}/logs/install.log`, sourceCommit: composed.sourceCommit, report: `${jobPath}/report.json` });
   const report = JSON.parse(readFileSync(join(job, 'report.json'), 'utf8'));
-  assert.deepEqual({ ...report.failure, message: undefined }, { ...failed.failure, message: undefined });
+  const { report: reportPath, ...thrown } = failed.failure;
+  assert.equal(reportPath, `${jobPath}/report.json`);
+  assert.deepEqual({ ...report.failure, message: undefined }, { ...thrown, message: undefined }, 'the report keeps the same failure, without its own path');
   assert.equal(report.failure.verificationReport, undefined, 'the verification report does not exist before the verify stage');
   assert.deepEqual([...new Set(logs.map(path => path.split(/[\\/]/).at(-1)))], ['database.log', 'source.log', 'install.log']);
   assert.ok(logs.every(path => path.startsWith(join(job, 'logs'))));
@@ -347,6 +358,11 @@ test('preflight compares the commit each request names with HEAD and bounds ever
   assert.ok(calls.length >= 6 && calls.every(call => call.options.timeoutMs === 10_000 && call.options.capture === true));
   // 계획은 도구·작업 트리에 대한 고정 문구를 싣지 않는다. 외부 설정 요구만 남는다.
   assert.deepEqual(engine.plan(recipe()).warnings, ['추가 설정: 메일 발송에 사용할 SMTP 설정']);
+});
+
+test('a command that cannot be started carries its errno, so only a missing executable reads as a missing tool', async () => {
+  await assert.rejects(() => runComposerCommand('egov-composer-missing-tool-0123', ['--version'], { root: tmpdir() }),
+    error => error.code === 'TOOL_UNAVAILABLE' && error.errno === 'ENOENT' && error.exitCode === null);
 });
 
 test('a command past its time limit ends its whole process tree without waiting for the pipes to close', async () => {
