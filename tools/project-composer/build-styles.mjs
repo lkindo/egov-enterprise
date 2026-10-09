@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Rebuild static utilities after HTML/JS class changes; the server needs no frontend packages. */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -8,7 +8,9 @@ const directory = dirname(fileURLToPath(import.meta.url));
 const tailwind = resolve(directory, '../../frontend/node_modules/tailwindcss');
 const { compile } = await import(pathToFileURL(resolve(tailwind, 'dist/lib.mjs')).href);
 const input = await readFile(resolve(directory, 'styles.input.css'), 'utf8');
-const contents = await Promise.all(['index.html', 'app.js', 'confirm.js', 'job.js'].map(file => readFile(resolve(directory, 'public', file), 'utf8')));
+// 화면 파일을 목록으로 적지 않고 public 의 HTML·JS 를 모두 읽는다(새 모듈의 클래스가 빠지지 않게).
+const sources = (await readdir(resolve(directory, 'public'))).filter(file => /\.(?:html|js)$/.test(file)).sort();
+const contents = await Promise.all(sources.map(file => readFile(resolve(directory, 'public', file), 'utf8')));
 // Tailwind candidates are tokens, including quoted class lists assembled by the small local UI.
 const candidates = [...new Set(contents.flatMap(source => source.split(/[\s"'`<>;=]+/)).filter(Boolean))];
 const compiler = await compile(input, { loadStylesheet: async id => {

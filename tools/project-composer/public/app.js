@@ -1,5 +1,8 @@
 import { createFinalConfirmation } from './confirm.js';
+import { inclusionChange } from './inclusion-change.js';
+import { renderInclusions } from './inclusions.js';
 import { createJobPanel } from './job.js';
+import { renderMenuTree } from './menu-tree.js';
 import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
 const $ = id => document.getElementById(id);
@@ -117,7 +120,7 @@ function withdrawPlan() {
   clearPlanNotes();
   // 거둔 계획의 개수·메뉴·경고·생성 위치도 남기지 않는다(계산할 수 없다는 문장 옆에 계산된 값이 남지 않게).
   for (const id of ['domain-count', 'table-count', 'menu-count']) $(id).textContent = '—';
-  $('plan-warnings').replaceChildren(); $('menu-preview').replaceChildren(); $('output-hint').textContent = '';
+  $('plan-warnings').replaceChildren(); $('output-hint').textContent = '';
   $('generate').disabled = true; $('download-recipe').disabled = true; $('preview').disabled = false;
   renderFeatures();
 }
@@ -285,48 +288,11 @@ function openInclusion(id) {
   summary.scrollIntoView({ block: 'nearest' });
   summary.focus();
 }
-// 마지막으로 알린 계획(기준)과 지금 계획을 비교해, 무엇을 바꿔 자동 포함이 어떻게 달라졌는지 한 문장으로 말한다.
-// 계획이 오기 전에 여러 번 바꿨으면 순변화만 말한다(마지막 행동 하나를 주어로 삼지 않는다). 기능 이름만 잇고 조사가
-// 붙지 않게 괄호로 묶는다.
-// - 해제했는데 다른 선택이 필요로 해 남은 기능은 '늘었다' 가 아니라 '남았다' 로 말한다.
-// - 시작 구성은 그 구성의 기능만 담고 직접 선택은 요구하는 기능까지 끌어온다. 시작 구성에서 직접 선택으로 바뀌며 들어온
-//   기능(뿌리에 바꾼 기능이 없는 것)은 바꾼 카드 탓으로 말하지 않고 전환 탓으로 나눠 말한다.
-// - 고른 것과 뺀 것이 섞이면 '바꾼 구성으로' 라고만 말한다.
-function inclusionChange(base, plan) {
-  const now = new Map((plan.inclusionNotes ?? []).map(note => [note.domain, note.roots ?? []]));
-  const resolved = new Set(plan.resolvedDomains ?? []);
-  const names = ids => ids.map(label).join(', ');
-  const order = new Map(state.catalog.capabilities.map((item, index) => [item.id, index]));
-  const sorted = ids => ids.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
-  const on = sorted([...state.selected].filter(id => !base.selected.has(id)));
-  const off = sorted([...base.selected].filter(id => !state.selected.has(id)));
-  const touched = new Set([...on, ...off]);
-  const switched = base.preset !== 'custom' && state.preset === 'custom';
-  let subject = '';
-  let specific = false;
-  if (state.preset !== base.preset && state.preset !== 'custom') subject = `‘${state.catalog.presentation.presets[state.preset]?.label ?? state.preset}’ 구성 선택으로`;
-  else if (!touched.size) subject = switched ? '‘직접 선택’ 구성 선택으로' : '';
-  else if (!(on.length && off.length)) { subject = `${names(on.length ? on : off)} ${on.length ? '선택으로' : '해제로'}`; specific = true; }
-  else subject = '바꾼 구성으로';
-  // 직접 선택이 같으면(이름·구조만 바꿈) 자동 포함도 같다. 바꾼 것이 없으면 말하지 않는다.
-  if (!subject) return '';
-  const split = switched && specific;
-  const kept = off.filter(id => now.has(id));
-  const added = [...now.keys()].filter(id => !base.automatic.has(id) && !kept.includes(id));
-  const byChange = added.filter(id => !split || now.get(id).some(root => touched.has(root)));
-  const bySwitch = added.filter(id => !byChange.includes(id));
-  const removed = [...base.automatic.keys()].filter(id => !now.has(id) && !resolved.has(id));
-  const parts = [];
-  if (byChange.length) parts.push(`${subject} 함께 포함되는 기능이 ${byChange.length}개 늘었습니다(${names(byChange)}).`);
-  if (removed.length) parts.push(`${byChange.length ? '' : `${subject} `}함께 포함되던 기능 ${removed.length}개가 빠졌습니다(${names(removed)}).`);
-  if (kept.length) parts.push(`다른 선택이 필요로 해 함께 포함된 채 남은 기능: ${names(kept)}.`);
-  if (bySwitch.length) parts.push(`시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 ${bySwitch.length}개 늘었습니다(${names(bySwitch)}).`);
-  else if (switched && touched.size) parts.push('시작 구성이 ‘직접 선택’으로 바뀌었습니다.');
-  return parts.join(' ');
-}
 // 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 자동 포함·기능 저하·미배정 권한을 보이지 않는다.
 function clearPlanNotes() {
   $('auto-included').replaceChildren();
+  // 메뉴 트리와 그 요약도 이전 구성의 것이므로 지운다(다시 확인 중·실패에 옛 '추가됨' 수가 남지 않게).
+  $('menu-preview').replaceChildren(); $('menu-summary').textContent = '';
   $('plan-degraded').hidden = true; $('plan-degraded').replaceChildren();
   $('plan-unassigned').hidden = true; $('plan-unassigned-list').replaceChildren();
 }
@@ -368,58 +334,14 @@ function changed() {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(() => preview(false), 250);
 }
-// 자동 포함: 경로 사슬과 사용자 문장, 해제 방법을 보이고 개발자 근거(종류·파일)는 한 번 더 접는다(E2).
-function renderInclusions(notes) {
-  const host = $('auto-included');
-  // 같은 구성을 다시 확인해도 사용자가 펼친 설명과 키보드 포커스는 그 자리에 남긴다.
-  const opened = new Set([...host.querySelectorAll('details[open]')].map(node => node.dataset.key));
-  const focusKey = host.contains(document.activeElement) ? document.activeElement.dataset.key : undefined;
-  const keyed = (element, key) => { element.dataset.key = key; return element; };
-  host.replaceChildren();
-  if (!notes.length) return;
-  host.append(text('p', `함께 포함되는 기능 ${notes.length}개`, 'font-semibold'));
-  for (const note of notes) {
-    const item = text('div', '', 'rounded-xl border border-dashed border-line p-3');
-    item.id = `auto-${note.domain}`;
-    const title = text('p', note.label, 'font-medium');
-    title.append(text('span', '자동 포함', 'ml-2 text-xs font-normal text-muted'));
-    item.append(title, text('p', note.path, 'text-xs text-muted'));
-    const why = keyed(document.createElement('details'), `why-${note.domain}`);
-    why.className = 'mt-2';
-    why.open = opened.has(why.dataset.key);
-    why.append(keyed(text('summary', '왜 포함됐나', 'cursor-pointer text-xs font-semibold'), `why-summary-${note.domain}`));
-    const steps = text('ul', '', 'mt-2 space-y-1 text-xs');
-    steps.append(...note.steps.map(step => text('li', step.text)));
-    const removal = text('p', note.removal, 'mt-2 text-xs');
-    removal.id = `removal-${note.domain}`;
-    const drop = keyed(text('button', `${note.roots.map(label).join(', ')} 해제하기`,
-      'mt-2 rounded-lg border border-line px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'), `drop-${note.domain}`);
-    drop.type = 'button';
-    drop.setAttribute('aria-describedby', removal.id);
-    drop.addEventListener('click', () => {
-      state.preset = 'custom'; $('preset').value = 'custom';
-      for (const root of note.roots) state.selected.delete(root);
-      changed(); renderFeatures();
-      // 해제한 기능이 검색으로 가려져 있으면 포커스를 둘 곳이 없다. 검색을 비워 그 카드를 보인다.
-      if ($(`capability-${note.roots[0]}`)?.closest('[hidden]')) { $('capability-search').value = ''; renderFeatures(); }
-      $(`capability-${note.roots[0]}`)?.focus();
-    });
-    const evidence = keyed(document.createElement('details'), `evidence-${note.domain}`);
-    evidence.className = 'mt-2';
-    evidence.open = opened.has(evidence.dataset.key);
-    evidence.append(keyed(text('summary', '개발자 근거', 'cursor-pointer text-xs text-muted'), `evidence-summary-${note.domain}`));
-    const files = text('ul', '', 'mt-1 space-y-1 text-xs text-muted');
-    files.append(...note.steps.map(step => {
-      const row = text('li', `${label(step.from)} → ${label(step.to)} · ${step.evidence.join(' · ')}`);
-      row.append(...step.files.map(file => text('code', file, 'block break-all font-mono')));
-      return row;
-    }));
-    evidence.append(files);
-    why.append(steps, removal, drop, evidence);
-    item.append(why);
-    host.append(item);
-  }
-  if (focusKey) host.querySelector(`[data-key="${focusKey}"]`)?.focus({ preventScroll: true });
+// 자동 포함 설명의 해제 버튼: 그 기능에 닿는 선택을 한 번에 빼고 해제한 첫 카드로 포커스를 옮긴다.
+function dropRoots(roots) {
+  state.preset = 'custom'; $('preset').value = 'custom';
+  for (const root of roots) state.selected.delete(root);
+  changed(); renderFeatures();
+  // 해제한 기능이 검색으로 가려져 있으면 포커스를 둘 곳이 없다. 검색을 비워 그 카드를 보인다.
+  if ($(`capability-${roots[0]}`)?.closest('[hidden]')) { $('capability-search').value = ''; renderFeatures(); }
+  $(`capability-${roots[0]}`)?.focus();
 }
 function renderPlan() {
   const plan = state.plan;
@@ -430,7 +352,7 @@ function renderPlan() {
   const blockers = plan.blockers ?? [];
   // 무엇을 바꿔 자동 포함이 달라졌는지 상태 문장 앞에 한 번 붙인다(상태 문장이 알림 영역이라 한 번에 읽힌다).
   clearTimeout(announceTimer);
-  const change = state.baseline ? inclusionChange(state.baseline, plan) : '';
+  const change = state.baseline ? inclusionChange({ base: state.baseline, plan, selected: state.selected, preset: state.preset, catalog: state.catalog, label }) : '';
   state.baseline = { preset: state.preset, selected: new Set(state.selected),
     automatic: new Map((plan.inclusionNotes ?? []).map(note => [note.domain, note.roots ?? []])) };
   const status = blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
@@ -441,7 +363,7 @@ function renderPlan() {
     announceTimer = setTimeout(() => { if (state.plan === plan) $('plan-status').textContent = sentence; }, ANNOUNCE_AFTER_FOCUS_MS);
   } else $('plan-status').textContent = sentence;
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
-  renderInclusions(plan.inclusionNotes ?? []);
+  renderInclusions({ host: $('auto-included'), text, label, onDrop: dropRoots }, plan.inclusionNotes ?? []);
   $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
   // 기능 저하와 미배정 권한은 생성을 막지 않는 안내다. 생성 버튼은 차단 사유로만 막힌다.
   const notes = plan.degradationNotes ?? [];
@@ -456,13 +378,7 @@ function renderPlan() {
     item.append(text('span', row.name, 'block font-medium'), text('span', `${row.effect} ${row.howToAssign}`, 'block text-xs leading-6 text-muted'));
     return item;
   }));
-  $('menu-preview').replaceChildren(...(plan.menus ?? []).map(menu => {
-    const row = document.createElement('li');
-    row.append(text('span', menu.label ?? menu.name ?? menu.id, 'block font-medium'));
-    if (menu.path) row.append(text('span', menu.path, 'block break-all text-xs text-muted'));
-    return row;
-  }));
-  if (!plan.menus?.length) $('menu-preview').append(text('li', '포함된 메뉴가 없습니다.'));
+  renderMenuTree({ list: $('menu-preview'), summary: $('menu-summary'), text }, plan.menus ?? []);
   $('generate').disabled = state.busy || blockers.length > 0; $('download-recipe').disabled = false;
   renderFeatures();
 }

@@ -95,6 +95,10 @@ test('UI and CLI use the same side-effect-free plan and reject unsupported or un
   assert.deepEqual(plan.resolvedDomains, ['mail', 'report', 'schedule']);
   assert.equal(plan.backendLayout, 'single-module');
   assert.ok(plan.menus.length > 0);
+  // 메뉴 트리 미리보기(E8): 메뉴마다 순서·종류와 공통 기반 대비 추가 여부를 싣는다.
+  assert.ok(plan.menus.every(menu => ['screen', 'category', 'detached'].includes(menu.kind) && Number.isInteger(menu.order) && typeof menu.added === 'boolean'));
+  assert.ok(plan.menus.some(menu => menu.added), 'mail and schedule add menus the core composition does not have');
+  assert.ok(engine.plan({ ...recipe(), selection: { preset: 'core' } }).menus.every(menu => menu.added === false));
   assert.ok(plan.tables.includes('tb_user_info'));
   assert.equal(existsSync(before.jobDirectory), false);
   assert.throws(() => engine.plan({ ...recipe(), sourceRef: 'HEAD~1' }), /source reference/);

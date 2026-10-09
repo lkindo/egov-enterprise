@@ -181,6 +181,10 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
     return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value, { routeKinds: loadRouteKinds(root) })) };
   };
+  const coreBase = (recipe, value) => {
+    if (!value.presets.some(preset => preset.id === 'core')) return undefined;
+    try { return resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, value); } catch { return undefined; }
+  };
   const plan = recipe => {
     const sourceCommit = recipeCommit(recipe);
     const snapshot = loadProjectComposerMenus(root);
@@ -194,7 +198,9 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root)).filter(row => composition.permissionCodes.includes(row.code))
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
-      menus: declared(() => projectComposerMenuPreview(root, composition, snapshot)),
+      // 공통 기반 시작 구성과 비교해 이 구성이 더하는 메뉴를 표시한다(설계서 E8). 그 시작 구성이 없거나 풀리지 않으면
+      // 표시만 빼고 계획은 그대로 낸다 — 보조 표시 때문에 사용자의 구성이 막히거나 그 구성의 오류로 보이지 않게 한다.
+      menus: declared(() => projectComposerMenuPreview(root, composition, snapshot, { base: coreBase(recipe, current) })),
       // 도구·작업 트리처럼 이 컴퓨터의 상태는 생성 전 점검(preflight)이 실제로 확인해 말한다.
       warnings: composition.requirements.map(requirement => `추가 설정: ${requirement}`),
     };
