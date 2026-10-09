@@ -283,6 +283,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 .ml-3 {
   margin-left: calc(var(--spacing) * 3);
 }
+.ml-5 {
+  margin-left: calc(var(--spacing) * 5);
+}
 .block {
   display: block;
 }
@@ -357,6 +360,11 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .gap-7 {
   gap: calc(var(--spacing) * 7);
+}
+:where(.space-y-0\.5 > :not(:last-child)) {
+  --tw-space-y-reverse: 0;
+  margin-block-start: calc(calc(var(--spacing) * 0.5) * var(--tw-space-y-reverse));
+  margin-block-end: calc(calc(var(--spacing) * 0.5) * calc(1 - var(--tw-space-y-reverse)));
 }
 :where(.space-y-1 > :not(:last-child)) {
   --tw-space-y-reverse: 0;

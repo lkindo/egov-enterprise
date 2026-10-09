@@ -8,6 +8,8 @@ import { REQUIRES_KIND_LABELS, createComposerEngine, composerOutputPaths, inclus
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
+import { readJobHistory } from './project-composer-timeline.mjs';
+import { VERIFICATION_STEP_IDS, verificationSteps } from './verify-reusable-artifact.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 // 계약 테스트의 생성 출력은 임시 루트에만 둔다. 저장소 build/ 에 engine-contract-* 잔재를 남기지 않는다.
@@ -135,8 +137,16 @@ function runner({ verificationResult = 'passed', wrongOwner = false, failStart =
         mkdirSync(join(staging, 'build/reports/reusable-base'), { recursive: true });
       }
       if (args[0] === 'scripts/verify-reusable-artifact.mjs') {
+        // 실제 검증기처럼 단계마다 머리줄을 찍고(엔진이 검증 단계를 알리는 근거), 관계없는 출력도 섞는다.
+        // 머리줄 형식이 실제 검증기와 같은지는 타임라인 시험이 실제 검증기 출력으로 대조한다.
+        const steps = verificationSteps('full', composition.backendLayout);
+        for (const step of steps) {
+          options.onLine?.(`[reusable-verify] ${composition.profile}/${composition.backendLayout}: ${[step.command, ...step.args].join(' ')}`);
+          options.onLine?.('> unrelated child output');
+        }
         writeFileSync(join(options.root, 'build/reports/reusable-base/full.json'), JSON.stringify({ result: verificationResult,
-          sourceCommit: composition.sourceCommit, profile: composition.profile, layout: composition.backendLayout, scope: 'full' }));
+          sourceCommit: composition.sourceCommit, profile: composition.profile, layout: composition.backendLayout, scope: 'full',
+          steps: steps.map((step, index) => ({ step: step.id, command: [step.command, ...step.args].join(' '), result: 'passed', durationMs: 1_000 * (index + 1) })) }));
       }
       if (command === 'pnpm') {
         const dependency = join(options.root, 'frontend/node_modules/.pnpm/mock-package');
@@ -162,11 +172,58 @@ test('generation publishes readiness after verification, keeps absolute dependen
   assert.equal(existsSync(result.projectDirectory), true);
   assert.equal(JSON.parse(readFileSync(result.reportPath, 'utf8')).result, 'passed');
   assert.equal(readFileSync(join(result.projectDirectory, 'frontend/node_modules/mock-package/entry.js'), 'utf8'), 'verified dependency');
-  assert.deepEqual(stages, ['resolve', 'database', 'source', 'install', 'verify', 'complete']);
+  // 검증 중에는 검증 단계마다 알림이 더 나간다(같은 단계 알림이 이어진다). 단계 순서만 본다.
+  assert.deepEqual(stages.filter((stage, index) => stage !== stages[index - 1]), ['resolve', 'database', 'source', 'install', 'verify', 'complete']);
   const start = mock.calls.find(call => call.command === 'docker' && call.args[0] === 'run');
   assert.ok(!start.args.some(arg => ['--publish', '-p', '--volume', '-v'].includes(arg)));
   assert.ok(start.args.includes('POSTGRES_PASSWORD'));
   assert.equal(mock.calls.at(-1).args[0], 'rm');
+});
+
+/*
+ * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 알리고, 작업 보고서와 작업 이력 색인에 단계별 소요 시간을 남긴다.
+ * 작업 이력은 이 시험만의 임시 루트에 쌓는다(다른 시험의 작업이 섞이지 않게).
+ */
+test('generation reports each stage and verification step, keeps the timeline in the report and adds the job to the history', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-timeline-')));
+  t.after(() => rmSync(own, { recursive: true, force: true }));
+  const mock = runner();
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const events = [];
+  const result = await engine.generate(recipe(), { onProgress: event => events.push(structuredClone(event)) });
+  const running = event => event.timeline.steps.find(step => step.status === 'running')?.id;
+  assert.deepEqual(events.map(event => (running(event) ? `${event.stage}:${running(event)}` : event.stage)),
+    ['resolve', 'database', 'source', 'install', 'verify', ...VERIFICATION_STEP_IDS.map(id => `verify:${id}`), 'complete']);
+  assert.ok(events.every((event, index) => index === 0 || event.progress >= events[index - 1].progress), 'progress never goes back');
+  assert.equal(events.at(-1).progress, 100);
+  assert.deepEqual(events[0].estimate, { runs: 0, remainingMs: null }, 'no history yet: no remaining time');
+  const report = JSON.parse(readFileSync(result.reportPath, 'utf8'));
+  assert.ok([...report.timeline.stages, ...report.timeline.steps].every(item => item.status === 'passed'));
+  assert.deepEqual(report.timeline.steps.map(step => step.durationMs), VERIFICATION_STEP_IDS.map((_, index) => 1_000 * (index + 1)),
+    'step times come from the verification report');
+  const [entry] = readJobHistory(own);
+  assert.equal(entry.result, 'passed');
+  assert.equal(entry.layout, 'single-module');
+  assert.equal(entry.job, result.projectDirectory.split(/[\\/]/).at(-1));
+  assert.equal(entry.durations.backend, 4_000);
+  // 알림을 받는 쪽이 실패해도 생성은 끝까지 가고 이력에 남는다.
+  const second = await engine.generate(recipe(), { onProgress: () => { throw new Error('listener failed'); } });
+  assert.equal(second.verified, true);
+  assert.equal(readJobHistory(own).length, 2);
+});
+
+test('a cleanup failure after a passing verifier blames the verification stage, not its last step', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cleanup-')));
+  t.after(() => rmSync(own, { recursive: true, force: true }));
+  const mock = runner({ wrongOwner: true });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const events = [];
+  await assert.rejects(() => engine.generate(recipe(), { onProgress: event => events.push(structuredClone(event)) }), /ownership changed/);
+  const last = events.at(-1).timeline;
+  assert.equal(last.stages.at(-1).status, 'failed');
+  assert.ok(last.steps.every(step => step.status === 'passed'), 'every step the verifier ran stays passed');
+  assert.equal(events.at(-1).estimate, undefined, 'the closing event carries no remaining time');
+  assert.equal(readJobHistory(own).at(-1).result, 'failed');
 });
 
 test('failed validation retains explicit failure evidence and never publishes a ready project', async () => {
@@ -198,8 +255,10 @@ test('a selection that violates a required foreign key is explained in the plan 
   assert.deepEqual(createComposerEngine({ loadCatalog }).plan(recipe()).blockers, []);
   const mock = runner();
   const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog });
+  const before = readJobHistory(outputRoot).length;
   await assert.rejects(() => engine.generate(blocked), error => error.code === 'FK_CLOSURE');
   assert.deepEqual(mock.calls, []);
+  assert.equal(readJobHistory(outputRoot).length, before, 'a job refused before it has a folder leaves no history');
   assert.equal(existsSync(join(outputRoot, 'build/project-composer/jobs')) && readdirSync(join(outputRoot, 'build/project-composer/jobs'))
     .some(name => name.startsWith('engine-contract-blocked-')), false);
 });
@@ -307,6 +366,26 @@ test('a flooding command keeps only a bounded tail of its stage log', async () =
   assert.ok(Buffer.byteLength(text) < 1024 * 1024 + 64 * 1024, 'the stage log stays bounded');
 });
 
+test('a line observer sees each raw output line once, the log keeps only the masked copy, and a failing observer changes nothing', async t => {
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-online-')));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const script = join(directory, 'emit.mjs');
+  writeFileSync(script, "process.stdout.write('first\\r\\nCOMPOSER_LINE_TOKEN=tail-tail-tail-tail\\n'); process.stderr.write('err-line\\n'); process.stdout.write('last-no-newline');");
+  const env = { ...process.env, COMPOSER_LINE_TOKEN: 'tail-tail-tail-tail' };
+  const seen = [];
+  const log = join(directory, 'emit.log');
+  await runComposerCommand('node', [script], { root: directory, log, env, onLine: line => seen.push(line) });
+  assert.deepEqual(seen.filter(line => line !== 'err-line'), ['first', 'COMPOSER_LINE_TOKEN=tail-tail-tail-tail', 'last-no-newline']);
+  assert.ok(seen.includes('err-line'), 'error output is observed too');
+  const text = readFileSync(log, 'utf8');
+  assert.match(text, /^COMPOSER_LINE_TOKEN=\*\*\*$/m, 'the log keeps the masked copy');
+  assert.doesNotMatch(text, /tail-tail-tail-tail/);
+  const quiet = [];
+  await runComposerCommand('node', [script], { root: directory, env, onLine: line => quiet.push(line) });
+  assert.deepEqual(quiet.filter(line => line !== 'err-line'), ['first', 'COMPOSER_LINE_TOKEN=tail-tail-tail-tail', 'last-no-newline'], 'lines are observed without a log');
+  assert.equal(await runComposerCommand('node', [script], { root: directory, env, onLine: () => { throw new Error('observer failed'); } }), '');
+});
+
 test('a failed command records its stage, command, exit code and stage log without claiming a missing verification report', async () => {
   const mock = runner();
   const logs = [];
@@ -334,6 +413,12 @@ test('a failed command records its stage, command, exit code and stage log witho
   assert.equal(report.failure.verificationReport, undefined, 'the verification report does not exist before the verify stage');
   assert.deepEqual([...new Set(logs.map(path => path.split(/[\\/]/).at(-1)))], ['database.log', 'source.log', 'install.log']);
   assert.ok(logs.every(path => path.startsWith(join(job, 'logs'))));
+  // 실패한 단계까지의 타임라인이 보고서와 작업 이력에 남는다. 시작하지 않은 단계는 건너뜀이다.
+  assert.deepEqual(report.timeline.stages.map(stage => stage.status), ['passed', 'passed', 'passed', 'failed', 'skipped']);
+  assert.ok(report.timeline.steps.every(step => step.status === 'skipped'));
+  const history = readJobHistory(outputRoot).at(-1);
+  assert.equal(history.result, 'failed');
+  assert.equal(history.job, job.split(/[\\/]/).at(-1));
 });
 
 /*
