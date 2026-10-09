@@ -232,7 +232,8 @@ export function projectComposerJava(file, source, profile) {
 }
 
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
-export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest) {
+// `present` 는 생성물에 그 파일이 남았는지 답한다. 생성기는 디스크를, 정밀 점검(plan/deep)은 제거 계획을 본다.
+export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest, { present = path => existsSync(join(outputRoot, path)) } = {}) {
   if (composition.profile !== 'custom') return;
   const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
   // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
@@ -243,7 +244,7 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
     if (excludedSupport.has(normalized)) return;
     if (normalized.startsWith('frontend/') && composition.frontend.removePaths.some(removed =>
       normalized === `frontend/${removed}` || normalized.startsWith(`frontend/${removed}/`))) return;
-    if (!existsSync(join(outputRoot, path))) throw new Error(`Selected capability source was removed: ${path}`);
+    if (!present(path)) throw new Error(`Selected capability source was removed: ${path}`);
   };
   function assertTree(directory) {
     if (!existsSync(directory)) return;

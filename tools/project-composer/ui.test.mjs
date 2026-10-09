@@ -6,7 +6,7 @@ import { chromium, expect } from '../../frontend/node_modules/@playwright/test/i
 import { createComposerServer } from '../../scripts/project-composer-server.mjs';
 import { loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
 import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
-import { degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
+import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
@@ -29,6 +29,10 @@ const catalog = {
 };
 // 생성 전 점검(설계서 19장)이 모두 통과하는 엔진 조각. 생성 흐름 테스트는 최종 확인을 거쳐 시작한다.
 const passingPreflight = () => ({ checks: [{ id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다', detail: '29.1.3' }], blocked: false });
+// 소스 정밀 점검(설계서 10장 plan/deep)이 차단 없이 끝나는 엔진 조각.
+const passingDeep = () => ({ java: { removedFiles: 517, cascadeFiles: 114 }, frontend: { removedFiles: 388, cascadeFiles: 73 }, removedGates: [],
+  blockers: [], summary: '제거: Java 517개(연쇄 114) · 프런트 388개(연쇄 73) · 검증 게이트 0건', durationMs: 10 });
+const DEEP_PASSED = '. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면 진입점은 남습니다.';
 async function confirmGenerate(page) {
   await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
@@ -61,7 +65,7 @@ function plan(recipe) {
 test('keyboard selection, dependent features, preview, failure recovery and generated recipe stay coherent', { timeout: 60_000 }, async t => {
   let generations = 0;
   let submitted;
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: async (recipe, { onProgress }) => {
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, deep: passingDeep, generate: async (recipe, { onProgress }) => {
     generations += 1; submitted = recipe;
     onProgress({ stage: 'database', progress: 20 });
     await new Promise(resolve => setTimeout(resolve, 350));
@@ -156,7 +160,7 @@ test('polling disconnect retains the active job and recovery does not submit it 
   let release;
   let generations = 0;
   const pending = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, deep: passingDeep, generate: () => { generations += 1; return pending; } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
   const browser = await chromium.launch({ headless: true });
@@ -179,7 +183,7 @@ test('another tab running a different recipe cannot overwrite the selection afte
   let release;
   let generations = 0;
   const pending = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
+  const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, deep: passingDeep, generate: () => { generations += 1; return pending; } } });
   const origin = await app.listen(0);
   t.after(() => { release({ verified: true }); return app.close(); });
   const browser = await chromium.launch({ headless: true });
@@ -215,7 +219,7 @@ test('lost generation response recovers only its accepted request without submit
     let submissions = 0;
     const result = { projectDirectory: 'build/project-composer/own-service', verified: true };
     const pending = completeBeforeRecovery ? Promise.resolve(result) : new Promise(resolve => { release = resolve; });
-    const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, generate: () => { generations += 1; return pending; } } });
+    const app = createComposerServer({ engine: { catalog: () => catalog, plan, preflight: passingPreflight, deep: passingDeep, generate: () => { generations += 1; return pending; } } });
     const origin = await app.listen(0);
     t.after(() => { release?.(result); return app.close(); });
     const browser = await chromium.launch({ headless: true });
@@ -259,7 +263,7 @@ const realDiff = (recipe, domain) => {
   const result = compositionDiff({ catalog: real, menus: realMenus, recipe, domain });
   return { ...result, summary: diffSummary(result, real) };
 };
-async function realCatalogPage(t, { preflight = passingPreflight } = {}) {
+async function realCatalogPage(t, { preflight = passingPreflight, deep = passingDeep } = {}) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, real);
     return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
@@ -267,7 +271,7 @@ async function realCatalogPage(t, { preflight = passingPreflight } = {}) {
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff, preflight,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff, preflight, deep,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -557,11 +561,12 @@ test('the final confirmation shows the environment check and the composition, an
   ], blocked: false };
   let next = blocked;
   let runs = 0;
+  let deepRuns = 0;
   const { page, pageErrors, release } = await realCatalogPage(t, { preflight: () => {
     runs += 1;
     if (next instanceof Error) throw next;
     return next;
-  } });
+  }, deep: () => { deepRuns += 1; return passingDeep(); } });
   await page.locator('#capability-mail').check();
   await expect(page.locator('#domain-count')).toHaveText('1');
   const generateButton = page.getByRole('button', { name: '프로젝트 생성', exact: true });
@@ -575,6 +580,9 @@ test('the final confirmation shows the environment check and the composition, an
   await expect(page.locator('#preflight-list li').first()).toHaveText('차단Docker에 연결할 수 없습니다. Docker Desktop을 시작한 뒤 다시 점검하세요.');
   await expect(start).toBeDisabled();
   await expect(start).toHaveAccessibleDescription('차단 항목을 해결한 뒤 다시 점검하세요.');
+  // 환경이 이미 생성을 막으면 수 초가 걸리는 소스 정밀 점검은 하지 않고 그 이유를 말한다.
+  await expect(page.locator('#deep-status')).toHaveText('생성 환경의 차단 항목을 해결한 뒤 다시 점검하면 이어서 점검합니다.');
+  assert.equal(deepRuns, 0);
   // 구성 요약: 직접·자동 기능, 기능 저하, 외부 설정, 검증 순서.
   const summary = page.locator('#confirm-summary');
   await expect(summary).toContainText(`직접 1 · 자동 0 — ${real.capabilities.find(item => item.id === 'mail').label}`);
@@ -588,6 +596,8 @@ test('the final confirmation shows the environment check and the composition, an
   await retry.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#preflight-status')).toHaveText('생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.');
+  // 환경 점검을 마치지 못했으면 정밀 점검 칸은 없는 '차단 항목'이 아니라 점검을 하지 않은 이유를 말한다.
+  await expect(page.locator('#deep-status')).toHaveText('생성 환경 점검을 마치지 못해 소스 정밀 점검을 하지 않았습니다.');
   await expect(retry).toBeFocused();
   await expect(start).toBeDisabled();
   await expect(start).toHaveAccessibleDescription('점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.');
@@ -600,9 +610,12 @@ test('the final confirmation shows the environment check and the composition, an
   // 경고만 남으면 확인하고 진행할 수 있다.
   next = warned;
   await dialog.getByRole('button', { name: '다시 점검' }).click();
-  await expect(page.locator('#preflight-status')).toHaveText('확인 필요 1건이 있습니다. 내용을 확인한 뒤 생성할 수 있습니다.');
+  await expect(page.locator('#preflight-status')).toHaveText('확인 필요 1건이 있습니다. 경고는 생성을 막지 않습니다.');
   await expect(start).toBeEnabled();
   await expect(start).toHaveAccessibleDescription('');
+  // 환경 점검이 통과하면 소스 정밀 점검이 이어서 돌고, 둘 다 통과해야 생성 시작이 열린다.
+  await expect(page.locator('#deep-status')).toHaveText(`${passingDeep().summary}${DEEP_PASSED}`);
+  assert.equal(deepRuns, 1);
   assert.equal(runs, 3, 'the aborted request never reached the server');
   // 돌아가기(Esc)는 생성하지 않고 생성 버튼으로 돌아간다.
   await page.keyboard.press('Escape');
@@ -653,11 +666,147 @@ test('a late answer from an earlier preflight never replaces the latest one', { 
   await expect.poll(() => calls).toBe(1);
   await page.keyboard.press('Escape');
   await page.locator('#generate').click();
-  await expect(page.locator('#preflight-status')).toHaveText('모든 점검을 통과했습니다.');
+  await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
   releaseFirst();
   await expect.poll(() => routed).toBe(2);
   await page.waitForTimeout(500);
-  await expect(page.locator('#preflight-status')).toHaveText('모든 점검을 통과했습니다.');
+  await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
   await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 소스 정밀 점검(설계서 10장 plan/deep, C3). 처음 점검은 이 저장소에서 생성기와 같은 판정을 실제로 돌린다.
+ * 차단 사유가 있으면 사유와 파일(앞 다섯 개와 나머지 수)을 보이고 생성 시작을 잠근다. 점검이 실패해도 통과로 보이지 않는다.
+ */
+test('the source deep check shows the real generator judgement and blocks generation on a projection blocker', { timeout: 120_000 }, async t => {
+  const engine = createComposerEngine({ root });
+  let real;
+  let next = 'real';
+  const { page, pageErrors } = await realCatalogPage(t, { deep: recipe => {
+    if (next === 'real') return (real = engine.deep(recipe));
+    if (next instanceof Error) throw next;
+    return next;
+  } });
+  await page.locator('#capability-mail').check();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  await expect(page.locator('#deep-status')).toHaveText(/개\(연쇄 \d+\)/, { timeout: 60_000 });
+  assert.match(real.summary, /^제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건$/);
+  assert.ok(real.java.removedFiles > 0 && real.removedGates.length > 0, 'choosing mail alone removes sources and gates');
+  await expect(page.locator('#deep-status')).toHaveText(`${real.summary}${DEEP_PASSED}`);
+  await expect(page.locator('#deep-list li')).toHaveCount(0);
+  await expect(start).toBeEnabled();
+
+  // 차단 사유: 사유 문장과 파일 앞 다섯 개, 나머지 수. 서버는 파일을 앞 200개만 보내므로 나머지 수는 서버가 센 전체 수로 말한다.
+  // 파일 목록이 없으면 투영 오류 문장을 보인다.
+  const missing = Array.from({ length: 250 }, (_, index) => `frontend/src/app/mail/page-${index}.tsx`);
+  next = { ...passingDeep(), blockers: [
+    { code: 'SOURCE_SURVIVAL', label: '선택한 기능의 소스가 투영 중 지워집니다', files: missing },
+    { code: 'JAVA_PROJECTION', label: 'Java 소스를 투영할 수 없습니다', message: '필수 모듈이 제외 domain을 참조한다: business-core/X.java -> nuri.Y' },
+  ] };
+  const retry = dialog.getByRole('button', { name: '다시 점검' });
+  await retry.click();
+  await expect(page.locator('#deep-status')).toHaveText(`차단 2건 · ${passingDeep().summary}`);
+  await expect(page.locator('#deep-list li').nth(0)).toHaveText(`차단선택한 기능의 소스가 투영 중 지워집니다: ${missing.slice(0, 5).join(', ')} 외 245개`);
+  await expect(page.locator('#deep-list li').nth(1)).toHaveText('차단Java 소스를 투영할 수 없습니다: 필수 모듈이 제외 domain을 참조한다: business-core/X.java -> nuri.Y');
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('소스 정밀 점검의 차단 항목을 해결한 뒤 다시 점검하세요.');
+  // 점검이 실패하면 통과로 보이지 않고, 앞선 차단 목록도 남기지 않는다.
+  next = new Error('C:/Users/me/private-path');
+  await retry.click();
+  await expect(page.locator('#deep-status')).toHaveText('소스 정밀 점검 결과를 확인하지 못했습니다. 다시 점검해 주세요.');
+  await expect(page.locator('#deep-list li')).toHaveCount(0);
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('정밀 점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.');
+  // 차단이 풀리면 다시 생성할 수 있다.
+  next = passingDeep();
+  await retry.click();
+  await expect(page.locator('#deep-status')).toHaveText(`${passingDeep().summary}${DEEP_PASSED}`);
+  await expect(start).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+/* 대화상자를 닫았다 다시 열면 새로 점검한다. 늦게 도착한 앞선 정밀 점검의 차단 답은 새 통과 결과를 덮지 않는다. */
+test('a late answer from an earlier deep check never replaces the latest one', { timeout: 45_000 }, async t => {
+  const answers = [{ ...passingDeep(), blockers: [{ code: 'GATE_STALE', label: '승인 목록에 지워지지 않는 게이트가 남아 있습니다', files: ['api-server/src/test/java/nuri/api/OldTest.java'] }] }, passingDeep()];
+  let calls = 0;
+  const { page, pageErrors } = await realCatalogPage(t, { deep: () => answers[Math.min(calls++, answers.length - 1)] });
+  let releaseFirst;
+  const firstHeld = new Promise(resolve => { releaseFirst = resolve; });
+  let routed = 0;
+  await page.route('**/api/plan/deep', async route => {
+    routed += 1;
+    if (routed > 1) return route.continue();
+    const response = await route.fetch();
+    await firstHeld;
+    return route.fulfill({ response });
+  });
+  await expect(page.locator('#generate')).toBeEnabled();
+  await page.locator('#generate').click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(page.locator('#deep-status')).toHaveText('선택하지 않은 기능의 소스를 미리 걷어 보고 있습니다…');
+  await expect.poll(() => calls).toBe(1);
+  await page.keyboard.press('Escape');
+  await page.locator('#generate').click();
+  await expect(page.locator('#deep-status')).toHaveText(`${passingDeep().summary}${DEEP_PASSED}`);
+  releaseFirst();
+  await expect.poll(() => routed).toBe(2);
+  await page.waitForTimeout(500);
+  await expect(page.locator('#deep-status')).toHaveText(`${passingDeep().summary}${DEEP_PASSED}`);
+  await expect(page.locator('#deep-list li')).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+/* 창을 닫으면(돌아가기·Esc) 진행 중인 점검을 버린다. 닫힌 창을 위해 정밀 점검이 생성기 서버를 수 초 붙잡지 않는다. */
+test('closing the confirmation abandons the running check so no deep check starts for a closed dialog', { timeout: 45_000 }, async t => {
+  let deepRuns = 0;
+  const { page, pageErrors } = await realCatalogPage(t, { deep: () => { deepRuns += 1; return passingDeep(); } });
+  let release;
+  const held = new Promise(resolve => { release = resolve; });
+  let routed = 0;
+  await page.route('**/api/preflight', async route => {
+    routed += 1;
+    const response = await route.fetch();
+    await held;
+    return route.fulfill({ response });
+  });
+  await expect(page.locator('#generate')).toBeEnabled();
+  await page.locator('#generate').click();
+  await expect.poll(() => routed).toBe(1);
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: '이 구성으로 생성할까요?' })).toBeHidden();
+  release();
+  await page.waitForTimeout(800);
+  assert.equal(deepRuns, 0, 'no deep check starts after the dialog closed');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 브라우저는 창이 닫힌 뒤 다음 화면 갱신 때 close 이벤트를 보낸다. 그 전에(Esc·돌아가기 직후 Enter) 창을 다시 열어도 새 점검은 끝까지
+ * 가야 한다. 같은 작업 안에서 닫고 다시 열어 그 순서를 늘 재현한다.
+ */
+test('reopening the confirmation before the close event arrives still completes the new check', { timeout: 45_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await expect(page.locator('#generate')).toBeEnabled();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  for (const close of ['dialog', 'cancel']) {
+    await page.locator('#generate').click();
+    await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+    await page.evaluate(how => {
+      if (how === 'cancel') document.getElementById('confirm-cancel').click();
+      else document.getElementById('confirm-dialog').close();
+      document.getElementById('generate').click();
+    }, close);
+    await expect(dialog).toBeVisible();
+    await expect(page.locator('#deep-status')).toHaveText(`${passingDeep().summary}${DEEP_PASSED}`);
+    await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+    await expect(page.locator('#preflight-retry')).not.toHaveAttribute('aria-disabled', 'true');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  }
   assert.deepEqual(pageErrors, []);
 });

@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { dirname, join, resolve } from 'node:path';
 import { REQUIRES_KIND_LABELS, createComposerEngine, composerOutputPaths, inclusionNotes, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -364,4 +365,67 @@ test('a timed-out command returns at once even when a grandchild escapes the pro
     // Windows 는 끝난 프로세스가 작업 폴더를 잠시 더 쥔다.
     rmSync(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
   }
+});
+
+/*
+ * 소스 정밀 점검의 엔진 연결(설계서 10장 plan/deep). 생성기처럼 Git 이 보는 파일(추적 + 무시되지 않은 새 파일, build 제외)을
+ * 생성물의 파일 집합으로 쓰고, 화면이 보낸 원본이 지금 체크아웃과 같을 때만 점검한다.
+ */
+test('the deep check reads the files Git would copy and refuses a recipe from another commit', t => {
+  const repository = realpathSync(mkdtempSync(join(tmpdir(), 'composer-deep-engine-')));
+  t.after(() => rmSync(repository, { recursive: true, force: true, maxRetries: 5 }));
+  const git = (...args) => execFileSync('git', ['-c', 'user.name=composer', '-c', 'user.email=composer@example.invalid', ...args],
+    { cwd: repository, encoding: 'utf8' }).trim();
+  const write = (file, text = 'export default function Page() { return null; }\n') => {
+    mkdirSync(dirname(join(repository, file)), { recursive: true });
+    writeFileSync(join(repository, file), text);
+  };
+  // 프리셋은 이 저장소의 manifest 로 제거 경로와 게이트 승인을 정한다(직접 선택은 원본 저장소의 게이트 승인을 쓴다).
+  const real = loadProjectComposerCatalog(root);
+  const core = { ...recipe(), selection: { preset: 'core' } };
+  const removed = 'src/app/demo';
+  git('init', '--quiet');
+  write('config/reusable-base-profiles.json', JSON.stringify({ packs: { core: {}, collaboration: {}, survey: {}, demo: { frontend: { removePaths: [removed] } } },
+    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }] } } }));
+  for (const file of ['layout.tsx', 'page.tsx', 'login/page.tsx']) write(`frontend/src/app/${file}`);
+  // 생성기는 원본 Atlas 를 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
+  for (const file of ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
+    'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
+  write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x' } }));
+  write('.gitignore', '*.log\n');
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'first');
+  const first = git('rev-parse', 'HEAD');
+  // 새 파일은 커밋하지 않아도 복사된다. build 아래 파일과 무시된 파일은 복사되지 않는다.
+  write(`frontend/${removed}/새 화면.tsx`);
+  write(`frontend/${removed}/build/generated.ts`);
+  write(`frontend/${removed}/debug.log`, 'ignored\n');
+  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real });
+  const deep = engine.deep(core);
+  assert.deepEqual(deep.blockers, []);
+  assert.deepEqual(deep.frontend.files, [`frontend/${removed}/새 화면.tsx`]);
+  assert.equal(deep.summary, '제거: Java 0개(연쇄 0) · 프런트 1개(연쇄 0) · 검증 게이트 0건');
+  // 화면을 연 뒤 원본이 바뀌었으면 점검하지 않는다(생성도 같은 이유로 거부한다).
+  write('frontend/src/app/next.tsx');
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'second');
+  assert.throws(() => engine.deep({ ...core, sourceRef: first }), /does not identify the current checkout/);
+  assert.equal(engine.deep(core).frontend.removedFiles, 1);
+  // 해석기가 거부한 구성은 입력 오류로 표시한다(서버가 400 으로 답한다). 그 밖의 실패와 구분된다.
+  assert.throws(() => engine.deep({ ...core, selection: { domains: ['nosuchdomain'] } }), error => error.code === 'INVALID_RECIPE');
+  // 해석기의 다른 거부 코드(지원하지 않는 DB 등)도 모두 입력 오류로 모은다.
+  assert.throws(() => engine.deep({ ...core, database: { vendor: 'oracle' } }), error => error.code === 'INVALID_RECIPE');
+  // 대소문자 구분은 생성물을 만들 폴더에서 판정한다(폴더마다 다를 수 있다). 진입점의 색인 이름이 대소문자만 다르면,
+  // 가리는 출력 폴더에서는 생성기가 진입점을 찾지 못한다.
+  git('mv', 'frontend/src/app/login/page.tsx', 'frontend/src/app/login/Page.tsx');
+  git('commit', '--quiet', '-m', 'third');
+  const caseOutput = realpathSync(mkdtempSync(join(tmpdir(), 'composer-deep-case-')));
+  t.after(() => rmSync(caseOutput, { recursive: true, force: true, maxRetries: 5 }));
+  if (process.platform === 'win32') {
+    try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
+  }
+  writeFileSync(join(caseOutput, 'Probe.txt'), 'x');
+  const outputIgnoresCase = existsSync(join(caseOutput, 'pROBE.TXT'));
+  const caseDeep = createComposerEngine({ root: repository, outputRoot: caseOutput, loadCatalog: () => real }).deep(core);
+  assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), outputIgnoresCase ? [] : ['FRONTEND_ENTRY']);
 });

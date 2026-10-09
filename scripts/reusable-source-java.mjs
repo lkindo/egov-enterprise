@@ -29,35 +29,48 @@ function javaType(path) {
   return packageName ? `${packageName}.${basename(path, '.java')}` : undefined;
 }
 
-function importedJavaTypes(path, source = readFileSync(path, 'utf8')) {
+/** 의존 판정에 쓰는 코드 조각. 계획 중에는 파일 내용이 바뀌지 않으므로 파일마다 한 번만 만든다. */
+function javaDependencyIndex(source) {
   // import 선언도 **코드에서만** 읽는다 — 테스트 픽스처 텍스트 블록·주석 속 `import …;` 는 의존이 아니다.
   //   (원문에 적용하던 종전 판정은 red-proof 텍스트 블록 한 줄 때문에 결합 census 게이트를 통째로 지웠다.)
-  const code = stripJavaCommentsAndStringLiterals(source);
-  return [...code.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;/g)].map((match) => match[1]);
-}
-
-function referencedRemovedJavaType(path, removedTypes, source = readFileSync(path, 'utf8')) {
-  const imported = importedJavaTypes(path, source).find((type) => removedTypes.has(type));
-  if (imported) return imported;
   // 의존은 **코드에서만** 판정한다 — 주석·문자열 리터럴 속 클래스 이름은 참조가 아니다.
   //   (census·정규식이 게이트 이름을 문자열로 열거하는 관용 때문에 오탐이 연쇄한다.)
   const code = stripJavaCommentsAndStringLiterals(source);
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
-  // 와일드카드 import(`import a.b.*;`)는 패키지를 들여오므로 같은 패키지 파일과 똑같이 단순명으로 본다.
-  //   종전에는 패키지 이름이 제거 타입 집합에 없어 조용히 놓쳤다 — 살아남은 파일이 투영에서 컴파일되지 않는 경로다.
-  const visiblePackages = new Set([
-    packageName,
-    ...[...code.matchAll(/\bimport\s+([\w.]+)\.\*\s*;/g)].map((match) => match[1]),
-  ].filter(Boolean));
-  for (const type of removedTypes) {
+  return {
+    code,
+    imports: [...code.matchAll(/\bimport\s+(?:static\s+)?([\w.]+)(?:\.\*)?\s*;/g)].map((match) => match[1]),
+    // 와일드카드 import(`import a.b.*;`)는 패키지를 들여오므로 같은 패키지 파일과 똑같이 단순명으로 본다.
+    //   종전에는 패키지 이름이 제거 타입 집합에 없어 조용히 놓쳤다 — 살아남은 파일이 투영에서 컴파일되지 않는 경로다.
+    visiblePackages: new Set([
+      packageName,
+      ...[...code.matchAll(/\bimport\s+([\w.]+)\.\*\s*;/g)].map((match) => match[1]),
+    ].filter(Boolean)),
+  };
+}
+
+/** `types`(삽입 순서) 가운데 이 파일이 참조하는 첫 타입. import 를 먼저, 그다음 코드 본문을 본다. */
+function firstReferencedJavaType({ code, imports, visiblePackages }, types) {
+  const typeSet = new Set(types);
+  const imported = imports.find((type) => typeSet.has(type));
+  if (imported) return imported;
+  // 패키지 이름은 타입 이름의 앞부분이다. 코드에 패키지 이름이 없고 그 패키지가 보이지도 않으면 그 패키지의 어떤 타입도 맞지 않는다.
+  const reachable = new Map();
+  for (const type of types) {
     if (!type) continue;
-    if (code.includes(type)) return type;
     const typePackage = type.slice(0, type.lastIndexOf('.'));
+    if (!reachable.has(typePackage)) reachable.set(typePackage, visiblePackages.has(typePackage) || code.includes(typePackage));
+    if (!reachable.get(typePackage)) continue;
+    if (code.includes(type)) return type;
     if (!visiblePackages.has(typePackage)) continue;
     const simpleName = type.slice(typePackage.length + 1);
     if (new RegExp(`\\b${simpleName}\\b`).test(code)) return type;
   }
   return undefined;
+}
+
+function referencedRemovedJavaType(path, removedTypes, source = readFileSync(path, 'utf8')) {
+  return firstReferencedJavaType(javaDependencyIndex(source), [...removedTypes]);
 }
 
 /**
@@ -80,7 +93,10 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
   return directory;
 }
 
-export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java'))) {
+// `walkDirectory` 는 제외 도메인 폴더 아래 생성물의 파일을 돌려준다. 생성기는 복사한 트리를 훑고, 정밀 점검(plan/deep)은
+// 복사할 파일 목록에서 고른다(디스크의 무시된 파일·대소문자만 다른 이름을 생성물과 같게 본다).
+export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
+  { walkDirectory = (directory) => walk(directory, () => true) } = {}) {
   const support = domainSupportFiles(root, manifest);
   const allowedPacks = new Set(profile.packs);
   const excludedDomains = profile.resolvedDomains
@@ -110,7 +126,7 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
         const directory = resolveDomainRemovalDirectory(root, sourceSet, layer, domain);
         if (!existsSync(directory)) continue;
         directDirectories.push(directory);
-        for (const file of walk(directory, () => true)) removed.add(file);
+        for (const file of walkDirectory(directory)) removed.add(file);
       }
     }
     for (const path of removed) {
@@ -119,13 +135,30 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
   }
 
   const removedTypes = new Set([...removed].map((path) => pathToType.get(path)).filter(Boolean));
+  /*
+    연쇄는 증분으로 판정한다. 파일마다 이미 대조한 타입 수를 기억하고 그 뒤에 지워진 타입만 본다.
+    앞서 대조한 타입과는 어떤 경로로도 맞지 않았으므로, 매번 전체를 다시 보던 종전 판정과 제거 여부·시점·사유 타입이 같다
+    (사유 타입은 import 순서, 그다음 삽입 순서의 첫 일치이고 새 타입은 삽입 순서의 뒤쪽이다). 파일 내용은 계획 중 바뀌지 않는다.
+  */
+  const typeOrder = [...removedTypes];
+  const checkedTypes = new Map();
+  const indexes = new Map();
+  const dependencyIndex = (path) => {
+    if (!indexes.has(path)) {
+      indexes.set(path, javaDependencyIndex(projectComposerJava(normalize(relative(root, path)), readFileSync(path, 'utf8'), profile)));
+    }
+    return indexes.get(path);
+  };
   let changed = true;
   while (changed) {
     changed = false;
     for (const path of allBefore) {
       if (removed.has(path)) continue;
-      const dangling = referencedRemovedJavaType(path, removedTypes,
-        projectComposerJava(normalize(relative(root, path)), readFileSync(path, 'utf8'), profile));
+      // 첫 반복에서 모든 파일을 투영한다 — 투영 오류(표지 드리프트)는 지울 타입이 없어도 드러나야 한다.
+      const index = dependencyIndex(path);
+      const fresh = typeOrder.slice(checkedTypes.get(path) ?? 0);
+      checkedTypes.set(path, typeOrder.length);
+      const dangling = fresh.length ? firstReferencedJavaType(index, fresh) : undefined;
       if (!dangling) continue;
       const rel = normalize(relative(root, path));
       if (rel.startsWith('foundation/') || rel.startsWith('business-core/')) {
@@ -136,7 +169,9 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
       }
       removed.add(path);
       removalReason.set(path, `${dangling} 참조`);
-      removedTypes.add(pathToType.get(path));
+      const type = pathToType.get(path);
+      if (!removedTypes.has(type)) typeOrder.push(type);
+      removedTypes.add(type);
       changed = true;
     }
   }

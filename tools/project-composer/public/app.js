@@ -1,3 +1,5 @@
+import { createFinalConfirmation } from './confirm.js';
+
 const $ = id => document.getElementById(id);
 const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null,
   version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map() };
@@ -334,70 +336,6 @@ async function pollJob() {
     $('job-error').hidden = false; $('retry-status').hidden = false;
   }
 }
-// 생성 전 최종 확인(설계서 19장, E5): 이 컴퓨터의 생성 환경을 점검하고 구성을 한 번 더 보인다.
-// 차단 항목이 있거나 점검을 마치지 못하면 생성 시작을 잠그고 그 이유를 버튼 설명으로 단다.
-const PREFLIGHT_STATUS_LABELS = Object.freeze({ pass: '통과', warn: '확인 필요', block: '차단' });
-const PREFLIGHT_STATUS_CLASSES = Object.freeze({ pass: 'text-muted', warn: 'text-ink', block: 'text-danger' });
-let preflightVersion = 0;
-function confirmRow(term, value) {
-  const row = text('div', '');
-  row.append(text('dt', term, 'text-xs font-semibold text-muted'), text('dd', value, 'break-words'));
-  return row;
-}
-function renderConfirmSummary(plan) {
-  const direct = (plan.selectedDomains ?? []).map(label);
-  const automatic = (plan.autoIncluded ?? []).map(item => `${label(item.domain)}(자동)`);
-  const degraded = plan.degradationNotes ?? [];
-  const requirements = plan.requirements ?? [];
-  const unassigned = plan.unassignedPermissions ?? [];
-  $('confirm-summary').replaceChildren(
-    confirmRow('업무 기능', `직접 ${direct.length} · 자동 ${automatic.length}${direct.length + automatic.length ? ` — ${[...direct, ...automatic].join(', ')}` : ' — 공통 기반만'}`),
-    confirmRow('테이블 · 권한 · 메뉴', `${plan.tables?.length ?? 0} · ${plan.permissionCodes?.length ?? 0} · ${plan.menus?.length ?? 0}`),
-    confirmRow('기능 저하', degraded.length ? degraded.map(group => group.heading).join(' / ') : '없음'),
-    confirmRow('외부 설정', requirements.length ? requirements.join(', ') : '없음'),
-    confirmRow('생성 뒤 할 일', unassigned.length ? `권한 ${unassigned.length}개는 자동 배정되지 않습니다: ${unassigned.map(row => row.name).join(', ')}` : '없음'),
-    confirmRow('검증', '계획 단계 검사(필수 외래 키와 기능 선언)는 통과했습니다. 생성할 때 DB 구성, 소스 구성, 의존성 설치, 전체 기술 검증을 차례로 거칩니다. 의존성 설치와 전체 검증에는 시간이 걸릴 수 있습니다.'),
-  );
-}
-function preflightBlocked(message) {
-  $('confirm-blocked').textContent = message; $('confirm-blocked').hidden = false;
-  $('confirm-start').disabled = true;
-}
-async function runPreflight() {
-  const version = ++preflightVersion;
-  // '다시 점검'은 잠그지 않는다. 포커스를 가진 버튼이 잠기면 모달 안 포커스가 사라진다. 진행 중 누름은 무시한다.
-  $('confirm-start').disabled = true; $('preflight-retry').setAttribute('aria-disabled', 'true');
-  $('confirm-blocked').hidden = true; $('confirm-blocked').textContent = '';
-  $('preflight-list').replaceChildren();
-  $('preflight-status').textContent = '이 컴퓨터의 생성 환경을 점검하고 있습니다…';
-  try {
-    const { preflight } = await api('/api/preflight', { sourceCommit: state.catalog.sourceCommit });
-    if (version !== preflightVersion) return;
-    $('preflight-list').replaceChildren(...preflight.checks.map(check => {
-      const item = text('li', '', 'flex gap-2');
-      item.append(text('span', PREFLIGHT_STATUS_LABELS[check.status], `shrink-0 font-semibold ${PREFLIGHT_STATUS_CLASSES[check.status]}`),
-        text('span', check.detail ? `${check.label} · ${check.detail}` : check.label, 'min-w-0 break-words'));
-      return item;
-    }));
-    const count = status => preflight.checks.filter(check => check.status === status).length;
-    $('preflight-status').textContent = preflight.blocked ? `차단 ${count('block')}건 · 확인 필요 ${count('warn')}건`
-      : count('warn') ? `확인 필요 ${count('warn')}건이 있습니다. 내용을 확인한 뒤 생성할 수 있습니다.` : '모든 점검을 통과했습니다.';
-    if (preflight.blocked) preflightBlocked('차단 항목을 해결한 뒤 다시 점검하세요.');
-    else $('confirm-start').disabled = false;
-  } catch (error) {
-    if (version !== preflightVersion) return;
-    $('preflight-status').textContent = error.message;
-    preflightBlocked('점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.');
-  } finally {
-    if (version === preflightVersion) $('preflight-retry').removeAttribute('aria-disabled');
-  }
-}
-function openConfirm() {
-  if (state.busy || !state.plan || state.plan.blockers?.length || !validateName(true)) return;
-  renderConfirmSummary(state.plan);
-  $('confirm-dialog').showModal();
-  runPreflight();
-}
 async function generate() {
   if (state.busy || !state.plan || !validateName(true)) return;
   const selectedRecipe = recipe();
@@ -463,12 +401,9 @@ $('preset').addEventListener('change', () => {
   changed(); renderFeatures();
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
-$('generate').addEventListener('click', openConfirm);
-$('preflight-retry').addEventListener('click', () => { if ($('preflight-retry').getAttribute('aria-disabled') !== 'true') runPreflight(); });
-$('confirm-cancel').addEventListener('click', () => $('confirm-dialog').close());
-// 생성 시작은 점검이 통과하거나 경고만 남았을 때만 열린다(runPreflight).
-// 모달 대화상자는 닫힐 때(돌아가기·Esc) 브라우저가 포커스를 생성 버튼으로 되돌린다.
-$('confirm-start').addEventListener('click', () => { $('confirm-dialog').close(); generate(); });
+// 생성 버튼은 곧바로 생성하지 않고 최종 확인 창(환경 점검·소스 정밀 점검·구성 요약)을 연다.
+const confirmation = createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate });
+$('generate').addEventListener('click', () => confirmation.open());
 $('download-recipe').addEventListener('click', downloadRecipe);
 $('retry-status').addEventListener('click', pollJob);
 $('reconnect').addEventListener('click', connect);

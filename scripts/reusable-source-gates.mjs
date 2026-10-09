@@ -31,12 +31,43 @@ const GATE_REMOVAL_RULES = {
     '원본 Atlas 는 원본 저장소의 운영 사실을 담은 채 로그인 전에 응답되고, 투영본만으로는 다시 만들 수 없어 생성물에서 걷는다',
 };
 
+/**
+ * 제거된 게이트와 승인 목록의 대조 결과를 출력·실패 없이 돌려준다. 생성기의 승인 대조와 정밀 점검(plan/deep)이
+ * 같은 판정을 쓴다. `removedGateFiles` 는 프로필 선택으로 지워지는 게이트 파일(정렬), `ruleRemovals` 는 규칙별 파일 목록이다.
+ */
+export function removedGateAcknowledgement(profile, removedGateFiles, ruleRemovals) {
+  /*
+    승인은 **사유를 포함한 객체**로만 받는다. 파일 경로만 나열하면 목록이 곧 서랍이 되고,
+    다음 사람이 "이건 왜 빠져도 되는가" 를 판정할 근거가 manifest 밖(커밋 메시지)에만 남는다.
+  */
+  const validEntry = (entry) => typeof entry?.file === 'string' && entry.file && typeof entry?.reason === 'string' && entry.reason.trim();
+  const validRule = (entry) => typeof entry?.rule === 'string' && GATE_REMOVAL_RULES[entry.rule]
+    && typeof entry?.reason === 'string' && entry.reason.trim();
+  // 배열이 아닌 값(문자열·객체)은 그 값 하나를 형식이 틀린 항목으로 본다. 대조가 TypeError 로 멈추면 무엇이 틀렸는지 말하지 못한다.
+  const listOf = (value) => (value === undefined || value === null ? [] : Array.isArray(value) ? value : [value]);
+  const activeRules = Object.entries(ruleRemovals ?? {}).filter(([, files]) => files.length > 0);
+  const acknowledgedEntries = listOf(profile.acknowledgedRemovedGates);
+  const acknowledgedRules = listOf(profile.acknowledgedGateRemovalRules);
+  const acknowledgedRuleIds = acknowledgedRules.filter(validRule).map((entry) => entry.rule);
+  const acknowledged = acknowledgedEntries.filter(validEntry).map((entry) => entry.file);
+  return {
+    activeRules,
+    invalidEntries: acknowledgedEntries.filter((entry) => !validEntry(entry)),
+    invalidRules: acknowledgedRules.filter((entry) => !validRule(entry)),
+    unacknowledgedRules: activeRules.map(([rule]) => rule).filter((rule) => !acknowledgedRuleIds.includes(rule)),
+    staleRules: acknowledgedRuleIds.filter((rule) => !activeRules.some(([active]) => active === rule)),
+    unacknowledged: removedGateFiles.filter((file) => !acknowledged.includes(file)),
+    stale: acknowledged.filter((file) => !removedGateFiles.includes(file)),
+  };
+}
+
 export function assertRemovedGatesAcknowledged(profileName, profile, java, frontend, ruleRemovals) {
   const removedGates = [
     ...java.removedGates.map((gate) => ({ ...gate, side: 'backend' })),
     ...frontend.removedGates.map((file) => ({ file, reason: 'frontend pack 제외/연쇄', side: 'frontend' })),
   ].sort((left, right) => left.file.localeCompare(right.file));
-  const activeRules = Object.entries(ruleRemovals ?? {}).filter(([, files]) => files.length > 0);
+  const { activeRules, invalidEntries, invalidRules, unacknowledgedRules, staleRules, unacknowledged, stale } =
+    removedGateAcknowledgement(profile, removedGates.map((gate) => gate.file), ruleRemovals);
   const ruleGateCount = activeRules.reduce((total, [, files]) => total + files.length, 0);
 
   const total = removedGates.length + ruleGateCount;
@@ -46,35 +77,19 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
   }
   for (const gate of removedGates) console.log(`  - ${gate.file}  <- ${gate.reason}`);
 
-  /*
-    승인은 **사유를 포함한 객체**로만 받는다. 파일 경로만 나열하면 목록이 곧 서랍이 되고,
-    다음 사람이 "이건 왜 빠져도 되는가" 를 판정할 근거가 manifest 밖(커밋 메시지)에만 남는다.
-  */
-  const acknowledgedEntries = profile.acknowledgedRemovedGates ?? [];
-  for (const entry of acknowledgedEntries) {
-    if (typeof entry?.file !== 'string' || !entry.file || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
-      fail(
-        `profile '${profileName}' 의 acknowledgedRemovedGates 항목은 { file, reason } 이어야 한다: ` +
-          JSON.stringify(entry),
-      );
-    }
+  if (invalidEntries.length) {
+    fail(
+      `profile '${profileName}' 의 acknowledgedRemovedGates 항목은 { file, reason } 이어야 한다: ` +
+        JSON.stringify(invalidEntries[0]),
+    );
   }
-  const acknowledgedRules = profile.acknowledgedGateRemovalRules ?? [];
-  for (const entry of acknowledgedRules) {
-    if (typeof entry?.rule !== 'string' || !GATE_REMOVAL_RULES[entry.rule]
-        || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
-      fail(
-        `profile '${profileName}' 의 acknowledgedGateRemovalRules 항목은 { rule, reason } 이어야 하고 `
-          + `rule 은 생성기가 아는 규칙(${Object.keys(GATE_REMOVAL_RULES).join(', ')})이어야 한다: `
-          + JSON.stringify(entry),
-      );
-    }
+  if (invalidRules.length) {
+    fail(
+      `profile '${profileName}' 의 acknowledgedGateRemovalRules 항목은 { rule, reason } 이어야 하고 `
+        + `rule 은 생성기가 아는 규칙(${Object.keys(GATE_REMOVAL_RULES).join(', ')})이어야 한다: `
+        + JSON.stringify(invalidRules[0]),
+    );
   }
-  const acknowledgedRuleIds = acknowledgedRules.map((entry) => entry.rule);
-  const unacknowledgedRules = activeRules.map(([rule]) => rule).filter((rule) => !acknowledgedRuleIds.includes(rule));
-  const staleRules = acknowledgedRuleIds.filter(
-    (rule) => !activeRules.some(([active]) => active === rule),
-  );
   if (unacknowledgedRules.length) {
     fail(
       `profile '${profileName}' 이 승인하지 않은 규칙으로 거버넌스 게이트를 제거한다: `
@@ -90,10 +105,6 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     );
   }
 
-  const acknowledged = acknowledgedEntries.map((entry) => entry.file);
-  const actual = removedGates.map((gate) => gate.file);
-  const unacknowledged = actual.filter((file) => !acknowledged.includes(file));
-  const stale = acknowledged.filter((file) => !actual.includes(file));
   if (unacknowledged.length) {
     fail(
       `profile '${profileName}' 이 승인하지 않은 거버넌스 게이트를 제거한다 (${unacknowledged.length}건):\n` +
@@ -186,11 +197,16 @@ export function isHistoricalAuthorizationRehearsal(name, source) {
   return true;
 }
 
+/** 규칙으로 걷는 과거 마이그레이션 검증을 고른다(지우지 않는다). 생성기와 정밀 점검(plan/deep)이 같이 쓴다. */
+export const HISTORICAL_SCHEMA_TEST_DIR = 'api-server/src/test/java/nuri/api/schema';
+export function selectHistoricalMigrationTests(paths, readSource) {
+  return paths.filter(path => /MigrationIntegrationTest\.java$/.test(path)
+    || isHistoricalAuthorizationRehearsal(basename(path), readSource(path)));
+}
+
 export function pruneHistoricalMigrationTests(output) {
-  const schemaTestRoot = join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'schema');
-  const tests = walk(schemaTestRoot, path => path.endsWith('.java')).filter(path =>
-    /MigrationIntegrationTest\.java$/.test(path)
-    || isHistoricalAuthorizationRehearsal(basename(path), readFileSync(path, 'utf8')));
+  const schemaTestRoot = join(output, ...HISTORICAL_SCHEMA_TEST_DIR.split('/'));
+  const tests = selectHistoricalMigrationTests(walk(schemaTestRoot, path => path.endsWith('.java')), path => readFileSync(path, 'utf8'));
   for (const path of tests) rmSync(path);
   return {
     count: tests.length,
@@ -218,17 +234,28 @@ export const UPSTREAM_ATLAS = Object.freeze({
   aliases: Object.freeze(['atlas:build', 'atlas:check']),
 });
 
+/**
+ * 원본 Atlas 를 걷기 전에 빠진 자산·검사와 package.json 별칭을 찾아 생성기 실패 문장으로 돌려준다(지우지 않는다).
+ * `has(path)` 는 그 파일·폴더가 투영본에 있는지 답한다. 생성기와 정밀 점검(plan/deep)이 같이 쓴다.
+ */
+export function missingUpstreamAtlasAssets(has) {
+  return [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates].filter(file => !has(file))
+    .map(file => `Upstream Atlas asset is missing; review the Atlas removal rule: ${file}`);
+}
+export function missingUpstreamAtlasAliases(scripts) {
+  return UPSTREAM_ATLAS.aliases.filter(alias => !Object.hasOwn(scripts ?? {}, alias))
+    .map(alias => `Upstream Atlas alias is missing; review the Atlas removal rule: ${alias}`);
+}
+
 export function pruneUpstreamAtlas(output) {
-  for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) {
-    if (!existsSync(join(output, file))) fail(`Upstream Atlas asset is missing; review the Atlas removal rule: ${file}`);
-  }
+  const missingAssets = missingUpstreamAtlasAssets(file => existsSync(join(output, file)));
+  if (missingAssets.length) fail(missingAssets[0]);
   for (const file of [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates]) rmSync(join(output, file), { recursive: true });
   const path = join(output, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8'));
-  for (const alias of UPSTREAM_ATLAS.aliases) {
-    if (!Object.hasOwn(pkg.scripts ?? {}, alias)) fail(`Upstream Atlas alias is missing; review the Atlas removal rule: ${alias}`);
-    delete pkg.scripts[alias];
-  }
+  const missingAliases = missingUpstreamAtlasAliases(pkg.scripts);
+  if (missingAliases.length) fail(missingAliases[0]);
+  for (const alias of UPSTREAM_ATLAS.aliases) delete pkg.scripts[alias];
   writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
   return { files: [...UPSTREAM_ATLAS.gates].sort((a, b) => a.localeCompare(b)) };
 }
