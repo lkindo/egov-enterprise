@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FAILED_STAGES, VERIFY_STEP_LABELS, applyJobProgress, failJob, jobView, startJob, succeedJob } from './project-composer-server-job.mjs';
+import { CANCELLING_MESSAGE, FAILED_STAGES, LATE_CANCEL_MESSAGE, STAGES, VERIFY_STEP_LABELS, applyJobProgress, cancelledMessage, failJob, jobView, requestCancel,
+  startJob, succeedJob }
+  from './project-composer-server-job.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
 import { JOB_STAGES } from './project-composer-timeline.mjs';
 import { VERIFICATION_STEP_IDS } from './verify-reusable-artifact.mjs';
 
@@ -105,4 +108,109 @@ test('a finished job freezes a running item at the job end, and a failure carrie
   assert.equal(view.elapsedMs, 90_000);
   assert.equal(view.timeline.steps.find(step => step.id === 'backend').elapsedMs, 30_000);
   assert.equal(view.status, 'failed');
+});
+
+/*
+ * 취소(E6b). 진행 중인 작업만 취소를 받고, 받은 뒤에는 정리를 마칠 때까지 진행 중이며 취소 문장을 지킨다. 취소를 요청한 작업의
+ * CANCELLED 만 취소로 끝나고, 정리 결과는 정해진 값과 저장소 기준 프로젝트 경로만 받는다.
+ */
+const cancelError = (details, failure = { stage: 'install', report: 'build/project-composer/jobs/demo-0123456789abcdef/report.json' }) =>
+  Object.assign(new ComposerError('CANCELLED', {}, 'internal cancel private-detail'), { details, failure });
+const PROJECT = 'build/reusable-base/source/demo-0123456789abcdef';
+const SCHEMA = 'build/reusable-base/composer-demo-0123456789abcdef-db';
+
+test('a running job takes one cancel request, keeps the cancelling sentence through progress and drops the estimate', () => {
+  const job = startJob({ id: 'j', requestId: 'r', recipe: {}, now: 0 });
+  applyJobProgress(job, { stage: 'verify', progress: 33, timeline: running(), estimate: { runs: 3, pendingMs: 1, running: null } }, 1);
+  assert.ok(job.estimate);
+  assert.equal(requestCancel(job), true);
+  assert.equal(job.message, CANCELLING_MESSAGE);
+  assert.equal(job.estimate, undefined);
+  assert.equal(job.status, 'running', 'the job stays running while it cleans up');
+  assert.equal(requestCancel(job), true, 'a repeated request is accepted');
+  applyJobProgress(job, { stage: 'verify', progress: 60, timeline: running(), estimate: { runs: 3, pendingMs: 1, running: null } }, 2);
+  assert.equal(job.message, CANCELLING_MESSAGE, 'a late progress event does not bring back the stage sentence');
+  assert.equal(job.estimate, undefined);
+  assert.equal(job.progress, 33);
+  const closed = timeline({ ...Object.fromEntries(JOB_STAGES.map(id => [id, { status: 'skipped' }])), verify: { status: 'cancelled', durationMs: 9 },
+    ...Object.fromEntries(VERIFICATION_STEP_IDS.map(id => [id, { status: 'skipped' }])), backend: { status: 'cancelled', durationMs: 5 } });
+  applyJobProgress(job, { stage: 'verify', timeline: closed }, 3);
+  assert.equal(jobView(job, 4).timeline.steps.find(step => step.id === 'backend').status, 'cancelled', 'a cancelled item with its duration is kept');
+  assert.equal(jobView(job, 4).cancelRequested, true);
+});
+
+test('a cancel that arrives after the job was already verified ends in success and says so', () => {
+  const late = startJob({ id: 'l', requestId: 'r', recipe: {}, now: 0 });
+  requestCancel(late);
+  succeedJob(late, { verified: true }, 1);
+  assert.equal(late.status, 'succeeded');
+  assert.equal(late.message, LATE_CANCEL_MESSAGE);
+  const plain = startJob({ id: 'p', requestId: 'r', recipe: {}, now: 0 });
+  succeedJob(plain, { verified: true }, 1);
+  assert.equal(plain.message, STAGES.complete);
+});
+
+test('a finished job cannot be cancelled', () => {
+  const done = startJob({ id: 'a', requestId: 'r', recipe: {}, now: 0 });
+  succeedJob(done, { verified: true }, 1);
+  assert.equal(requestCancel(done), false);
+  const failed = startJob({ id: 'b', requestId: 'r', recipe: {}, now: 0 });
+  failJob(failed, new Error('x'), 1);
+  assert.equal(requestCancel(failed), false);
+  assert.equal(failed.cancelRequested, undefined);
+});
+
+test('only a requested cancellation ends as cancelled, and its sentence names what is left and what to do', () => {
+  const unrequested = startJob({ id: 'u', requestId: 'r', recipe: {}, now: 0 });
+  failJob(unrequested, cancelError({ database: 'removed', staging: 'none' }), 5);
+  assert.equal(unrequested.status, 'failed', 'the engine cannot cancel a job nobody asked to cancel');
+  assert.equal(unrequested.error.code, 'GENERATION_FAILED');
+  const lookalike = startJob({ id: 'l', requestId: 'r', recipe: {}, now: 0 });
+  requestCancel(lookalike);
+  failJob(lookalike, Object.assign(new Error('x'), { code: 'CANCELLED', details: { database: 'removed', staging: 'none' } }), 5);
+  assert.equal(lookalike.status, 'failed', 'an unbranded look-alike is a failure');
+  const job = startJob({ id: 'j', requestId: 'r', recipe: {}, now: 1_000 });
+  requestCancel(job);
+  failJob(job, cancelError({ database: 'removed', staging: 'removed', project: PROJECT }), 9_000);
+  assert.equal(job.status, 'cancelled');
+  assert.equal(job.error, undefined);
+  assert.deepEqual(job.cancellation, { database: 'removed', staging: 'removed', project: PROJECT,
+    report: 'build/project-composer/jobs/demo-0123456789abcdef/report.json' });
+  assert.equal(job.message, cancelledMessage({ database: 'removed', staging: 'removed', project: PROJECT }));
+  assert.match(job.message, /^생성을 취소했습니다\. 임시 DB와 만들던 폴더는 남아 있지 않습니다\. 검증을 마치지 않은 프로젝트 폴더는 남겨 두었습니다/);
+  assert.equal(jobView(job, 99_000).elapsedMs, 8_000);
+  assert.match(cancelledMessage({ database: 'failed', staging: 'none' }), /임시 DB를 지우지 못했습니다\. 생성기를 다시 시작하면 다시 정리합니다/);
+  assert.match(cancelledMessage({ database: 'none', staging: 'failed' }), /만들던 폴더를 지우지 못했습니다/);
+  assert.match(cancelledMessage({ database: 'failed', staging: 'failed' }), /임시 DB와 만들던 폴더를 지우지 못했습니다/);
+  assert.match(cancelledMessage({ database: 'removed', staging: 'none', project: PROJECT, schema: SCHEMA }), /프로젝트 폴더와 DB 스키마 폴더는 남겨 두었습니다/);
+  assert.doesNotMatch(cancelledMessage({ database: 'removed', staging: 'none', project: PROJECT }), /DB 스키마 폴더/);
+  for (const message of [job.message, cancelledMessage(undefined), cancelledMessage({ database: 'failed', staging: 'failed' })]) {
+    assert.doesNotMatch(message, /[A-Z]+_[A-Z_]+|private-|Error/);
+  }
+});
+
+test('malformed cleanup results are dropped, and a project path must be the shaped one inside the repository', () => {
+  const finish = details => {
+    const job = startJob({ id: 'j', requestId: 'r', recipe: {}, now: 0 });
+    requestCancel(job);
+    failJob(job, cancelError(details, {}), 1);
+    return job;
+  };
+  for (const details of [{ database: 'gone', staging: 'none' }, { database: 'removed' }, 'removed', null]) {
+    const job = finish(details);
+    assert.equal(job.status, 'cancelled');
+    assert.equal(job.cancellation, undefined, JSON.stringify(details));
+    assert.equal(job.message, '생성을 취소했습니다. 정리 결과는 작업 보고서에서 확인해 주세요.');
+  }
+  for (const project of ['D:/work/build/reusable-base/source/demo-0123456789abcdef', 'build/reusable-base/source/../demo-0123456789abcdef',
+    'build/reusable-base/source/demo', 'build\\reusable-base\\source\\demo-0123456789abcdef', 'build/project-composer/jobs/demo-0123456789abcdef']) {
+    assert.deepEqual(finish({ database: 'none', staging: 'none', project }).cancellation, { database: 'none', staging: 'none' }, project);
+  }
+  // DB 스키마 폴더는 정해진 모양이고 남긴 프로젝트와 함께일 때만 받는다.
+  assert.deepEqual(finish({ database: 'none', staging: 'none', project: PROJECT, schema: SCHEMA }).cancellation,
+    { database: 'none', staging: 'none', project: PROJECT, schema: SCHEMA });
+  for (const schema of ['D:/build/reusable-base/composer-demo-0123456789abcdef-db', 'build/reusable-base/composer-demo-db', PROJECT]) {
+    assert.deepEqual(finish({ database: 'none', staging: 'none', project: PROJECT, schema }).cancellation, { database: 'none', staging: 'none', project: PROJECT }, schema);
+  }
+  assert.deepEqual(finish({ database: 'none', staging: 'none', schema: SCHEMA }).cancellation, { database: 'none', staging: 'none' }, 'no schema without a kept project');
 });

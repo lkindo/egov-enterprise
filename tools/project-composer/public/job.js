@@ -1,4 +1,4 @@
-// 생성 작업 영역(설계서 14.2·19장, E4b): 진행·결과·실패를 그린다. 실패 문장은 role=alert(#job-error) 안에 하나만 두고,
+// 생성 작업 영역(설계서 14.2·14.3·19장, E4b·E6): 진행·취소·결과·실패를 그린다. 실패 문장은 role=alert(#job-error) 안에 하나만 두고,
 // 실패 세부(단계·명령·로그 위치)·행동 버튼·접힌 로그 끝부분은 그 밖의 형제 요소에 둔다. 문장은 한 번만 읽히고 버튼은 Tab 으로 닿는다.
 // 지울 때 포커스를 지켜야 하는 영역. '상태 다시 확인' 은 다음 그리기에서 숨겨지므로 함께 본다.
 const FAILURE_PARTS = ['job-failure', 'job-actions', 'job-log-tail', 'retry-status'];
@@ -14,13 +14,14 @@ export function formatDuration(ms) {
   if (minutes < 60) return `${minutes}분 ${String(seconds % 60).padStart(2, '0')}초`;
   return `${Math.floor(minutes / 60)}시간 ${String(minutes % 60).padStart(2, '0')}분`;
 }
-const STATUS_TEXT = Object.freeze({ pending: '대기', running: '진행 중', passed: '완료', failed: '실패', skipped: '건너뜀' });
-const STATUS_CLASS = Object.freeze({ pending: 'text-muted', running: 'font-semibold', passed: '', failed: 'font-semibold text-danger', skipped: 'text-muted' });
+const STATUS_TEXT = Object.freeze({ pending: '대기', running: '진행 중', passed: '완료', failed: '실패', cancelled: '취소됨', skipped: '건너뜀' });
+const STATUS_CLASS = Object.freeze({ pending: 'text-muted', running: 'font-semibold', passed: '', failed: 'font-semibold text-danger',
+  cancelled: 'font-semibold', skipped: 'text-muted' });
 /** 단계 하나의 상태 문장. 진행 중이면 지금까지 걸린 시간을, 끝났으면 걸린 시간을 붙인다. */
 export function timelineStatus(item) {
   const time = item.status === 'running' ? item.elapsedMs : item.durationMs;
   const text = STATUS_TEXT[item.status] ?? '';
-  return Number.isFinite(time) && ['running', 'passed', 'failed'].includes(item.status) ? `${text} · ${formatDuration(time)}` : text;
+  return Number.isFinite(time) && ['running', 'passed', 'failed', 'cancelled'].includes(item.status) ? `${text} · ${formatDuration(time)}` : text;
 }
 /** 경과·남은 시간 한 줄. 남은 시간은 같은 배치로 끝까지 마친 기록이 충분할 때만 숫자로 말한다. */
 export function elapsedSentence(job) {
@@ -172,17 +173,80 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
   function onPlanChange() {
     for (const status of $('job-actions').querySelectorAll('[role="status"]')) status.textContent = '';
   }
+  // 취소 단추. 진행 중일 때만 보이고, 취소를 요청한 뒤에는 포커스를 지킨 채 aria-disabled 로 잠근다(정리를 마칠 때까지 진행 중이다).
+  // 작업이 끝나 단추가 사라지면 그 안의 포커스는 작업 제목으로 옮긴다. 취소하지 못한 이유(#job-cancel-status)는 단추 밖에 두어
+  // 작업이 끝난 뒤에도 남긴다(누르는 순간 끝난 작업이면 결과와 함께 그 이유가 보인다). 새 생성 요청이 지운다.
+  function renderCancel(job) {
+    const area = $('job-cancel-area');
+    const running = job.status === 'running';
+    if (!running) {
+      const focused = area.contains(document.activeElement);
+      area.hidden = true;
+      // 남기는 것은 '이미 끝난 작업이라 취소하지 못했다' 뿐이다. 연결 실패 같은 다른 이유는 결과와 함께 두면 사실이 아니다.
+      if (state.cancelRefused !== job.id) $('job-cancel-status').textContent = '';
+      if (focused) $('job-heading').focus();
+      return;
+    }
+    const cancelling = Boolean(job.cancelRequested) || state.cancelPending === job.id;
+    $('job-cancel').textContent = cancelling ? '취소하는 중…' : '생성 취소';
+    if (cancelling) $('job-cancel').setAttribute('aria-disabled', 'true'); else $('job-cancel').removeAttribute('aria-disabled');
+    area.hidden = false;
+  }
+  async function cancelJob() {
+    const job = state.job;
+    if (!job || job.status !== 'running' || job.cancelRequested || state.cancelPending === job.id) return;
+    state.cancelPending = job.id;
+    $('job-cancel-status').textContent = '';
+    renderCancel(job);
+    try {
+      const { job: updated } = await api(`/api/jobs/${job.id}/cancel`, {});
+      // 그새 결과를 그린 조회가 먼저 왔으면 끝난 작업을 다시 '진행 중' 으로 그리지 않는다.
+      if (state.job?.id === updated.id && state.job.status === 'running') {
+        renderJob(updated);
+        // 조회가 끊긴 뒤('상태 다시 확인')에 취소했어도 정리가 끝나는 것을 알 수 있게 조회를 다시 건다.
+        clearTimeout(state.polling); state.polling = setTimeout(pollJob, 1000);
+      }
+    } catch (error) {
+      // 그새 끝난 작업이면 결과를 다시 받아 그리고 그 이유를 결과 옆에 남긴다. 그 밖의 실패는 단추를 다시 열고 이유를 말한다.
+      $('job-cancel-status').textContent = error.message;
+      if (error.code === 'NOT_RUNNING') { state.cancelRefused = job.id; await pollJob(); }
+    } finally {
+      if (state.cancelPending === job.id) state.cancelPending = null;
+      if (state.job?.id === job.id) renderCancel(state.job);
+    }
+  }
+  $('job-cancel').addEventListener('click', () => { if ($('job-cancel').getAttribute('aria-disabled') !== 'true') cancelJob(); });
+  // 취소한 작업의 정리 결과. 남겨 둔 프로젝트 폴더와 작업 보고서 위치(원본 저장소 기준)만 보인다.
+  function renderCancelled(job) {
+    const container = $('job-cancelled');
+    for (const [key, title] of [['project', '남겨 둔 프로젝트 폴더(검증을 마치지 않음)'], ['schema', '남겨 둔 DB 스키마 폴더'],
+      ['report', '작업 보고서(원본 저장소 기준)']]) {
+      if (!job.cancellation?.[key]) continue;
+      const paragraph = text('p', title, 'font-semibold');
+      paragraph.append(text('code', job.cancellation[key], 'mt-1 block break-all font-mono text-xs font-normal text-muted'));
+      container.append(paragraph);
+    }
+    container.hidden = container.childElementCount === 0;
+  }
   function renderJob(job) {
     state.job = job;
     clearJobFailure();
+    $('job-cancelled').replaceChildren(); $('job-cancelled').hidden = true;
     $('job-panel').hidden = false; $('retry-status').hidden = true;
     // 실패 문장은 #job-error(assertive)에서 한 번만 알린다. 같은 문장을 진행 상태 줄(polite)에 두 번 쓰지 않는다.
     $('job-message').textContent = job.status === 'failed' ? '' : job.message;
     $('job-progress').value = job.progress ?? 0;
     renderProgressDetails(job);
+    renderCancel(job);
     $('job-result').hidden = true;
-    if (job.status === 'running') { $('job-heading').textContent = '프로젝트 준비 중'; busy(true); return; }
+    if (job.status === 'running') { $('job-heading').textContent = job.cancelRequested ? '생성을 취소하는 중' : '프로젝트 준비 중'; busy(true); return; }
     busy(false);
+    if (job.status === 'cancelled') {
+      state.requestId = null;
+      $('job-heading').textContent = '생성을 취소했습니다';
+      renderCancelled(job);
+      return;
+    }
     if (job.status === 'failed') {
       state.requestId = null;
       $('job-heading').textContent = '생성을 완료하지 못했습니다';
@@ -222,6 +286,8 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
     state.requestId ??= crypto.randomUUID();
     const requestId = state.requestId;
     clearJobFailure(); clearProgressDetails();
+    $('job-cancelled').replaceChildren(); $('job-cancelled').hidden = true; $('job-cancel-area').hidden = true; $('job-cancel-status').textContent = '';
+    state.cancelRefused = null;
     busy(true); $('job-panel').hidden = false; $('job-result').hidden = true;
     $('job-heading').textContent = '프로젝트 준비 중'; $('job-message').textContent = '생성을 요청하고 있습니다…';
     try {

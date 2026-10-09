@@ -10,7 +10,7 @@ import { NAME_RULE_MESSAGE, projectNameIsValid } from './project-composer-name.m
 import { classifyRecipeFailure } from './project-composer-recipe.mjs';
 import { ABSOLUTE_PATH, TOOL_MESSAGES, count, dense, files, identifier, keys, knownTool, line, plain, safeDetails }
   from './project-composer-server-shape.mjs';
-import { GENERATION_FAILED_MESSAGE, VERIFY_STEP_LABELS, applyJobProgress, failJob, jobView, startJob, succeedJob }
+import { GENERATION_FAILED_MESSAGE, VERIFY_STEP_LABELS, applyJobProgress, failJob, jobView, requestCancel, startJob, succeedJob }
   from './project-composer-server-job.mjs';
 
 export { VERIFY_STEP_LABELS };
@@ -30,6 +30,7 @@ const MESSAGES = Object.freeze({
   TOOL_UNAVAILABLE: '생성에 필요한 도구를 실행하지 못했습니다. 설치와 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
   BUSY: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.',
   REQUEST_CONFLICT: '이미 사용한 요청입니다. 구성을 확인한 뒤 다시 시도해 주세요.',
+  NOT_RUNNING: '이미 끝난 작업이라 취소할 수 없습니다. 작업 결과를 확인해 주세요.',
   // 원인을 나누지 못한 생성 실패. Docker 를 단정하지 않는다(린트·소스 구성 같은 다른 단계 실패에도 이 문장이 나간다).
   GENERATION_FAILED: GENERATION_FAILED_MESSAGE,
   PREFLIGHT_FAILED: '생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.',
@@ -172,6 +173,9 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
   const csrfToken = randomBytes(32).toString('hex');
   const jobs = new Map();
   const requests = new Map();
+  // 진행 중인 생성 작업의 취소 신호와 끝을 기다릴 약속(E6b). 작업이 정리를 마치면 지운다.
+  const controllers = new Map();
+  const runs = new Set();
   let active;
   let latest;
   // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋을 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
@@ -195,7 +199,8 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       if (url.search || url.hash) throw new HttpError(400, 'BAD_REQUEST');
       const path = url.pathname;
       // 생성 전 점검도 이 컴퓨터에서 명령을 띄우므로 계획·생성과 같은 출처·CSRF 경계를 지난다.
-      const mutation = ['/api/plan', '/api/plan/diff', '/api/plan/deep', '/api/preflight', '/api/jobs'].includes(path);
+      const cancelPath = /^\/api\/jobs\/[0-9a-f-]{36}\/cancel$/.test(path);
+      const mutation = cancelPath || ['/api/plan', '/api/plan/diff', '/api/plan/deep', '/api/preflight', '/api/jobs'].includes(path);
       if (request.method !== (mutation ? 'POST' : 'GET')) throw new HttpError(405, 'METHOD_NOT_ALLOWED');
       if (mutation) {
         const supplied = request.headers['x-composer-csrf'];
@@ -212,6 +217,16 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         if (path === '/api/preflight' && typeof engine.preflight !== 'function') throw new HttpError(404, 'NOT_FOUND');
         if (path === '/api/plan/deep' && typeof engine.deep !== 'function') throw new HttpError(404, 'NOT_FOUND');
         const input = await body(request);
+        if (cancelPath) {
+          // 취소(E6b). 본문은 빈 객체다. 취소를 받으면 202 로 '취소하는 중' 작업을 돌려주고, 작업은 정리를 마친 뒤 취소로 끝난다.
+          if (!keys(input, [])) throw new HttpError(400, 'BAD_REQUEST');
+          const job = jobs.get(path.split('/')[3]);
+          if (!job) throw new HttpError(404, 'NOT_FOUND');
+          if (!requestCancel(job)) throw new HttpError(409, 'NOT_RUNNING');
+          controllers.get(job.id)?.abort();
+          json(response, 202, { job: jobView(job) });
+          return;
+        }
         if (path === '/api/preflight') {
           // 원본 비교는 점검을 요청한 화면이 카탈로그를 받은 때의 커밋과 한다(탭마다 다를 수 있다).
           if (!keys(input, ['sourceCommit']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
@@ -268,9 +283,12 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
             for (const [key, record] of requests) if (record.id === oldest) requests.delete(key);
           }
           json(response, 202, { job: jobView(job) });
-          Promise.resolve().then(() => engine.generate(recipe, { onProgress: event => applyJobProgress(job, event) }))
+          const controller = new AbortController();
+          controllers.set(id, controller);
+          const run = Promise.resolve().then(() => engine.generate(recipe, { onProgress: event => applyJobProgress(job, event), signal: controller.signal }))
             .then(result => succeedJob(job, safeResult(result, recipe)), error => failJob(job, error))
-            .finally(() => { if (active === id) active = undefined; });
+            .finally(() => { controllers.delete(id); runs.delete(run); if (active === id) active = undefined; });
+          runs.add(run);
         }
       } else if (/^\/api\/jobs\/[0-9a-f-]{36}$/.test(path)) {
         const job = jobs.get(path.slice('/api/jobs/'.length));
@@ -305,7 +323,25 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       });
       return `http://127.0.0.1:${server.address().port}`;
     },
-    async close() { server.closeAllConnections(); await new Promise((accept, reject) => server.close(error => error ? reject(error) : accept())); },
+    async close() {
+      server.closeAllConnections();
+      if (!server.listening) return; // 종료(shutdown)가 이미 닫았다.
+      await new Promise((accept, reject) => server.close(error => error ? reject(error) : accept()));
+    },
+    /**
+     * 종료(E6b). 새 요청을 받지 않고, 진행 중인 생성을 취소한 뒤 정리를 마칠 때까지 기다린다. 정리가 `timeoutMs` 를 넘기면
+     * 더 기다리지 않는다(남은 자원은 다음 기동의 정리가 맡는다). 정리를 마치지 못한 작업이 있으면 false 다.
+     */
+    async shutdown({ timeoutMs = 60_000 } = {}) {
+      if (server.listening) server.close();
+      server.closeAllConnections();
+      for (const [id, controller] of controllers) { const job = jobs.get(id); if (job) requestCancel(job); controller.abort(); }
+      let timer;
+      const waited = await Promise.race([Promise.allSettled([...runs]).then(() => true),
+        new Promise(accept => { timer = setTimeout(() => accept(false), timeoutMs); })]);
+      clearTimeout(timer);
+      return waited;
+    },
   };
 }
 
@@ -314,9 +350,31 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const args = process.argv.slice(2);
     if (args.length && (args.length !== 2 || args[0] !== '--port' || !/^\d+$/.test(args[1]))) throw new Error('usage');
     const { createComposerEngine } = await import('./project-composer.mjs');
-    const application = createComposerServer({ engine: await createComposerEngine() });
+    const engine = await createComposerEngine();
+    // 지난번에 끝나지 않았거나 정리를 마치지 못한 작업의 임시 DB·소스 폴더를 정리한다(E6b). 정리하지 못해도 생성기는 시작한다.
+    try {
+      const recovered = await engine.recover();
+      if (recovered.some(item => item.database !== 'none' || item.staging !== 'none')) {
+        const touched = recovered.filter(item => item.database !== 'none' || item.staging !== 'none');
+        const left = touched.filter(item => item.database === 'failed' || item.staging === 'failed').length;
+        process.stdout.write(`[project-composer] 지난 생성 작업 ${touched.length}개의 임시 자원을 정리했습니다${left ? ` (${left}개는 정리하지 못해 다음 기동에 다시 봅니다)` : ''}.\n`);
+      }
+    } catch { process.stderr.write('[project-composer] 지난 생성 작업의 임시 자원을 정리하지 못했습니다. 다음 기동에 다시 봅니다.\n'); }
+    const application = createComposerServer({ engine });
     const origin = await application.listen(args.length ? Number(args[1]) : 3100);
     process.stdout.write(`[project-composer] ${origin}\n`);
+    // Ctrl+C·종료 신호는 진행 중인 생성을 취소하고 정리를 마친 뒤 끝낸다. 두 번째 신호는 기다리지 않고 끝낸다.
+    let stopping = false;
+    const stop = () => {
+      if (stopping) process.exit(130);
+      stopping = true;
+      process.stderr.write('[project-composer] 종료합니다. 진행 중인 생성이 있으면 취소하고 정리합니다…\n');
+      application.shutdown().then(done => {
+        if (!done) process.stderr.write('[project-composer] 정리를 마치지 못했습니다. 다음 기동에 다시 정리합니다.\n');
+      }).finally(() => process.exit(0));
+    };
+    // 터미널을 닫거나 접속이 끊길 때(SIGHUP)도 같다. 작업 명령은 따로 떨어진 프로세스 그룹이라 그 신호를 받지 못한다.
+    for (const name of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(name, stop);
   } catch {
     process.stderr.write('[project-composer] 로컬 생성기를 시작하지 못했습니다. 포트 사용 여부와 --port 값을 확인해 주세요.\n');
     process.exitCode = 1;

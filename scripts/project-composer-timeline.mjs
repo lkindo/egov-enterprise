@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { VERIFICATION_STEP_IDS, verificationSteps } from './verify-reusable-artifact.mjs';
 
 export const JOB_STAGES = Object.freeze(['resolve', 'database', 'source', 'install', 'verify']);
-export const TIMELINE_STATUSES = Object.freeze(['pending', 'running', 'passed', 'failed', 'skipped']);
+export const TIMELINE_STATUSES = Object.freeze(['pending', 'running', 'passed', 'failed', 'cancelled', 'skipped']);
 /*
  * 진행률 가중치(%, 합 100). 이 컴퓨터에서 끝까지 마친 생성 7회의 단계 중앙값(구성 확인 수 초·DB 33초·소스 40초·설치 36초·
  * 검증 569초)과 검증 보고서 10건의 단계 중앙값(백엔드 약 6분·빌드 약 1분 40초·린트 약 1분)에서 정했다(2026-10-09).
@@ -69,7 +69,7 @@ export function createJobTimeline({ now = Date.now } = {}) {
     /**
      * 끝낸다. 통과면 진행 중인 것을 통과로 닫고, 검증이 통과했는데 머리줄을 못 본 단계는 통과(소요 시간 모름)다 — 전체 범위 검증이
      * 통과했다면 일곱 단계가 모두 돌았다. 검증 보고서의 단계별 소요 시간이 있으면 그 값을 쓴다(검증기가 잰 값이 정본이다).
-     * 실패면 진행 중인 것을 실패로, 시작하지 않은 것을 건너뜀으로 닫는다.
+     * 실패·취소면 진행 중인 것을 실패·취소로, 시작하지 않은 것을 건너뜀으로 닫는다.
      */
     finish(result, { verificationSteps: measured = [] } = {}) {
       if (result === 'passed') {
@@ -84,8 +84,9 @@ export function createJobTimeline({ now = Date.now } = {}) {
           }
         }
       } else {
-        if (step) close(step, 'failed');
-        if (stage) close(stage, 'failed');
+        const status = result === 'cancelled' ? 'cancelled' : 'failed';
+        if (step) close(step, status);
+        if (stage) close(stage, status);
       }
       for (const item of items.values()) if (item.status === 'pending' || item.status === 'running') item.status = 'skipped';
       stage = undefined; step = undefined;
@@ -104,7 +105,7 @@ export function createJobTimeline({ now = Date.now } = {}) {
 
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const validEntry = entry => plain(entry) && typeof entry.job === 'string' && /^[a-z0-9-]{1,90}$/.test(entry.job)
-  && typeof entry.finishedAt === 'string' && Number.isFinite(Date.parse(entry.finishedAt)) && ['passed', 'failed'].includes(entry.result)
+  && typeof entry.finishedAt === 'string' && Number.isFinite(Date.parse(entry.finishedAt)) && ['passed', 'failed', 'cancelled'].includes(entry.result)
   && LAYOUTS.includes(entry.layout) && plain(entry.durations)
   && Object.entries(entry.durations).every(([id, value]) => ITEMS.includes(id) && duration(value));
 

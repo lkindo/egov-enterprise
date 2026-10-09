@@ -19,10 +19,10 @@ export class ComposerError extends Error {
 export const REQUEST_ERROR_CODES = Object.freeze(['INVALID_NAME', 'INVALID_RECIPE', 'SOURCE_CHANGED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'TOOL_UNAVAILABLE']);
 /**
  * 생성 작업 실패로 보낼 수 있는 코드(E4b). 엔진이 실패가 생긴 지점에서 판정해 단다. 서버는 이 목록 밖의 코드와
- * ComposerError 가 아닌 오류를 모두 일반 실패(GENERATION_FAILED)로 말한다. 작업 취소(CANCELLED)는 E6 에서 더한다.
+ * ComposerError 가 아닌 오류를 모두 일반 실패(GENERATION_FAILED)로 말한다. 작업 취소(CANCELLED)는 오류가 아니라 취소된 작업으로 끝난다(E6b).
  */
 export const JOB_ERROR_CODES = Object.freeze(['SOURCE_CHANGED', 'TOOL_UNAVAILABLE', 'DB_NOT_READY', 'OUTPUT_CONFLICT', 'SOURCE_SURVIVAL',
-  'VERIFY_FAILED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT']);
+  'VERIFY_FAILED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'CANCELLED']);
 /** 메뉴 미리보기 자료를 갱신하는 명령. 화면은 이 문자열만 보이고, 생성기 서버는 명령을 실행하지 않는다. */
 export const MENUS_REFRESH_COMMAND = 'npm run project:menus:refresh';
 

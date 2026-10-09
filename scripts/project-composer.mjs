@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /** Shared local composition engine: CLI and web transport execute the same recipe. */
 import { spawnSync } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFileSync, realpathSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from './project-composer-recipe.mjs';
@@ -14,17 +14,13 @@ import { composerPresentation, loadRouteKinds } from './project-composer-present
 import { composerPreflight } from './project-composer-preflight.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
-import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 import { createLogMasker, runComposerCommand } from './project-composer-command.mjs';
-import { classifyChildFailure, classifyDatabaseNotReady, classifyDockerStart, classifyVerificationFailure, jobFailure, toRepositoryPath }
-  from './project-composer-job-failure.mjs';
-import { appendJobHistory, createJobTimeline, estimateRemaining, historyEntry, readJobHistory, verificationStepMarkers }
-  from './project-composer-timeline.mjs';
+import { PREFLIGHT_TIMEOUT_MS, composerOutputPaths, createGenerator } from './project-composer-generate.mjs';
+import { recoverAbandonedJobs } from './project-composer-recovery.mjs';
 
-export { createLogMasker, runComposerCommand };
+export { composerOutputPaths, createLogMasker, runComposerCommand };
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const VERSION = 1;
 const hasBatchim = word => /[\uAC00-\uD7A3]$/.test(word) && (word.charCodeAt(word.length - 1) - 0xAC00) % 28 !== 0;
 const withObject = word => `${word}${hasBatchim(word) ? '을' : '를'}`;
 const withSubject = word => `${word}${hasBatchim(word) ? '이' : '가'}`;
@@ -131,29 +127,6 @@ export function composerSourceFingerprint(root) {
   return hash.digest('hex');
 }
 
-const PREFLIGHT_TIMEOUT_MS = 10_000;
-
-export function composerOutputPaths(root, name, token) {
-  if (!/^[a-z][a-z0-9-]{0,63}$/.test(name) || !/^[a-f0-9]{16}$/.test(token)) throw new Error('Invalid output identity');
-  const paths = {
-    projectDirectory: resolve(root, 'build/reusable-base/source', `${name}-${token}`),
-    stagingDirectory: resolve(root, 'build/reusable-base/source', `.pending-${name}-${token}`),
-    databaseDirectory: resolve(root, 'build/reusable-base', `composer-${name}-${token}-db`),
-    jobDirectory: resolve(root, 'build/project-composer/jobs', `${name}-${token}`),
-  };
-  const base = resolve(root, 'build');
-  for (const path of Object.values(paths)) {
-    const rel = relative(base, path);
-    if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error('Output must be fresh and inside the build directory');
-    if (existsSync(path)) throw new ComposerError('OUTPUT_CONFLICT', { path: relative(root, path).split(sep).join('/') }, 'Output already exists');
-    let ancestor = dirname(path);
-    while (!existsSync(ancestor)) ancestor = dirname(ancestor);
-    const physical = relative(realpathSync(root), realpathSync(ancestor));
-    if (physical === '..' || physical.startsWith(`..${sep}`) || isAbsolute(physical)) throw new Error('Output ancestor escapes the workspace');
-  }
-  return paths;
-}
-
 /**
  * outputRoot 는 계약 테스트용 이음새다. 기본값은 원본 저장소이고 CLI·서버는 넘기지 않는다.
  * 실제 생성기 스크립트는 저장소 build/ 밖 출력을 거부하므로, 운영 경로에서 다른 값을 넘기면
@@ -163,7 +136,6 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git', readiness } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
-  let running = false;
   const gitRun = args => git(root, args, gitExecutable);
   /*
    * 오류 분류(설계서 14.2, E4). 원본 커밋 → 메뉴 스냅숏 → 카탈로그 → 해석기 순서로 본다. 원본이 바뀌었으면 바뀐 선언이 낳은
@@ -238,161 +210,6 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     }
     return { ...result, summary: diffSummary(result, latest.catalog) };
   };
-  const generate = async (recipe, { onProgress = () => {} } = {}) => {
-    if (running) throw new Error('A composition job is already running');
-    running = true;
-    let container;
-    let databaseCreated = false;
-    let failed = false;
-    let report;
-    let paths;
-    let token;
-    let stage = 'resolve';
-    let composition;
-    let sourceFingerprint;
-    // 진행 타임라인(설계서 14.3, E6a). 단계·검증 단계가 바뀔 때마다 상태·소요 시간과 남은 시간 추정을 알린다.
-    // 남은 시간은 이 작업을 시작할 때의 작업 이력으로만 센다. 화면 알림이 실패해도 생성은 계속한다.
-    const timeline = createJobTimeline();
-    const history = readJobHistory(outputRoot);
-    const emit = () => {
-      const snapshot = timeline.snapshot();
-      try { onProgress({ stage, progress: snapshot.progress, timeline: snapshot, estimate: estimateRemaining(history, { layout: recipe?.backendLayout, snapshot }) }); }
-      catch { /* 알림을 받는 쪽의 오류가 생성 결과를 바꾸지 않는다. */ }
-    };
-    const progress = next => { stage = next; timeline.stage(next); emit(); };
-    const timelineReport = snapshot => ({ stages: snapshot.stages, steps: snapshot.steps });
-    // 끝난 작업을 이력 색인에 남긴다. 색인은 남은 시간 추정용이라 쓰지 못해도 생성 결과는 그대로다(작업 보고서에도 같은 값이 있다).
-    const recordHistory = (result, snapshot) => {
-      if (!paths || !composition) return;
-      try { appendJobHistory(outputRoot, historyEntry({ job: basename(paths.jobDirectory), layout: composition.backendLayout, result, snapshot })); }
-      catch { /* 다음 작업의 남은 시간 추정에서 이 작업이 빠질 뿐이다. */ }
-    };
-    const save = () => {
-      if (paths && report) writeFileSync(join(paths.jobDirectory, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
-    };
-    const docker = (args, options = {}) => run('docker', args, { root, capture: true, ...options });
-    // 단계마다 자식 출력의 가린 사본을 jobs/<id>/logs/<단계>.log 에 남긴다. 이 컴퓨터 밖으로 보내지 않는다.
-    const logOf = name => join(paths.jobDirectory, 'logs', `${name}.log`);
-    // 시작에 실패해 ID 를 받지 못한 컨테이너는 이 작업의 표식으로 찾아 지운다.
-    const cleanupDatabase = async () => {
-      if (!databaseCreated) return;
-      if (ownedContainerId(container)) await removeOwnedPostgres(docker, container, token);
-      else await removeOwnedPostgresByToken(docker, token);
-      container = undefined; databaseCreated = false;
-    };
-    // 실패 분류용 Docker 탐침. 멈춘 엔진을 기다리지 않도록 시간 제한을 두고, 탐침도 DB 단계 로그에 남긴다.
-    const probeOptions = () => ({ timeoutMs: PREFLIGHT_TIMEOUT_MS, log: logOf('database') });
-    // 자식이 실패한 뒤 원본을 다시 본다. 판정하지 못하면(git 실패 등) 바뀌었다고 말하지 않는다.
-    const sourceMoved = () => {
-      try { return gitRun(['rev-parse', 'HEAD']) !== composition.sourceCommit || fingerprint(root) !== sourceFingerprint; }
-      catch { return false; }
-    };
-    // 자식 생성기는 실패 원인을 코드로 jobs/<id>/failures/<단계>.json 에 보고한다(코드가 붙은 실패만).
-    const childStage = async (name, args) => {
-      const reportPath = join(paths.jobDirectory, 'failures', `${name}.json`);
-      try { await run('node', [...args, '--failure-report', reportPath], { root, log: logOf(name) }); }
-      catch (error) {
-        throw await classifyChildFailure(error, { stage: name, reportPath, root, sourceMoved,
-          ...(name === 'database' ? { docker, container, probeOptions: probeOptions() } : {}) });
-      }
-    };
-    try {
-      progress('resolve');
-      const resolvedPlan = plan(recipe);
-      // 생성 불가 구성은 출력 폴더·DB 컨테이너를 만들기 전에 사유와 함께 거부한다.
-      if (resolvedPlan.blockers.length) throw Object.assign(new Error(resolvedPlan.blockers.join(' ')), { code: 'FK_CLOSURE' });
-      composition = { ...resolveRecipe(recipe, loadCatalogClassified()), sourceCommit: resolvedPlan.sourceCommit };
-      sourceFingerprint = fingerprint(root);
-      token = randomBytes(8).toString('hex');
-      paths = composerOutputPaths(outputRoot, composition.project.name, token);
-      mkdirSync(paths.jobDirectory, { recursive: true });
-      const compositionPath = join(paths.jobDirectory, 'composition.json');
-      writeFileSync(compositionPath, `${JSON.stringify(composition, null, 2)}\n`);
-      report = { schemaVersion: VERSION, generatorVersion: VERSION, result: 'started', stage,
-        compositionHash: composition.compositionHash, sourceCommit: composition.sourceCommit, sourceFingerprint,
-        localDevelopmentBuild: Boolean(gitRun(['status', '--porcelain'])) || !gitRun(['tag', '--points-at', 'HEAD']).split(/\r?\n/).some(tag => /^v\d/.test(tag)),
-        startedAt: new Date().toISOString(), environmentApproved: false, ...paths };
-      save();
-      progress('database');
-      databaseCreated = true;
-      try { container = await createOwnedPostgres(docker, { name: `egov-composer-${token}`, token, log: logOf('database') }); }
-      catch (error) { throw await classifyDockerStart(error, docker, probeOptions()); }
-      if (!ownedContainerId(container)) throw new Error('Invalid owned database container identity');
-      if (!await waitForOwnedPostgres(docker, container, readiness)) throw await classifyDatabaseNotReady(docker, probeOptions());
-      const common = ['--composition', compositionPath, '--allow-dirty', '--allow-non-release-ref'];
-      await childStage('database', ['scripts/generate-reusable-base-db.mjs', ...common, '--container', container, '--output', paths.databaseDirectory]);
-      progress('source');
-      await childStage('source', ['scripts/generate-reusable-base-source.mjs', ...common, '--db-bundle', paths.databaseDirectory, '--output', paths.stagingDirectory]);
-      if (fingerprint(root) !== sourceFingerprint) throw new ComposerError('SOURCE_CHANGED', {}, 'Source checkout changed while the project was being composed');
-      writeFileSync(join(paths.stagingDirectory, 'project-recipe.json'), `${JSON.stringify(composition.recipe, null, 2)}\n`);
-      writeFileSync(join(paths.stagingDirectory, 'project-composition.json'), `${JSON.stringify(composition, null, 2)}\n`);
-      // pnpm uses absolute junctions on Windows. Set the permanent source location
-      // before dependency installation, and publish readiness only through the final report.
-      if (existsSync(paths.projectDirectory)) {
-        throw new ComposerError('OUTPUT_CONFLICT', { path: toRepositoryPath(outputRoot, paths.projectDirectory) }, 'Final output unexpectedly exists');
-      }
-      renameSync(paths.stagingDirectory, paths.projectDirectory);
-      report.result = 'verifying';
-      writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
-      progress('install');
-      await run('npm', ['ci', '--ignore-scripts'], { root: paths.projectDirectory, log: logOf('install') });
-      await run('pnpm', ['-C', 'frontend', 'install', '--frozen-lockfile'], { root: paths.projectDirectory, log: logOf('install') });
-      progress('verify');
-      // 검증기가 단계마다 찍는 머리줄로 검증 일곱 단계 중 어디인지 알린다(검증기 자체는 바꾸지 않는다).
-      const markers = verificationStepMarkers({ profile: composition.profile, layout: composition.backendLayout });
-      const onLine = line => { const step = markers.get(line); if (step && timeline.step(step)) emit(); };
-      try { await run('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify'), onLine }); }
-      catch (error) {
-        throw classifyVerificationFailure(error, { projectDirectory: paths.projectDirectory, composition, startedAt: report.startedAt,
-          roots: [paths.projectDirectory, outputRoot, root] });
-      }
-      // 검증기가 통과했으면 검증 단계는 모두 끝났다. 뒤따르는 보고서 확인·DB 정리 실패는 검증 단계가 아니라 검증 단계 묶음의 실패다.
-      timeline.endSteps();
-      const verification = JSON.parse(readFileSync(join(paths.projectDirectory, 'build/reports/reusable-base/full.json'), 'utf8'));
-      if (verification.result !== 'passed' || verification.sourceCommit !== composition.sourceCommit
-        || verification.layout !== composition.backendLayout || verification.profile !== composition.profile
-        || verification.scope !== 'full') throw new Error('Generated project verification report is incomplete');
-      await cleanupDatabase();
-      timeline.finish('passed', { verificationSteps: Array.isArray(verification.steps) ? verification.steps : [] });
-      const finished = timeline.snapshot();
-      report = { ...report, result: 'passed', stage: 'complete', finishedAt: new Date().toISOString(), verification, timeline: timelineReport(finished) };
-      delete report.stagingDirectory;
-      save();
-      writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
-      recordHistory('passed', finished);
-      stage = 'complete'; emit();
-      return { projectDirectory: paths.projectDirectory, databaseDirectory: paths.databaseDirectory,
-        reportPath: join(paths.projectDirectory, 'project-generation-report.json'), recipe: composition.recipe, verified: true };
-    } catch (error) {
-      failed = true;
-      timeline.finish('failed');
-      const finished = timeline.snapshot();
-      // 화면으로는 단계·코드·명령 식별자·종료 코드·저장소 기준 로그 위치만 넘긴다. 자식 출력 원문은 로그 파일에만 있고,
-      // 검증 실패만 가린 로그 끝부분을 던지는 실패에 붙인다(보고서에는 저장하지 않는다 — CI 아티팩트로 올라간다).
-      const failure = jobFailure(error, { stage, outputRoot, sourceCommit: composition?.sourceCommit });
-      if (report) {
-        report.result = 'failed'; report.stage = stage; report.finishedAt = new Date().toISOString(); report.timeline = timelineReport(finished);
-        const verificationReport = join(paths.projectDirectory, 'build/reports/reusable-base/full.json');
-        const { logTail, ...saved } = failure;
-        report.failure = { ...saved, message: createLogMasker().line(String(error.message)).slice(0, 2000),
-          ...(existsSync(verificationReport) ? { verificationReport: toRepositoryPath(outputRoot, verificationReport) } : {}) };
-        save();
-        failure.report = toRepositoryPath(outputRoot, join(paths.jobDirectory, 'report.json'));
-        if (existsSync(paths.projectDirectory)) writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
-      }
-      recordHistory('failed', finished);
-      // 실패한 단계·검증 단계와 건너뛴 단계를 마지막으로 알린다(실패 문장은 던지는 실패가 말한다).
-      emit();
-      throw Object.assign(error, { failure });
-    } finally {
-      // 정리 실패가 원래 실패(단계·명령·로그)를 가리지 않게 한다. 원래 실패가 있으면 정리 실패는 보고서에만 남긴다.
-      try { await cleanupDatabase(); }
-      catch (cleanupError) {
-        if (!failed) throw cleanupError;
-        if (report) { report.cleanupFailure = createLogMasker().line(String(cleanupError.message)).slice(0, 500); save(); }
-      } finally { running = false; }
-    }
-  };
   // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
   // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
   const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit,
@@ -410,7 +227,12 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const result = compositionDeepPlan({ root, manifest, composition, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
     return { ...result, summary: deepSummary(result) };
   };
-  return { catalog, plan, diff, preflight, deep, generate, outputRoot };
+  const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness });
+  // 기동 시 정리(E6b): 이 컴퓨터에서 시작했고 프로세스가 끝난 미완료 작업의 임시 DB·소스 폴더만 정리한다. Docker 가 멈춰 있어도
+  // 기동을 붙잡지 않도록 명령마다 시간 제한을 둔다.
+  const recover = () => recoverAbandonedJobs({ outputRoot,
+    docker: (args, options = {}) => run('docker', args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS, ...options }) });
+  return { catalog, plan, diff, preflight, deep, generate, recover, outputRoot };
 }
 
 export function parseComposerArgs(args) {
@@ -424,8 +246,14 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     const args = parseComposerArgs(process.argv.slice(2));
     const engine = createComposerEngine();
+    // Ctrl+C·종료 신호는 진행 중인 생성을 취소하고, 엔진이 임시 DB·소스 폴더를 정리한 뒤 끝난다(E6b).
+    const controller = new AbortController();
+    const stop = name => { process.stderr.write(`[composer] ${name}: 진행 중인 생성을 취소하고 정리합니다…\n`); controller.abort(); };
+    // 터미널을 닫거나 접속이 끊길 때(SIGHUP)도 같다. 작업 명령은 따로 떨어진 프로세스 그룹이라 그 신호를 받지 못한다.
+    for (const name of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.once(name, () => stop(name));
     const result = args.action === 'catalog' ? engine.catalog()
       : await engine[args.action](JSON.parse(readFileSync(resolve(args.recipeFile), 'utf8')), {
+        signal: controller.signal,
         onProgress: ({ stage, progress, timeline }) => {
           const step = timeline?.steps?.find(item => item.status === 'running')?.id;
           process.stderr.write(`[composer] ${stage}${step ? ` · ${step}` : ''} ${progress}%\n`);

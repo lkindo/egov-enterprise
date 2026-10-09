@@ -17,9 +17,10 @@ export function createOwnedPostgres(docker, { name, token, log }) {
   { env: { ...process.env, POSTGRES_PASSWORD: randomBytes(32).toString('hex') }, ...(log ? { log } : {}) });
 }
 
-/** 준비될 때까지 기다린다. 제한 안에 준비되지 않으면 false 다. */
-export async function waitForOwnedPostgres(docker, container, { attempts = 120, delayMs = 500 } = {}) {
+/** 준비될 때까지 기다린다. 제한 안에 준비되지 않거나 취소되면 false 다(취소는 부르는 쪽이 신호로 가린다). */
+export async function waitForOwnedPostgres(docker, container, { attempts = 120, delayMs = 500, signal } = {}) {
   for (let attempt = 0; attempt < attempts; attempt++) {
+    if (signal?.aborted) return false;
     try { await docker(['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']); return true; }
     catch { await new Promise(accept => setTimeout(accept, delayMs)); }
   }
