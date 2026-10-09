@@ -4,14 +4,21 @@ import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
 const $ = id => document.getElementById(id);
 // planPending: 구성 확인을 기다리는 중(변경 직후 대기·요청 중). '다시 생성' 이 막힌 이유를 말할 때 쓴다.
+// baseline: 마지막으로 알린 계획의 시작 구성·직접 선택·자동 포함(과 그 뿌리). 다음 계획이 도착하면 이것과 비교해
+// 무엇을 바꿔 자동 포함이 어떻게 달라졌는지 한 번 알린다(E7). 계획을 거두면 비운다(비교할 기준이 없다).
 const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null, planPending: true,
-  version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map(), notice: '' };
+  version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map(), notice: '', baseline: null };
 // 계획 단계 검사가 붙이는 요청 오류 코드(서버 REQUEST_ERRORS 와 같다 — 시험이 대조한다). 생성 요청이 이 코드로 거부되면
 // 보이던 계획이 더는 맞지 않는다.
 const PLAN_REJECTION_CODES = new Set(['INVALID_NAME', 'INVALID_RECIPE', 'SOURCE_CHANGED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'TOOL_UNAVAILABLE']);
 let previewTimer;
 // 포커스와 마우스는 따로 기다린다. 마우스가 다른 카드를 지나가도 포커스된 카드의 요청을 지우지 않는다.
 const previewTimers = { focus: undefined, hover: undefined };
+// 카드를 다시 그리며 포커스를 돌려놓는 동안(renderFeatures). 돌려놓은 포커스로 받은 미리보기는 알리지 않는다.
+let restoringFocus = false;
+// 바뀐 결과 문장은 포커스를 돌려놓은 뒤에 쓴다(화면 낭독기가 포커스 이동에 말하던 것을 끊는다).
+let announceTimer;
+const ANNOUNCE_AFTER_FOCUS_MS = 200;
 
 function text(tag, content, classes = '') {
   const element = document.createElement(tag);
@@ -106,7 +113,7 @@ function applySession(session) {
 // 계획을 거둔다(생성 요청 거부·다시 불러오기 실패). 진행 중 확인과 카드 미리보기도 버리고, 카드는 계획 없이 다시 그린다.
 // 진행 중 확인이 버려지면 그 확인이 '구성 다시 확인' 을 다시 열지 않으므로 여기서 연다.
 function withdrawPlan() {
-  state.version += 1; state.plan = null; state.previews.clear();
+  state.version += 1; state.plan = null; state.previews.clear(); state.baseline = null; clearTimeout(announceTimer);
   clearPlanNotes();
   // 거둔 계획의 개수·메뉴·경고·생성 위치도 남기지 않는다(계산할 수 없다는 문장 옆에 계산된 값이 남지 않게).
   for (const id of ['domain-count', 'table-count', 'menu-count']) $(id).textContent = '—';
@@ -172,15 +179,23 @@ function matchesSearch(item, area) {
   return [item.label, state.catalog.presentation.summaries[item.id], area.label, item.id].join(' ').toLowerCase().includes(query);
 }
 function capabilityCard(item, { automatic, included }) {
-  const row = text('label', '', 'flex cursor-pointer items-start gap-3 rounded-xl border border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft');
+  // 직접 고른 기능은 실선, 자동 포함 기능은 점선으로 모양을 나눈다(설계서 14.1).
+  const auto = item.available !== false && automatic.has(item.id);
+  const row = text('label', '', `flex cursor-pointer items-start gap-3 rounded-xl border ${auto ? 'border-dashed' : ''} border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft`);
   const input = document.createElement('input');
   input.type = 'checkbox'; input.value = item.id; input.id = `capability-${item.id}`;
   input.className = 'mt-1 shrink-0 accent-accent';
   input.checked = included.has(item.id);
-  input.disabled = item.available === false || automatic.has(item.id);
+  input.disabled = item.available === false;
   // 이름은 기능 이름만이다. 요약과 배지는 설명으로 한 번만 읽힌다.
   input.setAttribute('aria-labelledby', `title-${item.id}`);
-  input.setAttribute('aria-describedby', `reason-${item.id} badges-${item.id} preview-${item.id}`);
+  input.setAttribute('aria-describedby', `reason-${item.id}${auto ? ` hint-${item.id}` : ''} badges-${item.id} preview-${item.id}`);
+  if (auto) {
+    // 자동 포함 카드도 키보드로 닿아야 한다(E7). 직접 바꿀 수는 없으므로 disabled 대신 aria-disabled 로 두고,
+    // 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'(경로·이유·빼는 방법)를 연다.
+    input.setAttribute('aria-disabled', 'true');
+    input.addEventListener('click', event => { event.preventDefault(); openInclusion(item.id); });
+  }
   const content = text('span', '', 'min-w-0');
   const title = text('span', item.label, 'block text-sm font-semibold');
   title.id = `title-${item.id}`;
@@ -198,9 +213,15 @@ function capabilityCard(item, { automatic, included }) {
   const preview = text('span', changeable ? state.previews.get(item.id) ?? '' : '', 'mt-1 block break-words text-xs font-medium text-accent');
   preview.id = `preview-${item.id}`;
   preview.hidden = !preview.textContent;
-  content.append(description, badges, preview);
+  content.append(description);
+  if (auto) {
+    const hint = text('span', '누르면 요약에서 포함 이유와 빼는 방법을 엽니다.', 'mt-1 block text-xs text-muted');
+    hint.id = `hint-${item.id}`;
+    content.append(hint);
+  }
+  content.append(badges, preview);
   if (changeable) {
-    row.addEventListener('focusin', () => requestPreview(item.id, 'focus'));
+    row.addEventListener('focusin', () => requestPreview(item.id, 'focus', { announce: !restoringFocus }));
     row.addEventListener('mouseenter', () => requestPreview(item.id, 'hover'));
   }
   input.addEventListener('change', () => {
@@ -241,7 +262,67 @@ function renderFeatures() {
   // 계획이 다시 그려질 때마다 같은 결과를 다시 알리지 않도록, 문구가 바뀔 때만 쓴다.
   const status = query ? `‘${query}’ 검색 결과 기능 ${visible}개` : '';
   if ($('capability-search-status').textContent !== status) $('capability-search-status').textContent = status;
-  if (focusedId?.startsWith('capability-')) $(focusedId)?.focus({ preventScroll: true });
+  if (focusedId?.startsWith('capability-')) {
+    restoringFocus = true;
+    try { $(focusedId)?.focus({ preventScroll: true }); } finally { restoringFocus = false; }
+  }
+}
+// 자동 포함 카드를 누르면 요약의 그 기능 설명을 펼치고 '왜 포함됐나' 로 포커스를 옮긴다. 설명이 없으면 그 이유를 말한다
+// — 구성을 다시 확인하는 중이거나, 확인이 실패·중단돼(이름 오류·서버 오류) 다시 확인해야 하는 때다.
+// 같은 카드를 다시 눌러도 다시 읽히도록 알림을 비운 뒤 쓴다.
+function openInclusion(id) {
+  const why = $(`auto-${id}`)?.querySelector('details');
+  if (!why) {
+    const message = state.planPending ? '구성을 확인하는 중입니다. 확인이 끝나면 포함 이유를 볼 수 있습니다.'
+      : '구성을 확인하지 못해 포함 이유를 볼 수 없습니다. 요약의 상태 문장을 확인한 뒤 구성을 다시 확인해 주세요.';
+    const region = $('capability-preview-status');
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 50);
+    return;
+  }
+  why.open = true;
+  const summary = why.querySelector('summary');
+  summary.scrollIntoView({ block: 'nearest' });
+  summary.focus();
+}
+// 마지막으로 알린 계획(기준)과 지금 계획을 비교해, 무엇을 바꿔 자동 포함이 어떻게 달라졌는지 한 문장으로 말한다.
+// 계획이 오기 전에 여러 번 바꿨으면 순변화만 말한다(마지막 행동 하나를 주어로 삼지 않는다). 기능 이름만 잇고 조사가
+// 붙지 않게 괄호로 묶는다.
+// - 해제했는데 다른 선택이 필요로 해 남은 기능은 '늘었다' 가 아니라 '남았다' 로 말한다.
+// - 시작 구성은 그 구성의 기능만 담고 직접 선택은 요구하는 기능까지 끌어온다. 시작 구성에서 직접 선택으로 바뀌며 들어온
+//   기능(뿌리에 바꾼 기능이 없는 것)은 바꾼 카드 탓으로 말하지 않고 전환 탓으로 나눠 말한다.
+// - 고른 것과 뺀 것이 섞이면 '바꾼 구성으로' 라고만 말한다.
+function inclusionChange(base, plan) {
+  const now = new Map((plan.inclusionNotes ?? []).map(note => [note.domain, note.roots ?? []]));
+  const resolved = new Set(plan.resolvedDomains ?? []);
+  const names = ids => ids.map(label).join(', ');
+  const order = new Map(state.catalog.capabilities.map((item, index) => [item.id, index]));
+  const sorted = ids => ids.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+  const on = sorted([...state.selected].filter(id => !base.selected.has(id)));
+  const off = sorted([...base.selected].filter(id => !state.selected.has(id)));
+  const touched = new Set([...on, ...off]);
+  const switched = base.preset !== 'custom' && state.preset === 'custom';
+  let subject = '';
+  let specific = false;
+  if (state.preset !== base.preset && state.preset !== 'custom') subject = `‘${state.catalog.presentation.presets[state.preset]?.label ?? state.preset}’ 구성 선택으로`;
+  else if (!touched.size) subject = switched ? '‘직접 선택’ 구성 선택으로' : '';
+  else if (!(on.length && off.length)) { subject = `${names(on.length ? on : off)} ${on.length ? '선택으로' : '해제로'}`; specific = true; }
+  else subject = '바꾼 구성으로';
+  // 직접 선택이 같으면(이름·구조만 바꿈) 자동 포함도 같다. 바꾼 것이 없으면 말하지 않는다.
+  if (!subject) return '';
+  const split = switched && specific;
+  const kept = off.filter(id => now.has(id));
+  const added = [...now.keys()].filter(id => !base.automatic.has(id) && !kept.includes(id));
+  const byChange = added.filter(id => !split || now.get(id).some(root => touched.has(root)));
+  const bySwitch = added.filter(id => !byChange.includes(id));
+  const removed = [...base.automatic.keys()].filter(id => !now.has(id) && !resolved.has(id));
+  const parts = [];
+  if (byChange.length) parts.push(`${subject} 함께 포함되는 기능이 ${byChange.length}개 늘었습니다(${names(byChange)}).`);
+  if (removed.length) parts.push(`${byChange.length ? '' : `${subject} `}함께 포함되던 기능 ${removed.length}개가 빠졌습니다(${names(removed)}).`);
+  if (kept.length) parts.push(`다른 선택이 필요로 해 함께 포함된 채 남은 기능: ${names(kept)}.`);
+  if (bySwitch.length) parts.push(`시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 ${bySwitch.length}개 늘었습니다(${names(bySwitch)}).`);
+  else if (switched && touched.size) parts.push('시작 구성이 ‘직접 선택’으로 바뀌었습니다.');
+  return parts.join(' ');
 }
 // 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 자동 포함·기능 저하·미배정 권한을 보이지 않는다.
 function clearPlanNotes() {
@@ -253,7 +334,7 @@ function clearPlanNotes() {
 // 어느 카드가 자동 포함인지 알아야 하므로 계획을 확인한 뒤에만 묻고(계획이 도착해 카드를 다시 그리면 포커스가
 // 돌아오며 다시 묻는다), 판정은 요청을 예약한 때의 구성으로 한다. 카드를 누르면 포커스가 먼저 요청을 예약하고
 // 바로 구성이 바뀌는데, 그 요청이 계획 확인 전의 새 구성으로 나가면 곧 자동 포함될 카드에 문장이 붙는다.
-function requestPreview(id, source) {
+function requestPreview(id, source, { announce = true } = {}) {
   if (state.busy || !state.plan || !nameIsValid()) return;
   if (state.previews.has(id)) return;
   clearTimeout(previewTimers[source]);
@@ -267,7 +348,9 @@ function requestPreview(id, source) {
       const target = $(`preview-${id}`);
       if (target) { target.textContent = diff.summary; target.hidden = false; }
       // 포커스를 받은 뒤에 도착한 설명은 화면 낭독기가 읽지 않는다. 그 카드에 포커스가 있으면 한 번 알린다.
-      if (document.activeElement?.id === `capability-${id}`) $('capability-preview-status').textContent = `${label(id)}: ${diff.summary}`;
+      // 계획이 와서 카드를 다시 그리며 돌려놓은 포커스(announce=false)는 사용자가 옮긴 것이 아니므로 알리지 않는다
+      // (바뀐 결과 문장을 덮지 않게).
+      if (announce && document.activeElement?.id === `capability-${id}`) $('capability-preview-status').textContent = `${label(id)}: ${diff.summary}`;
     } catch { /* 미리보기는 보조 정보다. 실패하면 줄을 비워 둔다. */ }
   }, 120);
 }
@@ -345,7 +428,18 @@ function renderPlan() {
   $('menu-count').textContent = String(plan.menus?.length ?? 0);
   $('summary-heading').textContent = recipe().project.name;
   const blockers = plan.blockers ?? [];
-  $('plan-status').textContent = withNotice(blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
+  // 무엇을 바꿔 자동 포함이 달라졌는지 상태 문장 앞에 한 번 붙인다(상태 문장이 알림 영역이라 한 번에 읽힌다).
+  clearTimeout(announceTimer);
+  const change = state.baseline ? inclusionChange(state.baseline, plan) : '';
+  state.baseline = { preset: state.preset, selected: new Set(state.selected),
+    automatic: new Map((plan.inclusionNotes ?? []).map(note => [note.domain, note.roots ?? []])) };
+  const status = blockers.length ? '이 구성은 생성할 수 없습니다. 아래 사유를 확인해 주세요.' : '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
+  const sentence = withNotice(change ? `${change} ${status}` : status);
+  // 아래 renderFeatures 는 카드를 새로 그리고 포커스를 같은 카드의 새 노드로 돌려놓는다. 화면 낭독기는 포커스 이동에
+  // 말하던 것을 끊고 카드를 다시 읽으므로, 포커스가 카드에 있으면 바뀐 결과 문장을 그 뒤에 쓴다(같은 계획일 때만).
+  if (change && $('capabilities').contains(document.activeElement)) {
+    announceTimer = setTimeout(() => { if (state.plan === plan) $('plan-status').textContent = sentence; }, ANNOUNCE_AFTER_FOCUS_MS);
+  } else $('plan-status').textContent = sentence;
   $('output-hint').textContent = plan.outputDirectory ? `생성 위치 · ${plan.outputDirectory}` : '생성 위치 · 원본 프로젝트의 build/project-composer 아래 새 폴더';
   renderInclusions(plan.inclusionNotes ?? []);
   $('plan-warnings').replaceChildren(...blockers.map(blocker => text('p', blocker, 'font-semibold text-danger')), ...(plan.warnings ?? []).map(warning => text('p', warning)));
