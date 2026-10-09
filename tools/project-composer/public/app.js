@@ -1,7 +1,9 @@
 const $ = id => document.getElementById(id);
 const state = { catalog: null, csrf: '', preset: 'core', selected: new Set(), plan: null,
-  version: 0, job: null, polling: null, requestId: null, busy: false };
+  version: 0, job: null, polling: null, requestId: null, busy: false, previews: new Map() };
 let previewTimer;
+// 포커스와 마우스는 따로 기다린다. 마우스가 다른 카드를 지나가도 포커스된 카드의 요청을 지우지 않는다.
+const previewTimers = { focus: undefined, hover: undefined };
 
 function text(tag, content, classes = '') {
   const element = document.createElement(tag);
@@ -24,9 +26,12 @@ function recipe() {
     selection: state.preset === 'custom' ? { domains: [...state.selected].sort() } : { preset: state.preset },
     database: { vendor: $('database').value }, backendLayout: document.querySelector('input[name="layout"]:checked').value };
 }
-function validateName(focus = false) {
+function nameIsValid() {
   const name = $('project-name').value.trim();
-  const valid = name.length <= 63 && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name);
+  return name.length <= 63 && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name);
+}
+function validateName(focus = false) {
+  const valid = nameIsValid();
   $('project-name').setAttribute('aria-invalid', String(!valid));
   $('name-error').hidden = valid;
   $('name-error').textContent = valid ? '' : '영문 소문자로 시작하는 이름을 입력해 주세요. 최대 63자이며 하이픈은 영문·숫자 사이에 사용할 수 있습니다.';
@@ -53,7 +58,7 @@ function capabilityCard(item, { automatic, included }) {
   input.disabled = item.available === false || automatic.has(item.id);
   // 이름은 기능 이름만이다. 요약과 배지는 설명으로 한 번만 읽힌다.
   input.setAttribute('aria-labelledby', `title-${item.id}`);
-  input.setAttribute('aria-describedby', `reason-${item.id} badges-${item.id}`);
+  input.setAttribute('aria-describedby', `reason-${item.id} badges-${item.id} preview-${item.id}`);
   const content = text('span', '', 'min-w-0');
   const title = text('span', item.label, 'block text-sm font-semibold');
   title.id = `title-${item.id}`;
@@ -66,7 +71,16 @@ function capabilityCard(item, { automatic, included }) {
   const badges = text('span', `테이블 ${item.database.tables.length} · 화면 ${state.catalog.presentation.screens[item.id]} · 권한 ${item.permissionCodes.length}`, 'mt-2 block text-xs text-muted');
   badges.id = `badges-${item.id}`;
   if (item.requirements.length) badges.append(text('span', `외부 설정: ${item.requirements.join(', ')}`, 'mt-1 block font-medium text-ink'));
-  content.append(description, badges);
+  // 고르거나 빼면 무엇이 늘고 주는지 미리 보인다(설계서 10장·E3). 자동 포함 카드는 직접 바꿀 수 없어 보이지 않는다.
+  const changeable = item.available !== false && !automatic.has(item.id);
+  const preview = text('span', changeable ? state.previews.get(item.id) ?? '' : '', 'mt-1 block break-words text-xs font-medium text-accent');
+  preview.id = `preview-${item.id}`;
+  preview.hidden = !preview.textContent;
+  content.append(description, badges, preview);
+  if (changeable) {
+    row.addEventListener('focusin', () => requestPreview(item.id, 'focus'));
+    row.addEventListener('mouseenter', () => requestPreview(item.id, 'hover'));
+  }
   input.addEventListener('change', () => {
     state.preset = 'custom'; $('preset').value = 'custom';
     if (input.checked) state.selected.add(item.id); else state.selected.delete(item.id);
@@ -113,8 +127,33 @@ function clearPlanNotes() {
   $('plan-degraded').hidden = true; $('plan-degraded').replaceChildren();
   $('plan-unassigned').hidden = true; $('plan-unassigned-list').replaceChildren();
 }
+// 계획 차이를 받아 카드의 미리보기 줄에 넣는다. 구성이 바뀌면(changed) 기억한 결과를 비운다.
+// 어느 카드가 자동 포함인지 알아야 하므로 계획을 확인한 뒤에만 묻고(계획이 도착해 카드를 다시 그리면 포커스가
+// 돌아오며 다시 묻는다), 판정은 요청을 예약한 때의 구성으로 한다. 카드를 누르면 포커스가 먼저 요청을 예약하고
+// 바로 구성이 바뀌는데, 그 요청이 계획 확인 전의 새 구성으로 나가면 곧 자동 포함될 카드에 문장이 붙는다.
+function requestPreview(id, source) {
+  if (state.busy || !state.plan || !nameIsValid()) return;
+  if (state.previews.has(id)) return;
+  clearTimeout(previewTimers[source]);
+  const version = state.version;
+  previewTimers[source] = setTimeout(async () => {
+    if (version !== state.version) return;
+    try {
+      const { diff } = await api('/api/plan/diff', { recipe: recipe(), domain: id });
+      if (version !== state.version) return;
+      state.previews.set(id, diff.summary);
+      const target = $(`preview-${id}`);
+      if (target) { target.textContent = diff.summary; target.hidden = false; }
+      // 포커스를 받은 뒤에 도착한 설명은 화면 낭독기가 읽지 않는다. 그 카드에 포커스가 있으면 한 번 알린다.
+      if (document.activeElement?.id === `capability-${id}`) $('capability-preview-status').textContent = `${label(id)}: ${diff.summary}`;
+    } catch { /* 미리보기는 보조 정보다. 실패하면 줄을 비워 둔다. */ }
+  }, 120);
+}
 function changed() {
-  state.version += 1; state.plan = null; state.requestId = null;
+  state.version += 1; state.plan = null; state.requestId = null; state.previews.clear();
+  // 이미 그려진 미리보기 줄도 비운다. 옛 구성 기준 문장이 새 구성 위에 남지 않게 한다.
+  for (const line of $('capabilities').querySelectorAll('[id^="preview-"]')) { line.textContent = ''; line.hidden = true; }
+  $('capability-preview-status').textContent = '';
   clearPlanNotes();
   $('generate').disabled = true; $('download-recipe').disabled = true;
   $('plan-status').textContent = '변경한 구성을 확인하고 있습니다…';
@@ -351,7 +390,7 @@ $('capability-search').addEventListener('keydown', event => { if (event.key === 
 $('preset').addEventListener('change', () => {
   state.preset = $('preset').value;
   if (state.preset !== 'custom') state.selected = new Set(state.catalog.presets.find(item => item.id === state.preset).domains);
-  state.plan = null; renderFeatures(); changed();
+  changed(); renderFeatures();
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
 $('generate').addEventListener('click', generate);

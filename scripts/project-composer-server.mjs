@@ -129,7 +129,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       const url = new URL(request.url, origin);
       if (url.search || url.hash) throw new HttpError(400, 'BAD_REQUEST');
       const path = url.pathname;
-      const mutation = ['/api/plan', '/api/jobs'].includes(path);
+      const mutation = ['/api/plan', '/api/plan/diff', '/api/jobs'].includes(path);
       if (request.method !== (mutation ? 'POST' : 'GET')) throw new HttpError(405, 'METHOD_NOT_ALLOWED');
       if (mutation) {
         const supplied = request.headers['x-composer-csrf'];
@@ -139,10 +139,18 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       if (path === '/api/session') {
         json(response, 200, { csrfToken, catalog: await engine.catalog(), job: latest ? jobs.get(latest) : null });
       } else if (mutation) {
+        // 계획 차이는 선택 기능이다. 엔진이 제공하지 않으면 없는 경로로 답한다.
+        if (path === '/api/plan/diff' && typeof engine.diff !== 'function') throw new HttpError(404, 'NOT_FOUND');
         const input = await body(request);
-        if (!keys(input, path === '/api/jobs' ? ['recipe', 'requestId'] : ['recipe'])) throw new HttpError(400, 'BAD_REQUEST');
+        const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
+        if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
         const recipe = validateComposerRequestRecipe(input.recipe);
-        if (path === '/api/plan') {
+        if (path === '/api/plan/diff') {
+          if (!identifier(input.domain)) throw new HttpError(400, 'BAD_REQUEST');
+          let diff;
+          try { diff = await engine.diff(recipe, input.domain); } catch { throw new HttpError(400, 'INVALID_RECIPE'); }
+          json(response, 200, { diff });
+        } else if (path === '/api/plan') {
           let plan;
           try { plan = await engine.plan(recipe); } catch { throw new HttpError(400, 'INVALID_RECIPE'); }
           json(response, 200, { plan });

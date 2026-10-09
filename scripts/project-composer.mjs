@@ -7,13 +7,16 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
+import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
+import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
-const withObject = word => `${word}${/[\uAC00-\uD7A3]$/.test(word) && (word.charCodeAt(word.length - 1) - 0xAC00) % 28 !== 0 ? '을' : '를'}`;
+const hasBatchim = word => /[\uAC00-\uD7A3]$/.test(word) && (word.charCodeAt(word.length - 1) - 0xAC00) % 28 !== 0;
+const withObject = word => `${word}${hasBatchim(word) ? '을' : '를'}`;
+const withSubject = word => `${word}${hasBatchim(word) ? '이' : '가'}`;
 /** 필수 외래 키 위반을 사용자에게 보일 문장으로 바꾼다. 내부 경로나 클래스명은 싣지 않는다. */
 export function foreignKeyBlockers(composition, catalog) {
   const label = id => catalog.capabilities.find(capability => capability.id === id)?.label ?? id;
@@ -50,6 +53,40 @@ export function inclusionNotes(composition, catalog) {
       removal: `이 기능을 빼려면 ${listed} ${roots.length > 1 ? '모두 ' : ''}해제하세요.`,
     };
   });
+}
+const signed = number => (number > 0 ? `+${number}` : number < 0 ? `−${-number}` : '0');
+const DIFF_COUNT_LABELS = Object.freeze({ tables: '테이블', menus: '메뉴', permissions: '권한' });
+/**
+ * 계획 차이를 카드에 보일 한 문장으로 바꾼다(설계서 10장·E3). 늘고 주는 기능·테이블·메뉴·권한과
+ * 새로 생기거나 사라지는 기능 저하, 생성을 막는 외래 키를 말한다. 들어오는 기능과 빠지는 기능은 이름을 붙인다
+ * (누른 기능 하나만 움직이면 되풀이하지 않는다). 빼도 남는 기능은 무엇이 붙잡는지 먼저 말하고, 시작 구성에서
+ * 직접 선택으로 바뀌며 생기는 다른 변화가 있으면 이어서 말한다.
+ */
+export function diffSummary(diff, catalog) {
+  const label = id => catalog.capabilities.find(capability => capability.id === id)?.label ?? id;
+  const named = ids => {
+    const names = [...ids.filter(id => id === diff.domain), ...ids.filter(id => id !== diff.domain)].map(label);
+    return names.length > 3 ? `${names.slice(0, 3).join(', ')} 외 ${names.length - 3}개` : names.join(', ');
+  };
+  // 누른 기능 하나만 들어오거나 빠지면 이름을 되풀이하지 않는다. 다른 기능이 함께 움직이면 양쪽을 모두 밝힌다.
+  const [toward, against] = diff.action === 'add' ? [diff.added, diff.removed] : [diff.removed, diff.added];
+  const plain = against.length === 0 && toward.every(id => id === diff.domain);
+  const moved = plain ? [] : [
+    ...(diff.added.length ? [`들어옴: ${named(diff.added)}`] : []),
+    ...(diff.removed.length ? [`빠짐: ${named(diff.removed)}`] : []),
+  ];
+  const parts = [`기능 ${signed(diff.added.length - diff.removed.length)}${moved.length ? `(${moved.join('; ')})` : ''}`,
+    ...Object.entries(DIFF_COUNT_LABELS).map(([key, name]) => `${name} ${signed(diff.counts[key][1] - diff.counts[key][0])}`)];
+  if (diff.degraded.added.length) parts.push(`줄어드는 동작 ${diff.degraded.added.length}건 생김`);
+  if (diff.degraded.resolved.length) parts.push(`줄어들던 동작 ${diff.degraded.resolved.length}건 해소`);
+  if (diff.blockers.length) parts.push('필수 외래 키 때문에 생성할 수 없습니다');
+  if (diff.action === 'remove' && diff.retainedBy.length) {
+    const retained = `빼도 ${withSubject(diff.retainedBy.map(label).join(', '))} 요구해 계속 포함됩니다`;
+    const changed = diff.added.length || diff.removed.length || diff.degraded.added.length || diff.degraded.resolved.length || diff.blockers.length
+      || Object.keys(DIFF_COUNT_LABELS).some(key => diff.counts[key][0] !== diff.counts[key][1]);
+    return changed ? `${retained} · ${parts.join(' · ')}` : `${retained}.`;
+  }
+  return `${diff.action === 'add' ? '고르면' : '빼면'} ${parts.join(' · ')}`;
 }
 function git(root, args) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 32 * 1024 * 1024 });
@@ -203,14 +240,19 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   let running = false;
+  // 계획 차이는 마지막으로 적재한 카탈로그와 메뉴 스냅숏을 다시 쓴다(카탈로그 적재는 수 초가 걸린다).
+  // 차이는 미리보기일 뿐이고, 계획과 생성은 늘 카탈로그를 새로 적재해 다시 판정한다.
+  let latest;
+  const remember = (value, menus) => { latest = { catalog: value, menus }; return value; };
   const catalog = () => {
-    const value = loadCatalog(root);
+    const value = remember(loadCatalog(root));
     const sourceCommit = git(root, ['rev-parse', 'HEAD']);
     // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
     return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: composerPresentation(value, { routeKinds: loadRouteKinds(root) }) };
   };
   const plan = recipe => {
-    const current = loadCatalog(root);
+    const snapshot = loadProjectComposerMenus(root);
+    const current = remember(loadCatalog(root), snapshot.menus);
     const composition = resolveProjectRecipe(recipe, current);
     // The local generator exports the inspected checkout. It never silently checks out another revision.
     const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
@@ -223,13 +265,19 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       unassignedPermissions: loadUnassignedPermissionGuidance(root).filter(row => composition.permissionCodes.includes(row.code))
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
-      menus: projectComposerMenuPreview(root, composition),
+      menus: projectComposerMenuPreview(root, composition, snapshot),
       warnings: [
         '현재 체크아웃의 소스로 생성합니다. 커밋되지 않은 변경이 있으면 개발용 산출물로 표시됩니다.',
         '생성 시 Docker·Java 21·Node.js 22 이상·pnpm이 필요하며, 의존성 설치와 검증에 시간이 걸릴 수 있습니다.',
         ...composition.requirements.map(requirement => `추가 설정: ${requirement}`),
       ],
     };
+  };
+  const diff = (recipe, domain) => {
+    latest ??= { catalog: loadCatalog(root) };
+    latest.menus ??= loadProjectComposerMenus(root).menus;
+    const result = compositionDiff({ catalog: latest.catalog, menus: latest.menus, recipe, domain });
+    return { ...result, summary: diffSummary(result, latest.catalog) };
   };
   const generate = async (recipe, { onProgress = () => {} } = {}) => {
     if (running) throw new Error('A composition job is already running');
@@ -330,7 +378,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       try { await cleanupDatabase(); } finally { running = false; }
     }
   };
-  return { catalog, plan, generate, outputRoot };
+  return { catalog, plan, diff, generate, outputRoot };
 }
 
 export function parseComposerArgs(args) {
