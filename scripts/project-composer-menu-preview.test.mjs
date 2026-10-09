@@ -74,6 +74,12 @@ test('the preview keeps menu order and kind and marks menus the base composition
   ]);
   // 전체 화면이 남으면 '업무' 도 화면이다.
   assert.equal(projectComposerMenuPreview(null, composition(['/work', '/schedule']), snapshot)[0].kind, 'screen');
+  // 비교 구성에서는 화면 없이 묶기만 하던 메뉴가 이 구성에서 화면이 되면 더한 것이다(행은 같아도 목적지가 생겼다).
+  const destination = projectComposerMenuPreview(null, composition(['/work', '/schedule']), snapshot, { base: composition(['/schedule']) });
+  assert.deepEqual(destination.map(menu => [menu.id, menu.kind, menu.added]), [[1, 'screen', true], [2, 'screen', false]]);
+  // 반대로 비교 구성의 화면이 이 구성에서 묶기만 하게 되면 더한 것이 아니다.
+  const lost = projectComposerMenuPreview(null, composition(['/schedule']), snapshot, { base: composition(['/work', '/schedule']) });
+  assert.deepEqual(lost.map(menu => [menu.id, menu.kind, menu.added]), [[1, 'detached', false], [2, 'screen', false]]);
   assert.ok(projectComposerMenuPreview(null, composition(['/admin/users']), snapshot).every(menu => !('added' in menu)), 'no base, no added flag');
 });
 

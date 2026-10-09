@@ -208,6 +208,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   white-space: nowrap;
   border-width: 0;
 }
+.relative {
+  position: relative;
+}
 .container {
   width: 100%;
   @media (width >= 40rem) {

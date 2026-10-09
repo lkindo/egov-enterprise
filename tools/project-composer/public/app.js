@@ -120,7 +120,7 @@ function withdrawPlan() {
   clearPlanNotes();
   // 거둔 계획의 개수·메뉴·경고·생성 위치도 남기지 않는다(계산할 수 없다는 문장 옆에 계산된 값이 남지 않게).
   for (const id of ['domain-count', 'table-count', 'menu-count']) $(id).textContent = '—';
-  $('plan-warnings').replaceChildren(); $('menu-preview').replaceChildren(); $('menu-summary').textContent = ''; $('output-hint').textContent = '';
+  $('plan-warnings').replaceChildren(); $('output-hint').textContent = '';
   $('generate').disabled = true; $('download-recipe').disabled = true; $('preview').disabled = false;
   renderFeatures();
 }
@@ -291,6 +291,8 @@ function openInclusion(id) {
 // 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 자동 포함·기능 저하·미배정 권한을 보이지 않는다.
 function clearPlanNotes() {
   $('auto-included').replaceChildren();
+  // 메뉴 트리와 그 요약도 이전 구성의 것이므로 지운다(다시 확인 중·실패에 옛 '추가됨' 수가 남지 않게).
+  $('menu-preview').replaceChildren(); $('menu-summary').textContent = '';
   $('plan-degraded').hidden = true; $('plan-degraded').replaceChildren();
   $('plan-unassigned').hidden = true; $('plan-unassigned-list').replaceChildren();
 }

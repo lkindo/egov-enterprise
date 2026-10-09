@@ -93,14 +93,15 @@ export function writeProjectComposerMenuSnapshot(root, inventory) {
 // - screen: 이 구성에서 화면으로 가는 메뉴.
 // - category: 원본에도 화면 없이 하위 메뉴만 묶는 메뉴.
 // - detached(목적지 없음): 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져, 남은 하위 메뉴를 묶기만 하는 메뉴.
-// base 구성을 주면 그 구성에 없는 메뉴를 added 로 표시한다(공통 기반 대비 추가).
+// base 구성을 주면 이 구성이 더하는 메뉴를 added 로 표시한다(공통 기반 대비 추가). 메뉴 행이 base 에 없거나,
+// 행은 있지만 base 에서는 화면이 없던 메뉴가 이 구성에서 화면이 되면 더한 것이다('나의 업무' 처럼 화면이 생긴 경우).
 export function projectComposerMenuPreview(root, composition, snapshot = loadProjectComposerMenus(root), { base } = {}) {
   const project = value => projectCompositionMenus({ menus: snapshot.menus, menuRoutes: value.menuRoutes, excludedMenuTabs: value.excludedMenuTabs }).menus;
   const original = new Map(snapshot.menus.map(menu => [menu.menu_sn, menu]));
-  const baseIds = base ? new Set(project(base).map(menu => menu.menu_sn)) : null;
+  const baseScreens = base ? new Map(project(base).map(menu => [menu.menu_sn, Boolean(menu.modern_route)])) : null;
   return project(composition).map(menu => ({
     id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route, order: menu.menu_ordr,
     kind: menu.modern_route ? 'screen' : original.get(menu.menu_sn).modern_route ? 'detached' : 'category',
-    ...(baseIds ? { added: !baseIds.has(menu.menu_sn) } : {}),
+    ...(baseScreens ? { added: !baseScreens.has(menu.menu_sn) || (Boolean(menu.modern_route) && !baseScreens.get(menu.menu_sn)) } : {}),
   }));
 }

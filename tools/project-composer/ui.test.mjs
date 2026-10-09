@@ -541,9 +541,26 @@ test('the menu preview is a nested tree in menu order with category, detached an
   const count = kind => menus.filter(menu => menu.kind === kind).length;
   const added = menus.filter(menu => menu.added);
   assert.ok(count('detached') > 0 && added.length > 0, 'the fixture shows every marker');
+  const pageHeight = () => page.evaluate(() => document.documentElement.scrollHeight);
+  const closedHeight = await pageHeight();
   await page.getByText('포함되는 메뉴').click();
   await expect(page.locator('#menu-summary')).toHaveText(`화면 ${count('screen')}개 · 분류 ${count('category')}개 · 목적지 없음 ${count('detached')}개 · `
-    + `공통 기반 대비 추가 ${added.length}개. 목적지 없음은 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져 하위 메뉴만 묶는 메뉴입니다.`);
+    + `공통 기반 대비 추가됨 ${added.length}개. 목적지 없음은 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져 하위 메뉴만 묶는 메뉴입니다.`);
+  // 낭독용 쉼표(sr-only)는 목록 스크롤 상자 안에 갇힌다 — 목록을 펼쳐도 페이지에 빈 스크롤이 생기지 않는다.
+  const openHeight = await pageHeight();
+  const withoutSeparators = await page.evaluate(() => {
+    for (const separator of document.querySelectorAll('#menu-preview .sr-only')) separator.remove();
+    return document.documentElement.scrollHeight;
+  });
+  assert.equal(openHeight, withoutSeparators, 'the reading separators add no page scroll');
+  assert.ok(openHeight >= closedHeight);
+  // 글머리표를 지운 목록도 목록으로 알리도록 모든 단계에 role=list 를 단다.
+  await expect(page.locator('#menu-preview')).toHaveAttribute('role', 'list');
+  assert.deepEqual([...new Set(await page.locator('#menu-preview ul').evaluateAll(lists => lists.map(list => list.getAttribute('role'))))], ['list']);
+  await page.reload();
+  await page.locator('#capability-note').check();
+  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.getByText('포함되는 메뉴').click();
   await expect(page.locator('#menu-count')).toHaveText(String(menus.length));
   // 맨 위 메뉴는 메뉴 순서대로 놓이고, 각 메뉴의 하위는 그 안의 목록에 들어간다.
   const roots = menus.filter(menu => !menu.parent).sort((a, b) => a.order - b.order).map(menu => menu.label);
@@ -561,14 +578,24 @@ test('the menu preview is a nested tree in menu order with category, detached an
   // 표시는 글자다(낭독용 쉼표로 이름과 나뉜다).
   const detached = menus.find(menu => menu.kind === 'detached');
   const detachedRow = page.locator(`#menu-preview li[data-menu="${detached.id}"]`);
-  await expect(detachedRow.locator(':scope > div')).toHaveText(`${detached.label}, 목적지 없음${detached.added ? ', 추가' : ''}`);
+  await expect(detachedRow.locator(':scope > div')).toHaveText(`${detached.label}, 목적지 없음${detached.added ? ', 추가됨' : ''}`);
   const screen = added.find(menu => menu.kind === 'screen');
-  await expect(page.locator(`#menu-preview li[data-menu="${screen.id}"] > div`)).toHaveText(`${screen.label}, 추가`);
+  await expect(page.locator(`#menu-preview li[data-menu="${screen.id}"] > div`)).toHaveText(`${screen.label}, 추가됨`);
   await expect(page.locator(`#menu-preview li[data-menu="${screen.id}"]`)).toContainText(screen.path);
   const kept = menus.find(menu => menu.kind === 'screen' && !menu.added);
   await expect(page.locator(`#menu-preview li[data-menu="${kept.id}"] > div`)).toHaveText(kept.label);
   const category = menus.find(menu => menu.kind === 'category');
   await expect(page.locator(`#menu-preview li[data-menu="${category.id}"] > div`)).toContainText(`${category.label}, 분류`);
+  // 구성을 다시 확인하는 동안에는 이전 구성의 메뉴 트리와 요약을 보이지 않는다.
+  const held = [];
+  await page.route('**/api/plan', route => { held.push(route); });
+  await page.locator('#capability-mail').check();
+  await expect.poll(() => held.length).toBe(1);
+  await expect(page.locator('#menu-preview li')).toHaveCount(0);
+  await expect(page.locator('#menu-summary')).toHaveText('');
+  for (const route of held.splice(0)) await route.continue();
+  await page.unroute('**/api/plan');
+  await expect(page.locator('#menu-summary')).toContainText('공통 기반 대비 추가됨');
   assert.deepEqual(pageErrors, []);
 });
 
