@@ -3,7 +3,7 @@ import { inclusionChange } from './inclusion-change.js';
 import { renderInclusions } from './inclusions.js';
 import { createJobPanel } from './job.js';
 import { renderMenuTree } from './menu-tree.js';
-import { planImport, readRecipeFile, saveRecipeFile } from './recipe-file.js';
+import { createRecipeImport, saveRecipeFile } from './recipe-file.js';
 import { keepSummaryInView } from './sticky-summary.js';
 import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
@@ -137,8 +137,9 @@ async function reloadCatalog({ focus = false } = {}) {
   // 누른 버튼이 곧 사라지므로 포커스를 요약 제목으로 옮긴다(키보드·화면 낭독기 사용자가 위치를 잃지 않게).
   if (focus) $('summary-heading').focus();
   $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
-  // 원본이 바뀐 것을 알았으므로 다시 받는 동안 옛 계획으로 생성하거나 저장하지 못하게 먼저 거둔다.
-  withdrawPlan();
+  // 원본이 바뀐 것을 알았으므로 다시 받는 동안 옛 계획으로 생성하거나 저장하지 못하게 먼저 거둔다. 불러오기도 잠근다
+  // (그사이 불러온 구성이 새 목록에 덮이지 않게).
+  withdrawPlan(); $('import-recipe').disabled = true;
   $('plan-status').textContent = '기능 목록을 새 원본으로 다시 불러오고 있습니다…';
   try {
     const session = await api('/api/session');
@@ -153,7 +154,7 @@ async function reloadCatalog({ focus = false } = {}) {
     withdrawPlan();
     $('plan-status').textContent = error.message;
     renderFailureActions($('plan-actions'), error);
-  }
+  } finally { $('import-recipe').disabled = state.busy; }
 }
 function recipe() {
   return { schemaVersion: 1, project: { name: $('project-name').value.trim() }, sourceRef: state.catalog.sourceRef,
@@ -389,7 +390,7 @@ function renderPlan() {
 async function preview(focus) {
   clearTimeout(previewTimer);
   if (state.busy || !state.catalog) return;
-  if (!validateName(focus)) { state.planPending = false; $('plan-status').textContent = '프로젝트 이름을 확인해 주세요.'; return; }
+  if (!validateName(focus)) { state.planPending = false; $('plan-status').textContent = withNotice('프로젝트 이름을 확인해 주세요.'); return; }
   const version = state.version;
   state.planPending = true;
   $('preview').disabled = true;
@@ -426,23 +427,8 @@ function restoreRecipe(value) {
   document.querySelector(`input[name="layout"][value="${value.backendLayout}"]`).checked = true;
   renderFeatures();
 }
-// 저장한 구성 불러오기(E9): 파일을 읽어 지금 원본에 맞춘 뒤 화면의 선택으로 옮기고 구성을 다시 확인한다.
-// 빼고 불러온 것과 다른 원본에서 저장한 사실은 계획 상태 줄에 함께 싣는다(다시 불러오기와 같은 방식).
-async function importRecipe(file) {
-  $('import-error').hidden = true; $('import-error').textContent = '';
-  let imported;
-  try {
-    imported = planImport({ value: await readRecipeFile(file), fileName: file.name, catalog: state.catalog,
-      vendors: [...$('database').options].map(option => option.value) });
-  } catch (error) { $('import-error').textContent = error.message; $('import-error').hidden = false; return; }
-  if (state.busy) return;
-  restoreRecipe(imported.recipe);
-  if (imported.vendor) $('database').value = imported.vendor;
-  changed();
-  state.notice = imported.notes.join(' ');
-  $('plan-status').textContent = withNotice('변경한 구성을 확인하고 있습니다…');
-  $('import-status').textContent = imported.summary;
-}
+// 저장한 구성 불러오기(E9). 판정과 화면 연결은 recipe-file.js 에 있다.
+const importRecipe = createRecipeImport({ $, state, restoreRecipe, withdrawPlan, changed });
 function downloadRecipe() {
   saveRecipeFile(state.job?.status === 'succeeded' && !state.plan ? state.job.recipe : recipe());
 }

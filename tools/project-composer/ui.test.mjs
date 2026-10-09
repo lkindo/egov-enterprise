@@ -608,7 +608,7 @@ const savedRecipe = (overrides = {}) => ({ schemaVersion: 1, project: { name: 'i
   selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module', ...overrides });
 test('recipe import planning re-binds to the current source and names what it dropped', () => {
   const catalogFor = { ...catalog, sourceCommit: 'a'.repeat(40) };
-  const plan = (value, fileName = 'my.recipe.json') => planImport({ value: parseRecipe(JSON.stringify(value)), fileName, catalog: catalogFor, vendors: ['postgresql'] });
+  const plan = (value, fileName = 'my.recipe.json') => planImport({ value: parseRecipe(JSON.stringify(value)), fileName, catalog: catalogFor, vendors: ['postgresql'], currentName: 'current-service' });
   const same = plan(savedRecipe({ sourceRef: 'A'.repeat(12), selection: { domains: ['board', 'board', 'comment'] } }));
   assert.deepEqual(same.recipe.selection, { domains: ['board', 'comment'] });
   assert.deepEqual(same.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.'], 'a prefix of the current commit in any case is the same source');
@@ -628,7 +628,19 @@ test('recipe import planning re-binds to the current source and names what it dr
   assert.deepEqual(unknownPreset.recipe.selection, { domains: [] });
   assert.equal(unknownPreset.notes[1], '지금 원본에 없는 시작 구성(ghost-preset)이라 기능을 고르지 않은 직접 선택으로 불러왔습니다.');
   assert.equal(plan(savedRecipe(), `${'x'.repeat(100)}.json`).notes[0], `‘${'x'.repeat(80)}…’ 구성을 불러왔습니다.`);
+  // 엔진처럼 데이터베이스와 구조가 비어 있으면 기본값(PostgreSQL·멀티모듈)이다.
+  const defaults = plan({ schemaVersion: 1, project: { name: 'plain-service' }, selection: { domains: ['board'] } });
+  assert.equal(defaults.recipe.backendLayout, 'multi-module');
+  assert.equal(defaults.vendor, 'postgresql');
+  assert.deepEqual(defaults.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.']);
+  // 이름 규칙(63자)보다 긴 이름은 옮기지 않고 지금 이름을 둔다.
+  const long = plan(savedRecipe({ project: { name: 'a'.repeat(64) } }));
+  assert.equal(long.recipe.project.name, 'current-service');
+  assert.ok(long.notes.includes('구성 파일의 프로젝트 이름이 63자를 넘어 지금 이름을 그대로 둡니다.'), long.notes.join(' | '));
+  assert.equal(plan(savedRecipe({ project: { name: 'a'.repeat(63) } })).recipe.project.name, 'a'.repeat(63));
   for (const broken of [{ ...savedRecipe(), schemaVersion: 2 }, { ...savedRecipe(), selection: { preset: 'core', domains: [] } }, { ...savedRecipe(), selection: { domains: [1] } },
+    { ...savedRecipe(), selection: { preset: 'core', domains: false } }, { ...savedRecipe(), selection: { preset: null, domains: ['board'] } },
+    { ...savedRecipe(), selection: { domains: {} } }, { ...savedRecipe(), selection: { preset: 3 } }, { ...savedRecipe(), selection: {} },
     { ...savedRecipe(), backendLayout: 'other' }, { ...savedRecipe(), database: {} }, { ...savedRecipe(), project: { name: 3 } }, { ...savedRecipe(), sourceRef: 7 }, []]) {
     assert.throws(() => parseRecipe(JSON.stringify(broken)), /생성기 구성 파일/, JSON.stringify(broken));
   }
@@ -642,7 +654,19 @@ test('a saved recipe file fills the name, selection and structure and is re-chec
   const planned = [];
   page.on('request', request => { if (request.url().endsWith('/api/plan')) planned.push(JSON.parse(request.postData()).recipe); });
   const file = value => ({ name: 'imported-service.recipe.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
+  // 시작 구성에서 불러온다. 계획이 오기 전에도 카드·개수는 옛 구성을 말하지 않고, 상태 줄은 짧게 기다림만 말한다.
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(page.locator('#domain-count')).toHaveText('8');
+  const held = [];
+  await page.route('**/api/plan', route => { held.push(route); });
   await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
+  await expect(page.locator('#plan-status')).toHaveText('불러온 구성을 확인하고 있습니다…');
+  await expect(page.locator('#domain-count')).toHaveText('—');
+  await expect(page.locator('#capability-board')).not.toBeChecked();
+  await expect(page.locator('#capability-mail')).toBeChecked();
+  await expect.poll(() => held.length).toBeGreaterThan(0);
+  for (const route of held.splice(0)) await route.continue();
+  await page.unroute('**/api/plan');
   await expect(page.getByLabel('프로젝트 이름')).toHaveValue('imported-service');
   await expect(page.locator('input[name="layout"][value="single-module"]')).toBeChecked();
   await expect(page.locator('#preset')).toHaveValue('custom');
@@ -656,9 +680,22 @@ test('a saved recipe file fills the name, selection and structure and is re-chec
   // 계획은 지금 원본으로 다시 결속한다(파일에 기록된 커밋을 그대로 보내지 않는다).
   assert.equal(planned.at(-1).sourceRef, 'HEAD');
   assert.deepEqual(planned.at(-1).selection, { domains: ['mail', 'schedule'] });
+  // 불러온 뒤 파일 입력을 비운다 — 브라우저는 같은 파일을 다시 고르면 값이 같아 change 를 내지 않는다.
+  assert.equal(await page.locator('#recipe-file').evaluate(input => input.files.length), 0);
+  // 고를 수 있는 데이터베이스면 파일의 데이터베이스를 고른다(지금은 PostgreSQL 하나뿐이라 선택지를 하나 더해 확인한다).
+  await page.locator('#database').evaluate(select => { select.append(new Option('다른 DB', 'other-db')); select.value = 'other-db'; });
+  await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
+  await expect(page.locator('#database')).toHaveValue('postgresql');
+  await page.locator('#database').evaluate(select => select.querySelector('option[value="other-db"]').remove());
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
   // 그 뒤에 구성을 바꾸면 불러온 파일의 요약은 지운다.
   await page.getByLabel('프로젝트 이름').fill('next-service');
   await expect(page.locator('#import-status')).toHaveText('');
+  // 불러온 이름이 규칙에 맞지 않아 확인하지 못해도 불러오며 뺀 것은 함께 말한다.
+  await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ project: { name: 'Bad Name' }, selection: { domains: ['mail', 'ghost'] } })));
+  await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요. ‘imported-service.recipe.json’ 구성을 불러왔습니다. '
+    + '지금 원본에 없는 기능은 빼고 불러왔습니다: ghost. 이 구성은 다른 원본(커밋 bbbbbbbbbbbb)에서 저장했습니다. 지금 원본으로 다시 확인합니다. '
+    + '저장한 원본 그대로 만들려면 저장소를 그 커밋으로 체크아웃한 뒤 생성기를 다시 시작하세요.');
   // 같은 파일을 다시 골라도 다시 불러온다.
   await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
   await expect(page.getByLabel('프로젝트 이름')).toHaveValue('imported-service');
@@ -712,6 +749,25 @@ test('the summary stays in view with its buttons while long details scroll insid
   const box = await last.boundingBox();
   const area = await scroll.boundingBox();
   assert.ok(box.y >= area.y && box.y + box.height <= area.y + area.height, 'the focused summary is inside the visible part of the scroll area');
+  // 낮은 화면에서 작업 패널이 보여도 버튼은 가려지지 않고 내용은 스크롤로 닿는다(두 영역은 겹치지 않는다).
+  await page.setViewportSize({ width: 1366, height: 657 });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await confirmGenerate(page);
+  await expect(page.locator('#job-panel')).toBeVisible();
+  for (const position of ['top', 'bottom']) {
+    await page.evaluate(where => window.scrollTo(0, where === 'top' ? 0 : document.documentElement.scrollHeight), position);
+    await page.waitForTimeout(100);
+    for (const id of ['download-recipe', 'import-recipe']) {
+      const target = page.locator(`#${id}`);
+      if (position === 'bottom') assert.ok(await inView(target), `${id} is in view at the ${position}`);
+      assert.ok(await target.evaluate(element => {
+        const box = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.x + box.width / 2, Math.min(box.y + box.height / 2, innerHeight - 1));
+        return box.y + box.height / 2 >= innerHeight || hit === element;
+      }), `${id} is not covered at the ${position}`);
+    }
+    assert.ok(await scroll.evaluate(element => element.clientHeight > 0), `the summary keeps a visible scroll area at the ${position}`);
+  }
   // 좁은 화면에서는 고정하지 않는다.
   await page.setViewportSize({ width: 800, height: 900 });
   assert.deepEqual(await page.locator('aside').evaluate(element => [getComputedStyle(element).position, getComputedStyle(element).maxHeight]), ['static', 'none']);
@@ -1260,10 +1316,17 @@ test('a changed source offers a reload that keeps the name and selection and sho
   await expect(reload).toBeVisible();
   sourceChanged = false;
   const sessions = count('/api/session');
+  // 다시 불러오는 동안에는 구성 불러오기를 잠근다(그사이 불러온 구성이 새 목록에 덮이지 않게).
+  const heldSessions = [];
+  await page.route('**/api/session', route => { heldSessions.push(route); }, { times: 1 });
   // 키보드로 누르면 버튼이 사라져도 포커스가 요약 제목으로 옮겨 가 위치를 잃지 않는다.
   await reload.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#summary-heading')).toBeFocused();
+  await expect.poll(() => heldSessions.length).toBe(1);
+  await expect(page.getByRole('button', { name: '구성 불러오기' })).toBeDisabled();
+  await heldSessions[0].continue();
+  await expect(page.getByRole('button', { name: '구성 불러오기' })).toBeEnabled();
   await expect(page.locator('#source-ref')).toHaveText('HEAD · bbbbbbbbbbbb');
   await expect(generateButton(page)).toBeEnabled();
   await expect(page.locator('#plan-actions')).toBeHidden();
