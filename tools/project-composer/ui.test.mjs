@@ -13,6 +13,7 @@ import { composerPresentation, loadRouteKinds } from '../../scripts/project-comp
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
+import { parseRecipe, planImport, RECIPE_FILE_LIMIT } from './public/recipe-file.js';
 import { JOB_STAGES } from '../../scripts/project-composer-timeline.mjs';
 import { VERIFICATION_STEP_IDS } from '../../scripts/verify-reusable-artifact.mjs';
 
@@ -596,6 +597,125 @@ test('the menu preview is a nested tree in menu order with category, detached an
   for (const route of held.splice(0)) await route.continue();
   await page.unroute('**/api/plan');
   await expect(page.locator('#menu-summary')).toContainText('공통 기반 대비 추가됨');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 구성 불러오기(E9, 설계서 21장). 저장한 구성 파일을 읽어 지금 원본에 맞춘다 — 없는 시작 구성·기능·데이터베이스는 빼고,
+ * 다른 원본 커밋에서 저장했으면 그 사실과 재현 방법을 말한다. 파일 모양이 아니면 거부하고 구성을 바꾸지 않는다.
+ */
+const savedRecipe = (overrides = {}) => ({ schemaVersion: 1, project: { name: 'imported-service' }, sourceRef: 'b'.repeat(40),
+  selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module', ...overrides });
+test('recipe import planning re-binds to the current source and names what it dropped', () => {
+  const catalogFor = { ...catalog, sourceCommit: 'a'.repeat(40) };
+  const plan = (value, fileName = 'my.recipe.json') => planImport({ value: parseRecipe(JSON.stringify(value)), fileName, catalog: catalogFor, vendors: ['postgresql'] });
+  const same = plan(savedRecipe({ sourceRef: 'A'.repeat(12), selection: { domains: ['board', 'board', 'comment'] } }));
+  assert.deepEqual(same.recipe.selection, { domains: ['board', 'comment'] });
+  assert.deepEqual(same.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.'], 'a prefix of the current commit in any case is the same source');
+  assert.equal(same.summary, 'my.recipe.json 불러옴 · 기능 2개 직접 선택(게시판, 댓글)');
+  assert.equal(same.vendor, 'postgresql');
+  const other = plan(savedRecipe({ selection: { domains: ['board', 'ghost-1', 'ghost-2', 'ghost-3', 'ghost-4', 'ghost-5', 'ghost-6'] }, database: { vendor: 'oracle' } }));
+  assert.deepEqual(other.recipe.selection, { domains: ['board'] });
+  assert.equal(other.vendor, null);
+  assert.deepEqual(other.notes.slice(1), [
+    '지금 원본에 없는 기능은 빼고 불러왔습니다: ghost-1, ghost-2, ghost-3, ghost-4, ghost-5 외 1개.',
+    '지원하지 않는 데이터베이스(oracle)라 지금 고른 데이터베이스로 불러왔습니다.',
+    '이 구성은 다른 원본(커밋 bbbbbbbbbbbb)에서 저장했습니다. 지금 원본으로 다시 확인합니다. 저장한 원본 그대로 만들려면 저장소를 그 커밋으로 체크아웃한 뒤 생성기를 다시 시작하세요.']);
+  const preset = plan(savedRecipe({ sourceRef: 'HEAD', selection: { preset: 'collaboration' } }));
+  assert.deepEqual(preset.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.'], 'a symbolic source reference says nothing about the commit');
+  assert.equal(preset.summary, 'my.recipe.json 불러옴 · 시작 구성 ‘협업’');
+  const unknownPreset = plan(savedRecipe({ selection: { preset: 'ghost-preset' }, sourceRef: undefined }));
+  assert.deepEqual(unknownPreset.recipe.selection, { domains: [] });
+  assert.equal(unknownPreset.notes[1], '지금 원본에 없는 시작 구성(ghost-preset)이라 기능을 고르지 않은 직접 선택으로 불러왔습니다.');
+  assert.equal(plan(savedRecipe(), `${'x'.repeat(100)}.json`).notes[0], `‘${'x'.repeat(80)}…’ 구성을 불러왔습니다.`);
+  for (const broken of [{ ...savedRecipe(), schemaVersion: 2 }, { ...savedRecipe(), selection: { preset: 'core', domains: [] } }, { ...savedRecipe(), selection: { domains: [1] } },
+    { ...savedRecipe(), backendLayout: 'other' }, { ...savedRecipe(), database: {} }, { ...savedRecipe(), project: { name: 3 } }, { ...savedRecipe(), sourceRef: 7 }, []]) {
+    assert.throws(() => parseRecipe(JSON.stringify(broken)), /생성기 구성 파일/, JSON.stringify(broken));
+  }
+  assert.throws(() => parseRecipe('{'), /JSON 형식이 아닙니다/);
+});
+
+test('a saved recipe file fills the name, selection and structure and is re-checked against the current source', { timeout: 60_000 }, async t => {
+  const { page, pageErrors, release } = await realCatalogPage(t);
+  const labelOf = id => real.capabilities.find(item => item.id === id).label;
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  const planned = [];
+  page.on('request', request => { if (request.url().endsWith('/api/plan')) planned.push(JSON.parse(request.postData()).recipe); });
+  const file = value => ({ name: 'imported-service.recipe.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
+  await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('imported-service');
+  await expect(page.locator('input[name="layout"][value="single-module"]')).toBeChecked();
+  await expect(page.locator('#preset')).toHaveValue('custom');
+  await expect(page.locator('#capability-mail')).toBeChecked();
+  await expect(page.locator('#capability-schedule')).toBeChecked();
+  await expect(page.locator('#import-status')).toHaveText(`imported-service.recipe.json 불러옴 · 기능 2개 직접 선택(${labelOf('mail')}, ${labelOf('schedule')})`);
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  await expect(page.locator('#plan-status')).toContainText('‘imported-service.recipe.json’ 구성을 불러왔습니다. 지금 원본에 없는 기능은 빼고 불러왔습니다: ghost.');
+  await expect(page.locator('#plan-status')).toContainText('다른 원본(커밋 bbbbbbbbbbbb)');
+  await expect(generateButton(page)).toBeEnabled();
+  // 계획은 지금 원본으로 다시 결속한다(파일에 기록된 커밋을 그대로 보내지 않는다).
+  assert.equal(planned.at(-1).sourceRef, 'HEAD');
+  assert.deepEqual(planned.at(-1).selection, { domains: ['mail', 'schedule'] });
+  // 그 뒤에 구성을 바꾸면 불러온 파일의 요약은 지운다.
+  await page.getByLabel('프로젝트 이름').fill('next-service');
+  await expect(page.locator('#import-status')).toHaveText('');
+  // 같은 파일을 다시 골라도 다시 불러온다.
+  await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('imported-service');
+  // 파일 모양이 아니면 거부하고 구성을 바꾸지 않는다.
+  await expect(page.locator('#domain-count')).not.toHaveText('—');
+  const before = await page.locator('#domain-count').textContent();
+  await page.locator('#recipe-file').setInputFiles({ name: 'broken.json', mimeType: 'application/json', buffer: Buffer.from('{') });
+  await expect(page.locator('#import-error')).toHaveText('구성 파일을 읽지 못했습니다. JSON 형식이 아닙니다.');
+  await expect(page.locator('#import-error')).toBeVisible();
+  await page.locator('#recipe-file').setInputFiles({ name: 'big.json', mimeType: 'application/json', buffer: Buffer.alloc(RECIPE_FILE_LIMIT + 1, 32) });
+  await expect(page.locator('#import-error')).toHaveText('구성 파일이 너무 큽니다. 64KB 이하의 구성 파일을 고르세요.');
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('imported-service');
+  await expect(page.locator('#domain-count')).toHaveText(before);
+  // 버튼은 숨은 파일 입력을 연다.
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: '구성 불러오기' }).click();
+  await (await chooser).setFiles(file(savedRecipe({ project: { name: 'chosen-service' } })));
+  await expect(page.getByLabel('프로젝트 이름')).toHaveValue('chosen-service');
+  await expect(page.locator('#import-error')).toBeHidden();
+  // 생성 중에는 불러오지 못한다.
+  await expect(generateButton(page)).toBeEnabled();
+  await confirmGenerate(page);
+  await expect(page.getByRole('button', { name: '구성 불러오기' })).toBeDisabled();
+  release();
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 고정 요약(E9, 설계서 시안 S1). 넓은 화면에서는 요약을 화면 높이에 맞춰 고정하고 가운데(자동 포함·메뉴 등)만 스크롤해
+ * 자동 포함이 많아도 생성·저장·불러오기 버튼이 화면 밖으로 밀리지 않는다. 좁은 화면에서는 평소처럼 페이지와 함께 흐른다.
+ */
+test('the summary stays in view with its buttons while long details scroll inside it', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  await page.locator('#capability-dashboard').check();
+  await expect(page.locator('#auto-included > div').first()).toBeVisible();
+  const inView = async locator => {
+    const box = await locator.boundingBox();
+    const height = page.viewportSize().height;
+    return box && box.y >= 0 && box.y + box.height <= height;
+  };
+  for (const position of ['top', 'bottom']) {
+    await page.evaluate(where => window.scrollTo(0, where === 'top' ? 0 : document.documentElement.scrollHeight), position);
+    assert.ok(await inView(generateButton(page)), `generate is visible at the ${position}`);
+    assert.ok(await inView(page.getByRole('button', { name: '구성 불러오기' })), `import is visible at the ${position}`);
+  }
+  const scroll = page.locator('#summary-scroll');
+  assert.ok(await scroll.evaluate(element => element.scrollHeight > element.clientHeight), 'the long details scroll inside the summary');
+  // 키보드로 맨 아래 설명에 닿으면 그 칸이 보이도록 스크롤된다(고정 요약이 포커스를 가리지 않는다).
+  const last = page.locator('#auto-included > div').last().getByText('왜 포함됐나');
+  await last.focus();
+  const box = await last.boundingBox();
+  const area = await scroll.boundingBox();
+  assert.ok(box.y >= area.y && box.y + box.height <= area.y + area.height, 'the focused summary is inside the visible part of the scroll area');
+  // 좁은 화면에서는 고정하지 않는다.
+  await page.setViewportSize({ width: 800, height: 900 });
+  assert.deepEqual(await page.locator('aside').evaluate(element => [getComputedStyle(element).position, getComputedStyle(element).maxHeight]), ['static', 'none']);
+  assert.equal(await scroll.evaluate(element => getComputedStyle(element).overflowY), 'visible');
   assert.deepEqual(pageErrors, []);
 });
 
