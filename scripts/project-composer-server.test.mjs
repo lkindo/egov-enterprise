@@ -69,7 +69,7 @@ test('local server binds only loopback and serves explicit static assets with a 
   assert.match(session.csrfToken, /^[a-f0-9]{64}$/);
   assert.deepEqual(session.catalog, catalog);
   assert.equal(session.job, null);
-  for (const path of ['/', '/app.js', '/confirm.js', '/job.js', '/inclusion-change.js', '/inclusions.js', '/menu-tree.js', '/styles.css']) {
+  for (const path of ['/', '/app.js', '/confirm.js', '/job.js', '/inclusion-change.js', '/inclusions.js', '/menu-tree.js', '/recipe-file.js', '/sticky-summary.js', '/styles.css']) {
     const result = await send(origin, path);
     assert.equal(result.status, 200, path);
     assert.equal(result.headers['cache-control'], 'no-store');

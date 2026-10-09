@@ -3,6 +3,8 @@ import { inclusionChange } from './inclusion-change.js';
 import { renderInclusions } from './inclusions.js';
 import { createJobPanel } from './job.js';
 import { renderMenuTree } from './menu-tree.js';
+import { createRecipeImport, saveRecipeFile } from './recipe-file.js';
+import { keepSummaryInView } from './sticky-summary.js';
 import { NAME_RULE_MESSAGE, projectNameIsValid } from './name-rule.js';
 
 const $ = id => document.getElementById(id);
@@ -135,8 +137,9 @@ async function reloadCatalog({ focus = false } = {}) {
   // 누른 버튼이 곧 사라지므로 포커스를 요약 제목으로 옮긴다(키보드·화면 낭독기 사용자가 위치를 잃지 않게).
   if (focus) $('summary-heading').focus();
   $('plan-actions').replaceChildren(); $('plan-actions').hidden = true;
-  // 원본이 바뀐 것을 알았으므로 다시 받는 동안 옛 계획으로 생성하거나 저장하지 못하게 먼저 거둔다.
-  withdrawPlan();
+  // 원본이 바뀐 것을 알았으므로 다시 받는 동안 옛 계획으로 생성하거나 저장하지 못하게 먼저 거둔다. 불러오기도 잠근다
+  // (그사이 불러온 구성이 새 목록에 덮이지 않게).
+  withdrawPlan(); $('import-recipe').disabled = true;
   $('plan-status').textContent = '기능 목록을 새 원본으로 다시 불러오고 있습니다…';
   try {
     const session = await api('/api/session');
@@ -151,7 +154,7 @@ async function reloadCatalog({ focus = false } = {}) {
     withdrawPlan();
     $('plan-status').textContent = error.message;
     renderFailureActions($('plan-actions'), error);
-  }
+  } finally { $('import-recipe').disabled = state.busy; }
 }
 function recipe() {
   return { schemaVersion: 1, project: { name: $('project-name').value.trim() }, sourceRef: state.catalog.sourceRef,
@@ -322,6 +325,8 @@ function requestPreview(id, source, { announce = true } = {}) {
 }
 function changed() {
   state.version += 1; state.plan = null; state.requestId = null; state.previews.clear(); state.notice = '';
+  // 불러온 파일의 요약과 불러오기 오류는 그 뒤에 바꾼 구성에는 맞지 않는다.
+  $('import-status').textContent = ''; $('import-error').hidden = true; $('import-error').textContent = '';
   // 이미 그려진 미리보기 줄도 비운다. 옛 구성 기준 문장이 새 구성 위에 남지 않게 한다.
   for (const line of $('capabilities').querySelectorAll('[id^="preview-"]')) { line.textContent = ''; line.hidden = true; }
   $('capability-preview-status').textContent = '';
@@ -385,7 +390,7 @@ function renderPlan() {
 async function preview(focus) {
   clearTimeout(previewTimer);
   if (state.busy || !state.catalog) return;
-  if (!validateName(focus)) { state.planPending = false; $('plan-status').textContent = '프로젝트 이름을 확인해 주세요.'; return; }
+  if (!validateName(focus)) { state.planPending = false; $('plan-status').textContent = withNotice('프로젝트 이름을 확인해 주세요.'); return; }
   const version = state.version;
   state.planPending = true;
   $('preview').disabled = true;
@@ -407,7 +412,7 @@ async function preview(focus) {
 }
 function busy(value) {
   state.busy = value;
-  $('configuration').disabled = value; $('preview').disabled = value;
+  $('configuration').disabled = value; $('preview').disabled = value; $('import-recipe').disabled = value;
   // 자동 포함 설명의 해제 버튼은 잠기는 구성 영역 밖에 있다. 생성 중에는 선택을 바꾸지 못하게 함께 잠근다.
   // 생성 중에는 계획을 다시 그리지 않으므로(preview 가 바로 돌아간다) 이미 그려진 버튼만 잠그면 된다.
   for (const button of $('auto-included').querySelectorAll('button')) button.disabled = value;
@@ -422,11 +427,10 @@ function restoreRecipe(value) {
   document.querySelector(`input[name="layout"][value="${value.backendLayout}"]`).checked = true;
   renderFeatures();
 }
+// 저장한 구성 불러오기(E9). 판정과 화면 연결은 recipe-file.js 에 있다.
+const importRecipe = createRecipeImport({ $, state, restoreRecipe, withdrawPlan, changed });
 function downloadRecipe() {
-  const value = state.job?.status === 'succeeded' && !state.plan ? state.job.recipe : recipe();
-  const url = URL.createObjectURL(new Blob([`${JSON.stringify(value, null, 2)}\n`], { type: 'application/json' }));
-  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${value.project.name}.recipe.json`;
-  document.body.append(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveRecipeFile(state.job?.status === 'succeeded' && !state.plan ? state.job.recipe : recipe());
 }
 async function connect() {
   $('connection-error').hidden = true; $('loading').hidden = false;
@@ -460,6 +464,14 @@ $('preset').addEventListener('change', () => {
   changed(); renderFeatures();
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
+keepSummaryInView($('summary-aside'));
+$('import-recipe').addEventListener('click', () => $('recipe-file').click());
+$('recipe-file').addEventListener('change', () => {
+  const file = $('recipe-file').files?.[0];
+  // 같은 파일을 다시 골라도 change 가 나도록 비운다(File 은 이미 손에 있다).
+  $('recipe-file').value = '';
+  if (file) importRecipe(file);
+});
 // 작업 영역(진행·결과·실패와 그 행동). 실패의 다시 생성·다시 점검은 아래 확인 창을 연다(창은 그 뒤에 만들어진다).
 const { renderJob, pollJob, generate, onPlanChange } = createJobPanel({ $, text, api, state, busy, preview, recipe, validateName, withdrawPlan, restoreRecipe,
   renderFailureActions, planRejectionCodes: PLAN_REJECTION_CODES, openConfirmation: () => confirmation.open() });

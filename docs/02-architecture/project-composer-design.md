@@ -175,7 +175,7 @@ Oracle·MySQL/MariaDB·SQL Server는 후속 DB adapter 범위다. DDL 문법 출
 
 로컬 서버는 loopback에서만 바인딩하고 요청 출처를 확인한다. 입력 ID는 allowlist와 recipe 스키마로 검증하며 shell 문자열을 조립하지 않는다. 출력 절대 경로를 허용된 새 디렉터리로 제한하고 기존 파일을 덮어쓰지 않는다. DB·관리자 비밀은 UI URL·recipe·로그에 기록하지 않는다. 원격 서비스나 운영 관리자 API의 빌드 실행 권한은 이 단계의 범위가 아니다.
 
-CLI는 `project:catalog`, `project:plan -- --recipe FILE`, `project:create -- --recipe FILE`을 제공한다. UI의 **선택 정보 저장**으로 같은 recipe를 내려받는다. 방향키 기반 마법사는 현재 제공하지 않는다. [Atlas](../03-guides/governance-atlas-guide.md)는 설명·검색·원본 링크에 활용하며 생성기 정본이나 실행 서버는 아니다.
+CLI는 `project:catalog`, `project:plan -- --recipe FILE`, `project:create -- --recipe FILE`을 제공한다. UI의 **선택 정보 저장**으로 같은 recipe를 내려받고, **구성 불러오기**로 다시 연다([recipe 파일](../../tools/project-composer/public/recipe-file.js)). 불러오기는 파일을 브라우저에서만 읽어 엔진과 같은 모양(시작 구성과 직접 선택 중 하나, 비어 있는 데이터베이스·구조는 기본값)을 검사하고, 지금 원본에 없는 시작 구성·기능·데이터베이스와 63자를 넘는 이름을 빼며, 기록된 커밋이 지금 원본과 다르면 그 사실과 재현 방법을 알린 뒤 이전 계획을 거두고 지금 원본으로 다시 결속한다(설계서 21장의 업그레이드 키트는 Phase 3 범위다). 넓은 화면에서는 요약 카드와 작업 패널을 화면 높이에 맞춘 한 스크롤 영역에, 생성·저장·불러오기 버튼을 그 아래 따로 둔 카드에 두어 겹치지 않게 하고, 페이지 맨 위에서는 위쪽 위치만큼 높이를 줄인다([DEC-OPS-254](../../.agent/memory/decisions.md)). 방향키 기반 마법사는 현재 제공하지 않는다. [Atlas](../03-guides/governance-atlas-guide.md)는 설명·검색·원본 링크에 활용하며 생성기 정본이나 실행 서버는 아니다.
 
 ## 8. 구현 범위와 완료조건
 
