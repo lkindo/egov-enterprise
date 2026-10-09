@@ -90,6 +90,10 @@ test('the engine reads only a well-formed report for its own stage and an allowe
     ['huge.json', { schemaVersion: 1, stage: 'database', code: 'CATALOG_DRIFT', details: { violations: ['x'.repeat(70 * 1024)] } }, 'database'],
   ]) assert.equal(readChildFailure(report(name, value), stage, root), null, name);
   assert.equal(readChildFailure(join(root, 'build', 'missing.json'), 'database', root), null);
+  // 상한은 정확히 64KiB 다. 상한까지는 읽고 한 바이트라도 넘으면 버린다(파일을 한 번만 열어 상한+1 바이트까지만 읽는다).
+  const exact = body => { const json = JSON.stringify({ schemaVersion: 1, stage: 'database', code: 'MENU_SNAPSHOT_STALE' }); return json + ' '.repeat(body - json.length); };
+  assert.equal(readChildFailure(report('limit.json', exact(64 * 1024)), 'database', root)?.code, 'MENU_SNAPSHOT_STALE');
+  assert.equal(readChildFailure(report('limit-plus-one.json', exact(64 * 1024 + 1)), 'database', root), null);
 });
 
 test('survival details keep only 1..200 repository-relative files; anything else drops the details, not the code', t => {

@@ -4,7 +4,7 @@
  * 자식 출력 원문은 여전히 가린 로그에만 남는다. 보고 파일에는 코드와 코드별로 정한 세부 정보만 담긴다.
  * 경로는 원본 저장소의 build 아래 아직 없는 .json 으로 가두고, 한 번만 쓴다(wx) — 자식이 임의 파일을 덮어쓰지 않는다.
  */
-import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { ComposerError, withoutRoot } from './project-composer-errors.mjs';
 
@@ -65,14 +65,32 @@ export function runReportingChild({ argv, root, stage, label, main, exit = code 
 }
 
 /**
+ * 파일을 한 번 열어 상한보다 한 바이트 더까지만 읽는다. 크기를 먼저 묻고 다시 열면 그 사이에 파일이 바뀔 수 있다(확인과 사용의 경쟁).
+ * 상한을 넘으면 null 이다.
+ */
+function readBounded(path, limit) {
+  const descriptor = openSync(path, 'r');
+  try {
+    const buffer = Buffer.alloc(limit + 1);
+    let size = 0;
+    for (let read = 1; read > 0 && size < buffer.length;) {
+      read = readSync(descriptor, buffer, size, buffer.length - size, null);
+      size += read;
+    }
+    return size > limit ? null : buffer.subarray(0, size).toString('utf8');
+  } finally { closeSync(descriptor); }
+}
+
+/**
  * 엔진이 보고를 읽는다. 크기·형식·단계·코드가 맞지 않으면 없는 것으로 본다(분류하지 않는다).
  * 세부 정보는 코드마다 다시 거른다: 소스 소실은 저장소 기준 파일 1~200개, 선언 불일치는 첫 위반 한 줄(경로 가림).
  */
 export function readChildFailure(path, stage, root) {
   let report;
   try {
-    if (statSync(path).size > MAX_REPORT_BYTES) return null;
-    report = JSON.parse(readFileSync(path, 'utf8'));
+    const text = readBounded(path, MAX_REPORT_BYTES);
+    if (text === null) return null;
+    report = JSON.parse(text);
   } catch { return null; }
   if (report?.schemaVersion !== 1 || report.stage !== stage || !CHILD_FAILURE_CODES[stage]?.includes(report.code)) return null;
   const details = report.details && typeof report.details === 'object' && !Array.isArray(report.details) ? report.details : {};
