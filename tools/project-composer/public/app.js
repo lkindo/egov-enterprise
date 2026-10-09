@@ -34,32 +34,77 @@ function validateName(focus = false) {
   return valid;
 }
 function label(id) { return state.catalog.capabilities.find(item => item.id === id)?.label ?? id; }
+function presetLabel(preset) {
+  const count = preset.domains.length;
+  return `${state.catalog.presentation.presets[preset.id].label} · ${count ? `업무 기능 ${count}개` : '업무 기능 없음'}`;
+}
+// 검색어는 기능 이름·요약·영역 이름에서 찾는다. 대소문자와 앞뒤 공백은 무시한다.
+function matchesSearch(item, area) {
+  const query = $('capability-search').value.trim().toLowerCase();
+  if (!query) return true;
+  return [item.label, state.catalog.presentation.summaries[item.id], area.label, item.id].join(' ').toLowerCase().includes(query);
+}
+function capabilityCard(item, { automatic, included }) {
+  const row = text('label', '', 'flex cursor-pointer items-start gap-3 rounded-xl border border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft');
+  const input = document.createElement('input');
+  input.type = 'checkbox'; input.value = item.id; input.id = `capability-${item.id}`;
+  input.className = 'mt-1 shrink-0 accent-accent';
+  input.checked = included.has(item.id);
+  input.disabled = item.available === false || automatic.has(item.id);
+  // 이름은 기능 이름만이다. 요약과 배지는 설명으로 한 번만 읽힌다.
+  input.setAttribute('aria-labelledby', `title-${item.id}`);
+  input.setAttribute('aria-describedby', `reason-${item.id} badges-${item.id}`);
+  const content = text('span', '', 'min-w-0');
+  const title = text('span', item.label, 'block text-sm font-semibold');
+  title.id = `title-${item.id}`;
+  content.append(title);
+  const reason = automatic.get(item.id);
+  const summary = state.catalog.presentation.summaries[item.id];
+  const description = text('span', item.available === false ? '아직 선택할 수 없는 기능입니다.' : reason ? `자동 포함 · ${reason}` : summary, 'mt-1 block text-xs leading-5 text-muted');
+  description.id = `reason-${item.id}`;
+  // 배지는 카탈로그가 실제로 소유한 수를 보인다(테이블이 없는 기능은 0 이다). 화면은 리다이렉트 별칭을 빼고 센다.
+  const badges = text('span', `테이블 ${item.database.tables.length} · 화면 ${state.catalog.presentation.screens[item.id]} · 권한 ${item.permissionCodes.length}`, 'mt-2 block text-xs text-muted');
+  badges.id = `badges-${item.id}`;
+  if (item.requirements.length) badges.append(text('span', `외부 설정: ${item.requirements.join(', ')}`, 'mt-1 block font-medium text-ink'));
+  content.append(description, badges);
+  input.addEventListener('change', () => {
+    state.preset = 'custom'; $('preset').value = 'custom';
+    if (input.checked) state.selected.add(item.id); else state.selected.delete(item.id);
+    changed();
+  });
+  row.append(input, content);
+  return row;
+}
 function renderFeatures() {
   const focusedId = document.activeElement?.id;
   const automatic = new Map((state.plan?.inclusionNotes ?? []).map(note => [note.domain, note.path]));
   const included = new Set(state.plan?.resolvedDomains ?? [...state.selected]);
+  const byId = new Map(state.catalog.capabilities.map(item => [item.id, item]));
+  const query = $('capability-search').value.trim();
+  let visible = 0;
   $('capabilities').replaceChildren();
-  for (const item of state.catalog.capabilities) {
-    const row = text('label', '', 'flex cursor-pointer items-start gap-3 rounded-xl border border-line p-4 has-[:checked]:border-accent has-[:checked]:bg-accent-soft');
-    const input = document.createElement('input');
-    input.type = 'checkbox'; input.value = item.id; input.id = `capability-${item.id}`;
-    input.className = 'mt-1 shrink-0 accent-accent';
-    input.checked = included.has(item.id);
-    input.disabled = item.available === false || automatic.has(item.id);
-    input.setAttribute('aria-describedby', `reason-${item.id}`);
-    const content = text('span', '', 'min-w-0');
-    content.append(text('span', item.label, 'block text-sm font-semibold'));
-    const reason = automatic.get(item.id);
-    const description = text('span', item.available === false ? '아직 선택할 수 없는 기능입니다.' : reason ? `자동 포함 · ${reason}` : item.description ?? '', 'mt-1 block text-xs leading-5 text-muted');
-    description.id = `reason-${item.id}`;
-    content.append(description);
-    input.addEventListener('change', () => {
-      state.preset = 'custom'; $('preset').value = 'custom';
-      if (input.checked) state.selected.add(item.id); else state.selected.delete(item.id);
-      changed();
-    });
-    row.append(input, content); $('capabilities').append(row);
+  // 업무 영역마다 묶음을 하나 두고, 검색에 맞는 기능이 없는 영역은 숨긴다. 숨긴 기능의 선택은 그대로다.
+  for (const area of state.catalog.presentation.areas) {
+    const group = document.createElement('fieldset');
+    group.id = `area-${area.id}`;
+    const matched = area.domains.filter(id => matchesSearch(byId.get(id), area));
+    visible += matched.length;
+    group.hidden = matched.length === 0;
+    const legend = text('legend', area.label, 'mb-3 text-sm font-semibold');
+    legend.append(text('span', ` ${matched.length}개`, 'ml-1 font-normal text-muted'));
+    const cards = text('div', '', 'grid gap-3 sm:grid-cols-2');
+    for (const id of area.domains) {
+      const card = capabilityCard(byId.get(id), { automatic, included });
+      card.hidden = !matched.includes(id);
+      cards.append(card);
+    }
+    group.append(legend, cards);
+    $('capabilities').append(group);
   }
+  if (query && visible === 0) $('capabilities').append(text('p', `‘${query}’에 맞는 기능이 없습니다.`, 'break-all text-sm text-muted'));
+  // 계획이 다시 그려질 때마다 같은 결과를 다시 알리지 않도록, 문구가 바뀔 때만 쓴다.
+  const status = query ? `‘${query}’ 검색 결과 기능 ${visible}개` : '';
+  if ($('capability-search-status').textContent !== status) $('capability-search-status').textContent = status;
   if (focusedId?.startsWith('capability-')) $(focusedId)?.focus({ preventScroll: true });
 }
 // 계획이 없는 동안(다시 확인 중·실패) 이전 구성의 자동 포함·기능 저하·미배정 권한을 보이지 않는다.
@@ -109,6 +154,8 @@ function renderInclusions(notes) {
       state.preset = 'custom'; $('preset').value = 'custom';
       for (const root of note.roots) state.selected.delete(root);
       changed(); renderFeatures();
+      // 해제한 기능이 검색으로 가려져 있으면 포커스를 둘 곳이 없다. 검색을 비워 그 카드를 보인다.
+      if ($(`capability-${note.roots[0]}`)?.closest('[hidden]')) { $('capability-search').value = ''; renderFeatures(); }
       $(`capability-${note.roots[0]}`)?.focus();
     });
     const evidence = keyed(document.createElement('details'), `evidence-${note.domain}`);
@@ -278,7 +325,7 @@ async function connect() {
     const session = await api('/api/session');
     state.catalog = session.catalog; state.csrf = session.csrfToken;
     $('preset').replaceChildren(...state.catalog.presets.map(item => {
-      const option = document.createElement('option'); option.value = item.id; option.textContent = `${item.label} · ${item.description}`; return option;
+      const option = document.createElement('option'); option.value = item.id; option.textContent = presetLabel(item); return option;
     }));
     const custom = document.createElement('option'); custom.value = 'custom'; custom.textContent = '직접 선택'; $('preset').append(custom);
     $('source-ref').textContent = state.catalog.sourceRef === state.catalog.sourceCommit
@@ -296,6 +343,11 @@ async function connect() {
 }
 $('composer-form').addEventListener('submit', event => { event.preventDefault(); preview(true); });
 $('project-name').addEventListener('input', changed);
+// 검색은 보이는 카드만 바꾼다. 선택과 계획은 그대로다. 한글 조합 중(ㄱ→겨→결)에는 거르지 않고 조합이 끝나면 거른다.
+$('capability-search').addEventListener('input', event => { if (state.catalog && !event.isComposing) renderFeatures(); });
+$('capability-search').addEventListener('compositionend', () => { if (state.catalog) renderFeatures(); });
+// 검색칸의 Enter 는 구성 확인 폼을 제출하지 않는다.
+$('capability-search').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) event.preventDefault(); });
 $('preset').addEventListener('change', () => {
   state.preset = $('preset').value;
   if (state.preset !== 'custom') state.selected = new Set(state.catalog.presets.find(item => item.id === state.preset).domains);

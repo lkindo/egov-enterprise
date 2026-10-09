@@ -84,7 +84,8 @@ const FEATURES = {
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
     'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts'],
   routes: ['/smart-toolkit/work-report'] },
-  schedule: { label: '일정·일지', permissions: ['SCHEDULE'], paths: [
+  // 일지(tb_diary_info)는 엔티티만 있고 화면·API 가 없다. 이름이 없는 기능을 약속하지 않는다.
+  schedule: { label: '일정', permissions: ['SCHEDULE'], paths: [
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
   routes: ['/smart-toolkit/schedule'] },
   scrap: { label: '스크랩', permissions: ['SCRAP'], paths: [
@@ -303,7 +304,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
       requires.push({ ...edge, kind: 'ui-import', customOnly: true });
     }
     return {
-      id: domain, label: feature.label, description: `${feature.label}의 백엔드·화면·DB를 함께 포함합니다.`, available: true,
+      // 카드 요약·영역 같은 화면 문구는 해시 밖의 표시 문구(project-composer-presentation.mjs)가 맡는다.
+      id: domain, label: feature.label, available: true,
       pack: domainOwners.get(domain), requires: requires.sort((a, b) => canonicalJson(a) < canonicalJson(b) ? -1 : canonicalJson(a) > canonicalJson(b) ? 1 : 0),
       backend: { sourcePaths: ['domain', 'service'].map(layer => `${APP_ROOT}/${layer}/${domain}`).filter(path => existsSync(join(root, path))), sourceFiles: data.files.sort() },
       database: { tables: sorted(data.tables), explicitSequences: sorted(data.sequences) },
@@ -331,7 +333,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
     const owns = (domain, table) => capabilities.find(capability => capability.id === domain)?.database.tables.includes(table);
     if (!owns(contract.sourceDomain, contract.childTable) || !owns(contract.targetDomain, contract.parentTable)) fail(`declared foreign key ownership drifted: ${contract.name}`);
   }
-  const presets = Object.entries(manifest.profiles).map(([id, profile]) => ({ id, label: id, description: profile.description,
+  const presets = Object.entries(manifest.profiles).map(([id, profile]) => ({ id,
     domains: sorted(profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? [])), packs: profile.packs,
     frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) }));
   // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).

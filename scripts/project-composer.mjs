@@ -9,6 +9,7 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
+import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -205,7 +206,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   const catalog = () => {
     const value = loadCatalog(root);
     const sourceCommit = git(root, ['rev-parse', 'HEAD']);
-    return { ...value, sourceRef: sourceCommit, sourceCommit };
+    // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
+    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: composerPresentation(value, { routeKinds: loadRouteKinds(root) }) };
   };
   const plan = recipe => {
     const current = loadCatalog(root);
