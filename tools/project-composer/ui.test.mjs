@@ -6,7 +6,9 @@ import { chromium, expect } from '../../frontend/node_modules/@playwright/test/i
 import { createComposerServer } from '../../scripts/project-composer-server.mjs';
 import { loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
 import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
-import { degradationNotes, inclusionNotes } from '../../scripts/project-composer.mjs';
+import { degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
+import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
+import { loadProjectComposerMenus } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 
 const catalog = {
@@ -243,6 +245,11 @@ test('lost generation response recovers only its accepted request without submit
  */
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const real = loadProjectComposerCatalog(root);
+const realMenus = loadProjectComposerMenus(root).menus;
+const realDiff = (recipe, domain) => {
+  const result = compositionDiff({ catalog: real, menus: realMenus, recipe, domain });
+  return { ...result, summary: diffSummary(result, real) };
+};
 async function realCatalogPage(t) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, real);
@@ -251,7 +258,7 @@ async function realCatalogPage(t) {
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -338,7 +345,7 @@ test('the real catalog renders feature areas, search, owned-count badges and Kor
     await expect(group.locator('input[type="checkbox"]')).toHaveCount(area.domains.length);
   }
   // 체크박스의 이름은 기능 이름만이다. 요약·배지는 설명으로 한 번만 읽힌다.
-  await expect(page.getByRole('checkbox', { name: '메일', exact: true })).toHaveAttribute('aria-describedby', 'reason-mail badges-mail');
+  await expect(page.getByRole('checkbox', { name: '메일', exact: true })).toHaveAttribute('aria-describedby', 'reason-mail badges-mail preview-mail');
   await expect(page.locator('#reason-mail')).toHaveText('메일 작성·발송과 발송 이력');
   await expect(page.locator('#badges-dashboard')).toHaveText('테이블 0 · 화면 0 · 권한 0');
   // 화면 수는 실제 페이지만 센다. 설문·투표는 리다이렉트 별칭을 함께 소유하지만 그것은 화면이 아니다.
@@ -420,5 +427,108 @@ test('deselecting a root hidden by search clears the search and focuses the root
   await expect(page.locator('#capability-note')).not.toBeChecked();
   await expect(page.getByLabel('기능 찾기')).toHaveValue('');
   await expect(page.locator('#domain-count')).toHaveText('0');
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 카드에 포커스나 마우스가 오면 고르거나 뺄 때 무엇이 늘고 주는지 한 줄로 보인다(설계서 10장·E3).
+ * 빼도 남는 기능은 무엇이 붙잡는지 말하고, 직접 선택으로 바뀌며 생기는 변화도 감추지 않는다.
+ * 자동 포함 카드는 직접 바꿀 수 없어 미리보기가 없고, 포커스 뒤에 도착한 문장은 그 카드에 대해서만 한 번 알린다.
+ * 시간에 기대지 않도록 계획 요청은 미리 붙잡고, 구성이 바뀐 직후의 화면은 같은 이벤트 처리 안에서 읽는다.
+ */
+test('feature cards preview what choosing or removing them changes before the click', { timeout: 60_000 }, async t => {
+  const { page, pageErrors } = await realCatalogPage(t);
+  const recipe = selection => ({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+  const labelOf = id => real.capabilities.find(item => item.id === id).label;
+  const announced = page.locator('#capability-preview-status');
+  const diffRequests = [];
+  page.on('request', request => { if (request.url().endsWith('/api/plan/diff')) diffRequests.push(JSON.parse(request.postData()).domain); });
+  await expect(page.locator('#domain-count')).toHaveText('0');
+  await page.locator('#capability-mail').focus();
+  const choose = realDiff(recipe({ preset: 'core' }), 'mail').summary;
+  await expect(page.locator('#preview-mail')).toHaveText(choose);
+  await expect(page.locator('#preview-mail')).toContainText('고르면 기능 +1');
+  await expect(page.locator('#capability-mail')).toHaveAttribute('aria-describedby', /preview-mail/);
+  await expect(announced).toHaveText(`${labelOf('mail')}: ${choose}`);
+  await page.locator('#capability-survey').focus();
+  const survey = realDiff(recipe({ preset: 'core' }), 'survey').summary;
+  await expect(page.locator('#preview-survey')).toHaveText(survey);
+  await expect(announced).toHaveText(`${labelOf('survey')}: ${survey}`);
+  // 이미 받은 미리보기는 카드 설명으로 읽히므로 다시 포커스해도 알리지 않는다.
+  await page.locator('#capability-mail').focus();
+  await page.waitForTimeout(300);
+  await expect(announced).toHaveText(`${labelOf('survey')}: ${survey}`);
+  // 고르는 순간 이전 구성 기준 미리보기와 알림을 모두 지운다. 새 계획이 오기 전에도 옛 문장이 남지 않는다.
+  const cleared = await page.locator('#capability-mail').evaluate(input => {
+    input.click();
+    return ['preview-mail', 'preview-survey', 'capability-preview-status'].map(id => document.getElementById(id).textContent);
+  });
+  assert.deepEqual(cleared, ['', '', '']);
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  // 새 계획이 오면 포커스가 있던 카드를 새 구성 기준으로 다시 계산한다.
+  await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ domains: ['mail'] }), 'mail').summary);
+  await expect(page.locator('#preview-mail')).toContainText('빼면 기능 −1');
+  await expect(page.locator('#preview-survey')).toBeHidden();
+  // 시작 구성을 바꾸는 순간에도 옛 미리보기를 지우고, 계획이 오면 새 구성 기준으로 다시 계산한다.
+  const switched = await page.locator('#preset').evaluate(select => {
+    select.value = 'collaboration';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return document.getElementById('preview-mail').textContent;
+  });
+  assert.equal(switched, '');
+  await expect(page.locator('#domain-count')).toHaveText('8');
+  await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'mail').summary);
+  // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·쪽지·스크랩이 붙잡고, 직접 선택이 되며 들어오는 기능도 밝힌다.
+  await page.locator('#capability-board').focus();
+  const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
+  assert.match(board, /^빼도 댓글, 실시간 대시보드, 쪽지, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
+  await expect(page.locator('#preview-board')).toHaveText(board);
+  // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
+  // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.
+  await page.evaluate(() => {
+    document.getElementById('capability-survey').focus();
+    document.getElementById('capability-schedule').closest('label').dispatchEvent(new MouseEvent('mouseenter'));
+  });
+  const surveyInPreset = realDiff(recipe({ preset: 'collaboration' }), 'survey').summary;
+  await expect(page.locator('#preview-survey')).toHaveText(surveyInPreset);
+  await expect(page.locator('#preview-schedule')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'schedule').summary);
+  await page.waitForTimeout(300);
+  await expect(announced).toHaveText(`${labelOf('survey')}: ${surveyInPreset}`);
+  // 자동 포함이 될 카드도 계획을 확인하기 전에는 미리보기를 묻지 않는다. 계획 요청은 구성을 바꾸기 전에 붙잡는다.
+  const held = [];
+  await page.route('**/api/plan', route => { held.push(route); });
+  await page.locator('#preset').selectOption('custom');
+  await expect.poll(() => held.length).toBe(1);
+  await expect(page.locator('#capability-help')).toBeEnabled();
+  await page.locator('label').filter({ has: page.locator('#capability-help') }).hover();
+  // 미리보기 요청은 120ms 뒤에 나간다. 그보다 충분히 기다려도 요청이 없다.
+  await page.waitForTimeout(500);
+  assert.ok(!diffRequests.includes('help'), diffRequests.join(','));
+  for (const route of held.splice(0)) await route.continue();
+  await expect(page.locator('#capability-help')).toBeDisabled();
+  await page.locator('label').filter({ has: page.locator('#capability-help') }).hover();
+  await page.waitForTimeout(500);
+  await expect(page.locator('#preview-help')).toBeHidden();
+  assert.ok(!diffRequests.includes('help'), diffRequests.join(','));
+  // 카드를 누르면 포커스가 먼저 미리보기를 예약하고 곧 구성이 바뀐다. 그 요청은 계획 확인 전의 새 구성으로 나가지 않는다.
+  // 게시판이 댓글을 요구하므로 댓글을 빼면 댓글은 자동 포함이 된다.
+  await expect(page.locator('#capability-comment')).toBeEnabled();
+  await expect(page.locator('#capability-comment')).toBeChecked();
+  const sent = diffRequests.length;
+  await page.locator('#capability-comment').click();
+  await expect.poll(() => held.length).toBe(1);
+  await page.waitForTimeout(500);
+  assert.deepEqual(diffRequests.slice(sent).filter(id => id === 'comment'), []);
+  await expect(page.locator('#preview-comment')).toBeHidden();
+  await expect(announced).toHaveText('');
+  for (const route of held.splice(0)) await route.continue();
+  await page.unroute('**/api/plan');
+  await expect(page.locator('#capability-comment')).toBeDisabled();
+  await expect(page.locator('#preview-comment')).toBeHidden();
+  await page.locator('#capability-sms').hover();
+  await expect(page.locator('#preview-sms')).toBeVisible();
+  // 포커스가 없는 카드에 마우스만 올리면 미리보기는 보여도 화면 낭독기에는 알리지 않는다.
+  await page.waitForTimeout(300);
+  await expect(announced).toHaveText('');
   assert.deepEqual(pageErrors, []);
 });

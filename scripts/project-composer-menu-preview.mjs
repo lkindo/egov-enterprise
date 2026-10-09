@@ -82,8 +82,8 @@ export function writeProjectComposerMenuSnapshot(root, inventory) {
   return snapshot;
 }
 
-export function projectComposerMenuPreview(root, composition) {
-  const snapshot = loadProjectComposerMenus(root);
+// 호출자가 이미 적재한 스냅숏을 넘길 수 있다(계획이 적재한 스냅숏을 미리보기가 다시 쓰도록).
+export function projectComposerMenuPreview(root, composition, snapshot = loadProjectComposerMenus(root)) {
   return projectCompositionMenus({ menus: snapshot.menus, menuRoutes: composition.menuRoutes, excludedMenuTabs: composition.excludedMenuTabs }).menus.map(menu => ({
     id: menu.menu_sn, label: menu.menu_nm, parent: menu.up_menu_sn || null, path: menu.modern_route,
   }));

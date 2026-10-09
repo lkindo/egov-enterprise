@@ -208,3 +208,36 @@ test('a structured generation failure exposes only stage, command identity, exit
   const rejected = await unsafe.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
   assert.equal((await finished(unsafe.origin, rejected.body.job.id)).failure, undefined, 'unsafe failure fields are dropped');
 });
+
+/*
+ * 계획 차이(POST /api/plan/diff)는 계획과 같은 출처·CSRF 경계를 지난다. 엔진이 차이를 주지 않으면 없는 경로이고,
+ * 기능 id 형식이 틀리거나 해석이 실패하면 원문 없이 400 으로 답한다.
+ */
+test('plan diff shares the plan boundary, validates the domain and hides engine errors', async t => {
+  const diffs = [];
+  const { post, origin } = await fixture(t, { diff: (value, domain) => {
+    diffs.push({ value, domain });
+    if (domain === 'broken') throw new Error('private-catalog-detail');
+    return { domain, action: 'add', summary: '고르면 기능 +1' };
+  } });
+  const ok = await post('/api/plan/diff', { recipe: recipe(), domain: 'mail' });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(ok.body, { diff: { domain: 'mail', action: 'add', summary: '고르면 기능 +1' } });
+  assert.deepEqual(diffs.map(call => call.domain), ['mail']);
+  for (const domain of ['Mail', '../x', '', 7, undefined]) {
+    assert.equal((await post('/api/plan/diff', { recipe: recipe(), domain })).status, 400, String(domain));
+  }
+  assert.equal((await post('/api/plan/diff', { recipe: recipe(), domain: 'mail', extra: 1 })).status, 400);
+  const broken = await post('/api/plan/diff', { recipe: recipe(), domain: 'broken' });
+  assert.equal(broken.status, 400);
+  assert.equal(broken.body.error.code, 'INVALID_RECIPE');
+  assert.doesNotMatch(broken.text, /private-catalog-detail/);
+  assert.equal((await send(origin, '/api/plan/diff', { method: 'POST', data: { recipe: recipe(), domain: 'mail' }, headers: { Origin: origin } })).status, 403);
+  assert.equal((await send(origin, '/api/plan/diff')).status, 405);
+  assert.deepEqual(diffs.map(call => call.domain), ['mail', 'broken']);
+});
+
+test('an engine without plan diff answers not found instead of guessing', async t => {
+  const { post } = await fixture(t);
+  assert.equal((await post('/api/plan/diff', { recipe: recipe(), domain: 'mail' })).status, 404);
+});
