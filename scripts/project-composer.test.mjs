@@ -294,3 +294,74 @@ test('a failed command records its stage, command, exit code and stage log witho
   assert.deepEqual([...new Set(logs.map(path => path.split(/[\\/]/).at(-1)))], ['database.log', 'source.log', 'install.log']);
   assert.ok(logs.every(path => path.startsWith(join(job, 'logs'))));
 });
+
+/*
+ * 생성 전 점검(E5)의 엔진 연결. 원본 비교는 점검을 요청한 화면의 커밋과 하고(탭마다 다를 수 있어 엔진에 두지 않는다),
+ * 명령마다 시간 제한을 둔다. 계획은 이 컴퓨터의 상태를 짐작해 늘 같은 경고를 내지 않는다.
+ */
+test('preflight compares the commit each request names with HEAD and bounds every probe', async () => {
+  const head = 'c'.repeat(40);
+  const calls = [];
+  const run = async (command, args, options) => {
+    calls.push({ command, args, options });
+    const key = `${command.split(/[\/]/).pop()} ${args.find(arg => !arg.startsWith('--') || arg === '--version')}`;
+    return { 'docker version': 'linux 29.1.3', 'java --version': 'openjdk 21.0.9', 'javac --version': 'javac 21.0.9',
+      'pnpm --version': '9.15.0', 'git status': '', 'git rev-parse': head, 'docker image': 'sha256:1' }[key] ?? '';
+  };
+  const engine = createComposerEngine({ outputRoot, run });
+  const source = result => result.checks.find(check => check.id === 'source');
+  assert.equal(source(await engine.preflight({ sourceCommit: head })).status, 'pass');
+  assert.equal(source(await engine.preflight({ sourceCommit: 'd'.repeat(40) })).code, 'SOURCE_CHANGED', 'another tab loaded an older commit');
+  assert.equal(source(await engine.preflight({ sourceCommit: head })).status, 'pass', 'one tab does not change the answer for another');
+  assert.equal(source(await engine.preflight()).status, 'block', 'an unknown screen commit never passes silently');
+  assert.ok(calls.length >= 6 && calls.every(call => call.options.timeoutMs === 10_000 && call.options.capture === true));
+  // 계획은 도구·작업 트리에 대한 고정 문구를 싣지 않는다. 외부 설정 요구만 남는다.
+  assert.deepEqual(engine.plan(recipe()).warnings, ['추가 설정: 메일 발송에 사용할 SMTP 설정']);
+});
+
+test('a command past its time limit ends its whole process tree without waiting for the pipes to close', async () => {
+  // 실제 결함의 모양 그대로다. Windows 의 pnpm.cmd 는 cmd.exe 가 node 를 띄우고, 그 node 가 출력 파이프를 쥔 채 남는다.
+  // 가짜 pnpm 을 PATH 앞에 두어 같은 구조(셸 → node)를 만든다. POSIX 에서는 sh 스크립트가 같은 일을 한다.
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-timeout-')));
+  const pidFile = join(directory, 'slow.pid');
+  const slow = join(directory, 'slow.cjs');
+  writeFileSync(slow, "require('node:fs').writeFileSync(process.env.SLOW_PID_FILE, String(process.pid)); setTimeout(() => {}, 20000);\n");
+  if (process.platform === 'win32') writeFileSync(join(directory, 'pnpm.cmd'), `@"${process.execPath}" "${slow}" %*\r\n`);
+  else writeFileSync(join(directory, 'pnpm'), `#!/bin/sh\n"${process.execPath}" "${slow}" "$@"\n`, { mode: 0o755 });
+  const pathKey = Object.keys(process.env).find(key => key.toUpperCase() === 'PATH') ?? 'PATH';
+  const env = { ...process.env, [pathKey]: `${directory}${process.platform === 'win32' ? ';' : ':'}${process.env[pathKey]}`, SLOW_PID_FILE: pidFile };
+  const started = Date.now();
+  await assert.rejects(() => runComposerCommand('pnpm', ['--version'], { root: tmpdir(), env, timeoutMs: 1500 }), error => error.code === 'TIMED_OUT');
+  assert.ok(Date.now() - started < 6000, `the time limit returns early (${Date.now() - started}ms)`);
+  const slowPid = Number(readFileSync(pidFile, 'utf8'));
+  const alive = pid => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  for (let attempt = 0; attempt < 50 && alive(slowPid); attempt += 1) await new Promise(resolve => setTimeout(resolve, 100));
+  const survived = alive(slowPid);
+  if (survived) { try { process.kill(slowPid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
+  assert.equal(survived, false, 'the node process under the shell, holding the pipe, is ended too');
+  // Windows 는 끝난 프로세스가 작업 폴더를 잠시 더 쥔다.
+  rmSync(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+});
+
+test('a timed-out command returns at once even when a grandchild escapes the process tree', async () => {
+  // POSIX 에서 새 세션으로 떨어져 나간 손자는 그룹 종료가 닿지 않지만 출력 파이프는 쥐고 있다. 그래도 기다리지 않는다.
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-escape-')));
+  const pidFile = join(directory, 'escaped.pid');
+  const script = join(directory, 'parent.cjs');
+  writeFileSync(script, [
+    "const { spawn } = require('node:child_process');",
+    "const { writeFileSync } = require('node:fs');",
+    "const escaped = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], { stdio: 'inherit', detached: true });",
+    `writeFileSync(${JSON.stringify(pidFile)}, String(escaped.pid));`,
+    'setTimeout(() => {}, 20000);',
+  ].join('\n'));
+  const started = Date.now();
+  try {
+    await assert.rejects(() => runComposerCommand('node', [script], { root: tmpdir(), timeoutMs: 1000 }), error => error.code === 'TIMED_OUT');
+    assert.ok(Date.now() - started < 6000, `the time limit returns early (${Date.now() - started}ms)`);
+  } finally {
+    try { process.kill(Number(readFileSync(pidFile, 'utf8')), 'SIGKILL'); } catch { /* 이미 끝났다. */ }
+    // Windows 는 끝난 프로세스가 작업 폴더를 잠시 더 쥔다.
+    rmSync(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+  }
+});

@@ -5,7 +5,9 @@
   --font-sans: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace;
+  --color-black: #000;
   --spacing: 0.25rem;
+  --container-xl: 36rem;
   --container-3xl: 48rem;
   --container-7xl: 80rem;
   --text-xs: 0.75rem;
@@ -206,6 +208,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
   white-space: nowrap;
   border-width: 0;
 }
+.m-auto {
+  margin: auto;
+}
 .mx-auto {
   margin-inline: auto;
 }
@@ -275,8 +280,14 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 .max-h-72 {
   max-height: calc(var(--spacing) * 72);
 }
+.max-h-\[85vh\] {
+  max-height: 85vh;
+}
 .min-h-6 {
   min-height: calc(var(--spacing) * 6);
+}
+.w-\[calc\(100\%-2rem\)\] {
+  width: calc(100% - 2rem);
 }
 .w-full {
   width: 100%;
@@ -286,6 +297,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .max-w-7xl {
   max-width: var(--container-7xl);
+}
+.max-w-xl {
+  max-width: var(--container-xl);
 }
 .min-w-0 {
   min-width: 0px;
@@ -310,6 +324,12 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .justify-between {
   justify-content: space-between;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.gap-2 {
+  gap: calc(var(--spacing) * 2);
 }
 .gap-3 {
   gap: calc(var(--spacing) * 3);
@@ -394,6 +414,9 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .bg-panel {
   background-color: var(--color-panel);
+}
+.p-0 {
+  padding: 0px;
 }
 .p-3 {
   padding: calc(var(--spacing) * 3);
@@ -535,6 +558,12 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 .accent-accent {
   accent-color: var(--color-accent);
 }
+.backdrop\:bg-black\/40::backdrop {
+  background-color: color-mix(in srgb, #000 40%, transparent);
+  @supports (color: color-mix(in lab, red, red)) {
+    background-color: color-mix(in oklab, var(--color-black) 40%, transparent);
+  }
+}
 .focus\:not-sr-only:focus {
   position: static;
   width: auto;
@@ -562,6 +591,12 @@ button, input:where([type='button'], [type='reset'], [type='submit']), ::file-se
 }
 .has-\[\:checked\]\:bg-accent-soft:has(:is(:checked)) {
   background-color: var(--color-accent-soft);
+}
+.aria-disabled\:cursor-not-allowed[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+.aria-disabled\:opacity-50[aria-disabled="true"] {
+  opacity: 50%;
 }
 @media (width >= 40rem) {
   .sm\:block {

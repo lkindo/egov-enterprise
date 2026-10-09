@@ -241,3 +241,71 @@ test('an engine without plan diff answers not found instead of guessing', async 
   const { post } = await fixture(t);
   assert.equal((await post('/api/plan/diff', { recipe: recipe(), domain: 'mail' })).status, 404);
 });
+
+/*
+ * 생성 전 점검(설계서 10장, E5). 이 컴퓨터에서 명령을 띄우므로 계획·생성과 같은 출처·CSRF 경계를 지나고,
+ * 원본 비교 기준인 화면의 커밋을 본문으로 받는다. 정해진 모양의 항목만 넘기며, 모양이 어긋난 결과는 생성할 수
+ * 있다고 말하지 않도록 통째로 실패시킨다. 차단 여부는 서버가 항목에서 다시 센다.
+ */
+const SCREEN = 'a'.repeat(40);
+test('preflight crosses the plan boundary, passes checked items and recounts the block itself', async t => {
+  const checks = [
+    { id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다', detail: '29.1.3' },
+    { id: 'source', status: 'block', label: '원본이 새 커밋으로 바뀌었습니다.', code: 'SOURCE_CHANGED' },
+  ];
+  const asked = [];
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  // 정해진 필드 밖의 값(경로 같은 명령 출력)은 넘기지 않는다.
+  const { origin, post, headers } = await fixture(t, { preflight: async options => {
+    asked.push(options); await gate;
+    return { checks: checks.map(check => ({ ...check, path: 'C:/Users/me' })), blocked: false, extra: 'x' };
+  } });
+  // 같은 커밋을 묻는 겹친 요청은 한 번의 점검을 함께 기다리고, 다른 커밋은 따로 점검한다.
+  const pending = [post('/api/preflight', { sourceCommit: SCREEN }), post('/api/preflight', { sourceCommit: SCREEN }),
+    post('/api/preflight', { sourceCommit: 'b'.repeat(40) })];
+  await new Promise(resolve => setTimeout(resolve, 20));
+  release();
+  const [first, second, other] = await Promise.all(pending);
+  assert.deepEqual(asked, [{ sourceCommit: SCREEN }, { sourceCommit: 'b'.repeat(40) }]);
+  assert.equal(first.status, 200);
+  assert.deepEqual(first.body, { preflight: { checks, blocked: true } });
+  assert.deepEqual(second.body, first.body);
+  assert.equal(other.status, 200);
+  // 끝난 점검은 다시 쓰지 않는다.
+  await post('/api/preflight', { sourceCommit: SCREEN });
+  assert.equal(asked.length, 3);
+  // 경계: GET 은 없고, CSRF·출처가 맞아야 하며, 본문은 커밋 하나뿐이다.
+  assert.equal((await send(origin, '/api/preflight')).status, 405);
+  assert.equal((await post('/api/preflight', { sourceCommit: SCREEN }, { headers: { ...headers, 'X-Composer-CSRF': '0'.repeat(64) } })).status, 403);
+  assert.equal((await post('/api/preflight', { sourceCommit: SCREEN }, { headers: { ...headers, Origin: 'http://evil.example' } })).status, 403);
+  for (const body of [{}, { sourceCommit: 'HEAD' }, { sourceCommit: SCREEN.toUpperCase() }, { sourceCommit: SCREEN, extra: 1 }, { sourceCommit: 42 }]) {
+    assert.equal((await post('/api/preflight', body)).status, 400, JSON.stringify(body));
+  }
+  assert.equal(asked.length, 3, 'rejected requests never reach the engine');
+});
+
+test('a malformed or failing preflight is a failure, never a pass without detail', async t => {
+  const failures = [
+    { checks: [] },
+    { checks: [{ id: 'docker', status: 'ok', label: '응답' }] },
+    { checks: [{ id: 'docker', status: 'pass', label: '응답\n/home/user/secret' }] },
+    { checks: [{ id: 'Docker', status: 'pass', label: '응답' }] },
+    { checks: [{ id: 'docker', status: 'pass', label: '응답', detail: 'x'.repeat(41) }] },
+    { checks: [{ id: 'docker', status: 'block', label: '차단', code: 'lowercase' }] },
+    { checks: [{ id: 'java', status: 'block', label: '차단' }, null] },
+  ];
+  for (const value of failures) {
+    const { post } = await fixture(t, { preflight: () => value });
+    const response = await post('/api/preflight', { sourceCommit: SCREEN });
+    assert.equal(response.status, 500, JSON.stringify(value));
+    assert.deepEqual(response.body, { error: { code: 'PREFLIGHT_FAILED', message: '생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.' } });
+  }
+  const { post } = await fixture(t, { preflight: () => { throw new Error('C:/Users/me/private-path'); } });
+  const thrown = await post('/api/preflight', { sourceCommit: SCREEN });
+  assert.equal(thrown.status, 500);
+  assert.doesNotMatch(thrown.text, /private-path/);
+  // 엔진이 점검을 제공하지 않으면 없는 경로로 답한다.
+  const { post: without } = await fixture(t);
+  assert.equal((await without('/api/preflight', { sourceCommit: SCREEN })).status, 404);
+});

@@ -26,6 +26,7 @@ const MESSAGES = Object.freeze({
   BUSY: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.',
   REQUEST_CONFLICT: '이미 사용한 요청입니다. 구성을 확인한 뒤 다시 시도해 주세요.',
   GENERATION_FAILED: '프로젝트 생성에 실패했습니다. Docker와 개발 도구 상태를 확인한 뒤 다시 시도해 주세요.',
+  PREFLIGHT_FAILED: '생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.',
   INTERNAL_ERROR: '요청을 처리하지 못했습니다. 입력은 유지됩니다. 잠시 후 다시 시도해 주세요.',
 });
 
@@ -91,6 +92,21 @@ function safeResult(value, recipe) {
   return result;
 }
 
+const PREFLIGHT_STATUSES = Object.freeze(['pass', 'warn', 'block']);
+const line = (value, limit) => typeof value === 'string' && value.length > 0 && value.length <= limit && !/[\r\n\0]/.test(value);
+/**
+ * 생성 전 점검 항목은 정해진 모양만 넘긴다. 모양이 어긋난 항목이 하나라도 있으면 결과 전체를 버린다
+ * (차단 항목 하나를 빠뜨린 결과는 생성할 수 있다고 말하게 된다). 차단 여부는 서버가 항목에서 다시 센다.
+ */
+function safePreflight(value) {
+  const checks = Array.isArray(value?.checks) ? value.checks : [];
+  const valid = check => plain(check) && identifier(check.id) && PREFLIGHT_STATUSES.includes(check.status) && line(check.label, 200)
+    && (check.detail === undefined || line(check.detail, 40)) && (check.code === undefined || /^[A-Z][A-Z_]{2,39}$/.test(check.code));
+  if (!checks.length || checks.length > 20 || !checks.every(valid)) throw new HttpError(500, 'PREFLIGHT_FAILED');
+  const safe = checks.map(({ id, status, label, detail, code }) => ({ id, status, label, ...(detail ? { detail } : {}), ...(code ? { code } : {}) }));
+  return { checks: safe, blocked: safe.some(check => check.status === 'block') };
+}
+
 /** 실패한 단계·명령 식별자·종료 코드·가린 로그 위치만 넘긴다. 오류 메시지와 자식 출력은 보내지 않는다. */
 function safeFailure(failure) {
   if (!plain(failure)) return undefined;
@@ -111,6 +127,8 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
   const requests = new Map();
   let active;
   let latest;
+  // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋을 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
+  const preflightRuns = new Map();
   const server = createServer(async (request, response) => {
     secureHeaders(response);
     try {
@@ -129,7 +147,8 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       const url = new URL(request.url, origin);
       if (url.search || url.hash) throw new HttpError(400, 'BAD_REQUEST');
       const path = url.pathname;
-      const mutation = ['/api/plan', '/api/plan/diff', '/api/jobs'].includes(path);
+      // 생성 전 점검도 이 컴퓨터에서 명령을 띄우므로 계획·생성과 같은 출처·CSRF 경계를 지난다.
+      const mutation = ['/api/plan', '/api/plan/diff', '/api/preflight', '/api/jobs'].includes(path);
       if (request.method !== (mutation ? 'POST' : 'GET')) throw new HttpError(405, 'METHOD_NOT_ALLOWED');
       if (mutation) {
         const supplied = request.headers['x-composer-csrf'];
@@ -141,7 +160,23 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       } else if (mutation) {
         // 계획 차이는 선택 기능이다. 엔진이 제공하지 않으면 없는 경로로 답한다.
         if (path === '/api/plan/diff' && typeof engine.diff !== 'function') throw new HttpError(404, 'NOT_FOUND');
+        if (path === '/api/preflight' && typeof engine.preflight !== 'function') throw new HttpError(404, 'NOT_FOUND');
         const input = await body(request);
+        if (path === '/api/preflight') {
+          // 원본 비교는 점검을 요청한 화면이 카탈로그를 받은 때의 커밋과 한다(탭마다 다를 수 있다).
+          if (!keys(input, ['sourceCommit']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
+            throw new HttpError(400, 'BAD_REQUEST');
+          }
+          const { sourceCommit } = input;
+          if (!preflightRuns.has(sourceCommit)) {
+            preflightRuns.set(sourceCommit, Promise.resolve().then(() => engine.preflight({ sourceCommit }))
+              .finally(() => preflightRuns.delete(sourceCommit)));
+          }
+          let result;
+          try { result = await preflightRuns.get(sourceCommit); } catch { throw new HttpError(500, 'PREFLIGHT_FAILED'); }
+          json(response, 200, { preflight: safePreflight(result) });
+          return;
+        }
         const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
         if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
         const recipe = validateComposerRequestRecipe(input.recipe);
