@@ -103,6 +103,11 @@
           <progress id="job-progress" class="mt-4 h-2 w-full accent-accent" max="100" value="0" aria-label="프로젝트 생성 진행률"></progress>
           <p id="job-elapsed" class="mt-2 text-xs text-muted" hidden></p>
           <ol id="job-timeline" class="mt-4 space-y-1 text-sm" aria-label="생성 단계" hidden></ol>
+          <div id="job-cancel-area" class="mt-4" hidden>
+            <button id="job-cancel" type="button" class="rounded-lg border border-line px-4 py-2 text-sm font-semibold aria-disabled:cursor-not-allowed aria-disabled:opacity-50">생성 취소</button>
+          </div>
+          <p id="job-cancel-status" class="mt-2 text-xs text-muted" role="status"></p>
+          <div id="job-cancelled" class="mt-4 space-y-3 text-sm leading-6" hidden></div>
           <div id="job-error" class="mt-4 text-sm leading-6 text-danger" role="alert" hidden></div>
           <div id="job-failure" class="mt-2 space-y-1 text-sm leading-6" hidden></div>
           <div id="job-actions" class="mt-3 space-y-2 text-sm" hidden></div>

@@ -47,22 +47,29 @@ export function createLogMasker(secrets = []) {
 
 const LOG_LIMIT = 1024 * 1024;
 const LINE_LIMIT = 16 * 1024;
+// 시간 초과·취소로 프로세스 트리를 끝낼 때 taskkill 을 기다리는 최대 시간.
+const KILL_WAIT_MS = 5_000;
 
 /** Windows shells are used only for fixed tool names and fixed argument lists. Recipe values never become shell code. */
 /**
  * `onLine` 은 자식 출력 한 줄마다(가리기 전 원문) 불린다. 생성 작업이 검증기의 단계 머리줄을 보고 진행 단계를 알리는 데만 쓴다
- * (원문을 저장하거나 화면으로 보내지 않는다).
+ * (원문을 저장하거나 화면으로 보내지 않는다). `signal`(AbortSignal)이 취소되면 시간 제한과 같은 방법으로 프로세스 트리를 끝내고
+ * CANCELLED 로 거부한다. 이미 취소된 신호면 명령을 띄우지 않는다.
  */
-export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs, onLine } = {}) {
+export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs, onLine, signal } = {}) {
   return new Promise((accept, reject) => {
     const windows = process.platform === 'win32';
     const executable = command === 'node' ? process.execPath
       : windows && ['npm', 'pnpm'].includes(command) ? `${command}.cmd` : command;
     const shell = windows && ['npm.cmd', 'pnpm.cmd'].includes(executable);
     if (shell && args.some(value => !/^[A-Za-z0-9_./:= -]+$/.test(value))) return reject(new Error('Unsafe fixed-tool argument'));
+    const commandId = command === 'node' ? args[0] : command;
+    if (signal?.aborted) {
+      return reject(Object.assign(new Error(`Command cancelled: ${command}`), { code: 'CANCELLED', commandId, exitCode: null, durationMs: 0 }));
+    }
     const startedAt = Date.now();
-    // 시간 제한이 있으면 POSIX 에서는 새 프로세스 그룹으로 띄워 손자까지 한 번에 끝낼 수 있게 한다.
-    const child = spawn(executable, args, { cwd: root, env, windowsHide: true, shell, stdio: ['ignore', 'pipe', 'pipe'], detached: Boolean(timeoutMs) && !windows });
+    // 시간 제한이나 취소 신호가 있으면 POSIX 에서는 새 프로세스 그룹으로 띄워 손자까지 한 번에 끝낼 수 있게 한다.
+    const child = spawn(executable, args, { cwd: root, env, windowsHide: true, shell, stdio: ['ignore', 'pipe', 'pipe'], detached: Boolean(timeoutMs || signal) && !windows });
     let output = '';
     // Output can contain credentials from dependencies: it is kept only masked, bounded and on this computer.
     const masker = createLogMasker(environmentSecrets(env));
@@ -100,26 +107,45 @@ export function runComposerCommand(command, args, { root, env = process.env, cap
       appendFileSync(log, `${[header, ...omitted, ...lines, `[종료 코드 ${exitCode ?? '없음'} · ${Date.now() - startedAt}ms · 가림 ${masker.count}건]`, ''].join('\n')}\n`);
     };
     const failed = (code, exitCode) => Object.assign(new Error(`Command failed: ${command} (${code}${exitCode === null ? '' : ` ${exitCode}`})`),
-      { code, commandId: command === 'node' ? args[0] : command, exitCode, durationMs: Date.now() - startedAt, ...(log ? { log } : {}) });
+      { code, commandId, exitCode, durationMs: Date.now() - startedAt, ...(log ? { log } : {}) });
     // 실행 실패 뒤에도 close 가 올 수 있다. 로그와 결과는 한 번만 남긴다.
     let settled = false;
     let timer;
-    const settle = (exitCode, finish) => { if (settled) return; settled = true; clearTimeout(timer); written(exitCode); finish(); };
-    if (timeoutMs) {
-      // 시간 제한을 넘기면 프로세스 트리를 끝내고 close 를 기다리지 않고 실패로 돌려준다(점검처럼 오래 기다릴 수 없는 호출만 건다).
-      // Windows 의 pnpm.cmd 는 손자 node 가 출력 파이프를 쥐고 남아, 자식만 끝내면 close 가 손자가 끝날 때까지 오지 않는다.
-      timer = setTimeout(() => {
-        if (child.pid) {
-          if (windows) spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('error', () => {});
-          else { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
-        }
-        child.stdout.destroy(); child.stderr.destroy();
-        settle(null, () => reject(failed('TIMED_OUT', null)));
-      }, timeoutMs);
+    let stopping;
+    const onAbort = () => stopTree('CANCELLED');
+    const settle = (exitCode, finish) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer); signal?.removeEventListener('abort', onAbort); written(exitCode); finish();
+    };
+    // 프로세스 트리를 끝내고 close 를 기다리지 않고 실패로 돌려준다(시간 제한·취소).
+    // Windows 의 pnpm.cmd 는 손자 node 가 출력 파이프를 쥐고 남아, 자식만 끝내면 close 가 손자가 끝날 때까지 오지 않는다.
+    // 그래서 close 대신 taskkill 이 트리를 끝낼 때까지 기다린다(정리하는 쪽이 아직 살아 있는 손자와 폴더를 다투지 않게, 최대 5초).
+    function stopTree(code) {
+      if (settled || stopping) return;
+      stopping = code;
+      clearTimeout(timer);
+      const finish = () => { child.stdout.destroy(); child.stderr.destroy(); settle(null, () => reject(failed(code, null))); };
+      // 자식이 이미 끝났으면(손자가 파이프만 쥐고 있으면) 그 번호는 다른 프로세스가 다시 받았을 수 있다. 그 번호로 트리를 끝내지 않는다.
+      const exited = child.exitCode !== null || child.signalCode !== null;
+      if (child.pid && windows && !exited) {
+        const guard = setTimeout(finish, KILL_WAIT_MS);
+        const done = () => { clearTimeout(guard); finish(); };
+        spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('exit', done).on('error', done);
+        return;
+      }
+      // POSIX 프로세스 그룹은 구성원이 남아 있는 동안 번호가 재사용되지 않으므로, 자식이 끝났어도 그룹(손자)을 끝낸다.
+      if (child.pid && !windows) { try { process.kill(-child.pid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
+      finish();
     }
+    // 시간 제한은 점검처럼 오래 기다릴 수 없는 호출에만 건다.
+    if (timeoutMs) timer = setTimeout(() => stopTree('TIMED_OUT'), timeoutMs);
+    signal?.addEventListener('abort', onAbort, { once: true });
     // 실행하지 못한 원인(errno)을 함께 싣는다. 작업 폴더가 없을 때도 같은 이벤트(ENOENT)가 나므로, 생성 작업은 작업 폴더가
     // 늘 있는 docker 호출 지점에서만 이 값으로 도구 부재를 판정한다(코드만 보고 도구 부재라고 말하지 않는다).
-    child.on('error', spawnError => settle(null, () => reject(Object.assign(failed('TOOL_UNAVAILABLE', null), { errno: spawnError.code }))));
-    child.on('close', code => settle(code, () => code === 0 ? accept(output.trim()) : reject(failed('COMMAND_FAILED', code))));
+    // 멈추는 중에 온 종료·오류는 멈춘 이유(시간 초과·취소)로 돌려준다.
+    child.on('error', spawnError => settle(null, () => reject(stopping ? failed(stopping, null)
+      : Object.assign(failed('TOOL_UNAVAILABLE', null), { errno: spawnError.code }))));
+    child.on('close', code => settle(code, () => stopping ? reject(failed(stopping, null))
+      : code === 0 ? accept(output.trim()) : reject(failed('COMMAND_FAILED', code))));
   });
 }

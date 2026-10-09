@@ -1511,6 +1511,7 @@ test('durations, step states and the elapsed sentence read as plain Korean', () 
   assert.deepEqual([40, 400, 27_000, 59_999, 60_000, 368_000, 3_660_000].map(formatDuration), ['0.1초', '0.4초', '27초', '59초', '1분 00초', '6분 08초', '1시간 01분']);
   assert.equal(formatDuration(-1), '');
   assert.equal(timelineStatus({ status: 'failed', durationMs: 38_000 }), '실패 · 38초');
+  assert.equal(timelineStatus({ status: 'cancelled', durationMs: 4_000 }), '취소됨 · 4초');
   assert.equal(timelineStatus({ status: 'pending', durationMs: 5 }), '대기', 'a pending step shows no time');
   assert.equal(timelineStatus({ status: 'passed' }), '완료', 'a step the verifier did not time shows no time');
   assert.equal(elapsedSentence({ status: 'running', elapsedMs: 1_000, estimate: { runs: 3, minRuns: 3, remainingMs: 0 } }),
@@ -1518,4 +1519,163 @@ test('durations, step states and the elapsed sentence read as plain Korean', () 
   assert.equal(elapsedSentence({ status: 'running', elapsedMs: 1_000 }), '경과 1초');
   assert.equal(elapsedSentence({ status: 'failed', elapsedMs: 61_000, estimate: { runs: 3, minRuns: 3, remainingMs: 9 } }), '걸린 시간 1분 01초');
   assert.equal(elapsedSentence({ status: 'running' }), '');
+});
+
+/*
+ * 생성 취소(E6b). 진행 중인 작업에만 취소 단추가 있고, 누르면 정리를 마칠 때까지 '취소하는 중' 으로 잠긴 채 포커스를 지킨다.
+ * 끝나면 단추가 사라지고 포커스는 작업 제목으로 간다. 취소한 작업은 남겨 둔 프로젝트 폴더와 작업 보고서 위치를 보인다.
+ */
+const KEPT_PROJECT = 'build/reusable-base/source/agency-service-0123456789abcdef';
+const KEPT_SCHEMA = 'build/reusable-base/composer-agency-service-0123456789abcdef-db';
+const cancelRequests = page => {
+  const seen = [];
+  page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/cancel')) seen.push(request.method()); });
+  return seen;
+};
+async function startRunningJob(page, origin) {
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  await confirmGenerate(page);
+  await expect(page.getByRole('button', { name: '생성 취소' })).toBeVisible();
+}
+
+test('the cancel button stops a running job, keeps focus while it cleans up and shows what was kept', { timeout: 60_000 }, async t => {
+  let release;
+  const cleaned = new Promise(resolve => { release = resolve; });
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
+    const started = Date.now();
+    const before = { resolve: done.resolve, database: done.database, source: done.source };
+    onProgress({ stage: 'install', progress: 20, timeline: timelineOf({ ...before, install: { status: 'running', startedAt: started } }) });
+    await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+    await cleaned;
+    onProgress({ stage: 'install', progress: 20, timeline: timelineOf({ ...before, install: { status: 'cancelled', durationMs: 4_000 },
+      verify: { status: 'skipped' }, ...Object.fromEntries(VERIFICATION_STEP_IDS.map(id => [id, { status: 'skipped' }])) }) });
+    throw Object.assign(new ComposerError('CANCELLED', {}, 'private-detail cancel'), {
+      details: { database: 'removed', staging: 'none', project: KEPT_PROJECT, schema: KEPT_SCHEMA }, failure: { stage: 'install', report: JOB_REPORT } });
+  } });
+  const sent = cancelRequests(page);
+  await startRunningJob(page, origin);
+  await expect(page.getByRole('heading', { name: '프로젝트 준비 중' })).toBeVisible();
+  const cancel = page.locator('#job-cancel');
+  await cancel.focus();
+  await cancel.press('Enter');
+  await expect(cancel).toHaveText('취소하는 중…');
+  await expect(cancel).toHaveAttribute('aria-disabled', 'true');
+  await expect(page.getByRole('heading', { name: '생성을 취소하는 중' })).toBeVisible();
+  await expect(page.locator('#job-message')).toHaveText(/^생성을 취소하는 중입니다\./);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'job-cancel', 'focus stays on the locked button');
+  await cancel.press('Enter');
+  // Playwright 는 aria-disabled 단추를 누를 수 없는 것으로 본다. 클릭 이벤트를 직접 보내도 아무것도 보내지 않는지 본다.
+  await cancel.dispatchEvent('click');
+  assert.deepEqual(sent, ['POST'], 'a locked button sends nothing more');
+  await expect(page.locator('#generate'), 'no new job while cleaning up').toBeDisabled();
+  release();
+  await expect(page.getByRole('heading', { name: '생성을 취소했습니다' })).toBeVisible();
+  await expect(page.locator('#job-message')).toHaveText(/^생성을 취소했습니다\. 임시 DB와 만들던 폴더는 남아 있지 않습니다\. 검증을 마치지 않은 프로젝트 폴더와 DB 스키마 폴더는 남겨 두었습니다/);
+  await expect(page.locator('#job-error')).toBeHidden();
+  await expect(page.locator('#job-cancel-area')).toBeHidden();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'job-heading', 'focus moves to the heading when the button goes away');
+  await expect(page.locator('#job-cancelled')).toContainText(KEPT_PROJECT);
+  await expect(page.locator('#job-cancelled')).toContainText(KEPT_SCHEMA);
+  await expect(page.locator('#job-cancelled')).toContainText(JOB_REPORT);
+  await expect(page.getByRole('list', { name: '생성 단계' }).locator(':scope > li[data-id="install"]')).toHaveText('의존성 준비 · 취소됨 · 4초');
+  await expect(page.locator('#job-elapsed')).toHaveText(/^걸린 시간 /);
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#job-panel')).not.toContainText('private-detail');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a cancel pressed after the status poll failed re-arms polling, and a failed cancel reason does not outlive the job', { timeout: 60_000 }, async t => {
+  let release;
+  const cleaned = new Promise(resolve => { release = resolve; });
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
+    onProgress({ stage: 'install', progress: 20 });
+    await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+    await cleaned;
+    throw Object.assign(new ComposerError('CANCELLED', {}, 'private-detail cancel'), { details: { database: 'removed', staging: 'none' } });
+  } });
+  await startRunningJob(page, origin);
+  // 다음 진행 조회 하나를 끊는다 — 화면은 '상태 다시 확인' 을 보이고 더 조회하지 않는다.
+  let pollCut = false;
+  await page.route('**/api/jobs/*', async route => {
+    if (route.request().method() === 'GET' && !pollCut) { pollCut = true; await route.abort(); return; }
+    await route.continue();
+  });
+  await expect(page.locator('#retry-status')).toBeVisible();
+  // 첫 취소 요청도 연결이 끊긴다. 단추는 다시 열리고 이유를 말한다.
+  let cancelCut = false;
+  await page.route('**/api/jobs/*/cancel', async route => {
+    if (!cancelCut) { cancelCut = true; await route.abort(); return; }
+    await route.continue();
+  });
+  await page.locator('#job-cancel').click();
+  await expect(page.locator('#job-cancel-status')).toHaveText(/연결하지 못했습니다/);
+  await expect(page.locator('#job-cancel')).not.toHaveAttribute('aria-disabled', 'true');
+  await page.locator('#job-cancel').click();
+  await expect(page.locator('#job-cancel')).toHaveText('취소하는 중…');
+  release();
+  await expect(page.getByRole('heading', { name: '생성을 취소했습니다' })).toBeVisible();
+  await expect(page.locator('#job-cancel-status'), 'a connection error is not true next to the result').toHaveText('');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a cancel that reaches a job that has just finished says so and shows the finished result', { timeout: 60_000 }, async t => {
+  let finish;
+  const gate = new Promise(resolve => { finish = resolve; });
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+    onProgress({ stage: 'install', progress: 20 });
+    await gate;
+    return { verified: true, projectDirectory: KEPT_PROJECT };
+  } });
+  await startRunningJob(page, origin);
+  // 진행 조회 하나를 붙잡아 화면이 아직 '진행 중' 을 보이는 동안 작업을 끝낸다(누르는 순간 끝난 작업).
+  // 거절을 받은 화면은 붙잡힌 조회를 기다리지 않고 바로 다시 조회해 결과를 그린다.
+  let releasePoll;
+  const polled = new Promise(resolve => { releasePoll = resolve; });
+  let heldOne;
+  const holding = new Promise(resolve => { heldOne = resolve; });
+  let held = false;
+  await page.route('**/api/jobs/*', async route => {
+    if (route.request().method() === 'GET' && !held) { held = true; heldOne(); await polled; }
+    await route.continue();
+  });
+  await holding;
+  finish();
+  await page.locator('#job-cancel').click();
+  await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
+  await expect(page.locator('#job-cancel-status'), 'the reason stays next to the result').toHaveText('이미 끝난 작업이라 취소할 수 없습니다. 작업 결과를 확인해 주세요.');
+  await expect(page.locator('#job-cancel-area')).toBeHidden();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'job-heading');
+  releasePoll();
+  // 새 생성 요청은 지난 거절 이유를 지운다 — 그 요청이 거절돼 작업 결과를 다시 그리지 않을 때도.
+  // 구성을 바꿔 새 요청 번호로 보낸다(같은 번호면 서버가 끝난 작업을 돌려준다).
+  await page.route('**/api/jobs', route => route.request().method() === 'POST'
+    ? route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error: { code: 'BUSY', message: '다른 프로젝트를 생성하고 있습니다. 완료 후 다시 시도해 주세요.' } }) })
+    : route.continue());
+  await page.getByLabel('프로젝트 이름').fill('agency-service-two');
+  await expect(generateButton(page)).toBeEnabled();
+  await confirmGenerate(page);
+  await expect(page.getByRole('heading', { name: '생성 요청을 확인해 주세요' })).toBeVisible();
+  await expect(page.locator('#job-cancel-status')).toHaveText('');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('a cancel that failed to reach the server leaves no reason once the job ends on its own', { timeout: 60_000 }, async t => {
+  let finish;
+  const gate = new Promise(resolve => { finish = resolve; });
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+    onProgress({ stage: 'install', progress: 20 });
+    await gate;
+    return { verified: true, projectDirectory: KEPT_PROJECT };
+  } });
+  await startRunningJob(page, origin);
+  await page.route('**/api/jobs/*/cancel', route => route.abort());
+  await page.locator('#job-cancel').click();
+  await expect(page.locator('#job-cancel-status')).toHaveText(/연결하지 못했습니다/);
+  finish();
+  await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
+  await expect(page.locator('#job-cancel-status'), 'a connection error is not true next to the result').toHaveText('');
+  assert.deepEqual(pageErrors, []);
 });

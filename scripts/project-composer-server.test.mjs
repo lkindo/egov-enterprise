@@ -252,7 +252,8 @@ test('every job code has a rule, a Korean sentence and a stage, and verification
     MENU_SNAPSHOT_STALE: [{}, { stage: 'database' }, 'copy-command'],
     CATALOG_DRIFT: [{ violations: ['first'] }, { stage: 'database' }, 'show-violations'],
   };
-  assert.deepEqual(Object.keys(cases).sort(), [...JOB_ERROR_CODES].sort(), 'the table covers every job code');
+  // 취소는 실패 문장이 아니라 취소된 작업으로 끝난다(취소 시험이 따로 본다).
+  assert.deepEqual(Object.keys(cases).sort(), JOB_ERROR_CODES.filter(code => code !== 'CANCELLED').sort(), 'the table covers every job code');
   for (const [code, [details, failure, action]] of Object.entries(cases)) {
     const job = await jobFailureFixture(t, coded(code, details), failure);
     assert.equal(job.error.code, code);
@@ -282,6 +283,8 @@ test('a job code is trusted only when branded, allowed and raised at a stage tha
   assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'pnpm' }), { stage: 'database' })).error.code, 'GENERATION_FAILED');
   const docker = await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'docker' }), { stage: 'database' });
   assert.match(docker.error.message, /Linux 컨테이너 모드/);
+  // 취소 코드는 화면이 취소를 요청한 작업에서만 취소다. 요청 없이 오면 일반 실패다.
+  assert.equal((await jobFailureFixture(t, coded('CANCELLED'), { stage: 'install' })).error.code, 'GENERATION_FAILED');
 });
 
 test('every code a generator child may report is accepted at that child\u2019s stage', async t => {
@@ -672,4 +675,80 @@ test('the request validator names the project name field for reserved and malfor
   assert.equal(response.status, 400);
   assert.deepEqual(response.body.error, { code: 'INVALID_NAME', message: NAME_RULE_MESSAGE, action: 'focus-name', field: 'project.name' });
   assert.equal(calls.plan.length, 0, 'a rejected name never reaches the engine');
+});
+
+/*
+ * 생성 취소(E6b). 취소는 작업마다의 경로(POST /api/jobs/<id>/cancel, 빈 본문)로 받고 계획·생성과 같은 출처·CSRF 경계를 지난다.
+ * 받으면 엔진의 취소 신호를 끊고 202 로 '취소하는 중' 작업을 돌려준다. 작업은 정리를 마칠 때까지 진행 중이고 새 작업을 받지 않는다.
+ */
+const PROJECT_DIR = 'build/reusable-base/source/agency-service-0123456789abcdef';
+const REPORT = 'build/project-composer/jobs/agency-service-0123456789abcdef/report.json';
+function cancellableEngine({ details = { database: 'removed', staging: 'removed', project: PROJECT_DIR } } = {}) {
+  let release;
+  const cleaned = new Promise(resolve => { release = resolve; });
+  const seen = {};
+  const generate = async (value, options) => {
+    seen.signal = options.signal;
+    options.onProgress({ stage: 'install', progress: 20 });
+    await new Promise(resolve => options.signal.addEventListener('abort', resolve, { once: true }));
+    options.onProgress({ stage: 'install', progress: 30 });
+    await cleaned;
+    throw Object.assign(new ComposerError('CANCELLED', {}, 'internal cancel private-detail'), { details, failure: { stage: 'install', report: REPORT } });
+  };
+  return { generate, release: () => release(), seen };
+}
+
+test('a running job is cancelled through its own route, stays running while it cleans up and then ends as cancelled', async t => {
+  const engine = cancellableEngine();
+  const { origin, post } = await fixture(t, { generate: engine.generate });
+  const { body: { job } } = await post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  const path = `/api/jobs/${job.id}/cancel`;
+  assert.equal((await send(origin, path, { method: 'POST', data: {}, headers: { Origin: origin } })).status, 403, 'no CSRF token');
+  assert.equal((await send(origin, path, { method: 'POST', data: {}, headers: { Origin: 'http://evil.example', 'X-Composer-CSRF': 'a'.repeat(64) } })).status, 403);
+  assert.equal((await send(origin, path)).status, 405, 'a GET does not cancel');
+  assert.equal((await post(path, { force: true })).status, 400, 'the body is empty');
+  assert.equal((await post(path, [])).status, 400);
+  assert.equal((await post(`/api/jobs/${randomUUID()}/cancel`, {})).status, 404);
+  assert.equal(engine.seen.signal.aborted, false, 'nothing above cancelled the job');
+  const accepted = await post(path, {});
+  assert.equal(accepted.status, 202);
+  assert.equal(accepted.body.job.status, 'running');
+  assert.equal(accepted.body.job.cancelRequested, true);
+  assert.match(accepted.body.job.message, /취소하는 중/);
+  assert.equal(engine.seen.signal.aborted, true);
+  assert.equal((await post(path, {})).status, 202, 'a repeated request while cleaning up is accepted');
+  assert.equal((await post('/api/jobs', { recipe: recipe(), requestId: randomUUID() })).status, 409, 'no new job until cleanup ends');
+  assert.match((await send(origin, `/api/jobs/${job.id}`)).body.job.message, /취소하는 중/, 'a late progress event keeps the sentence');
+  engine.release();
+  const ended = await finished(origin, job.id);
+  assert.equal(ended.status, 'cancelled');
+  assert.equal(ended.error, undefined);
+  assert.deepEqual(ended.cancellation, { database: 'removed', staging: 'removed', project: PROJECT_DIR, report: REPORT });
+  assert.match(ended.message, /^생성을 취소했습니다\./);
+  assert.ok(!JSON.stringify(ended).includes('private-detail'), 'the engine message never reaches the screen');
+  const late = await post(path, {});
+  assert.equal(late.status, 409);
+  assert.equal(late.body.error.code, 'NOT_RUNNING');
+  assert.match(late.body.error.message, /[가-힣]/);
+  assert.equal((await post('/api/jobs', { recipe: recipe(), requestId: randomUUID() })).status, 202, 'a new job starts after cleanup');
+});
+
+test('shutdown cancels the running job and waits for its cleanup, and says so when the cleanup outlasts the wait', async t => {
+  const engine = cancellableEngine();
+  const { app, post } = await fixture(t, { generate: engine.generate });
+  await post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  let done;
+  const waiting = app.shutdown({ timeoutMs: 5_000 }).then(value => { done = value; return value; });
+  await new Promise(resolve => setTimeout(resolve, 20));
+  assert.equal(engine.seen.signal.aborted, true);
+  assert.equal(done, undefined, 'shutdown waits while the job cleans up');
+  assert.equal(app.server.listening, false, 'no new request is taken');
+  engine.release();
+  assert.equal(await waiting, true);
+  const stuck = cancellableEngine();
+  const other = await fixture(t, { generate: stuck.generate });
+  await other.post('/api/jobs', { recipe: recipe(), requestId: randomUUID() });
+  assert.equal(await other.app.shutdown({ timeoutMs: 30 }), false, 'a cleanup that outlasts the wait is reported');
+  stuck.release();
+  assert.equal(await (await fixture(t)).app.shutdown({ timeoutMs: 30 }), true, 'with no job there is nothing to wait for');
 });

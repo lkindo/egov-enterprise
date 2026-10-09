@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync, symlinkSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { hostname, tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
+import { getEventListeners } from 'node:events';
 import { dirname, join, resolve, sep } from 'node:path';
 import { REQUIRES_KIND_LABELS, createComposerEngine, composerOutputPaths, inclusionNotes, parseComposerArgs, runComposerCommand } from './project-composer.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
 import { readJobHistory } from './project-composer-timeline.mjs';
+import { ownerIdentity } from './project-composer-recovery.mjs';
 import { VERIFICATION_STEP_IDS, verificationSteps } from './verify-reusable-artifact.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -105,16 +107,40 @@ test('UI and CLI use the same side-effect-free plan and reject unsupported or un
   assert.equal(engine.outputRoot, realpathSync(root));
 });
 
-function runner({ verificationResult = 'passed', wrongOwner = false, failStart = false, dockerDown = false } = {}) {
+function runner({ verificationResult = 'passed', wrongOwner = false, failStart = false, dockerDown = false, hang, hangCode = 'CANCELLED' } = {}) {
   const calls = [];
   let token;
   let staging;
   let composition;
+  let hung;
+  const hanging = new Promise(resolve => { hung = resolve; });
   return {
     calls,
     get staging() { return staging; },
+    // 취소 시험: hang(command, args) 가 참인 첫 명령은 취소 신호가 올 때까지 끝나지 않는다(신호가 없으면 시험이 실패한다).
+    // hangCode 가 COMMAND_FAILED 이면 자식이 취소 신호보다 먼저 0 이 아닌 코드로 끝난 경합을 흉내 낸다.
+    hanging,
     run: async (command, args, options) => {
-      calls.push({ command, args, root: options.root });
+      // 실제 실행기처럼 이미 취소된 신호의 명령은 띄우지 않는다. 그런 호출이 있었는지는 aborted 로 남긴다.
+      calls.push({ command, args, root: options.root, signal: Boolean(options.signal), aborted: Boolean(options.signal?.aborted), timeoutMs: options.timeoutMs });
+      if (options.signal?.aborted) throw Object.assign(new Error(`Command cancelled: ${command}`), { code: 'CANCELLED', exitCode: null });
+      if (args[0] === 'scripts/generate-reusable-base-source.mjs') staging = args[args.indexOf('--output') + 1];
+      // DB 번들 생성기는 출력 폴더를 바로 최종 위치에 만든다(멈춘 경우에도 만들던 내용이 남는다).
+      if (args[0] === 'scripts/generate-reusable-base-db.mjs') mkdirSync(args[args.indexOf('--output') + 1], { recursive: true });
+      if (hang?.(command, args)) {
+        hang = undefined;
+        if (!options.signal) throw new Error('a job command ran without the cancel signal');
+        if (staging && args[0] === 'scripts/generate-reusable-base-source.mjs') mkdirSync(join(staging, 'partial'), { recursive: true });
+        // 검증기는 첫 단계 머리줄을 찍은 뒤 멈춘다(진행 중인 검증 단계가 취소로 닫히는지 본다).
+        if (args[0] === 'scripts/verify-reusable-artifact.mjs') {
+          const [first] = verificationSteps('full', composition.backendLayout);
+          options.onLine?.(`[reusable-verify] ${composition.profile}/${composition.backendLayout}: ${[first.command, ...first.args].join(' ')}`);
+        }
+        hung();
+        await new Promise(resolve => options.signal.addEventListener('abort', resolve, { once: true }));
+        throw Object.assign(new Error(`Command failed: ${command} (${hangCode})`),
+          { code: hangCode, commandId: command === 'node' ? args[0] : command, exitCode: hangCode === 'CANCELLED' ? null : 1 });
+      }
       if (command === 'docker') {
         // Docker 엔진에 닿지 않는 경우: 모든 docker 호출이 실패한다.
         if (dockerDown) throw Object.assign(new Error(`Command failed: docker ${args[0]}`), { code: 'COMMAND_FAILED', exitCode: 1 });
@@ -132,7 +158,6 @@ function runner({ verificationResult = 'passed', wrongOwner = false, failStart =
         return '';
       }
       if (args[0] === 'scripts/generate-reusable-base-source.mjs') {
-        staging = args[args.indexOf('--output') + 1];
         composition = JSON.parse(readFileSync(args[args.indexOf('--composition') + 1], 'utf8'));
         mkdirSync(join(staging, 'build/reports/reusable-base'), { recursive: true });
       }
@@ -210,6 +235,148 @@ test('generation reports each stage and verification step, keeps the timeline in
   const second = await engine.generate(recipe(), { onProgress: () => { throw new Error('listener failed'); } });
   assert.equal(second.verified, true);
   assert.equal(readJobHistory(own).length, 2);
+});
+
+/*
+ * 취소(E6b). 단계마다 진행 중인 명령이 취소 신호로 끝나면 작업은 CANCELLED 로 끝나고, 임시 DB 는 신호 없는 명령으로 끝까지 지우며,
+ * 최종 위치로 옮기기 전이면 만들던 소스 폴더와 DB 스키마 폴더를 지우고, 옮긴 프로젝트(와 그 DB 스키마 폴더)는 남긴다. 작업 보고서·이력은 'cancelled' 이고 타임라인은 멈춘 단계를 취소로 닫는다.
+ */
+const CANCEL_CASES = [
+  // 컨테이너 시작이 끝나지 않으면 ID 가 없다. 정리는 이 작업의 표식으로 찾고, 찾은 것이 없으면 지울 것도 없다.
+  // 시작과 DB 번들 자식은 취소 신호보다 먼저 실패 코드로 끝난 경합이다 — 그래도 취소이고, 실패 분류의 Docker 탐침을 돌리지 않는다.
+  { stage: 'database', label: 'starting the database', hang: (command, args) => command === 'docker' && args[0] === 'run',
+    details: { database: 'removed', staging: 'none' }, removals: 0, hangCode: 'COMMAND_FAILED' },
+  { stage: 'database', label: 'waiting for the database', hang: (command, args) => command === 'docker' && args[0] === 'exec',
+    details: { database: 'removed', staging: 'none' } },
+  { stage: 'database', label: 'creating the database bundle', hang: (command, args) => args[0] === 'scripts/generate-reusable-base-db.mjs',
+    details: { database: 'removed', staging: 'removed' }, hangCode: 'COMMAND_FAILED' },
+  { stage: 'source', label: 'composing the source', hang: (command, args) => args[0] === 'scripts/generate-reusable-base-source.mjs',
+    details: { database: 'removed', staging: 'removed' } },
+  { stage: 'install', label: 'installing dependencies', hang: command => command === 'pnpm', details: { database: 'removed', staging: 'none' }, project: true },
+  { stage: 'verify', label: 'verifying', hang: (command, args) => args[0] === 'scripts/verify-reusable-artifact.mjs',
+    details: { database: 'removed', staging: 'none' }, project: true },
+];
+for (const item of CANCEL_CASES) {
+  test(`cancelling while ${item.label} ends the job as cancelled, removes the database and the staging folder, and keeps a moved project`, async t => {
+    const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-')));
+    t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+    const mock = runner({ hang: item.hang, hangCode: item.hangCode });
+    const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), readiness: { attempts: 1000, delayMs: 1 } });
+    const controller = new AbortController();
+    const events = [];
+    const work = engine.generate(recipe(), { signal: controller.signal, onProgress: event => events.push(structuredClone(event)) });
+    await mock.hanging;
+    controller.abort();
+    const error = await work.then(() => assert.fail('a cancelled job must not succeed'), value => value);
+    assert.ok(error instanceof ComposerError);
+    assert.equal(error.code, 'CANCELLED');
+    assert.equal(error.failure.stage, item.stage);
+    const job = readdirSync(join(own, 'build/project-composer/jobs'))[0];
+    const project = `build/reusable-base/source/${job}`;
+    const schema = `build/reusable-base/composer-${job}-db`;
+    assert.deepEqual(error.details, { ...item.details, ...(item.project ? { project, schema } : {}) });
+    assert.equal(existsSync(join(own, 'build/reusable-base/source', `.pending-${job}`)), false, 'the staging folder is removed');
+    assert.equal(existsSync(join(own, project)), Boolean(item.project), 'a moved project is kept, never deleted');
+    assert.equal(existsSync(join(own, schema)), Boolean(item.project), 'the schema folder goes with an unmoved job and stays with a kept project');
+    const removal = mock.calls.filter(call => call.command === 'docker' && ['rm', 'ps', 'inspect'].includes(call.args[0]) && !call.signal);
+    assert.equal(removal.filter(call => call.args[0] === 'rm').length, item.removals ?? 1);
+    assert.ok(removal.length > 0 && removal.every(call => call.timeoutMs === 60_000), 'cleanup runs without the cancel signal and with a time limit');
+    assert.ok(mock.calls.filter(call => call.command !== 'docker' || !['rm', 'inspect', 'ps'].includes(call.args[0])).every(call => call.signal),
+      'every job command carries the cancel signal');
+    assert.deepEqual(mock.calls.filter(call => call.aborted).map(call => call.args[0]), [], 'no job command is started after the cancel');
+    assert.equal(mock.calls.some(call => call.command === 'docker' && call.args[0] === 'version'), false, 'a cancel is not probed as a Docker failure');
+    const report = JSON.parse(readFileSync(join(own, 'build/project-composer/jobs', job, 'report.json'), 'utf8'));
+    assert.equal(report.result, 'cancelled');
+    assert.deepEqual(report.cancellation, error.details);
+    assert.equal(report.failure.code, 'CANCELLED');
+    assert.deepEqual(report.owner, ownerIdentity());
+    assert.equal(report.owner.host, hostname());
+    if (item.project) assert.equal(JSON.parse(readFileSync(join(own, project, 'project-generation-report.json'), 'utf8')).result, 'cancelled');
+    const last = events.at(-1).timeline;
+    const items = [...last.stages, ...last.steps];
+    assert.equal(last.stages.find(stage => stage.id === item.stage).status, 'cancelled');
+    assert.ok(items.every(entry => ['passed', 'cancelled', 'skipped'].includes(entry.status)), 'nothing is left running or reads as failed');
+    if (item.stage === 'verify') assert.equal(last.steps.find(step => step.status === 'cancelled')?.id, VERIFICATION_STEP_IDS[0]);
+    assert.equal(readJobHistory(own).at(-1).result, 'cancelled');
+    // 취소한 뒤에도 같은 엔진으로 다시 생성할 수 있다.
+    assert.equal((await engine.generate(recipe())).verified, true);
+  });
+}
+
+test('a cancel that arrives after verification passed does not relabel the verified project as cancelled', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-verified-')));
+  t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  const controller = new AbortController();
+  // 검증이 통과한 뒤 정리(inspect)하는 순간 취소가 오고, 그 정리가 실패한다(소유 표식이 바뀜).
+  const mock = runner({ wrongOwner: true });
+  const run = async (command, args, options) => {
+    if (command === 'docker' && args[0] === 'inspect' && String(args[2]).includes('Labels')) controller.abort();
+    return mock.run(command, args, options);
+  };
+  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64) });
+  await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }), error => error.code !== 'CANCELLED' && /ownership changed/.test(error.message));
+  const job = readdirSync(join(own, 'build/project-composer/jobs'))[0];
+  assert.equal(JSON.parse(readFileSync(join(own, 'build/project-composer/jobs', job, 'report.json'), 'utf8')).result, 'failed');
+});
+
+test('a report that cannot be written does not turn a cancel into a generic failure', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-unwritable-')));
+  t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  const mock = runner({ hang: command => command === 'pnpm' });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const controller = new AbortController();
+  const work = engine.generate(recipe(), { signal: controller.signal });
+  await mock.hanging;
+  // 작업 보고서 자리를 폴더로 바꿔 쓰기를 실패시킨다(잠금·공간 부족과 같은 결과).
+  const job = readdirSync(join(own, 'build/project-composer/jobs'))[0];
+  const reportPath = join(own, 'build/project-composer/jobs', job, 'report.json');
+  rmSync(reportPath); mkdirSync(reportPath);
+  controller.abort();
+  await assert.rejects(() => work, error => error.code === 'CANCELLED' && error.details?.database === 'removed');
+});
+
+test('a signal that is already cancelled stops before any output, Docker or history', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-early-')));
+  t.after(() => rmSync(own, { recursive: true, force: true }));
+  const mock = runner();
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }),
+    error => error.code === 'CANCELLED' && error.failure.stage === 'resolve' && error.details.database === 'none' && error.details.staging === 'none');
+  assert.equal(mock.calls.length, 0);
+  assert.equal(existsSync(join(own, 'build')), false);
+});
+
+test('a cancel that arrives after a real failure began is still a cancellation, keeping the cause', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-cause-')));
+  t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
+  const controller = new AbortController();
+  const mock = runner();
+  const run = async (command, args, options) => {
+    // 의존성 설치가 실패로 끝나는 바로 그때 취소가 온다(끝낸 자식의 종료 코드처럼 보이는 실패).
+    if (command === 'npm') { controller.abort(); throw Object.assign(new Error('Command failed: npm (COMMAND_FAILED 1)'), { code: 'COMMAND_FAILED', exitCode: 1 }); }
+    return mock.run(command, args, options);
+  };
+  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64) });
+  await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }),
+    error => error.code === 'CANCELLED' && error.cause?.code === 'COMMAND_FAILED' && error.failure.stage === 'install');
+});
+
+test('a cleanup failure after cancelling is reported as a database left behind, without hiding the cancellation', async t => {
+  const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-cleanup-')));
+  t.after(() => rmSync(own, { recursive: true, force: true }));
+  const mock = runner({ wrongOwner: true, hang: (command, args) => args[0] === 'scripts/generate-reusable-base-db.mjs' });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const controller = new AbortController();
+  const work = engine.generate(recipe(), { signal: controller.signal });
+  await mock.hanging;
+  controller.abort();
+  await assert.rejects(() => work, error => error.code === 'CANCELLED' && error.details.database === 'failed');
+  const job = readdirSync(join(own, 'build/project-composer/jobs'))[0];
+  const report = JSON.parse(readFileSync(join(own, 'build/project-composer/jobs', job, 'report.json'), 'utf8'));
+  assert.equal(report.result, 'cancelled');
+  assert.match(report.cleanupFailure, /ownership changed/);
 });
 
 test('a cleanup failure after a passing verifier blames the verification stage, not its last step', async t => {
@@ -472,6 +639,47 @@ test('a command past its time limit ends its whole process tree without waiting 
   assert.equal(survived, false, 'the node process under the shell, holding the pipe, is ended too');
   // Windows 는 끝난 프로세스가 작업 폴더를 잠시 더 쥔다.
   rmSync(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+});
+
+test('a cancel signal ends the whole process tree the same way and returns CANCELLED', async () => {
+  // 시간 제한 시험과 같은 구조(셸 → 출력 파이프를 쥔 node)를 취소 신호로 끝낸다. 손자까지 끝나야 정리가 폴더를 다투지 않는다.
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-cancel-')));
+  const pidFile = join(directory, 'slow.pid');
+  const slow = join(directory, 'slow.cjs');
+  writeFileSync(slow, "require('node:fs').writeFileSync(process.env.SLOW_PID_FILE, String(process.pid)); setTimeout(() => {}, 20000);\n");
+  if (process.platform === 'win32') writeFileSync(join(directory, 'pnpm.cmd'), `@"${process.execPath}" "${slow}" %*\r\n`);
+  else writeFileSync(join(directory, 'pnpm'), `#!/bin/sh\n"${process.execPath}" "${slow}" "$@"\n`, { mode: 0o755 });
+  const pathKey = Object.keys(process.env).find(key => key.toUpperCase() === 'PATH') ?? 'PATH';
+  const env = { ...process.env, [pathKey]: `${directory}${process.platform === 'win32' ? ';' : ':'}${process.env[pathKey]}`, SLOW_PID_FILE: pidFile };
+  const controller = new AbortController();
+  const work = runComposerCommand('pnpm', ['--version'], { root: tmpdir(), env, signal: controller.signal });
+  for (let attempt = 0; attempt < 100 && !existsSync(pidFile); attempt += 1) await new Promise(resolve => setTimeout(resolve, 50));
+  const slowPid = Number(readFileSync(pidFile, 'utf8'));
+  const alive = pid => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  const started = Date.now();
+  controller.abort();
+  await assert.rejects(() => work, error => error.code === 'CANCELLED' && error.exitCode === null && error.commandId === 'pnpm');
+  assert.ok(Date.now() - started < 6000, `cancelling returns early (${Date.now() - started}ms)`);
+  for (let attempt = 0; attempt < 50 && alive(slowPid); attempt += 1) await new Promise(resolve => setTimeout(resolve, 100));
+  const survived = alive(slowPid);
+  if (survived) { try { process.kill(slowPid, 'SIGKILL'); } catch { /* 이미 끝났다. */ } }
+  assert.equal(survived, false, 'the node process under the shell is ended too');
+  rmSync(directory, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+});
+
+test('an already cancelled signal never starts the command, and a finished command leaves no listener behind', async () => {
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-cancel-early-')));
+  const marker = join(directory, 'ran');
+  const cancelled = new AbortController();
+  cancelled.abort();
+  await assert.rejects(() => runComposerCommand('node', ['-e', "require('node:fs').writeFileSync(process.argv[1], 'x')", marker], { root: tmpdir(), signal: cancelled.signal }),
+    error => error.code === 'CANCELLED' && error.exitCode === null && error.durationMs === 0);
+  assert.equal(existsSync(marker), false, 'nothing ran');
+  const controller = new AbortController();
+  assert.equal(await runComposerCommand('node', ['-e', "process.stdout.write('done')"], { root: tmpdir(), capture: true, signal: controller.signal }), 'done');
+  assert.equal(getEventListeners(controller.signal, 'abort').length, 0, 'the abort listener is removed when the command ends');
+  controller.abort();
+  rmSync(directory, { recursive: true, force: true });
 });
 
 test('a timed-out command returns at once even when a grandchild escapes the process tree', async () => {

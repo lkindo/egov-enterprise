@@ -1,5 +1,5 @@
 /*
- * 생성 작업의 상태와 화면에 보낼 모양(설계서 14.2·14.3·20장, E4b·E6a). 서버는 작업을 만들고 엔진 알림·결과를 여기로 넘긴다.
+ * 생성 작업의 상태와 화면에 보낼 모양(설계서 14.2·14.3·20장, E4b·E6a·E6b). 서버는 작업을 만들고 엔진 알림·결과를 여기로 넘긴다.
  * 엔진 값은 정해진 모양만 받고(어긋나면 버린다), 경과·남은 시간은 응답 시각에 서버 시계로 센다(엔진과 같은 프로세스다).
  */
 import { ComposerError, JOB_ERROR_CODES } from './project-composer-errors.mjs';
@@ -110,6 +110,42 @@ export function jobError(error, failure) {
   return { code, message: JOB_MESSAGES[code], ...(rule.action ? { action: rule.action } : {}), ...(Object.keys(shown).length ? { details: shown } : {}) };
 }
 
+/*
+ * 취소(E6b). 취소를 요청한 작업만 취소로 끝난다. 요청 없이 취소 코드가 오면 일반 실패로 말한다(엔진이 스스로 취소를 지어내지 않는다).
+ * 정리 결과는 엔진이 남긴 것만 정해진 값으로 받는다. 최종 위치로 옮긴 프로젝트 폴더는 지우지 않고 그 위치만 알린다.
+ */
+export const CANCELLING_MESSAGE = '생성을 취소하는 중입니다. 실행 중인 명령을 멈추고 임시 DB를 정리합니다.';
+// 취소를 받았지만 검증까지 이미 끝나 있던 작업. 성공으로 끝나며 그 사실을 말한다.
+export const LATE_CANCEL_MESSAGE = '취소 요청이 닿기 전에 생성과 검증을 마쳤습니다. 프로젝트를 남겨 두었습니다.';
+const CANCEL_STATES = Object.freeze(['removed', 'failed', 'none']);
+const PROJECT_PATH = /^build\/reusable-base\/source\/[a-z][a-z0-9-]{0,63}-[a-f0-9]{16}$/;
+const SCHEMA_PATH = /^build\/reusable-base\/composer-[a-z][a-z0-9-]{0,63}-[a-f0-9]{16}-db$/;
+function safeCancellation(details) {
+  if (!plain(details) || !CANCEL_STATES.includes(details.database) || !CANCEL_STATES.includes(details.staging)) return undefined;
+  const project = repositoryPath(details.project) && PROJECT_PATH.test(details.project) ? details.project : undefined;
+  // DB 스키마 폴더는 남긴 프로젝트와 함께일 때만 말한다(프로젝트 없이 남은 스키마 폴더는 정리 실패로 이미 말한다).
+  const schema = project && repositoryPath(details.schema) && SCHEMA_PATH.test(details.schema) ? details.schema : undefined;
+  return { database: details.database, staging: details.staging, ...(project ? { project } : {}), ...(schema ? { schema } : {}) };
+}
+/** 취소 문장. 지운 것은 말하지 않고, 지우지 못한 것과 남긴 것만 다음 행동과 함께 말한다. */
+export function cancelledMessage(cancellation) {
+  if (!cancellation) return '생성을 취소했습니다. 정리 결과는 작업 보고서에서 확인해 주세요.';
+  const parts = ['생성을 취소했습니다.'];
+  const leftover = [cancellation.database === 'failed' && '임시 DB', cancellation.staging === 'failed' && '만들던 폴더'].filter(Boolean);
+  if (leftover.length) parts.push(`${leftover.join('와 ')}를 지우지 못했습니다. 생성기를 다시 시작하면 다시 정리합니다.`);
+  else parts.push('임시 DB와 만들던 폴더는 남아 있지 않습니다.');
+  if (cancellation.project) {
+    parts.push(`검증을 마치지 않은 프로젝트 폴더${cancellation.schema ? '와 DB 스키마 폴더' : ''}는 남겨 두었습니다. 쓰지 않으려면 직접 지워 주세요.`);
+  }
+  return parts.join(' ');
+}
+/** 취소 요청. 진행 중인 작업만 받는다(true). 겹친 요청은 한 번만 반영한다. 정리를 마칠 때까지 작업은 진행 중이다. */
+export function requestCancel(job) {
+  if (job.status !== 'running') return false;
+  if (!job.cancelRequested) { job.cancelRequested = true; job.message = CANCELLING_MESSAGE; delete job.estimate; }
+  return true;
+}
+
 const DEFAULT_STAGE_MESSAGE = STAGES.resolve;
 /** 새 작업. 시작 시각은 서버 시계다(경과 시간을 센다). */
 export function startJob({ id, requestId, recipe, now = Date.now() }) {
@@ -125,7 +161,7 @@ function safeTimeline(value) {
   if (!plain(value)) return undefined;
   const valid = (list, ids) => dense(list) && list.length === ids.length && list.every((item, index) => plain(item) && item.id === ids[index]
     && TIMELINE_STATUSES.includes(item.status) && (item.status === 'running' ? count(item.startedAt) : item.startedAt === undefined)
-    && (item.durationMs === undefined || (count(item.durationMs) && ['passed', 'failed'].includes(item.status))));
+    && (item.durationMs === undefined || (count(item.durationMs) && ['passed', 'failed', 'cancelled'].includes(item.status))));
   if (!Object.entries(TIMELINE_IDS).every(([key, ids]) => valid(value[key], ids))) return undefined;
   const copy = list => list.map(({ id, status, startedAt, durationMs }) => ({ id, status,
     ...(startedAt !== undefined ? { startedAt } : {}), ...(durationMs !== undefined ? { durationMs } : {}) }));
@@ -157,6 +193,8 @@ export function applyJobProgress(job, event, now = Date.now()) {
   job.stage = event.stage;
   const timeline = safeTimeline(event.timeline);
   if (timeline) job.timeline = timeline;
+  // 취소하는 동안은 취소 문장을 지키고 남은 시간·진행률을 바꾸지 않는다. 타임라인은 멈춘 단계를 보이도록 계속 받는다.
+  if (job.cancelRequested) return;
   // 남은 단계가 없는 타임라인(실패를 알리는 마지막 알림)은 추정을 버리고 진행 문장을 일반 문구로 되돌리지 않는다.
   // 작업은 정리를 마친 뒤 실패로 끝나며, 그때 실패 문장이 나온다.
   const open = !job.timeline || [...job.timeline.stages, ...job.timeline.steps].some(openItem);
@@ -166,12 +204,20 @@ export function applyJobProgress(job, event, now = Date.now()) {
   if (Number.isFinite(event.progress)) job.progress = Math.max(job.progress, Math.min(99, Math.max(0, Math.round(event.progress))));
 }
 export function succeedJob(job, result, now = Date.now()) {
-  Object.assign(job, { status: 'succeeded', stage: 'complete', message: STAGES.complete, progress: 100, result, finishedAtMs: now });
+  Object.assign(job, { status: 'succeeded', stage: 'complete', message: job.cancelRequested ? LATE_CANCEL_MESSAGE : STAGES.complete,
+    progress: 100, result, finishedAtMs: now });
   delete job.estimate;
 }
-/** 작업 실패. 검증 실패만 실패한 단계와 가린 로그 끝부분을 함께 보인다(DEC-OPS-249). */
+/** 작업 실패. 검증 실패만 실패한 단계와 가린 로그 끝부분을 함께 보인다(DEC-OPS-249). 취소를 요청한 작업의 취소는 취소로 끝낸다. */
 export function failJob(job, error, now = Date.now()) {
   const failure = safeFailure(error?.failure);
+  if (job.cancelRequested && error instanceof ComposerError && error.code === 'CANCELLED') {
+    const cancellation = safeCancellation(error.details);
+    Object.assign(job, { status: 'cancelled', message: cancelledMessage(cancellation), finishedAtMs: now });
+    if (cancellation || failure?.report) job.cancellation = { ...(cancellation ?? {}), ...(failure?.report ? { report: failure.report } : {}) };
+    delete job.estimate;
+    return;
+  }
   job.status = 'failed'; job.error = jobError(error, failure); job.message = job.error.message; job.finishedAtMs = now;
   if (failure && job.error.code === 'VERIFY_FAILED') {
     failure.step = error.details.step; failure.stepLabel = VERIFY_STEP_LABELS[failure.step];
