@@ -49,7 +49,11 @@ const LOG_LIMIT = 1024 * 1024;
 const LINE_LIMIT = 16 * 1024;
 
 /** Windows shells are used only for fixed tool names and fixed argument lists. Recipe values never become shell code. */
-export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs } = {}) {
+/**
+ * `onLine` 은 자식 출력 한 줄마다(가리기 전 원문) 불린다. 생성 작업이 검증기의 단계 머리줄을 보고 진행 단계를 알리는 데만 쓴다
+ * (원문을 저장하거나 화면으로 보내지 않는다).
+ */
+export function runComposerCommand(command, args, { root, env = process.env, capture = false, log, timeoutMs, onLine } = {}) {
   return new Promise((accept, reject) => {
     const windows = process.platform === 'win32';
     const executable = command === 'node' ? process.execPath
@@ -73,19 +77,23 @@ export function runComposerCommand(command, args, { root, env = process.env, cap
     };
     const stream = source => {
       let rest = '';
+      const take = part => {
+        if (onLine) { try { onLine(part); } catch { /* 관찰자 오류가 명령 결과를 바꾸지 않는다. */ } }
+        if (log) keep(part);
+      };
       source.on('data', chunk => {
-        if (!log) return;
+        if (!log && !onLine) return;
         const parts = (rest + chunk.toString()).split(/\r?\n/);
         rest = parts.pop();
-        for (const part of parts) keep(part);
+        for (const part of parts) take(part);
       });
-      return () => { if (log && rest) keep(rest); };
+      return () => { if (rest) take(rest); rest = ''; };
     };
     child.stdout.on('data', chunk => { if (capture && output.length < 4 * 1024 * 1024) output += chunk.toString(); });
     const flush = [stream(child.stdout), stream(child.stderr)];
     const written = exitCode => {
-      if (!log) return;
       flush.forEach(finish => finish());
+      if (!log) return;
       const header = masker.line(`$ ${[command, ...args].join(' ')}`);
       const omitted = dropped ? [`…앞 ${dropped}줄 생략(로그 상한 ${LOG_LIMIT}바이트, 끝부분 보존)`] : [];
       mkdirSync(dirname(log), { recursive: true });

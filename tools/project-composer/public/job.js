@@ -4,6 +4,39 @@
 const FAILURE_PARTS = ['job-failure', 'job-actions', 'job-log-tail', 'retry-status'];
 const JOB_ACTIONS = Object.freeze({ regenerate: '다시 생성', recheck: '생성 환경 다시 점검', 'copy-diagnostics': '진단 정보 복사' });
 
+/** 걸린 시간을 사람이 읽는 말로. 1초 미만은 0.1초 단위, 1분 미만은 초, 그 위는 분·초(초는 두 자리), 1시간 위는 시간·분. */
+export function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return '';
+  if (ms < 1000) return `${Math.max(0.1, Math.round(ms / 100) / 10)}초`;
+  const seconds = Math.floor(ms / 1000);
+  if (seconds < 60) return `${seconds}초`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}분 ${String(seconds % 60).padStart(2, '0')}초`;
+  return `${Math.floor(minutes / 60)}시간 ${String(minutes % 60).padStart(2, '0')}분`;
+}
+const STATUS_TEXT = Object.freeze({ pending: '대기', running: '진행 중', passed: '완료', failed: '실패', skipped: '건너뜀' });
+const STATUS_CLASS = Object.freeze({ pending: 'text-muted', running: 'font-semibold', passed: '', failed: 'font-semibold text-danger', skipped: 'text-muted' });
+/** 단계 하나의 상태 문장. 진행 중이면 지금까지 걸린 시간을, 끝났으면 걸린 시간을 붙인다. */
+export function timelineStatus(item) {
+  const time = item.status === 'running' ? item.elapsedMs : item.durationMs;
+  const text = STATUS_TEXT[item.status] ?? '';
+  return Number.isFinite(time) && ['running', 'passed', 'failed'].includes(item.status) ? `${text} · ${formatDuration(time)}` : text;
+}
+/** 경과·남은 시간 한 줄. 남은 시간은 같은 배치로 끝까지 마친 기록이 충분할 때만 숫자로 말한다. */
+export function elapsedSentence(job) {
+  if (!Number.isFinite(job?.elapsedMs)) return '';
+  if (job.status !== 'running') return `걸린 시간 ${formatDuration(job.elapsedMs)}`;
+  const estimate = job.estimate;
+  let rest = '';
+  if (estimate && Number.isFinite(estimate.remainingMs)) {
+    rest = estimate.remainingMs > 0 ? ` · 최근 ${estimate.runs}회 기록 기준 약 ${formatDuration(estimate.remainingMs)} 남음`
+      : ' · 최근 기록보다 오래 걸리고 있습니다';
+  } else if (estimate && Number.isInteger(estimate.minRuns)) {
+    rest = ` · 남은 시간은 같은 배치로 끝까지 마친 기록이 ${estimate.minRuns}회 이상이면 알려 드립니다(지금 ${estimate.runs}회)`;
+  }
+  return `경과 ${formatDuration(job.elapsedMs)}${rest}`;
+}
+
 /**
  * 진단 정보(클립보드). 코드·단계·원본 커밋·작업 보고서 위치·파일만 담는다. 문장·로그 끝부분·이 컴퓨터의 경로·선택 정보는 넣지 않는다
  * (클립보드는 이슈 트래커 같은 제3자로 나간다). 값은 모두 서버가 다시 거른 식별자다.
@@ -28,6 +61,55 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
     for (const id of ['job-failure', 'job-actions']) { $(id).replaceChildren(); $(id).hidden = true; }
     $('job-log-tail').open = false; $('job-log-tail').hidden = true; $('job-log-tail-lines').textContent = '';
     if (focused) $('job-heading').focus();
+  }
+  // 진행 단계 목록. 같은 작업이면 항목을 제자리에서 고친다(매번 새로 만들면 화면 낭독기가 읽던 자리를 잃는다).
+  function renderTimeline(job) {
+    const list = $('job-timeline');
+    if (list.dataset.job !== job.id) { list.replaceChildren(); list.dataset.job = job.id; }
+    if (!job.timeline) { list.hidden = true; return; }
+    const row = (parent, item) => {
+      let element = [...parent.children].find(child => child.dataset.id === item.id);
+      if (!element) {
+        element = document.createElement('li');
+        element.dataset.id = item.id;
+        // 상태 색·굵기는 이 줄에만 붙인다(목록 항목에 붙이면 안쪽 검증 단계 목록이 물려받는다).
+        const line = document.createElement('span');
+        line.dataset.part = 'line';
+        const status = text('span', '');
+        status.dataset.part = 'status';
+        line.append(text('span', item.label ?? item.id), document.createTextNode(' · '), status);
+        element.append(line);
+        parent.append(element);
+      }
+      const line = element.querySelector(':scope > [data-part="line"]');
+      line.querySelector('[data-part="status"]').textContent = timelineStatus(item);
+      line.className = STATUS_CLASS[item.status] ?? '';
+      if (item.status === 'running') element.setAttribute('aria-current', 'step'); else element.removeAttribute('aria-current');
+      return element;
+    };
+    for (const stage of job.timeline.stages ?? []) {
+      const element = row(list, stage);
+      if (stage.id !== 'verify') continue;
+      let steps = element.querySelector('ol');
+      if (!steps) {
+        steps = document.createElement('ol');
+        steps.className = 'ml-5 mt-1 space-y-0.5 text-xs';
+        steps.setAttribute('aria-label', '검증 단계');
+        element.append(steps);
+      }
+      for (const step of job.timeline.steps ?? []) row(steps, step);
+    }
+    list.hidden = false;
+  }
+  function renderProgressDetails(job) {
+    const sentence = elapsedSentence(job);
+    $('job-elapsed').textContent = sentence; $('job-elapsed').hidden = !sentence;
+    renderTimeline(job);
+  }
+  // 새 요청을 보내는 동안 앞 작업의 단계·시간을 이번 요청의 것처럼 남기지 않는다.
+  function clearProgressDetails() {
+    $('job-elapsed').textContent = ''; $('job-elapsed').hidden = true;
+    $('job-timeline').replaceChildren(); $('job-timeline').hidden = true; delete $('job-timeline').dataset.job;
   }
   function renderFailureDetails(failure) {
     const details = $('job-failure');
@@ -97,6 +179,7 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
     // 실패 문장은 #job-error(assertive)에서 한 번만 알린다. 같은 문장을 진행 상태 줄(polite)에 두 번 쓰지 않는다.
     $('job-message').textContent = job.status === 'failed' ? '' : job.message;
     $('job-progress').value = job.progress ?? 0;
+    renderProgressDetails(job);
     $('job-result').hidden = true;
     if (job.status === 'running') { $('job-heading').textContent = '프로젝트 준비 중'; busy(true); return; }
     busy(false);
@@ -138,7 +221,7 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
     const selectedRecipe = recipe();
     state.requestId ??= crypto.randomUUID();
     const requestId = state.requestId;
-    clearJobFailure();
+    clearJobFailure(); clearProgressDetails();
     busy(true); $('job-panel').hidden = false; $('job-result').hidden = true;
     $('job-heading').textContent = '프로젝트 준비 중'; $('job-message').textContent = '생성을 요청하고 있습니다…';
     try {

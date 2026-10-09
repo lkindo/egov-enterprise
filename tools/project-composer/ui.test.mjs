@@ -12,6 +12,9 @@ import { loadProjectComposerMenus } from '../../scripts/project-composer-menu-pr
 import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
+import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
+import { JOB_STAGES } from '../../scripts/project-composer-timeline.mjs';
+import { VERIFICATION_STEP_IDS } from '../../scripts/verify-reusable-artifact.mjs';
 
 const catalog = {
   sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), mandatory: ['foundation', 'core'],
@@ -1409,4 +1412,110 @@ test('a command that ended without an exit code is not called "could not run", a
   await expect(page.locator('#job-heading')).toBeFocused();
   await expect(page.locator('#job-failure')).toContainText('실패 명령: pnpm (종료 코드 없이 끝남)');
   assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 상태와 시간을 보이고, 남은 시간은 같은 배치로 끝까지 마친 기록이
+ * 충분할 때만 숫자로 말한다. 같은 작업의 목록은 제자리에서 고치고, 새 작업은 목록을 새로 시작한다.
+ */
+const timelineOf = overrides => ({
+  stages: JOB_STAGES.map(id => ({ id, status: 'pending', ...(overrides[id] ?? {}) })),
+  steps: VERIFICATION_STEP_IDS.map(id => ({ id, status: 'pending', ...(overrides[id] ?? {}) })),
+});
+const done = { resolve: { status: 'passed', durationMs: 400 }, database: { status: 'passed', durationMs: 27_000 }, source: { status: 'passed', durationMs: 10_000 },
+  install: { status: 'passed', durationMs: 9_000 }, governance: { status: 'passed', durationMs: 5_000 }, 'ui-governance': { status: 'passed', durationMs: 6_000 },
+  entrypoints: { status: 'passed', durationMs: 2_000 } };
+
+test('the job panel shows each stage and verification step with its time, and the remaining time only from enough history', { timeout: 60_000 }, async t => {
+  let generations = 0;
+  const gates = [];
+  const gate = () => new Promise(resolve => gates.push(resolve));
+  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+    generations += 1;
+    if (generations > 1) {
+      onProgress({ stage: 'resolve', progress: 0, timeline: timelineOf({ resolve: { status: 'running', startedAt: Date.now() } }) });
+      await gate();
+      throw new Error('second job ends with the test');
+    }
+    const started = Date.now();
+    onProgress({ stage: 'verify', progress: 23, estimate: { runs: 1, remainingMs: null },
+      timeline: timelineOf({ ...done, verify: { status: 'running', startedAt: started }, backend: { status: 'running', startedAt: started } }) });
+    await gate();
+    onProgress({ stage: 'verify', progress: 23, estimate: { runs: 4, remainingMs: 130_000, pendingMs: 100_000, running: { id: 'backend', typicalMs: 30_000 } },
+      timeline: timelineOf({ ...done, verify: { status: 'running', startedAt: started }, backend: { status: 'running', startedAt: started } }) });
+    await gate();
+    onProgress({ stage: 'verify', progress: 23, timeline: timelineOf({ ...done, verify: { status: 'failed', durationMs: 70_000 },
+      backend: { status: 'failed', durationMs: 55_000 }, typecheck: { status: 'skipped' }, lint: { status: 'skipped' }, build: { status: 'skipped' } }) });
+    throw verifyFailure('backend', ['> Task :compileJava FAILED']);
+  } });
+  await page.goto(origin);
+  await page.getByLabel('프로젝트 이름').fill('agency-service');
+  await page.locator('#capability-board').check();
+  await expect(generateButton(page)).toBeEnabled();
+  await confirmGenerate(page);
+  const list = page.getByRole('list', { name: '생성 단계' });
+  await expect(list).toBeVisible();
+  await expect(list.locator(':scope > li')).toHaveCount(5);
+  await expect(list.locator(':scope > li[data-id="resolve"]')).toHaveText('구성 확인 · 완료 · 0.4초');
+  await expect(list.locator(':scope > li[data-id="database"]')).toHaveText('PostgreSQL 스키마와 초기 데이터 생성 · 완료 · 27초');
+  const steps = page.getByRole('list', { name: '검증 단계' });
+  await expect(steps.locator('li')).toHaveCount(7);
+  const backend = steps.locator('li[data-id="backend"]');
+  await expect(backend).toHaveText(/^백엔드 컴파일·테스트 · 진행 중 · \d+(\.\d)?초$/);
+  await expect(backend).toHaveAttribute('aria-current', 'step');
+  await expect(list.locator(':scope > li[data-id="verify"]')).toHaveAttribute('aria-current', 'step');
+  await expect(steps.locator('li[data-id="typecheck"]')).toHaveText('타입 검사 · 대기');
+  await expect(page.locator('#job-message')).toHaveText('생성 프로젝트 검증 중 · 백엔드 컴파일·테스트 (4/7)');
+  await expect(page.locator('#job-elapsed')).toHaveText(/^경과 \d+(\.\d)?초 · 남은 시간은 같은 배치로 끝까지 마친 기록이 3회 이상이면 알려 드립니다\(지금 1회\)$/);
+  assert.equal(await page.locator('#job-elapsed').getAttribute('aria-live'), null, 'the ticking time is not announced');
+  // 같은 작업의 다음 조회는 항목을 새로 만들지 않는다(화면 낭독기가 읽던 자리를 지킨다).
+  await page.evaluate(() => { window.backendRow = document.querySelector('#job-timeline li[data-id="backend"]'); });
+  gates.shift()();
+  await expect(page.locator('#job-elapsed')).toHaveText(/ · 최근 4회 기록 기준 약 2분 \d\d초 남음$/);
+  assert.equal(await page.evaluate(() => window.backendRow === document.querySelector('#job-timeline li[data-id="backend"]')), true);
+  gates.shift()();
+  await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
+  await expect(backend).toHaveText('백엔드 컴파일·테스트 · 실패 · 55초');
+  await expect(backend.locator(':scope > [data-part="line"]')).toHaveClass(/text-danger/);
+  // 실패 색은 실패한 줄에만 붙는다. 통과한 검증 단계와 단계 목록 항목은 물려받지 않는다.
+  await expect(steps.locator('li[data-id="governance"] > [data-part="line"]')).not.toHaveClass(/text-danger/);
+  assert.equal(await list.locator(':scope > li[data-id="verify"]').getAttribute('class'), null);
+  await expect(steps.locator('li[data-id="build"]')).toHaveText('프런트 빌드 · 건너뜀');
+  await expect(page.locator('#job-elapsed')).toHaveText(/^걸린 시간 /);
+  assert.equal(await page.locator('#job-timeline [aria-current]').count(), 0, 'nothing is current once the job ended');
+  // 다시 생성한 새 작업은 단계 목록을 새로 시작한다(앞 작업의 실패·시간이 남지 않는다).
+  // 요청을 보내는 동안에는 앞 작업의 단계·시간을 이번 요청의 것처럼 보이지 않는다.
+  let releaseRequest;
+  let held = false;
+  await page.route('**/api/jobs', async route => {
+    if (!held) { held = true; await new Promise(resolve => { releaseRequest = resolve; }); }
+    await route.continue();
+  });
+  await page.locator('#job-actions').getByRole('button', { name: '다시 생성' }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await dialog.getByRole('button', { name: '생성 시작' }).click();
+  await expect(page.locator('#job-message')).toHaveText('생성을 요청하고 있습니다…');
+  await expect(list).toBeHidden();
+  await expect(page.locator('#job-elapsed')).toBeHidden();
+  releaseRequest();
+  await expect(list.locator(':scope > li[data-id="resolve"]')).toHaveText(/^구성 확인 · 진행 중 · /);
+  await expect(list.locator(':scope > li[data-id="verify"] > [data-part="line"] > [data-part="status"]')).toHaveText('대기');
+  // 검증 단계는 앞으로 할 일로 미리 보이되, 앞 작업의 항목이 아니라 새 항목이다.
+  await expect(backend).toHaveText('백엔드 컴파일·테스트 · 대기');
+  assert.equal(await page.evaluate(() => window.backendRow.isConnected), false);
+  gates.shift()?.();
+  assert.deepEqual(pageErrors, []);
+});
+
+test('durations, step states and the elapsed sentence read as plain Korean', () => {
+  assert.deepEqual([40, 400, 27_000, 59_999, 60_000, 368_000, 3_660_000].map(formatDuration), ['0.1초', '0.4초', '27초', '59초', '1분 00초', '6분 08초', '1시간 01분']);
+  assert.equal(formatDuration(-1), '');
+  assert.equal(timelineStatus({ status: 'failed', durationMs: 38_000 }), '실패 · 38초');
+  assert.equal(timelineStatus({ status: 'pending', durationMs: 5 }), '대기', 'a pending step shows no time');
+  assert.equal(timelineStatus({ status: 'passed' }), '완료', 'a step the verifier did not time shows no time');
+  assert.equal(elapsedSentence({ status: 'running', elapsedMs: 1_000, estimate: { runs: 3, minRuns: 3, remainingMs: 0 } }),
+    '경과 1초 · 최근 기록보다 오래 걸리고 있습니다', 'an overrun never says zero seconds remain');
+  assert.equal(elapsedSentence({ status: 'running', elapsedMs: 1_000 }), '경과 1초');
+  assert.equal(elapsedSentence({ status: 'failed', elapsedMs: 61_000, estimate: { runs: 3, minRuns: 3, remainingMs: 9 } }), '걸린 시간 1분 01초');
+  assert.equal(elapsedSentence({ status: 'running' }), '');
 });
