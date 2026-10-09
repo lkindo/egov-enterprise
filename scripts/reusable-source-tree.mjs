@@ -60,12 +60,18 @@ export function trackedAndUntrackedFiles() {
     .filter((path) => !normalize(path).split('/').includes('build'));
 }
 
+/** 생성기가 산출물로 복사하는 파일인가. 정밀 점검(plan/deep)도 같은 판정으로 생성물의 파일 집합을 계산한다. */
+export function isCopyableSourceFile(rel, sourceRoot = ROOT) {
+  const normalized = rel.replaceAll('\\', '/');
+  if (EXCLUDED_REUSABLE_SKILL_ROOTS.some((skill) => normalized === skill || normalized.startsWith(`${skill}/`))) return false;
+  const source = join(sourceRoot, rel);
+  return existsSync(source) && statSync(source).isFile();
+}
+
 export function copySourceTree(output, { sourceRoot = ROOT, files = trackedAndUntrackedFiles() } = {}) {
   for (const rel of files) {
-    const normalized = rel.replaceAll('\\', '/');
-    if (EXCLUDED_REUSABLE_SKILL_ROOTS.some((skill) => normalized === skill || normalized.startsWith(`${skill}/`))) continue;
+    if (!isCopyableSourceFile(rel, sourceRoot)) continue;
     const source = join(sourceRoot, rel);
-    if (!existsSync(source) || !statSync(source).isFile()) continue;
     const target = join(output, rel);
     mkdirSync(dirname(target), { recursive: true });
     copyFileSync(source, target);

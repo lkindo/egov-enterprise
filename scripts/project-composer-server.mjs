@@ -27,6 +27,7 @@ const MESSAGES = Object.freeze({
   REQUEST_CONFLICT: '이미 사용한 요청입니다. 구성을 확인한 뒤 다시 시도해 주세요.',
   GENERATION_FAILED: '프로젝트 생성에 실패했습니다. Docker와 개발 도구 상태를 확인한 뒤 다시 시도해 주세요.',
   PREFLIGHT_FAILED: '생성 환경을 점검하지 못했습니다. 잠시 후 다시 점검해 주세요.',
+  DEEP_FAILED: '소스 정밀 점검 결과를 확인하지 못했습니다. 다시 점검해 주세요.',
   INTERNAL_ERROR: '요청을 처리하지 못했습니다. 입력은 유지됩니다. 잠시 후 다시 시도해 주세요.',
 });
 
@@ -107,6 +108,42 @@ function safePreflight(value) {
   return { checks: safe, blocked: safe.some(check => check.status === 'block') };
 }
 
+/**
+ * 소스 정밀 점검 결과도 정해진 모양만 넘긴다. 차단 사유 하나라도 모양이 어긋나면 결과 전체를 버린다
+ * (빠진 차단 사유는 생성할 수 있다고 말하게 된다). 파일 목록은 저장소 기준 경로이고 차단 사유마다 앞 200개만 보낸다.
+ */
+const count = value => Number.isSafeInteger(value) && value >= 0;
+const removal = value => value === null || (plain(value) && count(value.removedFiles) && count(value.cascadeFiles) && value.cascadeFiles <= value.removedFiles);
+// 빈 칸 없는 배열만 받는다(every 는 빈 칸을 건너뛰고, 빈 칸은 JSON 에서 null 이 된다).
+const dense = value => Array.isArray(value) && Object.keys(value).length === value.length;
+// 저장소 기준 경로만 받는다. 절대 경로·상위 폴더·역슬래시 경로는 이 컴퓨터의 폴더 이름을 흘릴 수 있다.
+const repositoryPath = value => line(value, 500) && !/^(?:[A-Za-z]:|[\\/])/.test(value) && !value.includes('\\') && !value.split('/').includes('..');
+const files = value => dense(value) && value.every(repositoryPath);
+// 투영 오류 문장의 안전망: 엔진이 저장소 기준으로 바꾸지 못한 절대 경로를 가린다.
+const ABSOLUTE_PATH = /(?:[A-Za-z]:[\\/]|\\\\|\/(?:Users|home|root|tmp|var|private|mnt|opt|srv|Volumes)\/)[^\s'"`]*/g;
+function safeDeep(value) {
+  const blockers = dense(value?.blockers) ? value.blockers : null;
+  const validBlocker = blocker => plain(blocker) && /^[A-Z][A-Z_]{2,39}$/.test(blocker.code) && line(blocker.label, 200)
+    && (blocker.files === undefined || (files(blocker.files) && blocker.files.length > 0))
+    && (blocker.message === undefined || typeof blocker.message === 'string');
+  // 투영 결과가 비었으면 그 투영의 차단 사유가 함께 있어야 한다. 없으면 계산하지 않은 결과를 통과로 말하게 된다.
+  const explained = (projection, code) => projection !== null || blockers.some(blocker => blocker.code === code);
+  if (!plain(value) || !blockers || blockers.length > 20 || !blockers.every(validBlocker) || !removal(value.java) || !removal(value.frontend)
+    || !explained(value.java, 'JAVA_PROJECTION') || !explained(value.frontend, 'FRONTEND_PROJECTION')
+    || !files(value.removedGates) || !line(value.summary, 200) || !count(value.durationMs)) throw new HttpError(500, 'DEEP_FAILED');
+  return {
+    java: value.java && { removedFiles: value.java.removedFiles, cascadeFiles: value.java.cascadeFiles },
+    frontend: value.frontend && { removedFiles: value.frontend.removedFiles, cascadeFiles: value.frontend.cascadeFiles },
+    removedGates: value.removedGates,
+    blockers: blockers.map(({ code, label, files: list, message }) => ({ code, label,
+      ...(list ? { files: list.slice(0, 200), fileCount: list.length } : {}),
+      ...(message ? { message: message.replace(/[\r\n\0]+/g, ' ').replace(ABSOLUTE_PATH, '<로컬 경로>').slice(0, 500) } : {}) })),
+    blocked: blockers.length > 0,
+    summary: value.summary,
+    durationMs: value.durationMs,
+  };
+}
+
 /** 실패한 단계·명령 식별자·종료 코드·가린 로그 위치만 넘긴다. 오류 메시지와 자식 출력은 보내지 않는다. */
 function safeFailure(failure) {
   if (!plain(failure)) return undefined;
@@ -148,7 +185,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
       if (url.search || url.hash) throw new HttpError(400, 'BAD_REQUEST');
       const path = url.pathname;
       // 생성 전 점검도 이 컴퓨터에서 명령을 띄우므로 계획·생성과 같은 출처·CSRF 경계를 지난다.
-      const mutation = ['/api/plan', '/api/plan/diff', '/api/preflight', '/api/jobs'].includes(path);
+      const mutation = ['/api/plan', '/api/plan/diff', '/api/plan/deep', '/api/preflight', '/api/jobs'].includes(path);
       if (request.method !== (mutation ? 'POST' : 'GET')) throw new HttpError(405, 'METHOD_NOT_ALLOWED');
       if (mutation) {
         const supplied = request.headers['x-composer-csrf'];
@@ -161,6 +198,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         // 계획 차이는 선택 기능이다. 엔진이 제공하지 않으면 없는 경로로 답한다.
         if (path === '/api/plan/diff' && typeof engine.diff !== 'function') throw new HttpError(404, 'NOT_FOUND');
         if (path === '/api/preflight' && typeof engine.preflight !== 'function') throw new HttpError(404, 'NOT_FOUND');
+        if (path === '/api/plan/deep' && typeof engine.deep !== 'function') throw new HttpError(404, 'NOT_FOUND');
         const input = await body(request);
         if (path === '/api/preflight') {
           // 원본 비교는 점검을 요청한 화면이 카탈로그를 받은 때의 커밋과 한다(탭마다 다를 수 있다).
@@ -180,7 +218,14 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
         if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
         const recipe = validateComposerRequestRecipe(input.recipe);
-        if (path === '/api/plan/diff') {
+        if (path === '/api/plan/deep') {
+          let deep;
+          // 해석기가 거부한 구성은 입력 오류로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).
+          try { deep = await engine.deep(recipe); } catch (error) {
+            throw error?.code === 'INVALID_RECIPE' ? new HttpError(400, 'INVALID_RECIPE') : new HttpError(500, 'DEEP_FAILED');
+          }
+          json(response, 200, { deep: safeDeep(deep) });
+        } else if (path === '/api/plan/diff') {
           if (!identifier(input.domain)) throw new HttpError(400, 'BAD_REQUEST');
           let diff;
           try { diff = await engine.diff(recipe, input.domain); } catch { throw new HttpError(400, 'INVALID_RECIPE'); }
@@ -233,7 +278,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         if (!job) throw new HttpError(404, 'NOT_FOUND');
         json(response, 200, { job });
       } else {
-        const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
+        const assets = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/confirm.js': ['confirm.js', 'text/javascript'], '/styles.css': ['styles.css', 'text/css'] };
         if (!Object.hasOwn(assets, path)) throw new HttpError(404, 'NOT_FOUND');
         const [file, type] = assets[path];
         const content = await readFile(resolve(publicDirectory, file));

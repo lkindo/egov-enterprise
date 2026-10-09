@@ -12,6 +12,7 @@ import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
+import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERSION = 1;
@@ -395,7 +396,23 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
   const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit,
     probe: (command, args) => run(command, args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS }) });
-  return { catalog, plan, diff, preflight, generate, outputRoot };
+  // 정밀 점검: 생성기의 투영 판정을 디스크를 바꾸지 않고 미리 한다(요청할 때만, 수 초가 걸린다).
+  // 계획처럼 카탈로그를 새로 적재하고, 생성기가 복사할 파일 목록(추적·무시되지 않은 새 파일, build 제외)을 쓴다.
+  const deep = recipe => {
+    const current = loadCatalog(root);
+    // 해석기가 거부한 구성은 입력 오류다(화면을 연 뒤 카탈로그가 바뀌었을 수도 있다). 그 밖의 실패는 점검 실패다.
+    let composition;
+    try { composition = resolveProjectRecipe(recipe, current); } catch (error) { throw Object.assign(new Error(error.message), { code: 'INVALID_RECIPE' }); }
+    const sourceCommit = git(root, ['rev-parse', '--verify', `${recipe.sourceRef}^{commit}`]);
+    if (sourceCommit !== git(root, ['rev-parse', 'HEAD'])) throw new Error('Recipe sourceRef does not identify the current checkout');
+    const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
+    const files = git(root, ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
+      .filter(file => !file.replaceAll('\\', '/').split('/').includes('build'));
+    // 대소문자 구분은 생성물을 만들 폴더(composerOutputPaths 의 상위 폴더)에서 판정한다.
+    const result = compositionDeepPlan({ root, manifest, composition, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
+    return { ...result, summary: deepSummary(result) };
+  };
+  return { catalog, plan, diff, preflight, deep, generate, outputRoot };
 }
 
 export function parseComposerArgs(args) {

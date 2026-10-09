@@ -64,7 +64,7 @@ test('local server binds only loopback and serves explicit static assets with a 
   assert.match(session.csrfToken, /^[a-f0-9]{64}$/);
   assert.deepEqual(session.catalog, catalog);
   assert.equal(session.job, null);
-  for (const path of ['/', '/app.js', '/styles.css']) {
+  for (const path of ['/', '/app.js', '/confirm.js', '/styles.css']) {
     const result = await send(origin, path);
     assert.equal(result.status, 200, path);
     assert.equal(result.headers['cache-control'], 'no-store');
@@ -308,4 +308,117 @@ test('a malformed or failing preflight is a failure, never a pass without detail
   // 엔진이 점검을 제공하지 않으면 없는 경로로 답한다.
   const { post: without } = await fixture(t);
   assert.equal((await without('/api/preflight', { sourceCommit: SCREEN })).status, 404);
+});
+
+/*
+ * 소스 정밀 점검(설계서 10장 plan/deep, C3). 계획과 같은 경계(출처·CSRF·recipe 검증)를 지난다. 지워질 파일의 경로 목록은
+ * 화면에 보내지 않고 개수만 넘기며, 차단 사유의 파일 목록은 앞 200개와 전체 수만 넘긴다. 차단 여부는 서버가 다시 센다.
+ */
+const deepResult = (blockers = []) => ({
+  java: { removedFiles: 517, cascadeFiles: 114, files: ['business-app/src/main/java/A.java'] },
+  frontend: { removedFiles: 388, cascadeFiles: 73, files: ['frontend/src/a.ts'] },
+  removedGates: ['api-server/src/test/java/nuri/api/harness/XLinterTest.java'],
+  blockers, summary: '제거: Java 517개(연쇄 114) · 프런트 388개(연쇄 73) · 검증 게이트 1건', durationMs: 4210, blocked: false, extra: 'x',
+});
+test('plan deep shares the plan boundary and passes only counts, gates and bounded blockers', async t => {
+  const asked = [];
+  let next = deepResult();
+  const { origin, post, headers } = await fixture(t, { deep: value => {
+    asked.push(value);
+    if (value.project.name === 'broken') throw new Error('C:/Users/me/private-path');
+    return next;
+  } });
+  const ok = await post('/api/plan/deep', { recipe: recipe() });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(ok.body, { deep: { java: { removedFiles: 517, cascadeFiles: 114 }, frontend: { removedFiles: 388, cascadeFiles: 73 },
+    removedGates: ['api-server/src/test/java/nuri/api/harness/XLinterTest.java'], blockers: [], blocked: false,
+    summary: '제거: Java 517개(연쇄 114) · 프런트 388개(연쇄 73) · 검증 게이트 1건', durationMs: 4210 } });
+  assert.deepEqual(asked, [recipe()]);
+  // 차단 사유: 파일 목록은 앞 200개와 전체 수만, 메시지는 한 줄 500자까지. 엔진이 blocked 를 거짓으로 말해도 서버가 다시 센다.
+  const many = Array.from({ length: 250 }, (_, index) => `frontend/src/app/page-${index}.tsx`);
+  next = deepResult([
+    { code: 'SOURCE_SURVIVAL', label: '선택한 기능의 소스가 투영 중 지워집니다', files: many, extra: 1 },
+    { code: 'JAVA_PROJECTION', label: 'Java 소스를 투영할 수 없습니다', message: `첫 줄\r\n둘째 줄${'x'.repeat(600)}` },
+  ]);
+  const blocked = await post('/api/plan/deep', { recipe: recipe() });
+  assert.equal(blocked.status, 200);
+  assert.equal(blocked.body.deep.blocked, true);
+  assert.deepEqual(blocked.body.deep.blockers[0], { code: 'SOURCE_SURVIVAL', label: '선택한 기능의 소스가 투영 중 지워집니다', files: many.slice(0, 200), fileCount: 250 });
+  assert.equal(blocked.body.deep.blockers[1].message, `첫 줄 둘째 줄${'x'.repeat(600)}`.slice(0, 500));
+  // 계획을 통과한 구성의 엔진 오류는 입력 탓이 아니므로 점검 실패로 답하고 내용을 숨긴다.
+  const broken = await post('/api/plan/deep', { recipe: { ...recipe(), project: { name: 'broken' } } });
+  assert.equal(broken.status, 500);
+  assert.equal(broken.body.error.code, 'DEEP_FAILED');
+  assert.doesNotMatch(broken.text, /private-path/);
+  // 경계: GET 은 없고, CSRF·출처가 맞아야 하며, 본문은 recipe 하나뿐이고 형식이 맞아야 엔진에 닿는다.
+  const before = asked.length;
+  assert.equal((await send(origin, '/api/plan/deep')).status, 405);
+  assert.equal((await post('/api/plan/deep', { recipe: recipe() }, { headers: { ...headers, 'X-Composer-CSRF': '0'.repeat(64) } })).status, 403);
+  assert.equal((await post('/api/plan/deep', { recipe: recipe() }, { headers: { ...headers, Origin: 'http://evil.example' } })).status, 403);
+  for (const body of [{}, { recipe: recipe(), extra: 1 }, { recipe: { ...recipe(), schemaVersion: 2 } }, { recipe: { ...recipe(), selection: { domains: ['../x'] } } }]) {
+    assert.equal((await post('/api/plan/deep', body)).status, 400, JSON.stringify(body));
+  }
+  assert.equal(asked.length, before, 'rejected requests never reach the engine');
+});
+
+test('a malformed deep plan is a failure, never a pass', async t => {
+  const failures = [
+    null,
+    { ...deepResult(), blockers: undefined },
+    { ...deepResult(), java: { removedFiles: 3, cascadeFiles: 4 } },
+    { ...deepResult(), frontend: { removedFiles: -1, cascadeFiles: 0 } },
+    { ...deepResult(), removedGates: ['a\nb'] },
+    { ...deepResult(), summary: '' },
+    { ...deepResult(), durationMs: 1.5 },
+    deepResult([{ code: 'lowercase', label: '차단' }]),
+    deepResult([{ code: 'SOURCE_SURVIVAL', label: '' }]),
+    deepResult([{ code: 'SOURCE_SURVIVAL', label: '차단', files: [] }]),
+    deepResult([{ code: 'SOURCE_SURVIVAL', label: '차단', files: ['a\r\nb'] }]),
+    deepResult([{ code: 'SOURCE_SURVIVAL', label: '차단', message: 7 }]),
+    deepResult(Array.from({ length: 21 }, () => ({ code: 'GATE_STALE', label: '차단' }))),
+    // 투영 결과가 비었는데 그 투영의 차단 사유가 없으면 계산하지 않은 결과를 통과로 말하게 된다.
+    { ...deepResult(), java: null },
+    { ...deepResult([{ code: 'JAVA_PROJECTION', label: '차단', message: 'x' }]), frontend: null },
+    // 빈 칸 있는 배열은 JSON 에서 null 이 된다.
+    { ...deepResult(), removedGates: new Array(2) },
+    deepResult(new Array(1)),
+    deepResult([{ code: 'GATE_STALE', label: '차단', files: new Array(3) }]),
+    // 저장소 기준이 아닌 경로는 이 컴퓨터의 폴더 이름을 흘린다.
+    { ...deepResult(), removedGates: ['C:/Users/me/x.java'] },
+    { ...deepResult(), removedGates: ['/home/me/x.java'] },
+    deepResult([{ code: 'GATE_STALE', label: '차단', files: ['../outside.java'] }]),
+    deepResult([{ code: 'GATE_STALE', label: '차단', files: ['api-server\\x.java'] }]),
+  ];
+  for (const value of failures) {
+    const { post } = await fixture(t, { deep: () => value });
+    const response = await post('/api/plan/deep', { recipe: recipe() });
+    assert.equal(response.status, 500, JSON.stringify(value));
+    assert.deepEqual(response.body, { error: { code: 'DEEP_FAILED', message: '소스 정밀 점검 결과를 확인하지 못했습니다. 다시 점검해 주세요.' } });
+  }
+  // 엔진이 정밀 점검을 제공하지 않으면 없는 경로로 답한다.
+  const { post: without } = await fixture(t);
+  assert.equal((await without('/api/plan/deep', { recipe: recipe() })).status, 404);
+});
+
+test('plan deep accepts an explained projection failure, hides local paths in messages and tells input errors apart', async t => {
+  let next = { ...deepResult([{ code: 'JAVA_PROJECTION', label: 'Java 소스를 투영할 수 없습니다',
+    message: "ENOENT: open 'C:\\Users\\me\\egov\\x.java' and /home/me/egov/y.java" }]), java: null };
+  const { post } = await fixture(t, { deep: () => {
+    if (next instanceof Error) throw next;
+    return next;
+  } });
+  const explained = await post('/api/plan/deep', { recipe: recipe() });
+  assert.equal(explained.status, 200);
+  assert.equal(explained.body.deep.java, null);
+  assert.equal(explained.body.deep.blocked, true);
+  assert.equal(explained.body.deep.blockers[0].message, "ENOENT: open '<로컬 경로>' and <로컬 경로>");
+  assert.doesNotMatch(explained.text, /Users|home\/me/);
+  // 해석기가 거부한 구성은 입력 오류(400)로, 그 밖의 엔진 오류는 점검 실패(500)로 답한다.
+  next = Object.assign(new Error('Unknown capability: nosuchdomain'), { code: 'INVALID_RECIPE' });
+  const invalid = await post('/api/plan/deep', { recipe: recipe() });
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.body.error.code, 'INVALID_RECIPE');
+  assert.doesNotMatch(invalid.text, /nosuchdomain/);
+  next = new Error('spawnSync git ENOENT');
+  assert.equal((await post('/api/plan/deep', { recipe: recipe() })).body.error.code, 'DEEP_FAILED');
 });

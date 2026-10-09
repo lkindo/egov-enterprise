@@ -2,7 +2,7 @@
  * 소스 투영의 프런트 단계 — import 해석, pack 마커 블록 투영, 제외 경로와 그 연쇄 제거.
  */
 import { existsSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, extname, join, relative, resolve } from 'node:path';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fail, normalize, removePath, walk } from './reusable-source-tree.mjs';
 
 export const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
@@ -115,29 +115,77 @@ export function stripExcludedFrontendPackBlocks(output, manifest, profile) {
   return { excludedPacks: [...excludedPacks].sort(), strippedBlocks, changedFiles };
 }
 
-export function pruneFrontend(output, manifest, profile) {
-  const frontendRoot = join(output, 'frontend');
+/** profile 이 직접 지우는 프런트 경로(frontend/ 기준). custom 구성은 해석기가 계산한 목록을, 프리셋은 제외 pack 의 선언을 쓴다. */
+export function frontendDirectRemovePaths(manifest, profile) {
   const allowedPacks = new Set(profile.packs);
-  const directPaths = profile.frontendRemovePaths ?? Object.entries(manifest.packs)
+  return profile.frontendRemovePaths ?? Object.entries(manifest.packs)
     .filter(([packName]) => !allowedPacks.has(packName))
     .flatMap(([, pack]) => pack.frontend?.removePaths ?? []);
-  const sourceFiles = walk(frontendRoot, (path) => SOURCE_EXTENSIONS.includes(extname(path)));
-  const knownFiles = new Set(sourceFiles);
-  const removed = new Set();
-  for (const rel of directPaths) removePath(join(frontendRoot, rel), removed);
-  // 선언된 removePaths 는 manifest 에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
-  const directRemoved = new Set(removed);
+}
 
+/**
+ * 제외 경로를 frontend 안의 정규 경로로 바꾼다(끝의 구분자·`./` 를 걷는다). frontend 밖이나 frontend 전체를 가리키면 실패한다.
+ * 계산(planFrontendRemoval)과 디스크 삭제(pruneFrontend)가 같은 경로를 봐야 지운 파일을 빠짐없이 센다.
+ */
+export function frontendRemoveTarget(frontendRoot, rel) {
+  const target = resolve(frontendRoot, rel);
+  const inside = relative(frontendRoot, target);
+  if (!inside || inside === '..' || inside.startsWith(`..${sep}`) || isAbsolute(inside)) fail(`frontend removePath 는 frontend 안의 하위 경로여야 한다: ${rel}`);
+  return target;
+}
+
+/**
+ * 제외 경로와 그 import 연쇄로 지워질 프런트 파일을 계산한다. 디스크는 바꾸지 않는다.
+ * `files` 는 frontendRoot 아래 파일의 절대 경로 전부, `readSource` 는 투영된(마커를 걷은) 내용을 돌려준다.
+ * 생성기(pruneFrontend)와 정밀 점검(plan/deep)이 같은 판정을 쓴다.
+ */
+export function planFrontendRemoval({ frontendRoot, files, directPaths, readSource }) {
+  const sourceFiles = files.filter((path) => SOURCE_EXTENSIONS.includes(extname(path)));
+  const knownFiles = new Set(sourceFiles);
+  const direct = new Set();
+  const under = (path, target) => path === target || path.startsWith(`${target}${sep}`);
+  for (const rel of directPaths) {
+    const target = frontendRemoveTarget(frontendRoot, rel);
+    const matched = files.filter((path) => under(path, target));
+    // 대소문자만 다른 경로는 디스크에 따라 지워지기도 하고 아니기도 하며, 지워져도 이름이 달라 셈에서 빠진다.
+    // 같은 manifest 가 플랫폼마다 다른 생성물을 만들지 않도록 실패한다.
+    const caseOnly = matched.length ? undefined : files.find((path) => under(path.toLowerCase(), target.toLowerCase()));
+    if (caseOnly) fail(`frontend removePath 의 대소문자가 실제 경로와 다르다: ${rel} (실제: ${normalize(relative(frontendRoot, caseOnly))})`);
+    for (const path of matched) direct.add(path);
+  }
+  const imports = new Map();
+  const importsOf = (path) => {
+    if (!imports.has(path)) {
+      imports.set(path, frontendImportSpecifiers(readSource(path))
+        .map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles))
+        .filter(Boolean));
+    }
+    return imports.get(path);
+  };
+  const removed = new Set(direct);
   let changed = true;
   while (changed) {
     changed = false;
     for (const path of sourceFiles) {
-      if (removed.has(path) || !existsSync(path)) continue;
-      if (!importedFrontendFiles(frontendRoot, path, knownFiles).some((dependency) => removed.has(dependency))) continue;
+      if (removed.has(path)) continue;
+      if (!importsOf(path).some((dependency) => removed.has(dependency))) continue;
       removed.add(path);
       changed = true;
     }
   }
+  return { direct, removed };
+}
+
+export function pruneFrontend(output, manifest, profile) {
+  const frontendRoot = join(output, 'frontend');
+  const directPaths = frontendDirectRemovePaths(manifest, profile);
+  // 선언된 removePaths 는 manifest 에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
+  const files = walk(frontendRoot, () => true);
+  const knownFiles = new Set(files.filter((path) => SOURCE_EXTENSIONS.includes(extname(path))));
+  const { direct: directRemoved, removed } = planFrontendRemoval({
+    frontendRoot, files, directPaths, readSource: (path) => readFileSync(path, 'utf8'),
+  });
+  for (const rel of directPaths) removePath(frontendRemoveTarget(frontendRoot, rel), new Set());
   for (const path of removed) if (existsSync(path)) rmSync(path);
 
   for (const critical of ['src/app/layout.tsx', 'src/app/page.tsx', 'src/app/login/page.tsx']) {

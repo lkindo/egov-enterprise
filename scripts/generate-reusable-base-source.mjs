@@ -186,6 +186,23 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
   );
 }
 
+/**
+ * 복사한 소스 트리에서 선택하지 않은 기능을 걷는다: Java 연쇄 제거, 선택 투영(직접 선택), pack 마커 블록, 프런트 연쇄 제거,
+ * 선택 기능 소스의 생존 확인. 정밀 점검(plan/deep)은 같은 판정을 디스크를 바꾸지 않고 미리 하며, 둘이 같은지 시험이 대조한다.
+ */
+export function projectSourceTree(output, { manifest, profile, composition, sourceRoot = ROOT }) {
+  const java = pruneJava(output, manifest, profile);
+  if (composition?.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
+    const source = readFileSync(file, 'utf8');
+    const projected = projectComposerFrontend(normalize(relative(output, file)), source, composition);
+    if (source !== projected) writeFileSync(file, projected);
+  }
+  const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
+  const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
+  assertComposerSourceSurvives(sourceRoot, output, composition, manifest);
+  return { java, frontend };
+}
+
 function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
@@ -217,15 +234,7 @@ function main() {
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   copySourceTree(output);
-  const java = pruneJava(output, manifest, profile);
-  if (composition?.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
-    const source = readFileSync(file, 'utf8');
-    const projected = projectComposerFrontend(normalize(relative(output, file)), source, composition);
-    if (source !== projected) writeFileSync(file, projected);
-  }
-  const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
-  const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  assertComposerSourceSurvives(ROOT, output, composition, manifest);
+  const { java, frontend } = projectSourceTree(output, { manifest, profile, composition });
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
