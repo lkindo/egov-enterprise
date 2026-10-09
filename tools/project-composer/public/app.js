@@ -97,6 +97,9 @@ function applySession(session) {
   const previous = state.catalog;
   const previousLabel = id => previous?.capabilities.find(item => item.id === id)?.label ?? id;
   state.catalog = session.catalog; state.csrf = session.csrfToken;
+  // 항상 포함되는 공통 기반의 크기를 보인다(설계서 시안 18장). 카탈로그가 알려 주지 않으면 비운다.
+  const core = state.catalog.core;
+  $('core-counts').textContent = core ? `테이블 ${core.tables.length} · 권한 ${core.permissionCodes.length} · 메뉴 경로 ${core.menuRoutes.length}` : '';
   $('preset').replaceChildren(...state.catalog.presets.map(item => {
     const option = document.createElement('option'); option.value = item.id; option.textContent = presetLabel(item); return option;
   }));
