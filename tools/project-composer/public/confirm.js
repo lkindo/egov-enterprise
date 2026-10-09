@@ -26,9 +26,16 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     const degraded = plan.degradationNotes ?? [];
     const requirements = plan.requirements ?? [];
     const unassigned = plan.unassignedPermissions ?? [];
+    // 공통 기반과 비교한다(설계서 시안 19장). 공통 기반 목적지는 이 구성의 목적지에서 공통 기반 대비 추가된 것을 뺀 수다
+    // (기능을 더해도 공통 기반의 화면은 빠지지 않는다). 비교 값이 없으면 수만 보인다.
+    const core = state.catalog?.core;
+    const menus = plan.menus ?? [];
+    const screens = menus.filter(menu => (menu.kind ?? (menu.path ? 'screen' : 'category')) === 'screen');
+    const compared = menus.some(menu => typeof menu.added === 'boolean');
     $('confirm-summary').replaceChildren(
       confirmRow('업무 기능', `직접 ${direct.length} · 자동 ${automatic.length}${direct.length + automatic.length ? ` — ${[...direct, ...automatic].join(', ')}` : ' — 공통 기반만'}`),
-      confirmRow('테이블 · 권한 · 메뉴', `${plan.tables?.length ?? 0} · ${plan.permissionCodes?.length ?? 0} · ${plan.menus?.length ?? 0}`),
+      confirmRow('테이블 · 권한', `${plan.tables?.length ?? 0} · ${plan.permissionCodes?.length ?? 0}${core ? ` (공통 기반 ${core.tables.length} · ${core.permissionCodes.length})` : ''}`),
+      confirmRow('메뉴', `전체 ${menus.length}개 · 목적지 ${screens.length}개${compared ? ` (공통 기반 목적지 ${screens.length - screens.filter(menu => menu.added).length}개)` : ''}`),
       confirmRow('기능 저하', degraded.length ? degraded.map(group => group.heading).join(' / ') : '없음'),
       confirmRow('외부 설정', requirements.length ? requirements.join(', ') : '없음'),
       confirmRow('생성 뒤 할 일', unassigned.length ? `권한 ${unassigned.length}개는 자동 배정되지 않습니다: ${unassigned.map(row => row.name).join(', ')}` : '없음'),

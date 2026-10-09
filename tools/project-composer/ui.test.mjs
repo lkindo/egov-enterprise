@@ -777,6 +777,8 @@ test('the summary stays in view with its buttons while long details scroll insid
 
 test('the real catalog renders feature areas, search, owned-count badges and Korean preset names', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
+  // 항상 포함되는 공통 기반의 크기(설계서 시안 18장).
+  await expect(page.locator('#core-counts')).toHaveText(`테이블 ${real.core.tables.length} · 권한 ${real.core.permissionCodes.length} · 메뉴 경로 ${real.core.menuRoutes.length}`);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
   const presentation = composerPresentation(real, { routeKinds: loadRouteKinds(root) });
   const options = await page.locator('#preset option').allTextContents();
@@ -1020,6 +1022,16 @@ test('the final confirmation shows the environment check and the composition, an
   await expect(summary).toContainText('메일 발송에 사용할 SMTP 설정');
   await expect(summary).toContainText('DB 구성, 소스 구성, 의존성 설치, 전체 기술 검증');
   await expect(summary).not.toContainText('수 분');
+  // 공통 기반과 비교한 수(설계서 시안 19장): 테이블·권한과 메뉴 목적지.
+  const mailRecipe = { schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['mail'] }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' };
+  const mailPlan = resolveProjectRecipe(mailRecipe, real);
+  const mailMenus = realMenuTree(mailRecipe);
+  const mailScreens = mailMenus.filter(menu => menu.kind === 'screen');
+  const coreScreens = realMenuTree({ ...mailRecipe, selection: { preset: 'core' } }).filter(menu => menu.kind === 'screen');
+  assert.ok(mailScreens.length > coreScreens.length, 'mail adds destinations');
+  const row = term => summary.locator('div', { has: page.locator('dt', { hasText: new RegExp(`^${term}$`) }) }).locator('dd');
+  await expect(row('테이블 · 권한')).toHaveText(`${mailPlan.tables.length} · ${mailPlan.permissionCodes.length} (공통 기반 ${real.core.tables.length} · ${real.core.permissionCodes.length})`);
+  await expect(row('메뉴')).toHaveText(`전체 ${mailMenus.length}개 · 목적지 ${mailScreens.length}개 (공통 기반 목적지 ${coreScreens.length}개)`);
   // 점검이 실패하면 통과로 보이지 않는다. '다시 점검'은 잠기지 않아 누른 뒤에도 포커스가 그 자리에 남는다.
   next = new Error('probe crashed');
   const retry = dialog.getByRole('button', { name: '다시 점검' });
@@ -1301,6 +1313,8 @@ test('a changed source offers a reload that keeps the name and selection and sho
     plan: recipe => { if (sourceChanged) throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef does not identify the current checkout'); return plan(recipe); } });
   await page.goto(origin);
   await expect(page.locator('#source-ref')).toHaveText('HEAD · aaaaaaaaaaaa');
+  // 카탈로그가 공통 기반의 크기를 알려 주지 않으면 그 줄을 보이지 않는다.
+  await expect(page.locator('#core-counts')).toHaveText('');
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-notification').check();
   await expect(generateButton(page)).toBeEnabled();
