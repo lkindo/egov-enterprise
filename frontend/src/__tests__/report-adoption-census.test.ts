@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inProjection, keepInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -16,10 +17,11 @@ const A7_IMPORT = /from\s+['"]@\/app\/components\/patterns\/report-page['"]/;
  * (children·basis 가 필수 prop). 이 census 는 그 구조가 실제로 소비되는지와,
  * 소비 화면이 원본 표를 계속 렌더하는지를 exact 로 고정한다.
  */
-const EXPECTED_IMPORTERS = [
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const EXPECTED_IMPORTERS = keepInProjection([
   'src/app/admin/stats/AdminStatsClient.tsx',
   'src/app/admin/survey/stats/SurveyStatsClient.tsx',
-];
+], file => join(FRONTEND_DIR, file));
 
 function screenFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -56,7 +58,7 @@ describe('A7 report adoption census', () => {
     expect(shell.match(/filter\?: React\.ReactNode;/g)).toHaveLength(1);
   });
 
-  it('/admin/survey/stats가 셸을 경유하고 임베드 시 제목을 중첩하지 않는다', () => {
+  if (inProjection(join(FRONTEND_DIR, 'src/app/admin/survey/stats/SurveyStatsClient.tsx'))) it('/admin/survey/stats가 셸을 경유하고 임베드 시 제목을 중첩하지 않는다', () => {
     const client = source('src/app/admin/survey/stats/SurveyStatsClient.tsx');
 
     expect(client).toMatch(/<ReportPage[\s>]/);

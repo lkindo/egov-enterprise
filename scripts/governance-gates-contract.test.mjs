@@ -592,6 +592,30 @@ test('authoritative runner catalogs reject every supported skip/focus form witho
   `), false);
 });
 
+test('conditional registration counts as a skip unless the projection ledger decides it', () => {
+  for (const forbidden of [
+    'if (process.env.CI) it("rule", () => {})',
+    'if (flag) describe("rule", () => {})',
+    'if (enabled) { test("rule", () => {}) }',
+    'if (rows.length) it.each(rows)("rule %s", () => {})',
+    'if (!existsSync(file)) test.concurrent("rule", () => {})',
+  ]) {
+    assert.deepEqual(findRunnerSkipConstructs(forbidden).map(({ kind }) => kind), ['conditional-registration'], forbidden);
+  }
+  // 투영 원장 판정(원본에서는 늘 참)만 등록을 가른다.
+  assert.equal(containsRunnerSkip(`
+    if (inProjection(path.join(SRC, 'a.ts'))) it("rule", () => {});
+    if (repoPresent(
+      'frontend/src/a.ts',
+    )) describe("rule", () => {});
+    if (srcPresent('app/a.tsx')) it("rule", () => {});
+    if (hookInProjection) it("rule", () => {});
+    if (PROJECTED_SOURCE !== undefined) describe("rule", () => {});
+    it("body", () => { if (flag) { expect(1).toBe(1); } });
+    const decoy = "if (flag) it('quoted', () => {})";
+  `), false);
+});
+
 test('runner skip scanner enumerates every real construct for exact Playwright waiver matching', () => {
   const source = `
     test.skip(process.platform !== 'linux', 'linux-only');

@@ -20,8 +20,12 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
+import { missingOutsideLedger, readInProjection } from '@/test-utils/projection';
 
-const SOURCE = readFileSync(path.resolve(__dirname, '..', 'boardActions.ts'), 'utf8');
+const SOURCE_PATH = path.resolve(__dirname, '..', 'boardActions.ts');
+// 게시판을 고르지 않은 생성물에서는 저장 액션이 투영으로 빠져 이 계약의 대상이 없다(원장으로 확인한다).
+const PROJECTED_SOURCE = readInProjection(SOURCE_PATH);
+const SOURCE = PROJECTED_SOURCE ?? '';
 
 /** 서버가 받아들이는 키 집합(생성 계약 원본). */
 const SERVER_KEYS = new Set(Object.keys(BoardSaveRequestSchema.shape));
@@ -41,7 +45,13 @@ function payloadKeys(): string[] {
   return [...new Set([...fromLiteral, ...fromAssign])];
 }
 
-describe('게시글 저장 요청 본문 계약', () => {
+describe('게시글 저장 요청 본문 계약의 대상', () => {
+  it('저장 액션은 남아 있거나 투영으로 빠졌다', () => {
+    expect(missingOutsideLedger([SOURCE_PATH])).toEqual([]);
+  });
+});
+
+if (PROJECTED_SOURCE !== undefined) describe('게시글 저장 요청 본문 계약', () => {
   it('본문 키가 전부 서버 계약(BoardSaveRequest)에 있다', () => {
     const keys = payloadKeys();
 

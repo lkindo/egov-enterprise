@@ -16,12 +16,22 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { inProjection, keepInProjection, readInProjection } from '@/test-utils/projection';
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const SRC = path.resolve(__dirname, '..', '..');
 
 const readSrc = (relative: string) => fs.readFileSync(path.join(SRC, relative), 'utf8');
 const readRepo = (relative: string) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+//   그 기능의 계약은 등록하지 않고, 기능과 무관한 단언은 그대로 본다.
+const srcPresent = (...relatives: string[]) => inProjection(relatives.map(relative => path.join(SRC, relative)));
+const repoPresent = (...relatives: string[]) => inProjection(relatives.map(relative => path.join(ROOT, relative)));
+// 여러 기능의 파일을 함께 읽는 시험은 시험 전체가 아니라 그 파일의 단언만 뺀다 — 한 파일이 빠졌다고 다른 파일의 단언을 버리지 않는다.
+const readRepoInProjection = (relative: string) => {
+  const source = readInProjection(path.join(ROOT, relative));
+  return source === undefined ? undefined : stripComments(source);
+};
 
 /** 디렉터리 아래 .java 소스를 전부 읽는다(파일 경로가 아니라 내용으로 판정하기 위해). */
 function collectJavaSources(dir: string): string[] {
@@ -52,7 +62,10 @@ function collectJavaSources(dir: string): string[] {
 const stripComments = (source: string) =>
   source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, ' ');
 
-describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
+if (repoPresent(
+  'frontend/src/app/admin/operation/rewards/RewardManageClient.tsx',
+  'business-app/src/main/java/nuri/business/domain/operation/RewardManage.java',
+)) describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
   const client = stripComments(readSrc('app/admin/operation/rewards/RewardManageClient.tsx'));
 
   it('승인 상태·일시 열을 표에 두지 않는다 — 그 값을 바꿀 경로가 제품에 없다', () => {
@@ -154,12 +167,13 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     // [Phase 0c] 자료 이용 집계도 포트로 옮겼다. 옛 필드 이름만 보면 그 포트를 불러도 통과한다.
     expect(body).not.toContain('dataUsageStatistics');
 
-    const contributor = readRepo(
-      'business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java',
-    );
-    expect(contributor, '게시글 집계 포트 구현이 게시판을 세지 않는다')
-      .toContain('boardRepository.countPostsByDate');
-    expect(contributor).not.toContain('dtaUseStatsRepository');
+    // 포트 구현은 게시판이 소유한다 — 게시판이 빠진 생성물에서는 구현이 없고 통계는 빈 목록이다.
+    if (repoPresent('business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java')) {
+      const contributor = readRepo('business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java');
+      expect(contributor, '게시글 집계 포트 구현이 게시판을 세지 않는다')
+        .toContain('boardRepository.countPostsByDate');
+      expect(contributor).not.toContain('dtaUseStatsRepository');
+    }
   });
 
   /**
@@ -179,13 +193,14 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(body).toContain('countDataUsageByDate');
     expect(body).not.toContain('postStatistics');
 
-    const contributor = stripComments(readRepo(
-      'business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java',
-    ));
-    expect(contributor, '자료 이용 포트 구현이 컴포넌트로 등록되지 않는다').toContain('@Component');
-    expect(contributor, '자료 이용 포트 구현이 자료 이용 기록을 읽지 않는다')
-      .toContain('dtaUseStatsRepository.countByDate');
-    expect(contributor).not.toContain('boardRepository');
+    // 자료 이용 기록도 게시판이 소유한다(Phase 0c) — 게시판이 빠진 생성물에서는 구현이 없다.
+    if (repoPresent('business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java')) {
+      const contributor = stripComments(readRepo('business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java'));
+      expect(contributor, '자료 이용 포트 구현이 컴포넌트로 등록되지 않는다').toContain('@Component');
+      expect(contributor, '자료 이용 포트 구현이 자료 이용 기록을 읽지 않는다')
+        .toContain('dtaUseStatsRepository.countByDate');
+      expect(contributor).not.toContain('boardRepository');
+    }
   });
 
   /**
@@ -239,7 +254,7 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
 });
 
 describe('정책: 권한 벽을 일시 장애처럼 안내하지 않는다', () => {
-  it('열람 실패가 권한 때문이면 기다리라고 하지 않는다', () => {
+  if (srcPresent('app/help/policies/[type]/page.tsx')) it('열람 실패가 권한 때문이면 기다리라고 하지 않는다', () => {
     /*
      * 정책 본문은 현재 기능권한을 요구한다. 권한 거부를 일시 장애로 안내하면
      * 사용자가 새로고침을 반복하게 되므로, 필요한 권한을 확인하도록 안내한다.
@@ -270,21 +285,21 @@ describe('정책: 권한 벽을 일시 장애처럼 안내하지 않는다', () 
  * 지어낸 숫자는 단순한 잡음이 아니다. 관리자가 그 값을 근거로 판단하기 때문이다.
  */
 describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않는다', () => {
-  const client = stripComments(
-    readSrc('app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx'),
-  );
+  const communityDetail = 'app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx';
+  const communityInProjection = srcPresent(communityDetail, 'app/cop/cmy/selectCommunityList/CommunityHubClient.tsx');
+  const client = communityInProjection ? stripComments(readSrc(communityDetail)) : '';
 
-  it('회원 수를 고정 문자열로 지어내지 않는다', () => {
+  if (communityInProjection) it('회원 수를 고정 문자열로 지어내지 않는다', () => {
     expect(client).not.toContain('42_Active_Entities');
     expect(client).not.toContain('Member Count');
   });
 
-  it("하드코딩한 회원 목록을 'Live' 로 보여 주지 않는다", () => {
+  if (communityInProjection) it("하드코딩한 회원 목록을 'Live' 로 보여 주지 않는다", () => {
     expect(client).not.toContain('Member_Pulse');
     expect(client).not.toContain('Active_Entity_');
   });
 
-  it('눌러도 아무 일이 없는 버튼을 두지 않는다', () => {
+  if (communityInProjection) it('눌러도 아무 일이 없는 버튼을 두지 않는다', () => {
     expect(client).not.toContain('ADMIN_PANEL_LOGIN');
     expect(client).not.toContain('VIEW_ALL_ENTITIES');
   });
@@ -343,7 +358,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     expect(offenders, `서버가 싣지 않는 필드를 읽는 생산 코드:\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
+  if (communityInProjection) it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
     const dto = readRepo(
       'business-app/src/main/java/nuri/business/service/system/content/community/dto/CommunityDto.java',
     );
@@ -376,7 +391,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
    * ADR-0002 는 UI 한국어 우선을 규정한다. 이 화면은 라벨 자체가 의사코드였다 —
    * 'Operational Manager'·'Visibility Protocol'·'PUBLIC_ACCESS' 는 데이터의 뜻을 가린다.
    */
-  it('업무 라벨을 의사코드로 쓰지 않는다', () => {
+  if (communityInProjection) it('업무 라벨을 의사코드로 쓰지 않는다', () => {
     for (const pseudo of [
       'Operational Manager', 'Initialization Date', 'Visibility Protocol',
       'PUBLIC_ACCESS', 'PRIVATE_NODE', 'Overview & Intelligence',
@@ -403,7 +418,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     **"조회하지 않은 채 없다고 단정하지 말라"** 였다. 그 규칙을 지금 형태로 다시 고정한다:
     없다는 말은 조회한 뒤(회원)에만 하고, 조회하지 않는 경우(비회원)에는 못 보는 사유를 말한다.
   */
-  it('조회하지 않은 채 게시글이 없다고 단정하지 않는다', () => {
+  if (communityInProjection) it('조회하지 않은 채 게시글이 없다고 단정하지 않는다', () => {
     // 실제로 조회한다 — 이 호출이 사라지면 아래 '없습니다' 는 다시 근거 없는 단정이 된다.
     expect(client).toContain('getCommunityBoards');
     expect(client).not.toContain('등록된 게시글이 없습니다');
@@ -414,7 +429,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     expect(client).toContain('승인된 회원만 볼 수 있습니다.');
   });
 
-  it('회원 수 API 가 여전히 없다 — 생기면 이 계약을 갱신하고 값을 되살려야 한다', () => {
+  if (communityInProjection) it('회원 수 API 가 여전히 없다 — 생기면 이 계약을 갱신하고 값을 되살려야 한다', () => {
     const controller = stripComments(readRepo(
       'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java',
     ));
@@ -518,28 +533,28 @@ describe('없는 것을 있다고 말하지 않는다', () => {
       덮어쓴다). 그런데 화면은 '조직에서 작성된' 이라 말해, 일반 사용자는 조직 전체를
       본다고 믿으면서 실제로는 자기 것만 봤다.
     */
-    const service = stripComments(
-      readRepo('business-app/src/main/java/nuri/business/service/report/WorkReportService.java'),
-    );
-    expect(service).toContain('getCurrentLoginId');
+    // 업무 보고(report)와 업무 허브(보고·일정이 함께 있어야 남는 공용 화면)는 따로 빠질 수 있다.
+    const service = readRepoInProjection('business-app/src/main/java/nuri/business/service/report/WorkReportService.java');
+    if (service !== undefined) expect(service).toContain('getCurrentLoginId');
 
-    const screen = stripComments(readRepo('frontend/src/app/admin/work-hub/WorkHubClient.tsx'));
-    expect(screen).not.toContain('조직에서 작성된');
-    expect(screen).toContain('관리자 권한이면 전체 보고가 조회됩니다');
+    const screen = readRepoInProjection('frontend/src/app/admin/work-hub/WorkHubClient.tsx');
+    if (screen !== undefined) {
+      expect(screen).not.toContain('조직에서 작성된');
+      expect(screen).toContain('관리자 권한이면 전체 보고가 조회됩니다');
+    }
   });
 
   it('존재하지 않는 대체 경로로 안내하지 않는다', () => {
-    const draft = stripComments(
-      readRepo('frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx'),
-    );
-    expect(draft).not.toContain('결재 목록 화면의 기존 경로');
+    // 결재 기안 화면과 레이아웃 화면은 서로 다른 기능과 함께 빠진다.
+    const draft = readRepoInProjection('frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx');
+    if (draft !== undefined) expect(draft).not.toContain('결재 목록 화면의 기존 경로');
 
-    const layout = stripComments(
-      readRepo('frontend/src/app/admin/system/layout/LayoutManagerClient.tsx'),
-    );
+    const layout = readRepoInProjection('frontend/src/app/admin/system/layout/LayoutManagerClient.tsx');
     // '[콘텐츠 운영]' 이라는 메뉴는 시드에 없다. 실재하는 메뉴는 '배너 및 팝업 관리' 다.
-    expect(layout).not.toContain('콘텐츠 운영');
-    expect(layout).toContain('/admin/system/banner');
+    if (layout !== undefined) {
+      expect(layout).not.toContain('콘텐츠 운영');
+      expect(layout).toContain('/admin/system/banner');
+    }
   });
 
   it('삭제 확인 문구가 서버가 하지 않는 정리를 약속하지 않는다', () => {
@@ -604,11 +619,11 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
  * 화면 문구를 함께** 고정한다.
  */
 describe('생성 마법사가 만드는 상태를 사실대로 말한다', () => {
-  const wizard = stripComments(
-    readRepo('frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx'),
-  );
+  const boardMakerWizard = 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
+  const wizardInProjection = repoPresent(boardMakerWizard);
+  const wizard = wizardInProjection ? stripComments(readRepo(boardMakerWizard)) : '';
 
-  it('메뉴를 비활성으로 만들면 비활성이라고 말한다', () => {
+  if (wizardInProjection) it('메뉴를 비활성으로 만들면 비활성이라고 말한다', () => {
     // 실제 값이 계약의 입력이다. 'Y' 로 바꾸는 것은 제품 결정이며, 그때 문구도 함께 바뀐다.
     expect(wizard, "메뉴 생성의 useYn 을 찾지 못했다 — 계약이 vacuous 하다").toContain("useYn: 'N'");
     expect(wizard).not.toContain('생성 즉시 메뉴 시스템에 활성화됩니다');
@@ -622,7 +637,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 걷었는지를 고정한다 — 두 값이 조건문에 쓰이지 않는다는 사실이 그 근거이므로, 집행이
    * 생기면 이 계약이 red 가 되어 토글을 되살릴 시점을 알려 준다.
    */
-  it('댓글·첨부 플래그의 집행자가 여전히 없다 — 생기면 이 계약을 갱신하고 토글을 되살려야 한다', () => {
+  if (repoPresent(
+    'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
+    'business-app/src/main/java/nuri/business/service/comment/CommentService.java',
+  )) it('댓글·첨부 플래그의 집행자가 여전히 없다 — 생기면 이 계약을 갱신하고 토글을 되살려야 한다', () => {
     const detail = stripComments(
       readRepo('frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'),
     );
@@ -768,7 +786,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 서버가 발신 DTO 에 읽음 상태를 담기 시작하면 이 계약이 red 가 되어 열을 되살릴 시점을
    * 알려 준다. (수신자가 여럿일 수 있으므로 그때는 집계 표현도 함께 정해야 한다.)
    */
-  it('보낸 쪽지함이 읽음 상태를 표시하지 않는다', () => {
+  if (repoPresent(
+    'frontend/src/app/note/page.tsx',
+    'business-app/src/main/java/nuri/business/service/note/NoteService.java',
+  )) it('보낸 쪽지함이 읽음 상태를 표시하지 않는다', () => {
     const page = stripComments(readSrc('app/note/page.tsx'));
     expect(page, '쪽지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('openYn');
     expect(
@@ -836,7 +857,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
         'Core Subject Header', 'Intelligent Payload', 'Draft Center', 'Document Entry',
       ]],
     ];
-    for (const [relative, banned] of cases) {
+    for (const [relative, banned] of keepInProjection(cases, ([relative]) => path.join(SRC, relative))) {
       const source = stripComments(readSrc(relative));
       expect(source, `${relative} 을 읽지 못했다 — 계약이 vacuous 하다`).not.toHaveLength(0);
       for (const term of banned) {
@@ -846,14 +867,16 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   });
 
   it('지식 허브가 지어낸 점수와 기여자를 보여 주지 않는다', () => {
-    const client = stripComments(readSrc('app/admin/help/KnowledgeHubClient.tsx'));
-    expect(client, '지식 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('StatsCard');
-    expect(client).not.toContain('지식 지수');
-    expect(client).not.toContain('intelligenceScore');
+    // 지식 허브(게시판·도움말·커뮤니티 공용 화면)는 게시판이 남아도 빠질 수 있다 — 서버 단언은 서버 파일로만 거른다.
+    const client = readRepoInProjection('frontend/src/app/admin/help/KnowledgeHubClient.tsx');
+    if (client !== undefined) {
+      expect(client, '지식 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('StatsCard');
+      expect(client).not.toContain('지식 지수');
+      expect(client).not.toContain('intelligenceScore');
+    }
 
-    const service = stripComments(
-      readRepo('business-app/src/main/java/nuri/business/service/board/BoardService.java'),
-    );
+    const service = readRepoInProjection('business-app/src/main/java/nuri/business/service/board/BoardService.java');
+    if (service === undefined) return;
     expect(service, '게시판 통계 서비스를 찾지 못했다 — 계약이 vacuous 하다').toContain('getBoardStats');
     expect(
       service,
@@ -878,7 +901,16 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   it('대시보드 위젯 SPI 는 여전히 마이페이지 콘텐츠를 소비하지 않는다', () => {
     const providers = collectJavaSources(path.join(ROOT, 'business-app', 'src', 'main'))
       .filter((source) => source.includes('DashboardItemProvider'));
-    expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(0);
+    // 구현체는 게시판·결재 기능에 있다. 투영으로 빠진 구현체만 빼고 남은 것은 모두 찾아야 한다.
+    const knownProviders = keepInProjection([
+      'business-app/src/main/java/nuri/business/service/board/BoardDashboardProvider.java',
+      'business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionDashboardProvider.java',
+    ], relative => path.join(ROOT, relative));
+    expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다')
+      .toBeGreaterThanOrEqual(knownProviders.length);
+    for (const known of knownProviders) {
+      expect(providers, `${path.basename(known)} 가 구현체로 잡히지 않는다`).toContain(fs.readFileSync(path.join(ROOT, known), 'utf8'));
+    }
     expect(providers.filter((source) => source.includes('MyPage'))).toEqual([]);
   });
 
@@ -888,7 +920,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 읽던 `srvyTtl` 은 응답 DTO 에 아예 없는 필드라 **모든 응답이** '설문 정보 없음' 이었다.
    * 그 문구는 "이 응답에 한해 비어 있다" 로 읽혀 관리자가 데이터 파손을 의심하게 만든다.
    */
-  it('설문 응답 상세가 응답 DTO 에 없는 설문 제목을 읽지 않는다', () => {
+  if (repoPresent(
+    'frontend/src/app/survey/response/[id]/SurveyResponseDetailClient.tsx',
+    'business-app/src/main/java/nuri/business/service/survey/dto/SurveyResultDto.java',
+  )) it('설문 응답 상세가 응답 DTO 에 없는 설문 제목을 읽지 않는다', () => {
     const detail = stripComments(readSrc('app/survey/response/[id]/SurveyResponseDetailClient.tsx'));
     expect(detail, '응답 상세를 찾지 못했다 — 계약이 vacuous 하다').toContain('srvySn');
     expect(detail).not.toContain('srvyTtl');
@@ -904,7 +939,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).not.toContain('srvyTtl');
   });
 
-  it('주소록이 집행되지 않는 공개 범위로 공유를 약속하지 않는다', () => {
+  if (repoPresent(
+    'frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
+    'business-app/src/main/java/nuri/business/domain/addressbook/AddressBookRepositoryImpl.java',
+  )) it('주소록이 집행되지 않는 공개 범위로 공유를 약속하지 않는다', () => {
     const list = stripComments(
       readSrc('app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx'),
     );
@@ -923,7 +961,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).not.toContain('rlsScopeCd');
   });
 
-  it('알림 표가 서버에 없는 우선순위를 보여 주지 않는다', () => {
+  if (repoPresent(
+    'frontend/src/app/components/ui/smart-notification-hub.tsx',
+    'business-app/src/main/java/nuri/business/service/notification/dto/NotificationDto.java',
+  )) it('알림 표가 서버에 없는 우선순위를 보여 주지 않는다', () => {
     const hub = stripComments(readSrc('app/components/ui/smart-notification-hub.tsx'));
     expect(hub, '알림 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('SmartNotificationHub');
     expect(hub).not.toContain('우선순위');
@@ -944,38 +985,47 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     // [2026-09-12] 부서 업무 목록은 core 소유 섹션으로 옥겨갔고 보고 목록만 허브에 남았다.
     // 두 소유자를 각각 읽고 단언은 종전과 같은 것을 그대로 유지한다.
     const jobList = stripComments(readSrc('components/business/deptJob/DeptJobListSection.tsx'));
-    const hub = stripComments(readSrc('app/admin/work-hub/WorkHubClient.tsx'));
     expect(jobList, '부서 업무 목록을 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
-    expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
     // 담당자·작성자 축은 서버에 없다(업무는 picId, 보고는 rptTtl 단일).
     expect(jobList).not.toContain('업무명·담당자');
-    expect(hub).not.toContain('업무명·담당자');
-    expect(hub).not.toContain('보고 제목·작성자');
     // 조건을 보내지 않으면 서버가 아무것도 거르지 않는다.
     expect(jobList, '부서업무 조회가 다시 조건 없이 나간다 — 검색어가 무시된다').toContain("searchCondition: '0'");
 
-    const reportRepo = stripComments(
-      readRepo('business-app/src/main/java/nuri/business/domain/report/WorkReportRepositoryImpl.java'),
-    );
-    expect(reportRepo, '보고 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchWrd');
-    expect(
-      reportRepo,
-      '보고 검색에 작성자 축이 생겼다 — 라벨을 되살리고 이 계약을 갱신하라.',
-    ).not.toContain('userNm.contains');
+    // 업무 허브(보고·일정이 함께 있어야 남는 공용 화면)와 업무 보고(report) 저장소는 따로 빠질 수 있다.
+    const hub = readRepoInProjection('frontend/src/app/admin/work-hub/WorkHubClient.tsx');
+    if (hub !== undefined) {
+      expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
+      expect(hub).not.toContain('업무명·담당자');
+      expect(hub).not.toContain('보고 제목·작성자');
+    }
+    const reportRepo = readRepoInProjection('business-app/src/main/java/nuri/business/domain/report/WorkReportRepositoryImpl.java');
+    if (reportRepo !== undefined) {
+      expect(reportRepo, '보고 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchWrd');
+      expect(
+        reportRepo,
+        '보고 검색에 작성자 축이 생겼다 — 라벨을 되살리고 이 계약을 갱신하라.',
+      ).not.toContain('userNm.contains');
+    }
 
-    const master = stripComments(
-      readSrc('app/admin/community/boards/master/BoardMasterListClient.tsx'),
-    );
-    expect(master, '게시판 마스터를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
-    expect(master).not.toContain('시스템 ID');
-    const masterRepo = stripComments(
-      readRepo('business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'),
-    );
-    expect(masterRepo, '마스터 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('getSearchWrd');
-    expect(masterRepo).not.toContain('bbsId.contains');
+    // 게시판 마스터는 게시판과 함께 투영으로 빠진다.
+    if (repoPresent(
+      'frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx',
+      'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java',
+    )) {
+      const master = stripComments(
+        readSrc('app/admin/community/boards/master/BoardMasterListClient.tsx'),
+      );
+      expect(master, '게시판 마스터를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
+      expect(master).not.toContain('시스템 ID');
+      const masterRepo = stripComments(
+        readRepo('business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'),
+      );
+      expect(masterRepo, '마스터 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('getSearchWrd');
+      expect(masterRepo).not.toContain('bbsId.contains');
+    }
   });
 
-  it('여론조사 카드가 조건 없는 상태 표시와 실패를 삼킨 빈 상태를 두지 않는다', () => {
+  if (srcPresent('app/admin/survey/polls/participate/OnlinePollParticipateClient.tsx')) it('여론조사 카드가 조건 없는 상태 표시와 실패를 삼킨 빈 상태를 두지 않는다', () => {
     const client = stripComments(
       readSrc('app/admin/survey/polls/participate/OnlinePollParticipateClient.tsx'),
     );
@@ -1004,7 +1054,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   });
 
   // [2026-10-01 결정 23] 종료일은 집행하고 시작일은 기록만 한다 — 화면 문구가 그 둘을 그대로 말해야 한다.
-  it('게시 종료일은 집행하고 시작일은 기록만 한다는 사실을 화면이 그대로 말한다', () => {
+  if (repoPresent(
+    'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx',
+    'business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java',
+  )) it('게시 종료일은 집행하고 시작일은 기록만 한다는 사실을 화면이 그대로 말한다', () => {
     const write = stripComments(
       readSrc('app/admin/community/boards/insert-board-article/BoardRegistClient.tsx'),
     );
@@ -1055,7 +1108,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).toContain('EgovARIACryptoServiceImpl');
   });
 
-  it('알림 드로어에 갈 곳 없는 버튼과 지어낸 시스템 이름을 두지 않는다', () => {
+  if (repoPresent('frontend/src/app/components/ui/app-notification-drawer.tsx')) it('알림 드로어에 갈 곳 없는 버튼과 지어낸 시스템 이름을 두지 않는다', () => {
     const drawer = stripComments(
       readRepo('frontend/src/app/components/ui/app-notification-drawer.tsx'),
     );
@@ -1069,7 +1122,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(drawer).not.toContain('무결성 피드');
   });
 
-  it('예시 데이터로 그린 미리보기를 실시간 시스템이라 부르지 않는다', () => {
+  if (repoPresent(
+    boardMakerWizard,
+    'frontend/src/app/admin/community/boards/maker/components/BoardPreview.tsx',
+  )) it('예시 데이터로 그린 미리보기를 실시간 시스템이라 부르지 않는다', () => {
     expect(wizard).not.toContain('LIVE_SYSTEM_PREVIEW');
     const preview = stripComments(
       readRepo('frontend/src/app/admin/community/boards/maker/components/BoardPreview.tsx'),

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as ts from 'typescript';
+import { readInProjection } from '@/test-utils/projection';
 
 const SRC = join(process.cwd(), 'src');
 const readSource = (...parts: string[]) => readFileSync(join(SRC, ...parts), 'utf8');
@@ -29,14 +30,14 @@ describe('P1 frontend safety source contract', () => {
   it('서버 데이터가 있는 핵심 화면은 mount 전용 gate로 첫 DOM을 버리지 않는다', () => {
     const dashboard = stripComments(readSource('app', 'UnifiedDashboardClient.tsx'));
     const navItem = stripComments(readSource('app', 'components', 'layout', 'NavItem.tsx'));
-    const boardDetail = stripComments(
-      readSource('app', 'admin', 'community', 'boards', 'detail', 'BoardDetailClient.tsx'),
-    );
+    // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+    const boardDetailSource = readInProjection(join(SRC, 'app', 'admin', 'community', 'boards', 'detail', 'BoardDetailClient.tsx'));
+    const boardDetail = boardDetailSource === undefined ? undefined : stripComments(boardDetailSource);
 
     for (const [name, source] of [
       ['UnifiedDashboardClient', dashboard],
       ['NavItem', navItem],
-      ['BoardDetailClient', boardDetail],
+      ...(boardDetail === undefined ? [] : [['BoardDetailClient', boardDetail] as const]),
     ] as const) {
       expect(source, `${name}: hydration 전용 mounted state가 다시 들어왔습니다`).not.toMatch(
         /\b(?:isMounted|mounted|setIsMounted|setMounted)\b/,
@@ -45,7 +46,7 @@ describe('P1 frontend safety source contract', () => {
 
     expect(dashboard).not.toMatch(/if\s*\(\s*!isMounted/);
     expect(navItem).not.toMatch(/if\s*\(\s*!isMounted\s*\)\s*return\s+null/);
-    expect(boardDetail).not.toMatch(/if\s*\(\s*!mounted/);
+    if (boardDetail !== undefined) expect(boardDetail).not.toMatch(/if\s*\(\s*!mounted/);
   });
 
   it('sidebar는 단일 semantic nav tree를 CSS로 반응형 전환한다', () => {

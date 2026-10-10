@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canPermission } from '@/lib/auth/permissions';
+import { inProjection } from '@/test-utils/projection';
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -73,12 +74,12 @@ describe('관리자 판정 parity', () => {
     expect(canPermission({ permissions: ['BBS_MST_CREATE'], authorizationVersion: 'v1' }, 'BBS_MST_CREATE')).toBe(true);
   });
 
-  it('관리자 전용 화면 액션이 단일 리터럴 비교로 되돌아가지 않는다', () => {
+  // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+  //   게시판이 빠진 생성물에서는 아래 전역 금지가 남은 화면을 그대로 본다.
+  const boardMasterClient = join(SRC_DIR, 'app/admin/community/boards/master/BoardMasterListClient.tsx');
+  if (inProjection(boardMasterClient)) it('관리자 전용 화면 액션이 단일 리터럴 비교로 되돌아가지 않는다', () => {
     // 되돌아가면 e2e 가 잡기 전까지 "관리자에게 버튼이 없다"가 정상처럼 보인다.
-    const client = readFileSync(
-      join(SRC_DIR, 'app/admin/community/boards/master/BoardMasterListClient.tsx'),
-      'utf8',
-    );
+    const client = readFileSync(boardMasterClient, 'utf8');
     expect(client).toContain("canPermission(user, 'BBS_MST_CREATE')");
     expect(client).not.toMatch(/user\?\.role === '[A-Z_]+'/);
   });

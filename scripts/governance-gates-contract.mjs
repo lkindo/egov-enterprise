@@ -483,6 +483,27 @@ function nodeSkipOptions(mask) {
   return constructs;
 }
 
+/**
+ * 조건부 등록(`if (cond) it(...)`)은 skip 과 같다 — 시험이 조용히 사라진다. 등록 여부는 생성물의 투영 원장
+ * 도우미(frontend/src/test-utils/projection.ts)로만 가른다(Phase 2 D6, DEC-OPS-258). 조건이 원장 판정을 부르거나 그 결과를
+ * 담은 `*InProjection` 변수·`PROJECTED_SOURCE` 를 쓸 때만 허용한다. 원본에는 원장이 없어 이 조건들은 늘 참이다.
+ */
+const PROJECTION_CONDITION = /\b(?:inProjection|repoPresent|srcPresent)\s*\(|\b\w*InProjection\b|\bPROJECTED_SOURCE\b/;
+const REGISTRATION_CALL = /^\s*\{?\s*(?:test|it|describe|suite|specify)\s*(?:\.\s*(?:describe|each|concurrent|sequential)\s*(?:\([^()]*\))?\s*)*\(/;
+
+function conditionalRegistrations(code, source) {
+  const constructs = [];
+  for (const marker of code.matchAll(/(?<![\w$.])if\s*\(/g)) {
+    const openIndex = code.indexOf('(', marker.index);
+    const closeIndex = matchingDelimiter(code, openIndex, '(', ')');
+    if (closeIndex < 0) continue;
+    const call = REGISTRATION_CALL.exec(code.slice(closeIndex + 1));
+    if (!call || PROJECTION_CONDITION.test(source.slice(openIndex + 1, closeIndex))) continue;
+    constructs.push({ kind: 'conditional-registration', index: marker.index, end: closeIndex + 1 + call[0].length });
+  }
+  return constructs;
+}
+
 export function findRunnerSkipConstructs(source) {
   const code = javaCodeMask(source);
   const constructs = [];
@@ -510,6 +531,7 @@ export function findRunnerSkipConstructs(source) {
     }
   }
   constructs.push(...nodeSkipOptions(code));
+  constructs.push(...conditionalRegistrations(code, source));
   return constructs
     .sort((left, right) => left.index - right.index || left.end - right.end)
     .map((construct) => ({

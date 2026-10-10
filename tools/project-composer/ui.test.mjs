@@ -738,8 +738,9 @@ test('the summary stays in view with its buttons while long details scroll insid
   };
   for (const position of ['top', 'bottom']) {
     await page.evaluate(where => window.scrollTo(0, where === 'top' ? 0 : document.documentElement.scrollHeight), position);
-    assert.ok(await inView(generateButton(page)), `generate is visible at the ${position}`);
-    assert.ok(await inView(page.getByRole('button', { name: '구성 불러오기' })), `import is visible at the ${position}`);
+    // 요약 위치는 스크롤·내용 변화 다음 프레임에 다시 잰다 — 다시 잰 뒤의 모습을 본다(main CI 에서 잰 직후를 봐 한 번 붉었다).
+    await expect.poll(() => inView(generateButton(page)), { message: `generate is visible at the ${position}` }).toBe(true);
+    await expect.poll(() => inView(page.getByRole('button', { name: '구성 불러오기' })), { message: `import is visible at the ${position}` }).toBe(true);
   }
   const scroll = page.locator('#summary-scroll');
   assert.ok(await scroll.evaluate(element => element.scrollHeight > element.clientHeight), 'the long details scroll inside the summary');

@@ -10,6 +10,7 @@ import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PAT
 import { compositionDigest } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
+import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
@@ -150,6 +151,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
         check(exact(verifyProjectComposition(lock.composition, catalog), composition), 'Source lock composition mismatch');
         check(lock.composition.sourceCommit === metadata.sourceCommit, 'Source lock composition commit mismatch');
       } else check(!lock.composition, 'Source lock contains an unbound composition');
+      errors.push(...inspectProjectionLedger(root, lock));
     }
     check(exact(metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];

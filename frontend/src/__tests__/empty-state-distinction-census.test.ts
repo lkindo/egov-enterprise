@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { keepInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -25,9 +26,11 @@ const SEARCH_COMPONENTS = [
 ];
 
 /** 공용 컴포넌트를 쓰지 않고 자체 입력으로 검색하는 화면. 발견하면 여기에 추가한다. */
-const CUSTOM_SEARCH_SCREENS = [
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const present = (files: string[]) => keepInProjection(files, file => join(FRONTEND_DIR, file));
+const CUSTOM_SEARCH_SCREENS = present([
   'src/app/help/HelpClient.tsx',
-];
+]);
 
 function screenFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -62,12 +65,12 @@ describe('빈 상태 구분 census', () => {
     같은 구분을 자체 조건으로 한다(아래 목록).
   */
   it('기간 필터를 쓰는 화면은 기간만 고른 0건도 결과 없음으로 말한다', () => {
-    const PERIOD_CUSTOM_DISTINCTION = [
+    const PERIOD_CUSTOM_DISTINCTION = present([
       // 결재함은 제목·기간·상태를 함께 hasListFilter 로 보고 '조건에 맞는 결재가 없습니다' 를 쓴다(DIP B5 F4).
       'src/app/approvals/ApprovalHubClient.tsx',
       // 통계 허브의 기간은 집계 구간이라 빈 목록을 만들지 않는다(DIP B5 F6).
       'src/app/admin/stats/IntelligenceHubClient.tsx',
-    ];
+    ]);
     const missing = screenFiles(APP_DIR)
       .filter((path) => readFileSync(path, 'utf8').includes('<PeriodFilter'))
       .map((path) => relative(FRONTEND_DIR, path).split(sep).join('/'))

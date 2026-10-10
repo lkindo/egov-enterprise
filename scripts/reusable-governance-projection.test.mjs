@@ -15,6 +15,9 @@ import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PAT
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
+import { PROJECTION_LEDGER_PATH, buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
+import { normalize, walk } from './reusable-source-tree.mjs';
+import { relative } from 'node:path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (root, path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
@@ -223,6 +226,7 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
     const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
     try {
       copyInputs(output);
+      const copied = walk(output, () => true).map(path => normalize(relative(output, path)));
       // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
       const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
         selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
@@ -247,9 +251,24 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
           label: file,
         }).source,
       });
+      const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
+      assert.equal(projectionLedger.files > 0, profileName !== 'demo', `${profileName}: 지운 파일이 원장에 남는다`);
       const lock = { schemaVersion: 1, profile: profileName, packs: profile.packs, sourceCommit,
-        composition: { ...composition, sourceCommit },
+        composition: { ...composition, sourceCommit }, projectionLedger,
         governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
+      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
+      assert.deepEqual(inspectReusableGovernance(output).errors, []);
+      // 원장은 생성기가 한 일의 기록이다 — 고치면 lock 해시가, 있는 파일을 적으면 실재 검사가 막는다.
+      const ledgerText = readFileSync(join(output, PROJECTION_LEDGER_PATH), 'utf8');
+      const ledger = JSON.parse(ledgerText);
+      writeFileSync(join(output, PROJECTION_LEDGER_PATH), `${JSON.stringify({ ...ledger,
+        removedFiles: [...ledger.removedFiles, 'package.json'].sort() }, null, 2)}\n`);
+      const tampered = inspectReusableGovernance(output).errors.join('\n');
+      assert.match(tampered, /Projection ledger checksum mismatch/);
+      assert.match(tampered, /Projection ledger lists files that exist: .*package\.json/);
+      writeFileSync(join(output, PROJECTION_LEDGER_PATH), ledgerText);
+      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock, projectionLedger: undefined }, null, 2)}\n`);
+      assert.match(inspectReusableGovernance(output).errors.join('\n'), /Source lock must bind the projection ledger/);
       writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
       assert.deepEqual(inspectReusableGovernance(output).errors, []);
       // 구성 스냅숏 연결을 지우고 lock 해시를 다시 맞춰도, 출처를 증명할 수 없는 투영은 어느 프로필에서도 통과하지 않는다.

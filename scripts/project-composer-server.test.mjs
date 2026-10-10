@@ -395,13 +395,20 @@ test('preflight crosses the plan boundary, passes checked items and recounts the
   let release;
   const gate = new Promise(resolve => { release = resolve; });
   // 정해진 필드 밖의 값(경로 같은 명령 출력)은 넘기지 않는다.
-  const { origin, post, headers } = await fixture(t, { preflight: async options => {
+  const { app, origin, post, headers } = await fixture(t, { preflight: async options => {
     asked.push(options); await gate;
     return { checks: checks.map(check => ({ ...check, path: 'C:/Users/me' })), blocked: false, extra: 'x' };
   } });
+  // 세 요청의 본문이 모두 서버에 닿은 뒤에 점검을 끝낸다 — 고정 대기만 두면 부하가 걸린 실행에서 두 번째 요청이
+  //   늦게 닿아 겹치지 않은 요청이 되고, 점검이 한 번 더 돈다(운영 계약 전체 실행에서 붉었다).
+  let arrived = 0;
+  const allArrived = new Promise(resolve => app.server.on('request', request => {
+    if (request.url === '/api/preflight') request.on('end', () => { arrived += 1; if (arrived === 3) resolve(); });
+  }));
   // 같은 커밋을 묻는 겹친 요청은 한 번의 점검을 함께 기다리고, 다른 커밋은 따로 점검한다.
   const pending = [post('/api/preflight', { sourceCommit: SCREEN }), post('/api/preflight', { sourceCommit: SCREEN }),
     post('/api/preflight', { sourceCommit: 'b'.repeat(40) })];
+  await allArrived;
   await new Promise(resolve => setTimeout(resolve, 20));
   release();
   const [first, second, other] = await Promise.all(pending);

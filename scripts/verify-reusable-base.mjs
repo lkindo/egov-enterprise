@@ -6,6 +6,15 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runCommand, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
+import { projectionLedgerCoverageErrors } from './reusable-projection-ledger.mjs';
+import { isCopyableSourceFile, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+
+/** 생성 직후 원본 쪽에서 원장이 생성기가 지운 파일을 빠짐없이 적었는지 본다(Phase 2 D6). */
+export function assertProjectionLedgerCoverage(root, output) {
+  const copied = trackedAndUntrackedFiles().filter((rel) => isCopyableSourceFile(rel, root));
+  const errors = projectionLedgerCoverageErrors(output, copied);
+  if (errors.length) throw new Error(`projection ledger: ${errors.join('; ')}`);
+}
 
 export function parseBaseVerificationArgs(argv) {
   const options = { layout: 'multi-module' };
@@ -23,7 +32,8 @@ export function parseBaseVerificationArgs(argv) {
   return options;
 }
 
-export async function verifyReusableBase({ root, profile, layout = 'multi-module', run = runCommand, verify = verifyReusableArtifact } = {}) {
+export async function verifyReusableBase({ root, profile, layout = 'multi-module', run = runCommand, verify = verifyReusableArtifact,
+  checkLedger = assertProjectionLedgerCoverage } = {}) {
   if (!['core', 'collaboration', 'demo'].includes(profile)) throw new Error('profile must be core, collaboration or demo');
   normalizeBackendLayout(layout);
   root = resolve(root);
@@ -57,6 +67,7 @@ export async function verifyReusableBase({ root, profile, layout = 'multi-module
     const lock = JSON.parse(readFileSync(resolve(output, 'reusable-base-lock.json'), 'utf8'));
     if (lock.profile !== profile) throw new Error('producer returned a different profile');
     if (normalizeBackendLayout(lock.layout) !== layout) throw new Error('producer returned a different layout');
+    checkLedger(root, output);
     if (process.platform !== 'win32') chmodSync(resolve(output, 'gradlew'), 0o755);
     run('npm', ['ci', '--ignore-scripts'], { root: output });
     run('pnpm', ['-C', 'frontend', 'install', '--frozen-lockfile'], { root: output });

@@ -23,9 +23,14 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { inProjection, keepInProjection } from '@/test-utils/projection';
 
 const SRC = path.resolve(__dirname, '..');
 const read = (relative: string) => fs.readFileSync(path.join(SRC, relative), 'utf8');
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const present = <T extends string>(files: readonly T[]) => keepInProjection(files, file => path.join(SRC, file));
+const BOARD_OPTIONS_HOOK = 'hooks/api/use-board-options.ts';
+const hookInProjection = inProjection(path.join(SRC, BOARD_OPTIONS_HOOK));
 
 /** Flyway 시드가 실제로 INSERT 하는 게시판 ID 를 쓰지 않는 상수들. */
 const UNSEEDED_CONSTANTS = [
@@ -50,7 +55,7 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
   it('선택지를 제공하는 화면은 시드에 없는 게시판 상수를 코드에서 쓰지 않는다', () => {
     const violations: string[] = [];
 
-    for (const screen of BOARD_CHOICE_SCREENS) {
+    for (const screen of present(BOARD_CHOICE_SCREENS)) {
       const code = stripComments(read(screen));
       for (const constant of UNSEEDED_CONSTANTS) {
         if (new RegExp(`\\b${constant}\\b`).test(code)) {
@@ -67,24 +72,24 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     // [2026-09-25 DEC-OPS-130] /admin/community/[id] 도 정본 커뮤니티 상세로의 redirect 가 되어 선택 화면이
     //   하나 남는다. 목록 위치로 자르지 않고 이름으로 적는다 — 앞 항목이 빠지면 서버 기본값 화면이 끌려온다.
     const selectScreens = ['app/admin/community/board/CommunityBoardClient.tsx'] as const;
-    for (const screen of selectScreens) {
+    for (const screen of present(selectScreens)) {
       const code = stripComments(read(screen));
       expect(code, `${screen} 가 게시판 목록을 서버에서 받지 않는다`).toContain('useBoardOptions');
     }
   });
 
-  it('bbsId 없이 들어오는 목록 화면은 상수가 아니라 실재 목록에서 기본값을 고른다', () => {
+  if (inProjection(path.join(SRC, 'app/admin/community/boards/select-board-list/page.tsx'))) it('bbsId 없이 들어오는 목록 화면은 상수가 아니라 실재 목록에서 기본값을 고른다', () => {
     const code = stripComments(read('app/admin/community/boards/select-board-list/page.tsx'));
     expect(code).toContain('resolveDefaultBoardId');
   });
 
-  it('훅은 비활성(useYn=N) 게시판을 선택지에서 제외한다', () => {
+  if (hookInProjection) it('훅은 비활성(useYn=N) 게시판을 선택지에서 제외한다', () => {
     // 구현이 필터를 잃으면 폐지된 게시판이 다시 선택지에 오른다.
-    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    const code = stripComments(read(BOARD_OPTIONS_HOOK));
     expect(code).toContain("useYn !== 'N'");
   });
 
-  it('훅은 관리자에게만 관리자 전용 API 를 호출한다 — 일반 사용자에게 403 으로 선택지를 비우지 않는다', () => {
+  if (hookInProjection) it('훅은 관리자에게만 관리자 전용 API 를 호출한다 — 일반 사용자에게 403 으로 선택지를 비우지 않는다', () => {
     /*
      * 이 훅을 쓰는 화면들은 proxy.ts 의 USER_ACCESSIBLE_ADMIN_PATHS('/admin/community')로
      * **일반 사용자에게 열려 있다.** 그런데 게시판 마스터 목록은 /api/v1/admin/** 아래에 있고
@@ -92,23 +97,23 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
      * 조회하면 일반 사용자에게 403 이 떨어져 선택지가 통째로 비고, "죽은 게시판이 섞여 있다"가
      * "아무 게시판도 못 고른다"로 악화된다.
      */
-    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    const code = stripComments(read(BOARD_OPTIONS_HOOK));
     expect(code, '기능 권한 판정 SSOT 를 쓰지 않는다').toContain("canPermission(user, 'BBS_MST_READ')");
     expect(code, '역할과 무관하게 조회한다').toMatch(/enabled:\s*isAdmin/);
   });
 
-  it('폴백 목록에는 시드가 실제로 INSERT 하는 게시판만 들어간다', () => {
+  if (hookInProjection) it('폴백 목록에는 시드가 실제로 INSERT 하는 게시판만 들어간다', () => {
     // 폴백에 죽은 ID 를 넣으면 고치려던 결함이 비관리자에게 그대로 돌아온다.
-    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    const code = stripComments(read(BOARD_OPTIONS_HOOK));
     for (const constant of UNSEEDED_CONSTANTS) {
       expect(code, `폴백에 시드에 없는 ${constant} 가 들어 있다`).not.toContain(constant);
     }
     expect(code).toContain('NOTICE_BOARD_ID');
   });
 
-  it('선택지가 비어 사용자가 아무것도 고르지 못하는 상태를 만들지 않는다', () => {
+  if (hookInProjection) it('선택지가 비어 사용자가 아무것도 고르지 못하는 상태를 만들지 않는다', () => {
     // 빈 배열을 그대로 돌려주면 select 가 비어 "게시판이 하나도 없다"고 거짓말한다.
-    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    const code = stripComments(read(BOARD_OPTIONS_HOOK));
     expect(code).toContain('SEEDED_FALLBACK_OPTIONS');
   });
 
