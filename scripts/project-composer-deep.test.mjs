@@ -12,6 +12,7 @@ import { composerProfile, domainSupportFiles } from './project-composer-source.m
 import { UPSTREAM_ATLAS, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas, removedGateAcknowledgement } from './reusable-source-gates.mjs';
 import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.mjs';
 import { copySourceTree, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
@@ -19,12 +20,13 @@ const catalog = loadProjectComposerCatalog(root);
 const files = trackedAndUntrackedFiles();
 const compose = (selection, from = catalog) => resolveProjectRecipe({ schemaVersion: 1, project: { name: 'deep-test' }, sourceRef: 'main', selection,
   database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, from);
-// 투영과 규칙 제거가 보는 파일: Java·프런트, 원본 Atlas 자산·검사, package.json(Atlas 별칭). 복사 시간을 줄이려고 이것만 복사한다.
+// 투영과 규칙 제거가 보는 파일: Java·프런트, 원본 Atlas 자산·검사, package.json(Atlas 별칭), 지운 ErrorCode 의 키를 걷는 메시지 번들.
+// 복사 시간을 줄이려고 이것만 복사한다.
 const atlasPaths = [...UPSTREAM_ATLAS.assets, ...UPSTREAM_ATLAS.gates];
 const projectionFiles = files.filter(file => {
   const path = normalize(file);
   return path.endsWith('.java') || path.startsWith('frontend/') || path === 'package.json'
-    || atlasPaths.some(asset => path === asset || path.startsWith(`${asset}/`));
+    || atlasPaths.some(asset => path === asset || path.startsWith(`${asset}/`)) || MESSAGE_BUNDLES.includes(path);
 });
 const codes = deep => deep.blockers.map(blocker => blocker.code);
 const quietly = run => {

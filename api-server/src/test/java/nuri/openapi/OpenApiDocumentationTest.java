@@ -70,26 +70,6 @@ class OpenApiDocumentationTest {
   }
 
   @Test
-  @DisplayName("주소록 수정은 성공·충돌 응답과 상세 상태 토큰을 함께 문서화한다")
-  void addressBookSnapshotUpdateContract_isDocumented() throws Exception {
-    tools.jackson.databind.JsonNode document = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
-    tools.jackson.databind.JsonNode responses = document.path("paths")
-        .path("/api/v1/address-books/{adbkSn}").path("put").path("responses");
-    for (String code : java.util.List.of("200", "409")) {
-      assertThat(responses.path(code).path("content").path("application/json").path("schema")
-          .path("$ref").asString()).isEqualTo("#/components/schemas/ApiResponseVoid");
-    }
-    assertThat(responses.path("409").path("description").asString()).contains("C013");
-    tools.jackson.databind.JsonNode token = document.path("components").path("schemas")
-        .path("AddressBookDto").path("properties").path("editToken");
-    assertThat(token.path("minLength").asInt()).isEqualTo(64);
-    assertThat(token.path("maxLength").asInt()).isEqualTo(64);
-    assertThat(token.path("pattern").asString()).isEqualTo("^[a-f0-9]{64}$");
-  }
-
-  @Test
   @DisplayName("서버 URL 과 경로를 이어 붙여도 API 기본 경로가 한 번만 나온다")
   void serverUrls_doNotRepeatThePathPrefix() throws Exception {
     tools.jackson.databind.JsonNode spec = objectMapper.readTree(mockMvc.perform(get("/v3/api-docs"))
@@ -244,6 +224,9 @@ class OpenApiDocumentationTest {
 
     CredentialRequestTargetScan scan = scanCredentialRequestTargets(document);
 
+    // 모집단 하한은 항상 포함되는 core 구성에서도 성립해야 한다(Phase 2 D6). 이 검사는 생성물에도 남고 어떤 구성도
+    // core 보다 작지 않다. 실측(2026-10-10) path parameter 는 원본 268·core 95 — 종전 하한 100 은 core 에서 처음부터
+    // 붉었다. 런타임 문서의 모집단이라 생성기가 지운 몫을 셀 수 없어, 붕괴만 잡는 수준으로 core 아래에 둔다.
     assertThat(scan.operationCount())
         .as("빈 OpenAPI 문서라서 자격증명 검사가 공허하게 통과하면 안 된다")
         .isGreaterThan(100);
@@ -252,35 +235,10 @@ class OpenApiDocumentationTest {
         .isGreaterThan(100);
     assertThat(scan.pathParameterCount())
         .as("path parameter 모집단이 사라져 검사가 공허하게 통과하면 안 된다")
-        .isGreaterThan(100);
+        .isGreaterThan(80);
     assertThat(scan.violations())
         .as("request-target(path/query)은 브라우저·프록시·access log에 남으므로 자격증명을 둘 수 없다")
         .isEmpty();
-  }
-
-  @Test
-  @DisplayName("만족도 공개 DTO와 삭제 계약에는 익명 비밀번호 증명 surface가 없다")
-  void satisfactionPasswordProofSurface_isRetired() throws Exception {
-    String content = mockMvc.perform(get("/v3/api-docs")
-        .contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk())
-        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-    tools.jackson.databind.JsonNode document = objectMapper.readTree(content);
-
-    tools.jackson.databind.JsonNode schema =
-        document.path("components").path("schemas").path("SatisfactionDto");
-    tools.jackson.databind.JsonNode delete = document.path("paths")
-        .path("/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}")
-        .path("delete");
-
-    assertThat(schema.isObject()).isTrue();
-    assertThat(schema.path("properties").has("pswd")).isFalse();
-    assertThat(delete.isObject()).isTrue();
-    assertThat(delete.path("parameters").valueStream()
-        .map(parameter -> resolveLocalReference(document, parameter))
-        .filter(parameter -> "query".equals(parameter.path("in").asString()))
-        .map(parameter -> parameter.path("name").asString())
-        .toList()).isEmpty();
   }
 
   @Test
@@ -407,7 +365,7 @@ class OpenApiDocumentationTest {
     }
   }
 
-  private static tools.jackson.databind.JsonNode resolveLocalReference(
+  static tools.jackson.databind.JsonNode resolveLocalReference(
       tools.jackson.databind.JsonNode document,
       tools.jackson.databind.JsonNode candidate) {
     java.util.Set<String> visited = new java.util.HashSet<>();

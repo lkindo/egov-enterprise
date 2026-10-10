@@ -202,6 +202,8 @@ function copyInputs(output) {
     'business-app/src/main/java', 'business-app/src/test/java',
     'business-core/src/main/java', 'business-core/src/test/java',
     'foundation/src/main/java', 'foundation/src/test/java',
+    // 투영은 지운 ErrorCode 가 소유한 메시지 키를 함께 걷으므로 번들이 있어야 한다(Phase 2 D6).
+    'foundation/src/main/resources/egovframework/message',
     'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql',
   ]) {
     mkdirSync(dirname(join(output, path)), { recursive: true });

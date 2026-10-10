@@ -46,7 +46,12 @@ class MessageBundleContractTest {
     private static final String BUNDLE_DIR = "foundation/src/main/resources/egovframework/message";
     private static final List<String> MODULES = List.of("foundation", "business-core", "business-app", "api-server");
 
-    /** 스캔 붕괴 방지 하한 — 실측 기준(2026-08-27) 이하로 떨어지면 스캐너 자체를 의심해야 한다. */
+    /**
+     * 스캔 붕괴 방지 하한 — 실측 기준(2026-08-27) 이하로 떨어지면 스캐너 자체를 의심해야 한다.
+     *
+     * <p>[2026-10-10 Phase 2 D6] 기능을 걷은 생성물에서는 생성기가 자기가 지운 ErrorCode 코드 수와 Bean Validation
+     * 참조 수만큼 아래 두 하한을 내리고 lock 에 기록한다(reusable-source-messages). 원본의 여유 폭이 생성물에서도 같다.
+     */
     private static final int MIN_ERROR_CODE_SOURCES = 4;
     private static final int MIN_ERROR_CODES = 39;
     private static final int MIN_HANDLER_KEYS = 7;

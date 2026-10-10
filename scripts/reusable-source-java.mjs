@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
 import { domainSupportFiles, projectComposerJava } from './project-composer-source.mjs';
+import { beanValidationRefsIn, isErrorCodeSource, isScannedSource, lowerMessageContractFloors, ownedMessageKeys, pruneOwnedMessageKeys } from './reusable-source-messages.mjs';
 import { fail, normalize, walk } from './reusable-source-tree.mjs';
 
 /**
@@ -184,11 +185,21 @@ export function pruneJava(output, manifest, profile) {
     planJavaRemoval(output, manifest, profile);
 
   const adaptedGates = [];
+  const rel = (path) => normalize(relative(output, path));
+  // 지우기 전에 읽는다 — 지운 뒤에는 그 enum 이 소유한 메시지 키도, 메시지 번들 계약이 세던 참조 수도 알 수 없다.
+  // 범위는 계약과 같다(네 모듈의 src/main/java 의 .java).
+  const removedScanned = [...removed].filter((path) => path.endsWith('.java') && isScannedSource(rel(path)) && existsSync(path))
+    .map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+  const removedErrorCodes = removedScanned.filter(({ path }) => isErrorCodeSource(rel(path)));
+  const removedBeanValidationRefs = removedScanned
+    .reduce((sum, { source }) => sum + beanValidationRefsIn(stripJavaComments(source)), 0);
+  const survivingErrorCodes = [];
   for (const path of removed) if (existsSync(path)) rmSync(path);
   for (const directory of directDirectories) if (existsSync(directory)) rmSync(directory, { recursive: true });
   for (const path of walk(output, (candidate) => candidate.endsWith('.java'))) {
     const source = readFileSync(path, 'utf8');
     const projected = projectComposerJava(normalize(relative(output, path)), source, profile);
+    if (isErrorCodeSource(rel(path))) survivingErrorCodes.push({ path, source: projected });
     if (source !== projected) {
       writeFileSync(path, projected);
       adaptedGates.push({ file: normalize(relative(output, path)), domains: profile.resolvedDomains,
@@ -205,7 +216,13 @@ export function pruneJava(output, manifest, profile) {
       reason: removalReason.get(path) ?? '(사유 미상)',
     }))
     .sort((left, right) => left.file.localeCompare(right.file));
-  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates, ...(adaptedGates.length ? { adaptedGates } : {}) };
+  const owned = ownedMessageKeys(removedErrorCodes, survivingErrorCodes);
+  const prunedMessageKeys = pruneOwnedMessageKeys(output, owned);
+  const messageContractFloors = lowerMessageContractFloors(output,
+    { errorCodes: owned.keys.length, beanValidationRefs: removedBeanValidationRefs });
+  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates,
+    ...(adaptedGates.length ? { adaptedGates } : {}), ...(prunedMessageKeys.length ? { prunedMessageKeys } : {}),
+    ...(Object.keys(messageContractFloors).length ? { messageContractFloors } : {}) };
 }
 
 function skipJavaLiteral(source, open, quote) {
