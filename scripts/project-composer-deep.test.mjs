@@ -112,6 +112,25 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.deepEqual(codes(deep), ['GATE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['api-server/src/test/java/nuri/api/NotRemovedTest.java']);
 
+  // 시작 구성이 연쇄로 지우는 Java 도 생성기처럼 커밋된 기대치와 대조한다(설계서 C4).
+  const coreCascade = manifest.profiles.core.acknowledgedJavaCascade;
+  assert.ok(coreCascade.length > 1, 'the core preset acknowledges cascaded Java');
+  const cascadeUnacknowledged = structuredClone(manifest);
+  cascadeUnacknowledged.profiles.core.acknowledgedJavaCascade = coreCascade.slice(1);
+  deep = compositionDeepPlan({ root, manifest: cascadeUnacknowledged, composition: core, files });
+  assert.deepEqual(codes(deep), ['JAVA_CASCADE_UNACKNOWLEDGED']);
+  assert.deepEqual(deep.blockers[0].files, [coreCascade[0]]);
+  assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.JAVA_CASCADE_UNACKNOWLEDGED);
+  const cascadeStale = structuredClone(manifest);
+  cascadeStale.profiles.core.acknowledgedJavaCascade.push('api-server/src/main/java/nuri/api/NotCascaded.java');
+  deep = compositionDeepPlan({ root, manifest: cascadeStale, composition: core, files });
+  assert.deepEqual(codes(deep), ['JAVA_CASCADE_STALE']);
+  assert.deepEqual(deep.blockers[0].files, ['api-server/src/main/java/nuri/api/NotCascaded.java']);
+  const cascadeDeclaration = structuredClone(manifest);
+  cascadeDeclaration.profiles.core.acknowledgedJavaCascade = coreCascade[0];
+  deep = compositionDeepPlan({ root, manifest: cascadeDeclaration, composition: core, files });
+  assert.deepEqual(codes(deep), ['JAVA_CASCADE_DECLARATION', 'JAVA_CASCADE_UNACKNOWLEDGED']);
+
   // 승인 항목의 형식(사유 없음, 모르는 규칙)은 생성기가 대조 전에 거부한다.
   const declaration = structuredClone(manifest);
   declaration.profiles.core.acknowledgedRemovedGates[0] = { file: coreGates[0].file };
@@ -238,7 +257,9 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   t.after(() => rmSync(fixture, { recursive: true, force: true, maxRetries: 5 }));
   const write = (file, text) => { mkdirSync(dirname(join(fixture, file)), { recursive: true }); writeFileSync(join(fixture, file), text); };
   const small = { packs: { core: {}, demo: { backend: { appDomains: ['mail'] }, frontend: { removePaths: ['src/app/demo'] } } },
-    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }] } } };
+    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }],
+      // 시작 구성은 연쇄로 지우는 Java 를 승인해야 생성된다(설계서 C4) — 아래 과거 마이그레이션 검증이 그 연쇄다.
+      acknowledgedJavaCascade: ['api-server/src/test/java/nuri/api/schema/OldMailMigrationIntegrationTest.java'] } } };
   // 원본 Atlas 규칙 제거가 성공하도록 자산과 별칭을 둔다(규칙 제거는 늘 적용된다).
   const atlas = ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
   for (const file of atlas) write(file, file === 'package.json' ? '{"scripts":{"atlas:build":"x","atlas:check":"x"}}' : '// atlas\n');

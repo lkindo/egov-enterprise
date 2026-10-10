@@ -127,6 +127,53 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
 }
 
 /**
+ * 프리셋의 Java 연쇄 제거(게이트 제외)와 manifest 의 {@code profiles.<name>.acknowledgedJavaCascade} 의 대조(설계서 C4).
+ *
+ * <p>[왜] 연쇄 제거는 선언이 아니라 타입 참조로 정해진다. 잘못 들어간 import 한 줄이 core 컨트롤러나 동작 시험을 조용히
+ * 지울 수 있고(DEC-OPS-084·085 는 이런 손실을 손으로 찾았다), 소유는 코드에서 도출되므로 그 import 가 기대치까지 함께
+ * 움직인다. 그래서 기대치는 커밋된 경로 목록이다 — 연쇄가 바뀌는 변경에서 목록이 함께 움직여 diff 에 의도가 남는다.
+ * 사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 {@code java.cascadeRemoved} 에 남긴다.
+ * 승인 목록은 양방향이다. 직접 선택 구성은 기대치가 없어 대조하지 않는다.
+ */
+export function javaCascadeAcknowledgement(profile, cascadeFiles) {
+  const value = profile.acknowledgedJavaCascade;
+  // 배열이 아닌 값(문자열 하나 포함)은 그 값 하나를 형식이 틀린 항목으로 본다 — 1개짜리 목록으로 받아 주지 않는다.
+  const absent = value === undefined || value === null;
+  const listed = Array.isArray(value) ? value : [];
+  const valid = listed.filter((file) => typeof file === 'string' && file.endsWith('.java'));
+  return {
+    invalidEntries: absent ? [] : Array.isArray(value) ? listed.filter((file) => !valid.includes(file)) : [value],
+    duplicates: valid.filter((file, index) => valid.indexOf(file) !== index),
+    unacknowledged: cascadeFiles.filter((file) => !valid.includes(file)),
+    stale: valid.filter((file) => !cascadeFiles.includes(file)),
+  };
+}
+
+export function assertJavaCascadeAcknowledged(profileName, profile, java) {
+  const files = java.cascadeRemoved.map((entry) => entry.file);
+  const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, files);
+  console.log(`[base-source] 선언이 아니라 연쇄로 지운 Java(게이트 제외): ${files.length}건`);
+  const where = `config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedJavaCascade`;
+  if (invalidEntries.length) fail(`${where} 항목은 .java 경로 문자열이어야 한다: ${JSON.stringify(invalidEntries[0])}`);
+  if (duplicates.length) fail(`${where} 에 중복 항목이 있다: ${duplicates.join(', ')}`);
+  if (unacknowledged.length) {
+    const reasons = new Map(java.cascadeRemoved.map((entry) => [entry.file, entry.reason]));
+    fail(
+      `profile '${profileName}' 이 승인하지 않은 Java 파일을 연쇄로 지운다 (${unacknowledged.length}건):\n`
+        + unacknowledged.map((file) => `  - ${file}  <- ${reasons.get(file)}`).join('\n')
+        + `\n잘못 들어간 import 인지 먼저 보고, 정당한 연쇄라면 ${where} 에 적는다.`,
+    );
+  }
+  if (stale.length) {
+    fail(
+      `${where} 에 더 이상 연쇄로 지워지지 않는 파일이 남아 있다 (${stale.length}건):\n`
+        + stale.map((file) => `  - ${file}`).join('\n')
+        + '\n승인 목록은 실제 연쇄와 exact 일치해야 한다 — 낡은 승인은 다음 연쇄를 조용히 통과시킨다.',
+    );
+  }
+}
+
+/**
  * ZDM waiver registry 를 **투영본에 실재하는 migration** 으로 가지친다.
  *
  * <p>[왜] 투영본은 원본 V2 체인을 검증된 V1 번들로 통째로 교체한다(installDatabaseBundle).

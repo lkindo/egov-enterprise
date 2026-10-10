@@ -134,6 +134,8 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
       if (!removalReason.has(path)) removalReason.set(path, `제외 domain ${domain} 직접 제거`);
     }
   }
+  // 선언으로 지운 파일. 나머지는 타입 참조 연쇄로 지운 것이다(설계서 C4 — 연쇄 제거는 프리셋마다 승인 목록과 대조한다).
+  const direct = new Set(removed);
 
   const removedTypes = new Set([...removed].map((path) => pathToType.get(path)).filter(Boolean));
   /*
@@ -177,12 +179,25 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
     }
   }
 
-  return { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories };
+  return { excludedDomains, removed, direct, removalReason, removedTypes, gateSources, directDirectories };
+}
+
+/**
+ * 타입 참조 연쇄로 지운 게이트가 아닌 Java 파일과 그 사유. 게이트는 따로 승인한다(acknowledgedRemovedGates).
+ * 생성기의 lock 기록과 프리셋 승인 대조(acknowledgedJavaCascade)가 같은 목록을 쓴다.
+ */
+export function javaCascadeRemovals(root, plan) {
+  return [...plan.removed]
+    .filter((path) => !plan.direct.has(path) && !plan.gateSources.has(path))
+    .map((path) => ({ file: normalize(relative(root, path)), reason: plan.removalReason.get(path) ?? '(사유 미상)' }))
+    .sort((left, right) => left.file.localeCompare(right.file));
 }
 
 export function pruneJava(output, manifest, profile) {
-  const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } =
-    planJavaRemoval(output, manifest, profile);
+  const plan = planJavaRemoval(output, manifest, profile);
+  const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } = plan;
+  // 지우기 전에 센다 — 지운 뒤에는 무엇이 선언이 아니라 연쇄로 사라졌는지 말할 수 없다.
+  const cascadeRemoved = javaCascadeRemovals(output, plan);
 
   const adaptedGates = [];
   const rel = (path) => normalize(relative(output, path));
@@ -220,7 +235,7 @@ export function pruneJava(output, manifest, profile) {
   const prunedMessageKeys = pruneOwnedMessageKeys(output, owned);
   const messageContractFloors = lowerMessageContractFloors(output,
     { errorCodes: owned.keys.length, beanValidationRefs: removedBeanValidationRefs });
-  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates,
+  return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates, cascadeRemoved,
     ...(adaptedGates.length ? { adaptedGates } : {}), ...(prunedMessageKeys.length ? { prunedMessageKeys } : {}),
     ...(Object.keys(messageContractFloors).length ? { messageContractFloors } : {}) };
 }

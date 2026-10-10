@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -7,7 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -15,13 +16,21 @@ import {
   buildFrontendReachabilityCensus,
   CURRENT_REPOSITORY_ASSERTIONS,
   parseModuleReferences,
+  resolveCensusModuleReference,
   validateReachabilityAssertions,
 } from './frontend-reachability-census.mjs';
 import {
+  SOURCE_EXTENSIONS,
+  frontendDirectRemovePaths,
   frontendImportSpecifiers,
+  planFrontendRemoval,
   projectFrontendPackMarkers,
   resolveFrontendImport,
 } from './reusable-source-frontend.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { composerProfile, projectComposerFrontend } from './project-composer-source.mjs';
+import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const temporaryRoots = [];
@@ -51,6 +60,13 @@ function censusFixture(root, overrides = {}) {
     routeManifestPath: null,
     ...overrides,
   });
+}
+
+let repositoryCensusCache;
+/** 저장소 census 는 한 번만 만든다(전체 빌드가 수십 초다). 시험은 이 결과를 바꾸지 않는다 — 바꿀 때는 복사본을 쓴다. */
+function repositoryCensus() {
+  repositoryCensusCache ??= buildFrontendReachabilityCensus({ repoRoot });
+  return repositoryCensusCache;
 }
 
 function byFile(census, file) {
@@ -90,7 +106,7 @@ test('immediate createRequire keeps local dependencies reachable and missing tar
 });
 
 test('current repository keeps the known live chain and user hub split explicit', () => {
-  const census = buildFrontendReachabilityCensus({ repoRoot });
+  const census = repositoryCensus();
   assert.deepEqual(validateReachabilityAssertions(census, CURRENT_REPOSITORY_ASSERTIONS), []);
   assert.ok(census.summary.population > 0);
   assert.equal(census.summary.issueCount, 0);
@@ -195,7 +211,7 @@ test('core 프로필에서 살아남아야 하는 파일은 제외 pack 을 참�
   const frontendRoot = join(repoRoot, 'frontend');
   assert.ok(exclusion.excludedRemovePaths.length > 0, 'core must exclude at least one frontend pack path');
 
-  const census = buildFrontendReachabilityCensus({ repoRoot });
+  const census = repositoryCensus();
   for (const survivor of CORE_SURVIVORS) {
     const file = join(repoRoot, survivor);
     assert.deepEqual(
@@ -293,7 +309,7 @@ function transitiveRouteLossViolations(losses, approved) {
 
 test('routes the route census declares surviving are lost only where an approved cascade says so', () => {
   const routeCensus = JSON.parse(readFileSync(join(repoRoot, 'config/ui-route-capabilities.json'), 'utf8'));
-  const census = buildFrontendReachabilityCensus({ repoRoot });
+  const census = repositoryCensus();
   const losses = transitiveRouteLosses(routeCensus, census);
   assert.deepEqual(transitiveRouteLossViolations(losses, APPROVED_TRANSITIVE_ROUTE_LOSSES), []);
   assert.equal(losses.length, APPROVED_TRANSITIVE_ROUTE_LOSSES.length);
@@ -324,7 +340,7 @@ test('a direct removal of a route the route census declares surviving is a contr
 });
 
 test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
-  const census = buildFrontendReachabilityCensus({ repoRoot });
+  const census = repositoryCensus();
   for (const file of COLLABORATION_SURVIVORS) {
     const collaborationRemoval = byFile(census, file).profileRemovalConstraints
       .find((constraint) => constraint.profile === 'collaboration');
@@ -671,4 +687,264 @@ test('known live-chain misclassification is a reproducible red in a temp fixture
     validateReachabilityAssertions(faulty, assertions).join('\n'),
     /runtime chain terminal misclassified/,
   );
+});
+
+/*
+  [2026-10-11 Phase 2 · 설계서 C5 — 프런트 판정 동치 측정]
+  프런트 연쇄 제거를 판정하는 곳이 둘이다. 생성기는 원문 정규식(frontendImportSpecifiers)으로 간선을 읽고 resolveFrontendImport 로
+  파일에 잇는다. 이 census 는 주석·문자열을 건너뛰는 토크나이저(parseModuleReferences)로 간선을 읽고 자기 해석기로 잇는다.
+  판정을 하나로 모으기(설계서 11장) 전에 두 판정이 어디서 다른지 재고, 그 차이가 제거 결과를 바꾸지 않는지 본다.
+  - 추출(간선을 읽는 방식): 구성(프리셋과 단독 선택)마다 생성기 연쇄에 두 추출을 넣은 결과가 같아야 한다(예외 없음).
+  - 판정 전체: 실제 프로필마다 census 의 제거 판정이 census 모집단(frontend/src 모듈) 안에서 생성기 결과와 같아야 한다.
+    위 라우트 소실 승인은 census 판정으로 센다.
+  - 차이 목록: 파일별 추출 차이와 해석 차이 대상은 아래 exact 목록이다. 새 차이도, 사라진 차이(낡은 항목)도 red 이고
+    래칫은 목록 길이와 같아야 한다(줄면 함께 내린다). 차이가 가리키는 대상은 어느 구성에서도 지워지지 않아야 한다 —
+    그래야 차이가 연쇄 결과를 바꾸지 못한다. 판정을 모으면 두 목록은 0 이 된다(설계서 13장 예외 목록).
+*/
+const IMPORT_JUDGMENT_DIFFERENCES = [
+  { file: 'frontend/e2e/scripts/run-e2e-with-coverage.test.ts', target: 'frontend/scripts/build-instrumented.js', judgment: 'census-only', kind: 'create-require', reason: '도구 시험이 createRequire 로 CommonJS 스크립트를 불러온다. 생성기 정규식은 require 를 읽지 않는다.' },
+  { file: 'frontend/e2e/scripts/run-e2e-with-coverage.test.ts', target: 'frontend/scripts/coverage-instrumentation-loader.js', judgment: 'census-only', kind: 'create-require', reason: '도구 시험이 createRequire 로 CommonJS 스크립트를 불러온다. 생성기 정규식은 require 를 읽지 않는다.' },
+  { file: 'frontend/e2e/scripts/run-e2e-with-coverage.test.ts', target: 'frontend/scripts/run-e2e-with-coverage.js', judgment: 'census-only', kind: 'create-require', reason: '도구 시험이 createRequire 로 CommonJS 스크립트를 불러온다. 생성기 정규식은 require 를 읽지 않는다.' },
+  { file: 'frontend/scripts/run-e2e-with-coverage.js', target: 'frontend/scripts/build-instrumented.js', judgment: 'census-only', kind: 'require', reason: 'CommonJS 도구 스크립트의 require 다. 생성기 정규식은 require 를 읽지 않는다.' },
+  { file: 'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', target: 'scripts/atlas-catalog.mjs', judgment: 'census-only', kind: 'create-require', reason: '원본 Atlas 계약이 createRequire 로 저장소 루트 스크립트를 읽는다(frontend 밖 대상).' },
+  { file: 'frontend/src/app/admin/security/authority/__tests__/screen-registry-fixture.ts', target: 'frontend/src/app/admin/security/authority/__tests__/screen-registry-fixture.ts', judgment: 'generator-only', reason: '사용법 주석이 vi.mock 예시로 자기 모듈의 import 를 인용한다. 생성기 정규식은 주석도 간선으로 읽는다(자기 간선이라 연쇄 결과는 같다).' },
+];
+const IMPORT_JUDGMENT_DIFFERENCE_RATCHET = 6;
+const CENSUS_MODULE_REFERENCE_KINDS = new Set(['static-import', 're-export', 'dynamic-import', 'import-type', 'require', 'require-resolve', 'create-require']);
+
+const IMPORT_RESOLUTION_DIFFERENCES = [
+  { target: 'frontend/next.config.ts', kind: 'script-extension-mapped', reason: 'e2e 도구 시험이 `../../next.config.js` 를 동적 import 한다. census 는 .js 지정자를 .ts 로 잇고 생성기는 잇지 않는다.' },
+  { target: 'frontend/src/types/generated-api.d.ts', kind: 'declaration-file', reason: '생성 API 타입 선언을 확장자 없이 import 한다. census 는 .d.ts 를 잇고 생성기는 .ts/.tsx/.js/.jsx 만 잇는다.' },
+];
+const IMPORT_RESOLUTION_DIFFERENCE_RATCHET = 2;
+const RESOLUTION_DIFFERENCE_KINDS = new Set(['declaration-file', 'script-extension-mapped', 'generator-only', 'different-target']);
+
+/** census 토크나이저로 읽은 간선 지정자. 판정할 수 없는 소스는 통과가 아니라 실패다. */
+function censusImportSpecifiers(source) {
+  const { references, issues } = parseModuleReferences(source);
+  if (issues.length) throw new Error(`census tokenizer cannot judge a source: ${issues.map((issue) => `${issue.code}@${issue.line}`).join(', ')}`);
+  return references.map((reference) => reference.specifier);
+}
+
+let frontendInventory;
+/** 생성기가 복사하는 프런트 파일(추적·추적 안 된 파일, 지운 추적 파일 제외)과 그 원문. */
+function repositoryFrontendInventory() {
+  if (!frontendInventory) {
+    const files = trackedAndUntrackedFiles()
+      .filter((file) => file.startsWith('frontend/') && existsSync(join(repoRoot, file)))
+      .map((file) => join(repoRoot, file));
+    const sources = new Map(files.filter((path) => SOURCE_EXTENSIONS.includes(extname(path)))
+      .map((path) => [path, readFileSync(path, 'utf8')]));
+    frontendInventory = { frontendRoot: join(repoRoot, 'frontend'), files, sources };
+  }
+  return frontendInventory;
+}
+
+const repoPath = (path) => relative(repoRoot, path).split(sep).join('/');
+
+/** 한 구성의 투영된 원문 위에서, 같은 생성기 연쇄에 `importSpecifiers` 를 넣어 지울 파일을 계산한다. */
+function frontendRemovalWith(importSpecifiers, { manifest, profile, inventory, projected }) {
+  return new Set([...planFrontendRemoval({
+    frontendRoot: inventory.frontendRoot,
+    files: inventory.files,
+    directPaths: frontendDirectRemovePaths(manifest, profile),
+    readSource: (path) => projected.get(path),
+    importSpecifiers,
+  }).removed].map(repoPath));
+}
+
+/** 생성기처럼 선택 투영(직접 선택)과 pack 마커 투영을 한 원문. */
+function projectedFrontendSources(manifest, profile, composition, inventory) {
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const excludedPacks = new Set([...knownPacks].filter((pack) => !profile.packs.includes(pack)));
+  return new Map([...inventory.sources].map(([path, source]) => {
+    const selected = composition?.profile === 'custom' ? projectComposerFrontend(repoPath(path), source, composition) : source;
+    return [path, projectFrontendPackMarkers(selected, { knownPacks, excludedPacks, label: repoPath(path) }).source];
+  }));
+}
+
+/** 파일별 추출 차이 — 원본 원문에서 두 추출이 다르게 읽은 간선(둘 다 생성기 해석기로 잇는다). */
+function importJudgmentDifferences(inventory) {
+  const rows = [];
+  const known = new Set(inventory.sources.keys());
+  for (const [path, source] of inventory.sources) {
+    const resolveTarget = (specifier) => resolveFrontendImport(inventory.frontendRoot, path, specifier, known);
+    const generator = new Set(frontendImportSpecifiers(source).map(resolveTarget).filter(Boolean).map(repoPath));
+    const census = new Map();
+    for (const reference of parseModuleReferences(source, repoPath(path)).references) {
+      const target = resolveTarget(reference.specifier);
+      if (target) census.set(repoPath(target), reference.kind);
+    }
+    for (const target of generator) if (!census.has(target)) rows.push({ file: repoPath(path), target, judgment: 'generator-only' });
+    for (const [target, kind] of census) if (!generator.has(target)) rows.push({ file: repoPath(path), target, judgment: 'census-only', kind });
+  }
+  return rows;
+}
+
+/** 해석 차이의 종류 — 지정자와 두 해석 결과에서 기계적으로 정한다. */
+function resolutionDifferenceKind(specifier, censusTarget, generatorTarget) {
+  if (!censusTarget) return 'generator-only';
+  if (generatorTarget) return 'different-target';
+  if (censusTarget.endsWith('.d.ts')) return 'declaration-file';
+  if (['.js', '.jsx', '.mjs', '.cjs'].includes(extname(specifier)) && extname(censusTarget) !== extname(specifier)) return 'script-extension-mapped';
+  return 'different-target';
+}
+
+/**
+ * 해석 차이 — census 토크나이저가 읽은 모든 지정자를 두 해석기로 이어, 결과가 다른 **대상**과 종류.
+ * 가져오는 파일이 아니라 대상으로 센다. 같은 선언 파일을 import 하는 화면이 늘어도 차이가 새로 생기지 않는다.
+ */
+function importResolutionDifferences(inventory) {
+  const rows = new Map();
+  const known = new Set(inventory.sources.keys());
+  for (const [path, source] of inventory.sources) {
+    for (const { specifier } of parseModuleReferences(source, repoPath(path)).references) {
+      const generatorTarget = resolveFrontendImport(inventory.frontendRoot, path, specifier, known);
+      const censusTarget = resolveCensusModuleReference({ repoRoot, importer: path, specifier });
+      const generator = generatorTarget && repoPath(generatorTarget);
+      const census = censusTarget && repoPath(censusTarget);
+      if (generator === census) continue;
+      const row = { target: census ?? generator, kind: resolutionDifferenceKind(specifier, census, generator) };
+      rows.set(`${row.target}|${row.kind}`, row);
+    }
+  }
+  return [...rows.values()];
+}
+
+/** exact 대조 — 형식이 틀린 항목, 목록에 없는 차이, 낡은 항목, 래칫 불일치를 모두 위반으로 낸다. */
+function differenceViolations({ measured, expected, ratchet, key, inVocabulary, noun }) {
+  const violations = [];
+  for (const entry of expected) {
+    if (!inVocabulary(entry)) violations.push(`${noun} 항목의 판정·종류가 어휘 밖이다: ${key(entry)}`);
+    if (!entry.reason?.trim()) violations.push(`${noun} 항목에 사유가 없다: ${key(entry)}`);
+  }
+  if (expected.length > ratchet) violations.push(`${noun} 목록 ${expected.length}건이 래칫 ${ratchet}건을 넘는다 — 판정을 모으는 방향으로만 줄인다`);
+  if (expected.length < ratchet) violations.push(`${noun} 목록이 ${expected.length}건으로 줄었다 — 래칫 ${ratchet}건도 함께 내린다`);
+  const expectedKeys = new Set(expected.map(key));
+  const measuredKeys = new Set(measured.map(key));
+  for (const row of measured) {
+    if (!expectedKeys.has(key(row))) {
+      violations.push(`두 판정이 다른 ${noun}: ${key(row)} — 주석·문자열 속 import 인용이나 require 를 걷거나, 정당하면 사유와 함께 목록에 적는다`);
+    }
+  }
+  for (const entry of expected) {
+    if (!measuredKeys.has(key(entry))) violations.push(`낡은 ${noun} 항목: ${key(entry)} — 목록과 래칫에서 뺀다`);
+  }
+  return violations;
+}
+
+const extractionKey = (row) => [row.file, row.target, row.judgment, row.kind ?? ''].join('|');
+const resolutionKey = (row) => [row.target, row.kind].join('|');
+const extractionViolations = (measured, expected, ratchet) => differenceViolations({
+  measured, expected, ratchet, key: extractionKey, noun: '추출 차이',
+  inVocabulary: (entry) => (entry.judgment === 'generator-only'
+    ? entry.kind === undefined
+    : entry.judgment === 'census-only' && CENSUS_MODULE_REFERENCE_KINDS.has(entry.kind)),
+});
+const resolutionViolations = (measured, expected, ratchet) => differenceViolations({
+  measured, expected, ratchet, key: resolutionKey, noun: '해석 차이', inVocabulary: (entry) => RESOLUTION_DIFFERENCE_KINDS.has(entry.kind),
+});
+
+test('the generator cascade removes the same frontend files under the census tokenizer for every preset and single selection', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const catalog = loadProjectComposerCatalog(repoRoot);
+  const inventory = repositoryFrontendInventory();
+  const base = { schemaVersion: 1, project: { name: 'judgment-equivalence' }, sourceRef: 'main',
+    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' };
+  const recipes = [
+    ...catalog.presets.map((preset) => [`preset ${preset.id}`, { ...base, selection: { preset: preset.id } }]),
+    ...catalog.capabilities.map((capability) => [`single ${capability.id}`, { ...base, selection: { domains: [capability.id] } }]),
+  ];
+  assert.ok(recipes.length >= catalog.presets.length + 19, `구성 ${recipes.length}개 — 프리셋과 단독 선택이 모두 들어야 한다`);
+  // 차이가 가리키는 대상이 지워지지 않으면 그 차이는 어느 구성의 연쇄도 바꾸지 못한다(해석 차이는 아래 대조가 직접 보지 않는다).
+  const differenceTargets = [...IMPORT_JUDGMENT_DIFFERENCES, ...IMPORT_RESOLUTION_DIFFERENCES].map((entry) => entry.target);
+  let removing = 0;
+  for (const [label, recipe] of recipes) {
+    const composition = resolveProjectRecipe(recipe, catalog);
+    const profile = composerProfile(manifest, composition);
+    const context = { manifest, profile, inventory, projected: projectedFrontendSources(manifest, profile, composition, inventory) };
+    const generator = frontendRemovalWith(frontendImportSpecifiers, context);
+    const census = frontendRemovalWith(censusImportSpecifiers, context);
+    assert.deepEqual(
+      { generatorOnly: [...generator].filter((file) => !census.has(file)), censusOnly: [...census].filter((file) => !generator.has(file)) },
+      { generatorOnly: [], censusOnly: [] },
+      `${label}: 두 추출의 연쇄 제거가 다르다`,
+    );
+    assert.deepEqual(differenceTargets.filter((target) => generator.has(target)), [], `${label}: 판정 차이가 가리키는 대상이 지워진다`);
+    if (generator.size > 0) removing += 1;
+  }
+  assert.ok(removing >= recipes.length - 1, `파일을 지우는 구성이 ${removing}개뿐이다 — 대조가 비어 있다`);
+});
+
+test('the census removal judgment equals the generator cascade for every real profile', () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const inventory = repositoryFrontendInventory();
+  const census = repositoryCensus();
+  // census 는 frontend/src 의 모듈만 판정한다. 그 밖(e2e·도구 스크립트)의 생성기 제거는 census 가 말하지 않으므로 비교하지 않는다.
+  const population = new Set(census.files.map((row) => row.file));
+  assert.ok(population.size > 1000, `census 모집단 ${population.size} — 비교가 비어 있다`);
+  for (const [name, profile] of Object.entries(manifest.profiles)) {
+    const projected = projectedFrontendSources(manifest, profile, undefined, inventory);
+    const generator = new Set([...frontendRemovalWith(frontendImportSpecifiers, { manifest, profile, inventory, projected })]
+      .filter((file) => population.has(file)));
+    const censusRemoved = new Set(census.files
+      .filter((row) => row.profileRemovalConstraints.some((constraint) => constraint.profile === name))
+      .map((row) => row.file));
+    assert.deepEqual(
+      { generatorOnly: [...generator].filter((file) => !censusRemoved.has(file)), censusOnly: [...censusRemoved].filter((file) => !generator.has(file)) },
+      { generatorOnly: [], censusOnly: [] },
+      `profile ${name}: census 판정과 생성기 연쇄 제거가 다르다`,
+    );
+  }
+});
+
+test('per-file import extraction and resolution differences match the approved lists exactly', () => {
+  const inventory = repositoryFrontendInventory();
+  const extraction = importJudgmentDifferences(inventory);
+  assert.deepEqual(extractionViolations(extraction, IMPORT_JUDGMENT_DIFFERENCES, IMPORT_JUDGMENT_DIFFERENCE_RATCHET), []);
+  assert.equal(extraction.length, IMPORT_JUDGMENT_DIFFERENCES.length);
+  const resolution = importResolutionDifferences(inventory);
+  assert.deepEqual(resolutionViolations(resolution, IMPORT_RESOLUTION_DIFFERENCES, IMPORT_RESOLUTION_DIFFERENCE_RATCHET), []);
+  assert.equal(resolution.length, IMPORT_RESOLUTION_DIFFERENCES.length);
+});
+
+test('the judgment equivalence gate is red for a diverging cascade, a new or stale difference, a loose ratchet and a malformed entry', () => {
+  // 생성기 연쇄가 넣은 판정을 실제로 쓴다 — 주석 속 import 인용은 정규식에서만 연쇄를 만든다.
+  const root = createFixture({
+    'frontend/src/removed/gone.ts': 'export const gone = 1;\n',
+    'frontend/src/kept/quote.ts': "// usage: import { gone } from '../removed/gone';\nexport const kept = 1;\n",
+  });
+  const files = ['frontend/src/removed/gone.ts', 'frontend/src/kept/quote.ts'].map((file) => join(root, file));
+  const sources = new Map(files.map((path) => [path, readFileSync(path, 'utf8')]));
+  const plan = (importSpecifiers) => [...planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files, directPaths: ['src/removed'],
+    readSource: (path) => sources.get(path), importSpecifiers }).removed].map((path) => relative(root, path).split(sep).join('/')).sort();
+  assert.deepEqual(plan(frontendImportSpecifiers), ['frontend/src/kept/quote.ts', 'frontend/src/removed/gone.ts']);
+  assert.deepEqual(plan(censusImportSpecifiers), ['frontend/src/removed/gone.ts']);
+  assert.throws(() => censusImportSpecifiers('const m = import(name);\n'), /cannot judge/u);
+
+  const approved = [{ file: 'a.ts', target: 'b.js', judgment: 'census-only', kind: 'require', reason: 'CommonJS' }];
+  const measured = [{ file: 'a.ts', target: 'b.js', judgment: 'census-only', kind: 'require' }];
+  assert.deepEqual(extractionViolations(measured, approved, 1), []);
+  assert.match(extractionViolations([...measured, { file: 'c.ts', target: 'c.ts', judgment: 'generator-only' }], approved, 1).join('\n'),
+    /두 판정이 다른 추출 차이: c\.ts\|c\.ts\|generator-only/u);
+  assert.match(extractionViolations([], approved, 1).join('\n'), /낡은 추출 차이 항목: a\.ts/u);
+  assert.match(extractionViolations(measured, [{ ...approved[0], kind: 'import' }], 1).join('\n'), /어휘 밖/u);
+  assert.match(extractionViolations(measured, [{ ...approved[0], reason: ' ' }], 1).join('\n'), /사유가 없다/u);
+  assert.match(extractionViolations(measured, approved, 0).join('\n'), /래칫 0건을 넘는다/u);
+  // 줄었는데 래칫을 그대로 두면 red 다 — 남는 여유가 새 차이를 조용히 받아들이지 않게 한다.
+  assert.match(extractionViolations(measured, approved, 2).join('\n'), /줄었다 — 래칫 2건도 함께 내린다/u);
+  // 같은 간선이라도 종류가 다르면 다른 차이다 — require 가 import 로 바뀐 것을 옛 항목이 가리지 않는다.
+  assert.equal(extractionViolations([{ ...measured[0], kind: 'create-require' }], approved, 1).length, 2);
+
+  // 해석 차이의 종류는 지정자와 두 해석 결과에서 기계적으로 정한다.
+  assert.equal(resolutionDifferenceKind('@/types/generated-api', 'frontend/src/types/generated-api.d.ts', undefined), 'declaration-file');
+  assert.equal(resolutionDifferenceKind('../../next.config.js', 'frontend/next.config.ts', undefined), 'script-extension-mapped');
+  assert.equal(resolutionDifferenceKind('./x', undefined, 'frontend/src/x.ts'), 'generator-only');
+  assert.equal(resolutionDifferenceKind('./x', 'frontend/src/x/index.ts', 'frontend/src/x.ts'), 'different-target');
+  const resolutionApproved = [{ target: 'frontend/src/a.d.ts', kind: 'declaration-file', reason: '선언 파일' }];
+  assert.deepEqual(resolutionViolations([{ target: 'frontend/src/a.d.ts', kind: 'declaration-file' }], resolutionApproved, 1), []);
+  assert.match(resolutionViolations([{ target: 'frontend/src/b.d.ts', kind: 'declaration-file' }], resolutionApproved, 1).join('\n'),
+    /두 판정이 다른 해석 차이: frontend\/src\/b\.d\.ts/u);
+  assert.match(resolutionViolations([], resolutionApproved, 1).join('\n'), /낡은 해석 차이 항목/u);
+  assert.match(resolutionViolations([], [{ ...resolutionApproved[0], kind: 'unknown' }], 1).join('\n'), /어휘 밖/u);
 });

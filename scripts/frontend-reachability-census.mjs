@@ -884,6 +884,17 @@ function resolveLocalReference({
   };
 }
 
+/**
+ * census 해석기로 로컬 지정자를 파일로 잇는다. 외부 모듈·해석 실패는 undefined 다.
+ * 판정 동치 계약이 생성기 해석기(resolveFrontendImport)와 대조한다(설계서 C5).
+ */
+export function resolveCensusModuleReference({ repoRoot, importer, specifier }) {
+  const root = resolve(repoRoot);
+  return resolveLocalReference({
+    importer, specifier, sourceRoot: join(root, 'frontend', 'src'), knownFiles: new Set(), caseMap: new Map(), repoRoot: root, line: 0,
+  }).target;
+}
+
 function issueKey(issue) {
   return `${issue.code}\0${issue.file}\0${issue.line ?? ''}\0${issue.detail ?? ''}`;
 }

@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { planJavaRemoval } from './reusable-source-java.mjs';
+import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { SOURCE_EXTENSIONS, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
-import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
+import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile, domainSupportFiles, projectComposerFrontend } from './project-composer-source.mjs';
@@ -51,6 +51,9 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   RULE_REMOVAL: '규칙으로 걷는 원본 검증·자산을 확인할 수 없습니다',
   RULE_UNACKNOWLEDGED: '승인되지 않은 규칙으로 검증 게이트가 지워집니다',
   RULE_STALE: '승인 목록에 적용되지 않는 규칙이 남아 있습니다',
+  JAVA_CASCADE_DECLARATION: '연쇄 제거 승인 목록의 형식이 맞지 않습니다',
+  JAVA_CASCADE_UNACKNOWLEDGED: '승인되지 않은 Java 파일이 연쇄로 지워집니다',
+  JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
 });
 
@@ -150,6 +153,15 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
     if (acknowledgement.unacknowledged.length) block('GATE_UNACKNOWLEDGED', { files: acknowledgement.unacknowledged });
     if (acknowledgement.stale.length) block('GATE_STALE', { files: acknowledgement.stale });
   }
+  // 시작 구성은 생성기가 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없다.
+  // 생성기는 이 대조를 프런트 투영 뒤에 하므로, 게이트 대조처럼 두 투영이 모두 될 때만 한다.
+  if (java && frontend && composition.profile !== 'custom') {
+    const cascade = javaCascadeAcknowledgement(profile, javaCascadeRemovals(root, java).map(entry => entry.file));
+    const declarations = [...cascade.invalidEntries.map(entry => JSON.stringify(entry)), ...cascade.duplicates];
+    if (declarations.length) block('JAVA_CASCADE_DECLARATION', { message: declarations.join(' · ') });
+    if (cascade.unacknowledged.length) block('JAVA_CASCADE_UNACKNOWLEDGED', { files: cascade.unacknowledged });
+    if (cascade.stale.length) block('JAVA_CASCADE_STALE', { files: cascade.stale });
+  }
 
   // 선택한 기능의 소스가 투영 뒤에도 남는지 본다. 생성기의 검사를 계획 결과에 그대로 건다.
   const missing = [];
@@ -164,7 +176,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   }
   if (missing.length) block('SOURCE_SURVIVAL', { files: [...new Set(missing)].sort() });
 
-  const javaDirect = java ? [...java.removed].filter(path => java.removalReason.get(path)?.endsWith('직접 제거')).length : 0;
+  const javaDirect = java ? java.direct.size : 0;
   return {
     // files 는 지워질 파일의 저장소 기준 경로다(생성기와 같은지 시험이 대조한다). 화면에는 개수만 보낸다.
     java: java && { removedFiles: java.removed.size, cascadeFiles: java.removed.size - javaDirect, files: [...java.removed].map(rel).sort() },

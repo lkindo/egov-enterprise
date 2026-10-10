@@ -14,7 +14,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { planJavaRemoval } from './reusable-source-java.mjs';
+import { javaCascadeAcknowledgement } from './reusable-source-gates.mjs';
+import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -180,6 +181,24 @@ export function acknowledgedJavaGateMismatches({ root, manifest, javaFiles }) {
     const stale = acknowledged.filter((file) => !planned.includes(file));
     if (unacknowledged.length) violations.push(`profile '${name}' 이 승인하지 않은 Java 게이트를 제거한다: ${unacknowledged.join(', ')}`);
     if (stale.length) violations.push(`profile '${name}' 의 승인 목록에 더 이상 제거되지 않는 Java 게이트가 남아 있다: ${stale.join(', ')}`);
+  }
+  return violations;
+}
+
+/** 실제 프로필의 Java 연쇄 제거(게이트 제외)와 `acknowledgedJavaCascade` 를 생성기와 같은 판정으로 exact 대조한다(설계서 C4). */
+export function acknowledgedJavaCascadeMismatches({ root, manifest, javaFiles }) {
+  const violations = [];
+  for (const [name, profile] of Object.entries(manifest.profiles)) {
+    const removals = javaCascadeRemovals(root, planJavaRemoval(root, manifest, profile, javaFiles));
+    const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, removals.map((entry) => entry.file));
+    const reasons = new Map(removals.map((entry) => [entry.file, entry.reason]));
+    if (invalidEntries.length) violations.push(`profile '${name}' 의 acknowledgedJavaCascade 항목이 .java 경로가 아니다: ${JSON.stringify(invalidEntries)}`);
+    if (duplicates.length) violations.push(`profile '${name}' 의 acknowledgedJavaCascade 에 중복이 있다: ${duplicates.join(', ')}`);
+    if (unacknowledged.length) {
+      violations.push(`profile '${name}' 이 승인하지 않은 Java 파일을 연쇄로 지운다 — 잘못 들어간 import 인지 먼저 본다: `
+        + unacknowledged.map((file) => `${file} <- ${reasons.get(file)}`).join(', '));
+    }
+    if (stale.length) violations.push(`profile '${name}' 의 acknowledgedJavaCascade 에 더 이상 연쇄로 지워지지 않는 파일이 남아 있다: ${stale.join(', ')}`);
   }
   return violations;
 }

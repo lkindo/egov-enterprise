@@ -18,7 +18,8 @@ import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, assertComposerSourceSurvives,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { SOURCE_EXTENSIONS, projectFrontendPackMarkers, pruneFrontend, stripExcludedFrontendPackBlocks } from './reusable-source-frontend.mjs';
-import { adaptGeneratedHarness, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas, pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
+import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas,
+  pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
@@ -251,6 +252,8 @@ function main() {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
     'upstream-atlas': removedUpstreamAtlas.files,
   });
+  // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
+  if (composition.profile !== 'custom') assertJavaCascadeAcknowledged(args.profile, profile, java);
   installDatabaseBundle(output, dbBundle);
   // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);

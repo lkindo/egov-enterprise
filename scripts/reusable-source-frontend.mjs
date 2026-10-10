@@ -137,9 +137,10 @@ export function frontendRemoveTarget(frontendRoot, rel) {
 /**
  * 제외 경로와 그 import 연쇄로 지워질 프런트 파일을 계산한다. 디스크는 바꾸지 않는다.
  * `files` 는 frontendRoot 아래 파일의 절대 경로 전부, `readSource` 는 투영된(마커를 걷은) 내용을 돌려준다.
- * 생성기(pruneFrontend)와 정밀 점검(plan/deep)이 같은 판정을 쓴다.
+ * 생성기(pruneFrontend)와 정밀 점검(plan/deep)이 같은 판정을 쓴다. `importSpecifiers` 는 간선을 읽는 판정이다 —
+ * 생성기는 원문 정규식을 쓰고, 판정 동치 계약은 같은 연쇄에 census 토크나이저를 넣어 결과를 대조한다(설계서 C5).
  */
-export function planFrontendRemoval({ frontendRoot, files, directPaths, readSource }) {
+export function planFrontendRemoval({ frontendRoot, files, directPaths, readSource, importSpecifiers = frontendImportSpecifiers }) {
   const sourceFiles = files.filter((path) => SOURCE_EXTENSIONS.includes(extname(path)));
   const knownFiles = new Set(sourceFiles);
   const direct = new Set();
@@ -156,7 +157,7 @@ export function planFrontendRemoval({ frontendRoot, files, directPaths, readSour
   const imports = new Map();
   const importsOf = (path) => {
     if (!imports.has(path)) {
-      imports.set(path, frontendImportSpecifiers(readSource(path))
+      imports.set(path, importSpecifiers(readSource(path))
         .map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles))
         .filter(Boolean));
     }
