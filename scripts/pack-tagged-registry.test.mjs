@@ -6,14 +6,16 @@
  * 생성기의 의존 판정은 주석·리터럴 속 인용을 무시하되 실제 코드 참조는 놓치지 않는다, 투영 모드는 위장할 수 없다.
  */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 
+import { assertJavaCascadeAcknowledged, javaCascadeAcknowledgement } from './reusable-source-gates.mjs';
 import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 import {
   JAVA_POPULATION_FLOOR,
+  acknowledgedJavaCascadeMismatches,
   acknowledgedJavaGateMismatches,
   buildPrefixPlans,
   detectProjection,
@@ -105,6 +107,44 @@ test('실제 프로필의 Java 게이트 제거 승인은 계획과 exact 일치
     return;
   }
   assert.deepEqual(acknowledgedJavaGateMismatches({ root, manifest, javaFiles }), []);
+});
+
+test('실제 프로필의 Java 연쇄 제거(게이트 제외)는 승인 목록과 exact 일치한다', () => {
+  const { root, manifest, projection, javaFiles } = repositoryContext();
+  if (projection) {
+    // 투영본은 제거가 끝났다 — 승인 목록의 파일이 실제로 없어야 한다.
+    const lingering = Object.values(manifest.profiles)
+      .flatMap((profile) => profile.acknowledgedJavaCascade ?? [])
+      .filter((file) => existsSync(join(root, file)));
+    assert.deepEqual(lingering, []);
+    return;
+  }
+  assert.deepEqual(acknowledgedJavaCascadeMismatches({ root, manifest, javaFiles }), []);
+  // 대조가 비어 있지 않다 — 축소 프리셋은 실제로 연쇄 제거를 승인한다.
+  assert.ok(Object.values(manifest.profiles).some((profile) => (profile.acknowledgedJavaCascade ?? []).length > 0));
+});
+
+test('Java 연쇄 승인 대조는 승인 밖 연쇄, 낡은 승인, 중복, 형식 오류를 모두 낸다', () => {
+  const profile = { acknowledgedJavaCascade: ['a/A.java', 'b/B.java'] };
+  assert.deepEqual(javaCascadeAcknowledgement(profile, ['a/A.java', 'b/B.java']),
+    { invalidEntries: [], duplicates: [], unacknowledged: [], stale: [] });
+  assert.deepEqual(javaCascadeAcknowledgement(profile, ['a/A.java', 'b/B.java', 'c/C.java']).unacknowledged, ['c/C.java']);
+  assert.deepEqual(javaCascadeAcknowledgement(profile, ['a/A.java']).stale, ['b/B.java']);
+  assert.deepEqual(javaCascadeAcknowledgement({ acknowledgedJavaCascade: ['a/A.java', 'a/A.java'] }, ['a/A.java']).duplicates, ['a/A.java']);
+  assert.deepEqual(javaCascadeAcknowledgement({ acknowledgedJavaCascade: [{ file: 'a/A.java' }, 'x.ts'] }, []).invalidEntries,
+    [{ file: 'a/A.java' }, 'x.ts']);
+  // 문자열 하나는 1개짜리 목록이 아니라 형식 오류다(연쇄가 정확히 1개여도 통과하지 않는다).
+  assert.deepEqual(javaCascadeAcknowledgement({ acknowledgedJavaCascade: 'a/A.java' }, ['a/A.java']),
+    { invalidEntries: ['a/A.java'], duplicates: [], unacknowledged: ['a/A.java'], stale: [] });
+  // 목록이 없는 프로필은 연쇄가 없을 때만 통과한다(demo).
+  assert.deepEqual(javaCascadeAcknowledgement({}, ['a/A.java']).unacknowledged, ['a/A.java']);
+
+  // 생성기의 생성 시점 대조도 같은 판정이다 — 승인 밖 연쇄는 사유와 함께, 낡은 승인은 따로 실패한다.
+  const java = { cascadeRemoved: [{ file: 'a/A.java', reason: 'nuri.business.service.board.BoardService 참조' }] };
+  assert.doesNotThrow(() => assertJavaCascadeAcknowledged('core', { acknowledgedJavaCascade: ['a/A.java'] }, java));
+  assert.throws(() => assertJavaCascadeAcknowledged('core', {}, java), /승인하지 않은 Java 파일을 연쇄로 지운다[\s\S]*BoardService 참조/u);
+  assert.throws(() => assertJavaCascadeAcknowledged('core', { acknowledgedJavaCascade: ['a/A.java', 'b/B.java'] }, java),
+    /더 이상 연쇄로 지워지지 않는 파일[\s\S]*b\/B\.java/u);
 });
 
 test('생성기 의존 판정: 주석·리터럴·텍스트 블록 속 import 인용은 게이트를 지우지 않는다', () => {
