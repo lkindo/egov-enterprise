@@ -76,8 +76,11 @@ test('pg_dump preserves the caller search path and all migrations share one orde
   assert.ok(!baseline.split('\n').includes(clear), 'unqualified Flyway repeatables must keep their configured schema');
   for (const line of retained) assert.ok(baseline.split('\n').includes(line), `unrelated dump SQL must survive: ${line}`);
   const parts = { baseline, metaSeed: 'INSERT INTO public.meta_probe VALUES (1);',
-    frameworkSeed: Buffer.from('INSERT INTO tb_probe VALUES (1);'), adminSeed: 'SELECT id FROM tb_probe;' };
-  assert.equal(generatedMigrationSessionSql(parts), [baseline, parts.metaSeed, parts.frameworkSeed.toString(), parts.adminSeed].join('\n'));
+    frameworkSeed: Buffer.from('INSERT INTO tb_probe VALUES (1);'), referenceSeed: 'INSERT INTO tb_probe VALUES (2) ON CONFLICT DO NOTHING;',
+    adminSeed: 'SELECT id FROM tb_probe;' };
+  // 반복 시드는 Flyway 처럼 이름 순서(framework → reference_data → zz_base_admin)로 같은 세션에서 적용한다.
+  assert.equal(generatedMigrationSessionSql(parts),
+    [baseline, parts.metaSeed, parts.frameworkSeed.toString(), parts.referenceSeed, parts.adminSeed].join('\n'));
   for (const key of Object.keys(parts)) assert.throws(() => generatedMigrationSessionSql({ ...parts, [key]: undefined }), /every baseline and seed/);
 });
 

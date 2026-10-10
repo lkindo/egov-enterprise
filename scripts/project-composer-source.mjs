@@ -66,7 +66,7 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
     if (!/^db\/migration\/[A-Za-z0-9_]+\.sql$/.test(path)) throw new Error('Invalid DB bundle file identity');
     return path.slice('db/migration/'.length);
   }).sort();
-  const names = ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql', 'V1_0__baseline.sql', 'V1_1__seed_meta_standard.sql'].sort();
+  const names = ['R__seed_framework.sql', 'R__seed_reference_data.sql', 'R__zz_seed_base_admin.sql', 'V1_0__baseline.sql', 'V1_1__seed_meta_standard.sql'].sort();
   if (JSON.stringify(actual) !== JSON.stringify(expected) || JSON.stringify(actual) !== JSON.stringify(names)) throw new Error('DB bundle migration population differs from its validated lock');
   for (const file of actual) {
     const hash = createHash('sha256').update(readFileSync(join(migrationDirectory, file))).digest('hex');

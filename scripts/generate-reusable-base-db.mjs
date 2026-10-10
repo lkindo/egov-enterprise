@@ -23,6 +23,7 @@ import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } fro
 import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, git, inspectContainer, listObjects, listSequenceDetails, psql,
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
+import { BOARD_MASTER_SEED, REFERENCE_SEED_NAME, boardMasterIds, omitCodeGroupsSql, referenceDataPlan } from './reusable-reference-data.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -115,8 +116,8 @@ export function assertCompositionOperationGrants(actual, permissionCodes, permis
   assertSameSet(rows, expected, '재적용 DB selected OPERATION group/code grants');
 }
 
-export function generatedMigrationSessionSql({ baseline, metaSeed, frameworkSeed, adminSeed }) {
-  return [baseline, metaSeed, frameworkSeed, adminSeed].map(sql => {
+export function generatedMigrationSessionSql({ baseline, metaSeed, frameworkSeed, referenceSeed, adminSeed }) {
+  return [baseline, metaSeed, frameworkSeed, referenceSeed, adminSeed].map(sql => {
     if ((!Buffer.isBuffer(sql) && typeof sql !== 'string') || !sql.length) fail('Generated migration session requires every baseline and seed.');
     return sql.toString();
   }).join('\n');
@@ -300,9 +301,27 @@ async function main() {
     );
     const metaSeed = sanitizePgDump(Buffer.concat(metaParts), '표준용어 최종 snapshot seed');
 
+    // 참조 데이터(설계서 B5): 원본 마이그레이션이 넣은 공통코드 그룹과 앱이 하드코딩한 게시판 마스터 가운데 선택한 기능의 몫만 싣는다.
+    const referencePlan = referenceDataPlan(composition.resolvedDomains, desiredTables);
+    const omitSql = omitCodeGroupsSql(referencePlan);
+    if (omitSql) restore(args.container, user, workingDb, omitSql);
+    const boardMasterSeed = readFileSync(join(ROOT, BOARD_MASTER_SEED), 'utf8');
+    if (referencePlan.includeBoardMasters) restore(args.container, user, workingDb, boardMasterSeed);
+    const rowsOf = (sql) => psql(args.container, user, workingDb, sql).split(/\r?\n/).filter(Boolean);
+    const referenceCodeGroups = rowsOf('SELECT cd_id FROM public.tb_com_cd ORDER BY cd_id');
+    const referenceBoardMasters = referencePlan.includeBoardMasters ? rowsOf('SELECT bbs_id FROM public.tb_bbs_master ORDER BY bbs_id') : [];
+    if (referencePlan.includeBoardMasters) assertSameSet(referenceBoardMasters, boardMasterIds(boardMasterSeed), '참조 데이터 게시판 마스터');
+    for (const group of referencePlan.omittedCodeGroups) {
+      if (referenceCodeGroups.includes(group)) fail(`참조 데이터: 선택하지 않은 기능의 코드 그룹 ${group} 이 남았다`);
+    }
+    const referenceSeed = sanitizePgDump(dump(args.container, user, workingDb, [
+      '--data-only', '--column-inserts', '--on-conflict-do-nothing', ...referencePlan.tables.map((table) => `--table=public.${table}`),
+    ]), '선택 구성 참조 데이터 seed(공통코드 그룹·게시판 마스터)');
+
     mkdirSync(join(output, 'db', 'migration'), { recursive: true });
     writeFileSync(join(output, 'db', 'migration', 'V1_0__baseline.sql'), baseline, 'utf8');
     writeFileSync(join(output, 'db', 'migration', 'V1_1__seed_meta_standard.sql'), metaSeed, 'utf8');
+    writeFileSync(join(output, 'db', 'migration', REFERENCE_SEED_NAME), referenceSeed, 'utf8');
     writeFileSync(join(output, 'schema-contract.json'), `${JSON.stringify(selectedSchema, null, 2)}\n`, 'utf8');
     // 프로필-안전 repeatable 만 번들에 태운다. R__seed_demo.sql 은 collaboration 테이블을
     // 참조하므로 core 프로필에서 깨진다 — 데모 프로필의 정의로 남겨두고 복사하지 않는다.
@@ -336,6 +355,7 @@ async function main() {
       schemaSnapshotHash: schemaSnapshotHash(selectedSchema.snapshot), omittedForeignKeys: selectedSchema.omittedForeignKeys,
       menus: menuProjection.menus.map(menu => ({ id: menu.menu_sn, parent: menu.up_menu_sn, route: menu.modern_route })),
       permissionCodes: composition.permissionCodes,
+      referenceData: { codeGroups: referenceCodeGroups, omittedCodeGroups: referencePlan.omittedCodeGroups, boardMasters: referenceBoardMasters },
     };
     // 번들은 빈 DB 재적용 단언을 모두 통과한 뒤에만 lock 을 갖는다. 그 전에 실패하면 소비될 수 없다.
 
@@ -347,6 +367,7 @@ async function main() {
     restore(args.container, user, verifyDb, generatedMigrationSessionSql({
       baseline, metaSeed,
       frameworkSeed: readFileSync(join(output, 'db', 'migration', 'R__seed_framework.sql')),
+      referenceSeed: readFileSync(join(output, 'db', 'migration', REFERENCE_SEED_NAME)),
       adminSeed: readFileSync(join(output, 'db', 'migration', 'R__zz_seed_base_admin.sql')),
     }));
     assertSameSet(listObjects(args.container, user, verifyDb, 'table'), desiredTables, '재적용 DB table');
@@ -367,6 +388,13 @@ async function main() {
     assertNavigationEnterable({ menus: menuProjection.menus, navigation: reappliedNavigation, pageAccess,
       operationGrants: JSON.parse(psql(args.container, user, verifyDb,
         "SELECT COALESCE(json_agg(json_build_array(authrt_cd, authrt_grnt_cd)),'[]'::json)::text FROM public.tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")) });
+    // 참조 데이터는 임시 DB 에서 고른 몫과 정확히 같다.
+    assertSameSet(psql(args.container, user, verifyDb, 'SELECT cd_id FROM public.tb_com_cd ORDER BY cd_id').split(/\r?\n/).filter(Boolean),
+      referenceCodeGroups, '재적용 DB 공통코드 그룹');
+    if (referencePlan.includeBoardMasters) {
+      assertSameSet(psql(args.container, user, verifyDb, 'SELECT bbs_id FROM public.tb_bbs_master ORDER BY bbs_id').split(/\r?\n/).filter(Boolean),
+        referenceBoardMasters, '재적용 DB 게시판 마스터');
+    }
     const metaMismatches = [];
     for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
       const actual = Number(psql(args.container, user, verifyDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`));
@@ -397,7 +425,8 @@ async function main() {
         `- packs: ${profile.packs.join(', ')}\n` +
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
-        `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → admin bootstrap seed 재적용 완료\n` +
+        `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → reference data seed → admin bootstrap seed 재적용 완료\n` +
+        `- 참조 데이터: 공통코드 그룹 ${referenceCodeGroups.length}개, 게시판 마스터 ${referenceBoardMasters.length}개\n` +
         `- 권한 전환: 생성기 소유 disposable DB에서 실제 Contract 리허설 후 구 6개 테이블 제거 확인\n` +
         `- day-1 관리자 부트스트랩: 명시 OPERATION/NAVIGATION·회원 그룹·감사 이력 SQL 단언 PASS\n\n` +
         `운영 DB 축소용 마이그레이션이 아니다. 신규 프로젝트의 빈 DB에서만 사용한다.\n`,
