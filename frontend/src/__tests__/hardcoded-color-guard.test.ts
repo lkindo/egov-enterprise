@@ -1,7 +1,8 @@
 import { describe, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, dirname, sep } from 'node:path';
+import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { frozenInProjection } from '@/test-utils/projection';
 
 /**
  * 🔗 하드코딩 색상 차단 게이트 — 브랜딩 토큰화(§2.B) 드리프트 방지.
@@ -71,6 +72,16 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-10-07] 10 -> 9. 참조처 0건인 고아 컴포넌트(admin/components/InsightBanner.tsx)를 지우며 1건이 함께
 //   사라졌다. 표면 제거이며 새 리터럴은 0건이다.
 const BASELINE = 9;
+// [2026-10-10 Phase 2 D6] 총계를 파일별로도 동결한다 — 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인).
+//   합은 BASELINE 과 같아야 한다(아래 계약). 리터럴을 줄이거나 옮기면 이 표와 BASELINE 을 함께 고친다.
+const BASELINE_BY_FILE: Record<string, number> = {
+  'src/app/admin/community/boards/select-board-list/components/BoardPagination.tsx': 1,
+  'src/app/admin/community/templates/TemplateAdminClient.tsx': 1,
+  'src/app/cop/sms/selectSmsList/SmsHubClient.tsx': 1,
+  'src/app/global-error.tsx': 4,
+  'src/app/search/SearchClient.tsx': 1,
+  'src/components/features/dashboard/RealTimeDashboard.tsx': 1,
+};
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
@@ -92,27 +103,35 @@ describe('하드코딩 색상 차단 게이트 (§2.B 브랜딩 토큰화 드리
       throw new Error(`게이트 무결성 파손: .tsx/.jsx 스캔 건수(${files.length})가 예상 하한(50) 미만 — 스캔/경로 파손 의심.`);
     }
 
-    let total = 0;
-    const offenders: Array<{ file: string; count: number }> = [];
+    const actual: Record<string, number> = {};
     for (const f of files) {
       const m = readFileSync(f, 'utf8').match(PATTERN);
-      if (m && m.length > 0) {
-        total += m.length;
-        offenders.push({ file: f.replace(SRC, 'src'), count: m.length });
-      }
+      if (m && m.length > 0) actual[relative(join(SRC, '..'), f).split(sep).join('/')] = m.length;
     }
-
-    if (total !== BASELINE) {
-      offenders.sort((a, b) => b.count - a.count);
-      const direction = total > BASELINE
-        ? `신규 ${total - BASELINE}건 증가`
-        : `${BASELINE - total}건 감소 — 개선분을 확정하려면 BASELINE 을 ${total}로 내릴 것`;
+    // 재사용 생성물에서는 투영으로 빠진 파일 몫만 뺀다(원장 확인). 원본에서는 동결표 그대로다.
+    const frozen = frozenInProjection(BASELINE_BY_FILE, (file) => join(SRC, '..', file));
+    const diff = [...new Set([...Object.keys(actual), ...Object.keys(frozen)])].sort()
+      .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
+      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
+    if (diff.length > 0) {
+      const total = Object.values(actual).reduce((sum, count) => sum + count, 0);
+      const expected = Object.values(frozen).reduce((sum, count) => sum + count, 0);
+      const direction = total > expected
+        ? `신규 ${total - expected}건 증가`
+        : total < expected
+          ? `${expected - total}건 감소 — 개선분을 확정하려면 BASELINE_BY_FILE 과 BASELINE 을 함께 내릴 것`
+          : '파일 사이에서 옮겨졌다 — 동결표를 실측에 맞출 것';
       throw new Error(
-        `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 베이스라인 ${BASELINE} — ${direction}.\n` +
+        `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 동결 ${expected}건 — ${direction}.\n` +
         `globals.css 토큰(hub-*/시맨틱)으로 대체하세요(docs/03-guides/design-tokens.md). status 색은 제외 대상.\n` +
-        `상위 파일:\n` + offenders.slice(0, 10).map(o => `  ${o.count}  ${o.file}`).join('\n')
+        diff.join('\n'),
       );
     }
+  });
+
+  it('파일별 동결의 합은 BASELINE 과 같다', () => {
+    const total = Object.values(BASELINE_BY_FILE).reduce((sum, count) => sum + count, 0);
+    if (total !== BASELINE) throw new Error(`BASELINE_BY_FILE 합 ${total} != BASELINE ${BASELINE} — 둘을 함께 고친다.`);
   });
 });
 
@@ -144,9 +163,11 @@ describe('흐린 보조 글자는 장식에만 (저대비 동결)', () => {
       const m = readFileSync(f, 'utf8').match(MUTED_OPACITY);
       if (m && m.length > 0) actual[f.replace(SRC, 'src').split(sep).join('/')] = m.length;
     }
-    const diff = [...new Set([...Object.keys(actual), ...Object.keys(MUTED_OPACITY_BASELINE)])]
-      .filter((file) => (actual[file] ?? 0) !== (MUTED_OPACITY_BASELINE[file] ?? 0))
-      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${MUTED_OPACITY_BASELINE[file] ?? 0}`);
+    // 재사용 생성물에서는 투영으로 빠진 파일의 동결값만 뺀다(원장 확인).
+    const frozen = frozenInProjection(MUTED_OPACITY_BASELINE, (file) => join(SRC, '..', file));
+    const diff = [...new Set([...Object.keys(actual), ...Object.keys(frozen)])]
+      .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
+      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
     if (diff.length > 0) {
       throw new Error(
         '🔗 [CONTRAST GUARD] text-muted-foreground/10~60 사용이 동결값과 다르다.\n'

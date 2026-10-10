@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import ErrorBoundary from '../error';
 import GlobalError from '../global-error';
 import AdminError from '../admin/error';
+import { pageInProjection } from '@/test-utils/projection';
 
 function renderGlobalError(error: Error & { digest?: string }, reset = vi.fn()) {
   const frame = document.createElement('iframe');
@@ -43,7 +44,12 @@ describe('application error boundaries', () => {
 
     expect(screen.queryByText('ERR-42', { exact: false })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /홈으로 돌아가기/ })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /기술 지원 문의하기/ })).toHaveAttribute('href', '/help');
+    // '기술 지원 문의' 는 시연 팩 마커 안이다 — 도움말 화면이 투영으로 빠진 생성물에는 링크도 없어야 한다.
+    if (pageInProjection('/help')) {
+      expect(screen.getByRole('link', { name: /기술 지원 문의하기/ })).toHaveAttribute('href', '/help');
+    } else {
+      expect(screen.queryByRole('link', { name: /기술 지원 문의하기/ })).not.toBeInTheDocument();
+    }
     fireEvent.click(screen.getByRole('button', { name: /다시 시도하기/ }));
     expect(refetch).not.toHaveBeenCalled();
     expect(reset).toHaveBeenCalled();

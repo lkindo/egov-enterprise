@@ -5,6 +5,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SecurityHubClient from '../SecurityHubClient';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 const mocks = vi.hoisted(() => ({
   permissions: [] as string[],
@@ -860,7 +863,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
    * 권한(…_ALL)이나 보호 권한이 필요한 메뉴는 빼고 화면 줄에서 고르게 한다. 종전에는 '모두 있어야 열림' 투표 관리(POLL_READ +
    * POLL_READ_ALL)와 댓글 관리(COMMENT_READ_ALL)를 한 번에 초안에 넣었다.
    */
-  it('진입 권한 모두 추가는 타인 자료 권한이 필요한 메뉴를 빼고, 그 메뉴는 화면 줄에서 고르게 한다', async () => {
+  if (pageInProjection('/admin/survey/polls') && pageInProjection('/admin/system/comments')) it('진입 권한 모두 추가는 타인 자료 권한이 필요한 메뉴를 빼고, 그 메뉴는 화면 줄에서 고르게 한다', async () => {
     mocks.getCatalog.mockResolvedValue({
       ...catalog,
       operations: [...catalog.operations,

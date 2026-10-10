@@ -4,6 +4,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createAppQueryClient } from '@/lib/query/list-query-defaults';
 import { SCREEN_ALIASES, SCREEN_REGISTRY } from '@/types/generated-screen-registry';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 const mocks = vi.hoisted(() => ({
   getMenuStructure: vi.fn(),
@@ -72,7 +75,10 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
           <span data-testid={`${accessibleLabel}-page-size`}>{pagination.pageSize}</span>
           <button type="button" onClick={() => pagination.onPageChange(pagination.currentPage + 1)}>{`${accessibleLabel} 다음 쪽`}</button>
           {pagination.onPageSizeChange && (
-            <button type="button" onClick={() => pagination.onPageSizeChange(20)}>{`${accessibleLabel} 20개씩`}</button>
+            <>
+              <button type="button" onClick={() => pagination.onPageSizeChange(10)}>{`${accessibleLabel} 10개씩`}</button>
+              <button type="button" onClick={() => pagination.onPageSizeChange(20)}>{`${accessibleLabel} 20개씩`}</button>
+            </>
           )}
         </>
       )}
@@ -298,10 +304,13 @@ describe('ProgramAdminClient Component', () => {
         .toEqual(['AUTHRT_READ', 'AUTHRT_AUDIT']);
       expect(details!.querySelector('[data-entry-permission="AUTHRT_AUDIT"]')).toHaveTextContent('(AUTHRT_AUDIT)');
 
-      searchScreens('/admin/survey/polls/manage');
-      const all = cell('/admin/survey/polls/manage', '진입 권한');
-      expect(within(all).getByText('모두')).toBeInTheDocument();
-      expect(within(all).getByText('모두 있어야 열림:')).toHaveClass('sr-only');
+      // 모두 충족(ALL) 예시는 투표 관리다 — 그 화면이 투영으로 빠진 생성물에는 ALL 화면이 없다(원장 확인).
+      if (pageInProjection('/admin/survey/polls/manage')) {
+        searchScreens('/admin/survey/polls/manage');
+        const all = cell('/admin/survey/polls/manage', '진입 권한');
+        expect(within(all).getByText('모두')).toBeInTheDocument();
+        expect(within(all).getByText('모두 있어야 열림:')).toHaveClass('sr-only');
+      }
     });
 
     it('검색어는 이름·경로로 거르고, 결과가 없으면 검색 결과가 없다고 말한다(G15)', () => {
@@ -449,7 +458,7 @@ describe('ProgramAdminClient Component', () => {
       expect(screen.queryByRole('button', { name: '연결 메뉴 다시 불러오기' })).not.toBeInTheDocument();
     });
 
-    it('메뉴 경로가 여는 화면으로 연결 메뉴를 세고(사용 중인 메뉴 먼저 한 줄), 별칭을 가리키는 메뉴는 넘어간 화면으로 센다', async () => {
+    if (pageInProjection('/admin/collaboration/address-book/select-address-book-list')) it('메뉴 경로가 여는 화면으로 연결 메뉴를 세고(사용 중인 메뉴 먼저 한 줄), 별칭을 가리키는 메뉴는 넘어간 화면으로 센다', async () => {
       auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockResolvedValue(structure([
         structureMenu(30, '화면 관리', { modernRoute: '/admin/system/programs' }),
@@ -650,7 +659,7 @@ describe('ProgramAdminClient Component', () => {
       expect(screen.queryByText(/거를 수 없습니다/)).not.toBeInTheDocument();
       expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
 
-      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/menus', '/admin/help')));
+      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/menus', '/search')));
       await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
       expect(table()).not.toHaveAttribute('data-loading');
     });
@@ -686,7 +695,8 @@ describe('ProgramAdminClient Component', () => {
       const client = createAppQueryClient();
       render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
       await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAccessibleName(`메뉴에 없는 화면 ${STATIC_SCREENS.length}`));
-      fireEvent.click(screen.getByRole('button', { name: '화면 목록 20개씩' }));
+      // 쪽 크기는 10개씩으로 본다 — 화면이 적은 생성물(core 37개)에서도 셋째 쪽이 있다.
+      fireEvent.click(screen.getByRole('button', { name: '화면 목록 10개씩' }));
       fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
       fireEvent.click(screen.getByRole('button', { name: '화면 목록 다음 쪽' }));
       expect(screen.getByTestId('화면 목록-page')).toHaveTextContent(/^3\//);
@@ -736,25 +746,25 @@ describe('ProgramAdminClient Component', () => {
       expect(table()).toHaveAttribute('data-loading', 'true');
       expect(screen.getByTestId('work-list-toolbar')).not.toHaveTextContent('총');
 
-      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/programs', '/admin/help')));
+      await act(async () => resolveMenus(structureCoveringAllBut('/admin/system/programs', '/search')));
       await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
       expect(table()).not.toHaveAttribute('data-loading');
     });
 
     it('화면을 다시 열면 캐시가 신선해도 메뉴 구조를 다시 읽어 방금 메뉴에 넣은 화면을 메뉴 없음으로 두지 않는다', async () => {
       auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
-      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus', '/admin/help'));
+      mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus', '/search'));
       const client = createAppQueryClient();
       const first = render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
       await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 2건'));
       first.unmount();
 
-      // 메뉴 관리에서 /admin/help 를 메뉴에 넣고 저장한 뒤 돌아온다.
+      // 메뉴 관리에서 /search 를 메뉴에 넣고 저장한 뒤 돌아온다.
       mocks.getMenuStructure.mockResolvedValueOnce(structureCoveringAllBut('/admin/system/menus'));
       render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
       await waitFor(() => expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 1건'));
       expect(mocks.getMenuStructure).toHaveBeenCalledTimes(2);
-      expect(() => row('/admin/help')).toThrow();
+      expect(() => row('/search')).toThrow();
     });
 
     /*
@@ -779,10 +789,15 @@ describe('ProgramAdminClient Component', () => {
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${SCREEN_ALIASES.length}건`);
       expect(screen.getByTestId('다른 화면으로 넘어가는 경로-count')).toHaveTextContent(`${SCREEN_ALIASES.length} items`);
       expect(within(table()).queryAllByRole('link')).toHaveLength(0);
-      expect(cell('/admin/system/ism', '넘어가는 곳')).toHaveTextContent('/approvals');
-      expect(cell('/admin/system/ism', '넘기는 곳')).toHaveTextContent('화면 파일이 넘김');
+      // 별칭 예시는 그 별칭 화면이 투영으로 빠진 생성물에서 뺀다(원장 확인).
+      if (pageInProjection('/admin/system/ism')) {
+        expect(cell('/admin/system/ism', '넘어가는 곳')).toHaveTextContent('/approvals');
+        expect(cell('/admin/system/ism', '넘기는 곳')).toHaveTextContent('화면 파일이 넘김');
+      }
       // 넘겨받는 동적 값은 생성 목록의 자리표시자(${id})가 아니라 화면 경로와 같은 표기로 보인다.
-      expect(cell('/admin/community/[id]', '넘어가는 곳')).toHaveTextContent('/cop/cmy/selectCommunityDetail/[id]');
+      if (pageInProjection('/admin/community/[id]')) {
+        expect(cell('/admin/community/[id]', '넘어가는 곳')).toHaveTextContent('/cop/cmy/selectCommunityDetail/[id]');
+      }
       expect(within(table()).queryByText(/\$\{/)).not.toBeInTheDocument();
 
       searchScreens('approvals');

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SCREEN_REGISTRY } from '@/types/generated-screen-registry';
 import { describeRoute, entryFixFor, entryModeText, filterScreens, LINKABLE_SCREENS, permissionText } from '../menuScreens';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·타인 자료 권한)는 그 화면이 투영으로 빠진 생성물에서 뺀다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 /**
  * [2026-10-02 D1] 연결 화면 — 앱 화면 목록(생성물)에서 고르고, 경로가 여는 화면·진입 권한·별칭을 말한다. 진입 권한 고치기는
@@ -19,9 +22,11 @@ describe('연결 화면 목록', () => {
     expect(describeRoute(null)).toEqual({ kind: 'none' });
     expect(describeRoute('  ')).toEqual({ kind: 'none' });
     expect(describeRoute('cop/bbs/selectBoardList.do')).toEqual({ kind: 'legacy' });
-    expect(describeRoute('/admin/collaboration/address-book')).toEqual({
-      kind: 'alias', target: '/admin/collaboration/address-book/select-address-book-list',
-    });
+    if (pageInProjection('/admin/collaboration/address-book/select-address-book-list')) {
+      expect(describeRoute('/admin/collaboration/address-book')).toEqual({
+        kind: 'alias', target: '/admin/collaboration/address-book/select-address-book-list',
+      });
+    }
     const screen = describeRoute('/admin/system/menus?tab=STRUCTURE');
     expect(screen.kind === 'screen' && screen.screen.route).toBe('/admin/system/menus');
     expect(describeRoute('/admin/no-such-screen')).toEqual({ kind: 'unknown' });
@@ -44,7 +49,9 @@ describe('진입 권한 고치기(권한 편집기 1단계와 같은 판정)', (
   it('필요한 권한이 하나면 그것을, ALL 이면 전부를 더하고, 이미 들어갈 수 있으면 없다', () => {
     expect(entryFixFor(menu('/admin/system/menus'), [])).toMatchObject({ kind: 'auto', codes: ['MENU_READ'] });
     expect(entryFixFor(menu('/admin/system/menus'), ['MENU_READ'])).toBeNull();
-    expect(entryFixFor(menu('/admin/survey/polls'), ['POLL_READ'])).toMatchObject({ kind: 'auto', codes: ['POLL_READ', 'POLL_READ_ALL'] });
+    if (pageInProjection('/admin/survey/polls')) {
+      expect(entryFixFor(menu('/admin/survey/polls'), ['POLL_READ'])).toMatchObject({ kind: 'auto', codes: ['POLL_READ', 'POLL_READ_ALL'] });
+    }
   });
 
   it('ANY 후보가 여럿이면 사람이 고르게 하되 조회(*_READ)를 먼저 권한다', () => {

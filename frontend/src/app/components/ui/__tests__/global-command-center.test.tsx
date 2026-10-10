@@ -5,6 +5,13 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GlobalCommandCenter } from '../global-command-center';
 import { GlobalShortcutProvider } from '../global-shortcut-provider';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 고정 메뉴의 경로 — 원본에서는 로그인만 요구하는 관리 화면이 게이트를 통과하는지를 함께 본다. 그 화면이 투영으로 빠진
+//   생성물에는 그런 관리 화면이 없으므로 관리 밖 core 경로로 본다(page 파일이 원장에 있고 실제로 없을 때다).
+const WORK_HUB_ROUTE = pageInProjection('/admin/work-hub') ? '/admin/work-hub' : '/smart-toolkit/dept-job';
+const COLLABORATION_ROUTE = pageInProjection('/admin/collaboration') ? '/admin/collaboration' : '/search';
+const HELP_ROUTE = pageInProjection('/admin/help') ? '/admin/help' : '/search';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -103,9 +110,9 @@ describe('GlobalCommandCenter accessibility contract', () => {
     const user = userEvent.setup();
     mocks.user = { id: 'staff01' };
     mocks.getHeadMenus.mockResolvedValue([
-      { menuNo: 1, menuNm: '업무', modernRoute: '/admin/work-hub', children: [
+      { menuNo: 1, menuNm: '업무', modernRoute: WORK_HUB_ROUTE, children: [
         { menuNo: 11, menuNm: '결재함', modernRoute: '/approvals' },
-        { menuNo: 12, menuNm: '공지', modernRoute: '/admin/help' },
+        { menuNo: 12, menuNm: '공지', modernRoute: HELP_ROUTE },
       ] },
     ]);
     mocks.getMyBookmarks.mockResolvedValue([{ menuNo: 11, menuNm: '결재함' }]);
@@ -137,7 +144,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     const user = userEvent.setup();
     mocks.user = { id: 'staff01' };
     mocks.getHeadMenus.mockResolvedValue([
-      { menuNo: 1, menuNm: '업무', modernRoute: '/admin/work-hub', children: [
+      { menuNo: 1, menuNm: '업무', modernRoute: WORK_HUB_ROUTE, children: [
         { menuNo: 11, menuNm: '팀 업무', children: [
           { menuNo: 111, menuNm: '결재함', modernRoute: '/approvals?tab=received#list', children: [
             { menuNo: 1111, menuNm: '결재 이력', modernRoute: '/approvals?tab=archive#list' },
@@ -178,7 +185,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
 
   it('권한 버전이 바뀌면 이전 메뉴를 즉시 숨기고 새 허용 목록을 읽는다', async () => {
     const user = userEvent.setup();
-    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '회수할 메뉴', modernRoute: '/admin/help' }]);
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '회수할 메뉴', modernRoute: HELP_ROUTE }]);
     const { rerender } = renderCommandCenter();
     await openFromTrigger(user);
     expect(await screen.findByRole('option', { name: '회수할 메뉴' })).toBeInTheDocument();
@@ -199,11 +206,11 @@ describe('GlobalCommandCenter accessibility contract', () => {
     const { rerender } = renderCommandCenter();
     await openFromTrigger(user);
     mocks.user = { id: 'staff02', esntlId: 'internal-2', authorizationVersion: 'v1' };
-    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 2, menuNm: '새 계정 메뉴', modernRoute: '/admin/work-hub' }]);
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 2, menuNm: '새 계정 메뉴', modernRoute: WORK_HUB_ROUTE }]);
     rerender(<CommandCenterHarness />);
     expect(await screen.findByRole('option', { name: '새 계정 메뉴' })).toBeInTheDocument();
     await act(async () => {
-      resolveOldMenu([{ menuNo: 1, menuNm: '이전 계정 메뉴', modernRoute: '/admin/help' }]);
+      resolveOldMenu([{ menuNo: 1, menuNm: '이전 계정 메뉴', modernRoute: HELP_ROUTE }]);
       resolveOldBookmarks([{ menuNo: 1 }]);
     });
     expect(screen.queryByRole('option', { name: '이전 계정 메뉴' })).toBeNull();
@@ -213,7 +220,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
 
   it('같은 계정에서 다시 열어도 메뉴 변경과 빈 응답을 반영한다', async () => {
     const user = userEvent.setup();
-    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '삭제할 메뉴', modernRoute: '/admin/help' }]);
+    mocks.getHeadMenus.mockResolvedValueOnce([{ menuNo: 1, menuNm: '삭제할 메뉴', modernRoute: HELP_ROUTE }]);
     renderCommandCenter();
     await openFromTrigger(user);
     expect(await screen.findByRole('option', { name: '삭제할 메뉴' })).toBeInTheDocument();
@@ -255,7 +262,10 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
     await openFromTrigger(user);
     const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    // 모든 생성물에 있는 두 항목(로그아웃·통합 검색 제안) 사이를 오간다 — 협업 허브 바로가기는 협업 팩 마커 안이다.
+    fireEvent.change(input, { target: { value: '로그' } });
     const options = await screen.findAllByRole('option');
+    expect(options).toHaveLength(2);
 
     expect(input).toHaveAttribute('aria-controls', 'command-center-results');
     expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
@@ -410,7 +420,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
       {
         menuNo: 1,
         menuNm: '안전 modern 메뉴',
-        modernRoute: '/admin/work-hub?tab=job#calendar',
+        modernRoute: `${WORK_HUB_ROUTE}?tab=job#calendar`,
         chkURL: '//ignored.example',
         // [DIP B5 F10] 하위 메뉴는 상위 메뉴 응답의 children 으로 온다 — 상위마다 다시 요청하지 않는다.
         children: [
@@ -424,7 +434,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
             menuNo: 11,
             menuNm: '안전 하위',
             // 등록된 화면이어야 한다 — 라우트 게이트가 거부할 메뉴는 제안하지 않는다(openableMenus).
-            modernRoute: '/admin/collaboration?view=summary#result',
+            modernRoute: `${COLLABORATION_ROUTE}?view=summary#result`,
           },
         ],
       },
@@ -461,7 +471,7 @@ describe('GlobalCommandCenter accessibility contract', () => {
     expect(screen.queryByRole('option', { name: '경로 없는 메뉴' })).not.toBeInTheDocument();
 
     await user.click(safeModern);
-    expect(mocks.push).toHaveBeenCalledWith('/admin/work-hub?tab=job#calendar');
+    expect(mocks.push).toHaveBeenCalledWith(`${WORK_HUB_ROUTE}?tab=job#calendar`);
     expect(mocks.push).not.toHaveBeenCalledWith('//evil.example/phish');
     expect(mocks.push).not.toHaveBeenCalledWith('/must-not-silently-fallback');
   });

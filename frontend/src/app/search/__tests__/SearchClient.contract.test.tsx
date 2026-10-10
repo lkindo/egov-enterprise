@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchResultsContent } from '../SearchClient';
+import { inProjection } from '@/test-utils/projection';
+
+// 게시글 축은 협업 팩 마커 안이다 — 게시글 검색 서비스가 투영으로 빠진 생성물에는 이 축이 없다(원본에서는 늘 있다).
+//   게시글 축 자체의 계약은 그 생성물에서 등록하지 않고, 다른 축의 계약은 메뉴 결과를 살아남는 축으로 써서 늘 등록한다.
+const boardAxisInProjection = inProjection('frontend/src/services/business/user/board/BoardUserService.ts');
 
 const mocks = vi.hoisted(() => ({
   legacyGet: vi.fn(),
@@ -157,19 +162,20 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 8, pstTtl: '독립 게시글 결과' },
     ]);
+    if (!boardAxisInProjection) mocks.getHeadMenus.mockResolvedValue([{ menuNo: 1, menuNm: '홍길 업무 안내', modernRoute: '/search' }]);
 
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 
-    expect(await screen.findByText('독립 게시글 결과')).toBeInTheDocument();
+    expect(await screen.findByText(boardAxisInProjection ? '독립 게시글 결과' : '홍길 업무 안내')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('임직원 검색 결과를 불러오지 못했습니다');
     expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '임직원 0건' })).not.toBeInTheDocument();
-    expect(mocks.searchPosts).toHaveBeenCalledWith('홍길');
+    if (boardAxisInProjection) expect(mocks.searchPosts).toHaveBeenCalledWith('홍길');
     expect(mocks.getHeadMenus).toHaveBeenCalled();
     expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
     expect(screen.queryByText('private upstream detail')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /게시글/ }));
+    fireEvent.click(screen.getByRole('button', { name: boardAxisInProjection ? /게시글/ : /메뉴 바로가기/ }));
     expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
   });
 
@@ -189,7 +195,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
    * 이 탭은 오랫동안 '미지원' 이었다 — 전역 검색 엔드포인트가 없어 결과가 항상 빈 배열이었고,
    * 화면은 그 사실을 경고로 정직하게 알렸다. 아래 세 건은 그 상태로 되돌아가는 것을 막는다.
    */
-  it('게시글을 통합 검색 API 에서 가져와 표시한다', async () => {
+  if (boardAxisInProjection) it('게시글을 통합 검색 API 에서 가져와 표시한다', async () => {
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 7, pstTtl: '연차 신청 안내', userNm: '홍길동', crtDt: '2026-09-01T10:00:00' },
     ]);
@@ -213,7 +219,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
    * 게시글 검색이 실패해도 임직원·메뉴 결과는 살아야 하지만, 실패를 0건으로 위장해서도
    * 안 된다. 부분 결과와 실패 축을 함께 표시한다.
    */
-  it('게시글 검색 실패를 알리면서 임직원 결과는 유지한다', async () => {
+  if (boardAxisInProjection) it('게시글 검색 실패를 알리면서 임직원 결과는 유지한다', async () => {
     mocks.searchPosts.mockRejectedValue(new Error('board search down'));
 
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
@@ -234,7 +240,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
-    expect(screen.getByText('메뉴와 무관한 게시글')).toBeInTheDocument();
+    if (boardAxisInProjection) expect(screen.getByText('메뉴와 무관한 게시글')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('메뉴 바로가기 검색 결과를 불러오지 못했습니다');
     expect(screen.getByRole('button', { name: '메뉴 바로가기 (조회 실패)' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '메뉴 바로가기 0건' })).not.toBeInTheDocument();
@@ -245,6 +251,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 10, pstTtl: '게시글만 존재' },
     ]);
+    if (!boardAxisInProjection) mocks.getHeadMenus.mockResolvedValue([{ menuNo: 1, menuNm: '게시글만 존재', modernRoute: '/search' }]);
     mocks.searchAssignableUsers.mockResolvedValue([]);
 
     render(<SearchResultsContent initialResults={emptyResults} query="게시글" />);

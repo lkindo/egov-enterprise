@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { canEnterRegisteredPage as proxyCanEnter } from '../page-authorization';
 import { canEnterRegisteredPage, canOpenPage, registeredPagePermissions } from '../page-access';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
+import { pageInProjection } from '@/test-utils/projection';
 
 /**
  * 화면의 링크 노출 판정(canOpenPage)은 라우트 게이트(proxy.ts 의 canEnterRegisteredPage)와 같은 판정이어야 한다
@@ -14,7 +15,8 @@ describe('canOpenPage', () => {
     expect(proxyCanEnter).toBe(canEnterRegisteredPage);
   });
 
-  it('목적지 라우트의 권한으로 판정한다 — 다른 화면의 권한은 길을 열지 않는다', () => {
+  // 예시 화면이 투영으로 빠진 생성물에서는 그 예시만 뺀다 — 라우트의 page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+  if (pageInProjection('/admin/operation/memo-reports')) it('목적지 라우트의 권한으로 판정한다 — 다른 화면의 권한은 길을 열지 않는다', () => {
     // [DIP D9] 메모보고 관리는 일반 사용자의 조회 권한(MEMO_RPT_READ)으로 연다.
     expect(PAGE_PERMISSIONS['/admin/operation/memo-reports']).toEqual(['MEMO_RPT_READ']);
     expect(canOpenPage(subject(['DEPT_BOX_READ']), '/admin/operation/memo-reports')).toBe(false);
@@ -26,7 +28,7 @@ describe('canOpenPage', () => {
     expect(canOpenPage(subject([]), '/admin/security/authority?tab=users')).toBe(false);
   });
 
-  it('동적 세그먼트는 등록된 라우트 모양으로도, 실제 값으로도 판정한다', () => {
+  if (pageInProjection('/admin/survey/manage/[id]')) it('동적 세그먼트는 등록된 라우트 모양으로도, 실제 값으로도 판정한다', () => {
     expect(canOpenPage(subject(['SURVEY_READ_ALL']), '/admin/survey/manage/[id]')).toBe(true);
     expect(canOpenPage(subject(['SURVEY_READ_ALL']), '/admin/survey/manage/12')).toBe(true);
     expect(canOpenPage(subject(['SURVEY_RSP_READ']), '/admin/survey/manage/12')).toBe(false);
@@ -46,7 +48,7 @@ describe('canOpenPage', () => {
     expect(canOpenPage(subject(['MENU_READ']), '/Admin/system/menus')).toBe(false);
   });
 
-  it('인증만 요구하는 관리 경로는 권한 없이도 열린다', () => {
+  if (pageInProjection('/admin/work-hub')) it('인증만 요구하는 관리 경로는 권한 없이도 열린다', () => {
     expect(registeredPagePermissions('/admin/work-hub')).toEqual([]);
     expect(canOpenPage(subject([]), '/admin/work-hub')).toBe(true);
   });

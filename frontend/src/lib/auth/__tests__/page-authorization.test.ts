@@ -1,15 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { canEnterRegisteredPage, loadPageAuthorization } from '../page-authorization';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
+import { pageInProjection } from '@/test-utils/projection';
 
 const SUBJECT = 'USRCNFRM_fixture_001';
 const current = { id: 'fixture-login', esntlId: SUBJECT, groups: ['USER'], permissions: [], authorizationVersion: 'v1' };
 const upstream = (data: unknown, status = 200) => new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data }), { status });
 
 afterEach(() => vi.unstubAllGlobals());
+// 예시 화면이 투영으로 빠진 생성물에서는 그 예시만 뺀다 — 라우트의 page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+const pages = (routes: string[]) => routes.filter(pageInProjection);
+const pageRows = <T extends [string, ...string[]]>(rows: T[]) => rows.filter(([route]) => pageInProjection(route));
 
 describe('page permission mapping', () => {
-  it.each(['/admin/survey/polls', '/admin/survey/polls/manage'])('requires both read permissions for %s', route => {
+  it.each(pages(['/admin/survey/polls', '/admin/survey/polls/manage']))('requires both read permissions for %s', route => {
     for (const permissions of [[], ['POLL_READ'], ['POLL_READ_ALL'], ['SURVEY_READ', 'SURVEY_READ_ALL']]) {
       expect(canEnterRegisteredPage(route, { ...current, permissions })).toBe(false);
     }
@@ -17,7 +21,7 @@ describe('page permission mapping', () => {
     expect(canEnterRegisteredPage(`${route}/`, { ...current, permissions: ['POLL_READ', 'POLL_READ_ALL'] })).toBe(true);
     expect(canEnterRegisteredPage(route, { permissions: ['POLL_READ', 'POLL_READ_ALL'] })).toBe(false);
   });
-  it('does not inherit an authenticated parent’s empty permission requirement for unknown children', () => {
+  if (pageInProjection('/admin/work-hub')) it('does not inherit an authenticated parent’s empty permission requirement for unknown children', () => {
     expect(canEnterRegisteredPage('/admin/work-hub', current)).toBe(true);
     expect(canEnterRegisteredPage('/admin/work-hub/unregistered-child', current)).toBe(false);
   });
@@ -29,11 +33,11 @@ describe('page permission mapping', () => {
     expect(canEnterRegisteredPage('/admin/system/menus', { ...current, permissions: [...required] })).toBe(true);
   });
 
-  it.each([
+  it.each(pageRows([
     ['/admin/community/boards/master', 'BBS_MST_READ'],
     ['/admin/community/boards/maker', 'BBS_MST_CREATE'],
     ['/admin/community/templates', 'TEMPLATE_READ'],
-  ])('does not let an authenticated dynamic sibling shadow %s', (route, permission) => {
+  ]))('does not let an authenticated dynamic sibling shadow %s', (route, permission) => {
     expect(canEnterRegisteredPage(route, current)).toBe(false);
     expect(canEnterRegisteredPage(`${route}/`, current)).toBe(false);
     expect(canEnterRegisteredPage(route, { ...current, permissions: ['BOARD_READ'] })).toBe(false);
@@ -41,11 +45,13 @@ describe('page permission mapping', () => {
   });
 
   it('preserves authenticated dynamic community and board detail routes', () => {
-    expect(canEnterRegisteredPage('/admin/community/fixture-community', current)).toBe(true);
-    expect(canEnterRegisteredPage('/admin/community/boards/fixture-board', current)).toBe(true);
+    if (pageInProjection('/admin/community/[id]')) expect(canEnterRegisteredPage('/admin/community/fixture-community', current)).toBe(true);
+    if (pageInProjection('/admin/community/boards/[id]')) expect(canEnterRegisteredPage('/admin/community/boards/fixture-board', current)).toBe(true);
+    // 모든 생성물에 남는 동적 화면(부서 업무 상세)도 같은 판정이다 — 위 예시가 빠진 생성물에서 단언 없이 끝나지 않게 한다.
+    expect(canEnterRegisteredPage('/smart-toolkit/dept-job/fixture-job', current)).toBe(true);
   });
 
-  it.each([
+  it.each(pageRows([
     ['/admin', 'DASHBOARD_READ', 'DASHBOARD_ADMIN_READ'],
     ['/admin/stats', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/board', 'STATS_READ', 'STATS_ADMIN_READ'],
@@ -57,7 +63,7 @@ describe('page permission mapping', () => {
     ['/admin/sanctn/workflow', 'APPROVAL_READ', 'WORKFLOW_READ'],
     ['/admin/survey/polls', 'POLL_READ', 'POLL_READ_ALL'],
     ['/admin/survey/polls/manage', 'POLL_READ', 'POLL_READ_ALL'],
-  ])('keeps %s separate from ordinary data reads while accepting an explicit grant', (route, ordinary, management) => {
+  ]))('keeps %s separate from ordinary data reads while accepting an explicit grant', (route, ordinary, management) => {
     const regularUser = { ...current, groups: ['ROLE_USER'], permissions: [ordinary] };
     expect(canEnterRegisteredPage(route, regularUser)).toBe(false);
     expect(canEnterRegisteredPage(route, { ...regularUser, permissions: [ordinary, management] })).toBe(true);

@@ -43,6 +43,12 @@ describe('투영 원장 시험 도우미', () => {
     expect(view.readInProjection('frontend/gone.ts')).toBeUndefined();
     // 원장에 없는 부재는 빠진 것이 아니다 — 읽기가 그대로 실패한다.
     expect(() => view.readInProjection('frontend/typo.ts')).toThrow(/ENOENT/);
+    // 라우트 판정은 그 라우트의 page 파일로 한다.
+    expect(view.pageInProjection('/admin/gone')).toBe(true);
+    expect(projectionView(fixture([], ['frontend/src/app/admin/gone/page.tsx'])).pageInProjection('/admin/gone/')).toBe(false);
+    // 파일별 동결표는 빠진 파일의 몫만 뺀다 — 원장에 없는 파일의 동결값은 그대로 남아 실측과 비교된다.
+    expect(view.frozenInProjection({ 'a.ts': 2, 'gone.ts': 3, 'typo.ts': 1 }, key => `frontend/${key}`))
+      .toEqual({ 'a.ts': 2, 'typo.ts': 1 });
   });
 
   it('원장이 있는 파일을 지웠다고 적으면 거르지 않고 실패한다', () => {

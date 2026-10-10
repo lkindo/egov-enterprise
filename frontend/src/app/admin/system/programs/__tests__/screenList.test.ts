@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 import { SCREEN_ALIASES, SCREEN_REGISTRY, type ScreenRegistryEntry } from '@/types/generated-screen-registry';
 import type { MenuStructureItem } from '@/services/foundation/system/MenuAdminService';
+import { pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
 import {
   SCREEN_VIEW_OPTIONS,
   UNKNOWN_SCREEN_LABEL,
@@ -61,7 +62,9 @@ describe('listedScreens', () => {
 
   it('생성된 화면 목록의 모든 화면이 진입 권한 표에 있다(재사용 투영본에서 빠진 화면은 둘 다에서 빠진다)', () => {
     expect(listedScreens().length).toBe(SCREEN_REGISTRY.length);
-    expect(listedScreens().length).toBeGreaterThan(50);
+    // 빈 목록을 막는 하한이다. 원본은 종전 값 그대로이고, 투영 원장이 있는 재사용 생성물에서만 가장 작은 생성물에서도
+    //   성립하는 값으로 낮춘다(2026-10-10 실측: 원본 92·collaboration 52·core 37개).
+    expect(listedScreens().length).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 30 : 50);
   });
 });
 
@@ -77,7 +80,8 @@ describe('표시 이름', () => {
     // 행위가 밑줄을 품어도(ADMIN_READ) 앞에서 자르지 않는다.
     expect(screenPermissionName(screen('/admin'), 'DASHBOARD_ADMIN_READ')).toBe('대시보드 · 관리 조회');
     // 업무 영역이 밑줄을 품어도(SURVEY_RSP) 행위로 정확히 가른다.
-    expect(screenPermissionName(screen('/admin/survey/hub'), 'SURVEY_RSP_READ')).toBe('설문 응답 · 조회');
+    // 기능 예시(별칭·모두 충족 판정)는 그 화면이 투영으로 빠진 생성물에서 뺀다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+    if (pageInProjection('/admin/survey/hub')) expect(screenPermissionName(screen('/admin/survey/hub'), 'SURVEY_RSP_READ')).toBe('설문 응답 · 조회');
     // 화면 목록에 그 권한의 행위가 없으면 코드를 그대로 보인다(이름을 지어내지 않는다).
     expect(screenPermissionName({ ...screen('/admin/system/programs'), permissions: [] }, 'MENU_READ')).toBe('MENU_READ');
   });
@@ -95,12 +99,13 @@ describe('screenEntrySummary', () => {
     const any = screenEntrySummary(screen('/admin/security/authority'));
     expect(any.permissions.map((permission) => permission.code)).toEqual(['AUTHRT_READ', 'AUTHRT_AUDIT']);
     expect(any.rule).toBe('하나라도 있으면 열림');
-    expect(screenEntrySummary(screen('/admin/survey/polls')).rule).toBe('모두 있어야 열림');
+    if (pageInProjection('/admin/survey/polls')) expect(screenEntrySummary(screen('/admin/survey/polls')).rule).toBe('모두 있어야 열림');
   });
 
   it('진입 권한이 없으면 로그인만 하면 열리고, 공개 화면은 로그인하지 않아도 열린다', () => {
-    expect(screenEntrySummary(screen('/admin/help'))).toStrictEqual({ permissions: [], rule: '로그인만 하면 열림' });
-    expect(opensWithLoginOnly(screen('/admin/help'))).toBe(true);
+    // 예시는 모든 생성물에 남는 통합 검색이다(로그인만 하면 열리는 정적 화면).
+    expect(screenEntrySummary(screen('/search'))).toStrictEqual({ permissions: [], rule: '로그인만 하면 열림' });
+    expect(opensWithLoginOnly(screen('/search'))).toBe(true);
     expect(screenEntrySummary(screen('/login')).rule).toBe('로그인하지 않아도 열림');
     expect(opensWithLoginOnly(screen('/login'))).toBe(false);
     expect(opensWithLoginOnly(screen('/admin/system/programs'))).toBe(false);
@@ -112,9 +117,9 @@ describe('screenEntrySummary', () => {
    */
   it('권한이 둘 이상이면 모두·하나 표지와 그 뜻을 싣고, 하나 이하면 표지가 없다', () => {
     expect(screenEntryMarker(screen('/admin/security/authority'))).toStrictEqual({ label: '하나', rule: '하나라도 있으면 열림' });
-    expect(screenEntryMarker(screen('/admin/survey/polls'))).toStrictEqual({ label: '모두', rule: '모두 있어야 열림' });
+    if (pageInProjection('/admin/survey/polls')) expect(screenEntryMarker(screen('/admin/survey/polls'))).toStrictEqual({ label: '모두', rule: '모두 있어야 열림' });
     expect(screenEntryMarker(screen('/admin/system/programs'))).toBeNull();
-    expect(screenEntryMarker(screen('/admin/help'))).toBeNull();
+    expect(screenEntryMarker(screen('/search'))).toBeNull();
   });
 
   /*
@@ -155,7 +160,7 @@ describe('createScreenMenuLinkLookup', () => {
       menu(30, '화면 관리', '/admin/system/programs'),
       menu(12, '옛 화면 관리', '/admin/system/programs/', 'N'),
       menu(40, '주소록', '/admin/collaboration/address-book'),
-      menu(50, '옛 도움말', '/admin/help?tab=FAQ', 'N'),
+      menu(50, '옛 통합 검색', '/search?tab=MENU', 'N'),
       menu(60, '게시판(레거시 경로)', '/admin/community/boards/selectBoardList?bbsId=BBSMSTR_000000000001'),
       menu(70, '게시글 하나', '/admin/community/boards/12'),
       menu(1, '관리 센터', null),
@@ -180,6 +185,8 @@ describe('createScreenMenuLinkLookup', () => {
     expect(screenMenuLinkSummary(cell)).toBe('화면 관리 외 1개');
     expect(screenMenuLinkNeedsDetails(cell)).toBe(true);
     expect(isScreenWithMenu(cell)).toBe(true);
+    // 별칭 예시(주소록)는 주소록이 투영으로 빠진 생성물에서 뺀다(원장 확인).
+    if (!pageInProjection('/admin/collaboration/address-book/select-address-book-list')) return;
     const addressBook = lookup('/admin/collaboration/address-book/select-address-book-list');
     expect(addressBook).toStrictEqual({
       kind: 'linked',
@@ -210,7 +217,7 @@ describe('createScreenMenuLinkLookup', () => {
     })).toBe('가 메뉴 외 1개 (모두 사용 안 함)');
   });
 
-  it('레거시 게시판 경로 메뉴는 앱 설정이 넘기는 게시판 목록에 세고, 동적 별칭으로만 맞는 메뉴는 어디에도 세지 않는다', () => {
+  if (pageInProjection('/admin/community/boards/select-board-list')) it('레거시 게시판 경로 메뉴는 앱 설정이 넘기는 게시판 목록에 세고, 동적 별칭으로만 맞는 메뉴는 어디에도 세지 않는다', () => {
     expect(lookup('/admin/community/boards/select-board-list')).toStrictEqual({
       kind: 'linked',
       menus: [{ menuNo: 60, menuNm: '게시판(레거시 경로)', inUse: true, viaAlias: '/admin/community/boards/selectBoardList' }],
@@ -221,13 +228,13 @@ describe('createScreenMenuLinkLookup', () => {
   });
 
   it('사용 안 함 메뉴만 가리키는 화면은 연결로 보이되 메뉴에 없는 화면이다', () => {
-    const cell = lookup('/admin/help');
+    const cell = lookup('/search');
     expect(cell).toStrictEqual({
       kind: 'linked',
-      menus: [{ menuNo: 50, menuNm: '옛 도움말', inUse: false, viaAlias: null }],
+      menus: [{ menuNo: 50, menuNm: '옛 통합 검색', inUse: false, viaAlias: null }],
       withoutMenu: true,
     });
-    expect(screenMenuLinkSummary(cell)).toBe('옛 도움말 (사용 안 함)');
+    expect(screenMenuLinkSummary(cell)).toBe('옛 통합 검색 (사용 안 함)');
     expect(screenMenuLinkNeedsDetails(cell)).toBe(true);
     expect(isScreenWithoutMenu(cell)).toBe(true);
     // 사용 중인 메뉴가 열지 않으므로 메뉴에 연결된 화면이 아니다 — 둘 중 정확히 하나다.
@@ -264,7 +271,7 @@ describe('screenBadges', () => {
     const linked: ScreenMenuLinkCell = {
       kind: 'linked', menus: [{ menuNo: 1, menuNm: '위키', inUse: true, viaAlias: null }], withoutMenu: false,
     };
-    expect(screenBadges(screen('/admin/help'), linked)).toEqual(['제한 없음']);
+    expect(screenBadges(screen('/search'), linked)).toEqual(['제한 없음']);
     expect(screenBadges(screen('/login'), { kind: 'none', withoutMenu: true })).toEqual(['메뉴 없음', '공개 화면']);
   });
 
@@ -302,7 +309,7 @@ describe('filterScreens', () => {
   const screens = [
     screen('/admin/system/programs'),
     screen('/admin/system/menus'),
-    screen('/admin/help'),
+    screen('/search'),
     screen('/smart-toolkit/dept-job/[id]'),
     screen('/login'),
   ];
@@ -319,15 +326,15 @@ describe('filterScreens', () => {
   it('구분은 메뉴에 없는 화면·로그인만 하면 열리는 화면·동적 경로로 거른다', () => {
     // 메뉴에 없는 화면에 동적 경로 화면은 들지 않는다(메뉴에 둘 수 없다).
     expect(filterScreens(screens, { keyword: '', kind: 'no-menu' }, linkOf).map((entry) => entry.route))
-      .toEqual(['/admin/system/menus', '/admin/help', '/login']);
+      .toEqual(['/admin/system/menus', '/search', '/login']);
     expect(filterScreens(screens, { keyword: '', kind: 'login-only' }, linkOf).map((entry) => entry.route))
-      .toEqual(['/admin/help', '/smart-toolkit/dept-job/[id]']);
+      .toEqual(['/search', '/smart-toolkit/dept-job/[id]']);
     expect(filterScreens(screens, { keyword: '', kind: 'dynamic' }, linkOf).map((entry) => entry.route))
       .toEqual(['/smart-toolkit/dept-job/[id]']);
     // 사용 안 함 메뉴만 가리키는 화면은 사용 중인 메뉴로 열리지 않는다 — 메뉴에 없는 화면이다.
     const unusedOnly = createScreenMenuLinkLookup({ status: 'loaded', menus: [menu(30, '옛 화면 관리', '/admin/system/programs', 'N')] });
     expect(filterScreens(screens, { keyword: '', kind: 'no-menu' }, unusedOnly).map((entry) => entry.route))
-      .toEqual(['/admin/system/programs', '/admin/system/menus', '/admin/help', '/login']);
+      .toEqual(['/admin/system/programs', '/admin/system/menus', '/search', '/login']);
   });
 
   /*
@@ -398,7 +405,7 @@ describe('보기 단추', () => {
   const screens = [
     screen('/admin/system/programs'),
     screen('/admin/system/menus'),
-    screen('/admin/help'),
+    screen('/search'),
     screen('/smart-toolkit/dept-job/[id]'),
     screen('/login'),
   ];
@@ -468,7 +475,9 @@ describe('별칭', () => {
   });
 
   it('목적지의 템플릿 자리표시자는 화면 경로 표기로 보이고, 모르는 목적지는 지어내지 않는다', () => {
-    expect(SCREEN_ALIASES.find((alias) => alias.route === '/admin/community/[id]')?.target).toBe('/cop/cmy/selectCommunityDetail/${id}');
+    if (pageInProjection('/admin/community/[id]')) {
+      expect(SCREEN_ALIASES.find((alias) => alias.route === '/admin/community/[id]')?.target).toBe('/cop/cmy/selectCommunityDetail/${id}');
+    }
     expect(aliasTargetLabel('/cop/cmy/selectCommunityDetail/${id}')).toBe('/cop/cmy/selectCommunityDetail/[id]');
     expect(aliasTargetLabel('/a/${kind}/b/${id}')).toBe('/a/[kind]/b/[id]');
     expect(aliasTargetLabel('/admin/help?tab=COMMUNITY')).toBe('/admin/help?tab=COMMUNITY');

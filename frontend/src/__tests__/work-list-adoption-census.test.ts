@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { keepInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -58,6 +59,60 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 const ADOPTERS = 43;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
+/*
+ * [2026-10-10 Phase 2 D6] 개수와 함께 화면 목록도 동결한다 — 재사용 생성물에서는 투영으로 빠진 화면만 뺀다(원장 확인).
+ *   목록 길이는 위 두 수와 같아야 한다(아래 계약). 화면을 옮기거나 이행하면 수와 목록을 함께 고친다.
+ */
+const ADOPTER_SCREENS = [
+  'src/app/admin/collaboration/CollaborationHubClient.tsx',
+  'src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
+  'src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx',
+  'src/app/admin/community/boards/master/BoardMasterListClient.tsx',
+  'src/app/admin/community/templates/TemplateAdminClient.tsx',
+  'src/app/admin/help/KnowledgeHubClient.tsx',
+  'src/app/admin/operation/events/EventManagementClient.tsx',
+  'src/app/admin/operation/external-hr/ExternalHrClient.tsx',
+  'src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx',
+  'src/app/admin/operation/rewards/RewardManageClient.tsx',
+  'src/app/admin/operation/rough-map/RoughMapManagementClient.tsx',
+  'src/app/admin/patterns/PatternGalleryClient.tsx',
+  'src/app/admin/security/authority/SecurityHubClient.tsx',
+  'src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx',
+  'src/app/admin/security/group/SecurityGroupClient.tsx',
+  'src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx',
+  'src/app/admin/survey/manage/SurveyManageClient.tsx',
+  'src/app/admin/survey/polls/OnlinePollAdminClient.tsx',
+  'src/app/admin/system/banner/BannerAdminClient.tsx',
+  'src/app/admin/system/codes/administ/AdministCodeClient.tsx',
+  'src/app/admin/system/codes/institution/InstitutionCodeClient.tsx',
+  'src/app/admin/system/durable-jobs/DurableJobsClient.tsx',
+  'src/app/admin/system/hpcm/HpcmClient.tsx',
+  'src/app/admin/system/isg/InternetSvcGuidanceClient.tsx',
+  'src/app/admin/system/logs/LogDashboardClient.tsx',
+  'src/app/admin/system/logs/audit/AuditJournalClient.tsx',
+  'src/app/admin/system/logs/login/SystemLogsLoginClient.tsx',
+  'src/app/admin/system/logs/privacy/SystemLogsPrivacyClient.tsx',
+  'src/app/admin/system/logs/system/SystemLogsSystemClient.tsx',
+  'src/app/admin/system/logs/user/SystemLogsUserClient.tsx',
+  'src/app/admin/system/logs/web/SystemLogsWebClient.tsx',
+  'src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx',
+  'src/app/admin/system/monitoring/MonitoringHubClient.tsx',
+  'src/app/admin/system/policies/PolicyAdminClient.tsx',
+  'src/app/admin/system/programs/ProgramAdminClient.tsx',
+  'src/app/admin/user/UserOrgHubClient.tsx',
+  'src/app/admin/uss/ion/sms/SmsAdminClient.tsx',
+  'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx',
+  'src/app/admin/work-hub/WorkHubClient.tsx',
+  'src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx',
+  'src/app/help/HelpClient.tsx',
+  'src/app/note/page.tsx',
+  'src/app/survey/SurveyClient.tsx',
+];
+const DIRECT_ONLY_SCREENS = [
+  'src/app/components/ui/smart-notification-hub.tsx',
+  'src/app/cop/sms/selectSmsList/SmsHubClient.tsx',
+];
+const inProjectionScreens = (screens: string[]) => keepInProjection(screens, (screen) => join(FRONTEND_DIR, screen));
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
@@ -117,16 +172,30 @@ describe('A1 archetype 채택 census', () => {
   const { adopters, directOnly } = census();
 
   it(`WorkListPage 경유 화면은 ${ADOPTERS}개 이상이다(이행 되돌리기 차단)`, () => {
-    expect(adopters.length, `현재 채택 화면:\n${adopters.join('\n')}`).toBe(ADOPTERS);
+    const expected = inProjectionScreens(ADOPTER_SCREENS);
+    const missing = expected.filter((screen) => !adopters.includes(screen));
+    const added = adopters.filter((screen) => !expected.includes(screen));
+    expect(
+      { missing, added },
+      `셸을 떠난 화면은 되돌리고, 새로 셸을 쓴 화면은 ADOPTER_SCREENS 와 ADOPTERS 를 함께 올리세요.\n현재 채택 화면:\n${adopters.join('\n')}`,
+    ).toEqual({ missing: [], added: [] });
+  });
+
+  it('동결한 화면 목록의 길이는 동결한 수와 같다', () => {
+    expect(ADOPTER_SCREENS.length).toBe(ADOPTERS);
+    expect(DIRECT_ONLY_SCREENS.length).toBe(DIRECT_ONLY);
   });
 
   it(`셸 없이 표를 직접 조립하는 화면은 ${DIRECT_ONLY}개를 넘지 않는다(신규 유입 차단)`, () => {
+    const expected = inProjectionScreens(DIRECT_ONLY_SCREENS);
+    const added = directOnly.filter((screen) => !expected.includes(screen));
+    const gone = expected.filter((screen) => !directOnly.includes(screen));
     expect(
-      directOnly.length,
-      directOnly.length > DIRECT_ONLY
-        ? `신규 ${directOnly.length - DIRECT_ONLY}건 유입 — 조회형 목록이면 WorkListPage 를 경유하세요.`
-        : `${DIRECT_ONLY - directOnly.length}건 감소 — 이행분을 확정하려면 DIRECT_ONLY 를 ${directOnly.length}로 내리세요.`,
-    ).toBe(DIRECT_ONLY);
+      { added, gone },
+      added.length
+        ? `신규 ${added.length}건 유입 — 조회형 목록이면 WorkListPage 를 경유하세요.`
+        : `${gone.length}건 감소 — 이행분을 확정하려면 DIRECT_ONLY_SCREENS 에서 빼고 DIRECT_ONLY 를 ${DIRECT_ONLY - gone.length}로 내리세요.`,
+    ).toEqual({ added: [], gone: [] });
   });
 
   /*

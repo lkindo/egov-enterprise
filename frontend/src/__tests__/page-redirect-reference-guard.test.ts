@@ -23,6 +23,7 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { inProjection } from '@/test-utils/projection';
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SRC = path.resolve(__dirname, '..');
@@ -170,22 +171,24 @@ describe('page-redirect 라우트로의 역참조 차단', () => {
       const hit = resolveRoute(target.split('?')[0].replace(/\/$/, ''));
       return hit?.kind === 'page-redirect' ? hit.route : null;
     };
+    // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+    //   예시 라우트가 빠진 생성물에서는 그 라우트의 단언만 뺀다(원장이 page 파일의 부재를 확인한다).
+    const expectRedirect = (target: string, route: string) => {
+      if (inProjection(path.join(APP, ...route.split('/').filter(Boolean), 'page.tsx'))) expect(flagged(target)).toBe(route);
+    };
 
     /*
       §A3-1 이행 4라우트는 종전 전용 가드(a3-1-migrated-route-guard)가 문자열로 하드코딩해
       지키던 대상이다. 이 가드가 그것을 **대체**하므로, 넷을 여기서 명시적으로 고정한다 —
       일반화하면서 보호가 약해지지 않았음을 이 네 줄이 증명한다.
     */
-    expect(flagged('/admin/collaboration/address-book/insert-address-book'))
-      .toBe('/admin/collaboration/address-book/insert-address-book');
-    expect(flagged('/admin/collaboration/scraps/insertScrap'))
-      .toBe('/admin/collaboration/scraps/insertScrap');
-    expect(flagged('/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}'))
-      .toBe('/admin/collaboration/scraps/selectScrapDetail/[id]');
-    expect(flagged('/admin/survey/manage/create')).toBe('/admin/survey/manage/create');
+    expectRedirect('/admin/collaboration/address-book/insert-address-book', '/admin/collaboration/address-book/insert-address-book');
+    expectRedirect('/admin/collaboration/scraps/insertScrap', '/admin/collaboration/scraps/insertScrap');
+    expectRedirect('/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}', '/admin/collaboration/scraps/selectScrapDetail/[id]');
+    expectRedirect('/admin/survey/manage/create', '/admin/survey/manage/create');
 
     // 이번에 새로 드러난 것 — 업무 홈의 '새 게시글 작성' 이 가리키던 곳.
-    expect(flagged('/admin/community/boards')).toBe('/admin/community/boards');
+    expectRedirect('/admin/community/boards', '/admin/community/boards');
 
     // 형제 정적 라우트 — Next 는 정적이 동적을 이긴다.
     expect(flagged('/admin/community/boards/detail?bbsId=${x}')).toBeNull();

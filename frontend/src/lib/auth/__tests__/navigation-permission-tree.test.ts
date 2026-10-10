@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildNavigationPermissionTree, menusMissingEntryPermission, navigationSelectionGaps, toggleNavigationPermission } from '../navigation-permission-tree';
+import { pageInProjection } from '@/test-utils/projection';
 
 const navigation = [
   { code: 'child-b', name: '두 번째 자식', parentCode: 'root', route: null, useYn: 'Y' as const },
@@ -93,8 +94,10 @@ describe('navigation permission hierarchy', () => {
     expect(menusMissingEntryPermission(menus, selection)).toEqual([
       { code: 'menus', name: '메뉴 관리', route: '/admin/system/menus', required: ['MENU_READ'], mode: 'ANY', fixable: true },
       { code: 'authority', name: '권한 그룹 관리', route: '/admin/security/authority', required: ['AUTHRT_READ', 'AUTHRT_AUDIT'], mode: 'ANY', fixable: true },
-      // ALL 은 하나만 있어서는 열리지 않는다.
-      { code: 'polls', name: '투표 관리', route: '/admin/survey/polls', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL', fixable: true },
+      // ALL 은 하나만 있어서는 열리지 않는다. 투표 화면이 투영으로 빠진 생성물에서는 등록되지 않은 경로라 고칠 수 없다(원장 확인).
+      pageInProjection('/admin/survey/polls')
+        ? { code: 'polls', name: '투표 관리', route: '/admin/survey/polls', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL', fixable: true }
+        : { code: 'polls', name: '투표 관리', route: '/admin/survey/polls', required: [], mode: 'ANY', fixable: false },
       // 등록되지 않은 /admin 경로는 어떤 기능권한으로도 열리지 않는다 — 고칠 수 있다고 말하지 않는다.
       { code: 'ghost', name: '없는 화면', route: '/admin/unregistered-only-in-test/page', required: [], mode: 'ANY', fixable: false },
     ]);
@@ -106,7 +109,9 @@ describe('navigation permission hierarchy', () => {
       { code: 'authority', name: '권한 그룹 관리', parentCode: null, route: '/admin/security/authority', useYn: 'Y' as const },
     ];
     const navigation = menus.map((menu) => `NAVIGATION:${menu.code}`);
-    expect(menusMissingEntryPermission(menus, new Set([...navigation, 'OPERATION:POLL_READ', 'OPERATION:POLL_READ_ALL', 'OPERATION:AUTHRT_AUDIT']))).toEqual([]);
+    // 투표 화면이 투영으로 빠진 생성물에서는 그 메뉴가 어떤 권한으로도 열리지 않는다(원장 확인).
+    const unregisteredPolls = pageInProjection('/admin/survey/polls') ? [] : ['polls'];
+    expect(menusMissingEntryPermission(menus, new Set([...navigation, 'OPERATION:POLL_READ', 'OPERATION:POLL_READ_ALL', 'OPERATION:AUTHRT_AUDIT'])).map((menu) => menu.code)).toEqual(unregisteredPolls);
     expect(menusMissingEntryPermission(menus, new Set([...navigation, 'OPERATION:POLL_READ_ALL', 'OPERATION:AUTHRT_READ'])).map((menu) => menu.code)).toEqual(['polls']);
   });
 });

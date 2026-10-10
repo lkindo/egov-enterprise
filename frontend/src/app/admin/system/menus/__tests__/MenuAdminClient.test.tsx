@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
 import { handOffScreen } from '@/lib/navigation/target-handoff';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 /**
  * [2026-10-02 D1·D2] 보드형 메뉴 구조 편집기 — 영역 탭·카드·줄, 오른쪽 상세(인스펙터), 끌지 않는 옮기기, 찾기, 그룹 미리보기,
@@ -497,7 +500,7 @@ describe('상세 편집 — 초안에 바로 반영하고 검증한다', () => {
     expect(saveButton()).toBeDisabled();
   });
 
-  it('연결 화면은 화면 목록에서 고르거나 경로를 직접 쓰고, 별칭·형식 오류를 말한다', async () => {
+  if (pageInProjection('/admin/collaboration/address-book/select-address-book-list')) it('연결 화면은 화면 목록에서 고르거나 경로를 직접 쓰고, 별칭·형식 오류를 말한다', async () => {
     await renderClient();
     fireEvent.click(rowButton('결재'));
     expect(screen.getByText('연결 경로가 없습니다 — 하위 메뉴를 묶는 분류 메뉴입니다.')).toBeInTheDocument();

@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import { createHmac } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
+import { pageInProjection } from '@/test-utils/projection';
 
 /**
  * Proxy 인증 게이트 회귀 테스트.
@@ -65,7 +66,12 @@ afterAll(() => {
   else process.env.JWT_SECRET = originalSecret;
 });
 
-function requestWith(token: string | null, path = '/admin/work-hub'): NextRequest {
+// 예시 화면이 투영으로 빠진 생성물에서는 그 예시만 뺀다 — 라우트의 page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+//   토큰 검증 시험의 기본 경로는 로그인만 요구하는 관리 화면(업무 허브)이다. 그 화면이 빠진 생성물에는 그런 관리 화면이
+//   없으므로 관리 밖 경로(홈)로 본다 — 관리 밖 경로도 유효한 토큰을 요구한다.
+const AUTHENTICATED_ROUTE = pageInProjection('/admin/work-hub') ? '/admin/work-hub' : '/';
+
+function requestWith(token: string | null, path = AUTHENTICATED_ROUTE): NextRequest {
   const headers = new Headers();
   if (token) headers.set('cookie', `accessToken=${token}`);
   return new NextRequestCtor(new URL(`http://localhost:3001${path}`), { headers });
@@ -187,13 +193,13 @@ describe('proxy 인증 게이트', () => {
     expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
   });
 
-  it.each([
-    '/admin/work-hub',
-    '/admin/help/faq',
-    '/admin/community/fixture-community',
-    '/admin/collaboration/scraps/insertScrap',
-    '/admin/collaboration/scraps/selectScrapDetail/fixture-scrap',
-  ])('preserves explicitly registered authenticated routes, including case-sensitive paths: %s', async (route) => {
+  it.each(([
+    ['/admin/work-hub', '/admin/work-hub'],
+    ['/admin/help/faq', '/admin/help/faq'],
+    ['/admin/community/fixture-community', '/admin/community/[id]'],
+    ['/admin/collaboration/scraps/insertScrap', '/admin/collaboration/scraps/insertScrap'],
+    ['/admin/collaboration/scraps/selectScrapDetail/fixture-scrap', '/admin/collaboration/scraps/selectScrapDetail/[id]'],
+  ] as const).filter(([, page]) => pageInProjection(page)).map(([route]) => route))('preserves explicitly registered authenticated routes, including case-sensitive paths: %s', async (route) => {
     const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET), route));
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
@@ -237,7 +243,8 @@ describe('proxy 인증 게이트', () => {
     { role: 'ADMIN', exp: futureExp() },
     { sub: SUBJECT, role: 'ADMIN' },
   ])('rejects the wrong token kind or incomplete signed identity before querying permissions', async (payload) => {
-    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET))))).toBe(true);
+    // 권한 조회가 반드시 따르는 관리 화면(모든 생성물에 있다)으로 본다 — 조회 없이 끝나는 경로에서는 아래 단언이 비게 된다.
+    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET), '/admin/system/menus')))).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

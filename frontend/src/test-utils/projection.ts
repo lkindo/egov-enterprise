@@ -74,11 +74,22 @@ export function projectionView(root: string) {
   const readInProjection = (path: string): string | undefined =>
     isRemovedByProjection(path) ? undefined : readFileSync(resolve(root, repoPath(path)), 'utf8');
 
+  /** 라우트의 page 파일(frontend/src/app/<경로>/page.tsx)이 투영으로 빠지지 않았으면 true. 동적 자리는 [이름] 그대로 쓴다. */
+  const pageInProjection = (route: string): boolean =>
+    inProjection(resolve(root, 'frontend', 'src', 'app', ...route.split('/').filter(Boolean), 'page.tsx'));
+
+  /** 파일별 동결표에서 투영으로 빠진 파일의 항목만 뺀다. 키를 절대 경로로 바꾸는 함수를 받는다. */
+  const frozenInProjection = (frozen: Readonly<Record<string, number>>, pathOf: (key: string) => string): Record<string, number> =>
+    Object.fromEntries(keepInProjection(Object.entries(frozen), ([key]) => pathOf(key)));
+
   /** 없는데 원장에도 없는 파일 — 늘 등록하는 시험이 빈 목록을 기대한다. */
   const missingOutsideLedger = (files: readonly string[]): string[] =>
     files.map(repoPath).filter(target => !existsSync(resolve(root, target)) && !isRemovedByProjection(target));
 
-  return { removedFiles, repoPath, isRemovedByProjection, inProjection, keepInProjection, readInProjection, missingOutsideLedger };
+  return {
+    removedFiles, repoPath, isRemovedByProjection, inProjection, keepInProjection, readInProjection, frozenInProjection, missingOutsideLedger,
+    pageInProjection,
+  };
 }
 
 export const {
@@ -88,5 +99,7 @@ export const {
   inProjection,
   keepInProjection,
   readInProjection,
+  frozenInProjection,
   missingOutsideLedger,
+  pageInProjection,
 } = projectionView(REPO_ROOT);

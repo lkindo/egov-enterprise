@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { keepInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -90,7 +91,9 @@ describe('진입 애니메이션 차단', () => {
   it('허용 목록에 사유가 사라진 항목이 남아 있지 않다', () => {
     // 사유 없는 예외가 남으면 다음 사람이 "여기는 원래 그래도 된다"고 읽는다.
     const current = new Set(offenders());
-    const stale = Object.keys(ALLOWED).filter((path) => !current.has(path));
+    // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+    //   그 파일의 예외는 사유가 사라진 것이 아니라 대상이 사라진 것이다.
+    const stale = keepInProjection(Object.keys(ALLOWED), (path) => join(FRONTEND_DIR, path)).filter((path) => !current.has(path));
 
     expect(stale, `사유가 없어진 예외: ${stale.join(', ')}`).toEqual([]);
   });
