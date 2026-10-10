@@ -29,11 +29,21 @@ interface CommandItem {
   name: string;
   url?: string;
   action?: () => void | Promise<void>;
-  category: '즐겨찾기' | '최근 방문' | '메뉴' | '액션' | '시스템' | '검색';
+  category: (typeof CATEGORY_ORDER)[number];
   icon?: React.ReactNode;
   description?: string;
 }
 
+/**
+ * 결과를 묶어 그리는 분류 순서. 방향키가 고르는 순서도 이 순서다 — 그리는 순서와 고르는 순서가 다르면 '다음 항목' 이
+ * 화면의 다음 항목이 아니게 된다(2026-10-10: 메뉴가 있으면 협업 허브 다음이 맨 아래 로그아웃이었다).
+ */
+const CATEGORY_ORDER = ['즐겨찾기', '최근 방문', '메뉴', '액션', '시스템', '검색'] as const;
+
+/** 항목을 분류 순서로 다시 늘어놓는다. 같은 분류 안의 순서는 그대로 둔다. */
+function inDisplayOrder<T extends { category: CommandItem['category'] }>(items: readonly T[]): T[] {
+  return CATEGORY_ORDER.flatMap(category => items.filter(item => item.category === category));
+}
 
 /** 결과 항목의 DOM id — combobox 의 aria-activedescendant 가 가리킨다. */
 function commandOptionId(item: { id: string }): string {
@@ -165,7 +175,7 @@ export function GlobalCommandCenter() {
         category: '검색',
         icon: <Search size={16} />
       };
-      return [...results.slice(0, 9), globalSearch];
+      return inDisplayOrder([...results.slice(0, 9), globalSearch]);
     }
 
     if (!search) {
@@ -176,10 +186,10 @@ export function GlobalCommandCenter() {
         }).slice(0, 5);
       const favorites = pick(bookmarkNos, '즐겨찾기', 'fav', <Star size={16} />);
       const recents = pick(recentNos.filter(no => !bookmarkNos.includes(no)), '최근 방문', 'recent', <History size={16} />);
-      return [...favorites, ...recents, ...results.slice(0, 10)];
+      return inDisplayOrder([...favorites, ...recents, ...results.slice(0, 10)]);
     }
 
-    return results.slice(0, 10);
+    return inDisplayOrder(results.slice(0, 10));
   }, [search, searchQueryError, menus, quickActions, menuByNo, bookmarkNos, recentNos]);
 
   // 5. 핸들바 및 포커스 관리
@@ -389,7 +399,7 @@ export function GlobalCommandCenter() {
           {searchQueryError ? <p id="command-search-query-error" role="alert" className="text-sm text-destructive-emphasis">{searchQueryError}</p> : null}
           {filteredItems.length > 0 ? (
             <div id="command-center-results" role="listbox" aria-label="커맨드 센터 결과" className="space-y-6">
-              {['즐겨찾기', '최근 방문', '메뉴', '액션', '시스템', '검색'].map(cat => {
+              {CATEGORY_ORDER.map(cat => {
                 const catItems = filteredItems.filter(item => item.category === cat);
                 if (catItems.length === 0) return null;
 
