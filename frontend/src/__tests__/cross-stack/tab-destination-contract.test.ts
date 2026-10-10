@@ -128,9 +128,9 @@ export function evaluateTabModule(source: string, file: string): { TAB_HUB?: Tab
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 }, fileName: file,
   });
   if (/\brequire\(/.test(outputText)) throw new Error(`${file}: 탭 해석 모듈은 실행 import 를 두지 않는다(타입 import 만 허용)`);
-  const module = { exports: {} as { TAB_HUB?: TabHub } };
-  runInNewContext(outputText, { module, exports: module.exports });
-  return module.exports;
+  const sandbox = { module: { exports: {} as { TAB_HUB?: TabHub } } };
+  runInNewContext(outputText, { module: sandbox.module, exports: sandbox.module.exports });
+  return sandbox.module.exports;
 }
 
 function tabModules(): Record<string, { TAB_HUB?: TabHub }> {
