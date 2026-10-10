@@ -488,8 +488,9 @@ function nodeSkipOptions(mask) {
  * 도우미(frontend/src/test-utils/projection.ts)로만 가른다(Phase 2 D6, DEC-OPS-258). 조건이 원장 판정을 부르거나 그 결과를
  * 담은 `*InProjection` 변수·`PROJECTED_SOURCE` 를 쓸 때만 허용한다. 원본에는 원장이 없어 이 조건들은 늘 참이다.
  */
-const PROJECTION_CONDITION = /\b(?:inProjection|repoPresent|srcPresent)\s*\(|\b\w*InProjection\b|\bPROJECTED_SOURCE\b/;
-const REGISTRATION_CALL = /^\s*\{?\s*(?:test|it|describe|suite|specify)\s*(?:\.\s*(?:describe|each|concurrent|sequential)\s*(?:\([^()]*\))?\s*)*\(/;
+// 정규식은 반복 그룹 안팎에서 공백 수량자가 겹치지 않게 쓴다(js/redos) — 각 반복은 '.' 로 시작한다.
+const PROJECTION_CONDITION = /\b(?:inProjection|repoPresent|srcPresent)\s*\(|InProjection\b|\bPROJECTED_SOURCE\b/;
+const REGISTRATION_CALL = /^\s*(?:\{\s*)?(?:test|it|describe|suite|specify)(?:\s*\.\s*(?:describe|each|concurrent|sequential)(?:\s*\([^()]*\))?)*\s*\(/;
 
 function conditionalRegistrations(code, source) {
   const constructs = [];
