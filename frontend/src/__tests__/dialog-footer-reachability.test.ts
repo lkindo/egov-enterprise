@@ -24,6 +24,7 @@
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { keepInProjection } from '@/test-utils/projection';
 
 const SRC = join(__dirname, '..');
 
@@ -35,10 +36,11 @@ const SRC = join(__dirname, '..');
  *  - `cop/sms/selectSmsList`: `next.config.ts` 리다이렉트로 **도달 불가**한 별칭 화면이다
  *    (DEC-OPS-023 ① — 도달 불가 화면은 이행 대상이 아니다). 도달 가능해지면 함께 고친다.
  */
-const ALLOWED_CLIPPING = [
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const ALLOWED_CLIPPING = keepInProjection([
   'app/components/ui/session-expiry-warning.tsx',
   'app/cop/sms/selectSmsList/SmsHubClient.tsx',
-];
+], file => join(SRC, file));
 
 const HEIGHT_BOUND = /max-h-\[[^\]]+\]|max-h-screen|max-h-full/;
 const SCROLLS = /overflow-y-auto|overflow-auto|overflow-y-scroll/;

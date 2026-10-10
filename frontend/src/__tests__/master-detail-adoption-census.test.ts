@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inProjection, keepInProjection, readInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -9,14 +10,16 @@ const URL_CENSUS_PATH = join(FRONTEND_DIR, '..', 'config', 'ui-url-state-census.
 const A2_IMPORT = /from\s+['"]@\/app\/components\/patterns\/master-detail-page['"]/;
 const FORBIDDEN_SELECTION_IDS = new Set(['menuId', 'menuNo', 'ognzId', 'deptId', 'emlDsptchSn']);
 
-const EXPECTED_IMPORTERS = [
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const inFrontend = (file: string) => join(FRONTEND_DIR, file);
+const EXPECTED_IMPORTERS = keepInProjection([
   'src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx',
   'src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx',
   'src/app/admin/system/common-code/CommonCodeClient.tsx',
   'src/app/admin/system/menus/MenuAdminClient.tsx',
   'src/app/admin/user/UserOrgHubClient.tsx',
   'src/app/approvals/ApprovalHubClient.tsx',
-];
+], inFrontend);
 
 function screenFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -88,7 +91,7 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toContain("data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}");
   });
 
-  it('/admin/collaboration/mail-history가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
+  if (inProjection(inFrontend('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx'))) it('/admin/collaboration/mail-history가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
     const route = source('src/app/admin/collaboration/mail-history/page.tsx');
     const client = source('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx');
 
@@ -99,7 +102,8 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toContain('aria-label="메일 검색"');
   });
 
-  it('/approvals가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
+  const approvalsInProjection = inProjection(inFrontend('src/app/approvals/ApprovalHubClient.tsx'));
+  if (approvalsInProjection) it('/approvals가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
     const client = source('src/app/approvals/ApprovalHubClient.tsx');
 
     expect(client).toMatch(/<MasterDetailPage\b/);
@@ -129,7 +133,7 @@ describe('A2 master-detail adoption census', () => {
     expect(client).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
   });
 
-  it('결재함 탭은 실제 질의 축을 이름으로 말하고 죽은 보관함 컨트롤을 두지 않는다', () => {
+  if (approvalsInProjection) it('결재함 탭은 실제 질의 축을 이름으로 말하고 죽은 보관함 컨트롤을 두지 않는다', () => {
     const client = source('src/app/approvals/ApprovalHubClient.tsx');
     const queries = source('src/queries/approval-query-options.ts');
 
@@ -292,7 +296,7 @@ describe('A2 master-detail adoption census', () => {
     const consumers = [
       ...menuModules,
       source('src/app/admin/user/UserOrgHubClient.tsx'),
-      source('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx'),
+      readInProjection(inFrontend('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx')) ?? '',
       // 조직 권한 일괄 관리도 선택 식별자(ognzId)를 가진 A2 소비자다 — 같은 금지 계약을 받는다.
       source('src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx'),
     ].join('\n');

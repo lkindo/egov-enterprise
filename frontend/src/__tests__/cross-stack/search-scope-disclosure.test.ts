@@ -20,12 +20,11 @@
  * 하는 양성 사례**로 함께 넣는다 — 금지만 하는 계약은 옳은 코드도 막는다.
  */
 
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { missingOutsideLedger, readInProjection } from '@/test-utils/projection';
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
 const stripComments = (source: string) => source
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
   .replace(/\/\/.*$/gm, ' ');
@@ -95,21 +94,35 @@ const HONEST_TWO_FIELD_AXIS = {
   expectedLabel: '행사 명칭 · 상세 내용',
 };
 
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const axisFiles = (axis: { screen: string; backend: string }) => [path.join(ROOT, axis.screen), path.join(ROOT, axis.backend)];
+// 화면과 서버 파일은 서로 다른 기능과 함께 빠질 수 있다(예: 협업 허브는 쪽지·스크랩 공용) — 각 파일의 단언만 뺀다.
+const readInProjectionAt = (relative: string) => readInProjection(path.join(ROOT, relative));
+
 describe('조회 조건 라벨 ↔ 서버 검색 술어 결속', () => {
+  it('결속한 화면·서버 파일은 남아 있거나 투영으로 빠졌다', () => {
+    expect(missingOutsideLedger([...AXES, HONEST_TWO_FIELD_AXIS].flatMap(axisFiles))).toEqual([]);
+  });
+
   it.each(AXES)('$screen 이 서버가 보지 않는 축을 약속하지 않는다', (axis) => {
-    const backend = stripComments(read(axis.backend));
+    const backendSource = readInProjectionAt(axis.backend);
 
     // 서버 술어가 실제로 그 필드만 보는지 먼저 확인한다 — 이 단언이 계약의 입력이다.
-    for (const field of axis.serverFields) {
-      expect(backend, `${axis.backend} 에서 ${field} 검색 술어를 찾지 못했다 — 계약이 vacuous 하다`)
-        .toContain(field);
+    if (backendSource !== undefined) {
+      const backend = stripComments(backendSource);
+      for (const field of axis.serverFields) {
+        expect(backend, `${axis.backend} 에서 ${field} 검색 술어를 찾지 못했다 — 계약이 vacuous 하다`)
+          .toContain(field);
+      }
     }
+    const screenSource = readInProjectionAt(axis.screen);
+    if (screenSource === undefined) return;
 
     /*
       검사 범위는 **조회 조건 문구만**이다. 표 컬럼이 발신자를 보여 주는 것은 정직하며
       금지 대상이 아니다 — 거짓은 "그 축으로 검색된다" 는 약속에서만 생긴다.
     */
-    const searchCopy = searchLabels(read(axis.screen));
+    const searchCopy = searchLabels(screenSource);
     expect(searchCopy.length, `${axis.screen} 에서 조회 조건 문구를 찾지 못했다 — 계약이 vacuous 하다`)
       .toBeGreaterThan(0);
     const screen = searchCopy.join(' | ');
@@ -126,11 +139,16 @@ describe('조회 조건 라벨 ↔ 서버 검색 술어 결속', () => {
   });
 
   it('서버가 두 필드를 보는 화면은 두 필드를 약속해도 된다 — 금지만 하는 계약이 되지 않게', () => {
-    const backend = stripComments(read(HONEST_TWO_FIELD_AXIS.backend));
-    for (const field of HONEST_TWO_FIELD_AXIS.serverFields) {
-      expect(backend).toContain(field);
+    const backendSource = readInProjectionAt(HONEST_TWO_FIELD_AXIS.backend);
+    if (backendSource !== undefined) {
+      const backend = stripComments(backendSource);
+      for (const field of HONEST_TWO_FIELD_AXIS.serverFields) {
+        expect(backend).toContain(field);
+      }
     }
-    expect(stripComments(read(HONEST_TWO_FIELD_AXIS.screen)))
-      .toContain(HONEST_TWO_FIELD_AXIS.expectedLabel);
+    const screenSource = readInProjectionAt(HONEST_TWO_FIELD_AXIS.screen);
+    if (screenSource !== undefined) {
+      expect(stripComments(screenSource)).toContain(HONEST_TWO_FIELD_AXIS.expectedLabel);
+    }
   });
 });

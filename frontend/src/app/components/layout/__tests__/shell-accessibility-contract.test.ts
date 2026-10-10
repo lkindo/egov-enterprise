@@ -1,10 +1,16 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { keepInProjection, readInProjection } from '@/test-utils/projection';
 
 const SRC_DIR = join(process.cwd(), 'src');
 const APP_DIR = join(SRC_DIR, 'app');
 const readAppSource = (...parts: string[]) => readFileSync(join(APP_DIR, ...parts), 'utf8');
+// 선택하지 않은 기능의 화면은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+const present = <T,>(items: readonly T[], partsOf: (item: T) => string[]) =>
+  keepInProjection(items, item => join(APP_DIR, ...partsOf(item)));
+const presentParts = (list: string[][]) => present(list, parts => parts);
+const readAppSourceInProjection = (...parts: string[]) => readInProjection(join(APP_DIR, ...parts));
 /** 생산 소스(.ts·.tsx, 테스트 제외) 전수 — 표현 변형의 소비처를 센다. */
 function listSourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -226,7 +232,7 @@ describe('app shell accessibility source contract', () => {
     const shell = readAppSource('components', 'patterns', 'master-detail-page.tsx');
     const menus = readAppSource('admin', 'system', 'menus', 'MenuAdminClient.tsx');
     const userOrg = readAppSource('admin', 'user', 'UserOrgHubClient.tsx');
-    const mailHistory = readAppSource(
+    const mailHistory = readAppSourceInProjection(
       'admin', 'collaboration', 'mail-history', 'MailHistoryHubClient.tsx',
     );
 
@@ -238,7 +244,9 @@ describe('app shell accessibility source contract', () => {
     expect(shell).toMatch(/<PageHeading[^>]*>\{title\}<\/PageHeading>/);
     expect(menus, '메뉴 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
     expect(userOrg, '부서 화면은 h1을 PageHeader에 위임해야 합니다').not.toMatch(/<h1\b/);
-    expect(mailHistory, '메일 이력 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
+    if (mailHistory !== undefined) {
+      expect(mailHistory, '메일 이력 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
+    }
   });
 
   it('A1 이행 화면은 제목을 셸에 위임한다(자체 h1 을 다시 만들지 않는다)', () => {
@@ -258,16 +266,16 @@ describe('app shell accessibility source contract', () => {
     ];
 
     // A7(현황) 셸로 이행한 화면은 제목을 ReportPage 에 위임한다 — 자체 h1 을 다시 만들지 않는다.
-    for (const pathParts of [
+    for (const pathParts of presentParts([
       ['admin', 'stats', 'AdminStatsClient.tsx'],
       ['admin', 'survey', 'stats', 'SurveyStatsClient.tsx'],
-    ]) {
+    ])) {
       const source = readAppSource(...pathParts);
       expect(source, `${pathParts.join('/')}: A7 셸을 경유하지 않습니다`).toMatch(/<ReportPage[\s>]/);
       expect(source, `${pathParts.join('/')}: 셸 밖에서 h1 을 다시 만듭니다`).not.toMatch(/<h1[\s>]/);
     }
 
-    for (const pathParts of delegatedHeadingSources) {
+    for (const pathParts of presentParts(delegatedHeadingSources)) {
       const source = readAppSource(...pathParts);
       expect(source, `${pathParts.join('/')}: 셸을 경유하지 않습니다`).toMatch(/<WorkListPage\b/);
       expect(source, `${pathParts.join('/')}: 셸 밖에서 h1 을 다시 만듭니다`).not.toMatch(/<h1\b/);
@@ -289,16 +297,16 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'community', 'boards', 'maker', 'components', 'BoardMakerWizard.tsx'],
     ];
 
-    for (const pathParts of routeHeadingSources) {
+    for (const pathParts of presentParts(routeHeadingSources)) {
       const source = readAppSource(...pathParts);
       expect(source, pathParts.join('/')).toMatch(/<(?:[A-Za-z]+\.)?h1\b/);
     }
 
-    const preview = readAppSource('admin', 'community', 'boards', 'maker', 'components', 'BoardPreview.tsx');
-    expect(preview).not.toMatch(/<h1\b/);
+    const preview = readAppSourceInProjection('admin', 'community', 'boards', 'maker', 'components', 'BoardPreview.tsx');
+    if (preview !== undefined) expect(preview).not.toMatch(/<h1\b/);
 
     // 통계 허브에 다른 기능이 넘기는 탭 본문은 셸이 소유한 제목 아래에 그려진다 — 페이지 제목을 다시 만들지 않는다.
-    for (const pathParts of [['admin', 'survey', 'components', 'StatsHubSurveyTab.tsx'], ['admin', 'stats', 'StatsHubParts.tsx']]) {
+    for (const pathParts of presentParts([['admin', 'survey', 'components', 'StatsHubSurveyTab.tsx'], ['admin', 'stats', 'StatsHubParts.tsx']])) {
       expect(readAppSource(...pathParts), pathParts.join('/')).not.toMatch(/<h1\b/);
     }
   });
@@ -320,7 +328,7 @@ describe('app shell accessibility source contract', () => {
         '/admin/collaboration/address-book/select-address-book-list'],
     ];
 
-    for (const [pathParts, target] of redirected) {
+    for (const [pathParts, target] of present(redirected, ([pathParts]) => pathParts)) {
       const source = readAppSource(...pathParts);
       expect(source, `${pathParts.join('/')}: redirect 목적지가 사라졌습니다`)
         .toContain(`redirect('${target}')`);
@@ -328,11 +336,11 @@ describe('app shell accessibility source contract', () => {
         .not.toMatch(/<h1\b/);
     }
 
-    for (const pathParts of [
+    for (const pathParts of presentParts([
       ['admin', 'collaboration', 'scraps', 'ScrapFormDialog.tsx'],
       ['admin', 'survey', 'manage', 'SurveyFormDialog.tsx'],
       ['admin', 'collaboration', 'address-book', 'AddressBookCreateDialog.tsx'],
-    ]) {
+    ])) {
       const source = readAppSource(...pathParts);
       expect(source, `${pathParts.join('/')}: StandardModal 을 경유하지 않습니다`)
         .toMatch(/<StandardModal\b/);
@@ -350,7 +358,7 @@ describe('app shell accessibility source contract', () => {
       ['help', 'policies', '[type]', 'page.tsx'],
     ];
 
-    for (const pathParts of standaloneHubSources) {
+    for (const pathParts of presentParts(standaloneHubSources)) {
       const source = readAppSource(...pathParts);
       expect(source, pathParts.join('/')).toMatch(
         /<HubHeader\b(?:(?!\/>)[\s\S])*?headingLevel\s*=\s*\{1\}/,
@@ -360,42 +368,44 @@ describe('app shell accessibility source contract', () => {
 
   it('loading/error shell도 h1을 보존하고 설문 hub는 내부 페이지 제목을 중첩하지 않는다', () => {
     const layout = readAppSource('layout.tsx');
-    const boardDetailPage = readAppSource('admin', 'community', 'boards', 'detail', 'page.tsx');
-    const boardListPage = readAppSource('admin', 'community', 'boards', 'select-board-list', 'page.tsx');
-    const boardListClient = readAppSource('admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx');
+    const boardDetailPage = readAppSourceInProjection('admin', 'community', 'boards', 'detail', 'page.tsx');
+    const boardListPage = readAppSourceInProjection('admin', 'community', 'boards', 'select-board-list', 'page.tsx');
+    const boardListClient = readAppSourceInProjection('admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx');
     const adminLoading = readAppSource('admin', 'loading.tsx');
     const statsFallback = readAppSource('admin', 'stats', 'StatsHubFallback.tsx');
-    const surveyHub = readAppSource('admin', 'survey', 'hub', 'SurveyHubClient.tsx');
+    const surveyHub = readAppSourceInProjection('admin', 'survey', 'hub', 'SurveyHubClient.tsx');
 
     expect(layout).toContain('보안 세션을 확인하는 중');
     expect(layout).toContain('애플리케이션을 준비하는 중');
     expect(layout.match(/<h1\b/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
-    expect(boardDetailPage).toMatch(/BoardDetailSkeleton[\s\S]*?<h1\b/);
-    expect(boardListPage).not.toMatch(/<Suspense\b/);
-    expect(boardListPage).toMatch(/<BoardListClient\b/);
+    if (boardDetailPage !== undefined) expect(boardDetailPage).toMatch(/BoardDetailSkeleton[\s\S]*?<h1\b/);
+    if (boardListPage !== undefined) {
+      expect(boardListPage).not.toMatch(/<Suspense\b/);
+      expect(boardListPage).toMatch(/<BoardListClient\b/);
+    }
     expect(adminLoading).toMatch(/<h1\b[^>]*>관리자 화면을 불러오는 중입니다\.<\/h1>/);
-    expect(boardListClient.match(/<h1\b/g)).toHaveLength(1);
+    if (boardListClient !== undefined) expect(boardListClient.match(/<h1\b/g)).toHaveLength(1);
     expect(statsFallback).toMatch(/<h1\b/);
-    expect(surveyHub).toContain('<SurveyManageClient embedded />');
+    if (surveyHub !== undefined) expect(surveyHub).toContain('<SurveyManageClient embedded />');
     // [2026-09-08 PD-SRVY-001] 응답자 탭을 걷었다 — tb_srvy_rspdnt 는 개인정보를 담는데 응답
     //   결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 항상 빈 목록이었다. 나머지 임베드
     //   화면(manage·stats)의 h1 중첩 금지 계약은 그대로다.
-    expect(surveyHub).toContain('<SurveyStatsClient embedded />');
+    if (surveyHub !== undefined) expect(surveyHub).toContain('<SurveyStatsClient embedded />');
   });
 
   it('동적 import의 독립 로딩 화면도 최종 화면과 교대하는 h1을 제공한다', () => {
     const dashboardPage = readAppSource('page.tsx');
-    const addressBookPage = readAppSource(
+    const addressBookPage = readAppSourceInProjection(
       'admin', 'collaboration', 'address-book', 'select-address-book-list', 'page.tsx',
     );
-    const boardMasterPage = readAppSource('admin', 'community', 'boards', 'master', 'page.tsx');
-    const boardMakerPage = readAppSource('admin', 'community', 'boards', 'maker', 'page.tsx');
+    const boardMasterPage = readAppSourceInProjection('admin', 'community', 'boards', 'master', 'page.tsx');
+    const boardMakerPage = readAppSourceInProjection('admin', 'community', 'boards', 'maker', 'page.tsx');
 
     expect(dashboardPage).toMatch(/DashboardLoading[\s\S]*?<h1\b/);
     expect(dashboardPage.match(/<DashboardLoading\s*\/>/g)).toHaveLength(2);
-    expect(addressBookPage).toMatch(/AddressBookListSkeleton[\s\S]*?<h1\b/);
-    expect(boardMasterPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
-    expect(boardMakerPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
+    if (addressBookPage !== undefined) expect(addressBookPage).toMatch(/AddressBookListSkeleton[\s\S]*?<h1\b/);
+    if (boardMasterPage !== undefined) expect(boardMasterPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
+    if (boardMakerPage !== undefined) expect(boardMakerPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
   });
 
   it('client 내부 early-return 로딩·오류 상태도 최종 제목과 교대하는 h1을 보존한다', () => {
@@ -403,22 +413,26 @@ describe('app shell accessibility source contract', () => {
     const dashboardLoadingStart = dashboardClient.indexOf('if (loading || !user)');
     const dashboardLoadingEnd = dashboardClient.indexOf('\n  return (', dashboardLoadingStart);
 
-    const pollParticipate = readAppSource(
+    expect(dashboardClient.slice(dashboardLoadingStart, dashboardLoadingEnd)).toMatch(/<h1\b/);
+
+    const pollParticipate = readAppSourceInProjection(
       'admin', 'survey', 'polls', 'participate', 'OnlinePollParticipateClient.tsx',
     );
-    const pollLoadingStart = pollParticipate.indexOf("if (loading && viewMode === 'list')");
-    const pollBranchReturnStart = pollParticipate.indexOf('\n return (', pollLoadingStart);
-    const pollLoadingEnd = pollParticipate.indexOf('\n return (', pollBranchReturnStart + 1);
+    if (pollParticipate !== undefined) {
+      const pollLoadingStart = pollParticipate.indexOf("if (loading && viewMode === 'list')");
+      const pollBranchReturnStart = pollParticipate.indexOf('\n return (', pollLoadingStart);
+      const pollLoadingEnd = pollParticipate.indexOf('\n return (', pollBranchReturnStart + 1);
+      expect(pollParticipate.slice(pollLoadingStart, pollLoadingEnd)).toMatch(/<h1\b/);
+    }
 
-    const responseDetail = readAppSource('survey', 'response', '[id]', 'SurveyResponseDetailClient.tsx');
-    const responseLoadingStart = responseDetail.indexOf('if (isLoading)');
-    const responseErrorStart = responseDetail.indexOf('if (isError)', responseLoadingStart);
-    const responseFinalStart = responseDetail.indexOf('\n    return (', responseErrorStart);
-
-    expect(dashboardClient.slice(dashboardLoadingStart, dashboardLoadingEnd)).toMatch(/<h1\b/);
-    expect(pollParticipate.slice(pollLoadingStart, pollLoadingEnd)).toMatch(/<h1\b/);
-    expect(responseDetail.slice(responseLoadingStart, responseErrorStart)).toMatch(/<h1\b/);
-    expect(responseDetail.slice(responseErrorStart, responseFinalStart)).toMatch(/<h1\b/);
+    const responseDetail = readAppSourceInProjection('survey', 'response', '[id]', 'SurveyResponseDetailClient.tsx');
+    if (responseDetail !== undefined) {
+      const responseLoadingStart = responseDetail.indexOf('if (isLoading)');
+      const responseErrorStart = responseDetail.indexOf('if (isError)', responseLoadingStart);
+      const responseFinalStart = responseDetail.indexOf('\n    return (', responseErrorStart);
+      expect(responseDetail.slice(responseLoadingStart, responseErrorStart)).toMatch(/<h1\b/);
+      expect(responseDetail.slice(responseErrorStart, responseFinalStart)).toMatch(/<h1\b/);
+    }
   });
 
   it('공통 segment loading/error 경계는 지속 상태에서도 페이지 제목을 제공한다', () => {
@@ -467,7 +481,7 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'uss', 'olh', 'online-manual', 'page.tsx'],
     ];
 
-    for (const pathParts of routeFallbackSources) {
+    for (const pathParts of presentParts(routeFallbackSources)) {
       expect(readAppSource(...pathParts), pathParts.join('/')).toMatch(/<h1\b/);
     }
 
@@ -501,7 +515,7 @@ describe('app shell accessibility source contract', () => {
       ['survey', 'stats', 'SurveyStatsClient.tsx'],
     ];
 
-    for (const pathParts of localFallbackSources) {
+    for (const pathParts of presentParts(localFallbackSources)) {
       expect(readAppSource(...pathParts), pathParts.join('/')).toMatch(
         /<Suspense\s+fallback\s*=\s*\{[\s\S]*?<h1\b/,
       );

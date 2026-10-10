@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { inProjection } from '@/test-utils/projection';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -74,7 +75,8 @@ describe('r6 accessibility regressions', () => {
     expect(userHub).toMatch(/role="status"[\s\S]{0,400}text-muted-foreground(?![/\w-])/);
   });
 
-  it('keeps FAQ labels on full-strength semantic foreground tokens', () => {
+  // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+  if (inProjection(join(SRC, 'app/help/HelpClient.tsx'))) it('keeps FAQ labels on full-strength semantic foreground tokens', () => {
     const help = source('app/help/HelpClient.tsx');
 
     expect(help).toContain('text-primary text-3xl');

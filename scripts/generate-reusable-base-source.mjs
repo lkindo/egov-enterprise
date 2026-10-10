@@ -21,7 +21,8 @@ import { SOURCE_EXTENSIONS, projectFrontendPackMarkers, pruneFrontend, stripExcl
 import { adaptGeneratedHarness, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas, pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, normalize, walk } from './reusable-source-tree.mjs';
+import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -238,7 +239,8 @@ function main() {
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
-  copySourceTree(output);
+  const copiedFiles = trackedAndUntrackedFiles().filter((rel) => isCopyableSourceFile(rel, ROOT));
+  copySourceTree(output, { files: copiedFiles });
   const { java, frontend } = projectSourceTree(output, { manifest, profile, composition });
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
@@ -266,6 +268,10 @@ function main() {
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
   writeHarnessBaseline(output, manifest);
+  // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
+  //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
+  //   단일모듈 배치는 build.gradle·settings.gradle 만 바꾸고 소스를 옮기지 않으므로 원장 경로는 그대로 유효하다.
+  const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copiedFiles));
 
   const lock = {
     schemaVersion: 1,
@@ -282,6 +288,7 @@ function main() {
     frontend,
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
+    projectionLedger,
     zdmWaivers,
     governance: {
       path: 'config/governance/reusable-governance-projection.json',

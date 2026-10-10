@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { logErrorSafely, summarizeError } from '../safe-error-log';
+import { keepInProjection } from '@/test-utils/projection';
 
 /**
  * 검색어가 서버 로그로 새는 경로를 막는다.
@@ -74,7 +75,8 @@ describe('summarizeError — 요청 파라미터를 담지 않는다', () => {
 describe('검색어를 나르는 호출부는 안전 로깅을 쓴다', () => {
   const ROOT = resolve(__dirname, '..', '..');
   const RAW_CONSOLE_CALL = /console\.(?:error|warn|info|log|debug)\s*\(/u;
-  const SITES = [
+  // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+  const SITES = keepInProjection([
     'app/admin/community/boards/select-board-list/BoardListServer.ts',
     'app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
     'app/admin/collaboration/address-book/select-address-book-list/AddressBookListServer.ts',
@@ -82,7 +84,7 @@ describe('검색어를 나르는 호출부는 안전 로깅을 쓴다', () => {
     'app/admin/system/codes/administ/page.tsx',
     'app/components/ui/user-picker.tsx',
     'app/components/ui/code-picker.tsx',
-  ];
+  ], relative => resolve(ROOT, relative));
 
   it.each(SITES)('%s 가 오류 객체를 통째로 console 에 넘기지 않는다', (relative) => {
     const source = readFileSync(resolve(ROOT, relative), 'utf8')

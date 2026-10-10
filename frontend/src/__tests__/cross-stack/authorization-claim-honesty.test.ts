@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { canPermission } from '@/lib/auth/permissions';
+import { inProjection, keepInProjection } from '@/test-utils/projection';
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
@@ -82,15 +83,21 @@ export function findUnenforcedDenial(source: string): string[] {
   return hits;
 }
 
-const BOARD_READ_SCREENS = [
+// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+// 게시판을 고르지 않은 생성물에서는 게시판 컨트롤러·서비스가 빠진다. 게시판과 무관한 인가 기반 단언은 그대로 보고,
+//   게시판을 읽는 화면(지식 허브·커뮤니티 게시판·게시글 상세 — 서로 다른 기능과 함께 빠진다)은 파일마다 거른다.
+const boardInProjection = inProjection([path.join(ROOT, BOARD_CONTROLLER), path.join(ROOT, BOARD_SERVICE)]);
+const BOARD_READ_SCREENS_ALL = [
   'frontend/src/app/admin/help/KnowledgeHubClient.tsx',
   'frontend/src/app/admin/community/board/CommunityBoardClient.tsx',
   'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
 ];
 
+const BOARD_READ_SCREENS = keepInProjection(BOARD_READ_SCREENS_ALL, screen => path.join(ROOT, screen));
+
 describe('현재 집행되는 인가와 화면 안내의 정합', () => {
   it('게시판 읽기·쓰기 전체는 exact HTTP binding과 같은 PermissionPolicy handler를 사용한다', () => {
-    assertBoardContract(read(BOARD_CONTROLLER), bindings());
+    if (boardInProjection) assertBoardContract(read(BOARD_CONTROLLER), bindings());
     const config = read('api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java');
     expect(config).toContain('auth.anyRequest().access(new nuri.business.security.authorization.OperationAuthorizationManager(');
     const manager = read('business-core/src/main/java/nuri/business/security/authorization/OperationAuthorizationManager.java');
@@ -111,13 +118,15 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
   });
 
   it('비밀글·커뮤니티·소유자 축과 SYSTEM 개인정보 배제는 기능 권한과 별도로 유지한다', () => {
-    const service = read(BOARD_SERVICE);
-    const detail = methodBody(service, 'getPostDetail');
-    expect(detail).toContain('assertCommunityAccess(bbsId)');
-    expect(detail).toContain('if ("Y".equalsIgnoreCase(detail.getScrtYn()))');
-    expect(detail).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL")');
-    expect(methodBody(service, 'findOwnedPost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL")');
-    expect(methodBody(service, 'deletePost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL")');
+    if (boardInProjection) {
+      const service = read(BOARD_SERVICE);
+      const detail = methodBody(service, 'getPostDetail');
+      expect(detail).toContain('assertCommunityAccess(bbsId)');
+      expect(detail).toContain('if ("Y".equalsIgnoreCase(detail.getScrtYn()))');
+      expect(detail).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL")');
+      expect(methodBody(service, 'findOwnedPost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL")');
+      expect(methodBody(service, 'deletePost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_DELETE_ALL")');
+    }
     const privacy = bindings().filter(row => row.handler.includes('PrivacyLogApiController#'));
     expect(privacy.map(row => row.permission).sort()).toEqual(['PRIVACY_EXPORT', 'PRIVACY_READ']);
     expect(privacy.every(row => row.access === 'PERMISSION' && row.excludedGroups?.join() === 'ROLE_SYSTEM')).toBe(true);
@@ -130,7 +139,7 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
     for (const screen of BOARD_READ_SCREENS) expect(findUnenforcedDenial(read(screen)), screen).toEqual([]);
   });
 
-  it('누락된 handler 가드·잘못된 permission·공개 완화는 red다', () => {
+  if (boardInProjection) it('누락된 handler 가드·잘못된 permission·공개 완화는 red다', () => {
     const controller = read(BOARD_CONTROLLER);
     const rows = bindings();
     expect(() => assertBoardContract(controller, rows)).not.toThrow();

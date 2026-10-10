@@ -133,9 +133,13 @@ test('producer generates all stages into a fresh artifact and only removes its o
       }
       return '';
     };
-    await verifyReusableBase({ root, profile, layout, run, verify: ({ root: artifact }) => {
-      assert.equal(artifact, output); return { profile, layout, scope: 'full', result: 'passed' };
-    } });
+    let ledgerChecked;
+    await verifyReusableBase({ root, profile, layout, run, checkLedger: (source, artifact) => { ledgerChecked = [source, artifact]; },
+      verify: ({ root: artifact }) => {
+        assert.equal(artifact, output); return { profile, layout, scope: 'full', result: 'passed' };
+      } });
+    // 원장 대조는 생성 직후 원본과 생성물을 함께 본다(Phase 2 D6).
+    assert.deepEqual(ledgerChecked, [root, output]);
     const dbArgs = calls.find(([cmd, args]) => cmd === 'node' && args[0].endsWith('db.mjs'))[1];
     // 구성 해시에 출력 레이아웃이 들어가므로 DB 번들도 같은 레이아웃으로 만든다(DEC-OPS-239).
     assert.equal(dbArgs[dbArgs.indexOf('--layout') + 1], layout, 'the database bundle is generated for the same layout');
@@ -171,6 +175,7 @@ test('producer rejects mismatched layout locks before installation or verificati
       return '';
     };
     await assert.rejects(verifyReusableBase({ root, profile: 'core', layout: 'single-module', run,
+      checkLedger: () => assert.fail('mismatched output must not reach the ledger check'),
       verify: () => assert.fail('mismatched output must not reach verification') }), /layout/);
     assert.ok(!calls.some(([command]) => ['npm', 'pnpm'].includes(command)));
     assert.deepEqual(calls.at(-1), ['docker', ['rm', '--force', 'c'.repeat(64)]]);

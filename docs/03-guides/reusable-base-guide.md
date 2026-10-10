@@ -438,7 +438,13 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 
 백엔드 9건은 [DEC-OPS-257](../../.agent/memory/decisions.md)로 닫았다. 기능 단언은 기능 타입을 참조하는 클래스로 옮겨 기능과 함께 빠지게 하고,
 생성기가 지운 ErrorCode 가 소유한 메시지 키를 번들에서 걷고 메시지 번들 계약의 하한을 지운 코드·참조 수만큼 내린다(lock `java.prunedMessageKeys`·`java.messageContractFloors`). 원본 하한은 그대로라 여유 폭이 원본과 같다. 런타임 문서를 세는 자격증명 검사의 하한은 core 아래로 둔다.
-프런트는 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+프런트 계약은 생성기가 남기는 투영 원장(`reusable-projection-ledger.json`, lock `projectionLedger`)으로 투영이 지운 기능 파일을 거른다([DEC-OPS-258](../../.agent/memory/decisions.md)).
+시험은 `@/test-utils/projection` 의 `inProjection`·`keepInProjection`·`readInProjection` 을 쓰고, 원장에 있고 실제로 없는 파일만 뺀다.
+원장에 없는 부재는 그대로 ENOENT 로 붉고, 원장에 있는데 파일이 있으면 실패한다. skip 대신 그 시험을 등록하지 않으며, 대상 전체가 빠질 수 있는
+파일은 `missingOutsideLedger` 로 "남아 있거나 투영으로 빠졌다" 를 확인하는 시험 하나를 늘 둔다. 여러 기능의 파일을 읽는 시험은 시험 전체가 아니라
+파일마다 단언을 거른다. 원본에는 원장이 없으므로 원본의 계약은 그대로다. 생성기는 파일을 지우는 마지막 단계 뒤에 원장을 쓰고 `base:verify` 가
+생성 직후 원본과 대조하며, skip 금지 게이트는 원장 판정이 아닌 조건부 등록(`if (…) it(…)`)을 skip 과 같이 막는다.
+남은 프런트 실패는 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
 `./gradlew test --continue` 와 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다.

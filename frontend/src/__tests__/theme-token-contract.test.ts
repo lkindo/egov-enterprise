@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { keepInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const THEMES_DIR = join(FRONTEND_DIR, 'src', 'styles', 'themes');
@@ -225,10 +226,11 @@ describe('브랜드 프로필 토큰 계약', () => {
       // --page-max-w 는 루트 레이아웃 한 곳이 소비한다(layout.tsx). 화면이 자체
       // max-w-[NNNNpx] mx-auto 캡을 다시 두면 compact 의 전폭(--page-max-w: 100%)이
       // 그 화면에서만 조용히 무효화된다. 위임을 마친 화면을 여기 등록해 재도입을 차단한다.
-      const WIDTH_DELEGATED_FILES = [
+      // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
+      const WIDTH_DELEGATED_FILES = keepInProjection([
         join(FRONTEND_DIR, 'src', 'app', 'approvals', 'ApprovalHubClient.tsx'),
         join(FRONTEND_DIR, 'src', 'app', 'approvals', 'draft', 'ApprovalDraftHubClient.tsx'),
-      ];
+      ], file => file);
       for (const file of WIDTH_DELEGATED_FILES) {
         expect(existsSync(file), `전폭 위임 등록 파일이 없습니다: ${file}`).toBe(true);
         const source = readFileSync(file, 'utf8')
