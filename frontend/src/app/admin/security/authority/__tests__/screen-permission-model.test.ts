@@ -23,6 +23,7 @@ import {
   visibleScreenRows,
 } from '../components/screen-permission-model';
 import { planEntryFixes } from '../components/operation-permission-matrix-model';
+import { pageInProjection } from '@/test-utils/projection';
 import { menusMissingEntryPermission } from '@/lib/auth/navigation-permission-tree';
 import { FIXTURE_SCREENS } from './screen-registry-fixture';
 
@@ -104,12 +105,16 @@ describe('화면별 권한 표 모델', () => {
   it('화면 진입은 라우트 게이트와 같은 원장을 읽는다 — ANY·ALL·로그인만·미등록·목록 밖', () => {
     const codes = new Set(operationCodes);
     expect(screenEntryOf('/admin/security/authority', codes)).toEqual({ state: 'gated', codes: ['AUTHRT_READ', 'AUTHRT_AUDIT'], mode: 'ANY' });
-    expect(screenEntryOf('/admin/survey/polls', codes)).toEqual({ state: 'gated', codes: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' });
-    expect(screenEntryOf('/note', codes).state).toBe('open');
+    // 기능 예시(모두 충족 판정·별칭·타인 자료 권한)는 그 화면이 투영으로 빠진 생성물에서 뺀다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+    if (pageInProjection('/admin/survey/polls')) {
+      expect(screenEntryOf('/admin/survey/polls', codes)).toEqual({ state: 'gated', codes: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' });
+    }
+    // 로그인만 하면 열리는 예시는 모든 생성물에 남는 통합 검색이다.
+    expect(screenEntryOf('/search', codes).state).toBe('open');
     expect(screenEntryOf('/admin/unregistered-only-in-test/page', codes).state).toBe('unregistered');
     expect(screenEntryOf('/legacy/menu.do', codes).state).toBe('unlisted');
     // ALL 의 일부가 기능 목록에 없으면 일부만 켤 수 있는 것처럼 보이게 하지 않는다.
-    expect(screenEntryOf('/admin/survey/polls', new Set(['POLL_READ'])).state).toBe('unknown');
+    if (pageInProjection('/admin/survey/polls')) expect(screenEntryOf('/admin/survey/polls', new Set(['POLL_READ'])).state).toBe('unknown');
     expect(screenEntryOf('/admin/system/menus', new Set(['USER_READ'])).state).toBe('unknown');
   });
 
@@ -156,8 +161,10 @@ describe('화면별 권한 표 모델', () => {
 
   it('진입 충족은 ANY 는 하나, ALL 은 모두다', () => {
     expect(entrySatisfied(row('AUTHORITY').entry!, new Set([key('AUTHRT_AUDIT')]))).toBe(true);
-    expect(entrySatisfied(row('POLLS').entry!, new Set([key('POLL_READ')]))).toBe(false);
-    expect(entrySatisfied(row('POLLS').entry!, new Set([key('POLL_READ'), key('POLL_READ_ALL')]))).toBe(true);
+    if (pageInProjection('/admin/survey/polls')) {
+      expect(entrySatisfied(row('POLLS').entry!, new Set([key('POLL_READ')]))).toBe(false);
+      expect(entrySatisfied(row('POLLS').entry!, new Set([key('POLL_READ'), key('POLL_READ_ALL')]))).toBe(true);
+    }
     expect(preferredEntryCode(['AUTHRT_AUDIT', 'AUTHRT_READ'])).toBe('AUTHRT_READ');
     expect(preferredEntryCode(['AUTHRT_GRANT'])).toBeNull();
   });
@@ -185,7 +192,7 @@ describe('화면별 권한 표 모델', () => {
    * 모두 추가'와 카탈로그 A5·DEC-OPS-209 ③의 묶음 칸 규칙(보호·…_ALL 은 일괄 선택에서 뺀다)과 어긋났다. 이제 그런 화면은 묶음 칸이
    * 다루지 않고(manual) 화면 줄에서 직접 고른다 — 권한을 좁히는 방향이다(DEC-OPS-225 보강).
    */
-  it('묶음의 화면 진입은 들어갈 수 없는 화면에 필요한 만큼만 더한다 — ANY 는 조회 하나, ALL 은 모두, 보호·타인 자료 권한이 필요한 화면은 뺀다', () => {
+  if (pageInProjection('/admin/survey/polls')) it('묶음의 화면 진입은 들어갈 수 없는 화면에 필요한 만큼만 더한다 — ANY 는 조회 하나, ALL 은 모두, 보호·타인 자료 권한이 필요한 화면은 뺀다', () => {
     const built = model();
     const under = rowsUnder(built, built.byKey.get(menuRowKey('AREA'))!);
     const entry = aggregateCell(under, 'entry', new Set([key('MENU_READ')]), true)!;
@@ -206,7 +213,7 @@ describe('화면별 권한 표 모델', () => {
       .toMatchObject({ total: 3, selected: 3, plan: { mode: 'clear' } });
   });
 
-  it('묶음의 화면 진입은 타인 자료 권한 하나로만 열리는 화면을 더하지 않고, 그런 화면만 있으면 다룰 화면이 없다', () => {
+  if (pageInProjection('/admin/system/comments') && pageInProjection('/admin/survey/hub')) it('묶음의 화면 진입은 타인 자료 권한 하나로만 열리는 화면을 더하지 않고, 그런 화면만 있으면 다룰 화면이 없다', () => {
     // 실제 진입 원장: 타인 댓글 관리 ANY[COMMENT_READ_ALL], 설문 허브 ANY[SURVEY_READ_ALL, SURVEY_RSP_READ].
     const navigation2 = [
       { code: 'AREA2', name: '운영', parentCode: null, route: null, useYn: 'Y' as const },
@@ -343,7 +350,7 @@ describe('화면별 권한 표 모델', () => {
    * 권한(auto)이면 모두 모아, 영역 줄 한 번이 '모두 있어야 열림' 투표 관리의 POLL_READ_ALL 과 댓글 관리의 COMMENT_READ_ALL 을 초안에
    * 넣었다. 이제 그런 메뉴는 직접 고를 메뉴(manualMenus)로 센다.
    */
-  it('섹션 단위 진입 권한 추가는 타인 자료·보호 권한이 필요한 메뉴를 빼고 직접 고를 메뉴로 센다', () => {
+  if (pageInProjection('/admin/survey/polls') && pageInProjection('/admin/system/comments')) it('섹션 단위 진입 권한 추가는 타인 자료·보호 권한이 필요한 메뉴를 빼고 직접 고를 메뉴로 센다', () => {
     const allNavigation = [
       { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' as const },
       { code: 'MENUS', name: '메뉴 관리', parentCode: 'AREA', route: '/admin/system/menus', useYn: 'Y' as const },

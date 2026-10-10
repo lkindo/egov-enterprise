@@ -1,7 +1,8 @@
 import { describe, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { frozenInProjection } from '@/test-utils/projection';
 
 /**
  * 🚦 status 색 하드코딩 차단 게이트 — `hardcoded-color-guard.test.ts` 의 사각지대 봉합.
@@ -216,6 +217,43 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-10-07] 137 -> 131. 참조처 0건인 고아 컴포넌트(admin/components/InsightBanner.tsx)를 지우며
 //   리터럴 6건이 함께 사라졌다. 표면 제거이며 새 리터럴은 0건이다.
 const BASELINE = 131;
+// [2026-10-10 Phase 2 D6] 총계를 파일별로도 동결한다 — 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인).
+//   합은 BASELINE 과 같아야 한다(아래 계약). 리터럴을 줄이거나 옮기면 이 표와 BASELINE 을 함께 고친다.
+const BASELINE_BY_FILE: Record<string, number> = {
+  'src/app/admin/AdminDashboardClient.tsx': 7,
+  'src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx': 1,
+  'src/app/admin/collaboration/mail-send/MailSendHubClient.tsx': 2,
+  'src/app/admin/community/templates/TemplateAdminClient.tsx': 3,
+  'src/app/admin/error.tsx': 6,
+  'src/app/admin/observability/components/ServiceTopology.tsx': 4,
+  'src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx': 3,
+  'src/app/admin/stats/IntelligenceHubClient.tsx': 1,
+  'src/app/admin/stats/StatsHubParts.tsx': 2,
+  'src/app/admin/survey/components/StatsHubSurveyTab.tsx': 2,
+  'src/app/admin/survey/hub/SurveyHubClient.tsx': 9,
+  'src/app/admin/survey/manage/SurveyManageClient.tsx': 6,
+  'src/app/admin/survey/polls/manage/page.tsx': 2,
+  'src/app/admin/survey/stats/SurveyStatsClient.tsx': 7,
+  'src/app/admin/system/audit/AuditTimelineClient.tsx': 1,
+  'src/app/admin/system/audit/TimelineItem.tsx': 8,
+  'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 3,
+  'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 3,
+  'src/app/admin/work-hub/WorkHubClient.tsx': 4,
+  'src/app/components/layout/header-notifications.tsx': 1,
+  'src/app/components/ui/confirm-modal.tsx': 6,
+  'src/app/components/ui/standard-form.tsx': 1,
+  'src/app/components/ui/status-displays.tsx': 13,
+  'src/app/components/ui/workflow-canvas.tsx': 4,
+  'src/app/cop/sms/selectSmsList/SmsHubClient.tsx': 3,
+  'src/app/global-error.tsx': 6,
+  'src/app/login/LoginClient.tsx': 1,
+  'src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx': 2,
+  'src/components/business/deptJob/DeptJobForm.tsx': 7,
+  'src/components/business/report/ReportCreateForm.tsx': 4,
+  'src/components/business/schedule/ScheduleCreateForm.tsx': 6,
+  'src/components/features/dashboard/RealTimeDashboard.tsx': 1,
+  'src/components/features/satisfaction/Stars.tsx': 2,
+};
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
@@ -242,26 +280,34 @@ describe('status 색 하드코딩 차단 게이트 (기존 색상 가드의 제�
       );
     }
 
-    let total = 0;
-    const offenders: Array<{ file: string; count: number }> = [];
+    const actual: Record<string, number> = {};
     for (const f of files) {
       const m = readFileSync(f, 'utf8').match(PATTERN);
-      if (m && m.length > 0) {
-        total += m.length;
-        offenders.push({ file: f.replace(SRC, 'src'), count: m.length });
-      }
+      if (m && m.length > 0) actual[relative(join(SRC, '..'), f).split(sep).join('/')] = m.length;
     }
-
-    if (total !== BASELINE) {
-      offenders.sort((a, b) => b.count - a.count);
-      const direction = total > BASELINE
-        ? `신규 ${total - BASELINE}건 증가 — success/warning/destructive 토큰으로 작성하세요`
-        : `${BASELINE - total}건 감소 — 개선분을 확정하려면 BASELINE 을 ${total}로 내릴 것`;
+    // 재사용 생성물에서는 투영으로 빠진 파일 몫만 뺀다(원장 확인). 원본에서는 동결표 그대로다.
+    const frozen = frozenInProjection(BASELINE_BY_FILE, (file) => join(SRC, '..', file));
+    const diff = [...new Set([...Object.keys(actual), ...Object.keys(frozen)])].sort()
+      .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
+      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
+    if (diff.length > 0) {
+      const total = Object.values(actual).reduce((sum, count) => sum + count, 0);
+      const expected = Object.values(frozen).reduce((sum, count) => sum + count, 0);
+      const direction = total > expected
+        ? `신규 ${total - expected}건 증가`
+        : total < expected
+          ? `${expected - total}건 감소 — 개선분을 확정하려면 BASELINE_BY_FILE 과 BASELINE 을 함께 내릴 것`
+          : '파일 사이에서 옮겨졌다 — 동결표를 실측에 맞출 것';
       throw new Error(
-        `🚦 [STATUS COLOR GUARD] status 팔레트 하드코딩 ${total}건 != 베이스라인 ${BASELINE} — ${direction}.\n` +
-        `globals.css 시맨틱 토큰(success/warning/info/destructive)으로 대체하세요(docs/03-guides/design-tokens.md).\n` +
-        `상위 파일:\n` + offenders.slice(0, 10).map(o => `  ${o.count}  ${o.file}`).join('\n'),
+        `🚦 [STATUS COLOR GUARD] status 팔레트 하드코딩 ${total}건 != 동결 ${expected}건 — ${direction}.\n` +
+        `success/warning/destructive 토큰으로 작성하세요 — globals.css 시맨틱 토큰(success/warning/info/destructive)(docs/03-guides/design-tokens.md).\n` +
+        diff.join('\n'),
       );
     }
+  });
+
+  it('파일별 동결의 합은 BASELINE 과 같다', () => {
+    const total = Object.values(BASELINE_BY_FILE).reduce((sum, count) => sum + count, 0);
+    if (total !== BASELINE) throw new Error(`BASELINE_BY_FILE 합 ${total} != BASELINE ${BASELINE} — 둘을 함께 고친다.`);
   });
 });

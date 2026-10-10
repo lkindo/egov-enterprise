@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { projectionRemovedFiles } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -190,7 +191,9 @@ describe('CSP nonce 계약', () => {
   it('public/ 정적 HTML 에 inline 이벤트 핸들러가 없다', () => {
     const publicDir = join(FRONTEND_DIR, 'public');
     const htmlFiles = readdirSync(publicDir).filter((name) => name.endsWith('.html'));
-    expect(htmlFiles.length, 'public/ HTML 스캔이 비면 이 계약은 vacuous 하다').toBeGreaterThan(0);
+    // 재사용 생성물에서는 원본 Atlas 같은 정적 HTML 이 투영으로 빠질 수 있다 — 원장이 확인한 부재는 비어 있는 이유가 된다.
+    const removedHtml = [...projectionRemovedFiles()].filter((file) => /^frontend\/public\/[^/]+\.html$/.test(file));
+    expect(htmlFiles.length + removedHtml.length, 'public/ HTML 스캔이 비면 이 계약은 vacuous 하다').toBeGreaterThan(0);
 
     const offenders = htmlFiles.flatMap((name) => {
       const source = readFileSync(join(publicDir, name), 'utf8');

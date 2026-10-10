@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { SCREEN_ALIASES, SCREEN_REGISTRY, type ScreenRegistryEntry } from '@/types/generated-screen-registry';
 import { canAddScreensToMenus, resolveMenuScreen, screensWithoutMenu } from '../menu-screen-resolution';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(별칭·모두 충족 판정)는 그 화면이 투영으로 빠진 생성물에서 뺀다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+//   앱 설정 리다이렉트는 화면 파일이 없으므로 목적지 화면으로 판정한다(목적지가 빠지면 투영이 그 리다이렉트를 걷는다).
 
 /**
  * 메뉴 → 화면 공용 판정(관리 콘솔 2단계 D3·D4). 화면 관리와 권한 작업대가 같은 판정을 쓴다 — 메뉴가 런타임에 실제로
@@ -22,7 +26,7 @@ function alias(route: string) {
 describe('resolveMenuScreen', () => {
   it('메뉴 경로의 쿼리·해시·끝 슬래시를 떼고 여는 화면을 찾는다', () => {
     expect(resolveMenuScreen('/admin/system/programs')).toStrictEqual({ screen: screen('/admin/system/programs'), viaAlias: null });
-    expect(resolveMenuScreen('/admin/help?tab=FAQ#top')?.screen.route).toBe('/admin/help');
+    expect(resolveMenuScreen('/admin/system/menus?tab=TREE#top')?.screen.route).toBe('/admin/system/menus');
     expect(resolveMenuScreen('/admin/system/programs/')?.screen.route).toBe('/admin/system/programs');
   });
 
@@ -32,13 +36,17 @@ describe('resolveMenuScreen', () => {
   });
 
   it('별칭을 가리키는 메뉴는 그 목적지 화면으로 한 번 따라간다', () => {
-    expect(alias('/admin/collaboration/address-book').target).toBe('/admin/collaboration/address-book/select-address-book-list');
-    expect(resolveMenuScreen('/admin/collaboration/address-book')).toStrictEqual({
-      screen: screen('/admin/collaboration/address-book/select-address-book-list'),
-      viaAlias: '/admin/collaboration/address-book',
-    });
+    if (pageInProjection('/admin/collaboration/address-book/select-address-book-list')) {
+      expect(alias('/admin/collaboration/address-book').target).toBe('/admin/collaboration/address-book/select-address-book-list');
+      expect(resolveMenuScreen('/admin/collaboration/address-book')).toStrictEqual({
+        screen: screen('/admin/collaboration/address-book/select-address-book-list'),
+        viaAlias: '/admin/collaboration/address-book',
+      });
+    }
     // 앱 설정이 넘기는 별칭도 같다(목적지의 쿼리는 화면 판정에 쓰지 않는다).
-    expect(resolveMenuScreen('/admin/survey/manage/')).toStrictEqual({ screen: screen('/admin/survey/hub'), viaAlias: '/admin/survey/manage' });
+    if (pageInProjection('/admin/survey/hub')) {
+      expect(resolveMenuScreen('/admin/survey/manage/')).toStrictEqual({ screen: screen('/admin/survey/hub'), viaAlias: '/admin/survey/manage' });
+    }
   });
 
   /*
@@ -46,7 +54,7 @@ describe('resolveMenuScreen', () => {
    * 같은 세그먼트 수의 동적 별칭 /admin/community/boards/[id](게시글 작성으로 넘김)가 맞아, 이 메뉴가 게시글 작성 화면의
    * 연결 메뉴로 잘못 세진다(2026-10-02 검토 P1). 앱 설정이 실제로 넘기는 게시판 목록으로 센다.
    */
-  it('화면 파일이 없는 앱 설정 리다이렉트는 앱 설정이 넘기는 화면으로 센다', () => {
+  if (pageInProjection('/admin/community/boards/select-board-list')) it('화면 파일이 없는 앱 설정 리다이렉트는 앱 설정이 넘기는 화면으로 센다', () => {
     expect(alias('/admin/community/boards/selectBoardList')).toStrictEqual({
       route: '/admin/community/boards/selectBoardList',
       target: '/admin/community/boards/select-board-list',
@@ -60,16 +68,18 @@ describe('resolveMenuScreen', () => {
   });
 
   it('동적 세그먼트로만 맞은 별칭은 따라가지 않는다 — 넘어가는 곳을 단정할 수 없다', () => {
-    expect(alias('/admin/community/boards/[id]').target).toBe('/admin/community/boards/insert-board-article');
+    if (pageInProjection('/admin/community/boards/[id]')) expect(alias('/admin/community/boards/[id]').target).toBe('/admin/community/boards/insert-board-article');
     expect(resolveMenuScreen('/admin/community/boards/12')).toBeNull();
-    expect(alias('/admin/community/[id]').target).toBe('/cop/cmy/selectCommunityDetail/${id}');
+    if (pageInProjection('/admin/community/[id]')) expect(alias('/admin/community/[id]').target).toBe('/cop/cmy/selectCommunityDetail/${id}');
     expect(resolveMenuScreen('/admin/community/7')).toBeNull();
     expect(resolveMenuScreen('/admin/collaboration/scraps/selectScrapDetail/3')).toBeNull();
     // 동적 세그먼트 없이 정확히 맞는 별칭은 따라간다.
-    expect(resolveMenuScreen('/admin/collaboration/scraps/insertScrap')?.screen.route).toBe('/admin/collaboration/scraps/selectScrapList');
+    if (pageInProjection('/admin/collaboration/scraps/selectScrapList')) {
+      expect(resolveMenuScreen('/admin/collaboration/scraps/insertScrap')?.screen.route).toBe('/admin/collaboration/scraps/selectScrapList');
+    }
   });
 
-  it('별칭은 한 번만 따라간다 — 목적지가 또 별칭이면 판정하지 않는다', () => {
+  if (pageInProjection('/admin/survey/manage/create')) it('별칭은 한 번만 따라간다 — 목적지가 또 별칭이면 판정하지 않는다', () => {
     expect(alias('/admin/survey/manage/create').target).toBe('/admin/survey/manage');
     expect(alias('/admin/survey/manage').kind).toBe('config-redirect');
     expect(resolveMenuScreen('/admin/survey/manage/create')).toBeNull();
@@ -126,8 +136,8 @@ describe('screensWithoutMenu', () => {
   });
 
   it('모집단을 주면 그 화면들 가운데서 판정한다', () => {
-    const population = [screen('/admin/system/programs'), screen('/admin/help'), screen('/smart-toolkit/dept-job/[id]')];
-    expect(screensWithoutMenu([{ route: '/admin/help', useYn: 'Y' }], population).map((entry) => entry.route))
+    const population = [screen('/admin/system/programs'), screen('/admin/system/menus'), screen('/smart-toolkit/dept-job/[id]')];
+    expect(screensWithoutMenu([{ route: '/admin/system/menus', useYn: 'Y' }], population).map((entry) => entry.route))
       .toEqual(['/admin/system/programs']);
   });
 });

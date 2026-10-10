@@ -2,6 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 고정 메뉴의 경로 — 원본에서는 로그인만 요구하는 관리 화면이 게이트를 통과하는지를 함께 본다. 그 화면이 투영으로 빠진
+//   생성물에는 그런 관리 화면이 없으므로 관리 밖 core 경로로 본다(page 파일이 원장에 있고 실제로 없을 때다).
+const WORK_HUB_ROUTE = pageInProjection('/admin/work-hub') ? '/admin/work-hub' : '/smart-toolkit/dept-job';
 
 /**
  * [2026-10-01] 사이드바는 메뉴 조회 실패와 '배정된 메뉴 없음' 을 같은 문구로 말하지 않는다.
@@ -27,7 +32,7 @@ describe('사이드바 메뉴 조회 상태', () => {
 
   it('조회에 실패하면 실패를 말하고 다시 시도하면 메뉴를 다시 읽는다', async () => {
     menu.getHeadMenus.mockRejectedValueOnce(new Error('network')).mockResolvedValue([
-      { menuNo: 1, menuNm: '업무', useYn: 'Y', children: [{ menuNo: 2, menuNm: '업무 홈', useYn: 'Y', modernRoute: '/admin/work-hub' }] },
+      { menuNo: 1, menuNm: '업무', useYn: 'Y', children: [{ menuNo: 2, menuNm: '업무 홈', useYn: 'Y', modernRoute: WORK_HUB_ROUTE }] },
     ]);
     renderSidebar();
 
@@ -47,13 +52,13 @@ describe('사이드바 메뉴 조회 상태', () => {
 
   it('즐겨찾기를 사이드바 위쪽 묶음으로 보이고, 지금 열 수 없는 메뉴의 즐겨찾기는 뺀다 (2026-10-01)', async () => {
     menu.getHeadMenus.mockResolvedValue([
-      { menuNo: 1, menuNm: '업무', useYn: 'Y', children: [{ menuNo: 2, menuNm: '업무 홈', useYn: 'Y', modernRoute: '/admin/work-hub' }] },
+      { menuNo: 1, menuNm: '업무', useYn: 'Y', children: [{ menuNo: 2, menuNm: '업무 홈', useYn: 'Y', modernRoute: WORK_HUB_ROUTE }] },
     ]);
     menu.getMyBookmarks.mockResolvedValue([{ menuNo: 2, menuNm: '업무 홈' }, { menuNo: 99, menuNm: '회수된 메뉴' }]);
     renderSidebar();
 
     const group = await screen.findByRole('group', { name: '즐겨찾기' });
-    expect(within(group).getByRole('link', { name: '업무 홈' })).toHaveAttribute('href', '/admin/work-hub');
+    expect(within(group).getByRole('link', { name: '업무 홈' })).toHaveAttribute('href', WORK_HUB_ROUTE);
     expect(within(group).queryByText('회수된 메뉴')).not.toBeInTheDocument();
   });
 });

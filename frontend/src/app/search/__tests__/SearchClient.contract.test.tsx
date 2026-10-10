@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchResultsContent } from '../SearchClient';
+import { inProjection } from '@/test-utils/projection';
+
+// 게시글 축(협업 팩 마커)의 결과에 기대는 시험은 게시글 검색 서비스가 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
 
 const mocks = vi.hoisted(() => ({
   legacyGet: vi.fn(),
@@ -152,7 +155,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(mocks.legacyGet).not.toHaveBeenCalled();
   });
 
-  it('사용자 검색 실패를 결과 0건으로 위장하지 않는다', async () => {
+  if (inProjection('frontend/src/services/business/user/board/BoardUserService.ts')) it('사용자 검색 실패를 결과 0건으로 위장하지 않는다', async () => {
     mocks.searchAssignableUsers.mockRejectedValue(new Error('private upstream detail'));
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 8, pstTtl: '독립 게시글 결과' },
@@ -189,7 +192,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
    * 이 탭은 오랫동안 '미지원' 이었다 — 전역 검색 엔드포인트가 없어 결과가 항상 빈 배열이었고,
    * 화면은 그 사실을 경고로 정직하게 알렸다. 아래 세 건은 그 상태로 되돌아가는 것을 막는다.
    */
-  it('게시글을 통합 검색 API 에서 가져와 표시한다', async () => {
+  if (inProjection('frontend/src/services/business/user/board/BoardUserService.ts')) it('게시글을 통합 검색 API 에서 가져와 표시한다', async () => {
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 7, pstTtl: '연차 신청 안내', userNm: '홍길동', crtDt: '2026-09-01T10:00:00' },
     ]);
@@ -213,7 +216,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
    * 게시글 검색이 실패해도 임직원·메뉴 결과는 살아야 하지만, 실패를 0건으로 위장해서도
    * 안 된다. 부분 결과와 실패 축을 함께 표시한다.
    */
-  it('게시글 검색 실패를 알리면서 임직원 결과는 유지한다', async () => {
+  if (inProjection('frontend/src/services/business/user/board/BoardUserService.ts')) it('게시글 검색 실패를 알리면서 임직원 결과는 유지한다', async () => {
     mocks.searchPosts.mockRejectedValue(new Error('board search down'));
 
     render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
@@ -225,7 +228,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
   });
 
-  it('메뉴 검색 실패를 알리면서 다른 두 검색 축은 유지한다', async () => {
+  if (inProjection('frontend/src/services/business/user/board/BoardUserService.ts')) it('메뉴 검색 실패를 알리면서 다른 두 검색 축은 유지한다', async () => {
     mocks.getHeadMenus.mockRejectedValue(new Error('menu endpoint down'));
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 9, pstTtl: '메뉴와 무관한 게시글' },
@@ -241,7 +244,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(screen.queryByText('menu endpoint down')).not.toBeInTheDocument();
   });
 
-  it('선택한 검색 범주만 0건이면 다른 범주의 결과 대신 빈 상태를 표시한다', async () => {
+  if (inProjection('frontend/src/services/business/user/board/BoardUserService.ts')) it('선택한 검색 범주만 0건이면 다른 범주의 결과 대신 빈 상태를 표시한다', async () => {
     mocks.searchPosts.mockResolvedValue([
       { bbsId: 'BBS_01', pstSn: 10, pstTtl: '게시글만 존재' },
     ]);

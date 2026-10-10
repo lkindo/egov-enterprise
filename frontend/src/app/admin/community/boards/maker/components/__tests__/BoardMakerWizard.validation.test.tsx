@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { BoardMakerWizard, boardMakerFormSchema } from '../BoardMakerWizard';
+import { inProjection } from '@/test-utils/projection';
 
 const { createBoardMaster, createMenu, getAllMenus, communities } = vi.hoisted(() => ({
   createBoardMaster: vi.fn(),
@@ -219,7 +220,8 @@ describe('BoardMakerWizard validation', () => {
     그래서 이 마법사가 유일한 생산자이며, 여기서 고정하는 것은 둘이다 —
     선택하지 않으면 필드를 **보내지 않고**, 선택하면 숫자로 보낸다.
   */
-  describe('커뮤니티 귀속', () => {
+  // 커뮤니티 귀속은 시연 팩 마커 안이다 — 커뮤니티 서비스가 투영으로 빠진 생성물에서는 이 묶음을 등록하지 않는다(원본에서는 그대로다).
+  if (inProjection('frontend/src/services/business/user/community/CommunityUserService.ts')) describe('커뮤니티 귀속', () => {
     async function fillToLastStep() {
       fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), {
         target: { value: '연구 자료실' },

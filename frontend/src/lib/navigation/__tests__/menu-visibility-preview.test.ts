@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuInfo } from '@/types/foundation/menu';
+import { pageInProjection } from '@/test-utils/projection';
 import { resolveMenuInternalRoute } from '../internal-route';
 import { openableMenus } from '../openable-menus';
 import {
@@ -126,7 +127,8 @@ describe('previewMenuVisibility — 숨는 이유', () => {
     expect(preview.byMenu.get('2')).toMatchObject({ visible: false, reason: 'no-navigation', canEnter: true });
   });
 
-  it('ALL 모드 경로는 모든 권한이 있어야 열린다(라우트 게이트와 같다)', () => {
+  // 예시 화면이 투영으로 빠진 생성물에서는 그 예시만 뺀다 — 라우트의 page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+  if (pageInProjection('/admin/survey/polls')) it('ALL 모드 경로는 모든 권한이 있어야 열린다(라우트 게이트와 같다)', () => {
     const menus = [menu(1, '여론조사', null, '/admin/survey/polls')];
     expect(previewMenuVisibility({ menus, navigation: [1], operations: ['POLL_READ'] }).byMenu.get('1')?.reason).toBe('no-entry-permission');
     expect(previewMenuVisibility({ menus, navigation: [1], operations: ['POLL_READ', 'POLL_READ_ALL'] }).byMenu.get('1')?.visible).toBe(true);

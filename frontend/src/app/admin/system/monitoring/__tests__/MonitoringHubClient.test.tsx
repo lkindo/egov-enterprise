@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
+import { inProjection } from '@/test-utils/projection';
+
+// 댓글 탭(협업 팩 마커)과 하네스 탭(시연 팩 마커)의 시험은 그 블록과 함께 빠지는 같은 팩 파일이 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
 
 const mocks = vi.hoisted(() => ({
   query: '',
@@ -273,7 +276,7 @@ describe('MonitoringHubClient', () => {
       .toHaveTextContent('1건 반출');
   });
 
-  it('does not expose unsupported comment search and confirms permanent deletion', async () => {
+  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it('does not expose unsupported comment search and confirms permanent deletion', async () => {
     renderHub('tab=comments');
 
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
@@ -292,7 +295,7 @@ describe('MonitoringHubClient', () => {
     expect(mocks.toast).toHaveBeenCalledWith('댓글이 성공적으로 삭제되었습니다.', 'success');
   });
 
-  it('댓글 삭제는 confirm 전에 동기 선점하고 시작 버튼에 pending 상태를 알리며 실패 후 재시도할 수 있다', async () => {
+  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it('댓글 삭제는 confirm 전에 동기 선점하고 시작 버튼에 pending 상태를 알리며 실패 후 재시도할 수 있다', async () => {
     let rejectDelete!: (reason?: unknown) => void;
     deleteCommentMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectDelete = reject;
@@ -328,7 +331,7 @@ describe('MonitoringHubClient', () => {
    * 이 허브는 로그 조회 권한만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 댓글 삭제가 보였고
    * 확인 모달까지 지난 뒤에야 403 을 만났다. 본인 댓글 삭제 권한은 이 관리자 삭제를 열지 않는다.
    */
-  it.each([
+  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it.each([
     { label: '조회 권한만 있으면', permissions: READ_ONLY_PERMISSIONS },
     { label: '본인 댓글 삭제 권한만 있어도', permissions: [...READ_ONLY_PERMISSIONS, 'COMMENT_DELETE'] },
   ])('$label 댓글 삭제 버튼을 보이지 않는다 — 목록과 선택은 그대로다', async ({ permissions }) => {
@@ -435,7 +438,7 @@ describe('MonitoringHubClient', () => {
   });
 
   // [2026-09-27 DIP B5 F11] 하네스 탭은 demo pack 소유 파일(HarnessAtlasPanels)로 옮겼다 — 목 없이 실제 상세를 본다.
-  it('selects both harness catalog item types', async () => {
+  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('selects both harness catalog item types', async () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
     let detail = screen.getByRole('region', { name: '선택 항목 상세' });
@@ -491,7 +494,7 @@ describe('MonitoringHubClient', () => {
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();
   });
 
-  it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
 

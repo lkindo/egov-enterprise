@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { ScreenTableHarness, selectionOf } from './screen-permission-table-harness';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 // 칸의 내용은 화면 목록에서 온다 — 다른 영역의 화면 소스가 바뀌어도 이 시험이 흔들리지 않게 고정 목록을 쓴다.
 vi.mock('@/types/generated-screen-registry', async (importOriginal) =>
@@ -32,7 +35,7 @@ describe('화면별 권한 표', () => {
     expect(within(screen.getByRole('row', { name: /^권한 그룹 관리/ })).getByText('보임')).toBeInTheDocument();
   });
 
-  it('모두 있어야 열리는 화면 진입은 한 체크로 전부 켜고 끄며, 일부만 있으면 일부 선택으로 보인다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('모두 있어야 열리는 화면 진입은 한 체크로 전부 켜고 끄며, 일부만 있으면 일부 선택으로 보인다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={['OPERATION:POLL_READ']} />);
     const entry = cell('투표 관리 × 화면 진입');
@@ -50,7 +53,7 @@ describe('화면별 권한 표', () => {
    * POLL_READ_ALL 까지 더하는 것을 고정했다. 같은 줄의 '진입 권한 추가'·'진입 권한 모두 추가'와 카탈로그 A5 묶음 칸 규칙(보호·…_ALL 은
    * 일괄 선택에서 뺀다)에 맞춰, 그런 화면은 묶음 칸의 수에서 빠지고 '직접 고르기 n'으로 남아 화면 줄에서 고른다(권한을 좁히는 방향).
    */
-  it('영역 줄의 화면 진입은 들어갈 수 없는 화면에 필요한 만큼만 더한다 — 후보가 여럿이면 조회 하나, 타인 자료 권한이 필요한 화면은 직접 고른다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('영역 줄의 화면 진입은 들어갈 수 없는 화면에 필요한 만큼만 더한다 — 후보가 여럿이면 조회 하나, 타인 자료 권한이 필요한 화면은 직접 고른다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={['OPERATION:MENU_READ']} />);
     const area = cell('관리 × 화면 진입');
@@ -71,7 +74,7 @@ describe('화면별 권한 표', () => {
     expect(selectionOf(view.container)).toEqual(['OPERATION:POLL_READ', 'OPERATION:POLL_READ_ALL']);
   });
 
-  it('보호·타인 자료 권한이 있어야 들어가는 화면만 있는 묶음 줄의 화면 진입 칸은 체크 대신 직접 고를 화면 수를 글자로 보인다', () => {
+  if (pageInProjection('/admin/survey/polls')) it('보호·타인 자료 권한이 있어야 들어가는 화면만 있는 묶음 줄의 화면 진입 칸은 체크 대신 직접 고를 화면 수를 글자로 보인다', () => {
     const navigation = [
       { code: 'VOTE', name: '투표', parentCode: null, route: null, useYn: 'Y' as const },
       { code: 'POLLS', name: '투표 관리', parentCode: 'VOTE', route: '/admin/survey/polls', useYn: 'Y' as const },
@@ -168,7 +171,7 @@ describe('화면별 권한 표', () => {
     await waitFor(() => expect(cell('시스템 × 화면 진입')).toHaveFocus());
   });
 
-  it('문제 줄만은 누른 때 고칠 일이 있는 줄(과 상위)만 고정해 보이고, 고쳐도 줄이 사라지지 않는다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('문제 줄만은 누른 때 고칠 일이 있는 줄(과 상위)만 고정해 보이고, 고쳐도 줄이 사라지지 않는다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={['NAVIGATION:AREA', 'NAVIGATION:SECTION', 'NAVIGATION:USERS', 'NAVIGATION:POLLS', 'OPERATION:POLL_READ', 'OPERATION:POLL_READ_ALL']} />);
     const problems = screen.getByRole('button', { name: /^문제 줄만/ });
@@ -235,7 +238,7 @@ describe('화면별 권한 표', () => {
     expect(help.compareDocumentPosition(screen.getByRole('button', { name: /^바뀐 줄/ })) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
   });
 
-  it('사용 안 함 메뉴를 표시하고, 메뉴 없이 주소로만 열리는 화면을 상태로 말한다', () => {
+  if (pageInProjection('/note')) it('사용 안 함 메뉴를 표시하고, 메뉴 없이 주소로만 열리는 화면을 상태로 말한다', () => {
     render(<ScreenTableHarness initial={['OPERATION:ADMCODE_READ']} />);
     const old = screen.getByRole('row', { name: /^옛 메뉴/ });
     expect(within(old).getByText('사용 안 함', { selector: 'span.rounded' })).toBeInTheDocument();
@@ -276,7 +279,7 @@ describe('화면별 권한 표', () => {
     await waitFor(() => expect(cell('사용자 관리 × 화면 진입 (USER_READ)')).toHaveFocus());
   });
 
-  it('화면 검색 중에는 영역·섹션 줄의 칸이 검색 결과에 보이는 화면만 바꾼다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('화면 검색 중에는 영역·섹션 줄의 칸이 검색 결과에 보이는 화면만 바꾼다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={[]} />);
     await user.type(screen.getByRole('textbox', { name: '화면 검색' }), 'USER_STATUS');
@@ -309,7 +312,7 @@ describe('화면별 권한 표', () => {
     expect(screen.getByRole('status')).toHaveTextContent('조건에 맞는 메뉴나 화면이 없습니다.');
   });
 
-  it('추가가 막힌 그룹(공개 메뉴)은 꺼진 기능권한 칸을 켤 수 없고 켜진 칸은 끌 수 있다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('추가가 막힌 그룹(공개 메뉴)은 꺼진 기능권한 칸을 켤 수 없고 켜진 칸은 끌 수 있다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={['OPERATION:POLL_CREATE']} allowAdd={false} />);
     expect(cell('투표 관리 × 등록 (POLL_CREATE)')).toBeEnabled();
@@ -320,7 +323,7 @@ describe('화면별 권한 표', () => {
     expect(selectionOf(view.container)).toEqual([]);
   });
 
-  it('권한 설정 권한이 없으면 칸과 묶음 칸을 잠그고 진입 권한 추가 버튼을 두지 않는다', () => {
+  if (pageInProjection('/admin/survey/polls')) it('권한 설정 권한이 없으면 칸과 묶음 칸을 잠그고 진입 권한 추가 버튼을 두지 않는다', () => {
     render(<ScreenTableHarness initial={['NAVIGATION:AREA', 'NAVIGATION:POLLS']} editable={false} />);
     for (const checkbox of within(screen.getByRole('table')).getAllByRole('checkbox')) expect(checkbox).toBeDisabled();
     // [2026-10-05] 버튼 이름 뒤에 권한 이름이 붙는다 — 끝 고정($)을 두면 늘 맞지 않아 빈 검사가 된다.
@@ -328,7 +331,7 @@ describe('화면별 권한 표', () => {
     expect(within(screen.getByRole('row', { name: /^투표 관리/ })).getByText('진입 권한 없음')).toBeInTheDocument();
   });
 
-  it('현재 줄 띠는 키보드로 옮긴 줄과 누른 줄의 이름 전체·경로·화면 진입에 필요한 권한을 보이는 글자로 보인다', async () => {
+  if (pageInProjection('/admin/survey/polls') && pageInProjection('/note')) it('현재 줄 띠는 키보드로 옮긴 줄과 누른 줄의 이름 전체·경로·화면 진입에 필요한 권한을 보이는 글자로 보인다', async () => {
     const user = userEvent.setup();
     render(<ScreenTableHarness initial={['NAVIGATION:AREA', 'NAVIGATION:POLLS']} />);
     const strip = screen.getByTestId('screen-permission-current-row');
@@ -363,7 +366,7 @@ describe('화면별 권한 표', () => {
    * (POLL_READ + POLL_READ_ALL)처럼 타인 자료 권한이 필요한 메뉴는 빼고 '직접 고르기'로 센다. 종전에는 영역 줄 한 번이 POLL_READ_ALL
    * 을 초안에 넣었고, 더할 코드는 title 에만 있었다.
    */
-  it('섹션 줄의 진입 권한 추가는 타인 자료 권한이 필요한 메뉴를 빼고, 그 메뉴는 화면 줄에서 고른다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('섹션 줄의 진입 권한 추가는 타인 자료 권한이 필요한 메뉴를 빼고, 그 메뉴는 화면 줄에서 고른다', async () => {
     const user = userEvent.setup();
     const view = render(<ScreenTableHarness initial={['NAVIGATION:AREA', 'NAVIGATION:SECTION', 'NAVIGATION:MENUS', 'NAVIGATION:POLLS']} />);
     const areaRow = screen.getByRole('row', { name: /^관리/ });

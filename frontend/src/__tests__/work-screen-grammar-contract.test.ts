@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as ts from 'typescript';
+import { frozenInProjection } from '@/test-utils/projection';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REPO_DIR = join(FRONTEND_DIR, '..');
@@ -255,10 +256,12 @@ describe('Control height ↔ density token contract', () => {
     }
     expect(byFile.size, '계측이 아무것도 찾지 못하면 이 계약은 vacuous 하다').toBeGreaterThan(0);
 
+    // 재사용 생성물에서는 투영으로 빠진 파일의 동결값만 뺀다(원장 확인). 원본에서는 동결표 그대로다.
+    const frozenTable = frozenInProjection(CONTROL_HEIGHT_OVERRIDES, (file) => join(SRC_DIR, file));
     const drift: string[] = [];
-    for (const file of [...new Set([...byFile.keys(), ...Object.keys(CONTROL_HEIGHT_OVERRIDES)])].sort()) {
+    for (const file of [...new Set([...byFile.keys(), ...Object.keys(frozenTable)])].sort()) {
       const found = byFile.get(file) ?? [];
-      const frozen = CONTROL_HEIGHT_OVERRIDES[file] ?? 0;
+      const frozen = frozenTable[file] ?? 0;
       if (found.length > frozen) {
         drift.push(
           `${file}: ${frozen} → ${found.length} — 새 고정 높이다. 컨트롤은 --control-h 를 따른다\n`

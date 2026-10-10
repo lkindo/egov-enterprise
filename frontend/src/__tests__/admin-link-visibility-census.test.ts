@@ -126,7 +126,9 @@ describe('관리 화면 링크 노출 census', () => {
 
   it('census 가 실제로 링크를 센다(빈 스캔의 거짓 green 방지)', () => {
     const counted = repositoryFiles().reduce((total, file) => total + [...file.source.matchAll(LINK_PATTERN)].length, 0);
-    expect(counted).toBeGreaterThan(30);
+    // 하한은 스캔이 깨져 0 이 되는 것을 잡는다 — 재사용 생성물에서도 성립하는 값으로 둔다
+    //   (2026-10-10 실측: 원본 57·collaboration 38·core 19. Phase 2 D6).
+    expect(counted).toBeGreaterThan(10);
   });
 
   describe('판정 규칙', () => {

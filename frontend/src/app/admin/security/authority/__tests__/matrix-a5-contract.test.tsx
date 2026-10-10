@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { OperationPermissionMatrix, type OperationPermissionMatrixProps } from '../components/OperationPermissionMatrix';
 import { ScreenTableHarness, selectionOf } from './screen-permission-table-harness';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
 
 // 화면별 권한 표의 칸 내용은 화면 목록에서 온다 — 다른 영역의 화면 소스가 바뀌어도 계약이 흔들리지 않게 고정 목록을 쓴다.
 vi.mock('@/types/generated-screen-registry', async (importOriginal) =>
@@ -460,7 +463,7 @@ describe('화면별 권한 표 — A5 계약', () => {
     expect(dirty).toHaveBeenCalledTimes(1);
   });
 
-  it('방향키로 칸을 이동하고 빈 칸은 건너뛴다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('방향키로 칸을 이동하고 빈 칸은 건너뛴다', async () => {
     const user = userEvent.setup();
     render(<ScreenTableHarness initial={[]} />);
     cell('투표 관리 × 메뉴 표시 (POLLS)').focus();
@@ -510,7 +513,7 @@ describe('화면별 권한 표 — A5 계약', () => {
     expect(password).toHaveAccessibleDescription(/저장하지 않은 변경/);
   });
 
-  it('칸의 상태(몇 개 중 몇 개)는 변경·보호 설명이 붙어도 보조기술에 남는다', async () => {
+  if (pageInProjection('/admin/survey/polls')) it('칸의 상태(몇 개 중 몇 개)는 변경·보호 설명이 붙어도 보조기술에 남는다', async () => {
     const user = userEvent.setup();
     render(<ScreenTableHarness initial={[]} />);
     const trigger = screen.getByRole('button', { name: '권한 그룹 관리 × 화면 진입 0/2' });

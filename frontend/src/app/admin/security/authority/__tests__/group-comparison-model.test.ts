@@ -97,9 +97,10 @@ describe('compareGroups — 화면별', () => {
   });
 
   it('로그인만 하면 열리는 화면은 비교 대신 사실을 쓴다', () => {
-    const navigation = [...NAVIGATION, { code: 'NOTE', name: '업무 쪽지함', parentCode: 'OTHER', route: '/note', useYn: 'Y' as const }];
-    const note = rowOf(compareGroups(A, B, navigation, OPERATIONS), 'NOTE');
-    expect(note.cells.entry).toEqual({ kind: 'note', text: '로그인만 하면 열림' });
+    // 예시는 모든 생성물에 남는 통합 검색이다(로그인만 하면 열리는 정적 화면).
+    const navigation = [...NAVIGATION, { code: 'SEARCH', name: '통합 검색', parentCode: 'OTHER', route: '/search', useYn: 'Y' as const }];
+    const search = rowOf(compareGroups(A, B, navigation, OPERATIONS), 'SEARCH');
+    expect(search.cells.entry).toEqual({ kind: 'note', text: '로그인만 하면 열림' });
   });
 
   it('차이만 보기는 다른 줄과 그 상위 줄을 남긴다', () => {

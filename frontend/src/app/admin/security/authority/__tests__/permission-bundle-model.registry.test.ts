@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PERMISSION_BUNDLES, SCREEN_REGISTRY } from '@/types/generated-screen-registry';
 import { OPEN_SCREEN_EXAMPLE_ROUTES, OPEN_SCREEN_NOTICE } from '../components/PermissionBundleDialog';
 import { previewBundle, unnamedScreenLabel } from '../components/permission-bundle-model';
+import { pageInProjection } from '@/test-utils/projection';
 
 /**
  * '권한 묶음 적용' 미리보기와 실제 생성물(화면 목록·권한 묶음)의 정합(2026-10-03, 선택지 ①).
@@ -12,10 +13,12 @@ import { previewBundle, unnamedScreenLabel } from '../components/permission-bund
  *   · 미리보기는 이름이 없는 화면의 경로를 화면 이름처럼 보이지 않는다.
  */
 const registered = new Map(SCREEN_REGISTRY.map((screen) => [screen.route, screen]));
+// 기능 예시(모두 충족 판정·별칭·타인 자료 권한)는 그 화면이 투영으로 빠진 생성물에서 뺀다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
+//   안내도 목록에 없는 화면을 예에서 빼므로(PermissionBundleDialog) 같은 화면을 뺀다.
 
 describe('권한 묶음 미리보기 — 실제 화면 목록과의 정합', () => {
   it('고정 안내가 예로 드는 화면은 누구나 들어가고 쓰기가 없어 어느 묶음의 화면·관련 화면에도 없다', () => {
-    for (const route of OPEN_SCREEN_EXAMPLE_ROUTES) {
+    for (const route of OPEN_SCREEN_EXAMPLE_ROUTES.filter(pageInProjection)) {
       const screen = registered.get(route);
       expect(screen, `${route} 는 화면 목록에 있다`).toBeDefined();
       expect(screen!.label, `${route} 는 이름이 있다(안내가 이름으로 부른다)`).toBeTruthy();

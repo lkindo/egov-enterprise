@@ -3,6 +3,9 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AxiosRequestConfig } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { inProjection } from '@/test-utils/projection';
+
+// '설문조사 분석' 탭은 설문 팩이 넘긴다 — 그 탭 파일이 투영으로 빠진 생성물에서는 이 시험을 등록하지 않는다(원본에서는 그대로다).
 
 /**
  * [Phase 0c] 통계 허브의 게시물·자료 이용 탭 동치 기준선.
@@ -220,7 +223,7 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
       expect(nav.replace).not.toHaveBeenCalled();
     });
 
-    it('설문조사 분석은 전용 라우트 없이 현재 경로의 tab 쿼리만 바꾸고 다른 쿼리는 버린다', async () => {
+    if (inProjection('frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx')) it('설문조사 분석은 전용 라우트 없이 현재 경로의 tab 쿼리만 바꾸고 다른 쿼리는 버린다', async () => {
       renderRoute(BoardStatsPage, '/admin/stats/board', 'foo=bar');
       await screen.findByText(PERIOD_EMPTY);
 

@@ -15,6 +15,12 @@ import { Sidebar } from '../sidebar';
 import { HeaderSearchParamSync } from '../HeaderSearchParamSync';
 import { LayoutProvider, useLayout } from '@/contexts/LayoutContext';
 import type { MenuInfo } from '@/types/foundation/menu';
+import { pageInProjection } from '@/test-utils/projection';
+
+// 고정 메뉴의 경로 — 원본에서는 로그인만 요구하는 관리 화면이 게이트를 통과하는지를 함께 본다. 그 화면이 투영으로 빠진
+//   생성물에는 그런 관리 화면이 없으므로 관리 밖 core 경로로 본다(page 파일이 원장에 있고 실제로 없을 때다).
+const WORK_HUB_ROUTE = pageInProjection('/admin/work-hub') ? '/admin/work-hub' : '/smart-toolkit/dept-job';
+const COLLABORATION_ROUTE = pageInProjection('/admin/collaboration') ? '/admin/collaboration' : '/search';
 
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'layout-user', groups: ['USER'], permissions: [], authorizationVersion: 'v1' } }),
@@ -37,12 +43,12 @@ const sidebarMenus = [
   {
     menuNo: 1000000,
     menuNm: '업무 공간',
-    children: [{ menuNo: 1000001, menuNm: '업무 홈', modernRoute: '/admin/work-hub' }],
+    children: [{ menuNo: 1000001, menuNm: '업무 홈', modernRoute: WORK_HUB_ROUTE }],
   },
   {
     menuNo: 2000000,
     menuNm: '커뮤니티',
-    children: [{ menuNo: 2000001, menuNm: '커뮤니티 홈', modernRoute: '/admin/collaboration' }],
+    children: [{ menuNo: 2000001, menuNm: '커뮤니티 홈', modernRoute: COLLABORATION_ROUTE }],
   },
 ] as MenuInfo[];
 
@@ -91,15 +97,15 @@ function SynchronizedSidebar() {
 describe('Sidebar responsive primary navigation', () => {
   it.each([
     {
-      name: '정확한 경로', pathname: '/admin/collaboration', query: '', menus: sidebarMenus,
+      name: '정확한 경로', pathname: COLLABORATION_ROUTE, query: '', menus: sidebarMenus,
       selected: '커뮤니티', visible: '커뮤니티 홈', absent: '업무 홈',
     },
     {
-      name: '같은 경로의 메뉴 쿼리', pathname: '/admin/collaboration', query: 'tab=second&page=2',
+      name: '같은 경로의 메뉴 쿼리', pathname: COLLABORATION_ROUTE, query: 'tab=second&page=2',
       menus: sidebarMenus.map((menu, index) => ({
         ...menu,
         children: menu.children!.map((child) => ({
-          ...child, modernRoute: `/admin/collaboration?tab=${index === 0 ? 'first' : 'second'}`,
+          ...child, modernRoute: `${COLLABORATION_ROUTE}?tab=${index === 0 ? 'first' : 'second'}`,
         })),
       })),
       selected: '커뮤니티', visible: '커뮤니티 홈', absent: '업무 홈',
@@ -143,7 +149,7 @@ describe('Sidebar responsive primary navigation', () => {
   });
 
   it('정본 URL로 처음 진입할 때 좌측 기본 영역이 상단의 현재 위치 선택을 덮어쓰지 않는다', async () => {
-    navigation.pathname = '/admin/collaboration';
+    navigation.pathname = COLLABORATION_ROUTE;
     const user = userEvent.setup();
     renderSidebar(<SynchronizedSidebar />);
     const navigationTree = await screen.findByRole('navigation', { name: '주 메뉴 탐색' });
