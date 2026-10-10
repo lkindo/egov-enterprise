@@ -278,6 +278,38 @@ describe('GlobalCommandCenter accessibility contract', () => {
     expect(options[0]).toHaveAttribute('aria-selected', 'false');
   });
 
+  /*
+   * [2026-10-10] 방향키가 고르는 순서는 화면에 보이는 순서다. 결과는 분류(메뉴·시스템…)별로 묶어 그리는데, 종전에는
+   *   고르는 순서가 [빠른 이동…, 메뉴…] 그대로라 메뉴가 있으면 '협업 통합 허브' 에서 한 번 내릴 때 바로 아래 메뉴가 아니라
+   *   맨 아래 '로그아웃' 이 골라졌다 — 그 상태로 Enter 를 누르면 로그아웃됐다.
+   */
+  it('메뉴가 있어도 방향키는 화면에 보이는 순서대로 고르고, Enter 는 보이는 선택 항목을 연다', async () => {
+    mocks.getHeadMenus.mockResolvedValue([{ menuNo: 7, menuNm: '통합 검색 바로가기', modernRoute: '/search' }]);
+    const user = userEvent.setup();
+    renderCommandCenter();
+    await openFromTrigger(user);
+    const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    await screen.findByRole('option', { name: '통합 검색 바로가기' });
+    const options = screen.getAllByRole('option');
+    expect(options.at(-1)).toHaveAccessibleName('로그아웃');
+
+    for (const option of options) {
+      expect(input).toHaveAttribute('aria-activedescendant', option.id);
+      expect(option).toHaveAttribute('aria-selected', 'true');
+      await user.keyboard('{ArrowDown}');
+    }
+    // 마지막에서 한 번 더 내리면 처음으로 돈다.
+    expect(input).toHaveAttribute('aria-activedescendant', options[0].id);
+
+    // 보이는 순서로 메뉴 항목까지 내려가 Enter 를 누르면 그 메뉴를 연다 — 로그아웃하지 않는다.
+    while (input.getAttribute('aria-activedescendant') !== screen.getByRole('option', { name: '통합 검색 바로가기' }).id) {
+      await user.keyboard('{ArrowDown}');
+    }
+    await user.keyboard('{Enter}');
+    expect(mocks.push).toHaveBeenCalledWith('/search');
+    expect(mocks.logout).not.toHaveBeenCalled();
+  });
+
   it('프로그램으로 주입된 길이 초과 검색어도 이동 제안으로 만들지 않는다', async () => {
     const user = userEvent.setup();
     renderCommandCenter();
