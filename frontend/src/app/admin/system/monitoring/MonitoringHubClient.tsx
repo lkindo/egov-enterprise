@@ -82,6 +82,7 @@ import { HARNESS_TAB_VIEW } from './components/HarnessAtlasPanels';
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monitoring-tabs';
 /* reusable-base:collaboration:start */
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
@@ -96,16 +97,7 @@ import { canPermission } from '@/lib/auth/permissions';
  */
 const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 
-export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'HARNESS';
-
-const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY',
-  /* reusable-base:collaboration:start */
-  'COMMENTS',
-  /* reusable-base:collaboration:end */
-  /* reusable-base:demo:start */
-  'HARNESS',
-  /* reusable-base:demo:end */
-];
+// 탭 목록과 `?tab=` 해석은 monitoring-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
 
 /**
  * 목록·가동 상태 밖의 부가 탭(2026-09-27 DIP B5 F11). 탭마다 본문·개요·선택 항목 조회·상세를 한 묶음으로 등록한다.
@@ -200,17 +192,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const rawTab = searchParams.get('tab')?.toUpperCase();
   // [2026-08-27] POLICY → LOGIN 별칭 제거. 이 허브에는 POLICY 탭이 없는데 별칭이 그 요청을
   //   LOGIN(로그인 **로그** 목록)으로 떨어뜨려, 정책을 열려던 사용자가 로그 목록을 보고도
   //   자기가 다른 화면에 있다는 것을 알 수 없었다. 로그인 정책의 정본은
   //   /admin/security/login-policy 이고 개인정보 정책은 /admin/user/indvdl-info-policy 다.
   //   이제 ?tab=policy 는 어떤 탭에도 맞지 않아 기본 탭으로 내려간다 — 없는 탭을 있는 척하지 않는다.
-  const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab) as MonitoringTab;
-
-  const activeTab = (queryTab && MONITORING_TABS.includes(queryTab))
-    ? queryTab
-    : MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY';
+  const activeTab = parseMonitoringTab(searchParams.get('tab'))
+    ?? (MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY');
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
   //        ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.

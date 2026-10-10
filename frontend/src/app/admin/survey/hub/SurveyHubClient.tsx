@@ -23,6 +23,7 @@ import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { DEFAULT_SURVEY_TAB, parseSurveyTab, type SurveyTab } from './survey-hub-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
@@ -33,7 +34,7 @@ import { canOpenPage } from '@/lib/auth/page-access';
  */
 const HUB_PARAM_KEYS = ['tab'] as const;
 
-// 허브 탭 정의 — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
+// 허브 탭 정의(survey-hub-tabs.ts 의 SURVEY_TABS) — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
 //
 // [2026-08-06] questions / templates / respondents 세 탭을 실제 화면으로 되살렸다.
 // 위 안내가 지시한 절차를 그대로 따랐다 — SURVEY_TABS 에 키 추가, TabTrigger·TabsContent 추가,
@@ -47,10 +48,8 @@ const HUB_PARAM_KEYS = ['tab'] as const;
   [2026-09-08 PD-SRVY-001 결정] 응답자 탭을 걷었다 — tb_srvy_rspdnt 는 개인정보를 담는데
   응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 **항상 빈 목록**이었다.
 */
-const SURVEY_TABS = ['manage', 'questions', 'templates', 'stats'] as const;
-type SurveyTab = (typeof SURVEY_TABS)[number];
+// 탭 목록과 `?tab=` 해석은 survey-hub-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
 
-const DEFAULT_TAB: SurveyTab = 'manage';
 const TAB_TITLE: Record<SurveyTab, string> = { manage: '여론조사 관리', questions: '설문지·문항 관리', templates: '설문 템플릿 관리', stats: '여론조사 통계' };
 const TAB_DESCRIPTION: Record<SurveyTab, string> = {
   manage: '여론조사를 조회하고 등록합니다. 여기서 등록하는 조사는 네 단계 만족도 응답으로 고정되며, 문항을 직접 구성하려면 설문지·문항 관리를 이용하세요.',
@@ -65,9 +64,7 @@ const TAB_DESCRIPTION: Record<SurveyTab, string> = {
  * 들어오는 북마크·딥링크가 여기서 모두 흡수된다.
  */
 function resolveTab(raw: string | null): SurveyTab {
-  if (!raw) return DEFAULT_TAB;
-  if ((SURVEY_TABS as readonly string[]).includes(raw)) return raw as SurveyTab;
-  return DEFAULT_TAB;
+  return parseSurveyTab(raw) ?? DEFAULT_SURVEY_TAB;
 }
 
 /**
