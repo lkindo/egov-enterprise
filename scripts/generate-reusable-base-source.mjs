@@ -23,6 +23,7 @@ import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
+import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -251,6 +252,9 @@ function main() {
     'upstream-atlas': removedUpstreamAtlas.files,
   });
   installDatabaseBundle(output, dbBundle);
+  // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
+  const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
+  console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   writeProjectedManifest(output, manifest, args.profile, profile, dbLock, composition);
   installReusableVerification(output, args.layout);

@@ -619,7 +619,7 @@ test('validated DB bundle requires the exact locked SQL population and unchanged
     assert.ok(child.startsWith('composer-db-files-') && !child.includes(sep));
     rmSync(fixture, { recursive: true, force: true });
   });
-  const sqlNames = ['V1_0__baseline.sql', 'V1_1__seed_meta_standard.sql', 'R__seed_framework.sql', 'R__zz_seed_base_admin.sql'];
+  const sqlNames = ['V1_0__baseline.sql', 'V1_1__seed_meta_standard.sql', 'R__seed_framework.sql', 'R__seed_reference_data.sql', 'R__zz_seed_base_admin.sql'];
   const migrationFiles = {};
   for (const [index, name] of sqlNames.entries()) {
     const bytes = Buffer.from(`-- isolated synthetic bundle ${index}\r\nSELECT ${index};\r\n`);

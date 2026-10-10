@@ -89,15 +89,16 @@ npm run base:generate-db -- --profile collaboration --layout single-module
 - `db/migration/V1_0__baseline.sql`
 - `db/migration/V1_1__seed_meta_standard.sql`
 - `db/migration/R__seed_framework.sql`
+- `db/migration/R__seed_reference_data.sql` — 원본 마이그레이션이 넣은 공통코드 그룹과 앱이 하드코딩한 게시판 마스터 가운데 선택한 기능의 몫([선언](../../scripts/reusable-reference-data.mjs), [DEC-OPS-262](../../.agent/memory/decisions.md))
 - `db/migration/R__zz_seed_base_admin.sql`
 - `schema-contract.json`, `schema-reapplied.json`, `README.md`
 - `profile-lock.json` — 재적용 검증을 모두 통과한 뒤에만 `validated: true`와 파일 해시를 담아 기록한다
 
 완성된 V1 체인은 두 번째 빈 DB에 다시 적용된다. 테이블·시퀀스 집합, 물리 스키마, 현재 표준 메타 행 수,
-그룹별 메뉴·권한 배정과 day-1 관리자 부트스트랩(§3.3)의 SQL 단언이 모두 성립해야만 PASS한다.
+그룹별 메뉴·권한 배정, 참조 데이터(공통코드 그룹·게시판 마스터) 집합과 day-1 관리자 부트스트랩(§3.3)의 SQL 단언이 모두 성립해야만 PASS한다.
 소스 생성기는 검증된 같은 구성의 번들만 받는다.
-`R__seed_demo.sql`은 collaboration 소유 테이블을 참조하므로 번들에 복사하지 않는다 —
-데모 시드는 데모 프로필 소스 체인의 정의로만 남는다.
+`R__seed_demo.sql` 자체는 번들에 복사하지 않는다. 그 안의 게시판 마스터 행은 게시판 기능을 고른 구성에서만 참조 데이터 시드에 들어간다.
+공통코드 그룹은 core 소유가 기본이고, 게시판(COM004·COM009)·결재(COM075) 그룹은 그 기능을 고를 때만 싣는다. 상세 코드는 원본도 시드하지 않는다(PD-DB-003).
 
 ### 3.3 day-1 관리자 부트스트랩
 
@@ -155,6 +156,9 @@ DB 번들의 기본 경로(`build/reusable-base/<profile>-<sha>-<timestamp>`)에
 소스 생성기는 DB lock의 프로필·커밋·레이아웃·구성 해시를 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
+루트 이관 카탈로그(`db_columns.json`)는 DB 번들이 검증한 스키마로 다시 쓴다([카탈로그 투영](../../scripts/reusable-migration-catalog.mjs), DEC-OPS-263).
+이관 도구는 이 카탈로그로 매핑 타깃을 판정하므로, 구성에서 빠진 표로 가는 매핑은 검증 단계에서 거부된다.
+Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 검증이 카탈로그와 적용 스키마를 정확히 대조한다.
 
 공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
 파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,
