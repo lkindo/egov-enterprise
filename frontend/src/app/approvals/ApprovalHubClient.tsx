@@ -51,6 +51,7 @@ import { canPermission } from '@/lib/auth/permissions';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { getTodayYmd } from '@/lib/date/today-ymd';
+import { linkedTab } from './approval-tabs';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 const NO_QUEUED: number[] = [];
@@ -114,14 +115,8 @@ const approvalDecisionSchema = ApprovalConfirmRequestSchema
 
 /**
  * 알림이 여는 주소(2026-10-03 D1). 탭과 문서 번호만 읽고 그 밖의 값은 버린다. 이 화면이 URL 에 쓰는 것은 연 링크를
- * 지우는 일뿐이다(링크 효과 참고) — 상태 값은 싣지 않는다.
- * 서버 알림이 `?tab=PENDING&doc=N` 처럼 보내며, 형식이 틀리면 기본 화면으로 연다.
- * 참조자 지정·최종 결과 알림은 `?tab=REFERENCED&doc=N` 이다(D4) — 빠뜨리면 참조 문서가 대기함 아래에 열린다.
+ * 지우는 일뿐이다(링크 효과 참고) — 상태 값은 싣지 않는다. 탭 해석(linkedTab)은 approval-tabs.ts 에 있다.
  */
-function linkedTab(value: string | null): ApprovalTab | null {
-  return value === 'PENDING' || value === 'SUBMITTED' || value === 'PROCESSED' || value === 'REFERENCED' ? value : null;
-}
-
 function linkedDocument(value: string | null): string | null {
   return value && /^[1-9]\d{0,17}$/.test(value) ? value : null;
 }

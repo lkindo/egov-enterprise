@@ -31,6 +31,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { parseKnowledgeTab, type KnowledgeCategory } from './knowledge-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `bbsId` 는 진입 전용이라 카테고리를 바꾸면 버린다(종전 delete 와 같은 결과).
@@ -41,9 +42,7 @@ import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
  */
 const HUB_PARAM_KEYS = ['tab'] as const;
 
-// --- Types ---
-type KnowledgeCategory = 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY';
-
+// 탭 목록과 `?tab=` 해석은 knowledge-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
 const CATEGORY_LABEL: Record<KnowledgeCategory, string> = {
   WIKI: '위키',
   FAQ: '자주 묻는 질문',
@@ -83,11 +82,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
     // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
     // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
-    const tab = searchParams.get('tab')?.toUpperCase();
-    if (tab === 'WIKI' || tab === 'FAQ' || tab === 'QNA' || tab === 'COMMUNITY') {
-      return tab;
-    }
-    return defaultTab || 'WIKI';
+    return parseKnowledgeTab(searchParams.get('tab')) ?? defaultTab ?? 'WIKI';
   };
 
   // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.

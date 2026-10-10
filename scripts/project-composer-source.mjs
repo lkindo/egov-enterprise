@@ -150,7 +150,10 @@ export function projectComposerFrontend(file, source, composition) {
     else if (['src/app/components/layout/footer.tsx', 'src/app/error.tsx'].includes(normalized)) owners = ['help'];
     else if (['src/app/search/SearchClient.tsx', 'src/app/components/ui/global-command-center.tsx'].includes(normalized)) owners = ['board'];
     // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
-    else if (normalized === 'src/app/admin/system/monitoring/MonitoringHubClient.tsx') owners = pack === 'demo' ? ['system'] : ['comment'];
+    // 탭 목록(monitoring-tabs.ts)도 같은 두 블록을 같은 소유로 나눈다.
+    else if (['src/app/admin/system/monitoring/MonitoringHubClient.tsx', 'src/app/admin/system/monitoring/monitoring-tabs.ts'].includes(normalized)) {
+      owners = pack === 'demo' ? ['system'] : ['comment'];
+    }
     else if (normalized === 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx') owners = ['system'];
     // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 다른 pack 블록은 분류가 없으므로 실패한다.
     else if (STATS_SHELL_FILES.has(normalized) && STATS_SHELL_BLOCK_OWNERS[pack]) owners = STATS_SHELL_BLOCK_OWNERS[pack];

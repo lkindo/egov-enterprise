@@ -32,6 +32,7 @@ import {
   FormErrorSummary,
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { MEMO_REPORT_TABS as TABS, parseMemoReportTab, type MemoReportTab as ReportTab } from './memo-report-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭과 페이지를 함께 읽는다.
@@ -74,8 +75,7 @@ const memoInstructionSchema = MemoReportDtoSchema.pick({ drctnMttr: true }).exte
 const COMPOSE_LABELS = { rptTtl: '제목', rptrId: '받는 사람', rptCn: '내용' };
 const INSTRUCTION_LABELS = { drctnMttr: '지시사항' };
 
-const TABS = ['RECEIVED', 'MY', 'ALL'] as const;
-type ReportTab = (typeof TABS)[number];
+// 탭 목록과 `?tab=` 해석은 memo-report-tabs.ts 에 있다(탭 목적지 계약이 서버 알림과 대조한다).
 
 const TAB_LABELS: Record<ReportTab, string> = {
   RECEIVED: '수신함',
@@ -351,8 +351,7 @@ export default function MemoReportManagementClient() {
 
   // 탭·페이지는 URL 파생값이다(공유·새로고침·뒤로가기 복원 + 사이드바 활성 유지).
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
-  const tabParam = searchParams.get('tab');
-  const requestedTab = TABS.find((t) => t === tabParam) ?? 'RECEIVED';
+  const requestedTab = parseMemoReportTab(searchParams.get('tab')) ?? 'RECEIVED';
   const activeTab: ReportTab = requestedTab === 'ALL' && !isAdmin ? 'RECEIVED' : requestedTab;
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
