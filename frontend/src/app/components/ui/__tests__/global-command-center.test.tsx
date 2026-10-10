@@ -257,12 +257,15 @@ describe('GlobalCommandCenter accessibility contract', () => {
     ]);
   });
 
-  if (pageInProjection('/admin/collaboration')) it('🚨 방향키로 고른 항목을 aria-activedescendant 와 aria-selected 로 알린다 (DIP V9)', async () => {
+  it('🚨 방향키로 고른 항목을 aria-activedescendant 와 aria-selected 로 알린다 (DIP V9)', async () => {
     const user = userEvent.setup();
     renderCommandCenter();
     await openFromTrigger(user);
     const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
+    // 모든 생성물에 있는 두 항목(로그아웃·통합 검색 제안) 사이를 오간다 — 협업 허브 바로가기는 협업 팩 마커 안이다.
+    fireEvent.change(input, { target: { value: '로그' } });
     const options = await screen.findAllByRole('option');
+    expect(options).toHaveLength(2);
 
     expect(input).toHaveAttribute('aria-controls', 'command-center-results');
     expect(input).toHaveAttribute('aria-activedescendant', options[0].id);

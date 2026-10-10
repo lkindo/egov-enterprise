@@ -47,6 +47,11 @@ describe('resolveMenuScreen', () => {
     if (pageInProjection('/admin/survey/hub')) {
       expect(resolveMenuScreen('/admin/survey/manage/')).toStrictEqual({ screen: screen('/admin/survey/hub'), viaAlias: '/admin/survey/manage' });
     }
+    // 모든 생성물에 남는 별칭(감시 허브)도 같다 — 위 예시가 빠진 생성물에서 단언 없이 끝나지 않게 한다.
+    expect(resolveMenuScreen('/admin/system/monitoring')).toStrictEqual({
+      screen: screen('/admin/system/monitoring/hub'), viaAlias: '/admin/system/monitoring',
+    });
+    expect(resolveMenuScreen('/admin/system/audit/')).toStrictEqual({ screen: screen('/admin/system/monitoring/hub'), viaAlias: '/admin/system/audit' });
   });
 
   /*

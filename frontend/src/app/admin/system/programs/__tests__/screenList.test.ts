@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PAGE_PERMISSIONS } from '@/types/generated-permissions';
 import { SCREEN_ALIASES, SCREEN_REGISTRY, type ScreenRegistryEntry } from '@/types/generated-screen-registry';
 import type { MenuStructureItem } from '@/services/foundation/system/MenuAdminService';
-import { pageInProjection } from '@/test-utils/projection';
+import { pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
 import {
   SCREEN_VIEW_OPTIONS,
   UNKNOWN_SCREEN_LABEL,
@@ -62,8 +62,9 @@ describe('listedScreens', () => {
 
   it('생성된 화면 목록의 모든 화면이 진입 권한 표에 있다(재사용 투영본에서 빠진 화면은 둘 다에서 빠진다)', () => {
     expect(listedScreens().length).toBe(SCREEN_REGISTRY.length);
-    // 빈 목록을 막는 하한이다 — 원본 92·collaboration 52·core 37개(2026-10-10 실측). 가장 작은 생성물에서도 성립해야 한다.
-    expect(listedScreens().length).toBeGreaterThan(30);
+    // 빈 목록을 막는 하한이다. 원본은 종전 값 그대로이고, 투영 원장이 있는 재사용 생성물에서만 가장 작은 생성물에서도
+    //   성립하는 값으로 낮춘다(2026-10-10 실측: 원본 92·collaboration 52·core 37개).
+    expect(listedScreens().length).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 30 : 50);
   });
 });
 

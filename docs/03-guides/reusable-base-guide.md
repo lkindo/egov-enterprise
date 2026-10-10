@@ -445,10 +445,10 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 파일마다 단언을 거른다. 원본에는 원장이 없으므로 원본의 계약은 그대로다. 생성기는 파일을 지우는 마지막 단계 뒤에 원장을 쓰고 `base:verify` 가
 생성 직후 원본과 대조하며, skip 금지 게이트는 원장 판정이 아닌 조건부 등록(`if (…) it(…)`)을 skip 과 같이 막는다.
 총계·허용 목록·예시도 같은 원장으로 거른다([DEC-OPS-259](../../.agent/memory/decisions.md)). 총계 동결은 파일(화면)별 표를 함께 두어 합이 총계와 같게 하고,
-생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 가장 작은 생성물에서도 성립하는 값으로 두고
-원본·생성물 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르거나 모든 생성물에 남는 화면으로 바꾸고,
+생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
+가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
 팩 마커로 걷히거나 다른 팩이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 팩 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
-2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,570건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
 `./gradlew test --continue` 와 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다.

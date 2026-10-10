@@ -47,6 +47,8 @@ describe('page permission mapping', () => {
   it('preserves authenticated dynamic community and board detail routes', () => {
     if (pageInProjection('/admin/community/[id]')) expect(canEnterRegisteredPage('/admin/community/fixture-community', current)).toBe(true);
     if (pageInProjection('/admin/community/boards/[id]')) expect(canEnterRegisteredPage('/admin/community/boards/fixture-board', current)).toBe(true);
+    // 모든 생성물에 남는 동적 화면(부서 업무 상세)도 같은 판정이다 — 위 예시가 빠진 생성물에서 단언 없이 끝나지 않게 한다.
+    expect(canEnterRegisteredPage('/smart-toolkit/dept-job/fixture-job', current)).toBe(true);
   });
 
   it.each(pageRows([

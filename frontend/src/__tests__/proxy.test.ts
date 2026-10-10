@@ -243,7 +243,8 @@ describe('proxy 인증 게이트', () => {
     { role: 'ADMIN', exp: futureExp() },
     { sub: SUBJECT, role: 'ADMIN' },
   ])('rejects the wrong token kind or incomplete signed identity before querying permissions', async (payload) => {
-    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET))))).toBe(true);
+    // 권한 조회가 반드시 따르는 관리 화면(모든 생성물에 있다)으로 본다 — 조회 없이 끝나는 경로에서는 아래 단언이 비게 된다.
+    expect(redirectedToLogin(await proxy(requestWith(signToken(payload, SECRET), '/admin/system/menus')))).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

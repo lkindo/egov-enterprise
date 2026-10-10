@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registeredPagePermissions } from '@/lib/auth/page-access';
+import { projectionRemovedFiles } from '@/test-utils/projection';
 
 /**
  * 관리 화면으로 가는 링크·버튼 노출 census (DIP B4 P1).
@@ -126,9 +127,9 @@ describe('관리 화면 링크 노출 census', () => {
 
   it('census 가 실제로 링크를 센다(빈 스캔의 거짓 green 방지)', () => {
     const counted = repositoryFiles().reduce((total, file) => total + [...file.source.matchAll(LINK_PATTERN)].length, 0);
-    // 하한은 스캔이 깨져 0 이 되는 것을 잡는다 — 재사용 생성물에서도 성립하는 값으로 둔다
-    //   (2026-10-10 실측: 원본 57·collaboration 38·core 19. Phase 2 D6).
-    expect(counted).toBeGreaterThan(10);
+    // 하한은 스캔이 깨지거나 일부가 빠지는 것을 잡는다. 원본은 종전 값 그대로이고, 투영 원장이 있는 재사용 생성물에서만
+    //   가장 작은 생성물에서도 성립하는 값으로 낮춘다(2026-10-10 실측: 원본 57·collaboration 38·core 19. Phase 2 D6).
+    expect(counted).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 10 : 30);
   });
 
   describe('판정 규칙', () => {

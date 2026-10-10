@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { OperationPermissionMatrix, type OperationPermissionMatrixProps } from '../components/OperationPermissionMatrix';
-import { ScreenTableHarness, selectionOf } from './screen-permission-table-harness';
+import { ScreenTableHarness, selectionOf, type HarnessNavigation } from './screen-permission-table-harness';
 import { pageInProjection } from '@/test-utils/projection';
 
 // 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
@@ -482,6 +482,32 @@ describe('화면별 권한 표 — A5 계약', () => {
     expect(cell('투표 관리 × 화면 진입')).toHaveFocus();
     await user.keyboard('{ArrowLeft}');
     expect(cell('투표 관리 × 메뉴 표시 (POLLS)')).toHaveFocus();
+  });
+
+  // 같은 이동 규칙을 모든 생성물에 있는 화면(메뉴 관리·권한 그룹 관리·사용자 관리)으로 본다 — 위 시험의 투표 관리는 설문 팩이다.
+  it('방향키로 줄을 옮길 때 빈 열이면 가장 가까운 칸으로 가고, 더 갈 칸이 없으면 머문다 — 모든 생성물에 있는 화면', async () => {
+    const coreRows: readonly HarnessNavigation[] = [
+      { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' },
+      { code: 'MENUS', name: '메뉴 관리', parentCode: 'AREA', route: '/admin/system/menus', useYn: 'Y' },
+      { code: 'AUTHORITY', name: '권한 그룹 관리', parentCode: 'AREA', route: '/admin/security/authority', useYn: 'Y' },
+      { code: 'USERS', name: '사용자 관리', parentCode: 'AREA', route: '/admin/user/manage', useYn: 'Y' },
+    ];
+    const user = userEvent.setup();
+    render(<ScreenTableHarness initial={[]} navigation={coreRows} />);
+    const authorityEntry = () => screen.getByRole('button', { name: '권한 그룹 관리 × 화면 진입 0/2' });
+    cell('메뉴 관리 × 등록 (MENU_CREATE)').focus();
+    // 아래 줄(권한 그룹 관리)에는 등록 칸이 없다 — 가장 가까운 열의 칸('k/n' 화면 진입)으로 내려간다.
+    await user.keyboard('{ArrowDown}');
+    expect(authorityEntry()).toHaveFocus();
+    // 그 줄에는 오른쪽으로 더 갈 칸이 없다.
+    await user.keyboard('{ArrowRight}');
+    expect(authorityEntry()).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(cell('사용자 관리 × 화면 진입 (USER_READ)')).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(authorityEntry()).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(cell('메뉴 관리 × 화면 진입 (MENU_READ)')).toHaveFocus();
   });
 
   it('보호 권한은 표시를 붙이고 영역·섹션 줄의 일괄 선택에서 뺀다(H3)', async () => {
