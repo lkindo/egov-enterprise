@@ -14,7 +14,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -85,30 +84,6 @@ class SecurityAuthorityAccessControlTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    @Test
-    @DisplayName("보안 검증 - [DEC-OPS-010] 설문 alias: USER 열람은 200, 관리 뮤테이션은 403 (HTTP·메서드 이중 집행)")
-    void surveyAlias_readOpen_mutationForbidden_forNormalUser() throws Exception {
-        // [2026-08-20 DEC-OPS-010 개정] 종전 이 테스트는 GET /api/v1/surveys 의 403 을 단언했다.
-        //   그때의 방어는 W1-04 주석이 스스로 밝혔듯 **secure-paths URL 게이트 1겹뿐**이었다
-        //   (SurveyApiController 에 메서드 인가가 하나도 없었다).
-        //   제품 결정으로 설문 열람·제출이 일반 개방되면서 그 게이트는 V2_84 로 제거됐다. 지금 방어는
-        //   경로·핸들러별 operation binding(별칭 열람 SURVEY_READ, 관리 SURVEY_*_ALL)이며, 이 테스트는
-        //   ApiServerApplication 전체 컨텍스트라 HTTP 계층(OperationAuthorizationManager)이 먼저 판정하고
-        //   메서드 계층(@PreAuthorize)이 같은 binding 을 다시 본다. 이 테스트는 그 의미를 양방향으로
-        //   고정한다 — 열람이 막히면(red) 제품 회귀이고, 뮤테이션이 뚫리면(red) 인가 회귀다.
-        CustomUserDetails normalUser = nuri.business.support.AuthorizationTestPrincipal.principal("normal_user", "USR_001", "USER");
-
-        // ① 열람 개방: 일반 USER 의 목록 조회는 200 이어야 한다 (SURVEY_READ — 기본 그룹에 ROLE_USER 포함).
-        mockMvc.perform(get("/api/v1/surveys")
-                        .with(user(normalUser))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        // ② 관리 차단: 별칭 경로의 관리 뮤테이션은 SURVEY_DELETE_ALL 이 필요하다(HTTP 계층이 먼저 403 을 낸다).
-        //    DELETE 는 @Valid 본문이 없어 400 개입 없이 순수 인가(403)를 관찰할 수 있다.
-        mockMvc.perform(delete("/api/v1/surveys/{srvySn}", 999999L)
-                        .with(user(normalUser))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
-    }
+    // [DEC-OPS-010] 설문 별칭 인가 단언은 SurveyAliasAccessControlTest 로 옮겼다(Phase 2 D6) — 설문 컨트롤러를 참조해
+    //   설문을 고르지 않은 생성물에서 함께 빠진다. 여기 두면 설문이 없는 생성물에서 404 로 처음부터 붉었다.
 }

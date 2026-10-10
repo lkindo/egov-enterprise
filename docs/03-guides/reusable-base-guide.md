@@ -426,6 +426,24 @@ retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대�
 19건 red 다 — 되살린 횡단 게이트 3종(개인정보 3·입력 계약 10·결합 4건)은 core·collaboration 투영본에서 모두 통과했고
 red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 green 이다.
 
+### 4.2 생성물의 일반 테스트
+
+산출물 검증은 하네스·스키마 검증과 프런트 `tsc`·lint·build 만 돌리고 일반 테스트(`./gradlew test`)와 vitest 는 돌리지 않는다.
+2026-10-10 main(`9b402a822`)에서 만든 생성물에서 처음 돌린 결과, 투영 뒤에도 남은 검사가 처음부터 붉었다(설계서 D6).
+
+| 프로필 | 백엔드 `test` | 프런트 vitest |
+|---|---|---|
+| `core` | 3,064건 중 7건 | 781개 파일 2,572건 중 47개 파일 145건 |
+| `collaboration` | 3,788건 중 2건 | 938개 파일 3,146건 중 40개 파일 102건 |
+
+백엔드 9건은 [DEC-OPS-257](../../.agent/memory/decisions.md)로 닫았다. 기능 단언은 기능 타입을 참조하는 클래스로 옮겨 기능과 함께 빠지게 하고,
+생성기가 지운 ErrorCode 가 소유한 메시지 키를 번들에서 걷고 메시지 번들 계약의 하한을 지운 코드·참조 수만큼 내린다(lock `java.prunedMessageKeys`·`java.messageContractFloors`). 원본 하한은 그대로라 여유 폭이 원본과 같다. 런타임 문서를 세는 자격증명 검사의 하한은 core 아래로 둔다.
+프런트는 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+
+다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
+`./gradlew test --continue` 와 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다.
+저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다. 판정은 종료 코드가 아니라 각 모듈의 테스트 리포트 XML 과 vitest JSON 보고서로 한다.
+
 ⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지
 않아 생성기 드리프트 4축이 v0.1.0(2026-08-24) 이후 계속 쌓여 있었고, `demo` 조차 red 였다.
 
