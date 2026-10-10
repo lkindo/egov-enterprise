@@ -156,6 +156,9 @@ DB 번들의 기본 경로(`build/reusable-base/<profile>-<sha>-<timestamp>`)에
 소스 생성기는 DB lock의 프로필·커밋·레이아웃·구성 해시를 현재 릴리스와 대조한 뒤 선택하지 않은 Java 도메인,
 그 도메인에 의존하는 소비자, 프런트 라우트와 전이 importer를 제거한다. 원본 마이그레이션 체인은
 검증된 V1 번들로 교체하고 `REUSABLE_BASE.md`와 `reusable-base-lock.json`을 기록한다.
+루트 이관 카탈로그(`db_columns.json`)는 DB 번들이 검증한 스키마로 다시 쓴다([카탈로그 투영](../../scripts/reusable-migration-catalog.mjs), DEC-OPS-263).
+이관 도구는 이 카탈로그로 매핑 타깃을 판정하므로, 구성에서 빠진 표로 가는 매핑은 검증 단계에서 거부된다.
+Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 검증이 카탈로그와 적용 스키마를 정확히 대조한다.
 
 공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
 파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,

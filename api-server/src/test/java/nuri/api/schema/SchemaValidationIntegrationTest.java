@@ -124,8 +124,9 @@ class SchemaValidationIntegrationTest {
      * 이 테스트가 Flyway 전량 적용 스키마(public 기본 테이블 전체)와 대조하고, {@code -DdbColumns.write=true}
      * 일 때만 같은 질의 결과로 파일을 다시 쓴다(손으로 고치지 않는다).
      *
-     * <p>재사용 base 투영본은 원본 카탈로그를 그대로 복사하고 스키마는 프로필에 따라 표가 빠지거나(축소)
-     * 늘어난다(custom). 그래서 투영본에서는 양쪽에 모두 있는 표의 컬럼 집합만 같아야 한다.
+     * <p>재사용 base 투영본도 정확히 같아야 한다. 생성기가 DB 번들이 검증한 스키마로 카탈로그를 다시 쓴다(설계서 B12,
+     * {@code scripts/reusable-migration-catalog.mjs}). 종전에는 원본 카탈로그를 그대로 복사하고 이 대조를 양쪽에 있는 표로
+     * 좁혀, 구성에서 빠진 표로 가는 매핑이 이관 검증을 통과하고 적재 직전에야 실패했다.
      */
     @Test
     @DisplayName("이관 표준 스키마 카탈로그(db_columns.json)가 Flyway 적용 스키마와 일치한다")
@@ -154,7 +155,6 @@ class SchemaValidationIntegrationTest {
         }
         assertThat(expected).as("db_columns.json 에서 항목을 읽지 못했다: " + catalog).isNotEmpty();
 
-        boolean projected = nuri.api.harness.ReusableHarnessProfile.current().projected();
         List<String> drift = new ArrayList<>();
         Set<String> tables = new TreeSet<>(actual.keySet());
         tables.addAll(expected.keySet());
@@ -162,9 +162,7 @@ class SchemaValidationIntegrationTest {
             Set<String> inSchema = actual.get(table);
             Set<String> inCatalog = expected.get(table);
             if (inSchema == null || inCatalog == null) {
-                if (!projected) {
-                    drift.add(table + (inSchema == null ? ": 스키마에 없는 표가 카탈로그에 있다" : ": 카탈로그에 없는 표다"));
-                }
+                drift.add(table + (inSchema == null ? ": 스키마에 없는 표가 카탈로그에 있다" : ": 카탈로그에 없는 표다"));
                 continue;
             }
             Set<String> missing = new TreeSet<>(inSchema);
