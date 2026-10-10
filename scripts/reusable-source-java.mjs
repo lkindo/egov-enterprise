@@ -7,7 +7,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
 import { domainSupportFiles, projectComposerJava } from './project-composer-source.mjs';
 import { beanValidationRefsIn, isErrorCodeSource, isScannedSource, lowerMessageContractFloors, ownedMessageKeys, pruneOwnedMessageKeys } from './reusable-source-messages.mjs';
-import { fail, normalize, walk } from './reusable-source-tree.mjs';
+import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
 
 /**
  * 게이트 술어 — 메타 게이트({@code HarnessBaselineIntegrityTest#isGateSource})와 **같은 모집단**을 본다.
@@ -188,8 +188,8 @@ export function pruneJava(output, manifest, profile) {
   const rel = (path) => normalize(relative(output, path));
   // 지우기 전에 읽는다 — 지운 뒤에는 그 enum 이 소유한 메시지 키도, 메시지 번들 계약이 세던 참조 수도 알 수 없다.
   // 범위는 계약과 같다(네 모듈의 src/main/java 의 .java).
-  const removedScanned = [...removed].filter((path) => path.endsWith('.java') && isScannedSource(rel(path)) && existsSync(path))
-    .map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+  const removedScanned = [...removed].filter((path) => path.endsWith('.java') && isScannedSource(rel(path)))
+    .map((path) => ({ path, source: readTextIfPresent(path) })).filter(({ source }) => source !== undefined);
   const removedErrorCodes = removedScanned.filter(({ path }) => isErrorCodeSource(rel(path)));
   const removedBeanValidationRefs = removedScanned
     .reduce((sum, { source }) => sum + beanValidationRefsIn(stripJavaComments(source)), 0);

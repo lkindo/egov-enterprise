@@ -13,8 +13,9 @@
  * 그래도 갈라지면 덜 걷은 쪽은 고아 키 검사가, 더 걷은 쪽은 "번들에 없는 ErrorCode" 검사가, 하한을 너무 내리거나 덜 내린
  * 쪽은 하한 자체가 생성물에서 붉어진다. Bean Validation·handler 키는 소유를 정할 수 없어 걷지 않는다.
  */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { readTextIfPresent } from './reusable-source-tree.mjs';
 
 export const MESSAGE_BUNDLES = Object.freeze([
   'foundation/src/main/resources/egovframework/message/messages_ko.properties',
@@ -81,8 +82,9 @@ export function pruneOwnedMessageKeys(output, owned) {
   if (!owned.keys.length) return [];
   for (const bundle of MESSAGE_BUNDLES) {
     const path = join(output, bundle);
-    if (!existsSync(path)) throw new Error(`메시지 번들이 없다: ${bundle}`);
-    const text = readFileSync(path, 'utf8');
+    // 확인하고 읽지 않는다(js/file-system-race) — 읽기를 시도하고 부재만 실패로 바꾼다.
+    const text = readTextIfPresent(path);
+    if (text === undefined) throw new Error(`메시지 번들이 없다: ${bundle}`);
     const pruned = pruneBundleText(text, owned);
     if (pruned !== text) writeFileSync(path, pruned, 'utf8');
   }
@@ -117,8 +119,8 @@ export function lowerContractFloors(source, removed) {
 export function lowerMessageContractFloors(output, removed) {
   if (!Object.keys(FLOORS).some(measure => removed[measure])) return {};
   const path = join(output, MESSAGE_CONTRACT);
-  if (!existsSync(path)) throw new Error(`메시지 번들 계약이 없다: ${MESSAGE_CONTRACT}`);
-  const source = readFileSync(path, 'utf8');
+  const source = readTextIfPresent(path);
+  if (source === undefined) throw new Error(`메시지 번들 계약이 없다: ${MESSAGE_CONTRACT}`);
   const lowered = lowerContractFloors(source, removed);
   if (lowered.source !== source) writeFileSync(path, lowered.source, 'utf8');
   return lowered.changes;
