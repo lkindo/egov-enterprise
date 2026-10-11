@@ -64,7 +64,7 @@ interface RecipientPickerProps {
    *
    * ⚠ [2026-09-13 GAP-PACK-001 ②] 주소록 구현은 demo pack 소유다. 이 파일이 그 구현을 직접 import 하면
    *   재사용 base 생성기가 collaboration 프로필에서 이 피커와 소비 화면 전체를 import 그래프로 함께 지운다.
-   *   생성기는 주석 속 import 문장도 간선으로 읽으므로, 이 파일의 주석에도 그 모듈 경로를 적지 않는다.
+   *   간선은 코드에서만 읽는다 — `import type` 도 간선이고, 주석 속 경로 인용은 간선이 아니다(2026-10-11 판정 통일, 가이드 §3.7-4).
    *   구현은 조합 지점(메일·문자 화면)이 `reusable-base:demo` 마커 블록 안에서 넘긴다.
    */
   addressBook?: RecipientAddressBookSource;

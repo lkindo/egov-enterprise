@@ -21,7 +21,7 @@ import { AppNotificationDrawer } from '../ui/app-notification-drawer';
  * (실측: `layout.tsx:7 → Header → header.tsx:29 → use-notifications`).
  *
  * 그래서 이 파일 하나로 떼어내고, `header.tsx` 에는 `reusable-base:collaboration` 마커 블록만
- * 남긴다. 생성기가 제외 프로필에서 그 블록을 잘라내므로(stripExcludedFrontendPackBlocks)
+ * 남긴다. 생성기가 제외 프로필에서 그 블록을 잘라내므로(createFrontendProjector)
  * **헤더는 살아남고 벨만 사라진다.** 죽은 링크도 남지 않는다(G10).
  *
  * 이 메커니즘의 선례는 [UnifiedDashboardClient](../../UnifiedDashboardClient.tsx) 의

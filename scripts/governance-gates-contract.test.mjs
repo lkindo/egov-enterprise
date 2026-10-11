@@ -43,6 +43,8 @@ const UI_UX_FOUNDATION_CONTRACT_ASSETS = [
   'frontend/scripts/ui-quality-baseline-runner.mjs',
   'scripts/frontend-reachability-census.mjs',
   'scripts/frontend-reachability-census.test.mjs',
+  'scripts/frontend-module-graph.mjs',
+  'scripts/frontend-module-resolver.mjs',
   'scripts/api-docker-context-contract.test.mjs',
   'scripts/frontend-docker-context-contract.test.mjs',
   'scripts/frontend-sensitive-console-contract.test.mjs',

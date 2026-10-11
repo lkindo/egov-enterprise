@@ -47,7 +47,7 @@ import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-q
 // ⚠ [2026-09-22] 이 타입 전용 참조는 반드시 collaboration 블록 안에 둔다. 생성기의 연쇄 제거는 타입 전용
 //   참조도 의존으로 세므로, 블록 밖에 두면 core 투영에서 댓글 서비스와 함께 이 파일 전체가 사라진다 →
 //   모니터링 허브 소실 → 그곳을 목적지로 둔 관측성 리다이렉트 페이지까지 삭제(#707 CI 실측).
-//   (가이드 §3.7-1·4: 타입 참조도 같은 구역이며, 주석에 제거 모듈의 참조 문장·경로를 인용하지 않는다)
+//   (가이드 §3.7-1·4: 타입 참조도 같은 구역이고, `import type` 도 간선이다)
 import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
 /* reusable-base:collaboration:end */
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
