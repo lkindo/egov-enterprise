@@ -621,6 +621,49 @@ test('the unread-notes card on the work home needs both the dashboard and the no
   assert.match(forcedWithoutNote, /업무게시판 글/);
 });
 
+/*
+ * 마커 블록 안의 라우트 리터럴은 블록이 남는 구성에 그 화면도 남을 때만 쓴다. 블록 소유 기능을 해석해(자동 포함 포함)
+ * 라우트를 소유한 기능(공동 화면은 그 기능 전부)이 모두 들어오는지 본다. 어긋나면 지워진 화면으로 가는 링크가 남는다 —
+ * tsc·정밀 점검·화면 생존 대조는 문자열 목적지를 보지 않는다.
+ */
+function routeOwnerDomains(path) {
+  let best = null;
+  const consider = (route, domains) => { if (covers(route, path) && (!best || route.length > best.route.length)) best = { route, domains }; };
+  for (const capability of catalog.capabilities) for (const route of capability.frontend.routes) consider(route, [capability.id]);
+  for (const group of catalog.sharedUi) for (const route of group.routes) consider(route, group.domains);
+  return best?.domains ?? null;
+}
+
+test('every route literal in a marker block survives in every composition that keeps the block', () => {
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const violations = [];
+  let checked = 0;
+  for (const row of FRONTEND_MARKER_FILES) {
+    const source = readFileSync(join(root, 'frontend', row.file), 'utf8');
+    for (const block of parsePackMarkerBlocks(source, { knownPacks, label: row.file }).blocks) {
+      const owners = composerMarkerBlockOwners(row.file, block.pack, block.text);
+      const kept = new Set(resolveProjectRecipe(recipe(owners), catalog).resolvedDomains);
+      for (const match of block.text.matchAll(/['"`](\/[a-z][^'"`?#\s$]*)/g)) {
+        const screen = routeOwnerDomains(match[1].replace(/\/$/, ''));
+        if (!screen) continue;
+        checked++;
+        const missing = screen.filter(domain => !kept.has(domain));
+        if (missing.length) violations.push(`${row.file}:${block.startLine} ${block.pack} [${owners}] ${match[1]} -> ${missing}`);
+      }
+    }
+  }
+  assert.ok(checked >= 10, `route literals checked: ${checked}`);
+  assert.deepEqual(violations, []);
+  // 명령 센터의 협업 허브 바로가기: 게시판·설문(CI 대표 구성)에는 허브가 없으므로 바로가기도 없다. 쪽지를 고르면 허브와 함께 남는다.
+  const file = 'frontend/src/app/components/ui/global-command-center.tsx';
+  const center = readFileSync(join(root, file), 'utf8');
+  const boardSurvey = projectCustom(file, center, resolveProjectRecipe(recipe(['board', 'survey']), catalog));
+  assert.doesNotMatch(boardSurvey, /\/admin\/collaboration|act-collab|import \{ Users \}/);
+  const withNote = projectCustom(file, center, resolveProjectRecipe(recipe(['note']), catalog));
+  assert.match(withNote, /url: '\/admin\/collaboration'/);
+  assert.match(withNote, /import \{ Users \} from 'lucide-react';/);
+});
+
 test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
   const file = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
   const source = readFileSync(join(root, file), 'utf8');

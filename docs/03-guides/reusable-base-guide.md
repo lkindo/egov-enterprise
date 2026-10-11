@@ -34,7 +34,7 @@ clean v* release tag
 | 프로필 | 포함 pack | 용도 |
 |---|---|---|
 | `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
-| `collaboration` | core + collaboration | core + 게시판 클러스터 + 메일·쪽지·알림·SMS·실시간 대시보드 |
+| `collaboration` | core + collaboration | core + 게시판·댓글·스크랩 + 메일·쪽지·알림·SMS·실시간 대시보드 |
 | `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
 
 프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
