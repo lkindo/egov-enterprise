@@ -73,6 +73,27 @@
       "pack": "collaboration"
     },
     {
+      "file": "community/CommunityService.java",
+      "owner": "community",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "community/listener/CommunityUserDeletionCleanupListener.java",
+      "owner": "community",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.user.event.UserDeletionEvent"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "informalsanction/event/SanctionEventListener.java",
       "owner": "informalsanction",
       "target": "user",
@@ -244,6 +265,37 @@
       "pack": "collaboration"
     },
     {
+      "file": "promotion/attachment/ContentAttachmentSourceContributor.java",
+      "owner": "promotion",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "promotion/banner/BannerService.java",
+      "owner": "promotion",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "promotion/popup/PopupService.java",
+      "owner": "promotion",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ],
+      "pack": "demo"
+    },
+    {
       "file": "report/attachment/ReportAttachmentSourceContributor.java",
       "owner": "report",
       "target": "file",
@@ -345,58 +397,6 @@
         "nuri.business.domain.user.repository.UserRepository"
       ],
       "pack": "survey"
-    },
-    {
-      "file": "system/attachment/ContentAttachmentSourceContributor.java",
-      "owner": "system",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "system/content/banner/BannerService.java",
-      "owner": "system",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "system/content/community/CommunityService.java",
-      "owner": "system",
-      "target": "user",
-      "module": "business-core",
-      "types": [
-        "nuri.business.domain.user.entity.User",
-        "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "system/content/community/listener/CommunityUserDeletionCleanupListener.java",
-      "owner": "system",
-      "target": "user",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "system/content/popup/PopupService.java",
-      "owner": "system",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
     }
   ]
 }

@@ -2,8 +2,8 @@ package nuri.api.controller.business.admin.content.community;
 
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
-import nuri.business.service.system.content.community.CommunityService;
-import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.community.CommunityService;
+import nuri.business.service.community.dto.CommunityDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -163,14 +163,14 @@ class CommunityApiControllerTest {
     @Test
     @DisplayName("회원·가입 신청 목록 — status 는 enum 이름으로 받아 서비스에 그대로 넘긴다")
     void getMembers() throws Exception {
-        Page<nuri.business.service.system.content.community.dto.CommunityMemberDto> page = new PageImpl<>(
-                List.of(new nuri.business.service.system.content.community.dto.CommunityMemberDto(
+        Page<nuri.business.service.community.dto.CommunityMemberDto> page = new PageImpl<>(
+                List.of(new nuri.business.service.community.dto.CommunityMemberDto(
                         101L, "esntl-1", "홍길동",
-                        nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED,
+                        nuri.business.domain.community.CommunityMemberStatus.REQUESTED,
                         "A", "N", "20260906", "Y")),
                 PageRequest.of(0, 20), 1);
         when(communityService.getMembers(eq(101L),
-                eq(nuri.business.domain.system.content.community.CommunityMemberStatus.REQUESTED), any()))
+                eq(nuri.business.domain.community.CommunityMemberStatus.REQUESTED), any()))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/content/community/101/members").param("status", "REQUESTED"))

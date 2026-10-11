@@ -1,7 +1,7 @@
 package nuri.api.schema;
 
-import nuri.business.service.system.content.community.CommunityService;
-import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.community.CommunityService;
+import nuri.business.service.community.dto.CommunityDto;
 import nuri.business.service.template.TmplatInfoService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;

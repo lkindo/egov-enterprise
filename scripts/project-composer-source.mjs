@@ -81,12 +81,12 @@ const MANAGEMENT_RBAC_SURFACES = new Map([
   ['/api/v1/admin/operation/rewards', 'reward'],
   ['/api/v1/help/hpcm', 'help'],
   ['/api/v1/help/manuals', 'help'],
-  ['/api/v1/admin/system/banners', 'system'],
-  ['/api/v1/admin/system/popups', 'system'],
+  ['/api/v1/admin/system/banners', 'promotion'],
+  ['/api/v1/admin/system/popups', 'promotion'],
   ['/api/v1/admin/system/templates', 'template'],
 ]);
 // Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
-const RBAC_DOMAINS = ['survey', 'system', 'informalsanction', 'event', 'reward', 'help', 'template'];
+const RBAC_DOMAINS = ['survey', 'promotion', 'informalsanction', 'event', 'reward', 'help', 'template'];
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
 const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
 const GATE_OWNERS = {
@@ -94,11 +94,11 @@ const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
   // 결재 흐름 검증은 알림 리스너(NotificationRequestListener)도 참조해, 알림이 빠지면 함께 지워진다.
   'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction', 'notification'],
-  'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
-  'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['system', 'template'],
+  'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['community'],
+  'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['community', 'template'],
   'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['event'],
   'api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java': ['notification'],
-  'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],
+  'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'community'],
   'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],
   'api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java': ['addressbook'],
   'api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java': ['sms'],
@@ -132,12 +132,12 @@ export function composerProfile(manifest, composition) {
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
 const STATS_TABS = { collaboration: ['board'], survey: ['survey'] };
-const MONITORING_TABS = { collaboration: ['comment'], demo: ['system'] };
+const MONITORING_TABS = { collaboration: ['comment'], demo: ['showcase'] };
 export const FRONTEND_MARKER_FILES = Object.freeze([
   { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
     // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
     owners: { collaboration: block => (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard']),
-      demo: block => (/BannerSlider|PopupManager/.test(block) ? ['system'] : ['dashboard', 'informalsanction']) },
+      demo: block => (/BannerSlider|PopupManager/.test(block) ? ['promotion'] : ['dashboard', 'informalsanction']) },
     step: '업무 홈', reason: '업무 홈의 카드·구역이 게시판·결재·홍보 데이터를 화면 안에서 직접 조립한다.' },
   { file: 'src/app/page.tsx', blocks: { collaboration: 3 }, owners: { collaboration: ['dashboard'] },
     step: '업무 홈', reason: '업무 홈 진입점이 대시보드 데이터 조회를 직접 넘긴다.' },
@@ -148,12 +148,12 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
   // 협업 허브 바로가기는 허브 화면(쪽지·스크랩 공동 화면)을 소유한 두 기능이 있어야 남는다. 게시판만으로는 허브가 지워진다(DEC-OPS-272).
   { file: 'src/app/components/ui/global-command-center.tsx', blocks: { collaboration: 2 }, owners: { collaboration: ['note', 'scrap'] },
     step: '허브 분해(협업 허브)', reason: '명령 센터가 협업 허브 항목을 직접 둔다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
-  // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
+  // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 시연 화면 기능 소유(패턴 갤러리와 같다).
   { file: 'src/app/admin/system/monitoring/MonitoringHubClient.tsx', blocks: { collaboration: 19, demo: 4 }, owners: MONITORING_TABS,
     step: '허브 분해(hub-tabs)', reason: '모니터링 허브가 댓글 관리 탭과 하네스 아틀라스 샘플 탭을 직접 조립한다.' },
   { file: 'src/app/admin/system/monitoring/monitoring-tabs.ts', blocks: { collaboration: 1, demo: 1 }, owners: MONITORING_TABS,
     step: '허브 분해(hub-tabs)', reason: '탭 목록이 허브와 같은 두 탭을 같은 소유로 나눈다.' },
-  { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['system'] },
+  { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
     step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
   // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 셸과 함께 남는 시험도 같은 마커로 기대값을 맞춘다.
   { file: 'src/app/admin/stats/IntelligenceHubClient.tsx', blocks: { collaboration: 15, survey: 6 }, owners: STATS_TABS,
@@ -264,14 +264,14 @@ export function projectComposerJava(file, source, profile) {
   const method = /    @Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints\(\) throws Exception \{[\s\S]*?\n    \}/.exec(source);
   if (!method) throw new Error('Mixed RBAC projection contract drifted');
   const blocks = method[0];
-  const system = blocks.match(/        for \(String path : List\.of\("\/api\/v1\/admin\/system\/banners"[\s\S]*?\n        \}/)?.[0];
+  const promotion = blocks.match(/        for \(String path : List\.of\("\/api\/v1\/admin\/system\/banners"[\s\S]*?\n        \}/)?.[0];
   const sanction = blocks.match(/        mockMvc\.perform\(patch\("\/api\/v1\/admin\/system\/ism\/1\/confirm"\)[\s\S]*?\.andExpect\(status\(\)\.isForbidden\(\)\);/)?.[0];
-  if (!system || !sanction) throw new Error('Mixed RBAC assertion inventory drifted');
+  if (!promotion || !sanction) throw new Error('Mixed RBAC assertion inventory drifted');
   let next = blocks;
-  if (!selected.has('system')) next = next.replace(system, '');
+  if (!selected.has('promotion')) next = next.replace(promotion, '');
   if (!selected.has('informalsanction')) next = next.replace(sanction, '');
   source = source.replace(blocks, next);
-  if (!['system', 'informalsanction'].some(domain => selected.has(domain))) source = removeTest(source, 'ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints');
+  if (!['promotion', 'informalsanction'].some(domain => selected.has(domain))) source = removeTest(source, 'ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints');
   return source;
 }
 

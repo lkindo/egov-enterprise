@@ -366,7 +366,7 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
  * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
  * 한 번 말하고, 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
  */
-const AUTO_FROM_NOTE = '게시판·지식, 댓글, 도움말·온라인 매뉴얼, 스크랩, 커뮤니티·배너·팝업, 템플릿';
+const AUTO_FROM_NOTE = '게시판·지식, 댓글, 커뮤니티, 도움말·온라인 매뉴얼, 스크랩, 템플릿';
 const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
 test('automatic cards stay reachable by keyboard, open their reason when pressed, and each change is announced once', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
@@ -440,7 +440,7 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await page.keyboard.press('Space');
   await expect(page.locator('#plan-status')).toContainText('쪽지 선택으로');
   await page.locator('#preset').selectOption('collaboration');
-  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 3개가 빠졌습니다(도움말·온라인 매뉴얼, 커뮤니티·배너·팝업, 템플릿). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 3개가 빠졌습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
   assert.deepEqual(pageErrors, []);
 });
 
@@ -457,7 +457,7 @@ test('unchecking a feature that another choice still needs says it stayed, not t
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await page.locator('#capability-comment').uncheck();
   await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. '
-    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 3개 늘었습니다(도움말·온라인 매뉴얼, 커뮤니티·배너·팝업, 템플릿). ' + PLAN_READY);
+    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 3개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
   await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#capability-comment')).toBeChecked();
   assert.deepEqual(pageErrors, []);

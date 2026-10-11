@@ -41,6 +41,7 @@ const SINGLE_DELETIONS = {
   addressbook: ['addressbook'],
   board: ['board', 'comment', 'dashboard', 'scrap'],
   comment: ['board', 'comment', 'dashboard', 'scrap'],
+  community: ['community'],
   dashboard: ['dashboard'],
   event: ['event'],
   help: ['help'],
@@ -51,16 +52,18 @@ const SINGLE_DELETIONS = {
   memoreport: ['memoreport'],
   note: ['note'],
   notification: ['dashboard', 'notification'],
+  promotion: ['promotion'],
   report: ['report'],
   reward: ['reward'],
   schedule: ['schedule'],
   // 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 선다(DEC-OPS-272).
   scrap: ['scrap'],
+  // 시연 화면은 프런트 전용 기능이라 지울 백엔드가 없다(DEC-OPS-273). 화면은 pack 단위로만 지운다.
+  showcase: ['showcase'],
   sms: ['sms'],
   survey: ['survey'],
-  system: ['system'],
-  // 커뮤니티(system)가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
-  template: ['system', 'template'],
+  // 커뮤니티가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
+  template: ['community', 'template'],
 };
 
 test('every single deletion of the real catalog removes exactly the frozen set', () => {
@@ -73,7 +76,7 @@ test('every single deletion of the real catalog removes exactly the frozen set',
 
 test('each companion names the requirement that pulled it in with the user sentence of that pair', () => {
   const plan = planDomainDeletion({ catalog, requested: ['template'] });
-  assert.deepEqual(plan.added, [{ domain: 'system', because: { from: 'system', to: 'template', kinds: ['java'],
+  assert.deepEqual(plan.added, [{ domain: 'community', because: { from: 'community', to: 'template', kinds: ['java'],
     userReason: '커뮤니티를 만들 때 템플릿을 고릅니다.' } }]);
 });
 
@@ -106,11 +109,12 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
   // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), Java 참조(스크랩→게시판).
-  for (const pair of ['system>template java', 'dashboard>notification manifest', 'scrap>board java']) {
+  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
-  assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), []);
+  // 프런트 전용 기능만 백엔드 디렉터리가 없다.
+  assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), ['showcase']);
   for (const [domain, expected] of Object.entries(SINGLE_DELETIONS)) {
     assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains, expected, domain);
   }
@@ -143,7 +147,7 @@ test('a tree where a deletion already ran and a new domain was scaffolded still 
     writeFileSync(join(root, APP, 'domain/product/Product.java'),
       'package nuri.business.domain.product;\nimport nuri.business.domain.board.entity.Board;\npublic class Product {}\n');
     const tree = treeDeletionCatalog(root);
-    assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), [...gone]);
+    assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), [...gone, 'showcase']);
     assert.ok(!tree.capabilities.some(capability => capability.id === 'product'));
     for (const [domain, expected] of Object.entries(SINGLE_DELETIONS)) {
       const domains = gone.has(domain) ? [domain] : expected.filter(name => !gone.has(name));
@@ -168,7 +172,7 @@ test('the CLI prints ASCII-only JSON that PowerShell decodes regardless of the c
   const result = spawnSync(process.execPath, [script, '--json', 'template'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^[\x00-\x7f]*$/u, 'stdout is ASCII');
-  assert.deepEqual(JSON.parse(result.stdout).domains, ['system', 'template']);
+  assert.deepEqual(JSON.parse(result.stdout).domains, ['community', 'template']);
   const refused = spawnSync(process.execPath, [script, '--json', 'nope'], { encoding: 'utf8' });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /unknown domain: nope/);

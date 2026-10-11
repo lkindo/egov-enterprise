@@ -360,7 +360,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
 
   if (communityInProjection) it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
     const dto = readRepo(
-      'business-app/src/main/java/nuri/business/service/system/content/community/dto/CommunityDto.java',
+      'business-app/src/main/java/nuri/business/service/community/dto/CommunityDto.java',
     );
     const builder = dto.slice(dto.indexOf('CommunityDto.builder()'));
     // 선언만 있고 빌더에서 채우지 않는 필드는 화면이 읽으면 안 된다.

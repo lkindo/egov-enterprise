@@ -149,17 +149,17 @@ class AttachmentSourceRegistryLinterTest {
             entry("business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java#createSchedule",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "scheduleRepository.save(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/banner/BannerService.java#insertBanner",
+            entry("business-app/src/main/java/nuri/business/service/promotion/banner/BannerService.java#insertBanner",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "bannerRepository.save(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/banner/BannerService.java#updateBanner",
+            entry("business-app/src/main/java/nuri/business/service/promotion/banner/BannerService.java#updateBanner",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.update(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/popup/PopupService.java#createPopup",
+            entry("business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java#createPopup",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "popupRepository.save(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/popup/PopupService.java#updatePopup",
+            entry("business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java#updatePopup",
                     guarded("attachmentAssignmentPolicy.assertAssignable(requestedAtchFileSn)", "popup.update(")),
-            entry("business-app/src/main/java/nuri/business/service/system/content/popup/dto/PopupDto.java#from",
+            entry("business-app/src/main/java/nuri/business/service/promotion/popup/dto/PopupDto.java#from",
                     readOnly()));
 
     @Test

@@ -2,8 +2,8 @@ package nuri.api.controller.business.admin.content.banner;
 
 import nuri.business.test.BaseControllerTest;
 
-import nuri.business.service.system.content.banner.BannerService;
-import nuri.business.service.system.content.banner.dto.BannerDto;
+import nuri.business.service.promotion.banner.BannerService;
+import nuri.business.service.promotion.banner.dto.BannerDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;

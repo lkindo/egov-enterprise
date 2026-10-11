@@ -16,7 +16,7 @@ class StandardTextInputValidationTest {
         return Stream.of(
                 Arguments.of(nuri.business.service.addressbook.dto.AddressBookDto.class,"adbkNm",200),
                 Arguments.of(nuri.business.service.board.dto.BoardSaveRequest.class,"pstTtl",256),
-                Arguments.of(nuri.business.service.system.content.community.dto.CommunityDto.class,"cmntyNm",300),
+                Arguments.of(nuri.business.service.community.dto.CommunityDto.class,"cmntyNm",300),
                 Arguments.of(nuri.business.service.mail.dto.SentMailDto.class,"sj",256),
                 Arguments.of(nuri.business.service.note.dto.NoteDto.class,"noteSj",256),
                 Arguments.of(nuri.business.service.event.dto.EventInfoDto.class,"picNm",100),

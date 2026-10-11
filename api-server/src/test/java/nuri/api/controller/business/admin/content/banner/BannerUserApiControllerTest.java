@@ -1,7 +1,7 @@
 package nuri.api.controller.business.admin.content.banner;
 
-import nuri.business.service.system.content.banner.BannerService;
-import nuri.business.service.system.content.banner.dto.BannerDto;
+import nuri.business.service.promotion.banner.BannerService;
+import nuri.business.service.promotion.banner.dto.BannerDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

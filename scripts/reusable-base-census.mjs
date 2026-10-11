@@ -212,8 +212,28 @@ export function validateReusableBase(manifest, repository) {
   for (const domain of repository.appDomains) {
     if (!domainOwners.has(domain)) errors.push(`business-app domain '${domain}'의 pack 소유자가 없다.`);
   }
+  /*
+    [프런트 전용 기능] backend.frontendOnlyDomains 의 도메인은 business-app 소스 없이 appDomains 에 둘 수 있다(DEC-OPS-273).
+    목록이 서랍이 되지 않도록 양방향으로 본다 — 같은 pack 의 appDomains 에 없거나, business-app main·test 에 그 도메인
+    디렉터리가 생기면 오류다. 목록에 없는 manifest 도메인은 종전대로 소스가 있어야 한다.
+  */
+  const frontendOnlyDomains = new Set();
+  const testDomains = new Set((repository.testSources ?? [])
+    .map((path) => path.match(/^business-app\/src\/test\/java\/nuri\/business\/(?:domain|service)\/([^/]+)\//)?.[1]).filter(Boolean));
+  for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
+    for (const domain of pack.backend?.frontendOnlyDomains ?? []) {
+      if (frontendOnlyDomains.has(domain)) errors.push(`프런트 전용 도메인 '${domain}'이 두 번 선언됐다.`);
+      frontendOnlyDomains.add(domain);
+      if (!(pack.backend?.appDomains ?? []).includes(domain)) {
+        errors.push(`프런트 전용 도메인 '${domain}'이 같은 pack '${packName}'의 appDomains 에 없다.`);
+      }
+      if (repository.appDomains.includes(domain) || testDomains.has(domain)) {
+        errors.push(`프런트 전용 도메인 '${domain}'에 business-app 소스가 있다 — 선언을 걷거나 소스를 다른 도메인으로 옮겨야 한다.`);
+      }
+    }
+  }
   for (const domain of domainOwners.keys()) {
-    if (!repository.appDomains.includes(domain)) {
+    if (!repository.appDomains.includes(domain) && !frontendOnlyDomains.has(domain)) {
       errors.push(`manifest domain '${domain}'에 대응하는 business-app domain 소스가 없다.`);
     }
   }

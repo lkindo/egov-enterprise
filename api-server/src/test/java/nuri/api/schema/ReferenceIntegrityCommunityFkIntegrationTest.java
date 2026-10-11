@@ -2,7 +2,7 @@ package nuri.api.schema;
 
 import jakarta.persistence.Table;
 import nuri.business.domain.board.BoardMaster;
-import nuri.business.domain.system.content.community.Community;
+import nuri.business.domain.community.Community;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

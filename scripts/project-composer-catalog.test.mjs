@@ -75,7 +75,7 @@ test('a declared foreign key whose child table moved into its parent domain is r
 test('a declared tab menu must match an active menu row of an existing screen', t => {
   assert.deepEqual(catalog.capabilities.filter(capability => capability.menuTabs.length).map(capability => [capability.id, capability.menuTabs]), [
     ['board', ['/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA', '/admin/help/faq?tab=WIKI']],
-    ['system', ['/admin/help?tab=COMMUNITY']],
+    ['community', ['/admin/help?tab=COMMUNITY']],
   ]);
   for (const capability of catalog.capabilities) assert.ok(!capability.menuRoutes.some(route => route.includes('?')), capability.id);
   const root = fixture(t);
@@ -90,8 +90,8 @@ test('all producer domains and tables have one verified ownership or an explicit
   const expectedDomains = Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
   // Phase 0c: 통계는 고를 수 있는 기능이 아니라 core 다(20 -> 19). 게시물·자료 이용 화면은 게시판이 소유한다.
-  // Phase 2 기능 분할(DEC-OPS-273): 행사·외부인사·포상을 행사와 포상으로 나눴다(19 -> 20).
-  assert.equal(catalog.capabilities.length, 20);
+  // Phase 2 기능 분할(DEC-OPS-273): 행사·포상을 나누고(19 -> 20) 커뮤니티·배너와 팝업·시연 화면을 나눴다(20 -> 22).
+  assert.equal(catalog.capabilities.length, 22);
   assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
   assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
   assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));
@@ -138,7 +138,7 @@ test('new undeclared domain, table and UI ownership become visible failures', t 
  * 이 단언이 없으면 행사·포상 권한이 모든 구성에 조용히 남는다.
  */
 test('split capabilities keep each permission domain in exactly one optional capability', () => {
-  const owners = { EVENT: 'event', EXT_HR: 'event', REWARD: 'reward' };
+  const owners = { EVENT: 'event', EXT_HR: 'event', REWARD: 'reward', COMMUNITY: 'community', BANNER: 'promotion', POPUP: 'promotion' };
   const permissions = JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')).permissions;
   for (const [domain, owner] of Object.entries(owners)) {
     const codes = permissions.filter(permission => permission.domain === domain).map(permission => permission.code);
@@ -148,6 +148,32 @@ test('split capabilities keep each permission domain in exactly one optional cap
       assert.ok(!catalog.core.permissionCodes.includes(code), code);
     }
   }
+});
+
+/*
+ * 시연 화면은 프런트 전용 기능이다(DEC-OPS-273). manifest 의 frontendOnlyDomains 만 소스 없이 적재되고,
+ * 그 목록이 서랍이 되지 않도록 소스·테이블·권한 도메인을 가진 기능을 올리면 실패한다.
+ */
+test('a frontend-only capability is declared in the manifest and owns no backend, table or permission', t => {
+  const showcase = catalog.capabilities.find(capability => capability.id === 'showcase');
+  assert.deepEqual([showcase.backend, showcase.database, showcase.permissionCodes, showcase.requires],
+    [{ sourcePaths: [], sourceFiles: [] }, { tables: [], explicitSequences: [] }, [], []]);
+  assert.deepEqual(showcase.menuRoutes, ['/admin/patterns', '/admin/system/layout']);
+  const root = fixture(t);
+  const file = join(root, 'config/reusable-base-profiles.json');
+  const without = structuredClone(manifest);
+  delete without.packs.demo.backend.frontendOnlyDomains;
+  writeFileSync(file, JSON.stringify(without));
+  assert.throws(() => loadProjectComposerCatalog(root), /capability has no source: showcase/);
+  const promoted = structuredClone(manifest);
+  promoted.packs.demo.backend.frontendOnlyDomains = ['promotion', 'showcase'];
+  writeFileSync(file, JSON.stringify(promoted));
+  assert.throws(() => loadProjectComposerCatalog(root), /frontend-only capability has backend source: promotion/);
+  const misplaced = structuredClone(manifest);
+  misplaced.packs.collaboration.backend.frontendOnlyDomains = ['showcase'];
+  delete misplaced.packs.demo.backend.frontendOnlyDomains;
+  writeFileSync(file, JSON.stringify(misplaced));
+  assert.throws(() => loadProjectComposerCatalog(root), /frontend-only capability is not an appDomain of its pack: showcase/);
 });
 
 test('configured notice and FAQ permissions belong to the optional board capability', t => {
@@ -203,8 +229,9 @@ const replaceIn = (root, path, from, to) => {
 
 test('selective integrations are declared exactly and every evidence line points at the code that proves them', () => {
   assert.deepEqual(catalog.integrates.map(edgeKey), [
+    'board -> community via fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     'board -> notification via event:NotificationRequestedEvent',
-    'board -> system via fk-optional:fk_tb_bbs_master_tb_cmnty_info',
+    'community -> notification via event:NotificationRequestedEvent',
     'core -> notification via event:NotificationRequestedEvent',
     'informalsanction -> mail via event:MailRequestedEvent',
     'informalsanction -> notification via event:NotificationRequestedEvent',
@@ -215,7 +242,6 @@ test('selective integrations are declared exactly and every evidence line points
     'note -> notification via event:NotificationRequestedEvent',
     'sms -> addressbook via port:RecipientAddressBookSource',
     'sms -> notification via event:NotificationRequestedEvent',
-    'system -> notification via event:NotificationRequestedEvent',
   ]);
   for (const edge of catalog.integrates) {
     const [kind, target] = edge.via.split(/:(.+)/);

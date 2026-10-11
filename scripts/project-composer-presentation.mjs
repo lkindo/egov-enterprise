@@ -16,16 +16,18 @@ import { join } from 'node:path';
 
 export const ROUTE_CENSUS_PATH = 'config/ui-route-capabilities.json';
 export const COMPOSER_AREAS = Object.freeze([
-  { id: 'communication', label: '소통·협업', domains: ['mail', 'sms', 'note', 'notification', 'addressbook', 'scrap'] },
-  { id: 'knowledge', label: '지식·커뮤니티', domains: ['board', 'comment', 'help', 'system', 'template', 'isg'] },
+  { id: 'communication', label: '소통·협업', domains: ['mail', 'sms', 'note', 'notification', 'addressbook', 'scrap', 'promotion'] },
+  { id: 'knowledge', label: '지식·커뮤니티', domains: ['board', 'comment', 'help', 'community', 'template', 'isg'] },
   { id: 'work', label: '업무 지원', domains: ['informalsanction', 'event', 'reward', 'report', 'schedule', 'memoreport'] },
   { id: 'participation', label: '분석·참여', domains: ['survey', 'dashboard'] },
+  { id: 'showcase', label: '시연·예제', domains: ['showcase'] },
 ]);
 
 export const CAPABILITY_SUMMARIES = Object.freeze({
   addressbook: '주소록과 연락처 관리',
   board: '게시판과 자주 묻는 질문·질의응답·위키',
   comment: '게시글 댓글과 댓글 관리',
+  community: '커뮤니티 개설·가입·회원 관리',
   dashboard: '업무 홈 실시간 연결·오늘 게시글·전체 미읽음 알림',
   event: '행사와 행사별 외부인사 관리',
   help: '도움말과 온라인 매뉴얼',
@@ -35,13 +37,14 @@ export const CAPABILITY_SUMMARIES = Object.freeze({
   memoreport: '메모 보고와 지시',
   note: '쪽지 보내기·받기',
   notification: '알림 센터와 실시간 알림',
+  promotion: '홈 배너와 팝업 공지 관리',
   report: '개인 업무 보고',
   reward: '포상 기록 관리',
   schedule: '개인·부서 일정',
   scrap: '게시글 스크랩',
+  showcase: '화면 패턴·레이아웃 예제와 하네스 샘플',
   sms: '문자 발송과 결과 확인',
   survey: '설문조사와 여론조사·투표',
-  system: '커뮤니티·배너·팝업 관리',
   template: '커뮤니티가 고르는 템플릿 원장 관리',
 });
 

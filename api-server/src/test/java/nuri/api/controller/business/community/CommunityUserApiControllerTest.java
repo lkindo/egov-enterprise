@@ -1,7 +1,7 @@
 package nuri.api.controller.business.community;
 
-import nuri.business.service.system.content.community.CommunityService;
-import nuri.business.service.system.content.community.dto.CommunityDto;
+import nuri.business.service.community.CommunityService;
+import nuri.business.service.community.dto.CommunityDto;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -93,8 +93,8 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     @DisplayName("내 멤버십 상태 — principal 의 esntlId 로 조회한다")
     void getMyMembership() throws Exception {
         given(communityService.getMembership(101L, "user01")).willReturn(
-                new nuri.business.service.system.content.community.dto.CommunityMembershipDto(
-                        101L, nuri.business.service.system.content.community.dto.CommunityMembershipDto.Status.REQUESTED, "20260906"));
+                new nuri.business.service.community.dto.CommunityMembershipDto(
+                        101L, nuri.business.service.community.dto.CommunityMembershipDto.Status.REQUESTED, "20260906"));
 
         mockMvc.perform(get("/api/v1/communities/101/membership").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

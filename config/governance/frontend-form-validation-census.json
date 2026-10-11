@@ -1041,7 +1041,7 @@
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -1058,7 +1058,7 @@
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -1075,7 +1075,7 @@
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/app/admin/system/codes/administ/__tests__/AdministCodeClient.form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
