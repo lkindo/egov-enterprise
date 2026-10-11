@@ -604,11 +604,15 @@ test('dashboard, notifications and optional address book blocks follow their dom
 test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
   const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
   const source = readFileSync(join(root, file), 'utf8');
-  // The card block is owned by dashboard + note. Today dashboard pulls in note through board, so the
-  // card survives with the dashboard; the dual ownership keeps it from dangling if that dependency moves.
+  // The card block is owned by dashboard + note. Dashboard alone used to pull in note through the board
+  // bundle's scrap edge and the note/scrap hub; that edge is gone (DEC-OPS-272), so the card now leaves with
+  // note and the dual ownership keeps it from dangling.
   const withoutDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
   assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
-  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard']), catalog));
+  const dashboardOnly = resolveProjectRecipe(recipe(['dashboard']), catalog);
+  assert.ok(!dashboardOnly.resolvedDomains.includes('note'), dashboardOnly.resolvedDomains.join(','));
+  assert.doesNotMatch(projectCustom(file, source, dashboardOnly), /UnreadNotesCard/);
+  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard', 'note']), catalog));
   assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
   assert.match(withDashboard, /<UnreadNotesCard \/>/);
   const forcedWithoutNote = projectCustom(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] },

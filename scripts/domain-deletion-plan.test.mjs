@@ -31,10 +31,12 @@ const SINGLE_DELETIONS = {
   memoreport: ['memoreport'],
   note: ['note'],
   notification: ['dashboard', 'notification'],
-  operation: ['informalsanction', 'operation'],
+  // 행사·포상은 결재를 요구하지만(포상의 결재 참조) 결재는 행사·포상을 요구하지 않는다(DEC-OPS-272).
+  operation: ['operation'],
   report: ['report'],
   schedule: ['schedule'],
-  scrap: ['board', 'comment', 'dashboard', 'scrap'],
+  // 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 선다(DEC-OPS-272).
+  scrap: ['scrap'],
   sms: ['sms'],
   survey: ['survey'],
   system: ['system'],

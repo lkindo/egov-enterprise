@@ -62,13 +62,14 @@ test('declared cross-domain foreign keys are bound to their migration evidence a
 
 test('a declared foreign key whose child table moved into its parent domain is refused', t => {
   // Phase 0c 에서 자료 이용 기록이 게시판 소유가 되며 그 외래 키 선언을 지웠다. 엔티티만 옮기고 선언을 남기면
-  // 소유 판정이 어긋나 거부돼야 한다. 같은 상황을 스크랩 엔티티로 재현한다.
+  // 소유 판정이 어긋나 거부돼야 한다. 같은 상황을 댓글 엔티티로 재현한다. 스크랩 엔티티는 스크랩이 게시판을 요구하는
+  // 유일한 근거라(묶음 선언이 없다) 옮기면 사유 표 대조가 먼저 실패한다.
   const root = fixture(t);
-  const from = join(root, 'business-app/src/main/java/nuri/business/domain/scrap/Scrap.java');
-  const to = join(root, 'business-app/src/main/java/nuri/business/domain/board/Scrap.java');
-  writeFileSync(to, readFileSync(from, 'utf8').replace('package nuri.business.domain.scrap;', 'package nuri.business.domain.board;'));
+  const from = join(root, 'business-app/src/main/java/nuri/business/domain/comment/Comment.java');
+  const to = join(root, 'business-app/src/main/java/nuri/business/domain/board/Comment.java');
+  writeFileSync(to, readFileSync(from, 'utf8').replace('package nuri.business.domain.comment;', 'package nuri.business.domain.board;'));
   rmSync(from);
-  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key ownership drifted: fk_tb_bbs_scrap_tb_bbs_item/);
+  assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key ownership drifted: fk_tb_bbs_comment_tb_bbs_item/);
 });
 
 test('a declared tab menu must match an active menu row of an existing screen', t => {
@@ -440,9 +441,16 @@ test('every dependency edge carries one Korean sentence per feature pair and the
   }
   assert.deepEqual([...pairs.keys()].sort(), Object.keys(REQUIRES_USER_REASONS).sort());
   // 같은 쌍의 코드 참조와 묶음 선언이 한 문장으로 모인다 — 종전 화면은 같은 원인을 두 번 보였다.
-  const scrap = catalog.capabilities.find(capability => capability.id === 'scrap').requires.filter(edge => edge.domain === 'board');
-  assert.deepEqual(scrap.map(edge => edge.kind).sort(), ['java', 'manifest']);
-  assert.equal(new Set(scrap.map(edge => edge.userReason)).size, 1);
+  const board = catalog.capabilities.find(capability => capability.id === 'board').requires.filter(edge => edge.domain === 'comment');
+  assert.deepEqual(board.map(edge => edge.kind).sort(), ['java', 'manifest']);
+  assert.equal(new Set(board.map(edge => edge.userReason)).size, 1);
+  // 근거 없는 묶음 간선은 걷었다(DEC-OPS-272). 스크랩·행사는 코드로 게시판·결재를 요구하지만 그 반대는 없다.
+  const requires = (from, to) => catalog.capabilities.find(capability => capability.id === from).requires.filter(edge => edge.domain === to).map(edge => edge.kind).sort();
+  assert.deepEqual(requires('scrap', 'board'), ['java']);
+  assert.deepEqual(requires('operation', 'informalsanction'), ['java']);
+  for (const [from, to] of [['board', 'scrap'], ['comment', 'scrap'], ['scrap', 'comment'], ['informalsanction', 'operation']]) {
+    assert.deepEqual(requires(from, to), [], `${from}>${to}`);
+  }
 });
 
 test('a new dependency without a sentence, a sentence without its dependency and developer text in a sentence are refused', t => {
