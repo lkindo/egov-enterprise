@@ -175,42 +175,32 @@ describe('app shell accessibility source contract', () => {
     expect(globals.match(/--app-sidebar-rail-width:/g)).toHaveLength(1);
   });
 
-  it('fill 화면에서 숨는 푸터의 링크는 같은 조건(lg 이상)에서 보이는 머리글 링크로도 닿고, 같은 pack 과 함께 남는다', () => {
+  it('푸터의 링크는 셸 링크 슬롯에서만 오고, 머리글은 그 링크를 그리는 자리를 lg 이상에서 숨기지 않는다', () => {
     // [2026-10-05] fill 셸이 있는 화면은 work-fill 조건(폭 lg 이상·높이 600px 이상)에서 푸터를 숨긴다(globals.css, :has).
-    //   푸터에만 있는 길이 생기면 그 화면에서는 닿을 수 없게 된다(2.4.5 여러 경로·3.2.3 일관된 내비게이션). 그래서 푸터의 모든
-    //   링크 목적지가 머리글에도 있고, 그 머리글 링크가 lg 이상에서 숨지 않으며, 푸터 링크가 남는 프로필에서 함께 남는지 본다.
-    //   주석 속 링크 예시는 세지 않는다(재사용 pack 마커만 남기고 다른 주석은 같은 길이의 공백으로 지운다).
-    const blankComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, (comment) => (
-      /^\/\*\s*reusable-base:[a-z-]+:(?:start|end)\s*\*\/$/.test(comment) ? comment : comment.replace(/[^\n]/g, ' ')
-    ));
-    const packAt = (source: string, index: number) => {
-      const before = source.slice(0, index);
-      const start = [...before.matchAll(/reusable-base:([a-z-]+):start/g)].at(-1);
-      const end = [...before.matchAll(/reusable-base:([a-z-]+):end/g)].at(-1);
-      return start && (!end || end.index! < start.index!) ? start[1] : null;
-    };
+    //   푸터에만 있는 길이 생기면 그 화면에서는 닿을 수 없게 된다(2.4.5 여러 경로·3.2.3 일관된 내비게이션).
+    // [슬롯 단계 PR-6] 셸 링크는 기능이 기여하는 데이터다(shell-links). 바닥글 항목마다 같은 기여 안에 같은 목적지의 머리글 항목이
+    //   있어야 한다는 짝 규칙은 경계 계약(scripts/reusable-frontend-boundaries-contract.test.mjs)이 기여 원문으로 본다 — 기여 파일 하나가
+    //   함께 지워지므로 머리글이 먼저 빠지는 프로필이 없다. 이 시험은 레지스트리를 import 하지 않는다(소비자 표는 시험도 센다).
+    //   여기서 보는 것은 셸 쪽 두 사실이다: 바닥글은 슬롯 밖의 정적 링크를 두지 않고, 머리글이 슬롯 링크를 그리는 자리는 lg 이상에서
+    //   숨지 않는다. 슬롯 데이터가 실제로 그려지는지는 렌더 시험(shell-slots.test.tsx)이 본다. 주석 속 링크 예시는 세지 않는다.
+    const blankComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '));
     const linkTags = (source: string) => [...source.matchAll(/<(?:Link|a)\b[\s\S]*?\/?>/g)]
-      .map((match) => ({ tag: match[0], index: match.index!, href: match[0].match(/\bhref="([^"]+)"/)?.[1] ?? null }));
+      .map((match) => ({ tag: match[0], href: match[0].match(/\bhref="([^"]+)"/)?.[1] ?? null }));
 
     const footer = blankComments(readAppSource('components', 'layout', 'footer.tsx'));
     const header = blankComments(readAppSource('components', 'layout', 'header.tsx'));
-    const footerLinks = linkTags(footer);
-    // 정규식이 링크를 놓쳐 검사가 비는 일을 막는다 — 모든 링크 태그가 정적 href 를 가져야 대조할 수 있다.
-    expect(footerLinks.length).toBe((footer.match(/<(?:Link|a)\b/g) ?? []).length);
-    for (const link of footerLinks) {
-      expect(link.href, `푸터 링크의 목적지를 정적으로 읽을 수 없습니다: ${link.tag}`).toBeTruthy();
-      const twin = linkTags(header).find((candidate) => candidate.href === link.href);
-      expect(twin, `푸터의 ${link.href} 가 머리글에 없어 fill 화면에서 닿을 수 없습니다`).toBeTruthy();
-      const tokens = [...twin!.tag.matchAll(/["'`]([^"'`]*)["'`]/g)].flatMap((match) => match[1].split(/\s+/));
-      expect(tokens.filter((token) => /^(?:sm|md|lg|xl|2xl):hidden$/.test(token)), `머리글의 ${link.href} 가 넓은 화면에서 숨습니다`).toEqual([]);
-      if (tokens.includes('hidden')) {
-        expect(tokens.some((token) => /^(?:sm|md|lg):(?:flex|inline-flex|block|inline-block|inline|grid)$/.test(token)),
-          `머리글의 ${link.href} 가 lg 이상에서 다시 보이지 않습니다`).toBe(true);
-      }
-      const footerPack = packAt(footer, link.index);
-      const headerPack = packAt(header, twin!.index);
-      expect(headerPack === null || headerPack === footerPack,
-        `머리글의 ${link.href}(pack ${headerPack})가 푸터 링크(pack ${footerPack})보다 먼저 빠지는 프로필이 있습니다`).toBe(true);
+    expect(footer, '바닥글이 셸 링크 슬롯을 그리지 않습니다').toMatch(/footerShellLinks\.map\(/);
+    expect(linkTags(footer).map((link) => link.href), '바닥글에 슬롯 밖의 정적 링크가 있습니다').toEqual([null]);
+
+    const at = header.indexOf('headerShellLinks.map(');
+    expect(at, '머리글이 셸 링크 슬롯을 그리지 않습니다').toBeGreaterThan(-1);
+    const [rendered] = linkTags(header.slice(at));
+    expect(rendered?.tag).toMatch(/\bhref=\{href\}/);
+    const tokens = [...rendered!.tag.matchAll(/["'`]([^"'`]*)["'`]/g)].flatMap((match) => match[1].split(/\s+/));
+    expect(tokens.filter((token) => /^(?:sm|md|lg|xl|2xl):hidden$/.test(token)), '머리글의 셸 링크가 넓은 화면에서 숨습니다').toEqual([]);
+    if (tokens.includes('hidden')) {
+      expect(tokens.some((token) => /^(?:sm|md|lg):(?:flex|inline-flex|block|inline-block|inline|grid)$/.test(token)),
+        '머리글의 셸 링크가 lg 이상에서 다시 보이지 않습니다').toBe(true);
     }
   });
 

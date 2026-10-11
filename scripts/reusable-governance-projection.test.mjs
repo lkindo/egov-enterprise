@@ -6,7 +6,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectReusableGovernance, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
-import { projectFrontendPackMarkers, pruneFrontend, stripExcludedFrontendPackBlocks } from './reusable-source-frontend.mjs';
+import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
+import { FRONTEND_MARKER_FILES, composerProfile } from './project-composer-source.mjs';
 import { planJavaRemoval, pruneJava, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities, parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
@@ -230,13 +231,24 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
       const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
         selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
-      const profile = profileName === 'custom'
-        ? { ...profiles.profiles.core, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths }
-        : profiles.profiles[profileName];
+      // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 직접 선택도 선택 투영과 pack 마커를 한 번에 판정한다.
+      const profile = composerProfile(profiles, composition);
+      const projector = createFrontendProjector({ manifest: profiles, profile, composition, files: copied.filter(file => file.startsWith('frontend/')) });
       pruneJava(output, profiles, profile);
       const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
       for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
-      stripExcludedFrontendPackBlocks(output, profiles, profile);
+      const packBlocks = applyFrontendProjection(output, projector);
+      // lock.frontend.packBlocks: 소유는 남지만 pack 이 빠져 걷은 블록만 센다. 프리셋은 소유가 늘 참이라 표의 제외 pack 블록 합과
+      // 그 행 수다. 직접 선택은 블록의 소유 기능이 그 마커 pack 을 함께 끌어오므로 0/0 이다 — 이 단언이 집계를 '내용이 바뀐 파일 수'로
+      // 바꾸는 변이를 잡는다(프리셋에서는 두 셈이 같다). 표의 기대식을 직접 선택에 쓰면 거짓으로 붉으므로 값을 직접 적는다.
+      const excluded = FRONTEND_MARKER_FILES.map((row) => Object.entries(row.blocks)
+        .filter(([pack]) => !profile.packs.includes(pack))
+        .reduce((sum, [, count]) => sum + count, 0));
+      const expectedPackBlocks = composition.profile === 'custom'
+        ? { strippedBlocks: 0, changedFiles: 0 }
+        : { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length };
+      assert.deepEqual({ strippedBlocks: packBlocks.strippedBlocks, changedFiles: packBlocks.changedFiles }, expectedPackBlocks,
+        `${profileName}: lock.frontend.packBlocks`);
       pruneFrontend(output, profiles, profile);
       const manifest = { ...profiles, sourcePolicy: { ...profiles.sourcePolicy, generatedProfile: profileName },
         profiles: { [profileName]: profile }, packs: Object.fromEntries(Object.entries(profiles.packs)
@@ -245,11 +257,7 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
       const result = projectReusableGovernance({
         sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit, composition,
-        projectSource: (file, text) => projectFrontendPackMarkers(text, {
-          knownPacks: new Set(Object.keys(profiles.packs)),
-          excludedPacks: new Set(Object.keys(profiles.packs).filter(name => !profile.packs.includes(name))),
-          label: file,
-        }).source,
+        projectSource: (file, text) => projector.project(file, text).source,
       });
       const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
       assert.equal(projectionLedger.files > 0, profileName !== 'demo', `${profileName}: 지운 파일이 원장에 남는다`);

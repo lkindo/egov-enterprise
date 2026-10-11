@@ -17,6 +17,7 @@ import {
   urlCensusSha256,
 } from './merge-main-regenerate.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
+import { slotRegistryOutputs } from './slot-registry.mjs';
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -114,6 +115,20 @@ test('only generators whose inputs or outputs changed on both sides run, downstr
     ['screen-registry', 'url-state-census', 'atlas'], 'the permission bundle ledger feeds the screen registry');
   assert.deepEqual(ids({ ours: ['config/frontend-visible-terms.json'], theirs: ['config/governance/permission-bundles.json'] }),
     ['screen-registry', 'url-state-census', 'atlas'], 'the visible terms ledger checks the bundle copy the registry writes');
+});
+
+test('slot contributions changed on both sides regenerate the slot registries before the censuses that scan them', () => {
+  // 슬롯 레지스트리(슬롯 단계 PR-4)도 frontend/src 의 소스다 — 다시 만든 레지스트리를 census 들이 읽는다.
+  const ids = files => planRegeneration(files).map(generator => generator.id);
+  assert.deepEqual(ids({ ours: ['frontend/src/extensions/addressbook/recipient-picker-sources.ts'],
+    theirs: ['frontend/src/extensions/note/recipient-picker-sources.ts'] }),
+  ['slot-registries', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas']);
+  const step = GENERATORS.find(generator => generator.id === 'slot-registries');
+  // 출력은 손으로 적지 않는다 — 디스크의 기여·레지스트리에서 읽는다(지금은 슬롯 세 개).
+  assert.deepEqual(step.outputs, slotRegistryOutputs(path.resolve(import.meta.dirname, '..')));
+  assert.ok(step.outputs.includes('frontend/src/extensions/generated-recipient-picker-sources.ts'));
+  assert.ok(planRegeneration({ ours: [step.outputs[0]], theirs: [step.outputs[0]] }).some(generator => generator.id === 'slot-registries'),
+    'a conflicted registry is regenerated, not picked');
 });
 
 test('the screen-registry step reads every input the generator declares and writes its output', () => {

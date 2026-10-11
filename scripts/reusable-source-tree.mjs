@@ -17,9 +17,9 @@ export function fail(message) {
   throw new Error(message);
 }
 
-function run(command, args) {
+function run(command, args, cwd = ROOT) {
   const result = spawnSync(command, args, {
-    cwd: ROOT,
+    cwd,
     encoding: null,
     maxBuffer: 128 * 1024 * 1024,
     windowsHide: true,
@@ -52,8 +52,9 @@ export function initializeGeneratedRepository(output) {
   if (realpathSync.native(repository) !== target) fail('산출물의 독립 Git 경계를 확인하지 못했다.');
 }
 
-export function trackedAndUntrackedFiles() {
-  return run('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'])
+/** Git 이 보는 파일(추적·무시되지 않은 새 파일, build 제외)의 `cwd` 기준 경로. 기본은 이 저장소다(도달성 census 는 자기 repoRoot 를 넘긴다). */
+export function trackedAndUntrackedFiles(cwd = ROOT) {
+  return run('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd)
     .toString('utf8')
     .split('\0')
     .filter(Boolean)

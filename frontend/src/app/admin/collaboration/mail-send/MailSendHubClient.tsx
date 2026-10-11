@@ -33,24 +33,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
 import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
-/* reusable-base:demo:start */
-import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
-/* reusable-base:demo:end */
-
-/**
- * '수신자 찾기' 가 실제로 제공하는 출처. 주소록은 demo pack 소유라 그 pack 이 빠진 프로필에서는 마커 블록과 함께
- * 사라지고, 입력 안내도 그 사실을 따른다(GAP-PACK-001 ② — 화면이 없는 출처를 약속하지 않는다).
- */
-const PICKER_SOURCE_LABEL = [
-  '사용자',
-  /* reusable-base:demo:start */
-  '주소록',
-  /* reusable-base:demo:end */
-].join('·');
+import { useRecipientAddressBook } from '@/app/components/ui/recipient-picker-sources';
 
 /**
  * 직접 입력 수신자 검증용. 서버가 이 값을 그대로 SMTP 수신 주소로 쓰므로, 주소 형태가 아닌 값은
- * 애초에 받지 않는다. 사람을 고르려면 '수신자 찾기'(사용자 검색, 전체 제품에서는 주소록 포함)를 쓴다 — 그쪽은
+ * 애초에 받지 않는다. 사람을 고르려면 '수신자 찾기'(사용자 검색, 주소록 기능과 주소록 조회 권한이 있으면 주소록 포함)를 쓴다 — 그쪽은
  * esntlId 를 실어 서버가 주소를 해석한다(DEC-OPS-035).
  */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -104,6 +91,10 @@ export default function MailSendHubClient() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
   const departmentSource = useRecipientDepartmentSource();
+  // [2026-10-11 슬롯 단계 PR-4·PR-5] 주소록 출처는 주소록 기능의 슬롯 기여에서 받는다 — 주소록이 빠진 구성이나 주소록 조회 권한(ADBK_READ)이
+  //   없는 사용자에게는 없다. 입력 안내도 '수신자 찾기' 가 실제로 주는 출처만 말한다(GAP-PACK-001 ② — 열 수 없는 출처를 약속하지 않는다).
+  const addressBook = useRecipientAddressBook('mail');
+  const pickerSourceLabel = ['사용자', addressBook?.label].filter(Boolean).join('·');
   // [2026-10-01] 발송 버튼은 발송 권한으로 보인다. 이 화면은 권한 없이도 들어올 수 있어, 종전에는 메일을 다 쓴 뒤에야
   //   403 을 만났다. 작성이 이 화면의 목적이라 폼은 그대로 두고 버튼 자리에 사유를 보인다. 서버 인가는 그대로 집행된다(H3).
   const { user } = useAuth();
@@ -331,7 +322,7 @@ export default function MailSendHubClient() {
                     id="mail-recipient-search"
                     {...validation.fieldProps('recipients')}
                     data-testid="mail-recipient-input"
-                    placeholder={`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${PICKER_SOURCE_LABEL}에서 고르세요`}
+                    placeholder={`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${pickerSourceLabel}에서 고르세요`}
                     className="font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
                     onChange={(e) => {
@@ -372,9 +363,7 @@ export default function MailSendHubClient() {
             isOpen={isPickerOpen}
             channel="mail"
             department={departmentSource}
-            /* reusable-base:demo:start */
-            addressBook={recipientAddressBookSource}
-            /* reusable-base:demo:end */
+            addressBook={addressBook?.source}
             onClose={() => setIsPickerOpen(false)}
             onConfirm={mergeRecipients}
           />

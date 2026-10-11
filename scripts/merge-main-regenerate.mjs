@@ -24,6 +24,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { slotRegistryOutputs } from './slot-registry.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -62,6 +63,14 @@ export const GENERATORS = [
       'frontend/src/types/generated-permissions.ts'],
     touches: ['api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'],
     command: ['node', ['scripts/generate-permissions.mjs']],
+  },
+  {
+    // 슬롯 레지스트리(슬롯 단계 PR-4)는 기여 파일 이름에서 만든다. 레지스트리도 frontend/src 의 소스라 그것을 읽는 census 들보다 앞이다.
+    // 출력은 손으로 적지 않는다 — 병합된 디스크의 기여·레지스트리에서 읽는다(양쪽이 새 슬롯을 더해도 그 레지스트리가 출력이다).
+    id: 'slot-registries',
+    inputs: under('frontend/src/extensions'),
+    get outputs() { return slotRegistryOutputs(repoRoot); },
+    command: ['node', ['scripts/slot-registry.mjs', '--write']],
   },
   {
     id: 'boundary-census',

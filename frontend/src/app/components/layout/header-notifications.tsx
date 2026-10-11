@@ -20,12 +20,12 @@ import { AppNotificationDrawer } from '../ui/app-notification-drawer';
  * 통째로 제거하면 생성기의 전이 cascade 가 `layout.tsx` 까지 끌고 가 앱이 무너진다
  * (실측: `layout.tsx:7 → Header → header.tsx:29 → use-notifications`).
  *
- * 그래서 이 파일 하나로 떼어내고, `header.tsx` 에는 `reusable-base:collaboration` 마커 블록만
- * 남긴다. 생성기가 제외 프로필에서 그 블록을 잘라내므로(stripExcludedFrontendPackBlocks)
- * **헤더는 살아남고 벨만 사라진다.** 죽은 링크도 남지 않는다(G10).
+ * 그래서 이 파일 하나로 떼어 두고, 머리글은 알림 기능의 슬롯 기여(`src/extensions/notification/header-widgets.ts`,
+ * 슬롯 단계 PR-6)를 레지스트리로 읽는다. 알림이 빠진 구성에서는 기여와 이 파일이 함께 직접 지워지고 레지스트리가 빈 배열로
+ * 다시 렌더되므로 **헤더는 살아남고 벨만 사라진다.** 죽은 링크도 남지 않는다(G10).
  *
- * 이 메커니즘의 선례는 [UnifiedDashboardClient](../../UnifiedDashboardClient.tsx) 의
- * `reusable-base:demo` 블록이다 — 배너·팝업을 같은 방식으로 떼어 두었다.
+ * 슬롯 술어(NOTI_READ)가 거짓이면 머리글은 이 컴포넌트를 마운트하지 않는다. 아래의 같은 판정은 이중 방어이고, 이 컴포넌트를
+ * 직접 렌더하는 시험(권한 철회)이 본다.
  */
 export function HeaderNotifications() {
   const [isOpen, setIsOpen] = useState(false);

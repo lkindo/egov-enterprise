@@ -338,15 +338,18 @@ test('the deep plan sees exactly the files the generator copies and projects eve
       composition: { profile: 'core' }, sourceRoot: fixture, pageSurvival: expectation }));
   };
   assert.throws(generated(small, ['frontend/src/app/login/page.tsx']),
-    error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]');
+    error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]',
+    'the generator fails on a lost screen and names it');
   assert.throws(generated(keepsDemo), /Screens outside the composition survive projection: \/demo/);
-  assert.throws(generated(small, ['frontend/src/app/layout.tsx']), /frontend 필수 진입점이 projection에서 제거됐다: src\/app\/layout\.tsx/);
+  assert.throws(generated(small, ['frontend/src/app/layout.tsx']), /frontend 필수 진입점이 projection에서 제거됐다: src\/app\/layout\.tsx/,
+    'the generator fails without the root layout');
   assert.doesNotThrow(generated(small));
   // 생성기도 화면을 디스크의 실제 page 파일 이름으로 본다 — 대소문자만 다른 이름(Page.tsx)은 대소문자를 가리지 않는 디스크에서도
   // 그 화면이 아니다(라우트는 이름 그대로다).
   const caseRenamed = output => renameSync(join(output, 'frontend/src/app/login/page.tsx'), join(output, 'frontend/src/app/login/Page.tsx'));
   assert.throws(generated(small, [], pageSurvival, caseRenamed),
-    error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]');
+    error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]',
+    'the generator reads the page file name exactly');
   // 기대값으로 대조할 수 없으면(원장에 없는 리다이렉트 목적지) 정밀 점검은 프런트 투영 차단으로 말하고, 생성기도 같은 판정에서 실패한다.
   const uncomparable = { ...pageSurvival, rows: routeRowsFromLedger({ routes: [...rows.values()].map(row => ({ route: row.route, source: row.source,
     routing: row.route === '/login' ? { kind: 'page-redirect', target: '/nowhere' } : { kind: 'page' } })) }) };
@@ -354,6 +357,22 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION']);
   assert.match(deep.blockers[0].message, /Redirect target was not an upstream page: \/nowhere \(\/login\)/);
   assert.throws(generated(small, [], uncomparable), /Redirect target was not an upstream page: \/nowhere \(\/login\)/);
+  // 판정할 수 없는 import 와 대소문자만 다른 import 대상은 정밀 점검과 생성기가 같은 자리(프런트 투영)에서 실패한다(슬롯 단계 PR-2).
+  //   곧 지워질 파일이어도 같다. 해석은 디스크를 묻지 않으므로 대소문자를 가리지 않는 디스크에서도 실패한다.
+  //   두 단언은 같은 판정 함수(planFrontendRemoval)를 지나므로, 판정을 지우는 변이는 정밀 점검 단언에서 먼저 붉다.
+  for (const [label, text, failure] of [
+    ['an unjudgeable import', "const name = './x';\nexport default function Page() { return import(name); }\n",
+      /UNPARSEABLE_DYNAMIC_IMPORT frontend\/src\/app\/demo\/page\.tsx:2/],
+    ['a case-only target', "import Layout from '../Layout';\nexport default function Page() { return Layout; }\n",
+      /IMPORT_TARGET_CASE_MISMATCH frontend\/src\/app\/demo\/page\.tsx:1/],
+  ]) {
+    write('frontend/src/app/demo/page.tsx', text);
+    deep = plan();
+    assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION'], `deep plan blocks ${label}`);
+    assert.match(deep.blockers[0].message, failure);
+    assert.throws(generated(small), failure, `the generator fails on ${label}`);
+  }
+  write('frontend/src/app/demo/page.tsx', 'export default function Page() { return null; }\n');
   // 생성기는 기대값을 카탈로그나 미리 만든 기대값으로만 만든다(조용히 다시 적재하지 않는다).
   assert.throws(() => projectSourceTree(fixture, { manifest: small, profile: small.profiles.core, composition: { profile: 'core' }, sourceRoot: fixture }),
     /projectSourceTree needs the composition catalog or a page survival expectation/);

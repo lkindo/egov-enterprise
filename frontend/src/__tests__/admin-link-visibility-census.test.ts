@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as ts from 'typescript';
 import { registeredPagePermissions } from '@/lib/auth/page-access';
 import { projectionRemovedFiles } from '@/test-utils/projection';
 
@@ -19,32 +20,43 @@ import { projectionRemovedFiles } from '@/test-utils/projection';
  *      목록을 거르는 형태(`href: '<목적지>'` 항목 + `canOpenPage(주체, x.href)`)도 인정한다.
  * 등록되지 않은 목적지는 라우트 게이트가 누구에게나 거부하므로 예외 없이 red 다.
  *
- * ⚠ 알려진 한계: 변수로 조립한 목적지(`router.push(TAB_ROUTES[tab])`)는 세지 않는다. 출발 화면은 파일에서 가장
+ * 슬롯 기여(src/extensions, 슬롯 단계 PR-4)는 출발 화면이 없는 데이터다. 그래서 2·3 의 파일 단위 판정을 쓰지 않고, 링크 항목마다
+ * 같은 객체의 `visibleWhen: { page: '<같은 목적지>' }` 만 게이트로 인정한다 — 셸은 그 술어를 canOpenPage 로 판정한다(slots.ts).
+ * 기여는 AST 로 읽는다: 따옴표·계산·단축 키도 링크 키로 보고, 값이 리터럴이 아닌 링크와 키를 알 수 없는 속성은 붉다(unresolved).
+ * 검사 대상은 .ts·.tsx 전부다(시험·선언 파일 제외).
+ *
+ * ⚠ 알려진 한계: 일반 파일에서 변수로 조립한 목적지(`router.push(TAB_ROUTES[tab])`)는 세지 않는다. 출발 화면은 파일에서 가장
  *   가까운 page.tsx 의 라우트로 보며, 여러 라우트가 같이 쓰는 파일은 그 판정이 넓을 수 있다 — 그래서 공용
  *   컴포넌트(src/components, src/app/components)는 출발 권한이 없는 것(인증만)으로 본다.
  */
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
-const SCAN_ROOTS = [APP_DIR, join(FRONTEND_DIR, 'src', 'components')];
+/** 슬롯 기여 디렉터리. 이 아래 파일은 항목 단위 판정만 받는다(위 설명). */
+const EXTENSIONS_DIR = join(FRONTEND_DIR, 'src', 'extensions');
+const SCAN_ROOTS = [APP_DIR, join(FRONTEND_DIR, 'src', 'components'), EXTENSIONS_DIR];
 
 const LINK_PATTERN =
   /(?:href|link|moreHref|url)\s*[=:]\s*\{?\s*(?:[\w.!&|() ]+\?\s*)?([`'"])(\/admin\/[^`'"]*)\1|router\.(?:push|replace)\(\s*([`'"])(\/admin\/[^`'"]*)\3/g;
 const GATE_LITERAL = /canOpenPage\(\s*[^,()]+,\s*([`'"])(\/admin\/[^`'"]*)\1\s*\)/g;
 const GATE_BY_HREF_FIELD = /canOpenPage\(\s*[^,()]+,\s*[\w.]+\.href\s*\)/;
+const LINK_KEYS = new Set(['href', 'link', 'moreHref', 'url']);
 
 interface LinkSourceFile {
   path: string;
   source: string;
   /** 이 파일이 놓인 화면의 라우트. 공용 컴포넌트면 null. */
   route: string | null;
+  /** 슬롯 기여 — 항목 단위 판정만 받는다. */
+  strict?: boolean;
 }
 
 interface LinkFinding {
   path: string;
   line: number;
   target: string;
-  reason: 'unregistered' | 'ungated';
+  /** unresolved: 슬롯 기여의 링크 값을 리터럴로 읽을 수 없다(이름·식·단축·펼침·계산 키). */
+  reason: 'unregistered' | 'ungated' | 'unresolved';
 }
 
 /** 쿼리·해시를 떼고 동적 세그먼트(`${...}`·`[id]`)를 같은 모양으로 만든다. */
@@ -54,9 +66,86 @@ function normalizeTarget(raw: string): string {
 
 type PermissionLookup = (path: string) => readonly string[] | null;
 
+interface ContributionLink {
+  offset: number;
+  /** 문자열·템플릿 리터럴 값. 이름·식·단축 속성이거나 키를 알 수 없는 속성(펼침·계산)이면 null — 목적지를 읽을 수 없다. */
+  target: string | null;
+  /** 같은 객체의 `visibleWhen: { page: '<리터럴>' }`(술어가 그것 하나일 때). */
+  page: string | undefined;
+}
+
+/**
+ * 슬롯 기여의 링크 속성을 AST 로 찾는다. 키는 이름·따옴표·문자열 계산 키·단축 속성을 모두 링크 키로 본다. 값이 리터럴이 아니거나
+ * 키를 알 수 없는 속성(펼침·리터럴 아닌 계산 키)은 목적지를 모르는 링크로 낸다 — 정규식으로는 그 꼴이 0건으로 지나간다.
+ */
+function contributionLinks(source: string): ContributionLink[] {
+  const file = ts.createSourceFile('contribution.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const links: ContributionLink[] = [];
+  const nameOf = (property: ts.ObjectLiteralElementLike): string | undefined => {
+    if (ts.isShorthandPropertyAssignment(property)) return property.name.text;
+    if (!ts.isPropertyAssignment(property)) return undefined;
+    const { name } = property;
+    if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNoSubstitutionTemplateLiteral(name)) return name.text;
+    if (ts.isComputedPropertyName(name) && (ts.isStringLiteral(name.expression) || ts.isNoSubstitutionTemplateLiteral(name.expression))) {
+      return name.expression.text;
+    }
+    return undefined;
+  };
+  const literal = (node: ts.Expression): string | undefined => {
+    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node)) return literal(node.expression);
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+    return ts.isTemplateExpression(node) ? node.getText(file).slice(1, -1) : undefined;
+  };
+  const visit = (node: ts.Node) => {
+    if (ts.isObjectLiteralExpression(node)) {
+      const visible = node.properties.find((property) => nameOf(property) === 'visibleWhen');
+      const rule = visible && ts.isPropertyAssignment(visible) && ts.isObjectLiteralExpression(visible.initializer)
+        ? visible.initializer.properties : undefined;
+      const only = rule?.length === 1 ? rule[0] : undefined;
+      const page = only && nameOf(only) === 'page' && ts.isPropertyAssignment(only) ? literal(only.initializer) : undefined;
+      for (const property of node.properties) {
+        const key = nameOf(property);
+        const unknownKey = ts.isSpreadAssignment(property)
+          || (ts.isPropertyAssignment(property) && ts.isComputedPropertyName(property.name) && key === undefined);
+        if (!unknownKey && (key === undefined || !LINK_KEYS.has(key))) continue;
+        const target = !unknownKey && ts.isPropertyAssignment(property) ? literal(property.initializer) ?? null : null;
+        links.push({ offset: property.getStart(file), target, page });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return links;
+}
+
+/** 슬롯 기여 판정: 링크 항목마다 같은 객체의 같은 목적지 page 술어만 게이트다. 파일 단위 판정(출발 화면·canOpenPage)은 쓰지 않는다. */
+function contributionFindings(file: LinkSourceFile, lookup: PermissionLookup): LinkFinding[] {
+  const findings: LinkFinding[] = [];
+  const lineOf = (offset: number) => file.source.slice(0, offset).split('\n').length;
+  const judge = (offset: number, raw: string, page: string | undefined) => {
+    const target = normalizeTarget(raw);
+    const required = lookup(target);
+    if (!required) findings.push({ path: file.path, line: lineOf(offset), target, reason: 'unregistered' });
+    else if (required.length > 0 && (page === undefined || normalizeTarget(page) !== target)) {
+      findings.push({ path: file.path, line: lineOf(offset), target, reason: 'ungated' });
+    }
+  };
+  for (const link of contributionLinks(file.source)) {
+    if (link.target === null) findings.push({ path: file.path, line: lineOf(link.offset), target: '(읽을 수 없는 목적지)', reason: 'unresolved' });
+    else if (link.target.startsWith('/admin/')) judge(link.offset, link.target, link.page);
+  }
+  // 호출 꼴(router.push·replace)은 정규식으로 본다. 기여는 함정 규칙상 호출을 둘 수 없지만 census 는 그 규칙에 기대지 않는다.
+  for (const match of file.source.matchAll(LINK_PATTERN)) if (match[4] !== undefined) judge(match.index, match[4], undefined);
+  return findings;
+}
+
 function findUngatedAdminLinks(files: LinkSourceFile[], lookup: PermissionLookup): LinkFinding[] {
   const findings: LinkFinding[] = [];
   for (const file of files) {
+    if (file.strict) {
+      findings.push(...contributionFindings(file, lookup));
+      continue;
+    }
     const gated = new Set([...file.source.matchAll(GATE_LITERAL)].map((match) => normalizeTarget(match[2])));
     const filtersByHref = GATE_BY_HREF_FIELD.test(file.source);
     const sourceRequired = file.route ? lookup(file.route) : null;
@@ -83,7 +172,7 @@ function screenFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) return entry.name === '__tests__' ? [] : screenFiles(path);
-    return entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx') ? [path] : [];
+    return /\.tsx?$/.test(entry.name) && !/\.(?:test|d)\.tsx?$/.test(entry.name) ? [path] : [];
   });
 }
 
@@ -113,6 +202,7 @@ function repositoryFiles(): LinkSourceFile[] {
     path: relative(FRONTEND_DIR, path).split(sep).join('/'),
     source: readFileSync(path, 'utf8'),
     route: owningRoute(path),
+    strict: path.startsWith(EXTENSIONS_DIR + sep),
   }));
 }
 
@@ -184,6 +274,56 @@ describe('관리 화면 링크 노출 census', () => {
       const filtered = "const all = [{ href: '/admin/memo', title: 'a' }];\nconst links = all.filter((link) => canOpenPage(user, link.href));";
       expect(findUngatedAdminLinks([file(filtered)], lookup)).toEqual([]);
       expect(findUngatedAdminLinks([file("const all = [{ href: '/admin/memo', title: 'a' }];")], lookup)).toHaveLength(1);
+    });
+
+    describe('슬롯 기여(src/extensions)는 항목 단위 page 술어만 게이트로 본다', () => {
+      const contribution = (body: string): LinkSourceFile => ({
+        path: 'src/extensions/x/shell-links.ts', route: null, strict: true,
+        source: `export default defineContributions('shell-links', [${body}]);`,
+      });
+      const check = (body: string) => findUngatedAdminLinks([contribution(body)], lookup).map((finding) => finding.reason);
+
+      it('술어가 없거나 always·permissions 술어면 red 다', () => {
+        expect(check("{ id: 'memo', href: '/admin/memo' }")).toEqual(['ungated']);
+        expect(check("{ id: 'memo', href: '/admin/memo', visibleWhen: { always: '사유' } }")).toEqual(['ungated']);
+        expect(check("{ id: 'memo', href: '/admin/memo', visibleWhen: { permissions: ['MEMO_READ'] } }")).toEqual(['ungated']);
+      });
+
+      it('같은 객체의 같은 목적지 page 술어면 통과하고(쿼리·동적 자리는 맞춘다), 다른 목적지면 red 다', () => {
+        expect(check("{ id: 'memo', href: '/admin/memo?tab=x', visibleWhen: { page: '/admin/memo' } }")).toEqual([]);
+        expect(check("{ id: 'detail', url: `/admin/detail/${id}`, visibleWhen: { page: '/admin/detail/[id]' } }")).toEqual([]);
+        expect(check("{ id: 'memo', moreHref: '/admin/memo', visibleWhen: { page: '/admin/hub' } }")).toEqual(['ungated']);
+      });
+
+      it('다른 객체의 술어와 파일 단위 판정은 게이트가 아니다', () => {
+        expect(check("{ id: 'memo', href: '/admin/memo', nested: { visibleWhen: { page: '/admin/memo' } } }")).toEqual(['ungated']);
+        expect(check("{ id: 'a', visibleWhen: { page: '/admin/memo' } }, { id: 'b', link: '/admin/memo' }")).toEqual(['ungated']);
+        // 같은 목적지의 canOpenPage 리터럴, href 목록 거르기, 목적지를 함축하는 출발 화면 — 일반 파일이면 셋 다 통과시킨다.
+        const fileLevel = contribution("{ id: 'memo', href: '/admin/memo' }");
+        const source = `const ok = canOpenPage(user, '/admin/memo');\nconst all = [{ id: 'x', title: 'a' }].filter((x) => canOpenPage(user, x.href));\n${fileLevel.source}`;
+        expect(findUngatedAdminLinks([{ ...fileLevel, source, route: '/admin/memo' }], lookup).map((finding) => finding.reason)).toEqual(['ungated']);
+        expect(findUngatedAdminLinks([{ ...fileLevel, source, route: '/admin/memo', strict: false }], lookup)).toEqual([]);
+      });
+
+      it('키·값의 꼴과 무관하게 링크를 찾고, 목적지를 읽을 수 없으면 red 다', () => {
+        // 따옴표·계산 키도 링크 키다(정규식은 둘 다 0건으로 지나간다).
+        expect(check("{ id: 'memo', 'href': '/admin/memo', visibleWhen: { always: '사유' } }")).toEqual(['ungated']);
+        expect(check("{ id: 'memo', ['href']: '/admin/memo', visibleWhen: { always: '사유' } }")).toEqual(['ungated']);
+        expect(check("{ id: 'memo', 'href': '/admin/memo', visibleWhen: { page: '/admin/memo' } }")).toEqual([]);
+        // 값이 이름·식·단축 속성이거나 키를 알 수 없는 속성이면 page 술어가 있어도 목적지를 모른다.
+        expect(check("{ id: 'memo', href: MEMO_ROUTE, visibleWhen: { page: '/admin/memo' } }")).toEqual(['unresolved']);
+        expect(check("{ id: 'memo', href, visibleWhen: { page: '/admin/memo' } }")).toEqual(['unresolved']);
+        expect(check("{ id: 'memo', link: ready ? '/admin/memo' : '/board', visibleWhen: { page: '/admin/memo' } }")).toEqual(['unresolved']);
+        expect(check("{ id: 'memo', ...links, visibleWhen: { page: '/admin/memo' } }")).toEqual(['unresolved']);
+        expect(check("{ id: 'memo', [KEY]: '/admin/memo', visibleWhen: { page: '/admin/memo' } }")).toEqual(['unresolved']);
+        // 대조: 리터럴에 붙은 as const 는 읽고, /admin 밖 목적지와 링크가 아닌 키는 보지 않는다.
+        expect(check("{ id: 'memo', href: '/admin/memo' as const, visibleWhen: { page: '/admin/memo' } }")).toEqual([]);
+        expect(check("{ id: 'board', href: '/board', label, visibleWhen: { always: '사유' } }")).toEqual([]);
+      });
+
+      it('등록되지 않은 목적지는 page 술어가 있어도 red 다', () => {
+        expect(check("{ id: 'none', href: '/admin/nowhere', visibleWhen: { page: '/admin/nowhere' } }")).toEqual(['unregistered']);
+      });
     });
 
     it('등록되지 않은 목적지는 판정과 무관하게 red 다', () => {

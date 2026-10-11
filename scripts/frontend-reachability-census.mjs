@@ -12,6 +12,7 @@ import {
   existsSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   statSync,
 } from 'node:fs';
 import {
@@ -25,44 +26,28 @@ import {
   sep,
 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseModuleReferences, tokenizeDependencies } from './frontend-module-graph.mjs';
 import {
-  canStartRegexAfterValue,
-  readRegexLiteral,
-  skipBlockComment,
-  skipLineComment,
-} from './source-lexing.mjs';
+  IGNORED_FRONTEND_DIRECTORIES,
+  buildCaseMap,
+  candidatePaths,
+  normalizePath,
+  repositoryFileLookup,
+  resolveModuleReference,
+} from './frontend-module-resolver.mjs';
+import { createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
+import { git, isCopyableSourceFile, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+
+/*
+ * [2026-10-11 슬롯 단계 PR-2] 간선을 읽는 토크나이저·파서와 지정자 해석기는 frontend-module-graph.mjs·frontend-module-resolver.mjs
+ * 로 옮겼다. 재사용 base 생성기·정밀 점검이 같은 함수로 연쇄 제거를 판정한다. 프로필 제약도 생성기의 투영(createFrontendProjector)과
+ * 연쇄 계획(planFrontendRemoval)을 생성기와 같은 모집단(Git 복사 목록, copiedFrontendFiles)에 그대로 불러 계산한다 — census 안에 두 번째
+ * 마커 파서·연쇄 루프를 두지 않고, 같은 함수·같은 입력이라 census 의 연쇄 제약이 곧 생성기의 연쇄다.
+ */
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
 
-const MODULE_EXTENSIONS = Object.freeze([
-  '.d.ts',
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.mjs',
-  '.cjs',
-  '.mts',
-  '.cts',
-]);
-const RESOLVABLE_EXTENSIONS = Object.freeze([
-  ...MODULE_EXTENSIONS,
-  '.json',
-  '.css',
-  '.scss',
-  '.sass',
-  '.less',
-  '.svg',
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.gif',
-  '.webp',
-  '.avif',
-  '.woff',
-  '.woff2',
-]);
 const NEXT_APP_ENTRY_NAMES = new Set([
   'page',
   'layout',
@@ -86,16 +71,6 @@ const ROOT_RUNTIME_ENTRY_NAMES = new Set([
   'middleware',
   'instrumentation',
   'instrumentation-client',
-]);
-const IGNORED_FRONTEND_DIRECTORIES = new Set([
-  'node_modules',
-  '.next',
-  'coverage',
-  '.turbo',
-  'dist',
-  'build',
-  'playwright-report',
-  'test-results',
 ]);
 const DELETION_CLASSES = new Set([
   'safe-candidate',
@@ -124,10 +99,6 @@ export const CURRENT_REPOSITORY_ASSERTIONS = Object.freeze({
   notRuntimeReachable: [],
   deletionClasses: {},
 });
-
-function normalizePath(path) {
-  return path.split(sep).join('/');
-}
 
 function repoRelative(repoRoot, path) {
   return normalizePath(relative(repoRoot, path));
@@ -161,10 +132,6 @@ function walkFiles(root, predicate = () => true, options = {}) {
 
   visit(root);
   return output.sort((left, right) => normalizePath(left).localeCompare(normalizePath(right), 'en'));
-}
-
-function isModuleFile(path) {
-  return MODULE_EXTENSIONS.includes(extname(path).toLowerCase());
 }
 
 function isTestFile(path) {
@@ -206,547 +173,6 @@ function lineAt(source, offset) {
   return line;
 }
 
-function readQuoted(source, start, quote) {
-  let value = '';
-  for (let index = start + 1; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === '\\') {
-      if (index + 1 >= source.length) {
-        return { end: source.length, value, closed: false };
-      }
-      const escaped = source[index + 1];
-      const simple = {
-        n: '\n',
-        r: '\r',
-        t: '\t',
-        b: '\b',
-        f: '\f',
-        v: '\v',
-        '0': '\0',
-      };
-      value += simple[escaped] ?? escaped;
-      index += 1;
-    } else if (char === quote) {
-      return { end: index + 1, value, closed: true };
-    } else {
-      value += char;
-    }
-  }
-  return { end: source.length, value, closed: false };
-}
-
-function readTemplate(source, start) {
-  let expressionDepth = 0;
-  let interpolated = false;
-  let containsDependencyKeyword = false;
-  let previousExpressionToken;
-
-  for (let index = start + 1; index < source.length; index += 1) {
-    const char = source[index];
-    const next = source[index + 1];
-    if (char === '\\') {
-      index += 1;
-      continue;
-    }
-    if (expressionDepth === 0) {
-      if (char === '`') {
-        return {
-          end: index + 1,
-          value: source.slice(start + 1, index),
-          closed: true,
-          interpolated,
-          containsDependencyKeyword,
-        };
-      }
-      if (char === '$' && next === '{') {
-        interpolated = true;
-        expressionDepth = 1;
-        previousExpressionToken = undefined;
-        index += 1;
-      }
-      continue;
-    }
-
-    if (char === "'" || char === '"') {
-      const quoted = readQuoted(source, index, char);
-      index = quoted.end - 1;
-      continue;
-    }
-    if (char === '`') {
-      const nested = readTemplate(source, index);
-      containsDependencyKeyword ||= nested.containsDependencyKeyword;
-      index = nested.end - 1;
-      continue;
-    }
-    if (char === '/' && next === '/') {
-      index = skipLineComment(source, index) - 1;
-      continue;
-    }
-    if (char === '/' && next === '*') {
-      const end = skipBlockComment(source, index);
-      if (end < 0) return { end: source.length, value: '', closed: false, interpolated: true };
-      index = end - 1;
-      continue;
-    }
-    if (char === '/' && canStartRegexAfterValue(previousExpressionToken)) {
-      const regex = readRegexLiteral(source, index);
-      if (regex) {
-        index = regex.end - 1;
-        previousExpressionToken = 'literal';
-        continue;
-      }
-    }
-    if (/[A-Za-z_$]/.test(char)) {
-      let end = index + 1;
-      while (end < source.length && /[A-Za-z0-9_$]/.test(source[end])) end += 1;
-      const word = source.slice(index, end);
-      if (word === 'import' || word === 'require') containsDependencyKeyword = true;
-      previousExpressionToken = word;
-      index = end - 1;
-      continue;
-    }
-    if (char === '{') expressionDepth += 1;
-    else if (char === '}') expressionDepth -= 1;
-    if (!/\s/.test(char)) previousExpressionToken = char;
-  }
-
-  return { end: source.length, value: '', closed: false, interpolated };
-}
-
-/**
- * A dependency-oriented lexer. It intentionally tokenizes only identifiers,
- * string/template literals, and punctuation needed by import syntax. JSX and
- * regular-expression tokens remain harmless punctuation/identifiers; an import
- * declaration is accepted only when it satisfies the module grammar below.
- */
-function tokenizeDependencies(source, file) {
-  const tokens = [];
-  const issues = [];
-  let line = 1;
-
-  for (let index = 0; index < source.length;) {
-    const char = source[index];
-    const next = source[index + 1];
-    if (/\s/.test(char)) {
-      if (char === '\n') line += 1;
-      index += 1;
-      continue;
-    }
-    if (char === '/' && next === '/') {
-      index = skipLineComment(source, index);
-      continue;
-    }
-    if (char === '/' && next === '*') {
-      const end = skipBlockComment(source, index);
-      if (end < 0) {
-        issues.push({ code: 'UNTERMINATED_BLOCK_COMMENT', file, line });
-        break;
-      }
-      line += source.slice(index, end).split('\n').length - 1;
-      index = end;
-      continue;
-    }
-    if (char === "'" || char === '"') {
-      const quoted = readQuoted(source, index, char);
-      tokens.push({ type: 'string', value: quoted.value, line, start: index, end: quoted.end });
-      if (!quoted.closed) issues.push({ code: 'UNTERMINATED_STRING', file, line });
-      line += source.slice(index, quoted.end).split('\n').length - 1;
-      index = quoted.end;
-      continue;
-    }
-    if (char === '`') {
-      const template = readTemplate(source, index);
-      tokens.push({
-        type: 'template',
-        value: template.value,
-        interpolated: template.interpolated,
-        line,
-        start: index,
-        end: template.end,
-      });
-      if (!template.closed) issues.push({ code: 'UNTERMINATED_TEMPLATE', file, line });
-      if (template.containsDependencyKeyword) {
-        issues.push({
-          code: 'DEPENDENCY_EXPRESSION_IN_TEMPLATE_INTERPOLATION',
-          file,
-          line,
-          detail: 'import/require inside a template interpolation is not silently ignored',
-        });
-      }
-      line += source.slice(index, template.end).split('\n').length - 1;
-      index = template.end;
-      continue;
-    }
-    if (char === '/' && canStartRegexAfterValue(tokens.at(-1)?.value)) {
-      const regex = readRegexLiteral(source, index);
-      if (regex) {
-        tokens.push({ type: 'regex', value: '<regex>', line, start: index, end: regex.end });
-        index = regex.end;
-        continue;
-      }
-    }
-    if (/[A-Za-z_$]/.test(char)) {
-      let end = index + 1;
-      while (end < source.length && /[A-Za-z0-9_$-]/.test(source[end])) end += 1;
-      tokens.push({ type: 'identifier', value: source.slice(index, end), line, start: index, end });
-      index = end;
-      continue;
-    }
-    if (source.startsWith('...', index)) {
-      tokens.push({ type: 'punctuation', value: '...', line, start: index, end: index + 3 });
-      index += 3;
-      continue;
-    }
-    if (source.startsWith('=>', index)) {
-      tokens.push({ type: 'punctuation', value: '=>', line, start: index, end: index + 2 });
-      index += 2;
-      continue;
-    }
-    tokens.push({ type: 'punctuation', value: char, line, start: index, end: index + 1 });
-    index += 1;
-  }
-
-  return { tokens, issues };
-}
-
-function literalSpecifier(token) {
-  if (token?.type === 'string') return { value: token.value };
-  if (token?.type === 'template' && !token.interpolated) return { value: token.value };
-  return undefined;
-}
-
-function findBalanced(tokens, start, open, close) {
-  let depth = 0;
-  for (let index = start; index < tokens.length; index += 1) {
-    if (tokens[index].value === open) depth += 1;
-    else if (tokens[index].value === close) {
-      depth -= 1;
-      if (depth === 0) return index;
-    }
-  }
-  return -1;
-}
-
-function namedImportClauseIsTypeOnly(tokens, open, close) {
-  const clauses = [];
-  let clause = [];
-  for (let index = open + 1; index < close; index += 1) {
-    if (tokens[index].value === ',') {
-      if (clause.length > 0) clauses.push(clause);
-      clause = [];
-    } else {
-      clause.push(tokens[index]);
-    }
-  }
-  if (clause.length > 0) clauses.push(clause);
-  return clauses.length > 0 && clauses.every((tokensInClause) => (
-    tokensInClause[0]?.value === 'type' && tokensInClause.length > 1
-  ));
-}
-
-function isTypeImportExpression(tokens, importIndex) {
-  let previous = importIndex - 1;
-  if ([':', 'as', 'satisfies'].includes(tokens[previous]?.value)) return true;
-  if (tokens[previous]?.value === 'typeof') previous -= 1;
-
-  let angleDepth = 0;
-  for (let index = previous; index >= 0; index -= 1) {
-    const value = tokens[index].value;
-    if (value === '>') angleDepth += 1;
-    else if (value === '<') {
-      if (angleDepth === 0) return true;
-      angleDepth -= 1;
-    }
-    if ([';', '{', '}'].includes(value)) break;
-    if (value === '=' && tokens[index - 2]?.value === 'type') return true;
-  }
-  return false;
-}
-
-function dependencyIssue(code, file, token, detail) {
-  return { code, file, line: token?.line ?? 1, detail };
-}
-
-function parseStaticImport(tokens, start, file) {
-  let index = start + 1;
-  let typeOnly = false;
-  const first = tokens[index];
-  const bare = literalSpecifier(first);
-  if (bare) {
-    return {
-      nextIndex: index,
-      reference: { kind: 'static-import', specifier: bare.value, typeOnly: false, line: tokens[start].line },
-    };
-  }
-  if (first?.value === 'type') {
-    typeOnly = true;
-    index += 1;
-  }
-
-  const binding = tokens[index];
-  if (!binding || !(
-    binding.type === 'identifier'
-    || binding.value === '{'
-    || binding.value === '*'
-  )) return undefined;
-
-  if (binding.type === 'identifier') {
-    index += 1;
-    if (tokens[index]?.value === '=' && tokens[index + 1]?.value === 'require') {
-      return undefined;
-    }
-    if (tokens[index]?.value === ',') index += 1;
-    else if (tokens[index]?.value !== 'from') {
-      return {
-        nextIndex: index,
-        issue: dependencyIssue('UNPARSEABLE_STATIC_IMPORT', file, tokens[start], 'expected from after default binding'),
-      };
-    }
-  }
-
-  if (tokens[index]?.value === '{') {
-    const close = findBalanced(tokens, index, '{', '}');
-    if (close < 0) {
-      return {
-        nextIndex: index,
-        issue: dependencyIssue('UNPARSEABLE_STATIC_IMPORT', file, tokens[start], 'unclosed named import clause'),
-      };
-    }
-    if (!typeOnly && binding.value === '{') typeOnly = namedImportClauseIsTypeOnly(tokens, index, close);
-    index = close + 1;
-  } else if (tokens[index]?.value === '*') {
-    if (tokens[index + 1]?.value !== 'as' || tokens[index + 2]?.type !== 'identifier') {
-      return {
-        nextIndex: index,
-        issue: dependencyIssue('UNPARSEABLE_STATIC_IMPORT', file, tokens[start], 'invalid namespace import clause'),
-      };
-    }
-    index += 3;
-  }
-
-  if (tokens[index]?.value !== 'from') {
-    return {
-      nextIndex: index,
-      issue: dependencyIssue('UNPARSEABLE_STATIC_IMPORT', file, tokens[start], 'missing from clause'),
-    };
-  }
-  const specifier = literalSpecifier(tokens[index + 1]);
-  if (!specifier) {
-    return {
-      nextIndex: index + 1,
-      issue: dependencyIssue('UNPARSEABLE_STATIC_IMPORT', file, tokens[start], 'module specifier is not a literal'),
-    };
-  }
-  return {
-    nextIndex: index + 1,
-    reference: { kind: 'static-import', specifier: specifier.value, typeOnly, line: tokens[start].line },
-  };
-}
-
-function parseReExport(tokens, start, file) {
-  let index = start + 1;
-  let typeOnly = false;
-  if (tokens[index]?.value === 'type') {
-    typeOnly = true;
-    index += 1;
-  }
-  if (tokens[index]?.value === '{') {
-    const close = findBalanced(tokens, index, '{', '}');
-    if (close < 0) {
-      return {
-        nextIndex: index,
-        issue: dependencyIssue('UNPARSEABLE_RE_EXPORT', file, tokens[start], 'unclosed export clause'),
-      };
-    }
-    index = close + 1;
-    if (tokens[index]?.value !== 'from') return { nextIndex: close };
-  } else if (tokens[index]?.value === '*') {
-    index += 1;
-    if (tokens[index]?.value === 'as') {
-      if (tokens[index + 1]?.type !== 'identifier') {
-        return {
-          nextIndex: index,
-          issue: dependencyIssue('UNPARSEABLE_RE_EXPORT', file, tokens[start], 'invalid namespace export'),
-        };
-      }
-      index += 2;
-    }
-    if (tokens[index]?.value !== 'from') {
-      return {
-        nextIndex: index,
-        issue: dependencyIssue('UNPARSEABLE_RE_EXPORT', file, tokens[start], 'missing from clause'),
-      };
-    }
-  } else {
-    return undefined;
-  }
-
-  const specifier = literalSpecifier(tokens[index + 1]);
-  if (!specifier) {
-    return {
-      nextIndex: index + 1,
-      issue: dependencyIssue('UNPARSEABLE_RE_EXPORT', file, tokens[start], 'module specifier is not a literal'),
-    };
-  }
-  return {
-    nextIndex: index + 1,
-    reference: { kind: 're-export', specifier: specifier.value, typeOnly, line: tokens[start].line },
-  };
-}
-
-/** Parse static imports, re-exports, literal dynamic imports, and require calls. */
-export function parseModuleReferences(source, file = '<memory>') {
-  const { tokens, issues } = tokenizeDependencies(source, file);
-  const references = [];
-  const createRequireAliases = new Set();
-
-  for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index].value !== 'createRequire' || tokens[index + 1]?.value !== '(') continue;
-    const factoryClose = findBalanced(tokens, index + 1, '(', ')');
-    if (factoryClose >= 0 && tokens[factoryClose + 1]?.value === '(') {
-      const argument = literalSpecifier(tokens[factoryClose + 2]);
-      if (!argument || tokens[factoryClose + 3]?.value !== ')') {
-        issues.push(dependencyIssue(
-          'UNPARSEABLE_CREATE_REQUIRE_CALL',
-          file,
-          tokens[index],
-          'immediate createRequire argument must be one literal module specifier',
-        ));
-      } else {
-        references.push({ kind: 'create-require', specifier: argument.value, typeOnly: false, line: tokens[index].line });
-      }
-      continue;
-    }
-    if (tokens[index - 1]?.value === '=' && tokens[index - 2]?.type === 'identifier') {
-      createRequireAliases.add(tokens[index - 2].value);
-    } else {
-      issues.push(dependencyIssue(
-        'UNSUPPORTED_CREATE_REQUIRE_ALIAS',
-        file,
-        tokens[index],
-        'createRequire must be assigned to one local identifier for dependency tracking',
-      ));
-    }
-  }
-
-  for (let index = 0; index < tokens.length; index += 1) {
-    const token = tokens[index];
-    if (token.type !== 'identifier') continue;
-
-    if (token.value === 'import') {
-      if (tokens[index + 1]?.value === '.') {
-        if (tokens[index + 2]?.value === 'meta' && tokens[index + 3]?.value === '.'
-          && /^glob(?:Eager)?$/.test(tokens[index + 4]?.value ?? '')) {
-          issues.push(dependencyIssue(
-            'UNSUPPORTED_IMPORT_META_GLOB',
-            file,
-            token,
-            'import.meta.glob creates implicit dependencies and needs an explicit parser rule',
-          ));
-        }
-        continue;
-      }
-      if (tokens[index + 1]?.value === '(') {
-        const argument = literalSpecifier(tokens[index + 2]);
-        if (!argument || tokens[index + 3]?.value !== ')') {
-          const code = argument && tokens[index + 3]?.value === ','
-            ? 'UNSUPPORTED_DYNAMIC_IMPORT_OPTIONS'
-            : 'UNPARSEABLE_DYNAMIC_IMPORT';
-          issues.push(dependencyIssue(
-            code,
-            file,
-            token,
-            code === 'UNSUPPORTED_DYNAMIC_IMPORT_OPTIONS'
-              ? 'dynamic import options require an explicit balanced parser rule'
-              : 'dynamic import first argument must be one literal module specifier',
-          ));
-        } else {
-          const typeOnly = isTypeImportExpression(tokens, index);
-          references.push({
-            kind: typeOnly ? 'import-type' : 'dynamic-import',
-            specifier: argument.value,
-            typeOnly,
-            line: token.line,
-          });
-        }
-        continue;
-      }
-      const parsed = parseStaticImport(tokens, index, file);
-      if (parsed?.reference) references.push(parsed.reference);
-      if (parsed?.issue) issues.push(parsed.issue);
-      if (parsed) index = Math.max(index, parsed.nextIndex);
-      continue;
-    }
-
-    if (token.value === 'export') {
-      const parsed = parseReExport(tokens, index, file);
-      if (parsed?.reference) references.push(parsed.reference);
-      if (parsed?.issue) issues.push(parsed.issue);
-      if (parsed) index = Math.max(index, parsed.nextIndex);
-      continue;
-    }
-
-    if (token.value === 'require') {
-      if (tokens[index + 1]?.value === '.' && tokens[index + 2]?.value === 'context') {
-        issues.push(dependencyIssue(
-          'UNSUPPORTED_REQUIRE_CONTEXT',
-          file,
-          token,
-          'require.context creates implicit dependencies and needs an explicit parser rule',
-        ));
-        continue;
-      }
-      if (tokens[index + 1]?.value === '.' && tokens[index + 2]?.value === 'resolve') {
-        const argument = literalSpecifier(tokens[index + 4]);
-        if (tokens[index + 3]?.value !== '(' || !argument || tokens[index + 5]?.value !== ')') {
-          issues.push(dependencyIssue(
-            'UNPARSEABLE_REQUIRE_RESOLVE',
-            file,
-            token,
-            'require.resolve argument must be one literal module specifier',
-          ));
-        } else {
-          references.push({ kind: 'require-resolve', specifier: argument.value, typeOnly: false, line: token.line });
-        }
-        continue;
-      }
-      if (tokens[index + 1]?.value !== '(') continue;
-      const argument = literalSpecifier(tokens[index + 2]);
-      if (!argument || tokens[index + 3]?.value !== ')') {
-        issues.push(dependencyIssue(
-          'UNPARSEABLE_REQUIRE',
-          file,
-          token,
-          'require argument must be one literal module specifier',
-        ));
-      } else {
-        references.push({ kind: 'require', specifier: argument.value, typeOnly: false, line: token.line });
-      }
-    }
-
-    if (createRequireAliases.has(token.value) && tokens[index + 1]?.value === '(') {
-      const argument = literalSpecifier(tokens[index + 2]);
-      if (!argument || tokens[index + 3]?.value !== ')') {
-        issues.push(dependencyIssue(
-          'UNPARSEABLE_CREATE_REQUIRE_CALL',
-          file,
-          token,
-          'createRequire alias argument must be one literal module specifier',
-        ));
-      } else {
-        references.push({ kind: 'create-require', specifier: argument.value, typeOnly: false, line: token.line });
-      }
-    }
-  }
-
-  const deduplicated = new Map();
-  for (const reference of references) {
-    const key = `${reference.kind}\0${reference.typeOnly}\0${reference.specifier}\0${reference.line}`;
-    deduplicated.set(key, reference);
-  }
-  return { references: [...deduplicated.values()], issues };
-}
-
 function parseConfigStringReferences(source, file, moduleReferences) {
   const { tokens } = tokenizeDependencies(source, file);
   const moduleSpecifiers = new Set(moduleReferences.map(({ specifier }) => specifier));
@@ -774,125 +200,6 @@ function parseConfigStringReferences(source, file, moduleReferences) {
     });
   }
   return references;
-}
-
-function buildCaseMap(paths) {
-  const map = new Map();
-  for (const path of paths) {
-    const key = normalizePath(resolve(path)).toLowerCase();
-    const values = map.get(key) ?? [];
-    values.push(resolve(path));
-    map.set(key, values);
-  }
-  return map;
-}
-
-function withoutQueryOrFragment(specifier) {
-  const marker = specifier.search(/[?#]/);
-  return marker < 0 ? specifier : specifier.slice(0, marker);
-}
-
-function candidatePaths(base) {
-  const output = [base];
-  if (extname(base)) {
-    const extension = extname(base);
-    if (['.js', '.jsx', '.mjs', '.cjs'].includes(extension)) {
-      const withoutExtension = base.slice(0, -extension.length);
-      output.push(...MODULE_EXTENSIONS.map((candidate) => `${withoutExtension}${candidate}`));
-    }
-  } else {
-    output.push(...RESOLVABLE_EXTENSIONS.map((extension) => `${base}${extension}`));
-    output.push(...RESOLVABLE_EXTENSIONS.map((extension) => join(base, `index${extension}`)));
-  }
-  return uniqueSorted(output.map((path) => resolve(path)));
-}
-
-function resolveLocalReference({
-  importer,
-  specifier,
-  sourceRoot,
-  knownFiles,
-  caseMap,
-  repoRoot,
-  line,
-}) {
-  const cleanSpecifier = withoutQueryOrFragment(specifier);
-  let base;
-  if (cleanSpecifier.startsWith('@/')) base = join(sourceRoot, cleanSpecifier.slice(2));
-  else if (cleanSpecifier.startsWith('./') || cleanSpecifier.startsWith('../')) {
-    base = resolve(dirname(importer), cleanSpecifier);
-  } else {
-    return { external: true };
-  }
-
-  if (cleanSpecifier !== specifier) {
-    return {
-      external: false,
-      issue: {
-        code: 'UNSUPPORTED_LOCAL_IMPORT_SUFFIX',
-        file: repoRelative(repoRoot, importer),
-        line,
-        detail: specifier,
-      },
-    };
-  }
-
-  const matches = [];
-  const caseMismatches = [];
-  for (const candidate of candidatePaths(base)) {
-    if (knownFiles.has(candidate) || (existsSync(candidate) && statSync(candidate).isFile())) {
-      matches.push(candidate);
-      continue;
-    }
-    const caseMatches = caseMap.get(normalizePath(candidate).toLowerCase()) ?? [];
-    for (const match of caseMatches) caseMismatches.push(match);
-  }
-
-  const uniqueMatches = uniqueSorted(matches);
-  if (uniqueMatches.length === 1) return { target: uniqueMatches[0], external: false };
-  const file = repoRelative(repoRoot, importer);
-  if (uniqueMatches.length > 1) {
-    return {
-      external: false,
-      issue: {
-        code: 'AMBIGUOUS_IMPORT_TARGET',
-        file,
-        line,
-        detail: `${specifier} -> ${uniqueMatches.map((path) => repoRelative(repoRoot, path)).join(', ')}`,
-      },
-    };
-  }
-  if (caseMismatches.length > 0) {
-    return {
-      external: false,
-      issue: {
-        code: 'IMPORT_TARGET_CASE_MISMATCH',
-        file,
-        line,
-        detail: `${specifier} -> ${uniqueSorted(caseMismatches).map((path) => repoRelative(repoRoot, path)).join(', ')}`,
-      },
-    };
-  }
-  return {
-    external: false,
-    issue: {
-      code: 'MISSING_IMPORT_TARGET',
-      file,
-      line,
-      detail: specifier,
-    },
-  };
-}
-
-/**
- * census 해석기로 로컬 지정자를 파일로 잇는다. 외부 모듈·해석 실패는 undefined 다.
- * 판정 동치 계약이 생성기 해석기(resolveFrontendImport)와 대조한다(설계서 C5).
- */
-export function resolveCensusModuleReference({ repoRoot, importer, specifier }) {
-  const root = resolve(repoRoot);
-  return resolveLocalReference({
-    importer, specifier, sourceRoot: join(root, 'frontend', 'src'), knownFiles: new Set(), caseMap: new Map(), repoRoot: root, line: 0,
-  }).target;
 }
 
 function issueKey(issue) {
@@ -1062,49 +369,9 @@ function mergeReferenceMaps(...maps) {
   return merged;
 }
 
-function projectPackSource(source, allowedPacks, knownPacks, file, issues) {
-  const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
-  const projected = [];
-  let openMarker;
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const markers = [...line.matchAll(/reusable-base:([a-z0-9_-]+):(start|end)/g)];
-    if (markers.length > 1) {
-      issues.push({ code: 'MULTIPLE_PROFILE_MARKERS_ON_LINE', file, line: index + 1 });
-      continue;
-    }
-    const marker = markers[0];
-    if (!marker) {
-      if (!openMarker?.strip) projected.push(line);
-      continue;
-    }
-    const [, packName, boundary] = marker;
-    if (!knownPacks.has(packName)) {
-      issues.push({ code: 'UNKNOWN_PROFILE_PACK_MARKER', file, line: index + 1, detail: packName });
-      continue;
-    }
-    if (boundary === 'start') {
-      if (openMarker) {
-        issues.push({ code: 'NESTED_PROFILE_PACK_MARKER', file, line: index + 1, detail: packName });
-      } else {
-        openMarker = { packName, strip: !allowedPacks.has(packName), line: index + 1 };
-        if (!openMarker.strip) projected.push(line);
-      }
-    } else if (!openMarker || openMarker.packName !== packName) {
-      issues.push({ code: 'MISMATCHED_PROFILE_PACK_MARKER', file, line: index + 1, detail: packName });
-    } else {
-      if (!openMarker.strip) projected.push(line);
-      openMarker = undefined;
-    }
-  }
-  if (openMarker) {
-    issues.push({ code: 'UNCLOSED_PROFILE_PACK_MARKER', file, line: openMarker.line, detail: openMarker.packName });
-  }
-  return projected.join('');
-}
-
 function directProfileFiles(frontendRoot, sourceFiles, directPaths, repoRoot, profileName, issues) {
   const direct = new Map();
+  const accepted = [];
   for (const configuredPath of directPaths) {
     if (typeof configuredPath !== 'string' || configuredPath.trim() === '') {
       issues.push({ code: 'INVALID_PROFILE_REMOVE_PATH', file: 'config/reusable-base-profiles.json', detail: profileName });
@@ -1124,18 +391,84 @@ function directProfileFiles(frontendRoot, sourceFiles, directPaths, repoRoot, pr
       });
       continue;
     }
+    accepted.push(configuredPath);
     for (const file of matches) direct.set(file, configuredPath);
   }
-  return direct;
+  return { direct, accepted };
 }
 
+/*
+ * 프로필 제약을 계산할 프런트 파일 모집단. repoRoot 가 Git 저장소의 최상위이면 생성기·정밀 점검과 같은 복사 목록(git ls-files
+ * --cached --others --exclude-standard, build 경로 제외, isCopyableSourceFile)을 쓴다 — 같은 projector·planner 를 같은 모집단에
+ * 돌려야 census 의 연쇄 제약이 생성기 연쇄와 같다. 그래야 무시된 로컬 파일(생성 모듈·임시 스크립트)이 census 에서만 간선을 만들거나,
+ * 판정할 수 없는 import 로 프로필을 붉게 하지 않는다. Git 저장소가 아니거나 다른 저장소 안의 폴더면(시험 픽스처) undefined 를 돌려줘
+ * 디스크 걷기 목록을 쓰게 한다. census 자신의 그래프(도달성·MISSING_IMPORT_TARGET)는 계속 디스크 기준이다.
+ */
+function copiedFrontendFiles(repoRoot, frontendRoot) {
+  let topLevel;
+  try {
+    topLevel = git(['-C', repoRoot, 'rev-parse', '--show-toplevel']);
+  } catch {
+    return undefined;
+  }
+  if (!topLevel || realpathSync.native(resolve(topLevel)) !== realpathSync.native(repoRoot)) return undefined;
+  return trackedAndUntrackedFiles(repoRoot)
+    .filter((rel) => isCopyableSourceFile(rel, repoRoot))
+    .map((rel) => resolve(repoRoot, rel))
+    .filter((path) => isInside(frontendRoot, path));
+}
+
+/*
+ * 프로필 제약을 계산할 모집단을 고르고, 복사 목록과 디스크 걷기 목록이 어긋나 제약이 조용히 사라지는 경우를 막는다. census 행은
+ * 디스크 표기이고 계획 결과는 복사 목록 표기라, 두 목록이 어긋나면 행이 계획과 이어지지 않아 제약 없이 삭제 후보가 된다(fail-open).
+ * - 대소문자만 다른 파일: 대소문자를 가리지 않는 디스크에서 디스크 이름만 바꾸면 git status 는 깨끗하고 복사 목록은 색인 표기를 낸다.
+ *   생성물의 이름이 디스크와 달라지므로 PROFILE_POPULATION_CASE_MISMATCH 다. 무시된 로컬 파일처럼 디스크에만 있는 파일은 정당하게
+ *   다르다 — 대소문자만 다른 경우만 오류다.
+ * - 복사 목록에 frontend 파일이 하나도 없는데 디스크에는 census 모듈이 있다(frontend 가 중첩 저장소·submodule 이면 목록에 디렉터리
+ *   항목 하나만 남는다): 생성기는 frontend 를 복사하지 못해 실패하므로 EMPTY_PROFILE_POPULATION 으로 gate 를 붉힌다. 그리고 디스크
+ *   걷기 목록으로 계산한다 — 빈 목록으로 계산하면 검사 모드에서 모든 제약이 사라져(선언 제거 포함) 파일이 삭제 후보가 된다.
+ * `copied` 는 copiedFrontendFiles 의 결과(Git 저장소가 아니면 undefined)다. 대소문자 판정은 디스크에 따라 갈리므로 목록을 넘겨받는
+ * 순수 함수로 두어, 시험이 두 목록으로 플랫폼과 무관하게 고정한다.
+ */
+export function profilePopulation({ copied, repoRoot, frontendRoot, diskFiles, sourceFiles, issues }) {
+  if (!copied) return diskFiles;
+  if (copied.length === 0 && sourceFiles.size > 0) {
+    issues.push({
+      code: 'EMPTY_PROFILE_POPULATION',
+      file: repoRelative(repoRoot, frontendRoot),
+      detail: 'the Git copy list has no frontend file (nested repository or submodule)',
+    });
+    return diskFiles;
+  }
+  const listed = new Set(copied);
+  const byLowerCase = new Map(copied.map((path) => [normalizePath(path).toLowerCase(), path]));
+  for (const file of diskFiles) {
+    if (listed.has(file)) continue;
+    const other = byLowerCase.get(normalizePath(file).toLowerCase());
+    if (other) {
+      issues.push({
+        code: 'PROFILE_POPULATION_CASE_MISMATCH',
+        file: repoRelative(repoRoot, file),
+        detail: `Git copy list: ${repoRelative(repoRoot, other)}`,
+      });
+    }
+  }
+  return copied;
+}
+
+/*
+ * 프로필마다 생성기와 같은 투영(createFrontendProjector)과 연쇄 계획(planFrontendRemoval)을 frontend 전체에 돌리고, 결과를 census
+ * 모집단(frontend/src 모듈)으로 거른다. 연쇄 증거 경로는 계획의 parent(BFS 단계가 가장 낮은 제거 의존, 같으면 참조 목록 순서상 첫 번째 —
+ * 즉시 호출 createRequire 참조가 앞이고 나머지는 소스 순서)를 따라간다. 투영·간선 판정이 실패하면(마커 오류·판정할 수 없는 import·
+ * 대소문자 불일치·모호 해석) 그 프로필을 issue 로 올린다 — 생성기는 같은 자리에서 실패한다. 마커 오류처럼 파일을 짚을 수 있으면 issue 를
+ * 그 파일에 붙인다(census 모집단 파일이면 blocked 가 된다). 검사 모드(failOnErrors: false)에서는 실패한 프로필의 제약을 모든 파일에 'unknown' 으로
+ * 남겨, 무관한 파일 하나의 오류 때문에 어떤 파일도 삭제 후보(safe-candidate)가 되지 않게 한다. gate 모드는 issue 로 실패한다.
+ */
 function computeProfileConstraints({
   manifestPath,
   frontendRoot,
-  sourceRoot,
   sourceFiles,
-  knownFiles,
-  caseMap,
+  frontendFiles,
   repoRoot,
   issues,
 }) {
@@ -1167,6 +500,11 @@ function computeProfileConstraints({
     return constraints;
   }
   const knownPacks = new Set(Object.keys(packs));
+  const sources = new Map();
+  const read = (path) => {
+    if (!sources.has(path)) sources.set(path, readFileSync(path, 'utf8'));
+    return sources.get(path);
+  };
 
   for (const [profileName, profile] of Object.entries(profiles)) {
     const allowedPacks = new Set(Array.isArray(profile?.packs) ? profile.packs : []);
@@ -1179,76 +517,65 @@ function computeProfileConstraints({
       });
       continue;
     }
-    const directPaths = Object.entries(packs)
-      .filter(([packName]) => !allowedPacks.has(packName))
-      .flatMap(([, pack]) => pack?.frontend?.removePaths ?? []);
-    const direct = directProfileFiles(frontendRoot, sourceFiles, directPaths, repoRoot, profileName, issues);
-    const removed = new Set(direct.keys());
-    const removalParent = new Map();
-    const projectedAdjacency = new Map();
-
-    for (const file of sourceFiles) {
-      const rel = repoRelative(repoRoot, file);
-      const source = projectPackSource(readFileSync(file, 'utf8'), allowedPacks, knownPacks, rel, issues);
-      const parsed = parseModuleReferences(source, rel);
-      issues.push(...parsed.issues);
-      const edges = [];
-      for (const reference of parsed.references) {
-        const resolution = resolveLocalReference({
-          importer: file,
-          specifier: reference.specifier,
-          sourceRoot,
-          knownFiles,
-          caseMap,
-          repoRoot,
-          line: reference.line,
-        });
-        if (resolution.issue) issues.push(resolution.issue);
-        if (resolution.target && sourceFiles.has(resolution.target)) {
-          edges.push({ from: file, to: resolution.target, ...reference });
-        }
+    // 슬롯 레지스트리는 생성기처럼 같은 복사 목록으로 렌더한다(PR-4).
+    const projector = createFrontendProjector({ manifest, profile: { ...profile, packs: [...allowedPacks] },
+      files: frontendFiles.map((path) => normalizePath(relative(frontendRoot, path))) });
+    const { accepted } = directProfileFiles(frontendRoot, sourceFiles, projector.directPaths, repoRoot, profileName, issues);
+    let plan;
+    try {
+      plan = planFrontendRemoval({
+        frontendRoot,
+        files: frontendFiles,
+        directPaths: accepted,
+        readSource: (path) => {
+          try {
+            return projector.project(normalizePath(relative(frontendRoot, path)), read(path)).source;
+          } catch (error) {
+            // 투영 오류(마커)는 그 파일을 짚는다. 연쇄 계획의 다른 실패는 파일을 특정할 수 없어 manifest 에 붙는다.
+            if (error && typeof error === 'object') error.censusFile = path;
+            throw error;
+          }
+        },
+      });
+    } catch (error) {
+      issues.push({
+        code: 'PROFILE_PROJECTION_FAILED',
+        file: repoRelative(repoRoot, error?.censusFile ?? manifestPath),
+        detail: `${profileName}: ${error instanceof Error ? error.message : String(error)}`,
+      });
+      // 계산하지 못한 프로필은 '제약 없음'이 아니다. 검사 모드에서 그 프로필의 판정을 모르는 채로 두어 삭제 후보에서 뺀다.
+      for (const list of constraints.values()) {
+        list.push({ profile: profileName, removal: 'unknown', evidencePath: [repoRelative(repoRoot, manifestPath)] });
       }
-      projectedAdjacency.set(file, edges);
+      continue;
     }
+    const configuredPathOf = (file) => accepted.find((configuredPath) => {
+      const absolute = resolve(frontendRoot, configuredPath);
+      return file === absolute || isInside(absolute, file);
+    });
 
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (const file of sourceFiles) {
-        if (removed.has(file)) continue;
-        const dependency = (projectedAdjacency.get(file) ?? []).find((edge) => removed.has(edge.to));
-        if (!dependency) continue;
-        removed.add(file);
-        removalParent.set(file, dependency);
-        changed = true;
-      }
-    }
-
-    for (const file of removed) {
-      const configuredPath = direct.get(file);
-      if (configuredPath) {
+    for (const file of plan.removed) {
+      if (!constraints.has(file)) continue;
+      if (plan.direct.has(file)) {
         constraints.get(file).push({
           profile: profileName,
           removal: 'direct',
-          configuredPath,
+          configuredPath: configuredPathOf(file),
           evidencePath: [repoRelative(repoRoot, manifestPath), repoRelative(repoRoot, file)],
         });
         continue;
       }
       const nodes = [repoRelative(repoRoot, file)];
       let cursor = file;
-      const seen = new Set([file]);
-      while (removalParent.has(cursor)) {
-        cursor = removalParent.get(cursor).to;
-        if (seen.has(cursor)) break;
-        seen.add(cursor);
+      while (plan.parent.has(cursor)) {
+        cursor = plan.parent.get(cursor).to;
         nodes.push(repoRelative(repoRoot, cursor));
-        if (direct.has(cursor)) break;
+        if (plan.direct.has(cursor)) break;
       }
       constraints.get(file).push({
         profile: profileName,
         removal: 'transitive',
-        configuredPath: direct.get(cursor),
+        configuredPath: configuredPathOf(cursor),
         evidencePath: nodes,
       });
     }
@@ -1403,25 +730,27 @@ export function buildFrontendReachabilityCensus(options = {}) {
   const failOnErrors = options.failOnErrors !== false;
 
   const issues = [];
-  const sourceFiles = new Set(walkFiles(sourceRoot, isModuleFile, {
+  const sourceFiles = new Set(walkFiles(sourceRoot, isFrontendModuleFile, {
     ignoredDirectories: IGNORED_FRONTEND_DIRECTORIES,
   }));
   if (sourceFiles.size === 0) {
     issues.push({ code: 'EMPTY_POPULATION', file: repoRelative(repoRoot, sourceRoot), detail: 'no frontend source modules' });
   }
 
-  const allFrontendModules = new Set(walkFiles(frontendRoot, isModuleFile, {
+  const allFrontendModules = new Set(walkFiles(frontendRoot, isFrontendModuleFile, {
     ignoredDirectories: IGNORED_FRONTEND_DIRECTORIES,
   }));
   const allFrontendFiles = new Set(walkFiles(frontendRoot, () => true, {
     ignoredDirectories: IGNORED_FRONTEND_DIRECTORIES,
   }));
   const caseMap = buildCaseMap(allFrontendFiles);
+  // frontend 밖 저장소 파일(e2e·도구 스크립트가 부르는 루트 scripts)은 디스크의 실제 이름과 정확히 같을 때만 잇는다.
+  const repositoryFile = repositoryFileLookup(repoRoot);
   const adjacency = new Map();
   const parsedFiles = new Set();
 
   function parseFile(file) {
-    if (parsedFiles.has(file) || !isModuleFile(file)) return;
+    if (parsedFiles.has(file) || !isFrontendModuleFile(file)) return;
     parsedFiles.add(file);
     const rel = repoRelative(repoRoot, file);
     const source = readFileSync(file, 'utf8');
@@ -1432,19 +761,21 @@ export function buildFrontendReachabilityCensus(options = {}) {
       : parsed.references;
     const edges = [];
     for (const reference of references) {
-      const resolution = resolveLocalReference({
+      const resolution = resolveModuleReference({
         importer: file,
         specifier: reference.specifier,
+        frontendRoot,
         sourceRoot,
         knownFiles: allFrontendFiles,
         caseMap,
         repoRoot,
         line: reference.line,
+        outsideFile: repositoryFile,
       });
       if (resolution.issue && !(reference.optionalConfigReference && resolution.issue.code === 'MISSING_IMPORT_TARGET')) {
         issues.push(resolution.issue);
       }
-      if (resolution.target && isModuleFile(resolution.target)) {
+      if (resolution.target && isFrontendModuleFile(resolution.target)) {
         allFrontendModules.add(resolution.target);
         edges.push({ from: file, to: resolution.target, ...reference });
       }
@@ -1494,10 +825,13 @@ export function buildFrontendReachabilityCensus(options = {}) {
   const profileConstraints = computeProfileConstraints({
     manifestPath,
     frontendRoot,
-    sourceRoot,
     sourceFiles,
-    knownFiles: allFrontendFiles,
-    caseMap,
+    // 생성기와 같은 복사 목록(Git 저장소일 때). 아니면 디스크 걷기 목록이다. 두 목록의 어긋남은 profilePopulation 이 막는다.
+    frontendFiles: manifestPath
+      ? profilePopulation({
+        copied: copiedFrontendFiles(repoRoot, frontendRoot), repoRoot, frontendRoot, diskFiles: [...allFrontendFiles], sourceFiles, issues,
+      })
+      : [...allFrontendFiles],
     repoRoot,
     issues,
   });

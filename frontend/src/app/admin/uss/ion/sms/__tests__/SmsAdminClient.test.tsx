@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -60,14 +60,14 @@ vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-// 작성 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
-// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+// 작성 버튼은 발송 권한으로, 주소록 출처는 주소록 조회 권한(ADBK_READ)으로 보인다 — 기본은 둘 다 가진 관리자이고, 표시 판정 테스트만
+// 권한을 줄인다. 두 훅은 실제처럼 같은 사용자를 돌려준다. 부서 탭(DEPT_READ·USER_READ)은 이 스펙의 대상이 아니라 주지 않는다.
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
-  useOptionalAuth: () => undefined,
-}));
-beforeEach(() => { auth.permissions = ['SMS_READ', 'SMS_SEND']; });
+vi.mock('@/contexts/AuthContext', () => {
+  const current = () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: current, useOptionalAuth: current };
+});
+beforeEach(() => { auth.permissions = ['SMS_READ', 'SMS_SEND', 'ADBK_READ']; });
 vi.mock('@/app/components/patterns/empty-result-message', () => ({ emptyResultMessage: (_value: string, fallback: string) => fallback }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: React.PropsWithChildren<{ actions?: React.ReactNode; filter?: React.ReactNode }>) => (
@@ -96,9 +96,8 @@ vi.mock('@/app/components/ui/recipient-picker', async () => {
 });
 
 import SmsAdminClient from '../SmsAdminClient';
-/* reusable-base:demo:start */
-import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
-/* reusable-base:demo:end */
+import { useRecipientAddressBook } from '@/app/components/ui/recipient-picker-sources';
+import { inProjection } from '@/test-utils/projection';
 
 async function openSmsForm(user: ReturnType<typeof userEvent.setup>) {
   render(<SmsAdminClient initialSmsList={null} />);
@@ -187,24 +186,39 @@ describe('SMS 조회 조건 전달', () => {
   });
 });
 
-/* reusable-base:demo:start */
 /**
- * [2026-09-13 GAP-PACK-001 ②] 주소록은 demo pack 소유라 이 화면은 demo 마커 블록 안에서만 주소록 출처를 주입한다.
- * demo 가 빠진 프로필에서는 주입 줄과 이 테스트가 함께 잘리고, 피커는 사용자 검색 탭만 보인다.
+ * [2026-10-11 슬롯 단계 PR-4] 주소록 출처는 주소록 기능의 슬롯 기여(recipient-picker-sources)에서 온다. 화면은 core 도우미
+ * useRecipientAddressBook 으로 받아 피커에 넘긴다. 주소록이 빠진 구성에서는 투영이 기여 파일을 지우고 레지스트리를 빈 배열로 다시
+ * 만들어 피커는 사용자·부서 검색 탭만 보인다. 이 시험은 두 구성 모두에서 등록되고, 기대값을 투영 원장으로 가른다.
+ * 권한 축(PR-5): 주소록 조회 권한(ADBK_READ)이 없으면 기여가 있어도 출처가 없다.
  */
+const addressBookInProjection = inProjection('frontend/src/extensions/addressbook/recipient-picker-sources.ts');
+
 describe('SmsAdminClient 재사용 base 조합 지점', () => {
-  it('전체 제품에서는 문자 수신자 피커에 주소록 어댑터를 그대로 주입한다', async () => {
+  it('문자 수신자 피커에는 주소록 기여가 있을 때만 그 출처를 넘긴다', async () => {
     const user = userEvent.setup();
+    const offered = renderHook(() => useRecipientAddressBook('sms')).result.current;
+    expect(offered === undefined).toBe(!addressBookInProjection);
     mocks.pickerProps.addressBook = 'not-rendered';
     await openSmsForm(user);
 
     await user.click(screen.getByTestId('sms-recipient-picker-btn'));
     await screen.findByTestId('sms-recipient-picker-stub');
 
-    expect(mocks.pickerProps.addressBook).toBe(recipientAddressBookSource);
+    expect(mocks.pickerProps.addressBook).toBe(offered?.source);
+  });
+
+  it('주소록 조회 권한(ADBK_READ)이 없으면 문자 수신자 피커에 주소록 출처를 넘기지 않는다', async () => {
+    auth.permissions = ['SMS_READ', 'SMS_SEND']; // '메일·문자·알림 운영' 묶음만 준 그룹과 같은 권한
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    await openSmsForm(user);
+
+    await user.click(screen.getByTestId('sms-recipient-picker-btn'));
+    await screen.findByTestId('sms-recipient-picker-stub');
+    expect(mocks.pickerProps.addressBook).toBeUndefined();
   });
 });
-/* reusable-base:demo:end */
 
 /*
  * [2026-10-01] 작성 버튼은 발송 권한으로 보인다.

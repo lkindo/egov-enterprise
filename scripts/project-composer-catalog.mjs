@@ -7,6 +7,7 @@ import { degradationPredicate, deriveEventTriples, requiresClosure, resolveInteg
 import { menuRouteKey } from './project-composer-db.mjs';
 import { attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
+import { SLOT_ROOT, slotPathKind } from './slot-registry.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
@@ -41,7 +42,9 @@ function walk(directory) {
 // 셸이 남아 있어도 이 기능이 빠지면 숨긴다. 선언은 메뉴 스냅숏의 실제 행과 맞아야 한다.
 const FEATURES = {
   addressbook: { label: '주소록', permissions: ['ADBK'], paths: [
-    'src/app/admin/collaboration/address-book', 'src/services/business/user/addressbook', 'src/types/business/addressbook.ts'], routes: ['/admin/collaboration/address-book'] },
+    'src/app/admin/collaboration/address-book', 'src/services/business/user/addressbook', 'src/types/business/addressbook.ts',
+    // 슬롯 기여(PR-4): 수신자 피커의 주소록 출처. 기능 디렉터리째 기능과 함께 직접 지워진다.
+    'src/extensions/addressbook'], routes: ['/admin/collaboration/address-book'] },
   board: { label: '게시판·지식', permissions: ['BOARD', 'BBS_MST', 'SATISFY', 'NOTICE', 'FAQ'], paths: [
     'src/app/actions/boardActions.ts', 'src/services/business/user/board/BoardUserService.ts',
     'src/services/foundation/system/BoardAdminService.ts', 'src/services/business/board/SatisfactionService.ts',
@@ -57,7 +60,9 @@ const FEATURES = {
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
     'src/app/admin/help', 'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
-    'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user'],
+    'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user',
+    // 슬롯 기여(PR-6): 머리글·바닥글·오류 화면의 도움말 링크. 기능 디렉터리째 기능과 함께 직접 지워진다.
+    'src/extensions/help'],
   routes: ['/admin/help', '/admin/system/hpcm', '/admin/uss/olh', '/help'] },
   informalsanction: { label: '약식 전자결재', permissions: ['INFORMAL', 'APPROVAL', 'WORKFLOW'], paths: [
     'src/app/admin/sanctn/workflow', 'src/app/admin/system/ism', 'src/app/admin/workflow', 'src/app/approvals',
@@ -73,7 +78,9 @@ const FEATURES = {
     routes: ['/note'] },
   notification: { label: '알림', permissions: ['NOTI'], paths: [
     'src/app/components/layout/header-notifications.tsx', 'src/app/components/ui/app-notification-drawer.tsx',
-    'src/lib/hooks/use-notifications.ts', 'src/services/foundation/system/NotificationAdminService.ts', 'src/app/admin/notifications'],
+    'src/lib/hooks/use-notifications.ts', 'src/services/foundation/system/NotificationAdminService.ts', 'src/app/admin/notifications',
+    // 슬롯 기여(PR-6): 머리글의 알림 벨.
+    'src/extensions/notification'],
   routes: ['/admin/notifications'] },
   operation: { label: '행사·외부인사·포상', permissions: ['EVENT', 'EXT_HR', 'REWARD'], paths: [
     'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rewards',
@@ -173,6 +180,40 @@ function frontendRules(domains) {
   ];
 }
 
+/*
+ * 슬롯 기여 디렉터리(슬롯 단계 PR-4). src/extensions 아래 디렉터리는 기능 id 여야 하고, 그 기능의 paths 와 그 기능을 소유한 pack 의
+ * removePaths 양쪽에 `src/extensions/<기능 id>` 로 선언돼야 한다(양방향). 한쪽에만 있으면 직접 선택과 프리셋이 기여를 다르게 지운다.
+ * 디렉터리 밖 최상위 파일은 슬롯 장치와 레지스트리뿐이다. 기여 파일 목록을 돌려준다 — 선택 연동의 기여 분류가 쓴다.
+ */
+function slotContributionInventory(root, manifest, domainOwners) {
+  const directory = join(root, 'frontend', SLOT_ROOT);
+  const contributions = [];
+  for (const entry of existsSync(directory) ? readdirSync(directory, { withFileTypes: true }) : []) {
+    const path = `${SLOT_ROOT}/${entry.name}`;
+    if (!entry.isDirectory()) {
+      if (!['device', 'registry'].includes(slotPathKind(path)?.kind)) fail(`slot root holds an unknown file: ${path}`);
+      continue;
+    }
+    if (!Object.hasOwn(FEATURES, entry.name)) fail(`slot contribution directory is not a feature: ${path}`);
+    if (!FEATURES[entry.name].paths.includes(path)) fail(`slot contribution directory is missing from its feature paths: ${path}`);
+    const pack = domainOwners.get(entry.name);
+    if (!(manifest.packs[pack]?.frontend?.removePaths ?? []).includes(path)) fail(`slot contribution directory is missing from its pack removePaths: ${path} (${pack})`);
+    for (const file of walk(join(directory, entry.name))) {
+      const kind = slotPathKind(slash(relative(join(root, 'frontend'), file)));
+      contributions.push({ path: `frontend/${kind.file}`, owner: kind.owner, slot: kind.slot });
+    }
+  }
+  // 반대 방향: 선언은 기능 자신의 디렉터리 하나만 가리킨다. 없는 디렉터리는 위의 경로 실재 검사가 거부한다.
+  for (const [id, feature] of Object.entries(FEATURES)) for (const path of feature.paths.filter(path => covers(SLOT_ROOT, path))) {
+    if (path !== `${SLOT_ROOT}/${id}`) fail(`feature declares a slot path that is not its own contribution directory: ${id} ${path}`);
+  }
+  for (const [packId, pack] of Object.entries(manifest.packs)) for (const path of (pack.frontend?.removePaths ?? []).filter(path => covers(SLOT_ROOT, path))) {
+    const id = path.slice(SLOT_ROOT.length + 1);
+    if (domainOwners.get(id) !== packId || !FEATURES[id]?.paths.includes(path)) fail(`pack removes a slot path that is not its feature's contribution directory: ${packId} ${path}`);
+  }
+  return contributions.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+}
+
 /** Read-only producer inventory. Does not contact a DB, execute Git or create output. */
 export function loadProjectComposerCatalog(root = ROOT) {
   root = resolve(root);
@@ -257,6 +298,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
     }
   }
 
+  const contributions = slotContributionInventory(root, manifest, domainOwners);
+
   const declaredPermissionDomains = new Map();
   for (const domain of domains) for (const permissionDomain of FEATURES[domain].permissions) {
     if (declaredPermissionDomains.has(permissionDomain)) fail(`duplicate permission domain ownership: ${permissionDomain}`);
@@ -339,7 +382,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
   // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).
   const supportOwners = new Map([...supportFiles].flatMap(([domain, files]) => files.map(file => [file, domain])));
   const integrates = resolveIntegrations({ root, triples: deriveEventTriples(root, sourceOwner(supportOwners, domains, requiresClosure(capabilities))),
-    canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS });
+    canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS, contributions });
   const catalog = {
     schemaVersion: 1, mandatory: ['foundation', 'core'], databaseVendors: ['postgresql'], backendLayouts: ['multi-module', 'single-module'],
     provenance: { manifest: MANIFEST, permissions: PERMISSIONS, manifestHash: compositionDigest(manifest), permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },

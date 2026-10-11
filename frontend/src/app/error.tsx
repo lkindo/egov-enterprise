@@ -1,13 +1,15 @@
 'use client';
 
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
-/* reusable-base:demo:start */
-import { MessageSquare } from 'lucide-react';
-/* reusable-base:demo:end */
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { ErrorReference } from '@/app/components/ui/error-reference';
+import { visibleEntries, type ShellLink } from '@/extensions/slots';
+import { shellLinks } from '@/extensions/generated-shell-links';
+
+// 셸 링크 슬롯에서 오류 화면 배치만 고른다.
+const isErrorShellLink = (link: ShellLink) => link.placement === 'error';
 
 export default function Error({
     error,
@@ -19,6 +21,8 @@ export default function Error({
     const handleReset = () => {
         reset();
     };
+    // 오류 경계는 인증 공급자에 기대지 않는다(주체 null). 오류 화면 항목은 /admin 밖 목적지만 둔다(경계 계약).
+    const errorShellLinks = visibleEntries(null, shellLinks, isErrorShellLink);
 
     return (
         <div className="min-h-[80vh] flex items-center justify-center p-6 relative overflow-hidden">
@@ -54,17 +58,18 @@ export default function Error({
                     </Link>
                 </div>
 
-                {/* reusable-base:demo:start */}
-                <div className="pt-8 border-t border-destructive/5 flex flex-col items-center gap-2">
-                    <p className="text-sm text-muted-foreground font-bold">문제가 지속된다면 기술 지원팀에 문의하세요</p>
-                    <Link
-                        href="/help"
-                        className={cn(buttonVariants({ variant: "link", size: "sm" }), "text-primary font-bold gap-1")}
-                    >
-                        <MessageSquare size={14} /> 기술 지원 문의하기
-                    </Link>
-                </div>
-                {/* reusable-base:demo:end */}
+                {errorShellLinks.map(({ id, href, label, icon: Icon, description }) => (
+                    <div key={id} className="pt-8 border-t border-destructive/5 flex flex-col items-center gap-2">
+                        {description ? <p className="text-sm text-muted-foreground font-bold">{description}</p> : null}
+                        <Link
+                            href={href}
+                            className={cn(buttonVariants({ variant: "link", size: "sm" }), "text-primary font-bold gap-1")}
+                        >
+                            {/* 아이콘 뒤 공백과 이름을 한 텍스트 노드로 둔다 — 종전 정적 링크와 같은 DOM 이다. */}
+                            {Icon ? <><Icon size={14} />{` ${label}`}</> : label}
+                        </Link>
+                    </div>
+                ))}
                 <ErrorReference digest={error.digest} />
             </div>
         </div>

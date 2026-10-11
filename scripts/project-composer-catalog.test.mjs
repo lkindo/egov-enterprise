@@ -246,15 +246,15 @@ test('registration-only cleanup listeners must still exist and an api-server sou
 
 test('port and optional foreign key evidence must occur exactly once in code, never only in a comment', t => {
   const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
-  const anchor = 'addressBook={recipientAddressBookSource}';
+  const anchor = "useRecipientAddressBook('mail')";
   const drifted = fixture(t);
-  replaceIn(drifted, mail, anchor, 'addressBook={undefined}');
+  replaceIn(drifted, mail, anchor, 'undefined');
   assert.throws(() => loadProjectComposerCatalog(drifted), /declared integration drifted: frontend\/src\/app\/admin\/collaboration\/mail-send\/MailSendHubClient\.tsx/);
   const commented = fixture(t);
-  replaceIn(commented, mail, anchor, `{/* ${anchor} */}`);
+  replaceIn(commented, mail, anchor, `/* ${anchor} */ undefined`);
   assert.throws(() => loadProjectComposerCatalog(commented), /declared integration drifted/);
   const duplicated = fixture(t);
-  replaceIn(duplicated, mail, anchor, `${anchor} data-copy={() => ${anchor.split('=')[1].slice(1, -1)}} ${anchor}`);
+  replaceIn(duplicated, mail, anchor, `${anchor}; ${anchor}`);
   assert.throws(() => loadProjectComposerCatalog(duplicated), /integration evidence anchor is ambiguous/);
 });
 
@@ -307,7 +307,9 @@ test('a listener whose type is too broad, or an anchor in a test file, is refuse
 test('a TSX apostrophe before a commented-out anchor does not hide the comment', t => {
   const root = fixture(t);
   const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
-  replaceIn(root, mail, 'addressBook={recipientAddressBookSource}', "<span>don't</span> {/* addressBook={recipientAddressBookSource} */}");
+  // 실제 사용 지점은 걷고, 같은 문장을 JSX 텍스트의 따옴표 뒤 주석에만 남긴다.
+  replaceIn(root, mail, "useRecipientAddressBook('mail')", 'undefined');
+  replaceIn(root, mail, 'addressBook={addressBook?.source}', "<span>don't</span> {/* useRecipientAddressBook('mail') */}");
   assert.throws(() => loadProjectComposerCatalog(root), /declared integration drifted/);
   // 코드 위치의 따옴표는 계속 문자열이다 — 문자열 속 '//' 를 주석으로 읽지 않는다.
   assert.equal(stripComments("const a = 'http://x'; f(b);", { kind: 'ts' }), "const a = 'http://x'; f(b);");
@@ -342,7 +344,8 @@ test('one predicate decides both whether an event needs a declaration and whethe
   assert.equal(canDegrade('core', 'a'), true);
   assert.equal(degradationPredicate(capabilities, [...presets, { id: 'q', domains: ['a'] }])('a', 'b'), true, 'a preset without b makes the edge live');
   const triple = { from: 'a', to: 'b', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
-  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade };
+  // 합성 시험은 실제 기여 분류표와 무관하다 — 기여도, 등록만 하는 기여도 비운다(실제 표는 아래 슬롯 기여 시험이 본다).
+  const base = { root: ROOT, registrationOnly: [], registrationOnlyContributions: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade };
   // 늘 함께 있는 쌍의 발행은 선언 없이 통과하고, 선언하면 '저하될 수 없다' 로 거부된다. 두 판정 사이에 빈틈이 없다.
   assert.deepEqual(resolveIntegrations({ ...base, declared: [], triples: [triple] }), []);
   assert.throws(() => resolveIntegrations({ ...base, triples: [triple], declared: [{ from: 'a', to: 'b', via: 'event:Evt', reason: '설명입니다.' }] }),
@@ -351,7 +354,8 @@ test('one predicate decides both whether an event needs a declaration and whethe
 
 test('integration declarations reject unknown kinds, duplicates, double classification and a missing optional key', () => {
   const triple = { from: 'a', to: 'c', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
-  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade: () => true, triples: [triple] };
+  const base = { root: ROOT, registrationOnly: [], registrationOnlyContributions: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [],
+    canDegrade: () => true, triples: [triple] };
   const edge = { from: 'a', to: 'c', via: 'event:Evt', reason: '설명입니다.' };
   assert.equal(resolveIntegrations({ ...base, declared: [edge] }).length, 1);
   assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, via: 'slot:home.cards' }] }), /unsupported integration kind: slot:home\.cards/);
@@ -363,6 +367,61 @@ test('integration declarations reject unknown kinds, duplicates, double classifi
     /optional foreign key lacks its integration: fk_x/);
   assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, anchors: [{ path: 'x', anchor: 'y' }] }] }),
     /event integration evidence is derived, not declared/);
+});
+
+/*
+ * 슬롯 기여(슬롯 단계 PR-4). 기여 디렉터리(src/extensions/<기능 id>)는 그 기능의 paths 와 소유 pack 의 removePaths 양쪽에 있어야 하고,
+ * 기여 파일은 연동 근거(INTEGRATES anchor)나 REGISTRATION_ONLY_CONTRIBUTIONS 중 정확히 한쪽으로 분류돼야 한다.
+ */
+test('a slot contribution directory is a feature declared in both its feature paths and its pack removePaths', t => {
+  const contribution = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
+  assert.ok(catalog.capabilities.find(capability => capability.id === 'addressbook').frontend.paths.includes('src/extensions/addressbook'));
+  assert.ok(manifest.packs.demo.frontend.removePaths.includes('src/extensions/addressbook'));
+  assert.ok(catalog.integrates.filter(edge => edge.to === 'addressbook').every(edge => edge.evidence.some(row => row.path === contribution)),
+    'the address book contribution evidences both recipient picker integrations');
+  const writeManifest = (root, edit) => {
+    const value = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
+    edit(value);
+    writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(value, null, 2));
+  };
+  const unknown = fixture(t);
+  mkdirSync(join(unknown, 'frontend/src/extensions/widgetlab'), { recursive: true });
+  writeFileSync(join(unknown, 'frontend/src/extensions/widgetlab/recipient-picker-sources.ts'), 'export default [];\n');
+  assert.throws(() => loadProjectComposerCatalog(unknown), /slot contribution directory is not a feature: src\/extensions\/widgetlab/);
+  const featureOnly = fixture(t);
+  writeManifest(featureOnly, value => { value.packs.demo.frontend.removePaths = value.packs.demo.frontend.removePaths.filter(path => path !== 'src/extensions/addressbook'); });
+  assert.throws(() => loadProjectComposerCatalog(featureOnly), /slot contribution directory is missing from its pack removePaths: src\/extensions\/addressbook \(demo\)/);
+  const wrongPack = fixture(t);
+  writeManifest(wrongPack, value => { value.packs.collaboration.frontend.removePaths.push('src/extensions/addressbook'); });
+  assert.throws(() => loadProjectComposerCatalog(wrongPack), /pack removes a slot path that is not its feature's contribution directory: collaboration src\/extensions\/addressbook/);
+  const undeclared = fixture(t);
+  mkdirSync(join(undeclared, 'frontend/src/extensions/note'), { recursive: true });
+  writeFileSync(join(undeclared, 'frontend/src/extensions/note/recipient-picker-sources.ts'), 'export default [];\n');
+  assert.throws(() => loadProjectComposerCatalog(undeclared), /slot contribution directory is missing from its feature paths: src\/extensions\/note/);
+  const stray = fixture(t);
+  writeFileSync(join(stray, 'frontend/src/extensions/helpers.ts'), 'export {};\n');
+  assert.throws(() => loadProjectComposerCatalog(stray), /슬롯 디렉터리에는/);
+});
+
+test('every slot contribution is classified exactly once: an integration it evidences, or a registration-only reason', () => {
+  const path = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
+  const contributions = [{ path, owner: 'addressbook', slot: 'recipient-picker-sources' }];
+  const base = { root: ROOT, registrationOnly: [], domains: ['mail', 'sms', 'addressbook'], optionalForeignKeys: [], canDegrade: () => true, triples: [] };
+  const edge = { from: 'mail', to: 'addressbook', via: 'port:X', reason: '설명입니다.', anchors: [{ path, anchor: "defineContributions('recipient-picker-sources'" }] };
+  const registered = [{ path, reason: '기능 자신의 진입점만 사라집니다.' }];
+  assert.equal(resolveIntegrations({ ...base, declared: [edge], contributions, registrationOnlyContributions: [] }).length, 1);
+  assert.equal(resolveIntegrations({ ...base, declared: [], contributions, registrationOnlyContributions: registered }).length, 0);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], contributions, registrationOnlyContributions: [] }),
+    /unclassified slot contribution: frontend\/src\/extensions\/addressbook\/recipient-picker-sources\.ts/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], contributions, registrationOnlyContributions: registered }), /slot contribution classified twice/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, to: 'sms' }], contributions, registrationOnlyContributions: [] }),
+    /slot contribution evidences another feature's integration/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], contributions, registrationOnlyContributions: [...registered, ...registered] }),
+    /duplicate registration-only contribution/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], contributions, registrationOnlyContributions: [{ path, reason: 'no reason' }] }),
+    /registration-only contribution needs a user sentence/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], contributions, registrationOnlyContributions: [{ path: 'frontend/src/x.ts', reason: '없는 기여입니다.' }] }),
+    /registration-only contribution is not a slot contribution file: frontend\/src\/x\.ts/);
 });
 
 /*

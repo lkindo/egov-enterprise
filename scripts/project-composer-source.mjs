@@ -123,46 +123,84 @@ export function composerProfile(manifest, composition) {
   };
 }
 
-const STATS_SHELL_BLOCK_OWNERS = { collaboration: ['board'], survey: ['survey'] };
-// 셸과 함께 모든 구성에 남는 통계 파일. 테스트도 화면과 같은 마커로 기대값을 맞춘다.
-const STATS_SHELL_FILES = new Set([
-  'src/app/admin/stats/IntelligenceHubClient.tsx',
-  'src/app/admin/stats/__tests__/IntelligenceHubClient.core-tabs.equivalence.test.tsx',
-  'src/app/admin/stats/__tests__/IntelligenceHubClient.tab-queries.test.tsx',
+/*
+ * pack 마커 블록이 있는 프런트 파일의 소유 표다(슬롯 단계 PR-2). 마커를 걷어 내는 이행이 끝날 때까지 남은 블록을 이 표 하나로 드러낸다.
+ * - blocks: pack 별 블록 수. 공용 파서(parsePackMarkerBlocks)로 센 원본 수와 정확히 같아야 한다(project-composer-source.test.mjs).
+ * - owners: pack → 그 블록을 남기는 데 필요한 기능. 직접 선택 투영이 쓴다. 블록 내용으로 가르는 파일만 함수다.
+ * - step: 블록을 걷어 낼 이행 단계, reason: 마커로 남겨 둔 이유.
+ * 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 'Unclassified' 로 실패한다 — 새 블록은 조용히 남거나 빠지지 않는다.
+ * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
+ */
+const STATS_TABS = { collaboration: ['board'], survey: ['survey'] };
+const MONITORING_TABS = { collaboration: ['comment'], demo: ['system'] };
+export const FRONTEND_MARKER_FILES = Object.freeze([
+  { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
+    // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
+    owners: { collaboration: block => (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard']),
+      demo: block => (/BannerSlider|PopupManager/.test(block) ? ['system'] : ['dashboard', 'informalsanction']) },
+    step: '업무 홈', reason: '업무 홈의 카드·구역이 게시판·결재·홍보 데이터를 화면 안에서 직접 조립한다.' },
+  { file: 'src/app/page.tsx', blocks: { collaboration: 3 }, owners: { collaboration: ['dashboard'] },
+    step: '업무 홈', reason: '업무 홈 진입점이 대시보드 데이터 조회를 직접 넘긴다.' },
+  { file: 'src/app/components/dashboard/ActivityFeed.tsx', blocks: { collaboration: 1 }, owners: { collaboration: ['dashboard'] },
+    step: '업무 홈', reason: '활동 피드가 대시보드 데이터를 직접 읽는다.' },
+  { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
+    step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
+  { file: 'src/app/components/ui/global-command-center.tsx', blocks: { collaboration: 2 }, owners: { collaboration: ['board'] },
+    step: '허브 분해(협업 허브)', reason: '명령 센터가 협업 허브 항목을 직접 둔다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
+  // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
+  { file: 'src/app/admin/system/monitoring/MonitoringHubClient.tsx', blocks: { collaboration: 19, demo: 4 }, owners: MONITORING_TABS,
+    step: '허브 분해(hub-tabs)', reason: '모니터링 허브가 댓글 관리 탭과 하네스 아틀라스 샘플 탭을 직접 조립한다.' },
+  { file: 'src/app/admin/system/monitoring/monitoring-tabs.ts', blocks: { collaboration: 1, demo: 1 }, owners: MONITORING_TABS,
+    step: '허브 분해(hub-tabs)', reason: '탭 목록이 허브와 같은 두 탭을 같은 소유로 나눈다.' },
+  { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['system'] },
+    step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
+  // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 셸과 함께 남는 시험도 같은 마커로 기대값을 맞춘다.
+  { file: 'src/app/admin/stats/IntelligenceHubClient.tsx', blocks: { collaboration: 15, survey: 6 }, owners: STATS_TABS,
+    step: '허브 분해(stats-panels)', reason: '통계 셸이 게시판·설문 탭을 직접 조립한다.' },
+  { file: 'src/app/admin/stats/__tests__/IntelligenceHubClient.core-tabs.equivalence.test.tsx', blocks: { collaboration: 6, survey: 2 },
+    owners: STATS_TABS, step: '허브 분해(stats-panels)', reason: '통계 셸 시험이 셸과 같은 탭 구성을 기대한다.' },
+  { file: 'src/app/admin/stats/__tests__/IntelligenceHubClient.tab-queries.test.tsx', blocks: { collaboration: 1, survey: 2 },
+    owners: STATS_TABS, step: '허브 분해(stats-panels)', reason: '통계 셸 시험이 셸과 같은 탭 구성을 기대한다.' },
+  { file: 'src/app/admin/stats/AdminStatsClient.tsx', blocks: { collaboration: 1 }, owners: { collaboration: ['board'] },
+    step: '허브 분해(stats-panels)', reason: '통계 요약이 누적 게시물 카드를 직접 둔다.' },
+  { file: 'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx', blocks: { collaboration: 2 },
+    owners: { collaboration: ['board'] }, step: '허브 분해(stats-panels)', reason: '통계 요약 시험이 요약과 같은 카드를 기대한다.' },
+  { file: 'src/app/admin/collaboration/CollaborationHubClient.tsx', blocks: { demo: 1 }, owners: { demo: ['addressbook'] },
+    step: '허브 분해(협업 허브)', reason: '협업 허브가 주소록 관리 링크를 직접 둔다.' },
 ]);
-const STATS_SUMMARY_FILES = new Set([
-  'src/app/admin/stats/AdminStatsClient.tsx',
-  'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx',
-]);
+const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 
-/** Each existing optional block has an explicit owner. An unclassified new block fails closed. */
-export function projectComposerFrontend(file, source, composition) {
-  if (composition.profile !== 'custom') return source;
-  const selected = new Set(composition.resolvedDomains);
+/** 마커 블록 하나를 남기는 데 필요한 기능. 표에 없는 파일·pack 이면 실패한다. `text` 는 마커 줄을 포함한 블록 원문이다. */
+export function composerMarkerBlockOwners(file, pack, text) {
   const normalized = file.replaceAll('\\', '/').replace(/^frontend\//, '');
-  return source.replace(/^[^\n]*reusable-base:([a-z0-9_-]+):start[^\n]*\n[\s\S]*?^[^\n]*reusable-base:\1:end[^\n]*(?:\n|$)/gm, (block, pack) => {
-    let owners;
-    if (normalized === 'src/app/UnifiedDashboardClient.tsx') {
-      // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
-      owners = pack === 'collaboration' ? (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard'])
-        : /BannerSlider|PopupManager/.test(block) ? ['system'] : ['dashboard', 'informalsanction'];
-    } else if (['src/app/page.tsx', 'src/app/components/dashboard/ActivityFeed.tsx'].includes(normalized)) owners = ['dashboard'];
-    else if (normalized === 'src/app/components/layout/header.tsx') owners = pack === 'collaboration' ? ['notification'] : ['help'];
-    else if (['src/app/components/layout/footer.tsx', 'src/app/error.tsx'].includes(normalized)) owners = ['help'];
-    else if (['src/app/search/SearchClient.tsx', 'src/app/components/ui/global-command-center.tsx'].includes(normalized)) owners = ['board'];
-    // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 system 도메인 소유(패턴 갤러리와 같다).
-    // 탭 목록(monitoring-tabs.ts)도 같은 두 블록을 같은 소유로 나눈다.
-    else if (['src/app/admin/system/monitoring/MonitoringHubClient.tsx', 'src/app/admin/system/monitoring/monitoring-tabs.ts'].includes(normalized)) {
-      owners = pack === 'demo' ? ['system'] : ['comment'];
-    }
-    else if (normalized === 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx') owners = ['system'];
-    // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 다른 pack 블록은 분류가 없으므로 실패한다.
-    else if (STATS_SHELL_FILES.has(normalized) && STATS_SHELL_BLOCK_OWNERS[pack]) owners = STATS_SHELL_BLOCK_OWNERS[pack];
-    else if (STATS_SUMMARY_FILES.has(normalized) && pack === 'collaboration') owners = ['board'];
-    else if (normalized.startsWith('src/app/admin/collaboration/') || normalized.startsWith('src/app/admin/uss/ion/sms/')) owners = ['addressbook'];
-    else throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);
-    return owners.every(domain => selected.has(domain)) ? block : '';
-  });
+  const owners = MARKER_FILE_ROWS.get(normalized)?.owners;
+  if (!owners || !Object.hasOwn(owners, pack)) throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);
+  return typeof owners[pack] === 'function' ? owners[pack](text) : owners[pack];
+}
+
+/**
+ * 표와 실측(파일 → pack 별 블록 수)의 정확한 대조. 블록 하나가 늘거나 줄어도, 표에 없는 마커 파일이 생겨도, 마커가 없는 행이
+ * 남아도, 단계·사유가 비거나 블록 수와 소유 기능의 pack 이 어긋나도 위반이다.
+ */
+export function frontendMarkerTableViolations(table, measured) {
+  const violations = [];
+  const rows = new Map();
+  const counts = value => JSON.stringify(Object.keys(value ?? {}).sort().map(pack => [pack, value[pack]]));
+  for (const row of table) {
+    if (rows.has(row.file)) violations.push(`표에 같은 파일이 두 번 있다: ${row.file}`);
+    rows.set(row.file, row);
+    if (!row.step?.trim() || !row.reason?.trim()) violations.push(`단계나 사유가 빈 행: ${row.file}`);
+    const packs = Object.keys(row.blocks ?? {});
+    if (!packs.length || packs.some(pack => !Number.isInteger(row.blocks[pack]) || row.blocks[pack] < 1)) violations.push(`블록 수가 양의 정수가 아니다: ${row.file}`);
+    if (JSON.stringify(packs.sort()) !== JSON.stringify(Object.keys(row.owners ?? {}).sort())) violations.push(`블록 수와 소유 기능의 pack 이 다르다: ${row.file}`);
+  }
+  for (const [file, value] of measured) {
+    const row = rows.get(file);
+    if (!row) violations.push(`표에 없는 마커 파일: ${file} ${counts(value)}`);
+    else if (counts(value) !== counts(row.blocks)) violations.push(`블록 수가 표와 다르다: ${file} 실측 ${counts(value)} · 표 ${counts(row.blocks)}`);
+  }
+  for (const row of table) if (!measured.has(row.file)) violations.push(`마커가 없는 표 행: ${row.file}`);
+  return violations;
 }
 
 function removeTest(source, name) {

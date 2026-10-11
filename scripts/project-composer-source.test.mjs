@@ -3,14 +3,15 @@ import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { FRONTEND_MARKER_FILES, assertCompositionDatabaseLock, composerMarkerBlockOwners, composerProfile, domainSupportFiles, frontendMarkerTableViolations,
+  projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
-import { FRONTEND_LAYOUT, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
+import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
@@ -25,9 +26,12 @@ const recipe = domains => ({ schemaVersion: 1, project: { name: 'composition-tes
 const files = trackedAndUntrackedFiles().filter(file => existsSync(join(root, file)));
 const java = files.filter(file => file.endsWith('.java')).map(file => join(root, file));
 const frontendFiles = files.filter(file => file.startsWith('frontend/'));
-const frontendSources = new Map(frontendFiles.filter(file => ['.ts', '.tsx', '.js', '.jsx'].includes(extname(file)))
+const frontendSources = new Map(frontendFiles.filter(isFrontendModuleFile)
   .map(file => [file, readFileSync(join(root, file), 'utf8')]));
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
+// 직접 선택의 소유 판정 시험도 생산 projector(createFrontendProjector)를 지난다. 합성 구성처럼 프로필을 만들 수 없으면 profile 을 직접 준다.
+const projectCustom = (file, source, composition, profile = composerProfile(manifest, composition)) =>
+  createFrontendProjector({ manifest, profile, composition }).project(file, source).source;
 const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
@@ -379,12 +383,10 @@ function assertIntegrityGateAcknowledgements(profile, selected) {
 function inspectFrontendSurvival(selection, currentCatalog = catalog) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection: Array.isArray(selection) ? { domains: selection } : selection }, currentCatalog);
   const profile = composerProfile(manifest, composition);
-  const knownPacks = new Set(Object.keys(manifest.packs));
-  const excludedPacks = new Set([...knownPacks].filter(pack => !profile.packs.includes(pack)));
-  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projectFrontendPackMarkers(
-    composition.profile === 'custom' ? projectComposerFrontend(file, source, composition) : source, { knownPacks, excludedPacks, label: file }).source]));
+  const projector = createFrontendProjector({ manifest, profile, composition, files: frontendFiles });
+  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
   const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
-    directPaths: frontendDirectRemovePaths(manifest, profile), readSource: path => projected.get(path) });
+    directPaths: projector.directPaths, readSource: path => projected.get(path) });
   const repositoryPaths = paths => new Set([...paths].map(path => relative(root, path).split(sep).join('/')));
   const [direct, removed] = [repositoryPaths(plan.direct), repositoryPaths(plan.removed)];
   const selected = frontendFiles.filter(file => !direct.has(file)
@@ -512,26 +514,89 @@ test('missing integrity gate ownership is red for a custom composition', async (
   }
 });
 
-test('all shared frontend marker blocks have explicit capability owners; unknown additions are red', () => {
-  const composition = resolveProjectRecipe(recipe([]), catalog);
-  let blocks = 0;
-  for (const file of files.filter(file => file.startsWith('frontend/') && /\.[jt]sx?$/.test(file))) {
-    const source = readFileSync(join(root, file), 'utf8');
-    if (!/reusable-base:[a-z]+:start/.test(source)) continue;
-    blocks++;
-    const projected = projectComposerFrontend(file, source, composition);
-    assert.doesNotThrow(() => projectFrontendPackMarkers(projected, { knownPacks: new Set(Object.keys(manifest.packs)), excludedPacks: new Set(), label: file }));
+/*
+ * [2026-10-11 슬롯 단계 PR-2] 마커 래칫: 공용 파서로 센 파일별·pack 별 블록 수가 소유 표(FRONTEND_MARKER_FILES)와 정확히 같아야 한다.
+ * 모집단은 Git 이 보는 frontend 아래 프런트 모듈 파일(isFrontendModuleFile — 해석기의 모듈 확장자) 전부이고 시험을 포함한다. 블록을
+ * 더하거나 걷으면 표를 함께 고쳐 단계·사유를 남긴다. 이 파일은 원본 저장소에서만 돈다(생성물에서는 카탈로그 적재가 먼저 실패한다).
+ * 생성물에 제외 pack 마커가 남지 않는다는 성질은 파서가 지킨다 — 투영 manifest 의 pack 만 알므로 다른 pack 마커는 실패다.
+ */
+function measuredMarkerBlocks(knownPacks) {
+  const measured = new Map();
+  for (const file of frontendFiles.filter(isFrontendModuleFile)) {
+    const { blocks } = parsePackMarkerBlocks(frontendSources.get(file), { knownPacks, label: file });
+    if (!blocks.length) continue;
+    const counts = {};
+    for (const block of blocks) counts[block.pack] = (counts[block.pack] ?? 0) + 1;
+    measured.set(file.replace(/^frontend\//, ''), counts);
   }
-  assert.ok(blocks >= 10);
-  assert.throws(() => projectComposerFrontend('frontend/src/app/new.tsx', '/* reusable-base:demo:start */\nhello\n/* reusable-base:demo:end */\n', composition), /Unclassified/);
+  return measured;
+}
+
+test('every frontend marker block is counted exactly in the composer owner table with a step and a reason', () => {
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const measured = measuredMarkerBlocks(knownPacks);
+  assert.deepEqual(frontendMarkerTableViolations(FRONTEND_MARKER_FILES, measured), []);
+  const blocks = [...measured.values()].reduce((sum, counts) => sum + Object.values(counts).reduce((total, count) => total + count, 0), 0);
+  assert.ok(blocks > 0 && measured.size > 0, 'the marker census is empty');
+  // 모든 블록의 소유 기능은 카탈로그의 기능이다(내용으로 가르는 함수 포함).
+  const capabilities = new Set(catalog.capabilities.map(row => row.id));
+  for (const file of measured.keys()) {
+    for (const block of parsePackMarkerBlocks(frontendSources.get(`frontend/${file}`), { knownPacks, label: file }).blocks) {
+      const owners = composerMarkerBlockOwners(file, block.pack, block.text);
+      assert.ok(owners.length > 0 && owners.every(owner => capabilities.has(owner)), `${file}:${block.startLine} ${block.pack} -> ${owners}`);
+    }
+  }
+  assert.throws(() => projectCustom('frontend/src/app/new.tsx', '/* reusable-base:demo:start */\nhello\n/* reusable-base:demo:end */\n',
+    resolveProjectRecipe(recipe([]), catalog)), /Unclassified/);
+});
+
+test('the marker table is red for an added or removed block, an unlisted marker file, a stale row and an empty step or reason', () => {
+  const table = [{ file: 'src/a.tsx', blocks: { demo: 2 }, owners: { demo: ['help'] }, step: 'PR-6', reason: '링크' }];
+  const measured = counts => new Map([['src/a.tsx', counts]]);
+  assert.deepEqual(frontendMarkerTableViolations(table, measured({ demo: 2 })), []);
+  assert.match(frontendMarkerTableViolations(table, measured({ demo: 3 })).join('\n'), /블록 수가 표와 다르다: src\/a\.tsx/);
+  assert.match(frontendMarkerTableViolations(table, measured({ demo: 1 })).join('\n'), /블록 수가 표와 다르다/);
+  assert.match(frontendMarkerTableViolations(table, measured({ demo: 2, collaboration: 1 })).join('\n'), /블록 수가 표와 다르다/);
+  assert.match(frontendMarkerTableViolations(table, new Map([...measured({ demo: 2 }), ['src/b.tsx', { demo: 1 }]])).join('\n'), /표에 없는 마커 파일: src\/b\.tsx/);
+  assert.match(frontendMarkerTableViolations(table, new Map()).join('\n'), /마커가 없는 표 행: src\/a\.tsx/);
+  for (const field of ['step', 'reason']) {
+    assert.match(frontendMarkerTableViolations([{ ...table[0], [field]: ' ' }], measured({ demo: 2 })).join('\n'), /단계나 사유가 빈 행/);
+  }
+  assert.match(frontendMarkerTableViolations([{ ...table[0], owners: { collaboration: ['board'] } }], measured({ demo: 2 })).join('\n'), /소유 기능의 pack 이 다르다/);
+  assert.match(frontendMarkerTableViolations([...table, table[0]], measured({ demo: 2 })).join('\n'), /같은 파일이 두 번/);
+  // 소유 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 실패한다. 경로 접두(collaboration/ 아래)로 소유를 짐작하지 않는다.
+  assert.throws(() => composerMarkerBlockOwners('src/app/admin/collaboration/new/NewClient.tsx', 'demo', ''), /Unclassified composer UI block: src\/app\/admin\/collaboration\/new\/NewClient\.tsx\/demo/,
+    'a path prefix is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
 });
 
 test('dashboard, notifications and optional address book blocks follow their domains rather than coarse packs', () => {
   const composition = resolveProjectRecipe(recipe(['mail']), catalog);
-  const project = path => projectComposerFrontend(path, readFileSync(join(root, path), 'utf8'), composition);
+  const project = path => projectCustom(path, readFileSync(join(root, path), 'utf8'), composition);
   assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
-  assert.doesNotMatch(project('frontend/src/app/components/layout/header.tsx'), /import \{ HeaderNotifications \}/);
-  assert.doesNotMatch(project('frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx'), /import .*recipientAddressBookSource/);
+  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
+  assert.deepEqual(['help', 'notification'].filter(domain => composition.resolvedDomains.includes(domain)), [],
+    'the mail selection leaves out help and notifications');
+  for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
+    assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
+  }
+  for (const [shellRegistry, empty] of [
+    ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
+    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+  ]) {
+    const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
+    assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
+  }
+  // [슬롯 단계 PR-4] 메일 화면은 주소록 출처를 슬롯 레지스트리에서 받는다. 주소록을 고르지 않으면 화면은 그대로이고, 레지스트리가
+  //   빈 배열로 다시 렌더된다(투영이 기여 파일을 직접 지운다).
+  const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
+  assert.equal(project(mail), readFileSync(join(root, mail), 'utf8'));
+  const registry = 'frontend/src/extensions/generated-recipient-picker-sources.ts';
+  const rendered = projector.project(registry, readFileSync(join(root, registry), 'utf8')).source;
+  assert.doesNotMatch(rendered, /import addressbook/);
+  assert.ok(rendered.includes("recipientPickerSources: readonly SlotContributions<'recipient-picker-sources'>[] = [];"), rendered);
 });
 
 test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
@@ -539,12 +604,13 @@ test('the unread-notes card on the work home needs both the dashboard and the no
   const source = readFileSync(join(root, file), 'utf8');
   // The card block is owned by dashboard + note. Today dashboard pulls in note through board, so the
   // card survives with the dashboard; the dual ownership keeps it from dangling if that dependency moves.
-  const withoutDashboard = projectComposerFrontend(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
+  const withoutDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
   assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
-  const withDashboard = projectComposerFrontend(file, source, resolveProjectRecipe(recipe(['dashboard']), catalog));
+  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard']), catalog));
   assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
   assert.match(withDashboard, /<UnreadNotesCard \/>/);
-  const forcedWithoutNote = projectComposerFrontend(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] });
+  const forcedWithoutNote = projectCustom(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] },
+    { packs: ['core', 'collaboration'], frontendRemovePaths: [] });
   assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
   assert.match(forcedWithoutNote, /업무게시판 글/);
 });
@@ -552,7 +618,7 @@ test('the unread-notes card on the work home needs both the dashboard and the no
 test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
   const file = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
   const source = readFileSync(join(root, file), 'utf8');
-  const project = domains => projectComposerFrontend(file, source, resolveProjectRecipe(recipe(domains), catalog));
+  const project = domains => projectCustom(file, source, resolveProjectRecipe(recipe(domains), catalog));
   // 통계 셸은 core 다. 설문 탭은 설문이 넘기는 패널이라 설문이 없으면 import·탭·등록이 함께 빠지고, 셸은 설문 서비스를 모른다.
   const coreOnly = project([]);
   assert.doesNotMatch(coreOnly, /StatsHubSurveyTab|'SURVEYS',|SURVEYS: surveyTab/);
@@ -568,14 +634,14 @@ test('the statistics shell keeps board and survey tabs only with their owning do
   assert.doesNotMatch(withBoard, /StatsHubSurveyTab/);
   // 분류가 없는 pack 의 블록은 조용히 남거나 빠지지 않고 실패한다.
   const empty = resolveProjectRecipe(recipe([]), catalog);
-  assert.throws(() => projectComposerFrontend(file, `${source}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
+  assert.throws(() => projectCustom(file, `${source}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
     empty), /Unclassified composer UI block/);
-  assert.throws(() => projectComposerFrontend('frontend/src/app/admin/stats/AdminStatsClient.tsx',
+  assert.throws(() => projectCustom('frontend/src/app/admin/stats/AdminStatsClient.tsx',
     '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty), /Unclassified composer UI block/);
   const admin = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
   const adminSource = readFileSync(join(root, admin), 'utf8');
-  assert.doesNotMatch(projectComposerFrontend(admin, adminSource, empty), /title="누적 게시물"/);
-  assert.match(projectComposerFrontend(admin, adminSource, resolveProjectRecipe(recipe(['board']), catalog)), /title="누적 게시물"/);
+  assert.doesNotMatch(projectCustom(admin, adminSource, empty), /title="누적 게시물"/);
+  assert.match(projectCustom(admin, adminSource, resolveProjectRecipe(recipe(['board']), catalog)), /title="누적 게시물"/);
   // 셸이 core 로 남으므로 기능을 하나도 고르지 않아도, 설문만 골라도 셸·통계 화면이 import 로 사라지지 않는다.
   for (const domains of [[], ['survey']]) assert.deepEqual(inspectFrontendSurvival(domains).missing, [], `${domains}`);
 });

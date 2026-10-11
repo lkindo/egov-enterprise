@@ -1,12 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import MailSendHubClient from '../MailSendHubClient';
-/* reusable-base:demo:start */
-import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
-/* reusable-base:demo:end */
+import { useRecipientAddressBook } from '@/app/components/ui/recipient-picker-sources';
+import { inProjection } from '@/test-utils/projection';
 
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
@@ -30,13 +29,13 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
-// 발송 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 사용자이고, 표시 판정 테스트만 권한을 줄인다.
-// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+// 발송 버튼은 발송 권한(MAIL_SEND)으로, 주소록 출처는 주소록 조회 권한(ADBK_READ)으로 보인다 — 기본은 둘 다 가진 사용자이고,
+// 표시 판정 테스트만 권한을 줄인다. 두 훅은 실제처럼 같은 사용자를 돌려준다. 부서 탭(DEPT_READ·USER_READ)은 이 스펙의 대상이 아니라 주지 않는다.
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
-  useOptionalAuth: () => undefined,
-}));
+vi.mock('@/contexts/AuthContext', () => {
+  const current = () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: current, useOptionalAuth: current };
+});
 
 // 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 "피커가 돌려준 선택을 화면이 어떻게 싣는가" 만 본다.
 vi.mock('@/app/components/ui/recipient-picker', async () => {
@@ -80,7 +79,7 @@ function renderCompose() {
 }
 
 beforeEach(() => {
-  auth.permissions = ['MAIL_SEND'];
+  auth.permissions = ['MAIL_SEND', 'ADBK_READ'];
   mocks.getDeliveryStatus.mockResolvedValue({ deliveryConfigured: true, senderImplementation: 'RealEmailSender' });
 });
 
@@ -151,37 +150,50 @@ async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
 }
 
 /**
- * [2026-09-13 GAP-PACK-001 ②] 주소록은 demo pack 소유라, 이 화면은 demo 마커 블록 안에서만 주소록 출처를 주입하고
- * 입력 안내도 같은 블록으로 '주소록' 을 덧붙인다. demo 가 빠진 프로필에서는 두 블록이 함께 잘려 피커는 사용자 검색만,
- * 안내는 '사용자' 만 말한다. 아래 demo 블록 테스트도 그 프로필에서는 함께 잘린다.
+ * [2026-10-11 슬롯 단계 PR-4] 주소록 출처는 주소록 기능의 슬롯 기여(recipient-picker-sources)에서 온다. 화면은 core 도우미
+ * useRecipientAddressBook 으로 받아 피커에 넘기고, 입력 안내도 같은 값으로 '주소록' 을 덧붙인다. 주소록이 빠진 구성에서는 투영이
+ * 기여 파일을 지우고 레지스트리를 빈 배열로 다시 만든다 — 피커는 사용자·부서 검색만, 안내는 '사용자' 만 말한다. 아래 두 시험은
+ * 두 구성 모두에서 등록되고, 기대값을 투영 원장(기여 파일이 빠졌는가)으로 가른다.
+ * 권한 축(PR-5): 주소록 조회 권한(ADBK_READ)이 없으면 기여가 있어도 출처와 '·주소록' 이 없다.
  */
+const ADDRESS_BOOK_CONTRIBUTION = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
+const addressBookInProjection = inProjection(ADDRESS_BOOK_CONTRIBUTION);
+
 describe('MailSendHubClient 재사용 base 조합 지점', () => {
   it('입력 안내는 수신자 찾기가 실제로 주는 출처만 말한다', () => {
     renderCompose();
     const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder') ?? '';
 
-    // 기대값도 같은 마커로 조립한다 — demo 가 빠진 프로필에서도 '주소록' 이 없다는 사실을 정확한 문자열로 단언한다.
-    const expectedSources = [
-      '사용자',
-      /* reusable-base:demo:start */
-      '주소록',
-      /* reusable-base:demo:end */
-    ].join('·');
+    // 기대값은 정확한 문자열이다 — 주소록이 빠진 구성에서도 '주소록' 이 없다는 사실을 그대로 단언한다.
+    const expectedSources = addressBookInProjection ? '사용자·주소록' : '사용자';
     expect(placeholder).toBe(`이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 ${expectedSources}에서 고르세요`);
   });
 
-  /* reusable-base:demo:start */
-  it('전체 제품에서는 메일 수신자 피커에 주소록 어댑터를 그대로 주입한다', async () => {
+  it('메일 수신자 피커에는 주소록 기여가 있을 때만 그 출처를 넘긴다', async () => {
     const user = userEvent.setup();
+    const offered = renderHook(() => useRecipientAddressBook('mail')).result.current;
+    expect(offered === undefined).toBe(!addressBookInProjection);
     mocks.pickerProps.addressBook = 'not-rendered';
     renderCompose();
 
     await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
     await screen.findByRole('button', { name: '피커 선택 확정' });
 
-    expect(mocks.pickerProps.addressBook).toBe(recipientAddressBookSource);
+    expect(mocks.pickerProps.addressBook).toBe(offered?.source);
   });
-  /* reusable-base:demo:end */
+
+  it('주소록 조회 권한(ADBK_READ)이 없으면 피커에 주소록 출처를 넘기지 않고 안내도 사용자만 말한다', async () => {
+    auth.permissions = ['MAIL_SEND']; // 발송은 되지만 주소록 조회 권한이 없는 사용자 정의 그룹
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    renderCompose();
+
+    const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder');
+    expect(placeholder).toBe('이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 사용자에서 고르세요');
+    await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
+    await screen.findByRole('button', { name: '피커 선택 확정' });
+    expect(mocks.pickerProps.addressBook).toBeUndefined();
+  });
 });
 
 describe('MailSendHubClient validation', () => {

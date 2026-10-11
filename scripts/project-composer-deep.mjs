@@ -1,19 +1,19 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, extname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
-import { FRONTEND_LAYOUT, SOURCE_EXTENSIONS, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
+import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
-import { assertComposerSourceSurvives, composerProfile, domainSupportFiles, projectComposerFrontend } from './project-composer-source.mjs';
+import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
- * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·planFrontendRemoval·
+ * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·createFrontendProjector·planFrontendRemoval·
  * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement). 그래서 여기서 찾은 차단 사유는 생성하면
  * 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
  * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
@@ -96,20 +96,17 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   } catch (error) { block('JAVA_PROJECTION', { message: message(error) }); }
 
   const frontendRoot = join(root, 'frontend');
-  const knownPacks = new Set(Object.keys(manifest.packs));
-  const excludedPacks = new Set([...knownPacks].filter(pack => !profile.packs.includes(pack)));
-  // 생성기처럼 모든 프런트 소스에 선택 투영(직접 선택일 때)과 pack 마커 투영을 먼저 하고, 그 내용으로 import 를 읽는다.
-  // 곧 지워질 파일의 마커 오류도 생성기는 투영 단계에서 실패하므로 여기서도 차단 사유가 된다.
+  // 생성기처럼 모든 프런트 모듈 파일에 투영(직접 선택의 소유 기능과 pack 마커를 한 번에)을 먼저 하고, 그 내용으로 import 를 읽는다.
+  // 곧 지워질 파일의 마커 오류·판정할 수 없는 import 도 생성기는 투영 단계에서 실패하므로 여기서도 차단 사유가 된다.
+  // 투영할 파일은 생성기와 같은 판정(isFrontendModuleFile)으로 고른다 — 연쇄 계획이 읽는 모든 파일이 이 맵에 있어야 한다.
   const frontendFiles = relativeFiles.filter(file => file.startsWith('frontend/')).map(file => join(root, file));
   let frontend = null;
   try {
-    const project = path => {
-      let source = readFileSync(path, 'utf8');
-      if (composition.profile === 'custom') source = projectComposerFrontend(rel(path), source, composition);
-      return projectFrontendPackMarkers(source, { knownPacks, excludedPacks, label: normalize(relative(frontendRoot, path)) }).source;
-    };
-    const projected = new Map(frontendFiles.filter(path => SOURCE_EXTENSIONS.includes(extname(path))).map(path => [path, project(path)]));
-    frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: frontendDirectRemovePaths(manifest, profile),
+    // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
+    const projector = createFrontendProjector({ manifest, profile, composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
+    const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
+    const projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
+    frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,
       readSource: path => projected.get(path) });
   } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
   const removed = new Set([...(java?.removed ?? []), ...(frontend?.removed ?? [])].map(path => pathKey(rel(path))));

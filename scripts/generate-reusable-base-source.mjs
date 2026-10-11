@@ -4,7 +4,7 @@
  * 장기 template 브랜치를 만들거나 현재 working tree를 수정하지 않는다.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { projectReusableGovernance } from './reusable-governance-projection.mjs';
 import { canonicalJsonSha256, validateReusableGovernance } from './reusable-governance-integrity.mjs';
@@ -15,16 +15,17 @@ import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
-import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, assertComposerSourceSurvives, projectedScreenLosses,
+import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { pageSurvivalExpectation } from './reusable-page-survival.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
-import { SOURCE_EXTENSIONS, projectFrontendPackMarkers, pruneFrontend, stripExcludedFrontendPackBlocks } from './reusable-source-frontend.mjs';
+import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
 import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas,
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles,
+  walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 
@@ -197,7 +198,7 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
 }
 
 /**
- * 복사한 소스 트리에서 선택하지 않은 기능을 걷는다: Java 연쇄 제거, 선택 투영(직접 선택), pack 마커 블록, 프런트 연쇄 제거,
+ * 복사한 소스 트리에서 선택하지 않은 기능을 걷는다: Java 연쇄 제거, 프런트 투영(직접 선택의 소유 기능과 pack 마커를 한 번에), 프런트 연쇄 제거,
  * 화면 생존 대조, 선택 기능 소스의 생존 확인. 정밀 점검(plan/deep)은 같은 판정을 디스크를 바꾸지 않고 미리 하며, 둘이 같은지
  * 시험이 대조한다. 화면 생존의 기대값은 기능 소유에서 계산한다(removePaths 로 거르지 않는다 — reusable-page-survival.mjs).
  */
@@ -206,12 +207,11 @@ export function projectSourceTree(output, { manifest, profile, composition, sour
   if (!pageSurvival && !catalog) throw new Error('projectSourceTree needs the composition catalog or a page survival expectation');
   const expectation = pageSurvival ?? pageSurvivalExpectation({ root: sourceRoot, catalog, composition });
   const java = pruneJava(output, manifest, profile);
-  if (composition.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
-    const source = readFileSync(file, 'utf8');
-    const projected = projectComposerFrontend(normalize(relative(output, file)), source, composition);
-    if (source !== projected) writeFileSync(file, projected);
-  }
-  const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
+  // 선택 투영(직접 선택의 소유 기능)과 pack 마커 투영을 한 번에 한다(슬롯 단계 PR-2). 정밀 점검·census·거버넌스 투영도 같은 projector 다.
+  // 슬롯 레지스트리는 같은 패스에서 복사한 프런트 파일 목록으로 다시 렌더한다(PR-4). 투영 뒤 레지스트리와 남은 기여의 대조는 pruneFrontend 가 한다.
+  const frontendRoot = join(output, 'frontend');
+  const files = walk(frontendRoot, () => true).map(path => normalize(relative(frontendRoot, path)));
+  const packBlocks = applyFrontendProjection(output, createFrontendProjector({ manifest, profile, composition, files }));
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
   const pages = new Set(discoverPageRoutes(output).map(page => page.source));
   const lostScreens = projectedScreenLosses(expectation, source => pages.has(source));
@@ -273,13 +273,13 @@ function main() {
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
   if (args.layout === 'single-module') installSingleModuleRuntime(output);
   else installMultiModuleMigrationRuntime(output);
+  // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
+  // 레지스트리 렌더는 생성기가 복사한 같은 파일 목록을 쓴다.
+  const sourceProjector = createFrontendProjector({ manifest, profile, composition,
+    files: copiedFiles.filter(file => file.startsWith('frontend/')) });
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
-    projectSource: (file, source) => projectFrontendPackMarkers(projectComposerFrontend(file, source, composition), {
-      knownPacks: new Set(Object.keys(manifest.packs)),
-      excludedPacks: new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack))),
-      label: file,
-    }).source,
+    projectSource: (file, source) => sourceProjector.project(file, source).source,
   });
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
@@ -337,6 +337,8 @@ function main() {
       `- 제거 Java files: ${java.removedFiles}\n` +
       `- 제거 frontend files: ${frontend.removedFiles}` +
         ` (선언 ${frontend.removedFiles - frontend.cascadedFiles} · 연쇄 ${frontend.cascadedFiles})\n` +
+      `- 슬롯 기여: ${frontend.slots.map(({ slot, owners }) => `${slot} ← ${owners.join(', ') || '(없음)'}`).join('; ') || '(슬롯 없음)'}` +
+        ' — 기여를 더하거나 뺀 뒤 `npm run slots:generate` 로 레지스트리를 다시 만든다.\n' +
       `- 제거된 거버넌스 게이트: ${removedGates.total}건` +
         (removedGates.total
           ? `\n${[
