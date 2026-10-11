@@ -39,6 +39,8 @@
  * 그대로 집행된다(H3). 이 축도 예외 목록 없이 래칫(`expected.ungatedWriteMax`) 하나로 막고, 줄었는데 래칫을
  * 내리지 않아도 red 다. 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)도 화면 모집단이고, 기여를 여는 화면은 그 슬롯
  * 레지스트리를 import 하는 화면이다(레지스트리를 도우미 .ts 가 읽으면 그 도우미의 화면으로 한 번 더 잇는다 — 스크랩 슬롯).
+ * 기여가 import 하는 비화면·비서비스 모듈은 어느 디렉터리에 있든 중간 모듈로 읽고, 기여의 판정은 visibleWhen.permissions 의
+ * 원소만 센다(사유 문자열 속 권한 이름은 판정이 아니다 — 스크랩 슬롯 검토).
  *
  * [규칙] 모든 operation 은 다음 셋 중 정확히 하나다.
  *   1. consumed      — 프런트 호출부가 있다(generated-api-boundaries 레코드).
@@ -451,8 +453,8 @@ const isUiFile = (file) => /\.tsx$/u.test(file) && /\/src\/(?:app|components)\//
 const moduleName = (file) => toPosix(file).split('/').pop().replace(/\.(?:ts|tsx)$/u, '');
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 const importsModule = (source, name) => new RegExp(`from\\s+['"][^'"]*/${escapeRegExp(name)}['"]`, 'u').test(source);
-/** 이 소스가 그 모듈에서 import 한 식별자(기본·이름·별칭). */
-function importedNames(source, name) {
+/** 이 소스가 그 모듈에서 import 한 식별자(기본·이름·별칭). original 이면 별칭 대신 내보낸 쪽 이름을 돌려준다. */
+function importedNames(source, name, { original = false } = {}) {
   const pattern = new RegExp(
     `import\\s+(?:type\\s+)?(?:([\\w$]+)\\s*,?\\s*)?(?:\\{([^}]*)\\})?\\s*from\\s+['"][^'"]*/${escapeRegExp(name)}['"]`,
     'gu',
@@ -461,7 +463,8 @@ function importedNames(source, name) {
   for (const match of source.matchAll(pattern)) {
     if (match[1]) names.push(match[1]);
     for (const part of (match[2] ?? '').split(',')) {
-      const local = part.trim().replace(/^type\s+/u, '').split(/\s+as\s+/u).pop();
+      const [exported, alias] = part.trim().replace(/^type\s+/u, '').split(/\s+as\s+/u);
+      const local = original ? exported : (alias ?? exported);
       if (local) names.push(local);
     }
   }
@@ -622,10 +625,39 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
     writeMethods.push({ module: moduleName(absolute), name: owner, permission });
   }
 
+  // [스크랩 슬롯] 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)도 화면 모집단이다. 기여는 셸이 그리는 버튼의 쓰기 함수를 가리키므로,
+  // 빼면 그 쓰기가 어느 화면에도 귀속되지 않아 부채가 사라진 것처럼 보인다(H2). 판정은 슬롯 장치의 경로 규칙 하나를 쓴다.
+  const frontendPrefix = `${toPosix(resolve(repoRoot, 'frontend'))}/`;
+  const contributionSlot = new Map();
+  for (const file of files) {
+    if (!file.startsWith(`${frontendPrefix}${SLOT_ROOT}/`)) continue;
+    const kind = slotPathKind(file.slice(frontendPrefix.length));
+    if (kind?.kind === 'contribution') contributionSlot.set(file, kind.slot);
+  }
+  /*
+    [스크랩 슬롯 검토] 경계 계약은 기여가 자기 기능 경로 아래 어떤 모듈이든 import 하게 둔다. 그래서 기여가 가리키는 쓰기 함수는 중간
+    모듈 디렉터리(src/queries 등) 밖 — 기능 소유의 app·lib·components .ts — 에도 놓일 수 있다. 기여가 import 하는 비화면·비서비스
+    모듈도 중간 모듈로 읽는다. 그러지 않으면 쓰기 함수를 옮기기만 해도 부채가 사라진다(H2). 이름 맞춤이 아니라 import 경로를 풀어 정한다.
+  */
+  const sourceRootPosix = toPosix(sourceRoot);
+  const resolveSpecifier = (from, specifier) => {
+    const base = specifier.startsWith('@/') ? `${sourceRootPosix}/${specifier.slice(2)}`
+      : specifier.startsWith('.') ? toPosix(join(dirname(from), specifier)) : null;
+    if (base === null) return null;
+    return [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`].find((candidate) => sources.has(candidate)) ?? null;
+  };
+  const contributionModules = new Set();
+  for (const file of contributionSlot.keys()) {
+    for (const match of sources.get(file).matchAll(/\bfrom\s+['"]([^'"]+)['"]/gu)) {
+      const target = resolveSpecifier(file, match[1]);
+      if (target && !isServiceFile(target) && !isUiFile(target) && !contributionSlot.has(target)) contributionModules.add(target);
+    }
+  }
+
   // 2. 중간 모듈의 함수 → 권한 (그 함수가 부르는 서비스 쓰기의 권한)
   const wrappers = [];
   for (const [file, source] of sources) {
-    if (!isIntermediaryFile(file)) continue;
+    if (!isIntermediaryFile(file) && !contributionModules.has(file)) continue;
     const lines = source.split('\n');
     for (const method of writeMethods) {
       const locals = importedNames(source, method.module);
@@ -650,22 +682,17 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
       pageDirs.add(posix.slice(index + '/src/app/'.length).replace(/\/?page\.tsx$/u, ''));
     }
   }
-  // [스크랩 슬롯] 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)도 화면 모집단이다. 기여는 셸이 그리는 버튼의 쓰기 함수를 가리키므로,
-  // 빼면 그 쓰기가 어느 화면에도 귀속되지 않아 부채가 사라진 것처럼 보인다(H2). 판정은 슬롯 장치의 경로 규칙 하나를 쓴다.
-  const frontendPrefix = `${toPosix(resolve(repoRoot, 'frontend'))}/`;
-  const contributionSlot = new Map();
-  for (const file of files) {
-    if (!file.startsWith(`${frontendPrefix}${SLOT_ROOT}/`)) continue;
-    const kind = slotPathKind(file.slice(frontendPrefix.length));
-    if (kind?.kind === 'contribution') contributionSlot.set(file, kind.slot);
-  }
   const uiFiles = files.filter((file) => (isUiFile(file) || contributionSlot.has(file)) && !isIntermediaryFile(file) && !isServiceFile(file));
   const needs = new Map();
   for (const file of uiFiles) {
     const source = sources.get(file);
     const required = new Map();
+    // 기여는 데이터뿐이라 쓰기를 부르지 않고 가리킨다(`submit: createThing`). 서비스가 내보낸 쓰기 함수(.bind() 재수출)를 그대로
+    // import 해 값으로 두면 호출 모양이 없어도 그 쓰기다 — 기여가 쓰지 않는 이름을 import 할 까닭이 없다.
+    const contribution = contributionSlot.has(file);
     for (const method of writeMethods) {
-      if (callsImportedMethod(source, method.module, method.name)) {
+      if (callsImportedMethod(source, method.module, method.name)
+        || (contribution && importedNames(source, method.module, { original: true }).includes(method.name))) {
         required.set(method.permission, `${method.module}.${method.name}`);
       }
     }
@@ -683,8 +710,43 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
   const relativeOf = (file) => toPosix(file).slice(rootPrefix);
   const absoluteOf = new Map(files.map((file) => [relativeOf(file), file]));
   const absolute = (file) => absoluteOf.get(toPosix(file)) ?? toPosix(resolve(repoRoot, file));
+  /*
+    [스크랩 슬롯 검토] 기여의 판정은 노출 술어 visibleWhen.permissions 하나다. 기여 소스 전체에서 따옴표 친 권한 이름을 찾으면, 서버
+    권한을 설명하는 always 사유(`always: "서버가 'X' 로 막는다."`)가 판정으로 세여 노출 판정 없이 부채가 사라진다(H2). 그래서 기여는
+    AST 로 그 배열의 문자열 원소만 읽는다. 화면 파일은 종전대로 따옴표 친 권한 이름이면 판정에 쓴 것으로 본다.
+  */
+  const unwrap = (node) => {
+    let current = node;
+    while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)
+      || ts.isSatisfiesExpression(current)) current = current.expression;
+    return current;
+  };
+  const visibilityCodes = new Map();
+  const contributionGates = (file) => {
+    if (!visibilityCodes.has(file)) {
+      const codes = new Set();
+      const visit = (node) => {
+        if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'permissions'
+          && ts.isArrayLiteralExpression(unwrap(node.initializer))) {
+          let holder = node.parent;
+          while (holder.parent && (ts.isAsExpression(holder.parent) || ts.isParenthesizedExpression(holder.parent)
+            || ts.isSatisfiesExpression(holder.parent))) holder = holder.parent;
+          const owner = holder.parent;
+          if (owner && ts.isPropertyAssignment(owner) && ts.isIdentifier(owner.name) && owner.name.text === 'visibleWhen') {
+            for (const element of unwrap(node.initializer).elements) if (ts.isStringLiteralLike(element)) codes.add(element.text);
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(ast(file));
+      visibilityCodes.set(file, codes);
+    }
+    return visibilityCodes.get(file);
+  };
   const mentions = (file, permission) => {
-    const source = sources.get(absolute(file));
+    const target = absolute(file);
+    if (contributionSlot.has(target)) return contributionGates(target).has(permission);
+    const source = sources.get(target);
     return source !== undefined && new RegExp(`['"\`]${permission}['"\`]`, 'u').test(source);
   };
   const directImporters = (target) => uiFiles.filter((other) => other !== target && importsModule(sources.get(other), moduleName(target)));
