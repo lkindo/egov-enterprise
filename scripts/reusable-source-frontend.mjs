@@ -8,6 +8,8 @@ import { fail, normalize, removePath, walk } from './reusable-source-tree.mjs';
 export const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
 /** frontend 거버넌스 계약이 사는 곳 — census·guard·cross-stack 계약이 전부 이 아래다. */
 const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
+/** 라우트가 아닌 필수 진입점(루트 레이아웃). 화면(page)의 생존은 구성 기대값 대조가 본다. */
+export const FRONTEND_LAYOUT = 'src/app/layout.tsx';
 
 export function resolveFrontendImport(frontendRoot, importer, specifier, knownFiles) {
   let base;
@@ -33,18 +35,24 @@ export function frontendImportSpecifiers(source) {
   ].map((match) => match[1]);
 }
 
-function importedFrontendFiles(frontendRoot, path, knownFiles) {
-  const source = readFileSync(path, 'utf8');
-  return frontendImportSpecifiers(source)
-    .map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles))
-    .filter(Boolean);
-}
+/*
+ * 화면 파일(page)과 next.config 의 라우트 종류는 그 본문에서 판정한다(redirect 호출·return 유무, next.config 선언 —
+ * ui-route-capabilities-contract.expectedRouting). 마커 블록이 그 근거를 품으면 같은 화면의 종류가 프로필마다 갈려, 원본 라우트
+ * 원장으로 계산하는 화면 생존 기대값과 투영 뒤 본문을 보는 거버넌스 투영이 어긋난다. 그래서 그런 블록은 작성 시점에 막는다.
+ * 판정은 expectedRouting 과 같은 정규식이다(redirect 호출은 주석까지, return 은 주석을 뺀 본문에서 센다).
+ */
+const PAGE_FILE = /(?:^|\/)src\/app\/(?:.+\/)?page\.(?:ts|tsx|js|jsx)$/;
+const NEXT_CONFIG = /(?:^|\/)next\.config\.(?:ts|mjs|js)$/;
+const REDIRECT_CALL = /\bredirect\s*\(\s*(['"`])[^\r\n]*?\1\s*\)/;
+const withoutComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\r\n]*/g, '');
 
 /**
  * 한 파일의 pack 마커 블록을 투영한다. 제외 pack 블록은 마커 줄과 함께 지우고 허용 pack 블록은 그대로 둔다.
- * 한 줄에 마커 둘·알 수 없는 pack·중첩·짝 불일치·미닫힘은 FAIL 이다. 계약 테스트가 같은 투영을 재사용하도록 export 한다.
+ * 한 줄에 마커 둘·알 수 없는 pack·중첩·짝 불일치·미닫힘, next.config 의 마커, page 파일에서 redirect 호출이나 return 을
+ * 품은 블록은 FAIL 이다. 계약 테스트가 같은 투영을 재사용하도록 export 한다.
  */
 export function projectFrontendPackMarkers(source, { knownPacks, excludedPacks, label }) {
+  const path = String(label).replaceAll('\\', '/');
   const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
   const projected = [];
   let openMarker;
@@ -58,6 +66,7 @@ export function projectFrontendPackMarkers(source, { knownPacks, excludedPacks, 
     }
     const marker = markers[0];
     if (!marker) {
+      if (openMarker) openMarker.body.push(line);
       if (!openMarker?.strip) projected.push(line);
       continue;
     }
@@ -66,17 +75,24 @@ export function projectFrontendPackMarkers(source, { knownPacks, excludedPacks, 
     if (!knownPacks.has(packName)) {
       fail(`알 수 없는 frontend pack marker: ${packName} (${label}:${index + 1})`);
     }
+    if (NEXT_CONFIG.test(path)) {
+      fail(`next.config 는 pack 마커를 둘 수 없다 — 리다이렉트 선언은 거버넌스 투영이 정리한다: ${label}:${index + 1}`);
+    }
     if (boundary === 'start') {
       if (openMarker) {
         fail(`frontend pack marker 중첩은 허용하지 않는다: ${label}:${index + 1}`);
       }
-      openMarker = { packName, line: index + 1, strip: excludedPacks.has(packName) };
+      openMarker = { packName, line: index + 1, strip: excludedPacks.has(packName), body: [] };
       if (!openMarker.strip) projected.push(line);
       continue;
     }
 
     if (!openMarker || openMarker.packName !== packName) {
       fail(`짝이 맞지 않는 frontend pack marker: ${packName} (${label}:${index + 1})`);
+    }
+    const body = openMarker.body.join('');
+    if (PAGE_FILE.test(path) && (REDIRECT_CALL.test(body) || /\breturn\b/.test(withoutComments(body)))) {
+      fail(`page 파일의 pack 마커 블록은 redirect 호출이나 return 을 품을 수 없다 — 화면의 라우트 종류가 프로필마다 갈린다: ${label}:${openMarker.line}`);
     }
     if (!openMarker.strip) projected.push(line);
     else strippedBlocks += 1;
@@ -182,20 +198,15 @@ export function pruneFrontend(output, manifest, profile) {
   const directPaths = frontendDirectRemovePaths(manifest, profile);
   // 선언된 removePaths 는 manifest 에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
   const files = walk(frontendRoot, () => true);
-  const knownFiles = new Set(files.filter((path) => SOURCE_EXTENSIONS.includes(extname(path))));
   const { direct: directRemoved, removed } = planFrontendRemoval({
     frontendRoot, files, directPaths, readSource: (path) => readFileSync(path, 'utf8'),
   });
   for (const rel of directPaths) removePath(frontendRemoveTarget(frontendRoot, rel), new Set());
   for (const path of removed) if (existsSync(path)) rmSync(path);
 
-  for (const critical of ['src/app/layout.tsx', 'src/app/page.tsx', 'src/app/login/page.tsx']) {
-    if (!existsSync(join(frontendRoot, critical))) fail(`frontend 필수 진입점이 projection에서 제거됐다: ${critical}`);
-  }
-  for (const path of walk(frontendRoot, (candidate) => SOURCE_EXTENSIONS.includes(extname(candidate)))) {
-    const dangling = importedFrontendFiles(frontendRoot, path, knownFiles).filter((dependency) => removed.has(dependency));
-    if (dangling.length) fail(`frontend projection dangling import: ${normalize(relative(frontendRoot, path))}`);
-  }
+  // 화면(page)의 생존은 구성 기대값과의 대조가 본다(project-composer-source.projectedScreenLosses). 라우트가 아닌 루트 레이아웃만 여기서 본다.
+  // 종전의 'dangling import' 검사는 연쇄와 같은 판정·같은 제거 집합으로 다시 봐서 실패할 수 없었다(항진) — 화면 대조로 바꿨다.
+  if (!existsSync(join(frontendRoot, FRONTEND_LAYOUT))) fail(`frontend 필수 진입점이 projection에서 제거됐다: ${FRONTEND_LAYOUT}`);
   const removedGates = [...removed]
     .map((path) => normalize(relative(output, path)))
     .filter((rel) => rel.startsWith(FRONTEND_GATE_DIR))

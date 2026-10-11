@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ComposerError } from './project-composer-errors.mjs';
+import { describeRoutes, pageSurvivalViolations } from './reusable-page-survival.mjs';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
 /*
@@ -235,10 +236,32 @@ export function projectComposerJava(file, source, profile) {
   return source;
 }
 
+/**
+ * 연쇄 제거 뒤 남은 등록 화면이 구성의 기대값과 같은지 본다(리다이렉트 수렴 포함, reusable-page-survival.mjs).
+ * `pagePresent(source)` 는 그 page 파일이 생성물에 남았는지 답한다. 화면은 디렉터리·파일 이름 그대로 라우트가 되므로,
+ * 생성기는 디스크의 실제 page 파일 이름(discoverPageRoutes)으로, 정밀 점검은 복사할 파일 목록과의 정확한 일치로 답한다 —
+ * 대소문자를 가리지 않는 디스크에서도 이름이 다른 파일은 그 화면이 아니다(생성물 무결성 검사와 같은 판정).
+ * 구성 밖 화면이 남으면 manifest 결함이라 일반 실패로 멈추고, 빠진 화면은 돌려줘 선택 소스 소실과 함께 알리게 한다.
+ */
+export function projectedScreenLosses(expectation, pagePresent) {
+  const { missing, extra } = pageSurvivalViolations({ ...expectation, survives: pagePresent });
+  if (extra.length) throw new Error(`Screens outside the composition survive projection: ${describeRoutes(extra)}`);
+  return missing;
+}
+
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
 // `present` 는 생성물에 그 파일이 남았는지 답한다. 생성기는 디스크를, 정밀 점검(plan/deep)은 제거 계획을 본다.
-export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest, { present = path => existsSync(join(outputRoot, path)) } = {}) {
-  if (composition.profile !== 'custom') return;
+// `lostScreens`(projectedScreenLosses 결과)를 함께 받아, 정밀 점검처럼 빠진 화면과 소스를 모두 모아 SOURCE_SURVIVAL 하나로 알린다.
+export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest, { present = path => existsSync(join(outputRoot, path)), lostScreens = [] } = {}) {
+  const lost = new Set(lostScreens.map(entry => entry.source));
+  if (composition.profile === 'custom') collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost);
+  if (!lost.size) return;
+  const files = [...lost].sort((left, right) => left.localeCompare(right));
+  throw new ComposerError('SOURCE_SURVIVAL', { files },
+    `Selected capability source was removed: ${files.join(', ')}${lostScreens.length ? ` (expected screens: ${describeRoutes(lostScreens)})` : ''}`);
+}
+
+function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
   const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
   // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
@@ -248,7 +271,7 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
     if (excludedSupport.has(normalized)) return;
     if (normalized.startsWith('frontend/') && composition.frontend.removePaths.some(removed =>
       normalized === `frontend/${removed}` || normalized.startsWith(`frontend/${removed}/`))) return;
-    if (!present(path)) throw new ComposerError('SOURCE_SURVIVAL', { files: [normalized] }, `Selected capability source was removed: ${path}`);
+    if (!present(path)) lost.add(normalized);
   };
   function assertTree(directory) {
     if (!existsSync(directory)) return;

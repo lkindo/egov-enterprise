@@ -723,10 +723,16 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     writeFileSync(join(repository, file), text);
   };
   // 프리셋은 이 저장소의 manifest 로 제거 경로와 게이트 승인을 정한다(직접 선택은 원본 저장소의 게이트 승인을 쓴다).
-  const real = loadProjectComposerCatalog(root);
+  // 이 합성 저장소의 화면은 홈·로그인뿐이다. 정밀 점검은 구성이 남겨야 할 화면과 남는 화면을 대조하므로(슬롯 단계 PR-1),
+  // core 화면을 그 둘로 줄인 카탈로그와 그 둘만 적은 라우트 원장을 쓴다.
+  const loaded = loadProjectComposerCatalog(root);
+  const { catalogHash: ignoredHash, ...body } = { ...loaded, core: { ...loaded.core, menuRoutes: ['/', '/login'] } };
+  const real = { ...body, catalogHash: compositionDigest(body) };
   const core = { ...recipe(), selection: { preset: 'core' } };
   const removed = 'src/app/demo';
   git('init', '--quiet');
+  write('config/ui-route-capabilities.json', JSON.stringify({ routes: [['/', 'page.tsx'], ['/login', 'login/page.tsx']]
+    .map(([route, page]) => ({ route, source: `frontend/src/app/${page}`, routing: { kind: 'page' } })) }));
   write('config/reusable-base-profiles.json', JSON.stringify({ packs: { core: {}, collaboration: {}, survey: {}, demo: { frontend: { removePaths: [removed] } } },
     profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }] } } }));
   for (const file of ['layout.tsx', 'page.tsx', 'login/page.tsx']) write(`frontend/src/app/${file}`);
@@ -757,8 +763,8 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   assert.throws(() => engine.deep({ ...core, selection: { domains: ['nosuchdomain'] } }), error => error.code === 'INVALID_RECIPE');
   // 해석기의 다른 거부 코드(지원하지 않는 DB 등)도 모두 입력 오류로 모은다.
   assert.throws(() => engine.deep({ ...core, database: { vendor: 'oracle' } }), error => error.code === 'INVALID_RECIPE');
-  // 대소문자 구분은 생성물을 만들 폴더에서 판정한다(폴더마다 다를 수 있다). 진입점의 색인 이름이 대소문자만 다르면,
-  // 가리는 출력 폴더에서는 생성기가 진입점을 찾지 못한다.
+  // 화면은 디렉터리·파일 이름 그대로 라우트가 된다. 로그인 화면의 색인 이름이 대소문자만 다르면(Page.tsx) 출력 폴더가 대소문자를
+  // 가리든 가리지 않든 그 화면은 없다(Linux 와 같다) — 생성기·생성물 무결성 검사와 같은 판정이다.
   git('mv', 'frontend/src/app/login/page.tsx', 'frontend/src/app/login/Page.tsx');
   git('commit', '--quiet', '-m', 'third');
   const caseOutput = realpathSync(mkdtempSync(join(tmpdir(), 'composer-deep-case-')));
@@ -766,10 +772,11 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   if (process.platform === 'win32') {
     try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
   }
-  writeFileSync(join(caseOutput, 'Probe.txt'), 'x');
-  const outputIgnoresCase = existsSync(join(caseOutput, 'pROBE.TXT'));
-  const caseDeep = createComposerEngine({ root: repository, outputRoot: caseOutput, loadCatalog: () => real }).deep(core);
-  assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), outputIgnoresCase ? [] : ['FRONTEND_ENTRY']);
+  for (const output of [outputRoot, caseOutput]) {
+    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real }).deep(core);
+    assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), ['SOURCE_SURVIVAL']);
+    assert.deepEqual(caseDeep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
+  }
   // 원본 커밋을 가장 먼저 본다(설계서 14.2). 이 저장소에는 메뉴 스냅숏이 없어(낡은 자료) 원본이 같으면 그 코드가 나오지만,
   // 원본이 바뀌었으면 SOURCE_CHANGED 가 먼저다 — 새 원본으로 다시 불러오면 함께 풀릴 수 있기 때문이다.
   assert.throws(() => engine.plan({ ...core, sourceRef: first }), error => error instanceof ComposerError && error.code === 'SOURCE_CHANGED');

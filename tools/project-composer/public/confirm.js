@@ -93,7 +93,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
         $('deep-status').textContent = `차단 ${deep.blockers.length}건 · ${deep.summary}`;
         return '소스 정밀 점검의 차단 항목을 해결한 뒤 다시 점검하세요.';
       }
-      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면 진입점은 남습니다.`;
+      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.`;
       return null;
     } catch (error) {
       if (stale()) return null;

@@ -263,9 +263,22 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       const ledger = JSON.parse(ledgerText);
       writeFileSync(join(output, PROJECTION_LEDGER_PATH), `${JSON.stringify({ ...ledger,
         removedFiles: [...ledger.removedFiles, 'package.json'].sort() }, null, 2)}\n`);
+      // 생성물의 화면은 구성이 남겨야 할 화면과 같아야 한다(슬롯 단계 PR-1). core 가 걷는 댓글 관리 화면과, 목적지가 빠져 사라진
+      // 스크랩 등록 리다이렉트 화면을 되살리면 둘 다 구성 밖 화면이다 — 투영 뒤의 디스크는 수렴 없이 그대로 본다.
+      const revived = profileName === 'core'
+        ? ['frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx', 'frontend/src/app/admin/system/comments/page.tsx'] : [];
+      for (const page of revived) {
+        assert.equal(existsSync(join(output, page)), false, `${profileName} removes ${page}`);
+        mkdirSync(dirname(join(output, page)), { recursive: true });
+        writeFileSync(join(output, page), readFileSync(join(ROOT, page)));
+      }
       const tampered = inspectReusableGovernance(output).errors.join('\n');
       assert.match(tampered, /Projection ledger checksum mismatch/);
       assert.match(tampered, /Projection ledger lists files that exist: .*package\.json/);
+      if (revived.length) {
+        assert.match(tampered, /Projected screens differ from the composition: missing \[\] extra \[\/admin\/collaboration\/scraps\/insertScrap, \/admin\/system\/comments\]/);
+      }
+      for (const page of revived) rmSync(join(output, page));
       writeFileSync(join(output, PROJECTION_LEDGER_PATH), ledgerText);
       writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock, projectionLedger: undefined }, null, 2)}\n`);
       assert.match(inspectReusableGovernance(output).errors.join('\n'), /Source lock must bind the projection ledger/);

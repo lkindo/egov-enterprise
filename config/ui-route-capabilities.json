@@ -6934,7 +6934,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
