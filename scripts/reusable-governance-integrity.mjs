@@ -11,6 +11,7 @@ import { compositionDigest } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
+import { artifactScreenErrors } from './reusable-page-survival.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
@@ -168,7 +169,14 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       bindingIndex.set(binding.source, binding);
     }
     const routes = readJson(root, 'config/ui-route-capabilities.json');
-    check(exact(metadata.routes, discoverPageRoutes(root).map(({ route, source }) => ({ route, source }))), 'Projection route population differs from actual pages');
+    const actualPages = discoverPageRoutes(root);
+    check(exact(metadata.routes, actualPages.map(({ route, source }) => ({ route, source }))), 'Projection route population differs from actual pages');
+    // 생성물의 화면은 구성이 남겨야 할 화면과 정확히 같다(기능 소유 + 리다이렉트 수렴, reusable-page-survival.mjs). 원천은 원본
+    // 라우트 원장 스냅숏과 구성 카탈로그다. 생성기는 연쇄 직후 같은 대조를 하고, 여기서는 거버넌스 투영까지 끝난 디스크를 그대로 본다.
+    if (composition) {
+      errors.push(...artifactScreenErrors({ ledger: upstream.get('config/ui-route-capabilities.json'), catalog, composition,
+        pageSources: new Set(actualPages.map(page => page.source)) }));
+    }
     const census = readJson(root, 'config/ui-url-state-census.json');
     check(exact(census, buildUrlStateCensus({ repoRoot: root })), 'URL census drifted from current source');
     check(exact(metadata.urlRecordIds, census.records.map(row => row.id).sort()), 'Projection URL record population mismatch');

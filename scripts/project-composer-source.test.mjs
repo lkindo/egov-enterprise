@@ -10,7 +10,8 @@ import { compositionDigest, loadProjectComposerCatalog } from './project-compose
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile, domainSupportFiles, projectComposerFrontend, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
-import { frontendImportSpecifiers, projectFrontendPackMarkers, resolveFrontendImport } from './reusable-source-frontend.mjs';
+import { FRONTEND_LAYOUT, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
+import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
 import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
@@ -26,7 +27,6 @@ const java = files.filter(file => file.endsWith('.java')).map(file => join(root,
 const frontendFiles = files.filter(file => file.startsWith('frontend/'));
 const frontendSources = new Map(frontendFiles.filter(file => ['.ts', '.tsx', '.js', '.jsx'].includes(extname(file)))
   .map(file => [file, readFileSync(join(root, file), 'utf8')]));
-const frontendKnownFiles = new Set([...frontendSources.keys()].map(file => join(root, file)));
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
 const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
@@ -261,8 +261,10 @@ test('a selected domain directory may lose only the support owned by an excluded
   const composition = selected => ({ profile: 'custom', resolvedDomains: selected, frontend: { includedPaths: [], removePaths: [] } });
   // 생성기가 템플릿 단독에서 커뮤니티 전용 구현을 지운 뒤 "선택된 소스가 지워졌다" 로 실패하던 경로다.
   assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest));
+  // 지워진 소스는 모두 모아 한 번에 알린다(정밀 점검과 같은 합집합). 메모 보고 서비스도 이 출력에 없어 함께 실린다.
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan', 'memoreport']), manifest),
-    /Selected capability source was removed: business-app[\\/]src[\\/]main[\\/]java[\\/]nuri[\\/]business[\\/]service[\\/]orphan[\\/]OrphanPolicy\.java/);
+    error => error.code === 'SOURCE_SURVIVAL' && error.details.files.includes('business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java')
+      && /^Selected capability source was removed: .*business-app\/src\/main\/java\/nuri\/business\/service\/orphan\/OrphanPolicy\.java/.test(error.message));
   rmSync(join(output, sibling));
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest), /OrphanService\.java/);
 });
@@ -369,35 +371,27 @@ function assertIntegrityGateAcknowledgements(profile, selected) {
   }
 }
 
-/** The real generator's pure marker/import functions run against the current source inventory. */
-function inspectFrontendSurvival(domains, currentCatalog = catalog) {
-  const composition = resolveProjectRecipe(recipe(domains), currentCatalog);
+/**
+ * The generator's own projection functions (marker projection, import cascade, screen survival) run against the current
+ * source inventory. `selection` is a domain list or `{ preset }`. `missing` lists selected sources the cascade removes;
+ * `screens` compares the surviving registered screens with the composition's expectation (reusable-page-survival.mjs).
+ */
+function inspectFrontendSurvival(selection, currentCatalog = catalog) {
+  const composition = resolveProjectRecipe({ ...recipe([]), selection: Array.isArray(selection) ? { domains: selection } : selection }, currentCatalog);
   const profile = composerProfile(manifest, composition);
-  const excludedPacks = new Set(Object.keys(manifest.packs).filter(pack => !profile.packs.includes(pack)));
-  const directlyRemoved = new Set(frontendFiles.filter(file => profile.frontendRemovePaths.some(prefix => covers(`frontend/${prefix}`, file))));
-  const removed = new Set(directlyRemoved);
-  const edges = new Map();
-  for (const [file, source] of frontendSources) {
-    const projected = projectFrontendPackMarkers(projectComposerFrontend(file, source, composition), {
-      knownPacks: new Set(Object.keys(manifest.packs)), excludedPacks, label: file,
-    }).source;
-    edges.set(file, frontendImportSpecifiers(projected)
-      .map(specifier => resolveFrontendImport(join(root, 'frontend'), join(root, file), specifier, frontendKnownFiles))
-      .filter(Boolean).map(path => relative(root, path).split(sep).join('/')));
-  }
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const [file, dependencies] of edges) {
-      if (!removed.has(file) && dependencies.some(dependency => removed.has(dependency))) {
-        removed.add(file); changed = true;
-      }
-    }
-  }
-  const selected = frontendFiles.filter(file => !directlyRemoved.has(file)
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const excludedPacks = new Set([...knownPacks].filter(pack => !profile.packs.includes(pack)));
+  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projectFrontendPackMarkers(
+    composition.profile === 'custom' ? projectComposerFrontend(file, source, composition) : source, { knownPacks, excludedPacks, label: file }).source]));
+  const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
+    directPaths: frontendDirectRemovePaths(manifest, profile), readSource: path => projected.get(path) });
+  const repositoryPaths = paths => new Set([...paths].map(path => relative(root, path).split(sep).join('/')));
+  const [direct, removed] = [repositoryPaths(plan.direct), repositoryPaths(plan.removed)];
+  const selected = frontendFiles.filter(file => !direct.has(file)
     && composition.frontend.includedPaths.some(prefix => covers(`frontend/${prefix}`, file)));
-  const expected = [...selected, 'frontend/src/app/layout.tsx', 'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx'];
-  return { expectedCount: expected.length, missing: expected.filter(file => removed.has(file)) };
+  const expected = [...selected, `frontend/${FRONTEND_LAYOUT}`];
+  const screens = pageSurvivalViolations({ ...pageSurvivalExpectation({ root, catalog: currentCatalog, composition }), survives: source => !removed.has(source) });
+  return { expectedCount: expected.length, missing: expected.filter(file => removed.has(file)), screens };
 }
 
 // [2026-09-30 DEC-OPS-182] 제한 스킬은 산출물에서 빼는 것만으로 부족하다 — 공개 원본 저장소가 추적하면 그 자체가 배포다.
@@ -417,12 +411,28 @@ ${tracked.stdout}`);
   }
 });
 
-test('every selectable capability preserves its declared frontend and mandatory entrypoints through actual import projection', () => {
+/*
+ * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 19개, CI 대표 직접 선택 2개, 그리고 주소록이
+ * 수신자 피커에 기여하는 {mail, sms, addressbook}. 판정 통일(PR-2)의 골든 diff 를 이 대조가 화면 단위로 지킨다.
+ */
+test('every selectable capability preserves its declared frontend and the screens its composition expects through actual import projection', () => {
   assert.equal(catalog.capabilities.length, 19, 'review the capability population when its declaration changes');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
-    assert.ok(result.expectedCount > 3, `${feature.id} has no declared frontend population`);
+    assert.ok(result.expectedCount > 1, `${feature.id} has no declared frontend population`);
     assert.deepEqual(result.missing, [], `${feature.id}: selected sources must not disappear through a shared import`);
+    assert.deepEqual({ missing: result.screens.missing.map(entry => entry.route), extra: result.screens.extra.map(entry => entry.route) },
+      { missing: [], extra: [] }, `${feature.id}: surviving screens must equal the composition's screens`);
+  }
+});
+
+test('presets and representative selections keep exactly the screens their composition expects', () => {
+  const selections = [...catalog.presets.map(preset => ({ preset: preset.id })), [], ['mail', 'schedule'], ['board', 'survey'], ['addressbook', 'mail', 'sms']];
+  for (const selection of selections) {
+    const { missing, screens } = inspectFrontendSurvival(selection);
+    assert.deepEqual(missing, [], `${JSON.stringify(selection)}: selected sources must survive`);
+    assert.deepEqual({ missing: screens.missing.map(entry => entry.route), extra: screens.extra.map(entry => entry.route) },
+      { missing: [], extra: [] }, `${JSON.stringify(selection)}: surviving screens must equal the composition's screens`);
   }
 });
 
@@ -435,7 +445,9 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
     feature.requires = feature.requires.filter(edge => edge.domain !== dependency);
     const { catalogHash: ignored, ...body } = changed;
     changed.catalogHash = compositionDigest(body);
-    assert.ok(inspectFrontendSurvival([from], changed).missing.length > 0, `${from} -> ${dependency}: broken dependency must be red`);
+    const broken = inspectFrontendSurvival([from], changed);
+    assert.ok(broken.missing.length > 0, `${from} -> ${dependency}: broken dependency must be red`);
+    assert.ok(broken.screens.missing.some(entry => entry.route === '/admin/help'), `${from} -> ${dependency}: the lost knowledge hub screen is named`);
   }
 });
 

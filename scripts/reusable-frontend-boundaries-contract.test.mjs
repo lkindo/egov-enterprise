@@ -62,6 +62,29 @@ for (const profile of ['core', 'collaboration', 'demo']) {
   });
 }
 
+/*
+ * 화면의 라우트 종류(page·리다이렉트)는 page 파일 본문의 redirect 호출·return 과 next.config 선언으로 판정한다. 마커 블록이 그
+ * 근거를 품으면 종류가 프로필마다 갈려, 원본 원장으로 계산한 화면 생존 기대값과 투영 뒤 본문을 보는 거버넌스 투영이 어긋난다.
+ */
+test('a page marker block cannot carry a redirect call or a return, and next.config cannot carry markers', () => {
+  const options = { knownPacks: new Set(Object.keys(manifest.packs)), excludedPacks: new Set(['demo']) };
+  const block = body => `export default function Page() {\n  // reusable-base:demo:start\n${body}\n  // reusable-base:demo:end\n  return null;\n}\n`;
+  for (const body of ["  redirect('/x');", '  return <Demo />;']) {
+    for (const label of ['src/app/demo/page.tsx', 'frontend/src/app/demo/page.tsx']) {
+      assert.throws(() => projectFrontendPackMarkers(block(body), { ...options, label }), /page 파일의 pack 마커 블록은 redirect 호출이나 return 을 품을 수 없다/);
+    }
+  }
+  // 남기는 블록이어도 같다 — 프로필마다 갈리는 것이 문제다.
+  assert.throws(() => projectFrontendPackMarkers(block("  redirect('/x');"), { ...options, excludedPacks: new Set(), label: 'src/app/demo/page.tsx' }),
+    /redirect 호출이나 return/);
+  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 통과한다.
+  assert.doesNotThrow(() => projectFrontendPackMarkers(block('  // return later'), { ...options, label: 'src/app/demo/page.tsx' }));
+  assert.doesNotThrow(() => projectFrontendPackMarkers(block("  redirect('/x');"), { ...options, label: 'src/app/demo/DemoClient.tsx' }));
+  assert.doesNotThrow(() => projectFrontendPackMarkers(block('  const x = 1;'), { ...options, label: 'src/app/demo/page.tsx' }));
+  // next.config 의 리다이렉트 선언은 거버넌스 투영이 정리하므로 마커를 두지 않는다.
+  assert.throws(() => projectFrontendPackMarkers(block('  const x = 1;'), { ...options, label: 'next.config.ts' }), /next\.config 는 pack 마커를 둘 수 없다/);
+});
+
 test('unscoped optional imports and removed shared service calls are reproducible reds', () => {
   const importLeak = sources.search.replace('/* reusable-base:collaboration:start */', '').replace('/* reusable-base:collaboration:end */', '');
   assert.match(boundaryErrors(importLeak, 'core', 'search').join('\n'), /excluded board search/);

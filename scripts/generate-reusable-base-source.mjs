@@ -15,8 +15,10 @@ import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
-import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, assertComposerSourceSurvives,
+import { assertCompositionDatabaseLock, composerProfile, projectComposerFrontend, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { pageSurvivalExpectation } from './reusable-page-survival.mjs';
+import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { SOURCE_EXTENSIONS, projectFrontendPackMarkers, pruneFrontend, stripExcludedFrontendPackBlocks } from './reusable-source-frontend.mjs';
 import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas,
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
@@ -196,18 +198,24 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
 
 /**
  * 복사한 소스 트리에서 선택하지 않은 기능을 걷는다: Java 연쇄 제거, 선택 투영(직접 선택), pack 마커 블록, 프런트 연쇄 제거,
- * 선택 기능 소스의 생존 확인. 정밀 점검(plan/deep)은 같은 판정을 디스크를 바꾸지 않고 미리 하며, 둘이 같은지 시험이 대조한다.
+ * 화면 생존 대조, 선택 기능 소스의 생존 확인. 정밀 점검(plan/deep)은 같은 판정을 디스크를 바꾸지 않고 미리 하며, 둘이 같은지
+ * 시험이 대조한다. 화면 생존의 기대값은 기능 소유에서 계산한다(removePaths 로 거르지 않는다 — reusable-page-survival.mjs).
  */
-export function projectSourceTree(output, { manifest, profile, composition, sourceRoot = ROOT }) {
+export function projectSourceTree(output, { manifest, profile, composition, sourceRoot = ROOT, catalog, pageSurvival }) {
+  // 기대값은 카탈로그(또는 미리 만든 기대값)로만 만든다. 둘 다 없으면 조용히 카탈로그를 다시 적재하지 않고 실패한다.
+  if (!pageSurvival && !catalog) throw new Error('projectSourceTree needs the composition catalog or a page survival expectation');
+  const expectation = pageSurvival ?? pageSurvivalExpectation({ root: sourceRoot, catalog, composition });
   const java = pruneJava(output, manifest, profile);
-  if (composition?.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
+  if (composition.profile === 'custom') for (const file of walk(join(output, 'frontend'), path => SOURCE_EXTENSIONS.includes(extname(path)))) {
     const source = readFileSync(file, 'utf8');
     const projected = projectComposerFrontend(normalize(relative(output, file)), source, composition);
     if (source !== projected) writeFileSync(file, projected);
   }
   const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
-  assertComposerSourceSurvives(sourceRoot, output, composition, manifest);
+  const pages = new Set(discoverPageRoutes(output).map(page => page.source));
+  const lostScreens = projectedScreenLosses(expectation, source => pages.has(source));
+  assertComposerSourceSurvives(sourceRoot, output, composition, manifest, { lostScreens });
   return { java, frontend };
 }
 
@@ -215,7 +223,8 @@ function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
-  const composition = resolveGeneratorComposition({ catalog: loadProjectComposerCatalog(ROOT), profile: args.composition ? undefined : args.profile,
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const composition = resolveGeneratorComposition({ catalog, profile: args.composition ? undefined : args.profile,
     supplied: args.composition ? JSON.parse(readFileSync(resolve(args.composition), 'utf8')) : undefined,
     backendLayout: args.layout, layoutExplicit: process.argv.includes('--layout'), sourceCommit: git(['rev-parse', 'HEAD']),
     resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
@@ -243,7 +252,7 @@ function main() {
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   const copiedFiles = trackedAndUntrackedFiles().filter((rel) => isCopyableSourceFile(rel, ROOT));
   copySourceTree(output, { files: copiedFiles });
-  const { java, frontend } = projectSourceTree(output, { manifest, profile, composition });
+  const { java, frontend } = projectSourceTree(output, { manifest, profile, composition, catalog });
   // ⚠ 규칙 기반 제거는 **승인 검사보다 먼저** 해야 한다 — 뒤에 두면 census 가 "0건" 이라고 말한 뒤
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);

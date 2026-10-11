@@ -38,7 +38,7 @@ const passingPreflight = () => ({ checks: [{ id: 'docker', status: 'pass', label
 // 소스 정밀 점검(설계서 10장 plan/deep)이 차단 없이 끝나는 엔진 조각.
 const passingDeep = () => ({ java: { removedFiles: 517, cascadeFiles: 114 }, frontend: { removedFiles: 388, cascadeFiles: 73 }, removedGates: [],
   blockers: [], summary: '제거: Java 517개(연쇄 114) · 프런트 388개(연쇄 73) · 검증 게이트 0건', durationMs: 10 });
-const DEEP_PASSED = '. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면 진입점은 남습니다.';
+const DEEP_PASSED = '. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.';
 async function confirmGenerate(page) {
   await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });

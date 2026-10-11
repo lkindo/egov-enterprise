@@ -30,6 +30,7 @@ import {
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerProfile, projectComposerFrontend } from './project-composer-source.mjs';
+import { ROUTE_LEDGER_PATH } from './reusable-page-survival.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -238,105 +239,51 @@ test('core 프로필에서 살아남아야 하는 파일은 제외 pack 을 참�
 });
 
 /*
-  [2026-09-22 GAP-PACK-001 · #707] route census(config/ui-route-capabilities.json)의 directProjectionProfiles 는
-  선언 removePaths 만 본 관찰이라 "그 프로필에 남는다" 는 뜻이 아니다(그 계약의 note 가 명시). 실제 생존은 import
-  cascade 를 따르는 이 도달성 census 가 안다. #707 에서 core 화면(모니터링 허브)이 collaboration 행 타입을 마커
-  밖에서 참조해 core 투영에서 통째로 사라졌는데 원장 투영은 red 가 아니었고 20분짜리 투영 tsc 만 잡았다.
-
-  아래는 "선언상 생존인데 cascade 로 사라지는 라우트" 의 exact 승인 집합이다(DEC-OPS-090 의 edge exact 패턴).
-  늘어나면 새 소실이라 red, 줄어들면 낡은 승인이라 red. 현재 14건은 전부 화면이 collaboration 서비스를 정당하게
-  쓰는 경우이며 route census 쪽 관찰 한계일 뿐이다. 새 항목을 넣기 전에 잘못된 import(가이드 §3.7-7)가 아닌지
-  먼저 본다 — 승인 집합은 서랍이 아니다(H2). 위 CORE_SURVIVORS 는 주석 인용까지 보는 원문 축이라 별개로 둔다.
+  [2026-10-11 슬롯 단계 PR-1] 종전에는 '선언상 생존인데 cascade 로 사라지는 라우트' 14건을 손으로 적은 exact 승인 집합으로
+  동결했다(GAP-PACK-001 · #707). 이제 프리셋이 남겨야 할 화면은 기능 소유로 계산하고(reusable-page-survival.mjs), 생성기 연쇄가
+  그 화면을 정확히 남기는지는 project-composer-source.test.mjs 가 본다. census 가 남기는 화면도 같은지는 따로 보지 않는다 —
+  아래 DEC-OPS-264 시험이 실제 프로필마다 census 제거와 생성기 연쇄가 파일 단위로 같다고 단언하므로 둘이 함께 그것을 함의한다.
+  그 함의의 전제와, census 만 볼 수 있는 모순을 여기서 본다:
+  - 원장의 모든 화면 소스에 census 행이 있다(없으면 동치 시험의 모집단 밖이라 함의가 성립하지 않는다).
+  - 원장이 그 프로필에 남는다고 한 화면(directProjectionProfiles, 선언 removePaths 관찰)을 census 가 선언으로 지우지 않는다.
+    두 경로 매칭 구현이 어긋나면 이것만 잡는다(동치 시험은 direct·transitive 를 나누지 않고, 화면 대조는 기대 밖 화면의 소실을 받아들인다).
+  위 CORE_SURVIVORS 는 주석 인용까지 보는 원문 축이라 별개로 둔다.
 */
-const APPROVED_TRANSITIVE_ROUTE_LOSSES = [
-  { profile: 'core', route: '/admin/collaboration', configuredPath: 'src/services/business/user/NoteService.ts', reason: '협업 허브가 쪽지 서비스(collaboration)를 쓴다' },
-  { profile: 'core', route: '/admin/collaboration/mail-history', configuredPath: 'src/services/business/mail/MailService.ts', reason: '메일 이력은 메일 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/collaboration/mail-send', configuredPath: 'src/services/business/mail/MailService.ts', reason: '메일 발송은 메일 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/collaboration/scraps', configuredPath: 'src/services/business/user/NoteService.ts', reason: '협업 허브 클라이언트를 공유한다' },
-  { profile: 'core', route: '/admin/collaboration/scraps/selectScrapList', configuredPath: 'src/services/business/user/ScrapService.ts', reason: '스크랩 목록은 스크랩 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/community/boards/detail', configuredPath: 'src/services/business/knowledge/knowledgeService.ts', reason: '게시글 상세는 지식 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/community/boards/insert-board-article', configuredPath: 'src/app/actions/boardActions.ts', reason: '게시글 작성은 게시판 서버 액션(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/community/boards/maker', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마법사는 게시판 관리 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/community/boards/master', configuredPath: 'src/services/foundation/system/BoardAdminService.ts', reason: '게시판 마스터 목록은 게시판 관리 서비스(collaboration) 소비자다' },
-  // Static client import makes the user service the first cascade witness; the approved route/profile is unchanged.
-  { profile: 'core', route: '/admin/community/boards/select-board-list', configuredPath: 'src/services/business/user/board/BoardUserService.ts', reason: '게시판 목록은 게시판 업무 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/admin/notifications', configuredPath: 'src/services/foundation/system/NotificationAdminService.ts', reason: '알림 센터의 관리자 발송 다이얼로그(DEC-OPS-042)가 알림 관리 서비스(collaboration)를 쓴다' },
-  { profile: 'core', route: '/admin/uss/ion/sms', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 관리는 문자 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/cop/sms/selectSmsList', configuredPath: 'src/services/foundation/operation/SmsAdminService.ts', reason: '문자 별칭 페이지는 같은 문자 서비스(collaboration) 소비자다' },
-  { profile: 'core', route: '/note', configuredPath: 'src/services/business/user/NoteService.ts', reason: '쪽지함은 쪽지 서비스(collaboration) 소비자다' },
-];
-
-/** route census 가 생존이라 선언한 라우트 중 도달성 census 가 cascade 로 지우는 것을 모은다. */
-function transitiveRouteLosses(routeCensus, census) {
-  const losses = [];
-  for (const route of routeCensus.routes) {
-    const row = census.files.find((candidate) => candidate.file === route.source);
-    if (!row) throw new Error(`${route.route}: ${route.source} has no reachability census row`);
-    for (const profile of route.directProjectionProfiles ?? []) {
-      const constraint = row.profileRemovalConstraints.find((candidate) => candidate.profile === profile);
-      if (!constraint) continue;
-      if (constraint.removal !== 'transitive') {
-        throw new Error(`${route.route}@${profile}: ${constraint.removal} removal contradicts directProjectionProfiles`);
-      }
-      losses.push({ profile, route: route.route, configuredPath: constraint.configuredPath, evidencePath: constraint.evidencePath });
-    }
-  }
-  return losses;
-}
-
-const lossKey = (entry) => `${entry.profile}\u0000${entry.route}\u0000${entry.configuredPath}`;
-
-/** exact 대조 — 승인 밖 소실, 낡은 승인, 사유 없는 승인을 모두 위반으로 낸다. */
-function transitiveRouteLossViolations(losses, approved) {
+function ledgerCensusContradictions(ledgerRoutes, censusRows, profiles) {
   const violations = [];
-  for (const entry of approved) {
-    if (!entry.reason?.trim()) violations.push(`승인 사유 없음: ${entry.profile} ${entry.route}`);
-  }
-  const approvedKeys = new Set(approved.map(lossKey));
-  for (const entry of losses) {
-    if (!approvedKeys.has(lossKey(entry))) {
-      violations.push(`승인되지 않은 라우트 소실: ${entry.profile} ${entry.route} via ${entry.evidencePath.join(' → ')} — 잘못된 import 인지(가이드 §3.7-7) 먼저 확인한다`);
+  for (const route of ledgerRoutes) {
+    const row = censusRows.get(route.source);
+    if (!row) {
+      violations.push(`${route.source} has no reachability census row`);
+      continue;
     }
-  }
-  const actualKeys = new Set(losses.map(lossKey));
-  for (const entry of approved) {
-    if (!actualKeys.has(lossKey(entry))) {
-      violations.push(`낡은 승인: ${entry.profile} ${entry.route} 는 더 이상 cascade 로 사라지지 않는다 — 승인에서 뺀다`);
+    for (const profile of profiles) {
+      if (!route.directProjectionProfiles.includes(profile)) continue;
+      if (row.profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal === 'direct') {
+        violations.push(`${route.route}@${profile}: direct removal contradicts directProjectionProfiles`);
+      }
     }
   }
   return violations;
 }
 
-test('routes the route census declares surviving are lost only where an approved cascade says so', () => {
-  const routeCensus = JSON.parse(readFileSync(join(repoRoot, 'config/ui-route-capabilities.json'), 'utf8'));
-  const census = repositoryCensus();
-  const losses = transitiveRouteLosses(routeCensus, census);
-  assert.deepEqual(transitiveRouteLossViolations(losses, APPROVED_TRANSITIVE_ROUTE_LOSSES), []);
-  assert.equal(losses.length, APPROVED_TRANSITIVE_ROUTE_LOSSES.length);
+test('every ledger screen has a census row and no profile removes directly a screen the ledger keeps', () => {
+  const ledger = JSON.parse(readFileSync(join(repoRoot, ROUTE_LEDGER_PATH), 'utf8'));
+  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const censusRows = new Map(repositoryCensus().files.map((row) => [row.file, row]));
+  assert.ok(ledger.routes.length > 100);
+  assert.deepEqual(ledgerCensusContradictions(ledger.routes, censusRows, Object.keys(manifest.profiles)), []);
 });
 
-test('the route-loss gate is red for an unapproved loss, a stale approval, a moved cascade, and a reasonless approval', () => {
-  const approved = [{ profile: 'core', route: '/kept', configuredPath: 'src/services/x.ts', reason: '정당한 cascade' }];
-  const losses = [{ profile: 'core', route: '/kept', configuredPath: 'src/services/x.ts', evidencePath: ['a', 'b'] }];
-  assert.deepEqual(transitiveRouteLossViolations(losses, approved), []);
-  const hub = { profile: 'core', route: '/hub', configuredPath: 'src/services/y.ts', evidencePath: ['hub/page.tsx', 'HubClient.tsx', 'y.ts'] };
-  assert.match(transitiveRouteLossViolations([...losses, hub], approved).join('\n'),
-    /승인되지 않은 라우트 소실: core \/hub via hub\/page\.tsx → HubClient\.tsx → y\.ts/u);
-  assert.match(transitiveRouteLossViolations([], approved).join('\n'), /낡은 승인: core \/kept/u);
-  assert.match(transitiveRouteLossViolations(losses, [{ ...approved[0], reason: ' ' }]).join('\n'), /승인 사유 없음/u);
-  // 같은 라우트라도 다른 경로로 사라지면 별개 소실이다 — 바뀐 cascade 를 옛 승인이 가리지 않는다.
-  const moved = transitiveRouteLossViolations([{ ...losses[0], configuredPath: 'src/services/z.ts' }], approved);
-  assert.equal(moved.length, 2);
-  assert.ok(moved.some((line) => line.startsWith('승인되지 않은 라우트 소실')) && moved.some((line) => line.startsWith('낡은 승인')));
-});
-
-test('a direct removal of a route the route census declares surviving is a contradiction, and a missing census row is red', () => {
-  const contradiction = {
-    routes: [{ route: '/x', source: 'frontend/src/app/x/page.tsx', directProjectionProfiles: ['core'] }],
-  };
-  const census = { files: [{ file: 'frontend/src/app/x/page.tsx', profileRemovalConstraints: [{ profile: 'core', removal: 'direct', configuredPath: 'src/app/x', evidencePath: [] }] }] };
-  assert.throws(() => transitiveRouteLosses(contradiction, census), /direct removal contradicts/u);
-  assert.throws(() => transitiveRouteLosses({ routes: [{ route: '/y', source: 'frontend/src/app/y/page.tsx', directProjectionProfiles: ['core'] }] }, { files: [] }), /no reachability census row/u);
+test('the ledger/census cross-check is red for a direct removal of a ledger-surviving screen and for a missing census row', () => {
+  const route = { route: '/x', source: 'frontend/src/app/x/page.tsx', directProjectionProfiles: ['core'] };
+  const rows = (removal) => new Map([[route.source, { file: route.source, profileRemovalConstraints: removal ? [{ profile: 'core', removal }] : [] }]]);
+  assert.deepEqual(ledgerCensusContradictions([route], rows(), ['core']), []);
+  // 대조군: 연쇄 소실은 화면 대조가 판정하고, 원장도 그 프로필에서 지운다고 하면 모순이 아니다.
+  assert.deepEqual(ledgerCensusContradictions([route], rows('transitive'), ['core']), []);
+  assert.deepEqual(ledgerCensusContradictions([{ ...route, directProjectionProfiles: ['demo'] }], rows('direct'), ['core']), []);
+  assert.deepEqual(ledgerCensusContradictions([route], rows('direct'), ['core']), ['/x@core: direct removal contradicts directProjectionProfiles']);
+  assert.deepEqual(ledgerCensusContradictions([route], new Map(), ['core']), ['frontend/src/app/x/page.tsx has no reachability census row']);
 });
 
 test('recipient picker and its collaboration consumers survive the collaboration projection', () => {
@@ -696,7 +643,7 @@ test('known live-chain misclassification is a reproducible red in a temp fixture
   판정을 하나로 모으기(설계서 11장) 전에 두 판정이 어디서 다른지 재고, 그 차이가 제거 결과를 바꾸지 않는지 본다.
   - 추출(간선을 읽는 방식): 구성(프리셋과 단독 선택)마다 생성기 연쇄에 두 추출을 넣은 결과가 같아야 한다(예외 없음).
   - 판정 전체: 실제 프로필마다 census 의 제거 판정이 census 모집단(frontend/src 모듈) 안에서 생성기 결과와 같아야 한다.
-    위 라우트 소실 승인은 census 판정으로 센다.
+    이 동치와 생성기 쪽 화면 대조(project-composer-source.test.mjs)가 함께 'census 가 남기는 화면 = 구성 기대값' 을 함의한다.
   - 차이 목록: 파일별 추출 차이와 해석 차이 대상은 아래 exact 목록이다. 새 차이도, 사라진 차이(낡은 항목)도 red 이고
     래칫은 목록 길이와 같아야 한다(줄면 함께 내린다). 차이가 가리키는 대상은 어느 구성에서도 지워지지 않아야 한다 —
     그래야 차이가 연쇄 결과를 바꾸지 못한다. 판정을 모으면 두 목록은 0 이 된다(설계서 13장 예외 목록).

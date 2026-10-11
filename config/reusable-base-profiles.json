@@ -423,6 +423,7 @@
           "src/app/actions/commentActions.ts",
           "src/services/business/comment/commentService.ts",
           "src/services/foundation/system/CommentAdminService.ts",
+          "src/app/admin/system/comments",
           "src/services/business/mail/MailService.ts",
           "src/services/business/user/NoteService.ts",
           "src/services/business/user/ScrapService.ts",

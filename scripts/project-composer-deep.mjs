@@ -2,7 +2,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
-import { SOURCE_EXTENSIONS, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
+import { FRONTEND_LAYOUT, SOURCE_EXTENSIONS, frontendDirectRemovePaths, planFrontendRemoval, projectFrontendPackMarkers } from './reusable-source-frontend.mjs';
+import { describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
@@ -12,12 +14,13 @@ import { withoutRoot } from './project-composer-errors.mjs';
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
  * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·planFrontendRemoval·
- * assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement). 그래서 여기서 찾은 차단 사유는 생성하면
+ * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement). 그래서 여기서 찾은 차단 사유는 생성하면
  * 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
  * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
  */
 const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
-const FRONTEND_ENTRIES = ['src/app/layout.tsx', 'src/app/page.tsx', 'src/app/login/page.tsx'];
+// 라우트가 아닌 진입점만 따로 본다. 홈·로그인 같은 화면은 아래 화면 생존 대조(core 기대 화면)가 본다.
+const FRONTEND_ENTRIES = [FRONTEND_LAYOUT];
 // 생성기는 복사한 트리를 디스크에서 확인한다. 대소문자를 가리지 않는 디스크(Windows·macOS 기본)에서는 같은 기준으로 대조한다.
 // 판정은 플랫폼 이름이 아니라 이름의 대소문자를 바꿔 디스크에 물어서 한다. 대소문자 구분은 폴더마다 다를 수 있다(NTFS 폴더 속성,
 // WSL 이 만든 폴더). 생성기가 출력을 만들 폴더는 가장 가까운 기존 상위 폴더의 구분을 물려받으므로 그 폴더에 먼저 묻는다.
@@ -55,6 +58,7 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   JAVA_CASCADE_UNACKNOWLEDGED: '승인되지 않은 Java 파일이 연쇄로 지워집니다',
   JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
+  FRONTEND_SCREEN_EXTRA: '구성에 없는 화면이 투영 뒤에 남습니다',
 });
 
 /**
@@ -62,8 +66,9 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
  * 실제로 복사할 수 있는 파일만 남겨 생성물의 파일 집합으로 쓴다.
  * `outputParent` 는 생성기가 생성물 폴더를 만들 상위 폴더다(없어도 된다). 대소문자 구분을 그 자리에서 판정한다.
  * 차단 사유는 `{ code, label, files?, message? }` 로 모은다. label 은 화면이 그대로 보이는 한국어 문장이다.
+ * 화면 생존의 기대값(`pageSurvival`)은 넘기지 않으면 `root` 의 라우트 원장과 카탈로그(`catalog`, 없으면 적재)로 만든다.
  */
-export function compositionDeepPlan({ root, manifest, composition, files, outputParent }) {
+export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival }) {
   const started = performance.now();
   const profile = composerProfile(manifest, composition);
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
@@ -109,9 +114,24 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
   const removed = new Set([...(java?.removed ?? []), ...(frontend?.removed ?? [])].map(path => pathKey(rel(path))));
   const kept = file => present.has(pathKey(file)) && !removed.has(pathKey(file));
-  // 생성기는 투영 뒤 세 진입점이 디스크에 있는지 본다. 원본에 없거나 연쇄로 지워지면 같은 자리에서 실패한다.
+  // 생성기는 투영 뒤 루트 레이아웃이 디스크에 있는지 본다(pruneFrontend). 원본에 없거나 연쇄로 지워지면 같은 자리에서 실패한다.
+  // 화면(홈·로그인 포함)은 아래 화면 생존 대조가 본다.
   const lostEntries = frontend ? FRONTEND_ENTRIES.map(entry => `frontend/${entry}`).filter(file => !kept(file)) : [];
   if (lostEntries.length) block('FRONTEND_ENTRY', { files: lostEntries });
+  // 연쇄 뒤 남는 화면이 구성의 기대값과 같은지 본다(리다이렉트 수렴 포함). 생성기는 같은 대조를 디스크에서 한다(projectedScreenLosses):
+  // 빠진 화면은 아래 SOURCE_SURVIVAL 에 합치고, 남은 화면은 생성기가 일반 실패로 멈추는 자리다. 화면은 디렉터리·파일 이름 그대로
+  // 라우트가 되므로 출력 폴더가 대소문자를 가리지 않아도 이름이 정확히 같은 page 파일만 남은 화면이다(생성기와 같다).
+  const exactFiles = new Set(relativeFiles);
+  const screenKept = file => exactFiles.has(file) && !removed.has(pathKey(file));
+  const lostScreens = [];
+  if (frontend) {
+    try {
+      const expectation = pageSurvival ?? pageSurvivalExpectation({ root, catalog: catalog ?? loadProjectComposerCatalog(root), composition });
+      const { missing: screens, extra } = pageSurvivalViolations({ ...expectation, survives: screenKept });
+      lostScreens.push(...screens.map(entry => entry.source));
+      if (extra.length) block('FRONTEND_SCREEN_EXTRA', { files: extra.map(entry => entry.source), message: describeRoutes(extra) });
+    } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
+  }
 
   const removedGates = [
     ...(java ? [...java.removed].filter(path => java.gateSources.has(path)).map(rel) : []),
@@ -174,7 +194,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
       } });
     } catch (error) { block('SOURCE_SURVIVAL', { message: message(error) }); }
   }
-  if (missing.length) block('SOURCE_SURVIVAL', { files: [...new Set(missing)].sort() });
+  if (missing.length || lostScreens.length) block('SOURCE_SURVIVAL', { files: [...new Set([...lostScreens, ...missing])].sort() });
 
   const javaDirect = java ? java.direct.size : 0;
   return {

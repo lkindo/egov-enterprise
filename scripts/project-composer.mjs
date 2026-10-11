@@ -225,12 +225,13 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   const deep = recipe => {
     recipeCommit(recipe);
     // 해석기가 거부한 구성은 코드가 붙은 입력 오류다(화면을 연 뒤 카탈로그가 바뀌었을 수도 있다). 그 밖의 실패는 점검 실패다.
-    const composition = resolveRecipe(recipe, loadCatalogClassified());
+    const loaded = loadCatalogClassified();
+    const composition = resolveRecipe(recipe, loaded);
     const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
     const files = gitRun(['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
       .filter(file => !file.replaceAll('\\', '/').split('/').includes('build'));
     // 대소문자 구분은 생성물을 만들 폴더(composerOutputPaths 의 상위 폴더)에서 판정한다.
-    const result = compositionDeepPlan({ root, manifest, composition, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
+    const result = compositionDeepPlan({ root, manifest, composition, catalog: loaded, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
     return { ...result, summary: deepSummary(result) };
   };
   const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness });
