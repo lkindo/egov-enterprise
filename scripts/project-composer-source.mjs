@@ -77,8 +77,8 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
 
 const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
 const MANAGEMENT_RBAC_SURFACES = new Map([
-  ['/api/v1/admin/operation/events', 'operation'],
-  ['/api/v1/admin/operation/rewards', 'operation'],
+  ['/api/v1/admin/operation/events', 'event'],
+  ['/api/v1/admin/operation/rewards', 'reward'],
   ['/api/v1/help/hpcm', 'help'],
   ['/api/v1/help/manuals', 'help'],
   ['/api/v1/admin/system/banners', 'system'],
@@ -86,7 +86,7 @@ const MANAGEMENT_RBAC_SURFACES = new Map([
   ['/api/v1/admin/system/templates', 'template'],
 ]);
 // Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
-const RBAC_DOMAINS = ['survey', 'system', 'informalsanction', 'operation', 'help', 'template'];
+const RBAC_DOMAINS = ['survey', 'system', 'informalsanction', 'event', 'reward', 'help', 'template'];
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
 const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
 const GATE_OWNERS = {
@@ -96,7 +96,7 @@ const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction', 'notification'],
   'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['system'],
   'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['system', 'template'],
-  'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['operation'],
+  'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['event'],
   'api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java': ['notification'],
   'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'system'],
   'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],

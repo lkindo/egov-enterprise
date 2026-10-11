@@ -64,7 +64,7 @@ const stripComments = (source: string) =>
 
 if (repoPresent(
   'frontend/src/app/admin/operation/rewards/RewardManageClient.tsx',
-  'business-app/src/main/java/nuri/business/domain/operation/RewardManage.java',
+  'business-app/src/main/java/nuri/business/domain/reward/RewardManage.java',
 )) describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
   const client = stripComments(readSrc('app/admin/operation/rewards/RewardManageClient.tsx'));
 
@@ -100,7 +100,7 @@ if (repoPresent(
     expect(controller).not.toContain('@PatchMapping');
 
     const service = stripComments(readRepo(
-      'business-app/src/main/java/nuri/business/service/operation/RewardManageService.java',
+      'business-app/src/main/java/nuri/business/service/reward/RewardManageService.java',
     ));
     const updateStart = service.indexOf('public RewardManageDto updateReward(');
     expect(updateStart, 'updateReward 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
@@ -110,7 +110,7 @@ if (repoPresent(
         .not.toContain(approvalField);
     }
 
-    const entity = stripComments(readRepo('business-app/src/main/java/nuri/business/domain/operation/RewardManage.java'));
+    const entity = stripComments(readRepo('business-app/src/main/java/nuri/business/domain/reward/RewardManage.java'));
     const updateSignature = entity.slice(entity.indexOf('public void update('), entity.indexOf('{', entity.indexOf('public void update(')));
     expect(updateSignature).not.toContain('confmYn');
     expect(updateSignature).not.toContain('aprvDt');

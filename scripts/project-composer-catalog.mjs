@@ -58,6 +58,12 @@ const FEATURES = {
   routes: ['/admin/system/comments'] },
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
+  // 행사(약도·행사별 외부인사 포함)와 포상은 따로 고른다(DEC-OPS-256 ①). 외부인사 기본 키가 행사 번호를 품고 물리 외래 키가 행사를 가리킨다.
+  event: { label: '행사·외부인사', permissions: ['EVENT', 'EXT_HR'], paths: [
+    'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rough-map',
+    'src/services/foundation/operation/ExternalHrAdminService.ts', 'src/services/foundation/operation/eventService.ts',
+    'src/services/foundation/operation/__tests__/eventService.test.ts'],
+  routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rough-map'] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
     'src/app/admin/help', 'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
     'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user',
@@ -82,16 +88,13 @@ const FEATURES = {
     // 슬롯 기여(PR-6): 머리글의 알림 벨.
     'src/extensions/notification'],
   routes: ['/admin/notifications'] },
-  operation: { label: '행사·외부인사·포상', permissions: ['EVENT', 'EXT_HR', 'REWARD'], paths: [
-    'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rewards',
-    'src/app/admin/operation/rough-map', 'src/services/foundation/operation/OperationAdminService.ts',
-    'src/services/foundation/operation/eventService.ts', 'src/services/foundation/operation/__tests__/eventService.test.ts',
-    'src/app/admin/operation/error.tsx', 'src/app/admin/operation/__tests__'],
-  routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rewards', '/admin/operation/rough-map'] },
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
     'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts'],
   routes: ['/smart-toolkit/work-report'] },
   // 일지(tb_diary_info)는 엔티티만 있고 화면·API 가 없다. 이름이 없는 기능을 약속하지 않는다.
+  reward: { label: '포상', permissions: ['REWARD'], paths: [
+    'src/app/admin/operation/rewards', 'src/services/foundation/operation/RewardAdminService.ts'],
+  routes: ['/admin/operation/rewards'] },
   schedule: { label: '일정', permissions: ['SCHEDULE'], paths: [
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
   routes: ['/smart-toolkit/schedule'] },
@@ -165,7 +168,7 @@ const REQUIRED_FOREIGN_KEYS = [
     reason: '댓글은 게시판에 속한다.', evidence: 'api-server/src/main/resources/db/migration/V2_14__add_referential_fks_batch2.sql' },
   { name: 'fk_tb_bbs_scrap_tb_bbs_item', childTable: 'tb_bbs_scrap', parentTable: 'tb_bbs_item', sourceDomain: 'scrap', targetDomain: 'board',
     reason: '스크랩은 게시글을 가리킨다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
-  { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'operation', targetDomain: 'informalsanction',
+  { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'reward', targetDomain: 'informalsanction',
     reason: '포상은 결재 문서를 참조한다.', evidence: 'api-server/src/main/resources/db/migration/V2_78__informal_sanction_bigint_identity.sql' },
 ];
 
@@ -199,6 +202,8 @@ function frontendRules(domains) {
     ...domains.flatMap(domain => FEATURES[domain].paths.map(path => ({ path, domains: [domain] }))),
     ...SHARED_UI.flatMap(group => group.paths.map(path => ({ path, domains: group.domains }))),
     { path: 'src/app/admin/sanctn/WorkflowHubClient.tsx', domains: ['informalsanction', 'template'], mode: 'any' },
+    // 운영 세그먼트의 오류 경계는 행사·포상 중 하나라도 남으면 남는다. 두 기능 paths 에 함께 넣으면 한쪽이 빠질 때 지워진다.
+    { path: 'src/app/admin/operation/error.tsx', domains: ['event', 'reward'], mode: 'any' },
   ];
 }
 

@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import {
-    operationAdminService,
+    externalHrAdminService,
     type ExternalHr,
-} from '@/services/foundation/operation/OperationAdminService';
+} from '@/services/foundation/operation/ExternalHrAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import ExternalHrClient from './ExternalHrClient';
 
@@ -19,7 +19,7 @@ export default async function ExternalHrPage() {
     let initialPage: PageResponse<ExternalHr> | null = null;
     try {
         // 서버는 0-based Pageable 을 받는다 (page=0 → 1페이지)
-        initialPage = await operationAdminService.getExternalHrList({ page: 0, size: PAGE_SIZE });
+        initialPage = await externalHrAdminService.getExternalHrList({ page: 0, size: PAGE_SIZE });
     } catch {
         // null 시드는 클라이언트 재조회와 기존 오류 상태를 유지한다.
     }

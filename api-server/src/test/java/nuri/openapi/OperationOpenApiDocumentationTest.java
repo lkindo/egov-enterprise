@@ -1,7 +1,7 @@
 package nuri.openapi;
 
 import nuri.api.support.ApiHttpIntegrationTest;
-import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.business.service.event.dto.ExternalHrDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

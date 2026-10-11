@@ -66,9 +66,9 @@ test('degradations appear when a partner is missing and resolve only when the pa
 
 test('a selection that would break a required foreign key is reported as a blocker', () => {
   const { catalogHash, ...body } = structuredClone(catalog);
-  body.capabilities.find(capability => capability.id === 'operation').requires = [];
+  body.capabilities.find(capability => capability.id === 'reward').requires = [];
   const loose = { ...body, catalogHash: compositionDigest(body) };
-  const diff = diffOf({ domains: [] }, 'operation', loose);
+  const diff = diffOf({ domains: [] }, 'reward', loose);
   assert.deepEqual(diff.blockers, ['fk_tb_rward_manage_tb_ifml_atrz_info']);
   assert.match(diffSummary(diff, loose), / · 필수 외래 키 때문에 생성할 수 없습니다$/);
   assert.throws(() => diffOf({ domains: [] }, 'retired'), /Unknown domain: retired/);

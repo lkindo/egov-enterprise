@@ -259,8 +259,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.operation.ExternalHr",
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "entity": "nuri.business.domain.event.ExternalHr",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "otsdHrId",
         "gndrCd",
@@ -671,8 +671,8 @@
       "pack": "collaboration"
     },
     {
-      "entity": "nuri.business.domain.operation.RewardManage",
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "entity": "nuri.business.domain.reward.RewardManage",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
         "rwardwnrId",
         "rwardCode",
@@ -696,8 +696,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.operation.EventInfo",
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "entity": "nuri.business.domain.event.EventInfo",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         "evntNm",
         "bizYr",
@@ -1323,7 +1323,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         {
           "field": "evntSn",
@@ -1734,12 +1734,12 @@
       "pack": "collaboration"
     },
     {
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [],
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         {
           "field": "evntNm",
@@ -1865,7 +1865,7 @@
       "pack": "collaboration"
     },
     {
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
         "sanctnerId",
         "confmAt",
@@ -1913,7 +1913,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         "evntBgngYmd",
         "evntEndYmd",
@@ -1952,7 +1952,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "brdtYmd"
       ],

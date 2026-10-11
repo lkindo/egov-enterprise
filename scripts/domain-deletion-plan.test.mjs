@@ -42,16 +42,17 @@ const SINGLE_DELETIONS = {
   board: ['board', 'comment', 'dashboard', 'scrap'],
   comment: ['board', 'comment', 'dashboard', 'scrap'],
   dashboard: ['dashboard'],
+  event: ['event'],
   help: ['help'],
-  informalsanction: ['informalsanction', 'operation'],
+  // 포상은 결재를 요구하지만(포상의 결재 참조) 결재는 포상을 요구하지 않는다(DEC-OPS-272). 행사는 결재와 무관하다(DEC-OPS-273).
+  informalsanction: ['informalsanction', 'reward'],
   isg: ['isg'],
   mail: ['mail'],
   memoreport: ['memoreport'],
   note: ['note'],
   notification: ['dashboard', 'notification'],
-  // 행사·포상은 결재를 요구하지만(포상의 결재 참조) 결재는 행사·포상을 요구하지 않는다(DEC-OPS-272).
-  operation: ['operation'],
   report: ['report'],
+  reward: ['reward'],
   schedule: ['schedule'],
   // 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 선다(DEC-OPS-272).
   scrap: ['scrap'],
@@ -134,7 +135,7 @@ test('a projected collaboration tree plans the same deletions without the full c
 });
 
 test('a tree where a deletion already ran and a new domain was scaffolded still plans', () => {
-  const gone = new Set(['informalsanction', 'operation']);
+  const gone = new Set(['informalsanction', 'reward']);
   const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)) });
   try {
     // generate-domain.ps1 가 만드는 새 도메인. manifest 에 없으므로 판정 대상이 아니고, 거부 사유도 아니다.

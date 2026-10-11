@@ -5,21 +5,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 
 import nuri.business.security.annotation.WithMockCustomUser;
-import nuri.business.service.operation.RewardManageService;
-import nuri.business.service.operation.dto.RewardManageDto;
+import nuri.business.service.reward.RewardManageService;
+import nuri.business.service.reward.dto.RewardManageDto;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -37,6 +42,21 @@ class RewardManageApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private RewardManageService rewardManageService;
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("포상 목록 조회는 이름 검색어를 그대로, 없으면 null 로 서비스에 전달한다")
+    void getRewardList_passesNameFilter() throws Exception {
+        given(rewardManageService.getRewardList(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/operation/rewards").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/admin/operation/rewards").param("name", "Award").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(rewardManageService).getRewardList(isNull(), any(Pageable.class));
+        verify(rewardManageService).getRewardList(eq("Award"), any(Pageable.class));
+    }
 
     @Test
     @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")

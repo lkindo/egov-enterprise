@@ -5,8 +5,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.eq;
 
 import nuri.business.security.annotation.WithMockCustomUser;
-import nuri.business.service.operation.ExternalHrService;
-import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.business.service.event.ExternalHrService;
+import nuri.business.service.event.dto.ExternalHrDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.exception.BusinessException;
@@ -79,6 +79,19 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
         org.mockito.ArgumentCaptor<String> captor = org.mockito.ArgumentCaptor.forClass(String.class);
         org.mockito.Mockito.verify(externalHrService).getExternalHrList(captor.capture(), any(Pageable.class));
         assertThat(captor.getValue()).isEqualTo("홍길");
+    }
+
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("성명 검색어가 없으면 null 로 전달한다")
+    void getAllExternalHr_withoutNamePassesNull() throws Exception {
+        given(externalHrService.getExternalHrList(any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/operation/external-hr").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(externalHrService).getExternalHrList(org.mockito.ArgumentMatchers.isNull(), any(Pageable.class));
     }
 
     @Test

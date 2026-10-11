@@ -13,9 +13,10 @@ const client = vi.hoisted(() => ({
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import {
-  operationAdminService,
+  externalHrAdminService,
   type ExternalHrCreateInput,
-} from '@/services/foundation/operation/OperationAdminService';
+} from '@/services/foundation/operation/ExternalHrAdminService';
+import { rewardAdminService } from '@/services/foundation/operation/RewardAdminService';
 import { createExternalHrOperation } from '@/types/generated-operations';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
@@ -61,7 +62,7 @@ describe('foundation ordinary generated boundary wave4', () => {
     const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(operationAdminService.getExternalHrList({ name: 'Kim', page: 0, size: 10 }))
+    await expect(externalHrAdminService.getExternalHrList({ name: 'Kim', page: 0, size: 10 }))
       .resolves.toStrictEqual(page);
     expect(client.getRaw).toHaveBeenCalledWith('admin/operation/external-hr', {
       params: { name: 'Kim', page: 0, size: 10 },
@@ -77,10 +78,10 @@ describe('foundation ordinary generated boundary wave4', () => {
       .mockResolvedValueOnce(success(reward));
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(operationAdminService.createExternalHr(externalHr)).resolves.toStrictEqual(externalHr);
-    await expect(operationAdminService.getRewardList({ name: 'Award', page: 0, size: 10 }))
+    await expect(externalHrAdminService.createExternalHr(externalHr)).resolves.toStrictEqual(externalHr);
+    await expect(rewardAdminService.getRewardList({ name: 'Award', page: 0, size: 10 }))
       .resolves.toStrictEqual(page);
-    await expect(operationAdminService.createReward(reward)).resolves.toStrictEqual(reward);
+    await expect(rewardAdminService.createReward(reward)).resolves.toStrictEqual(reward);
 
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
       url: 'admin/operation/external-hr',
@@ -103,7 +104,7 @@ describe('foundation ordinary generated boundary wave4', () => {
       'crtDt' | 'frstRgtrId' | 'mdfcnDt' | 'lastMdfrId'
     >;
     expectTypeOf<ServerOwnedAuditField>().toEqualTypeOf<never>();
-    expectTypeOf<Parameters<typeof operationAdminService.createExternalHr>[0]>()
+    expectTypeOf<Parameters<typeof externalHrAdminService.createExternalHr>[0]>()
       .toEqualTypeOf<ExternalHrCreateInput>();
 
     expect(createExternalHrOperation.requestForbiddenPaths).toStrictEqual([
@@ -114,7 +115,7 @@ describe('foundation ordinary generated boundary wave4', () => {
     ]);
 
     for (const field of ['crtDt', 'frstRgtrId', 'mdfcnDt', 'lastMdfrId']) {
-      await expect(operationAdminService.createExternalHr({
+      await expect(externalHrAdminService.createExternalHr({
         evntSn: 1,
         otsdHrId: 'OUTSIDE_1',
         [field]: 'forged-audit-value',

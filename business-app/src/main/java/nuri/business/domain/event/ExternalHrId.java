@@ -1,0 +1,14 @@
+package nuri.business.domain.event;
+
+import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+public class ExternalHrId implements Serializable {
+    private Long evntSn;
+    private String otsdHrId;
+}

@@ -9,7 +9,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { operationAdminService, type Reward } from '@/services/foundation/operation/OperationAdminService';
+import { rewardAdminService, type Reward } from '@/services/foundation/operation/RewardAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
@@ -114,7 +114,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         variant: 'destructive',
       });
       if (!ok) return;
-      await operationAdminService.deleteReward(item.rwrdSn);
+      await rewardAdminService.deleteReward(item.rwrdSn);
       toast('포상 기록을 삭제했습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
     } catch (error) {
@@ -135,7 +135,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const { data, isLoading, isError, error: listError, refetch } = useQuery({
     queryKey: ['admin-rewards', searchKeyword, page, size],
     // 서버 계약: name(포상명 부분일치) + Spring Data Pageable(page 는 0-based)
-    queryFn: () => operationAdminService.getRewardList({
+    queryFn: () => rewardAdminService.getRewardList({
       name: searchKeyword,
       page: page - 1,
       size
@@ -165,10 +165,10 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
        */
       if (editing && editing.rwrdSn !== undefined) {
         // 수정은 화면이 편집하는 다섯 필드만 보낸다 — 승인 상태(confmAt)는 여기서 건드리지 않는다.
-        await operationAdminService.updateReward(editing.rwrdSn, { ...values });
+        await rewardAdminService.updateReward(editing.rwrdSn, { ...values });
         toast('포상 기록을 수정했습니다.', 'success');
       } else {
-        await operationAdminService.createReward({ ...values });
+        await rewardAdminService.createReward({ ...values });
         toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
         // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
         setPage(1);

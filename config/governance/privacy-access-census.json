@@ -121,7 +121,7 @@
       "pack": "core"
     },
     {
-      "type": "nuri.business.service.operation.dto.ExternalHrDto",
+      "type": "nuri.business.service.event.dto.ExternalHrDto",
       "pack": "demo"
     },
     {

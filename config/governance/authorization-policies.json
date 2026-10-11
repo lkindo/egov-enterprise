@@ -4011,7 +4011,7 @@
     },
     {
       "target": "ExternalHrService#currentLoginId",
-      "source": "business-app/src/main/java/nuri/business/service/operation/ExternalHrService.java",
+      "source": "business-app/src/main/java/nuri/business/service/event/ExternalHrService.java",
       "policy": "AUTHENTICATED",
       "denyReferences": 1,
       "requiredTokens": [

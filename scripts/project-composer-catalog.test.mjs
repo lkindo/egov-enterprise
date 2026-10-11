@@ -90,7 +90,8 @@ test('all producer domains and tables have one verified ownership or an explicit
   const expectedDomains = Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
   // Phase 0c: 통계는 고를 수 있는 기능이 아니라 core 다(20 -> 19). 게시물·자료 이용 화면은 게시판이 소유한다.
-  assert.equal(catalog.capabilities.length, 19);
+  // Phase 2 기능 분할(DEC-OPS-273): 행사·외부인사·포상을 행사와 포상으로 나눴다(19 -> 20).
+  assert.equal(catalog.capabilities.length, 20);
   assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
   assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
   assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));
@@ -105,7 +106,7 @@ test('all producer domains and tables have one verified ownership or an explicit
   const sequences = [...new Set([...catalog.core.explicitSequences, ...catalog.capabilities.flatMap(capability => capability.database.explicitSequences)])].sort();
   assert.deepEqual(sequences, Object.values(manifest.packs).flatMap(pack => pack.database.sequences).sort());
   for (const id of ['board', 'template']) assert.ok(catalog.capabilities.find(capability => capability.id === id).database.tables.includes('tb_tmplt_info'));
-  for (const [id, target] of [['comment', 'board'], ['operation', 'informalsanction']]) {
+  for (const [id, target] of [['comment', 'board'], ['reward', 'informalsanction']]) {
     assert.ok(catalog.capabilities.find(capability => capability.id === id).requires.some(edge => edge.domain === target && edge.kind === 'java'));
   }
   const { catalogHash, ...body } = catalog;
@@ -129,6 +130,24 @@ test('new undeclared domain, table and UI ownership become visible failures', t 
   const unowned = join(root, 'frontend/src/app/admin/operation/UnknownFeature.tsx');
   writeFileSync(unowned, 'export default function Feature() { return null; }');
   assert.throws(() => loadProjectComposerCatalog(root), /no capability refinement/);
+});
+
+/*
+ * 나눈 기능의 권한 도메인은 각각 정확히 한 선택 기능에 있고 core 필수 권한으로 넘어가지 않는다(H3, DEC-OPS-273).
+ * 카탈로그는 FEATURES 가 주장하지 않은 권한 도메인을 core 필수 권한으로 본다 — 도메인을 빠뜨려도 적재는 실패하지 않으므로
+ * 이 단언이 없으면 행사·포상 권한이 모든 구성에 조용히 남는다.
+ */
+test('split capabilities keep each permission domain in exactly one optional capability', () => {
+  const owners = { EVENT: 'event', EXT_HR: 'event', REWARD: 'reward' };
+  const permissions = JSON.parse(readFileSync(join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')).permissions;
+  for (const [domain, owner] of Object.entries(owners)) {
+    const codes = permissions.filter(permission => permission.domain === domain).map(permission => permission.code);
+    assert.ok(codes.length > 0, domain);
+    for (const code of codes) {
+      assert.deepEqual(catalog.capabilities.filter(capability => capability.permissionCodes.includes(code)).map(capability => capability.id), [owner], code);
+      assert.ok(!catalog.core.permissionCodes.includes(code), code);
+    }
+  }
 });
 
 test('configured notice and FAQ permissions belong to the optional board capability', t => {
@@ -447,8 +466,10 @@ test('every dependency edge carries one Korean sentence per feature pair and the
   // 근거 없는 묶음 간선은 걷었다(DEC-OPS-272). 스크랩·행사는 코드로 게시판·결재를 요구하지만 그 반대는 없다.
   const requires = (from, to) => catalog.capabilities.find(capability => capability.id === from).requires.filter(edge => edge.domain === to).map(edge => edge.kind).sort();
   assert.deepEqual(requires('scrap', 'board'), ['java']);
-  assert.deepEqual(requires('operation', 'informalsanction'), ['java']);
-  for (const [from, to] of [['board', 'scrap'], ['comment', 'scrap'], ['scrap', 'comment'], ['informalsanction', 'operation']]) {
+  assert.deepEqual(requires('reward', 'informalsanction'), ['java']);
+  // 행사는 결재를 참조하지 않는다 — 결재 참조는 포상의 것이고, 나눈 뒤 행사는 혼자 고를 수 있다.
+  assert.deepEqual(requires('event', 'informalsanction'), []);
+  for (const [from, to] of [['board', 'scrap'], ['comment', 'scrap'], ['scrap', 'comment'], ['informalsanction', 'event'], ['informalsanction', 'reward']]) {
     assert.deepEqual(requires(from, to), [], `${from}>${to}`);
   }
 });

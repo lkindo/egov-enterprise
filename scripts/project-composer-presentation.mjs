@@ -18,7 +18,7 @@ export const ROUTE_CENSUS_PATH = 'config/ui-route-capabilities.json';
 export const COMPOSER_AREAS = Object.freeze([
   { id: 'communication', label: '소통·협업', domains: ['mail', 'sms', 'note', 'notification', 'addressbook', 'scrap'] },
   { id: 'knowledge', label: '지식·커뮤니티', domains: ['board', 'comment', 'help', 'system', 'template', 'isg'] },
-  { id: 'work', label: '업무 지원', domains: ['informalsanction', 'operation', 'report', 'schedule', 'memoreport'] },
+  { id: 'work', label: '업무 지원', domains: ['informalsanction', 'event', 'reward', 'report', 'schedule', 'memoreport'] },
   { id: 'participation', label: '분석·참여', domains: ['survey', 'dashboard'] },
 ]);
 
@@ -27,6 +27,7 @@ export const CAPABILITY_SUMMARIES = Object.freeze({
   board: '게시판과 자주 묻는 질문·질의응답·위키',
   comment: '게시글 댓글과 댓글 관리',
   dashboard: '업무 홈 실시간 연결·오늘 게시글·전체 미읽음 알림',
+  event: '행사와 행사별 외부인사 관리',
   help: '도움말과 온라인 매뉴얼',
   informalsanction: '기안·결재·참조와 결재함',
   isg: '인터넷 서비스 안내 문구 등록·관리',
@@ -34,8 +35,8 @@ export const CAPABILITY_SUMMARIES = Object.freeze({
   memoreport: '메모 보고와 지시',
   note: '쪽지 보내기·받기',
   notification: '알림 센터와 실시간 알림',
-  operation: '행사·외부인사·포상 관리',
   report: '개인 업무 보고',
+  reward: '포상 기록 관리',
   schedule: '개인·부서 일정',
   scrap: '게시글 스크랩',
   sms: '문자 발송과 결과 확인',

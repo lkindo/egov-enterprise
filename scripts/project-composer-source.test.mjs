@@ -37,7 +37,7 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
   ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'system'],
   ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['system', 'template']],
-  ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'operation'],
+  ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'event'],
   ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
@@ -112,8 +112,8 @@ test('new management HTTP matrices project every selected surface and reject an 
   const file = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
   const source = readFileSync(join(root, file), 'utf8');
   const owners = new Map([
-    ['/api/v1/admin/operation/events', 'operation'],
-    ['/api/v1/admin/operation/rewards', 'operation'],
+    ['/api/v1/admin/operation/events', 'event'],
+    ['/api/v1/admin/operation/rewards', 'reward'],
     ['/api/v1/help/hpcm', 'help'],
     ['/api/v1/help/manuals', 'help'],
     ['/api/v1/admin/system/banners', 'system'],
@@ -123,7 +123,7 @@ test('new management HTTP matrices project every selected surface and reject an 
   const paths = value => [...value.matchAll(/new ManagedSurface\("([^"]+)"/g)].map(match => match[1]);
   const sharedMethod = (value, name) => value.match(new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm'))?.[0];
   assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
-  for (const selected of [['operation'], ['help'], ['system'], ['template'], ['survey'], ['informalsanction'], ['operation', 'help', 'system', 'template']]) {
+  for (const selected of [['event'], ['reward'], ['help'], ['system'], ['template'], ['survey'], ['informalsanction'], ['event', 'reward', 'help', 'system', 'template']]) {
     const projected = projectComposerJava(file, source, { resolvedDomains: selected });
     assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
     if (selected.some(domain => [...owners.values()].includes(domain))) {
@@ -414,11 +414,11 @@ ${tracked.stdout}`);
 });
 
 /*
- * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 19개, CI 대표 직접 선택 2개, 그리고 주소록이
+ * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 20개, CI 대표 직접 선택 2개, 그리고 주소록이
  * 수신자 피커에 기여하는 {mail, sms, addressbook}. 판정 통일(PR-2)의 골든 diff 를 이 대조가 화면 단위로 지킨다.
  */
 test('every selectable capability preserves its declared frontend and the screens its composition expects through actual import projection', () => {
-  assert.equal(catalog.capabilities.length, 19, 'review the capability population when its declaration changes');
+  assert.equal(catalog.capabilities.length, 20, 'review the capability population when its declaration changes');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
     assert.ok(result.expectedCount > 1, `${feature.id} has no declared frontend population`);

@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 import {
-  operationAdminService,
+  rewardAdminService,
   emptyPage,
   type Reward,
-} from '@/services/foundation/operation/OperationAdminService';
+} from '@/services/foundation/operation/RewardAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import RewardManageClient from './RewardManageClient';
 
@@ -18,7 +18,7 @@ export default async function RewardManagePage() {
   let initialPage: PageResponse<Reward> = emptyPage<Reward>(PAGE_SIZE);
   try {
     // 서버는 0-based Pageable 을 받는다 (page=0 → 1페이지)
-    initialPage = await operationAdminService.getRewardList({ page: 0, size: PAGE_SIZE });
+    initialPage = await rewardAdminService.getRewardList({ page: 0, size: PAGE_SIZE });
   } catch {
     // 기존 empty seed fallback을 유지하되 Axios 오류 객체는 서버 로그로 보내지 않는다.
   }

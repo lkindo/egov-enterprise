@@ -3189,8 +3189,8 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/operation/EventApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/operation/OperationApiControllerTest.java",
-            "business-app/src/test/java/nuri/business/service/operation/EventInfoServiceTest.java",
+            "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
+            "business-app/src/test/java/nuri/business/service/event/EventInfoServiceTest.java",
             "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
             "frontend/src/app/admin/operation/events/__tests__/EventEdit.test.tsx",
             "frontend/src/app/admin/operation/events/page.tsx",
@@ -3218,7 +3218,7 @@
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/operation/EventApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/operation/OperationApiControllerTest.java",
+            "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
             "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
             "frontend/src/app/admin/operation/events/__tests__/EventCreateSubmit.test.tsx",
             "frontend/src/app/admin/operation/events/__tests__/EventEdit.test.tsx",
@@ -3305,7 +3305,7 @@
             "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
             "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrEventColumn.test.tsx",
             "frontend/src/app/admin/operation/external-hr/page.tsx",
-            "frontend/src/services/foundation/operation/OperationAdminService.ts"
+            "frontend/src/services/foundation/operation/ExternalHrAdminService.ts"
           ]
         },
         {
@@ -3329,9 +3329,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/operation/ExternalHrApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",
-            "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
-            "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx",
             "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
+            "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrClient.form-validation.test.tsx",
+            "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrClient.row-actions.test.tsx",
             "frontend/src/app/admin/operation/external-hr/page.tsx"
           ]
         }
@@ -3568,10 +3568,10 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/operation/RewardManageApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
-            "frontend/src/app/admin/operation/__tests__/rewards-e2e-contract.test.tsx",
             "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+            "frontend/src/app/admin/operation/rewards/__tests__/rewards-e2e-contract.test.tsx",
             "frontend/src/app/admin/operation/rewards/page.tsx",
-            "frontend/src/services/foundation/operation/OperationAdminService.ts"
+            "frontend/src/services/foundation/operation/RewardAdminService.ts"
           ]
         },
         {
@@ -3595,9 +3595,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/operation/RewardManageApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
-            "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
-            "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx",
             "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+            "frontend/src/app/admin/operation/rewards/__tests__/RewardManageClient.form-validation.test.tsx",
+            "frontend/src/app/admin/operation/rewards/__tests__/RewardManageClient.row-actions.test.tsx",
             "frontend/src/app/admin/operation/rewards/page.tsx"
           ]
         }

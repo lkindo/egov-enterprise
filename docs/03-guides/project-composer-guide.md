@@ -2,7 +2,7 @@
 
 원본의 모듈러 모노리스 구조를 유지하면서 선택한 업무의 소스·PostgreSQL DDL·메뉴·초기 권한을 독립 프로젝트로 생성한다. Foundation과 Core는 항상 포함하며, 결과물의 백엔드는 기존 멀티모듈 또는 단일 Gradle 프로젝트 중 선택한다. 설계 근거와 지원 경계는 [상세 설계](../02-architecture/project-composer-design.md), 기존 릴리스 프로필 명령은 [재사용 가이드](reusable-base-guide.md)에 있다.
 
-공통 엔진·CLI·로컬 UI에서 19개 도메인을 선택한다. 생성 작업마다 전체 기술 검증을 실행하며, 생성 결과는 아래 보고서의 실제 실행 상태로 확인한다.
+공통 엔진·CLI·로컬 UI에서 20개 도메인을 선택한다. 생성 작업마다 전체 기술 검증을 실행하며, 생성 결과는 아래 보고서의 실제 실행 상태로 확인한다.
 
 ## 실행
 
@@ -49,11 +49,11 @@ Docker 의 원인은 종료 코드로 짐작하지 않고 엔진 응답(`docker 
 
 ## 선택과 의존성
 
-19개 업무 도메인의 소유권은 [카탈로그](../../scripts/project-composer-catalog.mjs)가 기존 프로필 manifest, Java 소스, 권한 카탈로그와 명시된 화면 소유권으로 확인한다. [순수 해석기](../../scripts/project-composer-recipe.mjs)가 필수 의존성을 함께 포함한다. UI와 CLI는 동일한 해석기와 생성 엔진을 사용한다.
+20개 업무 도메인의 소유권은 [카탈로그](../../scripts/project-composer-catalog.mjs)가 기존 프로필 manifest, Java 소스, 권한 카탈로그와 명시된 화면 소유권으로 확인한다. [순수 해석기](../../scripts/project-composer-recipe.mjs)가 필수 의존성을 함께 포함한다. UI와 CLI는 동일한 해석기와 생성 엔진을 사용한다.
 
 선택 업무만 사용하는 Foundation/Core/API 지원 파일은 manifest의 `backend.domainSupportFiles`에 소비 도메인별 정확한 파일 경로로 선언한다. `memoreport`의 사용자 표시명 조회 인터페이스·구현·테스트와 `sms`의 공급자 설정 속성이 이 선언을 사용한다. 해당 업무를 제외하면 지원 파일도 제거하고, 포함하면 소스 생존 검사와 카탈로그 지문에 함께 포함한다. 필수 모듈의 다른 코드가 제거 대상 타입을 참조하면 생성은 계속 실패한다. 다른 업무의 업무 앱 디렉터리에 있는 구현도 선언할 수 있다 — 그 업무가 제공하고 선언한 업무만 쓰는 구현이다. `system`(커뮤니티)이 템플릿의 활성 검증 포트와 구현·테스트를 이렇게 소유한다. 이런 파일은 두 업무가 모두 있을 때만 남고, 카탈로그는 선언 업무가 디렉터리 업무를 요구한다고 기록한다. 그래서 템플릿만 골라도 소비자 없는 구현이 남아 도달 불가 서비스 게이트가 실패하지 않는다.
 
-- 게시판·댓글은 코드가 서로를 참조해 함께 포함된다. 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 생성된다 — 게시글 상세의 스크랩 버튼은 스크랩 기능의 슬롯 기여라 스크랩을 고르지 않으면 버튼만 빠진다. 약식 전자결재도 행사·포상 없이 생성되고, 행사·포상은 포상이 결재 문서를 참조해 결재를 요구한다([DEC-OPS-272](../../.agent/memory/decisions.md)).
+- 게시판·댓글은 코드가 서로를 참조해 함께 포함된다. 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 생성된다 — 게시글 상세의 스크랩 버튼은 스크랩 기능의 슬롯 기여라 스크랩을 고르지 않으면 버튼만 빠진다. 약식 전자결재도 행사·포상 없이 생성되고, 포상은 결재 문서를 참조해 결재를 요구한다. 행사(약도·행사별 외부인사 포함)는 혼자 고를 수 있다([DEC-OPS-272](../../.agent/memory/decisions.md), [DEC-OPS-273](../../.agent/memory/decisions.md)).
 - 현재 공동 화면의 직접 참조로 쪽지·스크랩, 게시판·도움말·커뮤니티, 일정·업무 보고가 함께 포함된다.
 - 커뮤니티 관리 화면에는 템플릿이 필요하다. 이 제약은 자동 포함 사유로 표시한다.
 - 영역·카드 요약·시작 구성 이름은 [표시 문구](../../scripts/project-composer-presentation.mjs)가 정하고 실제 기능·시작 구성과 양방향으로 대조한다. 카탈로그 해시 밖에 있어 문구를 고쳐도 구성 해시는 바뀌지 않는다([DEC-OPS-244](../../.agent/memory/decisions.md)).
@@ -88,7 +88,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 `schemaVersion`은 `1`이다. `selection`은 `domains`와 `preset` 중 하나만 받으며, `{"preset":"collaboration"}`처럼 사용할 수 있다. `domains: []`는 Foundation/Core만 포함한다. 프로젝트명은 소문자로 시작하는 1~63자이며 영문 소문자·숫자·단어 사이 하이픈을 허용한다. Windows 예약 이름과 알 수 없는 필드는 거부한다. `backendLayout`은 `multi-module` 또는 `single-module`이며 생략하면 `multi-module`이다. DB는 `postgresql`만 지원한다. UI가 저장하는 recipe의 `sourceRef`는 해당 체크아웃의 정확한 commit이다.
 
-현재 선택 가능한 ID는 `addressbook`, `board`, `comment`, `dashboard`, `help`, `informalsanction`, `isg`, `mail`, `memoreport`, `note`, `notification`, `operation`, `report`, `schedule`, `scrap`, `sms`, `survey`, `system`, `template`이다. 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
+현재 선택 가능한 ID는 `addressbook`, `board`, `comment`, `dashboard`, `event`, `help`, `informalsanction`, `isg`, `mail`, `memoreport`, `note`, `notification`, `report`, `reward`, `schedule`, `scrap`, `sms`, `survey`, `system`, `template`이다. 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
 
 ## 결과 인수
 
@@ -116,7 +116,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 소스 생성 후에는 선택한 코드·화면 존속, 원장 정합성, Java 컴파일·하네스·스키마 검사, 프런트엔드 타입·lint·build를 실행한다. 실패한 폴더와 보고서는 보존하되 완료 결과로 제공하지 않는다. 모든 부분집합을 사전에 인증했다는 의미는 아니며 **각 생성 작업 자체가 검증을 통과해야** 완료된다.
 
-custom 구성의 통합 검사 소유권도 실제 대상 도메인과 일치해야 한다. 소유권 선언이 빠지면 대상 기능을 선택하지 않았더라도 미승인 검사 제거로 소스 생성을 중단한다. 커뮤니티·템플릿 연결 검사는 `system`과 `template`이 모두 선택된 경우, 행사 승인 검사는 `operation`, 알림 내구성 검사는 `notification`이 선택된 경우 유지한다. 템플릿 단독 생성 무결성 검사와 core의 정책·공통 작업 엔진 검사는 각 대상이 남는 구성에서 별도로 유지한다. 이 경계는 [기존 소스 투영 계약](../../scripts/project-composer-source.test.mjs)이 실제 제거 계획과 선언 누락 반례로 확인한다.
+custom 구성의 통합 검사 소유권도 실제 대상 도메인과 일치해야 한다. 소유권 선언이 빠지면 대상 기능을 선택하지 않았더라도 미승인 검사 제거로 소스 생성을 중단한다. 커뮤니티·템플릿 연결 검사는 `system`과 `template`이 모두 선택된 경우, 행사 승인 검사는 `event`, 알림 내구성 검사는 `notification`이 선택된 경우 유지한다. 템플릿 단독 생성 무결성 검사와 core의 정책·공통 작업 엔진 검사는 각 대상이 남는 구성에서 별도로 유지한다. 이 경계는 [기존 소스 투영 계약](../../scripts/project-composer-source.test.mjs)이 실제 제거 계획과 선언 누락 반례로 확인한다.
 
 [CI](../../.github/workflows/ci.yml)와 같은 대표 조합의 전체 생성·검증 경로는 다음과 같다. 두 명령은 각각 새 전용 DB 컨테이너와 새 프로젝트를 만들고 의존성을 설치하므로 단순한 계획 조회보다 오래 걸린다.
 

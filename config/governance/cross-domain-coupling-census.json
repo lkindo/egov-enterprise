@@ -244,27 +244,6 @@
       "pack": "collaboration"
     },
     {
-      "file": "operation/attachment/RewardAttachmentSourceContributor.java",
-      "owner": "operation",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentSource",
-        "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
-    },
-    {
-      "file": "operation/RewardManageService.java",
-      "owner": "operation",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
-    },
-    {
       "file": "report/attachment/ReportAttachmentSourceContributor.java",
       "owner": "report",
       "target": "file",
@@ -292,6 +271,27 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "reward/attachment/RewardAttachmentSourceContributor.java",
+      "owner": "reward",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ],
+      "pack": "demo"
+    },
+    {
+      "file": "reward/RewardManageService.java",
+      "owner": "reward",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
       ],
       "pack": "demo"
     },

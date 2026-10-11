@@ -106,7 +106,7 @@ test('the ownership expectation equals the resolver retained routes for every pr
   const ids = catalog.capabilities.map(capability => capability.id);
   const selections = [...catalog.presets.map(preset => ({ preset: preset.id })), { domains: [] }, { domains: [...ids] },
     ...ids.map(id => ({ domains: [id] })), ...ids.flatMap((left, index) => ids.slice(index + 1).map(right => ({ domains: [left, right] })))];
-  assert.equal(selections.length, 3 + 2 + 19 + 171);
+  assert.equal(selections.length, 3 + 2 + 20 + 190);
   for (const selection of selections) {
     const composition = recipe(selection);
     assert.deepEqual([...expectedPageRoutes(catalog, composition, rows)].sort(), [...composition.frontend.retainedRoutes].sort(), JSON.stringify(selection));

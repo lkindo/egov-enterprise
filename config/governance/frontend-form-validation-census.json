@@ -739,8 +739,8 @@
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
-        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx",
+        "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrClient.form-validation.test.tsx",
+        "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrClient.row-actions.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -808,7 +808,7 @@
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
+        "frontend/src/app/admin/operation/rewards/__tests__/RewardManageClient.form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -1985,7 +1985,7 @@
       "owner": "ExternalHrClient",
       "handler": "handleDelete",
       "writeSinks": [
-        "operationAdminService.deleteExternalHr"
+        "externalHrAdminService.deleteExternalHr"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -1995,7 +1995,7 @@
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
+        "frontend/src/app/admin/operation/external-hr/__tests__/ExternalHrClient.row-actions.test.tsx"
       ]
     },
     {
@@ -2025,7 +2025,7 @@
       "owner": "RewardManageClient",
       "handler": "handleDelete",
       "writeSinks": [
-        "operationAdminService.deleteReward"
+        "rewardAdminService.deleteReward"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -2035,7 +2035,7 @@
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/operation/__tests__/operation-row-actions.test.tsx"
+        "frontend/src/app/admin/operation/rewards/__tests__/RewardManageClient.row-actions.test.tsx"
       ]
     },
     {

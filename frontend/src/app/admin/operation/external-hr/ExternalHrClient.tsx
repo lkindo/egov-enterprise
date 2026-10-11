@@ -6,7 +6,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { operationAdminService, type ExternalHr } from '@/services/foundation/operation/OperationAdminService';
+import { externalHrAdminService, type ExternalHr } from '@/services/foundation/operation/ExternalHrAdminService';
 import { eventService } from '@/services/foundation/operation/eventService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
@@ -235,7 +235,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
         variant: 'destructive',
       });
       if (!ok) return;
-      await operationAdminService.deleteExternalHr(item.evntSn, item.otsdHrId);
+      await externalHrAdminService.deleteExternalHr(item.evntSn, item.otsdHrId);
       toast('외부인사 정보를 삭제했습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
     } catch (error) {
@@ -253,7 +253,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
    */
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-external-hr', searchKeyword, page, pageSize],
-    queryFn: () => operationAdminService.getExternalHrList({
+    queryFn: () => externalHrAdminService.getExternalHrList({
       name: searchKeyword,
       page: page - 1,
       size: pageSize,
@@ -285,10 +285,10 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       //   묻지 않은 개인정보를 지어내 저장하지 않는다 — 값이 없으면 보내지 않는다.
       if (editing) {
         // 식별자는 경로로만 간다 — 본문의 evntSn·otsdHrId 는 서버가 무시한다.
-        await operationAdminService.updateExternalHr(editing.evntSn, editing.otsdHrId, { ...values });
+        await externalHrAdminService.updateExternalHr(editing.evntSn, editing.otsdHrId, { ...values });
         toast('외부인사 정보를 수정했습니다.', 'success');
       } else {
-        await operationAdminService.createExternalHr({ ...values });
+        await externalHrAdminService.createExternalHr({ ...values });
         toast('성공적으로 등록되었습니다.', 'success');
       }
       const wasEditing = editing !== null;
