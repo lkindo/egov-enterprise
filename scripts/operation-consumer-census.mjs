@@ -37,7 +37,8 @@
  * 버튼 노출 판정에 쓰는가. 조회 권한만으로 들어온 사람에게 등록·수정·삭제 버튼이 모두 보이면, 폼을 다 채운
  * 뒤에야 403 을 만난다(관리 화면 6곳의 권한 판정이 0건이었다). 판정은 표시일 뿐 인가가 아니다 — 서버 권한은
  * 그대로 집행된다(H3). 이 축도 예외 목록 없이 래칫(`expected.ungatedWriteMax`) 하나로 막고, 줄었는데 래칫을
- * 내리지 않아도 red 다.
+ * 내리지 않아도 red 다. 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)도 화면 모집단이고, 기여를 여는 화면은 그 슬롯
+ * 레지스트리를 import 하는 화면이다(레지스트리를 도우미 .ts 가 읽으면 그 도우미의 화면으로 한 번 더 잇는다 — 스크랩 슬롯).
  *
  * [규칙] 모든 operation 은 다음 셋 중 정확히 하나다.
  *   1. consumed      — 프런트 호출부가 있다(generated-api-boundaries 레코드).
@@ -63,6 +64,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
+import { SLOT_ROOT, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -573,7 +575,8 @@ function routeGuarantees(route, permission, catalog) {
  * 계산을 쓴다 — 판정기를 두 벌 두면 둘이 어긋난다. 반환값:
  * <ul>
  *   <li>{@code writeMethods} — 서비스 쓰기 메서드 {module, name, permission}</li>
- *   <li>{@code needs} — {file(저장소 상대 경로), route(가장 가까운 page.tsx 의 경로, app 밖 파일이면 null), permission, via}</li>
+ *   <li>{@code needs} — {file(저장소 상대 경로), route(가장 가까운 page.tsx 의 경로, app 밖 파일이면 null), permission, via}.
+ *       file 은 app·components 의 .tsx 이거나 슬롯 기여 파일이다.</li>
  *   <li>{@code routeOf(file)} · {@code importersOf(file)} · {@code mentions(file, permission)} — 같은 소스 색인 위의 조회
  *       (모두 저장소 상대 경로를 받고 돌려준다)</li>
  * </ul>
@@ -647,7 +650,16 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
       pageDirs.add(posix.slice(index + '/src/app/'.length).replace(/\/?page\.tsx$/u, ''));
     }
   }
-  const uiFiles = files.filter((file) => isUiFile(file) && !isIntermediaryFile(file) && !isServiceFile(file));
+  // [스크랩 슬롯] 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)도 화면 모집단이다. 기여는 셸이 그리는 버튼의 쓰기 함수를 가리키므로,
+  // 빼면 그 쓰기가 어느 화면에도 귀속되지 않아 부채가 사라진 것처럼 보인다(H2). 판정은 슬롯 장치의 경로 규칙 하나를 쓴다.
+  const frontendPrefix = `${toPosix(resolve(repoRoot, 'frontend'))}/`;
+  const contributionSlot = new Map();
+  for (const file of files) {
+    if (!file.startsWith(`${frontendPrefix}${SLOT_ROOT}/`)) continue;
+    const kind = slotPathKind(file.slice(frontendPrefix.length));
+    if (kind?.kind === 'contribution') contributionSlot.set(file, kind.slot);
+  }
+  const uiFiles = files.filter((file) => (isUiFile(file) || contributionSlot.has(file)) && !isIntermediaryFile(file) && !isServiceFile(file));
   const needs = new Map();
   for (const file of uiFiles) {
     const source = sources.get(file);
@@ -675,10 +687,25 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
     const source = sources.get(absolute(file));
     return source !== undefined && new RegExp(`['"\`]${permission}['"\`]`, 'u').test(source);
   };
+  const directImporters = (target) => uiFiles.filter((other) => other !== target && importsModule(sources.get(other), moduleName(target)));
+  /*
+    기여 파일은 아무 화면도 직접 import 하지 않는다 — 셸은 생성 레지스트리(generated-<슬롯>.ts)를 읽는다. 그래서 기여의 importer 는
+    그 레지스트리의 importer 다. 레지스트리를 읽는 것이 화면이 아니라 도우미(.ts, 예: 수신자 피커 출처 도우미)면 그 도우미를 import
+    하는 화면으로 한 번 더 잇는다. 이 한 단계가 없으면 다음 슬롯에서 같은 사각이 재발한다.
+  */
   const importersOf = (file) => {
     const target = absolute(file);
-    const name = moduleName(target);
-    return uiFiles.filter((other) => other !== target && importsModule(sources.get(other), name)).map(relativeOf);
+    const importers = new Set(directImporters(target));
+    const slot = contributionSlot.get(target);
+    if (slot !== undefined) {
+      const registry = moduleName(slotRegistryPath(slot));
+      for (const reader of files) {
+        if (reader === target || !importsModule(sources.get(reader), registry)) continue;
+        if (uiFiles.includes(reader)) importers.add(reader);
+        else directImporters(reader).forEach((screen) => importers.add(screen));
+      }
+    }
+    return [...importers].map(relativeOf);
   };
   const routeOf = (file) => routeOfUiFile(absolute(file), pageDirs);
 

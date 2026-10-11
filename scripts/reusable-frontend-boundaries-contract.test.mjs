@@ -329,6 +329,7 @@ test('direct selections that reach a check unit no earlier configuration checked
 /** 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 붉다 — 범용 플러그인 로더를 막고 grep 경로를 고정한다. */
 const SLOT_REGISTRY_CONSUMERS = {
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
+  'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
   'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx', 'frontend/src/app/error.tsx'],
 };

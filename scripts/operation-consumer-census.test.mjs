@@ -798,6 +798,64 @@ test('축 3 — 대화상자는 그것을 여는 화면이 모두 권한을 볼 
   ]);
 });
 
+/*
+  [스크랩 슬롯] 슬롯 기여는 셸이 그리는 버튼의 쓰기 함수를 가리킨다. 기여 파일을 모집단에서 빼면 그 쓰기가 어느 화면에도 귀속되지
+  않아 부채가 사라진 것처럼 보인다(H2). 기여를 여는 화면은 그 슬롯 레지스트리를 import 하는 화면이고, 레지스트리를 도우미(.ts)가
+  읽으면 그 도우미를 import 하는 화면으로 한 번 더 잇는다.
+*/
+function slotFixture(t, { rule = "{ always: '시험' }", host, helper } = {}) {
+  return affordanceFixture(t, {
+    'frontend/src/extensions/slots.ts': 'export const defineContributions = (slot, entries) => entries;',
+    'frontend/src/queries/thing-post-action.ts': [
+      SERVICE_IMPORT,
+      'export async function submitThing(context) {',
+      '  await thingService.deleteThing(context.id);',
+      '}',
+    ],
+    'frontend/src/extensions/things/post-actions.ts': [
+      "import { defineContributions } from '@/extensions/slots';",
+      "import { submitThing } from '@/queries/thing-post-action';",
+      "export default defineContributions('post-actions', [",
+      `  { id: 'thing', submit: submitThing, visibleWhen: ${rule} },`,
+      ']);',
+    ],
+    'frontend/src/extensions/generated-post-actions.ts': [
+      "import things from './things/post-actions';",
+      'export const postActions = [things];',
+    ],
+    ...(helper ? {
+      'frontend/src/app/components/ui/thing-actions.ts': [
+        "import { postActions } from '@/extensions/generated-post-actions';",
+        'export const thingActions = () => postActions.flat();',
+      ],
+    } : {}),
+    'frontend/src/app/admin/things/page.tsx': 'export default function Page() { return null; }',
+    'frontend/src/app/admin/things/ThingHost.tsx': [
+      helper ? "import { thingActions } from '@/app/components/ui/thing-actions';" : "import { postActions } from '@/extensions/generated-post-actions';",
+      host ?? 'export const ThingHost = () => null;',
+      `export const used = ${helper ? 'thingActions' : 'postActions'};`,
+    ],
+  });
+}
+
+test('축 3 — 슬롯 기여의 쓰기는 기여 파일에 귀속되고, 그 기여를 여는 화면(레지스트리 importer)이 권한을 보지 않으면 부채다', (t) => {
+  assert.deepEqual(slotFixture(t).analyze().ungated.map((entry) => [entry.file, entry.permission, entry.via]), [
+    ['frontend/src/extensions/things/post-actions.ts', 'THING_DELETE', 'thing-post-action.submitThing'],
+  ]);
+  // 기여 자신의 노출 술어가 그 권한이면 가려진다.
+  assert.deepEqual(slotFixture(t, { rule: "{ permissions: ['THING_DELETE'] }" }).analyze().ungated, []);
+  // 레지스트리를 읽는 화면이 그 권한을 보면 가려진다.
+  assert.deepEqual(slotFixture(t, { host: "export const ThingHost = ({ user }) => canPermission(user, 'THING_DELETE');" }).analyze().ungated, []);
+  // 사유 문자열에 권한 이름을 따옴표 없이 적은 것은 판정이 아니다.
+  assert.equal(slotFixture(t, { rule: "{ always: '저장은 서버가 THING_DELETE 로 막는다.' }" }).analyze().ungated.length, 1);
+});
+
+test('축 3 — 레지스트리를 도우미(.ts)가 읽으면 그 도우미를 import 하는 화면이 기여를 여는 화면이다', (t) => {
+  const gated = slotFixture(t, { helper: true, host: "export const ThingHost = ({ user }) => canPermission(user, 'THING_DELETE');" });
+  assert.deepEqual(gated.analyze().ungated, []);
+  assert.equal(slotFixture(t, { helper: true }).analyze().ungated.length, 1);
+});
+
 test('축 3 — 라우트 진입 권한이 그 권한을 보장하면 버튼을 따로 가릴 필요가 없다', (t) => {
   const { analyze } = affordanceFixture(t, {
     'frontend/src/app/admin/things/page.tsx': 'export default function Page() { return null; }',

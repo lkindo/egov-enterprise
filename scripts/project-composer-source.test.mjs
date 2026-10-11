@@ -577,14 +577,16 @@ test('dashboard, notifications and optional address book blocks follow their dom
   assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
   const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
   // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
-  assert.deepEqual(['help', 'notification'].filter(domain => composition.resolvedDomains.includes(domain)), [],
-    'the mail selection leaves out help and notifications');
+  //   [스크랩 슬롯] 게시글 상세의 스크랩 버튼(post-actions)도 같다.
+  assert.deepEqual(['help', 'notification', 'scrap'].filter(domain => composition.resolvedDomains.includes(domain)), [],
+    'the mail selection leaves out help, notifications and scraps');
   for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
     assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
   }
   for (const [shellRegistry, empty] of [
     ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
     ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+    ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);

@@ -180,6 +180,10 @@ const COLLABORATION_SURVIVORS = [
   'frontend/src/extensions/use-slot-entries.ts',
   'frontend/src/extensions/generated-recipient-picker-sources.ts',
   'frontend/src/app/components/ui/recipient-picker-sources.ts',
+  // [스크랩 슬롯] 게시글 상세의 스크랩 버튼은 스크랩 기여이고, 그 기여가 부르는 쓰기는 스크랩 소유 조회 모듈이다.
+  'frontend/src/extensions/scrap/post-actions.ts',
+  'frontend/src/queries/scrap-post-action.ts',
+  'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
   // [2026-09-15 GAP-PACK-001] pack 별로 가른 사용자 서비스 회귀 테스트 — 아래 CORE_SURVIVORS 주석 참조.
   'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
   'frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts',
@@ -227,6 +231,8 @@ const CORE_SURVIVORS = [
   'frontend/src/extensions/slots.ts',
   'frontend/src/extensions/generated-shell-links.ts',
   'frontend/src/extensions/generated-header-widgets.ts',
+  // [스크랩 슬롯] 게시글 상세 부가 동작 레지스트리. core 에서는 소비자(게시글 상세)가 빠져도 레지스트리는 빈 배열로 남는다.
+  'frontend/src/extensions/generated-post-actions.ts',
 ];
 
 /*
@@ -257,6 +263,8 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
   for (const [file, profiles] of [
     ['frontend/src/extensions/help/shell-links.ts', ['core', 'collaboration']],
     ['frontend/src/extensions/notification/header-widgets.ts', ['core']],
+    // [스크랩 슬롯] 스크랩 기여도 스크랩과 함께 직접 지워진다(collaboration pack removePaths).
+    ['frontend/src/extensions/scrap/post-actions.ts', ['core']],
   ]) {
     for (const profile of profiles) {
       assert.equal(byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal, 'direct',

@@ -1,5 +1,5 @@
 /**
- * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리(슬롯 단계 PR-4·PR-6).
+ * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리(슬롯 단계 PR-4·PR-6, 스크랩 슬롯).
  *
  * pack 마커 블록은 셸 파일 안에 선택 기능의 코드를 품어, 기능이 빠지면 투영이 그 줄을 걷어 냈다. 슬롯은 반대로 기능이 자기
  * 디렉터리(src/extensions/<기능 id>/<슬롯>.ts)에 항목을 적고, 셸은 생성 레지스트리(src/extensions/generated-<슬롯>.ts)만 읽는다.
@@ -9,6 +9,7 @@
  * SlotMap 키 = 기여 파일 이름 = 레지스트리 파일 이름(generated-<이름>.ts). 키를 더할 때는 그 슬롯을 읽는 셸(소비자)을 같은 변경에 둔다.
  */
 import type { ComponentType } from 'react';
+import type { QueryClient } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
 import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
@@ -64,10 +65,49 @@ export interface HeaderWidget extends SlotEntry {
   readonly Component: ComponentType;
 }
 
+/** post-actions 가 받는 게시글 맥락. 호스트(게시글 상세)가 만든다 — nttId 별칭은 호스트가 pstSn 으로 정규화해 넘긴다. */
+export interface PostActionContext {
+  readonly bbsId: string;
+  readonly pstSn: number;
+  /** 게시글 제목(없으면 빈 문자열). */
+  readonly title: string;
+  /** 게시판 이름(없으면 빈 문자열). */
+  readonly boardTitle: string;
+  /** 게시글 상세의 정본 경로. 기여 쪽이 화면 경로 리터럴을 갖지 않게 호스트가 만든다. */
+  readonly canonicalPath: string;
+  readonly queryClient: QueryClient;
+}
+
+/**
+ * post-actions — 게시글 상세의 부가 동작 버튼(추천과 삭제 사이). 잠금(추천·삭제·해결 표시와 하나)·토스트·완료 표시는 호스트가
+ * 소유하고, 항목은 쓰기 함수 하나(submit)만 준다. submit 은 폼 검증 census 가 쓰기로 읽는 이름이다 — 다른 이름으로 바꾸지 않는다.
+ * 쓰기 함수는 기능 소유의 조회 옵션 모듈(src/queries)에 두고 기여는 그 이름만 가리킨다(기여는 데이터다).
+ */
+export interface PostAction extends SlotEntry {
+  /** 같은 슬롯 안의 순서(작은 값 먼저). */
+  readonly order: number;
+  /** 버튼 글자. */
+  readonly label: string;
+  /** 완료 뒤 버튼 글자. */
+  readonly doneLabel: string;
+  /** 접근 이름 — 기본·진행 중·완료. */
+  readonly name: string;
+  readonly busyName: string;
+  readonly doneName: string;
+  readonly icon: LucideIcon;
+  readonly successMessage: string;
+  /** 서버 사유가 없을 때 쓰는 실패 문구. */
+  readonly failureMessage: string;
+  /** 서버에 유일성 제약이 없어 이번 방문에서 한 번만 누르게 잠근다(새로고침하면 풀린다). */
+  readonly oncePerVisit: boolean;
+  readonly submit: (context: PostActionContext) => Promise<void>;
+}
+
 export interface SlotMap {
   'recipient-picker-sources': RecipientPickerSource;
   'shell-links': ShellLink;
   'header-widgets': HeaderWidget;
+  'post-actions': PostAction;
 }
 export type SlotId = keyof SlotMap;
 /** 한 기능이 한 슬롯에 기여하는 항목들. 레지스트리는 이것을 기능(owner) 코드 포인트 순으로 모은 배열이다. */

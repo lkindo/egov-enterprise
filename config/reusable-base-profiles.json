@@ -410,6 +410,7 @@
           "src/app/components/ui/app-notification-drawer.tsx",
           "src/lib/hooks/use-notifications.ts",
           "src/extensions/notification",
+          "src/extensions/scrap",
           "src/app/dashboard-data.ts",
           "src/components/features/dashboard/RealTimeDashboard.tsx",
           "src/app/components/dashboard/UnreadNotesCard.tsx",

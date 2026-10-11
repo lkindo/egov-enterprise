@@ -27,7 +27,6 @@ vi.mock('@/services/business/user/board/BoardUserService', () => ({
   boardUserService: { likePost: vi.fn(), markQuestionSolved: mocks.markQuestionSolved },
 }));
 vi.mock('@/app/actions/boardActions', () => ({ deleteBoardArticle: vi.fn() }));
-vi.mock('@/services/business/user/ScrapService', () => ({ scrapService: { createScrap: vi.fn() } }));
 vi.mock('@/services/business/knowledge/knowledgeService', () => ({ knowledgeService: { getArticle: vi.fn() } }));
 vi.mock('@/services/foundation/file/FileService', () => ({ fileService: { getFileList: vi.fn() } }));
 vi.mock('@/components/features/comment/CommentSection', () => ({ default: () => <div data-testid="comments" /> }));

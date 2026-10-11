@@ -96,7 +96,9 @@ const FEATURES = {
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
   routes: ['/smart-toolkit/schedule'] },
   scrap: { label: '스크랩', permissions: ['SCRAP'], paths: [
-    'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps'],
+    'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps',
+    // 슬롯 기여(스크랩 슬롯): 게시글 상세의 스크랩 버튼과 그 버튼이 부르는 쓰기. 기능과 함께 직접 지워진다.
+    'src/queries/scrap-post-action.ts', 'src/extensions/scrap'],
   routes: ['/admin/collaboration/scraps'] },
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],

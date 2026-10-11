@@ -2,13 +2,13 @@
 
 import React, { use, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Edit3, Trash2,
   Download,
   Calendar, Eye, User,
   FileText, Quote, AlertTriangle,
-  Package, ThumbsUp, Bookmark
+  Package, ThumbsUp
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,8 @@ import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import type { BoardMeta } from '@/services/business/user/board/BoardUserService';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
-import { scrapMutationOptions } from '@/queries/scrap-query-options';
+import { postActions } from '@/extensions/generated-post-actions';
+import { visibleEntries, type PostAction } from '@/extensions/slots';
 import CommentSection from '@/components/features/comment/CommentSection';
 import SatisfactionSection from '@/components/features/satisfaction/SatisfactionSection';
 
@@ -122,13 +123,18 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
-  const createScrapMutation = useMutation(scrapMutationOptions.create(queryClient));
+  /*
+    [스크랩 슬롯] 부가 동작(스크랩 등)은 다른 기능이 post-actions 슬롯에 기여한다. 이 화면은 레지스트리만 읽고, 잠금·토스트·
+    완료 표시를 소유한다 — 기여는 쓰기 함수(submit) 하나만 준다. 그래서 부가 동작도 추천·삭제·해결 표시와 같은 잠금을 쓴다.
+    기여한 기능이 빠진 구성에서는 레지스트리가 빈 배열이라 버튼이 없다. 주체는 위 useAuth 의 사용자다(머리글과 같다).
+  */
+  const contributedActions = React.useMemo(() => visibleEntries(user, postActions), [user]);
 
   // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
   const [likeDelta, setLikeDelta] = useState(0);
-  // React state 반영 전 같은 tick의 추천/삭제/스크랩 재진입까지 막기 위해 ref를 먼저 선점한다.
+  // React state 반영 전 같은 tick의 추천/삭제/해결 표시/부가 동작 재진입까지 막기 위해 ref를 먼저 선점한다.
   const actionPendingRef = React.useRef(false);
-  const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'scrap' | 'solve' | null>(null);
+  const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'solve' | `post:${string}` | null>(null);
 
   /*
     [2026-09-25 DIP I3] Q&A 해결 표시. 해결 상태 컬럼과 목록의 배지는 있었지만 SOLVED 로 바꾸는 경로가 없어
@@ -171,30 +177,28 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     }
   };
 
-  // 저장에 성공하면 같은 화면에서 다시 누르지 못하게 잠근다. 서버·스키마에 (사용자, URL) 유일성
-  // 제약이 없어 누를 때마다 보관함 행이 하나씩 늘기 때문이다. 새로고침하면 풀리므로 "이번 방문에서
+  // 이번 방문에서 완료한 부가 동작. oncePerVisit 동작(스크랩)은 저장에 성공하면 같은 화면에서 다시 누르지 못하게 잠근다 —
+  // 서버·스키마에 (사용자, URL) 유일성 제약이 없어 누를 때마다 행이 하나씩 늘기 때문이다. 새로고침하면 풀리므로 "이번 방문에서
   // 저장했다" 이상은 주장하지 않는다 — 중복 제거를 서버 계약처럼 말하지 않기 위해서다.
-  const [isScrapped, setScrapped] = useState(false);
+  const [completedActions, setCompletedActions] = useState<ReadonlySet<string>>(() => new Set());
 
-  const handleScrap = async () => {
-    if (actionPendingRef.current || isScrapped || !bbsId || !hasValidPstSn || !article) return;
+  const handlePostAction = async (action: PostAction) => {
+    if (actionPendingRef.current || completedActions.has(action.id) || !bbsId || !hasValidPstSn || !article) return;
     actionPendingRef.current = true;
-    setActiveAction('scrap');
+    setActiveAction(`post:${action.id}`);
     try {
-      const currentPath = `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
-      // scrapNm 은 물리 컬럼 varchar(100). 게시글 제목은 더 길 수 있어 잘라 보낸다
-      // — 넘기면 서버가 400 을 주는데, 스크랩은 사용자가 길이를 조절할 수 있는 입력이 아니다.
-      const title = (article.pstTtl || '게시글 스크랩').slice(0, 100);
-      await createScrapMutation.mutateAsync({
-        scrapNm: title,
-        scrapUrl: currentPath,
-        scrapExpln: `${masterInfo?.bbsTtl || '게시판'} - ${title}`.slice(0, 4000),
-        useYn: 'Y',
+      await action.submit({
+        bbsId,
+        pstSn,
+        title: article.pstTtl ?? '',
+        boardTitle: masterInfo?.bbsTtl ?? '',
+        canonicalPath: `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`,
+        queryClient,
       });
-      setScrapped(true);
-      toast('게시글을 스크랩 보관함에 저장했습니다.', 'success');
+      if (action.oncePerVisit) setCompletedActions((previous) => new Set(previous).add(action.id));
+      toast(action.successMessage, 'success');
     } catch (error) {
-      toast(extractErrorMessage(error, '스크랩 저장 중 오류가 발생했습니다.'), 'error');
+      toast(extractErrorMessage(error, action.failureMessage), 'error');
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
@@ -353,17 +357,25 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           >
             <ThumbsUp size={16} className="text-primary" aria-hidden="true" /> {recommended ? '추천함' : '추천'} {(article.likeCnt ?? 0) + likeDelta}
           </Button>
-          <Button
-            variant="outline"
-            onClick={handleScrap}
-            disabled={activeAction !== null || isScrapped}
-            aria-busy={activeAction === 'scrap' || undefined}
-            aria-label={activeAction === 'scrap' ? '게시글 스크랩 보관 중' : isScrapped ? '게시글 스크랩됨' : '게시글 스크랩'}
-            size="sm"
-            className="gap-1.5"
-          >
-            <Bookmark size={16} className="text-primary" aria-hidden="true" /> {isScrapped ? '스크랩됨' : '스크랩'}
-          </Button>
+          {contributedActions.map((action) => {
+            const busy = activeAction === `post:${action.id}`;
+            const done = completedActions.has(action.id);
+            const ActionIcon = action.icon;
+            return (
+              <Button
+                key={action.id}
+                variant="outline"
+                onClick={() => { void handlePostAction(action); }}
+                disabled={activeAction !== null || done}
+                aria-busy={busy || undefined}
+                aria-label={busy ? action.busyName : done ? action.doneName : action.name}
+                size="sm"
+                className="gap-1.5"
+              >
+                <ActionIcon size={16} className="text-primary" aria-hidden="true" /> {done ? action.doneLabel : action.label}
+              </Button>
+            );
+          })}
           {/*
             감사 P1-9: native confirm() → useConfirm(변형 destructive).
             본문에 대상 게시글 제목을 노출하고, 실패(res.success === false)도 삼키지 않고 토스트로 드러낸다.
