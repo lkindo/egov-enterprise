@@ -1,26 +1,47 @@
 import { act, Suspense } from 'react';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { REPO_ROOT } from '@/test-utils/projection';
 
 /**
  * [스크랩 슬롯] 게시글 상세의 '스크랩' 버튼은 스크랩 기능이 post-actions 슬롯에 기여한다. 이 시험은 **실제 레지스트리**로 게시글
  * 상세를 렌더해 원본 조립 경로(레지스트리 → 기여 → 쓰기 → 서비스)를 본다. 스크랩 디렉터리에 두어 스크랩과 함께 빠진다 — 게시판
  * 쪽 호스트 계약(잠금·토스트·완료 표시)은 게시판 시험이 가짜 기여로 본다. 게시글 상세의 스크랩을 누르는 E2E 는 없다.
+ *
+ * 노출 행렬(스크랩 슬롯 S3): 버튼은 스크랩 등록 권한(SCRAP_CREATE)이 있는 주체에게만 보인다. 권한 상태를 모르면(로그아웃·권한 버전
+ * 없음·빈 권한 버전) 보이지 않는다. 판정은 목으로 막지 않는다 — 실제 레지스트리와 canPermission 을 그대로 탄다. 노출일 뿐 인가가
+ * 아니다 — 저장 API 는 서버가 같은 권한으로 막는다(H3).
  */
+type Subject = null | { id: string; esntlId: string; role: string; permissions: string[]; authorizationVersion?: string };
+const BOARD_PERMISSIONS = ['BOARD_UPDATE', 'BOARD_DELETE'];
+const SUBJECTS = {
+  granted: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: [...BOARD_PERMISSIONS, 'SCRAP_CREATE'], authorizationVersion: 'v1' },
+  // 근접 오답: 스크랩 조회·수정·삭제와 대행 권한은 있지만 등록 권한이 없다. 저장 API 는 정확히 SCRAP_CREATE 를 요구한다.
+  denied: {
+    id: 'writer', esntlId: 'owner-id', role: 'USER', authorizationVersion: 'v1',
+    permissions: [...BOARD_PERMISSIONS, 'SCRAP_READ', 'SCRAP_UPDATE', 'SCRAP_DELETE', 'SCRAP_READ_ALL', 'SCRAP_UPDATE_ALL'],
+  },
+  signedOut: null,
+  noVersion: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: [...BOARD_PERMISSIONS, 'SCRAP_CREATE'] },
+  emptyVersion: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: [...BOARD_PERMISSIONS, 'SCRAP_CREATE'], authorizationVersion: '' },
+} satisfies Record<string, Subject>;
+type SubjectCase = keyof typeof SUBJECTS;
+
 const mocks = vi.hoisted(() => ({
   createScrap: vi.fn(),
   invalidateQueries: vi.fn(),
   toast: vi.fn(),
   searchParams: new Map<string, string>(),
+  user: null as unknown,
 }));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ back: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
   useSearchParams: () => ({ get: (key: string) => mocks.searchParams.get(key) ?? null }),
 }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE'], authorizationVersion: 'v1' } }),
-}));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: mocks.user }) }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => vi.fn() }));
 vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService: { likePost: vi.fn(), markQuestionSolved: vi.fn() } }));
@@ -39,6 +60,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 import { BoardDetailClient } from '@/app/admin/community/boards/detail/BoardDetailClient';
+import scrapPostActions from '@/extensions/scrap/post-actions';
 
 async function renderDetail(pstTtl = '보존할 게시글') {
   const dataPromise = Promise.resolve({
@@ -47,15 +69,20 @@ async function renderDetail(pstTtl = '보존할 게시글') {
     initialComments: [],
     fetchError: null,
   } as never);
+  const tree = () => (
+    <Suspense fallback={<div>loading</div>}>
+      <BoardDetailClient dataPromise={dataPromise} />
+    </Suspense>
+  );
+  let view: ReturnType<typeof render> | undefined;
   await act(async () => {
-    render(
-      <Suspense fallback={<div>loading</div>}>
-        <BoardDetailClient dataPromise={dataPromise} />
-      </Suspense>,
-    );
+    view = render(tree());
     await dataPromise;
   });
+  return { rerender: () => act(() => { view?.rerender(tree()); }) };
 }
+
+const scrapButton = () => screen.queryByRole('button', { name: '게시글 스크랩' });
 
 describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => {
   beforeEach(() => {
@@ -64,6 +91,44 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
     mocks.searchParams.set('bbsId', 'BBS-1');
     mocks.searchParams.set('pstSn', '31');
     mocks.createScrap.mockResolvedValue(1);
+    // 기본 주체는 권한이 있는 사용자다 — 아래 조립 시험이 버튼을 찾는다.
+    mocks.user = SUBJECTS.granted;
+  });
+
+  it.each(Object.keys(SUBJECTS) as SubjectCase[])('노출 행렬 — 주체 %s', async (subject) => {
+    mocks.user = SUBJECTS[subject];
+    await renderDetail();
+    // 추천은 주체와 무관하게 보인다 — 화면이 그려진 뒤에 스크랩 버튼의 유무를 본다.
+    await screen.findByRole('button', { name: '게시글 추천' });
+    expect(scrapButton() !== null).toBe(subject === 'granted');
+  });
+
+  it('권한 상태가 정해지면 다시 렌더할 때 버튼이 나타나고, 권한이 회수되면 사라진다', async () => {
+    mocks.user = SUBJECTS.noVersion;
+    const view = await renderDetail();
+    await screen.findByRole('button', { name: '게시글 추천' });
+    expect(scrapButton()).toBeNull();
+    mocks.user = SUBJECTS.granted;
+    view.rerender();
+    expect(await screen.findByRole('button', { name: '게시글 스크랩' })).toBeEnabled();
+    mocks.user = SUBJECTS.denied;
+    view.rerender();
+    expect(scrapButton()).toBeNull();
+  });
+
+  it('노출 술어는 저장 API 의 권한과 같고, 기본 그룹 셋이 모두 그 권한을 가진다', () => {
+    const readConfig = (relative: string) => JSON.parse(readFileSync(path.join(REPO_ROOT, relative), 'utf8'));
+    const bindings = readConfig('config/governance/authorization-policies.json').operationBindings as Array<{
+      method: string; handler: string; permission: string | null;
+    }>;
+    // 기여의 쓰기(submitPostScrap)가 부르는 연산(ScrapService.createScrap → POST /api/v1/scraps).
+    const called = bindings.filter((row) => row.method === 'POST' && row.handler.endsWith('.ScrapApiController#createScrap'));
+    expect(called).toHaveLength(1);
+    expect(called[0].permission).toBe('SCRAP_CREATE');
+    expect(scrapPostActions.map((entry) => entry.visibleWhen)).toEqual([{ permissions: [called[0].permission] }]);
+    // 기본 그룹은 모두 이 권한을 가져 화면이 바뀌지 않는다. 기본 그룹에서 빠지면 이 노출 결정을 다시 본다.
+    const catalog = readConfig('config/governance/permission-catalog.json') as { permissions: Array<{ code: string; defaultGroups: string[] }> };
+    expect(catalog.permissions.find((row) => row.code === 'SCRAP_CREATE')?.defaultGroups).toEqual(['ROLE_ADMIN', 'ROLE_SYSTEM', 'ROLE_USER']);
   });
 
   it('추천과 삭제 사이에 스크랩 버튼이 있다', async () => {

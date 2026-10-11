@@ -155,7 +155,7 @@ flowchart TD
 | `recipient-picker-sources` | 메일·문자 작성 화면의 수신자 피커(도우미 `useRecipientAddressBook`). 기여: 주소록(노출 ADBK_READ, PR-5) | 정의(PR-4) |
 | `shell-links` | 머리글·바닥글·오류 화면의 링크(닫힌 배치 목록). 기여: 도움말(머리글 아이콘·바닥글 '고객지원'·오류 화면 '기술 지원 문의하기'). 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계라 주체 없이 거른다 — 두 배치는 `/admin` 밖 목적지만 둔다 | 정의(PR-6) |
 | `header-widgets` | 머리글 테마 전환 뒤의 컴포넌트. 기여: 알림 벨(노출 NOTI_READ, 컴포넌트는 알림 기능 파일에 두고 기여는 참조만 한다) | 정의(PR-6) |
-| `post-actions` | 게시글 상세의 부가 동작 버튼(추천과 삭제 사이). 기여: 스크랩(쓰기 함수 `submit` 하나, 이번 방문에서 한 번). 잠금(추천·삭제·해결 표시와 하나)·토스트·완료 표시는 게시글 상세가 소유한다 | 정의(스크랩 슬롯, [DEC-OPS-269](../../.agent/memory/decisions.md)). 저장은 react-query mutation 을 거치지 않아 오프라인이면 대기 대신 즉시 실패로 알린다(추천·삭제와 같다) |
+| `post-actions` | 게시글 상세의 부가 동작 버튼(추천과 삭제 사이). 기여: 스크랩(쓰기 함수 `submit` 하나, 이번 방문에서 한 번, 노출은 SCRAP_CREATE 보유자). 잠금(추천·삭제·해결 표시와 하나)·토스트·완료 표시는 게시글 상세가 소유한다 | 정의(스크랩 슬롯, [DEC-OPS-269](../../.agent/memory/decisions.md)), 노출 축소(S3, DEC-OPS-270). 저장은 react-query mutation 을 거치지 않아 오프라인이면 대기 대신 즉시 실패로 알린다(추천·삭제와 같다) |
 | `search-providers`·`hub-tabs`·`stats-panels`·`home-summary-cards`·`home-sections` | 검색·허브·통계·업무 홈 | Phase 2 후속 예상(합계 9종) |
 
 지금 기여는 데이터만 담는다. 경계 계약의 함정 규칙이 JSX, 최상위 실행문, 항목 안의 함수·호출, 링크 슬롯 밖의 링크 키, 중립 모듈·자기 기능 밖 import(다른 기능이 소유한 `@/lib`·`@/types` 파일 포함)를 막는다. 셸 링크(`shell-links`) 항목은 `{ page: 자기 href }` 만 쓰고, 바닥글·오류 화면 배치는 `/admin` 밖 목적지, 머리글 배치는 아이콘, 바닥글 항목은 같은 기여 안의 같은 목적지 머리글 짝을 둔다(PR-6, fill 화면에서 바닥글이 숨는다). PR-4 에서 넓힌 census 는 둘이다: [관리 링크 census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts)(슬롯 디렉터리와 .ts 를 보고, 기여는 AST 로 읽어 링크마다 같은 객체의 `{ page: 자기 목적지 }` 만 게이트로 인정하며 리터럴이 아닌 링크 값은 붉다)와 [리다이렉트 역참조 가드](../../frontend/src/__tests__/page-redirect-reference-guard.test.ts)(객체 리터럴의 `href`·`url`·`link`·`moreHref` 키). 슬롯이 처음 뷰·폼·쓰기·URL 을 담을 때는 아래 census 가 기여를 보지 못하므로, 그 슬롯을 들이는 변경에서 함께 넓히고 수용 기준에 넣는다. 그대로 두면 범위 밖으로 나간 부채가 exact 래칫에서 '감소' 로 보일 수 있다(H2).
@@ -255,7 +255,7 @@ A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는
 | PR-4 | 슬롯 장치(타입·레지스트리·projector 렌더·경계 계약)와 수신자 피커 주소록 파일럿, 관리 링크·리다이렉트 census 범위 | 완료([DEC-OPS-267](../../.agent/memory/decisions.md), [§5 슬롯](#슬롯-기여와-레지스트리)) |
 | PR-5 | 주소록 출처 노출을 ADBK_READ 로 | 완료([DEC-OPS-268](../../.agent/memory/decisions.md)) |
 | PR-6 | 셸 링크 슬롯(머리글·바닥글·오류 화면)과 알림 벨 | 완료(DEC 없음 — DEC-OPS-267 의 슬롯 종류 표 이행, 화면 동등) |
-| 스크랩 슬롯 S1·S2 | 게시글 상세 공유 잠금 동등성 시험, `post-actions` 슬롯과 스크랩 기여, 축 3·화면 목록의 기여 귀속 | 완료([DEC-OPS-269](../../.agent/memory/decisions.md), 화면 동등) |
+| 스크랩 슬롯 S1~S3 | 게시글 상세 공유 잠금 동등성 시험, `post-actions` 슬롯과 스크랩 기여, 축 3·화면 목록의 기여 귀속, 스크랩 버튼 노출을 SCRAP_CREATE 로(축 3 부채 45→44) | 완료([DEC-OPS-269·270](../../.agent/memory/decisions.md), S2 는 화면 동등, S3 는 기본 그룹 화면 동등) |
 
 계획 단계의 순서와 범위는 바뀔 수 있다. 마커 소유 표의 번호 없는 step(업무 홈, 검색 이행, 허브 분해의 협업 허브·커뮤니티·`hub-tabs`(허브 탭 기여 슬롯)·`stats-panels`(통계 패널 기여 슬롯))은 이 표 뒤의 Phase 2 후속 단계다.
 

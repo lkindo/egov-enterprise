@@ -8,6 +8,9 @@ import { submitPostScrap } from '@/queries/scrap-post-action';
  *
  * 저장은 서버에 (사용자, URL) 유일성 제약이 없어 누를 때마다 보관함 행이 하나씩 는다. 그래서 이번 방문에서 한 번만 누르게 잠근다
  * (oncePerVisit). 새로고침하면 풀리므로 중복 제거를 서버 계약처럼 말하지 않는다.
+ *
+ * 노출은 스크랩 등록 권한(SCRAP_CREATE)이 있는 사람에게만 한다(스크랩 슬롯 S3). 저장 API 가 같은 권한을 요구해, 권한 없는 사용자에게
+ * 버튼을 보이면 누를 때마다 403 이었다. 권한 상태를 모르는 동안은 보이지 않는다. 노출일 뿐 인가가 아니다 — 서버 권한은 그대로다(H3).
  */
 export default defineContributions('post-actions', [
   {
@@ -23,6 +26,6 @@ export default defineContributions('post-actions', [
     failureMessage: '스크랩 저장 중 오류가 발생했습니다.',
     oncePerVisit: true,
     submit: submitPostScrap,
-    visibleWhen: { always: '종전 노출 보존 — 저장은 서버가 스크랩 등록 권한으로 막는다.' },
+    visibleWhen: { permissions: ['SCRAP_CREATE'] },
   },
 ]);
