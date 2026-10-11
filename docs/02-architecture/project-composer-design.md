@@ -220,7 +220,7 @@ A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는
 |---|---|---|
 | PR-1 | 화면 생존 대조(구성 기대 화면과 남는 화면) | 완료([DEC-OPS-265](../../.agent/memory/decisions.md)) |
 | PR-2 | 판정 통일(마커·간선·해석·투영을 한 모듈로), 마커 소유 표 | 완료([DEC-OPS-266](../../.agent/memory/decisions.md)) |
-| PR-3 | 빠른 투영 타입 검사(투영 tsc 결함을 운영 계약 단계에서 잡는다) | 계획 |
+| PR-3 | 빠른 투영 타입 검사(투영 tsc 결함을 운영 계약 단계에서 잡는다) | 완료([경계 계약](../../scripts/reusable-frontend-boundaries-contract.test.mjs)이 core·collaboration 프리셋과, 프리셋이 보지 않은 검사 단위를 만드는 단독 선택의 투영을 메모리 안 tsc 로 본다, DEC 없음) |
 | PR-4 | 수신자 피커 슬롯과 주소록 파일럿 | 계획 |
 | PR-5 | 주소록 출처 노출을 ADBK_READ 로 | 계획 |
 | PR-6 | 셸 링크 슬롯(머리글·바닥글·오류 화면)과 알림 벨 | 계획 |
