@@ -142,7 +142,7 @@ flowchart TD
 
 선택 기능이 모든 구성에 남는 셸(화면·공용 컴포넌트)에 값을 더하는 자리를 **슬롯**이라 한다(슬롯 단계 PR-4, [DEC-OPS-267](../../.agent/memory/decisions.md)). 종전에는 셸 파일 안에 pack 마커 블록을 두어 기능이 빠지면 투영이 그 줄을 걷었다. 슬롯은 방향이 반대다. 기능은 자기 디렉터리의 기여 파일에 항목을 적고, 셸은 생성 레지스트리만 읽는다. 작성 규칙은 [가이드 §3.7](../03-guides/reusable-base-guide.md#37-프런트-마커슬롯-작성-규칙)에 있다.
 
-- **타입**: [슬롯 타입](../../frontend/src/extensions/slots.ts)의 `SlotMap` 이 슬롯 이름과 항목 모양을 정한다. 항목마다 `id` 와 노출 술어 `visibleWhen`(`always` 사유 · `permissions` · `page`)을 둔다. 술어는 기능권한·라우트 게이트와 같은 함수로 판정하며 노출일 뿐 인가가 아니다.
+- **타입**: [슬롯 타입](../../frontend/src/extensions/slots.ts)의 `SlotMap` 이 슬롯 이름과 항목 모양을 정한다. 항목마다 `id` 와 노출 술어 `visibleWhen`(`always` 사유 · `permissions` · `page`)을 둔다. 술어는 기능권한·라우트 게이트와 같은 함수로 판정하며 노출일 뿐 인가가 아니다. 술어는 그 기여가 부르는 API 의 권한과 맞춘다 — 주소록 출처는 목록·단건 API 와 같은 ADBK_READ 다(PR-5). permissions 술어는 화면 목록 생성기의 표시 권한(canPermission 리터럴)에 잡히지 않아, 권한 작업대의 소비 화면 행(메일·문자)에 그 권한이 표시 권한으로 나타나지 않는다(GAP-COMPOSE-001).
 - **기여**: `frontend/src/extensions/<기능 id>/<슬롯>.ts` 가 `defineContributions('<슬롯>', [...])` 를 default export 한다. 디렉터리는 그 기능의 카탈로그 경로와 소유 pack 의 `removePaths` 양쪽에 있어야 하고, 기능이 빠지면 직접 지워져 투영 원장에 남는다.
 - **레지스트리**: 슬롯마다 `frontend/src/extensions/generated-<슬롯>.ts` 하나다. [렌더러](../../scripts/slot-registry.mjs)가 기여 파일 목록에서 만들고(`npm run slots:generate`·`slots:check`, `merge:main`), 생성기·정밀 점검·도달성 census·거버넌스 투영은 같은 projector 가 직접 제거 경로에 걸리지 않은 기여로 다시 렌더한다. 마커 투영과 같은 패스, 즉 연쇄 계산 전이라 레지스트리를 읽는 셸이 연쇄로 사라지지 않는다. 남은 기여는 생성물 lock 의 `frontend.slots` 에 적힌다.
 - **소비자**: 레지스트리를 import 하는 모듈은 [경계 계약](../../scripts/reusable-frontend-boundaries-contract.test.mjs)의 소비자 표에 적힌 파일뿐이다. 범용 플러그인 로더를 막고 찾는 경로를 고정한다.
@@ -152,7 +152,7 @@ flowchart TD
 
 | 슬롯 | 소비 셸 | 상태 |
 |---|---|---|
-| `recipient-picker-sources` | 메일·문자 작성 화면의 수신자 피커(도우미 `useRecipientAddressBook`). 기여: 주소록 | 정의(PR-4) |
+| `recipient-picker-sources` | 메일·문자 작성 화면의 수신자 피커(도우미 `useRecipientAddressBook`). 기여: 주소록(노출 ADBK_READ, PR-5) | 정의(PR-4) |
 | `shell-links` | 머리글·바닥글·오류 화면의 링크(닫힌 배치 목록) | 슬롯 단계 계획(PR-6) |
 | `header-widgets` | 머리글 테마 전환 뒤의 컴포넌트(알림 벨) | 슬롯 단계 계획(PR-6) |
 | `search-providers`·`hub-tabs`·`stats-panels`·`home-summary-cards`·`home-sections`·`post-actions` | 검색·허브·통계·업무 홈·게시글 | Phase 2 후속 예상(합계 9종) |
@@ -252,7 +252,7 @@ A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는
 | PR-2 | 판정 통일(마커·간선·해석·투영을 한 모듈로), 마커 소유 표 | 완료([DEC-OPS-266](../../.agent/memory/decisions.md)) |
 | PR-3 | 빠른 투영 타입 검사(투영 tsc 결함을 운영 계약 단계에서 잡는다) | 완료([경계 계약](../../scripts/reusable-frontend-boundaries-contract.test.mjs)이 core·collaboration 프리셋과, 프리셋이 보지 않은 검사 단위를 만드는 단독 선택의 투영을 메모리 안 tsc 로 본다, DEC 없음) |
 | PR-4 | 슬롯 장치(타입·레지스트리·projector 렌더·경계 계약)와 수신자 피커 주소록 파일럿, 관리 링크·리다이렉트 census 범위 | 완료([DEC-OPS-267](../../.agent/memory/decisions.md), [§5 슬롯](#슬롯-기여와-레지스트리)) |
-| PR-5 | 주소록 출처 노출을 ADBK_READ 로 | 계획 |
+| PR-5 | 주소록 출처 노출을 ADBK_READ 로 | 완료([DEC-OPS-268](../../.agent/memory/decisions.md)) |
 | PR-6 | 셸 링크 슬롯(머리글·바닥글·오류 화면)과 알림 벨 | 계획 |
 
 계획 단계의 순서와 범위는 바뀔 수 있다. 마커 소유 표의 번호 없는 step(업무 홈, 검색 이행, 허브 분해의 협업 허브·커뮤니티·`hub-tabs`(허브 탭 기여 슬롯)·`stats-panels`(통계 패널 기여 슬롯))은 이 표 뒤의 Phase 2 후속 단계다.

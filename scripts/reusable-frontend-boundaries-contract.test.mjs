@@ -551,13 +551,17 @@ test('contribution files hold data only: .ts, no JSX, one defineContributions de
   assert.match(check(`${ownService}${withSource('source: addressbookUserService.source,')}`), /import 한 이름만 둔다\(PropertyAccessExpression\)/);
   assert.match(check(`import { make } from '@/lib/auth/permissions';\n${withSource('source: make(),')}`), /import 한 이름만 둔다\(CallExpression\)/);
   assert.match(check(withSource('source: LOCAL_SOURCE,')), /이름 LOCAL_SOURCE 은 import 한 이름이어야 한다/);
+  // always 사유 함정은 술어를 always 로 바꾼 기여에 건다 — 실제 기여의 술어는 권한·화면일 수 있다(PR-5). 치환이 일어났는지 함께 본다.
+  const withAlways = original.replace(/visibleWhen: \{[^}]*\}/, "visibleWhen: { always: '시험용 사유' }");
+  assert.notEqual(withAlways, original, 'the fixture replaces a visibleWhen predicate');
+  assert.equal(check(withAlways), '', 'an always predicate with a reason passes');
   // `키: 값` 꼴만 — 단축·계산·따옴표 키는 always 사유와 링크 키 검사를 비켜 간다.
-  assert.match(check(`const always = '';\n${original.replace(/always: '[^']*'/, 'always')}`), /최상위 문장은[\s\S]*단축·계산·펼침·메서드·따옴표 키 금지: ShorthandPropertyAssignment/);
-  assert.match(check(original.replace(/always: '[^']*'/, "['always']: ''")), /키 금지: ComputedPropertyName/);
+  assert.match(check(`const always = '';\n${withAlways.replace(/always: '[^']*'/, 'always')}`), /최상위 문장은[\s\S]*단축·계산·펼침·메서드·따옴표 키 금지: ShorthandPropertyAssignment/);
+  assert.match(check(withAlways.replace(/always: '[^']*'/, "['always']: ''")), /키 금지: ComputedPropertyName/);
   assert.match(check(original.replace("label: '주소록',", "'href': '/admin/memo',\n    label: '주소록',")), /키 금지: StringLiteral/);
   assert.match(check(original.replace("label: '주소록',", "...{ href: '/admin/memo' },\n    label: '주소록',")), /키 금지: SpreadAssignment/);
   assert.match(check(original.replace("defineContributions('recipient-picker-sources', [", "defineContributions('recipient-picker-sources', [\n  ...[],")), /import 한 이름만 둔다\(SpreadElement\)/);
-  assert.match(check(original.replace(/always: '[^']*'/, "always: '  '")), /always 술어는 비지 않은 사유/);
+  assert.match(check(withAlways.replace(/always: '[^']*'/, "always: '  '")), /always 술어는 비지 않은 사유/);
   assert.match(check(original.replace(/visibleWhen:/, "href: '/admin/memo',\n    visibleWhen:")), /링크 키\(href\)/);
   assert.match(check(original.replace(/defineContributions\('[^']+'/, "defineContributions('shell-links'")), /파일 이름\(.+\)과 다르다/);
   assert.match(check(`${original}\nexport const extra = 1;\n`), /이름 있는 export 금지/);

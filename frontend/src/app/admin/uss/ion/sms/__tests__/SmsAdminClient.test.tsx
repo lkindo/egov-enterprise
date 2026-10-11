@@ -60,14 +60,14 @@ vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
-// 작성 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
-// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+// 작성 버튼은 발송 권한으로, 주소록 출처는 주소록 조회 권한(ADBK_READ)으로 보인다 — 기본은 둘 다 가진 관리자이고, 표시 판정 테스트만
+// 권한을 줄인다. 두 훅은 실제처럼 같은 사용자를 돌려준다. 부서 탭(DEPT_READ·USER_READ)은 이 스펙의 대상이 아니라 주지 않는다.
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
-  useOptionalAuth: () => undefined,
-}));
-beforeEach(() => { auth.permissions = ['SMS_READ', 'SMS_SEND']; });
+vi.mock('@/contexts/AuthContext', () => {
+  const current = () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: current, useOptionalAuth: current };
+});
+beforeEach(() => { auth.permissions = ['SMS_READ', 'SMS_SEND', 'ADBK_READ']; });
 vi.mock('@/app/components/patterns/empty-result-message', () => ({ emptyResultMessage: (_value: string, fallback: string) => fallback }));
 vi.mock('@/app/components/patterns/work-list-page', () => ({
   WorkListPage: ({ actions, filter, children }: React.PropsWithChildren<{ actions?: React.ReactNode; filter?: React.ReactNode }>) => (
@@ -190,6 +190,7 @@ describe('SMS 조회 조건 전달', () => {
  * [2026-10-11 슬롯 단계 PR-4] 주소록 출처는 주소록 기능의 슬롯 기여(recipient-picker-sources)에서 온다. 화면은 core 도우미
  * useRecipientAddressBook 으로 받아 피커에 넘긴다. 주소록이 빠진 구성에서는 투영이 기여 파일을 지우고 레지스트리를 빈 배열로 다시
  * 만들어 피커는 사용자·부서 검색 탭만 보인다. 이 시험은 두 구성 모두에서 등록되고, 기대값을 투영 원장으로 가른다.
+ * 권한 축(PR-5): 주소록 조회 권한(ADBK_READ)이 없으면 기여가 있어도 출처가 없다.
  */
 const addressBookInProjection = inProjection('frontend/src/extensions/addressbook/recipient-picker-sources.ts');
 
@@ -205,6 +206,17 @@ describe('SmsAdminClient 재사용 base 조합 지점', () => {
     await screen.findByTestId('sms-recipient-picker-stub');
 
     expect(mocks.pickerProps.addressBook).toBe(offered?.source);
+  });
+
+  it('주소록 조회 권한(ADBK_READ)이 없으면 문자 수신자 피커에 주소록 출처를 넘기지 않는다', async () => {
+    auth.permissions = ['SMS_READ', 'SMS_SEND']; // '메일·문자·알림 운영' 묶음만 준 그룹과 같은 권한
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    await openSmsForm(user);
+
+    await user.click(screen.getByTestId('sms-recipient-picker-btn'));
+    await screen.findByTestId('sms-recipient-picker-stub');
+    expect(mocks.pickerProps.addressBook).toBeUndefined();
   });
 });
 

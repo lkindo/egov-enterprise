@@ -29,13 +29,13 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
-// 발송 버튼은 발송 권한으로 보인다 — 기본은 발송 권한을 가진 사용자이고, 표시 판정 테스트만 권한을 줄인다.
-// 부서 출처 훅(useOptionalAuth)은 종전처럼 인증 맥락 없음으로 둔다 — 부서 탭은 이 스펙의 대상이 아니다.
+// 발송 버튼은 발송 권한(MAIL_SEND)으로, 주소록 출처는 주소록 조회 권한(ADBK_READ)으로 보인다 — 기본은 둘 다 가진 사용자이고,
+// 표시 판정 테스트만 권한을 줄인다. 두 훅은 실제처럼 같은 사용자를 돌려준다. 부서 탭(DEPT_READ·USER_READ)은 이 스펙의 대상이 아니라 주지 않는다.
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }),
-  useOptionalAuth: () => undefined,
-}));
+vi.mock('@/contexts/AuthContext', () => {
+  const current = () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: current, useOptionalAuth: current };
+});
 
 // 피커 자체의 계약은 recipient-picker.test.tsx 가 본다. 여기서는 "피커가 돌려준 선택을 화면이 어떻게 싣는가" 만 본다.
 vi.mock('@/app/components/ui/recipient-picker', async () => {
@@ -79,7 +79,7 @@ function renderCompose() {
 }
 
 beforeEach(() => {
-  auth.permissions = ['MAIL_SEND'];
+  auth.permissions = ['MAIL_SEND', 'ADBK_READ'];
   mocks.getDeliveryStatus.mockResolvedValue({ deliveryConfigured: true, senderImplementation: 'RealEmailSender' });
 });
 
@@ -154,6 +154,7 @@ async function enterValidMail(user: ReturnType<typeof userEvent.setup>) {
  * useRecipientAddressBook 으로 받아 피커에 넘기고, 입력 안내도 같은 값으로 '주소록' 을 덧붙인다. 주소록이 빠진 구성에서는 투영이
  * 기여 파일을 지우고 레지스트리를 빈 배열로 다시 만든다 — 피커는 사용자·부서 검색만, 안내는 '사용자' 만 말한다. 아래 두 시험은
  * 두 구성 모두에서 등록되고, 기대값을 투영 원장(기여 파일이 빠졌는가)으로 가른다.
+ * 권한 축(PR-5): 주소록 조회 권한(ADBK_READ)이 없으면 기여가 있어도 출처와 '·주소록' 이 없다.
  */
 const ADDRESS_BOOK_CONTRIBUTION = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
 const addressBookInProjection = inProjection(ADDRESS_BOOK_CONTRIBUTION);
@@ -179,6 +180,19 @@ describe('MailSendHubClient 재사용 base 조합 지점', () => {
     await screen.findByRole('button', { name: '피커 선택 확정' });
 
     expect(mocks.pickerProps.addressBook).toBe(offered?.source);
+  });
+
+  it('주소록 조회 권한(ADBK_READ)이 없으면 피커에 주소록 출처를 넘기지 않고 안내도 사용자만 말한다', async () => {
+    auth.permissions = ['MAIL_SEND']; // 발송은 되지만 주소록 조회 권한이 없는 사용자 정의 그룹
+    const user = userEvent.setup();
+    mocks.pickerProps.addressBook = 'not-rendered';
+    renderCompose();
+
+    const placeholder = screen.getByRole('textbox', { name: '수신자 선택' }).getAttribute('placeholder');
+    expect(placeholder).toBe('이메일 주소를 직접 입력하거나 ‘수신자 찾기’로 사용자에서 고르세요');
+    await user.click(screen.getByRole('button', { name: '수신자 찾기' }));
+    await screen.findByRole('button', { name: '피커 선택 확정' });
+    expect(mocks.pickerProps.addressBook).toBeUndefined();
   });
 });
 
