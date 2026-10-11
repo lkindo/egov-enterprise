@@ -12,7 +12,7 @@
  *
  * 사용법: node scripts/slot-registry.mjs --write | --check   (npm run slots:generate · npm run slots:check)
  */
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -116,14 +116,25 @@ export function slotDirectoryFiles(frontendRoot) {
   return walk(root).sort(byCodePoint);
 }
 
+/** 레지스트리 원문을 읽는다. 없거나 폴더면 undefined 다. 존재를 먼저 확인하지 않고 바로 읽는다(확인과 읽기 사이의 경합을 두지 않는다). */
+function readRegistryText(path) {
+  try {
+    return readFileSync(path, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'EISDIR') return undefined;
+    throw error;
+  }
+}
+
 /** 원본(또는 생성물) 트리에서 레지스트리를 기대값과 대조한다. 줄 끝(CRLF)은 비교하지 않는다. */
 export function slotRegistryDrift(frontendRoot) {
   const drift = [];
   for (const [slot, owners] of discoverSlotContributions(slotDirectoryFiles(frontendRoot))) {
     const path = join(frontendRoot, slotRegistryPath(slot));
     const expected = renderSlotRegistry(slot, owners);
-    if (!existsSync(path) || !statSync(path).isFile()) drift.push({ slot, owners, path, expected, reason: 'missing' });
-    else if (readFileSync(path, 'utf8').replace(/\r\n/g, '\n') !== expected) drift.push({ slot, owners, path, expected, reason: 'stale' });
+    const actual = readRegistryText(path);
+    if (actual === undefined) drift.push({ slot, owners, path, expected, reason: 'missing' });
+    else if (actual.replace(/\r\n/g, '\n') !== expected) drift.push({ slot, owners, path, expected, reason: 'stale' });
   }
   return drift;
 }
