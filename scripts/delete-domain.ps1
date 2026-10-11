@@ -3,9 +3,11 @@
 # Usage:   ./scripts/delete-domain.ps1 -DomainName <name>[,<name>...] [-DryRun]
 # Example: ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun
 #
-# 도메인·클러스터의 SSOT 는 config/reusable-base-profiles.json 이다.
+# 도메인의 SSOT 는 config/reusable-base-profiles.json 이다.
 #  - 매니페스트에 없는 도메인명은 즉시 에러로 중단한다(경로 추측·침묵 SKIP 금지).
-#  - 매니페스트 clusters(및 requiresDomains)에 묶인 도메인은 자동으로 동반 삭제한다.
+#  - 지우는 도메인을 요구하는 도메인은 자동으로 동반 삭제한다. 판정은 생성기와 같은 카탈로그의 requires 간선
+#    (코드 참조·지원 파일·생성 묶음 선언)을 거꾸로 따라가는 scripts/domain-deletion-plan.mjs 가 한다.
+#    지우는 도메인이 요구하는 도메인은 남긴다.
 #  - 백엔드 경로는 생성기 Java 단계(reusable-source-java.mjs 의 resolveDomainRemovalDirectory)와 같은 canonical layout
 #    (business-app/src/{main,test}/java/nuri/business/{domain,service}/<d>)과
 #    api-server 의 controller/business/<d> 디렉터리를 사용한다.
@@ -76,27 +78,22 @@ if ($unknown.Count -gt 0) {
     exit 1
 }
 
-# 2. 클러스터 동반 삭제 강제 (manifest clusters + requiresDomains, 고정점 확장) --
-$toDelete = [System.Collections.Generic.HashSet[string]]::new([string[]]$requested)
-$expanded = $true
-while ($expanded) {
-    $expanded = $false
-    foreach ($cluster in @($manifest.clusters)) {
-        $members = @($cluster.domains | Where-Object { $_ })
-        $required = @($cluster.requiresDomains | Where-Object { $_ })
-        $touchesMember = @($members | Where-Object { $toDelete.Contains($_) }).Count -gt 0
-        $touchesRequired = @($required | Where-Object { $toDelete.Contains($_) }).Count -gt 0
-        if (-not ($touchesMember -or $touchesRequired)) { continue }
-        foreach ($m in $members) {
-            if (-not $toDelete.Contains($m)) {
-                [void]$toDelete.Add($m)
-                $expanded = $true
-                Write-Host "[CLUSTER] '$($cluster.id)' 클러스터 동반 삭제 추가: $m" -ForegroundColor Yellow
-                Write-Host "          사유: $($cluster.reason)" -ForegroundColor DarkYellow
-            }
-        }
-    }
+# 2. 동반 삭제 (카탈로그 requires 간선의 역방향 폐포, scripts/domain-deletion-plan.mjs) ----
+#    지우는 도메인을 요구하는 도메인을 함께 지운다. 화면을 같이 쓰는 데서 나온 간선은 보지 않는다.
+$planScript = Join-Path $RepoRoot 'scripts/domain-deletion-plan.mjs'
+$planOutput = & node $planScript --json @requested
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] 동반 삭제 판정 실패(scripts/domain-deletion-plan.mjs, exit $LASTEXITCODE)" -ForegroundColor Red
+    exit 1
 }
+$plan = ($planOutput -join "`n") | ConvertFrom-Json
+$kindLabels = @{ java = '코드 참조'; manifest = '생성 묶음 선언' }
+foreach ($row in @($plan.added)) {
+    $kinds = @($row.because.kinds | ForEach-Object { if ($kindLabels.ContainsKey($_)) { $kindLabels[$_] } else { $_ } }) -join ' · '
+    Write-Host "[REQUIRES] 동반 삭제 추가: $($row.domain) — $($row.because.to) 를 요구한다($kinds)" -ForegroundColor Yellow
+    if ($row.because.userReason) { Write-Host "          사유: $($row.because.userReason)" -ForegroundColor DarkYellow }
+}
+$toDelete = [System.Collections.Generic.HashSet[string]]::new([string[]]@($plan.domains))
 $deleteList = @($toDelete) | Sort-Object
 Write-Host "삭제 대상 도메인: $($deleteList -join ', ')" -ForegroundColor Cyan
 
