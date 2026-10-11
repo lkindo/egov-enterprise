@@ -82,7 +82,13 @@ export function resolveRoute(targetPath: string): Pattern | null {
   return best;
 }
 
-const NAV = /(?:href=|router\.(?:push|replace)\(|redirect\()\s*[{`'"]*\s*([^`'"),}\s]+)/g;
+/**
+ * 내비게이션 자리: JSX `href=`, router.push/replace, redirect(), 그리고 객체 리터럴의 링크 키(href·url·link·moreHref).
+ * 객체 키는 링크 목록과 슬롯 기여(src/extensions, 슬롯 단계 PR-4)가 목적지를 적는 자리다 — 타입 주석(`href: string`)은 '/' 로
+ * 시작하지 않으므로 아래 판정에서 빠진다. 따옴표·계산 키나 리터럴이 아닌 값은 이 정규식이 보지 못한다 — 슬롯 기여에서는 경계 계약의
+ * 함정 규칙(`키: 값` 꼴만)과 관리 링크 census(리터럴이 아닌 링크 값은 unresolved)가 그 꼴을 막는다.
+ */
+const NAV = /(?:href=|\b(?:href|url|link|moreHref)\s*:|router\.(?:push|replace)\(|redirect\()\s*[{`'"]*\s*([^`'"),}\s]+)/g;
 
 function stripComments(source: string): string {
   let out = '';
@@ -121,22 +127,31 @@ function ownsRoute(relFromApp: string, route: string): boolean {
   return relFromApp === `${dir}/page.tsx` || relFromApp.startsWith(`${dir}/`);
 }
 
+/** 한 파일의 위반. `relFromSrc` 는 표시용(src 기준), `rel` 은 라우트 소유 판정용(app 기준)이다. */
+export function sourceViolations(relFromSrc: string, rel: string, rawSource: string): string[] {
+  const found: string[] = [];
+  const source = stripComments(rawSource);
+  for (const match of source.matchAll(NAV)) {
+    const raw = match[1];
+    if (!raw.startsWith('/')) continue;
+    const targetPath = raw.split('?')[0].split('#')[0].replace(/\/$/, '');
+    if (!targetPath) continue;
+    const hit = resolveRoute(targetPath);
+    if (!hit || hit.kind !== 'page-redirect') continue;
+    if (ownsRoute(rel, hit.route)) continue;
+    const entry = `${relFromSrc} → ${raw}  (라우트 ${hit.route} 는 ${hit.target} 로 보내는 page-redirect)`;
+    if (!found.includes(entry)) found.push(entry);
+  }
+  return found;
+}
+
 export function findViolations(): string[] {
   const found: string[] = [];
   for (const file of collectSources(SRC)) {
     // 표시는 src 기준, 라우트 소유 판정은 app 기준(app 밖 파일은 어떤 라우트도 소유하지 않는다).
     const relFromSrc = path.relative(SRC, file).replace(/\\/g, '/');
     const rel = path.relative(APP, file).replace(/\\/g, '/');
-    const source = stripComments(fs.readFileSync(file, 'utf8'));
-    for (const match of source.matchAll(NAV)) {
-      const raw = match[1];
-      if (!raw.startsWith('/')) continue;
-      const targetPath = raw.split('?')[0].split('#')[0].replace(/\/$/, '');
-      if (!targetPath) continue;
-      const hit = resolveRoute(targetPath);
-      if (!hit || hit.kind !== 'page-redirect') continue;
-      if (ownsRoute(rel, hit.route)) continue;
-      const entry = `${relFromSrc} → ${raw}  (라우트 ${hit.route} 는 ${hit.target} 로 보내는 page-redirect)`;
+    for (const entry of sourceViolations(relFromSrc, rel, fs.readFileSync(file, 'utf8'))) {
       if (!found.includes(entry)) found.push(entry);
     }
   }
@@ -160,6 +175,18 @@ describe('page-redirect 라우트로의 역참조 차단', () => {
         '괄호 안의 목적지(정본)로 직접 보내세요.',
       ].join(' '),
     ).toEqual([]);
+  });
+
+  it('객체 리터럴의 링크 키도 내비게이션으로 센다 — 링크 목록과 슬롯 기여', () => {
+    // 모집단에서 동적 자리가 없는 page-redirect 하나를 고른다(생성물에서도 남는 것). 첫 시험이 모집단이 비지 않음을 본다.
+    const redirect = patterns.find((p) => p.kind === 'page-redirect' && !p.segs.some(isDynamic));
+    expect(redirect).toBeDefined();
+    const fixture = (body: string) => sourceViolations('extensions/x/shell-links.ts', '../extensions/x/shell-links.ts', body);
+    for (const key of ['href', 'url', 'link', 'moreHref']) {
+      expect(fixture(`export default [{ id: 'x', ${key}: '${redirect!.route}', label: 'x' }];`), key).toHaveLength(1);
+    }
+    // 대조: 타입 주석, 라우트가 아닌 경로, 주석 속 인용은 세지 않는다.
+    expect(fixture(`interface Link { href: string; url: string }\nconst api = { url: '/api/v1/x' };\n// href: '${redirect!.route}'\n`)).toEqual([]);
   });
 
   it('해석기가 형제 정적 라우트를 오탐하지 않고 동적 자리의 계산값은 잡는다', () => {

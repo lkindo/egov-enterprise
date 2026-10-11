@@ -174,14 +174,6 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
     owners: { collaboration: ['board'] }, step: '허브 분해(stats-panels)', reason: '통계 요약 시험이 요약과 같은 카드를 기대한다.' },
   { file: 'src/app/admin/collaboration/CollaborationHubClient.tsx', blocks: { demo: 1 }, owners: { demo: ['addressbook'] },
     step: '허브 분해(협업 허브)', reason: '협업 허브가 주소록 관리 링크를 직접 둔다.' },
-  { file: 'src/app/admin/collaboration/mail-send/MailSendHubClient.tsx', blocks: { demo: 3 }, owners: { demo: ['addressbook'] },
-    step: '수신자 피커 슬롯(PR-4)', reason: '메일 작성 화면이 주소록 출처를 수신자 피커에 직접 넘긴다.' },
-  { file: 'src/app/admin/collaboration/mail-send/__tests__/MailSendHubClient.test.tsx', blocks: { demo: 3 }, owners: { demo: ['addressbook'] },
-    step: '수신자 피커 슬롯(PR-4)', reason: '메일 작성 시험이 주소록 어댑터 주입을 확인한다.' },
-  { file: 'src/app/admin/uss/ion/sms/SmsAdminClient.tsx', blocks: { demo: 2 }, owners: { demo: ['addressbook'] },
-    step: '수신자 피커 슬롯(PR-4)', reason: '문자 작성 화면이 주소록 출처를 수신자 피커에 직접 넘긴다.' },
-  { file: 'src/app/admin/uss/ion/sms/__tests__/SmsAdminClient.test.tsx', blocks: { demo: 2 }, owners: { demo: ['addressbook'] },
-    step: '수신자 피커 슬롯(PR-4)', reason: '문자 작성 시험이 주소록 어댑터 주입을 확인한다.' },
 ]);
 const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 

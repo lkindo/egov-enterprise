@@ -3,7 +3,8 @@
  *
  * [2026-09-13 GAP-PACK-001 ②] 주소록 구현은 demo pack 소유다. 공용 피커가 그 구현을 직접 import 하면
  * 재사용 base 생성기가 collaboration 프로필에서 피커와 그 소비 화면(쪽지·메일·문자·알림 발송)을 import 그래프로
- * 함께 제거한다. 그래서 피커는 이 계약만 알고, 조합 지점(메일·문자 화면)이 demo 마커 블록 안에서 구현을 주입한다.
+ * 함께 제거한다. 그래서 피커는 이 계약만 알고, 조합 지점(메일·문자 화면)이 구현을 주입한다. 구현은 주소록 기능이 슬롯 기여
+ * (src/extensions/addressbook/recipient-picker-sources.ts)로 내놓고, 화면은 core 도우미(useRecipientAddressBook)로 받는다(슬롯 단계 PR-4).
  *
  * 이 파일은 어느 pack 에도 속하지 않는다 — 피커와 demo 어댑터가 함께 참조하는 중립 타입이다.
  */

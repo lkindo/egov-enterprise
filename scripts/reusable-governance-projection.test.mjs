@@ -233,7 +233,7 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
       // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 직접 선택도 선택 투영과 pack 마커를 한 번에 판정한다.
       const profile = composerProfile(profiles, composition);
-      const projector = createFrontendProjector({ manifest: profiles, profile, composition });
+      const projector = createFrontendProjector({ manifest: profiles, profile, composition, files: copied.filter(file => file.startsWith('frontend/')) });
       pruneJava(output, profiles, profile);
       const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
       for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);

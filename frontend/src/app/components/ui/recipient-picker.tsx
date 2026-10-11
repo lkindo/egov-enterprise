@@ -65,7 +65,8 @@ interface RecipientPickerProps {
    * ⚠ [2026-09-13 GAP-PACK-001 ②] 주소록 구현은 demo pack 소유다. 이 파일이 그 구현을 직접 import 하면
    *   재사용 base 생성기가 collaboration 프로필에서 이 피커와 소비 화면 전체를 import 그래프로 함께 지운다.
    *   간선은 코드에서만 읽는다 — `import type` 도 간선이고, 주석 속 경로 인용은 간선이 아니다(2026-10-11 판정 통일, 가이드 §3.7-4).
-   *   구현은 조합 지점(메일·문자 화면)이 `reusable-base:demo` 마커 블록 안에서 넘긴다.
+   *   [2026-10-11 슬롯 단계 PR-4] 구현은 주소록 기능이 슬롯 기여(recipient-picker-sources)로 내놓고, 조합 지점(메일·문자 화면)이
+   *   core 도우미 useRecipientAddressBook 으로 받아 넘긴다. 주소록이 빠진 구성에서는 도우미가 undefined 를 돌려준다.
    */
   addressBook?: RecipientAddressBookSource;
   /**

@@ -383,7 +383,7 @@ function assertIntegrityGateAcknowledgements(profile, selected) {
 function inspectFrontendSurvival(selection, currentCatalog = catalog) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection: Array.isArray(selection) ? { domains: selection } : selection }, currentCatalog);
   const profile = composerProfile(manifest, composition);
-  const projector = createFrontendProjector({ manifest, profile, composition });
+  const projector = createFrontendProjector({ manifest, profile, composition, files: frontendFiles });
   const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
   const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
     directPaths: projector.directPaths, readSource: path => projected.get(path) });
@@ -576,7 +576,15 @@ test('dashboard, notifications and optional address book blocks follow their dom
   const project = path => projectCustom(path, readFileSync(join(root, path), 'utf8'), composition);
   assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
   assert.doesNotMatch(project('frontend/src/app/components/layout/header.tsx'), /import \{ HeaderNotifications \}/);
-  assert.doesNotMatch(project('frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx'), /import .*recipientAddressBookSource/);
+  // [슬롯 단계 PR-4] 메일 화면은 주소록 출처를 슬롯 레지스트리에서 받는다. 주소록을 고르지 않으면 화면은 그대로이고, 레지스트리가
+  //   빈 배열로 다시 렌더된다(투영이 기여 파일을 직접 지운다).
+  const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
+  assert.equal(project(mail), readFileSync(join(root, mail), 'utf8'));
+  const registry = 'frontend/src/extensions/generated-recipient-picker-sources.ts';
+  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  const rendered = projector.project(registry, readFileSync(join(root, registry), 'utf8')).source;
+  assert.doesNotMatch(rendered, /import addressbook/);
+  assert.ok(rendered.includes("recipientPickerSources: readonly SlotContributions<'recipient-picker-sources'>[] = [];"), rendered);
 });
 
 test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {

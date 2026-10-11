@@ -163,8 +163,10 @@ test('current repository keeps the known live chain and user hub split explicit'
 });
 
 // [2026-09-13 GAP-PACK-001 ②] 공용 수신자 피커가 demo 소유 주소록을 정적 import 해, collaboration 프로필에서
-//   피커와 쪽지·메일·문자·알림 발송 화면이 import 그래프로 함께 사라지고 있었다. 피커는 이제 주소록 출처를 주입받고,
-//   조합 지점(메일·문자)만 demo 마커 블록 안에서 어댑터를 넘긴다. 아래 두 단언이 그 경계를 main CI 에서 지킨다.
+//   피커와 쪽지·메일·문자·알림 발송 화면이 import 그래프로 함께 사라지고 있었다. 피커는 이제 주소록 출처를 주입받는다.
+// [2026-10-11 슬롯 단계 PR-4] 출처는 주소록 기능의 슬롯 기여가 내놓고, 메일·문자 화면은 core 도우미로 슬롯 레지스트리를 읽는다.
+//   주소록이 빠진 프로필에서는 기여가 직접 지워지고 레지스트리가 빈 배열로 다시 렌더된다 — 레지스트리를 렌더하지 않으면 레지스트리
+//   → 도우미 → 메일·문자 화면이 연쇄로 사라진다. 아래 단언이 슬롯 장치·도우미의 생존과 기여·어댑터의 직접 제거를 main CI 에서 지킨다.
 // [2026-10-11 슬롯 단계 PR-2] 화면(page)의 생존은 project-composer-source.test.mjs 'presets and representative selections' 가 같은
 //   투영·연쇄로 본다. 이 목록에는 화면이 아닌 파일만 둔다 — 그 대조의 모집단 밖이고, 실패하면 연쇄 증거 경로를 이름으로 보여 준다.
 const COLLABORATION_SURVIVORS = [
@@ -174,6 +176,10 @@ const COLLABORATION_SURVIVORS = [
   'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx',
   'frontend/src/app/admin/notifications/NotificationsClient.tsx',
   'frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx',
+  'frontend/src/extensions/slots.ts',
+  'frontend/src/extensions/use-slot-entries.ts',
+  'frontend/src/extensions/generated-recipient-picker-sources.ts',
+  'frontend/src/app/components/ui/recipient-picker-sources.ts',
   // [2026-09-15 GAP-PACK-001] pack 별로 가른 사용자 서비스 회귀 테스트 — 아래 CORE_SURVIVORS 주석 참조.
   'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
   'frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts',
@@ -300,11 +306,16 @@ test('recipient picker and its collaboration consumers survive the collaboration
       `${file} is removed from the collaboration profile via ${JSON.stringify(collaborationRemoval?.evidencePath)}`,
     );
   }
-  const adapter = byFile(census, 'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts');
-  assert.equal(
-    adapter.profileRemovalConstraints.find((constraint) => constraint.profile === 'collaboration')?.removal,
-    'direct',
-  );
+  for (const file of [
+    'frontend/src/services/business/user/addressbook/recipient-address-book-source.ts',
+    'frontend/src/extensions/addressbook/recipient-picker-sources.ts',
+  ]) {
+    assert.equal(
+      byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === 'collaboration')?.removal,
+      'direct',
+      `${file} must be a direct removePath of the address book in collaboration`,
+    );
+  }
 });
 
 test('census distinguishes every evidence axis without promoting non-runtime references', () => {

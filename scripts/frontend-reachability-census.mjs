@@ -517,7 +517,9 @@ function computeProfileConstraints({
       });
       continue;
     }
-    const projector = createFrontendProjector({ manifest, profile: { ...profile, packs: [...allowedPacks] } });
+    // 슬롯 레지스트리는 생성기처럼 같은 복사 목록으로 렌더한다(PR-4).
+    const projector = createFrontendProjector({ manifest, profile: { ...profile, packs: [...allowedPacks] },
+      files: frontendFiles.map((path) => normalizePath(relative(frontendRoot, path))) });
     const { accepted } = directProfileFiles(frontendRoot, sourceFiles, projector.directPaths, repoRoot, profileName, issues);
     let plan;
     try {

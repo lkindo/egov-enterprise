@@ -20,9 +20,7 @@ import { Send,
   X } from 'lucide-react';
 import { RecipientPicker, recipientKey, type RecipientSelection } from '@/app/components/ui/recipient-picker';
 import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
-/* reusable-base:demo:start */
-import { recipientAddressBookSource } from '@/services/business/user/addressbook/recipient-address-book-source';
-/* reusable-base:demo:end */
+import { useRecipientAddressBook } from '@/app/components/ui/recipient-picker-sources';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,7 +69,7 @@ const smsValidationLabels: Record<string, string> = {
 
 /**
  * 작성 다이얼로그의 폼 스키마. 공유 `smsSchema` 는 수신 번호 1건 필수 축(다른 화면)을 그대로 두고,
- * 이 화면만 **수신 번호 직접 입력 또는 수신자 찾기(사용자, 전체 제품에서는 주소록 포함)** 중 하나면 되도록 번호를 선택 항목으로
+ * 이 화면만 **수신 번호 직접 입력 또는 수신자 찾기(사용자, 주소록 기능이 있는 구성에서는 주소록 포함)** 중 하나면 되도록 번호를 선택 항목으로
  * 낮춘다(2026-09-05 DEC-OPS-035). "둘 다 없음" 은 제출 핸들러가 수신 번호 필드 오류로 드러낸다.
  */
 const smsComposeSchema = smsSchema.extend({
@@ -147,6 +145,8 @@ export default function SmsAdminClient({
   const sendPendingRef = useRef(false);
   // [2026-09-27 DIP B5 F5] 부서 단위 일괄 선택 — 조직·사용자 조회 권한이 있을 때만 피커에 부서 탭이 생긴다.
   const departmentSource = useRecipientDepartmentSource();
+  // [2026-10-11 슬롯 단계 PR-4] 주소록 출처는 주소록 기능의 슬롯 기여에서 받는다 — 주소록이 빠진 구성에서는 없다.
+  const addressBook = useRecipientAddressBook('sms');
   const [isSendOpen, setIsSendOpen] = useState(false);
   /** 수신자 찾기·직접 추가로 모은 수신자. 수신 번호 입력란의 값은 제출 시점에 여기에 합쳐진다. */
   const [recipients, setRecipients] = useState<RecipientSelection[]>([]);
@@ -718,9 +718,7 @@ export default function SmsAdminClient({
           isOpen={isPickerOpen}
           channel="sms"
           department={departmentSource}
-          /* reusable-base:demo:start */
-          addressBook={recipientAddressBookSource}
-          /* reusable-base:demo:end */
+          addressBook={addressBook?.source}
           onClose={() => setIsPickerOpen(false)}
           onConfirm={mergeRecipients}
         />

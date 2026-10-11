@@ -14,6 +14,9 @@ import { join, relative, sep } from 'node:path';
  * 포트·선택 FK 연동은 주석을 뺀 코드에서 정확히 한 번 나오는 문자열(anchor)로 근거를 단다.
  * 문장은 평서문으로 쓰고 내부 클래스·경로를 담지 않는다 — 계획 화면에 그대로 나간다.
  */
+// 주소록의 수신자 피커 출처 기여(슬롯 단계 PR-4). 메일·문자 연동의 근거는 화면 쪽 사용 지점과 이 기여 파일이다.
+const RECIPIENT_PICKER_CONTRIBUTION = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
+
 export const INTEGRATES = [
   { from: 'core', to: 'notification', via: 'event:NotificationRequestedEvent',
     reason: '알림 기능이 없으면 부서 업무의 담당자를 지정하거나 바꿔도 새 담당자에게 업무 배정 알림이 가지 않습니다.' },
@@ -37,12 +40,12 @@ export const INTEGRATES = [
     reason: '문자 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 문자가 가지 않습니다.' },
   { from: 'mail', to: 'addressbook', via: 'port:RecipientAddressBookSource',
     reason: '주소록 기능이 없으면 메일 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 직접 입력만 남습니다.',
-    anchors: [{ path: 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx', anchor: 'addressBook={recipientAddressBookSource}' },
-      { path: 'frontend/src/types/recipient-address-book.ts', anchor: 'export interface RecipientAddressBookSource' }] },
+    anchors: [{ path: 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx', anchor: "useRecipientAddressBook('mail')" },
+      { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
   { from: 'sms', to: 'addressbook', via: 'port:RecipientAddressBookSource',
     reason: '주소록 기능이 없으면 문자 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 번호 직접 입력만 남습니다.',
-    anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: 'addressBook={recipientAddressBookSource}' },
-      { path: 'frontend/src/types/recipient-address-book.ts', anchor: 'export interface RecipientAddressBookSource' }] },
+    anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: "useRecipientAddressBook('sms')" },
+      { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
   { from: 'board', to: 'system', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
@@ -56,6 +59,14 @@ export const REGISTRATION_ONLY_EVENTS = [
   ...['addressbook', 'board', 'comment', 'notification', 'system'].map(to => ({ from: 'core', to, event: 'UserDeletionEvent',
     reason: '사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다.' })),
 ];
+
+/*
+ * 기여 분류(슬롯 단계 PR-4). 슬롯 기여 파일(frontend/src/extensions/<기능>/<슬롯>.ts)마다 정확히 한쪽이어야 한다:
+ * - INTEGRATES 의 근거(anchor)가 그 파일을 가리킨다 — 그 기여가 빠지면 다른 기능의 동작이 줄어든다(계획이 기능 저하로 알린다).
+ * - 이 표에 사유와 함께 있다 — 기여가 빠져도 그 기능 자신의 진입점만 사라지고 잃는 것이 없다(REGISTRATION_ONLY_EVENTS 와 같은 뜻).
+ * 연동 종류에 slot 을 두지 않는 대신, 선언 없이 들어온 새 기여는 카탈로그가 거부한다. 기여는 그 기능의 연동 근거만 될 수 있다.
+ */
+export const REGISTRATION_ONLY_CONTRIBUTIONS = [];
 
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];
 const SCAN_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
@@ -314,7 +325,8 @@ function anchorEvidence(root, { path, anchor }) {
 /**
  * 선언을 계산과 대조해 계획에 실을 연동 목록을 만든다. 순수 판정은 triples·canDegrade 를 받아 합성 입력으로 시험한다.
  */
-export function resolveIntegrations({ root, declared = INTEGRATES, registrationOnly = REGISTRATION_ONLY_EVENTS, triples, canDegrade, domains, optionalForeignKeys }) {
+export function resolveIntegrations({ root, declared = INTEGRATES, registrationOnly = REGISTRATION_ONLY_EVENTS, triples, canDegrade, domains, optionalForeignKeys,
+  contributions = [], registrationOnlyContributions = REGISTRATION_ONLY_CONTRIBUTIONS }) {
   const fail = message => { throw new Error(`project-composer catalog: ${message}`); };
   const known = new Set(domains);
   const keys = new Set();
@@ -365,5 +377,34 @@ export function resolveIntegrations({ root, declared = INTEGRATES, registrationO
     if (!canDegrade(triple.from, triple.to)) continue;
     if (!declaredHere && !registered) fail(`undeclared integration: ${triple.from} -> ${triple.to} via event:${triple.event}`);
   }
+  classifyContributions({ declared, contributions, registrationOnlyContributions, fail });
   return rows.sort((a, b) => byCodeUnits(`${a.from}\u0000${a.to}\u0000${a.via}`, `${b.from}\u0000${b.to}\u0000${b.via}`));
+}
+
+/** 기여 분류 완전성(REGISTRATION_ONLY_CONTRIBUTIONS 설명 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다. */
+function classifyContributions({ declared, contributions, registrationOnlyContributions, fail }) {
+  const owners = new Map();
+  for (const row of contributions) {
+    if (owners.has(row.path)) fail(`duplicate slot contribution: ${row.path}`);
+    owners.set(row.path, row.owner);
+  }
+  const anchored = new Set();
+  for (const edge of declared) for (const anchor of edge.anchors ?? []) {
+    if (!owners.has(anchor.path)) continue;
+    if (owners.get(anchor.path) !== edge.to) fail(`slot contribution evidences another feature's integration: ${anchor.path} (${edge.from} -> ${edge.to})`);
+    anchored.add(anchor.path);
+  }
+  const registered = new Set();
+  for (const row of registrationOnlyContributions) {
+    if (registered.has(row.path)) fail(`duplicate registration-only contribution: ${row.path}`);
+    registered.add(row.path);
+    if (!owners.has(row.path)) fail(`registration-only contribution is not a slot contribution file: ${row.path}`);
+    if (typeof row.reason !== 'string' || !/[가-힣]/u.test(row.reason) || !row.reason.trim().endsWith('.')) {
+      fail(`registration-only contribution needs a user sentence: ${row.path}`);
+    }
+  }
+  for (const path of owners.keys()) {
+    if (anchored.has(path) && registered.has(path)) fail(`slot contribution classified twice: ${path}`);
+    if (!anchored.has(path) && !registered.has(path)) fail(`unclassified slot contribution: ${path}`);
+  }
 }

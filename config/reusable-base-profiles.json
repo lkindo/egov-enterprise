@@ -550,6 +550,7 @@
           "src/app/smart-toolkit/work-report",
           "src/components/business/report",
           "src/components/business/schedule",
+          "src/extensions/addressbook",
           "src/services/business/community",
           "src/services/business/memoreport",
           "src/services/business/schedule",

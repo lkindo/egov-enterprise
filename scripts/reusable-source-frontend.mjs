@@ -1,5 +1,6 @@
 /**
- * 소스 투영의 프런트 단계 — pack 마커 블록 투영(createFrontendProjector), 제외 경로와 그 import 연쇄 제거(planFrontendRemoval).
+ * 소스 투영의 프런트 단계 — pack 마커 블록 투영과 슬롯 레지스트리 렌더(createFrontendProjector), 제외 경로와 그 import 연쇄
+ * 제거(planFrontendRemoval).
  *
  * [2026-10-11 슬롯 단계 PR-2 판정 통일] 마커를 읽는 파서는 이 파일의 parsePackMarkerBlocks 하나다. 선택 투영(직접 선택의 소유 기능)과
  * pack 마커 투영은 한 번에 판정한다(createFrontendProjector). 간선은 주석·문자열을 건너뛰는 토크나이저(frontend-module-graph.mjs)로
@@ -7,9 +8,10 @@
  * 계약·거버넌스 투영이 모두 이 함수들을 쓴다 — 두 번째 마커 파서·연쇄 루프를 두지 않는다(단일 모듈 계약이 지킨다).
  */
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { MODULE_EXTENSIONS, buildCaseMap, resolveModuleReference } from './frontend-module-resolver.mjs';
+import { discoverSlotContributions, frontendRelativePath, renderSlotRegistry, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 // 직접 선택의 블록 소유 표는 composer 가 갖고(FRONTEND_MARKER_FILES), 이 모듈이 한 방향으로 읽는다. composer 는 이 모듈을 import 하지
 // 않는다 — 순환이 있으면 진입점마다 평가 순서가 갈려, 최상위에서 상대 값을 쓰는 순간 한쪽 진입점에서만 TDZ 오류가 난다.
 import { composerMarkerBlockOwners } from './project-composer-source.mjs';
@@ -113,19 +115,43 @@ function frontendDirectRemovePaths(manifest, profile) {
  * (composer 의 FRONTEND_MARKER_FILES)이 모두 선택돼 있을 때만 남긴다. 분류 표에 없는 블록은 직접 선택에서 실패한다.
  * `project(path, source)` 의 path 는 frontend 기준(`src/…`)이나 저장소 기준(`frontend/src/…`) 표기이고 오류 문장에 그대로 쓴다.
  * 결과의 `strippedBlocks` 는 소유 판정은 통과했는데 pack 이 빠져 걷은 블록 수다(종전 pack 마커 단계의 셈, lock.frontend.packBlocks).
+ *
+ * [슬롯 단계 PR-4] 슬롯 레지스트리(src/extensions/generated-<슬롯>.ts)는 마커 대신 다시 렌더한다. 렌더 집합은 `files`(복사할 프런트
+ * 파일 목록, frontend 기준 또는 저장소 기준 경로) 가운데 직접 제거 경로(directPaths)에 걸리지 않은 기여 파일이다 — 기여 파일은 기능
+ * 경로와 함께 직접 지워지므로 두 번째 소유 판정을 두지 않는다. 마커 투영과 같은 패스, 즉 연쇄 계산 전이라 렌더가 빠진 레지스트리가
+ * 지워진 기여를 import 해 셸까지 연쇄로 지우는 일이 생기지 않는다. 레지스트리를 투영하는데 `files` 가 없으면 실패한다(조용히 원문을
+ * 두지 않는다). 렌더 결과가 원문과 줄 끝(CRLF)만 다르면 원문을 그대로 돌려준다 — 원본 구성의 투영은 원문과 바이트가 같다.
+ * 슬롯 파일은 pack 마커를 둘 수 없다(기여는 파일 단위로 빠진다).
  */
-export function createFrontendProjector({ manifest, profile, composition }) {
+export function createFrontendProjector({ manifest, profile, composition, files }) {
   const knownPacks = new Set(Object.keys(manifest.packs));
   const allowedPacks = new Set(profile.packs);
   const custom = composition?.profile === 'custom';
   if (custom && !Array.isArray(composition.resolvedDomains)) fail('직접 선택 투영에는 해석된 기능 목록(resolvedDomains)이 필요하다.');
   const selected = new Set(custom ? composition.resolvedDomains : []);
+  const directPaths = frontendDirectRemovePaths(manifest, profile);
+  let slotOwners;
+  const registryOwners = (slot, label) => {
+    if (!files) fail(`슬롯 레지스트리를 투영하려면 복사할 프런트 파일 목록(files)이 필요하다: ${label}`);
+    if (!slotOwners) {
+      const removed = directPaths.map((rel) => posix.normalize(frontendRelativePath(rel)).replace(/\/+$/, ''));
+      slotOwners = discoverSlotContributions([...files].map(frontendRelativePath)
+        .filter((file) => !removed.some((target) => file === target || file.startsWith(`${target}/`))));
+    }
+    return slotOwners.get(slot) ?? [];
+  };
   return {
-    directPaths: frontendDirectRemovePaths(manifest, profile),
+    directPaths,
     excludedPacks: [...knownPacks].filter((packName) => !allowedPacks.has(packName)).sort(),
     project(path, source) {
       const label = String(path).replaceAll('\\', '/');
       const { lines, blocks } = parsePackMarkerBlocks(source, { knownPacks, label });
+      const slotFile = slotPathKind(label);
+      if (slotFile && blocks.length) fail(`슬롯 파일은 pack 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다: ${label}`);
+      if (slotFile?.kind === 'registry') {
+        const rendered = renderSlotRegistry(slotFile.slot, registryOwners(slotFile.slot, label));
+        return { source: rendered === source.replace(/\r\n/g, '\n') ? source : rendered, strippedBlocks: 0, packChanged: false };
+      }
       if (!blocks.length) return { source, strippedBlocks: 0, packChanged: false };
       const file = label.replace(/^frontend\//, '');
       const dropped = [];
@@ -273,6 +299,7 @@ export function pruneFrontend(output, manifest, profile) {
   // 화면(page)의 생존은 구성 기대값과의 대조가 본다(project-composer-source.projectedScreenLosses). 라우트가 아닌 루트 레이아웃만 여기서 본다.
   // 종전의 'dangling import' 검사는 연쇄와 같은 판정·같은 제거 집합으로 다시 봐서 실패할 수 없었다(항진) — 화면 대조로 바꿨다.
   if (!existsSync(join(frontendRoot, FRONTEND_LAYOUT))) fail(`frontend 필수 진입점이 projection에서 제거됐다: ${FRONTEND_LAYOUT}`);
+  const slots = projectedSlotRegistries(frontendRoot, files, removed);
   const removedGates = [...removed]
     .map((path) => normalize(relative(output, path)))
     .filter((rel) => rel.startsWith(FRONTEND_GATE_DIR))
@@ -282,5 +309,27 @@ export function pruneFrontend(output, manifest, profile) {
     removedFiles: removed.size,
     cascadedFiles: removed.size - directRemoved.size,
     removedGates,
+    slots,
   };
+}
+
+/**
+ * 투영 뒤 슬롯 레지스트리가 남은 기여와 같은지 본다(lock.frontend.slots). 슬롯 집합은 복사한 트리 전체에서, 기여는 연쇄까지 끝난 뒤
+ * 남은 파일에서 얻는다. 투영(createFrontendProjector)이 직접 제거 경로로 렌더한 레지스트리와 남은 기여가 다르면 — 기여가 다른 기능
+ * 모듈을 import 해 연쇄로 지워진 경우, 그래서 레지스트리까지 연쇄로 지워진 경우 — 실패한다. 슬롯은 조용히 사라지지 않는다.
+ */
+function projectedSlotRegistries(frontendRoot, files, removed) {
+  const rel = (path) => normalize(relative(frontendRoot, path));
+  const surviving = discoverSlotContributions(files.filter((path) => !removed.has(path)).map(rel));
+  const slots = [];
+  for (const slot of discoverSlotContributions(files.map(rel)).keys()) {
+    const owners = surviving.get(slot) ?? [];
+    const path = join(frontendRoot, slotRegistryPath(slot));
+    const actual = existsSync(path) ? readFileSync(path, 'utf8').replace(/\r\n/g, '\n') : undefined;
+    if (actual !== renderSlotRegistry(slot, owners)) {
+      fail(`투영 뒤 슬롯 레지스트리가 남은 기여와 다르다: ${slotRegistryPath(slot)} (남은 기여: ${owners.join(', ') || '없음'})`);
+    }
+    slots.push({ slot, owners });
+  }
+  return slots;
 }

@@ -102,7 +102,8 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const frontendFiles = relativeFiles.filter(file => file.startsWith('frontend/')).map(file => join(root, file));
   let frontend = null;
   try {
-    const projector = createFrontendProjector({ manifest, profile, composition });
+    // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
+    const projector = createFrontendProjector({ manifest, profile, composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
     const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
     const projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
     frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,

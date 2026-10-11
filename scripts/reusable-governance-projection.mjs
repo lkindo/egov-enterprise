@@ -10,6 +10,7 @@ import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PAT
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH, loadProjectComposerMenus } from './project-composer-menu-preview.mjs';
+import { slotPathKind } from './slot-registry.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 const URL_PATH = 'config/ui-url-state-census.json';
@@ -239,7 +240,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     const matches = expected === projected;
     sourceBindings.set(file, {
       source: file, upstreamSha256: sha256(original), projectedSha256: sha256(projected), matches,
-      transformation: original === projected ? 'unchanged' : file === 'frontend/next.config.ts' ? 'excluded-destination-redirect-projection' : 'declared-pack-marker-projection',
+      transformation: original === projected ? 'unchanged' : file === 'frontend/next.config.ts' ? 'excluded-destination-redirect-projection'
+        : slotPathKind(file)?.kind === 'registry' ? 'declared-slot-registry-projection' : 'declared-pack-marker-projection',
     });
     return matches;
   };

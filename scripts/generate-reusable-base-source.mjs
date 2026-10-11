@@ -24,7 +24,8 @@ import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGate
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles,
+  walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 
@@ -207,7 +208,10 @@ export function projectSourceTree(output, { manifest, profile, composition, sour
   const expectation = pageSurvival ?? pageSurvivalExpectation({ root: sourceRoot, catalog, composition });
   const java = pruneJava(output, manifest, profile);
   // 선택 투영(직접 선택의 소유 기능)과 pack 마커 투영을 한 번에 한다(슬롯 단계 PR-2). 정밀 점검·census·거버넌스 투영도 같은 projector 다.
-  const packBlocks = applyFrontendProjection(output, createFrontendProjector({ manifest, profile, composition }));
+  // 슬롯 레지스트리는 같은 패스에서 복사한 프런트 파일 목록으로 다시 렌더한다(PR-4). 투영 뒤 레지스트리와 남은 기여의 대조는 pruneFrontend 가 한다.
+  const frontendRoot = join(output, 'frontend');
+  const files = walk(frontendRoot, () => true).map(path => normalize(relative(frontendRoot, path)));
+  const packBlocks = applyFrontendProjection(output, createFrontendProjector({ manifest, profile, composition, files }));
   const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
   const pages = new Set(discoverPageRoutes(output).map(page => page.source));
   const lostScreens = projectedScreenLosses(expectation, source => pages.has(source));
@@ -270,7 +274,9 @@ function main() {
   if (args.layout === 'single-module') installSingleModuleRuntime(output);
   else installMultiModuleMigrationRuntime(output);
   // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
-  const sourceProjector = createFrontendProjector({ manifest, profile, composition });
+  // 레지스트리 렌더는 생성기가 복사한 같은 파일 목록을 쓴다.
+  const sourceProjector = createFrontendProjector({ manifest, profile, composition,
+    files: copiedFiles.filter(file => file.startsWith('frontend/')) });
   const governance = projectReusableGovernance({
     sourceRoot: ROOT, outputRoot: output, profile: args.profile, sourceCommit, composition,
     projectSource: (file, source) => sourceProjector.project(file, source).source,
@@ -331,6 +337,8 @@ function main() {
       `- 제거 Java files: ${java.removedFiles}\n` +
       `- 제거 frontend files: ${frontend.removedFiles}` +
         ` (선언 ${frontend.removedFiles - frontend.cascadedFiles} · 연쇄 ${frontend.cascadedFiles})\n` +
+      `- 슬롯 기여: ${frontend.slots.map(({ slot, owners }) => `${slot} ← ${owners.join(', ') || '(없음)'}`).join('; ') || '(슬롯 없음)'}` +
+        ' — 기여를 더하거나 뺀 뒤 `npm run slots:generate` 로 레지스트리를 다시 만든다.\n' +
       `- 제거된 거버넌스 게이트: ${removedGates.total}건` +
         (removedGates.total
           ? `\n${[
