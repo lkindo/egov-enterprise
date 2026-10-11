@@ -124,7 +124,7 @@ test('slot contributions changed on both sides regenerate the slot registries be
     theirs: ['frontend/src/extensions/note/recipient-picker-sources.ts'] }),
   ['slot-registries', 'boundary-census', 'screen-registry', 'url-state-census', 'atlas']);
   const step = GENERATORS.find(generator => generator.id === 'slot-registries');
-  // 출력은 손으로 적지 않는다 — 디스크의 기여·레지스트리에서 읽는다(지금은 수신자 피커 출처 하나).
+  // 출력은 손으로 적지 않는다 — 디스크의 기여·레지스트리에서 읽는다(지금은 슬롯 세 개).
   assert.deepEqual(step.outputs, slotRegistryOutputs(path.resolve(import.meta.dirname, '..')));
   assert.ok(step.outputs.includes('frontend/src/extensions/generated-recipient-picker-sources.ts'));
   assert.ok(planRegeneration({ ours: [step.outputs[0]], theirs: [step.outputs[0]] }).some(generator => generator.id === 'slot-registries'),

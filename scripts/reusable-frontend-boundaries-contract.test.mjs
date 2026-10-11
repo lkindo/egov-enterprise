@@ -328,10 +328,12 @@ test('direct selections that reach a check unit no earlier configuration checked
  */
 /** 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 붉다 — 범용 플러그인 로더를 막고 grep 경로를 고정한다. */
 const SLOT_REGISTRY_CONSUMERS = {
+  'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
+  'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx', 'frontend/src/app/error.tsx'],
 };
-/** 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)을 들일 때 더한다 — 그때 관리 링크 census 가 그 항목을 본다. */
-const LINK_SLOTS = new Set();
+/** 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)이 링크 슬롯이다 — 관리 링크 census 가 그 항목을 본다. */
+const LINK_SLOTS = new Set(['shell-links']);
 const LINK_KEYS = new Set(['href', 'url', 'link', 'moreHref']);
 /** 슬롯 종류 상한(설계서 16.5). */
 const MAX_SLOTS = 10;
@@ -346,6 +348,59 @@ function slotMapKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
   const map = file.statements.find(node => ts.isInterfaceDeclaration(node) && node.name.text === 'SlotMap');
   assert.ok(map, 'slots.ts declares the SlotMap interface');
   return map.members.map(member => (ts.isStringLiteral(member.name) || ts.isIdentifier(member.name) ? member.name.text : `<${ts.SyntaxKind[member.name.kind]}>`));
+}
+
+/** shell-links 의 배치(닫힌 목록). 소비 셸이 있는 자리만 둔다. */
+const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error']);
+/** 주체 없이 거르는 배치 — 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계다. /admin 아래 page 술어는 늘 거짓이 된다. */
+const SUBJECTLESS_PLACEMENTS = new Set(['footer', 'error']);
+/** 페이지 게이트가 있는 경로(frontend/src/lib/auth/page-access.ts 의 isGatedPath 와 같은 경계). */
+const isGatedPath = href => /^\/admin(?:[/?#]|$)/i.test(href);
+/** 앱 안 경로. '//host' 와 '/\host' 는 '/' 로 시작해도 브라우저가 프로토콜 상대 주소(외부)로 읽는다. */
+const isInternalPath = href => /^\/(?![/\\])/.test(href);
+
+/**
+ * shell-links 항목 규칙(슬롯 단계 PR-6). 셸은 이 값을 그대로 그리므로 기여 원문에서 정적으로 판정한다.
+ * - 배치는 header·footer·error 리터럴, href 는 '/' 로 시작하는 앱 안 경로 리터럴('//'·'/\' 로 시작하는 외부 주소는 안 된다),
+ *   visibleWhen 은 { page: 자기 href } 하나다.
+ * - 바닥글·오류 화면 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다(그렇지 않으면 항목이 아무 신호 없이 늘 숨는다).
+ * - 머리글 배치는 아이콘 단추라 icon 이 필요하다(없으면 빈 단추가 된다).
+ * - fill 화면은 바닥글을 숨긴다(globals.css). 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝이 있어야 한다 — 기여 파일 하나가
+ *   함께 지워지므로 머리글이 먼저 빠지는 프로필이 없다(종전 셸 접근성 계약의 pack 대조를 대신한다).
+ */
+function shellLinkViolations(entries, label) {
+  const violations = [];
+  const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
+  const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
+    && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text === name);
+  const rows = [];
+  for (const element of entries.elements) {
+    if (!ts.isObjectLiteralExpression(element)) {
+      violations.push(`${label}: shell-links 항목은 객체 리터럴이다`);
+      continue;
+    }
+    const id = text(prop(element, 'id')?.initializer) ?? '?';
+    const placement = text(prop(element, 'placement')?.initializer);
+    const href = text(prop(element, 'href')?.initializer);
+    const rule = prop(element, 'visibleWhen')?.initializer;
+    const page = rule && ts.isObjectLiteralExpression(rule) && rule.properties.length === 1 ? text(prop(rule, 'page')?.initializer) : undefined;
+    if (!SHELL_LINK_PLACEMENTS.has(placement)) violations.push(`${label}: ${id} 의 배치는 header·footer·error 리터럴이다`);
+    if (href === undefined || !isInternalPath(href)) {
+      violations.push(`${label}: ${id} 의 href 는 '/' 로 시작하는 문자열 리터럴이다('//'·'/\\' 로 시작하면 브라우저가 외부 주소로 읽는다)`);
+    }
+    if (page === undefined || page !== href) violations.push(`${label}: ${id} 의 visibleWhen 은 { page: 자기 href } 여야 한다`);
+    if (SUBJECTLESS_PLACEMENTS.has(placement) && href !== undefined && isGatedPath(href)) {
+      violations.push(`${label}: ${id} — ${placement} 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다`);
+    }
+    if (placement === 'header' && !prop(element, 'icon')) violations.push(`${label}: ${id} — 머리글 배치는 아이콘 단추라 icon 이 필요하다`);
+    rows.push({ id, placement, href });
+  }
+  for (const row of rows.filter(candidate => candidate.placement === 'footer')) {
+    if (!rows.some(candidate => candidate.placement === 'header' && candidate.href === row.href)) {
+      violations.push(`${label}: ${row.id} — 바닥글 항목에 같은 목적지의 머리글 짝이 이 기여 안에 없다`);
+    }
+  }
+  return violations;
 }
 
 /**
@@ -432,6 +487,7 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
       if (!id || !ts.isStringLiteral(id.initializer)) violations.push(`${label}: 항목마다 id 를 문자열 리터럴로 둔다`);
       value(element);
     }
+    if (slot === 'shell-links') violations.push(...shellLinkViolations(entries, label));
   }
   const covers = (paths, target) => paths.some(path => {
     const root = path.replace(/\/+$/, '');
@@ -485,8 +541,8 @@ test('slot names are one spelling: SlotMap keys, registries and contribution fil
   assert.deepEqual(Object.keys(SLOT_REGISTRY_CONSUMERS).sort(), keys, 'every slot has its consumer row');
   // 대조: 키 하나를 더하면 레지스트리·기여·소비자가 없어 붉다.
   const probe = readFileSync(SLOTS_SOURCE, 'utf8').replace("'recipient-picker-sources': RecipientPickerSource;",
-    "'recipient-picker-sources': RecipientPickerSource;\n  'shell-links': RecipientPickerSource;");
-  assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'shell-links'].sort(), 'the key reader sees an added key');
+    "'recipient-picker-sources': RecipientPickerSource;\n  'probe-slot': RecipientPickerSource;");
+  assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'probe-slot'].sort(), 'the key reader sees an added key');
 });
 
 test('only the listed consumers import a slot registry, each from outside the slot root, and each slot has a contribution', () => {
@@ -524,8 +580,8 @@ test('contribution files hold data only: .ts, no JSX, one defineContributions de
       ids.set(`${slot}:${id}`, file);
     }
   }
-  // 대조: 함정마다 실제 기여를 바꿔 붉게 만든다.
-  const { file, owner, slot } = contributions[0];
+  // 대조: 함정마다 실제 기여를 바꿔 붉게 만든다. 아래 치환은 수신자 피커 출처 기여의 모양에 맞춘 것이다.
+  const { file, owner, slot } = contributions.find(row => row.slot === 'recipient-picker-sources');
   const original = inputs.original(join(frontendRoot, file));
   const check = (source, target = file) => contributionViolations({ file: target, source, owner, slot, ownPaths: paths.get(owner),
     foreignPaths: foreignOf(owner) }).join('\n');
@@ -566,6 +622,39 @@ test('contribution files hold data only: .ts, no JSX, one defineContributions de
   assert.match(check(original.replace(/defineContributions\('[^']+'/, "defineContributions('shell-links'")), /파일 이름\(.+\)과 다르다/);
   assert.match(check(`${original}\nexport const extra = 1;\n`), /이름 있는 export 금지/);
   assert.match(check(original.replace(/id: '([^']+)'/, 'id: ID')), /id 를 문자열 리터럴로/);
+});
+
+test('shell links: the page predicate is the href, subjectless placements stay outside /admin, header links have an icon and footer links a header twin', () => {
+  const inputs = readProjectionInputs();
+  const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
+  const shell = inputs.files.map(frontendRel).map(file => slotPathKind(file)).find(kind => kind?.kind === 'contribution' && kind.slot === 'shell-links');
+  assert.ok(shell, 'the source has a shell-links contribution');
+  const check = source => contributionViolations({ file: shell.file, source, owner: shell.owner, slot: 'shell-links', ownPaths: paths.get(shell.owner),
+    foreignPaths: [] }).join('\n');
+  assert.equal(check(inputs.original(join(frontendRoot, shell.file))), '', 'the source shell-links contribution keeps the rules');
+  // 합성 기여로 규칙마다 붉음을 본다. id 는 줄 머리에 둔다(위 유일성 검사의 정규식 모양).
+  const fixture = (...entries) => "import { Info } from 'lucide-react';\nimport { defineContributions } from '@/extensions/slots';\n"
+    + `export default defineContributions('shell-links', [\n${entries.join(',\n')}\n]);\n`;
+  const entry = (id, placement, href, extra = '', page = href) =>
+    `  {\n    id: '${id}',\n    placement: '${placement}',\n    order: 1,\n    href: '${href}',\n    label: '${id}',\n${extra}    visibleWhen: { page: '${page}' },\n  }`;
+  const icon = '    icon: Info,\n';
+  const header = entry('h', 'header', '/help', icon);
+  assert.equal(check(fixture(header, entry('f', 'footer', '/help'), entry('e', 'error', '/help'))), '', 'a footer link with its header twin and an error link are green');
+  assert.match(check(fixture(entry('f', 'footer', '/help'))), /f — 바닥글 항목에 같은 목적지의 머리글 짝이 이 기여 안에 없다/);
+  assert.match(check(fixture(header, entry('h2', 'header', '/admin/system/menus', icon), entry('f', 'footer', '/admin/system/menus'))),
+    /f — footer 배치는 주체 없이 거르므로 \/admin 밖 목적지만 둔다/);
+  assert.match(check(fixture(entry('e', 'error', '/admin/system/menus'))), /e — error 배치는 주체 없이 거르므로 \/admin 밖/);
+  // 대조: 머리글 배치는 주체를 알므로 /admin 목적지를 둘 수 있다(관리 링크 census 가 page 술어를 게이트로 본다).
+  assert.equal(check(fixture(entry('h', 'header', '/admin/system/menus', icon))), '');
+  assert.match(check(fixture(header, entry('f', 'footer', '/help').replace("visibleWhen: { page: '/help' }", "visibleWhen: { permissions: ['NOTI_READ'] }"))),
+    /f 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
+  assert.match(check(fixture(entry('h', 'header', '/help', icon, '/help/policies/PRIVACY'))), /h 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
+  assert.match(check(fixture(entry('h', 'header', '/help'))), /h — 머리글 배치는 아이콘 단추라 icon 이 필요하다/);
+  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error 리터럴이다/);
+  assert.match(check(fixture(entry('h', 'header', 'help', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
+  // '/' 로 시작해도 프로토콜 상대 주소는 외부 링크다. 원문 '/\\x' 의 값은 '/\x' 이고 브라우저는 '//x' 로 읽는다.
+  assert.match(check(fixture(entry('h', 'header', '//example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
+  assert.match(check(fixture(entry('h', 'header', '/\\\\example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
 });
 
 test('a configuration without the contributing feature renders an empty registry, which the projection type check sees as a root', () => {

@@ -66,7 +66,12 @@ export const REGISTRATION_ONLY_EVENTS = [
  * - 이 표에 사유와 함께 있다 — 기여가 빠져도 그 기능 자신의 진입점만 사라지고 잃는 것이 없다(REGISTRATION_ONLY_EVENTS 와 같은 뜻).
  * 연동 종류에 slot 을 두지 않는 대신, 선언 없이 들어온 새 기여는 카탈로그가 거부한다. 기여는 그 기능의 연동 근거만 될 수 있다.
  */
-export const REGISTRATION_ONLY_CONTRIBUTIONS = [];
+export const REGISTRATION_ONLY_CONTRIBUTIONS = [
+  { path: 'frontend/src/extensions/help/shell-links.ts',
+    reason: '도움말 기능이 없으면 머리글·바닥글·오류 화면에서 도움말 화면으로 가는 링크만 사라지고 다른 기능은 그대로입니다.' },
+  { path: 'frontend/src/extensions/notification/header-widgets.ts',
+    reason: '알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다.' },
+];
 
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];
 const SCAN_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];

@@ -1,5 +1,5 @@
 /**
- * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리(슬롯 단계 PR-4).
+ * 확장 슬롯 — 기능이 core 셸에 값을 기여하는 자리(슬롯 단계 PR-4·PR-6).
  *
  * pack 마커 블록은 셸 파일 안에 선택 기능의 코드를 품어, 기능이 빠지면 투영이 그 줄을 걷어 냈다. 슬롯은 반대로 기능이 자기
  * 디렉터리(src/extensions/<기능 id>/<슬롯>.ts)에 항목을 적고, 셸은 생성 레지스트리(src/extensions/generated-<슬롯>.ts)만 읽는다.
@@ -8,6 +8,8 @@
  * 이 파일은 core 소유다. 기능 디렉터리를 import 하지 않는다. 슬롯 이름 하나를 모든 곳에 같은 철자로 쓴다:
  * SlotMap 키 = 기여 파일 이름 = 레지스트리 파일 이름(generated-<이름>.ts). 키를 더할 때는 그 슬롯을 읽는 셸(소비자)을 같은 변경에 둔다.
  */
+import type { ComponentType } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
 import type { PermissionCode } from '@/types/generated-permissions';
@@ -40,8 +42,32 @@ export interface RecipientPickerSource extends SlotEntry {
   readonly source: RecipientAddressBookSource;
 }
 
+/**
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면). 셸이 모양을 정하고 항목은
+ * 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면 배치는 /admin 밖 목적지만
+ * 둔다. 머리글 배치는 아이콘 단추라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ */
+export interface ShellLink extends SlotEntry {
+  readonly placement: 'header' | 'footer' | 'error';
+  /** 같은 배치 안의 순서(작은 값 먼저). */
+  readonly order: number;
+  readonly href: string;
+  readonly label: string;
+  readonly icon?: LucideIcon;
+  /** 오류 화면에서 링크 위에 보이는 안내 문장. */
+  readonly description?: string;
+}
+
+/** header-widgets — 머리글 테마 전환 뒤의 컴포넌트. 컴포넌트는 기능 디렉터리에 두고 기여는 참조만 한다(JSX 금지). */
+export interface HeaderWidget extends SlotEntry {
+  readonly order: number;
+  readonly Component: ComponentType;
+}
+
 export interface SlotMap {
   'recipient-picker-sources': RecipientPickerSource;
+  'shell-links': ShellLink;
+  'header-widgets': HeaderWidget;
 }
 export type SlotId = keyof SlotMap;
 /** 한 기능이 한 슬롯에 기여하는 항목들. 레지스트리는 이것을 기능(owner) 코드 포인트 순으로 모은 배열이다. */

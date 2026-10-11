@@ -344,7 +344,8 @@ test('one predicate decides both whether an event needs a declaration and whethe
   assert.equal(canDegrade('core', 'a'), true);
   assert.equal(degradationPredicate(capabilities, [...presets, { id: 'q', domains: ['a'] }])('a', 'b'), true, 'a preset without b makes the edge live');
   const triple = { from: 'a', to: 'b', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
-  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade };
+  // 합성 시험은 실제 기여 분류표와 무관하다 — 기여도, 등록만 하는 기여도 비운다(실제 표는 아래 슬롯 기여 시험이 본다).
+  const base = { root: ROOT, registrationOnly: [], registrationOnlyContributions: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade };
   // 늘 함께 있는 쌍의 발행은 선언 없이 통과하고, 선언하면 '저하될 수 없다' 로 거부된다. 두 판정 사이에 빈틈이 없다.
   assert.deepEqual(resolveIntegrations({ ...base, declared: [], triples: [triple] }), []);
   assert.throws(() => resolveIntegrations({ ...base, triples: [triple], declared: [{ from: 'a', to: 'b', via: 'event:Evt', reason: '설명입니다.' }] }),
@@ -353,7 +354,8 @@ test('one predicate decides both whether an event needs a declaration and whethe
 
 test('integration declarations reject unknown kinds, duplicates, double classification and a missing optional key', () => {
   const triple = { from: 'a', to: 'c', event: 'Evt', publishers: [{ path: 'x', line: 1 }], listeners: [{ path: 'y', line: 2 }] };
-  const base = { root: ROOT, registrationOnly: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [], canDegrade: () => true, triples: [triple] };
+  const base = { root: ROOT, registrationOnly: [], registrationOnlyContributions: [], domains: ['a', 'b', 'c'], optionalForeignKeys: [],
+    canDegrade: () => true, triples: [triple] };
   const edge = { from: 'a', to: 'c', via: 'event:Evt', reason: '설명입니다.' };
   assert.equal(resolveIntegrations({ ...base, declared: [edge] }).length, 1);
   assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, via: 'slot:home.cards' }] }), /unsupported integration kind: slot:home\.cards/);

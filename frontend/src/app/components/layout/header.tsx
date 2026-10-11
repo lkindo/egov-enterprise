@@ -21,9 +21,6 @@ import {
   Search,
   Compass
 } from 'lucide-react';
-/* reusable-base:demo:start */
-import { Info } from 'lucide-react';
-/* reusable-base:demo:end */
 import { useAuth } from '@/contexts/AuthContext';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { canOpenPage } from '@/lib/auth/page-access';
@@ -31,9 +28,9 @@ import { useLayout } from '@/contexts/LayoutContext';
 import { setSidebarCollapsed, useSidebarCollapsed } from '@/lib/layout/use-sidebar-collapsed';
 import { ACCOUNT_MFA_OPEN_EVENT, requestCommandCenter } from '@/lib/navigation/command-center-bridge';
 import { requestOnboarding } from '@/lib/navigation/onboarding-bridge';
-/* reusable-base:collaboration:start */
-import { HeaderNotifications } from './header-notifications';
-/* reusable-base:collaboration:end */
+import { visibleEntries, type ShellLink } from '@/extensions/slots';
+import { shellLinks } from '@/extensions/generated-shell-links';
+import { headerWidgets } from '@/extensions/generated-header-widgets';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button, buttonVariants } from '@/components/ui/button';
 import Link from 'next/link';
@@ -70,6 +67,8 @@ const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; class
 };
 
 const NO_MENUS: MenuInfo[] = [];
+// 셸 링크 슬롯에서 머리글 배치만 고른다. 모듈에 두어 useMemo 의존성이 렌더마다 바뀌지 않게 한다.
+const isHeaderShellLink = (link: ShellLink) => link.placement === 'header';
 
 export function Header({ 
   initialMenus = [],
@@ -87,6 +86,10 @@ export function Header({
   const menuAuthorization = useMenuAuthorizationScope();
   // 라우트 게이트와 같은 판정(DIP B4 P1).
   const canReadMenus = canOpenPage(user, '/admin/system/menus');
+  // 셸 링크·머리글 위젯 슬롯(슬롯 단계 PR-6). 주체는 위 useAuth 의 사용자다 — useSlotEntries(useOptionalAuth)를 쓰지 않는 것은
+  //   머리글 시험들이 AuthContext 를 useAuth 만으로 대역하기 때문이다. 공급자 안에서는 같은 주체·같은 판정(visibleEntries)이다.
+  const headerShellLinks = useMemo(() => visibleEntries(user, shellLinks, isHeaderShellLink), [user]);
+  const visibleHeaderWidgets = useMemo(() => visibleEntries(user, headerWidgets), [user]);
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   // [2026-10-05] 넓은 화면의 사이드바 접힘(이 브라우저에 기억). 서랍형(lg 미만)의 열림 상태와는 별개다. 접고 펴는 단추는
   //   사이드바 경계선의 원형 아이콘 하나다(DEC-OPS-228, sidebar-edge-toggle.tsx) — 머리글은 '메뉴 보기'가 펼 때만 읽는다.
@@ -267,16 +270,17 @@ export function Header({
             <span className="hidden lg:inline text-sm font-medium">빠른 이동</span>
           </Button>
           <Link href="/search" aria-label="통합 검색" title="통합 검색" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "text-muted-foreground")}><Search size={20} aria-hidden="true" /></Link>
-          {/* reusable-base:demo:start */}
-          <Link
-            href="/help"
-            title="도움말"
-            aria-label="도움말"
-            className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
-          >
-            <Info size={20} />
-          </Link>
-          {/* reusable-base:demo:end */}
+          {headerShellLinks.map(({ id, href, label, icon: Icon }) => (
+            <Link
+              key={id}
+              href={href}
+              title={label}
+              aria-label={label}
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "hidden md:flex text-muted-foreground")}
+            >
+              {Icon ? <Icon size={20} /> : null}
+            </Link>
+          ))}
 
           <Button
             variant="ghost"
@@ -290,9 +294,7 @@ export function Header({
             <Sun size={20} aria-hidden="true" className="hidden dark:block" />
           </Button>
 
-          {/* reusable-base:collaboration:start */}
-          <HeaderNotifications />
-          {/* reusable-base:collaboration:end */}
+          {visibleHeaderWidgets.map(({ id, Component }) => <Component key={id} />)}
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
             {user ? (

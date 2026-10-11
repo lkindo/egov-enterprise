@@ -60,7 +60,9 @@ const FEATURES = {
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
     'src/app/admin/help', 'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
-    'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user'],
+    'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user',
+    // 슬롯 기여(PR-6): 머리글·바닥글·오류 화면의 도움말 링크. 기능 디렉터리째 기능과 함께 직접 지워진다.
+    'src/extensions/help'],
   routes: ['/admin/help', '/admin/system/hpcm', '/admin/uss/olh', '/help'] },
   informalsanction: { label: '약식 전자결재', permissions: ['INFORMAL', 'APPROVAL', 'WORKFLOW'], paths: [
     'src/app/admin/sanctn/workflow', 'src/app/admin/system/ism', 'src/app/admin/workflow', 'src/app/approvals',
@@ -76,7 +78,9 @@ const FEATURES = {
     routes: ['/note'] },
   notification: { label: '알림', permissions: ['NOTI'], paths: [
     'src/app/components/layout/header-notifications.tsx', 'src/app/components/ui/app-notification-drawer.tsx',
-    'src/lib/hooks/use-notifications.ts', 'src/services/foundation/system/NotificationAdminService.ts', 'src/app/admin/notifications'],
+    'src/lib/hooks/use-notifications.ts', 'src/services/foundation/system/NotificationAdminService.ts', 'src/app/admin/notifications',
+    // 슬롯 기여(PR-6): 머리글의 알림 벨.
+    'src/extensions/notification'],
   routes: ['/admin/notifications'] },
   operation: { label: '행사·외부인사·포상', permissions: ['EVENT', 'EXT_HR', 'REWARD'], paths: [
     'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rewards',

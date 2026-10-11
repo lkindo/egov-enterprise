@@ -218,6 +218,15 @@ const CORE_SURVIVORS = [
   'frontend/src/app/admin/stats/StatsHubFallback.tsx',
   'frontend/src/services/foundation/system/StatsAdminService.ts',
   'frontend/src/types/foundation/stats.ts',
+  // [슬롯 단계 PR-6] 셸(머리글·바닥글·오류 화면)은 셸 링크·머리글 위젯 레지스트리를 읽는다. core 에서는 기여가 모두 직접 지워지고
+  //   레지스트리가 빈 배열로 다시 렌더된다 — 렌더가 빠지면 레지스트리 → 셸이 연쇄로 사라진다. 오류 화면은 layout 이 import 하지 않아
+  //   필수 진입점 검사가 잡지 못하므로 여기에 둔다.
+  'frontend/src/app/components/layout/header.tsx',
+  'frontend/src/app/components/layout/footer.tsx',
+  'frontend/src/app/error.tsx',
+  'frontend/src/extensions/slots.ts',
+  'frontend/src/extensions/generated-shell-links.ts',
+  'frontend/src/extensions/generated-header-widgets.ts',
 ];
 
 /*
@@ -244,6 +253,18 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     'direct',
     'the harness atlas sample tab must be a demo removePath',
   );
+  // [슬롯 단계 PR-6] 셸 링크·머리글 위젯 기여는 기능과 함께 직접 지워진다(연쇄가 아니다). 알림 벨은 collaboration 에 남는다.
+  for (const [file, profiles] of [
+    ['frontend/src/extensions/help/shell-links.ts', ['core', 'collaboration']],
+    ['frontend/src/extensions/notification/header-widgets.ts', ['core']],
+  ]) {
+    for (const profile of profiles) {
+      assert.equal(byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal, 'direct',
+        `${file} in ${profile}`);
+    }
+  }
+  assert.equal(byFile(census, 'frontend/src/extensions/notification/header-widgets.ts').profileRemovalConstraints
+    .find((constraint) => constraint.profile === 'collaboration'), undefined, 'the bell survives in collaboration');
 });
 
 /*
@@ -930,12 +951,11 @@ test('the census profile population is red when the copy list differs from the d
   주석 제외) 안에서 마커 접두 뒤나 접두+`<pack>:` 뒤에 `(`·`[`·`$`·`.`·끝이 오거나, `\r`·`\n` 이 아닌 역슬래시 이스케이프(`\w`·`\S` 등)가
   오면 파서의 지문으로 센다. 마커를 글자 그대로 담은 정규식·문자열(시험 픽스처의 `<pack>:start` 등)과 ci.yml 의 잡 이름 정규식(`\r?\n`)은
   지문이 아니다. 이 시험 자신이 지문이 되지 않도록 접두를 조각으로 조립한다.
-  예외는 셸 접근성 계약 하나다 — 셸 링크를 슬롯으로 옮기면(PR-6) 0이 된다.
+  예외는 없다(슬롯 단계 PR-6 에서 셸 접근성 계약의 pack 판정을 슬롯 데이터 검사로 바꿨다).
 */
 const MARKER_WORD = ['reusable', 'base:'].join('-');
 const MARKER_PARSER_FINGERPRINT = new RegExp(`${MARKER_WORD}(?:[a-z0-9_-]+:)?(?:[(\\[$.]|$|\\\\+(?![\\\\rn]))`);
 const MARKER_PARSER_OWNER = 'scripts/reusable-source-frontend.mjs';
-const MARKER_PARSER_EXCEPTIONS = ['frontend/src/app/components/layout/__tests__/shell-accessibility-contract.test.ts'];
 
 function markerParserFingerprints(entries) {
   const found = new Set();
@@ -959,7 +979,7 @@ test('only the frontend projector parses pack markers (single module contract)',
     .filter((file) => roots.some((root) => file.startsWith(root)) && isFrontendModuleFile(file) && existsSync(join(repoRoot, file)))
     .map((file) => ({ file, source: readFileSync(join(repoRoot, file), 'utf8') }));
   assert.ok(entries.length > 1000, `scanned ${entries.length} files — the scan is empty`);
-  assert.deepEqual(markerParserFingerprints(entries), [MARKER_PARSER_OWNER, ...MARKER_PARSER_EXCEPTIONS].sort());
+  assert.deepEqual(markerParserFingerprints(entries), [MARKER_PARSER_OWNER]);
   // 투영·연쇄·마커 판정이 읽는 확장자는 해석기의 모듈 확장자와 같다(대소문자 무시). 대상으로는 풀면서 그 파일의 간선·마커는
   // 읽지 않는 비대칭을 두지 않는다 — 판정은 isFrontendModuleFile 하나다.
   for (const extension of MODULE_EXTENSIONS) {

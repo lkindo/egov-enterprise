@@ -567,21 +567,33 @@ test('the marker table is red for an added or removed block, an unlisted marker 
   // 소유 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 실패한다. 경로 접두(collaboration/ 아래)로 소유를 짐작하지 않는다.
   assert.throws(() => composerMarkerBlockOwners('src/app/admin/collaboration/new/NewClient.tsx', 'demo', ''), /Unclassified composer UI block: src\/app\/admin\/collaboration\/new\/NewClient\.tsx\/demo/,
     'a path prefix is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/components/layout/header.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/components/layout/header.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
 });
 
 test('dashboard, notifications and optional address book blocks follow their domains rather than coarse packs', () => {
   const composition = resolveProjectRecipe(recipe(['mail']), catalog);
   const project = path => projectCustom(path, readFileSync(join(root, path), 'utf8'), composition);
   assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
-  assert.doesNotMatch(project('frontend/src/app/components/layout/header.tsx'), /import \{ HeaderNotifications \}/);
+  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
+  assert.deepEqual(['help', 'notification'].filter(domain => composition.resolvedDomains.includes(domain)), [],
+    'the mail selection leaves out help and notifications');
+  for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
+    assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
+  }
+  for (const [shellRegistry, empty] of [
+    ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
+    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+  ]) {
+    const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
+    assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
+  }
   // [슬롯 단계 PR-4] 메일 화면은 주소록 출처를 슬롯 레지스트리에서 받는다. 주소록을 고르지 않으면 화면은 그대로이고, 레지스트리가
   //   빈 배열로 다시 렌더된다(투영이 기여 파일을 직접 지운다).
   const mail = 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx';
   assert.equal(project(mail), readFileSync(join(root, mail), 'utf8'));
   const registry = 'frontend/src/extensions/generated-recipient-picker-sources.ts';
-  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
   const rendered = projector.project(registry, readFileSync(join(root, registry), 'utf8')).source;
   assert.doesNotMatch(rendered, /import addressbook/);
   assert.ok(rendered.includes("recipientPickerSources: readonly SlotContributions<'recipient-picker-sources'>[] = [];"), rendered);
