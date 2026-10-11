@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   deleteArticle: vi.fn(),
   invalidateQueries: vi.fn(),
   likePost: vi.fn(),
+  markQuestionSolved: vi.fn(),
   push: vi.fn(),
   refresh: vi.fn(),
   toast: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock('@/contexts/AuthContext', () => ({
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/user/board/BoardUserService', () => ({
-  boardUserService: { likePost: mocks.likePost },
+  boardUserService: { likePost: mocks.likePost, markQuestionSolved: mocks.markQuestionSolved },
 }));
 vi.mock('@/app/actions/boardActions', () => ({ deleteBoardArticle: mocks.deleteArticle }));
 vi.mock('@/services/business/user/ScrapService', () => ({
@@ -70,8 +71,12 @@ const detailData = {
   fetchError: null,
 };
 
-async function renderDetail(articleOverrides: Record<string, unknown> = {}) {
-  const dataPromise = Promise.resolve({ ...detailData, article: { ...detailData.article, ...articleOverrides } } as any);
+async function renderDetail(articleOverrides: Record<string, unknown> = {}, masterOverrides: Record<string, unknown> = {}) {
+  const dataPromise = Promise.resolve({
+    ...detailData,
+    article: { ...detailData.article, ...articleOverrides },
+    masterInfo: { ...detailData.masterInfo, ...masterOverrides },
+  } as any);
   let result!: ReturnType<typeof render>;
   await act(async () => {
     result = render(
@@ -237,6 +242,102 @@ describe('BoardDetailClient action pending contract', () => {
     expect(screen.getByRole('heading', { name: '보존할 게시글' })).toBeInTheDocument();
     expect(remove).not.toBeDisabled();
     expect(remove).toHaveAccessibleName('게시글 삭제');
+  });
+
+  /*
+    [잠금 동등성] 추천·삭제·해결 표시·스크랩은 잠금 하나(actionPendingRef + activeAction)를 함께 쓴다.
+    스크랩 버튼을 게시판 밖으로 옮겨도(슬롯 단계 스크랩 슬롯) 이 잠금을 잃으면 삭제 확인·진행 중에 스크랩이
+    나가거나 스크랩 저장 중에 글이 지워진다(설계서 §16.4). 아래 네 시험이 버튼 상태와 같은 tick 의 재진입을 함께 본다.
+  */
+  it('삭제 확인·진행 중에는 스크랩도 누를 수 없다', async () => {
+    let answerConfirm!: (value: boolean) => void;
+    mocks.confirm.mockReturnValueOnce(new Promise<boolean>((resolve) => {
+      answerConfirm = resolve;
+    }));
+    let rejectDelete!: (reason?: unknown) => void;
+    mocks.deleteArticle.mockReturnValueOnce(new Promise((_, reject) => {
+      rejectDelete = reject;
+    }));
+    await renderDetail();
+    const scrap = await screen.findByRole('button', { name: '게시글 스크랩' });
+
+    fireEvent.click(screen.getByRole('button', { name: '게시글 삭제' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    // 확인 대화상자가 열려 있는 동안
+    expect(scrap).toBeDisabled();
+    fireEvent.click(scrap);
+
+    await act(async () => { answerConfirm(true); });
+    await waitFor(() => expect(mocks.deleteArticle).toHaveBeenCalledTimes(1));
+    // 서버 삭제가 진행 중인 동안
+    expect(scrap).toBeDisabled();
+    fireEvent.click(scrap);
+    expect(mocks.createScrap).not.toHaveBeenCalled();
+
+    rejectDelete(new Error('delete failed'));
+    await waitFor(() => expect(scrap).toBeEnabled());
+    expect(mocks.createScrap).not.toHaveBeenCalled();
+  });
+
+  it('스크랩 저장 중에는 추천·삭제를 누를 수 없다', async () => {
+    let resolveScrap!: (value: number) => void;
+    mocks.createScrap.mockReturnValueOnce(new Promise<number>((resolve) => {
+      resolveScrap = resolve;
+    }));
+    await renderDetail();
+
+    fireEvent.click(await screen.findByRole('button', { name: '게시글 스크랩' }));
+    await waitFor(() => expect(mocks.createScrap).toHaveBeenCalledTimes(1));
+    const like = screen.getByRole('button', { name: '게시글 추천' });
+    const remove = screen.getByRole('button', { name: '게시글 삭제' });
+    expect(like).toBeDisabled();
+    expect(remove).toBeDisabled();
+    fireEvent.click(like);
+    fireEvent.click(remove);
+    expect(mocks.likePost).not.toHaveBeenCalled();
+    expect(mocks.confirm).not.toHaveBeenCalled();
+
+    await act(async () => { resolveScrap(7); });
+    await waitFor(() => expect(remove).toBeEnabled());
+    expect(like).toBeEnabled();
+  });
+
+  it.each([
+    ['스크랩 → 삭제', 'scrap'],
+    ['삭제 → 스크랩', 'delete'],
+  ] as const)('같은 tick 에 %s 순서로 눌러도 먼저 누른 하나만 나간다', async (_order, first) => {
+    mocks.confirm.mockResolvedValue(false);
+    await renderDetail();
+    const scrap = await screen.findByRole('button', { name: '게시글 스크랩' });
+    const remove = screen.getByRole('button', { name: '게시글 삭제' });
+
+    // 화면 상태(disabled)가 반영되기 전이므로 두 번째 클릭을 막는 것은 ref 다.
+    act(() => {
+      fireEvent.click(first === 'scrap' ? scrap : remove);
+      fireEvent.click(first === 'scrap' ? remove : scrap);
+    });
+
+    await waitFor(() => expect(remove).toBeEnabled());
+    expect(mocks.createScrap).toHaveBeenCalledTimes(first === 'scrap' ? 1 : 0);
+    expect(mocks.confirm).toHaveBeenCalledTimes(first === 'scrap' ? 0 : 1);
+  });
+
+  it('해결 표시 중에는 스크랩을 누를 수 없다', async () => {
+    let resolveSolve!: () => void;
+    mocks.markQuestionSolved.mockReturnValueOnce(new Promise<void>((resolve) => {
+      resolveSolve = resolve;
+    }));
+    await renderDetail({ qnaSttsCd: 'OPEN' }, { tmpltId: 'TMPLT_QNA' });
+    const scrap = await screen.findByRole('button', { name: '게시글 스크랩' });
+
+    fireEvent.click(screen.getByRole('button', { name: '해결됨으로 표시' }));
+    await waitFor(() => expect(mocks.markQuestionSolved).toHaveBeenCalledTimes(1));
+    expect(scrap).toBeDisabled();
+    fireEvent.click(scrap);
+    expect(mocks.createScrap).not.toHaveBeenCalled();
+
+    await act(async () => { resolveSolve(); });
+    await waitFor(() => expect(scrap).toBeEnabled());
   });
 });
 
