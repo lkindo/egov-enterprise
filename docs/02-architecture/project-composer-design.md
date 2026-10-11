@@ -122,7 +122,7 @@ flowchart TD
 | 생존 계약 | 선택 후 반드시 남아야 하는 API·route·테이블·대표 사용자 흐름 |
 | 검증 소유권 | 기능 전용 검사와 공통·횡단 검사, 제외될 때의 적용범위 근거 |
 
-현재 게시판·댓글·스크랩은 manifest가 함께 선택하도록 선언한 클러스터다. 대시보드는 게시판·알림을 요구한다. `tb_tmplt_info`는 게시판과 템플릿이 공유한다. 반면 [수신자 피커](../../frontend/src/app/components/ui/recipient-picker.tsx)의 주소록은 주입형 선택 연동이다. 이 차이를 무시하고 모든 연결을 강제 의존성으로 만들면 불필요한 기능까지 포함된다.
+게시판·댓글은 코드가 서로를 참조해 함께 선택한다. 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 생성된다(게시글 상세의 스크랩 버튼은 [슬롯 기여](#슬롯-기여와-레지스트리)다). 약식 전자결재도 행사·포상 없이 생성되고, 행사·포상은 포상이 결재 문서를 참조해 결재를 요구한다. 대시보드는 게시판·알림을 요구한다. `tb_tmplt_info`는 게시판과 템플릿이 공유한다. 반면 [수신자 피커](../../frontend/src/app/components/ui/recipient-picker.tsx)의 주소록은 주입형 선택 연동이다. 이 차이를 무시하고 모든 연결을 강제 의존성으로 만들면 불필요한 기능까지 포함된다.
 
 선택 연동은 [연동 선언](../../scripts/project-composer-integrations.mjs)에 이벤트·포트·선택 외래 키 셋 중 하나로 적고, 계획이 '기능 저하'로 알린다. 저하는 연동의 출발 기능이 포함되고 상대 기능이 빠진 구성에서만 보이며, 자동 포함하지도 생성을 막지도 않는다. 이벤트 연동은 손으로 근거를 적지 않는다. 카탈로그가 네 모듈의 생산 Java에서 리스너가 받는 이벤트 타입을 찾고, 그 이벤트를 만드는 위치와 각 파일의 소유 기능을 계산한다. 소유는 지원 파일 선언이 먼저이고, 그다음 업무 앱 디렉터리다. foundation·business-core 는 core 다. api-server 파일은 참조하는 업무 패키지를 따르고, 여럿이면 나머지를 모두 끌어오는 기능이 소유자다(없으면 실패한다). 리스너가 받는 타입은 애노테이션에 적은 클래스가 먼저이고, 너무 넓은 타입(Object 등)은 거부한다. 생성자·생성자 참조·빌더/팩토리 호출을 발행 위치로 센다. 시험은 이 소유 판정을 단독 선택 19개 구성에서 생성기의 실제 연쇄 제거와 대조한다. 계산된 연결은 저하 선언 또는 '잃는 것 없음(자기 정리)' 분류 중 정확히 하나에 있어야 한다. "늘 함께 포함되어 저하될 수 없다"는 판정 하나를 두 검사가 같이 쓴다. 직접 선택 폐포에 상대가 있고 출발 기능을 담은 모든 preset에도 상대가 있으면 저하될 수 없다. 포트·선택 외래 키 연동은 주석을 뺀 생산 소스에서 정확히 한 번 나오는 문자열로 근거를 단다. 포트와 화면 슬롯의 새 연동을 기계적으로 찾아내는 일은 매니페스트 v2(Phase 2)의 범위다. 허브를 슬롯으로 나누기 전에, 메뉴·별칭·화면 코드·백엔드 문자열이 `?tab=` 으로 여는 값을 그 허브의 `*-tabs.ts` 모듈이 내보내는 탭 해석(`TAB_HUB`)과 대조하는 [탭 목적지 계약](../../frontend/src/__tests__/cross-stack/tab-destination-contract.test.ts)을 둔다([DEC-OPS-261](../../.agent/memory/decisions.md)). 허브는 모르는 탭이면 기본 탭을 열기 때문에, 탭 이름이 바뀌면 그 링크가 조용히 엉뚱한 탭에 떨어진다.
 
@@ -155,7 +155,8 @@ flowchart TD
 | `recipient-picker-sources` | 메일·문자 작성 화면의 수신자 피커(도우미 `useRecipientAddressBook`). 기여: 주소록(노출 ADBK_READ, PR-5) | 정의(PR-4) |
 | `shell-links` | 머리글·바닥글·오류 화면의 링크(닫힌 배치 목록). 기여: 도움말(머리글 아이콘·바닥글 '고객지원'·오류 화면 '기술 지원 문의하기'). 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계라 주체 없이 거른다 — 두 배치는 `/admin` 밖 목적지만 둔다 | 정의(PR-6) |
 | `header-widgets` | 머리글 테마 전환 뒤의 컴포넌트. 기여: 알림 벨(노출 NOTI_READ, 컴포넌트는 알림 기능 파일에 두고 기여는 참조만 한다) | 정의(PR-6) |
-| `search-providers`·`hub-tabs`·`stats-panels`·`home-summary-cards`·`home-sections`·`post-actions` | 검색·허브·통계·업무 홈·게시글 | Phase 2 후속 예상(합계 9종) |
+| `post-actions` | 게시글 상세의 부가 동작 버튼(추천과 삭제 사이). 기여: 스크랩(쓰기 함수 `submit` 하나, 이번 방문에서 한 번, 노출은 SCRAP_CREATE 보유자). 잠금(추천·삭제·해결 표시와 하나)·토스트·완료 표시는 게시글 상세가 소유한다 | 정의(스크랩 슬롯, [DEC-OPS-269](../../.agent/memory/decisions.md)), 노출 축소(S3, DEC-OPS-270). 저장은 react-query mutation 을 거치지 않아 오프라인이면 대기 대신 즉시 실패로 알린다(추천·삭제와 같다) |
+| `search-providers`·`hub-tabs`·`stats-panels`·`home-summary-cards`·`home-sections` | 검색·허브·통계·업무 홈 | Phase 2 후속 예상(합계 9종) |
 
 지금 기여는 데이터만 담는다. 경계 계약의 함정 규칙이 JSX, 최상위 실행문, 항목 안의 함수·호출, 링크 슬롯 밖의 링크 키, 중립 모듈·자기 기능 밖 import(다른 기능이 소유한 `@/lib`·`@/types` 파일 포함)를 막는다. 셸 링크(`shell-links`) 항목은 `{ page: 자기 href }` 만 쓰고, 바닥글·오류 화면 배치는 `/admin` 밖 목적지, 머리글 배치는 아이콘, 바닥글 항목은 같은 기여 안의 같은 목적지 머리글 짝을 둔다(PR-6, fill 화면에서 바닥글이 숨는다). PR-4 에서 넓힌 census 는 둘이다: [관리 링크 census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts)(슬롯 디렉터리와 .ts 를 보고, 기여는 AST 로 읽어 링크마다 같은 객체의 `{ page: 자기 목적지 }` 만 게이트로 인정하며 리터럴이 아닌 링크 값은 붉다)와 [리다이렉트 역참조 가드](../../frontend/src/__tests__/page-redirect-reference-guard.test.ts)(객체 리터럴의 `href`·`url`·`link`·`moreHref` 키). 슬롯이 처음 뷰·폼·쓰기·URL 을 담을 때는 아래 census 가 기여를 보지 못하므로, 그 슬롯을 들이는 변경에서 함께 넓히고 수용 기준에 넣는다. 그대로 두면 범위 밖으로 나간 부채가 exact 래칫에서 '감소' 로 보일 수 있다(H2).
 
@@ -163,7 +164,7 @@ flowchart TD
 |---|---|
 | 화면 조각(뷰) | [화면 목록 귀속](../../scripts/generate-screen-registry.mjs), A1·A2 채택 census(`APP_DIR` 스캔, [A1](../../frontend/src/__tests__/work-list-adoption-census.test.ts)), [화면 용어](../../scripts/frontend-visible-terms-contract.mjs), [정직성 계약](../../frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts) |
 | 폼 | [§A3-1 폼 그릇](../../scripts/a3-1-form-container-census.mjs), [폼 검증 census](../../frontend/scripts/frontend-form-validation-census.mjs), 미저장 닫기([작업 화면 문법 계약](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts)) |
-| 쓰기 | [operation 소비 census](../../scripts/operation-consumer-census.mjs) 축 3(쓰기 버튼의 권한 표시) |
+| 쓰기 | [operation 소비 census](../../scripts/operation-consumer-census.mjs) 축 3(쓰기 버튼의 권한 표시). 스크랩 슬롯에서 넓혔다 — 기여 파일을 화면 모집단에 넣고, 기여를 여는 화면을 그 레지스트리의 importer(도우미 .ts 면 그 도우미의 importer)로 잇는다. 기여가 import 하는 비화면·비서비스 모듈은 디렉터리와 무관하게 중간 모듈로 읽고, 기여의 판정은 `visibleWhen.permissions` 원소만 센다. 같은 계산을 쓰는 화면 목록(권한 작업대)도 함께 따른다 |
 | URL 상태 | [URL-state census](../../scripts/ui-url-state-census.mjs)의 routeContext(기여 파일을 소비 화면의 라우트로 귀속) |
 
 설계서 11장의 '헤더·푸터·명령 센터·검색 13블록' 은 실측 15블록이고, 오류 화면 2블록이 따로 있다. 마커 블록 수는 PR-4 에서 116블록·21파일에서 106블록·17파일이 됐다(메일·문자 화면과 두 시험의 10블록). PR-6 에서 98블록·14파일이 됐다(머리글 4·바닥글 2·오류 화면 2블록).
@@ -254,6 +255,8 @@ A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는
 | PR-4 | 슬롯 장치(타입·레지스트리·projector 렌더·경계 계약)와 수신자 피커 주소록 파일럿, 관리 링크·리다이렉트 census 범위 | 완료([DEC-OPS-267](../../.agent/memory/decisions.md), [§5 슬롯](#슬롯-기여와-레지스트리)) |
 | PR-5 | 주소록 출처 노출을 ADBK_READ 로 | 완료([DEC-OPS-268](../../.agent/memory/decisions.md)) |
 | PR-6 | 셸 링크 슬롯(머리글·바닥글·오류 화면)과 알림 벨 | 완료(DEC 없음 — DEC-OPS-267 의 슬롯 종류 표 이행, 화면 동등) |
+| 스크랩 슬롯 S1~S3 | 게시글 상세 공유 잠금 동등성 시험, `post-actions` 슬롯과 스크랩 기여, 축 3·화면 목록의 기여 귀속, 스크랩 버튼 노출을 SCRAP_CREATE 로(축 3 부채 45→44) | 완료([DEC-OPS-269·270](../../.agent/memory/decisions.md), S2 는 화면 동등, S3 는 기본 그룹 화면 동등) |
+| 간선 제거 E1·E2 | 수동 도메인 삭제의 동반 삭제를 카탈로그 간선의 역방향 폐포로, 근거 없는 묶음 간선 4개(게시판·댓글→스크랩, 스크랩→댓글, 결재→행사·포상) 제거. 묶음 형식은 매니페스트 v2 까지 그대로 둔다 | 완료([DEC-OPS-271·272](../../.agent/memory/decisions.md)). 단독 선택 평균 포함 수 3.53→2.95, 혼자 풀리는 기능 8→9. 게시판 단독은 7→5다 — 설계서의 3→2 는 지식 허브 분해 뒤 값이다 |
 
 계획 단계의 순서와 범위는 바뀔 수 있다. 마커 소유 표의 번호 없는 step(업무 홈, 검색 이행, 허브 분해의 협업 허브·커뮤니티·`hub-tabs`(허브 탭 기여 슬롯)·`stats-panels`(통계 패널 기여 슬롯))은 이 표 뒤의 Phase 2 후속 단계다.
 

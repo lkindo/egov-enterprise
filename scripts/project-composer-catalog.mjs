@@ -96,7 +96,9 @@ const FEATURES = {
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
   routes: ['/smart-toolkit/schedule'] },
   scrap: { label: '스크랩', permissions: ['SCRAP'], paths: [
-    'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps'],
+    'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps',
+    // 슬롯 기여(스크랩 슬롯): 게시글 상세의 스크랩 버튼과 그 버튼이 부르는 쓰기. 기능과 함께 직접 지워진다.
+    'src/queries/scrap-post-action.ts', 'src/extensions/scrap'],
   routes: ['/admin/collaboration/scraps'] },
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],
@@ -170,6 +172,26 @@ const REQUIRED_FOREIGN_KEYS = [
 function javaCode(source) {
   return source.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|"""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g,
     value => value.replace(/[^\r\n]/g, ' '));
+}
+
+/*
+ * 아래 세 판정은 카탈로그와 수동 도메인 삭제(domain-deletion-plan.mjs)가 함께 쓴다. 삭제 판정은 카탈로그 전체 검증 없이
+ * 지금 트리(생성물·이미 지운 트리 포함)에서 같은 간선을 계산해야 해서, 순회는 따로 하되 간선 규칙은 여기 하나만 둔다.
+ */
+/** 업무 앱 생산 소스의 상대 경로가 속한 기능 디렉터리. 업무 앱 소스가 아니면 null. */
+export function appSourceDomain(path) {
+  return path.startsWith(`${APP_ROOT}/`) ? path.slice(APP_ROOT.length + 1).match(/^(?:domain|service)\/([^/]+)\//)?.[1] ?? null : null;
+}
+
+/** Java 소스가 정규화된 이름으로 참조하는 기능 디렉터리(정적·와일드카드 import 포함, 주석·문자열 제외). 중복이 있을 수 있다. */
+export function javaDomainReferences(source) {
+  return [...javaCode(source).matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)].map(match => match[1]);
+}
+
+/** 생성 묶음 선언이 이 기능에 요구하는 기능. 같은 묶음의 다른 기능과 그 묶음의 requiresDomains 다. */
+export function clusterRequirements(manifest, domain) {
+  return (manifest.clusters ?? []).filter(cluster => cluster.domains.includes(domain)).flatMap(cluster =>
+    [...cluster.domains, ...(cluster.requiresDomains ?? [])].filter(item => item !== domain).map(required => ({ domain: required, cluster })));
 }
 function covers(prefix, candidate) { return candidate === prefix || candidate.startsWith(`${prefix}/`); }
 function frontendRules(domains) {
@@ -254,7 +276,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
   }
   for (const absolute of walk(join(root, APP_ROOT)).filter(path => path.endsWith('.java'))) {
     const path = slash(relative(root, absolute));
-    const domain = path.slice(APP_ROOT.length + 1).match(/^(?:domain|service)\/([^/]+)\//)?.[1];
+    const domain = appSourceDomain(path);
     if (!inventory.has(domain)) fail(`unowned application source: ${path}`);
     const source = readFileSync(absolute, 'utf8');
     const owner = inventory.get(domain);
@@ -263,8 +285,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const match of source.matchAll(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/g)) owner.tables.push(match[1]);
     for (const match of source.matchAll(/sequenceName\s*=\s*"([^"]+)"/g)) owner.sequences.push(match[1]);
     // Includes fully qualified field types (RewardManage), static and wildcard imports.
-    for (const match of javaCode(source).matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)) {
-      if (match[1] !== domain && inventory.has(match[1])) owner.edges.push({ domain: match[1], evidence: path });
+    for (const referenced of javaDomainReferences(source)) {
+      if (referenced !== domain && inventory.has(referenced)) owner.edges.push({ domain: referenced, evidence: path });
     }
   }
   const sharedTables = manifest.sharedTableContracts ?? [];
@@ -334,10 +356,8 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const support of supportRequirements.get(domain) ?? []) {
       requires.push({ domain: support.domain, kind: 'java', reason: `${domain} 이 쓰는 지원 구현이 ${support.domain} 소스에 있다.`, evidence: support.path });
     }
-    for (const cluster of manifest.clusters ?? []) if (cluster.domains.includes(domain)) {
-      for (const required of [...cluster.domains, ...(cluster.requiresDomains ?? [])].filter(item => item !== domain)) {
-        requires.push({ domain: required, kind: 'manifest', reason: cluster.reason, evidence: `${MANIFEST}#clusters/${cluster.id}` });
-      }
+    for (const { domain: required, cluster } of clusterRequirements(manifest, domain)) {
+      requires.push({ domain: required, kind: 'manifest', reason: cluster.reason, evidence: `${MANIFEST}#clusters/${cluster.id}` });
     }
     for (const cluster of SHARED_UI) if (cluster.domains.includes(domain)) {
       for (const required of cluster.domains.filter(item => item !== domain)) requires.push({ domain: required, kind: 'shared-ui', reason: cluster.reason, evidence: cluster.evidence, customOnly: true });

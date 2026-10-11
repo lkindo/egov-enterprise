@@ -3,9 +3,12 @@
 # Usage:   ./scripts/delete-domain.ps1 -DomainName <name>[,<name>...] [-DryRun]
 # Example: ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun
 #
-# 도메인·클러스터의 SSOT 는 config/reusable-base-profiles.json 이다.
+# 도메인의 SSOT 는 config/reusable-base-profiles.json 이다.
 #  - 매니페스트에 없는 도메인명은 즉시 에러로 중단한다(경로 추측·침묵 SKIP 금지).
-#  - 매니페스트 clusters(및 requiresDomains)에 묶인 도메인은 자동으로 동반 삭제한다.
+#  - 지우는 도메인을 요구하는 도메인은 자동으로 동반 삭제한다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·
+#    생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 scripts/domain-deletion-plan.mjs 가 한다. 카탈로그 전체를
+#    적재하지 않으므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 돈다.
+#    지우는 도메인이 요구하는 도메인은 남긴다.
 #  - 백엔드 경로는 생성기 Java 단계(reusable-source-java.mjs 의 resolveDomainRemovalDirectory)와 같은 canonical layout
 #    (business-app/src/{main,test}/java/nuri/business/{domain,service}/<d>)과
 #    api-server 의 controller/business/<d> 디렉터리를 사용한다.
@@ -76,27 +79,22 @@ if ($unknown.Count -gt 0) {
     exit 1
 }
 
-# 2. 클러스터 동반 삭제 강제 (manifest clusters + requiresDomains, 고정점 확장) --
-$toDelete = [System.Collections.Generic.HashSet[string]]::new([string[]]$requested)
-$expanded = $true
-while ($expanded) {
-    $expanded = $false
-    foreach ($cluster in @($manifest.clusters)) {
-        $members = @($cluster.domains | Where-Object { $_ })
-        $required = @($cluster.requiresDomains | Where-Object { $_ })
-        $touchesMember = @($members | Where-Object { $toDelete.Contains($_) }).Count -gt 0
-        $touchesRequired = @($required | Where-Object { $toDelete.Contains($_) }).Count -gt 0
-        if (-not ($touchesMember -or $touchesRequired)) { continue }
-        foreach ($m in $members) {
-            if (-not $toDelete.Contains($m)) {
-                [void]$toDelete.Add($m)
-                $expanded = $true
-                Write-Host "[CLUSTER] '$($cluster.id)' 클러스터 동반 삭제 추가: $m" -ForegroundColor Yellow
-                Write-Host "          사유: $($cluster.reason)" -ForegroundColor DarkYellow
-            }
-        }
-    }
+# 2. 동반 삭제 (requires 간선의 역방향 폐포, scripts/domain-deletion-plan.mjs) -----------
+#    지우는 도메인을 요구하는 도메인을 함께 지운다. 화면을 같이 쓰는 데서 나온 간선은 보지 않는다.
+$planScript = Join-Path $RepoRoot 'scripts/domain-deletion-plan.mjs'
+$planOutput = & node $planScript --json @requested
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] 동반 삭제 판정 실패(scripts/domain-deletion-plan.mjs, exit $LASTEXITCODE)" -ForegroundColor Red
+    exit 1
 }
+$plan = ($planOutput -join "`n") | ConvertFrom-Json
+$kindLabels = @{ java = '코드 참조'; manifest = '생성 묶음 선언' }
+foreach ($row in @($plan.added)) {
+    $kinds = @($row.because.kinds | ForEach-Object { if ($kindLabels.ContainsKey($_)) { $kindLabels[$_] } else { $_ } }) -join ' · '
+    Write-Host "[REQUIRES] 동반 삭제 추가: $($row.domain) — $($row.because.to) 를 요구한다($kinds)" -ForegroundColor Yellow
+    if ($row.because.userReason) { Write-Host "          사유: $($row.because.userReason)" -ForegroundColor DarkYellow }
+}
+$toDelete = [System.Collections.Generic.HashSet[string]]::new([string[]]@($plan.domains))
 $deleteList = @($toDelete) | Sort-Object
 Write-Host "삭제 대상 도메인: $($deleteList -join ', ')" -ForegroundColor Cyan
 
@@ -128,6 +126,22 @@ foreach ($packName in $packsTouched) {
     }
 }
 
+# 지우는 Java 타입의 정규화된 이름 (6단계 잔존 참조 검사용) — 지우기 전에 읽는다 ------
+#    기능 이름(system 등)을 패키지 접두로 찾으면 business-core 의 같은 이름 패키지까지 걸린다. 실제로 지우는 타입만 찾는다.
+$deletedTypeNames = [System.Collections.Generic.HashSet[string]]::new()
+$deletedPackages = [System.Collections.Generic.HashSet[string]]::new()
+foreach ($rel in $backendRelPaths) {
+    $full = [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $rel))
+    if (-not (Test-Path $full)) { continue }
+    foreach ($file in (Get-ChildItem -Path $full -Recurse -File -Filter '*.java')) {
+        $packageLine = Select-String -Path $file.FullName -Pattern '^\s*package\s+([A-Za-z_][\w.]*)\s*;' | Select-Object -First 1
+        if (-not $packageLine) { continue }
+        $package = $packageLine.Matches[0].Groups[1].Value
+        [void]$deletedPackages.Add($package)
+        [void]$deletedTypeNames.Add("$package.$($file.BaseName)")
+    }
+}
+
 # 5. 삭제 실행 (또는 DryRun 보고) ----------------------------------------------
 $allRelPaths = $backendRelPaths + $frontendRelPaths
 $deletedRelPaths = @()
@@ -151,23 +165,22 @@ if ($absentRelPaths.Count -gt 0) {
     foreach ($rel in $absentRelPaths) { Write-Host "    - $rel" -ForegroundColor DarkGray }
 }
 
-# 6. 잔존 Java 참조 sweep (삭제 대상 패키지를 참조하는 남은 소스 경고) ----------
-$packagePatterns = @()
-foreach ($d in $deleteList) {
-    foreach ($layer in 'domain', 'service') {
-        $packagePatterns += ([regex]::Escape("nuri.business.$layer.$d") + '(?![A-Za-z0-9_])')
-    }
-}
-$refPattern = $packagePatterns -join '|'
+# 6. 잔존 Java 참조 sweep (지우는 타입을 참조하는 남은 소스 경고) -----------------
+#    정규화된 타입 이름(import·정적 import·코드 안 FQN)과 지우는 패키지의 와일드카드 import 를 찾는다. 빌드 산출물(build/)은 보지 않는다.
+$refPatterns = @($deletedTypeNames | Sort-Object | ForEach-Object { [regex]::Escape($_) + '(?![A-Za-z0-9_$])' }) +
+    @($deletedPackages | Sort-Object | ForEach-Object { [regex]::Escape($_) + '\.\*' })
 $deletedFullPaths = @($deletedRelPaths | ForEach-Object { [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $_)) })
+$buildSegment = [System.IO.Path]::DirectorySeparatorChar + 'build' + [System.IO.Path]::DirectorySeparatorChar
 $remainingJava = Get-ChildItem -Path (Join-Path $RepoRoot 'foundation'), (Join-Path $RepoRoot 'business-core'), (Join-Path $RepoRoot 'business-app'), (Join-Path $RepoRoot 'api-server') -Recurse -File -Filter '*.java' |
     Where-Object {
         $file = $_.FullName
+        -not $file.Substring($RepoRoot.Length).Contains($buildSegment) -and
         -not ($deletedFullPaths | Where-Object { $file.StartsWith($_ + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
     }
-$danglingRefs = @($remainingJava | Select-String -Pattern $refPattern)
+$danglingRefs = @()
+if ($refPatterns.Count -gt 0) { $danglingRefs = @($remainingJava | Select-String -CaseSensitive -Pattern ($refPatterns -join '|')) }
 if ($danglingRefs.Count -gt 0) {
-    Write-Host "[WARN] 삭제 대상 도메인 패키지를 참조하는 잔존 Java 소스($(@($danglingRefs.Path | Select-Object -Unique).Count)개 파일) — 그대로 두면 컴파일이 깨진다:" -ForegroundColor Yellow
+    Write-Host "[WARN] 지우는 Java 타입을 참조하는 잔존 소스($(@($danglingRefs.Path | Select-Object -Unique).Count)개 파일) — 그대로 두면 컴파일이 깨진다:" -ForegroundColor Yellow
     foreach ($ref in ($danglingRefs | Select-Object -First 40)) {
         $rel = $ref.Path.Substring($RepoRoot.Length).TrimStart('\', '/')
         Write-Host "    - ${rel}:$($ref.LineNumber)" -ForegroundColor Yellow

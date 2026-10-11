@@ -71,6 +71,8 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '도움말 기능이 없으면 머리글·바닥글·오류 화면에서 도움말 화면으로 가는 링크만 사라지고 다른 기능은 그대로입니다.' },
   { path: 'frontend/src/extensions/notification/header-widgets.ts',
     reason: '알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다.' },
+  { path: 'frontend/src/extensions/scrap/post-actions.ts',
+    reason: '스크랩 기능이 없으면 게시글 상세의 스크랩 버튼만 사라지고 게시판 기능은 그대로입니다.' },
 ];
 
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];

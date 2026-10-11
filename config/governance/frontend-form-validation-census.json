@@ -1793,13 +1793,13 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleScrap[1]",
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handlePostAction[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
       "owner": "BoardDetailClient",
-      "handler": "handleScrap",
+      "handler": "handlePostAction",
       "writeSinks": [
-        "createScrapMutation.mutateAsync"
+        "action.submit"
       ],
       "classification": "mutation",
       "status": "compliant",

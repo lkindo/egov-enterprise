@@ -325,7 +325,9 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await expect(summary).toBeFocused();
   await board.getByText('개발자 근거').click();
   await expect(board.locator('code', { hasText: 'nuri/business/domain/scrap/Scrap.java' })).toBeVisible();
-  await expect(board).toContainText('코드 참조 · 생성 묶음 선언');
+  // 스크랩 → 게시판은 코드 참조로만 남는다. 생성 묶음 선언(게시판 묶음의 스크랩)은 간선 제거(DEC-OPS-272)에서 걷었다.
+  await expect(board).toContainText('코드 참조');
+  await expect(board).not.toContainText('생성 묶음 선언');
   // 요약은 생성 중 잠기는 구성 영역 밖에 있다. 생성이 도는 동안 해제 버튼도 잠기고, 끝나면 다시 풀린다.
   const drop = board.getByRole('button', { name: '쪽지 해제하기' });
   await confirmGenerate(page);

@@ -49,12 +49,13 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
   assert.equal(board.path, '쪽지 → 스크랩 → 게시판·지식');
   assert.deepEqual(board.steps.map(step => step.text), ['쪽지 → 스크랩: 쪽지와 스크랩이 쪽지·스크랩 화면 하나를 함께 씁니다.',
     '스크랩 → 게시판·지식: 스크랩은 게시글을 저장해 둡니다.']);
-  assert.deepEqual(board.steps.map(step => step.evidence), [['공동 화면'], ['코드 참조', '생성 묶음 선언']]);
+  assert.deepEqual(board.steps.map(step => step.evidence), [['공동 화면'], ['코드 참조']]);
   assert.ok(board.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/scrap/Scrap.java'));
   assert.equal(board.removal, '이 기능을 빼려면 쪽지를 해제하세요.');
   assert.deepEqual(board.roots, ['note']);
   assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
-  assert.equal(notesFor(['informalsanction'])[0].removal, '이 기능을 빼려면 약식 전자결재를 해제하세요.');
+  // 약식 전자결재는 행사·포상 없이 생성된다(DEC-OPS-272). 그 반대는 코드 참조로 남는다.
+  assert.deepEqual(notesFor(['informalsanction']), []);
   assert.equal(notesFor(['operation'])[0].removal, '이 기능을 빼려면 행사·외부인사·포상을 해제하세요.');
   // 대시보드 하나만 골라도 종전 사유는 1,600자를 넘었다. 화면 문장에는 영문(클래스명·id·경위 괄호)이 없다.
   for (const item of notesFor(['dashboard'])) {

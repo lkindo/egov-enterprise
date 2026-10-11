@@ -34,13 +34,14 @@ clean v* release tag
 | 프로필 | 포함 pack | 용도 |
 |---|---|---|
 | `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
-| `collaboration` | core + collaboration | core + 게시판 클러스터 + 메일·쪽지·알림·SMS·실시간 대시보드 |
+| `collaboration` | core + collaboration | core + 게시판·댓글·스크랩 + 메일·쪽지·알림·SMS·실시간 대시보드 |
 | `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
 
 프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
-소유한다. `board`·`comment`·`scrap`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
-테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`도 이
-매니페스트의 `appDomains`·`clusters`를 같은 SSOT 로 소비한다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+소유한다. `board`·`comment`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
+테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`은 이
+매니페스트의 `appDomains`로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그 간선을 거꾸로 따라 정한다
+([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
 
 ### 2.1 백엔드 출력 형태
 
@@ -357,7 +358,11 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    기여 파일을 가리키고(계획이 기능 저하로 알린다), 잃는 것이 없으면 `REGISTRATION_ONLY_CONTRIBUTIONS` 에 사유와 함께 둔다.
 8. **기여에 뷰·폼·쓰기·URL 을 처음 담을 때는 그것을 보는 census 를 같은 변경에서 넓힌다**(설계 §5 의 진입 조건 표). 지금
    기여는 데이터만 담고, 경계 계약의 함정 규칙이 JSX·최상위 실행문·항목 안의 함수와 호출·링크 키(링크 슬롯 밖)·기능 밖 import 를
-   막는다.
+   막는다. 쓰기를 담는 기여(스크랩 슬롯 `post-actions`)는 **쓰기 함수 하나(`submit`)의 이름만** 가리킨다 — 함수는 그 기능의
+   모듈(보통 조회 모듈 `src/queries`)에 두고, 잠금·토스트·완료 표시는 호스트 셸이 소유한다(추천·삭제와 같은 잠금을 쓰게 하려면).
+   축 3·화면 목록은 기여 파일을 화면 모집단에 넣어 그 레지스트리를 읽는 화면(도우미 .ts 면 그 도우미를 읽는 화면)으로 쓰기를
+   귀속하고, 기여가 import 하는 비화면·비서비스 모듈은 어느 디렉터리에 있든 중간 모듈로 읽는다. 기여의 판정은
+   `visibleWhen.permissions` 원소만 센다 — always 사유 문자열에 권한 이름을 따옴표째 적어도 판정이 아니다.
 
 ### 3.8 검토 원장 투영과 기관 승인
 

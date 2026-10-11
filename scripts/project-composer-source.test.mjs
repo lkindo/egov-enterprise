@@ -577,14 +577,16 @@ test('dashboard, notifications and optional address book blocks follow their dom
   assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
   const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
   // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
-  assert.deepEqual(['help', 'notification'].filter(domain => composition.resolvedDomains.includes(domain)), [],
-    'the mail selection leaves out help and notifications');
+  //   [스크랩 슬롯] 게시글 상세의 스크랩 버튼(post-actions)도 같다.
+  assert.deepEqual(['help', 'notification', 'scrap'].filter(domain => composition.resolvedDomains.includes(domain)), [],
+    'the mail selection leaves out help, notifications and scraps');
   for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
     assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
   }
   for (const [shellRegistry, empty] of [
     ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
     ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+    ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
@@ -602,17 +604,64 @@ test('dashboard, notifications and optional address book blocks follow their dom
 test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
   const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
   const source = readFileSync(join(root, file), 'utf8');
-  // The card block is owned by dashboard + note. Today dashboard pulls in note through board, so the
-  // card survives with the dashboard; the dual ownership keeps it from dangling if that dependency moves.
+  // The card block is owned by dashboard + note. Dashboard alone used to pull in note through the board
+  // bundle's scrap edge and the note/scrap hub; that edge is gone (DEC-OPS-272), so the card now leaves with
+  // note and the dual ownership keeps it from dangling.
   const withoutDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
   assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
-  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard']), catalog));
+  const dashboardOnly = resolveProjectRecipe(recipe(['dashboard']), catalog);
+  assert.ok(!dashboardOnly.resolvedDomains.includes('note'), dashboardOnly.resolvedDomains.join(','));
+  assert.doesNotMatch(projectCustom(file, source, dashboardOnly), /UnreadNotesCard/);
+  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard', 'note']), catalog));
   assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
   assert.match(withDashboard, /<UnreadNotesCard \/>/);
   const forcedWithoutNote = projectCustom(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] },
     { packs: ['core', 'collaboration'], frontendRemovePaths: [] });
   assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
   assert.match(forcedWithoutNote, /업무게시판 글/);
+});
+
+/*
+ * 마커 블록 안의 라우트 리터럴은 블록이 남는 구성에 그 화면도 남을 때만 쓴다. 블록 소유 기능을 해석해(자동 포함 포함)
+ * 라우트를 소유한 기능(공동 화면은 그 기능 전부)이 모두 들어오는지 본다. 어긋나면 지워진 화면으로 가는 링크가 남는다 —
+ * tsc·정밀 점검·화면 생존 대조는 문자열 목적지를 보지 않는다.
+ */
+function routeOwnerDomains(path) {
+  let best = null;
+  const consider = (route, domains) => { if (covers(route, path) && (!best || route.length > best.route.length)) best = { route, domains }; };
+  for (const capability of catalog.capabilities) for (const route of capability.frontend.routes) consider(route, [capability.id]);
+  for (const group of catalog.sharedUi) for (const route of group.routes) consider(route, group.domains);
+  return best?.domains ?? null;
+}
+
+test('every route literal in a marker block survives in every composition that keeps the block', () => {
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const violations = [];
+  let checked = 0;
+  for (const row of FRONTEND_MARKER_FILES) {
+    const source = readFileSync(join(root, 'frontend', row.file), 'utf8');
+    for (const block of parsePackMarkerBlocks(source, { knownPacks, label: row.file }).blocks) {
+      const owners = composerMarkerBlockOwners(row.file, block.pack, block.text);
+      const kept = new Set(resolveProjectRecipe(recipe(owners), catalog).resolvedDomains);
+      for (const match of block.text.matchAll(/['"`](\/[a-z][^'"`?#\s$]*)/g)) {
+        const screen = routeOwnerDomains(match[1].replace(/\/$/, ''));
+        if (!screen) continue;
+        checked++;
+        const missing = screen.filter(domain => !kept.has(domain));
+        if (missing.length) violations.push(`${row.file}:${block.startLine} ${block.pack} [${owners}] ${match[1]} -> ${missing}`);
+      }
+    }
+  }
+  assert.ok(checked >= 10, `route literals checked: ${checked}`);
+  assert.deepEqual(violations, []);
+  // 명령 센터의 협업 허브 바로가기: 게시판·설문(CI 대표 구성)에는 허브가 없으므로 바로가기도 없다. 쪽지를 고르면 허브와 함께 남는다.
+  const file = 'frontend/src/app/components/ui/global-command-center.tsx';
+  const center = readFileSync(join(root, file), 'utf8');
+  const boardSurvey = projectCustom(file, center, resolveProjectRecipe(recipe(['board', 'survey']), catalog));
+  assert.doesNotMatch(boardSurvey, /\/admin\/collaboration|act-collab|import \{ Users \}/);
+  const withNote = projectCustom(file, center, resolveProjectRecipe(recipe(['note']), catalog));
+  assert.match(withNote, /url: '\/admin\/collaboration'/);
+  assert.match(withNote, /import \{ Users \} from 'lucide-react';/);
 });
 
 test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
