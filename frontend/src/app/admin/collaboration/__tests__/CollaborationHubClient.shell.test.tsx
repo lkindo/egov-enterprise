@@ -7,17 +7,18 @@ import { CollaborationHubFrame } from '../collaboration-hub-frame';
  * 레지스트리를 가짜 기여로 바꿔 셸이 하는 일만 본다. 실제 쪽지·스크랩 탭은 각 기능의 시험이 실제 레지스트리로 본다.
  */
 
-const mocks = vi.hoisted(() => ({ query: '', replace: vi.fn(), tabs: [] as unknown[], links: [] as unknown[] }));
+const USER = { id: 'u', permissions: ['NOTE_READ'], authorizationVersion: 'v1' };
+const mocks = vi.hoisted(() => ({
+  query: '', replace: vi.fn(), tabs: [] as unknown[], links: [] as unknown[],
+  auth: { user: null as unknown, loading: false },
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: mocks.replace }),
   usePathname: () => '/admin/collaboration',
   useSearchParams: () => new URLSearchParams(mocks.query),
 }));
-vi.mock('@/contexts/AuthContext', () => {
-  const user = { id: 'u', permissions: ['NOTE_READ'], authorizationVersion: 'v1' };
-  return { useAuth: () => ({ user }), useOptionalAuth: () => ({ user }) };
-});
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => mocks.auth, useOptionalAuth: () => mocks.auth }));
 vi.mock('@/extensions/generated-hub-tabs', () => ({ hubTabs: [mocks.tabs] }));
 vi.mock('@/extensions/generated-shell-links', () => ({ shellLinks: [mocks.links] }));
 
@@ -34,6 +35,7 @@ const tabNames = () => within(screen.getByRole('tablist', { name: '협업 데이
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.query = '';
+  mocks.auth = { user: USER, loading: false };
   // 순서는 order 가 정한다(레지스트리 순서가 아니다). 다른 허브의 탭은 그리지 않는다. 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다.
   mocks.tabs.splice(0, Infinity, tab('SCRAPS', 20, '스크랩'), tab('COMMUNITY', 5, '커뮤니티', 'knowledge'), tab('MESSAGES', 10, '쪽지'));
   mocks.links.splice(0, Infinity,
@@ -86,5 +88,21 @@ describe('협업 허브 core 셸', () => {
     expect(screen.getByRole('status')).toHaveTextContent('이 구성에서 볼 수 있는 협업 목록이 없습니다.');
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.queryByRole('tabpanel')).toBeNull();
+  });
+
+  it('탭 기여는 있는데 권한으로 모두 가려졌으면 구성이 아니라 권한 때문이라고 말한다', () => {
+    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['SCRAP_READ'] } });
+    render(<CollaborationHubClient />);
+    expect(screen.getByRole('status')).toHaveTextContent('협업 목록 조회 권한이 없습니다. 필요하면 시스템 관리자에게 문의해 주세요.');
+    expect(screen.queryByRole('tablist')).toBeNull();
+  });
+
+  it('권한 상태를 아직 모르는 동안에는 빈 상태를 말하지 않는다', () => {
+    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['NOTE_READ'] } });
+    mocks.auth = { user: null, loading: true };
+    const { container } = render(<CollaborationHubClient />);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
   });
 });

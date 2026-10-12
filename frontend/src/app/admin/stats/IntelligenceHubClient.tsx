@@ -23,7 +23,9 @@ import { statsAdminService } from '@/services/foundation/system/StatsAdminServic
 import { isStatsHubTab, type StatsHubTab, type StatsPanelQuery, type StatsSeriesPoint } from '@/extensions/slots';
 import { useSlotEntries } from '@/extensions/use-slot-entries';
 import { statsPanels } from '@/extensions/generated-stats-panels';
+import { useOptionalAuth } from '@/contexts/AuthContext';
 import { HubEmptyState, HubErrorState } from './StatsHubParts';
+import { StatsHubFallback } from './StatsHubFallback';
 import { XAxis,
   YAxis,
   CartesianGrid,
@@ -124,6 +126,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
   // 기능 탭(stats-panels 기여). 노출은 기여의 술어(그 화면·권한)로 판정한다 — 라우트 게이트와 같은 판정이다.
   const panels: StatsHubTab[] = useSlotEntries(statsPanels, isHubPanel);
+  const authPending = useOptionalAuth()?.loading === true;
   const tabs = [
     ...CORE_TABS.map((tab) => ({ id: tab.id as string, order: tab.order, label: tab.label, icon: tab.icon })),
     ...panels.map((panel) => ({ id: panel.id, order: panel.order, label: panel.label, icon: panel.icon })),
@@ -255,6 +258,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     ];
 
   const ActiveBody = activeBody?.Body;
+
+  // 권한 상태를 아직 모르면(서버가 사용자를 넘기지 못해 다시 확인하는 동안) 기능 탭이 아직 보이지 않는다. 요청한 탭(그 라우트의 기본
+  // 탭이나 `?tab=`)이 아직 탭이 아니면 통계 개요로 떨어뜨려 다른 제목·차트를 잠깐 보이지 않고 진입 골격을 그린다.
+  if (authPending && !isTab(tabParam ?? defaultTab)) return <StatsHubFallback />;
 
   return (
     <div className="space-y-6 pb-8">

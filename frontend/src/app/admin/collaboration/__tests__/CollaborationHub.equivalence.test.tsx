@@ -128,6 +128,15 @@ describe('협업 허브 동등성', () => {
     expect(tabState()).toEqual([['쪽지', 'true']]);
   });
 
+  // 두 권한이 모두 없는 사용자 정의 그룹은 탭이 하나도 없다. 그때 구성 탓이 아니라 권한 탓이라고 말한다(허브 분해 검토).
+  if (bothTabsInProjection) it('[H5] 쪽지·스크랩 조회 권한이 모두 없으면 권한이 없다고 말하고 목록을 부르지 않는다', () => {
+    mocks.permissions = FULL_PERMISSIONS.filter((code) => code !== 'NOTE_READ' && code !== 'SCRAP_READ');
+    renderHub('tab=MESSAGES');
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent('협업 목록 조회 권한이 없습니다. 필요하면 시스템 관리자에게 문의해 주세요.');
+    expect(mocks.getReceivedNotes).not.toHaveBeenCalled();
+  });
+
   if (bothTabsInProjection) it('모르는 탭 값은 페이지 기본 탭을 연다', () => {
     renderHub('tab=COMMUNITY', 'SCRAPS');
     expect(tabState()).toEqual([['쪽지', 'false'], ['스크랩', 'true']]);

@@ -53,6 +53,14 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'stats-panels': ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
 });
 
+/**
+ * 소비자마다 다른 배치를 그리는데 배치별 귀속이 아직 없는 슬롯. stats-panels 는 통계 요약(AdminStatsClient)이 요약 칸만, 통계 셸
+ * (IntelligenceHubClient)이 기능 탭만 그린다. 쓰기 귀속(축 3·화면 목록)은 기여 파일 단위라 기여나 기여가 닿는 모듈(탭 본문 등)의
+ * 쓰기·canPermission 리터럴이 두 화면에 함께 귀속된다 — hub-tabs 가 허브별 표로 막은 것과 같은 오귀속이다. 배치별 귀속을 두기 전까지
+ * 화면 목록 생성기가 이 슬롯의 기여를 거쳐 귀속되는 쓰기·표시 권한을 거부한다(허브 분해 검토).
+ */
+export const PLACEMENT_BLIND_SLOTS = Object.freeze(['stats-panels']);
+
 /** 슬롯의 소비자 전체(허브별 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */
 export function slotConsumerFiles(slot, table = SLOT_REGISTRY_CONSUMERS) {
   const row = table[slot];

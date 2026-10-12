@@ -104,6 +104,13 @@ describe('지식 허브 동등성(허브 분해 전)', () => {
     expect(mocks.replace).toHaveBeenCalledWith('/admin/help/faq?tab=WIKI', { scroll: false });
   });
 
+  // H0 그물은 이 전환을 커뮤니티 탭으로 보았다. H2 뒤 커뮤니티는 기여 탭이라 원장 판정으로 걸러 같은 기대를 지킨다.
+  if (communityInProjection) it('기여 탭(커뮤니티)으로 바꿔도 `tab` 하나만 남기고 `bbsId` 를 버린다', () => {
+    renderHub(`bbsId=${QNA_BOARD_ID}&page=2`);
+    fireEvent.click(screen.getByRole('tab', { name: /커뮤니티/ }));
+    expect(mocks.replace).toHaveBeenCalledWith('/admin/help/faq?tab=COMMUNITY', { scroll: false });
+  });
+
   if (communityInProjection) it('커뮤니티 탭: 목록·가입은 누구에게나, 커뮤니티 관리는 COMMUNITY_READ_ALL 보유자에게만', async () => {
     const plain = renderHub('tab=COMMUNITY');
     fireEvent.click(screen.getByRole('button', { name: /커뮤니티 목록·가입/ }));

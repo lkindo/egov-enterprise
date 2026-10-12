@@ -6960,7 +6960,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "사용자 의견 관리",
+      "visibleLabel": "댓글 및 평가 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {
@@ -6982,7 +6982,7 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "사용자 의견 관리",
+          "visibleLabel": "댓글 및 평가 관리",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",

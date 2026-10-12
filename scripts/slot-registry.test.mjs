@@ -5,7 +5,8 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
 import {
-  discoverSlotContributions, frontendRelativePath, renderSlotRegistry, slotExportName, slotPathKind, slotRegistryDrift, slotRegistryPath,
+  PLACEMENT_BLIND_SLOTS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, frontendRelativePath, renderSlotRegistry, slotExportName,
+  slotPathKind, slotRegistryDrift, slotRegistryPath,
 } from './slot-registry.mjs';
 
 /*
@@ -128,4 +129,13 @@ test('after the cascade the generator refuses a registry that no longer matches 
     writeFileSync(join(clean, 'frontend', file), text);
   }
   assert.deepEqual(pruneFrontend(clean, MANIFEST, MANIFEST.profiles.core).slots, [{ slot: 'shell-links', owners: ['board'] }]);
+});
+
+// 배치를 가리지 못하는 슬롯은 소비자가 둘 이상인 평면 표다 — 허브별 표가 있거나 소비자가 하나면 오귀속이 없어 거부할 까닭이 없다.
+test('every placement-blind slot is a flat consumer row with more than one consumer', () => {
+  assert.ok(PLACEMENT_BLIND_SLOTS.length > 0);
+  for (const slot of PLACEMENT_BLIND_SLOTS) {
+    const row = SLOT_REGISTRY_CONSUMERS[slot];
+    assert.ok(Array.isArray(row) && row.length > 1, `${slot} must list several consumers in one flat row`);
+  }
 });

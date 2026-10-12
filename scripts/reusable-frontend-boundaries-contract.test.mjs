@@ -36,7 +36,11 @@ function projected(source, profile, label) {
   }).outputText;
 }
 
-function boundaryErrors(source, profile, feature) {
+// 댓글 및 평가 관리 화면(허브 분해 H6). 댓글과 함께 남고 빠지므로 생성물에서는 없을 수 있다.
+const MODERATION = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
+const moderationSource = existsSync(MODERATION) ? readFileSync(MODERATION, 'utf8') : null;
+
+function boundaryErrors(source, profile, feature, moderation = moderationSource) {
   const text = projected(source, profile, paths[feature]);
   const errors = [];
   if (feature === 'search') {
@@ -53,10 +57,8 @@ function boundaryErrors(source, profile, feature) {
       errors.push('comments returned to the monitoring hub');
     }
     // 그 화면은 댓글과 함께 남고 빠진다(투영 마커가 아니라 파일 소유). 남는 구성에서는 삭제 통제(확인 뒤 대행 삭제)를 지킨다.
-    const moderation = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
-    if (profile !== 'core' && existsSync(moderation)) {
-      const screen = readFileSync(moderation, 'utf8');
-      if (!screen.includes('commentMutationOptions.removeAdmin') || !screen.includes('await confirm(')) errors.push('comment deletion lost its control');
+    if (profile !== 'core' && moderation !== null) {
+      if (!moderation.includes('commentMutationOptions.removeAdmin') || !moderation.includes('await confirm(')) errors.push('comment deletion lost its control');
     }
   }
   if (feature === 'maker') {
@@ -117,10 +119,16 @@ test('unscoped optional imports and removed shared service calls are reproducibl
   assert.match(boundaryErrors(importLeak, 'core', 'search').join('\n'), /excluded board search/);
   const deletedCoreSearch = sources.search.replace('userSearchService.searchAssignableUsers(query)', 'Promise.resolve([])');
   assert.match(boundaryErrors(deletedCoreSearch, 'core', 'search').join('\n'), /core search was removed/);
-  const missingConfirmation = sources.monitoring.replace('await confirm(', 'await uncheckedConfirmation(');
-  assert.match(boundaryErrors(missingConfirmation, 'collaboration', 'monitoring').join('\n'), /lost its control/);
-  const leakedCommentHook = `${sources.monitoring}\nconst toast = useToast();\n`;
-  assert.match(boundaryErrors(leakedCommentHook, 'core', 'monitoring').join('\n'), /excluded comments/);
+  // [허브 분해 H6] 확인 뒤 대행 삭제 통제는 감시 허브가 아니라 댓글 및 평가 관리 화면에 있다 — 그 화면의 소스를 바꿔 본다.
+  if (moderationSource !== null) {
+    const missingConfirmation = moderationSource.replace('await confirm(', 'await uncheckedConfirmation(');
+    assert.notEqual(missingConfirmation, moderationSource, 'the moderation screen must still confirm before deleting');
+    assert.match(boundaryErrors(sources.monitoring, 'collaboration', 'monitoring', missingConfirmation).join('\n'), /lost its control/);
+  }
+  for (const profile of ['core', 'collaboration']) {
+    const leakedCommentHook = `${sources.monitoring}\nconst toast = useToast();\n`;
+    assert.match(boundaryErrors(leakedCommentHook, profile, 'monitoring').join('\n'), /comments returned to the monitoring hub/);
+  }
 });
 
 /*

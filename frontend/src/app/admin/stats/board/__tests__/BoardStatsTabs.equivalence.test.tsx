@@ -20,10 +20,11 @@ const SURVEY_CONTRIBUTION = 'frontend/src/extensions/survey/stats-panels.ts';
  * 탭의 존재를 양성으로 단언한다.
  */
 // 설문 탭(설문 기여)은 설문 목록 조회 권한으로 보인다(허브 분해 H5) — 전체 구성 순서를 보려고 함께 준다.
-const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' } }));
+const FULL_USER = { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' };
+const auth = vi.hoisted(() => ({ user: null as unknown, loading: false }));
 vi.mock('@/contexts/AuthContext', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/contexts/AuthContext')>()),
-  useOptionalAuth: () => ({ user: auth.user }),
+  useOptionalAuth: () => ({ user: auth.user, loading: auth.loading }),
 }));
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -120,6 +121,8 @@ function sidebarCard(): HTMLElement {
 
 describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
   beforeEach(() => {
+    auth.user = FULL_USER;
+    auth.loading = false;
     responses.clear();
     failures.clear();
     exported.props = undefined;
@@ -152,6 +155,19 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
         expect(requestedUrls()).toEqual(expectedUrls);
         expect(exported.props).toMatchObject({ scope: 'loaded', filename });
       });
+  });
+
+  // 권한 상태를 아직 모르면 기능 탭이 아직 보이지 않는다 — 그 라우트를 통계 개요로 떨어뜨려 다른 제목·차트를 보이지 않는다(허브 분해 검토).
+  it.each([
+    ['게시물', BoardStatsPage, '/admin/stats/board'],
+    ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage'],
+  ])('%s 화면은 권한 상태를 확인하는 동안 통계 개요가 아니라 진입 골격을 그린다', (_name, Page, pathname) => {
+    auth.user = null;
+    auth.loading = true;
+    renderRoute(Page, pathname);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('관리자 통계를 불러오는 중');
+    expect(screen.queryByText('통계 개요')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: '통계 분석 뷰' })).toBeNull();
   });
 
   describe('자료 이용 건수 카드', () => {
