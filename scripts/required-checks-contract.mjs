@@ -297,6 +297,8 @@ const GRADLE_CACHE_READ_ONLY = {
   '.github/workflows/dependency-check.yml': { 'dependency-check': 'true' },
   '.github/workflows/migration-tool.yml': { 'migration-tool': 'true' },
   '.github/workflows/release.yml': { verify: 'true' },
+  // T2 야간 검증(DEC-OPS-283)은 matrix 잡마다 캐시를 읽기만 한다. 저장소 캐시가 한도를 넘었다.
+  '.github/workflows/reusable-nightly.yml': { verify: 'true' },
 };
 
 export function validatePinnedWorkflowUses(workflowFiles) {

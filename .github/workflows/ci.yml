@@ -80,10 +80,12 @@ jobs:
 
           # PR and integration pushes use the same fail-closed impact mapping.
           # Manual execution and an unavailable base select the complete suite.
+          # The event decides the reusable layouts only: a PR verifies one layout per preset,
+          # every other event both layouts (ADR-0027).
           if [ -z "$BASE" ] || [[ "$BASE" =~ ^0+$ ]] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
-            node scripts/ci-change-scope.mjs --github-output "$GITHUB_OUTPUT"
+            node scripts/ci-change-scope.mjs --event "$GITHUB_EVENT_NAME" --github-output "$GITHUB_OUTPUT"
           elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then
-            node scripts/ci-change-scope.mjs --github-output "$GITHUB_OUTPUT"
+            node scripts/ci-change-scope.mjs --event "$GITHUB_EVENT_NAME" --github-output "$GITHUB_OUTPUT"
           else
             # A push base without its own main CI run (a dropped push event) was never verified;
             # the classifier then selects the full pipeline instead of trusting the diff.
@@ -93,6 +95,7 @@ jobs:
               --base "$BASE" \
               --head "${HEAD:-$GITHUB_SHA}" \
               "${VERIFY_BASE[@]}" \
+              --event "$GITHUB_EVENT_NAME" \
               --github-output "$GITHUB_OUTPUT"
           fi
 
@@ -199,8 +202,8 @@ jobs:
   # 로컬 훅과 무관하게 required CI에서 gitleaks를 hard-fail로 실행한다.
   # 라이선스·가변 태그 노출을 피하려고 고정 버전 바이너리를 직접 내려받는다.
   secret-scan:
-    # full run의 초기 작업은 이 job을 포함해 20-runner 한도 안이다. 분류 직후 시작해
-    # frontend 뒤 profile과 backend 뒤 custom이 입장하기 전에 슬롯을 반납한다.
+    # full run의 초기 작업은 이 job과 분류 직후의 custom 두 layout을 포함해 20-runner 한도 안이다.
+    # 분류 직후 시작해 frontend 뒤 profile이 입장하기 전에 슬롯을 반납한다(ADR-0027).
     needs: [change-scope]
     if: always()
     runs-on: ubuntu-latest
@@ -870,9 +873,10 @@ jobs:
           retention-days: 7
 
   reusable-custom:
-    # 두 layout은 backend source 뒤에서 함께 시작해 초기 migration과 frontend 뒤의
-    # 재사용 profile 6개에 runner를 우선 배정한다. backend 실패·skip은 선택된 검증을 생략시키지 않는다.
-    needs: [change-scope, backend-scope]
+    # 두 layout은 분류 직후 시작해 frontend 가 끝나기 전까지 비어 있는 runner 를 쓴다(ADR-0027).
+    # 2026-09-30 backend 뒤로 옮긴 근거(secret-scan 과 슬롯 경합)는 secret-scan 이 분류 직후로,
+    # 제품 PIT 가 4슬롯으로 바뀌며 사라졌다. main 처음 5회 중 3회 이상이 15.2분보다 느리면 되돌린다.
+    needs: [change-scope]
     if: "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-custom'] == 'true'"
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -1310,7 +1314,7 @@ jobs:
     # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
     timeout-minutes: 30
     strategy:
-      # 제품 10개 배치는 모두 실행하되 backend 완료 시 custom 두 layout이 입장할 슬롯을 남긴다.
+      # 제품 10개 배치는 모두 실행하되 분류 직후 custom 두 layout이 입장할 슬롯을 남긴다(ADR-0027).
       # 2026-09-29 attempt 2의 현행 분할 실측으로 4-slot LPT 종료를 10분 안쪽으로 계산했다.
       max-parallel: 4
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.

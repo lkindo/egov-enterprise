@@ -179,8 +179,7 @@
         {
           "sourceJobId": "reusable-custom",
           "sourceNeeds": [
-            "change-scope",
-            "backend-scope"
+            "change-scope"
           ],
           "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-custom'] == 'true'",
           "sourceStepName": "Generate and verify custom composition",
