@@ -50,7 +50,19 @@
   "integrates": [],
   "registrationOnly": {
     "events": [],
-    "contributions": []
+    "contributions": [],
+    "ports": [
+      {
+        "to": "board",
+        "port": "TemplateReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능이 쓰는 템플릿도 없어, 템플릿을 지우기 전 사용처를 확인할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "community",
+        "port": "TemplateReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능이 쓰는 템플릿도 없어, 템플릿을 지우기 전 사용처를 확인할 때 빠지는 것이 없습니다."
+      }
+    ]
   },
   "requirements": [],
   "unassignedPermissions": []

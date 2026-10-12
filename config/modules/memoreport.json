@@ -62,7 +62,8 @@
         "path": "frontend/src/extensions/memoreport/shell-links.ts",
         "reason": "메모 보고 기능이 없으면 업무 보고 화면의 메모보고 관리 링크와 안내 문장만 사라지고 업무 보고는 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

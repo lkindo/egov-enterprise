@@ -10,7 +10,7 @@ import { classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from '.
 import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
-import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
+import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
@@ -179,7 +179,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const value = remember(loadCatalogClassified());
     const sourceCommit = gitRun(['rev-parse', 'HEAD']);
     // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
-    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value, { routeKinds: loadRouteKinds(root) })) };
+    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value,
+      { routeKinds: loadRouteKinds(root), ...loadComposerPresentationDeclarations(root) })) };
   };
   const coreBase = (recipe, value) => {
     if (!value.presets.some(preset => preset.id === 'core')) return undefined;

@@ -3,8 +3,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
-import { INTEGRATES, REGISTRATION_ONLY_CONTRIBUTIONS, REGISTRATION_ONLY_EVENTS, apiSourceOwner, degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations,
-  sourceOwner } from './project-composer-integrations.mjs';
+import { INTEGRATES, REGISTRATION_ONLY_CONTRIBUTIONS, REGISTRATION_ONLY_EVENTS, REGISTRATION_ONLY_PORTS, apiSourceOwner, degradationPredicate, deriveEventSources,
+  deriveEventTriples, derivePortConnections, javaSourceFiles, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
+import { MODULES_DIRECTORY, loadComposerModules } from './composer-modules.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
 import { REQUIRES_USER_REASONS, attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
@@ -301,15 +302,15 @@ function slotContributionInventory(root, declarations) {
 
 /*
  * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기의 pack 모드 투영이 manifest removePaths 를 쓰는 동안만 남긴다 —
- * pack 소유(`capability.pack`, 시작 구성의 pack·removePaths)와, pack removePaths 가 기능 선언과 어긋나지 않는다는 검사다.
+ * pack 소유(`capability.pack`, 시작 구성의 pack 목록)와, pack removePaths 가 기능 선언과 어긋나지 않는다는 검사다.
  */
 function v1PackAxis(manifest) {
   const packOf = new Map();
   for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.appDomains ?? []) packOf.set(domain, packId);
   return {
     packOf,
-    presets: new Map(Object.entries(manifest.profiles).map(([id, profile]) => [id, { packs: profile.packs,
-      frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) }])),
+    // 시작 구성의 pack 목록. 프런트 제거 경로는 직접 선택과 같이 카탈로그 규칙에서 계산한다(해석기 단일화, 11단계 C2).
+    presets: new Map(Object.entries(manifest.profiles).map(([id, profile]) => [id, { packs: profile.packs }])),
     checkSlotDirectory(path, id) {
       const pack = packOf.get(id);
       if (!(manifest.packs[pack]?.frontend?.removePaths ?? []).includes(path)) fail(`slot contribution directory is missing from its pack removePaths: ${path} (${pack})`);
@@ -336,6 +337,29 @@ function v1PackAxis(manifest) {
 }
 
 /**
+ * v2 카탈로그에 덧붙이는 v1 pack 축(11단계 C2~C3). 생성기가 pack 모드로 투영하는 동안 구성의 pack 목록(composition.packs)과 manifest
+ * removePaths 검사는 v1 manifest 에서 와야 한다. manifest 의 기능·시작 구성이 config/modules 와 다르면(v1 을 고치고 다시 만들지 않음)
+ * 여기서 멈춘다. 그 밖의 선언은 v2 만 읽는다. 생성기를 옮기는 C3 에서 걷는다. manifest 가 생성기 투영에 쓰이는 동안은 카탈로그 해시도
+ * manifest 에 결속한다.
+ */
+function v1PackOverlay(root, declarations) {
+  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
+  const axis = v1PackAxis(manifest);
+  const regenerate = `npm run modules:generate 로 ${MODULES_DIRECTORY} 를 다시 만든다`;
+  if (canonicalJson([...axis.packOf.keys()].sort()) !== canonicalJson(Object.keys(declarations.features).sort())) {
+    fail(`v1 manifest appDomains differ from ${MODULES_DIRECTORY} (${regenerate})`);
+  }
+  if (canonicalJson(Object.keys(manifest.profiles).sort()) !== canonicalJson(declarations.presets.map(preset => preset.id).sort())) {
+    fail(`v1 manifest profiles differ from ${MODULES_DIRECTORY}/presets.json (${regenerate})`);
+  }
+  for (const preset of declarations.presets) {
+    const domains = sorted(manifest.profiles[preset.id].packs.flatMap(pack => manifest.packs[pack]?.backend?.appDomains ?? []));
+    if (canonicalJson(domains) !== canonicalJson(sorted(preset.domains))) fail(`v1 manifest profile domains differ from presets.json: ${preset.id} (${regenerate})`);
+  }
+  return { ...axis, provenance: { manifest: MANIFEST, manifestHash: compositionDigest(manifest) } };
+}
+
+/**
  * v1 선언(manifest + 이 파일·연동·사유 모듈의 상수)을 카탈로그 빌더의 기능 단위 정규형으로 모은다. 매니페스트 v2(config/modules,
  * composer-modules.mjs)도 같은 모양을 만든다 — 두 원천이 같은 카탈로그를 내는지를 임시 동치 계약이 본다(11단계 C1, 전환 C7 에서 걷는다).
  */
@@ -358,13 +382,19 @@ export function v1ComposerDeclarations(root = ROOT) {
     userReasons: REQUIRES_USER_REASONS,
     presets: Object.entries(manifest.profiles).map(([id, profile]) => ({ id, domains: profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? []) })),
     integrates: INTEGRATES, registrationOnlyEvents: REGISTRATION_ONLY_EVENTS, registrationOnlyContributions: REGISTRATION_ONLY_CONTRIBUTIONS,
+    registrationOnlyPorts: REGISTRATION_ONLY_PORTS,
     legacy: v1PackAxis(manifest),
   };
 }
 
-/** Read-only producer inventory. Does not contact a DB, execute Git or create output. */
+/**
+ * Read-only producer inventory. Does not contact a DB, execute Git or create output.
+ * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). 생성기가 pack 모드로 투영하는 동안(C3 전) pack 축만 v1 manifest 에서 덧붙인다.
+ */
 export function loadProjectComposerCatalog(root = ROOT) {
-  return buildProjectComposerCatalog(root, v1ComposerDeclarations(root));
+  root = resolve(root);
+  const { declarations } = loadComposerModules(root);
+  return buildProjectComposerCatalog(root, { ...declarations, legacy: v1PackOverlay(root, declarations) });
 }
 
 /**
@@ -528,6 +558,14 @@ export function buildProjectComposerCatalog(root, declarations) {
       requirements: feature.requirements ?? [],
     };
   }), declarations.userReasons);
+  // 시작 구성은 이름 붙은 기능 목록이고 필수 의존 폐포에 닫혀 있어야 한다. 시작 구성도 직접 선택과 같은 간선을 따르므로(해석기 단일화,
+  // 11단계 C2) 닫히지 않은 목록은 해석 중이 아니라 카탈로그 결함으로 거부한다.
+  const closure = requiresClosure(capabilities);
+  for (const preset of declarations.presets) for (const domain of preset.domains) {
+    if (!Object.hasOwn(features, domain)) fail(`preset names an unknown capability: ${preset.id} (${domain})`);
+    const missing = [...closure(domain)].filter(required => !preset.domains.includes(required)).sort();
+    if (missing.length) fail(`preset is not closed under requires: ${preset.id} (${domain} -> ${missing.join(', ')})`);
+  }
   // 탭 기여는 실제 메뉴 행과 셸 화면이 있어야 한다. 맞지 않는 선언은 아무 메뉴도 고르지 못한 채 조용히 남는다.
   const menuRows = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')).menus
     .filter(row => row.use_yn === 'Y' && row.del_yn !== 'Y' && row.modern_route).map(row => menuRouteKey(row.modern_route).key);
@@ -548,14 +586,18 @@ export function buildProjectComposerCatalog(root, declarations) {
   const presets = declarations.presets.map(preset => ({ id: preset.id, domains: sorted(preset.domains),
     ...(declarations.legacy ? declarations.legacy.presets.get(preset.id) : {}) }));
   // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).
+  // 포트 연결도 같은 소유 판정으로 계산해 선언과 양방향으로 대조한다(11단계 C2). 네 모듈의 생산 Java 는 한 번만 읽는다.
   const supportOwners = new Map([...supportFiles].flatMap(([domain, files]) => files.map(file => [file, domain])));
+  const ownerOf = sourceOwner(supportOwners, domains, closure);
+  const javaFiles = javaSourceFiles(root);
   const integrates = resolveIntegrations({ root, declared: declarations.integrates, registrationOnly: declarations.registrationOnlyEvents,
     registrationOnlyContributions: declarations.registrationOnlyContributions,
-    triples: deriveEventTriples(root, sourceOwner(supportOwners, domains, requiresClosure(capabilities))),
+    triples: deriveEventTriples(root, ownerOf, deriveEventSources(root, ownerOf, javaFiles)),
+    ports: derivePortConnections(root, ownerOf, javaFiles), registrationOnlyPorts: declarations.registrationOnlyPorts,
     canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: declarations.optionalForeignKeys, contributions });
   const catalog = {
     schemaVersion: 1, mandatory: ['foundation', 'core'], databaseVendors: ['postgresql'], backendLayouts: ['multi-module', 'single-module'],
-    provenance: { ...source.provenance, permissions: PERMISSIONS, permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
+    provenance: { ...source.provenance, ...(declarations.legacy?.provenance ?? {}), permissions: PERMISSIONS, permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
     presets, capabilities, frontendRules: rules, sharedUi: declarations.sharedUi, integrates,
     core: { tables: sorted(coreGroup.tables), explicitSequences: sorted(coreGroup.sequences), permissionCodes: mandatoryPermissions, menuRoutes: mandatoryRoutes },
     sharedTableContracts: sharedTables, optionalForeignKeys: declarations.optionalForeignKeys, requiredForeignKeys: declarations.requiredForeignKeys,

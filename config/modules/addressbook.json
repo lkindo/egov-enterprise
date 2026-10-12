@@ -54,7 +54,8 @@
         "path": "frontend/src/extensions/addressbook/shell-links.ts",
         "reason": "주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

@@ -45,7 +45,8 @@
         "path": "frontend/src/extensions/showcase/hub-tabs.ts",
         "reason": "시연 화면 기능이 없으면 감시 허브의 하네스 아틀라스 샘플 탭만 사라지고 로그·가동 상태 탭은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

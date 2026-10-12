@@ -11,6 +11,8 @@ import { join, relative, sep } from 'node:path';
  *
  * 이벤트 연동의 근거는 손으로 적지 않는다. 카탈로그가 발행·수신 위치를 매번 계산하고(deriveEventTriples),
  * 계산된 연결은 INTEGRATES 또는 REGISTRATION_ONLY_EVENTS 중 정확히 한쪽에 있어야 한다.
+ * Java 포트 연결도 계산한다(derivePortConnections, 11단계 C2). 계산된 (받는 기능 → 구현 기능, 포트)는 INTEGRATES(via port: 또는
+ * ports) 또는 REGISTRATION_ONLY_PORTS 중 정확히 한쪽에 있어야 한다.
  * 포트·선택 FK 연동은 주석을 뺀 코드에서 정확히 한 번 나오는 문자열(anchor)로 근거를 단다.
  * 문장은 평서문으로 쓰고 내부 클래스·경로를 담지 않는다 — 계획 화면에 그대로 나간다.
  */
@@ -52,7 +54,8 @@ export const INTEGRATES = [
     reason: '게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.',
     anchors: [{ path: 'business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java',
       anchor: 'CountSnapshot currentPosts = getTodayPostsCount();' }] },
-  { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
+  // 게시판이 커뮤니티 회원 판정 포트(CommunityBoardAccessPort)로 받는 연결도 같은 저하다 — 커뮤니티가 없으면 회원 전용 게시판이 없다.
+  { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info', ports: ['CommunityBoardAccessPort'],
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
   // DEC-OPS-280: 템플릿 배정 구현은 템플릿 기능의 서비스다. 커뮤니티는 포트를 선택 주입으로 받고 관리 창 후보도 커뮤니티 API 로 받는다.
@@ -70,6 +73,28 @@ export const INTEGRATES = [
 export const REGISTRATION_ONLY_EVENTS = [
   ...['addressbook', 'board', 'comment', 'community', 'notification'].map(to => ({ from: 'core', to, event: 'UserDeletionEvent',
     reason: '사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다.' })),
+];
+
+/*
+ * 계산된 포트 연결(derivePortConnections) 가운데 잃는 것이 없는 것(Phase 2 11단계 C2, GAP-COMPOSE-001 포트 부분). 받는 쪽이
+ * 구현 기능의 데이터만 모으거나 그 기능의 항목만 내보내므로, 그 기능이 없으면 모을 것도 내보낼 것도 없다.
+ * 계산과 정확히 맞아야 한다 — 이 목록에만 있고 계산에 없는 행, 연동 선언(via port: 또는 ports)과 이 목록에 모두 있는 행은 카탈로그가 거부한다.
+ */
+export const REGISTRATION_ONLY_PORTS = [
+  ...['board', 'mail', 'memoreport', 'note', 'promotion', 'report', 'reward', 'schedule'].map(to => ({ from: 'core', to, port: 'AttachmentSourceContributor',
+    reason: '이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다.' })),
+  ...['board', 'informalsanction'].map(to => ({ from: 'core', to, port: 'DashboardItemProvider',
+    reason: '이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다.' })),
+  { from: 'core', to: 'board', port: 'DataUsageStatisticsContributor',
+    reason: '게시판 기능이 없으면 자료 이용 통계에 셀 게시물이 없고, 그 통계를 보이던 탭도 함께 빠져 다른 통계는 그대로입니다.' },
+  { from: 'core', to: 'board', port: 'PostStatisticsContributor',
+    reason: '게시판 기능이 없으면 게시물 통계에 셀 글이 없고, 그 수를 보이던 칸도 함께 빠져 다른 통계는 그대로입니다.' },
+  { from: 'core', to: 'community', port: 'CommunityBoardAccessPort',
+    reason: '커뮤니티 기능이 없으면 커뮤니티 회원 전용 게시판도 없어, 첨부 열람을 판정할 때 빠지는 것이 없습니다.' },
+  { from: 'core', to: 'notification', port: 'DurableWorkHandler',
+    reason: '알림 기능이 없으면 알림 전달 후속 작업도 생기지 않아, 후속 작업을 처리할 때 빠지는 것이 없습니다.' },
+  ...['board', 'community'].map(to => ({ from: 'template', to, port: 'TemplateReferenceContributor',
+    reason: '이 기능이 없으면 그 기능이 쓰는 템플릿도 없어, 템플릿을 지우기 전 사용처를 확인할 때 빠지는 것이 없습니다.' })),
 ];
 
 /*
@@ -332,10 +357,14 @@ export function sourceOwner(supportOwners, domains, closure) {
   };
 }
 
-/** 리스너와 그 리스너가 받는 이벤트를 만드는 위치를 모두 찾는다(소유가 core 인 것 포함). */
-export function deriveEventSources(root, ownerOf) {
-  const files = SCAN_ROOTS.flatMap(scanRoot => walk(join(root, scanRoot))).filter(path => path.endsWith('.java'))
+/** 네 모듈의 생산 Java 를 주석·문자열을 지운 코드로 읽는다. 이벤트·포트 판정이 한 번 읽은 목록을 함께 쓴다. */
+export function javaSourceFiles(root) {
+  return SCAN_ROOTS.flatMap(scanRoot => walk(join(root, scanRoot))).filter(path => path.endsWith('.java'))
     .map(absolute => ({ path: relative(root, absolute).split(sep).join('/'), code: stripComments(readFileSync(absolute, 'utf8'), { strings: false }) }));
+}
+
+/** 리스너와 그 리스너가 받는 이벤트를 만드는 위치를 모두 찾는다(소유가 core 인 것 포함). */
+export function deriveEventSources(root, ownerOf, files = javaSourceFiles(root)) {
   const owners = new Map();
   const owner = file => { if (!owners.has(file.path)) owners.set(file.path, ownerOf(file.path, file.code)); return owners.get(file.path); };
   const listeners = files.flatMap(file => eventListenersIn(file.code, file.path).map(listener => ({ ...listener, path: file.path, owner: owner(file) })));
@@ -368,6 +397,83 @@ export function deriveEventTriples(root, ownerOf, sources = deriveEventSources(r
   return [...triples.values()].sort((a, b) => byCodeUnits(`${a.from}\u0000${a.to}\u0000${a.event}`, `${b.from}\u0000${b.to}\u0000${b.event}`));
 }
 
+// 스프링 빈 표지. 포트는 빈이 주입받아야 연결된다 — 빈이 아닌 클래스가 그 타입을 쓰는 것(예외 객체의 ErrorCode 필드)은 연결이 아니다.
+const SPRING_BEAN = /@(?:[\w$]+\.)*(?:Service|Component|Repository|Controller|RestController|Configuration)\b/u;
+const PORT_ROOT = /^(?:foundation|business-core)\//u;
+
+/** `implements` 절의 타입 단순 이름(최상위 쉼표로 나눈다). 클래스·레코드·열거형 선언만 본다. */
+function implementedTypes(code) {
+  const result = [];
+  for (const match of code.matchAll(/\b(?:class|record|enum)\s+[A-Za-z_$][\w$]*[^{;]*?\bimplements\s+([^{]+)\{/gu)) {
+    let depth = 0;
+    let current = '';
+    const parts = [];
+    for (const character of match[1]) {
+      if (character === '<') depth += 1;
+      else if (character === '>') depth -= 1;
+      if (character === ',' && depth === 0) { parts.push(current); current = ''; } else current += character;
+    }
+    parts.push(current);
+    for (const part of parts) {
+      const name = simpleName(part.trim());
+      if (JAVA_IDENTIFIER.test(name)) result.push({ type: name, line: lineAt(code, match.index) });
+    }
+  }
+  return result;
+}
+
+/**
+ * Java 포트 연결(11단계 C2, GAP-COMPOSE-001 포트 부분). foundation·business-core 의 인터페이스를 업무 기능 소유의 클래스가 구현하고,
+ * 그 구현과 소유가 다른 스프링 빈이 주입 지점(ObjectProvider·List·Optional·Collection·Set·Iterable·Map<String, P>, 필드·생성자
+ * 매개변수)으로 받으면 (받는 소유 → 구현 소유, 포트)는 연결이다. 구현 기능이 빠지면 받는 쪽은 그 구현 없이 돈다. 직접 implements 만
+ * 보고, 빈 판정은 표지 애노테이션으로 한다 — 놓치면 연동이 숨으므로 넓게 세고, 거짓 연결은 '분류되지 않은 연결'로 드러나 사람이 판정한다.
+ * `interfaces` 는 포트가 될 수 있는 인터페이스 이름 전부다(선언된 포트 이름이 Java 포트인지 가른다).
+ */
+export function derivePortConnections(root, ownerOf, files = javaSourceFiles(root)) {
+  const interfaces = new Map();
+  for (const file of files.filter(row => PORT_ROOT.test(row.path))) {
+    for (const match of file.code.matchAll(/(?<![\w$@])interface\s+([A-Z][\w$]*)/gu)) {
+      if (!interfaces.has(match[1])) interfaces.set(match[1], new Set());
+      interfaces.get(match[1]).add(file.path);
+    }
+  }
+  const owners = new Map();
+  const owner = file => { if (!owners.has(file.path)) owners.set(file.path, ownerOf(file.path, file.code)); return owners.get(file.path); };
+  const implementations = new Map();
+  for (const file of files) for (const row of implementedTypes(file.code).filter(row => interfaces.has(row.type))) {
+    if (!implementations.has(row.type)) implementations.set(row.type, []);
+    implementations.get(row.type).push({ file, line: row.line });
+  }
+  const connections = new Map();
+  for (const [port, implemented] of [...implementations].sort(([left], [right]) => byCodeUnits(left, right))) {
+    const featureImplementations = implemented.filter(row => owner(row.file) !== 'core');
+    if (!featureImplementations.length) continue;
+    const name = port.replace(/[$]/gu, '\\$&');
+    // 포트 타입 뒤의 타입 인자(Port<String>)도 같은 포트다. 한 겹 중첩까지 본다.
+    const type = `(?:[\\w$]+\\.)*${name}(?:\\s*<(?:[^<>;{}()=]|<[^<>;{}()=]*>)*>)?`;
+    const injection = new RegExp(`(?:ObjectProvider|List|Optional|Collection|Set|Iterable)\\s*<\\s*${type}\\s*>`
+      + `|Map\\s*<\\s*String\\s*,\\s*${type}\\s*>|(?<![\\w$.])${type}\\s+[a-z_$][\\w$]*\\s*[;,)=]`, 'u');
+    const excluded = new Set([...interfaces.get(port), ...implemented.map(row => row.file.path)]);
+    for (const consumer of files.filter(file => !excluded.has(file.path) && SPRING_BEAN.test(file.code))) {
+      const found = injection.exec(consumer.code);
+      if (!found) continue;
+      const from = owner(consumer);
+      for (const implementation of featureImplementations) {
+        const to = owner(implementation.file);
+        if (to === from) continue;
+        const key = `${from}>${to} (${port})`;
+        if (!connections.has(key)) connections.set(key, { from, to, port, consumers: [], implementations: [] });
+        const row = connections.get(key);
+        const use = { path: consumer.path, line: lineAt(consumer.code, found.index) };
+        if (!row.consumers.some(item => item.path === use.path)) row.consumers.push(use);
+        if (!row.implementations.some(item => item.path === implementation.file.path)) row.implementations.push({ path: implementation.file.path, line: implementation.line });
+      }
+    }
+  }
+  return { interfaces: new Set(interfaces.keys()),
+    connections: [...connections.values()].sort((left, right) => byCodeUnits(`${left.from}>${left.to} (${left.port})`, `${right.from}>${right.to} (${right.port})`)) };
+}
+
 /**
  * from 이 들어간 어떤 구성에서 to 가 빠질 수 있는가. 이벤트 판정과 '저하될 수 없는 선언' 판정이 같은 술어를 쓴다 —
  * 두 판정이 다르면 선언할 수도 안 할 수도 없는 쌍이 생긴다.
@@ -396,7 +502,7 @@ function anchorEvidence(root, { path, anchor }) {
  * 선언을 계산과 대조해 계획에 실을 연동 목록을 만든다. 순수 판정은 triples·canDegrade 를 받아 합성 입력으로 시험한다.
  */
 export function resolveIntegrations({ root, declared = INTEGRATES, registrationOnly = REGISTRATION_ONLY_EVENTS, triples, canDegrade, domains, optionalForeignKeys,
-  contributions = [], registrationOnlyContributions = REGISTRATION_ONLY_CONTRIBUTIONS }) {
+  contributions = [], registrationOnlyContributions = REGISTRATION_ONLY_CONTRIBUTIONS, ports = null, registrationOnlyPorts = REGISTRATION_ONLY_PORTS }) {
   const fail = message => { throw new Error(`project-composer catalog: ${message}`); };
   const known = new Set(domains);
   const keys = new Set();
@@ -448,7 +554,51 @@ export function resolveIntegrations({ root, declared = INTEGRATES, registrationO
     if (!declaredHere && !registered) fail(`undeclared integration: ${triple.from} -> ${triple.to} via event:${triple.event}`);
   }
   classifyContributions({ declared, contributions, registrationOnlyContributions, fail });
+  // 포트 분류는 계산된 연결(derivePortConnections)을 받을 때만 한다. 합성 입력의 시험은 연결을 넘기지 않으면 이 단계를 건너뛴다.
+  if (ports) classifyPorts({ declared, ports, registrationOnlyPorts, canDegrade, fail });
   return rows.sort((a, b) => byCodeUnits(`${a.from}\u0000${a.to}\u0000${a.via}`, `${b.from}\u0000${b.to}\u0000${b.via}`));
+}
+
+/**
+ * 포트 분류 완전성(REGISTRATION_ONLY_PORTS 설명 참조). 연동 선언은 via 'port:<포트>' 또는 ports 로 포트 연결을 덮는다. via 의 포트가
+ * Java 인터페이스가 아니면(수신자 피커의 주소록 출처 같은 화면 포트) 슬롯 기여 분류가 근거를 대조하므로 여기서는 보지 않는다.
+ * 늘 함께 포함되어 저하될 수 없는 연결은 선언하지 않는다(이벤트와 같은 술어).
+ */
+function classifyPorts({ declared, ports: { interfaces, connections }, registrationOnlyPorts, canDegrade, fail }) {
+  const key = (from, to, port) => `${from}>${to} (${port})`;
+  const detected = new Map(connections.map(row => [key(row.from, row.to, row.port), row]));
+  const covered = new Set();
+  for (const edge of declared) {
+    if (edge.ports !== undefined && (!Array.isArray(edge.ports) || !edge.ports.length || edge.ports.some(port => !JAVA_IDENTIFIER.test(port)))) {
+      fail(`integration ports must be Java port names: ${edge.from} -> ${edge.to}`);
+    }
+    const viaPort = String(edge.via).startsWith('port:') ? [String(edge.via).slice('port:'.length)] : [];
+    for (const port of [...viaPort, ...(edge.ports ?? [])]) {
+      if (!interfaces.has(port)) {
+        if (edge.ports?.includes(port)) fail(`integration names an unknown Java port: ${key(edge.from, edge.to, port)}`);
+        continue;
+      }
+      const name = key(edge.from, edge.to, port);
+      if (!detected.has(name)) fail(`declared port integration has no implementation and injection: ${name}`);
+      covered.add(name);
+    }
+  }
+  const registered = new Set();
+  for (const row of registrationOnlyPorts) {
+    const name = key(row.from, row.to, row.port);
+    if (registered.has(name)) fail(`duplicate registration-only port connection: ${name}`);
+    registered.add(name);
+    if (!detected.has(name)) fail(`registration-only port connection has no implementation and injection: ${name}`);
+    if (!canDegrade(row.from, row.to)) fail(`registration-only port connection can never degrade: ${name}`);
+    if (typeof row.reason !== 'string' || !/[가-힣]/u.test(row.reason) || !row.reason.trim().endsWith('.')) {
+      fail(`registration-only port connection needs a user sentence: ${name}`);
+    }
+  }
+  for (const [name, row] of detected) {
+    if (covered.has(name) && registered.has(name)) fail(`port connection classified twice: ${name}`);
+    if (!canDegrade(row.from, row.to)) continue;
+    if (!covered.has(name) && !registered.has(name)) fail(`unclassified port connection: ${name}`);
+  }
 }
 
 /** 기여 분류 완전성(REGISTRATION_ONLY_CONTRIBUTIONS 설명 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다. */

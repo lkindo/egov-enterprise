@@ -71,8 +71,9 @@ export function resolveProjectRecipe(input, catalog) {
   const reasons = new Map();
   const included = new Set(selectedDomains);
   const queue = [...selectedDomains];
-  // 프리셋은 화면 계열 간선(customOnly)을 따르지 않는다. 사슬과 해제 대상도 같은 간선으로 계산한다.
-  const traversed = domain => features.get(domain).requires.filter(edge => !(preset && edge.customOnly));
+  // 시작 구성도 직접 선택과 같은 간선을 따른다(해석기 단일화, 11단계 C2). 시작 구성은 이름 붙은 기능 목록이고 카탈로그가 그 목록이
+  // 필수 의존 폐포에 닫혀 있는지 적재 때 확인한다 — 같은 목록은 같은 결과를 낸다.
+  const traversed = domain => features.get(domain).requires;
   // 그 기능을 처음 끌어온 기능. 모든 선택에서 함께 퍼지는 너비 우선 탐색이라 선택에서 가장 짧은 경로가 남는다.
   const discoveredFrom = new Map();
   for (let index = 0; index < queue.length; index += 1) {
@@ -105,15 +106,13 @@ export function resolveProjectRecipe(input, catalog) {
   };
   const reach = new Map(selectedDomains.map(domain => [domain, reachableFrom(domain)]));
   const resolvedDomains = sorted(included);
-  if (preset && canonicalJson(resolvedDomains) !== canonicalJson([...preset.domains].sort())) fail('catalog', `Preset dependency closure changed: ${preset.id}`);
   const retained = resolvedDomains.map(domain => features.get(domain));
   const tables = sorted([...catalog.core.tables, ...retained.flatMap(feature => feature.database.tables)]);
   const explicitSequences = sorted([...catalog.core.explicitSequences, ...retained.flatMap(feature => feature.database.explicitSequences)]);
   const includeRule = rule => rule.mode === 'any' ? rule.domains.some(domain => included.has(domain)) : rule.domains.every(domain => included.has(domain));
   const includedPaths = sorted(catalog.frontendRules.filter(includeRule).map(rule => rule.path));
-  const removePaths = preset ? preset.frontendRemovePaths : sorted(catalog.frontendRules.filter(rule => !includeRule(rule)).map(rule => rule.path));
-  // Existing presets own the old route surface. Suppress routes under their
-  // declared removals even where a retained domain has a richer custom menu.
+  const removePaths = sorted(catalog.frontendRules.filter(rule => !includeRule(rule)).map(rule => rule.path));
+  // 지우는 화면 경로 아래의 라우트는 메뉴에서도 숨긴다(남는 기능의 메뉴가 그 경로를 가리켜도).
   const removedRoute = route => {
     const pathname = route.split('?')[0];
     const source = pathname === '/' ? 'src/app/page.tsx' : `src/app${pathname}/page.tsx`;

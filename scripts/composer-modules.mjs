@@ -1,7 +1,12 @@
 /**
  * 매니페스트 v2 로더(11단계). `config/modules/` 의 기능 파일(<기능 id>.json)·필수 기반(core.json)·인증 시작 구성(presets.json)을
- * JSON Schema(_schema.json, ajv)로 검사하고, 카탈로그 빌더(buildProjectComposerCatalog)가 받는 기능 단위 정규형과 해시 밖 선언
- * (표시 문구·미배정 권한 안내·게이트·RBAC 매트릭스·마커 블록·참조 데이터·시작 구성 기대치)을 만든다.
+ * 읽어, 카탈로그 빌더(buildProjectComposerCatalog)가 받는 기능 단위 정규형과 해시 밖 선언(표시 문구·미배정 권한 안내·게이트·RBAC
+ * 매트릭스·마커 블록·참조 데이터·시작 구성 기대치)을 만든다.
+ *
+ * 스키마(_schema.json) 검사는 여기서 하지 않는다(composer-modules-schema.mjs). 이 로더는 카탈로그를 거쳐 생성기·정밀 점검의 import
+ * 폐포에 들어가는데, 그 폐포는 의존성 설치 전에 돌아 Node 내장 모듈만 쓴다(frontend-reachability-census.test.mjs). 스키마 검사는
+ * 운영 계약(composer-modules.test.mjs)과 `npm run modules:check`·`modules:generate` 가 한다. 로더는 필수 파일·JSON 형식·파일 이름과
+ * 파일 사이 대조를 하고, 소스와의 대조는 빌더가 한다.
  *
  * v2 JSON 만 읽는다 — v1 manifest·생성기 상수를 보지 않는다. 그래야 두 원천이 같은 카탈로그를 낸다는 동치 계약이 같은 데이터를
  * 두 번 읽는 착시가 되지 않는다(설계서 위험 8). 전환(C7)까지는 v2 파일을 v1 에서 만든다(composer-modules-generate.mjs).
@@ -9,13 +14,12 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import Ajv2020 from 'ajv/dist/2020.js';
 import { RBAC, supportFileOwners } from './project-composer-source.mjs';
 
 export const MODULES_DIRECTORY = 'config/modules';
 export const MODULES_SCHEMA = '_schema.json';
-const CORE_FILE = 'core.json';
-const PRESETS_FILE = 'presets.json';
+export const CORE_FILE = 'core.json';
+export const PRESETS_FILE = 'presets.json';
 const sorted = values => [...new Set(values)].sort();
 const byCodeUnits = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 // 카탈로그와 같은 정규 JSON 해시(project-composer-catalog.mjs 의 compositionDigest). 카탈로그가 이 로더를 부르므로 import 하지 않는다.
@@ -33,32 +37,14 @@ export function composerModuleOutputs(root) {
   return names.filter(name => name.endsWith('.json') && name !== MODULES_SCHEMA).sort(byCodeUnits).map(name => `${MODULES_DIRECTORY}/${name}`);
 }
 
-let validators;
-function schemaValidators(root) {
-  const schema = JSON.parse(readFileSync(join(root, MODULES_DIRECTORY, MODULES_SCHEMA), 'utf8'));
-  const key = compositionDigest(schema);
-  if (validators?.key !== key) {
-    const ajv = new Ajv2020({ strict: true, allErrors: true });
-    ajv.addSchema(schema);
-    validators = { key, module: ajv.getSchema(`${schema.$id}#/$defs/module`), core: ajv.getSchema(`${schema.$id}#/$defs/core`),
-      presets: ajv.getSchema(`${schema.$id}#/$defs/presets`) };
-  }
-  return validators;
-}
-
-function validate(validator, value, file) {
-  if (validator(value)) return;
-  const detail = validator.errors.map(error => `${error.instancePath || '/'} ${error.message}${error.params?.additionalProperty
-    ? ` (${error.params.additionalProperty})` : ''}`).join('; ');
-  fail(`${file} does not match ${MODULES_SCHEMA}: ${detail}`);
-}
-
-/** 디렉터리의 선언 파일을 읽어 스키마로 검사한다. 파일 이름은 기능 id 와 같아야 한다. */
+/**
+ * 디렉터리의 선언 파일을 읽는다(파일 이름 → 값). 파일 이름은 기능 id 와 같아야 한다. 스키마 검사는 하지 않는다 — 운영 계약과
+ * modules:check 가 composer-modules-schema.mjs 로 한다(위 설명).
+ */
 export function readComposerModuleFiles(root) {
   const directory = join(root, MODULES_DIRECTORY);
   const names = readdirSync(directory).filter(name => name.endsWith('.json')).sort(byCodeUnits);
   for (const required of [MODULES_SCHEMA, CORE_FILE, PRESETS_FILE]) if (!names.includes(required)) fail(`missing ${MODULES_DIRECTORY}/${required}`);
-  const { module, core, presets } = schemaValidators(root);
   const files = {};
   for (const name of names.filter(name => name !== MODULES_SCHEMA)) {
     let value;
@@ -67,8 +53,7 @@ export function readComposerModuleFiles(root) {
       if (!(error instanceof SyntaxError)) throw error;
       fail(`${name} is not valid JSON: ${error.message}`);
     }
-    validate(name === CORE_FILE ? core : name === PRESETS_FILE ? presets : module, value, name);
-    if (![CORE_FILE, PRESETS_FILE].includes(name) && `${value.id}.json` !== name) fail(`file name differs from its feature id: ${name} (${value.id})`);
+    if (![CORE_FILE, PRESETS_FILE].includes(name) && `${value?.id}.json` !== name) fail(`file name differs from its feature id: ${name} (${value?.id})`);
     files[name] = value;
   }
   return files;
@@ -135,6 +120,7 @@ export function loadComposerModules(root) {
   }
   const integrationsOf = (from, value) => value.integrates.map(edge => ({ from, ...edge }));
   const registrationEventsOf = (from, value) => value.registrationOnly.events.map(row => ({ from, ...row }));
+  const registrationPortsOf = (from, value) => value.registrationOnly.ports.map(row => ({ from, ...row }));
   const presetIds = new Set();
   const presets = presetsFile.presets.map(preset => {
     if (presetIds.has(preset.id)) fail(`duplicate preset: ${preset.id}`);
@@ -159,6 +145,7 @@ export function loadComposerModules(root) {
     registrationOnlyEvents: [...registrationEventsOf('core', core), ...modules.flatMap(module => registrationEventsOf(module.id, module))],
     registrationOnlyContributions: [...core.registrationOnly.contributions, ...modules.flatMap(module => module.registrationOnly.contributions)]
       .map(row => ({ path: row.path, reason: row.reason })),
+    registrationOnlyPorts: [...registrationPortsOf('core', core), ...modules.flatMap(module => registrationPortsOf(module.id, module))],
     legacy: null,
   };
 

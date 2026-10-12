@@ -62,7 +62,8 @@
         "path": "frontend/src/extensions/promotion/home-sections.ts",
         "reason": "배너·팝업 기능이 없으면 업무 홈의 공지 팝업과 홍보 배너만 사라지고 업무 홈은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

@@ -72,7 +72,8 @@
         "path": "frontend/src/extensions/help/shell-links.ts",
         "reason": "도움말 기능이 없으면 머리글·바닥글·오류 화면에서 도움말 화면으로 가는 링크만 사라지고 다른 기능은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

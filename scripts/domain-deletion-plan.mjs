@@ -12,7 +12,8 @@
  * 간선은 카탈로그 전체(loadProjectComposerCatalog)를 적재하지 않고 지금 트리에서 계산한다(treeDeletionCatalog).
  * 카탈로그는 원본 저장소의 기능 19개가 모두 있고 화면 근거 파일·소유 표가 맞을 때만 적재된다. delete-domain 은
  * 생성물, 이미 한 번 지운 트리, 새 도메인을 스캐폴드한 트리에서도 돌아야 한다. 간선 규칙(Java 참조·지원 파일·묶음
- * 선언)은 카탈로그와 같은 함수를 쓰고, 원본 트리에서 두 결과가 같다는 것을 계약이 고정한다.
+ * 선언)은 카탈로그와 같은 함수를 쓰고, 원본 트리에서 두 결과가 같다는 것을 계약이 고정한다. 기능·지원 파일·묶음 선언·사용자
+ * 문장은 매니페스트 v2 기능 파일(config/modules)에서 읽는다(11단계 C2). 스키마·파일 사이 대조는 카탈로그 적재가 한다.
  *
  * 종전 delete-domain 은 manifest clusters 를 방향 없이 고정점으로 넓혔다. 코드 참조·지원 파일 간선을 보지 않아
  * 템플릿만 지우면 커뮤니티가 쓰는 템플릿 배정 구현이 함께 지워졌고, 묶음에서 근거 없는 간선을 걷으면
@@ -26,8 +27,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { API_SOURCE_ROOT, apiSourceRequirements, appSourceDomain, clusterRequirements, javaDomainReferences } from './project-composer-catalog.mjs';
-import { REQUIRES_USER_REASONS } from './project-composer-reasons.mjs';
+import { API_SOURCE_ROOT, apiSourceRequirements, appSourceDomain, javaDomainReferences } from './project-composer-catalog.mjs';
+import { MODULES_DIRECTORY, MODULES_SCHEMA } from './composer-modules.mjs';
 import { supportFileDirectoryDomain } from './project-composer-source.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 
@@ -72,17 +73,24 @@ function javaFiles(directory) {
     .map(entry => join(entry.parentPath ?? entry.path, entry.name)).sort();
 }
 
+/** 지금 트리의 기능 파일(config/modules/<기능 id>.json). 필수 기반·시작 구성·스키마 파일은 기능이 아니다. */
+function treeModules(root) {
+  const directory = join(root, MODULES_DIRECTORY);
+  return readdirSync(directory).filter(name => name.endsWith('.json') && ![MODULES_SCHEMA, 'core.json', 'presets.json'].includes(name)).sort()
+    .map(name => JSON.parse(readFileSync(join(directory, name), 'utf8')));
+}
+
 /**
- * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 manifest appDomains 이고, 간선은 카탈로그의 비 customOnly 간선과
+ * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 기능 파일(매니페스트 v2)이고, 간선은 카탈로그의 비 customOnly 간선과
  * 같은 네 종류다 — 업무 앱 Java 참조(java), api-server 디렉터리 소유 기능의 Java 참조(java, DEC-OPS-280), 다른 기능 디렉터리의
  * 지원 파일(java), 생성 묶음 선언(manifest).
- * manifest 에 없는 기능 디렉터리(스캐폴드한 새 도메인)의 소스는 건너뛴다 — 그 소스의 잔존 참조는 delete-domain 의 잔존 참조 검사가 알린다.
+ * 기능 파일이 없는 기능 디렉터리(스캐폴드한 새 도메인)의 소스는 건너뛴다 — 그 소스의 잔존 참조는 delete-domain 의 잔존 참조 검사가 알린다.
  * 업무 앱 디렉터리가 하나도 남지 않은 기능은 present: false 다.
  */
 export function treeDeletionCatalog(root) {
   root = resolve(root);
-  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
-  const domains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))].sort();
+  const modules = treeModules(root);
+  const domains = modules.map(module => module.id).sort();
   const known = new Set(domains);
   const requires = new Map(domains.map(domain => [domain, new Map()]));
   const add = (from, to, kind) => { if (to !== from && known.has(to)) requires.get(from).set(`${to}\u0000${kind}`, { domain: to, kind }); };
@@ -95,18 +103,19 @@ export function treeDeletionCatalog(root) {
     const { owner, requires: required } = apiSourceRequirements(relative(root, absolute).split(sep).join('/'), readFileSync(absolute, 'utf8'), known);
     for (const domain of required) add(owner, domain, 'java');
   }
-  for (const pack of Object.values(manifest.packs ?? {})) for (const [domain, files] of Object.entries(pack.backend?.domainSupportFiles ?? {})) {
-    if (!known.has(domain)) continue;
-    for (const file of Array.isArray(files) ? files : []) {
+  const userReasons = new Map();
+  for (const module of modules) {
+    for (const file of module.backend?.supportFiles ?? []) {
       const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
-      if (directoryDomain) add(domain, directoryDomain, 'java');
+      if (directoryDomain) add(module.id, directoryDomain, 'java');
     }
+    for (const edge of module.dependsOn ?? []) if (edge.kind === 'bundle') add(module.id, edge.to, 'manifest');
+    for (const row of module.requires ?? []) userReasons.set(`${module.id}>${row.to}`, row.userReason);
   }
-  for (const domain of domains) for (const { domain: required } of clusterRequirements(manifest, domain)) add(domain, required, 'manifest');
   return { capabilities: domains.map(id => ({ id,
     present: ['domain', 'service'].some(layer => existsSync(join(root, APP_ROOT, layer, id))),
     requires: [...requires.get(id).values()].sort((left, right) => (`${left.domain}\u0000${left.kind}` < `${right.domain}\u0000${right.kind}` ? -1 : 1))
-      .map(edge => ({ ...edge, userReason: REQUIRES_USER_REASONS[`${id}>${edge.domain}`] ?? null })) })) };
+      .map(edge => ({ ...edge, userReason: userReasons.get(`${id}>${edge.domain}`) ?? null })) })) };
 }
 
 const JAVA_MODULES = ['foundation', 'business-core', 'business-app', 'api-server'];

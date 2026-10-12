@@ -76,7 +76,8 @@
   "integrates": [],
   "registrationOnly": {
     "events": [],
-    "contributions": []
+    "contributions": [],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

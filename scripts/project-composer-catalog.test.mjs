@@ -6,11 +6,21 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { compositionDigest, javaDomainReferences as javaDomainReferencesOf, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { REQUIRES_USER_REASONS, attachUserReasons, userReasonProblem } from './project-composer-reasons.mjs';
-import { INTEGRATES, degradationPredicate, eventConstructionsIn, eventListenersIn, requiresClosure, resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
+import { INTEGRATES, REGISTRATION_ONLY_PORTS, degradationPredicate, deriveEventTriples, derivePortConnections, eventConstructionsIn, eventListenersIn, requiresClosure,
+  resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
+import { MODULES_DIRECTORY } from './composer-modules.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
 const catalog = loadProjectComposerCatalog(ROOT);
+// 기능 선언은 매니페스트 v2 기능 파일이다(11단계 C2). 시험은 그 파일을 고쳐 카탈로그가 거부하는지 본다.
+const moduleFile = name => JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, `${name}.json`), 'utf8'));
+const editModule = (root, name, edit) => {
+  const path = join(root, MODULES_DIRECTORY, `${name}.json`);
+  const value = JSON.parse(readFileSync(path, 'utf8'));
+  edit(value);
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+};
 
 function fixture(t) {
   const base = resolve(tmpdir());
@@ -18,6 +28,7 @@ function fixture(t) {
   for (const path of ['config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
+  cpSync(join(ROOT, MODULES_DIRECTORY), join(root, MODULES_DIRECTORY), { recursive: true });
   // 선택 연동 판정은 네 모듈의 생산 Java 를 모두 읽는다(발행은 core·api-server 에도 있다).
   for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) {
     cpSync(join(ROOT, module, 'src/main/java'), join(root, module, 'src/main/java'), { recursive: true });
@@ -69,6 +80,11 @@ test('a declared foreign key whose child table moved into its parent domain is r
   const to = join(root, 'business-app/src/main/java/nuri/business/domain/board/Comment.java');
   writeFileSync(to, readFileSync(from, 'utf8').replace('package nuri.business.domain.comment;', 'package nuri.business.domain.board;'));
   rmSync(from);
+  // 기능 파일은 테이블을 기능 단위로 소유한다(매니페스트 v2). 엔티티만 옮기면 테이블 소유 대조가 먼저 거부한다.
+  assert.throws(() => loadProjectComposerCatalog(root), /cross-module table lacks shared contract: board\/tb_bbs_comment/);
+  // 소유 선언까지 옮기고 외래 키 선언만 남기면 외래 키 소유 대조가 거부한다.
+  editModule(root, 'comment', value => { value.owns.tables = value.owns.tables.filter(table => table !== 'tb_bbs_comment'); });
+  editModule(root, 'board', value => { value.owns.tables = [...value.owns.tables, 'tb_bbs_comment'].sort(); });
   assert.throws(() => loadProjectComposerCatalog(root), /declared foreign key ownership drifted: fk_tb_bbs_comment_tb_bbs_item/);
 });
 
@@ -131,7 +147,7 @@ test('new undeclared domain, table and UI ownership become visible failures', t 
   const board = join(root, 'business-app/src/main/java/nuri/business/domain/board/Board.java');
   const original = readFileSync(board, 'utf8');
   writeFileSync(board, original.replace('tb_bbs_item', 'tb_unknown_composer_table'));
-  assert.throws(() => loadProjectComposerCatalog(root), /entity table absent from manifest/);
+  assert.throws(() => loadProjectComposerCatalog(root), /entity table absent from module: board\/tb_unknown_composer_table/);
   writeFileSync(board, original);
   const unowned = join(root, 'frontend/src/app/admin/operation/UnknownFeature.tsx');
   writeFileSync(unowned, 'export default function Feature() { return null; }');
@@ -157,29 +173,21 @@ test('split capabilities keep each permission domain in exactly one optional cap
 });
 
 /*
- * 시연 화면은 프런트 전용 기능이다(DEC-OPS-273). manifest 의 frontendOnlyDomains 만 소스 없이 적재되고,
- * 그 목록이 서랍이 되지 않도록 소스·테이블·권한 도메인을 가진 기능을 올리면 실패한다.
+ * 시연 화면은 프런트 전용 기능이다(DEC-OPS-273). 기능 파일의 backend.frontendOnly 인 기능만 소스 없이 적재되고,
+ * 그 표지가 서랍이 되지 않도록 소스·테이블·권한 도메인을 가진 기능에 붙이면 실패한다. 표지를 다른 자리가 선언하는 경우(v1 의
+ * 다른 pack)는 기능 파일이 자기 자신만 선언하므로 생길 수 없다.
  */
-test('a frontend-only capability is declared in the manifest and owns no backend, table or permission', t => {
+test('a frontend-only capability is declared in its feature file and owns no backend, table or permission', t => {
   const showcase = catalog.capabilities.find(capability => capability.id === 'showcase');
   assert.deepEqual([showcase.backend, showcase.database, showcase.permissionCodes, showcase.requires],
     [{ sourcePaths: [], sourceFiles: [] }, { tables: [], explicitSequences: [] }, [], []]);
   assert.deepEqual(showcase.menuRoutes, ['/admin/patterns', '/admin/system/layout']);
   const root = fixture(t);
-  const file = join(root, 'config/reusable-base-profiles.json');
-  const without = structuredClone(manifest);
-  delete without.packs.demo.backend.frontendOnlyDomains;
-  writeFileSync(file, JSON.stringify(without));
+  editModule(root, 'showcase', value => { value.backend.frontendOnly = false; });
   assert.throws(() => loadProjectComposerCatalog(root), /capability has no source: showcase/);
-  const promoted = structuredClone(manifest);
-  promoted.packs.demo.backend.frontendOnlyDomains = ['promotion', 'showcase'];
-  writeFileSync(file, JSON.stringify(promoted));
+  editModule(root, 'showcase', value => { value.backend.frontendOnly = true; });
+  editModule(root, 'promotion', value => { value.backend.frontendOnly = true; });
   assert.throws(() => loadProjectComposerCatalog(root), /frontend-only capability has backend source: promotion/);
-  const misplaced = structuredClone(manifest);
-  misplaced.packs.collaboration.backend.frontendOnlyDomains = ['showcase'];
-  delete misplaced.packs.demo.backend.frontendOnlyDomains;
-  writeFileSync(file, JSON.stringify(misplaced));
-  assert.throws(() => loadProjectComposerCatalog(root), /frontend-only capability is not an appDomain of its pack: showcase/);
 });
 
 test('configured notice and FAQ permissions belong to the optional board capability', t => {
@@ -196,21 +204,19 @@ test('configured notice and FAQ permissions belong to the optional board capabil
   assert.throws(() => loadProjectComposerCatalog(root), /unknown permission domain: FAQ/);
 });
 
-test('stale manifest source references and a removed shared table contract fail closed', t => {
+test('stale source references and a removed shared table contract fail closed', t => {
   const root = fixture(t);
-  const file = join(root, 'config/reusable-base-profiles.json');
-  const changed = structuredClone(manifest);
-  changed.sharedTableContracts = [];
-  writeFileSync(file, JSON.stringify(changed));
-  assert.throws(() => loadProjectComposerCatalog(root), /cross-pack table lacks shared contract/);
-  writeFileSync(file, JSON.stringify(manifest));
+  const board = moduleFile('board');
+  editModule(root, 'board', value => { value.owns.sharedTables = []; });
+  assert.throws(() => loadProjectComposerCatalog(root), /cross-module table lacks shared contract: template\/tb_tmplt_info/);
+  editModule(root, 'board', value => { value.owns.sharedTables = board.owns.sharedTables; });
   rmSync(join(root, 'frontend/src/services/business/mail/MailService.ts'));
   assert.throws(() => loadProjectComposerCatalog(root), /frontend ownership path missing/);
 });
 
 test('domain support is owned and fingerprinted with its consumer', t => {
   const root = fixture(t);
-  const support = manifest.packs.demo.backend.domainSupportFiles.memoreport;
+  const support = moduleFile('memoreport').backend.supportFiles;
   assert.equal(support.length, 3);
   const capability = catalog.capabilities.find(row => row.id === 'memoreport');
   for (const file of support) assert.ok(capability.backend.sourceFiles.includes(file), file);
@@ -230,10 +236,7 @@ test('domain support is owned and fingerprinted with its consumer', t => {
  */
 test('a support file in another feature directory becomes a requires edge of its consumer', t => {
   const root = fixture(t);
-  const file = join(root, 'config/reusable-base-profiles.json');
-  const declared = structuredClone(manifest);
-  declared.packs.demo.backend.domainSupportFiles.community = ['business-app/src/main/java/nuri/business/service/template/TmplatInfoService.java'];
-  writeFileSync(file, JSON.stringify(declared));
+  editModule(root, 'community', value => { value.backend.supportFiles = ['business-app/src/main/java/nuri/business/service/template/TmplatInfoService.java']; });
   assert.throws(() => loadProjectComposerCatalog(root), /requires edge lacks a user reason: community>template/);
 });
 
@@ -466,6 +469,88 @@ test('integration declarations reject unknown kinds, duplicates, double classifi
     /optional foreign key lacks its integration: fk_x/);
   assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, anchors: [{ path: 'x', anchor: 'y' }] }] }),
     /event integration evidence is derived, not declared/);
+});
+
+// ── Java 포트 연결(11단계 C2, GAP-COMPOSE-001 포트 부분) ───────────────────────────────
+
+const portKey = row => `${row.from}>${row.to} (${row.port})`;
+const ownerOfSource = () => {
+  const supportOwners = new Map(catalog.capabilities.flatMap(capability => moduleFile(capability.id).backend.supportFiles.map(file => [file, capability.id])));
+  return sourceOwner(supportOwners, catalog.capabilities.map(capability => capability.id), requiresClosure(catalog.capabilities));
+};
+
+test('port connection detection reads implementations and Spring bean injection points, not every use of the type', () => {
+  const files = [
+    { path: 'foundation/src/main/java/x/Port.java', code: 'public interface Port {}' },
+    { path: 'foundation/src/main/java/x/Typed.java', code: 'public interface Typed<T> {}' },
+    { path: 'foundation/src/main/java/x/Marker.java', code: 'public @interface Marker {}' },
+    { path: 'business-app/src/main/java/nuri/business/service/a/AImpl.java', code: '@Component class AImpl implements Typed<java.util.List<String>>, x.Port {}' },
+    { path: 'business-core/src/main/java/nuri/business/service/core/CoreImpl.java', code: '@Component class CoreImpl implements Port {}' },
+    { path: 'business-core/src/main/java/nuri/business/service/core/Consumer.java', code: '@Service class Consumer { private final ObjectProvider<x.Port> port; }' },
+    { path: 'business-app/src/main/java/nuri/business/service/b/B.java', code: '@Service class B { private final Map<String, Typed<String>> typed; }' },
+    { path: 'business-app/src/main/java/nuri/business/service/a/Self.java', code: '@Service class Self { private final java.util.List<Port> ports; }' },
+    // 빈이 아닌 클래스가 그 타입을 쓰는 것(예외 객체의 필드)은 연결이 아니다.
+    { path: 'business-core/src/main/java/nuri/business/service/core/Failure.java', code: 'class Failure extends RuntimeException { private final Port port; }' },
+  ];
+  const capabilities = [{ id: 'a', requires: [] }, { id: 'b', requires: [] }];
+  const owner = sourceOwner(new Map(), ['a', 'b'], requiresClosure(capabilities));
+  const { interfaces, connections } = derivePortConnections(ROOT, owner, files);
+  assert.deepEqual([...interfaces].sort(), ['Port', 'Typed']);
+  // core 구현(CoreImpl)은 늘 있으므로 연결이 아니고, 같은 기능 안의 주입(Self)도 연결이 아니다.
+  assert.deepEqual(connections.map(portKey), ['b>a (Typed)', 'core>a (Port)']);
+  assert.deepEqual(connections.find(row => row.port === 'Port').consumers, [{ path: 'business-core/src/main/java/nuri/business/service/core/Consumer.java', line: 1 }]);
+});
+
+test('every computed Java port connection is an integration or a registration-only connection, exactly once', () => {
+  const owner = ownerOfSource();
+  const ports = derivePortConnections(ROOT, owner);
+  const keys = ports.connections.map(portKey);
+  assert.deepEqual(keys, [
+    'board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
+    'core>board (AttachmentSourceContributor)', 'core>board (DashboardItemProvider)', 'core>board (DataUsageStatisticsContributor)',
+    'core>board (PostStatisticsContributor)', 'core>community (CommunityBoardAccessPort)', 'core>informalsanction (DashboardItemProvider)',
+    'core>mail (AttachmentSourceContributor)', 'core>memoreport (AttachmentSourceContributor)', 'core>note (AttachmentSourceContributor)',
+    'core>notification (DurableWorkHandler)', 'core>promotion (AttachmentSourceContributor)', 'core>report (AttachmentSourceContributor)',
+    'core>reward (AttachmentSourceContributor)', 'core>schedule (AttachmentSourceContributor)', 'dashboard>board (PostStatisticsContributor)',
+    'dashboard>notification (PendingAlertCountContributor)', 'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
+  ]);
+  // 예외 객체가 필드로 쓰는 ErrorCode 는 빈의 주입이 아니라 연결이 아니다.
+  assert.ok(!keys.some(key => key.includes('ErrorCode')));
+  const declared = new Set(INTEGRATES.flatMap(edge => [...(edge.via.startsWith('port:') ? [edge.via.slice(5)] : []), ...(edge.ports ?? [])]
+    .map(port => portKey({ from: edge.from, to: edge.to, port }))).filter(key => keys.includes(key)));
+  assert.deepEqual([...declared].sort(), ['board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
+    'dashboard>board (PostStatisticsContributor)']);
+  const canDegrade = degradationPredicate(catalog.capabilities, catalog.presets);
+  // 실시간 대시보드는 알림을 요구한다(화면 의존). 늘 함께 있는 쌍이라 분류하지 않는다.
+  assert.deepEqual(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey), ['dashboard>notification (PendingAlertCountContributor)']);
+  assert.deepEqual(REGISTRATION_ONLY_PORTS.map(portKey).sort(),
+    keys.filter(key => !declared.has(key) && key !== 'dashboard>notification (PendingAlertCountContributor)'));
+  for (const row of REGISTRATION_ONLY_PORTS) assert.match(row.reason, /^[^A-Za-z]+\.$/, portKey(row));
+});
+
+test('an unclassified, doubly classified, stale or never-degrading port connection is refused with its key', () => {
+  const owner = ownerOfSource();
+  const ports = derivePortConnections(ROOT, owner);
+  const base = { root: ROOT, declared: INTEGRATES, triples: deriveEventTriples(ROOT, owner), canDegrade: degradationPredicate(catalog.capabilities, catalog.presets),
+    domains: catalog.capabilities.map(capability => capability.id), optionalForeignKeys: catalog.optionalForeignKeys, contributions: [],
+    registrationOnlyContributions: [], ports };
+  assert.equal(resolveIntegrations({ ...base, registrationOnlyPorts: REGISTRATION_ONLY_PORTS }).length, catalog.integrates.length);
+  const without = REGISTRATION_ONLY_PORTS.filter(row => portKey(row) !== 'core>board (AttachmentSourceContributor)');
+  assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: without }), /unclassified port connection: core>board \(AttachmentSourceContributor\)/);
+  const twice = [...REGISTRATION_ONLY_PORTS, { from: 'board', to: 'community', port: 'CommunityBoardAccessPort', reason: '정리합니다.' }];
+  assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: twice }), /port connection classified twice: board>community \(CommunityBoardAccessPort\)/);
+  const never = [...REGISTRATION_ONLY_PORTS, { from: 'dashboard', to: 'notification', port: 'PendingAlertCountContributor', reason: '정리합니다.' }];
+  assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: never }),
+    /registration-only port connection can never degrade: dashboard>notification \(PendingAlertCountContributor\)/);
+  const stale = [...REGISTRATION_ONLY_PORTS, { from: 'core', to: 'survey', port: 'AttachmentSourceContributor', reason: '정리합니다.' }];
+  assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: stale }),
+    /registration-only port connection has no implementation and injection: core>survey \(AttachmentSourceContributor\)/);
+  const renamed = INTEGRATES.map(edge => (edge.from === 'board' && edge.to === 'community' ? { ...edge, ports: ['CommunityAccessPort'] } : edge));
+  assert.throws(() => resolveIntegrations({ ...base, declared: renamed, registrationOnlyPorts: REGISTRATION_ONLY_PORTS }),
+    /integration names an unknown Java port: board>community \(CommunityAccessPort\)/);
+  const misdirected = INTEGRATES.map(edge => (edge.from === 'community' && edge.to === 'template' ? { ...edge, via: 'port:TemplateReferenceContributor' } : edge));
+  assert.throws(() => resolveIntegrations({ ...base, declared: misdirected, registrationOnlyPorts: REGISTRATION_ONLY_PORTS }),
+    /declared port integration has no implementation and injection: community>template \(TemplateReferenceContributor\)/);
 });
 
 /*

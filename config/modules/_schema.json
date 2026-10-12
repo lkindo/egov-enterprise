@@ -24,6 +24,10 @@
         "to": { "$ref": "#/$defs/featureId" },
         "via": { "type": "string", "pattern": "^(?:event|port|fk-optional):[A-Za-z_][A-Za-z0-9_]*$" },
         "reason": { "$ref": "#/$defs/sentence" },
+        "ports": {
+          "description": "이 연동이 함께 덮는 Java 포트 연결(via 와 다른 근거로 같은 저하를 낳는 포트).",
+          "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9_]*$" }
+        },
         "anchors": {
           "type": "array", "minItems": 1,
           "items": {
@@ -34,7 +38,7 @@
       }
     },
     "registrationOnly": {
-      "type": "object", "additionalProperties": false, "required": ["events", "contributions"],
+      "type": "object", "additionalProperties": false, "required": ["events", "contributions", "ports"],
       "properties": {
         "events": {
           "type": "array",
@@ -52,6 +56,18 @@
           "items": {
             "type": "object", "additionalProperties": false, "required": ["path", "reason"],
             "properties": { "path": { "$ref": "#/$defs/repoFile" }, "reason": { "$ref": "#/$defs/sentence" } }
+          }
+        },
+        "ports": {
+          "description": "계산된 Java 포트 연결 가운데 잃는 것이 없는 것(구현 기능의 데이터만 모으거나 그 기능의 항목만 내보낸다).",
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["to", "port", "reason"],
+            "properties": {
+              "to": { "$ref": "#/$defs/featureId" },
+              "port": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9_]*$" },
+              "reason": { "$ref": "#/$defs/sentence" }
+            }
           }
         }
       }

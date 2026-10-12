@@ -67,7 +67,8 @@
         "path": "frontend/src/extensions/scrap/hub-tabs.ts",
         "reason": "스크랩 기능이 없으면 협업 허브의 스크랩 탭만 사라지고 다른 탭은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

@@ -71,7 +71,8 @@
         "path": "frontend/src/extensions/note/home-sections.ts",
         "reason": "쪽지 기능이 없으면 업무 홈의 안 읽은 쪽지 카드만 사라지고 업무 홈은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

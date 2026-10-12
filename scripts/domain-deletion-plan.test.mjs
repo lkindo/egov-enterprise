@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { asciiJson, planDomainDeletion, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
 import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
+import { MODULES_DIRECTORY } from './composer-modules.mjs';
 
 /*
  * 수동 도메인 삭제(delete-domain.ps1)의 동반 삭제 판정 계약. 판정은 카탈로그 requires 간선의 역방향 폐포다.
@@ -23,13 +24,19 @@ const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profil
 const APP = 'business-app/src/main/java/nuri/business';
 
 /**
- * manifest 와 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
+ * manifest·기능 파일과 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
+ * 기능 파일(매니페스트 v2)은 manifest 의 기능 것만 둔다 — 생성물처럼 일부 기능만 있는 트리다. `edit` 로 기능 파일을 고친다.
  * `api` 면 api-server 생산 소스도 둔다 — api-server 디렉터리 소유 간선(DEC-OPS-280)도 카탈로그 없이 계산된다.
  */
-function treeWith({ manifest, domains, api = false }) {
+function treeWith({ manifest, domains, api = false, edit = () => {} }) {
   const root = mkdtempSync(join(tmpdir(), 'domain-deletion-'));
-  mkdirSync(join(root, 'config'), { recursive: true });
+  mkdirSync(join(root, MODULES_DIRECTORY), { recursive: true });
   writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(manifest));
+  for (const id of Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? [])) {
+    const value = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, `${id}.json`), 'utf8'));
+    edit(value);
+    writeFileSync(join(root, MODULES_DIRECTORY, `${id}.json`), JSON.stringify(value));
+  }
   for (const domain of domains) for (const layer of ['domain', 'service']) {
     const source = join(ROOT, APP, layer, domain);
     if (existsSync(source)) cpSync(source, join(root, APP, layer, domain), { recursive: true });
@@ -133,12 +140,9 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
 // 다른 기능 디렉터리에 있는 지원 파일은 그 기능을 요구한다. 실례(커뮤니티가 쓰던 템플릿 배정 구현)는 DEC-OPS-280 에서 포트로
 // 바뀌어 사라졌으므로 합성 선언으로 규칙을 본다 — 실례만 바꾸고 단언을 지우면 이 간선 규칙의 red 가 사라진다.
 test('a support file declared in another feature directory makes its consumer require that feature', () => {
-  const manifest = structuredClone(MANIFEST);
-  manifest.packs.collaboration.backend.domainSupportFiles = {
-    ...manifest.packs.collaboration.backend.domainSupportFiles,
-    note: [`${APP}/service/mail/MailService.java`],
-  };
-  const root = treeWith({ manifest, domains: ['mail', 'note'] });
+  // 판정은 기능 파일(매니페스트 v2)의 지원 파일 선언을 읽는다. manifest 의 같은 선언은 생성기 Java 투영(planDomainJavaFiles)만 쓴다.
+  const root = treeWith({ manifest: MANIFEST, domains: ['mail', 'note'],
+    edit: value => { if (value.id === 'note') value.backend.supportFiles = [`${APP}/service/mail/MailService.java`]; } });
   try {
     const tree = treeDeletionCatalog(root);
     assert.deepEqual(tree.capabilities.find(capability => capability.id === 'note').requires.map(edge => `${edge.domain} ${edge.kind}`), ['mail java']);
@@ -210,7 +214,7 @@ test('a tree where a deletion already ran and a new domain was scaffolded still 
   const gone = new Set(['informalsanction', 'reward']);
   const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)), api: true });
   try {
-    // generate-domain.ps1 가 만드는 새 도메인. manifest 에 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
+    // generate-domain.ps1 가 만드는 새 도메인. 기능 파일이 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
     mkdirSync(join(root, APP, 'domain/product'), { recursive: true });
     writeFileSync(join(root, APP, 'domain/product/Product.java'),
       'package nuri.business.domain.product;\nimport nuri.business.domain.board.entity.Board;\npublic class Product {}\n');

@@ -169,19 +169,14 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   // 화면 생존 대조(slot 단계 PR-1): 구성이 남겨야 할 화면이 지워지면 SOURCE_SURVIVAL, 구성에 없는 화면이 남으면 FRONTEND_SCREEN_EXTRA 다.
   // 두 차단의 판정 경로는 아래 합성 저장소 시험이 생성기와 함께 본다. 여기서는 실제 카탈로그로만 보이는 경우를 본다.
   // 기대값은 removePaths 로 거르지 않는다. 그래서 경로를 다른 pack 에 잘못 넣으면(댓글 관리를 demo 에) 그 기능을 고른 구성에서 빠진다.
-  // 그 실수는 카탈로그의 프리셋 제거 경로에도 같이 들어간다 — 해석기의 retainedRoutes 도 그 화면을 빼므로, 기대값이 retainedRoutes
-  // 였다면 붉지 않았다(자기 참조). 카탈로그를 같은 실수로 만든 뒤 대조한다.
+  // 해석기는 시작 구성의 제거 경로도 카탈로그 규칙에서 계산하므로(해석기 단일화, 11단계 C2) 그 화면을 남기라고 말한다. pack 모드로
+  // 투영하는 생성기(C3 전)만 그 실수를 따른다 — 정밀 점검이 그 차이를 소실로 잡는다.
   const misplaced = structuredClone(manifest);
   misplaced.packs.collaboration.frontend.removePaths = misplaced.packs.collaboration.frontend.removePaths.filter(path => path !== 'src/app/admin/system/comments');
   misplaced.packs.demo.frontend.removePaths.push('src/app/admin/system/comments');
-  const misplacedCatalog = structuredClone(catalog);
-  const collaborationPreset = misplacedCatalog.presets.find(row => row.id === 'collaboration');
-  collaborationPreset.frontendRemovePaths = [...collaborationPreset.frontendRemovePaths, 'src/app/admin/system/comments'].sort();
-  const { catalogHash: unused, ...misplacedBody } = misplacedCatalog;
-  misplacedCatalog.catalogHash = compositionDigest(misplacedBody);
-  const misplacedComposition = compose({ preset: 'collaboration' }, misplacedCatalog);
-  assert.ok(!misplacedComposition.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver alone drops the misplaced screen');
-  deep = compositionDeepPlan({ root, catalog: misplacedCatalog, manifest: misplaced, composition: misplacedComposition, files });
+  const misplacedComposition = compose({ preset: 'collaboration' });
+  assert.ok(misplacedComposition.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver keeps the screen of a selected feature');
+  deep = compositionDeepPlan({ root, catalog, manifest: misplaced, composition: misplacedComposition, files });
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/admin/system/comments/page.tsx']);
 

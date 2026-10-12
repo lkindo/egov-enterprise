@@ -13,8 +13,11 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadComposerModules } from './composer-modules.mjs';
 
 export const ROUTE_CENSUS_PATH = 'config/ui-route-capabilities.json';
+// 아래 세 상수는 v1 선언이다. 매니페스트 v2 전환(11단계 C7)까지 v2 생성기(composer-modules-generate.mjs)만 읽고, 엔진은 기능 파일의
+// presentation 을 읽는다(loadComposerPresentationDeclarations).
 export const COMPOSER_AREAS = Object.freeze([
   { id: 'communication', label: '소통·협업', domains: ['mail', 'sms', 'note', 'notification', 'addressbook', 'scrap', 'promotion'] },
   { id: 'knowledge', label: '지식·커뮤니티', domains: ['board', 'comment', 'help', 'community', 'template', 'isg'] },
@@ -59,6 +62,12 @@ function copyProblem(text, { max }) {
   if (/[A-Za-z]/.test(text)) return 'contains Latin text such as a capability id';
   if ([...text].length > max) return `is longer than ${max} characters`;
   return null;
+}
+
+/** 매니페스트 v2(config/modules)의 표시 문구 — 업무 영역(core.json 의 영역과 기능 파일의 영역·순서), 기능 요약, 시작 구성 이름. */
+export function loadComposerPresentationDeclarations(root) {
+  const { presentation } = loadComposerModules(root).extras;
+  return { areas: presentation.areas, summaries: presentation.summaries, presetLabels: presentation.presetLabels };
 }
 
 /** 라우트 원장의 경로별 종류(page·page-redirect·config-redirect). */

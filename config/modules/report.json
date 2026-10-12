@@ -48,7 +48,8 @@
         "path": "frontend/src/extensions/report/shell-links.ts",
         "reason": "업무 보고 기능이 없으면 나의 업무 탭 줄의 업무 보고 탭만 사라지고 업무 관리 목록은 그대로입니다."
       }
-    ]
+    ],
+    "ports": []
   },
   "requirements": [],
   "unassignedPermissions": []

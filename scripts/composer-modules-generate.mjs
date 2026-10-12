@@ -9,6 +9,9 @@
  * 기능 단위 소유(테이블·시퀀스)는 v1 카탈로그가 엔티티에서 계산한 값을 pack 소유와 맞춰 옮긴다. 화면 문구·미배정 권한 안내·게이트·
  * RBAC 매트릭스·마커 블록·참조 데이터·시작 구성 기대치는 각 상수에서 옮긴다. `_schema.json` 은 손으로 쓰는 계약이라 만들지 않는다.
  *
+ * 두 방식 모두 쓰거나 비교한 뒤 `_schema.json` 검사(composer-modules-schema.mjs)를 한다 — 로더는 생성기 import 폐포의 내장 모듈
+ * 제약 때문에 스키마를 검사하지 않는다.
+ *
  * 사용: node scripts/composer-modules-generate.mjs --write | --check
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -20,6 +23,7 @@ import { UNASSIGNED_PERMISSION_GUIDANCE } from './project-composer-unassigned.mj
 import { FRONTEND_MARKER_FILES, GATE_OWNERS, MANAGEMENT_RBAC_SURFACES, RBAC, RBAC_DOMAINS } from './project-composer-source.mjs';
 import { CODE_GROUP_OWNERS } from './reusable-reference-data.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA } from './composer-modules.mjs';
+import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
@@ -54,7 +58,10 @@ export function v1ComposerExtras(root = ROOT) {
   };
 }
 
-const integrationRow = edge => ({ to: edge.to, via: edge.via, reason: edge.reason, ...(edge.anchors ? { anchors: edge.anchors.map(row => ({ ...row })) } : {}) });
+const integrationRow = edge => ({ to: edge.to, via: edge.via, reason: edge.reason, ...(edge.ports ? { ports: [...edge.ports] } : {}),
+  ...(edge.anchors ? { anchors: edge.anchors.map(row => ({ ...row })) } : {}) });
+const registrationPortRows = (declarations, from) => declarations.registrationOnlyPorts.filter(row => row.from === from)
+  .map(row => ({ to: row.to, port: row.port, reason: row.reason }));
 
 /** v1 선언에서 v2 파일 내용(파일 이름 → 값)을 만든다. 순수 계산이며 디스크에 쓰지 않는다. */
 export function composerModuleFiles(root = ROOT) {
@@ -128,6 +135,7 @@ export function composerModuleFiles(root = ROOT) {
         events: declarations.registrationOnlyEvents.filter(row => row.from === id).map(row => ({ to: row.to, event: row.event, reason: row.reason })),
         contributions: declarations.registrationOnlyContributions.filter(row => row.path.startsWith(`frontend/src/extensions/${id}/`))
           .map(row => ({ path: row.path, reason: row.reason })),
+        ports: registrationPortRows(declarations, id),
       },
       requirements: [...(feature.requirements ?? [])],
       unassignedPermissions: guidance(id),
@@ -146,6 +154,7 @@ export function composerModuleFiles(root = ROOT) {
     registrationOnly: {
       events: declarations.registrationOnlyEvents.filter(row => row.from === 'core').map(row => ({ to: row.to, event: row.event, reason: row.reason })),
       contributions: [],
+      ports: registrationPortRows(declarations, 'core'),
     },
     unassignedPermissions: guidance('core'),
   };
@@ -196,6 +205,7 @@ if (isMain) {
         process.exit(1);
       }
       console.log(`[modules] ${Object.keys(expected).length}개 파일이 v1 선언과 같다.`);
+      console.log(`[modules] ${validateComposerModuleSchema(ROOT)}개 파일이 ${MODULES_SCHEMA} 과 맞다.`);
     } else {
       const directory = join(ROOT, MODULES_DIRECTORY);
       mkdirSync(directory, { recursive: true });
@@ -204,6 +214,7 @@ if (isMain) {
       }
       for (const [name, value] of Object.entries(expected)) writeFileSync(join(directory, name), serializeModuleFile(value));
       console.log(`[modules] ${Object.keys(expected).length}개 파일을 썼다(바뀐 파일 ${drift.filter(line => !line.startsWith('unexpected ')).length}).`);
+      console.log(`[modules] ${validateComposerModuleSchema(ROOT)}개 파일이 ${MODULES_SCHEMA} 과 맞다.`);
       if (drift.some(line => line.startsWith('unexpected '))) process.exit(1);
     }
   } catch (error) {

@@ -52,18 +52,11 @@ test('a feature that another selection still requires stays, and the diff names 
   // 지식 허브가 게시판 셸이 된 뒤(허브 분해 H2) 직접 선택으로 바뀌어도 들어오는 기능이 없다.
   assert.deepEqual([preset.added, preset.removed], [[], []]);
   assert.equal(diffSummary(preset, catalog), '빼도 댓글, 스크랩이 요구해 계속 포함됩니다.');
-  // 직접 선택으로 바뀌며 시작 구성이 건너뛰던 의존이 들어오면 붙잡힌다는 말만 하고 그 변화를 감추지 않는다(합성: 게시판이 화면을
-  //   함께 쓰는 기능 둘을 요구한다 — 시작 구성은 화면 계열 간선을 따르지 않는다).
-  const { catalogHash, ...body } = structuredClone(catalog);
-  body.capabilities.find(capability => capability.id === 'board').requires.push(
-    { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
-    { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
-  const shared = { ...body, catalogHash: compositionDigest(body) };
-  const held = diffOf({ preset: 'collaboration' }, 'board', shared);
-  // 커뮤니티는 템플릿을 끌어오지 않는다(템플릿은 선택 연동, DEC-OPS-280).
-  assert.deepEqual(held.added, ['community', 'help']);
-  assert.match(diffSummary(held, shared),
-    /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
+  // 시작 구성은 같은 목록의 직접 선택과 결과가 같다(해석기 단일화, 11단계 C2). 카드를 눌러 직접 선택으로 바뀌어도 차이는 누른 기능의
+  //   것뿐이다 — 시작 구성에서 출발한 차이와 같은 목록의 직접 선택에서 출발한 차이가 모든 기능에서 같다.
+  for (const { id: presetId, domains } of catalog.presets) for (const { id } of catalog.capabilities) {
+    assert.deepEqual(diffOf({ preset: presetId }, id), diffOf({ domains }, id), `${presetId}/${id}`);
+  }
 });
 
 test('degradations appear when a partner is missing and resolve only when the partner arrives', () => {
@@ -98,15 +91,17 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
   assert.doesNotMatch(help, /[A-Za-z]/);
   assert.match(diffSummary(diffOf({ domains: ['help'] }, 'help'), catalog), /^빼면 기능 −3\(빠짐: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);
   assert.match(diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog), /^고르면 기능 \+2\(들어옴: 실시간 대시보드, 알림\) · /);
-  // 하나를 빼는데 다른 기능이 들어오면 양쪽을 모두 밝힌다(순 증감만 보이면 무엇이 빠지는지 알 수 없다). 지식 허브가 게시판 셸이 된 뒤
-  //   실제 카탈로그에는 그런 전환이 없어 합성 간선(게시판이 화면을 함께 쓰는 기능 둘을 요구)으로 본다.
+  // 하나를 빼는데 다른 기능이 들어오면 양쪽을 모두 밝힌다(순 증감만 보이면 무엇이 빠지는지 알 수 없다). 시작 구성이 같은 목록의
+  //   직접 선택과 같아진 뒤(11단계 C2) 해석기는 그런 차이를 만들지 않으므로 문장 규칙만 차이 값으로 본다.
+  const both = { domain: 'dashboard', action: 'remove', added: ['help'], removed: ['dashboard'], retainedBy: [],
+    counts: { tables: [10, 10], permissions: [5, 5], menus: [3, 3] }, degraded: { added: [], resolved: [] }, blockers: [] };
+  assert.equal(diffSummary(both, catalog), '빼면 기능 0(들어옴: 도움말·온라인 매뉴얼; 빠짐: 실시간 대시보드) · 테이블 0 · 메뉴 0 · 권한 0');
+  // 넷 이상이면 셋만 이름을 대고 나머지는 수로 줄인다(합성 — 게시판이 화면을 함께 쓰는 기능 둘을 요구해 게시판까지 네 기능이 들어온다).
   const { catalogHash, ...body } = structuredClone(catalog);
   body.capabilities.find(capability => capability.id === 'board').requires.push(
     { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   const shared = { ...body, catalogHash: compositionDigest(body) };
-  assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard', shared), shared), /^빼면 기능 \+1\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
-  // 넷 이상이면 셋만 이름을 대고 나머지는 수로 줄인다(같은 합성 — 게시판을 고르면 게시판까지 네 기능이 들어온다).
   assert.match(diffSummary(diffOf({ domains: [] }, 'board', shared), shared), /^고르면 기능 \+4\(들어옴: 게시판·지식, [^)]+ 외 1개\) · /);
 });
 
