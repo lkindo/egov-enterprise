@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { canonicalJson, compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { CAPABILITY_SUMMARIES, COMPOSER_AREAS, PRESET_LABELS, composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
 import { createComposerEngine } from './project-composer.mjs';
+import { hashedModuleDeclarations, readComposerModuleFiles } from './composer-modules.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const catalog = loadProjectComposerCatalog(root);
@@ -37,6 +38,15 @@ test('presentation copy stays outside the catalog hash, so copy edits never chan
   // 요약·시작 구성 이름 문자열이 본문 어디에도 없는지 본다(짧은 영역 이름은 개발자 근거 문장과 우연히 겹칠 수 있어 키로만 본다).
   const { catalogHash, ...body } = catalog;
   assert.equal(compositionDigest(body), catalogHash);
+  // 본문의 출처 해시(provenance.modulesHash)도 문구를 덮지 않는다. 기능 파일의 문구만 바꾼 선언은 같은 해시를 낸다
+  // (기능 파일을 고쳐 실제 카탈로그 해시로 보는 시험은 composer-modules.test.mjs 에 있다).
+  const files = readComposerModuleFiles(root);
+  assert.equal(catalog.provenance.modulesHash, compositionDigest(hashedModuleDeclarations(files)));
+  const copyEdited = structuredClone(files);
+  copyEdited['mail.json'].presentation.summary = '메일 보내기';
+  copyEdited['presets.json'].presets[0].label = '바꾼 이름';
+  copyEdited['board.json'].unassignedPermissions[0].effect = '바꾼 안내입니다.';
+  assert.equal(compositionDigest(hashedModuleDeclarations(copyEdited)), catalog.provenance.modulesHash);
   assert.ok(!['presentation', 'areas', 'summaries', 'screens'].some(key => Object.hasOwn(body, key)));
   for (const capability of body.capabilities) {
     assert.deepEqual(Object.keys(capability).sort(), ['available', 'backend', 'database', 'frontend', 'id', 'label', 'menuRoutes', 'menuTabs', 'pack',

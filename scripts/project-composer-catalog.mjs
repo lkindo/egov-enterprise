@@ -491,6 +491,14 @@ export function buildProjectComposerCatalog(root, declarations) {
 
   const rules = frontendRules(declarations, domains);
   for (const rule of rules) if (!existsSync(join(root, 'frontend', rule.path))) fail(`frontend ownership path missing: ${rule.path}`);
+  // 한 경로는 한 기능 집합만 소유한다. 같은 경로를 두 기능이 선언하면 한 기능만 고른 구성이 그 경로를 남기면서 동시에 지운다.
+  // 접두 경로 안쪽 파일을 다른 기능이 소유하는 중첩(게시판 디렉터리 안의 커뮤니티 화면)은 경로가 달라 여기에 걸리지 않는다.
+  const pathOwners = new Map();
+  for (const rule of rules) {
+    const owners = sorted(rule.domains).join('+');
+    if (pathOwners.has(rule.path) && pathOwners.get(rule.path) !== owners) fail(`duplicate frontend path owner: ${rule.path} (${pathOwners.get(rule.path)}, ${owners})`);
+    pathOwners.set(rule.path, owners);
+  }
   declarations.legacy?.checkFrontendUmbrellas(root, rules);
 
   const contributions = slotContributionInventory(root, declarations);

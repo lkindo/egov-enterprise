@@ -25,17 +25,18 @@ const APP = 'business-app/src/main/java/nuri/business';
 
 /**
  * manifest·기능 파일과 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
- * 기능 파일(매니페스트 v2)은 manifest 의 기능 것만 둔다 — 생성물처럼 일부 기능만 있는 트리다. `edit` 로 기능 파일을 고친다.
+ * 기능 파일(매니페스트 v2)은 원본 것을 모두 둔다 — 생성기는 C3 전까지 config/modules 를 투영하지 않고 그대로 복사하므로 생성물도
+ * 그렇다. 기능 집합은 manifest 가 정한다. `edit` 로 기능 파일을 고친다.
  * `api` 면 api-server 생산 소스도 둔다 — api-server 디렉터리 소유 간선(DEC-OPS-280)도 카탈로그 없이 계산된다.
  */
 function treeWith({ manifest, domains, api = false, edit = () => {} }) {
   const root = mkdtempSync(join(tmpdir(), 'domain-deletion-'));
   mkdirSync(join(root, MODULES_DIRECTORY), { recursive: true });
   writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(manifest));
-  for (const id of Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? [])) {
-    const value = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, `${id}.json`), 'utf8'));
+  for (const name of readdirSync(join(ROOT, MODULES_DIRECTORY)).filter(name => name.endsWith('.json'))) {
+    const value = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, name), 'utf8'));
     edit(value);
-    writeFileSync(join(root, MODULES_DIRECTORY, `${id}.json`), JSON.stringify(value));
+    writeFileSync(join(root, MODULES_DIRECTORY, name), JSON.stringify(value));
   }
   for (const domain of domains) for (const layer of ['domain', 'service']) {
     const source = join(ROOT, APP, layer, domain);
@@ -159,7 +160,10 @@ test('a projected collaboration tree plans the same deletions without the full c
     clusters: MANIFEST.clusters.filter(cluster => cluster.pack === 'collaboration') } });
   try {
     const tree = treeDeletionCatalog(root);
+    // 기능 파일은 22개 모두 있지만(생성기가 복사한다) 이 트리의 기능은 manifest 가 정한다. 없는 기능은 삭제 계획을 내지 않는다.
     assert.deepEqual(tree.capabilities.map(capability => capability.id), [...collaboration].sort());
+    assert.equal(readdirSync(join(root, MODULES_DIRECTORY)).length, readdirSync(join(ROOT, MODULES_DIRECTORY)).length);
+    assert.throws(() => planDomainDeletion({ catalog: tree, requested: ['survey'] }), /unknown domain: survey/);
     // 커뮤니티는 이 트리에 없다(demo pack) — 원본 표에서 트리에 있는 기능만 함께 지워진다.
     for (const domain of collaboration) {
       assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains,

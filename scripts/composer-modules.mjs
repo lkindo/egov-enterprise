@@ -59,6 +59,19 @@ export function readComposerModuleFiles(root) {
   return files;
 }
 
+/**
+ * 출처 해시(provenance.modulesHash)가 덮는 선언. 화면 문구(기능·core 의 presentation, 시작 구성의 label·description)와 미배정 권한
+ * 안내(unassignedPermissions)는 v1 에서도 카탈로그 해시 밖이었다(DEC-OPS-242 ④·244) — 문구만 고쳐도 카탈로그 해시·모든 구성 해시와
+ * 로컬 DB 번들 lock 이 바뀌지 않게 뺀다. 소유·간선·사용자 문장·연동·시작 구성 기대치는 생성 결과를 바꾸므로 해시에 남는다.
+ */
+export function hashedModuleDeclarations(files) {
+  return Object.fromEntries(Object.entries(files).map(([name, value]) => {
+    if (name === PRESETS_FILE) return [name, { ...value, presets: value.presets.map(({ label, description, ...preset }) => preset) }];
+    const { presentation, unassignedPermissions, ...rest } = value;
+    return [name, rest];
+  }));
+}
+
 /** 시작 구성에서 지워지는 게이트를 기능 파일의 owns.gates·RBAC 매트릭스에서 계산한다(직접 선택 승인 목록과 같은 규칙). */
 export function derivedRemovedGates(extras, domains) {
   const selected = new Set(domains);
@@ -102,9 +115,19 @@ export function loadComposerModules(root) {
   const requiredForeignKeys = [];
   const optionalForeignKeys = [];
   for (const module of modules) {
-    for (const row of module.requires) { knownTarget(module.id, row.to, 'requires'); userReasons[`${module.id}>${row.to}`] = row.userReason; }
+    // 같은 대상의 행이 둘이면 뒤 행이 앞 행을 조용히 덮는다(사용자 문장·근거). 한 파일 안에서 거부한다.
+    const requiredTargets = new Set();
+    for (const row of module.requires) {
+      knownTarget(module.id, row.to, 'requires');
+      if (requiredTargets.has(row.to)) fail(`${module.id}.json requires names a feature twice: ${row.to}`);
+      requiredTargets.add(row.to);
+      userReasons[`${module.id}>${row.to}`] = row.userReason;
+    }
+    const dependedTargets = new Set();
     for (const edge of module.dependsOn) {
       knownTarget(module.id, edge.to, 'dependsOn');
+      if (dependedTargets.has(`${edge.to}\u0000${edge.kind}`)) fail(`${module.id}.json dependsOn names a feature twice: ${edge.to} (${edge.kind})`);
+      dependedTargets.add(`${edge.to}\u0000${edge.kind}`);
       if (edge.kind === 'bundle') bundleEdges.push({ from: module.id, to: edge.to, reason: edge.reason, evidence: edge.evidence });
       else uiDependencies.push({ from: module.id, domain: edge.to, reason: edge.reason, evidence: edge.evidence, symbol: edge.symbol });
     }
@@ -131,7 +154,7 @@ export function loadComposerModules(root) {
 
   const declarations = {
     source: { label: 'module', ownerNoun: 'module', domainsLabel: 'module ids',
-      provenance: { modules: MODULES_DIRECTORY, modulesHash: compositionDigest(files) } },
+      provenance: { modules: MODULES_DIRECTORY, modulesHash: compositionDigest(hashedModuleDeclarations(files)) } },
     features: Object.fromEntries(modules.map(module => [module.id, { label: module.label, permissions: [...module.owns.permissionDomains],
       paths: [...module.owns.frontend], routes: [...module.owns.routes], exactRoutes: [...module.owns.exactRoutes], menuTabs: [...module.owns.menuTabs],
       requirements: [...module.requirements] }])),

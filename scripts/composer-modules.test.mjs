@@ -10,6 +10,7 @@
  *    있다 — 로더는 생성기 import 폐포에 들어가 Node 내장 모듈만 쓴다. 그래서 이 계약이 실제 config/modules 를 스키마로 검사한다.
  * 4. 생성기가 읽는 카탈로그(loadProjectComposerCatalog)는 v2 카탈로그에 v1 pack 축만 덧붙인 것이다(C2~C3). v1 manifest 의 기능·시작
  *    구성이 v2 와 다르면 그 자리에서 멈춘다.
+ * 5. 출처 해시(modulesHash)는 화면 문구·미배정 권한 안내를 빼고 계산한다 — 문구만 고치면 카탈로그 해시가 그대로다.
  */
 import assert from 'node:assert/strict';
 import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -149,6 +150,31 @@ test('the declarations outside the catalog hash equal their v1 constants', () =>
   }
 });
 
+test('copy in config/modules stays outside the catalog hash, while a user sentence is inside it', () => {
+  // 화면 문구·미배정 권한 안내는 v1 에서도 해시 밖이었다(DEC-OPS-242 ④·244). 출처 해시가 기능 파일 전체를 덮으면 문구만 고쳐도
+  // 카탈로그 해시·모든 구성 해시와 로컬 DB 번들 lock 이 바뀐다. 카탈로그 본문에 문구 문자열이 없다는 것만으로는 이를 보지 못한다.
+  const root = modulesOnlyFixture();
+  const hashOf = () => buildProjectComposerCatalog(root, loadComposerModules(root).declarations).catalogHash;
+  const before = hashOf();
+  const edited = ['mail.json', 'core.json', 'presets.json', 'board.json', 'help.json'];
+  try {
+    editModule(root, 'mail.json', value => { value.presentation.summary = '메일 보내기'; });
+    editModule(root, 'core.json', value => { value.presentation.areas[0].label = '소통'; });
+    editModule(root, 'presets.json', value => {
+      const preset = value.presets.find(row => row.id === 'collaboration');
+      preset.label = '협업';
+      preset.description = '바꾼 설명';
+    });
+    editModule(root, 'board.json', value => { value.unassignedPermissions[0].effect = '바꾼 안내입니다.'; });
+    assert.equal(hashOf(), before, 'copy edits changed the catalog hash');
+    // 대조군: 사용자 문장은 카탈로그 본문(requires.userReason)이라 해시가 바뀐다.
+    editModule(root, 'help.json', value => { value.requires.find(row => row.to === 'board').userReason = '바꾼 사유입니다.'; });
+    assert.notEqual(hashOf(), before, 'a user sentence edit must change the catalog hash');
+  } finally {
+    for (const name of edited) restoreModule(root, name);
+  }
+});
+
 test('the schema, cross-file checks and source checks refuse a broken feature file with its reason', () => {
   const root = modulesOnlyFixture();
   const restore = name => restoreModule(root, name);
@@ -169,6 +195,17 @@ test('the schema, cross-file checks and source checks refuse a broken feature fi
   editModule(root, 'help.json', value => { value.requires = value.requires.filter(row => row.to !== 'board'); });
   assert.throws(() => buildProjectComposerCatalog(root, loadComposerModules(root).declarations), /requires edge lacks a user reason: help>board/);
   restore('help.json');
+  // 파일 안: 같은 대상의 행이 둘이면 뒤 행이 앞 행을 조용히 덮으므로 거부한다.
+  editModule(root, 'help.json', value => { value.requires.push({ ...value.requires.find(row => row.to === 'board'), userReason: '다른 사유입니다.' }); });
+  assert.throws(() => loadComposerModules(root), /help\.json requires names a feature twice: board/);
+  restore('help.json');
+  editModule(root, 'help.json', value => { value.dependsOn.push({ ...value.dependsOn.find(edge => edge.to === 'board') }); });
+  assert.throws(() => loadComposerModules(root), /help\.json dependsOn names a feature twice: board \(ui-import\)/);
+  restore('help.json');
+  // 소스 대조: 한 화면 경로를 두 기능이 소유하면 한쪽만 고른 구성이 그 경로를 남기면서 지운다.
+  editModule(root, 'mail.json', value => { value.owns.frontend.push('src/app/note'); });
+  assert.throws(() => buildProjectComposerCatalog(root, loadComposerModules(root).declarations), /duplicate frontend path owner: src\/app\/note \(mail, note\)/);
+  restore('mail.json');
   // 시작 구성 기대치: 게이트 소유가 바뀌었는데 기대치가 그대로면 거부한다.
   editModule(root, 'presets.json', value => { value.presets.find(row => row.id === 'core').expected.gates.pop(); });
   assert.throws(() => loadComposerModules(root), /preset core expected gates differ from gate ownership \(missing: [^;]+; stale: -\)/);

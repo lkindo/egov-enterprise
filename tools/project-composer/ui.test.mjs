@@ -382,8 +382,9 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
 /*
  * 접근성(E7, 설계서 14.1). 자동 포함 카드는 점선으로 나누고 키보드로 닿으며(aria-disabled — native disabled 면 Tab 순서에서
  * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
- * 한 번 말한다. 시작 구성은 같은 목록의 직접 선택과 결과가 같으므로(해석기 단일화, 11단계 C2) 카드를 눌러 시작 구성이 '직접 선택'으로
- * 바뀐 것은 따로 말하지 않는다 — 바꾼 카드만 주어다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
+ * 한 번 말하고, 카드를 눌러 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 시작 구성은 같은 목록의 직접 선택과 결과가 같아
+ * (해석기 단일화, 11단계 C2) 전환 탓으로 들어오는 기능은 없다 — 늘거나 준 자동 포함은 바꾼 카드만 주어다. 같은 구성을 다시 확인하면
+ * 다시 말하지 않는다.
  */
 const AUTO_FROM_SCRAP = '게시판·지식, 댓글';
 const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
@@ -399,7 +400,7 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
     document.getElementById('capabilities').addEventListener('focusin', () => window.statusAtFocus.push(document.getElementById('plan-status').textContent), true);
   });
   await page.keyboard.press('Space');
-  await expect(page.locator('#plan-status')).toHaveText('스크랩 선택으로 함께 포함되는 기능이 2개 늘었습니다(' + AUTO_FROM_SCRAP + '). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('스크랩 선택으로 함께 포함되는 기능이 2개 늘었습니다(' + AUTO_FROM_SCRAP + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   const statusAtFocus = await page.evaluate(() => window.statusAtFocus);
   assert.ok(statusAtFocus.length > 0, 'the plan put focus back on the card');
   assert.ok(statusAtFocus.every(status => !status.includes('늘었습니다')), statusAtFocus.join(' | '));
@@ -472,20 +473,26 @@ test('unchecking a feature that another choice still needs says it stayed, not t
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
   // 협업 기본은 게시판과 댓글을 직접 고른다. 댓글을 빼면 게시판이 댓글을 필요로 해 댓글은 자동 포함으로 남는다.
   // 시작 구성은 같은 목록의 직접 선택과 결과가 같아(해석기 단일화) 직접 선택으로 바뀌는 것만으로 들어오는 기능은 없다.
+  // 다만 시작 구성 선택이 '직접 선택'으로 바뀐 것은 말한다(다른 컨트롤의 값이 바뀌었다).
   await page.locator('#preset').selectOption('collaboration');
   // 시작 구성의 계획이 온 뒤에 바꾼다(그 전에 바꾸면 공통 기반과 비교한 순변화를 말한다).
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#capability-comment')).toBeChecked();
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await page.locator('#capability-comment').uncheck();
-  await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#capability-comment')).toBeChecked();
-  // 시작 구성으로 돌아가면 댓글을 직접 고르므로 '빠졌다' 고 말하지 않는다. 같은 목록의 직접 선택으로만 바꾸면 결과가 같아
-  // 아무것도 말하지 않는다.
+  // 시작 구성으로 돌아가면 댓글을 직접 고르므로 '빠졌다' 고 말하지 않는다.
   await page.locator('#preset').selectOption('collaboration');
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 자동 포함 변화가 없어도 카드를 눌러 시작 구성 선택이 '직접 선택'으로 바뀐 사실은 말한다(다른 컨트롤의 값이 바뀌었다).
+  await page.locator('#capability-isg').check();
+  await expect(page.locator('#plan-status')).toHaveText('시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 카드를 누르지 않고 같은 목록의 직접 선택으로만 바꾸면 결과가 같아 아무것도 말하지 않는다.
   await page.locator('#preset').selectOption('custom');
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
@@ -512,7 +519,7 @@ test('several changes before the plan arrives are announced once as the net chan
   for (const route of held.splice(0)) await route.continue();
   const both = autoOf(['scrap', 'schedule']);
   await expect(page.locator('#plan-status')).toHaveText(`${labelOf('schedule')}, ${labelOf('scrap')} 선택으로 함께 포함되는 기능이 ${both.length}개 늘었습니다(${both.map(labelOf).join(', ')}). `
-    + PLAN_READY);
+    + '시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   // 하나는 빼고 하나는 고르면 '바꾼 구성으로' 라고 말한다.
   await press('scrap');
   await press('survey');
@@ -1501,7 +1508,7 @@ test('a reload starts the change announcement over instead of blaming the droppe
   await page.goto(origin);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
-  await expect(page.locator('#plan-status')).toHaveText('게시판 선택으로 함께 포함되는 기능이 2개 늘었습니다(댓글, 스크랩). 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
+  await expect(page.locator('#plan-status')).toHaveText('게시판 선택으로 함께 포함되는 기능이 2개 늘었습니다(댓글, 스크랩). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
   current = { ...catalog, sourceCommit: 'e'.repeat(40), capabilities: catalog.capabilities.filter(item => item.id !== 'board'), presets: [{ id: 'core', domains: [] }],
     presentation: { ...catalog.presentation, areas: [{ id: 'knowledge', label: '지식', domains: ['comment', 'scrap'] }, { id: 'communication', label: '소통', domains: ['notification'] }] } };
   await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',

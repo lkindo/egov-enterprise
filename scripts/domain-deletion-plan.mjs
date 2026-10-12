@@ -73,17 +73,24 @@ function javaFiles(directory) {
     .map(entry => join(entry.parentPath ?? entry.path, entry.name)).sort();
 }
 
-/** 지금 트리의 기능 파일(config/modules/<기능 id>.json). 필수 기반·시작 구성·스키마 파일은 기능이 아니다. */
+/**
+ * 지금 트리의 기능 파일(config/modules/<기능 id>.json). 필수 기반·시작 구성·스키마 파일은 기능이 아니다.
+ * 기능 집합은 manifest appDomains 와의 교집합이다(11단계 C3 전까지). 생성기는 config/modules 를 투영하지 않고 원본 그대로 복사하므로,
+ * 생성물에는 구성에 없는 기능의 파일도 남는다. 기능 파일만 보면 생성물에 없는 기능도 '알려진 기능' 이 되어 삭제 계획을 돌려준다
+ * (C2 전에는 'unknown domain' 이었다). 생성기가 config/modules 를 구성 기능만 남기도록 투영하면(C3) 이 교집합을 걷는다.
+ */
 function treeModules(root) {
+  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
+  const appDomains = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
   const directory = join(root, MODULES_DIRECTORY);
   return readdirSync(directory).filter(name => name.endsWith('.json') && ![MODULES_SCHEMA, 'core.json', 'presets.json'].includes(name)).sort()
-    .map(name => JSON.parse(readFileSync(join(directory, name), 'utf8')));
+    .map(name => JSON.parse(readFileSync(join(directory, name), 'utf8'))).filter(module => appDomains.has(module.id));
 }
 
 /**
- * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 기능 파일(매니페스트 v2)이고, 간선은 카탈로그의 비 customOnly 간선과
- * 같은 네 종류다 — 업무 앱 Java 참조(java), api-server 디렉터리 소유 기능의 Java 참조(java, DEC-OPS-280), 다른 기능 디렉터리의
- * 지원 파일(java), 생성 묶음 선언(manifest).
+ * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 manifest appDomains 에 있는 기능 파일(매니페스트 v2)이고, 간선은
+ * 카탈로그의 비 customOnly 간선과 같은 네 종류다 — 업무 앱 Java 참조(java), api-server 디렉터리 소유 기능의 Java 참조(java,
+ * DEC-OPS-280), 다른 기능 디렉터리의 지원 파일(java), 생성 묶음 선언(manifest).
  * 기능 파일이 없는 기능 디렉터리(스캐폴드한 새 도메인)의 소스는 건너뛴다 — 그 소스의 잔존 참조는 delete-domain 의 잔존 참조 검사가 알린다.
  * 업무 앱 디렉터리가 하나도 남지 않은 기능은 present: false 다.
  */
