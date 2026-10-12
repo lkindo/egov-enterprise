@@ -64,7 +64,8 @@ interface Axis {
 
 const AXES: Axis[] = [
   {
-    screen: 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx',
+    // [허브 분해 H1] 협업 허브의 쪽지 검색은 쪽지 소유 탭 뷰가 그린다.
+    screen: 'frontend/src/app/note/NoteCollaborationTab.tsx',
     backend: 'business-app/src/main/java/nuri/business/domain/note/NoteRecptnDomainRepository.java',
     serverFields: ['noteTtl', 'noteCn'],
     forbiddenInLabel: ['발신자', '수신자', '보낸사람'],

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import KnowledgeHubClient from '../KnowledgeHubClient';
 
 /**
- * [2026-10-01 결정 20] Q&A 탭은 '미해결만'(OPEN) 으로 좁히고, 커뮤니티 탭은 커뮤니티 목록·가입 화면으로 잇는다.
+ * [2026-10-01 결정 20] Q&A 탭은 '미해결만'(OPEN) 으로 좁히고, 커뮤니티 탭은 커뮤니티 목록·가입 화면으로 잇는다(그 시험은 커뮤니티 디렉터리).
  * 종전에는 답변 대기 값이 OPEN·QA01 두 가지라 하나의 조건으로 걸 수 없었고, 커뮤니티 탭에서 가입할 길이 없었다.
  */
 const mocks = vi.hoisted(() => ({ getArticles: vi.fn(), push: vi.fn(), tab: 'QNA' }));
@@ -51,10 +51,6 @@ describe('지식 허브 Q&A·커뮤니티', () => {
     expect(screen.queryByRole('button', { name: '미해결만' })).not.toBeInTheDocument();
   });
 
-  it('커뮤니티 탭은 권한과 무관하게 커뮤니티 목록·가입 화면으로 잇는다', async () => {
-    mocks.tab = 'COMMUNITY';
-    renderHub();
-    fireEvent.click(await screen.findByRole('button', { name: /커뮤니티 목록·가입/ }));
-    expect(mocks.push).toHaveBeenCalledWith('/cop/cmy/selectCommunityList');
-  });
+  // 커뮤니티 탭의 '커뮤니티 목록·가입' 은 커뮤니티 기여의 머리 동작이라 그 시험은 커뮤니티 디렉터리에 있다(허브 분해 H2,
+  //   components/business/community/__tests__/KnowledgeCommunityActions.test.tsx).
 });

@@ -56,7 +56,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   게시판 글 목록은 게시판 목록 화면이 계속 제공하므로 이행 되돌리기가 아니라 중복 표면 제거다.
 // [2026-10-01 결정 19] 41 -> 43: 민감 작업 감사 원장(/admin/system/logs/audit)과 후속 작업 상태(/admin/system/durable-jobs)를
 //   셸로 신설했다. 서버에 원장·작업이 쌓이는데 볼 화면이 없었다 — 이행 되돌리기가 아니라 새 화면이다.
-const ADOPTERS = 43;
+// [허브 분해 H6] 43 -> 44: 댓글 및 평가 관리(/admin/system/comments)가 감시 허브 위임을 떠나 댓글 기능의 독립 A1 화면이 됐다.
+//   감시 허브는 그대로 셸을 경유한다 — 이행 되돌리기가 아니라 새 화면이다.
+const ADOPTERS = 44;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
 /*
@@ -64,7 +66,8 @@ const DIRECT_ONLY = 2;
  *   목록 길이는 위 두 수와 같아야 한다(아래 계약). 화면을 옮기거나 이행하면 수와 목록을 함께 고친다.
  */
 const ADOPTER_SCREENS = [
-  'src/app/admin/collaboration/CollaborationHubClient.tsx',
+  // [허브 분해 H1] 협업 허브는 core 틀(collaboration-hub-frame)이 셸을 경유하고 탭 뷰가 그 틀에 조각을 넘긴다 — 수는 같다.
+  'src/app/admin/collaboration/collaboration-hub-frame.tsx',
   'src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
   'src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx',
   'src/app/admin/community/boards/master/BoardMasterListClient.tsx',
@@ -85,6 +88,7 @@ const ADOPTER_SCREENS = [
   'src/app/admin/system/banner/BannerAdminClient.tsx',
   'src/app/admin/system/codes/administ/AdministCodeClient.tsx',
   'src/app/admin/system/codes/institution/InstitutionCodeClient.tsx',
+  'src/app/admin/system/comments/CommentModerationClient.tsx',
   'src/app/admin/system/durable-jobs/DurableJobsClient.tsx',
   'src/app/admin/system/hpcm/HpcmClient.tsx',
   'src/app/admin/system/isg/InternetSvcGuidanceClient.tsx',
@@ -125,6 +129,11 @@ const OTHER_SHELL_IMPORTS = [
   'components/patterns/master-detail-page',
   'components/patterns/report-page',
 ];
+/**
+ * A1 셸을 감싼 허브 틀(허브 분해 H1). 틀이 WorkListPage 를 경유하므로 채택 수에는 틀 하나만 센다. 틀에 조각을 넘기는 탭 뷰(기능의
+ * hub-tabs 기여 뷰)는 직접 조립이 아니고, 셸 화면 규칙(G2 조회/Enter·총 건수 단일 표기)은 탭 뷰에도 그대로 적용한다.
+ */
+const A1_FRAME_IMPORTS = ['admin/collaboration/collaboration-hub-frame'];
 
 /** 화면 파일만 센다 — 테스트와 로딩 스켈레톤은 소비자가 아니다. */
 function screenFiles(directory: string): string[] {
@@ -153,23 +162,28 @@ function paginationBlocks(code: string): string[] {
 function census() {
   const adopters: string[] = [];
   const directOnly: string[] = [];
+  const frameUsers: string[] = [];
 
   for (const path of screenFiles(APP_DIR)) {
     const source = readFileSync(path, 'utf8');
     const usesShell = source.includes(SHELL_IMPORT);
     const usesOtherShell = OTHER_SHELL_IMPORTS.some((shell) => source.includes(shell));
+    const usesFrame = A1_FRAME_IMPORTS.some((frame) => source.includes(frame));
     const usesTable = source.includes(TABLE_IMPORT);
     const relativePath = relative(FRONTEND_DIR, path).split(sep).join('/');
 
     if (usesShell) adopters.push(relativePath);
+    else if (usesFrame) frameUsers.push(relativePath);
     else if (usesTable && !usesOtherShell) directOnly.push(relativePath);
   }
 
-  return { adopters: adopters.sort(), directOnly: directOnly.sort() };
+  return { adopters: adopters.sort(), directOnly: directOnly.sort(), frameUsers: frameUsers.sort() };
 }
 
 describe('A1 archetype 채택 census', () => {
-  const { adopters, directOnly } = census();
+  const { adopters, directOnly, frameUsers } = census();
+  /** 셸 화면 규칙을 받는 화면 — 셸 경유 화면과 셸 틀에 조각을 넘기는 탭 뷰. */
+  const shellScreens = [...adopters, ...frameUsers];
 
   it(`WorkListPage 경유 화면은 ${ADOPTERS}개 이상이다(이행 되돌리기 차단)`, () => {
     const expected = inProjectionScreens(ADOPTER_SCREENS);
@@ -179,6 +193,13 @@ describe('A1 archetype 채택 census', () => {
       { missing, added },
       `셸을 떠난 화면은 되돌리고, 새로 셸을 쓴 화면은 ADOPTER_SCREENS 와 ADOPTERS 를 함께 올리세요.\n현재 채택 화면:\n${adopters.join('\n')}`,
     ).toEqual({ missing: [], added: [] });
+  });
+
+  it('허브 틀에 조각을 넘기는 탭 뷰는 직접 조립으로 세지 않고 목록으로 동결한다', () => {
+    expect(frameUsers).toEqual(inProjectionScreens([
+      'src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx',
+      'src/app/note/NoteCollaborationTab.tsx',
+    ]));
   });
 
   it('동결한 화면 목록의 길이는 동결한 수와 같다', () => {
@@ -204,7 +225,7 @@ describe('A1 archetype 채택 census', () => {
    * 없었다). 셸을 쓰는 화면은 목록 조회에 입력 디바운스 훅을 쓰지 않는다 — 예외 목록은 두지 않는다.
    */
   it('셸을 쓰는 화면은 목록을 입력 디바운스로 조회하지 않는다(G2 조회/Enter)', () => {
-    const debouncing = adopters.filter((relativePath) => {
+    const debouncing = shellScreens.filter((relativePath) => {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');
       return /from ['"]@\/lib\/hooks\/use-debounced-value['"]/.test(source);
     });
@@ -212,7 +233,7 @@ describe('A1 archetype 채택 census', () => {
   });
 
   it('셸을 쓰는 화면은 총 건수를 표 하단에 중복 표기하지 않는다', () => {
-    const duplicated = adopters.filter((relativePath) => {
+    const duplicated = shellScreens.filter((relativePath) => {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');
       // ⚠ 주석을 먼저 지운다 — 이 규칙을 **설명하는 주석**이 대상 파일에 들어 있어서, 지우지 않으면
       //   계약이 자기 설명을 위반으로 신고한다(dom-identity-invariants 가 남긴 함정과 같은 것).

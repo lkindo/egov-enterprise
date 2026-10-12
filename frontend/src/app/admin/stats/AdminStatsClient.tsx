@@ -11,6 +11,9 @@ import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { isStatsOverviewCard } from '@/extensions/slots';
+import { useSlotEntries } from '@/extensions/use-slot-entries';
+import { statsPanels } from '@/extensions/generated-stats-panels';
 
 /** 일자별 접속 통계 표의 페이지당 건수 */
 const CONNECT_PAGE_SIZE = 10;
@@ -25,6 +28,8 @@ export default function AdminStatsClient({
   loadError?: string | null;
 }) {
   const router = useRouter();
+  // 기능이 넘기는 요약 칸(stats-panels 의 overview-card). 게시판이 있으면 게시물 수 칸이 붙는다(허브 분해 H4).
+  const featureCards = useSlotEntries(statsPanels, isStatsOverviewCard);
   // [2026-09-26 DIP V9] 새로고침 표시는 실제 서버 재조회가 끝날 때까지다. 종전에는 800ms 뒤 무조건 꺼져
   //   재조회가 끝나기 전에 '완료' 처럼 보이거나, 이미 끝났는데도 돌고 있었다.
   const [loading, startRefresh] = useTransition();
@@ -130,13 +135,13 @@ export default function AdminStatsClient({
         </>
       }
       summary={
-        // 열 수는 칸 수로 정한다 — 게시판이 빠진 구성에는 '누적 게시물' 칸이 없어 빈 열을 남기지 않는다.
+        // 열 수는 칸 수로 정한다 — 게시판이 빠진 구성에는 게시물 수 칸(게시판 기여)이 없어 빈 열을 남기지 않는다.
         <div className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
           <SummaryStat title="누적 사용자" value={summaryText(initialSummary?.totalUsers, loadError)} />
           <SummaryStat title="금일 성공 로그인" value={summaryText(initialSummary?.todayConnects, loadError)} />
-          {/* reusable-base:collaboration:start */}
-          <SummaryStat title="누적 게시물" value={summaryText(initialSummary?.totalPosts, loadError)} />
-          {/* reusable-base:collaboration:end */}
+          {featureCards.map((card) => (
+            <SummaryStat key={card.id} title={card.title} value={summaryText(initialSummary?.[card.field], loadError)} />
+          ))}
         </div>
       }
       chartTitle="일자별 성공 로그인 추이"

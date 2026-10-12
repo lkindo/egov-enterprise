@@ -385,6 +385,8 @@
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/page.tsx",
+            "frontend/src/app/note/NoteCollaborationTab.tsx",
+            "frontend/src/extensions/note/hub-tabs.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -412,10 +414,12 @@
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScrapApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScrapApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-            "frontend/src/app/admin/collaboration/__tests__/CollaborationHubClient.scraps.test.tsx",
             "frontend/src/app/admin/collaboration/page.tsx",
+            "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
             "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+            "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
+            "frontend/src/extensions/scrap/hub-tabs.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         }
@@ -1059,7 +1063,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1095,10 +1098,12 @@
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScrapApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScrapApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-            "frontend/src/app/admin/collaboration/__tests__/CollaborationHubClient.scraps.test.tsx",
+            "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
             "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+            "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
+            "frontend/src/extensions/scrap/hub-tabs.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         },
@@ -1125,6 +1130,8 @@
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
+            "frontend/src/app/note/NoteCollaborationTab.tsx",
+            "frontend/src/extensions/note/hub-tabs.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -1164,7 +1171,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1236,7 +1242,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1314,7 +1319,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2542,6 +2546,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -2635,12 +2640,14 @@
             "api-server/src/main/java/nuri/api/controller/business/admin/content/community/CommunityApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/content/community/CommunityApiControllerTest.java",
             "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-            "frontend/src/app/admin/help/__tests__/KnowledgeHubClient.community-manage.test.tsx",
             "frontend/src/app/admin/help/page.tsx",
             "frontend/src/components/business/community/CommunityManageDialog.tsx",
             "frontend/src/components/business/community/CommunityMembersPanel.tsx",
             "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx",
             "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx",
+            "frontend/src/components/business/community/__tests__/KnowledgeCommunityActions.test.tsx",
+            "frontend/src/components/business/community/knowledge-community-tab.tsx",
+            "frontend/src/extensions/community/hub-tabs.ts",
             "frontend/src/services/foundation/system/CommunityAdminService.ts"
           ]
         }
@@ -2688,6 +2695,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -2827,6 +2835,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -4778,7 +4787,9 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java",
             "frontend/src/app/admin/stats/AdminStatsClient.tsx",
             "frontend/src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx",
+            "frontend/src/app/admin/stats/board/__tests__/AdminStatsTotalPosts.test.tsx",
             "frontend/src/app/admin/stats/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts",
             "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
           ]
         }
@@ -4859,7 +4870,9 @@
             "frontend/e2e/journeys/statistics.spec.ts",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
+            "frontend/src/app/admin/stats/board/board-stats-series.ts",
             "frontend/src/app/admin/stats/board/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts",
             "frontend/src/services/foundation/system/StatsAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
           ]
@@ -4907,7 +4920,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/board/page.tsx"
+            "frontend/src/app/admin/stats/board/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -4932,6 +4946,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/board/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5009,7 +5024,9 @@
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/data-usage/page.tsx"
+            "frontend/src/app/admin/stats/board/board-stats-series.ts",
+            "frontend/src/app/admin/stats/data-usage/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5055,7 +5072,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/data-usage/page.tsx"
+            "frontend/src/app/admin/stats/data-usage/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5080,6 +5098,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5203,7 +5222,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/report/page.tsx"
+            "frontend/src/app/admin/stats/report/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5228,6 +5248,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/report/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5329,7 +5350,8 @@
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/screen/page.tsx"
+            "frontend/src/app/admin/stats/screen/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],
@@ -5456,7 +5478,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/user/page.tsx"
+            "frontend/src/app/admin/stats/user/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],
@@ -6937,7 +6960,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "사용자 의견 관리",
+      "visibleLabel": "댓글 및 평가 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {
@@ -6959,7 +6982,7 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "사용자 의견 관리",
+          "visibleLabel": "댓글 및 평가 관리",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
@@ -6968,9 +6991,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
+            "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+            "frontend/src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx",
             "frontend/src/app/admin/system/comments/page.tsx",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx",
             "frontend/src/queries/comment-query-options.ts",
             "frontend/src/services/foundation/system/CommentAdminService.ts"
           ]
@@ -6994,9 +7017,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
-            "frontend/src/app/admin/system/comments/page.tsx",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx"
+            "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+            "frontend/src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx",
+            "frontend/src/app/admin/system/comments/page.tsx"
           ]
         }
       ],
@@ -8789,7 +8812,6 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
-        "delete",
         "export",
         "filter",
         "refresh",
@@ -8877,34 +8899,6 @@
           ]
         },
         {
-          "id": "monitoring.comment-management",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-comments-api",
-          "actions": [
-            "delete",
-            "export",
-            "refresh",
-            "view-list"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "사용자 의견 관리",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx",
-            "frontend/src/app/admin/system/monitoring/hub/page.tsx",
-            "frontend/src/queries/comment-query-options.ts"
-          ]
-        },
-        {
           "id": "monitoring.sample-widgets",
           "status": "demo",
           "dataSource": "static-mock",
@@ -8923,7 +8917,8 @@
             "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
             "frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
             "frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx",
-            "frontend/src/app/admin/system/monitoring/hub/page.tsx"
+            "frontend/src/app/admin/system/monitoring/hub/page.tsx",
+            "frontend/src/extensions/showcase/hub-tabs.ts"
           ]
         }
       ],

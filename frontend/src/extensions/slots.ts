@@ -8,7 +8,7 @@
  * 이 파일은 core 소유다. 기능 디렉터리를 import 하지 않는다. 슬롯 이름 하나를 모든 곳에 같은 철자로 쓴다:
  * SlotMap 키 = 기여 파일 이름 = 레지스트리 파일 이름(generated-<이름>.ts). 키를 더할 때는 그 슬롯을 읽는 셸(소비자)을 같은 변경에 둔다.
  */
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
 import { canPermission } from '@/lib/auth/permissions';
@@ -44,18 +44,19 @@ export interface RecipientPickerSource extends SlotEntry {
 }
 
 /**
- * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면). 셸이 모양을 정하고 항목은
- * 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면 배치는 /admin 밖 목적지만
- * 둔다. 머리글 배치는 아이콘 단추라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리).
+ * 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면
+ * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은
+ * 목적지의 머리글 짝을 둔다(경계 계약).
  */
 export interface ShellLink extends SlotEntry {
-  readonly placement: 'header' | 'footer' | 'error';
+  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub';
   /** 같은 배치 안의 순서(작은 값 먼저). */
   readonly order: number;
   readonly href: string;
   readonly label: string;
   readonly icon?: LucideIcon;
-  /** 오류 화면에서 링크 위에 보이는 안내 문장. */
+  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명이다. */
   readonly description?: string;
 }
 
@@ -103,7 +104,137 @@ export interface PostAction extends SlotEntry {
   readonly submit: (context: PostActionContext) => Promise<void>;
 }
 
+/**
+ * hub-tabs 의 허브별 탭 뷰. 허브마다 탭이 하는 일이 달라 뷰 모양을 허브별로 둔다 — 허브를 더할 때는 키 하나를 더한다.
+ * 뷰는 기능 모듈이 내보낸 값이고 기여는 그 이름(또는 이름만 담은 객체)만 가리킨다(기여는 데이터다).
+ */
+export interface HubTabViews {
+  /** 협업 허브(core 셸). 탭 뷰가 자기 목록 조회·표·대화상자를 소유하고 core 틀(collaboration-hub-frame)에 조각을 넘긴다. */
+  readonly collaboration: { readonly Component: ComponentType };
+  /**
+   * 지식 허브(게시판 셸, 허브 분해 H2). 셸이 그 게시판(bbsId)의 글 목록·인기·최근 활동을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을
+   * 더한다. 설명은 탭 버튼 아래 짧은 문구다.
+   */
+  readonly knowledge: {
+    readonly description: string;
+    readonly icon: LucideIcon;
+    readonly bbsId: string;
+    readonly Actions?: ComponentType;
+  };
+  /**
+   * 감시 허브(core 셸, 허브 분해 H3). 로그 목록·가동 상태 밖의 부가 탭이다. 뷰가 본문·선택 전 개요·선택 항목 찾기·상세를 한 묶음으로
+   * 내놓고, 셸이 탭 버튼(아이콘)·제목 아래 설명·상세 틀을 그린다. sample 이면 상세에 샘플 고지를 단다 — 정적 카탈로그나 표본이라
+   * 실측이 아니라는 표시이고, 실제 기록을 보이는 탭은 sample 을 두지 않는다.
+   */
+  readonly monitoring: {
+    readonly description: string;
+    readonly icon: LucideIcon;
+    readonly sample?: boolean;
+    readonly render: (props: { selectedItemId: string | number | null; onSelect: (id: string) => void }) => ReactNode;
+    readonly overview: () => ReactNode;
+    readonly find: (id: string) => object | null;
+    readonly detail: (item: unknown) => { title: string; view: ReactNode } | null;
+  };
+}
+export type HubId = keyof HubTabViews;
+
+/**
+ * hub-tabs — 허브 셸의 탭. id 는 그 탭의 `?tab=` 값(대문자 식별자)이고 슬롯 전체에서 유일하다. 그 허브의 코어 탭과 겹치지 않고,
+ * 허브의 탭 해석 모듈(`*-tabs.ts` 의 TAB_HUB.contributable)이 이 기여 파일을 지목해야 한다(경계 계약). 셸은 자기 허브의 항목만
+ * 고른다(isHubTab) — 쓰기 귀속(축 3·화면 목록)도 허브별 소비자 표를 따른다.
+ */
+export type HubTab = {
+  [H in HubId]: SlotEntry & {
+    readonly hub: H;
+    /** 같은 허브 안의 순서(작은 값 먼저). */
+    readonly order: number;
+    /** 탭 버튼 글자. */
+    readonly label: string;
+    readonly view: HubTabViews[H];
+  };
+}[HubId];
+
+/** 셸이 자기 허브의 항목만 고르는 술어(타입을 좁힌다). */
+export const isHubTab = <H extends HubId>(hub: H) =>
+  (entry: HubTab): entry is Extract<HubTab, { readonly hub: H }> => entry.hub === hub;
+
+/** 통계 셸이 고른 집계 기간. 고르지 않으면 undefined 이고 서버 기본값(최근 1개월)을 집계한다. */
+export interface StatsDateRange {
+  readonly fromDate: string;
+  readonly toDate: string;
+}
+
+/** 일자별 집계 한 칸. 서버가 채우는 값은 일자와 건수 둘뿐이다(StatsAdminService). */
+export interface StatsSeriesPoint {
+  readonly statsDate?: string;
+  readonly statsCo?: number;
+}
+
+/** 통계 셸이 패널 조회로 만들어 본문 탭에 넘기는 결과. 조회는 셸이 소유한다 — 기여는 훅을 넘길 수 없다(기여는 데이터다). */
+export interface StatsPanelQuery {
+  readonly data: unknown;
+  readonly isLoading: boolean;
+  readonly isError: boolean;
+  readonly isFetching: boolean;
+  readonly refetch: () => Promise<unknown>;
+}
+
+interface StatsHubTabBase extends SlotEntry {
+  readonly placement: 'hub-tab';
+  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40 · 운영 보고서 70. */
+  readonly order: number;
+  /** 내비게이션 단추 글자. */
+  readonly label: string;
+  /** 화면 제목(h1)과 본문 카드 제목. */
+  readonly title: string;
+  readonly icon: LucideIcon;
+  /** 조회 키 접두. series 는 셸이 집계 기간을 덧붙인다. */
+  readonly queryKey: readonly string[];
+}
+
+/**
+ * series — 일자별 집계를 셸의 면적 차트·내보내기로 그린다. 탭이 곧 라우트라 href 를 가진다(링크 슬롯: visibleWhen 은 { page: href }).
+ * 미수집 축(쓰는 쪽이 없는 집계)은 uninstrumented 이고, 빈 차트는 기간이 아니라 미수집을 말한다. 요약 칸(summary)은 미수집 축에만
+ * 둔다 — 값은 늘 '미수집' 이다(측정되지 않는 값을 0 으로 보이지 않는다).
+ */
+export type StatsSeriesTab = StatsHubTabBase & {
+  readonly kind: 'series';
+  readonly href: string;
+  readonly load: (range?: StatsDateRange) => Promise<readonly StatsSeriesPoint[]>;
+} & (
+  | { readonly uninstrumented: false }
+  | { readonly uninstrumented: true; readonly summary?: { readonly label: string; readonly icon: LucideIcon } }
+);
+
+/** body — 기능이 본문을 그리는 탭. 전용 라우트가 없어 현재 경로의 `?tab=<id>` 로 연다. 내보내기 행도 기능이 만든다. */
+export interface StatsBodyTab extends StatsHubTabBase {
+  readonly kind: 'body';
+  readonly load: () => Promise<unknown>;
+  readonly Body: ComponentType<{ readonly query: StatsPanelQuery }>;
+  readonly exportRows: (data: unknown) => Record<string, unknown>[];
+  readonly exportHeaders: readonly { readonly label: string; readonly key: string }[];
+}
+
+/** overview-card — 통계 요약(/admin/stats)의 칸. 값은 요약 API 응답의 닫힌 필드다. */
+export interface StatsOverviewCard extends SlotEntry {
+  readonly placement: 'overview-card';
+  readonly order: number;
+  readonly title: string;
+  readonly field: 'totalPosts';
+}
+
+/**
+ * stats-panels — 통계 셸의 기능 탭과 요약 칸(허브 분해 H4). 셸이 패널 조회를 한 번(useQueries)에 소유하고, 기여는 조회 키·로더·본문
+ * 컴포넌트·내보내기 함수를 이름으로만 가리킨다. 기능이 빠진 구성에서는 기여 파일이 함께 지워져 그 탭·칸만 사라진다.
+ */
+export type StatsPanel = StatsSeriesTab | StatsBodyTab | StatsOverviewCard;
+export type StatsHubTab = StatsSeriesTab | StatsBodyTab;
+export const isStatsHubTab = (entry: StatsPanel): entry is StatsHubTab => entry.placement === 'hub-tab';
+export const isStatsOverviewCard = (entry: StatsPanel): entry is StatsOverviewCard => entry.placement === 'overview-card';
+
 export interface SlotMap {
+  'hub-tabs': HubTab;
+  'stats-panels': StatsPanel;
   'recipient-picker-sources': RecipientPickerSource;
   'shell-links': ShellLink;
   'header-widgets': HeaderWidget;
@@ -138,6 +269,16 @@ const orderOf = (entry: SlotEntry): number | undefined => {
  * 레지스트리를 펼쳐 보이는 항목만 돌려준다. 순서: order(있는 항목이 앞, 작은 값 먼저) → 레지스트리 순서(owner 코드 포인트) → id.
  * 훅이 아니므로 서버 컴포넌트도 쓴다. 항목 객체는 기여 모듈의 값 그대로다(새로 만들지 않는다).
  */
+export function visibleEntries<S extends SlotId, T extends SlotMap[S]>(
+  subject: SlotSubject,
+  registry: readonly SlotContributions<S>[],
+  accept: (entry: SlotMap[S]) => entry is T,
+): T[];
+export function visibleEntries<S extends SlotId>(
+  subject: SlotSubject,
+  registry: readonly SlotContributions<S>[],
+  accept?: (entry: SlotMap[S]) => boolean,
+): SlotMap[S][];
 export function visibleEntries<S extends SlotId>(
   subject: SlotSubject,
   registry: readonly SlotContributions<S>[],

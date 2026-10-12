@@ -5,7 +5,8 @@ import type { AxiosRequestConfig } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { inProjection } from '@/test-utils/projection';
 
-// '설문조사 분석' 탭은 설문 팩이 넘긴다 — 그 탭 파일이 투영으로 빠진 생성물에서는 이 시험을 등록하지 않는다(원본에서는 그대로다).
+// '설문조사 분석' 탭은 설문의 stats-panels 기여다 — 그 기여가 투영으로 빠진 생성물에서는 그 탭을 쓰는 시험을 등록하지 않는다(원본에서는 그대로다).
+const SURVEY_CONTRIBUTION = 'frontend/src/extensions/survey/stats-panels.ts';
 
 /**
  * [Phase 0c] 통계 허브의 게시물·자료 이용 탭 동치 기준선.
@@ -13,7 +14,18 @@ import { inProjection } from '@/test-utils/projection';
  * 자료 이용 집계(DtaUseStats)를 게시판 패키지로 옮기고 이 두 탭을 게시판 패널로 가르는 리팩터링이
  * 화면 동작을 바꾸지 않았음을 증명하려고 지금 동작을 그대로 고정한다. 라우트 page 모듈만 렌더하고
  * 요청은 URL(client.getRaw) 수준에서 관측한다.
+ *
+ * [허브 분해 H4] 두 탭은 게시판의 stats-panels 기여다. 통계 셸은 로그인 주체로 기여의 노출 술어(그 화면에 들어갈 수 있는가)를
+ * 판정하므로 통계 조회 권한을 가진 주체를 대역한다 — 대역이 없으면 탭이 조용히 숨어 '없음' 단언이 거짓 green 이 된다. 그래서
+ * 탭의 존재를 양성으로 단언한다.
  */
+// 설문 탭(설문 기여)은 설문 목록 조회 권한으로 보인다(허브 분해 H5) — 전체 구성 순서를 보려고 함께 준다.
+const FULL_USER = { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' };
+const auth = vi.hoisted(() => ({ user: null as unknown, loading: false }));
+vi.mock('@/contexts/AuthContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/contexts/AuthContext')>()),
+  useOptionalAuth: () => ({ user: auth.user, loading: auth.loading }),
+}));
 const api = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
@@ -109,6 +121,8 @@ function sidebarCard(): HTMLElement {
 
 describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
   beforeEach(() => {
+    auth.user = FULL_USER;
+    auth.loading = false;
     responses.clear();
     failures.clear();
     exported.props = undefined;
@@ -141,6 +155,19 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
         expect(requestedUrls()).toEqual(expectedUrls);
         expect(exported.props).toMatchObject({ scope: 'loaded', filename });
       });
+  });
+
+  // 권한 상태를 아직 모르면 기능 탭이 아직 보이지 않는다 — 그 라우트를 통계 개요로 떨어뜨려 다른 제목·차트를 보이지 않는다(허브 분해 검토).
+  it.each([
+    ['게시물', BoardStatsPage, '/admin/stats/board'],
+    ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage'],
+  ])('%s 화면은 권한 상태를 확인하는 동안 통계 개요가 아니라 진입 골격을 그린다', (_name, Page, pathname) => {
+    auth.user = null;
+    auth.loading = true;
+    renderRoute(Page, pathname);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('관리자 통계를 불러오는 중');
+    expect(screen.queryByText('통계 개요')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: '통계 분석 뷰' })).toBeNull();
   });
 
   describe('자료 이용 건수 카드', () => {
@@ -205,6 +232,50 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
     });
   });
 
+  describe('기능 탭의 노출과 새로고침', () => {
+    it('게시물 화면의 내비게이션에 게시판 탭 둘이 셸 탭 사이 자리에 있다', async () => {
+      renderRoute(BoardStatsPage, '/admin/stats/board');
+      await screen.findByText(PERIOD_EMPTY);
+      const labels = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
+      expect(labels.filter((label) => label !== '설문조사 분석'))
+        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '운영 보고서']);
+    });
+
+    if (inProjection(SURVEY_CONTRIBUTION)) it('게시판·설문 기여가 모두 있으면 내비게이션은 종전 순서 그대로다', async () => {
+      renderRoute(BoardStatsPage, '/admin/stats/board');
+      await screen.findByText(PERIOD_EMPTY);
+      expect(within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel))
+        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석', '운영 보고서']);
+    });
+
+    it('통계 조회 권한이 없는 주체에게는 게시판 탭이 보이지 않는다', async () => {
+      const saved = auth.user;
+      auth.user = { permissions: [], authorizationVersion: 'test' };
+      try {
+        renderRoute(BoardStatsPage, '/admin/stats/board');
+        await screen.findByText(PERIOD_EMPTY);
+        const labels = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
+        expect(labels).not.toContain('콘텐츠 지표');
+        expect(labels).not.toContain('자료이용현황');
+        // 탭이 없으면 기본 탭 값도 받지 않는다 — 통계 개요로 연다.
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('통계 개요');
+      } finally {
+        auth.user = saved;
+      }
+    });
+
+    it('통계 새로고침은 꺼진 게시판 탭의 조회(자료 이용)까지 다시 부른다', async () => {
+      renderRoute(BoardStatsPage, '/admin/stats/board');
+      await screen.findByText(PERIOD_EMPTY);
+      expect(requestedUrls()).not.toContain(URL.dataUsage);
+
+      api.getRaw.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: /통계 새로고침$/ }));
+
+      await waitFor(() => expect(requestedUrls()).toEqual(expect.arrayContaining([URL.bbs, URL.dataUsage])));
+    });
+  });
+
   describe('내비게이션 경로', () => {
     it.each([
       ['통계 개요', '/admin/stats'],
@@ -223,7 +294,7 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
       expect(nav.replace).not.toHaveBeenCalled();
     });
 
-    if (inProjection('frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx')) it('설문조사 분석은 전용 라우트 없이 현재 경로의 tab 쿼리만 바꾸고 다른 쿼리는 버린다', async () => {
+    if (inProjection(SURVEY_CONTRIBUTION)) it('설문조사 분석은 전용 라우트 없이 현재 경로의 tab 쿼리만 바꾸고 다른 쿼리는 버린다', async () => {
       renderRoute(BoardStatsPage, '/admin/stats/board', 'foo=bar');
       await screen.findByText(PERIOD_EMPTY);
 

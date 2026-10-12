@@ -145,7 +145,8 @@ flowchart TD
 - **타입**: [슬롯 타입](../../frontend/src/extensions/slots.ts)의 `SlotMap` 이 슬롯 이름과 항목 모양을 정한다. 항목마다 `id` 와 노출 술어 `visibleWhen`(`always` 사유 · `permissions` · `page`)을 둔다. 술어는 기능권한·라우트 게이트와 같은 함수로 판정하며 노출일 뿐 인가가 아니다. 술어는 그 기여가 부르는 API 의 권한과 맞춘다 — 주소록 출처는 목록·단건 API 와 같은 ADBK_READ 다(PR-5). permissions 술어는 화면 목록 생성기의 표시 권한(canPermission 리터럴)에 잡히지 않아, 권한 작업대의 소비 화면 행(메일·문자)에 그 권한이 표시 권한으로 나타나지 않는다(GAP-COMPOSE-001).
 - **기여**: `frontend/src/extensions/<기능 id>/<슬롯>.ts` 가 `defineContributions('<슬롯>', [...])` 를 default export 한다. 디렉터리는 그 기능의 카탈로그 경로와 소유 pack 의 `removePaths` 양쪽에 있어야 하고, 기능이 빠지면 직접 지워져 투영 원장에 남는다.
 - **레지스트리**: 슬롯마다 `frontend/src/extensions/generated-<슬롯>.ts` 하나다. [렌더러](../../scripts/slot-registry.mjs)가 기여 파일 목록에서 만들고(`npm run slots:generate`·`slots:check`, `merge:main`), 생성기·정밀 점검·도달성 census·거버넌스 투영은 같은 projector 가 직접 제거 경로에 걸리지 않은 기여로 다시 렌더한다. 마커 투영과 같은 패스, 즉 연쇄 계산 전이라 레지스트리를 읽는 셸이 연쇄로 사라지지 않는다. 남은 기여는 생성물 lock 의 `frontend.slots` 에 적힌다.
-- **소비자**: 레지스트리를 import 하는 모듈은 [경계 계약](../../scripts/reusable-frontend-boundaries-contract.test.mjs)의 소비자 표에 적힌 파일뿐이다. 범용 플러그인 로더를 막고 찾는 경로를 고정한다.
+- **소비자**: 레지스트리를 import 하는 모듈은 [렌더러](../../scripts/slot-registry.mjs)의 소비자 표(`SLOT_REGISTRY_CONSUMERS`)에 적힌 파일뿐이다. 범용 플러그인 로더를 막고 찾는 경로를 고정한다. [경계 계약](../../scripts/reusable-frontend-boundaries-contract.test.mjs)과 쓰기 귀속 census 가 같은 표를 쓴다. `hub-tabs` 는 허브별로 적고, 기여의 쓰기(축 3·화면 목록)는 기여 항목의 `hub` 가 가리키는 허브의 셸로만 잇는다(허브 분해 H1). 레지스트리는 하나라 허브 화면마다 다른 허브의 탭 뷰도 함께 싣는다 — 실측과 허브별 분리 조건은 [GAP-SLOT-001](../../.agent/memory/known-gaps.md). `stats-panels` 는 두 소비자가 서로 다른 배치(요약 칸·기능 탭)를 그리는데 귀속은 기여 파일 단위라, 배치별 귀속을 두기 전까지 화면 목록 생성기가 그 기여를 거치는 쓰기·`canPermission` 리터럴을 거부한다(`PLACEMENT_BLIND_SLOTS`).
+- **기여 폐포**: 레지스트리는 슬롯마다 하나라서 기여 하나가 연쇄로 지워지면 그 레지스트리를 읽는 모든 셸이 함께 사라진다. 그래서 기여에서 import 로 닿는 파일의 소유 기능은 기여 기능이 요구하는 기능 안이어야 한다. 경계 계약이 투영 연쇄 계획의 간선으로 본다.
 - **연동**: 기여가 빠질 때 다른 기능의 동작이 줄면 연동 선언의 근거가 그 기여 파일을 가리키고, 잃는 것이 없으면 '등록만 하는 기여' 표에 사유와 함께 둔다. 연동 종류에 slot 을 따로 두지 않는다.
 
 슬롯 종류는 10개 이하로 두고, 그 슬롯을 읽는 셸과 같은 변경에서만 정의한다.
@@ -153,19 +154,21 @@ flowchart TD
 | 슬롯 | 소비 셸 | 상태 |
 |---|---|---|
 | `recipient-picker-sources` | 메일·문자 작성 화면의 수신자 피커(도우미 `useRecipientAddressBook`). 기여: 주소록(노출 ADBK_READ, PR-5) | 정의(PR-4) |
-| `shell-links` | 머리글·바닥글·오류 화면의 링크(닫힌 배치 목록). 기여: 도움말(머리글 아이콘·바닥글 '고객지원'·오류 화면 '기술 지원 문의하기'). 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계라 주체 없이 거른다 — 두 배치는 `/admin` 밖 목적지만 둔다 | 정의(PR-6) |
+| `shell-links` | 머리글·바닥글·오류 화면·명령 센터·협업 허브 머리의 링크(닫힌 배치 목록). 기여: 도움말(머리글 아이콘·바닥글 '고객지원'·오류 화면 '기술 지원 문의하기'), 쪽지(명령 센터의 '협업 통합 허브'), 주소록('주소록 관리')·메일('신규 발송')(협업 허브 머리). 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계라 주체 없이 거른다 — 두 배치는 `/admin` 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 필요하다 | 정의(PR-6), 명령 센터·협업 허브 배치(허브 분해 H1) |
+| `hub-tabs` | 허브 셸의 탭. 허브마다 뷰 모양이 달라 `HubTabViews`(허브 → 뷰 모양) 사전으로 두고, 항목은 `{ id(=`?tab=` 값, 대문자), hub, order, label, view }` 다. 허브의 탭 해석 모듈(`*-tabs.ts` 의 `TAB_HUB`)이 `slotHub` 와 `contributable`(탭 → 기여 파일)을 선언하고 경계 계약이 실제 기여와 양방향으로 대조한다. 협업 허브(core 셸): 쪽지·스크랩 탭(뷰가 자기 목록·대화상자를 소유하고 core 틀에 조각을 넘긴다. 노출은 그 목록 API 권한 NOTE_READ·SCRAP_READ, H5). 탭이 없는 구성(core 등)은 빈 상태를 말한다 — 메뉴 행이 없고 바로가기는 쪽지 기여라 URL 로만 닿는다. 지식 허브(게시판 셸, 위키·FAQ·Q&A 는 셸 고유 탭): 커뮤니티 탭(뷰는 게시판 ID·설명·아이콘·머리 동작이고 글 목록은 셸이 그린다). 커뮤니티 탭으로 가는 별칭·알림 목적지·메뉴는 커뮤니티 소유라 기여와 함께 빠진다. 감시 허브(core 셸, 로그·가동 상태는 셸 탭 — 댓글 관리는 탭이 아니라 댓글 기능의 독립 화면 `/admin/system/comments` 다, H6): 하네스 아틀라스 탭(시연 기여, 뷰는 본문·개요·항목 찾기·상세와 `sample` — 셸은 sample 인 뷰의 상세에만 샘플 고지를 단다) | 정의(허브 분해 H1·H2·H3), 협업 허브 탭 노출 축소(H5, [DEC-OPS-277](../../.agent/memory/decisions.md)) |
 | `header-widgets` | 머리글 테마 전환 뒤의 컴포넌트. 기여: 알림 벨(노출 NOTI_READ, 컴포넌트는 알림 기능 파일에 두고 기여는 참조만 한다) | 정의(PR-6) |
 | `post-actions` | 게시글 상세의 부가 동작 버튼(추천과 삭제 사이). 기여: 스크랩(쓰기 함수 `submit` 하나, 이번 방문에서 한 번, 노출은 SCRAP_CREATE 보유자). 잠금(추천·삭제·해결 표시와 하나)·토스트·완료 표시는 게시글 상세가 소유한다 | 정의(스크랩 슬롯, [DEC-OPS-269](../../.agent/memory/decisions.md)), 노출 축소(S3, DEC-OPS-270). 저장은 react-query mutation 을 거치지 않아 오프라인이면 대기 대신 즉시 실패로 알린다(추천·삭제와 같다) |
-| `search-providers`·`hub-tabs`·`stats-panels`·`home-summary-cards`·`home-sections` | 검색·허브·통계·업무 홈 | Phase 2 후속 예상(합계 9종) |
+| `stats-panels` | 통계 셸의 기능 탭과 통계 요약의 칸. 배치는 `hub-tab`(탭)·`overview-card`(요약 칸) 둘이다. 탭은 `series`(일자별 집계 — 탭이 곧 라우트라 `href` 와 `{ page: href }` 를 갖는 링크 슬롯 항목, 미수집 축이면 `uninstrumented` 와 요약 칸 `summary`)와 `body`(기능이 본문을 그리고 `?tab=<id>` 로 연다)다. 조회는 셸이 한 번(`useQueries`)에 소유하고 기여는 조회 키·로더·본문·내보내기를 이름으로만 가리킨다. 기여: 게시판(콘텐츠 지표·자료이용현황 탭, 누적 게시물 칸), 설문(설문조사 분석 탭, 노출은 설문 목록 API 권한 SURVEY_READ_ALL) | 정의(허브 분해 H4), 설문 탭 노출 축소(H5, DEC-OPS-277) |
+| `search-providers`·`home-summary-cards`·`home-sections` | 검색·업무 홈 | Phase 2 후속 예상(합계 9종) |
 
-지금 기여는 데이터만 담는다. 경계 계약의 함정 규칙이 JSX, 최상위 실행문, 항목 안의 함수·호출, 링크 슬롯 밖의 링크 키, 중립 모듈·자기 기능 밖 import(다른 기능이 소유한 `@/lib`·`@/types` 파일 포함)를 막는다. 셸 링크(`shell-links`) 항목은 `{ page: 자기 href }` 만 쓰고, 바닥글·오류 화면 배치는 `/admin` 밖 목적지, 머리글 배치는 아이콘, 바닥글 항목은 같은 기여 안의 같은 목적지 머리글 짝을 둔다(PR-6, fill 화면에서 바닥글이 숨는다). PR-4 에서 넓힌 census 는 둘이다: [관리 링크 census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts)(슬롯 디렉터리와 .ts 를 보고, 기여는 AST 로 읽어 링크마다 같은 객체의 `{ page: 자기 목적지 }` 만 게이트로 인정하며 리터럴이 아닌 링크 값은 붉다)와 [리다이렉트 역참조 가드](../../frontend/src/__tests__/page-redirect-reference-guard.test.ts)(객체 리터럴의 `href`·`url`·`link`·`moreHref` 키). 슬롯이 처음 뷰·폼·쓰기·URL 을 담을 때는 아래 census 가 기여를 보지 못하므로, 그 슬롯을 들이는 변경에서 함께 넓히고 수용 기준에 넣는다. 그대로 두면 범위 밖으로 나간 부채가 exact 래칫에서 '감소' 로 보일 수 있다(H2).
+지금 기여는 데이터만 담는다. 경계 계약의 함정 규칙이 JSX, 최상위 실행문, 항목 안의 함수·호출, 링크 슬롯 밖의 링크 키, 중립 모듈·자기 기능 밖 import(다른 기능이 소유한 `@/lib`·`@/types` 파일 포함)를 막는다. 셸 링크(`shell-links`) 항목은 `{ page: 자기 href }` 만 쓰고, 바닥글·오류 화면 배치는 `/admin` 밖 목적지, 머리글·명령 센터 배치는 아이콘, 바닥글 항목은 같은 기여 안의 같은 목적지 머리글 짝을 둔다(PR-6, fill 화면에서 바닥글이 숨는다). PR-4 에서 넓힌 census 는 둘이다: [관리 링크 census](../../frontend/src/__tests__/admin-link-visibility-census.test.ts)(슬롯 디렉터리와 .ts 를 보고, 기여는 AST 로 읽어 링크마다 같은 객체의 `{ page: 자기 목적지 }` 만 게이트로 인정하며 리터럴이 아닌 링크 값은 붉다)와 [리다이렉트 역참조 가드](../../frontend/src/__tests__/page-redirect-reference-guard.test.ts)(객체 리터럴의 `href`·`url`·`link`·`moreHref` 키). 슬롯이 처음 뷰·폼·쓰기·URL 을 담을 때는 아래 census 가 기여를 보지 못하므로, 그 슬롯을 들이는 변경에서 함께 넓히고 수용 기준에 넣는다. 그대로 두면 범위 밖으로 나간 부채가 exact 래칫에서 '감소' 로 보일 수 있다(H2).
 
 | 슬롯 기여가 처음 담는 것 | 같은 변경에서 넓힐 census |
 |---|---|
 | 화면 조각(뷰) | [화면 목록 귀속](../../scripts/generate-screen-registry.mjs), A1·A2 채택 census(`APP_DIR` 스캔, [A1](../../frontend/src/__tests__/work-list-adoption-census.test.ts)), [화면 용어](../../scripts/frontend-visible-terms-contract.mjs), [정직성 계약](../../frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts) |
 | 폼 | [§A3-1 폼 그릇](../../scripts/a3-1-form-container-census.mjs), [폼 검증 census](../../frontend/scripts/frontend-form-validation-census.mjs), 미저장 닫기([작업 화면 문법 계약](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts)) |
 | 쓰기 | [operation 소비 census](../../scripts/operation-consumer-census.mjs) 축 3(쓰기 버튼의 권한 표시). 스크랩 슬롯에서 넓혔다 — 기여 파일을 화면 모집단에 넣고, 기여를 여는 화면을 그 레지스트리의 importer(도우미 .ts 면 그 도우미의 importer)로 잇는다. 기여가 import 하는 비화면·비서비스 모듈은 디렉터리와 무관하게 중간 모듈로 읽고, 기여의 판정은 `visibleWhen.permissions` 원소만 센다. 같은 계산을 쓰는 화면 목록(권한 작업대)도 함께 따른다 |
-| URL 상태 | [URL-state census](../../scripts/ui-url-state-census.mjs)의 routeContext(기여 파일을 소비 화면의 라우트로 귀속) |
+| URL 상태 | [URL-state census](../../scripts/ui-url-state-census.mjs)의 routeContext(기여 파일을 소비 화면의 라우트로 귀속). 허브 분해 검토에서 넓혔다 — 기여와, 기여만 import 하는 비라우트 모듈(기여 폐포)을 소비 셸(`SLOT_REGISTRY_CONSUMERS`: hub-tabs 는 기여가 적은 hub 의 셸, 배치를 적은 기여는 같은 배치 리터럴로 거르는 셸)의 맥락으로 귀속한다. 다른 화면도 import 하는 모듈과 타입 import 는 넣지 않는다. 소비 셸 자신의 맥락은 디렉터리 기준이고, 공용 셸(머리글·명령 센터 등)이 그리는 기여는 미해소로 남는다 |
 
 설계서 11장의 '헤더·푸터·명령 센터·검색 13블록' 은 실측 15블록이고, 오류 화면 2블록이 따로 있다. 마커 블록 수는 PR-4 에서 116블록·21파일에서 106블록·17파일이 됐다(메일·문자 화면과 두 시험의 10블록). PR-6 에서 98블록·14파일이 됐다(머리글 4·바닥글 2·오류 화면 2블록).
 
@@ -257,8 +260,11 @@ A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는
 | PR-6 | 셸 링크 슬롯(머리글·바닥글·오류 화면)과 알림 벨 | 완료(DEC 없음 — DEC-OPS-267 의 슬롯 종류 표 이행, 화면 동등) |
 | 스크랩 슬롯 S1~S3 | 게시글 상세 공유 잠금 동등성 시험, `post-actions` 슬롯과 스크랩 기여, 축 3·화면 목록의 기여 귀속, 스크랩 버튼 노출을 SCRAP_CREATE 로(축 3 부채 45→44) | 완료([DEC-OPS-269·270](../../.agent/memory/decisions.md), S2 는 화면 동등, S3 는 기본 그룹 화면 동등) |
 | 간선 제거 E1·E2 | 수동 도메인 삭제의 동반 삭제를 카탈로그 간선의 역방향 폐포로, 근거 없는 묶음 간선 4개(게시판·댓글→스크랩, 스크랩→댓글, 결재→행사·포상) 제거. 묶음 형식은 매니페스트 v2 까지 그대로 둔다 | 완료([DEC-OPS-271·272](../../.agent/memory/decisions.md)). 단독 선택 평균 포함 수 3.53→2.95, 혼자 풀리는 기능 8→9. 게시판 단독은 7→5다 — 설계서의 3→2 는 지식 허브 분해 뒤 값이다 |
+| 허브 분해 H0~H3 | 허브별 동등성 그물, `hub-tabs` 슬롯, 협업 허브(core 셸 + 쪽지·스크랩 탭 기여), 지식 허브(게시판 셸 + 커뮤니티 탭 기여), 감시 허브의 하네스 아틀라스 탭(시연 기여). 화면 공유 묶음(협업 허브·지식 허브)을 걷는다 | 완료([DEC-OPS-274·275](../../.agent/memory/decisions.md)). 단독 선택 평균 포함 수 2.68→1.68, 혼자 풀리는 기능 12→13, 게시판 단독 2(게시판·댓글). 마커 98/14→90/12 |
+| 허브 분해 H4 | `stats-panels` 슬롯, 통계 셸·요약의 게시판·설문 탭과 칸을 기여로. 통계 개요의 쓰지 않는 게시물 조회를 걷는다 | 완료([DEC-OPS-276](../../.agent/memory/decisions.md)). 원본 화면 동등. 마커 90/12→55/7. 카탈로그 간선은 그대로라 KPI 불변 |
+| 허브 분해 H5·H6 | 협업 허브 탭·통계 설문 탭의 노출을 목록 API 권한으로 좁힌다. 감시 허브의 댓글 탭을 걷고 `/admin/system/comments` 를 댓글 기능의 독립 A1 화면(댓글 및 평가 관리)으로 둔다 | 완료([DEC-OPS-277·278](../../.agent/memory/decisions.md)). 기본 그룹 화면 동등(H5). 마커 55/7→35/5. 감시 허브 화면 목록 행에서 댓글 삭제 대행 권한이 빠진다(사실과 맞다) |
 
-계획 단계의 순서와 범위는 바뀔 수 있다. 마커 소유 표의 번호 없는 step(업무 홈, 검색 이행, 허브 분해의 협업 허브·커뮤니티·`hub-tabs`(허브 탭 기여 슬롯)·`stats-panels`(통계 패널 기여 슬롯))은 이 표 뒤의 Phase 2 후속 단계다.
+계획 단계의 순서와 범위는 바뀔 수 있다. 마커 소유 표의 번호 없는 step(업무 홈, 검색 이행, 허브 분해(커뮤니티 — 게시판 마법사의 커뮤니티 귀속 4블록))은 이 표 뒤의 Phase 2 후속 단계다.
 
 조합 수가 늘어나면 모든 부분집합을 매번 빌드하는 대신 core, 각 독립 기능, 모든 명시적 연동 edge, 공유 자원 경계, 전체 구성을 기본 matrix로 유지하고 변경 영향 조합을 추가한다. 이 matrix는 미실행 조합의 성공을 주장하는 근거가 아니다. 새로 지원하는 조합은 실제 산출물 검증을 통과해야 한다.
 

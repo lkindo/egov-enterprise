@@ -858,6 +858,45 @@ test('축 3 — 슬롯 기여의 쓰기는 기여 파일에 귀속되고, 그 �
   assert.equal(slotFixture(t, { rule: "{ always: '저장은 서버가 THING_DELETE 로 막는다.' }" }).analyze().ungated.length, 1);
 });
 
+/*
+  [허브 분해 H1] hub-tabs 레지스트리는 하나인데 여러 허브 셸이 읽는다. 기여의 쓰기는 기여 항목의 hub 가 가리키는 허브의 셸(소비자 표)로만
+  잇는다 — 레지스트리를 읽는 모든 셸로 이으면 다른 허브 화면이 그 쓰기를 가진 것처럼 보이고(권한 작업대 오표시), 판정도 엉뚱한 셸의
+  권한 언급에 기댄다.
+*/
+function hubTabFixture(t, { collaboration = 'export const Hub = () => null;', monitoring = 'export const Hub = () => null;', hub = 'collaboration' } = {}) {
+  return affordanceFixture(t, {
+    'frontend/src/extensions/slots.ts': 'export const defineContributions = (slot, entries) => entries;',
+    'frontend/src/app/admin/things/ThingTab.tsx': [
+      SERVICE_IMPORT,
+      'export const ThingTab = () => <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+    ],
+    'frontend/src/extensions/things/hub-tabs.ts': [
+      "import { defineContributions } from '@/extensions/slots';",
+      "import { ThingTab } from '@/app/admin/things/ThingTab';",
+      "export default defineContributions('hub-tabs', [",
+      `  { id: 'THINGS', hub: '${hub}', order: 10, label: '물건', view: { Component: ThingTab }, visibleWhen: { always: '시험' } },`,
+      ']);',
+    ],
+    'frontend/src/extensions/generated-hub-tabs.ts': ["import things from './things/hub-tabs';", 'export const hubTabs = [things];'],
+    'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx': [
+      "import { hubTabs } from '@/extensions/generated-hub-tabs';", collaboration, 'export const used = hubTabs;'],
+    'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': [
+      "import { hubTabs } from '@/extensions/generated-hub-tabs';", monitoring, 'export const used = hubTabs;'],
+  });
+}
+
+test('축 3 — hub-tabs 기여의 쓰기는 그 허브의 셸에만 귀속된다(허브 분해 H1)', (t) => {
+  const gate = "export const Hub = ({ user }) => canPermission(user, 'THING_DELETE');";
+  // 협업 허브 셸이 권한을 보면 가려진다. 같은 레지스트리를 읽는 감시 허브는 이 기여를 열지 않으므로 판정에 끼지 않는다.
+  assert.deepEqual(hubTabFixture(t, { collaboration: gate }).analyze().ungated, []);
+  // 감시 허브가 권한을 봐도 협업 허브 탭의 쓰기를 가리지 못한다.
+  assert.deepEqual(hubTabFixture(t, { monitoring: gate }).analyze().ungated.map((entry) => [entry.file, entry.permission]), [
+    ['frontend/src/app/admin/things/ThingTab.tsx', 'THING_DELETE'],
+  ]);
+  // 소비자 표에 없는 허브의 기여는 어느 셸에도 귀속되지 않아 부채로 남는다(조용히 가려지지 않는다).
+  assert.equal(hubTabFixture(t, { collaboration: gate, monitoring: gate, hub: 'nowhere' }).analyze().ungated.length, 1);
+});
+
 test('축 3 — 기여의 판정은 visibleWhen.permissions 원소뿐이다: 사유 문자열에 따옴표 친 권한 이름은 판정이 아니다 (스크랩 슬롯 검토)', (t) => {
   // 기여 소스 전체에서 따옴표 친 권한 이름을 찾던 판정은, 서버 권한을 설명하는 always 사유를 노출 판정으로 셌다(거짓 감소, H2).
   for (const rule of [

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, posix, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
@@ -11,7 +11,9 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
-import { discoverSlotContributions, renderSlotRegistry, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles, slotConsumersByHub, slotPathKind,
+  slotRegistryPath } from './slot-registry.mjs';
+import { runInNewContext } from 'node:vm';
 
 // TypeScript 는 frontend 가 잠근 판(pnpm-lock)을 쓴다. 생성물의 tsc 와 같은 컴파일러다.
 const require = createRequire(new URL('../frontend/package.json', import.meta.url));
@@ -34,7 +36,11 @@ function projected(source, profile, label) {
   }).outputText;
 }
 
-function boundaryErrors(source, profile, feature) {
+// 댓글 및 평가 관리 화면(허브 분해 H6). 댓글과 함께 남고 빠지므로 생성물에서는 없을 수 있다.
+const MODERATION = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
+const moderationSource = existsSync(MODERATION) ? readFileSync(MODERATION, 'utf8') : null;
+
+function boundaryErrors(source, profile, feature, moderation = moderationSource) {
   const text = projected(source, profile, paths[feature]);
   const errors = [];
   if (feature === 'search') {
@@ -46,8 +52,14 @@ function boundaryErrors(source, profile, feature) {
     for (const call of ['auditAdminService.getAuditLogs', 'systemLogAdminService.getSystemLogs', 'systemLogAdminService.getLoginLogs']) {
       if (!text.includes(call)) errors.push(`core monitoring was removed: ${call}`);
     }
-    if (profile === 'core' && /commentQueryOptions|commentMutationOptions|handleDeleteComment|useRef|useMutation|MessageSquare|Trash2|useToast|useConfirm|tab: ['"]COMMENTS['"]/.test(text)) errors.push('excluded comments leaked into core');
-    if (profile !== 'core' && (!text.includes('commentMutationOptions.removeAdmin') || !text.includes('await confirm('))) errors.push('included comment deletion lost its control');
+    // [허브 분해 H6] 댓글 관리는 댓글 기능의 독립 화면이다 — 감시 허브는 어느 프로필에서도 댓글 코드를 갖지 않는다(마커도 없다).
+    if (/commentQueryOptions|commentMutationOptions|handleDeleteComment|useMutation|MessageSquare|Trash2|useToast|useConfirm|tab: ['"]COMMENTS['"]/.test(text)) {
+      errors.push('comments returned to the monitoring hub');
+    }
+    // 그 화면은 댓글과 함께 남고 빠진다(투영 마커가 아니라 파일 소유). 남는 구성에서는 삭제 통제(확인 뒤 대행 삭제)를 지킨다.
+    if (profile !== 'core' && moderation !== null) {
+      if (!moderation.includes('commentMutationOptions.removeAdmin') || !moderation.includes('await confirm(')) errors.push('comment deletion lost its control');
+    }
   }
   if (feature === 'maker') {
     if (!text.includes('boardAdminService.createBoardMaster(') || !text.includes('menuAdminService.createMenu(')) errors.push('included board creation was removed');
@@ -107,10 +119,16 @@ test('unscoped optional imports and removed shared service calls are reproducibl
   assert.match(boundaryErrors(importLeak, 'core', 'search').join('\n'), /excluded board search/);
   const deletedCoreSearch = sources.search.replace('userSearchService.searchAssignableUsers(query)', 'Promise.resolve([])');
   assert.match(boundaryErrors(deletedCoreSearch, 'core', 'search').join('\n'), /core search was removed/);
-  const missingConfirmation = sources.monitoring.replace('await confirm(', 'await uncheckedConfirmation(');
-  assert.match(boundaryErrors(missingConfirmation, 'collaboration', 'monitoring').join('\n'), /lost its control/);
-  const leakedCommentHook = `${sources.monitoring}\nconst toast = useToast();\n`;
-  assert.match(boundaryErrors(leakedCommentHook, 'core', 'monitoring').join('\n'), /excluded comments/);
+  // [허브 분해 H6] 확인 뒤 대행 삭제 통제는 감시 허브가 아니라 댓글 및 평가 관리 화면에 있다 — 그 화면의 소스를 바꿔 본다.
+  if (moderationSource !== null) {
+    const missingConfirmation = moderationSource.replace('await confirm(', 'await uncheckedConfirmation(');
+    assert.notEqual(missingConfirmation, moderationSource, 'the moderation screen must still confirm before deleting');
+    assert.match(boundaryErrors(sources.monitoring, 'collaboration', 'monitoring', missingConfirmation).join('\n'), /lost its control/);
+  }
+  for (const profile of ['core', 'collaboration']) {
+    const leakedCommentHook = `${sources.monitoring}\nconst toast = useToast();\n`;
+    assert.match(boundaryErrors(leakedCommentHook, profile, 'monitoring').join('\n'), /comments returned to the monitoring hub/);
+  }
 });
 
 /*
@@ -326,15 +344,13 @@ test('direct selections that reach a check unit no earlier configuration checked
  * 기여로 다시 렌더한다. 이 절은 그 장치가 원본에서 정확하고(parity), 이름이 한 철자이며, 소비자가 정해진 자리에만 있고, 기여 파일이
  * 셸 밖의 일을 몰래 하지 않는지 본다. 뷰·폼·쓰기·URL 을 담는 기여는 그것을 보는 census 를 넓히는 변경과 함께 들인다(설계 §5).
  */
-/** 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 붉다 — 범용 플러그인 로더를 막고 grep 경로를 고정한다. */
-const SLOT_REGISTRY_CONSUMERS = {
-  'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
-  'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
-  'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
-  'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx', 'frontend/src/app/error.tsx'],
-};
-/** 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)이 링크 슬롯이다 — 관리 링크 census 가 그 항목을 본다. */
-const LINK_SLOTS = new Set(['shell-links']);
+// 슬롯 레지스트리를 import 해도 되는 모듈 표(SLOT_REGISTRY_CONSUMERS)는 scripts/slot-registry.mjs 가 정본이다 — census 도 같은 표를
+// 쓴다(허브별 쓰기 귀속). 표에 없는 모듈이 import 하면 붉다 — 범용 플러그인 로더를 막고 grep 경로를 고정한다.
+/**
+ * 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)과 통계 패널(허브 분해 H4 — 라우트인 탭)이 링크 슬롯이다.
+ * 관리 링크 census 가 그 항목을 본다.
+ */
+const LINK_SLOTS = new Set(['shell-links', 'stats-panels']);
 const LINK_KEYS = new Set(['href', 'url', 'link', 'moreHref']);
 /** 슬롯 종류 상한(설계서 16.5). */
 const MAX_SLOTS = 10;
@@ -352,7 +368,9 @@ function slotMapKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
 }
 
 /** shell-links 의 배치(닫힌 목록). 소비 셸이 있는 자리만 둔다. */
-const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error']);
+const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error', 'command-center', 'collaboration-hub']);
+/** 아이콘이 있는 목록이라 icon 이 필요한 배치(머리글 아이콘 단추·명령 센터 목록). */
+const ICON_PLACEMENTS = new Set(['header', 'command-center']);
 /** 주체 없이 거르는 배치 — 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계다. /admin 아래 page 술어는 늘 거짓이 된다. */
 const SUBJECTLESS_PLACEMENTS = new Set(['footer', 'error']);
 /** 페이지 게이트가 있는 경로(frontend/src/lib/auth/page-access.ts 의 isGatedPath 와 같은 경계). */
@@ -365,7 +383,7 @@ const isInternalPath = href => /^\/(?![/\\])/.test(href);
  * - 배치는 header·footer·error 리터럴, href 는 '/' 로 시작하는 앱 안 경로 리터럴('//'·'/\' 로 시작하는 외부 주소는 안 된다),
  *   visibleWhen 은 { page: 자기 href } 하나다.
  * - 바닥글·오류 화면 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다(그렇지 않으면 항목이 아무 신호 없이 늘 숨는다).
- * - 머리글 배치는 아이콘 단추라 icon 이 필요하다(없으면 빈 단추가 된다).
+ * - 머리글 배치는 아이콘 단추, 명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다(없으면 빈 단추·빈 칸이 된다).
  * - fill 화면은 바닥글을 숨긴다(globals.css). 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝이 있어야 한다 — 기여 파일 하나가
  *   함께 지워지므로 머리글이 먼저 빠지는 프로필이 없다(종전 셸 접근성 계약의 pack 대조를 대신한다).
  */
@@ -385,7 +403,7 @@ function shellLinkViolations(entries, label) {
     const href = text(prop(element, 'href')?.initializer);
     const rule = prop(element, 'visibleWhen')?.initializer;
     const page = rule && ts.isObjectLiteralExpression(rule) && rule.properties.length === 1 ? text(prop(rule, 'page')?.initializer) : undefined;
-    if (!SHELL_LINK_PLACEMENTS.has(placement)) violations.push(`${label}: ${id} 의 배치는 header·footer·error 리터럴이다`);
+    if (!SHELL_LINK_PLACEMENTS.has(placement)) violations.push(`${label}: ${id} 의 배치는 ${[...SHELL_LINK_PLACEMENTS].join('·')} 리터럴이다`);
     if (href === undefined || !isInternalPath(href)) {
       violations.push(`${label}: ${id} 의 href 는 '/' 로 시작하는 문자열 리터럴이다('//'·'/\\' 로 시작하면 브라우저가 외부 주소로 읽는다)`);
     }
@@ -393,12 +411,131 @@ function shellLinkViolations(entries, label) {
     if (SUBJECTLESS_PLACEMENTS.has(placement) && href !== undefined && isGatedPath(href)) {
       violations.push(`${label}: ${id} — ${placement} 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다`);
     }
-    if (placement === 'header' && !prop(element, 'icon')) violations.push(`${label}: ${id} — 머리글 배치는 아이콘 단추라 icon 이 필요하다`);
+    if (ICON_PLACEMENTS.has(placement) && !prop(element, 'icon')) violations.push(`${label}: ${id} — ${placement} 배치는 아이콘이 있는 목록이라 icon 이 필요하다`);
     rows.push({ id, placement, href });
   }
   for (const row of rows.filter(candidate => candidate.placement === 'footer')) {
     if (!rows.some(candidate => candidate.placement === 'header' && candidate.href === row.href)) {
       violations.push(`${label}: ${row.id} — 바닥글 항목에 같은 목적지의 머리글 짝이 이 기여 안에 없다`);
+    }
+  }
+  return violations;
+}
+
+/** 통계 셸이 스스로 두는 탭 id(IntelligenceHubClient 의 CORE_TABS). 기여 탭 id 는 이것과 겹치지 않는다. */
+function statsCoreTabIds(source = readFileSync(join(frontendRoot, 'src/app/admin/stats/IntelligenceHubClient.tsx'), 'utf8')) {
+  const table = source.match(/const CORE_TABS[\s\S]*?\];/)?.[0] ?? '';
+  return [...table.matchAll(/\{ id: '([A-Z][A-Z0-9_]*)'/g)].map(match => match[1]);
+}
+
+/**
+ * stats-panels 항목 규칙(허브 분해 H4). 셸은 이 값으로 탭·조회·요약 칸을 만들므로 기여 원문에서 정적으로 판정한다.
+ * - placement 는 hub-tab·overview-card 리터럴, order 는 숫자 리터럴, id 는 대문자 식별자 리터럴(body 탭은 `?tab=` 값이다)이고
+ *   셸 탭 id 와 겹치지 않는다.
+ * - hub-tab 의 kind 는 series·body 리터럴이다. series 는 탭이 곧 라우트라 href 가 '/' 로 시작하는 앱 안 경로 리터럴이고 visibleWhen 은
+ *   { page: 자기 href } 하나다(셸 링크와 같은 규칙 — 관리 링크 census 가 page 술어를 게이트로 본다). uninstrumented 는 참거짓 리터럴이다.
+ * - body 와 overview-card 는 href 를 두지 않는다(라우트가 없다 — body 는 `?tab=` 으로 연다).
+ */
+function statsPanelViolations(entries, label, { coreTabs = statsCoreTabIds() } = {}) {
+  const violations = [];
+  const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
+  const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
+    && ts.isIdentifier(property.name) && property.name.text === name);
+  for (const element of entries.elements) {
+    if (!ts.isObjectLiteralExpression(element)) {
+      violations.push(`${label}: stats-panels 항목은 객체 리터럴이다`);
+      continue;
+    }
+    const id = text(prop(element, 'id')?.initializer);
+    const name = id ?? '?';
+    const placement = text(prop(element, 'placement')?.initializer);
+    const kind = text(prop(element, 'kind')?.initializer);
+    const order = prop(element, 'order')?.initializer;
+    const href = prop(element, 'href') ? text(prop(element, 'href').initializer) ?? null : undefined;
+    const rule = prop(element, 'visibleWhen')?.initializer;
+    const page = rule && ts.isObjectLiteralExpression(rule) && rule.properties.length === 1 ? text(prop(rule, 'page')?.initializer) : undefined;
+    const uninstrumented = prop(element, 'uninstrumented')?.initializer;
+    if (placement !== 'hub-tab' && placement !== 'overview-card') violations.push(`${label}: ${name} 의 placement 는 hub-tab·overview-card 리터럴이다`);
+    if (id === undefined || !/^[A-Z][A-Z0-9_]*$/.test(id)) violations.push(`${label}: ${name} 의 id 는 대문자 식별자 리터럴이다`);
+    else if (coreTabs.includes(id)) violations.push(`${label}: ${name} — 통계 셸 탭과 겹친다`);
+    if (!order || !ts.isNumericLiteral(order)) violations.push(`${label}: ${name} 의 order 는 숫자 리터럴이다`);
+    const series = placement === 'hub-tab' && kind === 'series';
+    if (placement === 'hub-tab' && kind !== 'series' && kind !== 'body') violations.push(`${label}: ${name} 의 kind 는 series·body 리터럴이다`);
+    if (series) {
+      if (typeof href !== 'string' || !isInternalPath(href)) violations.push(`${label}: ${name} 의 href 는 '/' 로 시작하는 앱 안 경로 리터럴이다`);
+      if (page === undefined || page !== href) violations.push(`${label}: ${name} 의 visibleWhen 은 { page: 자기 href } 여야 한다`);
+      if (!uninstrumented || (uninstrumented.kind !== ts.SyntaxKind.TrueKeyword && uninstrumented.kind !== ts.SyntaxKind.FalseKeyword)) {
+        violations.push(`${label}: ${name} 의 uninstrumented 는 참거짓 리터럴이다`);
+      }
+    } else if (href !== undefined) {
+      violations.push(`${label}: ${name} — 라우트가 없는 항목(body 탭·요약 칸)은 href 를 두지 않는다`);
+    }
+  }
+  return violations;
+}
+
+/** HubTabViews 인터페이스의 키(허브 이름). 타입 원천에서 읽는다. */
+function hubViewKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
+  const file = ts.createSourceFile(SLOTS_SOURCE, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const views = file.statements.find(node => ts.isInterfaceDeclaration(node) && node.name.text === 'HubTabViews');
+  assert.ok(views, 'slots.ts declares the HubTabViews interface');
+  return views.members.map(member => (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name) ? member.name.text : '?'));
+}
+
+/**
+ * 허브 탭 해석 모듈(`src/app/** /*-tabs.ts` 의 TAB_HUB)을 import 없이 평가한다 — 탭 목적지 계약과 같은 방법이다(실행 import 를 두지
+ * 않는 모듈이라 생성물에서도 읽힌다). slotHub 가 있는 모듈만 hub-tabs 기여를 받는 허브다.
+ */
+function hubTabModules(files = readProjectionInputs().files) {
+  const modules = new Map();
+  for (const path of files.filter(file => /\/src\/app\/.+-tabs\.ts$/.test(file.replaceAll('\\', '/')))) {
+    const { outputText } = ts.transpileModule(readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } });
+    assert.doesNotMatch(outputText, /\brequire\(/, `${relOf(path)}: 탭 해석 모듈은 실행 import 를 두지 않는다`);
+    const sandbox = { module: { exports: {} } };
+    runInNewContext(outputText, { module: sandbox.module, exports: sandbox.module.exports });
+    const hub = sandbox.module.exports.TAB_HUB;
+    if (hub?.slotHub) modules.set(hub.slotHub, { file: relOf(path), hub });
+  }
+  return modules;
+}
+
+/**
+ * hub-tabs 항목 규칙(허브 분해 H1). 셸은 이 값으로 탭을 그리고 `?tab=` 을 읽으므로 기여 원문에서 정적으로 판정한다.
+ * - hub 는 HubTabViews 키 리터럴, id 는 대문자 식별자 리터럴(`?tab=` 값), order 는 숫자 리터럴, view 는 import 한 이름이나 이름만 담은 객체.
+ * - id 는 그 허브 탭 해석의 contributable 이 이 파일을 지목하는 탭이고, 셸 고유 탭(parse(id) 가 기여 없이 받는 값)이 아니다.
+ */
+function hubTabViolations(entries, label, { file, hubs = hubViewKeys(), modules = hubTabModules() } = {}) {
+  const violations = [];
+  const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
+  const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
+    && ts.isIdentifier(property.name) && property.name.text === name);
+  for (const element of entries.elements) {
+    if (!ts.isObjectLiteralExpression(element)) {
+      violations.push(`${label}: hub-tabs 항목은 객체 리터럴이다`);
+      continue;
+    }
+    const id = text(prop(element, 'id')?.initializer);
+    const hub = text(prop(element, 'hub')?.initializer);
+    const order = prop(element, 'order')?.initializer;
+    const view = prop(element, 'view')?.initializer;
+    const name = id ?? '?';
+    if (!hubs.includes(hub)) violations.push(`${label}: ${name} 의 hub 는 ${hubs.join('·')} 리터럴이다`);
+    if (id === undefined || !/^[A-Z][A-Z0-9_]*$/.test(id)) violations.push(`${label}: ${name} 의 id 는 \`?tab=\` 값인 대문자 식별자 리터럴이다`);
+    if (!order || !ts.isNumericLiteral(order)) violations.push(`${label}: ${name} 의 order 는 숫자 리터럴이다`);
+    const named = node => node && ts.isIdentifier(node);
+    if (!(named(view) || (view && ts.isObjectLiteralExpression(view) && view.properties.length > 0
+      && view.properties.every(property => ts.isPropertyAssignment(property) && named(property.initializer))))) {
+      violations.push(`${label}: ${name} 의 view 는 import 한 이름이거나 이름만 담은 객체다`);
+    }
+    if (hub === undefined || id === undefined || !hubs.includes(hub)) continue;
+    const tabs = modules.get(hub);
+    if (!tabs) {
+      violations.push(`${label}: ${name} — 허브 ${hub} 의 탭 해석 모듈(TAB_HUB.slotHub)이 없다`);
+      continue;
+    }
+    if (tabs.hub.parse(id, []) !== null) violations.push(`${label}: ${name} — 허브 ${hub} 의 셸 고유 탭과 겹친다(${tabs.file})`);
+    if (tabs.hub.contributable?.[id] !== file) {
+      violations.push(`${label}: ${name} — ${tabs.file} 의 TAB_HUB.contributable 이 이 탭을 이 기여 파일로 지목하지 않는다`);
     }
   }
   return violations;
@@ -489,6 +626,8 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
       value(element);
     }
     if (slot === 'shell-links') violations.push(...shellLinkViolations(entries, label));
+    if (slot === 'hub-tabs') violations.push(...hubTabViolations(entries, label, { file: label }));
+    if (slot === 'stats-panels') violations.push(...statsPanelViolations(entries, label));
   }
   const covers = (paths, target) => paths.some(path => {
     const root = path.replace(/\/+$/, '');
@@ -540,10 +679,131 @@ test('slot names are one spelling: SlotMap keys, registries and contribution fil
   assert.deepEqual(registries, keys, 'every SlotMap key has a generated registry and every registry has a key');
   assert.deepEqual(contributed, keys, 'every SlotMap key has a source contribution file and every contribution file name is a key');
   assert.deepEqual(Object.keys(SLOT_REGISTRY_CONSUMERS).sort(), keys, 'every slot has its consumer row');
+  // 허브별로 적은 슬롯은 hub-tabs 하나이고, 그 허브 이름은 HubTabViews 키와 같다(셸이 고르는 허브 = 귀속하는 허브).
+  assert.deepEqual(keys.filter(slot => slotConsumersByHub(slot)), ['hub-tabs'], 'only hub-tabs lists consumers per hub');
+  assert.deepEqual(Object.keys(slotConsumersByHub('hub-tabs')).sort(), [...hubViewKeys()].sort(), 'hub-tabs consumer hubs are the HubTabViews keys');
   // 대조: 키 하나를 더하면 레지스트리·기여·소비자가 없어 붉다.
   const probe = readFileSync(SLOTS_SOURCE, 'utf8').replace("'recipient-picker-sources': RecipientPickerSource;",
     "'recipient-picker-sources': RecipientPickerSource;\n  'probe-slot': RecipientPickerSource;");
   assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'probe-slot'].sort(), 'the key reader sees an added key');
+});
+
+/** 원본(또는 생성물)의 hub-tabs 기여 항목 (hub, id, 파일). 생성물에서 투영으로 빠진 기여는 없다. */
+function hubTabContributionRows(inputs = readProjectionInputs()) {
+  const rows = [];
+  for (const kind of inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(row => row?.kind === 'contribution' && row.slot === 'hub-tabs')) {
+    const label = `frontend/${kind.file}`;
+    const ast = ts.createSourceFile(label, inputs.original(join(frontendRoot, kind.file)), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const visit = node => {
+      if (ts.isObjectLiteralExpression(node)) {
+        const value = name => node.properties.find(property => ts.isPropertyAssignment(property) && ts.isIdentifier(property.name)
+          && property.name.text === name)?.initializer;
+        const hub = value('hub');
+        const id = value('id');
+        if (hub && id && ts.isStringLiteral(hub) && ts.isStringLiteral(id)) rows.push(`${hub.text}:${id.text}:${label}`);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(ast);
+  }
+  return rows.sort();
+}
+
+test('hub tab modules: contributable names exactly the hub-tabs contributions, and the hub rules redden', () => {
+  const inputs = readProjectionInputs();
+  const modules = hubTabModules();
+  assert.deepEqual([...modules.keys()].sort(), [...hubViewKeys()].sort(), 'every hub in HubTabViews has one tab module with TAB_HUB.slotHub');
+  // 생성물에서는 투영으로 빠진 기여 파일이 원장에 있다 — contributable 이 그 파일을 지목해도 된다(탭 목적지 계약이 '빠진 기여' 로 가른다).
+  const ledgerPath = join(repoRoot, 'reusable-projection-ledger.json');
+  const removed = existsSync(ledgerPath) ? new Set(JSON.parse(readFileSync(ledgerPath, 'utf8')).removedFiles ?? []) : new Set();
+  const declared = [...modules].flatMap(([hub, { hub: tabHub }]) => Object.entries(tabHub.contributable ?? {})
+    .filter(([, path]) => !removed.has(path)).map(([tab, path]) => `${hub}:${tab}:${path}`)).sort();
+  assert.deepEqual(hubTabContributionRows(inputs), declared, 'hub-tabs contributions and TAB_HUB.contributable are the same (hub, tab, file) set');
+  assert.ok(removed.size > 0 || declared.length > 0, 'the source has contributed hub tabs');
+  // 대조: 합성 기여로 규칙마다 붉음을 본다.
+  const fixture = entry => `import { X } from '@/app/x';\nimport { defineContributions } from '@/extensions/slots';\nexport default defineContributions('hub-tabs', [\n${entry}\n]);\n`;
+  const entry = ({ id = 'MESSAGES', hub = 'collaboration', order = '10', view = '{ Component: X }' } = {}) =>
+    `  {\n    id: '${id}',\n    hub: '${hub}',\n    order: ${order},\n    label: '쪽지',\n    view: ${view},\n    visibleWhen: { always: '사유' },\n  }`;
+  const violations = (source, file = 'frontend/src/extensions/note/hub-tabs.ts') => {
+    const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    const call = ast.statements.find(ts.isExportAssignment).expression;
+    return hubTabViolations(call.arguments[1], file, { file, modules }).join('\n');
+  };
+  assert.equal(violations(fixture(entry())), '', 'the source shape is green');
+  assert.match(violations(fixture(entry({ hub: 'nowhere' }))), /MESSAGES 의 hub 는 .* 리터럴이다/);
+  // 다른 허브(지식 허브 — 허브 분해 H2)에 기여하면 그 허브의 contributable 이 이 탭을 지목하지 않는다.
+  assert.match(violations(fixture(entry({ hub: 'knowledge' }))), /MESSAGES — .*knowledge-tabs\.ts 의 TAB_HUB\.contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  assert.match(violations(fixture(entry({ id: 'messages' }))), /messages 의 id 는 `\?tab=` 값인 대문자 식별자 리터럴이다/);
+  assert.match(violations(fixture(entry({ order: "'10'" }))), /MESSAGES 의 order 는 숫자 리터럴이다/);
+  assert.match(violations(fixture(entry({ view: '{ Component: X, other: 1 }' }))), /view 는 import 한 이름이거나 이름만 담은 객체다/);
+  assert.match(violations(fixture(entry({ id: 'COMMUNITY' }))), /COMMUNITY — .*contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  assert.match(violations(fixture(entry()), 'frontend/src/extensions/mail/hub-tabs.ts'), /MESSAGES — .*contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  const coreTabs = new Map([...modules].map(([hub, row]) => [hub, { ...row, hub: { ...row.hub, parse: raw => (raw === 'MESSAGES' ? raw : null) } }]));
+  const ast = ts.createSourceFile('x.ts', fixture(entry()), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  assert.match(hubTabViolations(ast.statements.find(ts.isExportAssignment).expression.arguments[1], 'x.ts',
+    { file: 'frontend/src/extensions/note/hub-tabs.ts', modules: coreTabs }).join('\n'), /MESSAGES — 허브 collaboration 의 셸 고유 탭과 겹친다/);
+});
+
+/*
+ * 기여 폐포(허브 분해 H1). 레지스트리는 슬롯마다 하나라서, 기여 하나가 연쇄로 지워지면 그 레지스트리를 읽는 모든 셸이 함께 사라진다
+ * (허브 하나의 실수가 모든 허브를 지운다). 그래서 기여에서 import 로 닿는 파일의 소유 기능은 기여 기능이 요구하는 기능(폐포, 화면 계열
+ * 포함) 안이어야 한다. 판정은 투영 연쇄 계획의 간선(planFrontendRemoval)을 쓴다 — 두 번째 판정기는 없다. 레지스트리는 구성마다 다시
+ * 렌더되므로 따라가지 않는다. 소유도 생성기의 제거 규칙(카탈로그 frontendRules)을 그대로 쓴다 — 파일을 덮는 규칙이 하나라도 기여
+ * 기능의 폐포에서 빠지면 그 파일은 지워진다. 첫 일치 기능 하나만 보면 겹친 경로(게시판 접두 + 커뮤니티 정확 경로)에서 커뮤니티 누락을 놓친다.
+ */
+function contributionClosureViolations({ catalog, edges, files }) {
+  const covering = file => catalog.frontendRules.filter(({ path }) => {
+    const root = path.replace(/\/+$/, '');
+    return file === root || file.startsWith(`${root}/`) || file.replace(/\.tsx?$/, '') === root.replace(/\.tsx?$/, '');
+  });
+  // project-composer-recipe.mjs 의 includeRule 과 같다: any 는 하나라도, 나머지는 모두 남아야 규칙이 남는다.
+  const kept = (rule, included) => (rule.mode === 'any' ? rule.domains.some(domain => included.has(domain)) : rule.domains.every(domain => included.has(domain)));
+  const requires = new Map(catalog.capabilities.map(capability => [capability.id, capability.requires.map(edge => edge.domain)]));
+  const closureOf = id => {
+    const closure = new Set([id]);
+    for (const current of closure) for (const next of requires.get(current) ?? []) closure.add(next);
+    return closure;
+  };
+  const violations = [];
+  for (const kind of files.map(frontendRel).map(file => slotPathKind(file)).filter(row => row?.kind === 'contribution')) {
+    const start = join(frontendRoot, kind.file);
+    const allowed = closureOf(kind.owner);
+    const reached = new Set([start]);
+    for (const path of reached) for (const { to } of edges.get(path) ?? []) {
+      if (slotPathKind(frontendRel(to))?.kind === 'registry') continue;
+      reached.add(to);
+    }
+    for (const path of reached) {
+      for (const rule of covering(frontendRel(path)).filter(row => !kept(row, allowed))) {
+        const owner = `${rule.domains.join('·')}${rule.mode === 'any' ? '(하나 이상)' : ''}`;
+        violations.push(`frontend/${kind.file} → ${relOf(path)}: 소유 ${owner} 는 ${kind.owner} 가 요구하는 기능 밖이다`);
+      }
+    }
+  }
+  return [...new Set(violations)].sort();
+}
+
+test('contribution closure: what a contribution imports belongs to the features its own feature requires', () => {
+  const inputs = readProjectionInputs();
+  const { edges } = planFrontendRemoval({ frontendRoot, files: inputs.files, directPaths: [], readSource: inputs.original });
+  assert.deepEqual(contributionClosureViolations({ catalog: inputs.catalog, edges, files: inputs.files }), []);
+  // 대조: 쪽지 탭 뷰가 스크랩 서비스를 가져오면 쪽지 폐포 밖이라 붉다(쪽지만 고른 구성에서 기여·레지스트리·두 허브 셸이 함께 지워진다).
+  const view = join(frontendRoot, 'src/app/note/NoteCollaborationTab.tsx');
+  const scrapService = join(frontendRoot, 'src/services/business/user/ScrapService.ts');
+  const leaked = new Map(edges);
+  leaked.set(view, [...(edges.get(view) ?? []), { to: scrapService }]);
+  assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: leaked, files: inputs.files }).join('\n'),
+    /frontend\/src\/extensions\/note\/hub-tabs\.ts → frontend\/src\/services\/business\/user\/ScrapService\.ts: 소유 scrap 는 note 가 요구하는 기능 밖이다/);
+  // 대조: 겹친 경로는 덮는 규칙 모두가 남아야 남는다. 게시판 접두와 커뮤니티 정확 경로가 함께 덮는 파일에 게시판 기여가 닿으면,
+  // 첫 일치 기능(게시판)만 보던 판정은 통과시켰지만 게시판만 고른 구성에서 그 파일은 지워진다.
+  const boardContribution = join(frontendRoot, 'src/extensions/board/stats-panels.ts');
+  const communityPage = join(frontendRoot, 'src/app/admin/community/boards/page.tsx');
+  if (existsSync(boardContribution) && existsSync(communityPage)) {
+    const overlapped = new Map(edges);
+    overlapped.set(boardContribution, [...(edges.get(boardContribution) ?? []), { to: communityPage }]);
+    assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: overlapped, files: inputs.files }).join('\n'),
+      /frontend\/src\/extensions\/board\/stats-panels\.ts → frontend\/src\/app\/admin\/community\/boards\/page\.tsx: 소유 community 는 board 가 요구하는 기능 밖이다/);
+  }
 });
 
 test('only the listed consumers import a slot registry, each from outside the slot root, and each slot has a contribution', () => {
@@ -557,7 +817,8 @@ test('only the listed consumers import a slot registry, each from outside the sl
     importers.get(kind.slot).add(repoRel(path));
   }
   const contributions = discoverSlotContributions(inputs.files.map(frontendRel));
-  for (const [slot, consumers] of Object.entries(SLOT_REGISTRY_CONSUMERS)) {
+  for (const slot of Object.keys(SLOT_REGISTRY_CONSUMERS)) {
+    const consumers = slotConsumerFiles(slot);
     assert.deepEqual([...(importers.get(slot) ?? [])].sort(), [...consumers].sort(), `${slot}: registry importers are exactly the consumer table`);
     assert.ok(consumers.length > 0 && consumers.every(file => !file.startsWith('frontend/src/extensions/')), `${slot}: a consumer outside the slot root`);
     assert.ok((contributions.get(slot) ?? []).length > 0, `${slot}: at least one source contribution`);
@@ -650,12 +911,46 @@ test('shell links: the page predicate is the href, subjectless placements stay o
   assert.match(check(fixture(header, entry('f', 'footer', '/help').replace("visibleWhen: { page: '/help' }", "visibleWhen: { permissions: ['NOTI_READ'] }"))),
     /f 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', '/help', icon, '/help/policies/PRIVACY'))), /h 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
-  assert.match(check(fixture(entry('h', 'header', '/help'))), /h — 머리글 배치는 아이콘 단추라 icon 이 필요하다/);
-  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error 리터럴이다/);
+  assert.match(check(fixture(entry('h', 'header', '/help'))), /h — header 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
+  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error·command-center·collaboration-hub 리터럴이다/);
+  // 명령 센터 배치도 아이콘이 필요하다. 협업 허브 머리 배치는 글자 단추라 아이콘이 없어도 되고, 둘 다 주체가 있어 /admin 목적지를 둔다.
+  assert.match(check(fixture(entry('c', 'command-center', '/admin/collaboration'))), /c — command-center 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
+  assert.equal(check(fixture(entry('c', 'command-center', '/admin/collaboration', icon), entry('m', 'collaboration-hub', '/admin/collaboration/mail-send'))), '');
+  assert.match(check(fixture(entry('m', 'collaboration-hub', '/admin/collaboration/mail-send', '', '/admin/collaboration'))),
+    /m 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', 'help', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
   // '/' 로 시작해도 프로토콜 상대 주소는 외부 링크다. 원문 '/\\x' 의 값은 '/\x' 이고 브라우저는 '//x' 로 읽는다.
   assert.match(check(fixture(entry('h', 'header', '//example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
   assert.match(check(fixture(entry('h', 'header', '/\\\\example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
+});
+
+test('stats panels: route tabs carry their page predicate, body tabs and overview cards carry no link, and ids stay off the shell tabs', () => {
+  const inputs = readProjectionInputs();
+  const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
+  const panels = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'stats-panels');
+  assert.ok(panels.length > 0, 'the source has stats-panels contributions');
+  assert.deepEqual(statsCoreTabIds().sort(), ['DASHBOARD', 'REPORTS', 'SYSTEM_STATS', 'USER_STATS'], 'the shell tab table is read');
+  const check = (source, panel = panels[0]) => contributionViolations({ file: panel.file, source, owner: panel.owner, slot: 'stats-panels',
+    ownPaths: paths.get(panel.owner), foreignPaths: [] }).join('\n');
+  for (const panel of panels) assert.equal(check(inputs.original(join(frontendRoot, panel.file)), panel), '', panel.file);
+  // 합성 기여로 규칙마다 붉음을 본다. id 는 줄 머리에 둔다(유일성 검사의 정규식 모양).
+  const fixture = (...entries) => "import { Box } from 'lucide-react';\nimport { defineContributions } from '@/extensions/slots';\n"
+    + `export default defineContributions('stats-panels', [\n${entries.join(',\n')}\n]);\n`;
+  const series = ({ id = 'POSTS', href = '/admin/stats/board', page = href, uninstrumented = 'false', extra = '' } = {}) =>
+    `  {\n    id: '${id}',\n    placement: 'hub-tab',\n    kind: 'series',\n    order: 30,\n    href: '${href}',\n    label: 'x',\n    title: 'x',\n    icon: Box,\n`
+    + `    uninstrumented: ${uninstrumented},\n${extra}    visibleWhen: { page: '${page}' },\n  }`;
+  const card = (extra = '') => `  {\n    id: 'CARD',\n    placement: 'overview-card',\n    order: 30,\n    title: 'x',\n    field: 'totalPosts',\n${extra}    visibleWhen: { always: '시험' },\n  }`;
+  const body = (extra = '') => `  {\n    id: 'BODY',\n    placement: 'hub-tab',\n    kind: 'body',\n    order: 60,\n    label: 'x',\n    title: 'x',\n    icon: Box,\n${extra}    visibleWhen: { always: '시험' },\n  }`;
+  assert.equal(check(fixture(series(), body(), card())), '', 'a series tab with its page predicate, a body tab and a card are green');
+  assert.match(check(fixture(series({ page: '/admin/stats' }))), /POSTS 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
+  assert.match(check(fixture(series({ href: 'admin/stats/board' }))), /POSTS 의 href 는 '\/' 로 시작하는 앱 안 경로 리터럴이다/);
+  assert.match(check(fixture(series({ uninstrumented: 'flag' }))), /POSTS 의 uninstrumented 는 참거짓 리터럴이다/);
+  assert.match(check(fixture(series({ id: 'REPORTS' }))), /REPORTS — 통계 셸 탭과 겹친다/);
+  assert.match(check(fixture(series({ id: 'posts' }))), /posts 의 id 는 대문자 식별자 리터럴이다/);
+  assert.match(check(fixture(body("    href: '/admin/stats/board',\n"))), /BODY — 라우트가 없는 항목\(body 탭·요약 칸\)은 href 를 두지 않는다/);
+  assert.match(check(fixture(card("    href: '/admin/stats',\n"))), /CARD — 라우트가 없는 항목/);
+  assert.match(check(fixture(body().replace("kind: 'body'", "kind: 'table'"))), /BODY 의 kind 는 series·body 리터럴이다/);
+  assert.match(check(fixture(card().replace("placement: 'overview-card'", "placement: 'sidebar'"))), /CARD 의 placement 는 hub-tab·overview-card 리터럴이다/);
 });
 
 test('a configuration without the contributing feature renders an empty registry, which the projection type check sees as a root', () => {

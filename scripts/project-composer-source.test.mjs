@@ -606,10 +606,12 @@ test('dashboard, notifications and optional address book blocks follow their dom
   for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
     assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
   }
+  //   [허브 분해 H1] 협업 허브 탭(hub-tabs)도 같다. 셸 링크 레지스트리에는 메일 자신의 협업 허브 링크만 남는다.
   for (const [shellRegistry, empty] of [
     ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
-    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [mail];"],
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
+    ['frontend/src/extensions/generated-hub-tabs.ts', "hubTabs: readonly SlotContributions<'hub-tabs'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
@@ -649,6 +651,69 @@ test('the unread-notes card on the work home needs both the dashboard and the no
  * 라우트를 소유한 기능(공동 화면은 그 기능 전부)이 모두 들어오는지 본다. 어긋나면 지워진 화면으로 가는 링크가 남는다 —
  * tsc·정밀 점검·화면 생존 대조는 문자열 목적지를 보지 않는다.
  */
+/*
+ * 허브 분해 H2: 기여 탭(`?tab=COMMUNITY` 등)으로 가는 출처는 그 탭을 기여한 기능과 함께 빠져야 한다. 허브는 남고 기여가 빠진 구성에서
+ * 출처가 남으면 그 링크는 오류 없이 기본 탭으로 떨어진다. 탭 목적지 계약(cross-stack)은 원본에서 기여 파일이 늘 있어 이 경우를 보지
+ * 못하므로, 생성기의 실제 투영·연쇄로 단독 선택마다 본다. 메뉴 행은 recipe 의 excludedMenuTabs 가 따로 숨긴다(recipe 시험).
+ */
+const stripCode = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+function contributedHubTabs() {
+  return frontendFiles.filter(file => /^frontend\/src\/app\/.*-tabs\.ts$/.test(file)).flatMap(file => {
+    const source = stripCode(readFileSync(join(root, file), 'utf8'));
+    const body = source.match(/contributable:\s*\{([^}]*)\}/)?.[1];
+    if (!body) return [];
+    const routes = [...(source.match(/routes:\s*\[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)].map(match => match[1]);
+    return [...body.matchAll(/(\w+):\s*'([^']+)'/g)].map(([, tab, contribution]) => ({ file, routes, tab, contribution }));
+  });
+}
+function contributedTabSources({ routes, tab }, candidates) {
+  const escaped = routes.map(route => route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`(?:${escaped.join('|')})\\?tab=${tab}\\b`, 'i');
+  return candidates.filter(file => !/\/__tests__\/|\.test\.|\/generated-/.test(file) && pattern.test(stripCode(readFileSync(join(root, file), 'utf8'))));
+}
+
+test('every source of a contributed hub tab leaves with the contribution in each selection that keeps the hub', () => {
+  const tabs = contributedHubTabs();
+  // 원본에는 협업(쪽지·스크랩)·지식(커뮤니티)·감시(하네스) 허브가 기여 탭을 받는다. 모집단이 비면 시험이 vacuous 하다.
+  assert.deepEqual(tabs.map(row => row.tab).sort(), ['COMMUNITY', 'HARNESS', 'MESSAGES', 'SCRAPS']);
+  // 화면 코드만 본다 — e2e 시나리오는 기능별로 투영하지 않는다(생성물의 e2e 는 이 시험의 범위 밖이다).
+  const sources = new Map(tabs.map(row => [row, {
+    frontend: contributedTabSources(row, frontendFiles.filter(file => file.startsWith('frontend/src/') && isFrontendModuleFile(file))),
+    java: contributedTabSources(row, files.filter(file => file.endsWith('.java') && file.includes('/src/main/'))),
+  }]));
+  // 출처가 실제로 있어야 이 시험이 무엇을 지킨다 — 커뮤니티 탭은 별칭 화면 둘과 커뮤니티 서비스의 알림 목적지가 연다.
+  const community = [...sources].find(([row]) => row.tab === 'COMMUNITY')[1];
+  assert.ok(community.frontend.length >= 2 && community.java.length >= 1, JSON.stringify(community));
+  let checked = 0;
+  const violations = [];
+  for (const capability of catalog.capabilities) {
+    const composition = resolveProjectRecipe(recipe([capability.id]), catalog);
+    const profile = composerProfile(manifest, composition);
+    const projector = createFrontendProjector({ manifest, profile, composition, files: frontendFiles });
+    const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
+    const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
+      directPaths: projector.directPaths, readSource: path => projected.get(path) });
+    const removed = file => plan.removed.has(join(root, file));
+    let javaPlan = null;
+    for (const [row, { frontend, java: javaSources }] of sources) {
+      const hubKept = row.routes.some(route => {
+        const page = `frontend/src/app${route}/page.tsx`;
+        return existsSync(join(root, page)) && !removed(page);
+      });
+      if (!hubKept || !removed(row.contribution)) continue;
+      checked++;
+      for (const file of frontend) if (!removed(file)) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
+      if (javaSources.length) {
+        javaPlan ??= planJavaRemoval(root, manifest, profile, java);
+        for (const file of javaSources) if (!javaPlan.removed.has(join(root, file))) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
+      }
+    }
+  }
+  // 게시판을 남기고 커뮤니티를 빼는 단독 선택(게시판·댓글·도움말 등)과 협업 허브가 남는 단독 선택이 실제로 판정됐다.
+  assert.ok(checked >= 5, `selections checked: ${checked}`);
+  assert.deepEqual(violations, []);
+});
+
 function routeOwnerDomains(path) {
   let best = null;
   const consider = (route, domains) => { if (covers(route, path) && (!best || route.length > best.route.length)) best = { route, domains }; };
@@ -666,7 +731,9 @@ test('every route literal in a marker block survives in every composition that k
     for (const block of parsePackMarkerBlocks(source, { knownPacks, label: row.file }).blocks) {
       const owners = composerMarkerBlockOwners(row.file, block.pack, block.text);
       const kept = new Set(resolveProjectRecipe(recipe(owners), catalog).resolvedDomains);
-      for (const match of block.text.matchAll(/['"`](\/[a-z][^'"`?#\s$]*)/g)) {
+      // 주석 속 경로는 링크가 아니다(허브 분해 H2: 업무 홈 블록의 주석이 종전 목적지 별칭을 설명한다). 블록·줄 주석을 지우고 본다.
+      const code = block.text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+      for (const match of code.matchAll(/['"`](\/[a-z][^'"`?#\s$]*)/g)) {
         const screen = routeOwnerDomains(match[1].replace(/\/$/, ''));
         if (!screen) continue;
         checked++;
@@ -675,45 +742,57 @@ test('every route literal in a marker block survives in every composition that k
       }
     }
   }
-  assert.ok(checked >= 10, `route literals checked: ${checked}`);
+  // 2026-10-12 실측 7건. 종전 10건 중 1건은 업무 홈 블록의 주석 속 경로였다 — 주석을 세지 않게 바뀌며 하한을 실측에 맞췄다.
+  //   허브 분해 H4 에서 통계 셸의 탭 경로 2건(게시물·자료 이용)이 마커 블록을 떠나 게시판 기여의 href 가 됐다(9 → 7). 그 목적지는
+  //   이제 경계 계약의 stats-panels 규칙(href = page 술어)과 관리 링크 census 가 본다.
+  assert.ok(checked >= 7, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
-  // 명령 센터의 협업 허브 바로가기: 게시판·설문(CI 대표 구성)에는 허브가 없으므로 바로가기도 없다. 쪽지를 고르면 허브와 함께 남는다.
+  // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,
+  //   게시판·설문(CI 대표 구성)에서는 레지스트리에 쪽지 항목이 없으며, 쪽지를 고르면 있다.
   const file = 'frontend/src/app/components/ui/global-command-center.tsx';
   const center = readFileSync(join(root, file), 'utf8');
-  const boardSurvey = projectCustom(file, center, resolveProjectRecipe(recipe(['board', 'survey']), catalog));
-  assert.doesNotMatch(boardSurvey, /\/admin\/collaboration|act-collab|import \{ Users \}/);
-  const withNote = projectCustom(file, center, resolveProjectRecipe(recipe(['note']), catalog));
-  assert.match(withNote, /url: '\/admin\/collaboration'/);
-  assert.match(withNote, /import \{ Users \} from 'lucide-react';/);
+  assert.doesNotMatch(center, /reusable-base:|\/admin\/collaboration|act-collab/);
+  const links = 'frontend/src/extensions/generated-shell-links.ts';
+  const registryFor = domains => {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+      .project(links, readFileSync(join(root, links), 'utf8')).source;
+  };
+  assert.doesNotMatch(registryFor(['board', 'survey']), /import note from/);
+  assert.match(registryFor(['note']), /import note from '\.\/note\/shell-links';/);
 });
 
-test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {
-  const file = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
-  const source = readFileSync(join(root, file), 'utf8');
-  const project = domains => projectCustom(file, source, resolveProjectRecipe(recipe(domains), catalog));
-  // 통계 셸은 core 다. 설문 탭은 설문이 넘기는 패널이라 설문이 없으면 import·탭·등록이 함께 빠지고, 셸은 설문 서비스를 모른다.
-  const coreOnly = project([]);
-  assert.doesNotMatch(coreOnly, /StatsHubSurveyTab|'SURVEYS',|SURVEYS: surveyTab/);
-  assert.doesNotMatch(coreOnly, /getBbsStats|getDataUsageStats|label="자료 이용 건수"/);
-  assert.doesNotMatch(source, /SurveyAdminService/, 'the shell must not import the survey service directly');
-  const withSurvey = project(['survey']);
-  assert.match(withSurvey, /import \{ useStatsHubSurveyTab \}/);
-  assert.match(withSurvey, /SURVEYS: surveyTab/);
-  assert.doesNotMatch(withSurvey, /getBbsStats/);
-  const withBoard = project(['board']);
-  assert.match(withBoard, /getBbsStats/);
-  assert.match(withBoard, /getDataUsageStats/);
-  assert.doesNotMatch(withBoard, /StatsHubSurveyTab/);
-  // 분류가 없는 pack 의 블록은 조용히 남거나 빠지지 않고 실패한다.
-  const empty = resolveProjectRecipe(recipe([]), catalog);
-  assert.throws(() => projectCustom(file, `${source}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
-    empty), /Unclassified composer UI block/);
-  assert.throws(() => projectCustom('frontend/src/app/admin/stats/AdminStatsClient.tsx',
-    '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty), /Unclassified composer UI block/);
+test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c, H4 stats-panels)', () => {
+  // [허브 분해 H4] 통계 셸·요약은 core 이고 마커가 없다. 게시물·자료 이용 탭과 누적 게시물 칸은 게시판, 설문조사 분석 탭은 설문의
+  //   stats-panels 기여다. 셸은 기능 탭의 이름도 서비스도 모른다 — 기능이 빠지면 기여 파일이 직접 지워지고 레지스트리가 다시 렌더된다.
+  const shell = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
   const admin = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
-  const adminSource = readFileSync(join(root, admin), 'utf8');
-  assert.doesNotMatch(projectCustom(admin, adminSource, empty), /title="누적 게시물"/);
-  assert.match(projectCustom(admin, adminSource, resolveProjectRecipe(recipe(['board']), catalog)), /title="누적 게시물"/);
+  for (const file of [shell, admin]) {
+    const source = readFileSync(join(root, file), 'utf8');
+    assert.doesNotMatch(source, /reusable-base:|SurveyAdminService|StatsHubSurveyTab|getBbsStats|getDataUsageStats|CONTENT_STATS|DATA_USAGE|'SURVEYS'|누적 게시물/, file);
+    assert.match(source, /from '@\/extensions\/generated-stats-panels'/, file);
+  }
+  const registry = 'frontend/src/extensions/generated-stats-panels.ts';
+  const registryFor = domains => {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+      .project(registry, readFileSync(join(root, registry), 'utf8')).source;
+  };
+  const coreOnly = registryFor([]);
+  assert.doesNotMatch(coreOnly, /import (?:board|survey) from/);
+  assert.match(coreOnly, /export const statsPanels: readonly SlotContributions<'stats-panels'>\[\] = \[\];/);
+  const withSurvey = registryFor(['survey']);
+  assert.match(withSurvey, /import survey from '\.\/survey\/stats-panels';/);
+  assert.doesNotMatch(withSurvey, /import board from/);
+  const withBoard = registryFor(['board']);
+  assert.match(withBoard, /import board from '\.\/board\/stats-panels';/);
+  assert.doesNotMatch(withBoard, /import survey from/);
+  // 표에서 빠진 파일의 pack 블록은 조용히 남거나 빠지지 않고 실패한다(분류 없는 블록).
+  const empty = resolveProjectRecipe(recipe([]), catalog);
+  assert.throws(() => projectCustom(shell, `${readFileSync(join(root, shell), 'utf8')}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
+    empty), /Unclassified composer UI block/);
+  assert.throws(() => projectCustom(admin, '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty),
+    /Unclassified composer UI block/);
   // 셸이 core 로 남으므로 기능을 하나도 고르지 않아도, 설문만 골라도 셸·통계 화면이 import 로 사라지지 않는다.
   for (const domains of [[], ['survey']]) assert.deepEqual(inspectFrontendSurvival(domains).missing, [], `${domains}`);
 });

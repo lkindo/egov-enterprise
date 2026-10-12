@@ -3,14 +3,15 @@
 import React from 'react';
 import { CheckCircle2, Cpu, ShieldCheck, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { HubTabViews } from '@/extensions/slots';
 import { SampleDataBadge } from './MonitoringPanels';
 
 /**
  * 모니터링 허브의 '하네스 아틀라스' 탭(2026-09-27 DIP B5 F11 — demo pack 소유).
  *
  * 이 탭은 실측이 아니라 저장소의 스킬 목록을 옮긴 정적 카탈로그와 예시 계측 로그다(화면도 '샘플' 배지로 밝힌다).
- * 운영 제품의 모니터링 기능이 아니므로 demo pack 이 소유한다 — core·collaboration 투영에서는 이 파일과 허브의
- * 등록 한 줄(`EXTRA_TAB_VIEWS`)이 함께 빠지고, 허브는 로그·가동 상태 탭만 남는다.
+ * 운영 제품의 모니터링 기능이 아니므로 시연 기능(showcase)이 소유한다 — 허브에는 hub-tabs 기여(src/extensions/showcase)로
+ * 붙는다(허브 분해 H3). 시연이 빠진 구성에서는 이 파일과 기여가 함께 지워지고, 허브는 로그·가동 상태 탭만 남는다.
  */
 
 /**
@@ -179,13 +180,16 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
   );
 }
 
-/** 허브의 부가 탭 레지스트리(`EXTRA_TAB_VIEWS`)에 등록하는 묶음. */
+/** 감시 허브 탭 뷰(hub-tabs 기여가 가리킨다). 정적 카탈로그·표본이라 sample 이다 — 셸이 상세에 샘플 고지를 단다. */
 export const HARNESS_TAB_VIEW = {
+  description: '에이전트 하네스의 스킬·검증 자산을 조회합니다.',
+  icon: Zap,
+  sample: true,
   render: (props: { selectedItemId: string | number | null; onSelect: (id: string) => void }) => <HarnessAtlasTab {...props} />,
   overview: () => <HarnessDashboardOverview />,
   find: findHarnessItem,
   detail: harnessDetail,
-};
+} satisfies HubTabViews['monitoring'];
 
 // 선택 상태를 쓰지 않는 개요 패널 — 과거 미사용 props(selectedItemId/setSelectedItemId)를 받고 있었다(死코드).
 export function HarnessDashboardOverview() {

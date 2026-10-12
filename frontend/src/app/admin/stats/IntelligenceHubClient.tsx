@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,22 +14,18 @@ import {
   FileText,
   RefreshCcw,
   Zap,
-  /* reusable-base:collaboration:start */
-  Box,
-  HardDrive,
-  /* reusable-base:collaboration:end */
-  /* reusable-base:survey:start */
-  Vote,
-  /* reusable-base:survey:end */
   LayoutDashboard,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { statsAdminService, type StatsDto } from '@/services/foundation/system/StatsAdminService';
-/* reusable-base:survey:start */
-import { useStatsHubSurveyTab } from '@/app/admin/survey/components/StatsHubSurveyTab';
-/* reusable-base:survey:end */
-import { HubEmptyState, HubErrorState, type StatsExtraTab } from './StatsHubParts';
+import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
+import { isStatsHubTab, type StatsHubTab, type StatsPanelQuery, type StatsSeriesPoint } from '@/extensions/slots';
+import { useSlotEntries } from '@/extensions/use-slot-entries';
+import { statsPanels } from '@/extensions/generated-stats-panels';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { HubEmptyState, HubErrorState } from './StatsHubParts';
+import { StatsHubFallback } from './StatsHubFallback';
 import { XAxis,
   YAxis,
   CartesianGrid,
@@ -53,65 +49,61 @@ import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/a
  */
 const HUB_PARAM_KEYS = ['tab'] as const;
 
-// --- Types ---
-/*
- * 탭 이름은 모든 구성에서 같은 유니언이다. 게시판(collaboration)·설문(survey)이 빠진 구성은 아래 목록에서
- * 그 탭만 빠지므로, 제목 표·미수집 목록처럼 이름으로 고정된 곳은 마커 없이 그대로 컴파일된다.
+// --- Tabs ---
+/**
+ * 셸 고유 탭과 라우트 (감사 P1-7).
+ *
+ * 통계는 탭이 곧 라우트다(`/admin/stats/*` 메뉴). 따라서 탭 전환은 로컬 state 가 아니라 그 라우트로의 `router.push`
+ * 로 처리해야 공유·새로고침·뒤로가기가 복원되고 사이드바 메뉴 활성 표시도 유지된다.
+ *
+ * [허브 분해 H4] 게시물·자료 이용(게시판)과 설문조사 분석(설문)은 그 기능의 stats-panels 기여다 — 셸은 기능 탭의 이름도 서비스도
+ * 모른다. 기능이 빠진 구성에서는 기여 파일이 함께 지워져 그 탭만 사라진다. order 로 기여와 합쳐 내비게이션 순서를 정한다.
+ * 전용 라우트가 없는 기능 탭(body)은 현재 경로의 `?tab=<id>` 쿼리로 연다(없는 라우트를 만들어 메뉴 SSOT 를 흔들지 않기 위함 —
+ * 감사 §6 D-6).
  */
-type StatsTab = 'DASHBOARD' | 'USER_STATS' | 'CONTENT_STATS' | 'SYSTEM_STATS' | 'DATA_USAGE' | 'SURVEYS' | 'REPORTS';
+type CoreStatsTab = 'DASHBOARD' | 'USER_STATS' | 'SYSTEM_STATS' | 'REPORTS';
 
-const STATS_TABS: readonly StatsTab[] = [
-  'DASHBOARD',
-  'USER_STATS',
-  /* reusable-base:collaboration:start */
-  'CONTENT_STATS',
-  /* reusable-base:collaboration:end */
-  'SYSTEM_STATS',
-  /* reusable-base:collaboration:start */
-  'DATA_USAGE',
-  /* reusable-base:collaboration:end */
-  /* reusable-base:survey:start */
-  'SURVEYS',
-  /* reusable-base:survey:end */
-  'REPORTS',
+const CORE_TABS: readonly {
+  readonly id: CoreStatsTab;
+  readonly order: number;
+  readonly label: string;
+  readonly title: string;
+  readonly icon: LucideIcon;
+  readonly route: string;
+}[] = [
+  { id: 'DASHBOARD', order: 10, label: '통계 개요', title: '통계 개요', icon: LayoutDashboard, route: '/admin/stats' },
+  { id: 'USER_STATS', order: 20, label: '사용자 통계', title: '사용자 통계 분석', icon: Users, route: '/admin/stats/user' },
+  { id: 'SYSTEM_STATS', order: 40, label: '시스템 활성', title: '시스템 활성 지표', icon: Database, route: '/admin/stats/screen' },
+  { id: 'REPORTS', order: 70, label: '운영 보고서', title: '운영 보고서 아카이브', icon: FileText, route: '/admin/stats/report' },
 ];
 
+/** 셸이 기능 탭만 고르는 술어. 모듈 값이라 렌더마다 같다(useSlotEntries 결과가 안정된다). */
+const isHubPanel = isStatsHubTab;
+
 /**
- * 탭 ↔ 라우트 매핑 (감사 P1-7).
+ * 집계를 **쓰는 쪽이 없는** 셸 탭. 기능 탭의 미수집 여부는 그 기여가 밝힌다(uninstrumented) — 판정은 이 목록 ∪ 기여다.
  *
- * 통계는 탭이 곧 라우트다(`/admin/stats/*` 6개 메뉴). 따라서 탭 전환은 로컬 state 가 아니라
- * `router.push(TAB_ROUTE_MAP[tab])` 로 처리해야 공유·새로고침·뒤로가기가 복원되고
- * 사이드바 메뉴 활성 표시도 유지된다.
+ * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고 Flyway 시드에도 INSERT 가 없다.
+ *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
+ *   - 자료 이용(게시판 기여) → 게시판의 자료 이용 포트 → dtaUseStatsRepository.countByDate (writer 0)
  *
- * SURVEYS 만 전용 라우트가 없으므로 현재 경로의 `?tab=SURVEYS` 쿼리로 표현한다.
- * (없는 라우트를 만들어 메뉴 SSOT 를 흔들지 않기 위함 — 감사 §6 D-6)
+ * 값이 있는 탭은 셋이다.
+ *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
+ *   - USER_STATS   → **[2026-09-25] 미수집 목록에서 뺐다.** 2026-09-03 부터
+ *     UserActivityLogAggregator 가 인증 사용자의 API 요청을 tb_user_log 에 일자별로 적재한다
+ *     (OCI 실측 326행). 종전 문구는 값이 있어도 "수집되지 않는다" 고 말했다. 이 탭이 세는 것은
+ *     countByDate 의 SUM(crt_cnt), 즉 **등록 요청 수**다 — 조회 요청은 세지 않는다.
+ *   - 콘텐츠 지표(게시판 기여) → **[2026-08-28] 미수집이 아니다.** `boardRepository.countPostsByDate` 로 게시글을
+ *     실제로 센다 — 게시글은 제품이 `createPost` 로 직접 쓰므로 writer 가 명백히 존재한다.
+ *     ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 판정의 기준이다.
+ *     운영 DB 가 비어 있는 것은 '미수집' 이 아니라 '아직 글이 없음' 이고, 그건 기간을 바꾸면
+ *     달라질 수 있는 사실이라 '선택한 기간에 집계된 통계가 없습니다' 가 맞는 문구다.
+ *
+ * 미수집 탭에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
+ * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
+ * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
  */
-const TAB_ROUTE_MAP: Partial<Record<StatsTab, string>> = {
-  DASHBOARD: '/admin/stats',
-  USER_STATS: '/admin/stats/user',
-  /* reusable-base:collaboration:start */
-  CONTENT_STATS: '/admin/stats/board',
-  /* reusable-base:collaboration:end */
-  SYSTEM_STATS: '/admin/stats/screen',
-  /* reusable-base:collaboration:start */
-  DATA_USAGE: '/admin/stats/data-usage',
-  /* reusable-base:collaboration:end */
-  REPORTS: '/admin/stats/report',
-};
-
-const TAB_TITLE: Record<StatsTab, string> = {
-  DASHBOARD: '통계 개요',
-  USER_STATS: '사용자 통계 분석',
-  CONTENT_STATS: '콘텐츠 지표 분석',
-  SYSTEM_STATS: '시스템 활성 지표',
-  DATA_USAGE: '자료이용현황 분석',
-  SURVEYS: '설문조사 결과 분석',
-  REPORTS: '운영 보고서 아카이브',
-};
-
-function isStatsTab(value: string | null): value is StatsTab {
-  return !!value && (STATS_TABS as readonly string[]).includes(value);
-}
+const CORE_UNINSTRUMENTED_TABS: readonly string[] = ['REPORTS'];
 
 /**
  * X축 눈금 라벨: 'yyyyMMdd' → 'MM-DD' (표기 변환은 lib/format-date SSOT 경유).
@@ -126,19 +118,32 @@ function formatAxisDate(value: unknown): string {
   return display ? display.slice(5) : raw;
 }
 
-export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { defaultTab?: StatsTab }) {
+export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { defaultTab?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const chartColors = useChartColors();
 
-  // 활성 탭은 URL 파생값이다(로컬 state 금지 — 뒤로가기/공유 복원 불가).
-  const tabParam = searchParams.get('tab');
-  const activeTab: StatsTab = isStatsTab(tabParam) ? tabParam : defaultTab;
+  // 기능 탭(stats-panels 기여). 노출은 기여의 술어(그 화면·권한)로 판정한다 — 라우트 게이트와 같은 판정이다.
+  const panels: StatsHubTab[] = useSlotEntries(statsPanels, isHubPanel);
+  const authPending = useOptionalAuth()?.loading === true;
+  const tabs = [
+    ...CORE_TABS.map((tab) => ({ id: tab.id as string, order: tab.order, label: tab.label, icon: tab.icon })),
+    ...panels.map((panel) => ({ id: panel.id, order: panel.order, label: panel.label, icon: panel.icon })),
+  ].sort((left, right) => left.order - right.order);
+  const isTab = (value: string | null): value is string => !!value && tabs.some((tab) => tab.id === value);
 
-  const handleSelectTab = (tab: StatsTab) => {
+  // 활성 탭은 URL 파생값이다(로컬 state 금지 — 뒤로가기/공유 복원 불가). 이 구성에 없는 탭이면 페이지 기본 탭, 그것도 없으면 통계 개요다.
+  const tabParam = searchParams.get('tab');
+  const activeTab: string = isTab(tabParam) ? tabParam : isTab(defaultTab) ? defaultTab : 'DASHBOARD';
+  const activeCore = CORE_TABS.find((tab) => tab.id === activeTab);
+  const activePanel = panels.find((panel) => panel.id === activeTab);
+  const activeTitle = activeCore?.title ?? activePanel?.title ?? '';
+
+  const handleSelectTab = (tab: string) => {
     if (tab === activeTab) return;
-    const route = TAB_ROUTE_MAP[tab];
+    const route = CORE_TABS.find((core) => core.id === tab)?.route
+      ?? panels.find((panel): panel is Extract<StatsHubTab, { kind: 'series' }> => panel.id === tab && panel.kind === 'series')?.href;
     if (route) {
       router.push(route, { scroll: false });
       return;
@@ -161,20 +166,12 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   // --- Data Fetching ---
   // ⚠ 여기서 호출하는 경로는 StatisticsApiController 에 실제로 매핑된 것만 사용한다.
   //    (/report, /data-usage, /bbs, /user, /connect, /summary — 2026-07-22 감사 P0-22)
-  // 사용자/접속/자료이용 3종은 모든 탭에서 노출되는 상단 요약 카드의 소스이므로 탭과 무관하게 조회한다.
+  // 사용자/접속 2종은 모든 탭에서 노출되는 상단 요약 카드의 소스이므로 탭과 무관하게 조회한다.
   // (탭 조건부로 두면 비활성 탭에서 값이 undefined 가 되어 "0" 이라는 거짓 지표가 표시된다.)
   const userQuery = useQuery({
     queryKey: ['admin-stats-user', appliedRange],
     queryFn: () => statsAdminService.getUserStats(appliedRange)
   });
-
-  /* reusable-base:collaboration:start */
-  const bbsQuery = useQuery({
-    queryKey: ['admin-stats-bbs', appliedRange],
-    queryFn: () => statsAdminService.getBbsStats(appliedRange),
-    enabled: activeTab === 'CONTENT_STATS' || activeTab === 'DASHBOARD'
-  });
-  /* reusable-base:collaboration:end */
 
   // 구 `getScreenStats()` 는 존재하지 않는 `/screen` 을 호출해 첫 진입마다 404 를 냈다.
   // `/connect` 는 성공 로그인 건수다. 화면 조회 요청이나 실패 시도는 이 집계에 포함되지 않는다.
@@ -182,16 +179,6 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     queryKey: ['admin-stats-connect', appliedRange],
     queryFn: () => statsAdminService.getConnectStats(appliedRange)
   });
-
-  // [2026-09-26 DIP B5 F10] 자료 이용은 요약 카드가 쓰지 않는 미수집 축이라 그 탭에서만 조회한다 —
-  //   종전에는 어느 탭을 열어도 불렀다.
-  /* reusable-base:collaboration:start */
-  const dataUsageQuery = useQuery({
-    queryKey: ['admin-stats-data-usage', appliedRange],
-    queryFn: () => statsAdminService.getDataUsageStats(appliedRange),
-    enabled: activeTab === 'DATA_USAGE'
-  });
-  /* reusable-base:collaboration:end */
 
   // REPORTS 탭 전용 쿼리 (없어서 다른 탭의 잔여 차트가 그려지던 문제 — 감사 P0-23)
   const reportQuery = useQuery({
@@ -201,111 +188,80 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   });
 
   /*
-   * 다른 기능이 소유한 탭. 셸은 이 값으로 내보내기·본문·새로고침을 처리하고 그 기능의 서비스를 import 하지 않는다 —
-   * 기능이 빠진 구성에서 셸이 연쇄로 사라지지 않게 하기 위해서다(StatsHubParts).
+   * 기능 탭의 조회. 셸이 한 번(useQueries)에 소유한다 — 기여는 데이터라 훅을 넘길 수 없고, 셸이 기여 수만큼 훅을 부르면 hook 규칙을
+   * 어긴다. 그 탭이 열렸을 때만 조회한다. [허브 분해 H4] 종전에는 통계 개요 탭에서도 게시물 집계를 불렀지만 개요는 그 값을 쓰지
+   * 않았다(쓰지 않는 조회) — 이제 콘텐츠 지표 탭에서만 부른다. 결과 배열은 보이는 패널 순서이고, 아래는 패널과 짝을 지어 쓴다.
    */
-  /* reusable-base:survey:start */
-  const surveyTab = useStatsHubSurveyTab(activeTab === 'SURVEYS');
-  /* reusable-base:survey:end */
-  const extraTabs: Partial<Record<StatsTab, StatsExtraTab>> = {
-    /* reusable-base:survey:start */
-    SURVEYS: surveyTab,
-    /* reusable-base:survey:end */
-  };
-  const extraTab = extraTabs[activeTab];
+  const panelResults = useQueries({
+    queries: panels.map((panel) => (panel.kind === 'series'
+      ? { queryKey: [...panel.queryKey, appliedRange], queryFn: () => panel.load(appliedRange), enabled: activeTab === panel.id }
+      : { queryKey: [...panel.queryKey], queryFn: () => panel.load(), enabled: activeTab === panel.id })),
+  });
+  const panelQuery = (id: string): StatsPanelQuery | undefined => panelResults[panels.findIndex((panel) => panel.id === id)];
+  const activePanelQuery = activePanel ? panelQuery(activePanel.id) : undefined;
+  const activeBody = activePanel?.kind === 'body' ? activePanel : undefined;
 
-  // 자료 이용은 미수집 축이라 요약 카드가 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
+  // 요약 카드가 쓰는 값. 미수집 축(자료 이용 등)은 요약 카드가 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
   const userStats = userQuery.data;
   const connectStats = connectQuery.data;
 
   // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거). 목록에 없는 탭은 성공 로그인이다.
-  const chartQueries: Partial<Record<StatsTab, typeof connectQuery>> = {
-    USER_STATS: userQuery,
-    /* reusable-base:collaboration:start */
-    CONTENT_STATS: bbsQuery,
-    /* reusable-base:collaboration:end */
-    REPORTS: reportQuery,
-    /* reusable-base:collaboration:start */
-    DATA_USAGE: dataUsageQuery,
-    /* reusable-base:collaboration:end */
-  };
-  const chartQuery = chartQueries[activeTab] ?? connectQuery;
-  const chartData: StatsDto[] = chartQuery.data ?? [];
+  const chartQuery: StatsPanelQuery = activePanel?.kind === 'series' && activePanelQuery
+    ? activePanelQuery
+    : activeTab === 'USER_STATS' ? userQuery : activeTab === 'REPORTS' ? reportQuery : connectQuery;
+  const chartData = (chartQuery.data as readonly StatsSeriesPoint[] | undefined) ?? [];
 
-  /**
-   * 집계를 **쓰는 쪽이 없는** 탭들.
-   *
-   * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
-   * Flyway 시드에도 INSERT 가 없다.
-   *   - DATA_USAGE   → 게시판의 자료 이용 포트 → dtaUseStatsRepository.countByDate  (writer 0)
-   *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
-   *
-   * 값이 있는 탭은 셋이다.
-   *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
-   *   - USER_STATS   → **[2026-09-25] 미수집 목록에서 뺐다.** 2026-09-03 부터
-   *     UserActivityLogAggregator 가 인증 사용자의 API 요청을 tb_user_log 에 일자별로 적재한다
-   *     (OCI 실측 326행). 종전 문구는 값이 있어도 "수집되지 않는다" 고 말했다. 이 탭이 세는 것은
-   *     countByDate 의 SUM(crt_cnt), 즉 **등록 요청 수**다 — 조회 요청은 세지 않는다.
-   *   - CONTENT_STATS→ **[2026-08-28] 미수집 목록에서 뺐다.** 종전에는 이 탭도
-   *     `dtaUseStatsRepository.countByDate` 를 불러 DATA_USAGE 와 **완전히 같은 질의**였다.
-   *     이제 `boardRepository.countPostsByDate` 로 게시글을 실제로 센다 — 게시글은 제품이
-   *     `createPost` 로 직접 쓰므로 writer 가 명백히 존재한다.
-   *     ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 목록의 기준이다.
-   *     운영 DB 가 비어 있는 것은 '미수집' 이 아니라 '아직 글이 없음' 이고, 그건 기간을 바꾸면
-   *     달라질 수 있는 사실이라 '선택한 기간에 집계된 통계가 없습니다' 가 맞는 문구다.
-   *
-   * 이 상태에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
-   * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
-   * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
-   */
-  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['DATA_USAGE', 'REPORTS'];
-  const isUninstrumentedTab = UNINSTRUMENTED_TABS.includes(activeTab);
+  const isUninstrumentedTab = CORE_UNINSTRUMENTED_TABS.includes(activeTab)
+    || (activePanel?.kind === 'series' && activePanel.uninstrumented);
   const emptyChartMessage = isUninstrumentedTab
     ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
     : '선택한 기간에 집계된 통계가 없습니다.';
 
+  // 요약 칸이 있는 기능 탭(미수집 축만 — 값은 늘 '미수집'). 그 조회의 로딩·오류도 요약 상태에 든다(종전 동작).
+  const summaryPanels = panels.flatMap((panel) => (panel.kind === 'series' && panel.uninstrumented && panel.summary
+    ? [{ id: panel.id, summary: panel.summary }] : []));
+
   // 요약 카드는 실제 집계 합계만 표시한다(배열 길이는 "일수"일 뿐 지표가 아니다 — 감사 P0-22).
-  const sumStatsCo = (rows?: StatsDto[]) => (rows ?? []).reduce((acc, row) => acc + (row.statsCo ?? 0), 0);
-  const summaryQueries = [
+  const sumStatsCo = (rows?: readonly StatsSeriesPoint[]) => (rows ?? []).reduce((acc, row) => acc + (row.statsCo ?? 0), 0);
+  const summaryQueries: StatsPanelQuery[] = [
     userQuery,
     connectQuery,
-    /* reusable-base:collaboration:start */
-    dataUsageQuery,
-    /* reusable-base:collaboration:end */
+    ...summaryPanels.flatMap(({ id }) => panelQuery(id) ?? []),
   ];
   const isSummaryLoading = summaryQueries.some((query) => query.isLoading);
   const isSummaryError = summaryQueries.some((query) => query.isError);
   const totalConnect = sumStatsCo(connectStats);
 
+  // 새로고침은 꺼진 탭의 조회까지 모두 다시 부른다(refetch 는 enabled 와 무관하게 실행한다 — invalidate 는 꺼진 조회를 건너뛴다).
   const handleForceRefresh = () => {
     void Promise.all([
       userQuery.refetch(),
-      /* reusable-base:collaboration:start */
-      bbsQuery.refetch(),
-      /* reusable-base:collaboration:end */
       connectQuery.refetch(),
-      /* reusable-base:collaboration:start */
-      dataUsageQuery.refetch(),
-      /* reusable-base:collaboration:end */
       reportQuery.refetch(),
-      ...Object.values(extraTabs).map((tab) => tab.refetch()),
+      ...panelResults.map((result) => result.refetch()),
     ]);
   };
 
   // 내보내기는 "지금 화면에 보이는 데이터"만 반출한다(감사 P1-6 — 죽은 버튼을 기존 자산에 배선).
-  const exportRows: Record<string, unknown>[] = extraTab
-    ? extraTab.exportRows
+  const exportRows: Record<string, unknown>[] = activeBody
+    ? activeBody.exportRows(activePanelQuery?.data)
     : chartData.map((row) => ({
       statsDate: toDisplayYmd(typeof row.statsDate === 'string' ? row.statsDate : ''),
       statsCo: row.statsCo ?? 0,
     }));
 
-  const exportHeaders = extraTab
-    ? extraTab.exportHeaders
+  const exportHeaders = activeBody
+    ? activeBody.exportHeaders.map((header) => ({ ...header }))
     : [
       { label: '집계 일자', key: 'statsDate' },
       { label: '집계 건수', key: 'statsCo' },
     ];
+
+  const ActiveBody = activeBody?.Body;
+
+  // 권한 상태를 아직 모르면(서버가 사용자를 넘기지 못해 다시 확인하는 동안) 기능 탭이 아직 보이지 않는다. 요청한 탭(그 라우트의 기본
+  // 탭이나 `?tab=`)이 아직 탭이 아니면 통계 개요로 떨어뜨려 다른 제목·차트를 잠깐 보이지 않고 진입 골격을 그린다.
+  if (authPending && !isTab(tabParam ?? defaultTab)) return <StatsHubFallback />;
 
   return (
     <div className="space-y-6 pb-8">
@@ -317,7 +273,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tighter">
-              {TAB_TITLE[activeTab]}
+              {activeTitle}
             </h1>
             <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
               기간별 집계 및 항목별 통계
@@ -351,19 +307,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           */}
           <nav aria-label="통계 분석 뷰" className="block">
             <Card className="flex flex-wrap gap-2 rounded-lg border bg-card p-2">
-              <NavButton icon={<LayoutDashboard size={20} />} label="통계 개요" active={activeTab === 'DASHBOARD'} onClick={() => handleSelectTab('DASHBOARD')} />
-              <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => handleSelectTab('USER_STATS')} />
-              {/* reusable-base:collaboration:start */}
-              <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => handleSelectTab('CONTENT_STATS')} />
-              {/* reusable-base:collaboration:end */}
-              <NavButton icon={<Database size={20} />} label="시스템 활성" active={activeTab === 'SYSTEM_STATS'} onClick={() => handleSelectTab('SYSTEM_STATS')} />
-              {/* reusable-base:collaboration:start */}
-              <NavButton icon={<HardDrive size={20} />} label="자료이용현황" active={activeTab === 'DATA_USAGE'} onClick={() => handleSelectTab('DATA_USAGE')} />
-              {/* reusable-base:collaboration:end */}
-              {/* reusable-base:survey:start */}
-              <NavButton icon={<Vote size={20} />} label="설문조사 분석" active={activeTab === 'SURVEYS'} onClick={() => handleSelectTab('SURVEYS')} />
-              {/* reusable-base:survey:end */}
-              <NavButton icon={<FileText size={20} />} label="운영 보고서" active={activeTab === 'REPORTS'} onClick={() => handleSelectTab('REPORTS')} />
+              {tabs.map(({ id, label, icon: Icon }) => (
+                <NavButton key={id} icon={<Icon size={20} />} label={label} active={activeTab === id} onClick={() => handleSelectTab(id)} />
+              ))}
             </Card>
           </nav>
 
@@ -393,14 +339,14 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           ) : (
             <div className="grid gap-8 md:grid-flow-col md:auto-cols-fr">
               {/*
-                열 수는 카드 수로 정한다 — 게시판이 빠진 구성에는 자료 이용 카드가 없어 빈 열을 남기지 않는다.
+                열 수는 카드 수로 정한다 — 게시판이 빠진 구성에는 자료 이용 카드(게시판 기여의 summary)가 없어 빈 열을 남기지 않는다.
 
                 [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
 
-                같은 화면의 차트는 이 두 축을 이미 '미수집' 으로 고지하는데(UNINSTRUMENTED_TABS),
+                같은 화면의 차트는 미수집 축을 이미 '미수집' 으로 고지하는데(CORE_UNINSTRUMENTED_TABS ∪ 기여의 uninstrumented),
                 요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
                 읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
-                계측 원천(writer)이 생기면 그때 UNINSTRUMENTED_TABS 에서 빼고 값을 되살린다.
+                계측 원천(writer)이 생기면 그때 그 기여의 uninstrumented 를 거두고 값을 되살린다.
 
                 [2026-09-25] 사용자 축은 writer(UserActivityLogAggregator)가 생겨 값을 되살렸다. 이름은
                 세는 것 그대로 '등록 요청 수' 다 — '활동 집계' 는 조회까지 포함하는 것처럼 읽힌다.
@@ -416,13 +362,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                 value={connectQuery.isError ? '—' : totalConnect.toLocaleString()}
                 color="primary"
               />
-              {/* reusable-base:collaboration:start */}
-              <StatSummaryCard
-                icon={<Database size={24} />}
-                label="자료 이용 건수"
-                value="미수집"
-              />
-              {/* reusable-base:collaboration:end */}
+              {summaryPanels.map(({ id, summary: { label, icon: Icon } }) => (
+                <StatSummaryCard key={id} icon={<Icon size={24} />} label={label} value="미수집" />
+              ))}
             </div>
           )}
           {isSummaryError && (
@@ -436,7 +378,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               <div className="space-y-1">
                 <h3 className="text-xs font-bold text-muted-foreground tracking-tight">선택한 통계</h3>
                 <CardTitle className="text-2xl font-bold text-foreground tracking-tighter">
-                  {TAB_TITLE[activeTab]}
+                  {activeTitle}
                 </CardTitle>
               </div>
               {/*
@@ -461,12 +403,12 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                   exit={{ opacity: 0, y: -20 }}
                   className="h-full"
                 >
-                  {extraTab ? (
-                    extraTab.body
+                  {ActiveBody && activePanelQuery ? (
+                    <ActiveBody query={activePanelQuery} />
                   ) : chartQuery.isLoading ? (
                     <HubListSkeleton />
                   ) : chartQuery.isError ? (
-                    <HubErrorState message="통계 데이터를 불러오지 못했습니다." onRetry={() => chartQuery.refetch()} />
+                    <HubErrorState message="통계 데이터를 불러오지 못했습니다." onRetry={() => void chartQuery.refetch()} />
                   ) : chartData.length === 0 ? (
                     <HubEmptyState message={emptyChartMessage} />
                   ) : (

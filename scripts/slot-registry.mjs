@@ -31,6 +31,49 @@ const RESERVED = new Set(['await', 'break', 'case', 'catch', 'class', 'const', '
 // 로캘과 무관한 정렬(코드 포인트). 실행 환경에 따라 레지스트리 순서가 달라지지 않게 한다.
 const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
+/**
+ * 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 경계 계약이 붉다 — 범용 플러그인 로더를 막고
+ * grep 경로를 고정한다. hub-tabs 는 허브별로 적는다 — 레지스트리는 하나지만 기여의 쓰기 귀속(축 3·화면 목록)은 기여 항목의 hub 가
+ * 가리키는 허브 셸로만 잇는다(operation-consumer-census). 이 표가 정본이고 경계 계약과 census 가 함께 import 한다(시험 파일에 두면
+ * census 가 import 할 때 그 시험이 함께 등록된다).
+ */
+export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
+  'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
+  'hub-tabs': {
+    collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+    knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
+    monitoring: ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
+  },
+  'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
+  'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
+  'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx',
+    'frontend/src/app/error.tsx', 'frontend/src/app/components/ui/global-command-center.tsx',
+    'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+  // 통계 셸(기능 탭)과 통계 요약(요약 칸)이 같은 레지스트리를 읽는다(허브 분해 H4).
+  'stats-panels': ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
+});
+
+/**
+ * 소비자마다 다른 배치를 그리는데 배치별 귀속이 아직 없는 슬롯. stats-panels 는 통계 요약(AdminStatsClient)이 요약 칸만, 통계 셸
+ * (IntelligenceHubClient)이 기능 탭만 그린다. 쓰기 귀속(축 3·화면 목록)은 기여 파일 단위라 기여나 기여가 닿는 모듈(탭 본문 등)의
+ * 쓰기·canPermission 리터럴이 두 화면에 함께 귀속된다 — hub-tabs 가 허브별 표로 막은 것과 같은 오귀속이다. 배치별 귀속을 두기 전까지
+ * 화면 목록 생성기가 이 슬롯의 기여를 거쳐 귀속되는 쓰기·표시 권한을 거부한다(허브 분해 검토).
+ */
+export const PLACEMENT_BLIND_SLOTS = Object.freeze(['stats-panels']);
+
+/** 슬롯의 소비자 전체(허브별 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */
+export function slotConsumerFiles(slot, table = SLOT_REGISTRY_CONSUMERS) {
+  const row = table[slot];
+  if (!row) return [];
+  return [...new Set(Array.isArray(row) ? row : Object.values(row).flat())].sort(byCodePoint);
+}
+
+/** hub-tabs 처럼 허브별로 적은 슬롯이면 허브 → 소비자, 아니면 null. */
+export function slotConsumersByHub(slot, table = SLOT_REGISTRY_CONSUMERS) {
+  const row = table[slot];
+  return row && !Array.isArray(row) ? row : null;
+}
+
 export const slotRegistryPath = slot => `${SLOT_ROOT}/generated-${slot}.ts`;
 export const slotContributionPath = (owner, slot) => `${SLOT_ROOT}/${owner}/${slot}.ts`;
 /** 레지스트리가 내보내는 배열 이름(케밥 → camelCase). */

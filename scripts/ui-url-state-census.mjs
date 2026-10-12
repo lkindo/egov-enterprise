@@ -39,6 +39,14 @@ import {
   expectedRouting,
   inspectRouteRepository,
 } from './ui-route-capabilities-contract.mjs';
+import { parseModuleReferences } from './frontend-module-graph.mjs';
+import { buildCaseMap, resolveModuleReference } from './frontend-module-resolver.mjs';
+import {
+  SLOT_REGISTRY_CONSUMERS,
+  slotConsumerFiles,
+  slotConsumersByHub,
+  slotPathKind,
+} from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -927,6 +935,134 @@ function routeContextForSource(source, repository, routeManifest) {
   };
 }
 
+const UNRESOLVED_ROUTE_CONTEXT = Object.freeze({ routePattern: 'unresolved', shellAccessEvidence: 'unverified' });
+// 라우트 진입 파일. 기여가 import 해도 귀속을 옮기지 않는다 — 화면 파일은 자기 라우트가 정본이다.
+const ROUTE_ENTRY_FILE = /\/(?:page|layout|template|loading|error|global-error|not-found|default|route)\.[cm]?[jt]sx?$/;
+
+/** 이름 뒤 `:` 에 붙은 문자열 리터럴 값. 토큰으로 읽으므로 주석·문자열 속 인용은 값이 아니다. 기여의 hub·placement 를 읽는다. */
+function literalPropertyValues(tokens, name) {
+  const values = [];
+  for (let index = 0; index + 2 < tokens.length; index += 1) {
+    if (tokens[index].type === 'identifier' && tokens[index].value === name
+      && tokens[index + 1].value === ':' && tokens[index + 2].type === 'string') values.push(tokens[index + 2].value);
+  }
+  return values;
+}
+
+/** 셸이 배치를 거르는 리터럴(`x.placement === '<배치>'`). 없으면 그 셸은 배치를 가리지 않고 모든 항목을 그린다. */
+function placementFilterValues(tokens) {
+  const values = [];
+  for (let index = 1; index + 3 < tokens.length; index += 1) {
+    if (tokens[index - 1].value === '.' && tokens[index].type === 'identifier' && tokens[index].value === 'placement'
+      && tokens[index + 1].value === '==' && tokens[index + 2].value === '=' && tokens[index + 3].type === 'string') {
+      values.push(tokens[index + 3].value);
+    }
+  }
+  return values;
+}
+
+/** 맥락 목록을 합친다. 하나라도 라우트를 특정하지 못하면(공용 셸) 미해소 하나로 둔다 — 일부 라우트만 적으면 귀속이 줄어든다. */
+function mergeRouteContexts(contexts) {
+  if (contexts.length === 0 || contexts.some(({ routePattern }) => routePattern === 'unresolved' || routePattern === '*')) {
+    return [UNRESOLVED_ROUTE_CONTEXT];
+  }
+  const byRoute = new Map(contexts.map((context) => [context.routePattern, context]));
+  return [...byRoute.keys()].sort((left, right) => left.localeCompare(right, 'en')).map((route) => byRoute.get(route));
+}
+
+/**
+ * 슬롯 기여의 라우트 맥락(허브 분해 검토, 설계 §5 census 범위 확장 표 'URL 상태').
+ *
+ * 기여 파일(src/extensions/<기능>/<슬롯>.ts)은 그 슬롯을 그리는 소비 셸(slot-registry.mjs SLOT_REGISTRY_CONSUMERS)의 화면에서만
+ * 렌더된다. 디렉터리로 귀속하면 기여가 import 하는 뷰가 자기 기능의 라우트를 주장한다 — 협업 허브의 쪽지 탭
+ * (src/app/note/NoteCollaborationTab)의 이동이 '/note' 로, 스크랩 탭이 '/admin/collaboration/scraps' 로 적혔다. 그래서 기여와,
+ * 기여(또는 이미 귀속한 모듈)만 import 하는 비라우트 모듈(기여 폐포)을 소비 셸의 맥락으로 귀속한다.
+ * - 소비 셸: hub-tabs 는 기여가 적은 hub 의 셸만 본다. placement 를 적은 기여는 같은 배치 리터럴로 거르는 셸만 본다 — 배치를
+ *   리터럴로 거르지 않는 셸(stats-panels 의 두 소비자)은 모두 본다(넓은 쪽).
+ * - 소비 셸의 맥락은 셸 자신이 받는 맥락이다(routeContextForSource, 디렉터리 기준). 공용 셸(머리글 등)처럼 라우트를 특정하지 못하는
+ *   셸이 하나라도 있으면 미해소로 둔다.
+ * - 다른 화면·모듈도 import 하는 모듈은 폐포에 넣지 않는다(자기 맥락을 그대로 받는다). 타입 import 는 렌더 간선이 아니다.
+ *
+ * sources 는 저장소 기준 경로 → 원문(운영 소스), contextOf 는 디렉터리 기준 맥락이다. 귀속을 바꾼 파일 → 맥락 목록을 돌려준다.
+ * 모듈 지정자를 읽지 못하면 실패한다 — 숨은 import 가 있으면 폐포의 배타성을 판정할 수 없다.
+ */
+export function slotAttributedRouteContexts({ repoRoot, sources, contextOf, consumerTable = SLOT_REGISTRY_CONSUMERS }) {
+  const root = resolve(repoRoot);
+  const fileOf = new Map([...sources.keys()].map((file) => [resolve(root, file), file]));
+  const knownFiles = new Set(fileOf.keys());
+  const caseMap = buildCaseMap([...knownFiles]);
+  const tokenCache = new Map();
+  const tokensOf = (file) => {
+    if (!tokenCache.has(file)) tokenCache.set(file, tokenizeUrlStateSource(sources.get(file) ?? '', file).tokens);
+    return tokenCache.get(file);
+  };
+
+  const importsOf = new Map();
+  const importersOf = new Map();
+  for (const [absolute, file] of fileOf) {
+    const { references, issues } = parseModuleReferences(sources.get(file), file);
+    if (issues.length > 0) {
+      const lines = issues.map((issue) => `[${issue.code}] ${issue.file}:${issue.line}`);
+      throw new Error(`URL-state census could not read module references for slot attribution:\n${lines.join('\n')}`);
+    }
+    const targets = new Set();
+    for (const reference of references) {
+      if (reference.typeOnly) continue;
+      const resolved = resolveModuleReference({
+        importer: absolute,
+        specifier: reference.specifier,
+        frontendRoot: join(root, 'frontend'),
+        knownFiles,
+        caseMap,
+        repoRoot: root,
+        line: reference.line,
+      });
+      if (resolved.target) targets.add(fileOf.get(resolved.target));
+    }
+    importsOf.set(file, targets);
+    for (const target of targets) {
+      if (!importersOf.has(target)) importersOf.set(target, new Set());
+      importersOf.get(target).add(file);
+    }
+  }
+
+  const attributed = new Map();
+  for (const file of sources.keys()) {
+    const kind = slotPathKind(file);
+    if (kind?.kind !== 'contribution') continue;
+    const tokens = tokensOf(file);
+    const hubs = literalPropertyValues(tokens, 'hub');
+    const byHub = slotConsumersByHub(kind.slot, consumerTable);
+    let consumers = byHub && hubs.length > 0
+      ? [...new Set(hubs.flatMap((hub) => byHub[hub] ?? []))]
+      : slotConsumerFiles(kind.slot, consumerTable);
+    const placements = new Set(literalPropertyValues(tokens, 'placement'));
+    if (placements.size > 0) {
+      consumers = consumers.filter((consumer) => {
+        const filters = placementFilterValues(tokensOf(consumer));
+        return filters.length === 0 || filters.some((placement) => placements.has(placement));
+      });
+    }
+    attributed.set(file, mergeRouteContexts(consumers.filter((consumer) => sources.has(consumer)).map(contextOf)));
+  }
+
+  // 기여 폐포. 맥락은 넣을 때 한 번 정한다 — 모든 importer 가 이미 귀속돼 있으므로 순서와 무관하다. 순환에 걸린 모듈은 넣지 않는다.
+  const inClosure = (file) => !ROUTE_ENTRY_FILE.test(file) && slotPathKind(file) === null;
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const file of [...attributed.keys()]) {
+      for (const target of importsOf.get(file) ?? []) {
+        if (attributed.has(target) || !inClosure(target)) continue;
+        const importers = [...importersOf.get(target)];
+        if (!importers.every((importer) => attributed.has(importer))) continue;
+        attributed.set(target, mergeRouteContexts(importers.flatMap((importer) => attributed.get(importer))));
+        changed = true;
+      }
+    }
+  }
+  return attributed;
+}
+
 function finalizeRecords(rawRecords) {
   const sorted = rawRecords.sort((left, right) => JSON.stringify([
     left.source,
@@ -1047,16 +1183,23 @@ export function buildUrlStateCensus(options = {}) {
   const rawRecords = [];
   const issues = [];
 
-  for (const sourcePath of sourcePaths) {
-    const file = normalizePath(relative(repoRoot, sourcePath));
-    const routeContext = routeContextForSource(file, repository, routeManifest);
-    const inspected = scanUrlStateSource(readFileSync(sourcePath, 'utf8'), {
-      file,
-      reviewBy,
-      ...routeContext,
+  const sources = new Map(sourcePaths.map((sourcePath) => [
+    normalizePath(relative(repoRoot, sourcePath)),
+    readFileSync(sourcePath, 'utf8'),
+  ]));
+  const contextOf = (file) => routeContextForSource(file, repository, routeManifest);
+  // 슬롯 기여와 기여 폐포는 소비 셸의 라우트로 귀속한다. 소비 셸이 여러 라우트면 라우트마다 record 를 남긴다.
+  const slotContexts = slotAttributedRouteContexts({ repoRoot, sources, contextOf });
+  for (const [file, source] of sources) {
+    (slotContexts.get(file) ?? [contextOf(file)]).forEach((routeContext, index) => {
+      const inspected = scanUrlStateSource(source, {
+        file,
+        reviewBy,
+        ...routeContext,
+      });
+      if (index === 0) issues.push(...inspected.issues);
+      rawRecords.push(...inspected.records);
     });
-    issues.push(...inspected.issues);
-    rawRecords.push(...inspected.records);
   }
 
   // Exact route populations come from the same route parser as the capability manifest.
@@ -1162,6 +1305,7 @@ export function buildUrlStateCensus(options = {}) {
     limitations: [
       'Static syntax cannot determine whether a value is personal data, public, secret, or an authorized object locator.',
       'Computed target/key and unresolved shared-component route context remain ambiguous and therefore fail-closed.',
+      'Slot contributions and modules imported only by them take the route context of their consuming shells (slot-registry consumer table); a shell\'s own route context stays directory-based.',
       'This repository census does not observe CDN, reverse-proxy, browser-history, support-ticket, or production analytics retention.',
       'Candidate-allow is a review recommendation only; every state item remains approvalStatus=unverified.',
       'No runtime sanitizer, redirect behavior, login intent, pending decision, ADR, proxy, or Next configuration is changed by this artifact.',

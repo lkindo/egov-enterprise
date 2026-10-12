@@ -11,8 +11,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * 화면 동작을 바꾸지 않았음을 증명하려고 지금 동작을 그대로 고정한다. 모듈 배치와 무관하게 남도록
  * 라우트 page 모듈만 렌더하고, 요청은 서비스가 아니라 URL(client.getRaw) 수준에서 관측한다.
  *
- * 이 파일은 셸과 함께 모든 구성에 남는다. 게시판·설문이 빠진 구성에서도 맞도록 그 기능의 탭·조회·카드 기대값은
- * 셸과 같은 pack 마커로 감싼다(MailSendHubClient 테스트 선례). 전체 제품에서는 마커가 주석이라 기대값이 그대로다.
+ * 이 파일은 셸과 함께 모든 구성에 남는 **셸 전용** 시험이다. [허브 분해 H4] 게시판·설문 탭은 stats-panels 기여가 되어, 기능 레지스트리를
+ * 빈 배열로 대역해 셸이 기능을 모르고도 같은 동작을 하는지 본다(기능 탭은 기능 소유 시험이 본다 — 게시판·설문 동등성 시험). 그래서
+ * 이 파일에는 pack 마커가 없고 모든 구성에서 기대값이 같다.
  */
 const api = vi.hoisted(() => ({
   get: vi.fn(),
@@ -46,6 +47,8 @@ vi.mock('@/app/components/ui/data-export-excel', () => ({
 vi.mock('@/app/components/ui/observability-charts', () => ({
   SafeResponsiveContainer: () => <div data-testid="chart" />,
 }));
+// 셸 전용 — 기능이 넘기는 탭·요약 칸이 하나도 없는 구성(core)과 같다.
+vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import UserStatsPage from '../user/page';
 import ScreenStatsPage from '../screen/page';
@@ -58,44 +61,15 @@ const URL = {
   connect: `${BASE}/connect`,
   dataUsage: `${BASE}/data-usage`,
   report: `${BASE}/report`,
-  surveys: 'admin/system/surveys',
 } as const;
 
-const EMPTY_SURVEY_PAGE = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
-const NAV_LABELS = [
-  '통계 개요',
-  '사용자 통계',
-  /* reusable-base:collaboration:start */
-  '콘텐츠 지표',
-  /* reusable-base:collaboration:end */
-  '시스템 활성',
-  /* reusable-base:collaboration:start */
-  '자료이용현황',
-  /* reusable-base:collaboration:end */
-  /* reusable-base:survey:start */
-  '설문조사 분석',
-  /* reusable-base:survey:end */
-  '운영 보고서',
-];
-/** 통계 개요 탭이 탭 전용으로 더 부르는 조회. 게시물 집계는 게시판이 있을 때만 있다. */
-const DASHBOARD_TAB_URLS: string[] = [
-  /* reusable-base:collaboration:start */
-  URL.bbs,
-  /* reusable-base:collaboration:end */
-];
-/** 통계 새로고침이 다시 부르는 조회 전부(꺼진 탭의 조회 포함). */
-const REFRESH_URLS: string[] = [
-  URL.user,
-  /* reusable-base:collaboration:start */
-  URL.bbs,
-  URL.dataUsage,
-  /* reusable-base:collaboration:end */
-  URL.connect,
-  URL.report,
-  /* reusable-base:survey:start */
-  URL.surveys,
-  /* reusable-base:survey:end */
-];
+const NAV_LABELS = ['통계 개요', '사용자 통계', '시스템 활성', '운영 보고서'];
+/*
+ * 통계 개요 탭이 탭 전용으로 더 부르는 조회는 없다. [허브 분해 H4] 종전에는 게시판이 있으면 게시물 집계도 불렀지만 개요는 그 값을
+ * 쓰지 않았다(쓰지 않는 조회) — 걷었다. 게시물 집계는 콘텐츠 지표 탭에서만 부른다(게시판 동등성 시험).
+ */
+/** 통계 새로고침이 다시 부르는 조회 전부(꺼진 탭의 조회 포함). 기능 탭의 조회는 그 기능 소유 시험이 본다. */
+const REFRESH_URLS: string[] = [URL.user, URL.connect, URL.report];
 const STATS_HEADERS = [
   { label: '집계 일자', key: 'statsDate' },
   { label: '집계 건수', key: 'statsCo' },
@@ -105,7 +79,7 @@ const PERIOD_EMPTY = '선택한 기간에 집계된 통계가 없습니다.';
 const UNINSTRUMENTED_EMPTY = '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.';
 const DEFAULT_PERIOD = '집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)';
 
-/** URL 별 응답 본문. 값이 없으면 통계는 빈 배열, 설문은 빈 페이지다. */
+/** URL 별 응답 본문. 값이 없으면 빈 배열이다. */
 const responses = new Map<string, unknown>();
 /** URL 별 남은 실패 횟수. */
 const failures = new Map<string, number>();
@@ -158,7 +132,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
         throw new Error(`요청 실패: ${url}`);
       }
       if (responses.has(url)) return envelope(responses.get(url));
-      return envelope(url === URL.surveys ? EMPTY_SURVEY_PAGE : []);
+      return envelope([]);
     });
   });
 
@@ -185,7 +159,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       ['사용자', UserStatsPage, '/admin/stats/user', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
       ['운영 보고서', ReportPage, '/admin/stats/report', '', sorted(URL.user, URL.connect, URL.report), UNINSTRUMENTED_EMPTY],
-      ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', sorted(URL.user, URL.connect, ...DASHBOARD_TAB_URLS), PERIOD_EMPTY],
+      ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', sorted(URL.user, URL.connect), PERIOD_EMPTY],
     ])('%s 화면은 사용자·접속을 늘 부르고 탭 전용 조회만 더한다', async (_name, Page, pathname, query, expected, settled) => {
       renderRoute(Page, pathname, query);
 
@@ -201,7 +175,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
   });
 
   describe('요약 카드', () => {
-    it('사용자·성공 로그인 카드는 집계 합계를, 자료 이용 카드는 미수집을 보인다', async () => {
+    it('사용자·성공 로그인 카드는 집계 합계를 보이고, 기능 기여가 없으면 다른 요약 카드는 없다', async () => {
       responses.set(URL.user, [{ statsDate: '20261001', statsCo: 3 }, { statsDate: '20261002', statsCo: 4 }]);
       responses.set(URL.connect, [{ statsDate: '20261001', statsCo: 1200 }, { statsDate: '20261002', statsCo: 34 }]);
       responses.set(URL.dataUsage, [{ statsDate: '20261001', statsCo: 99 }]);
@@ -211,9 +185,9 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       const total = (1234).toLocaleString();
       expect(within(summaryCard('사용자 등록 요청 수')).getByText('7')).toBeInTheDocument();
       expect(within(summaryCard('성공 로그인 수')).getByText(total)).toBeInTheDocument();
-      /* reusable-base:collaboration:start */
-      expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
-      /* reusable-base:collaboration:end */
+      // 자료 이용 카드는 게시판 기여의 요약 칸이다 — 셸 혼자서는 그리지 않는다(값 99 도 어디에도 찍히지 않는다).
+      expect(screen.queryByText('_ 자료 이용 건수')).not.toBeInTheDocument();
+      expect(screen.queryByText('99')).not.toBeInTheDocument();
       expect(within(sidebarCard()).getByText(total)).toBeInTheDocument();
       expect(within(sidebarCard()).getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
       expect(screen.queryByText(SUMMARY_ALERT)).not.toBeInTheDocument();
@@ -227,9 +201,6 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
       expect(await screen.findByText(SUMMARY_ALERT)).toBeInTheDocument();
       expect(within(summaryCard('사용자 등록 요청 수')).getByText('5')).toBeInTheDocument();
       expect(within(summaryCard('성공 로그인 수')).getByText('—')).toBeInTheDocument();
-      /* reusable-base:collaboration:start */
-      expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
-      /* reusable-base:collaboration:end */
       expect(within(sidebarCard()).getByText('—')).toBeInTheDocument();
       expect(within(sidebarCard()).getByText('접속 통계를 불러오지 못했습니다')).toBeInTheDocument();
       // 시스템 활성 탭의 차트는 접속 집계를 그리므로 차트도 오류 상태다.
@@ -334,7 +305,7 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
 
     it('통계 개요 탭에서도 같은 URL 을 모두 다시 부른다', async () => {
       renderRoute(UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD');
-      await waitFor(() => expect(requestedUrls()).toEqual(sorted(URL.user, URL.connect, ...DASHBOARD_TAB_URLS)));
+      await waitFor(() => expect(requestedUrls()).toEqual(sorted(URL.user, URL.connect)));
       await screen.findByText(PERIOD_EMPTY);
 
       api.getRaw.mockClear();

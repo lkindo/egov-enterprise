@@ -4,7 +4,7 @@ import { join, relative, sep } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import * as ts from 'typescript';
 import { SCREEN_ALIASES } from '@/types/generated-screen-registry';
-import { REPO_ROOT, pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
+import { REPO_ROOT, isRemovedByProjection, pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
 
 /**
  * 탭 목적지 계약 (Phase 2 — 슬롯 도입 전 census 범위 확장).
@@ -19,6 +19,9 @@ import { REPO_ROOT, pageInProjection, projectionRemovedFiles } from '@/test-util
  *   - 여는 쪽: 메뉴 스냅숏(config/project-composer-menus.json)의 사용 중 메뉴, 생성 화면 목록의 별칭 목적지, 화면 코드의
  *     문자열 리터럴, 백엔드 소스의 문자열 리터럴(같은 파일 대문자 상수 + "?tab=" 결합 포함). 주석은 세지 않는다.
  *   - `?tab=` 을 보내는데 받는 해석이 없는 화면이면 red 다 — 새 허브는 `*-tabs.ts` 에 해석과 TAB_HUB 를 둔다.
+ *   - 슬롯 탭(허브 분해 H1): TAB_HUB.contributable 은 기여할 수 있는 탭 → 기여 파일 지도다. 해석에는 파일이 있는 기여 탭만 넘긴다.
+ *     생성물에서 기여 파일이 투영으로 빠진 탭(원장 확인)으로 가는 메뉴 행은 건너뛴다 — 메뉴는 DB 투영이 숨긴다. 코드·별칭·백엔드 출처는
+ *     그대로 판정한다. 원장에도 없는데 파일이 없으면 그 탭은 없는 탭이라 red 다(빠진 기여와 오타를 가른다).
  *   - 재사용 생성물에서 목적지 화면이 투영으로 빠졌으면(원장 확인) 그 목적지는 보지 않는다. 메뉴는 생성기가 투영하고,
  *     빠진 화면으로 가는 코드 링크는 도달성 census 가 본다.
  *
@@ -33,7 +36,9 @@ type TabParser = (raw: string | null | undefined) => string | null;
 
 interface TabHub {
   routes: readonly string[];
-  parse: TabParser;
+  parse: (raw: string | null | undefined, contributed?: readonly string[]) => string | null;
+  /** 슬롯 탭: 기여할 수 있는 탭 → 기여 파일(저장소 기준). */
+  contributable?: Readonly<Record<string, string>>;
 }
 
 interface TabDestination {
@@ -102,20 +107,36 @@ export function tabDestinationProblems(
   });
 }
 
-/** `*-tabs.ts` 모듈의 TAB_HUB 를 화면 경로별 해석으로 모은다. 선언이 없거나 경로가 겹치면 실패한다. */
-export function hubParsers(modules: Record<string, { TAB_HUB?: TabHub }>): Map<string, TabParser> {
+const contributionPresent = (path: string) => existsSync(join(REPO_ROOT, path));
+
+/**
+ * `*-tabs.ts` 모듈의 TAB_HUB 를 화면 경로별 해석으로 모은다. 선언이 없거나 경로가 겹치면 실패한다. 슬롯 탭은 기여 파일이 있는 탭만
+ * 해석에 넘긴다(런타임 셸이 보이는 기여만 넘기는 것과 같다).
+ */
+export function hubParsers(modules: Record<string, { TAB_HUB?: TabHub }>, present = contributionPresent): Map<string, TabParser> {
   const parsers = new Map<string, TabParser>();
   for (const [file, module] of Object.entries(modules)) {
     const hub = module.TAB_HUB;
     if (!hub || typeof hub.parse !== 'function' || !Array.isArray(hub.routes) || hub.routes.length === 0) {
       throw new Error(`${file} 이 TAB_HUB = { routes, parse } 를 내보내지 않는다`);
     }
+    const contributed = Object.entries(hub.contributable ?? {}).filter(([, path]) => present(path)).map(([tab]) => tab);
     for (const route of hub.routes) {
       if (parsers.has(route)) throw new Error(`${route} 의 탭 해석이 둘이다(${file})`);
-      parsers.set(route, hub.parse);
+      parsers.set(route, (raw) => hub.parse(raw, contributed));
     }
   }
   return parsers;
+}
+
+/** 화면 경로 → 기여 파일이 투영으로 빠진 슬롯 탭(대문자). 원본에서는 빈 지도다. */
+export function withdrawnContributedTabs(modules: Record<string, { TAB_HUB?: TabHub }>, removed = isRemovedByProjection): Map<string, Set<string>> {
+  const withdrawn = new Map<string, Set<string>>();
+  for (const tabModule of Object.values(modules)) {
+    const tabs = Object.entries(tabModule.TAB_HUB?.contributable ?? {}).filter(([, path]) => removed(path)).map(([tab]) => tab);
+    for (const route of tabModule.TAB_HUB?.routes ?? []) withdrawn.set(route, new Set(tabs));
+  }
+  return withdrawn;
 }
 
 /**
@@ -167,9 +188,13 @@ function repositoryDestinations(): TabDestination[] {
 
 describe('탭 목적지 계약', () => {
   it('메뉴·별칭·화면 코드·백엔드 문자열이 여는 `?tab=` 값은 그 허브가 탭으로 읽는다', () => {
-    const parsers = hubParsers(tabModules());
-    // 목적지 화면이 투영으로 빠진 생성물에서는 그 목적지를 보지 않는다(원장 확인). 원본에서는 모두 본다.
-    const destinations = repositoryDestinations().filter((destination) => pageInProjection(destination.route));
+    const modules = tabModules();
+    const parsers = hubParsers(modules);
+    const withdrawn = withdrawnContributedTabs(modules);
+    // 목적지 화면이 투영으로 빠진 생성물에서는 그 목적지를 보지 않는다(원장 확인). 기여 파일이 투영으로 빠진 슬롯 탭으로 가는 메뉴 행도
+    //   보지 않는다 — 메뉴는 DB 투영이 숨긴다. 원본에서는 모두 본다.
+    const destinations = repositoryDestinations().filter((destination) => pageInProjection(destination.route)
+      && !(destination.source.startsWith('menu ') && withdrawn.get(destination.route)?.has(destination.tab.toUpperCase())));
     expect(tabDestinationProblems(destinations, (route) => parsers.get(route))).toEqual([]);
     // 빈 수집은 통과가 아니다 — 출처마다 하한을 둔다(한 출처를 통째로 잃어도 합계로 가려지지 않게). 2026-10-10 원본 실측은
     //   메뉴 11·별칭 10·화면 코드 11·백엔드 8건이다. 가장 작은 생성물(core)에도 감시 허브의 메뉴·별칭은 남는다.
@@ -187,8 +212,8 @@ describe('탭 목적지 계약', () => {
   it('탭 해석이 받는 화면은 실제 화면이다', () => {
     const modules = tabModules();
     const parsers = hubParsers(modules);
-    // 원본에는 탭 해석 모듈이 다섯 개 있다(지식·설문·감시·결재함·메모 보고). 이름 규칙이 깨져 하나도 모이지 않으면 실패한다.
-    expect(Object.keys(modules).length).toBeGreaterThanOrEqual(projectionRemovedFiles().size > 0 ? 1 : 5);
+    // 원본에는 탭 해석 모듈이 여섯 개 있다(지식·설문·감시·결재함·메모 보고·협업). 이름 규칙이 깨져 하나도 모이지 않으면 실패한다.
+    expect(Object.keys(modules).length).toBeGreaterThanOrEqual(projectionRemovedFiles().size > 0 ? 1 : 6);
     for (const route of parsers.keys()) {
       expect(existsSync(join(REPO_ROOT, 'frontend', 'src', 'app', ...route.split('/').filter(Boolean), 'page.tsx')), route).toBe(true);
     }
@@ -238,6 +263,15 @@ describe('탭 목적지 계약', () => {
       .toThrow(/실행 import/);
     // 해석 모듈 모음 — 선언이 없거나 경로가 겹치면 실패한다.
     expect(() => hubParsers({ 'a-tabs.ts': {} })).toThrow(/TAB_HUB/);
+    // 슬롯 탭: 기여 파일이 있는 탭만 받는다. 원장으로 빠진 기여의 탭은 메뉴 행만 건너뛰고, 원장에도 없는 부재는 없는 탭이다.
+    const slotted = { 'c-tabs.ts': { TAB_HUB: {
+      routes: ['/c'],
+      parse: (raw: string | null | undefined, contributed: readonly string[] = []) => (raw && contributed.includes(raw.toUpperCase()) ? raw.toUpperCase() : null),
+      contributable: { MESSAGES: 'm.ts', SCRAPS: 's.ts' },
+    } } };
+    const slottedParser = hubParsers(slotted, (path) => path === 'm.ts').get('/c')!;
+    expect([slottedParser('messages'), slottedParser('SCRAPS')]).toEqual(['MESSAGES', null]);
+    expect(withdrawnContributedTabs(slotted, (path) => path === 's.ts')).toEqual(new Map([['/c', new Set(['SCRAPS'])]]));
     expect(() => hubParsers({
       'a-tabs.ts': { TAB_HUB: { routes: ['/hub'], parse: parser } },
       'b-tabs.ts': { TAB_HUB: { routes: ['/hub'], parse: parser } },

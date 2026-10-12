@@ -1001,9 +1001,10 @@ test('readiness headings follow the current user and FAQ page title producers', 
   const helpSource = readFileSync(join(repoRoot, 'frontend/src/app/help/HelpClient.tsx'), 'utf8');
   assert.match(userSource, /const meta = TAB_META\[activeTab\]/);
   assert.match(userSource, /<WorkListPage\s+title=\{meta\.title\}/);
-  assert.match(adminFaqSource, /<WorkListPage\s+title=\{CATEGORY_LABEL\[activeCategory\]\}/);
+  // 지식 허브 제목은 열린 탭의 이름이다(허브 분해 H2 — 셸 고유 탭과 기여 탭이 같은 모양이다). FAQ 는 셸 고유 탭이다.
+  assert.match(adminFaqSource, /<WorkListPage\s+title=\{activeTab\.label\}/);
   const userHeading = userSource.match(/USERS: \{\s*title: '([^']+)'/)?.[1];
-  const faqHeading = adminFaqSource.match(/const CATEGORY_LABEL[^=]*= \{[\s\S]*?FAQ: '([^']+)'/)?.[1];
+  const faqHeading = adminFaqSource.match(/const SHELL_TABS[^=]*= \[[\s\S]*?\{ id: 'FAQ', label: '([^']+)'/)?.[1];
   const helpHeading = helpSource.match(/<WorkListPage\s+title="([^"]+)"/)?.[1];
   assert.ok(userHeading && faqHeading && helpHeading, 'the actual page titles must remain discoverable');
   const declared = runnerSource.match(/const READY_HEADINGS = Object\.freeze\(\{([\s\S]*?)\n\}\)/)?.[1];

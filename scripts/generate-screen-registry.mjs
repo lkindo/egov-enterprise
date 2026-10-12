@@ -53,6 +53,7 @@ import { discoverConfigRedirects, discoverPageRoutes, expectedRouting } from './
 import {
   analyzeWritePermissionNeeds, isIntermediaryFile, isServiceFile, isTestFile, stripTsComments,
 } from './operation-consumer-census.mjs';
+import { PLACEMENT_BLIND_SLOTS, SLOT_ROOT, slotPathKind } from './slot-registry.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -467,12 +468,24 @@ export function buildScreenRegistry(root = repoRoot) {
       if (hostsPages.has(directory) || directory === '') return { kind: 'shared' };
     }
   };
-  const screensOf = file => {
+  // 배치를 가리지 못하는 슬롯(slot-registry.mjs PLACEMENT_BLIND_SLOTS)의 기여. 그 기여를 거치는 귀속은 배치가 다른 소비자 화면에도
+  // 함께 붙으므로 거부한다 — 조용히 넓게 붙이면 권한 작업대가 그 화면에 없는 권한을 보인다.
+  const placementBlindSlotOf = file => {
+    if (!file.startsWith(`frontend/${SLOT_ROOT}/`)) return null;
+    const kind = slotPathKind(file);
+    return kind?.kind === 'contribution' && PLACEMENT_BLIND_SLOTS.includes(kind.slot) ? kind.slot : null;
+  };
+  const screensOf = (file, permissionUse) => {
     const found = new Set();
     const seen = new Set();
     const visit = current => {
       if (seen.has(current)) return; // import 순환
       seen.add(current);
+      const blindSlot = placementBlindSlotOf(current);
+      if (blindSlot) {
+        throw new Error(`${blindSlot} 기여는 배치별 귀속이 없어 소비자 화면 모두에 귀속된다 — 그 기여가 닿는 모듈에 쓰기·`
+          + `canPermission 리터럴을 두지 않는다(${permissionUse}, ${file} → ${current}). 배치별 귀속을 먼저 둔다.`);
+      }
       const owner = ownerOf(current);
       if (owner.kind === 'screen') found.add(owner.route);
       // 화면 파일도 다른 화면이 import 해 렌더할 수 있다(허브 클라이언트 재사용) — 거기서 멈추지 않는다.
@@ -485,7 +498,7 @@ export function buildScreenRegistry(root = repoRoot) {
   // 쓰기 — 축 3 의 화면별 쓰기 권한.
   for (const need of analysis.needs) {
     known(need.permission, `write operation called from ${need.file}`);
-    for (const route of screensOf(need.file)) screens.get(route).granted.get('write').add(need.permission);
+    for (const route of screensOf(need.file, `쓰기 ${need.permission}`)) screens.get(route).granted.get('write').add(need.permission);
   }
 
   // 표시 — canPermission 리터럴(주석은 지운다). 귀속은 쓰기와 같다.
@@ -496,7 +509,7 @@ export function buildScreenRegistry(root = repoRoot) {
       const source = stripTsComments(fs.readFileSync(absolute, 'utf8'));
       const codes = [...source.matchAll(CAN_PERMISSION_LITERAL)].map(match => known(match[2], `canPermission literal in ${file}`));
       if (codes.length === 0) continue;
-      for (const route of screensOf(file)) codes.forEach(code => screens.get(route).granted.get('display').add(code));
+      for (const route of screensOf(file, `표시 ${codes.join('·')}`)) codes.forEach(code => screens.get(route).granted.get('display').add(code));
     }
   }
 

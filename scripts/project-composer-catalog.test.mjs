@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { compositionDigest, javaDomainReferences as javaDomainReferencesOf, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { REQUIRES_USER_REASONS, attachUserReasons, userReasonProblem } from './project-composer-reasons.mjs';
 import { INTEGRATES, degradationPredicate, eventConstructionsIn, eventListenersIn, requiresClosure, resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 
@@ -73,10 +73,16 @@ test('a declared foreign key whose child table moved into its parent domain is r
 });
 
 test('a declared tab menu must match an active menu row of an existing screen', t => {
+  // 허브 분해 H2: 지식 허브 셸은 게시판 소유라 위키·FAQ·Q&A 메뉴는 셸 경로 소유다. 남은 탭 메뉴는 커뮤니티 기여 탭뿐이다.
   assert.deepEqual(catalog.capabilities.filter(capability => capability.menuTabs.length).map(capability => [capability.id, capability.menuTabs]), [
-    ['board', ['/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA', '/admin/help/faq?tab=WIKI']],
     ['community', ['/admin/help?tab=COMMUNITY']],
   ]);
+  const board = catalog.capabilities.find(capability => capability.id === 'board');
+  assert.deepEqual(board.frontend.routes.filter(route => route.startsWith('/admin/help')), ['/admin/help', '/admin/help/faq', '/admin/help/qna']);
+  // 게시판 디렉터리 안의 커뮤니티 탭 별칭은 그 탭을 기여한 커뮤니티가 소유한다 — 같은 길이면 exact 선언이 접두 선언을 이긴다.
+  assert.ok(catalog.capabilities.find(capability => capability.id === 'community').frontend.routes.includes('/admin/community/boards'));
+  assert.ok(!board.frontend.routes.includes('/admin/community/boards'));
+  assert.ok(board.frontend.routes.includes('/admin/community/boards/detail'), 'the board keeps the screens under the alias');
   for (const capability of catalog.capabilities) assert.ok(!capability.menuRoutes.some(route => route.includes('?')), capability.id);
   const root = fixture(t);
   const path = join(root, 'config/project-composer-menus.json');
@@ -441,9 +447,9 @@ test('a slot contribution directory is a feature declared in both its feature pa
   writeManifest(wrongPack, value => { value.packs.collaboration.frontend.removePaths.push('src/extensions/addressbook'); });
   assert.throws(() => loadProjectComposerCatalog(wrongPack), /pack removes a slot path that is not its feature's contribution directory: collaboration src\/extensions\/addressbook/);
   const undeclared = fixture(t);
-  mkdirSync(join(undeclared, 'frontend/src/extensions/note'), { recursive: true });
-  writeFileSync(join(undeclared, 'frontend/src/extensions/note/recipient-picker-sources.ts'), 'export default [];\n');
-  assert.throws(() => loadProjectComposerCatalog(undeclared), /slot contribution directory is missing from its feature paths: src\/extensions\/note/);
+  mkdirSync(join(undeclared, 'frontend/src/extensions/sms'), { recursive: true });
+  writeFileSync(join(undeclared, 'frontend/src/extensions/sms/recipient-picker-sources.ts'), 'export default [];\n');
+  assert.throws(() => loadProjectComposerCatalog(undeclared), /slot contribution directory is missing from its feature paths: src\/extensions\/sms/);
   const stray = fixture(t);
   writeFileSync(join(stray, 'frontend/src/extensions/helpers.ts'), 'export {};\n');
   assert.throws(() => loadProjectComposerCatalog(stray), /슬롯 디렉터리에는/);
@@ -520,4 +526,75 @@ test('a new dependency without a sentence, a sentence without its dependency and
   assert.throws(() => attachUserReasons(capabilities, { 'a>b': ' ' }), /is empty/);
   assert.throws(() => attachUserReasons(capabilities, {}), /requires edge lacks a user reason: a>b/);
   assert.throws(() => attachUserReasons(capabilities, { 'a>b': '가는 나를 씁니다.', 'b>a': '나는 가를 씁니다.' }), /user reason has no requires edge: b>a/);
+});
+
+/*
+ * 화면 → 다른 기능 API 의 숨은 의존(허브 분해 H2). 프런트 import 그래프에도 Java 간선에도 보이지 않는다 — 생성 operation 은 core 다.
+ * 기능 소유 프런트 파일이 부르는 생성 operation 의 컨트롤러(권한 원장 operationBindings.handler)가 참조하는 업무 기능은 그 기능의
+ * requires 폐포 안이어야 한다. 지식 허브 공동 화면 간선이 가려 오던 도움말 → 게시판(도움말 센터의 FAQ·Q&A)을 UI_DEPENDENCIES 로
+ * 적은 이유이며, 이 선언을 지우면 생성물은 컴파일·화면 대조를 통과하고 실행 중에 404 가 된다 — 이 단언이 유일한 그물이다.
+ * 판정은 기능 파일의 직접 `xxxOperation` 참조만 본다(하한).
+ */
+function apiDependencyViolations(capabilities) {
+  const domains = new Set(capabilities.map(capability => capability.id));
+  const operations = new Map();
+  const operationsSource = readFileSync(join(ROOT, 'frontend/src/types/generated-operations.ts'), 'utf8');
+  for (const match of operationsSource.matchAll(/export const (\w+Operation) = [\s\S]*?method: "(\w+)",\s*path: "([^"]+)"/g)) {
+    operations.set(match[1], `${match[2].toUpperCase()} ${match[3]}`);
+  }
+  const handlers = new Map(JSON.parse(readFileSync(join(ROOT, 'config/governance/authorization-policies.json'), 'utf8')).operationBindings
+    .map(binding => [`${binding.method} ${binding.path}`, binding.handler]));
+  const controllerDomains = new Map();
+  const domainsOf = handler => {
+    const file = join(ROOT, `api-server/src/main/java/${handler.split('#')[0].replaceAll('.', '/')}.java`);
+    if (!controllerDomains.has(file)) {
+      let source = '';
+      try { source = readFileSync(file, 'utf8'); } catch { /* 원장에 있는데 소스가 없으면 아래 단언이 0 건으로 비지 않게 센다 */ }
+      controllerDomains.set(file, [...new Set(javaDomainReferencesOf(source))].filter(domain => domains.has(domain)));
+    }
+    return controllerDomains.get(file);
+  };
+  const closure = requiresClosure(capabilities);
+  const frontend = join(ROOT, 'frontend');
+  const walkFiles = directory => {
+    let entries;
+    try { entries = readdirSync(directory, { withFileTypes: true }); } catch { return []; }
+    return entries.flatMap(entry => entry.isDirectory()
+      ? (entry.name === '__tests__' ? [] : walkFiles(join(directory, entry.name)))
+      : (/\.tsx?$/.test(entry.name) && !/\.test\.|generated-/.test(entry.name) ? [join(directory, entry.name)] : []));
+  };
+  const violations = new Set();
+  let checked = 0;
+  for (const capability of capabilities) {
+    const allowed = closure(capability.id);
+    for (const path of capability.frontend.paths) {
+      const target = join(frontend, path);
+      const files = /\.tsx?$/.test(path) ? [target] : walkFiles(target);
+      for (const file of files) {
+        let source;
+        try { source = readFileSync(file, 'utf8'); } catch { continue; }
+        for (const match of source.matchAll(/\b(\w+Operation)\b/g)) {
+          const operation = operations.get(match[1]);
+          const handler = operation && handlers.get(operation);
+          if (!handler) continue;
+          checked += 1;
+          for (const needed of domainsOf(handler).filter(domain => !allowed.has(domain))) {
+            violations.add(`${relative(ROOT, file).split(sep).join('/')} [${capability.id}] ${match[1]} -> ${needed}`);
+          }
+        }
+      }
+    }
+  }
+  return { violations: [...violations].sort(), checked };
+}
+
+test('a feature screen calls only APIs whose controllers belong to features it requires (hidden UI-to-API edges)', () => {
+  const { violations, checked } = apiDependencyViolations(catalog.capabilities);
+  assert.ok(checked > 50, `operation references checked: ${checked}`);
+  assert.deepEqual(violations, []);
+  // 대조: 도움말 → 게시판 UI 의존을 지우면 도움말 센터 서비스의 게시판 operation 이 붉다.
+  const withoutHelpBoard = catalog.capabilities.map(capability => (capability.id !== 'help' ? capability
+    : { ...capability, requires: capability.requires.filter(edge => edge.domain !== 'board') }));
+  assert.match(apiDependencyViolations(withoutHelpBoard).violations.join('\n'),
+    /frontend\/src\/services\/business\/user\/help\/HelpUserService\.ts \[help\] getPublicFaqsOperation -> board/);
 });

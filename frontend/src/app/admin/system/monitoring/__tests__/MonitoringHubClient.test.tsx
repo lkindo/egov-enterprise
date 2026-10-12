@@ -1,34 +1,26 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
 import { inProjection } from '@/test-utils/projection';
 
-// 댓글 탭(협업 팩 마커)과 하네스 탭(시연 팩 마커)의 시험은 그 블록과 함께 빠지는 같은 팩 파일이 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
+// 하네스 탭(시연 기능의 hub-tabs 기여)의 시험은 그 기여가 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
+// [허브 분해 H6] 댓글 탭의 시험(검색 없음·확인 후 영구 삭제·동기 선점·삭제 대행 권한 표시)은 댓글 기능의 독립 화면 시험으로 옮겼다
+//   (src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx). 이 허브에는 댓글 탭이 없다.
 
 const mocks = vi.hoisted(() => ({
   query: '',
   replace: vi.fn(),
-  toast: vi.fn(),
-  confirm: vi.fn(),
   audit: vi.fn(),
   system: vi.fn(),
   login: vi.fn(),
-  comments: vi.fn(),
-  deleteComment: vi.fn(),
   health: vi.fn(),
   cpu: vi.fn(),
   memory: vi.fn(),
   integrity: vi.fn(),
 }));
 
-// Census action sink(`deleteCommentMutation.mutateAsync`)과 같은 이름의 테스트 alias.
-// query-options 내부 mutationFn까지 내려간 실제 write 호출을 이 alias로 관측한다.
-const deleteCommentMutation = mocks.deleteComment;
-
-// 댓글 삭제 버튼은 관리자 삭제 대행 권한으로 보인다 — 기본은 그 권한을 가진 관리자이고, 표시 판정 테스트만 권한을 줄인다.
 const READ_ONLY_PERMISSIONS = ['OPS_READ', 'SYS_LOG_READ', 'WEB_LOG_READ', 'LOGIN_LOG_READ'];
-const FULL_PERMISSIONS = [...READ_ONLY_PERMISSIONS, 'COMMENT_DELETE_ALL'];
 const auth = vi.hoisted(() => ({ permissions: [] as string[] }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: auth.permissions, authorizationVersion: 'v1' } }) }));
 
@@ -48,14 +40,6 @@ vi.mock('@/lib/hooks/use-debounced-value', () => ({
   useDebouncedValue: (value: string) => value,
 }));
 
-vi.mock('@/app/components/ui/toast', () => ({
-  useToast: () => ({ toast: mocks.toast }),
-}));
-
-vi.mock('@/app/components/ui/confirm-modal', () => ({
-  useConfirm: () => mocks.confirm,
-}));
-
 vi.mock('@/services/foundation/system/AuditAdminService', () => ({
   auditAdminService: { getAuditLogs: mocks.audit },
 }));
@@ -64,13 +48,6 @@ vi.mock('@/services/foundation/system/SystemLogAdminService', () => ({
   systemLogAdminService: {
     getSystemLogs: mocks.system,
     getLoginLogs: mocks.login,
-  },
-}));
-
-vi.mock('@/services/foundation/system/CommentAdminService', () => ({
-  commentAdminService: {
-    getComments: mocks.comments,
-    deleteComment: mocks.deleteComment,
   },
 }));
 
@@ -166,11 +143,6 @@ const loginRow = {
   loginMthd: 'PASSWORD',
   creatDt: '2026-08-15',
 };
-const commentRow = {
-  ansSn: 44,
-  ansCn: '삭제할 댓글',
-  wrterId: 'writer',
-};
 
 function page(list: unknown[]) {
   return { list, total: list.length, totalPage: 2 };
@@ -191,14 +163,11 @@ function renderHub(query = '') {
 describe('MonitoringHubClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    auth.permissions = FULL_PERMISSIONS;
+    auth.permissions = READ_ONLY_PERMISSIONS;
     mocks.query = '';
-    mocks.confirm.mockResolvedValue(true);
     mocks.audit.mockResolvedValue(page([auditRow]));
     mocks.system.mockResolvedValue(page([systemRow]));
     mocks.login.mockResolvedValue(page([loginRow]));
-    mocks.comments.mockResolvedValue(page([commentRow]));
-    mocks.deleteComment.mockResolvedValue(undefined);
     mocks.health.mockResolvedValue({
       status: 'UP',
       components: { db: { status: 'UP' }, redis: { status: 'UP' } },
@@ -276,72 +245,11 @@ describe('MonitoringHubClient', () => {
       .toHaveTextContent('1건 반출');
   });
 
-  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it('does not expose unsupported comment search and confirms permanent deletion', async () => {
+  // [허브 분해 H6] 댓글 탭은 댓글 기능의 독립 화면으로 옮겼다. 종전 주소는 없는 탭을 그리지 않고 기본 탭으로 떨어진다.
+  it('[H6] 댓글 탭은 없다 — `?tab=comments` 는 기본 탭을 연다', () => {
     renderHub('tab=comments');
-
-    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: LOG_SEARCH_LABEL })).not.toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: LOGIN_SEARCH_LABEL })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
-    expect(document.querySelector('button button')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '댓글 삭제' }));
-
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
-      title: '댓글 영구 삭제',
-      variant: 'destructive',
-    })));
-    await waitFor(() => expect(mocks.deleteComment).toHaveBeenCalledWith(44));
-    expect(mocks.toast).toHaveBeenCalledWith('댓글이 성공적으로 삭제되었습니다.', 'success');
-  });
-
-  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it('댓글 삭제는 confirm 전에 동기 선점하고 시작 버튼에 pending 상태를 알리며 실패 후 재시도할 수 있다', async () => {
-    let rejectDelete!: (reason?: unknown) => void;
-    deleteCommentMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
-      rejectDelete = reject;
-    }));
-    renderHub('tab=comments');
-
-    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
-    const remove = screen.getByRole('button', { name: '댓글 삭제' });
-
-    act(() => {
-      fireEvent.click(remove);
-      fireEvent.click(remove);
-    });
-
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(deleteCommentMutation).toHaveBeenCalledTimes(1));
-    expect(remove).toBeDisabled();
-    expect(remove).toHaveAttribute('aria-busy', 'true');
-    expect(remove).toHaveAccessibleName('댓글 삭제 중');
-
-    rejectDelete(new Error('댓글 삭제 서버 오류'));
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('댓글 삭제 서버 오류', 'error'));
-    expect(screen.getByText('삭제할 댓글')).toBeInTheDocument();
-    expect(remove).not.toBeDisabled();
-    expect(remove).not.toHaveAttribute('aria-busy');
-    expect(remove).toHaveAccessibleName('댓글 삭제');
-  });
-
-  /*
-   * [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다.
-   * 이 허브는 로그 조회 권한만으로 들어올 수 있어, 종전에는 조회만 맡은 담당자에게도 댓글 삭제가 보였고
-   * 확인 모달까지 지난 뒤에야 403 을 만났다. 본인 댓글 삭제 권한은 이 관리자 삭제를 열지 않는다.
-   */
-  if (inProjection('frontend/src/services/business/comment/commentService.ts')) it.each([
-    { label: '조회 권한만 있으면', permissions: READ_ONLY_PERMISSIONS },
-    { label: '본인 댓글 삭제 권한만 있어도', permissions: [...READ_ONLY_PERMISSIONS, 'COMMENT_DELETE'] },
-  ])('$label 댓글 삭제 버튼을 보이지 않는다 — 목록과 선택은 그대로다', async ({ permissions }) => {
-    auth.permissions = permissions;
-    renderHub('tab=comments');
-
-    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '사용자 의견 관리 44 상세 열기' }));
-    expect(screen.queryByRole('button', { name: '댓글 삭제' })).toBeNull();
-    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(screen.queryByRole('tab', { name: /의견/ })).toBeNull();
+    expect(screen.getByRole('tab', { name: '시스템 로그(감사 보기)' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('shows honest actuator failure state and retries health collection', async () => {
@@ -437,8 +345,9 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
-  // [2026-09-27 DIP B5 F11] 하네스 탭은 demo pack 소유 파일(HarnessAtlasPanels)로 옮겼다 — 목 없이 실제 상세를 본다.
-  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('selects both harness catalog item types', async () => {
+  // [2026-09-27 DIP B5 F11] 하네스 탭은 시연 기능 소유 파일(HarnessAtlasPanels)로 옮겼고, 허브에는 시연의 hub-tabs 기여로 붙는다
+  //   (허브 분해 H3) — 목 없이 실제 레지스트리·상세를 본다. 시연이 빠진 생성물에서는 기여가 원장으로 빠진다.
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('selects both harness catalog item types', async () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
     let detail = screen.getByRole('region', { name: '선택 항목 상세' });
@@ -494,7 +403,7 @@ describe('MonitoringHubClient', () => {
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();
   });
 
-  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
 

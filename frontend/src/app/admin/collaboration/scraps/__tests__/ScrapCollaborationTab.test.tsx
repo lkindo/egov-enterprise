@@ -4,7 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * 협업 허브 스크랩 탭의 **등록·수정 진입점** 계약(DEC-OPS-079).
+ * 협업 허브 스크랩 탭의 **등록·수정 진입점** 계약(DEC-OPS-079). 스크랩 탭은 스크랩 소유 hub-tabs 기여라(허브 분해 H1) 이 시험도
+ * 스크랩 디렉터리에 두고 실제 레지스트리로 허브를 그린다 — 스크랩이 빠진 구성에서는 기능과 함께 지워진다.
  *
  * ── 이 파일이 막는 회귀 ──────────────────────────────────────────────────────
  * §A3-1 이행으로 `insertScrap`(등록)과 `selectScrapDetail/[id]`(수정)이 page-redirect 가 됐는데
@@ -38,10 +39,6 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('tab=SCRAPS'),
 }));
 
-vi.mock('@/services/business/user/NoteService', () => ({
-  noteService: { getReceivedNotes: vi.fn(async () => ({ list: [], totalCount: 0 })) },
-}));
-
 vi.mock('@/queries/scrap-query-options', () => ({
   scrapKeys: { all: ['scraps'], lists: () => ['scraps', 'list'] },
   scrapQueryOptions: {
@@ -64,7 +61,13 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => mocks.confirm,
 }));
 
-import CollaborationHubClient from '../CollaborationHubClient';
+// 스크랩 탭은 내 스크랩 목록 조회 권한(SCRAP_READ)이 있는 주체에게 보인다(허브 분해 H5) — 그 권한을 가진 주체를 대역한다.
+vi.mock('@/contexts/AuthContext', () => {
+  const user = { id: 'u', permissions: ['SCRAP_READ', 'SCRAP_CREATE', 'SCRAP_UPDATE'], authorizationVersion: 'v1' };
+  return { useAuth: () => ({ user }), useOptionalAuth: () => ({ user }) };
+});
+
+import CollaborationHubClient from '../../CollaborationHubClient';
 
 function renderHub() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

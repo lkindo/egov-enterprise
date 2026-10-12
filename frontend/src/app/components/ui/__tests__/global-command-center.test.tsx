@@ -262,7 +262,8 @@ describe('GlobalCommandCenter accessibility contract', () => {
     renderCommandCenter();
     await openFromTrigger(user);
     const input = screen.getByRole('combobox', { name: '글로벌 커맨드 센터 검색어 입력' });
-    // 모든 생성물에 있는 두 항목(로그아웃·통합 검색 제안) 사이를 오간다 — 협업 허브 바로가기는 협업 팩 마커 안이다.
+    // 모든 생성물에 있는 두 항목(로그아웃·통합 검색 제안) 사이를 오간다 — 협업 허브 바로가기는 쪽지 기능의 shell-links 기여라
+    // 구성마다 있거나 없다(렌더 경로는 global-command-center.shell-links.test.tsx 가 가짜 레지스트리로 본다).
     fireEvent.change(input, { target: { value: '로그' } });
     const options = await screen.findAllByRole('option');
     expect(options).toHaveLength(2);

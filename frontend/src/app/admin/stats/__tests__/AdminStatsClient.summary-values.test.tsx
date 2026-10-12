@@ -4,17 +4,13 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/components/ui/standard-chart-wrapper', () => ({
   StandardChartWrapper: () => <div data-testid="connect-chart" />,
 }));
+// 셸 전용 — 기능이 넘기는 요약 칸이 없는 구성(core)과 같다. '누적 게시물' 칸은 게시판 기여 시험이 본다(허브 분해 H4).
+vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import AdminStatsClient from '../AdminStatsClient';
 
-/** 요약 칸 제목. '누적 게시물' 칸은 게시판이 있을 때만 있다(화면과 같은 pack 마커). */
-const SUMMARY_TITLES = [
-  '누적 사용자',
-  '금일 성공 로그인',
-  /* reusable-base:collaboration:start */
-  '누적 게시물',
-  /* reusable-base:collaboration:end */
-];
+/** 셸이 늘 두는 요약 칸 제목. */
+const SUMMARY_TITLES = ['누적 사용자', '금일 성공 로그인'];
 
 /** 요약 칸은 제목 문단과 값 문단을 한 상자에 담는다. */
 function summaryCard(title: string): HTMLElement {
@@ -65,9 +61,8 @@ describe('AdminStatsClient 요약 수치', () => {
     expect(within(summaryCard('누적 사용자')).getByText('1,234')).toBeInTheDocument();
     expect(within(summaryCard('금일 성공 로그인')).getByText('-')).toBeInTheDocument();
     expect(screen.getByText(/성공 로그인만 집계/)).toBeInTheDocument();
-    /* reusable-base:collaboration:start */
-    expect(within(summaryCard('누적 게시물')).getByText('0')).toBeInTheDocument();
-    /* reusable-base:collaboration:end */
+    // 요약 응답에 게시물 수가 있어도 기능 기여가 없으면 그 칸을 그리지 않는다.
+    expect(screen.queryByText('누적 게시물')).not.toBeInTheDocument();
     expect(screen.getByText(/수집된 일수 1일/)).toBeInTheDocument();
     // 양성 대조 — 합계 문구를 실제로 찾을 수 있어야 위 실패 단언이 의미가 있다.
     expect(renderedTotal(container)?.[1]).toBe('1');

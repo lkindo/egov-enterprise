@@ -678,6 +678,44 @@ test('a screen that renders another route\'s client gets that client\'s write an
   assert.deepEqual(rows('/admin/things/[id]'), ['THING_CREATE:write'], 'the cycle is followed once to the screen that opens it');
 });
 
+test('writes and canPermission literals reached through a placement-blind slot contribution are refused, not spread to every consumer', t => {
+  const { dir, write, mutate } = fixture(t);
+  // 통계처럼 같은 레지스트리를 읽는 화면이 서로 다른 배치를 그린다. 기여는 탭 본문을 가리킨다.
+  const registryFor = slot => `import thing from './thing/${slot}';\nexport const panels = [thing];\n`;
+  const contributionFor = () => "import { ThingStatsBody } from '@/components/things/ThingStatsBody';\n"
+    + "export default [{ id: 'THING', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody }];\n";
+  for (const slot of ['stats-panels', 'shell-links']) {
+    write(`frontend/src/extensions/generated-${slot}.ts`, registryFor(slot));
+    write(`frontend/src/extensions/thing/${slot}.ts`, contributionFor());
+  }
+  write('frontend/src/components/things/ThingStatsBody.tsx', 'export const ThingStatsBody = () => <p>본문</p>;\n');
+  write('frontend/src/app/admin/reports/page.tsx',
+    "import { panels } from '@/extensions/generated-stats-panels';\nexport default function Page() { return <>{panels.length}</>; }\n");
+  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => { catalog.pagePermissions['/admin/reports'] = ['THING_READ']; });
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    ledger.routes.push({ route: '/admin/reports', shellAccess: 'admin-system', visibleLabel: '사물 보고' });
+  });
+  // 본문에 쓰기·표시가 없으면 통과한다(대조군).
+  const rows = registry => byRoute(registry, '/admin/reports').permissions.map(row => `${row.code}:${row.source}`);
+  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_READ:entry']);
+
+  write('frontend/src/components/things/ThingStatsBody.tsx',
+    "export const ThingStatsBody = ({ user }) => (canPermission(user, 'THING_UPDATE') ? <p>본문</p> : null);\n");
+  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*표시 THING_UPDATE/u);
+  write('frontend/src/components/things/ThingStatsBody.tsx', [
+    "import { thingService } from '@/services/ThingService';",
+    'export const ThingStatsBody = () => <button onClick={() => thingService.createThing({})}>등록</button>;',
+  ].join('\n'));
+  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*쓰기 THING_CREATE/u);
+
+  // 배치를 가리는 슬롯(여기서는 shell-links 레지스트리를 읽는 화면)이면 종전처럼 그 화면에 귀속한다 — 거부는 슬롯 목록이 정한다.
+  write('frontend/src/app/admin/reports/page.tsx',
+    "import { panels } from '@/extensions/generated-shell-links';\nexport default function Page() { return <>{panels.length}</>; }\n");
+  fs.rmSync(path.join(dir, 'frontend/src/extensions/thing/stats-panels.ts'));
+  fs.rmSync(path.join(dir, 'frontend/src/extensions/generated-stats-panels.ts'));
+  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_CREATE:write', 'THING_READ:entry']);
+});
+
 test('screens and aliases are ordered by code point, not by the host locale order the page discovery uses', t => {
   const { dir, write, mutate } = fixture(t);
   // 탐색은 localeCompare(대소문자를 섞는다) 순서다 — 그대로 내보내면 산출물이 실행 환경의 로캘에 따라 달라진다.
