@@ -49,6 +49,8 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx',
     'frontend/src/app/error.tsx', 'frontend/src/app/components/ui/global-command-center.tsx',
     'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+  // 통계 셸(기능 탭)과 통계 요약(요약 칸)이 같은 레지스트리를 읽는다(허브 분해 H4).
+  'stats-panels': ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
 });
 
 /** 슬롯의 소비자 전체(허브별 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */

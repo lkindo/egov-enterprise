@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2a0165eb13e7c3e0d3bd2f0bb0cabb0932dfc4edaa02fbbb8303883434bf60ae"
+    "inventoryHash": "c177572cebf13e98b85957f2ba08770ce00f6821980636da014f711125cad103"
   },
   "summary": {
-    "sourceFileCount": 660,
-    "records": 388,
-    "syntaxOccurrences": 463,
-    "ambiguousRecords": 341,
-    "unverifiedRecords": 388,
+    "sourceFileCount": 664,
+    "records": 390,
+    "syntaxOccurrences": 466,
+    "ambiguousRecords": 343,
+    "unverifiedRecords": 390,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 173,
+      "navigation-producer": 175,
       "page-redirect": 17,
       "query-builder": 22,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 378,
+      "navigation": 380,
       "request-telemetry": 10
     }
   },
@@ -15867,6 +15867,84 @@
       }
     },
     {
+      "id": "URL-EDD46CA919337F",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/board/stats-panels.ts",
+      "producerFile": "frontend/src/extensions/board/stats-panels.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/stats/board",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/stats/board",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/board/stats-panels.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-64EE10C9640A18",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/board/stats-panels.ts",
+      "producerFile": "frontend/src/extensions/board/stats-panels.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/stats/data-usage",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/stats/data-usage",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/board/stats-panels.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-0A1F266DE62ADF",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -16020,7 +16098,7 @@
       "evidence": {
         "source": "frontend/src/extensions/slots.ts",
         "detector": "href-navigation",
-        "occurrenceCount": 1
+        "occurrenceCount": 2
       }
     },
     {

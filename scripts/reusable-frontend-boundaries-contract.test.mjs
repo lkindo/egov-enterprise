@@ -330,8 +330,11 @@ test('direct selections that reach a check unit no earlier configuration checked
  */
 // 슬롯 레지스트리를 import 해도 되는 모듈 표(SLOT_REGISTRY_CONSUMERS)는 scripts/slot-registry.mjs 가 정본이다 — census 도 같은 표를
 // 쓴다(허브별 쓰기 귀속). 표에 없는 모듈이 import 하면 붉다 — 범용 플러그인 로더를 막고 grep 경로를 고정한다.
-/** 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)이 링크 슬롯이다 — 관리 링크 census 가 그 항목을 본다. */
-const LINK_SLOTS = new Set(['shell-links']);
+/**
+ * 링크 키(href·url·link·moreHref)를 가질 수 있는 슬롯. 셸 링크 슬롯(PR-6)과 통계 패널(허브 분해 H4 — 라우트인 탭)이 링크 슬롯이다.
+ * 관리 링크 census 가 그 항목을 본다.
+ */
+const LINK_SLOTS = new Set(['shell-links', 'stats-panels']);
 const LINK_KEYS = new Set(['href', 'url', 'link', 'moreHref']);
 /** 슬롯 종류 상한(설계서 16.5). */
 const MAX_SLOTS = 10;
@@ -398,6 +401,58 @@ function shellLinkViolations(entries, label) {
   for (const row of rows.filter(candidate => candidate.placement === 'footer')) {
     if (!rows.some(candidate => candidate.placement === 'header' && candidate.href === row.href)) {
       violations.push(`${label}: ${row.id} — 바닥글 항목에 같은 목적지의 머리글 짝이 이 기여 안에 없다`);
+    }
+  }
+  return violations;
+}
+
+/** 통계 셸이 스스로 두는 탭 id(IntelligenceHubClient 의 CORE_TABS). 기여 탭 id 는 이것과 겹치지 않는다. */
+function statsCoreTabIds(source = readFileSync(join(frontendRoot, 'src/app/admin/stats/IntelligenceHubClient.tsx'), 'utf8')) {
+  const table = source.match(/const CORE_TABS[\s\S]*?\];/)?.[0] ?? '';
+  return [...table.matchAll(/\{ id: '([A-Z][A-Z0-9_]*)'/g)].map(match => match[1]);
+}
+
+/**
+ * stats-panels 항목 규칙(허브 분해 H4). 셸은 이 값으로 탭·조회·요약 칸을 만들므로 기여 원문에서 정적으로 판정한다.
+ * - placement 는 hub-tab·overview-card 리터럴, order 는 숫자 리터럴, id 는 대문자 식별자 리터럴(body 탭은 `?tab=` 값이다)이고
+ *   셸 탭 id 와 겹치지 않는다.
+ * - hub-tab 의 kind 는 series·body 리터럴이다. series 는 탭이 곧 라우트라 href 가 '/' 로 시작하는 앱 안 경로 리터럴이고 visibleWhen 은
+ *   { page: 자기 href } 하나다(셸 링크와 같은 규칙 — 관리 링크 census 가 page 술어를 게이트로 본다). uninstrumented 는 참거짓 리터럴이다.
+ * - body 와 overview-card 는 href 를 두지 않는다(라우트가 없다 — body 는 `?tab=` 으로 연다).
+ */
+function statsPanelViolations(entries, label, { coreTabs = statsCoreTabIds() } = {}) {
+  const violations = [];
+  const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
+  const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
+    && ts.isIdentifier(property.name) && property.name.text === name);
+  for (const element of entries.elements) {
+    if (!ts.isObjectLiteralExpression(element)) {
+      violations.push(`${label}: stats-panels 항목은 객체 리터럴이다`);
+      continue;
+    }
+    const id = text(prop(element, 'id')?.initializer);
+    const name = id ?? '?';
+    const placement = text(prop(element, 'placement')?.initializer);
+    const kind = text(prop(element, 'kind')?.initializer);
+    const order = prop(element, 'order')?.initializer;
+    const href = prop(element, 'href') ? text(prop(element, 'href').initializer) ?? null : undefined;
+    const rule = prop(element, 'visibleWhen')?.initializer;
+    const page = rule && ts.isObjectLiteralExpression(rule) && rule.properties.length === 1 ? text(prop(rule, 'page')?.initializer) : undefined;
+    const uninstrumented = prop(element, 'uninstrumented')?.initializer;
+    if (placement !== 'hub-tab' && placement !== 'overview-card') violations.push(`${label}: ${name} 의 placement 는 hub-tab·overview-card 리터럴이다`);
+    if (id === undefined || !/^[A-Z][A-Z0-9_]*$/.test(id)) violations.push(`${label}: ${name} 의 id 는 대문자 식별자 리터럴이다`);
+    else if (coreTabs.includes(id)) violations.push(`${label}: ${name} — 통계 셸 탭과 겹친다`);
+    if (!order || !ts.isNumericLiteral(order)) violations.push(`${label}: ${name} 의 order 는 숫자 리터럴이다`);
+    const series = placement === 'hub-tab' && kind === 'series';
+    if (placement === 'hub-tab' && kind !== 'series' && kind !== 'body') violations.push(`${label}: ${name} 의 kind 는 series·body 리터럴이다`);
+    if (series) {
+      if (typeof href !== 'string' || !isInternalPath(href)) violations.push(`${label}: ${name} 의 href 는 '/' 로 시작하는 앱 안 경로 리터럴이다`);
+      if (page === undefined || page !== href) violations.push(`${label}: ${name} 의 visibleWhen 은 { page: 자기 href } 여야 한다`);
+      if (!uninstrumented || (uninstrumented.kind !== ts.SyntaxKind.TrueKeyword && uninstrumented.kind !== ts.SyntaxKind.FalseKeyword)) {
+        violations.push(`${label}: ${name} 의 uninstrumented 는 참거짓 리터럴이다`);
+      }
+    } else if (href !== undefined) {
+      violations.push(`${label}: ${name} — 라우트가 없는 항목(body 탭·요약 칸)은 href 를 두지 않는다`);
     }
   }
   return violations;
@@ -556,6 +611,7 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
     }
     if (slot === 'shell-links') violations.push(...shellLinkViolations(entries, label));
     if (slot === 'hub-tabs') violations.push(...hubTabViolations(entries, label, { file: label }));
+    if (slot === 'stats-panels') violations.push(...statsPanelViolations(entries, label));
   }
   const covers = (paths, target) => paths.some(path => {
     const root = path.replace(/\/+$/, '');
@@ -836,6 +892,35 @@ test('shell links: the page predicate is the href, subjectless placements stay o
   // '/' 로 시작해도 프로토콜 상대 주소는 외부 링크다. 원문 '/\\x' 의 값은 '/\x' 이고 브라우저는 '//x' 로 읽는다.
   assert.match(check(fixture(entry('h', 'header', '//example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
   assert.match(check(fixture(entry('h', 'header', '/\\\\example.org', icon))), /h 의 href 는 '\/' 로 시작하는 문자열 리터럴이다/);
+});
+
+test('stats panels: route tabs carry their page predicate, body tabs and overview cards carry no link, and ids stay off the shell tabs', () => {
+  const inputs = readProjectionInputs();
+  const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
+  const panels = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'stats-panels');
+  assert.ok(panels.length > 0, 'the source has stats-panels contributions');
+  assert.deepEqual(statsCoreTabIds().sort(), ['DASHBOARD', 'REPORTS', 'SYSTEM_STATS', 'USER_STATS'], 'the shell tab table is read');
+  const check = (source, panel = panels[0]) => contributionViolations({ file: panel.file, source, owner: panel.owner, slot: 'stats-panels',
+    ownPaths: paths.get(panel.owner), foreignPaths: [] }).join('\n');
+  for (const panel of panels) assert.equal(check(inputs.original(join(frontendRoot, panel.file)), panel), '', panel.file);
+  // 합성 기여로 규칙마다 붉음을 본다. id 는 줄 머리에 둔다(유일성 검사의 정규식 모양).
+  const fixture = (...entries) => "import { Box } from 'lucide-react';\nimport { defineContributions } from '@/extensions/slots';\n"
+    + `export default defineContributions('stats-panels', [\n${entries.join(',\n')}\n]);\n`;
+  const series = ({ id = 'POSTS', href = '/admin/stats/board', page = href, uninstrumented = 'false', extra = '' } = {}) =>
+    `  {\n    id: '${id}',\n    placement: 'hub-tab',\n    kind: 'series',\n    order: 30,\n    href: '${href}',\n    label: 'x',\n    title: 'x',\n    icon: Box,\n`
+    + `    uninstrumented: ${uninstrumented},\n${extra}    visibleWhen: { page: '${page}' },\n  }`;
+  const card = (extra = '') => `  {\n    id: 'CARD',\n    placement: 'overview-card',\n    order: 30,\n    title: 'x',\n    field: 'totalPosts',\n${extra}    visibleWhen: { always: '시험' },\n  }`;
+  const body = (extra = '') => `  {\n    id: 'BODY',\n    placement: 'hub-tab',\n    kind: 'body',\n    order: 60,\n    label: 'x',\n    title: 'x',\n    icon: Box,\n${extra}    visibleWhen: { always: '시험' },\n  }`;
+  assert.equal(check(fixture(series(), body(), card())), '', 'a series tab with its page predicate, a body tab and a card are green');
+  assert.match(check(fixture(series({ page: '/admin/stats' }))), /POSTS 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
+  assert.match(check(fixture(series({ href: 'admin/stats/board' }))), /POSTS 의 href 는 '\/' 로 시작하는 앱 안 경로 리터럴이다/);
+  assert.match(check(fixture(series({ uninstrumented: 'flag' }))), /POSTS 의 uninstrumented 는 참거짓 리터럴이다/);
+  assert.match(check(fixture(series({ id: 'REPORTS' }))), /REPORTS — 통계 셸 탭과 겹친다/);
+  assert.match(check(fixture(series({ id: 'posts' }))), /posts 의 id 는 대문자 식별자 리터럴이다/);
+  assert.match(check(fixture(body("    href: '/admin/stats/board',\n"))), /BODY — 라우트가 없는 항목\(body 탭·요약 칸\)은 href 를 두지 않는다/);
+  assert.match(check(fixture(card("    href: '/admin/stats',\n"))), /CARD — 라우트가 없는 항목/);
+  assert.match(check(fixture(body().replace("kind: 'body'", "kind: 'table'"))), /BODY 의 kind 는 series·body 리터럴이다/);
+  assert.match(check(fixture(card().replace("placement: 'overview-card'", "placement: 'sidebar'"))), /CARD 의 placement 는 hub-tab·overview-card 리터럴이다/);
 });
 
 test('a configuration without the contributing feature renders an empty registry, which the projection type check sees as a root', () => {

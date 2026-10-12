@@ -220,8 +220,9 @@ const CORE_SURVIVORS = [
   //   화면이 아닌 파일만 둔다.
   'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
   'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
-  // [Phase 0c] 통계 셸과 게시판 데이터를 쓰지 않는 통계 화면은 core 다. 셸은 게시판·설문 탭을 마커와 설문 패널로
-  //   받으므로, 그 import 가 마커 밖으로 새면 core 투영에서 통계 화면 전체가 연쇄로 사라진다.
+  // [Phase 0c] 통계 셸과 게시판 데이터를 쓰지 않는 통계 화면은 core 다. [허브 분해 H4] 셸은 게시판·설문 탭을 stats-panels
+  //   레지스트리로 받는다 — 기능 코드를 다시 import 하거나 레지스트리 렌더가 빠지면 core 투영에서 통계 화면 전체가 연쇄로 사라진다.
+  'frontend/src/extensions/generated-stats-panels.ts',
   'frontend/src/app/admin/stats/AdminStatsClient.tsx',
   'frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
   'frontend/src/app/admin/stats/StatsHubParts.tsx',
@@ -293,6 +294,9 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/lib/board/qna-status.ts', ['core']],
     // [허브 분해 H3] 감시 허브의 하네스 아틀라스 탭 기여도 시연 기능과 함께 직접 지워진다(허브는 core 셸이라 남는다).
     ['frontend/src/extensions/showcase/hub-tabs.ts', ['core', 'collaboration']],
+    // [허브 분해 H4] 통계 셸의 게시판·설문 기여도 기능과 함께 직접 지워진다(셸·요약은 core 라 남는다).
+    ['frontend/src/extensions/board/stats-panels.ts', ['core']],
+    ['frontend/src/extensions/survey/stats-panels.ts', ['core', 'collaboration']],
   ]) {
     for (const profile of profiles) {
       assert.equal(byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal, 'direct',

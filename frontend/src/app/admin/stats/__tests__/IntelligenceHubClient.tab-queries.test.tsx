@@ -7,6 +7,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  *
  * 자료 이용 통계는 요약 카드가 쓰지 않는 미수집 축인데 어느 탭을 열어도 불렀다. 요약 카드가 쓰는 사용자·접속
  * 통계는 탭과 무관하게 계속 조회해야 한다(비활성 탭에서 값이 비어 '0' 으로 보이는 것을 막는다).
+ *
+ * [허브 분해 H4] 셸 전용 시험이다 — 기능 레지스트리를 빈 배열로 대역한다. 자료 이용 탭의 조회 조건은 게시판 기여 시험이 본다
+ * (stats/board/__tests__/BoardStatsTabs.equivalence.test.tsx).
  */
 const services = vi.hoisted(() => ({
   getUserStats: vi.fn(),
@@ -14,9 +17,6 @@ const services = vi.hoisted(() => ({
   getConnectStats: vi.fn(),
   getDataUsageStats: vi.fn(),
   getReportStats: vi.fn(),
-  /* reusable-base:survey:start */
-  getSurveyList: vi.fn(),
-  /* reusable-base:survey:end */
 }));
 const params = vi.hoisted(() => ({ value: new URLSearchParams() }));
 
@@ -34,14 +34,10 @@ vi.mock('@/services/foundation/system/StatsAdminService', () => ({
     getReportStats: services.getReportStats,
   },
 }));
-/* reusable-base:survey:start */
-vi.mock('@/services/foundation/system/SurveyAdminService', () => ({
-  surveyAdminService: { getSurveyList: services.getSurveyList },
-}));
-/* reusable-base:survey:end */
 vi.mock('@/app/components/ui/observability-charts', () => ({
   SafeResponsiveContainer: () => <div data-testid="chart" />,
 }));
+vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import IntelligenceHubClient from '../IntelligenceHubClient';
 
@@ -56,20 +52,21 @@ describe('통계 허브 탭별 조회', () => {
     Object.values(services).forEach(fn => fn.mockReset().mockResolvedValue([]));
   });
 
-  it('요약 카드용 사용자·접속 통계는 늘 부르고, 자료 이용 통계는 그 탭에서만 부른다', async () => {
+  it('요약 카드용 사용자·접속 통계는 늘 부르고, 기능 기여가 없으면 다른 통계는 부르지 않는다', async () => {
     renderHub('SYSTEM_STATS');
     await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
     expect(services.getUserStats).toHaveBeenCalled();
     expect(services.getDataUsageStats).not.toHaveBeenCalled();
+    expect(services.getBbsStats).not.toHaveBeenCalled();
     expect(screen.getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
   });
 
-  /* reusable-base:collaboration:start */
-  it('자료 이용 탭을 열면 자료 이용 통계를 부른다', async () => {
+  it('이 구성에 없는 탭 값(?tab=DATA_USAGE)은 기본 탭(통계 개요)을 열고 그 조회를 하지 않는다', async () => {
     renderHub('DATA_USAGE');
-    await waitFor(() => expect(services.getDataUsageStats).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('통계 개요');
+    expect(services.getDataUsageStats).not.toHaveBeenCalled();
   });
-  /* reusable-base:collaboration:end */
 
   it('[DIP B5 F6] 기간을 고르지 않으면 서버 기본값으로 부르고 그 사실을 말한다 — 전체 프리셋은 없다', async () => {
     renderHub('SYSTEM_STATS');

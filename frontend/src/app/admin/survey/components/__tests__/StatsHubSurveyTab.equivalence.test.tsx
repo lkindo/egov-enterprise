@@ -5,6 +5,9 @@
  * 같다는 것을 보이려고, 지금의 동작을 라우트 페이지와 URL 수준에서 고정한다.
  * ⚠ 패널 파일·서비스 모듈을 import 하거나 mock 하지 않는다 — 옮겨 가도 이 파일은 그대로 통과해야 한다.
  *   API 는 `@/lib/api/client` 에서, 반출은 공용 반출 컴포넌트에서만 가로챈다.
+ *
+ * [허브 분해 H4] 이 탭은 설문의 stats-panels 기여다. 셸이 로그인 주체로 기여의 노출 술어를 판정하므로 주체만 대역한다 — 대역이 없으면
+ * 탭이 숨어 기본 탭으로 떨어진다. 그래서 탭의 존재(aria-current)를 양성으로 단언한다.
  */
 
 import type { ComponentProps } from 'react';
@@ -25,6 +28,12 @@ const client = vi.hoisted(() => ({
   requestRaw: vi.fn<(config: AxiosRequestConfig) => Promise<unknown>>(),
 }));
 vi.mock('@/lib/api/client', () => ({ default: client }));
+
+const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ'], authorizationVersion: 'test' } }));
+vi.mock('@/contexts/AuthContext', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/contexts/AuthContext')>()),
+  useOptionalAuth: () => ({ user: auth.user }),
+}));
 
 const nav = vi.hoisted(() => ({ params: new URLSearchParams(), push: vi.fn(), replace: vi.fn() }));
 vi.mock('next/navigation', () => ({

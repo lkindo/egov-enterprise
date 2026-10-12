@@ -87,6 +87,10 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다.' },
   { path: 'frontend/src/extensions/mail/shell-links.ts',
     reason: '메일 기능이 없으면 협업 허브의 메일 발송 링크만 사라지고 허브는 그대로입니다.' },
+  { path: 'frontend/src/extensions/board/stats-panels.ts',
+    reason: '게시판 기능이 없으면 통계 화면의 게시물·자료 이용 탭과 누적 게시물 칸만 사라지고 통계는 그대로입니다.' },
+  { path: 'frontend/src/extensions/survey/stats-panels.ts',
+    reason: '설문 기능이 없으면 통계 화면의 설문조사 분석 탭만 사라지고 통계는 그대로입니다.' },
 ];
 
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];

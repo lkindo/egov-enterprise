@@ -119,6 +119,14 @@ if (repoPresent(
 
 describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않는다', () => {
   const client = stripComments(readSrc('app/admin/stats/IntelligenceHubClient.tsx'));
+  /*
+   * [허브 분해 H4] 게시물·자료 이용 탭은 게시판의 stats-panels 기여다. 셸은 셸 탭의 미수집 목록(CORE_UNINSTRUMENTED_TABS)만 갖고,
+   * 기능 탭의 미수집 여부는 그 기여가 uninstrumented 로 밝힌다 — 판정은 둘의 합이다. 게시판이 빠진 생성물에는 기여가 없다.
+   */
+  const BOARD_PANELS = 'extensions/board/stats-panels.ts';
+  const boardPanels = srcPresent(BOARD_PANELS) ? stripComments(readSrc(BOARD_PANELS)) : '';
+  /** 기여 안에서 그 탭 항목 하나(id 부터 그 항목의 노출 술어까지). */
+  const panelEntry = (id: string) => boardPanels.match(new RegExp(`id: '${id}'[\\s\\S]*?visibleWhen`))?.[0] ?? '';
 
   it('계측 writer 가 없는 탭은 기간 문구가 아니라 미수집 사실을 말한다', () => {
     /*
@@ -128,11 +136,11 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
      * [2026-08-28] CONTENT_STATS 는 이 목록에서 빠졌다 — 아래 별도 케이스가 그 근거를 고정한다.
      * [2026-09-25] USER_STATS 도 빠졌다 — writer 가 생겼다. 역시 아래 별도 케이스가 근거를 고정한다.
      */
-    expect(client).toContain('UNINSTRUMENTED_TABS');
-    for (const tab of ['DATA_USAGE', 'REPORTS']) {
-      expect(client, `${tab} 이 미수집 목록에서 빠졌다`).toMatch(
-        new RegExp(`UNINSTRUMENTED_TABS[\\s\\S]{0,200}${tab}`),
-      );
+    expect(client).toContain("CORE_UNINSTRUMENTED_TABS: readonly string[] = ['REPORTS']");
+    // 기능 탭의 미수집 표시가 판정에 든다 — 셸이 기여의 uninstrumented 를 읽지 않으면 자료 이용 탭이 기간 문구로 돌아간다.
+    expect(client).toMatch(/activePanel\?\.kind === 'series' && activePanel\.uninstrumented/);
+    if (boardPanels) {
+      expect(panelEntry('DATA_USAGE'), 'DATA_USAGE 가 미수집 표시를 잃었다').toContain('uninstrumented: true');
     }
     expect(client).toContain('아직 수집되지 않습니다');
   });
@@ -149,6 +157,10 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
    */
   it('CONTENT_STATS 가 미수집이 아닌 이유는 서버가 게시글을 실제로 세기 때문이다', () => {
     expect(client).not.toMatch(/UNINSTRUMENTED_TABS[\s\S]{0,200}CONTENT_STATS/);
+    if (boardPanels) {
+      expect(panelEntry('CONTENT_STATS'), 'CONTENT_STATS 항목을 찾지 못했다 — 계약이 vacuous 하다').toContain("kind: 'series'");
+      expect(panelEntry('CONTENT_STATS')).toContain('uninstrumented: false');
+    }
 
     const service = readRepo(
       'business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java',
@@ -597,7 +609,10 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
   it('미수집으로 고지한 축의 요약 카드가 합계를 숫자로 찍지 않는다', () => {
     // 고지 목록이 계약의 입력이다 — 여기서 축이 빠지면(writer 신설) 이 검사도 함께 판정한다.
     expect(statsHub, '미수집 목록을 찾지 못했다 — 계약이 vacuous 하다')
-      .toContain("UNINSTRUMENTED_TABS: readonly StatsTab[] = ['DATA_USAGE', 'REPORTS']");
+      .toContain("CORE_UNINSTRUMENTED_TABS: readonly string[] = ['REPORTS']");
+    // [허브 분해 H4] 기능의 요약 칸(stats-panels 의 summary)은 미수집 축에만 있고(타입이 막는다), 셸은 그 칸에 '미수집' 만 찍는다.
+    expect(statsHub).toMatch(/panel\.kind === 'series' && panel\.uninstrumented && panel\.summary/);
+    expect(statsHub).toContain('label={label} value="미수집" />');
 
     expect(statsHub).not.toContain('sumStatsCo(dataUsage)');
     // 계측 원천이 있는 축은 그대로 값을 보여 준다 — 금지만 하는 계약이 되지 않게.

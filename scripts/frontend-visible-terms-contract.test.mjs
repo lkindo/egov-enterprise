@@ -294,12 +294,22 @@ test('home route sources are bound to their real entry points and do not expose 
   assert.doesNotMatch(sidebar, /_ 허브_노드_v5\.0|고급 기업용 핵심 엔진|1\.0\.2_STABLE/);
 });
 
+/**
+ * 생성물에서 투영으로 빠진 파일(원장에 있고 실제로 없는 파일)을 거른다. 원본에는 원장이 없어 아무것도 거르지 않는다 — 원장에 없는데
+ * 파일이 없으면 거르지 않으므로 읽기가 그대로 실패한다(DEC-OPS-258 의 시험 도우미와 같은 규칙).
+ */
+function presentUnlessProjected(files) {
+  const ledgerPath = path.join(ROOT, 'reusable-projection-ledger.json');
+  const removed = fs.existsSync(ledgerPath) ? new Set(JSON.parse(fs.readFileSync(ledgerPath, 'utf8')).removedFiles ?? []) : new Set();
+  return files.filter((file) => !(removed.has(file) && !fs.existsSync(path.join(ROOT, file))));
+}
+
 test('search and statistics surfaces do not present batch-backed data as neural or realtime analysis', () => {
   const searchSources = [
     'frontend/src/app/search/SearchShell.tsx',
     'frontend/src/app/search/SearchClient.tsx',
   ].map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8')).join('\n');
-  const statsSources = [
+  const statsSources = presentUnlessProjected([
     'frontend/src/app/admin/stats/page.tsx',
     'frontend/src/app/admin/stats/AdminStatsClient.tsx',
     'frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
@@ -307,7 +317,10 @@ test('search and statistics surfaces do not present batch-backed data as neural 
     'frontend/src/app/admin/stats/StatsHubFallback.tsx',
     // Phase 0c: 설문 탭은 설문이 넘기는 패널로 옮겼다. 검사 범위를 줄이지 않도록 함께 본다.
     'frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx',
-  ].map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8')).join('\n');
+    // 허브 분해 H4: 기능 탭의 이름·제목은 stats-panels 기여에 있다. 같은 이유로 함께 본다.
+    'frontend/src/extensions/board/stats-panels.ts',
+    'frontend/src/extensions/survey/stats-panels.ts',
+  ]).map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8')).join('\n');
 
   assert.doesNotMatch(
     searchSources,

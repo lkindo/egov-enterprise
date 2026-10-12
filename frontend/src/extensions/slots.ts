@@ -158,8 +158,83 @@ export type HubTab = {
 export const isHubTab = <H extends HubId>(hub: H) =>
   (entry: HubTab): entry is Extract<HubTab, { readonly hub: H }> => entry.hub === hub;
 
+/** 통계 셸이 고른 집계 기간. 고르지 않으면 undefined 이고 서버 기본값(최근 1개월)을 집계한다. */
+export interface StatsDateRange {
+  readonly fromDate: string;
+  readonly toDate: string;
+}
+
+/** 일자별 집계 한 칸. 서버가 채우는 값은 일자와 건수 둘뿐이다(StatsAdminService). */
+export interface StatsSeriesPoint {
+  readonly statsDate?: string;
+  readonly statsCo?: number;
+}
+
+/** 통계 셸이 패널 조회로 만들어 본문 탭에 넘기는 결과. 조회는 셸이 소유한다 — 기여는 훅을 넘길 수 없다(기여는 데이터다). */
+export interface StatsPanelQuery {
+  readonly data: unknown;
+  readonly isLoading: boolean;
+  readonly isError: boolean;
+  readonly isFetching: boolean;
+  readonly refetch: () => Promise<unknown>;
+}
+
+interface StatsHubTabBase extends SlotEntry {
+  readonly placement: 'hub-tab';
+  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40 · 운영 보고서 70. */
+  readonly order: number;
+  /** 내비게이션 단추 글자. */
+  readonly label: string;
+  /** 화면 제목(h1)과 본문 카드 제목. */
+  readonly title: string;
+  readonly icon: LucideIcon;
+  /** 조회 키 접두. series 는 셸이 집계 기간을 덧붙인다. */
+  readonly queryKey: readonly string[];
+}
+
+/**
+ * series — 일자별 집계를 셸의 면적 차트·내보내기로 그린다. 탭이 곧 라우트라 href 를 가진다(링크 슬롯: visibleWhen 은 { page: href }).
+ * 미수집 축(쓰는 쪽이 없는 집계)은 uninstrumented 이고, 빈 차트는 기간이 아니라 미수집을 말한다. 요약 칸(summary)은 미수집 축에만
+ * 둔다 — 값은 늘 '미수집' 이다(측정되지 않는 값을 0 으로 보이지 않는다).
+ */
+export type StatsSeriesTab = StatsHubTabBase & {
+  readonly kind: 'series';
+  readonly href: string;
+  readonly load: (range?: StatsDateRange) => Promise<readonly StatsSeriesPoint[]>;
+} & (
+  | { readonly uninstrumented: false }
+  | { readonly uninstrumented: true; readonly summary?: { readonly label: string; readonly icon: LucideIcon } }
+);
+
+/** body — 기능이 본문을 그리는 탭. 전용 라우트가 없어 현재 경로의 `?tab=<id>` 로 연다. 내보내기 행도 기능이 만든다. */
+export interface StatsBodyTab extends StatsHubTabBase {
+  readonly kind: 'body';
+  readonly load: () => Promise<unknown>;
+  readonly Body: ComponentType<{ readonly query: StatsPanelQuery }>;
+  readonly exportRows: (data: unknown) => Record<string, unknown>[];
+  readonly exportHeaders: readonly { readonly label: string; readonly key: string }[];
+}
+
+/** overview-card — 통계 요약(/admin/stats)의 칸. 값은 요약 API 응답의 닫힌 필드다. */
+export interface StatsOverviewCard extends SlotEntry {
+  readonly placement: 'overview-card';
+  readonly order: number;
+  readonly title: string;
+  readonly field: 'totalPosts';
+}
+
+/**
+ * stats-panels — 통계 셸의 기능 탭과 요약 칸(허브 분해 H4). 셸이 패널 조회를 한 번(useQueries)에 소유하고, 기여는 조회 키·로더·본문
+ * 컴포넌트·내보내기 함수를 이름으로만 가리킨다. 기능이 빠진 구성에서는 기여 파일이 함께 지워져 그 탭·칸만 사라진다.
+ */
+export type StatsPanel = StatsSeriesTab | StatsBodyTab | StatsOverviewCard;
+export type StatsHubTab = StatsSeriesTab | StatsBodyTab;
+export const isStatsHubTab = (entry: StatsPanel): entry is StatsHubTab => entry.placement === 'hub-tab';
+export const isStatsOverviewCard = (entry: StatsPanel): entry is StatsOverviewCard => entry.placement === 'overview-card';
+
 export interface SlotMap {
   'hub-tabs': HubTab;
+  'stats-panels': StatsPanel;
   'recipient-picker-sources': RecipientPickerSource;
   'shell-links': ShellLink;
   'header-widgets': HeaderWidget;

@@ -4787,7 +4787,9 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java",
             "frontend/src/app/admin/stats/AdminStatsClient.tsx",
             "frontend/src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx",
+            "frontend/src/app/admin/stats/board/__tests__/AdminStatsTotalPosts.test.tsx",
             "frontend/src/app/admin/stats/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts",
             "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
           ]
         }
@@ -4868,7 +4870,9 @@
             "frontend/e2e/journeys/statistics.spec.ts",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
+            "frontend/src/app/admin/stats/board/board-stats-series.ts",
             "frontend/src/app/admin/stats/board/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts",
             "frontend/src/services/foundation/system/StatsAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
           ]
@@ -4916,7 +4920,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/board/page.tsx"
+            "frontend/src/app/admin/stats/board/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -4941,6 +4946,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/board/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5018,7 +5024,9 @@
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/data-usage/page.tsx"
+            "frontend/src/app/admin/stats/board/board-stats-series.ts",
+            "frontend/src/app/admin/stats/data-usage/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5064,7 +5072,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/data-usage/page.tsx"
+            "frontend/src/app/admin/stats/data-usage/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5089,6 +5098,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5212,7 +5222,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/report/page.tsx"
+            "frontend/src/app/admin/stats/report/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5237,6 +5248,7 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/report/page.tsx",
             "frontend/src/app/admin/survey/components/StatsHubSurveyTab.tsx",
+            "frontend/src/extensions/survey/stats-panels.ts",
             "frontend/src/services/foundation/system/SurveyAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/SurveyAdminService.test.ts"
           ]
@@ -5338,7 +5350,8 @@
             "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/screen/page.tsx"
+            "frontend/src/app/admin/stats/screen/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],
@@ -5465,7 +5478,8 @@
             "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/user/page.tsx"
+            "frontend/src/app/admin/stats/user/page.tsx",
+            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],

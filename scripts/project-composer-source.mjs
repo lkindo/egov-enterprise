@@ -131,7 +131,6 @@ export function composerProfile(manifest, composition) {
  * 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 'Unclassified' 로 실패한다 — 새 블록은 조용히 남거나 빠지지 않는다.
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
-const STATS_TABS = { collaboration: ['board'], survey: ['survey'] };
 const MONITORING_TABS = { collaboration: ['comment'] };
 export const FRONTEND_MARKER_FILES = Object.freeze([
   { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
@@ -152,17 +151,6 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
     step: '허브 분해(댓글 관리 화면)', reason: '탭 목록이 허브와 같은 댓글 탭을 같은 소유로 나눈다.' },
   { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
     step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
-  // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 셸과 함께 남는 시험도 같은 마커로 기대값을 맞춘다.
-  { file: 'src/app/admin/stats/IntelligenceHubClient.tsx', blocks: { collaboration: 15, survey: 6 }, owners: STATS_TABS,
-    step: '허브 분해(stats-panels)', reason: '통계 셸이 게시판·설문 탭을 직접 조립한다.' },
-  { file: 'src/app/admin/stats/__tests__/IntelligenceHubClient.core-tabs.equivalence.test.tsx', blocks: { collaboration: 6, survey: 2 },
-    owners: STATS_TABS, step: '허브 분해(stats-panels)', reason: '통계 셸 시험이 셸과 같은 탭 구성을 기대한다.' },
-  { file: 'src/app/admin/stats/__tests__/IntelligenceHubClient.tab-queries.test.tsx', blocks: { collaboration: 1, survey: 2 },
-    owners: STATS_TABS, step: '허브 분해(stats-panels)', reason: '통계 셸 시험이 셸과 같은 탭 구성을 기대한다.' },
-  { file: 'src/app/admin/stats/AdminStatsClient.tsx', blocks: { collaboration: 1 }, owners: { collaboration: ['board'] },
-    step: '허브 분해(stats-panels)', reason: '통계 요약이 누적 게시물 카드를 직접 둔다.' },
-  { file: 'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx', blocks: { collaboration: 2 },
-    owners: { collaboration: ['board'] }, step: '허브 분해(stats-panels)', reason: '통계 요약 시험이 요약과 같은 카드를 기대한다.' },
 ]);
 const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 

@@ -413,6 +413,7 @@
           "src/extensions/note",
           "src/extensions/notification",
           "src/extensions/scrap",
+          "src/extensions/board",
           "src/app/admin/collaboration/scraps",
           "src/app/admin/help",
           "src/lib/board",
@@ -479,7 +480,8 @@
           "src/services/foundation/survey",
           "src/services/foundation/system/SurveyAdminService.ts",
           "src/types/business/poll.ts",
-          "src/types/business/survey.ts"
+          "src/types/business/survey.ts",
+          "src/extensions/survey"
         ]
       },
       "database": {

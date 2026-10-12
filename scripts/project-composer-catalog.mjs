@@ -53,7 +53,9 @@ const FEATURES = {
     'src/app/admin/stats/board', 'src/app/admin/stats/data-usage',
     // 허브 분해 H2(결정 ⑤): 지식 허브 셸은 게시판 소유다. 위키·FAQ·Q&A 는 셸 고유 탭이고 커뮤니티 탭은 커뮤니티의 hub-tabs 기여다.
     //   질의응답 해결 판정은 셸과 도움말 서비스가 함께 쓰는 게시판 모듈이다.
-    'src/app/admin/help', 'src/lib/board'],
+    'src/app/admin/help', 'src/lib/board',
+    // 허브 분해 H4: 통계 셸의 게시물·자료 이용 탭과 통계 요약의 누적 게시물 칸 기여(stats-panels).
+    'src/extensions/board'],
   routes: ['/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
@@ -134,7 +136,9 @@ const FEATURES = {
   routes: ['/admin/uss/ion/sms', '/cop/sms'], requirements: ['문자 발송 공급자 설정'] },
   survey: { label: '설문·투표', permissions: ['SURVEY', 'SURVEY_RSP', 'POLL'], paths: [
     'src/app/admin/survey', 'src/app/survey', 'src/lib/api/survey.ts', 'src/services/business/user/poll',
-    'src/services/foundation/survey', 'src/services/foundation/system/SurveyAdminService.ts', 'src/types/business/poll.ts', 'src/types/business/survey.ts'],
+    'src/services/foundation/survey', 'src/services/foundation/system/SurveyAdminService.ts', 'src/types/business/poll.ts', 'src/types/business/survey.ts',
+    // 허브 분해 H4: 통계 셸의 설문조사 분석 탭 기여(stats-panels).
+    'src/extensions/survey'],
   routes: ['/admin/survey', '/survey'] },
   template: { label: '템플릿', permissions: ['TEMPLATE'], paths: [
     'src/app/admin/community/templates', 'src/app/admin/sanctn/forms', 'src/services/foundation/system/TemplateAdminService.ts'],
