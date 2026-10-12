@@ -14,7 +14,11 @@
  *   · 진입 권한 — config/governance/permission-catalog.json pagePermissions(정확 경로 → 같은 세그먼트 수 동적 형제)·
  *     pagePermissionModes(기본 ANY).
  *   · 쓰기 권한 — operation-consumer census 축 3 의 계산(analyzeWritePermissionNeeds).
- *   · 표시 권한 — canPermission(…, 'CODE') 리터럴로 적힌 권한.
+ *   · 표시 권한 — canPermission(…, 'CODE') 리터럴로 적힌 권한과, 슬롯 기여 항목의 노출 술어 visibleWhen.permissions(10단계 10a).
+ *     술어는 그 항목을 그리는 셸(소비자 표 — 허브별·배치별)의 화면에 귀속한다. page 술어는 링크 노출이라 목적지 화면의 진입
+ *     권한이 이미 말하므로, always 술어는 판정이 없으므로 귀속하지 않는다. 레이아웃 셸(LAYOUT_SHELL_FILES — 머리글·바닥글·오류
+ *     화면·명령 센터)만 그리는 항목은 귀속할 화면이 없다. 그 밖의 술어가 화면 0개로 귀속되면 원본에서는 실패하고, 투영본(투영 원장이
+ *     있는 생성물)에서는 소비 화면이 투영으로 지워진 것이라 실패하지 않고 기록한다(predicates 의 removedByProjection).
  *   · 귀속 — 파일은 가장 가까운 page 디렉터리의 화면에 귀속하고, 그 파일을 import 하는 다른 화면들에도 귀속한다
  *     (다른 라우트의 허브 클라이언트를 렌더하는 하위 화면 — /admin/help/faq 가 지식 허브 클라이언트를 연다).
  *     다음은 공용 파일이라 그것을 import 하는 화면들에만 귀속한다: src/components 등 app 밖 파일, 별칭 라우트
@@ -54,6 +58,7 @@ import {
   analyzeWritePermissionNeeds, isIntermediaryFile, isServiceFile, isTestFile, stripTsComments,
 } from './operation-consumer-census.mjs';
 import { SLOT_REGISTRY_CONSUMERS, SLOT_ROOT, slotConsumerFiles, slotConsumerPartition, slotPathKind } from './slot-registry.mjs';
+import { PROJECTION_LEDGER_PATH, projectionLedgerErrors } from './reusable-projection-ledger.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -74,6 +79,17 @@ export const SCREEN_REGISTRY_INPUTS = Object.freeze({
  * 같은 집합을 PROTECTED_PERMISSIONS 로 내보낸다 — 화면은 사본을 두지 않고 그것을 읽는다.
  */
 export const PROTECTED_PERMISSIONS = Object.freeze(['AUTHRT_ASSIGN', 'AUTHRT_GRANT', 'MFA_RECOVER', 'USER_PASSWORD']);
+/**
+ * 레이아웃 셸 — 슬롯 레지스트리를 읽지만 어느 화면에도 속하지 않는 앱 틀(머리글·바닥글·오류 화면·명령 센터). 이 셸만 그리는 기여
+ * 항목의 노출 술어(머리글 알림의 NOTI_READ 등)는 귀속할 화면이 없다(10단계 10a). 목록의 파일은 슬롯 소비자여야 하고 어느 화면에도
+ * 귀속되지 않아야 한다 — 생성기가 확인한다. 화면에 닿는 셸을 여기 두면 그 화면의 술어가 조용히 빠지므로 실패한다.
+ */
+export const LAYOUT_SHELL_FILES = Object.freeze([
+  'frontend/src/app/components/layout/footer.tsx',
+  'frontend/src/app/components/layout/header.tsx',
+  'frontend/src/app/components/ui/global-command-center.tsx',
+  'frontend/src/app/error.tsx',
+]);
 const BUNDLE_LEDGER_FIELDS = ['schemaVersion', 'description', 'bundles', 'excluded'];
 const BUNDLE_FIELDS = ['id', 'name', 'description', 'protected', 'permissions'];
 const EXCLUDED_FIELDS = ['code', 'reason'];
@@ -528,6 +544,67 @@ export function buildScreenRegistry(root = repoRoot) {
     }
   }
 
+  /*
+    [10단계 10a] 표시 — 슬롯 기여 항목의 노출 술어(visibleWhen.permissions). 판독기는 축 3 의 항목 단위 판독기 하나이고(파일 단위로
+    합치지 않는다), 항목을 그리는 셸은 그 항목의 값(hub·placement)이 가리키는 소비자뿐이다. 셸의 화면은 셸이 놓인 디렉터리가 아니라 셸을
+    그리는 화면이다(screensOf 의 slotConsumerShells). page·always 술어는 귀속하지 않는다(맨 위 주석).
+  */
+  const projected = (() => {
+    const ledgerFile = path.join(root, PROJECTION_LEDGER_PATH);
+    if (!fs.existsSync(ledgerFile)) return false;
+    const errors = projectionLedgerErrors(JSON.parse(fs.readFileSync(ledgerFile, 'utf8')));
+    if (errors.length > 0) throw new Error(`Projection ledger is invalid: ${errors.join('; ')}`);
+    return true;
+  })();
+  // 레이아웃 셸은 앱 틀이라 Next 경계 파일(layout·template·error·loading·not-found — 라우트의 오류 경계는 루트 오류 화면을 다시
+  // 내보낸다)을 거쳐서만 화면에 닿아야 한다. 화면의 내용(page 와 그것이 그리는 모듈)이 셸을 그리면 그 화면의 술어가 조용히 빠지므로 거부한다.
+  const routeBoundary = /\/(?:layout|template|error|global-error|loading|not-found)\.tsx$/u;
+  const contentScreensOf = shell => {
+    const found = new Set();
+    const seen = new Set();
+    const visit = current => {
+      if (seen.has(current)) return;
+      seen.add(current);
+      if (current !== shell && routeBoundary.test(current)) return;
+      const owner = ownerOf(current);
+      if (owner.kind === 'screen' && !slotConsumerShells.has(current)) found.add(owner.route);
+      importersOf(current).forEach(visit);
+    };
+    visit(shell);
+    return [...found].sort(byCodePoint);
+  };
+  for (const shell of LAYOUT_SHELL_FILES) {
+    if (!fs.existsSync(path.join(root, shell))) continue;
+    if (!slotConsumerShells.has(shell)) throw new Error(`레이아웃 셸 목록의 파일이 슬롯 소비자가 아니다: ${shell}`);
+    const reached = contentScreensOf(shell);
+    if (reached.length > 0) throw new Error(`레이아웃 셸 목록의 파일을 화면이 그린다: ${shell} → ${reached.join(', ')}`);
+  }
+  const predicates = [];
+  for (const file of analysis.contributionFiles) {
+    for (const entry of analysis.visibilityOf(file)) {
+      if (!entry.permissions || entry.permissions.length === 0) continue;
+      const codes = entry.permissions.map(code => known(code, `visibleWhen.permissions of ${file} ${entry.id}`));
+      const readers = analysis.entryReadersOf(file, entry);
+      const shells = readers.filter(reader => !LAYOUT_SHELL_FILES.includes(reader));
+      const record = { file, id: entry.id, permissions: [...codes].sort(byCodePoint), routes: [] };
+      if (readers.length > 0 && shells.length === 0) {
+        predicates.push({ ...record, layout: true });
+        continue;
+      }
+      const routes = new Set(shells.flatMap(shell => [...screensOf(shell, `노출 술어 ${codes.join('·')}`)]));
+      if (routes.size === 0) {
+        if (!projected) {
+          throw new Error(`기여 항목의 노출 술어가 어느 화면에도 귀속되지 않는다: ${file} ${entry.id} (${codes.join('·')}, 셸 `
+            + `${readers.join(', ') || '없음'}) — 그 항목을 그리는 셸이 소비자 표에 있는지, 레이아웃 셸이면 LAYOUT_SHELL_FILES 에 있는지 본다.`);
+        }
+        predicates.push({ ...record, removedByProjection: true });
+        continue;
+      }
+      for (const route of routes) codes.forEach(code => screens.get(route).granted.get('display').add(code));
+      predicates.push({ ...record, routes: [...routes].sort(byCodePoint) });
+    }
+  }
+
   const registry = [...screens.values()].sort((left, right) => byCodePoint(left.route, right.route)).map(screen => {
     const permissions = new Map();
     for (const source of SOURCE_PRIORITY) {
@@ -549,7 +626,7 @@ export function buildScreenRegistry(root = repoRoot) {
   const bundles = buildPermissionBundles(bundleLedger, {
     screens: registry, catalogCodes: [...actions.keys()].filter(code => typeof actions.get(code) === 'string'), findReplacedTerm,
   });
-  return { screens: registry, aliases, bundles, text: renderScreenRegistry(registry, aliases, bundles) };
+  return { screens: registry, aliases, bundles, predicates, text: renderScreenRegistry(registry, aliases, bundles) };
 }
 
 function renderArray(items) {
@@ -598,7 +675,8 @@ export function renderScreenRegistry(screens, aliases, bundles) {
 // 화면 목록 — 메뉴 편집기의 연결 화면, 권한 편집기의 화면별 권한 표, 화면 관리의 화면 목록이 읽는다.
 // 원천: 화면 파일(frontend/src/app/**/page.tsx 중 라우팅이 page 인 것), 진입 권한(permission-catalog.json
 // pagePermissions·pagePermissionModes), 라우트 원장(ui-route-capabilities.json shellAccess·visibleLabel),
-// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).
+// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산), 표시 권한(canPermission
+// 리터럴·슬롯 기여 항목의 노출 술어 visibleWhen.permissions).
 //
 // 권한 묶음 — 권한 작업대의 '권한 묶음 적용'이 읽는다. 원천은 config/governance/permission-bundles.json 이고, 묶음이
 // 여는 화면(screens)과 관련 화면(relatedScreens)은 위 화면 목록에서 계산한다. screens 는 진입 권한을 이 묶음의 권한이
@@ -615,8 +693,9 @@ export function renderScreenRegistry(screens, aliases, bundles) {
 //     canPermission 리터럴('display')로만 드러난다.
 //   · 호출·import 는 이름으로 맞춘다 — 같은 이름의 모듈은 겹치고(타입만 가져오는 import 도 import 로 본다),
 //     조립한 권한 코드(템플릿 문자열)는 보지 못한다.
-//   · 'display' 는 리터럴로 적힌 canPermission 코드다. 리터럴을 언급하면 판정에 쓴 것으로 본다(어느 버튼에
-//     걸었는지는 보지 않는다).
+//   · 'display' 는 리터럴로 적힌 canPermission 코드와 슬롯 기여 항목의 노출 술어(visibleWhen.permissions)다. 리터럴을
+//     언급하면 판정에 쓴 것으로 본다(어느 버튼에 걸었는지는 보지 않는다). 술어는 그 항목을 그리는 셸(허브별·배치별 소비자)의
+//     화면에 붙고, page·always 술어와 레이아웃 셸(머리글·바닥글·오류 화면·명령 센터)만 그리는 항목은 어느 화면에도 붙지 않는다.
 //   · 화면의 라우트 디렉터리 파일은 그 화면과, 그 파일을 import 하는(정적·동적) 다른 화면들에 귀속한다. 공용
 //     컴포넌트·허브 클라이언트는 그것을 import 하는 화면들에 귀속하고, app/ 루트의 layout·헤더·전역 provider 는
 //     어느 화면에도 귀속하지 않는다.

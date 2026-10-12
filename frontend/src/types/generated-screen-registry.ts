@@ -3,7 +3,8 @@
 // 화면 목록 — 메뉴 편집기의 연결 화면, 권한 편집기의 화면별 권한 표, 화면 관리의 화면 목록이 읽는다.
 // 원천: 화면 파일(frontend/src/app/**/page.tsx 중 라우팅이 page 인 것), 진입 권한(permission-catalog.json
 // pagePermissions·pagePermissionModes), 라우트 원장(ui-route-capabilities.json shellAccess·visibleLabel),
-// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).
+// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산), 표시 권한(canPermission
+// 리터럴·슬롯 기여 항목의 노출 술어 visibleWhen.permissions).
 //
 // 권한 묶음 — 권한 작업대의 '권한 묶음 적용'이 읽는다. 원천은 config/governance/permission-bundles.json 이고, 묶음이
 // 여는 화면(screens)과 관련 화면(relatedScreens)은 위 화면 목록에서 계산한다. screens 는 진입 권한을 이 묶음의 권한이
@@ -20,8 +21,9 @@
 //     canPermission 리터럴('display')로만 드러난다.
 //   · 호출·import 는 이름으로 맞춘다 — 같은 이름의 모듈은 겹치고(타입만 가져오는 import 도 import 로 본다),
 //     조립한 권한 코드(템플릿 문자열)는 보지 못한다.
-//   · 'display' 는 리터럴로 적힌 canPermission 코드다. 리터럴을 언급하면 판정에 쓴 것으로 본다(어느 버튼에
-//     걸었는지는 보지 않는다).
+//   · 'display' 는 리터럴로 적힌 canPermission 코드와 슬롯 기여 항목의 노출 술어(visibleWhen.permissions)다. 리터럴을
+//     언급하면 판정에 쓴 것으로 본다(어느 버튼에 걸었는지는 보지 않는다). 술어는 그 항목을 그리는 셸(허브별·배치별 소비자)의
+//     화면에 붙고, page·always 술어와 레이아웃 셸(머리글·바닥글·오류 화면·명령 센터)만 그리는 항목은 어느 화면에도 붙지 않는다.
 //   · 화면의 라우트 디렉터리 파일은 그 화면과, 그 파일을 import 하는(정적·동적) 다른 화면들에 귀속한다. 공용
 //     컴포넌트·허브 클라이언트는 그것을 import 하는 화면들에 귀속하고, app/ 루트의 layout·헤더·전역 provider 는
 //     어느 화면에도 귀속하지 않는다.
@@ -72,8 +74,11 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"APPROVAL_READ","action":"READ","source":"display"},
+      {"code":"BANNER_READ","action":"READ","source":"display"},
       {"code":"DASHBOARD_READ","action":"READ","source":"display"},
-      {"code":"NOTE_READ","action":"READ","source":"display"}
+      {"code":"NOTE_READ","action":"READ","source":"display"},
+      {"code":"POPUP_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -95,7 +100,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"NOTE_READ","action":"READ","source":"display"},
       {"code":"SCRAP_CREATE","action":"CREATE","source":"write"},
+      {"code":"SCRAP_READ","action":"READ","source":"display"},
       {"code":"SCRAP_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
@@ -143,6 +150,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"ADBK_READ","action":"READ","source":"display"},
       {"code":"DEPT_READ","action":"READ","source":"display"},
       {"code":"MAIL_SEND","action":"SEND","source":"write"},
       {"code":"USER_READ","action":"READ","source":"display"}
@@ -156,7 +164,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"NOTE_READ","action":"READ","source":"display"},
       {"code":"SCRAP_CREATE","action":"CREATE","source":"write"},
+      {"code":"SCRAP_READ","action":"READ","source":"display"},
       {"code":"SCRAP_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
@@ -499,7 +509,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -510,7 +521,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -521,7 +533,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -532,7 +545,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -543,7 +557,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -997,6 +1012,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["SMS_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"ADBK_READ","action":"READ","source":"display"},
       {"code":"DEPT_READ","action":"READ","source":"display"},
       {"code":"SMS_READ","action":"READ","source":"entry"},
       {"code":"SMS_SEND","action":"SEND","source":"write"},
