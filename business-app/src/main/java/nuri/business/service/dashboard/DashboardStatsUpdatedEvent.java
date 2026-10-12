@@ -5,6 +5,10 @@ import java.util.Map;
 /**
  * 실시간 대시보드 통계 지표가 업데이트되었음을 나타내는 이벤트
  * 백엔드 헌법 제12조 1항에 의거하여 불변성을 위해 Java Record 타입으로 설계
+ *
+ * <p>{@code *Available} 은 집계가 실패했는지(false 면 숫자를 믿을 수 없다), {@code *Provided} 는 그 집계를 하는 포트 구현이
+ * 이 구성에 있는지다(Phase 2 9단계). 게시판·알림 기능이 빠진 구성에서는 provided=false 이고, 화면은 그 카드를 그리지 않는다 —
+ * 세지 않는 값을 '0 · 오늘' 로 약속하지 않는다. 원본 제품에서는 두 구현이 늘 있어 화면이 같다.
  */
 public record DashboardStatsUpdatedEvent(
     int activeUsers,
@@ -12,7 +16,9 @@ public record DashboardStatsUpdatedEvent(
     int newPosts,
     int alerts,
     boolean newPostsAvailable,
-    boolean alertsAvailable
+    boolean alertsAvailable,
+    boolean newPostsProvided,
+    boolean alertsProvided
 ) {
     /**
      * 프론트엔드 전송에 필요한 맵 구조로 쉽게 변환할 수 있는 유틸리티 메서드
@@ -24,7 +30,9 @@ public record DashboardStatsUpdatedEvent(
             "newPosts", newPosts,
             "alerts", alerts,
             "newPostsAvailable", newPostsAvailable,
-            "alertsAvailable", alertsAvailable
+            "alertsAvailable", alertsAvailable,
+            "newPostsProvided", newPostsProvided,
+            "alertsProvided", alertsProvided
         );
     }
 }

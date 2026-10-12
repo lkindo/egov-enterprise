@@ -27,6 +27,9 @@ export interface RealTimeStats {
   alerts: number;
   newPostsAvailable: boolean;
   alertsAvailable: boolean;
+  /** 그 집계 포트 구현이 이 구성에 있는지(Phase 2 9단계). false 면 그 기능이 빠진 구성이라 카드를 그리지 않는다. */
+  newPostsProvided: boolean;
+  alertsProvided: boolean;
 }
 
 interface RealTimeDashboardProps {
@@ -45,15 +48,18 @@ function parseStats(body: string): RealTimeStats | null {
     if (!keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && value[key] >= 0)) {
       return null;
     }
-    const availabilityKeys = ['newPostsAvailable', 'alertsAvailable'] as const;
-    if (availabilityKeys.some((key) => value[key] !== undefined && typeof value[key] !== 'boolean')) {
+    const flagKeys = ['newPostsAvailable', 'alertsAvailable', 'newPostsProvided', 'alertsProvided'] as const;
+    if (flagKeys.some((key) => value[key] !== undefined && typeof value[key] !== 'boolean')) {
       return null;
     }
     // 기존 서버의 네 숫자 프레임도 읽는다. 새 서버는 조회 실패를 명시적으로 false로 보낸다.
+    // provided 키가 없는 프레임(구서버)은 집계 구현이 있다고 읽는다 — 종전 화면 그대로다.
     return {
       ...Object.fromEntries(keys.map((key) => [key, value[key]])),
       newPostsAvailable: value.newPostsAvailable !== false,
       alertsAvailable: value.alertsAvailable !== false,
+      newPostsProvided: value.newPostsProvided !== false,
+      alertsProvided: value.alertsProvided !== false,
     } as RealTimeStats;
   } catch {
     return null;
@@ -142,6 +148,11 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
   }, [showNotifications]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  // [Phase 2 9단계] 그 집계를 하는 기능(게시판·알림)이 빠진 구성이면 카드를 그리지 않는다 — 세지 않는 값을 '0 · 오늘' 로 약속하지
+  //   않는다. 첫 프레임 전에는 알 수 없으므로 종전처럼 '—' 카드를 둔다(원본 제품은 늘 두 구현이 있어 화면이 같다).
+  const showNewPosts = !stats || stats.newPostsProvided;
+  const showAlerts = !stats || stats.alertsProvided;
+  const statColumns = STAT_COLUMNS[2 + Number(showNewPosts) + Number(showAlerts)];
 
   return (
     <div className="space-y-4">
@@ -233,7 +244,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       </div>
 
       {/* 실시간 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-4', statColumns)}>
         {/*
           서버(RealTimeDashboardService)는 이 인스턴스의 활성 연결을 세고, visitsPerMinute 는 새 연결마다
           증가한 뒤 스케줄러가 1분마다 0으로 초기화한다. 최근 60초 이동 구간이나 고유 사용자 수는 아니다.
@@ -253,29 +264,36 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
           trend="회"
           color="green"
         />
-        <RealTimeStatCard
-          title="신규 게시글"
-          value={stats?.newPostsAvailable ? stats.newPosts : null}
-          icon={<Activity size={20} />}
-          trend="오늘"
-          unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
-          color="purple"
-        />
+        {showNewPosts && (
+          <RealTimeStatCard
+            title="신규 게시글"
+            value={stats?.newPostsAvailable ? stats.newPosts : null}
+            icon={<Activity size={20} />}
+            trend="오늘"
+            unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
+            color="purple"
+          />
+        )}
         {/* [2026-09-25] 서버는 모든 사용자의 읽지 않은 알림 합계(read_yn='N')를 방송한다. 종전 '알림' 제목과
             빨간 강조는 내 알림처럼 읽혀, 벨의 내 미읽음 수와 다른 숫자가 급한 일처럼 보였다. 범위를 이름에 싣고
             강조는 걷는다 — 보는 사람이 처리할 수 있는 숫자가 아니다. */}
-        <RealTimeStatCard
-          title="전체 미읽음 알림"
-          value={stats?.alertsAvailable ? stats.alerts : null}
-          unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
-          icon={<AlertCircle size={20} />}
-          trend="전체 사용자"
-          color="red"
-        />
+        {showAlerts && (
+          <RealTimeStatCard
+            title="전체 미읽음 알림"
+            value={stats?.alertsAvailable ? stats.alerts : null}
+            unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
+            icon={<AlertCircle size={20} />}
+            trend="전체 사용자"
+            color="red"
+          />
+        )}
       </div>
     </div>
   );
 }
+
+/** 보이는 통계 카드 수 → 넓은 화면의 열 수(빈 열을 남기지 않는다). Tailwind 가 찾도록 클래스는 리터럴로 둔다. */
+const STAT_COLUMNS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' };
 
 const statColorClasses = {
     blue: 'bg-hub-blue/10 text-hub-blue',

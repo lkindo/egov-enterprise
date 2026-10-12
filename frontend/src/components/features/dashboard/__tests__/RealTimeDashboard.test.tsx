@@ -51,6 +51,25 @@ describe('RealTimeDashboard', () => {
     expect(screen.getByText('새 연결(이 서버, 1분마다 초기화)').previousElementSibling).toHaveTextContent('3');
   });
 
+  it('🚨 집계 구현이 없는 기능(provided=false)의 카드는 그리지 않고, provided 키가 없는 구서버 프레임은 종전대로 그린다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    // 첫 프레임 전에는 알 수 없으므로 두 카드를 '—' 로 둔다.
+    expect(screen.getByText('신규 게시글')).toBeInTheDocument();
+    expect(screen.getByText('전체 미읽음 알림')).toBeInTheDocument();
+
+    act(() => statsHandler({ body: JSON.stringify({
+      activeUsers: 7, visitsPerMinute: 3, newPosts: 0, alerts: 0, newPostsAvailable: true, alertsAvailable: true,
+      newPostsProvided: false, alertsProvided: true,
+    }) }));
+    expect(screen.queryByText('신규 게시글')).not.toBeInTheDocument();
+    expect(screen.getByText('전체 미읽음 알림')).toBeInTheDocument();
+
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
+    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('2');
+    expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('1');
+  });
+
   it('서버 초기화 전후의 새 연결 횟수를 누적으로 설명하지 않는다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;

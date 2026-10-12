@@ -63,7 +63,7 @@ class RealTimeDashboardServiceTest {
         restarted.broadcastRealTimeStats();
 
         verify(eventPublisher, times(2)).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                e.newPosts() == 7 && e.newPostsAvailable()));
+                e.newPosts() == 7 && e.newPostsAvailable() && e.newPostsProvided()));
     }
 
     @Test
@@ -75,7 +75,7 @@ class RealTimeDashboardServiceTest {
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
 
-        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.alerts() == 5 && e.alertsAvailable()));
+        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.alerts() == 5 && e.alertsAvailable() && e.alertsProvided()));
         verify(pendingAlertCountContributor).countPendingAlerts();
     }
 
@@ -111,16 +111,17 @@ class RealTimeDashboardServiceTest {
     }
 
     /**
-     * 알림 도메인이 base projection 에서 빠진 프로필에는 구현이 없다. 그때의 0 은 "셀 알림이 없다" 는
-     * 사실이며, 조회 실패와 달리 정상 집계 상태다.
+     * 알림·게시판 도메인이 base projection 에서 빠진 프로필에는 구현이 없다. 그때의 0 은 "셀 알림·게시글이 없다" 는
+     * 사실이며, 조회 실패와 달리 정상 집계 상태다. provided=false 로 함께 알려 화면이 그 카드를 그리지 않는다(Phase 2 9단계).
      */
     @Test
-    @DisplayName("대기 알림 집계 구현이 없으면 0 을 방송하고 대시보드는 계속 돈다")
+    @DisplayName("집계 구현이 없으면 0 과 provided=false 를 방송하고 대시보드는 계속 돈다")
     void getRealTimeStats_NoContributor() {
         when(pendingAlertCounts.getIfAvailable()).thenReturn(null);
         realTimeDashboardService.broadcastRealTimeStats();
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                e.alerts() == 0 && e.alertsAvailable() && e.newPosts() == 0 && e.newPostsAvailable()));
+                e.alerts() == 0 && e.alertsAvailable() && !e.alertsProvided()
+                        && e.newPosts() == 0 && e.newPostsAvailable() && !e.newPostsProvided()));
     }
 
     @Test
@@ -146,7 +147,7 @@ class RealTimeDashboardServiceTest {
 
         var event = org.mockito.ArgumentCaptor.forClass(DashboardStatsUpdatedEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
-        assertThat(event.getValue().toMap()).containsEntry("alertsAvailable", false);
+        assertThat(event.getValue().toMap()).containsEntry("alertsAvailable", false).containsEntry("alertsProvided", true);
     }
 
     @Test
