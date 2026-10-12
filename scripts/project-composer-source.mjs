@@ -128,7 +128,7 @@ export function composerProfile(manifest, composition) {
  * pack 마커 블록이 있는 프런트 파일의 소유 표다(슬롯 단계 PR-2). 마커를 걷어 내는 이행이 끝날 때까지 남은 블록을 이 표 하나로 드러낸다.
  * - blocks: pack 별 블록 수. 공용 파서(parsePackMarkerBlocks)로 센 원본 수와 정확히 같아야 한다(project-composer-source.test.mjs).
  * - owners: pack → 그 블록을 남기는 데 필요한 기능. 직접 선택 투영이 쓴다. 블록 내용으로 가르는 파일만 함수다.
- * - step: 블록을 걷어 낼 이행 단계, reason: 마커로 남겨 둔 이유.
+ * - step: 블록을 걷어 낼 이행 단계(걷지 않고 남기는 블록은 '잔존(…)'), reason: 마커로 남겨 둔 이유.
  * 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 'Unclassified' 로 실패한다 — 새 블록은 조용히 남거나 빠지지 않는다.
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
@@ -145,7 +145,10 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
   { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
     step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
   { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
-    step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
+    // 커뮤니티 후속 C3(DEC-OPS-280): 커뮤니티가 게시판을 요구하고 게시판은 커뮤니티를 요구하지 않으므로 마커가 맞는 형태다 — 게시판만
+    //   고른 구성과 협업 기본에서 네 블록이 import 와 함께 빠진다.
+    step: '잔존(선택 외래 키 연동 칸)',
+    reason: '커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다.' },
 ]);
 const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 
