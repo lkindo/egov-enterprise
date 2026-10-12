@@ -25,6 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { slotRegistryOutputs } from './slot-registry.mjs';
+import { composerModuleOutputs } from './composer-modules.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -98,6 +99,17 @@ export const GENERATORS = [
     touches: [URL_APPROVAL],
     command: ['node', ['scripts/ui-url-state-census.mjs', '--write']],
     rebindUrlApproval: true,
+  },
+  {
+    // 매니페스트 v2(config/modules)는 11단계 전환(C7)까지 v1 선언(manifest·생성기 상수)의 파생물이다. 한쪽이 v1 을, 다른 쪽이
+    // v2 를 고쳤으면 v2 를 고르지 않고 다시 만든다. 테이블 소유는 엔티티에서 계산하므로 업무 앱 Java 도 입력이다.
+    id: 'composer-modules',
+    inputs: under('config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', 'config/project-composer-menus.json',
+      'scripts/project-composer-catalog.mjs', 'scripts/project-composer-integrations.mjs', 'scripts/project-composer-reasons.mjs',
+      'scripts/project-composer-presentation.mjs', 'scripts/project-composer-unassigned.mjs', 'scripts/project-composer-source.mjs',
+      'scripts/reusable-reference-data.mjs', 'scripts/composer-modules-generate.mjs', 'business-app/src/main/java'),
+    get outputs() { return composerModuleOutputs(repoRoot); },
+    command: ['node', ['scripts/composer-modules-generate.mjs', '--write']],
   },
   {
     id: 'atlas',

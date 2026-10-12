@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 2,
+  "id": "promotion",
+  "label": "배너·팝업",
+  "presentation": {
+    "area": "communication",
+    "order": 6,
+    "summary": "홈 배너와 팝업 공지 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_bnr_info",
+      "tb_popup_info"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/actions/promotionActions.ts",
+      "src/app/components/dashboard/BannerSlider.tsx",
+      "src/app/components/dashboard/PopupManager.tsx",
+      "src/app/admin/system/banner",
+      "src/services/business/user/BannerService.ts",
+      "src/services/business/user/PopupService.ts",
+      "src/services/foundation/system/BannerAdminService.ts",
+      "src/services/foundation/system/PopupAdminService.ts",
+      "src/types/foundation/banner.ts",
+      "src/app/components/dashboard/PromotionHome.tsx",
+      "src/extensions/promotion"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/system/banner"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "BANNER",
+      "POPUP"
+    ],
+    "gates": [],
+    "rbacMatrix": {
+      "surfaces": [
+        "/api/v1/admin/system/banners",
+        "/api/v1/admin/system/popups"
+      ]
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/promotion/home-sections.ts",
+        "reason": "배너·팝업 기능이 없으면 업무 홈의 공지 팝업과 홍보 배너만 사라지고 업무 홈은 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

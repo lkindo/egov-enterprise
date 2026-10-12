@@ -3,9 +3,10 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
-import { apiSourceOwner, degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
+import { INTEGRATES, REGISTRATION_ONLY_CONTRIBUTIONS, REGISTRATION_ONLY_EVENTS, apiSourceOwner, degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations,
+  sourceOwner } from './project-composer-integrations.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
-import { attachUserReasons } from './project-composer-reasons.mjs';
+import { REQUIRES_USER_REASONS, attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { SLOT_ROOT, slotPathKind } from './slot-registry.mjs';
 
@@ -252,22 +253,28 @@ export function clusterRequirements(manifest, domain) {
     [...cluster.domains, ...(cluster.requiresDomains ?? [])].filter(item => item !== domain).map(required => ({ domain: required, cluster })));
 }
 function covers(prefix, candidate) { return candidate === prefix || candidate.startsWith(`${prefix}/`); }
-function frontendRules(domains) {
+// 여러 기능 가운데 하나라도 남으면 남는 화면 파일(mode 'any'). 매니페스트 v2 에서는 첫 기능 파일의 owns.frontendAny 다.
+const JOINT_FRONTEND = [
+  { path: 'src/app/admin/sanctn/WorkflowHubClient.tsx', domains: ['informalsanction', 'template'], mode: 'any' },
+  // 운영 세그먼트의 오류 경계는 행사·포상 중 하나라도 남으면 남는다. 두 기능 paths 에 함께 넣으면 한쪽이 빠질 때 지워진다.
+  { path: 'src/app/admin/operation/error.tsx', domains: ['event', 'reward'], mode: 'any' },
+];
+function frontendRules(declarations, domains) {
   return [
-    ...domains.flatMap(domain => FEATURES[domain].paths.map(path => ({ path, domains: [domain] }))),
-    ...SHARED_UI.flatMap(group => group.paths.map(path => ({ path, domains: group.domains }))),
-    { path: 'src/app/admin/sanctn/WorkflowHubClient.tsx', domains: ['informalsanction', 'template'], mode: 'any' },
-    // 운영 세그먼트의 오류 경계는 행사·포상 중 하나라도 남으면 남는다. 두 기능 paths 에 함께 넣으면 한쪽이 빠질 때 지워진다.
-    { path: 'src/app/admin/operation/error.tsx', domains: ['event', 'reward'], mode: 'any' },
+    ...domains.flatMap(domain => declarations.features[domain].paths.map(path => ({ path, domains: [domain] }))),
+    ...declarations.sharedUi.flatMap(group => group.paths.map(path => ({ path, domains: group.domains }))),
+    ...declarations.jointFrontend.map(rule => ({ ...rule, domains: [...rule.domains] })),
   ];
 }
 
 /*
- * 슬롯 기여 디렉터리(슬롯 단계 PR-4). src/extensions 아래 디렉터리는 기능 id 여야 하고, 그 기능의 paths 와 그 기능을 소유한 pack 의
- * removePaths 양쪽에 `src/extensions/<기능 id>` 로 선언돼야 한다(양방향). 한쪽에만 있으면 직접 선택과 프리셋이 기여를 다르게 지운다.
- * 디렉터리 밖 최상위 파일은 슬롯 장치와 레지스트리뿐이다. 기여 파일 목록을 돌려준다 — 선택 연동의 기여 분류가 쓴다.
+ * 슬롯 기여 디렉터리(슬롯 단계 PR-4). src/extensions 아래 디렉터리는 기능 id 여야 하고, 그 기능의 paths 에 `src/extensions/<기능 id>` 로
+ * 선언돼야 한다(양방향). v1 선언은 그 기능을 소유한 pack 의 removePaths 에도 있어야 한다(legacy 검사) — 한쪽에만 있으면 직접 선택과
+ * 프리셋이 기여를 다르게 지운다. 디렉터리 밖 최상위 파일은 슬롯 장치와 레지스트리뿐이다. 기여 파일 목록을 돌려준다 — 선택 연동의
+ * 기여 분류가 쓴다.
  */
-function slotContributionInventory(root, manifest, domainOwners) {
+function slotContributionInventory(root, declarations) {
+  const { features, legacy } = declarations;
   const directory = join(root, 'frontend', SLOT_ROOT);
   const contributions = [];
   for (const entry of existsSync(directory) ? readdirSync(directory, { withFileTypes: true }) : []) {
@@ -276,59 +283,128 @@ function slotContributionInventory(root, manifest, domainOwners) {
       if (!['device', 'registry'].includes(slotPathKind(path)?.kind)) fail(`slot root holds an unknown file: ${path}`);
       continue;
     }
-    if (!Object.hasOwn(FEATURES, entry.name)) fail(`slot contribution directory is not a feature: ${path}`);
-    if (!FEATURES[entry.name].paths.includes(path)) fail(`slot contribution directory is missing from its feature paths: ${path}`);
-    const pack = domainOwners.get(entry.name);
-    if (!(manifest.packs[pack]?.frontend?.removePaths ?? []).includes(path)) fail(`slot contribution directory is missing from its pack removePaths: ${path} (${pack})`);
+    if (!Object.hasOwn(features, entry.name)) fail(`slot contribution directory is not a feature: ${path}`);
+    if (!features[entry.name].paths.includes(path)) fail(`slot contribution directory is missing from its feature paths: ${path}`);
+    legacy?.checkSlotDirectory(path, entry.name);
     for (const file of walk(join(directory, entry.name))) {
       const kind = slotPathKind(slash(relative(join(root, 'frontend'), file)));
       contributions.push({ path: `frontend/${kind.file}`, owner: kind.owner, slot: kind.slot });
     }
   }
   // 반대 방향: 선언은 기능 자신의 디렉터리 하나만 가리킨다. 없는 디렉터리는 위의 경로 실재 검사가 거부한다.
-  for (const [id, feature] of Object.entries(FEATURES)) for (const path of feature.paths.filter(path => covers(SLOT_ROOT, path))) {
+  for (const [id, feature] of Object.entries(features)) for (const path of feature.paths.filter(path => covers(SLOT_ROOT, path))) {
     if (path !== `${SLOT_ROOT}/${id}`) fail(`feature declares a slot path that is not its own contribution directory: ${id} ${path}`);
   }
-  for (const [packId, pack] of Object.entries(manifest.packs)) for (const path of (pack.frontend?.removePaths ?? []).filter(path => covers(SLOT_ROOT, path))) {
-    const id = path.slice(SLOT_ROOT.length + 1);
-    if (domainOwners.get(id) !== packId || !FEATURES[id]?.paths.includes(path)) fail(`pack removes a slot path that is not its feature's contribution directory: ${packId} ${path}`);
-  }
+  legacy?.checkPackSlotPaths(features);
   return contributions.sort((left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0));
+}
+
+/*
+ * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기의 pack 모드 투영이 manifest removePaths 를 쓰는 동안만 남긴다 —
+ * pack 소유(`capability.pack`, 시작 구성의 pack·removePaths)와, pack removePaths 가 기능 선언과 어긋나지 않는다는 검사다.
+ */
+function v1PackAxis(manifest) {
+  const packOf = new Map();
+  for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.appDomains ?? []) packOf.set(domain, packId);
+  return {
+    packOf,
+    presets: new Map(Object.entries(manifest.profiles).map(([id, profile]) => [id, { packs: profile.packs,
+      frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) }])),
+    checkSlotDirectory(path, id) {
+      const pack = packOf.get(id);
+      if (!(manifest.packs[pack]?.frontend?.removePaths ?? []).includes(path)) fail(`slot contribution directory is missing from its pack removePaths: ${path} (${pack})`);
+    },
+    checkPackSlotPaths(features) {
+      for (const [packId, pack] of Object.entries(manifest.packs)) for (const path of (pack.frontend?.removePaths ?? []).filter(path => covers(SLOT_ROOT, path))) {
+        const id = path.slice(SLOT_ROOT.length + 1);
+        if (packOf.get(id) !== packId || !features[id]?.paths.includes(path)) fail(`pack removes a slot path that is not its feature's contribution directory: ${packId} ${path}`);
+      }
+    },
+    // Older packs own umbrella directories; verify every file against the
+    // narrower feature declarations so new unowned UI cannot silently survive.
+    checkFrontendUmbrellas(root, rules) {
+      const legacyFrontendPaths = Object.values(manifest.packs).flatMap(pack => pack.frontend?.removePaths ?? []);
+      for (const path of legacyFrontendPaths) {
+        if (!existsSync(join(root, 'frontend', path))) fail(`manifest frontend ownership path missing: ${path}`);
+        for (const file of walk(join(root, 'frontend', path))) {
+          const relativePath = slash(relative(join(root, 'frontend'), file));
+          if (!rules.some(rule => covers(rule.path, relativePath))) fail(`frontend pack path has no capability refinement: ${relativePath}`);
+        }
+      }
+    },
+  };
+}
+
+/**
+ * v1 선언(manifest + 이 파일·연동·사유 모듈의 상수)을 카탈로그 빌더의 기능 단위 정규형으로 모은다. 매니페스트 v2(config/modules,
+ * composer-modules.mjs)도 같은 모양을 만든다 — 두 원천이 같은 카탈로그를 내는지를 임시 동치 계약이 본다(11단계 C1, 전환 C7 에서 걷는다).
+ */
+export function v1ComposerDeclarations(root = ROOT) {
+  root = resolve(root);
+  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
+  const packDomains = sorted(Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []));
+  return {
+    source: { label: 'manifest', ownerNoun: 'pack', domainsLabel: 'manifest appDomains', provenance: { manifest: MANIFEST, manifestHash: compositionDigest(manifest) } },
+    features: FEATURES,
+    groups: Object.entries(manifest.packs).map(([id, pack]) => ({ id, domains: pack.backend?.appDomains ?? [],
+      tables: pack.database?.tables ?? [], sequences: pack.database?.sequences ?? [] })),
+    frontendOnly: Object.entries(manifest.packs).flatMap(([id, pack]) => (pack.backend?.frontendOnlyDomains ?? []).map(domain => ({ domain, owner: id }))),
+    supportFiles: () => domainSupportFiles(root, manifest),
+    sharedTables: manifest.sharedTableContracts ?? [],
+    bundleEdges: packDomains.flatMap(domain => clusterRequirements(manifest, domain).map(({ domain: to, cluster }) =>
+      ({ from: domain, to, reason: cluster.reason, evidence: `${MANIFEST}#clusters/${cluster.id}` }))),
+    sharedUi: SHARED_UI, uiDependencies: UI_DEPENDENCIES, jointFrontend: JOINT_FRONTEND,
+    requiredForeignKeys: REQUIRED_FOREIGN_KEYS, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS,
+    userReasons: REQUIRES_USER_REASONS,
+    presets: Object.entries(manifest.profiles).map(([id, profile]) => ({ id, domains: profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? []) })),
+    integrates: INTEGRATES, registrationOnlyEvents: REGISTRATION_ONLY_EVENTS, registrationOnlyContributions: REGISTRATION_ONLY_CONTRIBUTIONS,
+    legacy: v1PackAxis(manifest),
+  };
 }
 
 /** Read-only producer inventory. Does not contact a DB, execute Git or create output. */
 export function loadProjectComposerCatalog(root = ROOT) {
+  return buildProjectComposerCatalog(root, v1ComposerDeclarations(root));
+}
+
+/**
+ * 정규형 선언(v1ComposerDeclarations·loadComposerModules)과 저장소 사실(Java 소스·권한 원장·메뉴 스냅숏·화면 파일)로 카탈로그를 만든다.
+ * 선언에서 계산할 수 있는 사실은 적지 않고 소스와 양방향으로 대조한다(설계서 9.1 R5).
+ */
+export function buildProjectComposerCatalog(root, declarations) {
   root = resolve(root);
-  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
+  const { features, source } = declarations;
   const permissions = JSON.parse(readFileSync(join(root, PERMISSIONS), 'utf8'));
-  for (const dependency of UI_DEPENDENCIES) {
+  for (const dependency of declarations.uiDependencies) {
     if (!readFileSync(join(root, dependency.evidence), 'utf8').includes(dependency.symbol)) fail(`declared UI dependency drifted: ${dependency.evidence}`);
   }
   const domainOwners = new Map();
-  for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.appDomains ?? []) {
+  for (const group of declarations.groups) for (const domain of group.domains) {
     if (domainOwners.has(domain)) fail(`duplicate domain owner: ${domain}`);
-    domainOwners.set(domain, packId);
+    domainOwners.set(domain, group.id);
   }
   const domains = sorted(domainOwners.keys());
-  if (canonicalJson(domains) !== canonicalJson(Object.keys(FEATURES).sort())) fail('capability declarations differ from manifest appDomains');
-  // 프런트 전용 기능(DEC-OPS-273). Java·테이블·권한 도메인이 없어야 하고, 같은 pack 의 appDomains 에 있어야 한다.
+  if (canonicalJson(domains) !== canonicalJson(Object.keys(features).sort())) fail(`capability declarations differ from ${source.domainsLabel}`);
+  // 프런트 전용 기능(DEC-OPS-273). Java·테이블·권한 도메인이 없어야 하고, 선언한 자리(pack·기능 파일)가 그 기능을 소유해야 한다.
   const frontendOnlyDomains = new Set();
-  for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.frontendOnlyDomains ?? []) {
-    if (domainOwners.get(domain) !== packId) fail(`frontend-only capability is not an appDomain of its pack: ${domain}`);
+  for (const { domain, owner } of declarations.frontendOnly) {
+    if (domainOwners.get(domain) !== owner) fail(`frontend-only capability is not an appDomain of its ${source.ownerNoun}: ${domain}`);
     frontendOnlyDomains.add(domain);
   }
   const tableOwners = new Map();
   const sequenceOwners = new Map();
-  for (const [packId, pack] of Object.entries(manifest.packs)) {
-    for (const [kind, values, owners] of [['table', pack.database?.tables ?? [], tableOwners], ['sequence', pack.database?.sequences ?? [], sequenceOwners]]) {
-      for (const value of values) { if (owners.has(value)) fail(`duplicate ${kind} owner: ${value}`); owners.set(value, packId); }
+  for (const group of declarations.groups) {
+    for (const [kind, values, owners] of [['table', group.tables, tableOwners], ['sequence', group.sequences, sequenceOwners]]) {
+      for (const value of values) { if (owners.has(value)) fail(`duplicate ${kind} owner: ${value}`); owners.set(value, group.id); }
     }
   }
+  const coreGroup = declarations.groups.find(group => group.id === 'core');
+  if (!coreGroup || coreGroup.domains.length) fail('core declarations must exist and own no selectable capability');
   const inventory = new Map(domains.map(domain => [domain, { files: [], tables: [], sequences: [], edges: [] }]));
-  const sourceFingerprints = UI_DEPENDENCIES.map(({ evidence }) => ({ path: evidence,
+  const sourceFingerprints = declarations.uiDependencies.map(({ evidence }) => ({ path: evidence,
     sha256: compositionDigest(readFileSync(join(root, evidence), 'utf8').replace(/\r\n/g, '\n')) }));
   const supportRequirements = new Map();
-  const supportFiles = domainSupportFiles(root, manifest);
+  const supportFiles = declarations.supportFiles();
   for (const [domain, files] of supportFiles) for (const path of files) {
     inventory.get(domain).files.push(path);
     // 다른 도메인 디렉터리의 지원 파일은 그 도메인이 있어야 존재한다. 업무 앱 생산 소스의 지문은 아래 순회가 남긴다.
@@ -344,73 +420,64 @@ export function loadProjectComposerCatalog(root = ROOT) {
     const path = slash(relative(root, absolute));
     const domain = appSourceDomain(path);
     if (!inventory.has(domain)) fail(`unowned application source: ${path}`);
-    const source = readFileSync(absolute, 'utf8');
+    const javaSource = readFileSync(absolute, 'utf8');
     const owner = inventory.get(domain);
     owner.files.push(path);
-    sourceFingerprints.push({ path, sha256: compositionDigest(source.replace(/\r\n/g, '\n')) });
-    for (const match of source.matchAll(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/g)) owner.tables.push(match[1]);
-    for (const match of source.matchAll(/sequenceName\s*=\s*"([^"]+)"/g)) owner.sequences.push(match[1]);
+    sourceFingerprints.push({ path, sha256: compositionDigest(javaSource.replace(/\r\n/g, '\n')) });
+    for (const match of javaSource.matchAll(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/g)) owner.tables.push(match[1]);
+    for (const match of javaSource.matchAll(/sequenceName\s*=\s*"([^"]+)"/g)) owner.sequences.push(match[1]);
     // Includes fully qualified field types (RewardManage), static and wildcard imports.
-    for (const referenced of javaDomainReferences(source)) {
+    for (const referenced of javaDomainReferences(javaSource)) {
       if (referenced !== domain && inventory.has(referenced)) owner.edges.push({ domain: referenced, evidence: path });
     }
   }
   // api-server 컨트롤러가 다른 기능 타입을 참조하는 결합도 간선이다(DEC-OPS-280). 업무 앱 순회만으로는 보이지 않는다.
-  const features = new Set(inventory.keys());
+  const selectable = new Set(inventory.keys());
   for (const absolute of walk(join(root, API_ROOT)).filter(path => path.endsWith('.java'))) {
     const path = slash(relative(root, absolute));
-    const source = readFileSync(absolute, 'utf8');
-    const { owner, requires } = apiSourceRequirements(path, source, features);
+    const javaSource = readFileSync(absolute, 'utf8');
+    const { owner, requires } = apiSourceRequirements(path, javaSource, selectable);
     if (!requires.length) continue;
     for (const required of requires) inventory.get(owner).edges.push({ domain: required, evidence: path });
-    sourceFingerprints.push({ path, sha256: compositionDigest(source.replace(/\r\n/g, '\n')) });
+    sourceFingerprints.push({ path, sha256: compositionDigest(javaSource.replace(/\r\n/g, '\n')) });
   }
-  const sharedTables = manifest.sharedTableContracts ?? [];
+  const sharedTables = declarations.sharedTables;
   for (const shared of sharedTables) for (const consumer of shared.consumers) {
     if (!inventory.has(consumer) || !tableOwners.has(shared.table)) fail(`invalid shared table consumer: ${shared.table}/${consumer}`);
     inventory.get(consumer).tables.push(shared.table);
   }
   const ownedTables = new Map();
   for (const [domain, data] of inventory) for (const table of sorted(data.tables)) {
-    if (!tableOwners.has(table)) fail(`entity table absent from manifest: ${domain}/${table}`);
+    if (!tableOwners.has(table)) fail(`entity table absent from ${source.label}: ${domain}/${table}`);
     if (tableOwners.get(table) !== domainOwners.get(domain)
-      && !sharedTables.some(shared => shared.table === table && shared.consumers.includes(domain))) fail(`cross-pack table lacks shared contract: ${domain}/${table}`);
+      && !sharedTables.some(shared => shared.table === table && shared.consumers.includes(domain))) fail(`cross-${source.ownerNoun} table lacks shared contract: ${domain}/${table}`);
     if (ownedTables.has(table) && !sharedTables.some(shared => shared.table === table
       && shared.consumers.includes(domain) && shared.consumers.includes(ownedTables.get(table)))) fail(`duplicate domain table without shared contract: ${table}`);
     ownedTables.set(table, domain);
   }
-  for (const [table, pack] of tableOwners) if (pack !== 'core' && !ownedTables.has(table)) fail(`unowned optional table: ${table}`);
-  for (const [sequence, pack] of sequenceOwners) if (pack !== 'core'
+  for (const [table, owner] of tableOwners) if (owner !== 'core' && !ownedTables.has(table)) fail(`unowned optional table: ${table}`);
+  for (const [sequence, owner] of sequenceOwners) if (owner !== 'core'
     && ![...inventory.values()].some(value => value.sequences.includes(sequence))) fail(`unowned optional sequence: ${sequence}`);
 
-  const rules = frontendRules(domains);
+  const rules = frontendRules(declarations, domains);
   for (const rule of rules) if (!existsSync(join(root, 'frontend', rule.path))) fail(`frontend ownership path missing: ${rule.path}`);
-  // Older packs own umbrella directories; verify every file against the
-  // narrower feature declarations so new unowned UI cannot silently survive.
-  const legacyFrontendPaths = Object.values(manifest.packs).flatMap(pack => pack.frontend?.removePaths ?? []);
-  for (const path of legacyFrontendPaths) {
-    if (!existsSync(join(root, 'frontend', path))) fail(`manifest frontend ownership path missing: ${path}`);
-    for (const file of walk(join(root, 'frontend', path))) {
-      const relativePath = slash(relative(join(root, 'frontend'), file));
-      if (!rules.some(rule => covers(rule.path, relativePath))) fail(`frontend pack path has no capability refinement: ${relativePath}`);
-    }
-  }
+  declarations.legacy?.checkFrontendUmbrellas(root, rules);
 
-  const contributions = slotContributionInventory(root, manifest, domainOwners);
+  const contributions = slotContributionInventory(root, declarations);
 
   const declaredPermissionDomains = new Map();
-  for (const domain of domains) for (const permissionDomain of FEATURES[domain].permissions) {
+  for (const domain of domains) for (const permissionDomain of features[domain].permissions) {
     if (declaredPermissionDomains.has(permissionDomain)) fail(`duplicate permission domain ownership: ${permissionDomain}`);
     if (!permissions.permissions.some(permission => permission.domain === permissionDomain)) fail(`unknown permission domain: ${permissionDomain}`);
     declaredPermissionDomains.set(permissionDomain, domain);
   }
   const allRoutes = Object.keys(permissions.pagePermissions).sort();
-  for (const feature of Object.values(FEATURES)) for (const prefix of feature.routes) {
+  for (const feature of Object.values(features)) for (const prefix of feature.routes) {
     if (!allRoutes.some(route => covers(prefix, route))) fail(`route declaration has no canonical page: ${prefix}`);
   }
   const routeOwners = new Map();
   for (const domain of domains) for (const route of allRoutes) {
-    const feature = FEATURES[domain];
+    const feature = features[domain];
     if (feature.routes.some(prefix => (feature.exactRoutes ?? []).includes(prefix) ? route === prefix : covers(prefix, route))) {
       const previous = routeOwners.get(route);
       // Narrower paths override an umbrella (/admin/community vs its templates). 같은 길이면 정확히 그 화면만 선언한 쪽(exactRoutes)이
@@ -421,12 +488,12 @@ export function loadProjectComposerCatalog(root = ROOT) {
       else if (specificity === previous.specificity && previous.domain !== domain) fail(`ambiguous route owner: ${route}`);
     }
   }
-  const sharedRoutes = new Map(SHARED_UI.flatMap(group => group.routes.map(route => [route, group.domains])));
+  const sharedRoutes = new Map(declarations.sharedUi.flatMap(group => group.routes.map(route => [route, group.domains])));
   const mandatoryPermissions = permissions.permissions.filter(permission => !declaredPermissionDomains.has(permission.domain)).map(permission => permission.code).sort();
   const mandatoryRoutes = allRoutes.filter(route => !routeOwners.has(route) && !sharedRoutes.has(route));
   // 간선마다 사용자용 한 문장을 붙인다. 선언과 간선이 어긋나면 여기서 실패한다(설계서 9.1 R5).
   const capabilities = attachUserReasons(domains.map(domain => {
-    const feature = FEATURES[domain];
+    const feature = features[domain];
     const data = inventory.get(domain);
     if (frontendOnlyDomains.has(domain)) {
       if (data.files.length) fail(`frontend-only capability has backend source: ${domain}`);
@@ -437,20 +504,21 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const support of supportRequirements.get(domain) ?? []) {
       requires.push({ domain: support.domain, kind: 'java', reason: `${domain} 이 쓰는 지원 구현이 ${support.domain} 소스에 있다.`, evidence: support.path });
     }
-    for (const { domain: required, cluster } of clusterRequirements(manifest, domain)) {
-      requires.push({ domain: required, kind: 'manifest', reason: cluster.reason, evidence: `${MANIFEST}#clusters/${cluster.id}` });
+    for (const edge of declarations.bundleEdges.filter(row => row.from === domain)) {
+      requires.push({ domain: edge.to, kind: 'manifest', reason: edge.reason, evidence: edge.evidence });
     }
-    for (const cluster of SHARED_UI) if (cluster.domains.includes(domain)) {
+    for (const cluster of declarations.sharedUi) if (cluster.domains.includes(domain)) {
       for (const required of cluster.domains.filter(item => item !== domain)) requires.push({ domain: required, kind: 'shared-ui', reason: cluster.reason, evidence: cluster.evidence, customOnly: true });
     }
-    for (const dependency of UI_DEPENDENCIES.filter(row => row.from === domain)) {
+    for (const dependency of declarations.uiDependencies.filter(row => row.from === domain)) {
       const { from, symbol, ...edge } = dependency;
       requires.push({ ...edge, kind: 'ui-import', customOnly: true });
     }
     return {
       // 카드 요약·영역 같은 화면 문구는 해시 밖의 표시 문구(project-composer-presentation.mjs)가 맡는다.
       id: domain, label: feature.label, available: true,
-      pack: domainOwners.get(domain), requires: requires.sort((a, b) => canonicalJson(a) < canonicalJson(b) ? -1 : canonicalJson(a) > canonicalJson(b) ? 1 : 0),
+      ...(declarations.legacy ? { pack: declarations.legacy.packOf.get(domain) } : {}),
+      requires: requires.sort((a, b) => canonicalJson(a) < canonicalJson(b) ? -1 : canonicalJson(a) > canonicalJson(b) ? 1 : 0),
       backend: { sourcePaths: ['domain', 'service'].map(layer => `${APP_ROOT}/${layer}/${domain}`).filter(path => existsSync(join(root, path))), sourceFiles: data.files.sort() },
       database: { tables: sorted(data.tables), explicitSequences: sorted(data.sequences) },
       frontend: { paths: feature.paths, routes: allRoutes.filter(route => routeOwners.get(route)?.domain === domain) },
@@ -459,7 +527,7 @@ export function loadProjectComposerCatalog(root = ROOT) {
       permissionCodes: permissions.permissions.filter(permission => feature.permissions.includes(permission.domain)).map(permission => permission.code).sort(),
       requirements: feature.requirements ?? [],
     };
-  }));
+  }), declarations.userReasons);
   // 탭 기여는 실제 메뉴 행과 셸 화면이 있어야 한다. 맞지 않는 선언은 아무 메뉴도 고르지 못한 채 조용히 남는다.
   const menuRows = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')).menus
     .filter(row => row.use_yn === 'Y' && row.del_yn !== 'Y' && row.modern_route).map(row => menuRouteKey(row.modern_route).key);
@@ -472,24 +540,25 @@ export function loadProjectComposerCatalog(root = ROOT) {
     if (tabContributors.has(route)) fail(`menu tab has two contributors: ${route}`);
     tabContributors.set(route, capability.id);
   }
-  for (const contract of [...REQUIRED_FOREIGN_KEYS, ...OPTIONAL_FOREIGN_KEYS]) {
+  for (const contract of [...declarations.requiredForeignKeys, ...declarations.optionalForeignKeys]) {
     if (!readFileSync(join(root, contract.evidence), 'utf8').includes(`ADD CONSTRAINT ${contract.name}`)) fail(`declared foreign key drifted: ${contract.name}`);
     const owns = (domain, table) => capabilities.find(capability => capability.id === domain)?.database.tables.includes(table);
     if (!owns(contract.sourceDomain, contract.childTable) || !owns(contract.targetDomain, contract.parentTable)) fail(`declared foreign key ownership drifted: ${contract.name}`);
   }
-  const presets = Object.entries(manifest.profiles).map(([id, profile]) => ({ id,
-    domains: sorted(profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? [])), packs: profile.packs,
-    frontendRemovePaths: sorted(Object.entries(manifest.packs).filter(([pack]) => !profile.packs.includes(pack)).flatMap(([, pack]) => pack.frontend?.removePaths ?? [])) }));
+  const presets = declarations.presets.map(preset => ({ id: preset.id, domains: sorted(preset.domains),
+    ...(declarations.legacy ? declarations.legacy.presets.get(preset.id) : {}) }));
   // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).
   const supportOwners = new Map([...supportFiles].flatMap(([domain, files]) => files.map(file => [file, domain])));
-  const integrates = resolveIntegrations({ root, triples: deriveEventTriples(root, sourceOwner(supportOwners, domains, requiresClosure(capabilities))),
-    canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS, contributions });
+  const integrates = resolveIntegrations({ root, declared: declarations.integrates, registrationOnly: declarations.registrationOnlyEvents,
+    registrationOnlyContributions: declarations.registrationOnlyContributions,
+    triples: deriveEventTriples(root, sourceOwner(supportOwners, domains, requiresClosure(capabilities))),
+    canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: declarations.optionalForeignKeys, contributions });
   const catalog = {
     schemaVersion: 1, mandatory: ['foundation', 'core'], databaseVendors: ['postgresql'], backendLayouts: ['multi-module', 'single-module'],
-    provenance: { manifest: MANIFEST, permissions: PERMISSIONS, manifestHash: compositionDigest(manifest), permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
-    presets, capabilities, frontendRules: rules, sharedUi: SHARED_UI, integrates,
-    core: { tables: sorted(manifest.packs.core.database.tables), explicitSequences: sorted(manifest.packs.core.database.sequences), permissionCodes: mandatoryPermissions, menuRoutes: mandatoryRoutes },
-    sharedTableContracts: sharedTables, optionalForeignKeys: OPTIONAL_FOREIGN_KEYS, requiredForeignKeys: REQUIRED_FOREIGN_KEYS,
+    provenance: { ...source.provenance, permissions: PERMISSIONS, permissionsHash: compositionDigest(permissions), sourceInventoryHash: compositionDigest(sourceFingerprints) },
+    presets, capabilities, frontendRules: rules, sharedUi: declarations.sharedUi, integrates,
+    core: { tables: sorted(coreGroup.tables), explicitSequences: sorted(coreGroup.sequences), permissionCodes: mandatoryPermissions, menuRoutes: mandatoryRoutes },
+    sharedTableContracts: sharedTables, optionalForeignKeys: declarations.optionalForeignKeys, requiredForeignKeys: declarations.requiredForeignKeys,
   };
   return { ...catalog, catalogHash: compositionDigest(catalog) };
 }

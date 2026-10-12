@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "id": "reward",
+  "label": "포상",
+  "presentation": {
+    "area": "work",
+    "order": 2,
+    "summary": "포상 기록 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_rward_manage"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/operation/rewards",
+      "src/services/foundation/operation/RewardAdminService.ts"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/operation/rewards"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "REWARD"
+    ],
+    "gates": [],
+    "rbacMatrix": {
+      "surfaces": [
+        "/api/v1/admin/operation/rewards"
+      ]
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [
+    {
+      "name": "fk_tb_rward_manage_tb_ifml_atrz_info",
+      "childTable": "tb_rward_manage",
+      "to": "informalsanction",
+      "parentTable": "tb_ifml_atrz_info",
+      "required": true,
+      "reason": "포상은 결재 문서를 참조한다.",
+      "evidence": "api-server/src/main/resources/db/migration/V2_78__informal_sanction_bigint_identity.sql"
+    }
+  ],
+  "requires": [
+    {
+      "to": "informalsanction",
+      "userReason": "포상 데이터가 결재 문서 표를 참조합니다."
+    }
+  ],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "id": "mail",
+  "label": "메일",
+  "presentation": {
+    "area": "communication",
+    "order": 0,
+    "summary": "메일 작성·발송과 발송 이력"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_email_dsptch_manage"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/services/business/mail/MailService.ts",
+      "src/app/admin/collaboration/mail-history",
+      "src/app/admin/collaboration/mail-send",
+      "src/extensions/mail"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/collaboration/mail-history",
+      "/admin/collaboration/mail-send"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "MAIL"
+    ],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 메일 발송이 실패로 확정되어도 보낸 사람에게 실패 알림이 가지 않고, 메일 이력 화면을 직접 열어야 압니다."
+    },
+    {
+      "to": "addressbook",
+      "via": "port:RecipientAddressBookSource",
+      "reason": "주소록 기능이 없으면 메일 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 직접 입력만 남습니다.",
+      "anchors": [
+        {
+          "path": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
+          "anchor": "useRecipientAddressBook('mail')"
+        },
+        {
+          "path": "frontend/src/extensions/addressbook/recipient-picker-sources.ts",
+          "anchor": "defineContributions('recipient-picker-sources'"
+        }
+      ]
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/mail/shell-links.ts",
+        "reason": "메일 기능이 없으면 협업 허브의 메일 발송 링크만 사라지고 허브는 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [
+    "메일 발송에 사용할 SMTP 설정"
+  ],
+  "unassignedPermissions": []
+}

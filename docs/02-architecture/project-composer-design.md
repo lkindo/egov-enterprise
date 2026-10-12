@@ -113,6 +113,8 @@ flowchart TD
 
 [카탈로그](../../scripts/project-composer-catalog.mjs)는 기존 재사용 manifest·Java import·권한 카탈로그와 명시된 프런트엔드 소유권을 읽어 22개 도메인을 구성한다. 기존 소유권 정본을 복제하는 대신 해당 근거를 사용하고, 공유 화면과 필수 UI 참조는 명시적 의존성으로 추가한다. 구성 판단에 사용하는 정보는 다음과 같다.
 
+기능 선언은 [매니페스트 v2](../../config/modules/)로 옮겨 간다(Phase 2 11단계). 기능 파일(`<기능 id>.json`) 하나에 그 기능의 소유(테이블·시퀀스·화면 경로·라우트·권한 도메인·게이트·RBAC 표면·마커 블록·공통코드 그룹)와 사용자 문장·선언 의존·외래 키·연동·외부 요구·미배정 권한 안내를 두고, `core.json` 은 필수 기반, `presets.json` 은 인증 시작 구성과 그 기대치다. [스키마](../../config/modules/_schema.json)가 모양을 검사하고 [로더](../../scripts/composer-modules.mjs)가 카탈로그 빌더가 받는 정규형을 만든다. Java 참조 간선·이벤트 연결 같은 계산된 사실은 적지 않는다. 시작 구성의 게이트 기대치는 기능 파일의 게이트 소유에서 계산한 목록과 정확히 같아야 한다. 전환 전까지는 v1(manifest·생성기 상수)이 원천이고 v2 는 [생성기](../../scripts/composer-modules-generate.mjs)가 만드는 파생물이다(`npm run modules:generate`·`modules:check`, `npm run merge:main` 도 다시 만든다). [동치 계약](../../scripts/composer-modules.test.mjs)이 manifest 가 없는 트리에서 v2 만으로 만든 카탈로그와 해시 밖 선언을 v1 과 대조한다. v1 에만 있는 pack 축(기능의 pack, 시작 구성의 pack·제거 경로, 공유 계약의 소유 pack)은 생성기 pack 모드를 위한 값이라 비교에서 뺀다.
+
 | 관계·정보 | 의미 |
 |---|---|
 | 필수 의존성 | 함께 포함해야 컴파일·기동·업무 의미가 성립하는 기능 |

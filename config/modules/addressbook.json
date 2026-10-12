@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 2,
+  "id": "addressbook",
+  "label": "주소록",
+  "presentation": {
+    "area": "communication",
+    "order": 4,
+    "summary": "주소록과 연락처 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_adbk_info",
+      "tb_adbk_manage"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/collaboration/address-book",
+      "src/services/business/user/addressbook",
+      "src/types/business/addressbook.ts",
+      "src/extensions/addressbook"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/collaboration/address-book"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "ADBK"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/addressbook/shell-links.ts",
+        "reason": "주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

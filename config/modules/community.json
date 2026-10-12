@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 2,
+  "id": "community",
+  "label": "커뮤니티",
+  "presentation": {
+    "area": "knowledge",
+    "order": 3,
+    "summary": "커뮤니티 개설·가입·회원 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_cmnty_info",
+      "tb_cmnty_user_map"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/community/[id]",
+      "src/app/admin/community/page.tsx",
+      "src/app/cop/cmy",
+      "src/services/business/community",
+      "src/services/foundation/system/CommunityAdminService.ts",
+      "src/types/business/community.ts",
+      "src/components/business/community",
+      "src/extensions/community",
+      "src/app/admin/community/boards/page.tsx"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/community",
+      "/admin/community/[id]",
+      "/admin/community/boards",
+      "/cop/cmy"
+    ],
+    "exactRoutes": [
+      "/admin/community",
+      "/admin/community/boards"
+    ],
+    "menuTabs": [
+      "/admin/help?tab=COMMUNITY"
+    ],
+    "permissionDomains": [
+      "COMMUNITY"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
+        "alsoRequires": []
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
+        "alsoRequires": [
+          "template"
+        ]
+      }
+    ],
+    "rbacMatrix": null,
+    "markerBlocks": [
+      {
+        "file": "src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
+        "token": "demo",
+        "blocks": 4,
+        "alsoRequires": [],
+        "step": "잔존(선택 외래 키 연동 칸)",
+        "reason": "커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다."
+      }
+    ],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [
+    {
+      "to": "board",
+      "userReason": "커뮤니티 회원이 여는 게시판 목록을 게시판 기능이 제공합니다."
+    }
+  ],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 커뮤니티 가입 신청이 들어와도 승인 권한자에게 알림이 가지 않고, 승인·반려 결과도 신청자에게 알림으로 전달되지 않습니다."
+    },
+    {
+      "to": "template",
+      "via": "port:TemplateAssignmentPolicy",
+      "reason": "템플릿 기능이 없으면 커뮤니티 관리 창에서 템플릿 칸이 사라집니다. 템플릿 값은 커뮤니티 화면 표시에 쓰이지 않습니다.",
+      "anchors": [
+        {
+          "path": "business-app/src/main/java/nuri/business/service/community/CommunityService.java",
+          "anchor": "ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy>"
+        },
+        {
+          "path": "frontend/src/components/business/community/CommunityManageDialog.tsx",
+          "anchor": "communityAdminService.getTemplateOptions()"
+        }
+      ]
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/community/hub-tabs.ts",
+        "reason": "커뮤니티 기능이 없으면 지식 허브의 커뮤니티 탭과 그 머리 동작만 사라지고 위키·자주 묻는 질문·질의응답은 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

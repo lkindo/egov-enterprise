@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "id": "survey",
+  "label": "설문·투표",
+  "presentation": {
+    "area": "participation",
+    "order": 0,
+    "summary": "설문조사와 여론조사·투표"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_onln_poll_artcl",
+      "tb_onln_poll_manage",
+      "tb_onln_poll_rslt",
+      "tb_srvy_artcl",
+      "tb_srvy_info",
+      "tb_srvy_qstn",
+      "tb_srvy_rslt",
+      "tb_srvy_rspdnt",
+      "tb_srvy_tmplt"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/survey",
+      "src/app/survey",
+      "src/lib/api/survey.ts",
+      "src/services/business/user/poll",
+      "src/services/foundation/survey",
+      "src/services/foundation/system/SurveyAdminService.ts",
+      "src/types/business/poll.ts",
+      "src/types/business/survey.ts",
+      "src/extensions/survey"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/survey",
+      "/survey"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "SURVEY",
+      "SURVEY_RSP",
+      "POLL"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
+    "rbacMatrix": {
+      "surfaces": []
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/survey/stats-panels.ts",
+        "reason": "설문 기능이 없으면 통계 화면의 설문조사 분석 탭만 사라지고 통계는 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

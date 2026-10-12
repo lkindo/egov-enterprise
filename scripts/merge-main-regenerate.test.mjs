@@ -18,6 +18,7 @@ import {
 } from './merge-main-regenerate.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
+import { composerModuleOutputs } from './composer-modules.mjs';
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -129,6 +130,19 @@ test('slot contributions changed on both sides regenerate the slot registries be
   assert.ok(step.outputs.includes('frontend/src/extensions/generated-recipient-picker-sources.ts'));
   assert.ok(planRegeneration({ ours: [step.outputs[0]], theirs: [step.outputs[0]] }).some(generator => generator.id === 'slot-registries'),
     'a conflicted registry is regenerated, not picked');
+});
+
+test('a v1 declaration changed on one side and the v2 feature files on the other regenerate config/modules', () => {
+  // 매니페스트 v2 는 전환(11단계 C7)까지 v1 선언의 파생물이다. main 이 v1 manifest 를 고친 뒤 합치면 v2 를 고르지 않고 다시 만든다.
+  const ids = files => planRegeneration(files).map(generator => generator.id);
+  assert.deepEqual(ids({ ours: ['config/reusable-base-profiles.json'], theirs: ['scripts/project-composer-catalog.mjs'] }), ['composer-modules', 'atlas']);
+  const step = GENERATORS.find(generator => generator.id === 'composer-modules');
+  assert.deepEqual(step.outputs, composerModuleOutputs(path.resolve(import.meta.dirname, '..')));
+  assert.ok(step.outputs.includes('config/modules/board.json') && !step.outputs.includes('config/modules/_schema.json'),
+    'the hand-written schema is not a generated output');
+  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), ['composer-modules', 'atlas'],
+    'a conflicted feature file is regenerated, not picked');
+  assert.deepEqual(ids({ ours: ['config/reusable-base-profiles.json'], theirs: ['docs/a.md'] }), ['atlas'], 'a v1 edit on one side only is already consistent');
 });
 
 test('the screen-registry step reads every input the generator declares and writes its output', () => {

@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "id": "comment",
+  "label": "댓글",
+  "presentation": {
+    "area": "knowledge",
+    "order": 1,
+    "summary": "게시글 댓글과 댓글 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_bbs_comment"
+    ],
+    "sequences": [
+      "sq_answer_no"
+    ],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/actions/commentActions.ts",
+      "src/services/business/comment/commentService.ts",
+      "src/services/foundation/system/CommentAdminService.ts",
+      "src/app/admin/system/comments"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/system/comments"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "COMMENT"
+    ],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [
+    {
+      "to": "board",
+      "kind": "bundle",
+      "reason": "Comment 엔티티의 게시글 연관과 BoardErrorCode 참조 때문에 함께 선택한다. 스크랩은 게시글 FK 로 게시판을 요구하지만 게시판은 스크랩 없이 생성된다(게시글 상세의 스크랩 버튼은 post-actions 슬롯 기여다). (댓글 수 동기화는 2026-08-29 foundation 이벤트로 역전돼 더는 결합 근거가 아니다.)",
+      "evidence": "config/reusable-base-profiles.json#clusters/board"
+    }
+  ],
+  "foreignKeys": [
+    {
+      "name": "fk_tb_bbs_comment_tb_bbs_item",
+      "childTable": "tb_bbs_comment",
+      "to": "board",
+      "parentTable": "tb_bbs_item",
+      "required": true,
+      "reason": "댓글은 게시글에 속한다.",
+      "evidence": "api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql"
+    },
+    {
+      "name": "fk_tb_bbs_comment_tb_bbs_master",
+      "childTable": "tb_bbs_comment",
+      "to": "board",
+      "parentTable": "tb_bbs_master",
+      "required": true,
+      "reason": "댓글은 게시판에 속한다.",
+      "evidence": "api-server/src/main/resources/db/migration/V2_14__add_referential_fks_batch2.sql"
+    }
+  ],
+  "requires": [
+    {
+      "to": "board",
+      "userReason": "댓글은 게시글에 달립니다."
+    }
+  ],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

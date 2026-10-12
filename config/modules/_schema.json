@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://egov-enterprise.local/config/modules/_schema.json",
+  "title": "프로젝트 생성기 기능 모듈 선언(매니페스트 v2)",
+  "description": "기능 하나의 소유·사용자 문장·연동·외부 요구를 한 파일에 둔다. 코드에서 계산할 수 있는 사실(Java 참조 간선·이벤트 연결·화면 경로의 소유)은 적지 않고 카탈로그가 소스와 양방향으로 대조한다. core.json 은 필수 기반, presets.json 은 인증 시작 구성이다. 11단계 전환 전까지는 scripts/composer-modules-generate.mjs 가 v1 선언에서 만든다.",
+  "$defs": {
+    "featureId": { "type": "string", "pattern": "^(?!core$)[a-z][a-z0-9]*$" },
+    "areaId": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" },
+    "text": { "type": "string", "minLength": 1 },
+    "sentence": { "type": "string", "minLength": 2, "pattern": "[가-힣]" },
+    "table": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "sequence": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "repoFile": { "type": "string", "pattern": "^(?:frontend|api-server|business-app|business-core|foundation|config)/[A-Za-z0-9_.\\-/\\[\\]@#()]+$" },
+    "javaFile": { "type": "string", "pattern": "^(?:foundation|business-core|business-app|api-server)/src/(?:main|test)/java/[A-Za-z0-9_$/]+\\.java$" },
+    "frontendPath": { "type": "string", "pattern": "^src/[A-Za-z0-9_.\\-/\\[\\]@()]+$" },
+    "route": { "type": "string", "pattern": "^/[A-Za-z0-9_\\-/\\[\\]]*$" },
+    "routeWithTab": { "type": "string", "pattern": "^/[A-Za-z0-9_\\-/\\[\\]]*\\?tab=[A-Za-z0-9_]+$" },
+    "permissionDomain": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "permissionCode": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "uniqueStrings": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+    "integration": {
+      "type": "object", "additionalProperties": false, "required": ["to", "via", "reason"],
+      "properties": {
+        "to": { "$ref": "#/$defs/featureId" },
+        "via": { "type": "string", "pattern": "^(?:event|port|fk-optional):[A-Za-z_][A-Za-z0-9_]*$" },
+        "reason": { "$ref": "#/$defs/sentence" },
+        "anchors": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["path", "anchor"],
+            "properties": { "path": { "$ref": "#/$defs/repoFile" }, "anchor": { "$ref": "#/$defs/text" } }
+          }
+        }
+      }
+    },
+    "registrationOnly": {
+      "type": "object", "additionalProperties": false, "required": ["events", "contributions"],
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["to", "event", "reason"],
+            "properties": {
+              "to": { "$ref": "#/$defs/featureId" },
+              "event": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" },
+              "reason": { "$ref": "#/$defs/sentence" }
+            }
+          }
+        },
+        "contributions": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["path", "reason"],
+            "properties": { "path": { "$ref": "#/$defs/repoFile" }, "reason": { "$ref": "#/$defs/sentence" } }
+          }
+        }
+      }
+    },
+    "unassignedPermissions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["code", "bundle", "protected", "effect"],
+        "properties": {
+          "code": { "$ref": "#/$defs/permissionCode" },
+          "bundle": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }] },
+          "protected": { "type": "boolean" },
+          "effect": { "$ref": "#/$defs/sentence" }
+        }
+      }
+    },
+    "module": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "id", "label", "presentation", "backend", "owns", "dependsOn", "foreignKeys", "requires", "integrates",
+        "registrationOnly", "requirements", "unassignedPermissions"],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "id": { "$ref": "#/$defs/featureId" },
+        "label": { "$ref": "#/$defs/text" },
+        "presentation": {
+          "description": "생성기 화면의 표시 문구. 카탈로그 해시 밖이다(DEC-OPS-244).",
+          "type": "object", "additionalProperties": false, "required": ["area", "order", "summary"],
+          "properties": { "area": { "$ref": "#/$defs/areaId" }, "order": { "type": "integer", "minimum": 0 }, "summary": { "$ref": "#/$defs/text" } }
+        },
+        "backend": {
+          "type": "object", "additionalProperties": false, "required": ["frontendOnly", "supportFiles"],
+          "properties": {
+            "frontendOnly": { "type": "boolean" },
+            "supportFiles": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/javaFile" } }
+          }
+        },
+        "owns": {
+          "type": "object", "additionalProperties": false,
+          "required": ["tables", "sequences", "sharedTables", "frontend", "frontendAny", "routes", "exactRoutes", "menuTabs", "permissionDomains", "gates",
+            "rbacMatrix", "markerBlocks", "commonCodeGroups"],
+          "properties": {
+            "tables": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/table" } },
+            "sequences": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sequence" } },
+            "sharedTables": {
+              "description": "이 기능이 소유하고 다른 기능의 엔티티도 매핑하는 테이블. consumers 는 이 기능을 포함한 매핑 기능 전부다.",
+              "type": "array",
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["table", "consumers", "reason"],
+                "properties": {
+                  "table": { "$ref": "#/$defs/table" },
+                  "consumers": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } },
+                  "reason": { "$ref": "#/$defs/text" }
+                }
+              }
+            },
+            "frontend": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/frontendPath" } },
+            "frontendAny": {
+              "description": "이 기능 또는 with 기능 가운데 하나라도 남으면 남는 화면 파일.",
+              "type": "array",
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["path", "with"],
+                "properties": {
+                  "path": { "$ref": "#/$defs/frontendPath" },
+                  "with": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } }
+                }
+              }
+            },
+            "routes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/route" } },
+            "exactRoutes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/route" } },
+            "menuTabs": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/routeWithTab" } },
+            "permissionDomains": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/permissionDomain" } },
+            "gates": {
+              "description": "이 기능이 빠지면 생성물에서 지워지는 검증 게이트. alsoRequires 기능도 모두 있어야 남는다.",
+              "type": "array",
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["file", "alsoRequires"],
+                "properties": {
+                  "file": { "$ref": "#/$defs/javaFile" },
+                  "alsoRequires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } }
+                }
+              }
+            },
+            "rbacMatrix": {
+              "description": "선택 기능 RBAC 매트릭스에서 이 기능이 지키는 관리 표면. null 이면 그 매트릭스에 표면이 없다.",
+              "oneOf": [
+                { "type": "null" },
+                {
+                  "type": "object", "additionalProperties": false, "required": ["surfaces"],
+                  "properties": { "surfaces": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^/api/v1/[A-Za-z0-9/_-]+$" } } }
+                }
+              ]
+            },
+            "markerBlocks": {
+              "description": "pack 마커 블록이 남은 화면 파일(마커 토큰은 기능 id 로 바꾸기 전까지 pack 이름이다).",
+              "type": "array",
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["file", "token", "blocks", "alsoRequires", "step", "reason"],
+                "properties": {
+                  "file": { "$ref": "#/$defs/frontendPath" },
+                  "token": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" },
+                  "blocks": { "type": "integer", "minimum": 1 },
+                  "alsoRequires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } },
+                  "step": { "$ref": "#/$defs/text" },
+                  "reason": { "$ref": "#/$defs/text" }
+                }
+              }
+            },
+            "commonCodeGroups": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z0-9]{1,12}$" } }
+          }
+        },
+        "dependsOn": {
+          "description": "코드가 말해 주지 않아 선언하는 필수 의존(묶음 선언, 화면이 다른 기능 API 를 부르는 의존).",
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object", "additionalProperties": false, "required": ["to", "kind", "reason", "evidence"],
+                "properties": {
+                  "to": { "$ref": "#/$defs/featureId" }, "kind": { "const": "bundle" },
+                  "reason": { "$ref": "#/$defs/text" }, "evidence": { "$ref": "#/$defs/repoFile" }
+                }
+              },
+              {
+                "type": "object", "additionalProperties": false, "required": ["to", "kind", "reason", "evidence", "symbol"],
+                "properties": {
+                  "to": { "$ref": "#/$defs/featureId" }, "kind": { "const": "ui-import" },
+                  "reason": { "$ref": "#/$defs/text" }, "evidence": { "$ref": "#/$defs/repoFile" },
+                  "symbol": { "type": "string", "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$" }
+                }
+              }
+            ]
+          }
+        },
+        "foreignKeys": {
+          "description": "이 기능 테이블이 다른 기능 테이블을 가리키는 물리 외래 키. required=false 면 선택 연동이다.",
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["name", "childTable", "to", "parentTable", "required", "reason", "evidence"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^fk_[a-z0-9_]+$" },
+              "childTable": { "$ref": "#/$defs/table" },
+              "to": { "$ref": "#/$defs/featureId" },
+              "parentTable": { "$ref": "#/$defs/table" },
+              "required": { "type": "boolean" },
+              "reason": { "$ref": "#/$defs/text" },
+              "evidence": { "$ref": "#/$defs/repoFile" }
+            }
+          }
+        },
+        "requires": {
+          "description": "필수 의존 쌍마다 화면에 보이는 사용자 문장 하나. 간선 자체는 카탈로그가 계산하고 이 목록과 양방향으로 대조한다.",
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["to", "userReason"],
+            "properties": { "to": { "$ref": "#/$defs/featureId" }, "userReason": { "type": "string" } }
+          }
+        },
+        "integrates": { "type": "array", "items": { "$ref": "#/$defs/integration" } },
+        "registrationOnly": { "$ref": "#/$defs/registrationOnly" },
+        "requirements": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+        "unassignedPermissions": { "$ref": "#/$defs/unassignedPermissions" }
+      }
+    },
+    "core": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schemaVersion", "id", "backend", "owns", "presentation", "integrates", "registrationOnly", "unassignedPermissions"],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "id": { "const": "core" },
+        "backend": {
+          "type": "object", "additionalProperties": false, "required": ["modules"],
+          "properties": { "modules": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z-]*$" } } }
+        },
+        "owns": {
+          "type": "object", "additionalProperties": false, "required": ["tables", "sequences"],
+          "properties": {
+            "tables": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/table" } },
+            "sequences": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sequence" } }
+          }
+        },
+        "presentation": {
+          "type": "object", "additionalProperties": false, "required": ["areas"],
+          "properties": {
+            "areas": {
+              "type": "array", "minItems": 1,
+              "items": {
+                "type": "object", "additionalProperties": false, "required": ["id", "label"],
+                "properties": { "id": { "$ref": "#/$defs/areaId" }, "label": { "$ref": "#/$defs/text" } }
+              }
+            }
+          }
+        },
+        "integrates": { "type": "array", "items": { "$ref": "#/$defs/integration" } },
+        "registrationOnly": { "$ref": "#/$defs/registrationOnly" },
+        "unassignedPermissions": { "$ref": "#/$defs/unassignedPermissions" }
+      }
+    },
+    "presets": {
+      "type": "object", "additionalProperties": false, "required": ["schemaVersion", "presets"],
+      "properties": {
+        "schemaVersion": { "const": 2 },
+        "presets": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["id", "label", "description", "domains", "expected"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" },
+              "label": { "$ref": "#/$defs/text" },
+              "description": { "$ref": "#/$defs/text" },
+              "domains": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } },
+              "expected": {
+                "description": "생성기가 이 구성에서 지울 것으로 승인한 것. gates 는 기능 파일의 owns.gates 에서 계산한 목록과 정확히 같아야 한다.",
+                "type": "object", "additionalProperties": false, "required": ["gates", "gateRemovalRules", "javaCascade"],
+                "properties": {
+                  "gates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object", "additionalProperties": false, "required": ["file", "reason"],
+                      "properties": { "file": { "$ref": "#/$defs/javaFile" }, "reason": { "$ref": "#/$defs/text" } }
+                    }
+                  },
+                  "gateRemovalRules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object", "additionalProperties": false, "required": ["rule", "reason"],
+                      "properties": { "rule": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "reason": { "$ref": "#/$defs/text" } }
+                    }
+                  },
+                  "javaCascade": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/javaFile" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "id": "note",
+  "label": "쪽지",
+  "presentation": {
+    "area": "communication",
+    "order": 2,
+    "summary": "쪽지 보내기·받기"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_note_info",
+      "tb_note_rcptn",
+      "tb_note_sndng"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/services/business/user/NoteService.ts",
+      "src/app/note",
+      "src/app/components/dashboard/UnreadNotesCard.tsx",
+      "src/extensions/note"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/note"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "NOTE"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java",
+        "alsoRequires": [
+          "notification"
+        ]
+      }
+    ],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 쪽지를 보내도 받는 사람에게 새 쪽지 알림이 가지 않고, 받는 사람은 쪽지함을 직접 열어야 압니다."
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/note/hub-tabs.ts",
+        "reason": "쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/note/shell-links.ts",
+        "reason": "쪽지 기능이 없으면 명령 센터의 협업 허브 바로가기만 사라지고 허브는 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/note/home-sections.ts",
+        "reason": "쪽지 기능이 없으면 업무 홈의 안 읽은 쪽지 카드만 사라지고 업무 홈은 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

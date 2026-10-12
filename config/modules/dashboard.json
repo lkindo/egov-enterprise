@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "id": "dashboard",
+  "label": "실시간 대시보드",
+  "presentation": {
+    "area": "participation",
+    "order": 1,
+    "summary": "업무 홈 실시간 연결·오늘 게시글·전체 미읽음 알림"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/components/features/dashboard/RealTimeDashboard.tsx",
+      "src/components/features/dashboard/RealTimeHomeSection.tsx",
+      "src/extensions/dashboard"
+    ],
+    "frontendAny": [],
+    "routes": [],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [
+    {
+      "to": "notification",
+      "kind": "ui-import",
+      "reason": "실시간 상태 구역이 개인 알림 큐의 알림을 알림 기능의 정규화로 읽는다.",
+      "evidence": "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
+      "symbol": "normalizeNotification"
+    }
+  ],
+  "foreignKeys": [],
+  "requires": [
+    {
+      "to": "notification",
+      "userReason": "업무 홈 실시간 상태 구역이 내 알림을 함께 보여 줍니다."
+    }
+  ],
+  "integrates": [
+    {
+      "to": "board",
+      "via": "port:PostStatisticsContributor",
+      "reason": "게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.",
+      "anchors": [
+        {
+          "path": "business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java",
+          "anchor": "CountSnapshot currentPosts = getTodayPostsCount();"
+        }
+      ]
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/dashboard/home-sections.ts",
+        "reason": "실시간 대시보드 기능이 없으면 업무 홈의 실시간 상태 구역만 사라지고 최근 활동 구역이 전체 폭을 씁니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

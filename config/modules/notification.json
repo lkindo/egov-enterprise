@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 2,
+  "id": "notification",
+  "label": "알림",
+  "presentation": {
+    "area": "communication",
+    "order": 3,
+    "summary": "알림 센터와 실시간 알림"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_user_noti"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/components/layout/header-notifications.tsx",
+      "src/app/components/ui/app-notification-drawer.tsx",
+      "src/lib/hooks/use-notifications.ts",
+      "src/services/foundation/system/NotificationAdminService.ts",
+      "src/app/admin/notifications",
+      "src/extensions/notification"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/notifications"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "NOTI"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/notification/header-widgets.ts",
+        "reason": "알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다."
+      }
+    ]
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

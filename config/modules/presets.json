@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 2,
+  "presets": [
+    {
+      "id": "core",
+      "label": "공통 기반만",
+      "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책·통계 중심의 최소 프레임워크",
+      "domains": [],
+      "expected": {
+        "gates": [
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java",
+            "reason": "기존 AssignmentRecipientIntegrityIntegrationTest의 메모 6검사를 도메인별로 분리했다. memoreport가 없는 core에서는 메모 검사만 제외하며 기존 쪽지·담당자 검사의 선택 범위는 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java",
+            "reason": "쪽지·담당자 저장과 알림·내구 작업의 동일 트랜잭션 원자성을 검증한다. core에는 note/notification 서비스·테이블이 없어 이 통합 과업이 성립하지 않는다. core 담당자 검증은 DeptJobServiceTest에, 내구 작업은 DurableWorkIntegrationTest에 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+            "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
+            "reason": "커뮤니티 기능의 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java",
+            "reason": "template 도메인의 생성 전용 INSERT·중복 방지 회귀. demo pack 제외 시 템플릿 서비스와 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",
+            "reason": "게시판(collaboration) 자식과 커뮤니티(demo) 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증. 어느 한쪽 pack 이 빠지면 제약도 대상 테이블도 없어 검사 대상 자체가 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest 가 모든 프로필에서 계속 본다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
+            "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
+            "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+            "reason": "demo 행사 서비스의 승인 필드 불변성을 검증한다. 행사 기능이 없는 프로필에서는 대상이 없고, 분리한 BusinessPolicyIntegrityIntegrationTest의 core 정책 검증은 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
+            "reason": "demo 커뮤니티와 템플릿의 신규 연결·비활성화·삭제 경합을 검증한다. 두 기능이 없는 프로필에서는 검증 대상이 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
+            "reason": "collaboration 알림 행과 내구 작업의 동시 저장·재시도·중복 전달 검증이다. core에서는 알림 기능 자체가 없으며 공통 작업 엔진 검증은 DurableWorkIntegrationTest로 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
+            "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. addressbook 도메인이 없는 core에서는 대상 서비스와 테이블이 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java",
+            "reason": "SMS 수신 행의 발송 claim·commit 콜백·확정 영수증·중복 발송 방지 검증이다. sms 도메인이 없는 core에서는 대상 서비스와 테이블이 없다."
+          }
+        ],
+        "gateRemovalRules": [
+          {
+            "rule": "historical-migration-tests",
+            "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+          },
+          {
+            "rule": "upstream-atlas",
+            "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          }
+        ],
+        "javaCascade": [
+          "api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/BannerApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/BannerUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/dto/BannerPublicResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterDetailResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterSummaryResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/community/CommunityApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/dto/PopupPublicResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/PopupApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/PopupUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/ApprovalApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalConfirmRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalDraftRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalResubmissionRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/board/dto/BoardSearchItemResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/board/dto/PublicFaqDetailResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/board/dto/PublicFaqListItemResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/board/SatisfactionApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/comment/CommentApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/mail/MailApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/main/DashboardResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/memoreport/MemoReportApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/notification/NotificationApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/EventApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/ExternalHrApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/RewardManageApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/poll/PollApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/report/WorkReportApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScheduleApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScrapApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/sms/SmsApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/isg/InternetSvcGuidanceApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAdminApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/template/TemplateApiController.java",
+          "api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsConfiguration.java",
+          "api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsSender.java",
+          "api-server/src/main/java/nuri/api/notification/NotificationEventListener.java",
+          "api-server/src/main/java/nuri/api/websocket/DashboardStatsEventListener.java",
+          "api-server/src/main/java/nuri/api/websocket/WebSocketSessionEventListener.java",
+          "api-server/src/test/java/nuri/api/config/JsonConverterParityIntegrationTest.java",
+          "api-server/src/test/java/nuri/api/contract/StandardTextInputValidationTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/addressbook/AddressBookApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/banner/BannerApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/banner/BannerUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/board/BoardMasterApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/community/CommunityApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/approval/InformalSanctionApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/board/BoardMultipartWriteApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/board/SatisfactionApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/comment/CommentApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/mail/MailApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/memoreport/MemoReportApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/notification/NotificationApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/poll/PollApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScheduleApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScrapApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/sms/SmsApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/CalendarDateInputIntegrationTest.java",
+          "api-server/src/test/java/nuri/api/controller/CollaborationInputErrorIntegrationTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/isg/InternetSvcGuidanceApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAuthorizationTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/template/TemplateApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/integration/sms/NaverSensSmsSenderTest.java",
+          "api-server/src/test/java/nuri/api/notification/NotificationEventListenerTest.java",
+          "api-server/src/test/java/nuri/api/websocket/DashboardStatsEventListenerTest.java",
+          "api-server/src/test/java/nuri/api/websocket/WebSocketSessionEventListenerTest.java",
+          "api-server/src/test/java/nuri/openapi/AddressBookOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/BoardOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/CommentOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/DashboardOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/OperationOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/SatisfactionOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/SurveyOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/security/SurveyAliasAccessControlTest.java",
+          "api-server/src/test/java/nuri/web/board/BoardApiControllerTest.java",
+          "business-app/src/test/java/nuri/business/core/softdelete/SoftDeleteDynamicTest.java",
+          "business-app/src/test/java/nuri/business/core/softdelete/SoftDeleteTestService.java",
+          "business-app/src/test/java/nuri/business/service/DateInputValidationTest.java"
+        ]
+      }
+    },
+    {
+      "id": "collaboration",
+      "label": "협업 기본",
+      "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS",
+      "domains": [
+        "board",
+        "comment",
+        "dashboard",
+        "mail",
+        "note",
+        "notification",
+        "scrap",
+        "sms"
+      ],
+      "expected": {
+        "gates": [
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java",
+            "reason": "기존 AssignmentRecipientIntegrityIntegrationTest의 메모 6검사를 도메인별로 분리했다. memoreport가 없는 collaboration에서는 메모 검사만 제외하고 쪽지·담당자 기존 14검사를 보존한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+            "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
+            "reason": "커뮤니티 기능의 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java",
+            "reason": "template 도메인의 생성 전용 INSERT·중복 방지 회귀. demo pack 제외 시 템플릿 서비스와 테이블이 없어 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",
+            "reason": "게시판(collaboration) 자식과 커뮤니티(demo) 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증. 어느 한쪽 pack 이 빠지면 제약도 대상 테이블도 없어 검사 대상 자체가 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest 가 모든 프로필에서 계속 본다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
+            "reason": "survey 응답 동시성 통합 테스트. survey pack 제외 시 검사 대상 자체가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
+            "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+            "reason": "demo 행사 서비스의 승인 필드 불변성을 검증한다. 행사 기능이 없는 프로필에서는 대상이 없고, 분리한 BusinessPolicyIntegrityIntegrationTest의 core 정책 검증은 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java",
+            "reason": "demo 커뮤니티와 템플릿의 신규 연결·비활성화·삭제 경합을 검증한다. 두 기능이 없는 프로필에서는 검증 대상이 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
+            "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. addressbook 도메인이 없는 collaboration에서는 대상 서비스와 테이블이 없다."
+          }
+        ],
+        "gateRemovalRules": [
+          {
+            "rule": "historical-migration-tests",
+            "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+          },
+          {
+            "rule": "upstream-atlas",
+            "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          }
+        ],
+        "javaCascade": [
+          "api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/BannerApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/BannerUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/banner/dto/BannerPublicResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/community/CommunityApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/dto/PopupPublicResponse.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/PopupApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/PopupUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/ApprovalApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalConfirmRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalDraftRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalResubmissionRequest.java",
+          "api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/memoreport/MemoReportApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/EventApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/ExternalHrApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/operation/RewardManageApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/poll/PollApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/report/WorkReportApiController.java",
+          "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScheduleApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/isg/InternetSvcGuidanceApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAdminApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java",
+          "api-server/src/main/java/nuri/api/controller/foundation/controller/system/template/TemplateApiController.java",
+          "api-server/src/test/java/nuri/api/config/JsonConverterParityIntegrationTest.java",
+          "api-server/src/test/java/nuri/api/contract/StandardTextInputValidationTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/addressbook/AddressBookApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/banner/BannerApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/banner/BannerUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/community/CommunityApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/approval/InformalSanctionApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/memoreport/MemoReportApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/poll/PollApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScheduleApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/CalendarDateInputIntegrationTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/isg/InternetSvcGuidanceApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAuthorizationTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiControllerTest.java",
+          "api-server/src/test/java/nuri/api/controller/foundation/controller/system/template/TemplateApiControllerTest.java",
+          "api-server/src/test/java/nuri/openapi/AddressBookOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/OperationOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/openapi/SurveyOpenApiDocumentationTest.java",
+          "api-server/src/test/java/nuri/security/SurveyAliasAccessControlTest.java",
+          "business-app/src/test/java/nuri/business/service/DateInputValidationTest.java"
+        ]
+      }
+    },
+    {
+      "id": "demo",
+      "label": "전체 참조 기능",
+      "description": "현재 제품의 전체 참조 기능",
+      "domains": [
+        "addressbook",
+        "board",
+        "comment",
+        "community",
+        "dashboard",
+        "event",
+        "help",
+        "informalsanction",
+        "isg",
+        "mail",
+        "memoreport",
+        "note",
+        "notification",
+        "promotion",
+        "report",
+        "reward",
+        "schedule",
+        "scrap",
+        "showcase",
+        "sms",
+        "survey",
+        "template"
+      ],
+      "expected": {
+        "gates": [],
+        "gateRemovalRules": [
+          {
+            "rule": "historical-migration-tests",
+            "reason": "투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 교체하므로 역사적 migration 검증 42건은 검사할 대상이 없다. 파일 단위가 아니라 규칙 단위로 승인한다 — migration 검증이 하나 늘 때마다 세 프로필 매니페스트가 함께 흔들리면 소음만 남고 신호가 죽는다."
+          },
+          {
+            "rule": "upstream-atlas",
+            "reason": "원본 Atlas HTML 은 원본 저장소의 결정·gap·운영 사실을 담고 로그인 전에 응답된다. 그 생성기는 원본 공용 메모리와 문서를 읽어 생성물 안에서 다시 만들어도 원본 사실이 되살아나므로, Atlas 와 생성기·생성기 테스트·Atlas 계약을 함께 걷는다. 걷은 계약 3건이 지키던 대상(Atlas HTML)이 생성물에 없으므로 보호가 줄지 않는다."
+          }
+        ],
+        "javaCascade": []
+      }
+    }
+  ]
+}
