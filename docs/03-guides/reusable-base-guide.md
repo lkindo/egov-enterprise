@@ -73,6 +73,8 @@ clean v* release tag
 - Docker와 실행 중인 PostgreSQL 컨테이너가 필요하다. 기본 컨테이너명은
   `egov-e2e-postgres`이며 `--container <name>`으로 바꿀 수 있다.
 - 생성기는 이름이 `test_reusable_base_*`인 일회용 DB만 만들고 종료 시 제거한다.
+- 원본 frontend 의존성이 설치돼 있어야 한다(`pnpm -C frontend install --frozen-lockfile`). 소스 생성기는 생성물의 API 계약을
+  원본의 TypeScript·openapi-typescript 로 다시 만들며(§3.5), 없으면 출력 폴더를 만들기 전에 `TOOL_UNAVAILABLE` 로 멈춘다.
 
 ### 3.2 DB 번들
 
@@ -160,6 +162,17 @@ DB 번들의 기본 경로(`build/reusable-base/<profile>-<sha>-<timestamp>`)에
 루트 이관 카탈로그(`db_columns.json`)는 DB 번들이 검증한 스키마로 다시 쓴다([카탈로그 투영](../../scripts/reusable-migration-catalog.mjs), DEC-OPS-263).
 이관 도구는 이 카탈로그로 매핑 타깃을 판정하므로, 구성에서 빠진 표로 가는 매핑은 검증 단계에서 거부된다.
 Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 검증이 카탈로그와 적용 스키마를 정확히 대조한다.
+
+API 계약 사슬도 구성으로 다시 만든다(Phase 2 10c-2, DEC-OPS-286). ① `api-docs.json` 은 인가 원장의 연산 바인딩으로
+핸들러 소스를 찾아, 투영이 지운 핸들러의 연산을 빼고 남는 문서에서 닿는 스키마와 쓰이는 태그만 남긴다([계약 투영](../../scripts/reusable-contract-projection.mjs)).
+바인딩이 없거나 소스를 찾지 못한 연산은 판정할 수 없어 생성이 실패하고, 정밀 점검이 같은 판정으로 미리 막는다.
+② 같은 단계에서 생성 타입 3종(`generated-zod`·`generated-operations`·`generated-api.d.ts`)을 원본의 생성기와
+원본 frontend 의 openapi-typescript 로 다시 만든다. ③ 투영 원장을 쓴 뒤 생성 경계 census 와 소비 census 원장을 생성물
+트리에서 다시 만든다([census 투영](../../scripts/reusable-contract-census.mjs)). 생성물에 없는 연산의 원장 항목은 빠지고,
+핸들러는 남는데 원본의 소비자 파일을 투영이 모두 지운 연산(예: 게시판의 공개 FAQ 연산 — 소비자는 도움말 화면뿐)은
+`consumer-not-in-composition` 으로 그 지운 파일을 근거로 적는다. 기대값(연산 수·세 래칫)은 생성물에서 잰 값이며,
+생성기는 생성물에서 소비 census 가 오류 0 인지 확인한다. 모든 기능을 고른 구성은 api-docs·생성 타입 3종·두 census 가
+원본과 같다. 생성물의 경로 린터는 api-docs ⊆ 컨트롤러도 본다. springdoc 으로 다시 추출한 문서와의 대조는 T2 야간 검증이 한다.
 
 공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
 파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,
