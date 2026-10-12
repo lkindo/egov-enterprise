@@ -132,15 +132,6 @@ export function composerProfile(manifest, composition) {
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
 export const FRONTEND_MARKER_FILES = Object.freeze([
-  { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
-    // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
-    owners: { collaboration: block => (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard']),
-      demo: block => (/BannerSlider|PopupManager/.test(block) ? ['promotion'] : ['dashboard', 'informalsanction']) },
-    step: '업무 홈', reason: '업무 홈의 카드·구역이 게시판·결재·홍보 데이터를 화면 안에서 직접 조립한다.' },
-  { file: 'src/app/page.tsx', blocks: { collaboration: 3 }, owners: { collaboration: ['dashboard'] },
-    step: '업무 홈', reason: '업무 홈 진입점이 대시보드 데이터 조회를 직접 넘긴다.' },
-  { file: 'src/app/components/dashboard/ActivityFeed.tsx', blocks: { collaboration: 1 }, owners: { collaboration: ['dashboard'] },
-    step: '업무 홈', reason: '활동 피드가 대시보드 데이터를 직접 읽는다.' },
   { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
     step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
   { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },

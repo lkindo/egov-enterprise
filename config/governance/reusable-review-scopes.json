@@ -344,7 +344,47 @@
   "optionalPilotSources": [
     {
       "pilotId": "content-user-home",
-      "source": "frontend/src/app/dashboard-data.ts",
+      "source": "frontend/src/app/components/dashboard/BoardHome.tsx",
+      "requiredPacks": [
+        "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/queries/board-home-query.ts",
+      "requiredPacks": [
+        "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/extensions/board/home-sections.ts",
+      "requiredPacks": [
+        "collaboration"
+      ],
+      "requiredDomains": [
+        "board"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/app/components/dashboard/ApprovalHome.tsx",
+      "requiredPacks": [
+        "demo"
+      ],
+      "requiredDomains": [
+        "informalsanction"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/components/features/dashboard/RealTimeHomeSection.tsx",
       "requiredPacks": [
         "collaboration"
       ],

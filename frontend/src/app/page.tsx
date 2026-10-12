@@ -1,10 +1,7 @@
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
-/* reusable-base:collaboration:start */
-import { cache } from 'react';
-import { loadDashboardData } from './dashboard-data';
-/* reusable-base:collaboration:end */
+import { HomeDataBoundary } from './home-data-boundary';
 
 function DashboardLoading() {
   return (
@@ -23,30 +20,11 @@ const UnifiedDashboardClient = dynamic(() => import('./UnifiedDashboardClient'),
   loading: () => <DashboardLoading />
 });
 
-/* reusable-base:collaboration:start */
-/**
- * P3: Server-side Data Refinement
- * Minifies the JSON payload sent to the client by picking only required fields.
- * cache() ensures that even if this is called multiple times in one request, only one API call is made.
- *
- * [2026-09-13 GAP-PACK-001 ③] 대시보드 API(`/api/v1/dashboard`)는 게시판 응답 타입에 묶여 collaboration pack 과
- * 함께 빠진다. 이 조회를 블록 밖에 두면 core 프로필의 로그인 착지(`/`)가 없는 API 를 불러 오류 화면이 된다.
- */
-const getDashboardData = cache(loadDashboardData);
-/* reusable-base:collaboration:end */
-
 export default async function UnifiedDashboardPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // 속성 목록 안에 마커를 두지 않도록 props 객체로 조립한다 — core 프로필에서는 빈 객체가 된다.
-  const clientProps = {
-    /* reusable-base:collaboration:start */
-    dataPromise: getDashboardData(),
-    /* reusable-base:collaboration:end */
-  };
-
   // [PD-UX-002 Q4] 권한이 없어 되돌려진 사실을 화면이 말한다.
   //   `proxy.ts` 는 /admin 접근이 role 로 막히면 여기로 되돌리며 `?auth_error=unauthorized` 를
   //   붙인다. 그런데 그 값을 **읽는 곳이 저장소 전체에 없었다** — 사용자 입장에서는 링크를 눌렀는데
@@ -66,8 +44,14 @@ export default async function UnifiedDashboardPage({
           접근 권한이 없어 홈으로 이동했습니다.
         </div>
       )}
+      {/*
+        [Phase 2 9단계] 업무 데이터는 기능이 업무 홈에 기여한 조회(home-sections)를 서버 자식이 이 Suspense 안에서 미리 채운다.
+        page 본문은 searchParams 만 기다린다 — 데이터를 여기서 기다리면 대기 동안 루트 전체화면 덮개(loading.tsx)가 보인다.
+      */}
       <Suspense fallback={<DashboardLoading />}>
-        <UnifiedDashboardClient {...clientProps} />
+        <HomeDataBoundary>
+          <UnifiedDashboardClient />
+        </HomeDataBoundary>
       </Suspense>
     </>
   );

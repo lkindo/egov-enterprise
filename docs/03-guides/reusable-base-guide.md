@@ -374,6 +374,13 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    축 3·화면 목록은 기여 파일을 화면 모집단에 넣어 그 레지스트리를 읽는 화면(도우미 .ts 면 그 도우미를 읽는 화면)으로 쓰기를
    귀속하고, 기여가 import 하는 비화면·비서비스 모듈은 어느 디렉터리에 있든 중간 모듈로 읽는다. 기여의 판정은
    `visibleWhen.permissions` 원소만 센다 — always 사유 문자열에 권한 이름을 따옴표째 적어도 판정이 아니다.
+10. **업무 홈(`home-sections`)은 서버 자식도 레지스트리를 읽는다**(Phase 2 9단계). 그래서 기여가 가리키는 두 이름의 모듈 경계가
+    정해져 있다 — `Component` 는 `'use client'` 모듈에서 가져오고(`ssr: false` 래퍼는 서버 컴포넌트에서 쓸 수 없다),
+    `prefetch` 의 `query` 는 `'use client'` 가 없는 모듈의 queryOptions 값이다(`'use client'` 모듈의 값은 서버에서 클라이언트
+    참조가 된다). `prefetch` 의 `failure` 는 `boundary`(서버에서 다시 던져 오류 경계로)·`section`(삼키고 그 구역이 조회 실패를
+    말한다) 중 하나다. 배치는 overlay·actions·cards·main·status·bottom 이고, `cards` 배치 컴포넌트는 `<li>` 하나를 그린다. 링크는
+    컴포넌트가 그린다(기여는 링크 키를 갖지 않는다). 셸은 등록된 기여가 하나라도 있으면 DASHBOARD_READ 로 진입을 판정한다.
+    경계 계약이 강제한다.
 
 ### 3.8 검토 원장 투영과 기관 승인
 

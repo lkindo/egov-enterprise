@@ -39,6 +39,8 @@ const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
  */
 export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
+  // 업무 홈(Phase 2 9단계): 셸이 배치마다 그리고, 서버 자식이 보이는 기여의 조회를 미리 채운다. 둘 다 '/' 화면이다.
+  'home-sections': ['frontend/src/app/UnifiedDashboardClient.tsx', 'frontend/src/app/home-data-boundary.tsx'],
   'hub-tabs': {
     collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
     knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],

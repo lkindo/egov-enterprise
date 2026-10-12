@@ -195,7 +195,7 @@ flowchart LR
 
 | 흐름 | 기존 설명과 보강점 | 우선 원본 |
 |---|---|---|
-| 대시보드 조회 | 기존 9단계 유지. RSC cache/Suspense 소유권과 오류 전파 설명 정합화 | [dashboard-data](../../frontend/src/app/dashboard-data.ts) |
+| 대시보드 조회 | 기존 9단계 유지. Suspense 안 서버 자식의 미리 채우기와 오류 전파 설명 정합화(Phase 2 9단계에서 대시보드 로더가 게시판 조회 모듈로 옮겨 갔다) | [board-home-query](../../frontend/src/queries/board-home-query.ts) |
 | 로그인·갱신·로그아웃 | 쿠키·JWT·refresh 저장/회전·실패 처리의 연결 추가 | [AuthServiceImpl](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java), [로그인 BFF](../../frontend/src/app/api/auth/login/route.ts) |
 | 일정 또는 게시글 쓰기 | 화면 검증→API 입력→서비스 인가→트랜잭션→DB 제약→응답→화면 오류의 실제 사례 | [입력 검증 가이드](frontend-form-validation-loop.md), [횡단관심사](cross-cutting-conventions.md) |
 | 결재 상태 변경·알림 | 승인 권한과 본 업무 커밋 이후 비동기 알림의 경계를 분리 | [InformalSanctionService](../../business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java) |

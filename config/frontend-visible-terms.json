@@ -276,9 +276,13 @@
       "roles": ["USER", "ADMIN", "SYSTEM"],
       "sources": [
         "frontend/src/app/page.tsx",
-        "frontend/src/app/dashboard-data.ts",
         "frontend/src/app/UnifiedDashboardClient.tsx",
         "frontend/src/app/components/dashboard/ActivityFeed.tsx",
+        "frontend/src/app/components/dashboard/BoardHome.tsx",
+        "frontend/src/queries/board-home-query.ts",
+        "frontend/src/extensions/board/home-sections.ts",
+        "frontend/src/app/components/dashboard/ApprovalHome.tsx",
+        "frontend/src/components/features/dashboard/RealTimeHomeSection.tsx",
         "frontend/src/components/features/dashboard/RealTimeDashboard.tsx"
       ],
       "evidenceLevel": "static-source-and-contract-test",

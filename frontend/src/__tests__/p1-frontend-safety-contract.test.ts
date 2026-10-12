@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as ts from 'typescript';
@@ -26,6 +26,26 @@ function requireOneRenderedMap(source: string, collection: string): void {
   if (count !== 1) throw new Error(`${collection}: rendered map count must be 1 (actual ${count})`);
 }
 
+/**
+ * 업무 홈 기여(home-sections)가 가리키는 모듈 — 셸에서 옮겨 간 카드·목록·구역과 그 조회다(Phase 2 9단계). 기여 파일에서 읽으므로 새 기여도
+ * 함께 덮고, 생성물에서는 기능과 함께 지워진 기여가 목록에서 빠진다.
+ */
+function homeSectionModules(): [string, string][] {
+  const root = join(SRC, 'extensions');
+  const specifiers = readdirSync(root, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => join(root, entry.name, 'home-sections.ts'))
+    .filter(file => existsSync(file))
+    .flatMap(file => [...readFileSync(file, 'utf8').matchAll(/from '@\/([^']+)'/g)].map(match => match[1]))
+    .filter(specifier => specifier !== 'extensions/slots');
+  return [...new Set(specifiers)].map(specifier => {
+    const base = join(SRC, specifier);
+    const path = [`${base}.tsx`, `${base}.ts`].find(candidate => existsSync(candidate));
+    if (!path) throw new Error(`업무 홈 기여가 가리키는 모듈을 찾지 못했다: @/${specifier}`);
+    return [specifier, path];
+  });
+}
+
 describe('P1 frontend safety source contract', () => {
   it('서버 데이터가 있는 핵심 화면은 mount 전용 gate로 첫 DOM을 버리지 않는다', () => {
     const dashboard = stripComments(readSource('app', 'UnifiedDashboardClient.tsx'));
@@ -34,10 +54,13 @@ describe('P1 frontend safety source contract', () => {
     const boardDetailSource = readInProjection(join(SRC, 'app', 'admin', 'community', 'boards', 'detail', 'BoardDetailClient.tsx'));
     const boardDetail = boardDetailSource === undefined ? undefined : stripComments(boardDetailSource);
 
+    // 업무 홈의 카드·목록·구역은 셸에서 기능 모듈로 옮겨 갔다(Phase 2 9단계) — 셸 하나만 보면 옮긴 조각이 검사 밖으로 나간다.
+    const home = homeSectionModules().map(([name, path]) => [name, stripComments(readFileSync(path, 'utf8'))] as const);
     for (const [name, source] of [
       ['UnifiedDashboardClient', dashboard],
       ['NavItem', navItem],
       ...(boardDetail === undefined ? [] : [['BoardDetailClient', boardDetail] as const]),
+      ...home,
     ] as const) {
       expect(source, `${name}: hydration 전용 mounted state가 다시 들어왔습니다`).not.toMatch(
         /\b(?:isMounted|mounted|setIsMounted|setMounted)\b/,

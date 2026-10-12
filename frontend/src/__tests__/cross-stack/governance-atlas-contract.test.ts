@@ -478,7 +478,7 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(read('scripts/run-load-test.ps1')).toContain('-e "K6_SCENARIO=$scenario"');
     const controller = read('api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java');
     expect(controller).toContain('ApiResponse<DashboardResponse>');
-    expect(read('frontend/src/app/dashboard-data.ts')).toContain('executeGeneratedOperation(getDashboardDataOperation');
+    expect(read('frontend/src/queries/board-home-query.ts')).toContain('executeGeneratedOperation(getDashboardDataOperation');
     expect(textOf('content-flows')).toContain('DashboardResponse');
   });
 

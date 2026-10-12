@@ -55,7 +55,8 @@ const FEATURES = {
     //   질의응답 해결 판정은 셸과 도움말 서비스가 함께 쓰는 게시판 모듈이다.
     'src/app/admin/help', 'src/lib/board',
     // 허브 분해 H4: 통계 셸의 게시물·자료 이용 탭과 통계 요약의 누적 게시물 칸 기여(stats-panels).
-    'src/extensions/board'],
+    // 업무 홈(Phase 2 9단계): 글 수 카드·최근 글 목록·새 게시글 작성 조각과 그 조회(home-sections 기여).
+    'src/extensions/board', 'src/app/components/dashboard/BoardHome.tsx', 'src/queries/board-home-query.ts'],
   routes: ['/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
@@ -69,8 +70,10 @@ const FEATURES = {
     'src/components/business/community', 'src/extensions/community', 'src/app/admin/community/boards/page.tsx'],
   routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/community/boards', '/cop/cmy'],
   exactRoutes: ['/admin/community', '/admin/community/boards'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
+  // 업무 홈(Phase 2 9단계): 업무 홈 셸은 core 이고, 이 기능은 '실시간 상태' 구역을 home-sections 로 기여한다.
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
-    'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
+    'src/components/features/dashboard/RealTimeDashboard.tsx', 'src/components/features/dashboard/RealTimeHomeSection.tsx',
+    'src/extensions/dashboard'], routes: [] },
   // 행사(약도·행사별 외부인사 포함)와 포상은 따로 고른다(DEC-OPS-256 ①). 외부인사 기본 키가 행사 번호를 품고 물리 외래 키가 행사를 가리킨다.
   event: { label: '행사·외부인사', permissions: ['EVENT', 'EXT_HR'], paths: [
     'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rough-map',
@@ -85,7 +88,9 @@ const FEATURES = {
   routes: ['/admin/system/hpcm', '/admin/uss/olh', '/help'] },
   informalsanction: { label: '약식 전자결재', permissions: ['INFORMAL', 'APPROVAL', 'WORKFLOW'], paths: [
     'src/app/admin/sanctn/workflow', 'src/app/admin/system/ism', 'src/app/admin/workflow', 'src/app/approvals',
-    'src/services/business/user/approval'], routes: ['/admin/sanctn/workflow', '/admin/system/ism', '/admin/workflow', '/approvals'] },
+    'src/services/business/user/approval',
+    // 업무 홈(Phase 2 9단계): 결재 대기 카드·결재함 열기 단추와 그 조회(home-sections 기여).
+    'src/app/components/dashboard/ApprovalHome.tsx', 'src/queries/approval-home-query.ts', 'src/extensions/informalsanction'], routes: ['/admin/sanctn/workflow', '/admin/system/ism', '/admin/workflow', '/approvals'] },
   isg: { label: '인터넷 서비스 안내', permissions: ['SERVICE'], paths: [
     'src/app/admin/system/isg', 'src/services/foundation/system/InternetSvcGuidanceAdminService.ts'], routes: ['/admin/system/isg'] },
   mail: { label: '메일', permissions: ['MAIL'], paths: [
@@ -110,7 +115,9 @@ const FEATURES = {
   promotion: { label: '배너·팝업', permissions: ['BANNER', 'POPUP'], paths: [
     'src/app/actions/promotionActions.ts', 'src/app/components/dashboard/BannerSlider.tsx', 'src/app/components/dashboard/PopupManager.tsx',
     'src/app/admin/system/banner', 'src/services/business/user/BannerService.ts', 'src/services/business/user/PopupService.ts',
-    'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/PopupAdminService.ts', 'src/types/foundation/banner.ts'],
+    'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/PopupAdminService.ts', 'src/types/foundation/banner.ts',
+    // 업무 홈(Phase 2 9단계): 공지 팝업·홍보 배너 조각(home-sections 기여).
+    'src/app/components/dashboard/PromotionHome.tsx', 'src/extensions/promotion'],
   routes: ['/admin/system/banner'] },
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
     'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts',

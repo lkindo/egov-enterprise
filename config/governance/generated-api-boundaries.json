@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "02d7fe9384701f1aa1958744530681c8d92fe328411f9121160fecb6727627db",
+  "inventoryHash": "1eee3bf395d94012a339fb7cf4439dc2d6f8cb072f926c4f8d3ffb926c163adf",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -492,23 +492,6 @@
       "id": "3f96d1062a180f5db4cf"
     },
     {
-      "file": "frontend/src/app/dashboard-data.ts",
-      "owner": "loadDashboardData",
-      "ordinal": 1,
-      "line": 44,
-      "column": 35,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "executeGeneratedOperation",
-      "method": "get",
-      "target": "/api/v1/dashboard",
-      "operationId": "getDashboardData",
-      "descriptorName": "getDashboardDataOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "fb3fa15a7c4f3aa4212f"
-    },
-    {
       "file": "frontend/src/lib/api/client.ts",
       "owner": "reissueSession",
       "ordinal": 1,
@@ -711,6 +694,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "1c2a9ed6f80007fa39b4"
+    },
+    {
+      "file": "frontend/src/queries/board-home-query.ts",
+      "owner": "loadBoardHome",
+      "ordinal": 1,
+      "line": 53,
+      "column": 35,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "executeGeneratedOperation",
+      "method": "get",
+      "target": "/api/v1/dashboard",
+      "operationId": "getDashboardData",
+      "descriptorName": "getDashboardDataOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "753cd96302e8770ce8e7"
     },
     {
       "file": "frontend/src/services/business/board/SatisfactionService.ts",

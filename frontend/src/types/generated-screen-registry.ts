@@ -72,6 +72,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"DASHBOARD_READ","action":"READ","source":"display"},
       {"code":"NOTE_READ","action":"READ","source":"display"}
     ]
   },

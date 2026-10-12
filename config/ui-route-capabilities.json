@@ -101,7 +101,7 @@
           "id": "home.work-summary",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "dashboard-api",
+          "dataSource": "dashboard-api+approvals-api",
           "actions": [
             "view-list"
           ],
@@ -117,9 +117,13 @@
             "api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
             "frontend/src/app/UnifiedDashboardClient.tsx",
-            "frontend/src/app/dashboard-data.ts",
-            "frontend/src/app/page.test.tsx",
-            "frontend/src/app/page.tsx"
+            "frontend/src/app/__tests__/WorkHome.equivalence.test.tsx",
+            "frontend/src/app/components/dashboard/ApprovalHome.tsx",
+            "frontend/src/app/components/dashboard/BoardHome.tsx",
+            "frontend/src/app/home-data-boundary.tsx",
+            "frontend/src/app/page.tsx",
+            "frontend/src/queries/approval-home-query.ts",
+            "frontend/src/queries/board-home-query.ts"
           ]
         },
         {
@@ -148,6 +152,7 @@
             "business-app/src/main/java/nuri/business/service/notification/dto/NotificationDto.java",
             "frontend/src/app/page.tsx",
             "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
+            "frontend/src/components/features/dashboard/RealTimeHomeSection.tsx",
             "frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx",
             "frontend/src/lib/hooks/use-notifications.ts"
           ]
@@ -193,6 +198,7 @@
             "api-server/src/main/java/nuri/api/controller/business/admin/content/popup/PopupUserApiController.java",
             "frontend/src/app/components/dashboard/BannerSlider.tsx",
             "frontend/src/app/components/dashboard/PopupManager.tsx",
+            "frontend/src/app/components/dashboard/PromotionHome.tsx",
             "frontend/src/app/components/dashboard/__tests__/BannerSlider.a11y.test.tsx",
             "frontend/src/app/page.tsx",
             "frontend/src/services/business/user/BannerService.ts",

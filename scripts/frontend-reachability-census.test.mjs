@@ -251,6 +251,14 @@ const CORE_SURVIVORS = [
   //   core 투영에서 도우미와 그것을 쓰는 업무 관리 목록(나의 업무·업무 관리 두 라우트)이 연쇄로 사라진다.
   'frontend/src/components/business/work-hub/work-hub-tabs.tsx',
   'frontend/src/components/business/deptJob/DeptJobListSection.tsx',
+  // [Phase 2 9단계] 업무 홈은 로그인 착지인 core 셸이다 — 카드·목록·실시간·홍보는 home-sections 기여다. 셸·서버 자식·판정·레지스트리가
+  //   기능 코드를 import 하면 core 투영에서 업무 홈 전체가 연쇄로 사라진다(page 생존은 위 주석의 투영 시험이 본다).
+  'frontend/src/app/UnifiedDashboardClient.tsx',
+  'frontend/src/app/home-data-boundary.tsx',
+  'frontend/src/app/home-access.ts',
+  'frontend/src/app/components/dashboard/ActivityFeed.tsx',
+  'frontend/src/extensions/generated-home-sections.ts',
+  'frontend/src/lib/auth/server-user.ts',
 ];
 
 /*
@@ -1336,11 +1344,12 @@ test('a projector keeps no marker block of an excluded pack and rejects malforme
   assert.throws(() => createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] }, composition: { profile: 'custom' } }),
     /해석된 기능 목록/, 'a direct selection projector needs the resolved domains');
   // lock.frontend.packBlocks 는 종전 pack 마커 단계의 셈이다: 소유 기능이 빠져 걷은 블록은 세지 않고, 소유는 남지만 pack 이 빠진 블록만 센다.
-  const home = 'src/app/UnifiedDashboardClient.tsx';
-  const homeSource = readFileSync(join(repoRoot, 'frontend', home), 'utf8');
-  const byCustom = custom.project(home, homeSource);
+  // 표본은 게시판 마법사의 커뮤니티 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다).
+  const maker = 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
+  const makerSource = readFileSync(join(repoRoot, 'frontend', maker), 'utf8');
+  const byCustom = custom.project(maker, makerSource);
   assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.packChanged }, { stripped: 0, changed: false });
-  assert.notEqual(byCustom.source, homeSource);
-  assert.equal(byCustom.source, projector.project(home, homeSource).source);
-  assert.equal(projector.project(home, homeSource).strippedBlocks, parsePackMarkerBlocks(homeSource, { label: home }).blocks.length);
+  assert.notEqual(byCustom.source, makerSource);
+  assert.equal(byCustom.source, projector.project(maker, makerSource).source);
+  assert.equal(projector.project(maker, makerSource).strippedBlocks, parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length);
 });

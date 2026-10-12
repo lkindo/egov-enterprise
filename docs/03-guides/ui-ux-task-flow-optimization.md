@@ -37,7 +37,7 @@ flowchart TD
 | UX06 기안 모달 | 상신 중 StandardModal의 `closeDisabled` 연결 | ApprovalDraftDialog |
 | UX07 권한 화면 | 탐색을 조회 조건에서 분리. 기본정보와 기능/메뉴를 별도 저장 단위로 명시. 하단 저장 영역. 2026-10-02부터 영역 바로가기 대신 작업대 탭(화면별 권한·기능별 권한·구성원·기본 정보·변경 이력)으로 나눈다(§2.1) | AuthorizationGroupEditor |
 | UX08 상단 배치 | 지식·설문의 큰 소개/요약을 줄이고 이용 현황은 본문 뒤 접기 영역으로 이동. 통계의 세로 탐색을 상단으로 이동 | 각 허브와 HubHeader |
-| UX09 홈 진입 | 서버가 제공하는 `bbsId`·`pstSn` 보존, 홈 업무·공지 제목을 상세로 연결. 전체 보기도 해당 게시판으로 연결 | dashboard-data·UnifiedDashboardClient |
+| UX09 홈 진입 | 서버가 제공하는 `bbsId`·`pstSn` 보존, 홈 업무·공지 제목을 상세로 연결. 전체 보기도 해당 게시판으로 연결 | board-home-query·BoardHome(Phase 2 9단계에서 dashboard-data·UnifiedDashboardClient 의 게시판 부분을 옮겼다) |
 | UX10 관리 홈 | 서비스에 연결되지 않은 InsightBanner의 상단 배치 제거, 사용자·권한·감사 경로 제공, 역할 수를 권한 그룹 수로 표시 | AdminDashboardClient |
 | UX11 설문 개념 | 여론조사 목록과 만족도 등록 동작, 문항형 설문, 온라인 투표를 구분. 문항형 진행 순서 제공 | SurveyHubClient |
 | UX12 생성기 메뉴명 | 기존 허용 부모를 OCI 현행 이름인 소통·지식/관리 센터 > 업무 지원으로 안내 | BoardMakerWizard; 허용 부모·ROOT 정책은 동일 |

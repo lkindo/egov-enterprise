@@ -590,14 +590,17 @@ test('the marker table is red for an added or removed block, an unlisted marker 
   // 소유 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 실패한다. 경로 접두(collaboration/ 아래)로 소유를 짐작하지 않는다.
   assert.throws(() => composerMarkerBlockOwners('src/app/admin/collaboration/new/NewClient.tsx', 'demo', ''), /Unclassified composer UI block: src\/app\/admin\/collaboration\/new\/NewClient\.tsx\/demo/,
     'a path prefix is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
 });
 
 test('dashboard, notifications and optional address book blocks follow their domains rather than coarse packs', () => {
   const composition = resolveProjectRecipe(recipe(['mail']), catalog);
   const project = path => projectCustom(path, readFileSync(join(root, path), 'utf8'), composition);
-  assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
+  // [Phase 2 9단계] 업무 홈 page·셸은 마커가 없다 — 메일만 고르면 그대로이고 업무 홈 레지스트리가 빈 배열이다(아래 표).
+  for (const home of ['frontend/src/app/page.tsx', 'frontend/src/app/UnifiedDashboardClient.tsx']) {
+    assert.equal(project(home), readFileSync(join(root, home), 'utf8'), home);
+  }
   const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
   // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
   //   [스크랩 슬롯] 게시글 상세의 스크랩 버튼(post-actions)도 같다.
@@ -612,6 +615,7 @@ test('dashboard, notifications and optional address book blocks follow their dom
     ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [mail];"],
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
     ['frontend/src/extensions/generated-hub-tabs.ts', "hubTabs: readonly SlotContributions<'hub-tabs'>[] = [];"],
+    ['frontend/src/extensions/generated-home-sections.ts', "homeSections: readonly SlotContributions<'home-sections'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
@@ -661,7 +665,7 @@ function homeSurface(selection) {
   return { alive: reached.size > 0, pieces: pieces.sort() };
 }
 
-test('the work home keeps exactly the pieces of the features each composition selects (H0 golden)', () => {
+test('the work home keeps exactly the pieces of the features each composition selects (H0 golden, H1 slots)', () => {
   const all = ['accessGate', 'approvalButton', 'approvalCard', 'banner', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'popup', 'realtime',
     'subtitle', 'unreadNotes'];
   const collaboration = all.filter(piece => !['approvalButton', 'approvalCard', 'banner', 'popup'].includes(piece));
@@ -670,13 +674,15 @@ test('the work home keeps exactly the pieces of the features each composition se
     [{ preset: 'collaboration' }, collaboration],
     [{ preset: 'demo' }, all],
     [{ domains: ['dashboard'] }, collaboration.filter(piece => piece !== 'unreadNotes')],
-    // 게시판·결재·쪽지 카드는 대시보드 기능의 마커 블록이라, 그 기능만 고르면 홈에 나오지 않는다.
-    [{ domains: ['board'] }, []],
-    [{ domains: ['informalsanction'] }, []],
-    [{ domains: ['note'] }, []],
-    [{ domains: ['board', 'informalsanction'] }, []],
-    // 홍보 블록만 소유 기능 하나로 남는다 — 접근 불가 판정은 대시보드 블록이라 없다.
-    [{ domains: ['promotion'] }, ['banner', 'popup']],
+    // [H1] 게시판·결재·쪽지 조각은 그 기능의 home-sections 기여다 — 그 기능만 골라도 홈에 나온다(H0 에서는 대시보드 기능의 마커
+    //   블록이라 나오지 않았다). 기여가 등록되면 셸이 DASHBOARD_READ 로 진입을 판정하고, 요약 카드가 있으면 부제를 그린다.
+    [{ domains: ['board'] }, ['accessGate', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
+    [{ domains: ['informalsanction'] }, ['accessGate', 'approvalButton', 'approvalCard', 'subtitle']],
+    [{ domains: ['note'] }, ['accessGate', 'subtitle', 'unreadNotes']],
+    [{ domains: ['board', 'informalsanction'] },
+      ['accessGate', 'approvalButton', 'approvalCard', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
+    // [H1] 홍보 조각도 기여라 접근 판정이 함께 생긴다(H0 에서는 홍보 블록만 남고 판정은 대시보드 블록이었다). 카드가 없어 부제는 없다.
+    [{ domains: ['promotion'] }, ['accessGate', 'banner', 'popup']],
     [{ domains: ['notification'] }, []],
   ];
   for (const [selection, pieces] of golden) {
@@ -686,24 +692,22 @@ test('the work home keeps exactly the pieces of the features each composition se
   }
 });
 
-test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
-  const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
-  const source = readFileSync(join(root, file), 'utf8');
-  // The card block is owned by dashboard + note. Dashboard alone used to pull in note through the board
-  // bundle's scrap edge and the note/scrap hub; that edge is gone (DEC-OPS-272), so the card now leaves with
-  // note and the dual ownership keeps it from dangling.
-  const withoutDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
-  assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
+test('the unread-notes card on the work home leaves with the note domain only (H1 home-sections)', () => {
+  // [Phase 2 9단계] 카드는 쪽지의 home-sections 기여다. 종전에는 대시보드 기능의 마커 블록(소유 dashboard+note)이라 쪽지만 골라도
+  //   나오지 않았다. 이제 쪽지와 함께 남고 쪽지와 함께 빠진다 — 대시보드와 무관하다.
+  const registry = 'frontend/src/extensions/generated-home-sections.ts';
+  const source = readFileSync(join(root, registry), 'utf8');
+  const rendered = domains => {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+      .project(registry, source).source;
+  };
+  assert.match(rendered(['note']), /import note from '\.\/note\/home-sections';/);
   const dashboardOnly = resolveProjectRecipe(recipe(['dashboard']), catalog);
   assert.ok(!dashboardOnly.resolvedDomains.includes('note'), dashboardOnly.resolvedDomains.join(','));
-  assert.doesNotMatch(projectCustom(file, source, dashboardOnly), /UnreadNotesCard/);
-  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard', 'note']), catalog));
-  assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
-  assert.match(withDashboard, /<UnreadNotesCard \/>/);
-  const forcedWithoutNote = projectCustom(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] },
-    { packs: ['core', 'collaboration'], frontendRemovePaths: [] });
-  assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
-  assert.match(forcedWithoutNote, /업무게시판 글/);
+  assert.doesNotMatch(rendered(['dashboard']), /note\/home-sections/);
+  assert.match(rendered(['dashboard']), /import dashboard from '\.\/dashboard\/home-sections';/);
+  assert.doesNotMatch(rendered(['mail']), /from '\.\/\w+\/home-sections'/);
 });
 
 /*
@@ -805,7 +809,10 @@ test('every route literal in a marker block survives in every composition that k
   // 2026-10-12 실측 7건. 종전 10건 중 1건은 업무 홈 블록의 주석 속 경로였다 — 주석을 세지 않게 바뀌며 하한을 실측에 맞췄다.
   //   허브 분해 H4 에서 통계 셸의 탭 경로 2건(게시물·자료 이용)이 마커 블록을 떠나 게시판 기여의 href 가 됐다(9 → 7). 그 목적지는
   //   이제 경계 계약의 stats-panels 규칙(href = page 술어)과 관리 링크 census 가 본다.
-  assert.ok(checked >= 7, `route literals checked: ${checked}`);
+  //   Phase 2 9단계에서 업무 홈 블록 24개가 걷혀 그 안의 경로 6건(새 게시글 작성·전체 보기·상세·결재함)이 각 기능의 업무 홈 조각
+  //   파일로 옮겨 갔다(7 → 1). 그 목적지는 같은 기능이 소유한 화면이라 조각 파일과 함께 남고 빠진다 — 관리 링크 census·리다이렉트
+  //   가드가 그 파일을 본다. 남은 1건은 통합 검색 블록이다.
+  assert.ok(checked >= 1, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
   // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,
   //   게시판·설문(CI 대표 구성)에서는 레지스트리에 쪽지 항목이 없으며, 쪽지를 고르면 있다.
