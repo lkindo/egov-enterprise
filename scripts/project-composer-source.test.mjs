@@ -673,7 +673,8 @@ test('the work home keeps exactly the pieces of the features each composition se
     [{ preset: 'core' }, []],
     [{ preset: 'collaboration' }, collaboration],
     [{ preset: 'demo' }, all],
-    [{ domains: ['dashboard'] }, collaboration.filter(piece => piece !== 'unreadNotes')],
+    // [H2] 실시간 대시보드는 게시판을 포트로 읽는다 — 대시보드만 고르면 게시판이 따라오지 않아 실시간 구역과 접근 판정만 남는다.
+    [{ domains: ['dashboard'] }, ['accessGate', 'realtime']],
     // [H1] 게시판·결재·쪽지 조각은 그 기능의 home-sections 기여다 — 그 기능만 골라도 홈에 나온다(H0 에서는 대시보드 기능의 마커
     //   블록이라 나오지 않았다). 기여가 등록되면 셸이 DASHBOARD_READ 로 진입을 판정하고, 요약 카드가 있으면 부제를 그린다.
     [{ domains: ['board'] }, ['accessGate', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],

@@ -46,6 +46,12 @@ export const INTEGRATES = [
     reason: '주소록 기능이 없으면 문자 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 번호 직접 입력만 남습니다.',
     anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: "useRecipientAddressBook('sms')" },
       { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
+  // 업무 홈(Phase 2 9단계): 실시간 통계는 게시판 포트로 오늘 게시글 수를 센다. 포트 구현이 없으면 프레임이 provided=false 를 실어
+  //   화면이 카드를 그리지 않는다. 근거는 실시간 서비스에만 있는 줄이다(같은 포트 주입은 통계 서비스에도 있어 근거가 될 수 없다).
+  { from: 'dashboard', to: 'board', via: 'port:PostStatisticsContributor',
+    reason: '게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.',
+    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java',
+      anchor: 'CountSnapshot currentPosts = getTodayPostsCount();' }] },
   { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },

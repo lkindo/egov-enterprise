@@ -758,7 +758,9 @@ test('a saved recipe file fills the name, selection and structure and is re-chec
  */
 test('the summary stays in view with its buttons while long details scroll inside it', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
-  await page.locator('#capability-dashboard').check();
+  // 자동 포함이 여럿인 선택: 도움말은 게시판·댓글을, 포상은 결재를 끌어온다(업무 홈 이행 뒤 대시보드는 알림 하나만 끌어온다).
+  await page.locator('#capability-help').check();
+  await page.locator('#capability-reward').check();
   await expect(page.locator('#auto-included > div').first()).toBeVisible();
   const inView = async locator => {
     const box = await locator.boundingBox();
@@ -955,10 +957,11 @@ test('feature cards preview what choosing or removing them changes before the cl
   assert.equal(switched, '');
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'mail').summary);
-  // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤 붙잡지 않는다), 직접 선택이 되며 들어오는 기능도 밝힌다.
+  // 시작 구성에서 게시판을 빼려 하면 댓글·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤, 실시간 대시보드는 Phase 2 9단계 뒤 붙잡지 않는다), 직접 선택이 되며
+  //   들어오는 기능도 밝힌다.
   await page.locator('#capability-board').focus();
   const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
-  assert.match(board, /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
+  assert.match(board, /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
   await expect(page.locator('#preview-board')).toHaveText(board);
   // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
   // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.

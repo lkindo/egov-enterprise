@@ -167,6 +167,8 @@ const FEATURES = {
 const SHARED_UI = [];
 
 // 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 두 의존을 명시한다.
+// 업무 홈(Phase 2 9단계)에서 묶음 realtime-stats 를 걷으며, 실시간 구역이 알림 기능의 알림 정규화를 쓰는 코드 의존을 적는다.
+//   대시보드→게시판은 의존이 아니라 포트 연동이다(project-composer-integrations.mjs) — 게시판이 없으면 '신규 게시글' 카드만 빠진다.
 const UI_DEPENDENCIES = [
   { from: 'community', domain: 'board', reason: '커뮤니티 게시판 화면이 게시판 서비스를 직접 참조한다.',
     evidence: 'frontend/src/app/admin/community/board/CommunityBoardClient.tsx', symbol: 'boardUserService' },
@@ -174,6 +176,8 @@ const UI_DEPENDENCIES = [
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
   { from: 'help', domain: 'board', reason: '도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.',
     evidence: 'frontend/src/services/business/user/help/HelpUserService.ts', symbol: 'getPublicFaqsOperation' },
+  { from: 'dashboard', domain: 'notification', reason: '실시간 상태 구역이 개인 알림 큐의 알림을 알림 기능의 정규화로 읽는다.',
+    evidence: 'frontend/src/components/features/dashboard/RealTimeDashboard.tsx', symbol: 'normalizeNotification' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{

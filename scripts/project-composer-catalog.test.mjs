@@ -239,6 +239,7 @@ test('selective integrations are declared exactly and every evidence line points
     'board -> notification via event:NotificationRequestedEvent',
     'community -> notification via event:NotificationRequestedEvent',
     'core -> notification via event:NotificationRequestedEvent',
+    'dashboard -> board via port:PostStatisticsContributor',
     'informalsanction -> mail via event:MailRequestedEvent',
     'informalsanction -> notification via event:NotificationRequestedEvent',
     'informalsanction -> sms via event:SmsRequestedEvent',
@@ -512,11 +513,11 @@ test('a new dependency without a sentence, a sentence without its dependency and
   writeFileSync(bridge, 'package nuri.business.service.note;\nclass NoteMailBridge { nuri.business.service.mail.MailService mail; }\n');
   assert.throws(() => loadProjectComposerCatalog(root), /requires edge lacks a user reason: note>mail/);
   rmSync(bridge);
-  const manifestPath = join(root, 'config/reusable-base-profiles.json');
-  const edited = structuredClone(manifest);
-  edited.clusters = edited.clusters.filter(cluster => cluster.id !== 'realtime-stats');
-  writeFileSync(manifestPath, `${JSON.stringify(edited, null, 2)}\n`);
-  assert.throws(() => loadProjectComposerCatalog(root), /user reason has no requires edge: dashboard>board, dashboard>notification/);
+  // 간선이 사라졌는데 문장이 남는 실례: 스크랩 엔티티의 게시글 참조를 걷으면 'scrap>board' 문장만 남는다(업무 홈 이행에서 대시보드
+  //   묶음을 걷어 종전 실례가 사라졌다).
+  const scrap = join(root, 'business-app/src/main/java/nuri/business/domain/scrap/Scrap.java');
+  writeFileSync(scrap, readFileSync(scrap, 'utf8').replace('private nuri.business.domain.board.Board board;', 'private Object board;'));
+  assert.throws(() => loadProjectComposerCatalog(root), /user reason has no requires edge: scrap>board/);
   const capabilities = [{ id: 'a', requires: [{ domain: 'b', kind: 'java' }] }];
   assert.deepEqual(attachUserReasons(capabilities, { 'a>b': '가는 나를 씁니다.' })[0].requires[0].userReason, '가는 나를 씁니다.');
   assert.throws(() => attachUserReasons(capabilities, { 'a>b': 'BoardErrorCode 를 참조합니다.' }), /contains Latin text/);

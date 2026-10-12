@@ -644,18 +644,6 @@
         "comment"
       ],
       "reason": "Comment 엔티티의 게시글 연관과 BoardErrorCode 참조 때문에 함께 선택한다. 스크랩은 게시글 FK 로 게시판을 요구하지만 게시판은 스크랩 없이 생성된다(게시글 상세의 스크랩 버튼은 post-actions 슬롯 기여다). (댓글 수 동기화는 2026-08-29 foundation 이벤트로 역전돼 더는 결합 근거가 아니다.)"
-    },
-    {
-      "id": "realtime-stats",
-      "pack": "collaboration",
-      "domains": [
-        "dashboard"
-      ],
-      "requiresDomains": [
-        "board",
-        "notification"
-      ],
-      "reason": "RealTimeDashboardService가 게시판 포트로 오늘 게시글 수(30초 재사용)를, 알림 포트로 전체 미읽음 알림 수를 DB에서 읽어 방송한다. 접속자·분당 방문은 인스턴스 메모리 카운터다."
     }
   ],
   "sharedTableContracts": [

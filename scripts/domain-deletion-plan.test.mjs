@@ -40,8 +40,9 @@ const synthetic = capabilities => ({ capabilities: Object.entries(capabilities).
 // 단독 삭제마다 함께 지워지는 도메인. 바뀌면 delete-domain 이 지우는 범위가 바뀐 것이다.
 const SINGLE_DELETIONS = {
   addressbook: ['addressbook'],
-  board: ['board', 'comment', 'dashboard', 'scrap'],
-  comment: ['board', 'comment', 'dashboard', 'scrap'],
+  // 실시간 대시보드는 게시판을 포트로 읽는다(Phase 2 9단계) — 게시판을 지워도 남는다.
+  board: ['board', 'comment', 'scrap'],
+  comment: ['board', 'comment', 'scrap'],
   community: ['community'],
   dashboard: ['dashboard'],
   event: ['event'],
@@ -52,7 +53,8 @@ const SINGLE_DELETIONS = {
   mail: ['mail'],
   memoreport: ['memoreport'],
   note: ['note'],
-  notification: ['dashboard', 'notification'],
+  // 실시간 대시보드→알림은 화면 의존(customOnly)이라 단독 삭제가 따라가지 않는다. 단독 삭제는 프런트를 지우지 않는다.
+  notification: ['notification'],
   promotion: ['promotion'],
   report: ['report'],
   reward: ['reward'],
@@ -109,8 +111,9 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   const edges = capabilities => [...new Set(capabilities.flatMap(capability => capability.requires.filter(row => !row.customOnly)
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
-  // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), Java 참조(스크랩→게시판).
-  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java']) {
+  // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음(게시판↔댓글), Java 참조(스크랩→게시판). 묶음 requiresDomains 의
+  //   실례였던 대시보드 묶음은 업무 홈 이행에서 걷었다(Phase 2 9단계).
+  for (const pair of ['community>template java', 'board>comment manifest', 'scrap>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
@@ -133,7 +136,7 @@ test('a projected collaboration tree plans the same deletions without the full c
     }
     const result = spawnSync(process.execPath, [SCRIPT, '--json', '--root', root, 'board'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual(JSON.parse(result.stdout).domains, ['board', 'comment', 'dashboard', 'scrap']);
+    assert.deepEqual(JSON.parse(result.stdout).domains, ['board', 'comment', 'scrap']);
     assert.deepEqual(JSON.parse(result.stdout).javaFiles, [], 'a tree with only app sources has nothing to delete outside them');
   } finally {
     rmSync(root, { recursive: true, force: true });
