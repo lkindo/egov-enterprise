@@ -13,10 +13,13 @@
  *      `#/components/schemas/` 밖의 참조나 discriminator mapping 은 폐포를 셀 수 없으므로 실패한다.
  * 모든 기능을 고른 구성은 원본과 바이트가 같다(계약 시험이 본다). springdoc 이 남는 컨트롤러로 다시 만든 문서와의 대조는 T2 다.
  *
- * 이 모듈은 Node 내장 모듈만 쓴다 — 생성기·정밀 점검이 frontend 의존성 설치 없이 부른다.
+ * 생성 타입 3종은 원본의 codegen-zod.js 와 원본 frontend 의 openapi-typescript 를 자식 프로세스로 돌려 다시 만든다(U5-A).
+ * 도구가 없으면 TOOL_UNAVAILABLE 이다. 이 모듈 자신은 Node 내장 모듈만 쓴다 — 생성기·정밀 점검이 frontend 의존성 설치 없이 적재한다.
  */
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { ComposerError } from './project-composer-errors.mjs';
 
 export const API_DOCS_PATH = 'api-docs.json';
 export const AUTHORIZATION_POLICIES_PATH = 'config/governance/authorization-policies.json';
@@ -26,6 +29,17 @@ export const GENERATED_CONTRACT_TYPES = Object.freeze({
   operations: 'frontend/src/types/generated-operations.ts',
   api: 'frontend/src/types/generated-api.d.ts',
 });
+const CODEGEN_ZOD = '.agent/scripts/codegen-zod.js';
+/**
+ * 생성 때 쓰는 원본 frontend 도구(U5-A). 원본 frontend 에 의존성을 설치해야 생성할 수 있다 — CI 재사용 잡은 생성 전에 설치하고,
+ * 생성기 화면은 사전 점검으로 알린다. TypeScript 는 경계·소비 census(reusable-contract-census.mjs)가, openapi-typescript 는
+ * generated-api.d.ts 가 쓴다.
+ */
+export const FRONTEND_TOOLCHAIN = Object.freeze({
+  typescript: 'frontend/node_modules/typescript/package.json',
+  openapiTypescript: 'frontend/node_modules/openapi-typescript/bin/cli.js',
+});
+export const FRONTEND_INSTALL_COMMAND = 'pnpm -C frontend install --frozen-lockfile';
 const JAVA_SOURCE_ROOTS = Object.freeze(['api-server', 'business-app', 'business-core', 'foundation'].map(module => `${module}/src/main/java`));
 const HTTP_METHODS = Object.freeze(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
 const SCHEMA_REF = '#/components/schemas/';
@@ -163,4 +177,38 @@ export function writeProjectedApiDocs(sourceRoot, output) {
   const projection = projectSourceApiDocs(sourceRoot, file => !existsSync(join(output, file)));
   writeFileSync(join(output, API_DOCS_PATH), apiDocsText(projection.doc), 'utf8');
   return projection;
+}
+
+/** 원본 frontend 에 설치되지 않은 생성 도구(저장소 기준 경로). 빈 배열이면 모두 있다. */
+export function missingFrontendToolchain(sourceRoot) {
+  return Object.values(FRONTEND_TOOLCHAIN).filter(file => !existsSync(join(sourceRoot, file)));
+}
+
+/** 생성 도구가 없으면 생성기 화면이 설치 안내로 바꿔 말하는 코드(TOOL_UNAVAILABLE, 도구 frontend)로 멈춘다. */
+export function assertFrontendToolchain(sourceRoot) {
+  const missing = missingFrontendToolchain(sourceRoot);
+  if (missing.length) {
+    throw new ComposerError('TOOL_UNAVAILABLE', { tool: 'frontend' },
+      `원본 frontend 의존성이 없어 API 계약 생성물을 다시 만들 수 없다(${missing.join(', ')}). 먼저 ${FRONTEND_INSTALL_COMMAND} 를 실행한다.`);
+  }
+}
+
+/**
+ * 생성물 api-docs 로 생성 타입 3종을 다시 만든다. 원본의 생성기(codegen-zod.js)와 원본 frontend 의 openapi-typescript 를 쓴다 —
+ * 원본 커밋본을 만든 것과 같은 도구다. 모든 기능을 고른 구성은 원본 커밋본과 같은 내용이 나온다(계약 시험).
+ */
+export function regenerateContractTypes({ sourceRoot, output, spawn = spawnSync }) {
+  assertFrontendToolchain(sourceRoot);
+  const run = (label, args, env = {}) => {
+    const result = spawn(process.execPath, args, { cwd: join(output, 'frontend'), env: { ...process.env, ...env }, encoding: 'utf8',
+      windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+    if (result.error || result.status !== 0) {
+      throw new Error(`${label} failed (${result.status ?? 'spawn'}): ${String(result.error?.message ?? result.stderr ?? '').trim().slice(-2000)}`);
+    }
+  };
+  run('codegen-zod', [join(sourceRoot, CODEGEN_ZOD)], { CODEGEN_API_DOCS_PATH: join(output, API_DOCS_PATH),
+    CODEGEN_ZOD_OUTPUT_PATH: join(output, GENERATED_CONTRACT_TYPES.zod), CODEGEN_OPERATIONS_OUTPUT_PATH: join(output, GENERATED_CONTRACT_TYPES.operations) });
+  run('openapi-typescript', [join(sourceRoot, FRONTEND_TOOLCHAIN.openapiTypescript), join(output, API_DOCS_PATH), '-o',
+    join(output, GENERATED_CONTRACT_TYPES.api)]);
+  return Object.values(GENERATED_CONTRACT_TYPES);
 }

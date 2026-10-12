@@ -33,7 +33,7 @@ const JOB_MESSAGES = Object.freeze({
 });
 const JOB_ERRORS = Object.freeze({
   SOURCE_CHANGED: { stages: ['resolve', 'database', 'source'], action: 'reload-source' },
-  TOOL_UNAVAILABLE: { stages: ['resolve', 'database'] },
+  TOOL_UNAVAILABLE: { stages: ['resolve', 'database', 'source'] },
   DB_NOT_READY: { stages: ['database'], action: 'regenerate' },
   OUTPUT_CONFLICT: { stages: ['resolve', 'source'], action: 'regenerate' },
   SOURCE_SURVIVAL: { stages: ['source'], action: 'copy-diagnostics' },
@@ -41,6 +41,9 @@ const JOB_ERRORS = Object.freeze({
   MENU_SNAPSHOT_STALE: { stages: ['resolve', 'database'], action: 'copy-command' },
   CATALOG_DRIFT: { stages: ['resolve', 'database'], action: 'show-violations' },
 });
+// 도구가 쓰이는 생성 단계. 다른 단계에서 온 도구 없음은 엔진의 잘못된 분류로 보고 일반 실패로 말한다.
+const TOOL_STAGES = Object.freeze({ git: 'resolve', docker: 'database', frontend: 'source' });
+const RECHECK_TOOLS = Object.freeze(['docker', 'frontend']);
 // 검증 단계 이름. 키는 검증기의 단계 id 와 같다(시험이 대조한다).
 export const VERIFY_STEP_LABELS = Object.freeze({ governance: '거버넌스 검증', 'ui-governance': '화면 거버넌스 계약', entrypoints: '진입점 계약',
   backend: '백엔드 컴파일·테스트', typecheck: '타입 검사', lint: '린트', build: '프런트 빌드' });
@@ -100,9 +103,10 @@ export function jobError(error, failure) {
     action: retry ? 'regenerate' : 'copy-diagnostics' };
   }
   if (code === 'TOOL_UNAVAILABLE') {
-    // Docker 는 DB 단계, git 은 구성 확인 단계에서만 쓴다. Docker 만 '다시 점검' 을 준다(git 은 생성기를 다시 시작해야 한다).
-    if (!knownTool(details.tool) || (details.tool === 'docker') !== (failure.stage === 'database')) return fallback;
-    return { code, message: TOOL_MESSAGES[details.tool], ...(details.tool === 'docker' ? { action: 'recheck' } : {}), details: { tool: details.tool } };
+    // Docker 는 DB 단계, git 은 구성 확인 단계, 원본 프런트 의존성은 소스 단계에서만 쓴다. Docker·프런트 의존성은 '다시 점검' 을 준다
+    // (git 은 생성기를 다시 시작해야 한다).
+    if (!knownTool(details.tool) || TOOL_STAGES[details.tool] !== failure.stage) return fallback;
+    return { code, message: TOOL_MESSAGES[details.tool], ...(RECHECK_TOOLS.includes(details.tool) ? { action: 'recheck' } : {}), details: { tool: details.tool } };
   }
   const shown = code === 'SOURCE_SURVIVAL'
     ? (files(details.files) && details.files.length ? { files: details.files.slice(0, 20), fileCount: details.files.length } : {})

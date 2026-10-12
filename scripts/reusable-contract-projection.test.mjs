@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { apiDocsText, handlerSourceFile, projectApiDocs, projectSourceApiDocs } from './reusable-contract-projection.mjs';
+import { ComposerError } from './project-composer-errors.mjs';
+import { FRONTEND_TOOLCHAIN, GENERATED_CONTRACT_TYPES, apiDocsText, assertFrontendToolchain, handlerSourceFile, missingFrontendToolchain, projectApiDocs,
+  projectSourceApiDocs, regenerateContractTypes } from './reusable-contract-projection.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const sourceText = readFileSync(join(root, 'api-docs.json'), 'utf8').replace(/\r\n/g, '\n');
@@ -123,4 +126,53 @@ test('handler source files resolve only to one Java main source root', () => {
   assert.equal(handlerSourceFile('nuri.x.Y#m', exists), 'business-core/src/main/java/nuri/x/Y.java');
   assert.equal(handlerSourceFile('nuri.x.Y$Z#m', exists), 'business-core/src/main/java/nuri/x/Y.java');
   assert.throws(() => handlerSourceFile('not a type#m', exists), /binding handler is not a Java type/);
+});
+
+/*
+ * 생성 타입 3종은 원본 생성기와 원본 frontend 의 openapi-typescript 로 다시 만든다(U5-A). 모든 기능을 고른 구성의 api-docs 로
+ * 다시 만들면 원본 커밋본과 같아야 한다 — 다르면 생성물의 타입이 원본과 다른 도구·설정으로 만들어진 것이다.
+ */
+const generatedText = (base, file) => readFileSync(join(base, file), 'utf8').replace(/\r\n/g, '\n');
+const contractOutput = (t, docText) => {
+  const output = mkdtempSync(join(tmpdir(), 'contract-types-'));
+  t.after(() => rmSync(output, { recursive: true, force: true, maxRetries: 5 }));
+  mkdirSync(join(output, 'frontend/src/types'), { recursive: true });
+  writeFileSync(join(output, 'api-docs.json'), docText);
+  return output;
+};
+
+test('regenerating the three generated contract types from the full api-docs reproduces the committed files', { timeout: 120_000 }, t => {
+  const output = contractOutput(t, apiDocsText(projectSourceApiDocs(root, () => false).doc));
+  assert.deepEqual(regenerateContractTypes({ sourceRoot: root, output }), Object.values(GENERATED_CONTRACT_TYPES));
+  for (const file of Object.values(GENERATED_CONTRACT_TYPES)) {
+    assert.equal(generatedText(output, file), generatedText(root, file), `${file} must match the committed generator output`);
+  }
+});
+
+test('a reduced api-docs yields operation descriptors for exactly the operations it keeps', { timeout: 120_000 }, t => {
+  const controller = 'api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java';
+  const projection = projectSourceApiDocs(root, file => file === controller);
+  const output = contractOutput(t, apiDocsText(projection.doc));
+  regenerateContractTypes({ sourceRoot: root, output });
+  const descriptors = [...generatedText(output, GENERATED_CONTRACT_TYPES.operations).matchAll(/export const (\w+)Operation\b/gu)].map(match => match[1]).sort();
+  assert.deepEqual(descriptors, operationsOf(projection.doc).map(operation => operation.operationId).sort());
+  for (const { operationId } of projection.removedOperations) {
+    assert.doesNotMatch(generatedText(output, GENERATED_CONTRACT_TYPES.api), new RegExp(`\\b${operationId}:`), `${operationId} left generated-api.d.ts`);
+  }
+});
+
+test('without the source frontend tools the generator stops with the frontend tool code before running anything', () => {
+  const bare = mkdtempSync(join(tmpdir(), 'contract-bare-'));
+  try {
+    assert.deepEqual(missingFrontendToolchain(bare), Object.values(FRONTEND_TOOLCHAIN));
+    assert.deepEqual(missingFrontendToolchain(root), [], 'this checkout has the source frontend installed');
+    let spawned = 0;
+    const attempt = () => regenerateContractTypes({ sourceRoot: bare, output: bare, spawn: () => { spawned += 1; return { status: 0 }; } });
+    assert.throws(attempt, error => error instanceof ComposerError && error.code === 'TOOL_UNAVAILABLE'
+      && JSON.stringify(error.details) === JSON.stringify({ tool: 'frontend' }) && /pnpm -C frontend install --frozen-lockfile/.test(error.message));
+    assert.equal(spawned, 0);
+    assert.throws(() => assertFrontendToolchain(bare), /원본 frontend 의존성이 없어/);
+  } finally { rmSync(bare, { recursive: true, force: true }); }
+  // 생성기가 실패하면 그 단계 이름과 종료 코드로 멈춘다.
+  assert.throws(() => regenerateContractTypes({ sourceRoot: root, output: root, spawn: () => ({ status: 3, stderr: 'boom' }) }), /codegen-zod failed \(3\): boom/);
 });

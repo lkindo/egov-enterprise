@@ -283,6 +283,13 @@ test('a job code is trusted only when branded, allowed and raised at a stage tha
   assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'pnpm' }), { stage: 'database' })).error.code, 'GENERATION_FAILED');
   const docker = await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'docker' }), { stage: 'database' });
   assert.match(docker.error.message, /Linux 컨테이너 모드/);
+  // 원본 프런트 의존성은 소스 단계에서만 쓴다(API 계약 생성물, 10c-2). 설치한 뒤 다시 점검하면 되므로 '다시 점검' 을 준다.
+  const frontend = await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'frontend' }), { stage: 'source' });
+  assert.equal(frontend.error.code, 'TOOL_UNAVAILABLE');
+  assert.equal(frontend.error.action, 'recheck');
+  assert.match(frontend.error.message, /pnpm -C frontend install --frozen-lockfile/);
+  assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'frontend' }), { stage: 'database' })).error.code, 'GENERATION_FAILED');
+  assert.equal((await jobFailureFixture(t, coded('TOOL_UNAVAILABLE', { tool: 'git' }), { stage: 'source' })).error.code, 'GENERATION_FAILED');
   // 취소 코드는 화면이 취소를 요청한 작업에서만 취소다. 요청 없이 오면 일반 실패다.
   assert.equal((await jobFailureFixture(t, coded('CANCELLED'), { stage: 'install' })).error.code, 'GENERATION_FAILED');
 });
@@ -290,7 +297,9 @@ test('a job code is trusted only when branded, allowed and raised at a stage tha
 test('every code a generator child may report is accepted at that child\u2019s stage', async t => {
   for (const [stage, codes] of Object.entries(CHILD_FAILURE_CODES)) {
     for (const code of codes) {
-      const job = await jobFailureFixture(t, coded(code), { stage, commandId: `scripts/generate-reusable-base-${stage === 'database' ? 'db' : 'source'}.mjs`, exitCode: 1 });
+      // 도구 없음은 그 단계가 쓰는 도구 이름과 함께 온다(readChildFailure 가 그 밖은 버린다).
+      const details = code === 'TOOL_UNAVAILABLE' ? { tool: 'frontend' } : {};
+      const job = await jobFailureFixture(t, coded(code, details), { stage, commandId: `scripts/generate-reusable-base-${stage === 'database' ? 'db' : 'source'}.mjs`, exitCode: 1 });
       assert.equal(job.error.code, code, `${stage}:${code}`);
     }
   }

@@ -8,11 +8,16 @@ import { closeSync, existsSync, mkdirSync, openSync, readSync, realpathSync, wri
 import { dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { ComposerError, withoutRoot } from './project-composer-errors.mjs';
 
-/** 단계마다 자식이 보고할 수 있는 코드. 원본 변경(SOURCE_CHANGED)은 엔진이 직접 판정하므로 자식은 보고하지 않는다. */
+/**
+ * 단계마다 자식이 보고할 수 있는 코드. 원본 변경(SOURCE_CHANGED)은 엔진이 직접 판정하므로 자식은 보고하지 않는다.
+ * 소스 단계의 도구 없음은 원본 frontend 의존성(API 계약 생성물을 다시 만드는 TypeScript·openapi-typescript)뿐이다(10c-2).
+ */
 export const CHILD_FAILURE_CODES = Object.freeze({
   database: Object.freeze(['MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT']),
-  source: Object.freeze(['SOURCE_SURVIVAL']),
+  source: Object.freeze(['SOURCE_SURVIVAL', 'TOOL_UNAVAILABLE']),
 });
+/** 단계마다 자식이 '없다' 고 보고할 수 있는 도구. */
+const CHILD_TOOLS = Object.freeze({ source: Object.freeze(['frontend']) });
 const MAX_REPORT_BYTES = 64 * 1024;
 const outside = rel => rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel);
 const repositoryFile = value => typeof value === 'string' && value.length > 0 && value.length <= 500 && !isAbsolute(value)
@@ -103,6 +108,11 @@ export function readChildFailure(path, stage, root) {
     const violation = Array.isArray(details.violations) && typeof details.violations[0] === 'string'
       ? withoutRoot(root, details.violations[0]).replace(/[\r\n\0]+/g, ' ').trim().slice(0, 300) : '';
     return new ComposerError('CATALOG_DRIFT', violation ? { violations: [violation] } : {}, `The ${stage} step reported CATALOG_DRIFT`);
+  }
+  if (report.code === 'TOOL_UNAVAILABLE') {
+    // 그 단계가 쓰는 도구만 받는다. 모르는 도구 이름은 분류하지 않는다(엉뚱한 설치 안내를 하지 않는다).
+    if (!CHILD_TOOLS[stage]?.includes(details.tool)) return null;
+    return new ComposerError('TOOL_UNAVAILABLE', { tool: details.tool }, `The ${stage} step reported TOOL_UNAVAILABLE`);
   }
   return new ComposerError(report.code, {}, `The ${stage} step reported ${report.code}`);
 }

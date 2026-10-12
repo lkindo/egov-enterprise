@@ -12,6 +12,7 @@ import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
+import { missingFrontendToolchain } from './reusable-contract-projection.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
 import { createLogMasker, runComposerCommand } from './project-composer-command.mjs';
@@ -219,7 +220,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   };
   // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
   // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
-  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit,
+  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit, missingFrontendTools: missingFrontendToolchain(root),
     probe: (command, args) => run(command, args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS }) });
   // 정밀 점검: 생성기의 투영 판정을 디스크를 바꾸지 않고 미리 한다(요청할 때만, 수 초가 걸린다).
   // 계획처럼 카탈로그를 새로 적재하고, 생성기가 복사할 파일 목록(추적·무시되지 않은 새 파일, build 제외)을 쓴다.

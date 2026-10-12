@@ -28,7 +28,7 @@ import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepo
   walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
-import { writeProjectedApiDocs } from './reusable-contract-projection.mjs';
+import { assertFrontendToolchain, regenerateContractTypes, writeProjectedApiDocs } from './reusable-contract-projection.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -251,6 +251,8 @@ function main() {
   assertCompositionDatabaseLock(dbLock, composition);
   verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
 
+  // API 계약 생성물은 원본 frontend 의 도구로 다시 만든다(U5-A). 출력 폴더를 만들기 전에 확인해 잔재를 남기지 않는다.
+  assertFrontendToolchain(ROOT);
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
@@ -270,6 +272,8 @@ function main() {
   // API 계약(10c-2): Java 투영이 핸들러를 지운 연산을 api-docs 에서 빼고 스키마 폐포·태그를 정리한다. 정밀 점검이 같은 함수로 미리 본다.
   const apiDocs = writeProjectedApiDocs(ROOT, output);
   console.log(`[base-source] ${args.profile}: api-docs 를 구성 기준으로 다시 썼다(연산 ${apiDocs.summary.operations}개, 뺀 연산 ${apiDocs.summary.removedOperations}개).`);
+  // 생성 타입 3종(zod·operations·api.d.ts)은 frontend/src 라 거버넌스 투영의 codeScope 해시보다 먼저 다시 만든다.
+  const generatedTypes = regenerateContractTypes({ sourceRoot: ROOT, output });
   installDatabaseBundle(output, dbBundle);
   // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
@@ -312,7 +316,7 @@ function main() {
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
     projectionLedger,
-    contracts: { apiDocs: apiDocs.summary },
+    contracts: { apiDocs: apiDocs.summary, generatedTypes },
     zdmWaivers,
     governance: {
       path: 'config/governance/reusable-governance-projection.json',
