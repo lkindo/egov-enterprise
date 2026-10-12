@@ -1,48 +1,58 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const MODULES_DIRECTORY = path.join(REPO_ROOT, 'config', 'modules');
+const MODULE_DECLARATION_FILES = new Set(['_schema.json', 'core.json', 'presets.json']);
 const DEFAULT_REUSABLE_PROFILE_NAMES = ['core', 'collaboration', 'demo'];
+const stringList = value => Array.isArray(value) && value.every(item => typeof item === 'string');
 
-function loadReusableManifest() {
+/**
+ * 매니페스트 v2(config/modules)의 시작 구성과 기능 소유를 읽는다(11단계 C5). 이 파일은 의존성 설치 전 분류 단계와
+ * 독립 이관 제품에서 다른 모듈 없이 돈다(migration-product-contract) — 카탈로그 로더를 import 하지 않고 JSON 만 읽는다.
+ * 파일이 없거나(독립 export 는 시작 구성 선언을 싣지 않는다) 모양이 다르면 null 이고, 그러면 모든 시작 구성을 두 레이아웃으로
+ * 고른다 — 소유 증거를 읽지 못했다고 검증을 건너뛰거나 독립 산출물을 쓸 수 없게 만들지 않는다.
+ */
+function loadComposerModules() {
   try {
-    const manifest = JSON.parse(readFileSync(
-      path.join(REPO_ROOT, 'config', 'reusable-base-profiles.json'),
-      'utf8',
-    ));
-    if (!manifest?.profiles || !manifest?.packs) return null;
-    return manifest;
+    const presetsFile = JSON.parse(readFileSync(path.join(MODULES_DIRECTORY, 'presets.json'), 'utf8'));
+    const features = new Map();
+    for (const name of readdirSync(MODULES_DIRECTORY).filter(name => name.endsWith('.json') && !MODULE_DECLARATION_FILES.has(name)).sort()) {
+      const value = JSON.parse(readFileSync(path.join(MODULES_DIRECTORY, name), 'utf8'));
+      const shared = value?.owns?.frontendAny;
+      if (`${value?.id}.json` !== name || !stringList(value.owns?.frontend) || !stringList(value.backend?.supportFiles)
+        || !Array.isArray(shared) || !shared.every(rule => typeof rule?.path === 'string' && stringList(rule.with))) return null;
+      features.set(value.id, { frontend: value.owns.frontend, frontendAny: shared, supportFiles: value.backend.supportFiles });
+    }
+    const presets = presetsFile?.presets;
+    if (!Array.isArray(presets) || presets.length === 0 || new Set(presets.map(preset => preset?.id)).size !== presets.length
+      || !presets.every(preset => typeof preset?.id === 'string' && stringList(preset.domains)
+        && preset.domains.every(domain => features.has(domain)))) return null;
+    return { presets, features };
   } catch {
-    // Standalone exports intentionally do not carry the root profile catalog.
-    // Missing or unreadable ownership evidence must expand to every profile,
-    // never skip verification or make an independent artifact unusable.
     return null;
   }
 }
 
-const REUSABLE_MANIFEST = loadReusableManifest();
-const REUSABLE_PROFILE_NAMES = REUSABLE_MANIFEST
-  ? Object.keys(REUSABLE_MANIFEST.profiles)
+const COMPOSER_MODULES = loadComposerModules();
+const REUSABLE_PROFILE_NAMES = COMPOSER_MODULES
+  ? COMPOSER_MODULES.presets.map(preset => preset.id)
   : DEFAULT_REUSABLE_PROFILE_NAMES;
 
 const REUSABLE_LAYOUTS = Object.freeze(['multi-module', 'single-module']);
 
 /**
- * PR 은 시작 구성마다 이 표의 레이아웃 하나만 생성·검증한다(ADR-0027). main push·수동 실행·이벤트 미상과
- * 표에 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃 전수다 — 표가 낡아도 덮개가 줄지 않는 쪽으로 닫힌다.
- * PR 이 놓친 레이아웃 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의 E2E 와 같은 수용 위험).
- * 매니페스트 v2(11단계)에서 이 표를 시작 구성 선언으로 옮긴다.
+ * PR 은 시작 구성마다 presets.json 의 `ci.pr` 레이아웃 하나만 생성·검증한다(ADR-0027, 11단계 C5 에서 이 파일의 표를 시작 구성
+ * 선언으로 옮겼다). main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃
+ * 전수다 — 선언이 빠져도 덮개가 줄지 않는 쪽으로 닫힌다. PR 이 놓친 레이아웃 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의
+ * E2E 와 같은 수용 위험). 값의 검사는 reusableMatrix 가 한다 — 모르는 레이아웃은 넘기지 않고 분류를 실패시킨다.
  */
-export const PR_REUSABLE_LAYOUT = Object.freeze({
-  // 제거가 가장 많고 단일 모듈 변환이 함께 일어나는 경로다.
-  core: 'single-module',
-  collaboration: 'multi-module',
-  // Java 제거가 0이라 멀티 모듈 생성물은 backend-scope·frontend-scope 와 겹친다.
-  demo: 'single-module',
-});
+export const PR_REUSABLE_LAYOUT = Object.freeze(Object.fromEntries((COMPOSER_MODULES?.presets ?? [])
+  .filter(preset => preset.ci !== undefined && preset.ci !== null && Object.hasOwn(preset.ci, 'pr'))
+  .map(preset => [preset.id, preset.ci.pr])));
 
 export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES, { event = '', prLayouts = PR_REUSABLE_LAYOUT } = {}) {
   const pullRequest = event === 'pull_request';
@@ -235,35 +245,37 @@ function isE2eRelevant(file) {
   return matchesAny(file, E2E_RELEVANT) || /^frontend\//.test(file);
 }
 
+/**
+ * 파일 하나가 바꾸는 시작 구성 — 파일 → 소유 기능 → 그 파일이 남는 시작 구성이다(매니페스트 v2, 11단계 C5). 소유는 생성기 투영과 같은
+ * 규칙이다: 업무 앱의 기능 패키지(business-app 의 domain·service/<기능 id>)와 기능 파일의 지원 파일(backend.supportFiles)은 그 기능이
+ * 있어야 남고, 화면 경로(owns.frontend)는 그 경로를 덮는 기능이 모두 있어야, 함께 소유한 화면(owns.frontendAny)은 그 기능이나 with
+ * 기능 가운데 하나라도 있어야 남는다. 그 조건을 모두 채우는 시작 구성을 고른다 — 연쇄 제거는 보지 않으므로 실제로 남는 구성보다
+ * 넓은 쪽이다. 공통 모듈·api-server·기능이 정해지지 않는 파일은 모든 시작 구성이다(fail-closed). config/modules 자체는 알려진 경로가
+ * 아니라 전수다 — 빠진 기능의 선언(화면 경로 등)도 그 기능이 없는 구성의 생성물을 바꾼다.
+ */
 function reusableProfilesForFile(file) {
   if (isDocumentationOnly(file)) return [];
-  if (!REUSABLE_MANIFEST) return REUSABLE_PROFILE_NAMES;
+  if (!COMPOSER_MODULES) return REUSABLE_PROFILE_NAMES;
 
-  // business-app pack domains are physically removed from profiles that do not
-  // include their owner pack. Common modules, support code and unclassified
-  // paths remain fail-closed to every profile.
-  const backendDomain = file.match(
+  const { features, presets } = COMPOSER_MODULES;
+  // 각 항목은 "이 기능들 가운데 하나라도 있어야 남는다" 다. 시작 구성은 모든 항목을 채워야 고른다.
+  const survivalConditions = [];
+  const backendFeature = file.match(
     /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([^/]+)\//,
   )?.[1];
-  const backendPack = backendDomain && Object.entries(REUSABLE_MANIFEST.packs)
-    .find(([, pack]) => pack.backend?.appDomains?.includes(backendDomain))?.[0];
-
+  if (backendFeature && features.has(backendFeature)) survivalConditions.push([backendFeature]);
   const frontendRelative = file.startsWith('frontend/') ? file.slice('frontend/'.length) : '';
-  const frontendPacks = frontendRelative
-    ? Object.entries(REUSABLE_MANIFEST.packs)
-      .filter(([, pack]) => pack.frontend?.removePaths?.some(
-        removed => frontendRelative === removed || frontendRelative.startsWith(`${removed}/`),
-      ))
-      .map(([packName]) => packName)
-    : [];
+  const covers = owned => frontendRelative !== ''
+    && (frontendRelative === owned || frontendRelative.startsWith(`${owned}/`));
+  for (const [id, feature] of features) {
+    if (feature.supportFiles.includes(file) || feature.frontend.some(covers)) survivalConditions.push([id]);
+    for (const rule of feature.frontendAny) if (covers(rule.path)) survivalConditions.push([id, ...rule.with]);
+  }
+  if (survivalConditions.length === 0) return REUSABLE_PROFILE_NAMES;
 
-  const ownerPacks = new Set([backendPack, ...frontendPacks].filter(Boolean));
-  if (ownerPacks.size === 0) return REUSABLE_PROFILE_NAMES;
-
-  return REUSABLE_PROFILE_NAMES.filter(profileName => {
-    const packs = new Set(REUSABLE_MANIFEST.profiles[profileName].packs);
-    return [...ownerPacks].some(pack => packs.has(pack));
-  });
+  return presets
+    .filter(preset => survivalConditions.every(condition => condition.some(domain => preset.domains.includes(domain))))
+    .map(preset => preset.id);
 }
 
 function selectedReusableProfiles(files, { full, docsOnly }) {

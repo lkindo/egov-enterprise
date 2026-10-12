@@ -278,6 +278,11 @@
               "label": { "$ref": "#/$defs/text" },
               "description": { "$ref": "#/$defs/text" },
               "domains": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } },
+              "ci": {
+                "description": "CI 의 재사용 생성 검증 범위(ADR-0027). pr 은 PR 에서 생성·검증할 레이아웃 하나다. ci 가 없는 시작 구성은 PR 에서도 두 레이아웃이다. 생성 결과를 바꾸지 않아 카탈로그 해시 밖이다.",
+                "type": "object", "additionalProperties": false, "required": ["pr"],
+                "properties": { "pr": { "enum": ["multi-module", "single-module"] } }
+              },
               "expected": {
                 "description": "생성기가 이 구성에서 지울 것으로 승인한 것. gates 는 기능 파일의 owns.gates 에서 계산한 목록과 정확히 같아야 한다.",
                 "type": "object", "additionalProperties": false, "required": ["gates", "gateRemovalRules", "javaCascade"],

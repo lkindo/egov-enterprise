@@ -6,6 +6,9 @@
       "label": "공통 기반만",
       "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책·통계 중심의 최소 프레임워크",
       "domains": [],
+      "ci": {
+        "pr": "single-module"
+      },
       "expected": {
         "gates": [
           {
@@ -194,6 +197,9 @@
         "scrap",
         "sms"
       ],
+      "ci": {
+        "pr": "multi-module"
+      },
       "expected": {
         "gates": [
           {
@@ -337,6 +343,9 @@
         "survey",
         "template"
       ],
+      "ci": {
+        "pr": "single-module"
+      },
       "expected": {
         "gates": [],
         "gateRemovalRules": [

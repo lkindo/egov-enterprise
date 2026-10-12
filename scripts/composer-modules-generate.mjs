@@ -27,6 +27,17 @@ import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
+/**
+ * PR 이 시작 구성마다 생성·검증하는 레이아웃 하나(ADR-0027). presets.json 의 `ci.pr` 로 옮긴다 — CI 분류기(ci-change-scope.mjs)가
+ * 그 선언을 읽는다(11단계 C5). 표에 없는 시작 구성은 `ci` 를 적지 않아 PR 에서도 두 레이아웃이다. 전환(C7) 뒤에는 presets.json 이 원천이다.
+ */
+const PRESET_PR_LAYOUTS = Object.freeze({
+  // 제거가 가장 많고 단일 모듈 변환이 함께 일어나는 경로다.
+  core: 'single-module',
+  collaboration: 'multi-module',
+  // Java 제거가 0이라 멀티 모듈 생성물은 backend-scope·frontend-scope 와 겹친다.
+  demo: 'single-module',
+});
 const PERMISSIONS = 'config/governance/permission-catalog.json';
 const byCodeUnits = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
@@ -161,7 +172,8 @@ export function composerModuleFiles(root = ROOT) {
   files['presets.json'] = {
     schemaVersion: 2,
     presets: catalog.presets.map(preset => ({ id: preset.id, label: extras.presentation.presetLabels[preset.id], description: extras.presetExpectations[preset.id].description,
-      domains: [...preset.domains], expected: { gates: extras.presetExpectations[preset.id].gates, gateRemovalRules: extras.presetExpectations[preset.id].gateRemovalRules,
+      domains: [...preset.domains], ...(Object.hasOwn(PRESET_PR_LAYOUTS, preset.id) ? { ci: { pr: PRESET_PR_LAYOUTS[preset.id] } } : {}),
+      expected: { gates: extras.presetExpectations[preset.id].gates, gateRemovalRules: extras.presetExpectations[preset.id].gateRemovalRules,
         javaCascade: extras.presetExpectations[preset.id].javaCascade } })),
   };
   return files;

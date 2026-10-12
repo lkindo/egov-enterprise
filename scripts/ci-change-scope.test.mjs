@@ -324,7 +324,7 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
   }
 });
 
-test('reusable-base matrix only retains profiles that contain a changed pack domain', () => {
+test('reusable-base matrix only retains presets in which a changed feature file survives', () => {
   const demoOnly = classifyChangedFiles([
     'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java',
   ]);
@@ -415,32 +415,106 @@ test('a preset outside the PR layout table falls back to both layouts and the ta
   assert.throws(() => reusableMatrix(['core'], { event: 'pull_request', prLayouts: { core: 'single' } }),
     /unknown PR reusable layout for core: single/);
 
-  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'reusable-base-profiles.json'), 'utf8'));
+  // 표는 presets.json 의 ci.pr 선언이다(11단계 C5). 이 파일에 따로 적은 표가 남지 않는다.
+  const presets = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'modules', 'presets.json'), 'utf8')).presets;
+  assert.deepEqual(PR_REUSABLE_LAYOUT, Object.fromEntries(presets.filter(preset => preset.ci).map(preset => [preset.id, preset.ci.pr])));
+  assert.deepEqual(Object.keys(PR_REUSABLE_LAYOUT), ['core', 'collaboration', 'demo']);
   for (const [preset, layout] of Object.entries(PR_REUSABLE_LAYOUT)) {
-    assert.ok(Object.hasOwn(manifest.profiles, preset), `PR layout table names a preset the manifest no longer has: ${preset}`);
+    assert.ok(presets.some(entry => entry.id === preset), `PR layout table names a preset presets.json no longer has: ${preset}`);
     assert.ok(['multi-module', 'single-module'].includes(layout), `${preset}: ${layout}`);
   }
 });
 
-test('a preset added to the manifest without a PR layout runs both layouts on pull requests', (t) => {
-  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-layout-'));
+/** 분류기와 config/modules 사본을 임시 저장소에 둔다. `edit(files)` 가 파일 이름 → 값을 고친다(null 이면 지운다). */
+function modulesFixture(t, edit = () => {}) {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-modules-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'config'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'config', 'modules'), { recursive: true });
   fs.copyFileSync(path.join(repoRoot, 'scripts', 'ci-change-scope.mjs'), path.join(root, 'scripts', 'ci-change-scope.mjs'));
-  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'reusable-base-profiles.json'), 'utf8'));
-  manifest.profiles.approval = { ...manifest.profiles.core };
-  fs.writeFileSync(path.join(root, 'config', 'reusable-base-profiles.json'), JSON.stringify(manifest));
+  const directory = path.join(repoRoot, 'config', 'modules');
+  const files = Object.fromEntries(fs.readdirSync(directory).filter(name => name.endsWith('.json'))
+    .map(name => [name, JSON.parse(fs.readFileSync(path.join(directory, name), 'utf8'))]));
+  edit(files);
+  for (const [name, value] of Object.entries(files)) {
+    if (value !== null) fs.writeFileSync(path.join(root, 'config', 'modules', name), JSON.stringify(value));
+  }
+  return (...args) => {
+    const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', ...args], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  };
+}
 
-  const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--event', 'pull_request',
-    '--file', 'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java'], { cwd: root, encoding: 'utf8' });
-  assert.equal(result.status, 0, result.stderr);
-  const include = JSON.parse(result.stdout).reusableMatrix.include;
+test('a preset added to presets.json without a PR layout runs both layouts on pull requests', (t) => {
+  const classify = modulesFixture(t, files => {
+    const { ci: _ci, ...core } = files['presets.json'].presets.find(preset => preset.id === 'core');
+    files['presets.json'].presets.push({ ...core, id: 'approval' });
+  });
+  const include = classify('--event', 'pull_request', '--file', 'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java')
+    .reusableMatrix.include;
   assert.deepEqual(include.filter(item => item.profile === 'approval'), [
     { profile: 'approval', layout: 'multi-module' },
     { profile: 'approval', layout: 'single-module' },
   ]);
   assert.deepEqual(include.filter(item => item.profile === 'core'), [{ profile: 'core', layout: 'single-module' }]);
+});
+
+test('a preset whose PR layout declaration is removed falls back to both layouts on pull requests', (t) => {
+  const classify = modulesFixture(t, files => {
+    delete files['presets.json'].presets.find(preset => preset.id === 'demo').ci;
+  });
+  const include = classify('--event', 'pull_request', '--file', 'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java')
+    .reusableMatrix.include;
+  assert.deepEqual(include, [
+    { profile: 'core', layout: 'single-module' },
+    { profile: 'collaboration', layout: 'multi-module' },
+    { profile: 'demo', layout: 'multi-module' },
+    { profile: 'demo', layout: 'single-module' },
+  ]);
+});
+
+// 11단계 C5: 파일 → 소유 기능 → 그 파일이 남는 시작 구성. 소유는 생성기 투영과 같은 규칙(기능 파일의 화면 경로·지원 파일·업무 패키지)이다.
+test('a feature-owned file selects only the presets in which it survives', () => {
+  const expectProfiles = (file, expected) => assert.deepEqual(classifyChangedFiles([file]).reusableProfiles, expected, `selection of ${file}`);
+  // 화면 경로: 메일 기능 소유다(종전 pack 제거 경로에는 없어 core 까지 골랐다).
+  expectProfiles('frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx', ['collaboration', 'demo']);
+  // 기능 파일의 지원 파일: 그 기능이 있어야 남는다.
+  expectProfiles('foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java', ['demo']);
+  expectProfiles('api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsProperties.java', ['collaboration', 'demo']);
+  // 두 기능이 함께 덮는 경로는 둘 다 있어야 남는다(게시판 디렉터리 안의 커뮤니티 리다이렉트 화면).
+  expectProfiles('frontend/src/app/admin/community/boards/page.tsx', ['demo']);
+  // 기능이 정해지지 않는 파일은 전수다.
+  expectProfiles('api-server/src/main/java/nuri/config/AsyncConfig.java', ['core', 'collaboration', 'demo']);
+  expectProfiles('frontend/src/app/layout.tsx', ['core', 'collaboration', 'demo']);
+});
+
+test('feature ownership and preset membership are read from config/modules, not from a table in the classifier', (t) => {
+  // 설문을 협업 시작 구성에 넣으면 설문 소스가 그 구성도 고른다. 설문 화면 경로를 걷으면 그 화면은 소유 미상이라 전수다.
+  // 행사만 넣으면 행사·포상이 함께 소유한 운영 오류 화면(owns.frontendAny)도 그 구성에 남는다 — 하나라도 있으면 남는다.
+  const classify = modulesFixture(t, files => {
+    files['presets.json'].presets.find(preset => preset.id === 'collaboration').domains.push('survey', 'event');
+    files['survey.json'].owns.frontend = files['survey.json'].owns.frontend.filter(owned => owned !== 'src/app/survey');
+  });
+  const expectProfiles = (file, expected) => assert.deepEqual(classify('--file', file).reusableProfiles, expected, `selection of ${file}`);
+  expectProfiles('business-app/src/main/java/nuri/business/service/survey/SurveyService.java', ['collaboration', 'demo']);
+  expectProfiles('frontend/src/app/survey/page.tsx', ['core', 'collaboration', 'demo']);
+  expectProfiles('frontend/src/app/admin/operation/error.tsx', ['collaboration', 'demo']);
+  expectProfiles('frontend/src/app/admin/operation/rewards/page.tsx', ['demo']);
+});
+
+test('unreadable or malformed module declarations fail closed to every preset and both layouts', (t) => {
+  for (const edit of [
+    files => { files['presets.json'] = null; },
+    files => { files['board.json'].id = 'boards'; },
+    files => { files['board.json'].owns.frontend = 'src/app/admin/community/boards'; },
+    files => { files['presets.json'].presets[0].domains.push('unknownfeature'); },
+  ]) {
+    const report = modulesFixture(t, edit)('--event', 'pull_request',
+      '--file', 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java');
+    assert.deepEqual(report.reusableProfiles, ['core', 'collaboration', 'demo']);
+    assert.equal(report.reusableMatrix.include.length, 6);
+  }
 });
 
 test('explicit full regression includes every heavy gate even for documentation-only inputs', () => {

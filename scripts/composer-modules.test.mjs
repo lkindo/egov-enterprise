@@ -164,6 +164,8 @@ test('copy in config/modules stays outside the catalog hash, while a user senten
       const preset = value.presets.find(row => row.id === 'collaboration');
       preset.label = '협업';
       preset.description = '바꾼 설명';
+      // CI 범위(PR 레이아웃, ADR-0027)도 생성 결과를 바꾸지 않는다(11단계 C5).
+      preset.ci = { pr: 'single-module' };
     });
     editModule(root, 'board.json', value => { value.unassignedPermissions[0].effect = '바꾼 안내입니다.'; });
     assert.equal(hashOf(), before, 'copy edits changed the catalog hash');

@@ -62,11 +62,12 @@ export function readComposerModuleFiles(root) {
 /**
  * 출처 해시(provenance.modulesHash)가 덮는 선언. 화면 문구(기능·core 의 presentation, 시작 구성의 label·description)와 미배정 권한
  * 안내(unassignedPermissions)는 v1 에서도 카탈로그 해시 밖이었다(DEC-OPS-242 ④·244) — 문구만 고쳐도 카탈로그 해시·모든 구성 해시와
- * 로컬 DB 번들 lock 이 바뀌지 않게 뺀다. 소유·간선·사용자 문장·연동·시작 구성 기대치는 생성 결과를 바꾸므로 해시에 남는다.
+ * 로컬 DB 번들 lock 이 바뀌지 않게 뺀다. 시작 구성의 CI 범위(ci — PR 레이아웃, ADR-0027)도 생성 결과를 바꾸지 않아 뺀다(11단계 C5).
+ * 소유·간선·사용자 문장·연동·시작 구성 기대치는 생성 결과를 바꾸므로 해시에 남는다.
  */
 export function hashedModuleDeclarations(files) {
   return Object.fromEntries(Object.entries(files).map(([name, value]) => {
-    if (name === PRESETS_FILE) return [name, { ...value, presets: value.presets.map(({ label, description, ...preset }) => preset) }];
+    if (name === PRESETS_FILE) return [name, { ...value, presets: value.presets.map(({ label, description, ci, ...preset }) => preset) }];
     const { presentation, unassignedPermissions, ...rest } = value;
     return [name, rest];
   }));
