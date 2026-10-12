@@ -69,7 +69,7 @@ function expectedTabs() {
     ...(pageInProjection(SCHEDULE) ? [['일정', 'false', 'work-hub-tab-calendar']] : []),
   ];
 }
-const contributedTabs = expectedTabs().length > 1;
+const contributedTabsInProjection = expectedTabs().length > 1;
 
 /** 아이콘(시험 대역은 이름을 글자로 그린다)을 뺀 글자. */
 const textWithoutIcons = (element: Element) => {
@@ -100,13 +100,13 @@ describe.each(ROUTES)('$route 동등성', (route) => {
     expect(await screen.findByText('예산 집행 점검')).toBeInTheDocument();
   });
 
-  if (!contributedTabs) it('기여 탭이 없으면 탭 줄도 tabpanel 도 없다', async () => {
+  if (!contributedTabsInProjection) it('기여 탭이 없으면 탭 줄도 tabpanel 도 없다', async () => {
     await renderScreen(route);
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.queryByRole('tabpanel')).toBeNull();
   });
 
-  if (contributedTabs) it('탭 줄: 이름·순서·선택·id·aria-controls 와 tabpanel', async () => {
+  if (contributedTabsInProjection) it('탭 줄: 이름·순서·선택·id·aria-controls 와 tabpanel', async () => {
     await renderScreen(route);
     expect(tabs().map(tab => [tab.textContent, tab.getAttribute('aria-selected'), tab.id])).toEqual(expectedTabs());
     for (const tab of tabs()) expect(tab).toHaveAttribute('aria-controls', 'work-hub-tabpanel');
@@ -114,7 +114,7 @@ describe.each(ROUTES)('$route 동등성', (route) => {
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'work-hub-tab-job');
   });
 
-  if (contributedTabs) it('탭을 누르면 그 탭의 화면 경로로 간다', async () => {
+  if (contributedTabsInProjection) it('탭을 누르면 그 탭의 화면 경로로 간다', async () => {
     await renderScreen(route);
     fireEvent.click(screen.getByRole('tab', { name: '업무 관리' }));
     expect(mocks.push).toHaveBeenLastCalledWith('/smart-toolkit/dept-job', { scroll: false });
