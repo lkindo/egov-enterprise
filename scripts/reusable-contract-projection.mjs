@@ -95,12 +95,16 @@ export function projectApiDocs(doc, { bindings, sourceExists, removed }) {
   const projected = structuredClone(doc);
   if (!projected.paths || typeof projected.paths !== 'object') throw new Error('api-docs has no paths');
   const removedOperations = [];
+  const removedPaths = [];
+  const keptOperationIds = [];
+  const sourceOperationIds = new Set();
   let keptOperations = 0;
   for (const [path, item] of Object.entries(projected.paths)) {
     const extra = Object.keys(item).filter(key => !HTTP_METHODS.includes(key));
     if (extra.length) throw new Error(`api-docs path item has fields the projection does not understand: ${path} ${extra.join(', ')}`);
     for (const method of HTTP_METHODS) {
       if (!Object.hasOwn(item, method)) continue;
+      sourceOperationIds.add(item[method].operationId);
       const label = `${method.toUpperCase()} ${path}`;
       const binding = byOperation.get(label);
       if (!binding) throw new Error(`api-docs operation has no authorization binding: ${label}`);
@@ -108,9 +112,15 @@ export function projectApiDocs(doc, { bindings, sourceExists, removed }) {
       if (removed(file)) {
         removedOperations.push({ method: method.toUpperCase(), path, operationId: item[method].operationId });
         delete item[method];
-      } else keptOperations += 1;
+      } else {
+        keptOperations += 1;
+        keptOperationIds.push(item[method].operationId);
+      }
     }
-    if (Object.keys(item).length === 0) delete projected.paths[path];
+    if (Object.keys(item).length === 0) {
+      delete projected.paths[path];
+      removedPaths.push(path);
+    }
   }
 
   const schemas = projected.components?.schemas ?? {};
@@ -127,6 +137,15 @@ export function projectApiDocs(doc, { bindings, sourceExists, removed }) {
   }
   const removedSchemas = Object.keys(schemas).filter(name => !reachable.has(name));
   for (const name of removedSchemas) delete schemas[name];
+
+  // springdoc 별칭(`_N`) 가운데 기본 연산이 빠지고 별칭만 남는 것. 정적 투영은 연산 id 를 원본 그대로 두지만, 생성물에서 springdoc 으로
+  // 다시 추출하면 충돌이 없어 접미사 없이 나온다(예: 게시판의 getStats_1 — 기본 getStats 는 설문 소유). lock 에 적고, T2 의 springdoc
+  // 재추출 대조(U9)는 이 목록의 접미사 차이를 정규화한다.
+  const kept = new Set(keptOperationIds);
+  const keptAliasesWithoutBase = keptOperationIds.filter(id => {
+    const base = id.replace(/_\d+$/u, '');
+    return base !== id && sourceOperationIds.has(base) && !kept.has(base);
+  }).sort();
 
   const usedTags = new Set(Object.values(projected.paths)
     .flatMap(item => HTTP_METHODS.flatMap(method => item[method]?.tags ?? [])));
@@ -145,6 +164,8 @@ export function projectApiDocs(doc, { bindings, sourceExists, removed }) {
       removedTags: removedTags.length,
     },
     removedOperations,
+    removedPaths,
+    keptAliasesWithoutBase,
     removedSchemas,
     removedTags,
   };

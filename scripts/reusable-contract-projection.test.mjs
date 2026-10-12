@@ -46,6 +46,20 @@ test('removing one controller removes exactly its operations, their unreachable 
   assert.deepEqual(projection.removedTags.filter(name => usedTags.has(name)), [], 'no used tag is removed');
 });
 
+/*
+ * springdoc 별칭(`_N`)의 기본 연산이 다른 기능에 있으면 그 기능이 빠진 구성에서 별칭만 남는다. 정적 투영은 id 를 그대로 두고(프런트가
+ * 그 이름의 서술자를 부른다) 사실을 기록한다 — 생성물에서 springdoc 으로 다시 추출하면 접미사 없이 나온다(트랙 K 검토 #5).
+ */
+test('an alias whose base operation leaves with another feature is kept verbatim and recorded', () => {
+  const survey = 'api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java';
+  const projection = projectSourceApiDocs(root, file => file === survey);
+  assert.ok(projection.removedOperations.some(operation => operation.operationId === 'getStats'), 'the survey controller owns getStats');
+  assert.deepEqual(projection.keptAliasesWithoutBase, ['getStats_1']);
+  assert.ok(operationsOf(projection.doc).some(operation => operation.operationId === 'getStats_1'), 'the board alias keeps its id');
+  assert.deepEqual(projectSourceApiDocs(root, () => false).keptAliasesWithoutBase, []);
+  assert.ok(projection.removedPaths.includes('/api/v1/surveys/{srvySn}/stats'), 'an emptied path is reported');
+});
+
 // 합성 문서 — 규칙 하나씩.
 const fixture = () => ({
   openapi: '3.1.0',

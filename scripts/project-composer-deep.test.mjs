@@ -16,6 +16,7 @@ import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.m
 import { copySourceTree, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 import { projectSourceApiDocs, readSourceApiContract } from './reusable-contract-projection.mjs';
+import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
@@ -77,8 +78,14 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     // API 계약(10c-2): 정밀 점검이 말한 빠지는 연산은 생성기가 투영한 트리에서 판정한 것과 같다.
     const contract = projectSourceApiDocs(root, file => !existsSync(join(output, file)));
     assert.deepEqual(deep.apiContract.removedOperationIds, contract.removedOperations.map(operation => operation.operationId).sort(), `${label}: removed operations`);
-    assert.deepEqual({ ...deep.apiContract, removedOperationIds: undefined }, { ...contract.summary, removedOperationIds: undefined }, `${label}: api-docs summary`);
+    assert.deepEqual({ ...deep.apiContract, removedOperationIds: undefined },
+      { ...contract.summary, removedOperationIds: undefined, keptAliasesWithoutBase: contract.keptAliasesWithoutBase }, `${label}: api-docs summary`);
     assert.ok(deep.apiContract.removedOperations > 0, `${label}: the projection removes operations`);
+    // 사라진 계약 이름 판정(트랙 K 검토 #2): 정밀 점검이 투영 내용으로 미리 본 자리와, 생성기가 투영한 트리의 디스크 내용에서 찾는 자리가 같다.
+    const onDisk = vanishedContractReferences(copied.filter(file => isContractScopeFile(file) && existsSync(join(output, file)))
+      .map(file => ({ file, source: readFileSync(join(output, file), 'utf8') })), predictFromProjection(root, contract));
+    assert.deepEqual(deep.blockers.find(blocker => blocker.code === 'API_CONTRACT_REFERENCE')?.files ?? [],
+      [...new Set([...onDisk.hits, ...onDisk.issues].map(entry => entry.file))].sort(), `${label}: contract name references`);
     assert.ok(deep.java.cascadeFiles > 0 && deep.java.cascadeFiles < deep.java.removedFiles, `${label}: Java cascade is a strict part of the removal`);
     assert.match(deepSummary(deep), /^제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건$/);
 
@@ -108,6 +115,22 @@ test('an api-docs operation the contract projection cannot judge blocks the deep
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.API_CONTRACT_PROJECTION);
   assert.equal(deep.blockers[0].message, `api-docs operation has no authorization binding: ${dropped.method} ${dropped.path}`);
   assert.equal(deep.apiContract, null, 'a failed projection reports no api-docs summary');
+});
+
+// 남는 파일이 구성에서 빠지는 계약 이름을 쓰면 생성물의 tsc 가 약 10분 뒤에 깨진다(트랙 K 검토 #2). 생성기는 생성 타입을 다시 만든 직후
+// 그 자리를 밝히며 멈추고, 정밀 점검이 같은 판정으로 Docker 전에 막는다. core 사용자 관리 서비스가 쓰는 연산을 core 가 지우는 컨트롤러에
+// 묶어 그 서술자가 사라지게 한다.
+test('a surviving file that uses a contract name the composition removes blocks the deep plan', () => {
+  const contract = readSourceApiContract(root);
+  const rebound = contract.bindings.map(binding => (binding.handler === 'nuri.api.controller.UserApiController#unlockUser'
+    ? { ...binding, handler: 'nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook' } : binding));
+  assert.notDeepEqual(rebound, contract.bindings, 'the unlock operation is bound');
+  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
+  const blocker = deep.blockers.find(entry => entry.code === 'API_CONTRACT_REFERENCE');
+  assert.equal(blocker?.label, DEEP_BLOCKER_LABELS.API_CONTRACT_REFERENCE);
+  assert.ok(blocker.files.includes('frontend/src/services/foundation/system/UserAdminService.ts'), JSON.stringify(blocker.files));
+  assert.match(blocker.message, /frontend\/src\/services\/foundation\/system\/UserAdminService\.ts:\d+ unlockUserOperation/);
+  assert.ok(deep.apiContract.removedOperationIds.includes('unlockUser'));
 });
 
 /*

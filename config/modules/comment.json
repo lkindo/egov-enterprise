@@ -23,7 +23,9 @@
       "src/app/actions/commentActions.ts",
       "src/services/business/comment/commentService.ts",
       "src/services/foundation/system/CommentAdminService.ts",
-      "src/app/admin/system/comments"
+      "src/app/admin/system/comments",
+      "src/components/features/comment",
+      "src/types/business/comment.ts"
     ],
     "frontendAny": [],
     "routes": [

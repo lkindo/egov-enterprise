@@ -61,11 +61,16 @@ const FEATURES = {
     // 업무 홈(Phase 2 9단계): 글 수 카드·최근 글 목록·새 게시글 작성 조각과 그 조회(home-sections 기여).
     'src/extensions/board', 'src/app/components/dashboard/BoardHome.tsx', 'src/queries/board-home-query.ts',
     // Phase 2 커뮤니티 후속 C1b: 게시글 모아보기는 이름과 달리 게시판을 골라 게시글을 보는 게시판 화면이다(커뮤니티 데이터를 쓰지 않는다).
-    'src/app/admin/community/board'],
+    'src/app/admin/community/board',
+    // 트랙 K 검토: 게시글 상세의 만족도 구역·편집 폼·폼 검증. 폼 검증 모듈은 어느 기능에도 속하지 않아 구역이 연쇄로 빠진 뒤에도 남았고,
+    //   생성 계약(generated-zod)이 구성 기준으로 줄면 사라진 스키마를 import 했다. 디렉터리째 게시판과 함께 직접 지운다.
+    'src/components/features/satisfaction'],
   routes: ['/admin/community/board', '/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
-    'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
+    'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments',
+    // 트랙 K 검토: 게시글 상세의 댓글 구역과 그 폼 검증, 댓글 타입(만족도와 같은 사유 — 타입 모듈도 generated-api 의 댓글 스키마·연산을 쓴다).
+    'src/components/features/comment', 'src/types/business/comment.ts'],
   routes: ['/admin/system/comments'] },
   // 커뮤니티·홍보(배너·팝업)·시연 화면은 따로 고른다(DEC-OPS-256 ①). 셋 사이에는 코드 참조가 없다.
   community: { label: '커뮤니티', permissions: ['COMMUNITY'], paths: [

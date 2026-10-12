@@ -11,12 +11,13 @@ import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
+import { describeContractReferences, isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
  * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·createFrontendProjector·planFrontendRemoval·
  * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement·
- * api-docs 투영(projectSourceApiDocs)). 그래서 여기서 찾은 차단 사유는 생성하면
+ * api-docs 투영(projectSourceApiDocs)·사라진 계약 이름 참조(vanishedContractReferences)). 그래서 여기서 찾은 차단 사유는 생성하면
  * 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
  * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
  */
@@ -61,6 +62,7 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
   API_CONTRACT_PROJECTION: 'API 계약(api-docs)을 투영할 수 없습니다',
+  API_CONTRACT_REFERENCE: '남는 코드가 구성에서 빠진 API 계약 이름을 씁니다',
   FRONTEND_SCREEN_EXTRA: '구성에 없는 화면이 투영 뒤에 남습니다',
 });
 
@@ -102,11 +104,13 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   // API 계약 투영(10c-2): 핸들러 소스가 지워지는 연산을 api-docs 에서 뺀다. 생성기는 Java 투영 뒤 같은 함수로 생성물 트리를 판정하므로
   // 바인딩 없는 연산·소스를 찾지 못한 핸들러·셀 수 없는 스키마 참조는 생성하면 같은 자리에서 실패한다.
   let apiContract = null;
+  let apiProjection = null;
   if (java) {
     try {
       const removedJava = new Set([...java.removed].map(path => pathKey(rel(path))));
-      const projection = projectSourceApiDocs(root, file => removedJava.has(pathKey(file)), apiContractSource);
-      apiContract = { ...projection.summary, removedOperationIds: projection.removedOperations.map(operation => operation.operationId).sort() };
+      apiProjection = projectSourceApiDocs(root, file => removedJava.has(pathKey(file)), apiContractSource);
+      apiContract = { ...apiProjection.summary, removedOperationIds: apiProjection.removedOperations.map(operation => operation.operationId).sort(),
+        keptAliasesWithoutBase: apiProjection.keptAliasesWithoutBase };
     } catch (error) { block('API_CONTRACT_PROJECTION', { message: message(error) }); }
   }
 
@@ -116,16 +120,30 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   // 투영할 파일은 생성기와 같은 판정(isFrontendModuleFile)으로 고른다 — 연쇄 계획이 읽는 모든 파일이 이 맵에 있어야 한다.
   const frontendFiles = relativeFiles.filter(file => file.startsWith('frontend/')).map(file => join(root, file));
   let frontend = null;
+  let projected = new Map();
   try {
     // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
     const projector = createFrontendProjector({ manifest, profile, composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
     const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
-    const projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
+    projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
     frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,
       readSource: path => projected.get(path) });
   } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
   const removed = new Set([...(java?.removed ?? []), ...(frontend?.removed ?? [])].map(path => pathKey(rel(path))));
   const kept = file => present.has(pathKey(file)) && !removed.has(pathKey(file));
+  // 남는 프런트 코드가 이 구성에서 사라질 계약 이름을 쓰는지 미리 본다(트랙 K 검토 #2). 생성기는 생성 타입을 다시 만든 직후 같은 판정을
+  // 생성물 트리에서 하고, 사라질 이름이 이 예측과 같은지도 본다. 내용은 투영(마커 걷기) 뒤의 것을 읽는다.
+  if (apiProjection && frontend) {
+    try {
+      const surviving = relativeFiles.filter(file => isContractScopeFile(file) && kept(file));
+      const references = vanishedContractReferences(surviving.map(file => ({ file, source: projected.get(join(root, file)) ?? readFileSync(join(root, file), 'utf8') })),
+        predictFromProjection(root, apiProjection));
+      if (references.hits.length || references.issues.length) {
+        block('API_CONTRACT_REFERENCE', { files: [...new Set([...references.hits, ...references.issues].map(entry => entry.file))].sort(),
+          message: describeContractReferences(references).join(' · ') });
+      }
+    } catch (error) { block('API_CONTRACT_REFERENCE', { message: message(error) }); }
+  }
   // 생성기는 투영 뒤 루트 레이아웃이 디스크에 있는지 본다(pruneFrontend). 원본에 없거나 연쇄로 지워지면 같은 자리에서 실패한다.
   // 화면(홈·로그인 포함)은 아래 화면 생존 대조가 본다.
   const lostEntries = frontend ? FRONTEND_ENTRIES.map(entry => `frontend/${entry}`).filter(file => !kept(file)) : [];

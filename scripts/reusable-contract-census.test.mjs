@@ -4,9 +4,9 @@ import { createRequire } from 'node:module';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { CONSUMER_NOT_IN_COMPOSITION, projectConsumerEntries, projectContractCensuses } from './reusable-contract-census.mjs';
+import { CONSUMER_NOT_IN_COMPOSITION, compareConsumerRatchets, projectConsumerEntries, projectContractCensuses } from './reusable-contract-census.mjs';
 import { apiDocsText, projectSourceApiDocs, regenerateContractTypes } from './reusable-contract-projection.mjs';
-import { BOUNDARY_PATH, LEDGER_PATH, readOperations, runCensus } from './operation-consumer-census.mjs';
+import { BOUNDARY_PATH, LEDGER_PATH, POLICY_PATH, analyzeWritePermissionNeeds, readOperations, runCensus } from './operation-consumer-census.mjs';
 import { PROJECTION_LEDGER_PATH, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
@@ -70,6 +70,10 @@ test('a reduced composition drops removed operations, records consumers the proj
   assert.equal(ledger.expected.operationCount, readOperations(projection.doc).length);
   assert.equal(ledger.expected.unwiredMax, ledger.entries.filter(entry => entry.category === 'unwired').length);
   for (const key of ['unwiredMax', 'screenOrphanMax', 'ungatedWriteMax']) assert.ok(ledger.expected[key] <= sourceLedger.expected[key], key);
+  // lock 은 원본 상한과, 원본보다 늘어난 화면 고아(여기서는 없다)를 함께 남긴다.
+  assert.deepEqual(result.consumer.upstreamExpected, { unwiredMax: sourceLedger.expected.unwiredMax,
+    screenOrphanMax: sourceLedger.expected.screenOrphanMax, ungatedWriteMax: sourceLedger.expected.ungatedWriteMax });
+  assert.deepEqual(result.consumer.screenOrphansAdded, []);
   assert.deepEqual(Object.keys(ledger), Object.keys(sourceLedger), 'the ledger keeps its shape');
 
   // 근거는 투영 원장에 적히고 생성물에 없는 파일이어야 한다. 남는 파일(원장에 적어도)·원장 밖의 없는 파일은 근거가 아니다.
@@ -93,6 +97,47 @@ test('a reduced composition drops removed operations, records consumers the proj
   const unprojected = runCensus(output, { ts }).errors;
   assert.deepEqual([...new Set(unprojected.map(error => error.code))], ['UNPROVEN_EVIDENCE']);
   assert.match(unprojected[0].message, /exists only in a generated product/);
+});
+
+/*
+ * 세 래칫은 부채의 상한이다(트랙 K 검토 #3). 생성물에서 다시 재되, 원본보다 커지면 투영이 회귀를 만든 것이므로 조용히 흡수하지 않는다.
+ * 화면 고아만은 소비 화면이 빠진 core 메서드 때문에 정당하게 늘 수 있어 원본 목록과 대조해 기록한다.
+ */
+test('consumer debt above the upstream maximum fails, and new screen orphans are recorded against the upstream list', () => {
+  const sourceExpected = { operationCount: 10, unwiredMax: 2, screenOrphanMax: 1, ungatedWriteMax: 1 };
+  const base = { unwiredOperations: ['b', 'a'], ungatedWrites: [{ permission: 'X_CREATE', via: 'S.create', file: 'frontend/src/x.tsx' }],
+    productOrphans: [{ file: 'frontend/src/s.ts', method: 'm1', operationIds: ['o1'] }] };
+  let sourceRuns = 0;
+  const sourceOrphans = () => { sourceRuns += 1; return [{ file: 'frontend/src/s.ts', method: 'm1', operationIds: ['o1'] }]; };
+  const within = compareConsumerRatchets({ sourceExpected, measured: { unwired: 2, ungatedWrites: 1 }, ...base, sourceOrphans });
+  assert.deepEqual(within, { errors: [], screenOrphansAdded: [] });
+  assert.equal(sourceRuns, 0, 'the upstream census runs only when the orphan count rises');
+
+  const above = compareConsumerRatchets({ sourceExpected, measured: { unwired: 3, ungatedWrites: 2 },
+    ...base, ungatedWrites: [...base.ungatedWrites, { permission: 'Y_DELETE', via: 'T.remove', file: 'frontend/src/y.tsx' }], sourceOrphans });
+  assert.equal(above.errors.length, 2);
+  assert.match(above.errors[0], /^unwired operations 3 exceed the upstream maximum 2: a, b$/);
+  assert.match(above.errors[1], /exceed the upstream maximum 1:\nX_CREATE \(S\.create\) — frontend\/src\/x\.tsx\nY_DELETE \(T\.remove\) — frontend\/src\/y\.tsx$/);
+
+  const orphans = compareConsumerRatchets({ sourceExpected, measured: { unwired: 0, ungatedWrites: 0 }, ...base,
+    productOrphans: [...base.productOrphans, { file: 'frontend/src/s.ts', method: 'm2', operationIds: ['o2'] }], sourceOrphans });
+  assert.deepEqual(orphans, { errors: [], screenOrphansAdded: [{ file: 'frontend/src/s.ts', method: 'm2', operationIds: ['o2'] }] });
+  assert.equal(sourceRuns, 1);
+});
+
+test('a projection that loses a write screen\'s permission judgement fails instead of raising the ratchet', { timeout: 300_000 }, t => {
+  const output = contractTree(t);
+  // 원본에서 판정이 화면 자신에게 있는(여는 화면이 없는) 쓰기를 하나 골라, 생성물 쪽 화면에서 그 판정만 걷는다(마커 블록이 판정만 지운 모양).
+  const needs = analyzeWritePermissionNeeds({ boundaries: json(root, BOUNDARY_PATH), policies: json(root, POLICY_PATH), repoRoot: root, ts });
+  const ungated = new Set(runCensus(root, { ts }).affordance.ungated.map(entry => `${entry.file}#${entry.permission}`));
+  const target = needs.needs.find(need => needs.mentions(need.file, need.permission) && needs.importersOf(need.file).length === 0
+    && !ungated.has(`${need.file}#${need.permission}`));
+  assert.ok(target, 'a self-judged write screen exists upstream');
+  const screen = join(output, target.file);
+  writeFileSync(screen, readFileSync(screen, 'utf8').replaceAll(`'${target.permission}'`, `'${target.permission}_JUDGEMENT_LOST'`));
+  assert.throws(() => projectContractCensuses({ sourceRoot: root, output, removedFiles: [] }),
+    error => /projection raised the consumer census debt above upstream/.test(error.message)
+      && error.message.includes(`${target.permission} (${target.via}) — ${target.file}`));
 });
 
 test('a consumer that disappears without its file being removed cannot be recorded', () => {

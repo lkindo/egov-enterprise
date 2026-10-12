@@ -49,7 +49,8 @@
       "src/extensions/board",
       "src/app/components/dashboard/BoardHome.tsx",
       "src/queries/board-home-query.ts",
-      "src/app/admin/community/board"
+      "src/app/admin/community/board",
+      "src/components/features/satisfaction"
     ],
     "frontendAny": [],
     "routes": [

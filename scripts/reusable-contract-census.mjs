@@ -8,7 +8,10 @@
  *      - 핸들러는 남는데 원본의 소비자 파일을 투영이 모두 지운 연산은 닫힌 어휘 `consumer-not-in-composition` 으로 적는다.
  *        근거는 투영 원장(reusable-projection-ledger.json)에 적힌 지워진 소비자 파일이다. 소비자 파일이 남았는데 호출만 사라졌으면
  *        (마커 투영 등) 근거를 댈 수 없으므로 실패한다.
- *      - 기대값(연산 수·세 래칫)은 생성물에서 잰 값으로 다시 쓴다(설계서 13장 — 축소한 하한은 생성 원장에서 다시 계산한다).
+ *      - 기대값(연산 수·세 래칫)은 생성물에서 잰 값으로 다시 쓴다. 단 세 래칫은 부채의 상한이라 원본 값보다 커지면 투영이 회귀를
+ *        만든 것이다(H2 — 생성물 기준선에 조용히 흡수하지 않는다): unwiredMax·ungatedWriteMax 가 원본보다 크면 그 연산·화면을 밝히며
+ *        실패한다. screenOrphanMax 는 소비 화면만 빠진 core 서비스 메서드 때문에 정당하게 늘 수 있으므로 원본 census 와 대조해 늘어난
+ *        메서드를 기록한다(lock).
  *   ③ 생성물 트리에서 소비 census 전체(runCensus)를 돌려 오류가 0 인지 본다.
  * 모든 기능을 고른 구성은 두 파일 모두 원본과 바이트가 같다(계약 시험).
  *
@@ -20,7 +23,7 @@ import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { buildBoundaryCensus, validateBoundaryCensus } from './generated-boundary-census.mjs';
-import { API_DOC_PATH, BOUNDARY_PATH, LEDGER_PATH, baseOperationId, isAliasDuplicate, readOperations, runCensus } from './operation-consumer-census.mjs';
+import { API_DOC_PATH, BOUNDARY_PATH, CATEGORIES, LEDGER_PATH, baseOperationId, isAliasDuplicate, readOperations, runCensus } from './operation-consumer-census.mjs';
 
 const readJson = (root, file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
 const jsonText = value => `${JSON.stringify(value, null, 2)}\n`;
@@ -71,6 +74,34 @@ export function projectConsumerEntries({ sourceLedger, sourceBoundaries, apiDoc,
   return { entries, added };
 }
 
+const orphanKey = orphan => `${orphan.file}#${orphan.method}`;
+
+/**
+ * 생성물에서 잰 소비 census 부채를 원본 상한(`sourceExpected`)과 대조한다. 세 값은 원본 기대값이 그대로 상한이다.
+ *   - unwired·ungatedWrites 가 원본보다 크면 투영이 만든 회귀다(투영은 부채를 지울 수만 있다 — 남는 쓰기의 권한 판정이 함께 빠졌거나
+ *     소비자만 남긴 채 호출이 사라진 것). 연산 id 와 화면을 밝히는 오류로 돌려준다.
+ *   - screenOrphans 는 소비 화면만 빠진 core 서비스 메서드 때문에 정당하게 늘 수 있다. 원본보다 크면 원본의 고아 목록(`sourceOrphans()`,
+ *     필요할 때만 잰다)과 대조해 새로 생긴 메서드를 돌려준다(lock 기록).
+ */
+export function compareConsumerRatchets({ sourceExpected, measured, unwiredOperations, ungatedWrites, productOrphans, sourceOrphans }) {
+  const errors = [];
+  if (measured.unwired > sourceExpected.unwiredMax) {
+    errors.push(`unwired operations ${measured.unwired} exceed the upstream maximum ${sourceExpected.unwiredMax}: ${[...unwiredOperations].sort().join(', ')}`);
+  }
+  if (measured.ungatedWrites > sourceExpected.ungatedWriteMax) {
+    errors.push(`screens calling a write operation without using its permission for display ${measured.ungatedWrites} exceed the upstream maximum `
+      + `${sourceExpected.ungatedWriteMax}:\n${ungatedWrites.map(entry => `${entry.permission} (${entry.via}) — ${entry.file}`).join('\n')}`);
+  }
+  let screenOrphansAdded = [];
+  if (productOrphans.length > sourceExpected.screenOrphanMax) {
+    const upstream = new Set(sourceOrphans().map(orphanKey));
+    screenOrphansAdded = productOrphans.filter(orphan => !upstream.has(orphanKey(orphan)))
+      .map(orphan => ({ file: orphan.file, method: orphan.method, operationIds: [...orphan.operationIds] }))
+      .sort((left, right) => orphanKey(left).localeCompare(orphanKey(right)));
+  }
+  return { errors, screenOrphansAdded };
+}
+
 /**
  * 생성물 트리(`output`)의 경계 census 를 다시 만들고 소비 census 원장을 투영한다. 원본 원장·경계 census 는 `sourceRoot` 에서 읽는다.
  * 투영 원장(`removedFiles`)이 생성물에 이미 쓰여 있어야 한다 — 소비 census 가 그 원장으로 근거를 대조한다.
@@ -103,7 +134,15 @@ export function projectContractCensuses({ sourceRoot, output, removedFiles }) {
   const write = expected => writeFileSync(join(output, LEDGER_PATH), jsonText({ ...sourceLedger, expected, entries }), 'utf8');
   // 처음에는 원본 기대값으로 재고, 잰 값으로 기대값을 다시 쓴 뒤 오류가 0 인지 본다. 키 순서는 원본 그대로다.
   write(sourceLedger.expected);
-  const measured = runCensus(output, { ts }).summary;
+  const first = runCensus(output, { ts });
+  const measured = first.summary;
+  const ratchets = compareConsumerRatchets({
+    sourceExpected: sourceLedger.expected, measured,
+    unwiredOperations: entries.filter(entry => CATEGORIES[entry.category]?.countsAsDebt).map(entry => entry.operationId),
+    ungatedWrites: first.affordance.ungated, productOrphans: first.reachability.orphans,
+    sourceOrphans: () => runCensus(sourceRoot, { ts }).reachability.orphans,
+  });
+  if (ratchets.errors.length) throw new Error(`projection raised the consumer census debt above upstream:\n${ratchets.errors.join('\n')}`);
   const values = { operationCount: measured.operationCount, unwiredMax: measured.unwired,
     screenOrphanMax: measured.screenOrphans, ungatedWriteMax: measured.ungatedWrites };
   const unknown = Object.keys(sourceLedger.expected ?? {}).filter(key => !Object.hasOwn(values, key));
@@ -115,6 +154,9 @@ export function projectContractCensuses({ sourceRoot, output, removedFiles }) {
   }
   return {
     boundary: { records: boundaries.records.length, eligible: boundaries.summary.eligible, adoptionPercent: boundaries.summary.adoptionPercent },
-    consumer: { ...result.summary, consumerNotInComposition: added },
+    consumer: { ...result.summary, consumerNotInComposition: added,
+      upstreamExpected: { unwiredMax: sourceLedger.expected.unwiredMax, screenOrphanMax: sourceLedger.expected.screenOrphanMax,
+        ungatedWriteMax: sourceLedger.expected.ungatedWriteMax },
+      screenOrphansAdded: ratchets.screenOrphansAdded },
   };
 }
