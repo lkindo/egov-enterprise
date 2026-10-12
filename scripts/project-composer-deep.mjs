@@ -10,11 +10,13 @@ import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement,
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
+import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
  * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·createFrontendProjector·planFrontendRemoval·
- * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement). 그래서 여기서 찾은 차단 사유는 생성하면
+ * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement·
+ * api-docs 투영(projectSourceApiDocs)). 그래서 여기서 찾은 차단 사유는 생성하면
  * 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
  * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
  */
@@ -58,6 +60,7 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   JAVA_CASCADE_UNACKNOWLEDGED: '승인되지 않은 Java 파일이 연쇄로 지워집니다',
   JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
+  API_CONTRACT_PROJECTION: 'API 계약(api-docs)을 투영할 수 없습니다',
   FRONTEND_SCREEN_EXTRA: '구성에 없는 화면이 투영 뒤에 남습니다',
 });
 
@@ -67,8 +70,9 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
  * `outputParent` 는 생성기가 생성물 폴더를 만들 상위 폴더다(없어도 된다). 대소문자 구분을 그 자리에서 판정한다.
  * 차단 사유는 `{ code, label, files?, message? }` 로 모은다. label 은 화면이 그대로 보이는 한국어 문장이다.
  * 화면 생존의 기대값(`pageSurvival`)은 넘기지 않으면 `root` 의 라우트 원장과 카탈로그(`catalog`, 없으면 적재)로 만든다.
+ * API 계약(`apiContract` = { doc, bindings })은 넘기지 않으면 `root` 의 api-docs 와 인가 원장에서 읽는다.
  */
-export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival }) {
+export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival, apiContract: apiContractSource }) {
   const started = performance.now();
   const profile = composerProfile(manifest, composition);
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
@@ -94,6 +98,17 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
     }
     java = plan;
   } catch (error) { block('JAVA_PROJECTION', { message: message(error) }); }
+
+  // API 계약 투영(10c-2): 핸들러 소스가 지워지는 연산을 api-docs 에서 뺀다. 생성기는 Java 투영 뒤 같은 함수로 생성물 트리를 판정하므로
+  // 바인딩 없는 연산·소스를 찾지 못한 핸들러·셀 수 없는 스키마 참조는 생성하면 같은 자리에서 실패한다.
+  let apiContract = null;
+  if (java) {
+    try {
+      const removedJava = new Set([...java.removed].map(path => pathKey(rel(path))));
+      const projection = projectSourceApiDocs(root, file => removedJava.has(pathKey(file)), apiContractSource);
+      apiContract = { ...projection.summary, removedOperationIds: projection.removedOperations.map(operation => operation.operationId).sort() };
+    } catch (error) { block('API_CONTRACT_PROJECTION', { message: message(error) }); }
+  }
 
   const frontendRoot = join(root, 'frontend');
   // 생성기처럼 모든 프런트 모듈 파일에 투영(직접 선택의 소유 기능과 pack 마커를 한 번에)을 먼저 하고, 그 내용으로 import 를 읽는다.
@@ -199,6 +214,8 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
     java: java && { removedFiles: java.removed.size, cascadeFiles: java.removed.size - javaDirect, files: [...java.removed].map(rel).sort() },
     frontend: frontend && { removedFiles: frontend.removed.size, cascadeFiles: frontend.removed.size - frontend.direct.size, files: [...frontend.removed].map(rel).sort() },
     removedGates,
+    // 생성물 api-docs 의 연산·스키마·태그 수와 빠지는 연산 id(생성기와 같은지 시험이 대조한다). 화면에는 보내지 않는다.
+    apiContract,
     // 규칙으로 걷는 게이트 파일(승인만 대조하고 제거 수에는 세지 않는다). 화면에는 보내지 않는다.
     ruleRemovals,
     blockers,

@@ -28,6 +28,7 @@ import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepo
   walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
+import { writeProjectedApiDocs } from './reusable-contract-projection.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -266,6 +267,9 @@ function main() {
   });
   // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
   if (composition.profile !== 'custom') assertJavaCascadeAcknowledged(args.profile, profile, java);
+  // API 계약(10c-2): Java 투영이 핸들러를 지운 연산을 api-docs 에서 빼고 스키마 폐포·태그를 정리한다. 정밀 점검이 같은 함수로 미리 본다.
+  const apiDocs = writeProjectedApiDocs(ROOT, output);
+  console.log(`[base-source] ${args.profile}: api-docs 를 구성 기준으로 다시 썼다(연산 ${apiDocs.summary.operations}개, 뺀 연산 ${apiDocs.summary.removedOperations}개).`);
   installDatabaseBundle(output, dbBundle);
   // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
@@ -308,6 +312,7 @@ function main() {
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
     projectionLedger,
+    contracts: { apiDocs: apiDocs.summary },
     zdmWaivers,
     governance: {
       path: 'config/governance/reusable-governance-projection.json',
