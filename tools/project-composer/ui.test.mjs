@@ -450,12 +450,15 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(page.locator('#plan-status')).toContainText('해제로 함께 포함되던 기능');
   await expect(page.locator('#plan-status')).toContainText('게시판·지식');
   // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능(게시판·댓글)은 '빠졌다' 고 말하지 않는다.
-  //   커뮤니티는 게시판·댓글·템플릿을 끌어오고, 협업 기본에는 템플릿만 없다.
+  //   커뮤니티는 게시판·댓글을, 포상은 약식 전자결재를 끌어오고, 협업 기본에는 약식 전자결재만 없다(템플릿은 DEC-OPS-280 뒤 선택 연동이다).
   await page.locator('#capability-community').focus();
   await page.keyboard.press('Space');
   await expect(page.locator('#plan-status')).toContainText('커뮤니티 선택으로');
+  await page.locator('#capability-reward').focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#plan-status')).toContainText('포상 선택으로');
   await page.locator('#preset').selectOption('collaboration');
-  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 1개가 빠졌습니다(템플릿). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 1개가 빠졌습니다(약식 전자결재). ' + PLAN_READY);
   assert.deepEqual(pageErrors, []);
 });
 
@@ -473,7 +476,7 @@ test('unchecking a feature that another choice still needs says it stayed, not t
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await page.locator('#capability-comment').uncheck();
   await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. '
-    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 3개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
+    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 2개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼). ' + PLAN_READY);
   await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#capability-comment')).toBeChecked();
   assert.deepEqual(pageErrors, []);
@@ -947,7 +950,7 @@ test('feature cards preview what choosing or removing them changes before the cl
   // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤 붙잡지 않는다), 직접 선택이 되며 들어오는 기능도 밝힌다.
   await page.locator('#capability-board').focus();
   const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
-  assert.match(board, /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
+  assert.match(board, /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: /);
   await expect(page.locator('#preview-board')).toHaveText(board);
   // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
   // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.

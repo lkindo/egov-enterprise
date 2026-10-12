@@ -68,8 +68,8 @@ const SINGLE_DELETIONS = {
   showcase: ['showcase'],
   sms: ['sms'],
   survey: ['survey'],
-  // 커뮤니티가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
-  template: ['community', 'template'],
+  // 템플릿 배정 구현은 템플릿 기능의 서비스이고 커뮤니티는 그 포트를 선택 주입으로 받는다(DEC-OPS-280). 템플릿을 지워도 커뮤니티는 선다.
+  template: ['template'],
 };
 
 test('every single deletion of the real catalog removes exactly the frozen set', () => {
@@ -81,9 +81,9 @@ test('every single deletion of the real catalog removes exactly the frozen set',
 });
 
 test('each companion names the requirement that pulled it in with the user sentence of that pair', () => {
-  const plan = planDomainDeletion({ catalog, requested: ['template'] });
-  assert.deepEqual(plan.added, [{ domain: 'community', because: { from: 'community', to: 'template', kinds: ['java'],
-    userReason: '커뮤니티를 만들 때 템플릿을 고릅니다.' } }]);
+  const plan = planDomainDeletion({ catalog, requested: ['informalsanction'] });
+  assert.deepEqual(plan.added, [{ domain: 'reward', because: { from: 'reward', to: 'informalsanction', kinds: ['java'],
+    userReason: '포상 데이터가 결재 문서 표를 참조합니다.' } }]);
 });
 
 test('deletion follows requirements backwards: the requirer goes, the required stays', () => {
@@ -114,9 +114,9 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   const edges = capabilities => [...new Set(capabilities.flatMap(capability => capability.requires.filter(row => !row.customOnly)
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
-  // 네 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), 업무 앱 Java 참조(스크랩→게시판),
-  // api-server 디렉터리 소유 기능의 Java 참조(커뮤니티→게시판, DEC-OPS-280).
-  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java', 'community>board java']) {
+  // 실제 표에 있는 세 종류 — 묶음 requiresDomains(대시보드→알림), 업무 앱 Java 참조(스크랩→게시판), api-server 디렉터리 소유 기능의
+  // Java 참조(커뮤니티→게시판, DEC-OPS-280). 다른 기능 디렉터리의 지원 파일 간선은 실례가 없어 아래 합성 트리로 본다.
+  for (const pair of ['dashboard>notification manifest', 'scrap>board java', 'community>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
@@ -124,6 +124,25 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), ['showcase']);
   for (const [domain, expected] of Object.entries(SINGLE_DELETIONS)) {
     assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains, expected, domain);
+  }
+});
+
+// 다른 기능 디렉터리에 있는 지원 파일은 그 기능을 요구한다. 실례(커뮤니티가 쓰던 템플릿 배정 구현)는 DEC-OPS-280 에서 포트로
+// 바뀌어 사라졌으므로 합성 선언으로 규칙을 본다 — 실례만 바꾸고 단언을 지우면 이 간선 규칙의 red 가 사라진다.
+test('a support file declared in another feature directory makes its consumer require that feature', () => {
+  const manifest = structuredClone(MANIFEST);
+  manifest.packs.collaboration.backend.domainSupportFiles = {
+    ...manifest.packs.collaboration.backend.domainSupportFiles,
+    note: [`${APP}/service/mail/MailService.java`],
+  };
+  const root = treeWith({ manifest, domains: ['mail', 'note'] });
+  try {
+    const tree = treeDeletionCatalog(root);
+    assert.deepEqual(tree.capabilities.find(capability => capability.id === 'note').requires.map(edge => `${edge.domain} ${edge.kind}`), ['mail java']);
+    assert.deepEqual(planDomainDeletion({ catalog: tree, requested: ['mail'] }).domains, ['mail', 'note']);
+    assert.deepEqual(planDomainDeletion({ catalog: tree, requested: ['note'] }).domains, ['note']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });
 
@@ -215,10 +234,10 @@ test('unknown or empty requests are refused instead of guessing', () => {
 
 test('the CLI prints ASCII-only JSON that PowerShell decodes regardless of the console code page', () => {
   const script = join(ROOT, 'scripts/domain-deletion-plan.mjs');
-  const result = spawnSync(process.execPath, [script, '--json', 'template'], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [script, '--json', 'informalsanction'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^[\x00-\x7f]*$/u, 'stdout is ASCII');
-  assert.deepEqual(JSON.parse(result.stdout).domains, ['community', 'template']);
+  assert.deepEqual(JSON.parse(result.stdout).domains, ['informalsanction', 'reward']);
   const refused = spawnSync(process.execPath, [script, '--json', 'nope'], { encoding: 'utf8' });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /unknown domain: nope/);

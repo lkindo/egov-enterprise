@@ -5277,6 +5277,38 @@ export const PageResponseCommunityMemberDtoSchema = /*#__PURE__*/ (() => z.objec
 export type PageResponseCommunityMemberDto = z.infer<typeof PageResponseCommunityMemberDtoSchema>;
 
 // ==========================================================================
+// ApiResponseCommunityTemplateOptionsDto Schema
+// ==========================================================================
+export const ApiResponseCommunityTemplateOptionsDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityTemplateOptionsDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseCommunityTemplateOptionsDto = z.infer<typeof ApiResponseCommunityTemplateOptionsDtoSchema>;
+
+// ==========================================================================
+// CommunityTemplateOptionDto Schema
+// ==========================================================================
+export const CommunityTemplateOptionDtoSchema = /*#__PURE__*/ (() => z.object({
+  tmpltId: z.string().optional(),
+  tmpltNm: z.string().optional().nullable(),
+}))();
+export type CommunityTemplateOptionDto = z.infer<typeof CommunityTemplateOptionDtoSchema>;
+
+// ==========================================================================
+// CommunityTemplateOptionsDto Schema
+// ==========================================================================
+export const CommunityTemplateOptionsDtoSchema = /*#__PURE__*/ (() => z.object({
+  available: z.boolean().optional(),
+  templates: z.array(z.lazy(() => CommunityTemplateOptionDtoSchema)).optional(),
+}))();
+export type CommunityTemplateOptionsDto = z.infer<typeof CommunityTemplateOptionsDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListCommunityDto Schema
 // ==========================================================================
 export const ApiResponseListCommunityDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -12998,6 +13030,46 @@ export const PageResponseCommunityMemberDtoResponseSchema = /*#__PURE__*/ (() =>
   page: z.number().int().optional().nullable(),
   size: z.number().int().optional().nullable(),
   totalPage: z.number().int().optional().nullable(),
+}))();
+
+export const ApiResponseCommunityTemplateOptionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => CommunityTemplateOptionsDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseCommunityTemplateOptionsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => CommunityTemplateOptionsDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const CommunityTemplateOptionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  tmpltId: z.string().optional(),
+  tmpltNm: z.string().optional().nullable(),
+}))();
+
+export const CommunityTemplateOptionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  tmpltId: z.string().optional().nullable(),
+  tmpltNm: z.string().optional().nullable(),
+}))();
+
+export const CommunityTemplateOptionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  available: z.boolean().optional(),
+  templates: z.array(z.lazy(() => CommunityTemplateOptionDtoRequestSchema.strict())).optional(),
+}))();
+
+export const CommunityTemplateOptionsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  available: z.boolean().optional().nullable(),
+  templates: z.array(z.lazy(() => CommunityTemplateOptionDtoResponseSchema)).optional().nullable(),
 }))();
 
 export const ApiResponseListCommunityDtoRequestSchema = /*#__PURE__*/ (() => z.object({

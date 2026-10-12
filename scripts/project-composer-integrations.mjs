@@ -49,6 +49,12 @@ export const INTEGRATES = [
   { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
+  // DEC-OPS-280: 템플릿 배정 구현은 템플릿 기능의 서비스다. 커뮤니티는 포트를 선택 주입으로 받고 관리 창 후보도 커뮤니티 API 로 받는다.
+  { from: 'community', to: 'template', via: 'port:TemplateAssignmentPolicy',
+    reason: '템플릿 기능이 없으면 커뮤니티 관리 창에서 템플릿 칸이 사라집니다. 템플릿 값은 커뮤니티 화면 표시에 쓰이지 않습니다.',
+    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/community/CommunityService.java',
+      anchor: 'ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy>' },
+    { path: 'frontend/src/components/business/community/CommunityManageDialog.tsx', anchor: 'communityAdminService.getTemplateOptions()' }] },
 ];
 
 /*

@@ -161,9 +161,8 @@ const SHARED_UI = [
 
 // 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 의존을 명시한다.
 // 커뮤니티 → 게시판은 게시글 모아보기 화면을 게시판 소유로 옮기며 걷었다(C1b). 그 결합은 커뮤니티 사용자 API 의 Java 간선이 센다.
+// 커뮤니티 → 템플릿은 관리 창 후보를 커뮤니티 API 로 받으며 선택 연동(포트)이 되었다(C2, project-composer-integrations.mjs).
 const UI_DEPENDENCIES = [
-  { from: 'community', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
   { from: 'help', domain: 'board', reason: '도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.',
     evidence: 'frontend/src/services/business/user/help/HelpUserService.ts', symbol: 'getPublicFaqsOperation' },
 ];

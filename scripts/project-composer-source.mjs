@@ -9,7 +9,7 @@ import { describeRoutes, pageSurvivalViolations } from './reusable-page-survival
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
 /*
  * 선택 업무만 쓰는 지원 파일. 업무 앱의 다른 도메인 디렉터리 파일도 선언할 수 있다 — 그 도메인이 제공하고
- * 선언한 도메인만 쓰는 구현이다(커뮤니티가 쓰는 템플릿 검증 포트 구현). 그런 파일은 두 도메인이 모두 있을 때만
+ * 선언한 도메인만 쓰는 구현이다(지금 실례는 없다 — 커뮤니티가 쓰던 템플릿 배정 구현은 DEC-OPS-280 에서 포트가 됐다). 그런 파일은 두 도메인이 모두 있을 때만
  * 남고, 카탈로그는 선언 도메인이 디렉터리 도메인을 요구한다고 기록한다.
  */
 export function supportFileDirectoryDomain(file) {
@@ -281,7 +281,7 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
 function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
   manifest ??= JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8'));
   const support = domainSupportFiles(sourceRoot, manifest);
-  // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
+  // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
     .flatMap(([, files]) => files));
   const requireFile = path => {

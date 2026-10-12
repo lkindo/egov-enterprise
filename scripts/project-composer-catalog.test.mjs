@@ -224,6 +224,19 @@ test('domain support is owned and fingerprinted with its consumer', t => {
   assert.throws(() => loadProjectComposerCatalog(root), /Missing domain support file/);
 });
 
+/*
+ * 다른 기능 디렉터리의 지원 파일 선언은 소비 기능이 그 기능을 요구한다는 간선이 된다. 실례(커뮤니티가 쓰던 템플릿 배정 구현)는
+ * DEC-OPS-280 에서 포트가 되어 사라졌으므로 합성 선언으로 본다. 그 쌍에는 사용자 문장이 없어, 간선이 계산되면 문장 대조가 붉다.
+ */
+test('a support file in another feature directory becomes a requires edge of its consumer', t => {
+  const root = fixture(t);
+  const file = join(root, 'config/reusable-base-profiles.json');
+  const declared = structuredClone(manifest);
+  declared.packs.demo.backend.domainSupportFiles.community = ['business-app/src/main/java/nuri/business/service/template/TmplatInfoService.java'];
+  writeFileSync(file, JSON.stringify(declared));
+  assert.throws(() => loadProjectComposerCatalog(root), /requires edge lacks a user reason: community>template/);
+});
+
 // ── 선택 연동(integrates, 설계서 9.1·B4) ──────────────────────────────────────────────
 
 const edgeKey = edge => `${edge.from} -> ${edge.to} via ${edge.via}`;
@@ -238,6 +251,7 @@ test('selective integrations are declared exactly and every evidence line points
     'board -> community via fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     'board -> notification via event:NotificationRequestedEvent',
     'community -> notification via event:NotificationRequestedEvent',
+    'community -> template via port:TemplateAssignmentPolicy',
     'core -> notification via event:NotificationRequestedEvent',
     'informalsanction -> mail via event:MailRequestedEvent',
     'informalsanction -> notification via event:NotificationRequestedEvent',

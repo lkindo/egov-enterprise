@@ -15,7 +15,6 @@ export const REQUIRES_USER_REASONS = Object.freeze({
   'board>comment': '게시글 화면이 댓글을 함께 다룹니다.',
   'comment>board': '댓글은 게시글에 달립니다.',
   'community>board': '커뮤니티 회원이 여는 게시판 목록을 게시판 기능이 제공합니다.',
-  'community>template': '커뮤니티를 만들 때 템플릿을 고릅니다.',
   'dashboard>board': '실시간 대시보드가 오늘 올라온 게시글 수를 보여 줍니다.',
   'dashboard>notification': '실시간 대시보드가 읽지 않은 알림 수를 보여 줍니다.',
   'help>board': '도움말 화면의 자주 묻는 질문·질의응답은 게시판 글입니다.',
