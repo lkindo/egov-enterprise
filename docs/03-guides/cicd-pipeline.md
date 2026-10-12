@@ -35,8 +35,8 @@ push/PR / workflow_dispatch
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
-        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile×layout 동시 생성·기술 검증)
-        ├─ reusable-custom (backend-scope 완료 뒤 core 영향 시 custom composition 두 layout 검증)
+        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout, 그 밖에는 두 layout)
+        ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
@@ -115,7 +115,7 @@ profile을 함께 실행한다. reusable source는 `!cancelled()`와 분류 성�
 frontend 실패·skip에서도 선택된 검증을 실행한다. `secret-scan`은 `always()`를 유지한다. 검사 모집단·
 required context·실패 판정은 바뀌지 않는다.
 
-PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
+PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 재사용 profile의 layout 수만 이벤트로 나뉜다(PR 한 layout, 그 밖 두 layout). 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699)의 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)에서 E2E 본 테스트 135개와 VRT가 통과했다. 두 shard의 Playwright wall time은 135.458/155.931초, GitHub E2E step은 150/171초, job은 623/454초다. workflow 생성부터 `e2e-test` required 완료까지는 695초(11분 35초)로, [이전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 1,984초(33분 4초)보다 짧았다. 상류 잡 대기·runner 배정·준비를 포함한 두 실행의 관측 비교이며 본 테스트 자체나 전체 CI가 같은 비율로 단축됐다는 뜻은 아니다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에 표적 PIT 검사와 전체 범위의 차이도 기록한다.
 
@@ -142,9 +142,13 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 `reusable-base`는 영향받는 core·collaboration·demo profile과 두 layout matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
 Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
-`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 6개
-matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 backend source
-완료 뒤 함께 실행한다. profile 여섯 개는 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
+`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 선택한
+profile 전부로 돌아간다. layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
+PR은 profile마다 한 layout(core 단일·collaboration 멀티·demo 단일)만 검증하고, main push·수동 실행·이벤트 미상과
+분류기 표에 없는 profile은 두 layout 전수다. PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
+생성기를 크게 바꾸는 PR은 병합 전에 `gh workflow run ci.yml --ref <브랜치>`로 전수를 한 번 받는다.
+core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 분류 직후 실행해 frontend가 끝나기 전의
+빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
@@ -158,7 +162,7 @@ matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 la
 ### 재사용 생성물 야간 시험(T2)
 
 산출물 검증은 하네스·스키마·프런트 타입·lint·build까지만 본다. 생성물의 일반 테스트는
-[reusable-nightly workflow](../../.github/workflows/reusable-nightly.yml)가 돈다.
+[reusable-nightly workflow](../../.github/workflows/reusable-nightly.yml)가 돈다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
 required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workflow_dispatch`)만 있고, 예약 실행(06:17 KST)은 첫 녹색 수동 실행 뒤 켠다.
 
 - **계획**: [러너](../../scripts/reusable-nightly.mjs)의 `plan`이 카탈로그에서 시작 구성과 서로 다른 단독 폐포를 계산한다.
