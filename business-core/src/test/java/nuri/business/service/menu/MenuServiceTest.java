@@ -1305,8 +1305,9 @@ class MenuServiceTest {
                 List.of(new MenuGroupGrantChange("G_A", "gv", List.of(), List.of(), List.of()))));
         invalid.put("알 수 없는 기능 권한", structureSave("v", List.of(), List.of(), List.of(), List.of(),
                 List.of(new MenuGroupGrantChange("G_A", "gv", List.of(), List.of(), List.of("NOT_REGISTERED")))));
+        // 공개 메뉴용 그룹 거부는 등록된 코드로 본다 — 예시 권한은 core 코드다(생성물은 권한 목록을 구성 코드로 줄인다, 10단계 10b).
         invalid.put("공개 메뉴용 그룹", structureSave("v", List.of(), List.of(), List.of(), List.of(),
-                List.of(new MenuGroupGrantChange("ROLE_ANONYMOUS", "gv", List.of(), List.of(), List.of("BOARD_READ")))));
+                List.of(new MenuGroupGrantChange("ROLE_ANONYMOUS", "gv", List.of(), List.of(), List.of("DEPT_JOB_READ")))));
         invalid.put("추가하면서 회수", structureSave("v", List.of(), List.of(), List.of(), List.of(),
                 List.of(new MenuGroupGrantChange("G_A", "gv", List.of("2"), List.of(2L), List.of()))));
         invalid.put("메뉴 번호가 너무 큽니다", structureSave("v", List.of(), List.of(new MenuPlacement("9999999999999999999", null, 1)),

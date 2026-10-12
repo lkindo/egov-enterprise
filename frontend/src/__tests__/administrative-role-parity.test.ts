@@ -70,8 +70,10 @@ describe('관리자 판정 parity', () => {
   it('both client affordances and the route gate require current functional grants', () => {
     expect(proxyUsesCurrentPermissions()).toBe(true);
     const roleOnly = { role: 'ROLE_ADMIN', permissions: [], authorizationVersion: 'v1' };
-    expect(canPermission(roleOnly, 'BBS_MST_CREATE')).toBe(false);
-    expect(canPermission({ permissions: ['BBS_MST_CREATE'], authorizationVersion: 'v1' }, 'BBS_MST_CREATE')).toBe(true);
+    // 예시 권한은 core 코드다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b). 게시판 관리 권한으로 시험하면
+    // 게시판이 빠진 구성에서 이 판정이 늘 거짓이다.
+    expect(canPermission(roleOnly, 'MENU_CREATE')).toBe(false);
+    expect(canPermission({ permissions: ['MENU_CREATE'], authorizationVersion: 'v1' }, 'MENU_CREATE')).toBe(true);
   });
 
   // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).

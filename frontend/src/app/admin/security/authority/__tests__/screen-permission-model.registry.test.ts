@@ -5,7 +5,7 @@ import { PERMISSION_CODES } from '@/types/generated-permissions';
 import { SCREEN_ALIASES, SCREEN_REGISTRY } from '@/types/generated-screen-registry';
 import { aggregateCell, buildScreenPermissionModel, menuRowKey, rowsUnder, SCREEN_CODE_COLUMNS, UNMATCHED_GROUP_KEY } from '../components/screen-permission-model';
 import { isOthersDataPermission, isProtectedPermission } from '../components/operation-permission-matrix-model';
-import { pageInProjection } from '@/test-utils/projection';
+import { pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
 
 /**
  * '화면별 권한' 표 모델과 실제 생성물(화면 목록·별칭·진입 원장)의 정합(2026-10-02, 관리 콘솔 UX 2단계 D3·D4).
@@ -21,7 +21,8 @@ const entryCodes = new Set<string>(SCREEN_REGISTRY.flatMap((screen) => screen.en
 /*
  * [10단계 10a — 이 파일에서 특정 화면을 단언하는 유일한 예외] 슬롯 기여 항목의 노출 술어(visibleWhen.permissions)가 그 항목을 그리는
  * 화면의 표시 권한이 되면서(DEC-OPS-284) '그 밖의 기능' 칸과 영역·섹션 줄의 일괄 대상이 넓어졌다. 그 변화를 화면별로 고정한다 — 술어
- * 귀속을 걷거나 엉뚱한 화면으로 넓히면 여기서 붉다. 노출일 뿐 인가는 그대로다(H3). 투영으로 빠진 화면은 보지 않는다.
+ * 귀속을 걷거나 엉뚱한 화면으로 넓히면 여기서 붉다. 노출일 뿐 인가는 그대로다(H3). 투영으로 빠진 화면과, 생성물의 권한 목록(구성
+ * 코드, 10단계 10b)에 없는 코드는 보지 않는다 — 그 코드를 노출 술어로 둔 기여는 그 기능과 함께 빠진다.
  *   · 일괄 대상에 드는 것: 메일·문자의 주소록 조회(ADBK_READ), 협업 허브 두 화면의 쪽지·스크랩 조회(NOTE_READ·SCRAP_READ),
  *     업무 홈의 결재·팝업·배너 조회(APPROVAL_READ·POPUP_READ·BANNER_READ). 어느 화면의 진입 권한도 아니다.
  *   · 칸에만 드는 것: 통계 셸 다섯 화면의 설문 전체 조회(SURVEY_READ_ALL) — 타인 자료 권한이자 설문 관리 화면의 진입 권한이라 일괄에서
@@ -42,11 +43,17 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
     expect(present.some(({ route }) => route === '/'), '업무 홈은 모든 구성에 있다').toBe(true);
     const navigation = present.map(({ route }, index) => ({ code: `P${index}`, name: route, parentCode: null, route, useYn: 'Y' as const }));
     const built = buildScreenPermissionModel(buildNavigationPermissionTree(navigation), operationCodes);
+    const registered = (codes: readonly string[]) => codes.filter((code) => operationCodes.includes(code));
+    // 원본(투영 원장 없음)에서는 술어 코드가 모두 권한 목록에 있어야 한다 — 거르기가 원본의 단언을 조용히 줄이지 않게 한다.
+    if (projectionRemovedFiles().size === 0) {
+      const codes = PREDICATE_DISPLAY.flatMap(({ bulk, cellOnly }) => [...bulk, ...cellOnly]);
+      expect(codes.filter((code) => !operationCodes.includes(code)), '원본 권한 목록에 없는 술어 코드').toEqual([]);
+    }
     for (const [index, { route, bulk, cellOnly }] of present.entries()) {
       const row = built.byKey.get(menuRowKey(`P${index}`))!;
       expect(row.screen?.route, route).toBe(route);
-      for (const code of [...bulk, ...cellOnly]) expect(row.codes.other, `${route} 칸 ${code}`).toContain(code);
-      for (const code of bulk) expect(row.bulkCodes.other, `${route} 일괄 ${code}`).toContain(code);
+      for (const code of registered([...bulk, ...cellOnly])) expect(row.codes.other, `${route} 칸 ${code}`).toContain(code);
+      for (const code of registered(bulk)) expect(row.bulkCodes.other, `${route} 일괄 ${code}`).toContain(code);
       for (const code of cellOnly) expect(row.bulkCodes.other, `${route} 일괄 ${code}`).not.toContain(code);
     }
     // 통계 요약은 설문 탭을 그리지 않는다 — 셸 디렉터리(/admin/stats)에 있다는 이유로 붙지 않는다.

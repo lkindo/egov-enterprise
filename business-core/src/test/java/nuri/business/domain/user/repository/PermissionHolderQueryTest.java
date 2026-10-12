@@ -16,7 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * 알림 수신자를 고르는 권한 보유자 조회(2026-09-26 DIP B5 F1).
  *
  * <p>그룹 배정과 그 그룹의 기능 권한을 거쳐 사용 중(P)인 사용자만 돌려주는가를 본다. 메뉴 배정(NAVIGATION)은
- * 기능 권한이 아니고, 쓰지 않는 계정에게 알림을 보내면 아무도 처리하지 않는다.
+ * 기능 권한이 아니고, 쓰지 않는 계정에게 알림을 보내면 아무도 처리하지 않는다. 조회는 core(사용자 저장소)라 예시 권한도 core
+ * 코드(사용자 상태 변경·조회)로 둔다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
  */
 @DisplayName("권한 보유자 조회")
 class PermissionHolderQueryTest extends PersistenceTestSupport {
@@ -35,12 +36,12 @@ class PermissionHolderQueryTest extends PersistenceTestSupport {
         assign("USR_INACTIVE", "GRP_APPROVER");
         assign("USR_NAV_ONLY", "GRP_NAV");
         assign("USR_OTHER", "GRP_OTHER");
-        em.persist(AuthorityGrant.create("GRP_APPROVER", "OPERATION", "COMMUNITY_APPROVE"));
-        em.persist(AuthorityGrant.create("GRP_NAV", "NAVIGATION", "COMMUNITY_APPROVE"));
-        em.persist(AuthorityGrant.create("GRP_OTHER", "OPERATION", "COMMUNITY_READ_ALL"));
+        em.persist(AuthorityGrant.create("GRP_APPROVER", "OPERATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_NAV", "NAVIGATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_OTHER", "OPERATION", "USER_READ"));
         em.flush();
 
-        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE"))
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS"))
                 .containsExactly("USR_HOLDER");
     }
 
@@ -50,11 +51,11 @@ class PermissionHolderQueryTest extends PersistenceTestSupport {
         user("USR_TWICE", "twice", "P");
         assign("USR_TWICE", "GRP_A");
         assign("USR_TWICE", "GRP_B");
-        em.persist(AuthorityGrant.create("GRP_A", "OPERATION", "COMMUNITY_APPROVE"));
-        em.persist(AuthorityGrant.create("GRP_B", "OPERATION", "COMMUNITY_APPROVE"));
+        em.persist(AuthorityGrant.create("GRP_A", "OPERATION", "USER_STATUS"));
+        em.persist(AuthorityGrant.create("GRP_B", "OPERATION", "USER_STATUS"));
         em.flush();
 
-        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("COMMUNITY_APPROVE"))
+        assertThat(userRepository.findActiveEsntlIdsHoldingPermission("USER_STATUS"))
                 .containsExactly("USR_TWICE");
     }
 

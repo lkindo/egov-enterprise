@@ -11,28 +11,29 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static nuri.business.security.authorization.PermissionPolicyTest.principal;
 
+/** 예시 권한은 core 코드(부서 업무)다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b). */
 class OperationAuthorizationManagerTest {
 
     @Test
     void sameUrlUsesExactHttpMethodPermissions() {
         var manager = manager(List.of(
-                binding("GET", "/api/v1/probe", "BOARD_READ"),
-                binding("POST", "/api/v1/probe", "BOARD_CREATE"),
-                binding("PUT", "/api/v1/probe", "BOARD_UPDATE"),
-                binding("DELETE", "/api/v1/probe", "BOARD_DELETE")));
-        Authentication reader = principal(List.of("CONTENT"), List.of("BOARD_READ"), true, "N");
+                binding("GET", "/api/v1/probe", "DEPT_JOB_READ"),
+                binding("POST", "/api/v1/probe", "DEPT_JOB_CREATE"),
+                binding("PUT", "/api/v1/probe", "DEPT_JOB_UPDATE"),
+                binding("DELETE", "/api/v1/probe", "DEPT_JOB_DELETE")));
+        Authentication reader = principal(List.of("CONTENT"), List.of("DEPT_JOB_READ"), true, "N");
         assertThat(granted(manager, reader, "GET", "/api/v1/probe")).isTrue();
         for (String method : List.of("POST", "PUT", "DELETE", "PATCH", "OPTIONS")) {
             assertThat(granted(manager, reader, method, "/api/v1/probe")).as(method).isFalse();
         }
-        assertThat(granted(manager, principal(List.of("CONTENT"), List.of("BOARD_DELETE"), true, "N"),
+        assertThat(granted(manager, principal(List.of("CONTENT"), List.of("DEPT_JOB_DELETE"), true, "N"),
                 "DELETE", "/api/v1/probe")).isTrue();
     }
 
     @Test
     void unknownPathAndEmptyManifestReturnExplicitDenial() {
         Authentication admin = principal(List.of("ROLE_ADMIN"), PermissionCodes.ALL.stream().toList(), true, "N");
-        var manager = manager(List.of(binding("GET", "/api/v1/known", "BOARD_READ")));
+        var manager = manager(List.of(binding("GET", "/api/v1/known", "DEPT_JOB_READ")));
         assertThat(granted(manager, admin, "GET", "/api/v1/unknown")).isFalse();
         assertThat(granted(manager(List.of()), admin, "GET", "/api/v1/known")).isFalse();
     }
@@ -40,9 +41,9 @@ class OperationAuthorizationManagerTest {
     @Test
     void literalPathTakesPrecedenceOverVariableAndNeverUnionsPermissions() {
         var manager = manager(List.of(
-                binding("GET", "/api/v1/probe/{id}", "BOARD_READ"),
+                binding("GET", "/api/v1/probe/{id}", "DEPT_JOB_READ"),
                 binding("GET", "/api/v1/probe/export", "FILE_READ_ALL")));
-        Authentication reader = principal(List.of("CONTENT"), List.of("BOARD_READ"), true, "N");
+        Authentication reader = principal(List.of("CONTENT"), List.of("DEPT_JOB_READ"), true, "N");
         assertThat(granted(manager, reader, "GET", "/api/v1/probe/42")).isTrue();
         assertThat(granted(manager, reader, "GET", "/api/v1/probe/export")).isFalse();
         Authentication exporter = principal(List.of("CONTENT"), List.of("FILE_READ_ALL"), true, "N");
@@ -52,8 +53,8 @@ class OperationAuthorizationManagerTest {
 
     @Test
     void headUsesGetPermissionAndApplicationContextPathIsRemoved() {
-        var manager = manager(List.of(binding("GET", "/api/v1/probe", "BOARD_READ")));
-        Authentication reader = principal(List.of(), List.of("BOARD_READ"), true, "N");
+        var manager = manager(List.of(binding("GET", "/api/v1/probe", "DEPT_JOB_READ")));
+        Authentication reader = principal(List.of(), List.of("DEPT_JOB_READ"), true, "N");
         MockHttpServletRequest request = new MockHttpServletRequest("HEAD", "/tenant/api/v1/probe");
         request.setContextPath("/tenant");
         var decision = manager.authorize(
@@ -65,10 +66,10 @@ class OperationAuthorizationManagerTest {
 
     @Test
     void anonymousAndGroupNameAloneCannotAccessOperation() {
-        var manager = manager(List.of(binding("GET", "/api/v1/probe", "BOARD_READ")));
+        var manager = manager(List.of(binding("GET", "/api/v1/probe", "DEPT_JOB_READ")));
         assertThat(granted(manager, null, "GET", "/api/v1/probe")).isFalse();
         assertThat(granted(manager, principal(List.of("ROLE_ADMIN"), List.of(), true, "N"), "GET", "/api/v1/probe")).isFalse();
-        assertThat(granted(manager, principal(List.of("ROLE_ADMIN"), List.of("BOARD_READ"), false, "N"), "GET", "/api/v1/probe")).isFalse();
+        assertThat(granted(manager, principal(List.of("ROLE_ADMIN"), List.of("DEPT_JOB_READ"), false, "N"), "GET", "/api/v1/probe")).isFalse();
     }
 
     @Test

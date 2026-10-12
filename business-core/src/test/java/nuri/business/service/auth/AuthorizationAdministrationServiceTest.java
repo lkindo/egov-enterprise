@@ -56,8 +56,9 @@ import static org.mockito.Mockito.when;
  * Real row mappers and canonical-principal permission checks run here without mocking the service.
  */
 class AuthorizationAdministrationServiceTest {
-    private static final Grant READ = new Grant("OPERATION", "BOARD_READ");
-    private static final Grant UPDATE = new Grant("OPERATION", "BOARD_UPDATE");
+    // 예시 권한은 core 코드(부서 업무)다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
+    private static final Grant READ = new Grant("OPERATION", "DEPT_JOB_READ");
+    private static final Grant UPDATE = new Grant("OPERATION", "DEPT_JOB_UPDATE");
     private static final Grant NAV_ONE = new Grant("NAVIGATION", "1");
     private Boundary db;
     private AuthorizationAdministrationService service;
@@ -213,7 +214,7 @@ class AuthorizationAdministrationServiceTest {
         db.memberships.replaceAll((user, groups) -> List.of());
         service.deleteGroup("G_A", version);
         assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(Write::values)
-                .containsExactly(List.of("G_A", "NAVIGATION", "1"), List.of("G_A", "OPERATION", "BOARD_READ"));
+                .containsExactly(List.of("G_A", "NAVIGATION", "1"), List.of("G_A", "OPERATION", "DEPT_JOB_READ"));
         assertThat(db.writesTo("tb_authrt_info")).singleElement().satisfies(w -> {
             assertThat(w.sql()).startsWith("DELETE"); assertThat(w.values()).containsExactly("G_A");
         });
@@ -246,7 +247,7 @@ class AuthorizationAdministrationServiceTest {
         service.replaceGrants("G_C", new ReplaceGrants(
                 List.of(new Grant("OPERATION", "USER_PASSWORD"), READ), service.group("G_C").version(), true));
         assertThat(db.writesTo("tb_authrt_grnt_map")).singleElement()
-                .satisfies(write -> assertThat(write.values()).contains("BOARD_READ"));
+                .satisfies(write -> assertThat(write.values()).contains("DEPT_JOB_READ"));
     }
 
     @ParameterizedTest
@@ -300,7 +301,7 @@ class AuthorizationAdministrationServiceTest {
         return Stream.of(Arrays.asList((Grant) null), List.of(new Grant("OPERATION", null)),
                 List.of(new Grant("OPERATION", "NOT_REGISTERED")), List.of(new Grant("NAVIGATION", "0")),
                 List.of(new Grant("NAVIGATION", "01")), List.of(new Grant("NAVIGATION", "-1")),
-                List.of(new Grant("NAVIGATION", "9999999999999999999")), List.of(new Grant("UNKNOWN", "BOARD_READ")),
+                List.of(new Grant("NAVIGATION", "9999999999999999999")), List.of(new Grant("UNKNOWN", "DEPT_JOB_READ")),
                 List.of(READ, READ));
     }
 
@@ -329,9 +330,9 @@ class AuthorizationAdministrationServiceTest {
         var writes = db.writesTo("tb_authrt_grnt_map");
         assertThat(writes).hasSize(2);
         assertThat(writes.get(0).values()).containsExactly("G_A", "NAVIGATION", "1");
-        assertThat(writes.get(1).values()).containsExactly("G_A", "OPERATION", "BOARD_UPDATE", "operator_login", "operator_login");
+        assertThat(writes.get(1).values()).containsExactly("G_A", "OPERATION", "DEPT_JOB_UPDATE", "operator_login", "operator_login");
         assertAudit(db.audits().get(0), "GROUP_GRANT", "REMOVE", "G_A", null, NAV_ONE, "grant", "1", null);
-        assertAudit(db.audits().get(1), "GROUP_GRANT", "ADD", "G_A", null, UPDATE, "grant", null, "BOARD_UPDATE");
+        assertAudit(db.audits().get(1), "GROUP_GRANT", "ADD", "G_A", null, UPDATE, "grant", null, "DEPT_JOB_UPDATE");
         assertThat(db.managerQueries).isEqualTo(2);
         db.writes.clear();
         error(CommonErrorCode.CONCURRENT_MODIFICATION, () -> service.replaceGrants("G_A", new ReplaceGrants(List.of(), version, true)));
@@ -737,7 +738,7 @@ class AuthorizationAdministrationServiceTest {
                 assertThat(write.values()).startsWith("COPY_A", "Copy of A", "Copied"));
         assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(Write::values).containsExactly(
                 List.of("COPY_A", "NAVIGATION", "1", "operator_login", "operator_login"),
-                List.of("COPY_A", "OPERATION", "BOARD_READ", "operator_login", "operator_login"));
+                List.of("COPY_A", "OPERATION", "DEPT_JOB_READ", "operator_login", "operator_login"));
         assertThat(db.writesTo("tb_authrt_user_map")).isEmpty();
         assertThat(db.audits()).hasSize(4).allSatisfy(write -> {
             assertThat(write.values().get(4)).isEqualTo("COPY_A");
@@ -779,7 +780,7 @@ class AuthorizationAdministrationServiceTest {
         var retired = assertThrows(BusinessException.class, () -> service.copyGroup("G_D",
                 new CopyGroup("COPY_D", "Copy", null, service.group("G_D").version())));
         assertThat(retired.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
-        assertThat(retired.getMessage()).contains("알 수 없는 기능 권한이 있습니다: NETWORK_READ").doesNotContain("BOARD_READ");
+        assertThat(retired.getMessage()).contains("알 수 없는 기능 권한이 있습니다: NETWORK_READ").doesNotContain("DEPT_JOB_READ");
         assertThat(db.writes).isEmpty();
     }
 
@@ -935,13 +936,13 @@ class AuthorizationAdministrationServiceTest {
 
     @Test
     void menuStructureGrantsApplyNavigationAndOperationsWithoutImplicitAncestors() {
-        service.applyMenuStructureGrants(List.of(new ResolvedGrantChange("G_B", Set.of(2L, 1L), Set.of(), Set.of("BOARD_READ")),
+        service.applyMenuStructureGrants(List.of(new ResolvedGrantChange("G_B", Set.of(2L, 1L), Set.of(), Set.of("DEPT_JOB_READ")),
                 new ResolvedGrantChange("G_A", Set.of(), Set.of(1L), Set.of())), List.of());
         assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(Write::values).containsExactly(
                 List.of("G_A", "NAVIGATION", "1"),
                 List.of("G_B", "NAVIGATION", "1", "operator_login", "operator_login"),
                 List.of("G_B", "NAVIGATION", "2", "operator_login", "operator_login"),
-                List.of("G_B", "OPERATION", "BOARD_READ", "operator_login", "operator_login"));
+                List.of("G_B", "OPERATION", "DEPT_JOB_READ", "operator_login", "operator_login"));
         assertThat(db.audits().stream().map(w -> w.values().getFirst()).distinct()).hasSize(1);
         assertThat(db.managerQueries).isEqualTo(2);
         db.writes.clear();
@@ -951,7 +952,7 @@ class AuthorizationAdministrationServiceTest {
                 new ResolvedGrantChange("G_C", Set.of(), Set.of(), Set.of("NOT_REGISTERED"))), List.of()));
         db.groups.put("ROLE_ANONYMOUS", new GroupData("Anonymous", null, List.of()));
         error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.applyMenuStructureGrants(List.of(
-                new ResolvedGrantChange("ROLE_ANONYMOUS", Set.of(), Set.of(), Set.of("BOARD_READ"))), List.of()));
+                new ResolvedGrantChange("ROLE_ANONYMOUS", Set.of(), Set.of(), Set.of("DEPT_JOB_READ"))), List.of()));
         service.applyMenuStructureGrants(List.of(new ResolvedGrantChange("ROLE_ANONYMOUS", Set.of(1L), Set.of(), Set.of())), List.of());
         assertThat(db.writesTo("tb_authrt_grnt_map")).singleElement().satisfies(write ->
                 assertThat(write.values()).startsWith("ROLE_ANONYMOUS", "NAVIGATION", "1"));
@@ -967,10 +968,10 @@ class AuthorizationAdministrationServiceTest {
         db.writes.clear();
         // 상위를 보지 않는 후보(메뉴 2 의 상위 1 이 선택되지 않음)는 받지 않고, 관리자 그룹이 아닌 그룹에는 후보를 더하지 않는다.
         db.groups.put("ROLE_ADMIN", new GroupData("Administrators", null, List.of()));
-        service.applyMenuStructureGrants(List.of(new ResolvedGrantChange("ROLE_ADMIN", Set.of(), Set.of(), Set.of("BOARD_READ")),
+        service.applyMenuStructureGrants(List.of(new ResolvedGrantChange("ROLE_ADMIN", Set.of(), Set.of(), Set.of("DEPT_JOB_READ")),
                 new ResolvedGrantChange("G_B", Set.of(3L), Set.of(), Set.of())), List.of(2L, 1L));
         assertThat(db.writesTo("tb_authrt_grnt_map")).extracting(write -> write.values().subList(0, 3)).containsExactly(
-                List.of("G_B", "NAVIGATION", "3"), List.of("ROLE_ADMIN", "NAVIGATION", "1"), List.of("ROLE_ADMIN", "OPERATION", "BOARD_READ"));
+                List.of("G_B", "NAVIGATION", "3"), List.of("ROLE_ADMIN", "NAVIGATION", "1"), List.of("ROLE_ADMIN", "OPERATION", "DEPT_JOB_READ"));
         error(CommonErrorCode.INVALID_INPUT_VALUE, () -> service.applyMenuStructureGrants(List.of(
                 new ResolvedGrantChange("ROLE_ADMIN", Set.of(2L), Set.of(), Set.of())), List.of()));
     }
