@@ -8,6 +8,7 @@
  *
  * [허브 분해 H4] 이 탭은 설문의 stats-panels 기여다. 셸이 로그인 주체로 기여의 노출 술어를 판정하므로 주체만 대역한다 — 대역이 없으면
  * 탭이 숨어 기본 탭으로 떨어진다. 그래서 탭의 존재(aria-current)를 양성으로 단언한다.
+ * [허브 분해 H5] 노출은 설문 목록 API 와 같은 SURVEY_READ_ALL 이다. 통계 조회 권한만 가진 주체에게는 탭이 없다(아래 시험).
  */
 
 import type { ComponentProps } from 'react';
@@ -29,7 +30,7 @@ const client = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ'], authorizationVersion: 'test' } }));
+const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' } }));
 vi.mock('@/contexts/AuthContext', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/contexts/AuthContext')>()),
   useOptionalAuth: () => ({ user: auth.user }),
@@ -199,6 +200,20 @@ describe('통계 허브 설문조사 탭 — 동등성', () => {
     fireEvent.click(screen.getByRole('button', { name: /통계 새로고침$/ }));
 
     await waitFor(() => expect(surveyCalls()).toHaveLength(2));
+  });
+
+  it('[H5] 설문 목록 조회 권한(SURVEY_READ_ALL)이 없으면 탭이 없고, ?tab=SURVEYS 는 그 화면의 기본 탭을 연다', async () => {
+    const saved = auth.user;
+    auth.user = { permissions: ['STATS_ADMIN_READ'], authorizationVersion: 'test' };
+    try {
+      renderHub();
+      await waitFor(() => expect(client.getRaw.mock.calls.some(([url]) => url === 'admin/system/statistics/connect')).toBe(true));
+      expect(screen.queryByRole('button', { name: /설문조사 분석$/ })).toBeNull();
+      expect(screen.getByRole('heading', { level: 1, name: '시스템 활성 지표' })).toBeInTheDocument();
+      expect(surveyCalls()).toHaveLength(0);
+    } finally {
+      auth.user = saved;
+    }
   });
 
   it('다른 탭에서는 설문 목록을 조회하지 않는다', async () => {

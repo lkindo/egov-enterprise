@@ -61,6 +61,12 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
   useConfirm: () => mocks.confirm,
 }));
 
+// 스크랩 탭은 내 스크랩 목록 조회 권한(SCRAP_READ)이 있는 주체에게 보인다(허브 분해 H5) — 그 권한을 가진 주체를 대역한다.
+vi.mock('@/contexts/AuthContext', () => {
+  const user = { id: 'u', permissions: ['SCRAP_READ', 'SCRAP_CREATE', 'SCRAP_UPDATE'], authorizationVersion: 'v1' };
+  return { useAuth: () => ({ user }), useOptionalAuth: () => ({ user }) };
+});
+
 import CollaborationHubClient from '../../CollaborationHubClient';
 
 function renderHub() {

@@ -25,7 +25,9 @@ const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
   getReceivedNotes: vi.fn(),
   scrapRows: [] as Array<Record<string, unknown>>,
+  permissions: [] as string[],
 }));
+const FULL_PERMISSIONS = ['NOTE_READ', 'SCRAP_READ', 'SCRAP_CREATE', 'SCRAP_UPDATE', 'ADBK_READ', 'MAIL_SEND'];
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push, replace: mocks.replace }),
@@ -33,8 +35,8 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(mocks.query),
 }));
 vi.mock('@/contexts/AuthContext', () => {
-  const user = { id: 'admin', role: 'ROLE_ADMIN', permissions: ['NOTE_READ', 'SCRAP_READ', 'SCRAP_CREATE', 'SCRAP_UPDATE', 'ADBK_READ', 'MAIL_SEND'], authorizationVersion: 'v1' };
-  return { useAuth: () => ({ user }), useOptionalAuth: () => ({ user }) };
+  const auth = () => ({ user: { id: 'admin', role: 'ROLE_ADMIN', permissions: mocks.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: auth, useOptionalAuth: auth };
 });
 vi.mock('@/services/business/user/NoteService', () => ({
   noteService: { getReceivedNotes: mocks.getReceivedNotes },
@@ -78,6 +80,7 @@ const tabState = () => within(screen.getByRole('tablist', { name: '협업 데이
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.permissions = FULL_PERMISSIONS;
   mocks.getReceivedNotes.mockResolvedValue({
     list: [{ noteSn: 5, noteSj: '주간 회의 안내', openYn: 'N', trnsmiterNm: '홍길동', crtDt: '2026-10-01 09:00:00' }],
     total: 1,
@@ -106,6 +109,23 @@ describe('협업 허브 동등성', () => {
     // 대소문자를 가리지 않는다.
     renderHub('tab=scraps');
     expect(tabState()).toEqual([['쪽지', 'false'], ['스크랩', 'true']]);
+  });
+
+  /*
+   * [허브 분해 H5] 탭은 그 탭이 부르는 목록 API 의 권한(쪽지 NOTE_READ·스크랩 SCRAP_READ)으로 보인다. 종전에는 허브에 들어온 누구에게나
+   * 보였고 목록이 403 이었다. 기본 그룹은 두 권한을 모두 가져 화면이 같다.
+   */
+  if (bothTabsInProjection) it('[H5] 쪽지 조회 권한이 없으면 쪽지 탭이 없고 ?tab=MESSAGES 는 남은 탭을 연다', () => {
+    mocks.permissions = FULL_PERMISSIONS.filter((code) => code !== 'NOTE_READ');
+    renderHub('tab=MESSAGES');
+    expect(tabState()).toEqual([['스크랩', 'true']]);
+    expect(mocks.getReceivedNotes).not.toHaveBeenCalled();
+  });
+
+  if (bothTabsInProjection) it('[H5] 스크랩 조회 권한이 없으면 스크랩 탭이 없다', () => {
+    mocks.permissions = FULL_PERMISSIONS.filter((code) => code !== 'SCRAP_READ');
+    renderHub('tab=SCRAPS', 'SCRAPS');
+    expect(tabState()).toEqual([['쪽지', 'true']]);
   });
 
   if (bothTabsInProjection) it('모르는 탭 값은 페이지 기본 탭을 연다', () => {

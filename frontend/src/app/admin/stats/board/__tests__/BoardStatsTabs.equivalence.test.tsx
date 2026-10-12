@@ -19,7 +19,8 @@ const SURVEY_CONTRIBUTION = 'frontend/src/extensions/survey/stats-panels.ts';
  * 판정하므로 통계 조회 권한을 가진 주체를 대역한다 — 대역이 없으면 탭이 조용히 숨어 '없음' 단언이 거짓 green 이 된다. 그래서
  * 탭의 존재를 양성으로 단언한다.
  */
-const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ'], authorizationVersion: 'test' } }));
+// 설문 탭(설문 기여)은 설문 목록 조회 권한으로 보인다(허브 분해 H5) — 전체 구성 순서를 보려고 함께 준다.
+const auth = vi.hoisted(() => ({ user: { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' } }));
 vi.mock('@/contexts/AuthContext', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/contexts/AuthContext')>()),
   useOptionalAuth: () => ({ user: auth.user }),
