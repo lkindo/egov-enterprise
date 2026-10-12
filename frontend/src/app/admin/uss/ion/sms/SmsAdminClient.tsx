@@ -36,7 +36,7 @@ import {
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { format } from 'date-fns';
-import { smsSchema, smsRecipientNumberSchema } from '@/lib/validation/schemas';
+import { smsSchema, smsRecipientNumberSchema } from './sms-form-validation';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,

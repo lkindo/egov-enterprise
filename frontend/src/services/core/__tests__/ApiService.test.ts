@@ -11,11 +11,16 @@ import { ApiService } from '../ApiService';
 import { AxiosRequestConfig } from 'axios';
 import {
   changePasswordOperation,
-  deleteScrapOperation,
-  getMyScrapListOperation,
-  getScrapOperation,
+  deleteDeptJobOperation,
+  getDeptJobListOperation,
+  getDeptJobOperation,
   uploadFilesOperation,
 } from '@/types/generated-operations';
+
+/*
+ * 예시 서술자는 core 업무(부서 업무)다 — 생성물은 생성 계약(api-docs → 생성 서술자·Zod·타입)을 구성으로 줄이므로(Phase 2 10단계 10c)
+ * 스크랩·댓글 서술자를 쓰면 그 기능이 빠진 구성에서 이 시험이 사라진 이름을 import 한다.
+ */
 
 vi.mock('@/lib/api/client', () => ({
  default: {
@@ -25,17 +30,17 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 class TestService extends ApiService {
- public async testGeneratedGet(scrapSn: number) {
-  return this.executeGenerated(getScrapOperation, { path: { scrapSn } });
+ public async testGeneratedGet(deptTaskSn: number) {
+  return this.executeGenerated(getDeptJobOperation, { path: { deptTaskSn } });
  }
  public async testGeneratedList(query: { pageIndex?: number; pageUnit?: number }) {
-  return this.executeGenerated(getMyScrapListOperation, { query });
+  return this.executeGenerated(getDeptJobListOperation, { query });
  }
  public async testGeneratedWrite(oldPassword: string, newPassword: string) {
   return this.executeGenerated(changePasswordOperation, { body: { oldPassword, newPassword } });
  }
- public async testGeneratedDelete(scrapSn: number) {
-  return this.executeGenerated(deleteScrapOperation, { path: { scrapSn } });
+ public async testGeneratedDelete(deptTaskSn: number) {
+  return this.executeGenerated(deleteDeptJobOperation, { path: { deptTaskSn } });
  }
  public async testGeneratedMultipart(files: File[], config?: AxiosRequestConfig) {
   return this.executeGeneratedMultipart(uploadFilesOperation, { body: { files }, config });
@@ -55,17 +60,17 @@ describe('ApiService', () => {
    success: true,
    code: 'S000',
    message: '성공',
-   data: { scrapSn: 7, scrapNm: '문서', useYn: 'Y' },
+   data: { deptTaskSn: 7, deptTaskNm: '문서' },
   });
 
-  await expect(service.testGeneratedGet(7)).resolves.toMatchObject({ scrapSn: 7, useYn: 'Y' });
-  expect(client.getRaw).toHaveBeenCalledWith('scraps/7', undefined);
+  await expect(service.testGeneratedGet(7)).resolves.toMatchObject({ deptTaskSn: 7, deptTaskNm: '문서' });
+  expect(client.getRaw).toHaveBeenCalledWith('dept-jobs/7', undefined);
 
   vi.mocked(client.getRaw).mockResolvedValueOnce({
    success: true,
    code: 'S000',
    message: '성공',
-   data: { scrapSn: '7', useYn: 'Y' },
+   data: { deptTaskSn: '7', deptTaskNm: '문서' },
   });
   await expect(service.testGeneratedGet(7)).rejects.toThrow(
    '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
@@ -81,7 +86,7 @@ describe('ApiService', () => {
   });
 
   await service.testGeneratedList({ pageIndex: 1, pageUnit: 20 });
-  expect(client.getRaw).toHaveBeenCalledWith('scraps', { params: { pageIndex: 1, pageUnit: 20 } });
+  expect(client.getRaw).toHaveBeenCalledWith('dept-jobs', { params: { pageIndex: 1, pageUnit: 20 } });
 
   await expect(service.testGeneratedList({ pageIndex: 1.5 })).rejects.toThrow(
    '생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.',
@@ -113,7 +118,7 @@ describe('ApiService', () => {
   });
 
   await expect(service.testGeneratedDelete(9)).resolves.toBeUndefined();
-  expect(client.requestRaw).toHaveBeenCalledWith({ url: 'scraps/9', method: 'delete' });
+  expect(client.requestRaw).toHaveBeenCalledWith({ url: 'dept-jobs/9', method: 'delete' });
  });
 
  it('multipart operation은 FormData와 boundary를 전용 adapter가 소유한다', async () => {

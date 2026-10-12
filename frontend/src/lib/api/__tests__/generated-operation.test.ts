@@ -2,13 +2,13 @@ import axios from 'axios';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import {
-  deleteScrapOperation,
+  deleteDeptJobOperation,
   downloadFileOperation,
-  getMyScrapListOperation,
-  getScrapOperation,
+  getDeptJobListOperation,
+  getDeptJobOperation,
   changePasswordOperation,
-  createCommentOperation,
-  getCommentsOperation,
+  createDeptJobOperation,
+  getUsersOperation,
   type GeneratedOperationResponse,
 } from '@/types/generated-operations';
 import type { components } from '@/types/generated-api';
@@ -22,31 +22,36 @@ import {
   type GeneratedOperationArguments,
 } from '@/lib/api/generated-operation';
 
+/*
+ * 예시 서술자는 core 업무(부서 업무·사용자·파일·비밀번호 변경)다 — 생성물은 생성 계약(api-docs → 생성 서술자·Zod·타입)을 구성으로
+ * 줄이므로(Phase 2 10단계 10c) 스크랩·댓글 서술자를 쓰면 그 기능이 빠진 구성에서 이 시험이 사라진 이름을 import 한다. 서술자 실행기
+ * 계약은 모든 구성에 있으므로 모든 구성에서 같은 뜻으로 돈다.
+ */
 describe('generated operation contract', () => {
   it('operationId와 HTTP 경로를 한 descriptor에 결속한다', () => {
-    expect(getScrapOperation).toMatchObject({
-      id: 'getScrap',
+    expect(getDeptJobOperation).toMatchObject({
+      id: 'getDeptJob',
       method: 'get',
-      path: '/api/v1/scraps/{scrapSn}',
+      path: '/api/v1/dept-jobs/{deptTaskSn}',
       requestKind: 'none',
       responseKind: 'json',
     });
-    expect(deleteScrapOperation.responseKind).toBe('void');
+    expect(deleteDeptJobOperation.responseKind).toBe('void');
     expect(downloadFileOperation.responseKind).toBe('binary');
   });
 
   it('path parameter를 빠짐없이 URL encode한다', () => {
-    expect(buildGeneratedOperationPath(getScrapOperation, { scrapSn: 42 })).toBe('scraps/42');
-    expect(() => buildGeneratedOperationPath(getScrapOperation, {} as never)).toThrow(
+    expect(buildGeneratedOperationPath(getDeptJobOperation, { deptTaskSn: 42 })).toBe('dept-jobs/42');
+    expect(() => buildGeneratedOperationPath(getDeptJobOperation, {} as never)).toThrow(
       '생성 API 경로 파라미터가 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
 
   it('query parameter의 이름과 정수 계약을 런타임에도 검증한다', () => {
-    expect(parseGeneratedOperationQuery(getMyScrapListOperation, { pageIndex: 1, pageUnit: 20 }))
+    expect(parseGeneratedOperationQuery(getDeptJobListOperation, { pageIndex: 1, pageUnit: 20 }))
       .toEqual({ pageIndex: 1, pageUnit: 20 });
-    expect(() => parseGeneratedOperationQuery(getMyScrapListOperation, { pageIndex: 1.5 })).toThrow();
-    expect(() => parseGeneratedOperationQuery(getMyScrapListOperation, { page: 0 })).toThrow();
+    expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { pageIndex: 1.5 })).toThrow();
+    expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { page: 0 })).toThrow();
   });
 
   it('generated request Zod로 쓰기 요청을 fail-closed 검증한다', () => {
@@ -61,24 +66,23 @@ describe('generated operation contract', () => {
   });
 
   it('readOnly 요청 위조와 writeOnly 응답 유출을 중첩 경로까지 차단한다', () => {
-    expect(() => parseGeneratedOperationRequest(createCommentOperation, {
-      pstSn: 7,
-      bbsId: 'BBSMSTR_A',
-      ansCn: '댓글',
+    // 수정 가능 여부(editable)는 서버가 판정해 응답에만 싣는 readOnly 필드다 — 요청에 실으면 위조다.
+    expect(() => parseGeneratedOperationRequest(createDeptJobOperation, {
+      deptTaskNm: '업무',
+      deptTaskCn: '내용',
       editable: true,
     } as never)).toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
 
-    // 일반 DTO에서 퇴역한 작성자 ID도 strict 요청 계약이 계속 거부한다.
-    expect(() => parseGeneratedOperationRequest(createCommentOperation, {
-      pstSn: 7,
-      bbsId: 'BBSMSTR_A',
-      ansCn: '댓글',
+    // 계약에 없는 작성자 ID도 strict 요청 계약이 거부한다(작성자는 서버가 인증 주체로 정한다).
+    expect(() => parseGeneratedOperationRequest(createDeptJobOperation, {
+      deptTaskNm: '업무',
+      deptTaskCn: '내용',
       wrterId: 'forged-writer',
     } as never)).toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
 
     let thrown: unknown;
     try {
-      parseGeneratedOperationResponse(getCommentsOperation, {
+      parseGeneratedOperationResponse(getUsersOperation, {
         success: true,
         code: 'S000',
         message: '성공',
@@ -93,60 +97,60 @@ describe('generated operation contract', () => {
   });
 
   it('공통 envelope와 generated data Zod를 함께 검증한다', () => {
-    const response = parseGeneratedOperationResponse(getScrapOperation, {
+    const response = parseGeneratedOperationResponse(getDeptJobOperation, {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { scrapSn: 12, scrapNm: '문서', useYn: 'Y' },
+      data: { deptTaskSn: 12, deptTaskNm: '문서' },
     });
-    expect(response).toMatchObject({ scrapSn: 12, scrapNm: '문서' });
-    expect(() => parseGeneratedOperationResponse(getScrapOperation, {
+    expect(response).toMatchObject({ deptTaskSn: 12, deptTaskNm: '문서' });
+    expect(() => parseGeneratedOperationResponse(getDeptJobOperation, {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { scrapSn: '12', useYn: 'Y' },
+      data: { deptTaskSn: '12', deptTaskNm: '문서' },
     })).toThrow();
-    expect(() => parseGeneratedOperationResponse(getScrapOperation, {
+    expect(() => parseGeneratedOperationResponse(getDeptJobOperation, {
       success: false,
       code: 'C001',
       message: '민감한 원문',
       data: null,
     })).toThrow('생성 API 응답 envelope가 성공 계약과 일치하지 않습니다.');
-    expect(() => parseGeneratedOperationResponse(getScrapOperation, {
-      data: { scrapSn: 12 },
+    expect(() => parseGeneratedOperationResponse(getDeptJobOperation, {
+      data: { deptTaskSn: 12 },
     })).toThrow('생성 API 응답 envelope가 성공 계약과 일치하지 않습니다.');
   });
 
   it('void 응답도 envelope를 검증하고 binary만 envelope를 우회한다', () => {
-    expect(parseGeneratedOperationResponse(deleteScrapOperation, {
+    expect(parseGeneratedOperationResponse(deleteDeptJobOperation, {
       success: true,
       code: 'S000',
       message: '성공',
       data: null,
       timestamp: '2026-08-31T21:00:00',
     })).toBeUndefined();
-    expect(() => parseGeneratedOperationResponse(deleteScrapOperation, {
+    expect(() => parseGeneratedOperationResponse(deleteDeptJobOperation, {
       success: true,
       code: 'S000',
       message: '성공',
       data: null,
       timestamp: 'not-a-date',
     })).toThrow('생성 API void 응답이 OpenAPI 계약과 일치하지 않습니다.');
-    expect(() => parseGeneratedOperationResponse(deleteScrapOperation, undefined)).toThrow(
+    expect(() => parseGeneratedOperationResponse(deleteDeptJobOperation, undefined)).toThrow(
       '생성 API 응답 envelope가 성공 계약과 일치하지 않습니다.',
     );
   });
 
   it('descriptor의 반환 타입은 generated-api operation 응답에서 유도한다', () => {
-    expectTypeOf<GeneratedOperationResponse<typeof getScrapOperation>>()
-      .toEqualTypeOf<NonNullable<components['schemas']['ScrapDto']>>();
-    expectTypeOf<GeneratedOperationResponse<typeof deleteScrapOperation>>().toEqualTypeOf<void>();
+    expectTypeOf<GeneratedOperationResponse<typeof getDeptJobOperation>>()
+      .toEqualTypeOf<NonNullable<components['schemas']['DeptJobDto']>>();
+    expectTypeOf<GeneratedOperationResponse<typeof deleteDeptJobOperation>>().toEqualTypeOf<void>();
     expectTypeOf<GeneratedOperationResponse<typeof downloadFileOperation>>().toEqualTypeOf<Blob>();
   });
 
   it('path/body 필수값과 transport-owned config를 타입·런타임에서 덮어쓸 수 없다', () => {
-    const validPath: GeneratedOperationArguments<typeof getScrapOperation> = {
-      path: { scrapSn: 1 },
+    const validPath: GeneratedOperationArguments<typeof getDeptJobOperation> = {
+      path: { deptTaskSn: 1 },
     };
     const validBody: GeneratedOperationArguments<typeof changePasswordOperation> = {
       body: { oldPassword: 'old', newPassword: 'new' },
@@ -155,11 +159,11 @@ describe('generated operation contract', () => {
     void validBody;
 
     // @ts-expect-error path parameter가 있는 operation은 path가 필수다.
-    const missingPath: GeneratedOperationArguments<typeof getScrapOperation> = {};
+    const missingPath: GeneratedOperationArguments<typeof getDeptJobOperation> = {};
     // @ts-expect-error requestBody.required=true인 operation은 body가 필수다.
     const missingBody: GeneratedOperationArguments<typeof changePasswordOperation> = {};
-    const overriddenUrl: GeneratedOperationArguments<typeof getScrapOperation> = {
-      path: { scrapSn: 1 },
+    const overriddenUrl: GeneratedOperationArguments<typeof getDeptJobOperation> = {
+      path: { deptTaskSn: 1 },
       // @ts-expect-error URL은 descriptor가 소유하므로 호출자가 config로 바꿀 수 없다.
       config: { url: '/other' },
     };
@@ -202,7 +206,7 @@ describe('generated operation contract', () => {
         success: true,
         code: 'S000',
         message: '성공',
-        data: { scrapSn: 1, useYn: 'Y' },
+        data: { deptTaskSn: 1 },
       })],
     })).toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
   });

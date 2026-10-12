@@ -54,7 +54,7 @@ describe('BoardUserService generated contract', () => {
     같은 계약은 정본 경로가 계속 검증한다:
       · 등록·수정·삭제·추천 — app/actions/__tests__/boardActions.test.ts
         (첨부 동반 /with-files 경로와 part 구성 포함, DEC-OPS-044)
-      · 저장 payload 경계 — app/actions/__tests__/board-save-payload-contract.test.ts
+      · 저장 payload 경계 — app/admin/community/boards/__tests__/board-save-payload-contract.test.ts
     커버리지를 지운 것이 아니라 소유자가 옮겨 간 것이다.
   */
 });

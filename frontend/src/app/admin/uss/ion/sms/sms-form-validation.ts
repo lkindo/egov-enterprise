@@ -1,13 +1,10 @@
 import { z } from 'zod';
-import {
-  SmsDtoSchema,
-  SmsRecptnDtoSchema,
-  OnlineManualDtoSchema,
-} from '@/types/generated-zod';
+import { SmsDtoSchema, SmsRecptnDtoSchema } from '@/types/generated-zod';
 
 /**
- * 여러 화면이 공유하는 폼 유효성 검사 스키마. 화면 하나만 쓰는 스키마는 그 화면 옆에 둔다
- * (예: 투표 폼은 admin/survey/manage/poll-form-validation.ts, 메뉴 속성은 admin/system/menus/menuDraft.ts).
+ * 문자 발송 폼 스키마 — 문자 기능 소유(Phase 2 10단계 10c-1). 문자 발송 화면 둘(관리 화면·옛 문자 목록)이 함께 쓴다.
+ * 종전에는 공유 모듈(lib/validation/schemas.ts)에 있어 문자를 고르지 않은 생성물에도 남았고, 생성 계약을 구성으로 줄이면(10c)
+ * 그 생성물에서 사라진 계약 이름(SmsDtoSchema)을 import 하게 된다. 문자 디렉터리에 두면 기능과 함께 빠진다.
  */
 
 // 화면은 수신 번호 하나를 입력받고 API 경계에서 recipients[] 로 승격한다. 서버 응답/검색 필드와
@@ -35,27 +32,3 @@ export const smsSchema = SmsDtoSchema.pick({ sndngTelno: true, sndngCn: true }).
     .max(80, '메시지 내용은 최대 80자까지 입력할 수 있습니다.')
     .pipe(SmsDtoSchema.shape.sndngCn),
 });
-
-export const manualSchema = OnlineManualDtoSchema.extend({
-  onlnMnlNm: z.string()
-    .trim()
-    .min(1, '매뉴얼 명칭을 입력해 주세요.')
-    .max(100, '매뉴얼 명칭은 최대 100자까지 입력할 수 있습니다.')
-    .pipe(OnlineManualDtoSchema.shape.onlnMnlNm),
-  onlnMnlSeCd: z.string()
-    .trim()
-    .min(1, '매뉴얼 구분 코드를 입력해 주세요.')
-    .max(12, '매뉴얼 구분 코드는 최대 12자까지 입력할 수 있습니다.')
-    .pipe(OnlineManualDtoSchema.shape.onlnMnlSeCd),
-  onlnMnlDfn: z.string()
-    .trim()
-    .max(1000, '리소스 경로는 최대 1000자까지 입력할 수 있습니다.')
-    .pipe(OnlineManualDtoSchema.shape.onlnMnlDfn.unwrap())
-    .optional(),
-  onlnMnlExpln: z.string()
-    .trim()
-    .max(4000, '상세 설명은 최대 4000자까지 입력할 수 있습니다.')
-    .pipe(OnlineManualDtoSchema.shape.onlnMnlExpln.unwrap())
-    .optional(),
-});
-

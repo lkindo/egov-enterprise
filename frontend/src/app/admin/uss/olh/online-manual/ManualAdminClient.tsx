@@ -31,7 +31,7 @@ import {
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { manualSchema } from '@/lib/validation/schemas';
+import { manualSchema } from './manual-form-validation';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
