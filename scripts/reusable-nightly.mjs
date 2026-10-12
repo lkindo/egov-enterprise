@@ -62,9 +62,24 @@ export function testPlan(layout, { migrationTests = false, modules = [] } = {}) 
   return { tasks, excluded, units };
 }
 
-/** 원장 밖 제외와, 돌리지 않거나 판정하지 않는 시험 작업을 거부한다. */
+/**
+ * 멀티 모듈 settings.gradle 이 포함하는 모듈. `include 'a'`·`include 'a', 'b'`·`include(':a')` 를 모두 읽고 앞의 ':' 는
+ * 떼어 낸다. 줄 머리의 `include` 만 보므로 줄 주석은 걸리지 않는다. 판정 모집단이 여기서 정해지므로, 모듈 0개나
+ * api-server 부재는 testPlanErrors 가 거부한다 — 형식을 못 읽어 모듈이 빠져도 통과하지 않게 한다.
+ */
+export function settingsModules(text) {
+  return [...text.matchAll(/^[ \t]*include\b[ \t]*\(?([^\n]*)$/gm)]
+    .flatMap(([, args]) => [...args.matchAll(/['"]([^'"]+)['"]/g)].map(([, name]) => name.replace(/^:/, '')));
+}
+
+/** 원장 밖 제외와, 돌리지 않거나 판정하지 않는 시험 작업, 모집단이 비거나 어긋난 멀티 모듈 계획을 거부한다. */
 export function testPlanErrors(plan, layout, modules = []) {
   const errors = [];
+  if (layout === 'multi-module') {
+    if (modules.length === 0) errors.push('multi-module settings.gradle declares no module');
+    else if (!modules.includes('api-server')) errors.push('multi-module settings.gradle lacks api-server');
+    for (const module of modules) if (!FEATURE.test(module)) errors.push(`module is not a top-level project: ${module}`);
+  }
   for (const task of plan.excluded) {
     if (!TEST_EXCLUSIONS[layout]?.[task]) errors.push(`test task excluded outside the ledger: ${task}`);
   }
@@ -203,8 +218,7 @@ export async function runItem(item, { root = ROOT, contracts = false, run = runC
     report.compositionHash = lock.composition?.compositionHash ?? null;
     const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
 
-    const modules = item.layout === 'multi-module'
-      ? [...readFileSync(join(artifact, 'settings.gradle'), 'utf8').matchAll(/^include\s+['"]([^'"]+)['"]/gm)].map((match) => match[1]) : [];
+    const modules = item.layout === 'multi-module' ? settingsModules(readFileSync(join(artifact, 'settings.gradle'), 'utf8')) : [];
     const plan = testPlan(item.layout, { migrationTests: item.migrationTests, modules });
     const planErrors = testPlanErrors(plan, item.layout, modules);
     if (planErrors.length) throw new Error(planErrors.join('; '));

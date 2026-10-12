@@ -41,6 +41,9 @@ export function judgeJUnit(artifact, units) {
     if (totals.failures + totals.errors > 0) errors.push(`${unit.task}: ${totals.failures + totals.errors} failed of ${totals.tests}`);
     suites.push({ task: unit.task, reports: files.length, ...totals, failedTests: failedTests.slice(0, 5) });
   }
+  // 백엔드 전체의 하한: 판정한 작업이 없거나(모든 작업이 시험 소스 없음·작업 0개) 판정한 시험이 0건이면 공집합 통과다.
+  const judgedTests = suites.reduce((sum, suite) => sum + (suite.tests ?? 0), 0);
+  if (suites.every((suite) => suite.status === 'no-test-sources') || judgedTests === 0) errors.push('backend: no JUnit test was judged');
   return { suites, errors };
 }
 

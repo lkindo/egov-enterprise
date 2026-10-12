@@ -27,8 +27,11 @@ on:
 permissions:
   contents: read
 
+# 그룹은 ref 와 무관하게 하나다. max-parallel 은 실행 하나에만 걸리므로, ref 마다 그룹을 두면 브랜치 dispatch·예약이
+# 겹칠 때 동시 잡이 10을 넘어 PR 몫 runner 까지 쓴다. 같은 그룹에서 기다리던 실행은 새 실행이 들어오면 취소된다 —
+# 앞 실행이 끝난 뒤 dispatch 한다.
 concurrency:
-  group: reusable-nightly-${{ github.ref }}
+  group: reusable-nightly
   cancel-in-progress: false
 
 jobs:

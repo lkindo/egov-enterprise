@@ -10,7 +10,7 @@ import { judgeJUnit, judgeVitest, summarize } from './reusable-nightly-judge.mjs
 import { parseWorkflowJobs, validatePinnedWorkflowUses } from './required-checks-contract.mjs';
 import {
   CONTRACT_CHECKS, catalogPlanInput, generatePreset, generateSelection, gradleTestArgs, nightlyPlan, REPORT_DIRECTORY, runItem,
-  TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
+  settingsModules, TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
 } from './reusable-nightly.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -146,6 +146,20 @@ test('test plans run every suite of the layout and exclude only the ledger tasks
   assert.deepEqual(testPlanErrors({ ...multi, tasks: [] }, 'multi-module', MODULES), ['multi-module plan must run the aggregate test task']);
 });
 
+// 멀티 모듈의 판정 모집단은 settings.gradle 에서 정해진다. 형식을 못 읽어 모듈이 빠지면 공집합 통과가 되므로 거부한다.
+test('the multi-module population reads every include form and an empty population fails', (t) => {
+  assert.deepEqual(settingsModules("rootProject.name = 'x'\n// include 'commented'\ninclude 'foundation'\r\n"
+    + "include 'business-core', \"business-app\"\ninclude(':api-server')\nincludeBuild 'tools'\n"), ['foundation', 'business-core', 'business-app', 'api-server']);
+  assert.deepEqual(testPlanErrors(testPlan('multi-module'), 'multi-module', []), ['multi-module settings.gradle declares no module']);
+  assert.deepEqual(testPlanErrors(testPlan('multi-module', { modules: ['foundation'] }), 'multi-module', ['foundation']),
+    ['multi-module settings.gradle lacks api-server']);
+  assert.deepEqual(testPlanErrors(testPlan('multi-module', { modules: ['api-server', 'app:web'] }), 'multi-module', ['api-server', 'app:web']),
+    ['module is not a top-level project: app:web']);
+  // 판정기 자신의 하한: 판정한 작업이 없거나 시험 소스가 모두 없으면 실패다.
+  assert.deepEqual(judgeJUnit(scratch(t), []).errors, ['backend: no JUnit test was judged']);
+  assert.deepEqual(judgeJUnit(scratch(t), testUnits('multi-module', MODULES)).errors, ['backend: no JUnit test was judged']);
+});
+
 test('JUnit judgment needs reports with tests and no failures for every task that kept test sources', (t) => {
   const passing = scratch(t);
   const units = fakeArtifact(passing, 'multi-module');
@@ -225,14 +239,15 @@ test('the summary fails on a missing, failed or unplanned report', (t) => {
 });
 
 /** run 의 흐름: 생성기와 명령 실행을 주입해 실제 생성 없이 판정까지 본다. */
-function fakeRun(t, { layout = 'single-module', ran = 'all', vitest = vitestReport(), contracts = [], exits = {} } = {}) {
+function fakeRun(t, { layout = 'single-module', ran = 'all', vitest = vitestReport(), contracts = [], exits = {},
+  settings = MODULES.map((module) => `include '${module}'`).join('\n') } = {}) {
   const root = scratch(t);
   const artifact = join(root, 'build/reusable-base/source/nightly-0123456789-ab');
   const commands = [];
   const generators = {
     preset: async () => {
       write(artifact, 'reusable-base-lock.json', JSON.stringify({ layout, composition: { compositionHash: 'f'.repeat(64) } }));
-      write(artifact, 'settings.gradle', `rootProject.name = 'x'\n${MODULES.map((module) => `include '${module}'`).join('\n')}\n`);
+      write(artifact, 'settings.gradle', `rootProject.name = 'x'\n${settings}\n`);
       for (const script of contracts) write(artifact, script, '');
       return artifact;
     },
@@ -272,6 +287,16 @@ test('run fails on missing suites, failing vitest, failed generation and contrac
   const red = await runItem({ ...item, layout: 'multi-module' }, { root: multi.root, run: multi.run, generators: multi.generators });
   assert.deepEqual(multi.commands[0].slice(0, 4), ['gradle', 'test', '-x', ':migration-tool:test']);
   assert.match(red.errors.join('\n'), /vitest: 1 failed files, 1 failed tests/);
+
+  // include 형식이 달라도 모듈이 빠지지 않는다 — gradle 이 0으로 끝나고 XML 이 없으면 보고서 없음으로 실패다.
+  const parenthesized = fakeRun(t, { layout: 'multi-module', ran: [], settings: "include(':foundation')\ninclude(':api-server')" });
+  const quiet = await runItem({ ...item, layout: 'multi-module' }, { root: parenthesized.root, run: parenthesized.run, generators: parenthesized.generators });
+  assert.deepEqual(quiet.errors, [':foundation:test: no JUnit report in foundation/build/test-results/test',
+    ':api-server:test: no JUnit report in api-server/build/test-results/test', 'backend: no JUnit test was judged']);
+  const unlisted = fakeRun(t, { layout: 'multi-module', settings: '// 모듈 없음' });
+  const empty = await runItem({ ...item, layout: 'multi-module' }, { root: unlisted.root, run: unlisted.run, generators: unlisted.generators });
+  assert.deepEqual(empty.errors, ['multi-module settings.gradle declares no module']);
+  assert.equal(unlisted.commands.length, 0, 'nothing runs on an empty population');
 
   // 보고서가 깨끗해도 명령이 실패로 끝났으면 실패다(보고서 뒤의 단계가 깨졌을 수 있다).
   const crashed = fakeRun(t, { exits: { gradle: 1, pnpm: 137 } });
@@ -344,6 +369,11 @@ function nightlyWorkflowErrors(source) {
   }
   if (block('permissions').trim() !== 'contents: read' || /^ {4}permissions:/m.test(text)) errors.push('nightly verification keeps contents read-only');
   if (/\bsecrets\./.test(text)) errors.push('nightly verification uses no secret');
+  // max-parallel 은 실행 하나에만 걸린다. 그룹이 하나여야 겹친 dispatch·예약이 동시 10잡 예산을 넘지 않는다.
+  const concurrency = block('concurrency').split('\n').map((line) => line.trim()).filter(Boolean);
+  if (JSON.stringify(concurrency) !== JSON.stringify(['group: reusable-nightly', 'cancel-in-progress: false']) || /^ {4}concurrency:/m.test(text)) {
+    errors.push('nightly runs share one concurrency group without cancelling the running one');
+  }
   const jobs = parseWorkflowJobs(text);
   if (JSON.stringify([...jobs.keys()]) !== JSON.stringify(['plan', 'verify', 'summary'])) errors.push('nightly jobs are plan, verify and summary');
   const verify = jobs.get('verify') ?? '';
@@ -386,6 +416,9 @@ test('the nightly workflow runs on demand only, read-only, without secrets and w
     [lf.replace('          NIGHTLY_LAYOUT: ${{ inputs.layout }}', '          NIGHTLY_LAYOUT: ${{ inputs.layout }}\n          TOKEN: ${{ secrets.DEPLOY_TOKEN }}'), /no secret/],
     [lf.replace('cache-read-only: true', 'cache-read-only: false'), /verify Gradle cache-read-only must be true/],
     [lf.replace('      max-parallel: 10', '      max-parallel: 20'), /max-parallel: 10/],
+    [lf.replace('  group: reusable-nightly\n', '  group: reusable-nightly-${{ github.ref }}\n'), /share one concurrency group/],
+    [lf.replace('  cancel-in-progress: false', '  cancel-in-progress: true'), /share one concurrency group/],
+    [lf.replace('    timeout-minutes: 60\n', '    timeout-minutes: 60\n    concurrency: verify-${{ github.ref }}\n'), /share one concurrency group/],
     [lf.replace('--item "$NIGHTLY_ITEM"', "--item '${{ toJSON(matrix) }}'"), /only through env/],
     [lf.replace('\n    if: always()\n', '\n'), /always judges every planned composition/],
     [lf.replace('- name: Retain the composition report\n        if: always()\n', '- name: Retain the composition report\n'), /keeps its report/],

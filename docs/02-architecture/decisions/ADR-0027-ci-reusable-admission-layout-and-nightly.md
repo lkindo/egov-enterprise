@@ -4,7 +4,7 @@
 - 결정일: 2026-10-12
 - 승인 범위: 사용자 결정(2026-10-12) — 사용자 구성 검증의 분류 직후 시작과 되돌림 조건, PR 의 시작 구성당 한 레이아웃·main 전수,
   T2 예산(26잡/밤·동시 10·06:17 KST·잡 60분)과 첫 녹색 수동 실행 뒤 예약, 기능 브랜치 검증의 `workflow_dispatch` 위임
-- 대체: ADR-0026 결정 1·2 중 PR 의 두 layout 부분과 결정 10 의 custom 입장 순서(나머지 결정은 유지)
+- 대체: ADR-0026 결정 1 의 PR 두 layout 부분과 결정 10 의 custom 입장 순서(custom 두 layout 을 둔 결정 2 와 나머지 결정은 유지)
 - 관련: [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md), [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md),
   [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md), [CI 가이드](../../03-guides/cicd-pipeline.md),
   [재사용 가이드 §4.2](../../03-guides/reusable-base-guide.md#42-생성물의-일반-테스트)
@@ -56,6 +56,9 @@ foundation·business-core·business-app·이관 시험은 별도 Test 작업이�
      이관 시험은 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고, 제외는 사유와 함께 원장에 둔다.
    - 판정은 작업별 JUnit XML 과 vitest JSON 이다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
    - required 가 아니다. 비밀이 없고 권한은 `contents: read`, Gradle 캐시는 읽기만 하며 동시 10잡, 잡 60분이다.
+   - 동시성 그룹은 ref 와 무관하게 하나다. `max-parallel` 은 실행 하나에만 걸리므로 그래야 브랜치 dispatch 와 예약이
+     겹쳐도 동시 10잡을 넘지 않는다. 같은 그룹에서 기다리던 실행은 새 실행이 들어오면 취소되므로, 앞 실행이 끝난 뒤
+     dispatch 한다.
    - 기능 브랜치의 무거운 직접 선택 검증은 `gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions=…` 로
      GitHub runner 에 넘긴다.
    - 예약 실행(`17 21 * * *`, 06:17 KST, 정각 회피)은 첫 녹색 수동 실행 뒤 다음 변경에서 켠다.
