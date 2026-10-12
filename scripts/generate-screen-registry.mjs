@@ -18,7 +18,8 @@
  *     술어는 그 항목을 그리는 셸(소비자 표 — 허브별·배치별)의 화면에 귀속한다. page 술어는 링크 노출이라 목적지 화면의 진입
  *     권한이 이미 말하므로, always 술어는 판정이 없으므로 귀속하지 않는다. 레이아웃 셸(LAYOUT_SHELL_FILES — 머리글·바닥글·오류
  *     화면·명령 센터)만 그리는 항목은 귀속할 화면이 없다. 그 밖의 술어가 화면 0개로 귀속되면 원본에서는 실패하고, 투영본(투영 원장이
- *     있는 생성물)에서는 소비 화면이 투영으로 지워진 것이라 실패하지 않고 기록한다(predicates 의 removedByProjection).
+ *     있는 생성물)에서는 그 항목을 그리던 셸·화면이 투영으로 지워졌다는 증거(projectionZeroAttribution)가 있을 때만 받아 기록한다
+ *     (predicates 의 removedByProjection — CLI 가 줄마다 출력한다). 증거가 없으면 투영본에서도 실패한다.
  *   · 귀속 — 파일은 가장 가까운 page 디렉터리의 화면에 귀속하고, 그 파일을 import 하는 다른 화면들에도 귀속한다
  *     (다른 라우트의 허브 클라이언트를 렌더하는 하위 화면 — /admin/help/faq 가 지식 허브 클라이언트를 연다).
  *     다음은 공용 파일이라 그것을 import 하는 화면들에만 귀속한다: src/components 등 app 밖 파일, 별칭 라우트
@@ -549,13 +550,54 @@ export function buildScreenRegistry(root = repoRoot) {
     합치지 않는다), 항목을 그리는 셸은 그 항목의 값(hub·placement)이 가리키는 소비자뿐이다. 셸의 화면은 셸이 놓인 디렉터리가 아니라 셸을
     그리는 화면이다(screensOf 의 slotConsumerShells). page·always 술어는 귀속하지 않는다(맨 위 주석).
   */
-  const projected = (() => {
+  const projectionRemoved = (() => {
     const ledgerFile = path.join(root, PROJECTION_LEDGER_PATH);
-    if (!fs.existsSync(ledgerFile)) return false;
-    const errors = projectionLedgerErrors(JSON.parse(fs.readFileSync(ledgerFile, 'utf8')));
+    if (!fs.existsSync(ledgerFile)) return null;
+    const projectionLedger = JSON.parse(fs.readFileSync(ledgerFile, 'utf8'));
+    const errors = projectionLedgerErrors(projectionLedger);
     if (errors.length > 0) throw new Error(`Projection ledger is invalid: ${errors.join('; ')}`);
-    return true;
+    return new Set(projectionLedger.removedFiles);
   })();
+  /*
+    [10단계 검토] 투영본의 귀속 0 은 그 항목을 그리던 셸·화면이 투영으로 지워졌다는 증거가 있을 때만 받는다. 원장이 있다는 것만으로는 받지
+    않는다 — 원장과 무관하게 셸이 레지스트리를 읽지 않게 되거나 셸 import 가 끊긴 생성물(잘못 이은 슬롯 소비자)이 조용히 통과한다. 다음을
+    모두 본다(원본 실행은 귀속 0 을 늘 거부한다).
+      · 소비자 표가 그 항목의 값에 적은 셸(레이아웃 셸 제외)이 하나 이상이다.
+      · 없는 셸은 원장에 있다 — 원장 밖 부재는 투영 결과가 아니다.
+      · 남은 셸은 그 기여의 레지스트리를 읽는다 — 읽지 않으면 화면이 빠진 것이 아니라 연결이 끊긴 것이다.
+      · 남은 셸을 import 하는 파일이 남지 않았다(셸이 고아다) — 남은 import 가 화면에 닿지 않으면 연결 결함이다. 그리고 원장이 화면(page)
+        파일을 하나 이상 지웠다.
+    한계: 남은 공용 셸을 원본에서 어느 화면이 그렸는지는 투영본에 없다(그 화면 파일이 없다). 화면이 남았는데 셸 import 만 끊겨(pack 마커)
+    셸이 고아가 된 경우도 통과한다 — 그 화면은 실제로 그 항목을 그리지 않으므로 귀속 0 이 사실과 맞다. 투영 밖에서 손으로 끊은 것과는
+    투영본만으로 구분하지 못한다.
+  */
+  const projectionZeroAttribution = (file, entry, readers, codes) => {
+    const fail = reason => new Error(`기여 항목의 노출 술어가 투영본에서도 어느 화면에도 귀속되지 않는다: ${file} ${entry.id} `
+      + `(${codes.join('·')}) — ${reason}`);
+    const slot = slotPathKind(file).slot;
+    const partition = slotConsumerPartition(slot);
+    const value = partition ? entry[partition.key] : null;
+    const declared = (partition ? (Object.hasOwn(partition.consumers, value) ? partition.consumers[value] : []) : slotConsumerFiles(slot))
+      .filter(shell => !LAYOUT_SHELL_FILES.includes(shell));
+    if (declared.length === 0) throw fail('그 항목을 그리는 셸이 소비자 표에 없다');
+    const removedShells = [];
+    const orphanedShells = [];
+    for (const shell of declared) {
+      if (!fs.existsSync(path.join(root, shell))) {
+        if (!projectionRemoved.has(shell)) throw fail(`셸이 없는데 투영 원장에 없다: ${shell}`);
+        removedShells.push(shell);
+        continue;
+      }
+      if (!readers.includes(shell)) throw fail(`남은 셸이 그 기여의 레지스트리를 읽지 않는다(연결이 끊겼다): ${shell}`);
+      const left = importersOf(shell);
+      if (left.length > 0) throw fail(`남은 셸을 import 하는 파일이 화면에 닿지 않는다(연결이 끊겼다): ${shell} ← ${left.join(', ')}`);
+      orphanedShells.push(shell);
+    }
+    if (orphanedShells.length > 0 && ![...projectionRemoved].some(removed => removed.startsWith(APP_PREFIX) && removed.endsWith('/page.tsx'))) {
+      throw fail(`남은 셸이 고아인데 투영 원장이 화면(page) 파일을 지우지 않았다: ${orphanedShells.join(', ')}`);
+    }
+    return { removedShells, orphanedShells };
+  };
   // 레이아웃 셸은 앱 틀이라 Next 경계 파일(layout·template·error·loading·not-found — 라우트의 오류 경계는 루트 오류 화면을 다시
   // 내보낸다)을 거쳐서만 화면에 닿아야 한다. 화면의 내용(page 와 그것이 그리는 모듈)이 셸을 그리면 그 화면의 술어가 조용히 빠지므로 거부한다.
   const routeBoundary = /\/(?:layout|template|error|global-error|loading|not-found)\.tsx$/u;
@@ -593,11 +635,11 @@ export function buildScreenRegistry(root = repoRoot) {
       }
       const routes = new Set(shells.flatMap(shell => [...screensOf(shell, `노출 술어 ${codes.join('·')}`)]));
       if (routes.size === 0) {
-        if (!projected) {
+        if (!projectionRemoved) {
           throw new Error(`기여 항목의 노출 술어가 어느 화면에도 귀속되지 않는다: ${file} ${entry.id} (${codes.join('·')}, 셸 `
             + `${readers.join(', ') || '없음'}) — 그 항목을 그리는 셸이 소비자 표에 있는지, 레이아웃 셸이면 LAYOUT_SHELL_FILES 에 있는지 본다.`);
         }
-        predicates.push({ ...record, removedByProjection: true });
+        predicates.push({ ...record, removedByProjection: true, ...projectionZeroAttribution(file, entry, readers, codes) });
         continue;
       }
       for (const route of routes) codes.forEach(code => screens.get(route).granted.get('display').add(code));
@@ -895,7 +937,7 @@ export function generateScreenRegistry(root = repoRoot, check = false) {
   return registry;
 }
 
-export function summarizeScreenRegistry({ screens, aliases, bundles = [] }) {
+export function summarizeScreenRegistry({ screens, aliases, bundles = [], predicates = [] }) {
   const labelSources = { menu: 0, 'route-ledger': 0, none: 0 };
   for (const screen of screens) labelSources[screen.labelSource ?? 'none'] += 1;
   return {
@@ -905,6 +947,14 @@ export function summarizeScreenRegistry({ screens, aliases, bundles = [] }) {
     labelSources,
     screensWithWritePermissions: screens.filter(screen => screen.permissions.some(row => row.source === 'write')).length,
     unlabeled: screens.filter(screen => screen.label === null).map(screen => screen.route),
+    predicates: {
+      attributed: predicates.filter(row => row.routes.length > 0).length,
+      layout: predicates.filter(row => row.layout).length,
+      // 투영본에서 그리던 셸·화면이 지워져 귀속 0 으로 받은 술어 — 증거와 함께 줄마다 남긴다.
+      removedByProjection: predicates.filter(row => row.removedByProjection)
+        .map(row => `${row.file} ${row.id} ${row.permissions.join('·')} (removed shells: ${row.removedShells.join(', ') || '-'}; `
+          + `orphaned shells: ${row.orphanedShells.join(', ') || '-'})`),
+    },
   };
 }
 
@@ -915,7 +965,9 @@ if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === imp
     console.log(`Screen registry: ${summary.screens} screens, ${summary.aliases} aliases `
       + `(labels menu=${summary.labelSources.menu} route-ledger=${summary.labelSources['route-ledger']} none=${summary.labelSources.none}; `
       + `write permissions on ${summary.screensWithWritePermissions} screens), ${summary.bundles} permission bundles `
-      + `${check ? 'verified' : 'written'}`);
+      + `${check ? 'verified' : 'written'}; slot predicates attributed=${summary.predicates.attributed} layout=${summary.predicates.layout} `
+      + `removed-by-projection=${summary.predicates.removedByProjection.length}`);
+    for (const row of summary.predicates.removedByProjection) console.log(`  removed by projection: ${row}`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

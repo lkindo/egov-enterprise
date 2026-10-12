@@ -14,6 +14,7 @@ import {
   generateScreenRegistry,
   readScreenRegistryArtifact,
   replacedTermFinder,
+  summarizeScreenRegistry,
   validateScreenRegistry,
 } from './generate-screen-registry.mjs';
 import { discoverConfigRedirects, discoverPageRoutes, expectedRouting } from './ui-route-capabilities-contract.mjs';
@@ -803,6 +804,19 @@ test('a permissions predicate goes to the screens that draw its item; page and a
   assert.equal(rows(registry, '/admin/things').includes('THING_EXPORT:display'), false);
 });
 
+test('an unreadable permissions predicate fails the registry instead of reading as no predicate (10단계 검토)', t => {
+  const { dir, write } = predicateFixture(t);
+  // 가져온 이름으로 적은 술어는 판독기가 읽을 수 없다 — 술어 없는 항목으로 읽혀 귀속도 '귀속 0 실패' 도 빠져나가면 안 된다.
+  write('frontend/src/extensions/thing/recipient-picker-sources.ts', [
+    "import { THING_CODES } from '@/app/things/thing-codes';",
+    'export default [',
+    "  { id: 'BOOK', label: '사물 명함', visibleWhen: { permissions: [THING_CODES.EXPORT] } },",
+    '];',
+  ].join('\n'));
+  assert.throws(() => buildScreenRegistry(dir),
+    /recipient-picker-sources\.ts:3: 기여 항목의 visibleWhen\.permissions 가 문자열 리터럴 배열이 아니다/u);
+});
+
 test('a predicate drawn only by a layout shell is recorded, and a layout shell that reaches a screen is refused', t => {
   const { dir, write } = predicateFixture(t);
   assert.ok(LAYOUT_SHELL_FILES.includes('frontend/src/app/components/layout/header.tsx'));
@@ -823,22 +837,71 @@ test('a predicate drawn only by a layout shell is recorded, and a layout shell t
   assert.equal(buildScreenRegistry(dir).predicates.find(row => row.id === 'BELL').layout, true);
 });
 
+const PICKER_HELPER = 'frontend/src/app/components/ui/recipient-picker-sources.ts';
+const REPORT_SCREEN_FILES = ['frontend/src/app/admin/reports/ReportClient.tsx', 'frontend/src/app/admin/reports/page.tsx'];
+const writeLedger = (dir, removedFiles) => fs.writeFileSync(path.join(dir, 'reusable-projection-ledger.json'), `${JSON.stringify({
+  schemaVersion: 1, authority: 'generated-reusable-projection-ledger', removedFiles: [...removedFiles].sort(),
+}, null, 2)}\n`);
+
 test('a predicate that reaches no screen fails in the source and is recorded in a projection whose ledger removed the screens', t => {
   const { dir } = predicateFixture(t);
   // 수신자 피커 도우미는 남는데(core) 그것을 그리는 화면이 빠진 생성물({addressbook} 단독)과 같은 모양이다.
   fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
   assert.throws(() => buildScreenRegistry(dir),
     /기여 항목의 노출 술어가 어느 화면에도 귀속되지 않는다: frontend\/src\/extensions\/thing\/recipient-picker-sources\.ts BOOK/u);
-  fs.writeFileSync(path.join(dir, 'reusable-projection-ledger.json'), `${JSON.stringify({
-    schemaVersion: 1, authority: 'generated-reusable-projection-ledger',
-    removedFiles: ['frontend/src/app/admin/reports/ReportClient.tsx', 'frontend/src/app/admin/reports/page.tsx'],
-  }, null, 2)}\n`);
-  assert.deepEqual(buildScreenRegistry(dir).predicates, [{
+  writeLedger(dir, REPORT_SCREEN_FILES);
+  const registry = buildScreenRegistry(dir);
+  assert.deepEqual(registry.predicates, [{
     file: 'frontend/src/extensions/thing/recipient-picker-sources.ts', id: 'BOOK', permissions: ['THING_EXPORT'], routes: [], removedByProjection: true,
+    removedShells: [], orphanedShells: [PICKER_HELPER],
   }]);
+  // 기록은 CLI 요약이 줄마다 남긴다.
+  assert.deepEqual(summarizeScreenRegistry(registry).predicates.removedByProjection, [
+    `frontend/src/extensions/thing/recipient-picker-sources.ts BOOK THING_EXPORT (removed shells: -; orphaned shells: ${PICKER_HELPER})`,
+  ]);
+  // 셸까지 지운 생성물 — 원장에 있는 셸이면 지워진 셸로 기록한다.
+  fs.rmSync(path.join(dir, PICKER_HELPER));
+  writeLedger(dir, [...REPORT_SCREEN_FILES, PICKER_HELPER]);
+  assert.deepEqual(buildScreenRegistry(dir).predicates.map(row => [row.removedShells, row.orphanedShells]), [[[PICKER_HELPER], []]]);
   // 원장 형식이 틀리면 투영본으로 보지 않고 실패한다.
   fs.writeFileSync(path.join(dir, 'reusable-projection-ledger.json'), '{"schemaVersion":1,"authority":"x","removedFiles":[]}\n');
   assert.throws(() => buildScreenRegistry(dir), /Projection ledger is invalid/u);
+});
+
+/*
+  [10단계 검토] 원장이 있다는 것만으로 귀속 0 을 받지 않는다. 그리던 화면이 남았는데 셸이 레지스트리를 읽지 않게 된 생성물, 원장에 없는
+  셸 부재, 셸을 import 하는 파일이 남았는데 화면에 닿지 않는 생성물, 원장이 화면을 하나도 지우지 않은 생성물은 투영본에서도 실패한다.
+*/
+test('a projection accepts zero attribution only with evidence that the drawing shell or screens were removed', t => {
+  const unrelated = 'frontend/src/app/admin/unrelated/Unrelated.tsx';
+  const projectionThrows = (arrange, pattern) => {
+    const { dir, write } = predicateFixture(t);
+    arrange({ dir, write });
+    assert.throws(() => buildScreenRegistry(dir), pattern);
+  };
+  // ① 화면(/admin/reports)은 남았는데 도우미가 레지스트리를 읽지 않는다 — 원장은 무관한 파일만 적었다.
+  projectionThrows(({ dir, write }) => {
+    write(PICKER_HELPER, 'export const sources = () => [];\n');
+    writeLedger(dir, [unrelated]);
+  }, /투영본에서도 .*BOOK \(THING_EXPORT\) — 남은 셸이 그 기여의 레지스트리를 읽지 않는다\(연결이 끊겼다\): frontend\/src\/app\/components\/ui\/recipient-picker-sources\.ts/u);
+  // ② 셸이 없는데 원장에 없다.
+  projectionThrows(({ dir }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    fs.rmSync(path.join(dir, PICKER_HELPER));
+    writeLedger(dir, REPORT_SCREEN_FILES);
+  }, /셸이 없는데 투영 원장에 없다: frontend\/src\/app\/components\/ui\/recipient-picker-sources\.ts/u);
+  // ③ 셸을 import 하는 파일이 남았는데 어느 화면에도 닿지 않는다.
+  projectionThrows(({ dir, write }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    write('frontend/src/components/things/Dangling.tsx',
+      "import { sources } from '@/app/components/ui/recipient-picker-sources';\nexport const Dangling = () => <>{sources().length}</>;\n");
+    writeLedger(dir, REPORT_SCREEN_FILES);
+  }, /남은 셸을 import 하는 파일이 화면에 닿지 않는다\(연결이 끊겼다\): .*recipient-picker-sources\.ts ← frontend\/src\/components\/things\/Dangling\.tsx/u);
+  // ④ 셸이 고아인데 원장이 화면(page) 파일을 지우지 않았다.
+  projectionThrows(({ dir }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    writeLedger(dir, [unrelated]);
+  }, /남은 셸이 고아인데 투영 원장이 화면\(page\) 파일을 지우지 않았다/u);
 });
 
 /*

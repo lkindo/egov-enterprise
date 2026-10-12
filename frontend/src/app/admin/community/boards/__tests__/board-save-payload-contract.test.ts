@@ -15,8 +15,9 @@
  * 전체가 생성 계약의 키 집합에 속하는지 검사한다. 새 필드를 서버 계약 없이 추가하면 red 다.
  *
  * 게시판 소유 시험이다(Phase 2 10단계 10c-1) — 종전 위치(app/actions/__tests__)는 모든 구성에 남아, 게시판을 고르지 않은 생성물에서
- * 저장 액션을 투영 원장으로 거르고 생성 계약에서 사라진 이름(BoardSaveRequestSchema)을 import 했다. 게시판 디렉터리에 두면 게시판과
- * 함께 빠지고, 게시판이 있는 구성에서 저장 액션이 없으면 그대로 실패한다.
+ * 생성 계약에서 사라질 이름(BoardSaveRequestSchema)을 import 했다. 게시판 디렉터리로 옮겨 단독 선택에서는 게시판과 함께 빠진다.
+ * 다만 core 시작 구성은 pack 제거 경로가 이 디렉터리의 시험을 남기고 저장 액션만 지운다(13a 에서 걷힌다). 그래서 대상 판정은 여전히
+ * 투영 원장으로 한다 — 원장에 없는 부재는 그대로 실패한다.
  */
 
 import { readFileSync } from 'node:fs';
@@ -24,9 +25,12 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
+import { missingOutsideLedger, readInProjection } from '@/test-utils/projection';
 
 const SOURCE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'actions', 'boardActions.ts');
-const SOURCE = readFileSync(SOURCE_PATH, 'utf8');
+// 게시판을 고르지 않은 생성물(core 시작 구성 포함)에서는 저장 액션이 투영으로 빠져 이 계약의 대상이 없다(원장으로 확인한다).
+const PROJECTED_SOURCE = readInProjection(SOURCE_PATH);
+const SOURCE = PROJECTED_SOURCE ?? '';
 
 /** 서버가 받아들이는 키 집합(생성 계약 원본). */
 const SERVER_KEYS = new Set(Object.keys(BoardSaveRequestSchema.shape));
@@ -46,7 +50,13 @@ function payloadKeys(): string[] {
   return [...new Set([...fromLiteral, ...fromAssign])];
 }
 
-describe('게시글 저장 요청 본문 계약', () => {
+describe('게시글 저장 요청 본문 계약의 대상', () => {
+  it('저장 액션은 남아 있거나 투영으로 빠졌다', () => {
+    expect(missingOutsideLedger([SOURCE_PATH])).toEqual([]);
+  });
+});
+
+if (PROJECTED_SOURCE !== undefined) describe('게시글 저장 요청 본문 계약', () => {
   it('본문 키가 전부 서버 계약(BoardSaveRequest)에 있다', () => {
     const keys = payloadKeys();
 

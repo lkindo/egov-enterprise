@@ -550,6 +550,10 @@ export function outermostFunctionAt(ts, sourceFile, line) {
  * 쓴다. 파일 단위로 합치지 않는다: 한 기여 파일이 배치가 다른 항목을 함께 둘 수 있고(게시판 → 통계: 셸 탭 둘과 요약 칸 하나), 합치면
  * 요약 칸의 권한이 셸 화면에도 붙는다. 권한은 술어 배열의 문자열 원소만 센다 — always 사유 문자열 속 권한 이름은 판정이 아니다.
  * as const·satisfies·괄호로 감싼 값도 벗겨 읽는다.
+ *
+ * <p>[10단계 검토] 읽을 수 없는 술어는 실패한다. visibleWhen 이 객체 리터럴이 아니거나(이름·호출·단축 속성), permissions 가 문자열 리터럴만
+ * 담은 배열 리터럴이 아니면(가져온 이름·펼침·조립 문자열) 술어가 없는 항목으로 읽혀 화면 목록 귀속·'원본 귀속 0 실패'·축 3 판정을 모두
+ * 조용히 빠져나간다. 경계 계약은 기여 항목 값에 기능 경로의 이름을 허용하므로 판독기가 막는다.
  */
 export function readContributionEntries(ts, sourceFile) {
   const unwrap = (node) => {
@@ -564,18 +568,31 @@ export function readContributionEntries(ts, sourceFile) {
     const value = unwrap(property(object, name)?.initializer);
     return value && ts.isStringLiteralLike(value) ? value.text : null;
   };
+  const named = (object, name) => object.properties.find((candidate) => candidate.name
+    && (ts.isIdentifier(candidate.name) || ts.isStringLiteral(candidate.name)) && candidate.name.text === name);
+  const unreadable = (node, what) => {
+    const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    return new Error(`${sourceFile.fileName}:${line + 1}: 기여 항목의 ${what} — 노출 술어는 객체 리터럴, permissions 는 문자열 리터럴 `
+      + '배열로 적는다(가져온 이름·펼침·조립 값은 판독할 수 없어 술어가 조용히 빠진다).');
+  };
   const entries = [];
   const visit = (node) => {
     if (ts.isObjectLiteralExpression(node)) {
+      const declared = named(node, 'visibleWhen');
       const rule = unwrap(property(node, 'visibleWhen')?.initializer);
-      if (rule && ts.isObjectLiteralExpression(rule)) {
+      if (declared && !(rule && ts.isObjectLiteralExpression(rule))) throw unreadable(declared, 'visibleWhen 이 객체 리터럴이 아니다');
+      if (rule) {
+        const declaredList = named(rule, 'permissions');
         const list = unwrap(property(rule, 'permissions')?.initializer);
+        if (declaredList && !(list && ts.isArrayLiteralExpression(list)
+          && list.elements.every((element) => ts.isStringLiteralLike(unwrap(element))))) {
+          throw unreadable(declaredList, 'visibleWhen.permissions 가 문자열 리터럴 배열이 아니다');
+        }
         entries.push({
           id: literal(node, 'id'),
           hub: literal(node, 'hub'),
           placement: literal(node, 'placement'),
-          permissions: list && ts.isArrayLiteralExpression(list)
-            ? list.elements.filter((element) => ts.isStringLiteralLike(element)).map((element) => element.text) : null,
+          permissions: list ? list.elements.map((element) => unwrap(element).text) : null,
           page: literal(rule, 'page'),
           always: property(rule, 'always') !== undefined,
         });

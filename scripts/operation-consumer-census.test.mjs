@@ -915,6 +915,29 @@ test('축 3 — 기여의 판정은 visibleWhen.permissions 원소뿐이다: 사
   assert.deepEqual(slotFixture(t, { rule: "({ permissions: ['THING_DELETE'] }) as const" }).analyze().ungated, []);
 });
 
+/*
+  [10단계 검토] 판독기가 읽을 수 없는 노출 술어는 실패한다. 종전에는 가져온 이름(`permissions: [CODE]`)·배열 이름·펼침·조립 문자열이 술어
+  없는 항목으로 읽혀 화면 목록 귀속과 '원본 귀속 0 실패' 를 조용히 빠져나갔고, 축 3 은 판정 없는 기여로 셌다. 판독 실패를 부채나 통과로
+  바꾸지 않는다.
+*/
+test('기여 항목의 노출 술어를 판독할 수 없으면 실패한다 — 가져온 이름·펼침·조립 값·단축 속성 (10단계 검토)', (t) => {
+  const read = (rule, entry = `{ id: 'thing', visibleWhen: ${rule} }`) => readContributionEntries(ts, ts.createSourceFile(
+    'frontend/src/extensions/things/post-actions.ts',
+    `import { CODES, CODE, RULE, rule } from '@/app/things/codes';\nexport default [${entry}];\n`,
+    ts.ScriptTarget.Latest, true, ts.ScriptKind.TS,
+  ));
+  for (const rule of ['{ permissions: [CODE] }', '{ permissions: CODES }', '{ permissions: [...CODES] }', "{ permissions: ['THING_' + 'DELETE'] }"]) {
+    assert.throws(() => read(rule), /post-actions\.ts:2: 기여 항목의 visibleWhen\.permissions 가 문자열 리터럴 배열이 아니다/u, rule);
+  }
+  for (const rule of ['RULE', 'rule()']) assert.throws(() => read(rule), /post-actions\.ts:2: 기여 항목의 visibleWhen 이 객체 리터럴이 아니다/u, rule);
+  assert.throws(() => read(null, "{ id: 'thing', visibleWhen }"), /visibleWhen 이 객체 리터럴이 아니다/u);
+  // 대조: 문자열 리터럴 배열(원소를 as const 로 감싸도)은 그대로 읽고, 술어 없는 규칙은 null 이다.
+  assert.deepEqual(read("{ permissions: ['THING_DELETE' as const, 'THING_READ'] }")[0].permissions, ['THING_DELETE', 'THING_READ']);
+  assert.equal(read("{ page: '/admin/things' }")[0].permissions, null);
+  // 축 3 도 실패한다.
+  assert.throws(() => slotFixture(t, { rule: '{ permissions: [THING_CODE] }' }).analyze(), /문자열 리터럴 배열이 아니다/u);
+});
+
 test('축 3 — 기여가 가리키는 쓰기 함수는 중간 모듈 디렉터리 밖에 있어도 기여에 귀속된다 (스크랩 슬롯 검토)', (t) => {
   // 경계 계약은 기여가 자기 기능 경로 아래 어떤 모듈이든 import 하게 둔다. 쓰기 함수를 src/queries 밖으로 옮기기만 해서 부채가
   // 사라지면 안 된다(H2). 기여가 import 하는 비화면·비서비스 모듈은 어느 디렉터리에 있든 중간 모듈로 읽는다.

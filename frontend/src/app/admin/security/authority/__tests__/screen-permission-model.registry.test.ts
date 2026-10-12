@@ -37,6 +37,13 @@ const PREDICATE_DISPLAY: ReadonlyArray<{ route: string; bulk: readonly string[];
   ...['board', 'data-usage', 'report', 'screen', 'user'].map((tab) => ({ route: `/admin/stats/${tab}`, bulk: [], cellOnly: ['SURVEY_READ_ALL'] })),
 ];
 
+/*
+ * [10단계 검토] 화면 진입 묶음 칸이 직접 고를 화면(manual)으로 남기는 화면의 예 — 원본 진입 원장의 '모두 있어야 열림' 투표 관리 두 화면
+ * (POLL_READ + POLL_READ_ALL)과 COMMENT_READ_ALL 하나로 열리는 댓글 관리다. 생성물에서는 그 기능과 함께 빠진다(core 시작 구성·결재 단독에는
+ * 하나도 없다). 남은 예만 단언하고, 원본에서는 모두 있어야 한다 — 빈 검사가 아님을 원본이 보인다.
+ */
+const MANUAL_ENTRY_EXEMPLARS: readonly string[] = ['/admin/survey/polls', '/admin/survey/polls/manage', '/admin/system/comments'];
+
 describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', () => {
   it('슬롯 노출 술어가 더한 표시 권한은 그 밖의 기능 칸에 들고, 일괄 대상은 진입·타인 자료 권한을 뺀 것이다(DEC-OPS-284)', () => {
     const present = PREDICATE_DISPLAY.filter(({ route }) => pageInProjection(route));
@@ -129,7 +136,12 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
     expect(added.plan.mode).toBe('select');
     expect(added.plan.keys.filter((key) => excluded(key.slice('OPERATION:'.length)))).toEqual([]);
     expect(new Set(added.manual.map((row) => row.key))).toEqual(new Set(gated.filter(needsExcluded).map((row) => row.key)));
-    expect(added.manual.length, '빠지는 화면이 하나도 없으면 이 정합은 빈 검사다').toBeGreaterThan(0);
+    const manualRoutes = added.manual.map((row) => row.route);
+    const exemplars = MANUAL_ENTRY_EXEMPLARS.filter((route) => pageInProjection(route));
+    if (projectionRemovedFiles().size === 0) {
+      expect(exemplars, '원본에는 직접 고를 화면의 예가 모두 있다 — 없으면 이 정합은 빈 검사다').toEqual([...MANUAL_ENTRY_EXEMPLARS]);
+    }
+    for (const route of exemplars) expect(manualRoutes, `${route} 는 직접 고를 화면이다`).toContain(route);
     expect(added.total + added.manual.length).toBe(gated.length);
     // 모든 진입 권한이 켜져 있어도 끄는 동작은 보호·타인 자료 권한을 남긴다.
     const everything = new Set(gated.flatMap((row) => row.entry!.codes).map((code) => `OPERATION:${code}`));
