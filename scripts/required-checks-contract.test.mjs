@@ -40,7 +40,10 @@ function assertImpactClassification(content) {
   assert.match(step, /HEAD="\$GITHUB_SHA"/);
   assert.match(step, /if \[ -z "\$BASE" \]/);
   assert.match(step, /git cat-file -e "\$\{BASE\}\^\{commit\}"/);
-  assert.match(step, /node scripts\/ci-change-scope\.mjs --github-output "\$GITHUB_OUTPUT"/);
+  assert.match(step, /node scripts\/ci-change-scope\.mjs --event "\$GITHUB_EVENT_NAME" --github-output "\$GITHUB_OUTPUT"/);
+  // ADR-0027: 분류기 호출마다 이벤트를 넘긴다. 빠지면 그 경로의 PR 은 조용히 두 레이아웃으로 돈다.
+  assert.deepEqual(classifierEventBindings(step), [true, true, true],
+    'every classifier call must pass the event so that only pull requests narrow the reusable layouts');
   assert.ok(step.includes('elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then'));
   assert.match(step, /--base "\$BASE"/);
   assert.match(step, /--head "\$\{HEAD:-\$GITHUB_SHA\}"/);
@@ -108,6 +111,10 @@ function assertRunnerAdmissionControl(content) {
     'frontend failure or skip must not silently suppress selected reusable validation');
   assert.equal(reusable.match(/^ {6}max-parallel:.*$/gm), null,
     'all selected reusable profiles must start together once admitted');
+  // ADR-0027: custom 두 layout 은 분류 직후의 빈 runner 를 쓴다. backend 뒤로 되돌리면 PR 의 마지막 잡이 된다.
+  const custom = jobs.get('reusable-custom') ?? '';
+  assert.match(custom, /^ {4}needs: \[change-scope\]$/m,
+    'reusable-custom must enter the idle runners right after classification');
 }
 
 function assertProductMutationLptOrder(content) {
@@ -560,6 +567,8 @@ test('integration pushes and PRs share impact mapping with full fallback for unk
     ['VERIFY_BASE=(--verify-push-base-run)', 'VERIFY_BASE=()'],
     ['      actions: read', '      actions: none'],
     ['GH_TOKEN: ${{ github.token }}', 'GH_TOKEN: '],
+    ['--event "$GITHUB_EVENT_NAME" --github-output', '--github-output'],
+    ['--event "$GITHUB_EVENT_NAME" \\\n', ''],
   ]) {
     const weakened = mutateWorkflowJob(ciContent, 'change-scope', block => block.replace(before, after));
     assert.throws(() => assertImpactClassification(weakened));
@@ -947,7 +956,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(reusableJob,
     /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
   assert.doesNotMatch(reusableJob, /verify-project-composer/);
-  assert.match(customJob, /^    needs: \[change-scope, backend-scope\]$/m);
+  assert.match(customJob, /^    needs: \[change-scope\]$/m);
   assert.match(customJob,
     /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m);
   assert.match(customJob, /^        layout: \[single-module, multi-module\]$/m);
@@ -963,6 +972,12 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
     /matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}/,
     'negative proof: replacing the impacted matrix with the old unconditional matrix must violate this contract');
 });
+
+function classifierEventBindings(job) {
+  return job.replace(/\r\n/g, '\n').replace(/\\\n\s*/g, ' ').split('\n')
+    .filter(line => line.includes('node scripts/ci-change-scope.mjs'))
+    .map(line => line.includes('--event "$GITHUB_EVENT_NAME"'));
+}
 
 test('Gradle verification commands fail on deprecation warnings', () => {
   const guardedCommands = [
@@ -1052,6 +1067,16 @@ test('short noncritical matrices reserve runner capacity without dropping valida
   ));
   assert.notEqual(throttled, ciContent.replace(/\r\n/g, '\n'));
   assert.throws(() => assertRunnerAdmissionControl(throttled), /start together/);
+  for (const replacement of [
+    '    needs: [change-scope, backend-scope]',
+    '    needs: [change-scope, frontend-scope]',
+    '    # needs: [change-scope]',
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-custom',
+      block => block.replace('    needs: [change-scope]', replacement));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /right after classification/);
+  }
 });
 
 // [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
@@ -1179,7 +1204,7 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
       checked += 1;
     }
   }
-  assert.equal(checked, 11, 'all producer Gradle cache callers must be covered');
+  assert.equal(checked, 12, 'all producer Gradle cache callers must be covered');
 });
 
 test('cache writer election remains tied to selected backend and migration jobs', () => {

@@ -1135,7 +1135,7 @@ test('scripts have no static import cycle, so every entry point evaluates each m
   (import 가 아니다) 두 생성기도 진입점으로 센다. 그래서 다섯 진입점의 import 폐포는 Node 내장 모듈만 쓴다. 그 잡은 패키지 import 를
   다른 잡 뒤에야 붉히고, 실행하지 않는 지연 로드 경로는 보지 못한다. 이 시험이 같은 제약을 운영 계약 단계에서 모든 참조 종류(정적·동적
   import, require, createRequire)에 건다. 계산된 import 는 판정할 수 없으므로 issue 로 막는다. 하한은 2026-10-11 실측(35·17·16·5·34)
-  아래다.
+  아래다. 야간 생성물 시험(reusable-nightly.yml)도 루트 설치 없이 reusable-nightly.mjs 를 돌리므로 같은 진입점으로 센다(2026-10-12 실측 38).
 */
 function scriptClosure(entry, overrides = new Map()) {
   const files = [];
@@ -1171,6 +1171,7 @@ test('the generator and the deep plan load only Node built-in modules through th
     ['scripts/generate-reusable-base-db.mjs', 12],
     ['scripts/verify-reusable-base.mjs', 4],
     ['scripts/verify-project-composer.mjs', 25],
+    ['scripts/reusable-nightly.mjs', 35],
   ]) {
     const closure = scriptClosure(entry);
     assert.ok(closure.files.length >= floor, `${entry}: the closure has only ${closure.files.length} files`);

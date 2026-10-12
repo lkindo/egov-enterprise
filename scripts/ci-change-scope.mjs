@@ -28,12 +28,32 @@ const REUSABLE_PROFILE_NAMES = REUSABLE_MANIFEST
   ? Object.keys(REUSABLE_MANIFEST.profiles)
   : DEFAULT_REUSABLE_PROFILE_NAMES;
 
-function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES) {
+const REUSABLE_LAYOUTS = Object.freeze(['multi-module', 'single-module']);
+
+/**
+ * PR 은 시작 구성마다 이 표의 레이아웃 하나만 생성·검증한다(ADR-0027). main push·수동 실행·이벤트 미상과
+ * 표에 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃 전수다 — 표가 낡아도 덮개가 줄지 않는 쪽으로 닫힌다.
+ * PR 이 놓친 레이아웃 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의 E2E 와 같은 수용 위험).
+ * 매니페스트 v2(11단계)에서 이 표를 시작 구성 선언으로 옮긴다.
+ */
+export const PR_REUSABLE_LAYOUT = Object.freeze({
+  // 제거가 가장 많고 단일 모듈 변환이 함께 일어나는 경로다.
+  core: 'single-module',
+  collaboration: 'multi-module',
+  // Java 제거가 0이라 멀티 모듈 생성물은 backend-scope·frontend-scope 와 겹친다.
+  demo: 'single-module',
+});
+
+export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES, { event = '', prLayouts = PR_REUSABLE_LAYOUT } = {}) {
+  const pullRequest = event === 'pull_request';
   return {
-    include: profileNames.flatMap(profile => [
-      { profile, layout: 'multi-module' },
-      { profile, layout: 'single-module' },
-    ]),
+    include: profileNames.flatMap(profile => {
+      const narrowed = pullRequest && Object.hasOwn(prLayouts, profile) ? prLayouts[profile] : null;
+      if (narrowed !== null && !REUSABLE_LAYOUTS.includes(narrowed)) {
+        throw new Error(`unknown PR reusable layout for ${profile}: ${narrowed}`);
+      }
+      return (narrowed ? [narrowed] : REUSABLE_LAYOUTS).map(layout => ({ profile, layout }));
+    }),
   };
 }
 
@@ -259,7 +279,7 @@ function selectedReusableProfiles(files, { full, docsOnly }) {
  * Unknown or empty input deliberately selects the full pipeline. A false
  * positive costs runner time; a false negative silently removes evidence.
  */
-export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
+export function classifyChangedFiles(changedFiles, { forceFull = false, event = '' } = {}) {
   const files = [...new Set(changedFiles.map(normalizeFile).filter(Boolean))].sort();
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = forceFull || files.length === 0 || unknownFiles.length > 0;
@@ -297,7 +317,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false } = {}) {
     reusable: reusableProfiles.length > 0,
     reusableCustom,
     reusableProfiles,
-    reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined),
+    reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event }),
   };
 }
 
@@ -363,10 +383,11 @@ export async function pushBaseWasVerified({ sha, repository, token, workflow = '
 
 function parseArgs(argv) {
   const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false,
-    verifyPushBaseRun: false };
+    verifyPushBaseRun: false, event: '' };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--file') options.files.push(argv[++index] ?? '');
+    else if (value === '--event') options.event = argv[++index] ?? '';
     else if (value === '--base') options.base = argv[++index] ?? '';
     else if (value === '--head') options.head = argv[++index] ?? 'HEAD';
     else if (value === '--github-output') options.githubOutput = argv[++index] ?? '';
@@ -396,7 +417,7 @@ async function main() {
     : options.stdin
       ? (await import('node:fs')).readFileSync(0, 'utf8').split(/\r?\n/).filter(Boolean)
       : changedFilesFromGit(options.base, options.head);
-  const result = classifyChangedFiles(files, { forceFull: options.forceFull });
+  const result = classifyChangedFiles(files, { forceFull: options.forceFull, event: options.event });
   const outputs = githubOutputs(result);
 
   if (options.field) {

@@ -249,7 +249,8 @@ function validatePipeline(workflow, manifest) {
     /^          if-no-files-found: error$/m,
   ]) if (!expected.test(job)) errors.push(`missing reusable pipeline contract: ${expected}`);
   for (const expected of [
-    /^    needs: \[change-scope, backend-scope\]$/m,
+    // ADR-0027: custom 두 layout 은 분류 직후의 빈 runner 에서 시작한다.
+    /^    needs: \[change-scope\]$/m,
     /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m,
     /^      fail-fast: false$/m,
     /^        layout: \[single-module, multi-module\]$/m,
@@ -296,7 +297,7 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
     ['wrong artifact', value => value.replace('build/project-composer/jobs/*/report.json', 'build/omitted-report.json')],
     ['advisory artifact', value => value.replace('if-no-files-found: error', 'if-no-files-found: warn')],
     ['advisory job', value => value.replace('    steps:', '    continue-on-error: true\n    steps:')],
-    ['detached admission', value => value.replace('    needs: [change-scope, backend-scope]', '    needs: [change-scope]')],
+    ['delayed admission', value => value.replace('    needs: [change-scope]', '    needs: [change-scope, backend-scope]')],
     ['ignores cancellation', value => value.replace('    if: "!cancelled()', '    if: "always()')],
   ]) {
     const changedJob = mutate(customJob);
