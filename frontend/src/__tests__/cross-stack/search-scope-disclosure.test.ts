@@ -72,7 +72,7 @@ const AXES: Axis[] = [
   },
   {
     screen: 'frontend/src/app/admin/operation/rewards/RewardManageClient.tsx',
-    backend: 'business-app/src/main/java/nuri/business/domain/operation/RewardManageRepository.java',
+    backend: 'business-app/src/main/java/nuri/business/domain/reward/RewardManageRepository.java',
     serverFields: ['findByRwrdNmContaining'],
     forbiddenInLabel: ['대상자', '수상자'],
     expectedLabel: '포상 명칭으로 검색',
@@ -89,7 +89,7 @@ const AXES: Axis[] = [
 /** 서버가 실제로 두 필드를 보는 양성 사례. 이 화면은 '상세 내용' 을 약속해도 정직하다. */
 const HONEST_TWO_FIELD_AXIS = {
   screen: 'frontend/src/app/admin/operation/events/EventManagementClient.tsx',
-  backend: 'business-app/src/main/java/nuri/business/domain/operation/EventInfoRepository.java',
+  backend: 'business-app/src/main/java/nuri/business/domain/event/EventInfoRepository.java',
   serverFields: ['evntNm', 'evntCn'],
   expectedLabel: '행사 명칭 · 상세 내용',
 };

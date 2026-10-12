@@ -56,7 +56,8 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
   assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
   // 약식 전자결재는 행사·포상 없이 생성된다(DEC-OPS-272). 그 반대는 코드 참조로 남는다.
   assert.deepEqual(notesFor(['informalsanction']), []);
-  assert.equal(notesFor(['operation'])[0].removal, '이 기능을 빼려면 행사·외부인사·포상을 해제하세요.');
+  assert.equal(notesFor(['reward'])[0].removal, '이 기능을 빼려면 포상을 해제하세요.');
+  assert.deepEqual(notesFor(['event']), []);
   // 대시보드 하나만 골라도 종전 사유는 1,600자를 넘었다. 화면 문장에는 영문(클래스명·id·경위 괄호)이 없다.
   for (const item of notesFor(['dashboard'])) {
     assert.doesNotMatch([item.path, item.removal, ...item.steps.map(step => step.text)].join(' '), /[A-Za-z()]/, item.domain);
@@ -415,10 +416,10 @@ test('a selection that violates a required foreign key is explained in the plan 
   // 실제 카탈로그의 단일 선택은 모두 생성할 수 있다(Phase 0c). 위반 경로는 요구 관계 하나를 지운 합성 카탈로그로 고정한다.
   const loadCatalog = path => {
     const { catalogHash, ...body } = loadProjectComposerCatalog(path);
-    body.capabilities.find(capability => capability.id === 'operation').requires = [];
+    body.capabilities.find(capability => capability.id === 'reward').requires = [];
     return { ...body, catalogHash: compositionDigest(body) };
   };
-  const blocked = { ...recipe(), project: { name: 'engine-contract-blocked' }, selection: { domains: ['operation'] } };
+  const blocked = { ...recipe(), project: { name: 'engine-contract-blocked' }, selection: { domains: ['reward'] } };
   const plan = createComposerEngine({ loadCatalog }).plan(blocked);
   assert.equal(plan.blockers.length, 1);
   assert.match(plan.blockers[0], /tb_rward_manage 테이블이 .+의 tb_ifml_atrz_info 테이블을 외래 키로 참조합니다\. .+ 함께 선택해야/);

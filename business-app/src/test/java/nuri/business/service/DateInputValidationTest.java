@@ -2,9 +2,9 @@ package nuri.business.service;
 
 import jakarta.validation.Validation;
 import nuri.business.service.schedule.dto.ScheduleDto;
-import nuri.business.service.operation.dto.EventInfoDto;
-import nuri.business.service.operation.dto.EventInfoRequest;
-import nuri.business.service.operation.dto.ExternalHrDto;
+import nuri.business.service.event.dto.EventInfoDto;
+import nuri.business.service.event.dto.EventInfoRequest;
+import nuri.business.service.event.dto.ExternalHrDto;
 import nuri.business.service.survey.dto.SurveyInfoDto;
 import nuri.business.service.survey.dto.OnlinePollManageDto;
 import nuri.business.service.survey.dto.OnlinePollManageRequest;

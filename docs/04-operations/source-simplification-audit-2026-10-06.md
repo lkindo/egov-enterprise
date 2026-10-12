@@ -81,7 +81,7 @@ Git 추적 파일 **3,547개**를 목록화했다. Java·TS/TSX·JS/MJS/MTS·CSS
 
 ### BE-06 · P2 · 미사용 서비스 메서드·빈 구현 — 퇴역 후보
 
-[ScheduleService.java](../../business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java) 170행 `selectEmpLyrPopup()`는 항상 빈 목록을 반환하며 직접 소비자도 없다. [NotificationService.java](../../business-app/src/main/java/nuri/business/service/notification/NotificationService.java) 139·145행의 두 목록 메서드와 [PopupService.java](../../business-app/src/main/java/nuri/business/service/system/content/popup/PopupService.java) 126행 `getPopupWhiteList()`는 테스트만 호출한다.
+[ScheduleService.java](../../business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java) 170행 `selectEmpLyrPopup()`는 항상 빈 목록을 반환하며 직접 소비자도 없다. [NotificationService.java](../../business-app/src/main/java/nuri/business/service/notification/NotificationService.java) 139·145행의 두 목록 메서드와 [PopupService.java](../../business-app/src/main/java/nuri/business/service/promotion/popup/PopupService.java) 126행 `getPopupWhiteList()`는 테스트만 호출한다.
 
 - 정비: 필요한 기능이 아니라면 메서드와 전용 의존을 걷는다. 미사용 메서드의 `findAll()`을 현재 사용자 요청의 성능 장애라고 주장하지 않는다.
 - 검증: 영향 서비스 테스트. Popup 메서드는 `AttachmentSourceRegistryLinterTest`의 exact census에도 있으므로 실제 삭제와 관련 목록 정합을 함께 처리한다.

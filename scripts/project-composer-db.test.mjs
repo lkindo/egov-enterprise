@@ -141,7 +141,7 @@ test('migrated cross-domain foreign keys must equal the declared required and op
       { id: 'board', database: { tables: ['tb_bbs_item', 'tb_tmplt_info'] } },
       { id: 'comment', database: { tables: ['tb_bbs_comment'] } },
       { id: 'template', database: { tables: ['tb_tmplt_info'] } },
-      { id: 'system', database: { tables: ['tb_cmnty_info'] } },
+      { id: 'community', database: { tables: ['tb_cmnty_info'] } },
     ],
     requiredForeignKeys: [{ name: 'fk_comment_item', childTable: 'tb_bbs_comment', parentTable: 'tb_bbs_item' }],
     optionalForeignKeys: [{ name: 'fk_item_cmnty', childTable: 'tb_bbs_item', parentTable: 'tb_cmnty_info' }],

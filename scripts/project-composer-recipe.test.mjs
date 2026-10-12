@@ -18,7 +18,7 @@ function catalogWithoutRequires(source, id) {
   body.capabilities.find(capability => capability.id === id).requires = [];
   return { ...body, catalogHash: compositionDigest(body) };
 }
-const loose = catalogWithoutRequires(catalog, 'operation');
+const loose = catalogWithoutRequires(catalog, 'reward');
 
 const recipe = selection => ({ schemaVersion: 1, project: { name: 'agency-project' }, sourceRef: 'v1.0.0', selection,
   database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
@@ -31,10 +31,15 @@ test('required cross-domain foreign keys are reported without auto-inclusion whe
   const survey = resolveProjectRecipe(recipe({ domains: ['survey'] }), catalog);
   assert.ok(!survey.resolvedDomains.includes('board'), 'survey alone must not pull the board domain');
   // 요구 관계가 빠지면 해석기는 부모를 자동으로 넣지 않고 위반으로 보고한다.
-  const operation = resolveProjectRecipe(recipe({ domains: ['operation'] }), loose);
-  assert.deepEqual(operation.foreignKeyViolations.map(row => row.name), ['fk_tb_rward_manage_tb_ifml_atrz_info']);
-  assert.ok(!operation.resolvedDomains.includes('informalsanction'), 'a violation must not silently pull the parent domain');
-  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['operation', 'informalsanction'] }), loose).foreignKeyViolations, []);
+  const reward = resolveProjectRecipe(recipe({ domains: ['reward'] }), loose);
+  assert.deepEqual(reward.foreignKeyViolations.map(row => row.name), ['fk_tb_rward_manage_tb_ifml_atrz_info']);
+  assert.ok(!reward.resolvedDomains.includes('informalsanction'), 'a violation must not silently pull the parent domain');
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['reward', 'informalsanction'] }), loose).foreignKeyViolations, []);
+  // 행사·포상을 나눈 뒤(DEC-OPS-273) 행사는 혼자 풀리고, 포상만 결재를 끌어온다.
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['event'] }), catalog).resolvedDomains, ['event']);
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['reward'] }), catalog).resolvedDomains, ['informalsanction', 'reward']);
+  // 배너·팝업과 프런트 전용 시연 화면도 혼자 풀린다.
+  for (const id of ['promotion', 'showcase']) assert.deepEqual(resolveProjectRecipe(recipe({ domains: [id] }), catalog).resolvedDomains, [id], id);
   for (const preset of catalog.presets) assert.deepEqual(resolveProjectRecipe(recipe({ preset: preset.id }), catalog).foreignKeyViolations, [], preset.id);
 });
 
@@ -64,7 +69,9 @@ test('core plus board and survey includes required UI/domain closure without mai
   assert.equal(plan.profile, 'custom');
   assert.deepEqual(plan.selectedDomains, ['board', 'survey']);
   // 게시판은 스크랩 없이 생성된다(DEC-OPS-272). 스크랩이 빠지니 쪽지·스크랩 공동 화면을 쓰는 쪽지도 들어오지 않는다.
-  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'help', 'survey', 'system', 'template']);
+  // 기능 분할(DEC-OPS-273) 뒤 지식 허브가 끌어오는 것은 커뮤니티뿐이다 — 배너·팝업·시연 화면은 들어오지 않는다.
+  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'community', 'help', 'survey', 'template']);
+  for (const absent of ['promotion', 'showcase']) assert.ok(!plan.resolvedDomains.includes(absent), absent);
   for (const absent of ['mail', 'sms', 'schedule', 'report', 'scrap', 'note']) assert.ok(!plan.resolvedDomains.includes(absent));
   assert.ok(!plan.tables.includes('tb_email_dsptch_manage'));
   assert.ok(plan.tables.includes('tb_srvy_info') && plan.tables.includes('tb_tmplt_info'));
@@ -101,7 +108,7 @@ test('empty/core selection, each independent capability, shared resources and pr
   }
   const collaboration = resolveProjectRecipe(recipe({ preset: 'collaboration' }), catalog);
   assert.ok(!collaboration.resolvedDomains.includes('help'));
-  assert.ok(!collaboration.resolvedDomains.includes('system'));
+  assert.ok(!collaboration.resolvedDomains.includes('community'));
   assert.equal(collaboration.optionalForeignKeys[0].name, 'fk_tb_bbs_master_tb_cmnty_info');
 });
 
@@ -152,7 +159,7 @@ test('canonical plans reject caller-injected tables, permission changes and stal
 test('a plan reports each declared integration whose partner is absent, without including it or blocking generation', () => {
   const degraded = selection => resolveProjectRecipe(recipe(selection), catalog).degraded.map(edge => `${edge.from}>${edge.to}`);
   assert.deepEqual(degraded({ preset: 'core' }), ['core>notification']);
-  assert.deepEqual(degraded({ preset: 'collaboration' }), ['board>system', 'mail>addressbook', 'sms>addressbook']);
+  assert.deepEqual(degraded({ preset: 'collaboration' }), ['board>community', 'mail>addressbook', 'sms>addressbook']);
   assert.deepEqual(degraded({ preset: 'demo' }), []);
   assert.deepEqual(degraded({ domains: [] }), ['core>notification']);
   assert.deepEqual(degraded({ domains: ['mail'] }), ['core>notification', 'mail>addressbook', 'mail>notification']);
@@ -262,7 +269,7 @@ test('both generators resolve a preset profile through the same resolver the com
   }
   const single = generator({ profile: 'core', backendLayout: 'single-module' });
   assert.throws(() => generator({ supplied: single, backendLayout: 'multi-module', layoutExplicit: true }), /layout differs/);
-  const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['operation'] }), sourceRef: sourceCommit }, loose), sourceCommit };
+  const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['reward'] }), sourceRef: sourceCommit }, loose), sourceCommit };
   assert.throws(() => resolveGeneratorComposition({ catalog: loose, sourceCommit, resolveSourceReference, supplied }),
     error => error.code === 'FK_CLOSURE' && /fk_tb_rward_manage_tb_ifml_atrz_info/.test(error.message));
   assert.throws(() => generator({ profile: 'custom' }), /Unknown project preset/);

@@ -134,6 +134,9 @@ export function writeProjectedManifest(output, manifest, profileName, profile, d
       composition?.profile === 'custom' ? {
         ...pack,
         backend: { ...pack.backend, appDomains: (pack.backend?.appDomains ?? []).filter(domain => composition.resolvedDomains.includes(domain)),
+          // 프런트 전용 기능 목록도 선택으로 거른다. 남기면 생성물 census 가 appDomains 에 없는 선언으로 붉다.
+          ...(pack.backend?.frontendOnlyDomains ? { frontendOnlyDomains: pack.backend.frontendOnlyDomains
+            .filter(domain => composition.resolvedDomains.includes(domain)) } : {}),
           ...(pack.backend?.domainSupportFiles ? { domainSupportFiles: Object.fromEntries(Object.entries(pack.backend.domainSupportFiles)
             .filter(([domain]) => composition.resolvedDomains.includes(domain))) } : {}) },
         database: { ...pack.database, tables: pack.database.tables.filter(table => composition.tables.includes(table)),

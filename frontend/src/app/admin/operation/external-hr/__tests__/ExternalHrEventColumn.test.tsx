@@ -61,8 +61,8 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
 vi.mock('@/services/foundation/operation/eventService', () => ({
   eventService: { getEvents: (...args: unknown[]) => mocks.getEvents(...args) },
 }));
-vi.mock('@/services/foundation/operation/OperationAdminService', () => ({
-  operationAdminService: {
+vi.mock('@/services/foundation/operation/ExternalHrAdminService', () => ({
+  externalHrAdminService: {
     getExternalHrList: (...args: unknown[]) => mocks.getExternalHrList(...args),
     createExternalHr: (...args: unknown[]) => mocks.createExternalHr(...args),
   },

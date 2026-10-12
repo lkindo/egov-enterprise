@@ -515,7 +515,7 @@ test('slot registries: the source registry is the render of its contributions an
     const text = inputs.original(join(frontendRoot, slotRegistryPath(slot))).replace(/\r\n/g, '\n');
     assert.equal(text, renderSlotRegistry(slot, owners), `${slotRegistryPath(slot)} is the render of ${owners.join(', ')} (npm run slots:generate)`);
   }
-  // 프리셋 demo 와 '기능 19개 전체' 직접 선택은 모든 기능을 남긴다. 투영이 모든 프런트 모듈 파일에서 원본과 같아야 한다(CRLF 정규화).
+  // 프리셋 demo 와 '기능 22개 전체' 직접 선택은 모든 기능을 남긴다. 투영이 모든 프런트 모듈 파일에서 원본과 같아야 한다(CRLF 정규화).
   const everyFeature = inputs.catalog.capabilities.map(capability => capability.id);
   for (const selection of [{ preset: 'demo' }, { domains: everyFeature }]) {
     const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'slot-parity' }, sourceRef: 'main', selection,

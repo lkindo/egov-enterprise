@@ -1,7 +1,7 @@
 package nuri.api.schema;
 
-import nuri.business.service.operation.EventInfoService;
-import nuri.business.service.operation.dto.EventInfoDto;
+import nuri.business.service.event.EventInfoService;
+import nuri.business.service.event.dto.EventInfoDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;

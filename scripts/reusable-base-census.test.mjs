@@ -218,6 +218,40 @@ test('rejects duplicate physical sequence ownership', () => {
   assert.ok(result.errors.some((error) => error.includes(`DB sequence '${duplicate}'`)));
 });
 
+/*
+ * 프런트 전용 기능(DEC-OPS-273): 시연 화면은 business-app 소스 없이 manifest 도메인으로 둔다. 목록이 서랍이 되지 않도록
+ * 목록에서 빠지거나, 같은 pack 의 appDomains 에 없거나, 그 도메인에 main·test 소스가 생기면 붉다.
+ */
+test('frontend-only domains are accepted without source and refused in every other direction', () => {
+  assert.deepEqual(validateReusableBase(baseline.manifest, baseline.repository).errors, []);
+  assert.deepEqual(baseline.manifest.packs.demo.backend.frontendOnlyDomains, ['showcase']);
+
+  const undeclared = structuredClone(baseline.manifest);
+  delete undeclared.packs.demo.backend.frontendOnlyDomains;
+  assert.ok(validateReusableBase(undeclared, baseline.repository).errors
+    .some((error) => error.includes("manifest domain 'showcase'에 대응하는 business-app domain 소스가 없다")));
+
+  const sourced = structuredClone(baseline.repository);
+  sourced.appDomains = [...sourced.appDomains, 'showcase'].sort();
+  assert.ok(validateReusableBase(baseline.manifest, sourced).errors
+    .some((error) => error.includes("프런트 전용 도메인 'showcase'에 business-app 소스가 있다")));
+
+  const tested = structuredClone(baseline.repository);
+  tested.testSources = [...tested.testSources, 'business-app/src/test/java/nuri/business/service/showcase/ProbeTest.java'];
+  assert.ok(validateReusableBase(baseline.manifest, tested).errors
+    .some((error) => error.includes("프런트 전용 도메인 'showcase'에 business-app 소스가 있다")));
+
+  const sourcedDomain = structuredClone(baseline.manifest);
+  sourcedDomain.packs.demo.backend.frontendOnlyDomains = ['promotion', 'showcase'];
+  assert.ok(validateReusableBase(sourcedDomain, baseline.repository).errors
+    .some((error) => error.includes("프런트 전용 도메인 'promotion'에 business-app 소스가 있다")));
+
+  const misplaced = structuredClone(baseline.manifest);
+  misplaced.packs.collaboration.backend.frontendOnlyDomains = ['showcase'];
+  assert.ok(validateReusableBase(misplaced, baseline.repository).errors
+    .some((error) => error.includes("프런트 전용 도메인 'showcase'이 같은 pack 'collaboration'의 appDomains 에 없다")));
+});
+
 test('rejects a source root outside domain/service ownership', () => {
   const repository = structuredClone(baseline.repository);
   repository.unexpectedAppSourceRoots.push('repository');

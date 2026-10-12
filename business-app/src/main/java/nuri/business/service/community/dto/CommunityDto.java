@@ -1,0 +1,74 @@
+package nuri.business.service.community.dto;
+
+import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import nuri.business.domain.community.Community;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import java.time.format.DateTimeFormatter;
+
+@Data
+@Builder
+@NoArgsConstructor(onConstructor_ = @com.fasterxml.jackson.annotation.JsonCreator)
+// Use setters for requests; response-only primitive flags must never become creator inputs.
+@AllArgsConstructor(onConstructor_ = @com.fasterxml.jackson.annotation.JsonCreator(mode = com.fasterxml.jackson.annotation.JsonCreator.Mode.DISABLED))
+public class CommunityDto {
+    private Long cmntySn;
+    // [2026-09-06 DEC-OPS-037] 제품 규칙(컬럼은 nullable) — 이름 없는 커뮤니티는 목록·포틀릿에서 빈칸이 된다.
+    @NotBlank
+    @Size(max = 300)
+    private String cmntyNm;
+    @Size(max = 4000)
+    private String cmntyIntroCn;
+    @Size(max = 12)
+    private String regSeCd;
+    private String regSeCdNm;
+    @Size(max = 20)
+    private String tmpltId;
+    private String tmpltNm;
+    @Schema(description = "사용 여부", allowableValues = {"Y", "N"})
+    @Size(max = 1)
+    @NotBlank
+    @Pattern(regexp = "^(?:Y|N)$")
+    private String useYn;
+    @JsonIgnore
+    @Schema(hidden = true)
+    private String frstRgtrId;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean createdByMe;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean editable;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private boolean deletable;
+    /** [2026-10-01 결정 20] 승인을 기다리는 가입 신청 수 — 관리 목록에만 싣고 사용자 목록에서는 null 이다. */
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, nullable = true, types = {"integer", "null"})
+    private Long pendingMemberCount;
+    // [2026-09-26 DIP V2] 등록자명(frstRegisterNm)은 from() 이 채우지 않아 늘 null 이라 걷었다.
+    private String crtDt;
+
+    public static CommunityDto from(Community community) {
+        if (community == null)
+            return null;
+        return CommunityDto.builder()
+                .cmntySn(community.getCmntySn())
+                .cmntyNm(community.getCmntyNm())
+                .cmntyIntroCn(community.getCmntyIntroCn())
+                .regSeCd(community.getRegSeCd())
+                .tmpltId(community.getTmpltId())
+                .useYn(community.getUseYn())
+                .frstRgtrId(community.getFrstRgtrId())
+                .crtDt(community.getCrtDt() != null
+                        ? community.getCrtDt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        : null)
+                .build();
+    }
+}

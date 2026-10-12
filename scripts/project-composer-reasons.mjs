@@ -15,22 +15,22 @@ const WORK_HUB = '업무 보고와 일정이 나의 업무 화면 하나를 함�
 
 export const REQUIRES_USER_REASONS = Object.freeze({
   'board>comment': '게시글 화면이 댓글을 함께 다룹니다.',
+  'board>community': KNOWLEDGE_HUB,
   'board>help': KNOWLEDGE_HUB,
-  'board>system': KNOWLEDGE_HUB,
   'comment>board': '댓글은 게시글에 달립니다.',
+  'community>board': KNOWLEDGE_HUB,
+  'community>help': KNOWLEDGE_HUB,
+  'community>template': '커뮤니티를 만들 때 템플릿을 고릅니다.',
   'dashboard>board': '실시간 대시보드가 오늘 올라온 게시글 수를 보여 줍니다.',
   'dashboard>notification': '실시간 대시보드가 읽지 않은 알림 수를 보여 줍니다.',
   'help>board': KNOWLEDGE_HUB,
-  'help>system': KNOWLEDGE_HUB,
+  'help>community': KNOWLEDGE_HUB,
   'note>scrap': COLLABORATION_HUB,
-  'operation>informalsanction': '포상 데이터가 결재 문서 표를 참조합니다.',
   'report>schedule': WORK_HUB,
+  'reward>informalsanction': '포상 데이터가 결재 문서 표를 참조합니다.',
   'schedule>report': WORK_HUB,
   'scrap>board': '스크랩은 게시글을 저장해 둡니다.',
   'scrap>note': COLLABORATION_HUB,
-  'system>board': KNOWLEDGE_HUB,
-  'system>help': KNOWLEDGE_HUB,
-  'system>template': '커뮤니티를 만들 때 템플릿을 고릅니다.',
 });
 
 const pairKey = (from, to) => `${from}>${to}`;

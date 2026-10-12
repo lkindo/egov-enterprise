@@ -2,7 +2,7 @@ package nuri.api.controller;
 
 import nuri.api.support.ApiHttpIntegrationTest;
 import nuri.business.security.annotation.WithMockCustomUser;
-import nuri.business.service.operation.EventInfoService;
+import nuri.business.service.event.EventInfoService;
 import nuri.business.service.survey.OnlinePollService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

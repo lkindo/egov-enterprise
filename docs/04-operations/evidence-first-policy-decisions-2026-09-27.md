@@ -119,7 +119,7 @@
 
 ## R4-6 — 행사 승인 필드의 의미
 
-현재 근거: [EventInfoService](../../business-app/src/main/java/nuri/business/service/operation/EventInfoService.java), [EventInfoRequest](../../business-app/src/main/java/nuri/business/service/operation/dto/EventInfoRequest.java), [EventInfoDto](../../business-app/src/main/java/nuri/business/service/operation/dto/EventInfoDto.java), [EventManagementClient](../../frontend/src/app/admin/operation/events/EventManagementClient.tsx).
+현재 근거: [EventInfoService](../../business-app/src/main/java/nuri/business/service/event/EventInfoService.java), [EventInfoRequest](../../business-app/src/main/java/nuri/business/service/event/dto/EventInfoRequest.java), [EventInfoDto](../../business-app/src/main/java/nuri/business/service/event/dto/EventInfoDto.java), [EventManagementClient](../../frontend/src/app/admin/operation/events/EventManagementClient.tsx).
 
 | 주체 | 대상 × 동작 | 현재 결과 |
 |---|---|---|

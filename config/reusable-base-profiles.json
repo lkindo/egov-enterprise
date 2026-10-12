@@ -36,7 +36,7 @@
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
-          "reason": "system 도메인의 커뮤니티 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
+          "reason": "커뮤니티 기능의 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java",
@@ -150,8 +150,8 @@
         "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/notification/NotificationApiControllerTest.java",
+        "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",
-        "api-server/src/test/java/nuri/api/controller/business/operation/OperationApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/poll/PollApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
@@ -210,7 +210,7 @@
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
-          "reason": "system 도메인의 커뮤니티 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
+          "reason": "커뮤니티 기능의 승인·반려 경합 회귀. demo pack 제외 시 커뮤니티 서비스와 회원 테이블이 없어 검사 대상 자체가 없다."
         },
         {
           "file": "api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java",
@@ -283,8 +283,8 @@
         "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/memoreport/MemoReportApiControllerTest.java",
+        "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",
-        "api-server/src/test/java/nuri/api/controller/business/operation/OperationApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/operation/RewardManageApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/poll/PollApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
@@ -497,15 +497,21 @@
       "backend": {
         "appDomains": [
           "addressbook",
+          "community",
+          "event",
           "help",
           "informalsanction",
           "isg",
           "memoreport",
-          "operation",
+          "promotion",
           "report",
+          "reward",
           "schedule",
-          "system",
+          "showcase",
           "template"
+        ],
+        "frontendOnlyDomains": [
+          "showcase"
         ],
         "domainSupportFiles": {
           "memoreport": [
@@ -513,7 +519,7 @@
             "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
             "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
           ],
-          "system": [
+          "community": [
             "foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java",
             "business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java",
             "business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java"
@@ -563,7 +569,8 @@
           "src/services/business/user/addressbook",
           "src/services/business/user/approval",
           "src/services/business/user/help",
-          "src/services/foundation/operation/OperationAdminService.ts",
+          "src/services/foundation/operation/ExternalHrAdminService.ts",
+          "src/services/foundation/operation/RewardAdminService.ts",
           "src/services/foundation/operation/eventService.ts",
           "src/services/foundation/operation/__tests__/eventService.test.ts",
           "src/services/foundation/system/BannerAdminService.ts",

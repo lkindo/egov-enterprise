@@ -2,9 +2,9 @@ package nuri.api.controller.business.community;
 
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
-import nuri.business.service.system.content.community.CommunityService;
-import nuri.business.service.system.content.community.dto.CommunityDto;
-import nuri.business.service.system.content.community.dto.CommunityMembershipDto;
+import nuri.business.service.community.CommunityService;
+import nuri.business.service.community.dto.CommunityDto;
+import nuri.business.service.community.dto.CommunityMembershipDto;
 import nuri.business.service.board.BoardMasterService;
 import nuri.business.service.board.dto.CommunityBoardDto;
 import io.swagger.v3.oas.annotations.Operation;

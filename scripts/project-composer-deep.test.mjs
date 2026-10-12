@@ -202,12 +202,12 @@ test('every generator failure point becomes a labelled blocker before Docker sta
 
   // 선언이 요구를 빠뜨리면 선택한 기능의 화면이 공유 import 연쇄로 지워진다. 생존 검사가 지워질 파일을 밝힌다.
   const broken = structuredClone(catalog);
-  const system = broken.capabilities.find(row => row.id === 'system');
-  assert.ok(system.requires.some(edge => edge.domain === 'template'), 'system -> template must exist');
-  system.requires = system.requires.filter(edge => edge.domain !== 'template');
+  const community = broken.capabilities.find(row => row.id === 'community');
+  assert.ok(community.requires.some(edge => edge.domain === 'template'), 'community -> template must exist');
+  community.requires = community.requires.filter(edge => edge.domain !== 'template');
   const { catalogHash: ignored, ...body } = broken;
   broken.catalogHash = compositionDigest(body);
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ domains: ['system'] }, broken), files });
+  deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ domains: ['community'] }, broken), files });
   const lost = deep.blockers.find(blocker => blocker.code === 'SOURCE_SURVIVAL');
   assert.ok(lost?.files.length > 0, JSON.stringify(codes(deep)));
   // 잃은 소스는 계획이 지우는 파일이거나, 목적지(지식 허브)가 지워져 거버넌스 수렴으로 함께 빠지는 리다이렉트 화면이다.

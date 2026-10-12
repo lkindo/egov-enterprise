@@ -56,8 +56,20 @@ const FEATURES = {
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
   routes: ['/admin/system/comments'] },
+  // 커뮤니티·홍보(배너·팝업)·시연 화면은 따로 고른다(DEC-OPS-256 ①). 셋 사이에는 코드 참조가 없다.
+  community: { label: '커뮤니티', permissions: ['COMMUNITY'], paths: [
+    'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
+    'src/services/business/community', 'src/services/foundation/system/CommunityAdminService.ts', 'src/types/business/community.ts'],
+  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/cop/cmy'],
+  exactRoutes: ['/admin/community'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
+  // 행사(약도·행사별 외부인사 포함)와 포상은 따로 고른다(DEC-OPS-256 ①). 외부인사 기본 키가 행사 번호를 품고 물리 외래 키가 행사를 가리킨다.
+  event: { label: '행사·외부인사', permissions: ['EVENT', 'EXT_HR'], paths: [
+    'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rough-map',
+    'src/services/foundation/operation/ExternalHrAdminService.ts', 'src/services/foundation/operation/eventService.ts',
+    'src/services/foundation/operation/__tests__/eventService.test.ts'],
+  routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rough-map'] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
     'src/app/admin/help', 'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
     'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user',
@@ -82,16 +94,18 @@ const FEATURES = {
     // 슬롯 기여(PR-6): 머리글의 알림 벨.
     'src/extensions/notification'],
   routes: ['/admin/notifications'] },
-  operation: { label: '행사·외부인사·포상', permissions: ['EVENT', 'EXT_HR', 'REWARD'], paths: [
-    'src/app/admin/operation/events', 'src/app/admin/operation/external-hr', 'src/app/admin/operation/rewards',
-    'src/app/admin/operation/rough-map', 'src/services/foundation/operation/OperationAdminService.ts',
-    'src/services/foundation/operation/eventService.ts', 'src/services/foundation/operation/__tests__/eventService.test.ts',
-    'src/app/admin/operation/error.tsx', 'src/app/admin/operation/__tests__'],
-  routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rewards', '/admin/operation/rough-map'] },
+  promotion: { label: '배너·팝업', permissions: ['BANNER', 'POPUP'], paths: [
+    'src/app/actions/promotionActions.ts', 'src/app/components/dashboard/BannerSlider.tsx', 'src/app/components/dashboard/PopupManager.tsx',
+    'src/app/admin/system/banner', 'src/services/business/user/BannerService.ts', 'src/services/business/user/PopupService.ts',
+    'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/PopupAdminService.ts', 'src/types/foundation/banner.ts'],
+  routes: ['/admin/system/banner'] },
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
     'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts'],
   routes: ['/smart-toolkit/work-report'] },
   // 일지(tb_diary_info)는 엔티티만 있고 화면·API 가 없다. 이름이 없는 기능을 약속하지 않는다.
+  reward: { label: '포상', permissions: ['REWARD'], paths: [
+    'src/app/admin/operation/rewards', 'src/services/foundation/operation/RewardAdminService.ts'],
+  routes: ['/admin/operation/rewards'] },
   schedule: { label: '일정', permissions: ['SCHEDULE'], paths: [
     'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
   routes: ['/smart-toolkit/schedule'] },
@@ -100,6 +114,10 @@ const FEATURES = {
     // 슬롯 기여(스크랩 슬롯): 게시글 상세의 스크랩 버튼과 그 버튼이 부르는 쓰기. 기능과 함께 직접 지워진다.
     'src/queries/scrap-post-action.ts', 'src/extensions/scrap'],
   routes: ['/admin/collaboration/scraps'] },
+  // 프런트 전용 기능이다 — Java·테이블·권한이 없다(manifest frontendOnlyDomains). 화면 진입 권한은 core 권한이다.
+  showcase: { label: '시연 화면', permissions: [], paths: [
+    'src/app/admin/patterns', 'src/app/admin/system/layout', 'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx'],
+  routes: ['/admin/patterns', '/admin/system/layout'] },
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],
   routes: ['/admin/uss/ion/sms', '/cop/sms'], requirements: ['문자 발송 공급자 설정'] },
@@ -107,16 +125,6 @@ const FEATURES = {
     'src/app/admin/survey', 'src/app/survey', 'src/lib/api/survey.ts', 'src/services/business/user/poll',
     'src/services/foundation/survey', 'src/services/foundation/system/SurveyAdminService.ts', 'src/types/business/poll.ts', 'src/types/business/survey.ts'],
   routes: ['/admin/survey', '/survey'] },
-  system: { label: '커뮤니티·배너·팝업', permissions: ['COMMUNITY', 'BANNER', 'POPUP'], paths: [
-    'src/app/actions/promotionActions.ts', 'src/app/components/dashboard/BannerSlider.tsx', 'src/app/components/dashboard/PopupManager.tsx',
-    'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx',
-    'src/app/admin/patterns', 'src/app/admin/system/banner', 'src/app/admin/system/layout', 'src/app/cop/cmy',
-    'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx',
-    'src/services/business/community', 'src/services/business/user/BannerService.ts', 'src/services/business/user/PopupService.ts',
-    'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/CommunityAdminService.ts',
-    'src/services/foundation/system/PopupAdminService.ts', 'src/types/business/community.ts', 'src/types/foundation/banner.ts'],
-  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/patterns', '/admin/system/banner', '/admin/system/layout', '/cop/cmy'],
-  exactRoutes: ['/admin/community'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   template: { label: '템플릿', permissions: ['TEMPLATE'], paths: [
     'src/app/admin/community/templates', 'src/app/admin/sanctn/forms', 'src/services/foundation/system/TemplateAdminService.ts'],
   routes: ['/admin/community/templates', '/admin/sanctn/forms'] },
@@ -129,7 +137,7 @@ const SHARED_UI = [
     paths: ['src/app/admin/collaboration/page.tsx', 'src/app/admin/collaboration/CollaborationHubClient.tsx'],
     routes: ['/admin/collaboration'], reason: '쪽지·스크랩 공동 화면이 두 기능의 서비스와 폼을 직접 참조한다.',
     evidence: 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx' },
-  { id: 'knowledge-hub', domains: ['board', 'help', 'system'], paths: [], routes: [],
+  { id: 'knowledge-hub', domains: ['board', 'community', 'help'], paths: [], routes: [],
     reason: '지식·커뮤니티 공동 화면이 게시판 서비스, 도움말 헬퍼와 커뮤니티 관리 폼을 직접 참조한다.',
     evidence: 'frontend/src/app/admin/help/KnowledgeHubClient.tsx' },
   { id: 'work-hub', domains: ['report', 'schedule'],
@@ -139,13 +147,13 @@ const SHARED_UI = [
 ];
 
 const UI_DEPENDENCIES = [
-  { from: 'system', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
+  { from: 'community', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{
   name: 'fk_tb_bbs_master_tb_cmnty_info', childTable: 'tb_bbs_master', parentTable: 'tb_cmnty_info',
-  sourceDomain: 'board', targetDomain: 'system',
+  sourceDomain: 'board', targetDomain: 'community',
   reason: '커뮤니티 귀속은 선택 연동이며 기존 collaboration 투영에서도 커뮤니티 없는 게시판을 제공한다.',
   evidence: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql',
 }];
@@ -165,7 +173,7 @@ const REQUIRED_FOREIGN_KEYS = [
     reason: '댓글은 게시판에 속한다.', evidence: 'api-server/src/main/resources/db/migration/V2_14__add_referential_fks_batch2.sql' },
   { name: 'fk_tb_bbs_scrap_tb_bbs_item', childTable: 'tb_bbs_scrap', parentTable: 'tb_bbs_item', sourceDomain: 'scrap', targetDomain: 'board',
     reason: '스크랩은 게시글을 가리킨다.', evidence: 'api-server/src/main/resources/db/migration/V2_69__board_post_bigint_identity.sql' },
-  { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'operation', targetDomain: 'informalsanction',
+  { name: 'fk_tb_rward_manage_tb_ifml_atrz_info', childTable: 'tb_rward_manage', parentTable: 'tb_ifml_atrz_info', sourceDomain: 'reward', targetDomain: 'informalsanction',
     reason: '포상은 결재 문서를 참조한다.', evidence: 'api-server/src/main/resources/db/migration/V2_78__informal_sanction_bigint_identity.sql' },
 ];
 
@@ -199,6 +207,8 @@ function frontendRules(domains) {
     ...domains.flatMap(domain => FEATURES[domain].paths.map(path => ({ path, domains: [domain] }))),
     ...SHARED_UI.flatMap(group => group.paths.map(path => ({ path, domains: group.domains }))),
     { path: 'src/app/admin/sanctn/WorkflowHubClient.tsx', domains: ['informalsanction', 'template'], mode: 'any' },
+    // 운영 세그먼트의 오류 경계는 행사·포상 중 하나라도 남으면 남는다. 두 기능 paths 에 함께 넣으면 한쪽이 빠질 때 지워진다.
+    { path: 'src/app/admin/operation/error.tsx', domains: ['event', 'reward'], mode: 'any' },
   ];
 }
 
@@ -251,6 +261,12 @@ export function loadProjectComposerCatalog(root = ROOT) {
   }
   const domains = sorted(domainOwners.keys());
   if (canonicalJson(domains) !== canonicalJson(Object.keys(FEATURES).sort())) fail('capability declarations differ from manifest appDomains');
+  // 프런트 전용 기능(DEC-OPS-273). Java·테이블·권한 도메인이 없어야 하고, 같은 pack 의 appDomains 에 있어야 한다.
+  const frontendOnlyDomains = new Set();
+  for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.frontendOnlyDomains ?? []) {
+    if (domainOwners.get(domain) !== packId) fail(`frontend-only capability is not an appDomain of its pack: ${domain}`);
+    frontendOnlyDomains.add(domain);
+  }
   const tableOwners = new Map();
   const sequenceOwners = new Map();
   for (const [packId, pack] of Object.entries(manifest.packs)) {
@@ -350,7 +366,10 @@ export function loadProjectComposerCatalog(root = ROOT) {
   const capabilities = attachUserReasons(domains.map(domain => {
     const feature = FEATURES[domain];
     const data = inventory.get(domain);
-    if (!data.files.length) fail(`capability has no source: ${domain}`);
+    if (frontendOnlyDomains.has(domain)) {
+      if (data.files.length) fail(`frontend-only capability has backend source: ${domain}`);
+      if (data.tables.length || feature.permissions.length) fail(`frontend-only capability declares tables or permission domains: ${domain}`);
+    } else if (!data.files.length) fail(`capability has no source: ${domain}`);
     const requires = [];
     for (const edge of data.edges) requires.push({ domain: edge.domain, kind: 'java', reason: `${domain} 소스가 ${edge.domain} 타입을 참조한다.`, evidence: edge.evidence });
     for (const support of supportRequirements.get(domain) ?? []) {

@@ -49,9 +49,9 @@ test('a feature that another selection still requires stays, and the diff names 
   assert.equal(preset.action, 'remove');
   assert.deepEqual(preset.retainedBy, ['comment', 'dashboard', 'note', 'scrap']);
   // 직접 선택으로 바뀌며 시작 구성이 건너뛰던 의존이 들어온다. 붙잡힌다는 말만 하고 그 변화를 감추지 않는다.
-  assert.deepEqual(preset.added, ['help', 'system', 'template']);
+  assert.deepEqual(preset.added, ['community', 'help', 'template']);
   assert.match(diffSummary(preset, catalog),
-    /^빼도 댓글, 실시간 대시보드, 쪽지, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 도움말·온라인 매뉴얼, 커뮤니티·배너·팝업, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
+    /^빼도 댓글, 실시간 대시보드, 쪽지, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
 });
 
 test('degradations appear when a partner is missing and resolve only when the partner arrives', () => {
@@ -66,9 +66,9 @@ test('degradations appear when a partner is missing and resolve only when the pa
 
 test('a selection that would break a required foreign key is reported as a blocker', () => {
   const { catalogHash, ...body } = structuredClone(catalog);
-  body.capabilities.find(capability => capability.id === 'operation').requires = [];
+  body.capabilities.find(capability => capability.id === 'reward').requires = [];
   const loose = { ...body, catalogHash: compositionDigest(body) };
-  const diff = diffOf({ domains: [] }, 'operation', loose);
+  const diff = diffOf({ domains: [] }, 'reward', loose);
   assert.deepEqual(diff.blockers, ['fk_tb_rward_manage_tb_ifml_atrz_info']);
   assert.match(diffSummary(diff, loose), / · 필수 외래 키 때문에 생성할 수 없습니다$/);
   assert.throws(() => diffOf({ domains: [] }, 'retired'), /Unknown domain: retired/);

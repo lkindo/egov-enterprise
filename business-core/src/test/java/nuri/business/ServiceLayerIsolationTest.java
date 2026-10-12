@@ -35,15 +35,17 @@ public class ServiceLayerIsolationTest {
     static final ArchRule sample_domains_should_not_reside_in_business_core =
             noClasses()
                     .should().resideInAnyPackage(
-                            "nuri.business.domain.system.content.banner..",
-                            "nuri.business.domain.system.content.popup..",
-                            "nuri.business.domain.system.content.community..",
+                            "nuri.business.domain.promotion..",
+                            "nuri.business.domain.community..",
                             "nuri.business.domain.survey..",
+                            "nuri.business.domain.event..",
+                            "nuri.business.domain.reward..",
                             "nuri.business.domain.system.service.consult..",
-                            "nuri.business.service.system.content.banner..",
-                            "nuri.business.service.system.content.popup..",
-                            "nuri.business.service.system.content.community..",
+                            "nuri.business.service.promotion..",
+                            "nuri.business.service.community..",
                             "nuri.business.service.survey..",
+                            "nuri.business.service.event..",
+                            "nuri.business.service.reward..",
                             "nuri.business.service.system.service.consult..")
                     .because("삭제 가능한 샘플 도메인은 business-app에만 있어야 business-core가 재사용 필수 코어로 유지된다");
 }

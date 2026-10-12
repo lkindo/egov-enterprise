@@ -1,7 +1,7 @@
 package nuri.api.controller.business.admin.content.popup;
 
 import nuri.foundation.core.response.ApiResponse;
-import nuri.business.service.system.content.popup.PopupService;
+import nuri.business.service.promotion.popup.PopupService;
 import nuri.api.controller.business.admin.content.popup.dto.PopupPublicResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

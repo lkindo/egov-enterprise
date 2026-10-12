@@ -118,7 +118,7 @@
 
 - **쪽지:** [NoteService](../../business-app/src/main/java/nuri/business/service/note/NoteService.java)의 신규 수신자 존재·활성 확인과 미삭제 수신 행에 의존하는 파기를 함께 본다. 없는 ID·중복·비활성 수신자와 동시 상태 변경을 검증한다. 기존 고아 행을 추정 삭제하지 않는다.
 - **부서 업무:** 서버가 담당자 ID를 그대로 저장하는 경로를 보완한다. UI 피커가 활성 사용자만 보여도 직접 API 요청을 막지는 못한다.
-- **행사:** [EventInfoService](../../business-app/src/main/java/nuri/business/service/operation/EventInfoService.java)의 승인 여부/일자 요청 저장은 수용한다. 필드가 실제 승인 절차를 뜻하는지 확인하고, 서버 소유 필드라면 요청 바인딩을 차단한다. 별도 승인 workflow를 추측해서 만들지 않는다.
+- **행사:** [EventInfoService](../../business-app/src/main/java/nuri/business/service/event/EventInfoService.java)의 승인 여부/일자 요청 저장은 수용한다. 필드가 실제 승인 절차를 뜻하는지 확인하고, 서버 소유 필드라면 요청 바인딩을 차단한다. 별도 승인 workflow를 추측해서 만들지 않는다.
 - **설문:** 일반 등록의 기간 UX와 선택형 응답 표시를 우선 수리한다. 현재 삭제는 답변 행 하나를 지우지만 “제출 전체 삭제”가 기존 명세라는 증거는 확인하지 못했다. 답변 삭제/제출 취소 중 사용자 계약을 먼저 정한다. 복제 기간 입력, 서버 기간 가드, 수정 API가 있으므로 기간 설정 화면과 마감 수단이 전혀 없다고 설명하지 않는다. 원문의 “공개”는 인터넷 익명이 아닌 인증 사용자 범위다. 제출 식별 단위가 필요한데 현재 모델로 표현할 수 없다면 스키마 결정 단계에서 멈춘다.
 - **만족도:** [SatisfactionService](../../business-app/src/main/java/nuri/business/service/board/SatisfactionService.java)는 `frstRgtrId`를 감사 저장·중복 방지·소유 판정에 사용한다. 평가자가 저장되지 않는다는 진단은 틀렸다. 이름 표시 공백을 고치되 익명/실명 공개 정책은 별도로 확인한다.
 - **결재:** [결재 설계 문서](../02-architecture/approval-workflow-ux.md)에 사용자 요청·규칙·검증 기록이 있다. DEC 번호 부재를 결정 부재로 해석하지 않는다. legacy endpoint의 소비자와 deprecation 전략을 확인하고 진행 문서 편집 가드를 제거하지 않는다.

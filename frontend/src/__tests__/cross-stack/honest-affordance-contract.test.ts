@@ -64,7 +64,7 @@ const stripComments = (source: string) =>
 
 if (repoPresent(
   'frontend/src/app/admin/operation/rewards/RewardManageClient.tsx',
-  'business-app/src/main/java/nuri/business/domain/operation/RewardManage.java',
+  'business-app/src/main/java/nuri/business/domain/reward/RewardManage.java',
 )) describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
   const client = stripComments(readSrc('app/admin/operation/rewards/RewardManageClient.tsx'));
 
@@ -100,7 +100,7 @@ if (repoPresent(
     expect(controller).not.toContain('@PatchMapping');
 
     const service = stripComments(readRepo(
-      'business-app/src/main/java/nuri/business/service/operation/RewardManageService.java',
+      'business-app/src/main/java/nuri/business/service/reward/RewardManageService.java',
     ));
     const updateStart = service.indexOf('public RewardManageDto updateReward(');
     expect(updateStart, 'updateReward 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
@@ -110,7 +110,7 @@ if (repoPresent(
         .not.toContain(approvalField);
     }
 
-    const entity = stripComments(readRepo('business-app/src/main/java/nuri/business/domain/operation/RewardManage.java'));
+    const entity = stripComments(readRepo('business-app/src/main/java/nuri/business/domain/reward/RewardManage.java'));
     const updateSignature = entity.slice(entity.indexOf('public void update('), entity.indexOf('{', entity.indexOf('public void update(')));
     expect(updateSignature).not.toContain('confmYn');
     expect(updateSignature).not.toContain('aprvDt');
@@ -360,7 +360,7 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
 
   if (communityInProjection) it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
     const dto = readRepo(
-      'business-app/src/main/java/nuri/business/service/system/content/community/dto/CommunityDto.java',
+      'business-app/src/main/java/nuri/business/service/community/dto/CommunityDto.java',
     );
     const builder = dto.slice(dto.indexOf('CommunityDto.builder()'));
     // 선언만 있고 빌더에서 채우지 않는 필드는 화면이 읽으면 안 된다.

@@ -35,15 +35,15 @@ const projectCustom = (file, source, composition, profile = composerProfile(mani
 const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
-  ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'system'],
-  ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['system', 'template']],
-  ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'operation'],
+  ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'community'],
+  ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['community', 'template']],
+  ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'event'],
   ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
   ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
   ['api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java', ['informalsanction', 'notification']],
-  ['api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java', ['board', 'system']],
+  ['api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java', ['board', 'community']],
   ['api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java', 'survey'],
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
@@ -87,8 +87,9 @@ const templatePolicySupport = [
 ];
 
 test('template assignment policy follows its only consumer, community, in the real generator removal plan', () => {
-  assert.deepEqual(manifest.packs.demo.backend.domainSupportFiles?.system, templatePolicySupport);
-  for (const [selected, kept] of [[['template'], false], [['system'], true], [[], false]]) {
+  assert.deepEqual(manifest.packs.demo.backend.domainSupportFiles?.community, templatePolicySupport);
+  // 배너·팝업은 템플릿 배정 구현을 쓰지 않는다 — 커뮤니티와 나눈 뒤(DEC-OPS-273) 홍보만 고르면 그 구현이 지워진다.
+  for (const [selected, kept] of [[['template'], false], [['community'], true], [['promotion'], false], [[], false]]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
     const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
     for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), !kept, `${selected}: ${file}`);
@@ -98,11 +99,11 @@ test('template assignment policy follows its only consumer, community, in the re
     for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), name !== 'demo', `${name}: ${file}`);
   }
   // 커뮤니티가 구현을 요구한다는 사실을 카탈로그가 기록해야, 커뮤니티 선택이 템플릿 없이 해석되지 않는다.
-  assert.ok(catalog.capabilities.find(row => row.id === 'system').requires
-    .some(row => row.domain === 'template' && row.kind === 'java' && row.evidence === templatePolicySupport[1]), 'system requires the template implementation');
+  assert.ok(catalog.capabilities.find(row => row.id === 'community').requires
+    .some(row => row.domain === 'template' && row.kind === 'java' && row.evidence === templatePolicySupport[1]), 'community requires the template implementation');
   // 선언이 없으면 템플릿 단독 생성물에 소비자 없는 @Service 가 남는다 — 생성물 검증의 도달 불가 서비스 게이트가 실패한 경로다.
   const unowned = structuredClone(manifest);
-  delete unowned.packs.demo.backend.domainSupportFiles.system;
+  delete unowned.packs.demo.backend.domainSupportFiles.community;
   const templateOnly = composerProfile(unowned, resolveProjectRecipe(recipe(['template']), catalog));
   assert.equal(planJavaRemoval(root, unowned, templateOnly, java).removed.has(join(root, templatePolicySupport[1])), false,
     'removing the support declaration reproduces the unreachable template-only provider');
@@ -112,18 +113,18 @@ test('new management HTTP matrices project every selected surface and reject an 
   const file = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
   const source = readFileSync(join(root, file), 'utf8');
   const owners = new Map([
-    ['/api/v1/admin/operation/events', 'operation'],
-    ['/api/v1/admin/operation/rewards', 'operation'],
+    ['/api/v1/admin/operation/events', 'event'],
+    ['/api/v1/admin/operation/rewards', 'reward'],
     ['/api/v1/help/hpcm', 'help'],
     ['/api/v1/help/manuals', 'help'],
-    ['/api/v1/admin/system/banners', 'system'],
-    ['/api/v1/admin/system/popups', 'system'],
+    ['/api/v1/admin/system/banners', 'promotion'],
+    ['/api/v1/admin/system/popups', 'promotion'],
     ['/api/v1/admin/system/templates', 'template'],
   ]);
   const paths = value => [...value.matchAll(/new ManagedSurface\("([^"]+)"/g)].map(match => match[1]);
   const sharedMethod = (value, name) => value.match(new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm'))?.[0];
   assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
-  for (const selected of [['operation'], ['help'], ['system'], ['template'], ['survey'], ['informalsanction'], ['operation', 'help', 'system', 'template']]) {
+  for (const selected of [['event'], ['reward'], ['help'], ['promotion'], ['template'], ['survey'], ['informalsanction'], ['event', 'reward', 'help', 'promotion', 'template']]) {
     const projected = projectComposerJava(file, source, { resolvedDomains: selected });
     assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
     if (selected.some(domain => [...owners.values()].includes(domain))) {
@@ -330,6 +331,28 @@ test('custom projection keeps every selected table owned, including a shared tab
   }
 });
 
+/*
+ * 프런트 전용 기능 목록(DEC-OPS-273)도 선택으로 거른다. 남기면 생성물 manifest 의 census 가 appDomains 에 없는 선언으로 붉다.
+ */
+test('custom projection keeps a frontend-only declaration only for a selected frontend-only capability', t => {
+  const base = realpathSync(tmpdir());
+  const directory = mkdtempSync(join(base, 'composer-frontend-only-'));
+  t.after(() => {
+    const child = relative(base, realpathSync(directory));
+    assert.ok(child.startsWith('composer-frontend-only-') && !child.includes(sep));
+    rmSync(directory, { recursive: true, force: true });
+  });
+  mkdirSync(join(directory, 'config'));
+  for (const [domains, expected] of [[['event'], []], [['showcase'], ['showcase']], [['event', 'showcase'], ['showcase']]]) {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    writeProjectedManifest(directory, structuredClone(manifest), 'custom', composerProfile(manifest, composition),
+      { generatedAt: '2026-10-12T00:00:00Z', tables: composition.tables, sequences: [] }, composition);
+    const demo = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8')).packs.demo.backend;
+    assert.deepEqual(demo.frontendOnlyDomains, expected, `${domains}`);
+    for (const domain of demo.frontendOnlyDomains) assert.ok(demo.appDomains.includes(domain), `${domains}: ${domain} stays an appDomain`);
+  }
+});
+
 test('source copying excludes restricted skill trees while preserving ordinary source and the producer', t => {
   const base = realpathSync(tmpdir());
   const fixture = mkdtempSync(join(base, 'composer-copy-'));
@@ -414,11 +437,11 @@ ${tracked.stdout}`);
 });
 
 /*
- * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 19개, CI 대표 직접 선택 2개, 그리고 주소록이
+ * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 22개, CI 대표 직접 선택 2개, 그리고 주소록이
  * 수신자 피커에 기여하는 {mail, sms, addressbook}. 판정 통일(PR-2)의 골든 diff 를 이 대조가 화면 단위로 지킨다.
  */
 test('every selectable capability preserves its declared frontend and the screens its composition expects through actual import projection', () => {
-  assert.equal(catalog.capabilities.length, 19, 'review the capability population when its declaration changes');
+  assert.equal(catalog.capabilities.length, 22, 'review the capability population when its declaration changes');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
     assert.ok(result.expectedCount > 1, `${feature.id} has no declared frontend population`);
@@ -440,7 +463,7 @@ test('presets and representative selections keep exactly the screens their compo
 
 test('removing a shared UI dependency exposes the selected page loss instead of silently passing', () => {
   // Phase 0c: 통계는 core 라 설문·게시판과 통계 사이의 화면 의존이 사라졌다(survey <-> stats 삭제).
-  for (const [from, dependency] of [['system', 'template']]) {
+  for (const [from, dependency] of [['community', 'template']]) {
     const changed = structuredClone(catalog);
     const feature = changed.capabilities.find(row => row.id === from);
     assert.ok(feature.requires.some(edge => edge.domain === dependency), `${from} -> ${dependency} must exist`);
@@ -705,16 +728,18 @@ test('custom RBAC projection preserves selected assertions and removes only abse
   assert.match(survey, /explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup/);
   assert.match(survey, /ordinaryPollParticipantCannotCreateUpdateOrDeletePolls/);
   assert.doesNotMatch(survey, /@Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints/);
-  const system = projectComposerJava(file, source, { resolvedDomains: ['system'] });
+  const promotion = projectComposerJava(file, source, { resolvedDomains: ['promotion'] });
   // 설문이 없으면 표지를 지워 남은 표면(배너·팝업)의 단언이 연쇄 제거되지 않게 한다.
-  assert.doesNotMatch(system, /SurveyService/);
-  assert.match(system, /get\(path\)\.with\(user\(ordinary\)\)\)\.andExpect\(status\(\)\.isForbidden\(\)\)/);
-  assert.match(system, /List\.of\("\/api\/v1\/admin\/system\/banners"/);
-  assert.doesNotMatch(system, /\/api\/v1\/admin\/system\/ism\/1\/confirm/);
-  assert.doesNotMatch(system, /@Test void explicitSurvey/);
-  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['system'] }), /contract drifted/);
-  assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['system'] }), /survey boundary marker drifted/);
-  assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['system'] }), /Mixed RBAC projection contract drifted/);
+  assert.doesNotMatch(promotion, /SurveyService/);
+  assert.match(promotion, /get\(path\)\.with\(user\(ordinary\)\)\)\.andExpect\(status\(\)\.isForbidden\(\)\)/);
+  assert.match(promotion, /List\.of\("\/api\/v1\/admin\/system\/banners"/);
+  assert.doesNotMatch(promotion, /\/api\/v1\/admin\/system\/ism\/1\/confirm/);
+  assert.doesNotMatch(promotion, /@Test void explicitSurvey/);
+  // 커뮤니티는 이 매트릭스의 표면이 아니다 — 커뮤니티만 고르면 매트릭스가 통째로 빠진다(선언된 제거).
+  assert.equal(projectComposerJava(file, source, { resolvedDomains: ['community'] }), source);
+  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['promotion'] }), /contract drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['promotion'] }), /survey boundary marker drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['promotion'] }), /Mixed RBAC projection contract drifted/);
 });
 
 test('selected-source survival rejects collateral deletion and allows explicitly excluded child features', t => {

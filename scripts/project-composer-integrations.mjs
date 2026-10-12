@@ -32,7 +32,7 @@ export const INTEGRATES = [
     reason: '알림 기능이 없으면 메일 발송이 실패로 확정되어도 보낸 사람에게 실패 알림이 가지 않고, 메일 이력 화면을 직접 열어야 압니다.' },
   { from: 'sms', to: 'notification', via: 'event:NotificationRequestedEvent',
     reason: '알림 기능이 없으면 문자 발송 일부가 실패해도 보낸 사람에게 실패 알림이 가지 않고, 문자 화면에서 수신자 결과를 직접 확인해야 합니다.' },
-  { from: 'system', to: 'notification', via: 'event:NotificationRequestedEvent',
+  { from: 'community', to: 'notification', via: 'event:NotificationRequestedEvent',
     reason: '알림 기능이 없으면 커뮤니티 가입 신청이 들어와도 승인 권한자에게 알림이 가지 않고, 승인·반려 결과도 신청자에게 알림으로 전달되지 않습니다.' },
   { from: 'informalsanction', to: 'mail', via: 'event:MailRequestedEvent',
     reason: '메일 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 메일이 가지 않습니다.' },
@@ -46,7 +46,7 @@ export const INTEGRATES = [
     reason: '주소록 기능이 없으면 문자 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 번호 직접 입력만 남습니다.',
     anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: "useRecipientAddressBook('sms')" },
       { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
-  { from: 'board', to: 'system', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
+  { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
 ];
@@ -56,7 +56,7 @@ export const INTEGRATES = [
  * 계산과 정확히 맞아야 한다 — 이 목록에만 있고 계산에 없는 행, 두 목록에 모두 있는 행은 카탈로그가 거부한다.
  */
 export const REGISTRATION_ONLY_EVENTS = [
-  ...['addressbook', 'board', 'comment', 'notification', 'system'].map(to => ({ from: 'core', to, event: 'UserDeletionEvent',
+  ...['addressbook', 'board', 'comment', 'community', 'notification'].map(to => ({ from: 'core', to, event: 'UserDeletionEvent',
     reason: '사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다.' })),
 ];
 

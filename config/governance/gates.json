@@ -1611,7 +1611,7 @@
             "scope": "business-app-delivery-operation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.operation.*,nuri.business.service.survey.SurveyResultService",
+            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*,nuri.business.service.survey.SurveyResultService",
             "tests": "nuri.business.*"
           },
           {

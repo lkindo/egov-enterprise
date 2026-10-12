@@ -86,8 +86,8 @@ test('domain removal rejects empty, absolute, and traversing paths before planni
     assert.throws(() => resolveDomainRemovalDirectory(ROOT, 'main', 'service', domain), /domain/);
     assert.throws(() => planJavaRemoval(ROOT, { packs: { excluded: { backend: { appDomains: [domain] } } } }, { packs: [] }, []), /domain/);
   }
-  assert.equal(resolveDomainRemovalDirectory(ROOT, 'main', 'service', 'system/content'),
-    join(ROOT, 'business-app/src/main/java/nuri/business/service/system/content'));
+  assert.equal(resolveDomainRemovalDirectory(ROOT, 'main', 'service', 'promotion/banner'),
+    join(ROOT, 'business-app/src/main/java/nuri/business/service/promotion/banner'));
 });
 
 test('redirect projection removes only declared aliases and preserves CSP, rewrites, and surviving targets', () => {

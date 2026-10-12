@@ -9,8 +9,8 @@
   ],
   "lengthBindings": [
     {
-      "entity": "nuri.business.domain.system.content.banner.Banner",
-      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "entity": "nuri.business.domain.promotion.banner.Banner",
+      "dto": "nuri.business.service.promotion.banner.dto.BannerDto",
       "fields": [
         "bnrNm",
         "linkUrl",
@@ -21,8 +21,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.system.content.popup.Popup",
-      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "entity": "nuri.business.domain.promotion.popup.Popup",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
       "fields": [
         "popupTtlNm",
         "fileUrl",
@@ -36,8 +36,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.system.content.community.Community",
-      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "entity": "nuri.business.domain.community.Community",
+      "dto": "nuri.business.service.community.dto.CommunityDto",
       "fields": [
         "cmntyNm",
         "cmntyIntroCn",
@@ -259,8 +259,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.operation.ExternalHr",
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "entity": "nuri.business.domain.event.ExternalHr",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "otsdHrId",
         "gndrCd",
@@ -671,8 +671,8 @@
       "pack": "collaboration"
     },
     {
-      "entity": "nuri.business.domain.operation.RewardManage",
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "entity": "nuri.business.domain.reward.RewardManage",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
         "rwardwnrId",
         "rwardCode",
@@ -696,8 +696,8 @@
       "pack": "demo"
     },
     {
-      "entity": "nuri.business.domain.operation.EventInfo",
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "entity": "nuri.business.domain.event.EventInfo",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         "evntNm",
         "bizYr",
@@ -739,7 +739,7 @@
       "pack": "core"
     },
     {
-      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "dto": "nuri.business.service.promotion.banner.dto.BannerDto",
       "field": "rfltYn",
       "allowedValues": [
         "Y",
@@ -748,7 +748,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
       "field": "stopvewSetupYn",
       "allowedValues": [
         "Y",
@@ -757,7 +757,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
       "field": "ntceYn",
       "allowedValues": [
         "Y",
@@ -766,7 +766,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "dto": "nuri.business.service.community.dto.CommunityDto",
       "field": "useYn",
       "allowedValues": [
         "Y",
@@ -951,7 +951,7 @@
   ],
   "requiredBindings": [
     {
-      "dto": "nuri.business.service.system.content.banner.dto.BannerDto",
+      "dto": "nuri.business.service.promotion.banner.dto.BannerDto",
       "fields": [
         {
           "field": "bnrNm",
@@ -962,7 +962,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.system.content.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
       "fields": [
         {
           "field": "popupTtlNm",
@@ -973,7 +973,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.system.content.community.dto.CommunityDto",
+      "dto": "nuri.business.service.community.dto.CommunityDto",
       "fields": [
         {
           "field": "cmntyNm",
@@ -1323,7 +1323,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         {
           "field": "evntSn",
@@ -1734,12 +1734,12 @@
       "pack": "collaboration"
     },
     {
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [],
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         {
           "field": "evntNm",
@@ -1865,7 +1865,7 @@
       "pack": "collaboration"
     },
     {
-      "dto": "nuri.business.service.operation.dto.RewardManageDto",
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
         "sanctnerId",
         "confmAt",
@@ -1913,7 +1913,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.EventInfoRequest",
+      "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         "evntBgngYmd",
         "evntEndYmd",
@@ -1952,7 +1952,7 @@
       "pack": "demo"
     },
     {
-      "dto": "nuri.business.service.operation.dto.ExternalHrDto",
+      "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "brdtYmd"
       ],

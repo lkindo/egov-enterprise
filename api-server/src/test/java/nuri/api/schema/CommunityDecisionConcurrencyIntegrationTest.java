@@ -2,7 +2,7 @@ package nuri.api.schema;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import nuri.business.service.system.content.community.CommunityService;
+import nuri.business.service.community.CommunityService;
 import nuri.business.service.user.UserService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { asciiJson, planDomainDeletion, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { asciiJson, planDomainDeletion, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 
 /*
  * 수동 도메인 삭제(delete-domain.ps1)의 동반 삭제 판정 계약. 판정은 카탈로그 requires 간선의 역방향 폐포다.
@@ -41,25 +42,29 @@ const SINGLE_DELETIONS = {
   addressbook: ['addressbook'],
   board: ['board', 'comment', 'dashboard', 'scrap'],
   comment: ['board', 'comment', 'dashboard', 'scrap'],
+  community: ['community'],
   dashboard: ['dashboard'],
+  event: ['event'],
   help: ['help'],
-  informalsanction: ['informalsanction', 'operation'],
+  // 포상은 결재를 요구하지만(포상의 결재 참조) 결재는 포상을 요구하지 않는다(DEC-OPS-272). 행사는 결재와 무관하다(DEC-OPS-273).
+  informalsanction: ['informalsanction', 'reward'],
   isg: ['isg'],
   mail: ['mail'],
   memoreport: ['memoreport'],
   note: ['note'],
   notification: ['dashboard', 'notification'],
-  // 행사·포상은 결재를 요구하지만(포상의 결재 참조) 결재는 행사·포상을 요구하지 않는다(DEC-OPS-272).
-  operation: ['operation'],
+  promotion: ['promotion'],
   report: ['report'],
+  reward: ['reward'],
   schedule: ['schedule'],
   // 스크랩은 게시판을 요구하지만 게시판은 스크랩 없이 선다(DEC-OPS-272).
   scrap: ['scrap'],
+  // 시연 화면은 프런트 전용 기능이라 지울 백엔드가 없다(DEC-OPS-273). 화면은 pack 단위로만 지운다.
+  showcase: ['showcase'],
   sms: ['sms'],
   survey: ['survey'],
-  system: ['system'],
-  // 커뮤니티(system)가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
-  template: ['system', 'template'],
+  // 커뮤니티가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
+  template: ['community', 'template'],
 };
 
 test('every single deletion of the real catalog removes exactly the frozen set', () => {
@@ -72,7 +77,7 @@ test('every single deletion of the real catalog removes exactly the frozen set',
 
 test('each companion names the requirement that pulled it in with the user sentence of that pair', () => {
   const plan = planDomainDeletion({ catalog, requested: ['template'] });
-  assert.deepEqual(plan.added, [{ domain: 'system', because: { from: 'system', to: 'template', kinds: ['java'],
+  assert.deepEqual(plan.added, [{ domain: 'community', because: { from: 'community', to: 'template', kinds: ['java'],
     userReason: '커뮤니티를 만들 때 템플릿을 고릅니다.' } }]);
 });
 
@@ -105,11 +110,12 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
   // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), Java 참조(스크랩→게시판).
-  for (const pair of ['system>template java', 'dashboard>notification manifest', 'scrap>board java']) {
+  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
-  assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), []);
+  // 프런트 전용 기능만 백엔드 디렉터리가 없다.
+  assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), ['showcase']);
   for (const [domain, expected] of Object.entries(SINGLE_DELETIONS)) {
     assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains, expected, domain);
   }
@@ -128,13 +134,50 @@ test('a projected collaboration tree plans the same deletions without the full c
     const result = spawnSync(process.execPath, [SCRIPT, '--json', '--root', root, 'board'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout).domains, ['board', 'comment', 'dashboard', 'scrap']);
+    assert.deepEqual(JSON.parse(result.stdout).javaFiles, [], 'a tree with only app sources has nothing to delete outside them');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
+// 지우는 타입을 참조하는 api-server 생산 파일. 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있어(행사·외부인사·포상은
+// controller/business/operation, 결재는 controller/business/approval) 디렉터리 이름으로는 찾지 못한다.
+const API_MAIN = 'api-server/src/main/java/nuri/api/controller/business/';
+const API_MAIN_DELETIONS = {
+  event: ['operation/EventApiController.java', 'operation/ExternalHrApiController.java'],
+  reward: ['operation/RewardManageApiController.java'],
+  informalsanction: ['approval/ApprovalApiController.java', 'approval/InformalSanctionApiController.java',
+    'approval/dto/ApprovalConfirmRequest.java', 'approval/dto/ApprovalDraftRequest.java',
+    'approval/dto/ApprovalResubmissionRequest.java', 'operation/RewardManageApiController.java'],
+};
+
+function treeJava(root) {
+  return ['foundation', 'business-core', 'business-app', 'api-server'].flatMap(module => {
+    const directory = join(root, module, 'src');
+    return existsSync(directory) ? readdirSync(directory, { recursive: true, withFileTypes: true })
+      .filter(entry => entry.isFile() && entry.name.endsWith('.java'))
+      .map(entry => join(entry.parentPath, entry.name).slice(root.length + 1).split('\\').join('/')) : [];
+  });
+}
+
+test('files outside the domain directories go with the types they reference, judged like the generator', () => {
+  const java = treeJava(ROOT);
+  for (const [domain, expected] of Object.entries(API_MAIN_DELETIONS)) {
+    const plan = planDomainDeletion({ catalog, requested: [domain] });
+    const files = planDomainJavaFiles(ROOT, plan.domains).map(row => row.file);
+    assert.deepEqual(files.filter(file => file.startsWith('api-server/src/main/')), expected.map(file => API_MAIN + file).sort(), domain);
+    // 독립 대조: 남는 Java 코드(주석·문자열 제외)에 지우는 패키지 이름이 하나도 없다. 남기면 컴파일이 깨진다.
+    const deleted = new RegExp(`\\bnuri\\.business\\.(?:domain|service)\\.(?:${plan.domains.join('|')})\\b`, 'u');
+    const inDomainDirectory = file => plan.domains.some(name => ['domain', 'service'].some(layer =>
+      new RegExp(`^business-app/src/(?:main|test)/java/nuri/business/${layer}/${name}/`, 'u').test(file)));
+    const dangling = java.filter(file => !inDomainDirectory(file) && !files.includes(file))
+      .filter(file => deleted.test(stripJavaCommentsAndStringLiterals(readFileSync(join(ROOT, file), 'utf8'))));
+    assert.deepEqual(dangling, [], `${domain}: no surviving source references a deleted package`);
+  }
+});
+
 test('a tree where a deletion already ran and a new domain was scaffolded still plans', () => {
-  const gone = new Set(['informalsanction', 'operation']);
+  const gone = new Set(['informalsanction', 'reward']);
   const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)) });
   try {
     // generate-domain.ps1 가 만드는 새 도메인. manifest 에 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
@@ -142,7 +185,7 @@ test('a tree where a deletion already ran and a new domain was scaffolded still 
     writeFileSync(join(root, APP, 'domain/product/Product.java'),
       'package nuri.business.domain.product;\nimport nuri.business.domain.board.entity.Board;\npublic class Product {}\n');
     const tree = treeDeletionCatalog(root);
-    assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), [...gone]);
+    assert.deepEqual(tree.capabilities.filter(capability => !capability.present).map(capability => capability.id), [...gone, 'showcase']);
     assert.ok(!tree.capabilities.some(capability => capability.id === 'product'));
     for (const [domain, expected] of Object.entries(SINGLE_DELETIONS)) {
       const domains = gone.has(domain) ? [domain] : expected.filter(name => !gone.has(name));
@@ -167,7 +210,7 @@ test('the CLI prints ASCII-only JSON that PowerShell decodes regardless of the c
   const result = spawnSync(process.execPath, [script, '--json', 'template'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^[\x00-\x7f]*$/u, 'stdout is ASCII');
-  assert.deepEqual(JSON.parse(result.stdout).domains, ['system', 'template']);
+  assert.deepEqual(JSON.parse(result.stdout).domains, ['community', 'template']);
   const refused = spawnSync(process.execPath, [script, '--json', 'nope'], { encoding: 'utf8' });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /unknown domain: nope/);
@@ -181,6 +224,9 @@ test('delete-domain.ps1 takes its companions from the plan, not from manifest cl
   assert.match(script, /domain-deletion-plan\.mjs/u);
   assert.match(script, /& node \$planScript --json @requested/u);
   assert.doesNotMatch(script, /\$manifest\.clusters/u, 'the undirected cluster expansion is gone');
+  // api-server 파일은 plan.javaFiles(생성기 Java 투영)로 지운다. 기능 이름의 controller 디렉터리를 추측하지 않는다.
+  assert.doesNotMatch(script, /controller\/business\/\$d/u, 'no controller directory guessed from the domain name');
+  assert.match(script, /foreach \(\$row in @\(\$plan\.javaFiles\)\)/u);
   assert.match(script, /\$toDelete = \[System\.Collections\.Generic\.HashSet\[string\]\]::new\(\[string\[\]\]@\(\$plan\.domains\)\)/u);
   // 잔존 참조 검사는 지우는 타입의 정규화된 이름으로 찾는다. 기능 이름을 패키지 접두로 찾으면 business-core 의
   // 같은 이름 패키지(nuri.business.service.system.user 등)까지 걸려 실제로 깨지는 소스가 경고 소음에 묻힌다.

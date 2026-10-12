@@ -51,7 +51,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
  *   <li><b>[버킷 2 — 게시판 클러스터 상호 결합(업무↔업무 기술부채, 향후 분리 대상)]</b>
  *       {@code comment → board}({@code Comment.board @ManyToOne}), {@code board → comment}
  *       ({@code Board.comments @OneToMany}, 양방향), {@code scrap → board}({@code Scrap.board
- *       @ManyToOne}), {@code operation → informalsanction}({@code RewardManage.informalSanction}).
+ *       @ManyToOne}), {@code reward → informalsanction}({@code RewardManage.informalSanction}).
  *       앞의 셋은 게시판 클러스터이고 마지막은 보상 승인 클러스터다. 각각 템플릿에서 함께 삭제되며,
  *       단독 삭제가 필요해지면 연관을 포트/식별자 참조로 분리해야 하는 <b>명시적 기술부채</b>다.</li>
  * </ul>
@@ -109,9 +109,9 @@ public class DomainIsolationTest {
                     .ignoreDependency(
                             resideInAPackage("nuri.business.domain.scrap.."),
                             resideInAPackage("nuri.business.domain.board.."))
-                    // operation → informalsanction (RewardManage.informalSanction, 보상 승인 클러스터)
+                    // reward → informalsanction (RewardManage.informalSanction, 보상 승인 클러스터)
                     .ignoreDependency(
-                            resideInAPackage("nuri.business.domain.operation.."),
+                            resideInAPackage("nuri.business.domain.reward.."),
                             resideInAPackage("nuri.business.domain.informalsanction.."))
                     .because("업무 도메인은 서로 독립적이어야 통째로 삭제/재사용할 수 있다(프레임워크 재사용성). "
                             + "코어 도메인 참조는 허용하되, 게시판·보상승인 클러스터의 업무↔업무 결합은 현행 기술부채로 동결한다. "

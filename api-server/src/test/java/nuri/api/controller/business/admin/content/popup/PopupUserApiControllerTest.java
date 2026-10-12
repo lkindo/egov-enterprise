@@ -1,7 +1,7 @@
 package nuri.api.controller.business.admin.content.popup;
 
-import nuri.business.service.system.content.popup.PopupService;
-import nuri.business.service.system.content.popup.dto.PopupDto;
+import nuri.business.service.promotion.popup.PopupService;
+import nuri.business.service.promotion.popup.dto.PopupDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
