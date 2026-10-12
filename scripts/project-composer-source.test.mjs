@@ -626,6 +626,66 @@ test('dashboard, notifications and optional address book blocks follow their dom
   assert.ok(rendered.includes("recipientPickerSources: readonly SlotContributions<'recipient-picker-sources'>[] = [];"), rendered);
 });
 
+/*
+ * [Phase 2 9단계 H0] 업무 홈 투영 그물. 구성마다 업무 홈('/')에 무엇이 남는지 생성기의 실제 투영·연쇄로 재고 골든과 대조한다.
+ * 업무 홈 page 에서 import 간선으로 닿고 지워지지 않은 파일을 모아, 파일 자체(팝업·배너·쪽지 카드·실시간)와 주석을 뺀 글(카드·
+ * 단추·목록·활동 문장)로 조각을 판정한다 — 마커 블록으로 조립하는 화면과 슬롯 기여로 조립하는 화면에 같은 판정이 선다.
+ * 접근 불가 안내는 다른 조각이 하나라도 있을 때만, 부제는 요약 카드가 있을 때만 화면에 나온다.
+ */
+const HOME_PAGE = 'frontend/src/app/page.tsx';
+const HOME_PIECES = [
+  ['popup', { file: 'frontend/src/app/components/dashboard/PopupManager.tsx' }],
+  ['banner', { file: 'frontend/src/app/components/dashboard/BannerSlider.tsx' }],
+  ['unreadNotes', { file: 'frontend/src/app/components/dashboard/UnreadNotesCard.tsx' }],
+  ['realtime', { file: 'frontend/src/components/features/dashboard/RealTimeDashboard.tsx' }],
+  ['approvalCard', { text: /결재 대기<\/span>/ }],
+  ['approvalButton', { text: />결재함 열기</ }],
+  ['boardCards', { text: /업무게시판 글</ }],
+  ['boardLists', { text: /title="업무게시판 최근 글"/ }],
+  ['newPost', { text: /새 게시글 작성/ }],
+  ['feedNote', { text: /위 목록에서 확인할 수 있습니다/ }],
+];
+const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards'];
+function homeSurface(selection) {
+  const composition = resolveProjectRecipe({ ...recipe([]), selection }, catalog);
+  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
+  const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
+    directPaths: projector.directPaths, readSource: path => projected.get(path) });
+  const reached = new Set([join(root, HOME_PAGE)].filter(path => !plan.removed.has(path)));
+  for (const path of reached) for (const { to } of plan.edges.get(path) ?? []) if (!plan.removed.has(to)) reached.add(to);
+  const text = [...reached].map(path => stripCode(projected.get(path) ?? '')).join('\n');
+  const pieces = HOME_PIECES.filter(([, rule]) => (rule.file ? reached.has(join(root, rule.file)) : rule.text.test(text))).map(([name]) => name);
+  if (pieces.length && /업무 홈 대시보드에 접근할 권한이 없습니다/.test(text)) pieces.push('accessGate');
+  if (pieces.some(piece => HOME_CARDS.includes(piece)) && /확인할 일과 업무 현황입니다/.test(text)) pieces.push('subtitle');
+  return { alive: reached.size > 0, pieces: pieces.sort() };
+}
+
+test('the work home keeps exactly the pieces of the features each composition selects (H0 golden)', () => {
+  const all = ['accessGate', 'approvalButton', 'approvalCard', 'banner', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'popup', 'realtime',
+    'subtitle', 'unreadNotes'];
+  const collaboration = all.filter(piece => !['approvalButton', 'approvalCard', 'banner', 'popup'].includes(piece));
+  const golden = [
+    [{ preset: 'core' }, []],
+    [{ preset: 'collaboration' }, collaboration],
+    [{ preset: 'demo' }, all],
+    [{ domains: ['dashboard'] }, collaboration.filter(piece => piece !== 'unreadNotes')],
+    // 게시판·결재·쪽지 카드는 대시보드 기능의 마커 블록이라, 그 기능만 고르면 홈에 나오지 않는다.
+    [{ domains: ['board'] }, []],
+    [{ domains: ['informalsanction'] }, []],
+    [{ domains: ['note'] }, []],
+    [{ domains: ['board', 'informalsanction'] }, []],
+    // 홍보 블록만 소유 기능 하나로 남는다 — 접근 불가 판정은 대시보드 블록이라 없다.
+    [{ domains: ['promotion'] }, ['banner', 'popup']],
+    [{ domains: ['notification'] }, []],
+  ];
+  for (const [selection, pieces] of golden) {
+    const surface = homeSurface(selection);
+    assert.ok(surface.alive, `${JSON.stringify(selection)}: the work home page survives`);
+    assert.deepEqual(surface.pieces, pieces, JSON.stringify(selection));
+  }
+});
+
 test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
   const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
   const source = readFileSync(join(root, file), 'utf8');
