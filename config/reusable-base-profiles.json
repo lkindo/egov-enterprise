@@ -418,6 +418,7 @@
           "src/app/admin/collaboration/scraps",
           "src/app/admin/help",
           "src/app/admin/community/board",
+          "src/app/admin/community/boards",
           "src/lib/board",
           "src/components/features/dashboard/RealTimeDashboard.tsx",
           "src/components/features/dashboard/RealTimeHomeSection.tsx",
@@ -439,8 +440,10 @@
           "src/app/admin/system/comments",
           "src/services/business/mail/MailService.ts",
           "src/services/business/user/NoteService.ts",
+          "src/app/note",
           "src/services/business/user/ScrapService.ts",
-          "src/services/foundation/operation/SmsAdminService.ts"
+          "src/services/foundation/operation/SmsAdminService.ts",
+          "src/app/admin/uss/ion/sms"
         ]
       },
       "database": {

@@ -1738,7 +1738,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1815,7 +1814,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1917,7 +1915,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2025,7 +2022,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2130,7 +2126,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2260,7 +2255,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2365,7 +2359,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -9637,7 +9630,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -10808,7 +10800,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],

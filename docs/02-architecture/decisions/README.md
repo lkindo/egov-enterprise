@@ -32,3 +32,4 @@
 | [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted |
 | [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted |
 | [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted |
+| [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
