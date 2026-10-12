@@ -22,8 +22,11 @@ const SCRIPT = join(ROOT, 'scripts/domain-deletion-plan.mjs');
 const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
 const APP = 'business-app/src/main/java/nuri/business';
 
-/** manifest 와 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다. */
-function treeWith({ manifest, domains }) {
+/**
+ * manifest 와 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
+ * `api` 면 api-server 생산 소스도 둔다 — api-server 디렉터리 소유 간선(DEC-OPS-280)도 카탈로그 없이 계산된다.
+ */
+function treeWith({ manifest, domains, api = false }) {
   const root = mkdtempSync(join(tmpdir(), 'domain-deletion-'));
   mkdirSync(join(root, 'config'), { recursive: true });
   writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(manifest));
@@ -31,6 +34,7 @@ function treeWith({ manifest, domains }) {
     const source = join(ROOT, APP, layer, domain);
     if (existsSync(source)) cpSync(source, join(root, APP, layer, domain), { recursive: true });
   }
+  if (api) cpSync(join(ROOT, 'api-server/src/main/java'), join(root, 'api-server/src/main/java'), { recursive: true });
   return root;
 }
 
@@ -40,8 +44,9 @@ const synthetic = capabilities => ({ capabilities: Object.entries(capabilities).
 // 단독 삭제마다 함께 지워지는 도메인. 바뀌면 delete-domain 이 지우는 범위가 바뀐 것이다.
 const SINGLE_DELETIONS = {
   addressbook: ['addressbook'],
-  board: ['board', 'comment', 'dashboard', 'scrap'],
-  comment: ['board', 'comment', 'dashboard', 'scrap'],
+  // 커뮤니티 사용자 API(게시판 목록)는 게시판 타입을 참조한다 — api-server 디렉터리 소유 간선(DEC-OPS-280).
+  board: ['board', 'comment', 'community', 'dashboard', 'scrap'],
+  comment: ['board', 'comment', 'community', 'dashboard', 'scrap'],
   community: ['community'],
   dashboard: ['dashboard'],
   event: ['event'],
@@ -109,8 +114,9 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   const edges = capabilities => [...new Set(capabilities.flatMap(capability => capability.requires.filter(row => !row.customOnly)
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
-  // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), Java 참조(스크랩→게시판).
-  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java']) {
+  // 네 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음 requiresDomains(대시보드→알림), 업무 앱 Java 참조(스크랩→게시판),
+  // api-server 디렉터리 소유 기능의 Java 참조(커뮤니티→게시판, DEC-OPS-280).
+  for (const pair of ['community>template java', 'dashboard>notification manifest', 'scrap>board java', 'community>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
@@ -128,8 +134,10 @@ test('a projected collaboration tree plans the same deletions without the full c
   try {
     const tree = treeDeletionCatalog(root);
     assert.deepEqual(tree.capabilities.map(capability => capability.id), [...collaboration].sort());
+    // 커뮤니티는 이 트리에 없다(demo pack) — 원본 표에서 트리에 있는 기능만 함께 지워진다.
     for (const domain of collaboration) {
-      assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains, SINGLE_DELETIONS[domain], domain);
+      assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains,
+        SINGLE_DELETIONS[domain].filter(name => collaboration.includes(name)), domain);
     }
     const result = spawnSync(process.execPath, [SCRIPT, '--json', '--root', root, 'board'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
@@ -178,7 +186,7 @@ test('files outside the domain directories go with the types they reference, jud
 
 test('a tree where a deletion already ran and a new domain was scaffolded still plans', () => {
   const gone = new Set(['informalsanction', 'reward']);
-  const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)) });
+  const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)), api: true });
   try {
     // generate-domain.ps1 가 만드는 새 도메인. manifest 에 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
     mkdirSync(join(root, APP, 'domain/product'), { recursive: true });

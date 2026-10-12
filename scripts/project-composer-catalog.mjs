@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
-import { degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
+import { apiSourceOwner, degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
 import { attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
@@ -13,6 +13,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
 const PERMISSIONS = 'config/governance/permission-catalog.json';
 const APP_ROOT = 'business-app/src/main/java/nuri/business';
+const API_ROOT = 'api-server/src/main/java/nuri/api';
 const sorted = values => [...new Set(values)].sort();
 const slash = value => value.split(sep).join('/');
 
@@ -198,9 +199,27 @@ function javaCode(source) {
 }
 
 /*
- * 아래 세 판정은 카탈로그와 수동 도메인 삭제(domain-deletion-plan.mjs)가 함께 쓴다. 삭제 판정은 카탈로그 전체 검증 없이
+ * 아래 판정들은 카탈로그와 수동 도메인 삭제(domain-deletion-plan.mjs)가 함께 쓴다. 삭제 판정은 카탈로그 전체 검증 없이
  * 지금 트리(생성물·이미 지운 트리 포함)에서 같은 간선을 계산해야 해서, 순회는 따로 하되 간선 규칙은 여기 하나만 둔다.
  */
+/** api-server 생산 소스의 루트(저장소 기준). 간선은 이 아래 `.java` 파일에서 센다. */
+export const API_SOURCE_ROOT = API_ROOT;
+
+/**
+ * api-server 생산 소스 하나가 만드는 기능 간선(DEC-OPS-280). 생성기는 지운 기능의 타입을 참조하는 api-server 파일을 연쇄로
+ * 지우므로, 디렉터리 소유 기능(apiSourceOwner)의 컨트롤러가 다른 기능 타입을 참조하면 소유 기능은 그 기능을 요구한다.
+ * 이 간선이 없으면 소유 기능만 고른 생성물에서 그 컨트롤러가 조용히 지워진다(커뮤니티 사용자 API 가 게시판 참조로 사라지던 경로).
+ * 소유 디렉터리 없이 둘 이상을 참조하면 어느 기능에 속하는지 정할 수 없어 실패한다. `features` 는 기능 id 집합이다.
+ * @returns {{ owner: string | null, referenced: string[], requires: string[] }}
+ */
+export function apiSourceRequirements(path, source, features) {
+  const referenced = sorted(javaDomainReferences(source).filter(domain => features.has(domain)));
+  const owner = referenced.length ? apiSourceOwner(path, features) : null;
+  if (!owner && referenced.length > 1) {
+    fail(`api-server source references several capabilities without an owning directory: ${path} (${referenced.join(', ')})`);
+  }
+  return { owner, referenced, requires: owner ? referenced.filter(domain => domain !== owner) : [] };
+}
 /** 업무 앱 생산 소스의 상대 경로가 속한 기능 디렉터리. 업무 앱 소스가 아니면 null. */
 export function appSourceDomain(path) {
   return path.startsWith(`${APP_ROOT}/`) ? path.slice(APP_ROOT.length + 1).match(/^(?:domain|service)\/([^/]+)\//)?.[1] ?? null : null;
@@ -319,6 +338,16 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const referenced of javaDomainReferences(source)) {
       if (referenced !== domain && inventory.has(referenced)) owner.edges.push({ domain: referenced, evidence: path });
     }
+  }
+  // api-server 컨트롤러가 다른 기능 타입을 참조하는 결합도 간선이다(DEC-OPS-280). 업무 앱 순회만으로는 보이지 않는다.
+  const features = new Set(inventory.keys());
+  for (const absolute of walk(join(root, API_ROOT)).filter(path => path.endsWith('.java'))) {
+    const path = slash(relative(root, absolute));
+    const source = readFileSync(absolute, 'utf8');
+    const { owner, requires } = apiSourceRequirements(path, source, features);
+    if (!requires.length) continue;
+    for (const required of requires) inventory.get(owner).edges.push({ domain: required, evidence: path });
+    sourceFingerprints.push({ path, sha256: compositionDigest(source.replace(/\r\n/g, '\n')) });
   }
   const sharedTables = manifest.sharedTableContracts ?? [];
   for (const shared of sharedTables) for (const consumer of shared.consumers) {

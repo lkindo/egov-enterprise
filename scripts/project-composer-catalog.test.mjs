@@ -289,11 +289,37 @@ test('registration-only cleanup listeners must still exist and an api-server sou
     'public void onUserDeletion(UserDeletionEvent event)', 'public void onUserDeletion(RetiredCleanupEvent event)');
   assert.throws(() => loadProjectComposerCatalog(root), /registration-only event has no publisher and listener: core -> addressbook via UserDeletionEvent/);
 
+  // 소유 디렉터리 없이 두 기능을 참조하는 api-server 파일은 이벤트 소유 판정 전에 간선 판정(DEC-OPS-280)이 거부한다 — 어느 기능이
+  // 그 파일을 요구하는지 정할 수 없다. 이벤트 소유의 모호성 자체는 아래 sourceOwner 단위 시험이 본다.
   const ambiguous = fixture(t);
   const probe = 'api-server/src/main/java/nuri/api/ProbePublisher.java';
   writeFileSync(join(ambiguous, probe), 'package nuri.api;\nimport nuri.business.service.mail.MailService;\nimport nuri.business.service.note.NoteService;\n'
     + 'class ProbePublisher { MailService mail; NoteService note; Object probe() { return new nuri.foundation.core.event.NotificationRequestedEvent("u", "t", "c", "/"); } }\n');
-  assert.throws(() => loadProjectComposerCatalog(ambiguous), /Event source ownership is ambiguous: api-server\/src\/main\/java\/nuri\/api\/ProbePublisher\.java/);
+  assert.throws(() => loadProjectComposerCatalog(ambiguous),
+    /api-server source references several capabilities without an owning directory: api-server\/src\/main\/java\/nuri\/api\/ProbePublisher\.java \(mail, note\)/);
+});
+
+/*
+ * api-server 컨트롤러의 기능 결합(DEC-OPS-280). 생성기는 지운 기능의 타입을 참조하는 api-server 파일을 연쇄로 지운다. 업무 앱만 세면
+ * 커뮤니티 사용자 API(게시판 목록·가입·탈퇴)가 게시판 참조로 지워지는 결합이 간선에 없어, 다른 간선이 빠지는 순간 커뮤니티만 고른
+ * 생성물이 그 API 없이 생성·검증을 통과한다. 디렉터리 소유 기능이 나머지 참조 기능을 요구한다고 센다.
+ */
+test('an api-server source requires, from its owning directory feature, every other feature it references', t => {
+  const apiEdges = (from, to) => catalog.capabilities.find(row => row.id === from).requires
+    .filter(row => row.domain === to && row.kind === 'java' && row.evidence.startsWith('api-server/')).map(row => row.evidence);
+  assert.deepEqual(apiEdges('community', 'board'), ['api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java'],
+    'community requires board through its user API');
+  assert.deepEqual(apiEdges('comment', 'board'), ['api-server/src/main/java/nuri/api/controller/business/comment/CommentApiController.java'],
+    'comment requires board through its API');
+  // 기능 사이 api-server 간선은 이 둘뿐이다. 늘면 사용자 문장과 수동 삭제 표가 함께 움직인다.
+  assert.deepEqual(catalog.capabilities.flatMap(row => row.requires.filter(edge => edge.kind === 'java' && edge.evidence.startsWith('api-server/'))
+    .map(edge => `${row.id}>${edge.domain}`)).sort(), ['comment>board', 'community>board']);
+  // 근거 파일의 지문이 카탈로그 해시에 들어간다.
+  const root = fixture(t);
+  assert.equal(loadProjectComposerCatalog(root).provenance.sourceInventoryHash, catalog.provenance.sourceInventoryHash);
+  const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
+  writeFileSync(join(root, controller), `// 지문만 바뀐다\n${readFileSync(join(root, controller), 'utf8')}`);
+  assert.notEqual(loadProjectComposerCatalog(root).provenance.sourceInventoryHash, catalog.provenance.sourceInventoryHash);
 });
 
 test('port and optional foreign key evidence must occur exactly once in code, never only in a comment', t => {
@@ -382,6 +408,12 @@ test('event-source ownership follows support declarations, the module and the do
   assert.equal(owner('api-server/src/main/java/nuri/api/C.java', 'import nuri.business.service.system.S; import nuri.business.service.board.B;'), 'system');
   assert.throws(() => owner('api-server/src/main/java/nuri/api/D.java', 'import nuri.business.service.mail.M; import nuri.business.service.note.N;'),
     /Event source ownership is ambiguous/);
+  // api-server 파일은 참조한 기능 가운데 디렉터리 소유 기능이 소유자다(DEC-OPS-280) — 카탈로그 간선과 같은 판정이다.
+  //   폐포만 보면 서로 끌어오는 게시판·댓글 가운데 정렬 첫째(게시판)가 되어, 댓글 컨트롤러가 게시판 소유로 잘못 셌다.
+  assert.equal(owner('api-server/src/main/java/nuri/api/controller/business/comment/E.java', 'import nuri.business.service.comment.C; import nuri.business.service.board.B;'), 'comment');
+  assert.equal(owner('api-server/src/main/java/nuri/api/controller/business/mail/F.java', 'import nuri.business.service.mail.M; import nuri.business.service.note.N;'), 'mail');
+  // 디렉터리 소유 기능을 참조하지 않으면 그 파일의 생존은 디렉터리와 무관하다 — 폐포 규칙으로 정한다.
+  assert.equal(owner('api-server/src/main/java/nuri/api/controller/business/note/G.java', 'import nuri.business.service.comment.C; import nuri.business.service.board.B;'), 'board');
 });
 
 test('one predicate decides both whether an event needs a declaration and whether a declaration can ever degrade', () => {

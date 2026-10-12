@@ -96,6 +96,7 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];
 const SCAN_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
 const APP_PREFIX = 'business-app/src/main/java/nuri/business/';
+const API_PREFIX = 'api-server/src/main/java/nuri/api/';
 // 받는 타입이 이것이면 어떤 이벤트를 받는지 정할 수 없다. 클래스를 애노테이션에 적어야 한다.
 const BROAD_EVENT_TYPES = new Set(['Object', 'ApplicationEvent', 'DomainEvent', 'PayloadApplicationEvent', 'Record']);
 const JAVA_IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
@@ -267,9 +268,22 @@ export function requiresClosure(capabilities) {
 }
 
 /**
+ * api-server 생산 소스의 디렉터리 소유 기능(Phase 2 커뮤니티 후속, DEC-OPS-280). `api-server/src/main/java/nuri/api/` 아래
+ * 디렉터리 구간 가운데 기능 id 인 마지막 구간이다(`controller/business/admin/content/community/…` 는 community). 없으면 null.
+ * 카탈로그 간선·수동 삭제 판정·소스 생존 검사·이벤트 소유 판정이 이 하나를 쓴다.
+ */
+export function apiSourceOwner(path, domains) {
+  if (!path.startsWith(API_PREFIX)) return null;
+  const features = domains instanceof Set ? domains : new Set(domains);
+  return path.slice(API_PREFIX.length).split('/').slice(0, -1).reverse().find(segment => features.has(segment)) ?? null;
+}
+
+/**
  * 파일 소유 판정. domainSupportFiles 선언이 먼저, 그다음 업무 앱 디렉터리다. foundation·business-core 는 core 다.
  * 그 밖(주로 api-server)은 참조하는 업무 패키지로 정한다 — 생성기는 그 기능이 빠지면 참조 파일을 함께 지운다.
- * 여러 기능을 참조하면 나머지를 모두 끌어오는 기능이 소유자다(그 기능이 있어야 파일이 남는다). 그런 기능이 없으면 실패한다.
+ * 여러 기능을 참조하는 api-server 파일은 그 가운데 디렉터리 소유 기능(apiSourceOwner)이 소유자다 — 카탈로그가 그 기능이 나머지
+ * 참조 기능을 요구한다고 센다. 디렉터리 소유가 없으면 나머지를 모두 끌어오는 기능이 소유자다(그 기능이 있어야 파일이 남는다).
+ * 그런 기능이 없으면 실패한다.
  * 같은 패키지의 단순 이름 참조처럼 이 규칙이 못 보는 연쇄 제거는 시험이 생성기 제거 계획과 대조해 잡는다.
  */
 export function sourceOwner(supportOwners, domains, closure) {
@@ -281,6 +295,8 @@ export function sourceOwner(supportOwners, domains, closure) {
     const referenced = [...new Set([...code.matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./gu)]
       .map(found => found[1]).filter(domain => selectable.has(domain)))].sort(byCodeUnits);
     if (referenced.length <= 1) return referenced[0] ?? 'core';
+    const directory = apiSourceOwner(path, selectable);
+    if (directory && referenced.includes(directory)) return directory;
     const owners = referenced.filter(domain => referenced.every(other => closure(domain).has(other)));
     if (!owners.length) throw new Error(`Event source ownership is ambiguous: ${path} references ${referenced.join(', ')}`);
     return owners[0];

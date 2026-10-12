@@ -250,6 +250,31 @@ test('API support is removed or survives with its exact consumer and cannot sile
     error => error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details) === JSON.stringify({ files: [file.split(sep).join('/')] }));
 });
 
+/*
+ * 디렉터리 소유 기능이 선택된 api-server 컨트롤러는 남아야 한다(DEC-OPS-280). 커뮤니티 사용자 API 는 게시판 타입을 참조해, 게시판 없이
+ * 커뮤니티를 고르면 생성기가 그 컨트롤러를 연쇄로 지운다. 참조 기능이 모두 선택됐을 때만 생존을 요구하던 검사는 이 손실을 통과시켰다.
+ * 카탈로그가 그 참조를 간선으로 세므로 실제 해석에서는 게시판이 함께 들어온다. 간선을 메모리에서 걷어 손실을 재현한다.
+ */
+test('a selected feature keeps the api-server controllers of its own directory even when the requires edge is missing', () => {
+  const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
+  const survives = (catalogValue, selected) => {
+    const composition = resolveProjectRecipe(recipe(selected), catalogValue);
+    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, manifest,
+      { present: path => !plan.removed.has(join(root, path)) }) };
+  };
+  const real = survives(catalog, ['community']);
+  assert.ok(real.composition.resolvedDomains.includes('board'), 'the real catalog pulls the board in for the community');
+  assert.equal(real.plan.removed.has(join(root, controller)), false);
+  assert.doesNotThrow(real.check);
+  const { catalogHash: _realHash, ...body } = { ...catalog, capabilities: catalog.capabilities.map(row => (row.id !== 'community' ? row
+    : { ...row, requires: row.requires.filter(edge => edge.domain !== 'board') })) };
+  const lost = survives({ ...body, catalogHash: compositionDigest(body) }, ['community']);
+  assert.ok(!lost.composition.resolvedDomains.includes('board'));
+  assert.ok(lost.plan.removed.has(join(root, controller)), 'the generator removes the controller through its board reference');
+  assert.throws(lost.check, error => error.code === 'SOURCE_SURVIVAL' && error.details.files.includes(controller));
+});
+
 test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
   const { directory, manifest } = supportFixture(t);
   const foreign = 'business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java';

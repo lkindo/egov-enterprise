@@ -3,6 +3,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ComposerError } from './project-composer-errors.mjs';
+import { apiSourceOwner } from './project-composer-integrations.mjs';
 import { describeRoutes, pageSurvivalViolations } from './reusable-page-survival.mjs';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
@@ -278,7 +279,8 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
 }
 
 function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
-  const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
+  manifest ??= JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const support = domainSupportFiles(sourceRoot, manifest);
   // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
     .flatMap(([, files]) => files));
@@ -305,6 +307,10 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
   const selected = new Set(composition.resolvedDomains);
+  const features = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
+  // 참조 기능이 모두 선택된 컨트롤러는 남아야 한다. 디렉터리 소유 기능(apiSourceOwner)이 선택된 컨트롤러도 남아야 한다 —
+  // 소유 기능만 고른 구성에서 다른 기능 타입 참조로 컨트롤러가 연쇄 제거되면, 참조 기능이 모두 선택된 것이 아니라 앞 규칙은
+  // 통과시킨다(커뮤니티 사용자 API 가 게시판 참조로 조용히 지워지던 경로, DEC-OPS-280). 카탈로그가 그 참조를 간선으로 세면 둘은 같다.
   function assertControllers(directory) {
     if (!existsSync(directory)) return;
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -315,7 +321,9 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
       const domains = [...source.matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)]
         .map(match => match[1]).filter(domain => existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/domain', domain))
           || existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/service', domain)));
-      if (domains.length && domains.every(domain => selected.has(domain))) requireFile(relative(sourceRoot, path));
+      const file = relative(sourceRoot, path);
+      const owner = apiSourceOwner(file.split(sep).join('/'), features);
+      if ((domains.length && domains.every(domain => selected.has(domain))) || (owner && selected.has(owner))) requireFile(file);
     }
   }
   assertControllers(join(sourceRoot, 'api-server/src/main/java/nuri/api/controller'));

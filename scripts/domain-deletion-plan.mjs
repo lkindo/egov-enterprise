@@ -26,7 +26,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { appSourceDomain, clusterRequirements, javaDomainReferences } from './project-composer-catalog.mjs';
+import { API_SOURCE_ROOT, apiSourceRequirements, appSourceDomain, clusterRequirements, javaDomainReferences } from './project-composer-catalog.mjs';
 import { REQUIRES_USER_REASONS } from './project-composer-reasons.mjs';
 import { supportFileDirectoryDomain } from './project-composer-source.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
@@ -74,7 +74,8 @@ function javaFiles(directory) {
 
 /**
  * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 manifest appDomains 이고, 간선은 카탈로그의 비 customOnly 간선과
- * 같은 세 종류다 — 업무 앱 Java 참조(java), 다른 기능 디렉터리의 지원 파일(java), 생성 묶음 선언(manifest).
+ * 같은 네 종류다 — 업무 앱 Java 참조(java), api-server 디렉터리 소유 기능의 Java 참조(java, DEC-OPS-280), 다른 기능 디렉터리의
+ * 지원 파일(java), 생성 묶음 선언(manifest).
  * manifest 에 없는 기능 디렉터리(스캐폴드한 새 도메인)의 소스는 건너뛴다 — 그 소스의 잔존 참조는 delete-domain 의 잔존 참조 검사가 알린다.
  * 업무 앱 디렉터리가 하나도 남지 않은 기능은 present: false 다.
  */
@@ -89,6 +90,10 @@ export function treeDeletionCatalog(root) {
     const domain = appSourceDomain(relative(root, absolute).split(sep).join('/'));
     if (!known.has(domain)) continue;
     for (const referenced of javaDomainReferences(readFileSync(absolute, 'utf8'))) add(domain, referenced, 'java');
+  }
+  for (const absolute of javaFiles(join(root, API_SOURCE_ROOT))) {
+    const { owner, requires: required } = apiSourceRequirements(relative(root, absolute).split(sep).join('/'), readFileSync(absolute, 'utf8'), known);
+    for (const domain of required) add(owner, domain, 'java');
   }
   for (const pack of Object.values(manifest.packs ?? {})) for (const [domain, files] of Object.entries(pack.backend?.domainSupportFiles ?? {})) {
     if (!known.has(domain)) continue;
