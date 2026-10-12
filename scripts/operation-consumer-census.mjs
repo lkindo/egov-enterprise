@@ -66,7 +66,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
-import { SLOT_ROOT, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_ROOT, slotConsumersByHub, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -751,6 +751,21 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
   };
   const directImporters = (target) => uiFiles.filter((other) => other !== target && importsModule(sources.get(other), moduleName(target)));
   /*
+    [허브 분해 H1] hub-tabs 레지스트리는 하나인데 여러 허브 셸이 읽는다. 기여의 importer 를 레지스트리를 읽는 모든 파일로 이으면 한 허브
+    탭의 쓰기(예: 스크랩 등록)가 다른 허브 화면에 귀속돼 권한 작업대가 엉뚱한 권한을 보이고, 축 3 판정이 다른 허브의 언급으로 통과할 수
+    있다. 그래서 허브별 소비자 표(slot-registry.mjs)가 있는 슬롯은 기여 항목의 hub 리터럴을 AST 로 읽어 그 허브의 셸만 잇는다.
+  */
+  const contributionHubs = (file) => {
+    const hubs = new Set();
+    const visit = (node) => {
+      if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'hub'
+        && ts.isStringLiteralLike(unwrap(node.initializer))) hubs.add(unwrap(node.initializer).text);
+      ts.forEachChild(node, visit);
+    };
+    visit(ast(file));
+    return [...hubs];
+  };
+  /*
     기여 파일은 아무 화면도 직접 import 하지 않는다 — 셸은 생성 레지스트리(generated-<슬롯>.ts)를 읽는다. 그래서 기여의 importer 는
     그 레지스트리의 importer 다. 레지스트리를 읽는 것이 화면이 아니라 도우미(.ts, 예: 수신자 피커 출처 도우미)면 그 도우미를 import
     하는 화면으로 한 번 더 잇는다. 이 한 단계가 없으면 다음 슬롯에서 같은 사각이 재발한다.
@@ -761,8 +776,11 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
     const slot = contributionSlot.get(target);
     if (slot !== undefined) {
       const registry = moduleName(slotRegistryPath(slot));
+      const byHub = slotConsumersByHub(slot);
+      const hubReaders = byHub ? new Set(contributionHubs(target).flatMap((hub) => byHub[hub] ?? []).map((file) => absolute(file))) : null;
       for (const reader of files) {
         if (reader === target || !importsModule(sources.get(reader), registry)) continue;
+        if (hubReaders && !hubReaders.has(reader)) continue;
         if (uiFiles.includes(reader)) importers.add(reader);
         else directImporters(reader).forEach((screen) => importers.add(screen));
       }

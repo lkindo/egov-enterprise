@@ -10,7 +10,6 @@
  * 메뉴·화면 제목을 쓴다. 문장은 카탈로그 해시에 들어가므로 고치면 모든 구성 해시가 바뀐다.
  */
 const KNOWLEDGE_HUB = '게시판·도움말·커뮤니티가 도움말 관리 화면의 위키·질의응답·커뮤니티 탭을 함께 씁니다.';
-const COLLABORATION_HUB = '쪽지와 스크랩이 쪽지·스크랩 화면 하나를 함께 씁니다.';
 const WORK_HUB = '업무 보고와 일정이 나의 업무 화면 하나를 함께 씁니다.';
 
 export const REQUIRES_USER_REASONS = Object.freeze({
@@ -25,12 +24,10 @@ export const REQUIRES_USER_REASONS = Object.freeze({
   'dashboard>notification': '실시간 대시보드가 읽지 않은 알림 수를 보여 줍니다.',
   'help>board': KNOWLEDGE_HUB,
   'help>community': KNOWLEDGE_HUB,
-  'note>scrap': COLLABORATION_HUB,
   'report>schedule': WORK_HUB,
   'reward>informalsanction': '포상 데이터가 결재 문서 표를 참조합니다.',
   'schedule>report': WORK_HUB,
   'scrap>board': '스크랩은 게시글을 저장해 둡니다.',
-  'scrap>note': COLLABORATION_HUB,
 });
 
 const pairKey = (from, to) => `${from}>${to}`;

@@ -68,7 +68,7 @@ test('core plus board and survey includes required UI/domain closure without mai
   const plan = resolveProjectRecipe(recipe({ domains: ['board', 'survey'] }), catalog);
   assert.equal(plan.profile, 'custom');
   assert.deepEqual(plan.selectedDomains, ['board', 'survey']);
-  // 게시판은 스크랩 없이 생성된다(DEC-OPS-272). 스크랩이 빠지니 쪽지·스크랩 공동 화면을 쓰는 쪽지도 들어오지 않는다.
+  // 게시판은 스크랩 없이 생성된다(DEC-OPS-272). 협업 허브는 core 셸이고 쪽지·스크랩은 그 탭 기여라 둘 다 들어오지 않는다(허브 분해 H1).
   // 기능 분할(DEC-OPS-273) 뒤 지식 허브가 끌어오는 것은 커뮤니티뿐이다 — 배너·팝업·시연 화면은 들어오지 않는다.
   assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'community', 'help', 'survey', 'template']);
   for (const absent of ['promotion', 'showcase']) assert.ok(!plan.resolvedDomains.includes(absent), absent);
@@ -77,7 +77,10 @@ test('core plus board and survey includes required UI/domain closure without mai
   assert.ok(plan.tables.includes('tb_srvy_info') && plan.tables.includes('tb_tmplt_info'));
   assert.ok(plan.permissionCodes.includes('BOARD_READ') && !plan.permissionCodes.includes('MAIL_SEND'));
   assert.ok(plan.menuRoutes.includes('/admin/help'));
-  assert.ok(!plan.menuRoutes.includes('/admin/collaboration'), 'the note and scrap hub leaves with both of its features');
+  assert.ok(plan.menuRoutes.includes('/admin/collaboration'), 'the collaboration hub is a core shell');
+  for (const contribution of ['src/extensions/note', 'src/extensions/scrap', 'src/app/admin/collaboration/scraps']) {
+    assert.ok(plan.frontend.removePaths.includes(contribution), `${contribution} leaves with its feature`);
+  }
   assert.ok(!plan.menuRoutes.some(route => route.includes('?')), 'menus are owned by screen path');
   assert.deepEqual(plan.excludedMenuTabs, [], 'every tab contributor of the retained knowledge hub is retained');
   assert.ok(plan.frontend.removePaths.includes('src/services/business/mail/MailService.ts'));
@@ -329,12 +332,14 @@ test('auto-included features carry the shortest chain from a selection, one sent
     }
   }
   assert.ok(checked > 200, `checked ${checked} automatic inclusions`);
-  // 대표 사례: 쪽지만 고르면 게시판은 '쪽지 → 스크랩 → 게시판'으로 들어온다. 스크랩→게시판은 코드 참조뿐이다(묶음 선언은 걷었다).
-  const note = resolveProjectRecipe(recipe({ domains: ['note'] }), catalog).autoIncluded.find(item => item.domain === 'board');
-  assert.deepEqual(note.chain.map(hop => [hop.from, hop.to, hop.kinds]), [['note', 'scrap', ['shared-ui']], ['scrap', 'board', ['java']]]);
-  assert.deepEqual(note.roots, ['note']);
+  // 대표 사례: 대시보드만 고르면 댓글은 '대시보드 → 게시판 → 댓글'로 들어온다(쪽지 사슬은 허브 분해 H1 에서 사라졌다).
+  const dashboard = resolveProjectRecipe(recipe({ domains: ['dashboard'] }), catalog).autoIncluded.find(item => item.domain === 'comment');
+  assert.deepEqual(dashboard.chain.map(hop => [hop.from, hop.to, hop.kinds]), [['dashboard', 'board', ['manifest']], ['board', 'comment', ['java', 'manifest']]]);
+  assert.deepEqual(dashboard.roots, ['dashboard']);
   // 개발자 원문 reason 은 종전 형식 그대로 남는다(호환). 그 기능으로 들어오는 모든 간선의 원문을 모은다.
-  assert.ok(note.reason.includes('scrap: scrap 소스가 board 타입을 참조한다.') && note.reason.includes('comment: '), note.reason);
+  assert.ok(dashboard.reason.includes('board: board 소스가 comment 타입을 참조한다.'), dashboard.reason);
+  // 쪽지는 혼자 풀린다.
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['note'] }), catalog).autoIncluded, []);
   const both = resolveProjectRecipe(recipe({ domains: ['comment', 'scrap'] }), catalog).autoIncluded.find(item => item.domain === 'board');
   assert.deepEqual(both.roots, ['comment', 'scrap']);
 });
@@ -343,5 +348,5 @@ test('a catalog edge without its user sentence is refused rather than shown as d
   const { catalogHash, ...body } = structuredClone(catalog);
   for (const edge of body.capabilities.find(capability => capability.id === 'scrap').requires) delete edge.userReason;
   const tampered = { ...body, catalogHash: compositionDigest(body) };
-  assert.throws(() => resolveProjectRecipe(recipe({ domains: ['note'] }), tampered), /Dependency lacks a user reason: scrap -> board/);
+  assert.throws(() => resolveProjectRecipe(recipe({ domains: ['scrap'] }), tampered), /Dependency lacks a user reason: scrap -> board/);
 });

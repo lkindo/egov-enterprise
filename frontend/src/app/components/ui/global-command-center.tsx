@@ -8,9 +8,6 @@ import { Search,
   Star,
   History,
   Zap } from 'lucide-react';
-/* reusable-base:collaboration:start */
-import { Users } from 'lucide-react';
-/* reusable-base:collaboration:end */
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +20,11 @@ import {
   normalizeInternalRoute,
   resolveMenuInternalRoute,
 } from '@/lib/navigation/internal-route';
+import { visibleEntries, type ShellLink } from '@/extensions/slots';
+import { shellLinks } from '@/extensions/generated-shell-links';
+
+/** 명령 센터의 바로가기는 기능의 shell-links 기여(command-center 배치)다 — 이 파일은 기능 경로를 적지 않는다(허브 분해 H1). */
+const isCommandCenterLink = (link: ShellLink) => link.placement === 'command-center';
 
 interface CommandItem {
   id: string;
@@ -144,13 +146,17 @@ export function GlobalCommandCenter() {
     }
   }, [logout, router]);
 
+  // 바로가기는 기능이 기여한다(shell-links 의 command-center 배치). 기능이 빠진 구성에서는 그 기여 파일이 함께 지워진다.
+  //   목적지는 url 키로 옮긴다 — 이 파일은 /search 검색어 승인 바인딩의 원천이라 새 URL 레코드를 만들지 않는다.
+  const shortcutLinks: CommandItem[] = useMemo(() => visibleEntries(user, shellLinks, isCommandCenterLink)
+    .map(({ id, label, href, icon: Icon, description }) => ({
+      id: `link-${id}`, name: label, url: href, icon: Icon ? <Icon size={16} /> : undefined, category: '메뉴' as const, description,
+    })), [user]);
+
   const quickActions: CommandItem[] = useMemo(() => [
-    // 협업 허브는 collaboration pack 소유다 — 그 pack 이 빠진 프로필에서 404 로 가는 바로가기를 남기지 않는다.
-    /* reusable-base:collaboration:start */
-    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '쪽지·메일·스크랩 등 협업 기능으로 이동' },
-    /* reusable-base:collaboration:end */
+    ...shortcutLinks,
     { id: 'sys-logout', name: '로그아웃', action: logoutAndLeaveAuthenticatedSurface, icon: <LogOut size={16} />, category: '시스템' },
-  ], [logoutAndLeaveAuthenticatedSurface]);
+  ], [shortcutLinks, logoutAndLeaveAuthenticatedSurface]);
 
   // 4. 통합 검색 필터링
   const filteredItems = useMemo(() => {

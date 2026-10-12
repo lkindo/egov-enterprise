@@ -606,10 +606,12 @@ test('dashboard, notifications and optional address book blocks follow their dom
   for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
     assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
   }
+  //   [허브 분해 H1] 협업 허브 탭(hub-tabs)도 같다. 셸 링크 레지스트리에는 메일 자신의 협업 허브 링크만 남는다.
   for (const [shellRegistry, empty] of [
     ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
-    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [];"],
+    ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [mail];"],
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
+    ['frontend/src/extensions/generated-hub-tabs.ts', "hubTabs: readonly SlotContributions<'hub-tabs'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
@@ -677,14 +679,19 @@ test('every route literal in a marker block survives in every composition that k
   }
   assert.ok(checked >= 10, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
-  // 명령 센터의 협업 허브 바로가기: 게시판·설문(CI 대표 구성)에는 허브가 없으므로 바로가기도 없다. 쪽지를 고르면 허브와 함께 남는다.
+  // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,
+  //   게시판·설문(CI 대표 구성)에서는 레지스트리에 쪽지 항목이 없으며, 쪽지를 고르면 있다.
   const file = 'frontend/src/app/components/ui/global-command-center.tsx';
   const center = readFileSync(join(root, file), 'utf8');
-  const boardSurvey = projectCustom(file, center, resolveProjectRecipe(recipe(['board', 'survey']), catalog));
-  assert.doesNotMatch(boardSurvey, /\/admin\/collaboration|act-collab|import \{ Users \}/);
-  const withNote = projectCustom(file, center, resolveProjectRecipe(recipe(['note']), catalog));
-  assert.match(withNote, /url: '\/admin\/collaboration'/);
-  assert.match(withNote, /import \{ Users \} from 'lucide-react';/);
+  assert.doesNotMatch(center, /reusable-base:|\/admin\/collaboration|act-collab/);
+  const links = 'frontend/src/extensions/generated-shell-links.ts';
+  const registryFor = domains => {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+      .project(links, readFileSync(join(root, links), 'utf8')).source;
+  };
+  assert.doesNotMatch(registryFor(['board', 'survey']), /import note from/);
+  assert.match(registryFor(['note']), /import note from '\.\/note\/shell-links';/);
 });
 
 test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c)', () => {

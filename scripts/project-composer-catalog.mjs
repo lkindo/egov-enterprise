@@ -82,11 +82,15 @@ const FEATURES = {
   isg: { label: '인터넷 서비스 안내', permissions: ['SERVICE'], paths: [
     'src/app/admin/system/isg', 'src/services/foundation/system/InternetSvcGuidanceAdminService.ts'], routes: ['/admin/system/isg'] },
   mail: { label: '메일', permissions: ['MAIL'], paths: [
-    'src/services/business/mail/MailService.ts', 'src/app/admin/collaboration/mail-history', 'src/app/admin/collaboration/mail-send'],
+    'src/services/business/mail/MailService.ts', 'src/app/admin/collaboration/mail-history', 'src/app/admin/collaboration/mail-send',
+    // 슬롯 기여(허브 분해 H1): 협업 허브 머리의 메일 발송 링크.
+    'src/extensions/mail'],
   routes: ['/admin/collaboration/mail-history', '/admin/collaboration/mail-send'], requirements: ['메일 발송에 사용할 SMTP 설정'] },
   memoreport: { label: '메모 보고', permissions: ['MEMO_RPT'], paths: [
     'src/services/business/memoreport', 'src/app/admin/operation/memo-reports'], routes: ['/admin/operation/memo-reports'] },
-  note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note', 'src/app/components/dashboard/UnreadNotesCard.tsx'],
+  note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note', 'src/app/components/dashboard/UnreadNotesCard.tsx',
+    // 슬롯 기여(허브 분해 H1): 협업 허브의 쪽지 탭과 명령 센터의 협업 허브 바로가기.
+    'src/extensions/note'],
     routes: ['/note'] },
   notification: { label: '알림', permissions: ['NOTI'], paths: [
     'src/app/components/layout/header-notifications.tsx', 'src/app/components/ui/app-notification-drawer.tsx',
@@ -132,11 +136,8 @@ const FEATURES = {
 
 // Required only by explicit domain selections. Legacy presets retain their
 // existing reduced route surface; their pack projection is unchanged.
+// 협업 허브는 core 셸 + 쪽지·스크랩 탭 기여(hub-tabs)라 공동 화면이 아니다(허브 분해 H1).
 const SHARED_UI = [
-  { id: 'collaboration-hub', domains: ['note', 'scrap'],
-    paths: ['src/app/admin/collaboration/page.tsx', 'src/app/admin/collaboration/CollaborationHubClient.tsx'],
-    routes: ['/admin/collaboration'], reason: '쪽지·스크랩 공동 화면이 두 기능의 서비스와 폼을 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx' },
   { id: 'knowledge-hub', domains: ['board', 'community', 'help'], paths: [], routes: [],
     reason: '지식·커뮤니티 공동 화면이 게시판 서비스, 도움말 헬퍼와 커뮤니티 관리 폼을 직접 참조한다.',
     evidence: 'frontend/src/app/admin/help/KnowledgeHubClient.tsx' },

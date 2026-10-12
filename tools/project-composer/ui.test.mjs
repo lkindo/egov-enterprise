@@ -259,8 +259,8 @@ test('lost generation response recovers only its accepted request without submit
 });
 
 /*
- * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 쪽지만 고르면 협업 허브와 게시판 묶음을 따라 여섯 기능이
- * 함께 들어온다. 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며, '해제하기'로 정확히 빠진다.
+ * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 스크랩만 고르면 게시판과 지식 허브를 따라 다섯 기능이
+ * 함께 들어온다(쪽지는 허브 분해 H1 뒤 혼자 풀린다). 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며, '해제하기'로 정확히 빠진다.
  */
 /*
  * 실제 카탈로그·실제 해석기·실제 화면 문구로 도는 서버(설계서 Phase 1 종료 조건: UI 테스트가 실제 카탈로그를 쓴다).
@@ -302,15 +302,15 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   const { page, pageErrors, release } = await realCatalogPage(t);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
   await expect(page.locator('#domain-count')).toHaveText('0');
-  await page.locator('#capability-note').check();
-  await expect(page.locator('#domain-count')).toHaveText('7');
-  await expect(page.locator('#reason-board')).toHaveText('자동 포함 · 쪽지 → 스크랩 → 게시판·지식');
-  await expect(page.locator('#auto-included')).toContainText('함께 포함되는 기능 6개');
+  await page.locator('#capability-scrap').check();
+  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#reason-board')).toHaveText('자동 포함 · 스크랩 → 게시판·지식');
+  await expect(page.locator('#auto-included')).toContainText('함께 포함되는 기능 5개');
   const board = page.locator('#auto-board');
-  await expect(board).toContainText('쪽지 → 스크랩 → 게시판·지식');
+  await expect(board).toContainText('스크랩 → 게시판·지식');
   await board.getByText('왜 포함됐나').click();
   await expect(board).toContainText('스크랩 → 게시판·지식: 스크랩은 게시글을 저장해 둡니다.');
-  await expect(board).toContainText('이 기능을 빼려면 쪽지를 해제하세요.');
+  await expect(board).toContainText('이 기능을 빼려면 스크랩을 해제하세요.');
   // 개발자 근거(파일 경로)는 접혀 있고, 보이는 설명에는 클래스명·기능 id 같은 영문이 없다.
   await expect(board.locator('code').first()).toBeHidden();
   assert.doesNotMatch(await page.locator('#auto-included').innerText(), /[A-Za-z]/);
@@ -329,7 +329,7 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await expect(board).toContainText('코드 참조');
   await expect(board).not.toContainText('생성 묶음 선언');
   // 요약은 생성 중 잠기는 구성 영역 밖에 있다. 생성이 도는 동안 해제 버튼도 잠기고, 끝나면 다시 풀린다.
-  const drop = board.getByRole('button', { name: '쪽지 해제하기' });
+  const drop = board.getByRole('button', { name: '스크랩 해제하기' });
   await confirmGenerate(page);
   await expect(page.getByRole('button', { name: '프로젝트 생성 중…' })).toBeDisabled();
   await expect(drop).toBeDisabled();
@@ -338,8 +338,8 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await expect(page.getByRole('heading', { name: '생성을 완료하지 못했습니다' })).toBeVisible();
   await expect(drop).toBeEnabled();
   await drop.click();
-  await expect(page.locator('#capability-note')).toBeFocused();
-  await expect(page.locator('#capability-note')).not.toBeChecked();
+  await expect(page.locator('#capability-scrap')).toBeFocused();
+  await expect(page.locator('#capability-scrap')).not.toBeChecked();
   await expect(page.locator('#capability-board')).not.toBeChecked();
   await expect(page.locator('#domain-count')).toHaveText('0');
   await expect(page.locator('#auto-included')).toBeEmpty();
@@ -366,13 +366,13 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
  * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
  * 한 번 말하고, 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
  */
-const AUTO_FROM_NOTE = '게시판·지식, 댓글, 커뮤니티, 도움말·온라인 매뉴얼, 스크랩, 템플릿';
+const AUTO_FROM_SCRAP = '게시판·지식, 댓글, 커뮤니티, 도움말·온라인 매뉴얼, 템플릿';
 const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
 test('automatic cards stay reachable by keyboard, open their reason when pressed, and each change is announced once', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
   await expect(page.locator('#domain-count')).toHaveText('0');
   await expect(page.locator('#plan-status'), 'the first plan announces no change').toHaveText(PLAN_READY);
-  await page.locator('#capability-note').focus();
+  await page.locator('#capability-scrap').focus();
   // 계획이 오면 카드를 다시 그리며 포커스를 같은 카드로 돌려놓는다. 화면 낭독기는 포커스 이동에 말하던 것을 끊으므로
   // 바뀐 결과 문장은 그 뒤에 쓴다 — 포커스가 돌아오는 순간의 상태 문장에는 아직 결과가 없다.
   await page.evaluate(() => {
@@ -380,12 +380,12 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
     document.getElementById('capabilities').addEventListener('focusin', () => window.statusAtFocus.push(document.getElementById('plan-status').textContent), true);
   });
   await page.keyboard.press('Space');
-  await expect(page.locator('#plan-status')).toHaveText('쪽지 선택으로 함께 포함되는 기능이 6개 늘었습니다(' + AUTO_FROM_NOTE + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('스크랩 선택으로 함께 포함되는 기능이 5개 늘었습니다(' + AUTO_FROM_SCRAP + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   const statusAtFocus = await page.evaluate(() => window.statusAtFocus);
   assert.ok(statusAtFocus.length > 0, 'the plan put focus back on the card');
   assert.ok(statusAtFocus.every(status => !status.includes('늘었습니다')), statusAtFocus.join(' | '));
   // 돌려놓은 포커스로 받은 미리보기는 줄에는 보이지만 알리지 않는다(바뀐 결과 문장을 덮지 않게).
-  await expect(page.locator('#preview-note')).toBeVisible();
+  await expect(page.locator('#preview-scrap')).toBeVisible();
   await page.waitForTimeout(300);
   await expect(page.locator('#capability-preview-status')).toHaveText('');
   const board = page.locator('#capability-board');
@@ -393,7 +393,7 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(board).toHaveAttribute('aria-disabled', 'true');
   assert.equal(await board.evaluate(element => element.disabled), false, 'a native disabled checkbox leaves the tab order');
   await expect(page.locator('label').filter({ has: board })).toHaveClass(/border-dashed/);
-  await expect(page.locator('label').filter({ has: page.locator('#capability-note') })).not.toHaveClass(/border-dashed/);
+  await expect(page.locator('label').filter({ has: page.locator('#capability-scrap') })).not.toHaveClass(/border-dashed/);
   await expect(board).toHaveAttribute('aria-describedby', 'reason-board hint-board badges-board preview-board');
   await expect(page.locator('#hint-board')).toHaveText('누르면 요약에서 포함 이유와 빼는 방법을 엽니다.');
   // Tab 으로 닿는다: 바로 앞 카드에서 Tab 을 누르면 자동 포함 카드에 선다.
@@ -406,13 +406,13 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(board).toBeChecked();
   await expect(page.locator('#auto-board details').first()).toHaveAttribute('open', '');
   await expect(page.locator('#auto-board summary').first()).toBeFocused();
-  await expect(page.locator('#domain-count')).toHaveText('7');
+  await expect(page.locator('#domain-count')).toHaveText('6');
   // 마우스로 카드를 눌러도 같다(체크를 바꾸지 않는다). Playwright 는 aria-disabled 를 품은 라벨을 누르지 않으므로 좌표로 누른다.
-  const scrapCard = await page.locator('label').filter({ has: page.locator('#capability-scrap') }).boundingBox();
-  await page.mouse.click(scrapCard.x + scrapCard.width / 2, scrapCard.y + 12);
-  await expect(page.locator('#capability-scrap')).toBeChecked();
-  await expect(page.locator('#auto-scrap details').first()).toHaveAttribute('open', '');
-  await expect(page.locator('#domain-count')).toHaveText('7');
+  const commentCard = await page.locator('label').filter({ has: page.locator('#capability-comment') }).boundingBox();
+  await page.mouse.click(commentCard.x + commentCard.width / 2, commentCard.y + 12);
+  await expect(page.locator('#capability-comment')).toBeChecked();
+  await expect(page.locator('#auto-comment details').first()).toHaveAttribute('open', '');
+  await expect(page.locator('#domain-count')).toHaveText('6');
   // 같은 구성을 다시 확인하면 지난 변화를 다시 말하지 않는다.
   await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
@@ -436,9 +436,9 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(page.locator('#plan-status')).toContainText('해제로 함께 포함되던 기능');
   await expect(page.locator('#plan-status')).toContainText('게시판·지식');
   // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능은 '빠졌다' 고 말하지 않는다.
-  await page.locator('#capability-note').focus();
+  await page.locator('#capability-scrap').focus();
   await page.keyboard.press('Space');
-  await expect(page.locator('#plan-status')).toContainText('쪽지 선택으로');
+  await expect(page.locator('#plan-status')).toContainText('스크랩 선택으로');
   await page.locator('#preset').selectOption('collaboration');
   await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 3개가 빠졌습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
   assert.deepEqual(pageErrors, []);
@@ -476,22 +476,22 @@ test('several changes before the plan arrives are announced once as the net chan
   const held = [];
   await page.route('**/api/plan', route => { held.push(route); });
   const press = async id => { await page.locator(`#capability-${id}`).focus(); await page.keyboard.press('Space'); };
-  await press('note');
+  await press('scrap');
   await press('schedule');
   await expect.poll(() => held.length).toBeGreaterThan(0);
   for (const route of held.splice(0)) await route.continue();
-  const both = autoOf(['note', 'schedule']);
-  await expect(page.locator('#plan-status')).toHaveText(`${labelOf('note')}, ${labelOf('schedule')} 선택으로 함께 포함되는 기능이 ${both.length}개 늘었습니다(${both.map(labelOf).join(', ')}). `
+  const both = autoOf(['scrap', 'schedule']);
+  await expect(page.locator('#plan-status')).toHaveText(`${labelOf('schedule')}, ${labelOf('scrap')} 선택으로 함께 포함되는 기능이 ${both.length}개 늘었습니다(${both.map(labelOf).join(', ')}). `
     + '시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   // 하나는 빼고 하나는 고르면 '바꾼 구성으로' 라고 말한다.
-  await press('note');
+  await press('scrap');
   await press('survey');
   await expect.poll(() => held.length).toBeGreaterThan(0);
   for (const route of held.splice(0)) await route.continue();
   const gone = both.filter(id => !autoOf(['schedule', 'survey']).includes(id));
   await expect(page.locator('#plan-status')).toHaveText(`바꾼 구성으로 함께 포함되던 기능 ${gone.length}개가 빠졌습니다(${gone.map(labelOf).join(', ')}). ` + PLAN_READY);
   // 결과 문장을 쓰기 전(포커스를 돌려놓는 동안)에 구성이 또 바뀌면 옛 계획의 문장을 쓰지 않는다.
-  await press('note');
+  await press('scrap');
   await expect.poll(() => held.length).toBe(1);
   await page.evaluate(() => {
     const observer = new MutationObserver(() => { observer.disconnect(); document.getElementById('capability-survey').click(); });
@@ -513,8 +513,8 @@ test('several changes before the plan arrives are announced once as the net chan
  */
 test('pressing an automatic card while the plan cannot be checked says why the reason is missing', { timeout: 45_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
-  await page.locator('#capability-note').check();
-  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.locator('#capability-scrap').check();
+  await expect(page.locator('#domain-count')).toHaveText('6');
   await page.getByLabel('프로젝트 이름').fill('con');
   await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요.');
   const board = page.locator('#capability-board');
@@ -537,9 +537,9 @@ test('pressing an automatic card while the plan cannot be checked says why the r
  */
 test('the menu preview is a nested tree in menu order with category, detached and added markers', { timeout: 45_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
-  await page.locator('#capability-note').check();
-  await expect(page.locator('#domain-count')).toHaveText('7');
-  const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['note'] },
+  await page.locator('#capability-scrap').check();
+  await expect(page.locator('#domain-count')).toHaveText('6');
+  const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['scrap'] },
     database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
   const count = kind => menus.filter(menu => menu.kind === kind).length;
   const added = menus.filter(menu => menu.added);
@@ -561,8 +561,8 @@ test('the menu preview is a nested tree in menu order with category, detached an
   await expect(page.locator('#menu-preview')).toHaveAttribute('role', 'list');
   assert.deepEqual([...new Set(await page.locator('#menu-preview ul').evaluateAll(lists => lists.map(list => list.getAttribute('role'))))], ['list']);
   await page.reload();
-  await page.locator('#capability-note').check();
-  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.locator('#capability-scrap').check();
+  await expect(page.locator('#domain-count')).toHaveText('6');
   await page.getByText('포함되는 메뉴').click();
   await expect(page.locator('#menu-count')).toHaveText(String(menus.length));
   // 맨 위 메뉴는 메뉴 순서대로 놓이고, 각 메뉴의 하위는 그 안의 목록에 들어간다.
@@ -864,15 +864,15 @@ test('the real catalog renders feature areas, search, owned-count badges and Kor
 test('deselecting a root hidden by search clears the search and focuses the root', { timeout: 45_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
   await expect(page.locator('#domain-count')).toHaveText('0');
-  await page.locator('#capability-note').check();
-  await expect(page.locator('#domain-count')).toHaveText('7');
+  await page.locator('#capability-scrap').check();
+  await expect(page.locator('#domain-count')).toHaveText('6');
   await page.getByLabel('기능 찾기').fill('알림');
-  await expect(page.locator('#capability-note')).toBeHidden();
+  await expect(page.locator('#capability-scrap')).toBeHidden();
   const board = page.locator('#auto-board');
   await board.getByText('왜 포함됐나').click();
-  await board.getByRole('button', { name: '쪽지 해제하기' }).click();
-  await expect(page.locator('#capability-note')).toBeFocused();
-  await expect(page.locator('#capability-note')).not.toBeChecked();
+  await board.getByRole('button', { name: '스크랩 해제하기' }).click();
+  await expect(page.locator('#capability-scrap')).toBeFocused();
+  await expect(page.locator('#capability-scrap')).not.toBeChecked();
   await expect(page.getByLabel('기능 찾기')).toHaveValue('');
   await expect(page.locator('#domain-count')).toHaveText('0');
   assert.deepEqual(pageErrors, []);
@@ -926,10 +926,10 @@ test('feature cards preview what choosing or removing them changes before the cl
   assert.equal(switched, '');
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'mail').summary);
-  // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·쪽지·스크랩이 붙잡고, 직접 선택이 되며 들어오는 기능도 밝힌다.
+  // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤 붙잡지 않는다), 직접 선택이 되며 들어오는 기능도 밝힌다.
   await page.locator('#capability-board').focus();
   const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
-  assert.match(board, /^빼도 댓글, 실시간 대시보드, 쪽지, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
+  assert.match(board, /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
   await expect(page.locator('#preview-board')).toHaveText(board);
   // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
   // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.

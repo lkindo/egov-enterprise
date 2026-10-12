@@ -385,6 +385,8 @@
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/page.tsx",
+            "frontend/src/app/note/NoteCollaborationTab.tsx",
+            "frontend/src/extensions/note/hub-tabs.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -412,10 +414,12 @@
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScrapApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScrapApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-            "frontend/src/app/admin/collaboration/__tests__/CollaborationHubClient.scraps.test.tsx",
             "frontend/src/app/admin/collaboration/page.tsx",
+            "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
             "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+            "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
+            "frontend/src/extensions/scrap/hub-tabs.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         }
@@ -1059,7 +1063,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1095,10 +1098,12 @@
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/ScrapApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/ScrapApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-            "frontend/src/app/admin/collaboration/__tests__/CollaborationHubClient.scraps.test.tsx",
+            "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
             "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
+            "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
+            "frontend/src/extensions/scrap/hub-tabs.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         },
@@ -1125,6 +1130,8 @@
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
+            "frontend/src/app/note/NoteCollaborationTab.tsx",
+            "frontend/src/extensions/note/hub-tabs.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -1164,7 +1171,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1236,7 +1242,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1314,7 +1319,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],

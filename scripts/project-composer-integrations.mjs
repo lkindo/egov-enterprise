@@ -73,6 +73,16 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다.' },
   { path: 'frontend/src/extensions/scrap/post-actions.ts',
     reason: '스크랩 기능이 없으면 게시글 상세의 스크랩 버튼만 사라지고 게시판 기능은 그대로입니다.' },
+  { path: 'frontend/src/extensions/note/hub-tabs.ts',
+    reason: '쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다.' },
+  { path: 'frontend/src/extensions/scrap/hub-tabs.ts',
+    reason: '스크랩 기능이 없으면 협업 허브의 스크랩 탭만 사라지고 다른 탭은 그대로입니다.' },
+  { path: 'frontend/src/extensions/note/shell-links.ts',
+    reason: '쪽지 기능이 없으면 명령 센터의 협업 허브 바로가기만 사라지고 허브는 그대로입니다.' },
+  { path: 'frontend/src/extensions/addressbook/shell-links.ts',
+    reason: '주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다.' },
+  { path: 'frontend/src/extensions/mail/shell-links.ts',
+    reason: '메일 기능이 없으면 협업 허브의 메일 발송 링크만 사라지고 허브는 그대로입니다.' },
 ];
 
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];

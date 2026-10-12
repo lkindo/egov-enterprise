@@ -44,15 +44,17 @@ test('the plan explains degraded integrations by missing feature and lists permi
 test('the plan explains each automatic inclusion with a chain, one sentence per step and how to deselect it', () => {
   const catalog = loadProjectComposerCatalog(root);
   const notesFor = domains => inclusionNotes(resolveProjectRecipe({ ...recipe(), selection: { domains } }, catalog), catalog);
-  const note = notesFor(['note']);
-  const board = note.find(item => item.domain === 'board');
-  assert.equal(board.path, '쪽지 → 스크랩 → 게시판·지식');
-  assert.deepEqual(board.steps.map(step => step.text), ['쪽지 → 스크랩: 쪽지와 스크랩이 쪽지·스크랩 화면 하나를 함께 씁니다.',
-    '스크랩 → 게시판·지식: 스크랩은 게시글을 저장해 둡니다.']);
-  assert.deepEqual(board.steps.map(step => step.evidence), [['공동 화면'], ['코드 참조']]);
-  assert.ok(board.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/scrap/Scrap.java'));
-  assert.equal(board.removal, '이 기능을 빼려면 쪽지를 해제하세요.');
-  assert.deepEqual(board.roots, ['note']);
+  // 대표 사슬은 대시보드 → 게시판 → 댓글이다(쪽지 → 스크랩 → 게시판 사슬은 허브 분해 H1 에서 사라졌다 — 쪽지는 혼자 풀린다).
+  assert.deepEqual(notesFor(['note']), []);
+  const dashboard = notesFor(['dashboard']);
+  const comment = dashboard.find(item => item.domain === 'comment');
+  assert.equal(comment.path, '실시간 대시보드 → 게시판·지식 → 댓글');
+  assert.deepEqual(comment.steps.map(step => step.text), ['실시간 대시보드 → 게시판·지식: 실시간 대시보드가 오늘 올라온 게시글 수를 보여 줍니다.',
+    '게시판·지식 → 댓글: 게시글 화면이 댓글을 함께 다룹니다.']);
+  assert.deepEqual(comment.steps.map(step => step.evidence), [['생성 묶음 선언'], ['코드 참조', '생성 묶음 선언']]);
+  assert.ok(comment.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/board/Board.java'));
+  assert.equal(comment.removal, '이 기능을 빼려면 실시간 대시보드를 해제하세요.');
+  assert.deepEqual(comment.roots, ['dashboard']);
   assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
   // 약식 전자결재는 행사·포상 없이 생성된다(DEC-OPS-272). 그 반대는 코드 참조로 남는다.
   assert.deepEqual(notesFor(['informalsanction']), []);
@@ -66,8 +68,8 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
     assert.ok(Object.hasOwn(REQUIRES_KIND_LABELS, kind), `kind label: ${kind}`);
   }
   assert.deepEqual(notesFor(['survey']), []);
-  const plan = createComposerEngine().plan({ ...recipe(), selection: { domains: ['note'] } });
-  assert.deepEqual(plan.inclusionNotes, note);
+  const plan = createComposerEngine().plan({ ...recipe(), selection: { domains: ['dashboard'] } });
+  assert.deepEqual(plan.inclusionNotes, dashboard);
   assert.deepEqual(createComposerEngine().plan({ ...recipe(), selection: { preset: 'collaboration' } }).inclusionNotes, []);
 });
 

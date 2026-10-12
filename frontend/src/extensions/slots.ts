@@ -44,18 +44,19 @@ export interface RecipientPickerSource extends SlotEntry {
 }
 
 /**
- * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면). 셸이 모양을 정하고 항목은
- * 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면 배치는 /admin 밖 목적지만
- * 둔다. 머리글 배치는 아이콘 단추라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리).
+ * 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면
+ * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은
+ * 목적지의 머리글 짝을 둔다(경계 계약).
  */
 export interface ShellLink extends SlotEntry {
-  readonly placement: 'header' | 'footer' | 'error';
+  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub';
   /** 같은 배치 안의 순서(작은 값 먼저). */
   readonly order: number;
   readonly href: string;
   readonly label: string;
   readonly icon?: LucideIcon;
-  /** 오류 화면에서 링크 위에 보이는 안내 문장. */
+  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명이다. */
   readonly description?: string;
 }
 
@@ -103,7 +104,38 @@ export interface PostAction extends SlotEntry {
   readonly submit: (context: PostActionContext) => Promise<void>;
 }
 
+/**
+ * hub-tabs 의 허브별 탭 뷰. 허브마다 탭이 하는 일이 달라 뷰 모양을 허브별로 둔다 — 허브를 더할 때는 키 하나를 더한다.
+ * 뷰는 기능 모듈이 내보낸 값이고 기여는 그 이름(또는 이름만 담은 객체)만 가리킨다(기여는 데이터다).
+ */
+export interface HubTabViews {
+  /** 협업 허브(core 셸). 탭 뷰가 자기 목록 조회·표·대화상자를 소유하고 core 틀(collaboration-hub-frame)에 조각을 넘긴다. */
+  readonly collaboration: { readonly Component: ComponentType };
+}
+export type HubId = keyof HubTabViews;
+
+/**
+ * hub-tabs — 허브 셸의 탭. id 는 그 탭의 `?tab=` 값(대문자 식별자)이고 슬롯 전체에서 유일하다. 그 허브의 코어 탭과 겹치지 않고,
+ * 허브의 탭 해석 모듈(`*-tabs.ts` 의 TAB_HUB.contributable)이 이 기여 파일을 지목해야 한다(경계 계약). 셸은 자기 허브의 항목만
+ * 고른다(isHubTab) — 쓰기 귀속(축 3·화면 목록)도 허브별 소비자 표를 따른다.
+ */
+export type HubTab = {
+  [H in HubId]: SlotEntry & {
+    readonly hub: H;
+    /** 같은 허브 안의 순서(작은 값 먼저). */
+    readonly order: number;
+    /** 탭 버튼 글자. */
+    readonly label: string;
+    readonly view: HubTabViews[H];
+  };
+}[HubId];
+
+/** 셸이 자기 허브의 항목만 고르는 술어(타입을 좁힌다). */
+export const isHubTab = <H extends HubId>(hub: H) =>
+  (entry: HubTab): entry is Extract<HubTab, { readonly hub: H }> => entry.hub === hub;
+
 export interface SlotMap {
+  'hub-tabs': HubTab;
   'recipient-picker-sources': RecipientPickerSource;
   'shell-links': ShellLink;
   'header-widgets': HeaderWidget;
@@ -138,6 +170,16 @@ const orderOf = (entry: SlotEntry): number | undefined => {
  * 레지스트리를 펼쳐 보이는 항목만 돌려준다. 순서: order(있는 항목이 앞, 작은 값 먼저) → 레지스트리 순서(owner 코드 포인트) → id.
  * 훅이 아니므로 서버 컴포넌트도 쓴다. 항목 객체는 기여 모듈의 값 그대로다(새로 만들지 않는다).
  */
+export function visibleEntries<S extends SlotId, T extends SlotMap[S]>(
+  subject: SlotSubject,
+  registry: readonly SlotContributions<S>[],
+  accept: (entry: SlotMap[S]) => entry is T,
+): T[];
+export function visibleEntries<S extends SlotId>(
+  subject: SlotSubject,
+  registry: readonly SlotContributions<S>[],
+  accept?: (entry: SlotMap[S]) => boolean,
+): SlotMap[S][];
 export function visibleEntries<S extends SlotId>(
   subject: SlotSubject,
   registry: readonly SlotContributions<S>[],

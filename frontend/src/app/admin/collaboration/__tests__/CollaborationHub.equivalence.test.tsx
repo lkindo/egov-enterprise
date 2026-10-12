@@ -5,7 +5,7 @@ import { inProjection, pageInProjection } from '@/test-utils/projection';
 
 /**
  * 협업 허브 동등성 그물(허브 분해 H0). 허브를 셸과 탭 기여로 나누기 전의 화면 동작을 고정한다 — 이후 변경은 이 기대값을
- * 사유와 함께 바꿀 때만 화면을 바꿀 수 있다.
+ * 사유와 함께 바꿀 때만 화면을 바꿀 수 있다. H1 에서 바뀐 기대값은 메일 발송 링크의 위치 하나다(사유는 그 단언 옆).
  *
  * 고정하는 것: 제목, 탭 이름·순서·aria-selected 와 `?tab=` 해석, 탭 전환의 URL(허용 키만 남긴다), 탭 전환이 검색어를
  * 비우는 것, 탭별 설명·머리 동작('주소록 관리'·'신규 발송'·'스크랩 등록')·도구 막대 링크, 행을 눌렀을 때의 목적지.
@@ -89,7 +89,13 @@ beforeEach(() => {
   });
 });
 
-describe('협업 허브 동등성(허브 분해 전)', () => {
+describe('협업 허브 동등성', () => {
+  // 셸은 core 라 어느 구성에서도 남는다 — 제목은 탭이 없는 구성에서도 같다.
+  it('제목은 구성과 무관하게 같다', () => {
+    renderHub('');
+    expect(screen.getByRole('heading', { level: 1, name: '협업 및 네트워크 허브' })).toBeInTheDocument();
+  });
+
   if (bothTabsInProjection) it('제목과 탭 이름·순서, `?tab=` 해석과 기본 탭을 고정한다', async () => {
     const first = renderHub('');
     expect(screen.getByRole('heading', { level: 1, name: '협업 및 네트워크 허브' })).toBeInTheDocument();
@@ -141,8 +147,11 @@ describe('협업 허브 동등성(허브 분해 전)', () => {
     if (pageInProjection(ADDRESS_BOOK_LIST)) {
       expect(screen.getByRole('link', { name: '주소록 관리' })).toHaveAttribute('href', ADDRESS_BOOK_LIST);
     }
-    // 허브 분해 전에는 메일 발송 링크가 쪽지 탭의 주 동작이었다.
-    expect(screen.queryByRole('link', { name: '신규 발송' })).toBeNull();
+    // [허브 분해 H1 — 의도한 변화] 메일 발송 링크는 쪽지 탭의 주 동작이 아니라 허브 머리의 메일 기여 링크라 스크랩 탭에서도 보인다.
+    //   종전에는 쪽지 탭 안의 문자열 링크라 메일 없이 쪽지만 고른 생성물에서 404 로 갔다(GAP-COMPOSE-001).
+    if (pageInProjection(MAIL_SEND)) {
+      expect(screen.getByRole('link', { name: '신규 발송' })).toHaveAttribute('href', MAIL_SEND);
+    }
 
     fireEvent.click(await screen.findByRole('button', { name: '참고 자료 스크랩 열기' }));
     expect(await screen.findByText('스크랩 수정')).toBeInTheDocument();

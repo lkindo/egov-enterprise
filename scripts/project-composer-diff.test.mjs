@@ -47,11 +47,12 @@ test('a feature that another selection still requires stays, and the diff names 
   // 시작 구성에서 카드를 누르면 직접 선택으로 바뀐다. 협업 기본에서 게시판을 빼도 다른 선택이 게시판을 붙잡는다.
   const preset = diffOf({ preset: 'collaboration' }, 'board');
   assert.equal(preset.action, 'remove');
-  assert.deepEqual(preset.retainedBy, ['comment', 'dashboard', 'note', 'scrap']);
+  // 쪽지는 협업 허브 탭 기여라 게시판을 붙잡지 않는다(허브 분해 H1).
+  assert.deepEqual(preset.retainedBy, ['comment', 'dashboard', 'scrap']);
   // 직접 선택으로 바뀌며 시작 구성이 건너뛰던 의존이 들어온다. 붙잡힌다는 말만 하고 그 변화를 감추지 않는다.
   assert.deepEqual(preset.added, ['community', 'help', 'template']);
   assert.match(diffSummary(preset, catalog),
-    /^빼도 댓글, 실시간 대시보드, 쪽지, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
+    /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
 });
 
 test('degradations appear when a partner is missing and resolve only when the partner arrives', () => {
@@ -78,10 +79,12 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
   assert.match(diffSummary(diffOf({ domains: [] }, 'mail'), catalog), /^고르면 기능 \+1 · 테이블 \+1 · 메뉴 \+\d+ · 권한 \+\d+ · 줄어드는 동작 2건 생김$/);
   assert.match(diffSummary(diffOf({ domains: ['mail'] }, 'mail'), catalog), /^빼면 기능 −1 · 테이블 −1 · 메뉴 −\d+ · 권한 −\d+$/);
   assert.match(diffSummary(diffOf({ domains: ['mail'] }, 'notification'), catalog), / · 줄어들던 동작 2건 해소$/);
-  const note = diffSummary(diffOf({ domains: [] }, 'note'), catalog);
-  assert.match(note, /^고르면 기능 \+7\(들어옴: 쪽지, [^)]+ 외 4개\) · /);
-  assert.doesNotMatch(note, /[A-Za-z]/);
-  assert.match(diffSummary(diffOf({ domains: ['note'] }, 'note'), catalog), /^빼면 기능 −7\(빠짐: 쪽지, [^)]+ 외 4개\) · /);
+  // 쪽지는 혼자 들어온다(허브 분해 H1 — 협업 허브가 core 셸이 되어 스크랩·게시판을 끌어오지 않는다).
+  assert.match(diffSummary(diffOf({ domains: [] }, 'note'), catalog), /^고르면 기능 \+1 · 테이블 \+\d+ · /);
+  const dashboard = diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog);
+  assert.match(dashboard, /^고르면 기능 \+7\(들어옴: 실시간 대시보드, [^)]+ 외 4개\) · /);
+  assert.doesNotMatch(dashboard, /[A-Za-z]/);
+  assert.match(diffSummary(diffOf({ domains: ['dashboard'] }, 'dashboard'), catalog), /^빼면 기능 −7\(빠짐: 실시간 대시보드, [^)]+ 외 4개\) · /);
   // 하나를 빼는데 다른 기능이 들어오면 양쪽을 모두 밝힌다(순 증감만 보이면 무엇이 빠지는지 알 수 없다).
   assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard'), catalog), /^빼면 기능 \+2\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
 });

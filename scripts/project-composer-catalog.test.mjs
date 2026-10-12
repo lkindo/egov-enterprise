@@ -441,9 +441,9 @@ test('a slot contribution directory is a feature declared in both its feature pa
   writeManifest(wrongPack, value => { value.packs.collaboration.frontend.removePaths.push('src/extensions/addressbook'); });
   assert.throws(() => loadProjectComposerCatalog(wrongPack), /pack removes a slot path that is not its feature's contribution directory: collaboration src\/extensions\/addressbook/);
   const undeclared = fixture(t);
-  mkdirSync(join(undeclared, 'frontend/src/extensions/note'), { recursive: true });
-  writeFileSync(join(undeclared, 'frontend/src/extensions/note/recipient-picker-sources.ts'), 'export default [];\n');
-  assert.throws(() => loadProjectComposerCatalog(undeclared), /slot contribution directory is missing from its feature paths: src\/extensions\/note/);
+  mkdirSync(join(undeclared, 'frontend/src/extensions/sms'), { recursive: true });
+  writeFileSync(join(undeclared, 'frontend/src/extensions/sms/recipient-picker-sources.ts'), 'export default [];\n');
+  assert.throws(() => loadProjectComposerCatalog(undeclared), /slot contribution directory is missing from its feature paths: src\/extensions\/sms/);
   const stray = fixture(t);
   writeFileSync(join(stray, 'frontend/src/extensions/helpers.ts'), 'export {};\n');
   assert.throws(() => loadProjectComposerCatalog(stray), /슬롯 디렉터리에는/);

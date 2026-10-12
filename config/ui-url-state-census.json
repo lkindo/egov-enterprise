@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "828a0a8fa37e9a07054cb54f121c3b8a589e0cc361ae94368af39ea338135412"
+    "inventoryHash": "91513a55bf6d6e06fb50a87cf285fd5ac1ffe933b57ab79145da6ad06074428c"
   },
   "summary": {
-    "sourceFileCount": 646,
-    "records": 386,
-    "syntaxOccurrences": 461,
-    "ambiguousRecords": 339,
-    "unverifiedRecords": 386,
+    "sourceFileCount": 656,
+    "records": 388,
+    "syntaxOccurrences": 463,
+    "ambiguousRecords": 341,
+    "unverifiedRecords": 388,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 171,
+      "navigation-producer": 173,
       "page-redirect": 17,
       "query-builder": 22,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 376,
+      "navigation": 378,
       "request-telemetry": 10
     }
   },
@@ -1639,7 +1639,7 @@
       }
     },
     {
-      "id": "URL-FE91EE75A32CA2",
+      "id": "URL-D44D35641E2F6A",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -1647,16 +1647,17 @@
       "producerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/collaboration",
-      "targetCandidate": "/admin/collaboration/address-book/select-address-book-list",
+      "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/collaboration/address-book/select-address-book-list",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -1673,120 +1674,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-56D1B9D4E91D1E",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration",
-      "targetCandidate": "/admin/collaboration/mail-send",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/collaboration/mail-send",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-ECFDA5FB401366",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration",
-      "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/collaboration/scraps/selectScrapList",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-C1B8B836B4269F",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/collaboration",
-      "targetCandidate": "/note",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/note",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
-        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },
@@ -2168,6 +2055,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
         "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-B0693FAF37126B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
+      "producerFile": "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/collaboration/scraps",
+      "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration/scraps/selectScrapList",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
@@ -13628,6 +13553,44 @@
       }
     },
     {
+      "id": "URL-BFAFE1EB99A9E9",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/note/NoteCollaborationTab.tsx",
+      "producerFile": "frontend/src/app/note/NoteCollaborationTab.tsx",
+      "consumerFile": null,
+      "routePattern": "/note",
+      "targetCandidate": "/note",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/note",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/note/NoteCollaborationTab.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-2CE013208411B6",
       "surface": "navigation",
       "kind": "query-consumer",
@@ -15864,6 +15827,45 @@
       }
     },
     {
+      "id": "URL-DE5C6E6D05377D",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/addressbook/shell-links.ts",
+      "producerFile": "frontend/src/extensions/addressbook/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/collaboration/address-book/select-address-book-list",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration/address-book/select-address-book-list",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/addressbook/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-0A1F266DE62ADF",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -15900,6 +15902,84 @@
         "source": "frontend/src/extensions/help/shell-links.ts",
         "detector": "href-navigation",
         "occurrenceCount": 3
+      }
+    },
+    {
+      "id": "URL-F5ED0C8B97A0F1",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/mail/shell-links.ts",
+      "producerFile": "frontend/src/extensions/mail/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/collaboration/mail-send",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration/mail-send",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/mail/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-33CC6FCF08E729",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/note/shell-links.ts",
+      "producerFile": "frontend/src/extensions/note/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/collaboration",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/collaboration",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/note/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
       }
     },
     {

@@ -145,9 +145,6 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
     step: '업무 홈', reason: '활동 피드가 대시보드 데이터를 직접 읽는다.' },
   { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
     step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
-  // 협업 허브 바로가기는 허브 화면(쪽지·스크랩 공동 화면)을 소유한 두 기능이 있어야 남는다. 게시판만으로는 허브가 지워진다(DEC-OPS-272).
-  { file: 'src/app/components/ui/global-command-center.tsx', blocks: { collaboration: 2 }, owners: { collaboration: ['note', 'scrap'] },
-    step: '허브 분해(협업 허브)', reason: '명령 센터가 협업 허브 항목을 직접 둔다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
   // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 시연 화면 기능 소유(패턴 갤러리와 같다).
   { file: 'src/app/admin/system/monitoring/MonitoringHubClient.tsx', blocks: { collaboration: 19, demo: 4 }, owners: MONITORING_TABS,
     step: '허브 분해(hub-tabs)', reason: '모니터링 허브가 댓글 관리 탭과 하네스 아틀라스 샘플 탭을 직접 조립한다.' },
@@ -166,8 +163,6 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
     step: '허브 분해(stats-panels)', reason: '통계 요약이 누적 게시물 카드를 직접 둔다.' },
   { file: 'src/app/admin/stats/__tests__/AdminStatsClient.summary-values.test.tsx', blocks: { collaboration: 2 },
     owners: { collaboration: ['board'] }, step: '허브 분해(stats-panels)', reason: '통계 요약 시험이 요약과 같은 카드를 기대한다.' },
-  { file: 'src/app/admin/collaboration/CollaborationHubClient.tsx', blocks: { demo: 1 }, owners: { demo: ['addressbook'] },
-    step: '허브 분해(협업 허브)', reason: '협업 허브가 주소록 관리 링크를 직접 둔다.' },
 ]);
 const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 
