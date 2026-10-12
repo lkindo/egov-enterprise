@@ -102,7 +102,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
       {active ? (
         <ActiveCollaborationTab key={active.id} view={active.view} />
       ) : (
-        <CollaborationHubFrame description="쪽지·스크랩 같은 협업 목록을 탭으로 모아 봅니다.">
+        <CollaborationHubFrame description="구성에 포함된 협업 기능의 목록을 탭으로 모아 봅니다.">
           {permissionPending ? (
             <div aria-busy="true" className="py-10" />
           ) : (

@@ -4,8 +4,9 @@ import { Metadata } from 'next';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 
 export const metadata: Metadata = {
-  title: '쪽지·스크랩 | eGov Enterprise',
-  description: '조직 내 지식 공유 및 커뮤니케이션을 위한 통합 협업 허브',
+  // 협업 허브는 core 셸이고 탭은 기능의 기여다 — 탭이 없는 구성(core 등)에서도 맞도록 기능 이름을 적지 않는다.
+  title: '협업 목록 | eGov Enterprise',
+  description: '구성에 포함된 협업 기능의 목록을 탭으로 모아 보는 화면',
 };
 
 /**

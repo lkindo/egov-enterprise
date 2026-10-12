@@ -10,6 +10,7 @@ import {
   compareUrlStateCensus,
   hasNoClassifiableUrlState,
   scanUrlStateSource,
+  slotAttributedRouteContexts,
   tokenizeUrlStateSource,
   validateUrlStateCensus,
 } from './ui-url-state-census.mjs';
@@ -426,4 +427,66 @@ test('가로채기 판정이 실제 모집단에서 공허하지 않다', () => 
     unresolved.length > 0,
     '전부 가로채기로 판정되면 판정이 느슨해진 것이다 — 이름만 넘긴 핸들러와 onSubmit 부재가 남아 있어야 한다',
   );
+});
+
+/*
+ * [2026-10-12 허브 분해 검토] 슬롯 기여가 import 하는 뷰는 자기 기능 디렉터리가 아니라 그 기여를 그리는 소비 셸의 라우트로 귀속한다.
+ *   종전에는 협업 허브의 쪽지 탭 이동이 '/note' 로, 스크랩 탭이 '/admin/collaboration/scraps' 로 적혔다(설계 §5 census 범위 확장 표).
+ */
+test('슬롯 기여와 기여만 import 하는 모듈은 소비 셸의 라우트로 귀속한다', () => {
+  const sources = new Map(Object.entries({
+    // 주석 속 hub 인용은 값이 아니다 — 지식 허브로 새면 /admin/help 가 함께 적힌다.
+    'frontend/src/extensions/note/hub-tabs.ts': [
+      "import { defineContributions } from '@/extensions/slots';",
+      "import { NoteTab } from '@/app/note/NoteTab';",
+      "// hub: 'knowledge' 는 인용일 뿐이다",
+      "export default defineContributions('hub-tabs', [{ id: 'MESSAGES', hub: 'collaboration', view: { Component: NoteTab } }]);",
+    ].join('\n'),
+    'frontend/src/extensions/slots.ts': 'export const defineContributions = (slot, entries) => entries;',
+    'frontend/src/app/note/NoteTab.tsx': [
+      "import { helper } from './note-helper';",
+      "import { shared } from '@/lib/shared';",
+      "import type { Shape } from '@/lib/shape';",
+      "export const NoteTab = () => { router.push('/note'); return helper(shared); };",
+    ].join('\n'),
+    'frontend/src/app/note/note-helper.ts': 'export const helper = (value) => value;',
+    'frontend/src/lib/shared.ts': 'export const shared = 1;',
+    'frontend/src/lib/shape.ts': 'export interface Shape { readonly id: string }',
+    'frontend/src/app/note/page.tsx': "import { shared } from '@/lib/shared';\nexport default function Page() { return shared; }",
+    'frontend/src/extensions/mail/shell-links.ts': "export default [{ id: 'send', placement: 'collaboration-hub', href: '/admin/collaboration/mail-send' }];",
+    'frontend/src/extensions/help/shell-links.ts': "export default [{ id: 'help', placement: 'header', href: '/help' }];",
+    'frontend/src/app/admin/collaboration/HubClient.tsx': "export const isHubLink = (link) => link.placement === 'collaboration-hub';",
+    'frontend/src/app/components/Header.tsx': "export const isHeaderLink = (link) => link.placement === 'header';",
+  }));
+  const consumerTable = {
+    'hub-tabs': {
+      collaboration: ['frontend/src/app/admin/collaboration/HubClient.tsx'],
+      knowledge: ['frontend/src/app/admin/help/KnowledgeHub.tsx'],
+    },
+    'shell-links': ['frontend/src/app/components/Header.tsx', 'frontend/src/app/admin/collaboration/HubClient.tsx'],
+  };
+  sources.set('frontend/src/app/admin/help/KnowledgeHub.tsx', 'export const KnowledgeHub = () => null;');
+  const contextOf = (file) => ({
+    routePattern: file.startsWith('frontend/src/app/admin/collaboration/') ? '/admin/collaboration'
+      : file.startsWith('frontend/src/app/admin/help/') ? '/admin/help'
+        : file.startsWith('frontend/src/app/note/') ? '/note' : 'unresolved',
+    shellAccessEvidence: 'unverified',
+  });
+  const attributed = slotAttributedRouteContexts({ repoRoot: resolve(repoRoot, 'synthetic-slot-fixture'), sources, contextOf, consumerTable });
+  const routes = Object.fromEntries([...attributed].map(([file, contexts]) => [file, contexts.map(({ routePattern }) => routePattern)]));
+
+  assert.deepEqual(routes, {
+    'frontend/src/extensions/note/hub-tabs.ts': ['/admin/collaboration'],
+    'frontend/src/app/note/NoteTab.tsx': ['/admin/collaboration'],
+    'frontend/src/app/note/note-helper.ts': ['/admin/collaboration'],
+    // 배치 리터럴로 거르는 셸만 그 기여를 그린다. 공용 셸(머리글)이 그리는 기여는 라우트를 특정하지 못한다.
+    'frontend/src/extensions/mail/shell-links.ts': ['/admin/collaboration'],
+    'frontend/src/extensions/help/shell-links.ts': ['unresolved'],
+  }, '다른 화면도 import 하는 모듈(shared)·타입 import(shape)·라우트 진입 파일은 자기 맥락을 그대로 받는다');
+
+  // 실제 모집단: 쪽지 탭의 이동은 협업 허브의 record 다(종전 '/note').
+  const census = buildUrlStateCensus({ repoRoot });
+  const noteTab = census.records.filter(({ source }) => source === 'frontend/src/app/note/NoteCollaborationTab.tsx');
+  assert.ok(noteTab.length > 0, '쪽지 탭의 record 가 사라지면 이 귀속 시험이 공허하다');
+  assert.deepEqual([...new Set(noteTab.map(({ routePattern }) => routePattern))], ['/admin/collaboration']);
 });

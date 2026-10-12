@@ -27,7 +27,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "000f03731f9758fba326d2a82b5d3cd3eba1bda01187de256f769e86b7f82c2f"
+    "inventoryHash": "51443538a5bc8508fb0aef6327580afd311493aaa64fb8cafba2f269a62f4339"
   },
   "summary": {
     "sourceFileCount": 665,
@@ -2059,14 +2059,14 @@
       }
     },
     {
-      "id": "URL-B0693FAF37126B",
+      "id": "URL-45D136D9CA843B",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
       "source": "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
       "producerFile": "frontend/src/app/admin/collaboration/scraps/ScrapCollaborationTab.tsx",
       "consumerFile": null,
-      "routePattern": "/admin/collaboration/scraps",
+      "routePattern": "/admin/collaboration",
       "targetCandidate": "/admin/collaboration/scraps/selectScrapList",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
@@ -13740,14 +13740,14 @@
       }
     },
     {
-      "id": "URL-BFAFE1EB99A9E9",
+      "id": "URL-8E63334A4C6B6A",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
       "source": "frontend/src/app/note/NoteCollaborationTab.tsx",
       "producerFile": "frontend/src/app/note/NoteCollaborationTab.tsx",
       "consumerFile": null,
-      "routePattern": "/note",
+      "routePattern": "/admin/collaboration",
       "targetCandidate": "/note",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
@@ -15450,21 +15450,20 @@
       }
     },
     {
-      "id": "URL-7C944A7B4D997B",
+      "id": "URL-8C73AC4B3CDE23",
       "surface": "navigation",
       "kind": "form-producer",
       "operation": "intercepted-submit",
       "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
       "producerFile": "frontend/src/components/business/community/CommunityManageDialog.tsx",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/help",
       "targetCandidate": null,
       "stateItems": [],
       "currentBehavior": "Form submission is intercepted before native navigation (react-hook-form-handle-submit); no URL state is emitted.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -15472,7 +15471,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -15489,21 +15488,20 @@
       }
     },
     {
-      "id": "URL-DB70EE212118AC",
+      "id": "URL-9C29FB824E4730",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "router.push",
       "source": "frontend/src/components/business/community/knowledge-community-tab.tsx",
       "producerFile": "frontend/src/components/business/community/knowledge-community-tab.tsx",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/help",
       "targetCandidate": "/cop/cmy/selectCommunityList",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -15511,7 +15509,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -16053,21 +16051,20 @@
       }
     },
     {
-      "id": "URL-DE5C6E6D05377D",
+      "id": "URL-78B7D3C3FA1313",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "href-field",
       "source": "frontend/src/extensions/addressbook/shell-links.ts",
       "producerFile": "frontend/src/extensions/addressbook/shell-links.ts",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/collaboration",
       "targetCandidate": "/admin/collaboration/address-book/select-address-book-list",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -16075,7 +16072,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -16092,21 +16089,20 @@
       }
     },
     {
-      "id": "URL-EDD46CA919337F",
+      "id": "URL-4179AE8EE1E8E7",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "href-field",
       "source": "frontend/src/extensions/board/stats-panels.ts",
       "producerFile": "frontend/src/extensions/board/stats-panels.ts",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/stats",
       "targetCandidate": "/admin/stats/board",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -16114,7 +16110,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "admin-system",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -16131,21 +16127,20 @@
       }
     },
     {
-      "id": "URL-64EE10C9640A18",
+      "id": "URL-B092372B3C8889",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "href-field",
       "source": "frontend/src/extensions/board/stats-panels.ts",
       "producerFile": "frontend/src/extensions/board/stats-panels.ts",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/stats",
       "targetCandidate": "/admin/stats/data-usage",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -16153,7 +16148,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "admin-system",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -16209,21 +16204,20 @@
       }
     },
     {
-      "id": "URL-F5ED0C8B97A0F1",
+      "id": "URL-21A430229B02DD",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "href-field",
       "source": "frontend/src/extensions/mail/shell-links.ts",
       "producerFile": "frontend/src/extensions/mail/shell-links.ts",
       "consumerFile": null,
-      "routePattern": "unresolved",
+      "routePattern": "/admin/collaboration",
       "targetCandidate": "/admin/collaboration/mail-send",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
+        "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
@@ -16231,7 +16225,7 @@
         "status": "unverified"
       },
       "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
+        "shellAccessEvidence": "authenticated",
         "capabilityRoles": "unverified",
         "objectAuthorization": "unverified"
       },
@@ -17352,6 +17346,7 @@
   "limitations": [
     "Static syntax cannot determine whether a value is personal data, public, secret, or an authorized object locator.",
     "Computed target/key and unresolved shared-component route context remain ambiguous and therefore fail-closed.",
+    "Slot contributions and modules imported only by them take the route context of their consuming shells (slot-registry consumer table); a shell's own route context stays directory-based.",
     "This repository census does not observe CDN, reverse-proxy, browser-history, support-ticket, or production analytics retention.",
     "Candidate-allow is a review recommendation only; every state item remains approvalStatus=unverified.",
     "No runtime sanitizer, redirect behavior, login intent, pending decision, ADR, proxy, or Next configuration is changed by this artifact."

@@ -748,14 +748,16 @@ test('hub tab modules: contributable names exactly the hub-tabs contributions, a
  * 기여 폐포(허브 분해 H1). 레지스트리는 슬롯마다 하나라서, 기여 하나가 연쇄로 지워지면 그 레지스트리를 읽는 모든 셸이 함께 사라진다
  * (허브 하나의 실수가 모든 허브를 지운다). 그래서 기여에서 import 로 닿는 파일의 소유 기능은 기여 기능이 요구하는 기능(폐포, 화면 계열
  * 포함) 안이어야 한다. 판정은 투영 연쇄 계획의 간선(planFrontendRemoval)을 쓴다 — 두 번째 판정기는 없다. 레지스트리는 구성마다 다시
- * 렌더되므로 따라가지 않는다.
+ * 렌더되므로 따라가지 않는다. 소유도 생성기의 제거 규칙(카탈로그 frontendRules)을 그대로 쓴다 — 파일을 덮는 규칙이 하나라도 기여
+ * 기능의 폐포에서 빠지면 그 파일은 지워진다. 첫 일치 기능 하나만 보면 겹친 경로(게시판 접두 + 커뮤니티 정확 경로)에서 커뮤니티 누락을 놓친다.
  */
 function contributionClosureViolations({ catalog, edges, files }) {
-  const owners = catalog.capabilities.map(capability => ({ id: capability.id, paths: capability.frontend.paths }));
-  const ownerOf = file => owners.find(({ paths }) => paths.some(path => {
+  const covering = file => catalog.frontendRules.filter(({ path }) => {
     const root = path.replace(/\/+$/, '');
     return file === root || file.startsWith(`${root}/`) || file.replace(/\.tsx?$/, '') === root.replace(/\.tsx?$/, '');
-  }))?.id;
+  });
+  // project-composer-recipe.mjs 의 includeRule 과 같다: any 는 하나라도, 나머지는 모두 남아야 규칙이 남는다.
+  const kept = (rule, included) => (rule.mode === 'any' ? rule.domains.some(domain => included.has(domain)) : rule.domains.every(domain => included.has(domain)));
   const requires = new Map(catalog.capabilities.map(capability => [capability.id, capability.requires.map(edge => edge.domain)]));
   const closureOf = id => {
     const closure = new Set([id]);
@@ -772,11 +774,13 @@ function contributionClosureViolations({ catalog, edges, files }) {
       reached.add(to);
     }
     for (const path of reached) {
-      const owner = ownerOf(frontendRel(path));
-      if (owner && !allowed.has(owner)) violations.push(`frontend/${kind.file} → ${relOf(path)}: 소유 ${owner} 는 ${kind.owner} 가 요구하는 기능 밖이다`);
+      for (const rule of covering(frontendRel(path)).filter(row => !kept(row, allowed))) {
+        const owner = `${rule.domains.join('·')}${rule.mode === 'any' ? '(하나 이상)' : ''}`;
+        violations.push(`frontend/${kind.file} → ${relOf(path)}: 소유 ${owner} 는 ${kind.owner} 가 요구하는 기능 밖이다`);
+      }
     }
   }
-  return violations.sort();
+  return [...new Set(violations)].sort();
 }
 
 test('contribution closure: what a contribution imports belongs to the features its own feature requires', () => {
@@ -790,6 +794,16 @@ test('contribution closure: what a contribution imports belongs to the features 
   leaked.set(view, [...(edges.get(view) ?? []), { to: scrapService }]);
   assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: leaked, files: inputs.files }).join('\n'),
     /frontend\/src\/extensions\/note\/hub-tabs\.ts → frontend\/src\/services\/business\/user\/ScrapService\.ts: 소유 scrap 는 note 가 요구하는 기능 밖이다/);
+  // 대조: 겹친 경로는 덮는 규칙 모두가 남아야 남는다. 게시판 접두와 커뮤니티 정확 경로가 함께 덮는 파일에 게시판 기여가 닿으면,
+  // 첫 일치 기능(게시판)만 보던 판정은 통과시켰지만 게시판만 고른 구성에서 그 파일은 지워진다.
+  const boardContribution = join(frontendRoot, 'src/extensions/board/stats-panels.ts');
+  const communityPage = join(frontendRoot, 'src/app/admin/community/boards/page.tsx');
+  if (existsSync(boardContribution) && existsSync(communityPage)) {
+    const overlapped = new Map(edges);
+    overlapped.set(boardContribution, [...(edges.get(boardContribution) ?? []), { to: communityPage }]);
+    assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: overlapped, files: inputs.files }).join('\n'),
+      /frontend\/src\/extensions\/board\/stats-panels\.ts → frontend\/src\/app\/admin\/community\/boards\/page\.tsx: 소유 community 는 board 가 요구하는 기능 밖이다/);
+  }
 });
 
 test('only the listed consumers import a slot registry, each from outside the slot root, and each slot has a contribution', () => {

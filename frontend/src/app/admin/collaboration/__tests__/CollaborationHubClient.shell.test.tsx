@@ -23,6 +23,7 @@ vi.mock('@/extensions/generated-hub-tabs', () => ({ hubTabs: [mocks.tabs] }));
 vi.mock('@/extensions/generated-shell-links', () => ({ shellLinks: [mocks.links] }));
 
 import CollaborationHubClient from '../CollaborationHubClient';
+import { metadata } from '../page';
 
 const view = (text: string) => function FakeTab() {
   return <CollaborationHubFrame description={`${text} 설명`}><p>{text} 본문</p></CollaborationHubFrame>;
@@ -88,6 +89,11 @@ describe('협업 허브 core 셸', () => {
     expect(screen.getByRole('status')).toHaveTextContent('이 구성에서 볼 수 있는 협업 목록이 없습니다.');
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.queryByRole('tabpanel')).toBeNull();
+    // 셸은 core 다 — 빈 구성에서 설명·문서 제목이 이 구성에 없는 기능(쪽지·스크랩)을 말하지 않는다.
+    expect(screen.getByText('구성에 포함된 협업 기능의 목록을 탭으로 모아 봅니다.')).toBeInTheDocument();
+    expect(screen.queryByText(/쪽지|스크랩/)).toBeNull();
+    expect(String(metadata.title)).toBe('협업 목록 | eGov Enterprise');
+    expect(String(metadata.description)).not.toMatch(/쪽지|스크랩/);
   });
 
   it('탭 기여는 있는데 권한으로 모두 가려졌으면 구성이 아니라 권한 때문이라고 말한다', () => {
