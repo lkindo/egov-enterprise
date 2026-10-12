@@ -1,4 +1,3 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -94,12 +93,33 @@ describe('게시글 모아보기 동등성', () => {
     expect(mocks.getPosts.mock.calls.length).toBeGreaterThan(calls);
   });
 
+  // 이행 뒤 바뀐 유일한 행동: 조회 시점은 조회 또는 Enter 다(카탈로그 G2). 종전에는 입력을 디바운스해 바로 조회했다.
   it('검색어로 그 게시판의 1페이지를 조회한다', async () => {
     renderScreen();
     await screen.findByText('첫 공지');
     fireEvent.click(screen.getByRole('button', { name: '2 페이지로 이동' }));
     await waitFor(() => expect(lastQuery()?.[1]).toEqual(expect.objectContaining({ page: 1 })));
-    fireEvent.change(screen.getByLabelText('게시글 검색'), { target: { value: '예산' } });
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '예산' } });
+    fireEvent.submit(screen.getByRole('search'));
     await waitFor(() => expect(lastQuery()).toEqual(['BBSMSTR_AAAAAAAAAAAA', expect.objectContaining({ page: 0, searchWrd: '예산' })]));
+  });
+
+  it('입력만으로는 조회하지 않는다', async () => {
+    renderScreen();
+    await screen.findByText('첫 공지');
+    const calls = mocks.getPosts.mock.calls.length;
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '예산' } });
+    await new Promise(resolve => setTimeout(resolve, 400));
+    expect(mocks.getPosts.mock.calls.length).toBe(calls);
+    expect(mocks.getPosts.mock.calls.some(([, params]) => params.searchWrd === '예산')).toBe(false);
+  });
+
+  it('검색 결과가 없으면 데이터 없음이 아니라 검색 결과 없음으로 말한다', async () => {
+    mocks.getPosts.mockResolvedValue({ list: [], total: 0 });
+    renderScreen();
+    expect(await screen.findByText('선택한 게시판에 등록된 게시글이 없습니다.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('제목'), { target: { value: '예산' } });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
+    expect(await screen.findByText('"예산"에 대한 검색 결과가 없습니다.')).toBeInTheDocument();
   });
 });

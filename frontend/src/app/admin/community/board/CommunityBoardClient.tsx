@@ -5,16 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Plus, Eye,
-  Search, ChevronRight, MessageSquare,
+  ChevronRight, MessageSquare,
   User, Layers, Sparkles, AlertTriangle, RefreshCcw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
@@ -35,17 +35,15 @@ function CommunityBoardContent() {
   const { options: boardOptions } = useBoardOptions();
   const [page, setPage] = useState(0);
 
-  // 감사 P1-8: 과거 `searchWrd` 원본이 그대로 queryKey 에 있어 타이핑 한 글자마다 서버 요청이 나갔다.
-  // 공용 훅으로 300ms 디바운스하고, 입력 컨트롤에는 원본 상태를 그대로 바인딩한다.
-  const debouncedSearchWrd = useDebouncedValue(searchWrd, 300);
-
+  // 조회 시점은 `조회` 또는 Enter 다(카탈로그 G2, Phase 2 커뮤니티 후속 C1b). 종전에는 입력을 300ms 디바운스해
+  // 타이핑 도중에도 조회했다. searchWrd 는 적용된 검색어이고, 입력 중인 값은 KeywordFilter 가 갖는다.
   // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
   const { data: boardData, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['community-board', bbsId, debouncedSearchWrd, page],
+    queryKey: ['community-board', bbsId, searchWrd, page],
     queryFn: () => boardUserService.getPosts(bbsId, {
       page: page,
       size: PAGE_SIZE,
-      searchWrd: debouncedSearchWrd,
+      searchWrd,
       searchCnd: '0'
     }),
   });
@@ -67,9 +65,6 @@ function CommunityBoardContent() {
       {/* 1. Hub Header Matrix */}
       <motion.div variants={hubItemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 px-2">
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-bold tracking-[0.3em] text-primary leading-none px-3 py-1 bg-primary/5 rounded-lg border border-primary/10">커뮤니티</span>
-          </div>
           <h1 className="text-4xl md:text-5xl font-bold text-foreground tracking-tighter leading-none transition-colors">
             게시글 <span className="text-primary">모아보기</span>
           </h1>
@@ -89,26 +84,18 @@ function CommunityBoardContent() {
 
       {/* 2. Search & Filter Matrix */}
       <motion.div variants={hubItemVariants} className="px-2">
-        <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 shadow-2xl flex flex-col md:flex-row gap-6 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none group-focus-within:opacity-10 transition-opacity">
-            <Search size={120} className="rotate-12" />
-          </div>
-          <div className="relative z-10 flex-1 flex flex-col md:flex-row gap-4">
-            <div className="relative group/search flex-1">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within/search:text-primary transition-colors" aria-hidden="true" />
-              <Input
-                value={searchWrd}
-                onChange={(e) => {
-                  setSearchWrd(e.target.value);
-                  // 감사 P1-8: 3페이지에서 검색하면 빈 화면이 되던 결함 — 검색어 변경 시 첫 페이지로 되돌린다.
-                  setPage(0);
-                }}
-                className="pl-14 bg-card border-2 border-border rounded-lg font-bold placeholder:text-muted-foreground focus:border-primary/20 focus:ring-0 transition-all shadow-inner"
-                placeholder="제목으로 게시글 검색..."
-                aria-label="게시글 검색"
-              />
-            </div>
-            <div className="flex gap-3">
+        <div className="hub-glass-premium p-8 rounded-lg border-2 border-border/50 shadow-2xl">
+          <KeywordFilter
+            label="제목"
+            placeholder="제목으로 게시글 검색"
+            value={searchWrd}
+            onSearch={(keyword) => {
+              setSearchWrd(keyword);
+              // 감사 P1-8: 3페이지에서 검색하면 빈 화면이 되던 결함 — 조회하면 첫 페이지로 되돌린다.
+              setPage(0);
+            }}
+          >
+            <div className="flex items-end gap-3">
               <select
                 value={bbsId}
                 onChange={(e) => {
@@ -141,7 +128,7 @@ function CommunityBoardContent() {
                 <RefreshCcw size={20} className={cn(isFetching && 'animate-spin')} aria-hidden="true" />
               </Button>
             </div>
-          </div>
+          </KeywordFilter>
         </div>
       </motion.div>
 
@@ -172,7 +159,7 @@ function CommunityBoardContent() {
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-foreground tracking-tight">표시할 게시글이 없습니다</h3>
               <p className="text-sm font-medium text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                {searchWrd ? `'${searchWrd}' 검색 결과가 없습니다. 다른 검색어를 시도해 보세요.` : '선택한 게시판에 등록된 게시글이 없습니다.'}
+                {emptyResultMessage(searchWrd, '선택한 게시판에 등록된 게시글이 없습니다.')}
               </p>
             </div>
           </div>
@@ -273,7 +260,7 @@ export default function CommunityBoardClient() {
   return (
     <Suspense fallback={
       <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 py-8 animate-pulse">
-        <h1 className="sr-only">커뮤니티 게시글을 불러오는 중</h1>
+        <h1 className="sr-only">게시글을 불러오는 중</h1>
         {/* PageHeader 1:1 스켈레톤 */}
         <div className="flex justify-between items-center pb-6 border-b border-border">
           <div className="space-y-2 w-1/3">

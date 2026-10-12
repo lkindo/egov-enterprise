@@ -56,19 +56,21 @@ const FEATURES = {
     //   질의응답 해결 판정은 셸과 도움말 서비스가 함께 쓰는 게시판 모듈이다.
     'src/app/admin/help', 'src/lib/board',
     // 허브 분해 H4: 통계 셸의 게시물·자료 이용 탭과 통계 요약의 누적 게시물 칸 기여(stats-panels).
-    'src/extensions/board'],
-  routes: ['/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
+    'src/extensions/board',
+    // Phase 2 커뮤니티 후속 C1b: 게시글 모아보기는 이름과 달리 게시판을 골라 게시글을 보는 게시판 화면이다(커뮤니티 데이터를 쓰지 않는다).
+    'src/app/admin/community/board'],
+  routes: ['/admin/community/board', '/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
   routes: ['/admin/system/comments'] },
   // 커뮤니티·홍보(배너·팝업)·시연 화면은 따로 고른다(DEC-OPS-256 ①). 셋 사이에는 코드 참조가 없다.
   community: { label: '커뮤니티', permissions: ['COMMUNITY'], paths: [
-    'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
+    'src/app/admin/community/[id]', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
     'src/services/business/community', 'src/services/foundation/system/CommunityAdminService.ts', 'src/types/business/community.ts',
     // 허브 분해 H2: 지식 허브의 커뮤니티 탭 기여와 그 뷰·대화상자, 그리고 커뮤니티 탭으로 가는 별칭 화면.
     'src/components/business/community', 'src/extensions/community', 'src/app/admin/community/boards/page.tsx'],
-  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/community/boards', '/cop/cmy'],
+  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/boards', '/cop/cmy'],
   exactRoutes: ['/admin/community', '/admin/community/boards'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
@@ -157,10 +159,9 @@ const SHARED_UI = [
     evidence: 'frontend/src/app/admin/work-hub/WorkHubClient.tsx' },
 ];
 
-// 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 두 의존을 명시한다.
+// 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 의존을 명시한다.
+// 커뮤니티 → 게시판은 게시글 모아보기 화면을 게시판 소유로 옮기며 걷었다(C1b). 그 결합은 커뮤니티 사용자 API 의 Java 간선이 센다.
 const UI_DEPENDENCIES = [
-  { from: 'community', domain: 'board', reason: '커뮤니티 게시판 화면이 게시판 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/community/board/CommunityBoardClient.tsx', symbol: 'boardUserService' },
   { from: 'community', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
   { from: 'help', domain: 'board', reason: '도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.',
