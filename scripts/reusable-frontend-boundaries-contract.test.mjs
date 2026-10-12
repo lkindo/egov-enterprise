@@ -48,8 +48,16 @@ function boundaryErrors(source, profile, feature) {
     for (const call of ['auditAdminService.getAuditLogs', 'systemLogAdminService.getSystemLogs', 'systemLogAdminService.getLoginLogs']) {
       if (!text.includes(call)) errors.push(`core monitoring was removed: ${call}`);
     }
-    if (profile === 'core' && /commentQueryOptions|commentMutationOptions|handleDeleteComment|useRef|useMutation|MessageSquare|Trash2|useToast|useConfirm|tab: ['"]COMMENTS['"]/.test(text)) errors.push('excluded comments leaked into core');
-    if (profile !== 'core' && (!text.includes('commentMutationOptions.removeAdmin') || !text.includes('await confirm('))) errors.push('included comment deletion lost its control');
+    // [허브 분해 H6] 댓글 관리는 댓글 기능의 독립 화면이다 — 감시 허브는 어느 프로필에서도 댓글 코드를 갖지 않는다(마커도 없다).
+    if (/commentQueryOptions|commentMutationOptions|handleDeleteComment|useMutation|MessageSquare|Trash2|useToast|useConfirm|tab: ['"]COMMENTS['"]/.test(text)) {
+      errors.push('comments returned to the monitoring hub');
+    }
+    // 그 화면은 댓글과 함께 남고 빠진다(투영 마커가 아니라 파일 소유). 남는 구성에서는 삭제 통제(확인 뒤 대행 삭제)를 지킨다.
+    const moderation = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
+    if (profile !== 'core' && existsSync(moderation)) {
+      const screen = readFileSync(moderation, 'utf8');
+      if (!screen.includes('commentMutationOptions.removeAdmin') || !screen.includes('await confirm(')) errors.push('comment deletion lost its control');
+    }
   }
   if (feature === 'maker') {
     if (!text.includes('boardAdminService.createBoardMaster(') || !text.includes('menuAdminService.createMenu(')) errors.push('included board creation was removed');

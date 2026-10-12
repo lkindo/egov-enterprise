@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "c177572cebf13e98b85957f2ba08770ce00f6821980636da014f711125cad103"
+    "inventoryHash": "000f03731f9758fba326d2a82b5d3cd3eba1bda01187de256f769e86b7f82c2f"
   },
   "summary": {
-    "sourceFileCount": 664,
-    "records": 390,
-    "syntaxOccurrences": 466,
-    "ambiguousRecords": 343,
-    "unverifiedRecords": 390,
+    "sourceFileCount": 665,
+    "records": 395,
+    "syntaxOccurrences": 471,
+    "ambiguousRecords": 347,
+    "unverifiedRecords": 395,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,16 +45,16 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 175,
+      "navigation-producer": 176,
       "page-redirect": 17,
-      "query-builder": 22,
-      "query-consumer": 53,
-      "query-producer": 37,
+      "query-builder": 23,
+      "query-consumer": 54,
+      "query-producer": 39,
       "request-query-producer": 3,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 380,
+      "navigation": 385,
       "request-telemetry": 10
     }
   },
@@ -8807,6 +8807,231 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/codes/institution/page.tsx",
         "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-028DCB2E23ECC4",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.replace",
+      "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/comments",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E2186D1A8996BF",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "allowlist-rebuild",
+      "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "consumerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "routePattern": "/admin/system/comments",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameters are rebuilt from a declared allowlist; unknown, repeated, and encoded names are dropped.",
+      "riskSignals": [],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+        "detector": "url-search-params-allowlist-rebuild",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-0FE1B58B5495BA",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "routePattern": "/admin/system/comments",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-B3368273723808",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "delete",
+      "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/comments",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with delete().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-98D8382FDDCB41",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/comments",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+        "detector": "url-search-param-method",
         "occurrenceCount": 1
       }
     },

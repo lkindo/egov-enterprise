@@ -863,7 +863,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["OPS_READ","SYS_LOG_READ","WEB_LOG_READ","LOGIN_LOG_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"COMMENT_DELETE_ALL","action":"DELETE_ALL","source":"write"},
       {"code":"LOGIN_LOG_READ","action":"READ","source":"entry"},
       {"code":"OPS_READ","action":"READ","source":"entry"},
       {"code":"SYS_LOG_READ","action":"READ","source":"entry"},

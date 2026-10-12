@@ -294,6 +294,8 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/lib/board/qna-status.ts', ['core']],
     // [허브 분해 H3] 감시 허브의 하네스 아틀라스 탭 기여도 시연 기능과 함께 직접 지워진다(허브는 core 셸이라 남는다).
     ['frontend/src/extensions/showcase/hub-tabs.ts', ['core', 'collaboration']],
+    // [허브 분해 H6] 댓글 및 평가 관리는 댓글 기능의 독립 화면이다 — 감시 허브(core)는 남고 이 화면은 댓글과 함께 직접 지워진다.
+    ['frontend/src/app/admin/system/comments/CommentModerationClient.tsx', ['core']],
     // [허브 분해 H4] 통계 셸의 게시판·설문 기여도 기능과 함께 직접 지워진다(셸·요약은 core 라 남는다).
     ['frontend/src/extensions/board/stats-panels.ts', ['core']],
     ['frontend/src/extensions/survey/stats-panels.ts', ['core', 'collaboration']],

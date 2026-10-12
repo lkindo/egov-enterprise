@@ -1,15 +1,7 @@
 'use client';
 
-import { useState, useMemo, useTransition,
-  /* reusable-base:collaboration:start */
-  useRef,
-  /* reusable-base:collaboration:end */
-} from 'react';
-import { useQuery, useQueryClient,
-  /* reusable-base:collaboration:start */
-  useMutation,
-  /* reusable-base:collaboration:end */
-} from '@tanstack/react-query';
+import { useState, useMemo, useTransition } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 ;
 import { Button } from '@/components/ui/button';
 ;
@@ -19,10 +11,6 @@ import {
   RefreshCcw,
   LogIn,
   Download,
-  /* reusable-base:collaboration:start */
-  MessageSquare,
-  Trash2,
-  /* reusable-base:collaboration:end */
   MonitorCheck,
   Database,
   Network,
@@ -30,23 +18,11 @@ import {
   AlertCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-/* reusable-base:collaboration:start */
-import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-/* reusable-base:collaboration:end */
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { monitoringKeys, monitoringQueryOptions } from '@/queries/monitoring-query-options';
-/* reusable-base:collaboration:start */
-import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
-// ⚠ [2026-09-22] 이 타입 전용 참조는 반드시 collaboration 블록 안에 둔다. 생성기의 연쇄 제거는 타입 전용
-//   참조도 의존으로 세므로, 블록 밖에 두면 core 투영에서 댓글 서비스와 함께 이 파일 전체가 사라진다 →
-//   모니터링 허브 소실 → 그곳을 목적지로 둔 관측성 리다이렉트 페이지까지 삭제(#707 CI 실측).
-//   (가이드 §3.7-1·4: 타입 참조도 같은 구역이고, `import type` 도 간선이다)
-import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
-/* reusable-base:collaboration:end */
 import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
 import type { SysLog, LoginLog } from '@/types/foundation/system';
 import type { AuditLog } from '@/services/foundation/system/AuditAdminService';
@@ -80,9 +56,6 @@ import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monit
 import { useAuth } from '@/contexts/AuthContext';
 import { isHubTab, visibleEntries } from '@/extensions/slots';
 import { hubTabs } from '@/extensions/generated-hub-tabs';
-/* reusable-base:collaboration:start */
-import { canPermission } from '@/lib/auth/permissions';
-/* reusable-base:collaboration:end */
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `updateQuery` 호출부가 쓰는 키는 `tab`·`page` 둘뿐이다.
@@ -102,17 +75,13 @@ const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 const isMonitoringTab = isHubTab('monitoring');
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
-const LIST_TABS: readonly string[] = ['SECURITY', 'SYSTEM', 'LOGIN',
-  /* reusable-base:collaboration:start */
-  'COMMENTS',
-  /* reusable-base:collaboration:end */
-];
+const LIST_TABS: readonly string[] = ['SECURITY', 'SYSTEM', 'LOGIN'];
 
 /** 페이지당 건수 기본값. 사용자가 바꾸면 화면 상태가 이긴다(A1 필수 — 페이지당 건수 선택). */
 const DEFAULT_PAGE_SIZE = 50;
 
 
-/** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog / CommentDetail)의 실제 필드명을 따른다. */
+/** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog)의 실제 필드명을 따른다. */
 const SYS_LOG_EXPORT_HEADERS = [
   { label: '시스템 로그 일련번호', key: 'sysLogSn' },
   { label: '요청ID', key: 'dmndId' },
@@ -125,21 +94,10 @@ const SYS_LOG_EXPORT_HEADERS = [
   { label: '처리시간(ms)', key: 'prcsTm' }
 ];
 
-/* reusable-base:collaboration:start */
-const COMMENT_EXPORT_HEADERS = [
-  { label: '댓글번호', key: 'ansSn' },
-  { label: '내용', key: 'ansCn' },
-  { label: '작성자ID', key: 'wrterId' },
-  { label: '작성자명', key: 'wrterNm' },
-  { label: '작성일시', key: 'crtDt' },
-  { label: '게시판ID', key: 'bbsId' },
-  { label: '게시글ID', key: 'pstSn' }
-];
-/* reusable-base:collaboration:end */
 
 /**
  * 목록 탭의 조회 상태 묶음.
- * 탭마다 행 타입(SysLog / LoginLog / CommentDetail / AuditLog)을 제네릭으로 보존한다.
+ * 탭마다 행 타입(SysLog / LoginLog / AuditLog)을 제네릭으로 보존한다. 댓글 목록은 댓글 기능의 독립 화면으로 옮겼다(허브 분해 H6).
  */
 interface BaseListTabConfig<T> {
   columns: Column<T>[];
@@ -161,19 +119,12 @@ interface BaseListTabConfig<T> {
 type ListTabConfig =
   | (BaseListTabConfig<SysLog> & { kind: 'SYSTEM' })
   | (BaseListTabConfig<LoginLog> & { kind: 'LOGIN' })
-  /* reusable-base:collaboration:start */
-  | (BaseListTabConfig<CommentDetail> & { kind: 'COMMENTS' })
-  /* reusable-base:collaboration:end */
   | (BaseListTabConfig<AuditLog> & { kind: 'SECURITY' });
 
 
 /** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
-  /* reusable-base:collaboration:start */
-  const { toast } = useToast();
-  const confirm = useConfirm();
-  /* reusable-base:collaboration:end */
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -200,21 +151,14 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-/* reusable-base:collaboration:start */
-  const deleteCommentPendingRef = useRef(false);
-  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
-  // [2026-10-01] 댓글 삭제 버튼은 관리자 삭제 대행 권한(COMMENT_DELETE_ALL)으로 보인다. 이 허브는 로그 조회 권한만으로
-  //   들어올 수 있어, 종전에는 확인 모달까지 지난 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
-  const canDeleteComment = canPermission(user, 'COMMENT_DELETE_ALL');
-/* reusable-base:collaboration:end */
 
   // [P1-8] 타이핑 한 글자마다 서버 요청이 나가던 문제 → 300ms 디바운스 후에만 조회한다.
 
 
   /**
    * 현재 경로를 유지한 채 쿼리스트링만 바꾼다.
-   * 과거에는 `/admin/system/monitoring` 로 하드코딩 push 해서 `/hub`·`/admin/system/comments`
-   * 진입 시 사이드바 활성 메뉴가 풀리고 중복 라우트로 이탈했다(감사 mr-04 / sys-mon-18).
+   * 과거에는 `/admin/system/monitoring` 로 하드코딩 push 해서 `/hub` 진입 시 사이드바 활성 메뉴가 풀리고
+   * 중복 라우트로 이탈했다(감사 mr-04 / sys-mon-18).
    */
   const updateQuery = (updates: Record<string, string | null>) => {
     const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
@@ -282,15 +226,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   });
   const loginLogs = useMemo(() => loginLogData?.list || [], [loginLogData]);
 
-  // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조).
-  //    따라서 COMMENTS 탭에서는 검색 입력을 렌더하지 않고, queryKey 에도 검색어를 넣지 않는다.
-/* reusable-base:collaboration:start */
-  const { data: commentData, isLoading: isCommentLoading, error: commentError, refetch: refetchComments } = useQuery({
-    ...commentQueryOptions.adminList({ page: page - 1, size: pageSize }),
-    enabled: activeTab === 'COMMENTS'
-  });
-  const comments = useMemo(() => commentData?.list || [], [commentData]);
-/* reusable-base:collaboration:end */
 
   // Real-time Metrics Queries
   const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth, dataUpdatedAt: healthUpdatedAt } = useQuery({
@@ -339,47 +274,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     gcTime: 0,
   });
 
-/* reusable-base:collaboration:start */
-  const deleteCommentMutation = useMutation({
-    ...commentMutationOptions.removeAdmin(queryClient),
-    onSuccess: () => {
-      toast('댓글이 성공적으로 삭제되었습니다.', 'success');
-      if (selectedItemId) setSelectedItemId(null);
-    },
-    onError: (error: Error) => {
-      toast(error.message || '댓글 삭제 중 오류가 발생했습니다.', 'error');
-    }
-  });
-
-  /**
-   * 댓글 삭제(복구 불가·물리 삭제)는 반드시 확인 모달을 거친다.
-   * 과거에는 서비스 경로 오조립(404)으로 삭제가 "잠복"해 있었을 뿐, 무확인 1클릭 삭제 구조였다.
-   */
-  const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterId?: string }) => {
-    if (comment?.ansSn === undefined || comment?.ansSn === null || deleteCommentPendingRef.current) return;
-    const ansSn = comment.ansSn;
-    deleteCommentPendingRef.current = true;
-    setDeletingCommentId(ansSn);
-    try {
-      const preview = (comment.ansCn || '').trim();
-      const isConfirmed = await confirm({
-        title: '댓글 영구 삭제',
-        message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-        confirmText: '영구 삭제',
-        variant: 'destructive'
-      });
-      if (!isConfirmed) return;
-      try {
-        await deleteCommentMutation.mutateAsync(ansSn);
-      } catch {
-        // mutation onError가 오류 안내를 소유하며 선택된 댓글은 그대로 보존한다.
-      }
-    } finally {
-      deleteCommentPendingRef.current = false;
-      setDeletingCommentId(null);
-    }
-  };
-/* reusable-base:collaboration:end */
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -388,18 +282,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       const found = view.find(idStr);
       if (found) return found;
     }
-/* reusable-base:collaboration:start */
-    if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
-/* reusable-base:collaboration:end */
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
-  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, contributedTabs,
-    /* reusable-base:collaboration:start */
-    comments,
-    /* reusable-base:collaboration:end */
-  ]);
+  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, contributedTabs]);
 
   const auditColumns: Column<AuditLog>[] = [
     {
@@ -474,40 +361,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     }
   ];
 
-/* reusable-base:collaboration:start */
-  const commentColumns: Column<CommentDetail>[] = [
-    {
-      header: '댓글 및 피드백',
-      accessor: (c) => (
-        <div className="flex w-full items-center gap-3 py-1 pr-4">
-          <div className={cn(
-            "flex size-9 shrink-0 items-center justify-center rounded-md transition-colors",
-            selectedItemId === c.ansSn ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-          )}>
-            <MessageSquare size={16} aria-hidden="true" />
-          </div>
-          <div className="flex-1 space-y-0.5 min-w-0">
-            <h4 className="truncate text-[length:var(--font-size-body)] font-medium text-foreground">{c.ansCn}</h4>
-            <p className="text-xs text-muted-foreground">{c.wrterNm ?? '작성자 정보 없음'}</p>
-          </div>
-          {selectedItemId === c.ansSn && canDeleteComment && (
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                aria-label={deletingCommentId === c.ansSn ? '댓글 삭제 중' : '댓글 삭제'}
-                aria-busy={deletingCommentId === c.ansSn || undefined}
-                disabled={deletingCommentId !== null}
-                onClick={(e) => { e.stopPropagation(); void handleDeleteComment(c); }}
-                className="relative z-10 size-8 shrink-0 rounded-md text-destructive-emphasis hover:bg-destructive/10"
-            >
-              <Trash2 size={16} />
-            </Button>
-          )}
-        </div>
-      )
-    }
-  ];
-/* reusable-base:collaboration:end */
 
   const renderObservability = () => (
     <div className="space-y-4">
@@ -760,27 +613,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               exportHeaders: LOGIN_LOG_EXPORT_HEADERS,
               label: '로그인 시도 이력'
             };
-/* reusable-base:collaboration:start */
-          case 'COMMENTS':
-            return {
-              kind: 'COMMENTS',
-              columns: commentColumns,
-              data: comments,
-              loading: isCommentLoading,
-              error: commentError,
-              refetch: () => { void refetchComments(); },
-              keyField: 'ansSn',
-              rowId: (item: CommentDetail) => item.ansSn,
-              totalPage: commentData?.totalPage || 1,
-              totalCount: commentData?.total,
-              // 백엔드가 댓글 키워드 검색을 지원하지 않아 검색 입력을 노출하지 않는다.
-              searchable: false,
-              emptyMessage: '등록된 댓글이 없습니다.',
-              exportName: '댓글목록',
-              exportHeaders: COMMENT_EXPORT_HEADERS,
-              label: '사용자 의견 관리'
-            };
-/* reusable-base:collaboration:end */
           case 'SECURITY':
           default:
             return {
@@ -824,7 +656,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     SECURITY: '시스템 로그 탭과 같은 전체 데이터이며 보안 전용 분류를 제공하지 않습니다.',
     SYSTEM: '시스템 로그를 조회합니다. 한 건을 선택하면 아래에 상세가 표시됩니다.',
     LOGIN: '성공·실패·결과 미상 로그인 시도를 조회합니다. 성공 로그인 통계와 집계 범위가 다릅니다.',
-    COMMENTS: '서비스에 등록된 사용자 의견을 조회하고 관리합니다.',
     OBSERVABILITY: '애플리케이션 가동 상태와 자원 사용량을 조회합니다.',
   };
   const extraTab = contributedTabs.find((tab) => tab.id === activeTab)?.view;
@@ -834,12 +665,15 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
     { tab: 'LOGIN', icon: <LogIn size={14} />, label: '로그인 시도 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
-    // 기여 탭은 셸의 로그·가동 상태 탭 뒤, 댓글 탭 앞에 order 순으로 놓는다(종전 탭 순서 그대로).
+    // 기여 탭은 셸의 로그·가동 상태 탭 뒤에 order 순으로 놓는다(종전 탭 순서 그대로).
     ...contributedTabs.map(({ id, label, view: { icon: Icon } }) => ({ tab: id, icon: <Icon size={14} />, label })),
-/* reusable-base:collaboration:start */
-    { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
-/* reusable-base:collaboration:end */
   ];
+
+  /**
+   * 반출할 수 있는 목록 탭의 이름. 반출 안내가 이 이름을 그대로 쓴다 — 종전 안내는 마커 밖 문장이라 없는 탭('서비스 피드백')을
+   * 가리켰고, 댓글이 없는 생성물에서도 그 이름을 말했다(허브 분해 H6).
+   */
+  const LIST_TAB_LABELS = NAV_ITEMS.filter((item) => LIST_TABS.includes(item.tab)).map((item) => item.label).join('·');
 
   /**
    * 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. 기여 탭의 항목이면 그 뷰의
@@ -886,7 +720,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </div>
       }
       filter={
-        /* COMMENTS 탭은 백엔드가 키워드 검색을 지원하지 않아(입력해도 결과 불변) 입력 자체를 노출하지 않는다. */
         listConfig?.searchable ? (
           /*
             [2026-08-29] 라벨 하나가 세 탭에 공유되는데 **탭마다 서버 술어가 다르다.**
@@ -976,31 +809,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   onPageChange: (p) => setPage(p)
                 }}
               />
-/* ⚠ [2026-09-22] 이 분기는 collaboration 소유 행 타입으로 좁혀지는 유일한 JSX 라 블록 안에 둔다 —
-   유니온 멤버가 블록과 함께 빠지는 축소 프로필에서는 이 비교 자체가 타입 오류다(#707 core 투영 tsc 실측). */
-/* reusable-base:collaboration:start */
-            ) : listConfig.kind === 'COMMENTS' ? (
-              <StandardDataTable
-                columns={listConfig.columns}
-                data={listConfig.data}
-                loading={listConfig.loading || isPending}
-                error={listConfig.error}
-                onRetry={listConfig.refetch}
-                onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
-                rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
-                keyField={listConfig.keyField}
-                emptyMessage={listConfig.searchable
-                  ? emptyResultMessage(searchKeyword, listConfig.emptyMessage, hasAppliedPeriod(period))
-                  : listConfig.emptyMessage}
-                pagination={{
-                  currentPage: page,
-                  totalPages: listConfig.totalPage,
-                  pageSize,
-                  onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
-                  onPageChange: (p) => setPage(p)
-                }}
-              />
-/* reusable-base:collaboration:end */
             ) : (
               <StandardDataTable
                 columns={listConfig.columns}
@@ -1041,7 +849,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
-                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다. 기여 뷰가 sample 일 때만이다 — 실제 로그·의견 기록에는 붙이지 않는다(허브 분해 H3). */}
+                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다. 기여 뷰가 sample 일 때만이다 — 실제 로그 기록에는 붙이지 않는다(허브 분해 H3). */}
                 {extraDetail?.sample ? <div className="mt-2"><SampleDataBadge /></div> : null}
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
@@ -1076,7 +884,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                   {listConfig
                     ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 이 모달은 현재 페이지만 반출하며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
-                    : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 시스템 로그(감사 보기)·시스템 로그·로그인 시도 이력·서비스 피드백 탭에서 실행해 주세요.'}
+                    : `현재 탭은 목록 데이터가 없어 반출할 수 없습니다. ${LIST_TAB_LABELS} 탭에서 실행해 주세요.`}
                </p>
             </div>
 

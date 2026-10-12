@@ -56,7 +56,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   게시판 글 목록은 게시판 목록 화면이 계속 제공하므로 이행 되돌리기가 아니라 중복 표면 제거다.
 // [2026-10-01 결정 19] 41 -> 43: 민감 작업 감사 원장(/admin/system/logs/audit)과 후속 작업 상태(/admin/system/durable-jobs)를
 //   셸로 신설했다. 서버에 원장·작업이 쌓이는데 볼 화면이 없었다 — 이행 되돌리기가 아니라 새 화면이다.
-const ADOPTERS = 43;
+// [허브 분해 H6] 43 -> 44: 댓글 및 평가 관리(/admin/system/comments)가 감시 허브 위임을 떠나 댓글 기능의 독립 A1 화면이 됐다.
+//   감시 허브는 그대로 셸을 경유한다 — 이행 되돌리기가 아니라 새 화면이다.
+const ADOPTERS = 44;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
 /*
@@ -86,6 +88,7 @@ const ADOPTER_SCREENS = [
   'src/app/admin/system/banner/BannerAdminClient.tsx',
   'src/app/admin/system/codes/administ/AdministCodeClient.tsx',
   'src/app/admin/system/codes/institution/InstitutionCodeClient.tsx',
+  'src/app/admin/system/comments/CommentModerationClient.tsx',
   'src/app/admin/system/durable-jobs/DurableJobsClient.tsx',
   'src/app/admin/system/hpcm/HpcmClient.tsx',
   'src/app/admin/system/isg/InternetSvcGuidanceClient.tsx',

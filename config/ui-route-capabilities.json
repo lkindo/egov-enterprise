@@ -6991,9 +6991,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
+            "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+            "frontend/src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx",
             "frontend/src/app/admin/system/comments/page.tsx",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx",
             "frontend/src/queries/comment-query-options.ts",
             "frontend/src/services/foundation/system/CommentAdminService.ts"
           ]
@@ -7017,9 +7017,9 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
-            "frontend/src/app/admin/system/comments/page.tsx",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx"
+            "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+            "frontend/src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx",
+            "frontend/src/app/admin/system/comments/page.tsx"
           ]
         }
       ],
@@ -8812,7 +8812,6 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
-        "delete",
         "export",
         "filter",
         "refresh",
@@ -8897,34 +8896,6 @@
             "frontend/src/app/admin/system/monitoring/hub/page.tsx",
             "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
             "frontend/src/services/foundation/system/MonitoringAdminService.ts"
-          ]
-        },
-        {
-          "id": "monitoring.comment-management",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-comments-api",
-          "actions": [
-            "delete",
-            "export",
-            "refresh",
-            "view-list"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "사용자 의견 관리",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/admin/CommentApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/admin/CommentApiControllerTest.java",
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-            "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx",
-            "frontend/src/app/admin/system/monitoring/hub/page.tsx",
-            "frontend/src/queries/comment-query-options.ts"
           ]
         },
         {

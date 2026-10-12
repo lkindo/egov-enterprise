@@ -8,13 +8,15 @@ import { inProjection } from '@/test-utils/projection';
  *
  * 고정하는 것: 권한 집합별 탭 이름·순서(지금은 권한과 무관하게 같다), `?tab=` 해석(대소문자·옛 이름 HEALTH·퇴역 값)과
  * 페이지 기본 탭, 탭 전환의 URL(소문자 탭 값, 쪽 번호를 버린다), 탭별 제목, 상세의 샘플 고지, 반출 안내 문구.
- * 하네스·댓글 탭은 그 탭의 소스가 투영으로 빠진 생성물에서 기대 목록에서 빠진다. 하네스 탭은 시연 기능의 hub-tabs 기여다(허브 분해 H3).
+ * 하네스 탭은 그 기여가 투영으로 빠진 생성물에서 기대 목록에서 빠진다. 하네스 탭은 시연 기능의 hub-tabs 기여다(허브 분해 H3).
+ * [허브 분해 H6 — 의도한 변화] 댓글 탭('사용자 의견 관리')을 걷었다. 댓글 관리는 댓글 기능의 독립 화면(/admin/system/comments)이다 —
+ * 그래서 탭 목록에 없고, `?tab=comments` 는 기본 탭을 열며, 반출 안내는 남은 목록 탭 이름만 말한다(종전 안내는 없는 탭 이름
+ * '서비스 피드백' 을 가리켰다).
  */
 
 const harnessInProjection = inProjection('frontend/src/extensions/showcase/hub-tabs.ts');
-const commentsInProjection = inProjection('frontend/src/services/business/comment/commentService.ts');
 const CORE_TABS = ['시스템 로그(감사 보기)', '시스템 로그', '로그인 시도 이력', '가동 상태'];
-const ALL_TABS = [...CORE_TABS, ...(harnessInProjection ? ['하네스 아틀라스'] : []), ...(commentsInProjection ? ['사용자 의견 관리'] : [])];
+const ALL_TABS = [...CORE_TABS, ...(harnessInProjection ? ['하네스 아틀라스'] : [])];
 
 const mocks = vi.hoisted(() => ({
   query: '',
@@ -33,8 +35,6 @@ vi.mock('@/contexts/AuthContext', () => {
   return { useAuth: auth, useOptionalAuth: auth };
 });
 vi.mock('next/dynamic', () => ({ default: () => function DynamicPanel() { return <div />; } }));
-vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
-vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => vi.fn() }));
 const page = (list: unknown[]) => ({ list, total: list.length, totalPage: 1 });
 vi.mock('@/services/foundation/system/AuditAdminService', () => ({ auditAdminService: { getAuditLogs: async () => page([]) } }));
 vi.mock('@/services/foundation/system/SystemLogAdminService', () => ({
@@ -42,9 +42,6 @@ vi.mock('@/services/foundation/system/SystemLogAdminService', () => ({
     getSystemLogs: async () => page([{ sysLogSn: 22, srvcNm: 'SYSTEM', methodNm: 'healthCheck', ocrnYmd: '20260815' }]),
     getLoginLogs: async () => page([]),
   },
-}));
-vi.mock('@/services/foundation/system/CommentAdminService', () => ({
-  commentAdminService: { getComments: async () => page([]), deleteComment: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/MonitoringAdminService', () => ({
   monitoringAdminService: { getHealth: async () => ({ status: 'UP', components: {} }), getCpuUsage: async () => 1, getMemoryUsage: async () => 1 },
@@ -112,13 +109,10 @@ describe('감시 허브 탭 동등성(허브 분해 전)', () => {
     expect(within(detail).getByText(/샘플 데이터/)).toBeInTheDocument();
   });
 
-  if (commentsInProjection) it('`?tab=comments` 와 댓글 화면의 기본 탭은 의견 탭이다', () => {
-    const first = renderHub('tab=comments');
-    expect(tabState()).toEqual(selected('사용자 의견 관리'));
-    first.unmount();
-    mocks.pathname = '/admin/system/comments';
-    renderHub('', 'COMMENTS');
-    expect(tabState()).toEqual(selected('사용자 의견 관리'));
+  it('[H6] 의견 탭은 없다 — `?tab=comments` 는 기본 탭을 연다', () => {
+    renderHub('tab=comments');
+    expect(tabState()).toEqual(selected('시스템 로그(감사 보기)'));
+    expect(screen.queryByRole('tab', { name: /의견/ })).toBeNull();
   });
 
   it('실제 로그 상세에는 샘플 고지가 없다', async () => {
@@ -138,7 +132,7 @@ describe('감시 허브 탭 동등성(허브 분해 전)', () => {
     renderHub('tab=observability');
     fireEvent.click(screen.getByRole('button', { name: /리포트 스냅샷/ }));
     const modal = screen.getByRole('region', { name: '현재 조회 결과 반출' });
-    expect(within(modal).getByText('현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 시스템 로그(감사 보기)·시스템 로그·로그인 시도 이력·서비스 피드백 탭에서 실행해 주세요.'))
+    expect(within(modal).getByText('현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 시스템 로그(감사 보기)·시스템 로그·로그인 시도 이력 탭에서 실행해 주세요.'))
       .toBeInTheDocument();
   });
 });

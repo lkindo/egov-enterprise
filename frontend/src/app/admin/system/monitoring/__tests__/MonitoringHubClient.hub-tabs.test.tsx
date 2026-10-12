@@ -2,16 +2,13 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Zap } from 'lucide-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { inProjection } from '@/test-utils/projection';
 
 /**
- * 감시 허브 셸의 기여 탭 호스트 계약(허브 분해 H3). 셸 고유 탭은 로그 셋·가동 상태(+댓글)이고 부가 탭은 hub-tabs 레지스트리에서 온다 —
+ * 감시 허브 셸의 기여 탭 호스트 계약(허브 분해 H3). 셸 고유 탭은 로그 셋·가동 상태이고 부가 탭은 hub-tabs 레지스트리에서 온다 —
  * 여기서는 레지스트리를 가짜 기여로 바꿔 셸이 하는 일만 본다. 실제 하네스 탭은 허브 시험과 동등성 그물이 실제 레지스트리로 본다.
  */
 
-const commentsInProjection = inProjection('frontend/src/services/business/comment/commentService.ts');
 const CORE_TABS = ['시스템 로그(감사 보기)', '시스템 로그', '로그인 시도 이력', '가동 상태'];
-const COMMENT_TABS = commentsInProjection ? ['사용자 의견 관리'] : [];
 
 const mocks = vi.hoisted(() => ({ query: '', replace: vi.fn(), tabs: [] as unknown[] }));
 
@@ -25,15 +22,10 @@ vi.mock('@/contexts/AuthContext', () => {
   return { useAuth: auth, useOptionalAuth: auth };
 });
 vi.mock('next/dynamic', () => ({ default: () => function DynamicPanel() { return <div />; } }));
-vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
-vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => vi.fn() }));
 const page = (list: unknown[]) => ({ list, total: list.length, totalPage: 1 });
 vi.mock('@/services/foundation/system/AuditAdminService', () => ({ auditAdminService: { getAuditLogs: async () => page([]) } }));
 vi.mock('@/services/foundation/system/SystemLogAdminService', () => ({
   systemLogAdminService: { getSystemLogs: async () => page([]), getLoginLogs: async () => page([]) },
-}));
-vi.mock('@/services/foundation/system/CommentAdminService', () => ({
-  commentAdminService: { getComments: async () => page([]), deleteComment: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/MonitoringAdminService', () => ({
   monitoringAdminService: { getHealth: async () => ({ status: 'UP', components: {} }), getCpuUsage: async () => 1, getMemoryUsage: async () => 1 },
@@ -76,9 +68,9 @@ beforeEach(() => {
 });
 
 describe('감시 허브 셸의 기여 탭', () => {
-  it('셸의 로그·가동 상태 탭 뒤, 댓글 탭 앞에 자기 허브의 기여 탭을 order 순으로 놓고, 기여 탭 제목 아래 그 뷰의 설명을 보인다', () => {
+  it('셸의 로그·가동 상태 탭 뒤에 자기 허브의 기여 탭을 order 순으로 놓고, 기여 탭 제목 아래 그 뷰의 설명을 보인다', () => {
     renderHub('tab=real_tab');
-    const labels = [...CORE_TABS, '실측 탭', '표본 탭', ...COMMENT_TABS];
+    const labels = [...CORE_TABS, '실측 탭', '표본 탭'];
     expect(tabState()).toEqual(labels.map((label) => [label, String(label === '실측 탭')]));
     expect(screen.getByRole('heading', { level: 1, name: '실측 탭' })).toBeInTheDocument();
     expect(screen.getByText('실측 탭 설명')).toBeInTheDocument();
@@ -103,7 +95,7 @@ describe('감시 허브 셸의 기여 탭', () => {
   it('기여가 없는 구성에서는 셸 고유 탭만 있고, 기여 탭 값은 기본 탭으로 떨어진다', () => {
     mocks.tabs.splice(0, Infinity);
     renderHub('tab=harness');
-    const labels = [...CORE_TABS, ...COMMENT_TABS];
+    const labels = CORE_TABS;
     expect(tabState()).toEqual(labels.map((label) => [label, String(label === '시스템 로그(감사 보기)')]));
   });
 });

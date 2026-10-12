@@ -64,6 +64,13 @@ describe('P2 frontend consistency source contract', () => {
     }
     expect(monitoring).not.toContain("queryKey: ['admin-comments'");
     expect(monitoring).not.toContain("invalidateQueries({ queryKey: ['admin-comments']");
+    // [허브 분해 H6] 댓글 관리의 실제 소비 화면은 댓글 기능의 독립 화면이다. 같은 금지를 그 화면에도 둔다(댓글과 함께 빠진다).
+    if (inProjection(srcPath('app', 'admin', 'system', 'comments', 'CommentModerationClient.tsx'))) {
+      const moderation = source('app', 'admin', 'system', 'comments', 'CommentModerationClient.tsx');
+      expect(moderation).toContain('commentQueryOptions.adminList(');
+      expect(moderation).not.toContain("queryKey: ['admin-comments'");
+      expect(moderation).not.toContain("invalidateQueries({ queryKey: ['admin-comments']");
+    }
   });
 
   if (inProjection(srcPath('services', 'foundation', 'system', 'BoardAdminService.ts'))) it('board master 경계와 소비 화면은 generated 계약·factory key를 사용한다', () => {
