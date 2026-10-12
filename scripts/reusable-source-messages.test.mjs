@@ -9,6 +9,7 @@ import {
   beanValidationRefsIn, errorCodesIn, isErrorCodeSource, lowerContractFloors, ownedMessageKeys, pruneBundleText, pruneOwnedMessageKeys,
 } from './reusable-source-messages.mjs';
 import { pruneJava, stripJavaComments } from './reusable-source-java.mjs';
+import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const read = path => readFileSync(join(ROOT, path), 'utf8');
@@ -51,8 +52,10 @@ function projectedTree(profileName) {
     mkdirSync(dirname(join(output, path)), { recursive: true });
     cpSync(join(ROOT, path), join(output, path), { recursive: true });
   }
-  const manifest = JSON.parse(read('config/reusable-base-profiles.json'));
-  return { output, java: pruneJava(output, manifest, manifest.profiles[profileName]) };
+  // 생성기처럼 매니페스트 v2 의 기능 소유와 시작 구성의 기능 목록으로 투영한다(11단계 C3).
+  const modules = loadComposerModules(ROOT);
+  const preset = modules.files['presets.json'].presets.find(entry => entry.id === profileName);
+  return { output, java: pruneJava(output, composerOwnership(modules), { resolvedDomains: preset.domains }) };
 }
 
 test('ErrorCode·Bean Validation 정규식은 메시지 번들 계약의 원문과 같다', () => {

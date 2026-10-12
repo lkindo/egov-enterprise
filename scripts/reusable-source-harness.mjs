@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 
 /**
  * 하네스 baseline 미러 상수 — 전부 메타 게이트({@code HarnessBaselineIntegrityTest})의 동명 선언과
@@ -185,13 +185,13 @@ export function projectedWriteHandlerCounts(source) {
   return { handlers, successful };
 }
 
-export function writeReusableHarnessProfile(output, sourceManifest) {
+// `ownership`·`profile` 은 생성기가 투영에 쓴 기능 소유(composerOwnership)와 프로필(composerProfile)이다. 원본에서 같은 판정으로
+// 계획을 다시 세워 생성물의 Java 와 대조한다(독립 계획). pack 을 보지 않는다(11단계 C3).
+export function writeReusableHarnessProfile(output, { ownership, profile }) {
   const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
   const profileName = projected.sourcePolicy.generatedProfile;
-  const manifest = sourceManifest ?? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  const profile = manifest.profiles[profileName];
   const javaFiles = trackedAndUntrackedFiles().filter(path => path.endsWith('.java')).map(path => join(ROOT, path));
-  const plan = planJavaRemoval(ROOT, manifest, profile, javaFiles);
+  const plan = planJavaRemoval(ROOT, ownership, profile, javaFiles);
   const production = javaFiles.filter(path => /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//.test(normalize(relative(ROOT, path))));
   const retained = [];
   const removed = [];
@@ -261,8 +261,8 @@ export function writeReusableHarnessProfile(output, sourceManifest) {
   return snapshot;
 }
 
-export function writeHarnessBaseline(output, sourceManifest) {
-  writeReusableHarnessProfile(output, sourceManifest);
+export function writeHarnessBaseline(output, projection) {
+  writeReusableHarnessProfile(output, projection);
   const entries = computeHarnessBaselineEntries(output);
   const lines = [
     '# 자동 산출 — reusable-base source projection 기준.',

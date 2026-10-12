@@ -8,9 +8,11 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { FRONTEND_MARKER_FILES, assertCompositionDatabaseLock, composerMarkerBlockOwners, composerProfile, domainSupportFiles, frontendMarkerTableViolations,
-  projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { FRONTEND_MARKER_FILES, assertCompositionDatabaseLock, composerMarkerBlockOwners, composerProfile, frontendMarkerTableViolations,
+  manifestOwnership, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { composerOwnership, loadComposerModules, moduleDatabaseInventory, projectComposerModuleFiles, projectedModuleViolations, sharedTableTransfers }
+  from './composer-modules.mjs';
+import { activeCompositionEntry, writeProjectedManifest } from './generate-reusable-base-source.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
@@ -20,8 +22,12 @@ import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree
 const root = resolve(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
 const catalog = loadProjectComposerCatalog(root);
+// 생성기는 매니페스트 v2 의 기능 소유와 구성으로 투영한다(11단계 C3). 시험도 같은 입력을 쓴다.
+const modules = loadComposerModules(root);
+const ownership = composerOwnership(modules);
 const recipe = domains => ({ schemaVersion: 1, project: { name: 'composition-test' }, sourceRef: 'main',
   selection: { domains }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+const presetComposition = id => resolveProjectRecipe({ ...recipe([]), selection: { preset: id } }, catalog);
 // Match copySourceTree: tracked deletions are absent from the current source projection.
 const files = trackedAndUntrackedFiles().filter(file => existsSync(join(root, file)));
 const java = files.filter(file => file.endsWith('.java')).map(file => join(root, file));
@@ -29,9 +35,11 @@ const frontendFiles = files.filter(file => file.startsWith('frontend/'));
 const frontendSources = new Map(frontendFiles.filter(isFrontendModuleFile)
   .map(file => [file, readFileSync(join(root, file), 'utf8')]));
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
-// 직접 선택의 소유 판정 시험도 생산 projector(createFrontendProjector)를 지난다. 합성 구성처럼 프로필을 만들 수 없으면 profile 을 직접 준다.
-const projectCustom = (file, source, composition, profile = composerProfile(manifest, composition)) =>
-  createFrontendProjector({ manifest, profile, composition }).project(file, source).source;
+// 소유 판정 시험도 생산 projector(createFrontendProjector)를 지난다 — 구성을 주면 기능 투영이다(시작 구성과 직접 선택이 같다).
+const projectCustom = (file, source, composition) => createFrontendProjector({ composition }).project(file, source).source;
+// 합성 manifest 의 기능 소유(v1 모양)로 생성기 Java 투영을 부른다. 생성기는 같은 모양을 매니페스트 v2 에서 얻는다(composerOwnership).
+const planWith = (directory, fixtureManifest, resolvedDomains, javaFiles) =>
+  planJavaRemoval(directory, manifestOwnership(directory, fixtureManifest), { resolvedDomains }, javaFiles);
 const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
@@ -62,20 +70,19 @@ const smsApiSources = [
 ];
 
 test('SMS API support follows the optional domain in the real generator removal plan', () => {
-  assert.deepEqual(manifest.packs.collaboration.backend.domainSupportFiles?.sms, [smsApiSources[1]]);
+  assert.deepEqual(modules.files['sms.json'].backend.supportFiles, [smsApiSources[1]]);
   for (const selected of [[], ['sms']]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
-    const profile = composerProfile(manifest, composition);
-    const plan = planJavaRemoval(root, manifest, profile, java);
+    const profile = composerProfile(modules, composition);
+    const plan = planJavaRemoval(root, ownership, profile, java);
     for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), !selected.includes('sms'), `${file}: exact SMS owner`);
   }
-  for (const [name, profile] of Object.entries(manifest.profiles)) {
-    const plan = planJavaRemoval(root, manifest, profile, java);
-    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), name === 'core', `${name}: ${file}`);
+  for (const preset of catalog.presets) {
+    const plan = planJavaRemoval(root, ownership, composerProfile(modules, presetComposition(preset.id)), java);
+    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), preset.id === 'core', `${preset.id}: ${file}`);
   }
-  const unowned = structuredClone(manifest);
-  delete unowned.packs.collaboration.backend.domainSupportFiles.sms;
-  const excluded = composerProfile(unowned, resolveProjectRecipe(recipe([]), catalog));
+  const unowned = { ...ownership, supportFiles: new Map([...ownership.supportFiles].filter(([domain]) => domain !== 'sms')) };
+  const excluded = composerProfile(modules, resolveProjectRecipe(recipe([]), catalog));
   assert.equal(planJavaRemoval(root, unowned, excluded, java).removed.has(join(root, smsApiSources[1])), false,
     'removing the exact support declaration reproduces the isolated Properties survivor');
 });
@@ -86,7 +93,7 @@ const templateService = 'business-app/src/main/java/nuri/business/service/templa
 
 test('the template assignment port survives every composition and its only implementation leaves with the template feature', () => {
   // 종전에는 템플릿 디렉터리의 별도 구현을 커뮤니티 지원 파일로 묶어 커뮤니티가 템플릿을 늘 끌어왔다.
-  assert.equal(manifest.packs.demo.backend.domainSupportFiles?.community, undefined, 'the community no longer declares template support');
+  assert.deepEqual(modules.files['community.json'].backend.supportFiles, [], 'the community no longer declares template support');
   // 구현은 하나이고 템플릿 API 가 쓰는 @Service 다 — 템플릿만 고른 생성물에 소비자 없는 구현이 남지 않는다(도달 불가 서비스 게이트).
   //   별도 구현을 다시 만들면 템플릿 단독 생성물에서 그 구현이 소비자 없이 남는다.
   const implementations = java.filter(file => /\bimplements\b[^{]*\bTemplateAssignmentPolicy\b/u.test(readFileSync(file, 'utf8')))
@@ -96,14 +103,14 @@ test('the template assignment port survives every composition and its only imple
   for (const [selected, kept] of [[['template'], true], [['community'], false], [['community', 'template'], true], [['promotion'], false], [[], false]]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
     assert.equal(composition.resolvedDomains.includes('template'), kept, `${selected}: template resolution`);
-    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    const plan = planJavaRemoval(root, ownership, composerProfile(modules, composition), java);
     assert.equal(plan.removed.has(join(root, templateService)), !kept, `${selected}: ${templateService}`);
     assert.equal(plan.removed.has(join(root, templatePort)), false, `${selected}: the port stays in foundation`);
   }
-  for (const [name, profile] of Object.entries(manifest.profiles)) {
-    const plan = planJavaRemoval(root, manifest, profile, java);
-    assert.equal(plan.removed.has(join(root, templateService)), name !== 'demo', `${name}: ${templateService}`);
-    assert.equal(plan.removed.has(join(root, templatePort)), false, `${name}: ${templatePort}`);
+  for (const preset of catalog.presets) {
+    const plan = planJavaRemoval(root, ownership, composerProfile(modules, presetComposition(preset.id)), java);
+    assert.equal(plan.removed.has(join(root, templateService)), preset.id !== 'demo', `${preset.id}: ${templateService}`);
+    assert.equal(plan.removed.has(join(root, templatePort)), false, `${preset.id}: ${templatePort}`);
   }
   // 커뮤니티는 템플릿을 요구하지 않는다 — 선택 연동(포트)으로만 잇고, 템플릿이 빠진 구성은 기능 저하로 알린다.
   assert.ok(!catalog.capabilities.find(row => row.id === 'community').requires.some(row => row.domain === 'template'));
@@ -139,9 +146,9 @@ test('new management HTTP matrices project every selected surface and reject an 
       assert.doesNotMatch(projected, /void managementWriteRequiresItsExactHttpPermission\(/);
       assert.doesNotMatch(projected, /void exactManagementGrantsIndependentlyAllowRealHttpCrud\(/);
     }
-    const profile = composerProfile(manifest, { profile: 'custom', packs: ['core', 'demo'], resolvedDomains: selected, frontend: { removePaths: [] } });
+    const profile = composerProfile(modules, { profile: 'custom', packs: ['core', 'demo'], resolvedDomains: selected, frontend: { removePaths: [] } });
     assert.ok(!profile.acknowledgedRemovedGates.some(row => row.file === file), `${selected}: the selected RBAC surface must retain its gate`);
-    assert.equal(planJavaRemoval(root, manifest, profile, java).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
+    assert.equal(planJavaRemoval(root, ownership, profile, java).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
   }
   assert.throws(() => projectComposerJava(file, source.replace('/api/v1/help/manuals', '/api/v1/help/new-api'), { resolvedDomains: ['help'] }), /RBAC.*(inventory|owner|contract).*drifted/i);
 });
@@ -172,22 +179,15 @@ function supportFixture(t) {
 
 test('domain support follows its selected consumer without weakening mandatory dependency guards', t => {
   const { directory, manifest, java } = supportFixture(t);
-  for (const profile of [
-    { packs: ['core'] },
-    { packs: ['core', 'demo'], resolvedDomains: [] },
-  ]) {
-    const plan = planJavaRemoval(directory, manifest, profile, java);
-    for (const file of displayNameSupport) assert.ok(plan.removed.has(join(directory, file)), `${file}: excluded consumer must remove its support`);
-  }
-  for (const profile of [
-    { packs: ['core', 'demo'] },
-    { packs: ['core', 'demo'], resolvedDomains: ['memoreport'] },
-  ]) {
-    assert.equal(planJavaRemoval(directory, manifest, profile, java).removed.size, 0);
-  }
+  const plan = planWith(directory, manifest, [], java);
+  for (const file of displayNameSupport) assert.ok(plan.removed.has(join(directory, file)), `${file}: excluded consumer must remove its support`);
+  assert.equal(planWith(directory, manifest, ['memoreport'], java).removed.size, 0);
   const required = join(directory, 'business-core/src/main/java/nuri/business/service/user/RequiredService.java');
   writeFileSync(required, 'package nuri.business.service.user; import nuri.foundation.core.user.UserDisplayNameLookup; class RequiredService { UserDisplayNameLookup lookup; }');
-  assert.throws(() => planJavaRemoval(directory, manifest, { packs: ['core'] }, [...java, required]), /필수 모듈이 제외 domain을 참조한다/);
+  assert.throws(() => planWith(directory, manifest, [], [...java, required]), /필수 모듈이 제외 domain을 참조한다/);
+  // Java 투영은 pack 을 보지 않는다 — 해석된 기능 목록이 없는 pack 프로필은 투영하지 않고 실패한다(11단계 C3).
+  assert.throws(() => planJavaRemoval(directory, manifestOwnership(directory, manifest), { packs: ['core'] }, java), /해석된 기능 목록\(resolvedDomains\)이 필요하다/);
+  assert.throws(() => planJavaRemoval(directory, manifest, { resolvedDomains: [] }, java), /기능 소유\(기능 목록·지원 파일\)가 필요하다/);
 });
 
 test('domain support rejects unsafe, missing, duplicate and unowned declarations', t => {
@@ -202,13 +202,13 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
   ]) {
     const changed = structuredClone(manifest);
     changed.packs.demo.backend.domainSupportFiles.memoreport = files;
-    assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
+    assert.throws(() => planWith(directory, changed, [], java), /support/i);
   }
   const changed = structuredClone(manifest);
   changed.packs.demo.backend.domainSupportFiles.unknown = [displayNameSupport[0]];
-  assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /support/i);
+  assert.throws(() => planWith(directory, changed, [], java), /support/i);
   changed.packs.demo.backend.appDomains.push('unknown');
-  assert.throws(() => planJavaRemoval(directory, changed, { packs: ['core'] }, java), /duplicate domain support/i);
+  assert.throws(() => planWith(directory, changed, [], java), /duplicate domain support/i);
   // 업무 앱 파일은 다른 선택 도메인의 디렉터리에 있을 때만 지원 파일이다. 자기 디렉터리는 이미 자기 소유이고,
   // 어느 pack 에도 없는 도메인 디렉터리는 선택으로 되살릴 수 없다. 파일이 실제로 있어도 형식에서 거부한다.
   const own = 'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java';
@@ -218,12 +218,12 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
   for (const file of [own, foreign]) {
     const rejected = structuredClone(manifest);
     rejected.packs.demo.backend.domainSupportFiles.memoreport = [file];
-    assert.throws(() => planJavaRemoval(directory, rejected, { packs: ['core'] }, java), /Invalid or duplicate domain support file/, file);
+    assert.throws(() => planWith(directory, rejected, [], java), /Invalid or duplicate domain support file/, file);
   }
   const accepted = structuredClone(manifest);
   accepted.packs.core.backend.appDomains = ['orphan'];
   accepted.packs.demo.backend.domainSupportFiles.memoreport = [foreign];
-  assert.ok(planJavaRemoval(directory, accepted, { packs: ['core'] }, [...java, join(directory, foreign)]).removed.has(join(directory, foreign)),
+  assert.ok(planWith(directory, accepted, ['orphan'], [...java, join(directory, foreign)]).removed.has(join(directory, foreign)),
     'a selected domain directory file owned by an excluded consumer is removed');
 });
 
@@ -234,8 +234,8 @@ test('API support is removed or survives with its exact consumer and cannot sile
   writeFileSync(join(directory, file), 'package nuri.api.integration.memoreport; class LocalProperties {}');
   manifest.packs.demo.backend.domainSupportFiles.memoreport.push(file);
   const allJava = [...java, join(directory, file)];
-  assert.ok(planJavaRemoval(directory, manifest, { packs: ['core'] }, allJava).removed.has(join(directory, file)));
-  assert.equal(planJavaRemoval(directory, manifest, { packs: ['core', 'demo'], resolvedDomains: ['memoreport'] }, allJava).removed.size, 0);
+  assert.ok(planWith(directory, manifest, [], allJava).removed.has(join(directory, file)));
+  assert.equal(planWith(directory, manifest, ['memoreport'], allJava).removed.size, 0);
   const output = join(directory, 'output');
   for (const source of allJava) {
     const path = relative(directory, source);
@@ -243,11 +243,12 @@ test('API support is removed or survives with its exact consumer and cannot sile
     writeFileSync(join(output, path), readFileSync(source));
   }
   const composition = { profile: 'custom', resolvedDomains: ['memoreport'], frontend: { includedPaths: [], removePaths: [] } };
-  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
+  const owned = manifestOwnership(directory, manifest);
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, owned));
   rmSync(join(output, file));
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source was removed: api-server/);
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, owned), /Selected capability source was removed: api-server/);
   // 생성 단계는 이 실패를 코드로 엔진에 알린다. 세부 정보는 저장소 기준 '/' 경로다.
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest),
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, owned),
     error => error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details) === JSON.stringify({ files: [file.split(sep).join('/')] }));
 });
 
@@ -260,8 +261,8 @@ test('a selected feature keeps the api-server controllers of its own directory e
   const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
   const survives = (catalogValue, selected) => {
     const composition = resolveProjectRecipe(recipe(selected), catalogValue);
-    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
-    return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, manifest,
+    const plan = planJavaRemoval(root, ownership, composerProfile(modules, composition), java);
+    return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, ownership,
       { present: path => !plan.removed.has(join(root, path)) }) };
   };
   const real = survives(catalog, ['community']);
@@ -290,14 +291,15 @@ test('a selected domain directory may lose only the support owned by an excluded
   mkdirSync(dirname(join(output, sibling)), { recursive: true });
   writeFileSync(join(output, sibling), readFileSync(join(directory, sibling)));
   const composition = selected => ({ profile: 'custom', resolvedDomains: selected, frontend: { includedPaths: [], removePaths: [] } });
+  const owned = manifestOwnership(directory, manifest);
   // 생성기가 템플릿 단독에서 커뮤니티 전용 구현을 지운 뒤 "선택된 소스가 지워졌다" 로 실패하던 경로다.
-  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest));
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), owned));
   // 지워진 소스는 모두 모아 한 번에 알린다(정밀 점검과 같은 합집합). 메모 보고 서비스도 이 출력에 없어 함께 실린다.
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan', 'memoreport']), manifest),
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan', 'memoreport']), owned),
     error => error.code === 'SOURCE_SURVIVAL' && error.details.files.includes('business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java')
       && /^Selected capability source was removed: .*business-app\/src\/main\/java\/nuri\/business\/service\/orphan\/OrphanPolicy\.java/.test(error.message));
   rmSync(join(output, sibling));
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), manifest), /OrphanService\.java/);
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), owned), /OrphanService\.java/);
 });
 
 test('selected domain support cannot disappear from a custom artifact', t => {
@@ -310,9 +312,9 @@ test('selected domain support cannot disappear from a custom artifact', t => {
     mkdirSync(dirname(join(output, file)), { recursive: true });
     writeFileSync(join(output, file), readFileSync(join(directory, file)));
   }
-  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifest));
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifestOwnership(directory, manifest)));
   rmSync(join(output, displayNameSupport[1]));
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest), /Selected capability source/);
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifestOwnership(directory, manifest)), /Selected capability source/);
 });
 
 test('custom manifest domain support follows exact selected domains', t => {
@@ -324,7 +326,7 @@ test('custom manifest domain support follows exact selected domains', t => {
   for (const resolvedDomains of [[], ['memoreport']]) {
     writeProjectedManifest(directory, manifest, 'custom', profile, lock, {
       profile: 'custom', resolvedDomains, tables: [], explicitSequences: [],
-    });
+    }, new Map());
     const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
     assert.deepEqual(projected.packs.demo.backend.domainSupportFiles, resolvedDomains.length ? { memoreport: displayNameSupport } : {});
   }
@@ -343,9 +345,9 @@ test('custom projection keeps every selected table owned, including a shared tab
   mkdirSync(join(directory, 'config'));
   for (const [domains, owner] of [[['template'], 'demo'], [['board', 'template'], 'collaboration']]) {
     const composition = resolveProjectRecipe(recipe(domains), catalog);
-    const profile = composerProfile(manifest, composition);
+    const profile = composerProfile(modules, composition);
     writeProjectedManifest(directory, structuredClone(manifest), 'custom', profile,
-      { generatedAt: '2026-10-08T00:00:00Z', tables: composition.tables, sequences: [] }, composition);
+      { generatedAt: '2026-10-08T00:00:00Z', tables: composition.tables, sequences: [] }, composition, sharedTableTransfers(modules.files, composition.resolvedDomains));
     const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
     const owned = Object.values(projected.packs).flatMap(pack => pack.database.tables);
     assert.deepEqual([...owned].sort(), [...composition.tables].sort(), `${domains}: each selected table has exactly one pack owner`);
@@ -371,12 +373,83 @@ test('custom projection keeps a frontend-only declaration only for a selected fr
   mkdirSync(join(directory, 'config'));
   for (const [domains, expected] of [[['event'], []], [['showcase'], ['showcase']], [['event', 'showcase'], ['showcase']]]) {
     const composition = resolveProjectRecipe(recipe(domains), catalog);
-    writeProjectedManifest(directory, structuredClone(manifest), 'custom', composerProfile(manifest, composition),
-      { generatedAt: '2026-10-12T00:00:00Z', tables: composition.tables, sequences: [] }, composition);
+    writeProjectedManifest(directory, structuredClone(manifest), 'custom', composerProfile(modules, composition),
+      { generatedAt: '2026-10-12T00:00:00Z', tables: composition.tables, sequences: [] }, composition, sharedTableTransfers(modules.files, composition.resolvedDomains));
     const demo = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8')).packs.demo.backend;
     assert.deepEqual(demo.frontendOnlyDomains, expected, `${domains}`);
     for (const domain of demo.frontendOnlyDomains) assert.ok(demo.appDomains.includes(domain), `${domains}: ${domain} stays an appDomain`);
   }
+});
+
+/*
+ * [11단계 C3] 생성물의 매니페스트 v2(config/modules)는 구성의 기능 파일·core·활성 구성 하나만 담는다. 소유 기능이 빠진 공유 테이블은
+ * 넘겨받는 기능 파일의 owns.tables 로 옮겨, 생성물 기능 파일의 테이블이 구성의 테이블과 정확히 같다. 생성물 무결성 검사가 같은 판정
+ * (projectedModuleViolations)을 생성물 디스크에 건다.
+ */
+test('projected modules keep exactly the composition features, its active entry and every table owner', () => {
+  const projectFor = composition => projectComposerModuleFiles(modules.files, composition,
+    activeCompositionEntry(modules, composition, composerProfile(modules, composition), { cascadeRemoved: [{ file: 'x.java' }] }));
+  const check = (composition, projected, names = ['_schema.json', ...Object.keys(projected)]) =>
+    projectedModuleViolations({ names, read: name => projected[name], composition });
+  for (const composition of [...catalog.presets.map(preset => presetComposition(preset.id)), ...[['template'], ['board', 'template'], ['mail', 'schedule']]
+    .map(domains => resolveProjectRecipe(recipe(domains), catalog))]) {
+    const label = `${composition.profile}:${composition.resolvedDomains.join(',')}`;
+    const projected = projectFor(composition);
+    assert.deepEqual(check(composition, projected), [], label);
+    assert.deepEqual(Object.keys(projected).filter(name => !['core.json', 'presets.json'].includes(name)).sort(),
+      composition.resolvedDomains.map(domain => `${domain}.json`), `${label}: only the selected feature files`);
+    const [active] = projected['presets.json'].presets;
+    if (composition.profile === 'custom') {
+      assert.deepEqual({ id: active.id, domains: active.domains, javaCascade: active.expected.javaCascade },
+        { id: 'custom', domains: composition.resolvedDomains, javaCascade: ['x.java'] }, `${label}: the direct selection records what the generator removed`);
+    } else {
+      assert.equal(active, modules.files['presets.json'].presets.find(preset => preset.id === composition.profile), `${label}: the preset entry is copied as declared`);
+    }
+  }
+  // 템플릿만 고르면 소유 기능(게시판)이 빠진 tb_tmplt_info 를 템플릿이 넘겨받는다. 넘기지 않으면 소유 기능이 없는 테이블이 남는다.
+  const template = resolveProjectRecipe(recipe(['template']), catalog);
+  const projected = projectFor(template);
+  assert.ok(projected['template.json'].owns.tables.includes('tb_tmplt_info'), 'the template receives the shared table');
+  assert.ok(!modules.files['template.json'].owns.tables.includes('tb_tmplt_info'), 'the upstream template file is not mutated');
+  const untransferred = { ...projected, 'template.json': modules.files['template.json'] };
+  assert.deepEqual(check(template, untransferred), ['projected module table ownership differs from composition']);
+  // 구성 밖 기능 파일이 남거나 구성 기능 파일이 빠지면 파일 집합이 다르다고 말한다.
+  assert.deepEqual(check(template, { ...projected, 'board.json': modules.files['board.json'] }),
+    ['projected module set differs from composition (extra: board.json; missing: -)']);
+  const { 'template.json': _template, ...lacking } = projected;
+  assert.deepEqual(check(template, lacking), ['projected module set differs from composition (extra: -; missing: template.json)']);
+  // 활성 구성은 하나이고 그 구성이어야 한다.
+  const otherPreset = { ...projected, 'presets.json': modules.files['presets.json'] };
+  assert.deepEqual(check(template, otherPreset), ['projected active composition differs from composition: custom']);
+});
+
+/*
+ * [11단계 C3] 생성기·정밀 점검·DB 생성기는 매니페스트 v2 의 기능 소유로 투영한다. pack 목록과 순위로 판정하는 코드가 이 파일들에
+ * 돌아오면 시작 구성이 다시 직접 선택과 다른 경로를 탄다. pack 을 읽는 옛 소비자(투영 manifest 쓰기·도달성 census)는 대상이 아니다.
+ */
+test('the generators and the deep plan project by feature ownership, never by pack or rank', () => {
+  const code = file => readFileSync(join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\r\n]*/g, '$1');
+  for (const file of ['scripts/reusable-source-java.mjs', 'scripts/project-composer-deep.mjs', 'scripts/generate-reusable-base-db.mjs']) {
+    assert.doesNotMatch(code(file), /manifest\.packs|profile\.packs|allowedPacks|\.rank\b/, file);
+  }
+  assert.doesNotMatch(code('scripts/generate-reusable-base-source.mjs'), /\.rank\b/, 'shared tables move by declared consumer order, not pack rank');
+  // DB 생성기가 원본 스키마와 대조하는 소유 목록은 기능 파일에서 온다 — 카탈로그의 core·기능 테이블·독립 시퀀스와 같다.
+  const inventory = moduleDatabaseInventory(modules.files);
+  const sortedUnique = values => [...new Set(values)].sort();
+  assert.deepEqual(inventory.tables, sortedUnique([...catalog.core.tables, ...catalog.capabilities.flatMap(row => row.database.tables)]));
+  assert.deepEqual(inventory.sequences, sortedUnique([...catalog.core.explicitSequences, ...catalog.capabilities.flatMap(row => row.database.explicitSequences)]));
+});
+
+test('a shared table goes to the first selected consumer in declared order, not by pack rank', () => {
+  const files = {
+    'core.json': modules.files['core.json'], 'presets.json': modules.files['presets.json'],
+    'owner.json': { id: 'owner', owns: { tables: ['tb_shared'], sharedTables: [{ table: 'tb_shared', consumers: ['owner', 'zeta', 'alpha'], reason: '시험' }] } },
+    'alpha.json': { id: 'alpha', owns: { tables: [], sharedTables: [] } }, 'zeta.json': { id: 'zeta', owns: { tables: [], sharedTables: [] } },
+  };
+  assert.deepEqual([...sharedTableTransfers(files, ['alpha', 'zeta'])], [['tb_shared', 'zeta']], 'declared order wins over name order');
+  assert.deepEqual([...sharedTableTransfers(files, ['alpha'])], [['tb_shared', 'alpha']]);
+  assert.deepEqual([...sharedTableTransfers(files, ['owner', 'alpha'])], [], 'a selected owner keeps its table');
+  assert.deepEqual([...sharedTableTransfers(files, [])], [], 'a table without any selected consumer is not part of the composition');
 });
 
 test('source copying excludes restricted skill trees while preserving ordinary source and the producer', t => {
@@ -431,8 +504,7 @@ function assertIntegrityGateAcknowledgements(profile, selected) {
  */
 function inspectFrontendSurvival(selection, currentCatalog = catalog) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection: Array.isArray(selection) ? { domains: selection } : selection }, currentCatalog);
-  const profile = composerProfile(manifest, composition);
-  const projector = createFrontendProjector({ manifest, profile, composition, files: frontendFiles });
+  const projector = createFrontendProjector({ composition, files: frontendFiles });
   const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
   const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
     directPaths: projector.directPaths, readSource: path => projected.get(path) });
@@ -506,14 +578,14 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
 test('each selectable domain retains its Java production sources after actual dependency pruning', () => {
   // 선택 연동 판정이 정한 이벤트 소스(리스너·발행 위치)의 소유 기능은 생성기의 실제 연쇄 제거와 같아야 한다.
   //   다르면 판정이 core 로 본 파일이 실제로는 기능과 함께 지워져 연동이 숨는다(같은 패키지 단순 이름 참조 등).
-  const supportOwners = new Map([...domainSupportFiles(root, manifest)].flatMap(([owner, files]) => files.map(file => [file, owner])));
+  const supportOwners = new Map([...ownership.supportFiles].flatMap(([owner, files]) => files.map(file => [file, owner])));
   const eventSources = deriveEventSources(root, sourceOwner(supportOwners, catalog.capabilities.map(row => row.id), requiresClosure(catalog.capabilities)));
   const eventOwners = new Map([...eventSources.listeners, ...eventSources.constructions].map(row => [row.path, row.owner]));
   assert.ok(eventOwners.size >= 15, 'the census reads real event sources');
   for (const domain of catalog.capabilities.map(row => row.id)) {
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
-    const profile = composerProfile(manifest, composition);
-    const plan = planJavaRemoval(root, manifest, profile, java);
+    const profile = composerProfile(modules, composition);
+    const plan = planJavaRemoval(root, ownership, profile, java);
     for (const [path, owner] of eventOwners) {
       assert.equal(!plan.removed.has(join(root, path)), owner === 'core' || composition.resolvedDomains.includes(owner),
         `${domain}: event source ${path} is owned by ${owner} in the census but the generator ${plan.removed.has(join(root, path)) ? 'removes' : 'keeps'} it`);
@@ -528,7 +600,7 @@ test('each selectable domain retains its Java production sources after actual de
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(composition.resolvedDomains, owner), `${domain}: ${file}`);
     }
     // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
-    const excludedSupport = new Set([...domainSupportFiles(root, manifest)].filter(([owner]) => !composition.resolvedDomains.includes(owner))
+    const excludedSupport = new Set([...ownership.supportFiles].filter(([owner]) => !composition.resolvedDomains.includes(owner))
       .flatMap(([, supportFiles]) => supportFiles.map(file => join(root, file))));
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {
       if (excludedSupport.has(file)) continue;
@@ -539,10 +611,13 @@ test('each selectable domain retains its Java production sources after actual de
 });
 
 test('preset integrity gate acknowledgements match the real removal plan', () => {
-  for (const [name, profile] of Object.entries(manifest.profiles)) {
-    const selected = profile.packs.flatMap(pack => manifest.packs[pack].backend?.appDomains ?? []);
+  for (const preset of catalog.presets) {
+    const name = preset.id;
+    const composition = presetComposition(name);
+    const profile = composerProfile(modules, composition);
+    const selected = composition.resolvedDomains;
     assertIntegrityGateAcknowledgements(profile, selected);
-    const plan = planJavaRemoval(root, manifest, profile, java);
+    const plan = planJavaRemoval(root, ownership, profile, java);
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !selected.includes('memoreport'), `${name}: ${file}`);
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(selected, owner), `${name}: ${file}`);
@@ -550,17 +625,15 @@ test('preset integrity gate acknowledgements match the real removal plan', () =>
   }
 });
 
-test('missing integrity gate ownership is red for a custom composition', async () => {
-  const source = readFileSync(join(root, 'scripts/project-composer-source.mjs'), 'utf8').replaceAll('\r\n', '\n');
+// 게이트 소유는 기능 파일의 owns.gates 다(매니페스트 v2, 생성기 프로필이 읽는다). 소유 선언 하나를 걷으면 직접 선택의 승인 목록에서
+// 그 게이트가 빠져 위 대조가 붉다.
+test('missing integrity gate ownership is red for a custom composition', () => {
   const composition = resolveProjectRecipe(recipe([]), catalog);
   for (const [file, owner] of integrityGates) {
-    const declaration = `  '${file}': [${gateDomains(owner).map(domain => `'${domain}'`).join(', ')}],\n`;
-    assert.ok(source.includes(declaration), `${file}: owner declaration is present before mutation`);
-    // data: URL 은 상대 import 를 풀지 못한다. 변이본의 형제 모듈 import 를 절대 파일 URL 로 바꿔 같은 모듈을 쓰게 한다.
-    const siblings = `${pathToFileURL(join(root, 'scripts')).href}/`;
-    const mutated = source.replace(declaration, '').replaceAll("from './", `from '${siblings}`);
-    const mutant = await import(`data:text/javascript;base64,${Buffer.from(mutated).toString('base64')}`);
-    assert.throws(() => assertIntegrityGateAcknowledgements(mutant.composerProfile(manifest, composition), []), /acknowledged removal/);
+    assert.deepEqual(modules.extras.gateOwners[file], gateDomains(owner), `${file}: owner declaration is present before mutation`);
+    const { [file]: _dropped, ...gateOwners } = modules.extras.gateOwners;
+    const mutant = { ...modules, extras: { ...modules.extras, gateOwners } };
+    assert.throws(() => assertIntegrityGateAcknowledgements(composerProfile(mutant, composition), []), /acknowledged removal/);
   }
 });
 
@@ -628,7 +701,7 @@ test('dashboard, notifications and optional address book blocks follow their dom
   for (const home of ['frontend/src/app/page.tsx', 'frontend/src/app/UnifiedDashboardClient.tsx']) {
     assert.equal(project(home), readFileSync(join(root, home), 'utf8'), home);
   }
-  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  const projector = createFrontendProjector({ composition, files: frontendFiles });
   // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
   //   [스크랩 슬롯] 게시글 상세의 스크랩 버튼(post-actions)도 같다.
   assert.deepEqual(['help', 'notification', 'scrap'].filter(domain => composition.resolvedDomains.includes(domain)), [],
@@ -679,7 +752,7 @@ const HOME_PIECES = [
 const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards'];
 function homeSurface(selection) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection }, catalog);
-  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  const projector = createFrontendProjector({ composition, files: frontendFiles });
   const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
   const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
     directPaths: projector.directPaths, readSource: path => projected.get(path) });
@@ -727,7 +800,7 @@ test('the unread-notes card on the work home leaves with the note domain only (H
   const source = readFileSync(join(root, registry), 'utf8');
   const rendered = domains => {
     const composition = resolveProjectRecipe(recipe(domains), catalog);
-    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+    return createFrontendProjector({ composition, files: frontendFiles })
       .project(registry, source).source;
   };
   assert.match(rendered(['note']), /import note from '\.\/note\/home-sections';/);
@@ -780,8 +853,8 @@ test('every source of a contributed hub tab leaves with the contribution in each
   const violations = [];
   for (const capability of catalog.capabilities) {
     const composition = resolveProjectRecipe(recipe([capability.id]), catalog);
-    const profile = composerProfile(manifest, composition);
-    const projector = createFrontendProjector({ manifest, profile, composition, files: frontendFiles });
+    const profile = composerProfile(modules, composition);
+    const projector = createFrontendProjector({ composition, files: frontendFiles });
     const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
     const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
       directPaths: projector.directPaths, readSource: path => projected.get(path) });
@@ -796,7 +869,7 @@ test('every source of a contributed hub tab leaves with the contribution in each
       checked++;
       for (const file of frontend) if (!removed(file)) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
       if (javaSources.length) {
-        javaPlan ??= planJavaRemoval(root, manifest, profile, java);
+        javaPlan ??= planJavaRemoval(root, ownership, profile, java);
         for (const file of javaSources) if (!javaPlan.removed.has(join(root, file))) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
       }
     }
@@ -850,7 +923,7 @@ test('every route literal in a marker block survives in every composition that k
   const links = 'frontend/src/extensions/generated-shell-links.ts';
   const registryFor = domains => {
     const composition = resolveProjectRecipe(recipe(domains), catalog);
-    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+    return createFrontendProjector({ composition, files: frontendFiles })
       .project(links, readFileSync(join(root, links), 'utf8')).source;
   };
   assert.doesNotMatch(registryFor(['board', 'survey']), /import note from/);
@@ -870,7 +943,7 @@ test('the statistics shell keeps board and survey tabs only with their owning do
   const registry = 'frontend/src/extensions/generated-stats-panels.ts';
   const registryFor = domains => {
     const composition = resolveProjectRecipe(recipe(domains), catalog);
-    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+    return createFrontendProjector({ composition, files: frontendFiles })
       .project(registry, readFileSync(join(root, registry), 'utf8')).source;
   };
   const coreOnly = registryFor([]);
@@ -886,8 +959,9 @@ test('the statistics shell keeps board and survey tabs only with their owning do
   const empty = resolveProjectRecipe(recipe([]), catalog);
   assert.throws(() => projectCustom(shell, `${readFileSync(join(root, shell), 'utf8')}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
     empty), /Unclassified composer UI block/);
+  // 블록 소유 표가 모르는 토큰은 마커 줄에서 실패한다 — 시작 구성도 같은 기능 투영이다(11단계 C3).
   assert.throws(() => projectCustom(admin, '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty),
-    /Unclassified composer UI block/);
+    /알 수 없는 frontend pack marker: survey/);
   // 셸이 core 로 남으므로 기능을 하나도 고르지 않아도, 설문만 골라도 셸·통계 화면이 import 로 사라지지 않는다.
   for (const domains of [[], ['survey']]) assert.deepEqual(inspectFrontendSurvival(domains).missing, [], `${domains}`);
 });
@@ -932,9 +1006,10 @@ test('selected-source survival rejects collateral deletion and allows explicitly
   }
   writeFileSync(join(upstream, 'frontend/src/board/template/page.tsx'), 'template');
   const composition = { profile: 'custom', resolvedDomains: [], frontend: { includedPaths: ['src/board'], removePaths: ['src/board/template'] } };
-  assert.doesNotThrow(() => assertComposerSourceSurvives(upstream, output, composition, { packs: {} }));
+  const owned = { domains: [], supportFiles: new Map() };
+  assert.doesNotThrow(() => assertComposerSourceSurvives(upstream, output, composition, owned));
   writeFileSync(join(upstream, 'frontend/src/board/required.tsx'), 'required');
-  assert.throws(() => assertComposerSourceSurvives(upstream, output, composition, { packs: {} }), /Selected capability source/);
+  assert.throws(() => assertComposerSourceSurvives(upstream, output, composition, owned), /Selected capability source/);
 });
 
 test('validated DB bundle requires the exact locked SQL population and unchanged raw file bytes', t => {

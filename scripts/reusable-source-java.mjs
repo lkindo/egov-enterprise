@@ -5,7 +5,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
-import { domainSupportFiles, projectComposerJava } from './project-composer-source.mjs';
+import { projectComposerJava } from './project-composer-source.mjs';
 import { beanValidationRefsIn, isErrorCodeSource, isScannedSource, lowerMessageContractFloors, ownedMessageKeys, pruneOwnedMessageKeys } from './reusable-source-messages.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
 
@@ -98,16 +98,15 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 // 복사할 파일 목록에서 고른다(디스크의 무시된 파일·대소문자만 다른 이름을 생성물과 같게 본다).
 // `projectSource` 는 판정 전에 소스를 구성에 맞게 고쳐 쓰는 투영이다. 소스를 고치지 않는 수동 삭제(domain-deletion-plan.mjs)는
 // 원문 그대로를 넘긴다 — 생성기처럼 고쳐 쓴 소스로 판정하면 실제로 남는 원문과 판정이 어긋난다.
-export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
+// `ownership` 은 기능 소유(기능 id 전부·기능 → 지원 파일, composerOwnership)이고 `profile.resolvedDomains` 는 남길 기능이다. 제외 기능은
+// 그 차집합이다 — pack 을 보지 않는다(11단계 C3). 시작 구성도 해석된 기능 목록으로 투영한다.
+export function planJavaRemoval(root, ownership, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
   { walkDirectory = (directory) => walk(directory, () => true),
     projectSource = (file, source) => projectComposerJava(file, source, profile) } = {}) {
-  const support = domainSupportFiles(root, manifest);
-  const allowedPacks = new Set(profile.packs);
-  const excludedDomains = profile.resolvedDomains
-    ? Object.values(manifest.packs).flatMap(pack => pack.backend?.appDomains ?? []).filter(domain => !profile.resolvedDomains.includes(domain))
-    : Object.entries(manifest.packs)
-    .filter(([packName]) => !allowedPacks.has(packName))
-    .flatMap(([, pack]) => pack.backend?.appDomains ?? []);
+  if (!Array.isArray(profile?.resolvedDomains)) fail('Java 투영에는 해석된 기능 목록(resolvedDomains)이 필요하다.');
+  if (!Array.isArray(ownership?.domains) || !(ownership.supportFiles instanceof Map)) fail('Java 투영에는 기능 소유(기능 목록·지원 파일)가 필요하다.');
+  const support = ownership.supportFiles;
+  const excludedDomains = ownership.domains.filter((domain) => !profile.resolvedDomains.includes(domain));
   const allBefore = javaFiles;
   const pathToType = new Map(allBefore.map((path) => [path, javaType(path)]));
   /*
@@ -196,8 +195,8 @@ export function javaCascadeRemovals(root, plan) {
     .sort((left, right) => left.file.localeCompare(right.file));
 }
 
-export function pruneJava(output, manifest, profile) {
-  const plan = planJavaRemoval(output, manifest, profile);
+export function pruneJava(output, ownership, profile) {
+  const plan = planJavaRemoval(output, ownership, profile);
   const { excludedDomains, removed, removalReason, removedTypes, gateSources, directDirectories } = plan;
   // 지우기 전에 센다 — 지운 뒤에는 무엇이 선언이 아니라 연쇄로 사라졌는지 말할 수 없다.
   const cascadeRemoved = javaCascadeRemovals(output, plan);

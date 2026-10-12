@@ -24,6 +24,7 @@ import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, 
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
 import { BOARD_MASTER_SEED, REFERENCE_SEED_NAME, boardMasterIds, omitCodeGroupsSql, referenceDataPlan } from './reusable-reference-data.mjs';
+import { moduleDatabaseInventory, readComposerModuleFiles } from './composer-modules.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -164,7 +165,7 @@ async function main() {
   if (!releaseTag && !args.allowNonReleaseRef) fail('공식 산출물은 v* 릴리스 태그에서만 생성한다.');
   const sourceCommit = git(['rev-parse', 'HEAD']);
   // 프리셋(--profile)과 화면 생성기(--composition)가 같은 해석기를 탄다. 스냅숏 갱신 모드만 해석하지 않는다.
-  let composition, composerCatalog, profile;
+  let composition, composerCatalog;
   if (!args.writeMenuSnapshot) {
     const { loadProjectComposerCatalog } = await import('./project-composer-catalog.mjs');
     const { resolveGeneratorComposition } = await import('./project-composer-recipe.mjs');
@@ -174,7 +175,6 @@ async function main() {
       backendLayout: args.layout, layoutExplicit: args.layout !== undefined, sourceCommit,
       resolveSourceReference: reference => git(['rev-parse', '--verify', `${reference}^{commit}`]) });
     args.profile = composition.profile;
-    profile = { packs: composition.packs };
   }
   const shortSha = sourceCommit.slice(0, 12);
   const output = args.writeMenuSnapshot ? undefined : safeDbOutputPath(args.output, args.profile, shortSha);
@@ -187,8 +187,9 @@ async function main() {
 
   const desiredTables = [...(composition?.tables ?? [])].sort();
   const explicitDesiredSequences = [...(composition?.explicitSequences ?? [])].sort();
-  const sourceExpectedTables = Object.values(manifest.packs).flatMap((pack) => pack.database.tables).sort();
-  const sourceExplicitSequences = Object.values(manifest.packs).flatMap((pack) => pack.database.sequences).sort();
+  // 원본 마이그레이션이 만드는 테이블·독립 시퀀스의 소유는 매니페스트 v2(core·기능 파일)에서 읽는다(11단계 C3).
+  //   manifest 는 원본 스냅숏 수치(databaseSnapshot)에만 쓴다.
+  const { tables: sourceExpectedTables, sequences: sourceExplicitSequences } = moduleDatabaseInventory(readComposerModuleFiles(ROOT));
 
   let workingCreated = false;
   let verifyCreated = false;
@@ -340,7 +341,7 @@ async function main() {
     const lock = {
       schemaVersion: 1,
       profile: args.profile,
-      packs: profile.packs,
+      packs: composition.packs,
       sourceCommit,
       sourceReleaseTag: releaseTag ?? null,
       localDevelopmentBuild: !releaseTag || Boolean(dirty),
@@ -422,7 +423,7 @@ async function main() {
       join(output, 'README.md'),
       `# Reusable Base DB — ${args.profile}\n\n` +
         `- source: \`${releaseTag ?? shortSha}\` (\`${sourceCommit}\`)\n` +
-        `- packs: ${profile.packs.join(', ')}\n` +
+        `- packs: ${composition.packs.join(', ')}\n` +
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
         `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → reference data seed → admin bootstrap seed 재적용 완료\n` +

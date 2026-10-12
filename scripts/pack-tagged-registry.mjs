@@ -14,6 +14,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { manifestOwnership, manifestPackDomains } from './project-composer-source.mjs';
 import { javaCascadeAcknowledgement } from './reusable-source-gates.mjs';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
@@ -76,10 +77,19 @@ export function rankPrefixProfiles(manifest) {
   return ordered.map((_, index) => ({ packs: ordered.slice(0, index + 1) }));
 }
 
+/**
+ * pack 프로필의 Java 투영 계획. 생성기 Java 투영은 pack 을 보지 않고 해석된 기능 목록으로 투영하므로(11단계 C3), pack 이 소유한 기능을
+ * 그 목록으로 넘긴다. pack 태그 원장 계약이 걷히면(11단계 C4) 함께 걷는다.
+ */
+export function planPackProfile(root, manifest, profile, javaFiles) {
+  return planJavaRemoval(root, manifestOwnership(root, manifest),
+    { ...profile, resolvedDomains: manifestPackDomains(manifest, profile.packs ?? []) }, javaFiles);
+}
+
 export function buildPrefixPlans(root, manifest, javaFiles) {
   return rankPrefixProfiles(manifest).map((profile) => ({
     profile,
-    plan: planJavaRemoval(root, manifest, profile, javaFiles),
+    plan: planPackProfile(root, manifest, profile, javaFiles),
   }));
 }
 
@@ -168,7 +178,7 @@ export function evaluateGateSurvival({ root, prefixPlans, gateFiles, javaFiles }
 export function acknowledgedJavaGateMismatches({ root, manifest, javaFiles }) {
   const violations = [];
   for (const [name, profile] of Object.entries(manifest.profiles)) {
-    const plan = planJavaRemoval(root, manifest, profile, javaFiles);
+    const plan = planPackProfile(root, manifest, profile, javaFiles);
     const planned = [...plan.removed]
       .filter((path) => plan.gateSources.has(path))
       .map((path) => normalize(relative(root, path)))
@@ -189,7 +199,7 @@ export function acknowledgedJavaGateMismatches({ root, manifest, javaFiles }) {
 export function acknowledgedJavaCascadeMismatches({ root, manifest, javaFiles }) {
   const violations = [];
   for (const [name, profile] of Object.entries(manifest.profiles)) {
-    const removals = javaCascadeRemovals(root, planJavaRemoval(root, manifest, profile, javaFiles));
+    const removals = javaCascadeRemovals(root, planPackProfile(root, manifest, profile, javaFiles));
     const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, removals.map((entry) => entry.file));
     const reasons = new Map(removals.map((entry) => [entry.file, entry.reason]));
     if (invalidEntries.length) violations.push(`profile '${name}' 의 acknowledgedJavaCascade 항목이 .java 경로가 아니다: ${JSON.stringify(invalidEntries)}`);

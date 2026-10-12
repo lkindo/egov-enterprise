@@ -28,6 +28,20 @@ export function domainSupportFiles(root, manifest) {
 }
 
 /**
+ * v1 manifest 의 기능 소유(Java 투영 입력 모양, composerOwnership 과 같다). 생성기는 매니페스트 v2 소유를 쓴다(11단계 C3). 이 함수는
+ * manifest pack 으로 판정하는 옛 소비자(pack 태그 원장 계약, C4 에서 걷는다)만 쓴다.
+ */
+export function manifestOwnership(root, manifest) {
+  const domains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))].sort();
+  return { domains, supportFiles: domainSupportFiles(root, manifest) };
+}
+
+/** manifest pack 목록이 소유한 기능 — pack 으로 정의한 프로필을 Java 투영의 해석된 기능 목록으로 바꾼다(옛 소비자용). */
+export function manifestPackDomains(manifest, packs) {
+  return [...new Set(packs.flatMap(pack => manifest.packs?.[pack]?.backend?.appDomains ?? []))].sort();
+}
+
+/**
  * 지원 파일 선언의 공용 판정(manifest pack 선언과 매니페스트 v2 기능 파일이 함께 쓴다). `entries` 는 선언 순서의
  * `{ owner, owned, domain, files }` 다 — owner 는 선언한 자리(pack 이름 또는 기능 id), owned 는 그 자리가 소유한 기능이다.
  */
@@ -117,20 +131,34 @@ export const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java': ['template'],
 };
 
-export function composerProfile(manifest, composition) {
-  if (composition.profile !== 'custom') return manifest.profiles[composition.profile];
+/**
+ * 생성기가 투영에 쓰는 프로필(11단계 C3). 시작 구성과 직접 선택이 같은 모양이다 — 투영은 해석된 기능 목록(resolvedDomains)과 화면
+ * 제외 경로(frontendRemovePaths)로만 하고 pack 을 보지 않는다. 시작 구성은 승인 기대치(지워지는 게이트·규칙·Java 연쇄)를 매니페스트
+ * v2 의 presets.json 에서 받고, 직접 선택은 기능 파일의 게이트 소유에서 계산한다. `modules` 는 loadComposerModules 결과다.
+ * `packs` 는 생성물 투영 manifest·lock 같은 옛 소비자를 위한 v1 pack 목록이다(투영에는 쓰지 않는다, C4·C7 에서 걷는다).
+ */
+export function composerProfile(modules, composition) {
+  const projection = { packs: composition.packs, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths };
+  const { presetExpectations, gateOwners, rbac } = modules.extras;
+  // 목록만 복사한다. 목록이 아닌 값은 그대로 넘겨 승인 대조가 형식 오류로 말하게 한다(removedGateAcknowledgement·javaCascadeAcknowledgement).
+  const copy = value => (Array.isArray(value) ? value.map(row => (row !== null && typeof row === 'object' ? { ...row } : row)) : value);
+  if (composition.profile !== 'custom') {
+    const expected = presetExpectations[composition.profile];
+    if (!expected) throw new Error(`Preset expectations are not declared: ${composition.profile}`);
+    return { ...projection, acknowledgedRemovedGates: copy(expected.gates), acknowledgedGateRemovalRules: copy(expected.gateRemovalRules),
+      acknowledgedJavaCascade: copy(expected.javaCascade), description: expected.description };
+  }
   const selected = new Set(composition.resolvedDomains);
-  const acknowledgedRemovedGates = Object.entries(GATE_OWNERS)
+  const acknowledgedRemovedGates = Object.entries(gateOwners)
     .filter(([, domains]) => domains.some(domain => !selected.has(domain)))
     .map(([file, domains]) => ({ file, reason: `선택하지 않은 검사 대상 도메인: ${domains.filter(domain => !selected.has(domain)).join(', ')}` }));
-  if (!RBAC_DOMAINS.some(domain => selected.has(domain))) acknowledgedRemovedGates.push({
-    file: RBAC, reason: `선택 가능한 RBAC 검사 표면(${RBAC_DOMAINS.join(', ')})이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.`,
+  if (!rbac.domains.some(domain => selected.has(domain))) acknowledgedRemovedGates.push({
+    file: rbac.file, reason: `선택 가능한 RBAC 검사 표면(${rbac.domains.join(', ')})이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.`,
   });
   return {
-    packs: composition.packs, resolvedDomains: composition.resolvedDomains,
-    frontendRemovePaths: composition.frontend.removePaths,
+    ...projection,
     acknowledgedRemovedGates,
-    acknowledgedGateRemovalRules: manifest.profiles.core.acknowledgedGateRemovalRules,
+    acknowledgedGateRemovalRules: copy(presetExpectations.core.gateRemovalRules),
     description: '명시적 recipe와 의존성 해석으로 구성한 독립 프로젝트',
   };
 }
@@ -274,18 +302,18 @@ export function projectedScreenLosses(expectation, pagePresent) {
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
 // `present` 는 생성물에 그 파일이 남았는지 답한다. 생성기는 디스크를, 정밀 점검(plan/deep)은 제거 계획을 본다.
 // `lostScreens`(projectedScreenLosses 결과)를 함께 받아, 정밀 점검처럼 빠진 화면과 소스를 모두 모아 SOURCE_SURVIVAL 하나로 알린다.
-export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest, { present = path => existsSync(join(outputRoot, path)), lostScreens = [] } = {}) {
+// `ownership` 은 기능 소유(composerOwnership — 기능 id·지원 파일)다. 시작 구성도 직접 선택과 같은 기대 모집단을 본다(11단계 C3).
+export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, ownership, { present = path => existsSync(join(outputRoot, path)), lostScreens = [] } = {}) {
   const lost = new Set(lostScreens.map(entry => entry.source));
-  if (composition.profile === 'custom') collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost);
+  collectComposerSourceLosses(sourceRoot, composition, ownership, present, lost);
   if (!lost.size) return;
   const files = [...lost].sort((left, right) => left.localeCompare(right));
   throw new ComposerError('SOURCE_SURVIVAL', { files },
     `Selected capability source was removed: ${files.join(', ')}${lostScreens.length ? ` (expected screens: ${describeRoutes(lostScreens)})` : ''}`);
 }
 
-function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
-  manifest ??= JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8'));
-  const support = domainSupportFiles(sourceRoot, manifest);
+function collectComposerSourceLosses(sourceRoot, composition, ownership, present, lost) {
+  const support = ownership.supportFiles;
   // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
     .flatMap(([, files]) => files));
@@ -312,7 +340,7 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
   const selected = new Set(composition.resolvedDomains);
-  const features = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
+  const features = new Set(ownership.domains);
   // 참조 기능이 모두 선택된 컨트롤러는 남아야 한다. 디렉터리 소유 기능(apiSourceOwner)이 선택된 컨트롤러도 남아야 한다 —
   // 소유 기능만 고른 구성에서 다른 기능 타입 참조로 컨트롤러가 연쇄 제거되면, 참조 기능이 모두 선택된 것이 아니라 앞 규칙은
   // 통과시킨다(커뮤니티 사용자 API 가 게시판 참조로 조용히 지워지던 경로, DEC-OPS-280). 카탈로그가 그 참조를 간선으로 세면 둘은 같다.

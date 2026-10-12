@@ -22,7 +22,7 @@ clean v* release tag
 - 단일 정본: 현재 릴리스 소스
 - 프로필 SSOT: `config/reusable-base-profiles.json`
 - 생성기: `scripts/generate-reusable-base-db.mjs`, `scripts/generate-reusable-base-source.mjs`
-  - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(pack 마커·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
+  - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(마커 블록·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
   - DB 번들 단계: `reusable-db-postgres`(컨테이너·psql·pg_dump), `reusable-db-migrations`(버전 순서·권한 Contract 리허설) `.mjs`
 - 출력: `build/reusable-base/` 아래의 무시되는 릴리스 준비 산출물
 - 금지: 장기 template 브랜치 수동 동기화, 운영·공유 DB에서 테이블 삭제, 생성 SQL 수동 편집
@@ -42,6 +42,13 @@ clean v* release tag
 테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`은 이
 매니페스트의 `appDomains`로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그 간선을 거꾸로 따라 정한다
 ([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+
+생성기는 시작 구성도 기능 단위로 투영한다(2026-10-13 매니페스트 v2 11단계 C3). 제외 기능은 시작 구성의 기능 목록에서, 화면 제외 경로는
+기능 규칙에서 정하고 pack 의 `removePaths` 를 보지 않는다 — 같은 기능 목록의 직접 선택과 같은 결과다. 기능 소유·지원 파일·시작 구성
+기대치는 매니페스트 v2(`config/modules`)에서 읽는다. 소유 기능이 빠진 공유 테이블은 그 테이블 선언의 소비자 가운데 구성에 있는 첫
+기능이 넘겨받는다(순위를 보지 않는다). 생성물의 `config/modules` 에는 구성의 기능 파일·`core.json`·활성 구성 하나만 담은
+`presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 생성물의 `config/reusable-base-profiles.json` 은 pack 을 읽는
+옛 소비자를 위한 투영이다(11단계 C4·C5 에서 걷는다).
 
 ### 2.1 백엔드 출력 형태
 
@@ -203,6 +210,9 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 }
 ```
 
+생성기와 정밀 점검은 이 승인을 매니페스트 v2(`config/modules/presets.json` 의 `expected`)에서 읽는다(11단계 C3). 전환(C7) 전까지는
+매니페스트가 원천이므로 고친 뒤 `npm run modules:generate` 로 다시 만든다.
+
 - 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
 - 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
 - `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 매니페스트 안에 남긴다.
@@ -266,8 +276,9 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 생성기는 **마커 투영·레지스트리 렌더 → import cascade** 순서로 투영한다(`createFrontendProjector` → `pruneFrontend`).
 두 판정은 `scripts/reusable-source-frontend.mjs` 한 곳에 있다(2026-10-11 판정 통일).
 
-- 마커 블록은 공용 파서(`parsePackMarkerBlocks`)가 읽는다. 블록을 남기는지는 projector 가 한 번에 정한다 — 블록의 pack 이
-  프로필에 있고, 직접 선택이면 그 블록의 소유 기능(`project-composer-source.mjs` 의 `FRONTEND_MARKER_FILES`)이 모두 선택돼 있어야 한다.
+- 마커 블록은 공용 파서(`parsePackMarkerBlocks`)가 읽는다. 블록을 남기는지는 projector 가 한 번에 정한다 — 그 블록의 소유
+  기능(`project-composer-source.mjs` 의 `FRONTEND_MARKER_FILES`)이 모두 구성에 있어야 한다. 시작 구성도 같다(11단계 C3). 블록의 pack 으로
+  거르는 pack 투영은 프리셋을 pack 으로 보는 도달성 census 만 쓴다(C5 에서 걷는다).
 - import 연쇄는 `planFrontendRemoval` 이 계산한다. 간선은 도달성 census 와 같은 토크나이저(`scripts/frontend-module-graph.mjs`)로
   읽고, 넘겨받은 파일 목록 안에서만 정확한 표기로 잇는다(`scripts/frontend-module-resolver.mjs`).
 - 생성기·정밀 점검·도달성 census·생존 시험·경계 계약·거버넌스 투영이 모두 이 함수들을 쓴다.

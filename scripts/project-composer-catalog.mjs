@@ -301,8 +301,9 @@ function slotContributionInventory(root, declarations) {
 }
 
 /*
- * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기의 pack 모드 투영이 manifest removePaths 를 쓰는 동안만 남긴다 —
- * pack 소유(`capability.pack`, 시작 구성의 pack 목록)와, pack removePaths 가 기능 선언과 어긋나지 않는다는 검사다.
+ * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기 투영은 pack 을 보지 않는다(C3). 이 축은 pack 을 읽는 옛 소비자를 위해서만
+ * 남는다 — 구성의 pack 목록(`capability.pack`·시작 구성 pack → composition.packs: 생성물 투영 manifest·lock·거버넌스 투영·검토 범위, C4)과
+ * pack removePaths 가 기능 선언과 어긋나지 않는다는 검사(프리셋을 pack 으로 보는 관찰자 — 도달성 census·라우트 원장, C5)다.
  */
 function v1PackAxis(manifest) {
   const packOf = new Map();
@@ -337,10 +338,10 @@ function v1PackAxis(manifest) {
 }
 
 /**
- * v2 카탈로그에 덧붙이는 v1 pack 축(11단계 C2~C3). 생성기가 pack 모드로 투영하는 동안 구성의 pack 목록(composition.packs)과 manifest
- * removePaths 검사는 v1 manifest 에서 와야 한다. manifest 의 기능·시작 구성이 config/modules 와 다르면(v1 을 고치고 다시 만들지 않음)
- * 여기서 멈춘다. 그 밖의 선언은 v2 만 읽는다. 생성기를 옮기는 C3 에서 걷는다. manifest 가 생성기 투영에 쓰이는 동안은 카탈로그 해시도
- * manifest 에 결속한다.
+ * v2 카탈로그에 덧붙이는 v1 pack 축(11단계 C2~C5). 생성기 투영은 C3 부터 매니페스트 v2 의 기능 소유로 하고 pack 을 보지 않는다. 구성의
+ * pack 목록(composition.packs)과 manifest removePaths 검사는 pack 을 읽는 옛 소비자(위 v1PackAxis)가 걷힐 때까지 v1 manifest 에서 온다.
+ * manifest 의 기능·시작 구성이 config/modules 와 다르면(v1 을 고치고 다시 만들지 않음) 여기서 멈춘다. 그 밖의 선언은 v2 만 읽는다.
+ * 생성물의 투영 manifest 가 pack 목록을 담는 동안은 카탈로그 해시도 manifest 에 결속한다.
  */
 function v1PackOverlay(root, declarations) {
   const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
@@ -389,7 +390,7 @@ export function v1ComposerDeclarations(root = ROOT) {
 
 /**
  * Read-only producer inventory. Does not contact a DB, execute Git or create output.
- * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). 생성기가 pack 모드로 투영하는 동안(C3 전) pack 축만 v1 manifest 에서 덧붙인다.
+ * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). pack 을 읽는 옛 소비자가 걷힐 때까지(C4·C5) pack 축만 v1 manifest 에서 덧붙인다.
  */
 export function loadProjectComposerCatalog(root = ROOT) {
   root = resolve(root);

@@ -1326,8 +1326,8 @@ test('a projector keeps no marker block of an excluded pack and rejects malforme
   assert.throws(() => applyFrontendProjection(config, projector), /next\.config 는 pack 마커를 둘 수 없다/, 'next.config.mjs is projected and its markers fail');
   // 마커 구조 오류와 알 수 없는 pack 은 투영 단계에서 실패한다. 직접 선택도 같다 — 종전 직접 선택의 정규식 투영은 중첩·알 수 없는 pack 을
   // 통과시켰다. 줄 번호까지 고정한다(미닫힘은 여는 마커의 줄이다).
-  const custom = createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] },
-    composition: { profile: 'custom', resolvedDomains: [] } });
+  // 구성 투영(생성기·정밀 점검 — 시작 구성과 직접 선택, 11단계 C3)도 같은 파서를 지난다. 토큰 어휘는 블록 소유 표의 토큰이다.
+  const custom = createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } });
   const nested = '/* reusable-base:demo:start */\n/* reusable-base:collaboration:start */\nx\n/* reusable-base:collaboration:end */\n/* reusable-base:demo:end */\n';
   for (const [name, candidate] of [['preset', projector], ['direct selection', custom]]) {
     assert.throws(() => candidate.project('src/app/x.tsx', nested), /중첩은 허용하지 않는다/);
@@ -1340,15 +1340,19 @@ test('a projector keeps no marker block of an excluded pack and rejects malforme
     assert.throws(() => candidate.project('src/app/x.tsx', 'x\n/* reusable-base:demo:start */\nx\n'),
       /닫히지 않은 frontend pack marker: demo \(src\/app\/x\.tsx:2\)/, `${name} projector reports an unclosed marker at its line`);
   }
-  // 직접 선택 투영은 해석된 기능 목록이 있어야 한다 — 종전에는 목록이 없으면 블록을 조용히 걷었다.
-  assert.throws(() => createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] }, composition: { profile: 'custom' } }),
-    /해석된 기능 목록/, 'a direct selection projector needs the resolved domains');
-  // lock.frontend.packBlocks 는 종전 pack 마커 단계의 셈이다: 소유 기능이 빠져 걷은 블록은 세지 않고, 소유는 남지만 pack 이 빠진 블록만 센다.
-  // 표본은 게시판 마법사의 커뮤니티 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다).
+  // 구성 투영은 해석된 기능 목록과 화면 제외 경로가 있어야 한다 — 종전에는 목록이 없으면 블록을 조용히 걷었다.
+  assert.throws(() => createFrontendProjector({ composition: { profile: 'custom' } }),
+    /해석된 기능 목록/, 'a composition projector needs the resolved domains');
+  assert.throws(() => createFrontendProjector({ composition: { profile: 'core', resolvedDomains: [] } }),
+    /화면 제외 경로/, 'a composition projector needs the remove paths the resolver computed');
+  // lock.frontend.markerBlocks 는 걷은 마커 블록 수다 — 구성 투영은 소유 기능이 빠진 블록을, pack 투영은 pack 이 빠진 블록을 걷는다.
+  // 표본은 게시판 마법사의 커뮤니티 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다). 두 투영의 결과가 같다.
   const maker = 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
   const makerSource = readFileSync(join(repoRoot, 'frontend', maker), 'utf8');
   const byCustom = custom.project(maker, makerSource);
-  assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.packChanged }, { stripped: 0, changed: false });
+  const makerBlocks = parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length;
+  assert.ok(makerBlocks > 0);
+  assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.packChanged }, { stripped: makerBlocks, changed: true });
   assert.notEqual(byCustom.source, makerSource);
   assert.equal(byCustom.source, projector.project(maker, makerSource).source);
   assert.equal(projector.project(maker, makerSource).strippedBlocks, parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length);

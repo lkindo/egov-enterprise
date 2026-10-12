@@ -238,3 +238,85 @@ export function loadComposerModules(root) {
   }
   return { files, declarations, extras };
 }
+
+/**
+ * 생성기 투영이 읽는 기능 소유(11단계 C3). Java 투영의 제외 기능과 지원 파일을 manifest pack 이 아니라 기능 파일에서 얻는다 —
+ * 시작 구성과 직접 선택이 같은 소유로 투영된다. `modules` 는 loadComposerModules 결과다. 지원 파일은 선언을 검사하며 푼다
+ * (supportFileOwners) — 잘못된 선언은 여기서 실패하고, 생성기와 정밀 점검이 같은 자리에서 실패한다.
+ */
+export function composerOwnership(modules) {
+  return { domains: Object.keys(modules.declarations.features).sort(byCodeUnits), supportFiles: modules.declarations.supportFiles() };
+}
+
+/**
+ * 원본 마이그레이션이 만드는 테이블·독립 시퀀스의 소유 목록(core·기능 파일의 owns). DB 생성기가 원본 스키마 실측과 대조한다(11단계 C3) —
+ * manifest pack 을 읽지 않는다. `files` 는 readComposerModuleFiles 결과(파일 이름 → 값)다.
+ */
+export function moduleDatabaseInventory(files) {
+  const owned = Object.entries(files).filter(([name]) => ![MODULES_SCHEMA, PRESETS_FILE].includes(name)).map(([, value]) => value.owns);
+  return { tables: sorted(owned.flatMap(owns => owns.tables)), sequences: sorted(owned.flatMap(owns => owns.sequences)) };
+}
+
+/**
+ * 소유 기능이 구성에 없는 공유 테이블을 넘겨받을 기능(테이블 → 기능). 순위가 아니라 선언 순서로 정한다 — 소유 기능 파일의
+ * owns.sharedTables 에 적은 consumers 가운데 구성에 있는 첫 기능이다. 넘기지 않으면 생성물의 어느 기능도 그 테이블을 소유하지
+ * 않는다(템플릿만 고른 구성의 tb_tmplt_info). 소비자가 모두 빠지면 테이블도 구성에 없어 넘기지 않는다.
+ */
+export function sharedTableTransfers(files, resolvedDomains) {
+  const selected = new Set(resolvedDomains);
+  const transfers = new Map();
+  for (const [name, value] of Object.entries(files)) {
+    if ([MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name) || selected.has(value.id)) continue;
+    for (const shared of value.owns.sharedTables) {
+      const receiver = shared.consumers.find(consumer => consumer !== value.id && selected.has(consumer));
+      if (receiver) transfers.set(shared.table, receiver);
+    }
+  }
+  return transfers;
+}
+
+/**
+ * 생성물의 config/modules 를 구성으로 투영한다(11단계 C3). 구성의 기능 파일·core.json 만 남기고 presets.json 에는 활성 구성 하나
+ * (`active`)만 둔다. 기능 파일 내용은 원본 선언 그대로다 — 빠진 기능을 가리키는 연동·게이트 행도 남아, 그 기능이 이 생성물에
+ * 없다는 사실을 말한다. 소유 기능이 빠진 공유 테이블은 넘겨받는 기능의 owns.tables 에 더한다(sharedTableTransfers).
+ * 결과는 파일 이름 → 값이고 `_schema.json` 은 넣지 않는다(원본 그대로 둔다).
+ */
+export function projectComposerModuleFiles(files, composition, active) {
+  const selected = new Set(composition.resolvedDomains);
+  const transfers = sharedTableTransfers(files, composition.resolvedDomains);
+  const projected = { [CORE_FILE]: files[CORE_FILE], [PRESETS_FILE]: { ...files[PRESETS_FILE], presets: [active] } };
+  for (const [name, value] of Object.entries(files)) {
+    if ([MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name) || !selected.has(value.id)) continue;
+    const received = [...transfers].filter(([, receiver]) => receiver === value.id).map(([table]) => table);
+    projected[name] = received.length ? { ...value, owns: { ...value.owns, tables: [...value.owns.tables, ...received] } } : value;
+  }
+  const missing = composition.resolvedDomains.filter(domain => !Object.hasOwn(projected, `${domain}.json`));
+  if (missing.length) fail(`projected modules lack selected features: ${missing.join(', ')}`);
+  return projected;
+}
+
+/**
+ * 생성물 config/modules 의 기능 파일 집합·활성 구성·테이블 소유가 구성과 같은지 본다(생성물 무결성 검사). 위반 문장 목록을 돌려준다.
+ * `names` 는 그 디렉터리의 .json 파일 이름, `read(name)` 는 그 파일의 값이다. 파일 집합이 다르면 그 한 문장만 돌려준다.
+ */
+export function projectedModuleViolations({ names, read, composition }) {
+  const expected = [MODULES_SCHEMA, CORE_FILE, PRESETS_FILE, ...composition.resolvedDomains.map(domain => `${domain}.json`)].sort(byCodeUnits);
+  const actual = [...names].sort(byCodeUnits);
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    const extra = actual.filter(name => !expected.includes(name));
+    const missing = expected.filter(name => !actual.includes(name));
+    return [`projected module set differs from composition (extra: ${extra.join(', ') || '-'}; missing: ${missing.join(', ') || '-'})`];
+  }
+  const violations = [];
+  for (const domain of composition.resolvedDomains) {
+    if (read(`${domain}.json`).id !== domain) violations.push(`projected module file differs from its feature id: ${domain}.json`);
+  }
+  const presets = read(PRESETS_FILE).presets;
+  if (presets.length !== 1 || presets[0].id !== composition.profile
+    || JSON.stringify(sorted(presets[0].domains)) !== JSON.stringify(sorted(composition.resolvedDomains))) {
+    violations.push(`projected active composition differs from composition: ${composition.profile}`);
+  }
+  const tables = sorted([...read(CORE_FILE).owns.tables, ...composition.resolvedDomains.flatMap(domain => read(`${domain}.json`).owns.tables)]);
+  if (JSON.stringify(tables) !== JSON.stringify(sorted(composition.tables))) violations.push('projected module table ownership differs from composition');
+  return violations;
+}

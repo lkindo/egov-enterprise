@@ -729,19 +729,22 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     mkdirSync(dirname(join(repository, file)), { recursive: true });
     writeFileSync(join(repository, file), text);
   };
-  // 프리셋은 이 저장소의 manifest 로 제거 경로와 게이트 승인을 정한다(직접 선택은 원본 저장소의 게이트 승인을 쓴다).
+  // 프리셋도 구성의 화면 제외 경로와 기능 소유·시작 구성 기대치로 투영한다(11단계 C3). 이 합성 저장소의 demo 화면은 카탈로그에서
+  // 게시판 소유로 적어 core 시작 구성이 지우게 하고, 기능 소유·기대치는 엔진 이음새(loadModules)로 넣는다 — manifest 는 쓰지 않는다.
   // 이 합성 저장소의 화면은 홈·로그인뿐이다. 정밀 점검은 구성이 남겨야 할 화면과 남는 화면을 대조하므로(슬롯 단계 PR-1),
   // core 화면을 그 둘로 줄인 카탈로그와 그 둘만 적은 라우트 원장을 쓴다.
-  const loaded = loadProjectComposerCatalog(root);
-  const { catalogHash: ignoredHash, ...body } = { ...loaded, core: { ...loaded.core, menuRoutes: ['/', '/login'] } };
-  const real = { ...body, catalogHash: compositionDigest(body) };
-  const core = { ...recipe(), selection: { preset: 'core' } };
   const removed = 'src/app/demo';
+  const loaded = loadProjectComposerCatalog(root);
+  const { catalogHash: ignoredHash, ...body } = { ...loaded, core: { ...loaded.core, menuRoutes: ['/', '/login'] },
+    frontendRules: [...loaded.frontendRules, { path: removed, domains: ['board'] }] };
+  const real = { ...body, catalogHash: compositionDigest(body) };
+  const modules = { files: {}, declarations: { features: Object.fromEntries(real.capabilities.map(row => [row.id, {}])), supportFiles: () => new Map() },
+    extras: { gateOwners: {}, rbac: { file: 'none', domains: [], surfaces: {} }, presetExpectations: { core: { description: '시험용', gates: [],
+      gateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }], javaCascade: [] } } } };
+  const core = { ...recipe(), selection: { preset: 'core' } };
   git('init', '--quiet');
   write('config/ui-route-capabilities.json', JSON.stringify({ routes: [['/', 'page.tsx'], ['/login', 'login/page.tsx']]
     .map(([route, page]) => ({ route, source: `frontend/src/app/${page}`, routing: { kind: 'page' } })) }));
-  write('config/reusable-base-profiles.json', JSON.stringify({ packs: { core: {}, collaboration: {}, survey: {}, demo: { frontend: { removePaths: [removed] } } },
-    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }] } } }));
   for (const file of ['layout.tsx', 'page.tsx', 'login/page.tsx']) write(`frontend/src/app/${file}`);
   // 생성기는 원본 Atlas 를 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
   for (const file of ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
@@ -755,7 +758,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   write(`frontend/${removed}/새 화면.tsx`);
   write(`frontend/${removed}/build/generated.ts`);
   write(`frontend/${removed}/debug.log`, 'ignored\n');
-  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real });
+  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real, loadModules: () => modules });
   const deep = engine.deep(core);
   assert.deepEqual(deep.blockers, []);
   assert.deepEqual(deep.frontend.files, [`frontend/${removed}/새 화면.tsx`]);
@@ -780,7 +783,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
   }
   for (const output of [outputRoot, caseOutput]) {
-    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real }).deep(core);
+    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real, loadModules: () => modules }).deep(core);
     assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), ['SOURCE_SURVIVAL']);
     assert.deepEqual(caseDeep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   }

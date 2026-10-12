@@ -12,6 +12,7 @@ import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-com
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
 import { artifactScreenErrors } from './reusable-page-survival.mjs';
+import { MODULES_DIRECTORY, projectedModuleViolations } from './composer-modules.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
@@ -143,6 +144,13 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       check(exact(inventory(pack => pack.backend?.appDomains ?? []), composition.resolvedDomains), 'Active custom domain inventory differs from composition');
       check(exact(inventory(pack => pack.database?.tables ?? []), composition.tables), 'Active custom table inventory differs from composition');
       check(exact(inventory(pack => pack.database?.sequences ?? []), composition.explicitSequences), 'Active custom sequence inventory differs from composition');
+    }
+    // 생성물의 매니페스트 v2(config/modules)는 구성의 기능 파일·core·활성 구성 하나만 담는다(11단계 C3). 빠진 기능의 선언이 남으면
+    // 생성물이 갖지 않은 기능을 있다고 말한다 — 수동 도메인 삭제 판정(domain-deletion-plan)이 그 기능을 안다.
+    if (composition) {
+      const directory = join(root, MODULES_DIRECTORY);
+      const names = existsSync(directory) ? readdirSync(directory).filter(name => name.endsWith('.json')) : [];
+      errors.push(...projectedModuleViolations({ names, read: name => readJson(root, `${MODULES_DIRECTORY}/${name}`), composition }));
     }
     if (requireLock) {
       const lock = readJson(root, 'reusable-base-lock.json');

@@ -18,6 +18,8 @@ import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-compose
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { PROJECTION_LEDGER_PATH, buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { normalize, walk } from './reusable-source-tree.mjs';
+import { activeCompositionEntry, writeProjectedModules } from './generate-reusable-base-source.mjs';
+import { MODULES_DIRECTORY, composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { relative } from 'node:path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,6 +30,9 @@ const profiles = readJson(ROOT, 'config/reusable-base-profiles.json');
 const reviewContract = readJson(ROOT, REVIEW_SCOPE_PATH);
 const upstreamReviews = Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(ROOT, path)]));
 const sourceCommit = 'a'.repeat(40);
+// 생성기는 매니페스트 v2 의 기능 소유와 구성으로 투영한다(11단계 C3).
+const modules = loadComposerModules(ROOT);
+const ownership = composerOwnership(modules);
 const hash = value => createHash('sha256').update(`${JSON.stringify(value, null, 2)}\n`).digest('hex');
 
 test('projection restricts upstream broad names to existing records and preserves actual review evidence', () => {
@@ -84,7 +89,7 @@ test('a directory junction cannot disguise the source checkout as an output', ()
 test('domain removal rejects empty, absolute, and traversing paths before planning a deletion', () => {
   for (const domain of ['', '.', '..', '../service', 'board/../../..', '/tmp', 'C:/outside', '\\outside', 'board\\..\\..', null]) {
     assert.throws(() => resolveDomainRemovalDirectory(ROOT, 'main', 'service', domain), /domain/);
-    assert.throws(() => planJavaRemoval(ROOT, { packs: { excluded: { backend: { appDomains: [domain] } } } }, { packs: [] }, []), /domain/);
+    assert.throws(() => planJavaRemoval(ROOT, { domains: [domain], supportFiles: new Map() }, { resolvedDomains: [] }, []), /domain/);
   }
   assert.equal(resolveDomainRemovalDirectory(ROOT, 'main', 'service', 'promotion/banner'),
     join(ROOT, 'business-app/src/main/java/nuri/business/service/promotion/banner'));
@@ -231,29 +236,29 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
       const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
         selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
-      // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 직접 선택도 선택 투영과 pack 마커를 한 번에 판정한다.
-      const profile = composerProfile(profiles, composition);
-      const projector = createFrontendProjector({ manifest: profiles, profile, composition, files: copied.filter(file => file.startsWith('frontend/')) });
-      pruneJava(output, profiles, profile);
-      const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
+      // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 시작 구성과 직접 선택이 같은 기능 투영이다(11단계 C3).
+      const profile = composerProfile(modules, composition);
+      const projector = createFrontendProjector({ composition, files: copied.filter(file => file.startsWith('frontend/')) });
+      const java = pruneJava(output, ownership, profile);
+      const support = modules.files['memoreport.json'].backend.supportFiles;
+      assert.ok(support.length > 0, 'the memo report declares support files');
       for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
-      const packBlocks = applyFrontendProjection(output, projector);
-      // lock.frontend.packBlocks: 소유는 남지만 pack 이 빠져 걷은 블록만 센다. 프리셋은 소유가 늘 참이라 표의 제외 pack 블록 합과
-      // 그 행 수다. 직접 선택은 블록의 소유 기능이 그 마커 pack 을 함께 끌어오므로 0/0 이다 — 이 단언이 집계를 '내용이 바뀐 파일 수'로
-      // 바꾸는 변이를 잡는다(프리셋에서는 두 셈이 같다). 표의 기대식을 직접 선택에 쓰면 거짓으로 붉으므로 값을 직접 적는다.
+      const markerBlocks = applyFrontendProjection(output, projector);
+      // lock.frontend.markerBlocks: 소유 기능이 구성에 없어 걷은 블록 수와 그 블록이 있던 파일 수다(시작 구성과 직접 선택이 같은 셈).
+      //   이 단언이 집계를 '내용이 바뀐 파일 수'로 바꾸는 변이를 잡는다(블록 수와 파일 수가 다르다).
       const excluded = FRONTEND_MARKER_FILES.map((row) => Object.entries(row.blocks)
-        .filter(([pack]) => !profile.packs.includes(pack))
+        .filter(([pack]) => !row.owners[pack].every(domain => composition.resolvedDomains.includes(domain)))
         .reduce((sum, [, count]) => sum + count, 0));
-      const expectedPackBlocks = composition.profile === 'custom'
-        ? { strippedBlocks: 0, changedFiles: 0 }
-        : { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length };
-      assert.deepEqual({ strippedBlocks: packBlocks.strippedBlocks, changedFiles: packBlocks.changedFiles }, expectedPackBlocks,
-        `${profileName}: lock.frontend.packBlocks`);
-      pruneFrontend(output, profiles, profile);
+      assert.deepEqual({ strippedBlocks: markerBlocks.strippedBlocks, changedFiles: markerBlocks.changedFiles },
+        { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length },
+        `${profileName}: lock.frontend.markerBlocks`);
+      assert.equal(Object.hasOwn(markerBlocks, 'excludedPacks'), false, `${profileName}: the projection does not report packs`);
+      pruneFrontend(output, projector.directPaths);
       const manifest = { ...profiles, sourcePolicy: { ...profiles.sourcePolicy, generatedProfile: profileName },
         profiles: { [profileName]: profile }, packs: Object.fromEntries(Object.entries(profiles.packs)
           .filter(([name]) => profile.packs.includes(name))) };
       writeFileSync(join(output, 'config/reusable-base-profiles.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+      writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
       writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
       const result = projectReusableGovernance({
         sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit, composition,
@@ -280,7 +285,17 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         mkdirSync(dirname(join(output, page)), { recursive: true });
         writeFileSync(join(output, page), readFileSync(join(ROOT, page)));
       }
+      // 생성물의 기능 파일 집합은 구성과 같아야 한다(11단계 C3). 빠진 기능의 파일을 되살리거나(프리셋·빈 선택) 남은 기능의 파일을 걷으면(전체) 붉다.
+      const absent = Object.keys(modules.declarations.features).find(domain => !composition.resolvedDomains.includes(domain));
+      const moduleFile = join(output, MODULES_DIRECTORY, `${absent ?? 'board'}.json`);
+      const moduleText = absent ? undefined : readFileSync(moduleFile, 'utf8');
+      if (absent) writeFileSync(moduleFile, readFileSync(join(ROOT, MODULES_DIRECTORY, `${absent}.json`)));
+      else rmSync(moduleFile);
       const tampered = inspectReusableGovernance(output).errors.join('\n');
+      assert.match(tampered, absent ? new RegExp(`projected module set differs from composition \\(extra: ${absent}\\.json; missing: -\\)`)
+        : /projected module set differs from composition \(extra: -; missing: board\.json\)/);
+      if (absent) rmSync(moduleFile);
+      else writeFileSync(moduleFile, moduleText);
       assert.match(tampered, /Projection ledger checksum mismatch/);
       assert.match(tampered, /Projection ledger lists files that exist: .*package\.json/);
       if (revived.length) {

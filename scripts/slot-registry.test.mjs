@@ -81,9 +81,9 @@ test('the projector re-renders a registry from the contributions its direct remo
   const core = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core, files: FILES });
   assert.equal(core.project(REGISTRY, source).source, renderSlotRegistry('shell-links', ['board']), 'the excluded contribution leaves the registry');
   assert.equal(core.project(`frontend/${REGISTRY}`, source).source, renderSlotRegistry('shell-links', ['board']), 'repository paths are the same file');
-  // 직접 선택은 해석기가 계산한 제거 경로를 쓴다 — 두 번째 소유 판정은 없다.
-  const custom = createFrontendProjector({ manifest: MANIFEST, profile: { packs: ['core', 'demo'], frontendRemovePaths: ['src/extensions/board/'] },
-    composition: { profile: 'custom', resolvedDomains: [] }, files: FILES.map(file => `frontend/${file}`) });
+  // 구성 투영(생성기·정밀 점검)은 해석기가 계산한 제거 경로를 쓴다 — 두 번째 소유 판정은 없다.
+  const custom = createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: ['src/extensions/board/'] } },
+    files: FILES.map(file => `frontend/${file}`) });
   assert.equal(custom.project(REGISTRY, source).source, renderSlotRegistry('shell-links', ['note']));
   // 원본 구성의 투영은 원문과 바이트가 같다 — CRLF 체크아웃도 그대로 돌려준다.
   const demo = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.demo, files: FILES });
@@ -116,7 +116,7 @@ test('after the cascade the generator refuses a registry that no longer matches 
   const files = FILES;
   const projector = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core, files });
   write(REGISTRY, projector.project(REGISTRY, renderSlotRegistry('shell-links', ['board', 'note'])).source);
-  assert.throws(() => pruneFrontend(output, MANIFEST, MANIFEST.profiles.core),
+  assert.throws(() => pruneFrontend(output, projector.directPaths),
     /투영 뒤 슬롯 레지스트리가 남은 기여와 다르다: src\/extensions\/generated-shell-links\.ts \(남은 기여: 없음\)/);
   // 대조군: 연쇄로 지워지지 않는 기여면 남은 기여와 레지스트리가 같고 lock 에 그대로 적힌다.
   const clean = mkdtempSync(join(tmpdir(), 'slot-registry-prune-'));
@@ -128,7 +128,7 @@ test('after the cascade the generator refuses a registry that no longer matches 
     mkdirSync(dirname(join(clean, 'frontend', file)), { recursive: true });
     writeFileSync(join(clean, 'frontend', file), text);
   }
-  assert.deepEqual(pruneFrontend(clean, MANIFEST, MANIFEST.profiles.core).slots, [{ slot: 'shell-links', owners: ['board'] }]);
+  assert.deepEqual(pruneFrontend(clean, projector.directPaths).slots, [{ slot: 'shell-links', owners: ['board'] }]);
 });
 
 // 배치를 가리지 못하는 슬롯은 소비자가 둘 이상인 평면 표다 — 허브별 표가 있거나 소비자가 하나면 오귀속이 없어 거부할 까닭이 없다.

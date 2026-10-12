@@ -8,7 +8,6 @@ import test from 'node:test';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { composerProfile } from './project-composer-source.mjs';
 import { createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 import { SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles, slotConsumersByHub, slotPathKind,
@@ -26,10 +25,21 @@ const paths = {
 };
 const sources = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')]));
 
-// 생성기·정밀 점검과 같은 projector 로 투영한다(슬롯 단계 PR-2). transpileModule 은 문자열 단언이 볼 본문을 만드는 데만 쓴다
-// (주석을 걷고 JSX 를 호출로 바꾼다). 투영 뒤의 구문·타입 오류는 아래 투영 타입 검사가 생성물과 같은 tsconfig 로 본다(PR-3).
+// 생성기·정밀 점검과 같은 projector 로 투영한다(슬롯 단계 PR-2). 시작 구성도 해석기의 구성으로 투영한다(11단계 C3).
+// transpileModule 은 문자열 단언이 볼 본문을 만드는 데만 쓴다(주석을 걷고 JSX 를 호출로 바꾼다). 투영 뒤의 구문·타입 오류는
+// 아래 투영 타입 검사가 생성물과 같은 tsconfig 로 본다(PR-3).
+let presetCatalog;
+const presetCompositions = new Map();
+function presetComposition(id) {
+  presetCatalog ??= loadProjectComposerCatalog(resolve(import.meta.dirname, '..'));
+  if (!presetCompositions.has(id)) {
+    presetCompositions.set(id, resolveProjectRecipe({ schemaVersion: 1, project: { name: 'boundary-probe' }, sourceRef: 'main', selection: { preset: id },
+      database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, presetCatalog));
+  }
+  return presetCompositions.get(id);
+}
 function projected(source, profile, label) {
-  const result = createFrontendProjector({ manifest, profile: manifest.profiles[profile] }).project(label, source);
+  const result = createFrontendProjector({ composition: presetComposition(profile) }).project(label, source);
   return ts.transpileModule(result.source, {
     fileName: label,
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX, removeComments: true, verbatimModuleSyntax: true },
@@ -84,11 +94,12 @@ for (const profile of ['core', 'collaboration', 'demo']) {
  * 근거를 품으면 종류가 프로필마다 갈려, 원본 원장으로 계산한 화면 생존 기대값과 투영 뒤 본문을 보는 거버넌스 투영이 어긋난다.
  */
 test('a page marker block cannot carry a redirect call or a return, and next.config cannot carry markers', () => {
-  // 규칙은 공용 파서가 지키므로 블록을 걷는 프로필(core)·남기는 프로필(demo)·직접 선택 투영이 모두 같은 자리에서 실패한다.
+  // 규칙은 공용 파서가 지키므로 블록을 걷는 구성(core)·남기는 구성(demo)·직접 선택 투영과 pack 투영(도달성 census)이 모두 같은 자리에서 실패한다.
   const projectors = {
-    core: createFrontendProjector({ manifest, profile: manifest.profiles.core }),
-    demo: createFrontendProjector({ manifest, profile: manifest.profiles.demo }),
-    custom: createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] }, composition: { profile: 'custom', resolvedDomains: [] } }),
+    core: createFrontendProjector({ composition: presetComposition('core') }),
+    demo: createFrontendProjector({ composition: presetComposition('demo') }),
+    custom: createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } }),
+    pack: createFrontendProjector({ manifest, profile: manifest.profiles.core }),
   };
   const knownPacks = new Set(Object.keys(manifest.packs));
   const block = body => `export default function Page() {\n  // reusable-base:demo:start\n${body}\n  // reusable-base:demo:end\n  return null;\n}\n`;
@@ -101,11 +112,14 @@ test('a page marker block cannot carry a redirect call or a return, and next.con
   // 남기는 블록이어도, 직접 선택 투영이어도 같다 — 프로필마다 갈리는 것이 문제다.
   assert.throws(() => projectors.demo.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
   assert.throws(() => projectors.custom.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
+  assert.throws(() => projectors.pack.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
   assert.throws(() => parsePackMarkerBlocks(block("  redirect('/x');"), { knownPacks, label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
-  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 통과한다.
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/page.tsx', block('  // return later')));
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/DemoClient.tsx', block("  redirect('/x');")));
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')));
+  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 파서를 통과한다. 구성 투영은 소유 표에 없는 파일의 블록을 소유 판정에서
+  // 거부하므로(11단계 C3) 파서 대조군은 pack 투영으로 본다.
+  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/page.tsx', block('  // return later')));
+  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/DemoClient.tsx', block("  redirect('/x');")));
+  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/page.tsx', block('  const x = 1;')));
+  assert.throws(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')), /Unclassified composer UI block: src\/app\/demo\/page\.tsx\/demo/);
   // next.config 의 리다이렉트 선언은 거버넌스 투영이 정리하므로 마커를 두지 않는다. Next 가 읽는 설정 파일 전부(Next 16 은 .mts 도
   // 읽는다)이고, 투영 판정(isFrontendModuleFile)처럼 확장자 대소문자를 가리지 않는다.
   for (const label of ['next.config.ts', 'next.config.mts', 'frontend/next.config.mts', 'next.config.mjs', 'next.config.js', 'next.config.MTS']) {
@@ -198,8 +212,7 @@ function projectedTree(selection, inputs) {
   const { files, original, scope, catalog } = inputs;
   const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'projection-type-check' }, sourceRef: 'main', selection,
     database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, catalog);
-  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition,
-    files: files.map(path => normalize(relative(frontendRoot, path))) });
+  const projector = createFrontendProjector({ composition, files: files.map(path => normalize(relative(frontendRoot, path))) });
   const projectedSources = new Map(files.filter(isFrontendModuleFile)
     .map(path => [path, projector.project(normalize(relative(frontendRoot, path)), original(path)).source]));
   const plan = planFrontendRemoval({ frontendRoot, files, directPaths: projector.directPaths, readSource: path => projectedSources.get(path) });
@@ -776,7 +789,7 @@ test('slot registries: the source registry is the render of its contributions an
   for (const selection of [{ preset: 'demo' }, { domains: everyFeature }]) {
     const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'slot-parity' }, sourceRef: 'main', selection,
       database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, inputs.catalog);
-    const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files });
+    const projector = createFrontendProjector({ composition, files });
     assert.deepEqual(projector.directPaths, [], `${JSON.stringify(selection)} removes nothing directly`);
     const changed = inputs.files.filter(isFrontendModuleFile).filter(path => {
       const original = inputs.original(path);

@@ -28,11 +28,10 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { API_SOURCE_ROOT, apiSourceRequirements, appSourceDomain, javaDomainReferences } from './project-composer-catalog.mjs';
-import { MODULES_DIRECTORY, MODULES_SCHEMA } from './composer-modules.mjs';
-import { supportFileDirectoryDomain } from './project-composer-source.mjs';
+import { CORE_FILE, MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE } from './composer-modules.mjs';
+import { supportFileDirectoryDomain, supportFileOwners } from './project-composer-source.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 
-const MANIFEST = 'config/reusable-base-profiles.json';
 const APP_ROOT = 'business-app/src/main/java/nuri/business';
 
 /**
@@ -75,20 +74,16 @@ function javaFiles(directory) {
 
 /**
  * 지금 트리의 기능 파일(config/modules/<기능 id>.json). 필수 기반·시작 구성·스키마 파일은 기능이 아니다.
- * 기능 집합은 manifest appDomains 와의 교집합이다(11단계 C3 전까지). 생성기는 config/modules 를 투영하지 않고 원본 그대로 복사하므로,
- * 생성물에는 구성에 없는 기능의 파일도 남는다. 기능 파일만 보면 생성물에 없는 기능도 '알려진 기능' 이 되어 삭제 계획을 돌려준다
- * (C2 전에는 'unknown domain' 이었다). 생성기가 config/modules 를 구성 기능만 남기도록 투영하면(C3) 이 교집합을 걷는다.
+ * 생성기는 config/modules 를 구성의 기능 파일만 남기도록 투영한다(11단계 C3) — 생성물에서도 기능 파일이 그 생성물의 기능 집합이다.
  */
 function treeModules(root) {
-  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
-  const appDomains = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
   const directory = join(root, MODULES_DIRECTORY);
-  return readdirSync(directory).filter(name => name.endsWith('.json') && ![MODULES_SCHEMA, 'core.json', 'presets.json'].includes(name)).sort()
-    .map(name => JSON.parse(readFileSync(join(directory, name), 'utf8'))).filter(module => appDomains.has(module.id));
+  return readdirSync(directory).filter(name => name.endsWith('.json') && ![MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name)).sort()
+    .map(name => JSON.parse(readFileSync(join(directory, name), 'utf8')));
 }
 
 /**
- * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 manifest appDomains 에 있는 기능 파일(매니페스트 v2)이고, 간선은
+ * 지금 트리에서 삭제 판정에 쓰는 기능 목록을 만든다. 기능은 기능 파일(매니페스트 v2)이고, 간선은
  * 카탈로그의 비 customOnly 간선과 같은 네 종류다 — 업무 앱 Java 참조(java), api-server 디렉터리 소유 기능의 Java 참조(java,
  * DEC-OPS-280), 다른 기능 디렉터리의 지원 파일(java), 생성 묶음 선언(manifest).
  * 기능 파일이 없는 기능 디렉터리(스캐폴드한 새 도메인)의 소스는 건너뛴다 — 그 소스의 잔존 참조는 delete-domain 의 잔존 참조 검사가 알린다.
@@ -133,24 +128,18 @@ const JAVA_MODULES = ['foundation', 'business-core', 'business-app', 'api-server
  * 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있다(행사·외부인사·포상 컨트롤러는 controller/business/operation). 디렉터리 이름으로
  * 찾으면 그런 컨트롤러가 남아 컴파일이 깨진다.
  * 수동 삭제는 소스를 고쳐 쓰지 않으므로 생성기의 소스 투영 없이 원문으로 판정한다. 이미 지운 트리에서는 지원 파일이 없을 수 있어,
- * 남아 있는 지원 파일만 판정에 넣는다.
+ * 남아 있는 지원 파일만 판정에 넣는다. 기능 소유(기능 목록·지원 파일)는 기능 파일(매니페스트 v2)에서 읽는다(11단계 C3).
  * @returns {{ file: string, reason: string }[]}
  */
 export function planDomainJavaFiles(root, domains) {
   root = resolve(root);
-  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
   const deleting = new Set(domains);
-  const appDomains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))];
-  const packs = Object.fromEntries(Object.entries(manifest.packs ?? {}).map(([name, pack]) => {
-    const declared = pack.backend?.domainSupportFiles;
-    if (!declared || typeof declared !== 'object') return [name, pack];
-    const present = Object.entries(declared)
-      .map(([domain, files]) => [domain, (Array.isArray(files) ? files : []).filter(file => typeof file === 'string' && existsSync(join(root, file)))])
-      .filter(([, files]) => files.length);
-    return [name, { ...pack, backend: { ...pack.backend, domainSupportFiles: Object.fromEntries(present) } }];
-  }));
-  const plan = planJavaRemoval(root, { ...manifest, packs },
-    { packs: Object.keys(packs), resolvedDomains: appDomains.filter(domain => !deleting.has(domain)) },
+  const modules = treeModules(root);
+  const ids = modules.map(module => module.id);
+  const supportFiles = supportFileOwners(root, modules.map(module => ({ owner: module.id, owned: [module.id], domain: module.id,
+    files: (module.backend?.supportFiles ?? []).filter(file => typeof file === 'string' && existsSync(join(root, file))) }))
+    .filter(entry => entry.files.length), ids);
+  const plan = planJavaRemoval(root, { domains: ids, supportFiles }, { resolvedDomains: ids.filter(domain => !deleting.has(domain)) },
     JAVA_MODULES.flatMap(module => javaFiles(join(root, module, 'src'))), { projectSource: (_file, source) => source });
   const inside = plan.directDirectories.map(directory => `${directory}${sep}`);
   return [...plan.removed].filter(path => !inside.some(prefix => path.startsWith(prefix)))
