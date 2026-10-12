@@ -131,7 +131,7 @@ function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessag
 export function BoardHomeLists() {
   const home = useBoardHome();
   if (home.data === null) return null;
-  if (home.data === undefined) {
+  if (home.isPending) {
     // 서버 자식이 미리 채우지 못한 첫 화면(드문 경우)에는 목록 자리만 잡는다.
     return (
       <div className="grid gap-4 lg:grid-cols-2">
@@ -140,20 +140,25 @@ export function BoardHomeLists() {
       </div>
     );
   }
+  /*
+    브라우저 조회가 실패하면(404·429·연결 실패 — 앱 기본값은 4xx 를 다시 보내지 않고 5xx 최초 로드만 오류 경계로 올린다) data 는
+    undefined 로 남는다. 자리표시를 계속 그리면 목록이 끝없이 '불러오는 중' 이 되므로, 두 목록 모두 조회 실패 문구로 그린다(total=null).
+  */
+  const data = home.data;
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <HomeListSection
         title="업무게시판 최근 글"
-        items={home.data.initialTaskList}
-        total={home.data.taskListTotal}
+        items={data?.initialTaskList ?? []}
+        total={data ? data.taskListTotal : null}
         moreHref={`/admin/community/boards/select-board-list?bbsId=${TASK_BOARD_ID}`}
         moreLabel="업무게시판 전체 보기"
         emptyMessage="업무게시판에 등록된 글이 없습니다."
       />
       <HomeListSection
         title="최근 공지사항"
-        items={home.data.initialNotiList}
-        total={home.data.notiListTotal}
+        items={data?.initialNotiList ?? []}
+        total={data ? data.notiListTotal : null}
         moreHref={`/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`}
         moreLabel="공지 전체 보기"
         emptyMessage="새 공지사항이 없습니다."
