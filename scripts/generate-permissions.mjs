@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { detectGeneratedComposition } from './composer-modules.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const BASE_SEED = 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql';
@@ -24,10 +25,12 @@ if (codes.length !== new Set(codes).size || codes.some(code => !/^[A-Z][A-Z0-9_]
   throw new Error('Permission codes must be unique and fit the registered VARCHAR(20) domain');
 }
 const initialGrants = [];
-const manifestPath = path.join(root, 'config/reusable-base-profiles.json');
 let selectedPermissions;
-const generatedProfile = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).sourcePolicy?.generatedProfile : undefined;
-if (generatedProfile && (generatedProfile === 'custom' || fs.existsSync(path.join(root, COMPOSER_SELECTION_PATH)))) {
+// 생성물 표지(config/modules/presets.json 의 active, 11단계 C5). 생성물이면 구성 스냅숏이 반드시 있어야 한다 — 없으면 원본 권한
+// 전체로 조용히 넓히지 않고 실패한다. 표지 판정은 lock 만 있고 표지가 없는 트리도 실패시킨다(detectGeneratedComposition).
+const generated = detectGeneratedComposition(root);
+const generatedProfile = generated.projection ? generated.profile : undefined;
+if (generatedProfile) {
   // This immutable selection is bound by governance metadata and the source lock. Regeneration
   // rederives its scope rather than trusting an arbitrary list of requested permission codes.
   const selection = JSON.parse(fs.readFileSync(path.join(root, COMPOSER_SELECTION_PATH), 'utf8'));

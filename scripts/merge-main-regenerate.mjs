@@ -56,8 +56,9 @@ export const GENERATORS = [
   },
   {
     id: 'permissions',
+    // 권한 생성기는 생성물 표지(config/modules/presets.json 의 active)로 선택 권한 분기를 정한다(11단계 C5).
     inputs: under('config/governance/permission-catalog.json', 'config/governance/authorization-policies.json',
-      'config/reusable-base-profiles.json'),
+      'config/modules/presets.json'),
     outputs: ['business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java',
       'business-core/src/main/resources/authorization/permission-catalog.json',
       'business-core/src/main/resources/authorization/operation-bindings.json',

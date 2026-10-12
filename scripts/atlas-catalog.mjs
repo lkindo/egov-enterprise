@@ -274,8 +274,13 @@ export function buildAtlasCatalog(repoRoot) {
   const registry = io.json(gateSource);
   const requiredSource = '.github/required-checks.json';
   const required = io.json(requiredSource);
-  const profileSource = 'config/reusable-base-profiles.json';
-  const profiles = io.json(profileSource);
+  // 재사용 시작 구성과 기능 선언은 매니페스트 v2(config/modules)다(11단계 C5 — v1 manifest 의 profile·pack 축을 걷었다).
+  const profileSource = 'config/modules/presets.json';
+  const presets = io.json(profileSource).presets;
+  const moduleDirectory = 'config/modules';
+  const coreModule = io.json(`${moduleDirectory}/core.json`);
+  const featureModules = io.files(moduleDirectory, file => file.endsWith('.json')
+    && !['_schema.json', 'core.json', 'presets.json'].includes(path.posix.basename(file))).map(file => ({ file, value: io.json(file) }));
   const routeSource = 'config/ui-route-capabilities.json';
   const routeInventory = io.json(routeSource);
   const operationSource = 'config/governance/operation-consumer-census.json';
@@ -311,20 +316,24 @@ export function buildAtlasCatalog(repoRoot) {
       io.read(file);
     }
     return [...groups].map(([name, files]) => {
-      const packs = Object.entries(profiles.packs).filter(([, pack]) => module === 'business-app'
-        ? pack.backend?.appDomains?.includes(name) : pack.backend?.modules?.includes(module)).map(([id]) => id);
+      // 업무 앱 폴더는 같은 이름의 기능 선언이, 공통 모듈 폴더는 필수 기반(core.json 의 backend.modules)이 소유한다.
+      const features = module === 'business-app'
+        ? featureModules.filter(({ value }) => value.id === name).map(({ value }) => value.id)
+        : (coreModule.backend?.modules ?? []).includes(module) ? ['core'] : [];
       return record(`${module}/${name}`, `${name} · ${module}`, '최상위 소스 폴더 인벤토리. 독립 업무 수·화면 완성·권한 확인을 의미하지 않습니다.',
-        'source-inventory', `${root}/${name}`, { module, packs, javaFileCount: files.length,
-          details: [detail('pack 선언', packs), detail('Java 파일 수', files.length), detail('제품 의미·실제 역량', 'UNVERIFIED')],
-          links: [{ label: '재사용 범위', path: profileSource }, ...files.map(file => ({ label: path.posix.basename(file), path: file }))] });
+        'source-inventory', `${root}/${name}`, { module, features, javaFileCount: files.length,
+          details: [detail('기능 소유 선언', features), detail('Java 파일 수', files.length), detail('제품 의미·실제 역량', 'UNVERIFIED')],
+          links: [{ label: '재사용 범위', path: moduleDirectory }, ...files.map(file => ({ label: path.posix.basename(file), path: file }))] });
     });
   });
   connectDomainDeclarations(io, domainRecords);
 
-  const profileRecords = Object.entries(profiles.profiles).map(([id, value]) => record(id, id, value.description ?? '', 'declared-profile', profileSource,
-    { packs: value.packs, details: [detail('포함 pack', value.packs)] }));
-  const packRecords = Object.entries(profiles.packs).map(([id, value]) => record(id, id, '재사용 manifest의 pack 선언. profile과 다른 분류 축입니다.', 'declared-pack', profileSource,
-    { details: [detail('소스 구성', value.backend ?? {}), detail('DB 소유 선언', value.database ?? {}), detail('프론트 구성', value.frontend ?? {})] }));
+  const profileRecords = presets.map(value => record(value.id, value.label ?? value.id, value.description ?? '', 'declared-profile', profileSource,
+    { domains: value.domains, details: [detail('포함 기능', value.domains.length ? value.domains : '공통 기반만')] }));
+  const featureRecords = featureModules.map(({ file, value }) => record(value.id, value.label ?? value.id,
+    '매니페스트 v2 의 기능 선언. 시작 구성은 이 기능들의 이름 붙은 목록입니다.', 'declared-feature', file,
+    { details: [detail('테이블 소유', value.owns?.tables ?? []), detail('화면 소유', value.owns?.frontend ?? []),
+      detail('권한 도메인', value.owns?.permissionDomains ?? [])] }));
 
   // 소스 생성 진입점. 검증 runner(gates.json 파생)와 다른 축이라 별도 카탈로그로 둔다 —
   // 게이트는 "red 로 증명되는 검사"이고 이 명령들은 "제품 소스를 만들어 내는 도구"다.
@@ -506,7 +515,7 @@ export function buildAtlasCatalog(repoRoot) {
     gradleVersion: requireValue(io.read('gradle/wrapper/gradle-wrapper.properties').match(/gradle-([^/]+)-bin\.zip/)?.[1], 'Gradle version not found'),
   };
   requireValue(rootPackage.engines?.node, 'root Node engine missing');
-  const catalogs = { modules: moduleRecords, domains: domainRecords, profiles: profileRecords, packs: packRecords, generators: generatorRecords, routes: routeRecords,
+  const catalogs = { modules: moduleRecords, domains: domainRecords, profiles: profileRecords, features: featureRecords, generators: generatorRecords, routes: routeRecords,
     operations: operationRecords, constitutions: constitutionRecords, gates: gateRecords, runners: runnerRecords,
     executionProfiles: executionRecords, requiredChecks: requiredRecords, workflows: workflowRecords, documents: documentRecords,
     decisions: decisionRecords, gaps: gapRecords, memory: memoryRecords };

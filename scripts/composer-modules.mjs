@@ -12,7 +12,7 @@
  * 두 번 읽는 착시가 되지 않는다(설계서 위험 8). 전환(C7)까지는 v2 파일을 v1 에서 만든다(composer-modules-generate.mjs).
  */
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { RBAC, supportFileOwners } from './project-composer-source.mjs';
 
@@ -20,6 +20,8 @@ export const MODULES_DIRECTORY = 'config/modules';
 export const MODULES_SCHEMA = '_schema.json';
 export const CORE_FILE = 'core.json';
 export const PRESETS_FILE = 'presets.json';
+/** 생성물 루트의 소스 lock. 이 파일이 있으면 생성물이다 — 생성물 표지(아래 detectGeneratedComposition)가 함께 있어야 한다. */
+export const GENERATED_LOCK = 'reusable-base-lock.json';
 const sorted = values => [...new Set(values)].sort();
 const byCodeUnits = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 // 카탈로그와 같은 정규 JSON 해시(project-composer-catalog.mjs 의 compositionDigest). 카탈로그가 이 로더를 부르므로 import 하지 않는다.
@@ -278,14 +280,16 @@ export function sharedTableTransfers(files, resolvedDomains) {
 
 /**
  * 생성물의 config/modules 를 구성으로 투영한다(11단계 C3). 구성의 기능 파일·core.json 만 남기고 presets.json 에는 활성 구성 하나
- * (`active`)만 둔다. 기능 파일 내용은 원본 선언 그대로다 — 빠진 기능을 가리키는 연동·게이트 행도 남아, 그 기능이 이 생성물에
- * 없다는 사실을 말한다. 소유 기능이 빠진 공유 테이블은 넘겨받는 기능의 owns.tables 에 더한다(sharedTableTransfers).
+ * (`active`)만 둔다. presets.json 의 `active` 필드(그 구성의 id)가 생성물 표지다(11단계 C5, detectGeneratedComposition) — 생성물의
+ * 하네스·원장 계약·권한 생성기가 v1 manifest 대신 이 표지로 생성물임을 안다. 기능 파일 내용은 원본 선언 그대로다 — 빠진 기능을
+ * 가리키는 연동·게이트 행도 남아, 그 기능이 이 생성물에 없다는 사실을 말한다. 소유 기능이 빠진 공유 테이블은 넘겨받는 기능의
+ * owns.tables 에 더한다(sharedTableTransfers).
  * 결과는 파일 이름 → 값이고 `_schema.json` 은 넣지 않는다(원본 그대로 둔다).
  */
 export function projectComposerModuleFiles(files, composition, active) {
   const selected = new Set(composition.resolvedDomains);
   const transfers = sharedTableTransfers(files, composition.resolvedDomains);
-  const projected = { [CORE_FILE]: files[CORE_FILE], [PRESETS_FILE]: { ...files[PRESETS_FILE], presets: [active] } };
+  const projected = { [CORE_FILE]: files[CORE_FILE], [PRESETS_FILE]: { ...files[PRESETS_FILE], active: active.id, presets: [active] } };
   for (const [name, value] of Object.entries(files)) {
     if ([MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name) || !selected.has(value.id)) continue;
     const received = [...transfers].filter(([, receiver]) => receiver === value.id).map(([table]) => table);
@@ -297,7 +301,7 @@ export function projectComposerModuleFiles(files, composition, active) {
 }
 
 /**
- * 생성물 config/modules 의 기능 파일 집합·활성 구성·테이블 소유가 구성과 같은지 본다(생성물 무결성 검사). 위반 문장 목록을 돌려준다.
+ * 생성물 config/modules 의 기능 파일 집합·활성 구성(표지 active 포함)·테이블·독립 시퀀스 소유가 구성과 같은지 본다(생성물 무결성 검사). 위반 문장 목록을 돌려준다.
  * `names` 는 그 디렉터리의 .json 파일 이름, `read(name)` 는 그 파일의 값이다. 파일 집합이 다르면 그 한 문장만 돌려준다.
  */
 export function projectedModuleViolations({ names, read, composition }) {
@@ -312,12 +316,43 @@ export function projectedModuleViolations({ names, read, composition }) {
   for (const domain of composition.resolvedDomains) {
     if (read(`${domain}.json`).id !== domain) violations.push(`projected module file differs from its feature id: ${domain}.json`);
   }
-  const presets = read(PRESETS_FILE).presets;
-  if (presets.length !== 1 || presets[0].id !== composition.profile
+  const { active, presets } = read(PRESETS_FILE);
+  if (active !== composition.profile || presets.length !== 1 || presets[0].id !== composition.profile
     || JSON.stringify(sorted(presets[0].domains)) !== JSON.stringify(sorted(composition.resolvedDomains))) {
     violations.push(`projected active composition differs from composition: ${composition.profile}`);
   }
   const tables = sorted([...read(CORE_FILE).owns.tables, ...composition.resolvedDomains.flatMap(domain => read(`${domain}.json`).owns.tables)]);
   if (JSON.stringify(tables) !== JSON.stringify(sorted(composition.tables))) violations.push('projected module table ownership differs from composition');
+  // 독립 시퀀스도 같다(종전 생성물 manifest 의 시퀀스 inventory 검사를 옮겼다, 11단계 C5).
+  const sequences = sorted([...read(CORE_FILE).owns.sequences, ...composition.resolvedDomains.flatMap(domain => read(`${domain}.json`).owns.sequences)]);
+  if (JSON.stringify(sequences) !== JSON.stringify(sorted(composition.explicitSequences))) violations.push('projected module sequence ownership differs from composition');
   return violations;
+}
+
+/**
+ * 생성물 표지(11단계 C5). 생성물의 presets.json 은 활성 구성 하나와 그 id 를 담은 `active` 를 둔다(projectComposerModuleFiles). 원본 저장소의
+ * presets.json 에는 `active` 가 없다. 표지 하나로 투영 모드로 바꾸지 않는다 — 원본 presets.json 에 `active` 만 넣어 계획 대조를 끄는 경로를
+ * 막기 위해 생성기가 쓰는 구조(시작 구성이 그 하나이고, 기능 파일이 정확히 그 구성의 기능)까지 요구한다. 생성물 lock 이 있는데 표지가 없거나,
+ * 표지가 있는데 구조가 다르면 실패한다(조용히 원본으로 보지 않는다). presets.json 을 읽지 못해도 실패다.
+ * 돌려주는 값: 원본이면 `{ projection: false }`, 생성물이면 `{ projection: true, profile, domains }`.
+ */
+export function detectGeneratedComposition(root) {
+  const directory = join(resolve(root), MODULES_DIRECTORY);
+  const presetsFile = JSON.parse(readFileSync(join(directory, PRESETS_FILE), 'utf8'));
+  if (presetsFile?.active === undefined) {
+    if (existsSync(join(resolve(root), GENERATED_LOCK))) {
+      fail(`${GENERATED_LOCK} 이 있는 생성물인데 ${MODULES_DIRECTORY}/${PRESETS_FILE} 에 활성 구성 표지(active)가 없다`);
+    }
+    return { projection: false };
+  }
+  const entries = Array.isArray(presetsFile.presets) ? presetsFile.presets : [];
+  const features = readdirSync(directory)
+    .filter(name => name.endsWith('.json') && ![MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name)).sort(byCodeUnits);
+  const domains = Array.isArray(entries[0]?.domains) ? entries[0].domains : [];
+  if (typeof presetsFile.active !== 'string' || entries.length !== 1 || entries[0].id !== presetsFile.active
+    || JSON.stringify(features) !== JSON.stringify(sorted(domains).map(domain => `${domain}.json`).sort(byCodeUnits))) {
+    fail(`${PRESETS_FILE} 의 active='${presetsFile.active}' 인데 생성기 투영 구조가 아니다 `
+      + `(presets=${JSON.stringify(entries.map(entry => entry?.id))}, features=${JSON.stringify(features)}) — 투영 모드로 전환하지 않는다.`);
+  }
+  return { projection: true, profile: presetsFile.active, domains: sorted(domains) };
 }

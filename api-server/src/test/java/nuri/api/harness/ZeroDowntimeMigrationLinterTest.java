@@ -327,8 +327,7 @@ class ZeroDowntimeMigrationLinterTest {
     void migrationHistoryRejectsUnmarkedSourceBelowProducerGit(@TempDir Path root) throws Exception {
         historyFixture(root);
         Path artifact = root.resolve("build/unmarked");
-        Files.createDirectories(artifact.resolve("config"));
-        Files.writeString(artifact.resolve("config/reusable-base-profiles.json"), "{}");
+        writeUnmarkedPresets(artifact);
         writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
         assertThat(migrationHistoryViolations(artifact, Map.of())).isNotEmpty();
     }
@@ -389,9 +388,8 @@ class ZeroDowntimeMigrationLinterTest {
     void migrationHistoryRejectsUnmarkedFreshGitInit(@TempDir Path root) throws Exception {
         historyFixture(root);
         Path artifact = root.resolve("build/unmarked-fresh-repository");
-        Files.createDirectories(artifact.resolve("config"));
+        writeUnmarkedPresets(artifact);
         Files.createDirectories(artifact.resolve(".github"));
-        Files.writeString(artifact.resolve("config/reusable-base-profiles.json"), "{}");
         Files.writeString(artifact.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
         writeHistorySql(artifact, "V1__baseline.sql", "SELECT 9;\n");
         historyGit(artifact, "init", "--quiet");
@@ -632,9 +630,8 @@ class ZeroDowntimeMigrationLinterTest {
     }
 
     private static HistoryFixture historyFixture(Path root) throws Exception {
-        Files.createDirectories(root.resolve("config"));
+        writeUnmarkedPresets(root);
         Files.createDirectories(root.resolve(".github"));
-        Files.writeString(root.resolve("config/reusable-base-profiles.json"), "{}");
         Files.writeString(root.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
         writeHistorySql(root, "V1__original.sql", "SELECT 1;\n");
         writeHistorySql(root, "R__refresh.sql", "SELECT 1;\n");
@@ -665,13 +662,19 @@ class ZeroDowntimeMigrationLinterTest {
                 "GITHUB_SHA", sha, "GITHUB_EVENT_PATH", path.toString());
     }
 
+    /** 원본 저장소 모양 — 시작 구성 선언은 있지만 생성물 표지(active)가 없다(11단계 C5). */
+    private static void writeUnmarkedPresets(Path root) throws IOException {
+        Files.createDirectories(root.resolve("config/modules"));
+        Files.writeString(root.resolve("config/modules/presets.json"), "{\"presets\":[]}");
+    }
+
     private static void writeProjectedHistoryProfile(Path root) throws IOException {
         Files.createDirectories(root.resolve("config/governance"));
-        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"fixture\"},"
-                + "\"profiles\":{\"fixture\":{\"packs\":[]}}}";
-        Files.writeString(root.resolve("config/reusable-base-profiles.json"), profiles);
+        Files.createDirectories(root.resolve("config/modules"));
+        String presets = "{\"active\":\"fixture\",\"presets\":[{\"id\":\"fixture\",\"domains\":[]}]}";
+        Files.writeString(root.resolve("config/modules/presets.json"), presets);
         Files.writeString(root.resolve("reusable-base-lock.json"), JSON.writeValueAsString(Map.of(
-                "profile", "fixture", "packs", List.of(), "sourceCommit", "a".repeat(40),
+                "profile", "fixture", "composition", Map.of("resolvedDomains", List.of()), "sourceCommit", "a".repeat(40),
                 "java", Map.of("excludedDomains", List.of()))));
         String source = "foundation/src/main/java/Fixture.java";
         for (String module : List.of("foundation", "business-core", "business-app", "api-server")) {
@@ -679,9 +682,9 @@ class ZeroDowntimeMigrationLinterTest {
         }
         Files.writeString(root.resolve(source), "class Fixture {}\n");
         Files.writeString(root.resolve("config/governance/reusable-harness-profile.json"),
-                JSON.writeValueAsString(Map.of("schemaVersion", 1, "profile", "fixture", "packs", List.of(),
+                JSON.writeValueAsString(Map.of("schemaVersion", 2, "profile", "fixture", "domains", List.of(),
                         "sourceCommit", "a".repeat(40), "excludedDomains", List.of(),
-                        "profileManifestSha256", sha256(profiles), "retained", List.of(Map.of("path", source)))));
+                        "presetsSha256", sha256(presets), "retained", List.of(Map.of("path", source)))));
     }
 
     private record HistoryFixture(Path root, String base) {

@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
+import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
 import { ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 
@@ -187,9 +188,13 @@ export function projectedWriteHandlerCounts(source) {
 
 // `ownership`·`profile` 은 생성기가 투영에 쓴 기능 소유(composerOwnership)와 프로필(composerProfile)이다. 원본에서 같은 판정으로
 // 계획을 다시 세워 생성물의 Java 와 대조한다(독립 계획). pack 을 보지 않는다(11단계 C3).
-export function writeReusableHarnessProfile(output, { ownership, profile }) {
-  const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
-  const profileName = projected.sourcePolicy.generatedProfile;
+// 활성 구성은 생성물 표지(config/modules/presets.json 의 active)에서 읽고, 기록은 그 파일의 해시(presetsSha256)에 결속한다(11단계 C5) —
+// 생성물 하네스(ReusableHarnessProfile)가 같은 표지·lock·기록을 대조한다. `schemaTables` 는 DB 번들 lock 의 물리 테이블 수다.
+export function writeReusableHarnessProfile(output, { ownership, profile, schemaTables }) {
+  const generated = detectGeneratedComposition(output);
+  if (!generated.projection) fail('Harness profile requires the generated composition marker (config/modules/presets.json active)');
+  if (!Number.isInteger(schemaTables) || schemaTables <= 0) fail('Harness profile requires the DB bundle table count');
+  const profileName = generated.profile;
   const javaFiles = trackedAndUntrackedFiles().filter(path => path.endsWith('.java')).map(path => join(ROOT, path));
   const plan = planJavaRemoval(ROOT, ownership, profile, javaFiles);
   const production = javaFiles.filter(path => /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//.test(normalize(relative(ROOT, path))));
@@ -236,7 +241,7 @@ export function writeReusableHarnessProfile(output, { ownership, profile }) {
     entities: entities.length,
     entityTables: new Set(entities.map(([, source]) => source.match(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/)?.[1]
       ?? fail('Entity @Table(name) cannot be determined'))).size,
-    schemaTables: projected.databaseSnapshot.physicalTableCountExcludingFlyway,
+    schemaTables,
     migrations: walk(join(output, 'api-server/src/main/resources/db/migration'), path => path.endsWith('.sql')).length,
     booleanFlagColumns: [...readFileSync(join(output, 'api-server/src/main/resources/db/migration/V1_0__baseline.sql'), 'utf8')
       .matchAll(/^\s+[a-z][a-z0-9_]*_yn\s+[a-z]/gm)].length,
@@ -253,9 +258,9 @@ export function writeReusableHarnessProfile(output, { ownership, profile }) {
     productionSources: retained.length,
   };
   for (const module of ['business-core', 'business-app']) census[`entities:${module}`] = entities.filter(([path]) => path.startsWith(`${module}/`)).length;
-  const snapshot = { schemaVersion: 1, profile: profileName, packs: profile.packs,
+  const snapshot = { schemaVersion: 2, profile: profileName, domains: generated.domains,
     excludedDomains: plan.excludedDomains.sort(), sourceCommit: git(['rev-parse', 'HEAD']),
-    profileManifestSha256: createHash('sha256').update(readFileSync(join(output, 'config/reusable-base-profiles.json'))).digest('hex'),
+    presetsSha256: createHash('sha256').update(readFileSync(join(output, MODULES_DIRECTORY, PRESETS_FILE))).digest('hex'),
     census, retained: retained.sort((a, b) => a.path.localeCompare(b.path)), removed: removed.sort((a, b) => a.path.localeCompare(b.path)) };
   writeFileSync(join(output, 'config/governance/reusable-harness-profile.json'), `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
   return snapshot;

@@ -37,6 +37,18 @@ class HarnessSourceAccessContractTest {
                 () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("missing"), true, false)));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("wrong-profile"), false, true)));
+        // 표지(presets.json 의 active)를 지우거나 생성 뒤 구성 선언을 바꾸면 생성물 판정이 실패한다(11단계 C5).
+        Path unmarked = projectedFixture(temporary.resolve("unmarked"), false, false);
+        java.nio.file.Files.writeString(unmarked.resolve("config/modules/presets.json"), "{\"presets\":[{\"id\":\"core\",\"domains\":[]}]}");
+        assertEquals("Reusable harness profile requires the generated composition marker: config/modules/presets.json",
+                org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                        () -> ReusableHarnessProfile.load(unmarked)).getMessage());
+        Path tampered = projectedFixture(temporary.resolve("tampered"), false, false);
+        java.nio.file.Files.writeString(tampered.resolve("config/modules/presets.json"),
+                "{\"active\":\"core\",\"presets\":[{\"id\":\"core\",\"domains\":[]}] }");
+        assertEquals("Reusable harness profile composition hash mismatch",
+                org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+                        () -> ReusableHarnessProfile.load(tampered)).getMessage());
         ReusableHarnessProfile custom = ReusableHarnessProfile.load(projectedFixture(temporary.resolve("custom"), false, false, "custom"));
         assertTrue(custom.projected());
         assertTrue(custom.retainsType("sample.Core$NestedDto"));
@@ -57,16 +69,18 @@ class HarnessSourceAccessContractTest {
         String source = "business-core/src/main/java/sample/Core.java";
         java.nio.file.Files.createDirectories(root.resolve(source).getParent());
         if (!missing) java.nio.file.Files.writeString(root.resolve(source), "package sample; class Core {}");
-        String profiles = "{\"sourcePolicy\":{\"generatedProfile\":\"" + profile + "\"},\"profiles\":{\"" + profile + "\":{\"packs\":[\"core\"]}}}";
-        java.nio.file.Files.writeString(root.resolve("config/reusable-base-profiles.json"), profiles);
+        // 생성물 표지는 매니페스트 v2 의 활성 구성(presets.json 의 active)이다(11단계 C5).
+        java.nio.file.Files.createDirectories(root.resolve("config/modules"));
+        String presets = "{\"active\":\"" + profile + "\",\"presets\":[{\"id\":\"" + profile + "\",\"domains\":[]}]}";
+        java.nio.file.Files.writeString(root.resolve("config/modules/presets.json"), presets);
         String hash = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
-                .digest(profiles.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                .digest(presets.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         mapper.writeValue(root.resolve("reusable-base-lock.json").toFile(), Map.of(
-                "profile", wrongProfile ? "collaboration" : profile, "packs", List.of("core"),
+                "profile", wrongProfile ? "collaboration" : profile, "composition", Map.of("resolvedDomains", List.of()),
                 "sourceCommit", "fixture", "java", Map.of("excludedDomains", List.of("optional"))));
         mapper.writeValue(root.resolve("config/governance/reusable-harness-profile.json").toFile(), Map.of(
-                "schemaVersion", 1, "profile", profile, "packs", List.of("core"), "sourceCommit", "fixture",
-                "excludedDomains", List.of("optional"), "profileManifestSha256", hash,
+                "schemaVersion", 2, "profile", profile, "domains", List.of(), "sourceCommit", "fixture",
+                "excludedDomains", List.of("optional"), "presetsSha256", hash,
                 "retained", List.of(Map.of("path", source, "type", "sample.Core")),
                 "removed", List.of(Map.of("path", "business-app/src/main/java/sample/Optional.java", "type", "sample.Optional"))));
         return root;

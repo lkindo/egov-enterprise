@@ -7,7 +7,8 @@
  * 지우는 기능이 요구하는 기능은 남긴다. 그쪽은 지운 기능 없이도 선다.
  *
  * 화면을 같이 쓰는 데서 나온 간선(customOnly — 공동 화면·화면 참조)은 보지 않는다. 그 간선은 직접 선택 생성에서
- * 어떤 화면을 남길지 정하는 데만 쓰고, delete-domain 은 화면을 pack 단위로만 지운다.
+ * 어떤 화면을 남길지 정하는 데만 쓴다. delete-domain 은 화면을 지우는 기능의 화면 소유(기능 파일의 owns.frontend·frontendAny)로
+ * 지운다(planDomainFrontendPaths, 11단계 C5 — 종전에는 pack 단위로만 지웠다).
  *
  * 간선은 카탈로그 전체(loadProjectComposerCatalog)를 적재하지 않고 지금 트리에서 계산한다(treeDeletionCatalog).
  * 카탈로그는 원본 저장소의 기능 19개가 모두 있고 화면 근거 파일·소유 표가 맞을 때만 적재된다. delete-domain 은
@@ -44,7 +45,7 @@ export function planDomainDeletion({ catalog, requested }) {
   const names = [...new Set((requested ?? []).map(name => String(name).trim().toLowerCase()).filter(Boolean))].sort();
   if (!names.length) throw new Error('no domain to delete');
   const unknown = names.filter(name => !known.has(name));
-  if (unknown.length) throw new Error(`unknown domain: ${unknown.join(', ')}`);
+  if (unknown.length) throw new Error(`unknown domain: ${unknown.join(', ')} (known: ${[...known].join(', ')})`);
 
   const deleting = new Set(names);
   const added = [];
@@ -147,6 +148,24 @@ export function planDomainJavaFiles(root, domains) {
     .sort((left, right) => (left.file < right.file ? -1 : left.file > right.file ? 1 : 0));
 }
 
+/**
+ * 지우는 기능이 소유한 화면 경로(저장소 기준, frontend/…). 기능 파일의 owns.frontend 는 그 기능만 지우면 빠지고, 함께 소유한 화면
+ * (owns.frontendAny — 그 기능이나 with 기능 가운데 하나라도 있으면 남는다)은 소유한 기능을 모두 지울 때만 빠진다. 생성기 투영의 화면 제외
+ * 규칙(project-composer-recipe 의 includeRule)과 같다. 종전 delete-domain 은 pack 의 removePaths 를 pack 전체를 지울 때만 지웠다(11단계 C5).
+ * @returns {string[]}
+ */
+export function planDomainFrontendPaths(root, domains) {
+  const deleting = new Set(domains);
+  const paths = new Set();
+  for (const module of treeModules(resolve(root))) {
+    if (deleting.has(module.id)) for (const path of module.owns?.frontend ?? []) paths.add(`frontend/${path}`);
+    for (const rule of module.owns?.frontendAny ?? []) {
+      if ([module.id, ...(rule.with ?? [])].every(domain => deleting.has(domain))) paths.add(`frontend/${rule.path}`);
+    }
+  }
+  return [...paths].sort();
+}
+
 /** JSON 을 ASCII 만으로 적는다. */
 export function asciiJson(value) {
   // u 플래그를 두지 않는다. BMP 밖 문자는 서로게이트 반쪽마다 따로 적혀야 올바른 JSON 이다.
@@ -165,7 +184,8 @@ if (isMain) {
   }
   try {
     const plan = planDomainDeletion({ catalog: treeDeletionCatalog(root), requested: args });
-    process.stdout.write(`${asciiJson({ ...plan, javaFiles: planDomainJavaFiles(root, plan.domains) })}\n`);
+    process.stdout.write(`${asciiJson({ ...plan, javaFiles: planDomainJavaFiles(root, plan.domains),
+      frontendPaths: planDomainFrontendPaths(root, plan.domains) })}\n`);
   } catch (error) {
     console.error(`[domain-deletion-plan] ${error.message}`);
     process.exit(1);

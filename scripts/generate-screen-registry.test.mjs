@@ -344,12 +344,13 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.ok(catalog.permissions.find(row => row.code === 'MEMO_RPT_INSTRUCT')?.defaultGroups.includes('ROLE_USER'), 'instructing is a user default');
   assert.ok(ledger.bundles.find(bundle => bundle.id === 'basic-work')?.permissions.includes('MEMO_RPT_INSTRUCT'));
   assert.match(proxy.description, /메모 보고의 본문 수정과 지시는 맡기지 않습니다/u);
-  // 워크플로우 데모 화면은 demo pack 이 소유한다 — 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
+  // 워크플로우 데모 화면은 약식 결재 기능 파일이 소유한다(11단계 C5 — 종전 v1 manifest 의 demo pack) — 업무 화면이 되면(소유가
+  // 바뀌면) 다시 분류한다.
   assert.ok(excluded.has('WORKFLOW_READ'));
-  const { packs } = JSON.parse(fs.readFileSync(path.join(root, 'config/reusable-base-profiles.json'), 'utf8'));
-  const demo = JSON.stringify((Array.isArray(packs) ? packs : Object.entries(packs).map(([id, pack]) => ({ id, ...pack })))
-    .find(pack => pack.id === 'demo') ?? null);
-  for (const route of ['"src/app/admin/workflow"', '"src/app/admin/sanctn"']) assert.ok(demo.includes(route), `${route} is demo-owned`);
+  const approvalModule = JSON.parse(fs.readFileSync(path.join(root, 'config/modules/informalsanction.json'), 'utf8'));
+  for (const route of ['src/app/admin/workflow', 'src/app/admin/sanctn/workflow']) {
+    assert.ok(approvalModule.owns.frontend.includes(route), `${route} is owned by the approval feature`);
+  }
 });
 
 test('the protected permission set is the server\'s sensitive administration set', () => {

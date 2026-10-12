@@ -35,6 +35,8 @@ import {
   repositoryFileLookup,
   resolveModuleReference,
 } from './frontend-module-resolver.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { git, isCopyableSourceFile, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
@@ -47,6 +49,24 @@ import { git, isCopyableSourceFile, trackedAndUntrackedFiles } from './reusable-
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
+/** 시작 구성 선언(매니페스트 v2). 프로필 제약 issue·증거 경로가 가리키는 원천이다(11단계 C5 — 종전 v1 manifest). */
+const PROFILE_SOURCE = 'config/modules/presets.json';
+
+/**
+ * 시작 구성마다 생성기와 같은 해석기로 푼 구성(11단계 C5). 도달성 census 는 이 구성으로 생성기와 같은 기능 투영을 한다 — pack 을
+ * 보지 않는다. 카탈로그를 적재하지 못하면 issue 를 올리고 빈 목록을 돌려준다(호출자가 모든 파일을 '모름'으로 둔다).
+ */
+export function presetProfileCompositions(repoRoot, issues = []) {
+  try {
+    const catalog = loadProjectComposerCatalog(repoRoot);
+    return catalog.presets.map((preset) => ({ profile: preset.id, composition: resolveProjectRecipe({ schemaVersion: 1,
+      project: { name: 'reachability-census' }, sourceRef: 'main', selection: { preset: preset.id } }, catalog) }));
+  } catch (error) {
+    issues.push({ code: 'INVALID_PROFILE_COMPOSITIONS', file: PROFILE_SOURCE,
+      detail: error instanceof Error ? error.message : String(error) });
+    return undefined;
+  }
+}
 
 const NEXT_APP_ENTRY_NAMES = new Set([
   'page',
@@ -374,19 +394,19 @@ function directProfileFiles(frontendRoot, sourceFiles, directPaths, repoRoot, pr
   const accepted = [];
   for (const configuredPath of directPaths) {
     if (typeof configuredPath !== 'string' || configuredPath.trim() === '') {
-      issues.push({ code: 'INVALID_PROFILE_REMOVE_PATH', file: 'config/reusable-base-profiles.json', detail: profileName });
+      issues.push({ code: 'INVALID_PROFILE_REMOVE_PATH', file: PROFILE_SOURCE, detail: profileName });
       continue;
     }
     const absolute = resolve(frontendRoot, configuredPath);
     if (!isInside(frontendRoot, absolute)) {
-      issues.push({ code: 'UNSAFE_PROFILE_REMOVE_PATH', file: 'config/reusable-base-profiles.json', detail: configuredPath });
+      issues.push({ code: 'UNSAFE_PROFILE_REMOVE_PATH', file: PROFILE_SOURCE, detail: configuredPath });
       continue;
     }
     const matches = [...sourceFiles].filter((file) => file === absolute || isInside(absolute, file));
     if (matches.length === 0 && !existsSync(absolute)) {
       issues.push({
         code: 'STALE_PROFILE_REMOVE_PATH',
-        file: 'config/reusable-base-profiles.json',
+        file: PROFILE_SOURCE,
         detail: `${profileName}: ${configuredPath}`,
       });
       continue;
@@ -465,7 +485,7 @@ export function profilePopulation({ copied, repoRoot, frontendRoot, diskFiles, s
  * 남겨, 무관한 파일 하나의 오류 때문에 어떤 파일도 삭제 후보(safe-candidate)가 되지 않게 한다. gate 모드는 issue 로 실패한다.
  */
 function computeProfileConstraints({
-  manifestPath,
+  profileCompositions,
   frontendRoot,
   sourceFiles,
   frontendFiles,
@@ -473,53 +493,30 @@ function computeProfileConstraints({
   issues,
 }) {
   const constraints = new Map([...sourceFiles].map((file) => [file, []]));
-  if (!manifestPath) return constraints;
-  if (!existsSync(manifestPath)) {
-    issues.push({
-      code: 'MISSING_PROFILE_MANIFEST',
-      file: repoRelative(repoRoot, manifestPath),
-    });
+  if (profileCompositions === null) return constraints;
+  // 시작 구성을 풀지 못했으면(카탈로그 적재 실패 — issue 는 이미 올렸다) 어떤 파일도 삭제 후보로 두지 않는다.
+  if (!Array.isArray(profileCompositions)) {
+    for (const list of constraints.values()) list.push({ profile: '*', removal: 'unknown', evidencePath: [PROFILE_SOURCE] });
     return constraints;
   }
-
-  let manifest;
-  try {
-    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  } catch (error) {
-    issues.push({
-      code: 'INVALID_PROFILE_MANIFEST',
-      file: repoRelative(repoRoot, manifestPath),
-      detail: error instanceof Error ? error.message : String(error),
-    });
-    return constraints;
-  }
-  const profiles = manifest?.profiles;
-  const packs = manifest?.packs;
-  if (!profiles || typeof profiles !== 'object' || !packs || typeof packs !== 'object') {
-    issues.push({ code: 'INVALID_PROFILE_MANIFEST', file: repoRelative(repoRoot, manifestPath), detail: 'profiles/packs missing' });
-    return constraints;
-  }
-  const knownPacks = new Set(Object.keys(packs));
   const sources = new Map();
   const read = (path) => {
     if (!sources.has(path)) sources.set(path, readFileSync(path, 'utf8'));
     return sources.get(path);
   };
 
-  for (const [profileName, profile] of Object.entries(profiles)) {
-    const allowedPacks = new Set(Array.isArray(profile?.packs) ? profile.packs : []);
-    const unknownAllowed = [...allowedPacks].filter((packName) => !knownPacks.has(packName));
-    if (unknownAllowed.length > 0) {
-      issues.push({
-        code: 'UNKNOWN_PROFILE_PACK',
-        file: repoRelative(repoRoot, manifestPath),
-        detail: `${profileName}: ${unknownAllowed.join(', ')}`,
-      });
+  for (const { profile: profileName, composition } of profileCompositions) {
+    // 생성기·정밀 점검과 같은 기능 투영이다(11단계 C5): 구성의 화면 제외 경로와 마커 블록의 소유 기능. 슬롯 레지스트리는 생성기처럼
+    // 같은 복사 목록으로 렌더한다(PR-4).
+    let projector;
+    try {
+      projector = createFrontendProjector({ composition, files: frontendFiles.map((path) => normalizePath(relative(frontendRoot, path))) });
+    } catch (error) {
+      issues.push({ code: 'PROFILE_PROJECTION_FAILED', file: PROFILE_SOURCE,
+        detail: `${profileName}: ${error instanceof Error ? error.message : String(error)}` });
+      for (const list of constraints.values()) list.push({ profile: profileName, removal: 'unknown', evidencePath: [PROFILE_SOURCE] });
       continue;
     }
-    // 슬롯 레지스트리는 생성기처럼 같은 복사 목록으로 렌더한다(PR-4).
-    const projector = createFrontendProjector({ manifest, profile: { ...profile, packs: [...allowedPacks] },
-      files: frontendFiles.map((path) => normalizePath(relative(frontendRoot, path))) });
     const { accepted } = directProfileFiles(frontendRoot, sourceFiles, projector.directPaths, repoRoot, profileName, issues);
     let plan;
     try {
@@ -531,7 +528,7 @@ function computeProfileConstraints({
           try {
             return projector.project(normalizePath(relative(frontendRoot, path)), read(path)).source;
           } catch (error) {
-            // 투영 오류(마커)는 그 파일을 짚는다. 연쇄 계획의 다른 실패는 파일을 특정할 수 없어 manifest 에 붙는다.
+            // 투영 오류(마커)는 그 파일을 짚는다. 연쇄 계획의 다른 실패는 파일을 특정할 수 없어 시작 구성 선언에 붙는다.
             if (error && typeof error === 'object') error.censusFile = path;
             throw error;
           }
@@ -540,12 +537,12 @@ function computeProfileConstraints({
     } catch (error) {
       issues.push({
         code: 'PROFILE_PROJECTION_FAILED',
-        file: repoRelative(repoRoot, error?.censusFile ?? manifestPath),
+        file: error?.censusFile ? repoRelative(repoRoot, error.censusFile) : PROFILE_SOURCE,
         detail: `${profileName}: ${error instanceof Error ? error.message : String(error)}`,
       });
       // 계산하지 못한 프로필은 '제약 없음'이 아니다. 검사 모드에서 그 프로필의 판정을 모르는 채로 두어 삭제 후보에서 뺀다.
       for (const list of constraints.values()) {
-        list.push({ profile: profileName, removal: 'unknown', evidencePath: [repoRelative(repoRoot, manifestPath)] });
+        list.push({ profile: profileName, removal: 'unknown', evidencePath: [PROFILE_SOURCE] });
       }
       continue;
     }
@@ -561,7 +558,7 @@ function computeProfileConstraints({
           profile: profileName,
           removal: 'direct',
           configuredPath: configuredPathOf(file),
-          evidencePath: [repoRelative(repoRoot, manifestPath), repoRelative(repoRoot, file)],
+          evidencePath: [PROFILE_SOURCE, repoRelative(repoRoot, file)],
         });
         continue;
       }
@@ -717,9 +714,11 @@ export function buildFrontendReachabilityCensus(options = {}) {
   const repoRoot = resolve(options.repoRoot ?? DEFAULT_REPO_ROOT);
   const frontendRoot = resolve(options.frontendRoot ?? join(repoRoot, 'frontend'));
   const sourceRoot = resolve(options.sourceRoot ?? join(frontendRoot, 'src'));
-  const manifestPath = options.profileManifestPath === null
-    ? undefined
-    : resolve(options.profileManifestPath ?? join(repoRoot, 'config', 'reusable-base-profiles.json'));
+  // 시작 구성(11단계 C5): 기본은 저장소 카탈로그로 푼 시작 구성이다. null 이면 프로필 제약을 계산하지 않는다(픽스처). 픽스처는
+  //   [{ profile, composition: { resolvedDomains, frontend: { removePaths } } }] 를 직접 준다.
+  const issues = [];
+  const profileCompositions = options.profileCompositions === null ? null
+    : options.profileCompositions ?? presetProfileCompositions(repoRoot, issues);
   const routeManifestPath = options.routeManifestPath === null
     ? undefined
     : resolve(options.routeManifestPath ?? join(repoRoot, 'config', 'ui-route-capabilities.json'));
@@ -729,7 +728,6 @@ export function buildFrontendReachabilityCensus(options = {}) {
     ?? [join(repoRoot, 'config'), join(repoRoot, 'package.json'), join(frontendRoot, 'package.json')];
   const failOnErrors = options.failOnErrors !== false;
 
-  const issues = [];
   const sourceFiles = new Set(walkFiles(sourceRoot, isFrontendModuleFile, {
     ignoredDirectories: IGNORED_FRONTEND_DIRECTORIES,
   }));
@@ -823,11 +821,11 @@ export function buildFrontendReachabilityCensus(options = {}) {
   );
   const configReferences = scanTextReferences(configFiles, referenceContext);
   const profileConstraints = computeProfileConstraints({
-    manifestPath,
+    profileCompositions,
     frontendRoot,
     sourceFiles,
     // 생성기와 같은 복사 목록(Git 저장소일 때). 아니면 디스크 걷기 목록이다. 두 목록의 어긋남은 profilePopulation 이 막는다.
-    frontendFiles: manifestPath
+    frontendFiles: profileCompositions
       ? profilePopulation({
         copied: copiedFrontendFiles(repoRoot, frontendRoot), repoRoot, frontendRoot, diskFiles: [...allFrontendFiles], sourceFiles, issues,
       })
@@ -948,7 +946,7 @@ export function buildFrontendReachabilityCensus(options = {}) {
     generatedFrom: {
       repoRoot: normalizePath(repoRoot),
       sourceRoot: repoRelative(repoRoot, sourceRoot),
-      profileManifest: manifestPath ? repoRelative(repoRoot, manifestPath) : null,
+      profileCompositions: profileCompositions === null ? null : PROFILE_SOURCE,
       routeManifest: routeManifestPath ? repoRelative(repoRoot, routeManifestPath) : null,
     },
     semantics: {

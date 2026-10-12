@@ -290,9 +290,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   if (urlErrors.length) throw new Error(`Projected URL contract failed:\n${urlErrors.join('\n')}`);
   writeJson(outputRoot, URL_PATH, census);
   writeJson(outputRoot, APPROVAL_PATH, approval);
-  const originalProfiles = readJson(sourceRoot, 'config/reusable-base-profiles.json');
+  // 검토 범위는 기능 소유로 투영한다(11단계 C5) — 원본 카탈로그와 해석된 구성이 입력이다.
   const reviewProjection = deriveProjectedReviewManifests({
-    outputRoot, profile, routes, profiles: originalProfiles, composition,
+    outputRoot, profile, routes, catalog, composition,
     contract: readJson(sourceRoot, REVIEW_SCOPE_PATH),
     upstream: Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(sourceRoot, path)])),
   });
@@ -309,7 +309,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   const metadata = {
     schemaVersion: 1,
     authority: 'generated-reusable-governance-projection-not-environment-approval',
-    profile, packs: composition?.packs ?? originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
+    profile, sourceCommit, upstreamSnapshots: snapshots,
     composition: compositionProvenance,
     routes: routes.routes.map(({ route, source }) => ({ route, source })),
     urlRecordIds: census.records.map(record => record.id).sort(),

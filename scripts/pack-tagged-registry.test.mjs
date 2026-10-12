@@ -19,7 +19,6 @@ import {
   JAVA_POPULATION_FLOOR,
   SURVEY_SPLIT_FIXTURE,
   compositionOwnerOf,
-  detectProjection,
   evaluateExpectedSurvival,
   evaluateGateSurvival,
   evaluateRecordedPresence,
@@ -282,20 +281,7 @@ test('투영본 기록 대조: 기록 없는 소스, 남김 기록인데 없는 
   ]);
 });
 
-test('투영 모드는 manifest 필드 하나로 위장할 수 없다', async () => {
-  const { root } = await repositoryContext();
-  const manifest = readRepoJson(root, 'config/reusable-base-profiles.json');
-  if (detectProjection(manifest).projection) return;
-  const spoofed = structuredClone(manifest);
-  spoofed.sourcePolicy = { ...spoofed.sourcePolicy, generatedProfile: 'core' };
-  assert.throws(() => detectProjection(spoofed), /생성기 투영 구조가 아니다/);
-
-  const projected = {
-    sourcePolicy: { generatedProfile: 'core' },
-    profiles: { core: { packs: ['core'] } },
-    packs: { core: { rank: 0 } },
-  };
-  assert.deepEqual(detectProjection(projected), { projection: true, profile: 'core' });
-  assert.throws(() => detectProjection({ ...projected, packs: { core: {}, demo: {} } }), /생성기 투영 구조가 아니다/);
+// 투영 모드 위장 차단(표지 하나로 계획 대조를 끄지 못한다)은 표지 판정의 집인 composer-modules.test.mjs 가 본다(11단계 C5).
+test('경로 정규화는 구분자를 슬래시로 맞춘다', () => {
   assert.equal(normalize('a\\b'.replaceAll('\\', '/')), 'a/b');
 });

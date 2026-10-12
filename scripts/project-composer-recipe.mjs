@@ -136,7 +136,6 @@ export function resolveProjectRecipe(input, catalog) {
       return { domain, reason: [...why].sort().join(' '), userReason: chain.at(-1).userReason, chain,
         roots: selectedDomains.filter(root => reach.get(root).has(domain)) };
     }).sort((a, b) => a.domain.localeCompare(b.domain)),
-    packs: preset ? [...preset.packs] : sorted(['core', ...retained.map(feature => feature.pack)]),
     database: normalizedRecipe.database, backendLayout, tables, explicitSequences, permissionCodes, menuRoutes, excludedMenuTabs,
     frontend: { includedPaths, removePaths, retainedRoutes: menuRoutes },
     optionalForeignKeys: catalog.optionalForeignKeys.filter(fk => tables.includes(fk.childTable) && !tables.includes(fk.parentTable)),

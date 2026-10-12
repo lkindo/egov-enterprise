@@ -91,7 +91,7 @@ export function adoptionScope(repoRoot, { product, profile }) {
     'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',
     'config/ui-route-capabilities.json', 'config/ui-quality-scenarios.json',
     'config/frontend-visible-terms.json', 'config/krds-profile-mapping.json',
-    'config/governance/permission-catalog.json', 'config/reusable-base-profiles.json',
+    'config/governance/permission-catalog.json', 'config/modules',
     'config/governance/reusable-governance-projection.json',
     'scripts/ui-url-state-census.mjs', 'scripts/ui-route-capabilities-contract.mjs', 'scripts/e2e-shard-plan.mjs'];
   const files = new Map();
@@ -107,8 +107,10 @@ export function adoptionScope(repoRoot, { product, profile }) {
     }
   }
   for (const file of roots) walk(file);
+  // 온라인 제품의 기능 소유·활성 구성 선언(매니페스트 v2, 11단계 C5)은 승인 범위에 반드시 들어간다 — 없으면 건너뛰지 않고 실패한다.
+  //   종전 v1 manifest 처럼 '없는 파일은 건너뛴다' 로 두면 기능 소유 선언이 승인 digest 에서 조용히 빠진다.
   const required = product === 'migration-tool'
-    ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json'];
+    ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json', 'config/modules/presets.json'];
   if (generatedProduct) required.push('package.json', 'scripts/reusable-layout.mjs',
     'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs');
   for (const file of required) if (!files.has(file)) throw new Error(`missing product scope input: ${file}`);

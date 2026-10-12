@@ -19,7 +19,8 @@ function fixture(t) {
     assert.ok(path.basename(dir).startsWith('egov-permission-contract-'));
     fs.rmSync(dir, { recursive: true, force: true });
   });
-  for (const file of [catalogPath, policyPath, BASE_SEED]) {
+  // 시작 구성 선언(생성물 표지가 없는 원본 모양)도 둔다 — 생성기는 표지로 생성물인지 판정하고, 선언이 없으면 판정하지 못해 실패한다.
+  for (const file of [catalogPath, policyPath, BASE_SEED, 'config/modules/presets.json']) {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
     fs.copyFileSync(path.join(root, file), path.join(dir, file));
   }
@@ -158,7 +159,10 @@ test('composition bootstrap regeneration retains exactly selected grants for cus
       fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
       fs.writeFileSync(path.join(dir, file), JSON.stringify(value));
     };
-    write('config/reusable-base-profiles.json', { sourcePolicy: { generatedProfile: composition.profile } });
+    // 생성물 표지(11단계 C5): 활성 구성 하나와 그 구성의 기능 파일만 둔다.
+    write('config/modules/presets.json', { schemaVersion: 2, active: composition.profile,
+      presets: [{ id: composition.profile, domains: composition.resolvedDomains }] });
+    for (const domain of composition.resolvedDomains) write(`config/modules/${domain}.json`, { id: domain });
     write(COMPOSER_SELECTION_PATH, { catalog, composition });
     const baseline = buildPermissionArtifacts(dir);
     const block = baseline[BASE_SEED].split('-- BEGIN GENERATED BASE OPERATION GRANTS')[1].split('-- END GENERATED BASE OPERATION GRANTS')[0];
@@ -175,10 +179,13 @@ test('composition bootstrap regeneration retains exactly selected grants for cus
     tampered.permissionCodes.push('MAIL_SEND');
     write(COMPOSER_SELECTION_PATH, { catalog, composition: tampered });
     assert.throws(() => buildPermissionArtifacts(dir), /does not match/);
-    if (composition.profile === 'custom') {
-      fs.unlinkSync(path.join(dir, COMPOSER_SELECTION_PATH));
-      assert.throws(() => buildPermissionArtifacts(dir), /ENOENT/);
-    }
+    // 생성물에서 구성 스냅숏이 없으면 원본 권한 전체로 넓히지 않고 실패한다 — 시작 구성도 같다(11단계 C5).
+    fs.unlinkSync(path.join(dir, COMPOSER_SELECTION_PATH));
+    assert.throws(() => buildPermissionArtifacts(dir), /ENOENT/);
+    // lock 이 있는 생성물에 표지가 없으면 원본으로 보지 않는다.
+    write('reusable-base-lock.json', {});
+    fs.copyFileSync(path.join(root, 'config/modules/presets.json'), path.join(dir, 'config/modules/presets.json'));
+    assert.throws(() => buildPermissionArtifacts(dir), /활성 구성 표지\(active\)가 없다/);
   }
 });
 

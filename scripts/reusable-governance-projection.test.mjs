@@ -26,7 +26,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (root, path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
 const census = readJson(ROOT, 'config/ui-url-state-census.json');
 const approval = readJson(ROOT, 'config/ui-url-state-approval.json');
-const profiles = readJson(ROOT, 'config/reusable-base-profiles.json');
+// 검토 범위는 기능 소유로 판정한다(11단계 C5 — v1 manifest 의 pack 을 걷었다). 원본 카탈로그가 판정 원천이다.
+const catalog = loadProjectComposerCatalog(ROOT);
+const presetComposition = preset => resolveProjectRecipe({ schemaVersion: 1, project: { name: 'review-probe' }, sourceRef: 'v1.0.0',
+  selection: { preset } }, catalog);
 const reviewContract = readJson(ROOT, REVIEW_SCOPE_PATH);
 const upstreamReviews = Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(ROOT, path)]));
 const sourceCommit = 'a'.repeat(40);
@@ -123,27 +126,37 @@ test('only known excluded upstream destinations may be removed, including exact 
 });
 
 test('review ownership covers every upstream item and cannot invent missing-source exclusions', () => {
-  assert.doesNotThrow(() => validateReviewScopeContract(reviewContract, upstreamReviews, profiles));
+  assert.doesNotThrow(() => validateReviewScopeContract(reviewContract, upstreamReviews, catalog));
+  // 판정 원천은 카탈로그다 — 없으면 판정하지 않는다.
+  assert.throws(() => validateReviewScopeContract(reviewContract, upstreamReviews, undefined), /requires the composition catalog/);
   for (const kind of ['scenarios', 'pilots', 'mappings']) {
     const missing = structuredClone(reviewContract);
     missing[kind].pop();
-    assert.throws(() => validateReviewScopeContract(missing, upstreamReviews, profiles), /exactly cover/);
-    const unknown = structuredClone(reviewContract);
-    unknown[kind][0].requiredPacks = ['nonexistent'];
-    assert.throws(() => validateReviewScopeContract(unknown, upstreamReviews, profiles), /invalid required packs/);
+    assert.throws(() => validateReviewScopeContract(missing, upstreamReviews, catalog), /exactly cover/);
+    // pack 소유를 되살리면 거부한다(11단계 C5) — 행은 기능(requiredDomains)만 둔다.
+    const packOwned = structuredClone(reviewContract);
+    packOwned[kind][0].requiredPacks = ['collaboration'];
+    assert.throws(() => validateReviewScopeContract(packOwned, upstreamReviews, catalog), /still declares pack ownership/);
     const invalidDomains = structuredClone(reviewContract);
     invalidDomains[kind][0].requiredDomains = ['unowned'];
-    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, catalog), /invalid required domains/);
     delete invalidDomains[kind][0].requiredDomains;
-    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, catalog), /invalid required domains/);
   }
+  // 선택 소스 예외는 그 소스를 덮는 기능 화면 규칙이 있고 그 규칙의 기능이 모두 행의 기능일 때만 선다.
   const fakeException = structuredClone(reviewContract);
-  fakeException.optionalPilotSources.push({ pilotId: 'content-login', source: 'frontend/src/app/login/LoginClient.tsx', requiredPacks: ['collaboration'] });
-  assert.throws(() => validateReviewScopeContract(fakeException, upstreamReviews, profiles), /lacks declared pack removal ownership/);
+  fakeException.optionalPilotSources.push({ pilotId: 'content-login', source: 'frontend/src/app/login/LoginClient.tsx', requiredDomains: ['board'] });
+  assert.throws(() => validateReviewScopeContract(fakeException, upstreamReviews, catalog), /lacks declared feature removal ownership/);
+  const ownerless = structuredClone(reviewContract);
+  ownerless.optionalPilotSources[0] = { ...ownerless.optionalPilotSources[0], requiredDomains: [] };
+  assert.throws(() => validateReviewScopeContract(ownerless, upstreamReviews, catalog), /needs a feature owner/);
+  const packException = structuredClone(reviewContract);
+  packException.optionalPilotSources[0] = { ...packException.optionalPilotSources[0], requiredPacks: ['collaboration'] };
+  assert.throws(() => validateReviewScopeContract(packException, upstreamReviews, catalog), /Optional source still declares pack ownership/);
   const routes = readJson(ROOT, 'config/ui-route-capabilities.json');
   const removedLogin = { ...routes, routes: routes.routes.filter(row => row.route !== '/login') };
   assert.throws(() => deriveProjectedReviewManifests({ outputRoot: ROOT, upstream: upstreamReviews, contract: reviewContract,
-    profiles, profile: 'demo', routes: removedLogin }), /included route is missing/);
+    catalog, profile: 'demo', routes: removedLogin, composition: presetComposition('demo') }), /included route is missing/);
 });
 
 test('custom review population follows domains and fails when selected evidence disappears', () => {
@@ -159,14 +172,16 @@ test('custom review population follows domains and fails when selected evidence 
     for (const file of sources) if (!excluded.has(file)) {
       mkdirSync(dirname(join(output, file)), { recursive: true }); cpSync(join(ROOT, file), join(output, file));
     }
-    const options = { outputRoot: output, upstream: upstreamReviews, contract: reviewContract, profiles, profile: 'custom',
+    const options = { outputRoot: output, upstream: upstreamReviews, contract: reviewContract, catalog, profile: 'custom',
       routes: readJson(ROOT, 'config/ui-route-capabilities.json'), composition };
     const projected = deriveProjectedReviewManifests(options);
     assert.ok(projected.reviewScopes.visibleTerms.pilotIds.includes('content-survey-create'));
-    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'the demo provenance pack does not select schedule');
+    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'a survey-only composition does not select schedule');
     assert.ok(!projected.reviewScopes.uiQuality.scenarioIds.includes('board-article-composer'));
     assert.ok(projected.reviewScopes.uiQuality.excludedScenarios.every(row => row.reason === 'required-domain-not-in-composition'));
-    assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires a resolved composition/);
+    assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires the resolved composition/);
+    // 구성의 프로필과 요청한 프로필이 다르면 판정하지 않는다.
+    assert.throws(() => deriveProjectedReviewManifests({ ...options, profile: 'demo' }), /requires the resolved composition: demo/);
     rmSync(join(output, 'frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx'));
     assert.throws(() => deriveProjectedReviewManifests(options), /included source is missing/);
   } finally { cleanupOwnedFixture(output); }
@@ -254,10 +269,8 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         `${profileName}: lock.frontend.markerBlocks`);
       assert.equal(Object.hasOwn(markerBlocks, 'excludedPacks'), false, `${profileName}: the projection does not report packs`);
       pruneFrontend(output, projector.directPaths);
-      const manifest = { ...profiles, sourcePolicy: { ...profiles.sourcePolicy, generatedProfile: profileName },
-        profiles: { [profileName]: profile }, packs: Object.fromEntries(Object.entries(profiles.packs)
-          .filter(([name]) => profile.packs.includes(name))) };
-      writeFileSync(join(output, 'config/reusable-base-profiles.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+      // 생성기처럼 복사한 v1 manifest 를 생성물에 남기지 않는다(11단계 C5). 표지는 매니페스트 v2 의 활성 구성이다.
+      rmSync(join(output, 'config/reusable-base-profiles.json'));
       writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
       writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
       const result = projectReusableGovernance({
@@ -265,8 +278,10 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         projectSource: (file, text) => projector.project(file, text).source,
       });
       const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
-      assert.equal(projectionLedger.files > 0, profileName !== 'demo', `${profileName}: 지운 파일이 원장에 남는다`);
-      const lock = { schemaVersion: 1, profile: profileName, packs: profile.packs, sourceCommit,
+      // 지운 파일이 원장에 남는다. 복사한 v1 manifest 는 어느 구성에도 남기지 않으므로(11단계 C5) 아무것도 걷지 않는 demo 도 그 한 파일을 적는다.
+      assert.ok(projectionLedger.files > 0, `${profileName}: 지운 파일이 원장에 남는다`);
+      if (profileName === 'demo') assert.deepEqual(readJson(output, PROJECTION_LEDGER_PATH).removedFiles, ['config/reusable-base-profiles.json']);
+      const lock = { schemaVersion: 1, profile: profileName, sourceCommit,
         composition: { ...composition, sourceCommit }, projectionLedger,
         governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
       writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
@@ -294,6 +309,8 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       const tampered = inspectReusableGovernance(output).errors.join('\n');
       assert.match(tampered, absent ? new RegExp(`projected module set differs from composition \\(extra: ${absent}\\.json; missing: -\\)`)
         : /projected module set differs from composition \(extra: -; missing: board\.json\)/);
+      // 기능 파일 집합이 활성 구성과 다르면 생성물 표지도 생성기 투영 구조가 아니다(11단계 C5).
+      assert.match(tampered, new RegExp(`active='${profileName}' 인데 생성기 투영 구조가 아니다`));
       if (absent) rmSync(moduleFile);
       else writeFileSync(moduleFile, moduleText);
       assert.match(tampered, /Projection ledger checksum mismatch/);
@@ -389,6 +406,14 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         mutateFile(result.upstreamSnapshots[0].path, text => text + '\n', /snapshot hash mismatch/);
         mutateFile('frontend/src/proxy.ts', text => text + '\n// source-evidence mutation\n', /Source evidence scope changed|Inherited source evidence changed/);
         mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), profile: 'demo' }), /lock profile/);
+        // lock 에 pack 축이 되살아나거나 v1 manifest 가 다시 실리면 붉다(11단계 C5).
+        mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), packs: ['core'] }), /Source lock profile\/commit mismatch/);
+        writeFileSync(join(output, 'config/reusable-base-profiles.json'), readFileSync(join(ROOT, 'config/reusable-base-profiles.json')));
+        assert.match(inspectReusableGovernance(output).errors.join('\n'), /Generated artifact must not carry the upstream v1 manifest/);
+        rmSync(join(output, 'config/reusable-base-profiles.json'));
+        // 표지가 빠지면(lock 은 있다) 생성물 판정이 실패한다.
+        mutateFile('config/modules/presets.json', text => { const { active: _marker, ...rest } = JSON.parse(text); return JSON.stringify(rest); },
+          /활성 구성 표지\(active\)가 없다/);
         mutateFile('.agent/memory/project-context.md', text => text + '\nUpstream production state is approved here.\n', /Generated memory must separate/);
         mutateFile('config/ui-url-state-approval.json', text => {
           const changed = JSON.parse(text);

@@ -68,17 +68,16 @@ test('drift is reported for a missing or hand-edited registry and ignores CRLF',
   assert.deepEqual(slotRegistryDrift(root).map(row => [row.slot, row.reason]), [['shell-links', 'stale']], 'a side-effect import is drift');
 });
 
-const MANIFEST = {
-  packs: { core: { rank: 0 }, demo: { rank: 1, frontend: { removePaths: ['src/extensions/note', 'src/app/note'] } } },
-  profiles: { core: { packs: ['core'] }, demo: { packs: ['core', 'demo'] } },
-};
+// 구성 투영의 입력(11단계 C5 — pack 투영을 걷었다): core 는 쪽지 기능을 빼 그 화면·기여를 직접 지우고, demo 는 아무것도 지우지 않는다.
+const CORE = { profile: 'core', resolvedDomains: [], frontend: { removePaths: ['src/extensions/note', 'src/app/note'] } };
+const DEMO = { profile: 'demo', resolvedDomains: ['note'], frontend: { removePaths: [] } };
 const FILES = ['src/app/layout.tsx', 'src/app/note/page.tsx', 'src/extensions/slots.ts', 'src/extensions/note/shell-links.ts',
   'src/extensions/board/shell-links.ts', 'src/extensions/generated-shell-links.ts'];
 const REGISTRY = slotRegistryPath('shell-links');
 
 test('the projector re-renders a registry from the contributions its direct remove paths keep, in the same pass as markers', () => {
   const source = renderSlotRegistry('shell-links', ['board', 'note']);
-  const core = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core, files: FILES });
+  const core = createFrontendProjector({ composition: CORE, files: FILES });
   assert.equal(core.project(REGISTRY, source).source, renderSlotRegistry('shell-links', ['board']), 'the excluded contribution leaves the registry');
   assert.equal(core.project(`frontend/${REGISTRY}`, source).source, renderSlotRegistry('shell-links', ['board']), 'repository paths are the same file');
   // 구성 투영(생성기·정밀 점검)은 해석기가 계산한 제거 경로를 쓴다 — 두 번째 소유 판정은 없다.
@@ -86,16 +85,16 @@ test('the projector re-renders a registry from the contributions its direct remo
     files: FILES.map(file => `frontend/${file}`) });
   assert.equal(custom.project(REGISTRY, source).source, renderSlotRegistry('shell-links', ['note']));
   // 원본 구성의 투영은 원문과 바이트가 같다 — CRLF 체크아웃도 그대로 돌려준다.
-  const demo = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.demo, files: FILES });
+  const demo = createFrontendProjector({ composition: DEMO, files: FILES });
   const crlf = source.replace(/\n/g, '\r\n');
   assert.equal(demo.project(REGISTRY, crlf).source, crlf);
   // 손으로 고친 레지스트리는 원본 구성에서도 렌더 결과로 바뀐다(원본 parity 는 경계 계약이 따로 본다).
   assert.equal(demo.project(REGISTRY, `${source}export const extra = 1;\n`).source, source);
   // 파일 목록 없이 레지스트리를 투영하지 않는다 — 조용히 원문을 두면 지운 기여를 import 하는 레지스트리가 셸까지 연쇄로 지운다.
-  assert.throws(() => createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core }).project(REGISTRY, source),
+  assert.throws(() => createFrontendProjector({ composition: CORE }).project(REGISTRY, source),
     /복사할 프런트 파일 목록\(files\)이 필요하다/);
   // 레지스트리가 아닌 파일은 목록 없이도 투영한다.
-  assert.equal(createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core }).project('src/app/x.ts', 'x\n').source, 'x\n');
+  assert.equal(createFrontendProjector({ composition: CORE }).project('src/app/x.ts', 'x\n').source, 'x\n');
   // 슬롯 파일은 pack 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다.
   const marked = '// reusable-base:demo:start\nexport const x = 1;\n// reusable-base:demo:end\nexport default [];\n';
   for (const file of ['src/extensions/board/shell-links.ts', REGISTRY, 'src/extensions/slots.ts']) {
@@ -114,7 +113,7 @@ test('after the cascade the generator refuses a registry that no longer matches 
   // board 기여가 지워지는 note 화면을 import 한다 — 직접 제거 경로에는 없지만 연쇄로 지워진다.
   write('src/extensions/board/shell-links.ts', "import '@/app/note/page';\nexport default [];\n");
   const files = FILES;
-  const projector = createFrontendProjector({ manifest: MANIFEST, profile: MANIFEST.profiles.core, files });
+  const projector = createFrontendProjector({ composition: CORE, files });
   write(REGISTRY, projector.project(REGISTRY, renderSlotRegistry('shell-links', ['board', 'note'])).source);
   assert.throws(() => pruneFrontend(output, projector.directPaths),
     /투영 뒤 슬롯 레지스트리가 남은 기여와 다르다: src\/extensions\/generated-shell-links\.ts \(남은 기여: 없음\)/);

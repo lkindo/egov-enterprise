@@ -194,6 +194,7 @@ function onlineFixture(t) {
   const { root, path, write } = value;
   write('frontend/package.json', '{"private":true}');
   write('config/ui-url-state-census.json', '{}');
+  write('config/modules/presets.json', '{}');
   const manifest = { schemaVersion: 1, revision: 'a'.repeat(40),
     apiImage: `registry.example.org/institution/api@sha256:${'1'.repeat(64)}`,
     frontendImage: `registry.example.org/institution/frontend@sha256:${'2'.repeat(64)}` };

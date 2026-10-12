@@ -17,7 +17,6 @@ import { runInNewContext } from 'node:vm';
 // TypeScript 는 frontend 가 잠근 판(pnpm-lock)을 쓴다. 생성물의 tsc 와 같은 컴파일러다.
 const require = createRequire(new URL('../frontend/package.json', import.meta.url));
 const ts = require('typescript');
-const manifest = JSON.parse(readFileSync(new URL('../config/reusable-base-profiles.json', import.meta.url), 'utf8'));
 const paths = {
   search: 'frontend/src/app/search/SearchClient.tsx',
   monitoring: 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
@@ -94,14 +93,13 @@ for (const profile of ['core', 'collaboration', 'demo']) {
  * 근거를 품으면 종류가 프로필마다 갈려, 원본 원장으로 계산한 화면 생존 기대값과 투영 뒤 본문을 보는 거버넌스 투영이 어긋난다.
  */
 test('a page marker block cannot carry a redirect call or a return, and next.config cannot carry markers', () => {
-  // 규칙은 공용 파서가 지키므로 블록을 걷는 구성(core)·남기는 구성(demo)·직접 선택 투영과 pack 투영(도달성 census)이 모두 같은 자리에서 실패한다.
+  // 규칙은 공용 파서가 지키므로 블록을 걷는 구성(core)·남기는 구성(demo)·직접 선택 투영(생성기·정밀 점검·도달성 census)이 모두 같은
+  // 자리에서 실패한다(11단계 C5 — pack 투영을 걷었다).
   const projectors = {
     core: createFrontendProjector({ composition: presetComposition('core') }),
     demo: createFrontendProjector({ composition: presetComposition('demo') }),
     custom: createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } }),
-    pack: createFrontendProjector({ manifest, profile: manifest.profiles.core }),
   };
-  const knownPacks = new Set(Object.keys(manifest.packs));
   const block = body => `export default function Page() {\n  // reusable-base:demo:start\n${body}\n  // reusable-base:demo:end\n  return null;\n}\n`;
   for (const body of ["  redirect('/x');", '  return <Demo />;']) {
     for (const label of ['src/app/demo/page.tsx', 'frontend/src/app/demo/page.tsx']) {
@@ -112,13 +110,12 @@ test('a page marker block cannot carry a redirect call or a return, and next.con
   // 남기는 블록이어도, 직접 선택 투영이어도 같다 — 프로필마다 갈리는 것이 문제다.
   assert.throws(() => projectors.demo.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
   assert.throws(() => projectors.custom.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
-  assert.throws(() => projectors.pack.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
-  assert.throws(() => parsePackMarkerBlocks(block("  redirect('/x');"), { knownPacks, label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
+  assert.throws(() => parsePackMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
   // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 파서를 통과한다. 구성 투영은 소유 표에 없는 파일의 블록을 소유 판정에서
-  // 거부하므로(11단계 C3) 파서 대조군은 pack 투영으로 본다.
-  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/page.tsx', block('  // return later')));
-  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/DemoClient.tsx', block("  redirect('/x');")));
-  assert.doesNotThrow(() => projectors.pack.project('src/app/demo/page.tsx', block('  const x = 1;')));
+  // 거부하므로(11단계 C3) 파서 대조군은 공용 파서로 직접 본다.
+  assert.doesNotThrow(() => parsePackMarkerBlocks(block('  // return later'), { label: 'src/app/demo/page.tsx' }));
+  assert.doesNotThrow(() => parsePackMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/DemoClient.tsx' }));
+  assert.doesNotThrow(() => parsePackMarkerBlocks(block('  const x = 1;'), { label: 'src/app/demo/page.tsx' }));
   assert.throws(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')), /Unclassified composer UI block: src\/app\/demo\/page\.tsx\/demo/);
   // next.config 의 리다이렉트 선언은 거버넌스 투영이 정리하므로 마커를 두지 않는다. Next 가 읽는 설정 파일 전부(Next 16 은 .mts 도
   // 읽는다)이고, 투영 판정(isFrontendModuleFile)처럼 확장자 대소문자를 가리지 않는다.

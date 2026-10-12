@@ -14,8 +14,8 @@ import { runReportingChild } from './project-composer-child-failure.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, loadComposerModules, projectComposerModuleFiles,
-  sharedTableTransfers } from './composer-modules.mjs';
+import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, detectGeneratedComposition, loadComposerModules,
+  projectComposerModuleFiles } from './composer-modules.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
@@ -26,13 +26,18 @@ import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGate
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, trackedAndUntrackedFiles,
-  walk } from './reusable-source-tree.mjs';
+import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
+  trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
+/**
+ * 원본의 v1 manifest. 생성물에는 두지 않는다(11단계 C5) — 생성물의 표지·활성 구성은 config/modules/presets.json(active)이고,
+ * 하네스·무결성 검사·검토 범위·원장 계약이 그것을 읽는다. 원본 manifest 는 전환(C7)까지만 있다.
+ */
+const V1_MANIFEST = 'config/reusable-base-profiles.json';
 
 /** 생성기 엔진이 이 자식을 부르는 단계 이름. 실패 보고는 이 단계에 허용된 코드만 쓴다. */
 export const CHILD_STAGE = 'source';
@@ -78,9 +83,11 @@ export function installReusableVerification(output, layout = 'multi-module') {
   if (existsSync(join(output, VERIFICATION_HISTORY, 'index.json'))) fail('Verification history is already projected; regenerate from upstream source');
   const path = join(output, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8'));
-  const profilePath = join(output, 'config/reusable-base-profiles.json');
-  const profile = existsSync(profilePath)
-    ? JSON.parse(readFileSync(profilePath, 'utf8')).sourcePolicy.generatedProfile
+  // 활성 구성은 생성물 표지(config/modules/presets.json 의 active, 11단계 C5)다. 생성기 흐름에서는 lock 보다 먼저 쓰인다.
+  //   표지가 없는 트리(검증 설치만 다시 하는 시험 픽스처)는 lock 의 프로필을 쓴다.
+  const presetsText = readTextIfPresent(join(output, MODULES_DIRECTORY, PRESETS_FILE));
+  const profile = presetsText !== undefined && JSON.parse(presetsText).active !== undefined
+    ? detectGeneratedComposition(output).profile
     : JSON.parse(readFileSync(join(output, 'reusable-base-lock.json'), 'utf8')).profile;
   const workflowDirectory = join(output, '.github/workflows');
   const workflows = existsSync(workflowDirectory)
@@ -127,82 +134,6 @@ export function installReusableVerification(output, layout = 'multi-module') {
     + '생산자 전용 `base:*`·`migration:export`, 기관 실행 환경이 필요한 `verify:e2e`·`verify:ops`는 제공하지 않는다. 독립 이관 제품 export는 원본 저장소에서 실행한다. 기관 브라우저 시나리오와 원격 ruleset은 기관에서 별도로 결속한다.\n\n'
     + '현재 CI의 required context 제안은 `artifact-verification` 하나이다. `.github/required-checks.json`의 remoteApplied=false는 기관 branch protection을 실제 적용하지 않았다는 뜻이다. 원본 6개 required context와 동등한 보증이 아니다.\n\n'
     + '원본 workflow·required manifest·package·hook은 `config/governance/upstream-verification/`의 비활성 이력이다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞게 재결속해야 한다. 이력을 복사한 것은 외부 발행이나 기관 운영 승인이 아니다.\n');
-}
-
-/**
- * 생성물의 v1 manifest(config/reusable-base-profiles.json). 투영 manifest·lock 을 읽는 옛 소비자(생성물 하네스 프로필의 표지·거버넌스
- * 무결성·검토 범위, 11단계 C5)를 위한 v1 모양이다 — Java 게이트는 C4 부터 이 manifest 대신 투영 기록(retainsType)을 본다 — 투영 판정에는 쓰지 않는다. 시작 구성의 프로필은 원본 v1 선언 그대로,
- * 직접 선택은 생성기 프로필(composerProfile)을 적는다. `transfers` 는 공유 테이블을 넘겨받을 기능이다(sharedTableTransfers).
- */
-export function writeProjectedManifest(output, manifest, profileName, profile, dbLock, composition, transfers) {
-  const allowedPacks = new Set(profile.packs);
-  const packs = Object.fromEntries(
-    Object.entries(manifest.packs).filter(([packName]) => allowedPacks.has(packName)).map(([name, pack]) => [name,
-      composition?.profile === 'custom' ? {
-        ...pack,
-        backend: { ...pack.backend, appDomains: (pack.backend?.appDomains ?? []).filter(domain => composition.resolvedDomains.includes(domain)),
-          // 프런트 전용 기능 목록도 선택으로 거른다. 남기면 생성물 census 가 appDomains 에 없는 선언으로 붉다.
-          ...(pack.backend?.frontendOnlyDomains ? { frontendOnlyDomains: pack.backend.frontendOnlyDomains
-            .filter(domain => composition.resolvedDomains.includes(domain)) } : {}),
-          ...(pack.backend?.domainSupportFiles ? { domainSupportFiles: Object.fromEntries(Object.entries(pack.backend.domainSupportFiles)
-            .filter(([domain]) => composition.resolvedDomains.includes(domain))) } : {}) },
-        database: { ...pack.database, tables: pack.database.tables.filter(table => composition.tables.includes(table)),
-          sequences: (pack.database.sequences ?? []).filter(sequence => composition.explicitSequences.includes(sequence)) },
-        ...(pack.frontend ? { frontend: { ...pack.frontend, removePaths: composition.frontend.includedPaths.filter(path =>
-          pack.frontend.removePaths.some(parent => path === parent || path.startsWith(`${parent}/`))) } } : {}),
-      } : pack]),
-  );
-  const ownedDomains = new Set(Object.values(packs).flatMap((pack) => pack.backend?.appDomains ?? []));
-  // 소유 pack 이 구성에 없는 공유 테이블은 넘겨받는 기능(선언 순서의 첫 선택 소비자, sharedTableTransfers)의 pack 으로 넘긴다.
-  //   넘기지 않으면 생성물의 어느 pack 도 그 테이블을 소유하지 않는다(템플릿 단독 선택: collaboration 소유 tb_tmplt_info).
-  //   pack 순위를 보지 않는다(11단계 C3) — 시작 구성도 같은 규칙이다.
-  const transferredOwners = new Map();
-  const selectedTables = new Set(composition.tables);
-  for (const contract of manifest.sharedTableContracts ?? []) {
-    if (allowedPacks.has(contract.ownerPack) || !selectedTables.has(contract.table)) continue;
-    const receiver = transfers?.get(contract.table);
-    const target = receiver && ownedDomains.has(receiver)
-      ? Object.keys(packs).find((name) => packs[name].backend?.appDomains?.includes(receiver)) : undefined;
-    if (!target) fail(`공유 테이블 ${contract.table} 을 넘겨받을 선택 소비자 pack 이 없다.`);
-    packs[target] = { ...packs[target], database: { ...packs[target].database, tables: [...packs[target].database.tables, contract.table] } };
-    transferredOwners.set(contract.table, target);
-  }
-  const projected = {
-    ...manifest,
-    sourcePolicy: {
-      ...manifest.sourcePolicy,
-      generatedProfile: profileName,
-    },
-    profiles: {
-      [profileName]: composition.profile === 'custom' ? profile : manifest.profiles[profileName],
-    },
-    packs,
-    clusters: (manifest.clusters ?? []).filter(
-      (cluster) => allowedPacks.has(cluster.pack) &&
-        [...(cluster.domains ?? []), ...(cluster.requiresDomains ?? [])].every((domain) => ownedDomains.has(domain)),
-    ),
-    sharedTableContracts: (manifest.sharedTableContracts ?? [])
-      .filter((contract) => allowedPacks.has(contract.ownerPack) || transferredOwners.has(contract.table))
-      .map((contract) => ({
-        ...contract,
-        ...(transferredOwners.has(contract.table) ? { ownerPack: transferredOwners.get(contract.table) } : {}),
-        consumers: (contract.consumers ?? []).filter((consumer) => ownedDomains.has(consumer)),
-      })),
-    databaseSnapshot: {
-      ...manifest.databaseSnapshot,
-      source: `generated/${profileName}`,
-      checkedAt: dbLock.generatedAt,
-      physicalTableCountExcludingFlyway: dbLock.tables.length,
-      physicalSequenceCount: dbLock.sequences.length,
-      physicalStandaloneSequenceCount: Object.values(packs)
-        .flatMap((pack) => pack.database.sequences ?? []).length,
-    },
-  };
-  writeFileSync(
-    join(output, 'config', 'reusable-base-profiles.json'),
-    `${JSON.stringify(projected, null, 2)}\n`,
-    'utf8',
-  );
 }
 
 /**
@@ -264,7 +195,6 @@ export function writeProjectedModules(output, modules, composition, active) {
 
 function main() {
   const args = parseSourceArgs(process.argv.slice(2));
-  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
   const catalog = loadProjectComposerCatalog(ROOT);
   const composition = resolveGeneratorComposition({ catalog, profile: args.composition ? undefined : args.profile,
@@ -273,7 +203,7 @@ function main() {
     resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
   args.profile = composition.profile;
   args.layout = composition.backendLayout;
-  // 투영은 매니페스트 v2(config/modules)의 기능 소유와 구성으로 한다(11단계 C3). v1 manifest 는 생성물의 옛 소비자를 위한 투영 manifest 에만 쓴다.
+  // 투영은 매니페스트 v2(config/modules)의 기능 소유와 구성으로 한다(11단계 C3). v1 manifest 는 읽지 않는다(C5).
   const modules = loadComposerModules(ROOT);
   const ownership = composerOwnership(modules);
   const profile = composerProfile(modules, composition);
@@ -312,8 +242,8 @@ function main() {
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
   console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
-  const transfers = sharedTableTransfers(modules.files, composition.resolvedDomains);
-  writeProjectedManifest(output, manifest, args.profile, profile, dbLock, composition, transfers);
+  // 복사한 v1 manifest 는 생성물에 남기지 않는다(투영 원장이 지운 파일로 적는다). 원본에 없으면(C7 뒤) 지울 것도 없다.
+  rmSync(join(output, V1_MANIFEST), { force: true });
   const projectedModules = writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
   installReusableVerification(output, args.layout);
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
@@ -328,7 +258,7 @@ function main() {
   });
   verifyCompositionDatabaseFiles(join(output, 'api-server/src/main/resources/db/migration'), dbLock);
   adaptGeneratedHarness(output);
-  writeHarnessBaseline(output, { ownership, profile });
+  writeHarnessBaseline(output, { ownership, profile, schemaTables: dbLock.tables.length });
   // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
   //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
   //   단일모듈 배치는 build.gradle·settings.gradle 만 바꾸고 소스를 옮기지 않으므로 원장 경로는 그대로 유효하다.
@@ -339,7 +269,6 @@ function main() {
     profile: args.profile,
     layout: args.layout,
     layoutProjection,
-    packs: profile.packs,
     modules: projectedModules,
     composition,
     sourceCommit,
@@ -370,7 +299,7 @@ function main() {
     `# Reusable Base — ${args.profile}\n\n` +
       `릴리스 \`${releaseTag ?? sourceCommit.slice(0, 12)}\`에서 생성된 일회성 산출물이다. ` +
       `\`template/reusable-base\` 장기 브랜치가 아니다.\n\n` +
-      `- packs: ${profile.packs.join(', ')}\n` +
+      `- 기능: ${composition.resolvedDomains.join(', ') || '(공통 기반만)'}\n` +
       `- backend layout: ${args.layout}\n` +
       '- 독립 Git 저장소로 초기화되어 있다. 파일 추가·커밋·원격 연결은 도입자가 수행한다.\n' +
       (args.layout === 'single-module'

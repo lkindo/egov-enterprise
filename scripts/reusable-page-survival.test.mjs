@@ -130,7 +130,7 @@ test('redirect convergence removes exactly the redirect pages the governance pro
   const rows = readRouteRows(root);
   const upstream = new Set(rows.keys());
   const inputs = ['frontend/next.config.ts', 'frontend/src/proxy.ts', 'frontend/src/types/generated-permissions.ts',
-    'frontend/src/lib/auth/page-authorization.ts', 'config/governance/permission-catalog.json', 'config/reusable-base-profiles.json'];
+    'frontend/src/lib/auth/page-authorization.ts', 'config/governance/permission-catalog.json'];
   const cases = [
     ['page-redirect', '/admin/collaboration/scraps/selectScrapList',
       ['/admin/collaboration/scraps/insertScrap', '/admin/collaboration/scraps/selectScrapDetail/[id]']],

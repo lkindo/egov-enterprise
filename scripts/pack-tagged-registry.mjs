@@ -12,22 +12,22 @@
  * 소스만 가진 항목은 이 대조가 '잘못 들어간 import 로 코어 항목이 사라지는' 경우를 따로 잡지 못하고, 그 신호(DEC-OPS-089)는 시작 구성의
  * Java 연쇄 exact 목록(presets.json 의 expected.javaCascade)이 받친다. 그 목록을 수로 바꾸지 않는다.
  *
- * 투영본(생성기가 쓴 manifest)에서는 제거가 이미 끝났다. 거기서는 계획 대신 생성기가 남긴 하네스 프로필 기록
- * (`config/governance/reusable-harness-profile.json` 의 retained·removed)과 실제 파일이 맞는지 본다. 투영본 판별은
- * `sourcePolicy.generatedProfile` 필드 하나로 하지 않는다 — 저장소 manifest 에 그 필드만 넣어 계획 대조를 끄는 경로를
- * 막기 위해, 생성기가 쓰는 **구조**(프로필이 정확히 그 하나이고 pack 이 그 프로필의 pack 과 같다)까지 요구한다
- * (생성물 표지를 매니페스트 v2 로 옮기는 일은 11단계 C5 다).
+ * 투영본(생성물)에서는 제거가 이미 끝났다. 거기서는 계획 대신 생성기가 남긴 하네스 프로필 기록
+ * (`config/governance/reusable-harness-profile.json` 의 retained·removed)과 실제 파일이 맞는지 본다. 투영본 판별은 매니페스트 v2 의
+ * 생성물 표지(presets.json 의 active, composer-modules.mjs 의 detectGeneratedComposition)다 — 표지 필드 하나로 하지 않고 생성기가 쓰는
+ * **구조**(시작 구성이 그 하나이고 기능 파일이 그 구성의 기능)까지 요구해, 원본 presets.json 에 표지만 넣어 계획 대조를 끄는 경로를
+ * 막는다(11단계 C5).
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { detectGeneratedComposition } from './composer-modules.mjs';
 import { javaCascadeAcknowledgement } from './reusable-source-gates.mjs';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const PACK_MANIFEST = 'config/reusable-base-profiles.json';
 export const HARNESS_PROFILE = 'config/governance/reusable-harness-profile.json';
 export const PRESETS_PATH = 'config/modules/presets.json';
 export const JAVA_POPULATION_FLOOR = 1000;
@@ -41,27 +41,6 @@ const SKIPPED_DIRECTORIES = new Set(['build', 'node_modules', '.git', '.gradle']
 
 export const normalize = (path) => path.split(sep).join('/');
 export const readRepoJson = (root, path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
-
-/**
- * 투영본 판별. 생성기의 `writeProjectedManifest` 가 쓰는 구조일 때만 투영본으로 인정하고,
- * `generatedProfile` 이 있는데 구조가 다르면 모드 전환이 아니라 오류다.
- */
-export function detectProjection(manifest) {
-  const generatedProfile = manifest.sourcePolicy?.generatedProfile;
-  if (generatedProfile === undefined) return { projection: false };
-  const profileNames = Object.keys(manifest.profiles ?? {});
-  const profile = manifest.profiles?.[generatedProfile];
-  const packNames = Object.keys(manifest.packs ?? {}).sort();
-  const profilePacks = [...(profile?.packs ?? [])].sort();
-  if (profileNames.length !== 1 || profileNames[0] !== generatedProfile
-      || JSON.stringify(packNames) !== JSON.stringify(profilePacks)) {
-    throw new Error(
-      `sourcePolicy.generatedProfile='${generatedProfile}' 인데 manifest 가 생성기 투영 구조가 아니다 `
-        + `(profiles=${JSON.stringify(profileNames)}, packs=${JSON.stringify(packNames)}) — 투영 모드로 전환하지 않는다.`,
-    );
-  }
-  return { projection: true, profile: generatedProfile };
-}
 
 function walkJava(directory, out = []) {
   for (const name of readdirSync(directory)) {
@@ -267,7 +246,7 @@ export function presetJavaCascadeMismatches({ root, compositions }) {
 const contexts = new Map();
 /**
  * 저장소(또는 투영본) 한 번의 판정 문맥 — 카탈로그 적재와 계획은 비싸므로 한 프로세스에서 공유한다. 카탈로그·해석기는 저장소 쪽에서만
- * 부른다(동적 import) — 투영본에는 원본 카탈로그를 적재할 원천이 없고, detectProjection 만 쓰는 소비자가 그 사슬을 끌어오지 않게 한다.
+ * 부른다(동적 import) — 투영본에는 원본 카탈로그를 적재할 원천이 없다.
  */
 export function repositoryContext(root = REPO_ROOT) {
   if (!contexts.has(root)) contexts.set(root, buildContext(root));
@@ -275,12 +254,10 @@ export function repositoryContext(root = REPO_ROOT) {
 }
 
 async function buildContext(root) {
-  const manifest = readRepoJson(root, PACK_MANIFEST);
-  const { projection } = detectProjection(manifest);
+  const { projection } = detectGeneratedComposition(root);
   const javaFiles = javaPopulation(root, projection);
   if (projection) {
     const presets = readRepoJson(root, PRESETS_PATH).presets;
-    if (!Array.isArray(presets) || presets.length !== 1) throw new Error(`투영본 ${PRESETS_PATH} 에는 활성 구성이 정확히 하나여야 한다`);
     return { root, projection: true, javaFiles, record: readRepoJson(root, HARNESS_PROFILE), active: presets[0], presets: [], compositions: [] };
   }
   const [{ loadProjectComposerCatalog }, { resolveProjectRecipe }, { composerOwnership, loadComposerModules }, { composerProfile },

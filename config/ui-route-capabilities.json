@@ -6,7 +6,7 @@
   "notes": [
     "shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.",
     "admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.",
-    "directProjectionProfiles is a direct removePaths observation, not positive semantic profile ownership and not a full transitive artifact proof.",
+    "directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.",
     "unverified values are bounded review exceptions and keep G1 gateReady=false.",
     "Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.",
     "candidateStatus records a hypothesis only; it never upgrades the asserted status without current E4 evidence.",
@@ -19,7 +19,7 @@
     "generatedPagePermissions": "frontend/src/types/generated-permissions.ts",
     "pageAuthorization": "frontend/src/lib/auth/page-authorization.ts",
     "redirects": "frontend/next.config.ts",
-    "profiles": "config/reusable-base-profiles.json"
+    "profiles": "config/modules/presets.json"
   },
   "menuSnapshot": {
     "status": "blocked-external",
@@ -207,7 +207,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/page.tsx",
         "frontend/src/proxy.ts"
@@ -316,7 +316,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/page.tsx",
         "frontend/src/proxy.ts"
@@ -431,7 +431,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/page.tsx",
         "frontend/src/proxy.ts"
@@ -497,7 +497,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/address-book/page.tsx",
         "frontend/src/proxy.ts"
@@ -567,7 +567,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
         "frontend/src/proxy.ts"
@@ -690,7 +690,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -819,7 +819,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
         "frontend/src/proxy.ts"
@@ -858,7 +858,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -926,7 +925,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/mail-history/page.tsx",
         "frontend/src/proxy.ts"
@@ -963,7 +962,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1030,7 +1028,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/mail-send/page.tsx",
         "frontend/src/proxy.ts"
@@ -1144,7 +1142,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/scraps/page.tsx",
         "frontend/src/proxy.ts"
@@ -1211,7 +1209,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
         "frontend/src/proxy.ts"
@@ -1282,7 +1280,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -1414,7 +1412,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/collaboration/scraps/selectScrapList/page.tsx",
         "frontend/src/proxy.ts"
@@ -1480,7 +1478,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/page.tsx",
         "frontend/src/proxy.ts"
@@ -1550,7 +1548,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -1635,7 +1633,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/board/page.tsx",
         "frontend/src/proxy.ts"
@@ -1701,7 +1699,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/page.tsx",
         "frontend/src/proxy.ts"
@@ -1738,7 +1736,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1773,7 +1770,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -1815,7 +1812,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1878,7 +1874,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/detail/page.tsx",
         "frontend/src/proxy.ts"
@@ -1917,7 +1913,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -1989,7 +1984,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
         "frontend/src/proxy.ts"
@@ -2025,7 +2020,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2089,7 +2083,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/maker/page.tsx",
         "frontend/src/proxy.ts"
@@ -2130,7 +2124,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2221,7 +2214,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/master/page.tsx",
         "frontend/src/proxy.ts"
@@ -2260,7 +2253,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2332,7 +2324,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
         "frontend/src/proxy.ts"
@@ -2365,7 +2357,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -2400,7 +2391,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/boards/write/page.tsx",
         "frontend/src/proxy.ts"
@@ -2508,7 +2499,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/community/templates/page.tsx",
         "frontend/src/proxy.ts"
@@ -2660,7 +2651,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/help/page.tsx",
         "frontend/src/proxy.ts"
@@ -2800,7 +2791,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/help/faq/page.tsx",
         "frontend/src/proxy.ts"
@@ -2940,7 +2931,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/help/qna/page.tsx",
         "frontend/src/proxy.ts"
@@ -2977,7 +2968,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -3063,7 +3053,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/notifications/page.tsx",
         "frontend/src/proxy.ts"
@@ -3130,7 +3120,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/observability/page.tsx",
         "frontend/src/proxy.ts"
@@ -3244,7 +3234,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/operation/events/page.tsx",
         "frontend/src/proxy.ts"
@@ -3353,7 +3343,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/operation/external-hr/page.tsx",
         "frontend/src/proxy.ts"
@@ -3510,7 +3500,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/operation/memo-reports/page.tsx",
         "frontend/src/proxy.ts"
@@ -3619,7 +3609,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/operation/rewards/page.tsx",
         "frontend/src/proxy.ts"
@@ -3684,7 +3674,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/operation/rough-map/page.tsx",
         "frontend/src/proxy.ts"
@@ -3761,7 +3751,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/patterns/page.tsx",
         "frontend/src/proxy.ts"
@@ -3874,7 +3864,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/sanctn/forms/page.tsx",
         "frontend/src/proxy.ts"
@@ -3939,7 +3929,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/sanctn/workflow/page.tsx",
         "frontend/src/proxy.ts"
@@ -4012,7 +4002,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/audit/page.tsx",
         "frontend/src/proxy.ts"
@@ -4283,7 +4273,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/authority/page.tsx",
         "frontend/src/proxy.ts"
@@ -4392,7 +4382,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/dept-authority/page.tsx",
         "frontend/src/proxy.ts"
@@ -4505,7 +4495,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/group/page.tsx",
         "frontend/src/proxy.ts"
@@ -4618,7 +4608,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/login-policy/page.tsx",
         "frontend/src/proxy.ts"
@@ -4686,7 +4676,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/security/role/page.tsx",
         "frontend/src/proxy.ts"
@@ -4802,7 +4792,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/page.tsx",
         "frontend/src/proxy.ts"
@@ -4960,7 +4950,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/board/page.tsx",
         "frontend/src/proxy.ts"
@@ -5112,7 +5102,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/data-usage/page.tsx",
         "frontend/src/proxy.ts"
@@ -5262,7 +5252,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/report/page.tsx",
         "frontend/src/proxy.ts"
@@ -5363,7 +5353,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/screen/page.tsx",
         "frontend/src/proxy.ts"
@@ -5491,7 +5481,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/stats/user/page.tsx",
         "frontend/src/proxy.ts"
@@ -5557,7 +5547,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/page.tsx",
         "frontend/src/proxy.ts"
@@ -5728,7 +5718,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/hub/page.tsx",
         "frontend/src/proxy.ts"
@@ -5795,7 +5785,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/items/page.tsx",
         "frontend/src/proxy.ts"
@@ -5864,7 +5854,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/manage/page.tsx",
         "frontend/src/proxy.ts"
@@ -5991,7 +5981,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/manage/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -6057,7 +6047,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/manage/create/page.tsx",
         "frontend/src/proxy.ts"
@@ -6163,7 +6153,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/polls/page.tsx",
         "frontend/src/proxy.ts"
@@ -6226,7 +6216,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/polls/manage/page.tsx",
         "frontend/src/proxy.ts"
@@ -6306,7 +6296,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/polls/participate/page.tsx",
         "frontend/src/proxy.ts"
@@ -6373,7 +6363,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/questions/page.tsx",
         "frontend/src/proxy.ts"
@@ -6442,7 +6432,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/stats/page.tsx",
         "frontend/src/proxy.ts"
@@ -6513,7 +6503,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/survey/templates/page.tsx",
         "frontend/src/proxy.ts"
@@ -6584,7 +6574,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/audit/page.tsx",
         "frontend/src/proxy.ts"
@@ -6705,7 +6695,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/banner/page.tsx",
         "frontend/src/proxy.ts"
@@ -6815,7 +6805,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/codes/administ/page.tsx",
         "frontend/src/proxy.ts"
@@ -6925,7 +6915,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/codes/institution/page.tsx",
         "frontend/src/proxy.ts"
@@ -7031,7 +7021,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/comments/page.tsx",
         "frontend/src/proxy.ts"
@@ -7209,7 +7199,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/common-code/page.tsx",
         "frontend/src/proxy.ts"
@@ -7274,7 +7264,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/common-code/codes/page.tsx",
         "frontend/src/proxy.ts"
@@ -7380,7 +7370,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/durable-jobs/page.tsx",
         "frontend/src/proxy.ts"
@@ -7485,7 +7475,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/hpcm/page.tsx",
         "frontend/src/proxy.ts"
@@ -7591,7 +7581,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/isg/page.tsx",
         "frontend/src/proxy.ts"
@@ -7657,7 +7647,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/ism/page.tsx",
         "frontend/src/proxy.ts"
@@ -7755,7 +7745,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/layout/page.tsx",
         "frontend/src/proxy.ts"
@@ -7869,7 +7859,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/page.tsx",
         "frontend/src/proxy.ts"
@@ -7949,7 +7939,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/audit/page.tsx",
         "frontend/src/proxy.ts"
@@ -8057,7 +8047,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/login/page.tsx",
         "frontend/src/proxy.ts"
@@ -8163,7 +8153,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/privacy/page.tsx",
         "frontend/src/proxy.ts"
@@ -8267,7 +8257,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/system/page.tsx",
         "frontend/src/proxy.ts"
@@ -8371,7 +8361,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/user/page.tsx",
         "frontend/src/proxy.ts"
@@ -8475,7 +8465,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/logs/web/page.tsx",
         "frontend/src/proxy.ts"
@@ -8639,7 +8629,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/menus/page.tsx",
         "frontend/src/proxy.ts"
@@ -8719,7 +8709,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/menus/by-authority/page.tsx",
         "frontend/src/proxy.ts"
@@ -8787,7 +8777,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/monitoring/page.tsx",
         "frontend/src/proxy.ts"
@@ -8930,7 +8920,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/monitoring/hub/page.tsx",
         "frontend/src/proxy.ts"
@@ -9009,7 +8999,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/policies/page.tsx",
         "frontend/src/proxy.ts"
@@ -9100,7 +9090,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/system/programs/page.tsx",
         "frontend/src/proxy.ts"
@@ -9198,7 +9188,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/user/absences/page.tsx",
         "frontend/src/proxy.ts"
@@ -9314,7 +9304,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/user/departments/page.tsx",
         "frontend/src/proxy.ts"
@@ -9385,7 +9375,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/user/indvdl-info-policy/page.tsx",
         "frontend/src/proxy.ts"
@@ -9452,7 +9442,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/user/login-policy/page.tsx",
         "frontend/src/proxy.ts"
@@ -9597,7 +9587,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/user/manage/page.tsx",
         "frontend/src/proxy.ts"
@@ -9637,7 +9627,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -9705,7 +9694,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/uss/ion/sms/page.tsx",
         "frontend/src/proxy.ts"
@@ -9788,7 +9777,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/uss/olh/online-manual/page.tsx",
         "frontend/src/proxy.ts"
@@ -9902,7 +9891,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/work-hub/page.tsx",
         "frontend/src/proxy.ts"
@@ -10011,7 +10000,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/admin/workflow/WorkflowClient.tsx",
         "frontend/src/app/admin/workflow/page.tsx",
@@ -10113,7 +10102,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/approvals/page.tsx",
         "frontend/src/proxy.ts"
@@ -10207,7 +10196,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/approvals/draft/page.tsx",
         "frontend/src/proxy.ts"
@@ -10337,7 +10326,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -10439,7 +10428,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/cop/cmy/selectCommunityList/page.tsx",
         "frontend/src/proxy.ts"
@@ -10472,7 +10461,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -10506,7 +10494,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/cop/sms/selectSmsList/page.tsx",
         "frontend/src/proxy.ts"
@@ -10617,7 +10605,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/help/page.tsx",
         "frontend/src/proxy.ts"
@@ -10690,7 +10678,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/help/policies/[type]/page.tsx",
         "frontend/src/proxy.ts"
@@ -10767,7 +10755,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/login/page.tsx",
         "frontend/src/proxy.ts"
@@ -10808,7 +10796,6 @@
       ],
       "directProjectionProfiles": [
         "collaboration",
-        "core",
         "demo"
       ],
       "journeys": [],
@@ -10900,7 +10887,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/note/page.tsx",
         "frontend/src/proxy.ts"
@@ -11013,7 +11000,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/search/page.tsx",
         "frontend/src/proxy.ts"
@@ -11173,7 +11160,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/page.tsx",
         "frontend/src/proxy.ts"
@@ -11276,7 +11263,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -11355,7 +11342,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/create/page.tsx",
         "frontend/src/proxy.ts"
@@ -11423,7 +11410,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/insertDeptJob/page.tsx",
         "frontend/src/proxy.ts"
@@ -11495,7 +11482,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -11567,7 +11554,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx",
         "frontend/src/proxy.ts"
@@ -11699,7 +11686,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/schedule/page.tsx",
         "frontend/src/proxy.ts"
@@ -11826,7 +11813,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/schedule/dept/page.tsx",
         "frontend/src/proxy.ts"
@@ -11954,7 +11941,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/smart-toolkit/work-report/page.tsx",
         "frontend/src/proxy.ts"
@@ -12030,7 +12017,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/survey/page.tsx",
         "frontend/src/proxy.ts"
@@ -12132,7 +12119,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/survey/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -12237,7 +12224,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/survey/response/page.tsx",
         "frontend/src/proxy.ts"
@@ -12310,7 +12297,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/survey/response/[id]/page.tsx",
         "frontend/src/proxy.ts"
@@ -12415,7 +12402,7 @@
         }
       ],
       "evidence": [
-        "config/reusable-base-profiles.json",
+        "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/survey/stats/page.tsx",
         "frontend/src/proxy.ts"

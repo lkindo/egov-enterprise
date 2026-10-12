@@ -141,11 +141,11 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 
 `reusable-base`는 영향받는 core·collaboration·demo profile과 두 layout matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
-Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
-`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 선택한
-profile 전부로 돌아간다. layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
-PR은 profile마다 한 layout(core 단일·collaboration 멀티·demo 단일)만 검증하고, main push·수동 실행·이벤트 미상과
-분류기 표에 없는 profile은 두 layout 전수다. PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
+Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. 기능 파일(`config/modules`)로 소유가 증명된
+`business-app` 도메인·지원 파일·화면 경로만 그 기능을 담은 시작 구성으로 줄이고, 공용·미분류 입력은 선택한
+profile 전부로 돌아간다(11단계 C5 — 종전 v1 manifest 의 pack). layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
+PR은 profile마다 한 layout(`config/modules/presets.json` 의 `ci.pr` — core 단일·collaboration 멀티·demo 단일)만 검증하고,
+main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 profile은 두 layout 전수다. PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
 생성기를 크게 바꾸는 PR은 병합 전에 `gh workflow run ci.yml --ref <브랜치>`로 전수를 한 번 받는다.
 core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 분류 직후 실행해 frontend가 끝나기 전의
 빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립

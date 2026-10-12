@@ -341,7 +341,6 @@ async function main() {
     const lock = {
       schemaVersion: 1,
       profile: args.profile,
-      packs: composition.packs,
       sourceCommit,
       sourceReleaseTag: releaseTag ?? null,
       localDevelopmentBuild: !releaseTag || Boolean(dirty),
@@ -423,7 +422,7 @@ async function main() {
       join(output, 'README.md'),
       `# Reusable Base DB — ${args.profile}\n\n` +
         `- source: \`${releaseTag ?? shortSha}\` (\`${sourceCommit}\`)\n` +
-        `- packs: ${composition.packs.join(', ')}\n` +
+        `- 기능: ${composition.resolvedDomains.join(', ') || '(공통 기반만)'}\n` +
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
         `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → reference data seed → admin bootstrap seed 재적용 완료\n` +

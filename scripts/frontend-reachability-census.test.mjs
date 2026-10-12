@@ -36,6 +36,8 @@ import {
   parsePackMarkerBlocks,
   planFrontendRemoval,
 } from './reusable-source-frontend.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { ROUTE_LEDGER_PATH } from './reusable-page-survival.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
@@ -63,18 +65,27 @@ function censusFixture(root, overrides = {}) {
     repoRoot: root,
     documentationRoots: [],
     configRoots: [],
-    profileManifestPath: null,
+    profileCompositions: null,
     routeManifestPath: null,
     ...overrides,
   });
 }
 
-/** 프로필 제약 픽스처의 manifest: stripped 는 optional pack 을 빼고, optional pack 은 src/profile/direct.ts 를 직접 지운다. */
-const OPTIONAL_PROFILE_MANIFEST = JSON.stringify({
-  schemaVersion: 1,
-  profiles: { stripped: { packs: ['core'] }, full: { packs: ['core', 'optional'] } },
-  packs: { core: {}, optional: { frontend: { removePaths: ['src/profile/direct.ts'] } } },
-});
+/**
+ * 프로필 제약 픽스처의 시작 구성(11단계 C5 — pack 대신 해석된 구성): stripped 는 optional 기능을 빼 src/profile/direct.ts 를 직접 지우고,
+ * full 은 아무것도 지우지 않는다. census 는 생성기와 같은 기능 투영(createFrontendProjector({ composition }))을 한다.
+ */
+const OPTIONAL_PROFILE_COMPOSITIONS = Object.freeze([
+  { profile: 'stripped', composition: { profile: 'stripped', resolvedDomains: [], frontend: { removePaths: ['src/profile/direct.ts'] } } },
+  { profile: 'full', composition: { profile: 'full', resolvedDomains: ['optional'], frontend: { removePaths: [] } } },
+]);
+
+let presetCatalog;
+/** 시작 구성 하나를 생성기와 같은 해석기로 푼다(11단계 C5 — census 는 이 구성으로 기능 투영을 한다). */
+function presetComposition(id) {
+  presetCatalog ??= loadProjectComposerCatalog(repoRoot);
+  return resolveProjectRecipe({ schemaVersion: 1, project: { name: 'census-test' }, sourceRef: 'main', selection: { preset: id } }, presetCatalog);
+}
 
 let repositoryCensusCache;
 /** 저장소 census 는 한 번만 만든다(전체 빌드가 수십 초다). 시험은 이 결과를 바꾸지 않는다 — 바꿀 때는 복사본을 쓴다. */
@@ -353,10 +364,10 @@ function ledgerCensusContradictions(ledgerRoutes, censusRows, profiles) {
 
 test('every ledger screen has a census row and no profile removes directly a screen the ledger keeps', () => {
   const ledger = JSON.parse(readFileSync(join(repoRoot, ROUTE_LEDGER_PATH), 'utf8'));
-  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const presets = JSON.parse(readFileSync(join(repoRoot, 'config/modules/presets.json'), 'utf8')).presets.map(({ id }) => id);
   const censusRows = new Map(repositoryCensus().files.map((row) => [row.file, row]));
   assert.ok(ledger.routes.length > 100);
-  assert.deepEqual(ledgerCensusContradictions(ledger.routes, censusRows, Object.keys(manifest.profiles)), []);
+  assert.deepEqual(ledgerCensusContradictions(ledger.routes, censusRows, presets), []);
 });
 
 test('the ledger/census cross-check is red for a direct removal of a ledger-surviving screen and for a missing census row', () => {
@@ -438,22 +449,11 @@ test('census distinguishes every evidence axis without promoting non-runtime ref
     'frontend/src/lib/cycle-b.ts': "import './cycle-a';\n",
     'docs/reference.md': '`frontend/src/lib/docs-target.ts` is documentation-only.\n',
     'config/reference.json': '{"source":"frontend/src/lib/config-target.ts"}\n',
-    'config/reusable-base-profiles.json': JSON.stringify({
-      schemaVersion: 1,
-      profiles: {
-        stripped: { packs: ['core'] },
-        full: { packs: ['core', 'optional'] },
-      },
-      packs: {
-        core: {},
-        optional: { frontend: { removePaths: ['src/profile/direct.ts'] } },
-      },
-    }),
   });
   const census = censusFixture(root, {
     documentationRoots: [join(root, 'docs')],
     configRoots: [join(root, 'config')],
-    profileManifestPath: join(root, 'config', 'reusable-base-profiles.json'),
+    profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS,
   });
 
   assert.equal(byFile(census, 'frontend/src/app/page.tsx').entryKinds.nextRoute, true);
@@ -564,13 +564,12 @@ test('a pack marker error is red in gate mode and drops no profile evidence in i
     'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
     'frontend/src/profile/direct.ts': 'export const direct = true;\n',
     'frontend/src/profile/importer.ts': "import './direct';\nexport const importer = true;\n",
-    'frontend/src/lib/broken.ts': '// reusable-base:optional:start\nexport const broken = true;\n',
-    'config/reusable-base-profiles.json': OPTIONAL_PROFILE_MANIFEST,
+    'frontend/src/lib/broken.ts': '// reusable-base:demo:start\nexport const broken = true;\n',
   });
-  const options = { profileManifestPath: join(root, 'config', 'reusable-base-profiles.json') };
+  const options = { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS };
   assert.throws(
     () => censusFixture(root, options),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/broken\.ts — stripped: 닫히지 않은 frontend pack marker: optional \(src\/lib\/broken\.ts:1\)/,
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/broken\.ts — stripped: 닫히지 않은 frontend pack marker: demo \(src\/lib\/broken\.ts:1\)/,
     'gate mode names the file whose marker failed the profile projection',
   );
   const inspection = censusFixture(root, { ...options, failOnErrors: false });
@@ -592,17 +591,15 @@ test('a pack marker error is red in gate mode and drops no profile evidence in i
   // census 도 같은 파일을 짚어 붉다.
   const publicRoot = createFixture({
     'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
-    'frontend/public/vendor/lib.js': '// reusable-base:optional:start\nwindow.vendor = true;\n',
-    'config/reusable-base-profiles.json': OPTIONAL_PROFILE_MANIFEST,
+    'frontend/public/vendor/lib.js': '// reusable-base:demo:start\nwindow.vendor = true;\n',
   });
   assert.throws(
-    () => censusFixture(publicRoot, { profileManifestPath: join(publicRoot, 'config', 'reusable-base-profiles.json') }),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/public\/vendor\/lib\.js — stripped: 닫히지 않은 frontend pack marker: optional \(public\/vendor\/lib\.js:1\)/,
+    () => censusFixture(publicRoot, { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS }),
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/public\/vendor\/lib\.js — stripped: 닫히지 않은 frontend pack marker: demo \(public\/vendor\/lib\.js:1\)/,
     'a marker error in a public/ module file fails the census like the generator',
   );
-  const manifest = JSON.parse(OPTIONAL_PROFILE_MANIFEST);
-  assert.throws(() => applyFrontendProjection(publicRoot, createFrontendProjector({ manifest, profile: manifest.profiles.stripped })),
-    /닫히지 않은 frontend pack marker: optional \(public\/vendor\/lib\.js:1\)/, 'the generator projection fails at the same public/ file');
+  assert.throws(() => applyFrontendProjection(publicRoot, createFrontendProjector({ composition: OPTIONAL_PROFILE_COMPOSITIONS[0].composition })),
+    /닫히지 않은 frontend pack marker: demo \(public\/vendor\/lib\.js:1\)/, 'the generator projection fails at the same public/ file');
 });
 
 // 판정은 해석기의 모듈 확장자 전부(isFrontendModuleFile)를 읽는다 — .mts·.mjs 모듈의 간선도 연쇄하고, 그 마커도 판정한다.
@@ -611,9 +608,8 @@ test('census profile constraints read .mts and .mjs modules: their edges cascade
     'frontend/src/app/page.tsx': "import { b } from '../lib/b.mjs';\nexport default function Page() { return b; }\n",
     'frontend/src/lib/b.mts': "import { direct } from '../profile/direct';\nexport const b = direct;\n",
     'frontend/src/profile/direct.ts': 'export const direct = true;\n',
-    'config/reusable-base-profiles.json': OPTIONAL_PROFILE_MANIFEST,
   };
-  const options = (root) => ({ profileManifestPath: join(root, 'config', 'reusable-base-profiles.json') });
+  const options = (root) => ({ profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS });
   const root = createFixture(files);
   const census = censusFixture(root, options(root));
   for (const file of ['frontend/src/lib/b.mts', 'frontend/src/app/page.tsx']) {
@@ -623,10 +619,10 @@ test('census profile constraints read .mts and .mjs modules: their edges cascade
       `${file} cascades through the .mts module`,
     );
   }
-  const marked = createFixture({ ...files, 'frontend/src/lib/b.mts': `// reusable-base:optional:start\n${files['frontend/src/lib/b.mts']}` });
+  const marked = createFixture({ ...files, 'frontend/src/lib/b.mts': `// reusable-base:demo:start\n${files['frontend/src/lib/b.mts']}` });
   assert.throws(
     () => censusFixture(marked, options(marked)),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/b\.mts — stripped: 닫히지 않은 frontend pack marker: optional \(src\/lib\/b\.mts:1\)/,
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/b\.mts — stripped: 닫히지 않은 frontend pack marker: demo \(src\/lib\/b\.mts:1\)/,
     'an unclosed marker in a .mts module fails the profile projection',
   );
 });
@@ -924,21 +920,19 @@ test('in a Git checkout the census plans profile removal over the generator copy
     'frontend/src/gen/out.ts': "import { direct } from '../profile/direct';\nexport const out = direct;\n",
     'frontend/src/profile/direct.ts': 'export const direct = true;\n',
     'frontend/local/scratch.ts': "const name = './x';\nexport const load = () => import(name);\n",
-    'config/reusable-base-profiles.json': OPTIONAL_PROFILE_MANIFEST,
   });
   const init = spawnSync('git', ['init', '--quiet'], { cwd: root, encoding: 'utf8' });
   assert.equal(init.status, 0, init.stderr);
-  const census = censusFixture(root, { profileManifestPath: join(root, 'config', 'reusable-base-profiles.json') });
+  const census = censusFixture(root, { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS });
 
-  const manifest = JSON.parse(OPTIONAL_PROFILE_MANIFEST);
   const frontendRoot = join(root, 'frontend');
   const toRepo = (path) => relative(root, path).split(sep).join('/');
   const copied = trackedAndUntrackedFiles(root).filter((file) => file.startsWith('frontend/')).map((file) => join(root, file));
   assert.deepEqual(copied.map(toRepo).sort(), ['frontend/src/app/page.tsx', 'frontend/src/profile/direct.ts'], 'the fixture ignores both local files');
   const population = new Set(census.files.map((row) => row.file));
   const expected = new Map();
-  for (const [profileName, profile] of Object.entries(manifest.profiles)) {
-    const projector = createFrontendProjector({ manifest, profile });
+  for (const { profile: profileName, composition } of OPTIONAL_PROFILE_COMPOSITIONS) {
+    const projector = createFrontendProjector({ composition });
     const plan = planFrontendRemoval({ frontendRoot, files: copied, directPaths: projector.directPaths,
       readSource: (path) => projector.project(relative(frontendRoot, path), readFileSync(path, 'utf8')).source });
     for (const path of plan.removed) {
@@ -983,13 +977,12 @@ test('the census profile population is red when the copy list differs from the d
     'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
     'frontend/src/profile/direct.ts': 'export const direct = true;\n',
     'frontend/src/profile/importer.ts': "import './direct';\nexport const importer = true;\n",
-    'config/reusable-base-profiles.json': OPTIONAL_PROFILE_MANIFEST,
   });
   for (const cwd of [root, join(root, 'frontend')]) {
     const init = spawnSync('git', ['init', '--quiet'], { cwd, encoding: 'utf8' });
     assert.equal(init.status, 0, init.stderr);
   }
-  const options = { profileManifestPath: join(root, 'config', 'reusable-base-profiles.json') };
+  const options = { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS };
   assert.throws(() => censusFixture(root, options), /\[EMPTY_PROFILE_POPULATION\] frontend — the Git copy list has no frontend file/,
     'a nested frontend repository is red in gate mode');
   const inspection = censusFixture(root, { ...options, failOnErrors: false });
@@ -1309,20 +1302,17 @@ test('the tokenizer reads the same module specifiers as the TypeScript AST in ev
   assert.deepEqual(parseModuleReferences(member).issues, [], 'member calls and declarations are not unjudgeable imports');
 });
 
-test('a projector keeps no marker block of an excluded pack and rejects malformed or unknown markers for presets and direct selections', () => {
-  const manifest = JSON.parse(readFileSync(join(repoRoot, 'config/reusable-base-profiles.json'), 'utf8'));
-  const projector = createFrontendProjector({ manifest, profile: manifest.profiles.core });
+test('a projector keeps no marker block of an excluded feature and rejects malformed or unknown markers for presets and direct selections', () => {
+  const projector = createFrontendProjector({ composition: presetComposition('core') });
   const file = 'src/app/search/SearchClient.tsx';
   const projected = projector.project(file, readFileSync(join(repoRoot, 'frontend', file), 'utf8'));
   assert.ok(projected.strippedBlocks > 0);
-  assert.deepEqual(parsePackMarkerBlocks(projected.source, { knownPacks: new Set(Object.keys(manifest.packs)), label: file }).blocks, []);
-  // 투영은 프런트 모듈 파일 전부(isFrontendModuleFile)를 걷는다 — .mjs 의 제외 pack 블록도 걷고, next.config.mjs 의 마커는 실패다.
+  assert.deepEqual(parsePackMarkerBlocks(projected.source, { label: file }).blocks, []);
+  // 투영은 프런트 모듈 파일 전부(isFrontendModuleFile)를 걷는다 — .mjs 도 투영하고(소유 표에 없는 블록이면 실패), next.config.mjs 의 마커는 실패다.
   const output = createFixture({
     'frontend/src/lib/x.mjs': '// reusable-base:demo:start\nexport const demo = 1;\n// reusable-base:demo:end\nexport const kept = 1;\n',
   });
-  assert.deepEqual(applyFrontendProjection(output, projector), { excludedPacks: projector.excludedPacks, strippedBlocks: 1, changedFiles: 1 },
-    'a .mjs module is projected');
-  assert.equal(readFileSync(join(output, 'frontend/src/lib/x.mjs'), 'utf8'), 'export const kept = 1;\n');
+  assert.throws(() => applyFrontendProjection(output, projector), /src\/lib\/x\.mjs/, 'a .mjs module is projected and its unowned block fails');
   const config = createFixture({ 'frontend/next.config.mjs': '// reusable-base:demo:start\nexport const x = 1;\n// reusable-base:demo:end\n' });
   assert.throws(() => applyFrontendProjection(config, projector), /next\.config 는 pack 마커를 둘 수 없다/, 'next.config.mjs is projected and its markers fail');
   // 마커 구조 오류와 알 수 없는 pack 은 투영 단계에서 실패한다. 직접 선택도 같다 — 종전 직접 선택의 정규식 투영은 중첩·알 수 없는 pack 을
@@ -1346,8 +1336,8 @@ test('a projector keeps no marker block of an excluded pack and rejects malforme
     /해석된 기능 목록/, 'a composition projector needs the resolved domains');
   assert.throws(() => createFrontendProjector({ composition: { profile: 'core', resolvedDomains: [] } }),
     /화면 제외 경로/, 'a composition projector needs the remove paths the resolver computed');
-  // lock.frontend.markerBlocks 는 걷은 마커 블록 수다 — 구성 투영은 소유 기능이 빠진 블록을, pack 투영은 pack 이 빠진 블록을 걷는다.
-  // 표본은 게시판 마법사의 커뮤니티 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다). 두 투영의 결과가 같다.
+  // lock.frontend.markerBlocks 는 걷은 마커 블록 수다 — 구성 투영은 소유 기능이 빠진 블록을 걷는다. 표본은 게시판 마법사의 커뮤니티
+  // 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다). 직접 선택(빈 선택)과 core 시작 구성의 결과가 같다.
   const maker = 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
   const makerSource = readFileSync(join(repoRoot, 'frontend', maker), 'utf8');
   const byCustom = custom.project(maker, makerSource);

@@ -37,18 +37,20 @@ clean v* release tag
 | `collaboration` | core + collaboration | core + 게시판·댓글·스크랩 + 메일·쪽지·알림·SMS·실시간 대시보드 |
 | `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
 
-프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
-소유한다. `board`·`comment`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
-테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`은 이
-매니페스트의 `appDomains`로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그 간선을 거꾸로 따라 정한다
-([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+프로필은 누적된다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
+pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
+클러스터와 `tb_tmplt_info`처럼 공유되는 테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트
+`scripts/delete-domain.ps1`은 기능 파일(`config/modules/<기능>.json`)로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그
+간선을 거꾸로 따라 정하며, 화면은 지우는 기능의 화면 소유로 지운다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
 
 생성기는 시작 구성도 기능 단위로 투영한다(2026-10-13 매니페스트 v2 11단계 C3). 제외 기능은 시작 구성의 기능 목록에서, 화면 제외 경로는
 기능 규칙에서 정하고 pack 의 `removePaths` 를 보지 않는다 — 같은 기능 목록의 직접 선택과 같은 결과다. 기능 소유·지원 파일·시작 구성
 기대치는 매니페스트 v2(`config/modules`)에서 읽는다. 소유 기능이 빠진 공유 테이블은 그 테이블 선언의 소비자 가운데 구성에 있는 첫
 기능이 넘겨받는다(순위를 보지 않는다). 생성물의 `config/modules` 에는 구성의 기능 파일·`core.json`·활성 구성 하나만 담은
-`presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 생성물의 `config/reusable-base-profiles.json` 은 pack 을 읽는
-옛 소비자를 위한 투영이다(11단계 C5 에서 걷는다).
+`presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 그 `presets.json` 의 `active` 가 생성물 표지다 — 권한 생성기·
+하네스 프로필·원장 계약·생성물 무결성 검사는 표지를 생성기 투영 구조(활성 구성 하나·기능 파일 집합)와 함께 확인하고, 구조가
+다르거나 lock 이 있는데 표지가 없으면 실패한다. 생성물에는 `config/reusable-base-profiles.json` 이 남지 않고 lock·하네스 프로필에도
+pack 이 없다(11단계 C5).
 
 ### 2.1 백엔드 출력 형태
 
@@ -289,7 +291,7 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 
 - 마커 블록은 공용 파서(`parsePackMarkerBlocks`)가 읽는다. 블록을 남기는지는 projector 가 한 번에 정한다 — 그 블록의 소유
   기능(`project-composer-source.mjs` 의 `FRONTEND_MARKER_FILES`)이 모두 구성에 있어야 한다. 시작 구성도 같다(11단계 C3). 블록의 pack 으로
-  거르는 pack 투영은 프리셋을 pack 으로 보는 도달성 census 만 쓴다(C5 에서 걷는다).
+  거르는 pack 투영은 걷었다 — 도달성 census 도 시작 구성의 해석된 구성으로 투영한다(11단계 C5).
 - import 연쇄는 `planFrontendRemoval` 이 계산한다. 간선은 도달성 census 와 같은 토크나이저(`scripts/frontend-module-graph.mjs`)로
   읽고, 넘겨받은 파일 목록 안에서만 정확한 표기로 잇는다(`scripts/frontend-module-resolver.mjs`).
 - 생성기·정밀 점검·도달성 census·생존 시험·경계 계약·거버넌스 투영이 모두 이 함수들을 쓴다.
@@ -327,8 +329,9 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
      토크나이저와 대조한다)이 지키고, 따옴표는 `react/no-unescaped-entities` 경고가 lint 경고 상한에 걸려 먼저 막힌다. 생성기는
      의존성 설치 전에 돌므로 TypeScript 에 기대지 않는다. 원본 밖에서 고친 체크아웃의 숨은 간선은 생성물 타입 검사(산출물 검증)가
      깨진 import 로 늦게 잡는다.
-5. **상위 rank pack 블록은 하위 rank pack 블록의 import 에 기댈 수 있다**(예: demo 블록이 collaboration 블록의
-   `Link` 를 쓴다). 프로필은 rank 하향 폐쇄라 안전하다(`base:census` 가 강제). 반대 방향은 금지다.
+5. **블록은 자기 소유 기능이 요구하는 기능의 블록 import 에 기댈 수 있다**(예: demo 블록이 collaboration 블록의
+   `Link` 를 쓴다). 블록이 남는 구성에는 요구 기능도 있으므로 안전하다(카탈로그의 필수 의존 폐포 — 11단계 C5 에서 pack 순위
+   검사를 대신했다). 반대 방향은 금지다.
 6. **공용 컴포넌트는 pack 소유 구현을 import 하지 않고 주입받는다.** 수신자 피커는 주소록 출처를 prop 으로 받고,
    조합 지점(메일·문자 화면)은 core 도우미(`useRecipientAddressBook`)로 슬롯 레지스트리에서 받아 넘긴다 — 공용 파일에
    마커를 흩뿌리지 않는다(아래 슬롯 규칙).

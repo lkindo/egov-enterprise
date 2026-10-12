@@ -12,7 +12,7 @@ import { FRONTEND_MARKER_FILES, assertCompositionDatabaseLock, composerMarkerBlo
   manifestOwnership, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { composerOwnership, loadComposerModules, moduleDatabaseInventory, projectComposerModuleFiles, projectedModuleViolations, sharedTableTransfers }
   from './composer-modules.mjs';
-import { activeCompositionEntry, writeProjectedManifest } from './generate-reusable-base-source.mjs';
+import { activeCompositionEntry } from './generate-reusable-base-source.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
@@ -317,74 +317,11 @@ test('selected domain support cannot disappear from a custom artifact', t => {
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifestOwnership(directory, manifest)), /Selected capability source/);
 });
 
-test('custom manifest domain support follows exact selected domains', t => {
-  const { directory, manifest } = supportFixture(t);
-  mkdirSync(join(directory, 'config'));
-  for (const pack of Object.values(manifest.packs)) pack.database = { tables: [], sequences: [] };
-  const lock = { generatedAt: '2026-09-27T00:00:00Z', tables: [], sequences: [] };
-  const profile = { packs: ['core', 'demo'] };
-  for (const resolvedDomains of [[], ['memoreport']]) {
-    writeProjectedManifest(directory, manifest, 'custom', profile, lock, {
-      profile: 'custom', resolvedDomains, tables: [], explicitSequences: [],
-    }, new Map());
-    const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
-    assert.deepEqual(projected.packs.demo.backend.domainSupportFiles, resolvedDomains.length ? { memoreport: displayNameSupport } : {});
-  }
-});
-
-test('custom projection keeps every selected table owned, including a shared table whose owner pack is not selected', t => {
-  // 템플릿만 고르면 tb_tmplt_info 의 소유 pack(collaboration)이 구성에 없다. 종전에는 투영 매니페스트의 어느 pack 도
-  //   그 테이블을 갖지 않아, 생성 마지막의 거버넌스 무결성 검사(테이블 목록 불일치)가 실패했다.
-  const base = realpathSync(tmpdir());
-  const directory = mkdtempSync(join(base, 'composer-shared-table-'));
-  t.after(() => {
-    const child = relative(base, realpathSync(directory));
-    assert.ok(child.startsWith('composer-shared-table-') && !child.includes(sep));
-    rmSync(directory, { recursive: true, force: true });
-  });
-  mkdirSync(join(directory, 'config'));
-  for (const [domains, owner] of [[['template'], 'demo'], [['board', 'template'], 'collaboration']]) {
-    const composition = resolveProjectRecipe(recipe(domains), catalog);
-    const profile = composerProfile(modules, composition);
-    writeProjectedManifest(directory, structuredClone(manifest), 'custom', profile,
-      { generatedAt: '2026-10-08T00:00:00Z', tables: composition.tables, sequences: [] }, composition, sharedTableTransfers(modules.files, composition.resolvedDomains));
-    const projected = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8'));
-    const owned = Object.values(projected.packs).flatMap(pack => pack.database.tables);
-    assert.deepEqual([...owned].sort(), [...composition.tables].sort(), `${domains}: each selected table has exactly one pack owner`);
-    const contract = projected.sharedTableContracts.find(row => row.table === 'tb_tmplt_info');
-    assert.equal(contract?.ownerPack, owner, `${domains}: the shared table owner follows the selected packs`);
-    for (const row of projected.sharedTableContracts) {
-      assert.ok(projected.packs[row.ownerPack]?.database.tables.includes(row.table), `${domains}: ${row.table} owner pack holds the table`);
-    }
-  }
-});
-
-/*
- * 프런트 전용 기능 목록(DEC-OPS-273)도 선택으로 거른다. 남기면 생성물 manifest 의 census 가 appDomains 에 없는 선언으로 붉다.
- */
-test('custom projection keeps a frontend-only declaration only for a selected frontend-only capability', t => {
-  const base = realpathSync(tmpdir());
-  const directory = mkdtempSync(join(base, 'composer-frontend-only-'));
-  t.after(() => {
-    const child = relative(base, realpathSync(directory));
-    assert.ok(child.startsWith('composer-frontend-only-') && !child.includes(sep));
-    rmSync(directory, { recursive: true, force: true });
-  });
-  mkdirSync(join(directory, 'config'));
-  for (const [domains, expected] of [[['event'], []], [['showcase'], ['showcase']], [['event', 'showcase'], ['showcase']]]) {
-    const composition = resolveProjectRecipe(recipe(domains), catalog);
-    writeProjectedManifest(directory, structuredClone(manifest), 'custom', composerProfile(modules, composition),
-      { generatedAt: '2026-10-12T00:00:00Z', tables: composition.tables, sequences: [] }, composition, sharedTableTransfers(modules.files, composition.resolvedDomains));
-    const demo = JSON.parse(readFileSync(join(directory, 'config/reusable-base-profiles.json'), 'utf8')).packs.demo.backend;
-    assert.deepEqual(demo.frontendOnlyDomains, expected, `${domains}`);
-    for (const domain of demo.frontendOnlyDomains) assert.ok(demo.appDomains.includes(domain), `${domains}: ${domain} stays an appDomain`);
-  }
-});
-
 /*
  * [11단계 C3] 생성물의 매니페스트 v2(config/modules)는 구성의 기능 파일·core·활성 구성 하나만 담는다. 소유 기능이 빠진 공유 테이블은
  * 넘겨받는 기능 파일의 owns.tables 로 옮겨, 생성물 기능 파일의 테이블이 구성의 테이블과 정확히 같다. 생성물 무결성 검사가 같은 판정
- * (projectedModuleViolations)을 생성물 디스크에 건다.
+ * (projectedModuleViolations)을 생성물 디스크에 건다. [C5] 생성물에는 v1 manifest 가 없다 — 종전 투영 manifest 시험이 보던 지원 파일·
+ * 프런트 전용 기능·공유 테이블 소유는 선택한 기능 파일 집합과 테이블·시퀀스 소유 대조가 본다. 활성 구성의 id 는 생성물 표지(active)다.
  */
 test('projected modules keep exactly the composition features, its active entry and every table owner', () => {
   const projectFor = composition => projectComposerModuleFiles(modules.files, composition,
@@ -399,6 +336,7 @@ test('projected modules keep exactly the composition features, its active entry 
     assert.deepEqual(Object.keys(projected).filter(name => !['core.json', 'presets.json'].includes(name)).sort(),
       composition.resolvedDomains.map(domain => `${domain}.json`), `${label}: only the selected feature files`);
     const [active] = projected['presets.json'].presets;
+    assert.equal(projected['presets.json'].active, composition.profile, `${label}: the generated-product marker names the composition`);
     if (composition.profile === 'custom') {
       assert.deepEqual({ id: active.id, domains: active.domains, javaCascade: active.expected.javaCascade },
         { id: 'custom', domains: composition.resolvedDomains, javaCascade: ['x.java'] }, `${label}: the direct selection records what the generator removed`);
@@ -421,6 +359,12 @@ test('projected modules keep exactly the composition features, its active entry 
   // 활성 구성은 하나이고 그 구성이어야 한다.
   const otherPreset = { ...projected, 'presets.json': modules.files['presets.json'] };
   assert.deepEqual(check(template, otherPreset), ['projected active composition differs from composition: custom']);
+  // 표지(active)가 빠지면 활성 구성 하나가 맞아도 생성물로 보지 않는다(11단계 C5).
+  const { active: _marker, ...unmarked } = projected['presets.json'];
+  assert.deepEqual(check(template, { ...projected, 'presets.json': unmarked }), ['projected active composition differs from composition: custom']);
+  // 독립 시퀀스 소유도 구성과 같아야 한다.
+  const sequenceDrift = { ...projected, 'core.json': { ...projected['core.json'], owns: { ...projected['core.json'].owns, sequences: [] } } };
+  assert.deepEqual(check(template, sequenceDrift), ['projected module sequence ownership differs from composition']);
 });
 
 /*
@@ -433,6 +377,18 @@ test('the generators and the deep plan project by feature ownership, never by pa
     assert.doesNotMatch(code(file), /manifest\.packs|profile\.packs|allowedPacks|\.rank\b/, file);
   }
   assert.doesNotMatch(code('scripts/generate-reusable-base-source.mjs'), /\.rank\b/, 'shared tables move by declared consumer order, not pack rank');
+  // 관찰자(원장·census·CI 범위·생성물 판정·Atlas·수동 삭제)도 v1 manifest 의 pack·순위를 읽지 않는다(11단계 C5). 생성기 본체와 생성물 무결성
+  // 검사는 v1 manifest 이름을 '생성물에 남기지 않는다·원본 스냅숏' 으로만 쓰므로 pack·순위 읽기만 막는다.
+  for (const file of ['scripts/ui-route-capabilities-contract.mjs', 'scripts/frontend-reachability-census.mjs', 'scripts/reusable-review-scopes.mjs',
+    'scripts/reusable-governance-projection.mjs', 'scripts/generate-permissions.mjs', 'scripts/pack-tagged-registry.mjs',
+    'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs', 'scripts/atlas-catalog.mjs',
+    'scripts/domain-deletion-plan.mjs', 'scripts/reusable-source-frontend.mjs', 'scripts/project-composer-recipe.mjs',
+    'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs']) {
+    assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks|reusable-base-profiles/, file);
+  }
+  for (const file of ['scripts/generate-reusable-base-source.mjs', 'scripts/reusable-governance-integrity.mjs']) {
+    assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks/, file);
+  }
   // DB 생성기가 원본 스키마와 대조하는 소유 목록은 기능 파일에서 온다 — 카탈로그의 core·기능 테이블·독립 시퀀스와 같다.
   const inventory = moduleDatabaseInventory(modules.files);
   const sortedUnique = values => [...new Set(values)].sort();

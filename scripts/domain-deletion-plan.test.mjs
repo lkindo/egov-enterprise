@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { asciiJson, planDomainDeletion, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { asciiJson, planDomainDeletion, planDomainFrontendPaths, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
 import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 import { MODULES_DIRECTORY } from './composer-modules.mjs';
 
@@ -268,4 +268,18 @@ test('delete-domain.ps1 takes its companions from the plan, not from manifest cl
   // 같은 이름 패키지(nuri.business.service.system.user 등)까지 걸려 실제로 깨지는 소스가 경고 소음에 묻힌다.
   assert.doesNotMatch(script, /nuri\.business\.\$layer\.\$d/u, 'no package-prefix sweep by domain name');
   assert.match(script, /\[void\]\$deletedTypeNames\.Add\("\$package\.\$\(\$file\.BaseName\)"\)/u);
+  // 화면은 기능 파일의 화면 소유(plan.frontendPaths)로 지운다(11단계 C5). v1 manifest 의 pack 경로를 읽지 않는다.
+  assert.match(script, /\$frontendRelPaths = @\(\$plan\.frontendPaths/u);
+  assert.doesNotMatch(script, /reusable-base-profiles|\$manifest|frontend\.removePaths/u, 'no v1 manifest or pack removal paths');
+});
+
+// 11단계 C5: 수동 삭제의 화면은 지우는 기능의 화면 소유다. 함께 소유한 화면은 소유한 기능을 모두 지울 때만 빠진다.
+test('manual deletion removes the screens the deleted features own, shared screens only with all their owners', () => {
+  const owned = planDomainFrontendPaths(ROOT, ['event']);
+  assert.ok(owned.includes('frontend/src/app/admin/operation/events'));
+  assert.ok(!owned.includes('frontend/src/app/admin/operation/rewards'), 'another feature keeps its own screen');
+  assert.ok(!owned.includes('frontend/src/app/admin/operation/error.tsx'), 'a shared screen stays while one owner remains');
+  assert.ok(planDomainFrontendPaths(ROOT, ['event', 'reward']).includes('frontend/src/app/admin/operation/error.tsx'),
+    'a shared screen goes with all its owners');
+  for (const path of planDomainFrontendPaths(ROOT, ['survey'])) assert.ok(existsSync(join(ROOT, path)), path);
 });
