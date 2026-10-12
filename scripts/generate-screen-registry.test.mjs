@@ -678,42 +678,86 @@ test('a screen that renders another route\'s client gets that client\'s write an
   assert.deepEqual(rows('/admin/things/[id]'), ['THING_CREATE:write'], 'the cycle is followed once to the screen that opens it');
 });
 
-test('writes and canPermission literals reached through a placement-blind slot contribution are refused, not spread to every consumer', t => {
+/*
+  [10단계 10a] 통계처럼 같은 레지스트리를 읽는 셸이 서로 다른 배치를 그린다 — 통계 셸(IntelligenceHubClient)은 기능 탭, 통계 요약
+  (AdminStatsClient)은 요약 칸이다. 소비자 표가 배치별이라 기여의 쓰기·표시는 그 항목의 배치를 그리는 셸의 화면에만 붙는다. 통계 셸은
+  /admin/stats 디렉터리에 있지만 그 화면을 그리지 않으므로 디렉터리가 아니라 그것을 그리는 화면(importer)에 귀속한다.
+*/
+function statsPanelsFixture(t) {
   const { dir, write, mutate } = fixture(t);
-  // 통계처럼 같은 레지스트리를 읽는 화면이 서로 다른 배치를 그린다. 기여는 탭 본문을 가리킨다.
-  const registryFor = slot => `import thing from './thing/${slot}';\nexport const panels = [thing];\n`;
-  const contributionFor = () => "import { ThingStatsBody } from '@/components/things/ThingStatsBody';\n"
-    + "export default [{ id: 'THING', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody }];\n";
-  for (const slot of ['stats-panels', 'shell-links']) {
-    write(`frontend/src/extensions/generated-${slot}.ts`, registryFor(slot));
-    write(`frontend/src/extensions/thing/${slot}.ts`, contributionFor());
-  }
+  write('frontend/src/extensions/generated-stats-panels.ts', "import thing from './thing/stats-panels';\nexport const statsPanels = [thing];\n");
   write('frontend/src/components/things/ThingStatsBody.tsx', 'export const ThingStatsBody = () => <p>본문</p>;\n');
-  write('frontend/src/app/admin/reports/page.tsx',
-    "import { panels } from '@/extensions/generated-stats-panels';\nexport default function Page() { return <>{panels.length}</>; }\n");
-  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => { catalog.pagePermissions['/admin/reports'] = ['THING_READ']; });
-  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
-    ledger.routes.push({ route: '/admin/reports', shellAccess: 'admin-system', visibleLabel: '사물 보고' });
+  write('frontend/src/components/things/ThingCardBody.tsx', 'export const ThingCardBody = () => <p>칸</p>;\n');
+  write('frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
+    "import { statsPanels } from '@/extensions/generated-stats-panels';\nexport default function Shell() { return <>{statsPanels.length}</>; }\n");
+  write('frontend/src/app/admin/stats/AdminStatsClient.tsx',
+    "import { statsPanels } from '@/extensions/generated-stats-panels';\nexport default function Overview() { return <>{statsPanels.length}</>; }\n");
+  write('frontend/src/app/admin/stats/page.tsx',
+    "import AdminStatsClient from './AdminStatsClient';\nexport default function Page() { return <AdminStatsClient />; }\n");
+  write('frontend/src/app/admin/stats/board/page.tsx',
+    "import IntelligenceHubClient from '../IntelligenceHubClient';\nexport default function Page() { return <IntelligenceHubClient />; }\n");
+  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => {
+    catalog.pagePermissions['/admin/stats'] = ['THING_READ'];
+    catalog.pagePermissions['/admin/stats/board'] = ['THING_READ'];
   });
-  // 본문에 쓰기·표시가 없으면 통과한다(대조군).
-  const rows = registry => byRoute(registry, '/admin/reports').permissions.map(row => `${row.code}:${row.source}`);
-  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_READ:entry']);
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    ledger.routes.push({ route: '/admin/stats', shellAccess: 'admin-system', visibleLabel: '통계 요약' });
+    ledger.routes.push({ route: '/admin/stats/board', shellAccess: 'admin-system', visibleLabel: '게시물 통계' });
+  });
+  // 기여는 항목이 가리키는 본문만 import 한다(import 가 곧 귀속 간선이다).
+  const contribution = entries => write('frontend/src/extensions/thing/stats-panels.ts', [
+    ...['ThingStatsBody', 'ThingCardBody'].filter(name => entries.some(entry => entry.includes(name)))
+      .map(name => `import { ${name} } from '@/components/things/${name}';`),
+    'export default [',
+    ...entries.map(entry => `  ${entry},`),
+    '];',
+  ].join('\n'));
+  const rows = (registry, route) => byRoute(registry, route).permissions.map(row => `${row.code}:${row.source}`);
+  return { dir, write, contribution, rows };
+}
 
+const STATS_TAB = "{ id: 'TAB', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody, visibleWhen: { page: '/admin/stats/board' } }";
+const STATS_CARD = "{ id: 'CARD', placement: 'overview-card', field: 'totalPosts', Body: ThingCardBody, visibleWhen: { page: '/admin/stats' } }";
+
+test('writes and canPermission literals reached through a stats panel go to the screens that draw its placement, not every consumer', t => {
+  const { dir, write, contribution, rows } = statsPanelsFixture(t);
+  contribution([STATS_TAB]);
+  // 본문에 쓰기·표시가 없으면 진입 권한뿐이다(대조군).
+  assert.deepEqual(rows(buildScreenRegistry(dir), '/admin/stats/board'), ['THING_READ:entry']);
+
+  write('frontend/src/components/things/ThingStatsBody.tsx', [
+    "import { thingService } from '@/services/ThingService';",
+    "export const ThingStatsBody = ({ user }) => (canPermission(user, 'THING_UPDATE')",
+    '  ? <button onClick={() => thingService.createThing({})}>등록</button> : null);',
+  ].join('\n'));
+  const tab = buildScreenRegistry(dir);
+  assert.deepEqual(rows(tab, '/admin/stats/board'), ['THING_CREATE:write', 'THING_READ:entry', 'THING_UPDATE:display']);
+  // 통계 셸이 /admin/stats 디렉터리에 있어도 요약 화면은 셸 탭을 그리지 않는다.
+  assert.deepEqual(rows(tab, '/admin/stats'), ['THING_READ:entry']);
+
+  // 요약 칸 항목만 두면 요약 화면에만 붙는다.
+  write('frontend/src/components/things/ThingCardBody.tsx',
+    "export const ThingCardBody = ({ user }) => (canPermission(user, 'THING_EXPORT') ? <p>칸</p> : null);\n");
+  contribution([STATS_CARD]);
+  const card = buildScreenRegistry(dir);
+  assert.deepEqual(rows(card, '/admin/stats'), ['THING_EXPORT:display', 'THING_READ:entry']);
+  assert.deepEqual(rows(card, '/admin/stats/board'), ['THING_READ:entry']);
+});
+
+test('a stats panel contribution file whose items span placements refuses writes and literals reached through it', t => {
+  const { dir, write, contribution, rows } = statsPanelsFixture(t);
+  // 배치가 섞인 기여 파일(게시판 → 통계와 같은 모양)이라도 그 파일을 거치는 쓰기·표시가 없으면 통과한다(대조군).
+  contribution([STATS_TAB, STATS_CARD]);
+  assert.deepEqual(rows(buildScreenRegistry(dir), '/admin/stats'), ['THING_READ:entry']);
   write('frontend/src/components/things/ThingStatsBody.tsx',
     "export const ThingStatsBody = ({ user }) => (canPermission(user, 'THING_UPDATE') ? <p>본문</p> : null);\n");
-  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*표시 THING_UPDATE/u);
+  assert.throws(() => buildScreenRegistry(dir),
+    /stats-panels 기여 파일의 항목이 여러 placement\(hub-tab, overview-card\)에 걸쳐 있어 .*표시 THING_UPDATE/u);
   write('frontend/src/components/things/ThingStatsBody.tsx', [
     "import { thingService } from '@/services/ThingService';",
     'export const ThingStatsBody = () => <button onClick={() => thingService.createThing({})}>등록</button>;',
   ].join('\n'));
-  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*쓰기 THING_CREATE/u);
-
-  // 배치를 가리는 슬롯(여기서는 shell-links 레지스트리를 읽는 화면)이면 종전처럼 그 화면에 귀속한다 — 거부는 슬롯 목록이 정한다.
-  write('frontend/src/app/admin/reports/page.tsx',
-    "import { panels } from '@/extensions/generated-shell-links';\nexport default function Page() { return <>{panels.length}</>; }\n");
-  fs.rmSync(path.join(dir, 'frontend/src/extensions/thing/stats-panels.ts'));
-  fs.rmSync(path.join(dir, 'frontend/src/extensions/generated-stats-panels.ts'));
-  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_CREATE:write', 'THING_READ:entry']);
+  assert.throws(() => buildScreenRegistry(dir), /여러 placement\(hub-tab, overview-card\)에 걸쳐 있어 .*쓰기 THING_CREATE/u);
 });
 
 test('screens and aliases are ordered by code point, not by the host locale order the page discovery uses', t => {

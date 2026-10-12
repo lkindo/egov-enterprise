@@ -11,6 +11,7 @@ import {
   analyze,
   analyzeScreenReachability,
   analyzeWriteAffordance,
+  analyzeWritePermissionNeeds,
   baseOperationId,
   isAliasDuplicate,
   isServiceFile,
@@ -18,6 +19,7 @@ import {
   outermostFunctionAt,
   owningMethodAt,
   pathSuffix,
+  readContributionEntries,
   runCensus,
   stripTsComments,
 } from './operation-consumer-census.mjs';
@@ -595,21 +597,22 @@ function affordanceFixture(t, files) {
     'export const thingService = new ThingService();',
   ]);
   for (const [relative, lines] of Object.entries(files)) write(relative, lines);
+  const inputs = {
+    boundaries: { records: [
+      { file: 'frontend/src/services/ThingService.ts', line: 3, method: 'get', target: '/api/v1/things', operationId: 'getThings' },
+      { file: 'frontend/src/services/ThingService.ts', line: 6, method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
+    ] },
+    policies: { operationBindings: [
+      { method: 'GET', path: '/api/v1/things', access: 'PERMISSION', permission: 'THING_READ' },
+      { method: 'DELETE', path: '/api/v1/things/{id}', access: 'PERMISSION', permission: 'THING_DELETE' },
+    ] },
+    repoRoot: root,
+    ts,
+  };
   return {
     root,
-    analyze: (catalog = { pagePermissions: {}, pagePermissionModes: {} }) => analyzeWriteAffordance({
-      boundaries: { records: [
-        { file: 'frontend/src/services/ThingService.ts', line: 3, method: 'get', target: '/api/v1/things', operationId: 'getThings' },
-        { file: 'frontend/src/services/ThingService.ts', line: 6, method: 'delete', target: '/api/v1/things/{id}', operationId: 'deleteThing' },
-      ] },
-      policies: { operationBindings: [
-        { method: 'GET', path: '/api/v1/things', access: 'PERMISSION', permission: 'THING_READ' },
-        { method: 'DELETE', path: '/api/v1/things/{id}', access: 'PERMISSION', permission: 'THING_DELETE' },
-      ] },
-      catalog,
-      repoRoot: root,
-      ts,
-    }),
+    analyze: (catalog = { pagePermissions: {}, pagePermissionModes: {} }) => analyzeWriteAffordance({ ...inputs, catalog }),
+    needs: () => analyzeWritePermissionNeeds(inputs),
   };
 }
 
@@ -959,6 +962,59 @@ test('축 3 — 레지스트리를 도우미(.ts)가 읽으면 그 도우미를 
   const gated = slotFixture(t, { helper: true, host: "export const ThingHost = ({ user }) => canPermission(user, 'THING_DELETE');" });
   assert.deepEqual(gated.analyze().ungated, []);
   assert.equal(slotFixture(t, { helper: true }).analyze().ungated.length, 1);
+});
+
+/*
+  [10단계 10a] 노출 술어는 항목 단위로 읽는다. 한 기여 파일이 배치가 다른 항목을 함께 둘 수 있다(게시판 → 통계: 셸 탭 둘과 요약 칸 하나).
+  파일 단위로 합치면 요약 칸의 권한(STATS_ADMIN_READ)이 셸 탭의 것으로 읽혀, 소비자를 배치별로 나눈 표가 있어도 셸 화면에 붙는다.
+*/
+const MIXED_STATS_CONTRIBUTION = [
+  "import { defineContributions } from '@/extensions/slots';",
+  "import { ThingStatsBody } from '@/app/admin/things/ThingStatsBody';",
+  "export default defineContributions('stats-panels', [",
+  "  { id: 'TAB', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody, visibleWhen: { page: '/admin/stats/board' } },",
+  "  { id: 'CARD', placement: 'overview-card', field: 'totalPosts', visibleWhen: { permissions: ['STATS_ADMIN_READ'] as const } },",
+  "  { id: 'BODY', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody, visibleWhen: ({ permissions: ['SURVEY_READ_ALL'] }) satisfies object },",
+  "  { id: 'ALWAYS', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody, visibleWhen: { always: \"서버가 'NOTE_READ' 로 막는다.\" } },",
+  ']);',
+];
+
+test('기여 항목은 항목 단위로 읽는다 — 배치가 섞인 파일의 술어를 파일 단위로 합치지 않는다 (10단계 10a)', (t) => {
+  const source = ts.createSourceFile('stats-panels.ts', MIXED_STATS_CONTRIBUTION.join('\n'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  assert.deepEqual(readContributionEntries(ts, source), [
+    { id: 'TAB', hub: null, placement: 'hub-tab', permissions: null, page: '/admin/stats/board', always: false },
+    { id: 'CARD', hub: null, placement: 'overview-card', permissions: ['STATS_ADMIN_READ'], page: null, always: false },
+    { id: 'BODY', hub: null, placement: 'hub-tab', permissions: ['SURVEY_READ_ALL'], page: null, always: false },
+    // always 사유 속 따옴표 친 권한 이름은 술어가 아니다.
+    { id: 'ALWAYS', hub: null, placement: 'hub-tab', permissions: null, page: null, always: true },
+  ]);
+  // 소비자 표는 배치별이다(통계 셸 = 기능 탭, 통계 요약 = 요약 칸). 항목의 reader 는 그 배치의 소비자뿐이고, 기여의 importer 는 항목들의 합이다.
+  const shell = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
+  const overview = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
+  const contribution = 'frontend/src/extensions/things/stats-panels.ts';
+  const { needs } = affordanceFixture(t, {
+    'frontend/src/extensions/slots.ts': 'export const defineContributions = (slot, entries) => entries;',
+    'frontend/src/app/admin/things/ThingStatsBody.tsx': 'export const ThingStatsBody = () => null;',
+    [contribution]: MIXED_STATS_CONTRIBUTION,
+    'frontend/src/extensions/generated-stats-panels.ts': ["import things from './things/stats-panels';", 'export const statsPanels = [things];'],
+    [shell]: ["import { statsPanels } from '@/extensions/generated-stats-panels';", 'export const Shell = () => statsPanels;'],
+    [overview]: ["import { statsPanels } from '@/extensions/generated-stats-panels';", 'export const Overview = () => statsPanels;'],
+  });
+  const analysis = needs();
+  assert.deepEqual(analysis.contributionFiles, [contribution]);
+  const entries = analysis.visibilityOf(contribution);
+  assert.deepEqual(entries.map((entry) => [entry.id, analysis.entryReadersOf(contribution, entry)]), [
+    ['TAB', [shell]],
+    ['CARD', [overview]],
+    ['BODY', [shell]],
+    ['ALWAYS', [shell]],
+  ]);
+  assert.deepEqual(analysis.importersOf(contribution).sort(), [overview, shell]);
+  // 축 3 의 기여 판정도 항목 술어의 합이다(사유 문자열은 세지 않는다).
+  assert.equal(analysis.mentions(contribution, 'STATS_ADMIN_READ'), true);
+  assert.equal(analysis.mentions(contribution, 'NOTE_READ'), false);
+  // 소비자 표에 없는 배치의 항목은 reader 가 없다(조용히 다른 소비자로 넘기지 않는다).
+  assert.deepEqual(analysis.entryReadersOf(contribution, { ...entries[0], placement: 'bogus' }), []);
 });
 
 test('축 3 — 라우트 진입 권한이 그 권한을 보장하면 버튼을 따로 가릴 필요가 없다', (t) => {

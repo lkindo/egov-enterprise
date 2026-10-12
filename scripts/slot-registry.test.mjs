@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
 import {
-  PLACEMENT_BLIND_SLOTS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, frontendRelativePath, renderSlotRegistry, slotExportName,
-  slotPathKind, slotRegistryDrift, slotRegistryPath,
+  SLOT_CONSUMER_PARTITION_KEYS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, frontendRelativePath, renderSlotRegistry,
+  slotConsumerFiles, slotConsumerPartition, slotConsumersByHub, slotExportName, slotPathKind, slotRegistryDrift, slotRegistryPath,
 } from './slot-registry.mjs';
 
 /*
@@ -131,11 +131,26 @@ test('after the cascade the generator refuses a registry that no longer matches 
   assert.deepEqual(pruneFrontend(clean, MANIFEST, MANIFEST.profiles.core).slots, [{ slot: 'shell-links', owners: ['board'] }]);
 });
 
-// 배치를 가리지 못하는 슬롯은 소비자가 둘 이상인 평면 표다 — 허브별 표가 있거나 소비자가 하나면 오귀속이 없어 거부할 까닭이 없다.
-test('every placement-blind slot is a flat consumer row with more than one consumer', () => {
-  assert.ok(PLACEMENT_BLIND_SLOTS.length > 0);
-  for (const slot of PLACEMENT_BLIND_SLOTS) {
-    const row = SLOT_REGISTRY_CONSUMERS[slot];
-    assert.ok(Array.isArray(row) && row.length > 1, `${slot} must list several consumers in one flat row`);
-  }
+// [10단계 10a] 소비자마다 다른 항목을 그리는 슬롯은 나눔 속성의 값별로 소비자를 적는다 — hub-tabs 는 허브별, stats-panels 는 배치별이다.
+// 나눈 표와 나눔 속성 목록이 어긋나면 어느 값이 어느 소비자인지 판정할 수 없으므로 실패한다(조용히 한 목록으로 읽지 않는다).
+test('partitioned consumer rows: hub-tabs by hub and stats-panels by placement, and a row without its key fails closed', () => {
+  const partitioned = Object.keys(SLOT_REGISTRY_CONSUMERS).filter(slot => slotConsumerPartition(slot) !== null).sort();
+  assert.deepEqual(partitioned, Object.keys(SLOT_CONSUMER_PARTITION_KEYS).sort(), 'the partitioned rows are exactly the partition keys');
+  assert.deepEqual(SLOT_CONSUMER_PARTITION_KEYS, { 'hub-tabs': 'hub', 'stats-panels': 'placement' });
+  assert.deepEqual(slotConsumerPartition('stats-panels'), {
+    key: 'placement',
+    consumers: {
+      'hub-tab': ['frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
+      'overview-card': ['frontend/src/app/admin/stats/AdminStatsClient.tsx'],
+    },
+  });
+  // 허브별 표를 읽는 쪽(URL 상태 census)은 배치별로 나눈 표를 허브 표로 읽지 않는다. 펼친 소비자 목록은 종전과 같다.
+  assert.equal(slotConsumersByHub('stats-panels'), null);
+  assert.deepEqual(Object.keys(slotConsumersByHub('hub-tabs')).sort(), ['collaboration', 'knowledge', 'monitoring']);
+  assert.deepEqual(slotConsumerFiles('stats-panels'),
+    ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx']);
+  assert.equal(slotConsumerPartition('shell-links'), null, 'a flat row has no partition');
+  // 대조: 나눈 표에 나눔 속성이 없거나, 나눔 속성이 있는데 한 목록이면 붉다.
+  assert.throws(() => slotConsumerPartition('probe', { probe: { a: ['x.tsx'] } }), /소비자 표를 값별로 나눴는데 나눔 속성이 없다/u);
+  assert.throws(() => slotConsumerPartition('hub-tabs', { 'hub-tabs': ['x.tsx'] }), /나눔 속성\(hub\)이 있는데 소비자 표가 한 목록이다/u);
 });

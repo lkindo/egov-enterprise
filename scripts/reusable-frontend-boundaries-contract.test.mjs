@@ -11,8 +11,9 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
-import { SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles, slotConsumersByHub, slotPathKind,
-  slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_CONSUMER_PARTITION_KEYS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles,
+  slotConsumerPartition, slotConsumersByHub, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { readContributionEntries } from './operation-consumer-census.mjs';
 import { runInNewContext } from 'node:vm';
 
 // TypeScript 는 frontend 가 잠근 판(pnpm-lock)을 쓴다. 생성물의 tsc 와 같은 컴파일러다.
@@ -803,6 +804,66 @@ test('slot names are one spelling: SlotMap keys, registries and contribution fil
   const probe = readFileSync(SLOTS_SOURCE, 'utf8').replace("'recipient-picker-sources': RecipientPickerSource;",
     "'recipient-picker-sources': RecipientPickerSource;\n  'probe-slot': RecipientPickerSource;");
   assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'probe-slot'].sort(), 'the key reader sees an added key');
+});
+
+/** 통계 패널(stats-panels) 항목 타입이 두는 배치(placement 리터럴). slots.ts 의 통계 타입 구간에서 읽는다. */
+function statsPanelPlacements(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
+  const start = source.indexOf('interface StatsHubTabBase');
+  const end = source.indexOf('export type StatsPanel =');
+  assert.ok(start >= 0 && end > start, 'slots.ts declares the stats panel types before the StatsPanel union');
+  return [...new Set([...source.slice(start, end).matchAll(/readonly placement: '([a-z][a-z0-9-]*)'/gu)].map(match => match[1]))].sort();
+}
+
+/**
+ * 소비자를 값별로 나눈 슬롯의 기여 항목 가운데 표에 그 값의 소비자가 없는 항목(10단계 10a). 판독기는 축 3 의 항목 단위 판독기 하나다.
+ * files 는 frontend 기준 경로 → 원문, table 은 소비자 표다.
+ */
+function partitionViolations(files, table = SLOT_REGISTRY_CONSUMERS) {
+  const violations = [];
+  for (const [file, source] of files) {
+    const kind = slotPathKind(file);
+    if (kind?.kind !== 'contribution') continue;
+    const partition = slotConsumerPartition(kind.slot, table);
+    if (!partition) continue;
+    const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const entry of readContributionEntries(ts, ast)) {
+      const value = entry[partition.key];
+      if (typeof value !== 'string' || !Object.hasOwn(partition.consumers, value) || partition.consumers[value].length === 0) {
+        violations.push(`frontend/${kind.file} ${entry.id}: ${partition.key} '${value}' 를 그리는 소비자가 없다(소비자 없는 배치)`);
+      }
+    }
+  }
+  return violations.sort();
+}
+
+test('partitioned consumer rows: the values are the slot type values, and every contribution item names a value with consumers', () => {
+  const inputs = readProjectionInputs();
+  const files = new Map(inputs.files.map(file => [frontendRel(file), inputs.original(file)])
+    .filter(([file]) => slotPathKind(file)?.kind === 'contribution'));
+  assert.deepEqual(partitionViolations(files), [], 'every item of a partitioned slot is drawn by a consumer of its value');
+  assert.deepEqual(Object.keys(SLOT_CONSUMER_PARTITION_KEYS).sort(), ['hub-tabs', 'stats-panels']);
+  assert.deepEqual(Object.keys(slotConsumerPartition('hub-tabs').consumers).sort(), [...hubViewKeys()].sort(), 'hub-tabs: one row per hub view');
+  assert.deepEqual(Object.keys(slotConsumerPartition('stats-panels').consumers).sort(), statsPanelPlacements(),
+    'stats-panels: one row per placement of the stats panel types');
+  assert.deepEqual(statsPanelPlacements(), ['hub-tab', 'overview-card']);
+  // 대조: 요약 칸의 소비자 행을 지운 표 — 게시판의 '누적 게시물' 칸을 그리는 소비자가 없다.
+  const withoutOverview = { ...SLOT_REGISTRY_CONSUMERS, 'stats-panels': { 'hub-tab': SLOT_REGISTRY_CONSUMERS['stats-panels']['hub-tab'] } };
+  const board = 'src/extensions/board/stats-panels.ts';
+  if (files.has(board)) {
+    assert.deepEqual(partitionViolations(new Map([[board, files.get(board)]]), withoutOverview),
+      [`frontend/${board} TOTAL_POSTS: placement 'overview-card' 를 그리는 소비자가 없다(소비자 없는 배치)`]);
+  }
+  // 대조: 모르는 배치·배치 없는 항목·모르는 허브.
+  const synthetic = new Map([
+    ['src/extensions/probe/stats-panels.ts', "export default [{ id: 'A', placement: 'bogus', visibleWhen: { always: '시험' } },\n"
+      + "  { id: 'B', visibleWhen: { always: '시험' } }];\n"],
+    ['src/extensions/probe/hub-tabs.ts', "export default [{ id: 'C', hub: 'nowhere', visibleWhen: { always: '시험' } }];\n"],
+  ]);
+  assert.deepEqual(partitionViolations(synthetic), [
+    "frontend/src/extensions/probe/hub-tabs.ts C: hub 'nowhere' 를 그리는 소비자가 없다(소비자 없는 배치)",
+    "frontend/src/extensions/probe/stats-panels.ts A: placement 'bogus' 를 그리는 소비자가 없다(소비자 없는 배치)",
+    "frontend/src/extensions/probe/stats-panels.ts B: placement 'null' 를 그리는 소비자가 없다(소비자 없는 배치)",
+  ]);
 });
 
 /** 원본(또는 생성물)의 hub-tabs 기여 항목 (hub, id, 파일). 생성물에서 투영으로 빠진 기여는 없다. */

@@ -66,7 +66,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
-import { SLOT_ROOT, slotConsumersByHub, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_ROOT, slotConsumerPartition, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -542,6 +542,51 @@ export function outermostFunctionAt(ts, sourceFile, line) {
   return best?.name ?? null;
 }
 
+/**
+ * 슬롯 기여 파일의 항목을 읽는다(Phase 2 10단계 10a — 항목 단위 판독). 항목은 노출 술어 visibleWhen 을 가진 객체 리터럴이고,
+ * 항목마다 { id, hub, placement, permissions, page, always } 를 돌려준다(없는 값은 null, always 는 있으면 true).
+ *
+ * <p>판독기는 이것 하나다 — 축 3 판정(기여의 노출 판정)·소비자 귀속(나눈 표의 값)·화면 목록 생성기(술어 귀속)·슬롯 경계 계약이 함께
+ * 쓴다. 파일 단위로 합치지 않는다: 한 기여 파일이 배치가 다른 항목을 함께 둘 수 있고(게시판 → 통계: 셸 탭 둘과 요약 칸 하나), 합치면
+ * 요약 칸의 권한이 셸 화면에도 붙는다. 권한은 술어 배열의 문자열 원소만 센다 — always 사유 문자열 속 권한 이름은 판정이 아니다.
+ * as const·satisfies·괄호로 감싼 값도 벗겨 읽는다.
+ */
+export function readContributionEntries(ts, sourceFile) {
+  const unwrap = (node) => {
+    let current = node;
+    while (current && (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)
+      || ts.isSatisfiesExpression(current))) current = current.expression;
+    return current;
+  };
+  const property = (object, name) => object.properties.find((candidate) => ts.isPropertyAssignment(candidate)
+    && (ts.isIdentifier(candidate.name) || ts.isStringLiteral(candidate.name)) && candidate.name.text === name);
+  const literal = (object, name) => {
+    const value = unwrap(property(object, name)?.initializer);
+    return value && ts.isStringLiteralLike(value) ? value.text : null;
+  };
+  const entries = [];
+  const visit = (node) => {
+    if (ts.isObjectLiteralExpression(node)) {
+      const rule = unwrap(property(node, 'visibleWhen')?.initializer);
+      if (rule && ts.isObjectLiteralExpression(rule)) {
+        const list = unwrap(property(rule, 'permissions')?.initializer);
+        entries.push({
+          id: literal(node, 'id'),
+          hub: literal(node, 'hub'),
+          placement: literal(node, 'placement'),
+          permissions: list && ts.isArrayLiteralExpression(list)
+            ? list.elements.filter((element) => ts.isStringLiteralLike(element)).map((element) => element.text) : null,
+          page: literal(rule, 'page'),
+          always: property(rule, 'always') !== undefined,
+        });
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return entries;
+}
+
 /** 화면 파일이 놓인 라우트(가장 가까운 page.tsx 의 경로). 공용 컴포넌트면 null. */
 function routeOfUiFile(file, pageDirs) {
   const posix = toPosix(file);
@@ -590,7 +635,10 @@ function routeGuarantees(route, permission, catalog) {
 export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = DEFAULT_REPO_ROOT, ts }) {
   const sourceRoot = resolve(repoRoot, FRONTEND_SOURCE_ROOT);
   if (!existsSync(sourceRoot)) {
-    return { writeMethods: [], needs: [], routeOf: () => null, importersOf: () => [], mentions: () => false };
+    return {
+      writeMethods: [], needs: [], routeOf: () => null, importersOf: () => [], mentions: () => false,
+      contributionFiles: [], visibilityOf: () => [], entryReadersOf: () => [],
+    };
   }
 
   const bindings = new Map();
@@ -713,79 +761,76 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
   /*
     [스크랩 슬롯 검토] 기여의 판정은 노출 술어 visibleWhen.permissions 하나다. 기여 소스 전체에서 따옴표 친 권한 이름을 찾으면, 서버
     권한을 설명하는 always 사유(`always: "서버가 'X' 로 막는다."`)가 판정으로 세여 노출 판정 없이 부채가 사라진다(H2). 그래서 기여는
-    AST 로 그 배열의 문자열 원소만 읽는다. 화면 파일은 종전대로 따옴표 친 권한 이름이면 판정에 쓴 것으로 본다.
+    항목 단위 판독기(readContributionEntries)로 술어 배열의 문자열 원소만 읽는다. 화면 파일은 종전대로 따옴표 친 권한 이름이면
+    판정에 쓴 것으로 본다.
   */
-  const unwrap = (node) => {
-    let current = node;
-    while (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)
-      || ts.isSatisfiesExpression(current)) current = current.expression;
-    return current;
-  };
-  const visibilityCodes = new Map();
-  const contributionGates = (file) => {
-    if (!visibilityCodes.has(file)) {
-      const codes = new Set();
-      const visit = (node) => {
-        if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'permissions'
-          && ts.isArrayLiteralExpression(unwrap(node.initializer))) {
-          let holder = node.parent;
-          while (holder.parent && (ts.isAsExpression(holder.parent) || ts.isParenthesizedExpression(holder.parent)
-            || ts.isSatisfiesExpression(holder.parent))) holder = holder.parent;
-          const owner = holder.parent;
-          if (owner && ts.isPropertyAssignment(owner) && ts.isIdentifier(owner.name) && owner.name.text === 'visibleWhen') {
-            for (const element of unwrap(node.initializer).elements) if (ts.isStringLiteralLike(element)) codes.add(element.text);
-          }
-        }
-        ts.forEachChild(node, visit);
-      };
-      visit(ast(file));
-      visibilityCodes.set(file, codes);
-    }
-    return visibilityCodes.get(file);
+  const entryCache = new Map();
+  const entriesOf = (target) => {
+    if (!entryCache.has(target)) entryCache.set(target, readContributionEntries(ts, ast(target)));
+    return entryCache.get(target);
   };
   const mentions = (file, permission) => {
     const target = absolute(file);
-    if (contributionSlot.has(target)) return contributionGates(target).has(permission);
+    if (contributionSlot.has(target)) return entriesOf(target).some((entry) => (entry.permissions ?? []).includes(permission));
     const source = sources.get(target);
     return source !== undefined && new RegExp(`['"\`]${permission}['"\`]`, 'u').test(source);
   };
   const directImporters = (target) => uiFiles.filter((other) => other !== target && importsModule(sources.get(other), moduleName(target)));
   /*
-    [허브 분해 H1] hub-tabs 레지스트리는 하나인데 여러 허브 셸이 읽는다. 기여의 importer 를 레지스트리를 읽는 모든 파일로 이으면 한 허브
-    탭의 쓰기(예: 스크랩 등록)가 다른 허브 화면에 귀속돼 권한 작업대가 엉뚱한 권한을 보이고, 축 3 판정이 다른 허브의 언급으로 통과할 수
-    있다. 그래서 허브별 소비자 표(slot-registry.mjs)가 있는 슬롯은 기여 항목의 hub 리터럴을 AST 로 읽어 그 허브의 셸만 잇는다.
+    기여 파일은 아무 화면도 직접 import 하지 않는다 — 셸은 생성 레지스트리(generated-<슬롯>.ts)를 읽는다. 그래서 기여를 그리는 것은
+    그 레지스트리를 읽는 파일(reader)이다.
+    [허브 분해 H1·10단계 10a] 레지스트리는 하나인데 소비자마다 다른 항목을 그리는 슬롯(hub-tabs 는 허브별, stats-panels 는 배치별)은
+    소비자 표(slot-registry.mjs)를 값별로 나눴다. 항목의 reader 는 그 항목의 값(hub·placement)이 가리키는 소비자뿐이다 — 레지스트리를
+    읽는 모든 파일로 이으면 한 허브 탭의 쓰기(예: 스크랩 등록)가 다른 허브 화면에 귀속돼 권한 작업대가 엉뚱한 권한을 보이고, 축 3 판정이
+    다른 소비자의 언급으로 통과할 수 있다. 표에 없는 값이면 reader 가 없다 — 축 3 은 부채로 남고(조용히 가려지지 않는다), 화면 목록은
+    귀속 0 으로 실패하며, 경계 계약이 그 값을 '소비자 없는 배치' 로 막는다.
   */
-  const contributionHubs = (file) => {
-    const hubs = new Set();
-    const visit = (node) => {
-      if (ts.isPropertyAssignment(node) && ts.isIdentifier(node.name) && node.name.text === 'hub'
-        && ts.isStringLiteralLike(unwrap(node.initializer))) hubs.add(unwrap(node.initializer).text);
-      ts.forEachChild(node, visit);
-    };
-    visit(ast(file));
-    return [...hubs];
+  const registryReaders = new Map();
+  const readersOfSlot = (slot) => {
+    if (!registryReaders.has(slot)) {
+      const registry = moduleName(slotRegistryPath(slot));
+      registryReaders.set(slot, files.filter((reader) => importsModule(sources.get(reader), registry)));
+    }
+    return registryReaders.get(slot);
+  };
+  const entryReaders = (target, entry) => {
+    const slot = contributionSlot.get(target);
+    const readers = readersOfSlot(slot).filter((reader) => reader !== target);
+    const partition = slotConsumerPartition(slot);
+    if (!partition) return readers;
+    const value = entry[partition.key];
+    const allowed = new Set((typeof value === 'string' && Object.hasOwn(partition.consumers, value) ? partition.consumers[value] : [])
+      .map((consumer) => absolute(consumer)));
+    return readers.filter((reader) => allowed.has(reader));
   };
   /*
-    기여 파일은 아무 화면도 직접 import 하지 않는다 — 셸은 생성 레지스트리(generated-<슬롯>.ts)를 읽는다. 그래서 기여의 importer 는
-    그 레지스트리의 importer 다. 레지스트리를 읽는 것이 화면이 아니라 도우미(.ts, 예: 수신자 피커 출처 도우미)면 그 도우미를 import
-    하는 화면으로 한 번 더 잇는다. 이 한 단계가 없으면 다음 슬롯에서 같은 사각이 재발한다.
+    기여의 importer 는 그 항목들의 reader 다. reader 가 화면이 아니라 도우미(.ts, 예: 수신자 피커 출처 도우미)면 그 도우미를 import
+    하는 화면으로 한 번 더 잇는다. 이 한 단계가 없으면 다음 슬롯에서 같은 사각이 재발한다. 항목이 없는 기여(술어 없는 합성 기여)는
+    한 목록 슬롯이면 모든 reader, 나눈 슬롯이면 reader 가 없다(종전과 같다).
   */
   const importersOf = (file) => {
     const target = absolute(file);
     const importers = new Set(directImporters(target));
-    const slot = contributionSlot.get(target);
-    if (slot !== undefined) {
-      const registry = moduleName(slotRegistryPath(slot));
-      const byHub = slotConsumersByHub(slot);
-      const hubReaders = byHub ? new Set(contributionHubs(target).flatMap((hub) => byHub[hub] ?? []).map((file) => absolute(file))) : null;
-      for (const reader of files) {
-        if (reader === target || !importsModule(sources.get(reader), registry)) continue;
-        if (hubReaders && !hubReaders.has(reader)) continue;
-        if (uiFiles.includes(reader)) importers.add(reader);
-        else directImporters(reader).forEach((screen) => importers.add(screen));
+    if (contributionSlot.has(target)) {
+      const entries = entriesOf(target);
+      for (const entry of entries.length > 0 ? entries : [{ hub: null, placement: null }]) {
+        for (const reader of entryReaders(target, entry)) {
+          if (uiFiles.includes(reader)) importers.add(reader);
+          else directImporters(reader).forEach((screen) => importers.add(screen));
+        }
       }
     }
     return [...importers].map(relativeOf);
+  };
+  /** 기여 파일의 항목(저장소 상대 경로를 받는다). 기여가 아니면 빈 목록이다. */
+  const visibilityOf = (file) => {
+    const target = absolute(file);
+    return contributionSlot.has(target) ? entriesOf(target).map((entry) => ({ ...entry })) : [];
+  };
+  /** 그 항목을 그리는 reader(레지스트리를 읽는 파일, 저장소 상대 경로). 화면 목록 생성기가 술어를 귀속하는 출발점이다. */
+  const entryReadersOf = (file, entry) => {
+    const target = absolute(file);
+    return contributionSlot.has(target) ? entryReaders(target, entry).map(relativeOf) : [];
   };
   const routeOf = (file) => routeOfUiFile(absolute(file), pageDirs);
 
@@ -795,7 +840,8 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
       needList.push({ file: relativeOf(file), route: routeOfUiFile(file, pageDirs), permission, via });
     }
   }
-  return { writeMethods, needs: needList, routeOf, importersOf, mentions };
+  const contributionFiles = [...contributionSlot.keys()].map(relativeOf).sort();
+  return { writeMethods, needs: needList, routeOf, importersOf, mentions, contributionFiles, visibilityOf, entryReadersOf };
 }
 
 /**

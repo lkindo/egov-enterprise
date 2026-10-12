@@ -53,7 +53,7 @@ import { discoverConfigRedirects, discoverPageRoutes, expectedRouting } from './
 import {
   analyzeWritePermissionNeeds, isIntermediaryFile, isServiceFile, isTestFile, stripTsComments,
 } from './operation-consumer-census.mjs';
-import { PLACEMENT_BLIND_SLOTS, SLOT_ROOT, slotPathKind } from './slot-registry.mjs';
+import { SLOT_REGISTRY_CONSUMERS, SLOT_ROOT, slotConsumerFiles, slotConsumerPartition, slotPathKind } from './slot-registry.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -468,26 +468,41 @@ export function buildScreenRegistry(root = repoRoot) {
       if (hostsPages.has(directory) || directory === '') return { kind: 'shared' };
     }
   };
-  // 배치를 가리지 못하는 슬롯(slot-registry.mjs PLACEMENT_BLIND_SLOTS)의 기여. 그 기여를 거치는 귀속은 배치가 다른 소비자 화면에도
-  // 함께 붙으므로 거부한다 — 조용히 넓게 붙이면 권한 작업대가 그 화면에 없는 권한을 보인다.
-  const placementBlindSlotOf = file => {
+  /*
+    [10단계 10a] 소비자를 값별로 나눈 슬롯(hub-tabs 는 허브별, stats-panels 는 배치별)의 기여는 항목마다 그 값의 소비자에게만 닿는다
+    (축 3 의 importersOf 가 항목의 값으로 reader 를 가른다). 그런데 쓰기·canPermission 리터럴은 어느 항목이 그 모듈을 가리키는지 모른 채
+    기여 파일을 거쳐 올라온다. 한 기여 파일의 항목이 여러 값에 걸쳐 있으면(게시판 → 통계: 셸 탭 둘과 요약 칸 하나) 그 쓰기·표시가 모든
+    값의 소비자 화면에 함께 붙으므로 거부한다 — 조용히 넓게 붙이면 권한 작업대가 그 화면에 없는 권한을 보인다. 값마다 기여 파일을 나누면
+    통과한다. 노출 술어(visibleWhen.permissions)는 항목 단위로 따로 귀속하므로 이 제한을 받지 않는다.
+  */
+  const mixedPartitionOf = file => {
     if (!file.startsWith(`frontend/${SLOT_ROOT}/`)) return null;
     const kind = slotPathKind(file);
-    return kind?.kind === 'contribution' && PLACEMENT_BLIND_SLOTS.includes(kind.slot) ? kind.slot : null;
+    const partition = kind?.kind === 'contribution' ? slotConsumerPartition(kind.slot) : null;
+    if (!partition) return null;
+    const values = [...new Set(analysis.visibilityOf(file).map(entry => entry[partition.key]))].sort(byCodePoint);
+    return values.length > 1 ? { slot: kind.slot, key: partition.key, values } : null;
   };
+  /*
+    [10단계 10a] 슬롯 소비자(레지스트리를 읽는 셸, slot-registry.mjs 의 소비자 표)는 놓인 디렉터리의 화면이 아니라 그것을 그리는 화면
+    (importer)에 귀속한다. 통계 셸(IntelligenceHubClient)은 /admin/stats 디렉터리에 있지만 그 화면(통계 요약)은 통계 셸이 아니라 요약
+    화면을 그린다 — 디렉터리로 귀속하면 셸 탭의 권한이 요약 화면에 붙는다. 다른 소비자는 모두 자기 디렉터리의 page 가 그리므로 importer 로
+    귀속해도 결과가 같다.
+  */
+  const slotConsumerShells = new Set(Object.keys(SLOT_REGISTRY_CONSUMERS).flatMap(slot => slotConsumerFiles(slot)));
   const screensOf = (file, permissionUse) => {
     const found = new Set();
     const seen = new Set();
     const visit = current => {
       if (seen.has(current)) return; // import 순환
       seen.add(current);
-      const blindSlot = placementBlindSlotOf(current);
-      if (blindSlot) {
-        throw new Error(`${blindSlot} 기여는 배치별 귀속이 없어 소비자 화면 모두에 귀속된다 — 그 기여가 닿는 모듈에 쓰기·`
-          + `canPermission 리터럴을 두지 않는다(${permissionUse}, ${file} → ${current}). 배치별 귀속을 먼저 둔다.`);
+      const mixed = mixedPartitionOf(current);
+      if (mixed) {
+        throw new Error(`${mixed.slot} 기여 파일의 항목이 여러 ${mixed.key}(${mixed.values.join(', ')})에 걸쳐 있어 그 파일을 거치는 `
+          + `쓰기·canPermission 리터럴을 한 소비자에 가를 수 없다(${permissionUse}, ${file} → ${current}). ${mixed.key} 마다 기여 파일을 나눈다.`);
       }
       const owner = ownerOf(current);
-      if (owner.kind === 'screen') found.add(owner.route);
+      if (owner.kind === 'screen' && !slotConsumerShells.has(current)) found.add(owner.route);
       // 화면 파일도 다른 화면이 import 해 렌더할 수 있다(허브 클라이언트 재사용) — 거기서 멈추지 않는다.
       importersOf(current).forEach(visit);
     };
