@@ -42,6 +42,7 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'hub-tabs': {
     collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
     knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
+    monitoring: ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
   },
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],

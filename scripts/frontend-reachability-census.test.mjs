@@ -264,8 +264,8 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
       `${survivor} is removed from the core profile via ${JSON.stringify(coreRemoval?.evidencePath)}`,
     );
   }
-  // [2026-09-27 DIP B5 F11] 하네스 아틀라스(정적 스킬 카탈로그·예시 계측 로그)는 demo 소유 샘플이다. 허브는 그 탭을
-  //   demo 마커 안에서만 등록하므로, removePaths 에서 빠지면 탭은 사라지고 파일만 core 에 고아로 남는다.
+  // [2026-09-27 DIP B5 F11] 하네스 아틀라스(정적 스킬 카탈로그·예시 계측 로그)는 demo pack 소유 샘플이다. 허브에는 시연 기능의
+  //   hub-tabs 기여로만 붙으므로(허브 분해 H3), removePaths 에서 빠지면 탭은 사라지고 파일만 core 에 고아로 남는다.
   const harnessAtlas = byFile(census, 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx');
   assert.equal(
     harnessAtlas.profileRemovalConstraints.find((constraint) => constraint.profile === 'core')?.removal,
@@ -291,6 +291,8 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/components/business/community/knowledge-community-tab.tsx', ['core', 'collaboration']],
     ['frontend/src/app/admin/help/KnowledgeHubClient.tsx', ['core']],
     ['frontend/src/lib/board/qna-status.ts', ['core']],
+    // [허브 분해 H3] 감시 허브의 하네스 아틀라스 탭 기여도 시연 기능과 함께 직접 지워진다(허브는 core 셸이라 남는다).
+    ['frontend/src/extensions/showcase/hub-tabs.ts', ['core', 'collaboration']],
   ]) {
     for (const profile of profiles) {
       assert.equal(byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal, 'direct',

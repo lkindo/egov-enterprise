@@ -125,7 +125,9 @@ const FEATURES = {
   routes: ['/admin/collaboration/scraps'] },
   // 프런트 전용 기능이다 — Java·테이블·권한이 없다(manifest frontendOnlyDomains). 화면 진입 권한은 core 권한이다.
   showcase: { label: '시연 화면', permissions: [], paths: [
-    'src/app/admin/patterns', 'src/app/admin/system/layout', 'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx'],
+    'src/app/admin/patterns', 'src/app/admin/system/layout', 'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx',
+    // 허브 분해 H3: 감시 허브의 하네스 아틀라스 탭 기여.
+    'src/extensions/showcase'],
   routes: ['/admin/patterns', '/admin/system/layout'] },
   sms: { label: '문자 발송', permissions: ['SMS'], paths: [
     'src/services/foundation/operation/SmsAdminService.ts', 'src/app/admin/uss/ion/sms', 'src/app/cop/sms'],

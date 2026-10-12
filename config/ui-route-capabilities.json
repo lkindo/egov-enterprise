@@ -8932,7 +8932,8 @@
             "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
             "frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
             "frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx",
-            "frontend/src/app/admin/system/monitoring/hub/page.tsx"
+            "frontend/src/app/admin/system/monitoring/hub/page.tsx",
+            "frontend/src/extensions/showcase/hub-tabs.ts"
           ]
         }
       ],

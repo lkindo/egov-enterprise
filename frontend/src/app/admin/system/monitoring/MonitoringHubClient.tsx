@@ -17,9 +17,6 @@ import {
   ShieldAlert,
   Terminal,
   RefreshCcw,
-  /* reusable-base:demo:start */
-  Zap,
-  /* reusable-base:demo:end */
   LogIn,
   Download,
   /* reusable-base:collaboration:start */
@@ -76,15 +73,14 @@ const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observabilit
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SampleDataBadge, NavButton, StatusIndicator } from './components/MonitoringPanels';
-/* reusable-base:demo:start */
-import { HARNESS_TAB_VIEW } from './components/HarnessAtlasPanels';
-/* reusable-base:demo:end */
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monitoring-tabs';
-/* reusable-base:collaboration:start */
 import { useAuth } from '@/contexts/AuthContext';
+import { isHubTab, visibleEntries } from '@/extensions/slots';
+import { hubTabs } from '@/extensions/generated-hub-tabs';
+/* reusable-base:collaboration:start */
 import { canPermission } from '@/lib/auth/permissions';
 /* reusable-base:collaboration:end */
 
@@ -100,23 +96,13 @@ const HUB_PARAM_KEYS = ['tab', 'page'] as const;
 // 탭 목록과 `?tab=` 해석은 monitoring-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
 
 /**
- * 목록·가동 상태 밖의 부가 탭(2026-09-27 DIP B5 F11). 탭마다 본문·개요·선택 항목 조회·상세를 한 묶음으로 등록한다.
- * 하네스 아틀라스는 demo pack 소유라 축소 프로필에서는 등록 줄이 빠지고 탭도 함께 사라진다.
+ * 목록·가동 상태 밖의 부가 탭(2026-09-27 DIP B5 F11)은 다른 기능의 hub-tabs 기여다(허브 분해 H3 — 하네스 아틀라스는 시연 기능).
+ * 탭 뷰가 본문·개요·선택 항목 찾기·상세를 한 묶음으로 내놓는다. 기여한 기능이 빠진 구성에서는 레지스트리에서 함께 빠진다.
  */
-type ExtraTabView = {
-  render: (props: { selectedItemId: string | number | null; onSelect: (id: string) => void }) => React.ReactNode;
-  overview: () => React.ReactNode;
-  find: (id: string) => object | null;
-  detail: (item: unknown) => { title: string; view: React.ReactNode } | null;
-};
-const EXTRA_TAB_VIEWS: Partial<Record<MonitoringTab, ExtraTabView>> = {
-  /* reusable-base:demo:start */
-  HARNESS: HARNESS_TAB_VIEW,
-  /* reusable-base:demo:end */
-};
+const isMonitoringTab = isHubTab('monitoring');
 
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
-const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN',
+const LIST_TABS: readonly string[] = ['SECURITY', 'SYSTEM', 'LOGIN',
   /* reusable-base:collaboration:start */
   'COMMENTS',
   /* reusable-base:collaboration:end */
@@ -197,7 +183,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   //   자기가 다른 화면에 있다는 것을 알 수 없었다. 로그인 정책의 정본은
   //   /admin/security/login-policy 이고 개인정보 정책은 /admin/user/indvdl-info-policy 다.
   //   이제 ?tab=policy 는 어떤 탭에도 맞지 않아 기본 탭으로 내려간다 — 없는 탭을 있는 척하지 않는다.
-  const activeTab = parseMonitoringTab(searchParams.get('tab'))
+  // 부가 탭은 이 구성에서 보이는 기여 탭이다. 해석은 셸 고유 탭과 그 기여 탭 값만 받는다(모르는 값은 기본 탭).
+  const { user } = useAuth();
+  const contributedTabs = useMemo(() => visibleEntries(user, hubTabs, isMonitoringTab), [user]);
+  const activeTab = parseMonitoringTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id))
     ?? (MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY');
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
@@ -216,7 +205,6 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
   // [2026-10-01] 댓글 삭제 버튼은 관리자 삭제 대행 권한(COMMENT_DELETE_ALL)으로 보인다. 이 허브는 로그 조회 권한만으로
   //   들어올 수 있어, 종전에는 확인 모달까지 지난 뒤에야 403 을 만났다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
-  const { user } = useAuth();
   const canDeleteComment = canPermission(user, 'COMMENT_DELETE_ALL');
 /* reusable-base:collaboration:end */
 
@@ -240,7 +228,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     });
   };
 
-  const setActiveTab = (tab: MonitoringTab) => {
+  const setActiveTab = (tab: string) => {
     setSelectedItemId(null);
     setSearchKeyword('');
     setPeriod(EMPTY_PERIOD);
@@ -396,8 +384,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
     const idStr = String(selectedItemId);
-    for (const view of Object.values(EXTRA_TAB_VIEWS)) {
-      const found = view?.find(idStr);
+    for (const { view } of contributedTabs) {
+      const found = view.find(idStr);
       if (found) return found;
     }
 /* reusable-base:collaboration:start */
@@ -407,7 +395,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
-  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs,
+  }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, contributedTabs,
     /* reusable-base:collaboration:start */
     comments,
     /* reusable-base:collaboration:end */
@@ -838,33 +826,37 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     LOGIN: '성공·실패·결과 미상 로그인 시도를 조회합니다. 성공 로그인 통계와 집계 범위가 다릅니다.',
     COMMENTS: '서비스에 등록된 사용자 의견을 조회하고 관리합니다.',
     OBSERVABILITY: '애플리케이션 가동 상태와 자원 사용량을 조회합니다.',
-    HARNESS: '에이전트 하네스의 스킬·검증 자산을 조회합니다.',
   };
+  const extraTab = contributedTabs.find((tab) => tab.id === activeTab)?.view;
 
-  const NAV_ITEMS: Array<{ tab: MonitoringTab; icon: React.ReactNode; label: string }> = [
+  const NAV_ITEMS: Array<{ tab: string; icon: React.ReactNode; label: string }> = [
     { tab: 'SECURITY', icon: <ShieldAlert size={14} />, label: '시스템 로그(감사 보기)' },
     { tab: 'SYSTEM', icon: <Terminal size={14} />, label: '시스템 로그' },
     { tab: 'LOGIN', icon: <LogIn size={14} />, label: '로그인 시도 이력' },
     { tab: 'OBSERVABILITY', icon: <MonitorCheck size={14} />, label: '가동 상태' },
-/* reusable-base:demo:start */
-    { tab: 'HARNESS', icon: <Zap size={14} />, label: '하네스 아틀라스' },
-/* reusable-base:demo:end */
+    // 기여 탭은 셸의 로그·가동 상태 탭 뒤, 댓글 탭 앞에 order 순으로 놓는다(종전 탭 순서 그대로).
+    ...contributedTabs.map(({ id, label, view: { icon: Icon } }) => ({ tab: id, icon: <Icon size={14} />, label })),
 /* reusable-base:collaboration:start */
     { tab: 'COMMENTS', icon: <MessageSquare size={14} />, label: '사용자 의견 관리' },
 /* reusable-base:collaboration:end */
   ];
 
-  /** 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. */
+  /**
+   * 선택 항목의 상세. 종전에는 우측 3열 패널이었고, 미선택 시 '인텔리전스 대기 중' 장식이 자리를 채웠다. 기여 탭의 항목이면 그 뷰의
+   * 상세를 쓰고, 뷰가 sample 이면 샘플 고지를 단다.
+   */
   const extraDetail = selectedItem
-    ? Object.values(EXTRA_TAB_VIEWS).map((view) => view?.detail(selectedItem) ?? null).find(Boolean) ?? null
+    ? contributedTabs.map(({ view }) => {
+        const detail = view.detail(selectedItem);
+        return detail ? { ...detail, sample: view.sample === true } : null;
+      }).find(Boolean) ?? null
     : null;
-  const extraTab = EXTRA_TAB_VIEWS[activeTab];
 
   return (
     <>
     <WorkListPage
       title={NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링'}
-      description={TAB_DESCRIPTION[activeTab]}
+      description={TAB_DESCRIPTION[activeTab as MonitoringTab] ?? extraTab?.description}
       breadcrumbItems={[{ label: '시스템관리' }, { label: NAV_ITEMS.find((item) => item.tab === activeTab)?.label ?? '시스템 모니터링' }]}
       filterStateKey="system-monitoring"
       totalCount={listConfig && !listConfig.error ? listConfig.totalCount : undefined}
@@ -1049,8 +1041,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                   식별자 {selectedItemId}
                 </p>
-                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다(demo). 실제 로그·의견 기록에는 붙이지 않는다. */}
-                {extraDetail ? <div className="mt-2"><SampleDataBadge /></div> : null}
+                {/* [2026-09-15 DEC-OPS-100] 하네스 스킬·테스트 상세는 정적 카탈로그·표본이라 목록과 같은 고지를 둔다. 기여 뷰가 sample 일 때만이다 — 실제 로그·의견 기록에는 붙이지 않는다(허브 분해 H3). */}
+                {extraDetail?.sample ? <div className="mt-2"><SampleDataBadge /></div> : null}
               </div>
               <Button variant="outline" size="sm" onClick={() => setSelectedItemId(null)}>닫기</Button>
             </header>

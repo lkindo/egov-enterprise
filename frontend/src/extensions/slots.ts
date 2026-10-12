@@ -8,7 +8,7 @@
  * 이 파일은 core 소유다. 기능 디렉터리를 import 하지 않는다. 슬롯 이름 하나를 모든 곳에 같은 철자로 쓴다:
  * SlotMap 키 = 기여 파일 이름 = 레지스트리 파일 이름(generated-<이름>.ts). 키를 더할 때는 그 슬롯을 읽는 셸(소비자)을 같은 변경에 둔다.
  */
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { QueryClient } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
 import { canPermission } from '@/lib/auth/permissions';
@@ -120,6 +120,20 @@ export interface HubTabViews {
     readonly icon: LucideIcon;
     readonly bbsId: string;
     readonly Actions?: ComponentType;
+  };
+  /**
+   * 감시 허브(core 셸, 허브 분해 H3). 로그 목록·가동 상태 밖의 부가 탭이다. 뷰가 본문·선택 전 개요·선택 항목 찾기·상세를 한 묶음으로
+   * 내놓고, 셸이 탭 버튼(아이콘)·제목 아래 설명·상세 틀을 그린다. sample 이면 상세에 샘플 고지를 단다 — 정적 카탈로그나 표본이라
+   * 실측이 아니라는 표시이고, 실제 기록을 보이는 탭은 sample 을 두지 않는다.
+   */
+  readonly monitoring: {
+    readonly description: string;
+    readonly icon: LucideIcon;
+    readonly sample?: boolean;
+    readonly render: (props: { selectedItemId: string | number | null; onSelect: (id: string) => void }) => ReactNode;
+    readonly overview: () => ReactNode;
+    readonly find: (id: string) => object | null;
+    readonly detail: (item: unknown) => { title: string; view: ReactNode } | null;
   };
 }
 export type HubId = keyof HubTabViews;

@@ -77,6 +77,8 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '커뮤니티 기능이 없으면 지식 허브의 커뮤니티 탭과 그 머리 동작만 사라지고 위키·자주 묻는 질문·질의응답은 그대로입니다.' },
   { path: 'frontend/src/extensions/note/hub-tabs.ts',
     reason: '쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다.' },
+  { path: 'frontend/src/extensions/showcase/hub-tabs.ts',
+    reason: '시연 화면 기능이 없으면 감시 허브의 하네스 아틀라스 샘플 탭만 사라지고 로그·가동 상태 탭은 그대로입니다.' },
   { path: 'frontend/src/extensions/scrap/hub-tabs.ts',
     reason: '스크랩 기능이 없으면 협업 허브의 스크랩 탭만 사라지고 다른 탭은 그대로입니다.' },
   { path: 'frontend/src/extensions/note/shell-links.ts',

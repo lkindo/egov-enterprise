@@ -437,8 +437,9 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
-  // [2026-09-27 DIP B5 F11] 하네스 탭은 demo pack 소유 파일(HarnessAtlasPanels)로 옮겼다 — 목 없이 실제 상세를 본다.
-  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('selects both harness catalog item types', async () => {
+  // [2026-09-27 DIP B5 F11] 하네스 탭은 시연 기능 소유 파일(HarnessAtlasPanels)로 옮겼고, 허브에는 시연의 hub-tabs 기여로 붙는다
+  //   (허브 분해 H3) — 목 없이 실제 레지스트리·상세를 본다. 시연이 빠진 생성물에서는 기여가 원장으로 빠진다.
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('selects both harness catalog item types', async () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
     let detail = screen.getByRole('region', { name: '선택 항목 상세' });
@@ -494,7 +495,7 @@ describe('MonitoringHubClient', () => {
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();
   });
 
-  if (inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
 

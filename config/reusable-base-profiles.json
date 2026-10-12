@@ -551,6 +551,7 @@
           "src/app/admin/system/ism",
           "src/app/admin/system/layout",
           "src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
+          "src/extensions/showcase",
           "src/app/admin/uss/olh",
           "src/app/admin/work-hub",
           "src/app/admin/workflow",

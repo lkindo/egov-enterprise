@@ -132,7 +132,7 @@ export function composerProfile(manifest, composition) {
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
 const STATS_TABS = { collaboration: ['board'], survey: ['survey'] };
-const MONITORING_TABS = { collaboration: ['comment'], demo: ['showcase'] };
+const MONITORING_TABS = { collaboration: ['comment'] };
 export const FRONTEND_MARKER_FILES = Object.freeze([
   { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
     // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
@@ -145,11 +145,11 @@ export const FRONTEND_MARKER_FILES = Object.freeze([
     step: '업무 홈', reason: '활동 피드가 대시보드 데이터를 직접 읽는다.' },
   { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
     step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
-  // 댓글 탭은 collaboration 블록, 하네스 아틀라스 샘플 탭은 demo 블록이다 — 샘플 파일은 시연 화면 기능 소유(패턴 갤러리와 같다).
-  { file: 'src/app/admin/system/monitoring/MonitoringHubClient.tsx', blocks: { collaboration: 19, demo: 4 }, owners: MONITORING_TABS,
-    step: '허브 분해(hub-tabs)', reason: '모니터링 허브가 댓글 관리 탭과 하네스 아틀라스 샘플 탭을 직접 조립한다.' },
-  { file: 'src/app/admin/system/monitoring/monitoring-tabs.ts', blocks: { collaboration: 1, demo: 1 }, owners: MONITORING_TABS,
-    step: '허브 분해(hub-tabs)', reason: '탭 목록이 허브와 같은 두 탭을 같은 소유로 나눈다.' },
+  // 댓글 탭은 collaboration 블록이다. 하네스 아틀라스 샘플 탭은 시연 기능의 hub-tabs 기여가 됐다(허브 분해 H3).
+  { file: 'src/app/admin/system/monitoring/MonitoringHubClient.tsx', blocks: { collaboration: 19 }, owners: MONITORING_TABS,
+    step: '허브 분해(댓글 관리 화면)', reason: '모니터링 허브가 댓글 관리 탭을 직접 조립한다.' },
+  { file: 'src/app/admin/system/monitoring/monitoring-tabs.ts', blocks: { collaboration: 1 }, owners: MONITORING_TABS,
+    step: '허브 분해(댓글 관리 화면)', reason: '탭 목록이 허브와 같은 댓글 탭을 같은 소유로 나눈다.' },
   { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
     step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
   // 통계 셸: 게시물·자료 이용 탭과 카드는 게시판, 설문 탭은 설문이 소유한다. 셸과 함께 남는 시험도 같은 마커로 기대값을 맞춘다.

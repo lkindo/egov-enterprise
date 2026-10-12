@@ -4,5 +4,6 @@ import type { SlotContributions } from './slots';
 import community from './community/hub-tabs';
 import note from './note/hub-tabs';
 import scrap from './scrap/hub-tabs';
+import showcase from './showcase/hub-tabs';
 
-export const hubTabs: readonly SlotContributions<'hub-tabs'>[] = [community, note, scrap];
+export const hubTabs: readonly SlotContributions<'hub-tabs'>[] = [community, note, scrap, showcase];

@@ -11,9 +11,8 @@ import { AlertCircle, type LucideIcon } from 'lucide-react';
  * 원래 이 컴포넌트들은 허브 본체와 같은 파일의 최상위에 선언돼 있었고, 본체의 상태·쿼리를
  * 전혀 참조하지 않는 순수 표시 컴포넌트다 — 파일을 나눌 때 경계가 이미 거기 있었다.
  *
- * <p>타입 {@code MonitoringTab} 은 탭 모듈(monitoring-tabs.ts)이 소유하므로 여기서 재선언하지 않고 import 한다.
+ * <p>탭 버튼의 탭 값은 문자열이다 — 셸 고유 탭(monitoring-tabs.ts)과 다른 기능의 기여 탭(hub-tabs)을 같은 버튼으로 그린다(허브 분해 H3).
  */
-import type { MonitoringTab } from '../monitoring-tabs';
 
 export function SampleDataBadge({ className }: { className?: string }) {
   return (
@@ -27,7 +26,7 @@ export function SampleDataBadge({ className }: { className?: string }) {
 }
 
 
-export function NavButton({ tab, icon, label, active, onClick }: { tab: MonitoringTab, icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
+export function NavButton({ tab, icon, label, active, onClick }: { tab: string, icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
     <button
       type="button"

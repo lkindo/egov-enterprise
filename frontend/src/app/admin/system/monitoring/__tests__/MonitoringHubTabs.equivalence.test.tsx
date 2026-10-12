@@ -8,10 +8,10 @@ import { inProjection } from '@/test-utils/projection';
  *
  * 고정하는 것: 권한 집합별 탭 이름·순서(지금은 권한과 무관하게 같다), `?tab=` 해석(대소문자·옛 이름 HEALTH·퇴역 값)과
  * 페이지 기본 탭, 탭 전환의 URL(소문자 탭 값, 쪽 번호를 버린다), 탭별 제목, 상세의 샘플 고지, 반출 안내 문구.
- * 하네스·댓글 탭은 그 탭의 소스가 투영으로 빠진 생성물에서 기대 목록에서 빠진다.
+ * 하네스·댓글 탭은 그 탭의 소스가 투영으로 빠진 생성물에서 기대 목록에서 빠진다. 하네스 탭은 시연 기능의 hub-tabs 기여다(허브 분해 H3).
  */
 
-const harnessInProjection = inProjection('frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx');
+const harnessInProjection = inProjection('frontend/src/extensions/showcase/hub-tabs.ts');
 const commentsInProjection = inProjection('frontend/src/services/business/comment/commentService.ts');
 const CORE_TABS = ['시스템 로그(감사 보기)', '시스템 로그', '로그인 시도 이력', '가동 상태'];
 const ALL_TABS = [...CORE_TABS, ...(harnessInProjection ? ['하네스 아틀라스'] : []), ...(commentsInProjection ? ['사용자 의견 관리'] : [])];
