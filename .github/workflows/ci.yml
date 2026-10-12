@@ -80,10 +80,12 @@ jobs:
 
           # PR and integration pushes use the same fail-closed impact mapping.
           # Manual execution and an unavailable base select the complete suite.
+          # The event decides the reusable layouts only: a PR verifies one layout per preset,
+          # every other event both layouts (ADR-0027).
           if [ -z "$BASE" ] || [[ "$BASE" =~ ^0+$ ]] || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
-            node scripts/ci-change-scope.mjs --github-output "$GITHUB_OUTPUT"
+            node scripts/ci-change-scope.mjs --event "$GITHUB_EVENT_NAME" --github-output "$GITHUB_OUTPUT"
           elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then
-            node scripts/ci-change-scope.mjs --github-output "$GITHUB_OUTPUT"
+            node scripts/ci-change-scope.mjs --event "$GITHUB_EVENT_NAME" --github-output "$GITHUB_OUTPUT"
           else
             # A push base without its own main CI run (a dropped push event) was never verified;
             # the classifier then selects the full pipeline instead of trusting the diff.
@@ -93,6 +95,7 @@ jobs:
               --base "$BASE" \
               --head "${HEAD:-$GITHUB_SHA}" \
               "${VERIFY_BASE[@]}" \
+              --event "$GITHUB_EVENT_NAME" \
               --github-output "$GITHUB_OUTPUT"
           fi
 

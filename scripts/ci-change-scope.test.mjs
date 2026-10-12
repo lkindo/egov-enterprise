@@ -7,7 +7,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { applyPushBaseCheck, classifyChangedFiles, githubOutputs, pushBaseWasVerified } from './ci-change-scope.mjs';
+import {
+  applyPushBaseCheck, classifyChangedFiles, githubOutputs, PR_REUSABLE_LAYOUT, pushBaseWasVerified, reusableMatrix,
+} from './ci-change-scope.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -372,6 +374,73 @@ test('mixed reusable-base inputs take the conservative union and docs do not exp
     'api-server/src/main/java/nuri/config/AsyncConfig.java',
   ]);
   assert.deepEqual(packAndCommon.reusableProfiles, ['core', 'collaboration', 'demo']);
+});
+
+// ADR-0027: PR 은 시작 구성마다 한 레이아웃, 그 밖의 실행은 두 레이아웃이다. 사용자 구성 2잡은 ci.yml 이 두 레이아웃을 그대로 둔다.
+test('pull requests verify one layout per preset while every other event keeps both layouts', () => {
+  const common = ['foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java'];
+  const pullRequest = classifyChangedFiles(common, { event: 'pull_request' });
+  assert.deepEqual(pullRequest.reusableMatrix.include, [
+    { profile: 'core', layout: 'single-module' },
+    { profile: 'collaboration', layout: 'multi-module' },
+    { profile: 'demo', layout: 'single-module' },
+  ]);
+  assert.equal(pullRequest.reusableCustom, true, 'the custom composition jobs stay on pull requests');
+
+  assert.equal(classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include.length, 3,
+    'a full pull request run still covers every preset once');
+  for (const event of ['push', 'workflow_dispatch', 'pull_request_target', 'PULL_REQUEST', '', undefined]) {
+    assert.equal(classifyChangedFiles([], { event }).reusableMatrix.include.length, 6, `event ${String(event)} keeps both layouts`);
+  }
+  assert.equal(classifyChangedFiles(common).reusableMatrix.include.length, 6, 'a missing event keeps both layouts');
+
+  const docs = classifyChangedFiles(['docs/03-guides/testing-guide.md'], { event: 'pull_request' });
+  assert.equal(docs.reusable, false);
+  assert.deepEqual(docs.reusableProfiles, []);
+  assert.equal(docs.reusableCustom, false);
+
+  const demoOnly = classifyChangedFiles([
+    'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java',
+  ], { event: 'pull_request' });
+  assert.deepEqual(demoOnly.reusableMatrix.include, [{ profile: 'demo', layout: 'single-module' }]);
+});
+
+test('a preset outside the PR layout table falls back to both layouts and the table holds no stale entry', () => {
+  const { core: _core, ...withoutCore } = PR_REUSABLE_LAYOUT;
+  assert.deepEqual(reusableMatrix(['core', 'collaboration'], { event: 'pull_request', prLayouts: withoutCore }).include, [
+    { profile: 'core', layout: 'multi-module' },
+    { profile: 'core', layout: 'single-module' },
+    { profile: 'collaboration', layout: 'multi-module' },
+  ]);
+  assert.throws(() => reusableMatrix(['core'], { event: 'pull_request', prLayouts: { core: 'single' } }),
+    /unknown PR reusable layout for core: single/);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'reusable-base-profiles.json'), 'utf8'));
+  for (const [preset, layout] of Object.entries(PR_REUSABLE_LAYOUT)) {
+    assert.ok(Object.hasOwn(manifest.profiles, preset), `PR layout table names a preset the manifest no longer has: ${preset}`);
+    assert.ok(['multi-module', 'single-module'].includes(layout), `${preset}: ${layout}`);
+  }
+});
+
+test('a preset added to the manifest without a PR layout runs both layouts on pull requests', (t) => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-layout-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'config'), { recursive: true });
+  fs.copyFileSync(path.join(repoRoot, 'scripts', 'ci-change-scope.mjs'), path.join(root, 'scripts', 'ci-change-scope.mjs'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'reusable-base-profiles.json'), 'utf8'));
+  manifest.profiles.approval = { ...manifest.profiles.core };
+  fs.writeFileSync(path.join(root, 'config', 'reusable-base-profiles.json'), JSON.stringify(manifest));
+
+  const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--event', 'pull_request',
+    '--file', 'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java'], { cwd: root, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const include = JSON.parse(result.stdout).reusableMatrix.include;
+  assert.deepEqual(include.filter(item => item.profile === 'approval'), [
+    { profile: 'approval', layout: 'multi-module' },
+    { profile: 'approval', layout: 'single-module' },
+  ]);
+  assert.deepEqual(include.filter(item => item.profile === 'core'), [{ profile: 'core', layout: 'single-module' }]);
 });
 
 test('explicit full regression includes every heavy gate even for documentation-only inputs', () => {

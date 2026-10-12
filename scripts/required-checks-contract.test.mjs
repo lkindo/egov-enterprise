@@ -40,7 +40,10 @@ function assertImpactClassification(content) {
   assert.match(step, /HEAD="\$GITHUB_SHA"/);
   assert.match(step, /if \[ -z "\$BASE" \]/);
   assert.match(step, /git cat-file -e "\$\{BASE\}\^\{commit\}"/);
-  assert.match(step, /node scripts\/ci-change-scope\.mjs --github-output "\$GITHUB_OUTPUT"/);
+  assert.match(step, /node scripts\/ci-change-scope\.mjs --event "\$GITHUB_EVENT_NAME" --github-output "\$GITHUB_OUTPUT"/);
+  // ADR-0027: 분류기 호출마다 이벤트를 넘긴다. 빠지면 그 경로의 PR 은 조용히 두 레이아웃으로 돈다.
+  assert.deepEqual(classifierEventBindings(step), [true, true, true],
+    'every classifier call must pass the event so that only pull requests narrow the reusable layouts');
   assert.ok(step.includes('elif [ "$GITHUB_EVENT_NAME" = "push" ] && ! git merge-base --is-ancestor "$BASE" "${HEAD:-$GITHUB_SHA}"; then'));
   assert.match(step, /--base "\$BASE"/);
   assert.match(step, /--head "\$\{HEAD:-\$GITHUB_SHA\}"/);
@@ -564,6 +567,8 @@ test('integration pushes and PRs share impact mapping with full fallback for unk
     ['VERIFY_BASE=(--verify-push-base-run)', 'VERIFY_BASE=()'],
     ['      actions: read', '      actions: none'],
     ['GH_TOKEN: ${{ github.token }}', 'GH_TOKEN: '],
+    ['--event "$GITHUB_EVENT_NAME" --github-output', '--github-output'],
+    ['--event "$GITHUB_EVENT_NAME" \\\n', ''],
   ]) {
     const weakened = mutateWorkflowJob(ciContent, 'change-scope', block => block.replace(before, after));
     assert.throws(() => assertImpactClassification(weakened));
@@ -967,6 +972,12 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
     /matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}/,
     'negative proof: replacing the impacted matrix with the old unconditional matrix must violate this contract');
 });
+
+function classifierEventBindings(job) {
+  return job.replace(/\r\n/g, '\n').replace(/\\\n\s*/g, ' ').split('\n')
+    .filter(line => line.includes('node scripts/ci-change-scope.mjs'))
+    .map(line => line.includes('--event "$GITHUB_EVENT_NAME"'));
+}
 
 test('Gradle verification commands fail on deprecation warnings', () => {
   const guardedCommands = [
