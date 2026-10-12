@@ -368,9 +368,19 @@ function slotMapKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
 }
 
 /** shell-links 의 배치(닫힌 목록). 소비 셸이 있는 자리만 둔다. */
-const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error', 'command-center', 'collaboration-hub']);
-/** 아이콘이 있는 목록이라 icon 이 필요한 배치(머리글 아이콘 단추·명령 센터 목록). */
-const ICON_PLACEMENTS = new Set(['header', 'command-center']);
+const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error', 'command-center', 'collaboration-hub', 'work-hub', 'work-report']);
+/** 아이콘이 있는 목록이라 icon 이 필요한 배치(머리글 아이콘 단추·명령 센터 목록·업무 보고 머리 단추). */
+const ICON_PLACEMENTS = new Set(['header', 'command-center', 'work-report']);
+/** 글자 탭이라 icon 을 두지 않는 배치(나의 업무 탭 줄). 두면 셸이 버리는 데이터가 된다. */
+const ICONLESS_PLACEMENTS = new Set(['work-hub']);
+const WORK_HUB_TABS = join(frontendRoot, 'src/components/business/work-hub/work-hub-tabs.tsx');
+
+/** 나의 업무 탭 줄의 core 탭(work-hub-tabs.tsx 의 CORE_TAB). 기여 탭의 id·목적지는 이것과 겹치지 않는다 — id 가 탭 DOM id 가 된다. */
+function workHubCoreTab(source = readFileSync(WORK_HUB_TABS, 'utf8')) {
+  const match = /const CORE_TAB = \{ id: '([a-z][a-z0-9-]*)', href: '([^']+)'/.exec(source);
+  return match ? { id: match[1], href: match[2] } : null;
+}
+
 /** 주체 없이 거르는 배치 — 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계다. /admin 아래 page 술어는 늘 거짓이 된다. */
 const SUBJECTLESS_PLACEMENTS = new Set(['footer', 'error']);
 /** 페이지 게이트가 있는 경로(frontend/src/lib/auth/page-access.ts 의 isGatedPath 와 같은 경계). */
@@ -383,11 +393,14 @@ const isInternalPath = href => /^\/(?![/\\])/.test(href);
  * - 배치는 header·footer·error 리터럴, href 는 '/' 로 시작하는 앱 안 경로 리터럴('//'·'/\' 로 시작하는 외부 주소는 안 된다),
  *   visibleWhen 은 { page: 자기 href } 하나다.
  * - 바닥글·오류 화면 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다(그렇지 않으면 항목이 아무 신호 없이 늘 숨는다).
- * - 머리글 배치는 아이콘 단추, 명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다(없으면 빈 단추·빈 칸이 된다).
+ * - 머리글 배치는 아이콘 단추, 명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다(없으면 빈 단추·빈 칸이 된다). 업무 보고 머리
+ *   배치(work-report)도 아이콘 단추라 icon 이 필요하다.
+ * - 나의 업무 탭 줄 배치(work-hub)는 글자 탭이라 icon 을 두지 않고, id·목적지가 core 탭(업무 관리)과 겹치지 않는다 — id 가 탭 DOM id
+ *   (work-hub-tab-<id>)가 되고 core 탭과 같은 목적지면 탭이 둘이 된다. 두 배치 모두 주체가 있는 소비자라 /admin 목적지를 둘 수 있다.
  * - fill 화면은 바닥글을 숨긴다(globals.css). 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝이 있어야 한다 — 기여 파일 하나가
  *   함께 지워지므로 머리글이 먼저 빠지는 프로필이 없다(종전 셸 접근성 계약의 pack 대조를 대신한다).
  */
-function shellLinkViolations(entries, label) {
+function shellLinkViolations(entries, label, { coreTab = workHubCoreTab() } = {}) {
   const violations = [];
   const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
   const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
@@ -412,6 +425,10 @@ function shellLinkViolations(entries, label) {
       violations.push(`${label}: ${id} — ${placement} 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다`);
     }
     if (ICON_PLACEMENTS.has(placement) && !prop(element, 'icon')) violations.push(`${label}: ${id} — ${placement} 배치는 아이콘이 있는 목록이라 icon 이 필요하다`);
+    if (ICONLESS_PLACEMENTS.has(placement) && prop(element, 'icon')) violations.push(`${label}: ${id} — ${placement} 배치는 글자 탭이라 icon 을 두지 않는다`);
+    if (placement === 'work-hub' && (!coreTab || id === coreTab.id || href === coreTab.href)) {
+      violations.push(`${label}: ${id} — work-hub 배치는 core 탭(업무 관리)의 id·목적지와 겹치지 않는다`);
+    }
     rows.push({ id, placement, href });
   }
   for (const row of rows.filter(candidate => candidate.placement === 'footer')) {
@@ -912,7 +929,14 @@ test('shell links: the page predicate is the href, subjectless placements stay o
     /f 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', '/help', icon, '/help/policies/PRIVACY'))), /h 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', '/help'))), /h — header 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
-  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error·command-center·collaboration-hub 리터럴이다/);
+  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error·command-center·collaboration-hub·work-hub·work-report 리터럴이다/);
+  // 나의 업무 탭 줄(work-hub)은 글자 탭이고 core 탭과 id·목적지가 겹치지 않는다. 업무 보고 머리(work-report)는 아이콘 단추다.
+  assert.deepEqual(workHubCoreTab(), { id: 'job', href: '/smart-toolkit/dept-job' }, 'the core tab of the work hub strip is read');
+  assert.equal(check(fixture(entry('report', 'work-hub', '/smart-toolkit/work-report'), entry('m', 'work-report', '/admin/operation/memo-reports', icon))), '');
+  assert.match(check(fixture(entry('report', 'work-hub', '/smart-toolkit/work-report', icon))), /report — work-hub 배치는 글자 탭이라 icon 을 두지 않는다/);
+  assert.match(check(fixture(entry('job', 'work-hub', '/smart-toolkit/work-report'))), /job — work-hub 배치는 core 탭\(업무 관리\)의 id·목적지와 겹치지 않는다/);
+  assert.match(check(fixture(entry('jobs', 'work-hub', '/smart-toolkit/dept-job'))), /jobs — work-hub 배치는 core 탭\(업무 관리\)의 id·목적지와 겹치지 않는다/);
+  assert.match(check(fixture(entry('m', 'work-report', '/admin/operation/memo-reports'))), /m — work-report 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
   // 명령 센터 배치도 아이콘이 필요하다. 협업 허브 머리 배치는 글자 단추라 아이콘이 없어도 되고, 둘 다 주체가 있어 /admin 목적지를 둔다.
   assert.match(check(fixture(entry('c', 'command-center', '/admin/collaboration'))), /c — command-center 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
   assert.equal(check(fixture(entry('c', 'command-center', '/admin/collaboration', icon), entry('m', 'collaboration-hub', '/admin/collaboration/mail-send'))), '');

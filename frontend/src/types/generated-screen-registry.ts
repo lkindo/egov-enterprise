@@ -1030,13 +1030,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"DEPT_BOX_UPDATE","action":"UPDATE","source":"write"},
       {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
       {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_READ","action":"READ","source":"display"},
-      {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
-      {"code":"SCHEDULE_DELETE","action":"DELETE","source":"write"},
-      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"WORK_RPT_CREATE","action":"CREATE","source":"write"},
-      {"code":"WORK_RPT_DELETE","action":"DELETE","source":"write"},
-      {"code":"WORK_RPT_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"DEPT_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -1195,19 +1189,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
-      {"code":"DEPT_BOX_CREATE","action":"CREATE","source":"write"},
-      {"code":"DEPT_BOX_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_BOX_READ","action":"READ","source":"display"},
-      {"code":"DEPT_BOX_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
-      {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_READ","action":"READ","source":"display"},
       {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
       {"code":"SCHEDULE_DELETE","action":"DELETE","source":"write"},
-      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"WORK_RPT_CREATE","action":"CREATE","source":"write"},
-      {"code":"WORK_RPT_DELETE","action":"DELETE","source":"write"},
-      {"code":"WORK_RPT_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
   {
@@ -1231,16 +1215,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
-      {"code":"DEPT_BOX_CREATE","action":"CREATE","source":"write"},
-      {"code":"DEPT_BOX_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_BOX_READ","action":"READ","source":"display"},
-      {"code":"DEPT_BOX_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"},
-      {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
-      {"code":"DEPT_READ","action":"READ","source":"display"},
-      {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
-      {"code":"SCHEDULE_DELETE","action":"DELETE","source":"write"},
-      {"code":"SCHEDULE_UPDATE","action":"UPDATE","source":"write"},
       {"code":"WORK_RPT_CREATE","action":"CREATE","source":"write"},
       {"code":"WORK_RPT_DELETE","action":"DELETE","source":"write"},
       {"code":"WORK_RPT_UPDATE","action":"UPDATE","source":"write"}
@@ -1603,9 +1577,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "relatedScreens": [
       "/admin/work-hub",
-      "/smart-toolkit/dept-job",
-      "/smart-toolkit/schedule",
-      "/smart-toolkit/work-report"
+      "/smart-toolkit/dept-job"
     ]
   },
   {

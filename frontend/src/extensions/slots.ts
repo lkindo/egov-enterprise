@@ -44,19 +44,24 @@ export interface RecipientPickerSource extends SlotEntry {
 }
 
 /**
- * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리).
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리·
+ * 나의 업무 탭 줄·업무 보고 머리).
  * 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면
- * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은
- * 목적지의 머리글 짝을 둔다(경계 계약).
+ * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터·업무 보고 머리 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은
+ * 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ * - work-hub(업무 허브 분해 W1): 나의 업무 탭 줄의 탭 하나. 탭은 글자뿐이라 icon 을 두지 않는다. id 가 탭 DOM id(work-hub-tab-<id>)
+ *   가 되므로 core 탭(업무 관리, id job·목적지 /smart-toolkit/dept-job)과 겹치지 않는다. 탭은 그 화면 경로로 가는 경로 탭이다.
+ * - work-report(업무 허브 분해 W1): 업무 보고 화면 머리의 링크. description 은 업무 보고 화면 설명에 덧붙는 한 문장이고 링크와 함께
+ *   보이고 숨는다(갈 수 없는 화면을 안내하지 않는다).
  */
 export interface ShellLink extends SlotEntry {
-  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub';
+  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub' | 'work-hub' | 'work-report';
   /** 같은 배치 안의 순서(작은 값 먼저). */
   readonly order: number;
   readonly href: string;
   readonly label: string;
   readonly icon?: LucideIcon;
-  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명이다. */
+  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명, 업무 보고 머리에서는 화면 설명에 덧붙는 문장이다. */
   readonly description?: string;
 }
 

@@ -132,8 +132,7 @@
         "demo"
       ],
       "requiredDomains": [
-        "schedule",
-        "report"
+        "schedule"
       ]
     }
   ],

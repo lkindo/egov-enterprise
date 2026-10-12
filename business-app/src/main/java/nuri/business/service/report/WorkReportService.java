@@ -83,7 +83,7 @@ public class WorkReportService extends BaseAbstractService {
      * 업무보고 목록.
      *
      * <p>[2026-07-29 IDOR 수정] 종전에는 작성자 필터 없이 <b>전원의 보고서를 본문(rptCn)까지</b> 반환했다.
-     * 이 엔드포인트의 유일한 소비처는 개인 착지점인 {@code /admin/work-hub} 이고(별도 관리자 콘솔 없음),
+     * 이 엔드포인트의 유일한 소비처는 업무 보고 화면({@code /smart-toolkit/work-report})이고(별도 관리자 콘솔 없음),
      * 같은 엔티티의 수정·삭제는 이미 {@link SecurityUtil#assertOwnerOrPermission(String, String)} 로 작성자에 묶여 있다
      * (대체 권한 {@code WORK_RPT_UPDATE_ALL}·{@code WORK_RPT_DELETE_ALL}).
      * 읽기만 전원 공개인 것은 비대칭이므로 쓰기와 같은 경계로 좁힌다 — <b>작성자 본인, 관리자는 전체</b>.

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { SITE_IDENTITY } from '@/config/site-identity';
-import WorkHubClient from '@/app/admin/work-hub/WorkHubClient';
+import WorkReportClient from './WorkReportClient';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { connection } from 'next/server';
 
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 
 export default async function WorkReportPage() {
  await connection();
- return <WorkHubClient defaultTab="REPORTS" initialYmd={getTodayYmd()} />;
+ return <WorkReportClient initialYmd={getTodayYmd()} />;
 }

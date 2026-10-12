@@ -96,7 +96,8 @@ test('UI and CLI use the same side-effect-free plan and reject unsupported or un
   const engine = createComposerEngine();
   const before = composerOutputPaths(root, 'planning-only', '0123456789abcdef');
   const plan = engine.plan(recipe());
-  assert.deepEqual(plan.resolvedDomains, ['mail', 'report', 'schedule']);
+  // 업무 허브 분해 W1: 일정은 업무 보고를 더 요구하지 않는다(나의 업무가 core 셸이 됐다).
+  assert.deepEqual(plan.resolvedDomains, ['mail', 'schedule']);
   assert.equal(plan.backendLayout, 'single-module');
   assert.ok(plan.menus.length > 0);
   // 메뉴 트리 미리보기(E8): 메뉴마다 순서·종류와 공통 기반 대비 추가 여부를 싣는다.

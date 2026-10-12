@@ -247,6 +247,10 @@ const CORE_SURVIVORS = [
   'frontend/src/app/admin/collaboration/collaboration-tabs.ts',
   'frontend/src/extensions/generated-hub-tabs.ts',
   'frontend/src/app/components/ui/global-command-center.tsx',
+  // [업무 허브 분해 W1] 나의 업무 탭 줄은 core 도우미다 — 업무 보고·일정 탭은 shell-links 기여다. 도우미가 기능 코드를 import 하면
+  //   core 투영에서 도우미와 그것을 쓰는 업무 관리 목록(나의 업무·업무 관리 두 라우트)이 연쇄로 사라진다.
+  'frontend/src/components/business/work-hub/work-hub-tabs.tsx',
+  'frontend/src/components/business/deptJob/DeptJobListSection.tsx',
 ];
 
 /*

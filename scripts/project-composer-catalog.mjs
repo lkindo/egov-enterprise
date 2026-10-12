@@ -94,7 +94,9 @@ const FEATURES = {
     'src/extensions/mail'],
   routes: ['/admin/collaboration/mail-history', '/admin/collaboration/mail-send'], requirements: ['메일 발송에 사용할 SMTP 설정'] },
   memoreport: { label: '메모 보고', permissions: ['MEMO_RPT'], paths: [
-    'src/services/business/memoreport', 'src/app/admin/operation/memo-reports'], routes: ['/admin/operation/memo-reports'] },
+    'src/services/business/memoreport', 'src/app/admin/operation/memo-reports',
+    // 슬롯 기여(업무 허브 분해 W1): 업무 보고 화면 머리의 메모보고 관리 링크와 안내 문장.
+    'src/extensions/memoreport'], routes: ['/admin/operation/memo-reports'] },
   note: { label: '쪽지', permissions: ['NOTE'], paths: ['src/services/business/user/NoteService.ts', 'src/app/note', 'src/app/components/dashboard/UnreadNotesCard.tsx',
     // 슬롯 기여(허브 분해 H1): 협업 허브의 쪽지 탭과 명령 센터의 협업 허브 바로가기.
     'src/extensions/note'],
@@ -111,14 +113,18 @@ const FEATURES = {
     'src/services/foundation/system/BannerAdminService.ts', 'src/services/foundation/system/PopupAdminService.ts', 'src/types/foundation/banner.ts'],
   routes: ['/admin/system/banner'] },
   report: { label: '업무 보고', permissions: ['WORK_RPT'], paths: [
-    'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts'],
+    'src/app/smart-toolkit/work-report', 'src/components/business/report', 'src/services/business/user/ReportService.ts',
+    // 슬롯 기여(업무 허브 분해 W1): 나의 업무 탭 줄의 업무 보고 탭.
+    'src/extensions/report'],
   routes: ['/smart-toolkit/work-report'] },
   // 일지(tb_diary_info)는 엔티티만 있고 화면·API 가 없다. 이름이 없는 기능을 약속하지 않는다.
   reward: { label: '포상', permissions: ['REWARD'], paths: [
     'src/app/admin/operation/rewards', 'src/services/foundation/operation/RewardAdminService.ts'],
   routes: ['/admin/operation/rewards'] },
   schedule: { label: '일정', permissions: ['SCHEDULE'], paths: [
-    'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts'],
+    'src/app/smart-toolkit/schedule', 'src/components/business/schedule', 'src/services/business/schedule', 'src/types/business/schedule.ts',
+    // 슬롯 기여(업무 허브 분해 W1): 나의 업무 탭 줄의 일정 탭.
+    'src/extensions/schedule'],
   routes: ['/smart-toolkit/schedule'] },
   scrap: { label: '스크랩', permissions: ['SCRAP'], paths: [
     'src/services/business/user/ScrapService.ts', 'src/app/admin/collaboration/scraps',
@@ -148,13 +154,10 @@ const FEATURES = {
 // Required only by explicit domain selections. Legacy presets retain their
 // existing reduced route surface; their pack projection is unchanged.
 // 협업 허브는 core 셸 + 쪽지·스크랩 탭 기여(hub-tabs)라 공동 화면이 아니다(허브 분해 H1). 지식 허브는 게시판 셸 + 커뮤니티 탭
-// 기여다(허브 분해 H2). 남은 공동 화면은 업무 허브 하나다.
-const SHARED_UI = [
-  { id: 'work-hub', domains: ['report', 'schedule'],
-    paths: ['src/app/admin/work-hub', 'src/app/smart-toolkit/dept-job/layout.tsx'], routes: ['/admin/work-hub'],
-    reason: '업무 허브가 업무 보고와 일정 조회·작성 컴포넌트를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/work-hub/WorkHubClient.tsx' },
-];
+// 기여다(허브 분해 H2). 나의 업무(/admin/work-hub)도 core 셸 + 업무 보고·일정 탭 링크 기여(shell-links 의 work-hub 배치)다
+// (업무 허브 분해 W1). 남은 공동 화면은 없다 — 여러 기능이 한 화면 파일을 함께 소유해야 하면 { id, domains, paths, routes, reason,
+// evidence } 행을 둔다(직접 선택에서만 서로를 요구하는 간선이 된다).
+const SHARED_UI = [];
 
 // 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 두 의존을 명시한다.
 const UI_DEPENDENCIES = [

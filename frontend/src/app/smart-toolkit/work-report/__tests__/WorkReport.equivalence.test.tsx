@@ -5,7 +5,8 @@ import { pageInProjection } from '@/test-utils/projection';
 
 /**
  * 업무 보고 화면 동등성 그물(업무 허브 분해 W0). 업무 허브를 core 셸과 링크 기여로 나누기 전의 화면을 고정한다 — 이후 변경은 이
- * 기대값을 사유와 함께 바꿀 때만 화면을 바꿀 수 있다.
+ * 기대값을 사유와 함께 바꿀 때만 화면을 바꿀 수 있다. W1 에서 바뀐 기대값은 메모 보고 화면에 들어갈 수 없는 사람의 안내 문장 하나다
+ * (사유는 그 시험 옆).
  *
  * 고정하는 것: 문서 제목, h1·설명·현재 위치, 탭 줄(이름·순서·id·aria-selected·aria-controls)과 tabpanel 의 aria-labelledby,
  * 탭을 눌렀을 때의 목적지, '보고 등록'·검색 라벨·도구 막대 문구, '메모보고 관리' 링크(목적지 진입 권한 MEMO_RPT_READ 있음·없음).
@@ -125,11 +126,21 @@ describe('업무 보고 화면 동등성', () => {
       .toBeInTheDocument();
   });
 
-  if (pageInProjection(MEMO_REPORTS)) it('메모 보고 화면에 들어갈 수 없으면 링크를 보이지 않는다', async () => {
+  /*
+   * [W1 — 의도한 변화] 메모 보고를 안내하는 문장은 링크와 함께 숨는다. 종전에는 링크만 숨고 문장은 남아, 들어갈 수 없는 화면을
+   * 안내했다. 메모 보고 화면의 진입 권한(MEMO_RPT_READ)은 기본 그룹 셋이 모두 가져 기본 그룹의 화면은 같다(사용자 확인 B2).
+   */
+  it('메모 보고 화면에 들어갈 수 없으면 링크와 안내 문장을 보이지 않는다', async () => {
     mocks.permissions = BASE_PERMISSIONS;
     await renderScreen();
     expect(screen.queryByRole('link', { name: '메모보고 관리' })).toBeNull();
-    expect(screen.getByText('받는 사람 없이 남기는 개인 업무 기록입니다. 누군가에게 보고하려면 메모 보고를 쓰세요. 관리자 권한이면 전체 보고가 조회됩니다.'))
-      .toBeInTheDocument();
+    expect(screen.getByText('받는 사람 없이 남기는 개인 업무 기록입니다. 관리자 권한이면 전체 보고가 조회됩니다.')).toBeInTheDocument();
+  });
+
+  // 메모 보고가 없는 구성에서도 같다 — 링크 기여가 기능과 함께 지워진다.
+  if (!pageInProjection(MEMO_REPORTS)) it('메모 보고가 없는 구성에서는 링크와 안내 문장이 없다', async () => {
+    await renderScreen();
+    expect(screen.queryByRole('link', { name: '메모보고 관리' })).toBeNull();
+    expect(screen.getByText('받는 사람 없이 남기는 개인 업무 기록입니다. 관리자 권한이면 전체 보고가 조회됩니다.')).toBeInTheDocument();
   });
 });

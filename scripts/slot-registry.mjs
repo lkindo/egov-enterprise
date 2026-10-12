@@ -46,9 +46,10 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   },
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
+  // 나의 업무 탭 줄·업무 보고 머리 링크는 core 도우미 하나가 읽는다(업무 허브 분해 W1) — 기능 화면은 레지스트리를 직접 읽지 않는다.
   'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx',
     'frontend/src/app/error.tsx', 'frontend/src/app/components/ui/global-command-center.tsx',
-    'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+    'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx', 'frontend/src/components/business/work-hub/work-hub-tabs.tsx'],
   // 통계 셸(기능 탭)과 통계 요약(요약 칸)이 같은 레지스트리를 읽는다(허브 분해 H4).
   'stats-panels': ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
 });

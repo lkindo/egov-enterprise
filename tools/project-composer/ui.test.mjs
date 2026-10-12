@@ -291,6 +291,17 @@ const sharedBoard = (() => {
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   return { ...body, catalogHash: compositionDigest(body) };
 })();
+/*
+ * 업무 허브 분해 W1 뒤 실제 카탈로그에는 '목적지 없음' 메뉴가 생기는 구성이 없다 — 유일하던 '나의 업무'가 core 셸이 됐다(단독 22개·
+ * 두 기능 231개·프리셋 3개 실측). 그 표시를 보는 시험은 나의 업무 화면을 업무 보고 소유로 되돌린 카탈로그로 돈다 — 나머지 기능·간선·
+ * 문구·메뉴는 실제 그대로다.
+ */
+const detachedHub = (() => {
+  const { catalogHash, ...body } = structuredClone(real);
+  body.core.menuRoutes = body.core.menuRoutes.filter(route => route !== '/admin/work-hub');
+  body.capabilities.find(capability => capability.id === 'report').menuRoutes.push('/admin/work-hub');
+  return { ...body, catalogHash: compositionDigest(body) };
+})();
 async function realCatalogPage(t, { preflight = passingPreflight, deep = passingDeep, catalog = real } = {}) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, catalog);
@@ -552,11 +563,11 @@ test('pressing an automatic card while the plan cannot be checked says why the r
  * 글자 표시를 단다. 요약 줄이 화면·분류·목적지 없음·추가 수를 말한다.
  */
 test('the menu preview is a nested tree in menu order with category, detached and added markers', { timeout: 45_000 }, async t => {
-  const { page, pageErrors } = await realCatalogPage(t);
+  const { page, pageErrors } = await realCatalogPage(t, { catalog: detachedHub });
   await page.locator('#capability-scrap').check();
   await expect(page.locator('#domain-count')).toHaveText('3');
   const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['scrap'] },
-    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, detachedHub);
   const count = kind => menus.filter(menu => menu.kind === kind).length;
   const added = menus.filter(menu => menu.added);
   assert.ok(count('detached') > 0 && added.length > 0, 'the fixture shows every marker');

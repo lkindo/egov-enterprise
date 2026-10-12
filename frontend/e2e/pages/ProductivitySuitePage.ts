@@ -19,21 +19,6 @@ export class ProductivitySuitePage {
         await expect(this.page.getByRole('heading', { name: /결재|결재 양식|Sanction/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
-    // 부서 업무 (Dept Job)
-    async gotoDeptJob() {
-        console.log(`>>> Navigating to Departmental Jobs`);
-        await this.page.goto('/admin/work-hub?tab=job');
-        // Both Dept Job and Work Report now use Workflow Hub layout
-        await expect(this.page.getByRole('heading', { level: 1, name: '업무 관리', exact: true })).toBeVisible({ timeout: 15000 });
-    }
-
-    // 업무 보고 (Work Report)
-    async gotoWorkReport() {
-        console.log(`>>> Navigating to Work Reports`);
-        await this.page.goto('/admin/work-hub?tab=report');
-        await expect(this.page.getByRole('heading', { level: 1, name: '업무 보고', exact: true })).toBeVisible({ timeout: 15000 });
-    }
-
     async verifyWorkflowHubTabs() {
         console.log(`>>> Verifying Workflow Hub Tabs`);
         await expect(this.page.getByRole('button', { name: '워크플로우' })).toBeVisible();

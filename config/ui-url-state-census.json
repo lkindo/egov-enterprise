@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "51443538a5bc8508fb0aef6327580afd311493aaa64fb8cafba2f269a62f4339"
+    "inventoryHash": "418d4e35be35ba1eaee0de93028b09ffb7c02dbfe98f2ea50f432c124f5fca33"
   },
   "summary": {
-    "sourceFileCount": 665,
-    "records": 395,
-    "syntaxOccurrences": 471,
-    "ambiguousRecords": 347,
-    "unverifiedRecords": 395,
+    "sourceFileCount": 668,
+    "records": 397,
+    "syntaxOccurrences": 472,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 397,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,16 +45,16 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 176,
+      "navigation-producer": 179,
       "page-redirect": 17,
       "query-builder": 23,
-      "query-consumer": 54,
+      "query-consumer": 53,
       "query-producer": 39,
       "request-query-producer": 3,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 385,
+      "navigation": 387,
       "request-telemetry": 10
     }
   },
@@ -11610,130 +11610,6 @@
       }
     },
     {
-      "id": "URL-8D41A25EE5FBF2",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": "/admin/operation/memo-reports",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/operation/memo-reports",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-F60E1E9DD183E6",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-9AA3C1C73F0D0F",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "get",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "URL search parameter is consumed with get().",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "url-search-param-method",
-        "occurrenceCount": 2
-      }
-    },
-    {
       "id": "URL-08653D2EBCC0FF",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -14304,45 +14180,6 @@
       }
     },
     {
-      "id": "URL-82D10FB13519DB",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
-      "producerFile": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
-      "consumerFile": null,
-      "routePattern": "/smart-toolkit/dept-job",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/smart-toolkit/dept-job/layout.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-D28763D08DF60C",
       "surface": "navigation",
       "kind": "dynamic-segment",
@@ -14546,6 +14383,45 @@
       "evidence": {
         "source": "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx",
         "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-FD05B133DECF66",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+      "producerFile": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/smart-toolkit/work-report",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
@@ -15764,6 +15640,85 @@
       }
     },
     {
+      "id": "URL-DAAA3C38A5E04B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+      "producerFile": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/dept-job",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/dept-job",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-7428B8555358C4",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+      "producerFile": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/work-hub/work-hub-tabs.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-9AB2FD303B634D",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -16242,6 +16197,45 @@
       }
     },
     {
+      "id": "URL-FC710D586FAA88",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/memoreport/shell-links.ts",
+      "producerFile": "frontend/src/extensions/memoreport/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/operation/memo-reports",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/operation/memo-reports",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/memoreport/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-33CC6FCF08E729",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -16276,6 +16270,84 @@
       },
       "evidence": {
         "source": "frontend/src/extensions/note/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-F26405650FFB3B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/report/shell-links.ts",
+      "producerFile": "frontend/src/extensions/report/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/work-report",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/work-report",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/report/shell-links.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-07EF2470D5244A",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/extensions/schedule/shell-links.ts",
+      "producerFile": "frontend/src/extensions/schedule/shell-links.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/schedule",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/schedule",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/extensions/schedule/shell-links.ts",
         "detector": "href-navigation",
         "occurrenceCount": 1
       }

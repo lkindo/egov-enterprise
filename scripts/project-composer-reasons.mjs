@@ -9,8 +9,6 @@
  * 카탈로그를 만들지 않는다. 문장에는 영문(클래스명·기능 id)을 쓰지 않는다. 화면 이름은 사용자가 실제로 보는
  * 메뉴·화면 제목을 쓴다. 문장은 카탈로그 해시에 들어가므로 고치면 모든 구성 해시가 바뀐다.
  */
-const WORK_HUB = '업무 보고와 일정이 나의 업무 화면 하나를 함께 씁니다.';
-
 export const REQUIRES_USER_REASONS = Object.freeze({
   'board>comment': '게시글 화면이 댓글을 함께 다룹니다.',
   'comment>board': '댓글은 게시글에 달립니다.',
@@ -19,9 +17,7 @@ export const REQUIRES_USER_REASONS = Object.freeze({
   'dashboard>board': '실시간 대시보드가 오늘 올라온 게시글 수를 보여 줍니다.',
   'dashboard>notification': '실시간 대시보드가 읽지 않은 알림 수를 보여 줍니다.',
   'help>board': '도움말 화면의 자주 묻는 질문·질의응답은 게시판 글입니다.',
-  'report>schedule': WORK_HUB,
   'reward>informalsanction': '포상 데이터가 결재 문서 표를 참조합니다.',
-  'schedule>report': WORK_HUB,
   'scrap>board': '스크랩은 게시글을 저장해 둡니다.',
 });
 

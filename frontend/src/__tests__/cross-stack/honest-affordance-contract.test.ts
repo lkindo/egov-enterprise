@@ -545,11 +545,11 @@ describe('없는 것을 있다고 말하지 않는다', () => {
       덮어쓴다). 그런데 화면은 '조직에서 작성된' 이라 말해, 일반 사용자는 조직 전체를
       본다고 믿으면서 실제로는 자기 것만 봤다.
     */
-    // 업무 보고(report)와 업무 허브(보고·일정이 함께 있어야 남는 공용 화면)는 따로 빠질 수 있다.
+    // 업무 보고 서비스와 업무 보고 화면은 업무 보고 기능과 함께 빠진다(업무 허브 분해 W1 — 화면이 업무 보고 경로로 옮겨 왔다).
     const service = readRepoInProjection('business-app/src/main/java/nuri/business/service/report/WorkReportService.java');
     if (service !== undefined) expect(service).toContain('getCurrentLoginId');
 
-    const screen = readRepoInProjection('frontend/src/app/admin/work-hub/WorkHubClient.tsx');
+    const screen = readRepoInProjection('frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx');
     if (screen !== undefined) {
       expect(screen).not.toContain('조직에서 작성된');
       expect(screen).toContain('관리자 권한이면 전체 보고가 조회됩니다');
@@ -998,7 +998,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
 
   it('업무 허브·게시판 마스터의 조회 조건이 서버 술어와 일치한다', () => {
     // [2026-09-12] 부서 업무 목록은 core 소유 섹션으로 옥겨갔고 보고 목록만 허브에 남았다.
-    // 두 소유자를 각각 읽고 단언은 종전과 같은 것을 그대로 유지한다.
+    // [업무 허브 분해 W1] 보고 목록은 업무 보고 화면으로 옮겨 갔다. 두 소유자를 각각 읽고 단언은 종전과 같은 것을 그대로 유지한다.
     const jobList = stripComments(readSrc('components/business/deptJob/DeptJobListSection.tsx'));
     expect(jobList, '부서 업무 목록을 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
     // 담당자·작성자 축은 서버에 없다(업무는 picId, 보고는 rptTtl 단일).
@@ -1006,10 +1006,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     // 조건을 보내지 않으면 서버가 아무것도 거르지 않는다.
     expect(jobList, '부서업무 조회가 다시 조건 없이 나간다 — 검색어가 무시된다').toContain("searchCondition: '0'");
 
-    // 업무 허브(보고·일정이 함께 있어야 남는 공용 화면)와 업무 보고(report) 저장소는 따로 빠질 수 있다.
-    const hub = readRepoInProjection('frontend/src/app/admin/work-hub/WorkHubClient.tsx');
+    // 업무 보고 화면과 업무 보고 저장소는 업무 보고 기능과 함께 빠진다.
+    const hub = readRepoInProjection('frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx');
     if (hub !== undefined) {
-      expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
+      expect(hub, '업무 보고 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
       expect(hub).not.toContain('업무명·담당자');
       expect(hub).not.toContain('보고 제목·작성자');
     }

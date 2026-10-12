@@ -6,7 +6,9 @@ import { pageInProjection } from '@/test-utils/projection';
 
 /**
  * 나의 업무(/admin/work-hub)와 업무 관리(/smart-toolkit/dept-job) 동등성 그물(업무 허브 분해 W0). 업무 허브를 core 셸과 링크 기여로
- * 나누기 전의 화면을 고정한다 — 이후 변경은 이 기대값을 사유와 함께 바꿀 때만 화면을 바꿀 수 있다.
+ * 나누기 전의 화면을 고정한다 — 이후 변경은 이 기대값을 사유와 함께 바꿀 때만 화면을 바꿀 수 있다. W1 에서 바뀐 기대값은 나의 업무의
+ * 문서 제목 하나다(사유는 그 줄 옆). 업무 관리 라우트의 탭 줄은 분해 전에는 레이아웃이, 지금은 page 가 그린다 — 그물은 사용자가 보는
+ * 화면 전체를 렌더하므로 기대값은 같다.
  *
  * 고정하는 것: 문서 제목, h1·설명·현재 위치, 탭 줄(이름·순서·id·aria-selected·aria-controls)과 tabpanel, 탭을 눌렀을 때의 목적지,
  * '업무 등록'·업무명 검색, '업무함 관리'(DEPT_BOX_READ 있음·없음). 두 라우트는 같은 업무 관리 목록을 연다. 업무 보고·일정 탭은 그
@@ -45,12 +47,12 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => vi.fn() 
 
 import WorkHubPage, { metadata as workHubMetadata } from '../page';
 import DeptJobPage, { metadata as deptJobMetadata } from '@/app/smart-toolkit/dept-job/page';
-import DeptJobLayout from '@/app/smart-toolkit/dept-job/layout';
 
 const ROUTES: ReadonlyArray<{ route: string; title: string; screen: () => Promise<ReactElement> }> = [
-  { route: '/admin/work-hub', title: '업무·보고·일정 | 전자정부 표준프레임워크', screen: () => WorkHubPage() },
-  // 사용자가 보는 화면은 레이아웃이 감싼 page 다.
-  { route: '/smart-toolkit/dept-job', title: '부서 업무 목록 | 전자정부 표준프레임워크', screen: async () => <DeptJobLayout>{await DeptJobPage()}</DeptJobLayout> },
+  // [W1] 문서 제목은 메뉴 이름 '나의 업무' 를 따른다 — 이 화면은 업무 관리 목록만 그리는데 종전 제목은 보고·일정을 말했다.
+  { route: '/admin/work-hub', title: '나의 업무 | 전자정부 표준프레임워크', screen: () => WorkHubPage() },
+  // 분해 전에는 레이아웃이 탭 줄을 넘겼다. 레이아웃을 걷은 뒤에는 page 가 사용자가 보는 화면 전체다.
+  { route: '/smart-toolkit/dept-job', title: '부서 업무 목록 | 전자정부 표준프레임워크', screen: () => DeptJobPage() },
 ];
 
 async function renderScreen(route: (typeof ROUTES)[number]) {

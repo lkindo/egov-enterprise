@@ -499,7 +499,8 @@
       "roles": ["USER", "ADMIN", "SYSTEM"],
       "sources": [
         "frontend/src/app/smart-toolkit/schedule/page.tsx",
-        "frontend/src/app/admin/work-hub/WorkHubClient.tsx"
+        "frontend/src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx",
+        "frontend/src/components/business/work-hub/work-hub-tabs.tsx"
       ],
       "evidenceLevel": "static-source",
       "status": "remediated-local",
@@ -508,7 +509,7 @@
       "findings": [
         {
           "kind": "shared-hub-copy-boundary",
-          "evidence": "schedule route renders a shared work-hub client and required route-specific terminology review. Reviewed 2026-09-15: the tab list's accessible name used the hub container metaphor (term-hub) on this route and was renamed to the task context; the tab, breadcrumb, description, register action, empty and error states and dialogs say 일정 (DEC-OPS-099).",
+          "evidence": "schedule route rendered a shared work-hub client and required route-specific terminology review; since 2026-10-12 (work hub decomposition W1) it renders its own schedule screen and only the work-hub tab strip is shared. Reviewed 2026-09-15: the tab list's accessible name used the hub container metaphor (term-hub) on this route and was renamed to the task context; the tab, breadcrumb, description, register action, empty and error states and dialogs say 일정 (DEC-OPS-099).",
           "removedSourceEvidence": ["워크허브 영역 선택"],
           "status": "remediated-local",
           "owner": "work-domain-owner",
