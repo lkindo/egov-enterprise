@@ -52,14 +52,6 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
   ),
 }));
 
-vi.mock('@/app/components/patterns/keyword-filter', () => ({
-  KeywordFilter: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
-}));
-
-vi.mock('@/app/components/patterns/empty-result-message', () => ({
-  emptyResultMessage: (_keyword: string, fallback: string) => fallback,
-}));
-
 vi.mock('@/app/components/ui/standard-data-table', () => ({
   StandardDataTable: ({ columns, data }: { columns: Array<{ accessor: (item: Record<string, unknown>, index: number) => React.ReactNode }>; data: Array<Record<string, unknown>> }) => (
     <div data-testid="data-table">

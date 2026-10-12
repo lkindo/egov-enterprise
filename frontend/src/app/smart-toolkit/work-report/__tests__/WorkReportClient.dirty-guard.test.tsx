@@ -92,8 +92,6 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
 
 // 보고 폼 대역. 전달받은 defaultYmd 를 그대로 드러내고, 입력이 생기면 실제 폼과 같은 모양으로
 // 편집 상태를 부모에 올린다(실제 폼은 formState.isDirty 를 같은 시그니처로 올린다).
-// 보고 폼 대역. 전달받은 defaultYmd 를 그대로 드러내고, 입력이 생기면 실제 폼과 같은 모양으로
-// 편집 상태를 부모에 올린다(실제 폼은 formState.isDirty 를 같은 시그니처로 올린다).
 vi.mock('@/components/business/report/ReportCreateForm', () => ({
   ReportCreateForm: ({ defaultYmd, onCancel, onEditStateChange }: {
     defaultYmd: string;
