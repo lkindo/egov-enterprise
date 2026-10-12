@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { asciiJson, planDomainDeletion, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { asciiJson, planDomainDeletion, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 
 /*
  * 수동 도메인 삭제(delete-domain.ps1)의 동반 삭제 판정 계약. 판정은 카탈로그 requires 간선의 역방향 폐포다.
@@ -133,8 +134,45 @@ test('a projected collaboration tree plans the same deletions without the full c
     const result = spawnSync(process.execPath, [SCRIPT, '--json', '--root', root, 'board'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout).domains, ['board', 'comment', 'dashboard', 'scrap']);
+    assert.deepEqual(JSON.parse(result.stdout).javaFiles, [], 'a tree with only app sources has nothing to delete outside them');
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// 지우는 타입을 참조하는 api-server 생산 파일. 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있어(행사·외부인사·포상은
+// controller/business/operation, 결재는 controller/business/approval) 디렉터리 이름으로는 찾지 못한다.
+const API_MAIN = 'api-server/src/main/java/nuri/api/controller/business/';
+const API_MAIN_DELETIONS = {
+  event: ['operation/EventApiController.java', 'operation/ExternalHrApiController.java'],
+  reward: ['operation/RewardManageApiController.java'],
+  informalsanction: ['approval/ApprovalApiController.java', 'approval/InformalSanctionApiController.java',
+    'approval/dto/ApprovalConfirmRequest.java', 'approval/dto/ApprovalDraftRequest.java',
+    'approval/dto/ApprovalResubmissionRequest.java', 'operation/RewardManageApiController.java'],
+};
+
+function treeJava(root) {
+  return ['foundation', 'business-core', 'business-app', 'api-server'].flatMap(module => {
+    const directory = join(root, module, 'src');
+    return existsSync(directory) ? readdirSync(directory, { recursive: true, withFileTypes: true })
+      .filter(entry => entry.isFile() && entry.name.endsWith('.java'))
+      .map(entry => join(entry.parentPath, entry.name).slice(root.length + 1).split('\\').join('/')) : [];
+  });
+}
+
+test('files outside the domain directories go with the types they reference, judged like the generator', () => {
+  const java = treeJava(ROOT);
+  for (const [domain, expected] of Object.entries(API_MAIN_DELETIONS)) {
+    const plan = planDomainDeletion({ catalog, requested: [domain] });
+    const files = planDomainJavaFiles(ROOT, plan.domains).map(row => row.file);
+    assert.deepEqual(files.filter(file => file.startsWith('api-server/src/main/')), expected.map(file => API_MAIN + file).sort(), domain);
+    // 독립 대조: 남는 Java 코드(주석·문자열 제외)에 지우는 패키지 이름이 하나도 없다. 남기면 컴파일이 깨진다.
+    const deleted = new RegExp(`\\bnuri\\.business\\.(?:domain|service)\\.(?:${plan.domains.join('|')})\\b`, 'u');
+    const inDomainDirectory = file => plan.domains.some(name => ['domain', 'service'].some(layer =>
+      new RegExp(`^business-app/src/(?:main|test)/java/nuri/business/${layer}/${name}/`, 'u').test(file)));
+    const dangling = java.filter(file => !inDomainDirectory(file) && !files.includes(file))
+      .filter(file => deleted.test(stripJavaCommentsAndStringLiterals(readFileSync(join(ROOT, file), 'utf8'))));
+    assert.deepEqual(dangling, [], `${domain}: no surviving source references a deleted package`);
   }
 });
 
@@ -186,6 +224,9 @@ test('delete-domain.ps1 takes its companions from the plan, not from manifest cl
   assert.match(script, /domain-deletion-plan\.mjs/u);
   assert.match(script, /& node \$planScript --json @requested/u);
   assert.doesNotMatch(script, /\$manifest\.clusters/u, 'the undirected cluster expansion is gone');
+  // api-server 파일은 plan.javaFiles(생성기 Java 투영)로 지운다. 기능 이름의 controller 디렉터리를 추측하지 않는다.
+  assert.doesNotMatch(script, /controller\/business\/\$d/u, 'no controller directory guessed from the domain name');
+  assert.match(script, /foreach \(\$row in @\(\$plan\.javaFiles\)\)/u);
   assert.match(script, /\$toDelete = \[System\.Collections\.Generic\.HashSet\[string\]\]::new\(\[string\[\]\]@\(\$plan\.domains\)\)/u);
   // 잔존 참조 검사는 지우는 타입의 정규화된 이름으로 찾는다. 기능 이름을 패키지 접두로 찾으면 business-core 의
   // 같은 이름 패키지(nuri.business.service.system.user 등)까지 걸려 실제로 깨지는 소스가 경고 소음에 묻힌다.

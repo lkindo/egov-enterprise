@@ -42,7 +42,7 @@ export const CAPABILITY_SUMMARIES = Object.freeze({
   reward: '포상 기록 관리',
   schedule: '개인·부서 일정',
   scrap: '게시글 스크랩',
-  showcase: '화면 패턴·레이아웃 예제와 하네스 샘플',
+  showcase: '화면 패턴 갤러리·브라우저 테마 설정·하네스 샘플',
   sms: '문자 발송과 결과 확인',
   survey: '설문조사와 여론조사·투표',
   template: '커뮤니티가 고르는 템플릿 원장 관리',

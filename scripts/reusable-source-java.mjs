@@ -96,8 +96,11 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 
 // `walkDirectory` 는 제외 도메인 폴더 아래 생성물의 파일을 돌려준다. 생성기는 복사한 트리를 훑고, 정밀 점검(plan/deep)은
 // 복사할 파일 목록에서 고른다(디스크의 무시된 파일·대소문자만 다른 이름을 생성물과 같게 본다).
+// `projectSource` 는 판정 전에 소스를 구성에 맞게 고쳐 쓰는 투영이다. 소스를 고치지 않는 수동 삭제(domain-deletion-plan.mjs)는
+// 원문 그대로를 넘긴다 — 생성기처럼 고쳐 쓴 소스로 판정하면 실제로 남는 원문과 판정이 어긋난다.
 export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
-  { walkDirectory = (directory) => walk(directory, () => true) } = {}) {
+  { walkDirectory = (directory) => walk(directory, () => true),
+    projectSource = (file, source) => projectComposerJava(file, source, profile) } = {}) {
   const support = domainSupportFiles(root, manifest);
   const allowedPacks = new Set(profile.packs);
   const excludedDomains = profile.resolvedDomains
@@ -148,7 +151,7 @@ export function planJavaRemoval(root, manifest, profile, javaFiles = walk(root, 
   const indexes = new Map();
   const dependencyIndex = (path) => {
     if (!indexes.has(path)) {
-      indexes.set(path, javaDependencyIndex(projectComposerJava(normalize(relative(root, path)), readFileSync(path, 'utf8'), profile)));
+      indexes.set(path, javaDependencyIndex(projectSource(normalize(relative(root, path)), readFileSync(path, 'utf8'))));
     }
     return indexes.get(path);
   };

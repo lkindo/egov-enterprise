@@ -10,8 +10,10 @@
 #    적재하지 않으므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 돈다.
 #    지우는 도메인이 요구하는 도메인은 남긴다.
 #  - 백엔드 경로는 생성기 Java 단계(reusable-source-java.mjs 의 resolveDomainRemovalDirectory)와 같은 canonical layout
-#    (business-app/src/{main,test}/java/nuri/business/{domain,service}/<d>)과
-#    api-server 의 controller/business/<d> 디렉터리를 사용한다.
+#    (business-app/src/{main,test}/java/nuri/business/{domain,service}/<d>)과, 그 밖에서 함께 지울 파일이다.
+#    그 밖의 파일(지원 파일, 지우는 타입을 참조하는 api-server 컨트롤러·시험)은 디렉터리 이름으로 추측하지 않고
+#    생성기 Java 투영(planJavaRemoval)으로 고른 plan.javaFiles 를 쓴다. 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있다
+#    (행사·외부인사·포상 컨트롤러는 controller/business/operation).
 #  - frontend 경로는 매니페스트가 pack 단위(frontend.removePaths)로만 소유하므로,
 #    해당 pack 의 app 도메인 전부를 삭제할 때만 일괄 삭제하고 그 외에는 명시 경고한다.
 #  - 삭제 후 남는 tb_menu_info 시드 라우트(versioned migration)는 경고로 출력한다.
@@ -98,15 +100,18 @@ $toDelete = [System.Collections.Generic.HashSet[string]]::new([string[]]@($plan.
 $deleteList = @($toDelete) | Sort-Object
 Write-Host "삭제 대상 도메인: $($deleteList -join ', ')" -ForegroundColor Cyan
 
-# 3. 백엔드 경로 도출 (generator canonical layout + controller 디렉터리) --------
+# 3. 백엔드 경로 도출 (generator canonical layout + 생성기 Java 투영이 함께 지우는 파일) --------
 $backendRelPaths = @()
 foreach ($d in $deleteList) {
     foreach ($sourceSet in 'main', 'test') {
         foreach ($layer in 'domain', 'service') {
             $backendRelPaths += "business-app/src/$sourceSet/java/nuri/business/$layer/$d"
         }
-        $backendRelPaths += "api-server/src/$sourceSet/java/nuri/api/controller/business/$d"
     }
+}
+foreach ($row in @($plan.javaFiles)) {
+    Write-Host "[CASCADE] 함께 삭제: $($row.file) — $($row.reason)" -ForegroundColor Yellow
+    $backendRelPaths += $row.file
 }
 
 # 4. frontend 경로: pack 전체 삭제일 때만 매니페스트 removePaths 일괄 삭제 ------
@@ -175,7 +180,10 @@ $remainingJava = Get-ChildItem -Path (Join-Path $RepoRoot 'foundation'), (Join-P
     Where-Object {
         $file = $_.FullName
         -not $file.Substring($RepoRoot.Length).Contains($buildSegment) -and
-        -not ($deletedFullPaths | Where-Object { $file.StartsWith($_ + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase) })
+        -not ($deletedFullPaths | Where-Object {
+            $file.Equals($_, [System.StringComparison]::OrdinalIgnoreCase) -or
+            $file.StartsWith($_ + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)
+        })
     }
 $danglingRefs = @()
 if ($refPatterns.Count -gt 0) { $danglingRefs = @($remainingJava | Select-String -CaseSensitive -Pattern ($refPatterns -join '|')) }

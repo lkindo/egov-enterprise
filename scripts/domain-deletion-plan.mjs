@@ -18,6 +18,8 @@
  * 템플릿만 지우면 커뮤니티가 쓰는 템플릿 배정 구현이 함께 지워졌고, 묶음에서 근거 없는 간선을 걷으면
  * 게시판·결재를 지울 때 그 기능을 요구하는 스크랩·행사가 남았다.
  *
+ * 업무 앱 디렉터리 밖에서 함께 지울 Java 파일(api-server 컨트롤러·시험, 지원 파일)은 생성기 Java 투영으로 고른다(planDomainJavaFiles).
+ *
  * 사용: node scripts/domain-deletion-plan.mjs --json [--root <저장소>] <도메인> [<도메인>...]
  * 출력 JSON 의 비 ASCII 문자는 \uXXXX 로 적는다. 콘솔 코드 페이지와 관계없이 PowerShell 이 같은 값을 읽는다.
  */
@@ -27,6 +29,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { appSourceDomain, clusterRequirements, javaDomainReferences } from './project-composer-catalog.mjs';
 import { REQUIRES_USER_REASONS } from './project-composer-reasons.mjs';
 import { supportFileDirectoryDomain } from './project-composer-source.mjs';
+import { planJavaRemoval } from './reusable-source-java.mjs';
 
 const MANIFEST = 'config/reusable-base-profiles.json';
 const APP_ROOT = 'business-app/src/main/java/nuri/business';
@@ -101,6 +104,39 @@ export function treeDeletionCatalog(root) {
       .map(edge => ({ ...edge, userReason: REQUIRES_USER_REASONS[`${id}>${edge.domain}`] ?? null })) })) };
 }
 
+const JAVA_MODULES = ['foundation', 'business-core', 'business-app', 'api-server'];
+
+/**
+ * 지우는 기능의 업무 앱 디렉터리 밖에서 함께 지울 Java 파일과 그 사유. 판정은 생성기 Java 투영(planJavaRemoval)을 그대로 쓴다 —
+ * 지우는 기능의 지원 파일, 그리고 지우는 타입을 참조해 남기면 컴파일되지 않는 파일(api-server 컨트롤러·시험, 게이트 포함)이다.
+ * 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있다(행사·외부인사·포상 컨트롤러는 controller/business/operation). 디렉터리 이름으로
+ * 찾으면 그런 컨트롤러가 남아 컴파일이 깨진다.
+ * 수동 삭제는 소스를 고쳐 쓰지 않으므로 생성기의 소스 투영 없이 원문으로 판정한다. 이미 지운 트리에서는 지원 파일이 없을 수 있어,
+ * 남아 있는 지원 파일만 판정에 넣는다.
+ * @returns {{ file: string, reason: string }[]}
+ */
+export function planDomainJavaFiles(root, domains) {
+  root = resolve(root);
+  const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
+  const deleting = new Set(domains);
+  const appDomains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))];
+  const packs = Object.fromEntries(Object.entries(manifest.packs ?? {}).map(([name, pack]) => {
+    const declared = pack.backend?.domainSupportFiles;
+    if (!declared || typeof declared !== 'object') return [name, pack];
+    const present = Object.entries(declared)
+      .map(([domain, files]) => [domain, (Array.isArray(files) ? files : []).filter(file => typeof file === 'string' && existsSync(join(root, file)))])
+      .filter(([, files]) => files.length);
+    return [name, { ...pack, backend: { ...pack.backend, domainSupportFiles: Object.fromEntries(present) } }];
+  }));
+  const plan = planJavaRemoval(root, { ...manifest, packs },
+    { packs: Object.keys(packs), resolvedDomains: appDomains.filter(domain => !deleting.has(domain)) },
+    JAVA_MODULES.flatMap(module => javaFiles(join(root, module, 'src'))), { projectSource: (_file, source) => source });
+  const inside = plan.directDirectories.map(directory => `${directory}${sep}`);
+  return [...plan.removed].filter(path => !inside.some(prefix => path.startsWith(prefix)))
+    .map(path => ({ file: relative(root, path).split(sep).join('/'), reason: plan.removalReason.get(path) ?? '' }))
+    .sort((left, right) => (left.file < right.file ? -1 : left.file > right.file ? 1 : 0));
+}
+
 /** JSON 을 ASCII 만으로 적는다. */
 export function asciiJson(value) {
   // u 플래그를 두지 않는다. BMP 밖 문자는 서로게이트 반쪽마다 따로 적혀야 올바른 JSON 이다.
@@ -118,7 +154,8 @@ if (isMain) {
     process.exit(2);
   }
   try {
-    process.stdout.write(`${asciiJson(planDomainDeletion({ catalog: treeDeletionCatalog(root), requested: args }))}\n`);
+    const plan = planDomainDeletion({ catalog: treeDeletionCatalog(root), requested: args });
+    process.stdout.write(`${asciiJson({ ...plan, javaFiles: planDomainJavaFiles(root, plan.domains) })}\n`);
   } catch (error) {
     console.error(`[domain-deletion-plan] ${error.message}`);
     process.exit(1);
