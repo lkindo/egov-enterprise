@@ -223,7 +223,7 @@ export function projectSourceTree(output, { manifest, profile, composition, sour
   return { java, frontend };
 }
 
-function main() {
+async function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
@@ -298,7 +298,13 @@ function main() {
   // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
   //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
   //   단일모듈 배치는 build.gradle·settings.gradle 만 바꾸고 소스를 옮기지 않으므로 원장 경로는 그대로 유효하다.
-  const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copiedFiles));
+  const removedSourceFiles = buildProjectionLedger(output, copiedFiles);
+  const projectionLedger = writeProjectionLedger(output, removedSourceFiles);
+  // 경계·소비 census(10c-2)는 생성물 트리에서 다시 만든다. 소비 census 의 'consumer-not-in-composition' 근거가 투영 원장이라 그 뒤에 한다.
+  //   이 모듈은 적재할 때 원본 frontend 의 TypeScript 를 읽으므로 동적 import 로만 부른다 — 정적으로 부르면 frontend 를 설치하지 않은 곳에서
+  //   생성기 적재부터 실패한다(도구 확인은 출력 폴더를 만들기 전에 했다).
+  const { projectContractCensuses } = await import('./reusable-contract-census.mjs');
+  const contractCensus = projectContractCensuses({ sourceRoot: ROOT, output, removedFiles: removedSourceFiles.removedFiles });
 
   const lock = {
     schemaVersion: 1,
@@ -316,7 +322,7 @@ function main() {
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
     projectionLedger,
-    contracts: { apiDocs: apiDocs.summary, generatedTypes },
+    contracts: { apiDocs: apiDocs.summary, generatedTypes, ...contractCensus },
     zdmWaivers,
     governance: {
       path: 'config/governance/reusable-governance-projection.json',
