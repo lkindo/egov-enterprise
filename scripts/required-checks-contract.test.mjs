@@ -108,6 +108,10 @@ function assertRunnerAdmissionControl(content) {
     'frontend failure or skip must not silently suppress selected reusable validation');
   assert.equal(reusable.match(/^ {6}max-parallel:.*$/gm), null,
     'all selected reusable profiles must start together once admitted');
+  // ADR-0027: custom 두 layout 은 분류 직후의 빈 runner 를 쓴다. backend 뒤로 되돌리면 PR 의 마지막 잡이 된다.
+  const custom = jobs.get('reusable-custom') ?? '';
+  assert.match(custom, /^ {4}needs: \[change-scope\]$/m,
+    'reusable-custom must enter the idle runners right after classification');
 }
 
 function assertProductMutationLptOrder(content) {
@@ -947,7 +951,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(reusableJob,
     /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}$/m);
   assert.doesNotMatch(reusableJob, /verify-project-composer/);
-  assert.match(customJob, /^    needs: \[change-scope, backend-scope\]$/m);
+  assert.match(customJob, /^    needs: \[change-scope\]$/m);
   assert.match(customJob,
     /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-custom'\] == 'true'"$/m);
   assert.match(customJob, /^        layout: \[single-module, multi-module\]$/m);
@@ -1052,6 +1056,16 @@ test('short noncritical matrices reserve runner capacity without dropping valida
   ));
   assert.notEqual(throttled, ciContent.replace(/\r\n/g, '\n'));
   assert.throws(() => assertRunnerAdmissionControl(throttled), /start together/);
+  for (const replacement of [
+    '    needs: [change-scope, backend-scope]',
+    '    needs: [change-scope, frontend-scope]',
+    '    # needs: [change-scope]',
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'reusable-custom',
+      block => block.replace('    needs: [change-scope]', replacement));
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertRunnerAdmissionControl(changed), /right after classification/);
+  }
 });
 
 // [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
