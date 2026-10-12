@@ -867,7 +867,7 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   });
 
   it('지식 허브가 지어낸 점수와 기여자를 보여 주지 않는다', () => {
-    // 지식 허브(게시판·도움말·커뮤니티 공용 화면)는 게시판이 남아도 빠질 수 있다 — 서버 단언은 서버 파일로만 거른다.
+    // 지식 허브는 게시판 셸이다(허브 분해 H2). 화면과 서버 파일을 따로 거른다 — 서버 단언은 서버 파일로만 거른다.
     const client = readRepoInProjection('frontend/src/app/admin/help/KnowledgeHubClient.tsx');
     if (client !== undefined) {
       expect(client, '지식 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('StatsCard');

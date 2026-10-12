@@ -50,8 +50,11 @@ const FEATURES = {
     'src/services/foundation/system/BoardAdminService.ts', 'src/services/business/board/SatisfactionService.ts',
     'src/services/business/knowledge/knowledgeService.ts', 'src/app/admin/community/boards',
     // Phase 0c: 게시물·자료 이용 통계 화면은 게시판 데이터만 보여 준다. 통계 셸·나머지 통계 화면은 core 다.
-    'src/app/admin/stats/board', 'src/app/admin/stats/data-usage'],
-  routes: ['/admin/community/boards', '/admin/stats/board', '/admin/stats/data-usage'], menuTabs: ['/admin/help/faq?tab=WIKI', '/admin/help/faq?tab=FAQ', '/admin/help/faq?tab=QNA'] },
+    'src/app/admin/stats/board', 'src/app/admin/stats/data-usage',
+    // 허브 분해 H2(결정 ⑤): 지식 허브 셸은 게시판 소유다. 위키·FAQ·Q&A 는 셸 고유 탭이고 커뮤니티 탭은 커뮤니티의 hub-tabs 기여다.
+    //   질의응답 해결 판정은 셸과 도움말 서비스가 함께 쓰는 게시판 모듈이다.
+    'src/app/admin/help', 'src/lib/board'],
+  routes: ['/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
@@ -59,9 +62,11 @@ const FEATURES = {
   // 커뮤니티·홍보(배너·팝업)·시연 화면은 따로 고른다(DEC-OPS-256 ①). 셋 사이에는 코드 참조가 없다.
   community: { label: '커뮤니티', permissions: ['COMMUNITY'], paths: [
     'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
-    'src/services/business/community', 'src/services/foundation/system/CommunityAdminService.ts', 'src/types/business/community.ts'],
-  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/cop/cmy'],
-  exactRoutes: ['/admin/community'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
+    'src/services/business/community', 'src/services/foundation/system/CommunityAdminService.ts', 'src/types/business/community.ts',
+    // 허브 분해 H2: 지식 허브의 커뮤니티 탭 기여와 그 뷰·대화상자, 그리고 커뮤니티 탭으로 가는 별칭 화면.
+    'src/components/business/community', 'src/extensions/community', 'src/app/admin/community/boards/page.tsx'],
+  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/community/boards', '/cop/cmy'],
+  exactRoutes: ['/admin/community', '/admin/community/boards'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
     'src/app/dashboard-data.ts', 'src/components/features/dashboard/RealTimeDashboard.tsx'], routes: [] },
   // 행사(약도·행사별 외부인사 포함)와 포상은 따로 고른다(DEC-OPS-256 ①). 외부인사 기본 키가 행사 번호를 품고 물리 외래 키가 행사를 가리킨다.
@@ -71,11 +76,11 @@ const FEATURES = {
     'src/services/foundation/operation/__tests__/eventService.test.ts'],
   routes: ['/admin/operation/events', '/admin/operation/external-hr', '/admin/operation/rough-map'] },
   help: { label: '도움말·온라인 매뉴얼', permissions: ['HELP'], paths: [
-    'src/app/admin/help', 'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
+    'src/app/admin/system/hpcm', 'src/app/admin/uss/olh', 'src/app/help',
     'src/services/business/user/help', 'src/services/foundation/system/HpcmAdminService.ts', 'src/services/foundation/user',
     // 슬롯 기여(PR-6): 머리글·바닥글·오류 화면의 도움말 링크. 기능 디렉터리째 기능과 함께 직접 지워진다.
     'src/extensions/help'],
-  routes: ['/admin/help', '/admin/system/hpcm', '/admin/uss/olh', '/help'] },
+  routes: ['/admin/system/hpcm', '/admin/uss/olh', '/help'] },
   informalsanction: { label: '약식 전자결재', permissions: ['INFORMAL', 'APPROVAL', 'WORKFLOW'], paths: [
     'src/app/admin/sanctn/workflow', 'src/app/admin/system/ism', 'src/app/admin/workflow', 'src/app/approvals',
     'src/services/business/user/approval'], routes: ['/admin/sanctn/workflow', '/admin/system/ism', '/admin/workflow', '/approvals'] },
@@ -136,20 +141,23 @@ const FEATURES = {
 
 // Required only by explicit domain selections. Legacy presets retain their
 // existing reduced route surface; their pack projection is unchanged.
-// 협업 허브는 core 셸 + 쪽지·스크랩 탭 기여(hub-tabs)라 공동 화면이 아니다(허브 분해 H1).
+// 협업 허브는 core 셸 + 쪽지·스크랩 탭 기여(hub-tabs)라 공동 화면이 아니다(허브 분해 H1). 지식 허브는 게시판 셸 + 커뮤니티 탭
+// 기여다(허브 분해 H2). 남은 공동 화면은 업무 허브 하나다.
 const SHARED_UI = [
-  { id: 'knowledge-hub', domains: ['board', 'community', 'help'], paths: [], routes: [],
-    reason: '지식·커뮤니티 공동 화면이 게시판 서비스, 도움말 헬퍼와 커뮤니티 관리 폼을 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/help/KnowledgeHubClient.tsx' },
   { id: 'work-hub', domains: ['report', 'schedule'],
     paths: ['src/app/admin/work-hub', 'src/app/smart-toolkit/dept-job/layout.tsx'], routes: ['/admin/work-hub'],
     reason: '업무 허브가 업무 보고와 일정 조회·작성 컴포넌트를 직접 참조한다.',
     evidence: 'frontend/src/app/admin/work-hub/WorkHubClient.tsx' },
 ];
 
+// 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 두 의존을 명시한다.
 const UI_DEPENDENCIES = [
+  { from: 'community', domain: 'board', reason: '커뮤니티 게시판 화면이 게시판 서비스를 직접 참조한다.',
+    evidence: 'frontend/src/app/admin/community/board/CommunityBoardClient.tsx', symbol: 'boardUserService' },
   { from: 'community', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
     evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
+  { from: 'help', domain: 'board', reason: '도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.',
+    evidence: 'frontend/src/services/business/user/help/HelpUserService.ts', symbol: 'getPublicFaqsOperation' },
 ];
 
 const OPTIONAL_FOREIGN_KEYS = [{
@@ -354,8 +362,10 @@ export function loadProjectComposerCatalog(root = ROOT) {
     const feature = FEATURES[domain];
     if (feature.routes.some(prefix => (feature.exactRoutes ?? []).includes(prefix) ? route === prefix : covers(prefix, route))) {
       const previous = routeOwners.get(route);
-      // Narrower paths override an umbrella (/admin/community vs its templates).
-      const specificity = Math.max(...feature.routes.filter(prefix => covers(prefix, route)).map(prefix => prefix.length));
+      // Narrower paths override an umbrella (/admin/community vs its templates). 같은 길이면 정확히 그 화면만 선언한 쪽(exactRoutes)이
+      // 접두 선언을 이긴다 — 게시판 디렉터리 안의 커뮤니티 탭 별칭(/admin/community/boards)이 그 예다(허브 분해 H2).
+      const specificity = Math.max(...feature.routes.filter(prefix => covers(prefix, route))
+        .map(prefix => prefix.length + ((feature.exactRoutes ?? []).includes(prefix) ? 0.5 : 0)));
       if (!previous || specificity > previous.specificity) routeOwners.set(route, { domain, specificity });
       else if (specificity === previous.specificity && previous.domain !== domain) fail(`ambiguous route owner: ${route}`);
     }

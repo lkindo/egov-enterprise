@@ -49,10 +49,8 @@ export interface QNA {
   scrtYn?: string;
 }
 
-/** 답변이 끝난 문의인지. 서버 값 도메인 밖은 '진행 중'으로 본다(없는 완료를 지어내지 않는다). */
-export function isQnaSolved(qnaSttsCd?: string): boolean {
-  return qnaSttsCd === 'SOLVED';
-}
+// 해결 상태 판정은 지식 허브(게시판 셸)와 함께 쓰므로 core 모듈에 둔다(허브 분해 H2). 도움말 화면은 이 이름으로 계속 쓴다.
+export { isQnaSolved } from '@/lib/board/qna-status';
 
 /**
  * 도움말 데이터 서비스 (User)

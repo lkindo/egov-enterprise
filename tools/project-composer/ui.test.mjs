@@ -4,7 +4,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect } from '../../frontend/node_modules/@playwright/test/index.mjs';
 import { createComposerServer } from '../../scripts/project-composer-server.mjs';
-import { loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
+import { compositionDigest, loadProjectComposerCatalog } from '../../scripts/project-composer-catalog.mjs';
 import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs';
 import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
@@ -259,8 +259,9 @@ test('lost generation response recovers only its accepted request without submit
 });
 
 /*
- * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 스크랩만 고르면 게시판과 지식 허브를 따라 다섯 기능이
- * 함께 들어온다(쪽지는 허브 분해 H1 뒤 혼자 풀린다). 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며, '해제하기'로 정확히 빠진다.
+ * 자동 포함 설명(E2)을 실제 카탈로그와 실제 해석기로 그린다. 스크랩만 고르면 게시판과 댓글이 함께 들어온다(쪽지는 허브 분해 H1,
+ * 지식 허브의 커뮤니티·도움말·템플릿은 H2 뒤 따라오지 않는다). 화면은 경로 사슬과 사용자 문장을 보이고, 개발자 근거는 한 번 더 접으며,
+ * '해제하기'로 정확히 빠진다.
  */
 /*
  * 실제 카탈로그·실제 해석기·실제 화면 문구로 도는 서버(설계서 Phase 1 종료 조건: UI 테스트가 실제 카탈로그를 쓴다).
@@ -271,21 +272,34 @@ const real = loadProjectComposerCatalog(root);
 const realSnapshot = loadProjectComposerMenus(root);
 const realMenus = realSnapshot.menus;
 // 엔진과 같이 공통 기반 구성과 비교해 메뉴 트리를 만든다(E8).
-const realMenuTree = recipe => projectComposerMenuPreview(root, resolveProjectRecipe(recipe, real), realSnapshot,
-  { base: resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, real) });
-const realDiff = (recipe, domain) => {
-  const result = compositionDiff({ catalog: real, menus: realMenus, recipe, domain });
-  return { ...result, summary: diffSummary(result, real) };
+const realMenuTree = (recipe, catalog = real) => projectComposerMenuPreview(root, resolveProjectRecipe(recipe, catalog), realSnapshot,
+  { base: resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, catalog) });
+const diffWith = catalog => (recipe, domain) => {
+  const result = compositionDiff({ catalog, menus: realMenus, recipe, domain });
+  return { ...result, summary: diffSummary(result, catalog) };
 };
-async function realCatalogPage(t, { preflight = passingPreflight, deep = passingDeep } = {}) {
+const realDiff = diffWith(real);
+/*
+ * 시작 구성에서 직접 선택으로 바뀌며 들어오는 기능(화면을 함께 쓰는 기능 — 시작 구성은 그 간선을 따르지 않는다)은 허브 분해 H2 뒤
+ * 실제 카탈로그에 없다. 그 전환을 보는 시험은 실제 카탈로그에 그 간선 둘(게시판이 도움말·커뮤니티 화면을 함께 쓴다)만 더한 카탈로그로
+ * 돈다 — 나머지 기능·간선·문구·메뉴는 실제 그대로다.
+ */
+const sharedBoard = (() => {
+  const { catalogHash, ...body } = structuredClone(real);
+  body.capabilities.find(capability => capability.id === 'board').requires.push(
+    { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
+    { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
+  return { ...body, catalogHash: compositionDigest(body) };
+})();
+async function realCatalogPage(t, { preflight = passingPreflight, deep = passingDeep, catalog = real } = {}) {
   const plan = recipe => {
-    const composition = resolveProjectRecipe(recipe, real);
-    return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, real), degradationNotes: degradationNotes(composition, real),
-      unassignedPermissions: [], menus: realMenuTree(recipe), warnings: [], outputDirectory: `build/project-composer/${recipe.project.name}` };
+    const composition = resolveProjectRecipe(recipe, catalog);
+    return { ...composition, blockers: [], inclusionNotes: inclusionNotes(composition, catalog), degradationNotes: degradationNotes(composition, catalog),
+      unassignedPermissions: [], menus: realMenuTree(recipe, catalog), warnings: [], outputDirectory: `build/project-composer/${recipe.project.name}` };
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...real, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(real, { routeKinds: loadRouteKinds(root) }) }), plan, diff: realDiff, preflight, deep,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...catalog, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(catalog, { routeKinds: loadRouteKinds(root) }) }), plan, diff: diffWith(catalog), preflight, deep,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -303,9 +317,9 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
   await expect(page.locator('#domain-count')).toHaveText('0');
   await page.locator('#capability-scrap').check();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   await expect(page.locator('#reason-board')).toHaveText('자동 포함 · 스크랩 → 게시판·지식');
-  await expect(page.locator('#auto-included')).toContainText('함께 포함되는 기능 5개');
+  await expect(page.locator('#auto-included')).toContainText('함께 포함되는 기능 2개');
   const board = page.locator('#auto-board');
   await expect(board).toContainText('스크랩 → 게시판·지식');
   await board.getByText('왜 포함됐나').click();
@@ -366,7 +380,7 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
  * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
  * 한 번 말하고, 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
  */
-const AUTO_FROM_SCRAP = '게시판·지식, 댓글, 커뮤니티, 도움말·온라인 매뉴얼, 템플릿';
+const AUTO_FROM_SCRAP = '게시판·지식, 댓글';
 const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
 test('automatic cards stay reachable by keyboard, open their reason when pressed, and each change is announced once', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
@@ -380,7 +394,7 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
     document.getElementById('capabilities').addEventListener('focusin', () => window.statusAtFocus.push(document.getElementById('plan-status').textContent), true);
   });
   await page.keyboard.press('Space');
-  await expect(page.locator('#plan-status')).toHaveText('스크랩 선택으로 함께 포함되는 기능이 5개 늘었습니다(' + AUTO_FROM_SCRAP + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('스크랩 선택으로 함께 포함되는 기능이 2개 늘었습니다(' + AUTO_FROM_SCRAP + '). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   const statusAtFocus = await page.evaluate(() => window.statusAtFocus);
   assert.ok(statusAtFocus.length > 0, 'the plan put focus back on the card');
   assert.ok(statusAtFocus.every(status => !status.includes('늘었습니다')), statusAtFocus.join(' | '));
@@ -406,13 +420,13 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(board).toBeChecked();
   await expect(page.locator('#auto-board details').first()).toHaveAttribute('open', '');
   await expect(page.locator('#auto-board summary').first()).toBeFocused();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   // 마우스로 카드를 눌러도 같다(체크를 바꾸지 않는다). Playwright 는 aria-disabled 를 품은 라벨을 누르지 않으므로 좌표로 누른다.
   const commentCard = await page.locator('label').filter({ has: page.locator('#capability-comment') }).boundingBox();
   await page.mouse.click(commentCard.x + commentCard.width / 2, commentCard.y + 12);
   await expect(page.locator('#capability-comment')).toBeChecked();
   await expect(page.locator('#auto-comment details').first()).toHaveAttribute('open', '');
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   // 같은 구성을 다시 확인하면 지난 변화를 다시 말하지 않는다.
   await page.evaluate(() => document.getElementById('composer-form').requestSubmit());
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
@@ -435,17 +449,19 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await page.locator('#auto-board').getByRole('button', { name: /해제하기$/ }).click();
   await expect(page.locator('#plan-status')).toContainText('해제로 함께 포함되던 기능');
   await expect(page.locator('#plan-status')).toContainText('게시판·지식');
-  // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능은 '빠졌다' 고 말하지 않는다.
-  await page.locator('#capability-scrap').focus();
+  // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능(게시판·댓글)은 '빠졌다' 고 말하지 않는다.
+  //   커뮤니티는 게시판·댓글·템플릿을 끌어오고, 협업 기본에는 템플릿만 없다.
+  await page.locator('#capability-community').focus();
   await page.keyboard.press('Space');
-  await expect(page.locator('#plan-status')).toContainText('스크랩 선택으로');
+  await expect(page.locator('#plan-status')).toContainText('커뮤니티 선택으로');
   await page.locator('#preset').selectOption('collaboration');
-  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 3개가 빠졌습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 1개가 빠졌습니다(템플릿). ' + PLAN_READY);
   assert.deepEqual(pageErrors, []);
 });
 
 test('unchecking a feature that another choice still needs says it stayed, not that something was added', { timeout: 60_000 }, async t => {
-  const { page, pageErrors } = await realCatalogPage(t);
+  // 전환으로 들어오는 기능은 실제 카탈로그에 없어(허브 분해 H2) 게시판이 도움말·커뮤니티 화면을 함께 쓰는 간선을 더한 카탈로그로 본다.
+  const { page, pageErrors } = await realCatalogPage(t, { catalog: sharedBoard });
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
   // 협업 기본은 게시판과 댓글을 직접 고른다. 댓글을 빼면 게시판이 댓글을 필요로 해 댓글은 자동 포함으로 남는다.
   // 직접 선택으로 바뀌면서 게시판이 요구하는 세 기능도 함께 들어온다(시작 구성은 그 구성의 기능만 담는다).
@@ -514,7 +530,7 @@ test('several changes before the plan arrives are announced once as the net chan
 test('pressing an automatic card while the plan cannot be checked says why the reason is missing', { timeout: 45_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
   await page.locator('#capability-scrap').check();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   await page.getByLabel('프로젝트 이름').fill('con');
   await expect(page.locator('#plan-status')).toHaveText('프로젝트 이름을 확인해 주세요.');
   const board = page.locator('#capability-board');
@@ -538,7 +554,7 @@ test('pressing an automatic card while the plan cannot be checked says why the r
 test('the menu preview is a nested tree in menu order with category, detached and added markers', { timeout: 45_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
   await page.locator('#capability-scrap').check();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['scrap'] },
     database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
   const count = kind => menus.filter(menu => menu.kind === kind).length;
@@ -562,7 +578,7 @@ test('the menu preview is a nested tree in menu order with category, detached an
   assert.deepEqual([...new Set(await page.locator('#menu-preview ul').evaluateAll(lists => lists.map(list => list.getAttribute('role'))))], ['list']);
   await page.reload();
   await page.locator('#capability-scrap').check();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   await page.getByText('포함되는 메뉴').click();
   await expect(page.locator('#menu-count')).toHaveText(String(menus.length));
   // 맨 위 메뉴는 메뉴 순서대로 놓이고, 각 메뉴의 하위는 그 안의 목록에 들어간다.
@@ -865,7 +881,7 @@ test('deselecting a root hidden by search clears the search and focuses the root
   const { page, pageErrors } = await realCatalogPage(t);
   await expect(page.locator('#domain-count')).toHaveText('0');
   await page.locator('#capability-scrap').check();
-  await expect(page.locator('#domain-count')).toHaveText('6');
+  await expect(page.locator('#domain-count')).toHaveText('3');
   await page.getByLabel('기능 찾기').fill('알림');
   await expect(page.locator('#capability-scrap')).toBeHidden();
   const board = page.locator('#auto-board');
@@ -885,7 +901,9 @@ test('deselecting a root hidden by search clears the search and focuses the root
  * 시간에 기대지 않도록 계획 요청은 미리 붙잡고, 구성이 바뀐 직후의 화면은 같은 이벤트 처리 안에서 읽는다.
  */
 test('feature cards preview what choosing or removing them changes before the click', { timeout: 60_000 }, async t => {
-  const { page, pageErrors } = await realCatalogPage(t);
+  // 직접 선택으로 바뀌며 들어오는 기능(도움말 등)은 실제 카탈로그에 없어(허브 분해 H2) 그 간선을 더한 카탈로그로 본다.
+  const { page, pageErrors } = await realCatalogPage(t, { catalog: sharedBoard });
+  const realDiff = diffWith(sharedBoard);
   const recipe = selection => ({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
   const labelOf = id => real.capabilities.find(item => item.id === id).label;
   const announced = page.locator('#capability-preview-status');

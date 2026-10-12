@@ -27,10 +27,10 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "91513a55bf6d6e06fb50a87cf285fd5ac1ffe933b57ab79145da6ad06074428c"
+    "inventoryHash": "2a0165eb13e7c3e0d3bd2f0bb0cabb0932dfc4edaa02fbbb8303883434bf60ae"
   },
   "summary": {
-    "sourceFileCount": 656,
+    "sourceFileCount": 659,
     "records": 388,
     "syntaxOccurrences": 463,
     "ambiguousRecords": 341,
@@ -5206,44 +5206,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/admin/community/boards/master",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-8F19D9E59417E2",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/help",
-      "targetCandidate": "/cop/cmy/selectCommunityList",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/cop/cmy/selectCommunityList",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -15298,6 +15260,45 @@
       "evidence": {
         "source": "frontend/src/components/business/community/CommunityManageDialog.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-DB70EE212118AC",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/components/business/community/knowledge-community-tab.tsx",
+      "producerFile": "frontend/src/components/business/community/knowledge-community-tab.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/cop/cmy/selectCommunityList",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/cop/cmy/selectCommunityList",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/business/community/knowledge-community-tab.tsx",
+        "detector": "router-navigation",
         "occurrenceCount": 1
       }
     },

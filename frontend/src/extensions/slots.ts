@@ -111,6 +111,16 @@ export interface PostAction extends SlotEntry {
 export interface HubTabViews {
   /** 협업 허브(core 셸). 탭 뷰가 자기 목록 조회·표·대화상자를 소유하고 core 틀(collaboration-hub-frame)에 조각을 넘긴다. */
   readonly collaboration: { readonly Component: ComponentType };
+  /**
+   * 지식 허브(게시판 셸, 허브 분해 H2). 셸이 그 게시판(bbsId)의 글 목록·인기·최근 활동을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을
+   * 더한다. 설명은 탭 버튼 아래 짧은 문구다.
+   */
+  readonly knowledge: {
+    readonly description: string;
+    readonly icon: LucideIcon;
+    readonly bbsId: string;
+    readonly Actions?: ComponentType;
+  };
 }
 export type HubId = keyof HubTabViews;
 

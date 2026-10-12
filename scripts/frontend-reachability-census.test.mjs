@@ -184,6 +184,12 @@ const COLLABORATION_SURVIVORS = [
   'frontend/src/extensions/scrap/post-actions.ts',
   'frontend/src/queries/scrap-post-action.ts',
   'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
+  // [허브 분해 H2] 지식 허브는 게시판 셸이고 커뮤니티 탭은 커뮤니티 기여다. 셸이 커뮤니티 코드를 다시 import 하면 커뮤니티가 빠진
+  //   collaboration 투영에서 허브가 연쇄로 사라진다.
+  'frontend/src/app/admin/help/KnowledgeHubClient.tsx',
+  'frontend/src/app/admin/help/knowledge-tabs.ts',
+  'frontend/src/lib/board/qna-status.ts',
+  'frontend/src/extensions/generated-hub-tabs.ts',
   // [2026-09-15 GAP-PACK-001] pack 별로 가른 사용자 서비스 회귀 테스트 — 아래 CORE_SURVIVORS 주석 참조.
   'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
   'frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts',
@@ -280,6 +286,11 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/extensions/mail/shell-links.ts', ['core']],
     ['frontend/src/extensions/addressbook/shell-links.ts', ['core', 'collaboration']],
     ['frontend/src/app/admin/collaboration/scraps/page.tsx', ['core']],
+    // [허브 분해 H2] 지식 허브 커뮤니티 탭 기여와 그 머리 동작은 커뮤니티와 함께, 지식 허브 셸은 게시판과 함께 직접 지워진다.
+    ['frontend/src/extensions/community/hub-tabs.ts', ['core', 'collaboration']],
+    ['frontend/src/components/business/community/knowledge-community-tab.tsx', ['core', 'collaboration']],
+    ['frontend/src/app/admin/help/KnowledgeHubClient.tsx', ['core']],
+    ['frontend/src/lib/board/qna-status.ts', ['core']],
   ]) {
     for (const profile of profiles) {
       assert.equal(byFile(census, file).profileRemovalConstraints.find((constraint) => constraint.profile === profile)?.removal, 'direct',

@@ -39,7 +39,10 @@ const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
  */
 export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
-  'hub-tabs': { collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'] },
+  'hub-tabs': {
+    collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+    knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
+  },
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
   'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx',

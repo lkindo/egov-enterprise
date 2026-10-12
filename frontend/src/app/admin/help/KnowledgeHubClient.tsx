@@ -1,37 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Plus,
   Library, BookOpen, MessageCircleQuestion,
-  TrendingUp, Users, History,
+  TrendingUp, History,
   User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { knowledgeService, toKnowledgeActivities, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
 import {
-  COMMUNITY_BOARD_ID,
   HELP_FAQ_BOARD_ID,
   NOTICE_BOARD_ID,
   QNA_BOARD_ID,
   WIKI_BOARD_ID,
 } from '@/config/board-ids';
-import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
-import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
+import { isQnaSolved } from '@/lib/board/qna-status';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
-import { CommunityManageDialog } from '@/components/business/community/CommunityManageDialog';
+import { isHubTab, visibleEntries, type HubTabViews } from '@/extensions/slots';
+import { hubTabs } from '@/extensions/generated-hub-tabs';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
-import { parseKnowledgeTab, type KnowledgeCategory } from './knowledge-tabs';
+import { parseKnowledgeTab, type KnowledgeShellTab } from './knowledge-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `bbsId` 는 진입 전용이라 카테고리를 바꾸면 버린다(종전 delete 와 같은 결과).
@@ -43,16 +42,26 @@ import { parseKnowledgeTab, type KnowledgeCategory } from './knowledge-tabs';
 const HUB_PARAM_KEYS = ['tab'] as const;
 
 // 탭 목록과 `?tab=` 해석은 knowledge-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
-const CATEGORY_LABEL: Record<KnowledgeCategory, string> = {
-  WIKI: '위키',
-  FAQ: '자주 묻는 질문',
-  QNA: '질의응답(Q&A)',
-  COMMUNITY: '커뮤니티',
-};
+/**
+ * 탭 하나. 셸 고유 탭(위키·FAQ·Q&A)은 이 파일이 정하고, 다른 기능의 탭(커뮤니티)은 hub-tabs 기여의 뷰에서 온다(허브 분해 H2).
+ * 셸이 그 게시판(bbsId)의 글 목록을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을 더한다.
+ */
+type KnowledgeTab = { readonly id: string; readonly label: string } & HubTabViews['knowledge'];
+const SHELL_TABS: readonly KnowledgeTab[] = [
+  { id: 'WIKI', label: '위키', description: '기술 사양', icon: Library, bbsId: WIKI_BOARD_ID },
+  { id: 'FAQ', label: '자주 묻는 질문', description: '빠른 답변', icon: BookOpen, bbsId: HELP_FAQ_BOARD_ID },
+  { id: 'QNA', label: '질의응답(Q&A)', description: '질문과 답변', icon: MessageCircleQuestion, bbsId: QNA_BOARD_ID },
+];
+const isKnowledgeTab = isHubTab('knowledge');
+
+/** 열린 탭의 머리 동작. 기여 뷰의 컴포넌트를 그대로 그린다. */
+function ContributedActions({ view: { Actions } }: { view: HubTabViews['knowledge'] }) {
+  return Actions ? <Actions /> : null;
+}
 
 const PAGE_SIZE = 20;
 
-export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: KnowledgeCategory }) {
+export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: KnowledgeShellTab }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -63,9 +72,13 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
   // [2026-09-26 DIP B4 P1] 다른 화면으로 가는 버튼은 라우트 게이트와 같은 판정(canOpenPage)을 쓴다.
   const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
-  const canManageCommunities = canPermission(user, 'COMMUNITY_READ_ALL');
-  // [2026-09-06 DEC-OPS-037] 커뮤니티 생성·수정·폐쇄(감사 D07-01). 관리자이고 커뮤니티 탭일 때만 버튼을 그린다.
-  const [communityManageOpen, setCommunityManageOpen] = useState(false);
+  // [허브 분해 H2] 셸 고유 탭 뒤에 이 구성에서 보이는 기여 탭을 order 순으로 붙인다. 커뮤니티 관리 버튼·대화상자는 커뮤니티 기여의
+  //   머리 동작이 소유한다(DEC-OPS-037 의 노출 규칙 그대로 — 커뮤니티 탭에서, COMMUNITY_READ_ALL 보유자에게만).
+  const contributedTabs = useMemo(() => visibleEntries(user, hubTabs, isKnowledgeTab), [user]);
+  const tabs: readonly KnowledgeTab[] = useMemo(
+    () => [...SHELL_TABS, ...contributedTabs.map(({ id, label, view }) => ({ id, label, ...view }))],
+    [contributedTabs],
+  );
   // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
@@ -73,25 +86,25 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   const [unsolvedOnly, setUnsolvedOnly] = useState(false);
   const [pagination, setPagination] = useState({ context: '', page: 1 });
 
-  const resolveCategory = (): KnowledgeCategory => {
+  const resolveCategory = (): string => {
+    // `?bbsId=` 진입은 그 게시판을 보여 주는 탭을 연다(탭 값보다 먼저 본다). 이 구성에 그 탭이 없으면 탭 값으로 간다.
     const bbsId = searchParams.get('bbsId');
-    if (bbsId === COMMUNITY_BOARD_ID) return 'COMMUNITY';
-    if (bbsId === HELP_FAQ_BOARD_ID) return 'FAQ';
-    if (bbsId === QNA_BOARD_ID) return 'QNA';
-    if (bbsId === WIKI_BOARD_ID) return 'WIKI';
+    const byBoard = tabs.find((tab) => tab.bbsId === bbsId);
+    if (byBoard) return byBoard.id;
 
     // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
-    // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
-    return parseKnowledgeTab(searchParams.get('tab')) ?? defaultTab ?? 'WIKI';
+    // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다. 이 구성에 없는 기여 탭이면 기본 탭으로 간다.
+    return parseKnowledgeTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id)) ?? defaultTab ?? 'WIKI';
   };
 
   // 카테고리는 URL 파생값이다. 상태를 따로 두면 공유·새로고침·뒤로가기에서 복원되지 않는다.
-  const activeCategory: KnowledgeCategory = resolveCategory();
+  const activeCategory = resolveCategory();
+  const activeTab = tabs.find((tab) => tab.id === activeCategory) ?? SHELL_TABS[0];
   const qnaStatus = activeCategory === 'QNA' && unsolvedOnly ? 'OPEN' as const : undefined;
   const pageContext = JSON.stringify([activeCategory, searchQuery, sortBy, qnaStatus ?? '']);
   const page = pagination.context === pageContext ? pagination.page : 1;
 
-  const selectCategory = (next: KnowledgeCategory) => {
+  const selectCategory = (next: string) => {
     const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
     params.set('tab', next);
     // bbsId 로 진입했어도 카테고리를 바꾸면 버린다 — tab 이 우선 해석되지만 둘이 함께 남으면 링크가 혼란스럽다.
@@ -99,18 +112,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
-  const currentBbsId = React.useMemo(() => {
-    if (activeCategory === 'COMMUNITY') return COMMUNITY_BOARD_ID;
-    if (activeCategory === 'FAQ') return HELP_FAQ_BOARD_ID;
-    if (activeCategory === 'QNA') return QNA_BOARD_ID;
-    if (activeCategory === 'WIKI') return WIKI_BOARD_ID;
-    /*
-     * 종전 폴백 KNOWLEDGE_FALLBACK_BOARD_ID('BBSMSTR_NNNNNNNNNNNN')는 Flyway 시드에도
-     * sql/seed_knowledge_boards.sql 에도 없다(전량 grep 실측 — 등장처가 테스트 목뿐이다).
-     * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
-     */
-    return NOTICE_BOARD_ID; // DEFAULT/NOTICE
-  }, [activeCategory]);
+  /*
+   * 종전 폴백 KNOWLEDGE_FALLBACK_BOARD_ID('BBSMSTR_NNNNNNNNNNNN')는 Flyway 시드에도
+   * sql/seed_knowledge_boards.sql 에도 없다(전량 grep 실측 — 등장처가 테스트 목뿐이다).
+   * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
+   */
+  const currentBbsId = activeTab.bbsId ?? NOTICE_BOARD_ID;
 
   /*
     [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
@@ -241,7 +248,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   return (
     <>
       <WorkListPage
-        title={CATEGORY_LABEL[activeCategory]}
+        title={activeTab.label}
         description="문서를 검색하고 필요한 내용을 확인하세요."
         filterStateKey="knowledge-hub"
         // 조회 실패 시에는 총계를 말하지 않는다 — '총 0건' 은 "없다" 라는 사실 주장이 된다.
@@ -249,19 +256,17 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
         actions={
           <>
             {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
-            {/* [2026-10-01 결정 20] 커뮤니티를 찾고 가입하는 목록 화면으로 가는 길 — 메뉴를 바꾸지 않고 이 탭에서 잇는다. */}
-            {activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => router.push('/cop/cmy/selectCommunityList')}><Users size={16} aria-hidden="true" /> 커뮤니티 목록·가입</Button>}
-            {canManageCommunities && activeCategory === 'COMMUNITY' && <Button variant="outline" size="sm" onClick={() => setCommunityManageOpen(true)}><Users size={16} aria-hidden="true" /> 커뮤니티 관리</Button>}
+            {/* 기여 탭이 열렸으면 그 기여의 머리 동작(커뮤니티: 목록·가입, 관리)을 둔다. 탭을 바꾸면 다시 마운트된다. */}
+            <ContributedActions key={activeTab.id} view={activeTab} />
             <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
           </>
         }
         navigation={
           <div role="tablist" aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {/* 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
-            <CategoryTab title="위키" desc="기술 사양" icon={Library} active={activeCategory === 'WIKI'} onClick={() => selectCategory('WIKI')} />
-            <CategoryTab title="자주 묻는 질문" desc="빠른 답변" icon={BookOpen} active={activeCategory === 'FAQ'} onClick={() => selectCategory('FAQ')} />
-            <CategoryTab title="질의응답(Q&A)" desc="질문과 답변" icon={MessageCircleQuestion} active={activeCategory === 'QNA'} onClick={() => selectCategory('QNA')} />
-            <CategoryTab title="커뮤니티" desc="활성 게시판" icon={Users} active={activeCategory === 'COMMUNITY'} onClick={() => selectCategory('COMMUNITY')} />
+            {tabs.map((tab) => (
+              <CategoryTab key={tab.id} title={tab.label} desc={tab.description} icon={tab.icon} active={activeCategory === tab.id} onClick={() => selectCategory(tab.id)} />
+            ))}
           </div>
         }
         filter={
@@ -306,7 +311,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
                 data={displayItems}
                 keyField="pstSn"
                 loading={isLoading}
-                accessibleLabel={`${CATEGORY_LABEL[activeCategory]} 문서 목록`}
+                accessibleLabel={`${activeTab.label} 문서 목록`}
                 emptyMessage={emptyResultMessage(searchQuery, '등록된 지식 문서가 없습니다.')}
               />
               <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
@@ -400,10 +405,6 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
         </details>
       </WorkListPage>
 
-      {/* 열릴 때만 마운트한다 — 닫으면 폼·선택 상태가 함께 버려지고, 다이얼로그의 조회 훅이 허브 렌더에 끼지 않는다. */}
-      {canManageCommunities && communityManageOpen && (
-        <CommunityManageDialog isOpen onClose={() => setCommunityManageOpen(false)} />
-      )}
     </>
   );
 }
@@ -464,7 +465,7 @@ function StatsCard({ label, value, desc }: { label: string, value: string, desc:
  * 위키의 게시/초안과 FAQ·커뮤니티의 공개 여부는 저장할 곳 자체가 없다. 없는 상태를
  * 지어내지 않으려면 배지를 붙이지 않는 것이 맞다 — 상태 축이 생기면 그때 되살린다.
  */
-function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategory }) {
+function StatusBadge({ status, type }: { status?: string, type: string }) {
   if (type !== 'QNA') return null;
 
   const isSolved = isQnaSolved(status);

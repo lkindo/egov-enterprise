@@ -2546,6 +2546,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -2639,12 +2640,14 @@
             "api-server/src/main/java/nuri/api/controller/business/admin/content/community/CommunityApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/content/community/CommunityApiControllerTest.java",
             "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-            "frontend/src/app/admin/help/__tests__/KnowledgeHubClient.community-manage.test.tsx",
             "frontend/src/app/admin/help/page.tsx",
             "frontend/src/components/business/community/CommunityManageDialog.tsx",
             "frontend/src/components/business/community/CommunityMembersPanel.tsx",
             "frontend/src/components/business/community/__tests__/CommunityManageDialog.test.tsx",
             "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx",
+            "frontend/src/components/business/community/__tests__/KnowledgeCommunityActions.test.tsx",
+            "frontend/src/components/business/community/knowledge-community-tab.tsx",
+            "frontend/src/extensions/community/hub-tabs.ts",
             "frontend/src/services/foundation/system/CommunityAdminService.ts"
           ]
         }
@@ -2692,6 +2695,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],
@@ -2831,6 +2835,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],

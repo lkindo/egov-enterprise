@@ -69,12 +69,12 @@ test('core plus board and survey includes required UI/domain closure without mai
   assert.equal(plan.profile, 'custom');
   assert.deepEqual(plan.selectedDomains, ['board', 'survey']);
   // 게시판은 스크랩 없이 생성된다(DEC-OPS-272). 협업 허브는 core 셸이고 쪽지·스크랩은 그 탭 기여라 둘 다 들어오지 않는다(허브 분해 H1).
-  // 기능 분할(DEC-OPS-273) 뒤 지식 허브가 끌어오는 것은 커뮤니티뿐이다 — 배너·팝업·시연 화면은 들어오지 않는다.
-  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'community', 'help', 'survey', 'template']);
+  // 지식 허브는 게시판 셸이고 커뮤니티 탭은 커뮤니티 기여다(허브 분해 H2) — 게시판은 커뮤니티·도움말·템플릿을 끌어오지 않는다.
+  assert.deepEqual(plan.resolvedDomains, ['board', 'comment', 'survey']);
   for (const absent of ['promotion', 'showcase']) assert.ok(!plan.resolvedDomains.includes(absent), absent);
   for (const absent of ['mail', 'sms', 'schedule', 'report', 'scrap', 'note']) assert.ok(!plan.resolvedDomains.includes(absent));
   assert.ok(!plan.tables.includes('tb_email_dsptch_manage'));
-  assert.ok(plan.tables.includes('tb_srvy_info') && plan.tables.includes('tb_tmplt_info'));
+  assert.ok(plan.tables.includes('tb_srvy_info') && !plan.tables.includes('tb_cmnty_info'));
   assert.ok(plan.permissionCodes.includes('BOARD_READ') && !plan.permissionCodes.includes('MAIL_SEND'));
   assert.ok(plan.menuRoutes.includes('/admin/help'));
   assert.ok(plan.menuRoutes.includes('/admin/collaboration'), 'the collaboration hub is a core shell');
@@ -82,7 +82,8 @@ test('core plus board and survey includes required UI/domain closure without mai
     assert.ok(plan.frontend.removePaths.includes(contribution), `${contribution} leaves with its feature`);
   }
   assert.ok(!plan.menuRoutes.some(route => route.includes('?')), 'menus are owned by screen path');
-  assert.deepEqual(plan.excludedMenuTabs, [], 'every tab contributor of the retained knowledge hub is retained');
+  // 지식 허브(게시판 셸)는 남고 커뮤니티 탭 메뉴는 숨는다.
+  assert.deepEqual(plan.excludedMenuTabs, ['/admin/help?tab=COMMUNITY'], 'the community tab menu leaves with the community contribution');
   assert.ok(plan.frontend.removePaths.includes('src/services/business/mail/MailService.ts'));
   assert.ok(plan.autoIncluded.every(item => item.reason.length > 10));
   assert.deepEqual(plan, resolveProjectRecipe(recipe({ domains: ['survey', 'board'] }), catalog));

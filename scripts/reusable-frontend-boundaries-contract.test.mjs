@@ -658,7 +658,9 @@ test('hub tab modules: contributable names exactly the hub-tabs contributions, a
     return hubTabViolations(call.arguments[1], file, { file, modules }).join('\n');
   };
   assert.equal(violations(fixture(entry())), '', 'the source shape is green');
-  assert.match(violations(fixture(entry({ hub: 'knowledge' }))), /MESSAGES 의 hub 는 .* 리터럴이다/);
+  assert.match(violations(fixture(entry({ hub: 'nowhere' }))), /MESSAGES 의 hub 는 .* 리터럴이다/);
+  // 다른 허브(지식 허브 — 허브 분해 H2)에 기여하면 그 허브의 contributable 이 이 탭을 지목하지 않는다.
+  assert.match(violations(fixture(entry({ hub: 'knowledge' }))), /MESSAGES — .*knowledge-tabs\.ts 의 TAB_HUB\.contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
   assert.match(violations(fixture(entry({ id: 'messages' }))), /messages 의 id 는 `\?tab=` 값인 대문자 식별자 리터럴이다/);
   assert.match(violations(fixture(entry({ order: "'10'" }))), /MESSAGES 의 order 는 숫자 리터럴이다/);
   assert.match(violations(fixture(entry({ view: '{ Component: X, other: 1 }' }))), /view 는 import 한 이름이거나 이름만 담은 객체다/);

@@ -73,6 +73,8 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다.' },
   { path: 'frontend/src/extensions/scrap/post-actions.ts',
     reason: '스크랩 기능이 없으면 게시글 상세의 스크랩 버튼만 사라지고 게시판 기능은 그대로입니다.' },
+  { path: 'frontend/src/extensions/community/hub-tabs.ts',
+    reason: '커뮤니티 기능이 없으면 지식 허브의 커뮤니티 탭과 그 머리 동작만 사라지고 위키·자주 묻는 질문·질의응답은 그대로입니다.' },
   { path: 'frontend/src/extensions/note/hub-tabs.ts',
     reason: '쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다.' },
   { path: 'frontend/src/extensions/scrap/hub-tabs.ts',

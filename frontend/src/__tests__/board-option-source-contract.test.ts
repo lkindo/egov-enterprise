@@ -44,6 +44,8 @@ const BOARD_CHOICE_SCREENS = [
   'app/admin/community/board/CommunityBoardClient.tsx',
   'app/admin/community/boards/select-board-list/page.tsx',
   'app/admin/help/KnowledgeHubClient.tsx',
+  // 지식 허브 커뮤니티 탭의 게시판 ID 를 정하는 기여 뷰(허브 분해 H2)
+  'components/business/community/knowledge-community-tab.tsx',
 ] as const;
 
 /** 주석 안의 이름을 참조로 세면 "주석만 남기면 통과"가 되어 계약이 무력해진다. */

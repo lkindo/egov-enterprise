@@ -89,6 +89,8 @@ export function findUnenforcedDenial(source: string): string[] {
 const boardInProjection = inProjection([path.join(ROOT, BOARD_CONTROLLER), path.join(ROOT, BOARD_SERVICE)]);
 const BOARD_READ_SCREENS_ALL = [
   'frontend/src/app/admin/help/KnowledgeHubClient.tsx',
+  // 지식 허브의 커뮤니티 탭 머리 동작(허브 분해 H2 — 커뮤니티 기여)
+  'frontend/src/components/business/community/knowledge-community-tab.tsx',
   'frontend/src/app/admin/community/board/CommunityBoardClient.tsx',
   'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
 ];
