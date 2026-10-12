@@ -48,7 +48,7 @@ clean v* release tag
 기대치는 매니페스트 v2(`config/modules`)에서 읽는다. 소유 기능이 빠진 공유 테이블은 그 테이블 선언의 소비자 가운데 구성에 있는 첫
 기능이 넘겨받는다(순위를 보지 않는다). 생성물의 `config/modules` 에는 구성의 기능 파일·`core.json`·활성 구성 하나만 담은
 `presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 생성물의 `config/reusable-base-profiles.json` 은 pack 을 읽는
-옛 소비자를 위한 투영이다(11단계 C4·C5 에서 걷는다).
+옛 소비자를 위한 투영이다(11단계 C5 에서 걷는다).
 
 ### 2.1 백엔드 출력 형태
 
@@ -223,7 +223,10 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 (api-server main 50개 — 컨트롤러 34·요청·응답 DTO 11·연동·리스너 5 — 와 api-server 시험 52개, business-app 시험 3개).
 소유는 코드에서 도출되므로, 잘못 들어간 import 한 줄은 컨트롤러를 지우면서 기대치까지 함께 바꾼다(개인정보 census·컨트롤러
 하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `profiles.<name>.acknowledgedJavaCascade`
-에 적고, 생성기·정밀 점검(plan/deep)·운영 계약(`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다.
+에 적고(매니페스트 v2 의 `presets.json` `expected.javaCascade` 로 옮겨 적힌다), 생성기·정밀 점검(plan/deep)·운영 계약
+(`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다. 운영 계약은 2026-10-13(11단계 C4)부터
+`presets.json` 의 Java 게이트 승인(`expected.gates`)과 연쇄 목록을 읽어 시작 구성마다 생성기 계획과 대조한다 — 수가 아니라 목록이라
+게이트 하나가 사라지고 다른 하나가 살아나는 교체도 붉다.
 목록의 형식·중복도 이 대조가 본다. 사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 `java.cascadeRemoved` 에
 남는다. 직접 선택 구성은 기대치가 없어 lock 기록만 남긴다.
 
@@ -241,17 +244,25 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
 판정 원장을 JSON 으로 옮겼다. 승인 목록의 정본은 매니페스트다.
 
-**횡단 게이트를 되살리는 방식(DEC-OPS-089·090).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
-옮기고 항목마다 소유 pack 을 적는다. 원장은 셋이다 — `config/governance/privacy-access-census.json`,
-`input-contract-mirror-census.json`, `cross-domain-coupling-census.json`.
+**횡단 게이트를 되살리는 방식(DEC-OPS-089·090, 11단계 C4).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
+옮긴다. 원장은 셋이다 — `config/governance/privacy-access-census.json`, `input-contract-mirror-census.json`,
+`cross-domain-coupling-census.json`. 원장에 소유를 적지 않는다 — 2026-10-13 항목마다 적던 pack 태그 230개를 걷고, 남고 빠지는
+기대를 소스의 기능 소유에서 계산한다.
 
-- 게이트는 현재 트리 manifest 에 남은 pack 의 항목만 기대한다. 빠진 pack 항목은 **실제로 없을 때만** 부재로 인정한다
+- 게이트는 저장소에서 원장 전체를, 생성물에서는 생성기가 기록한 투영 계획(하네스 프로필의 `retainsType`·`retainsSource`)에서
+  소스가 모두 남은 항목만 기대한다. 시작 구성과 직접 선택이 같은 판정이다. 지운 항목은 **실제로 없을 때만** 부재로 인정한다
   — 타입 표적은 참조 타입 중 하나가 `ClassNotFoundException` 일 때, 결합 edge 는 소스 파일 중 하나가 없을 때다.
-  전부 남아 있으면 pack 태그가 틀린 것이고, 링크 오류는 판정할 수 없는 것이라 둘 다 red 다.
-- 태그는 **항목이 참조하는 소스가 모두** 살아남는 가장 작은 rank 누적 프로필이다. 생성기의 `planJavaRemoval` 을
-  rank 누적 프로필마다 불러 대조하는 node 계약(`scripts/*-census-contract.test.mjs`, 공용 판정은
-  `scripts/pack-tagged-registry.mjs`)이 CI 에서 지킨다. 실제 프로필에는 survey 만 더한 프로필이 없어 Java 게이트는
-  survey 와 demo 태그를 구분하지 못한다 — 그 구분은 이 계약만 한다.
+  전부 남아 있으면 투영 기록과 트리가 어긋난 것이고, 링크 오류는 판정할 수 없는 것이라 둘 다 red 다.
+- 기대 생존은 항목이 참조하는 **소스가 모두** 구성 안 기능(또는 core) 소유일 때만 참이다. 소유는 카탈로그가 연동을 계산할 때 쓰는
+  규칙(지원 파일 선언, 업무 앱 기능 디렉터리, foundation·business-core 는 core, api-server 는 참조하는 업무 패키지)을 그대로 쓴다.
+  node 계약(`scripts/*-census-contract.test.mjs`, 공용 판정은 `scripts/pack-tagged-registry.mjs`)이 시작 구성마다 생성기의
+  `planJavaRemoval` 을 불러 그 기대와 양방향으로 대조한다(`expected to survive in …`·`expected to be removed in …`).
+  시작 구성 셋은 설문을 늘 다른 demo 전용 기능과 함께 넣거나 빼므로, 협업 시작 구성에 설문만 더한 합성 구성도 함께 돈다
+  — 설문 소유를 다른 기능으로 잘못 정하면 그 구성만 잡는다('공통 기반 + 설문' 시작 구성이 생기면 걷는다).
+- api-server 의 기능 디렉터리 밖 파일은 참조하는 업무 패키지로 소유가 정해진다 — 생성기 연쇄와 같은 import 관계다. 그런 항목에서
+  '잘못 들어간 import 로 코어 항목이 사라지는' 신호(DEC-OPS-089)는 이 대조가 아니라 시작 구성의 Java 연쇄 exact 목록이 받친다.
+  지금 원장에서 그런 소스 파일은 셋이다(행사 외부인사 컨트롤러, 결재 기안·승인 요청 DTO — 항목 6개). 다른 api-server 파일을 거쳐 닿는 간접 참조는
+  소유 규칙이 core 로 보므로 이 대조가 붉다.
 - 표적 하한(anti-vacuity)은 프로필과 무관하게 원장 **전체**에 적용한다.
 - 원장 해시는 메타 게이트의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE` 의 `__sourceHash` 가 동결한다(생성기 미러 포함).
 - 게이트 판정은 각 게이트 파일 안에 둔다. 공용 Java 헬퍼로 빼면 그 파일이 `__sourceHash` 밖으로 나가고, 다른 게이트

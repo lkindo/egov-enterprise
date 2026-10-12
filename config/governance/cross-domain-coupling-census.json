@@ -1,12 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "교차 도메인 결합 census(CrossDomainCouplingLinterTest)의 동결 원장. business-app 서비스 파일이 다른 도메인 타입을 참조하는 edge 를 정확한 집합으로 동결한다. pack 은 소유 파일과 참조 타입 소스가 모두 살아남는 가장 작은 재사용 pack 이며 scripts/cross-domain-coupling-census-contract.test.mjs 가 생성기 제거 계획과 대조한다. 스캔 결과는 build/harness/cross-domain-coupling.actual.json. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
-  "packs": [
-    "core",
-    "collaboration",
-    "survey",
-    "demo"
-  ],
+  "description": "교차 도메인 결합 census(CrossDomainCouplingLinterTest)의 동결 원장. business-app 서비스 파일이 다른 도메인 타입을 참조하는 edge 를 정확한 집합으로 동결한다. 생성물에서는 소유 파일과 참조 타입 소스가 모두 남은 edge 만 기대하며, scripts/cross-domain-coupling-census-contract.test.mjs 가 그 생존을 기능 소유로 계산해 생성기 제거 계획과 대조한다. 스캔 결과는 build/harness/cross-domain-coupling.actual.json. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
   "edges": [
     {
       "file": "addressbook/listener/AddressBookUserDeletionCleanupListener.java",
@@ -15,8 +9,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "board/attachment/BoardAttachmentSourceContributor.java",
@@ -26,8 +19,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "board/BoardService.java",
@@ -37,8 +29,7 @@
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy",
         "nuri.business.service.file.FileService"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "board/BoardService.java",
@@ -49,8 +40,7 @@
         "nuri.business.domain.user.exception.UserErrorCode",
         "nuri.business.service.user.UserService",
         "nuri.business.service.user.dto.UserDto"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "board/listener/BoardUserDeletionCleanupListener.java",
@@ -59,8 +49,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "comment/listener/CommentUserDeletionCleanupListener.java",
@@ -69,8 +58,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "community/CommunityService.java",
@@ -80,8 +68,7 @@
       "types": [
         "nuri.business.domain.user.entity.User",
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "community/listener/CommunityUserDeletionCleanupListener.java",
@@ -90,8 +77,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/event/SanctionEventListener.java",
@@ -101,8 +87,7 @@
       "types": [
         "nuri.business.service.user.UserService",
         "nuri.business.service.user.dto.UserDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/InformalSanctionService.java",
@@ -112,8 +97,7 @@
       "types": [
         "nuri.business.service.code.CommonCodeService",
         "nuri.business.service.code.dto.CommonCodeDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/ApprovalLineAssistService.java",
@@ -123,8 +107,7 @@
       "types": [
         "nuri.business.service.code.CommonCodeService",
         "nuri.business.service.code.dto.CommonCodeDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/ApprovalLineAssistService.java",
@@ -135,8 +118,7 @@
         "nuri.business.domain.user.entity.User",
         "nuri.business.domain.user.repository.UserRepository",
         "nuri.business.service.user.dto.UserSearchDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/ApprovalTemporaryDraftService.java",
@@ -145,8 +127,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/InformalSanctionReadAssembler.java",
@@ -155,8 +136,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.dto.UserSearchDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "informalsanction/InformalSanctionService.java",
@@ -167,8 +147,7 @@
         "nuri.business.domain.user.entity.User",
         "nuri.business.domain.user.repository.UserRepository",
         "nuri.business.service.user.dto.UserSearchDto"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "mail/attachment/MailAttachmentSourceContributor.java",
@@ -178,8 +157,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "mail/MailService.java",
@@ -188,8 +166,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.UserContactService"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "memoreport/attachment/MemoReportAttachmentSourceContributor.java",
@@ -199,8 +176,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "memoreport/MemoReportService.java",
@@ -209,8 +185,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "memoreport/MemoReportService.java",
@@ -219,8 +194,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "note/attachment/NoteAttachmentSourceContributor.java",
@@ -230,8 +204,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "note/NoteService.java",
@@ -241,8 +214,7 @@
       "types": [
         "nuri.business.domain.user.entity.User",
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "notification/listener/NotificationUserDeletionCleanupListener.java",
@@ -251,8 +223,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.event.UserDeletionEvent"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "notification/NotificationService.java",
@@ -261,8 +232,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.UserContactService"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "promotion/attachment/ContentAttachmentSourceContributor.java",
@@ -272,8 +242,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "promotion/banner/BannerService.java",
@@ -282,8 +251,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "promotion/popup/PopupService.java",
@@ -292,8 +260,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "report/attachment/ReportAttachmentSourceContributor.java",
@@ -303,8 +270,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "report/WorkReportService.java",
@@ -313,8 +279,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "report/WorkReportService.java",
@@ -323,8 +288,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "reward/attachment/RewardAttachmentSourceContributor.java",
@@ -334,8 +298,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "reward/RewardManageService.java",
@@ -344,8 +307,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "schedule/attachment/ScheduleAttachmentSourceContributor.java",
@@ -355,8 +317,7 @@
       "types": [
         "nuri.business.service.file.AttachmentSource",
         "nuri.business.service.file.AttachmentSourceContributor"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "schedule/ScheduleService.java",
@@ -365,8 +326,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.file.AttachmentAssignmentPolicy"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "schedule/ScheduleService.java",
@@ -375,8 +335,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "file": "sms/SmsService.java",
@@ -385,8 +344,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.service.user.UserContactService"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "file": "survey/SurveyResultService.java",
@@ -395,8 +353,7 @@
       "module": "business-core",
       "types": [
         "nuri.business.domain.user.repository.UserRepository"
-      ],
-      "pack": "survey"
+      ]
     }
   ]
 }

@@ -28,7 +28,8 @@ class HarnessSourceAccessContractTest {
         ReusableHarnessProfile profile = ReusableHarnessProfile.load(valid);
         assertTrue(profile.retainsType("sample.Core"));
         assertTrue(profile.retainsType("sample.Core$NestedDto"));
-        org.junit.jupiter.api.Assertions.assertFalse(profile.customDomains());
+        // 시작 구성과 직접 선택은 같은 투영 기록(retainsType)으로 판정한다(11단계 C4 — pack 분기를 걷었다).
+        assertTrue(profile.projected());
         org.junit.jupiter.api.Assertions.assertFalse(profile.retainsType("sample.Optional"));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> profile.retainsSource("business-core/src/main/java/sample/Unknown.java"));
@@ -37,7 +38,7 @@ class HarnessSourceAccessContractTest {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
                 () -> ReusableHarnessProfile.load(projectedFixture(temporary.resolve("wrong-profile"), false, true)));
         ReusableHarnessProfile custom = ReusableHarnessProfile.load(projectedFixture(temporary.resolve("custom"), false, false, "custom"));
-        assertTrue(custom.customDomains());
+        assertTrue(custom.projected());
         assertTrue(custom.retainsType("sample.Core$NestedDto"));
         org.junit.jupiter.api.Assertions.assertFalse(custom.retainsType("sample.Optional"));
         org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> custom.retainsType("sample.Unregistered"));

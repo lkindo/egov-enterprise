@@ -41,7 +41,7 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
     private static final String FRAMEWORK_SEED_RESOURCE = "/db/migration/R__seed_framework.sql";
     private static final String ADMIN_BOOTSTRAP_SEED_RESOURCE = "/db/migration/R__zz_seed_base_admin.sql";
 
-    /** 부트스트랩 트리의 기대 라우트 — 전부 core pack 잔존 화면이어야 한다. */
+    /** 부트스트랩 트리의 기대 라우트 — 전부 공통 기반(어떤 기능도 고르지 않은 구성)에 남는 화면이어야 한다. */
     private static final Set<String> EXPECTED_LEAF_ROUTES = Set.of(
             "/admin/user/manage",
             "/admin/user/departments",
@@ -136,20 +136,17 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
 
     /**
      * 시드된 모든 라우트가 (a) frontend 실제 페이지 파일로 존재하고,
-     * (b) {@code config/reusable-base-profiles.json} 의 어떤 pack {@code removePaths} 에도
-     * 걸리지 않음을 단언한다 — 라우트가 demo pack 으로 이동하면 이 계약이 red 가 된다.
+     * (b) 어떤 기능 파일({@code config/modules/<기능>.json})의 화면 경로({@code owns.frontend}·{@code owns.frontendAny})에도
+     * 걸리지 않음을 단언한다 — 그 경로는 공통 기반만 고른 구성에서 모두 지워진다(11단계 C4 에서 pack {@code removePaths} 대신
+     * 기능 소유를 읽는다). 라우트가 선택 기능으로 옮겨 가면 이 계약이 red 가 된다.
      */
     private void assertRoutesSurviveEveryProfile(JsonNode compositionExpectation) throws IOException {
         Path repoRoot = resolveRepoRoot();
-        Path manifest = repoRoot.resolve("config").resolve("reusable-base-profiles.json");
-        JsonNode packs = JsonMapper.builder().configureForJackson2().build().readTree(manifest.toFile()).path("packs");
-
         List<String> removePaths = new ArrayList<>();
         Set<String> expectedRoutes = new TreeSet<>();
         if (compositionExpectation == null) {
             expectedRoutes.addAll(EXPECTED_LEAF_ROUTES);
-            packs.forEach(pack -> pack.path("frontend").path("removePaths")
-                    .forEach(path -> removePaths.add(path.asString())));
+            removePaths.addAll(featureFrontendPaths(repoRoot));
         } else {
             compositionExpectation.path("menus").forEach(menu -> {
                 if (!menu.path("modern_route").isNull()) expectedRoutes.add(menu.path("modern_route").asString());
@@ -416,15 +413,37 @@ class BaseAdminBootstrapSeedIntegrationTest extends SharedPostgresMigrationTestS
         }
     }
 
+    /** 모든 기능 파일의 화면 경로. 기능 파일이 하나도 없거나 경로가 비면 판정할 수 없는 것이라 실패한다(조용한 통과 금지). */
+    private static List<String> featureFrontendPaths(Path repoRoot) throws IOException {
+        ObjectMapper mapper = JsonMapper.builder().configureForJackson2().build();
+        Set<String> skipped = Set.of("_schema.json", "core.json", "presets.json");
+        List<String> paths = new ArrayList<>();
+        int features = 0;
+        try (var files = Files.newDirectoryStream(repoRoot.resolve("config/modules"), "*.json")) {
+            for (Path file : files) {
+                if (skipped.contains(file.getFileName().toString())) continue;
+                features += 1;
+                JsonNode owns = mapper.readTree(file.toFile()).path("owns");
+                owns.path("frontend").forEach(path -> paths.add(path.asString()));
+                owns.path("frontendAny").forEach(rule -> paths.add(rule.path("path").asString()));
+            }
+        }
+        if (features == 0 || paths.isEmpty() || paths.stream().anyMatch(String::isBlank)) {
+            fail("게이트 무결성 파손: config/modules 의 기능 파일 화면 경로를 읽지 못했습니다 (기능 " + features + "개, 경로 "
+                    + paths.size() + "개). 조용한 skip 은 false-green 입니다.");
+        }
+        return paths;
+    }
+
     private static Path resolveRepoRoot() {
         Path current = Paths.get("").toAbsolutePath();
         for (int depth = 0; depth < 6 && current != null; depth += 1) {
-            if (Files.isRegularFile(current.resolve("config").resolve("reusable-base-profiles.json"))) {
+            if (Files.isRegularFile(current.resolve("config/modules/core.json"))) {
                 return current;
             }
             current = current.getParent();
         }
-        fail("게이트 무결성 파손: config/reusable-base-profiles.json 을 찾을 수 없습니다 (workingDir="
+        fail("게이트 무결성 파손: config/modules/core.json 을 찾을 수 없습니다 (workingDir="
                 + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");
         throw new IllegalStateException("unreachable");
     }

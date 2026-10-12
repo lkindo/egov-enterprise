@@ -1,21 +1,20 @@
 /**
- * 입력 계약 미러 원장(config/governance/input-contract-mirror-census.json)의 pack 태그 계약.
+ * 입력 계약 미러 원장(config/governance/input-contract-mirror-census.json)의 소유 대조 계약.
  *
- * InputContractMirrorLinterTest 는 투영된 트리에 남은 pack 의 표적만 검사한다. 한 표적은 엔티티·DTO·중첩 item·검증 그룹 등
- * 여러 타입을 참조하므로, 태그는 **참조 타입 소스가 모두** 살아남는 가장 작은 rank 누적 프로필이어야 한다.
- * 실제 프로필(core·collaboration·demo)에는 survey 만 더한 프로필이 없어 Java 게이트는 survey 와 demo 태그를 구분하지
- * 못한다 — 그 구분은 합성 프로필 [core,collaboration,survey] 를 도는 이 계약만 할 수 있다.
+ * InputContractMirrorLinterTest 는 저장소에서 원장 전체를, 생성물에서는 참조 타입 소스가 **모두** 남은 표적만 검사한다(투영 기록 retainsType).
+ * 한 표적은 엔티티·DTO·중첩 item·검증 그룹 등 여러 타입을 참조하므로, 기대는 참조 타입 소스의 기능 소유가 모두 구성 안일 때만 남는다
+ * (11단계 C4 — 원장에 소유를 적지 않고 계산한다). 시작 구성(core·collaboration·demo)에는 survey 만 더한 구성이 없어, 설문 소유를
+ * 다른 demo 기능으로 잘못 정해도 세 구성은 구분하지 못한다 — 그 구분은 합성 구성 [collaboration + survey] 를 함께 도는 이 계약이 한다.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  evaluateEntryTags,
-  evaluateProjectionPresence,
-  evaluateVocabulary,
+  evaluateExpectedSurvival,
+  ledgerEntries,
+  ledgerViolations,
   readRepoJson,
   repositoryContext,
-  resolveTypeSources,
 } from './pack-tagged-registry.mjs';
 
 const REGISTRY_PATH = 'config/governance/input-contract-mirror-census.json';
@@ -39,102 +38,91 @@ export function specLabel(section, spec) {
   return `${section} ${owner}${spec.field ? `.${spec.field}` : ''}`;
 }
 
-export function toTagEntries({ root, javaFiles, registry }) {
-  const entries = [];
-  const violations = [];
-  for (const section of SECTIONS) {
-    for (const spec of registry[section]) {
-      const label = specLabel(section, spec);
-      const resolved = resolveTypeSources(root, javaFiles, label, specTypes(section, spec));
-      violations.push(...resolved.violations);
-      entries.push({ label, pack: spec.pack, sources: resolved.sources, complete: resolved.violations.length === 0 });
-    }
-  }
-  return { entries, violations };
+export function registrySpecEntries(registry) {
+  return SECTIONS.flatMap((section) => registry[section].map((spec) => ({ label: specLabel(section, spec), types: specTypes(section, spec),
+    section, dto: spec.dto ?? spec.parent })));
 }
 
-test('원장의 pack 어휘는 pack manifest 와 같다(투영본에서는 남은 pack 을 포함한다)', () => {
-  const { root, manifest, projection } = repositoryContext();
+test('원장에는 pack 어휘가 없다 — 남고 빠지는 기대는 소유에서 계산한다', async () => {
+  const { root } = await repositoryContext();
   const registry = readRepoJson(root, REGISTRY_PATH);
-  assert.deepEqual(evaluateVocabulary({
-    registryPacks: registry.packs,
-    manifest,
-    projection,
-    entryPacks: SECTIONS.flatMap((section) => registry[section].map((spec) => spec.pack)),
-  }), []);
+  assert.equal(Object.hasOwn(registry, 'packs'), false, '최상위 packs 어휘가 남아 있다');
+  const tagged = SECTIONS.flatMap((section) => registry[section].filter((spec) => Object.hasOwn(spec, 'pack')).map((spec) => specLabel(section, spec)));
+  assert.deepEqual(tagged, [], '표적에 pack 태그가 남아 있다');
 });
 
-test('원장 표적 pack 태그가 생성기의 실제 제거 계획과 일치한다', () => {
-  const { root, javaFiles, projection, prefixPlans, presentPacks } = repositoryContext();
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  const { entries, violations } = toTagEntries({ root, javaFiles, registry });
-  if (projection) {
-    const presentFailures = entries.filter((entry) => presentPacks.has(entry.pack) && !entry.complete)
-      .map((entry) => `${entry.label}: 남은 pack 인데 참조 타입 소스를 해석하지 못했다`);
-    const presence = evaluateProjectionPresence({ entries: entries.filter((entry) => entry.complete), presentPacks });
-    assert.deepEqual([...presentFailures, ...presence], []);
+test('원장 표적이 소유대로 생성기의 실제 제거 계획에서 남고 빠진다', async () => {
+  const context = await repositoryContext();
+  const registry = readRepoJson(context.root, REGISTRY_PATH);
+  const raw = registrySpecEntries(registry);
+  const { entries, violations } = ledgerEntries(context, raw);
+  assert.ok(entries.length === raw.length && entries.length > 0, '판정할 표적이 비었다');
+  assert.deepEqual([...violations, ...ledgerViolations(context, entries)], []);
+});
+
+/*
+ * Java 게이트는 남은 길이·필수 표적의 DTO 집합이 같아야 하고, 응답 전용 필수 필드는 필수 표적 안에서만 검사된다. 그래서 같은 DTO 의 길이·필수·
+ * 응답 전용 표적은 **어느 구성에서나 함께** 남고 빠져야 한다 — 소유 기능 집합이 같으면 그렇다(종전의 '같은 pack' 규칙을 소유로 옮겼다).
+ */
+test('같은 DTO 의 길이·필수·응답 전용 표적은 소유 기능 집합이 같다(Java 게이트의 DTO 집합 대조 전제)', async (t) => {
+  const context = await repositoryContext();
+  if (context.projection) {
+    t.diagnostic('투영본에는 소유를 계산할 카탈로그가 없다 — 같은 성질은 Java 게이트의 DTO 집합 대조가 투영본에서 직접 본다');
     return;
   }
-  assert.deepEqual([...violations, ...evaluateEntryTags({ entries, prefixPlans })], []);
+  const registry = readRepoJson(context.root, REGISTRY_PATH);
+  const { entries } = ledgerEntries(context, registrySpecEntries(registry));
+  const raw = registrySpecEntries(registry);
+  const ownersBy = (section) => new Map(raw.map((row, index) => [row, entries[index]]).filter(([row]) => row.section === section)
+    .map(([row, entry]) => [row.dto, JSON.stringify([...new Set(entry.owners.filter((owner) => owner !== 'core'))].sort())]));
+  const length = ownersBy('lengthBindings');
+  const required = ownersBy('requiredBindings');
+  assert.deepEqual([...required.keys()].sort(), [...length.keys()].sort(), '필수·길이 표적의 DTO 집합이 다르다');
+  const differing = [...required].filter(([dto, owners]) => length.get(dto) !== owners).map(([dto, owners]) => `${dto}: 필수 ${owners} · 길이 ${length.get(dto)}`);
+  assert.deepEqual(differing, []);
+  const response = [...ownersBy('requiredResponseFields')].filter(([dto, owners]) => required.get(dto) !== owners).map(([dto]) => dto);
+  assert.deepEqual(response, [], '응답 전용 필수 필드의 소유가 필수 표적과 다르다');
 });
 
-test('같은 DTO 의 길이·필수 표적은 같은 pack 이다(Java 게이트의 DTO 집합 대조 전제)', () => {
-  const { root } = repositoryContext();
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  const packsOf = (section) => Object.fromEntries(registry[section].map((spec) => [spec.dto, spec.pack]));
-  assert.deepEqual(packsOf('requiredBindings'), packsOf('lengthBindings'));
-});
-
-test('부정 증명: 틀린 표적 pack 태그는 생성기 계획과의 대조에서 red 다', (t) => {
-  const { root, javaFiles, projection, prefixPlans } = repositoryContext();
-  if (projection) {
-    t.diagnostic('투영본에는 제거 계획이 없어 합성 태그 대조를 저장소에서만 수행한다');
+test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에서 red 다 — 설문 오인은 합성 구성만 잡는다', async (t) => {
+  const context = await repositoryContext();
+  if (context.projection) {
+    t.diagnostic('투영본에는 제거 계획이 없어 합성 소유 대조를 저장소에서만 수행한다');
     return;
   }
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  const tagViolations = (candidate) => {
-    const { entries, violations } = toTagEntries({ root, javaFiles, registry: candidate });
-    return [...violations, ...evaluateEntryTags({ entries, prefixPlans })];
-  };
-  const retag = (section, predicate, pack) => ({
-    ...registry,
-    [section]: registry[section].map((spec) => (predicate(spec) ? { ...spec, pack } : spec)),
-  });
-  const endsWith = (suffix) => (spec) => (spec.dto ?? spec.parent).endsWith(suffix);
+  const registry = readRepoJson(context.root, REGISTRY_PATH);
+  const { entries } = ledgerEntries(context, registrySpecEntries(registry));
+  const reown = (predicate, owner) => entries.map((entry) => (predicate(entry) ? { ...entry, owners: entry.sources.map(() => owner) } : entry));
+  const surveyDate = (entry) => entry.label === 'calendarDateBindings nuri.business.service.survey.dto.SurveyInfoDto';
+  assert.ok(entries.some(surveyDate), '설문 날짜 표적이 원장에 있어야 이 부정 증명이 vacuous 하지 않다');
   const cases = [
     {
-      name: 'survey 소유 설문 날짜 표적을 demo 로 적는다(실제 프로필로는 구분 불가)',
-      registry: retag('calendarDateBindings', endsWith('.SurveyInfoDto'), 'demo'),
-      expect: /calendarDateBindings nuri\.business\.service\.survey\.dto\.SurveyInfoDto \(pack=demo\) 는 프로필 \[core,collaboration,survey\] 에서 남는다/,
+      name: '설문 날짜 표적을 홍보(다른 demo 기능) 소유로 본다',
+      entries: reown(surveyDate, 'promotion'),
+      expect: /^expected to be removed in 합성 구성 \[collaboration \+ survey\]: calendarDateBindings nuri\.business\.service\.survey\.dto\.SurveyInfoDto — 구성 밖 소유 기능 \[promotion\] 인데 생성기가 남긴다/,
     },
     {
-      name: 'collaboration 소유 게시판 길이 표적을 core 로 적는다',
-      registry: retag('lengthBindings', endsWith('.BoardMasterDto'), 'core'),
-      expect: /lengthBindings nuri\.business\.service\.board\.dto\.BoardMasterDto \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
-    },
-    {
-      name: 'core 소유 중첩 권한 표적을 collaboration 으로 적는다',
-      registry: retag('nestedValidationBindings', endsWith('AuthorizationDto$ReplaceGrants'), 'collaboration'),
-      expect: /nestedValidationBindings nuri\.business\.service\.auth\.dto\.AuthorizationDto\$ReplaceGrants\.grants \(pack=collaboration\) 는 프로필 \[core\] 에서 남는다/,
-    },
-    {
-      name: 'demo 소유 엔티티를 core DTO 와 묶고 core 로 적는다(엔티티만 빠지는 표적)',
-      registry: {
-        ...registry,
-        lengthBindings: [...registry.lengthBindings, {
-          entity: 'nuri.business.domain.addressbook.AddressBook', dto: 'nuri.business.service.user.dto.UserDto',
-          fields: ['userId'], pack: 'core',
-        }],
-      },
-      expect: /lengthBindings nuri\.business\.service\.user\.dto\.UserDto \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
+      name: '게시판 길이 표적을 core 소유로 본다',
+      entries: reown((entry) => entry.label === 'lengthBindings nuri.business.service.board.dto.BoardMasterDto', 'core'),
+      expect: /^expected to survive in preset core: lengthBindings nuri\.business\.service\.board\.dto\.BoardMasterDto — 생성기가 지운다/,
     },
   ];
   for (const redCase of cases) {
-    const violations = tagViolations(redCase.registry);
+    const violations = evaluateExpectedSurvival({ entries: redCase.entries, compositions: context.compositions });
     assert.ok(violations.some((line) => redCase.expect.test(line)), `${redCase.name}: ${JSON.stringify(violations)}`);
   }
-  const ghost = retag('readOnlyBindings', endsWith('.UserDto'), 'core');
-  ghost.readOnlyBindings = [...ghost.readOnlyBindings, { dto: 'nuri.business.service.user.dto.UserDto$NoSuchNested', fields: ['x'], pack: 'core' }];
-  assert.deepEqual(tagViolations(ghost).filter((line) => line.includes('NoSuchNested')), [],
+  // 대조군: 시작 구성 셋만 돌면 설문 오인은 보이지 않는다 — 합성 구성이 있어야 하는 이유다.
+  assert.deepEqual(evaluateExpectedSurvival({ entries: reown(surveyDate, 'promotion'), compositions: context.presets }), [],
+    '시작 구성 셋만으로 설문 오인이 잡힌다면 합성 구성의 근거를 다시 본다');
+
+  // 엔티티만 빠지는 표적 — 주소록 엔티티를 core DTO 와 묶으면 core 에서 빠진다고 기대하고 계획도 그렇다(참조 타입을 모두 본다).
+  const mixed = { ...registry, lengthBindings: [{ entity: 'nuri.business.domain.addressbook.AddressBook', dto: 'nuri.business.service.user.dto.UserDto',
+    fields: ['userId'] }], enumBindings: [], nestedValidationBindings: [], requiredBindings: [], requiredResponseFields: [], readOnlyBindings: [],
+  calendarDateBindings: [] };
+  const [synthetic] = ledgerEntries(context, registrySpecEntries(mixed)).entries;
+  assert.deepEqual(synthetic.owners, ['addressbook', 'core']);
+  assert.deepEqual(evaluateExpectedSurvival({ entries: [synthetic], compositions: context.compositions }), []);
+  const ghost = { ...mixed, lengthBindings: [], readOnlyBindings: [{ dto: 'nuri.business.service.user.dto.UserDto$NoSuchNested', fields: ['x'] }] };
+  assert.deepEqual(ledgerEntries(context, registrySpecEntries(ghost)).violations, [],
     '중첩 이진 이름은 바깥 클래스 소스로 해석한다 — 존재 여부는 Java 게이트의 클래스 로드가 판정한다');
 });

@@ -390,7 +390,7 @@ export function v1ComposerDeclarations(root = ROOT) {
 
 /**
  * Read-only producer inventory. Does not contact a DB, execute Git or create output.
- * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). pack 을 읽는 옛 소비자가 걷힐 때까지(C4·C5) pack 축만 v1 manifest 에서 덧붙인다.
+ * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). pack 을 읽는 옛 소비자가 걷힐 때까지(C5) pack 축만 v1 manifest 에서 덧붙인다.
  */
 export function loadProjectComposerCatalog(root = ROOT) {
   root = resolve(root);

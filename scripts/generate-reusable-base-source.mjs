@@ -130,8 +130,8 @@ export function installReusableVerification(output, layout = 'multi-module') {
 }
 
 /**
- * 생성물의 v1 manifest(config/reusable-base-profiles.json). 투영 manifest·lock 을 읽는 옛 소비자(생성물 하네스 프로필·Java 게이트·거버넌스
- * 무결성·검토 범위, 11단계 C4·C5)를 위한 v1 모양이다 — 투영 판정에는 쓰지 않는다. 시작 구성의 프로필은 원본 v1 선언 그대로,
+ * 생성물의 v1 manifest(config/reusable-base-profiles.json). 투영 manifest·lock 을 읽는 옛 소비자(생성물 하네스 프로필의 표지·거버넌스
+ * 무결성·검토 범위, 11단계 C5)를 위한 v1 모양이다 — Java 게이트는 C4 부터 이 manifest 대신 투영 기록(retainsType)을 본다 — 투영 판정에는 쓰지 않는다. 시작 구성의 프로필은 원본 v1 선언 그대로,
  * 직접 선택은 생성기 프로필(composerProfile)을 적는다. `transfers` 는 공유 테이블을 넘겨받을 기능이다(sharedTableTransfers).
  */
 export function writeProjectedManifest(output, manifest, profileName, profile, dbLock, composition, transfers) {

@@ -35,7 +35,6 @@ public final class ReusableHarnessProfile {
 
     public static ReusableHarnessProfile current() { return CURRENT; }
     public boolean projected() { return projection != null; }
-    boolean customDomains() { return projected() && "custom".equals(projection.path("profile").asString()); }
 
     public int count(String key, int canonical) {
         if (!projected()) return canonical;

@@ -28,17 +28,12 @@ export function domainSupportFiles(root, manifest) {
 }
 
 /**
- * v1 manifest 의 기능 소유(Java 투영 입력 모양, composerOwnership 과 같다). 생성기는 매니페스트 v2 소유를 쓴다(11단계 C3). 이 함수는
- * manifest pack 으로 판정하는 옛 소비자(pack 태그 원장 계약, C4 에서 걷는다)만 쓴다.
+ * v1 manifest 의 기능 소유(Java 투영 입력 모양, composerOwnership 과 같다). 생성기는 매니페스트 v2 소유를 쓴다(11단계 C3). 원장 계약도
+ * 기능 소유로 판정한다(C4). 이 함수는 합성 manifest 로 트리를 꾸미는 시험 픽스처만 쓴다(전환 C7 에서 걷는다).
  */
 export function manifestOwnership(root, manifest) {
   const domains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))].sort();
   return { domains, supportFiles: domainSupportFiles(root, manifest) };
-}
-
-/** manifest pack 목록이 소유한 기능 — pack 으로 정의한 프로필을 Java 투영의 해석된 기능 목록으로 바꾼다(옛 소비자용). */
-export function manifestPackDomains(manifest, packs) {
-  return [...new Set(packs.flatMap(pack => manifest.packs?.[pack]?.backend?.appDomains ?? []))].sort();
 }
 
 /**
@@ -135,7 +130,7 @@ export const GATE_OWNERS = {
  * 생성기가 투영에 쓰는 프로필(11단계 C3). 시작 구성과 직접 선택이 같은 모양이다 — 투영은 해석된 기능 목록(resolvedDomains)과 화면
  * 제외 경로(frontendRemovePaths)로만 하고 pack 을 보지 않는다. 시작 구성은 승인 기대치(지워지는 게이트·규칙·Java 연쇄)를 매니페스트
  * v2 의 presets.json 에서 받고, 직접 선택은 기능 파일의 게이트 소유에서 계산한다. `modules` 는 loadComposerModules 결과다.
- * `packs` 는 생성물 투영 manifest·lock 같은 옛 소비자를 위한 v1 pack 목록이다(투영에는 쓰지 않는다, C4·C7 에서 걷는다).
+ * `packs` 는 생성물 투영 manifest·lock 같은 옛 소비자를 위한 v1 pack 목록이다(투영에는 쓰지 않는다, C5·C7 에서 걷는다).
  */
 export function composerProfile(modules, composition) {
   const projection = { packs: composition.packs, resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths };
