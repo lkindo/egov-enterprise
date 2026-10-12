@@ -148,6 +148,7 @@
         "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/memoreport/MemoReportApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
+        "api-server/src/test/java/nuri/api/controller/business/note/NoteInputErrorIntegrationTest.java",
         "api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/notification/NotificationApiControllerTest.java",
         "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
