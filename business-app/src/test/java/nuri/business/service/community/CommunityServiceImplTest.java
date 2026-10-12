@@ -42,8 +42,17 @@ class CommunityServiceImplTest {
     @Mock
     private CommunityRepository communityRepository;
 
+    /** 템플릿은 선택 연동이다(DEC-OPS-280) — 서비스는 포트를 선택 주입으로 받는다. 기본은 템플릿 기능이 있는 구성이다. */
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy> templateAssignmentPolicyProvider;
+
     @Mock
     private nuri.foundation.core.template.TemplateAssignmentPolicy templateAssignmentPolicy;
+
+    @org.junit.jupiter.api.BeforeEach
+    void templateFeaturePresent() {
+        given(templateAssignmentPolicyProvider.getIfAvailable()).willReturn(templateAssignmentPolicy);
+    }
 
     @Mock
     private JPAQueryFactory queryFactory;
@@ -286,7 +295,52 @@ class CommunityServiceImplTest {
         communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).build());
         assertThat(existing.getTmpltId()).isNull();
     }
-    
+
+    @Test
+    @DisplayName("템플릿 기능이 없는 구성은 새 템플릿 지정을 거부하고, 기존 값 유지와 템플릿 없음은 받는다(fail-closed)")
+    void withoutTheTemplateFeatureANewTemplateIsRefusedButKeepingAndClearingPass() {
+        given(templateAssignmentPolicyProvider.getIfAvailable()).willReturn(null);
+        var request = CommunityDto.builder().cmntySn(101L).cmntyNm("새 커뮤니티").tmpltId("TMPL01").build();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.createCommunity("writer", request))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("템플릿 기능이 없어");
+        verify(communityRepository, never()).save(any());
+
+        var existing = Community.builder().cmntySn(101L).cmntyNm("원래").tmpltId("KEPT").build();
+        given(communityRepository.findByIdForUpdate(101L)).willReturn(Optional.of(existing));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> communityService.updateCommunity("writer", request))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasMessageContaining("템플릿 기능이 없어");
+        assertThat(existing.getCmntyNm()).isEqualTo("원래");
+
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId("KEPT").build());
+        assertThat(existing.getCmntyNm()).isEqualTo("정정");
+        assertThat(existing.getTmpltId()).isEqualTo("KEPT");
+        communityService.updateCommunity("writer", CommunityDto.builder().cmntySn(101L).cmntyNm("정정").tmpltId(null).build());
+        assertThat(existing.getTmpltId()).isNull();
+        given(communityRepository.save(any(Community.class))).willAnswer(invocation -> invocation.getArgument(0));
+        communityService.createCommunity("writer", CommunityDto.builder().cmntyNm("템플릿 없음").build());
+        verify(communityRepository).save(any(Community.class));
+        verify(templateAssignmentPolicy, never()).assertActiveForAssignment(any());
+    }
+
+    @Test
+    @DisplayName("관리 창 템플릿 후보는 템플릿 기능이 주고, 기능이 없으면 없다고 말한다")
+    void templateOptionsComeFromTheTemplateFeatureOrSayItIsAbsent() {
+        given(templateAssignmentPolicy.assignableTemplates()).willReturn(List.of(
+                new nuri.foundation.core.template.AssignableTemplate("TMPL01", "기본 템플릿")));
+        var options = communityService.getTemplateOptions();
+        assertThat(options.available()).isTrue();
+        assertThat(options.templates()).containsExactly(
+                new nuri.business.service.community.dto.CommunityTemplateOptionsDto.CommunityTemplateOptionDto("TMPL01", "기본 템플릿"));
+
+        given(templateAssignmentPolicyProvider.getIfAvailable()).willReturn(null);
+        var absent = communityService.getTemplateOptions();
+        assertThat(absent.available()).isFalse();
+        assertThat(absent.templates()).isEmpty();
+    }
+
     @Test
     @DisplayName("커뮤니티 삭제 (논리 삭제) - 성공")
     void deleteCommunity() {

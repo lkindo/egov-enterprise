@@ -60,9 +60,10 @@ test('a feature that another selection still requires stays, and the diff names 
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   const shared = { ...body, catalogHash: compositionDigest(body) };
   const held = diffOf({ preset: 'collaboration' }, 'board', shared);
-  assert.deepEqual(held.added, ['community', 'help', 'template']);
+  // 커뮤니티는 템플릿을 끌어오지 않는다(템플릿은 선택 연동, DEC-OPS-280).
+  assert.deepEqual(held.added, ['community', 'help']);
   assert.match(diffSummary(held, shared),
-    /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
+    /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
 });
 
 test('degradations appear when a partner is missing and resolve only when the partner arrives', () => {
@@ -104,9 +105,9 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
     { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   const shared = { ...body, catalogHash: compositionDigest(body) };
-  assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard', shared), shared), /^빼면 기능 \+2\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
-  // 넷 이상이면 셋만 이름을 대고 나머지는 수로 줄인다(같은 합성 — 게시판이 다섯 기능을 끌어온다).
-  assert.match(diffSummary(diffOf({ domains: [] }, 'board', shared), shared), /^고르면 기능 \+5\(들어옴: 게시판·지식, [^)]+ 외 2개\) · /);
+  assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard', shared), shared), /^빼면 기능 \+1\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
+  // 넷 이상이면 셋만 이름을 대고 나머지는 수로 줄인다(같은 합성 — 게시판을 고르면 게시판까지 네 기능이 들어온다).
+  assert.match(diffSummary(diffOf({ domains: [] }, 'board', shared), shared), /^고르면 기능 \+4\(들어옴: 게시판·지식, [^)]+ 외 1개\) · /);
 });
 
 test('the engine reuses the last loaded catalog for diffs and never reloads it per preview', () => {

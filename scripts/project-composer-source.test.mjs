@@ -80,33 +80,34 @@ test('SMS API support follows the optional domain in the real generator removal 
     'removing the exact support declaration reproduces the isolated Properties survivor');
 });
 
-const templatePolicySupport = [
-  'foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java',
-  'business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java',
-  'business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java',
-];
+// 템플릿 배정 포트(DEC-OPS-280). 구현은 템플릿 기능의 서비스이고 커뮤니티는 포트를 선택 주입으로 받는다.
+const templatePort = 'foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java';
+const templateService = 'business-app/src/main/java/nuri/business/service/template/TmplatInfoService.java';
 
-test('template assignment policy follows its only consumer, community, in the real generator removal plan', () => {
-  assert.deepEqual(manifest.packs.demo.backend.domainSupportFiles?.community, templatePolicySupport);
-  // 배너·팝업은 템플릿 배정 구현을 쓰지 않는다 — 커뮤니티와 나눈 뒤(DEC-OPS-273) 홍보만 고르면 그 구현이 지워진다.
-  for (const [selected, kept] of [[['template'], false], [['community'], true], [['promotion'], false], [[], false]]) {
+test('the template assignment port survives every composition and its only implementation leaves with the template feature', () => {
+  // 종전에는 템플릿 디렉터리의 별도 구현을 커뮤니티 지원 파일로 묶어 커뮤니티가 템플릿을 늘 끌어왔다.
+  assert.equal(manifest.packs.demo.backend.domainSupportFiles?.community, undefined, 'the community no longer declares template support');
+  // 구현은 하나이고 템플릿 API 가 쓰는 @Service 다 — 템플릿만 고른 생성물에 소비자 없는 구현이 남지 않는다(도달 불가 서비스 게이트).
+  //   별도 구현을 다시 만들면 템플릿 단독 생성물에서 그 구현이 소비자 없이 남는다.
+  const implementations = java.filter(file => /\bimplements\b[^{]*\bTemplateAssignmentPolicy\b/u.test(readFileSync(file, 'utf8')))
+    .map(file => relative(root, file).split(sep).join('/'));
+  assert.deepEqual(implementations, [templateService]);
+  assert.match(readFileSync(join(root, templateService), 'utf8'), /@Service\b/u);
+  for (const [selected, kept] of [[['template'], true], [['community'], false], [['community', 'template'], true], [['promotion'], false], [[], false]]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
+    assert.equal(composition.resolvedDomains.includes('template'), kept, `${selected}: template resolution`);
     const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
-    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), !kept, `${selected}: ${file}`);
+    assert.equal(plan.removed.has(join(root, templateService)), !kept, `${selected}: ${templateService}`);
+    assert.equal(plan.removed.has(join(root, templatePort)), false, `${selected}: the port stays in foundation`);
   }
   for (const [name, profile] of Object.entries(manifest.profiles)) {
     const plan = planJavaRemoval(root, manifest, profile, java);
-    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), name !== 'demo', `${name}: ${file}`);
+    assert.equal(plan.removed.has(join(root, templateService)), name !== 'demo', `${name}: ${templateService}`);
+    assert.equal(plan.removed.has(join(root, templatePort)), false, `${name}: ${templatePort}`);
   }
-  // 커뮤니티가 구현을 요구한다는 사실을 카탈로그가 기록해야, 커뮤니티 선택이 템플릿 없이 해석되지 않는다.
-  assert.ok(catalog.capabilities.find(row => row.id === 'community').requires
-    .some(row => row.domain === 'template' && row.kind === 'java' && row.evidence === templatePolicySupport[1]), 'community requires the template implementation');
-  // 선언이 없으면 템플릿 단독 생성물에 소비자 없는 @Service 가 남는다 — 생성물 검증의 도달 불가 서비스 게이트가 실패한 경로다.
-  const unowned = structuredClone(manifest);
-  delete unowned.packs.demo.backend.domainSupportFiles.community;
-  const templateOnly = composerProfile(unowned, resolveProjectRecipe(recipe(['template']), catalog));
-  assert.equal(planJavaRemoval(root, unowned, templateOnly, java).removed.has(join(root, templatePolicySupport[1])), false,
-    'removing the support declaration reproduces the unreachable template-only provider');
+  // 커뮤니티는 템플릿을 요구하지 않는다 — 선택 연동(포트)으로만 잇고, 템플릿이 빠진 구성은 기능 저하로 알린다.
+  assert.ok(!catalog.capabilities.find(row => row.id === 'community').requires.some(row => row.domain === 'template'));
+  assert.ok(catalog.integrates.some(row => row.from === 'community' && row.to === 'template' && row.via === 'port:TemplateAssignmentPolicy'));
 });
 
 test('new management HTTP matrices project every selected surface and reject an unowned addition', () => {
@@ -248,6 +249,31 @@ test('API support is removed or survives with its exact consumer and cannot sile
   // 생성 단계는 이 실패를 코드로 엔진에 알린다. 세부 정보는 저장소 기준 '/' 경로다.
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest),
     error => error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details) === JSON.stringify({ files: [file.split(sep).join('/')] }));
+});
+
+/*
+ * 디렉터리 소유 기능이 선택된 api-server 컨트롤러는 남아야 한다(DEC-OPS-280). 커뮤니티 사용자 API 는 게시판 타입을 참조해, 게시판 없이
+ * 커뮤니티를 고르면 생성기가 그 컨트롤러를 연쇄로 지운다. 참조 기능이 모두 선택됐을 때만 생존을 요구하던 검사는 이 손실을 통과시켰다.
+ * 카탈로그가 그 참조를 간선으로 세므로 실제 해석에서는 게시판이 함께 들어온다. 간선을 메모리에서 걷어 손실을 재현한다.
+ */
+test('a selected feature keeps the api-server controllers of its own directory even when the requires edge is missing', () => {
+  const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
+  const survives = (catalogValue, selected) => {
+    const composition = resolveProjectRecipe(recipe(selected), catalogValue);
+    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, manifest,
+      { present: path => !plan.removed.has(join(root, path)) }) };
+  };
+  const real = survives(catalog, ['community']);
+  assert.ok(real.composition.resolvedDomains.includes('board'), 'the real catalog pulls the board in for the community');
+  assert.equal(real.plan.removed.has(join(root, controller)), false);
+  assert.doesNotThrow(real.check);
+  const { catalogHash: _realHash, ...body } = { ...catalog, capabilities: catalog.capabilities.map(row => (row.id !== 'community' ? row
+    : { ...row, requires: row.requires.filter(edge => edge.domain !== 'board') })) };
+  const lost = survives({ ...body, catalogHash: compositionDigest(body) }, ['community']);
+  assert.ok(!lost.composition.resolvedDomains.includes('board'));
+  assert.ok(lost.plan.removed.has(join(root, controller)), 'the generator removes the controller through its board reference');
+  assert.throws(lost.check, error => error.code === 'SOURCE_SURVIVAL' && error.details.files.includes(controller));
 });
 
 test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
@@ -463,7 +489,8 @@ test('presets and representative selections keep exactly the screens their compo
 
 test('removing a shared UI dependency exposes the selected page loss instead of silently passing', () => {
   // Phase 0c: 통계는 core 라 설문·게시판과 통계 사이의 화면 의존이 사라졌다(survey <-> stats 삭제).
-  for (const [from, dependency] of [['community', 'template']]) {
+  // 커뮤니티 → 템플릿은 선택 연동(포트)이 되어 화면 의존이 아니다(DEC-OPS-280). 남은 화면 의존은 도움말 → 게시판이다.
+  for (const [from, dependency, lostRoute] of [['help', 'board', '/help']]) {
     const changed = structuredClone(catalog);
     const feature = changed.capabilities.find(row => row.id === from);
     assert.ok(feature.requires.some(edge => edge.domain === dependency), `${from} -> ${dependency} must exist`);
@@ -472,7 +499,7 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
     changed.catalogHash = compositionDigest(body);
     const broken = inspectFrontendSurvival([from], changed);
     assert.ok(broken.missing.length > 0, `${from} -> ${dependency}: broken dependency must be red`);
-    assert.ok(broken.screens.missing.some(entry => entry.route === '/admin/help'), `${from} -> ${dependency}: the lost knowledge hub screen is named`);
+    assert.ok(broken.screens.missing.some(entry => entry.route === lostRoute), `${from} -> ${dependency}: the lost ${lostRoute} screen is named`);
   }
 });
 
@@ -500,7 +527,7 @@ test('each selectable domain retains its Java production sources after actual de
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(composition.resolvedDomains, owner), `${domain}: ${file}`);
     }
-    // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(템플릿 단독의 커뮤니티 전용 구현).
+    // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
     const excludedSupport = new Set([...domainSupportFiles(root, manifest)].filter(([owner]) => !composition.resolvedDomains.includes(owner))
       .flatMap(([, supportFiles]) => supportFiles.map(file => join(root, file))));
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {

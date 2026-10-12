@@ -12,6 +12,7 @@ import {
   getCommunityOperation,
   getCommunityPortletOperation,
   getMembersOperation,
+  getTemplateOptionsOperation,
   type GeneratedOperationRequest,
   rejectMemberOperation,
   updateCommunityOperation,
@@ -33,7 +34,29 @@ export interface Community {
   crtDt?: string;
 }
 
+/**
+ * 관리 창의 템플릿 후보(DEC-OPS-280). 템플릿은 커뮤니티의 선택 연동이라 이 구성에 템플릿 기능이 없으면 available 이 false 다.
+ * 후보는 사용 중인 항목만 온다(서버가 거른다).
+ */
+export interface CommunityTemplateOptions {
+  available: boolean;
+  templates: { tmpltId: string; tmpltNm: string | null }[];
+}
+
 type CommunityWire = components['schemas']['CommunityDto'];
+type CommunityTemplateOptionsWire = components['schemas']['CommunityTemplateOptionsDto'];
+
+function fromTemplateOptions(value: CommunityTemplateOptionsWire): CommunityTemplateOptions {
+  if (typeof value.available !== 'boolean' || !Array.isArray(value.templates)) {
+    throw new Error('커뮤니티 템플릿 후보 응답이 필수 계약과 일치하지 않습니다.');
+  }
+  return {
+    available: value.available,
+    templates: value.templates
+      .filter((template): template is { tmpltId: string; tmpltNm?: string | null } => typeof template.tmpltId === 'string' && template.tmpltId !== '')
+      .map((template) => ({ tmpltId: template.tmpltId, tmpltNm: template.tmpltNm ?? null })),
+  };
+}
 type CommunityMemberWire = components['schemas']['CommunityMemberDto'];
 type MemberListQuery = NonNullable<operations['getMembers']['parameters']['query']>;
 
@@ -151,6 +174,12 @@ class CommunityAdminService extends ApiService {
       body: toCommunityRequest(data) as GeneratedOperationRequest<'updateCommunity'>,
       config,
     });
+  }
+
+  /** 관리 창의 템플릿 후보. 템플릿 기능이 없는 구성이면 available=false 다. 템플릿 조회 권한이 없으면 403 이다. */
+  async getTemplateOptions(config?: AxiosRequestConfig): Promise<CommunityTemplateOptions> {
+    const response = await this.executeGenerated(getTemplateOptionsOperation, { config });
+    return fromTemplateOptions(response);
   }
 
   /** 커뮤니티 삭제/폐쇄 */

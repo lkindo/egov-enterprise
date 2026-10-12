@@ -10,6 +10,7 @@ import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.community.dto.CommunityDto;
 import nuri.business.service.community.dto.CommunityMemberDto;
 import nuri.business.service.community.dto.CommunityMembershipDto;
+import nuri.business.service.community.dto.CommunityTemplateOptionsDto;
 import nuri.business.domain.community.CommunityUser;
 import nuri.business.domain.community.CommunityUserRepository;
 import nuri.business.domain.community.CommunityUserId;
@@ -50,7 +51,11 @@ public class CommunityService {
      * 내보내지 않는다(H3).
      */
     private final UserRepository userRepository;
-    private final nuri.foundation.core.template.TemplateAssignmentPolicy templateAssignmentPolicy;
+    /**
+     * [DEC-OPS-280] 템플릿은 커뮤니티의 선택 연동이다. 템플릿 기능이 빠진 구성에는 구현이 없으므로 선택 주입으로 받고,
+     * 구현이 없으면 새 템플릿 지정을 거부한다(fail-closed). 기존 값을 그대로 두는 수정과 템플릿 없음은 구현 없이 통과한다.
+     */
+    private final org.springframework.beans.factory.ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy> templateAssignmentPolicy;
 
     /** [2026-09-26 DIP B5 F1] 가입 신청은 승인 권한자에게, 결과는 신청자에게 알린다(커밋 뒤). */
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
@@ -163,7 +168,7 @@ public class CommunityService {
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
         String templateId = normalizeTemplateId(dto.getTmpltId());
-        if (templateId != null) templateAssignmentPolicy.assertActiveForAssignment(templateId);
+        if (templateId != null) assertAssignableTemplate(templateId);
         Community community = Community.builder()
                 .cmntyNm(dto.getCmntyNm())
                 .cmntyIntroCn(dto.getCmntyIntroCn())
@@ -183,7 +188,7 @@ public class CommunityService {
         String templateId = normalizeTemplateId(dto.getTmpltId());
         // 기존 비활성·식별 불가 ID의 유지 정정은 허용한다. 새 선택만 활성 검증을 한다.
         if (templateId != null && !Objects.equals(templateId, community.getTmpltId())) {
-            templateAssignmentPolicy.assertActiveForAssignment(templateId);
+            assertAssignableTemplate(templateId);
         }
 
         community.update(
@@ -214,6 +219,29 @@ public class CommunityService {
 
     private static String normalizeTemplateId(String templateId) {
         return templateId == null || templateId.isBlank() ? null : templateId;
+    }
+
+    /** 새로 지정하는 템플릿이 사용 중인지 템플릿 기능에 묻는다. 이 구성에 템플릿 기능이 없으면 지정할 수 없다. */
+    private void assertAssignableTemplate(String templateId) {
+        var policy = templateAssignmentPolicy.getIfAvailable();
+        if (policy == null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "이 구성에는 템플릿 기능이 없어 템플릿을 지정할 수 없습니다.");
+        }
+        policy.assertActiveForAssignment(templateId);
+    }
+
+    /**
+     * 관리 창의 템플릿 후보(DEC-OPS-280). 템플릿 기능이 없으면 {@code available=false} 와 빈 목록이다 — 화면은 템플릿 칸을
+     * 그리지 않는다. 후보는 템플릿 기능이 템플릿 조회 권한을 다시 확인해 준다(종전 관리 창과 같은 주체만 본다).
+     */
+    public CommunityTemplateOptionsDto getTemplateOptions() {
+        var policy = templateAssignmentPolicy.getIfAvailable();
+        if (policy == null) {
+            return CommunityTemplateOptionsDto.unavailable();
+        }
+        return new CommunityTemplateOptionsDto(true, policy.assignableTemplates().stream()
+                .map(template -> new CommunityTemplateOptionsDto.CommunityTemplateOptionDto(template.tmpltId(), template.tmpltNm()))
+                .toList());
     }
 
     private CommunityDto toDto(Community community) {

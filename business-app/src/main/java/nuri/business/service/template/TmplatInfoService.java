@@ -8,21 +8,31 @@ import nuri.business.domain.template.TemplateRepository;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.template.dto.TemplateMapper;
+import nuri.foundation.core.template.AssignableTemplate;
+import nuri.foundation.core.template.TemplateAssignmentPolicy;
 import nuri.foundation.core.template.TemplateReferenceContributor;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 템플릿 정보 서비스
+ * 템플릿 정보 서비스.
+ *
+ * <p>커뮤니티가 쓰는 템플릿 배정 포트({@link TemplateAssignmentPolicy})도 이 서비스가 구현한다(DEC-OPS-280). 종전에는 템플릿
+ * 디렉터리의 별도 구현을 커뮤니티 지원 파일로 묶어 커뮤니티가 템플릿 기능을 늘 끌어왔다. 이제 템플릿 기능이 빠지면 구현도
+ * 함께 빠지고 커뮤니티는 포트가 없는 것으로 판정한다. 템플릿만 고른 구성에서도 이 서비스는 템플릿 API 가 쓰므로 소비자 없는
+ * 구현이 남지 않는다.
  */
 @Service
 @Transactional(readOnly = true)
-public class TmplatInfoService extends BaseAbstractService {
+public class TmplatInfoService extends BaseAbstractService implements TemplateAssignmentPolicy {
 
     private final TemplateRepository templateRepository;
     private final TemplateMapper templateMapper;
@@ -40,6 +50,30 @@ public class TmplatInfoService extends BaseAbstractService {
         return templateRepository.findAll().stream()
                 .map(templateMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    /** 원장 행을 잠그고 존재하는 사용 중 템플릿인지 확인한다. 새로 지정하는 쓰기 트랜잭션 안에서만 부른다. */
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void assertActiveForAssignment(String templateId) {
+        templateRepository.findByIdForUpdate(templateId).filter(template -> "Y".equals(template.getUseYn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "존재하는 사용 중 템플릿을 선택해 주세요."));
+    }
+
+    /**
+     * 새로 지정할 수 있는 사용 중 템플릿(이름 순). 종전 관리 창은 템플릿 관리 목록(TEMPLATE_READ)을 받아 화면에서 걸렀다 —
+     * 같은 권한을 여기서 다시 요구해 후보를 보는 주체가 바뀌지 않게 한다(H3).
+     */
+    @Override
+    public List<AssignableTemplate> assignableTemplates() {
+        SecurityUtil.assertPermission("TEMPLATE_READ");
+        return templateRepository.findAll().stream()
+                .filter(template -> template.getTmpltId() != null && "Y".equals(template.getUseYn()))
+                .sorted(Comparator.comparing((Template template) -> Objects.requireNonNullElse(template.getTmpltNm(), ""))
+                        .thenComparing(Template::getTmpltId))
+                .map(template -> new AssignableTemplate(template.getTmpltId(), template.getTmpltNm()))
+                .toList();
     }
 
     public TemplateDto selectTmplatInfoDetail(String tmplatId) {

@@ -5442,6 +5442,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/community/template-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 커뮤니티 템플릿 후보
+         * @description 커뮤니티에 새로 지정할 수 있는 사용 중 템플릿을 조회합니다. 이 구성에 템플릿 기능이 없으면 available=false 와 빈 목록입니다. 템플릿 조회 권한이 없으면 403 입니다.
+         */
+        get: operations["getTemplateOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/content/community/portlet": {
         parameters: {
             query?: never;
@@ -11145,6 +11165,31 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
+        };
+        ApiResponseCommunityTemplateOptionsDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["CommunityTemplateOptionsDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 커뮤니티 템플릿 후보 한 건 */
+        CommunityTemplateOptionDto: {
+            /** @description 템플릿 ID */
+            tmpltId?: string;
+            /** @description 템플릿 이름 */
+            tmpltNm?: string | null;
+        };
+        /** @description 커뮤니티 템플릿 후보 */
+        CommunityTemplateOptionsDto: {
+            /** @description 이 구성에 템플릿 기능이 있는지 */
+            available?: boolean;
+            /** @description 새로 지정할 수 있는 사용 중 템플릿. 템플릿 기능이 없으면 빈 목록 */
+            templates?: components["schemas"]["CommunityTemplateOptionDto"][];
         };
         ApiResponseListCommunityDto: {
             success?: boolean;
@@ -38555,6 +38600,62 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getTemplateOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseCommunityTemplateOptionsDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

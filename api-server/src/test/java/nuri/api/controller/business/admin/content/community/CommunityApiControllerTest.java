@@ -214,11 +214,11 @@ class CommunityApiControllerTest {
     @Test
     @DisplayName("멤버십 조회·승인·거절·강제 탈퇴는 각각의 기능 권한을 확인한다")
     void membershipHandlersCarryMethodSecurity() throws Exception {
-        for (String name : List.of("getMembers", "approveMember", "rejectMember", "withdrawMember")) {
+        for (String name : List.of("getMembers", "approveMember", "rejectMember", "withdrawMember", "getTemplateOptions")) {
             java.lang.reflect.Method handler = java.util.Arrays.stream(CommunityApiController.class.getDeclaredMethods())
                     .filter(m -> m.getName().equals(name)).findFirst().orElseThrow();
             String permission = switch (name) {
-                case "getMembers" -> "COMMUNITY_READ_ALL";
+                case "getMembers", "getTemplateOptions" -> "COMMUNITY_READ_ALL";
                 case "approveMember" -> "COMMUNITY_APPROVE";
                 case "withdrawMember" -> "COMMUNITY_UPDATE_ALL";
                 default -> "COMMUNITY_REJECT";
@@ -236,5 +236,23 @@ class CommunityApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/content/community/portlet"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    /** [DEC-OPS-280] 템플릿 후보는 커뮤니티 API 가 준다 — 템플릿 기능이 없으면 available=false 와 빈 목록이다. */
+    @Test
+    @DisplayName("템플릿 후보를 커뮤니티 API 로 준다")
+    void getTemplateOptions() throws Exception {
+        when(communityService.getTemplateOptions()).thenReturn(new nuri.business.service.community.dto.CommunityTemplateOptionsDto(true,
+                List.of(new nuri.business.service.community.dto.CommunityTemplateOptionsDto.CommunityTemplateOptionDto("TMPL01", "기본 템플릿"))));
+        mockMvc.perform(get("/api/v1/admin/content/community/template-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.available").value(true))
+                .andExpect(jsonPath("$.data.templates[0].tmpltId").value("TMPL01"))
+                .andExpect(jsonPath("$.data.templates[0].tmpltNm").value("기본 템플릿"));
+        when(communityService.getTemplateOptions()).thenReturn(nuri.business.service.community.dto.CommunityTemplateOptionsDto.unavailable());
+        mockMvc.perform(get("/api/v1/admin/content/community/template-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.templates").isEmpty());
     }
 }

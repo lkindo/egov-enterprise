@@ -22,8 +22,11 @@ const SCRIPT = join(ROOT, 'scripts/domain-deletion-plan.mjs');
 const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
 const APP = 'business-app/src/main/java/nuri/business';
 
-/** manifest 와 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다. */
-function treeWith({ manifest, domains }) {
+/**
+ * manifest 와 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
+ * `api` 면 api-server 생산 소스도 둔다 — api-server 디렉터리 소유 간선(DEC-OPS-280)도 카탈로그 없이 계산된다.
+ */
+function treeWith({ manifest, domains, api = false }) {
   const root = mkdtempSync(join(tmpdir(), 'domain-deletion-'));
   mkdirSync(join(root, 'config'), { recursive: true });
   writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(manifest));
@@ -31,6 +34,7 @@ function treeWith({ manifest, domains }) {
     const source = join(ROOT, APP, layer, domain);
     if (existsSync(source)) cpSync(source, join(root, APP, layer, domain), { recursive: true });
   }
+  if (api) cpSync(join(ROOT, 'api-server/src/main/java'), join(root, 'api-server/src/main/java'), { recursive: true });
   return root;
 }
 
@@ -40,9 +44,10 @@ const synthetic = capabilities => ({ capabilities: Object.entries(capabilities).
 // 단독 삭제마다 함께 지워지는 도메인. 바뀌면 delete-domain 이 지우는 범위가 바뀐 것이다.
 const SINGLE_DELETIONS = {
   addressbook: ['addressbook'],
-  // 실시간 대시보드는 게시판을 포트로 읽는다(Phase 2 9단계) — 게시판을 지워도 남는다.
-  board: ['board', 'comment', 'scrap'],
-  comment: ['board', 'comment', 'scrap'],
+  // 커뮤니티 사용자 API(게시판 목록)는 게시판 타입을 참조한다 — api-server 디렉터리 소유 간선(DEC-OPS-280).
+  //   실시간 대시보드는 게시판을 포트로 읽는다(Phase 2 9단계) — 게시판을 지워도 남는다.
+  board: ['board', 'comment', 'community', 'scrap'],
+  comment: ['board', 'comment', 'community', 'scrap'],
   community: ['community'],
   dashboard: ['dashboard'],
   event: ['event'],
@@ -65,8 +70,8 @@ const SINGLE_DELETIONS = {
   showcase: ['showcase'],
   sms: ['sms'],
   survey: ['survey'],
-  // 커뮤니티가 쓰는 템플릿 배정 구현이 템플릿 디렉터리에 있다. 템플릿만 지우면 그 구현이 사라진다.
-  template: ['community', 'template'],
+  // 템플릿 배정 구현은 템플릿 기능의 서비스이고 커뮤니티는 그 포트를 선택 주입으로 받는다(DEC-OPS-280). 템플릿을 지워도 커뮤니티는 선다.
+  template: ['template'],
 };
 
 test('every single deletion of the real catalog removes exactly the frozen set', () => {
@@ -78,9 +83,9 @@ test('every single deletion of the real catalog removes exactly the frozen set',
 });
 
 test('each companion names the requirement that pulled it in with the user sentence of that pair', () => {
-  const plan = planDomainDeletion({ catalog, requested: ['template'] });
-  assert.deepEqual(plan.added, [{ domain: 'community', because: { from: 'community', to: 'template', kinds: ['java'],
-    userReason: '커뮤니티를 만들 때 템플릿을 고릅니다.' } }]);
+  const plan = planDomainDeletion({ catalog, requested: ['informalsanction'] });
+  assert.deepEqual(plan.added, [{ domain: 'reward', because: { from: 'reward', to: 'informalsanction', kinds: ['java'],
+    userReason: '포상 데이터가 결재 문서 표를 참조합니다.' } }]);
 });
 
 test('deletion follows requirements backwards: the requirer goes, the required stays', () => {
@@ -111,9 +116,10 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   const edges = capabilities => [...new Set(capabilities.flatMap(capability => capability.requires.filter(row => !row.customOnly)
     .map(row => `${capability.id}>${row.domain} ${row.kind} ${row.userReason}`)))].sort();
   const tree = treeDeletionCatalog(ROOT);
-  // 세 종류가 모두 들어 있다 — 지원 파일(커뮤니티→템플릿), 묶음(게시판↔댓글), Java 참조(스크랩→게시판). 묶음 requiresDomains 의
+  // 실제 표에 있는 세 종류 — 묶음(게시판↔댓글), 업무 앱 Java 참조(스크랩→게시판), api-server 디렉터리 소유 기능의 Java 참조
+  // (커뮤니티→게시판, DEC-OPS-280). 다른 기능 디렉터리의 지원 파일 간선은 실례가 없어 아래 합성 트리로 본다. 묶음 requiresDomains 의
   //   실례였던 대시보드 묶음은 업무 홈 이행에서 걷었다(Phase 2 9단계).
-  for (const pair of ['community>template java', 'board>comment manifest', 'scrap>board java']) {
+  for (const pair of ['board>comment manifest', 'scrap>board java', 'community>board java']) {
     assert.ok(edges(catalog.capabilities).some(row => row.startsWith(`${pair} `)), pair);
   }
   assert.deepEqual(edges(tree.capabilities), edges(catalog.capabilities));
@@ -124,6 +130,25 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
   }
 });
 
+// 다른 기능 디렉터리에 있는 지원 파일은 그 기능을 요구한다. 실례(커뮤니티가 쓰던 템플릿 배정 구현)는 DEC-OPS-280 에서 포트로
+// 바뀌어 사라졌으므로 합성 선언으로 규칙을 본다 — 실례만 바꾸고 단언을 지우면 이 간선 규칙의 red 가 사라진다.
+test('a support file declared in another feature directory makes its consumer require that feature', () => {
+  const manifest = structuredClone(MANIFEST);
+  manifest.packs.collaboration.backend.domainSupportFiles = {
+    ...manifest.packs.collaboration.backend.domainSupportFiles,
+    note: [`${APP}/service/mail/MailService.java`],
+  };
+  const root = treeWith({ manifest, domains: ['mail', 'note'] });
+  try {
+    const tree = treeDeletionCatalog(root);
+    assert.deepEqual(tree.capabilities.find(capability => capability.id === 'note').requires.map(edge => `${edge.domain} ${edge.kind}`), ['mail java']);
+    assert.deepEqual(planDomainDeletion({ catalog: tree, requested: ['mail'] }).domains, ['mail', 'note']);
+    assert.deepEqual(planDomainDeletion({ catalog: tree, requested: ['note'] }).domains, ['note']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('a projected collaboration tree plans the same deletions without the full catalog', () => {
   const collaboration = MANIFEST.packs.collaboration.backend.appDomains;
   const root = treeWith({ domains: collaboration, manifest: { packs: { core: MANIFEST.packs.core, collaboration: MANIFEST.packs.collaboration },
@@ -131,8 +156,10 @@ test('a projected collaboration tree plans the same deletions without the full c
   try {
     const tree = treeDeletionCatalog(root);
     assert.deepEqual(tree.capabilities.map(capability => capability.id), [...collaboration].sort());
+    // 커뮤니티는 이 트리에 없다(demo pack) — 원본 표에서 트리에 있는 기능만 함께 지워진다.
     for (const domain of collaboration) {
-      assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains, SINGLE_DELETIONS[domain], domain);
+      assert.deepEqual(planDomainDeletion({ catalog: tree, requested: [domain] }).domains,
+        SINGLE_DELETIONS[domain].filter(name => collaboration.includes(name)), domain);
     }
     const result = spawnSync(process.execPath, [SCRIPT, '--json', '--root', root, 'board'], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
@@ -181,7 +208,7 @@ test('files outside the domain directories go with the types they reference, jud
 
 test('a tree where a deletion already ran and a new domain was scaffolded still plans', () => {
   const gone = new Set(['informalsanction', 'reward']);
-  const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)) });
+  const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)), api: true });
   try {
     // generate-domain.ps1 가 만드는 새 도메인. manifest 에 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
     mkdirSync(join(root, APP, 'domain/product'), { recursive: true });
@@ -210,10 +237,10 @@ test('unknown or empty requests are refused instead of guessing', () => {
 
 test('the CLI prints ASCII-only JSON that PowerShell decodes regardless of the console code page', () => {
   const script = join(ROOT, 'scripts/domain-deletion-plan.mjs');
-  const result = spawnSync(process.execPath, [script, '--json', 'template'], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [script, '--json', 'informalsanction'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^[\x00-\x7f]*$/u, 'stdout is ASCII');
-  assert.deepEqual(JSON.parse(result.stdout).domains, ['community', 'template']);
+  assert.deepEqual(JSON.parse(result.stdout).domains, ['informalsanction', 'reward']);
   const refused = spawnSync(process.execPath, [script, '--json', 'nope'], { encoding: 'utf8' });
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /unknown domain: nope/);

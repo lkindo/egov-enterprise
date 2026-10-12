@@ -3094,6 +3094,18 @@
       ]
     },
     {
+      "target": "TmplatInfoService#assignableTemplates",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "TEMPLATE_READ"
+        }
+      ]
+    },
+    {
       "target": "TmplatInfoService#deleteTmplatInfo",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -4715,6 +4727,13 @@
       "method": "GET",
       "path": "/api/v1/admin/content/community/portlet",
       "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getCommunityPortlet",
+      "access": "PERMISSION",
+      "permission": "COMMUNITY_READ_ALL"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/content/community/template-options",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getTemplateOptions",
       "access": "PERMISSION",
       "permission": "COMMUNITY_READ_ALL"
     },

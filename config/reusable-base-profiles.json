@@ -416,6 +416,7 @@
           "src/extensions/board",
           "src/app/admin/collaboration/scraps",
           "src/app/admin/help",
+          "src/app/admin/community/board",
           "src/lib/board",
           "src/components/features/dashboard/RealTimeDashboard.tsx",
           "src/components/features/dashboard/RealTimeHomeSection.tsx",
@@ -528,11 +529,6 @@
             "foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java",
             "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
             "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
-          ],
-          "community": [
-            "foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java",
-            "business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java",
-            "business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java"
           ]
         }
       },
@@ -548,7 +544,6 @@
           "src/extensions/promotion",
           "src/app/admin/collaboration/address-book",
           "src/app/admin/community/[id]",
-          "src/app/admin/community/board",
           "src/app/admin/community/page.tsx",
           "src/app/admin/community/boards/page.tsx",
           "src/app/admin/community/templates",

@@ -1591,6 +1591,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "collaboration",
         "demo"
       ],
       "journeys": [],

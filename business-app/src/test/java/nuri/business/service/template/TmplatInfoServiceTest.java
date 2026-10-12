@@ -78,6 +78,39 @@ class TmplatInfoServiceTest {
         verify(templateRepository, times(1)).findAll();
     }
 
+    /** 템플릿 배정 포트(DEC-OPS-280) — 종전 TemplateAssignmentPolicyService 시험을 옮겼다. */
+    @Test
+    @DisplayName("새 지정은 존재하는 사용 중 템플릿만 받고 행을 잠가 확인한다")
+    void onlyExistingActiveTemplateCanBeNewlyAssigned() {
+        when(templateRepository.findByIdForUpdate("missing")).thenReturn(Optional.empty());
+        when(templateRepository.findByIdForUpdate("inactive")).thenReturn(Optional.of(Template.builder().tmpltId("inactive").useYn("N").build()));
+        when(templateRepository.findByIdForUpdate("active")).thenReturn(Optional.of(Template.builder().tmpltId("active").useYn("Y").build()));
+        for (String id : List.of("missing", "inactive")) {
+            assertThatThrownBy(() -> tmplatInfoService.assertActiveForAssignment(id)).isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        tmplatInfoService.assertActiveForAssignment("active");
+        verify(templateRepository, never()).findById(anyString());
+    }
+
+    @Test
+    @DisplayName("지정 후보는 사용 중 템플릿만 이름 순으로 주고 템플릿 조회 권한을 요구한다")
+    void assignableTemplatesAreActiveOnlyAndRequireTemplateRead() {
+        when(templateRepository.findAll()).thenReturn(List.of(
+                Template.builder().tmpltId("B").tmpltNm("나 템플릿").useYn("Y").build(),
+                Template.builder().tmpltId("OFF").tmpltNm("가 꺼짐").useYn("N").build(),
+                Template.builder().tmpltId("A").tmpltNm("가 템플릿").useYn("Y").build()));
+
+        authenticate("COMMUNITY_READ_ALL");
+        assertDenied(() -> tmplatInfoService.assignableTemplates());
+        verifyNoInteractions(templateRepository);
+
+        authenticate("TEMPLATE_READ");
+        assertThat(tmplatInfoService.assignableTemplates()).containsExactly(
+                new nuri.foundation.core.template.AssignableTemplate("A", "가 템플릿"),
+                new nuri.foundation.core.template.AssignableTemplate("B", "나 템플릿"));
+    }
+
     @Test
     @DisplayName("템플릿 상세 조회")
     void selectTmplatInfoDetail() {

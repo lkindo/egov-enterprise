@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommunityManageDialog } from '../CommunityManageDialog';
 
-const mocks = vi.hoisted(() => ({ updateCommunity: vi.fn(), getTemplateList: vi.fn() }));
+const mocks = vi.hoisted(() => ({ updateCommunity: vi.fn(), getTemplateOptions: vi.fn() }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { permissions: ['COMMUNITY_READ_ALL', 'COMMUNITY_UPDATE_ALL'], authorizationVersion: 'v1' } }),
 }));
@@ -20,20 +20,16 @@ vi.mock('@/services/foundation/system/CommunityAdminService', () => ({
       total: 1, page: 0, size: 10, totalPage: 1,
     }),
     updateCommunity: mocks.updateCommunity,
+    getTemplateOptions: mocks.getTemplateOptions,
   },
-}));
-vi.mock('@/services/foundation/system/TemplateAdminService', () => ({
-  templateAdminService: { getTemplateList: mocks.getTemplateList },
 }));
 
 describe('CommunityManageDialog 실제 Radix 템플릿 선택', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.updateCommunity.mockResolvedValue(undefined);
-    mocks.getTemplateList.mockResolvedValue([
-      { tmpltId: 'ACTIVE', tmpltNm: '활성 템플릿', useYn: 'Y' },
-      { tmpltId: 'OLD_OFF', tmpltNm: '비활성 템플릿', useYn: 'N' },
-    ]);
+    // 후보는 서버가 사용 중인 항목만 준다(DEC-OPS-280). 기존 비활성 값 OLD_OFF 는 후보에 없다.
+    mocks.getTemplateOptions.mockResolvedValue({ available: true, templates: [{ tmpltId: 'ACTIVE', tmpltNm: '활성 템플릿' }] });
   });
 
   it('편집 때 동적으로 나타나는 비활성 기존 항목이 native select 이벤트로 지워지지 않고 그대로 저장된다', async () => {

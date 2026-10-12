@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { domainSupportFiles, supportFileDirectoryDomain } from './project-composer-source.mjs';
-import { degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
+import { apiSourceOwner, degradationPredicate, deriveEventTriples, requiresClosure, resolveIntegrations, sourceOwner } from './project-composer-integrations.mjs';
 import { menuRouteKey } from './project-composer-db.mjs';
 import { attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
@@ -13,6 +13,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
 const PERMISSIONS = 'config/governance/permission-catalog.json';
 const APP_ROOT = 'business-app/src/main/java/nuri/business';
+const API_ROOT = 'api-server/src/main/java/nuri/api';
 const sorted = values => [...new Set(values)].sort();
 const slash = value => value.split(sep).join('/');
 
@@ -56,19 +57,21 @@ const FEATURES = {
     'src/app/admin/help', 'src/lib/board',
     // 허브 분해 H4: 통계 셸의 게시물·자료 이용 탭과 통계 요약의 누적 게시물 칸 기여(stats-panels).
     // 업무 홈(Phase 2 9단계): 글 수 카드·최근 글 목록·새 게시글 작성 조각과 그 조회(home-sections 기여).
-    'src/extensions/board', 'src/app/components/dashboard/BoardHome.tsx', 'src/queries/board-home-query.ts'],
-  routes: ['/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
+    'src/extensions/board', 'src/app/components/dashboard/BoardHome.tsx', 'src/queries/board-home-query.ts',
+    // Phase 2 커뮤니티 후속 C1b: 게시글 모아보기는 이름과 달리 게시판을 골라 게시글을 보는 게시판 화면이다(커뮤니티 데이터를 쓰지 않는다).
+    'src/app/admin/community/board'],
+  routes: ['/admin/community/board', '/admin/community/boards', '/admin/help', '/admin/stats/board', '/admin/stats/data-usage'] },
   comment: { label: '댓글', permissions: ['COMMENT'], paths: [
     'src/app/actions/commentActions.ts', 'src/services/business/comment/commentService.ts',
     'src/services/foundation/system/CommentAdminService.ts', 'src/app/admin/system/comments'],
   routes: ['/admin/system/comments'] },
   // 커뮤니티·홍보(배너·팝업)·시연 화면은 따로 고른다(DEC-OPS-256 ①). 셋 사이에는 코드 참조가 없다.
   community: { label: '커뮤니티', permissions: ['COMMUNITY'], paths: [
-    'src/app/admin/community/[id]', 'src/app/admin/community/board', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
+    'src/app/admin/community/[id]', 'src/app/admin/community/page.tsx', 'src/app/cop/cmy',
     'src/services/business/community', 'src/services/foundation/system/CommunityAdminService.ts', 'src/types/business/community.ts',
     // 허브 분해 H2: 지식 허브의 커뮤니티 탭 기여와 그 뷰·대화상자, 그리고 커뮤니티 탭으로 가는 별칭 화면.
     'src/components/business/community', 'src/extensions/community', 'src/app/admin/community/boards/page.tsx'],
-  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/board', '/admin/community/boards', '/cop/cmy'],
+  routes: ['/admin/community', '/admin/community/[id]', '/admin/community/boards', '/cop/cmy'],
   exactRoutes: ['/admin/community', '/admin/community/boards'], menuTabs: ['/admin/help?tab=COMMUNITY'] },
   // 업무 홈(Phase 2 9단계): 업무 홈 셸은 core 이고, 이 기능은 '실시간 상태' 구역을 home-sections 로 기여한다.
   dashboard: { label: '실시간 대시보드', permissions: [], paths: [
@@ -168,14 +171,12 @@ const FEATURES = {
 // 간선과 화면 생존 시험을 함께 둔다.
 const SHARED_UI = [];
 
-// 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 두 의존을 명시한다.
+// 화면이 다른 기능의 코드·API 에 기대는 의존. 허브 분해 H2 에서 지식 허브 공동 화면 간선이 가리던 의존을 명시한다.
+// 커뮤니티 → 게시판은 게시글 모아보기 화면을 게시판 소유로 옮기며 걷었다(C1b). 그 결합은 커뮤니티 사용자 API 의 Java 간선이 센다.
+// 커뮤니티 → 템플릿은 관리 창 후보를 커뮤니티 API 로 받으며 선택 연동(포트)이 되었다(C2, project-composer-integrations.mjs).
 // 업무 홈(Phase 2 9단계)에서 묶음 realtime-stats 를 걷으며, 실시간 구역이 알림 기능의 알림 정규화를 쓰는 코드 의존을 적는다.
 //   대시보드→게시판은 의존이 아니라 포트 연동이다(project-composer-integrations.mjs) — 게시판이 없으면 '신규 게시글' 카드만 빠진다.
 const UI_DEPENDENCIES = [
-  { from: 'community', domain: 'board', reason: '커뮤니티 게시판 화면이 게시판 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/app/admin/community/board/CommunityBoardClient.tsx', symbol: 'boardUserService' },
-  { from: 'community', domain: 'template', reason: '커뮤니티 관리 폼이 템플릿 조회 서비스를 직접 참조한다.',
-    evidence: 'frontend/src/components/business/community/CommunityManageDialog.tsx', symbol: 'TemplateAdminService' },
   { from: 'help', domain: 'board', reason: '도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.',
     evidence: 'frontend/src/services/business/user/help/HelpUserService.ts', symbol: 'getPublicFaqsOperation' },
   { from: 'dashboard', domain: 'notification', reason: '실시간 상태 구역이 개인 알림 큐의 알림을 알림 기능의 정규화로 읽는다.',
@@ -214,9 +215,27 @@ function javaCode(source) {
 }
 
 /*
- * 아래 세 판정은 카탈로그와 수동 도메인 삭제(domain-deletion-plan.mjs)가 함께 쓴다. 삭제 판정은 카탈로그 전체 검증 없이
+ * 아래 판정들은 카탈로그와 수동 도메인 삭제(domain-deletion-plan.mjs)가 함께 쓴다. 삭제 판정은 카탈로그 전체 검증 없이
  * 지금 트리(생성물·이미 지운 트리 포함)에서 같은 간선을 계산해야 해서, 순회는 따로 하되 간선 규칙은 여기 하나만 둔다.
  */
+/** api-server 생산 소스의 루트(저장소 기준). 간선은 이 아래 `.java` 파일에서 센다. */
+export const API_SOURCE_ROOT = API_ROOT;
+
+/**
+ * api-server 생산 소스 하나가 만드는 기능 간선(DEC-OPS-280). 생성기는 지운 기능의 타입을 참조하는 api-server 파일을 연쇄로
+ * 지우므로, 디렉터리 소유 기능(apiSourceOwner)의 컨트롤러가 다른 기능 타입을 참조하면 소유 기능은 그 기능을 요구한다.
+ * 이 간선이 없으면 소유 기능만 고른 생성물에서 그 컨트롤러가 조용히 지워진다(커뮤니티 사용자 API 가 게시판 참조로 사라지던 경로).
+ * 소유 디렉터리 없이 둘 이상을 참조하면 어느 기능에 속하는지 정할 수 없어 실패한다. `features` 는 기능 id 집합이다.
+ * @returns {{ owner: string | null, referenced: string[], requires: string[] }}
+ */
+export function apiSourceRequirements(path, source, features) {
+  const referenced = sorted(javaDomainReferences(source).filter(domain => features.has(domain)));
+  const owner = referenced.length ? apiSourceOwner(path, features) : null;
+  if (!owner && referenced.length > 1) {
+    fail(`api-server source references several capabilities without an owning directory: ${path} (${referenced.join(', ')})`);
+  }
+  return { owner, referenced, requires: owner ? referenced.filter(domain => domain !== owner) : [] };
+}
 /** 업무 앱 생산 소스의 상대 경로가 속한 기능 디렉터리. 업무 앱 소스가 아니면 null. */
 export function appSourceDomain(path) {
   return path.startsWith(`${APP_ROOT}/`) ? path.slice(APP_ROOT.length + 1).match(/^(?:domain|service)\/([^/]+)\//)?.[1] ?? null : null;
@@ -335,6 +354,16 @@ export function loadProjectComposerCatalog(root = ROOT) {
     for (const referenced of javaDomainReferences(source)) {
       if (referenced !== domain && inventory.has(referenced)) owner.edges.push({ domain: referenced, evidence: path });
     }
+  }
+  // api-server 컨트롤러가 다른 기능 타입을 참조하는 결합도 간선이다(DEC-OPS-280). 업무 앱 순회만으로는 보이지 않는다.
+  const features = new Set(inventory.keys());
+  for (const absolute of walk(join(root, API_ROOT)).filter(path => path.endsWith('.java'))) {
+    const path = slash(relative(root, absolute));
+    const source = readFileSync(absolute, 'utf8');
+    const { owner, requires } = apiSourceRequirements(path, source, features);
+    if (!requires.length) continue;
+    for (const required of requires) inventory.get(owner).edges.push({ domain: required, evidence: path });
+    sourceFingerprints.push({ path, sha256: compositionDigest(source.replace(/\r\n/g, '\n')) });
   }
   const sharedTables = manifest.sharedTableContracts ?? [];
   for (const shared of sharedTables) for (const consumer of shared.consumers) {

@@ -6,6 +6,7 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.community.CommunityService;
 import nuri.business.service.community.dto.CommunityDto;
 import nuri.business.service.community.dto.CommunityMemberDto;
+import nuri.business.service.community.dto.CommunityTemplateOptionsDto;
 import nuri.business.domain.community.CommunityMemberStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -77,6 +78,18 @@ public class CommunityApiController {
             @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
         communityService.deleteCommunity(cmntySn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * [DEC-OPS-280] 관리 창의 템플릿 후보. 템플릿은 커뮤니티의 선택 연동이라, 관리 창이 템플릿 관리 API 를 직접 부르면 템플릿이
+     * 빠진 구성에서 그 호출이 남는다. 후보는 커뮤니티 API 로 받고, 템플릿 기능이 템플릿 조회 권한을 다시 확인한다.
+     */
+    @Operation(summary = "커뮤니티 템플릿 후보",
+            description = "커뮤니티에 새로 지정할 수 있는 사용 중 템플릿을 조회합니다. 이 구성에 템플릿 기능이 없으면 available=false 와 빈 목록입니다. 템플릿 조회 권한이 없으면 403 입니다.")
+    @GetMapping("/template-options")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#getTemplateOptions')")
+    public ResponseEntity<ApiResponse<CommunityTemplateOptionsDto>> getTemplateOptions() {
+        return ResponseEntity.ok(ApiResponse.success(communityService.getTemplateOptions()));
     }
 
     // ─── 멤버십 (2026-09-06 DEC-OPS-043) ──────────────────────────────────────────────────────────

@@ -30,6 +30,7 @@ import {
   ApiResponseCmmnDetailCodeDtoResponseSchema,
   ApiResponseCommunityDtoResponseSchema,
   ApiResponseCommunityMembershipDtoResponseSchema,
+  ApiResponseCommunityTemplateOptionsDtoResponseSchema,
   ApiResponseCurrentUserResponseResponseSchema,
   ApiResponseDashboardResponseResponseSchema,
   ApiResponseDepartmentRecipientsDtoResponseSchema,
@@ -223,6 +224,7 @@ import {
   CommunityDtoRequestSchema,
   CommunityDtoResponseSchema,
   CommunityMembershipDtoResponseSchema,
+  CommunityTemplateOptionsDtoResponseSchema,
   CopyGroupRequestSchema,
   CreateGroupRequestSchema,
   CurrentUserResponseResponseSchema,
@@ -8411,6 +8413,25 @@ export const getMembersOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommunityMemberDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommunityMemberDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getTemplateOptionsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getTemplateOptions",
+  method: "get",
+  path: "/api/v1/admin/content/community/template-options",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => CommunityTemplateOptionsDtoResponseSchema),
+  envelopeSchema: ApiResponseCommunityTemplateOptionsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
