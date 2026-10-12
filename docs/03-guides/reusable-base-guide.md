@@ -465,7 +465,7 @@ backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테
 working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
 [생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
 
-생산 저장소의 12개 workflow·required-check 명세·package·pre-push는
+생산 저장소의 13개 workflow·required-check 명세·package·pre-push는
 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존한다. 원본 CodeQL·E2E·mutation과
 배포·예약 작업은 기관 범위에 맞게 다시 결속해야 하며, 생성물 기본 CI가 원본 CI와 동등한 검증이나 운영 인증을
 제공한다고 주장하지 않는다. 생성물의 `.github/required-checks.json`은 `remoteApplied: false`이고 대상 브랜치·App은
@@ -552,8 +552,12 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
-`./gradlew test --continue` 와 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다.
-저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다. 판정은 종료 코드가 아니라 각 모듈의 테스트 리포트 XML 과 vitest JSON 보고서로 한다.
+Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다. Gradle 시험은 레이아웃마다 다르다.
+멀티모듈은 `./gradlew test --continue` 가 모든 모듈을 돈다. 단일모듈의 `test` 는 `api-server` 시험만 돌므로
+`./gradlew test foundationTest coreTest appTest --continue` 를 돌린다(이관 시험까지는 `allTests`).
+저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다(Windows 실측). 판정은 종료 코드가 아니라 시험 작업별 리포트 XML 과 vitest JSON 보고서로 한다.
+같은 절차를 GitHub runner 에서 구성 단위로 도는 것이 [T2 야간 시험](cicd-pipeline.md#재사용-생성물-야간-시험t2)이다.
+직접 선택 구성은 그 워크플로의 `compositions` 입력으로 잰다.
 
 ⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지
 않아 생성기 드리프트 4축이 v0.1.0(2026-08-24) 이후 계속 쌓여 있었고, `demo` 조차 red 였다.

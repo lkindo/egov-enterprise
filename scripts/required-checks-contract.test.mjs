@@ -1204,7 +1204,7 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
       checked += 1;
     }
   }
-  assert.equal(checked, 11, 'all producer Gradle cache callers must be covered');
+  assert.equal(checked, 12, 'all producer Gradle cache callers must be covered');
 });
 
 test('cache writer election remains tied to selected backend and migration jobs', () => {

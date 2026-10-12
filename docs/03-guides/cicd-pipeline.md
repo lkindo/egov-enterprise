@@ -155,6 +155,32 @@ matrix 전부로 돌아간다. core가 선택되면 custom composition의 두 la
 체크 설정은 기관이 연결한다. 실제 기관 배포·이관은 `adoption:check`가 기술 검사 전후에 승인과 실행 대상을
 확인하며, 명시적 `--execute`에서만 기존 deploy/load를 호출한다. 참조 CI에서 실제 기관 작업을 실행하지 않는다.
 
+### 재사용 생성물 야간 시험(T2)
+
+산출물 검증은 하네스·스키마·프런트 타입·lint·build까지만 본다. 생성물의 일반 테스트는
+[reusable-nightly workflow](../../.github/workflows/reusable-nightly.yml)가 돈다.
+required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workflow_dispatch`)만 있고, 예약 실행(06:17 KST)은 첫 녹색 수동 실행 뒤 켠다.
+
+- **계획**: [러너](../../scripts/reusable-nightly.mjs)의 `plan`이 카탈로그에서 시작 구성과 서로 다른 단독 폐포를 계산한다.
+  시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다(지금 26잡). 이름을 손으로 쓰지 않는다.
+- **생성**: 시작 구성은 PR CI와 같은 `verify-reusable-base.mjs`, 단독 선택은 composer 엔진으로 생성·산출물 검증한다.
+- **시험**: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`를 돈다. 단일 모듈의 `test`는
+  `api-server` 시험만 돈다. 이관 시험은 구성과 무관해 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고,
+  제외는 러너의 원장에 사유와 함께 둔다.
+- **판정**: 작업별 JUnit XML과 vitest JSON으로 판정한다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
+  `summary`는 계획의 모든 구성에 통과 보고서가 있는지 본다. 구성별 보고서는 14일, 실패한 구성의 원본 XML·vitest JSON은 7일 남긴다.
+- **경계**: 비밀을 쓰지 않고 권한은 `contents: read`, Gradle 캐시는 읽기만 한다. 동시 10잡, 잡 60분이다.
+
+기능 브랜치의 무거운 직접 선택 검증은 이 워크플로로 GitHub runner에 넘긴다. 수동 실행은 기본 브랜치에 워크플로가
+있어야 열리고, `--ref`로 고른 브랜치의 워크플로 파일과 소스로 돈다고 본다 — 첫 실행에서 확인한다.
+
+```bash
+gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions="board+survey informalsanction" -f layout=both
+```
+
+`compositions`는 `preset:<id>` 또는 `<기능>+<기능>` 토큰을 공백·쉼표로 나열하며, 비우면 전체 계획이다. `contracts=true`는
+생성물 안에서 계약 생성물(화면 목록·슬롯·권한·경계·소비 census)을 다시 만들어 대조한다. 권한·계약 투영 전에는 붉으므로 기본은 끈다.
+
 ### 실행 트리거
 
 - **Push**: `main`, `master` 브랜치, PR과 같은 영향 분류·fail-closed fallback 적용
@@ -376,7 +402,7 @@ dependencyCheck {
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
 - **구성**: `setup-gradle` v6.4.0의 commit `3f5f9adaf7d9fecd50b5935e54106014257a94e6`와 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
-- **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스는 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다.
+- **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스·재사용 생성물 야간 시험은 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다.
 - **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 

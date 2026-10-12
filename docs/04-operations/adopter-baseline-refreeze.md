@@ -116,7 +116,7 @@ adopter 절차:
 기준선 재동결의 마지막은 **병합 권위 재결속**이다. adopter 의 원격 저장소는 base 의 ruleset 을 자동 승계하지 않는다.
 
 1. 생산 저장소의 [.github/required-checks.json](../../.github/required-checks.json)은 6개 required context와 원본 review policy를 검증한다. 온라인 생성물의 같은 경로에는 `artifact-verification` 한 context의 기관용 템플릿이 생성된다. `remoteApplied: false`, `branch: null`, `integrationId: null`이므로 원격 적용 완료나 원본 기관 정책의 승계를 뜻하지 않는다.
-2. 생성물 CI는 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 실행한다. 원본 12개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 결속해야 한다. 기본 CI를 원본 6개 context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
+2. 생성물 CI는 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 실행한다. 원본 13개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 결속해야 한다. 기본 CI를 원본 6개 context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
 3. 기관은 대상 브랜치·GitHub App·리뷰 인력에 맞는 정책을 정하고 실제 workflow context를 ruleset에 적용한 뒤 원격 상태를 읽어 대조한다. 생성물 실행 경로·템플릿 정합은 [실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 검사한다. 원본 [required-check 계약](../../scripts/required-checks-contract.mjs)과 [원격 점검기](../../scripts/verify-branch-protection.mjs)를 도입하려면 기관의 명세·계약·결정 기록을 함께 조정해야 하며, 생성물에는 생산자 전용 `verify:ops` 별칭이 제공되지 않는다.
 
 ## 9. 실행 순서 요약과 완료 기준

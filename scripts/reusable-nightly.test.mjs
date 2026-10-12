@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { judgeJUnit, judgeVitest, summarize } from './reusable-nightly-judge.mjs';
+import { parseWorkflowJobs, validatePinnedWorkflowUses } from './required-checks-contract.mjs';
 import {
   CONTRACT_CHECKS, catalogPlanInput, generatePreset, generateSelection, gradleTestArgs, nightlyPlan, REPORT_DIRECTORY, runItem,
   TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
@@ -322,4 +323,79 @@ test('generation reuses the preset verification and the composer engine with the
   assert.equal(recipes[0].sourceRef, 'a'.repeat(40));
   assert.match(recipes[0].project.name, /^nightly-[0-9a-f]{10}$/);
   assert.deepEqual(ledger, [['/repo', '/repo/build/reusable-base/source/nightly-x']]);
+});
+
+const WORKFLOW = '.github/workflows/reusable-nightly.yml';
+
+/**
+ * T2 워크플로의 모양(DEC-OPS-283). 수동·예약 실행만, 읽기 권한만, 비밀 0, 캐시는 읽기만, 계획이 matrix 를 만든다.
+ * run 줄에 `${{ }}` 를 두지 않는다 — 입력은 env 로만 넘겨 셸 주입을 막는다.
+ */
+function nightlyWorkflowErrors(source) {
+  const errors = [];
+  const text = source.replace(/\r\n/g, '\n').replace(/^\s*#.*$/gm, '');
+  const block = (name) => text.match(new RegExp(`^${name}:\\n((?: {2}.*\\n|\\n)*)`, 'm'))?.[1] ?? '';
+  const triggers = [...block('on').matchAll(/^ {2}([a-z_]+):/gm)].map((match) => match[1]);
+  if (!triggers.includes('workflow_dispatch') || triggers.some((name) => !['workflow_dispatch', 'schedule'].includes(name))) {
+    errors.push('nightly verification runs only on demand or on a schedule');
+  }
+  for (const [, cron] of text.matchAll(/^ {4}- cron: '([^']*)'/gm)) {
+    if (!/^(?:[1-9]|[1-5]\d) \S+ \* \* \*$/.test(cron)) errors.push(`nightly schedule must run daily off the top of the hour: ${cron}`);
+  }
+  if (block('permissions').trim() !== 'contents: read' || /^ {4}permissions:/m.test(text)) errors.push('nightly verification keeps contents read-only');
+  if (/\bsecrets\./.test(text)) errors.push('nightly verification uses no secret');
+  const jobs = parseWorkflowJobs(text);
+  if (JSON.stringify([...jobs.keys()]) !== JSON.stringify(['plan', 'verify', 'summary'])) errors.push('nightly jobs are plan, verify and summary');
+  const verify = jobs.get('verify') ?? '';
+  for (const line of ['    needs: plan', '    timeout-minutes: 60', '      fail-fast: false', '      max-parallel: 10',
+    '      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}', '          NIGHTLY_ITEM: ${{ toJSON(matrix) }}',
+    '        run: node scripts/reusable-nightly.mjs run --item "$NIGHTLY_ITEM" --contracts "$NIGHTLY_CONTRACTS"']) {
+    if (!verify.split('\n').includes(line)) errors.push(`verify job must keep: ${line.trim()}`);
+  }
+  if (!(jobs.get('plan') ?? '').includes('run: node scripts/reusable-nightly.mjs plan ')) errors.push('the plan job computes the matrix');
+  if (!/- name: Retain the composition report\n {8}if: always\(\)\n(?: {8,}.*\n)* {10}if-no-files-found: error\n/.test(verify)) {
+    errors.push('every composition keeps its report, failed or not');
+  }
+  const summary = jobs.get('summary') ?? '';
+  if (!/^ {4}if: always\(\)$/m.test(summary) || !summary.includes('node scripts/reusable-nightly.mjs summary --plan')) {
+    errors.push('the summary always judges every planned composition');
+  }
+  const expressionLines = text.split('\n').filter((line) => line.includes('${{'));
+  if (expressionLines.some((line) => !/^\s+(?:- )?[A-Za-z][\w-]*: /.test(line) || /^\s+(?:- )?run: /.test(line))) {
+    errors.push('workflow expressions reach scripts only through env');
+  }
+  if (/continue-on-error:/.test(text)) errors.push('nightly verification never forgives a failure');
+  const checkouts = [...text.matchAll(/uses: actions\/checkout@[0-9a-f]{40}.*\n(?: {8}.*\n)*/g)].map((match) => match[0]);
+  if (checkouts.length !== 3 || checkouts.some((step) => !step.includes('persist-credentials: false'))) {
+    errors.push('every checkout drops the job token');
+  }
+  errors.push(...validatePinnedWorkflowUses([{ path: WORKFLOW, content: source }]));
+  return errors;
+}
+
+test('the nightly workflow runs on demand only, read-only, without secrets and with a read-only Gradle cache', () => {
+  const source = readFileSync(join(ROOT, WORKFLOW), 'utf8');
+  assert.deepEqual(nightlyWorkflowErrors(source), []);
+  // 예약은 첫 녹색 수동 실행 뒤 다음 변경에서 켠다(ADR-0027). 그때 이 단언을 그 변경과 함께 바꾼다.
+  assert.doesNotMatch(source, /^\s+schedule:/m, 'the schedule is enabled only after the first green manual run');
+  const lf = source.replace(/\r\n/g, '\n');
+  for (const [mutation, expected] of [
+    [lf.replace('on:\n  workflow_dispatch:', 'on:\n  pull_request:\n  workflow_dispatch:'), /on demand or on a schedule/],
+    [lf.replace('on:\n  workflow_dispatch:', "on:\n  schedule:\n    - cron: '0 21 * * *'\n  workflow_dispatch:"), /off the top of the hour: 0 21/],
+    [lf.replace('permissions:\n  contents: read', 'permissions:\n  contents: write'), /contents read-only/],
+    [lf.replace('          NIGHTLY_LAYOUT: ${{ inputs.layout }}', '          NIGHTLY_LAYOUT: ${{ inputs.layout }}\n          TOKEN: ${{ secrets.DEPLOY_TOKEN }}'), /no secret/],
+    [lf.replace('cache-read-only: true', 'cache-read-only: false'), /verify Gradle cache-read-only must be true/],
+    [lf.replace('      max-parallel: 10', '      max-parallel: 20'), /max-parallel: 10/],
+    [lf.replace('--item "$NIGHTLY_ITEM"', "--item '${{ toJSON(matrix) }}'"), /only through env/],
+    [lf.replace('\n    if: always()\n', '\n'), /always judges every planned composition/],
+    [lf.replace('- name: Retain the composition report\n        if: always()\n', '- name: Retain the composition report\n'), /keeps its report/],
+    [lf.replace('          if-no-files-found: error', '          if-no-files-found: warn'), /keeps its report/],
+    [lf.replace('          printf', '          echo "${{ inputs.compositions }}"\n          printf'), /only through env/],
+  ]) {
+    assert.notEqual(mutation, lf, String(expected));
+    assert.match(nightlyWorkflowErrors(mutation).join('\n'), expected);
+  }
+  // 정각을 피한 매일 예약은 통과한다(예약을 켜는 변경이 쓸 모양).
+  const scheduled = lf.replace('on:\n  workflow_dispatch:', "on:\n  schedule:\n    - cron: '17 21 * * *'\n  workflow_dispatch:");
+  assert.deepEqual(nightlyWorkflowErrors(scheduled), []);
 });
