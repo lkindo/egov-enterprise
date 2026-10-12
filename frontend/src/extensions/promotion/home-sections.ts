@@ -4,6 +4,10 @@ import { HomeBannerSlider, HomePopupManager } from '@/app/components/dashboard/P
 /**
  * 배너·팝업 → 업무 홈 기여(Phase 2 9단계). 공지 팝업과 홍보 배너다. 배너·팝업이 빠진 구성에서는 이 파일이 기능과 함께 직접 지워져 이
  * 조각만 사라진다.
+ *
+ * 노출은 조각이 부르는 사용자 API 의 권한이다 — 팝업은 활성 팝업 API(POPUP_READ), 배너는 노출 배너 API(BANNER_READ)(사용자 결정 B5).
+ * 종전에는 늘 그려 권한이 없는 사용자에게 조회 403 을 콘솔 오류로 남기고 빈 자리만 보였다. 기본 그룹은 셋 모두 두 권한을 가져 화면이
+ * 같다. 노출일 뿐 인가는 서버가 한다(H3).
  */
 export default defineContributions('home-sections', [
   {
@@ -11,13 +15,13 @@ export default defineContributions('home-sections', [
     placement: 'overlay',
     order: 10,
     Component: HomePopupManager,
-    visibleWhen: { always: '팝업 조회가 실패하면 컴포넌트가 스스로 아무것도 그리지 않는다.' },
+    visibleWhen: { permissions: ['POPUP_READ'] },
   },
   {
     id: 'banner',
     placement: 'bottom',
     order: 10,
     Component: HomeBannerSlider,
-    visibleWhen: { always: '배너 조회가 실패하거나 배너가 없으면 컴포넌트가 스스로 아무것도 그리지 않는다.' },
+    visibleWhen: { permissions: ['BANNER_READ'] },
   },
 ]);
