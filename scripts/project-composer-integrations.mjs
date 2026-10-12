@@ -46,9 +46,21 @@ export const INTEGRATES = [
     reason: '주소록 기능이 없으면 문자 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 번호 직접 입력만 남습니다.',
     anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: "useRecipientAddressBook('sms')" },
       { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
+  // 업무 홈(Phase 2 9단계): 실시간 통계는 게시판 포트로 오늘 게시글 수를 센다. 포트 구현이 없으면 프레임이 provided=false 를 실어
+  //   화면이 카드를 그리지 않는다. 근거는 실시간 서비스에만 있는 줄이다(같은 포트 주입은 통계 서비스에도 있어 근거가 될 수 없다).
+  { from: 'dashboard', to: 'board', via: 'port:PostStatisticsContributor',
+    reason: '게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.',
+    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java',
+      anchor: 'CountSnapshot currentPosts = getTodayPostsCount();' }] },
   { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info',
     reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
     anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
+  // DEC-OPS-280: 템플릿 배정 구현은 템플릿 기능의 서비스다. 커뮤니티는 포트를 선택 주입으로 받고 관리 창 후보도 커뮤니티 API 로 받는다.
+  { from: 'community', to: 'template', via: 'port:TemplateAssignmentPolicy',
+    reason: '템플릿 기능이 없으면 커뮤니티 관리 창에서 템플릿 칸이 사라집니다. 템플릿 값은 커뮤니티 화면 표시에 쓰이지 않습니다.',
+    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/community/CommunityService.java',
+      anchor: 'ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy>' },
+    { path: 'frontend/src/components/business/community/CommunityManageDialog.tsx', anchor: 'communityAdminService.getTemplateOptions()' }] },
 ];
 
 /*
@@ -87,6 +99,23 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
     reason: '주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다.' },
   { path: 'frontend/src/extensions/mail/shell-links.ts',
     reason: '메일 기능이 없으면 협업 허브의 메일 발송 링크만 사라지고 허브는 그대로입니다.' },
+  { path: 'frontend/src/extensions/report/shell-links.ts',
+    reason: '업무 보고 기능이 없으면 나의 업무 탭 줄의 업무 보고 탭만 사라지고 업무 관리 목록은 그대로입니다.' },
+  { path: 'frontend/src/extensions/schedule/shell-links.ts',
+    reason: '일정 기능이 없으면 나의 업무 탭 줄의 일정 탭만 사라지고 업무 관리 목록은 그대로입니다.' },
+  { path: 'frontend/src/extensions/memoreport/shell-links.ts',
+    reason: '메모 보고 기능이 없으면 업무 보고 화면의 메모보고 관리 링크와 안내 문장만 사라지고 업무 보고는 그대로입니다.' },
+  // 업무 홈(Phase 2 9단계): 기능마다 자기 데이터의 조각을 업무 홈에 기여한다. 빠지면 그 조각만 사라지고 업무 홈은 그대로다.
+  { path: 'frontend/src/extensions/board/home-sections.ts',
+    reason: '게시판 기능이 없으면 업무 홈의 게시판 글 수 카드·최근 글 목록·새 게시글 작성 단추만 사라지고 업무 홈은 그대로입니다.' },
+  { path: 'frontend/src/extensions/dashboard/home-sections.ts',
+    reason: '실시간 대시보드 기능이 없으면 업무 홈의 실시간 상태 구역만 사라지고 최근 활동 구역이 전체 폭을 씁니다.' },
+  { path: 'frontend/src/extensions/informalsanction/home-sections.ts',
+    reason: '약식 전자결재 기능이 없으면 업무 홈의 결재 대기 카드와 결재함 열기 단추만 사라지고 업무 홈은 그대로입니다.' },
+  { path: 'frontend/src/extensions/note/home-sections.ts',
+    reason: '쪽지 기능이 없으면 업무 홈의 안 읽은 쪽지 카드만 사라지고 업무 홈은 그대로입니다.' },
+  { path: 'frontend/src/extensions/promotion/home-sections.ts',
+    reason: '배너·팝업 기능이 없으면 업무 홈의 공지 팝업과 홍보 배너만 사라지고 업무 홈은 그대로입니다.' },
   { path: 'frontend/src/extensions/board/stats-panels.ts',
     reason: '게시판 기능이 없으면 통계 화면의 게시물·자료 이용 탭과 누적 게시물 칸만 사라지고 통계는 그대로입니다.' },
   { path: 'frontend/src/extensions/survey/stats-panels.ts',
@@ -96,6 +125,7 @@ export const REGISTRATION_ONLY_CONTRIBUTIONS = [
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];
 const SCAN_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
 const APP_PREFIX = 'business-app/src/main/java/nuri/business/';
+const API_PREFIX = 'api-server/src/main/java/nuri/api/';
 // 받는 타입이 이것이면 어떤 이벤트를 받는지 정할 수 없다. 클래스를 애노테이션에 적어야 한다.
 const BROAD_EVENT_TYPES = new Set(['Object', 'ApplicationEvent', 'DomainEvent', 'PayloadApplicationEvent', 'Record']);
 const JAVA_IDENTIFIER = /^[A-Za-z_$][\w$]*$/u;
@@ -267,9 +297,22 @@ export function requiresClosure(capabilities) {
 }
 
 /**
+ * api-server 생산 소스의 디렉터리 소유 기능(Phase 2 커뮤니티 후속, DEC-OPS-280). `api-server/src/main/java/nuri/api/` 아래
+ * 디렉터리 구간 가운데 기능 id 인 마지막 구간이다(`controller/business/admin/content/community/…` 는 community). 없으면 null.
+ * 카탈로그 간선·수동 삭제 판정·소스 생존 검사·이벤트 소유 판정이 이 하나를 쓴다.
+ */
+export function apiSourceOwner(path, domains) {
+  if (!path.startsWith(API_PREFIX)) return null;
+  const features = domains instanceof Set ? domains : new Set(domains);
+  return path.slice(API_PREFIX.length).split('/').slice(0, -1).reverse().find(segment => features.has(segment)) ?? null;
+}
+
+/**
  * 파일 소유 판정. domainSupportFiles 선언이 먼저, 그다음 업무 앱 디렉터리다. foundation·business-core 는 core 다.
  * 그 밖(주로 api-server)은 참조하는 업무 패키지로 정한다 — 생성기는 그 기능이 빠지면 참조 파일을 함께 지운다.
- * 여러 기능을 참조하면 나머지를 모두 끌어오는 기능이 소유자다(그 기능이 있어야 파일이 남는다). 그런 기능이 없으면 실패한다.
+ * 여러 기능을 참조하는 api-server 파일은 그 가운데 디렉터리 소유 기능(apiSourceOwner)이 소유자다 — 카탈로그가 그 기능이 나머지
+ * 참조 기능을 요구한다고 센다. 디렉터리 소유가 없으면 나머지를 모두 끌어오는 기능이 소유자다(그 기능이 있어야 파일이 남는다).
+ * 그런 기능이 없으면 실패한다.
  * 같은 패키지의 단순 이름 참조처럼 이 규칙이 못 보는 연쇄 제거는 시험이 생성기 제거 계획과 대조해 잡는다.
  */
 export function sourceOwner(supportOwners, domains, closure) {
@@ -281,6 +324,8 @@ export function sourceOwner(supportOwners, domains, closure) {
     const referenced = [...new Set([...code.matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./gu)]
       .map(found => found[1]).filter(domain => selectable.has(domain)))].sort(byCodeUnits);
     if (referenced.length <= 1) return referenced[0] ?? 'core';
+    const directory = apiSourceOwner(path, selectable);
+    if (directory && referenced.includes(directory)) return directory;
     const owners = referenced.filter(domain => referenced.every(other => closure(domain).has(other)));
     if (!owners.length) throw new Error(`Event source ownership is ambiguous: ${path} references ${referenced.join(', ')}`);
     return owners[0];

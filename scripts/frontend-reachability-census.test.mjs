@@ -247,6 +247,18 @@ const CORE_SURVIVORS = [
   'frontend/src/app/admin/collaboration/collaboration-tabs.ts',
   'frontend/src/extensions/generated-hub-tabs.ts',
   'frontend/src/app/components/ui/global-command-center.tsx',
+  // [업무 허브 분해 W1] 나의 업무 탭 줄은 core 도우미다 — 업무 보고·일정 탭은 shell-links 기여다. 도우미가 기능 코드를 import 하면
+  //   core 투영에서 도우미와 그것을 쓰는 업무 관리 목록(나의 업무·업무 관리 두 라우트)이 연쇄로 사라진다.
+  'frontend/src/components/business/work-hub/work-hub-tabs.tsx',
+  'frontend/src/components/business/deptJob/DeptJobListSection.tsx',
+  // [Phase 2 9단계] 업무 홈은 로그인 착지인 core 셸이다 — 카드·목록·실시간·홍보는 home-sections 기여다. 셸·서버 자식·판정·레지스트리가
+  //   기능 코드를 import 하면 core 투영에서 업무 홈 전체가 연쇄로 사라진다(page 생존은 위 주석의 투영 시험이 본다).
+  'frontend/src/app/UnifiedDashboardClient.tsx',
+  'frontend/src/app/home-data-boundary.tsx',
+  'frontend/src/app/home-access.ts',
+  'frontend/src/app/components/dashboard/ActivityFeed.tsx',
+  'frontend/src/extensions/generated-home-sections.ts',
+  'frontend/src/lib/auth/server-user.ts',
 ];
 
 /*
@@ -1123,7 +1135,7 @@ test('scripts have no static import cycle, so every entry point evaluates each m
   (import 가 아니다) 두 생성기도 진입점으로 센다. 그래서 다섯 진입점의 import 폐포는 Node 내장 모듈만 쓴다. 그 잡은 패키지 import 를
   다른 잡 뒤에야 붉히고, 실행하지 않는 지연 로드 경로는 보지 못한다. 이 시험이 같은 제약을 운영 계약 단계에서 모든 참조 종류(정적·동적
   import, require, createRequire)에 건다. 계산된 import 는 판정할 수 없으므로 issue 로 막는다. 하한은 2026-10-11 실측(35·17·16·5·34)
-  아래다.
+  아래다. 야간 생성물 시험(reusable-nightly.yml)도 루트 설치 없이 reusable-nightly.mjs 를 돌리므로 같은 진입점으로 센다(2026-10-12 실측 38).
 */
 function scriptClosure(entry, overrides = new Map()) {
   const files = [];
@@ -1159,6 +1171,7 @@ test('the generator and the deep plan load only Node built-in modules through th
     ['scripts/generate-reusable-base-db.mjs', 12],
     ['scripts/verify-reusable-base.mjs', 4],
     ['scripts/verify-project-composer.mjs', 25],
+    ['scripts/reusable-nightly.mjs', 35],
   ]) {
     const closure = scriptClosure(entry);
     assert.ok(closure.files.length >= floor, `${entry}: the closure has only ${closure.files.length} files`);
@@ -1332,11 +1345,12 @@ test('a projector keeps no marker block of an excluded pack and rejects malforme
   assert.throws(() => createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] }, composition: { profile: 'custom' } }),
     /해석된 기능 목록/, 'a direct selection projector needs the resolved domains');
   // lock.frontend.packBlocks 는 종전 pack 마커 단계의 셈이다: 소유 기능이 빠져 걷은 블록은 세지 않고, 소유는 남지만 pack 이 빠진 블록만 센다.
-  const home = 'src/app/UnifiedDashboardClient.tsx';
-  const homeSource = readFileSync(join(repoRoot, 'frontend', home), 'utf8');
-  const byCustom = custom.project(home, homeSource);
+  // 표본은 게시판 마법사의 커뮤니티 블록이다(업무 홈 블록은 Phase 2 9단계에서 슬롯으로 걷었다).
+  const maker = 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
+  const makerSource = readFileSync(join(repoRoot, 'frontend', maker), 'utf8');
+  const byCustom = custom.project(maker, makerSource);
   assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.packChanged }, { stripped: 0, changed: false });
-  assert.notEqual(byCustom.source, homeSource);
-  assert.equal(byCustom.source, projector.project(home, homeSource).source);
-  assert.equal(projector.project(home, homeSource).strippedBlocks, parsePackMarkerBlocks(homeSource, { label: home }).blocks.length);
+  assert.notEqual(byCustom.source, makerSource);
+  assert.equal(byCustom.source, projector.project(maker, makerSource).source);
+  assert.equal(projector.project(maker, makerSource).strippedBlocks, parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length);
 });

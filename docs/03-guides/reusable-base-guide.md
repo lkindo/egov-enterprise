@@ -354,8 +354,11 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    감춘다. 수신자 피커의 주소록 출처는 목록·단건 API 와 같은 `{ permissions: ['ADBK_READ'] }` 다(PR-5). `always` 는 판정할
    권한이 없을 때만 쓴다. 셸 링크(`shell-links`)는 `{ page: 자기 href }` 만 쓰고, 목적지는 앱 안 경로다(`//`·`/\` 로
    시작하면 브라우저가 외부 주소로 읽는다). 주체 없이 거르는 바닥글·오류 화면 배치는 `/admin` 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 아이콘이
-   필요하다(협업 허브 머리 배치는 필요 없다). 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(fill
-   화면에서 바닥글이 숨는다). 경계 계약이 강제한다(PR-6, 명령 센터·협업 허브 배치는 허브 분해 H1).
+   필요하다(협업 허브 머리 배치는 필요 없다). 업무 보고 머리 배치(`work-report`)도 아이콘 단추라 아이콘이 필요하다.
+   나의 업무 탭 줄 배치(`work-hub`)는 글자 탭이라 아이콘을 두지 않고, id·목적지가 core 탭(업무 관리)과 겹치지 않는다 — id 가
+   탭 DOM id 가 된다. 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝을 둔다(fill
+   화면에서 바닥글이 숨는다). 경계 계약이 강제한다(PR-6, 명령 센터·협업 허브 배치는 허브 분해 H1, 나의 업무·업무 보고 배치는
+   업무 허브 분해 W1).
 7. **허브 탭(`hub-tabs`)의 id 는 `?tab=` 값이다.** 대문자 식별자이고 슬롯 전체에서 유일하며, 그 허브의 셸 고유 탭과 겹치지
    않는다. `view` 는 기능 모듈이 내보낸 이름이나 이름만 담은 객체다(`{ Component: NoteCollaborationTab }`). 허브의 탭 해석 모듈
    (`*-tabs.ts`)이 `TAB_HUB.slotHub` 와 `TAB_HUB.contributable`(탭 → 기여 파일)을 선언하고, 셸은 보이는 기여 id 를
@@ -371,6 +374,13 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    축 3·화면 목록은 기여 파일을 화면 모집단에 넣어 그 레지스트리를 읽는 화면(도우미 .ts 면 그 도우미를 읽는 화면)으로 쓰기를
    귀속하고, 기여가 import 하는 비화면·비서비스 모듈은 어느 디렉터리에 있든 중간 모듈로 읽는다. 기여의 판정은
    `visibleWhen.permissions` 원소만 센다 — always 사유 문자열에 권한 이름을 따옴표째 적어도 판정이 아니다.
+10. **업무 홈(`home-sections`)은 서버 자식도 레지스트리를 읽는다**(Phase 2 9단계). 그래서 기여가 가리키는 두 이름의 모듈 경계가
+    정해져 있다 — `Component` 는 `'use client'` 모듈에서 가져오고(`ssr: false` 래퍼는 서버 컴포넌트에서 쓸 수 없다),
+    `prefetch` 의 `query` 는 `'use client'` 가 없는 모듈의 queryOptions 값이다(`'use client'` 모듈의 값은 서버에서 클라이언트
+    참조가 된다). `prefetch` 의 `failure` 는 `boundary`(서버에서 다시 던져 오류 경계로)·`section`(삼키고 그 구역이 조회 실패를
+    말한다) 중 하나다. 배치는 overlay·actions·cards·main·status·bottom 이고, `cards` 배치 컴포넌트는 `<li>` 하나를 그린다. 링크는
+    컴포넌트가 그린다(기여는 링크 키를 갖지 않는다). 셸은 등록된 기여가 하나라도 있으면 DASHBOARD_READ 로 진입을 판정한다.
+    경계 계약이 강제한다.
 
 ### 3.8 검토 원장 투영과 기관 승인
 
@@ -465,7 +475,7 @@ backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테
 working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
 [생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
 
-생산 저장소의 12개 workflow·required-check 명세·package·pre-push는
+생산 저장소의 13개 workflow·required-check 명세·package·pre-push는
 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존한다. 원본 CodeQL·E2E·mutation과
 배포·예약 작업은 기관 범위에 맞게 다시 결속해야 하며, 생성물 기본 CI가 원본 CI와 동등한 검증이나 운영 인증을
 제공한다고 주장하지 않는다. 생성물의 `.github/required-checks.json`은 `remoteApplied: false`이고 대상 브랜치·App은
@@ -552,8 +562,12 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
-`./gradlew test --continue` 와 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다.
-저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다. 판정은 종료 코드가 아니라 각 모듈의 테스트 리포트 XML 과 vitest JSON 보고서로 한다.
+Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다. Gradle 시험은 레이아웃마다 다르다.
+멀티모듈은 `./gradlew test --continue` 가 모든 모듈을 돈다. 단일모듈의 `test` 는 `api-server` 시험만 돌므로
+`./gradlew test foundationTest coreTest appTest --continue` 를 돌린다(이관 시험까지는 `allTests`).
+저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다(Windows 실측). 판정은 종료 코드가 아니라 시험 작업별 리포트 XML 과 vitest JSON 보고서로 한다.
+같은 절차를 GitHub runner 에서 구성 단위로 도는 것이 [T2 야간 시험](cicd-pipeline.md#재사용-생성물-야간-시험t2)이다.
+직접 선택 구성은 그 워크플로의 `compositions` 입력으로 잰다.
 
 ⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지
 않아 생성기 드리프트 4축이 v0.1.0(2026-08-24) 이후 계속 쌓여 있었고, `demo` 조차 red 였다.

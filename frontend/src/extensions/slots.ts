@@ -44,19 +44,24 @@ export interface RecipientPickerSource extends SlotEntry {
 }
 
 /**
- * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리).
+ * shell-links — 앱 셸의 링크. 배치는 소비 셸이 있는 것만 닫힌 목록으로 둔다(머리글·바닥글·오류 화면·명령 센터·협업 허브 머리·
+ * 나의 업무 탭 줄·업무 보고 머리).
  * 셸이 모양을 정하고 항목은 목적지·이름·아이콘만 준다. visibleWhen 은 { page: 자기 href } 여야 한다. 주체 없이 거르는 바닥글·오류 화면
- * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은 기여 안에 같은
- * 목적지의 머리글 짝을 둔다(경계 계약).
+ * 배치는 /admin 밖 목적지만 둔다. 머리글·명령 센터·업무 보고 머리 배치는 아이콘이 있는 목록이라 icon 이 필요하다. 바닥글 항목은 같은
+ * 기여 안에 같은 목적지의 머리글 짝을 둔다(경계 계약).
+ * - work-hub(업무 허브 분해 W1): 나의 업무 탭 줄의 탭 하나. 탭은 글자뿐이라 icon 을 두지 않는다. id 가 탭 DOM id(work-hub-tab-<id>)
+ *   가 되므로 core 탭(업무 관리, id job·목적지 /smart-toolkit/dept-job)과 겹치지 않는다. 탭은 그 화면 경로로 가는 경로 탭이다.
+ * - work-report(업무 허브 분해 W1): 업무 보고 화면 머리의 링크. description 은 업무 보고 화면 설명에 덧붙는 한 문장이고 링크와 함께
+ *   보이고 숨는다(갈 수 없는 화면을 안내하지 않는다).
  */
 export interface ShellLink extends SlotEntry {
-  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub';
+  readonly placement: 'header' | 'footer' | 'error' | 'command-center' | 'collaboration-hub' | 'work-hub' | 'work-report';
   /** 같은 배치 안의 순서(작은 값 먼저). */
   readonly order: number;
   readonly href: string;
   readonly label: string;
   readonly icon?: LucideIcon;
-  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명이다. */
+  /** 오류 화면에서 링크 위에 보이는 안내 문장. 명령 센터에서는 항목 아래 설명, 업무 보고 머리에서는 화면 설명에 덧붙는 문장이다. */
   readonly description?: string;
 }
 
@@ -232,6 +237,40 @@ export type StatsHubTab = StatsSeriesTab | StatsBodyTab;
 export const isStatsHubTab = (entry: StatsPanel): entry is StatsHubTab => entry.placement === 'hub-tab';
 export const isStatsOverviewCard = (entry: StatsPanel): entry is StatsOverviewCard => entry.placement === 'overview-card';
 
+/**
+ * 업무 홈 미리 채우기 하나(Phase 2 9단계). query 는 기능 소유의 queryOptions 값이고 'use client' 가 없는 모듈에서 가져온다 —
+ * 서버 자식이 실제 객체를 받아야 한다('use client' 모듈의 값은 서버에서 클라이언트 참조가 된다, 경계 계약). failure 는 서버에서 실패했을
+ * 때의 뜻이다.
+ * - boundary: 다시 던져 서버에서 라우트 오류 경계로 보낸다(실패를 빈 화면이나 0건으로 위장하지 않는다).
+ * - section: 삼키고 그 구역이 스스로 '조회 실패' 를 말한다(브라우저가 다시 읽는다).
+ */
+export interface HomePrefetch {
+  /**
+   * 기능 소유 queryOptions 값. 셸은 키와 조회 함수만 쓰므로 그 둘로만 받는다 — 조회마다 데이터 타입이 달라 공통 FetchQueryOptions 로는
+   * 받을 수 없다(키 튜플 타입이 함수 매개변수 자리에서 반공변이다). queryFn 을 메서드 꼴로 적어 그 비교를 이변으로 둔다.
+   */
+  readonly query: { readonly queryKey: readonly unknown[]; queryFn?(context: never): unknown };
+  readonly failure: 'boundary' | 'section';
+}
+
+/**
+ * home-sections — 업무 홈('/')의 자리(Phase 2 9단계). 셸이 배치마다 순서대로 그린다: overlay(구역 밖에 뜨는 것) → 머리의 actions
+ * (단추) → cards(요약 카드 줄, Component 는 <li> 하나를 그린다) → main(본문 목록) → status(상태 구역, '최근 활동' 옆) → bottom(홍보).
+ * Component 는 기능의 'use client' 모듈에서 가져오고 기여는 그 이름만 가리킨다 — 서버 자식도 레지스트리를 읽으므로 서버에서 그릴 수 없는
+ * 컴포넌트(ssr:false 래퍼)가 서버 그래프에 들어오지 않게 한다(경계 계약). 링크는 컴포넌트가 그린다(기여는 링크 키를 갖지 않는다).
+ * 셸은 등록된 항목이 하나라도 있으면 DASHBOARD_READ 로 홈 진입을 판정한다(app/home-access.ts).
+ */
+export interface HomeSection extends SlotEntry {
+  readonly placement: 'overlay' | 'actions' | 'cards' | 'main' | 'status' | 'bottom';
+  /** 같은 배치 안의 순서(작은 값 먼저). */
+  readonly order: number;
+  readonly Component: ComponentType;
+  /** 서버가 첫 화면 전에 채워 둘 조회. 같은 키는 한 번만 부른다. */
+  readonly prefetch?: readonly HomePrefetch[];
+  /** '최근 활동' 구역에 덧붙이는 한 문장 — 이 항목이 위에 무엇을 보여 주는지 말한다. */
+  readonly activityNote?: string;
+}
+
 export interface SlotMap {
   'hub-tabs': HubTab;
   'stats-panels': StatsPanel;
@@ -239,6 +278,7 @@ export interface SlotMap {
   'shell-links': ShellLink;
   'header-widgets': HeaderWidget;
   'post-actions': PostAction;
+  'home-sections': HomeSection;
 }
 export type SlotId = keyof SlotMap;
 /** 한 기능이 한 슬롯에 기여하는 항목들. 레지스트리는 이것을 기능(owner) 코드 포인트 순으로 모은 배열이다. */

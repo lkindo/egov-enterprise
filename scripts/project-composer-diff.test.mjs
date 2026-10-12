@@ -47,11 +47,11 @@ test('a feature that another selection still requires stays, and the diff names 
   // 시작 구성에서 카드를 누르면 직접 선택으로 바뀐다. 협업 기본에서 게시판을 빼도 다른 선택이 게시판을 붙잡는다.
   const preset = diffOf({ preset: 'collaboration' }, 'board');
   assert.equal(preset.action, 'remove');
-  // 쪽지는 협업 허브 탭 기여라 게시판을 붙잡지 않는다(허브 분해 H1).
-  assert.deepEqual(preset.retainedBy, ['comment', 'dashboard', 'scrap']);
+  // 쪽지는 협업 허브 탭 기여라 게시판을 붙잡지 않는다(허브 분해 H1). 실시간 대시보드는 게시판을 포트로 읽는다(Phase 2 9단계).
+  assert.deepEqual(preset.retainedBy, ['comment', 'scrap']);
   // 지식 허브가 게시판 셸이 된 뒤(허브 분해 H2) 직접 선택으로 바뀌어도 들어오는 기능이 없다.
   assert.deepEqual([preset.added, preset.removed], [[], []]);
-  assert.equal(diffSummary(preset, catalog), '빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다.');
+  assert.equal(diffSummary(preset, catalog), '빼도 댓글, 스크랩이 요구해 계속 포함됩니다.');
   // 직접 선택으로 바뀌며 시작 구성이 건너뛰던 의존이 들어오면 붙잡힌다는 말만 하고 그 변화를 감추지 않는다(합성: 게시판이 화면을
   //   함께 쓰는 기능 둘을 요구한다 — 시작 구성은 화면 계열 간선을 따르지 않는다).
   const { catalogHash, ...body } = structuredClone(catalog);
@@ -60,9 +60,10 @@ test('a feature that another selection still requires stays, and the diff names 
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   const shared = { ...body, catalogHash: compositionDigest(body) };
   const held = diffOf({ preset: 'collaboration' }, 'board', shared);
-  assert.deepEqual(held.added, ['community', 'help', 'template']);
+  // 커뮤니티는 템플릿을 끌어오지 않는다(템플릿은 선택 연동, DEC-OPS-280).
+  assert.deepEqual(held.added, ['community', 'help']);
   assert.match(diffSummary(held, shared),
-    /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼, 템플릿\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
+    /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: 커뮤니티, 도움말·온라인 매뉴얼\) · 테이블 \+\d+ · 메뉴 \+\d+ · 권한 \+\d+/);
 });
 
 test('degradations appear when a partner is missing and resolve only when the partner arrives', () => {
@@ -91,10 +92,12 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
   assert.match(diffSummary(diffOf({ domains: ['mail'] }, 'notification'), catalog), / · 줄어들던 동작 2건 해소$/);
   // 쪽지는 혼자 들어온다(허브 분해 H1 — 협업 허브가 core 셸이 되어 스크랩·게시판을 끌어오지 않는다).
   assert.match(diffSummary(diffOf({ domains: [] }, 'note'), catalog), /^고르면 기능 \+1 · 테이블 \+\d+ · /);
-  const dashboard = diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog);
-  assert.match(dashboard, /^고르면 기능 \+4\(들어옴: 실시간 대시보드, [^)]+ 외 1개\) · /);
-  assert.doesNotMatch(dashboard, /[A-Za-z]/);
-  assert.match(diffSummary(diffOf({ domains: ['dashboard'] }, 'dashboard'), catalog), /^빼면 기능 −4\(빠짐: 실시간 대시보드, [^)]+ 외 1개\) · /);
+  // 도움말은 게시판·댓글을 끌어온다. 실시간 대시보드는 알림 하나만 끌어온다(Phase 2 9단계 — 게시판은 포트로 읽는다).
+  const help = diffSummary(diffOf({ domains: [] }, 'help'), catalog);
+  assert.match(help, /^고르면 기능 \+3\(들어옴: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);
+  assert.doesNotMatch(help, /[A-Za-z]/);
+  assert.match(diffSummary(diffOf({ domains: ['help'] }, 'help'), catalog), /^빼면 기능 −3\(빠짐: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);
+  assert.match(diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog), /^고르면 기능 \+2\(들어옴: 실시간 대시보드, 알림\) · /);
   // 하나를 빼는데 다른 기능이 들어오면 양쪽을 모두 밝힌다(순 증감만 보이면 무엇이 빠지는지 알 수 없다). 지식 허브가 게시판 셸이 된 뒤
   //   실제 카탈로그에는 그런 전환이 없어 합성 간선(게시판이 화면을 함께 쓰는 기능 둘을 요구)으로 본다.
   const { catalogHash, ...body } = structuredClone(catalog);
@@ -102,7 +105,9 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
     { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   const shared = { ...body, catalogHash: compositionDigest(body) };
-  assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard', shared), shared), /^빼면 기능 \+2\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
+  assert.match(diffSummary(diffOf({ preset: 'collaboration' }, 'dashboard', shared), shared), /^빼면 기능 \+1\(들어옴: [^;]+; 빠짐: 실시간 대시보드\) · /);
+  // 넷 이상이면 셋만 이름을 대고 나머지는 수로 줄인다(같은 합성 — 게시판을 고르면 게시판까지 네 기능이 들어온다).
+  assert.match(diffSummary(diffOf({ domains: [] }, 'board', shared), shared), /^고르면 기능 \+4\(들어옴: 게시판·지식, [^)]+ 외 1개\) · /);
 });
 
 test('the engine reuses the last loaded catalog for diffs and never reloads it per preview', () => {

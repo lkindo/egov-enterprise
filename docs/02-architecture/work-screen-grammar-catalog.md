@@ -214,6 +214,8 @@
 
 이 예외는 **면제가 아니라 미결**이다. 정리하려면 pack 소유권 판정(work-hub를 core로 옮길 것인가, core에 자체 목록을 줄 것인가)이 선행하고, 라우트 처분은 [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md) §Decision 4의 owner 승인 경계다. 그 판정 전까지 두 페이지를 지우거나 리다이렉트로 바꾸지 않는다.
 
+[2026-10-12 업무 허브 분해 W1] 선행 조건이던 pack 소유권 판정은 해소됐다 — 나의 업무(`/admin/work-hub`)와 업무 관리 목록은 core 이고 모든 프로필에 남는다(업무 보고·일정 탭만 기능 기여다). 남은 것은 라우트 처분(전용 등록 페이지를 목록 모달로 수렴할지)이며 여전히 ADR-0007 owner 승인 경계다.
+
 ### A4. 작업 큐 / 결재함 (Work Queue)
 
 - **목적:** "내가 지금 처리해야 할 것"을 우선 노출하고 일괄 처리한다.
@@ -284,8 +286,8 @@
 | `ReportPage`(A7) 소비 | 2 | 2 | 별도 exact census 가 고정 |
 | `sortKey`(열 정렬) 채택 | 9 | 10 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
 | `onPageSizeChange` 채택 | 28 | 34 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
-| `KeywordFilter` 경유 조회 조건 | 17 | 35 | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고(그때 30), [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9). 2026-10-02 권한 작업대의 구성원 추가 창이 더해졌다 |
-| `emptyResultMessage` 경유 빈 상태 | 30 | 39 | G15 — 결과 없음/데이터 없음 구분 |
+| `KeywordFilter` 경유 조회 조건 | 17 | 36 | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고(그때 30), [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9). 2026-10-02 권한 작업대의 구성원 추가 창이, 2026-10-12 게시글 모아보기가 더해졌다(DEC-OPS-280) |
+| `emptyResultMessage` 경유 빈 상태 | 30 | 42 | G15 — 결과 없음/데이터 없음 구분. 2026-10-12 게시글 모아보기가 조회/Enter 로 옮기며 더해졌다(DEC-OPS-280) |
 | `PeriodFilter` 경유 조회 기간 | 6 | 10 | A6 **필수**. 2026-08-25 에는 로그 5화면 + 모니터링 허브 목록 탭이었고, 이후 로그 통합 조회·민감 작업 감사 원장·통계 허브·결재함이 더해졌다. 서버 저장소는 처음부터 기간 조건을 갖고 있었고 화면이 보내지 않았다([계약](../../frontend/src/__tests__/cross-stack/log-period-filter-contract.test.ts)) |
 | `PagePagination` 별도 소비 | 0 | 13 | 표가 아닌 목록(마스터 목록·이력·선택 창)의 페이저. 2026-08-25 에는 0이었지만 이후 결재함·메일 이력·지식 허브·권한 허브의 사용자 찾기·구성원·변경 이력·구성원 추가 창 등이 쓴다 |
 | `bulkActions` 채택 | 3 | 3 | A4 필수 미이행 |

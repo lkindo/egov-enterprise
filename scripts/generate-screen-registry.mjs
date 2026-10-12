@@ -16,7 +16,7 @@
  *   · 쓰기 권한 — operation-consumer census 축 3 의 계산(analyzeWritePermissionNeeds).
  *   · 표시 권한 — canPermission(…, 'CODE') 리터럴로 적힌 권한.
  *   · 귀속 — 파일은 가장 가까운 page 디렉터리의 화면에 귀속하고, 그 파일을 import 하는 다른 화면들에도 귀속한다
- *     (다른 라우트의 허브 클라이언트를 렌더하는 하위 화면 — /smart-toolkit/schedule 이 work-hub 클라이언트를 연다).
+ *     (다른 라우트의 허브 클라이언트를 렌더하는 하위 화면 — /admin/help/faq 가 지식 허브 클라이언트를 연다).
  *     다음은 공용 파일이라 그것을 import 하는 화면들에만 귀속한다: src/components 등 app 밖 파일, 별칭 라우트
  *     디렉터리의 파일, page 는 없고 하위에 page 를 품은 라우트 구간의 파일(app/admin/user 의 허브 클라이언트), 그리고
  *     app/ 루트의 page.tsx 밖 파일. 루트 페이지(/)가 모든 앱 파일의 가장 가까운 page 라서, 마지막 구분 없이는

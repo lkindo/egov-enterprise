@@ -35,6 +35,8 @@ const mocks = vi.hoisted(() => ({
   permissions: [] as string[],
   jobRows: [] as Array<Record<string, unknown>>,
   dialogRenders: vi.fn(),
+  /** 셸 링크 레지스트리 대역 — 업무 보고·일정 탭 기여가 있는 구성과 없는 구성을 함께 본다. */
+  shellLinks: [] as unknown[],
 }));
 
 vi.mock('next/navigation', () => ({
@@ -157,8 +159,14 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { role: mocks.role, permissions: mocks.permissions, authorizationVersion: 'v1' } }),
+vi.mock('@/contexts/AuthContext', () => {
+  const auth = () => ({ user: { role: mocks.role, permissions: mocks.permissions, authorizationVersion: 'v1' } });
+  return { useAuth: auth, useOptionalAuth: auth };
+});
+vi.mock('@/extensions/generated-shell-links', () => ({
+  get shellLinks() {
+    return mocks.shellLinks;
+  },
 }));
 vi.mock('@/components/business/deptJob/DeptJobBoxManageDialog', () => ({
   DeptJobBoxManageDialog: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
@@ -172,7 +180,6 @@ vi.mock('@/components/business/deptJob/DeptJobBoxManageDialog', () => ({
 }));
 
 import { DeptJobListSection } from '../DeptJobListSection';
-import { DeptJobSectionSlotProvider } from '../dept-job-section-slot';
 
 describe('DeptJobListSection composed write contract', () => {
   beforeEach(() => {
@@ -183,6 +190,7 @@ describe('DeptJobListSection composed write contract', () => {
     mocks.role = 'ROLE_USER';
     mocks.permissions = [];
     mocks.jobRows = [];
+    mocks.shellLinks = [];
   });
 
   /*
@@ -345,22 +353,28 @@ describe('DeptJobListSection composed write contract', () => {
 });
 
 /**
- * 슬롯 계약 — 이 섹션이 **core 프로필에서 단독으로 성립**하는지를 고정한다.
+ * 탭 줄 계약 — 이 섹션이 **core 구성에서 단독으로 성립**하는지를 고정한다(업무 허브 분해 W1).
  *
- * 워크허브 탭 스트립은 보고·일정 라우트를 가리키는데 그 둘은 demo pack 소유라 core 프로필에는
- * 존재하지 않는다. 그래서 탭은 import 가 아니라 슬롯으로만 들어오고, 슬롯이 비면 섹션은 탭도
- * tabpanel 도 그리지 않는다 — 가리키는 탭이 없는 tabpanel 을 남기지 않기 위해서다.
+ * 나의 업무 탭 줄은 core 도우미(useWorkHubTabStrip)가 그리고, 업무 보고·일정 탭은 그 기능의 링크 기여(shell-links 의 work-hub 배치)다.
+ * 기여가 없으면(core·collaboration 구성) 섹션은 탭도 tabpanel 도 그리지 않는다 — 가리키는 탭이 없는 tabpanel 을 남기지 않기 위해서다.
+ * 종전에는 기능 소유 레이아웃이 컨텍스트로 탭 줄을 넘겼다(레이아웃·컨텍스트는 걷었다).
  */
-describe('DeptJobListSection 탭 스트립 슬롯', () => {
+const REPORT_TAB = {
+  id: 'report', placement: 'work-hub', order: 20, href: '/smart-toolkit/work-report', label: '업무 보고',
+  visibleWhen: { page: '/smart-toolkit/work-report' },
+};
+
+describe('DeptJobListSection 탭 줄', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.confirm.mockResolvedValue(true);
     mocks.role = 'ROLE_USER';
     mocks.permissions = [];
     mocks.jobRows = [];
+    mocks.shellLinks = [];
   });
 
-  it('슬롯이 없으면 탭도 tabpanel 도 그리지 않는다(core 프로필)', () => {
+  it('기여 탭이 없으면 탭도 tabpanel 도 그리지 않는다(core 구성)', () => {
     render(<DeptJobListSection />);
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     expect(screen.queryByRole('tabpanel')).not.toBeInTheDocument();
@@ -368,30 +382,17 @@ describe('DeptJobListSection 탭 스트립 슬롯', () => {
     expect(screen.getByTestId('data-table')).toBeInTheDocument();
   });
 
-  it('provider 가 준 탭 스트립을 액션 영역에 그리고 tabpanel 로 받는다(demo 레이아웃)', () => {
-    render(
-      <DeptJobSectionSlotProvider
-        value={<div role="tablist" aria-label="업무 영역 선택"><button type="button" role="tab" id="work-hub-tab-job" aria-selected aria-controls="work-hub-tabpanel">업무 관리</button></div>}
-      >
-        <DeptJobListSection />
-      </DeptJobSectionSlotProvider>,
-    );
-    expect(screen.getByRole('tablist', { name: '업무 영역 선택' })).toBeInTheDocument();
+  it('기여 탭이 있으면 업무 관리가 선택된 탭 줄을 액션 영역에 그리고 tabpanel 로 받는다', () => {
+    mocks.shellLinks = [[REPORT_TAB]];
+    render(<DeptJobListSection />);
+    const tabs = within(screen.getByRole('tablist', { name: '업무 영역 선택' })).getAllByRole('tab');
+    expect(tabs.map(tab => [tab.textContent, tab.getAttribute('aria-selected')])).toEqual([['업무 관리', 'true'], ['업무 보고', 'false']]);
     // 탭이 aria-controls 로 가리키는 패널이 실제로 존재해야 한다.
     expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'work-hub-tabpanel');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'work-hub-tab-job');
   });
 
-  it('prop 이 있으면 prop 이 이긴다(워크허브가 직접 내려주는 경로)', () => {
-    render(
-      <DeptJobSectionSlotProvider value={<span>context-tabs</span>}>
-        <DeptJobListSection leadingActions={<span>prop-tabs</span>} />
-      </DeptJobSectionSlotProvider>,
-    );
-    expect(screen.getByText('prop-tabs')).toBeInTheDocument();
-    expect(screen.queryByText('context-tabs')).not.toBeInTheDocument();
-  });
-
-  it('관리자에게만 업무함 관리 버튼을 그리고, 누르면 다이얼로그를 마운트한다', async () => {
+  it('업무함 조회 권한이 있으면 업무함 관리 버튼을 그리고, 누르면 다이얼로그를 마운트한다', async () => {
     mocks.role = 'ROLE_ADMIN';
     mocks.permissions = ['DEPT_BOX_READ'];
     const user = userEvent.setup();
@@ -400,9 +401,20 @@ describe('DeptJobListSection 탭 스트립 슬롯', () => {
     expect(mocks.dialogRenders).not.toHaveBeenCalled();
     await user.click(screen.getByRole('button', { name: '업무함 관리' }));
     expect(screen.getByRole('dialog', { name: '업무함 관리' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '닫기' }));
+    expect(screen.queryByRole('dialog', { name: '업무함 관리' })).not.toBeInTheDocument();
   });
 
-  it('비관리자에게는 업무함 관리 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
+  // [업무 허브 분해 W1] 업무 허브 시험(box-manage)에서 옮겨 왔다 — 판정은 역할이 아니라 기능권한이다.
+  it('SYSTEM 그룹도 명시적인 업무함 조회 기능권한을 사용한다', () => {
+    mocks.role = 'ROLE_SYSTEM';
+    mocks.permissions = ['DEPT_BOX_READ'];
+    render(<DeptJobListSection />);
+    expect(screen.getByRole('button', { name: '업무함 관리' })).toBeInTheDocument();
+  });
+
+  it('업무함 조회 권한이 없으면 업무함 관리 버튼을 그리지 않는다(죽은 버튼 금지)', () => {
+    mocks.role = 'ROLE_ADMIN';
     render(<DeptJobListSection />);
     expect(screen.queryByRole('button', { name: '업무함 관리' })).not.toBeInTheDocument();
     expect(mocks.dialogRenders).not.toHaveBeenCalled();

@@ -1,51 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
-/* reusable-base:collaboration:start */
-import { use } from 'react';
-import Link from 'next/link';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DashboardTask } from '@/types/foundation/dashboard';
-import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
-/* reusable-base:collaboration:end */
-/* reusable-base:collaboration:start */
-import { UnreadNotesCard } from '@/app/components/dashboard/UnreadNotesCard';
-/* reusable-base:collaboration:end */
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
+import { homeSections } from '@/extensions/generated-home-sections';
+import type { HomeSection } from '@/extensions/slots';
+import { useSlotEntries } from '@/extensions/use-slot-entries';
+import { homeAccessDenied } from './home-access';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
-/* reusable-base:demo:start */
-const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), {
-  loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />,
-  ssr: false
-});
-const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
-/* reusable-base:demo:end */
 const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), {
   loading: () => <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>,
   ssr: false
 });
-/* reusable-base:collaboration:start */
-const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/RealTimeDashboard').then(mod => mod.RealTimeDashboard), {
-  loading: () => <Skeleton className="h-[150px] w-full rounded-lg" />,
-  ssr: false
-});
-
-interface UnifiedDashboardClientProps {
-  dataPromise: Promise<{
-    initialNotiList: DashboardTask[];
-    initialTaskList: DashboardTask[];
-    notiListTotal: number | null;
-    taskListTotal: number | null;
-    pendingApprovalCount: number | null;
-  } | null>; // null is the server's explicit 403 state, never a failed/empty data fallback.
-}
-/* reusable-base:collaboration:end */
 
 /**
  * 업무 홈 — 포털형 랜딩의 대체.
@@ -56,80 +26,26 @@ interface UnifiedDashboardClientProps {
  * 목록 카드 순서라, "내가 지금 처리해야 할 것"이 화면 한참 아래에 있었다. 순서를 뒤집어
  * **처리 대기 → 내 목록 → 상태·활동 → 홍보**로 놓는다.
  *
- * 서버가 제공한 게시판·게시글 식별자가 있는 항목만 상세로 연결한다.
- * 식별자가 없는 응답에 임의 목적지를 붙이지 않고 전체 보기로 안내한다.
- *
- * [2026-09-13 GAP-PACK-001 ③] 이 화면은 모든 재사용 base 프로필에 남는다(로그인 착지, DEC-OPS-083).
- * 게시판·대시보드 API·실시간 구독은 collaboration pack, 결재는 demo pack 소유라 각 구역을 그 pack 의 마커 블록으로
- * 감싼다. 링크뿐 아니라 그 구역의 import·지역 선언·데이터 조회도 같은 블록에 둔다 — 링크만 감싸면 축소 프로필에서
- * 미사용 import 로 타입 검사가 깨지거나(noUnusedLocals), 제거된 API 를 부르는 화면이 남는다.
- * 마커는 중첩할 수 없어 여닫는 태그를 연속 블록으로 나눈다. demo 블록은 collaboration 블록의 import(Link·Button)에
- * 기댄다 — 프로필은 rank 하향 폐쇄라(demo 를 담으면 collaboration 도 담는다) 안전하며, 반대 방향 의존은 금지다.
+ * [Phase 2 9단계] 이 화면은 모든 재사용 구성에 남는 core 셸이다(로그인 착지, DEC-OPS-083). 카드·목록·단추·실시간·홍보는 데이터를 가진
+ * 기능이 home-sections 슬롯에 기여한 컴포넌트이고, 셸은 배치마다 순서대로 그리기만 한다 — 종전에는 셸이 기능 데이터를 직접 조립해
+ * pack 마커 블록 24개로 가렸다. 기능이 빠진 구성에서는 기여 파일이 함께 지워지고 레지스트리가 남은 기여로 다시 만들어진다.
+ * 서버 자식(home-data-boundary.tsx)이 기여의 조회를 미리 채우므로 첫 화면에 값이 있다.
  */
 
-/* reusable-base:collaboration:start */
-interface HomeListSectionProps {
-  title: string;
-  items: DashboardTask[];
-  /** 게시판 전체 글 수. null 은 조회 실패 — 빈 목록을 "글이 없다" 로 말하지 않는다(DIP V1). */
-  total: number | null;
-  moreHref: string;
-  moreLabel: string;
-  emptyMessage: string;
+/** 배치별로 나눈 보이는 항목. 레지스트리 순서는 order → 기여 기능 → id 다(visibleEntries). */
+function byPlacement(sections: readonly HomeSection[], placement: HomeSection['placement']) {
+  return sections.filter(section => section.placement === placement);
 }
 
-function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
-  const headingId = `home-section-${moreLabel}`;
-
-  return (
-    <section aria-labelledby={headingId} className="rounded-md border border-border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
-        <h2 id={headingId} className="text-[length:var(--font-size-body)] font-semibold text-foreground">
-          {title}
-        </h2>
-        <Link
-          href={moreHref}
-          className="text-[length:var(--font-size-body)] text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-        >
-          {moreLabel}
-        </Link>
-      </div>
-      {items.length > 0 ? (
-        <ul className="divide-y divide-border">
-          {items.slice(0, 6).map((item, index) => (
-            <li key={item.id || `${title}-${index}`} className="flex items-baseline justify-between gap-3 px-4 py-2">
-              <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground">
-                {item.bbsId && item.pstSn
-                  ? <Link href={`/admin/community/boards/detail?bbsId=${encodeURIComponent(item.bbsId)}&pstSn=${item.pstSn}`} className="underline-offset-4 hover:text-primary hover:underline">{item.title}</Link>
-                  : item.title}
-                {item.isNew && (
-                  <span className="ml-2 rounded bg-info px-1.5 py-0.5 text-xs font-bold text-info-foreground">신규</span>
-                )}
-              </span>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{item.date || '-'}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="px-4 py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
-          {total === null ? '목록을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.' : emptyMessage}
-        </p>
-      )}
-    </section>
-  );
+function renderSections(sections: readonly HomeSection[]) {
+  return sections.map(({ id, Component }) => <Component key={id} />);
 }
-/* reusable-base:collaboration:end */
 
-export default function UnifiedDashboardClient(
-  /* reusable-base:collaboration:start */
-  { dataPromise }: UnifiedDashboardClientProps,
-  /* reusable-base:collaboration:end */
-) {
-  /* reusable-base:collaboration:start */
-  const data = use(dataPromise);
-  /* reusable-base:collaboration:end */
+export default function UnifiedDashboardClient() {
   const { user, loading, mfaPending } = useAuth();
   const router = useRouter();
+  const sections = useSlotEntries(homeSections);
+  const registered = homeSections.some(entries => entries.length > 0);
 
   // Enrollment revokes the ordinary session; keep its header challenge mounted while hiding home data.
   useEffect(() => {
@@ -147,8 +63,8 @@ export default function UnifiedDashboardClient(
     );
   }
 
-  /* reusable-base:collaboration:start */
-  if (data === null) {
+  // 기능이 기여한 자리가 있으면 DASHBOARD_READ 로 진입을 판정한다(home-access.ts). 서버 자식도 같은 판정으로 미리 채우지 않는다.
+  if (homeAccessDenied(user, registered)) {
     return (
       <div className="space-y-4">
         <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
@@ -159,139 +75,53 @@ export default function UnifiedDashboardClient(
       </div>
     );
   }
-  const notiList = data.initialNotiList || [];
-  const taskList = data.initialTaskList || [];
-  /* reusable-base:collaboration:end */
-  /* reusable-base:demo:start */
-  // [2026-09-15 DEC-OPS-100] 셀 수 없는 결재 대기(null)를 0건으로 말하지 않는다(unknownAsZero).
-  const pendingCount = data.pendingApprovalCount;
-  /* reusable-base:demo:end */
+
+  const actions = byPlacement(sections, 'actions');
+  const cards = byPlacement(sections, 'cards');
+  const activityNotes = sections.flatMap(section => (section.activityNote ? [section.activityNote] : []));
 
   return (
     <div className="space-y-4">
-      {/* reusable-base:demo:start */}
-      <PopupManager />
-      {/* reusable-base:demo:end */}
+      {renderSections(byPlacement(sections, 'overlay'))}
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
-          {/* 처리할 업무 목록은 collaboration 구역이다 — 그 구역이 없는 프로필에서 '오늘 처리할 업무' 를 약속하지 않는다. */}
+          {/* 확인할 일(요약 카드)이 없는 구성에서는 '확인할 일과 업무 현황' 을 약속하지 않는다. */}
           <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
             안녕하세요, {user.name}님.
-            {/* reusable-base:collaboration:start */}
             {/* [2026-10-01] '오늘 처리할 업무' 는 개인 항목이 결재 대기 하나뿐이라 실제 내용보다 넓었다. */}
-            {' '}확인할 일과 업무 현황입니다.
-            {/* reusable-base:collaboration:end */}
+            {cards.length > 0 && ' 확인할 일과 업무 현황입니다.'}
           </p>
         </div>
-        {/* reusable-base:collaboration:start */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/*
-            [2026-09-12] 종전 목적지 `/admin/community/boards` 는 DEC-OPS-040 이후 지식 허브
-            커뮤니티 탭으로 보내는 page-redirect 다 — **글쓰기 버튼이 탭 화면에 떨어졌다**.
-            리다이렉트가 200 을 돌려주므로 아무것도 실패하지 않아 조용했다.
-            정본 작성 화면으로 직접 보내고, bbsId 를 싣는다 — 그 화면은 bbsId 가 없으면
-            **공지사항**으로 기본값을 잡는데, 업무 홈에서 누른 글쓰기가 공지 방송이 되면 안 된다.
-          */}
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/admin/community/boards/insert-board-article?bbsId=${TASK_BOARD_ID}`}>
-              <Plus size={16} aria-hidden="true" /> 새 게시글 작성
-            </Link>
-          </Button>
-        {/* reusable-base:collaboration:end */}
-          {/* reusable-base:demo:start */}
-          <Button asChild size="sm">
-            <Link href="/approvals">결재함 열기</Link>
-          </Button>
-          {/* reusable-base:demo:end */}
-        {/* reusable-base:collaboration:start */}
-        </div>
-        {/* reusable-base:collaboration:end */}
+        {actions.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {renderSections(actions)}
+          </div>
+        )}
       </header>
 
-      {/* reusable-base:collaboration:start */}
-      {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). */}
-      {/* 열 수를 항목 수에 맞춘다 — 결재 항목(demo)이 빠진 프로필에서 빈 열이 남지 않는다. */}
-      <ul className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
-      {/* reusable-base:collaboration:end */}
-        {/* reusable-base:demo:start */}
-        <li className="rounded-md border border-border bg-card px-4 py-3">
-          <Link href="/approvals" className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-            <span className="text-[length:var(--font-size-body)] text-muted-foreground group-hover:text-primary">결재 대기</span>
-            <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount === null ? '조회 실패' : `${pendingCount}건`}</span>
-          </Link>
-        </li>
-        {/* reusable-base:demo:end */}
-      {/* reusable-base:collaboration:start */}
-        <UnreadNotesCard />
-      {/* reusable-base:collaboration:end */}
-      {/* reusable-base:collaboration:start */}
-        {/*
-          [2026-08-29] '배정된 업무'·'신규' 두 표현을 걷는다.
-          이 값은 나에게 배정된 것도, 총 건수도 아니다 — BoardDashboardProvider:35 가
-          `getBoardPosts(taskId, PageRequest.of(0, 5))` 로 가져오는 **업무게시판 최신 5건**이고,
-          로그인한 누구에게나 같은 목록이다. '배정' 을 결정할 담당자 컬럼도 술어도 없다.
-          '신규' 는 언제나 0 이다 — dashboard-data.ts:17 이 읽는 `isNew` 를 서버가 만들지 않아
-          `Boolean(undefined || false)` 로 떨어진다(전 저장소 grep: 백엔드에 isNew 0건).
-        */}
-        {/*
-          [2026-09-26 DIP V1] 종전 카드는 목록 길이(최근 5건)를 세어 늘 5 이하였다. 게시판의 전체 글 수를
-          싣고, 조회에 실패하면 0 이 아니라 '조회 실패' 라고 말한다(결재 대기와 같은 규칙).
-        */}
-        <li className="rounded-md border border-border bg-card px-4 py-3">
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground">업무게시판 글</span>
-          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{data.taskListTotal === null ? '조회 실패' : `${data.taskListTotal}건`}</span>
-        </li>
-        <li className="rounded-md border border-border bg-card px-4 py-3">
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground">공지사항</span>
-          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{data.notiListTotal === null ? '조회 실패' : `${data.notiListTotal}건`}</span>
-        </li>
-      </ul>
+      {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). 열 수를 항목 수에 맞춘다 — 빠진 기능의 빈 열이 남지 않는다. */}
+      {cards.length > 0 && (
+        <ul className="grid gap-2 sm:grid-flow-col sm:auto-cols-fr">
+          {renderSections(cards)}
+        </ul>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <HomeListSection
-          title="업무게시판 최근 글"
-          items={taskList}
-          total={data.taskListTotal}
-          moreHref={`/admin/community/boards/select-board-list?bbsId=${TASK_BOARD_ID}`}
-          moreLabel="업무게시판 전체 보기"
-          emptyMessage="업무게시판에 등록된 글이 없습니다."
-        />
-        <HomeListSection
-          title="최근 공지사항"
-          items={notiList}
-          total={data.notiListTotal}
-          moreHref={`/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`}
-          moreLabel="공지 전체 보기"
-          emptyMessage="새 공지사항이 없습니다."
-        />
-      </div>
-      {/* reusable-base:collaboration:end */}
+      {renderSections(byPlacement(sections, 'main'))}
 
-      {/* 실시간 구역(collaboration)이 빠진 프로필에서는 활동 구역 하나가 전체 폭을 쓴다. */}
+      {/* 상태 구역(실시간)이 빠진 구성에서는 활동 구역 하나가 전체 폭을 쓴다. */}
       <div className="grid gap-4 lg:grid-flow-col lg:auto-cols-fr">
-        {/* reusable-base:collaboration:start */}
-        <section aria-labelledby="home-realtime" className="rounded-md border border-border bg-card p-4">
-          <h2 id="home-realtime" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
-            실시간 상태
-          </h2>
-          <RealTimeDashboard />
-        </section>
-        {/* reusable-base:collaboration:end */}
+        {renderSections(byPlacement(sections, 'status'))}
         <section aria-labelledby="home-activity" className="rounded-md border border-border bg-card p-4">
           <h2 id="home-activity" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
             최근 활동
           </h2>
-          <ActivityFeed />
+          <ActivityFeed notes={activityNotes} />
         </section>
       </div>
 
-      {/* reusable-base:demo:start */}
-      <div className="overflow-hidden rounded-md">
-        <BannerSlider />
-      </div>
-      {/* reusable-base:demo:end */}
+      {renderSections(byPlacement(sections, 'bottom'))}
     </div>
   );
 }

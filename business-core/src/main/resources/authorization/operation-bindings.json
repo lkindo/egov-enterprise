@@ -77,6 +77,13 @@
     "permission": "COMMUNITY_READ_ALL"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/admin/content/community/template-options",
+    "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#getTemplateOptions",
+    "access": "PERMISSION",
+    "permission": "COMMUNITY_READ_ALL"
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/admin/content/community/{cmntySn}",
     "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#deleteCommunity",

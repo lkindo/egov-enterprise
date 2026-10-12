@@ -33,7 +33,7 @@ public class RealTimeDashboardService {
      * <p>종전에는 {@code NotificationRepository} 를 직접 주입해 dashboard→notification 교차 도메인
      * 결합을 만들었다(GAP-ARCH-001). {@code ObjectProvider} 로 받는 것은 알림 도메인이 base projection
      * 에서 빠진 프로필에서도 대시보드가 뜨게 하기 위해서다 — 그때의 0 은 "세지 못했다" 가 아니라
-     * "셀 알림이 없다" 는 사실이다.
+     * "셀 알림이 없다" 는 사실이다. 그 사실은 provided=false 로 함께 방송해 화면이 그 카드를 그리지 않게 한다(Phase 2 9단계).
      */
     private final ObjectProvider<PendingAlertCountContributor> pendingAlertCounts;
     private final ObjectProvider<PostStatisticsContributor> postStatistics;
@@ -76,7 +76,9 @@ public class RealTimeDashboardService {
                 currentPosts.value(),
                 pendingAlerts.value(),
                 currentPosts.available(),
-                pendingAlerts.available()
+                pendingAlerts.available(),
+                currentPosts.provided(),
+                pendingAlerts.provided()
             );
 
             eventPublisher.publishEvent(event);
@@ -105,13 +107,13 @@ public class RealTimeDashboardService {
     /**
      * 처리 대기 중인 알림 수 조회.
      *
-     * <p>구현이 없으면(알림 도메인이 빠진 프로필) 셀 알림 자체가 없으므로 0 이다. 조회가 실패해서 0 이 되는
+     * <p>구현이 없으면(알림 도메인이 빠진 프로필) 셀 알림 자체가 없으므로 0 이고 provided=false 다. 조회가 실패해서 0 이 되는
      * 경우와 구분되도록 실패는 error 로그와 available=false 를 함께 방송한다.
      */
     private CountSnapshot getPendingAlertsCount() {
         try {
             PendingAlertCountContributor contributor = pendingAlertCounts.getIfAvailable();
-            return CountSnapshot.known(contributor == null ? 0 : contributor.countPendingAlerts());
+            return contributor == null ? CountSnapshot.notProvided() : CountSnapshot.known(contributor.countPendingAlerts());
         } catch (Exception e) {
             log.error("Failed to count pending alerts", e);
             return CountSnapshot.unavailable();
@@ -129,7 +131,8 @@ public class RealTimeDashboardService {
         try {
             PostStatisticsContributor contributor = postStatistics.getIfAvailable();
             if (contributor == null) {
-                return CountSnapshot.known(0);
+                // 게시판이 빠진 구성이다 — 셀 게시글이 없다. 화면은 provided=false 로 '신규 게시글' 카드를 그리지 않는다.
+                return CountSnapshot.notProvided();
             }
             Instant now = clock.instant();
             LocalDate today = LocalDate.ofInstant(now, clock.getZone());
@@ -157,17 +160,23 @@ public class RealTimeDashboardService {
         }
     }
 
-    private record CountSnapshot(int value, boolean available) {
+    private record CountSnapshot(int value, boolean available, boolean provided) {
         static CountSnapshot known(long value) {
             if (value < 0) {
                 throw new IllegalArgumentException("dashboard count must be nonnegative");
             }
-            return new CountSnapshot(Math.toIntExact(value), true);
+            return new CountSnapshot(Math.toIntExact(value), true, true);
         }
 
         static CountSnapshot unavailable() {
             // 숫자 필드는 기존 wire 형태를 유지한다. 소비자는 available=false일 때 숫자를 표시하지 않는다.
-            return new CountSnapshot(0, false);
+            // 포트 구현은 있었으므로(조회가 실패했을 뿐) provided 다 — 화면은 카드를 두고 '확인 불가' 를 말한다.
+            return new CountSnapshot(0, false, true);
+        }
+
+        /** 이 구성에 집계 포트 구현이 없다(그 기능이 빠졌다). 0 은 사실이고 화면은 카드를 그리지 않는다. */
+        static CountSnapshot notProvided() {
+            return new CountSnapshot(0, true, false);
         }
     }
 

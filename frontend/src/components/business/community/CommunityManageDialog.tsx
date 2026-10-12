@@ -27,7 +27,6 @@ import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { PagePagination } from '@/components/common/PagePagination';
 import { communityAdminService, type Community } from '@/services/foundation/system/CommunityAdminService';
 import { CommunityMembersPanel } from './CommunityMembersPanel';
-import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { CommunityDtoSchema } from '@/types/generated-zod';
 
 const StandardModal = dynamic(
@@ -96,16 +95,20 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
     queryFn: () => communityAdminService.getCommunityList({ page: page - 1, size: PAGE_SIZE }),
     enabled: isOpen,
   });
-  const { data: templates } = useQuery({
-    queryKey: ['admin-templates', 'community-manage'],
-    queryFn: () => templateAdminService.getTemplateList(),
+  // 템플릿은 커뮤니티의 선택 연동이다(DEC-OPS-280). 후보는 커뮤니티 API 로 받는다 — 템플릿 관리 API 를 직접 부르면 템플릿이
+  // 빠진 구성에서 없는 API 를 부른다. 템플릿 기능이 없으면(available=false) 칸을 그리지 않고 편집 대상의 기존 값을 그대로 보낸다.
+  // 템플릿 조회 권한이 없으면(403) 종전처럼 '템플릿 없음'과 기존 선택만 남는다.
+  const { data: templateOptions } = useQuery({
+    queryKey: ['community-template-options'],
+    queryFn: () => communityAdminService.getTemplateOptions(),
     enabled: isOpen,
     staleTime: 5 * 60 * 1000,
   });
 
   const communities = data?.list ?? [];
   const total = data?.total ?? 0;
-  const activeTemplates = (templates ?? []).filter(template => template.tmpltId && template.useYn === 'Y');
+  const templateFieldShown = templateOptions?.available !== false;
+  const activeTemplates = templateOptions?.templates ?? [];
   const existingTemplateId = editing?.tmpltId;
   const preserveExistingTemplate = !!existingTemplateId
     && !activeTemplates.some(template => template.tmpltId === existingTemplateId);
@@ -354,6 +357,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 </FormItem>
               )}
             />
+            {templateFieldShown && (
             <ShadcnFormField
               control={form.control}
               name="tmpltId"
@@ -380,7 +384,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                       </SelectItem>}
                       {activeTemplates
                         .map((template) => (
-                          <SelectItem key={template.tmpltId} value={template.tmpltId as string}>
+                          <SelectItem key={template.tmpltId} value={template.tmpltId}>
                             {template.tmpltNm || template.tmpltId}
                           </SelectItem>
                         ))}
@@ -391,6 +395,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
                 </FormItem>
               )}
             />
+            )}
             {editing && (
               <ShadcnFormField
                 control={form.control}

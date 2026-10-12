@@ -37,7 +37,7 @@ test.describe('캘린더 조작', () => {
             // UI 검증용 일정 1건을 API 로 만들어 둔다(등록 폼 자체는 아래에서 별도로 연다).
             //
             // [2026-08-03 시한폭탄 제거] 종전엔 '20260716' 하드코딩이었다. 그런데 캘린더 탭은
-            //   WorkHubClient 가 `format(currentDate, 'yyyyMM')` 로 **현재 달**만 조회한다(monthly API).
+            //   일정 화면(ScheduleCalendarClient)이 `format(currentDate, 'yyyyMM')` 로 **현재 달**만 조회한다(monthly API).
             //   그래서 이 픽스처는 2026-07 에만 목록에 나타났고, 8월이 되자 목록이 비어
             //   schedule-edit 버튼이 존재하지 않아 실패했다 — 제품 결함도 플레이키도 아닌
             //   테스트가 특정 달에만 성립하도록 쓰여 있던 문제다.
@@ -68,7 +68,8 @@ test.describe('캘린더 조작', () => {
             try {
                 // e2e=true 는 SmartOnboardingHub 가 투어를 띄우지 않게 하는 프로젝트 표준 플래그다.
                 // 이 투어는 z-[10000] 전면 오버레이라 붙이지 않으면 캘린더를 덮어 검증이 불가능하다.
-                await page.goto('/admin/work-hub?tab=calendar&e2e=true');
+                // [업무 허브 분해 W1] 나의 업무의 옛 탭 주소(?tab=calendar) 호환을 걷었다 — 일정은 자기 경로의 화면이다.
+                await page.goto('/smart-toolkit/schedule?e2e=true');
                 await expect(page.getByRole('heading', { level: 1, name: '일정', exact: true })).toBeVisible({ timeout: 15000 });
                 // 캘린더 섹션이 렌더되어야 한다. (그리드 셀 자체는 react-day-picker 내부 구조라
                 //  단언 대상으로 삼지 않는다 — 라이브러리 업그레이드에 취약하다.)

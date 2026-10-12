@@ -22,7 +22,7 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { DeptJobBoxManageDialog } from '@/components/business/deptJob/DeptJobBoxManageDialog';
-import { useDeptJobSectionSlot } from '@/components/business/deptJob/dept-job-section-slot';
+import { useWorkHubTabStrip } from '@/components/business/work-hub/work-hub-tabs';
 import { type DeptJobVO } from '@/types/business/deptJob';
 import { failureMessage } from '@/lib/safe-error-log';
 import { useSessionListState } from '@/lib/hooks/use-session-list-state';
@@ -38,16 +38,12 @@ import { useSessionListState } from '@/lib/hooks/use-session-list-state';
  * 일정·보고는 테이블도 demo 소유라 일관되며, 어긋난 것은 부서 업무 하나뿐이었다.
  *
  * 이 디렉터리(`src/components/business/deptJob`)는 어느 pack 의 removePaths 에도 없으므로
- * 이 파일은 모든 프로필에 남는다. 그래서 여기에는 **demo 소유 모듈을 import 하지 않는다** —
- * 보고(`components/business/report`)·일정(`components/business/schedule`)·워크허브 어느 쪽도
- * 참조하지 않으며, 탭 스트립은 import 가 아니라 슬롯(`leadingActions`)으로만 받는다.
+ * 이 파일은 모든 프로필에 남는다. 그래서 여기에는 **기능 소유 모듈을 import 하지 않는다** —
+ * 보고(`components/business/report`)·일정(`components/business/schedule`) 어느 쪽도 참조하지 않는다.
+ * [업무 허브 분해 W1] 나의 업무 탭 줄은 core 도우미(useWorkHubTabStrip)가 그린다 — 업무 보고·일정 탭은 그 기능의 링크 기여라
+ * 기능이 빠진 구성에서는 탭만 사라지고, 기여 탭이 하나도 없으면 탭 줄도 tabpanel 도 그리지 않는다.
  */
 export interface DeptJobListSectionProps {
-  /**
-   * 셸 액션 영역 맨 앞에 끼워 넣을 요소(워크허브의 탭 스트립). 없으면 렌더하지 않는다.
-   * 지정하지 않으면 `DeptJobSectionSlotProvider` 의 값을 쓰고, provider 도 없으면 `null` 이다.
-   */
-  leadingActions?: React.ReactNode;
   breadcrumbItems?: { label: string }[];
   /** 조회조건 접힘 상태 저장 키(A1 G2). 화면마다 달라야 하므로 소비자가 명시한다. */
   filterStateKey?: string;
@@ -58,15 +54,13 @@ const DEFAULT_BREADCRUMB_ITEMS = [{ label: '나의 업무' }, { label: '업무 �
 const LIST_STATE_DEFAULTS = { searchKeyword: '', jobPage: 1, jobScope: 'mine', pageUnit: 10 };
 
 export function DeptJobListSection({
-  leadingActions,
   breadcrumbItems = DEFAULT_BREADCRUMB_ITEMS,
   filterStateKey = 'dept-job',
 }: DeptJobListSectionProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const slotActions = useDeptJobSectionSlot();
-  // prop 이 우선이고, 없으면 context(=demo 레이아웃이 내려준 탭 스트립)를 쓴다.
-  const resolvedLeadingActions = leadingActions ?? slotActions;
+  // 업무 관리는 나의 업무의 core 탭이다 — 지금 화면의 경로가 core 탭 경로다.
+  const tabs = useWorkHubTabStrip('/smart-toolkit/dept-job');
 
   // 조회어. KeywordFilter 는 '조회' 버튼·Enter 로만 제출하는 명시 제출 컴포넌트이므로
   // 이 값은 타이핑이 아니라 onSearch 에서만 갱신된다 — 디바운스가 필요 없고 실제로도 없다.
@@ -320,7 +314,7 @@ export function DeptJobListSection({
         totalCount={isJobError ? undefined : jobData?.total}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {resolvedLeadingActions}
+            {tabs.strip}
             {canManageBoxes && (
               <Button size="sm" variant="outline" onClick={() => setBoxManageOpen(true)}>
                 <FolderCog size={16} aria-hidden="true" /> 업무함 관리
@@ -376,17 +370,10 @@ export function DeptJobListSection({
         }
       >
         {/*
-          탭 패널은 **탭 스트립이 실재할 때만** 그린다. 워크허브(demo)에서는 슬롯이 내려온
-          탭 버튼들이 aria-controls="work-hub-tabpanel" 로 이 영역을 가리키지만, core 프로필에는
-          탭 자체가 없으므로 가리키는 탭이 없는 tabpanel 을 남기지 않는다.
+          탭 패널은 **탭 줄이 실재할 때만** 그린다. 탭 버튼들이 aria-controls="work-hub-tabpanel" 로 이 영역을 가리키지만,
+          기여 탭이 없는 구성에는 탭 줄 자체가 없으므로 가리키는 탭이 없는 tabpanel 을 남기지 않는다(도우미가 판정한다).
         */}
-        {resolvedLeadingActions ? (
-          <div role="tabpanel" id="work-hub-tabpanel" aria-labelledby="work-hub-tab-job">
-            {jobTable}
-          </div>
-        ) : (
-          jobTable
-        )}
+        {tabs.panel(jobTable)}
       </WorkListPage>
 
       {/* 업무 등록 다이얼로그 — 열릴 때만 마운트해 담당자 피커의 조회 훅이 목록 렌더에 끼지 않게 한다. */}

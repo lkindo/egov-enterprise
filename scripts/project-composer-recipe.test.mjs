@@ -332,13 +332,17 @@ test('auto-included features carry the shortest chain from a selection, one sent
       checked += 1;
     }
   }
-  assert.ok(checked > 200, `checked ${checked} automatic inclusions`);
-  // 대표 사례: 대시보드만 고르면 댓글은 '대시보드 → 게시판 → 댓글'로 들어온다(쪽지 사슬은 허브 분해 H1 에서 사라졌다).
-  const dashboard = resolveProjectRecipe(recipe({ domains: ['dashboard'] }), catalog).autoIncluded.find(item => item.domain === 'comment');
-  assert.deepEqual(dashboard.chain.map(hop => [hop.from, hop.to, hop.kinds]), [['dashboard', 'board', ['manifest']], ['board', 'comment', ['java', 'manifest']]]);
-  assert.deepEqual(dashboard.roots, ['dashboard']);
+  // 빈 검사가 아니라는 하한이다. 간선을 걷을수록 모집단이 준다 — 2026-10-12 나의 업무 분해·커뮤니티 후속·업무 홈을 합친 트리에서
+  //   단독·두 기능 선택 253개의 자동 포함은 198건이다(그 전 main 7dc76ad22 은 295건). 모든 자동 포함을 위 단언으로 본다.
+  assert.ok(checked > 150, `checked ${checked} automatic inclusions`);
+  // 대표 사례: 도움말만 고르면 댓글은 '도움말 → 게시판 → 댓글'로 들어온다(쪽지 사슬은 허브 분해 H1 에서, 대시보드 사슬은 Phase 2
+  //   9단계에서 사라졌다 — 실시간 대시보드는 게시판을 포트로 읽는다).
+  const help = resolveProjectRecipe(recipe({ domains: ['help'] }), catalog).autoIncluded.find(item => item.domain === 'comment');
+  assert.deepEqual(help.chain.map(hop => [hop.from, hop.to, hop.kinds]), [['help', 'board', ['ui-import']], ['board', 'comment', ['java', 'manifest']]]);
+  assert.deepEqual(help.roots, ['help']);
   // 개발자 원문 reason 은 종전 형식 그대로 남는다(호환). 그 기능으로 들어오는 모든 간선의 원문을 모은다.
-  assert.ok(dashboard.reason.includes('board: board 소스가 comment 타입을 참조한다.'), dashboard.reason);
+  assert.ok(help.reason.includes('board: board 소스가 comment 타입을 참조한다.'), help.reason);
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['dashboard'] }), catalog).resolvedDomains, ['dashboard', 'notification']);
   // 쪽지는 혼자 풀린다.
   assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['note'] }), catalog).autoIncluded, []);
   const both = resolveProjectRecipe(recipe({ domains: ['comment', 'scrap'] }), catalog).autoIncluded.find(item => item.domain === 'board');

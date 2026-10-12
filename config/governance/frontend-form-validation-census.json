@@ -7,9 +7,9 @@
     "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 22,
+    "formlessWriteBoundaries": 23,
     "secondaryActionBoundaries": 77,
-    "candidateCount": 165
+    "candidateCount": 166
   },
   "entries": [
     {
@@ -296,10 +296,10 @@
       ]
     },
     {
-      "key": "formless-write:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient",
+      "key": "formless-write:frontend/src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx#ScheduleCalendarClient",
       "kind": "formless-write",
-      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "owner": "WorkHubClient",
+      "file": "frontend/src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx",
+      "owner": "ScheduleCalendarClient",
       "composedChildContracts": [
         {
           "actionHandlers": [
@@ -311,7 +311,25 @@
             "createDeptSchedule",
             "updateDeptSchedule"
           ]
-        },
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:ScheduleCreateForm+schedule-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/schedule/__tests__/ScheduleCalendarClient.errors.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx#WorkReportClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+      "owner": "WorkReportClient",
+      "composedChildContracts": [
         {
           "actionHandlers": [
             "handleDeleteReport"
@@ -327,12 +345,12 @@
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:ScheduleCreateForm+ReportCreateForm+work-hub-actions",
+      "schemaSource": "composed:ReportCreateForm+work-report-actions",
       "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
       "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
       "pendingGuard": "composed-child-submit-and-action-locks",
       "testEvidence": [
-        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+        "frontend/src/app/smart-toolkit/work-report/__tests__/WorkReportClient.errors.test.tsx"
       ]
     },
     {
@@ -1572,7 +1590,7 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
-        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx",
+        "frontend/src/app/smart-toolkit/work-report/__tests__/WorkReportClient.errors.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -1591,7 +1609,7 @@
       "testEvidence": [
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
         "frontend/src/components/business/schedule/__tests__/ScheduleCreateForm.test.tsx",
-        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx",
+        "frontend/src/app/smart-toolkit/schedule/__tests__/ScheduleCalendarClient.errors.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -2714,10 +2732,10 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteReport[1]",
+      "key": "secondary-action:frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx#WorkReportClient.handleDeleteReport[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "owner": "WorkHubClient",
+      "file": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+      "owner": "WorkReportClient",
       "handler": "handleDeleteReport",
       "writeSinks": [
         "reportService.deleteReport"
@@ -2730,14 +2748,14 @@
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+        "frontend/src/app/smart-toolkit/work-report/__tests__/WorkReportClient.errors.test.tsx"
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteSchedule[1]",
+      "key": "secondary-action:frontend/src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx#ScheduleCalendarClient.handleDeleteSchedule[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "owner": "WorkHubClient",
+      "file": "frontend/src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx",
+      "owner": "ScheduleCalendarClient",
       "handler": "handleDeleteSchedule",
       "writeSinks": [
         "deleteDeptSchedule"
@@ -2750,7 +2768,7 @@
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
-        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+        "frontend/src/app/smart-toolkit/schedule/__tests__/ScheduleCalendarClient.errors.test.tsx"
       ]
     },
     {

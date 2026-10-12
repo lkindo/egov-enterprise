@@ -200,11 +200,11 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.deepEqual(codes(deep), ['JAVA_PROJECTION']);
   assert.equal(deep.blockers[0].message, `Missing domain support file: ${supportFile}`);
 
-  // 선언이 요구를 빠뜨리면 선택한 기능의 화면이 공유 import 연쇄로 지워진다. 생존 검사가 지워질 파일을 밝힌다.
+  // 요구가 빠지면 선택한 기능의 API·화면이 연쇄로 지워진다. 생존 검사가 지워질 파일을 밝힌다(커뮤니티 → 게시판, DEC-OPS-280).
   const broken = structuredClone(catalog);
   const community = broken.capabilities.find(row => row.id === 'community');
-  assert.ok(community.requires.some(edge => edge.domain === 'template'), 'community -> template must exist');
-  community.requires = community.requires.filter(edge => edge.domain !== 'template');
+  assert.ok(community.requires.some(edge => edge.domain === 'board'), 'community -> board must exist');
+  community.requires = community.requires.filter(edge => edge.domain !== 'board');
   const { catalogHash: ignored, ...body } = broken;
   broken.catalogHash = compositionDigest(body);
   deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ domains: ['community'] }, broken), files });
@@ -214,8 +214,9 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   const redirects = new Set([...readRouteRows(root).values()].filter(row => row.kind !== 'page').map(row => row.source));
   assert.ok(lost.files.every(file => deep.frontend.files.includes(file) || deep.java.files.includes(file) || redirects.has(file)),
     'every lost source is one the plan removes or a redirect page whose destination it removes');
-  assert.ok(lost.files.some(file => redirects.has(file)), 'the knowledge hub loss takes its redirect aliases with it');
-  assert.ok(lost.files.some(file => file.startsWith('frontend/')) && lost.files.some(file => file.endsWith('.java')), 'both a screen and its Java support are lost');
+  // 커뮤니티 사용자 API 는 게시판 타입을 참조해 연쇄로 지워진다 — 디렉터리 소유 기능이 선택된 컨트롤러는 남아야 한다.
+  assert.ok(lost.files.includes('api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java'), 'the community user API is lost through its board reference');
+  assert.ok(lost.files.some(file => file.startsWith('frontend/')) && lost.files.some(file => file.endsWith('.java')), 'both frontend and Java sources are lost');
 
   // 프런트 pack 마커가 manifest 에 없는 pack 을 가리키면 생성기는 마커 투영에서 실패한다. 게이트·생존 판정은 하지 않는다.
   const unknownPack = structuredClone(manifest);

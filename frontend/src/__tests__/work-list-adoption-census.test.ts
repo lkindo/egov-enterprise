@@ -58,7 +58,9 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   셸로 신설했다. 서버에 원장·작업이 쌓이는데 볼 화면이 없었다 — 이행 되돌리기가 아니라 새 화면이다.
 // [허브 분해 H6] 43 -> 44: 댓글 및 평가 관리(/admin/system/comments)가 감시 허브 위임을 떠나 댓글 기능의 독립 A1 화면이 됐다.
 //   감시 허브는 그대로 셸을 경유한다 — 이행 되돌리기가 아니라 새 화면이다.
-const ADOPTERS = 44;
+// [업무 허브 분해 W1] 44 -> 45: 업무 허브 클라이언트(업무 보고·일정 탭 공유)가 업무 보고·일정 두 화면으로 나뉘었다 — 둘 다 셸을
+//   경유한다. 나의 업무·업무 관리는 core 섹션(components/business/deptJob)이라 이 census 의 화면 모집단(src/app) 밖이다.
+const ADOPTERS = 45;
 // [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY = 2;
 /*
@@ -106,10 +108,11 @@ const ADOPTER_SCREENS = [
   'src/app/admin/user/UserOrgHubClient.tsx',
   'src/app/admin/uss/ion/sms/SmsAdminClient.tsx',
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx',
-  'src/app/admin/work-hub/WorkHubClient.tsx',
   'src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx',
   'src/app/help/HelpClient.tsx',
   'src/app/note/page.tsx',
+  'src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx',
+  'src/app/smart-toolkit/work-report/WorkReportClient.tsx',
   'src/app/survey/SurveyClient.tsx',
 ];
 const DIRECT_ONLY_SCREENS = [

@@ -99,6 +99,7 @@
 | [ADR-0024](02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환과 조용히 바뀌는 동작의 고정 |
 | [ADR-0025](02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 승인된 D01~D15 A·F01~F08의 제품 계약, 내구성 및 운영 적용 경계 |
 | [ADR-0026](02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 |
+| [ADR-0027](02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) |
 
 ## 03-guides — 개발 지침
 

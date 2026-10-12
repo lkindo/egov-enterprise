@@ -44,17 +44,19 @@ test('the plan explains degraded integrations by missing feature and lists permi
 test('the plan explains each automatic inclusion with a chain, one sentence per step and how to deselect it', () => {
   const catalog = loadProjectComposerCatalog(root);
   const notesFor = domains => inclusionNotes(resolveProjectRecipe({ ...recipe(), selection: { domains } }, catalog), catalog);
-  // 대표 사슬은 대시보드 → 게시판 → 댓글이다(쪽지 → 스크랩 → 게시판 사슬은 허브 분해 H1 에서 사라졌다 — 쪽지는 혼자 풀린다).
+  // 대표 사슬은 도움말 → 게시판 → 댓글이다(쪽지 → 스크랩 → 게시판 사슬은 허브 분해 H1 에서, 대시보드 → 게시판 사슬은 Phase 2
+  //   9단계에서 사라졌다 — 쪽지는 혼자 풀리고, 실시간 대시보드는 알림만 끌어온다).
   assert.deepEqual(notesFor(['note']), []);
-  const dashboard = notesFor(['dashboard']);
-  const comment = dashboard.find(item => item.domain === 'comment');
-  assert.equal(comment.path, '실시간 대시보드 → 게시판·지식 → 댓글');
-  assert.deepEqual(comment.steps.map(step => step.text), ['실시간 대시보드 → 게시판·지식: 실시간 대시보드가 오늘 올라온 게시글 수를 보여 줍니다.',
+  const comment = notesFor(['help']).find(item => item.domain === 'comment');
+  assert.equal(comment.path, '도움말·온라인 매뉴얼 → 게시판·지식 → 댓글');
+  assert.deepEqual(comment.steps.map(step => step.text), ['도움말·온라인 매뉴얼 → 게시판·지식: 도움말 화면의 자주 묻는 질문·질의응답은 게시판 글입니다.',
     '게시판·지식 → 댓글: 게시글 화면이 댓글을 함께 다룹니다.']);
-  assert.deepEqual(comment.steps.map(step => step.evidence), [['생성 묶음 선언'], ['코드 참조', '생성 묶음 선언']]);
+  assert.deepEqual(comment.steps.map(step => step.evidence), [['화면 참조'], ['코드 참조', '생성 묶음 선언']]);
   assert.ok(comment.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/board/Board.java'));
-  assert.equal(comment.removal, '이 기능을 빼려면 실시간 대시보드를 해제하세요.');
-  assert.deepEqual(comment.roots, ['dashboard']);
+  assert.equal(comment.removal, '이 기능을 빼려면 도움말·온라인 매뉴얼을 해제하세요.');
+  assert.deepEqual(comment.roots, ['help']);
+  const dashboard = notesFor(['dashboard']);
+  assert.deepEqual(dashboard.map(item => [item.domain, item.path]), [['notification', '실시간 대시보드 → 알림']]);
   assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
   // 약식 전자결재는 행사·포상 없이 생성된다(DEC-OPS-272). 그 반대는 코드 참조로 남는다.
   assert.deepEqual(notesFor(['informalsanction']), []);
@@ -96,7 +98,8 @@ test('UI and CLI use the same side-effect-free plan and reject unsupported or un
   const engine = createComposerEngine();
   const before = composerOutputPaths(root, 'planning-only', '0123456789abcdef');
   const plan = engine.plan(recipe());
-  assert.deepEqual(plan.resolvedDomains, ['mail', 'report', 'schedule']);
+  // 업무 허브 분해 W1: 일정은 업무 보고를 더 요구하지 않는다(나의 업무가 core 셸이 됐다).
+  assert.deepEqual(plan.resolvedDomains, ['mail', 'schedule']);
   assert.equal(plan.backendLayout, 'single-module');
   assert.ok(plan.menus.length > 0);
   // 메뉴 트리 미리보기(E8): 메뉴마다 순서·종류와 공통 기반 대비 추가 여부를 싣는다.

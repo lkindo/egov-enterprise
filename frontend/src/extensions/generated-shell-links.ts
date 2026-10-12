@@ -4,6 +4,9 @@ import type { SlotContributions } from './slots';
 import addressbook from './addressbook/shell-links';
 import help from './help/shell-links';
 import mail from './mail/shell-links';
+import memoreport from './memoreport/shell-links';
 import note from './note/shell-links';
+import report from './report/shell-links';
+import schedule from './schedule/shell-links';
 
-export const shellLinks: readonly SlotContributions<'shell-links'>[] = [addressbook, help, mail, note];
+export const shellLinks: readonly SlotContributions<'shell-links'>[] = [addressbook, help, mail, memoreport, note, report, schedule];

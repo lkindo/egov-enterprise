@@ -3,12 +3,13 @@ import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'n
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ComposerError } from './project-composer-errors.mjs';
+import { apiSourceOwner } from './project-composer-integrations.mjs';
 import { describeRoutes, pageSurvivalViolations } from './reusable-page-survival.mjs';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
 /*
  * 선택 업무만 쓰는 지원 파일. 업무 앱의 다른 도메인 디렉터리 파일도 선언할 수 있다 — 그 도메인이 제공하고
- * 선언한 도메인만 쓰는 구현이다(커뮤니티가 쓰는 템플릿 검증 포트 구현). 그런 파일은 두 도메인이 모두 있을 때만
+ * 선언한 도메인만 쓰는 구현이다(지금 실례는 없다 — 커뮤니티가 쓰던 템플릿 배정 구현은 DEC-OPS-280 에서 포트가 됐다). 그런 파일은 두 도메인이 모두 있을 때만
  * 남고, 카탈로그는 선언 도메인이 디렉터리 도메인을 요구한다고 기록한다.
  */
 export function supportFileDirectoryDomain(file) {
@@ -127,24 +128,18 @@ export function composerProfile(manifest, composition) {
  * pack 마커 블록이 있는 프런트 파일의 소유 표다(슬롯 단계 PR-2). 마커를 걷어 내는 이행이 끝날 때까지 남은 블록을 이 표 하나로 드러낸다.
  * - blocks: pack 별 블록 수. 공용 파서(parsePackMarkerBlocks)로 센 원본 수와 정확히 같아야 한다(project-composer-source.test.mjs).
  * - owners: pack → 그 블록을 남기는 데 필요한 기능. 직접 선택 투영이 쓴다. 블록 내용으로 가르는 파일만 함수다.
- * - step: 블록을 걷어 낼 이행 단계, reason: 마커로 남겨 둔 이유.
+ * - step: 블록을 걷어 낼 이행 단계(걷지 않고 남기는 블록은 '잔존(…)'), reason: 마커로 남겨 둔 이유.
  * 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 'Unclassified' 로 실패한다 — 새 블록은 조용히 남거나 빠지지 않는다.
  * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
  */
 export const FRONTEND_MARKER_FILES = Object.freeze([
-  { file: 'src/app/UnifiedDashboardClient.tsx', blocks: { collaboration: 14, demo: 6 },
-    // 안 읽은 쪽지 카드 블록은 쪽지 기능도 있어야 남는다 — 카드 파일이 쪽지 서비스를 쓴다.
-    owners: { collaboration: block => (/UnreadNotesCard/.test(block) ? ['dashboard', 'note'] : ['dashboard']),
-      demo: block => (/BannerSlider|PopupManager/.test(block) ? ['promotion'] : ['dashboard', 'informalsanction']) },
-    step: '업무 홈', reason: '업무 홈의 카드·구역이 게시판·결재·홍보 데이터를 화면 안에서 직접 조립한다.' },
-  { file: 'src/app/page.tsx', blocks: { collaboration: 3 }, owners: { collaboration: ['dashboard'] },
-    step: '업무 홈', reason: '업무 홈 진입점이 대시보드 데이터 조회를 직접 넘긴다.' },
-  { file: 'src/app/components/dashboard/ActivityFeed.tsx', blocks: { collaboration: 1 }, owners: { collaboration: ['dashboard'] },
-    step: '업무 홈', reason: '활동 피드가 대시보드 데이터를 직접 읽는다.' },
   { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
     step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
   { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
-    step: '허브 분해(커뮤니티)', reason: '게시판 마법사가 커뮤니티 귀속 칸을 직접 둔다. 맞는 슬롯이 없으면 사유와 함께 남긴다.' },
+    // 커뮤니티 후속 C3(DEC-OPS-280): 커뮤니티가 게시판을 요구하고 게시판은 커뮤니티를 요구하지 않으므로 마커가 맞는 형태다 — 게시판만
+    //   고른 구성과 협업 기본에서 네 블록이 import 와 함께 빠진다.
+    step: '잔존(선택 외래 키 연동 칸)',
+    reason: '커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다.' },
 ]);
 const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
 
@@ -278,8 +273,9 @@ export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition
 }
 
 function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
-  const support = domainSupportFiles(sourceRoot, manifest ?? JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8')));
-  // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(템플릿 단독의 커뮤니티 전용 구현).
+  manifest ??= JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8'));
+  const support = domainSupportFiles(sourceRoot, manifest);
+  // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
     .flatMap(([, files]) => files));
   const requireFile = path => {
@@ -305,6 +301,10 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
   const selected = new Set(composition.resolvedDomains);
+  const features = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
+  // 참조 기능이 모두 선택된 컨트롤러는 남아야 한다. 디렉터리 소유 기능(apiSourceOwner)이 선택된 컨트롤러도 남아야 한다 —
+  // 소유 기능만 고른 구성에서 다른 기능 타입 참조로 컨트롤러가 연쇄 제거되면, 참조 기능이 모두 선택된 것이 아니라 앞 규칙은
+  // 통과시킨다(커뮤니티 사용자 API 가 게시판 참조로 조용히 지워지던 경로, DEC-OPS-280). 카탈로그가 그 참조를 간선으로 세면 둘은 같다.
   function assertControllers(directory) {
     if (!existsSync(directory)) return;
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -315,7 +315,9 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
       const domains = [...source.matchAll(/(?<![\w$])nuri\.business\.(?:domain|service)\.([a-z][a-z0-9_]*)\./g)]
         .map(match => match[1]).filter(domain => existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/domain', domain))
           || existsSync(join(sourceRoot, 'business-app/src/main/java/nuri/business/service', domain)));
-      if (domains.length && domains.every(domain => selected.has(domain))) requireFile(relative(sourceRoot, path));
+      const file = relative(sourceRoot, path);
+      const owner = apiSourceOwner(file.split(sep).join('/'), features);
+      if ((domains.length && domains.every(domain => selected.has(domain))) || (owner && selected.has(owner))) requireFile(file);
     }
   }
   assertControllers(join(sourceRoot, 'api-server/src/main/java/nuri/api/controller'));

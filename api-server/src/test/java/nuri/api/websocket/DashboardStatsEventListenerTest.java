@@ -20,7 +20,7 @@ class DashboardStatsEventListenerTest {
     void forwardsCountAvailabilityWithTheExistingNumericFields(boolean postsAvailable) {
         var messaging = mock(SimpMessageSendingOperations.class);
         var listener = new DashboardStatsEventListener(messaging);
-        var event = new DashboardStatsUpdatedEvent(7, 3, 2, 0, postsAvailable, !postsAvailable);
+        var event = new DashboardStatsUpdatedEvent(7, 3, 2, 0, postsAvailable, !postsAvailable, !postsAvailable, postsAvailable);
 
         listener.handleDashboardStatsUpdated(event);
 
@@ -32,6 +32,8 @@ class DashboardStatsEventListenerTest {
                 "newPosts", 2,
                 "alerts", 0,
                 "newPostsAvailable", postsAvailable,
-                "alertsAvailable", !postsAvailable));
+                "alertsAvailable", !postsAvailable,
+                "newPostsProvided", !postsAvailable,
+                "alertsProvided", postsAvailable));
     }
 }

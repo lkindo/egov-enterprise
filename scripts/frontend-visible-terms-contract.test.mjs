@@ -260,7 +260,8 @@ test('home route sources are bound to their real entry points and do not expose 
   const adminPilot = contract.pilotCensus.find(({ route }) => route === '/admin');
   const rootPage = fs.readFileSync(path.join(ROOT, 'frontend/src/app/page.tsx'), 'utf8');
   const adminPage = fs.readFileSync(path.join(ROOT, 'frontend/src/app/admin/page.tsx'), 'utf8');
-  const rootSources = rootPilot.sources
+  // 업무 홈의 카드·목록·구역은 기능 모듈이다(Phase 2 9단계) — 생성물에서는 그 기능과 함께 빠진 파일을 거른다.
+  const rootSources = presentUnlessProjected(rootPilot.sources)
     .map((source) => fs.readFileSync(path.join(ROOT, source), 'utf8'))
     .join('\n');
   const adminSources = adminPilot.sources
@@ -273,11 +274,17 @@ test('home route sources are bound to their real entry points and do not expose 
 
   assert.match(rootPage, /UnifiedDashboardClient/);
   assert.match(adminPage, /AdminDashboardClient/);
+  // [Phase 2 9단계] 업무 홈은 core 셸과 기능의 home-sections 기여다. 문구 증거는 셸과, 게시판(카드·목록·활동 문장)·결재(대기 카드)·
+  //   실시간(구역) 조각 파일이다 — 제거 문구의 부재 검사가 옮긴 조각까지 덮게 한다.
   assert.deepEqual(rootPilot.sources, [
     'frontend/src/app/page.tsx',
-    'frontend/src/app/dashboard-data.ts',
     'frontend/src/app/UnifiedDashboardClient.tsx',
     'frontend/src/app/components/dashboard/ActivityFeed.tsx',
+    'frontend/src/app/components/dashboard/BoardHome.tsx',
+    'frontend/src/queries/board-home-query.ts',
+    'frontend/src/extensions/board/home-sections.ts',
+    'frontend/src/app/components/dashboard/ApprovalHome.tsx',
+    'frontend/src/components/features/dashboard/RealTimeHomeSection.tsx',
     'frontend/src/components/features/dashboard/RealTimeDashboard.tsx',
   ]);
   // [2026-09-15] route 진입 파일을 sources 에 넣어 제거 문구의 부재 검사가 실제 화면 경로를 덮게 한다.

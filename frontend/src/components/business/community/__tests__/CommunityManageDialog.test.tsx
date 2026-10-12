@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   createCommunity: vi.fn(),
   updateCommunity: vi.fn(),
   deleteCommunity: vi.fn(),
-  getTemplateList: vi.fn(),
+  getTemplateOptions: vi.fn(),
   getMembers: vi.fn(),
   confirm: vi.fn(),
   toast: vi.fn(),
@@ -56,12 +56,10 @@ vi.mock('@/services/foundation/system/CommunityAdminService', () => ({
     updateCommunity: mocks.updateCommunity,
     deleteCommunity: mocks.deleteCommunity,
     getMembers: mocks.getMembers,
+    getTemplateOptions: mocks.getTemplateOptions,
     approveMember: vi.fn(),
     rejectMember: vi.fn(),
   },
-}));
-vi.mock('@/services/foundation/system/TemplateAdminService', () => ({
-  templateAdminService: { getTemplateList: mocks.getTemplateList },
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
@@ -85,7 +83,7 @@ describe('CommunityManageDialog', () => {
     vi.clearAllMocks();
     mocks.permissions = ['COMMUNITY_READ_ALL', 'COMMUNITY_CREATE_ALL', 'COMMUNITY_UPDATE_ALL', 'COMMUNITY_DELETE_ALL'];
     mocks.getCommunityList.mockResolvedValue({ list: communities, total: 2, page: 0, size: 10, totalPage: 1 });
-    mocks.getTemplateList.mockResolvedValue([{ tmpltId: 'TMPL01', tmpltNm: '기본 템플릿', useYn: 'Y' }]);
+    mocks.getTemplateOptions.mockResolvedValue({ available: true, templates: [{ tmpltId: 'TMPL01', tmpltNm: '기본 템플릿' }] });
     mocks.createCommunity.mockResolvedValue({ cmntySn: 13 });
     mocks.updateCommunity.mockResolvedValue(undefined);
     mocks.deleteCommunity.mockResolvedValue(undefined);
@@ -105,20 +103,39 @@ describe('CommunityManageDialog', () => {
     expect(mocks.deleteCommunity).not.toHaveBeenCalled();
   });
 
+  // 후보는 서버가 사용 중인 항목만 준다(DEC-OPS-280, TmplatInfoServiceTest). 화면은 후보와 편집 대상의 기존 값만 보인다.
   it('새 선택은 활성 원장만 보이고 기존 비활성 선택은 정정할 때 유지할 수 있다', async () => {
-    mocks.getTemplateList.mockResolvedValue([
-      { tmpltId: 'ACTIVE', tmpltNm: '새 활성 템플릿', useYn: 'Y' },
-      { tmpltId: 'TMPL01', tmpltNm: '기존 비활성 템플릿', useYn: 'N' },
-      { tmpltId: 'OTHER_OFF', tmpltNm: '선택 불가', useYn: 'N' },
-    ]);
+    mocks.getTemplateOptions.mockResolvedValue({ available: true, templates: [{ tmpltId: 'ACTIVE', tmpltNm: '새 활성 템플릿' }] });
     renderDialog();
     expect(await screen.findByRole('option', { name: '새 활성 템플릿' })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: /기존 선택 유지|선택 불가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /기존 선택 유지/ })).not.toBeInTheDocument();
     fireEvent.click(await screen.findByRole('button', { name: '독서 모임 수정' }));
     expect(screen.getByRole('option', { name: /TMPL01.*기존 선택 유지/ })).toBeInTheDocument();
-    expect(screen.queryByRole('option', { name: '선택 불가' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
     await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11, expect.objectContaining({ tmpltId: 'TMPL01' })));
+  });
+
+  // [DEC-OPS-280] 템플릿 기능이 없는 구성: 칸을 그리지 않고, 정정은 기존 값을 그대로 보낸다(서버는 같은 값이면 검증하지 않는다).
+  it('템플릿 기능이 없으면 템플릿 칸이 없고 정정은 기존 값을 그대로 보낸다', async () => {
+    mocks.getTemplateOptions.mockResolvedValue({ available: false, templates: [] });
+    renderDialog();
+    await screen.findByRole('form', { name: '커뮤니티 등록' });
+    await waitFor(() => expect(mocks.getTemplateOptions).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText('템플릿', { selector: 'label' })).not.toBeInTheDocument());
+    expect(screen.queryByRole('option', { name: '템플릿 없음' })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: '독서 모임 수정' }));
+    expect(screen.queryByRole('option', { name: /기존 선택 유지/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateCommunity).toHaveBeenCalledWith(11, expect.objectContaining({ tmpltId: 'TMPL01' })));
+  });
+
+  it('템플릿 조회 권한이 없으면(403) 템플릿 없음과 기존 선택만 남는다', async () => {
+    mocks.getTemplateOptions.mockRejectedValue(Object.assign(new Error('Forbidden'), { response: { status: 403 } }));
+    renderDialog();
+    fireEvent.click(await screen.findByRole('button', { name: '독서 모임 수정' }));
+    await waitFor(() => expect(mocks.getTemplateOptions).toHaveBeenCalled());
+    expect(screen.getByRole('option', { name: '템플릿 없음' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /TMPL01.*기존 선택 유지/ })).toBeInTheDocument();
   });
 
   it('[결정 20] 승인을 기다리는 가입 신청 수를 행과 회원 관리 버튼 이름에 보인다', async () => {

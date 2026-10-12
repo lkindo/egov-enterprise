@@ -238,7 +238,6 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/system/audit/TimelineItem.tsx': 8,
   'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 3,
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 3,
-  'src/app/admin/work-hub/WorkHubClient.tsx': 4,
   'src/app/components/layout/header-notifications.tsx': 1,
   'src/app/components/ui/confirm-modal.tsx': 6,
   'src/app/components/ui/standard-form.tsx': 1,
@@ -248,6 +247,9 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/global-error.tsx': 6,
   'src/app/login/LoginClient.tsx': 1,
   'src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx': 2,
+  // [업무 허브 분해 W1] 업무 허브 클라이언트의 4건이 두 화면으로 나뉘었다(보고 삭제 2·일정 삭제 2) — 합은 같다.
+  'src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx': 2,
+  'src/app/smart-toolkit/work-report/WorkReportClient.tsx': 2,
   'src/components/business/deptJob/DeptJobForm.tsx': 7,
   'src/components/business/report/ReportCreateForm.tsx': 4,
   'src/components/business/schedule/ScheduleCreateForm.tsx': 6,

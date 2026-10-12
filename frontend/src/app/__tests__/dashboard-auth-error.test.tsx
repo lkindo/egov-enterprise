@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +14,14 @@ import { describe, expect, it, vi } from 'vitest';
  *   걷어내야 '쓰고 안 읽는' 상태로 되돌아가지 않는다.
  */
 
-vi.mock('../dashboard-data', () => ({
-  loadDashboardData: vi.fn(async () => ({})),
+// 업무 데이터를 미리 채우는 서버 자식은 이 계약의 대상이 아니다. 끝나지 않는 서버 자식으로 바꿔, 안내가 그 대기와 무관하게
+// 그려지는지 본다(Phase 2 9단계 — page 본문은 searchParams 만 기다린다).
+const boundary = vi.hoisted(() => ({ calls: 0 }));
+vi.mock('../home-data-boundary', () => ({
+  HomeDataBoundary: ({ children }: { children: unknown }) => {
+    boundary.calls += 1;
+    return children;
+  },
 }));
 
 // 대시보드 본문은 이 계약의 대상이 아니다. 무거운 클라이언트를 실제로 띄우지 않는다.
@@ -68,6 +76,20 @@ describe('권한 부족 되돌림 안내', () => {
 
     // 되돌려졌다는 사실만 말한다. 경로를 알려 주면 존재 여부가 새어 나간다.
     expect(screen.getByTestId('dashboard-auth-error').textContent).not.toMatch(/\/admin/);
+  });
+
+  it('page 본문은 searchParams 만 기다린다 — 업무 데이터 대기는 Suspense 안의 서버 자식 몫이다', async () => {
+    // page 를 부르는 것만으로는 서버 자식이 돌지 않는다(트리의 요소일 뿐이다). 본문에서 데이터를 기다리면 업무 홈 대기 동안
+    // 루트 전체화면 덮개(loading.tsx)가 보이고 이 안내도 늦어진다.
+    boundary.calls = 0;
+    const element = await UnifiedDashboardPage({ searchParams: Promise.resolve({ auth_error: 'unauthorized' }) });
+    expect(boundary.calls).toBe(0);
+    render(element);
+    expect(screen.getByTestId('dashboard-auth-error')).toHaveTextContent('접근 권한이 없어 홈으로 이동했습니다.');
+
+    const source = readFileSync(join(process.cwd(), 'src', 'app', 'page.tsx'), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    expect(source.match(/\bawait\b[^;]*/g)).toEqual(['await searchParams']);
+    expect(source).toMatch(/<Suspense fallback=\{<DashboardLoading \/>\}>\s*<HomeDataBoundary>/);
   });
 
   it('안내와 무관하게 대시보드 본문은 그대로 렌더된다', async () => {

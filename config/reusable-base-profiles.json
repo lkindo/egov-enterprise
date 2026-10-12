@@ -416,9 +416,13 @@
           "src/extensions/board",
           "src/app/admin/collaboration/scraps",
           "src/app/admin/help",
+          "src/app/admin/community/board",
           "src/lib/board",
-          "src/app/dashboard-data.ts",
           "src/components/features/dashboard/RealTimeDashboard.tsx",
+          "src/components/features/dashboard/RealTimeHomeSection.tsx",
+          "src/extensions/dashboard",
+          "src/app/components/dashboard/BoardHome.tsx",
+          "src/queries/board-home-query.ts",
           "src/app/components/dashboard/UnreadNotesCard.tsx",
           "src/services/foundation/system/NotificationAdminService.ts",
           "src/app/actions/boardActions.ts",
@@ -525,11 +529,6 @@
             "foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java",
             "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
             "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
-          ],
-          "community": [
-            "foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java",
-            "business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java",
-            "business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java"
           ]
         }
       },
@@ -538,9 +537,13 @@
           "src/app/actions/promotionActions.ts",
           "src/app/components/dashboard/BannerSlider.tsx",
           "src/app/components/dashboard/PopupManager.tsx",
+          "src/app/components/dashboard/PromotionHome.tsx",
+          "src/app/components/dashboard/ApprovalHome.tsx",
+          "src/queries/approval-home-query.ts",
+          "src/extensions/informalsanction",
+          "src/extensions/promotion",
           "src/app/admin/collaboration/address-book",
           "src/app/admin/community/[id]",
-          "src/app/admin/community/board",
           "src/app/admin/community/page.tsx",
           "src/app/admin/community/boards/page.tsx",
           "src/app/admin/community/templates",
@@ -555,12 +558,10 @@
           "src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
           "src/extensions/showcase",
           "src/app/admin/uss/olh",
-          "src/app/admin/work-hub",
           "src/app/admin/workflow",
           "src/app/approvals",
           "src/app/cop/cmy",
           "src/app/help",
-          "src/app/smart-toolkit/dept-job/layout.tsx",
           "src/app/smart-toolkit/schedule",
           "src/app/smart-toolkit/work-report",
           "src/components/business/report",
@@ -569,6 +570,9 @@
           "src/extensions/addressbook",
           "src/extensions/community",
           "src/extensions/help",
+          "src/extensions/memoreport",
+          "src/extensions/report",
+          "src/extensions/schedule",
           "src/services/business/community",
           "src/services/business/memoreport",
           "src/services/business/schedule",
@@ -635,18 +639,6 @@
         "comment"
       ],
       "reason": "Comment 엔티티의 게시글 연관과 BoardErrorCode 참조 때문에 함께 선택한다. 스크랩은 게시글 FK 로 게시판을 요구하지만 게시판은 스크랩 없이 생성된다(게시글 상세의 스크랩 버튼은 post-actions 슬롯 기여다). (댓글 수 동기화는 2026-08-29 foundation 이벤트로 역전돼 더는 결합 근거가 아니다.)"
-    },
-    {
-      "id": "realtime-stats",
-      "pack": "collaboration",
-      "domains": [
-        "dashboard"
-      ],
-      "requiresDomains": [
-        "board",
-        "notification"
-      ],
-      "reason": "RealTimeDashboardService가 게시판 포트로 오늘 게시글 수(30초 재사용)를, 알림 포트로 전체 미읽음 알림 수를 DB에서 읽어 방송한다. 접속자·분당 방문은 인스턴스 메모리 카운터다."
     }
   ],
   "sharedTableContracts": [

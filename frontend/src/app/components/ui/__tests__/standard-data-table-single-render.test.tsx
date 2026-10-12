@@ -49,7 +49,7 @@ describe('StandardDataTable 단일 렌더 계약', () => {
 
   it('accessor 가 만든 식별자와 컨트롤이 문서 전체에서 정확히 1개다', () => {
     // 실제 소비자들이 하는 일을 그대로 재현한다 — accessor 안에서 testid·aria-label 을 만든다
-    // (MailHistoryHubClient·EventManagementClient·WorkHubClient 가 이 패턴이다).
+    // (MailHistoryHubClient·EventManagementClient·ScheduleCalendarClient 가 이 패턴이다).
     const columns: Column<Row>[] = [
       { header: '이름', accessor: 'name' },
       {

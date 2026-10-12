@@ -368,9 +368,19 @@ function slotMapKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
 }
 
 /** shell-links 의 배치(닫힌 목록). 소비 셸이 있는 자리만 둔다. */
-const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error', 'command-center', 'collaboration-hub']);
-/** 아이콘이 있는 목록이라 icon 이 필요한 배치(머리글 아이콘 단추·명령 센터 목록). */
-const ICON_PLACEMENTS = new Set(['header', 'command-center']);
+const SHELL_LINK_PLACEMENTS = new Set(['header', 'footer', 'error', 'command-center', 'collaboration-hub', 'work-hub', 'work-report']);
+/** 아이콘이 있는 목록이라 icon 이 필요한 배치(머리글 아이콘 단추·명령 센터 목록·업무 보고 머리 단추). */
+const ICON_PLACEMENTS = new Set(['header', 'command-center', 'work-report']);
+/** 글자 탭이라 icon 을 두지 않는 배치(나의 업무 탭 줄). 두면 셸이 버리는 데이터가 된다. */
+const ICONLESS_PLACEMENTS = new Set(['work-hub']);
+const WORK_HUB_TABS = join(frontendRoot, 'src/components/business/work-hub/work-hub-tabs.tsx');
+
+/** 나의 업무 탭 줄의 core 탭(work-hub-tabs.tsx 의 CORE_TAB). 기여 탭의 id·목적지는 이것과 겹치지 않는다 — id 가 탭 DOM id 가 된다. */
+function workHubCoreTab(source = readFileSync(WORK_HUB_TABS, 'utf8')) {
+  const match = /const CORE_TAB = \{ id: '([a-z][a-z0-9-]*)', href: '([^']+)'/.exec(source);
+  return match ? { id: match[1], href: match[2] } : null;
+}
+
 /** 주체 없이 거르는 배치 — 바닥글은 서버 컴포넌트, 오류 화면은 인증 공급자에 기대지 않는 경계다. /admin 아래 page 술어는 늘 거짓이 된다. */
 const SUBJECTLESS_PLACEMENTS = new Set(['footer', 'error']);
 /** 페이지 게이트가 있는 경로(frontend/src/lib/auth/page-access.ts 의 isGatedPath 와 같은 경계). */
@@ -383,11 +393,14 @@ const isInternalPath = href => /^\/(?![/\\])/.test(href);
  * - 배치는 header·footer·error 리터럴, href 는 '/' 로 시작하는 앱 안 경로 리터럴('//'·'/\' 로 시작하는 외부 주소는 안 된다),
  *   visibleWhen 은 { page: 자기 href } 하나다.
  * - 바닥글·오류 화면 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다(그렇지 않으면 항목이 아무 신호 없이 늘 숨는다).
- * - 머리글 배치는 아이콘 단추, 명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다(없으면 빈 단추·빈 칸이 된다).
+ * - 머리글 배치는 아이콘 단추, 명령 센터 배치는 아이콘이 있는 목록이라 icon 이 필요하다(없으면 빈 단추·빈 칸이 된다). 업무 보고 머리
+ *   배치(work-report)도 아이콘 단추라 icon 이 필요하다.
+ * - 나의 업무 탭 줄 배치(work-hub)는 글자 탭이라 icon 을 두지 않고, id·목적지가 core 탭(업무 관리)과 겹치지 않는다 — id 가 탭 DOM id
+ *   (work-hub-tab-<id>)가 되고 core 탭과 같은 목적지면 탭이 둘이 된다. 두 배치 모두 주체가 있는 소비자라 /admin 목적지를 둘 수 있다.
  * - fill 화면은 바닥글을 숨긴다(globals.css). 바닥글 항목은 같은 기여 안에 같은 목적지의 머리글 짝이 있어야 한다 — 기여 파일 하나가
  *   함께 지워지므로 머리글이 먼저 빠지는 프로필이 없다(종전 셸 접근성 계약의 pack 대조를 대신한다).
  */
-function shellLinkViolations(entries, label) {
+function shellLinkViolations(entries, label, { coreTab = workHubCoreTab() } = {}) {
   const violations = [];
   const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
   const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
@@ -412,6 +425,10 @@ function shellLinkViolations(entries, label) {
       violations.push(`${label}: ${id} — ${placement} 배치는 주체 없이 거르므로 /admin 밖 목적지만 둔다`);
     }
     if (ICON_PLACEMENTS.has(placement) && !prop(element, 'icon')) violations.push(`${label}: ${id} — ${placement} 배치는 아이콘이 있는 목록이라 icon 이 필요하다`);
+    if (ICONLESS_PLACEMENTS.has(placement) && prop(element, 'icon')) violations.push(`${label}: ${id} — ${placement} 배치는 글자 탭이라 icon 을 두지 않는다`);
+    if (placement === 'work-hub' && (!coreTab || id === coreTab.id || href === coreTab.href)) {
+      violations.push(`${label}: ${id} — work-hub 배치는 core 탭(업무 관리)의 id·목적지와 겹치지 않는다`);
+    }
     rows.push({ id, placement, href });
   }
   for (const row of rows.filter(candidate => candidate.placement === 'footer')) {
@@ -541,6 +558,99 @@ function hubTabViolations(entries, label, { file, hubs = hubViewKeys(), modules 
   return violations;
 }
 
+/** home-sections 의 배치(닫힌 목록). 업무 홈 셸이 그리는 자리만 둔다. */
+const HOME_PLACEMENTS = new Set(['overlay', 'actions', 'cards', 'main', 'status', 'bottom']);
+const HOME_SECTION_KEYS = new Set(['id', 'placement', 'order', 'Component', 'prefetch', 'activityNote', 'visibleWhen']);
+const HOME_FAILURES = new Set(['boundary', 'section']);
+
+/** frontend 기준 경로의 모듈 원문(확장자를 붙여 찾는다). 없으면 undefined. */
+function readFrontendModule(target) {
+  for (const candidate of [target, `${target}.ts`, `${target}.tsx`, `${target}/index.ts`, `${target}/index.tsx`]) {
+    const path = join(frontendRoot, candidate);
+    if (existsSync(path) && !candidate.endsWith('/')) {
+      try {
+        return readFileSync(path, 'utf8');
+      } catch {
+        // 폴더면 다음 후보를 본다.
+      }
+    }
+  }
+  return undefined;
+}
+
+/** 모듈의 첫 문장이 'use client' 지시문인지. 모듈을 읽을 수 없으면 undefined(판정 불가 — 위반으로 다룬다). */
+function startsWithUseClient(source) {
+  if (source === undefined) return undefined;
+  const first = ts.createSourceFile('module.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX).statements[0];
+  return Boolean(first && ts.isExpressionStatement(first) && ts.isStringLiteral(first.expression) && first.expression.text === 'use client');
+}
+
+/**
+ * home-sections 항목 규칙(Phase 2 9단계). 업무 홈은 서버 자식(home-data-boundary.tsx)도 레지스트리를 읽는다 — 그래서 기여가 가리키는 두
+ * 이름의 모듈 경계를 정적으로 판정한다.
+ * - 규칙 1: prefetch 의 query 는 'use client' 가 없는 모듈에서 가져온다. 'use client' 모듈의 값은 서버에서 클라이언트 참조가 되어,
+ *   서버 자식이 조회를 부를 수 없다(미리 채우기가 조용히 빠지거나 서버에서 실패한다).
+ * - 규칙 2: Component 는 'use client' 모듈에서 가져온다. ssr:false 래퍼는 서버 컴포넌트에서 쓸 수 없는데(Next), 'use client' 가 없는
+ *   모듈의 래퍼는 레지스트리를 통해 서버 그래프에 들어간다.
+ * - placement 는 닫힌 배치 리터럴, order 는 숫자 리터럴, prefetch 는 { query: import 한 이름, failure: boundary·section } 배열,
+ *   activityNote 는 비지 않은 문자열 리터럴이다. 그 밖의 키는 두지 않는다.
+ * importedFrom 은 기여의 import 이름 → 지정자, readModule 은 frontend 기준 경로 → 원문이다.
+ */
+function homeSectionViolations(entries, label, { file, importedFrom, readModule = readFrontendModule }) {
+  const violations = [];
+  const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
+  const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
+    && ts.isIdentifier(property.name) && property.name.text === name);
+  const moduleOf = specifier => (specifier?.startsWith('@/') ? `src/${specifier.slice(2)}`
+    : specifier?.startsWith('.') ? posix.normalize(posix.join(posix.dirname(file), specifier)) : undefined);
+  const clientModule = name => {
+    const target = moduleOf(importedFrom.get(name));
+    return target === undefined ? undefined : startsWithUseClient(readModule(target));
+  };
+  for (const element of entries.elements) {
+    if (!ts.isObjectLiteralExpression(element)) {
+      violations.push(`${label}: home-sections 항목은 객체 리터럴이다`);
+      continue;
+    }
+    const name = text(prop(element, 'id')?.initializer) ?? '?';
+    for (const property of element.properties) {
+      if (ts.isPropertyAssignment(property) && ts.isIdentifier(property.name) && !HOME_SECTION_KEYS.has(property.name.text)) {
+        violations.push(`${label}: ${name} 에 home-sections 가 모르는 키(${property.name.text})가 있다`);
+      }
+    }
+    if (!HOME_PLACEMENTS.has(text(prop(element, 'placement')?.initializer))) {
+      violations.push(`${label}: ${name} 의 배치는 ${[...HOME_PLACEMENTS].join('·')} 리터럴이다`);
+    }
+    const order = prop(element, 'order')?.initializer;
+    if (!order || !ts.isNumericLiteral(order)) violations.push(`${label}: ${name} 의 order 는 숫자 리터럴이다`);
+    const component = prop(element, 'Component')?.initializer;
+    if (!component || !ts.isIdentifier(component)) violations.push(`${label}: ${name} 의 Component 는 import 한 이름이다`);
+    else if (clientModule(component.text) !== true) {
+      violations.push(`${label}: ${name} 의 Component(${component.text})는 'use client' 모듈에서 가져온다 — 서버 자식도 레지스트리를 읽는다`);
+    }
+    const note = prop(element, 'activityNote')?.initializer;
+    if (note && !text(note)?.trim()) violations.push(`${label}: ${name} 의 activityNote 는 비지 않은 문자열 리터럴이다`);
+    const prefetch = prop(element, 'prefetch')?.initializer;
+    if (!prefetch) continue;
+    if (!ts.isArrayLiteralExpression(prefetch) || prefetch.elements.length === 0) {
+      violations.push(`${label}: ${name} 의 prefetch 는 비지 않은 배열이다`);
+      continue;
+    }
+    for (const item of prefetch.elements) {
+      const query = ts.isObjectLiteralExpression(item) ? prop(item, 'query')?.initializer : undefined;
+      const failure = ts.isObjectLiteralExpression(item) ? text(prop(item, 'failure')?.initializer) : undefined;
+      if (!ts.isObjectLiteralExpression(item) || item.properties.length !== 2 || !query || !ts.isIdentifier(query) || !HOME_FAILURES.has(failure)) {
+        violations.push(`${label}: ${name} 의 prefetch 항목은 { query: import 한 이름, failure: boundary·section } 이다`);
+        continue;
+      }
+      if (clientModule(query.text) !== false) {
+        violations.push(`${label}: ${name} 의 prefetch(${query.text})는 'use client' 가 없는 모듈에서 가져온다 — 서버 자식이 그 값으로 조회한다`);
+      }
+    }
+  }
+  return violations;
+}
+
 /**
  * 기여 파일 하나의 함정 규칙 위반. `ownPaths` 는 그 기능의 FEATURES.paths, `foreignPaths` 는 다른 기능의 FEATURES.paths 합집합이다
  * (둘 다 frontend 기준).
@@ -552,7 +662,7 @@ function hubTabViolations(entries, label, { file, hubs = hubViewKeys(), modules 
  *   다른 기능이 소유한 @/lib·@/types 파일을 가져오면 그 기능이 빠진 구성에서 기여·레지스트리·셸이 연쇄로 지워진다.
  * - 항목마다 id 는 문자열 리터럴, always 사유는 비지 않은 문자열 리터럴, 링크 키는 링크 슬롯에서만.
  */
-function contributionViolations({ file, source, owner, slot, ownPaths, foreignPaths }) {
+function contributionViolations({ file, source, owner, slot, ownPaths, foreignPaths, readModule }) {
   const violations = [];
   const label = `frontend/${file}`;
   if (!file.endsWith('.ts')) violations.push(`${label}: 기여는 .ts 여야 한다`);
@@ -564,12 +674,18 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
   walk(ast);
   const defaults = [];
   const imported = new Set();
+  const importedFrom = new Map();
   for (const statement of ast.statements) {
     if (ts.isImportDeclaration(statement)) {
       const clause = statement.importClause;
-      if (clause?.name) imported.add(clause.name.text);
-      if (clause?.namedBindings && ts.isNamespaceImport(clause.namedBindings)) imported.add(clause.namedBindings.name.text);
-      if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) for (const element of clause.namedBindings.elements) imported.add(element.name.text);
+      const from = ts.isStringLiteral(statement.moduleSpecifier) ? statement.moduleSpecifier.text : undefined;
+      const add = name => {
+        imported.add(name);
+        importedFrom.set(name, from);
+      };
+      if (clause?.name) add(clause.name.text);
+      if (clause?.namedBindings && ts.isNamespaceImport(clause.namedBindings)) add(clause.namedBindings.name.text);
+      if (clause?.namedBindings && ts.isNamedImports(clause.namedBindings)) for (const element of clause.namedBindings.elements) add(element.name.text);
     } else if (ts.isExportAssignment(statement) && !statement.isExportEquals) {
       defaults.push(statement);
     } else if (ts.isExportDeclaration(statement)
@@ -628,6 +744,7 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
     if (slot === 'shell-links') violations.push(...shellLinkViolations(entries, label));
     if (slot === 'hub-tabs') violations.push(...hubTabViolations(entries, label, { file: label }));
     if (slot === 'stats-panels') violations.push(...statsPanelViolations(entries, label));
+    if (slot === 'home-sections') violations.push(...homeSectionViolations(entries, label, { file, importedFrom, readModule }));
   }
   const covers = (paths, target) => paths.some(path => {
     const root = path.replace(/\/+$/, '');
@@ -912,7 +1029,14 @@ test('shell links: the page predicate is the href, subjectless placements stay o
     /f 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', '/help', icon, '/help/policies/PRIVACY'))), /h 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(entry('h', 'header', '/help'))), /h — header 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
-  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error·command-center·collaboration-hub 리터럴이다/);
+  assert.match(check(fixture(entry('s', 'sidebar', '/help'))), /s 의 배치는 header·footer·error·command-center·collaboration-hub·work-hub·work-report 리터럴이다/);
+  // 나의 업무 탭 줄(work-hub)은 글자 탭이고 core 탭과 id·목적지가 겹치지 않는다. 업무 보고 머리(work-report)는 아이콘 단추다.
+  assert.deepEqual(workHubCoreTab(), { id: 'job', href: '/smart-toolkit/dept-job' }, 'the core tab of the work hub strip is read');
+  assert.equal(check(fixture(entry('report', 'work-hub', '/smart-toolkit/work-report'), entry('m', 'work-report', '/admin/operation/memo-reports', icon))), '');
+  assert.match(check(fixture(entry('report', 'work-hub', '/smart-toolkit/work-report', icon))), /report — work-hub 배치는 글자 탭이라 icon 을 두지 않는다/);
+  assert.match(check(fixture(entry('job', 'work-hub', '/smart-toolkit/work-report'))), /job — work-hub 배치는 core 탭\(업무 관리\)의 id·목적지와 겹치지 않는다/);
+  assert.match(check(fixture(entry('jobs', 'work-hub', '/smart-toolkit/dept-job'))), /jobs — work-hub 배치는 core 탭\(업무 관리\)의 id·목적지와 겹치지 않는다/);
+  assert.match(check(fixture(entry('m', 'work-report', '/admin/operation/memo-reports'))), /m — work-report 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
   // 명령 센터 배치도 아이콘이 필요하다. 협업 허브 머리 배치는 글자 단추라 아이콘이 없어도 되고, 둘 다 주체가 있어 /admin 목적지를 둔다.
   assert.match(check(fixture(entry('c', 'command-center', '/admin/collaboration'))), /c — command-center 배치는 아이콘이 있는 목록이라 icon 이 필요하다/);
   assert.equal(check(fixture(entry('c', 'command-center', '/admin/collaboration', icon), entry('m', 'collaboration-hub', '/admin/collaboration/mail-send'))), '');
@@ -951,6 +1075,43 @@ test('stats panels: route tabs carry their page predicate, body tabs and overvie
   assert.match(check(fixture(card("    href: '/admin/stats',\n"))), /CARD — 라우트가 없는 항목/);
   assert.match(check(fixture(body().replace("kind: 'body'", "kind: 'table'"))), /BODY 의 kind 는 series·body 리터럴이다/);
   assert.match(check(fixture(card().replace("placement: 'overview-card'", "placement: 'sidebar'"))), /CARD 의 placement 는 hub-tab·overview-card 리터럴이다/);
+});
+
+test('home sections: closed placements, a client Component, a server-readable prefetch and data-only notes', () => {
+  const inputs = readProjectionInputs();
+  const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
+  const sections = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'home-sections');
+  assert.deepEqual(sections.map(row => row.owner).sort(), ['board', 'dashboard', 'informalsanction', 'note', 'promotion'], 'the work home contributions are read');
+  const foreignOf = owner => [...paths].filter(([id]) => id !== owner).flatMap(([, list]) => list);
+  const check = (source, row, readModule) => contributionViolations({ file: row.file, source, owner: row.owner, slot: 'home-sections',
+    ownPaths: paths.get(row.owner), foreignPaths: foreignOf(row.owner), readModule }).join('\n');
+  for (const row of sections) assert.equal(check(inputs.original(join(frontendRoot, row.file)), row), '', row.file);
+  // 합성 기여로 규칙마다 붉음을 본다. 게시판 기여의 실제 모양 위에서 바꾼다.
+  const board = sections.find(row => row.owner === 'board');
+  const original = inputs.original(join(frontendRoot, board.file)).replace(/\r\n/g, '\n');
+  const swap = (from, to) => {
+    assert.ok(original.includes(from), `the fixture finds ${from}`);
+    return original.replace(from, to);
+  };
+  assert.match(check(swap("placement: 'actions'", "placement: 'sidebar'"), board), /board-new-post 의 배치는 overlay·actions·cards·main·status·bottom 리터럴이다/);
+  assert.match(check(swap("activityNote: '공지사항과", "activityNote: '  ',\n    note: '공지사항과"), board), /board-lists 의 activityNote 는 비지 않은 문자열 리터럴이다/);
+  assert.match(check(swap("failure: 'boundary' }],\n    visibleWhen: { permissions: ['DASHBOARD_READ'] },\n  },\n  {\n    id: 'board-notice-total'",
+    "failure: 'later' }],\n    visibleWhen: { permissions: ['DASHBOARD_READ'] },\n  },\n  {\n    id: 'board-notice-total'"), board),
+  /board-task-total 의 prefetch 항목은 \{ query: import 한 이름, failure: boundary·section \} 이다/);
+  // H-R6: 기여는 기능 경로·중립 모듈만 import 한다 — 게시판 ID 원천(@/config)은 컴포넌트가 쓴다.
+  assert.match(check(`import { TASK_BOARD_ID } from '@/config/board-ids';\n${original}`, board), /허용되지 않은 import @\/config\/board-ids/);
+  // H-R7·H-R8: 모듈 경계. 읽기 대역으로 지시문만 바꾼다(실제 모듈은 그대로 둔다).
+  const flip = target => path => {
+    const text = readFrontendModule(path);
+    if (text === undefined || !path.startsWith(target)) return text;
+    return text.startsWith("'use client'") ? text.replace("'use client';", '') : `'use client';\n${text}`;
+  };
+  assert.match(check(original, board, flip('src/queries/board-home-query')),
+    /board-new-post 의 prefetch\(boardHomeQuery\)는 'use client' 가 없는 모듈에서 가져온다/);
+  assert.match(check(original, board, flip('src/app/components/dashboard/BoardHome')),
+    /board-new-post 의 Component\(BoardNewPostAction\)는 'use client' 모듈에서 가져온다/);
+  assert.match(check(original, board, () => undefined), /Component\(BoardNewPostAction\)는 'use client' 모듈에서 가져온다/,
+    'an unreadable module is not judged client-safe');
 });
 
 test('a configuration without the contributing feature renders an empty registry, which the projection type check sees as a root', () => {

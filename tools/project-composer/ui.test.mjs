@@ -291,6 +291,17 @@ const sharedBoard = (() => {
     { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
   return { ...body, catalogHash: compositionDigest(body) };
 })();
+/*
+ * 업무 허브 분해 W1 뒤 실제 카탈로그에는 '목적지 없음' 메뉴가 생기는 구성이 없다 — 유일하던 '나의 업무'가 core 셸이 됐다(단독 22개·
+ * 두 기능 231개·프리셋 3개 실측). 그 표시를 보는 시험은 나의 업무 화면을 업무 보고 소유로 되돌린 카탈로그로 돈다 — 나머지 기능·간선·
+ * 문구·메뉴는 실제 그대로다.
+ */
+const detachedHub = (() => {
+  const { catalogHash, ...body } = structuredClone(real);
+  body.core.menuRoutes = body.core.menuRoutes.filter(route => route !== '/admin/work-hub');
+  body.capabilities.find(capability => capability.id === 'report').menuRoutes.push('/admin/work-hub');
+  return { ...body, catalogHash: compositionDigest(body) };
+})();
 async function realCatalogPage(t, { preflight = passingPreflight, deep = passingDeep, catalog = real } = {}) {
   const plan = recipe => {
     const composition = resolveProjectRecipe(recipe, catalog);
@@ -450,12 +461,15 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
   await expect(page.locator('#plan-status')).toContainText('해제로 함께 포함되던 기능');
   await expect(page.locator('#plan-status')).toContainText('게시판·지식');
   // 시작 구성을 고르면 그 구성 이름으로 말한다. 새 구성이 직접 포함하는 기능(게시판·댓글)은 '빠졌다' 고 말하지 않는다.
-  //   커뮤니티는 게시판·댓글·템플릿을 끌어오고, 협업 기본에는 템플릿만 없다.
+  //   커뮤니티는 게시판·댓글을, 포상은 약식 전자결재를 끌어오고, 협업 기본에는 약식 전자결재만 없다(템플릿은 DEC-OPS-280 뒤 선택 연동이다).
   await page.locator('#capability-community').focus();
   await page.keyboard.press('Space');
   await expect(page.locator('#plan-status')).toContainText('커뮤니티 선택으로');
+  await page.locator('#capability-reward').focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#plan-status')).toContainText('포상 선택으로');
   await page.locator('#preset').selectOption('collaboration');
-  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 1개가 빠졌습니다(템플릿). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('‘협업 기본’ 구성 선택으로 함께 포함되던 기능 1개가 빠졌습니다(약식 전자결재). ' + PLAN_READY);
   assert.deepEqual(pageErrors, []);
 });
 
@@ -473,7 +487,7 @@ test('unchecking a feature that another choice still needs says it stayed, not t
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await page.locator('#capability-comment').uncheck();
   await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. '
-    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 3개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼, 템플릿). ' + PLAN_READY);
+    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 2개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼). ' + PLAN_READY);
   await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#capability-comment')).toBeChecked();
   assert.deepEqual(pageErrors, []);
@@ -552,11 +566,11 @@ test('pressing an automatic card while the plan cannot be checked says why the r
  * 글자 표시를 단다. 요약 줄이 화면·분류·목적지 없음·추가 수를 말한다.
  */
 test('the menu preview is a nested tree in menu order with category, detached and added markers', { timeout: 45_000 }, async t => {
-  const { page, pageErrors } = await realCatalogPage(t);
+  const { page, pageErrors } = await realCatalogPage(t, { catalog: detachedHub });
   await page.locator('#capability-scrap').check();
   await expect(page.locator('#domain-count')).toHaveText('3');
   const menus = realMenuTree({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection: { domains: ['scrap'] },
-    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+    database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, detachedHub);
   const count = kind => menus.filter(menu => menu.kind === kind).length;
   const added = menus.filter(menu => menu.added);
   assert.ok(count('detached') > 0 && added.length > 0, 'the fixture shows every marker');
@@ -747,7 +761,9 @@ test('a saved recipe file fills the name, selection and structure and is re-chec
  */
 test('the summary stays in view with its buttons while long details scroll inside it', { timeout: 60_000 }, async t => {
   const { page, pageErrors } = await realCatalogPage(t);
-  await page.locator('#capability-dashboard').check();
+  // 자동 포함이 여럿인 선택: 도움말은 게시판·댓글을, 포상은 결재를 끌어온다(업무 홈 이행 뒤 대시보드는 알림 하나만 끌어온다).
+  await page.locator('#capability-help').check();
+  await page.locator('#capability-reward').check();
   await expect(page.locator('#auto-included > div').first()).toBeVisible();
   const inView = async locator => {
     const box = await locator.boundingBox();
@@ -944,10 +960,11 @@ test('feature cards preview what choosing or removing them changes before the cl
   assert.equal(switched, '');
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'mail').summary);
-  // 시작 구성에서 게시판을 빼려 하면 댓글·대시보드·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤 붙잡지 않는다), 직접 선택이 되며 들어오는 기능도 밝힌다.
+  // 시작 구성에서 게시판을 빼려 하면 댓글·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤, 실시간 대시보드는 Phase 2 9단계 뒤 붙잡지 않는다), 직접 선택이 되며
+  //   들어오는 기능도 밝힌다.
   await page.locator('#capability-board').focus();
   const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
-  assert.match(board, /^빼도 댓글, 실시간 대시보드, 스크랩이 요구해 계속 포함됩니다 · 기능 \+3\(들어옴: /);
+  assert.match(board, /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: /);
   await expect(page.locator('#preview-board')).toHaveText(board);
   // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
   // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.

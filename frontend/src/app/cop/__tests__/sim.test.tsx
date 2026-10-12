@@ -5,15 +5,17 @@ vi.mock('next/config', () => ({
   }),
 }));
 
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
+// 일정 화면은 탭 줄 도우미를 거쳐 useOptionalAuth 도 읽는다.
+vi.mock('@/contexts/AuthContext', () => {
+  const auth = () => ({
     user: { id: 'test-user', userNm: '테스트' },
     loading: false,
     login: vi.fn(),
     logout: vi.fn(),
     checkAuth: vi.fn(),
-  }),
-}));
+  });
+  return { useAuth: auth, useOptionalAuth: auth };
+});
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';

@@ -653,7 +653,7 @@ test('entry permissions resolve exact routes before dynamic siblings and keep AL
 
 test('a screen that renders another route\'s client gets that client\'s write and display permissions, and import cycles terminate', t => {
   const { dir, write, mutate } = fixture(t);
-  // /smart-toolkit/schedule 이 work-hub 의 허브 클라이언트를 렌더하는 것과 같은 모양 — 클라이언트 파일은
+  // /admin/help/faq 가 지식 허브(/admin/help)의 허브 클라이언트를 렌더하는 것과 같은 모양 — 클라이언트 파일은
   // /admin/things 화면의 디렉터리에 있지만 /admin/reports 도 그것을 연다.
   write('frontend/src/app/admin/reports/page.tsx',
     "import { ThingClient } from '@/app/admin/things/ThingClient';\nexport default function Page() { return <ThingClient />; }\n");

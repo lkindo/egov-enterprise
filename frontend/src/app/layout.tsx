@@ -16,7 +16,7 @@ import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
 import { cookies, headers } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
-import { authService, UserInfo } from '@/services/foundation/auth/authService';
+import { getServerUser } from '@/lib/auth/server-user';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { POPSTATE_GATE_SCRIPT } from '@/lib/navigation/popstate-gate';
 import { SIDEBAR_COLLAPSE_SCRIPT } from '@/lib/layout/sidebar-collapse-script';
@@ -83,18 +83,9 @@ async function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-
-  // 인증 정보를 서버 사이드에서 미리 조회 (성능 최적화 및 플리커 방지)
-  let initialUser: UserInfo | null = null;
-  if (accessToken) {
-    try {
-      initialUser = await authService.getCurrentUser();
-    } catch {
-      initialUser = null;
-    }
-  }
+  // 인증 정보를 서버 사이드에서 미리 조회 (성능 최적화 및 플리커 방지). 요청 하나에서 한 번만 읽는다 — 업무 홈 서버 자식도 같은
+  // 함수로 읽어 '/' 요청의 /auth/me 가 두 번 나가지 않는다(lib/auth/server-user.ts).
+  const initialUser = await getServerUser();
 
   return (
     <Providers initialUser={initialUser}>

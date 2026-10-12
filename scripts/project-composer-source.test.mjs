@@ -80,33 +80,34 @@ test('SMS API support follows the optional domain in the real generator removal 
     'removing the exact support declaration reproduces the isolated Properties survivor');
 });
 
-const templatePolicySupport = [
-  'foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java',
-  'business-app/src/main/java/nuri/business/service/template/TemplateAssignmentPolicyService.java',
-  'business-app/src/test/java/nuri/business/service/template/TemplateAssignmentPolicyServiceTest.java',
-];
+// 템플릿 배정 포트(DEC-OPS-280). 구현은 템플릿 기능의 서비스이고 커뮤니티는 포트를 선택 주입으로 받는다.
+const templatePort = 'foundation/src/main/java/nuri/foundation/core/template/TemplateAssignmentPolicy.java';
+const templateService = 'business-app/src/main/java/nuri/business/service/template/TmplatInfoService.java';
 
-test('template assignment policy follows its only consumer, community, in the real generator removal plan', () => {
-  assert.deepEqual(manifest.packs.demo.backend.domainSupportFiles?.community, templatePolicySupport);
-  // 배너·팝업은 템플릿 배정 구현을 쓰지 않는다 — 커뮤니티와 나눈 뒤(DEC-OPS-273) 홍보만 고르면 그 구현이 지워진다.
-  for (const [selected, kept] of [[['template'], false], [['community'], true], [['promotion'], false], [[], false]]) {
+test('the template assignment port survives every composition and its only implementation leaves with the template feature', () => {
+  // 종전에는 템플릿 디렉터리의 별도 구현을 커뮤니티 지원 파일로 묶어 커뮤니티가 템플릿을 늘 끌어왔다.
+  assert.equal(manifest.packs.demo.backend.domainSupportFiles?.community, undefined, 'the community no longer declares template support');
+  // 구현은 하나이고 템플릿 API 가 쓰는 @Service 다 — 템플릿만 고른 생성물에 소비자 없는 구현이 남지 않는다(도달 불가 서비스 게이트).
+  //   별도 구현을 다시 만들면 템플릿 단독 생성물에서 그 구현이 소비자 없이 남는다.
+  const implementations = java.filter(file => /\bimplements\b[^{]*\bTemplateAssignmentPolicy\b/u.test(readFileSync(file, 'utf8')))
+    .map(file => relative(root, file).split(sep).join('/'));
+  assert.deepEqual(implementations, [templateService]);
+  assert.match(readFileSync(join(root, templateService), 'utf8'), /@Service\b/u);
+  for (const [selected, kept] of [[['template'], true], [['community'], false], [['community', 'template'], true], [['promotion'], false], [[], false]]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
+    assert.equal(composition.resolvedDomains.includes('template'), kept, `${selected}: template resolution`);
     const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
-    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), !kept, `${selected}: ${file}`);
+    assert.equal(plan.removed.has(join(root, templateService)), !kept, `${selected}: ${templateService}`);
+    assert.equal(plan.removed.has(join(root, templatePort)), false, `${selected}: the port stays in foundation`);
   }
   for (const [name, profile] of Object.entries(manifest.profiles)) {
     const plan = planJavaRemoval(root, manifest, profile, java);
-    for (const file of templatePolicySupport) assert.equal(plan.removed.has(join(root, file)), name !== 'demo', `${name}: ${file}`);
+    assert.equal(plan.removed.has(join(root, templateService)), name !== 'demo', `${name}: ${templateService}`);
+    assert.equal(plan.removed.has(join(root, templatePort)), false, `${name}: ${templatePort}`);
   }
-  // 커뮤니티가 구현을 요구한다는 사실을 카탈로그가 기록해야, 커뮤니티 선택이 템플릿 없이 해석되지 않는다.
-  assert.ok(catalog.capabilities.find(row => row.id === 'community').requires
-    .some(row => row.domain === 'template' && row.kind === 'java' && row.evidence === templatePolicySupport[1]), 'community requires the template implementation');
-  // 선언이 없으면 템플릿 단독 생성물에 소비자 없는 @Service 가 남는다 — 생성물 검증의 도달 불가 서비스 게이트가 실패한 경로다.
-  const unowned = structuredClone(manifest);
-  delete unowned.packs.demo.backend.domainSupportFiles.community;
-  const templateOnly = composerProfile(unowned, resolveProjectRecipe(recipe(['template']), catalog));
-  assert.equal(planJavaRemoval(root, unowned, templateOnly, java).removed.has(join(root, templatePolicySupport[1])), false,
-    'removing the support declaration reproduces the unreachable template-only provider');
+  // 커뮤니티는 템플릿을 요구하지 않는다 — 선택 연동(포트)으로만 잇고, 템플릿이 빠진 구성은 기능 저하로 알린다.
+  assert.ok(!catalog.capabilities.find(row => row.id === 'community').requires.some(row => row.domain === 'template'));
+  assert.ok(catalog.integrates.some(row => row.from === 'community' && row.to === 'template' && row.via === 'port:TemplateAssignmentPolicy'));
 });
 
 test('new management HTTP matrices project every selected surface and reject an unowned addition', () => {
@@ -248,6 +249,31 @@ test('API support is removed or survives with its exact consumer and cannot sile
   // 생성 단계는 이 실패를 코드로 엔진에 알린다. 세부 정보는 저장소 기준 '/' 경로다.
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifest),
     error => error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details) === JSON.stringify({ files: [file.split(sep).join('/')] }));
+});
+
+/*
+ * 디렉터리 소유 기능이 선택된 api-server 컨트롤러는 남아야 한다(DEC-OPS-280). 커뮤니티 사용자 API 는 게시판 타입을 참조해, 게시판 없이
+ * 커뮤니티를 고르면 생성기가 그 컨트롤러를 연쇄로 지운다. 참조 기능이 모두 선택됐을 때만 생존을 요구하던 검사는 이 손실을 통과시켰다.
+ * 카탈로그가 그 참조를 간선으로 세므로 실제 해석에서는 게시판이 함께 들어온다. 간선을 메모리에서 걷어 손실을 재현한다.
+ */
+test('a selected feature keeps the api-server controllers of its own directory even when the requires edge is missing', () => {
+  const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
+  const survives = (catalogValue, selected) => {
+    const composition = resolveProjectRecipe(recipe(selected), catalogValue);
+    const plan = planJavaRemoval(root, manifest, composerProfile(manifest, composition), java);
+    return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, manifest,
+      { present: path => !plan.removed.has(join(root, path)) }) };
+  };
+  const real = survives(catalog, ['community']);
+  assert.ok(real.composition.resolvedDomains.includes('board'), 'the real catalog pulls the board in for the community');
+  assert.equal(real.plan.removed.has(join(root, controller)), false);
+  assert.doesNotThrow(real.check);
+  const { catalogHash: _realHash, ...body } = { ...catalog, capabilities: catalog.capabilities.map(row => (row.id !== 'community' ? row
+    : { ...row, requires: row.requires.filter(edge => edge.domain !== 'board') })) };
+  const lost = survives({ ...body, catalogHash: compositionDigest(body) }, ['community']);
+  assert.ok(!lost.composition.resolvedDomains.includes('board'));
+  assert.ok(lost.plan.removed.has(join(root, controller)), 'the generator removes the controller through its board reference');
+  assert.throws(lost.check, error => error.code === 'SOURCE_SURVIVAL' && error.details.files.includes(controller));
 });
 
 test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
@@ -463,7 +489,8 @@ test('presets and representative selections keep exactly the screens their compo
 
 test('removing a shared UI dependency exposes the selected page loss instead of silently passing', () => {
   // Phase 0c: 통계는 core 라 설문·게시판과 통계 사이의 화면 의존이 사라졌다(survey <-> stats 삭제).
-  for (const [from, dependency] of [['community', 'template']]) {
+  // 커뮤니티 → 템플릿은 선택 연동(포트)이 되어 화면 의존이 아니다(DEC-OPS-280). 남은 화면 의존은 도움말 → 게시판이다.
+  for (const [from, dependency, lostRoute] of [['help', 'board', '/help']]) {
     const changed = structuredClone(catalog);
     const feature = changed.capabilities.find(row => row.id === from);
     assert.ok(feature.requires.some(edge => edge.domain === dependency), `${from} -> ${dependency} must exist`);
@@ -472,7 +499,7 @@ test('removing a shared UI dependency exposes the selected page loss instead of 
     changed.catalogHash = compositionDigest(body);
     const broken = inspectFrontendSurvival([from], changed);
     assert.ok(broken.missing.length > 0, `${from} -> ${dependency}: broken dependency must be red`);
-    assert.ok(broken.screens.missing.some(entry => entry.route === '/admin/help'), `${from} -> ${dependency}: the lost knowledge hub screen is named`);
+    assert.ok(broken.screens.missing.some(entry => entry.route === lostRoute), `${from} -> ${dependency}: the lost ${lostRoute} screen is named`);
   }
 });
 
@@ -500,7 +527,7 @@ test('each selectable domain retains its Java production sources after actual de
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(composition.resolvedDomains, owner), `${domain}: ${file}`);
     }
-    // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(템플릿 단독의 커뮤니티 전용 구현).
+    // 선택 도메인 디렉터리에서 지워도 되는 것은 제외된 소비자가 소유한 지원 파일뿐이다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
     const excludedSupport = new Set([...domainSupportFiles(root, manifest)].filter(([owner]) => !composition.resolvedDomains.includes(owner))
       .flatMap(([, supportFiles]) => supportFiles.map(file => join(root, file))));
     for (const selected of composition.resolvedDomains) for (const file of plan.removed) {
@@ -590,14 +617,17 @@ test('the marker table is red for an added or removed block, an unlisted marker 
   // 소유 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 실패한다. 경로 접두(collaboration/ 아래)로 소유를 짐작하지 않는다.
   assert.throws(() => composerMarkerBlockOwners('src/app/admin/collaboration/new/NewClient.tsx', 'demo', ''), /Unclassified composer UI block: src\/app\/admin\/collaboration\/new\/NewClient\.tsx\/demo/,
     'a path prefix is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/UnifiedDashboardClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
+  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
 });
 
 test('dashboard, notifications and optional address book blocks follow their domains rather than coarse packs', () => {
   const composition = resolveProjectRecipe(recipe(['mail']), catalog);
   const project = path => projectCustom(path, readFileSync(join(root, path), 'utf8'), composition);
-  assert.doesNotMatch(project('frontend/src/app/page.tsx'), /dataPromise: getDashboardData\(\)/);
+  // [Phase 2 9단계] 업무 홈 page·셸은 마커가 없다 — 메일만 고르면 그대로이고 업무 홈 레지스트리가 빈 배열이다(아래 표).
+  for (const home of ['frontend/src/app/page.tsx', 'frontend/src/app/UnifiedDashboardClient.tsx']) {
+    assert.equal(project(home), readFileSync(join(root, home), 'utf8'), home);
+  }
   const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
   // [슬롯 단계 PR-6] 알림 벨·도움말 링크는 header-widgets·shell-links 슬롯이다. 고르지 않으면 셸 파일은 그대로이고 레지스트리가 빈 배열이다.
   //   [스크랩 슬롯] 게시글 상세의 스크랩 버튼(post-actions)도 같다.
@@ -612,6 +642,7 @@ test('dashboard, notifications and optional address book blocks follow their dom
     ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [mail];"],
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
     ['frontend/src/extensions/generated-hub-tabs.ts', "hubTabs: readonly SlotContributions<'hub-tabs'>[] = [];"],
+    ['frontend/src/extensions/generated-home-sections.ts', "homeSections: readonly SlotContributions<'home-sections'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;
     assert.ok(shellRendered.includes(empty), `${shellRegistry}: ${shellRendered}`);
@@ -626,24 +657,85 @@ test('dashboard, notifications and optional address book blocks follow their dom
   assert.ok(rendered.includes("recipientPickerSources: readonly SlotContributions<'recipient-picker-sources'>[] = [];"), rendered);
 });
 
-test('the unread-notes card on the work home needs both the dashboard and the note domains', () => {
-  const file = 'frontend/src/app/UnifiedDashboardClient.tsx';
-  const source = readFileSync(join(root, file), 'utf8');
-  // The card block is owned by dashboard + note. Dashboard alone used to pull in note through the board
-  // bundle's scrap edge and the note/scrap hub; that edge is gone (DEC-OPS-272), so the card now leaves with
-  // note and the dual ownership keeps it from dangling.
-  const withoutDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['mail']), catalog));
-  assert.doesNotMatch(withoutDashboard, /UnreadNotesCard/);
+/*
+ * [Phase 2 9단계 H0] 업무 홈 투영 그물. 구성마다 업무 홈('/')에 무엇이 남는지 생성기의 실제 투영·연쇄로 재고 골든과 대조한다.
+ * 업무 홈 page 에서 import 간선으로 닿고 지워지지 않은 파일을 모아, 파일 자체(팝업·배너·쪽지 카드·실시간)와 주석을 뺀 글(카드·
+ * 단추·목록·활동 문장)로 조각을 판정한다 — 마커 블록으로 조립하는 화면과 슬롯 기여로 조립하는 화면에 같은 판정이 선다.
+ * 접근 불가 안내는 다른 조각이 하나라도 있을 때만, 부제는 요약 카드가 있을 때만 화면에 나온다.
+ */
+const HOME_PAGE = 'frontend/src/app/page.tsx';
+const HOME_PIECES = [
+  ['popup', { file: 'frontend/src/app/components/dashboard/PopupManager.tsx' }],
+  ['banner', { file: 'frontend/src/app/components/dashboard/BannerSlider.tsx' }],
+  ['unreadNotes', { file: 'frontend/src/app/components/dashboard/UnreadNotesCard.tsx' }],
+  ['realtime', { file: 'frontend/src/components/features/dashboard/RealTimeDashboard.tsx' }],
+  ['approvalCard', { text: /결재 대기<\/span>/ }],
+  ['approvalButton', { text: />결재함 열기</ }],
+  ['boardCards', { text: /업무게시판 글</ }],
+  ['boardLists', { text: /title="업무게시판 최근 글"/ }],
+  ['newPost', { text: /새 게시글 작성/ }],
+  ['feedNote', { text: /위 목록에서 확인할 수 있습니다/ }],
+];
+const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards'];
+function homeSurface(selection) {
+  const composition = resolveProjectRecipe({ ...recipe([]), selection }, catalog);
+  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles });
+  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
+  const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
+    directPaths: projector.directPaths, readSource: path => projected.get(path) });
+  const reached = new Set([join(root, HOME_PAGE)].filter(path => !plan.removed.has(path)));
+  for (const path of reached) for (const { to } of plan.edges.get(path) ?? []) if (!plan.removed.has(to)) reached.add(to);
+  const text = [...reached].map(path => stripCode(projected.get(path) ?? '')).join('\n');
+  const pieces = HOME_PIECES.filter(([, rule]) => (rule.file ? reached.has(join(root, rule.file)) : rule.text.test(text))).map(([name]) => name);
+  if (pieces.length && /업무 홈 대시보드에 접근할 권한이 없습니다/.test(text)) pieces.push('accessGate');
+  if (pieces.some(piece => HOME_CARDS.includes(piece)) && /확인할 일과 업무 현황입니다/.test(text)) pieces.push('subtitle');
+  return { alive: reached.size > 0, pieces: pieces.sort() };
+}
+
+test('the work home keeps exactly the pieces of the features each composition selects (H0 golden, H1 slots)', () => {
+  const all = ['accessGate', 'approvalButton', 'approvalCard', 'banner', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'popup', 'realtime',
+    'subtitle', 'unreadNotes'];
+  const collaboration = all.filter(piece => !['approvalButton', 'approvalCard', 'banner', 'popup'].includes(piece));
+  const golden = [
+    [{ preset: 'core' }, []],
+    [{ preset: 'collaboration' }, collaboration],
+    [{ preset: 'demo' }, all],
+    // [H2] 실시간 대시보드는 게시판을 포트로 읽는다 — 대시보드만 고르면 게시판이 따라오지 않아 실시간 구역과 접근 판정만 남는다.
+    [{ domains: ['dashboard'] }, ['accessGate', 'realtime']],
+    // [H1] 게시판·결재·쪽지 조각은 그 기능의 home-sections 기여다 — 그 기능만 골라도 홈에 나온다(H0 에서는 대시보드 기능의 마커
+    //   블록이라 나오지 않았다). 기여가 등록되면 셸이 DASHBOARD_READ 로 진입을 판정하고, 요약 카드가 있으면 부제를 그린다.
+    [{ domains: ['board'] }, ['accessGate', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
+    [{ domains: ['informalsanction'] }, ['accessGate', 'approvalButton', 'approvalCard', 'subtitle']],
+    [{ domains: ['note'] }, ['accessGate', 'subtitle', 'unreadNotes']],
+    [{ domains: ['board', 'informalsanction'] },
+      ['accessGate', 'approvalButton', 'approvalCard', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
+    // [H1] 홍보 조각도 기여라 접근 판정이 함께 생긴다(H0 에서는 홍보 블록만 남고 판정은 대시보드 블록이었다). 카드가 없어 부제는 없다.
+    [{ domains: ['promotion'] }, ['accessGate', 'banner', 'popup']],
+    [{ domains: ['notification'] }, []],
+  ];
+  for (const [selection, pieces] of golden) {
+    const surface = homeSurface(selection);
+    assert.ok(surface.alive, `${JSON.stringify(selection)}: the work home page survives`);
+    assert.deepEqual(surface.pieces, pieces, JSON.stringify(selection));
+  }
+});
+
+test('the unread-notes card on the work home leaves with the note domain only (H1 home-sections)', () => {
+  // [Phase 2 9단계] 카드는 쪽지의 home-sections 기여다. 종전에는 대시보드 기능의 마커 블록(소유 dashboard+note)이라 쪽지만 골라도
+  //   나오지 않았다. 이제 쪽지와 함께 남고 쪽지와 함께 빠진다 — 대시보드와 무관하다.
+  const registry = 'frontend/src/extensions/generated-home-sections.ts';
+  const source = readFileSync(join(root, registry), 'utf8');
+  const rendered = domains => {
+    const composition = resolveProjectRecipe(recipe(domains), catalog);
+    return createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files: frontendFiles })
+      .project(registry, source).source;
+  };
+  assert.match(rendered(['note']), /import note from '\.\/note\/home-sections';/);
   const dashboardOnly = resolveProjectRecipe(recipe(['dashboard']), catalog);
   assert.ok(!dashboardOnly.resolvedDomains.includes('note'), dashboardOnly.resolvedDomains.join(','));
-  assert.doesNotMatch(projectCustom(file, source, dashboardOnly), /UnreadNotesCard/);
-  const withDashboard = projectCustom(file, source, resolveProjectRecipe(recipe(['dashboard', 'note']), catalog));
-  assert.match(withDashboard, /import \{ UnreadNotesCard \}/);
-  assert.match(withDashboard, /<UnreadNotesCard \/>/);
-  const forcedWithoutNote = projectCustom(file, source, { profile: 'custom', resolvedDomains: ['dashboard', 'board'] },
-    { packs: ['core', 'collaboration'], frontendRemovePaths: [] });
-  assert.doesNotMatch(forcedWithoutNote, /UnreadNotesCard/);
-  assert.match(forcedWithoutNote, /업무게시판 글/);
+  assert.doesNotMatch(rendered(['dashboard']), /note\/home-sections/);
+  assert.match(rendered(['dashboard']), /import dashboard from '\.\/dashboard\/home-sections';/);
+  assert.doesNotMatch(rendered(['mail']), /from '\.\/\w+\/home-sections'/);
 });
 
 /*
@@ -745,7 +837,10 @@ test('every route literal in a marker block survives in every composition that k
   // 2026-10-12 실측 7건. 종전 10건 중 1건은 업무 홈 블록의 주석 속 경로였다 — 주석을 세지 않게 바뀌며 하한을 실측에 맞췄다.
   //   허브 분해 H4 에서 통계 셸의 탭 경로 2건(게시물·자료 이용)이 마커 블록을 떠나 게시판 기여의 href 가 됐다(9 → 7). 그 목적지는
   //   이제 경계 계약의 stats-panels 규칙(href = page 술어)과 관리 링크 census 가 본다.
-  assert.ok(checked >= 7, `route literals checked: ${checked}`);
+  //   Phase 2 9단계에서 업무 홈 블록 24개가 걷혀 그 안의 경로 6건(새 게시글 작성·전체 보기·상세·결재함)이 각 기능의 업무 홈 조각
+  //   파일로 옮겨 갔다(7 → 1). 그 목적지는 같은 기능이 소유한 화면이라 조각 파일과 함께 남고 빠진다 — 관리 링크 census·리다이렉트
+  //   가드가 그 파일을 본다. 남은 1건은 통합 검색 블록이다.
+  assert.ok(checked >= 1, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
   // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,
   //   게시판·설문(CI 대표 구성)에서는 레지스트리에 쪽지 항목이 없으며, 쪽지를 고르면 있다.

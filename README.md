@@ -132,7 +132,7 @@ pnpm dev
 
 변경 범위별 최소 검증과 문서-only fast path는 [AGENTS.md](./AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](./.githooks/README.md)를 따른다.
 
-생산 저장소는 기존 6개 required context와 `core`·`collaboration`·`demo` 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 수행한다. 원본 12개 workflow와 실행 설정은 `config/governance/upstream-verification/`의 비활성 이력으로 보존하며, CodeQL·E2E·mutation·배포·예약 작업은 기관에서 다시 결속해야 한다. 기본 생성물 CI가 원본과 동등한 검증이나 기관 운영 인증을 제공한다는 뜻은 아니다.
+생산 저장소는 기존 6개 required context와 `core`·`collaboration`·`demo` 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 수행한다. 원본 13개 workflow와 실행 설정은 `config/governance/upstream-verification/`의 비활성 이력으로 보존하며, CodeQL·E2E·mutation·배포·예약 작업은 기관에서 다시 결속해야 한다. 기본 생성물 CI가 원본과 동등한 검증이나 기관 운영 인증을 제공한다는 뜻은 아니다.
 
 생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행한다. 생성물에는 `base:*`·`verify:e2e`·`verify:ops` 별칭이 없으며, required-check 템플릿의 `remoteApplied: false`에 따라 기관이 자기 ruleset과 실행 환경을 설정해야 한다.
 
