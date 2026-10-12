@@ -166,12 +166,14 @@ core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서
 required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workflow_dispatch`)만 있고, 예약 실행(06:17 KST)은 첫 녹색 수동 실행 뒤 켠다.
 
 - **계획**: [러너](../../scripts/reusable-nightly.mjs)의 `plan`이 카탈로그에서 시작 구성과 서로 다른 단독 폐포를 계산한다.
-  시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다(지금 26잡). 이름을 손으로 쓰지 않는다.
+  시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다(2026-10-13 기준 시작 구성 3개 × 2 + 단독 폐포 21개 = 27잡).
+  이름을 손으로 쓰지 않는다.
 - **생성**: 시작 구성은 PR CI와 같은 `verify-reusable-base.mjs`, 단독 선택은 composer 엔진으로 생성·산출물 검증한다.
 - **시험**: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`를 돈다. 단일 모듈의 `test`는
   `api-server` 시험만 돈다. 이관 시험은 구성과 무관해 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고,
   제외는 러너의 원장에 사유와 함께 둔다.
 - **판정**: 작업별 JUnit XML과 vitest JSON으로 판정한다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
+  vitest 의 실패 파일 수는 `testResults` 에서 세고, describe 블록까지 센 suite 수(`numFailedTestSuites`)는 따로 적는다.
   `summary`는 계획의 모든 구성에 통과 보고서가 있는지 본다. 구성별 보고서는 14일, 실패한 구성의 원본 XML·vitest JSON은 7일 남긴다.
 - **경계**: 비밀을 쓰지 않고 권한은 `contents: read`, Gradle 캐시는 읽기만 한다. 동시 10잡, 잡 60분이다.
   동시성 그룹은 ref 와 무관하게 하나다(`max-parallel` 은 실행 하나에만 걸린다). 같은 그룹에서 기다리던 실행은 새 실행이

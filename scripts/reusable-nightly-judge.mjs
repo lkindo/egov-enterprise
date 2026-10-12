@@ -47,7 +47,11 @@ export function judgeJUnit(artifact, units) {
   return { suites, errors };
 }
 
-/** vitest JSON 판정. 파일·시험이 0이면 공집합 통과라 실패다. 실패한 파일은 앞 5개만 남긴다. */
+/**
+ * vitest JSON 판정. 파일·시험이 0이면 공집합 통과라 실패다. 실패한 파일은 앞 5개만 남긴다.
+ * 실패 파일 수는 testResults 에서 센다 — numFailedTestSuites 는 describe 블록도 suite 로 세므로 파일 수가 아니다(T2 첫 실행에서
+ * 실패 파일 4개가 '9 failed files' 로 적혔다). 둘을 따로 적는다.
+ */
 export function judgeVitest(file, base = dirname(file)) {
   if (!existsSync(file)) return { errors: ['vitest: no JSON report'] };
   let report;
@@ -57,13 +61,13 @@ export function judgeVitest(file, base = dirname(file)) {
   const errors = [];
   if (!keys.every((key) => Number.isInteger(summary[key]))) errors.push('vitest: JSON report lacks its counts');
   if (!(summary.numTotalTestSuites > 0) || !(summary.numTotalTests > 0)) errors.push('vitest: report holds no test');
-  if (summary.numFailedTestSuites !== 0 || summary.numFailedTests !== 0) {
-    errors.push(`vitest: ${summary.numFailedTestSuites} failed files, ${summary.numFailedTests} failed tests`);
-  }
-  if (report?.success !== true) errors.push('vitest: report is not successful');
   const failedFiles = (Array.isArray(report?.testResults) ? report.testResults : [])
     .filter((result) => result?.status === 'failed').map((result) => relative(base, String(result.name)).replaceAll('\\', '/'));
-  return { summary: { ...summary, success: report?.success === true, failedFiles: failedFiles.slice(0, 5) }, errors };
+  if (summary.numFailedTestSuites !== 0 || summary.numFailedTests !== 0) {
+    errors.push(`vitest: ${failedFiles.length} failed files, ${summary.numFailedTestSuites} failed suites, ${summary.numFailedTests} failed tests`);
+  }
+  if (report?.success !== true) errors.push('vitest: report is not successful');
+  return { summary: { ...summary, success: report?.success === true, numFailedFiles: failedFiles.length, failedFiles: failedFiles.slice(0, 5) }, errors };
 }
 
 function reportFiles(directory) {

@@ -211,8 +211,18 @@ test('vitest judgment needs a successful report with tests', (t) => {
   writeFileSync(file, vitestReport({ numFailedTests: 2, numFailedTestSuites: 1, success: false,
     testResults: [{ name: join(root, 'src/a.test.ts'), status: 'failed' }, { name: join(root, 'src/b.test.ts'), status: 'passed' }] }));
   const failed = judgeVitest(file, root);
-  assert.deepEqual(failed.errors, ['vitest: 1 failed files, 2 failed tests', 'vitest: report is not successful']);
+  assert.deepEqual(failed.errors, ['vitest: 1 failed files, 1 failed suites, 2 failed tests', 'vitest: report is not successful']);
   assert.deepEqual(failed.summary.failedFiles, ['src/a.test.ts']);
+  // 파일 수는 testResults 에서 센다. numFailedTestSuites 는 describe 블록까지 센 suite 수라 따로 적는다(T2 첫 실행에서 4파일이
+  // '9 failed files' 로 적혔다). 남기는 파일 이름은 5개까지지만 수는 전부 센다.
+  const many = Array.from({ length: 7 }, (_, index) => ({ name: join(root, `src/f${index}.test.ts`), status: 'failed' }));
+  writeFileSync(file, vitestReport({ numFailedTests: 9, numFailedTestSuites: 12, success: false,
+    testResults: [...many, { name: join(root, 'src/ok.test.ts'), status: 'passed' }] }));
+  const suites = judgeVitest(file, root);
+  assert.deepEqual(suites.errors, ['vitest: 7 failed files, 12 failed suites, 9 failed tests', 'vitest: report is not successful']);
+  assert.equal(suites.summary.numFailedFiles, 7);
+  assert.equal(suites.summary.numFailedTestSuites, 12);
+  assert.deepEqual(suites.summary.failedFiles, ['src/f0.test.ts', 'src/f1.test.ts', 'src/f2.test.ts', 'src/f3.test.ts', 'src/f4.test.ts']);
   writeFileSync(file, vitestReport({ numTotalTestSuites: 0, numTotalTests: 0 }));
   assert.deepEqual(judgeVitest(file).errors, ['vitest: report holds no test']);
   writeFileSync(file, '{');
@@ -286,7 +296,7 @@ test('run fails on missing suites, failing vitest, failed generation and contrac
   const multi = fakeRun(t, { layout: 'multi-module', vitest: vitestReport({ numFailedTests: 1, numFailedTestSuites: 1, success: false }) });
   const red = await runItem({ ...item, layout: 'multi-module' }, { root: multi.root, run: multi.run, generators: multi.generators });
   assert.deepEqual(multi.commands[0].slice(0, 4), ['gradle', 'test', '-x', ':migration-tool:test']);
-  assert.match(red.errors.join('\n'), /vitest: 1 failed files, 1 failed tests/);
+  assert.match(red.errors.join('\n'), /vitest: 0 failed files, 1 failed suites, 1 failed tests/);
 
   // include 형식이 달라도 모듈이 빠지지 않는다 — gradle 이 0으로 끝나고 XML 이 없으면 보고서 없음으로 실패다.
   const parenthesized = fakeRun(t, { layout: 'multi-module', ran: [], settings: "include(':foundation')\ninclude(':api-server')" });
