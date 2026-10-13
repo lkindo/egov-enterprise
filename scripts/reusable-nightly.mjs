@@ -97,16 +97,21 @@ export function gradleTestArgs(plan) {
 }
 
 /**
- * 생성물 안에서 계약 생성물을 다시 만들어 대조한다(--check). 기본은 끈다 — 권한·계약 투영(10단계) 전에는 생성물의
- * 화면 목록이 원본 그대로라 대조가 붉다. 그 투영이 들어오는 변경에서 기본으로 켠다. 스크립트가 없으면 실패다.
+ * 생성물 안에서 계약 생성물을 다시 만들어 대조한다(--check). 기본으로 켠다(Phase 2 B8) — 권한·계약 사슬 투영이 이것들을
+ * 구성으로 다시 만들므로 생성물에서 다시 만든 결과와 같아야 한다. 스크립트가 없으면 실패다.
  */
 export const CONTRACT_CHECKS = Object.freeze([
-  ['screens', 'scripts/generate-screen-registry.mjs', '--check'],
-  ['slots', 'scripts/slot-registry.mjs', '--check'],
-  ['permissions', 'scripts/generate-permissions.mjs', '--check'],
-  ['generated-boundaries', 'scripts/generated-boundary-census.mjs', '--check'],
+  ['screens', 'scripts/generate-screen-registry.mjs', '--check'], ['slots', 'scripts/slot-registry.mjs', '--check'],
+  ['permissions', 'scripts/generate-permissions.mjs', '--check'], ['generated-boundaries', 'scripts/generated-boundary-census.mjs', '--check'],
   ['operation-consumers', 'scripts/operation-consumer-census.mjs'],
 ]);
+
+/** 예약 실행은 입력이 없어 빈 값이 오므로 빈 값은 켬이다. 'false' 만 끄고, 오타가 대조를 조용히 끄지 않도록 그 밖의 값은 실패다. */
+export function contractsOption(value) {
+  if (value === undefined || value === '' || value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`--contracts must be true or false: ${value}`);
+}
 
 export function catalogPlanInput(catalog, resolveRecipe = resolveProjectRecipe) {
   const domainsOf = (selection) => [...resolveRecipe({ schemaVersion: 1, project: { name: 'nightly-plan' }, sourceRef: 'HEAD', selection,
@@ -263,6 +268,11 @@ function option(argv, name, fallback = undefined) {
   return argv[index + 1];
 }
 
+/** `run` 의 인자. 워크플로는 예약 실행에도 `--contracts "$NIGHTLY_CONTRACTS"`(빈 값)를 넘긴다. */
+export function runArguments(argv) {
+  return { item: JSON.parse(option(argv, '--item', 'null')), contracts: contractsOption(option(argv, '--contracts')) };
+}
+
 async function main(argv) {
   const [command, ...rest] = argv;
   if (command === 'plan') {
@@ -273,7 +283,8 @@ async function main(argv) {
     if (githubOutput) appendFileSync(githubOutput, `matrix=${JSON.stringify(matrix)}\n`, 'utf8');
     process.stdout.write(`${JSON.stringify(matrix, null, 2)}\n`);
   } else if (command === 'run') {
-    const report = await runItem(JSON.parse(option(rest, '--item', 'null')), { contracts: option(rest, '--contracts', 'false') === 'true' });
+    const { item, contracts } = runArguments(rest);
+    const report = await runItem(item, { contracts });
     process.stdout.write(`[reusable-nightly] ${report.id}/${report.layout}: ${report.result}\n`);
     for (const error of report.errors) process.stderr.write(`  - ${error}\n`);
     if (report.result !== 'passed') process.exitCode = 1;

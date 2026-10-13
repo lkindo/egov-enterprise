@@ -9,8 +9,8 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { judgeJUnit, judgeVitest, summarize } from './reusable-nightly-judge.mjs';
 import { parseWorkflowJobs, validatePinnedWorkflowUses } from './required-checks-contract.mjs';
 import {
-  CONTRACT_CHECKS, catalogPlanInput, generatePreset, generateSelection, gradleTestArgs, nightlyPlan, REPORT_DIRECTORY, runItem,
-  settingsModules, TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
+  CONTRACT_CHECKS, catalogPlanInput, contractsOption, generatePreset, generateSelection, gradleTestArgs, nightlyPlan, REPORT_DIRECTORY, runItem,
+  runArguments, settingsModules, TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
 } from './reusable-nightly.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -363,7 +363,8 @@ test('generation reuses the preset verification and the composer engine with the
 const WORKFLOW = '.github/workflows/reusable-nightly.yml';
 
 /**
- * T2 워크플로의 모양(DEC-OPS-283). 수동·예약 실행만, 읽기 권한만, 비밀 0, 캐시는 읽기만, 계획이 matrix 를 만든다.
+ * T2 워크플로의 모양(DEC-OPS-283). 수동 실행과 매일 예약 하나, 읽기 권한만, 비밀 0, 캐시는 읽기만, 계획이 matrix 를 만든다.
+ * 계약 대조는 기본으로 켠다(Phase 2 B8 — 예약 실행은 입력이 없어 러너의 기본값을 쓴다).
  * run 줄에 `${{ }}` 를 두지 않는다 — 입력은 env 로만 넘겨 셸 주입을 막는다.
  */
 function nightlyWorkflowErrors(source) {
@@ -371,11 +372,18 @@ function nightlyWorkflowErrors(source) {
   const text = source.replace(/\r\n/g, '\n').replace(/^\s*#.*$/gm, '');
   const block = (name) => text.match(new RegExp(`^${name}:\\n((?: {2}.*\\n|\\n)*)`, 'm'))?.[1] ?? '';
   const triggers = [...block('on').matchAll(/^ {2}([a-z_]+):/gm)].map((match) => match[1]);
-  if (!triggers.includes('workflow_dispatch') || triggers.some((name) => !['workflow_dispatch', 'schedule'].includes(name))) {
-    errors.push('nightly verification runs only on demand or on a schedule');
+  if (!triggers.includes('workflow_dispatch') || !triggers.includes('schedule')
+    || triggers.some((name) => !['workflow_dispatch', 'schedule'].includes(name))) {
+    errors.push('nightly verification runs only on demand and on a daily schedule');
   }
-  for (const [, cron] of text.matchAll(/^ {4}- cron: '([^']*)'/gm)) {
+  const crons = [...text.matchAll(/^ {4}- cron: '([^']*)'/gm)].map((match) => match[1]);
+  // 예약이 둘이면 같은 그룹에서 겹쳐 하나가 취소되고, 없으면 매일 돌지 않는다.
+  if (crons.length !== 1) errors.push(`nightly verification has exactly one daily schedule, found ${crons.length}`);
+  for (const cron of crons) {
     if (!/^(?:[1-9]|[1-5]\d) \S+ \* \* \*$/.test(cron)) errors.push(`nightly schedule must run daily off the top of the hour: ${cron}`);
+  }
+  if (!/^ {6}contracts:\n(?: {8}.*\n)*? {8}default: true\n/m.test(block('on'))) {
+    errors.push('contract regeneration is on by default');
   }
   if (block('permissions').trim() !== 'contents: read' || /^ {4}permissions:/m.test(text)) errors.push('nightly verification keeps contents read-only');
   if (/\bsecrets\./.test(text)) errors.push('nightly verification uses no secret');
@@ -389,6 +397,7 @@ function nightlyWorkflowErrors(source) {
   const verify = jobs.get('verify') ?? '';
   for (const line of ['    needs: plan', '    timeout-minutes: 60', '      fail-fast: false', '      max-parallel: 10',
     '      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}', '          NIGHTLY_ITEM: ${{ toJSON(matrix) }}',
+    '          NIGHTLY_CONTRACTS: ${{ inputs.contracts }}',
     '        run: node scripts/reusable-nightly.mjs run --item "$NIGHTLY_ITEM" --contracts "$NIGHTLY_CONTRACTS"']) {
     if (!verify.split('\n').includes(line)) errors.push(`verify job must keep: ${line.trim()}`);
   }
@@ -418,15 +427,21 @@ function nightlyWorkflowErrors(source) {
   return errors;
 }
 
-test('the nightly workflow runs on demand only, read-only, without secrets and with a read-only Gradle cache', () => {
+test('the nightly workflow runs daily and on demand, read-only, without secrets and with a read-only Gradle cache', () => {
   const source = readFileSync(join(ROOT, WORKFLOW), 'utf8');
   assert.deepEqual(nightlyWorkflowErrors(source), []);
-  // 예약은 첫 녹색 수동 실행 뒤 다음 변경에서 켠다(ADR-0027). 그때 이 단언을 그 변경과 함께 바꾼다.
-  assert.doesNotMatch(source, /^\s+schedule:/m, 'the schedule is enabled only after the first green manual run');
+  // 예약은 매일 06:17 KST 하나다(Phase 2 B8). 첫 수동 실행(run 38275695802)의 붉은 구성은 원인마다 담당 커밋으로 고친 뒤 켰다.
+  assert.deepEqual([...source.matchAll(/^ {4}- cron: '([^']*)'/gm)].map((match) => match[1]), ['17 21 * * *']);
   const lf = source.replace(/\r\n/g, '\n');
+  const cron = "    - cron: '17 21 * * *'\n";
   for (const [mutation, expected] of [
-    [lf.replace('on:\n  workflow_dispatch:', 'on:\n  pull_request:\n  workflow_dispatch:'), /on demand or on a schedule/],
-    [lf.replace('on:\n  workflow_dispatch:', "on:\n  schedule:\n    - cron: '0 21 * * *'\n  workflow_dispatch:"), /off the top of the hour: 0 21/],
+    [lf.replace('on:\n  schedule:', 'on:\n  pull_request:\n  schedule:'), /only on demand and on a daily schedule/],
+    [lf.replace(`  schedule:\n${cron}`, ''), /exactly one daily schedule, found 0/],
+    [lf.replace(cron, `${cron}    - cron: '47 9 * * *'\n`), /exactly one daily schedule, found 2/],
+    [lf.replace("'17 21 * * *'", "'0 21 * * *'"), /off the top of the hour: 0 21/],
+    [lf.replace("'17 21 * * *'", "'17 21 * * 1'"), /daily off the top of the hour: 17 21 \* \* 1/],
+    [lf.replace('        default: true\n        type: boolean', '        default: false\n        type: boolean'), /on by default/],
+    [lf.replace('          NIGHTLY_CONTRACTS: ${{ inputs.contracts }}\n', "          NIGHTLY_CONTRACTS: 'false'\n"), /verify job must keep: NIGHTLY_CONTRACTS/],
     [lf.replace('permissions:\n  contents: read', 'permissions:\n  contents: write'), /contents read-only/],
     [lf.replace('          NIGHTLY_LAYOUT: ${{ inputs.layout }}', '          NIGHTLY_LAYOUT: ${{ inputs.layout }}\n          TOKEN: ${{ secrets.DEPLOY_TOKEN }}'), /no secret/],
     [lf.replace('cache-read-only: true', 'cache-read-only: false'), /verify Gradle cache-read-only must be true/],
@@ -445,7 +460,18 @@ test('the nightly workflow runs on demand only, read-only, without secrets and w
     assert.notEqual(mutation, lf, String(expected));
     assert.match(nightlyWorkflowErrors(mutation).join('\n'), expected);
   }
-  // 정각을 피한 매일 예약은 통과한다(예약을 켜는 변경이 쓸 모양).
-  const scheduled = lf.replace('on:\n  workflow_dispatch:', "on:\n  schedule:\n    - cron: '17 21 * * *'\n  workflow_dispatch:");
-  assert.deepEqual(nightlyWorkflowErrors(scheduled), []);
+  // 정각을 피한 다른 매일 시각은 모양으로는 통과한다(시각은 위 단언이 고정한다).
+  assert.deepEqual(nightlyWorkflowErrors(lf.replace("'17 21 * * *'", "'47 20 * * *'")), []);
+});
+
+// 예약 실행은 워크플로 입력이 없어 --contracts 에 빈 값이 온다. 빈 값은 기본(켬)이고, 'false' 만 끈다.
+test('the contracts option is on unless it says false, and a typo fails instead of silently turning it off', () => {
+  for (const value of [undefined, '', 'true']) assert.equal(contractsOption(value), true, String(value));
+  assert.equal(contractsOption('false'), false);
+  for (const value of ['False', 'no', '0', 'ture']) assert.throws(() => contractsOption(value), /--contracts must be true or false/);
+  // run 이 받는 인자 그대로: 예약 실행(빈 값)·인자 없음은 켜고, 수동 실행의 false 만 끈다.
+  const item = '{"id":"preset-core"}';
+  assert.deepEqual(runArguments(['--item', item, '--contracts', '']), { item: { id: 'preset-core' }, contracts: true });
+  assert.equal(runArguments(['--item', item]).contracts, true);
+  assert.equal(runArguments(['--item', item, '--contracts', 'false']).contracts, false);
 });

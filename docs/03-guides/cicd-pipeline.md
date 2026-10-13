@@ -163,12 +163,15 @@ core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서
 
 산출물 검증은 하네스·스키마·프런트 타입·lint·build까지만 본다. 생성물의 일반 테스트는
 [reusable-nightly workflow](../../.github/workflows/reusable-nightly.yml)가 돈다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
-required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workflow_dispatch`)만 있고, 예약 실행(06:17 KST)은 첫 녹색 수동 실행 뒤 켠다.
+required가 아니고 병합을 막지 않는다. 매일 06:17 KST(`17 21 * * *`, 정각 회피)에 기본 브랜치에서 예약 실행하고,
+수동 실행(`workflow_dispatch`)도 된다. 첫 수동 실행(2026-10-13, run 38275695802)은 27잡 중 25잡이 붉었는데 모두 생성물 안의
+시험이 투영을 거르지 않은 원인이었고, 원인마다 담당 커밋으로 고친 뒤 예약을 켰다(Phase 2 B8).
 
 - **계획**: [러너](../../scripts/reusable-nightly.mjs)의 `plan`이 카탈로그에서 시작 구성과 서로 다른 단독 폐포를 계산한다.
   시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다(2026-10-13 기준 시작 구성 3개 × 2 + 단독 폐포 21개 = 27잡).
   이름을 손으로 쓰지 않는다.
 - **생성**: 시작 구성은 PR CI와 같은 `verify-reusable-base.mjs`, 단독 선택은 composer 엔진으로 생성·산출물 검증한다.
+  생성기가 생성물의 API 계약을 원본 frontend 도구로 다시 만들므로 생성 전에 원본 frontend 의존성을 설치한다.
 - **시험**: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`를 돈다. 단일 모듈의 `test`는
   `api-server` 시험만 돈다. 이관 시험은 구성과 무관해 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고,
   제외는 러너의 원장에 사유와 함께 둔다.
@@ -186,8 +189,10 @@ required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workf
 gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions="board+survey informalsanction" -f layout=both
 ```
 
-`compositions`는 `preset:<id>` 또는 `<기능>+<기능>` 토큰을 공백·쉼표로 나열하며, 비우면 전체 계획이다. `contracts=true`는
-생성물 안에서 계약 생성물(화면 목록·슬롯·권한·경계·소비 census)을 다시 만들어 대조한다. 권한·계약 투영 전에는 붉으므로 기본은 끈다.
+`compositions`는 `preset:<id>` 또는 `<기능>+<기능>` 토큰을 공백·쉼표로 나열하며, 비우면 전체 계획이다. `contracts`는
+생성물 안에서 계약 생성물(화면 목록·슬롯·권한·경계·소비 census)을 다시 만들어 대조하며 기본으로 켠다. 권한 투영(10b-2)과
+계약 사슬 투영(10c-2)이 이 생성물들을 구성으로 다시 만들기 때문이다. 예약 실행은 입력이 없어 러너의 기본값(켬)을 쓰고,
+`contracts=false` 만 끈다(그 밖의 값은 러너가 거부한다).
 
 ### 실행 트리거
 
