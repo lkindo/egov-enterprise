@@ -34,13 +34,14 @@ clean v* release tag
 
 | 프로필 | 선택 기능 | 용도 |
 |---|---|---|
-| `core` | 없음 | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
+| `core` | 없음 | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책·통계 중심 최소 골격 |
 | `collaboration` | 게시판·댓글·스크랩·메일·쪽지·알림·문자·실시간 대시보드 | core + 협업 기본 |
 | `demo` | 선택 기능 22개 전부 | 현재 제품의 전체 참조 기능 |
 | `survey` | 설문·투표 | 공통 기반 + 설문(인증 시작 구성, 13b) |
 | `approval` | 약식 전자결재 | 공통 기반 + 결재(인증 시작 구성, 13b) |
 
-`core`·`collaboration`·`demo` 는 누적된다. `survey`·`approval` 은 공통 기반에 기능 하나를 더한 구성이라 `collaboration` 에
+시작 구성은 이름 붙은 기능 목록이다([ADR-0028](../02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md)). 지금 `core` ⊂ `collaboration` ⊂ `demo` 는 포함 관계지만
+규칙이 아니다. `survey`·`approval` 은 공통 기반에 기능 하나를 더한 구성이라 `collaboration` 에
 들지 않는다(DEC-OPS-295). 결재 구성에는 알림이 없어, 알림까지 함께 보는 결재 통합 시험(`ApprovalWorkflowIntegrationTest`)이
 그 구성에서 빠진다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
 pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
@@ -198,7 +199,6 @@ Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 �
 카탈로그 키·진입 권한, 남는 바인딩, 묶음 투영을 미리 판정한다. 정밀 점검 계약이 복사한 트리에 생성기의 거버넌스 단계를 돌려 남는
 page·화면 수·남는/빠지는 묶음·생성 제외 권한이 같은지 대조한다.
 모든 기능을 고른 구성(demo)은 카탈로그·인가 원장·묶음 원장·화면 목록·권한 생성물이 원본과 바이트가 같다.
-정밀 점검이 같은 판정을 미리 하고, 실패는 `PERMISSION_PROJECTION` 차단 사유가 된다.
 **이미 배포한 생성물 DB 는 정리하지 않는다.** 예전 생성물로 만든 DB 에는 지금 구성 밖 권한이 그룹에 배정돼 있을 수 있다.
 새 생성물은 그 코드를 모르므로 권한 스냅숏이 그 그룹 사용자의 인증을 막는다(fail-closed).
 그런 DB 에 새로 만든 소스를 배포하기 전에 구성 밖 OPERATION 배정을 정리하고 이력을 남긴다.
@@ -285,8 +285,8 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 - 승인은 삭제를 **허용**하는 장치가 아니라 **조용할 수 없게** 만드는 장치다. 게이트가 사라지는 변경에서는
   기능 파일·`presets.json` 과 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
 
-**연쇄로 지운 Java(DEC-OPS-264).** 게이트가 아닌 Java 도 선언이 아니라 타입 참조 연쇄로 빠진다 — core 는 105개다
-(api-server main 50개 — 컨트롤러 34·요청·응답 DTO 11·연동·리스너 5 — 와 api-server 시험 52개, business-app 시험 3개).
+**연쇄로 지운 Java(DEC-OPS-264).** 게이트가 아닌 Java 도 선언이 아니라 타입 참조 연쇄로 빠진다 — core 는 106개다
+(api-server main 50개 — 컨트롤러 34·요청·응답 DTO 11·연동·리스너 5 — 와 api-server 시험 53개, business-app 시험 3개).
 소유는 코드에서 도출되므로, 잘못 들어간 import 한 줄은 컨트롤러를 지우면서 기대치까지 함께 바꾼다(개인정보 census·컨트롤러
 하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `presets.json` 의
 `expected.javaCascade` 에 적고, 생성기·정밀 점검(plan/deep)·운영 계약
@@ -305,8 +305,8 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 Atlas 규칙(`upstream-atlas`)으로 Atlas HTML·생성기와
 그 계약 3건(`governance-atlas-contract`·`atlas-catalog`·`atlas-generation`)도 걷는다 — Atlas 는 원본의 운영 사실을 담고
 로그인 전에 응답되며, 생성기가 원본 공용 메모리를 읽어 생성물 안에서 다시 만들 수 없다. 파일 게이트(예: `SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
-pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
-`QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
+기능의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
+`QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 당시 pack 경계(지금은 기능 경계)로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
 판정 원장을 JSON 으로 옮겼다. 승인 목록의 정본은 `presets.json` 의 `expected` 다.
 
@@ -412,7 +412,8 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    생성기·정밀 점검·생성물 무결성 검사가 남는 화면을 이 기대값과 양방향으로 대조한다. 기대한 화면이 빠지면 생성기·정밀
    점검은 SOURCE_SURVIVAL, 무결성 검사는 일반 실패이고, 구성에 없는 화면이 남아도 실패다. 기대값은 기능의 라우트 소유(카탈로그)에서
    계산하고 화면 제외 경로(`owns.frontend`)로 거르지 않으므로, 화면 생존을 바꾸는 잘못된 배치(경로를 다른 기능의 `owns.frontend` 에
-   넣는 실수)는 잡힌다. 늘 함께 빠지는 기능 사이의 이동과 비화면 파일의 소유는 이 대조 밖이다(DEC-OPS-265).
+   넣는 실수)는 잡힌다. 비화면 파일의 소유는 이 대조 밖이고, 시작 구성에서는 preset 동치 계약이 같은 목록의 직접 선택과
+   대조한다(DEC-OPS-265, ADR-0028).
 8. **판정은 실제 투영본의 타입·lint·build와 적용범위 계약이다.** 마커 편집은 전체 제품 빌드만으로 확인할 수 없다.
    - 마커 블록을 더하거나 걷으면 그 기능 파일 `owns.markerBlocks` 의 파일별 블록 수·이행 단계(step)·사유(reason)를 함께 고친다.
      운영 계약(`project-composer-source.test.mjs`)이 공용 파서로 센 원본 블록 수와 기능 파일 선언을 정확히 대조한다(마커 래칫).
@@ -428,8 +429,8 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    `visibleWhen` 을 둔다. import 는 중립 모듈(`@/extensions/slots`·lucide-react, 어떤 기능도 소유하지 않는 `@/types/*`·`@/lib/*`)
    이나 자기 기능 경로만 쓴다 — 다른 기능이 소유한 파일을 가져오면 그 기능이 빠진 구성에서 셸까지 연쇄로 지워진다. 경계 계약
    (`scripts/reusable-frontend-boundaries-contract.test.mjs`)이 강제한다.
-2. **기여 디렉터리는 두 곳에 선언한다** — 그 기능의 카탈로그 경로(`FEATURES[id].paths`)와 소유 pack 의 `frontend.removePaths`.
-   카탈로그 적재가 양방향으로 강제한다(한쪽에만 있거나 기능이 아닌 디렉터리는 실패). 기능이 빠지면 기여 파일은 직접 제거되어
+2. **기여 디렉터리는 그 기능 파일에 선언한다** — `config/modules/<기능 id>.json` 의 `owns.frontend`. 카탈로그 적재가
+   양방향으로 강제한다(선언이 없거나, 기능이 아니거나, 다른 기능의 디렉터리를 가리키면 실패). 기능이 빠지면 기여 파일은 직접 제거되어
    투영 원장에 남는다.
 3. **레지스트리 `src/extensions/generated-<슬롯>.ts` 는 생성 파일이다.** 손으로 고치지 않는다. 기여를 더하거나 걷으면
    `npm run slots:generate` 로 다시 만들고 `npm run slots:check` 로 확인한다(`merge:main` 도 다시 만든다). 생성기·정밀 점검·
@@ -566,7 +567,7 @@ backend 범위는 컴파일·하네스·스키마 검사이며 모든 일반 테
 중첩된 단계가 아니다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 생성물에서
 제거한다. 기관 브라우저 검증과 원격 ruleset 검증은 기관에서 별도로 설계하고 연결한다.
 
-생산 저장소는 기존 6개 required context를 유지하며 3프로필 × 2레이아웃의 6개 생성 조합을 검사한다. 생성물은
+생산 저장소는 기존 6개 required context를 유지하며 main 에서 시작 구성마다 두 레이아웃(PR 은 `ci.pr` 레이아웃, null 이면 제외)의 생성 조합을 검사한다. 생성물은
 `artifact-verification` 한 job에서 자기 프로필·레이아웃의 산출물 runner를 직접 실행하고, 기존 버전의 gitleaks
 working-tree·incremental 검사를 함께 수행한다. 실제 실행 설정은
 [생성물 실행 경로 계약](../../scripts/reusable-artifact-entrypoints-contract.mjs)이 정한다.
@@ -588,7 +589,7 @@ Windows에서는 `./gradlew` 대신 `.\gradlew.bat`을 사용한다. 배포 아�
 
 ### 4.1 하네스 게이트의 프로필별 기대치
 
-현재 승인된 계약은 **세 프로필 모두 각 출력 레이아웃의 기술 게이트를 통과하는 것**이다. 생성기는 원본 제거 계획의
+현재 승인된 계약은 **모든 시작 구성이 각 출력 레이아웃의 기술 게이트를 통과하는 것**이다. 생성기는 원본 제거 계획의
 retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대조해
 `config/governance/reusable-harness-profile.json`에 결속한다. 하네스는 이 명시 모집단으로 축소 제품을
 검사하며 파일 부재만으로 임의의 검사를 생략하지 않는다. 기관 고유 코드 변경은
@@ -607,7 +608,7 @@ retained/removed Java 소스·FQCN 집합을 실제 산출물과 정확히 대�
 
 소스 모집단·필수 실행 단계의 누락, 잘못된 프로필과 보안 부정 테스트 변조가 red가 되는 것도
 확인했다. 이 로컬 기술 검증과 현재 커밋의 required CI는 별개이며, 병합에는
-현재 3프로필 × 2레이아웃 matrix를 포함한 required CI 통과가 필요하다. 위 날짜의 실측은 단일모듈
+시작 구성 matrix를 포함한 required CI 통과가 필요하다. 위 날짜의 실측은 단일모듈
 출력의 검증 결과를 포함하지 않는다. 기관의 운영·업무 승인은 별도다.
 
 아래 수치는 **2026-09-12의 역사적 진단**이며 현재 허용되는 실패 수가 아니다.
@@ -643,6 +644,11 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 | `core` | 3,064건 중 7건 | 781개 파일 2,572건 중 47개 파일 145건 |
 | `collaboration` | 3,788건 중 2건 | 938개 파일 3,146건 중 40개 파일 102건 |
 
+표의 파일 열은 vitest `numTotalTestSuites` 로 센 값으로 보인다(2026-10-13 T2 의 core 는 파일 312·suite 841 — T2 판정기는 둘을 나눠 적는다).
+2026-10-13 T2 첫 실행(main `52527499a`)은 시작 구성 두 레이아웃과 단독 폐포 21개(27잡)를 돌았다. 모든 잡이 생성·산출물 검증을 통과했고
+25잡이 일반 테스트에서 붉었다(vitest 93건·JUnit 4건). core 생성물은 vitest 312개 파일(suite 841) 2,673건, 전체 구성은 백엔드 4,800건·vitest
+4,518건이다. 원인과 수리는 [GAP-BASE-002](../../.agent/memory/known-gaps.md)와 [DEC-OPS-298](../../.agent/memory/decisions.md)에 있다.
+
 백엔드 9건은 [DEC-OPS-257](../../.agent/memory/decisions.md)로 닫았다. 기능 단언은 기능 타입을 참조하는 클래스로 옮겨 기능과 함께 빠지게 하고,
 생성기가 지운 ErrorCode 가 소유한 메시지 키를 번들에서 걷고 메시지 번들 계약의 하한을 지운 코드·참조 수만큼 내린다(lock `java.prunedMessageKeys`·`java.messageContractFloors`). 원본 하한은 그대로라 여유 폭이 원본과 같다. 런타임 문서를 세는 자격증명 검사의 하한은 core 아래로 둔다.
 프런트 계약은 생성기가 남기는 투영 원장(`reusable-projection-ledger.json`, lock `projectionLedger`)으로 투영이 지운 기능 파일을 거른다([DEC-OPS-258](../../.agent/memory/decisions.md)).
@@ -655,14 +661,14 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
 가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
 마커 블록으로 걷히거나 다른 기능이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 기능 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
-2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. 수리 뒤 모든 구성의 녹색 확인은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
 Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다. Gradle 시험은 레이아웃마다 다르다.
 멀티모듈은 `./gradlew test --continue` 가 모든 모듈을 돈다. 단일모듈의 `test` 는 `api-server` 시험만 돌므로
 `./gradlew test foundationTest coreTest appTest --continue` 를 돌린다(이관 시험까지는 `allTests`).
 저장소 안의 깊은 경로에서는 vitest 가 `#module-evaluator` 를 찾지 못해 시작하지 못한다(Windows 실측). 판정은 종료 코드가 아니라 시험 작업별 리포트 XML 과 vitest JSON 보고서로 한다.
-같은 절차를 GitHub runner 에서 구성 단위로 도는 것이 [T2 야간 시험](cicd-pipeline.md#재사용-생성물-야간-시험t2)이다.
+같은 절차를 GitHub runner 에서 구성 단위로 도는 것이 [T2 야간 시험](cicd-pipeline.md#재사용-생성물-야간-시험t2)이다. 매일 06:17 KST 에 예약 실행한다.
 직접 선택 구성은 그 워크플로의 `compositions` 입력으로 잰다.
 
 ⚠ 수치를 **추론하지 말고 실제로 돌려라.** 2026-09-12 이전에는 아무도 투영본에서 harnessTest 를 돌리지

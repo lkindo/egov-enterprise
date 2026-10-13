@@ -22,7 +22,7 @@ route별 disposition, 미승인 URL-state 3개 부류는 계속 별도 판단 �
 | 프런트엔드 지원 언어 | [ADR-0002](../02-architecture/decisions/ADR-0002-korean-first-frontend.md) |
 | 현재 구현·의존성·버전 | 현재 코드와 빌드 설정, [.agent/memory/project-context.md](../../.agent/memory/project-context.md)의 근거 링크 |
 | 아직 결정되지 않은 제품 사안 | [pending-decisions.md](../04-operations/pending-decisions.md) |
-| 신규 프로젝트 생성 범위 | [reusable-base-guide.md](../03-guides/reusable-base-guide.md)와 `config/reusable-base-profiles.json` |
+| 신규 프로젝트 생성 범위 | [reusable-base-guide.md](../03-guides/reusable-base-guide.md)와 [`config/modules`](../../config/modules/)(기능 파일·시작 구성) |
 
 진행률이나 완료 선언은 오래 유지되는 제품 문서에 복제하지 않는다. 현재 상태는 코드·설정·required CI를 직접 확인하고, 장기 제품 결정은 ADR로 남긴다.
 
