@@ -186,6 +186,8 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 
 스키마 자체의 Expand-and-Contract 절차는 [zero-downtime-migration.md](zero-downtime-migration.md)의 영역이며, 데이터 cutover와 같은 것으로 간주하지 않는다.
 
+표준화 단계(레거시 컬럼의 의미 식별·표준용어 매핑)와 이 도구의 공백 진단·보강 제안은 [레거시 표준화 이관 설계(Draft)](legacy-standardization-migration-design.md)에 둔다.
+
 ## 검증 증거와 한계
 
 ```powershell
