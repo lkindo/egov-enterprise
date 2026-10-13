@@ -1668,7 +1668,7 @@
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.validate.*",
-            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.MigrationPipelineTest"
+            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest"
           },
           {
             "scope": "migration-verify",

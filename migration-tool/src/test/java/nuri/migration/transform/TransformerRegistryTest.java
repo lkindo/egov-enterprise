@@ -96,4 +96,17 @@ class TransformerRegistryTest {
         assertThat(registry.has("exclaim")).isTrue();
         assertThat(registry.apply("exclaim", "hi")).isEqualTo("hi!");
     }
+
+    @Test
+    void 내장_여부는_등록_정의를_따르고_같은_이름의_사용자_변환기는_내장이_아니다() {
+        assertThat(registry.isBuiltin("trim")).isTrue();
+        assertThat(registry.isBuiltin("date")).isTrue();
+        assertThat(registry.isBuiltin("unregistered")).isFalse();
+        assertThat(registry.isBuiltin(null)).isFalse();
+        registry.register("exclaim", v -> v + "!");
+        assertThat(registry.isBuiltin("exclaim")).isFalse();
+        // 표준 검증은 내장 변환기의 출력 계약을 안다고 보고 대조한다 — 덮어쓴 이름은 그 가정에서 빠져야 한다.
+        registry.register("trim", v -> v);
+        assertThat(registry.isBuiltin("trim")).isFalse();
+    }
 }

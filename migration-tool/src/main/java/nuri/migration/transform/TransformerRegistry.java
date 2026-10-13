@@ -65,6 +65,12 @@ public class TransformerRegistry {
         return transformers.containsKey(name);
     }
 
+    /** 내장 변환기인가. 같은 이름을 사용자 변환기로 덮어쓰면 내장이 아니다. 미등록이면 false. */
+    public boolean isBuiltin(String name) {
+        Definition definition = name == null ? null : transformers.get(name);
+        return definition != null && definition.builtin();
+    }
+
     /** 변환기 적용. 이름이 비었으면 원본, 미등록이면 원본 반환(검증 단계가 경고). */
     public Object apply(String name, Object value) {
         if (name == null || name.isBlank()) {

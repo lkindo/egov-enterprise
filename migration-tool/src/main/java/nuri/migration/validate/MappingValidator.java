@@ -2,9 +2,11 @@ package nuri.migration.validate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
@@ -492,6 +494,15 @@ public class MappingValidator {
             return null;
         });
         return new ValidationResult(errors, List.of());
+    }
+
+    /**
+     * plan·load 에서 live 대상 컬럼 계약과 표준 사전으로 매핑을 대조한다(DEC-OPS-307). 계약은 승인 workflow 가
+     * target schema digest 에 결속한 {@link TargetSchemaFingerprint#standard()} 이며, 없으면 실패한다.
+     */
+    public ValidationResult validateTargetStandard(MappingSpec spec, TargetSchemaFingerprint target,
+                                                   CatalogSnapshot inventory) {
+        return new TargetStandardValidator(transformers::isBuiltin).validate(spec, target, inventory);
     }
 
     /**

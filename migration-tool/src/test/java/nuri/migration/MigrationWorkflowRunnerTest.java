@@ -172,6 +172,7 @@ class MigrationWorkflowRunnerTest {
         given(validator.validate(mapping)).willReturn(pass());
         given(validator.validateLiveSource(mapping, sourceJdbc)).willReturn(pass());
         given(validator.validateLiveTarget(mapping, targetJdbc)).willReturn(pass());
+        given(validator.validateTargetStandard(eq(mapping), any(), any())).willReturn(pass());
         List<EtlExecutor.TableResult> results = List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of()));
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
@@ -366,6 +367,69 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void planValidatesTheBoundTargetStandardAndNamesViolatingColumnsWithoutWritingThePlan() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("standard-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(
+                new ValidationResult(List.of("기본값 없는 NOT NULL 타깃 컬럼을 채우는 매핑·const 가 없습니다:"
+                        + " public.tb_user_info.frst_rgtr_id"), List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("target standard contract validation 실패로 중단했습니다: 기본값 없는 NOT NULL 타깃 컬럼을"
+                        + " 채우는 매핑·const 가 없습니다: public.tb_user_info.frst_rgtr_id");
+
+        assertThat(plan).doesNotExist();
+        ArgumentCaptor<CatalogSnapshot> inventorySnapshot = ArgumentCaptor.forClass(CatalogSnapshot.class);
+        verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), inventorySnapshot.capture());
+        assertThat(CatalogSnapshotDigester.sha256(inventorySnapshot.getValue()))
+                .isEqualTo(CatalogSnapshotDigester.sha256(snapshot));
+    }
+
+    @Test
+    void targetStandardGateCapsReportedErrorsAndFailsClosedWithoutAResult() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        List<String> many = java.util.stream.IntStream.rangeClosed(1, 22)
+                .mapToObj(index -> "violation-" + index).toList();
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any()))
+                .willReturn(new ValidationResult(many, List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + temp.resolve("capped.json"))))
+                .hasMessageContaining("violation-20 (외 2건)")
+                .hasMessageNotContaining("violation-21");
+
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(null);
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + temp.resolve("null.json"))))
+                .hasMessage("target standard contract validation 결과가 없어 중단했습니다.");
+    }
+
+    @Test
+    void loadRevalidatesTheTargetStandardAfterTheDigestCheckAndBeforeExecution() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(
+                new ValidationResult(List.of("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_user_info.user_id"), List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=load", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan,
+                "--ack-adapter=postgresql-pg-catalog", "--ack-source-freeze")))
+                .hasMessageContaining("target standard contract validation 실패")
+                .hasMessageContaining("public.tb_user_info.user_id");
+
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+    }
+
+    @Test
     void planRejectsInvalidMappingBeforeTargetFingerprintOrArtifactWrite() throws Exception {
         Path inventory = temp.resolve("inventory.json");
         Path plan = temp.resolve("invalid-plan.json");
@@ -495,6 +559,7 @@ class MigrationWorkflowRunnerTest {
         verify(adapter).preflight(eq(sourceConnection), any(DiscoveryRequest.class));
         verify(adapter).discover(eq(sourceConnection), any(DiscoveryRequest.class));
         verify(fingerprinter).fingerprintBound(targetConnection, mapping, Set.of("public"));
+        verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), any());
         verify(executor).execute(
                 mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
         verify(validator, never()).validateLiveTarget(any(), any());

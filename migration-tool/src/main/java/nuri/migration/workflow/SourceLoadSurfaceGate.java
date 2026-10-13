@@ -87,6 +87,29 @@ public final class SourceLoadSurfaceGate {
         return List.copyOf(blockers);
     }
 
+    /**
+     * 승인 inventory 에서 매핑 소스 표의 한 컬럼 선언을 찾는다. 표 이름은 이 gate 와 같은 규칙으로
+     * 대조하고, 이름이 겹쳐 둘 이상 나오면 그대로 돌려줘 호출부가 모호함을 판정하게 한다.
+     */
+    public static List<CatalogObject> sourceColumns(CatalogSnapshot snapshot, TableMapping mapping, String column) {
+        Objects.requireNonNull(snapshot, "snapshot");
+        Objects.requireNonNull(mapping, "mapping");
+        if (column == null || column.isBlank()) {
+            return List.of();
+        }
+        List<String> tables = snapshot.objects().stream()
+                .filter(object -> object.kind() == ObjectKind.TABLE)
+                .filter(table -> matches(mapping, table))
+                .map(CatalogObject::referenceId)
+                .toList();
+        return snapshot.objects().stream()
+                .filter(object -> object.kind() == ObjectKind.COLUMN)
+                .filter(candidate -> tables.stream().anyMatch(table -> belongsTo(candidate, table)))
+                .filter(candidate -> identifierEquals(column,
+                        candidate.attributes().get("originalName"), candidate.quoted()))
+                .toList();
+    }
+
     private static void inspectColumn(
             CatalogObject column,
             SourceReadSessionPolicy policy,

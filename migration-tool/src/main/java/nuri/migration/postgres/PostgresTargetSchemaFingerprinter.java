@@ -26,6 +26,8 @@ import java.util.Set;
 /** MappingSpec가 쓰는 target table/column/PK만 실제 JDBC metadata에서 읽는 read-only fingerprinter. */
 public final class PostgresTargetSchemaFingerprinter {
 
+    private final PostgresTargetStandardReader standardReader = new PostgresTargetStandardReader();
+
     /** 승인 workflow는 schema뿐 아니라 실제 접속 환경과 허용 스키마를 함께 검증한다. */
     public TargetSchemaFingerprint fingerprintBound(Connection connection, MappingSpec mapping,
                                                      Set<String> allowedSchemas) throws SQLException {
@@ -44,10 +46,32 @@ public final class PostgresTargetSchemaFingerprinter {
         }
         String environment = nuri.migration.artifact.TargetEndpointBinding.capture(connection, mapping.target());
         TargetSchemaFingerprint schema = fingerprint(connection, mapping);
+        // 표준 검증이 쓰는 live 컬럼 계약·표준 사전을 같은 연결에서 읽고 digest 에 결속한다(DEC-OPS-307).
+        TargetStandardSnapshot standard = standardReader.read(connection, standardTables(schema), jdbcColumns(schema));
         String digest = nuri.migration.artifact.CanonicalArtifactDigest.sha256(Map.of(
-                "version", 2, "environment", environment, "schema", schema.digest(),
+                "version", 3, "environment", environment, "schema", schema.digest(),
+                "standard", nuri.migration.artifact.CanonicalArtifactDigest.sha256(standard),
                 "allowedSchemas", allowedSchemas.stream().sorted().toList()));
-        return new TargetSchemaFingerprint(2, schema.databaseProduct(), schema.databaseVersion(), digest, schema.tables());
+        return new TargetSchemaFingerprint(3, schema.databaseProduct(), schema.databaseVersion(), digest,
+                schema.tables(), standard);
+    }
+
+    private static Map<String, Set<String>> standardTables(TargetSchemaFingerprint schema) {
+        Map<String, Set<String>> tables = new LinkedHashMap<>();
+        for (TableMetadata table : schema.tables()) {
+            tables.computeIfAbsent(table.schema(), ignored -> new LinkedHashSet<>()).add(table.name());
+        }
+        return tables;
+    }
+
+    private static Map<String, Set<String>> jdbcColumns(TargetSchemaFingerprint schema) {
+        Map<String, Set<String>> columns = new LinkedHashMap<>();
+        for (TableMetadata table : schema.tables()) {
+            Set<String> names = new LinkedHashSet<>();
+            table.columns().forEach(column -> names.add(normalize(column.name())));
+            columns.put(table.schema() + "." + table.name(), names);
+        }
+        return columns;
     }
 
     public TargetSchemaFingerprint fingerprint(Connection connection, MappingSpec mapping) throws SQLException {

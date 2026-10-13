@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     private static final String POSTGRESQL_PRODUCT = "PostgreSQL";
+    private static final int MAX_REPORTED_ERRORS = 20;
 
     private final MappingLoader loader;
     private final MappingValidator validator;
@@ -237,6 +238,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         String executionContractDigest = MigrationExecutionContract.capture(
                 mapping, plannedAdapter, transformers).digest();
         TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
+        requireTargetStandard(validator.validateTargetStandard(
+                mapping, target, inventory.payload().toSnapshot()));
         Map<String, nuri.migration.plan.DispositionDecision> decisions = Map.of();
         if (options.review() != null) {
             WorkflowReview review = reviewLoader.load(
@@ -329,6 +332,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
             TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
+            requireTargetStandard(validator.validateTargetStandard(
+                    mapping, target, inventory.payload().toSnapshot()));
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -522,6 +527,22 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private static void requireValid(ValidationResult result, String boundary) {
         if (result == null || !result.ok()) {
             throw gate(boundary + " validation 실패로 중단했습니다.");
+        }
+    }
+
+    /**
+     * 표준 계약 위반은 표·컬럼 이름과 타입·길이만 담으므로 그대로 보여 준다. 행 값·상수·자격은 메시지에 없다.
+     */
+    private static void requireTargetStandard(ValidationResult result) {
+        if (result == null) {
+            throw gate("target standard contract validation 결과가 없어 중단했습니다.");
+        }
+        if (!result.ok()) {
+            List<String> shown = result.errors().stream().limit(MAX_REPORTED_ERRORS).toList();
+            String more = result.errors().size() > shown.size()
+                    ? " (외 " + (result.errors().size() - shown.size()) + "건)" : "";
+            throw gate("target standard contract validation 실패로 중단했습니다: "
+                    + String.join(" | ", shown) + more);
         }
     }
 
