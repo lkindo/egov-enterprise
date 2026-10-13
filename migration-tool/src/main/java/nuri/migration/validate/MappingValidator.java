@@ -6,6 +6,7 @@ import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -145,7 +146,18 @@ public class MappingValidator {
             }
         }
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
+        validateCodemaps(spec.codemaps(), errors);
         return new ValidationResult(errors, warnings);
+    }
+
+    /** [2026-10-13 DEC-OPS-309] 실행기와 같은 판정으로 codemap 정의의 결함을 적재 전에 알린다. */
+    private static void validateCodemaps(Map<String, MappingSpec.CodeMap> codemaps, List<String> errors) {
+        for (Map.Entry<String, MappingSpec.CodeMap> entry : codemaps.entrySet()) {
+            String problem = CodeTranslator.definitionProblem(entry.getValue());
+            if (problem != null) {
+                errors.add("codemap '" + entry.getKey() + "': " + problem);
+            }
+        }
     }
 
     private static void validateCrossTableCycles(List<MappingSpec.TableMapping> tables,

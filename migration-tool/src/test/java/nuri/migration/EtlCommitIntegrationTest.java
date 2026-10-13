@@ -74,7 +74,7 @@ class EtlCommitIntegrationTest {
     }
 
     @Test
-    void fkOrphanRowIsIsolatedAndReportedFail() {
+    void fkOrphanRowStopsTheTableWithoutCommittingAnyRowOfItsChunk() {
         String tag = "it" + SEQ.incrementAndGet();
         DbConfig src = h2Config(tag + "src");
         DbConfig tgt = h2Config(tag + "tgt");
@@ -86,9 +86,103 @@ class EtlCommitIntegrationTest {
         JdbcTemplate tgtJt = jdbc(tgt);
         MigrationReport report = verifier.verify(spec, results, tgtJt);
 
-        // 고아 행은 격리(오류 기록) → 해당 테이블 FAIL, 유효 2행만 적재
+        // [2026-10-13 DEC-OPS-309] 고아 행 하나 때문에 같은 chunk 의 u1·u2 도 쓰지 않는다(종전: u1·u2 커밋).
         assertThat(report.overall()).isEqualTo(MigrationReport.Status.FAIL);
-        assertThat(count(tgtJt, "tb_user_info")).isEqualTo(2); // u1,u2 성공, u3 격리
+        assertThat(count(tgtJt, "tb_org")).isEqualTo(2);
+        assertThat(count(tgtJt, "tb_user_info")).isZero();
+        EtlExecutor.TableResult users = results.stream()
+                .filter(result -> result.sourceTable().equals("LEGACY_USER")).findFirst().orElseThrow();
+        assertThat(users.errors()).containsExactly("행 변환 실패(LEGACY_USER, column=org_id, row=3): "
+                + "ROW_TRANSFORM_FAILED:FK_REF_ORPHAN — 이 chunk 는 기록하지 않고 적재를 멈췄습니다");
+        assertThat(users.errors().getFirst()).doesNotContain("99", "u3", "Park");
+        // 실패 chunk 에서 새로 만든 사용자 keymap(u1·u2)도 남지 않는다. 부모 org 2건만 남는다.
+        assertThat(count(tgtJt, "migration_control.tb_migration_key_map")).isEqualTo(2);
+        assertThat(tgtJt.queryForObject("SELECT run_stts_cd FROM migration_control.tb_migration_run",
+                String.class)).isEqualTo("FAILED");
+        assertThat(report.tables()).anySatisfy(table -> assertThat(table.note())
+                .contains("첫 오류: 행 변환 실패(LEGACY_USER, column=org_id, row=3)"));
+    }
+
+    @Test
+    void unmappedCodeStopsTheRunSoLaterTablesAreReportedAsNotProcessed() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        seedSource(src, false);
+        jdbc(src).update("INSERT INTO LEGACY_ORG VALUES ('30','LEGACY-ONLY-SENSITIVE')");
+        seedTargetSchema(tgt);
+        jdbc(src).execute("CREATE TABLE LEGACY_NOTE (NOTE_ID varchar(20), BODY varchar(50))");
+        jdbc(src).update("INSERT INTO LEGACY_NOTE VALUES ('n1','memo')");
+        jdbc(tgt).execute("CREATE TABLE tb_note (note_id varchar(20) PRIMARY KEY, body varchar(50))");
+        TableMapping org = new TableMapping("LEGACY_ORG", "tb_org", null, "ORG_ID", null, List.of(
+                new ColumnMapping("ORG_NM", "org_nm", "trim", null, "org_name", null, null)
+        ), new IdStrategy("org_id", "ORG", "ORG_ID"));
+        TableMapping note = new TableMapping("LEGACY_NOTE", "tb_note", null, "NOTE_ID", "note_id", List.of(
+                new ColumnMapping("NOTE_ID", "note_id", null, null, null, null, null),
+                new ColumnMapping("BODY", "body", null, null, null, null, null)), null);
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(org, note),
+                Map.of("org_name", MappingSpec.CodeMap.of(Map.of("HQ", "본사", "Sales", "영업"))),
+                new RunContext("commit-unmapped", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
+        JdbcTemplate tgtJt = jdbc(tgt);
+
+        assertThat(results).extracting(EtlExecutor.TableResult::sourceTable)
+                .containsExactly("LEGACY_ORG", "LEGACY_NOTE");
+        assertThat(results.getFirst().errors()).singleElement().asString()
+                .startsWith("행 변환 실패(LEGACY_ORG, column=org_nm, row=3): ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED")
+                .doesNotContain("LEGACY-ONLY-SENSITIVE");
+        assertThat(results.get(1).read()).isZero();
+        assertThat(results.get(1).errors()).containsExactly("적재 중단으로 처리하지 않음(LEGACY_NOTE): 앞 테이블 "
+                + "LEGACY_ORG 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE");
+        assertThat(count(tgtJt, "tb_org")).isZero();
+        assertThat(count(tgtJt, "tb_note")).isZero();
+        assertThat(count(tgtJt, "migration_control.tb_migration_key_map")).isZero();
+        assertThat(count(tgtJt, "migration_control.tb_migration_checkpoint")).isZero();
+        MigrationReport report = verifier.verify(spec, results, tgtJt);
+        assertThat(report.overall()).isEqualTo(MigrationReport.Status.FAIL);
+        assertThat(report.tables()).noneSatisfy(table -> assertThat(table.source()).isEqualTo("<execution-contract>"));
+    }
+
+    @Test
+    void dryRunStopsAtTheSameRowSoItPredictsWhereCommitWouldStop() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        seedSource(src, true);
+
+        MappingSpec commitSpec = spec(src, h2Config(tag + "tgt"));
+        MappingSpec dryRun = new MappingSpec(src, null, commitSpec.tables(), commitSpec.codemaps());
+        List<EtlExecutor.TableResult> results = executor.execute(dryRun, MigrationMode.DRY_RUN);
+
+        EtlExecutor.TableResult users = results.stream()
+                .filter(result -> result.sourceTable().equals("LEGACY_USER")).findFirst().orElseThrow();
+        assertThat(users.read()).isEqualTo(3);
+        assertThat(users.transformed()).isEqualTo(2);
+        assertThat(users.errors()).singleElement().asString()
+                .startsWith("행 변환 실패(LEGACY_USER, column=org_id, row=3): ROW_TRANSFORM_FAILED:FK_REF_ORPHAN");
+    }
+
+    @Test
+    void missingSurrogateKeyIsAnIdentityStageFailureNamingTheIdColumn() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        seedSource(src, false);
+        jdbc(src).update("INSERT INTO LEGACY_ORG VALUES ('30', NULL)");
+        seedTargetSchema(tgt);
+        // 대리키 원천(ORG_NM)이 NULL 이면 대리키를 만들 수 없다 — checkpoint identity 단계의 실패다.
+        TableMapping org = new TableMapping("LEGACY_ORG", "tb_org", null, "ORG_ID", null, List.of(
+                new ColumnMapping("ORG_ID", "org_nm", null, null, null, null, null)
+        ), new IdStrategy("org_id", "ORG", "ORG_NM"));
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(org), Map.of(),
+                new RunContext("commit-identity", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(results).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                "행 변환 실패(LEGACY_ORG, column=org_id, row=3): ROW_TRANSFORM_FAILED:IDENTITY_FAILED"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다"));
+        assertThat(count(jdbc(tgt), "tb_org")).isZero();
     }
 
     // ── fixtures ──────────────────────────────────────────────────────────
@@ -108,8 +202,8 @@ class EtlCommitIntegrationTest {
                 new ColumnMapping("ORG_NM", "org_nm", null, null, null, null, null)
         ), new IdStrategy("org_id", "ORG", "ORG_ID"));
 
-        Map<String, Map<String, String>> codemaps = Map.of(
-                "user_status", Map.of("1", "A", "0", "D", "default", "P"));
+        Map<String, MappingSpec.CodeMap> codemaps = Map.of(
+                "user_status", MappingSpec.CodeMap.of(Map.of("1", "A", "0", "D")));
 
         return new MappingSpec(src, tgt, List.of(user, org), codemaps,
                 new RunContext("commit-integration", "legacy-crm"));

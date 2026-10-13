@@ -105,12 +105,23 @@ tables:
 
 codemaps:
   user_status:
-    "1": P
-    "0": D
-    default: A
+    values:              # 레거시 코드 → 표준 코드. 숫자처럼 보이는 코드는 따옴표로 감싼다
+      "1": "P"
+      "0": "D"
+    # unmapped: fail(기본) | passthrough | fallback(+ fallback: "<표준 코드>")
 ```
 
 이 예시는 source의 `password_hash`가 현재 `EgovPasswordEncoder`와 호환된다는 사전 검증을 전제로 한다. 해시 형식이 다르면 원문 비밀번호를 복호화·재해시하지 말고, 별도의 강제 재설정/계정 활성화 정책과 매핑을 승인한 뒤 이관해야 한다. `pswd`는 target의 NOT NULL 컬럼이므로 정책 없이 생략할 수 없다.
+
+### 값 변환 순서와 codemap
+
+컬럼 값은 `transform → codemap → type → fkRef` 순서로 만든다. `trim` 같은 정리가 코드 대조보다 먼저라 CHAR 원천의 공백 채움 때문에 코드가 어긋나지 않는다(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), 종전 순서는 `codemap → transform → type`).
+
+- codemap 은 `values`(레거시 코드 → 표준 코드)와 `unmapped` 정책을 갖는다. **기본은 `fail`** 이다 — `values` 에 없는 코드가 오면 그 행 변환이 실패한다. 그대로 통과는 `unmapped: passthrough`, 대체값은 `unmapped: fallback` 과 `fallback` 으로 명시할 때만 쓴다. `values` 가 비었거나 정책과 `fallback` 이 어긋나면 validate 가 오류를 내고 실행기도 같은 판정으로 거부한다.
+- 레거시 코드값 `default` 는 이제 평범한 코드다. 대체값을 `default` 키로 두던 **옛 평면 형식은 읽지 않는다**. 같은 파일을 새 의미로 조용히 다르게 해석하지 않으려고 loader 가 codemap 이름과 옮겨 쓸 방법을 밝혀 거부하고, 승인 workflow 는 그 문구로 gate 한다.
+- 코드와 표준 코드는 문자열이어야 한다. Jackson YAML(2.21.7 실측)은 따옴표 없는 `yes`·`true` 를 boolean, `01` 을 정수 1 로 읽는다. 이런 값은 형식 오류로 거부한다(`Y`·`N` 은 문자열로 남는다).
+- NULL 은 코드가 아니므로 NULL 로 둔다. 숫자 원천값은 표기를 정규화해 찾는다 — `NUMBER(5,1)` 의 `1.0` 과 `NUMBER(1)` 의 `1` 은 같은 코드 `"1"` 이다. 문자열 원천은 그대로 찾으므로 `"01"` 과 `"1"` 은 다른 코드다. 숫자 열에 쓰는 codemap 의 키는 정규형(`1`, `-3`, `2.5`)으로 적는다.
+- `type: date` 는 자정이 아닌 시각이 붙은 값을 거부한다. 종전에는 시각을 조용히 버렸다. 시각을 버리는 것이 의도면 `transform: date-truncate` 로 밝힌다. 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 `date-truncate` 도 거부한다.
 
 Commit에는 `run.runId`, `run.sourceNamespace`, 모든 table의 결정적 `orderBy` 또는 `orderByKeys`, checkpoint 검증에 사용할 target identity가 필요하다. order tuple은 source transaction 안에서 유일성을 먼저 검사하며 이후 keyset pagination에 사용한다. `where`의 주석·세미콜론·DDL/DML token과 잘못된 식별자를 차단하지만, 신뢰된 mapping 작성과 독립 리뷰를 대체하지 않는다.
 
@@ -134,7 +145,9 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 일반 chunk는 target data INSERT, 신규 keymap, durable checkpoint를 **같은 target connection/transaction**에 기록한다. JDBC batch `updateCounts`가 각 1행을 증명하지 못하거나 하나라도 실패하면 chunk를 rollback하고 행 단위로 재변환·재시도한다. `target_generated`는 처음부터 행별 `INSERT ... RETURNING`·keymap·checkpoint transaction을 쓴다. Commit 또는 rollback 결과가 불확정하면 자동 재시도를 중단한다.
 
-재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
+**행 변환 실패는 격리하지 않는다**(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), Q6 위임 결정). transform·codemap·type·fkRef·identity 중 하나라도 실패한 행이 있으면 그 chunk 는 한 행도 쓰지 않고, 이 chunk 에서 새로 만든 keymap 도 버린 뒤 테이블과 run 을 멈춘다. `target_generated` 도 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 남은 테이블은 읽지 않고 `RUN_STOPPED_BY_ROW_FAILURE` 로 결과에 남긴다. dry-run 도 같은 행에서 멈춰 commit 이 어디서 멈출지 보여 준다. 오류는 `행 변환 실패(<원천 테이블>, column=<타깃 컬럼>, row=<원천 정렬 순서의 위치>): ROW_TRANSFORM_FAILED:<단계>` 형식이며 값·키·예외 원문을 담지 않는다. 검증 보고서와 load gate 는 첫 실패를 이 문구로 밝힌다. 종전에는 실패 행만 건너뛰고 나머지를 커밋해 승인 없는 누락이 남았다. 승인된 예외 행만 격리하는 경로(L2 원장)는 아직 없으므로 지금은 모든 행 변환 실패가 fail-closed 다. 행 단위 격리는 쓰기(제약 위반) 실패의 재시도 경로에만 남는다.
+
+재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 행 변환 실패로 멈춘 run 은 원인을 고친 mapping(다시 승인한 plan)으로 같은 run 을 재개하면 마지막으로 커밋된 checkpoint 다음 행부터 적재한다([PostgreSQL 회귀](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)). 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
 
 다음 경계는 원자적이지 않다.
 
@@ -195,4 +208,4 @@ npm run verify:migration
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*
+*값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

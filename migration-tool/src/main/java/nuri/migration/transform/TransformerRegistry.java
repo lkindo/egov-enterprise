@@ -19,7 +19,7 @@ import nuri.migration.artifact.CanonicalArtifactDigest;
 
 /**
  * 값 변환기 레지스트리 — {@code mapping.yml}의 {@code transform: <name>} 을 실제 함수로 해석.
- * 내장: trim / upper / lower / date(→LocalDate) / timestamp(→LocalDateTime).
+ * 내장: trim / upper / lower / date(→LocalDate) / timestamp(→LocalDateTime) / date-truncate(일시 → 날짜, 명시적 시각 절단).
  * 프로젝트별 확장은 {@link #register(String, UnaryOperator)}.
  */
 @Component
@@ -39,6 +39,10 @@ public class TransformerRegistry {
                 v -> v == null ? null : LocalDate.parse(v.toString().trim(), DateTimeFormatter.ISO_LOCAL_DATE));
         registerBuiltin("timestamp", "builtin:timestamp:iso-local-date-time:v1",
                 TransformerRegistry::parseTimestamp);
+        // [2026-10-13 DEC-OPS-309] type: date 는 자정이 아닌 시각을 거부한다. 시각을 버리는 것이 의도일 때만
+        //   이 변환기로 밝힌다 — 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다.
+        registerBuiltin("date-truncate", "builtin:date-truncate:iso-local-date-time:v1",
+                TransformerRegistry::truncateToDate);
     }
 
     /** source compatibility only. 승인 실행에서 사용되면 versionless extension으로 fail-closed한다. */
@@ -131,6 +135,18 @@ public class TransformerRegistry {
             return null;
         }
         return LocalDateTime.parse(v.toString().trim().replace(' ', 'T'));
+    }
+
+    /** ISO 날짜는 그대로, ISO 일시는 날짜만 남긴다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 실패한다. */
+    private static Object truncateToDate(Object v) {
+        if (v == null) {
+            return null;
+        }
+        String text = v.toString().trim();
+        if (text.length() == 10) {
+            return LocalDate.parse(text, DateTimeFormatter.ISO_LOCAL_DATE);
+        }
+        return LocalDateTime.parse(text.replace(' ', 'T')).toLocalDate();
     }
 
     private record Definition(

@@ -76,6 +76,24 @@ class MappingSpecDigesterTest {
                 .isNotEqualTo(MappingSpecDigester.sha256(baseline));
     }
 
+    @Test
+    void bindsCodemapUnmappedPolicyAndFallbackSoAChangedPolicyNeedsReapproval() {
+        // [2026-10-13 DEC-OPS-309] 미매핑 처리 방식도 승인 의미다 — 정책·대체값이 바뀌면 plan 을 다시 승인한다.
+        MappingSpec baseline = spec(null, null, null, "ACTIVE");
+        Map<String, MappingSpec.CodeMap> values = Map.of("status", MappingSpec.CodeMap.of(Map.of("A", "ACTIVE")));
+        assertThat(MappingSpecDigester.sha256(new MappingSpec(null, null, baseline.tables(), values, null)))
+                .isEqualTo(MappingSpecDigester.sha256(baseline));
+        for (MappingSpec.CodeMap changed : List.of(
+                new MappingSpec.CodeMap(Map.of("A", "ACTIVE"), MappingSpec.UnmappedPolicy.PASSTHROUGH, null),
+                new MappingSpec.CodeMap(Map.of("A", "ACTIVE"), MappingSpec.UnmappedPolicy.FALLBACK, "X"),
+                new MappingSpec.CodeMap(Map.of("A", "ACTIVE"), MappingSpec.UnmappedPolicy.FALLBACK, "Y"))) {
+            assertThat(MappingSpecDigester.sha256(new MappingSpec(
+                    null, null, baseline.tables(), Map.of("status", changed), null)))
+                    .as(changed.toString())
+                    .isNotEqualTo(MappingSpecDigester.sha256(baseline));
+        }
+    }
+
     private static MappingSpec spec(DbConfig source, DbConfig target, RunContext run, String activeCode) {
         IdentityStrategy identity = new IdentityStrategy(
                 TargetIdentityPolicy.PRESERVE,
@@ -95,7 +113,7 @@ class MappingSpecDigesterTest {
                 List.of(new ColumnMapping("PAYLOAD", "payload", "trim", "string", "status", null, null)),
                 null, identity, List.of(foreignKey));
         return new MappingSpec(
-                source, target, List.of(table), Map.of("status", Map.of("A", activeCode)), run);
+                source, target, List.of(table), Map.of("status", MappingSpec.CodeMap.of(Map.of("A", activeCode))), run);
     }
 
     private static IdentityComponentSpec component(String column, IdentityValueType type) {

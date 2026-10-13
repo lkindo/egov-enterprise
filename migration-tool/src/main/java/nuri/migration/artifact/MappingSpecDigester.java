@@ -25,6 +25,6 @@ public final class MappingSpecDigester {
             String runId,
             String sourceNamespace,
             java.util.List<MappingSpec.TableMapping> tables,
-            java.util.Map<String, java.util.Map<String, String>> codemaps
+            java.util.Map<String, MappingSpec.CodeMap> codemaps
     ) {}
 }

@@ -140,8 +140,23 @@ class TypeConverterTest {
         assertThat(TypeConverter.convert("date", "20260809")).isEqualTo(LocalDate.of(2026, 8, 9));
         // ISO 그대로.
         assertThat(TypeConverter.convert("date", "2026-08-09")).isEqualTo(LocalDate.of(2026, 8, 9));
-        // timestamp가 date 컬럼으로 오면 전체 timestamp를 검증한 뒤 date를 취한다.
-        assertThat(TypeConverter.convert("date", "2026-08-09 13:45:00")).isEqualTo(LocalDate.of(2026, 8, 9));
+        // timestamp가 date 컬럼으로 오면 전체 timestamp를 검증한 뒤, 자정일 때만 date를 취한다.
+        assertThat(TypeConverter.convert("date", "2026-08-09 00:00:00")).isEqualTo(LocalDate.of(2026, 8, 9));
+        assertThat(TypeConverter.convert("date", "2026-08-09T00:00")).isEqualTo(LocalDate.of(2026, 8, 9));
+        // [2026-10-13 DEC-OPS-309] 자정이 아닌 시각은 조용히 버리지 않는다(종전: 13:45 를 버리고 날짜만).
+        for (String withTime : new String[] {"2026-08-09 13:45:00", "2026-08-09 00:00:01", "2026-08-09T00:00:00.000001"}) {
+            assertThatThrownBy(() -> TypeConverter.convert("date", withTime))
+                    .as(withTime)
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasNoCause()
+                    .hasMessageNotContaining("2026");
+        }
+        // JDBC 가 Timestamp·LocalDateTime 으로 주는 값도 같다(Oracle DATE 는 시각을 담는다).
+        assertThat(TypeConverter.convert("date", java.sql.Timestamp.valueOf("2026-08-09 00:00:00")))
+                .isEqualTo(LocalDate.of(2026, 8, 9));
+        assertThatThrownBy(() -> TypeConverter.convert("date", LocalDateTime.of(2026, 8, 9, 13, 45)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasNoCause();
         assertThatThrownBy(() -> TypeConverter.convert("date", "2026/8/9"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasNoCause();

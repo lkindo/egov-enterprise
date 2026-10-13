@@ -85,7 +85,8 @@ public class MigrationVerifier {
 
             if (!r.errors().isEmpty()) {
                 status = Status.FAIL;
-                note = "오류 " + r.errors().size() + "건";
+                // [2026-10-13 DEC-OPS-309] 첫 오류를 함께 보인다. 실행기 오류 문구는 테이블·컬럼·행 순번·고정 코드뿐이다.
+                note = "오류 " + r.errors().size() + "건 — 첫 오류: " + r.errors().getFirst();
             } else if (scoped != null && scoped.error() != null) {
                 status = Status.FAIL;
                 note = scoped.error();

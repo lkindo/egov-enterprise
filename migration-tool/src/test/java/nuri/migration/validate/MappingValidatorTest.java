@@ -72,7 +72,7 @@ class MappingValidatorTest {
         return new MappingSpec(null, null, tables, Map.of());
     }
 
-    private static MappingSpec spec(List<TableMapping> tables, Map<String, Map<String, String>> codemaps) {
+    private static MappingSpec spec(List<TableMapping> tables, Map<String, MappingSpec.CodeMap> codemaps) {
         return new MappingSpec(null, null, tables, codemaps);
     }
 
@@ -295,9 +295,30 @@ class MappingValidatorTest {
 
             ValidationResult r = withSchema().validate(spec(
                     List.of(new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null)),
-                    Map.of("statusMap", Map.of("1", "P"))));
+                    Map.of("statusMap", MappingSpec.CodeMap.of(Map.of("1", "P")))));
 
             assertThat(r.errors()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("codemap 정의 결함은 실행기와 같은 판정으로 오류다 — 이름을 밝힌다")
+        void codemapDefinitionProblemsAreErrorsNamingTheCodemap() {
+            ColumnMapping c = new ColumnMapping("stat", "user_stts_cd", null, null, "statusMap", null, null);
+            List<TableMapping> tables = List.of(new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null));
+            Map<MappingSpec.CodeMap, String> cases = Map.of(
+                    new MappingSpec.CodeMap(Map.of(), MappingSpec.UnmappedPolicy.FAIL, null),
+                    "codemap 'statusMap': values 에 대응이 하나도 없습니다",
+                    new MappingSpec.CodeMap(Map.of("1", "P"), MappingSpec.UnmappedPolicy.FALLBACK, null),
+                    "codemap 'statusMap': unmapped: fallback 에는 fallback 값이 필요합니다",
+                    new MappingSpec.CodeMap(Map.of("1", "P"), MappingSpec.UnmappedPolicy.PASSTHROUGH, "X"),
+                    "codemap 'statusMap': fallback 값은 unmapped: fallback 일 때만 쓸 수 있습니다");
+            for (Map.Entry<MappingSpec.CodeMap, String> entry : cases.entrySet()) {
+                ValidationResult r = withSchema().validate(spec(tables, Map.of("statusMap", entry.getKey())));
+                assertThat(r.errors()).containsExactly(entry.getValue());
+            }
+            ValidationResult fallback = withSchema().validate(spec(tables, Map.of("statusMap",
+                    new MappingSpec.CodeMap(Map.of("1", "P"), MappingSpec.UnmappedPolicy.FALLBACK, "X"))));
+            assertThat(fallback.errors()).isEmpty();
         }
 
         @Test

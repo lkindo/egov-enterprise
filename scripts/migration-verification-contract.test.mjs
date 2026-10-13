@@ -44,7 +44,7 @@ const childOnlyTests = [
 ];
 const childOnlyScopes = [
   ['nuri.migration.transform.TransformerRegistry'],
-  ['nuri.migration.transform.TypeConverter'],
+  ['nuri.migration.transform.TypeConverter', 'nuri.migration.transform.CodeTranslator'],
   ['nuri.migration.validate.*'],
   ['nuri.migration.verify.*'],
 ];
@@ -297,7 +297,7 @@ test('migration duration profile exactly covers source tests and produces three 
   const profile = loadMigrationDurationProfile();
   const classes = discoverMigrationTestClasses();
   assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
-  assert.equal(classes.length, 122);
+  assert.equal(classes.length, 123);
   const plan = buildMigrationShardPlan(profile, classes);
   assert.equal(plan.length, 3);
   assert.deepEqual(plan.flatMap(({ classes: selected }) => selected).sort(), classes);

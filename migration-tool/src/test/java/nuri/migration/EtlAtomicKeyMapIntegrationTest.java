@@ -88,7 +88,8 @@ class EtlAtomicKeyMapIntegrationTest {
         assertThat(parentResult.errors()).isNotEmpty();
         assertThat(childResult.written()).isZero();
         assertThat(childResult.errors()).containsExactly(
-                "행 변환 실패(LEGACY_CHILD): ROW_TRANSFORM_FAILED");
+                "행 변환 실패(LEGACY_CHILD, column=item_id, row=1): ROW_TRANSFORM_FAILED:FK_REF_ORPHAN"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다");
         assertThat(childResult.errors().getFirst()).doesNotContain("bad", "child-1");
         assertThat(count(target, "tb_item")).isEqualTo(1L);
         assertThat(count(target, "tb_child")).isZero();

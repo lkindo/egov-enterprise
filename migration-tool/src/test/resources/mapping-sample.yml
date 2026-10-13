@@ -17,6 +17,8 @@ tables:
       - { target: frst_rgtr_id, const: "MIGRATION" }
 codemaps:
   user_status:
-    "1": "A"
-    "0": "D"
-    default: "P"
+    values:
+      "1": "A"
+      "0": "D"
+    unmapped: fallback
+    fallback: "P"
