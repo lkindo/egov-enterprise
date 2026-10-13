@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  applyPushBaseCheck, classifyChangedFiles, githubOutputs, PR_REUSABLE_LAYOUT, pushBaseWasVerified, reusableMatrix,
+  applyPushBaseCheck, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, pushBaseWasVerified, reusableMatrix,
 } from './ci-change-scope.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
@@ -383,20 +383,16 @@ test('mixed reusable-base inputs take the conservative union and docs do not exp
 test('pull requests verify one layout per preset while every other event keeps both layouts', () => {
   const common = ['foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java'];
   const pullRequest = classifyChangedFiles(common, { event: 'pull_request' });
-  // 설문·결재 시작 구성(13b)은 아직 ci 선언이 없어 PR 에서도 두 레이아웃이다(선언이 빠지면 덮개가 줄지 않는 쪽으로 닫힌다).
+  // 설문·결재 시작 구성(13b)은 ci.pr 이 null 이라 PR 에서 빠지고 main 에서 두 레이아웃이다(DEC-OPS-296, 아래 시험).
   assert.deepEqual(pullRequest.reusableMatrix.include, [
     { profile: 'core', layout: 'single-module' },
     { profile: 'collaboration', layout: 'multi-module' },
     { profile: 'demo', layout: 'single-module' },
-    { profile: 'survey', layout: 'multi-module' },
-    { profile: 'survey', layout: 'single-module' },
-    { profile: 'approval', layout: 'multi-module' },
-    { profile: 'approval', layout: 'single-module' },
   ]);
   assert.equal(pullRequest.reusableCustom, true, 'the custom composition jobs stay on pull requests');
 
-  assert.equal(classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include.length, 7,
-    'a full pull request run still covers every preset');
+  assert.equal(classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include.length, 3,
+    'a full pull request run still covers every preset verified on pull requests once');
   for (const event of ['push', 'workflow_dispatch', 'pull_request_target', 'PULL_REQUEST', '', undefined]) {
     assert.equal(classifyChangedFiles([], { event }).reusableMatrix.include.length, 10, `event ${String(event)} keeps both layouts`);
   }
@@ -427,10 +423,11 @@ test('a preset outside the PR layout table falls back to both layouts and the ta
   const presets = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'modules', 'presets.json'), 'utf8')).presets;
   assert.deepEqual(PR_REUSABLE_LAYOUT, Object.fromEntries(presets.filter(preset => preset.ci).map(preset => [preset.id, preset.ci.pr])));
   // ADR-0027 의 PR 레이아웃: 제거가 가장 많은 core 와 Java 제거가 없는 demo 는 단일 모듈, collaboration 은 멀티 모듈이다.
-  assert.deepEqual(PR_REUSABLE_LAYOUT, { core: 'single-module', collaboration: 'multi-module', demo: 'single-module' });
+  // 13b 의 인증 시작 구성은 PR 에서 뺀다(null, DEC-OPS-296).
+  assert.deepEqual(PR_REUSABLE_LAYOUT, { core: 'single-module', collaboration: 'multi-module', demo: 'single-module', survey: null, approval: null });
   for (const [preset, layout] of Object.entries(PR_REUSABLE_LAYOUT)) {
     assert.ok(presets.some(entry => entry.id === preset), `PR layout table names a preset presets.json no longer has: ${preset}`);
-    assert.ok(['multi-module', 'single-module'].includes(layout), `${preset}: ${layout}`);
+    assert.ok(['multi-module', 'single-module', null].includes(layout), `${preset}: ${layout}`);
   }
 });
 
@@ -483,11 +480,71 @@ test('a preset whose PR layout declaration is removed falls back to both layouts
     { profile: 'collaboration', layout: 'multi-module' },
     { profile: 'demo', layout: 'multi-module' },
     { profile: 'demo', layout: 'single-module' },
+  ]);
+});
+
+// DEC-OPS-296(U15): 13b 의 인증 시작 구성은 PR 에서 빼고 main·수동 실행에서 두 레이아웃으로 돈다(T2 는 카탈로그에서 따로 고른다).
+// PR 에 뜨면 PR 러너가 늘고, main 에서 빠지면 그 구성을 어떤 required 검증도 생성하지 않는다 — 둘 다 붉다.
+test('presets kept out of pull requests run on main and manual runs in both layouts', () => {
+  const presets = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'modules', 'presets.json'), 'utf8')).presets;
+  const kept = presets.filter(preset => preset.ci?.pr === null).map(preset => preset.id);
+  assert.deepEqual(kept, ['survey', 'approval'], 'the certified presets of 13b stay out of pull requests');
+  for (const id of kept) {
+    assert.deepEqual(presets.find(preset => preset.id === id).ci.main, ['multi-module', 'single-module'], `${id}: main runs both layouts`);
+  }
+  assert.deepEqual(Object.keys(MAIN_REUSABLE_LAYOUTS), kept);
+  const layoutsOf = (include, id) => include.filter(item => item.profile === id).map(item => item.layout);
+  const pullRequest = classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include;
+  for (const id of kept) assert.deepEqual(layoutsOf(pullRequest, id), [], `${id} must not be verified on a pull request`);
+  for (const event of ['push', 'workflow_dispatch', '']) {
+    const include = classifyChangedFiles([], { event }).reusableMatrix.include;
+    for (const id of kept) {
+      assert.deepEqual(layoutsOf(include, id), ['multi-module', 'single-module'], `${id} must be verified on ${event || 'an unknown event'} in both layouts`);
+    }
+  }
+  // 설문 소스만 바꾼 PR 은 같은 코드를 담은 demo 한 레이아웃으로 재사용 검증을 고른다. main 은 설문 시작 구성까지 두 레이아웃으로 돈다.
+  const surveyChange = 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java';
+  const surveyPullRequest = classifyChangedFiles([surveyChange], { event: 'pull_request' });
+  assert.deepEqual(surveyPullRequest.reusableProfiles, ['demo', 'survey']);
+  assert.equal(surveyPullRequest.reusable, true);
+  assert.deepEqual(surveyPullRequest.reusableMatrix.include, [{ profile: 'demo', layout: 'single-module' }]);
+  assert.deepEqual(classifyChangedFiles([surveyChange], { event: 'push' }).reusableMatrix.include, [
+    { profile: 'demo', layout: 'multi-module' },
+    { profile: 'demo', layout: 'single-module' },
     { profile: 'survey', layout: 'multi-module' },
     { profile: 'survey', layout: 'single-module' },
-    { profile: 'approval', layout: 'multi-module' },
-    { profile: 'approval', layout: 'single-module' },
   ]);
+});
+
+test('a pull request that selects only presets kept out of pull requests selects no reusable work, and the main layouts are checked', (t) => {
+  // 설문 시작 구성만 고르게 하면(다른 시작 구성을 걷은 합성 선언) PR 은 생성할 항목이 없다 — 빈 matrix 를 넘기지 않고 재사용 검증을
+  // 고르지 않는다. push 는 그 구성을 두 레이아웃으로 돈다.
+  const surveyChange = 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java';
+  const classify = modulesFixture(t, files => {
+    files['presets.json'].presets = files['presets.json'].presets.filter(preset => !preset.domains.includes('survey') || preset.ci?.pr === null);
+  });
+  const pullRequest = classify('--event', 'pull_request', '--file', surveyChange);
+  assert.deepEqual(pullRequest.reusableProfiles, ['survey']);
+  assert.equal(pullRequest.reusable, false, 'an empty matrix must not be handed to the reusable job');
+  assert.deepEqual(pullRequest.reusableMatrix.include, []);
+  const push = classify('--event', 'push', '--file', surveyChange);
+  assert.equal(push.reusable, true);
+  assert.deepEqual(push.reusableMatrix.include, [
+    { profile: 'survey', layout: 'multi-module' },
+    { profile: 'survey', layout: 'single-module' },
+  ]);
+  // PR 에서 빼면서 main 레이아웃을 적지 않거나 하나로 줄이면 분류가 멈춘다 — PR 제외가 CI 제외가 되지 않는다.
+  for (const [edit, expected] of [
+    [preset => { preset.ci = { pr: null }; }, /main reusable layouts for survey must be every layout: null/],
+    [preset => { preset.ci = { pr: null, main: ['single-module'] }; }, /main reusable layouts for survey must be every layout: \["single-module"\]/],
+  ]) {
+    const failed = modulesFixture(t, files => edit(files['presets.json'].presets.find(preset => preset.id === 'survey')),
+      { expectFailure: true })('--event', 'pull_request', '--file', surveyChange);
+    assert.notEqual(failed.status, 0, 'a preset kept out of pull requests without both main layouts must stop the classification');
+    assert.match(failed.stderr, expected);
+  }
+  assert.throws(() => reusableMatrix(['core'], { event: 'push', mainLayouts: { core: ['multi-module', 'multi-module'] } }),
+    /main reusable layouts for core must be every layout/);
 });
 
 // 11단계 C5: 파일 → 소유 기능 → 그 파일이 남는 시작 구성. 소유는 생성기 투영과 같은 규칙(기능 파일의 화면 경로·지원 파일·업무 패키지)이다.

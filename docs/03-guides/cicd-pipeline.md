@@ -35,7 +35,7 @@ push/PR / workflow_dispatch
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
-        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout, 그 밖에는 두 layout)
+        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 시작 구성 profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout(survey·approval 은 PR 에서 뺀다), 그 밖에는 두 layout)
         ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
@@ -145,7 +145,11 @@ Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 �
 `business-app` 도메인·지원 파일·화면 경로만 그 기능을 담은 시작 구성으로 줄이고, 공용·미분류 입력은 선택한
 profile 전부로 돌아간다(11단계 C5 — 종전 v1 manifest 의 pack). layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
 PR은 profile마다 한 layout(`config/modules/presets.json` 의 `ci.pr` — core 단일·collaboration 멀티·demo 단일)만 검증하고,
-main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 profile은 두 layout 전수다. PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
+main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 profile은 두 layout 전수다. `ci.pr` 이 `null` 인 인증 시작 구성
+(13b 의 survey·approval)은 PR 에서 빼고 `ci.main` 의 두 layout 으로 main·수동 실행과 T2 에서만 돈다([DEC-OPS-296](../../.agent/memory/decisions.md)).
+두 구성의 기능은 demo 에 모두 있어 PR 의 demo 가 같은 코드를 생성·검증하고, 두 구성의 생성기 계획(연쇄·게이트·화면·차단)은
+PR 의 운영 계약이 매번 대조한다. `ci.main` 은 두 layout 전부여야 하며, PR 에서 빼면서 적지 않거나 하나로 줄이면 스키마와
+분류기가 멈춘다. PR 에서 고른 시작 구성이 모두 PR 제외면 재사용 검증을 고르지 않는다(빈 matrix 를 넘기지 않는다). PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
 생성기를 크게 바꾸는 PR은 병합 전에 `gh workflow run ci.yml --ref <브랜치>`로 전수를 한 번 받는다.
 core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 분류 직후 실행해 frontend가 끝나기 전의
 빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립

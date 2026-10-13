@@ -289,7 +289,7 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 목록의 형식·중복도 이 대조가 본다. 사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 `java.cascadeRemoved` 에
 남는다. 직접 선택 구성은 기대치가 없어 lock 기록만 남긴다.
 
-생산 저장소 CI의 `reusable-base` 3프로필 × 2레이아웃 matrix가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required
+생산 저장소 CI의 `reusable-base` 시작 구성 × 2레이아웃 matrix(PR 은 `ci.pr` 레이아웃 하나, survey·approval 은 PR 에서 빼고 main·T2 에서만 — DEC-OPS-296)가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required
 `backend-build`에 집계한다. 게이트 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
@@ -409,7 +409,7 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    - 마커 블록을 더하거나 걷으면 그 기능 파일 `owns.markerBlocks` 의 파일별 블록 수·이행 단계(step)·사유(reason)를 함께 고친다.
      운영 계약(`project-composer-source.test.mjs`)이 공용 파서로 센 원본 블록 수와 기능 파일 선언을 정확히 대조한다(마커 래칫).
      생성물에서는 남은 블록의 토큰이 모두 그 생성물의 기능 파일에 있는 기능인지 파서가 본다.
-   - 마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필과 두 레이아웃의 같은 경로를 실행한다.
+   - 마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 시작 구성과 두 레이아웃의 같은 경로를 실행한다(PR 은 `ci.pr` 레이아웃, survey·approval 은 main·T2).
    컴파일 성공만으로 모든 링크와 API의 런타임 동작이 증명되는 것은 아니다.
 
 **슬롯 규칙**(설계 [§5 슬롯](../02-architecture/project-composer-design.md#슬롯-기여와-레지스트리)):

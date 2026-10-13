@@ -113,6 +113,29 @@ test('preset gate expectations equal the gates derived from feature gate ownersh
   }
 });
 
+test('a preset kept out of pull requests must state that main verifies both layouts (DEC-OPS-296)', () => {
+  // ci.pr 이 null 이면 PR 에서 빼고 main·T2 에서만 돈다. 그때 main 을 적지 않거나 한 레이아웃으로 줄이면 스키마가 거부한다 —
+  // 'PR 에서 뺀다' 가 'CI 에서 뺀다' 로 바뀌지 않게 한다. 분류기도 같은 규칙을 따로 검사한다(ci-change-scope.test.mjs).
+  const root = modulesFixture();
+  const surveyCi = ci => editModule(root, 'presets.json', value => { value.presets.find(row => row.id === 'survey').ci = ci; });
+  const index = modules.declarations.presets.findIndex(row => row.id === 'survey');
+  try {
+    assert.deepEqual(modules.files['presets.json'].presets[index].ci, { pr: null, main: ['multi-module', 'single-module'] });
+    surveyCi({ pr: null });
+    assert.throws(() => validateComposerModuleSchema(root),
+      new RegExp(`presets\\.json does not match _schema\\.json: .*/presets/${index}/ci must have required property 'main'`));
+    surveyCi({ pr: null, main: ['single-module'] });
+    assert.throws(() => validateComposerModuleSchema(root), new RegExp(`/presets/${index}/ci/main must NOT have fewer than 2 items`));
+    surveyCi({ pr: null, main: ['single-module', 'single-module'] });
+    assert.throws(() => validateComposerModuleSchema(root), new RegExp(`/presets/${index}/ci/main must NOT have duplicate items`));
+    // 대조군: PR 레이아웃을 하나 고른 구성은 main 을 적지 않아도 된다(main 은 늘 두 레이아웃이다).
+    surveyCi({ pr: 'single-module' });
+    assert.equal(validateComposerModuleSchema(root), Object.keys(modules.files).length);
+  } finally {
+    restoreModule(root, 'presets.json');
+  }
+});
+
 test('copy in config/modules stays outside the catalog hash, while a user sentence is inside it', () => {
   // 화면 문구·미배정 권한 안내는 v1 에서도 해시 밖이었다(DEC-OPS-242 ④·244). 출처 해시가 기능 파일 전체를 덮으면 문구만 고쳐도
   // 카탈로그 해시·모든 구성 해시와 로컬 DB 번들 lock 이 바뀐다. 카탈로그 본문에 문구 문자열이 없다는 것만으로는 이를 보지 못한다.

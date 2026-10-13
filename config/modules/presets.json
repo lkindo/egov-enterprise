@@ -369,6 +369,13 @@
       "domains": [
         "survey"
       ],
+      "ci": {
+        "pr": null,
+        "main": [
+          "multi-module",
+          "single-module"
+        ]
+      },
       "expected": {
         "gates": [
           {
@@ -533,6 +540,13 @@
       "domains": [
         "informalsanction"
       ],
+      "ci": {
+        "pr": null,
+        "main": [
+          "multi-module",
+          "single-module"
+        ]
+      },
       "expected": {
         "gates": [
           {

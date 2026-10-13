@@ -58,23 +58,45 @@ const REUSABLE_LAYOUTS = Object.freeze(['multi-module', 'single-module']);
 
 /**
  * PR 은 시작 구성마다 presets.json 의 `ci.pr` 레이아웃 하나만 생성·검증한다(ADR-0027, 11단계 C5 에서 이 파일의 표를 시작 구성
- * 선언으로 옮겼다). main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃
- * 전수다 — 선언이 빠져도 덮개가 줄지 않는 쪽으로 닫힌다. PR 이 놓친 레이아웃 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의
- * E2E 와 같은 수용 위험). 값의 검사는 reusableMatrix 가 한다 — 모르는 레이아웃은 넘기지 않고 분류를 실패시킨다.
+ * 선언으로 옮겼다). `ci.pr` 이 null 이면 그 시작 구성은 PR 에서 빼고 main·T2 에서만 돈다(DEC-OPS-296 — 13b 의 인증 시작 구성은
+ * 기능이 모두 demo 에 있어 PR 의 demo 가 같은 코드를 생성·검증하고, 그 구성의 생성기 계획은 PR 의 운영 계약이 대조한다).
+ * main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃 전수다 — 선언이 빠져도
+ * 덮개가 줄지 않는 쪽으로 닫힌다. PR 이 놓친 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의 E2E 와 같은 수용 위험). 값의 검사는
+ * reusableMatrix 가 한다 — 모르는 레이아웃은 넘기지 않고 분류를 실패시킨다.
  */
 export const PR_REUSABLE_LAYOUT = Object.freeze(Object.fromEntries((COMPOSER_MODULES?.presets ?? [])
   .filter(preset => preset.ci !== undefined && preset.ci !== null && Object.hasOwn(preset.ci, 'pr'))
   .map(preset => [preset.id, preset.ci.pr])));
 
-export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES, { event = '', prLayouts = PR_REUSABLE_LAYOUT } = {}) {
+/**
+ * main push·수동 실행에서 검증할 레이아웃(`ci.main`, DEC-OPS-296). main 은 늘 두 레이아웃 전수라(ADR-0027 결정 2) 선언은 그 사실을
+ * 적을 뿐이고, 하나라도 빠지거나 모르는 값이면 분류를 멈춘다. PR 에서 빼는 시작 구성(`ci.pr: null`)은 이것을 적어야 한다 —
+ * 'PR 에서 뺀다' 가 'CI 에서 뺀다' 로 바뀌지 않게, 빠뜨리면 그 시작 구성을 고르는 순간 분류가 멈춘다.
+ */
+export const MAIN_REUSABLE_LAYOUTS = Object.freeze(Object.fromEntries((COMPOSER_MODULES?.presets ?? [])
+  .filter(preset => preset.ci !== undefined && preset.ci !== null && (Object.hasOwn(preset.ci, 'main') || preset.ci.pr === null))
+  .map(preset => [preset.id, preset.ci.main])));
+
+export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES,
+  { event = '', prLayouts = PR_REUSABLE_LAYOUT, mainLayouts = MAIN_REUSABLE_LAYOUTS } = {}) {
   const pullRequest = event === 'pull_request';
   return {
     include: profileNames.flatMap(profile => {
-      const narrowed = pullRequest && Object.hasOwn(prLayouts, profile) ? prLayouts[profile] : null;
-      if (narrowed !== null && !REUSABLE_LAYOUTS.includes(narrowed)) {
-        throw new Error(`unknown PR reusable layout for ${profile}: ${narrowed}`);
+      if (Object.hasOwn(mainLayouts, profile)) {
+        const declared = mainLayouts[profile];
+        if (!Array.isArray(declared) || declared.length !== REUSABLE_LAYOUTS.length
+          || !REUSABLE_LAYOUTS.every(layout => declared.includes(layout))) {
+          throw new Error(`main reusable layouts for ${profile} must be every layout: ${JSON.stringify(declared ?? null)}`);
+        }
       }
-      return (narrowed ? [narrowed] : REUSABLE_LAYOUTS).map(layout => ({ profile, layout }));
+      if (pullRequest && Object.hasOwn(prLayouts, profile)) {
+        const narrowed = prLayouts[profile];
+        // PR 에서 빼는 시작 구성 — main·수동 실행과 T2 에서만 돈다.
+        if (narrowed === null) return [];
+        if (!REUSABLE_LAYOUTS.includes(narrowed)) throw new Error(`unknown PR reusable layout for ${profile}: ${narrowed}`);
+        return [{ profile, layout: narrowed }];
+      }
+      return REUSABLE_LAYOUTS.map(layout => ({ profile, layout }));
     }),
   };
 }
@@ -322,6 +344,7 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
   const mutationMigrationTool = full || files.some(isMigrationToolMutation);
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
   const reusableCustom = reusableProfiles.includes('core');
+  const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });
 
   return {
     files,
@@ -338,10 +361,11 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
     e2e,
     mutation,
     mutationMigrationTool,
-    reusable: reusableProfiles.length > 0,
+    // PR 에서 고른 시작 구성이 모두 PR 제외(ci.pr: null)면 생성할 항목이 없다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
+    reusable: reusableProfiles.length > 0 && matrix.include.length > 0,
     reusableCustom,
     reusableProfiles,
-    reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event }),
+    reusableMatrix: matrix,
   };
 }
 
