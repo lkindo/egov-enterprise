@@ -37,8 +37,12 @@ clean v* release tag
 | `core` | 없음 | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
 | `collaboration` | 게시판·댓글·스크랩·메일·쪽지·알림·문자·실시간 대시보드 | core + 협업 기본 |
 | `demo` | 선택 기능 22개 전부 | 현재 제품의 전체 참조 기능 |
+| `survey` | 설문·투표 | 공통 기반 + 설문(인증 시작 구성, 13b) |
+| `approval` | 약식 전자결재 | 공통 기반 + 결재(인증 시작 구성, 13b) |
 
-프로필은 누적된다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
+`core`·`collaboration`·`demo` 는 누적된다. `survey`·`approval` 은 공통 기반에 기능 하나를 더한 구성이라 `collaboration` 에
+들지 않는다(DEC-OPS-295). 결재 구성에는 알림이 없어, 알림까지 함께 보는 결재 통합 시험(`ApprovalWorkflowIntegrationTest`)이
+그 구성에서 빠진다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
 pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
 묶음(`dependsOn` 의 `bundle`)과 `tb_tmplt_info`처럼 공유되는 테이블 계약(`owns.sharedTables`)도 기능 파일에 명시한다. 수동 도메인 삭제 스크립트
 `scripts/delete-domain.ps1`은 기능 파일(`config/modules/<기능>.json`)로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그
@@ -69,7 +73,7 @@ pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 �
 클래스패스를 분리하여 core/app 경계와 동일 이름의 테스트·설정 자원을 지킨다. 프론트엔드는 두 형태
 모두 별도 `frontend` 애플리케이션이다.
 
-이 가이드의 명령은 위 세 누적 프로필과 PostgreSQL을 대상으로 한다. 프로필도 도메인 선택형 생성기와
+이 가이드의 명령은 위 다섯 시작 구성과 PostgreSQL을 대상으로 한다. 프로필도 도메인 선택형 생성기와
 같은 해석기로 구성을 만든다(DEC-OPS-239). 구성 식별자에 출력 레이아웃이 들어가므로 DB 번들은 레이아웃마다
 만든다. 레이아웃이 달라도 테이블·메뉴·권한 내용은 같다. 개별 도메인 선택과 별도 로컬 UI는
 [도메인 선택형 생성기 가이드](project-composer-guide.md)를 따른다. 추가 DB는
@@ -289,11 +293,11 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 `backend-build`에 집계한다. 게이트 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
-현재 core·collaboration 프로필은 각각 파일 게이트 6건(`presets.json` 의 `expected.gates`)과 역사 검증 규칙
-45건을 제외한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
+현재 시작 구성은 파일 게이트를 core 13·collaboration 10·survey 11·approval 12·demo 0건(`presets.json` 의 `expected.gates`),
+역사 검증 규칙 45건을 제외한다(2026-10-13). 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
 PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 Atlas 규칙(`upstream-atlas`)으로 Atlas HTML·생성기와
 그 계약 3건(`governance-atlas-contract`·`atlas-catalog`·`atlas-generation`)도 걷는다 — Atlas 는 원본의 운영 사실을 담고
-로그인 전에 응답되며, 생성기가 원본 공용 메모리를 읽어 생성물 안에서 다시 만들 수 없다. 여섯(`SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
+로그인 전에 응답되며, 생성기가 원본 공용 메모리를 읽어 생성물 안에서 다시 만들 수 없다. 파일 게이트(예: `SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
 pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
 `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
@@ -312,8 +316,9 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
   규칙(지원 파일 선언, 업무 앱 기능 디렉터리, foundation·business-core 는 core, api-server 는 참조하는 업무 패키지)을 그대로 쓴다.
   node 계약(`scripts/*-census-contract.test.mjs`, 공용 판정은 `scripts/pack-tagged-registry.mjs`)이 시작 구성마다 생성기의
   `planJavaRemoval` 을 불러 그 기대와 양방향으로 대조한다(`expected to survive in …`·`expected to be removed in …`).
-  시작 구성 셋은 설문을 늘 다른 demo 전용 기능과 함께 넣거나 빼므로, 협업 시작 구성에 설문만 더한 합성 구성도 함께 돈다
-  — 설문 소유를 다른 기능으로 잘못 정하면 그 구성만 잡는다('공통 기반 + 설문' 시작 구성이 생기면 걷는다).
+  설문 소유를 다른 기능으로 잘못 정하면 '공통 기반 + 설문'(`survey`) 시작 구성이 잡는다 — 그 구성만 설문을 다른 demo 전용 기능과
+  가른다. 13b 전에는 협업 시작 구성에 설문만 더한 합성 구성을 따로 돌았다. 계약이 '설문을 다른 기능과 가르는 시작 구성이 있다'를
+  요구하므로 그 구성을 걷으면 붉다.
 - api-server 의 기능 디렉터리 밖 파일은 참조하는 업무 패키지로 소유가 정해진다 — 생성기 연쇄와 같은 import 관계다. 그런 항목에서
   '잘못 들어간 import 로 코어 항목이 사라지는' 신호(DEC-OPS-089)는 이 대조가 아니라 시작 구성의 Java 연쇄 exact 목록이 받친다.
   지금 원장에서 그런 소스 파일은 셋이다(행사 외부인사 컨트롤러, 결재 기안·승인 요청 DTO — 항목 6개). 다른 api-server 파일을 거쳐 닿는 간접 참조는
@@ -681,7 +686,7 @@ npm run base:generate-source -- \
 2. 기능 파일(`config/modules/<기능>.json`)의 `owns`·`dependsOn` 과 `core.json` 의 `owns`·`databaseSnapshot` 을 갱신하고
    `npm run modules:check` 로 스키마·파일 사이 대조를 확인한다(이 디렉터리가 원천이다 — 다시 만드는 생성 스크립트는 없다).
 3. `npm run test:base-profile`에서 누락·중복·실측 수 불일치가 없는지 확인한다.
-4. core, collaboration, demo DB 번들을 레이아웃별로 생성해 빈 DB 재적용을 통과시킨다.
+4. 시작 구성마다 DB 번들을 레이아웃별로 생성해 빈 DB 재적용을 통과시킨다.
 5. 영향을 받는 소스 projection을 두 레이아웃으로 생성해 §4 게이트를 통과시킨다.
 6. 제거되는 거버넌스 게이트가 달라졌으면 기능 파일의 `owns.gates` 와 `presets.json` 의 `expected.gates` 를 사유와 함께
    갱신한다(§3.6). 승인 없이 게이트가 빠지면 생성이 FAIL한다.

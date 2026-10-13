@@ -4,8 +4,9 @@
  * 개인정보 접근·교차 도메인 결합·입력 계약 미러 세 게이트는 판정 원장을 JSON 으로 둔다(DEC-OPS-089·090). 종전에는 항목마다
  * 소유 pack 을 적고 rank 누적 프로필마다 태그를 대조했는데, 매니페스트 v2 에서 pack·순위가 사라져(11단계 C4) 태그도 걷었다.
  * 이제 기대는 **소유에서 계산한다** — 항목이 참조하는 소스 파일마다 기능 소유(카탈로그와 같은 sourceOwner 규칙)를 정하고,
- * 소유 기능이 모두 구성 안에 있을 때만 그 구성에서 남는다고 본다. 시작 구성마다(그리고 survey 와 demo 전용 기능을 가르는 합성 구성
- * 하나) 생성기의 `planJavaRemoval` 을 그대로 불러 그 기대와 **양방향**으로 대조한다 — 시뮬레이터가 아니라 생성기 판정 자체다.
+ * 소유 기능이 모두 구성 안에 있을 때만 그 구성에서 남는다고 본다. 시작 구성마다 생성기의 `planJavaRemoval` 을 그대로 불러 그 기대와
+ * **양방향**으로 대조한다 — 시뮬레이터가 아니라 생성기 판정 자체다. 설문을 다른 기능과 가르는 구성은 '공통 기반 + 설문' 시작 구성(13b)이다
+ * (그 전에는 협업 시작 구성에 설문만 더한 합성 구성을 따로 돌았다).
  * 파일 이름의 'pack-tagged' 는 옛 이름이다. 결정 기록(DEC-OPS-089·090)이 이 경로를 가리키므로 이름을 바꾸지 않는다.
  *
  * ⚠ api-server 의 기능 디렉터리 밖 파일은 참조하는 업무 패키지로 소유가 정해진다 — 생성기 연쇄와 같은 import 관계다. 그래서 그런
@@ -31,12 +32,6 @@ export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const HARNESS_PROFILE = 'config/governance/reusable-harness-profile.json';
 export const PRESETS_PATH = 'config/modules/presets.json';
 export const JAVA_POPULATION_FLOOR = 1000;
-/**
- * survey 와 demo 전용 기능을 가르는 합성 구성 — 협업 시작 구성에 설문만 더한다. 지금 시작 구성 셋(core·collaboration·demo)은 설문을
- * 늘 다른 demo 전용 기능과 함께 넣거나 함께 빼므로, 설문 소유를 다른 demo 기능으로 잘못 정해도 세 구성 어디서도 드러나지 않는다
- * (DEC-OPS-090 이 합성 프로필 [core,collaboration,survey] 를 필수로 둔 이유와 같다). '공통 기반 + 설문' 시작 구성(13b)이 생기면 걷는다.
- */
-export const SURVEY_SPLIT_FIXTURE = Object.freeze({ base: 'collaboration', add: Object.freeze(['survey']) });
 const SKIPPED_DIRECTORIES = new Set(['build', 'node_modules', '.git', '.gradle']);
 
 export const normalize = (path) => path.split(sep).join('/');
@@ -274,14 +269,9 @@ async function buildContext(root) {
     return { name, preset, selected: new Set(composition.resolvedDomains), profile, plan: planJavaRemoval(root, ownership, profile, javaFiles) };
   };
   const presets = catalog.presets.map((preset) => row(`preset ${preset.id}`, resolveProjectRecipe(recipe({ preset: preset.id }), catalog), preset.id));
-  const base = presets.find((entry) => entry.preset === SURVEY_SPLIT_FIXTURE.base);
-  if (!base) throw new Error(`합성 구성의 기준 시작 구성이 없다: ${SURVEY_SPLIT_FIXTURE.base}`);
-  const fixtureDomains = [...new Set([...base.selected, ...SURVEY_SPLIT_FIXTURE.add])].sort();
-  const fixture = row(`합성 구성 [${SURVEY_SPLIT_FIXTURE.base} + ${SURVEY_SPLIT_FIXTURE.add.join(', ')}]`,
-    resolveProjectRecipe(recipe({ domains: fixtureDomains }), catalog));
   const features = new Set(catalog.capabilities.map((capability) => capability.id));
   const supportOwners = new Map([...ownership.supportFiles].flatMap(([domain, files]) => files.map((file) => [file, domain])));
   const ownerOf = compositionOwnerOf(root, { ownerOf: sourceOwner(supportOwners, [...features], requiresClosure(catalog.capabilities)),
     features, stripComments });
-  return { root, projection: false, javaFiles, catalog, modules, ownership, ownerOf, presets, compositions: [...presets, fixture] };
+  return { root, projection: false, javaFiles, catalog, modules, ownership, ownerOf, presets, compositions: presets };
 }

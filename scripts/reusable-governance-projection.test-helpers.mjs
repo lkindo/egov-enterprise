@@ -193,15 +193,16 @@ export function registerProfileProjectionTests(shard) {
         assert.equal(migrationAdoption.owner, null);
         assert.equal(migrationAdoption.product, 'migration-tool');
         assert.equal(migrationAdoption.profile, null);
-        const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8], custom: [5, 5] }[profileName];
+        // 공통 기반 + 설문은 설문 문구 파일럿이, 공통 기반 + 결재는 업무 홈의 결재 대기 카드가 더해진다(13b 인증 시작 구성).
+        const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8], survey: [5, 6], approval: [5, 5], custom: [5, 5] }[profileName];
         assert.equal(result.projectedReviewScopes.uiQuality.scenarioIds.length, expectedCounts[0]);
         assert.equal(result.projectedReviewScopes.visibleTerms.pilotIds.length, expectedCounts[1]);
         assert.deepEqual(readJson(output, REVIEW_MANIFEST_PATHS.krds).profiles, upstreamReviews.krds.profiles);
         const home = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus.find(row => row.id === 'content-user-home');
         assert.ok(home, 'the retained home pilot must continue to check remaining source');
         assert.deepEqual(home.findings, upstreamReviews.visibleTerms.pilotCensus.find(row => row.id === home.id).findings);
-        // 업무 홈 문구 증거: core 셸 셋(page·셸·최근 활동) + 게시판 조각 셋·실시간 둘(collaboration) + 결재 대기 카드(demo, Phase 2 9단계).
-        assert.equal(home.sources.length, { core: 3, custom: 3, collaboration: 8, demo: 9 }[profileName]);
+        // 업무 홈 문구 증거: core 셸 셋(page·셸·최근 활동) + 게시판 조각 셋·실시간 둘(collaboration) + 결재 대기 카드(결재 기능 — demo·approval, Phase 2 9단계).
+        assert.equal(home.sources.length, { core: 3, custom: 3, collaboration: 8, demo: 9, survey: 3, approval: 4 }[profileName]);
         // Upstream owner decisions reopen as awaiting input in every generated profile (ADR-0018).
         const isDecision = finding => finding.status === 'accepted-by-owner';
         assert.ok(upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.findings ?? []).some(isDecision),

@@ -83,9 +83,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "업무 홈",
@@ -243,9 +245,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "관리자 업무 현황",
@@ -354,9 +358,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "협업 및 네트워크 허브",
@@ -3085,9 +3091,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -3896,6 +3904,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "demo"
       ],
       "journeys": [],
@@ -3965,9 +3974,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -4051,9 +4062,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "권한 그룹 관리",
@@ -4313,9 +4326,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "부서별 그룹 배정",
@@ -4423,9 +4438,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "사용자 분류 그룹",
@@ -4536,9 +4553,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "로그인 보안 정책 관리",
@@ -4640,9 +4659,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -4719,9 +4740,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "관리자 통계",
@@ -5139,9 +5162,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "운영 보고서 아카이브",
@@ -5288,9 +5313,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "시스템 활성 지표",
@@ -5390,9 +5417,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "사용자 통계 분석",
@@ -5513,7 +5542,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -5592,7 +5622,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "여론조사 관리",
@@ -5750,7 +5781,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -5821,7 +5853,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -5895,7 +5928,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문 상세",
@@ -6013,7 +6047,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -6088,7 +6123,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "온라인 투표 관리",
@@ -6185,7 +6221,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문 여론조사 관리",
@@ -6253,7 +6290,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "투표 참여",
@@ -6328,7 +6366,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -6399,7 +6438,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -6468,7 +6508,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -6539,9 +6580,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -6734,9 +6777,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "행정 표준코드 관리",
@@ -6842,9 +6887,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "공공기관 코드 관리",
@@ -7064,9 +7111,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "코드 관리",
@@ -7231,9 +7280,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "공통코드 관리",
@@ -7303,9 +7354,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "후속 작업 상태",
@@ -7613,6 +7666,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "demo"
       ],
       "journeys": [],
@@ -7783,9 +7837,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "로그 통합 조회",
@@ -7895,9 +7951,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "민감 작업 감사 원장",
@@ -7978,9 +8036,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "로그인 로그",
@@ -8084,9 +8144,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "개인정보 접근 로그",
@@ -8190,9 +8252,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "시스템 로그",
@@ -8294,9 +8358,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "사용자 로그",
@@ -8398,9 +8464,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "웹 로그",
@@ -8509,9 +8577,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "시스템 메뉴 관리",
@@ -8665,9 +8735,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "그룹별 메뉴 현황",
@@ -8741,9 +8813,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -8823,9 +8897,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "보안 감사 로그",
@@ -8956,9 +9032,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "시스템 정책 관리",
@@ -9038,9 +9116,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "화면 관리",
@@ -9127,9 +9207,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "부재 상태 관리",
@@ -9230,9 +9312,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "부서 및 조직 관리",
@@ -9338,9 +9422,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "조직 정책",
@@ -9407,9 +9493,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -9490,9 +9578,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "계정 및 사용자 관리",
@@ -9817,9 +9907,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "업무 관리",
@@ -9925,6 +10017,7 @@
         "demo"
       ],
       "directProjectionProfiles": [
+        "approval",
         "demo"
       ],
       "journeys": [],
@@ -10039,6 +10132,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "demo"
       ],
       "journeys": [],
@@ -10139,6 +10233,7 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "demo"
       ],
       "journeys": [],
@@ -10712,9 +10807,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "엔터프라이즈",
@@ -10922,9 +11019,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "통합 검색",
@@ -11040,9 +11139,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "업무 관리",
@@ -11196,9 +11297,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "부서 업무 상세",
@@ -11298,9 +11401,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "부서 업무 등록",
@@ -11374,9 +11479,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -11446,9 +11553,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -11518,9 +11627,11 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
+        "approval",
         "collaboration",
         "core",
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "unverified",
@@ -11976,7 +12087,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "온라인 설문 조사",
@@ -12053,7 +12165,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문 응답",
@@ -12157,7 +12270,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문조사 응답 관리",
@@ -12258,7 +12372,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문 응답 상세",
@@ -12334,7 +12449,8 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "demo"
+        "demo",
+        "survey"
       ],
       "journeys": [],
       "visibleLabel": "설문 결과 통계",

@@ -84,7 +84,9 @@ test('SMS API support follows the optional domain in the real generator removal 
   }
   for (const preset of catalog.presets) {
     const plan = planJavaRemoval(root, ownership, composerProfile(modules, presetComposition(preset.id)), java);
-    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), preset.id === 'core', `${preset.id}: ${file}`);
+    // 문자 기능이 없는 시작 구성(공통 기반·설문·결재)에서만 빠진다 — 시작 구성 이름이 아니라 해석된 기능 목록으로 판정한다.
+    const excluded = !presetComposition(preset.id).resolvedDomains.includes('sms');
+    for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), excluded, `${preset.id}: ${file}`);
   }
   const unowned = { ...ownership, supportFiles: new Map([...ownership.supportFiles].filter(([domain]) => domain !== 'sms')) };
   const excluded = composerProfile(modules, resolveProjectRecipe(recipe([]), catalog));

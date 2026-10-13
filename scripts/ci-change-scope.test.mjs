@@ -370,7 +370,7 @@ test('mixed reusable-base inputs take the conservative union and docs do not exp
     'business-app/src/main/java/nuri/business/service/survey/SurveyService.java',
     'docs/03-guides/testing-guide.md',
   ]);
-  assert.deepEqual(packAndDocs.reusableProfiles, ['demo']);
+  assert.deepEqual(packAndDocs.reusableProfiles, ['demo', 'survey']);
 
   const packAndCommon = classifyChangedFiles([
     'business-app/src/main/java/nuri/business/service/survey/SurveyService.java',
@@ -383,19 +383,24 @@ test('mixed reusable-base inputs take the conservative union and docs do not exp
 test('pull requests verify one layout per preset while every other event keeps both layouts', () => {
   const common = ['foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java'];
   const pullRequest = classifyChangedFiles(common, { event: 'pull_request' });
+  // 설문·결재 시작 구성(13b)은 아직 ci 선언이 없어 PR 에서도 두 레이아웃이다(선언이 빠지면 덮개가 줄지 않는 쪽으로 닫힌다).
   assert.deepEqual(pullRequest.reusableMatrix.include, [
     { profile: 'core', layout: 'single-module' },
     { profile: 'collaboration', layout: 'multi-module' },
     { profile: 'demo', layout: 'single-module' },
+    { profile: 'survey', layout: 'multi-module' },
+    { profile: 'survey', layout: 'single-module' },
+    { profile: 'approval', layout: 'multi-module' },
+    { profile: 'approval', layout: 'single-module' },
   ]);
   assert.equal(pullRequest.reusableCustom, true, 'the custom composition jobs stay on pull requests');
 
-  assert.equal(classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include.length, 3,
-    'a full pull request run still covers every preset once');
+  assert.equal(classifyChangedFiles([], { event: 'pull_request' }).reusableMatrix.include.length, 7,
+    'a full pull request run still covers every preset');
   for (const event of ['push', 'workflow_dispatch', 'pull_request_target', 'PULL_REQUEST', '', undefined]) {
-    assert.equal(classifyChangedFiles([], { event }).reusableMatrix.include.length, 6, `event ${String(event)} keeps both layouts`);
+    assert.equal(classifyChangedFiles([], { event }).reusableMatrix.include.length, 10, `event ${String(event)} keeps both layouts`);
   }
-  assert.equal(classifyChangedFiles(common).reusableMatrix.include.length, 6, 'a missing event keeps both layouts');
+  assert.equal(classifyChangedFiles(common).reusableMatrix.include.length, 10, 'a missing event keeps both layouts');
 
   const docs = classifyChangedFiles(['docs/03-guides/testing-guide.md'], { event: 'pull_request' });
   assert.equal(docs.reusable, false);
@@ -456,13 +461,13 @@ function modulesFixture(t, edit = () => {}, { expectFailure = false } = {}) {
 test('a preset added to presets.json without a PR layout runs both layouts on pull requests', (t) => {
   const classify = modulesFixture(t, files => {
     const { ci: _ci, ...core } = files['presets.json'].presets.find(preset => preset.id === 'core');
-    files['presets.json'].presets.push({ ...core, id: 'approval' });
+    files['presets.json'].presets.push({ ...core, id: 'probe' });
   });
   const include = classify('--event', 'pull_request', '--file', 'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java')
     .reusableMatrix.include;
-  assert.deepEqual(include.filter(item => item.profile === 'approval'), [
-    { profile: 'approval', layout: 'multi-module' },
-    { profile: 'approval', layout: 'single-module' },
+  assert.deepEqual(include.filter(item => item.profile === 'probe'), [
+    { profile: 'probe', layout: 'multi-module' },
+    { profile: 'probe', layout: 'single-module' },
   ]);
   assert.deepEqual(include.filter(item => item.profile === 'core'), [{ profile: 'core', layout: 'single-module' }]);
 });
@@ -478,6 +483,10 @@ test('a preset whose PR layout declaration is removed falls back to both layouts
     { profile: 'collaboration', layout: 'multi-module' },
     { profile: 'demo', layout: 'multi-module' },
     { profile: 'demo', layout: 'single-module' },
+    { profile: 'survey', layout: 'multi-module' },
+    { profile: 'survey', layout: 'single-module' },
+    { profile: 'approval', layout: 'multi-module' },
+    { profile: 'approval', layout: 'single-module' },
   ]);
 });
 
@@ -504,7 +513,7 @@ test('feature ownership and preset membership are read from config/modules, not 
     files['survey.json'].owns.frontend = files['survey.json'].owns.frontend.filter(owned => owned !== 'src/app/survey');
   });
   const expectProfiles = (file, expected) => assert.deepEqual(classify('--file', file).reusableProfiles, expected, `selection of ${file}`);
-  expectProfiles('business-app/src/main/java/nuri/business/service/survey/SurveyService.java', ['collaboration', 'demo']);
+  expectProfiles('business-app/src/main/java/nuri/business/service/survey/SurveyService.java', ['collaboration', 'demo', 'survey']);
   expectProfiles('frontend/src/app/survey/page.tsx', PRESET_IDS);
   expectProfiles('frontend/src/app/admin/operation/error.tsx', ['collaboration', 'demo']);
   expectProfiles('frontend/src/app/admin/operation/rewards/page.tsx', ['demo']);
@@ -613,6 +622,10 @@ test('GitHub outputs are explicit strings for job conditions', () => {
         { profile: 'collaboration', layout: 'single-module' },
         { profile: 'demo', layout: 'multi-module' },
         { profile: 'demo', layout: 'single-module' },
+        { profile: 'survey', layout: 'multi-module' },
+        { profile: 'survey', layout: 'single-module' },
+        { profile: 'approval', layout: 'multi-module' },
+        { profile: 'approval', layout: 'single-module' },
       ],
     }),
     unknown_count: '0',

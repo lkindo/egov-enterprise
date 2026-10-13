@@ -3,8 +3,8 @@
  *
  * InputContractMirrorLinterTest 는 저장소에서 원장 전체를, 생성물에서는 참조 타입 소스가 **모두** 남은 표적만 검사한다(투영 기록 retainsType).
  * 한 표적은 엔티티·DTO·중첩 item·검증 그룹 등 여러 타입을 참조하므로, 기대는 참조 타입 소스의 기능 소유가 모두 구성 안일 때만 남는다
- * (11단계 C4 — 원장에 소유를 적지 않고 계산한다). 시작 구성(core·collaboration·demo)에는 survey 만 더한 구성이 없어, 설문 소유를
- * 다른 demo 기능으로 잘못 정해도 세 구성은 구분하지 못한다 — 그 구분은 합성 구성 [collaboration + survey] 를 함께 도는 이 계약이 한다.
+ * (11단계 C4 — 원장에 소유를 적지 않고 계산한다). 설문 소유를 다른 demo 기능으로 잘못 정하면 '공통 기반 + 설문' 시작 구성(13b)만
+ * 그 둘을 가른다 — 13b 전에는 합성 구성 [collaboration + survey] 를 따로 돌아 이 구분을 했다.
  */
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -84,7 +84,7 @@ test('같은 DTO 의 길이·필수·응답 전용 표적은 소유 기능 집�
   assert.deepEqual(response, [], '응답 전용 필수 필드의 소유가 필수 표적과 다르다');
 });
 
-test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에서 red 다 — 설문 오인은 합성 구성만 잡는다', async (t) => {
+test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에서 red 다 — 설문 오인은 설문 시작 구성이 잡는다', async (t) => {
   const context = await repositoryContext();
   if (context.projection) {
     t.diagnostic('투영본에는 제거 계획이 없어 합성 소유 대조를 저장소에서만 수행한다');
@@ -99,7 +99,7 @@ test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에
     {
       name: '설문 날짜 표적을 홍보(다른 demo 기능) 소유로 본다',
       entries: reown(surveyDate, 'promotion'),
-      expect: /^expected to be removed in 합성 구성 \[collaboration \+ survey\]: calendarDateBindings nuri\.business\.service\.survey\.dto\.SurveyInfoDto — 구성 밖 소유 기능 \[promotion\] 인데 생성기가 남긴다/,
+      expect: /^expected to be removed in preset survey: calendarDateBindings nuri\.business\.service\.survey\.dto\.SurveyInfoDto — 구성 밖 소유 기능 \[promotion\] 인데 생성기가 남긴다/,
     },
     {
       name: '게시판 길이 표적을 core 소유로 본다',
@@ -111,9 +111,10 @@ test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에
     const violations = evaluateExpectedSurvival({ entries: redCase.entries, compositions: context.compositions });
     assert.ok(violations.some((line) => redCase.expect.test(line)), `${redCase.name}: ${JSON.stringify(violations)}`);
   }
-  // 대조군: 시작 구성 셋만 돌면 설문 오인은 보이지 않는다 — 합성 구성이 있어야 하는 이유다.
-  assert.deepEqual(evaluateExpectedSurvival({ entries: reown(surveyDate, 'promotion'), compositions: context.presets }), [],
-    '시작 구성 셋만으로 설문 오인이 잡힌다면 합성 구성의 근거를 다시 본다');
+  // 대조군: 설문 시작 구성을 빼면 설문 오인은 보이지 않는다 — 그 구성이 이 신호를 받친다(13b 전의 합성 구성과 같은 몫).
+  assert.deepEqual(evaluateExpectedSurvival({ entries: reown(surveyDate, 'promotion'),
+    compositions: context.presets.filter((row) => row.preset !== 'survey') }), [],
+  '설문 시작 구성 없이도 설문 오인이 잡힌다면 그 구성이 받친다는 근거를 다시 본다');
 
   // 엔티티만 빠지는 표적 — 주소록 엔티티를 core DTO 와 묶으면 core 에서 빠진다고 기대하고 계획도 그렇다(참조 타입을 모두 본다).
   const mixed = { ...registry, lengthBindings: [{ entity: 'nuri.business.domain.addressbook.AddressBook', dto: 'nuri.business.service.user.dto.UserDto',

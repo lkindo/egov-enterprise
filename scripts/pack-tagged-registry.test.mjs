@@ -17,7 +17,6 @@ import { assertJavaCascadeAcknowledged, javaCascadeAcknowledgement } from './reu
 import { planJavaRemoval, stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 import {
   JAVA_POPULATION_FLOOR,
-  SURVEY_SPLIT_FIXTURE,
   compositionOwnerOf,
   evaluateExpectedSurvival,
   evaluateGateSurvival,
@@ -67,7 +66,7 @@ function gateSurvivesIn(gateSource) {
 
 const gateWith = (body) => `package nuri.api.harness;\n\n${body}\n@Tag("governance-harness")\nclass SampleGateLinterTest {\n  void check() { int kept = 1; }\n}\n`;
 
-test('저장소 모집단이 생성기 판정을 대표할 만큼 크고 구성은 시작 구성 전부와 설문 합성 구성이다', async () => {
+test('저장소 모집단이 생성기 판정을 대표할 만큼 크고 구성은 시작 구성 전부다', async () => {
   const { javaFiles, projection, presets, compositions, catalog } = await repositoryContext();
   if (projection) {
     assert.ok(javaFiles.length > 0, '투영본 모집단이 비었다');
@@ -76,15 +75,12 @@ test('저장소 모집단이 생성기 판정을 대표할 만큼 크고 구성�
   assert.ok(javaFiles.length >= JAVA_POPULATION_FLOOR, `java 모집단 ${javaFiles.length} < ${JAVA_POPULATION_FLOOR}`);
   assert.deepEqual(presets.map((row) => row.preset), catalog.presets.map((preset) => preset.id), '시작 구성을 하나도 빠뜨리지 않는다');
   assert.ok(presets.length >= 2, '시작 구성이 둘 이상이어야 남고 빠지는 기대를 가를 수 있다');
-  const [fixtureRow] = compositions.filter((row) => !row.preset);
-  const base = presets.find((row) => row.preset === SURVEY_SPLIT_FIXTURE.base);
-  assert.deepEqual([...fixtureRow.selected].filter((domain) => !base.selected.has(domain)).sort(), [...SURVEY_SPLIT_FIXTURE.add].sort(),
-    '합성 구성은 기준 시작 구성에 설문만 더한다');
-  // 합성 구성이 가르는 것: 시작 구성 어디서도 설문과 다른 demo 전용 기능은 함께 들거나 함께 빠진다.
-  const demoOnly = (presets.find((row) => row.preset === 'demo')?.selected ?? new Set());
-  assert.ok(presets.every((row) => [...demoOnly].filter((domain) => !base.selected.has(domain) && domain !== 'survey')
-    .every((domain) => row.selected.has(domain) === row.selected.has('survey'))),
-  '시작 구성이 이미 설문을 따로 가른다면 합성 구성을 걷는다(13b 의 공통 기반 + 설문)');
+  assert.equal(compositions, presets, '대조 구성은 시작 구성뿐이다(13b 전의 설문 합성 구성은 공통 기반 + 설문 시작 구성이 대신한다)');
+  // 설문 소유를 다른 기능으로 잘못 정한 원장 항목은 설문과 그 기능을 가르는 구성에서만 드러난다(DEC-OPS-090). 13b 전에는 시작 구성
+  // 셋이 설문을 다른 demo 전용 기능과 늘 함께 넣거나 빼서 합성 구성을 따로 돌았다. 이제 시작 구성 가운데 하나가 그 일을 해야 한다.
+  const unsplit = catalog.capabilities.map((capability) => capability.id).filter((domain) => domain !== 'survey')
+    .filter((domain) => presets.every((row) => row.selected.has(domain) === row.selected.has('survey')));
+  assert.deepEqual(unsplit, [], '설문과 늘 함께 들고 나는 기능이 있다 — 설문 소유 오인을 가를 시작 구성이 없다');
 });
 
 test('원장 게이트 파일은 어떤 구성에서도 제거되지 않는다', async () => {
