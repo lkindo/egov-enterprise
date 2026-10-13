@@ -14,6 +14,7 @@ import { RETIRED_OWNERSHIP_DECLARATION, composerMarkerDeclarations, composerOwne
   projectedModuleViolations, readComposerModuleFiles, sharedTableTransfers } from './composer-modules.mjs';
 import { activeCompositionEntry } from './generate-reusable-base-source.mjs';
 import { presetIds } from './composition-profiles.mjs';
+import { PROPOSAL_RELATIVE_PATH as DISPOSITION_OVERLAY } from './ui-navigation-disposition-contract.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
@@ -413,7 +414,8 @@ test('the old ownership declaration is gone and no production code names it agai
   assert.equal(Object.hasOwn(pkg.scripts, 'modules:generate'), false, 'npm run modules:generate remains');
   const production = file => /^(?:scripts\/.+\.(?:mjs|cjs|js|ps1|sh)|tools\/.+\.(?:mjs|cjs|js)|\.github\/.+\.(?:ya?ml|json)|\.githooks\/.+|package\.json|config\/.+\.json|(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/main\/.+|frontend\/src\/.+\.(?:ts|tsx))$/.test(file)
     && !/(?:\.test\.(?:mjs|ts|tsx)|\.test-helpers\.mjs|\/__tests__\/.*)$/.test(file)
-    && file !== 'config/ui-navigation-disposition-proposal.json';
+    // overlay 경로는 disposition 계약의 상수로 받는다 — 경로를 적으면 그 계약이 이 시험을 등록되지 않은 overlay 소비자로 본다.
+    && file !== DISPOSITION_OVERLAY;
   const scanned = files.filter(production);
   assert.ok(scanned.length > 1000, `scanned ${scanned.length} files — the scan is empty`);
   const naming = scanned.filter(file => readFileSync(join(root, file), 'utf8').includes('reusable-base-profiles'));

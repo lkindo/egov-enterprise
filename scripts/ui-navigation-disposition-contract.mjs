@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST_RELATIVE_PATH = 'config/ui-route-capabilities.json';
 const SCHEMA_RELATIVE_PATH = 'config/ui-navigation-disposition.schema.json';
-const PROPOSAL_RELATIVE_PATH = 'config/ui-navigation-disposition-proposal.json';
+export const PROPOSAL_RELATIVE_PATH = 'config/ui-navigation-disposition-proposal.json';
 const PROVISIONAL_DIRECTION_ADR_PATH = 'docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md';
 const PROVISIONAL_DIRECTION_SCOPE = [
   'prototype-and-research-default',
