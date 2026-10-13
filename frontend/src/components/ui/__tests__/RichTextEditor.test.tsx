@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RichTextEditor from '../RichTextEditor';
 
@@ -18,7 +18,9 @@ const tiptap = vi.hoisted(() => {
       editorProps?: { attributes?: Record<string, string> };
     } | undefined,
     editor: {
+      setOptions: vi.fn(),
       chain: vi.fn(() => chain),
+      can: () => ({ undo: () => true, redo: () => true }),
       commands: { setContent: vi.fn() },
       getHTML: vi.fn(() => ''),
       isActive: vi.fn((nameOrAttributes: string | Record<string, string>) => (
@@ -30,7 +32,9 @@ const tiptap = vi.hoisted(() => {
   };
 });
 
-vi.mock('@tiptap/react', () => ({
+vi.mock('@tiptap/react', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@tiptap/react')>(),
+  useEditorState: () => 0,
   useEditor: (options: typeof tiptap.options) => {
     tiptap.options = options;
     return tiptap.editor;
@@ -66,6 +70,10 @@ vi.mock('@tiptap/extension-character-count', () => ({
 }));
 
 const toggleNames = [
+  '굵게',
+  '기울임',
+  '밑줄',
+  '취소선',
   '제목 1',
   '제목 2',
   '본문',
@@ -79,6 +87,7 @@ const toggleNames = [
 ];
 
 describe('RichTextEditor toolbar accessibility', () => {
+  beforeEach(() => vi.clearAllMocks());
   it('호출부의 식별자와 접근성 설명을 실제 contenteditable 표면에 전달한다', () => {
     render(
       <>
@@ -114,7 +123,7 @@ describe('RichTextEditor toolbar accessibility', () => {
     expect(editable).toHaveAttribute('aria-multiline', 'true');
   });
 
-  it('14개 아이콘 도구에 한국어 이름과 도움말을 제공하고 토글 상태를 노출한다', () => {
+  it('아이콘 도구에 한국어 이름과 도움말을 제공하고 토글 상태를 노출한다', () => {
     render(<RichTextEditor value="" onChange={vi.fn()} />);
 
     const names = [
@@ -161,5 +170,29 @@ describe('RichTextEditor toolbar accessibility', () => {
     expect(screen.queryByText('실시간 문서 동기화 활성화')).not.toBeInTheDocument();
     expect(screen.getByText('서식 있는 텍스트 편집기')).toBeInTheDocument();
     expect(screen.getByText('3단어')).toBeInTheDocument();
+  });
+
+  it('방향키와 Home/End로 사용 가능한 도구 사이를 이동한다', async () => {
+    const user = userEvent.setup();
+    render(<RichTextEditor value="" onChange={vi.fn()} />);
+    screen.getByRole('button', { name: '실행 취소' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('button', { name: '다시 실행' })).toHaveFocus();
+    await user.keyboard('{End}');
+    expect(screen.getByRole('button', { name: '양쪽 정렬' })).toHaveFocus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('button', { name: '실행 취소' })).toHaveFocus();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('button', { name: '양쪽 정렬' })).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(screen.getByRole('button', { name: '실행 취소' })).toHaveFocus();
+  });
+
+  it('외부 값 복원은 다시 onChange를 발생시키지 않는다', () => {
+    const onChange = vi.fn();
+    const view = render(<RichTextEditor value="" onChange={onChange} />);
+    expect(tiptap.editor.commands.setContent).not.toHaveBeenCalled();
+    view.rerender(<RichTextEditor value="<p>복구한 초안</p>" onChange={onChange} />);
+    expect(tiptap.editor.commands.setContent).toHaveBeenCalledWith('<p>복구한 초안</p>', { emitUpdate: false });
   });
 });

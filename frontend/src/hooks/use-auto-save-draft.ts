@@ -14,6 +14,8 @@ const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 interface AutoSaveOptions {
   /** 사용자/세션·게시판·작업·레코드까지 포함한 초안 격리 범위. null이면 저장하지 않는다. */
   scope: BoardDraftScope | null;
+  /** 복구 여부를 정하는 동안 쓰기만 멈춘다. 기존 초안 조회·복원은 유지한다. */
+  enabled?: boolean;
   /** 자동 저장 간격 (ms). 기본 3000(3초) — 주석이 "30초" 라고 적혀 있었으나 실제 기본값은 3000 이다. */
   interval?: number;
   /** 저장이 활성화되는 최소 글자 수, 기본 10자 */
@@ -24,6 +26,9 @@ interface AutoSaveOptions {
   getData: () => { title: string; content: string };
   /** 데이터 복원 콜백 */
   onRestore?: (data: { title: string; content: string }) => void;
+  /** 미제출 첨부도 같은 사용자·글 범위의 메모리에서만 보관한다. */
+  getFiles?: () => File[];
+  onRestoreFiles?: (files: File[]) => void;
 }
 
 interface DraftData {
@@ -67,11 +72,14 @@ function readDraftFromStorage(fullKey: string | null, epochValue: number): Draft
 export function useAutoSaveDraft(options: AutoSaveOptions) {
   const {
     scope,
+    enabled = true,
     interval = 3000,
     minLength = 10,
     ttlMs = DEFAULT_TTL_MS,
     getData,
     onRestore,
+    getFiles,
+    onRestoreFiles,
   } = options;
   const fullKey = useMemo(() => scope ? buildBoardDraftStorageKey(scope) : null, [scope]);
   const epoch = useMemo(() => ({ key: fullKey, value: getBoardDraftEpoch() }), [fullKey]);
@@ -86,15 +94,19 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
   // Use refs for callbacks to prevent infinite loops when inline functions are passed
   const onRestoreRef = useRef(onRestore);
   const getDataRef = useRef(getData);
+  const getFilesRef = useRef(getFiles);
+  const onRestoreFilesRef = useRef(onRestoreFiles);
 
   useEffect(() => {
     onRestoreRef.current = onRestore;
     getDataRef.current = getData;
-  }, [onRestore, getData]);
+    getFilesRef.current = getFiles;
+    onRestoreFilesRef.current = onRestoreFiles;
+  }, [onRestore, getData, getFiles, onRestoreFiles]);
 
   // 저장 실행
   const saveDraft = useCallback(() => {
-    if (!fullKey || ttlMs <= 0 || epoch.value !== getBoardDraftEpoch()) return;
+    if (!enabled || !fullKey || ttlMs <= 0 || epoch.value !== getBoardDraftEpoch()) return;
     const { title, content } = getDataRef.current();
 
     // 최소 글자 수 미만이면 저장하지 않음
@@ -111,12 +123,13 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
 
     try {
       boardDraftMemoryStorage.setItem(fullKey, JSON.stringify(draft));
+      boardDraftMemoryStorage.setFiles(fullKey, getFilesRef.current?.() ?? []);
       setLastSavedAt(draft.savedAt);
       setHasDraft(true);
     } catch {
       // 임시 보관 실패가 편집을 막지 않게 한다.
     }
-  }, [fullKey, minLength, ttlMs, epoch]);
+  }, [enabled, fullKey, minLength, ttlMs, epoch]);
 
   const readDraft = useCallback((): DraftData | null => {
     return readDraftFromStorage(fullKey, epoch.value);
@@ -125,19 +138,21 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
   // 복원
   const restoreDraft = useCallback((): DraftData | null => {
     const data = readDraft();
-    if (data && onRestoreRef.current) {
-      onRestoreRef.current({ title: data.title, content: data.content });
+    if (data) {
+      if (fullKey) onRestoreFilesRef.current?.(boardDraftMemoryStorage.getFiles(fullKey));
+      onRestoreRef.current?.({ title: data.title, content: data.content });
     }
     return data;
-  }, [readDraft]);
+  }, [readDraft, fullKey]);
 
   // 삭제 (정상 제출 시 호출)
   const clearDraft = useCallback(() => {
+    if (epoch.value !== getBoardDraftEpoch()) return;
     if (fullKey) boardDraftMemoryStorage.removeItem(fullKey);
     clearedDataRef.current = JSON.stringify(getDataRef.current());
     setHasDraft(false);
     setLastSavedAt(null);
-  }, [fullKey]);
+  }, [fullKey, epoch]);
 
   // fullKey 변경 시 임시저장 상태 동기화
   const [prevFullKey, setPrevFullKey] = useState(fullKey);
@@ -156,6 +171,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
 
   // 주기적 자동 저장
   useEffect(() => {
+    if (!enabled) return;
     intervalRef.current = setInterval(() => {
       saveDraft();
     }, interval);
@@ -163,7 +179,7 @@ export function useAutoSaveDraft(options: AutoSaveOptions) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [saveDraft, interval]);
+  }, [enabled, saveDraft, interval]);
 
   // 메모리 초안은 문서 종료를 넘지 못하므로, 미제출 입력이 있으면 브라우저 이탈 확인을 요청한다.
   useEffect(() => {

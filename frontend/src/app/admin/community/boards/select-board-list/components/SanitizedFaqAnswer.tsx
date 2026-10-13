@@ -1,12 +1,18 @@
 'use client';
 
-import DOMPurify from 'isomorphic-dompurify';
+import { BoardRichTextContent } from '@/components/ui/BoardRichTextContent';
+import { cn } from '@/lib/utils';
+import { RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
 
-export default function SanitizedFaqAnswer({ html }: { html: string }) {
+export default function SanitizedFaqAnswer({ html, atchFileSn }: { html: string; atchFileSn?: number | null }) {
   return (
-    <div
-      className="prose prose-sm max-w-none text-[length:var(--font-size-body)] leading-relaxed text-foreground"
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
+    <BoardRichTextContent
+      className={cn(
+        'prose prose-sm max-w-none text-[length:var(--font-size-body)] leading-relaxed text-foreground',
+        RICH_TEXT_TABLE_CLASSES,
+      )}
+      html={html}
+      atchFileSn={atchFileSn}
     />
   );
 }

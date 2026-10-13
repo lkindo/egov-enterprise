@@ -5,12 +5,17 @@ const LEGACY_BOARD_AUTOSAVE_KEY = 'autosave_bbs_write';
 
 // 업무 본문은 브라우저 영속 저장소에 쓰지 않는다. 현재 문서의 메모리에서만 유지한다.
 const drafts = new Map<string, string>();
+const draftFiles = new Map<string, File[]>();
 let draftEpoch = 0;
 export const boardDraftMemoryStorage = {
   getItem: (key: string): string | null => drafts.get(key) ?? null,
   setItem: (key: string, value: string): void => { drafts.set(key, value); },
-  removeItem: (key: string): void => { drafts.delete(key); },
-  clear: (): void => { drafts.clear(); draftEpoch += 1; },
+  removeItem: (key: string): void => { drafts.delete(key); draftFiles.delete(key); },
+  clear: (): void => { drafts.clear(); draftFiles.clear(); draftEpoch += 1; },
+  getFiles: (key: string): File[] => [...(draftFiles.get(key) ?? [])],
+  setFiles: (key: string, files: readonly File[]): void => {
+    if (drafts.has(key)) draftFiles.set(key, [...files]);
+  },
 };
 export const getBoardDraftEpoch = (): number => draftEpoch;
 

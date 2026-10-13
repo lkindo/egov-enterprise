@@ -10,8 +10,9 @@ import {
   FileText, Quote, AlertTriangle,
   Package, ThumbsUp
 } from 'lucide-react';
-import DOMPurify from 'isomorphic-dompurify';
+import { BoardRichTextContent } from '@/components/ui/BoardRichTextContent';
 import { cn } from '@/lib/utils';
+import { RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
 import { canPermission } from '@/lib/auth/permissions';
 import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { Button } from '@/components/ui/button';
@@ -424,15 +425,18 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           {tmpltId === 'TMPLT_QNA' ? (article.qnaCatCd || 'Q&A') : '본문'}
         </h2>
 
-        <div
+        <BoardRichTextContent
           className={cn(
             "prose dark:prose-invert max-w-none text-foreground",
             "leading-relaxed",
             "prose-headings:font-semibold prose-headings:text-foreground",
             "prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:not-italic prose-blockquote:text-foreground",
-            "prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-pre:bg-surface-inverse prose-pre:rounded-md"
+            "prose-code:bg-muted prose-code:rounded prose-code:px-1 prose-pre:bg-surface-inverse prose-pre:rounded-md",
+            RICH_TEXT_TABLE_CLASSES
           )}
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || '') }}
+          html={article.pstCn || ''}
+          atchFileSn={atchFileSn}
+          attachments={attachments}
         />
       </section>
 

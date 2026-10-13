@@ -58,6 +58,8 @@ public class FileService extends BaseAbstractService {
     private static final String NO_FILE_MESSAGE = "올릴 파일이 없습니다. 내용이 있는 파일을 선택해 주세요.";
     private static final int SIGNATURE_READ_SIZE = 16;
 
+    private enum UploadProfile { GENERAL, BOARD }
+
     public FileService(FileMasterRepository fileMasterRepository,
             FileDetailRepository fileDetailRepository,
             FileStorageService storageService,
@@ -77,8 +79,18 @@ public class FileService extends BaseAbstractService {
      */
     @Transactional
     public Long uploadFiles(List<MultipartFile> files) throws IOException {
+        return createFileGroup(files, UploadProfile.GENERAL);
+    }
+
+    /** 게시판의 기존 첨부 형식에 MP4·WebM을 더한다. 다른 업무의 허용 범위는 그대로 둔다. */
+    @Transactional
+    public Long uploadBoardFiles(List<MultipartFile> files) throws IOException {
+        return createFileGroup(files, UploadProfile.BOARD);
+    }
+
+    private Long createFileGroup(List<MultipartFile> files, UploadProfile profile) throws IOException {
         // 선(先) 검증 패스: 하나라도 거부되면 어떤 DB 행·파일도 쓰지 않는다.
-        validateUploadBatch(files, true);
+        validateUploadBatch(files, true, profile);
 
         FileMaster master = fileMasterRepository.save(FileMaster.create());
         Long atchFileSn = required(master.getAtchFileSn(), "자동 생성된 atchFileSn 은 null 일 수 없습니다");
@@ -169,6 +181,16 @@ public class FileService extends BaseAbstractService {
      */
     @Transactional
     public void updateFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
+        appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL);
+    }
+
+    /** 게시판의 기존 묶음에 추가한다. 원 업로더 판정·상한·롤백 보상은 공용 경로와 같다. */
+    @Transactional
+    public void updateBoardFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
+        appendToFileGroup(atchFileSn, files, UploadProfile.BOARD);
+    }
+
+    private void appendToFileGroup(Long atchFileSn, List<MultipartFile> files, UploadProfile profile) throws IOException {
         FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
@@ -182,7 +204,7 @@ public class FileService extends BaseAbstractService {
                 .orElse(0);
 
         // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
-        validateUploadBatch(files, false);
+        validateUploadBatch(files, false, profile);
 
         storeFileDetails(master, files, maxSn + 1, "general/" + atchFileSn);
     }
@@ -273,7 +295,7 @@ public class FileService extends BaseAbstractService {
     /**
      * [Security] 파일 확장자 화이트리스트 검징
      */
-    private void validateUploadBatch(List<MultipartFile> files, boolean requireNonEmpty) throws IOException {
+    private void validateUploadBatch(List<MultipartFile> files, boolean requireNonEmpty, UploadProfile profile) throws IOException {
         // [2026-09-30] 한도가 있는 거부는 한도를 말한다 — 사유 없는 '입력값이 올바르지 않습니다' 로는 무엇을 줄여야 하는지 알 수 없다.
         if (files == null) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, NO_FILE_MESSAGE);
@@ -307,7 +329,7 @@ public class FileService extends BaseAbstractService {
             }
             totalSize += size;
 
-            String extension = validateFileExtension(file.getOriginalFilename());
+            String extension = validateFileExtension(file.getOriginalFilename(), profile);
             validateFileSignature(file, extension);
         }
 
@@ -320,7 +342,7 @@ public class FileService extends BaseAbstractService {
         return bytes / (1024 * 1024);
     }
 
-    private String validateFileExtension(String filename) {
+    private String validateFileExtension(String filename, UploadProfile profile) {
         if (filename == null || filename.isBlank()
                 || filename.length() > MAX_ORIGINAL_FILENAME_LENGTH
                 || !filename.contains(".")) {
@@ -331,7 +353,8 @@ public class FileService extends BaseAbstractService {
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         extension = extension.toLowerCase(Locale.ROOT);
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+        if (!ALLOWED_EXTENSIONS.contains(extension)
+                && !(profile == UploadProfile.BOARD && BoardMediaSignature.supportsExtension(extension))) {
             log.warn("Blocked file upload attempt with forbidden extension");
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
@@ -346,7 +369,8 @@ public class FileService extends BaseAbstractService {
     private void validateFileSignature(MultipartFile file, String extension) throws IOException {
         byte[] header;
         try (InputStream input = file.getInputStream()) {
-            header = input.readNBytes(SIGNATURE_READ_SIZE);
+            header = input.readNBytes(BoardMediaSignature.supportsExtension(extension)
+                    ? BoardMediaSignature.MAX_HEADER_BYTES : SIGNATURE_READ_SIZE);
         }
 
         boolean valid = switch (extension) {
@@ -354,6 +378,8 @@ public class FileService extends BaseAbstractService {
             case "png" -> startsWith(header, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
             case "gif" -> startsWithAscii(header, "GIF87a") || startsWithAscii(header, "GIF89a");
             case "bmp" -> startsWithAscii(header, "BM");
+            case "mp4" -> BoardMediaSignature.isMp4(header);
+            case "webm" -> BoardMediaSignature.isWebm(header);
             case "pdf" -> startsWithAscii(header, "%PDF-");
             case "doc", "xls", "ppt", "hwp" ->
                     startsWith(header, 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);

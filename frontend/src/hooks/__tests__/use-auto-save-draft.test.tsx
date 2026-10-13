@@ -162,15 +162,29 @@ describe('useAutoSaveDraft', () => {
       expect(localStorage.getItem('unrelated-preference')).toBe('keep');
     });
 
-    it('같은 탭에서 다시 들어오면 보관되지만 사용자 범위가 다르면 복원되지 않는다', () => {
-      const first = setup();
+    it.each([
+      ['사용자', { ...SCOPE, ownerId: 'user-2' }],
+      ['게시판', { ...SCOPE, boardId: 'BBS-2' }],
+    ])('같은 탭의 본문과 File은 복원하되 %s 범위가 다르면 복원되지 않는다', (_label, otherScope) => {
+      const file = new File(['draft image'], 'draft.png', { type: 'image/png' });
+      const persist = vi.spyOn(Storage.prototype, 'setItem');
+      const first = setup({ getFiles: () => [file] });
       act(() => first.result.current.saveDraft());
       first.unmount();
-      const other = setup({ scope: { ...SCOPE, ownerId: 'user-2' } });
+      const otherRestoreFiles = vi.fn();
+      const other = setup({ scope: otherScope, onRestoreFiles: otherRestoreFiles });
       expect(other.result.current.restoreDraft()).toBeNull();
+      expect(other.onRestore).not.toHaveBeenCalled();
+      expect(otherRestoreFiles).not.toHaveBeenCalled();
       other.unmount();
-      const same = setup();
+      const restoreFiles = vi.fn();
+      const same = setup({ onRestoreFiles: restoreFiles });
+      expect(restoreFiles).not.toHaveBeenCalled();
       expect(same.result.current.restoreDraft()).toMatchObject(LONG);
+      expect(same.onRestore).toHaveBeenCalledWith(LONG);
+      expect(restoreFiles).toHaveBeenCalledTimes(1);
+      expect(restoreFiles.mock.calls[0][0][0]).toBe(file);
+      expect(persist).not.toHaveBeenCalled();
     });
 
     it('저장된 초안은 마운트 시 존재만 감지하고 사용자가 선택할 때 복원한다', () => {
@@ -186,15 +200,35 @@ describe('useAutoSaveDraft', () => {
       expect(onRestore).toHaveBeenCalledWith({ title: '이전 제목', content: '이전 본문' });
     });
 
-    it('TTL이 지난 초안은 삭제하고 복원하지 않는다', () => {
+    it('TTL이 지난 초안은 첨부와 함께 삭제하고 복원하지 않는다', () => {
       boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ expiresAt: NOW.getTime() - 1 })));
+      boardDraftMemoryStorage.setFiles(FULL_KEY, [new File(['expired'], 'expired.png', { type: 'image/png' })]);
+      const onRestoreFiles = vi.fn();
 
-      const { result, onRestore } = setup();
+      const { result, onRestore } = setup({ onRestoreFiles });
 
       expect(result.current.hasDraft).toBe(false);
       expect(result.current.restoreDraft()).toBeNull();
       expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([]);
       expect(onRestore).not.toHaveBeenCalled();
+      expect(onRestoreFiles).not.toHaveBeenCalled();
+    });
+
+    it('편집 중에도 TTL 경계에 도달하면 본문과 첨부를 복원하지 않는다', () => {
+      const file = new File(['expired'], 'expired.webm', { type: 'video/webm' });
+      const onRestoreFiles = vi.fn();
+      const { result, onRestore } = setup({ ttlMs: 1000, interval: 10_000, getFiles: () => [file], onRestoreFiles });
+      act(() => result.current.saveDraft());
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
+
+      act(() => vi.advanceTimersByTime(1000));
+
+      expect(result.current.restoreDraft()).toBeNull();
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([]);
+      expect(onRestore).not.toHaveBeenCalled();
+      expect(onRestoreFiles).not.toHaveBeenCalled();
     });
 
     it('legacy 공유 키는 복원하지 않고 즉시 제거한다', () => {
@@ -238,20 +272,90 @@ describe('useAutoSaveDraft', () => {
 
       expect(result.current.restoreDraft()).toMatchObject({ title: 'T', content: 'C' });
     });
+
+    it('본문 콜백 없이 파일 복원 콜백만 전달해도 같은 초안의 File을 복원한다', () => {
+      const file = new File(['draft'], 'draft.png', { type: 'image/png' });
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft()));
+      boardDraftMemoryStorage.setFiles(FULL_KEY, [file]);
+      const onRestoreFiles = vi.fn();
+      const { result } = setup({ onRestore: undefined, onRestoreFiles });
+      expect(onRestoreFiles).not.toHaveBeenCalled();
+
+      expect(result.current.restoreDraft()).toMatchObject({ title: '이전 제목', content: '이전 본문' });
+
+      expect(onRestoreFiles).toHaveBeenCalledTimes(1);
+      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
+    });
   });
 
   describe('삭제', () => {
     it('로그아웃 후 늦은 타이머·복원 콜백은 이전 초안을 되살리지 않는다', () => {
-      const { result } = setup({ interval: 1000 });
+      const file = new File(['old'], 'old.png', { type: 'image/png' });
+      const onRestoreFiles = vi.fn();
+      const { result, onRestore } = setup({ interval: 1000, getFiles: () => [file], onRestoreFiles });
       act(() => result.current.saveDraft());
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
+      const lateSave = result.current.saveDraft;
       act(() => purgeBoardDraftStorage());
-      act(() => vi.advanceTimersByTime(3000));
+      act(() => {
+        vi.advanceTimersByTime(3000);
+        lateSave();
+      });
       expect(result.current.restoreDraft()).toBeNull();
       expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([]);
+      expect(onRestore).not.toHaveBeenCalled();
+      expect(onRestoreFiles).not.toHaveBeenCalled();
+    });
+
+    it('로그아웃 전 훅의 늦은 저장은 새 세션이 보관한 본문과 첨부를 덮어쓰지 않는다', () => {
+      const oldFile = new File(['old'], 'old.png', { type: 'image/png' });
+      const oldHook = setup({ interval: 1000, getFiles: () => [oldFile] });
+      act(() => oldHook.result.current.saveDraft());
+      act(() => purgeBoardDraftStorage());
+
+      const newFile = new File(['new'], 'new.webm', { type: 'video/webm' });
+      const newData = { title: '새 세션의 제목', content: '새 세션에서 작성한 본문' };
+      const onRestoreFiles = vi.fn();
+      const current = setup({ getData: () => newData, getFiles: () => [newFile], onRestoreFiles });
+      act(() => current.result.current.saveDraft());
+      act(() => {
+        vi.advanceTimersByTime(2000);
+        oldHook.result.current.saveDraft();
+      });
+
+      expect(oldHook.result.current.restoreDraft()).toBeNull();
+      expect(current.result.current.restoreDraft()).toMatchObject(newData);
+      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(newFile);
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([newFile]);
+    });
+
+    it('이전 세션의 늦은 제출 완료가 같은 사용자의 새 초안과 File을 삭제하지 않는다', () => {
+      const oldHook = setup();
+      act(() => oldHook.result.current.saveDraft());
+      const lateClear = oldHook.result.current.clearDraft;
+      oldHook.unmount();
+      act(() => purgeBoardDraftStorage());
+
+      const file = new File(['new session'], 'new.png', { type: 'image/png' });
+      const data = { title: '재로그인 뒤 제목', content: '재로그인 뒤 작성한 본문' };
+      const onRestoreFiles = vi.fn();
+      const current = setup({ getData: () => data, getFiles: () => [file], onRestoreFiles });
+      act(() => current.result.current.saveDraft());
+      const saved = boardDraftMemoryStorage.getItem(FULL_KEY);
+
+      act(() => lateClear());
+
+      expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBe(saved);
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
+      expect(current.result.current.hasDraft).toBe(true);
+      expect(current.result.current.restoreDraft()).toMatchObject(data);
+      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
     });
 
     it('정상 제출 뒤 같은 입력을 자동 저장하거나 이탈 경고하지 않는다', () => {
-      const { result } = setup({ interval: 1000 });
+      const file = new File(['submitted'], 'submitted.png', { type: 'image/png' });
+      const { result } = setup({ interval: 1000, getFiles: () => [file] });
       act(() => result.current.saveDraft());
       act(() => result.current.clearDraft());
       act(() => vi.advanceTimersByTime(3000));
@@ -259,6 +363,7 @@ describe('useAutoSaveDraft', () => {
       act(() => window.dispatchEvent(event));
       expect(event.defaultPrevented).toBe(false);
       expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([]);
     });
     it('정상 제출 후 초안을 지우고 상태도 되돌린다', () => {
       boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(storedDraft({ title: 'T', content: 'C' })));
@@ -286,14 +391,48 @@ describe('useAutoSaveDraft', () => {
   });
 
   describe('주기 저장과 정리', () => {
+    it('복구 결정 중에는 기존 본문과 File을 덮지 않고 결정 후 주기 저장을 재개한다', () => {
+      const draft = storedDraft();
+      const file = new File(['draft'], 'draft.png', { type: 'image/png' });
+      const nextFile = new File(['next'], 'next.webm', { type: 'video/webm' });
+      boardDraftMemoryStorage.setItem(FULL_KEY, JSON.stringify(draft));
+      boardDraftMemoryStorage.setFiles(FULL_KEY, [file]);
+      const onRestore = vi.fn();
+      const onRestoreFiles = vi.fn();
+      const { result, rerender } = renderHook(({ enabled }) => useAutoSaveDraft({
+        scope: SCOPE, enabled, getData: () => LONG, getFiles: () => [nextFile],
+        onRestore, onRestoreFiles,
+      }), { initialProps: { enabled: false } });
+
+      act(() => {
+        vi.advanceTimersByTime(6000);
+        window.dispatchEvent(new Event('beforeunload', { cancelable: true }));
+        result.current.saveDraft();
+      });
+
+      expect(JSON.parse(boardDraftMemoryStorage.getItem(FULL_KEY)!)).toEqual(draft);
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
+      act(() => { result.current.restoreDraft(); });
+      expect(onRestore).toHaveBeenCalledWith({ title: draft.title, content: draft.content });
+      expect(onRestoreFiles.mock.calls[0][0][0]).toBe(file);
+
+      rerender({ enabled: true });
+      act(() => vi.advanceTimersByTime(3000));
+      expect(JSON.parse(boardDraftMemoryStorage.getItem(FULL_KEY)!)).toMatchObject(LONG);
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(nextFile);
+    });
+
     it('미제출 입력의 문서 이탈을 확인하고 pagehide에서 메모리를 비운다', () => {
-      const { result } = setup();
+      const file = new File(['draft'], 'draft.png', { type: 'image/png' });
+      const { result } = setup({ getFiles: () => [file] });
       const event = new Event('beforeunload', { cancelable: true });
       act(() => window.dispatchEvent(event));
       expect(event.defaultPrevented).toBe(true);
       expect(result.current.restoreDraft()).toMatchObject(LONG);
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)[0]).toBe(file);
       act(() => window.dispatchEvent(new Event('pagehide')));
       expect(boardDraftMemoryStorage.getItem(FULL_KEY)).toBeNull();
+      expect(boardDraftMemoryStorage.getFiles(FULL_KEY)).toEqual([]);
       expect(result.current.restoreDraft()).toBeNull();
     });
     it('지정한 간격마다 자동 저장한다', () => {

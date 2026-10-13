@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: dockerStandalone ? 'standalone' : undefined,
   experimental: {
+    // Next 기본 1MiB 제한은 첨부가 있는 게시글 저장 전에 적용된다.
+    // 서버 요청 상한 50MiB와 multipart/액션 메타데이터 여유 2MiB를 합치며 파일당 10MiB 제한은 서버가 유지한다.
+    serverActions: {
+      bodySizeLimit: '52mb',
+    },
     // ppr: 'incremental', // Merged into cacheComponents
     // [bundle-barrel-imports] 배럴 임포트 자동 최적화.
     // [2026-10-07] 직접 import 하지 않는 @radix-ui/* 개별 패키지(래퍼는 통합 패키지 radix-ui 를 쓴다)와

@@ -13,6 +13,10 @@ export const SERVER_UPLOAD_EXTENSIONS = [
 /** `<input accept>` 형식. */
 export const SERVER_UPLOAD_ACCEPT = SERVER_UPLOAD_EXTENSIONS.map((extension) => `.${extension}`).join(',');
 
+/** 게시판 전용 업로드 프로필. 일반 첨부 형식에 MP4·WebM만 추가한다. */
+export const BOARD_UPLOAD_EXTENSIONS = [...SERVER_UPLOAD_EXTENSIONS, 'mp4', 'webm'] as const;
+export const BOARD_UPLOAD_ACCEPT = BOARD_UPLOAD_EXTENSIONS.map((extension) => `.${extension}`).join(',');
+
 /** 서버의 파일당 상한(MB) — FileService.MAX_FILE_SIZE_BYTES. */
 export const SERVER_MAX_FILE_SIZE_MB = 10;
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT } from '../server-upload-limits';
+import {
+  BOARD_UPLOAD_ACCEPT,
+  boardUploadLimits,
+  formatMegabytes,
+  SERVER_UPLOAD_ACCEPT,
+} from '../server-upload-limits';
 
 /** 게시판 첨부 제한 — 서버 BoardService.assertNewFilesAllowed 와 같은 규칙(2026-09-27 DIP B5 F9). */
 describe('boardUploadLimits', () => {
@@ -26,5 +31,15 @@ describe('boardUploadLimits', () => {
     expect(SERVER_UPLOAD_ACCEPT).not.toContain('*');
     expect(formatMegabytes(5)).toBe('5MB');
     expect(formatMegabytes(1.5)).toBe('1.5MB');
+  });
+
+  it('MP4·WebM은 게시판 프로필에서만 선택할 수 있고 임의 영상 형식은 받지 않는다', () => {
+    const boardAccept = BOARD_UPLOAD_ACCEPT.split(',');
+    expect(boardAccept).toEqual(expect.arrayContaining(['.jpg', '.png', '.hwp', '.mp4', '.webm']));
+    expect(boardAccept).not.toContain('.mov');
+    expect(BOARD_UPLOAD_ACCEPT).not.toContain('*');
+    const generalAccept = SERVER_UPLOAD_ACCEPT.split(',');
+    expect(generalAccept).not.toContain('.mp4');
+    expect(generalAccept).not.toContain('.webm');
   });
 });

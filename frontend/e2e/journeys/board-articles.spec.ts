@@ -223,6 +223,251 @@ test.describe('게시판과 커뮤니티', () => {
                 });
             }
         });
+        test('본문 이미지·영상·표는 저장과 재수정 후 실제 첨부로 표시된다', async ({ page, adminRequest }) => {
+            const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
+            const title = `E2E Media ${Date.now()}`;
+            const updatedTitle = `${title} 수정`;
+            const imageLabel = '업무 흐름 이미지';
+            const updatedImageLabel = '수정한 업무 흐름 이미지';
+            const addedImageLabel = '수정 중 추가한 업무 흐름 이미지';
+            const videoLabel = '업무 흐름 영상';
+            let pstSn: number | null = null;
+            let saveAttempted = false;
+
+            const readArticle = async () => {
+                const response = await adminRequest.get(`/api/v1/boards/${bbsId}/posts/${pstSn}`);
+                expect(response.status()).toBe(200);
+                return (await response.json()).data as { pstTtl: string; pstCn: string; atchFileSn: number };
+            };
+            const readFiles = async (group: number) => {
+                const response = await adminRequest.get(`/api/v1/files/${group}`);
+                expect(response.status()).toBe(200);
+                return (await response.json()).data as {
+                    atchFileSn: number; fileSn: number; fileExtsn: string; orignlFileNm: string; fileMg: number;
+                }[];
+            };
+            const readReferences = async (html: string) => page.evaluate((content) => {
+                const document = new DOMParser().parseFromString(content, 'text/html');
+                return [...document.querySelectorAll('figure[data-board-file]')].map((figure) => ({
+                    name: figure.getAttribute('data-board-file'),
+                    kind: figure.getAttribute('data-media-kind'),
+                    label: figure.getAttribute('data-media-label'),
+                }));
+            }, html);
+
+            try {
+                await page.goto(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`);
+                const editor = page.getByRole('textbox', { name: '게시글 본문 내용 (필수)', exact: true });
+                await expect(editor).toBeVisible();
+
+                // 실제 디코딩 가능한 PNG/WebM을 만든다. PNG는 Server Action 기본 1 MiB 제한도 넘는다.
+                const fixtures = await page.evaluate(async () => {
+                    const image = document.createElement('canvas');
+                    image.width = 768;
+                    image.height = 768;
+                    const imageContext = image.getContext('2d');
+                    if (!imageContext) throw new Error('PNG fixture canvas is unavailable');
+                    const pixels = imageContext.createImageData(image.width, image.height);
+                    let seed = 0x12345678;
+                    for (let offset = 0; offset < pixels.data.length; offset += 4) {
+                        seed ^= seed << 13;
+                        seed ^= seed >>> 17;
+                        seed ^= seed << 5;
+                        pixels.data[offset] = seed & 255;
+                        pixels.data[offset + 1] = (seed >>> 8) & 255;
+                        pixels.data[offset + 2] = (seed >>> 16) & 255;
+                        pixels.data[offset + 3] = 255;
+                    }
+                    imageContext.putImageData(pixels, 0, 0);
+                    const png = image.toDataURL('image/png').split(',')[1];
+
+                    const movie = document.createElement('canvas');
+                    movie.width = 128;
+                    movie.height = 96;
+                    const context = movie.getContext('2d');
+                    if (!context) throw new Error('WebM fixture canvas is unavailable');
+                    const mimeType = ['video/webm;codecs=vp8', 'video/webm'].find((type) => MediaRecorder.isTypeSupported(type));
+                    if (!mimeType) throw new Error('This browser cannot record the WebM fixture');
+                    const stream = movie.captureStream(10);
+                    try {
+                        const recorder = new MediaRecorder(stream, { mimeType });
+                        const chunks: Blob[] = [];
+                        const webm = await new Promise<string>((resolve, reject) => {
+                            let frame = 0;
+                            const timer = window.setInterval(() => {
+                                context.fillStyle = frame % 2 === 0 ? '#164e63' : '#f59e0b';
+                                context.fillRect(0, 0, movie.width, movie.height);
+                                frame += 1;
+                                if (frame === 12) {
+                                    window.clearInterval(timer);
+                                    recorder.stop();
+                                }
+                            }, 100);
+                            recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+                            recorder.onerror = () => {
+                                window.clearInterval(timer);
+                                reject(new Error('WebM fixture recording failed'));
+                            };
+                            recorder.onstop = () => {
+                                window.clearInterval(timer);
+                                const reader = new FileReader();
+                                reader.onerror = () => reject(new Error('WebM fixture encoding failed'));
+                                reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                                reader.readAsDataURL(new Blob(chunks, { type: 'video/webm' }));
+                            };
+                            recorder.start();
+                        });
+                        return { png, webm };
+                    } finally {
+                        stream.getTracks().forEach((track) => track.stop());
+                    }
+                });
+                const imageBytes = Buffer.from(fixtures.png, 'base64');
+                const videoBytes = Buffer.from(fixtures.webm, 'base64');
+                expect(imageBytes.length).toBeGreaterThan(1024 * 1024);
+                expect(imageBytes.length).toBeLessThan(10 * 1024 * 1024);
+                expect(videoBytes.length).toBeGreaterThan(0);
+
+                await page.getByRole('textbox', { name: '게시글 제목', exact: true }).fill(title);
+                await editor.fill('본문 미디어와 표의 저장 및 재수정 검증');
+                await editor.press('End');
+                await editor.press('Enter');
+                await page.getByLabel('본문 이미지 파일', { exact: true }).setInputFiles({
+                    name: 'workflow-noise.png', mimeType: 'image/png', buffer: imageBytes,
+                });
+                await page.getByRole('textbox', { name: '이미지 설명', exact: true }).fill(imageLabel);
+                await expect.poll(() => page.getByRole('img', { name: imageLabel, exact: true })
+                    .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
+                await page.getByLabel('본문 영상 파일', { exact: true }).setInputFiles({
+                    name: 'workflow-motion.webm', mimeType: 'video/webm', buffer: videoBytes,
+                });
+                await page.getByRole('textbox', { name: '영상 설명', exact: true }).fill(videoLabel);
+                await page.getByRole('button', { name: '표 도구', exact: true }).click();
+                const tableTools = page.getByRole('dialog', { name: '표 편집 도구', exact: true });
+                await tableTools.getByRole('spinbutton', { name: '행 수', exact: true }).fill('2');
+                await tableTools.getByRole('spinbutton', { name: '열 수', exact: true }).fill('2');
+                await tableTools.getByRole('button', { name: '표 삽입', exact: true }).click();
+                await editor.locator('th').first().click();
+                await page.keyboard.type('검증 항목');
+                await editor.locator('td').first().click();
+                await page.keyboard.type('첨부와 표 보존');
+
+                saveAttempted = true;
+                await page.getByRole('button', { name: '게시글 등록', exact: true }).click();
+                await page.waitForURL((url) => url.pathname.endsWith('/boards/detail')
+                    && url.searchParams.get('bbsId') === bbsId && Number(url.searchParams.get('pstSn')) > 0);
+                pstSn = Number(new URL(page.url()).searchParams.get('pstSn'));
+                expect(Number.isSafeInteger(pstSn)).toBe(true);
+                const stored = await readArticle();
+                expect(stored.pstTtl).toBe(title);
+                expect(stored.atchFileSn).toBeGreaterThan(0);
+                expect(stored.pstCn).toContain('<table');
+                expect(stored.pstCn).not.toMatch(/\bsrc\s*=|blob:|data:image|<(?:img|video)\b/i);
+                const references = await readReferences(stored.pstCn);
+                expect(references).toHaveLength(2);
+                expect(references).toEqual(expect.arrayContaining([
+                    { name: expect.stringMatching(/^media-[0-9a-f-]{36}-workflow-noise\.png$/), kind: 'image', label: imageLabel },
+                    { name: expect.stringMatching(/^media-[0-9a-f-]{36}-workflow-motion\.webm$/), kind: 'video', label: videoLabel },
+                ]));
+                const files = await readFiles(stored.atchFileSn);
+                expect(files).toHaveLength(2);
+                expect(files.map((file) => file.orignlFileNm).sort()).toEqual(references.map((reference) => reference.name).sort());
+                for (const [extension, bytes] of [['png', imageBytes], ['webm', videoBytes]] as const) {
+                    const matches = files.filter((file) => file.fileExtsn.toLowerCase() === extension);
+                    expect(matches).toHaveLength(1);
+                    expect(matches[0].atchFileSn).toBe(stored.atchFileSn);
+                    expect(matches[0].fileMg).toBe(bytes.length);
+                    const downloaded = await adminRequest.get(`/api/v1/files/${stored.atchFileSn}/${matches[0].fileSn}`);
+                    expect(downloaded.status()).toBe(200);
+                    expect((await downloaded.body()).equals(bytes)).toBe(true);
+                }
+
+                await expect.poll(() => page.getByRole('img', { name: imageLabel, exact: true })
+                    .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
+                const videoGroup = page.getByRole('group', { name: videoLabel, exact: true });
+                await videoGroup.getByRole('button', { name: '영상 불러오기', exact: true }).click();
+                const video = videoGroup.locator('video');
+                await expect(video).toBeVisible();
+                await expect(video).toHaveAttribute('controls', '');
+                await video.evaluate(async (element) => {
+                    const media = element as HTMLVideoElement;
+                    media.muted = true;
+                    await media.play();
+                });
+                // MediaRecorder의 WebM은 duration이 Infinity일 수 있다. 실제 프레임 디코딩도 함께 확인한다.
+                await expect.poll(() => video.evaluate((element) => {
+                    const media = element as HTMLVideoElement;
+                    return media.readyState >= 2 && media.videoWidth === 128 && media.duration > 0;
+                })).toBe(true);
+                await video.evaluate((element) => (element as HTMLVideoElement).pause());
+                await expect(page.getByRole('cell', { name: '첨부와 표 보존', exact: true })).toBeVisible();
+
+                await page.getByRole('button', { name: '게시글 수정', exact: true }).click();
+                await expect(editor).toBeVisible();
+                await expect(page.getByRole('textbox', { name: '게시글 제목', exact: true })).toHaveValue(title);
+                await expect(page.getByRole('textbox', { name: '이미지 설명', exact: true })).toHaveValue(imageLabel);
+                await expect(page.getByRole('textbox', { name: '영상 설명', exact: true })).toHaveValue(videoLabel);
+                await expect(editor.getByRole('cell', { name: '첨부와 표 보존', exact: true })).toBeVisible();
+                await page.getByRole('textbox', { name: '게시글 제목', exact: true }).fill(updatedTitle);
+                await page.getByRole('textbox', { name: '이미지 설명', exact: true }).fill(updatedImageLabel);
+                await editor.press('Control+Home');
+                await page.getByLabel('본문 이미지 파일', { exact: true }).setInputFiles({
+                    name: 'workflow-added.png', mimeType: 'image/png', buffer: imageBytes,
+                });
+                await page.getByRole('textbox', { name: '이미지 설명', exact: true })
+                    .and(page.locator('input[value="workflow-added.png"]')).fill(addedImageLabel);
+                await expect.poll(() => page.getByRole('img', { name: addedImageLabel, exact: true })
+                    .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
+                await page.getByRole('button', { name: '게시글 수정', exact: true }).click();
+                await page.waitForURL((url) => url.pathname.endsWith('/boards/detail')
+                    && Number(url.searchParams.get('pstSn')) === pstSn);
+                const updated = await readArticle();
+                expect(updated.pstTtl).toBe(updatedTitle);
+                expect(updated.atchFileSn).toBe(stored.atchFileSn);
+                expect(updated.pstCn).not.toMatch(/\bsrc\s*=|blob:|data:image|<(?:img|video)\b/i);
+                const updatedReferences = await readReferences(updated.pstCn);
+                expect(updatedReferences).toHaveLength(3);
+                expect(updatedReferences).toEqual(expect.arrayContaining([
+                    ...references.map((reference) => reference.kind === 'image'
+                        ? { ...reference, label: updatedImageLabel } : reference),
+                    { name: expect.stringMatching(/^media-[0-9a-f-]{36}-workflow-added\.png$/), kind: 'image', label: addedImageLabel },
+                ]));
+                const updatedFiles = await readFiles(updated.atchFileSn);
+                expect(updatedFiles).toHaveLength(3);
+                expect(updatedFiles).toEqual(expect.arrayContaining(files));
+                expect(updatedFiles.map((file) => file.orignlFileNm).sort())
+                    .toEqual(updatedReferences.map((reference) => reference.name).sort());
+                const addedFiles = updatedFiles.filter((file) => !files.some((original) => original.fileSn === file.fileSn));
+                expect(addedFiles).toHaveLength(1);
+                expect(addedFiles[0].atchFileSn).toBe(stored.atchFileSn);
+                expect(addedFiles[0].fileExtsn.toLowerCase()).toBe('png');
+                expect(addedFiles[0].fileMg).toBe(imageBytes.length);
+                const addedDownload = await adminRequest.get(`/api/v1/files/${updated.atchFileSn}/${addedFiles[0].fileSn}`);
+                expect(addedDownload.status()).toBe(200);
+                expect((await addedDownload.body()).equals(imageBytes)).toBe(true);
+                await expect(page.getByRole('heading', { name: updatedTitle, exact: true, level: 1 })).toBeVisible();
+                await expect.poll(() => page.getByRole('img', { name: updatedImageLabel, exact: true })
+                    .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
+                await expect.poll(() => page.getByRole('img', { name: addedImageLabel, exact: true })
+                    .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
+                await expect(page.getByRole('cell', { name: '첨부와 표 보존', exact: true })).toBeVisible();
+            } finally {
+                // 저장은 끝났지만 화면 전환이 실패한 경우도 고유 제목으로 찾아 정리한다.
+                const ids = new Set<number>(pstSn ? [pstSn] : []);
+                if (saveAttempted && !pstSn) {
+                    const response = await adminRequest.get(`/api/v1/boards/${bbsId}`, {
+                        params: { searchCnd: '0', searchWrd: title, size: 100 },
+                    });
+                    expect(response.status()).toBe(200);
+                    const articles = (await response.json()).data.list as { pstSn: number; pstTtl: string }[];
+                    articles.filter((article) => article.pstTtl === title || article.pstTtl === updatedTitle)
+                        .forEach((article) => ids.add(article.pstSn));
+                }
+                for (const id of ids) {
+                    expect((await adminRequest.delete(`/api/v1/boards/${bbsId}/posts/${id}`)).status()).toBe(200);
+                }
+            }
+        });
         /**
          * 댓글 생명주기 — 작성 → 수정 → 삭제.
          *

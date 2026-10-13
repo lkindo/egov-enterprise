@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  BOARD_UPLOAD_EXTENSIONS,
   SERVER_MAX_FILE_SIZE_MB,
   SERVER_MAX_FILES_PER_REQUEST,
   SERVER_UPLOAD_EXTENSIONS,
@@ -11,6 +12,7 @@ import {
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const REPO_DIR = join(SRC_DIR, '..', '..');
 const FILE_SERVICE = join(REPO_DIR, 'business-core/src/main/java/nuri/business/service/file/FileService.java');
+const BOARD_MEDIA_SIGNATURE = join(REPO_DIR, 'business-core/src/main/java/nuri/business/service/file/BoardMediaSignature.java');
 
 /**
  * 업로더 제한과 서버 첨부 제한의 대조(2026-09-27 DIP B5 F9).
@@ -37,5 +39,33 @@ describe('server upload limits contract', () => {
     expect(count, 'FileService.MAX_FILES_PER_REQUEST 형식이 바뀌었다').not.toBeNull();
     expect(SERVER_MAX_FILE_SIZE_MB).toBe(Number(size![1]));
     expect(SERVER_MAX_FILES_PER_REQUEST).toBe(Number(count![1]));
+  });
+
+  it('게시판 업로드 확장자는 일반 첨부와 서버 게시판 영상 프로필의 합집합이다', () => {
+    const mediaSource = readFileSync(BOARD_MEDIA_SIGNATURE, 'utf8');
+    const block = mediaSource.match(/EXTENSIONS\s*=\s*Set\.of\(([\s\S]*?)\);/);
+    expect(block, 'BoardMediaSignature.EXTENSIONS를 찾지 못했다').not.toBeNull();
+    const serverMediaExtensions = [...block![1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+    expect(serverMediaExtensions).toHaveLength(2);
+    expect([...BOARD_UPLOAD_EXTENSIONS].sort())
+      .toEqual([...SERVER_UPLOAD_EXTENSIONS, ...serverMediaExtensions].sort());
+  });
+
+  it('서버 액션은 서버 요청 50MiB와 multipart 여유 2MiB까지만 받는다', () => {
+    const requestSize = source.match(/MAX_REQUEST_SIZE_BYTES\s*=\s*(\d+)L\s*\*\s*1024\s*\*\s*1024;/);
+    expect(requestSize, 'FileService.MAX_REQUEST_SIZE_BYTES를 찾지 못했다').not.toBeNull();
+    const backendRequestMiB = Number(requestSize![1]);
+    expect(backendRequestMiB).toBe(50);
+
+    const application = readFileSync(join(REPO_DIR, 'api-server/src/main/resources/application.yml'), 'utf8');
+    const parserDefault = application.match(/max-request-size:\s*\$\{FILE_UPLOAD_MAX_REQUEST_SIZE:(\d+)MB\}/);
+    expect(parserDefault, 'HTTP multipart 파서의 기본 요청 상한을 찾지 못했다').not.toBeNull();
+    expect(Number(parserDefault![1])).toBe(backendRequestMiB);
+
+    const nextConfig = readFileSync(join(REPO_DIR, 'frontend/next.config.ts'), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    const actionLimit = nextConfig.match(/experimental\s*:\s*\{\s*serverActions\s*:\s*\{\s*bodySizeLimit\s*:\s*['"](\d+)mb['"]/i);
+    expect(actionLimit, 'experimental.serverActions.bodySizeLimit를 명시해야 한다').not.toBeNull();
+    expect(Number(actionLimit![1])).toBe(backendRequestMiB + 2);
   });
 });

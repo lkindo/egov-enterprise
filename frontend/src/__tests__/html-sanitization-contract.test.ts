@@ -48,6 +48,21 @@ describe('HTML 살균 기준선 — 에디터가 만드는 것은 통과하고, 
     expect(sanitized).not.toContain('javascript:');
   });
 
+  it('표의 머리글과 병합된 셀 구조·내용을 보존한다', () => {
+    const html = '<table><tbody><tr><th colspan="2"><p>분기 실적</p></th></tr>'
+      + '<tr><td rowspan="2"><p>영업</p></td><td><p>12</p></td></tr>'
+      + '<tr><td><p>15</p></td></tr></tbody></table>';
+    expect(DOMPurify.sanitize(html)).toBe(html);
+  });
+
+  it('표·머리글·셀의 실행 가능한 속성은 제거하고 데이터는 남긴다', () => {
+    const html = '<table onclick="alert(1)"><tbody><tr><th onerror="alert(2)">항목</th>'
+      + '<td onclick="alert(3)" onerror="alert(4)">실적</td></tr></tbody></table>';
+    expect(DOMPurify.sanitize(html)).toBe(
+      '<table><tbody><tr><th>항목</th><td>실적</td></tr></tbody></table>',
+    );
+  });
+
   /*
     style 속성은 현재 통과한다(실측). 저장된 정렬 서식이 라이브러리 기본 정책 변경으로
     사라지면 이 계약이 red로 알려 준다.

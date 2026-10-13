@@ -66,7 +66,11 @@ class AttachmentSourceRegistryLinterTest {
                     + "(?:(?:public|protected|private)\\s+)?(?:(?:static|final|synchronized)\\s+)*"
                     + "[\\w.$][\\w.$<>?,\\[\\] ]*\\s+([a-zA-Z0-9_]+)\\s*\\(");
     private static final Pattern ATTACHMENT_USAGE = Pattern.compile(
-            "\\.(?:getAtchFileSn|setAtchFileSn|atchFileSn|getFileUrl|fileUrl|uploadFiles|updateFiles|assertAssignable)\\s*\\(");
+            "\\.(?:getAtchFileSn|setAtchFileSn|atchFileSn|getFileUrl|fileUrl|uploadFiles|updateFiles|uploadBoardFiles|updateBoardFiles|assertAssignable)\\s*\\(");
+    private static final Pattern LOCAL_ATTACHMENT_STORAGE_USAGE = Pattern.compile(
+            "(?<![\\w$.])(?:createFileGroup|appendToFileGroup|storeFileDetails)\\s*\\(");
+    private static final Set<String> UPLOAD_ENTRY_POINTS =
+            Set.of("uploadFiles", "updateFiles", "uploadBoardFiles", "updateBoardFiles");
     private static final Pattern ATTACHMENT_IDENTIFIER = Pattern.compile("\\batchFileSn\\b");
     private static final Pattern ASSIGNMENT_MUTATION = Pattern.compile(
             "\\.(?:save|saveAll|saveAndFlush|persist|merge|update|updateAll|setAtchFileSn)\\s*\\(");
@@ -84,6 +88,7 @@ class AttachmentSourceRegistryLinterTest {
      * <p>인가 토큰이 빈 규칙은 응답 변환·점검 같은 read-only 소비다. 쓰기 규칙은 인가 토큰이 존재하고,
      * 모든 저장·변경 토큰보다 먼저 실행돼야 한다. read-only 규칙은 저장·삭제·변경 토큰을 금지한다.
      * 신규 소비 메서드는 자동 수집되므로 이 목록에서 read/write 의미를 판정하지 않으면 red다.
+     * 업로드 진입점은 지정한 단일 helper 호출만 허용하며, 그 helper도 독립 수집해 실제 가드를 검사한다.
      */
     private static final Map<String, AttachmentMethodRule> ATTACHMENT_METHOD_RULES = Map.ofEntries(
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#createDeptJob",
@@ -103,8 +108,16 @@ class AttachmentSourceRegistryLinterTest {
             entry("business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java#assertDeletable",
                     readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/FileService.java#uploadFiles",
+                    uploadDelegate("return createFileGroup(files, UploadProfile.GENERAL)")),
+            entry("business-core/src/main/java/nuri/business/service/file/FileService.java#uploadBoardFiles",
+                    uploadDelegate("return createFileGroup(files, UploadProfile.BOARD)")),
+            entry("business-core/src/main/java/nuri/business/service/file/FileService.java#createFileGroup",
                     generatedUpload()),
             entry("business-core/src/main/java/nuri/business/service/file/FileService.java#updateFiles",
+                    uploadDelegate("appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL)")),
+            entry("business-core/src/main/java/nuri/business/service/file/FileService.java#updateBoardFiles",
+                    uploadDelegate("appendToFileGroup(atchFileSn, files, UploadProfile.BOARD)")),
+            entry("business-core/src/main/java/nuri/business/service/file/FileService.java#appendToFileGroup",
                     guarded("accessPolicy.assertAttachable(master)",
                             "fileDetailRepository.findByFileMaster(", "storeFileDetails(")),
             entry("business-core/src/main/java/nuri/business/service/file/FileService.java#convertToDto",
@@ -123,7 +136,7 @@ class AttachmentSourceRegistryLinterTest {
                     guarded("attachmentAssignmentPolicy.assertAssignable(request.atchFileSn())", "board.update(")),
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#updatePostWithFiles",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
-                            "fileService.updateFiles(", "updateOwnedPost(")),
+                            "fileService.updateBoardFiles(", "updateOwnedPost(")),
             // [2026-09-25 DIP D8] 메일은 첨부를 발송하지 않으므로 할당하지 않는다 — 지정하면 거부만 한다.
             entry("business-app/src/main/java/nuri/business/service/mail/MailService.java#assertNoAttachment",
                     readOnly()),
@@ -387,6 +400,91 @@ class AttachmentSourceRegistryLinterTest {
     }
 
     @Test
+    @DisplayName("🔒 일반·게시판 업로드의 단일 위임과 실제 helper 인가를 함께 검사한다")
+    void fileUploadDelegationGateRejectsBypassedOrUnguardedHelpers() {
+        String path = "business-core/src/main/java/example/FileService.java";
+        Map<String, AttachmentMethodRule> rules = Map.ofEntries(
+                entry(path + "#uploadFiles", uploadDelegate("return createFileGroup(files, UploadProfile.GENERAL)")),
+                entry(path + "#uploadBoardFiles", uploadDelegate("return createFileGroup(files, UploadProfile.BOARD)")),
+                entry(path + "#createFileGroup", generatedUpload()),
+                entry(path + "#updateFiles", uploadDelegate("appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL)")),
+                entry(path + "#updateBoardFiles", uploadDelegate("appendToFileGroup(atchFileSn, files, UploadProfile.BOARD)")),
+                entry(path + "#appendToFileGroup", guarded("accessPolicy.assertAttachable(master)",
+                        "fileDetailRepository.findByFileMaster(", "storeFileDetails(")));
+        String good = """
+                class FileService {
+                    public Long uploadFiles(Files files) {
+                        return createFileGroup(files, UploadProfile.GENERAL);
+                    }
+                    public Long uploadBoardFiles(Files files) {
+                        return createFileGroup(files, UploadProfile.BOARD);
+                    }
+                    private Long createFileGroup(Files files, UploadProfile profile) {
+                        FileMaster master = fileMasterRepository.save(FileMaster.create());
+                        storeFileDetails(master, files, 1);
+                        return master.getAtchFileSn();
+                    }
+                    public void updateFiles(Long atchFileSn, Files files) {
+                        appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL);
+                    }
+                    public void updateBoardFiles(Long atchFileSn, Files files) {
+                        appendToFileGroup(atchFileSn, files, UploadProfile.BOARD);
+                    }
+                    private void appendToFileGroup(Long atchFileSn, Files files, UploadProfile profile) {
+                        FileMaster master = fileMasterRepository.findById(atchFileSn).orElseThrow();
+                        accessPolicy.assertAttachable(master);
+                        fileDetailRepository.findByFileMaster(master);
+                        storeFileDetails(master, files, maxSn + 1);
+                    }
+                }
+                """;
+        assertTrue(attachmentMethodViolations(Map.of(path, good), rules).isEmpty());
+
+        String missingGuard = good.replace("accessPolicy.assertAttachable(master);",
+                "// accessPolicy.assertAttachable(master);");
+        assertTrue(attachmentMethodViolations(Map.of(path, missingGuard), rules).stream()
+                .anyMatch(value -> value.contains("#appendToFileGroup") && value.contains("가드 토큰 소실")));
+
+        String lateGuard = good.replace("accessPolicy.assertAttachable(master);", "")
+                .replace("storeFileDetails(master, files, maxSn + 1);",
+                        "storeFileDetails(master, files, maxSn + 1); accessPolicy.assertAttachable(master);");
+        assertTrue(attachmentMethodViolations(Map.of(path, lateGuard), rules).stream()
+                .anyMatch(value -> value.contains("#appendToFileGroup") && value.contains("저장보다 뒤")));
+
+        String boardUpdate = "appendToFileGroup(atchFileSn, files, UploadProfile.BOARD);";
+        for (String unsafeCall : List.of(
+                "storeFileDetails(uncheckedMaster, files, 1);",
+                "appendToFileGroup(otherAtchFileSn, files, UploadProfile.BOARD);",
+                "appendToFileGroup(atchFileSn, files, UploadProfile.GENERAL);",
+                boardUpdate + " storeFileDetails(uncheckedMaster, files, 1);")) {
+            String bypassed = good.replace(boardUpdate, unsafeCall);
+            assertTrue(attachmentMethodViolations(Map.of(path, bypassed), rules).stream()
+                    .anyMatch(value -> value.contains("#updateBoardFiles") && value.contains("단일 위임")), unsafeCall);
+        }
+
+        String reusedGroup = good.replace("fileMasterRepository.save(FileMaster.create())",
+                "fileMasterRepository.findById(atchFileSn).orElseThrow()");
+        assertTrue(attachmentMethodViolations(Map.of(path, reusedGroup), rules).stream()
+                .anyMatch(value -> value.contains("#createFileGroup") && value.contains("금지된 쓰기/재사용")));
+
+        Map<String, AttachmentMethodRule> missingHelperRule = new LinkedHashMap<>(rules);
+        missingHelperRule.remove(path + "#appendToFileGroup");
+        assertTrue(attachmentMethodViolations(Map.of(path, good), missingHelperRule).stream()
+                .anyMatch(value -> value.contains("미등록 소비 메서드") && value.contains("#appendToFileGroup")));
+
+        String unknownCallerPath = "business-app/src/main/java/example/NewService.java";
+        String unknownCaller = """
+                class NewService {
+                    public void create(Files files) {
+                        fileService.uploadBoardFiles(files);
+                    }
+                }
+                """;
+        assertTrue(attachmentMethodViolations(Map.of(unknownCallerPath, unknownCaller), Map.of()).stream()
+                .anyMatch(value -> value.contains("미등록 소비 메서드") && value.contains("#create")));
+    }
+
+    @Test
     @DisplayName("🔒 Board 소유권 가드는 첨부 조회·업로드·갱신보다 먼저 실행된다")
     void auditBoardOwnerGuardPrecedesEveryAttachmentMutation() throws IOException {
         String path = "business-app/src/main/java/nuri/business/service/board/BoardService.java";
@@ -413,8 +511,8 @@ class AttachmentSourceRegistryLinterTest {
                     public void updatePostWithFiles(Long pstSn, Request request, Files files) {
                         Board board = findOwnedPost(bbsId, pstSn);
                         attachmentAssignmentPolicy.assertAssignable(atchFileSn);
-                        fileService.uploadFiles(files);
-                        fileService.updateFiles(atchFileSn, files);
+                        fileService.uploadBoardFiles(files);
+                        fileService.updateBoardFiles(atchFileSn, files);
                         updateOwnedPost(board, request, true);
                     }
                 }
@@ -423,28 +521,35 @@ class AttachmentSourceRegistryLinterTest {
 
         String uploadBeforeOwner = good.replace(
                 "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
-                "fileService.uploadFiles(files);\n        Board board = findOwnedPost(bbsId, pstSn);\n"
+                "fileService.uploadBoardFiles(files);\n        Board board = findOwnedPost(bbsId, pstSn);\n"
                         + "        attachmentAssignmentPolicy")
-                .replace("        fileService.uploadFiles(files);\n        fileService.updateFiles",
-                        "        fileService.updateFiles");
+                .replace("        fileService.uploadBoardFiles(files);\n        fileService.updateBoardFiles",
+                        "        fileService.updateBoardFiles");
         assertTrue(boardOwnershipOrderViolations(path, uploadBeforeOwner).stream()
-                .anyMatch(value -> value.contains("fileService.uploadFiles(") && value.contains("소유권보다 앞")));
+                .anyMatch(value -> value.contains("fileService.uploadBoardFiles(") && value.contains("소유권보다 앞")));
 
         String updateBeforeOwner = good.replace(
                 "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
-                "fileService.updateFiles(atchFileSn, files);\n"
+                "fileService.updateBoardFiles(atchFileSn, files);\n"
                         + "        Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy")
-                .replace("        fileService.updateFiles(atchFileSn, files);\n        updateOwnedPost",
+                .replace("        fileService.updateBoardFiles(atchFileSn, files);\n        updateOwnedPost",
                         "        updateOwnedPost");
         assertTrue(boardOwnershipOrderViolations(path, updateBeforeOwner).stream()
+                .anyMatch(value -> value.contains("fileService.updateBoardFiles(") && value.contains("소유권보다 앞")));
+
+        String generalUploadBeforeOwner = uploadBeforeOwner.replace("uploadBoardFiles", "uploadFiles");
+        assertTrue(boardOwnershipOrderViolations(path, generalUploadBeforeOwner).stream()
+                .anyMatch(value -> value.contains("fileService.uploadFiles(") && value.contains("소유권보다 앞")));
+        String generalUpdateBeforeOwner = updateBeforeOwner.replace("updateBoardFiles", "updateFiles");
+        assertTrue(boardOwnershipOrderViolations(path, generalUpdateBeforeOwner).stream()
                 .anyMatch(value -> value.contains("fileService.updateFiles(") && value.contains("소유권보다 앞")));
 
         String assignmentBeforeOwner = good.replace(
                 "Board board = findOwnedPost(bbsId, pstSn);\n        attachmentAssignmentPolicy",
                 "attachmentAssignmentPolicy.assertAssignable(atchFileSn);\n"
                         + "        Board board = findOwnedPost(bbsId, pstSn);\n        voidPolicy")
-                .replace("        voidPolicy.assertAssignable(atchFileSn);\n        fileService.uploadFiles",
-                        "        fileService.uploadFiles");
+                .replace("        voidPolicy.assertAssignable(atchFileSn);\n        fileService.uploadBoardFiles",
+                        "        fileService.uploadBoardFiles");
         assertTrue(boardOwnershipOrderViolations(path, assignmentBeforeOwner).stream()
                 .anyMatch(value -> value.contains("assertAssignable(atchFileSn)")
                         && value.contains("소유권보다 앞")));
@@ -483,7 +588,7 @@ class AttachmentSourceRegistryLinterTest {
             methods.forEach((methodName, body) -> {
                 String key = path + "#" + methodName;
                 methodBodies.put(key, body);
-                if (containsAttachmentCarrier(body) || "updateFiles".equals(methodName)) {
+                if (containsAttachmentCarrier(body) || UPLOAD_ENTRY_POINTS.contains(methodName)) {
                     discovered.add(key);
                 }
             });
@@ -501,6 +606,10 @@ class AttachmentSourceRegistryLinterTest {
                 return;
             }
             String normalized = body.replaceAll("\\s+", "");
+            if (rule.soleDelegate()
+                    && !normalized.equals("{" + rule.requiredToken().replaceAll("\\s+", "") + ";}")) {
+                violations.add("업로드 진입점의 단일 위임 계약 위반: " + key);
+            }
             for (String forbiddenToken : rule.forbiddenTokens()) {
                 if (normalized.contains(forbiddenToken.replaceAll("\\s+", ""))) {
                     violations.add("금지된 쓰기/재사용 토큰 출현: " + key + " -> " + forbiddenToken);
@@ -533,12 +642,16 @@ class AttachmentSourceRegistryLinterTest {
         List<String> violations = new ArrayList<>();
         Map<String, String> methods = extractMethods(stripCommentsAndLiterals(rawSource), path, violations);
         requireTokenBeforeMutations(methods, path, "updatePost",
-                "findOwnedPost(bbsId, pstSn)", List.of("updateOwnedPost("), violations);
+                "findOwnedPost(bbsId, pstSn)", List.of("updateOwnedPost("), true, violations);
         requireTokenBeforeMutations(methods, path, "updatePostWithFiles",
                 "findOwnedPost(bbsId, pstSn)",
                 List.of("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
-                        "fileService.uploadFiles(", "fileService.updateFiles(", "updateOwnedPost("),
-                violations);
+                        "fileService.uploadBoardFiles(", "fileService.updateBoardFiles(", "updateOwnedPost("),
+                true, violations);
+        // 새 프로필 외에 기존 일반 진입점을 끼워 넣어도 소유권 선행 검사를 피할 수 없다.
+        requireTokenBeforeMutations(methods, path, "updatePostWithFiles",
+                "findOwnedPost(bbsId, pstSn)",
+                List.of("fileService.uploadFiles(", "fileService.updateFiles("), false, violations);
         return violations;
     }
 
@@ -548,6 +661,7 @@ class AttachmentSourceRegistryLinterTest {
             String methodName,
             String ownerToken,
             List<String> mutationTokens,
+            boolean requireMutations,
             List<String> violations) {
         String key = path + "#" + methodName;
         String body = methods.get(methodName);
@@ -564,7 +678,9 @@ class AttachmentSourceRegistryLinterTest {
         for (String mutationToken : mutationTokens) {
             int mutationIndex = normalized.indexOf(mutationToken.replaceAll("\\s+", ""));
             if (mutationIndex < 0) {
-                violations.add("Board 첨부 변경 토큰 소실: " + key + " -> " + mutationToken);
+                if (requireMutations) {
+                    violations.add("Board 첨부 변경 토큰 소실: " + key + " -> " + mutationToken);
+                }
             } else if (mutationIndex < ownerIndex) {
                 violations.add("Board 첨부 변경이 소유권보다 앞에 있음: " + key + " -> " + mutationToken);
             }
@@ -592,7 +708,7 @@ class AttachmentSourceRegistryLinterTest {
             if (prior != null
                     && (containsAttachmentCarrier(prior)
                             || containsAttachmentCarrier(body)
-                            || "updateFiles".equals(methodName))) {
+                            || UPLOAD_ENTRY_POINTS.contains(methodName))) {
                 violations.add("첨부 소비 overloaded 메서드는 현재 key로 구분할 수 없음: "
                         + path + "#" + methodName);
             }
@@ -602,6 +718,7 @@ class AttachmentSourceRegistryLinterTest {
 
     private static boolean containsAttachmentCarrier(String body) {
         return ATTACHMENT_USAGE.matcher(body).find()
+                || LOCAL_ATTACHMENT_STORAGE_USAGE.matcher(body).find()
                 || (ATTACHMENT_IDENTIFIER.matcher(body).find()
                         && ASSIGNMENT_MUTATION.matcher(body).find());
     }
@@ -686,32 +803,37 @@ class AttachmentSourceRegistryLinterTest {
         return new AttachmentMethodRule("", List.of(), List.of(
                 ".save(", ".saveAll(", ".saveAndFlush(",
                 ".delete(", ".deleteById(", ".deleteAll(",
-                ".update(", ".updateAll(", ".setAtchFileSn("));
+                ".update(", ".updateAll(", ".setAtchFileSn("), false);
     }
 
     private static AttachmentMethodRule required(String requiredToken) {
-        return new AttachmentMethodRule(requiredToken, List.of(), List.of());
+        return new AttachmentMethodRule(requiredToken, List.of(), List.of(), false);
     }
 
     private static AttachmentMethodRule delegate(String requiredToken, String... forbiddenDirectSinks) {
-        return new AttachmentMethodRule(requiredToken, List.of(), List.of(forbiddenDirectSinks));
+        return new AttachmentMethodRule(requiredToken, List.of(), List.of(forbiddenDirectSinks), false);
+    }
+
+    private static AttachmentMethodRule uploadDelegate(String invocation) {
+        return new AttachmentMethodRule(invocation, List.of(), List.of(), true);
     }
 
     private static AttachmentMethodRule guarded(String guardToken, String... mutationTokens) {
-        return new AttachmentMethodRule(guardToken, List.of(mutationTokens), List.of());
+        return new AttachmentMethodRule(guardToken, List.of(mutationTokens), List.of(), false);
     }
 
     private static AttachmentMethodRule generatedUpload() {
         return new AttachmentMethodRule(
                 "fileMasterRepository.save(FileMaster.create())",
                 List.of("storeFileDetails("),
-                List.of("fileMasterRepository.findById("));
+                List.of("fileMasterRepository.findById("), false);
     }
 
     private record AttachmentMethodRule(
             String requiredToken,
             List<String> mutationTokens,
-            List<String> forbiddenTokens) {
+            List<String> forbiddenTokens,
+            boolean soleDelegate) {
     }
 
     private Collection<AttachmentSource> scanContributedSources() {
