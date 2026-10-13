@@ -158,8 +158,8 @@ export function RichTextTableTools({ editor, readOnly = false }: { editor: Edito
 function selectedCellPosition(editor: Editor): { cell: number; table: number } | null {
   const { $from } = editor.state.selection;
   for (let depth = $from.depth; depth > 1; depth -= 1) {
-    const role = $from.node(depth).type.spec.tableRole;
-    if (role === 'cell' || role === 'header_cell') {
+    const tableRole = $from.node(depth).type.spec.tableRole;
+    if (tableRole === 'cell' || tableRole === 'header_cell') {
       return { cell: $from.before(depth), table: $from.before(depth - 2) };
     }
   }
