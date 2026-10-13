@@ -20,8 +20,12 @@
             "reason": "쪽지·담당자 저장과 알림·내구 작업의 동일 트랜잭션 원자성을 검증한다. core에는 note/notification 서비스·테이블이 없어 이 통합 과업이 성립하지 않는다. core 담당자 검증은 DeptJobServiceTest에, 내구 작업은 DurableWorkIntegrationTest에 유지한다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
+            "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
-            "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+            "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
@@ -208,8 +212,12 @@
             "reason": "기존 AssignmentRecipientIntegrityIntegrationTest의 메모 6검사를 도메인별로 분리했다. memoreport가 없는 collaboration에서는 메모 검사만 제외하고 쪽지·담당자 기존 14검사를 보존한다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
+            "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
-            "reason": "demo 소유 다단계 결재의 상태 전환·동시성·열람 범위 통합 테스트. demo pack 제외 시 결재 서비스와 테이블이 없어 검사 대상 자체가 없다."
+            "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java",
@@ -383,6 +391,10 @@
             "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. 주소록 기능이 없는 구성에서는 대상 서비스와 테이블이 없다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
+            "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
             "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다."
           },
@@ -554,8 +566,8 @@
             "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. 주소록 기능이 없는 구성에서는 대상 서비스와 테이블이 없다."
           },
           {
-            "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
-            "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트지만 지정 알림이 실제 알림 행으로 저장되는지도 함께 본다(게이트 소유: 결재와 알림). 이 구성에는 알림 기능이 없어 클래스 전체가 빠진다. 결재 서비스 규칙은 InformalSanctionServiceTest 등 단위 시험과 결재 API 시험이 계속 본다. 알림 검사 하나를 따로 떼면 나머지는 이 구성에 남길 수 있다."
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
+            "reason": "지워진 참조자 계정이 있어도 승인이 커밋되는지 실제 알림 행(사용자 FK)으로 보는 시험이라 알림 기능이 있어야 성립한다(게이트 소유: 결재와 알림). 이 구성에는 알림 기능이 없어 빠진다. 병렬 결재·회수·보완·임시저장·참조자 흐름의 나머지 13건은 알림 타입을 참조하지 않는 ApprovalWorkflowIntegrationTest 로 이 구성에서도 돈다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java",
