@@ -594,4 +594,24 @@ class MappingValidatorTest {
         assertThat(r.errors()).isEmpty();
         assertThat(r.ok()).isTrue();
     }
+
+    @Test
+    @DisplayName("온라인 앱이 암호화해 저장하는 컬럼은 같은 encrypt 선언이 있어야 매핑할 수 있다(DEC-OPS-308)")
+    void protectedTargetColumnRequiresTheOnlineEncryptDeclaration(@TempDir Path tmp) throws IOException {
+        Path catalog = tmp.resolve("db_columns.json");
+        Files.writeString(catalog, "[{\"table_name\":\"tb_user_info\",\"column_name\":\"user_nm\"},"
+                + "{\"table_name\":\"tb_user_info\",\"column_name\":\"user_enrrno\"}]", StandardCharsets.UTF_8);
+        MappingValidator validator = new MappingValidator(new TransformerRegistry(), catalog.toString());
+
+        ValidationResult missing = validator.validate(spec(List.of(new TableMapping("legacy_user", "tb_user_info", null,
+                List.of(col("nm", "user_nm"), col("jumin", "user_enrrno")), null))));
+        ValidationResult declared = validator.validate(spec(List.of(new TableMapping("legacy_user", "tb_user_info", null,
+                List.of(col("nm", "user_nm"),
+                        new ColumnMapping("jumin", "user_enrrno", "trim", null, null, null, null, "aria-egov-v1")),
+                null))));
+
+        assertThat(missing.errors()).containsExactly("tb_user_info.user_enrrno: 온라인 앱이 암호화해 저장하는 컬럼입니다"
+                + " — encrypt: aria-egov-v1 를 선언해야 평문으로 쓰지 않습니다");
+        assertThat(declared.errors()).isEmpty();
+    }
 }

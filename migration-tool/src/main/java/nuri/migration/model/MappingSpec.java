@@ -1,5 +1,6 @@
 package nuri.migration.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
@@ -7,6 +8,7 @@ import nuri.migration.identity.TargetIdentityPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * {@code mapping.yml} 바인딩 모델 — 레거시 소스 → 표준 스키마 이관 선언(진실원천).
@@ -112,6 +114,10 @@ public record MappingSpec(
      * {@code transform}(변환기명)·{@code codemap}(코드맵명)·{@code type}(타입변환 힌트)은 선택.
      * {@code fkRef}(부모 소스 테이블명)가 있으면 이 컬럼의 소스 값을 그 부모의 키맵으로 번역해
      * 신규 대리키(esntl_id 등)로 재작성한다 — 부모 PK 재생성 시 자식 FK 무결성 보존의 핵심.
+     *
+     * <p>{@code encrypt}(보호 방식 id, 예: {@code aria-egov-v1})는 온라인 앱이 암호화해 저장하는 대상 컬럼에 쓴다.
+     * 이관 도구가 온라인 앱과 같은 암호문을 만들어 쓰며, 키는 실행 때 환경 변수로만 받는다(DEC-OPS-308). 비어 있으면
+     * 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
      */
     public record ColumnMapping(
             String source,
@@ -120,8 +126,15 @@ public record MappingSpec(
             String type,
             String codemap,
             String fkRef,
-            @JsonProperty("const") String constant
-    ) {}
+            @JsonProperty("const") String constant,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt
+    ) {
+        /** encrypt 도입 전 생성자 호환. */
+        public ColumnMapping(String source, String target, String transform, String type,
+                             String codemap, String fkRef, String constant) {
+            this(source, target, transform, type, codemap, fkRef, constant, null);
+        }
+    }
 
     /**
      * 표준 ID 생성 전략. {@code column}=타깃 PK 컬럼, {@code generator}=ID prefix,
@@ -141,16 +154,87 @@ public record MappingSpec(
         }
     }
 
-    /** 기존 문자열 idStrategy와 병용하지 않는 typed/composite identity DSL. */
+    /**
+     * 기존 문자열 idStrategy와 병용하지 않는 typed/composite identity DSL.
+     *
+     * <p>{@code targetSequences} 는 {@code preserve} 에서만 쓰는 선택 선언이다 — 원본 키를 그대로 쓴 대상 컬럼이
+     * 카탈로그로 연결되지 않은 시퀀스(예: 온라인 앱의 {@code @SequenceGenerator} 전용 시퀀스)로 채번되면 그 이름을,
+     * 시퀀스로 채번되지 않으면 {@value #NO_SEQUENCE} 를 적는다. 적재가 끝나면 이 시퀀스를 원본 키 최댓값 뒤로
+     * 맞춘다(DEC-OPS-306). 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
+     */
     public record IdentityStrategy(
             TargetIdentityPolicy policy,
             List<IdentityComponentSpec> sourceComponents,
-            List<IdentityComponentSpec> targetComponents
+            List<IdentityComponentSpec> targetComponents,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) Map<String, String> targetSequences
     ) {
+        /** 시퀀스로 채번되지 않는 원본 키 컬럼의 선언 값. */
+        public static final String NO_SEQUENCE = "none";
+
+        private static final Pattern SEQUENCE_NAME =
+                Pattern.compile("[A-Za-z_][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)?");
+
+        /** targetSequences 도입 전 생성자 호환. */
+        public IdentityStrategy(
+                TargetIdentityPolicy policy,
+                List<IdentityComponentSpec> sourceComponents,
+                List<IdentityComponentSpec> targetComponents
+        ) {
+            this(policy, sourceComponents, targetComponents, Map.of());
+        }
+
         public IdentityStrategy {
             Objects.requireNonNull(policy, "identity policy");
             sourceComponents = sourceComponents == null ? List.of() : List.copyOf(sourceComponents);
             targetComponents = targetComponents == null ? List.of() : List.copyOf(targetComponents);
+            targetSequences = copyDeclarations(targetSequences);
+            if (!targetSequences.isEmpty() && policy != TargetIdentityPolicy.PRESERVE) {
+                throw new IllegalArgumentException("identity targetSequences는 preserve 정책에서만 선언할 수 있습니다");
+            }
+            for (Map.Entry<String, String> declared : targetSequences.entrySet()) {
+                String column = declared.getKey();
+                IdentityComponentSpec component = targetComponents.stream()
+                        .filter(target -> target.column().equalsIgnoreCase(column))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException(
+                                "identity targetSequences 키는 targetComponents 컬럼이어야 합니다: " + column));
+                String sequence = declared.getValue();
+                if (NO_SEQUENCE.equals(sequence)) {
+                    continue;
+                }
+                if (!SEQUENCE_NAME.matcher(sequence).matches()) {
+                    throw new IllegalArgumentException(
+                            "identity targetSequences 값은 시퀀스 이름 또는 none 이어야 합니다: " + column);
+                }
+                if (component.type() != IdentityValueType.SIGNED_INTEGER
+                        && component.type() != IdentityValueType.UNSIGNED_INTEGER
+                        && component.type() != IdentityValueType.DECIMAL) {
+                    throw new IllegalArgumentException(
+                            "identity targetSequences 시퀀스는 정수 키 컬럼에만 선언할 수 있습니다: " + column);
+                }
+            }
+        }
+
+        private static Map<String, String> copyDeclarations(Map<String, String> declarations) {
+            if (declarations == null) {
+                return Map.of();
+            }
+            for (Map.Entry<String, String> declared : declarations.entrySet()) {
+                if (declared.getKey() == null || declared.getValue() == null) {
+                    throw new IllegalArgumentException("identity targetSequences 키와 값은 비어 있을 수 없습니다");
+                }
+            }
+            return Map.copyOf(declarations);
+        }
+
+        /** 대상 컬럼(대소문자 무시)에 선언된 시퀀스 이름 또는 none. 선언이 없으면 null. */
+        public String declaredSequence(String column) {
+            for (Map.Entry<String, String> declared : targetSequences.entrySet()) {
+                if (declared.getKey().equalsIgnoreCase(column)) {
+                    return declared.getValue();
+                }
+            }
+            return null;
         }
     }
 

@@ -43,7 +43,9 @@ class EtlTypedIdentityResumeIntegrationTest {
                 new IdentityStrategy(
                         TargetIdentityPolicy.PRESERVE,
                         List.of(component("ID")),
-                        List.of(component("id"))),
+                        List.of(component("id")),
+                        // 시험 대상 PK 는 시퀀스로 채번되지 않는다(DEC-OPS-306 none 선언).
+                        Map.of("id", IdentityStrategy.NO_SEQUENCE)),
                 List.of());
         String runId = "typed-resume-" + suffix;
         MappingSpec spec = new MappingSpec(

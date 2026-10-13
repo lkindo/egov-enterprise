@@ -19,6 +19,7 @@ import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
+import nuri.migration.protect.ColumnProtector;
 import nuri.migration.schema.MigrationSchemaManager;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.KeyDiagnostics;
@@ -28,6 +29,7 @@ import nuri.migration.state.RowChecksum;
 import nuri.migration.transform.CodeMapper;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * ETL 실행기 — FK 위상정렬 → 스트리밍(keyset-fetch) 소스 조회 → 컬럼 매핑/코드맵/변환/타입강제/키맵 재작성 →
@@ -68,14 +71,40 @@ public class EtlExecutor {
     private final SourceIntrospector introspector;
     private final TransformerRegistry transformers;
     private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
+    /** 보호 컬럼 암호화 키를 주는 환경(DEC-OPS-308). 키는 이 경계로만 들어오고 어디에도 기록하지 않는다. */
+    private final Function<String, String> environment;
 
+    @Autowired
     public EtlExecutor(SourceIntrospector introspector, TransformerRegistry transformers) {
-        this.introspector = introspector;
-        this.transformers = transformers;
+        this(introspector, transformers, System::getenv);
     }
 
+    /** 시험과 승인된 secret provider adapter 가 같은 키 경계를 쓴다. */
+    public EtlExecutor(SourceIntrospector introspector, TransformerRegistry transformers,
+                       Function<String, String> environment) {
+        this.introspector = introspector;
+        this.transformers = transformers;
+        this.environment = Objects.requireNonNull(environment, "environment");
+    }
+
+    /**
+     * 테이블별 적재 결과. {@code sequenceResets} 는 원본 키를 쓴 컬럼의 시퀀스 재설정 기록이다(DEC-OPS-306) —
+     * 이름과 결과만 담고 키 값은 담지 않는다.
+     */
     public record TableResult(String sourceTable, String targetTable,
-                              long read, long transformed, long written, List<String> errors) {}
+                              long read, long transformed, long written, List<String> errors,
+                              List<TargetSequenceSynchronizer.SequenceReset> sequenceResets) {
+
+        public TableResult {
+            sequenceResets = sequenceResets == null ? List.of() : List.copyOf(sequenceResets);
+        }
+
+        /** 시퀀스 재설정 기록 도입 전 생성자 호환. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors) {
+            this(sourceTable, targetTable, read, transformed, written, errors, List.of());
+        }
+    }
 
     public List<TableResult> execute(MappingSpec spec, MigrationMode mode) {
         if (spec == null) {
@@ -127,6 +156,8 @@ public class EtlExecutor {
         if (commit) {
             requireCommitContract(spec);
         }
+        // 보호 컬럼 선언 위반·키 부재는 연결을 열거나 실행 상태를 만들기 전에 멈춘다(DEC-OPS-308).
+        ColumnProtector protector = ColumnProtector.forRun(spec, environment);
         DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
         if (commit && targetDs == null) {
@@ -149,6 +180,11 @@ public class EtlExecutor {
                     stateInitialized = true;
                 }
             } else {
+                // 원본 키를 쓰는 컬럼의 시퀀스를 행을 쓰기 전에 정한다. 정할 수 없으면 여기서 멈춘다(DEC-OPS-306).
+                List<TargetSequenceSynchronizer.Target> sequencePlan = commit
+                        ? planTargetSequences(targetDs, orderedTables)
+                        : List.of();
+                boolean tablesRan = false;
                 try (Connection sourceConnection = sourceDs.getConnection()) {
                     try {
                         sourceConnection.setReadOnly(true);
@@ -166,9 +202,11 @@ public class EtlExecutor {
                                 stateInitialized = true;
                             }
                             boolean sourceSessionFailed = false;
+                            tablesRan = true;
                             for (TableMapping table : orderedTables) {
                                 TableExecution execution = runTable(
-                                        sourceConnection, targetDs, spec, table, registry, state, commit);
+                                        sourceConnection, targetDs, spec, table, registry, state, commit,
+                                        protector);
                                 results.add(execution.result());
                                 if (execution.sourceSessionFailed()) {
                                     sourceSessionFailed = true;
@@ -187,6 +225,10 @@ public class EtlExecutor {
                         safeRollback(sourceConnection);
                         throw propagate(failure);
                     }
+                }
+                if (tablesRan) {
+                    // 오류가 난 테이블도 앞선 chunk 는 남으므로 재설정한다. 앞으로만 옮기므로 재실행해도 같다.
+                    synchronizeTargetSequences(targetDs, sequencePlan, results);
                 }
             }
         } catch (SQLException sourceConnectionFailure) {
@@ -208,6 +250,77 @@ public class EtlExecutor {
             Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
         }
         return results;
+    }
+
+    private static List<TargetSequenceSynchronizer.Target> planTargetSequences(
+            DataSource targetDs,
+            List<TableMapping> orderedTables
+    ) {
+        try (Connection target = targetDs.getConnection()) {
+            return TargetSequenceSynchronizer.plan(target, orderedTables);
+        } catch (SQLException failure) {
+            throw new IllegalStateException("대상 시퀀스 카탈로그를 읽지 못해 적재를 시작하지 않습니다", failure);
+        }
+    }
+
+    /** 실행한 테이블마다 재설정 기록이나 실패를 결과에 붙인다. 실패는 그 테이블의 오류가 되어 run 을 FAILED 로 만든다. */
+    private static void synchronizeTargetSequences(
+            DataSource targetDs,
+            List<TargetSequenceSynchronizer.Target> plan,
+            List<TableResult> results
+    ) {
+        if (plan.isEmpty()) {
+            return;
+        }
+        Map<String, List<TargetSequenceSynchronizer.SequenceReset>> resets = new LinkedHashMap<>();
+        Map<String, List<String>> failures = new LinkedHashMap<>();
+        Set<String> ranTables = new HashSet<>();
+        for (TableResult result : results) {
+            ranTables.add(result.sourceTable().toLowerCase(Locale.ROOT));
+        }
+        try (Connection target = targetDs.getConnection()) {
+            for (TargetSequenceSynchronizer.Target planned : plan) {
+                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                if (!ranTables.contains(table)) {
+                    continue;
+                }
+                try {
+                    resets.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(TargetSequenceSynchronizer.apply(target, planned));
+                } catch (SQLException failure) {
+                    safeRollback(target);
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, "SQL_EXECUTION_FAILED"));
+                } catch (IllegalStateException failure) {
+                    safeRollback(target);
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, failure.getMessage()));
+                }
+            }
+        } catch (SQLException connectionFailure) {
+            for (TargetSequenceSynchronizer.Target planned : plan) {
+                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                if (ranTables.contains(table)) {
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, "SQL_EXECUTION_FAILED"));
+                }
+            }
+        }
+        for (int i = 0; i < results.size(); i++) {
+            TableResult result = results.get(i);
+            String table = result.sourceTable().toLowerCase(Locale.ROOT);
+            if (!resets.containsKey(table) && !failures.containsKey(table)) {
+                continue;
+            }
+            List<String> errors = new ArrayList<>(result.errors());
+            errors.addAll(failures.getOrDefault(table, List.of()));
+            results.set(i, new TableResult(result.sourceTable(), result.targetTable(), result.read(),
+                    result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of())));
+        }
+    }
+
+    private static String sequenceFailure(TargetSequenceSynchronizer.Target planned, String reason) {
+        return "시퀀스 재설정 실패(" + planned.targetTable() + "." + planned.column() + "): " + reason;
     }
 
     private static void initializeCommitState(
@@ -403,7 +516,7 @@ public class EtlExecutor {
 
     private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
                                     TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
-                                    boolean commit) {
+                                    boolean commit, ColumnProtector protector) {
         List<String> errors = new ArrayList<>();
         List<String> targetCols = canonicalTargetColumns(t);
         List<String> insertCols = insertTargetColumns(t);
@@ -412,7 +525,8 @@ public class EtlExecutor {
                 targetCols,
                 insertCols,
                 returningCols,
-                buildInsertSql(t.target(), insertCols, returningCols));
+                buildInsertSql(t.target(), insertCols, returningCols),
+                protector);
         TableCounts counts = new TableCounts();
         boolean sourceSessionFailed = false;
 
@@ -576,7 +690,8 @@ public class EtlExecutor {
             List<String> targetColumns,
             List<String> insertColumns,
             List<String> returningColumns,
-            String insertSql
+            String insertSql,
+            ColumnProtector protector
     ) {}
 
     private SourcePage readSourcePage(Connection source, TableMapping table,
@@ -739,7 +854,7 @@ public class EtlExecutor {
         for (Map<String, Object> row : chunk) {
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
-                Map<String, Object> out = transformRow(row, spec, t, reg);
+                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector());
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
@@ -765,9 +880,9 @@ public class EtlExecutor {
                     }
                 }
                 batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException failure) {
                 reg.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + t.source() + "): ROW_TRANSFORM_FAILED");
+                errors.add("행 변환 실패(" + t.source() + "): " + transformFailure(failure));
             }
         }
         if (batch.isEmpty()) {
@@ -803,10 +918,10 @@ public class EtlExecutor {
             for (Map<String, Object> row : rows) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
-                    transformRow(row, spec, table, registry);
+                    transformRow(row, spec, table, registry, writePlan.protector());
                     counts.transformed++;
-                } catch (RuntimeException ignored) {
-                    errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                } catch (RuntimeException failure) {
+                    errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
                 } finally {
                     registry.rollback(checkpoint);
                 }
@@ -821,7 +936,7 @@ public class EtlExecutor {
             Map<String, Object> transformed;
             TypedKeyTuple sourceIdentity;
             try {
-                transformed = transformRow(row, spec, table, registry);
+                transformed = transformRow(row, spec, table, registry, writePlan.protector());
                 sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
@@ -858,9 +973,9 @@ public class EtlExecutor {
                     registry.rollback(rowCheckpoint);
                     continue;
                 }
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException failure) {
                 registry.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
                 continue;
             }
 
@@ -979,6 +1094,12 @@ public class EtlExecutor {
                 .toList());
     }
 
+    /** 보호 컬럼 판정은 테이블·컬럼 이름을 남기고, 그 밖의 변환 실패는 값이 담길 수 있어 고정 코드만 남긴다. */
+    private static String transformFailure(RuntimeException failure) {
+        return failure instanceof ColumnProtector.ProtectedColumnException
+                ? failure.getMessage() : "ROW_TRANSFORM_FAILED";
+    }
+
     private static Object[] toArguments(Map<String, Object> transformed, List<String> targetColumns) {
         Object[] arguments = new Object[targetColumns.size()];
         for (int i = 0; i < targetColumns.size(); i++) {
@@ -987,7 +1108,8 @@ public class EtlExecutor {
         return arguments;
     }
 
-    private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t, KeyMapRegistry reg) {
+    private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t,
+                                             KeyMapRegistry reg, ColumnProtector protector) {
         Map<String, Object> out = new LinkedHashMap<>();
         for (ColumnMapping col : t.columns()) {
             Object value;
@@ -1002,6 +1124,8 @@ public class EtlExecutor {
                 value = transformers.apply(col.transform(), value);
                 value = TypeConverter.convert(col.type(), value);
                 value = applyFkRef(col, value, reg);
+                // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 행을 쓰지 않는다.
+                value = protector.protect(t.target(), col.target(), value);
             } else {
                 value = null;
             }
@@ -1196,7 +1320,8 @@ public class EtlExecutor {
             Object[] arguments;
             CheckpointEntry durableCheckpoint;
             try {
-                Map<String, Object> transformed = transformRow(row.source(), spec, table, registry);
+                Map<String, Object> transformed = transformRow(
+                        row.source(), spec, table, registry, writePlan.protector());
                 arguments = toArguments(transformed, writePlan.insertColumns());
                 durableCheckpoint = checkpoint(
                         row.source(), transformed, table, writePlan.targetColumns());

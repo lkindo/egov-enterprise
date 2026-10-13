@@ -200,6 +200,28 @@ test('shared ID contract changes select both modules and both PIT scopes', () =>
   }
 });
 
+test('online encryption sources select the migration suite that holds their compatibility contract', () => {
+  // OnlineRrnoConverterContractTest compiles the online converter, its crypto
+  // and the entities that declare protected columns (DEC-OPS-308).
+  for (const file of [
+    'business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java',
+    'foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java',
+    'foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java',
+    'foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java',
+    'business-core/src/main/java/nuri/business/domain/user/entity/User.java',
+    'business-core/src/main/java/nuri/business/domain/auth/mfa/MfaCredential.java',
+  ]) {
+    assert.ok(fs.existsSync(path.join(repoRoot, file)), `${file}: semantic input must exist`);
+    const result = classifyChangedFiles([file]);
+    for (const field of ['backend', 'migration']) {
+      assert.equal(result[field], true, `${file}: protected column contract lost ${field}`);
+    }
+  }
+  // A future converter elsewhere is still counted by the contract.
+  assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/NewSecretConverter.java']).migration, true);
+  assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/Plain.java']).migration, false);
+});
+
 test('target standard catalog and unknown toolchain inputs retain full fallback', () => {
   // MappingValidator's default catalog is the tracked root db_columns.json.
   // Do not classify it as an isolated migration fixture: it represents the

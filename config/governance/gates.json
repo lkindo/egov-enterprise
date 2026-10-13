@@ -1678,6 +1678,13 @@
             "tests": "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
           },
           {
+            "scope": "migration-protect",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.protect.*",
+            "tests": "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
+          },
+          {
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
