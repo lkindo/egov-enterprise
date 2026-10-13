@@ -36,9 +36,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 게이트가 GREEN 인 채 프론트가 stale 계약으로 동작). 이 게이트가 그 드리프트를 오프라인으로 차단한다.
  *
  * <p>[규칙 — fail-safe ⊆] api-server 의 각 {@code @RestController} 리터럴 경로(클래스 {@code @RequestMapping}
- * 접두 + 메서드 {@code @*Mapping})가 api-docs.json 의 paths 에 <b>존재(부분집합)</b>하는지만 단언한다.
+ * 접두 + 메서드 {@code @*Mapping})가 api-docs.json 의 paths 에 <b>존재(부분집합)</b>하는지 단언한다.
  * 경로 변수는 {@code {var}→{}} 로 정규화해 변수명 불일치 오탐을 제거한다. 매핑 없는 메서드·비-REST 는 자연 제외.
  * (필드레벨 스키마↔DTO 대조는 파싱복잡·오탐위험으로 스코프 밖 — 경로 존재만.)
+ *
+ * <p>[역방향 — api-docs ⊆ 컨트롤러, Phase 2 10c-2] api-docs.json 의 모든 경로도 남아 있는 컨트롤러의 경로여야 한다.
+ * 재사용 생성물은 기능을 걷으면서 api-docs 를 같은 구성으로 투영한다(scripts/reusable-contract-projection.mjs).
+ * 투영이 빠지면 지워진 컨트롤러의 연산이 계약과 생성 타입에 남아 화면이 없는 API 를 부를 수 있는데, 정방향만으로는
+ * 그것을 보지 못했다. 원본에서는 두 방향이 모두 성립한다. 컨트롤러를 읽지 못해 스캔에서 빠지면 그 경로가 남는
+ * 것으로 보이므로 이 방향은 붉다(조용히 통과하지 않는다).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(api-docs.json 파싱 + 컨트롤러 리플렉션).
  */
@@ -53,39 +59,13 @@ class ApiDocsPathCoverageLinterTest {
     @DisplayName("🔗 컨트롤러 @*Mapping 리터럴 경로는 api-docs.json paths 의 부분집합이다 (SSOT 계약체인)")
     void auditControllerPathsSubsetOfApiDocs() throws IOException {
         Set<String> docPaths = loadApiDocsPaths();
-        if (docPaths.size() < 50) {
-            fail("게이트 무결성 파손: api-docs.json paths(" + docPaths.size() + ")가 예상 하한(50) 미만 — 파일/파싱 파손 의심.");
-        }
-
+        List<ControllerPath> scanned = scanControllerPaths();
+        int checked = scanned.size();
         List<String> missing = new ArrayList<>();
-        int checked = 0;
-
-        ClassPathScanningCandidateComponentProvider scanner =
-                new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
-        int controllers = 0;
-        for (var bd : scanner.findCandidateComponents(CONTROLLER_SCAN_BASE)) {
-            try {
-                Class<?> clazz = Class.forName(bd.getBeanClassName());
-                controllers++;
-                for (String full : collectMappingPaths(clazz)) {
-                    // 비-리터럴(정규화 후에도 이상 토큰) 및 공백 경로는 skip(부재 단언 금지 — fail-safe)
-                    if (full.isBlank() || full.contains("${")) {
-                        continue;
-                    }
-                    checked++;
-                    if (!docPaths.contains(normalize(full))) {
-                        missing.add(clazz.getSimpleName() + "  →  " + full);
-                    }
-                }
-            } catch (ClassNotFoundException | LinkageError ex) {
-                log.warn("[ApiDocsPathGate] 컨트롤러 로드 실패(스캔 제외): {} ({})", bd.getBeanClassName(), ex.getMessage());
+        for (ControllerPath path : scanned) {
+            if (!docPaths.contains(normalize(path.path()))) {
+                missing.add(path.controller() + "  →  " + path.path());
             }
-        }
-
-        // vacuous-green 방지: 컨트롤러/경로 스캔이 조용히 0이면 차단
-        if (controllers < 20 || checked < 50) {
-            fail("게이트 무결성 파손: 컨트롤러(" + controllers + ")/검사경로(" + checked + ") 스캔이 하한 미만 — 스캔/리플렉션 파손 의심.");
         }
 
         if (!missing.isEmpty()) {
@@ -105,9 +85,82 @@ class ApiDocsPathCoverageLinterTest {
         }
     }
 
+    @Test
+    @DisplayName("🔗 api-docs.json paths 는 남아 있는 컨트롤러 @*Mapping 경로의 부분집합이다 (역방향 — 생성물 계약 투영)")
+    void auditApiDocsPathsSubsetOfControllers() throws IOException {
+        Set<String> docPaths = loadApiDocsPaths();
+        Set<String> controllerPaths = new TreeSet<>();
+        for (ControllerPath path : scanControllerPaths()) {
+            controllerPaths.add(normalize(path.path()));
+        }
+        List<String> orphaned = new ArrayList<>();
+        for (String docPath : docPaths) {
+            if (!controllerPaths.contains(docPath)) {
+                orphaned.add(docPath);
+            }
+        }
+        if (!orphaned.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n========================================================================\n");
+            sb.append("🔗 [API-DOCS PATH GATE] api-docs.json 경로를 처리하는 컨트롤러가 없습니다 — 계약이 코드보다 넓다!\n");
+            sb.append("========================================================================\n");
+            for (String path : orphaned) {
+                sb.append("❌ ").append(path).append("\n");
+            }
+            sb.append("\n💡 원본이면 컨트롤러를 지운 뒤 api-docs.json 재생성을 잊은 것입니다(`pnpm -C frontend codegen:ts`).\n");
+            sb.append("   재사용 생성물이면 생성기의 api-docs 투영(scripts/reusable-contract-projection.mjs)이 빠졌거나 생성 뒤 바뀐 것입니다.\n");
+            fail(sb.toString());
+        }
+        log.info("✅ api-docs.json 경로 {}건 전부 컨트롤러 경로({}건)의 부분집합.", docPaths.size(), controllerPaths.size());
+    }
+
+    // ---- 컨트롤러 @*Mapping 경로 스캔 ----------------------------------------------------
+
+    /** 컨트롤러 이름과 정규화하기 전의 리터럴 경로. */
+    private record ControllerPath(String controller, String path) {}
+
+    /**
+     * {@code @RestController} 의 리터럴 경로. 비-리터럴(정규화 후에도 이상 토큰)·공백 경로는 뺀다(부재 단언 금지 — fail-safe).
+     * 읽지 못한 컨트롤러는 경고하고 뺀다 — 정방향에서는 그 경로가 검사되지 않고, 역방향에서는 그 경로가 남는 것으로 보여 붉다.
+     */
+    private List<ControllerPath> scanControllerPaths() {
+        List<ControllerPath> result = new ArrayList<>();
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(RestController.class));
+        int controllers = 0;
+        for (var bd : scanner.findCandidateComponents(CONTROLLER_SCAN_BASE)) {
+            try {
+                Class<?> clazz = Class.forName(bd.getBeanClassName());
+                controllers++;
+                for (String full : collectMappingPaths(clazz)) {
+                    if (full.isBlank() || full.contains("${")) {
+                        continue;
+                    }
+                    result.add(new ControllerPath(clazz.getSimpleName(), full));
+                }
+            } catch (ClassNotFoundException | LinkageError ex) {
+                log.warn("[ApiDocsPathGate] 컨트롤러 로드 실패(스캔 제외): {} ({})", bd.getBeanClassName(), ex.getMessage());
+            }
+        }
+        // vacuous-green 방지: 컨트롤러/경로 스캔이 조용히 0이면 차단
+        if (controllers < 20 || result.size() < 50) {
+            fail("게이트 무결성 파손: 컨트롤러(" + controllers + ")/검사경로(" + result.size() + ") 스캔이 하한 미만 — 스캔/리플렉션 파손 의심.");
+        }
+        return result;
+    }
+
     // ---- api-docs.json paths 로드 ------------------------------------------------------
 
     private Set<String> loadApiDocsPaths() throws IOException {
+        Set<String> paths = readApiDocsPaths();
+        if (paths.size() < 50) {
+            fail("게이트 무결성 파손: api-docs.json paths(" + paths.size() + ")가 예상 하한(50) 미만 — 파일/파싱 파손 의심.");
+        }
+        return paths;
+    }
+
+    private Set<String> readApiDocsPaths() throws IOException {
         Path apiDocs = resolveApiDocs();
         JsonNode root = JsonMapper.builder().configureForJackson2().build().readTree(HarnessSourceIndex.read(apiDocs));
         JsonNode paths = root.get("paths");

@@ -10,6 +10,8 @@ import type { HomeSection, SlotContributions } from '@/extensions/slots';
  *   그러면 DASHBOARD_READ 도 다른 권한도 없는 사용자가 접근 불가 대신 빈 홈을 본다.
  * - 등록된 기여가 없는 구성(core 프리셋)은 판정 없이 제목·인사·최근 활동만 보인다.
  * - 부제는 요약 카드가 있을 때만, 머리 단추 줄과 카드 줄은 항목이 있을 때만 그린다. '최근 활동' 문장은 보이는 항목의 activityNote 다.
+ * 대역 기여의 노출 권한은 core 코드(USER_READ·DEPT_READ)다 — 생성물은 권한 목록을 구성 코드로 줄이므로(Phase 2 10단계 10b) 기능의
+ * 코드를 쓰면 그 기능이 빠진 구성에서 타입 검사가 깨진다.
  */
 vi.mock('next/dynamic', () => ({
   default: () => function ActivityFeedStub({ notes }: { notes?: readonly string[] }) {
@@ -54,7 +56,7 @@ async function renderShell() {
 
 describe('업무 홈 셸', () => {
   beforeEach(() => {
-    session.user = { id: 'user', name: '사용자', permissions: ['DASHBOARD_READ', 'NOTE_READ'], authorizationVersion: 'v1' };
+    session.user = { id: 'user', name: '사용자', permissions: ['DASHBOARD_READ', 'USER_READ'], authorizationVersion: 'v1' };
     session.mfaPending = false;
     session.replace.mockClear();
     session.registry = [];
@@ -72,8 +74,8 @@ describe('업무 홈 셸', () => {
   });
 
   it('🚨 등록된 기여가 있으면 DASHBOARD_READ 가 없을 때 종전 문구로 접근 불가를 알린다', async () => {
-    session.registry = [[section('notes', 'cards', 20, { visibleWhen: { permissions: ['NOTE_READ'] } })]];
-    session.user = { id: 'user', name: '사용자', permissions: ['NOTE_READ'], authorizationVersion: 'v1' };
+    session.registry = [[section('notes', 'cards', 20, { visibleWhen: { permissions: ['USER_READ'] } })]];
+    session.user = { id: 'user', name: '사용자', permissions: ['USER_READ'], authorizationVersion: 'v1' };
     await renderShell();
 
     expect(screen.getByRole('status')).toHaveTextContent('업무 홈 대시보드에 접근할 권한이 없습니다.');
@@ -81,7 +83,7 @@ describe('업무 홈 셸', () => {
   });
 
   it('🚨 보이는 기여가 하나도 없어도 등록돼 있으면 빈 홈이 아니라 접근 불가다', async () => {
-    session.registry = [[section('notes', 'cards', 20, { visibleWhen: { permissions: ['NOTE_READ'] } })]];
+    session.registry = [[section('notes', 'cards', 20, { visibleWhen: { permissions: ['USER_READ'] } })]];
     session.user = { id: 'user', name: '사용자', permissions: [], authorizationVersion: 'v1' };
     await renderShell();
 
@@ -92,7 +94,7 @@ describe('업무 홈 셸', () => {
     session.registry = [
       [section('lists', 'main', 10, { activityNote: '목록 안내' }), section('task', 'cards', 30), section('new', 'actions', 10)],
       [section('realtime', 'status', 10), section('banner', 'bottom', 10), section('popup', 'overlay', 10)],
-      [section('pending', 'cards', 10), section('open', 'actions', 20), section('hidden', 'cards', 5, { visibleWhen: { permissions: ['APPROVAL_READ'] } })],
+      [section('pending', 'cards', 10), section('open', 'actions', 20), section('hidden', 'cards', 5, { visibleWhen: { permissions: ['DEPT_READ'] } })],
     ];
     await renderShell();
 

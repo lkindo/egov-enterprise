@@ -24,10 +24,10 @@ import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, 
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
 import { BOARD_MASTER_SEED, REFERENCE_SEED_NAME, boardMasterIds, omitCodeGroupsSql, referenceDataPlan } from './reusable-reference-data.mjs';
+import { loadComposerModules, moduleDatabaseInventory, sourceDatabaseSnapshot } from './composer-modules.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base');
 
 /** 생성기 엔진이 이 자식을 부르는 단계 이름. 실패 보고는 이 단계에 허용된 코드만 쓴다. */
@@ -83,7 +83,7 @@ export function parseDbGenerationArgs(argv) {
     return args;
   }
   if (args.profile && args.composition) fail('--profile and --composition are mutually exclusive.');
-  if (!args.profile && !args.composition) fail('--profile core|collaboration|demo 또는 --composition PATH가 필요하다.');
+  if (!args.profile && !args.composition) fail('--profile <시작 구성 id(config/modules/presets.json)> 또는 --composition PATH가 필요하다.');
   return args;
 }
 
@@ -155,7 +155,9 @@ export function safeDbOutputPath(requested, profile, shortSha) {
 
 async function main() {
   const args = parseDbGenerationArgs(process.argv.slice(2));
-  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  // 기능 소유·원본 스키마 실측·공통코드 그룹 소유는 매니페스트 v2(config/modules)가 원천이다(11단계 C3·C7).
+  const modules = loadComposerModules(ROOT);
+  const databaseSnapshot = sourceDatabaseSnapshot(modules.files);
   assertContainerName(args.container);
 
   const dirty = git(['status', '--porcelain']);
@@ -164,7 +166,7 @@ async function main() {
   if (!releaseTag && !args.allowNonReleaseRef) fail('공식 산출물은 v* 릴리스 태그에서만 생성한다.');
   const sourceCommit = git(['rev-parse', 'HEAD']);
   // 프리셋(--profile)과 화면 생성기(--composition)가 같은 해석기를 탄다. 스냅숏 갱신 모드만 해석하지 않는다.
-  let composition, composerCatalog, profile;
+  let composition, composerCatalog;
   if (!args.writeMenuSnapshot) {
     const { loadProjectComposerCatalog } = await import('./project-composer-catalog.mjs');
     const { resolveGeneratorComposition } = await import('./project-composer-recipe.mjs');
@@ -174,7 +176,6 @@ async function main() {
       backendLayout: args.layout, layoutExplicit: args.layout !== undefined, sourceCommit,
       resolveSourceReference: reference => git(['rev-parse', '--verify', `${reference}^{commit}`]) });
     args.profile = composition.profile;
-    profile = { packs: composition.packs };
   }
   const shortSha = sourceCommit.slice(0, 12);
   const output = args.writeMenuSnapshot ? undefined : safeDbOutputPath(args.output, args.profile, shortSha);
@@ -187,8 +188,9 @@ async function main() {
 
   const desiredTables = [...(composition?.tables ?? [])].sort();
   const explicitDesiredSequences = [...(composition?.explicitSequences ?? [])].sort();
-  const sourceExpectedTables = Object.values(manifest.packs).flatMap((pack) => pack.database.tables).sort();
-  const sourceExplicitSequences = Object.values(manifest.packs).flatMap((pack) => pack.database.sequences).sort();
+  // 원본 마이그레이션이 만드는 테이블·독립 시퀀스의 소유는 매니페스트 v2(core·기능 파일)에서 읽는다(11단계 C3).
+  //   원본 스냅숏 수치(시퀀스 수·표준 사전 행 수)는 core.json 의 databaseSnapshot 이다(11단계 C7).
+  const { tables: sourceExpectedTables, sequences: sourceExplicitSequences } = moduleDatabaseInventory(modules.files);
 
   let workingCreated = false;
   let verifyCreated = false;
@@ -215,14 +217,14 @@ async function main() {
     const sourceTables = listObjects(args.container, user, workingDb, 'table');
     assertSameSet(sourceTables, sourceExpectedTables, '현재 migration table snapshot');
     const sourceSequenceDetails = listSequenceDetails(args.container, user, workingDb);
-    if (sourceSequenceDetails.length !== manifest.databaseSnapshot.physicalSequenceCount) {
-      fail(`현재 migration sequence 수 ${sourceSequenceDetails.length}가 snapshot ${manifest.databaseSnapshot.physicalSequenceCount}와 다르다.`);
+    if (sourceSequenceDetails.length !== databaseSnapshot.physicalSequenceCount) {
+      fail(`현재 migration sequence 수 ${sourceSequenceDetails.length}가 snapshot ${databaseSnapshot.physicalSequenceCount}와 다르다.`);
     }
     const sourceSequenceNames = sourceSequenceDetails.map((sequence) => sequence.name);
     const unknownOwnedTables = sourceSequenceDetails
       .filter((sequence) => sequence.ownerTable && !sourceExpectedTables.includes(sequence.ownerTable));
     if (unknownOwnedTables.length) {
-      fail(`sequence owner table이 manifest에 없다: ${unknownOwnedTables.map((sequence) => `${sequence.name}->${sequence.ownerTable}`).join(', ')}`);
+      fail(`sequence owner table이 기능 파일 소유에 없다: ${unknownOwnedTables.map((sequence) => `${sequence.name}->${sequence.ownerTable}`).join(', ')}`);
     }
     const unownedSequences = sourceSequenceDetails
       .filter((sequence) => !sequence.ownerTable)
@@ -253,7 +255,7 @@ async function main() {
     const sourceSnapshot = JSON.parse(psql(args.container, user, workingDb, schemaSnapshotSql()));
     assertDeclaredCrossDomainForeignKeys(sourceSnapshot, composerCatalog);
     selectedSchema = selectSchemaSnapshot(sourceSnapshot, desiredTables, desiredSequences, composition.optionalForeignKeys);
-    for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
+    for (const [table, expected] of Object.entries(databaseSnapshot.metaRows)) {
       if (Number(psql(args.container, user, workingDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`)) !== expected) {
         fail(`Composition source metadata differs from the checked-in snapshot: ${table}`);
       }
@@ -302,7 +304,7 @@ async function main() {
     const metaSeed = sanitizePgDump(Buffer.concat(metaParts), '표준용어 최종 snapshot seed');
 
     // 참조 데이터(설계서 B5): 원본 마이그레이션이 넣은 공통코드 그룹과 앱이 하드코딩한 게시판 마스터 가운데 선택한 기능의 몫만 싣는다.
-    const referencePlan = referenceDataPlan(composition.resolvedDomains, desiredTables);
+    const referencePlan = referenceDataPlan(composition.resolvedDomains, desiredTables, modules.extras.codeGroupOwners);
     const omitSql = omitCodeGroupsSql(referencePlan);
     if (omitSql) restore(args.container, user, workingDb, omitSql);
     const boardMasterSeed = readFileSync(join(ROOT, BOARD_MASTER_SEED), 'utf8');
@@ -340,7 +342,6 @@ async function main() {
     const lock = {
       schemaVersion: 1,
       profile: args.profile,
-      packs: profile.packs,
       sourceCommit,
       sourceReleaseTag: releaseTag ?? null,
       localDevelopmentBuild: !releaseTag || Boolean(dirty),
@@ -349,7 +350,7 @@ async function main() {
       sourceMigrationCount: migrations.length,
       tables: desiredTables,
       sequences: desiredSequences,
-      metaRows: manifest.databaseSnapshot.metaRows,
+      metaRows: databaseSnapshot.metaRows,
       composition, compositionHash: composition.compositionHash, recipeHash: composition.recipeHash,
       catalogHash: composition.catalogHash, layout: composition.backendLayout, resolvedDomains: composition.resolvedDomains,
       schemaSnapshotHash: schemaSnapshotHash(selectedSchema.snapshot), omittedForeignKeys: selectedSchema.omittedForeignKeys,
@@ -396,7 +397,7 @@ async function main() {
         referenceBoardMasters, '재적용 DB 게시판 마스터');
     }
     const metaMismatches = [];
-    for (const [table, expected] of Object.entries(manifest.databaseSnapshot.metaRows)) {
+    for (const [table, expected] of Object.entries(databaseSnapshot.metaRows)) {
       const actual = Number(psql(args.container, user, verifyDb, `SELECT count(*) FROM public.${quoteSqlIdentifier(table)}`));
       if (actual !== expected) metaMismatches.push(`${table}=${actual}(snapshot ${expected})`);
     }
@@ -422,7 +423,7 @@ async function main() {
       join(output, 'README.md'),
       `# Reusable Base DB — ${args.profile}\n\n` +
         `- source: \`${releaseTag ?? shortSha}\` (\`${sourceCommit}\`)\n` +
-        `- packs: ${profile.packs.join(', ')}\n` +
+        `- 기능: ${composition.resolvedDomains.join(', ') || '(공통 기반만)'}\n` +
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
         `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → reference data seed → admin bootstrap seed 재적용 완료\n` +

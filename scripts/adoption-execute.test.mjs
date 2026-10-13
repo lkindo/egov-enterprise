@@ -16,6 +16,8 @@ function fixture(t, layout) {
   const write = (path, bytes) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); };
   write('migration-tool/build.gradle', 'dependencies {}');
   write('migration-tool/src/main/java/Tool.java', 'class Tool {}');
+  // 승인 실행 사슬이 import 하는 구성 이름 판정(11단계 C8)은 이관 제품에도 복사된다.
+  write('scripts/composition-profiles.mjs', '// Synthetic composition profile input; the real module is imported from this repository.\n');
   if (layout !== undefined) {
     write('reusable-base-lock.json', JSON.stringify({ profile: 'core', layout }));
     write('package.json', JSON.stringify({ scripts: { 'verify:migration': 'node scripts/reusable-layout-runtime.mjs --verify-migration' } }));
@@ -124,7 +126,7 @@ test('unknown generated layout or profile cannot fall back to a different verifi
 
 test('both generated layouts bind verification sources, layout selection and aliases to approval', t => {
   for (const layout of ['single-module', 'multi-module']) for (const file of ['scripts/reusable-layout.mjs', 'scripts/reusable-layout-runtime.mjs',
-    'scripts/reusable-single-module.mjs', 'package.json', 'reusable-base-lock.json']) {
+    'scripts/reusable-single-module.mjs', 'scripts/composition-profiles.mjs', 'package.json', 'reusable-base-lock.json']) {
     const { root, path, write } = fixture(t, layout);
     const changed = file === 'reusable-base-lock.json'
       ? JSON.stringify({ profile: 'core', layout: layout === 'single-module' ? 'multi-module' : 'single-module' })
@@ -133,10 +135,17 @@ test('both generated layouts bind verification sources, layout selection and ali
     assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
       run: () => assert.fail('unreviewed verifier may not run') }), /scope digest mismatch/, file);
   }
-  const { root, path } = fixture(t, 'single-module');
-  rmSync(join(root, 'scripts/reusable-layout-runtime.mjs'));
+  for (const file of ['scripts/reusable-layout-runtime.mjs', 'scripts/composition-profiles.mjs']) {
+    const { root, path } = fixture(t, 'single-module');
+    rmSync(join(root, file));
+    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+      run: () => assert.fail('missing verifier may not run') }), new RegExp(`missing product scope input: ${file}`), file);
+  }
+  // 생성물이 아닌 이관 승인도 구성 이름 판정을 범위에 묶는다(트랙 C 검토 #1).
+  const { root, path, write } = fixture(t);
+  write('scripts/composition-profiles.mjs', `${readFileSync(join(root, 'scripts/composition-profiles.mjs'), 'utf8')}\nchanged`);
   assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-    run: () => assert.fail('missing verifier may not run') }), /missing product scope input/);
+    run: () => assert.fail('unreviewed composition profiles may not run') }), /scope digest mismatch/);
 });
 
 test('verifier or layout mutation during single-module verification prevents the final load', t => {
@@ -194,6 +203,7 @@ function onlineFixture(t) {
   const { root, path, write } = value;
   write('frontend/package.json', '{"private":true}');
   write('config/ui-url-state-census.json', '{}');
+  write('config/modules/presets.json', '{}');
   const manifest = { schemaVersion: 1, revision: 'a'.repeat(40),
     apiImage: `registry.example.org/institution/api@sha256:${'1'.repeat(64)}`,
     frontendImage: `registry.example.org/institution/frontend@sha256:${'2'.repeat(64)}` };

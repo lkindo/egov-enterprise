@@ -109,13 +109,15 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
     expect(read(POLICY)).toContain('"PERMISSION".equals(binding.access()) && has(authentication, binding.permission())');
   });
 
+  // 예시 권한은 core 코드(부서 업무)다 — 생성물은 권한 목록을 구성 코드로 줄이므로(Phase 2 10단계 10b) 게시판이 빠진 구성에서도
+  // 같은 뜻으로 돈다. 읽기 권한이 등록·수정·삭제·타인 자료 권한을 만들지 않는다는 판정이다.
   it('그룹 이름이나 읽기 권한이 쓰기 권한을 만들지 않고 회수하면 표시 권한도 닫힌다', () => {
-    const reader = { groups: ['OPERATIONS_TEAM'], permissions: ['BOARD_READ'], authorizationVersion: 'current' };
-    expect(canPermission(reader, 'BOARD_READ')).toBe(true);
-    for (const code of ['BOARD_CREATE', 'BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_READ_ALL']) expect(canPermission(reader, code)).toBe(false);
+    const reader = { groups: ['OPERATIONS_TEAM'], permissions: ['DEPT_JOB_READ'], authorizationVersion: 'current' };
+    expect(canPermission(reader, 'DEPT_JOB_READ')).toBe(true);
+    for (const code of ['DEPT_JOB_CREATE', 'DEPT_JOB_UPDATE', 'DEPT_JOB_DELETE', 'DEPT_JOB_UPDATE_ALL']) expect(canPermission(reader, code)).toBe(false);
     const revoked = { ...reader, groups: ['ROLE_ADMIN', 'ROLE_SYSTEM'], permissions: [] };
-    expect(canPermission(revoked, 'BOARD_READ')).toBe(false);
-    expect(canPermission({ permissions: ['BOARD_READ'] }, 'BOARD_READ')).toBe(false);
+    expect(canPermission(revoked, 'DEPT_JOB_READ')).toBe(false);
+    expect(canPermission({ permissions: ['DEPT_JOB_READ'] }, 'DEPT_JOB_READ')).toBe(false);
     expect(canPermission(reader, 'UNKNOWN')).toBe(false);
   });
 

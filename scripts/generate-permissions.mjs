@@ -3,9 +3,17 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
+import { detectGeneratedComposition } from './composer-modules.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const BASE_SEED = 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql';
+/** 권한 생성기가 쓰는 파일(buildPermissionArtifacts 의 키와 같다 — 시험이 대조한다). */
+export const PERMISSION_ARTIFACT_PATHS = Object.freeze([BASE_SEED,
+  'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java',
+  'business-core/src/main/resources/authorization/permission-catalog.json',
+  'business-core/src/main/resources/authorization/operation-bindings.json',
+  'frontend/src/types/generated-permissions.ts']);
 const BASE_BEGIN = '-- BEGIN GENERATED BASE OPERATION GRANTS';
 const BASE_END = '-- END GENERATED BASE OPERATION GRANTS';
 
@@ -15,8 +23,7 @@ const catalogText = fs.readFileSync(path.join(root, 'config/governance/permissio
 const catalog = JSON.parse(catalogText);
 const policyText = fs.readFileSync(path.join(root, 'config/governance/authorization-policies.json'), 'utf8');
 const policy = JSON.parse(policyText);
-if (!Array.isArray(catalog.permissions) || catalog.permissions.length < 200
-    || !Array.isArray(policy.operationBindings) || policy.operationBindings.length < 350) {
+if (!Array.isArray(catalog.permissions) || !Array.isArray(policy.operationBindings)) {
   throw new Error('Permission source coverage must not collapse');
 }
 const codes = catalog.permissions.map(row => row.code);
@@ -24,10 +31,12 @@ if (codes.length !== new Set(codes).size || codes.some(code => !/^[A-Z][A-Z0-9_]
   throw new Error('Permission codes must be unique and fit the registered VARCHAR(20) domain');
 }
 const initialGrants = [];
-const manifestPath = path.join(root, 'config/reusable-base-profiles.json');
 let selectedPermissions;
-const generatedProfile = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf8')).sourcePolicy?.generatedProfile : undefined;
-if (generatedProfile && (generatedProfile === 'custom' || fs.existsSync(path.join(root, COMPOSER_SELECTION_PATH)))) {
+// 생성물 표지(config/modules/presets.json 의 active, 11단계 C5). 생성물이면 구성 스냅숏이 반드시 있어야 한다 — 없으면 원본 권한
+// 전체로 조용히 넓히지 않고 실패한다. 표지 판정은 lock 만 있고 표지가 없는 트리도 실패시킨다(detectGeneratedComposition).
+const generated = detectGeneratedComposition(root);
+const generatedProfile = generated.projection ? generated.profile : undefined;
+if (generatedProfile) {
   // This immutable selection is bound by governance metadata and the source lock. Regeneration
   // rederives its scope rather than trusting an arbitrary list of requested permission codes.
   const selection = JSON.parse(fs.readFileSync(path.join(root, COMPOSER_SELECTION_PATH), 'utf8'));
@@ -36,6 +45,12 @@ if (generatedProfile && (generatedProfile === 'custom' || fs.existsSync(path.joi
     throw new Error('Permission seed must bind a valid composition and generated profile');
   }
   selectedPermissions = new Set(composition.permissionCodes);
+  // [10단계 10b] 생성물은 권한 정의를 구성으로 투영했다(reusable-permission-projection.mjs). 원본 하한 대신 도출값과 정확히 비교한다 —
+  // 카탈로그 = 구성 코드, 바인딩 핸들러 소스가 생성물에 있음, 하네스 census 가 있으면 그 수와 같음.
+  const coverage = projectedPermissionCoverageErrors(root, { catalog, bindings: policy.operationBindings, permissionCodes: composition.permissionCodes });
+  if (coverage.length) throw new Error(`Projected permission coverage does not match the composition: ${coverage.join('; ')}`);
+} else if (catalog.permissions.length < 200 || policy.operationBindings.length < 350) {
+  throw new Error('Permission source coverage must not collapse');
 }
 for (const row of catalog.permissions) {
   if (!Array.isArray(row.defaultGroups) || new Set(row.defaultGroups).size !== row.defaultGroups.length

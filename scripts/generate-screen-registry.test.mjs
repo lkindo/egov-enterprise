@@ -6,16 +6,20 @@ import test from 'node:test';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  LAYOUT_SHELL_FILES,
   PROTECTED_PERMISSIONS,
   SCREEN_REGISTRY_INPUTS,
   SCREEN_REGISTRY_OUTPUT,
+  UPSTREAM_ROUTE_LEDGER,
   buildScreenRegistry,
   generateScreenRegistry,
   readScreenRegistryArtifact,
   replacedTermFinder,
+  summarizeScreenRegistry,
   validateScreenRegistry,
 } from './generate-screen-registry.mjs';
 import { discoverConfigRedirects, discoverPageRoutes, expectedRouting } from './ui-route-capabilities-contract.mjs';
+import { snapshotPathFor } from './reusable-governance-integrity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -344,12 +348,14 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.ok(catalog.permissions.find(row => row.code === 'MEMO_RPT_INSTRUCT')?.defaultGroups.includes('ROLE_USER'), 'instructing is a user default');
   assert.ok(ledger.bundles.find(bundle => bundle.id === 'basic-work')?.permissions.includes('MEMO_RPT_INSTRUCT'));
   assert.match(proxy.description, /메모 보고의 본문 수정과 지시는 맡기지 않습니다/u);
-  // 워크플로우 데모 화면은 demo pack 이 소유한다 — 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
+  // 워크플로우 데모 화면은 시연 기능 파일이 소유한다(종전 v1 manifest 의 demo pack → 11단계 C5 의 약식 결재 → 2026-10-13 시연 —
+  // 인증 시작 구성 '공통 기반 + 결재' 에 정적 목업이 실리지 않게 했다). 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
   assert.ok(excluded.has('WORKFLOW_READ'));
-  const { packs } = JSON.parse(fs.readFileSync(path.join(root, 'config/reusable-base-profiles.json'), 'utf8'));
-  const demo = JSON.stringify((Array.isArray(packs) ? packs : Object.entries(packs).map(([id, pack]) => ({ id, ...pack })))
-    .find(pack => pack.id === 'demo') ?? null);
-  for (const route of ['"src/app/admin/workflow"', '"src/app/admin/sanctn"']) assert.ok(demo.includes(route), `${route} is demo-owned`);
+  const showcaseModule = JSON.parse(fs.readFileSync(path.join(root, 'config/modules/showcase.json'), 'utf8'));
+  assert.ok(showcaseModule.backend.frontendOnly && showcaseModule.owns.permissionDomains.includes('WORKFLOW'), 'the showcase feature owns the demo entry permission');
+  for (const route of ['src/app/admin/workflow', 'src/app/admin/sanctn/workflow']) {
+    assert.ok(showcaseModule.owns.frontend.includes(route), `${route} is owned by the showcase feature`);
+  }
 });
 
 test('the protected permission set is the server\'s sensitive administration set', () => {
@@ -626,6 +632,36 @@ test('screens, aliases, labels, entry modes, and write/display permissions are d
   });
 });
 
+/*
+ * [10단계 10b] 재사용 생성물의 라우트 원장은 검토 전('unverified')이다. 화면 목록을 생성물에서 다시 만들어도 원본 산출물과 같은 라벨이
+ * 나와야 데이터 투영과 재생성이 같다 — 같은 page 파일이면 원본 라우트 원장 스냅숏의 라벨을 쓴다. 생성물 원장이 검토한 라벨이 앞선다.
+ */
+test('an unreviewed generated route ledger takes screen labels from the upstream ledger snapshot of the same page file', t => {
+  const { dir, mutate, write } = fixture(t);
+  assert.equal(UPSTREAM_ROUTE_LEDGER, snapshotPathFor(SCREEN_REGISTRY_INPUTS.routes), 'the snapshot path is the projection snapshot');
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    for (const row of ledger.routes) if (row.route !== '/admin/hub/beta') row.visibleLabel = 'unverified';
+    ledger.routes.find(row => row.route === '/admin/hub/beta').visibleLabel = '허브 나(생성물 검토)';
+  });
+  const before = buildScreenRegistry(dir);
+  assert.deepEqual([byRoute(before, '/').label, byRoute(before, '/').labelSource], [null, null], 'no snapshot, no label');
+  write(UPSTREAM_ROUTE_LEDGER, `${JSON.stringify({ routes: [
+    { route: '/', source: 'frontend/src/app/page.tsx', visibleLabel: '업무 홈' },
+    // 다른 page 파일의 라벨은 쓰지 않는다.
+    { route: '/admin/hub/alpha', source: 'frontend/src/app/admin/hub/gamma/page.tsx', visibleLabel: '허브 가' },
+    { route: '/admin/hub/beta', source: 'frontend/src/app/admin/hub/beta/page.tsx', visibleLabel: '허브 나' },
+    { route: '/admin/things/[id]', source: 'frontend/src/app/admin/things/[id]/page.tsx', visibleLabel: 'unverified' },
+  ] }, null, 2)}\n`);
+  const registry = buildScreenRegistry(dir);
+  const label = route => [byRoute(registry, route).label, byRoute(registry, route).labelSource];
+  assert.deepEqual(label('/'), ['업무 홈', 'route-ledger']);
+  assert.deepEqual(label('/admin/hub/alpha'), [null, null]);
+  assert.deepEqual(label('/admin/hub/beta'), ['허브 나(생성물 검토)', 'route-ledger']);
+  assert.deepEqual(label('/admin/things/[id]'), [null, null]);
+  // 메뉴 라벨은 그대로 앞선다.
+  assert.deepEqual(label('/admin/things'), ['사물 관리', 'menu']);
+});
+
 test('entry permissions resolve exact routes before dynamic siblings and keep ALL modes; priority is entry > write > display', t => {
   const { dir, mutate, write } = fixture(t);
   mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => {
@@ -678,42 +714,260 @@ test('a screen that renders another route\'s client gets that client\'s write an
   assert.deepEqual(rows('/admin/things/[id]'), ['THING_CREATE:write'], 'the cycle is followed once to the screen that opens it');
 });
 
-test('writes and canPermission literals reached through a placement-blind slot contribution are refused, not spread to every consumer', t => {
+/*
+  [10단계 10a] 통계처럼 같은 레지스트리를 읽는 셸이 서로 다른 배치를 그린다 — 통계 셸(IntelligenceHubClient)은 기능 탭, 통계 요약
+  (AdminStatsClient)은 요약 칸이다. 소비자 표가 배치별이라 기여의 쓰기·표시는 그 항목의 배치를 그리는 셸의 화면에만 붙는다. 통계 셸은
+  /admin/stats 디렉터리에 있지만 그 화면을 그리지 않으므로 디렉터리가 아니라 그것을 그리는 화면(importer)에 귀속한다.
+*/
+function statsPanelsFixture(t) {
   const { dir, write, mutate } = fixture(t);
-  // 통계처럼 같은 레지스트리를 읽는 화면이 서로 다른 배치를 그린다. 기여는 탭 본문을 가리킨다.
-  const registryFor = slot => `import thing from './thing/${slot}';\nexport const panels = [thing];\n`;
-  const contributionFor = () => "import { ThingStatsBody } from '@/components/things/ThingStatsBody';\n"
-    + "export default [{ id: 'THING', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody }];\n";
-  for (const slot of ['stats-panels', 'shell-links']) {
-    write(`frontend/src/extensions/generated-${slot}.ts`, registryFor(slot));
-    write(`frontend/src/extensions/thing/${slot}.ts`, contributionFor());
-  }
+  write('frontend/src/extensions/generated-stats-panels.ts', "import thing from './thing/stats-panels';\nexport const statsPanels = [thing];\n");
   write('frontend/src/components/things/ThingStatsBody.tsx', 'export const ThingStatsBody = () => <p>본문</p>;\n');
-  write('frontend/src/app/admin/reports/page.tsx',
-    "import { panels } from '@/extensions/generated-stats-panels';\nexport default function Page() { return <>{panels.length}</>; }\n");
-  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => { catalog.pagePermissions['/admin/reports'] = ['THING_READ']; });
-  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
-    ledger.routes.push({ route: '/admin/reports', shellAccess: 'admin-system', visibleLabel: '사물 보고' });
+  write('frontend/src/components/things/ThingCardBody.tsx', 'export const ThingCardBody = () => <p>칸</p>;\n');
+  write('frontend/src/app/admin/stats/IntelligenceHubClient.tsx',
+    "import { statsPanels } from '@/extensions/generated-stats-panels';\nexport default function Shell() { return <>{statsPanels.length}</>; }\n");
+  write('frontend/src/app/admin/stats/AdminStatsClient.tsx',
+    "import { statsPanels } from '@/extensions/generated-stats-panels';\nexport default function Overview() { return <>{statsPanels.length}</>; }\n");
+  write('frontend/src/app/admin/stats/page.tsx',
+    "import AdminStatsClient from './AdminStatsClient';\nexport default function Page() { return <AdminStatsClient />; }\n");
+  write('frontend/src/app/admin/stats/board/page.tsx',
+    "import IntelligenceHubClient from '../IntelligenceHubClient';\nexport default function Page() { return <IntelligenceHubClient />; }\n");
+  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => {
+    catalog.pagePermissions['/admin/stats'] = ['THING_READ'];
+    catalog.pagePermissions['/admin/stats/board'] = ['THING_READ'];
   });
-  // 본문에 쓰기·표시가 없으면 통과한다(대조군).
-  const rows = registry => byRoute(registry, '/admin/reports').permissions.map(row => `${row.code}:${row.source}`);
-  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_READ:entry']);
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    ledger.routes.push({ route: '/admin/stats', shellAccess: 'admin-system', visibleLabel: '통계 요약' });
+    ledger.routes.push({ route: '/admin/stats/board', shellAccess: 'admin-system', visibleLabel: '게시물 통계' });
+  });
+  // 기여는 항목이 가리키는 본문만 import 한다(import 가 곧 귀속 간선이다).
+  const contribution = entries => write('frontend/src/extensions/thing/stats-panels.ts', [
+    ...['ThingStatsBody', 'ThingCardBody'].filter(name => entries.some(entry => entry.includes(name)))
+      .map(name => `import { ${name} } from '@/components/things/${name}';`),
+    'export default [',
+    ...entries.map(entry => `  ${entry},`),
+    '];',
+  ].join('\n'));
+  const rows = (registry, route) => byRoute(registry, route).permissions.map(row => `${row.code}:${row.source}`);
+  return { dir, write, contribution, rows };
+}
 
+const STATS_TAB = "{ id: 'TAB', placement: 'hub-tab', kind: 'body', Body: ThingStatsBody, visibleWhen: { page: '/admin/stats/board' } }";
+const STATS_CARD = "{ id: 'CARD', placement: 'overview-card', field: 'totalPosts', Body: ThingCardBody, visibleWhen: { page: '/admin/stats' } }";
+
+test('writes and canPermission literals reached through a stats panel go to the screens that draw its placement, not every consumer', t => {
+  const { dir, write, contribution, rows } = statsPanelsFixture(t);
+  contribution([STATS_TAB]);
+  // 본문에 쓰기·표시가 없으면 진입 권한뿐이다(대조군).
+  assert.deepEqual(rows(buildScreenRegistry(dir), '/admin/stats/board'), ['THING_READ:entry']);
+
+  write('frontend/src/components/things/ThingStatsBody.tsx', [
+    "import { thingService } from '@/services/ThingService';",
+    "export const ThingStatsBody = ({ user }) => (canPermission(user, 'THING_UPDATE')",
+    '  ? <button onClick={() => thingService.createThing({})}>등록</button> : null);',
+  ].join('\n'));
+  const tab = buildScreenRegistry(dir);
+  assert.deepEqual(rows(tab, '/admin/stats/board'), ['THING_CREATE:write', 'THING_READ:entry', 'THING_UPDATE:display']);
+  // 통계 셸이 /admin/stats 디렉터리에 있어도 요약 화면은 셸 탭을 그리지 않는다.
+  assert.deepEqual(rows(tab, '/admin/stats'), ['THING_READ:entry']);
+
+  // 요약 칸 항목만 두면 요약 화면에만 붙는다.
+  write('frontend/src/components/things/ThingCardBody.tsx',
+    "export const ThingCardBody = ({ user }) => (canPermission(user, 'THING_EXPORT') ? <p>칸</p> : null);\n");
+  contribution([STATS_CARD]);
+  const card = buildScreenRegistry(dir);
+  assert.deepEqual(rows(card, '/admin/stats'), ['THING_EXPORT:display', 'THING_READ:entry']);
+  assert.deepEqual(rows(card, '/admin/stats/board'), ['THING_READ:entry']);
+});
+
+test('a stats panel contribution file whose items span placements refuses writes and literals reached through it', t => {
+  const { dir, write, contribution, rows } = statsPanelsFixture(t);
+  // 배치가 섞인 기여 파일(게시판 → 통계와 같은 모양)이라도 그 파일을 거치는 쓰기·표시가 없으면 통과한다(대조군).
+  contribution([STATS_TAB, STATS_CARD]);
+  assert.deepEqual(rows(buildScreenRegistry(dir), '/admin/stats'), ['THING_READ:entry']);
   write('frontend/src/components/things/ThingStatsBody.tsx',
     "export const ThingStatsBody = ({ user }) => (canPermission(user, 'THING_UPDATE') ? <p>본문</p> : null);\n");
-  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*표시 THING_UPDATE/u);
+  assert.throws(() => buildScreenRegistry(dir),
+    /stats-panels 기여 파일의 항목이 여러 placement\(hub-tab, overview-card\)에 걸쳐 있어 .*표시 THING_UPDATE/u);
   write('frontend/src/components/things/ThingStatsBody.tsx', [
     "import { thingService } from '@/services/ThingService';",
     'export const ThingStatsBody = () => <button onClick={() => thingService.createThing({})}>등록</button>;',
   ].join('\n'));
-  assert.throws(() => buildScreenRegistry(dir), /stats-panels 기여는 배치별 귀속이 없어 .*쓰기 THING_CREATE/u);
+  assert.throws(() => buildScreenRegistry(dir), /여러 placement\(hub-tab, overview-card\)에 걸쳐 있어 .*쓰기 THING_CREATE/u);
+});
 
-  // 배치를 가리는 슬롯(여기서는 shell-links 레지스트리를 읽는 화면)이면 종전처럼 그 화면에 귀속한다 — 거부는 슬롯 목록이 정한다.
+/*
+  [10단계 10a] 슬롯 기여 항목의 노출 술어(visibleWhen.permissions)는 그 항목을 그리는 셸의 화면에 표시 권한으로 붙는다. 수신자 피커처럼
+  레지스트리를 도우미(.ts)가 읽으면 그 도우미를 import 하는 화면이 셸이다. page 술어(링크 노출 — 목적지 화면의 진입 권한)와 always 술어
+  (판정 없음, 사유 속 권한 이름은 판정이 아니다)는 붙지 않는다.
+*/
+function predicateFixture(t) {
+  const { dir, write, mutate } = fixture(t);
+  write('frontend/src/extensions/generated-recipient-picker-sources.ts',
+    "import thing from './thing/recipient-picker-sources';\nexport const recipientPickerSources = [thing];\n");
+  write('frontend/src/extensions/thing/recipient-picker-sources.ts', [
+    'export default [',
+    "  { id: 'BOOK', label: '사물 명함', visibleWhen: { permissions: ['THING_EXPORT'] } },",
+    "  { id: 'LINK', label: '사물 원장', visibleWhen: { page: '/admin/things' } },",
+    "  { id: 'ALWAYS', label: '사물', visibleWhen: { always: \"서버가 'THING_UPDATE' 로 막는다.\" } },",
+    '];',
+  ].join('\n'));
+  write('frontend/src/app/components/ui/recipient-picker-sources.ts',
+    "import { recipientPickerSources } from '@/extensions/generated-recipient-picker-sources';\nexport const sources = () => recipientPickerSources.flat();\n");
+  write('frontend/src/app/admin/reports/ReportClient.tsx',
+    "import { sources } from '@/app/components/ui/recipient-picker-sources';\nexport const ReportClient = () => <>{sources().length}</>;\n");
   write('frontend/src/app/admin/reports/page.tsx',
-    "import { panels } from '@/extensions/generated-shell-links';\nexport default function Page() { return <>{panels.length}</>; }\n");
-  fs.rmSync(path.join(dir, 'frontend/src/extensions/thing/stats-panels.ts'));
-  fs.rmSync(path.join(dir, 'frontend/src/extensions/generated-stats-panels.ts'));
-  assert.deepEqual(rows(buildScreenRegistry(dir)), ['THING_CREATE:write', 'THING_READ:entry']);
+    "import { ReportClient } from './ReportClient';\nexport default function Page() { return <ReportClient />; }\n");
+  mutate(SCREEN_REGISTRY_INPUTS.catalog, catalog => { catalog.pagePermissions['/admin/reports'] = ['THING_DELETE']; });
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    ledger.routes.push({ route: '/admin/reports', shellAccess: 'admin-system', visibleLabel: '사물 보고' });
+  });
+  const rows = (registry, route) => byRoute(registry, route).permissions.map(row => `${row.code}:${row.source}`);
+  return { dir, write, rows };
+}
+
+test('a permissions predicate goes to the screens that draw its item; page and always predicates go nowhere', t => {
+  const { dir, rows } = predicateFixture(t);
+  const registry = buildScreenRegistry(dir);
+  // 진입(THING_DELETE)과 술어 THING_EXPORT 뿐이다 — page 술어의 목적지 진입 권한(THING_READ)과 always 사유 속 THING_UPDATE 는 붙지 않는다.
+  assert.deepEqual(rows(registry, '/admin/reports'), ['THING_DELETE:entry', 'THING_EXPORT:display']);
+  assert.deepEqual(registry.predicates, [{
+    file: 'frontend/src/extensions/thing/recipient-picker-sources.ts', id: 'BOOK', permissions: ['THING_EXPORT'], routes: ['/admin/reports'],
+  }]);
+  // 셸을 그리는 화면이 아닌 화면에는 붙지 않는다.
+  assert.equal(rows(registry, '/admin/things').includes('THING_EXPORT:display'), false);
+});
+
+test('an unreadable permissions predicate fails the registry instead of reading as no predicate (10단계 검토)', t => {
+  const { dir, write } = predicateFixture(t);
+  // 가져온 이름으로 적은 술어는 판독기가 읽을 수 없다 — 술어 없는 항목으로 읽혀 귀속도 '귀속 0 실패' 도 빠져나가면 안 된다.
+  write('frontend/src/extensions/thing/recipient-picker-sources.ts', [
+    "import { THING_CODES } from '@/app/things/thing-codes';",
+    'export default [',
+    "  { id: 'BOOK', label: '사물 명함', visibleWhen: { permissions: [THING_CODES.EXPORT] } },",
+    '];',
+  ].join('\n'));
+  assert.throws(() => buildScreenRegistry(dir),
+    /recipient-picker-sources\.ts:3: 기여 항목의 visibleWhen\.permissions 가 문자열 리터럴 배열이 아니다/u);
+});
+
+test('a predicate drawn only by a layout shell is recorded, and a layout shell that reaches a screen is refused', t => {
+  const { dir, write } = predicateFixture(t);
+  assert.ok(LAYOUT_SHELL_FILES.includes('frontend/src/app/components/layout/header.tsx'));
+  write('frontend/src/extensions/generated-header-widgets.ts', "import thing from './thing/header-widgets';\nexport const headerWidgets = [thing];\n");
+  write('frontend/src/extensions/thing/header-widgets.ts', "export default [{ id: 'BELL', order: 1, visibleWhen: { permissions: ['THING_EXPORT'] } }];\n");
+  write('frontend/src/app/components/layout/header.tsx',
+    "import { headerWidgets } from '@/extensions/generated-header-widgets';\nexport const Header = () => <>{headerWidgets.length}</>;\n");
+  const registry = buildScreenRegistry(dir);
+  assert.deepEqual(registry.predicates.find(row => row.id === 'BELL'),
+    { file: 'frontend/src/extensions/thing/header-widgets.ts', id: 'BELL', permissions: ['THING_EXPORT'], routes: [], layout: true });
+  // 레이아웃 셸 목록의 파일을 화면이 그리면 그 화면의 술어가 조용히 빠지므로 실패한다.
+  write('frontend/src/app/admin/things/page.tsx',
+    "import { Header } from '@/app/components/layout/header';\nexport default function Page() { return <Header />; }\n");
+  assert.throws(() => buildScreenRegistry(dir), /레이아웃 셸 목록의 파일을 화면이 그린다: frontend\/src\/app\/components\/layout\/header\.tsx → \/admin\/things/u);
+  // 대조: Next 경계 파일(라우트 오류 경계가 루트 오류 화면을 다시 내보내는 모양)을 거쳐서만 닿으면 앱 틀이다.
+  write('frontend/src/app/admin/things/page.tsx', "import { ThingClient } from './ThingClient';\nexport default function Page() { return <ThingClient />; }\n");
+  write('frontend/src/app/admin/things/error.tsx', "export { Header as default } from '@/app/components/layout/header';\n");
+  assert.equal(buildScreenRegistry(dir).predicates.find(row => row.id === 'BELL').layout, true);
+});
+
+const PICKER_HELPER = 'frontend/src/app/components/ui/recipient-picker-sources.ts';
+const REPORT_SCREEN_FILES = ['frontend/src/app/admin/reports/ReportClient.tsx', 'frontend/src/app/admin/reports/page.tsx'];
+const writeLedger = (dir, removedFiles) => fs.writeFileSync(path.join(dir, 'reusable-projection-ledger.json'), `${JSON.stringify({
+  schemaVersion: 1, authority: 'generated-reusable-projection-ledger', removedFiles: [...removedFiles].sort(),
+}, null, 2)}\n`);
+
+test('a predicate that reaches no screen fails in the source and is recorded in a projection whose ledger removed the screens', t => {
+  const { dir } = predicateFixture(t);
+  // 수신자 피커 도우미는 남는데(core) 그것을 그리는 화면이 빠진 생성물({addressbook} 단독)과 같은 모양이다.
+  fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+  assert.throws(() => buildScreenRegistry(dir),
+    /기여 항목의 노출 술어가 어느 화면에도 귀속되지 않는다: frontend\/src\/extensions\/thing\/recipient-picker-sources\.ts BOOK/u);
+  writeLedger(dir, REPORT_SCREEN_FILES);
+  const registry = buildScreenRegistry(dir);
+  assert.deepEqual(registry.predicates, [{
+    file: 'frontend/src/extensions/thing/recipient-picker-sources.ts', id: 'BOOK', permissions: ['THING_EXPORT'], routes: [], removedByProjection: true,
+    removedShells: [], orphanedShells: [PICKER_HELPER],
+  }]);
+  // 기록은 CLI 요약이 줄마다 남긴다.
+  assert.deepEqual(summarizeScreenRegistry(registry).predicates.removedByProjection, [
+    `frontend/src/extensions/thing/recipient-picker-sources.ts BOOK THING_EXPORT (removed shells: -; orphaned shells: ${PICKER_HELPER})`,
+  ]);
+  // 셸까지 지운 생성물 — 원장에 있는 셸이면 지워진 셸로 기록한다.
+  fs.rmSync(path.join(dir, PICKER_HELPER));
+  writeLedger(dir, [...REPORT_SCREEN_FILES, PICKER_HELPER]);
+  assert.deepEqual(buildScreenRegistry(dir).predicates.map(row => [row.removedShells, row.orphanedShells]), [[[PICKER_HELPER], []]]);
+  // 원장 형식이 틀리면 투영본으로 보지 않고 실패한다.
+  fs.writeFileSync(path.join(dir, 'reusable-projection-ledger.json'), '{"schemaVersion":1,"authority":"x","removedFiles":[]}\n');
+  assert.throws(() => buildScreenRegistry(dir), /Projection ledger is invalid/u);
+});
+
+/*
+  [10단계 검토] 원장이 있다는 것만으로 귀속 0 을 받지 않는다. 그리던 화면이 남았는데 셸이 레지스트리를 읽지 않게 된 생성물, 원장에 없는
+  셸 부재, 셸을 import 하는 파일이 남았는데 화면에 닿지 않는 생성물, 원장이 화면을 하나도 지우지 않은 생성물은 투영본에서도 실패한다.
+*/
+test('a projection accepts zero attribution only with evidence that the drawing shell or screens were removed', t => {
+  const unrelated = 'frontend/src/app/admin/unrelated/Unrelated.tsx';
+  const projectionThrows = (arrange, pattern) => {
+    const { dir, write } = predicateFixture(t);
+    arrange({ dir, write });
+    assert.throws(() => buildScreenRegistry(dir), pattern);
+  };
+  // ① 화면(/admin/reports)은 남았는데 도우미가 레지스트리를 읽지 않는다 — 원장은 무관한 파일만 적었다.
+  projectionThrows(({ dir, write }) => {
+    write(PICKER_HELPER, 'export const sources = () => [];\n');
+    writeLedger(dir, [unrelated]);
+  }, /투영본에서도 .*BOOK \(THING_EXPORT\) — 남은 셸이 그 기여의 레지스트리를 읽지 않는다\(연결이 끊겼다\): frontend\/src\/app\/components\/ui\/recipient-picker-sources\.ts/u);
+  // ② 셸이 없는데 원장에 없다.
+  projectionThrows(({ dir }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    fs.rmSync(path.join(dir, PICKER_HELPER));
+    writeLedger(dir, REPORT_SCREEN_FILES);
+  }, /셸이 없는데 투영 원장에 없다: frontend\/src\/app\/components\/ui\/recipient-picker-sources\.ts/u);
+  // ③ 셸을 import 하는 파일이 남았는데 어느 화면에도 닿지 않는다.
+  projectionThrows(({ dir, write }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    write('frontend/src/components/things/Dangling.tsx',
+      "import { sources } from '@/app/components/ui/recipient-picker-sources';\nexport const Dangling = () => <>{sources().length}</>;\n");
+    writeLedger(dir, REPORT_SCREEN_FILES);
+  }, /남은 셸을 import 하는 파일이 화면에 닿지 않는다\(연결이 끊겼다\): .*recipient-picker-sources\.ts ← frontend\/src\/components\/things\/Dangling\.tsx/u);
+  // ④ 셸이 고아인데 원장이 화면(page) 파일을 지우지 않았다.
+  projectionThrows(({ dir }) => {
+    fs.rmSync(path.join(dir, 'frontend/src/app/admin/reports'), { recursive: true });
+    writeLedger(dir, [unrelated]);
+  }, /남은 셸이 고아인데 투영 원장이 화면\(page\) 파일을 지우지 않았다/u);
+});
+
+/*
+  [10단계 10a] 원본의 슬롯 노출 술어 귀속표. 항목마다 그 항목을 그리는 셸의 화면이다 — 쪽지·스크랩 허브 탭은 협업 허브 두 화면뿐이고
+  (지식·감시 허브 화면이 아니다), 설문 통계 탭은 통계 셸 다섯 화면뿐이며(통계 요약 /admin/stats 가 아니다), 머리글 알림은 레이아웃이다.
+  원본 화면 목록에 더해진 표시 권한은 14건/10화면이다(메일·문자 ADBK_READ, 협업 허브 NOTE_READ·SCRAP_READ, 통계 셸 SURVEY_READ_ALL,
+  업무 홈 APPROVAL_READ·BANNER_READ·POPUP_READ — DASHBOARD_READ·NOTE_READ·STATS_ADMIN_READ·SCRAP_CREATE 는 이미 있었다).
+*/
+test('the source slot predicates are attributed item by item to the screens that draw them', () => {
+  const rows = buildScreenRegistry(root).predicates.map(row => `${row.file.replace('frontend/src/extensions/', '')} ${row.id} `
+    + `${row.permissions.join('·')} → ${row.layout ? 'layout' : row.removedByProjection ? 'removed' : row.routes.join(', ')}`);
+  const collaboration = '/admin/collaboration, /admin/collaboration/scraps';
+  assert.deepEqual(rows, [
+    'addressbook/recipient-picker-sources.ts address-book ADBK_READ → /admin/collaboration/mail-send, /admin/uss/ion/sms',
+    'board/home-sections.ts board-new-post DASHBOARD_READ → /',
+    'board/home-sections.ts board-task-total DASHBOARD_READ → /',
+    'board/home-sections.ts board-notice-total DASHBOARD_READ → /',
+    'board/home-sections.ts board-lists DASHBOARD_READ → /',
+    'board/stats-panels.ts TOTAL_POSTS STATS_ADMIN_READ → /admin/stats',
+    'dashboard/home-sections.ts realtime DASHBOARD_READ → /',
+    'informalsanction/home-sections.ts approval-open APPROVAL_READ → /',
+    'informalsanction/home-sections.ts approval-pending APPROVAL_READ → /',
+    'note/home-sections.ts unread-notes NOTE_READ → /',
+    `note/hub-tabs.ts MESSAGES NOTE_READ → ${collaboration}`,
+    'notification/header-widgets.ts notification-bell NOTI_READ → layout',
+    'promotion/home-sections.ts popup POPUP_READ → /',
+    'promotion/home-sections.ts banner BANNER_READ → /',
+    `scrap/hub-tabs.ts SCRAPS SCRAP_READ → ${collaboration}`,
+    'scrap/post-actions.ts scrap SCRAP_CREATE → /admin/community/boards/detail',
+    'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, /admin/stats/report, '
+      + '/admin/stats/screen, /admin/stats/user',
+  ]);
 });
 
 test('screens and aliases are ordered by code point, not by the host locale order the page discovery uses', t => {
@@ -1239,14 +1493,19 @@ test('PERMISSION_BUNDLES keeps every bundle in the full repository and drops pro
   assert.equal(registry.bundles.length, 4, 'the generated list itself is not projected');
 });
 
-test('a bundle whose gated screens are all projected away is dropped even when related screens remain', async t => {
+test('a bundle whose gated screens are all projected away stays while a related screen remains and leaves when none remains', async t => {
   const { dir } = relatedFixture(t);
   const registry = buildScreenRegistry(dir);
   const pagePermissions = JSON.parse(fs.readFileSync(path.join(dir, SCREEN_REGISTRY_INPUTS.catalog), 'utf8')).pagePermissions;
-  // 진입 권한이 있는 화면을 모두 빼고 누구나 들어가는 업무 홈만 남긴다 — 그 투영본에는 이 묶음이 맡길 업무가 없다.
+  // [10단계 10b] 진입 권한이 있는 화면을 모두 빼고 누구나 들어가는 업무 홈만 남긴다. 업무 홈은 사물 등록(THING_CREATE)을 쓰기로
+  // 쓰므로 등록 묶음이 맡길 일이 남는다 — 묶음 투영 규칙(여는 화면 또는 관련 화면)과 같은 기준으로 남는다. 다른 묶음은 사라진다.
   const homeOnly = Object.fromEntries(Object.entries(pagePermissions).filter(([route]) => !GATED.includes(route)));
   const reduced = await loadRuntime(t, registry, homeOnly);
-  assert.deepEqual(reduced.PERMISSION_BUNDLES, []);
+  assert.deepEqual(reduced.PERMISSION_BUNDLES.map(bundle => [bundle.id, bundle.screens, bundle.relatedScreens]), [['thing-creator', [], ['/']]]);
+  // 관련 화면까지 빠지면 묶음도 사라진다.
+  const nothing = Object.fromEntries(Object.entries(homeOnly).filter(([route]) => route !== '/'));
+  const gone = await loadRuntime(t, registry, nothing);
+  assert.deepEqual(gone.PERMISSION_BUNDLES, []);
 });
 
 // ---------------------------------------------------------------- 실행 경로(H5)

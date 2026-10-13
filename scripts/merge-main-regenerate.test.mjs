@@ -131,6 +131,16 @@ test('slot contributions changed on both sides regenerate the slot registries be
     'a conflicted registry is regenerated, not picked');
 });
 
+test('config/modules is the source after the v2 transition — no generator rewrites a feature file', () => {
+  // 11단계 C7 전환 뒤 기능 파일은 손으로 쓰는 원천이다. 양쪽이 같은 기능 파일을 고친 충돌은 다시 만들지 않고 사람이 합친다.
+  const ids = files => planRegeneration(files).map(generator => generator.id);
+  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), ['atlas'],
+    'a conflicted feature file is resolved by hand, not regenerated');
+  assert.ok(GENERATORS.every(generator => generator.outputs.every(output => !output.startsWith('config/modules/'))),
+    'no generator writes the feature files');
+  assert.equal(GENERATORS.some(generator => generator.id === 'composer-modules'), false);
+});
+
 test('the screen-registry step reads every input the generator declares and writes its output', () => {
   // 생성기에 입력을 더하고 여기를 잊으면, 그 입력만 양쪽이 바꾼 병합에서 화면 목록이 낡은 채 stage 된다.
   const step = GENERATORS.find(generator => generator.id === 'screen-registry');

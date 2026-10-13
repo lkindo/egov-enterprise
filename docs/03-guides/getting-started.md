@@ -113,12 +113,12 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ### 5.1 프로젝트 고유 기능 삭제
 
 ```powershell
-# manifest(config/reusable-base-profiles.json) 기반으로 도메인 BE 경로를 제거 (여러 도메인은 쉼표 구분)
+# 기능 파일(config/modules/<기능>.json) 기반으로 도메인 경로를 제거 (여러 도메인은 쉼표 구분)
 ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun   # 먼저 확인
 ./scripts/delete-domain.ps1 -DomainName "informalsanction"
 ```
 
-> `delete-domain.ps1`은 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 SSOT 로 소비한다. manifest 에 없는 도메인명은 즉시 에러이고, 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`·`dashboard`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 manifest 가 pack 단위(`frontend.removePaths`)로만 소유하므로 pack 도메인 전체를 지정할 때만 일괄 삭제되며, 그 외 화면 제거는 [재사용 Base 가이드](./reusable-base-guide.md)의 projection 을 사용한다. 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
+> `delete-domain.ps1`은 [기능 파일](../../config/modules/)을 SSOT 로 소비한다. 기능 파일이 없는 도메인명은 즉시 에러이고(알려진 기능을 함께 적는다), 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`·`dashboard`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 지우는 기능의 화면 소유(`owns.frontend`)와, 소유한 기능을 모두 지울 때의 함께 소유한 화면(`owns.frontendAny`)이다 — 생성기 투영의 화면 제외 규칙과 같다(11단계 C5, 종전에는 pack 도메인 전체를 지정할 때만 지웠다). 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
 > FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 [재사용 Base 가이드](./reusable-base-guide.md)의 projection·도달성 검사로 메뉴와 화면의 잔존 참조를 함께 확인한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)
@@ -269,11 +269,11 @@ npm run review:migration
 
 ### 6.6 재사용 프로필과 기관 도입
 
-원본 저장소에서 `npm run base:verify -- --profile core`를 실행하면 새 일회용 DB와 소스 산출물을 만들어 실제 프로필을 검증한다. `collaboration`·`demo`도 각각 실행하며 Docker·Java 21·Node·pnpm이 필요하다. 이 명령의 개발 검증 산출물과 공식 릴리스 태그 산출물의 경계는 [재사용 Base 가이드](reusable-base-guide.md)를 따른다.
+원본 저장소에서 `npm run base:verify -- --profile core`를 실행하면 새 일회용 DB와 소스 산출물을 만들어 실제 프로필을 검증한다. `collaboration`·`demo`·`survey`·`approval`(시작 구성 선언 `config/modules/presets.json`)도 각각 실행하며 Docker·Java 21·Node·pnpm이 필요하다. 이 명령의 개발 검증 산출물과 공식 릴리스 태그 산출물의 경계는 [재사용 Base 가이드](reusable-base-guide.md)를 따른다.
 
 생성물의 `npm run verify`는 해당 프로필의 계약·하네스·스키마·프런트를 검증한다. 원본 제품의 회귀 테스트는 생산 저장소에서 계속 실행한다. 기술 검증 통과, 일반 검토 일정의 최신성, 실제 기관 운영 승인은 서로 다른 판정이다. 생성물의 온라인·이관 승인 원장은 모두 `pending`에서 시작하고, 원본 운영 메모리는 upstream 이력으로만 보존한다.
 
-생산 저장소의 CI는 기존 6개 required context와 3프로필 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 산출물 runner와 gitleaks working-tree·incremental 검사를 실행한다. 원본 13개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 연결해야 하며, 기본 생성물 CI를 원본과 동등한 검증이나 운영 인증으로 해석하지 않는다.
+생산 저장소의 CI는 기존 6개 required context와 시작 구성 생성 matrix(PR 은 시작 구성 셋을 한 레이아웃씩, main 은 다섯을 두 레이아웃씩)를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 산출물 runner와 gitleaks working-tree·incremental 검사를 실행한다. 원본 13개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 연결해야 하며, 기본 생성물 CI를 원본과 동등한 검증이나 운영 인증으로 해석하지 않는다.
 
 생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`에 연결된다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행하며 모든 범위에서 공통 활성 계약을 먼저 검사한다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 제거된다. 생성물 required-check 템플릿은 `remoteApplied: false`이고 브랜치·App이 미설정이므로 기관의 실제 ruleset과 런타임 검증을 별도로 구성한다. 자세한 명령별 범위는 [재사용 Base 가이드 §4](reusable-base-guide.md#4-산출물-검증)를 따른다.
 
@@ -291,7 +291,7 @@ npm run review:migration
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실제 PostgreSQL 스키마 검증 포함·Docker 필요, 브라우저 E2E와 원격 ruleset은 별도) |
 | Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
-| 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 세 프로필 각각 실행 |
+| 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 시작 구성 다섯 각각 실행 |
 | 독립 이관 기술 검증 | `npm run verify:migration` | migration-tool 테스트·bootJar; 실제 기관 적재 승인과 구분 |
 | 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest의 현재 설정 래칫 |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |

@@ -13,7 +13,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.assertj.core.api.Assertions.*;
 
-/** Permission override is explicit; loginId and esntlId ownership axes stay distinct. */
+/**
+ * Permission override is explicit; loginId and esntlId ownership axes stay distinct.
+ * 예시 권한은 core 코드(부서 업무·파일)다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
+ */
 @SuppressWarnings("deprecation")
 class SecurityUtilTest {
     @BeforeEach void before() { SecurityContextHolder.clearContext(); }
@@ -37,9 +40,9 @@ class SecurityUtilTest {
         assertThat(SecurityUtil.getCurrentLoginId()).isEmpty();
     }
     @Test void legacyStringIdentityReadDoesNotMintPermissions() {
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("esntl", null, List.of(new SimpleGrantedAuthority("BOARD_READ"))));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("esntl", null, List.of(new SimpleGrantedAuthority("DEPT_JOB_READ"))));
         assertThat(SecurityUtil.getCurrentEsntlId()).contains("esntl");
-        assertThat(SecurityUtil.hasPermission("BOARD_READ")).isFalse();
+        assertThat(SecurityUtil.hasPermission("DEPT_JOB_READ")).isFalse();
     }
     @Test void unauthenticatedCanonicalLoginIdIsEmpty() {
         var user = CustomUserDetails.builder().userId("loginA").esntlId("ESNTL_loginA").enabled(true).build();
@@ -59,9 +62,9 @@ class SecurityUtilTest {
         SecurityContextHolder.clearContext();
         assertThat(SecurityUtil.getCurrentUserNm()).isEmpty();
     }
-    @Test void exactPermissionIsAllowed() { authenticate("loginA", "BOARD_READ"); assertThat(SecurityUtil.hasPermission("BOARD_READ")).isTrue(); }
-    @Test void otherPermissionIsDenied() { authenticate("loginA", "BOARD_READ"); assertThat(SecurityUtil.hasPermission("BOARD_DELETE")).isFalse(); }
-    @Test void noAuthenticationHasNoPermission() { assertThat(SecurityUtil.hasPermission("BOARD_READ")).isFalse(); }
+    @Test void exactPermissionIsAllowed() { authenticate("loginA", "DEPT_JOB_READ"); assertThat(SecurityUtil.hasPermission("DEPT_JOB_READ")).isTrue(); }
+    @Test void otherPermissionIsDenied() { authenticate("loginA", "DEPT_JOB_READ"); assertThat(SecurityUtil.hasPermission("DEPT_JOB_DELETE")).isFalse(); }
+    @Test void noAuthenticationHasNoPermission() { assertThat(SecurityUtil.hasPermission("DEPT_JOB_READ")).isFalse(); }
     @Test void unknownNullOrRoleSymbolIsNeverPermission() {
         authenticate("loginA", "UNKNOWN", "ROLE_ADMIN");
         for (String code : List.of("UNKNOWN", "ROLE_ADMIN", "ADMIN")) assertThat(SecurityUtil.hasPermission(code)).isFalse();
@@ -71,29 +74,29 @@ class SecurityUtilTest {
         var user = CustomUserDetails.builder().userId("admin").esntlId("ESNTL_admin").enabled(true)
                 .groups(List.of("ROLE_ADMIN", "ROLE_SYSTEM")).roleName("ADMIN").authorCode("ROLE_ADMIN").build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
-        assertThat(SecurityUtil.hasPermission("BOARD_READ")).isFalse();
-        denied(() -> SecurityUtil.assertOwnerOrPermission("victim", "BOARD_READ_ALL"));
+        assertThat(SecurityUtil.hasPermission("DEPT_JOB_READ")).isFalse();
+        denied(() -> SecurityUtil.assertOwnerOrPermission("victim", "FILE_READ_ALL"));
     }
-    @Test void permissionGuardAllowsExactGrant() { authenticate("operator", "BOARD_CREATE"); assertThatCode(() -> SecurityUtil.assertPermission("BOARD_CREATE")).doesNotThrowAnyException(); }
-    @Test void permissionGuardDeniesOtherOrMissingGrant() { authenticate("operator", "BOARD_READ"); denied(() -> SecurityUtil.assertPermission("BOARD_CREATE")); }
-    @Test void loginOwnerCanModifyWithoutOverride() { authenticate("loginA"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermission("loginA", "BOARD_UPDATE_ALL")).doesNotThrowAnyException(); }
-    @Test void loginNonOwnerIsDenied() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermission("loginB", "BOARD_UPDATE_ALL")); }
-    @Test void loginAxisDoesNotAcceptEsntlId() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermission("ESNTL_loginA", "BOARD_UPDATE_ALL")); }
-    @Test void exactLoginOverrideAllowsNonOwner() { authenticate("operator", "BOARD_UPDATE_ALL"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermission("victim", "BOARD_UPDATE_ALL")).doesNotThrowAnyException(); }
-    @Test void readOverrideCannotAuthorizeDelete() { authenticate("operator", "BOARD_READ_ALL"); denied(() -> SecurityUtil.assertOwnerOrPermission("victim", "BOARD_DELETE_ALL")); }
-    @Test void esntlOwnerCanModifyWithoutOverride() { authenticate("loginA"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_loginA", "BOARD_UPDATE_ALL")).doesNotThrowAnyException(); }
-    @Test void esntlNonOwnerIsDenied() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_other", "BOARD_UPDATE_ALL")); }
-    @Test void esntlAxisDoesNotAcceptLoginId() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("loginA", "BOARD_UPDATE_ALL")); }
-    @Test void exactEsntlOverrideAllowsNonOwner() { authenticate("operator", "BOARD_UPDATE_ALL"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_other", "BOARD_UPDATE_ALL")).doesNotThrowAnyException(); }
+    @Test void permissionGuardAllowsExactGrant() { authenticate("operator", "DEPT_JOB_CREATE"); assertThatCode(() -> SecurityUtil.assertPermission("DEPT_JOB_CREATE")).doesNotThrowAnyException(); }
+    @Test void permissionGuardDeniesOtherOrMissingGrant() { authenticate("operator", "DEPT_JOB_READ"); denied(() -> SecurityUtil.assertPermission("DEPT_JOB_CREATE")); }
+    @Test void loginOwnerCanModifyWithoutOverride() { authenticate("loginA"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermission("loginA", "DEPT_JOB_UPDATE_ALL")).doesNotThrowAnyException(); }
+    @Test void loginNonOwnerIsDenied() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermission("loginB", "DEPT_JOB_UPDATE_ALL")); }
+    @Test void loginAxisDoesNotAcceptEsntlId() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermission("ESNTL_loginA", "DEPT_JOB_UPDATE_ALL")); }
+    @Test void exactLoginOverrideAllowsNonOwner() { authenticate("operator", "DEPT_JOB_UPDATE_ALL"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermission("victim", "DEPT_JOB_UPDATE_ALL")).doesNotThrowAnyException(); }
+    @Test void readOverrideCannotAuthorizeDelete() { authenticate("operator", "FILE_READ_ALL"); denied(() -> SecurityUtil.assertOwnerOrPermission("victim", "FILE_DELETE_ALL")); }
+    @Test void esntlOwnerCanModifyWithoutOverride() { authenticate("loginA"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_loginA", "DEPT_JOB_UPDATE_ALL")).doesNotThrowAnyException(); }
+    @Test void esntlNonOwnerIsDenied() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_other", "DEPT_JOB_UPDATE_ALL")); }
+    @Test void esntlAxisDoesNotAcceptLoginId() { authenticate("loginA"); denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("loginA", "DEPT_JOB_UPDATE_ALL")); }
+    @Test void exactEsntlOverrideAllowsNonOwner() { authenticate("operator", "DEPT_JOB_UPDATE_ALL"); assertThatCode(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId("ESNTL_other", "DEPT_JOB_UPDATE_ALL")).doesNotThrowAnyException(); }
     @Test void strictOwnerAlwaysRequiresIdentityEvenWithAllOverrideGrants() {
-        authenticate("operator", "BOARD_READ_ALL", "BOARD_UPDATE_ALL", "BOARD_DELETE_ALL");
+        authenticate("operator", "FILE_READ_ALL", "DEPT_JOB_UPDATE_ALL", "DEPT_JOB_DELETE_ALL");
         denied(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_victim"));
         assertThatCode(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_operator")).doesNotThrowAnyException();
     }
     @Test void strictOwnerWithoutAuthenticationIsDenied() { denied(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_victim")); }
     @Test void missingOwnerNeverMatchesMissingIdentity() {
-        denied(() -> SecurityUtil.assertOwnerOrPermission(null, "BOARD_UPDATE_ALL"));
-        denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId(null, "BOARD_UPDATE_ALL"));
+        denied(() -> SecurityUtil.assertOwnerOrPermission(null, "DEPT_JOB_UPDATE_ALL"));
+        denied(() -> SecurityUtil.assertOwnerOrPermissionByEsntlId(null, "DEPT_JOB_UPDATE_ALL"));
     }
     private static void authenticate(String login, String... permissions) {
         var user = CustomUserDetails.builder().userId(login).esntlId("ESNTL_" + login).enabled(true)

@@ -1141,7 +1141,7 @@ bbs_ttl임을 확인했다. 날짜 경계 repository 검증은 H2에서 실제 �
 첨부 검증의 저장소는 실제 임시 파일이지만 repository는 mock이고 커밋 실패를 Spring 트랜잭션 관리자에 주입한다.
 
 새 경합 테스트는 기존 schemaValidationTest에 연결한다. 도메인을 제외한 생성물에는 해당 테스트도 빠지도록
-기존 [게이트 원장](../../config/governance/gates.json), [프로필 제거 승인](../../config/reusable-base-profiles.json),
+기존 [게이트 원장](../../config/governance/gates.json), [프로필 제거 승인](https://github.com/lkindo/egov-enterprise/blob/52527499a62d/config/reusable-base-profiles.json),
 [custom 도메인 소유 선언](../../scripts/project-composer-source.mjs)을 함께 결속한다. 보고서 날짜 검증은 게시판
 의존 테스트와 분리해 board가 빠져도 남는다. 전역 MockitoSpyBean 없이 기존 TC 컨텍스트를 공유한다.
 

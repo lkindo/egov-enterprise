@@ -1,34 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectReusableGovernance, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
-import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
-import { FRONTEND_MARKER_FILES, composerProfile } from './project-composer-source.mjs';
-import { planJavaRemoval, pruneJava, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
-import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved } from './ui-url-state-census.mjs';
-import { analyzeRouteCapabilities, parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
-import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
-import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH, validateReviewScopeContract } from './reusable-review-scopes.mjs';
+import { dirname, join } from 'node:path';
+import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
+import { planJavaRemoval, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
+import { approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
+import { parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
+import { projectedCodeScope } from './reusable-governance-integrity.mjs';
+import { deriveProjectedReviewManifests, validateReviewScopeContract } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
-import { PROJECTION_LEDGER_PATH, buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
-import { normalize, walk } from './reusable-source-tree.mjs';
-import { relative } from 'node:path';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const readJson = (root, path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
-const census = readJson(ROOT, 'config/ui-url-state-census.json');
-const approval = readJson(ROOT, 'config/ui-url-state-approval.json');
-const profiles = readJson(ROOT, 'config/reusable-base-profiles.json');
-const reviewContract = readJson(ROOT, REVIEW_SCOPE_PATH);
-const upstreamReviews = Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(ROOT, path)]));
-const sourceCommit = 'a'.repeat(40);
-const hash = value => createHash('sha256').update(`${JSON.stringify(value, null, 2)}\n`).digest('hex');
+import { resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { ROOT, readJson, census, approval, catalog, presetComposition, reviewContract, upstreamReviews, ownership, hash, cleanupOwnedFixture } from './reusable-governance-projection.test-helpers.mjs';
 
 test('projection restricts upstream broad names to existing records and preserves actual review evidence', () => {
   const selectors = approvedStateItemSelectors(approval, census);
@@ -84,7 +67,7 @@ test('a directory junction cannot disguise the source checkout as an output', ()
 test('domain removal rejects empty, absolute, and traversing paths before planning a deletion', () => {
   for (const domain of ['', '.', '..', '../service', 'board/../../..', '/tmp', 'C:/outside', '\\outside', 'board\\..\\..', null]) {
     assert.throws(() => resolveDomainRemovalDirectory(ROOT, 'main', 'service', domain), /domain/);
-    assert.throws(() => planJavaRemoval(ROOT, { packs: { excluded: { backend: { appDomains: [domain] } } } }, { packs: [] }, []), /domain/);
+    assert.throws(() => planJavaRemoval(ROOT, { domains: [domain], supportFiles: new Map() }, { resolvedDomains: [] }, []), /domain/);
   }
   assert.equal(resolveDomainRemovalDirectory(ROOT, 'main', 'service', 'promotion/banner'),
     join(ROOT, 'business-app/src/main/java/nuri/business/service/promotion/banner'));
@@ -118,27 +101,37 @@ test('only known excluded upstream destinations may be removed, including exact 
 });
 
 test('review ownership covers every upstream item and cannot invent missing-source exclusions', () => {
-  assert.doesNotThrow(() => validateReviewScopeContract(reviewContract, upstreamReviews, profiles));
+  assert.doesNotThrow(() => validateReviewScopeContract(reviewContract, upstreamReviews, catalog));
+  // 판정 원천은 카탈로그다 — 없으면 판정하지 않는다.
+  assert.throws(() => validateReviewScopeContract(reviewContract, upstreamReviews, undefined), /requires the composition catalog/);
   for (const kind of ['scenarios', 'pilots', 'mappings']) {
     const missing = structuredClone(reviewContract);
     missing[kind].pop();
-    assert.throws(() => validateReviewScopeContract(missing, upstreamReviews, profiles), /exactly cover/);
-    const unknown = structuredClone(reviewContract);
-    unknown[kind][0].requiredPacks = ['nonexistent'];
-    assert.throws(() => validateReviewScopeContract(unknown, upstreamReviews, profiles), /invalid required packs/);
+    assert.throws(() => validateReviewScopeContract(missing, upstreamReviews, catalog), /exactly cover/);
+    // pack 소유를 되살리면 거부한다(11단계 C5) — 행은 기능(requiredDomains)만 둔다.
+    const packOwned = structuredClone(reviewContract);
+    packOwned[kind][0].requiredPacks = ['collaboration'];
+    assert.throws(() => validateReviewScopeContract(packOwned, upstreamReviews, catalog), /still declares pack ownership/);
     const invalidDomains = structuredClone(reviewContract);
     invalidDomains[kind][0].requiredDomains = ['unowned'];
-    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, catalog), /invalid required domains/);
     delete invalidDomains[kind][0].requiredDomains;
-    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, profiles), /invalid required domains/);
+    assert.throws(() => validateReviewScopeContract(invalidDomains, upstreamReviews, catalog), /invalid required domains/);
   }
+  // 선택 소스 예외는 그 소스를 덮는 기능 화면 규칙이 있고 그 규칙의 기능이 모두 행의 기능일 때만 선다.
   const fakeException = structuredClone(reviewContract);
-  fakeException.optionalPilotSources.push({ pilotId: 'content-login', source: 'frontend/src/app/login/LoginClient.tsx', requiredPacks: ['collaboration'] });
-  assert.throws(() => validateReviewScopeContract(fakeException, upstreamReviews, profiles), /lacks declared pack removal ownership/);
+  fakeException.optionalPilotSources.push({ pilotId: 'content-login', source: 'frontend/src/app/login/LoginClient.tsx', requiredDomains: ['board'] });
+  assert.throws(() => validateReviewScopeContract(fakeException, upstreamReviews, catalog), /lacks declared feature removal ownership/);
+  const ownerless = structuredClone(reviewContract);
+  ownerless.optionalPilotSources[0] = { ...ownerless.optionalPilotSources[0], requiredDomains: [] };
+  assert.throws(() => validateReviewScopeContract(ownerless, upstreamReviews, catalog), /needs a feature owner/);
+  const packException = structuredClone(reviewContract);
+  packException.optionalPilotSources[0] = { ...packException.optionalPilotSources[0], requiredPacks: ['collaboration'] };
+  assert.throws(() => validateReviewScopeContract(packException, upstreamReviews, catalog), /Optional source still declares pack ownership/);
   const routes = readJson(ROOT, 'config/ui-route-capabilities.json');
   const removedLogin = { ...routes, routes: routes.routes.filter(row => row.route !== '/login') };
   assert.throws(() => deriveProjectedReviewManifests({ outputRoot: ROOT, upstream: upstreamReviews, contract: reviewContract,
-    profiles, profile: 'demo', routes: removedLogin }), /included route is missing/);
+    catalog, profile: 'demo', routes: removedLogin, composition: presetComposition('demo') }), /included route is missing/);
 });
 
 test('custom review population follows domains and fails when selected evidence disappears', () => {
@@ -154,14 +147,16 @@ test('custom review population follows domains and fails when selected evidence 
     for (const file of sources) if (!excluded.has(file)) {
       mkdirSync(dirname(join(output, file)), { recursive: true }); cpSync(join(ROOT, file), join(output, file));
     }
-    const options = { outputRoot: output, upstream: upstreamReviews, contract: reviewContract, profiles, profile: 'custom',
+    const options = { outputRoot: output, upstream: upstreamReviews, contract: reviewContract, catalog, profile: 'custom',
       routes: readJson(ROOT, 'config/ui-route-capabilities.json'), composition };
     const projected = deriveProjectedReviewManifests(options);
     assert.ok(projected.reviewScopes.visibleTerms.pilotIds.includes('content-survey-create'));
-    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'the demo provenance pack does not select schedule');
+    assert.ok(!projected.reviewScopes.visibleTerms.pilotIds.includes('content-schedule'), 'a survey-only composition does not select schedule');
     assert.ok(!projected.reviewScopes.uiQuality.scenarioIds.includes('board-article-composer'));
     assert.ok(projected.reviewScopes.uiQuality.excludedScenarios.every(row => row.reason === 'required-domain-not-in-composition'));
-    assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires a resolved composition/);
+    assert.throws(() => deriveProjectedReviewManifests({ ...options, composition: undefined }), /requires the resolved composition/);
+    // 구성의 프로필과 요청한 프로필이 다르면 판정하지 않는다.
+    assert.throws(() => deriveProjectedReviewManifests({ ...options, profile: 'demo' }), /requires the resolved composition: demo/);
     rmSync(join(output, 'frontend/src/app/admin/survey/manage/SurveyFormDialog.tsx'));
     assert.throws(() => deriveProjectedReviewManifests(options), /included source is missing/);
   } finally { cleanupOwnedFixture(output); }
@@ -196,241 +191,3 @@ test('release evidence binds active CI, required checks and upstream verificatio
     assert.notEqual(projectedCodeScope(output).sha256, baseline.sha256, 'new active workflows must change the certified population');
   } finally { cleanupOwnedFixture(output); }
 });
-
-function copyInputs(output) {
-  for (const path of [
-    'frontend/src', 'frontend/e2e', 'frontend/next.config.ts',
-    'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/tsconfig.json',
-    'config', 'docs', 'scripts', 'package.json', '.agent/knowledge',
-    'api-server/src/main/java', 'api-server/src/test/java',
-    'business-app/src/main/java', 'business-app/src/test/java',
-    'business-core/src/main/java', 'business-core/src/test/java',
-    'foundation/src/main/java', 'foundation/src/test/java',
-    // 투영은 지운 ErrorCode 가 소유한 메시지 키를 함께 걷으므로 번들이 있어야 한다(Phase 2 D6).
-    'foundation/src/main/resources/egovframework/message',
-    'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql',
-  ]) {
-    mkdirSync(dirname(join(output, path)), { recursive: true });
-    cpSync(join(ROOT, path), join(output, path), { recursive: true });
-  }
-}
-
-function cleanupOwnedFixture(directory) {
-  const resolved = resolve(directory);
-  assert.equal(dirname(resolved), resolve(tmpdir()));
-  assert.ok(resolved.startsWith(join(resolve(tmpdir()), 'egov-governance-projection-')));
-  rmSync(resolved, { recursive: true });
-}
-
-for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
-  test(`${profileName} source projection rebuilds actual census, retains provenance, and leaves adoption pending`, () => {
-    const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
-    try {
-      copyInputs(output);
-      const copied = walk(output, () => true).map(path => normalize(relative(output, path)));
-      // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
-      const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
-        selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
-      // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 직접 선택도 선택 투영과 pack 마커를 한 번에 판정한다.
-      const profile = composerProfile(profiles, composition);
-      const projector = createFrontendProjector({ manifest: profiles, profile, composition, files: copied.filter(file => file.startsWith('frontend/')) });
-      pruneJava(output, profiles, profile);
-      const support = profiles.packs.demo.backend.domainSupportFiles.memoreport;
-      for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
-      const packBlocks = applyFrontendProjection(output, projector);
-      // lock.frontend.packBlocks: 소유는 남지만 pack 이 빠져 걷은 블록만 센다. 프리셋은 소유가 늘 참이라 표의 제외 pack 블록 합과
-      // 그 행 수다. 직접 선택은 블록의 소유 기능이 그 마커 pack 을 함께 끌어오므로 0/0 이다 — 이 단언이 집계를 '내용이 바뀐 파일 수'로
-      // 바꾸는 변이를 잡는다(프리셋에서는 두 셈이 같다). 표의 기대식을 직접 선택에 쓰면 거짓으로 붉으므로 값을 직접 적는다.
-      const excluded = FRONTEND_MARKER_FILES.map((row) => Object.entries(row.blocks)
-        .filter(([pack]) => !profile.packs.includes(pack))
-        .reduce((sum, [, count]) => sum + count, 0));
-      const expectedPackBlocks = composition.profile === 'custom'
-        ? { strippedBlocks: 0, changedFiles: 0 }
-        : { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length };
-      assert.deepEqual({ strippedBlocks: packBlocks.strippedBlocks, changedFiles: packBlocks.changedFiles }, expectedPackBlocks,
-        `${profileName}: lock.frontend.packBlocks`);
-      pruneFrontend(output, profiles, profile);
-      const manifest = { ...profiles, sourcePolicy: { ...profiles.sourcePolicy, generatedProfile: profileName },
-        profiles: { [profileName]: profile }, packs: Object.fromEntries(Object.entries(profiles.packs)
-          .filter(([name]) => profile.packs.includes(name))) };
-      writeFileSync(join(output, 'config/reusable-base-profiles.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-      writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
-      const result = projectReusableGovernance({
-        sourceRoot: ROOT, outputRoot: output, profile: profileName, sourceCommit, composition,
-        projectSource: (file, text) => projector.project(file, text).source,
-      });
-      const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
-      assert.equal(projectionLedger.files > 0, profileName !== 'demo', `${profileName}: 지운 파일이 원장에 남는다`);
-      const lock = { schemaVersion: 1, profile: profileName, packs: profile.packs, sourceCommit,
-        composition: { ...composition, sourceCommit }, projectionLedger,
-        governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
-      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
-      assert.deepEqual(inspectReusableGovernance(output).errors, []);
-      // 원장은 생성기가 한 일의 기록이다 — 고치면 lock 해시가, 있는 파일을 적으면 실재 검사가 막는다.
-      const ledgerText = readFileSync(join(output, PROJECTION_LEDGER_PATH), 'utf8');
-      const ledger = JSON.parse(ledgerText);
-      writeFileSync(join(output, PROJECTION_LEDGER_PATH), `${JSON.stringify({ ...ledger,
-        removedFiles: [...ledger.removedFiles, 'package.json'].sort() }, null, 2)}\n`);
-      // 생성물의 화면은 구성이 남겨야 할 화면과 같아야 한다(슬롯 단계 PR-1). core 가 걷는 댓글 관리 화면과, 목적지가 빠져 사라진
-      // 스크랩 등록 리다이렉트 화면을 되살리면 둘 다 구성 밖 화면이다 — 투영 뒤의 디스크는 수렴 없이 그대로 본다.
-      const revived = profileName === 'core'
-        ? ['frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx', 'frontend/src/app/admin/system/comments/page.tsx'] : [];
-      for (const page of revived) {
-        assert.equal(existsSync(join(output, page)), false, `${profileName} removes ${page}`);
-        mkdirSync(dirname(join(output, page)), { recursive: true });
-        writeFileSync(join(output, page), readFileSync(join(ROOT, page)));
-      }
-      const tampered = inspectReusableGovernance(output).errors.join('\n');
-      assert.match(tampered, /Projection ledger checksum mismatch/);
-      assert.match(tampered, /Projection ledger lists files that exist: .*package\.json/);
-      if (revived.length) {
-        assert.match(tampered, /Projected screens differ from the composition: missing \[\] extra \[\/admin\/collaboration\/scraps\/insertScrap, \/admin\/system\/comments\]/);
-      }
-      for (const page of revived) rmSync(join(output, page));
-      writeFileSync(join(output, PROJECTION_LEDGER_PATH), ledgerText);
-      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock, projectionLedger: undefined }, null, 2)}\n`);
-      assert.match(inspectReusableGovernance(output).errors.join('\n'), /Source lock must bind the projection ledger/);
-      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
-      assert.deepEqual(inspectReusableGovernance(output).errors, []);
-      // 구성 스냅숏 연결을 지우고 lock 해시를 다시 맞춰도, 출처를 증명할 수 없는 투영은 어느 프로필에서도 통과하지 않는다.
-      const { composition: boundComposition, ...unbound } = result;
-      assert.ok(boundComposition, `${profileName}: the projection binds its composition`);
-      writeFileSync(join(output, lock.governance.path), `${JSON.stringify(unbound, null, 2)}\n`);
-      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock,
-        governance: { ...lock.governance, projectionSha256: canonicalJsonSha256(unbound) } }, null, 2)}\n`);
-      assert.ok(inspectReusableGovernance(output).errors.includes('Generated projection requires a resolved composition snapshot'), profileName);
-      writeFileSync(join(output, lock.governance.path), `${JSON.stringify(result, null, 2)}\n`);
-      writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
-      assert.deepEqual(inspectReusableGovernance(output).errors, []);
-      assert.deepEqual(analyzeRouteCapabilities(output, join(output, 'config/ui-route-capabilities.json')).result.errors, []);
-      assert.deepEqual(readJson(output, 'config/ui-url-state-census.json'), buildUrlStateCensus({ repoRoot: output }));
-      assert.equal(result.sourceCommit, sourceCommit);
-      assert.equal(result.profile, profileName);
-      assert.equal(result.activeArtifacts.filter(row => row.path === 'config/governance/permission-catalog.json').length, 1);
-      const adoption = readJson(output, 'config/governance/adoption-review.json');
-      assert.equal(adoption.status, 'pending');
-      assert.equal(adoption.profile, profileName);
-      assert.equal(adoption.reviewedAt, null);
-      assert.deepEqual(adoption.evidence, []);
-      const migrationAdoption = readJson(output, 'config/governance/migration-adoption-review.json');
-      assert.equal(migrationAdoption.status, 'pending');
-      assert.equal(migrationAdoption.owner, null);
-      assert.equal(migrationAdoption.product, 'migration-tool');
-      assert.equal(migrationAdoption.profile, null);
-      const expectedCounts = { core: [5, 5], collaboration: [7, 6], demo: [8, 8], custom: [5, 5] }[profileName];
-      assert.equal(result.projectedReviewScopes.uiQuality.scenarioIds.length, expectedCounts[0]);
-      assert.equal(result.projectedReviewScopes.visibleTerms.pilotIds.length, expectedCounts[1]);
-      assert.deepEqual(readJson(output, REVIEW_MANIFEST_PATHS.krds).profiles, upstreamReviews.krds.profiles);
-      const home = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus.find(row => row.id === 'content-user-home');
-      assert.ok(home, 'the retained home pilot must continue to check remaining source');
-      assert.deepEqual(home.findings, upstreamReviews.visibleTerms.pilotCensus.find(row => row.id === home.id).findings);
-      // 업무 홈 문구 증거: core 셸 셋(page·셸·최근 활동) + 게시판 조각 셋·실시간 둘(collaboration) + 결재 대기 카드(demo, Phase 2 9단계).
-      assert.equal(home.sources.length, { core: 3, custom: 3, collaboration: 8, demo: 9 }[profileName]);
-      // Upstream owner decisions reopen as awaiting input in every generated profile (ADR-0018).
-      const isDecision = finding => finding.status === 'accepted-by-owner';
-      assert.ok(upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.findings ?? []).some(isDecision),
-        'the upstream ledger must carry an owner decision for this proof to mean anything');
-      const projectedTerms = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus;
-      assert.equal(projectedTerms.flatMap(row => row.findings ?? []).filter(isDecision).length, 0);
-      const userLog = projectedTerms.find(row => row.id === 'content-user-log');
-      const auditFields = userLog.findings.find(finding => finding.kind === 'technical-audit-fields');
-      assert.equal(auditFields.status, 'blocked-input');
-      assert.equal(auditFields.decisionRef, undefined);
-      assert.equal(userLog.status, 'open');
-      assert.ok(result.projectedReviewScopes.visibleTerms.resetDecisions
-        .some(row => row.pilotId === 'content-user-log' && row.kind === 'technical-audit-fields'));
-      for (const path of MEMORY_PATHS) {
-        const memory = readFileSync(join(output, path), 'utf8');
-        assert.match(memory, /derived-generated-profile-index/);
-        assert.match(memory, /생성 시 두 기관 승인 원장은 pending/);
-        assert.doesNotMatch(memory, /CTX-016|OCI V2_100/);
-      }
-      assert.ok(result.routes.length > 0);
-      assert.ok(result.urlRecordIds.length > 0);
-      if (profileName === 'demo') assert.equal(result.removedPagePermissions.length, 0);
-      else assert.ok(result.removedPagePermissions.length > 0);
-      const projectedPermissions = readJson(output, 'config/governance/permission-catalog.json').pagePermissions;
-      const upstreamPermissions = readJson(ROOT, 'config/governance/permission-catalog.json').pagePermissions;
-      for (const [route, required] of Object.entries(projectedPermissions)) {
-        assert.deepEqual(required, upstreamPermissions[route], `${route} authorization must not change`);
-      }
-      for (const snapshot of result.upstreamSnapshots) {
-        assert.ok(existsSync(join(output, snapshot.path)));
-        assert.equal(readFileSync(join(output, snapshot.path), 'utf8'), readFileSync(join(ROOT, snapshot.sourcePath), 'utf8').replace(/\r\n?/gu, '\n'));
-      }
-      const projectedApproval = readJson(output, 'config/ui-url-state-approval.json');
-      for (const row of projectedApproval.classes.filter(row => row.reviewState === 'approved')) {
-        assert.deepEqual(row.approvals, approval.classes.find(original => original.classId === row.classId).approvals);
-        assert.ok(row.selector.recordIds.every(id => result.urlRecordIds.includes(id)));
-      }
-      if (profileName === 'core') {
-        function mutateFile(path, transform, expectedError) {
-          const original = readFileSync(join(output, path), 'utf8');
-          try {
-            writeFileSync(join(output, path), transform(original));
-            assert.match(inspectReusableGovernance(output).errors.join('\n'), expectedError);
-          } finally { writeFileSync(join(output, path), original); }
-        }
-        mutateFile(result.upstreamSnapshots[0].path, text => text + '\n', /snapshot hash mismatch/);
-        mutateFile('frontend/src/proxy.ts', text => text + '\n// source-evidence mutation\n', /Source evidence scope changed|Inherited source evidence changed/);
-        mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), profile: 'demo' }), /lock profile/);
-        mutateFile('.agent/memory/project-context.md', text => text + '\nUpstream production state is approved here.\n', /Generated memory must separate/);
-        mutateFile('config/ui-url-state-approval.json', text => {
-          const changed = JSON.parse(text);
-          changed.classes.find(row => row.reviewState === 'approved').selector.stateItemNames.push('token');
-          return JSON.stringify(changed);
-        }, /Inherited state selector widened|Active URL approval is invalid/);
-        // Rebinding checksums alone cannot shrink declared feature ownership.
-        const metadataPath = 'config/governance/reusable-governance-projection.json';
-        const oldMetadata = readFileSync(join(output, metadataPath), 'utf8');
-        const oldLock = readFileSync(join(output, 'reusable-base-lock.json'), 'utf8');
-        try {
-          const changed = JSON.parse(oldMetadata);
-          changed.projectedReviewScopes.uiQuality.scenarioIds.shift();
-          writeFileSync(join(output, metadataPath), JSON.stringify(changed));
-          const changedLock = JSON.parse(oldLock);
-          changedLock.governance.projectionSha256 = canonicalJsonSha256(changed);
-          writeFileSync(join(output, 'reusable-base-lock.json'), JSON.stringify(changedLock));
-          assert.match(inspectReusableGovernance(output).errors.join('\n'), /review scope metadata drifted/);
-        } finally {
-          writeFileSync(join(output, metadataPath), oldMetadata);
-          writeFileSync(join(output, 'reusable-base-lock.json'), oldLock);
-        }
-      }
-      if (composition) {
-        for (const permissionPath of [snapshotPathFor('config/governance/permission-catalog.json'), 'config/governance/permission-catalog.json']) {
-          const originalPermissions = readFileSync(join(output, permissionPath), 'utf8');
-          try {
-            const changedPermissions = JSON.parse(originalPermissions);
-            const permission = changedPermissions.permissions.find(row => row.defaultGroups.length > 0);
-            assert.ok(permission, 'the permission catalog must contain a default group for this mutation proof');
-            permission.defaultGroups.pop();
-            writeFileSync(join(output, permissionPath), JSON.stringify(changedPermissions));
-            const errors = inspectReusableGovernance(output).errors.join('\n');
-            if (permissionPath.includes('/upstream-review/')) {
-              assert.match(errors, /Upstream snapshot hash mismatch/);
-              assert.match(errors, /Composition catalog differs from upstream permission snapshot/);
-            } else assert.match(errors, /Active review artifact changed: config\/governance\/permission-catalog\.json/);
-          } finally { writeFileSync(join(output, permissionPath), originalPermissions); }
-          assert.deepEqual(inspectReusableGovernance(output).errors, []);
-        }
-        const originalMenuSnapshot = readFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8');
-        try {
-          const changedMenuSnapshot = JSON.parse(originalMenuSnapshot);
-          changedMenuSnapshot.menus[0].menu_nm = 'Unreviewed replacement';
-          writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), JSON.stringify(changedMenuSnapshot));
-          assert.match(inspectReusableGovernance(output).errors.join('\n'), /Composer menu snapshot checksum mismatch/);
-        } finally { writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), originalMenuSnapshot); }
-        assert.deepEqual(inspectReusableGovernance(output).errors, []);
-        const selection = readJson(output, COMPOSER_SELECTION_PATH);
-        assert.equal(selection.composition.compositionHash, composition.compositionHash);
-        selection.composition.permissionCodes.push('MAIL_SEND');
-        writeFileSync(join(output, COMPOSER_SELECTION_PATH), JSON.stringify(selection));
-        assert.match(inspectReusableGovernance(output).errors.join('\n'), /snapshot checksum mismatch|does not match/);
-      }
-      console.log(`${profileName}: routes=${result.routes.length}, URL records=${result.urlRecordIds.length}, inherited=${result.inheritedUrlRecordIds.length}, adoption=pending`);
-    } finally {
-      cleanupOwnedFixture(output);
-    }
-  });
-}

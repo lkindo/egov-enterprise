@@ -108,7 +108,7 @@ export function sanitizePgDump(buffer, title) {
       && line !== "SELECT pg_catalog.set_config('search_path', '', false);")
     .join('\n')
     .trimEnd();
-  return `-- ${title}\n-- config/reusable-base-profiles.json에서 생성됨. 수동 편집 금지.\n\n${body}\n`;
+  return `-- ${title}\n-- 재사용 생성기가 구성(config/modules)으로 생성함. 수동 편집 금지.\n\n${body}\n`;
 }
 
 export function inspectContainer(container) {

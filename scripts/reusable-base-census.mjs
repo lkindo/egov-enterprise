@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * reusable-base-census — 현재 소스의 도메인·테이블 경계가 base 프로필 계약과 일치하는지 검증한다.
+ * reusable-base-census — 현재 소스의 도메인·테이블 경계가 기능 소유 선언(매니페스트 v2, config/modules)과 일치하는지 검증한다.
+ *
+ * [11단계 C5] 의존 방향(pack 순위) 검사는 카탈로그로 흡수했다 — 생성기는 pack·순위를 보지 않고(C3), 방향은 카탈로그의 시작 구성
+ * 닫힘 검사(필수 의존 폐포, 'preset is not closed under requires')와 엔티티 테이블 소유 대조가 본다.
+ * [11단계 C7] v1 manifest 를 걷으며 같은 검사(권한 핵심 테이블·퇴역 테이블·소스 경계·화면 소유 의무·프런트 전용 표지·엔티티
+ * 테이블 소유·게이트 승인 실재·실측 수)를 기능 파일·core.json·presets.json 에 건다. pack·묶음·프로필 형식 검사는 대상이 없어졌다.
  *
  * 이 스크립트는 base 산출물을 만들지 않는다. 먼저 현행 main이 안전하게 잘릴 수 있는지를 증명하는
  * 선행 게이트다. 배포 산출물은 릴리스 태그에서 별도 생성하며 장기 template 브랜치를 사용하지 않는다.
@@ -13,10 +18,10 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CORE_FILE, MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, readComposerModuleFiles, sourceDatabaseSnapshot } from './composer-modules.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = resolve(dirname(SCRIPT_PATH), '..');
-const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 const JAVA_SOURCE = /\.java$/;
 
 function normalize(path) {
@@ -131,48 +136,49 @@ function discoverRepository(root = ROOT) {
   };
 }
 
-function ownershipMaps(manifest, errors) {
-  const domainOwners = new Map();
+function featureModules(files) {
+  return Object.entries(files)
+    .filter(([name]) => ![MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name))
+    .map(([, value]) => value)
+    .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
+}
+
+function ownershipMaps(files, errors) {
   const tableOwners = new Map();
   const sequenceOwners = new Map();
-
-  for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
-    if (!Number.isInteger(pack.rank)) {
-      errors.push(`pack '${packName}' rank는 정수여야 한다.`);
-    }
-    for (const domain of pack.backend?.appDomains ?? []) {
-      if (domainOwners.has(domain)) {
-        errors.push(`business-app domain '${domain}'이 ${domainOwners.get(domain)}와 ${packName}에 중복 배정됐다.`);
-      } else {
-        domainOwners.set(domain, packName);
-      }
-    }
-    for (const table of pack.database?.tables ?? []) {
+  const owners = [['core', files[CORE_FILE]], ...featureModules(files).map((module) => [module.id, module])];
+  for (const [owner, value] of owners) {
+    for (const table of value?.owns?.tables ?? []) {
       if (tableOwners.has(table)) {
-        errors.push(`DB table '${table}'이 ${tableOwners.get(table)}와 ${packName}에 중복 배정됐다.`);
+        errors.push(`DB table '${table}'이 ${tableOwners.get(table)}와 ${owner}에 중복 배정됐다.`);
       } else {
-        tableOwners.set(table, packName);
+        tableOwners.set(table, owner);
       }
     }
-    for (const sequence of pack.database?.sequences ?? []) {
+    for (const sequence of value?.owns?.sequences ?? []) {
       if (sequenceOwners.has(sequence)) {
-        errors.push(`DB sequence '${sequence}'이 ${sequenceOwners.get(sequence)}와 ${packName}에 중복 배정됐다.`);
+        errors.push(`DB sequence '${sequence}'이 ${sequenceOwners.get(sequence)}와 ${owner}에 중복 배정됐다.`);
       } else {
-        sequenceOwners.set(sequence, packName);
+        sequenceOwners.set(sequence, owner);
       }
     }
   }
-
-  return { domainOwners, tableOwners, sequenceOwners };
+  return { tableOwners, sequenceOwners };
 }
 
-export function validateReusableBase(manifest, repository) {
+/**
+ * `files` 는 config/modules 의 선언 파일(파일 이름 → 값, readComposerModuleFiles 결과)이다. 11단계 C7 에서 v1 manifest 대신 이것을
+ * 본다 — 기능 id 는 파일 이름이라 같은 기능을 두 번 선언할 수 없고, 묶음 간선·시작 구성·공유 테이블의 형식은 로더가, 기능 소유와
+ * 소스(엔티티 테이블·화면 경로·간선)의 대조는 카탈로그가 본다. 여기에는 그 밖의 값싼 정적 검사만 남는다.
+ */
+export function validateReusableBase(files, repository) {
   const errors = [];
-  const { domainOwners, tableOwners, sequenceOwners } = ownershipMaps(manifest, errors);
-  const packRank = (packName) => manifest.packs?.[packName]?.rank;
+  const { tableOwners, sequenceOwners } = ownershipMaps(files, errors);
+  const modules = featureModules(files);
+  const featureIds = new Set(modules.map((module) => module.id));
 
   for (const table of ['tb_authrt_info', 'tb_authrt_user_map', 'tb_authrt_grnt_map', 'tb_authrt_chg_hstry']) {
-    if (tableOwners.get(table) !== 'core') errors.push(`authorization core table '${table}'은 core pack에 있어야 한다.`);
+    if (tableOwners.get(table) !== 'core') errors.push(`authorization core table '${table}'은 ${MODULES_DIRECTORY}/${CORE_FILE} 에 있어야 한다.`);
   }
   for (const table of ['tb_user_authrt_map', 'tb_authrt_role_map', 'tb_menu_crt_dtl', 'tb_role_prgrm_map', 'tb_role_hierarchy', 'tb_role_info']) {
     if (tableOwners.has(table)) errors.push(`retired authorization table '${table}'은 Contract 이후 base에 포함할 수 없다.`);
@@ -183,215 +189,133 @@ export function validateReusableBase(manifest, repository) {
   }
 
   /*
-    [프런트 소유 선언 의무] backend.appDomains 를 선언한 pack 은 frontend 소유도 선언해야 한다.
+    [프런트 소유 선언 의무] 백엔드 소스가 있는 기능은 화면 소유(owns.frontend)도 선언해야 한다.
 
-    생성기는 제외 pack 의 appDomains 로 **백엔드만** 지운다(pruneJava). 프런트는 그 pack 의
-    frontend.removePaths 가 있어야 함께 빠진다(pruneFrontend). 그래서 backend 만 선언하면
-    파생 프로필이 **API 없는 화면을 그대로 배포**한다 — 메뉴는 있는데 진입 즉시 실패한다.
+    생성기는 빠진 기능의 백엔드를 지우고, 화면은 그 기능의 owns.frontend 로 함께 지운다. 화면 소유를 선언하지 않으면 파생
+    생성물이 **API 없는 화면을 그대로 배포**한다 — 메뉴는 있는데 진입 즉시 실패한다. 2026-09-12 실측: collaboration pack 이
+    appDomains 8개를 선언하면서 frontend 키가 없어 core 프로필에 게시판·댓글·메일·쪽지·스크랩·문자·알림 화면이 API 없이
+    남았다(생존 파일 15개가 제거된 operation 을 호출). DEC-OPS-018·DEC-OPS-048 ⑤ 와 같은 원칙이다.
 
-    2026-09-12 실측: collaboration pack 이 appDomains 8개·tables 15개를 선언하면서 frontend
-    키가 없어, core 프로필에 게시판·댓글·메일·쪽지·스크랩·문자·알림 화면이 API 없이 남았다
-    (생존 파일 15개가 제거된 operation 을 호출). DEC-OPS-018(survey 승격 시 셋을 같은 변경에서
-    선언)·DEC-OPS-048 ⑤(백엔드가 demo 소유면 프런트 경로도 편입)가 이미 정한 원칙인데
-    collaboration 에만 적용되지 않았다.
-
-    ⚠ 이 검사는 '선언했는가' 만 본다. 목록이 **옳은가**(빠진 화면이 없는가)는 생성기를 실제로
-    돌려 투영본에서 확인해야 한다 — 정적 census 가 판정할 수 있는 범위를 넘는다.
+    ⚠ 이 검사는 '선언했는가' 만 본다. 목록이 **옳은가**(빠진 화면이 없는가)는 화면 생존 대조(DEC-OPS-265)와 생성기 실제 실행이 본다.
   */
-  for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
-    const domains = pack.backend?.appDomains ?? [];
-    const frontendPaths = pack.frontend?.removePaths ?? [];
-    if (domains.length > 0 && frontendPaths.length === 0) {
+  for (const module of modules) {
+    if (!module.backend?.frontendOnly && !(module.owns?.frontend ?? []).length) {
       errors.push(
-        `pack '${packName}'이 backend.appDomains ${domains.length}개를 선언하면서 frontend 소유를 선언하지 않았다 — `
-        + '제외 프로필에서 백엔드만 사라지고 화면이 남아 없는 API 를 부른다.',
+        `기능 '${module.id}'이 백엔드를 가지면서 화면 소유(owns.frontend)를 선언하지 않았다 — `
+        + '그 기능이 빠진 구성에서 백엔드만 사라지고 화면이 남아 없는 API 를 부른다.',
       );
     }
   }
 
   for (const domain of repository.appDomains) {
-    if (!domainOwners.has(domain)) errors.push(`business-app domain '${domain}'의 pack 소유자가 없다.`);
+    if (!featureIds.has(domain)) errors.push(`business-app domain '${domain}'의 기능 파일(${MODULES_DIRECTORY}/${domain}.json)이 없다.`);
   }
   /*
-    [프런트 전용 기능] backend.frontendOnlyDomains 의 도메인은 business-app 소스 없이 appDomains 에 둘 수 있다(DEC-OPS-273).
-    목록이 서랍이 되지 않도록 양방향으로 본다 — 같은 pack 의 appDomains 에 없거나, business-app main·test 에 그 도메인
-    디렉터리가 생기면 오류다. 목록에 없는 manifest 도메인은 종전대로 소스가 있어야 한다.
+    [프런트 전용 기능] backend.frontendOnly 기능은 business-app 소스 없이 둘 수 있다(DEC-OPS-273). 표지가 서랍이 되지 않도록
+    양방향으로 본다 — 그 기능의 business-app main·test 디렉터리가 생기면 오류다. 표지가 없는 기능은 소스가 있어야 한다.
   */
-  const frontendOnlyDomains = new Set();
   const testDomains = new Set((repository.testSources ?? [])
     .map((path) => path.match(/^business-app\/src\/test\/java\/nuri\/business\/(?:domain|service)\/([^/]+)\//)?.[1]).filter(Boolean));
-  for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
-    for (const domain of pack.backend?.frontendOnlyDomains ?? []) {
-      if (frontendOnlyDomains.has(domain)) errors.push(`프런트 전용 도메인 '${domain}'이 두 번 선언됐다.`);
-      frontendOnlyDomains.add(domain);
-      if (!(pack.backend?.appDomains ?? []).includes(domain)) {
-        errors.push(`프런트 전용 도메인 '${domain}'이 같은 pack '${packName}'의 appDomains 에 없다.`);
+  for (const module of modules) {
+    if (module.backend?.frontendOnly) {
+      if (repository.appDomains.includes(module.id) || testDomains.has(module.id)) {
+        errors.push(`프런트 전용 기능 '${module.id}'에 business-app 소스가 있다 — 표지를 걷거나 소스를 다른 기능으로 옮겨야 한다.`);
       }
-      if (repository.appDomains.includes(domain) || testDomains.has(domain)) {
-        errors.push(`프런트 전용 도메인 '${domain}'에 business-app 소스가 있다 — 선언을 걷거나 소스를 다른 도메인으로 옮겨야 한다.`);
-      }
-    }
-  }
-  for (const domain of domainOwners.keys()) {
-    if (!repository.appDomains.includes(domain) && !frontendOnlyDomains.has(domain)) {
-      errors.push(`manifest domain '${domain}'에 대응하는 business-app domain 소스가 없다.`);
+    } else if (!repository.appDomains.includes(module.id)) {
+      errors.push(`기능 '${module.id}'에 대응하는 business-app domain 소스가 없다.`);
     }
   }
   for (const serviceDomain of repository.appServiceDomains) {
-    if (!domainOwners.has(serviceDomain)) {
-      errors.push(`business-app service root '${serviceDomain}'의 pack 소유자가 없다.`);
+    if (!featureIds.has(serviceDomain)) {
+      errors.push(`business-app service root '${serviceDomain}'의 기능 파일이 없다.`);
     }
   }
 
+  // 업무 앱 도메인 사이의 간선은 보고만 한다. 방향(어느 기능이 어느 기능을 요구하는가)은 카탈로그가 Java 참조에서 계산하고, 시작
+  // 구성이 그 폐포에 닫혀 있는지 카탈로그 적재가 검사한다(11단계 C5 — pack 순위 검사를 걷었다).
   const edgeSet = new Set();
   for (const edge of repository.crossDomainEdges) {
-    if (!domainOwners.has(edge.source) || !domainOwners.has(edge.target)) continue;
-    const sourcePack = domainOwners.get(edge.source);
-    const targetPack = domainOwners.get(edge.target);
-    const key = `${edge.source}->${edge.target}`;
-    edgeSet.add(key);
-    if (packRank(targetPack) > packRank(sourcePack)) {
-      errors.push(
-        `상위 pack 역참조 ${key}: ${sourcePack}이 ${targetPack}에 의존한다 (${edge.file}).`,
-      );
-    }
+    if (!featureIds.has(edge.source) || !featureIds.has(edge.target)) continue;
+    edgeSet.add(`${edge.source}->${edge.target}`);
   }
 
   for (const entity of repository.entityTables) {
-    const tablePack = tableOwners.get(entity.table);
-    if (!tablePack) {
-      errors.push(`entity table '${entity.table}'의 pack 소유자가 없다 (${entity.file}).`);
-      continue;
-    }
-    const sourcePack = entity.module === 'business-core' ? 'core' : domainOwners.get(entity.domain);
-    if (!sourcePack) continue;
-    if (packRank(tablePack) > packRank(sourcePack)) {
-      errors.push(
-        `entity ${entity.domain}(${sourcePack})가 상위 DB pack ${tablePack}의 ${entity.table}을 매핑한다 (${entity.file}).`,
-      );
-    }
+    if (!tableOwners.get(entity.table)) errors.push(`entity table '${entity.table}'의 소유 기능이 없다 (${entity.file}).`);
   }
 
   /*
-    [게이트 제거 승인의 형식·실재] 생성기는 투영 시점에 "제거된 게이트 == 승인 목록" 을 exact
-    대조한다. 그런데 생성기는 DB bundle 과 docker 가 필요해 CI 에서 돌지 않는다 — 그래서 여기서
-    승인 목록 **자체**의 건전성만 저비용으로 지킨다(형식·중복·대상 실재). 이게 없으면 승인 항목이
-    개명·삭제로 죽은 뒤에도 아무도 모르고, 죽은 승인은 다음 제거를 조용히 통과시킨다.
+    [게이트 제거 승인의 형식·실재] 생성기는 투영 시점에 "제거된 게이트 == 시작 구성의 expected.gates" 를 exact 대조한다. 그런데
+    생성기는 DB bundle 과 docker 가 필요해 PR 마다 모든 구성을 돌지 않는다 — 그래서 여기서 승인 목록 **자체**의 건전성만
+    저비용으로 지킨다(형식·중복·대상 실재). 이게 없으면 승인 항목이 개명·삭제로 죽은 뒤에도 아무도 모르고, 죽은 승인은 다음 제거를
+    조용히 통과시킨다. 로더는 목록을 기능 파일의 게이트 소유와 대조하지만 중복은 거르고 실재는 보지 않는다.
   */
   const knownTestSources = new Set(repository.testSources ?? []);
-  for (const [profileName, profile] of Object.entries(manifest.profiles ?? {})) {
+  for (const preset of files[PRESETS_FILE]?.presets ?? []) {
     const seen = new Set();
-    for (const entry of profile.acknowledgedRemovedGates ?? []) {
+    for (const entry of preset.expected?.gates ?? []) {
       if (typeof entry?.file !== 'string' || !entry.file.trim()
           || typeof entry?.reason !== 'string' || !entry.reason.trim()) {
-        errors.push(`profile '${profileName}'의 acknowledgedRemovedGates 항목은 { file, reason } 이어야 한다: ${JSON.stringify(entry)}`);
+        errors.push(`시작 구성 '${preset.id}'의 expected.gates 항목은 { file, reason } 이어야 한다: ${JSON.stringify(entry)}`);
         continue;
       }
       if (seen.has(entry.file)) {
-        errors.push(`profile '${profileName}'의 acknowledgedRemovedGates 에 '${entry.file}'이 중복 등재됐다.`);
+        errors.push(`시작 구성 '${preset.id}'의 expected.gates 에 '${entry.file}'이 중복 등재됐다.`);
       }
       seen.add(entry.file);
       if (knownTestSources.size > 0 && !knownTestSources.has(entry.file)) {
-        errors.push(`profile '${profileName}'이 실재하지 않는 게이트 '${entry.file}'의 제거를 승인한다 (개명·삭제된 승인은 다음 제거를 조용히 통과시킨다).`);
-      }
-    }
-    const ranks = [];
-    for (const packName of profile.packs ?? []) {
-      if (!manifest.packs?.[packName]) errors.push(`profile '${profileName}'이 없는 pack '${packName}'을 참조한다.`);
-      else ranks.push(packRank(packName));
-    }
-    if (ranks.length > 0) {
-      const max = Math.max(...ranks);
-      for (const [packName, pack] of Object.entries(manifest.packs)) {
-        if (pack.rank <= max && !(profile.packs ?? []).includes(packName)) {
-          errors.push(`profile '${profileName}'은 rank ${max}까지 사용하지만 하위 pack '${packName}'을 포함하지 않는다.`);
-        }
+        errors.push(`시작 구성 '${preset.id}'이 실재하지 않는 게이트 '${entry.file}'의 제거를 승인한다 (개명·삭제된 승인은 다음 제거를 조용히 통과시킨다).`);
       }
     }
   }
 
-  for (const cluster of manifest.clusters ?? []) {
-    for (const domain of [...(cluster.domains ?? []), ...(cluster.requiresDomains ?? [])]) {
-      if (!domainOwners.has(domain)) errors.push(`cluster '${cluster.id}'의 domain '${domain}'이 존재하지 않는다.`);
-    }
-    for (const domain of cluster.domains ?? []) {
-      if (domainOwners.get(domain) !== cluster.pack) {
-        errors.push(`cluster '${cluster.id}'의 domain '${domain}'은 pack '${cluster.pack}'에 함께 있어야 한다.`);
-      }
-    }
-    for (const required of cluster.requiresDomains ?? []) {
-      if (packRank(domainOwners.get(required)) > packRank(cluster.pack)) {
-        errors.push(`cluster '${cluster.id}'이 상위 pack domain '${required}'에 역참조한다.`);
-      }
-    }
-  }
-
-  for (const contract of manifest.sharedTableContracts ?? []) {
-    if (tableOwners.get(contract.table) !== contract.ownerPack) {
-      errors.push(`shared table '${contract.table}'의 소유 pack이 '${contract.ownerPack}'과 다르다.`);
-    }
-    for (const consumer of contract.consumers ?? []) {
-      const consumerPack = domainOwners.get(consumer);
-      if (!consumerPack) errors.push(`shared table '${contract.table}' consumer '${consumer}'가 존재하지 않는다.`);
-      else if (packRank(contract.ownerPack) > packRank(consumerPack)) {
-        errors.push(`shared table '${contract.table}'이 consumer '${consumer}'보다 상위 pack에 있다.`);
-      }
-    }
-  }
-
+  // 원본 스키마 실측(core.json 의 databaseSnapshot)과 기능 파일의 테이블·독립 시퀀스 소유 수. 마이그레이션이 표를 더하거나 걷으면
+  // 소유 선언과 실측이 같은 변경에서 함께 움직여야 한다(실제 집합 대조는 DB 생성기가 임시 DB 에서 한다).
   const tableCount = tableOwners.size;
-  const expectedCount = manifest.databaseSnapshot?.physicalTableCountExcludingFlyway;
-  if (tableCount !== expectedCount) {
-    errors.push(`manifest table 수 ${tableCount}가 실측 snapshot ${expectedCount}와 다르다.`);
-  }
   const sequenceCount = sequenceOwners.size;
-  const expectedSequenceCount = manifest.databaseSnapshot?.physicalStandaloneSequenceCount;
-  if (sequenceCount !== expectedSequenceCount) {
-    errors.push(`manifest standalone sequence 수 ${sequenceCount}가 실측 snapshot ${expectedSequenceCount}와 다르다.`);
+  let snapshot;
+  try { snapshot = sourceDatabaseSnapshot(files); } catch (error) { errors.push(error.message); }
+  if (snapshot) {
+    if (tableCount !== snapshot.physicalTableCountExcludingFlyway) {
+      errors.push(`기능 파일 table 수 ${tableCount}가 실측 snapshot ${snapshot.physicalTableCountExcludingFlyway}와 다르다.`);
+    }
+    if (sequenceCount !== snapshot.physicalStandaloneSequenceCount) {
+      errors.push(`기능 파일 standalone sequence 수 ${sequenceCount}가 실측 snapshot ${snapshot.physicalStandaloneSequenceCount}와 다르다.`);
+    }
   }
 
+  const owners = ['core', ...modules.map((module) => module.id)];
   return {
     errors: uniqueSorted(errors),
     summary: {
-      domainsByPack: Object.fromEntries(
-        Object.keys(manifest.packs ?? {}).map((pack) => [
-          pack,
-          uniqueSorted([...domainOwners.entries()].filter(([, owner]) => owner === pack).map(([domain]) => domain)),
-        ]),
-      ),
-      tablesByPack: Object.fromEntries(
-        Object.keys(manifest.packs ?? {}).map((pack) => [
-          pack,
-          [...tableOwners.values()].filter((owner) => owner === pack).length,
-        ]),
-      ),
+      features: modules.map((module) => module.id),
+      tablesByOwner: Object.fromEntries(owners.map((owner) => [owner, [...tableOwners.values()].filter((value) => value === owner).length])),
       crossDomainEdges: uniqueSorted(edgeSet),
       entityTableCount: uniqueSorted(repository.entityTables.map((item) => item.table)).length,
-      manifestTableCount: tableCount,
-      manifestSequenceCount: sequenceCount,
+      declaredTableCount: tableCount,
+      declaredSequenceCount: sequenceCount,
     },
   };
 }
 
-export function analyzeRepository(root = ROOT, manifestPath = MANIFEST_PATH) {
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+export function analyzeRepository(root = ROOT) {
+  const modules = readComposerModuleFiles(root);
   const repository = discoverRepository(root);
-  return { manifest, repository, result: validateReusableBase(manifest, repository) };
+  return { modules, repository, result: validateReusableBase(modules, repository) };
 }
 
 function printReport({ result }) {
-  console.log('\n=== Reusable Base Profile Census ===');
-  for (const [pack, domains] of Object.entries(result.summary.domainsByPack)) {
-    console.log(`${pack.padEnd(14)} domains=${String(domains.length).padStart(2)} tables=${String(result.summary.tablesByPack[pack]).padStart(2)}  ${domains.join(', ') || '(core modules)'}`);
+  console.log('\n=== Reusable Base Feature Census ===');
+  for (const [owner, tables] of Object.entries(result.summary.tablesByOwner)) {
+    console.log(`${owner.padEnd(18)} tables=${String(tables).padStart(2)}`);
   }
-  console.log(`entity tables    : ${result.summary.entityTableCount}`);
-  console.log(`manifest tables  : ${result.summary.manifestTableCount}`);
-  console.log(`manifest seqs    : ${result.summary.manifestSequenceCount} standalone`);
-  console.log(`cross-domain edge: ${result.summary.crossDomainEdges.join(', ') || '(none)'}`);
+  console.log(`entity tables      : ${result.summary.entityTableCount}`);
+  console.log(`declared tables    : ${result.summary.declaredTableCount}`);
+  console.log(`declared seqs      : ${result.summary.declaredSequenceCount} standalone`);
+  console.log(`cross-domain edge  : ${result.summary.crossDomainEdges.join(', ') || '(none)'}`);
   if (result.errors.length === 0) {
-    console.log('\n✅ profile ownership/의존 방향/테이블 계약 일치');
+    console.log('\n✅ 기능 소유/테이블 계약 일치 (의존 방향은 카탈로그의 시작 구성 닫힘 검사)');
   } else {
-    console.error('\n❌ reusable-base profile 계약 위반');
+    console.error('\n❌ reusable-base 기능 소유 계약 위반');
     for (const error of result.errors) console.error(`  - ${error}`);
   }
 }

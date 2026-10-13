@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { inspectReusableGovernance } from './reusable-governance-integrity.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { validateVisibleTerms } from './frontend-visible-terms-contract.mjs';
 import { validateKrdsMapping } from './krds-profile-mapping-contract.mjs';
 import { validateUiQuality, queryConsumerContractErrors } from './ui-quality-scenarios-contract.mjs';
@@ -59,7 +60,7 @@ test('active contracts validate exact applicable populations with no environment
     assert.deepEqual(report.errors, []);
     assert.equal(report.verifiedContracts.length, 8);
     assert.equal(report.environmentApproved, false);
-    assert.ok(['core', 'collaboration', 'demo', 'custom'].includes(report.profile));
+    assert.ok(compositionProfiles().includes(report.profile));
   } else {
     assert.equal(documents.quality.scenarios.length, 8, 'upstream scenarios may not be reduced');
     assert.equal(documents.terms.pilotCensus.length, 8, 'upstream pilots may not be reduced');

@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 2,
+  "id": "core",
+  "backend": {
+    "modules": [
+      "foundation",
+      "business-core",
+      "api-server"
+    ]
+  },
+  "owns": {
+    "tables": [
+      "meta_standard_domains",
+      "meta_standard_terms",
+      "meta_standard_words",
+      "revinfo",
+      "tb_admdst_cd",
+      "tb_auth_cert_dmnd",
+      "tb_auth_otp_cert",
+      "tb_auth_rfsh_tk",
+      "tb_auth_rstr_cd",
+      "tb_authrt_chg_hstry",
+      "tb_authrt_grnt_map",
+      "tb_authrt_group_info",
+      "tb_authrt_info",
+      "tb_authrt_user_map",
+      "tb_bkmk_menu_mng_rslt",
+      "tb_com_cd",
+      "tb_com_cd_chg_hstry",
+      "tb_com_clsf_cd",
+      "tb_com_dtl_cd",
+      "tb_dept_job_bx",
+      "tb_dept_task_info",
+      "tb_file_detail",
+      "tb_file_master",
+      "tb_inst_cd",
+      "tb_inst_cd_rcptn_log",
+      "tb_login_log",
+      "tb_login_policy",
+      "tb_menu_info",
+      "tb_ognz_info",
+      "tb_plcy_manage",
+      "tb_privacy_log",
+      "tb_rptp_stats",
+      "tb_stmp_info",
+      "tb_sys_adt_log",
+      "tb_sys_job",
+      "tb_sys_log",
+      "tb_user_absn",
+      "tb_user_info",
+      "tb_user_log",
+      "tb_web_log"
+    ],
+    "sequences": [
+      "revinfo_seq",
+      "sq_auth_cert_dmnd",
+      "sq_auth_otp_cert",
+      "sq_auth_rstr_cd"
+    ]
+  },
+  "databaseSnapshot": {
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_127 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process and approval-temporary-draft sequences are table-owned",
+    "checkedAt": "2026-10-05T11:18:06.296Z",
+    "physicalTableCountExcludingFlyway": 90,
+    "physicalSequenceCount": 56,
+    "physicalStandaloneSequenceCount": 6,
+    "metaRows": {
+      "meta_standard_words": 3387,
+      "meta_standard_terms": 13231,
+      "meta_standard_domains": 130
+    }
+  },
+  "presentation": {
+    "areas": [
+      {
+        "id": "communication",
+        "label": "소통·협업"
+      },
+      {
+        "id": "knowledge",
+        "label": "지식·커뮤니티"
+      },
+      {
+        "id": "work",
+        "label": "업무 지원"
+      },
+      {
+        "id": "participation",
+        "label": "분석·참여"
+      },
+      {
+        "id": "showcase",
+        "label": "시연·예제"
+      }
+    ]
+  },
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 부서 업무의 담당자를 지정하거나 바꿔도 새 담당자에게 업무 배정 알림이 가지 않습니다."
+    }
+  ],
+  "registrationOnly": {
+    "events": [
+      {
+        "to": "addressbook",
+        "event": "UserDeletionEvent",
+        "reason": "사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다."
+      },
+      {
+        "to": "board",
+        "event": "UserDeletionEvent",
+        "reason": "사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다."
+      },
+      {
+        "to": "comment",
+        "event": "UserDeletionEvent",
+        "reason": "사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다."
+      },
+      {
+        "to": "community",
+        "event": "UserDeletionEvent",
+        "reason": "사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다."
+      },
+      {
+        "to": "notification",
+        "event": "UserDeletionEvent",
+        "reason": "사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다."
+      }
+    ],
+    "contributions": [],
+    "ports": [
+      {
+        "to": "board",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "mail",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "memoreport",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "note",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "promotion",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "report",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "reward",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "schedule",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "board",
+        "port": "DashboardItemProvider",
+        "reason": "이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다."
+      },
+      {
+        "to": "informalsanction",
+        "port": "DashboardItemProvider",
+        "reason": "이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다."
+      },
+      {
+        "to": "board",
+        "port": "DataUsageStatisticsContributor",
+        "reason": "게시판 기능이 없으면 자료 이용 통계에 셀 게시물이 없고, 그 통계를 보이던 탭도 함께 빠져 다른 통계는 그대로입니다."
+      },
+      {
+        "to": "board",
+        "port": "PostStatisticsContributor",
+        "reason": "게시판 기능이 없으면 게시물 통계에 셀 글이 없고, 그 수를 보이던 칸도 함께 빠져 다른 통계는 그대로입니다."
+      },
+      {
+        "to": "community",
+        "port": "CommunityBoardAccessPort",
+        "reason": "커뮤니티 기능이 없으면 커뮤니티 회원 전용 게시판도 없어, 첨부 열람을 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "notification",
+        "port": "DurableWorkHandler",
+        "reason": "알림 기능이 없으면 알림 전달 후속 작업도 생기지 않아, 후속 작업을 처리할 때 빠지는 것이 없습니다."
+      }
+    ]
+  },
+  "unassignedPermissions": [
+    {
+      "code": "ADT_LOG_READ",
+      "bundle": "log-audit-viewer",
+      "protected": false,
+      "effect": "민감 작업 감사 원장에서 누가 언제 민감한 조회·변경을 했는지 봅니다."
+    },
+    {
+      "code": "DWORK_READ",
+      "bundle": "log-audit-viewer",
+      "protected": false,
+      "effect": "첨부 삭제 같은 후속 작업의 처리 상태를 봅니다."
+    },
+    {
+      "code": "DWORK_RETRY",
+      "bundle": null,
+      "protected": false,
+      "effect": "실패한 후속 작업을 다시 실행합니다. 실패한 작업을 보려면 후속 작업 상태 조회 권한도 함께 있어야 하고, 감사 원장 열람 권한과는 다른 그룹에 두기를 권합니다."
+    },
+    {
+      "code": "MFA_RECOVER",
+      "bundle": "account-recovery",
+      "protected": true,
+      "effect": "추가 인증 수단을 잃은 사용자의 계정 복구를 승인합니다."
+    }
+  ]
+}

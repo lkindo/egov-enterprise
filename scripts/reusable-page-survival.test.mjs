@@ -106,7 +106,7 @@ test('the ownership expectation equals the resolver retained routes for every pr
   const ids = catalog.capabilities.map(capability => capability.id);
   const selections = [...catalog.presets.map(preset => ({ preset: preset.id })), { domains: [] }, { domains: [...ids] },
     ...ids.map(id => ({ domains: [id] })), ...ids.flatMap((left, index) => ids.slice(index + 1).map(right => ({ domains: [left, right] })))];
-  assert.equal(selections.length, 3 + 2 + 22 + 231);
+  assert.equal(selections.length, 5 + 2 + 22 + 231);
   for (const selection of selections) {
     const composition = recipe(selection);
     assert.deepEqual([...expectedPageRoutes(catalog, composition, rows)].sort(), [...composition.frontend.retainedRoutes].sort(), JSON.stringify(selection));
@@ -130,7 +130,7 @@ test('redirect convergence removes exactly the redirect pages the governance pro
   const rows = readRouteRows(root);
   const upstream = new Set(rows.keys());
   const inputs = ['frontend/next.config.ts', 'frontend/src/proxy.ts', 'frontend/src/types/generated-permissions.ts',
-    'frontend/src/lib/auth/page-authorization.ts', 'config/governance/permission-catalog.json', 'config/reusable-base-profiles.json'];
+    'frontend/src/lib/auth/page-authorization.ts', 'config/governance/permission-catalog.json'];
   const cases = [
     ['page-redirect', '/admin/collaboration/scraps/selectScrapList',
       ['/admin/collaboration/scraps/insertScrap', '/admin/collaboration/scraps/selectScrapDetail/[id]']],

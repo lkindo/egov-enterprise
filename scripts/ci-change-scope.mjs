@@ -1,58 +1,102 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { presetIds } from './composition-profiles.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DEFAULT_REUSABLE_PROFILE_NAMES = ['core', 'collaboration', 'demo'];
+const MODULES_DIRECTORY = path.join(REPO_ROOT, 'config', 'modules');
+const MODULE_DECLARATION_FILES = new Set(['_schema.json', 'core.json', 'presets.json']);
+/** 재사용 생성기. 이것도 시작 구성 선언도 없는 트리는 재사용 생성 대상이 없는 독립 산출물이다(reusableProfileNames). */
+const REUSABLE_GENERATOR = path.join(REPO_ROOT, 'scripts', 'generate-reusable-base-source.mjs');
+const stringList = value => Array.isArray(value) && value.every(item => typeof item === 'string');
 
-function loadReusableManifest() {
+/**
+ * 매니페스트 v2(config/modules)의 시작 구성과 기능 소유를 읽는다(11단계 C5). 이 파일은 의존성 설치 전 분류 단계와
+ * 독립 이관 제품에서 다른 모듈 없이 돈다(migration-product-contract) — 카탈로그 로더를 import 하지 않고 JSON 만 읽는다.
+ * 파일이 없거나(독립 export 는 시작 구성 선언을 싣지 않는다) 모양이 다르면 null 이고, 그러면 모든 시작 구성을 두 레이아웃으로
+ * 고른다 — 소유 증거를 읽지 못했다고 검증을 건너뛰거나 독립 산출물을 쓸 수 없게 만들지 않는다.
+ */
+function loadComposerModules() {
   try {
-    const manifest = JSON.parse(readFileSync(
-      path.join(REPO_ROOT, 'config', 'reusable-base-profiles.json'),
-      'utf8',
-    ));
-    if (!manifest?.profiles || !manifest?.packs) return null;
-    return manifest;
+    const presetsFile = JSON.parse(readFileSync(path.join(MODULES_DIRECTORY, 'presets.json'), 'utf8'));
+    const features = new Map();
+    for (const name of readdirSync(MODULES_DIRECTORY).filter(name => name.endsWith('.json') && !MODULE_DECLARATION_FILES.has(name)).sort()) {
+      const value = JSON.parse(readFileSync(path.join(MODULES_DIRECTORY, name), 'utf8'));
+      const shared = value?.owns?.frontendAny;
+      if (`${value?.id}.json` !== name || !stringList(value.owns?.frontend) || !stringList(value.backend?.supportFiles)
+        || !Array.isArray(shared) || !shared.every(rule => typeof rule?.path === 'string' && stringList(rule.with))) return null;
+      features.set(value.id, { frontend: value.owns.frontend, frontendAny: shared, supportFiles: value.backend.supportFiles });
+    }
+    const presets = presetsFile?.presets;
+    if (!Array.isArray(presets) || presets.length === 0 || new Set(presets.map(preset => preset?.id)).size !== presets.length
+      || !presets.every(preset => typeof preset?.id === 'string' && stringList(preset.domains)
+        && preset.domains.every(domain => features.has(domain)))) return null;
+    return { presets, features };
   } catch {
-    // Standalone exports intentionally do not carry the root profile catalog.
-    // Missing or unreadable ownership evidence must expand to every profile,
-    // never skip verification or make an independent artifact unusable.
     return null;
   }
 }
 
-const REUSABLE_MANIFEST = loadReusableManifest();
-const REUSABLE_PROFILE_NAMES = REUSABLE_MANIFEST
-  ? Object.keys(REUSABLE_MANIFEST.profiles)
-  : DEFAULT_REUSABLE_PROFILE_NAMES;
+const COMPOSER_MODULES = loadComposerModules();
+
+/**
+ * 재사용 생성 검증의 시작 구성 이름(11단계 C8 — 종전에는 이 파일에 이름을 열거해 두고 읽지 못하면 그것으로 닫았다). 기능 파일의 모양이
+ * 달라 소유를 읽지 못해도 시작 구성 id 는 presets.json 에서 따로 읽어 모든 시작 구성·두 레이아웃으로 닫는다. 재사용 생성기도 시작 구성
+ * 선언도 없는 트리(독립 이관 제품)는 재사용 생성 대상이 없으므로 빈 목록이다. 그 밖에 시작 구성 선언을 읽지 못하면 분류를 멈춘다 —
+ * 검증할 구성을 모르는 채로 재사용 검증을 건너뛰지 않는다.
+ */
+function reusableProfileNames() {
+  if (COMPOSER_MODULES) return COMPOSER_MODULES.presets.map(preset => preset.id);
+  if (!existsSync(MODULES_DIRECTORY) && !existsSync(REUSABLE_GENERATOR)) return [];
+  return presetIds(REPO_ROOT);
+}
+const REUSABLE_PROFILE_NAMES = reusableProfileNames();
 
 const REUSABLE_LAYOUTS = Object.freeze(['multi-module', 'single-module']);
 
 /**
- * PR 은 시작 구성마다 이 표의 레이아웃 하나만 생성·검증한다(ADR-0027). main push·수동 실행·이벤트 미상과
- * 표에 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃 전수다 — 표가 낡아도 덮개가 줄지 않는 쪽으로 닫힌다.
- * PR 이 놓친 레이아웃 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의 E2E 와 같은 수용 위험).
- * 매니페스트 v2(11단계)에서 이 표를 시작 구성 선언으로 옮긴다.
+ * PR 은 시작 구성마다 presets.json 의 `ci.pr` 레이아웃 하나만 생성·검증한다(ADR-0027, 11단계 C5 에서 이 파일의 표를 시작 구성
+ * 선언으로 옮겼다). `ci.pr` 이 null 이면 그 시작 구성은 PR 에서 빼고 main·T2 에서만 돈다(DEC-OPS-296 — 13b 의 인증 시작 구성은
+ * 기능이 모두 demo 에 있어 PR 의 demo 가 같은 코드를 생성·검증하고, 그 구성의 생성기 계획은 PR 의 운영 계약이 대조한다).
+ * main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 시작 구성(새로 더한 시작 구성 포함)은 두 레이아웃 전수다 — 선언이 빠져도
+ * 덮개가 줄지 않는 쪽으로 닫힌다. PR 이 놓친 회귀는 병합 뒤 main 전수가 잡는다(ADR-0023 의 E2E 와 같은 수용 위험). 값의 검사는
+ * reusableMatrix 가 한다 — 모르는 레이아웃은 넘기지 않고 분류를 실패시킨다.
  */
-export const PR_REUSABLE_LAYOUT = Object.freeze({
-  // 제거가 가장 많고 단일 모듈 변환이 함께 일어나는 경로다.
-  core: 'single-module',
-  collaboration: 'multi-module',
-  // Java 제거가 0이라 멀티 모듈 생성물은 backend-scope·frontend-scope 와 겹친다.
-  demo: 'single-module',
-});
+export const PR_REUSABLE_LAYOUT = Object.freeze(Object.fromEntries((COMPOSER_MODULES?.presets ?? [])
+  .filter(preset => preset.ci !== undefined && preset.ci !== null && Object.hasOwn(preset.ci, 'pr'))
+  .map(preset => [preset.id, preset.ci.pr])));
 
-export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES, { event = '', prLayouts = PR_REUSABLE_LAYOUT } = {}) {
+/**
+ * main push·수동 실행에서 검증할 레이아웃(`ci.main`, DEC-OPS-296). main 은 늘 두 레이아웃 전수라(ADR-0027 결정 2) 선언은 그 사실을
+ * 적을 뿐이고, 하나라도 빠지거나 모르는 값이면 분류를 멈춘다. PR 에서 빼는 시작 구성(`ci.pr: null`)은 이것을 적어야 한다 —
+ * 'PR 에서 뺀다' 가 'CI 에서 뺀다' 로 바뀌지 않게, 빠뜨리면 그 시작 구성을 고르는 순간 분류가 멈춘다.
+ */
+export const MAIN_REUSABLE_LAYOUTS = Object.freeze(Object.fromEntries((COMPOSER_MODULES?.presets ?? [])
+  .filter(preset => preset.ci !== undefined && preset.ci !== null && (Object.hasOwn(preset.ci, 'main') || preset.ci.pr === null))
+  .map(preset => [preset.id, preset.ci.main])));
+
+export function reusableMatrix(profileNames = REUSABLE_PROFILE_NAMES,
+  { event = '', prLayouts = PR_REUSABLE_LAYOUT, mainLayouts = MAIN_REUSABLE_LAYOUTS } = {}) {
   const pullRequest = event === 'pull_request';
   return {
     include: profileNames.flatMap(profile => {
-      const narrowed = pullRequest && Object.hasOwn(prLayouts, profile) ? prLayouts[profile] : null;
-      if (narrowed !== null && !REUSABLE_LAYOUTS.includes(narrowed)) {
-        throw new Error(`unknown PR reusable layout for ${profile}: ${narrowed}`);
+      if (Object.hasOwn(mainLayouts, profile)) {
+        const declared = mainLayouts[profile];
+        if (!Array.isArray(declared) || declared.length !== REUSABLE_LAYOUTS.length
+          || !REUSABLE_LAYOUTS.every(layout => declared.includes(layout))) {
+          throw new Error(`main reusable layouts for ${profile} must be every layout: ${JSON.stringify(declared ?? null)}`);
+        }
       }
-      return (narrowed ? [narrowed] : REUSABLE_LAYOUTS).map(layout => ({ profile, layout }));
+      if (pullRequest && Object.hasOwn(prLayouts, profile)) {
+        const narrowed = prLayouts[profile];
+        // PR 에서 빼는 시작 구성 — main·수동 실행과 T2 에서만 돈다.
+        if (narrowed === null) return [];
+        if (!REUSABLE_LAYOUTS.includes(narrowed)) throw new Error(`unknown PR reusable layout for ${profile}: ${narrowed}`);
+        return [{ profile, layout: narrowed }];
+      }
+      return REUSABLE_LAYOUTS.map(layout => ({ profile, layout }));
     }),
   };
 }
@@ -194,6 +238,43 @@ const CROSS_STACK_CONTRACT = [
   /^Dockerfile$/,
 ];
 
+/**
+ * 생성기·도구 전용 경로(11단계 C11, CI 2차-b — 설계 13장 '투영 무영향 경로 목록은 계약으로 고정'). 재사용 생성기·생성기
+ * 화면·기능 선언만 바꾼 변경은 종전에 미분류 경로라 전 파이프라인을 돌았다(병합 PR 41개 중 16개). 이 표의 경로는 알려진
+ * 경로다 — 모든 시작 구성과 사용자 구성의 재사용 검증, 늘 도는 운영 계약(secret-scan), SAST 를 고르고, 그 밖의 축은
+ * 항목의 `axes` 만 켠다. 경로 문자열의 접두로 맞추고 먼저 맞는 항목이 이긴다.
+ *
+ * `axes` 는 그 경로를 문자열로 가리키거나(디렉터리째 읽기 포함) 실행하는 시험·조건부 CI 진입점이 도는 축이다. 운영 계약
+ * (ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 ci.yml 에서 다시 계산해 항목마다 정확히 같은지 본다 —
+ * 시험이 표의 경로를 새로 읽으면 그 축을 켜야 통과하고, 읽는 시험이 사라지면 축을 내려야 통과한다. 분류기 자신이 읽는
+ * composition-profiles.mjs 는 넣지 않는다(분류기가 자기 입력의 변경을 좁게 분류하지 않게 한다).
+ */
+export const GENERATOR_TOOL_PATHS = Object.freeze([
+  // 기능 선언(매니페스트 v2). 하네스가 생성물 표지(presets.json)와 디렉터리를, 기본 관리자 시드 스키마 검증이 기능 파일을
+  // 읽고, 생성기 화면 시험이 카탈로그를 실행한다.
+  { path: 'config/modules/', axes: ['backend', 'e2e', 'schema'] },
+  // 생성기 메뉴 스냅숏. 탭 목적지 cross-stack 계약도 읽는다.
+  { path: 'config/project-composer-menus.json', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
+  { path: 'scripts/composer-modules', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/domain-deletion-plan', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/verify-project-composer', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
+  // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
+  { path: 'tools/project-composer/', axes: ['e2e'] },
+].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
+
+export function generatorToolEntry(file) {
+  return GENERATOR_TOOL_PATHS.find(entry => normalizeFile(file).startsWith(entry.path)) ?? null;
+}
+
+function selectsToolAxis(file, axis) {
+  return generatorToolEntry(file)?.axes.includes(axis) ?? false;
+}
+
 function normalizeFile(file) {
   return String(file).trim().replaceAll('\\', '/').replace(/^\.\//, '');
 }
@@ -221,7 +302,8 @@ function isFrontend(file) {
 }
 
 function isKnown(file) {
-  return isDocumentationOnly(file) || isBackend(file) || isMigration(file) || isFrontend(file);
+  return isDocumentationOnly(file) || isBackend(file) || isMigration(file) || isFrontend(file)
+    || generatorToolEntry(file) !== null;
 }
 
 /**
@@ -235,35 +317,38 @@ function isE2eRelevant(file) {
   return matchesAny(file, E2E_RELEVANT) || /^frontend\//.test(file);
 }
 
+/**
+ * 파일 하나가 바꾸는 시작 구성 — 파일 → 소유 기능 → 그 파일이 남는 시작 구성이다(매니페스트 v2, 11단계 C5). 소유는 생성기 투영과 같은
+ * 규칙이다: 업무 앱의 기능 패키지(business-app 의 domain·service/<기능 id>)와 기능 파일의 지원 파일(backend.supportFiles)은 그 기능이
+ * 있어야 남고, 화면 경로(owns.frontend)는 그 경로를 덮는 기능이 모두 있어야, 함께 소유한 화면(owns.frontendAny)은 그 기능이나 with
+ * 기능 가운데 하나라도 있어야 남는다. 그 조건을 모두 채우는 시작 구성을 고른다 — 연쇄 제거는 보지 않으므로 실제로 남는 구성보다
+ * 넓은 쪽이다. 공통 모듈·api-server·기능이 정해지지 않는 파일은 모든 시작 구성이다(fail-closed). config/modules 자체와 생성기·도구
+ * 전용 경로(GENERATOR_TOOL_PATHS)도 소유 기능이 없어 모든 시작 구성이다 — 빠진 기능의 선언(화면 경로 등)도 그 기능이 없는 구성의
+ * 생성물을 바꾼다.
+ */
 function reusableProfilesForFile(file) {
   if (isDocumentationOnly(file)) return [];
-  if (!REUSABLE_MANIFEST) return REUSABLE_PROFILE_NAMES;
+  if (!COMPOSER_MODULES) return REUSABLE_PROFILE_NAMES;
 
-  // business-app pack domains are physically removed from profiles that do not
-  // include their owner pack. Common modules, support code and unclassified
-  // paths remain fail-closed to every profile.
-  const backendDomain = file.match(
+  const { features, presets } = COMPOSER_MODULES;
+  // 각 항목은 "이 기능들 가운데 하나라도 있어야 남는다" 다. 시작 구성은 모든 항목을 채워야 고른다.
+  const survivalConditions = [];
+  const backendFeature = file.match(
     /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([^/]+)\//,
   )?.[1];
-  const backendPack = backendDomain && Object.entries(REUSABLE_MANIFEST.packs)
-    .find(([, pack]) => pack.backend?.appDomains?.includes(backendDomain))?.[0];
-
+  if (backendFeature && features.has(backendFeature)) survivalConditions.push([backendFeature]);
   const frontendRelative = file.startsWith('frontend/') ? file.slice('frontend/'.length) : '';
-  const frontendPacks = frontendRelative
-    ? Object.entries(REUSABLE_MANIFEST.packs)
-      .filter(([, pack]) => pack.frontend?.removePaths?.some(
-        removed => frontendRelative === removed || frontendRelative.startsWith(`${removed}/`),
-      ))
-      .map(([packName]) => packName)
-    : [];
+  const covers = owned => frontendRelative !== ''
+    && (frontendRelative === owned || frontendRelative.startsWith(`${owned}/`));
+  for (const [id, feature] of features) {
+    if (feature.supportFiles.includes(file) || feature.frontend.some(covers)) survivalConditions.push([id]);
+    for (const rule of feature.frontendAny) if (covers(rule.path)) survivalConditions.push([id, ...rule.with]);
+  }
+  if (survivalConditions.length === 0) return REUSABLE_PROFILE_NAMES;
 
-  const ownerPacks = new Set([backendPack, ...frontendPacks].filter(Boolean));
-  if (ownerPacks.size === 0) return REUSABLE_PROFILE_NAMES;
-
-  return REUSABLE_PROFILE_NAMES.filter(profileName => {
-    const packs = new Set(REUSABLE_MANIFEST.profiles[profileName].packs);
-    return [...ownerPacks].some(pack => packs.has(pack));
-  });
+  return presets
+    .filter(preset => survivalConditions.every(condition => condition.some(domain => preset.domains.includes(domain))))
+    .map(preset => preset.id);
 }
 
 function selectedReusableProfiles(files, { full, docsOnly }) {
@@ -284,20 +369,24 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = forceFull || files.length === 0 || unknownFiles.length > 0;
   const docsOnly = !full && files.every(isDocumentationOnly);
-  const atlas = files.some(file => file === 'frontend/public/governance_harness_atlas.html'
+  // 생성기·도구 전용 경로는 표의 축만 켠다(GENERATOR_TOOL_PATHS). 재사용 검증은 아래 selectedReusableProfiles 가 고른다 —
+  // 이 경로는 기능 소유가 없어 모든 시작 구성이다.
+  const tool = axis => files.some(file => selectsToolAxis(file, axis));
+  const atlas = tool('atlas') || files.some(file => file === 'frontend/public/governance_harness_atlas.html'
     || file.startsWith('frontend/atlas/')
     || file === 'scripts/build-atlas.mjs'
     || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
-  const backend = full || files.some(isBackend);
-  const migration = full || files.some(isMigration);
-  const frontend = full || files.some(isFrontend) || files.includes('api-docs.json');
+  const backend = full || files.some(isBackend) || tool('backend');
+  const migration = full || files.some(isMigration) || tool('migration');
+  const frontend = full || files.some(isFrontend) || files.includes('api-docs.json') || tool('frontend');
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
-  const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT));
-  const e2e = full || crossStack || files.some(isE2eRelevant);
-  const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT));
-  const mutationMigrationTool = full || files.some(isMigrationToolMutation);
+  const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT)) || tool('schema');
+  const e2e = full || crossStack || files.some(isE2eRelevant) || tool('e2e');
+  const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT)) || tool('mutation');
+  const mutationMigrationTool = full || files.some(isMigrationToolMutation) || tool('mutationMigrationTool');
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
   const reusableCustom = reusableProfiles.includes('core');
+  const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });
 
   return {
     files,
@@ -314,10 +403,11 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
     e2e,
     mutation,
     mutationMigrationTool,
-    reusable: reusableProfiles.length > 0,
+    // PR 에서 고른 시작 구성이 모두 PR 제외(ci.pr: null)면 생성할 항목이 없다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
+    reusable: reusableProfiles.length > 0 && matrix.include.length > 0,
     reusableCustom,
     reusableProfiles,
-    reusableMatrix: reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event }),
+    reusableMatrix: matrix,
   };
 }
 

@@ -5,20 +5,20 @@ import { createRequire } from 'node:module';
 import { join, posix, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
+import { presetIds } from './composition-profiles.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { composerProfile } from './project-composer-source.mjs';
-import { createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
+import { createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
-import { SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles, slotConsumersByHub, slotPathKind,
-  slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_CONSUMER_PARTITION_KEYS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles,
+  slotConsumerPartition, slotConsumersByHub, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { readContributionEntries } from './operation-consumer-census.mjs';
 import { runInNewContext } from 'node:vm';
 
 // TypeScript 는 frontend 가 잠근 판(pnpm-lock)을 쓴다. 생성물의 tsc 와 같은 컴파일러다.
 const require = createRequire(new URL('../frontend/package.json', import.meta.url));
 const ts = require('typescript');
-const manifest = JSON.parse(readFileSync(new URL('../config/reusable-base-profiles.json', import.meta.url), 'utf8'));
 const paths = {
   search: 'frontend/src/app/search/SearchClient.tsx',
   monitoring: 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
@@ -26,10 +26,21 @@ const paths = {
 };
 const sources = Object.fromEntries(Object.entries(paths).map(([key, path]) => [key, readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')]));
 
-// 생성기·정밀 점검과 같은 projector 로 투영한다(슬롯 단계 PR-2). transpileModule 은 문자열 단언이 볼 본문을 만드는 데만 쓴다
-// (주석을 걷고 JSX 를 호출로 바꾼다). 투영 뒤의 구문·타입 오류는 아래 투영 타입 검사가 생성물과 같은 tsconfig 로 본다(PR-3).
+// 생성기·정밀 점검과 같은 projector 로 투영한다(슬롯 단계 PR-2). 시작 구성도 해석기의 구성으로 투영한다(11단계 C3).
+// transpileModule 은 문자열 단언이 볼 본문을 만드는 데만 쓴다(주석을 걷고 JSX 를 호출로 바꾼다). 투영 뒤의 구문·타입 오류는
+// 아래 투영 타입 검사가 생성물과 같은 tsconfig 로 본다(PR-3).
+let presetCatalog;
+const presetCompositions = new Map();
+function presetComposition(id) {
+  presetCatalog ??= loadProjectComposerCatalog(resolve(import.meta.dirname, '..'));
+  if (!presetCompositions.has(id)) {
+    presetCompositions.set(id, resolveProjectRecipe({ schemaVersion: 1, project: { name: 'boundary-probe' }, sourceRef: 'main', selection: { preset: id },
+      database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, presetCatalog));
+  }
+  return presetCompositions.get(id);
+}
 function projected(source, profile, label) {
-  const result = createFrontendProjector({ manifest, profile: manifest.profiles[profile] }).project(label, source);
+  const result = createFrontendProjector({ composition: presetComposition(profile) }).project(label, source);
   return ts.transpileModule(result.source, {
     fileName: label,
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX, removeComments: true, verbatimModuleSyntax: true },
@@ -40,13 +51,15 @@ function projected(source, profile, label) {
 const MODERATION = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
 const moderationSource = existsSync(MODERATION) ? readFileSync(MODERATION, 'utf8') : null;
 
+// 기대는 시작 구성 이름이 아니라 그 구성의 기능으로 정한다(11단계 C8) — 시작 구성이 늘어도 규칙이 그대로 맞는다.
 function boundaryErrors(source, profile, feature, moderation = moderationSource) {
   const text = projected(source, profile, paths[feature]);
+  const domains = new Set(presetComposition(profile).resolvedDomains);
   const errors = [];
   if (feature === 'search') {
     if (!text.includes('userSearchService.searchAssignableUsers(query)') || !text.includes('menuService.getHeadMenus()')) errors.push('core search was removed');
-    if (profile === 'core' && /boardUserService|ArticleResultItem|ArrowRight|MessageSquare|id: ['"]articles['"]/.test(text)) errors.push('excluded board search leaked into core');
-    if (profile !== 'core' && !text.includes('boardUserService.searchPosts(query)')) errors.push('included board search was removed');
+    if (!domains.has('board') && /boardUserService|ArticleResultItem|ArrowRight|MessageSquare|id: ['"]articles['"]/.test(text)) errors.push(`excluded board search leaked into ${profile}`);
+    if (domains.has('board') && !text.includes('boardUserService.searchPosts(query)')) errors.push('included board search was removed');
   }
   if (feature === 'monitoring') {
     for (const call of ['auditAdminService.getAuditLogs', 'systemLogAdminService.getSystemLogs', 'systemLogAdminService.getLoginLogs']) {
@@ -57,20 +70,20 @@ function boundaryErrors(source, profile, feature, moderation = moderationSource)
       errors.push('comments returned to the monitoring hub');
     }
     // 그 화면은 댓글과 함께 남고 빠진다(투영 마커가 아니라 파일 소유). 남는 구성에서는 삭제 통제(확인 뒤 대행 삭제)를 지킨다.
-    if (profile !== 'core' && moderation !== null) {
+    if (domains.has('comment') && moderation !== null) {
       if (!moderation.includes('commentMutationOptions.removeAdmin') || !moderation.includes('await confirm(')) errors.push('comment deletion lost its control');
     }
   }
   if (feature === 'maker') {
     if (!text.includes('boardAdminService.createBoardMaster(') || !text.includes('menuAdminService.createMenu(')) errors.push('included board creation was removed');
-    if (profile !== 'demo' && /communityUserService|communityOptions|htmlFor: ['"]cmntySn['"]/.test(text)) errors.push('excluded community ownership leaked into collaboration');
-    if (profile === 'demo' && !text.includes('communityUserService.getCommunityList(')) errors.push('included community selection was removed');
+    if (!domains.has('community') && /communityUserService|communityOptions|htmlFor: ['"]cmntySn['"]/.test(text)) errors.push(`excluded community ownership leaked into ${profile}`);
+    if (domains.has('community') && !text.includes('communityUserService.getCommunityList(')) errors.push('included community selection was removed');
   }
   return errors;
 }
 
-for (const profile of ['core', 'collaboration', 'demo']) {
-  test(`${profile} retains shared UI and includes optional axes only with their declared packs`, () => {
+for (const profile of presetIds()) {
+  test(`${profile} retains shared UI and includes optional axes only with their owning features`, () => {
     for (const [feature, source] of Object.entries(sources)) {
       // The maker belongs to collaboration; its internal demo boundary is checked here
       // even for core as a string fixture, while the artifact route inventory rejects it in core.
@@ -84,38 +97,41 @@ for (const profile of ['core', 'collaboration', 'demo']) {
  * 근거를 품으면 종류가 프로필마다 갈려, 원본 원장으로 계산한 화면 생존 기대값과 투영 뒤 본문을 보는 거버넌스 투영이 어긋난다.
  */
 test('a page marker block cannot carry a redirect call or a return, and next.config cannot carry markers', () => {
-  // 규칙은 공용 파서가 지키므로 블록을 걷는 프로필(core)·남기는 프로필(demo)·직접 선택 투영이 모두 같은 자리에서 실패한다.
+  // 규칙은 공용 파서가 지키므로 블록을 걷는 구성(core)·남기는 구성(demo)·직접 선택 투영(생성기·정밀 점검·도달성 census)이 모두 같은
+  // 자리에서 실패한다(11단계 C5 — pack 투영을 걷었다).
   const projectors = {
-    core: createFrontendProjector({ manifest, profile: manifest.profiles.core }),
-    demo: createFrontendProjector({ manifest, profile: manifest.profiles.demo }),
-    custom: createFrontendProjector({ manifest, profile: { packs: ['core'], frontendRemovePaths: [] }, composition: { profile: 'custom', resolvedDomains: [] } }),
+    core: createFrontendProjector({ composition: presetComposition('core') }),
+    demo: createFrontendProjector({ composition: presetComposition('demo') }),
+    custom: createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } }),
   };
-  const knownPacks = new Set(Object.keys(manifest.packs));
-  const block = body => `export default function Page() {\n  // reusable-base:demo:start\n${body}\n  // reusable-base:demo:end\n  return null;\n}\n`;
+  // 토큰은 기능 id 다(11단계 C6). 커뮤니티 블록은 core 에서 걷히고 demo 에서 남는다.
+  const block = body => `export default function Page() {\n  // reusable-base:community:start\n${body}\n  // reusable-base:community:end\n  return null;\n}\n`;
   for (const body of ["  redirect('/x');", '  return <Demo />;']) {
     for (const label of ['src/app/demo/page.tsx', 'frontend/src/app/demo/page.tsx']) {
-      assert.throws(() => projectors.core.project(label, block(body)), /page 파일의 pack 마커 블록은 redirect 호출이나 return 을 품을 수 없다/,
+      assert.throws(() => projectors.core.project(label, block(body)), /page 파일의 마커 블록은 redirect 호출이나 return 을 품을 수 없다/,
         'a page block may not carry a redirect or return');
     }
   }
   // 남기는 블록이어도, 직접 선택 투영이어도 같다 — 프로필마다 갈리는 것이 문제다.
   assert.throws(() => projectors.demo.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
   assert.throws(() => projectors.custom.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
-  assert.throws(() => parsePackMarkerBlocks(block("  redirect('/x');"), { knownPacks, label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
-  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 통과한다.
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/page.tsx', block('  // return later')));
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/DemoClient.tsx', block("  redirect('/x');")));
-  assert.doesNotThrow(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')));
+  assert.throws(() => parseMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
+  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 파서를 통과한다. 구성 투영은 기능 파일에 선언하지 않은 블록을
+  // 거부하므로(11단계 C3·C6) 파서 대조군은 공용 파서로 직접 본다.
+  assert.doesNotThrow(() => parseMarkerBlocks(block('  // return later'), { label: 'src/app/demo/page.tsx' }));
+  assert.doesNotThrow(() => parseMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/DemoClient.tsx' }));
+  assert.doesNotThrow(() => parseMarkerBlocks(block('  const x = 1;'), { label: 'src/app/demo/page.tsx' }));
+  assert.throws(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')), /Unclassified composer UI block: src\/app\/demo\/page\.tsx\/community/);
   // next.config 의 리다이렉트 선언은 거버넌스 투영이 정리하므로 마커를 두지 않는다. Next 가 읽는 설정 파일 전부(Next 16 은 .mts 도
   // 읽는다)이고, 투영 판정(isFrontendModuleFile)처럼 확장자 대소문자를 가리지 않는다.
   for (const label of ['next.config.ts', 'next.config.mts', 'frontend/next.config.mts', 'next.config.mjs', 'next.config.js', 'next.config.MTS']) {
-    assert.throws(() => projectors.core.project(label, block('  const x = 1;')), /next\.config 는 pack 마커를 둘 수 없다/,
-      `${label} cannot carry pack markers`);
+    assert.throws(() => projectors.core.project(label, block('  const x = 1;')), /next\.config 는 마커를 둘 수 없다/,
+      `${label} cannot carry markers`);
   }
 });
 
 test('unscoped optional imports and removed shared service calls are reproducible reds', () => {
-  const importLeak = sources.search.replace('/* reusable-base:collaboration:start */', '').replace('/* reusable-base:collaboration:end */', '');
+  const importLeak = sources.search.replace('/* reusable-base:board:start */', '').replace('/* reusable-base:board:end */', '');
   assert.match(boundaryErrors(importLeak, 'core', 'search').join('\n'), /excluded board search/);
   const deletedCoreSearch = sources.search.replace('userSearchService.searchAssignableUsers(query)', 'Promise.resolve([])');
   assert.match(boundaryErrors(deletedCoreSearch, 'core', 'search').join('\n'), /core search was removed/);
@@ -198,8 +214,7 @@ function projectedTree(selection, inputs) {
   const { files, original, scope, catalog } = inputs;
   const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'projection-type-check' }, sourceRef: 'main', selection,
     database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, catalog);
-  const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition,
-    files: files.map(path => normalize(relative(frontendRoot, path))) });
+  const projector = createFrontendProjector({ composition, files: files.map(path => normalize(relative(frontendRoot, path))) });
   const projectedSources = new Map(files.filter(isFrontendModuleFile)
     .map(path => [path, projector.project(normalize(relative(frontendRoot, path)), original(path)).source]));
   const plan = planFrontendRemoval({ frontendRoot, files, directPaths: projector.directPaths, readSource: path => projectedSources.get(path) });
@@ -652,7 +667,7 @@ function homeSectionViolations(entries, label, { file, importedFrom, readModule 
 }
 
 /**
- * 기여 파일 하나의 함정 규칙 위반. `ownPaths` 는 그 기능의 FEATURES.paths, `foreignPaths` 는 다른 기능의 FEATURES.paths 합집합이다
+ * 기여 파일 하나의 함정 규칙 위반. `ownPaths` 는 그 기능의 owns.frontend, `foreignPaths` 는 다른 기능의 owns.frontend 합집합이다
  * (둘 다 frontend 기준).
  * - .ts 만, JSX 금지, 최상위 문장은 import 와 default export(defineContributions('<파일 이름>', [...])) 하나뿐이다. 이름 있는 export·
  *   지역 선언·식 문장은 두지 않는다 — 모듈을 읽기만 해도 무언가 하는 기여(최상위 호출)를 막는다.
@@ -776,7 +791,7 @@ test('slot registries: the source registry is the render of its contributions an
   for (const selection of [{ preset: 'demo' }, { domains: everyFeature }]) {
     const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'slot-parity' }, sourceRef: 'main', selection,
       database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, inputs.catalog);
-    const projector = createFrontendProjector({ manifest, profile: composerProfile(manifest, composition), composition, files });
+    const projector = createFrontendProjector({ composition, files });
     assert.deepEqual(projector.directPaths, [], `${JSON.stringify(selection)} removes nothing directly`);
     const changed = inputs.files.filter(isFrontendModuleFile).filter(path => {
       const original = inputs.original(path);
@@ -803,6 +818,66 @@ test('slot names are one spelling: SlotMap keys, registries and contribution fil
   const probe = readFileSync(SLOTS_SOURCE, 'utf8').replace("'recipient-picker-sources': RecipientPickerSource;",
     "'recipient-picker-sources': RecipientPickerSource;\n  'probe-slot': RecipientPickerSource;");
   assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'probe-slot'].sort(), 'the key reader sees an added key');
+});
+
+/** 통계 패널(stats-panels) 항목 타입이 두는 배치(placement 리터럴). slots.ts 의 통계 타입 구간에서 읽는다. */
+function statsPanelPlacements(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
+  const start = source.indexOf('interface StatsHubTabBase');
+  const end = source.indexOf('export type StatsPanel =');
+  assert.ok(start >= 0 && end > start, 'slots.ts declares the stats panel types before the StatsPanel union');
+  return [...new Set([...source.slice(start, end).matchAll(/readonly placement: '([a-z][a-z0-9-]*)'/gu)].map(match => match[1]))].sort();
+}
+
+/**
+ * 소비자를 값별로 나눈 슬롯의 기여 항목 가운데 표에 그 값의 소비자가 없는 항목(10단계 10a). 판독기는 축 3 의 항목 단위 판독기 하나다.
+ * files 는 frontend 기준 경로 → 원문, table 은 소비자 표다.
+ */
+function partitionViolations(files, table = SLOT_REGISTRY_CONSUMERS) {
+  const violations = [];
+  for (const [file, source] of files) {
+    const kind = slotPathKind(file);
+    if (kind?.kind !== 'contribution') continue;
+    const partition = slotConsumerPartition(kind.slot, table);
+    if (!partition) continue;
+    const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    for (const entry of readContributionEntries(ts, ast)) {
+      const value = entry[partition.key];
+      if (typeof value !== 'string' || !Object.hasOwn(partition.consumers, value) || partition.consumers[value].length === 0) {
+        violations.push(`frontend/${kind.file} ${entry.id}: ${partition.key} '${value}' 를 그리는 소비자가 없다(소비자 없는 배치)`);
+      }
+    }
+  }
+  return violations.sort();
+}
+
+test('partitioned consumer rows: the values are the slot type values, and every contribution item names a value with consumers', () => {
+  const inputs = readProjectionInputs();
+  const files = new Map(inputs.files.map(file => [frontendRel(file), inputs.original(file)])
+    .filter(([file]) => slotPathKind(file)?.kind === 'contribution'));
+  assert.deepEqual(partitionViolations(files), [], 'every item of a partitioned slot is drawn by a consumer of its value');
+  assert.deepEqual(Object.keys(SLOT_CONSUMER_PARTITION_KEYS).sort(), ['hub-tabs', 'stats-panels']);
+  assert.deepEqual(Object.keys(slotConsumerPartition('hub-tabs').consumers).sort(), [...hubViewKeys()].sort(), 'hub-tabs: one row per hub view');
+  assert.deepEqual(Object.keys(slotConsumerPartition('stats-panels').consumers).sort(), statsPanelPlacements(),
+    'stats-panels: one row per placement of the stats panel types');
+  assert.deepEqual(statsPanelPlacements(), ['hub-tab', 'overview-card']);
+  // 대조: 요약 칸의 소비자 행을 지운 표 — 게시판의 '누적 게시물' 칸을 그리는 소비자가 없다.
+  const withoutOverview = { ...SLOT_REGISTRY_CONSUMERS, 'stats-panels': { 'hub-tab': SLOT_REGISTRY_CONSUMERS['stats-panels']['hub-tab'] } };
+  const board = 'src/extensions/board/stats-panels.ts';
+  if (files.has(board)) {
+    assert.deepEqual(partitionViolations(new Map([[board, files.get(board)]]), withoutOverview),
+      [`frontend/${board} TOTAL_POSTS: placement 'overview-card' 를 그리는 소비자가 없다(소비자 없는 배치)`]);
+  }
+  // 대조: 모르는 배치·배치 없는 항목·모르는 허브.
+  const synthetic = new Map([
+    ['src/extensions/probe/stats-panels.ts', "export default [{ id: 'A', placement: 'bogus', visibleWhen: { always: '시험' } },\n"
+      + "  { id: 'B', visibleWhen: { always: '시험' } }];\n"],
+    ['src/extensions/probe/hub-tabs.ts', "export default [{ id: 'C', hub: 'nowhere', visibleWhen: { always: '시험' } }];\n"],
+  ]);
+  assert.deepEqual(partitionViolations(synthetic), [
+    "frontend/src/extensions/probe/hub-tabs.ts C: hub 'nowhere' 를 그리는 소비자가 없다(소비자 없는 배치)",
+    "frontend/src/extensions/probe/stats-panels.ts A: placement 'bogus' 를 그리는 소비자가 없다(소비자 없는 배치)",
+    "frontend/src/extensions/probe/stats-panels.ts B: placement 'null' 를 그리는 소비자가 없다(소비자 없는 배치)",
+  ]);
 });
 
 /** 원본(또는 생성물)의 hub-tabs 기여 항목 (hub, id, 파일). 생성물에서 투영으로 빠진 기여는 없다. */

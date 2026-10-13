@@ -3,19 +3,25 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
-import { describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
+import { convergeRedirectPages, describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
-import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
+import { assertComposerSourceSurvives, composerProfile } from './project-composer-source.mjs';
+import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
+import { planPermissionProjection, readPermissionSources } from './reusable-permission-projection.mjs';
+import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
+import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
+import { describeContractReferences, isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
  * 디스크를 바꾸지 않고 미리 한다. 판정 함수는 생성기와 같은 것을 쓴다(planJavaRemoval·createFrontendProjector·planFrontendRemoval·
- * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement). 그래서 여기서 찾은 차단 사유는 생성하면
- * 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
+ * 화면 생존 대조(pageSurvivalViolations)·assertComposerSourceSurvives·규칙 제거 선택·removedGateAcknowledgement·
+ * api-docs 투영(projectSourceApiDocs)·사라진 계약 이름 참조(vanishedContractReferences)·권한 투영(planPermissionProjection)).
+ * 그래서 여기서 찾은 차단 사유는 생성하면 같은 자리에서 실패할 사유다. 투영 뒤의 DB 번들·ZDM 원장·하네스 단계는 보지 않는다.
  * 규칙으로 걷는 게이트(과거 마이그레이션 검증·원본 Atlas)는 승인만 대조하고 제거 수에는 세지 않는다.
  */
 const FRONTEND_GATE_DIR = 'frontend/src/__tests__/';
@@ -58,7 +64,10 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   JAVA_CASCADE_UNACKNOWLEDGED: '승인되지 않은 Java 파일이 연쇄로 지워집니다',
   JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
+  API_CONTRACT_PROJECTION: 'API 계약(api-docs)을 투영할 수 없습니다',
+  API_CONTRACT_REFERENCE: '남는 코드가 구성에서 빠진 API 계약 이름을 씁니다',
   FRONTEND_SCREEN_EXTRA: '구성에 없는 화면이 투영 뒤에 남습니다',
+  PERMISSION_PROJECTION: '권한 정의(카탈로그·바인딩·묶음·화면 목록)를 구성으로 줄일 수 없습니다',
 });
 
 /**
@@ -67,10 +76,15 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
  * `outputParent` 는 생성기가 생성물 폴더를 만들 상위 폴더다(없어도 된다). 대소문자 구분을 그 자리에서 판정한다.
  * 차단 사유는 `{ code, label, files?, message? }` 로 모은다. label 은 화면이 그대로 보이는 한국어 문장이다.
  * 화면 생존의 기대값(`pageSurvival`)은 넘기지 않으면 `root` 의 라우트 원장과 카탈로그(`catalog`, 없으면 적재)로 만든다.
+ * 권한 투영 입력(`permissionSources` = 카탈로그·인가 원장·묶음 원장·화면 용어 원장·화면 목록 산출물)은 넘기지 않으면 `root` 에서 읽는다.
+ * API 계약(`apiContract` = { doc, bindings })은 넘기지 않으면 `root` 의 api-docs 와 인가 원장에서 읽는다.
+ * 기능 소유와 시작 구성 기대치는 매니페스트 v2 에서 읽는다(`modules` — loadComposerModules 결과, 없으면 `root` 에서 적재). 생성기와 같다
+ * (11단계 C3) — 시작 구성도 직접 선택과 같은 판정이고 pack 을 보지 않는다.
  */
-export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival }) {
+export function compositionDeepPlan({ root, composition, files, outputParent, catalog, pageSurvival, permissionSources,
+  apiContract: apiContractSource, modules = loadComposerModules(root) }) {
   const started = performance.now();
-  const profile = composerProfile(manifest, composition);
+  const profile = composerProfile(modules, composition);
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
   const pathKey = ignoresCase(root, relativeFiles, outputParent) ? path => path.toLowerCase() : path => path;
   const present = new Set(relativeFiles.map(pathKey));
@@ -80,37 +94,67 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const rel = path => normalize(relative(root, path));
 
   let java = null;
+  let ownership = null;
   try {
+    // 지원 파일 선언은 여기서 검사하며 푼다 — 잘못된 선언은 생성기와 같은 자리(Java 투영)에서 실패한다.
+    ownership = composerOwnership(modules);
     // 제외 도메인 폴더는 디스크가 아니라 복사할 파일 목록에서 훑는다(생성기는 복사한 트리를 훑는다).
     const walkDirectory = directory => {
       const prefix = pathKey(`${directory}${sep}`);
       return relativeFiles.map(file => join(root, file)).filter(path => pathKey(path).startsWith(prefix));
     };
-    const plan = planJavaRemoval(root, manifest, profile, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
+    const plan = planJavaRemoval(root, ownership, profile, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
       { walkDirectory });
     // 생성기는 복사한 트리에서 선언된 지원 파일을 찾는다. 디스크에만 있고 복사되지 않는 파일이면 거기서 실패한다.
-    for (const supportFiles of domainSupportFiles(root, manifest).values()) {
+    for (const supportFiles of ownership.supportFiles.values()) {
       for (const file of supportFiles) if (!present.has(pathKey(file))) throw new Error(`Missing domain support file: ${file}`);
     }
     java = plan;
   } catch (error) { block('JAVA_PROJECTION', { message: message(error) }); }
 
+  // API 계약 투영(10c-2): 핸들러 소스가 지워지는 연산을 api-docs 에서 뺀다. 생성기는 Java 투영 뒤 같은 함수로 생성물 트리를 판정하므로
+  // 바인딩 없는 연산·소스를 찾지 못한 핸들러·셀 수 없는 스키마 참조는 생성하면 같은 자리에서 실패한다.
+  let apiContract = null;
+  let apiProjection = null;
+  if (java) {
+    try {
+      const removedJava = new Set([...java.removed].map(path => pathKey(rel(path))));
+      apiProjection = projectSourceApiDocs(root, file => removedJava.has(pathKey(file)), apiContractSource);
+      apiContract = { ...apiProjection.summary, removedOperationIds: apiProjection.removedOperations.map(operation => operation.operationId).sort(),
+        keptAliasesWithoutBase: apiProjection.keptAliasesWithoutBase };
+    } catch (error) { block('API_CONTRACT_PROJECTION', { message: message(error) }); }
+  }
+
   const frontendRoot = join(root, 'frontend');
-  // 생성기처럼 모든 프런트 모듈 파일에 투영(직접 선택의 소유 기능과 pack 마커를 한 번에)을 먼저 하고, 그 내용으로 import 를 읽는다.
+  // 생성기처럼 모든 프런트 모듈 파일에 투영(구성의 화면 제외 경로와 마커 블록의 소유 기능)을 먼저 하고, 그 내용으로 import 를 읽는다.
   // 곧 지워질 파일의 마커 오류·판정할 수 없는 import 도 생성기는 투영 단계에서 실패하므로 여기서도 차단 사유가 된다.
   // 투영할 파일은 생성기와 같은 판정(isFrontendModuleFile)으로 고른다 — 연쇄 계획이 읽는 모든 파일이 이 맵에 있어야 한다.
   const frontendFiles = relativeFiles.filter(file => file.startsWith('frontend/')).map(file => join(root, file));
   let frontend = null;
+  let projected = new Map();
   try {
     // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
-    const projector = createFrontendProjector({ manifest, profile, composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
+    const projector = createFrontendProjector({ composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
     const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
-    const projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
+    projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
     frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,
       readSource: path => projected.get(path) });
   } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
   const removed = new Set([...(java?.removed ?? []), ...(frontend?.removed ?? [])].map(path => pathKey(rel(path))));
   const kept = file => present.has(pathKey(file)) && !removed.has(pathKey(file));
+  // 남는 프런트 코드가 이 구성에서 사라질 계약 이름을 쓰는지 미리 본다(트랙 K 검토 #2). 생성기는 생성 타입을 다시 만든 직후 같은 판정을
+  // 생성물 트리에서 하고, 사라질 이름이 이 예측과 같은지도 본다. 내용은 투영(마커 걷기) 뒤의 것을 읽는다.
+  if (apiProjection && frontend) {
+    try {
+      const surviving = relativeFiles.filter(file => isContractScopeFile(file) && kept(file));
+      const references = vanishedContractReferences(surviving.map(file => ({ file, source: projected.get(join(root, file)) ?? readFileSync(join(root, file), 'utf8') })),
+        predictFromProjection(root, apiProjection));
+      if (references.hits.length || references.issues.length) {
+        block('API_CONTRACT_REFERENCE', { files: [...new Set([...references.hits, ...references.issues].map(entry => entry.file))].sort(),
+          message: describeContractReferences(references).join(' · ') });
+      }
+    } catch (error) { block('API_CONTRACT_REFERENCE', { message: message(error) }); }
+  }
   // 생성기는 투영 뒤 루트 레이아웃이 디스크에 있는지 본다(pruneFrontend). 원본에 없거나 연쇄로 지워지면 같은 자리에서 실패한다.
   // 화면(홈·로그인 포함)은 아래 화면 생존 대조가 본다.
   const lostEntries = frontend ? FRONTEND_ENTRIES.map(entry => `frontend/${entry}`).filter(file => !kept(file)) : [];
@@ -121,13 +165,30 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const exactFiles = new Set(relativeFiles);
   const screenKept = file => exactFiles.has(file) && !removed.has(pathKey(file));
   const lostScreens = [];
+  let routeRows = null;
   if (frontend) {
     try {
       const expectation = pageSurvival ?? pageSurvivalExpectation({ root, catalog: catalog ?? loadProjectComposerCatalog(root), composition });
       const { missing: screens, extra } = pageSurvivalViolations({ ...expectation, survives: screenKept });
+      // 같은 원장으로 수렴할 수 없으면(위에서 실패) 권한 투영은 판정하지 않는다 — 차단 사유는 FRONTEND_PROJECTION 하나다.
+      routeRows = expectation.rows;
       lostScreens.push(...screens.map(entry => entry.source));
       if (extra.length) block('FRONTEND_SCREEN_EXTRA', { files: extra.map(entry => entry.source), message: describeRoutes(extra) });
     } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
+  }
+
+  // 권한 투영(10단계 10b): 생성기는 Java·프런트 투영과 리다이렉트 정리 뒤 카탈로그·인가 원장 바인딩·화면 목록·묶음 원장을 구성으로 줄인다.
+  // 같은 판정(planPermissionProjection — 생성기와 같은 모듈)을 미리 한다. 남는 page(넘기는 page 포함)에 카탈로그 키가 없거나 그 진입 권한,
+  // 남는 바인딩이 구성 밖 코드를 요구하거나, 묶음 원장이 남는 권한을 나누지 못하면 생성하면 같은 자리에서 실패한다.
+  // 남는 page 는 생성기의 거버넌스 투영처럼 목적지가 사라진 리다이렉트 page 를 수렴할 때까지 뺀 집합이다(화면 생존 대조와 같은 규칙).
+  // 두 투영과 라우트 원장 읽기가 모두 될 때만 판정한다(지워질 파일을 다 알아야 한다).
+  let permissionProjection = null;
+  if (java && frontend && routeRows) {
+    try {
+      const keptPageRoutes = convergeRedirectPages(discoverPageRoutes(root).filter(page => screenKept(page.source)).map(page => page.route), routeRows);
+      permissionProjection = planPermissionProjection({ sourceRoot: root, composition, removed: file => removed.has(pathKey(file)),
+        keptPageRoutes, sources: permissionSources ?? readPermissionSources(root) });
+    } catch (error) { block('PERMISSION_PROJECTION', { message: message(error) }); }
   }
 
   const removedGates = [
@@ -184,7 +245,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const missing = [];
   if (java && frontend) {
     try {
-      assertComposerSourceSurvives(root, root, composition, manifest, { present: path => {
+      assertComposerSourceSurvives(root, root, composition, ownership, { present: path => {
         const file = normalize(path).replaceAll('\\', '/');
         if (!kept(file)) missing.push(file);
         return true;
@@ -199,6 +260,11 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
     java: java && { removedFiles: java.removed.size, cascadeFiles: java.removed.size - javaDirect, files: [...java.removed].map(rel).sort() },
     frontend: frontend && { removedFiles: frontend.removed.size, cascadeFiles: frontend.removed.size - frontend.direct.size, files: [...frontend.removed].map(rel).sort() },
     removedGates,
+    // 생성물의 권한 카탈로그·바인딩·화면·묶음 수와 빠지는 page 권한·묶음·생성 제외 권한(생성기와 같은지 시험이 대조한다 —
+    // project-composer-deep-parity.test.mjs 가 복사한 트리에서 생성기의 권한 투영 단계를 돌려 비교한다). 화면에는 보내지 않는다.
+    permissionProjection,
+    // 생성물 api-docs 의 연산·스키마·태그 수와 빠지는 연산 id(생성기와 같은지 시험이 대조한다). 화면에는 보내지 않는다.
+    apiContract,
     // 규칙으로 걷는 게이트 파일(승인만 대조하고 제거 수에는 세지 않는다). 화면에는 보내지 않는다.
     ruleRemovals,
     blockers,

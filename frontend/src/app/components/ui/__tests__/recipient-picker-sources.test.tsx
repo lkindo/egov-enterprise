@@ -156,6 +156,10 @@ if (addressBookInProjection) {
   });
 }
 
+/*
+ * 판정 규칙은 대역 기여로 본다. 대역의 노출 권한은 core 코드(DEPT_READ)다 — 생성물은 권한 목록을 구성 코드로 줄이므로(Phase 2 10단계 10b)
+ * 주소록이 빠진 구성에서도 이 도우미의 규칙은 같은 뜻으로 돈다. 주소록 권한(ADBK_READ)은 위 실제 기여 시험이 본다.
+ */
 describe('판정 규칙', () => {
   const source: RecipientAddressBookSource = { listBooks: async () => [], listContacts: async () => [] };
   const entry = (id: string, channels: RecipientPickerSource['channels'], visibleWhen: RecipientPickerSource['visibleWhen']) => ({
@@ -165,10 +169,10 @@ describe('판정 규칙', () => {
   it('그 채널을 받는 항목만, 보이는 항목만 돌려준다', () => {
     state.mode = 'fake';
     state.auth = AUTH.noProvider;
-    state.fake = [[entry('sms-only', ['sms'], { always: '시험용 사유' }), entry('gated', ['mail'], { permissions: ['ADBK_READ'] })]];
+    state.fake = [[entry('sms-only', ['sms'], { always: '시험용 사유' }), entry('gated', ['mail'], { permissions: ['DEPT_READ'] })]];
     expect(renderHook(() => useRecipientAddressBook('mail')).result.current).toBeUndefined();
     expect(renderHook(() => useRecipientAddressBook('sms')).result.current?.label).toBe('sms-only');
-    state.auth = AUTH.granted;
+    state.auth = { user: { permissions: ['DEPT_READ'], authorizationVersion: 'v1' } };
     expect(renderHook(() => useRecipientAddressBook('mail')).result.current?.label).toBe('gated');
   });
 

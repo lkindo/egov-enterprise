@@ -15,6 +15,12 @@ vi.mock('@/types/generated-screen-registry', async (importOriginal) =>
  *  · 같은 묶음을 두 번 더해도 초안이 변하지 않고(멱등), 빼는 키가 없다.
  */
 type Navigation = { code: string; name: string; parentCode: string | null; route: string | null; useYn: 'Y' | 'N' };
+/**
+ * 고정 화면 목록(screen-registry-fixture)의 기능 권한을 묶음에 싣는다. 그 목록과 같은 관례로 string 에서 맞춘다 — 생성물은 권한 목록을
+ * 구성 코드로 줄이므로(Phase 2 10단계 10b) 기능의 코드 리터럴을 생성 유니온으로 단언하면 그 기능이 빠진 구성에서 타입 검사가 깨진다.
+ * 이 시험의 카탈로그는 인자로 넘기는 고정 목록이고 생성 권한 목록을 읽지 않는다.
+ */
+const fixtureCodes = (...codes: string[]): PermissionCode[] => codes as PermissionCode[];
 
 const NAVIGATION: readonly Navigation[] = [
   { code: 'AREA', name: '관리', parentCode: null, route: null, useYn: 'Y' },
@@ -99,7 +105,7 @@ describe('previewBundle', () => {
       { code: 'COLLAB', name: '협업', parentCode: null, route: null, useYn: 'Y' },
       { code: 'ADDRESS', name: '주소록', parentCode: 'COLLAB', route: '/admin/collaboration/address-book', useYn: 'Y' },
     ];
-    const bundle = bundleOf({ permissions: ['ADBK_CREATE'] as PermissionCode[], screens: ['/admin/collaboration/address-book/select-address-book-list'] });
+    const bundle = bundleOf({ permissions: fixtureCodes('ADBK_CREATE'), screens: ['/admin/collaboration/address-book/select-address-book-list'] });
     const preview = previewBundle(bundle, new Set(), navigation);
     expect(preview.navigationToAdd).toEqual(['COLLAB', 'ADDRESS']);
     expect(preview.screens[0]).toMatchObject({ label: '통합 주소록 관리', menus: [{ code: 'ADDRESS', name: '주소록' }] });
@@ -162,7 +168,7 @@ describe('previewBundle', () => {
 });
 
 describe('previewBundle — 누구나 들어가는 관련 화면(2026-10-03, 선택지 ①)', () => {
-  const noteBundle = () => bundleOf({ permissions: ['MENU_READ', 'NOTE_SEND'] as PermissionCode[], screens: ['/admin/system/menus'], relatedScreens: ['/note'] });
+  const noteBundle = () => bundleOf({ permissions: fixtureCodes('MENU_READ', 'NOTE_SEND'), screens: ['/admin/system/menus'], relatedScreens: ['/note'] });
 
   it('관련 화면의 메뉴와 그 상위 메뉴 전부도 더하고, 미리보기는 권한으로 열리는 화면과 따로 싣는다', () => {
     const preview = previewBundle(noteBundle(), new Set(), WITH_NOTE, [...CATALOG_CODES, 'NOTE_SEND']);

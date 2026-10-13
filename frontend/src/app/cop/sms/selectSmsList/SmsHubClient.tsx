@@ -28,7 +28,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
-import { smsSchema } from '@/lib/validation/schemas';
+import { smsSchema } from '@/app/admin/uss/ion/sms/sms-form-validation';
 import { Dialog,  
   DialogContent,  
   DialogHeader,  

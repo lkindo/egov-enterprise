@@ -100,6 +100,7 @@
 | [ADR-0025](02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 승인된 D01~D15 A·F01~F08의 제품 계약, 내구성 및 운영 적용 경계 |
 | [ADR-0026](02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 |
 | [ADR-0027](02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) |
+| [ADR-0028](02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 |
 
 ## 03-guides — 개발 지침
 
@@ -125,7 +126,7 @@
 | [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택, 관리 콘솔의 메뉴 관리·화면 관리·권한 작업대의 현재 구현과 검증 경계 |
 | [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
 | [evidence-first-improvement-loop-prompt.md](03-guides/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
-| [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 세 프로필 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
+| [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 시작 구성 다섯의 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 | [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |
 
 ## 04-operations — 운영

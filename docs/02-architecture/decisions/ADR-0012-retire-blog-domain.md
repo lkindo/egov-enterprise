@@ -43,5 +43,5 @@
 
 - [공용 결정 인덱스](../../../.agent/memory/decisions.md)
 - [DB 헌법](../../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)
-- [재사용 profile](../../../config/reusable-base-profiles.json)
+- [재사용 profile](https://github.com/lkindo/egov-enterprise/blob/52527499a62d/config/reusable-base-profiles.json)
 - [백업·복원 런북](../../04-operations/backup-and-restore-runbook.md)

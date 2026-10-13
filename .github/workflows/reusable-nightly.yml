@@ -2,9 +2,12 @@ name: Reusable nightly verification
 
 # T2 야간 검증(설계서 12단계, DEC-OPS-283). 재사용 생성물의 일반 테스트(Gradle 시험 작업·vitest)를 돌린다.
 # 산출물 검증(T1)은 생성 단계 안에서 PR CI 와 같은 진입점이 한다. required 가 아니고 병합을 막지 않는다.
-# 지금은 수동 실행만 한다. 첫 녹색 수동 실행 뒤 다음 변경에서 예약 실행(정각 회피)을 켠다.
+# 매일 06:17 KST(21:17 UTC, 정각 회피)에 기본 브랜치에서 예약 실행한다. 예약 실행은 입력이 없어 전체 계획·auto 레이아웃·
+# 계약 대조 켬으로 돈다. 첫 수동 실행(run 38275695802)의 붉은 구성은 원인마다 담당 커밋으로 고친 뒤 켰다(Phase 2 B8).
 # 기능 브랜치의 무거운 직접 선택 검증도 이 워크플로를 쓴다: gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions=board+survey
 on:
+  schedule:
+    - cron: '17 21 * * *'
   workflow_dispatch:
     inputs:
       compositions:
@@ -19,9 +22,9 @@ on:
         type: choice
         options: [auto, both, multi-module, single-module]
       contracts:
-        description: '생성물 안에서 계약 생성물을 다시 만들어 대조한다(--check)'
+        description: '생성물 안에서 계약 생성물을 다시 만들어 대조한다(--check). 끄면 일반 테스트만 돈다'
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -84,6 +87,11 @@ jobs:
         with:
           cache-provider: basic
           cache-read-only: true
+      # 생성기는 생성물의 API 계약(생성 타입·경계·소비 census)을 원본 frontend 의 TypeScript·openapi-typescript 로
+      # 다시 만든다(Phase 2 10c-2, U5-A). 설치하지 않으면 생성이 TOOL_UNAVAILABLE 로 멈춘다(조용히 건너뛰지 않는다).
+      - name: Install source frontend tools for contract projection
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
       - name: Generate, verify and test the composition
         env:
           NIGHTLY_ITEM: ${{ toJSON(matrix) }}

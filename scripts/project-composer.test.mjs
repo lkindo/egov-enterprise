@@ -77,20 +77,25 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
 
 test('unassigned-permission guidance stays exact with the permission catalog, bundles and protected set', async () => {
   const { PROTECTED_PERMISSIONS } = await import('./generate-screen-registry.mjs');
-  const { UNASSIGNED_PERMISSION_GUIDANCE, validateUnassignedGuidance } = await import('./project-composer-unassigned.mjs');
+  const { validateUnassignedGuidance } = await import('./project-composer-unassigned.mjs');
+  const { loadComposerModules } = await import('./composer-modules.mjs');
+  // 안내 표는 그 권한을 소유한 기능 파일(없으면 core.json)의 unassignedPermissions 다(11단계 C7 — 생성기 상수를 걷었다).
+  const guidance = Object.fromEntries(Object.entries(loadComposerModules(root).extras.unassigned)
+    .map(([code, row]) => [code, { bundle: row.bundle, protected: row.protected, effect: row.effect }]));
   const permissions = JSON.parse(readFileSync(join(root, 'config/governance/permission-catalog.json'), 'utf8'));
   const bundles = JSON.parse(readFileSync(join(root, 'config/governance/permission-bundles.json'), 'utf8'));
-  const rows = validateUnassignedGuidance({ permissions, bundles });
+  const rows = validateUnassignedGuidance({ guidance, permissions, bundles });
   for (const row of rows) assert.equal(row.protected, PROTECTED_PERMISSIONS.includes(row.code), `${row.code}: protected flag follows the protected set`);
   const withNew = structuredClone(permissions);
   withNew.permissions.push({ code: 'NEW_READ', domain: 'NEW', action: 'READ', name: '새 권한', defaultGroups: [] });
-  assert.throws(() => validateUnassignedGuidance({ permissions: withNew, bundles }), /unassigned permission lacks guidance: NEW_READ/);
+  assert.throws(() => validateUnassignedGuidance({ guidance, permissions: withNew, bundles }), /unassigned permission lacks guidance: NEW_READ/);
   const assigned = structuredClone(permissions);
   assigned.permissions.find(row => row.code === 'NOTICE_EDIT').defaultGroups = ['ROLE_ADMIN'];
-  assert.throws(() => validateUnassignedGuidance({ permissions: assigned, bundles }), /guidance names a permission with default groups or no catalog row: NOTICE_EDIT/);
-  const wrongBundle = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: 'account-recovery' } };
+  assert.throws(() => validateUnassignedGuidance({ guidance, permissions: assigned, bundles }), /guidance names a permission with default groups or no catalog row: NOTICE_EDIT/);
+  assert.throws(() => validateUnassignedGuidance({ permissions, bundles }), /guidance from the feature files is required/);
+  const wrongBundle = { ...guidance, ADT_LOG_READ: { ...guidance.ADT_LOG_READ, bundle: 'account-recovery' } };
   assert.throws(() => validateUnassignedGuidance({ guidance: wrongBundle, permissions, bundles }), /guidance bundle does not contain the permission: ADT_LOG_READ/);
-  const unbundled = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: null } };
+  const unbundled = { ...guidance, ADT_LOG_READ: { ...guidance.ADT_LOG_READ, bundle: null } };
   assert.throws(() => validateUnassignedGuidance({ guidance: unbundled, permissions, bundles }), /guidance without a bundle must be an excluded permission: ADT_LOG_READ/);
 });
 
@@ -729,24 +734,30 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     mkdirSync(dirname(join(repository, file)), { recursive: true });
     writeFileSync(join(repository, file), text);
   };
-  // 프리셋은 이 저장소의 manifest 로 제거 경로와 게이트 승인을 정한다(직접 선택은 원본 저장소의 게이트 승인을 쓴다).
+  // 프리셋도 구성의 화면 제외 경로와 기능 소유·시작 구성 기대치로 투영한다(11단계 C3). 이 합성 저장소의 demo 화면은 카탈로그에서
+  // 게시판 소유로 적어 core 시작 구성이 지우게 하고, 기능 소유·기대치는 엔진 이음새(loadModules)로 넣는다 — manifest 는 쓰지 않는다.
   // 이 합성 저장소의 화면은 홈·로그인뿐이다. 정밀 점검은 구성이 남겨야 할 화면과 남는 화면을 대조하므로(슬롯 단계 PR-1),
   // core 화면을 그 둘로 줄인 카탈로그와 그 둘만 적은 라우트 원장을 쓴다.
-  const loaded = loadProjectComposerCatalog(root);
-  const { catalogHash: ignoredHash, ...body } = { ...loaded, core: { ...loaded.core, menuRoutes: ['/', '/login'] } };
-  const real = { ...body, catalogHash: compositionDigest(body) };
-  const core = { ...recipe(), selection: { preset: 'core' } };
   const removed = 'src/app/demo';
+  const loaded = loadProjectComposerCatalog(root);
+  const { catalogHash: ignoredHash, ...body } = { ...loaded, core: { ...loaded.core, menuRoutes: ['/', '/login'] },
+    frontendRules: [...loaded.frontendRules, { path: removed, domains: ['board'] }] };
+  const real = { ...body, catalogHash: compositionDigest(body) };
+  const modules = { files: {}, declarations: { features: Object.fromEntries(real.capabilities.map(row => [row.id, {}])), supportFiles: () => new Map() },
+    extras: { gateOwners: {}, rbac: { file: 'none', domains: [], surfaces: {} }, presetExpectations: { core: { description: '시험용', gates: [],
+      gateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }], javaCascade: [] } } } };
+  const core = { ...recipe(), selection: { preset: 'core' } };
   git('init', '--quiet');
   write('config/ui-route-capabilities.json', JSON.stringify({ routes: [['/', 'page.tsx'], ['/login', 'login/page.tsx']]
     .map(([route, page]) => ({ route, source: `frontend/src/app/${page}`, routing: { kind: 'page' } })) }));
-  write('config/reusable-base-profiles.json', JSON.stringify({ packs: { core: {}, collaboration: {}, survey: {}, demo: { frontend: { removePaths: [removed] } } },
-    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }] } } }));
   for (const file of ['layout.tsx', 'page.tsx', 'login/page.tsx']) write(`frontend/src/app/${file}`);
   // 생성기는 원본 Atlas 를 늘 규칙으로 걷는다. 그 자산·검사와 package.json 별칭이 있어야 규칙 제거가 성공한다.
   for (const file of ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
   write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x' } }));
+  // 정밀 점검은 api-docs 를 인가 원장으로 투영한다(10c-2). 이 저장소에는 문서화된 연산이 없다.
+  write('api-docs.json', JSON.stringify({ openapi: '3.1.0', paths: {}, components: { schemas: {} } }));
+  write('config/governance/authorization-policies.json', JSON.stringify({ operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] }));
   write('.gitignore', '*.log\n');
   git('add', '.');
   git('commit', '--quiet', '-m', 'first');
@@ -755,9 +766,23 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   write(`frontend/${removed}/새 화면.tsx`);
   write(`frontend/${removed}/build/generated.ts`);
   write(`frontend/${removed}/debug.log`, 'ignored\n');
-  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real });
+  // 이 합성 저장소에는 권한 정의도 없다. 정밀 점검의 권한 투영 입력은 core 구성 코드를 모두 덮는 최소 원장으로 주입한다 — 홈 화면을
+  // 여는 묶음 하나(첫 코드)와 나머지 코드의 제외 행, 외부 핸들러 바인딩 하나다.
+  const [homeCode, ...otherCodes] = [...real.core.permissionCodes].sort();
+  const permissionSources = {
+    // 남는 page(홈·로그인)마다 카탈로그 키가 있어야 한다 — 생성기처럼 정밀 점검도 남는 page 전부를 카탈로그로 판정한다.
+    catalog: { permissions: real.core.permissionCodes.map(code => ({ code })), pagePermissions: { '/': [homeCode], '/login': [] } },
+    policies: { operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] },
+    bundles: { schemaVersion: 1, description: '시험용 묶음 원장', excluded: otherCodes.map(code => ({ code, reason: '시험용 합성 저장소에는 이 권한을 쓰는 화면이 없다.' })),
+      bundles: [{ id: 'home-viewer', name: '홈 조회', description: '홈 조회를 맡깁니다.', protected: false, permissions: [homeCode] }] },
+    visibleTerms: { terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] },
+    registry: { screens: [{ route: '/', entry: { permissions: [homeCode], mode: 'ANY' }, permissions: [{ code: homeCode, action: 'READ', source: 'entry' }] }] },
+  };
+  const loadPermissionSources = () => permissionSources;
+  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources });
   const deep = engine.deep(core);
   assert.deepEqual(deep.blockers, []);
+  assert.equal(deep.permissionProjection.permissions, real.core.permissionCodes.length, 'the engine passes its permission sources to the deep plan');
   assert.deepEqual(deep.frontend.files, [`frontend/${removed}/새 화면.tsx`]);
   assert.equal(deep.summary, '제거: Java 0개(연쇄 0) · 프런트 1개(연쇄 0) · 검증 게이트 0건');
   // 화면을 연 뒤 원본이 바뀌었으면 점검하지 않는다(생성도 같은 이유로 거부한다).
@@ -780,7 +805,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
   }
   for (const output of [outputRoot, caseOutput]) {
-    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real }).deep(core);
+    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources }).deep(core);
     assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), ['SOURCE_SURVIVAL']);
     assert.deepEqual(caseDeep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   }

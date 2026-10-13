@@ -53,7 +53,7 @@ npm run review:migration
 | control | 검토 내용 |
 |---|---|
 | `data-classification` | 실제 업무 데이터, 허용 URL 상태·검색 안내·입력 목적, 기관의 노출 허용 범위 |
-| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다. `NOTICE_EDIT`·`FAQ_EDIT`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`는 기본 그룹이 없어 자동 배정되지 않는다(ADR-0025). 특히 공지·FAQ 게시판 쓰기는 배정 전까지 관리자도 거부되므로, 새 앱 배포 뒤 담당 그룹을 정해 배정하고 같은 트랜잭션에 변경 이력을 남긴다(먼저 넣으면 구 앱이 모르는 권한 코드로 그룹 저장을 거부할 수 있다) |
+| `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다. `NOTICE_EDIT`·`FAQ_EDIT`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`는 기본 그룹이 없어 자동 배정되지 않는다(ADR-0025). 특히 공지·FAQ 게시판 쓰기는 배정 전까지 관리자도 거부되므로, 새 앱 배포 뒤 담당 그룹을 정해 배정하고 같은 트랜잭션에 변경 이력을 남긴다(먼저 넣으면 구 앱이 모르는 권한 코드로 그룹 저장을 거부할 수 있다). 재사용 생성물은 권한 카탈로그를 구성 코드로 투영한다(DEC-OPS-287). 이미 운영 중인 DB 에 다시 생성한 소스를 배포할 때는 구성 밖 OPERATION 배정이 남았는지 먼저 확인하고, 남았으면 배포 전에 정리하고 변경 이력을 남긴다 — 남겨 두면 그 그룹 사용자의 권한 스냅숏이 모르는 코드로 인증을 막는다(업그레이드 키트 선행 조건) |
 | `request-logging` | 프록시·WAF·앱·분석 도구의 수집 필드, 검색어 복제·보존·접근 정책 |
 | `accessibility` | 기관 화면·사용자·지원 환경의 접근성 및 필요한 수동 평가 |
 | `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과 |
@@ -167,9 +167,9 @@ npm run review:adoption:migration -- --environment institution-migration
 
 snapshot은 과거 근거다. active 원장이나 기관 승인을 대신하지 않으며, 과거 근거를 오늘 승인한 것처럼 날짜를 다시 쓰지 않는다. 기관의 실제 메뉴 노출·권한·접근성은 별도로 검토한다.
 
-[무결성 검사](../../scripts/reusable-governance-integrity.mjs)는 실제 소스·snapshot·승계 selector·원장 모집단·메모리·lock을 독립 대조한다. 활성 UI 계약은 검증된 적용범위에서 실행한다. 생산 저장소의 `npm run base:verify -- --profile core`와 CI의 세 프로필 matrix는 실제 DB·소스를 생성하여 이 계약과 Java 하네스·스키마·프런트 타입·lint·build까지 검사한다.
+[무결성 검사](../../scripts/reusable-governance-integrity.mjs)는 실제 소스·snapshot·승계 selector·원장 모집단·메모리·lock을 독립 대조한다. 활성 UI 계약은 검증된 적용범위에서 실행한다. 생산 저장소의 `npm run base:verify -- --profile core`와 CI의 시작 구성 matrix(PR 은 시작 구성 셋을 한 레이아웃씩, main 은 다섯을 두 레이아웃씩)는 실제 DB·소스를 생성하여 이 계약과 Java 하네스·스키마·프런트 타입·lint·build까지 검사한다.
 
-온라인 생성물의 CI는 자기 프로필에서 `node scripts/verify-reusable-artifact.mjs`를 직접 실행하는 `artifact-verification` job 하나다. 같은 job에서 기존 버전의 gitleaks working-tree·incremental 검사를 유지한다. 다른 프로필을 다시 생성하거나 원본 3프로필 matrix를 실행하지 않는다.
+온라인 생성물의 CI는 자기 프로필에서 `node scripts/verify-reusable-artifact.mjs`를 직접 실행하는 `artifact-verification` job 하나다. 같은 job에서 기존 버전의 gitleaks working-tree·incremental 검사를 유지한다. 다른 프로필을 다시 생성하거나 원본 시작 구성 matrix를 실행하지 않는다.
 
 생산 저장소의 13개 workflow, required-check 명세, package와 pre-push는 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존된다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞춰 별도로 결속해야 한다. 생성물 기본 CI를 원본 6개 required context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
 

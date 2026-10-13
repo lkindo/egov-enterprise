@@ -4,8 +4,10 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
+import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
-import { MANIFEST_PATH, ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 
 /**
  * 하네스 baseline 미러 상수 — 전부 메타 게이트({@code HarnessBaselineIntegrityTest})의 동명 선언과
@@ -29,6 +31,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-artifact-entrypoints-contract.mjs',
   'scripts/reusable-artifact-entrypoints-contract.test.mjs',
   'scripts/verify-reusable-artifact.mjs',
+  'scripts/composition-profiles.mjs',
   'config/governance/reusable-harness-profile.json',
   'config/governance/authorization-policies.json',
   'config/governance/cross-domain-coupling-census.json',
@@ -185,13 +188,25 @@ export function projectedWriteHandlerCounts(source) {
   return { handlers, successful };
 }
 
-export function writeReusableHarnessProfile(output, sourceManifest) {
-  const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
-  const profileName = projected.sourcePolicy.generatedProfile;
-  const manifest = sourceManifest ?? JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
-  const profile = manifest.profiles[profileName];
+/** 생성물에 기록된 구성(거버넌스 투영이 쓴 스냅숏)의 권한 코드. 스냅숏을 다시 검증한다 — 임의의 코드 목록을 믿지 않는다. */
+function projectedPermissionCodes(output) {
+  const selectionPath = join(output, COMPOSER_SELECTION_PATH);
+  if (!existsSync(selectionPath)) fail(`Projected composition snapshot is missing: ${COMPOSER_SELECTION_PATH}`);
+  const selection = JSON.parse(readFileSync(selectionPath, 'utf8'));
+  return verifyProjectComposition(selection.composition, selection.catalog).permissionCodes;
+}
+
+// `ownership`·`profile` 은 생성기가 투영에 쓴 기능 소유(composerOwnership)와 프로필(composerProfile)이다. 원본에서 같은 판정으로
+// 계획을 다시 세워 생성물의 Java 와 대조한다(독립 계획). pack 을 보지 않는다(11단계 C3).
+// 활성 구성은 생성물 표지(config/modules/presets.json 의 active)에서 읽고, 기록은 그 파일의 해시(presetsSha256)에 결속한다(11단계 C5) —
+// 생성물 하네스(ReusableHarnessProfile)가 같은 표지·lock·기록을 대조한다. `schemaTables` 는 DB 번들 lock 의 물리 테이블 수다.
+export function writeReusableHarnessProfile(output, { ownership, profile, schemaTables }) {
+  const generated = detectGeneratedComposition(output);
+  if (!generated.projection) fail('Harness profile requires the generated composition marker (config/modules/presets.json active)');
+  if (!Number.isInteger(schemaTables) || schemaTables <= 0) fail('Harness profile requires the DB bundle table count');
+  const profileName = generated.profile;
   const javaFiles = trackedAndUntrackedFiles().filter(path => path.endsWith('.java')).map(path => join(ROOT, path));
-  const plan = planJavaRemoval(ROOT, manifest, profile, javaFiles);
+  const plan = planJavaRemoval(ROOT, ownership, profile, javaFiles);
   const production = javaFiles.filter(path => /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\//.test(normalize(relative(ROOT, path))));
   const retained = [];
   const removed = [];
@@ -236,7 +251,7 @@ export function writeReusableHarnessProfile(output, sourceManifest) {
     entities: entities.length,
     entityTables: new Set(entities.map(([, source]) => source.match(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/)?.[1]
       ?? fail('Entity @Table(name) cannot be determined'))).size,
-    schemaTables: projected.databaseSnapshot.physicalTableCountExcludingFlyway,
+    schemaTables,
     migrations: walk(join(output, 'api-server/src/main/resources/db/migration'), path => path.endsWith('.sql')).length,
     booleanFlagColumns: [...readFileSync(join(output, 'api-server/src/main/resources/db/migration/V1_0__baseline.sql'), 'utf8')
       .matchAll(/^\s+[a-z][a-z0-9_]*_yn\s+[a-z]/gm)].length,
@@ -251,18 +266,21 @@ export function writeReusableHarnessProfile(output, sourceManifest) {
     serviceGuards: authorization.serviceGuardPolicies.filter(row => activeType(row.target)).length,
     manualGuards: authorization.manualGuardPolicies.filter(row => sources.has(row.source)).length,
     productionSources: retained.length,
+    // [10단계 10b] 투영본의 권한 카탈로그 수는 구성의 권한 코드 수다(원본 하한 200 대신 정확히 비교 — SecurePathsDeclarationSyncLinterTest,
+    // generate-permissions). 바인딩 수는 위 operationBindings(원본 원장을 독립된 Java 제거 계획으로 거른 수)를 쓴다.
+    permissionCatalog: projectedPermissionCodes(output).length,
   };
   for (const module of ['business-core', 'business-app']) census[`entities:${module}`] = entities.filter(([path]) => path.startsWith(`${module}/`)).length;
-  const snapshot = { schemaVersion: 1, profile: profileName, packs: profile.packs,
+  const snapshot = { schemaVersion: 2, profile: profileName, domains: generated.domains,
     excludedDomains: plan.excludedDomains.sort(), sourceCommit: git(['rev-parse', 'HEAD']),
-    profileManifestSha256: createHash('sha256').update(readFileSync(join(output, 'config/reusable-base-profiles.json'))).digest('hex'),
+    presetsSha256: createHash('sha256').update(readFileSync(join(output, MODULES_DIRECTORY, PRESETS_FILE))).digest('hex'),
     census, retained: retained.sort((a, b) => a.path.localeCompare(b.path)), removed: removed.sort((a, b) => a.path.localeCompare(b.path)) };
   writeFileSync(join(output, 'config/governance/reusable-harness-profile.json'), `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
   return snapshot;
 }
 
-export function writeHarnessBaseline(output, sourceManifest) {
-  writeReusableHarnessProfile(output, sourceManifest);
+export function writeHarnessBaseline(output, projection) {
+  writeReusableHarnessProfile(output, projection);
   const entries = computeHarnessBaselineEntries(output);
   const lines = [
     '# 자동 산출 — reusable-base source projection 기준.',

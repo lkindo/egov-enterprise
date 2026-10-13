@@ -21,8 +21,8 @@ import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree
  */
 /**
  * 생성기 **규칙**으로 제거되는 게이트 묶음 — 프로필 선택이 아니라 투영 방식 자체가 원인이라 파일 단위
- * 승인 대신 규칙 단위 승인을 받는다. 파일 단위로 두면 migration 검증이 하나 늘 때마다 세 프로필의
- * 매니페스트가 함께 흔들려 소음만 남고 신호가 죽는다.
+ * 승인 대신 규칙 단위 승인을 받는다. 파일 단위로 두면 migration 검증이 하나 늘 때마다 모든 시작 구성의
+ * 기대치(presets.json)가 함께 흔들려 소음만 남고 신호가 죽는다.
  */
 const GATE_REMOVAL_RULES = {
   'historical-migration-tests':
@@ -94,8 +94,8 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     fail(
       `profile '${profileName}' 이 승인하지 않은 규칙으로 거버넌스 게이트를 제거한다: `
         + unacknowledgedRules.map((rule) => `${rule}(${ruleRemovals[rule].length}건)`).join(', ')
-        + `\nconfig/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedGateRemovalRules 에 `
-        + '{ rule, reason } 으로 등재할 것.',
+        + `\nconfig/modules/presets.json 의 시작 구성 '${profileName}' expected.gateRemovalRules 에 `
+        + '{ rule, reason } 으로 등재할 것(직접 선택은 core 시작 구성의 규칙 승인을 쓴다).',
     );
   }
   if (staleRules.length) {
@@ -109,7 +109,8 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     fail(
       `profile '${profileName}' 이 승인하지 않은 거버넌스 게이트를 제거한다 (${unacknowledged.length}건):\n` +
         unacknowledged.map((file) => `  - ${file}`).join('\n') +
-        `\n정당한 제거라면 config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedRemovedGates 에 등재하고 사유를 커밋에 남길 것.`,
+        `\n정당한 제거라면 그 게이트를 지키는 기능 파일의 owns.gates 에 적고(시작 구성은 config/modules/presets.json 의 `
+        + `'${profileName}' expected.gates 에도 같은 파일을 사유와 함께 적는다) 사유를 커밋에 남길 것.`,
     );
   }
   if (stale.length) {
@@ -127,7 +128,7 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
 }
 
 /**
- * 프리셋의 Java 연쇄 제거(게이트 제외)와 manifest 의 {@code profiles.<name>.acknowledgedJavaCascade} 의 대조(설계서 C4).
+ * 프리셋의 Java 연쇄 제거(게이트 제외)와 presets.json 의 {@code expected.javaCascade}(프로필의 acknowledgedJavaCascade)의 대조(설계서 C4).
  *
  * <p>[왜] 연쇄 제거는 선언이 아니라 타입 참조로 정해진다. 잘못 들어간 import 한 줄이 core 컨트롤러나 동작 시험을 조용히
  * 지울 수 있고(DEC-OPS-084·085 는 이런 손실을 손으로 찾았다), 소유는 코드에서 도출되므로 그 import 가 기대치까지 함께
@@ -153,7 +154,7 @@ export function assertJavaCascadeAcknowledged(profileName, profile, java) {
   const files = java.cascadeRemoved.map((entry) => entry.file);
   const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, files);
   console.log(`[base-source] 선언이 아니라 연쇄로 지운 Java(게이트 제외): ${files.length}건`);
-  const where = `config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedJavaCascade`;
+  const where = `config/modules/presets.json 의 시작 구성 '${profileName}' expected.javaCascade`;
   if (invalidEntries.length) fail(`${where} 항목은 .java 경로 문자열이어야 한다: ${JSON.stringify(invalidEntries[0])}`);
   if (duplicates.length) fail(`${where} 에 중복 항목이 있다: ${duplicates.join(', ')}`);
   if (unacknowledged.length) {

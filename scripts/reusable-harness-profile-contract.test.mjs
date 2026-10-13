@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { detectGeneratedComposition } from './composer-modules.mjs';
 import { adaptGeneratedHarness, isHistoricalAuthorizationRehearsal } from './reusable-source-gates.mjs';
 import { projectedWriteHandlerCounts } from './reusable-source-harness.mjs';
 
 test('generated harness adaptation matches current source selectors and rejects census or display-name drift', (t) => {
-  const generatedProfile = JSON.parse(readFileSync(new URL('../config/reusable-base-profiles.json', import.meta.url), 'utf8'))
-    .sourcePolicy.generatedProfile;
+  // 생성물 표지(config/modules/presets.json 의 active, 11단계 C5). 원본이면 undefined 다.
+  const marker = detectGeneratedComposition(fileURLToPath(new URL('..', import.meta.url)));
+  const generatedProfile = marker.projection ? marker.profile : undefined;
   const harnessDirectory = 'api-server/src/test/java/nuri/api/harness';
   const migrationHarness = 'SharedPostgresMigrationHarnessContractTest.java';
   const files = ['EntitySchemaConformanceLinterTest.java', 'SeedLocationLinterTest.java',

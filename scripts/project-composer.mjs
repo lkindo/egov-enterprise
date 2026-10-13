@@ -6,12 +6,14 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { loadComposerModules } from './composer-modules.mjs';
 import { classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from './project-composer-recipe.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
-import { composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
+import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
+import { missingFrontendToolchain } from './reusable-contract-projection.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
 import { createLogMasker, runComposerCommand } from './project-composer-command.mjs';
@@ -128,12 +130,14 @@ export function composerSourceFingerprint(root) {
 }
 
 /**
- * outputRoot 는 계약 테스트용 이음새다. 기본값은 원본 저장소이고 CLI·서버는 넘기지 않는다.
+ * outputRoot 는 계약 테스트용 이음새다. 기본값은 원본 저장소이고 CLI·서버는 넘기지 않는다. loadCatalog·loadModules 도 같다 —
+ * 정밀 점검은 매니페스트 v2 의 기능 소유·시작 구성 기대치(loadModules)로 투영한다(11단계 C3).
  * 실제 생성기 스크립트는 저장소 build/ 밖 출력을 거부하므로, 운영 경로에서 다른 값을 넘기면
  * 생성이 실패할 뿐 출력이 새지 않는다.
+ * loadPermissionSources 도 계약 테스트용 이음새다(권한 정의가 없는 합성 저장소). 넘기지 않으면 정밀 점검이 root 에서 읽는다.
  */
 export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
-  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git', readiness } = {}) {
+  loadCatalog = loadProjectComposerCatalog, loadModules = loadComposerModules, gitExecutable = 'git', readiness, loadPermissionSources } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   const gitRun = args => git(root, args, gitExecutable);
@@ -179,7 +183,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const value = remember(loadCatalogClassified());
     const sourceCommit = gitRun(['rev-parse', 'HEAD']);
     // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
-    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value, { routeKinds: loadRouteKinds(root) })) };
+    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value,
+      { routeKinds: loadRouteKinds(root), ...loadComposerPresentationDeclarations(root) })) };
   };
   const coreBase = (recipe, value) => {
     if (!value.presets.some(preset => preset.id === 'core')) return undefined;
@@ -218,7 +223,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   };
   // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
   // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
-  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit,
+  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit, missingFrontendTools: missingFrontendToolchain(root),
     probe: (command, args) => run(command, args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS }) });
   // 정밀 점검: 생성기의 투영 판정을 디스크를 바꾸지 않고 미리 한다(요청할 때만, 수 초가 걸린다).
   // 계획처럼 카탈로그를 새로 적재하고, 생성기가 복사할 파일 목록(추적·무시되지 않은 새 파일, build 제외)을 쓴다.
@@ -227,11 +232,12 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     // 해석기가 거부한 구성은 코드가 붙은 입력 오류다(화면을 연 뒤 카탈로그가 바뀌었을 수도 있다). 그 밖의 실패는 점검 실패다.
     const loaded = loadCatalogClassified();
     const composition = resolveRecipe(recipe, loaded);
-    const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
     const files = gitRun(['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
       .filter(file => !file.replaceAll('\\', '/').split('/').includes('build'));
     // 대소문자 구분은 생성물을 만들 폴더(composerOutputPaths 의 상위 폴더)에서 판정한다.
-    const result = compositionDeepPlan({ root, manifest, composition, catalog: loaded, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
+    const modules = declared(() => loadModules(root));
+    const result = compositionDeepPlan({ root, composition, catalog: loaded, modules, files, outputParent: resolve(outputRoot, 'build/reusable-base/source'),
+      permissionSources: loadPermissionSources?.(root) });
     return { ...result, summary: deepSummary(result) };
   };
   const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness });

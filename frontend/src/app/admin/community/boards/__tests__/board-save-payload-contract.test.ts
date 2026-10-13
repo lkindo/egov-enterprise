@@ -13,6 +13,11 @@
  *
  * 그래서 문자열 하나를 금지하는 대신 **결함의 부류**를 고정한다 — 요청 본문에 들어가는 키
  * 전체가 생성 계약의 키 집합에 속하는지 검사한다. 새 필드를 서버 계약 없이 추가하면 red 다.
+ *
+ * 게시판 소유 시험이다(Phase 2 10단계 10c-1) — 종전 위치(app/actions/__tests__)는 모든 구성에 남아, 게시판을 고르지 않은 생성물에서
+ * 생성 계약에서 사라질 이름(BoardSaveRequestSchema)을 import 했다. 게시판 디렉터리로 옮겨 단독 선택에서는 게시판과 함께 빠진다.
+ * 다만 core 시작 구성은 pack 제거 경로가 이 디렉터리의 시험을 남기고 저장 액션만 지운다(13a 에서 걷힌다). 그래서 대상 판정은 여전히
+ * 투영 원장으로 한다 — 원장에 없는 부재는 그대로 실패한다.
  */
 
 import { readFileSync } from 'node:fs';
@@ -22,8 +27,8 @@ import { describe, expect, it } from 'vitest';
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
 import { missingOutsideLedger, readInProjection } from '@/test-utils/projection';
 
-const SOURCE_PATH = path.resolve(__dirname, '..', 'boardActions.ts');
-// 게시판을 고르지 않은 생성물에서는 저장 액션이 투영으로 빠져 이 계약의 대상이 없다(원장으로 확인한다).
+const SOURCE_PATH = path.resolve(__dirname, '..', '..', '..', '..', 'actions', 'boardActions.ts');
+// 게시판을 고르지 않은 생성물(core 시작 구성 포함)에서는 저장 액션이 투영으로 빠져 이 계약의 대상이 없다(원장으로 확인한다).
 const PROJECTED_SOURCE = readInProjection(SOURCE_PATH);
 const SOURCE = PROJECTED_SOURCE ?? '';
 
@@ -68,7 +73,7 @@ if (PROJECTED_SOURCE !== undefined) describe('게시글 저장 요청 본문 계
   it('[DIP B5 F9] 폐기된 게시글 비밀번호를 싣지 않는다 — 종전에는 1 을 채워 평문으로 쌓였다', () => {
     expect(payloadKeys()).not.toContain('pswd');
     expect(SOURCE).not.toMatch(/pswd\s*\|\|\s*'1'/);
-    const client = readFileSync(path.resolve(__dirname, '..', '..', 'admin', 'community', 'boards', 'insert-board-article', 'BoardRegistClient.tsx'), 'utf8');
+    const client = readFileSync(path.resolve(__dirname, '..', 'insert-board-article', 'BoardRegistClient.tsx'), 'utf8');
     expect(client).not.toMatch(/pswd:\s*initialData\?\.pswd\s*\|\|\s*'1'/);
   });
 

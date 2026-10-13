@@ -8,16 +8,10 @@
  * 선언은 실제 간선과 양방향으로 대조한다. 간선이 생겼는데 문장이 없거나, 간선이 사라졌는데 문장이 남으면
  * 카탈로그를 만들지 않는다. 문장에는 영문(클래스명·기능 id)을 쓰지 않는다. 화면 이름은 사용자가 실제로 보는
  * 메뉴·화면 제목을 쓴다. 문장은 카탈로그 해시에 들어가므로 고치면 모든 구성 해시가 바뀐다.
+ *
+ * 문장은 기능 파일(config/modules/<기능>.json)의 requires[{ to, userReason }] 에 둔다(11단계 C7 — 이 모듈의 상수를 걷었다).
+ * 로더가 그것을 'from>to' 표로 모아 카탈로그에 넘긴다.
  */
-export const REQUIRES_USER_REASONS = Object.freeze({
-  'board>comment': '게시글 화면이 댓글을 함께 다룹니다.',
-  'comment>board': '댓글은 게시글에 달립니다.',
-  'community>board': '커뮤니티 회원이 여는 게시판 목록을 게시판 기능이 제공합니다.',
-  'dashboard>notification': '업무 홈 실시간 상태 구역이 내 알림을 함께 보여 줍니다.',
-  'help>board': '도움말 화면의 자주 묻는 질문·질의응답은 게시판 글입니다.',
-  'reward>informalsanction': '포상 데이터가 결재 문서 표를 참조합니다.',
-  'scrap>board': '스크랩은 게시글을 저장해 둡니다.',
-});
 
 const pairKey = (from, to) => `${from}>${to}`;
 
@@ -36,7 +30,8 @@ export function userReasonProblem(sentence) {
  * 모든 requires 간선에 userReason 을 붙인 새 기능 목록을 돌려준다.
  * 선언 없는 간선·간선 없는 선언·형식이 틀린 문장은 이유와 함께 실패한다.
  */
-export function attachUserReasons(capabilities, reasons = REQUIRES_USER_REASONS) {
+export function attachUserReasons(capabilities, reasons) {
+  if (!reasons || typeof reasons !== 'object') throw new Error('requires user reasons are required from the feature files');
   const used = new Set();
   const withReasons = capabilities.map(capability => ({ ...capability, requires: capability.requires.map(edge => {
     const key = pairKey(capability.id, edge.domain);

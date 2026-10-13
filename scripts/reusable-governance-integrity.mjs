@@ -4,6 +4,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { containedFile } from './adoption-review.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
@@ -12,16 +13,29 @@ import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-com
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
 import { artifactScreenErrors } from './reusable-page-survival.mjs';
+import { buildPermissionArtifacts } from './generate-permissions.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_CATALOG_PATH, projectPermissionCatalog, projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
+import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact, validateScreenRegistry } from './screen-registry-model.mjs';
+import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition, hashedModuleDeclarations, projectedModuleViolations, readComposerModuleFiles } from './composer-modules.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
 export const MEMORY_PATHS = ['.agent/memory/project-context.md', '.agent/memory/decisions.md', '.agent/memory/known-gaps.md'];
+/**
+ * 원본 기능 선언(매니페스트 v2)의 스냅숏. 생성물의 config/modules 는 구성의 기능 파일만 담으므로, 구성 카탈로그의 출처 해시
+ * (provenance.modulesHash)는 원본 전체 선언의 이 스냅숏에 결속된다(11단계 C7 — 종전 v1 manifest 스냅숏을 대신한다). 디렉터리라
+ * 파일 하나로 적는다: 카탈로그 해시가 덮는 선언(hashedModuleDeclarations — 화면 문구·미배정 권한 안내·CI 범위를 뺀 값)을 파일
+ * 이름 → 값으로 담는다.
+ */
+const UPSTREAM_MODULES = MODULES_DIRECTORY;
+/** 생성물의 활성 구성 선언(생성물 표지). 원본 스냅숏은 두지 않는다 — 원본 presets.json 은 시작 구성 전부라 생성물의 것과 다르다. */
+const ACTIVE_COMPOSITION = `${MODULES_DIRECTORY}/${PRESETS_FILE}`;
 export const UPSTREAM_SOURCES = Object.freeze([
   'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',
   'config/ui-route-capabilities.json', ...Object.values(REVIEW_MANIFEST_PATHS),
-  'config/reusable-base-profiles.json', 'config/governance/permission-catalog.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
+  UPSTREAM_MODULES, 'config/governance/permission-catalog.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
 ]);
-export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES]);
+export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES.filter(path => path !== UPSTREAM_MODULES), ACTIVE_COMPOSITION]);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HEX = /^[a-f0-9]{64}$/u;
 const sha256 = value => createHash('sha256').update(value).digest('hex');
@@ -30,7 +44,12 @@ const readJson = (root, file) => JSON.parse(normalizedText(root, file));
 const jsonText = value => `${JSON.stringify(value, null, 2)}\n`;
 export const canonicalJsonSha256 = value => sha256(jsonText(value));
 export const artifactTextSha256 = (root, file) => sha256(normalizedText(root, file));
-export const snapshotPathFor = source => `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`;
+export const snapshotPathFor = source => (source === UPSTREAM_MODULES ? `${UPSTREAM_DIRECTORY}/modules.json`
+  : `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`);
+/** 원본 출처의 스냅숏 본문(줄 끝 정규화). 기능 선언 디렉터리는 카탈로그 해시가 덮는 선언을 JSON 하나로 적는다(UPSTREAM_MODULES). */
+export function upstreamSnapshotText(sourceRoot, source) {
+  return source === UPSTREAM_MODULES ? jsonText(hashedModuleDeclarations(readComposerModuleFiles(sourceRoot))) : normalizedText(sourceRoot, source);
+}
 const exact = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
 const CODE_ROOTS = [
@@ -87,6 +106,35 @@ export function buildGeneratedMemory({ profile, sourceCommit }) {
   }));
 }
 
+/**
+ * [10단계 10b] 생성물의 권한 투영 불변식. 생성기 자신을 믿지 않고 원본 스냅숏·구성·생성물 트리에서 다시 센다.
+ *   · 카탈로그 = 원본 카탈로그 스냅숏을 구성 코드와 생성물에 남는 page 로 줄인 것(값·순서 그대로).
+ *   · 권한 생성물(Java·TS 코드 상수, 런타임 카탈로그·바인딩, 시드 생성 블록)이 생성물의 카탈로그·인가 원장에서 다시 만든 것과 같다 —
+ *     그래서 런타임 바인딩 = 인가 원장이다.
+ *   · 인가 원장 바인딩의 핸들러 소스가 생성물에 있고(외부 핸들러 제외), 하네스 census 가 있으면 카탈로그·바인딩 수가 그 도출값과 같다.
+ *   · 화면 목록 산출물의 화면·별칭이 생성물 page 와 같고, 행·묶음의 권한이 카탈로그 안이며, 묶음이 묶음 원장(투영본 규칙)으로 다시
+ *     계산한 것과 같다.
+ */
+export function projectedPermissionArtifactErrors(root, { composition, upstreamCatalog, pageRoutes }) {
+  const errors = [];
+  try {
+    const expected = projectPermissionCatalog(upstreamCatalog, { permissionCodes: composition.permissionCodes, routes: pageRoutes }).catalog;
+    const catalog = readJson(root, PERMISSION_CATALOG_PATH);
+    if (!exact(catalog, expected)) errors.push('Projected permission catalog differs from the upstream catalog reduced to the composition');
+    const policies = readJson(root, AUTHORIZATION_POLICY_PATH);
+    errors.push(...projectedPermissionCoverageErrors(root, { catalog, bindings: policies.operationBindings ?? [],
+      permissionCodes: composition.permissionCodes }));
+    for (const [file, content] of Object.entries(buildPermissionArtifacts(root))) {
+      if (!existsSync(join(root, file)) || normalizedText(root, file) !== content.replace(/\r\n?/gu, '\n')) {
+        errors.push(`Generated permission artifact differs from the projected permission sources: ${file}`);
+      }
+    }
+    const registry = readScreenRegistryArtifact(normalizedText(root, SCREEN_REGISTRY_OUTPUT));
+    errors.push(...validateScreenRegistry(registry, root).map(error => `Projected screen registry: ${error}`));
+  } catch (error) { errors.push(`Projected permission artifacts cannot be verified: ${error.message}`); }
+  return errors;
+}
+
 export function inspectReusableGovernance(root = ROOT, { requireLock = true } = {}) {
   const errors = [];
   let metadata;
@@ -95,7 +143,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
   try {
     metadata = readJson(root, PROJECTION_PATH);
     check(metadata.schemaVersion === 1 && metadata.authority === 'generated-reusable-governance-projection-not-environment-approval', 'Invalid projection metadata authority');
-    check(['core', 'collaboration', 'demo', 'custom'].includes(metadata.profile), 'Invalid projection profile');
+    check(compositionProfiles().includes(metadata.profile), 'Invalid projection profile');
     check(/^[a-f0-9]{40}$/u.test(metadata.sourceCommit ?? ''), 'Invalid upstream source commit');
     const snapshots = metadata.upstreamSnapshots ?? [];
     check(exact(snapshots.map(row => row.sourcePath).sort(), [...UPSTREAM_SOURCES].sort()), 'Upstream snapshot population must be exact');
@@ -104,9 +152,9 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       check(snapshot.path === snapshotPathFor(snapshot.sourcePath), `Unexpected upstream snapshot location: ${snapshot.sourcePath}`);
       const text = normalizedText(root, snapshot.path);
       check(HEX.test(snapshot.sha256 ?? '') && sha256(text) === snapshot.sha256, `Upstream snapshot hash mismatch: ${snapshot.sourcePath}`);
-      upstream.set(snapshot.sourcePath, snapshot.sourcePath.endsWith('.json') ? JSON.parse(text) : text);
+      upstream.set(snapshot.sourcePath, snapshot.sourcePath.endsWith('.json') || snapshot.sourcePath === UPSTREAM_MODULES ? JSON.parse(text) : text);
     }
-    const originalProfiles = upstream.get('config/reusable-base-profiles.json');
+    const originalModules = upstream.get(UPSTREAM_MODULES);
     let composition;
     let catalog;
     if (metadata.composition) {
@@ -120,7 +168,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       catalog = selection.catalog;
       composition = verifyProjectComposition(selection.composition, catalog);
       check(composition.profile === metadata.profile, 'Composition profile differs from projection');
-      check(catalog.provenance.manifestHash === compositionDigest(originalProfiles), 'Composition catalog differs from upstream manifest snapshot');
+      check(catalog.provenance.modules === UPSTREAM_MODULES && catalog.provenance.modulesHash === compositionDigest(originalModules),
+        'Composition catalog differs from upstream module declaration snapshot');
       check(catalog.provenance.permissionsHash === compositionDigest(upstream.get('config/governance/permission-catalog.json')),
         'Composition catalog differs from upstream permission snapshot');
       for (const key of ['catalogHash', 'recipeHash', 'compositionHash']) check(metadata.composition[key] === composition[key], `Composition ${key} mismatch`);
@@ -128,25 +177,22 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏이 없으면 어느 프로필이든 출처를 증명할 수 없다.
       check(false, 'Generated projection requires a resolved composition snapshot');
     }
-    const expectedPacks = composition?.packs ?? originalProfiles?.profiles?.[metadata.profile]?.packs;
-    const profileManifest = readJson(root, 'config/reusable-base-profiles.json');
-    check(exact(metadata.packs, expectedPacks), 'Projection packs differ from upstream profile ownership');
-    check(profileManifest.sourcePolicy.generatedProfile === metadata.profile
-      && exact(Object.keys(profileManifest.profiles), [metadata.profile])
-      && exact(profileManifest.profiles[metadata.profile]?.packs, expectedPacks)
-      && exact(Object.keys(profileManifest.packs).sort(), [...(expectedPacks ?? [])].sort()), 'Active profile declaration differs from source artifact');
-    if (composition?.profile === 'custom') {
-      const active = profileManifest.profiles.custom;
-      check(exact(active.resolvedDomains, composition.resolvedDomains)
-        && exact(active.frontendRemovePaths, composition.frontend.removePaths), 'Active custom profile differs from resolved composition');
-      const inventory = field => [...new Set(Object.values(profileManifest.packs).flatMap(field))].sort();
-      check(exact(inventory(pack => pack.backend?.appDomains ?? []), composition.resolvedDomains), 'Active custom domain inventory differs from composition');
-      check(exact(inventory(pack => pack.database?.tables ?? []), composition.tables), 'Active custom table inventory differs from composition');
-      check(exact(inventory(pack => pack.database?.sequences ?? []), composition.explicitSequences), 'Active custom sequence inventory differs from composition');
+    // 활성 구성은 매니페스트 v2 의 표지(presets.json 의 active)이고, 표지·구조가 구성과 맞는지 본다. 생성물 표지 판정이 실패하면
+    // (표지 위장·구조 불일치, 걷은 v1 소유 선언 파일이 되살아남 — 'old ownership declaration remains') 여기서 붉다.
+    // 표지 판정 실패는 오류로 적고 나머지 검사(기능 파일 집합·원장 등)를 계속한다 — 위장·구조 불일치의 원인이 함께 보이게 한다.
+    let marker;
+    try { marker = detectGeneratedComposition(root); } catch (error) { errors.push(error.message); }
+    if (marker) check(marker.projection && marker.profile === metadata.profile, 'Generated composition marker differs from projection profile');
+    // 생성물의 매니페스트 v2(config/modules)는 구성의 기능 파일·core·활성 구성 하나만 담는다(11단계 C3). 빠진 기능의 선언이 남으면
+    // 생성물이 갖지 않은 기능을 있다고 말한다 — 수동 도메인 삭제 판정(domain-deletion-plan)이 그 기능을 안다.
+    if (composition) {
+      const directory = join(root, MODULES_DIRECTORY);
+      const names = existsSync(directory) ? readdirSync(directory).filter(name => name.endsWith('.json')) : [];
+      errors.push(...projectedModuleViolations({ names, read: name => readJson(root, `${MODULES_DIRECTORY}/${name}`), composition }));
     }
     if (requireLock) {
       const lock = readJson(root, 'reusable-base-lock.json');
-      check(lock.profile === metadata.profile && lock.sourceCommit === metadata.sourceCommit && exact(lock.packs, metadata.packs), 'Source lock profile/packs/commit mismatch');
+      check(lock.profile === metadata.profile && lock.sourceCommit === metadata.sourceCommit && !Object.hasOwn(lock, 'packs'), 'Source lock profile/commit mismatch');
       check(lock.governance?.path === PROJECTION_PATH && lock.governance?.projectionSha256 === canonicalJsonSha256(metadata), 'Source lock projection checksum mismatch');
       if (composition) {
         check(exact(verifyProjectComposition(lock.composition, catalog), composition), 'Source lock composition mismatch');
@@ -176,6 +222,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
     if (composition) {
       errors.push(...artifactScreenErrors({ ledger: upstream.get('config/ui-route-capabilities.json'), catalog, composition,
         pageSources: new Set(actualPages.map(page => page.source)) }));
+      errors.push(...projectedPermissionArtifactErrors(root, { composition, upstreamCatalog: upstream.get(PERMISSION_CATALOG_PATH),
+        pageRoutes: new Set(actualPages.map(page => page.route)) }));
     }
     const census = readJson(root, 'config/ui-url-state-census.json');
     check(exact(census, buildUrlStateCensus({ repoRoot: root })), 'URL census drifted from current source');
@@ -211,7 +259,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
     const originals = Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, upstream.get(path)]));
     const scopeContract = upstream.get(REVIEW_SCOPE_PATH);
     check(exact(readJson(root, REVIEW_SCOPE_PATH), scopeContract), 'Review scope ownership changed from upstream contract');
-    const derived = deriveProjectedReviewManifests({ outputRoot: root, upstream: originals, contract: scopeContract, profiles: originalProfiles, profile: metadata.profile, routes, composition });
+    const derived = deriveProjectedReviewManifests({ outputRoot: root, upstream: originals, contract: scopeContract, catalog, profile: metadata.profile, routes, composition });
     reviewScopes = derived.reviewScopes;
     check(exact(metadata.projectedReviewScopes, reviewScopes), 'Projected review scope metadata drifted from feature ownership');
     for (const [key, path] of Object.entries(REVIEW_MANIFEST_PATHS)) {

@@ -7,11 +7,13 @@ import { fileURLToPath } from 'node:url';
 
 import {
   analyzeRouteCapabilities,
+  directProjectionProfiles,
   discoverPageRoutes,
   expectedShellAccess,
   inspectRouteRepository,
   parsePageAuthorizationSources,
   parseConfigRedirectsSource,
+  profileProjections,
   validatePageAuthorizationBinding,
   validateRouteCapabilities,
 } from './ui-route-capabilities-contract.mjs';
@@ -406,26 +408,18 @@ test('empty, missing, and duplicate route populations fail closed', () => {
     validateRouteCapabilities(retired, retiredRepository).errors.join('\n'),
     /frozen capability expectation has no ledger route: \/admin\/user\/absences/,
   );
-  // [2026-10-05] 투영본 manifest 는 자기 프로필과 포함된 pack 만 남겨 빠진 pack 의 제거 경로를 모른다. 생성기가 쓰는
-  // 구조(프로필 하나·그 프로필의 pack 만)일 때는 파일이 없는 동결 화면을 투영이 걷은 화면으로 본다.
-  const coreProfile = retiredRepository.profileManifest.profiles.core;
-  const projectedRepository = structuredClone(retiredRepository);
-  projectedRepository.profileManifest = {
-    ...projectedRepository.profileManifest,
-    sourcePolicy: { ...projectedRepository.profileManifest.sourcePolicy, generatedProfile: 'core' },
-    profiles: { core: coreProfile },
-    packs: Object.fromEntries(coreProfile.packs.map(pack => [pack, projectedRepository.profileManifest.packs[pack]])),
-  };
+  // [2026-10-05] 생성물은 자기 구성의 제외 경로만 알고 다른 시작 구성을 모른다. 생성물(표지와 생성기 구조가 맞는 트리)이면 파일이
+  // 없는 동결 화면을 투영이 걷은 화면으로 본다(11단계 C5 — 판별은 매니페스트 v2 의 표지다).
+  const coreProjection = repository.profileProjections.profiles.find(row => row.profile === 'core');
+  const projectedRepository = { ...retiredRepository, profileProjections: { projection: true, profiles: [coreProjection] } };
   assert.doesNotMatch(
     validateRouteCapabilities(retired, projectedRepository).errors.join('\n'),
     /frozen capability expectation has no ledger route/,
   );
-  // 원본 저장소 manifest 에 표지만 넣으면 투영 모드로 바뀌지 않고 오류이며, 낡은 동결 항목도 그대로 red 다.
-  const spoofedRepository = structuredClone(retiredRepository);
-  spoofedRepository.profileManifest.sourcePolicy = { ...spoofedRepository.profileManifest.sourcePolicy, generatedProfile: 'core' };
-  const spoofedErrors = validateRouteCapabilities(retired, spoofedRepository).errors.join('\n');
-  assert.match(spoofedErrors, /생성기 투영 구조가 아니다/);
-  assert.match(spoofedErrors, /frozen capability expectation has no ledger route: \/admin\/user\/absences/);
+  // 원본에서는 시작 구성이 하나뿐이라도 투영 모드로 보지 않는다 — 그 구성이 남기는 화면의 낡은 동결 항목은 그대로 red 다.
+  const singlePresetRepository = { ...retiredRepository, profileProjections: { projection: false, profiles: [coreProjection] } };
+  assert.match(validateRouteCapabilities(retired, singlePresetRepository).errors.join('\n'),
+    /frozen capability expectation has no ledger route: \/admin\/user\/absences/);
 
   const duplicate = structuredClone(analysis.manifest);
   duplicate.routes.push(structuredClone(duplicate.routes[0]));
@@ -514,6 +508,27 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
     /demo capability leaks into a non-demo profile owner/,
   );
 
+  // 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 누수 가드가 그 구성을 보지 못한다(2026-10-13: 결재 기능이 워크플로우 예시
+  // 화면을 소유해 인증 시작 구성 '공통 기반 + 결재' 가 그 화면을 실었는데 원장은 'demo' 만 적었다). 결재 시작 구성이 화면을 지우지
+  // 않는 투영을 만들어, 투영을 그대로 따른 원장이 소유 누락으로 붉은지 본다.
+  const shipped = structuredClone(repository);
+  const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
+  assert.ok(approval?.removePaths.includes('src/app/admin/workflow'), 'the approval preset removes the workflow demo today');
+  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/app/admin/workflow');
+  const omitted = structuredClone(analysis.manifest);
+  const workflowEntry = omitted.routes.find(({ route }) => route === '/admin/workflow');
+  workflowEntry.directProjectionProfiles = directProjectionProfiles(workflowEntry.source, shipped.profileProjections);
+  assert.deepEqual(workflowEntry.directProjectionProfiles, ['approval', 'demo']);
+  assert.deepEqual(validateRouteCapabilities(omitted, shipped).errors, [
+    'route /admin/workflow: profileOwners omit presets that ship the screen: approval',
+  ]);
+  // 소유에 적으면 누락은 풀리고 누수 가드가 그 구성을 잡는다. 생성물(자기 구성 하나만 아는 투영)은 이 대조를 하지 않는다.
+  workflowEntry.profileOwners = ['approval', 'demo'];
+  assert.match(validateRouteCapabilities(omitted, shipped).errors.join('\n'), /demo capability leaks into a non-demo profile owner/);
+  workflowEntry.profileOwners = ['demo'];
+  shipped.profileProjections.projection = true;
+  assert.ok(!validateRouteCapabilities(omitted, shipped).errors.some((error) => error.includes('profileOwners omit')));
+
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');
   // [2026-09-06 DEC-OPS-038] dispatch-preview 데모는 걷었다 — 같은 라우트의 다른 demo capability(health-metrics)로 false-live 를 검사한다.
@@ -595,4 +610,30 @@ test('a projected route population may omit the demo workflow only when the page
     validateRouteCapabilities(manifest, projectedRepository).errors.join('\n'),
     /route \/admin\/workflow: no matching page.ts\/page.tsx exists/,
   );
+});
+
+// 11단계 C5: 시작 구성의 화면 제외 경로는 원본이면 카탈로그로, 생성물이면 구성 스냅숏으로 푼다. 표지 위장과 스냅숏 불일치는 실패한다.
+test('route ledger profile projections follow the preset compositions and fail closed on a spoofed or unbound marker', (t) => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'egov-route-marker-'));
+  t.after(() => fs.rmSync(base, { recursive: true, force: true }));
+  const presets = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/modules/presets.json'), 'utf8'));
+  assert.deepEqual(repository.profileProjections.profiles.map(({ profile }) => profile), presets.presets.map(({ id }) => id));
+  assert.equal(repository.profileProjections.projection, false);
+  const tree = (name, presetsFile, selection) => {
+    const root = path.join(base, name);
+    fs.mkdirSync(path.join(root, 'config/modules'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'config/modules/presets.json'), JSON.stringify(presetsFile));
+    if (selection) {
+      const target = path.join(root, 'config/governance/upstream-review/project-composer-selection.json');
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, JSON.stringify(selection));
+    }
+    return root;
+  };
+  assert.throws(() => profileProjections(tree('spoofed', { ...presets, active: 'core' })), /active='core' 인데 생성기 투영 구조가 아니다/);
+  const marked = { schemaVersion: 2, active: 'core', presets: [presets.presets.find(({ id }) => id === 'core')] };
+  assert.deepEqual(profileProjections(tree('generated', marked, { composition: { profile: 'core', frontend: { removePaths: ['src/app/note'] } } })),
+    { projection: true, profiles: [{ profile: 'core', removePaths: ['src/app/note'] }] });
+  assert.throws(() => profileProjections(tree('unbound', marked, { composition: { profile: 'demo', frontend: { removePaths: [] } } })),
+    /composer selection snapshot does not describe the generated composition: core/);
 });

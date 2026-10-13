@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "1455aee6c03d3867afe2fb0dc84c922e3af13f88396c895e84c04341be0ebde6"
+    "inventoryHash": "58e2ff023e7adf9122fbebb6a038a1d2150602ba856231b898c86c0982d1679b"
   },
   "summary": {
-    "sourceFileCount": 682,
-    "records": 397,
-    "syntaxOccurrences": 472,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 397,
+    "sourceFileCount": 683,
+    "records": 396,
+    "syntaxOccurrences": 471,
+    "ambiguousRecords": 348,
+    "unverifiedRecords": 396,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 179,
+      "navigation-producer": 178,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 387,
+      "navigation": 386,
       "request-telemetry": 10
     }
   },
@@ -9772,44 +9772,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/ism/page.tsx",
         "detector": "page-redirect-parser",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-A3DF59CE53692B",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/layout",
-      "targetCandidate": "/admin/system/banner",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/system/banner",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
-        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

@@ -10,6 +10,7 @@ import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
+import { presetIds } from './composition-profiles.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
@@ -49,7 +50,7 @@ function fixture(t, profile = 'core', layout = 'multi-module') {
 }
 
 test('producer fixtures and the actual generated product preserve a distinct non-recursive verification contract', t => {
-  const profiles = isArtifact ? [json(ROOT, 'reusable-base-lock.json').profile] : ['core', 'collaboration', 'demo'];
+  const profiles = isArtifact ? [json(ROOT, 'reusable-base-lock.json').profile] : presetIds();
   if (isArtifact) assert.deepEqual(validateReusableArtifactEntrypoints(ROOT), []);
   for (const profile of profiles) {
     const root = fixture(t, profile);

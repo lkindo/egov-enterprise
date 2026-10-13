@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { BASE_SEED, buildPermissionArtifacts, generatePermissions } from './generate-permissions.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { HARNESS_PROFILE_PATH, bindingHandlerSource, projectPermissionCatalog } from './reusable-permission-projection.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalogPath = 'config/governance/permission-catalog.json';
@@ -19,7 +20,8 @@ function fixture(t) {
     assert.ok(path.basename(dir).startsWith('egov-permission-contract-'));
     fs.rmSync(dir, { recursive: true, force: true });
   });
-  for (const file of [catalogPath, policyPath, BASE_SEED]) {
+  // 시작 구성 선언(생성물 표지가 없는 원본 모양)도 둔다 — 생성기는 표지로 생성물인지 판정하고, 선언이 없으면 판정하지 못해 실패한다.
+  for (const file of [catalogPath, policyPath, BASE_SEED, 'config/modules/presets.json']) {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
     fs.copyFileSync(path.join(root, file), path.join(dir, file));
   }
@@ -149,17 +151,42 @@ test('fresh-base grant projection preserves surrounding SQL and rejects missing 
   assert.throws(() => buildPermissionArtifacts(dir), /markers/);
 });
 
+/*
+ * 생성물 모사: 카탈로그는 구성 코드와 그 코드만 요구하는 page 로, 인가 원장은 구성 밖 권한을 요구하지 않는 바인딩으로 줄이고, 남는
+ * 바인딩의 핸들러 소스 자리를 빈 파일로 둔다(권한 투영 — reusable-permission-projection.mjs 가 생성기에서 하는 일의 모양).
+ */
+function projectedFixture(t, composition, { stubAllHandlers = false } = {}) {
+  const dir = fixture(t);
+  const codes = new Set(composition.permissionCodes);
+  const sourceCatalog = JSON.parse(fs.readFileSync(path.join(root, catalogPath), 'utf8'));
+  const sourcePolicy = JSON.parse(fs.readFileSync(path.join(root, policyPath), 'utf8'));
+  const routes = new Set(Object.entries(sourceCatalog.pagePermissions).filter(([, required]) => required.every(code => codes.has(code)))
+    .map(([route]) => route));
+  const projectedCatalog = projectPermissionCatalog(sourceCatalog, { permissionCodes: composition.permissionCodes, routes }).catalog;
+  const keptBindings = sourcePolicy.operationBindings.filter(row => row.access !== 'PERMISSION' || codes.has(row.permission));
+  const write = (file, value) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), typeof value === 'string' ? value : JSON.stringify(value));
+  };
+  for (const row of stubAllHandlers ? sourcePolicy.operationBindings : keptBindings) {
+    const source = bindingHandlerSource(row.handler, file => fs.existsSync(path.join(root, file)));
+    if (source) write(source, '');
+  }
+  write(catalogPath, projectedCatalog);
+  write(policyPath, { ...sourcePolicy, operationBindings: keptBindings });
+  // 생성물 표지(11단계 C5): 활성 구성 하나와 그 구성의 기능 파일만 둔다.
+  write('config/modules/presets.json', { schemaVersion: 2, active: composition.profile,
+    presets: [{ id: composition.profile, domains: composition.resolvedDomains }] });
+  for (const domain of composition.resolvedDomains) write(`config/modules/${domain}.json`, { id: domain });
+  write(COMPOSER_SELECTION_PATH, { catalog: loadProjectComposerCatalog(root), composition });
+  return { dir, write, sourceCatalog, sourcePolicy, projectedCatalog, keptBindings };
+}
+
 test('composition bootstrap regeneration retains exactly selected grants for custom and preset recipes', t => {
   const catalog = loadProjectComposerCatalog(root);
   for (const selection of [{ domains: ['survey'] }, { preset: 'core' }]) {
-    const dir = fixture(t);
     const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'permission-probe' }, sourceRef: 'v1.0.0', selection }, catalog);
-    const write = (file, value) => {
-      fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
-      fs.writeFileSync(path.join(dir, file), JSON.stringify(value));
-    };
-    write('config/reusable-base-profiles.json', { sourcePolicy: { generatedProfile: composition.profile } });
-    write(COMPOSER_SELECTION_PATH, { catalog, composition });
+    const { dir, write } = projectedFixture(t, composition);
     const baseline = buildPermissionArtifacts(dir);
     const block = baseline[BASE_SEED].split('-- BEGIN GENERATED BASE OPERATION GRANTS')[1].split('-- END GENERATED BASE OPERATION GRANTS')[0];
     const permissions = JSON.parse(fs.readFileSync(path.join(root, catalogPath), 'utf8')).permissions;
@@ -168,18 +195,62 @@ test('composition bootstrap regeneration retains exactly selected grants for cus
     const actual = [...block.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(([, group, code]) => `${group}|${code}`);
     assert.deepEqual(actual, expected);
     assert.ok(!actual.some(row => row.endsWith('|MAIL_SEND')));
-    assert.match(baseline['business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'], /MAIL_SEND/);
+    // [10단계 10b] 코드 상수(Java·TS)도 구성 코드뿐이다.
+    const java = baseline['business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java'];
+    assert.doesNotMatch(java, /MAIL_SEND/);
+    assert.match(java, /USER_READ/);
+    assert.doesNotMatch(baseline['frontend/src/types/generated-permissions.ts'], /"MAIL_SEND"/);
     generatePermissions(dir);
     assert.doesNotThrow(() => generatePermissions(dir, true));
     const tampered = structuredClone(composition);
     tampered.permissionCodes.push('MAIL_SEND');
     write(COMPOSER_SELECTION_PATH, { catalog, composition: tampered });
     assert.throws(() => buildPermissionArtifacts(dir), /does not match/);
-    if (composition.profile === 'custom') {
-      fs.unlinkSync(path.join(dir, COMPOSER_SELECTION_PATH));
-      assert.throws(() => buildPermissionArtifacts(dir), /ENOENT/);
-    }
+    // 생성물에서 구성 스냅숏이 없으면 원본 권한 전체로 넓히지 않고 실패한다 — 시작 구성도 같다(11단계 C5).
+    fs.unlinkSync(path.join(dir, COMPOSER_SELECTION_PATH));
+    assert.throws(() => buildPermissionArtifacts(dir), /ENOENT/);
+    // lock 이 있는 생성물에 표지가 없으면 원본으로 보지 않는다.
+    write('reusable-base-lock.json', {});
+    fs.copyFileSync(path.join(root, 'config/modules/presets.json'), path.join(dir, 'config/modules/presets.json'));
+    assert.throws(() => buildPermissionArtifacts(dir), /활성 구성 표지\(active\)가 없다/);
   }
+});
+
+/*
+ * [10단계 10b] 생성물은 원본 하한(권한 200·바인딩 350) 대신 도출값과 정확히 비교한다. 카탈로그와 바인딩 가운데 하나만 줄이거나, 지워진
+ * 핸들러의 바인딩을 남기거나, 하네스 census 와 수가 다르면 권한 생성기가 멈춘다(원본은 종전 하한 그대로다).
+ */
+test('a projected product compares the permission catalog and bindings with derived values instead of the source floors', t => {
+  const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'permission-probe' }, sourceRef: 'v1.0.0',
+    selection: { preset: 'core' } }, loadProjectComposerCatalog(root));
+  // 카탈로그만 줄이고 바인딩을 원본 그대로 두면(핸들러 소스는 모두 있게 해도) 남는 바인딩이 모르는 권한을 요구한다.
+  const catalogOnly = projectedFixture(t, composition, { stubAllHandlers: true });
+  catalogOnly.write(policyPath, catalogOnly.sourcePolicy);
+  assert.throws(() => buildPermissionArtifacts(catalogOnly.dir), /Unknown permission or invalid access/, 'catalog-only projection');
+  // 바인딩만 줄이고 카탈로그를 원본 그대로 두면 카탈로그가 구성 코드와 다르다.
+  const bindingsOnly = projectedFixture(t, composition);
+  bindingsOnly.write(catalogPath, bindingsOnly.sourceCatalog);
+  assert.throws(() => buildPermissionArtifacts(bindingsOnly.dir), /projected permission catalog differs from the composition codes: extra \[[A-Z_, ]*MAIL_SEND/,
+    'bindings-only projection');
+  // 핸들러 소스가 지워진 바인딩이 원장에 남으면 실패한다.
+  const stale = projectedFixture(t, composition);
+  const removedHandler = stale.sourcePolicy.operationBindings.find(row => row.handler.includes('.MailApiController#'));
+  stale.write(policyPath, { ...stale.sourcePolicy, operationBindings: [...stale.keptBindings, { ...removedHandler, access: 'AUTHENTICATED', permission: null }] });
+  assert.throws(() => buildPermissionArtifacts(stale.dir), /operation binding handler has no source: nuri\.api\.controller\.business\.mail\.MailApiController#/u,
+    'stale binding of a removed handler');
+  // 하네스 census 가 있으면 수가 같아야 하고, 키가 없으면 실패한다.
+  const counted = projectedFixture(t, composition);
+  const census = { permissionCatalog: counted.projectedCatalog.permissions.length, operationBindings: counted.keptBindings.length };
+  counted.write(HARNESS_PROFILE_PATH, { census });
+  assert.doesNotThrow(() => buildPermissionArtifacts(counted.dir));
+  counted.write(HARNESS_PROFILE_PATH, { census: { ...census, operationBindings: census.operationBindings + 1 } });
+  assert.throws(() => buildPermissionArtifacts(counted.dir), /projected operationBindings \d+ differs from the reusable harness census/, 'census count mismatch');
+  counted.write(HARNESS_PROFILE_PATH, { census: { operationBindings: census.operationBindings } });
+  assert.throws(() => buildPermissionArtifacts(counted.dir), /reusable harness census does not declare permissionCatalog/, 'census key missing');
+  // 원본(구성 스냅숏 없음)은 종전 하한을 지킨다.
+  const source = fixture(t);
+  mutate(source, catalogPath, value => { value.permissions = value.permissions.slice(0, 199); });
+  assert.throws(() => buildPermissionArtifacts(source), /Permission source coverage must not collapse/);
 });
 
 test('permission freshness and red contracts run through local verify, pre-push and required CI operational tests', () => {

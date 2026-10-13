@@ -32,11 +32,12 @@ class CustomUserDetailsTest {
 
     @Test
     void permissionsAreExactImmutableValuesWithoutRolePrefixExpansion() {
-        var input = new ArrayList<>(List.of("SURVEY_READ", "SURVEY_CREATE", "SURVEY_READ"));
+        // 예시 권한은 core 코드다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
+        var input = new ArrayList<>(List.of("USER_READ", "USER_CREATE", "USER_READ"));
         CustomUserDetails user = CustomUserDetails.builder().permissions(input).build();
         input.add("AUTH_ASSIGN");
         assertThat(user.getAuthorities()).extracting(GrantedAuthority::getAuthority)
-                .containsExactly("SURVEY_CREATE", "SURVEY_READ");
+                .containsExactly("USER_CREATE", "USER_READ");
         assertThatThrownBy(() -> user.getPermissions().add("AUTH_ASSIGN"))
                 .isInstanceOf(UnsupportedOperationException.class);
     }

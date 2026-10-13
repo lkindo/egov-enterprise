@@ -859,6 +859,11 @@ jobs:
         with:
           cache-provider: basic
           cache-read-only: true
+      # 생성기는 생성물의 API 계약(생성 타입·경계·소비 census)을 원본 frontend 의 TypeScript·openapi-typescript 로
+      # 다시 만든다(Phase 2 10c-2, U5-A). 설치하지 않으면 생성이 TOOL_UNAVAILABLE 로 멈춘다(조용히 건너뛰지 않는다).
+      - name: Install source frontend tools for contract projection
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
       - name: Generate and verify reusable profile
         run: node scripts/verify-reusable-base.mjs --profile ${{ matrix.profile }} --layout ${{ matrix.layout }}
       - name: Retain reusable profile verification
@@ -904,6 +909,11 @@ jobs:
         with:
           cache-provider: basic
           cache-read-only: true
+      # 생성기는 생성물의 API 계약(생성 타입·경계·소비 census)을 원본 frontend 의 TypeScript·openapi-typescript 로
+      # 다시 만든다(Phase 2 10c-2, U5-A). 설치하지 않으면 생성이 TOOL_UNAVAILABLE 로 멈춘다(조용히 건너뛰지 않는다).
+      - name: Install source frontend tools for contract projection
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
       - name: Generate and verify custom composition
         run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}
       - name: Retain custom composition verification

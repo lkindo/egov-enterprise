@@ -205,11 +205,15 @@ describe('proxy 인증 게이트', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 
+  // 같은 깊이의 동적 형제(/admin/community/[id], 인증만 요구)가 있는 정적 관리 경로도 그 정적 페이지의 권한으로 막는다.
+  //   투영으로 정적 page 가 빠진 생성물(템플릿 없이 커뮤니티를 고른 구성)에서는 Next 도 그 경로를 동적 형제로 해석하므로 예시에서
+  //   뺀다(T2 첫 실행, run 38275695802). 목록이 비지 않도록 모든 생성물에 남는 core 관리 경로(메뉴 관리)를 함께 둔다.
   it.each([
     '/admin/community/boards/master',
     '/admin/community/boards/maker',
     '/admin/community/templates',
-  ])('requires current management permission before serving the static route %s', async (route) => {
+    '/admin/system/menus',
+  ].filter((route) => pageInProjection(route)))('requires current management permission before serving the static route %s', async (route) => {
     const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
     const response = await proxy(requestWith(token, route));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');

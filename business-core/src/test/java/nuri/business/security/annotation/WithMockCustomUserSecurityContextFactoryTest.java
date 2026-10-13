@@ -20,8 +20,9 @@ class WithMockCustomUserSecurityContextFactoryTest {
         assertThat(admin.getGroups()).containsExactly("ROLE_ADMIN");
         assertThat(admin.getPermissions()).contains("AUTHRT_GRANT", "PRIVACY_READ");
         assertThat(admin.getAuthorities()).extracting("authority").doesNotContain("ROLE_ADMIN", "ROLE_USER");
-        assertThat(principal(UserFixture.class).getPermissions()).contains("BOARD_READ")
-                .doesNotContain("AUTHRT_GRANT", "PRIVACY_READ", "BOARD_DELETE_ALL");
+        // 일반 사용자 기본 권한의 예시는 core 코드다 — 생성물은 런타임 카탈로그를 구성 코드로 줄인다(Phase 2 10단계 10b).
+        assertThat(principal(UserFixture.class).getPermissions()).contains("DEPT_JOB_READ")
+                .doesNotContain("AUTHRT_GRANT", "PRIVACY_READ", "DEPT_JOB_DELETE_ALL");
     }
 
     @Test

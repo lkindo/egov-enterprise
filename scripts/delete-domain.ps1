@@ -1,10 +1,10 @@
-# delete-domain.ps1 — manifest 기반 app 도메인 소스 삭제
+# delete-domain.ps1 — 기능 파일(매니페스트 v2) 기반 app 도메인 소스 삭제
 #
 # Usage:   ./scripts/delete-domain.ps1 -DomainName <name>[,<name>...] [-DryRun]
 # Example: ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun
 #
-# 도메인의 SSOT 는 config/reusable-base-profiles.json 이다.
-#  - 매니페스트에 없는 도메인명은 즉시 에러로 중단한다(경로 추측·침묵 SKIP 금지).
+# 도메인의 SSOT 는 config/modules 의 기능 파일(<기능 id>.json)이다(11단계 C5 — 종전 v1 manifest).
+#  - 기능 파일이 없는 도메인명은 즉시 에러로 중단한다(경로 추측·침묵 SKIP 금지). 판정은 scripts/domain-deletion-plan.mjs 가 한다.
 #  - 지우는 도메인을 요구하는 도메인은 자동으로 동반 삭제한다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·
 #    생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 scripts/domain-deletion-plan.mjs 가 한다. 카탈로그 전체를
 #    적재하지 않으므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 돈다.
@@ -14,8 +14,8 @@
 #    그 밖의 파일(지원 파일, 지우는 타입을 참조하는 api-server 컨트롤러·시험)은 디렉터리 이름으로 추측하지 않고
 #    생성기 Java 투영(planJavaRemoval)으로 고른 plan.javaFiles 를 쓴다. 컨트롤러는 기능 이름과 다른 패키지에 있을 수 있다
 #    (행사·외부인사·포상 컨트롤러는 controller/business/operation).
-#  - frontend 경로는 매니페스트가 pack 단위(frontend.removePaths)로만 소유하므로,
-#    해당 pack 의 app 도메인 전부를 삭제할 때만 일괄 삭제하고 그 외에는 명시 경고한다.
+#  - frontend 경로는 지우는 기능의 화면 소유(owns.frontend)와, 소유한 기능을 모두 지울 때의 함께 소유한 화면(owns.frontendAny)이다
+#    (plan.frontendPaths). 생성기 투영의 화면 제외 규칙과 같다.
 #  - 삭제 후 남는 tb_menu_info 시드 라우트(versioned migration)는 경고로 출력한다.
 #
 # 이 스크립트는 경로 삭제만 담당한다. 전이 참조 정리·pack marker 블록 제거까지 필요한
@@ -30,63 +30,31 @@ param (
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$ManifestRelPath = 'config/reusable-base-profiles.json'
-$ManifestPath = Join-Path $RepoRoot $ManifestRelPath
+$ModulesRelPath = 'config/modules'
 
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "Domain deletion (manifest-driven)" -ForegroundColor Cyan
-Write-Host "  Manifest: $ManifestRelPath" -ForegroundColor Cyan
+Write-Host "Domain deletion (feature-module-driven)" -ForegroundColor Cyan
+Write-Host "  Modules: $ModulesRelPath" -ForegroundColor Cyan
 if ($DryRun) {
     Write-Host "[DRY RUN MODE] No files will be actually deleted." -ForegroundColor Yellow
 }
 Write-Host "=============================================" -ForegroundColor Cyan
 
-# 0. 매니페스트 로드 -----------------------------------------------------------
-if (-not (Test-Path $ManifestPath)) {
-    Write-Host "[ERROR] 매니페스트를 찾을 수 없다: $ManifestPath" -ForegroundColor Red
-    exit 1
-}
-try {
-    $manifest = Get-Content $ManifestPath -Raw | ConvertFrom-Json
-} catch {
-    Write-Host "[ERROR] 매니페스트 JSON 파싱 실패: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
-}
-
-# 도메인 -> pack 매핑 (SSOT: packs.*.backend.appDomains)
-$domainPack = @{}
-foreach ($packProp in $manifest.packs.PSObject.Properties) {
-    foreach ($d in @($packProp.Value.backend.appDomains)) {
-        if ($d) { $domainPack[$d] = $packProp.Name }
-    }
-}
-
-# 1. 입력 검증: 매니페스트에 없는 도메인은 명시 에러 ---------------------------
+# 1. 입력 정리 ------------------------------------------------------------------
 $requested = @(
     $DomainName |
         ForEach-Object { $_.ToLower().Trim() } |
         Where-Object { $_ } |
         Select-Object -Unique
 )
-$unknown = @($requested | Where-Object { -not $domainPack.ContainsKey($_) })
-if ($unknown.Count -gt 0) {
-    Write-Host "[ERROR] 매니페스트에 없는 도메인: $($unknown -join ', ')" -ForegroundColor Red
-    Write-Host "        유효한 app 도메인($ManifestRelPath, packs.*.backend.appDomains):" -ForegroundColor Red
-    foreach ($packProp in $manifest.packs.PSObject.Properties) {
-        $names = @($packProp.Value.backend.appDomains)
-        if ($names.Count -gt 0) {
-            Write-Host ("          {0}: {1}" -f $packProp.Name, ($names -join ', ')) -ForegroundColor Red
-        }
-    }
-    exit 1
-}
 
 # 2. 동반 삭제 (requires 간선의 역방향 폐포, scripts/domain-deletion-plan.mjs) -----------
+#    기능 파일이 없는 도메인은 판정이 에러로 멈춘다(알려진 기능 목록을 함께 적는다).
 #    지우는 도메인을 요구하는 도메인을 함께 지운다. 화면을 같이 쓰는 데서 나온 간선은 보지 않는다.
 $planScript = Join-Path $RepoRoot 'scripts/domain-deletion-plan.mjs'
 $planOutput = & node $planScript --json @requested
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] 동반 삭제 판정 실패(scripts/domain-deletion-plan.mjs, exit $LASTEXITCODE)" -ForegroundColor Red
+    Write-Host "[ERROR] 동반 삭제 판정 실패(scripts/domain-deletion-plan.mjs, exit $LASTEXITCODE) — 위 메시지를 보라. 기능은 $ModulesRelPath 의 기능 파일이다." -ForegroundColor Red
     exit 1
 }
 $plan = ($planOutput -join "`n") | ConvertFrom-Json
@@ -114,22 +82,8 @@ foreach ($row in @($plan.javaFiles)) {
     $backendRelPaths += $row.file
 }
 
-# 4. frontend 경로: pack 전체 삭제일 때만 매니페스트 removePaths 일괄 삭제 ------
-$frontendRelPaths = @()
-$frontendWarnings = @()
-$packsTouched = @($deleteList | ForEach-Object { $domainPack[$_] } | Select-Object -Unique)
-foreach ($packName in $packsTouched) {
-    $pack = $manifest.packs.$packName
-    $removePaths = @($pack.frontend.removePaths | Where-Object { $_ })
-    if ($removePaths.Count -eq 0) { continue }
-    $remaining = @(@($pack.backend.appDomains) | Where-Object { -not $toDelete.Contains($_) })
-    if ($remaining.Count -eq 0) {
-        $frontendRelPaths += ($removePaths | ForEach-Object { "frontend/$_" })
-    } else {
-        $frontendWarnings += ("pack '{0}'의 frontend 경로 {1}건은 매니페스트가 pack 단위로만 소유해 이번 삭제에서 제외했다. " -f $packName, $removePaths.Count) +
-            ("pack 에 남는 도메인: {0}. 화면까지 제거하려면 pack 도메인 전체를 지정하거나 npm run base:generate-source projection 을 사용하라." -f ($remaining -join ', '))
-    }
-}
+# 4. frontend 경로: 지우는 기능의 화면 소유(plan.frontendPaths) ---------------------
+$frontendRelPaths = @($plan.frontendPaths | Where-Object { $_ })
 
 # 지우는 Java 타입의 정규화된 이름 (6단계 잔존 참조 검사용) — 지우기 전에 읽는다 ------
 #    기능 이름(system 등)을 패키지 접두로 찾으면 business-core 의 같은 이름 패키지까지 걸린다. 실제로 지우는 타입만 찾는다.
@@ -166,7 +120,7 @@ foreach ($rel in $allRelPaths) {
     }
 }
 if ($absentRelPaths.Count -gt 0) {
-    Write-Host "[INFO] 매니페스트 매핑 경로 중 현재 트리에 없는 경로($($absentRelPaths.Count)건) — 해당 도메인이 그 계층을 갖지 않는 정상 케이스다:" -ForegroundColor DarkGray
+    Write-Host "[INFO] 기능 소유 경로 중 현재 트리에 없는 경로($($absentRelPaths.Count)건) — 해당 도메인이 그 계층을 갖지 않는 정상 케이스다:" -ForegroundColor DarkGray
     foreach ($rel in $absentRelPaths) { Write-Host "    - $rel" -ForegroundColor DarkGray }
 }
 
@@ -236,12 +190,11 @@ if ($menuHits.Count -gt 0) {
     if ($menuHits.Count -gt 20) { Write-Host "    ... 외 $($menuHits.Count - 20)건" -ForegroundColor Yellow }
     Write-Host "  잔존 메뉴는 후속 versioned migration 으로 정리하라(V2_45 방식 참고)." -ForegroundColor Yellow
 } else {
-    Write-Host "[WARN] 경로 근거로 특정된 tb_menu_info 잔존 라우트는 없다. 다만 메뉴-도메인 매핑은 매니페스트에 없으므로," -ForegroundColor Yellow
+    Write-Host "[WARN] 경로 근거로 특정된 tb_menu_info 잔존 라우트는 없다. 다만 메뉴-도메인 매핑은 기능 파일에 없으므로," -ForegroundColor Yellow
     Write-Host "       live DB 기준 전수 확인은 node scripts/menu-census.mjs 로 수행하라." -ForegroundColor Yellow
 }
 
-# 8. frontend pack 경고 + 요약 --------------------------------------------------
-foreach ($w in $frontendWarnings) { Write-Host "[WARN] $w" -ForegroundColor Yellow }
+# 8. 요약 -----------------------------------------------------------------------
 
 Write-Host "=============================================" -ForegroundColor Cyan
 if ($DryRun) {

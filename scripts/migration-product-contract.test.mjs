@@ -62,6 +62,7 @@ test('standalone migration export retains independent verification and clears in
     ['reusable-layout.mjs', 'adoption-execute.mjs'],
     ['release-images.mjs', 'adoption-execute.mjs'],
     ['ci-change-scope.mjs', 'governance-review.mjs'],
+    ['composition-profiles.mjs', 'adoption-execute.mjs'],
     ['read-regular-file.mjs', 'governance-review.mjs'],
   ]) {
     const missingHelper = resolve(outputRoot, 'scripts', dependency);

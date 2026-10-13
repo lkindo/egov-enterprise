@@ -16,32 +16,32 @@ export function supportFileDirectoryDomain(file) {
   return /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([a-z][a-z0-9_]*)\/(?:[A-Za-z_$][\w$]*\/)*[A-Za-z_$][\w$]*\.java$/u.exec(file)?.[1] ?? null;
 }
 
-export function domainSupportFiles(root, manifest) {
+/**
+ * 지원 파일 선언의 판정(매니페스트 v2 기능 파일의 backend.supportFiles). `entries` 는 선언 순서의 `{ owner, owned, domain, files }` 다 —
+ * owner 는 선언한 자리(기능 id), owned 는 그 자리가 소유한 기능이다. `appDomainList` 는 선택할 수 있는 기능 id 전부다.
+ */
+export function supportFileOwners(root, entries, appDomainList) {
   const result = new Map();
   const owners = new Set();
   const realRoot = realpathSync(root);
-  const appDomains = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
-  for (const [pack, value] of Object.entries(manifest.packs ?? {})) {
-    const declarations = value.backend?.domainSupportFiles ?? {};
-    if (!declarations || typeof declarations !== 'object' || Array.isArray(declarations)) throw new Error(`Invalid domain support declarations: ${pack}`);
-    for (const [domain, files] of Object.entries(declarations)) {
-      if (!value.backend?.appDomains?.includes(domain) || result.has(domain)
-        || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
-      for (const file of files) {
-        const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
-        if (typeof file !== 'string'
-          || !(/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
-            || (directoryDomain && directoryDomain !== domain && appDomains.has(directoryDomain)))
-          || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
-        const absolute = resolve(root, file);
-        if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
-        const child = relative(realRoot, realpathSync(absolute));
-        if (isAbsolute(child) || child === '..' || child.startsWith(`..${sep}`)
-          || child.split(sep).join('/') !== file) throw new Error(`Unsafe domain support file: ${file}`);
-        owners.add(file);
-      }
-      result.set(domain, [...files]);
+  const appDomains = new Set(appDomainList);
+  for (const { owner: pack, owned, domain, files } of entries) {
+    if (!owned.includes(domain) || result.has(domain)
+      || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
+    for (const file of files) {
+      const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
+      if (typeof file !== 'string'
+        || !(/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+          || (directoryDomain && directoryDomain !== domain && appDomains.has(directoryDomain)))
+        || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
+      const absolute = resolve(root, file);
+      if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
+      const child = relative(realRoot, realpathSync(absolute));
+      if (isAbsolute(child) || child === '..' || child.startsWith(`..${sep}`)
+        || child.split(sep).join('/') !== file) throw new Error(`Unsafe domain support file: ${file}`);
+      owners.add(file);
     }
+    result.set(domain, [...files]);
   }
   return result;
 }
@@ -76,104 +76,43 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   }
 }
 
-const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
-const MANAGEMENT_RBAC_SURFACES = new Map([
-  ['/api/v1/admin/operation/events', 'event'],
-  ['/api/v1/admin/operation/rewards', 'reward'],
-  ['/api/v1/help/hpcm', 'help'],
-  ['/api/v1/help/manuals', 'help'],
-  ['/api/v1/admin/system/banners', 'promotion'],
-  ['/api/v1/admin/system/popups', 'promotion'],
-  ['/api/v1/admin/system/templates', 'template'],
-]);
-// Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
-const RBAC_DOMAINS = ['survey', 'promotion', 'informalsanction', 'event', 'reward', 'help', 'template'];
+/**
+ * 선택 기능 RBAC 매트릭스(데모 표면) 파일. 어느 표면을 어느 기능이 지키는지는 기능 파일의 owns.rbacMatrix 가 정한다(로더의 extras.rbac,
+ * composerOwnership 의 rbac — 게이트 소유·시작 구성 기대치와 같은 원천이다). 통계는 Phase 0c 에서 core 로 옮겨 core 매트릭스가 검사한다.
+ */
+export const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
 const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
-const GATE_OWNERS = {
-  'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
-  'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
-  // 결재 흐름 검증은 알림 리스너(NotificationRequestListener)도 참조해, 알림이 빠지면 함께 지워진다.
-  'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction', 'notification'],
-  'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['community'],
-  'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['community', 'template'],
-  'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['event'],
-  'api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java': ['notification'],
-  'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'community'],
-  'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],
-  'api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java': ['addressbook'],
-  'api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java': ['sms'],
-  'api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java': ['template'],
-};
-
-export function composerProfile(manifest, composition) {
-  if (composition.profile !== 'custom') return manifest.profiles[composition.profile];
-  const selected = new Set(composition.resolvedDomains);
-  const acknowledgedRemovedGates = Object.entries(GATE_OWNERS)
-    .filter(([, domains]) => domains.some(domain => !selected.has(domain)))
-    .map(([file, domains]) => ({ file, reason: `선택하지 않은 검사 대상 도메인: ${domains.filter(domain => !selected.has(domain)).join(', ')}` }));
-  if (!RBAC_DOMAINS.some(domain => selected.has(domain))) acknowledgedRemovedGates.push({
-    file: RBAC, reason: `선택 가능한 RBAC 검사 표면(${RBAC_DOMAINS.join(', ')})이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.`,
-  });
-  return {
-    packs: composition.packs, resolvedDomains: composition.resolvedDomains,
-    frontendRemovePaths: composition.frontend.removePaths,
-    acknowledgedRemovedGates,
-    acknowledgedGateRemovalRules: manifest.profiles.core.acknowledgedGateRemovalRules,
-    description: '명시적 recipe와 의존성 해석으로 구성한 독립 프로젝트',
-  };
-}
-
-/*
- * pack 마커 블록이 있는 프런트 파일의 소유 표다(슬롯 단계 PR-2). 마커를 걷어 내는 이행이 끝날 때까지 남은 블록을 이 표 하나로 드러낸다.
- * - blocks: pack 별 블록 수. 공용 파서(parsePackMarkerBlocks)로 센 원본 수와 정확히 같아야 한다(project-composer-source.test.mjs).
- * - owners: pack → 그 블록을 남기는 데 필요한 기능. 직접 선택 투영이 쓴다. 블록 내용으로 가르는 파일만 함수다.
- * - step: 블록을 걷어 낼 이행 단계(걷지 않고 남기는 블록은 '잔존(…)'), reason: 마커로 남겨 둔 이유.
- * 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 'Unclassified' 로 실패한다 — 새 블록은 조용히 남거나 빠지지 않는다.
- * 경로 접두로 소유를 정하지 않는다. 접두 아래 새 파일에 블록이 생겨도 분류 없이 실패한다.
- */
-export const FRONTEND_MARKER_FILES = Object.freeze([
-  { file: 'src/app/search/SearchClient.tsx', blocks: { collaboration: 7 }, owners: { collaboration: ['board'] },
-    step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)', reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' },
-  { file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: { demo: 4 }, owners: { demo: ['community'] },
-    // 커뮤니티 후속 C3(DEC-OPS-280): 커뮤니티가 게시판을 요구하고 게시판은 커뮤니티를 요구하지 않으므로 마커가 맞는 형태다 — 게시판만
-    //   고른 구성과 협업 기본에서 네 블록이 import 와 함께 빠진다.
-    step: '잔존(선택 외래 키 연동 칸)',
-    reason: '커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다.' },
-]);
-const MARKER_FILE_ROWS = new Map(FRONTEND_MARKER_FILES.map(row => [row.file, row]));
-
-/** 마커 블록 하나를 남기는 데 필요한 기능. 표에 없는 파일·pack 이면 실패한다. `text` 는 마커 줄을 포함한 블록 원문이다. */
-export function composerMarkerBlockOwners(file, pack, text) {
-  const normalized = file.replaceAll('\\', '/').replace(/^frontend\//, '');
-  const owners = MARKER_FILE_ROWS.get(normalized)?.owners;
-  if (!owners || !Object.hasOwn(owners, pack)) throw new Error(`Unclassified composer UI block: ${normalized}/${pack}`);
-  return typeof owners[pack] === 'function' ? owners[pack](text) : owners[pack];
-}
 
 /**
- * 표와 실측(파일 → pack 별 블록 수)의 정확한 대조. 블록 하나가 늘거나 줄어도, 표에 없는 마커 파일이 생겨도, 마커가 없는 행이
- * 남아도, 단계·사유가 비거나 블록 수와 소유 기능의 pack 이 어긋나도 위반이다.
+ * 생성기가 투영에 쓰는 프로필(11단계 C3). 시작 구성과 직접 선택이 같은 모양이다 — 투영은 해석된 기능 목록(resolvedDomains)과 화면
+ * 제외 경로(frontendRemovePaths)로만 하고 pack 을 보지 않는다. 시작 구성은 승인 기대치(지워지는 게이트·규칙·Java 연쇄)를 매니페스트
+ * v2 의 presets.json 에서 받고, 직접 선택은 기능 파일의 게이트 소유에서 계산한다. `modules` 는 loadComposerModules 결과다.
  */
-export function frontendMarkerTableViolations(table, measured) {
-  const violations = [];
-  const rows = new Map();
-  const counts = value => JSON.stringify(Object.keys(value ?? {}).sort().map(pack => [pack, value[pack]]));
-  for (const row of table) {
-    if (rows.has(row.file)) violations.push(`표에 같은 파일이 두 번 있다: ${row.file}`);
-    rows.set(row.file, row);
-    if (!row.step?.trim() || !row.reason?.trim()) violations.push(`단계나 사유가 빈 행: ${row.file}`);
-    const packs = Object.keys(row.blocks ?? {});
-    if (!packs.length || packs.some(pack => !Number.isInteger(row.blocks[pack]) || row.blocks[pack] < 1)) violations.push(`블록 수가 양의 정수가 아니다: ${row.file}`);
-    if (JSON.stringify(packs.sort()) !== JSON.stringify(Object.keys(row.owners ?? {}).sort())) violations.push(`블록 수와 소유 기능의 pack 이 다르다: ${row.file}`);
+export function composerProfile(modules, composition) {
+  const projection = { resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths };
+  const { presetExpectations, gateOwners, rbac } = modules.extras;
+  // 목록만 복사한다. 목록이 아닌 값은 그대로 넘겨 승인 대조가 형식 오류로 말하게 한다(removedGateAcknowledgement·javaCascadeAcknowledgement).
+  const copy = value => (Array.isArray(value) ? value.map(row => (row !== null && typeof row === 'object' ? { ...row } : row)) : value);
+  if (composition.profile !== 'custom') {
+    const expected = presetExpectations[composition.profile];
+    if (!expected) throw new Error(`Preset expectations are not declared: ${composition.profile}`);
+    return { ...projection, acknowledgedRemovedGates: copy(expected.gates), acknowledgedGateRemovalRules: copy(expected.gateRemovalRules),
+      acknowledgedJavaCascade: copy(expected.javaCascade), description: expected.description };
   }
-  for (const [file, value] of measured) {
-    const row = rows.get(file);
-    if (!row) violations.push(`표에 없는 마커 파일: ${file} ${counts(value)}`);
-    else if (counts(value) !== counts(row.blocks)) violations.push(`블록 수가 표와 다르다: ${file} 실측 ${counts(value)} · 표 ${counts(row.blocks)}`);
-  }
-  for (const row of table) if (!measured.has(row.file)) violations.push(`마커가 없는 표 행: ${row.file}`);
-  return violations;
+  const selected = new Set(composition.resolvedDomains);
+  const acknowledgedRemovedGates = Object.entries(gateOwners)
+    .filter(([, domains]) => domains.some(domain => !selected.has(domain)))
+    .map(([file, domains]) => ({ file, reason: `선택하지 않은 검사 대상 도메인: ${domains.filter(domain => !selected.has(domain)).join(', ')}` }));
+  if (!rbac.domains.some(domain => selected.has(domain))) acknowledgedRemovedGates.push({
+    file: rbac.file, reason: `선택 가능한 RBAC 검사 표면(${rbac.domains.join(', ')})이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다.`,
+  });
+  return {
+    ...projection,
+    acknowledgedRemovedGates,
+    acknowledgedGateRemovalRules: copy(presetExpectations.core.gateRemovalRules),
+    description: '명시적 recipe와 의존성 해석으로 구성한 독립 프로젝트',
+  };
 }
 
 function removeTest(source, name) {
@@ -190,7 +129,7 @@ function removeTest(source, name) {
   return source.slice(0, declaration.index) + source.slice(end);
 }
 
-function projectManagementRbacSurfaces(source, selected) {
+function projectManagementRbacSurfaces(source, selected, surfaces) {
   const inventory = /    static Stream<ManagedSurface> managementSurfaces\(\) \{\r?\n        return Stream\.of\(([\s\S]*?)\);\r?\n    \}/.exec(source);
   if (!inventory) throw new Error('Management RBAC surface inventory contract drifted');
   // Constructor records have a fixed textual shape; keep each selected record byte-for-byte,
@@ -198,9 +137,10 @@ function projectManagementRbacSurfaces(source, selected) {
   const constructors = [...inventory[1].matchAll(/                new ManagedSurface\("([^"]+)", "[A-Z_]+", "[A-Z_]+", "[A-Za-z][A-Za-z0-9_]*",\r?\n                        """\r?\n[\s\S]*?\r?\n                        """, "[^"]*", "[^"]*"\)/g)];
   const paths = constructors.map(match => match[1]);
   const remainder = constructors.reduce((value, match) => value.replace(match[0], ''), inventory[1]);
-  if (JSON.stringify(paths) !== JSON.stringify([...MANAGEMENT_RBAC_SURFACES.keys()])
+  // 표면 집합은 기능 파일의 owns.rbacMatrix 와 정확히 같아야 한다. 남기는 생성자의 순서는 시험 파일의 것을 그대로 둔다.
+  if (JSON.stringify([...paths].sort()) !== JSON.stringify(Object.keys(surfaces).sort()) || new Set(paths).size !== paths.length
       || !/^[\s,]*$/.test(remainder)) throw new Error('Management RBAC surface owner inventory drifted');
-  const retained = constructors.filter(match => selected.has(MANAGEMENT_RBAC_SURFACES.get(match[1])));
+  const retained = constructors.filter(match => selected.has(surfaces[match[1]]));
   if (retained.length === constructors.length) return source;
   if (retained.length) return source.replace(inventory[1], `\n${retained.map(match => match[0]).join(',\n')}`);
   source = source.replace(inventory[0], '');
@@ -217,12 +157,18 @@ function projectManagementRbacSurfaces(source, selected) {
   return source.replace(record[0], '');
 }
 
-/** Preserve every assertion for a selected surface in the formerly pack-wide RBAC test. */
-export function projectComposerJava(file, source, profile) {
+/**
+ * Preserve every assertion for a selected surface in the formerly pack-wide RBAC test. `rbac` 은 기능 파일의 RBAC 매트릭스 소유
+ * (composerOwnership(modules).rbac — { domains, surfaces: 표면 → 기능 })다. 그 파일이 아니면 읽지 않는다.
+ */
+export function projectComposerJava(file, source, profile, rbac) {
   if (!profile.resolvedDomains || file.replaceAll('\\', '/') !== RBAC) return source;
+  if (!Array.isArray(rbac?.domains) || rbac.surfaces === null || typeof rbac.surfaces !== 'object') {
+    throw new Error('RBAC projection needs the feature RBAC ownership (composerOwnership(modules).rbac)');
+  }
   const selected = new Set(profile.resolvedDomains);
-  if (!RBAC_DOMAINS.some(domain => selected.has(domain))) return source; // normal declared removal
-  source = projectManagementRbacSurfaces(source, selected);
+  if (!rbac.domains.some(domain => selected.has(domain))) return source; // normal declared removal
+  source = projectManagementRbacSurfaces(source, selected, rbac.surfaces);
   if (!selected.has('survey')) for (const method of [
     'adminReadsDemoOwnedAdministrativeSurfaces', 'ordinaryUserCannotReadDemoOwnedAdministrativeSurfaces',
     'anonymousDemoOwnedAdministrativeRequestsRequireAuthentication', 'explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup',
@@ -263,18 +209,18 @@ export function projectedScreenLosses(expectation, pagePresent) {
 /** Selected source roots are an expected population, never inferred from what survived cascading removal. */
 // `present` 는 생성물에 그 파일이 남았는지 답한다. 생성기는 디스크를, 정밀 점검(plan/deep)은 제거 계획을 본다.
 // `lostScreens`(projectedScreenLosses 결과)를 함께 받아, 정밀 점검처럼 빠진 화면과 소스를 모두 모아 SOURCE_SURVIVAL 하나로 알린다.
-export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, manifest, { present = path => existsSync(join(outputRoot, path)), lostScreens = [] } = {}) {
+// `ownership` 은 기능 소유(composerOwnership — 기능 id·지원 파일)다. 시작 구성도 직접 선택과 같은 기대 모집단을 본다(11단계 C3).
+export function assertComposerSourceSurvives(sourceRoot, outputRoot, composition, ownership, { present = path => existsSync(join(outputRoot, path)), lostScreens = [] } = {}) {
   const lost = new Set(lostScreens.map(entry => entry.source));
-  if (composition.profile === 'custom') collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost);
+  collectComposerSourceLosses(sourceRoot, composition, ownership, present, lost);
   if (!lost.size) return;
   const files = [...lost].sort((left, right) => left.localeCompare(right));
   throw new ComposerError('SOURCE_SURVIVAL', { files },
     `Selected capability source was removed: ${files.join(', ')}${lostScreens.length ? ` (expected screens: ${describeRoutes(lostScreens)})` : ''}`);
 }
 
-function collectComposerSourceLosses(sourceRoot, composition, manifest, present, lost) {
-  manifest ??= JSON.parse(readFileSync(join(sourceRoot, 'config/reusable-base-profiles.json'), 'utf8'));
-  const support = domainSupportFiles(sourceRoot, manifest);
+function collectComposerSourceLosses(sourceRoot, composition, ownership, present, lost) {
+  const support = ownership.supportFiles;
   // 선택 도메인 디렉터리에서도 제외된 소비자가 소유한 지원 파일은 지워지는 것이 맞다(제외된 소비자만 쓰는 다른 기능 디렉터리의 구현).
   const excludedSupport = new Set([...support].filter(([owner]) => !composition.resolvedDomains.includes(owner))
     .flatMap(([, files]) => files));
@@ -301,7 +247,7 @@ function collectComposerSourceLosses(sourceRoot, composition, manifest, present,
   for (const path of composition.frontend.includedPaths) assertTree(join(sourceRoot, 'frontend', path));
   for (const path of composition.frontend.includedPaths) if (existsSync(join(sourceRoot, 'frontend', path)) && statSync(join(sourceRoot, 'frontend', path)).isFile()) requireFile(`frontend/${path}`);
   const selected = new Set(composition.resolvedDomains);
-  const features = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
+  const features = new Set(ownership.domains);
   // 참조 기능이 모두 선택된 컨트롤러는 남아야 한다. 디렉터리 소유 기능(apiSourceOwner)이 선택된 컨트롤러도 남아야 한다 —
   // 소유 기능만 고른 구성에서 다른 기능 타입 참조로 컨트롤러가 연쇄 제거되면, 참조 기능이 모두 선택된 것이 아니라 앞 규칙은
   // 통과시킨다(커뮤니티 사용자 API 가 게시판 참조로 조용히 지워지던 경로, DEC-OPS-280). 카탈로그가 그 참조를 간선으로 세면 둘은 같다.

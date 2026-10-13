@@ -49,7 +49,7 @@ class SecurePathsDeclarationSyncLinterTest {
         List<String> problems = bindingProblems(source, runtime);
         JsonNode catalog = read(root.resolve(CATALOG));
         if (!catalog.equals(read(root.resolve(RUNTIME_CATALOG)))) problems.add("permission catalog 생성물 drift");
-        if (catalog.path("permissions").size() < 200) problems.add("permission catalog 하한 미달");
+        if (coverageMismatch(catalog.path("permissions").size(), "permissionCatalog", 200)) problems.add("permission catalog 하한 미달");
         String config = HarnessSourceIndex.stripCommentsPreservingStrings(
                 HarnessSourceIndex.read(root.resolve(API_CONFIG))).replaceAll("\\s+", "");
         // 공백을 지운 설정에서 찾으므로 'new' 와 패키지가 붙는다. 패키지를 따로 된 문자열로 두어야 rename-project.ps1 이
@@ -93,9 +93,20 @@ class SecurePathsDeclarationSyncLinterTest {
         assertFalse(bindingProblems(empty, empty).isEmpty());
     }
 
+    /**
+     * 원본은 하한, 재사용 투영본은 하네스 census 의 도출값과 정확히 같아야 한다(10단계 10b). 투영본의 권한 카탈로그는 구성 코드로,
+     * 인가 원장 바인딩은 핸들러 소스가 남는 행으로 줄었으므로 원본 하한(200·350)은 core 생성물에서 맞지 않는다. 대신 census 가
+     * 원본 원장을 독립된 Java 제거 계획으로 거른 수(operationBindings)와 구성 코드 수(permissionCatalog)를 정확히 대조한다 — 하한보다
+     * 엄격하다. census 키가 없으면 ReusableHarnessProfile 이 실패한다.
+     */
+    private static boolean coverageMismatch(int actual, String censusKey, int sourceFloor) {
+        ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+        return profile.projected() ? actual != profile.count(censusKey, sourceFloor) : actual < sourceFloor;
+    }
+
     private static List<String> bindingProblems(JsonNode source, JsonNode runtime) {
         List<String> problems = new ArrayList<>();
-        if (!source.isArray() || source.size() < 350) problems.add("operation source 하한 미달");
+        if (!source.isArray() || coverageMismatch(source.size(), "operationBindings", 350)) problems.add("operation source 하한 미달");
         if (!source.equals(runtime)) problems.add("operation runtime 생성물 drift");
         Set<String> keys = new HashSet<>();
         for (JsonNode row : source) {

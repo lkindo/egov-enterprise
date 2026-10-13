@@ -33,9 +33,10 @@ const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
 /**
  * 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 경계 계약이 붉다 — 범용 플러그인 로더를 막고
- * grep 경로를 고정한다. hub-tabs 는 허브별로 적는다 — 레지스트리는 하나지만 기여의 쓰기 귀속(축 3·화면 목록)은 기여 항목의 hub 가
- * 가리키는 허브 셸로만 잇는다(operation-consumer-census). 이 표가 정본이고 경계 계약과 census 가 함께 import 한다(시험 파일에 두면
- * census 가 import 할 때 그 시험이 함께 등록된다).
+ * grep 경로를 고정한다. 소비자마다 다른 항목을 그리는 슬롯은 나눔 속성(SLOT_CONSUMER_PARTITION_KEYS)의 값별로 적는다 — hub-tabs 는
+ * 허브별, stats-panels 는 배치별이다. 레지스트리는 하나지만 기여 항목의 귀속(축 3·화면 목록)은 그 항목의 값이 가리키는 소비자로만
+ * 잇는다(operation-consumer-census). 이 표가 정본이고 경계 계약과 census 가 함께 import 한다(시험 파일에 두면 census 가 import 할 때
+ * 그 시험이 함께 등록된다).
  */
 export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
@@ -52,29 +53,47 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'shell-links': ['frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/components/layout/header.tsx',
     'frontend/src/app/error.tsx', 'frontend/src/app/components/ui/global-command-center.tsx',
     'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx', 'frontend/src/components/business/work-hub/work-hub-tabs.tsx'],
-  // 통계 셸(기능 탭)과 통계 요약(요약 칸)이 같은 레지스트리를 읽는다(허브 분해 H4).
-  'stats-panels': ['frontend/src/app/admin/stats/AdminStatsClient.tsx', 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
+  // 통계 셸(IntelligenceHubClient)은 기능 탭(hub-tab)만, 통계 요약(AdminStatsClient)은 요약 칸(overview-card)만 그린다(허브 분해 H4).
+  // 배치별로 적어 탭의 노출 술어·쓰기가 요약 화면에, 요약 칸의 것이 셸 화면에 붙지 않게 한다(Phase 2 10단계 10a).
+  'stats-panels': {
+    'hub-tab': ['frontend/src/app/admin/stats/IntelligenceHubClient.tsx'],
+    'overview-card': ['frontend/src/app/admin/stats/AdminStatsClient.tsx'],
+  },
 });
 
 /**
- * 소비자마다 다른 배치를 그리는데 배치별 귀속이 아직 없는 슬롯. stats-panels 는 통계 요약(AdminStatsClient)이 요약 칸만, 통계 셸
- * (IntelligenceHubClient)이 기능 탭만 그린다. 쓰기 귀속(축 3·화면 목록)은 기여 파일 단위라 기여나 기여가 닿는 모듈(탭 본문 등)의
- * 쓰기·canPermission 리터럴이 두 화면에 함께 귀속된다 — hub-tabs 가 허브별 표로 막은 것과 같은 오귀속이다. 배치별 귀속을 두기 전까지
- * 화면 목록 생성기가 이 슬롯의 기여를 거쳐 귀속되는 쓰기·표시 권한을 거부한다(허브 분해 검토).
+ * 소비자를 값별로 나눈 슬롯의 나눔 속성. 그 슬롯의 소비자 표는 기여 항목의 이 속성 값 → 소비자다. 표에서 소비자를 나눈 슬롯과 이 목록은
+ * 같아야 한다(slotConsumerPartition 이 어긋나면 실패한다). 경계 계약이 값 집합을 슬롯 타입(slots.ts)과, 기여 항목의 값을 표와 대조한다.
  */
-export const PLACEMENT_BLIND_SLOTS = Object.freeze(['stats-panels']);
+export const SLOT_CONSUMER_PARTITION_KEYS = Object.freeze({ 'hub-tabs': 'hub', 'stats-panels': 'placement' });
 
-/** 슬롯의 소비자 전체(허브별 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */
+/** 슬롯의 소비자 전체(나눈 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */
 export function slotConsumerFiles(slot, table = SLOT_REGISTRY_CONSUMERS) {
   const row = table[slot];
   if (!row) return [];
   return [...new Set(Array.isArray(row) ? row : Object.values(row).flat())].sort(byCodePoint);
 }
 
-/** hub-tabs 처럼 허브별로 적은 슬롯이면 허브 → 소비자, 아니면 null. */
-export function slotConsumersByHub(slot, table = SLOT_REGISTRY_CONSUMERS) {
+/**
+ * 소비자를 값별로 나눈 슬롯이면 { key: 나눔 속성, consumers: 값 → 소비자 }, 소비자가 한 목록인 슬롯이나 표에 없는 슬롯이면 null.
+ * 나눈 표인데 나눔 속성이 없거나, 나눔 속성이 있는데 표가 한 목록이면 판정할 수 없으므로 실패한다.
+ */
+export function slotConsumerPartition(slot, table = SLOT_REGISTRY_CONSUMERS, keys = SLOT_CONSUMER_PARTITION_KEYS) {
   const row = table[slot];
-  return row && !Array.isArray(row) ? row : null;
+  const key = Object.hasOwn(keys, slot) ? keys[slot] : undefined;
+  if (!row) return null;
+  if (Array.isArray(row)) {
+    if (key !== undefined) throw new Error(`${slot}: 나눔 속성(${key})이 있는데 소비자 표가 한 목록이다`);
+    return null;
+  }
+  if (key === undefined) throw new Error(`${slot}: 소비자 표를 값별로 나눴는데 나눔 속성이 없다(SLOT_CONSUMER_PARTITION_KEYS)`);
+  return { key, consumers: row };
+}
+
+/** hub-tabs 처럼 허브별로 적은 슬롯이면 허브 → 소비자, 아니면 null(배치별로 나눈 슬롯도 null 이다). */
+export function slotConsumersByHub(slot, table = SLOT_REGISTRY_CONSUMERS) {
+  const partition = slotConsumerPartition(slot, table);
+  return partition?.key === 'hub' ? partition.consumers : null;
 }
 
 export const slotRegistryPath = slot => `${SLOT_ROOT}/generated-${slot}.ts`;

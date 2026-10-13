@@ -67,6 +67,9 @@ function assertWiring(sources) {
   assert.match(java, /"classpath:db\/seed-dev"\.equals\(location\.getDescriptor\(\)\)/);
   assert.match(java, /if \(!devFixtures\) return;/);
   assert.match(java, /List\.of\("NOTICE_EDIT","FAQ_EDIT"\)/);
+  // [10단계 10b] 재사용 투영본의 카탈로그에 없는 코드는 배정하지 않는다(권한 스냅숏이 모르는 코드를 거부한다).
+  assert.match(java, /for \(String permission:contentEditorPermissions\(PermissionCodes\.ALL\)\)/);
+  assert.match(java, /List\.of\("NOTICE_EDIT","FAQ_EDIT"\)\.stream\(\)\.filter\(catalog::contains\)\.toList\(\)/);
   assert.match(java, /set_config\('app\.authorization_catalog_version',\?,true\)",String\.class,AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
   assert.doesNotMatch(java, /PermissionCodes\.CATALOG_VERSION/);
   assert.match(sources.get(testSupport), /statement\.setString\(3, AuthorizationReviewedMigrationCatalog\.version\(\)\)/);
@@ -93,6 +96,8 @@ test('missing execution wiring, unsafe defaults and removed isolation checks are
     [config, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
     [config, s => s.replace('if (!devFixtures) return;', '')],
     [config, s => s.replace('seedDisposableContentEditors(flyway,profiles,ack,expected);', '')],
+    [config, s => s.replace('contentEditorPermissions(PermissionCodes.ALL)', 'java.util.List.of("NOTICE_EDIT","FAQ_EDIT")')],
+    [config, s => s.replace('.filter(catalog::contains)', '')],
     [testSupport, s => s.replace('AuthorizationReviewedMigrationCatalog.version()', 'PermissionCodes.CATALOG_VERSION')],
     [config, s => s.replace('            flyway.migrate();', '').replace('            // Check the effective datasource', '            flyway.migrate();\n            // Check the effective datasource')],
   ];

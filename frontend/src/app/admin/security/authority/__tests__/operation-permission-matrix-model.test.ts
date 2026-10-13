@@ -103,24 +103,28 @@ describe('기능별 권한 표 모델', () => {
   });
 });
 
+/*
+ * 진입 권한 예시는 core 코드다 — 생성물은 권한 목록을 구성 코드로 줄이므로(Phase 2 10단계 10b) 기능의 코드를 쓰면 그 기능이 빠진
+ * 구성에서 타입 검사가 깨진다. '모두 있어야 열림' 화면은 파일 조회 + 타인 파일 조회(…_ALL)로, 후보가 여럿인 화면은 사용자 등록·수정으로 둔다.
+ */
 describe('진입 권한 고치기 계획', () => {
   const menu = (overrides: Partial<MenuMissingEntryPermission>): MenuMissingEntryPermission => ({
     code: '1', name: '메뉴', route: '/admin/x', required: [], mode: 'ANY', fixable: true, ...overrides,
   });
-  const catalog = new Set(['MENU_READ', 'AUTHRT_READ', 'AUTHRT_AUDIT', 'POLL_READ', 'POLL_READ_ALL', 'BBS_MST_CREATE', 'BBS_MST_UPDATE']);
+  const catalog = new Set(['MENU_READ', 'AUTHRT_READ', 'AUTHRT_AUDIT', 'FILE_READ', 'FILE_READ_ALL', 'USER_CREATE', 'USER_UPDATE']);
 
   it('필요 권한이 하나이거나 ALL 이면 정해진 권한을, 후보가 여럿인 ANY 는 조회를 먼저 권한다', () => {
     const fixes = planEntryFixes([
       menu({ code: 'a', required: ['MENU_READ'] }),
-      menu({ code: 'b', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' }),
+      menu({ code: 'b', required: ['FILE_READ', 'FILE_READ_ALL'], mode: 'ALL' }),
       menu({ code: 'c', required: ['AUTHRT_AUDIT', 'AUTHRT_READ'] }),
-      menu({ code: 'd', required: ['BBS_MST_CREATE', 'BBS_MST_UPDATE'] }),
+      menu({ code: 'd', required: ['USER_CREATE', 'USER_UPDATE'] }),
     ], catalog);
     expect(fixes).toEqual([
       expect.objectContaining({ kind: 'auto', codes: ['MENU_READ'] }),
-      expect.objectContaining({ kind: 'auto', codes: ['POLL_READ', 'POLL_READ_ALL'] }),
+      expect.objectContaining({ kind: 'auto', codes: ['FILE_READ', 'FILE_READ_ALL'] }),
       expect.objectContaining({ kind: 'choose', candidates: ['AUTHRT_AUDIT', 'AUTHRT_READ'], preferred: 'AUTHRT_READ' }),
-      expect.objectContaining({ kind: 'choose', candidates: ['BBS_MST_CREATE', 'BBS_MST_UPDATE'], preferred: 'BBS_MST_CREATE' }),
+      expect.objectContaining({ kind: 'choose', candidates: ['USER_CREATE', 'USER_UPDATE'], preferred: 'USER_CREATE' }),
     ]);
   });
 
@@ -129,7 +133,7 @@ describe('진입 권한 고치기 계획', () => {
     const fixes = planEntryFixes([
       menu({ code: 'a', fixable: false }),
       menu({ code: 'b', required: ['ADMCODE_READ'] }),
-      menu({ code: 'c', required: ['POLL_READ', 'ADMCODE_READ'], mode: 'ALL' }),
+      menu({ code: 'c', required: ['FILE_READ', 'ADMCODE_READ'], mode: 'ALL' }),
       menu({ code: 'd', required: ['ADMCODE_READ', 'MENU_READ'] }),
     ], catalog);
     expect(fixes.map((fix) => fix.kind)).toEqual(['unfixable', 'unfixable', 'unfixable', 'auto']);
@@ -141,13 +145,13 @@ describe('진입 권한 고치기 계획', () => {
    * 영역·섹션 줄의 묶음 칸과 같은 제외 규칙을 따른다 — 정해진 권한이라도 보호 권한·타인 자료 권한(…_ALL)이 있으면 뺀다.
    */
   it('일괄로 고칠 수 있는 고치기는 정해진 권한이고 보호·타인 자료 권한이 없는 것뿐이다', () => {
-    expect(isOthersDataPermission('POLL_READ_ALL')).toBe(true);
-    expect(isOthersDataPermission('COMMENT_READ_ALL')).toBe(true);
-    expect(isOthersDataPermission('POLL_READ')).toBe(false);
+    expect(isOthersDataPermission('FILE_READ_ALL')).toBe(true);
+    expect(isOthersDataPermission('DEPT_JOB_UPDATE_ALL')).toBe(true);
+    expect(isOthersDataPermission('FILE_READ')).toBe(false);
     const protectedCode = PROTECTED_PERMISSIONS[0];
     const fixes = planEntryFixes([
       menu({ code: 'a', required: ['MENU_READ'] }),
-      menu({ code: 'b', required: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' }),
+      menu({ code: 'b', required: ['FILE_READ', 'FILE_READ_ALL'], mode: 'ALL' }),
       menu({ code: 'c', required: ['AUTHRT_AUDIT', 'AUTHRT_READ'] }),
       menu({ code: 'd', fixable: false }),
       menu({ code: 'e', required: [protectedCode] }),

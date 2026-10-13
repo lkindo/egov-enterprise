@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { projectionRemovedFiles } from '@/test-utils/projection';
 import {
   OTHER_PERMISSION_CATEGORY,
   PERMISSION_DOMAIN_CATEGORIES,
@@ -15,15 +16,23 @@ import {
  * 정본 카탈로그(config/governance/permission-catalog.json)와 양방향으로 대조한다.
  */
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..', '..');
-const catalog = JSON.parse(readFileSync(path.join(ROOT, 'config/governance/permission-catalog.json'), 'utf8')) as {
+const readCatalog = (file: string) => JSON.parse(readFileSync(path.join(ROOT, file), 'utf8')) as {
   permissions: Array<{ code: string; domain: string; action: string }>;
 };
-const domains = [...new Set(catalog.permissions.map((permission) => permission.domain))];
+const domainsOf = (source: ReturnType<typeof readCatalog>) => [...new Set(source.permissions.map((permission) => permission.domain))];
+const catalog = readCatalog('config/governance/permission-catalog.json');
+const domains = domainsOf(catalog);
+// 재사용 생성물은 카탈로그를 구성 코드로 줄이지만(DEC-OPS-287) 분류·라벨 표는 원본 그대로 남는다. 그래서 생성물에서는 표의 영역을
+// 생성 때 남긴 원본 카탈로그 스냅숏과 대조한다(스냅숏이 없으면 읽기가 실패한다). 원본 저장소에는 투영 원장이 없어 지금 카탈로그와
+// 대조한다 — 원본의 계약은 그대로다. 하한도 원본은 그대로이고, 생성물에서만 가장 작은 생성물(core 25개 영역)에서도 성립하는 값이다.
+const projected = projectionRemovedFiles().size > 0;
+const tableDomains = projected ? domainsOf(readCatalog('config/governance/upstream-review/permission-catalog.json')) : domains;
 const actions = [...new Set(catalog.permissions.map((permission) => permission.action))];
 
 describe('권한 영역 분류', () => {
   it('카탈로그를 실제로 읽었다(공허 통과 방지)', () => {
-    expect(domains.length).toBeGreaterThanOrEqual(50);
+    expect(domains.length).toBeGreaterThanOrEqual(projected ? 20 : 50);
+    expect(tableDomains.length).toBeGreaterThanOrEqual(50);
   });
 
   it('카탈로그의 모든 영역은 정확히 한 분류에 속한다 — 기타로 새지 않는다', () => {
@@ -37,7 +46,7 @@ describe('권한 영역 분류', () => {
   it('분류 표에는 카탈로그에 없는 영역도, 중복도 없다', () => {
     const listed = PERMISSION_DOMAIN_CATEGORIES.flatMap((category) => category.domains);
     expect(new Set(listed).size).toBe(listed.length);
-    expect(listed.filter((domain) => !domains.includes(domain))).toEqual([]);
+    expect(listed.filter((domain) => !tableDomains.includes(domain))).toEqual([]);
     expect(new Set(PERMISSION_DOMAIN_CATEGORIES.map((category) => category.key)).size).toBe(PERMISSION_DOMAIN_CATEGORIES.length);
   });
 

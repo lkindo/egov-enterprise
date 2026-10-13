@@ -1,20 +1,23 @@
 /**
- * 소스 투영의 프런트 단계 — pack 마커 블록 투영과 슬롯 레지스트리 렌더(createFrontendProjector), 제외 경로와 그 import 연쇄
+ * 소스 투영의 프런트 단계 — 마커 블록 투영과 슬롯 레지스트리 렌더(createFrontendProjector), 제외 경로와 그 import 연쇄
  * 제거(planFrontendRemoval).
  *
- * [2026-10-11 슬롯 단계 PR-2 판정 통일] 마커를 읽는 파서는 이 파일의 parsePackMarkerBlocks 하나다. 선택 투영(직접 선택의 소유 기능)과
- * pack 마커 투영은 한 번에 판정한다(createFrontendProjector). 간선은 주석·문자열을 건너뛰는 토크나이저(frontend-module-graph.mjs)로
+ * [2026-10-11 슬롯 단계 PR-2 판정 통일] 마커를 읽는 파서는 이 파일의 parseMarkerBlocks 하나다. 화면 제외 경로와 마커 블록 투영은
+ * 한 번에 판정한다(createFrontendProjector). 간선은 주석·문자열을 건너뛰는 토크나이저(frontend-module-graph.mjs)로
  * 읽고, 넘겨받은 파일 목록 안에서만 정확한 표기로 잇는다(frontend-module-resolver.mjs). 생성기·정밀 점검·도달성 census·생존 시험·경계
  * 계약·거버넌스 투영이 모두 이 함수들을 쓴다 — 두 번째 마커 파서·연쇄 루프를 두지 않는다(단일 모듈 계약이 지킨다).
+ *
+ * [11단계 C3·C5·C6] 생성기·정밀 점검·도달성 census 는 시작 구성도 기능 투영(구성의 화면 제외 경로·블록 소유 기능)으로 한다. pack 프로필
+ * 투영은 C5 에서 걷었고, C6 부터 마커 토큰은 블록을 소유한 기능 id 다 — 블록은 그 기능이 구성에 있을 때만 남는다. 마커 선언(파일별 블록
+ * 수·단계·사유)은 기능 파일의 owns.markerBlocks 이고(composerMarkerDeclarations), 선언 없는 블록과 기능이 아닌 토큰은 실패한다.
  */
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { composerMarkerDeclarations, readComposerModuleFiles } from './composer-modules.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { MODULE_EXTENSIONS, buildCaseMap, resolveModuleReference } from './frontend-module-resolver.mjs';
 import { discoverSlotContributions, frontendRelativePath, renderSlotRegistry, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
-// 직접 선택의 블록 소유 표는 composer 가 갖고(FRONTEND_MARKER_FILES), 이 모듈이 한 방향으로 읽는다. composer 는 이 모듈을 import 하지
-// 않는다 — 순환이 있으면 진입점마다 평가 순서가 갈려, 최상위에서 상대 값을 쓰는 순간 한쪽 진입점에서만 TDZ 오류가 난다.
-import { composerMarkerBlockOwners } from './project-composer-source.mjs';
 import { fail, normalize, removePath, walk } from './reusable-source-tree.mjs';
 
 /**
@@ -40,13 +43,14 @@ const REDIRECT_CALL = /\bredirect\s*\(\s*(['"`])[^\r\n]*?\1\s*\)/;
 const withoutComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\r\n]*/g, '');
 
 /**
- * 한 파일의 pack 마커 블록을 읽는다. 마커는 한 줄에 하나이고 중첩하지 않으며, 같은 pack 의 start·end 가 짝을 이룬다.
- * 한 줄에 마커 둘·알 수 없는 pack·중첩·짝 불일치·미닫힘, next.config 의 마커, page 파일에서 redirect 호출이나 return 을 품은
- * 블록은 FAIL 이다(블록을 남기든 걷든 같다 — 프로필마다 갈리는 것이 문제다). `knownPacks` 를 주지 않으면 알 수 없는 pack 검사만
- * 하지 않는다(pack 이 아니라 소유 기능으로 거르는 직접 선택 투영).
- * 결과의 `lines` 는 줄 끝을 포함한 원문 줄, 블록의 `startLine`·`endLine` 은 1부터 센 마커 줄 번호, `text` 는 마커 줄을 포함한 원문이다.
+ * 한 파일의 마커 블록을 읽는다. 마커 토큰은 블록을 소유한 기능 id 다(11단계 C6). 마커는 한 줄에 하나이고 중첩하지 않으며, 같은 기능의
+ * start·end 가 짝을 이룬다. 한 줄에 마커 둘·알 수 없는 기능·중첩·짝 불일치·미닫힘, next.config 의 마커, page 파일에서 redirect 호출이나
+ * return 을 품은 블록은 FAIL 이다(블록을 남기든 걷든 같다 — 구성마다 갈리는 것이 문제다). `knownFeatures`(has 를 가진 집합)를 주지 않으면
+ * 알 수 없는 기능 검사만 하지 않는다(투영은 기능 파일의 기능 id 를 준다).
+ * 결과의 `lines` 는 줄 끝을 포함한 원문 줄, 블록의 `feature` 는 토큰, `startLine`·`endLine` 은 1부터 센 마커 줄 번호, `text` 는 마커 줄을
+ * 포함한 원문이다.
  */
-export function parsePackMarkerBlocks(source, { knownPacks, label }) {
+export function parseMarkerBlocks(source, { knownFeatures, label }) {
   const path = String(label).replaceAll('\\', '/');
   const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
   const blocks = [];
@@ -55,81 +59,84 @@ export function parsePackMarkerBlocks(source, { knownPacks, label }) {
   for (let index = 0; index < lines.length; index += 1) {
     const markers = [...lines[index].matchAll(/reusable-base:([a-z0-9_-]+):(start|end)/g)];
     if (markers.length > 1) {
-      fail(`frontend pack marker는 한 줄에 하나만 허용한다: ${label}:${index + 1}`);
+      fail(`frontend 마커는 한 줄에 하나만 허용한다: ${label}:${index + 1}`);
     }
     const marker = markers[0];
     if (!marker) continue;
 
-    const [, packName, boundary] = marker;
-    if (knownPacks && !knownPacks.has(packName)) {
-      fail(`알 수 없는 frontend pack marker: ${packName} (${label}:${index + 1})`);
+    const [, feature, boundary] = marker;
+    if (knownFeatures && !knownFeatures.has(feature)) {
+      fail(`unknown marker feature: ${feature} (${label}:${index + 1})`);
     }
     if (NEXT_CONFIG.test(path)) {
-      fail(`next.config 는 pack 마커를 둘 수 없다 — 리다이렉트 선언은 거버넌스 투영이 정리한다: ${label}:${index + 1}`);
+      fail(`next.config 는 마커를 둘 수 없다 — 리다이렉트 선언은 거버넌스 투영이 정리한다: ${label}:${index + 1}`);
     }
     if (boundary === 'start') {
       if (openMarker) {
-        fail(`frontend pack marker 중첩은 허용하지 않는다: ${label}:${index + 1}`);
+        fail(`frontend 마커 중첩은 허용하지 않는다: ${label}:${index + 1}`);
       }
-      openMarker = { packName, index };
+      openMarker = { feature, index };
       continue;
     }
 
-    if (!openMarker || openMarker.packName !== packName) {
-      fail(`짝이 맞지 않는 frontend pack marker: ${packName} (${label}:${index + 1})`);
+    if (!openMarker || openMarker.feature !== feature) {
+      fail(`짝이 맞지 않는 frontend 마커: ${feature} (${label}:${index + 1})`);
     }
     const body = lines.slice(openMarker.index + 1, index).join('');
     if (PAGE_FILE.test(path) && (REDIRECT_CALL.test(body) || /\breturn\b/.test(withoutComments(body)))) {
-      fail(`page 파일의 pack 마커 블록은 redirect 호출이나 return 을 품을 수 없다 — 화면의 라우트 종류가 프로필마다 갈린다: ${label}:${openMarker.index + 1}`);
+      fail(`page 파일의 마커 블록은 redirect 호출이나 return 을 품을 수 없다 — 화면의 라우트 종류가 구성마다 갈린다: ${label}:${openMarker.index + 1}`);
     }
-    blocks.push({ pack: packName, startLine: openMarker.index + 1, endLine: index + 1, text: lines.slice(openMarker.index, index + 1).join('') });
+    blocks.push({ feature, startLine: openMarker.index + 1, endLine: index + 1, text: lines.slice(openMarker.index, index + 1).join('') });
     openMarker = undefined;
   }
 
   if (openMarker) {
-    fail(`닫히지 않은 frontend pack marker: ${openMarker.packName} (${label}:${openMarker.index + 1})`);
+    fail(`닫히지 않은 frontend 마커: ${openMarker.feature} (${label}:${openMarker.index + 1})`);
   }
   return { lines, blocks };
 }
 
-/** parsePackMarkerBlocks 가 읽은 줄에서 주어진 블록을 마커 줄과 함께 걷는다. 소유·pack 판정 없이 걷으므로 projector 밖에 내놓지 않는다. */
+/** parseMarkerBlocks 가 읽은 줄에서 주어진 블록을 마커 줄과 함께 걷는다. 소유 판정 없이 걷으므로 projector 밖에 내놓지 않는다. */
 function stripMarkerBlocks(lines, blocks) {
   if (!blocks.length) return lines.join('');
   const dropped = new Set(blocks.flatMap((block) => Array.from({ length: block.endLine - block.startLine + 1 }, (_, offset) => block.startLine - 1 + offset)));
   return lines.filter((_, index) => !dropped.has(index)).join('');
 }
 
-/**
- * profile 이 직접 지우는 프런트 경로(frontend/ 기준). custom 구성은 해석기가 계산한 목록을, 프리셋은 제외 pack 의 선언을 쓴다.
- * 밖에서는 createFrontendProjector(...).directPaths 하나로만 얻는다(pruneFrontend 는 같은 함수·같은 입력을 쓴다).
+/*
+ * 마커 선언(기능 파일의 owns.markerBlocks, 11단계 C6)은 투영하는 트리가 아니라 이 스크립트가 속한 저장소의 config/modules 에서 읽는다 —
+ * 원본 체크아웃의 스크립트는 원본을, 생성물의 스크립트는 생성물(구성의 기능 파일만 있다)을 투영한다. 시험의 합성 트리에는 기능 파일이
+ * 없으므로 이 저장소의 선언을 쓴다. projector 마다 마커 줄을 처음 만날 때 한 번 읽는다 — 마커 없는 파일만 투영하면 읽지 않는다.
+ * 프로세스 전체에 한 번만 읽지 않는다: 오래 도는 생성기 화면 서버(project:ui)는 정밀 점검마다 카탈로그를 다시 적재하는데, 선언을
+ * 프로세스에 두면 pull 로 블록·기능이 바뀐 뒤에도 옛 선언으로 판정해 '알 수 없는 기능'·'Unclassified composer UI block' 으로 막는다.
  */
-function frontendDirectRemovePaths(manifest, profile) {
-  const allowedPacks = new Set(profile.packs);
-  return profile.frontendRemovePaths ?? Object.entries(manifest.packs)
-    .filter(([packName]) => !allowedPacks.has(packName))
-    .flatMap(([, pack]) => pack.frontend?.removePaths ?? []);
-}
+const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const readMarkerDeclarations = () => composerMarkerDeclarations(readComposerModuleFiles(REPOSITORY_ROOT));
 
 /**
- * 한 구성의 프런트 투영. 블록 유지 판정을 한 번에 한다: 블록의 pack 이 프로필에 있고, 직접 선택이면 그 블록의 소유 기능
- * (composer 의 FRONTEND_MARKER_FILES)이 모두 선택돼 있을 때만 남긴다. 분류 표에 없는 블록은 직접 선택에서 실패한다.
+ * 한 구성의 프런트 투영(기능 투영). 생성기·정밀 점검·도달성 census 가 시작 구성과 직접 선택을 모두 이렇게 투영한다(11단계 C3·C5).
+ * 직접 제거 경로는 해석기가 기능 규칙에서 계산한 목록(composition.frontend.removePaths)이고, 마커 블록은 토큰의 기능이 선택돼 있을 때만
+ * 남긴다(11단계 C6 — 토큰이 곧 소유다). 기능 파일의 owns.markerBlocks 에 선언하지 않은 블록은 실패한다(조용히 남거나 빠지지 않는다).
  * `project(path, source)` 의 path 는 frontend 기준(`src/…`)이나 저장소 기준(`frontend/src/…`) 표기이고 오류 문장에 그대로 쓴다.
- * 결과의 `strippedBlocks` 는 소유 판정은 통과했는데 pack 이 빠져 걷은 블록 수다(종전 pack 마커 단계의 셈, lock.frontend.packBlocks).
+ * 결과의 `strippedBlocks` 는 걷은 마커 블록 수다(lock.frontend.markerBlocks).
  *
  * [슬롯 단계 PR-4] 슬롯 레지스트리(src/extensions/generated-<슬롯>.ts)는 마커 대신 다시 렌더한다. 렌더 집합은 `files`(복사할 프런트
  * 파일 목록, frontend 기준 또는 저장소 기준 경로) 가운데 직접 제거 경로(directPaths)에 걸리지 않은 기여 파일이다 — 기여 파일은 기능
  * 경로와 함께 직접 지워지므로 두 번째 소유 판정을 두지 않는다. 마커 투영과 같은 패스, 즉 연쇄 계산 전이라 렌더가 빠진 레지스트리가
  * 지워진 기여를 import 해 셸까지 연쇄로 지우는 일이 생기지 않는다. 레지스트리를 투영하는데 `files` 가 없으면 실패한다(조용히 원문을
  * 두지 않는다). 렌더 결과가 원문과 줄 끝(CRLF)만 다르면 원문을 그대로 돌려준다 — 원본 구성의 투영은 원문과 바이트가 같다.
- * 슬롯 파일은 pack 마커를 둘 수 없다(기여는 파일 단위로 빠진다).
+ * 슬롯 파일은 마커를 둘 수 없다(기여는 파일 단위로 빠진다).
  */
-export function createFrontendProjector({ manifest, profile, composition, files }) {
-  const knownPacks = new Set(Object.keys(manifest.packs));
-  const allowedPacks = new Set(profile.packs);
-  const custom = composition?.profile === 'custom';
-  if (custom && !Array.isArray(composition.resolvedDomains)) fail('직접 선택 투영에는 해석된 기능 목록(resolvedDomains)이 필요하다.');
-  const selected = new Set(custom ? composition.resolvedDomains : []);
-  const directPaths = frontendDirectRemovePaths(manifest, profile);
+export function createFrontendProjector({ composition, files }) {
+  if (!Array.isArray(composition?.resolvedDomains) || !Array.isArray(composition.frontend?.removePaths)) {
+    fail('구성 투영에는 해석된 기능 목록(resolvedDomains)과 화면 제외 경로(frontend.removePaths)가 필요하다.');
+  }
+  const selected = new Set(composition.resolvedDomains);
+  const directPaths = [...composition.frontend.removePaths];
+  let declarations;
+  const markerDeclarations = () => (declarations ??= readMarkerDeclarations());
+  /** 마커 토큰 어휘 — 기능 파일의 기능 id. 모르는 토큰은 마커 줄에서 실패한다. */
+  const knownFeatures = Object.freeze({ has: (feature) => markerDeclarations().features.has(feature) });
   let slotOwners;
   const registryOwners = (slot, label) => {
     if (!files) fail(`슬롯 레지스트리를 투영하려면 복사할 프런트 파일 목록(files)이 필요하다: ${label}`);
@@ -142,32 +149,29 @@ export function createFrontendProjector({ manifest, profile, composition, files 
   };
   return {
     directPaths,
-    excludedPacks: [...knownPacks].filter((packName) => !allowedPacks.has(packName)).sort(),
     project(path, source) {
       const label = String(path).replaceAll('\\', '/');
-      const { lines, blocks } = parsePackMarkerBlocks(source, { knownPacks, label });
+      const { lines, blocks } = parseMarkerBlocks(source, { knownFeatures, label });
       const slotFile = slotPathKind(label);
-      if (slotFile && blocks.length) fail(`슬롯 파일은 pack 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다: ${label}`);
+      if (slotFile && blocks.length) fail(`슬롯 파일은 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다: ${label}`);
       if (slotFile?.kind === 'registry') {
         const rendered = renderSlotRegistry(slotFile.slot, registryOwners(slotFile.slot, label));
-        return { source: rendered === source.replace(/\r\n/g, '\n') ? source : rendered, strippedBlocks: 0, packChanged: false };
+        return { source: rendered === source.replace(/\r\n/g, '\n') ? source : rendered, strippedBlocks: 0, markerChanged: false };
       }
-      if (!blocks.length) return { source, strippedBlocks: 0, packChanged: false };
+      if (!blocks.length) return { source, strippedBlocks: 0, markerChanged: false };
       const file = label.replace(/^frontend\//, '');
-      const dropped = [];
-      let strippedBlocks = 0;
-      for (const block of blocks) {
-        const owned = !custom || composerMarkerBlockOwners(file, block.pack, block.text).every((domain) => selected.has(domain));
-        if (owned && allowedPacks.has(block.pack)) continue;
-        dropped.push(block);
-        if (owned) strippedBlocks += 1;
+      const { declared } = markerDeclarations();
+      const unclassified = blocks.find((block) => !declared.has(`${file}\u0000${block.feature}`));
+      if (unclassified) {
+        fail(`Unclassified composer UI block: ${file}/${unclassified.feature} — config/modules/${unclassified.feature}.json 의 owns.markerBlocks 에 없는 블록이다`);
       }
-      return { source: stripMarkerBlocks(lines, dropped), strippedBlocks, packChanged: strippedBlocks > 0 };
+      const dropped = blocks.filter((block) => !selected.has(block.feature));
+      return { source: stripMarkerBlocks(lines, dropped), strippedBlocks: dropped.length, markerChanged: dropped.length > 0 };
     },
   };
 }
 
-/** 복사한 트리의 프런트 모듈 파일(isFrontendModuleFile) 전부에 투영을 쓴다. lock.frontend.packBlocks 를 돌려준다. */
+/** 복사한 트리의 프런트 모듈 파일(isFrontendModuleFile) 전부에 투영을 쓴다. lock.frontend.markerBlocks 를 돌려준다. */
 export function applyFrontendProjection(output, projector) {
   const frontendRoot = join(output, 'frontend');
   let changedFiles = 0;
@@ -176,10 +180,10 @@ export function applyFrontendProjection(output, projector) {
     const source = readFileSync(path, 'utf8');
     const projection = projector.project(normalize(relative(frontendRoot, path)), source);
     strippedBlocks += projection.strippedBlocks;
-    if (projection.packChanged) changedFiles += 1;
+    if (projection.markerChanged) changedFiles += 1;
     if (projection.source !== source) writeFileSync(path, projection.source, 'utf8');
   }
-  return { excludedPacks: projector.excludedPacks, strippedBlocks, changedFiles };
+  return { strippedBlocks, changedFiles };
 }
 
 /**
@@ -285,10 +289,10 @@ export function planFrontendRemoval({ frontendRoot, files, directPaths, readSour
   return { direct, removed, parent, edges };
 }
 
-export function pruneFrontend(output, manifest, profile) {
+// `directPaths` 는 같은 구성의 projector(createFrontendProjector(...).directPaths)가 계산한 직접 제거 경로다 — 투영과 삭제가 같은 목록을 쓴다.
+export function pruneFrontend(output, directPaths) {
   const frontendRoot = join(output, 'frontend');
-  const directPaths = frontendDirectRemovePaths(manifest, profile);
-  // 선언된 removePaths 는 manifest 에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
+  // 직접 제거 경로는 기능 선언에 의도가 남는다. 문제는 **연쇄로 딸려 가는 것**이라 나눠 센다.
   const files = walk(frontendRoot, () => true);
   const { direct: directRemoved, removed } = planFrontendRemoval({
     frontendRoot, files, directPaths, readSource: (path) => readFileSync(path, 'utf8'),
@@ -305,7 +309,7 @@ export function pruneFrontend(output, manifest, profile) {
     .filter((rel) => rel.startsWith(FRONTEND_GATE_DIR))
     .sort((left, right) => left.localeCompare(right));
   return {
-    directPaths: directPaths.sort(),
+    directPaths: [...directPaths].sort(),
     removedFiles: removed.size,
     cascadedFiles: removed.size - directRemoved.size,
     removedGates,

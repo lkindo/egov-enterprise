@@ -35,7 +35,7 @@ push/PR / workflow_dispatch
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
         ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
-        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 core·collaboration·demo profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout, 그 밖에는 두 layout)
+        ├─ reusable-base (frontend-scope 완료 뒤 영향받는 시작 구성 profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout(survey·approval 은 PR 에서 뺀다), 그 밖에는 두 layout)
         ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
@@ -98,6 +98,8 @@ BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 �
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
+생성기·도구 전용 경로(`config/modules/**`, `config/project-composer-menus.json`, `scripts/` 의 `project-composer*`·`reusable-*`·`generate-reusable-base-*`·`verify-reusable-*`·`verify-project-composer*`·`composer-modules*`·`domain-deletion-plan*`, `tools/project-composer/**`)는 미분류 전수 대신 모든 시작 구성의 재사용 검증과 표에 적힌 축만 고른다(11단계 C11, DEC-OPS-297). 축은 그 경로를 문자열로 가리키거나 디렉터리째 읽거나 실행하는 시험·조건부 CI 진입점이 도는 축이며, [표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 `ci.yml` 에서 다시 계산해 항목마다 정확히 같은지 본다. `scripts/` 는 하네스 두 개가 디렉터리째 읽어 backend 를, 기본 관리자 시드 스키마 검증과 생성기 화면 시험이 생성기를 실행해 schema·E2E 를 끄지 못한다 — 이 경로만 바꾼 변경이 건너뛰는 것은 이관·PIT·frontend 다. 생성기 화면(`tools/project-composer/**`)만 바꾼 변경은 재사용 검증과 E2E 축만 고른다. E2E 축은 생성기 화면 시험(`tools/project-composer/ui.test.mjs`, E2E 첫 샤드에서 돈다) 때문에 켜지지만, 켜지면 Playwright 전체 샤드가 돈다 — E2E 영향 선별이 이 경로를 화면 spec 에 잇지 못해 전수로 물러난다(DEC-OPS-301). 화면 시험만 가벼운 잡에서 돌려 E2E 축을 끄는 일은 후속이다. 분류기 자신이 읽는 `scripts/composition-profiles.mjs` 와 표 밖 스크립트는 종전대로 전수다.
+
 제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 4`를 사용한다. 5슬롯 실행은 backend 완료 뒤 custom composition이 최대 1분 54초 runner를 기다리게 했다. 같은 SHA의 실측 job 총시간 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 선언하면 4슬롯에서도 mutation aggregate가 10분 안쪽에 끝나는 반면 custom 두 layout용 입장 여유를 만든다. 이 LPT 순서와 동시 수는 모집단·테스트·75% 게이트를 바꾸지 않는다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
 
 동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
@@ -141,11 +143,15 @@ shard가 현재 런타임에서도 균형이 맞는다는 뜻은 아니다.
 
 `reusable-base`는 영향받는 core·collaboration·demo profile과 두 layout matrix에서 `node scripts/verify-reusable-base.mjs --profile <profile>`을
 실행한다. 각 호출은 새 격리 PostgreSQL과 DB·소스 번들을 생성하고 산출물의 거버넌스 무결성·활성 원장·
-Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. pack 소유가 manifest로 증명된
-`business-app` 도메인과 프런트 제거 경로만 해당 pack을 포함하는 profile로 줄이고, 공용·미분류 입력은 선택한
-profile 전부로 돌아간다. layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
-PR은 profile마다 한 layout(core 단일·collaboration 멀티·demo 단일)만 검증하고, main push·수동 실행·이벤트 미상과
-분류기 표에 없는 profile은 두 layout 전수다. PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
+Java 컴파일·하네스·실 DB 스키마·프런트 타입·lint·build를 검사한다. 기능 파일(`config/modules`)로 소유가 증명된
+`business-app` 도메인·지원 파일·화면 경로만 그 기능을 담은 시작 구성으로 줄이고, 공용·미분류 입력은 선택한
+profile 전부로 돌아간다(11단계 C5 — 종전 v1 manifest 의 pack). layout은 이벤트로 나뉜다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
+PR은 profile마다 한 layout(`config/modules/presets.json` 의 `ci.pr` — core 단일·collaboration 멀티·demo 단일)만 검증하고,
+main push·수동 실행·이벤트 미상과 `ci.pr` 이 없는 profile은 두 layout 전수다. `ci.pr` 이 `null` 인 인증 시작 구성
+(13b 의 survey·approval)은 PR 에서 빼고 `ci.main` 의 두 layout 으로 main·수동 실행과 T2 에서만 돈다([DEC-OPS-296](../../.agent/memory/decisions.md)).
+두 구성의 기능은 demo 에 모두 있어 PR 의 demo 가 같은 코드를 생성·검증하고, 두 구성의 생성기 계획(연쇄·게이트·화면·차단)은
+PR 의 운영 계약이 매번 대조한다. `ci.main` 은 두 layout 전부여야 하며, PR 에서 빼면서 적지 않거나 하나로 줄이면 스키마와
+분류기가 멈춘다. PR 에서 고른 시작 구성이 모두 PR 제외면 재사용 검증을 고르지 않는다(빈 matrix 를 넘기지 않는다). PR이 놓친 layout 고유 회귀는 병합 뒤 main이 붉은 동안만 보이므로,
 생성기를 크게 바꾸는 PR은 병합 전에 `gh workflow run ci.yml --ref <브랜치>`로 전수를 한 번 받는다.
 core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 분류 직후 실행해 frontend가 끝나기 전의
 빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
@@ -163,15 +169,20 @@ core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서
 
 산출물 검증은 하네스·스키마·프런트 타입·lint·build까지만 본다. 생성물의 일반 테스트는
 [reusable-nightly workflow](../../.github/workflows/reusable-nightly.yml)가 돈다([ADR-0027](../02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md)).
-required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workflow_dispatch`)만 있고, 예약 실행(06:17 KST)은 첫 녹색 수동 실행 뒤 켠다.
+required가 아니고 병합을 막지 않는다. 매일 06:17 KST(`17 21 * * *`, 정각 회피)에 기본 브랜치에서 예약 실행하고,
+수동 실행(`workflow_dispatch`)도 된다. 첫 수동 실행(2026-10-13, run 38275695802)은 27잡 중 25잡이 붉었는데 모두 생성물 안의
+시험이 투영을 거르지 않은 원인이었고, 원인마다 담당 커밋으로 고친 뒤 예약을 켰다(Phase 2 B8).
 
 - **계획**: [러너](../../scripts/reusable-nightly.mjs)의 `plan`이 카탈로그에서 시작 구성과 서로 다른 단독 폐포를 계산한다.
-  시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다(지금 26잡). 이름을 손으로 쓰지 않는다.
+  시작 구성은 두 레이아웃, 폐포는 UTC 날짜로 번갈아 한 레이아웃이다. 기능 목록이 어떤 시작 구성과 같은 폐포는 그 시작 구성이 두 레이아웃으로 덮으므로 돌지 않는다(같은 목록은 같은 결과 — ADR-0028, DEC-OPS-301). 2026-10-13 기준 시작 구성 5개 × 2 + 단독 폐포 19개 = 29잡이다 — 서로 다른 단독 폐포 21개 가운데 설문·결재는 13b 의 설문·결재 시작 구성이 덮는다. ADR-0027 결정 당시 계획은 26잡, 커뮤니티 폐포가 생긴 뒤(DEC-OPS-280) 27잡이었다.
+  이름을 손으로 쓰지 않는다.
 - **생성**: 시작 구성은 PR CI와 같은 `verify-reusable-base.mjs`, 단독 선택은 composer 엔진으로 생성·산출물 검증한다.
+  생성기가 생성물의 API 계약을 원본 frontend 도구로 다시 만들므로 생성 전에 원본 frontend 의존성을 설치한다.
 - **시험**: 멀티 모듈은 `test`, 단일 모듈은 `test foundationTest coreTest appTest`를 돈다. 단일 모듈의 `test`는
   `api-server` 시험만 돈다. 이관 시험은 구성과 무관해 가장 많은 기능을 담은 시작 구성의 두 레이아웃에서만 돌고,
   제외는 러너의 원장에 사유와 함께 둔다.
 - **판정**: 작업별 JUnit XML과 vitest JSON으로 판정한다. 보고서가 없거나 모집단이 0이거나 명령이 실패하면 실패다.
+  vitest 의 실패 파일 수는 `testResults` 에서 세고, describe 블록까지 센 suite 수(`numFailedTestSuites`)는 따로 적는다.
   `summary`는 계획의 모든 구성에 통과 보고서가 있는지 본다. 구성별 보고서는 14일, 실패한 구성의 원본 XML·vitest JSON은 7일 남긴다.
 - **경계**: 비밀을 쓰지 않고 권한은 `contents: read`, Gradle 캐시는 읽기만 한다. 동시 10잡, 잡 60분이다.
   동시성 그룹은 ref 와 무관하게 하나다(`max-parallel` 은 실행 하나에만 걸린다). 같은 그룹에서 기다리던 실행은 새 실행이
@@ -184,8 +195,10 @@ required가 아니고 병합을 막지 않는다. 지금은 수동 실행(`workf
 gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions="board+survey informalsanction" -f layout=both
 ```
 
-`compositions`는 `preset:<id>` 또는 `<기능>+<기능>` 토큰을 공백·쉼표로 나열하며, 비우면 전체 계획이다. `contracts=true`는
-생성물 안에서 계약 생성물(화면 목록·슬롯·권한·경계·소비 census)을 다시 만들어 대조한다. 권한·계약 투영 전에는 붉으므로 기본은 끈다.
+`compositions`는 `preset:<id>` 또는 `<기능>+<기능>` 토큰을 공백·쉼표로 나열하며, 비우면 전체 계획이다. `contracts`는
+생성물 안에서 계약 생성물(화면 목록·슬롯·권한·경계·소비 census)을 다시 만들어 대조하며 기본으로 켠다. 권한 투영(10b-2)과
+계약 사슬 투영(10c-2)이 이 생성물들을 구성으로 다시 만들기 때문이다. 예약 실행은 입력이 없어 러너의 기본값(켬)을 쓰고,
+`contracts=false` 만 끈다(그 밖의 값은 러너가 거부한다).
 
 ### 실행 트리거
 

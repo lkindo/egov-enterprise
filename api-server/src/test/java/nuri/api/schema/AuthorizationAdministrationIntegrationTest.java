@@ -719,7 +719,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(matrixAfterMembershipChange.groups()).filteredOn(group -> group.code().equals("T_READ_GROUP"))
                 .singleElement().isEqualTo(groupBeforeMembershipChange);
 
-        replaceGrants("T_READ_GROUP",List.of(new Grant("OPERATION","BOARD_READ")));
+        // 예시 권한은 core 코드다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
+        replaceGrants("T_READ_GROUP",List.of(new Grant("OPERATION","DEPT_JOB_READ")));
         replaceGrants("T_READ_GROUP",List.of());
         var matrixAfterGrantAba = withSelectCount(3,service::grantMatrix);
         assertThat(matrixAfterGrantAba.groups()).filteredOn(group -> group.code().equals("T_READ_GROUP"))

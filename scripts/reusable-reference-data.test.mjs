@@ -5,12 +5,15 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { requiresClosure, sourceOwner, stripComments } from './project-composer-integrations.mjs';
-import { domainSupportFiles } from './project-composer-source.mjs';
+import { loadComposerModules } from './composer-modules.mjs';
 import {
-  BOARD_MASTER_SEED, BOARD_MASTER_TABLE, CODE_GROUP_OWNERS, CODE_GROUP_TABLE, boardMasterIds, omitCodeGroupsSql, referenceDataPlan,
+  BOARD_MASTER_SEED, BOARD_MASTER_TABLE, CODE_GROUP_TABLE, boardMasterIds, omitCodeGroupsSql, referenceDataPlan,
 } from './reusable-reference-data.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+// 공통코드 그룹 소유는 기능 파일의 owns.commonCodeGroups 다(11단계 C7 — 생성기 상수를 걷었다).
+const modules = loadComposerModules(root);
+const CODE_GROUP_OWNERS = modules.extras.codeGroupOwners;
 const JAVA_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
 
 function javaFiles(directory) {
@@ -23,8 +26,7 @@ function javaFiles(directory) {
 test('code group owners match the capability that owns every production file reading that group', () => {
   // 카탈로그와 같은 소유 판정(지원 파일 선언 → 업무 앱 디렉터리 → foundation·business-core 는 core → 참조 패키지)을 쓴다.
   const catalog = loadProjectComposerCatalog(root);
-  const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
-  const supportOwners = new Map([...domainSupportFiles(root, manifest)].flatMap(([domain, files]) => files.map(file => [file, domain])));
+  const supportOwners = new Map([...modules.declarations.supportFiles()].flatMap(([domain, files]) => files.map(file => [file, domain])));
   const ownerOf = sourceOwner(supportOwners, catalog.capabilities.map(capability => capability.id), requiresClosure(catalog.capabilities));
   const readers = new Map();
   for (const javaRoot of JAVA_ROOTS) for (const absolute of javaFiles(join(root, javaRoot))) {
@@ -58,21 +60,23 @@ test('the board master seed only inserts board masters and its IDs are read back
 });
 
 test('the reference data plan keeps core groups and only the selected capabilities’ groups and board masters', () => {
-  const full = referenceDataPlan(['board', 'informalsanction', 'note'], [CODE_GROUP_TABLE, BOARD_MASTER_TABLE, 'tb_note']);
+  const full = referenceDataPlan(['board', 'informalsanction', 'note'], [CODE_GROUP_TABLE, BOARD_MASTER_TABLE, 'tb_note'], CODE_GROUP_OWNERS);
   assert.deepEqual(full, { omittedCodeGroups: [], includeBoardMasters: true, tables: [CODE_GROUP_TABLE, BOARD_MASTER_TABLE] });
   assert.equal(omitCodeGroupsSql(full), '');
 
-  const core = referenceDataPlan([], [CODE_GROUP_TABLE]);
+  const core = referenceDataPlan([], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS);
   assert.deepEqual(core, { omittedCodeGroups: ['COM004', 'COM009', 'COM075'], includeBoardMasters: false, tables: [CODE_GROUP_TABLE] });
   assert.equal(omitCodeGroupsSql(core), "DELETE FROM public.tb_com_cd WHERE cd_id IN ('COM004', 'COM009', 'COM075');");
 
-  const approvalOnly = referenceDataPlan(['informalsanction'], [CODE_GROUP_TABLE]);
+  const approvalOnly = referenceDataPlan(['informalsanction'], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS);
   assert.deepEqual(approvalOnly.omittedCodeGroups, ['COM004', 'COM009']);
 
   // 게시판 기능과 게시판 마스터 표는 함께 있거나 함께 없다.
-  assert.throws(() => referenceDataPlan(['board'], [CODE_GROUP_TABLE]), /어긋난다/);
-  assert.throws(() => referenceDataPlan([], [CODE_GROUP_TABLE, BOARD_MASTER_TABLE]), /어긋난다/);
+  assert.throws(() => referenceDataPlan(['board'], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS), /어긋난다/);
+  assert.throws(() => referenceDataPlan([], [CODE_GROUP_TABLE, BOARD_MASTER_TABLE], CODE_GROUP_OWNERS), /어긋난다/);
   // 공통코드 그룹 표는 core 라 늘 있다.
-  assert.throws(() => referenceDataPlan([], []), /core 테이블/);
+  assert.throws(() => referenceDataPlan([], [], CODE_GROUP_OWNERS), /core 테이블/);
+  // 소유 표는 기능 파일에서 받는다 — 빠뜨리면 모든 그룹을 싣지 않고 멈춘다.
+  assert.throws(() => referenceDataPlan([], [CODE_GROUP_TABLE]), /공통코드 그룹 소유\(codeGroupOwners\)가 필요하다/);
   assert.throws(() => omitCodeGroupsSql({ omittedCodeGroups: ["X'); DROP TABLE t; --"] }), /올바르지 않다/);
 });

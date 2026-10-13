@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "id": "showcase",
+  "label": "시연 화면",
+  "presentation": {
+    "area": "showcase",
+    "order": 0,
+    "summary": "화면 패턴·테마 설정·하네스 샘플·워크플로우 예시"
+  },
+  "backend": {
+    "frontendOnly": true,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/patterns",
+      "src/app/admin/sanctn/workflow",
+      "src/app/admin/system/layout",
+      "src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
+      "src/app/admin/workflow",
+      "src/extensions/showcase"
+    ],
+    "frontendAny": [
+      {
+        "path": "src/app/admin/sanctn/WorkflowHubClient.tsx",
+        "with": [
+          "template"
+        ]
+      }
+    ],
+    "routes": [
+      "/admin/patterns",
+      "/admin/sanctn/workflow",
+      "/admin/system/layout",
+      "/admin/workflow"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "WORKFLOW"
+    ],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/showcase/hub-tabs.ts",
+        "reason": "시연 화면 기능이 없으면 감시 허브의 하네스 아틀라스 샘플 탭만 사라지고 로그·가동 상태 탭은 그대로입니다."
+      }
+    ],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

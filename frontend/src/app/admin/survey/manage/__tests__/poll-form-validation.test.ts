@@ -44,3 +44,15 @@ describe('pollFormSchema', () => {
     }).success).toBe(false);
   });
 });
+
+/*
+  [Phase 2 10단계 10c-1] core 의 생성 제약 보존 시험(lib/validation/__tests__/generated-constraint-preservation)에서 옮겼다 — 그 파일이
+  설문 모듈을 import 하면 설문을 고르지 않은 생성물에서 core 사례까지 연쇄로 빠졌다.
+*/
+describe('pollFormSchema keeps the shared generated constraints', () => {
+  it('accepts a valid poll and rejects an over-long name and a non-8-digit start date', () => {
+    expect(pollFormSchema.safeParse(validPoll).success).toBe(true);
+    expect(pollFormSchema.safeParse({ ...validPoll, pollNm: '가'.repeat(101) }).success).toBe(false);
+    expect(pollFormSchema.safeParse({ ...validPoll, pollBgngYmd: '202601011' }).success).toBe(false);
+  });
+});

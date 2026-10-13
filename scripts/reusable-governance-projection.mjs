@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { generatePermissions } from './generate-permissions.mjs';
-import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, discoverPageRoutes, expectedRouting, inspectRouteRepository, parseConfigRedirectsSource, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
+import { PERMISSION_ARTIFACT_PATHS, generatePermissions } from './generate-permissions.mjs';
+import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, expectedRouting, inspectRouteRepository, parseConfigRedirectsSource, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, applyPermissionSourceProjection, applyScreenAndBundleProjection } from './reusable-permission-projection.mjs';
+import { SCREEN_REGISTRY_OUTPUT } from './screen-registry-model.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
-import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
+import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
@@ -24,6 +27,9 @@ const CONTROL_SOURCES = [
   'frontend/next.config.ts',
   'frontend/src/lib/auth/page-authorization.ts',
 ];
+// [10단계 10b] 권한 투영이 다시 쓰는 파일 — 원본 소스 증거로 승계하지 않는다(sourceBindings 의 transformation 이름).
+const PERMISSION_PROJECTION_OUTPUTS = Object.freeze([PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH,
+  SCREEN_REGISTRY_OUTPUT, ...PERMISSION_ARTIFACT_PATHS]);
 
 function normalizedText(root, file) {
   return readFileSync(join(root, file), 'utf8').replace(/\r\n?/gu, '\n');
@@ -113,24 +119,16 @@ export function projectUrlApproval({ upstreamCensus, upstreamApproval, census, s
   };
 }
 
-/** Preserve page authorization values exactly; remove only pages absent from the artifact. */
-export function projectPagePermissions(outputRoot) {
-  const path = 'config/governance/permission-catalog.json';
-  const catalog = readJson(outputRoot, path);
-  const routes = new Set(discoverPageRoutes(outputRoot).map(row => row.route));
-  if (routes.size === 0) throw new Error('Cannot project an empty online route population');
-  for (const route of routes) {
-    if (!Object.hasOwn(catalog.pagePermissions ?? {}, route)) {
-      throw new Error(`Unregistered page permission in projected artifact: ${route}`);
-    }
-  }
-  const removed = Object.keys(catalog.pagePermissions).filter(route => !routes.has(route));
-  catalog.pagePermissions = Object.fromEntries(Object.entries(catalog.pagePermissions).filter(([route]) => routes.has(route)));
-  catalog.pagePermissionModes = Object.fromEntries(Object.entries(catalog.pagePermissionModes ?? {}).filter(([route]) => routes.has(route)));
-  writeJson(outputRoot, path, catalog);
+/**
+ * [10단계 10b] Project permission definitions with the composition: the catalog keeps the composition codes and the pages present
+ * in the artifact (page values unchanged), and authorization bindings drop rows whose handler source the projection removed. The
+ * runtime artifacts are then regenerated from these sources, so the source ledger and the runtime stay identical.
+ */
+export function projectPermissionDefinitions({ sourceRoot, outputRoot, composition }) {
+  const projection = applyPermissionSourceProjection({ sourceRoot, outputRoot, composition });
   // The catalog hash is shared by Java and TS: use its canonical generator, not a hand-edited TS map.
   generatePermissions(outputRoot);
-  return removed.sort();
+  return projection;
 }
 
 export function removeRedirectDeclarations(source, removedSources) {
@@ -192,7 +190,7 @@ export function projectRemovedRouteAliases(outputRoot, upstreamRoutes) {
 
 export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sourceCommit, composition, projectSource = (_file, text) => text }) {
   assertSeparateProjectionRoot(sourceRoot, outputRoot);
-  if (!['core', 'collaboration', 'demo', 'custom'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
+  if (!compositionProfiles().includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
     throw new Error('Governance projection requires a known profile and exact upstream commit');
   }
   // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏 없는 투영은 어느 프로필에서도 만들지 않는다.
@@ -215,7 +213,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     catalogHash: composition.catalogHash, recipeHash: composition.recipeHash, compositionHash: composition.compositionHash,
     menuSnapshotSha256 };
   const snapshots = UPSTREAM_SOURCES.map(path => {
-    const content = normalizedText(sourceRoot, path);
+    const content = upstreamSnapshotText(sourceRoot, path);
     const snapshotPath = snapshotPathFor(path);
     mkdirSync(dirname(join(outputRoot, snapshotPath)), { recursive: true });
     writeFileSync(join(outputRoot, snapshotPath), content, 'utf8');
@@ -228,7 +226,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     throw new Error('Upstream URL census drifted from the current source; projection cannot rebind stale approval');
   }
   const aliases = projectRemovedRouteAliases(outputRoot, new Set(upstreamRoutes.routes.map(row => row.route)));
-  const removedPagePermissions = projectPagePermissions(outputRoot);
+  const permissionDefinitions = projectPermissionDefinitions({ sourceRoot, outputRoot, composition });
+  const removedPagePermissions = permissionDefinitions.removedPagePermissions;
   const sourceBindings = new Map();
   const sourceUnchanged = file => {
     if (sourceBindings.has(file)) return sourceBindings.get(file).matches;
@@ -241,7 +240,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     sourceBindings.set(file, {
       source: file, upstreamSha256: sha256(original), projectedSha256: sha256(projected), matches,
       transformation: original === projected ? 'unchanged' : file === 'frontend/next.config.ts' ? 'excluded-destination-redirect-projection'
-        : slotPathKind(file)?.kind === 'registry' ? 'declared-slot-registry-projection' : 'declared-pack-marker-projection',
+        : slotPathKind(file)?.kind === 'registry' ? 'declared-slot-registry-projection'
+          : PERMISSION_PROJECTION_OUTPUTS.includes(file) ? 'composition-permission-projection' : 'declared-pack-marker-projection',
     });
     return matches;
   };
@@ -250,6 +250,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     asOf: upstreamRoutes.asOf,
     reviewBy: upstreamRoutes.menuSnapshot.review.reviewBy,
   });
+  // [10단계 10b] 화면 목록·묶음 원장을 구성으로 투영한다. 라우트 원장의 화면·shellAccess·라벨이 정해진 뒤(위)이고, capability 를 승계할지
+  // 정하는 판정(아래 sourceUnchanged)보다 앞이다 — 권한 작업대처럼 화면 목록·묶음 원장을 증거로 둔 화면은 바뀐 파일을 보고 승계하지 않는다.
+  const permissionScreens = applyScreenAndBundleProjection({ sourceRoot, outputRoot, ledger: routes });
   const unreviewedCapabilities = [];
   const originalRoutes = new Map(upstreamRoutes.routes.map(row => [row.route, row]));
   for (const route of routes.routes) {
@@ -290,9 +293,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   if (urlErrors.length) throw new Error(`Projected URL contract failed:\n${urlErrors.join('\n')}`);
   writeJson(outputRoot, URL_PATH, census);
   writeJson(outputRoot, APPROVAL_PATH, approval);
-  const originalProfiles = readJson(sourceRoot, 'config/reusable-base-profiles.json');
+  // 검토 범위는 기능 소유로 투영한다(11단계 C5) — 원본 카탈로그와 해석된 구성이 입력이다.
   const reviewProjection = deriveProjectedReviewManifests({
-    outputRoot, profile, routes, profiles: originalProfiles, composition,
+    outputRoot, profile, routes, catalog, composition,
     contract: readJson(sourceRoot, REVIEW_SCOPE_PATH),
     upstream: Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(sourceRoot, path)])),
   });
@@ -309,7 +312,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   const metadata = {
     schemaVersion: 1,
     authority: 'generated-reusable-governance-projection-not-environment-approval',
-    profile, packs: composition?.packs ?? originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
+    profile, sourceCommit, upstreamSnapshots: snapshots,
     composition: compositionProvenance,
     routes: routes.routes.map(({ route, source }) => ({ route, source })),
     urlRecordIds: census.records.map(record => record.id).sort(),
@@ -317,6 +320,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     unreviewedUrlRecordIds: census.records.filter(record => !inherited.has(record.id)).map(record => record.id).sort(),
     sourceBindings: [...sourceBindings.values()].sort((a, b) => a.source.localeCompare(b.source)),
     removedPagePermissions, unreviewedCapabilities, ...aliases,
+    permissionProjection: { ...permissionDefinitions.summary, ...permissionScreens },
     projectedReviewScopes: reviewProjection.reviewScopes,
     codeScope: projectedCodeScope(outputRoot),
     activeArtifacts: ACTIVE_ARTIFACTS.map(path => ({ path, sha256: artifactTextSha256(outputRoot, path) })),

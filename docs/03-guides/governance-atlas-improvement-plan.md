@@ -36,7 +36,7 @@
 - [프로젝트 개요](../../README.md), [모듈 선언](../../settings.gradle), core/app의 실제 domain 디렉터리.
 - [AGENTS](../../AGENTS.md), [SOP](orchestration-protocol.md), 3대 헌법과 공용 메모리.
 - [문서 인덱스](../README.md), 아키텍처·제품·개발·운영 문서 및 Accepted ADR.
-- [재사용 프로필](../../config/reusable-base-profiles.json), [라우트 역량 목록](../../config/ui-route-capabilities.json), [API 소비자 목록](../../config/governance/operation-consumer-census.json), [인가 정책](../../config/governance/authorization-policies.json).
+- [재사용 프로필](https://github.com/lkindo/egov-enterprise/blob/52527499a62d/config/reusable-base-profiles.json), [라우트 역량 목록](../../config/ui-route-capabilities.json), [API 소비자 목록](../../config/governance/operation-consumer-census.json), [인가 정책](../../config/governance/authorization-policies.json).
 - [게이트 registry](../../config/governance/gates.json), [검증 진입점](../../scripts/verify.mjs), [CI](../../.github/workflows/ci.yml), [릴리스](../../.github/workflows/release.yml), [배포 스크립트](../../scripts/deploy.sh).
 - Atlas HTML·JavaScript 및 [Atlas 계약 테스트](../../frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts).
 

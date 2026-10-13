@@ -562,10 +562,12 @@ describe('없는 것을 있다고 말하지 않는다', () => {
     if (draft !== undefined) expect(draft).not.toContain('결재 목록 화면의 기존 경로');
 
     const layout = readRepoInProjection('frontend/src/app/admin/system/layout/LayoutManagerClient.tsx');
-    // '[콘텐츠 운영]' 이라는 메뉴는 시드에 없다. 실재하는 메뉴는 '배너 및 팝업 관리' 다.
+    // '[콘텐츠 운영]' 이라는 메뉴는 시드에 없다. 배너·팝업 관리 화면도 안내하지 않는다 — 그 화면은 다른 기능(홍보)의 것이라 시연
+    //   기능만 고른 생성물에는 없는 메뉴가 된다(DEC-OPS-273 분리 뒤 T2 첫 실행, run 38275695802).
     if (layout !== undefined) {
       expect(layout).not.toContain('콘텐츠 운영');
-      expect(layout).toContain('/admin/system/banner');
+      expect(layout).not.toContain('/admin/system/banner');
+      expect(layout).not.toContain('배너 및 팝업');
     }
   });
 

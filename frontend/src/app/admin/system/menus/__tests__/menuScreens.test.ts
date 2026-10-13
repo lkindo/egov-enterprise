@@ -35,7 +35,8 @@ describe('연결 화면 목록', () => {
   it('진입 권한 문구 — 권한이 없으면 로그인만, ANY 는 하나라도, ALL 은 모두', () => {
     expect(entryModeText({ permissions: [], mode: 'ANY' })).toBe('로그인만 하면 열림');
     expect(entryModeText({ permissions: ['MENU_READ'], mode: 'ANY' })).toBe('하나라도 있으면 열림');
-    expect(entryModeText({ permissions: ['POLL_READ', 'POLL_READ_ALL'], mode: 'ALL' })).toBe('모두 있어야 열림');
+    // core 코드로 시험한다 — 생성물은 권한 목록을 구성 코드로 줄인다(Phase 2 10단계 10b).
+    expect(entryModeText({ permissions: ['FILE_READ', 'FILE_READ_ALL'], mode: 'ALL' })).toBe('모두 있어야 열림');
     const menus = SCREEN_REGISTRY.find((candidate) => candidate.route === '/admin/system/menus')!;
     expect(permissionText('MENU_READ', menus)).toMatch(/\(MENU_READ\)$/);
     expect(permissionText('MENU_READ', menus)).not.toBe('MENU_READ');

@@ -22,6 +22,8 @@ export const ABSOLUTE_PATH = /(?:[A-Za-z]:[\\/]|\\\\|\/(?:Users|home|root|tmp|va
 export const TOOL_MESSAGES = Object.freeze({
   git: 'Git 을 실행하지 못했습니다. Git 을 설치하거나 PATH 를 확인한 뒤 생성기를 다시 시작해 주세요.',
   docker: 'Docker 를 실행하지 못했습니다. Docker 엔진을 시작하거나 설치하고, Linux 컨테이너 모드인지 확인한 뒤 다시 점검해 주세요.',
+  // 생성기 서버를 다시 시작하지 않아도 된다(실행 파일이 아니라 원본 저장소의 의존성이다).
+  frontend: '원본 프런트 의존성(TypeScript·openapi-typescript)이 없어 API 계약을 다시 만들지 못했습니다. 저장소에서 pnpm -C frontend install --frozen-lockfile 을 실행하고 생성 환경을 다시 점검해 주세요.',
 });
 // 도구 이름은 문자열이고 알려진 것이어야 한다(문자열로 바뀌는 객체·배열이 그대로 실려 나가지 않게).
 export const knownTool = tool => typeof tool === 'string' && Object.hasOwn(TOOL_MESSAGES, tool);

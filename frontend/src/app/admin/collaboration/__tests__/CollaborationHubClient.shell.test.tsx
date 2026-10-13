@@ -5,9 +5,11 @@ import { CollaborationHubFrame } from '../collaboration-hub-frame';
 /**
  * 협업 허브 core 셸의 호스트 계약(허브 분해 H1). 셸은 기능 코드를 모르고 hub-tabs·shell-links 레지스트리만 읽는다 — 여기서는 두
  * 레지스트리를 가짜 기여로 바꿔 셸이 하는 일만 본다. 실제 쪽지·스크랩 탭은 각 기능의 시험이 실제 레지스트리로 본다.
+ * 가짜 기여의 권한·목적지는 core 의 것(사용자 관리·메뉴 관리, USER_READ·MENU_READ)이다 — 생성물은 권한 목록과 화면을 구성으로 줄이므로
+ * (Phase 2 10단계 10b) 기능의 화면·권한을 쓰면 그 기능이 빠진 구성에서 셸 규칙이 아니라 대역이 깨진다.
  */
 
-const USER = { id: 'u', permissions: ['NOTE_READ'], authorizationVersion: 'v1' };
+const USER = { id: 'u', permissions: ['USER_READ', 'MENU_READ'], authorizationVersion: 'v1' };
 const mocks = vi.hoisted(() => ({
   query: '', replace: vi.fn(), tabs: [] as unknown[], links: [] as unknown[],
   auth: { user: null as unknown, loading: false },
@@ -40,9 +42,9 @@ beforeEach(() => {
   // 순서는 order 가 정한다(레지스트리 순서가 아니다). 다른 허브의 탭은 그리지 않는다. 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다.
   mocks.tabs.splice(0, Infinity, tab('SCRAPS', 20, '스크랩'), tab('COMMUNITY', 5, '커뮤니티', 'knowledge'), tab('MESSAGES', 10, '쪽지'));
   mocks.links.splice(0, Infinity,
-    { id: 'mail', placement: 'collaboration-hub', order: 20, href: '/admin/collaboration/mail-send', label: '신규 발송', visibleWhen: { page: '/admin/collaboration/mail-send' } },
+    { id: 'menus', placement: 'collaboration-hub', order: 20, href: '/admin/system/menus', label: '메뉴 관리', visibleWhen: { page: '/admin/system/menus' } },
     { id: 'help', placement: 'header', order: 10, href: '/help', label: '도움말', visibleWhen: { page: '/help' } },
-    { id: 'book', placement: 'collaboration-hub', order: 10, href: '/admin/collaboration/address-book/select-address-book-list', label: '주소록 관리', visibleWhen: { page: '/admin/collaboration/address-book/select-address-book-list' } },
+    { id: 'users', placement: 'collaboration-hub', order: 10, href: '/admin/user/manage', label: '사용자 관리', visibleWhen: { page: '/admin/user/manage' } },
   );
 });
 
@@ -73,11 +75,11 @@ describe('협업 허브 core 셸', () => {
 
   it('머리 링크는 collaboration-hub 배치만 order 순으로 그린다', () => {
     render(<CollaborationHubClient />);
-    const actions = screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/admin/collaboration/'))
+    const actions = screen.getAllByRole('link').filter((link) => /^\/admin\/(?:system|user)\//.test(link.getAttribute('href') ?? ''))
       .map((link) => [link.textContent, link.getAttribute('href')]);
     expect(actions).toEqual([
-      ['주소록 관리', '/admin/collaboration/address-book/select-address-book-list'],
-      ['신규 발송', '/admin/collaboration/mail-send'],
+      ['사용자 관리', '/admin/user/manage'],
+      ['메뉴 관리', '/admin/system/menus'],
     ]);
   });
 
@@ -97,14 +99,14 @@ describe('협업 허브 core 셸', () => {
   });
 
   it('탭 기여는 있는데 권한으로 모두 가려졌으면 구성이 아니라 권한 때문이라고 말한다', () => {
-    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['SCRAP_READ'] } });
+    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['DEPT_READ'] } });
     render(<CollaborationHubClient />);
     expect(screen.getByRole('status')).toHaveTextContent('협업 목록 조회 권한이 없습니다. 필요하면 시스템 관리자에게 문의해 주세요.');
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
   it('권한 상태를 아직 모르는 동안에는 빈 상태를 말하지 않는다', () => {
-    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['NOTE_READ'] } });
+    mocks.tabs.splice(0, Infinity, { ...tab('MESSAGES', 10, '쪽지'), visibleWhen: { permissions: ['USER_READ'] } });
     mocks.auth = { user: null, loading: true };
     const { container } = render(<CollaborationHubClient />);
     expect(screen.queryByRole('status')).toBeNull();

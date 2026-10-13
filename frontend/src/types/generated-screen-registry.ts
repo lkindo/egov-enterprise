@@ -3,7 +3,8 @@
 // 화면 목록 — 메뉴 편집기의 연결 화면, 권한 편집기의 화면별 권한 표, 화면 관리의 화면 목록이 읽는다.
 // 원천: 화면 파일(frontend/src/app/**/page.tsx 중 라우팅이 page 인 것), 진입 권한(permission-catalog.json
 // pagePermissions·pagePermissionModes), 라우트 원장(ui-route-capabilities.json shellAccess·visibleLabel),
-// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산).
+// 메뉴 snapshot(project-composer-menus.json menu_nm), 쓰기 권한(operation-consumer census 축 3 계산), 표시 권한(canPermission
+// 리터럴·슬롯 기여 항목의 노출 술어 visibleWhen.permissions).
 //
 // 권한 묶음 — 권한 작업대의 '권한 묶음 적용'이 읽는다. 원천은 config/governance/permission-bundles.json 이고, 묶음이
 // 여는 화면(screens)과 관련 화면(relatedScreens)은 위 화면 목록에서 계산한다. screens 는 진입 권한을 이 묶음의 권한이
@@ -20,19 +21,21 @@
 //     canPermission 리터럴('display')로만 드러난다.
 //   · 호출·import 는 이름으로 맞춘다 — 같은 이름의 모듈은 겹치고(타입만 가져오는 import 도 import 로 본다),
 //     조립한 권한 코드(템플릿 문자열)는 보지 못한다.
-//   · 'display' 는 리터럴로 적힌 canPermission 코드다. 리터럴을 언급하면 판정에 쓴 것으로 본다(어느 버튼에
-//     걸었는지는 보지 않는다).
+//   · 'display' 는 리터럴로 적힌 canPermission 코드와 슬롯 기여 항목의 노출 술어(visibleWhen.permissions)다. 리터럴을
+//     언급하면 판정에 쓴 것으로 본다(어느 버튼에 걸었는지는 보지 않는다). 술어는 그 항목을 그리는 셸(허브별·배치별 소비자)의
+//     화면에 붙고, page·always 술어와 레이아웃 셸(머리글·바닥글·오류 화면·명령 센터)만 그리는 항목은 어느 화면에도 붙지 않는다.
 //   · 화면의 라우트 디렉터리 파일은 그 화면과, 그 파일을 import 하는(정적·동적) 다른 화면들에 귀속한다. 공용
 //     컴포넌트·허브 클라이언트는 그것을 import 하는 화면들에 귀속하고, app/ 루트의 layout·헤더·전역 provider 는
 //     어느 화면에도 귀속하지 않는다.
 //   · 별칭(page-redirect·config-redirect)은 화면이 아니다. 목적지를 함께 적지만 링크하지 않는다. 화면 파일이 없는 앱
 //     설정(next.config) 리다이렉트도 별칭이다 — 앱 설정은 화면 파일보다 먼저 넘기므로, 목록에 없으면 그 경로가 동적
 //     형제(…/[id])로 풀린다.
-//   · 재사용 투영본은 권한 생성물(PAGE_PERMISSIONS)만 다시 만든다. 그 산출물에서 빠진 화면·별칭은 아래에서
-//     PAGE_PERMISSIONS 로 다시 거른다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도
-//     앱 설정이 그대로 넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다.
-//     묶음의 화면·관련 화면도 같이 거르고, 여는 화면(screens)이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은
-//     내지 않는다 — 관련 화면만 남아도 내지 않는다(생성기가 여는 화면 하나 이상을 요구하는 것과 같은 기준).
+//   · 재사용 투영본(생성물)은 이 목록을 구성으로 투영해 싣는다 — 남는 화면·별칭만 두고, 행에서 구성에 없는 권한을 빼고,
+//     묶음도 구성으로 줄인다(scripts/reusable-permission-projection.mjs). 아래의 PAGE_PERMISSIONS 거름은 같은 결과를 내는
+//     두 번째 거름이다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도 앱 설정이 그대로
+//     넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다. 묶음의 화면·관련 화면도 같이
+//     거르고, 여는 화면과 관련 화면이 모두 남지 않은 묶음은 내지 않는다. 생성물에서는 여는 화면 없이 관련 화면만 남은 묶음도
+//     낸다 — 누구나 들어가는 화면에서 그 권한으로 쓰는 일이 남았다(원본 묶음은 늘 여는 화면이 하나 이상이다).
 import { PAGE_PERMISSIONS, type PermissionCode } from '@/types/generated-permissions';
 
 export type ScreenPermissionSource = 'entry' | 'write' | 'display';
@@ -72,8 +75,11 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"APPROVAL_READ","action":"READ","source":"display"},
+      {"code":"BANNER_READ","action":"READ","source":"display"},
       {"code":"DASHBOARD_READ","action":"READ","source":"display"},
-      {"code":"NOTE_READ","action":"READ","source":"display"}
+      {"code":"NOTE_READ","action":"READ","source":"display"},
+      {"code":"POPUP_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -95,7 +101,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"NOTE_READ","action":"READ","source":"display"},
       {"code":"SCRAP_CREATE","action":"CREATE","source":"write"},
+      {"code":"SCRAP_READ","action":"READ","source":"display"},
       {"code":"SCRAP_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
@@ -143,6 +151,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"ADBK_READ","action":"READ","source":"display"},
       {"code":"DEPT_READ","action":"READ","source":"display"},
       {"code":"MAIL_SEND","action":"SEND","source":"write"},
       {"code":"USER_READ","action":"READ","source":"display"}
@@ -156,7 +165,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"NOTE_READ","action":"READ","source":"display"},
       {"code":"SCRAP_CREATE","action":"CREATE","source":"write"},
+      {"code":"SCRAP_READ","action":"READ","source":"display"},
       {"code":"SCRAP_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
@@ -499,7 +510,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -510,7 +522,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -521,7 +534,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -532,7 +546,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -543,7 +558,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {
@@ -997,6 +1013,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["SMS_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"ADBK_READ","action":"READ","source":"display"},
       {"code":"DEPT_READ","action":"READ","source":"display"},
       {"code":"SMS_READ","action":"READ","source":"entry"},
       {"code":"SMS_SEND","action":"SEND","source":"write"},
@@ -1836,7 +1853,7 @@ export const SCREEN_REGISTRY: readonly ScreenRegistryEntry[] = GENERATED_SCREENS
 export const SCREEN_ALIASES: readonly ScreenAlias[] = GENERATED_ALIASES.filter(isProjectedAlias);
 export const PERMISSION_BUNDLES: readonly PermissionBundle[] = GENERATED_BUNDLES
   .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected), relatedScreens: bundle.relatedScreens.filter(isProjected) }))
-  .filter(bundle => bundle.screens.length > 0);
+  .filter(bundle => bundle.screens.length > 0 || bundle.relatedScreens.length > 0);
 
 /**
  * 보호 권한 — 서버 SENSITIVE_ADMINISTRATION_PERMISSIONS 와 같은 집합이다(생성기 계약이 대조한다), 코드 순. 그룹에 새로

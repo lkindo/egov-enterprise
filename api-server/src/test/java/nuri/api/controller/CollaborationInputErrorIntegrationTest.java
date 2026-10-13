@@ -21,12 +21,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * collaboration pack 표면의 잘못된 입력이 500 이 아니라 400 으로 끝나는지 실제 저장소 위에서 확인한다.
+ * 게시판·댓글 표면의 잘못된 입력이 500 이 아니라 400 으로 끝나는지 실제 저장소 위에서 확인한다.
  *
- * <p>[2026-09-24 ZAP API 스캔] 쪽지 목록은 {@code @Query} 에 정렬을 붙이므로 없는 필드는 Hibernate 가, 정렬 식이
- * 아닌 값은 Spring Data 가 거부한다. 둘 다 500 이었다. 게시글 첨부 등록·수정은 {@code @Valid} 가 없어 JSON 경로의
- * 입력 검사를 통째로 건너뛰었다. 게시판 요청 DTO 를 직접 써서 이 파일은 collaboration 이 빠진 프로필에서 함께
- * 빠진다(core 표면은 {@link ClientInputErrorIntegrationTest}).
+ * <p>[2026-09-24 ZAP API 스캔] 게시글 첨부 등록·수정은 {@code @Valid} 가 없어 JSON 경로의 입력 검사를 통째로 건너뛰었다.
+ * 게시판 요청 DTO 를 직접 써서 이 파일은 게시판이 빠진 생성물에서 함께 빠진다(core 표면은
+ * {@link ClientInputErrorIntegrationTest}). 게시판은 댓글을 늘 함께 담으므로 댓글 확인도 여기 둔다.
+ *
+ * <p>[2026-10-13 T2 첫 실행] 쪽지 목록의 정렬 확인은 쪽지 소유 시험(note 패키지의 NoteInputErrorIntegrationTest)으로
+ * 옮겼다. 여기 두면 쪽지가 없는 게시판 폐포에서 쪽지 API 가 404 라 붉었다.
  */
 @ApiHttpIntegrationTest
 @WithMockCustomUser(role = "ADMIN")
@@ -43,18 +45,6 @@ class CollaborationInputErrorIntegrationTest {
         mvc.perform(get("/api/v1/comments"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", containsString("pstSn")));
-    }
-
-    @Test
-    @DisplayName("없는 필드나 정렬 식이 아닌 값으로 정렬하면 400 이고, 올바른 정렬은 그대로 통과한다")
-    void invalidSortIsBadRequestAndValidSortStillWorks() throws Exception {
-        for (String sort : new String[] {"nope", "[noteRcptnSn,DESC]"}) {
-            mvc.perform(get("/api/v1/notes/received").param("page", "0").param("size", "10").param("sort", sort))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("C001"));
-        }
-        mvc.perform(get("/api/v1/notes/received").param("page", "0").param("size", "10").param("sort", "noteRcptnSn,DESC"))
-                .andExpect(status().isOk());
     }
 
     @Test
