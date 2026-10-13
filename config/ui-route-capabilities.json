@@ -10117,17 +10117,20 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "approvals-api",
       "supportedActions": [
         "confirm",
         "create",
+        "filter",
         "list",
         "refresh",
         "reject",
+        "search",
         "select-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "demo"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -10151,14 +10154,14 @@
           "actions": [
             "confirm",
             "create",
+            "filter",
             "list",
             "refresh",
             "reject",
+            "search",
             "select-detail"
           ],
-          "unsupportedVisibleActions": [
-            "server-search"
-          ],
+          "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
           "visibleLabel": "결재 기안·목록·승인·반려",
           "primaryTask": true,
@@ -10167,33 +10170,17 @@
             "frontend/e2e/journeys/approvals.spec.ts",
             "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
             "frontend/src/app/approvals/ApprovalHubClient.tsx",
+            "frontend/src/app/approvals/__tests__/ApprovalHubClient.actions.test.tsx",
             "frontend/src/app/approvals/page.tsx",
             "frontend/src/services/business/user/approval/ApprovalUserService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
-          "owner": "product/UX + domain owner"
-        },
-        {
-          "id": "approvals.visualization-metrics",
-          "status": "demo",
-          "dataSource": "hardcoded-metrics",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "워크플로우·무결성 지표",
-          "primaryTask": false,
-          "evidenceLevel": "E1",
-          "evidence": [
-            "frontend/src/app/approvals/ApprovalHubClient.tsx",
-            "frontend/src/app/approvals/page.tsx"
-          ],
-          "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
+          "lastVerifiedAt": "2026-10-13",
           "owner": "product/UX + domain owner"
         }
       ],
       "evidence": [
+        "config/modules/informalsanction.json",
         "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/approvals/page.tsx",
@@ -10201,13 +10188,12 @@
       ],
       "unverifiedFields": [
         "journeys",
-        "profileOwners",
         "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the visualization-metrics (demo) and unsupported server-search verdicts were re-read from code; the rest of the action list was not re-verified and is not exhaustive (the hub also withdraws, reminds, replaces approvers, requests and answers supplements, adds references and resubmits). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
       }
     },
     {
@@ -10220,15 +10206,14 @@
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "approvals-api",
       "supportedActions": [
         "back",
-        "edit-local-content",
-        "edit-local-subject",
-        "select-template"
+        "create"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "demo"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -10245,50 +10230,34 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "draft.form-catalog",
-          "status": "demo",
-          "dataSource": "hardcoded-local-state",
+          "id": "draft.compose",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "approvals-api",
           "actions": [
             "back",
-            "edit-local-content",
-            "edit-local-subject",
-            "select-template"
+            "create"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
-          "visibleLabel": "결재 양식 선택·작성",
+          "visibleLabel": "새 결재 기안",
           "primaryTask": true,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E3",
           "evidence": [
+            "frontend/src/app/approvals/ApprovalDraftDialog.tsx",
+            "frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx",
+            "frontend/src/app/approvals/__tests__/ApprovalDraftHubClient.test.tsx",
             "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
-            "frontend/src/app/approvals/draft/page.tsx"
+            "frontend/src/app/approvals/draft/page.tsx",
+            "frontend/src/services/business/user/approval/ApprovalUserService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
-          "owner": "product/UX + domain owner"
-        },
-        {
-          "id": "draft.submit",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [
-            "submit"
-          ],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "결재 상신(목업 — 실제 상신은 /approvals)",
-          "primaryTask": true,
-          "evidenceLevel": "E1",
-          "evidence": [
-            "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx",
-            "frontend/src/app/approvals/draft/page.tsx"
-          ],
-          "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
+          "lastVerifiedAt": "2026-10-13",
           "owner": "product/UX + domain owner"
         }
       ],
       "evidence": [
+        "config/modules/informalsanction.json",
         "config/modules/presets.json",
         "frontend/next.config.ts",
         "frontend/src/app/approvals/draft/page.tsx",
@@ -10296,13 +10265,12 @@
       ],
       "unverifiedFields": [
         "journeys",
-        "profileOwners",
         "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the mock verdicts (form catalog demo, submit unavailable) were re-read from code and replaced by draft.compose; its action list was not re-verified and is not exhaustive (the draft dialog also saves and deletes temporary drafts). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
       }
     },
     {

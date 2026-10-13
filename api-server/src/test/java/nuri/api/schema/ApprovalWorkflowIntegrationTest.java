@@ -9,7 +9,6 @@ import nuri.business.service.informalsanction.InformalSanctionService;
 import nuri.business.service.informalsanction.dto.ApprovalStageRequest;
 import nuri.business.service.informalsanction.dto.InformalSanctionDto;
 import nuri.business.service.informalsanction.event.SanctionEventListener;
-import nuri.business.service.notification.listener.NotificationRequestListener;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
@@ -17,7 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +30,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.ClassUtils;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
@@ -39,10 +44,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-/** Real Flyway, PostgreSQL transactions and repositories; external notification handlers are inert. */
+/**
+ * Real Flyway, PostgreSQL transactions and repositories; external notification handlers are inert.
+ *
+ * <p>이 클래스는 알림 타입을 하나도 참조하지 않는다 — 그래서 알림이 없는 '공통 기반 + 결재' 생성물에도 남는다(GAP-BASE-003).
+ * 알림이 있는 구성에서는 결재가 발행한 알림 요청을 실제 알림 리스너가 받아 사용자 FK 가 있는 알림 행을 쓰는데, 이 클래스의
+ * 결재자·참조자는 사용자 행이 없다. 그래서 그 리스너의 bean 정의를 이름(문자열)으로 걷는다. 알림 행까지 보는 시험은
+ * 결재와 알림이 함께 소유한 ApprovalReferenceNotificationIntegrationTest 에 있다.
+ */
 @Tag("schema-validation")
 @SpringBootTest
-@org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
+@org.springframework.context.annotation.Import({AuthorizationSchemaRehearsalTestConfiguration.class,
+        ApprovalWorkflowIntegrationTest.InAppNotificationsOffTestConfiguration.class})
 @ActiveProfiles({"test", "tc"})
 class ApprovalWorkflowIntegrationTest {
     private static final String OWNER = "WF_OWNER";
@@ -54,22 +67,34 @@ class ApprovalWorkflowIntegrationTest {
     /** [2026-10-04 D4] 참조자 — 결재 조회 권한(APPROVAL_READ)만 있고 결재 권한은 없다. */
     private static final String REFERENCE = "WF_REFERENCE";
     private static final String LATE_REFERENCE = "WF_LATE_REFERENCE";
+    /** 알림 기능의 알림 요청 리스너 — 타입으로 쓰면 이 클래스가 알림 없는 구성에서 함께 지워지므로 이름으로만 가리킨다. */
+    private static final String IN_APP_NOTIFICATION_LISTENER = "nuri.business.service.notification.listener.NotificationRequestListener";
     @Autowired private InformalSanctionService service;
     @Autowired private nuri.business.service.informalsanction.ApprovalTemporaryDraftService drafts;
     @Autowired private nuri.api.controller.business.approval.InformalSanctionApiController legacyController;
-    /** 알림 리스너는 이 클래스에서 목이다 — 실제 알림 행(사용자 FK)을 보는 시험만 이 서비스로 넘긴다. */
-    @Autowired private nuri.business.service.notification.NotificationService notificationService;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private ApplicationContext applicationContext;
     @Autowired private DataSource dataSource;
     @Autowired private PlatformTransactionManager transactionManager;
     @MockitoBean private UserRepository users;
     @MockitoBean private CommonCodeService codes;
     @MockitoBean private SanctionEventListener finalNotifications;
-    @MockitoBean private NotificationRequestListener inAppNotifications;
     private final List<Long> ownDocuments = new ArrayList<>();
 
     @BeforeEach
     void availableParticipants() {
+        // 알림 기능이 있으면(클래스) 알림 테이블도 있다. 리스너가 개명·이동되면 무력화를 확인할 수 없으므로 여기서 붉다.
+        // 수동 도메인 삭제(scripts/delete-domain.ps1)는 Java 소스만 지우고 Flyway DDL 을 남기므로, 알림만 수동으로 지운
+        // 트리에서도 여기서 붉다 — 그때 원인은 개명이 아니라 남은 알림 테이블(tb_user_noti, V2_0 baseline)이다.
+        ClassLoader loader = getClass().getClassLoader();
+        boolean listener = ClassUtils.isPresent(IN_APP_NOTIFICATION_LISTENER, loader);
+        assertThat(listener).as("알림 리스너 클래스와 알림 테이블은 함께 있거나 함께 없다 — 리스너가 개명·이동됐거나, "
+                        + "알림을 수동 삭제(delete-domain.ps1)해 Flyway DDL(tb_user_noti)만 남은 경우다")
+                .isEqualTo(jdbc.queryForObject("SELECT to_regclass('public.tb_user_noti') IS NOT NULL", Boolean.class));
+        if (listener) {
+            assertThat(applicationContext.getBeanNamesForType(ClassUtils.resolveClassName(IN_APP_NOTIFICATION_LISTENER, loader)))
+                    .as("알림 리스너 bean 은 이 클래스의 문맥에 없다").isEmpty();
+        }
         when(codes.getCodesByGroup("COM075")).thenReturn(List.of(new CommonCodeDto("COM075", "WF", "검토", null, "Y")));
         when(users.findAllById(any())).thenAnswer(call -> {
             List<User> result = new ArrayList<>();
@@ -531,78 +556,6 @@ class ApprovalWorkflowIntegrationTest {
     }
 
     /**
-     * [2026-10-04 D4 개정 1] 지워진 참조자 때문에 결재가 되돌아가지 않는다. 참조 행은 사용자 삭제 뒤에도 남는데(사용자 FK 없음)
-     * 알림 행(tb_user_noti)은 사용자 FK 가 있고 업무 트랜잭션 안에서 저장된다 — 지워진 참조자에게 결과 알림을 보내면 FK 위반으로
-     * 승인 전체가 되돌아간다. 이 시험만 실제 알림 서비스로 알림 행을 쓴다(나머지 시험의 결재자·참조자는 사용자 행이 없다).
-     */
-    @Test
-    void approvalSucceedsWhenACurrentCycleReferenceAccountWasDeletedOnPostgres() {
-        String fixture = "WFN" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 10);
-        String approver = fixture + "A";
-        String kept = fixture + "K";
-        String deleted = fixture + "D";
-        List<String> people = List.of(approver, kept, deleted);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM pg_constraint WHERE conname='fk_tb_user_noti_tb_user_info'",
-                Integer.class)).as("알림 행은 사용자 FK 로 묶여 있다 — 없으면 이 시험은 아무것도 증명하지 않는다").isEqualTo(1);
-        try {
-            for (String person : people) {
-                jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                        + "VALUES(?,?,'reference fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
-                        person, person.toLowerCase(java.util.Locale.ROOT));
-            }
-            // 사용자 저장소는 이 클래스에서 목이다 — 이 시험에서는 실제 사용자 행이 있는 사람만 돌려준다(지운 사람은 없다).
-            //   doAnswer 로 바꿔 단다 — when(users.findAllById(any())) 는 다는 순간 목을 null 인자로 한 번 불러, @BeforeEach 의
-            //   응답이 null 을 순회하다 NPE 로 죽는다.
-            org.mockito.Mockito.doAnswer(call -> {
-                List<User> result = new ArrayList<>();
-                Iterable<String> ids = call.getArgument(0);
-                for (String id : ids) {
-                    Integer rows = jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE esntl_id=?", Integer.class, id);
-                    if (rows != null && rows > 0) {
-                        result.add(User.builder().esntlId(id).userId(id).userNm(id).userSttsCd("P").build());
-                    }
-                }
-                return result;
-            }).when(users).findAllById(any());
-            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(approver));
-            when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_READ")).thenReturn(people);
-            org.mockito.Mockito.doAnswer(call -> notificationService.createForEvent(call.getArgument(0)))
-                    .when(inAppNotifications).onNotificationRequested(any());
-
-            authenticate(OWNER);
-            long id = service.registerInformalSanction(document("검토 요청", "지워질 참조자가 있는 기안"),
-                    List.of(stage(ApprovalStageKind.APPROVAL, approver)), List.of(kept, deleted));
-            ownDocuments.add(id);
-            assertThat(notificationCount(deleted)).as("지정 알림이 실제 알림 행으로 저장된다(리스너가 실제로 불린다)").isEqualTo(1);
-
-            jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", deleted);
-            jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", deleted);
-            assertThat(jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", deleted)).isEqualTo(1);
-
-            authenticate(approver);
-            service.confirmInformalSanction(id, "C", null, service.getInformalSanction(id, approver).getVersion());
-
-            assertThat(jdbc.queryForObject("SELECT aprv_yn FROM tb_ifml_atrz_info WHERE ifml_atrz_sn=?", String.class, id))
-                    .as("지워진 참조자가 있어도 승인이 커밋된다").isEqualTo("C");
-            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=? AND noti_ttl_nm=?",
-                    Integer.class, kept, "결재가 완료되었습니다")).as("남은 참조자는 결과 알림을 받는다").isEqualTo(1);
-            assertThat(notificationCount(deleted)).isZero();
-            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_rfpr WHERE ifml_atrz_sn=? AND user_id=?",
-                    Integer.class, id, deleted)).as("참조 행은 문서 기록으로 남는다").isEqualTo(1);
-        } finally {
-            for (String person : people) {
-                jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", person);
-                jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", person);
-                jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", person);
-            }
-        }
-    }
-
-    private int notificationCount(String receiver) {
-        return jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Integer.class, receiver);
-    }
-
-    /**
      * [2026-10-04 D4] 결재자 추가 규칙의 세 갈래 — 차례가 아니면 403, 기안자가 이 차수에 지정했으면 409, 아무도 지정하지
      * 않았으면 지금 차례인 결재자가 더한다(문서 버전이 오르고 참조자가 읽는다).
      */
@@ -744,5 +697,25 @@ class ApprovalWorkflowIntegrationTest {
                 .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new).toList();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, authorities));
+    }
+
+    /**
+     * 알림 요청 리스너의 bean 정의를 걷는다. 이름에 TestConfig 를 둔다 — 앱의 컴포넌트 스캔은 이름이 .*TestConfig.* 인 클래스만
+     * 거른다(ApiServerApplication). 이 규칙을 어기면 이 설정이 모든 시험 문맥에 스캔돼 다른 시험의 알림까지 사라진다.
+     * 일반 BeanFactoryPostProcessor 는 컴포넌트 스캔(ConfigurationClassPostProcessor) 뒤에 돈다.
+     */
+    @TestConfiguration(proxyBeanMethods = false)
+    static class InAppNotificationsOffTestConfiguration {
+        @Bean
+        static BeanFactoryPostProcessor dropInAppNotificationListener() {
+            return beanFactory -> {
+                BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+                for (String name : registry.getBeanDefinitionNames()) {
+                    if (IN_APP_NOTIFICATION_LISTENER.equals(registry.getBeanDefinition(name).getBeanClassName())) {
+                        registry.removeBeanDefinition(name);
+                    }
+                }
+            };
+        }
     }
 }

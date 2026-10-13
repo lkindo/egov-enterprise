@@ -4,8 +4,8 @@
 
 ## 🛠 주요 기술 스택
 
-- **Framework**: Next.js 16.2.x (App Router, cacheComponents/PPR)
-- **Library**: React 19.2.x
+- **Framework**: Next.js 16.4.x (App Router, 요청별 CSP nonce 로 전 페이지 동적 렌더 — PPR 은 쓰지 않는다, DEC-OPS-011)
+- **Library**: React 19.3.x
 - **Styling**: Tailwind CSS 4, 시맨틱 디자인 토큰
 - **Data Fetching**: Axios(동일 출처 `/api/v1` 프록시), TanStack Query 5.x
 - **State Management**: Zustand, React Context
