@@ -95,10 +95,10 @@ test('the projector re-renders a registry from the contributions its direct remo
     /복사할 프런트 파일 목록\(files\)이 필요하다/);
   // 레지스트리가 아닌 파일은 목록 없이도 투영한다.
   assert.equal(createFrontendProjector({ composition: CORE }).project('src/app/x.ts', 'x\n').source, 'x\n');
-  // 슬롯 파일은 pack 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다.
-  const marked = '// reusable-base:demo:start\nexport const x = 1;\n// reusable-base:demo:end\nexport default [];\n';
+  // 슬롯 파일은 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다.
+  const marked = '// reusable-base:note:start\nexport const x = 1;\n// reusable-base:note:end\nexport default [];\n';
   for (const file of ['src/extensions/board/shell-links.ts', REGISTRY, 'src/extensions/slots.ts']) {
-    assert.throws(() => demo.project(file, marked), /슬롯 파일은 pack 마커를 둘 수 없다/, file);
+    assert.throws(() => demo.project(file, marked), /슬롯 파일은 마커를 둘 수 없다/, file);
   }
 });
 

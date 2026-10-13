@@ -62,9 +62,7 @@
     "markerBlocks": [
       {
         "file": "src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
-        "token": "demo",
         "blocks": 4,
-        "alsoRequires": [],
         "step": "잔존(선택 외래 키 연동 칸)",
         "reason": "커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다."
       }

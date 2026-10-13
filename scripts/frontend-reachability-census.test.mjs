@@ -33,7 +33,7 @@ import {
   applyFrontendProjection,
   createFrontendProjector,
   isFrontendModuleFile,
-  parsePackMarkerBlocks,
+  parseMarkerBlocks,
   planFrontendRemoval,
 } from './reusable-source-frontend.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -559,17 +559,17 @@ test('computed dynamic import is ambiguous in inspection mode and red in gate mo
   프로필 투영이 실패하면(마커 오류) 생성기는 그 자리에서 실패한다. census 는 gate 모드에서 같은 자리를 짚어 실패하고, 검사 모드에서는
   실패한 프로필의 판정을 '모름'(unknown)으로 남긴다 — 위 계산된 동적 import 와 같은 규칙으로, 판정할 수 없는 것을 삭제 후보로 두지 않는다.
 */
-test('a pack marker error is red in gate mode and drops no profile evidence in inspection mode', () => {
+test('a marker error is red in gate mode and drops no profile evidence in inspection mode', () => {
   const root = createFixture({
     'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
     'frontend/src/profile/direct.ts': 'export const direct = true;\n',
     'frontend/src/profile/importer.ts': "import './direct';\nexport const importer = true;\n",
-    'frontend/src/lib/broken.ts': '// reusable-base:demo:start\nexport const broken = true;\n',
+    'frontend/src/lib/broken.ts': '// reusable-base:help:start\nexport const broken = true;\n',
   });
   const options = { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS };
   assert.throws(
     () => censusFixture(root, options),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/broken\.ts — stripped: 닫히지 않은 frontend pack marker: demo \(src\/lib\/broken\.ts:1\)/,
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/broken\.ts — stripped: 닫히지 않은 frontend 마커: help \(src\/lib\/broken\.ts:1\)/,
     'gate mode names the file whose marker failed the profile projection',
   );
   const inspection = censusFixture(root, { ...options, failOnErrors: false });
@@ -591,15 +591,15 @@ test('a pack marker error is red in gate mode and drops no profile evidence in i
   // census 도 같은 파일을 짚어 붉다.
   const publicRoot = createFixture({
     'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
-    'frontend/public/vendor/lib.js': '// reusable-base:demo:start\nwindow.vendor = true;\n',
+    'frontend/public/vendor/lib.js': '// reusable-base:help:start\nwindow.vendor = true;\n',
   });
   assert.throws(
     () => censusFixture(publicRoot, { profileCompositions: OPTIONAL_PROFILE_COMPOSITIONS }),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/public\/vendor\/lib\.js — stripped: 닫히지 않은 frontend pack marker: demo \(public\/vendor\/lib\.js:1\)/,
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/public\/vendor\/lib\.js — stripped: 닫히지 않은 frontend 마커: help \(public\/vendor\/lib\.js:1\)/,
     'a marker error in a public/ module file fails the census like the generator',
   );
   assert.throws(() => applyFrontendProjection(publicRoot, createFrontendProjector({ composition: OPTIONAL_PROFILE_COMPOSITIONS[0].composition })),
-    /닫히지 않은 frontend pack marker: demo \(public\/vendor\/lib\.js:1\)/, 'the generator projection fails at the same public/ file');
+    /닫히지 않은 frontend 마커: help \(public\/vendor\/lib\.js:1\)/, 'the generator projection fails at the same public/ file');
 });
 
 // 판정은 해석기의 모듈 확장자 전부(isFrontendModuleFile)를 읽는다 — .mts·.mjs 모듈의 간선도 연쇄하고, 그 마커도 판정한다.
@@ -619,10 +619,10 @@ test('census profile constraints read .mts and .mjs modules: their edges cascade
       `${file} cascades through the .mts module`,
     );
   }
-  const marked = createFixture({ ...files, 'frontend/src/lib/b.mts': `// reusable-base:demo:start\n${files['frontend/src/lib/b.mts']}` });
+  const marked = createFixture({ ...files, 'frontend/src/lib/b.mts': `// reusable-base:help:start\n${files['frontend/src/lib/b.mts']}` });
   assert.throws(
     () => censusFixture(marked, options(marked)),
-    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/b\.mts — stripped: 닫히지 않은 frontend pack marker: demo \(src\/lib\/b\.mts:1\)/,
+    /\[PROFILE_PROJECTION_FAILED\] frontend\/src\/lib\/b\.mts — stripped: 닫히지 않은 frontend 마커: help \(src\/lib\/b\.mts:1\)/,
     'an unclosed marker in a .mts module fails the profile projection',
   );
 });
@@ -841,7 +841,7 @@ test('the shared plan fails on an unjudgeable import, a case-only target and an 
   }
   // 대조군: frontend 밖 저장소 스크립트, 빌드 폴더, 목록에 없는 대상은 간선이 아니다(지워질 파일은 frontend 안에만 있다).
   // public/ 은 Next 가 URL 로만 내주는 정적 폴더라 그 파일의 간선은 읽지 않는다 — 벤더 번들의 변수 인자 require 가 계획을 막지 않고,
-  // 제거 경로를 가리키는 리터럴 require 로 public 파일이 연쇄로 지워지지도 않는다(마커 투영은 한다 — 위 'pack marker error' 시험).
+  // 제거 경로를 가리키는 리터럴 require 로 public 파일이 연쇄로 지워지지도 않는다(마커 투영은 한다 — 위 'marker error' 시험).
   const quiet = virtualPlan({
     'src/a.ts': "import '../../scripts/atlas.mjs';\nimport '../.next/types/routes.d.ts';\nimport './nowhere';\nimport 'react';\n",
     'src/removed/x.ts': '',
@@ -994,9 +994,9 @@ test('the census profile population is red when the copy list differs from the d
 });
 
 /*
-  단일 모듈 계약: pack 마커를 읽는 파서는 reusable-source-frontend.mjs 하나다. 코드 토큰(문자열은 해석한 값, 템플릿·정규식은 원문,
-  주석 제외) 안에서 마커 접두 뒤나 접두+`<pack>:` 뒤에 `(`·`[`·`$`·`.`·끝이 오거나, `\r`·`\n` 이 아닌 역슬래시 이스케이프(`\w`·`\S` 등)가
-  오면 파서의 지문으로 센다. 마커를 글자 그대로 담은 정규식·문자열(시험 픽스처의 `<pack>:start` 등)과 ci.yml 의 잡 이름 정규식(`\r?\n`)은
+  단일 모듈 계약: 마커를 읽는 파서는 reusable-source-frontend.mjs 하나다. 코드 토큰(문자열은 해석한 값, 템플릿·정규식은 원문,
+  주석 제외) 안에서 마커 접두 뒤나 접두+`<기능>:` 뒤에 `(`·`[`·`$`·`.`·끝이 오거나, `\r`·`\n` 이 아닌 역슬래시 이스케이프(`\w`·`\S` 등)가
+  오면 파서의 지문으로 센다. 마커를 글자 그대로 담은 정규식·문자열(시험 픽스처의 `<기능>:start` 등)과 ci.yml 의 잡 이름 정규식(`\r?\n`)은
   지문이 아니다. 이 시험 자신이 지문이 되지 않도록 접두를 조각으로 조립한다.
   예외는 없다(슬롯 단계 PR-6 에서 셸 접근성 계약의 pack 판정을 슬롯 데이터 검사로 바꿨다).
 */
@@ -1019,7 +1019,7 @@ function markerParserFingerprints(entries) {
   return [...found].sort();
 }
 
-test('only the frontend projector parses pack markers (single module contract)', () => {
+test('only the frontend projector parses markers (single module contract)', () => {
   const roots = ['scripts/', 'frontend/src/', 'frontend/scripts/', 'frontend/e2e/'];
   const entries = trackedAndUntrackedFiles()
     .map((file) => file.split(sep).join('/'))
@@ -1113,11 +1113,11 @@ test('scripts have no static import cycle, so every entry point evaluates each m
   const { files, cycles } = scriptImportCycles();
   assert.ok(files > 200, `scanned ${files} scripts — the scan is empty`);
   assert.deepEqual(cycles, [], 'scripts/*.mjs static import cycles');
-  // 대조: composer 가 projector 를 다시 import 하면 순환 하나다. 자기 자신을 import 해도 순환이다.
+  // 대조: projector 가 마커 선언을 읽는 기능 파일 로더(11단계 C6)가 projector 를 다시 import 하면 순환 하나다. 자기 자신을 import 해도 순환이다.
   const read = (name) => readFileSync(join(repoRoot, 'scripts', name), 'utf8');
-  const composer = 'project-composer-source.mjs';
-  assert.deepEqual(scriptImportCycles(new Map([[composer, `import { parsePackMarkerBlocks } from './reusable-source-frontend.mjs';\n${read(composer)}`]])).cycles,
-    [[composer, 'reusable-source-frontend.mjs']]);
+  const loader = 'composer-modules.mjs';
+  assert.deepEqual(scriptImportCycles(new Map([[loader, `import { parseMarkerBlocks } from './reusable-source-frontend.mjs';\n${read(loader)}`]])).cycles,
+    [[loader, 'reusable-source-frontend.mjs']]);
   assert.deepEqual(scriptImportCycles(new Map([['source-lexing.mjs', `import './source-lexing.mjs';\n${read('source-lexing.mjs')}`]])).cycles,
     [['source-lexing.mjs']]);
 });
@@ -1307,29 +1307,38 @@ test('a projector keeps no marker block of an excluded feature and rejects malfo
   const file = 'src/app/search/SearchClient.tsx';
   const projected = projector.project(file, readFileSync(join(repoRoot, 'frontend', file), 'utf8'));
   assert.ok(projected.strippedBlocks > 0);
-  assert.deepEqual(parsePackMarkerBlocks(projected.source, { label: file }).blocks, []);
-  // 투영은 프런트 모듈 파일 전부(isFrontendModuleFile)를 걷는다 — .mjs 도 투영하고(소유 표에 없는 블록이면 실패), next.config.mjs 의 마커는 실패다.
+  assert.deepEqual(parseMarkerBlocks(projected.source, { label: file }).blocks, []);
+  // 투영은 프런트 모듈 파일 전부(isFrontendModuleFile)를 걷는다 — .mjs 도 투영하고(기능 파일에 선언이 없는 블록이면 실패), next.config.mjs 의 마커는 실패다.
   const output = createFixture({
-    'frontend/src/lib/x.mjs': '// reusable-base:demo:start\nexport const demo = 1;\n// reusable-base:demo:end\nexport const kept = 1;\n',
+    'frontend/src/lib/x.mjs': '// reusable-base:help:start\nexport const help = 1;\n// reusable-base:help:end\nexport const kept = 1;\n',
   });
-  assert.throws(() => applyFrontendProjection(output, projector), /src\/lib\/x\.mjs/, 'a .mjs module is projected and its unowned block fails');
-  const config = createFixture({ 'frontend/next.config.mjs': '// reusable-base:demo:start\nexport const x = 1;\n// reusable-base:demo:end\n' });
-  assert.throws(() => applyFrontendProjection(config, projector), /next\.config 는 pack 마커를 둘 수 없다/, 'next.config.mjs is projected and its markers fail');
-  // 마커 구조 오류와 알 수 없는 pack 은 투영 단계에서 실패한다. 직접 선택도 같다 — 종전 직접 선택의 정규식 투영은 중첩·알 수 없는 pack 을
+  assert.throws(() => applyFrontendProjection(output, projector), /Unclassified composer UI block: src\/lib\/x\.mjs\/help/,
+    'a .mjs module is projected and its undeclared block fails');
+  const config = createFixture({ 'frontend/next.config.mjs': '// reusable-base:help:start\nexport const x = 1;\n// reusable-base:help:end\n' });
+  assert.throws(() => applyFrontendProjection(config, projector), /next\.config 는 마커를 둘 수 없다/, 'next.config.mjs is projected and its markers fail');
+  // 마커 구조 오류와 기능이 아닌 토큰은 투영 단계에서 실패한다. 직접 선택도 같다 — 종전 직접 선택의 정규식 투영은 중첩·알 수 없는 토큰을
   // 통과시켰다. 줄 번호까지 고정한다(미닫힘은 여는 마커의 줄이다).
-  // 구성 투영(생성기·정밀 점검 — 시작 구성과 직접 선택, 11단계 C3)도 같은 파서를 지난다. 토큰 어휘는 블록 소유 표의 토큰이다.
+  // 구성 투영(생성기·정밀 점검 — 시작 구성과 직접 선택, 11단계 C3)도 같은 파서를 지난다. 토큰 어휘는 기능 파일의 기능 id 다(11단계 C6) —
+  // 옛 pack 이름(demo·collaboration)도 이제 모르는 토큰이다.
   const custom = createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } });
-  const nested = '/* reusable-base:demo:start */\n/* reusable-base:collaboration:start */\nx\n/* reusable-base:collaboration:end */\n/* reusable-base:demo:end */\n';
+  const nested = '/* reusable-base:help:start */\n/* reusable-base:board:start */\nx\n/* reusable-base:board:end */\n/* reusable-base:help:end */\n';
   for (const [name, candidate] of [['preset', projector], ['direct selection', custom]]) {
     assert.throws(() => candidate.project('src/app/x.tsx', nested), /중첩은 허용하지 않는다/);
-    assert.throws(() => candidate.project('src/app/x.tsx', '/* reusable-base:nope:start */\nx\n/* reusable-base:nope:end */\n'), /알 수 없는 frontend pack marker: nope/,
-      `${name} projector rejects an unknown pack`);
-    assert.throws(() => candidate.project('src/app/x.tsx', '/* reusable-base:demo:start */ x /* reusable-base:demo:end */\n'),
+    for (const [token, source] of [
+      ['nope', '/* reusable-base:nope:start */\nx\n/* reusable-base:nope:end */\n'],
+      ['boarx', '/* reusable-base:boarx:start */\nx\n/* reusable-base:boarx:end */\n'],
+      ['demo', '/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n'],
+      ['collaboration', '/* reusable-base:collaboration:start */\nx\n/* reusable-base:collaboration:end */\n'],
+    ]) {
+      assert.throws(() => candidate.project('src/app/x.tsx', source),
+        new RegExp(`unknown marker feature: ${token} \\(src/app/x\\.tsx:1\\)`), `${name} projector rejects an unknown feature token: ${token}`);
+    }
+    assert.throws(() => candidate.project('src/app/x.tsx', '/* reusable-base:help:start */ x /* reusable-base:help:end */\n'),
       /한 줄에 하나만 허용한다: src\/app\/x\.tsx:1/, `${name} projector rejects two markers on one line`);
-    assert.throws(() => candidate.project('src/app/x.tsx', '/* reusable-base:demo:start */\nx\n/* reusable-base:collaboration:end */\n'),
-      /짝이 맞지 않는 frontend pack marker: collaboration \(src\/app\/x\.tsx:3\)/, `${name} projector rejects a mismatched end marker`);
-    assert.throws(() => candidate.project('src/app/x.tsx', 'x\n/* reusable-base:demo:start */\nx\n'),
-      /닫히지 않은 frontend pack marker: demo \(src\/app\/x\.tsx:2\)/, `${name} projector reports an unclosed marker at its line`);
+    assert.throws(() => candidate.project('src/app/x.tsx', '/* reusable-base:help:start */\nx\n/* reusable-base:board:end */\n'),
+      /짝이 맞지 않는 frontend 마커: board \(src\/app\/x\.tsx:3\)/, `${name} projector rejects a mismatched end marker`);
+    assert.throws(() => candidate.project('src/app/x.tsx', 'x\n/* reusable-base:help:start */\nx\n'),
+      /닫히지 않은 frontend 마커: help \(src\/app\/x\.tsx:2\)/, `${name} projector reports an unclosed marker at its line`);
   }
   // 구성 투영은 해석된 기능 목록과 화면 제외 경로가 있어야 한다 — 종전에는 목록이 없으면 블록을 조용히 걷었다.
   assert.throws(() => createFrontendProjector({ composition: { profile: 'custom' } }),
@@ -1341,10 +1350,15 @@ test('a projector keeps no marker block of an excluded feature and rejects malfo
   const maker = 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
   const makerSource = readFileSync(join(repoRoot, 'frontend', maker), 'utf8');
   const byCustom = custom.project(maker, makerSource);
-  const makerBlocks = parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length;
+  const makerBlocks = parseMarkerBlocks(makerSource, { label: maker }).blocks.length;
   assert.ok(makerBlocks > 0);
-  assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.packChanged }, { stripped: makerBlocks, changed: true });
+  assert.deepEqual({ stripped: byCustom.strippedBlocks, changed: byCustom.markerChanged }, { stripped: makerBlocks, changed: true });
   assert.notEqual(byCustom.source, makerSource);
   assert.equal(byCustom.source, projector.project(maker, makerSource).source);
-  assert.equal(projector.project(maker, makerSource).strippedBlocks, parsePackMarkerBlocks(makerSource, { label: maker }).blocks.length);
+  assert.equal(projector.project(maker, makerSource).strippedBlocks, parseMarkerBlocks(makerSource, { label: maker }).blocks.length);
+  // 토큰이 곧 소유다(11단계 C6): 마법사의 블록은 커뮤니티 토큰이고, 커뮤니티를 고르면 남으며 게시판만 고르면 걷힌다.
+  assert.deepEqual([...new Set(parseMarkerBlocks(makerSource, { label: maker }).blocks.map((block) => block.feature))], ['community']);
+  const keep = (resolvedDomains) => createFrontendProjector({ composition: { profile: 'custom', resolvedDomains, frontend: { removePaths: [] } } })
+    .project(maker, makerSource).strippedBlocks;
+  assert.deepEqual([keep(['board', 'community']), keep(['board'])], [0, makerBlocks]);
 });

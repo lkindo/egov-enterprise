@@ -8,10 +8,10 @@ import { Search,
     User as UserIcon, 
     Layout, 
     ChevronRight, 
-    /* reusable-base:collaboration:start */
+    /* reusable-base:board:start */
     ArrowRight,
     MessageSquare, 
-    /* reusable-base:collaboration:end */
+    /* reusable-base:board:end */
     AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
-/* reusable-base:collaboration:start */
+/* reusable-base:board:start */
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
-/* reusable-base:collaboration:end */
+/* reusable-base:board:end */
 import { menuService } from '@/services/business/user/MenuService';
 import { useOptionalAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
@@ -68,7 +68,7 @@ interface SearchResultsContentProps {
 
 const EMPTY_RESULTS: SearchResults = { articles: [], users: [], menus: [] };
 const articleSearchProviders: Array<(query: string) => Promise<SearchArticle[]>> = [
-    /* reusable-base:collaboration:start */
+    /* reusable-base:board:start */
     async (query) => (await boardUserService.searchPosts(query)).map(item => ({
         bbsId: item.bbsId,
         pstSn: item.pstSn,
@@ -77,7 +77,7 @@ const articleSearchProviders: Array<(query: string) => Promise<SearchArticle[]>>
         userNm: item.userNm,
         inqCnt: item.inqCnt,
     })),
-    /* reusable-base:collaboration:end */
+    /* reusable-base:board:end */
 ];
 const hasArticleSearch = articleSearchProviders.length > 0;
 
@@ -209,14 +209,14 @@ export const SearchResultsContent = ({
     //   이제 검색 대상은 **제목**이므로 그 범위는 아래 안내 문구가 말한다.
     const tabs = [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
-        /* reusable-base:collaboration:start */
+        /* reusable-base:board:start */
         {
             id: 'articles',
             label: articleSearchError ? '게시글 (조회 실패)' : '게시글',
             count: articleSearchError ? undefined : results.articles.length,
             icon: <MessageSquare size={16} />,
         },
-        /* reusable-base:collaboration:end */
+        /* reusable-base:board:end */
         {
             id: 'users',
             label: userSearchError ? '임직원 (조회 실패)' : '임직원',
@@ -345,7 +345,7 @@ export const SearchResultsContent = ({
                         범위를 적지 않으면 사용자는 본문에만 있는 낱말로 검색하고 "글이 없다" 로 오독한다.
                         ⚠ 결과 영역 **밖**에 둔다. 아래 분기는 세 결과가 모두 비면 '일치하는 결과가
                         없습니다' 를 먼저 렌더하므로, 안쪽에 두면 정작 필요한 순간에 가려진다. */}
-{/* reusable-base:collaboration:start */}
+{/* reusable-base:board:start */}
                     {activeTab === 'articles' ? (
                         <div className="rounded-md border border-border bg-muted/30 px-4 py-3">
                             <p className="text-[length:var(--font-size-body)] font-bold text-foreground">게시글은 제목만 검색합니다.</p>
@@ -355,7 +355,7 @@ export const SearchResultsContent = ({
                             </p>
                         </div>
                     ) : null}
-{/* reusable-base:collaboration:end */}
+{/* reusable-base:board:end */}
 
                     {visibleErrors.map(({ axis, message }) => (
                         <div key={axis} role="alert" className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3">
@@ -390,7 +390,7 @@ export const SearchResultsContent = ({
                             </div>
                         ) : (
                             <div className="space-y-6">
-{/* reusable-base:collaboration:start */}
+{/* reusable-base:board:start */}
                                 {/* Articles Section */}
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                                     <ResultSection title="게시글" count={results.articles.length}>
@@ -399,7 +399,7 @@ export const SearchResultsContent = ({
                                         ))}
                                     </ResultSection>
                                 ) : null}
-{/* reusable-base:collaboration:end */}
+{/* reusable-base:board:end */}
 
                                 {/* Users Section */}
                                 {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
@@ -446,7 +446,7 @@ function ResultSection({ title, count, children }: { title: string; count: numbe
     );
 }
 
-/* reusable-base:collaboration:start */
+/* reusable-base:board:start */
 function ArticleResultItem({ item }: { item: SearchArticle }) {
     return (
         <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstSn=${item.pstSn}`} className="block group">
@@ -480,7 +480,7 @@ function ArticleResultItem({ item }: { item: SearchArticle }) {
         </Link>
     );
 }
-/* reusable-base:collaboration:end */
+/* reusable-base:board:end */
 
 // [2026-09-08] 아바타가 w-14 h-11 로 **정사각형이 아니었다**(가로 56 세로 44) — 원형/정사각
 //   아이콘 자리가 눌린 타원으로 보이던 원인이다. size-9 정사각으로 맞췄다.

@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectReusableGovernance, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
 import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
-import { FRONTEND_MARKER_FILES, composerProfile } from './project-composer-source.mjs';
+import { composerProfile } from './project-composer-source.mjs';
 import { planJavaRemoval, pruneJava, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities, parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
@@ -261,9 +261,12 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       const markerBlocks = applyFrontendProjection(output, projector);
       // lock.frontend.markerBlocks: 소유 기능이 구성에 없어 걷은 블록 수와 그 블록이 있던 파일 수다(시작 구성과 직접 선택이 같은 셈).
       //   이 단언이 집계를 '내용이 바뀐 파일 수'로 바꾸는 변이를 잡는다(블록 수와 파일 수가 다르다).
-      const excluded = FRONTEND_MARKER_FILES.map((row) => Object.entries(row.blocks)
-        .filter(([pack]) => !row.owners[pack].every(domain => composition.resolvedDomains.includes(domain)))
-        .reduce((sum, [, count]) => sum + count, 0));
+      //   마커 토큰이 곧 소유 기능이다(11단계 C6) — 기능 파일의 마커 선언에서 빠진 기능의 블록을 파일별로 센다.
+      const excludedByFile = new Map();
+      for (const row of modules.extras.markerBlocks) {
+        if (!composition.resolvedDomains.includes(row.feature)) excludedByFile.set(row.file, (excludedByFile.get(row.file) ?? 0) + row.blocks);
+      }
+      const excluded = [...excludedByFile.values()];
       assert.deepEqual({ strippedBlocks: markerBlocks.strippedBlocks, changedFiles: markerBlocks.changedFiles },
         { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length },
         `${profileName}: lock.frontend.markerBlocks`);

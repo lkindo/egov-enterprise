@@ -1,7 +1,7 @@
 /**
  * 매니페스트 v2 로더(11단계). `config/modules/` 의 기능 파일(<기능 id>.json)·필수 기반(core.json)·인증 시작 구성(presets.json)을
  * 읽어, 카탈로그 빌더(buildProjectComposerCatalog)가 받는 기능 단위 정규형과 해시 밖 선언(표시 문구·미배정 권한 안내·게이트·RBAC
- * 매트릭스·마커 블록·참조 데이터·시작 구성 기대치)을 만든다.
+ * 매트릭스·마커 블록·참조 데이터·시작 구성 기대치)을 만든다. 마커 블록 선언은 프런트 투영도 읽는다(composerMarkerDeclarations).
  *
  * 스키마(_schema.json) 검사는 여기서 하지 않는다(composer-modules-schema.mjs). 이 로더는 카탈로그를 거쳐 생성기·정밀 점검의 import
  * 폐포에 들어가는데, 그 폐포는 의존성 설치 전에 돌아 Node 내장 모듈만 쓴다(frontend-reachability-census.test.mjs). 스키마 검사는
@@ -180,7 +180,6 @@ export function loadComposerModules(root) {
   const gateOwners = {};
   const rbacSurfaces = {};
   const codeGroupOwners = {};
-  const markerRows = new Map();
   const guidance = {};
   for (const [owner, value] of [['core', core], ...modules.map(module => [module.id, module])]) {
     for (const row of value.unassignedPermissions) {
@@ -202,15 +201,6 @@ export function loadComposerModules(root) {
       if (Object.hasOwn(codeGroupOwners, group)) fail(`common code group is owned twice: ${group}`);
       codeGroupOwners[group] = module.id;
     }
-    for (const block of module.owns.markerBlocks) {
-      for (const other of block.alsoRequires) knownTarget(module.id, other, 'markerBlocks');
-      const row = markerRows.get(block.file) ?? { file: block.file, blocks: {}, owners: {}, step: block.step, reason: block.reason };
-      if (Object.hasOwn(row.blocks, block.token)) fail(`marker blocks are owned twice: ${block.file}/${block.token}`);
-      if (row.step !== block.step || row.reason !== block.reason) fail(`marker file rows disagree on step or reason: ${block.file}`);
-      row.blocks[block.token] = block.blocks;
-      row.owners[block.token] = [module.id, ...block.alsoRequires];
-      markerRows.set(block.file, row);
-    }
   }
   const extras = {
     presentation: {
@@ -224,7 +214,7 @@ export function loadComposerModules(root) {
     gateOwners,
     rbac: { file: RBAC,
       domains: modules.filter(module => module.owns.rbacMatrix).map(module => module.id), surfaces: rbacSurfaces },
-    markerFiles: [...markerRows.values()].sort((left, right) => byCodeUnits(left.file, right.file)),
+    markerBlocks: composerMarkerDeclarations(files).rows,
     codeGroupOwners,
     presetExpectations: Object.fromEntries(presetsFile.presets.map(preset => [preset.id, { description: preset.description,
       gates: preset.expected.gates.map(row => ({ ...row })), gateRemovalRules: preset.expected.gateRemovalRules.map(row => ({ ...row })),
@@ -240,6 +230,59 @@ export function loadComposerModules(root) {
     }
   }
   return { files, declarations, extras };
+}
+
+/**
+ * 프런트 마커 블록 선언(11단계 C6). 마커 토큰은 블록을 소유한 기능 id 다 — 블록은 그 기능이 구성에 있을 때만 남고, 소유를 따로 적지
+ * 않는다(종전 pack 토큰은 소유 표가 기능으로 옮겼다). 기능 파일의 owns.markerBlocks 가 파일별 블록 수·이행 단계·사유를 적는다. 필수
+ * 기반은 늘 있으므로 core.json 에는 마커가 없다. `files` 는 readComposerModuleFiles 결과(파일 이름 → 값)다. 프런트 투영은 생성물에서도
+ * 이것을 읽는다 — 생성물의 config/modules 에는 구성의 기능 파일만 있고, 남은 마커도 그 기능의 것뿐이다. 돌려주는 값:
+ * - features: 마커 토큰으로 쓸 수 있는 기능 id 집합
+ * - declared: `파일\u0000기능` 집합(투영이 선언 없는 블록을 거부한다)
+ * - rows: { file, feature, blocks, step, reason } — 파일·기능 순(마커 래칫이 실측과 대조한다)
+ * 한 기능이 같은 파일을 두 번 적으면 실패한다.
+ */
+export function composerMarkerDeclarations(files) {
+  const features = new Set();
+  const declared = new Set();
+  const rows = [];
+  for (const [name, value] of Object.entries(files)) {
+    if ([MODULES_SCHEMA, CORE_FILE, PRESETS_FILE].includes(name)) continue;
+    features.add(value.id);
+    for (const block of value.owns.markerBlocks) {
+      const key = `${block.file}\u0000${value.id}`;
+      if (declared.has(key)) fail(`marker blocks are declared twice: ${block.file}/${value.id}`);
+      declared.add(key);
+      rows.push({ file: block.file, feature: value.id, blocks: block.blocks, step: block.step, reason: block.reason });
+    }
+  }
+  rows.sort((left, right) => byCodeUnits(left.file, right.file) || byCodeUnits(left.feature, right.feature));
+  return { features, declared, rows };
+}
+
+/**
+ * 마커 래칫: 기능 파일의 마커 선언(composerMarkerDeclarations 의 rows)과 실측(파일 → 기능 → 블록 수)의 정확한 대조. 블록 하나가 늘거나
+ * 줄어도, 선언 없는 블록이나 마커 없는 선언이 남아도, 단계·사유가 비거나 블록 수가 양의 정수가 아니어도 위반이다. 위반 문장 목록을 돌려준다.
+ */
+export function markerDeclarationViolations(rows, measured) {
+  const violations = [];
+  const declared = new Map();
+  for (const row of rows) {
+    const key = `${row.file}/${row.feature}`;
+    if (declared.has(key)) violations.push(`같은 파일·기능의 선언이 두 번 있다: ${key}`);
+    declared.set(key, row);
+    if (!row.step?.trim() || !row.reason?.trim()) violations.push(`단계나 사유가 빈 선언: ${key}`);
+    if (!Number.isInteger(row.blocks) || row.blocks < 1) violations.push(`블록 수가 양의 정수가 아니다: ${key}`);
+  }
+  for (const [file, counts] of measured) {
+    for (const [feature, count] of Object.entries(counts)) {
+      const row = declared.get(`${file}/${feature}`);
+      if (!row) violations.push(`기능 파일에 선언이 없는 마커 블록: ${file}/${feature} 실측 ${count}`);
+      else if (row.blocks !== count) violations.push(`블록 수가 기능 파일 선언과 다르다: ${file}/${feature} 실측 ${count} · 선언 ${row.blocks}`);
+    }
+  }
+  for (const row of rows) if (!Object.hasOwn(measured.get(row.file) ?? {}, row.feature)) violations.push(`마커가 없는 선언: ${row.file}/${row.feature}`);
+  return violations;
 }
 
 /**

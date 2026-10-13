@@ -317,7 +317,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   write('frontend/src/app/demo/page.tsx', '// reusable-base:nope:start\nexport default function Page() { return null; }\n// reusable-base:nope:end\n');
   deep = plan();
   assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION'], 'the generator projects markers before it removes the page');
-  assert.match(deep.blockers[0].message, /알 수 없는 frontend pack marker: nope/);
+  assert.match(deep.blockers[0].message, /unknown marker feature: nope/);
 
   write('frontend/src/app/demo/page.tsx', 'export default function Page() { return null; }\n');
   deep = plan(listed.filter(file => file !== 'frontend/src/app/layout.tsx'));
@@ -471,7 +471,7 @@ test('blocker messages name repository paths, never this computer\'s absolute ch
   assert.equal(withoutRoot(windows, JSON.stringify('D:\\work\\egov\\x')), JSON.stringify('.\\x'), 'a JSON-escaped root is hidden too');
   assert.equal(withoutRoot(windows, 'D:\\work\\egovother\\a.ts'), '.other\\a.ts', 'a sibling folder sharing the prefix is still not shown in full');
   assert.equal(withoutRoot('/home/me/egov', 'read /home/me/egov/frontend/a.ts'), 'read ./frontend/a.ts');
-  assert.equal(withoutRoot('/home/me/egov', '알 수 없는 frontend pack marker: demo (src/a.tsx:3)'), '알 수 없는 frontend pack marker: demo (src/a.tsx:3)');
+  assert.equal(withoutRoot('/home/me/egov', 'unknown marker feature: boarx (src/a.tsx:3)'), 'unknown marker feature: boarx (src/a.tsx:3)');
   // 루트 이름이 저장소 안 경로에도 나오면(도커 작업 폴더 /app·/src) 그 자리는 그대로 둔다. 바꾸면 없는 파일을 말한다.
   assert.equal(withoutRoot('/app', "ENOENT: open '/app/frontend/src/app/login/page.tsx' (src/app/demo/page.tsx:1)"),
     "ENOENT: open './frontend/src/app/login/page.tsx' (src/app/demo/page.tsx:1)");

@@ -8,12 +8,12 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { FRONTEND_MARKER_FILES, assertCompositionDatabaseLock, composerMarkerBlockOwners, composerProfile, frontendMarkerTableViolations,
+import { assertCompositionDatabaseLock, composerProfile,
   manifestOwnership, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { composerOwnership, loadComposerModules, moduleDatabaseInventory, projectComposerModuleFiles, projectedModuleViolations, sharedTableTransfers }
-  from './composer-modules.mjs';
+import { composerMarkerDeclarations, composerOwnership, loadComposerModules, markerDeclarationViolations, moduleDatabaseInventory, projectComposerModuleFiles,
+  projectedModuleViolations, readComposerModuleFiles, sharedTableTransfers } from './composer-modules.mjs';
 import { activeCompositionEntry } from './generate-reusable-base-source.mjs';
-import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
+import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
@@ -594,60 +594,74 @@ test('missing integrity gate ownership is red for a custom composition', () => {
 });
 
 /*
- * [2026-10-11 슬롯 단계 PR-2] 마커 래칫: 공용 파서로 센 파일별·pack 별 블록 수가 소유 표(FRONTEND_MARKER_FILES)와 정확히 같아야 한다.
- * 모집단은 Git 이 보는 frontend 아래 프런트 모듈 파일(isFrontendModuleFile — 해석기의 모듈 확장자) 전부이고 시험을 포함한다. 블록을
- * 더하거나 걷으면 표를 함께 고쳐 단계·사유를 남긴다. 이 파일은 원본 저장소에서만 돈다(생성물에서는 카탈로그 적재가 먼저 실패한다).
- * 생성물에 제외 pack 마커가 남지 않는다는 성질은 파서가 지킨다 — 투영 manifest 의 pack 만 알므로 다른 pack 마커는 실패다.
+ * [2026-10-11 슬롯 단계 PR-2 · 11단계 C6] 마커 래칫: 공용 파서로 센 파일별·기능별 블록 수가 기능 파일의 마커 선언(owns.markerBlocks)과
+ * 정확히 같아야 한다. 마커 토큰은 블록을 소유한 기능 id 다. 모집단은 Git 이 보는 frontend 아래 프런트 모듈 파일(isFrontendModuleFile —
+ * 해석기의 모듈 확장자) 전부이고 시험을 포함한다. 블록을 더하거나 걷으면 기능 파일의 선언을 함께 고쳐 단계·사유를 남긴다. 이 파일은
+ * 원본 저장소에서만 돈다(생성물에서는 카탈로그 적재가 먼저 실패한다). 생성물에 빠진 기능의 마커가 남지 않는다는 성질은 파서가 지킨다 —
+ * 생성물의 기능 파일에 있는 기능만 알므로 다른 기능의 마커는 실패다.
  */
-function measuredMarkerBlocks(knownPacks) {
+const markers = composerMarkerDeclarations(readComposerModuleFiles(root));
+function measuredMarkerBlocks() {
   const measured = new Map();
   for (const file of frontendFiles.filter(isFrontendModuleFile)) {
-    const { blocks } = parsePackMarkerBlocks(frontendSources.get(file), { knownPacks, label: file });
+    const { blocks } = parseMarkerBlocks(frontendSources.get(file), { knownFeatures: markers.features, label: file });
     if (!blocks.length) continue;
     const counts = {};
-    for (const block of blocks) counts[block.pack] = (counts[block.pack] ?? 0) + 1;
+    for (const block of blocks) counts[block.feature] = (counts[block.feature] ?? 0) + 1;
     measured.set(file.replace(/^frontend\//, ''), counts);
   }
   return measured;
 }
 
-test('every frontend marker block is counted exactly in the composer owner table with a step and a reason', () => {
-  const knownPacks = new Set(Object.keys(manifest.packs));
-  const measured = measuredMarkerBlocks(knownPacks);
-  assert.deepEqual(frontendMarkerTableViolations(FRONTEND_MARKER_FILES, measured), []);
+test('every frontend marker block is declared exactly in its feature file with a step and a reason', () => {
+  const measured = measuredMarkerBlocks();
+  assert.deepEqual(markerDeclarationViolations(markers.rows, measured), []);
   const blocks = [...measured.values()].reduce((sum, counts) => sum + Object.values(counts).reduce((total, count) => total + count, 0), 0);
   assert.ok(blocks > 0 && measured.size > 0, 'the marker census is empty');
-  // 모든 블록의 소유 기능은 카탈로그의 기능이다(내용으로 가르는 함수 포함).
+  // 마커 토큰은 카탈로그의 기능이고 로더가 넘긴 선언과 같다(11단계 C6 — 소유를 따로 적지 않는다).
   const capabilities = new Set(catalog.capabilities.map(row => row.id));
-  for (const file of measured.keys()) {
-    for (const block of parsePackMarkerBlocks(frontendSources.get(`frontend/${file}`), { knownPacks, label: file }).blocks) {
-      const owners = composerMarkerBlockOwners(file, block.pack, block.text);
-      assert.ok(owners.length > 0 && owners.every(owner => capabilities.has(owner)), `${file}:${block.startLine} ${block.pack} -> ${owners}`);
-    }
+  assert.deepEqual([...markers.features].sort(), [...capabilities].sort());
+  assert.deepEqual(modules.extras.markerBlocks, markers.rows);
+  assert.ok(markers.rows.every(row => capabilities.has(row.feature)), 'every marker block belongs to a catalog feature');
+  // 기능 파일에 선언하지 않은 블록은 투영에서 실패한다 — 알려진 기능의 토큰이어도 그 파일에 선언이 없으면 조용히 남거나 빠지지 않는다.
+  assert.throws(() => projectCustom('frontend/src/app/new.tsx', '/* reusable-base:board:start */\nhello\n/* reusable-base:board:end */\n',
+    resolveProjectRecipe(recipe([]), catalog)), /Unclassified composer UI block: src\/app\/new\.tsx\/board/);
+  // 기능이 아닌 토큰(옛 pack 이름·오타)은 마커 줄에서 실패한다. 필수 기반은 늘 있으므로 core 토큰도 없다. 마커 문자열은 리터럴로 둔다
+  // (마커 접두에 계산을 붙이면 단일 파서 계약이 두 번째 파서로 본다).
+  for (const [token, source] of [
+    ['boarx', '/* reusable-base:boarx:start */\nx\n/* reusable-base:boarx:end */\n'],
+    ['demo', '/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n'],
+    ['collaboration', '/* reusable-base:collaboration:start */\nx\n/* reusable-base:collaboration:end */\n'],
+    ['core', '/* reusable-base:core:start */\nx\n/* reusable-base:core:end */\n'],
+  ]) {
+    assert.throws(() => projectCustom('frontend/src/app/search/SearchClient.tsx', source, resolveProjectRecipe(recipe([]), catalog)),
+      new RegExp(`unknown marker feature: ${token} \\(frontend/src/app/search/SearchClient\\.tsx:1\\)`), token);
   }
-  assert.throws(() => projectCustom('frontend/src/app/new.tsx', '/* reusable-base:demo:start */\nhello\n/* reusable-base:demo:end */\n',
-    resolveProjectRecipe(recipe([]), catalog)), /Unclassified/);
 });
 
-test('the marker table is red for an added or removed block, an unlisted marker file, a stale row and an empty step or reason', () => {
-  const table = [{ file: 'src/a.tsx', blocks: { demo: 2 }, owners: { demo: ['help'] }, step: 'PR-6', reason: '링크' }];
+test('the marker ratchet is red for an added or removed block, an undeclared block, a stale declaration and an empty step or reason', () => {
+  const rows = [{ file: 'src/a.tsx', feature: 'help', blocks: 2, step: 'PR-6', reason: '링크' }];
   const measured = counts => new Map([['src/a.tsx', counts]]);
-  assert.deepEqual(frontendMarkerTableViolations(table, measured({ demo: 2 })), []);
-  assert.match(frontendMarkerTableViolations(table, measured({ demo: 3 })).join('\n'), /블록 수가 표와 다르다: src\/a\.tsx/);
-  assert.match(frontendMarkerTableViolations(table, measured({ demo: 1 })).join('\n'), /블록 수가 표와 다르다/);
-  assert.match(frontendMarkerTableViolations(table, measured({ demo: 2, collaboration: 1 })).join('\n'), /블록 수가 표와 다르다/);
-  assert.match(frontendMarkerTableViolations(table, new Map([...measured({ demo: 2 }), ['src/b.tsx', { demo: 1 }]])).join('\n'), /표에 없는 마커 파일: src\/b\.tsx/);
-  assert.match(frontendMarkerTableViolations(table, new Map()).join('\n'), /마커가 없는 표 행: src\/a\.tsx/);
+  assert.deepEqual(markerDeclarationViolations(rows, measured({ help: 2 })), []);
+  assert.match(markerDeclarationViolations(rows, measured({ help: 3 })).join('\n'), /블록 수가 기능 파일 선언과 다르다: src\/a\.tsx\/help 실측 3 · 선언 2/);
+  assert.match(markerDeclarationViolations(rows, measured({ help: 1 })).join('\n'), /블록 수가 기능 파일 선언과 다르다/);
+  assert.match(markerDeclarationViolations(rows, measured({ help: 2, board: 1 })).join('\n'), /기능 파일에 선언이 없는 마커 블록: src\/a\.tsx\/board 실측 1/);
+  assert.match(markerDeclarationViolations(rows, new Map([...measured({ help: 2 }), ['src/b.tsx', { help: 1 }]])).join('\n'),
+    /기능 파일에 선언이 없는 마커 블록: src\/b\.tsx\/help/);
+  assert.match(markerDeclarationViolations(rows, new Map()).join('\n'), /마커가 없는 선언: src\/a\.tsx\/help/);
+  assert.match(markerDeclarationViolations(rows, measured({ board: 2 })).join('\n'), /마커가 없는 선언: src\/a\.tsx\/help/, 'the token is the owner');
   for (const field of ['step', 'reason']) {
-    assert.match(frontendMarkerTableViolations([{ ...table[0], [field]: ' ' }], measured({ demo: 2 })).join('\n'), /단계나 사유가 빈 행/);
+    assert.match(markerDeclarationViolations([{ ...rows[0], [field]: ' ' }], measured({ help: 2 })).join('\n'), /단계나 사유가 빈 선언/);
   }
-  assert.match(frontendMarkerTableViolations([{ ...table[0], owners: { collaboration: ['board'] } }], measured({ demo: 2 })).join('\n'), /소유 기능의 pack 이 다르다/);
-  assert.match(frontendMarkerTableViolations([...table, table[0]], measured({ demo: 2 })).join('\n'), /같은 파일이 두 번/);
-  // 소유 표에 없는 파일·pack 의 블록은 직접 선택 투영에서 실패한다. 경로 접두(collaboration/ 아래)로 소유를 짐작하지 않는다.
-  assert.throws(() => composerMarkerBlockOwners('src/app/admin/collaboration/new/NewClient.tsx', 'demo', ''), /Unclassified composer UI block: src\/app\/admin\/collaboration\/new\/NewClient\.tsx\/demo/,
-    'a path prefix is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'survey', ''), /Unclassified/, 'a pack missing from a listed file is not an owner');
-  assert.throws(() => composerMarkerBlockOwners('src/app/search/SearchClient.tsx', 'constructor', ''), /Unclassified/, 'a prototype key is not an owner');
+  for (const blocks of [0, 1.5, '2']) {
+    assert.match(markerDeclarationViolations([{ ...rows[0], blocks }], measured({ help: 2 })).join('\n'), /블록 수가 양의 정수가 아니다/, String(blocks));
+  }
+  assert.match(markerDeclarationViolations([...rows, rows[0]], measured({ help: 2 })).join('\n'), /같은 파일·기능의 선언이 두 번 있다: src\/a\.tsx\/help/);
+  // 로더도 한 기능 파일 안의 같은 파일 선언 둘을 거부한다. 경로 접두로 소유를 짐작하지 않는다 — 소유는 토큰이다.
+  const files = readComposerModuleFiles(root);
+  const board = files['board.json'];
+  const twice = { ...files, 'board.json': { ...board, owns: { ...board.owns, markerBlocks: [...board.owns.markerBlocks, board.owns.markerBlocks[0]] } } };
+  assert.throws(() => composerMarkerDeclarations(twice), /marker blocks are declared twice: src\/app\/search\/SearchClient\.tsx\/board/);
 });
 
 test('dashboard, notifications and optional address book blocks follow their domains rather than coarse packs', () => {
@@ -844,13 +858,13 @@ function routeOwnerDomains(path) {
 }
 
 test('every route literal in a marker block survives in every composition that keeps the block', () => {
-  const knownPacks = new Set(Object.keys(manifest.packs));
   const violations = [];
   let checked = 0;
-  for (const row of FRONTEND_MARKER_FILES) {
-    const source = readFileSync(join(root, 'frontend', row.file), 'utf8');
-    for (const block of parsePackMarkerBlocks(source, { knownPacks, label: row.file }).blocks) {
-      const owners = composerMarkerBlockOwners(row.file, block.pack, block.text);
+  for (const file of [...new Set(markers.rows.map(row => row.file))]) {
+    const source = readFileSync(join(root, 'frontend', file), 'utf8');
+    for (const block of parseMarkerBlocks(source, { knownFeatures: markers.features, label: file }).blocks) {
+      // 토큰이 곧 소유다(11단계 C6) — 블록은 그 기능이 있는 구성에만 남는다.
+      const owners = [block.feature];
       const kept = new Set(resolveProjectRecipe(recipe(owners), catalog).resolvedDomains);
       // 주석 속 경로는 링크가 아니다(허브 분해 H2: 업무 홈 블록의 주석이 종전 목적지 별칭을 설명한다). 블록·줄 주석을 지우고 본다.
       const code = block.text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
@@ -859,7 +873,7 @@ test('every route literal in a marker block survives in every composition that k
         if (!screen) continue;
         checked++;
         const missing = screen.filter(domain => !kept.has(domain));
-        if (missing.length) violations.push(`${row.file}:${block.startLine} ${block.pack} [${owners}] ${match[1]} -> ${missing}`);
+        if (missing.length) violations.push(`${file}:${block.startLine} ${block.feature} ${match[1]} -> ${missing}`);
       }
     }
   }
@@ -911,13 +925,13 @@ test('the statistics shell keeps board and survey tabs only with their owning do
   const withBoard = registryFor(['board']);
   assert.match(withBoard, /import board from '\.\/board\/stats-panels';/);
   assert.doesNotMatch(withBoard, /import survey from/);
-  // 표에서 빠진 파일의 pack 블록은 조용히 남거나 빠지지 않고 실패한다(분류 없는 블록).
+  // 기능 파일에 선언하지 않은 블록은 조용히 남거나 빠지지 않고 실패한다(분류 없는 블록) — 설문 토큰이어도 이 셸에는 선언이 없다.
   const empty = resolveProjectRecipe(recipe([]), catalog);
-  assert.throws(() => projectCustom(shell, `${readFileSync(join(root, shell), 'utf8')}\n/* reusable-base:demo:start */\nx\n/* reusable-base:demo:end */\n`,
-    empty), /Unclassified composer UI block/);
-  // 블록 소유 표가 모르는 토큰은 마커 줄에서 실패한다 — 시작 구성도 같은 기능 투영이다(11단계 C3).
-  assert.throws(() => projectCustom(admin, '/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n', empty),
-    /알 수 없는 frontend pack marker: survey/);
+  assert.throws(() => projectCustom(shell, `${readFileSync(join(root, shell), 'utf8')}\n/* reusable-base:survey:start */\nx\n/* reusable-base:survey:end */\n`,
+    empty), /Unclassified composer UI block: src\/app\/admin\/stats\/IntelligenceHubClient\.tsx\/survey/);
+  // 기능이 아닌 토큰은 마커 줄에서 실패한다 — 시작 구성도 같은 기능 투영이다(11단계 C3·C6).
+  assert.throws(() => projectCustom(admin, '/* reusable-base:boarx:start */\nx\n/* reusable-base:boarx:end */\n', empty),
+    /unknown marker feature: boarx/);
   // 셸이 core 로 남으므로 기능을 하나도 고르지 않아도, 설문만 골라도 셸·통계 화면이 import 로 사라지지 않는다.
   for (const domains of [[], ['survey']]) assert.deepEqual(inspectFrontendSurvival(domains).missing, [], `${domains}`);
 });

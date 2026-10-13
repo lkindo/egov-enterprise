@@ -161,15 +161,13 @@
               ]
             },
             "markerBlocks": {
-              "description": "pack 마커 블록이 남은 화면 파일(마커 토큰은 기능 id 로 바꾸기 전까지 pack 이름이다).",
+              "description": "이 기능의 마커 블록이 남은 화면 파일과 블록 수(11단계 C6). 마커 토큰은 이 기능 id 이고, 블록은 이 기능이 구성에 있을 때만 남는다.",
               "type": "array",
               "items": {
-                "type": "object", "additionalProperties": false, "required": ["file", "token", "blocks", "alsoRequires", "step", "reason"],
+                "type": "object", "additionalProperties": false, "required": ["file", "blocks", "step", "reason"],
                 "properties": {
                   "file": { "$ref": "#/$defs/frontendPath" },
-                  "token": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" },
                   "blocks": { "type": "integer", "minimum": 1 },
-                  "alsoRequires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/featureId" } },
                   "step": { "$ref": "#/$defs/text" },
                   "reason": { "$ref": "#/$defs/text" }
                 }

@@ -8,7 +8,7 @@ import test from 'node:test';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { createFrontendProjector, isFrontendModuleFile, parsePackMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
+import { createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 import { SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles, slotConsumersByHub, slotPathKind,
   slotRegistryPath } from './slot-registry.mjs';
@@ -100,33 +100,34 @@ test('a page marker block cannot carry a redirect call or a return, and next.con
     demo: createFrontendProjector({ composition: presetComposition('demo') }),
     custom: createFrontendProjector({ composition: { profile: 'custom', resolvedDomains: [], frontend: { removePaths: [] } } }),
   };
-  const block = body => `export default function Page() {\n  // reusable-base:demo:start\n${body}\n  // reusable-base:demo:end\n  return null;\n}\n`;
+  // 토큰은 기능 id 다(11단계 C6). 커뮤니티 블록은 core 에서 걷히고 demo 에서 남는다.
+  const block = body => `export default function Page() {\n  // reusable-base:community:start\n${body}\n  // reusable-base:community:end\n  return null;\n}\n`;
   for (const body of ["  redirect('/x');", '  return <Demo />;']) {
     for (const label of ['src/app/demo/page.tsx', 'frontend/src/app/demo/page.tsx']) {
-      assert.throws(() => projectors.core.project(label, block(body)), /page 파일의 pack 마커 블록은 redirect 호출이나 return 을 품을 수 없다/,
+      assert.throws(() => projectors.core.project(label, block(body)), /page 파일의 마커 블록은 redirect 호출이나 return 을 품을 수 없다/,
         'a page block may not carry a redirect or return');
     }
   }
   // 남기는 블록이어도, 직접 선택 투영이어도 같다 — 프로필마다 갈리는 것이 문제다.
   assert.throws(() => projectors.demo.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
   assert.throws(() => projectors.custom.project('src/app/demo/page.tsx', block("  redirect('/x');")), /redirect 호출이나 return/);
-  assert.throws(() => parsePackMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
-  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 파서를 통과한다. 구성 투영은 소유 표에 없는 파일의 블록을 소유 판정에서
-  // 거부하므로(11단계 C3) 파서 대조군은 공용 파서로 직접 본다.
-  assert.doesNotThrow(() => parsePackMarkerBlocks(block('  // return later'), { label: 'src/app/demo/page.tsx' }));
-  assert.doesNotThrow(() => parsePackMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/DemoClient.tsx' }));
-  assert.doesNotThrow(() => parsePackMarkerBlocks(block('  const x = 1;'), { label: 'src/app/demo/page.tsx' }));
-  assert.throws(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')), /Unclassified composer UI block: src\/app\/demo\/page\.tsx\/demo/);
+  assert.throws(() => parseMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/page.tsx' }), /redirect 호출이나 return/);
+  // 대조군: 주석 속 return, page 가 아닌 파일, 근거가 없는 블록은 파서를 통과한다. 구성 투영은 기능 파일에 선언하지 않은 블록을
+  // 거부하므로(11단계 C3·C6) 파서 대조군은 공용 파서로 직접 본다.
+  assert.doesNotThrow(() => parseMarkerBlocks(block('  // return later'), { label: 'src/app/demo/page.tsx' }));
+  assert.doesNotThrow(() => parseMarkerBlocks(block("  redirect('/x');"), { label: 'src/app/demo/DemoClient.tsx' }));
+  assert.doesNotThrow(() => parseMarkerBlocks(block('  const x = 1;'), { label: 'src/app/demo/page.tsx' }));
+  assert.throws(() => projectors.core.project('src/app/demo/page.tsx', block('  const x = 1;')), /Unclassified composer UI block: src\/app\/demo\/page\.tsx\/community/);
   // next.config 의 리다이렉트 선언은 거버넌스 투영이 정리하므로 마커를 두지 않는다. Next 가 읽는 설정 파일 전부(Next 16 은 .mts 도
   // 읽는다)이고, 투영 판정(isFrontendModuleFile)처럼 확장자 대소문자를 가리지 않는다.
   for (const label of ['next.config.ts', 'next.config.mts', 'frontend/next.config.mts', 'next.config.mjs', 'next.config.js', 'next.config.MTS']) {
-    assert.throws(() => projectors.core.project(label, block('  const x = 1;')), /next\.config 는 pack 마커를 둘 수 없다/,
-      `${label} cannot carry pack markers`);
+    assert.throws(() => projectors.core.project(label, block('  const x = 1;')), /next\.config 는 마커를 둘 수 없다/,
+      `${label} cannot carry markers`);
   }
 });
 
 test('unscoped optional imports and removed shared service calls are reproducible reds', () => {
-  const importLeak = sources.search.replace('/* reusable-base:collaboration:start */', '').replace('/* reusable-base:collaboration:end */', '');
+  const importLeak = sources.search.replace('/* reusable-base:board:start */', '').replace('/* reusable-base:board:end */', '');
   assert.match(boundaryErrors(importLeak, 'core', 'search').join('\n'), /excluded board search/);
   const deletedCoreSearch = sources.search.replace('userSearchService.searchAssignableUsers(query)', 'Promise.resolve([])');
   assert.match(boundaryErrors(deletedCoreSearch, 'core', 'search').join('\n'), /core search was removed/);
