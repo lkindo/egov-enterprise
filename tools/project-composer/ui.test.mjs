@@ -587,10 +587,11 @@ test('the menu preview is a nested tree in menu order with category, detached an
   await expect(page.locator('#menu-summary')).toHaveText(`화면 ${count('screen')}개 · 분류 ${count('category')}개 · 목적지 없음 ${count('detached')}개 · `
     + `공통 기반 대비 추가됨 ${added.length}개. 목적지 없음은 원본에는 화면이 있지만 이 구성에서 그 화면이 빠져 하위 메뉴만 묶는 메뉴입니다.`);
   // 낭독용 쉼표(sr-only)는 목록 스크롤 상자 안에 갇힌다 — 목록을 펼쳐도 페이지에 빈 스크롤이 생기지 않는다.
-  const openHeight = await pageHeight();
-  const withoutSeparators = await page.evaluate(() => {
+  // 두 높이는 한 번의 동기 실행에서 잰다. 따로 재면 그 사이에 비동기로 그려지는 상태 줄이 높이를 바꿔 결과가 흔들린다.
+  const { openHeight, withoutSeparators } = await page.evaluate(() => {
+    const open = document.documentElement.scrollHeight;
     for (const separator of document.querySelectorAll('#menu-preview .sr-only')) separator.remove();
-    return document.documentElement.scrollHeight;
+    return { openHeight: open, withoutSeparators: document.documentElement.scrollHeight };
   });
   assert.equal(openHeight, withoutSeparators, 'the reading separators add no page scroll');
   assert.ok(openHeight >= closedHeight);
