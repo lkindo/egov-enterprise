@@ -260,6 +260,8 @@ function buildAppCsp(nonce: string): string {
     //   ⚠ 이 주석에 스킴(h t t p s ://)을 적지 말 것 — csp-policy 계약의 본문 추출은 주석의
     //   URL 을 남기므로 외부 호스트 부재 단언이 자기 주석에 걸려 red 가 된다.
     `style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; ` +
+    // 게시판 영상은 인증된 첨부 응답을 Blob URL로 재생한다. 외부 영상 출처는 열지 않는다.
+    `media-src 'self' blob:; ` +
     `font-src 'self'; ${connectSrc}; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
     `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`
   );

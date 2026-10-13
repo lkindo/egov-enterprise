@@ -411,7 +411,7 @@ const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
                   <Button type="button" variant="outline" size="sm" onClick={() => void answer.refetch()}>다시 시도</Button>
                 </div>
               ) : answerHtml ? (
-                <SanitizedFaqAnswer html={answerHtml} />
+                <SanitizedFaqAnswer html={answerHtml} atchFileSn={answer.data?.atchFileSn} />
               ) : (
                 <p className="text-[length:var(--font-size-body)] text-muted-foreground">등록된 답변이 없습니다.</p>
               )}

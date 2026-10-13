@@ -31,10 +31,16 @@ import { canPermission } from '@/lib/auth/permissions';
 import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
-import { boardUploadLimits, formatMegabytes, SERVER_UPLOAD_ACCEPT, SERVER_UPLOAD_EXTENSIONS } from '@/lib/attachments/server-upload-limits';
+import { boardUploadLimits, formatMegabytes, BOARD_UPLOAD_ACCEPT, BOARD_UPLOAD_EXTENSIONS } from '@/lib/attachments/server-upload-limits';
 import { fileService } from '@/services/foundation/file/FileService';
+import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { htmlToSemanticPlainText } from '@/lib/html-to-text';
+import { createBoardMediaFile, getBoardMediaKind, getBoardMediaReferences, type BoardMediaReference } from '@/lib/attachments/board-media';
+import type { RichTextMediaOptions } from '@/components/ui/RichTextMedia';
+import { useWatch } from 'react-hook-form';
+import { getBoardDraftEpoch } from '@/lib/drafts/board-draft-storage';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -47,7 +53,7 @@ const boardSchema = BoardSaveRequestSchema.extend({
   pstSn: z.coerce.number().int().positive().optional(),
   pstCn: BoardSaveRequestSchema.shape.pstCn
     .min(1, '내용을 입력해 주세요.')
-    .refine((value) => !/^<p>(?:<br\s*\/?>)?<\/p>$/i.test(value.trim()), '내용을 입력해 주세요.'),
+    .refine((value) => htmlToSemanticPlainText(value).length > 0 || getBoardMediaReferences(value).length > 0, '내용을 입력해 주세요.'),
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
@@ -88,9 +94,13 @@ const DATE_FIELDS = [
 function RichTextFieldControl({
   value,
   onChange,
+  media,
+  readOnly,
 }: {
   value: string;
   onChange: (value: string) => void;
+  media: RichTextMediaOptions;
+  readOnly: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { error, formMessageId, name } = useFormField();
@@ -127,6 +137,9 @@ function RichTextFieldControl({
     >
       <FormControl>
         <RichTextEditor
+          enableTables
+          media={media}
+          readOnly={readOnly}
           value={value}
           onChange={onChange}
           placeholder="내용을 입력하세요..."
@@ -155,11 +168,15 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
    *    가 판정하므로 화면은 결과만 정직하게 보여 준다 — 거부(403)는 토스트로 드러낸다.
    */
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const mediaScope = `${user?.esntlId ?? user?.id ?? ''}:${bbsId}:${activeRecordId ?? 'new'}:${getBoardDraftEpoch()}`;
+  const [mediaCache, setMediaCache] = useState<{ scope: string; files: File[] }>({ scope: mediaScope, files: [] });
+  const pendingMediaFiles = mediaCache.scope === mediaScope ? mediaCache.files : [];
   const [deletingFileKey, setDeletingFileKey] = useState<string | null>(null);
   // 같은 tick 의 연속 클릭은 state 갱신보다 먼저 들어오므로 동기 ref 로 잠근다(폼 검증 census 의 destructive action 계약).
   const deletingRef = useRef(false);
-  // 임시저장 복구 확인은 한 번만 묻는다 — confirm 함수 참조가 렌더마다 바뀌어도 effect 가 다시 묻지 않게 한다.
+  // 사용자 범위가 준비되면 기존 초안을 한 번만 확인한다. 이후 자기 자동저장분은 다시 묻지 않는다.
   const draftPromptedRef = useRef(false);
+  const [draftRestorePending, setDraftRestorePending] = useState(true);
   const existingAtchFileSn = initialData?.atchFileSn ?? undefined;
   const {
     data: attachments = [],
@@ -187,6 +204,11 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
   const handleDeleteAttachment = async (file: AttachmentItem) => {
     if (!canWrite || deletingRef.current) return;
+    if ([...getBoardMediaReferences(form.getValues('pstCn')), ...getBoardMediaReferences(initialData?.pstCn ?? '')]
+      .some((reference) => reference.name === file.orignlFileNm)) {
+      toast('본문에서 사용하는 파일입니다. 본문에서 먼저 제거하고 게시글을 저장한 뒤 첨부파일을 삭제해 주세요.', 'error');
+      return;
+    }
     deletingRef.current = true;
     const key = attachmentKey(file);
     setDeletingFileKey(key);
@@ -234,13 +256,36 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
     } as BoardFormValues
   });
 
+  const currentContent = useWatch({ control: form.control, name: 'pstCn' }) ?? '';
+  const referencedMediaNames = new Set(getBoardMediaReferences(currentContent).map((reference) => reference.name));
+  const selectedMediaFiles = pendingMediaFiles.filter((file) => referencedMediaNames.has(file.name));
+
+  const addMediaFiles = (files: File[]): BoardMediaReference[] => {
+    if (!canWrite || isSubmitting || !uploadLimits.allowed || files.length === 0) return [];
+    if (files.some((file) => !getBoardMediaKind(file.name) || file.size === 0 || file.size > uploadLimits.maxSizeMB * 1024 * 1024)) {
+      toast(`이미지(JPG, PNG, GIF, BMP) 또는 영상(MP4, WebM)을 선택해 주세요. 파일 하나당 ${formatMegabytes(uploadLimits.maxSizeMB)}까지 첨부할 수 있습니다.`, 'error');
+      return [];
+    }
+    const allFiles = [...newFiles, ...selectedMediaFiles, ...files];
+    if (allFiles.length > uploadLimits.remaining || allFiles.reduce((sum, file) => sum + file.size, 0) > 50 * 1024 * 1024) {
+      toast('일반 첨부와 본문 미디어를 합친 파일 수 또는 전체 크기(50MB)가 허용 범위를 넘습니다.', 'error');
+      return [];
+    }
+    const additions = files.map(createBoardMediaFile);
+    setMediaCache({ scope: mediaScope, files: [...pendingMediaFiles, ...additions.map((item) => item.file)] });
+    return additions.map((item) => item.reference);
+  };
+
   // 자동 임시저장 훅 연동
   const { restoreDraft, clearDraft, hasDraft, lastSavedAt, peekDraft } = useAutoSaveDraft({
     scope: draftScope,
+    enabled: !draftRestorePending,
     getData: () => ({
       title: form.getValues('pstTtl'),
       content: form.getValues('pstCn')
     }),
+    getFiles: () => selectedMediaFiles,
+    onRestoreFiles: (files) => setMediaCache({ scope: mediaScope, files }),
     onRestore: (data) => {
       form.setValue('pstTtl', data.title);
       form.setValue('pstCn', data.content);
@@ -253,34 +298,54 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   //   [2026-09-27 DIP B5 F9] 수정 화면도 묻는다. 종전에는 새 글에서만 물어, 글을 고치다 다른 화면에 다녀오면 고친 내용을
   //   되살릴 길이 없었다. 수정 화면은 저장된 글로 채워져 있으므로 초안이 그 글과 다를 때만 묻는다.
   useEffect(() => {
-    if (draftPromptedRef.current || !hasDraft) return;
-    const editing = Boolean(activeRecordId);
-    if (editing) {
-      const draft = peekDraft();
-      if (!draft || (draft.title === (initialData?.pstTtl ?? '') && draft.content === (initialData?.pstCn ?? ''))) return;
-    } else if (form.getValues('pstTtl') || form.getValues('pstCn')) {
-      return;
-    }
+    if (!draftScope || draftPromptedRef.current) return;
     draftPromptedRef.current = true;
-    void confirm(editing ? {
-      title: '수정하던 초안 복구',
-      message: '이 글을 수정하던 초안이 현재 탭에 있습니다. 초안으로 바꾸시겠습니까? 바꾸지 않으면 저장된 글을 그대로 수정합니다.',
-      confirmText: '초안으로 바꾸기',
-      cancelText: '저장된 글로 수정',
-    } : {
-      title: '임시저장 데이터 복구',
-      message: '현재 탭에서 작성하던 초안이 있습니다. 복구하시겠습니까?',
-      confirmText: '복구',
-      cancelText: '새로 작성',
-    }).then((restore) => {
-      if (!restore) return;
-      restoreDraft();
-      toast('임시저장 데이터를 복구했습니다.', 'success');
-    });
-  }, [confirm, hasDraft, restoreDraft, peekDraft, toast, activeRecordId, initialData, form]);
+    const checkDraft = async () => {
+      if (!hasDraft) return;
+      const editing = Boolean(activeRecordId);
+      if (editing) {
+        const draft = peekDraft();
+        if (!draft || (draft.title === (initialData?.pstTtl ?? '') && draft.content === (initialData?.pstCn ?? ''))) return;
+      } else if (form.getValues('pstTtl') || form.getValues('pstCn')) {
+        return;
+      }
+      const restore = await confirm(editing ? {
+        title: '수정하던 초안 복구',
+        message: '이 글을 수정하던 초안이 현재 탭에 있습니다. 초안으로 바꾸시겠습니까? 바꾸지 않으면 저장된 글을 그대로 수정합니다.',
+        confirmText: '초안으로 바꾸기',
+        cancelText: '저장된 글로 수정',
+      } : {
+        title: '임시저장 데이터 복구',
+        message: '현재 탭에서 작성하던 초안이 있습니다. 복구하시겠습니까?',
+        confirmText: '복구',
+        cancelText: '새로 작성',
+      });
+      if (restore && restoreDraft()) toast('임시저장 데이터를 복구했습니다.', 'success');
+    };
+    // 최초 판단과 비동기 확인이 끝날 때까지 서버 초기값이 초안·File을 덮지 않게 한다.
+    void checkDraft().finally(() => setDraftRestorePending(false));
+  }, [confirm, hasDraft, restoreDraft, peekDraft, toast, activeRecordId, initialData, form, draftScope]);
 
   const onSubmit = async (values: BoardFormValues) => {
     if (!canWrite || submittingRef.current) return;
+    const references = getBoardMediaReferences(values.pstCn);
+    const pending = pendingMediaFiles.filter((file) => references.some((reference) => reference.name === file.name));
+    if (references.some((reference) => {
+      const matches = pending.filter((file) => file.name === reference.name).length
+        + attachments.filter((file) => file.orignlFileNm === reference.name).length;
+      return matches !== 1;
+    })) {
+      form.setError('pstCn', { message: '본문의 이미지·영상 파일을 확인할 수 없습니다. 해당 항목을 본문에서 제거한 뒤 파일을 다시 첨부해 주세요.' });
+      form.focusError('pstCn');
+      return;
+    }
+    const submittedFiles = uploadLimits.allowed ? [...newFiles, ...pending] : [];
+    if ((!uploadLimits.allowed && pending.length > 0) || submittedFiles.length > uploadLimits.remaining
+      || submittedFiles.some((file) => file.size === 0 || file.size > uploadLimits.maxSizeMB * 1024 * 1024)
+      || submittedFiles.reduce((sum, file) => sum + file.size, 0) > 50 * 1024 * 1024) {
+      toast('첨부 가능한 파일 수와 크기를 확인해 주세요. 본문 미디어도 첨부 제한에 포함됩니다.', 'error');
+      return;
+    }
     submittingRef.current = true;
     setIsSubmitting(true);
 
@@ -293,7 +358,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       });
       // 새로 붙인 파일 — 서버 액션이 `files` 키를 읽어 multipart 로 넘긴다(boardActions.saveBoardArticle).
       // [2026-09-27 DIP B5 F9] 게시판이 첨부를 받지 않아 업로더를 감춘 뒤에는 앞서 고른 파일도 보내지 않는다.
-      if (uploadLimits.allowed) newFiles.forEach((file) => formData.append('files', file));
+      submittedFiles.forEach((file) => formData.append('files', file));
 
       // Props 또는 initialData의 pstSn가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
       const activePstSn = activeRecordId;
@@ -306,6 +371,27 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+        const refreshes: Promise<unknown>[] = [];
+        if (activePstSn) {
+          // An inactive query seeded only with SSR initialData is not refetched by
+          // invalidateQueries. Fetch explicitly before navigating to avoid stale media.
+          const detailKey = ['article-detail', bbsId, activePstSn];
+          if (queryClient.getQueryState(detailKey)) {
+            refreshes.push(queryClient.fetchQuery({
+              queryKey: detailKey,
+              queryFn: () => knowledgeService.getArticle(bbsId, activePstSn, { countView: false }),
+              staleTime: 0,
+            }).catch(() => {
+              // The write already succeeded. Remove stale data if this refresh fails.
+              queryClient.removeQueries({ queryKey: detailKey, exact: true });
+            }));
+          }
+          refreshes.push(queryClient.invalidateQueries({ queryKey: ['boardArticle', bbsId, activePstSn], refetchType: 'all' }));
+        }
+        if (existingAtchFileSn) {
+          refreshes.push(queryClient.invalidateQueries({ queryKey: ['article-files', existingAtchFileSn], refetchType: 'all' }));
+        }
+        await Promise.all(refreshes);
         clearDraft();
         toast(pstSn ? '게시글을 수정했습니다.' : '게시글을 등록했습니다.', 'success');
         // [2026-09-26 DIP C8] 작성 화면을 방문 기록에서 바꿔 끼운다. push 로 가면 뒤로 가기가 저장을 마친 폼으로
@@ -358,7 +444,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
           {boardMeta ? '이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.' : '게시판 편집 권한을 확인하고 있습니다.'}
         </p>}
         <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <fieldset disabled={!canWrite} className="contents">
+          <fieldset disabled={!canWrite || isSubmitting} className="contents">
           <p className="text-sm text-muted-foreground">
             초안 임시 보관은 현재 탭에서만 유효합니다. 새로고침하거나 탭을 닫으면 사라지므로 게시글을 등록해 주세요.
           </p>
@@ -413,7 +499,9 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">본문 내용</FormLabel>
-                  <RichTextFieldControl value={field.value} onChange={field.onChange} />
+                  <RichTextFieldControl value={field.value} onChange={field.onChange} readOnly={!canWrite || isSubmitting}
+                    media={{ atchFileSn: existingAtchFileSn, attachments, pendingFiles: pendingMediaFiles,
+                      onAddFiles: addMediaFiles, disabled: !canWrite || isSubmitting || !uploadLimits.allowed }} />
                   <FormMessage className="pt-1 text-xs text-destructive-emphasis" />
                 </FormItem>
               )}
@@ -477,14 +565,14 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                 <StandardFileUploader
                   name="files"
                   onFilesChange={setNewFiles}
-                  maxFiles={uploadLimits.remaining}
+                  maxFiles={Math.max(0, uploadLimits.remaining - selectedMediaFiles.length)}
                   maxSizeMB={uploadLimits.maxSizeMB}
-                  accept={SERVER_UPLOAD_ACCEPT}
+                  accept={BOARD_UPLOAD_ACCEPT}
                 />
                 <p className="text-xs text-muted-foreground">
                   새로 붙인 파일은 게시글을 저장할 때 함께 올라갑니다.{existingAtchFileSn ? ' 기존 첨부에 추가됩니다.' : ''}
                   {uploadLimits.boardMaxFiles !== null ? ` 이 게시판은 파일을 ${uploadLimits.boardMaxFiles}개까지(기존 첨부 포함) 받습니다.` : ''}
-                  {` 파일 하나당 ${formatMegabytes(uploadLimits.maxSizeMB)}까지, 형식은 ${SERVER_UPLOAD_EXTENSIONS.join(', ')} 입니다.`}
+                  {` 파일 하나당 ${formatMegabytes(uploadLimits.maxSizeMB)}까지, 형식은 ${BOARD_UPLOAD_EXTENSIONS.join(', ')} 입니다. 본문 이미지·영상도 첨부 수에 포함됩니다.`}
                 </p>
               </div>
             )}

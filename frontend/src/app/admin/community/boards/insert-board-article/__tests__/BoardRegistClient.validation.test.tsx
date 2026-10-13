@@ -30,14 +30,19 @@ vi.mock('next/dynamic', () => ({
     value,
     onChange,
     className,
+    enableTables,
+    media: _media,
     ...props
   }: Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange' | 'value'> & {
     value: string;
     onChange: (value: string) => void;
+    enableTables?: boolean;
+    media?: unknown;
   }) {
     return (
       <textarea
         {...props}
+        data-tables-enabled={enableTables}
         className={`ProseMirror ${className ?? ''}`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -143,6 +148,46 @@ describe('BoardRegistClient validation contract', () => {
     expect(screen.getByRole('button', { name: /제목/ })).toBeVisible();
     await waitFor(() => expect(document.querySelector('[data-form-error-announcer="true"]'))
       .toBeEmptyDOMElement());
+  });
+
+  it.each([
+    ['빈 문단', '<p><br></p>'],
+    ['빈 표', '<table><tbody><tr><th><p></p></th><td><p><br></p></td></tr></tbody></table>'],
+    ['공백만 있는 표', '<table><tbody><tr><td><p>&nbsp; \t</p></td></tr></tbody></table>'],
+  ])('%s는 저장하지 않고 본문 입력과 오류 포커스를 보존한다', async (_label, content) => {
+    const user = userEvent.setup();
+    renderSubject();
+    const title = screen.getByRole('textbox', { name: '게시글 제목' });
+    const editor = screen.getByRole('textbox', { name: /게시글 본문 내용/ });
+    fireEvent.change(title, { target: { value: '표가 있는 글' } });
+    fireEvent.change(editor, { target: { value: content } });
+
+    await user.click(screen.getByRole('button', { name: '게시글 등록' }));
+
+    await waitFor(() => expect(editor).toHaveAttribute('aria-invalid', 'true'));
+    await waitFor(() => expect(editor).toHaveFocus());
+    expect(editor).toHaveValue(content);
+    expect(title).toHaveValue('표가 있는 글');
+    expect(mocks.saveBoardArticle).not.toHaveBeenCalled();
+    expect(document.getElementById(editor.getAttribute('aria-errormessage')!))
+      .toHaveTextContent('내용을 입력해 주세요.');
+  });
+
+  it('내용이 있는 표는 셀과 병합 속성을 포함한 HTML 그대로 저장한다', async () => {
+    const content = '<table><tbody><tr><th colspan="2"><p>분기 실적</p></th></tr><tr><td><p>상반기</p></td><td><p>100</p></td></tr></tbody></table>';
+    renderSubject();
+    fireEvent.change(screen.getByRole('textbox', { name: '게시글 제목' }), {
+      target: { value: '표가 있는 글' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: /게시글 본문 내용/ }), {
+      target: { value: content },
+    });
+
+    fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
+
+    await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
+    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    expect(formData.get('pstCn')).toBe(content);
   });
 
   it('server field 오류를 먼저 귀속시키고 일반 toast 없이 입력을 유지한다', async () => {

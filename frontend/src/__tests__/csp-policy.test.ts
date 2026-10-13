@@ -129,6 +129,13 @@ describe('CSP nonce 계약', () => {
     ).not.toContain('hostname');
   });
 
+  it('영상은 동일 출처와 인증 후 만든 Blob URL만 재생할 수 있다', () => {
+    const body = extractFunctionBody('buildAppCsp');
+    const directives = [...body.matchAll(/media-src\s+([^;]+);/g)];
+    expect(directives, 'media-src를 한 번 명시해야 Blob 영상 재생과 허용 범위를 함께 검증할 수 있다').toHaveLength(1);
+    expect(directives[0][1].trim().split(/\s+/)).toEqual(["'self'", 'blob:']);
+  });
+
   it("Atlas 예외 정책은 elem inline 을 허용하되 attr 'none' 을 유지하며, 예외 경로는 정확히 하나다", () => {
     const atlasPolicy = proxySource.match(/const ATLAS_CSP =\s*((?:`[^`]*`|'[^']*'|"[^"]*"|[\s+])+);/)?.[1] ?? '';
     expect(atlasPolicy, 'proxy.ts 에서 ATLAS_CSP 리터럴을 찾지 못했습니다').toBeTruthy();

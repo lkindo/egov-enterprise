@@ -1250,7 +1250,7 @@ class BoardServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
                 .hasMessageContaining("최대 1MB");
 
-        verify(fileService, never()).uploadFiles(any());
+        verify(fileService, never()).uploadBoardFiles(any());
         verify(boardRepository, never()).save(any(Board.class));
     }
 
@@ -1269,16 +1269,16 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", pstSn, request,
                 java.util.List.of(upload("a.txt", 1), upload("b.txt", 1))))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        verify(fileService, never()).updateFiles(any(), any());
+        verify(fileService, never()).updateBoardFiles(any(), any());
 
         boardService.updatePostWithFiles("BBS_01", pstSn, request, java.util.List.of(upload("a.txt", 1)));
-        verify(fileService).updateFiles(eq(77L), any());
+        verify(fileService).updateBoardFiles(eq(77L), any());
 
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
                 .fileAtchPsbltyYn("Y").atchPsbltyFileQty(0).build()));
         boardService.updatePostWithFiles("BBS_01", pstSn, request,
                 java.util.List.of(upload("a.txt", 1), upload("b.txt", 1), upload("c.txt", 1)));
-        verify(fileService, times(2)).updateFiles(eq(77L), any());
+        verify(fileService, times(2)).updateBoardFiles(eq(77L), any());
     }
 
     @Test
@@ -1314,14 +1314,14 @@ class BoardServiceTest {
         BoardMaster master = attachableMaster("BBS_01");
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(fileService.uploadFiles(files)).willReturn(101L);
+        given(fileService.uploadBoardFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.createPostWithFiles(userId, request, files);
 
         // then
-        verify(fileService).uploadFiles(files);
+        verify(fileService).uploadBoardFiles(files);
         verify(boardRepository).save(argThat(b -> Long.valueOf(101L).equals(b.getAtchFileSn())));
     }
 
@@ -1400,14 +1400,14 @@ class BoardServiceTest {
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        given(fileService.uploadFiles(files)).willReturn(101L);
+        given(fileService.uploadBoardFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.replyPostWithFiles(userId, parentId, request, files);
 
         // then
-        verify(fileService).uploadFiles(files);
+        verify(fileService).uploadBoardFiles(files);
     }
 
     @Test
@@ -1572,13 +1572,13 @@ class BoardServiceTest {
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
-        given(fileService.uploadFiles(files)).willReturn(102L);
+        given(fileService.uploadBoardFiles(files)).willReturn(102L);
 
         // when
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
-        verify(fileService).uploadFiles(files);
+        verify(fileService).uploadBoardFiles(files);
         assertThat(board.getAtchFileSn()).isEqualTo(102L);
     }
 
@@ -1600,8 +1600,8 @@ class BoardServiceTest {
 
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
-        verify(fileService).updateFiles(77L, files);
-        verify(fileService, never()).uploadFiles(any());
+        verify(fileService).updateBoardFiles(77L, files);
+        verify(fileService, never()).uploadBoardFiles(any());
         assertThat(board.getAtchFileSn()).isEqualTo(77L);
     }
 
@@ -1616,7 +1616,7 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request, files))
                 .isInstanceOf(BusinessException.class);
 
-        verify(fileService, never()).uploadFiles(any());
+        verify(fileService, never()).uploadBoardFiles(any());
         verify(boardRepository, never()).save(any(Board.class));
     }
 
@@ -1634,7 +1634,7 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.createPostWithFiles("outsider", request, files))
                 .isInstanceOf(BusinessException.class);
 
-        verify(fileService, never()).uploadFiles(any());
+        verify(fileService, never()).uploadBoardFiles(any());
     }
 
     @Test
@@ -1715,7 +1715,7 @@ class BoardServiceTest {
         // then
         org.mockito.InOrder authorizationBeforeFileMutation = inOrder(attachmentAssignmentPolicy, fileService);
         authorizationBeforeFileMutation.verify(attachmentAssignmentPolicy).assertAssignable(atchFileSn);
-        authorizationBeforeFileMutation.verify(fileService).updateFiles(eq(atchFileSn), eq(files));
+        authorizationBeforeFileMutation.verify(fileService).updateBoardFiles(eq(atchFileSn), eq(files));
     }
 
     @Test
@@ -1742,8 +1742,8 @@ class BoardServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
-        verify(fileService, never()).updateFiles(anyLong(), anyList());
-        verify(fileService, never()).uploadFiles(anyList());
+        verify(fileService, never()).updateBoardFiles(anyLong(), anyList());
+        verify(fileService, never()).uploadBoardFiles(anyList());
     }
 
     @Test
@@ -1765,8 +1765,8 @@ class BoardServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
-        verify(fileService, never()).uploadFiles(anyList());
-        verify(fileService, never()).updateFiles(anyLong(), anyList());
+        verify(fileService, never()).uploadBoardFiles(anyList());
+        verify(fileService, never()).updateBoardFiles(anyLong(), anyList());
     }
 
     @Test
@@ -1863,8 +1863,8 @@ class BoardServiceTest {
         boardService.replyPostWithFiles(userId, 1L, request, null);
         boardService.replyPostWithFiles(userId, 1L, request, Collections.emptyList());
 
-        verify(fileService, never()).uploadFiles(any());
-        verify(fileService, never()).updateFiles(any(), any());
+        verify(fileService, never()).uploadBoardFiles(any());
+        verify(fileService, never()).updateBoardFiles(any(), any());
     }
 
     // ------------------------------------------------------------------

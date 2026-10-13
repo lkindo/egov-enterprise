@@ -1,21 +1,26 @@
 'use client';
 
 import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, useEditorState, EditorContent, type EditorOptions } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
 import CharacterCount from '@tiptap/extension-character-count';
+import { TableKit } from '@tiptap/extension-table';
 import { 
   List, ListOrdered, 
   Heading1, Heading2, Quote, 
-  Link as LinkIcon, Image as ImageIcon,
-  Undo, Redo, 
+  Link as LinkIcon, Image as ImageIcon, Video,
+  Undo, Redo, Bold, Italic, Underline, Strikethrough,
   Type, AlignLeft, AlignCenter, AlignRight, AlignJustify
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { RICH_TEXT_TABLE_CLASSES } from '@/lib/rich-text-styles';
+import { RichTextTableTools } from './RichTextTableTools';
+import { BoardMediaNode, RichTextMediaContext, type RichTextMediaOptions } from './RichTextMedia';
+import DOMPurify from 'isomorphic-dompurify';
 
 export interface RichTextEditorProps extends Pick<
   React.AriaAttributes,
@@ -28,6 +33,9 @@ export interface RichTextEditorProps extends Pick<
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
+  enableTables?: boolean;
+  media?: RichTextMediaOptions;
+  readOnly?: boolean;
 }
 
 function buildEditableAttributes({
@@ -41,6 +49,7 @@ function buildEditableAttributes({
   ariaErrorMessage,
   name,
   formFieldName,
+  enableTables,
 }: {
   id?: string;
   placeholder?: string;
@@ -52,12 +61,14 @@ function buildEditableAttributes({
   ariaErrorMessage?: React.AriaAttributes['aria-errormessage'];
   name?: string;
   formFieldName?: string;
+  enableTables: boolean;
 }): Record<string, string> {
   return {
     class: cn(
       'prose dark:prose-invert prose-slate max-w-none min-h-[400px] outline-none p-10 font-sans text-lg focus:ring-0',
       'prose-headings:font-bold prose-headings:tracking-tighter prose-headings:uppercase',
-      'prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:px-8 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl'
+      'prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:px-8 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl',
+      enableTables && RICH_TEXT_TABLE_CLASSES,
     ),
     role: 'textbox',
     'aria-multiline': 'true',
@@ -88,7 +99,13 @@ export default function RichTextEditor({
   'aria-errormessage': ariaErrorMessage,
   name,
   'data-form-field-name': formFieldName,
+  enableTables = false,
+  media,
+  readOnly = false,
 }: RichTextEditorProps) {
+  const imageInput = React.useRef<HTMLInputElement>(null);
+  const videoInput = React.useRef<HTMLInputElement>(null);
+  const mediaContext = React.useMemo(() => media ? { ...media, readOnly } : undefined, [media, readOnly]);
   const editableAttributes = buildEditableAttributes({
     id,
     placeholder,
@@ -100,7 +117,28 @@ export default function RichTextEditor({
     ariaErrorMessage,
     name,
     formFieldName,
+    enableTables,
   });
+  const editorProps: EditorOptions['editorProps'] = {
+    attributes: editableAttributes,
+    handleDrop: (view, event, _slice, moved) => {
+      if (!media || moved || !event.dataTransfer?.files.length) return false;
+      event.preventDefault();
+      if (!readOnly) addMedia(Array.from(event.dataTransfer.files), view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos);
+      return true;
+    },
+    handlePaste: (_view, event) => {
+      if (!media || !event.clipboardData?.files.length) return false;
+      event.preventDefault();
+      if (!readOnly) addMedia(Array.from(event.clipboardData.files));
+      return true;
+    },
+    ...(media ? {
+      transformPastedHTML: (html: string) => DOMPurify.sanitize(html, {
+        FORBID_TAGS: ['img', 'video', 'audio', 'source', 'iframe', 'object', 'embed'],
+      }),
+    } : {}),
+  };
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -123,21 +161,44 @@ export default function RichTextEditor({
         types: ['heading', 'paragraph'],
       }),
       CharacterCount,
+      ...(enableTables ? [TableKit] : []),
+      ...(media ? [BoardMediaNode] : []),
     ],
     content: value,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    editorProps: {
-      attributes: editableAttributes,
-    },
+    editorProps,
+  }, [enableTables, Boolean(media)]);
+
+  function addMedia(files: File[], position?: number) {
+    if (!editor || !media || readOnly || media.disabled) return;
+    const references = media.onAddFiles(files);
+    if (references.length === 0) return;
+    const content = [...references.map((attrs) => ({ type: 'boardMedia', attrs })), { type: 'paragraph' }];
+    editor.chain().focus().insertContentAt(position ?? editor.state.selection.from, content).run();
+  }
+
+  React.useEffect(() => {
+    // Explicit extension dependencies preserve the editor instance; keep DOM handlers
+    // synchronized with the latest media files, permissions, and initialized editor.
+    editor?.setOptions({ editorProps, editable: !readOnly });
   });
 
-  // 외부에서 value가 변경되었을 때 에디터 내용 동기화 (초기 로딩 및 외부 초기화 대응)
+  // Tiptap 3 does not rerender useEditor on selection changes by default.
+  useEditorState({ editor, selector: ({ transactionNumber }) => transactionNumber });
+
+  const lastSyncedValue = React.useRef<{ editor: typeof editor; value: string } | null>(null);
+
+  // Initial content is already parsed by useEditor. Reapplying normalized HTML
+  // (including '' -> <p></p>) would create an undo step before the user edits.
   React.useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
+    if (!editor) return;
+    const previous = lastSyncedValue.current;
+    lastSyncedValue.current = { editor, value };
+    if (previous?.editor === editor && previous.value !== value && value !== editor.getHTML()) {
+      editor.commands.setContent(value, { emitUpdate: false });
     }
   }, [value, editor]);
 
@@ -150,11 +211,22 @@ export default function RichTextEditor({
       <div
         role="toolbar"
         aria-label="문서 서식 도구"
+        onKeyDown={handleToolbarNavigation}
         className="flex items-center flex-wrap gap-2 p-4 bg-muted dark:bg-muted/20 border-b border-border/50 relative z-20"
       >
+        <fieldset disabled={readOnly} className="contents">
         <ToolbarGroup>
-          <ToolbarButton label="실행 취소" onClick={() => editor.chain().focus().undo().run()} icon={<Undo size={18} />} />
-          <ToolbarButton label="다시 실행" onClick={() => editor.chain().focus().redo().run()} icon={<Redo size={18} />} />
+          <ToolbarButton label="실행 취소" disabled={!editor.can().undo()} onClick={() => editor.chain().focus().undo().run()} icon={<Undo size={18} />} />
+          <ToolbarButton label="다시 실행" disabled={!editor.can().redo()} onClick={() => editor.chain().focus().redo().run()} icon={<Redo size={18} />} />
+        </ToolbarGroup>
+
+        <ToolbarDivider />
+
+        <ToolbarGroup>
+          <ToolbarButton label="굵게" onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} icon={<Bold size={18} />} />
+          <ToolbarButton label="기울임" onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} icon={<Italic size={18} />} />
+          <ToolbarButton label="밑줄" onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} icon={<Underline size={18} />} />
+          <ToolbarButton label="취소선" onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')} icon={<Strikethrough size={18} />} />
         </ToolbarGroup>
 
         <ToolbarDivider />
@@ -236,13 +308,32 @@ export default function RichTextEditor({
 
         <ToolbarGroup>
           <ToolbarButton label="링크 삽입 (현재 사용할 수 없음)" disabled icon={<LinkIcon size={18} />} />
-          <ToolbarButton label="이미지 삽입 (현재 사용할 수 없음)" disabled icon={<ImageIcon size={18} />} />
+          {media ? <>
+            <ToolbarButton label="이미지 삽입" disabled={media.disabled} onClick={() => imageInput.current?.click()} icon={<ImageIcon size={18} />} />
+            <ToolbarButton label="영상 삽입" disabled={media.disabled} onClick={() => videoInput.current?.click()} icon={<Video size={18} />} />
+            <input ref={imageInput} type="file" accept=".jpg,.jpeg,.png,.gif,.bmp" multiple hidden aria-label="본문 이미지 파일" onChange={(event) => {
+              addMedia(Array.from(event.target.files ?? [])); event.target.value = '';
+            }} />
+            <input ref={videoInput} type="file" accept=".mp4,.webm" multiple hidden aria-label="본문 영상 파일" onChange={(event) => {
+              addMedia(Array.from(event.target.files ?? [])); event.target.value = '';
+            }} />
+          </> : <ToolbarButton label="이미지 삽입 (현재 사용할 수 없음)" disabled icon={<ImageIcon size={18} />} />}
         </ToolbarGroup>
+        {enableTables && (
+          <ToolbarGroup>
+            <RichTextTableTools editor={editor} readOnly={readOnly} />
+          </ToolbarGroup>
+        )}
+        </fieldset>
       </div>
+
+      {media && <p className="px-4 py-2 text-sm text-muted-foreground">이미지·영상을 본문에 끌어 놓거나 삽입 버튼으로 선택하세요. 게시글을 저장할 때 함께 업로드됩니다.</p>}
 
       {/* --- Scrollable Content Area --- */}
       <div className="relative overflow-y-auto max-h-[600px] bg-gradient-to-b from-transparent to-muted/30">
-        <EditorContent editor={editor} />
+        <RichTextMediaContext.Provider value={mediaContext}>
+          <EditorContent editor={editor} />
+        </RichTextMediaContext.Provider>
       </div>
 
       {/* --- Footer Status --- */}
@@ -273,6 +364,7 @@ function ToolbarButton({ label, onClick, active, disabled = false, icon, classNa
       type="button"
       variant="ghost"
       onClick={onClick}
+      onMouseDown={(event) => event.preventDefault()}
       disabled={disabled}
       aria-label={label}
       aria-pressed={active === undefined ? undefined : active}
@@ -297,4 +389,22 @@ function ToolbarGroup({ children }: { children: React.ReactNode }) {
 
 function ToolbarDivider() {
   return <div className="w-[1px] h-6 bg-border/60 mx-1 hidden sm:block" />;
+}
+
+function handleToolbarNavigation(event: React.KeyboardEvent<HTMLDivElement>) {
+  // Popover content is a portal: its form controls keep their own keyboard behavior.
+  if (!(event.target instanceof HTMLButtonElement) || !event.currentTarget.contains(event.target)) return;
+  const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));
+  const index = buttons.indexOf(event.target);
+  if (index < 0) return;
+  let next: number;
+  switch (event.key) {
+    case 'ArrowRight': next = (index + 1) % buttons.length; break;
+    case 'ArrowLeft': next = (index - 1 + buttons.length) % buttons.length; break;
+    case 'Home': next = 0; break;
+    case 'End': next = buttons.length - 1; break;
+    default: return;
+  }
+  event.preventDefault();
+  buttons[next].focus();
 }

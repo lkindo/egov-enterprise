@@ -466,7 +466,7 @@ public class BoardService extends BaseAbstractService {
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 저장 전에 본다.
                         assertNewFilesAllowed(master, 0, files);
-                        atchFileSn = fileService.uploadFiles(files);
+                        atchFileSn = fileService.uploadBoardFiles(files);
                 }
 
                 BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
@@ -541,7 +541,7 @@ public class BoardService extends BaseAbstractService {
                         BoardMaster master = findBoardMaster(request.bbsId());
                         assertCommunityAccess(master);
                         assertNewFilesAllowed(master, 0, files);
-                        atchFileSn = fileService.uploadFiles(files);
+                        atchFileSn = fileService.uploadBoardFiles(files);
                 }
 
                 BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
@@ -895,10 +895,10 @@ public class BoardService extends BaseAbstractService {
                         if (atchFileSn == null) {
                                 // 게시글 소유권을 먼저 확인한 뒤 이 호출에서 새로 만든 첨부는
                                 // 클라이언트가 선택한 외부 식별자가 아니므로 재할당 조회가 필요 없다.
-                                atchFileSn = fileService.uploadFiles(files);
+                                atchFileSn = fileService.uploadBoardFiles(files);
                                 attachmentAlreadyValidated = true;
                         } else {
-                                fileService.updateFiles(atchFileSn, files);
+                                fileService.updateBoardFiles(atchFileSn, files);
                         }
                 }
 

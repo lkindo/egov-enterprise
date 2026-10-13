@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -70,16 +71,17 @@ class FileServiceTest {
     @Mock private DurableWorkPort durableWork;
     @Spy private ObjectMapper objectMapper = JsonMapper.builder().build();
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("🚨 업로드 뒤 트랜잭션이 롤백되면 이번에 저장한 파일을 지운다 — 커밋되면 남긴다 (DIP I2)")
-    void uploadFiles_compensatesStoredFilesOnRollback() throws IOException {
+    void uploadFiles_compensatesStoredFilesOnRollback(boolean board) throws IOException {
         List<MultipartFile> files = Collections.singletonList(validJpeg("a.jpg"));
         given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored_a.jpg");
 
         org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
         try {
-            fileService.uploadFiles(files);
+            uploadWithProfile(files, board);
             verify(storageService, never()).delete(anyString(), anyString());
 
             for (var sync : org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()) {
@@ -143,14 +145,15 @@ class FileServiceTest {
         verify(storageService, never()).store(any(), anyString());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 업로드 - 단일 파일 10MiB 상한을 넘으면 내용을 읽거나 저장하지 않는다")
-    void uploadFiles_rejectsOversizedFileBeforeStorage() throws IOException {
+    void uploadFiles_rejectsOversizedFileBeforeStorage(boolean board) throws IOException {
         MultipartFile oversized = mock(MultipartFile.class);
         given(oversized.isEmpty()).willReturn(false);
         given(oversized.getSize()).willReturn(10L * 1024 * 1024 + 1);
 
-        assertThatThrownBy(() -> fileService.uploadFiles(List.of(oversized)))
+        assertThatThrownBy(() -> uploadWithProfile(List.of(oversized), board))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("10MB 이하");
 
@@ -158,37 +161,40 @@ class FileServiceTest {
         verify(fileMasterRepository, never()).save(any());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 업로드 - 빈 목록과 20개 초과 요청을 거부한다")
-    void uploadFiles_rejectsEmptyOrExcessiveFileCount() {
+    void uploadFiles_rejectsEmptyOrExcessiveFileCount(boolean board) {
         // [2026-09-30] 한도가 있는 거부는 한도를 말한다 — 사유 없는 기본 문구로는 무엇을 줄여야 하는지 알 수 없다.
-        assertThatThrownBy(() -> fileService.uploadFiles(List.of()))
+        assertThatThrownBy(() -> uploadWithProfile(List.of(), board))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("올릴 파일이 없습니다");
 
         MultipartFile placeholder = mock(MultipartFile.class);
-        assertThatThrownBy(() -> fileService.uploadFiles(Collections.nCopies(21, placeholder)))
+        assertThatThrownBy(() -> uploadWithProfile(Collections.nCopies(21, placeholder), board))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("20개까지");
 
         verify(fileMasterRepository, never()).save(any());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 업로드 - DB 컬럼보다 긴 원본 파일명은 파일 저장 전에 거부한다")
-    void uploadFiles_rejectsFilenameLongerThanDatabaseColumn() {
+    void uploadFiles_rejectsFilenameLongerThanDatabaseColumn(boolean board) {
         MockMultipartFile file = validJpeg("a".repeat(297) + ".jpg");
 
-        assertThatThrownBy(() -> fileService.uploadFiles(List.of(file)))
+        assertThatThrownBy(() -> uploadWithProfile(List.of(file), board))
                 .isInstanceOf(BusinessException.class);
 
         verify(fileMasterRepository, never()).save(any());
         verify(storageService, never()).store(any(), anyString());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 업로드 - 요청 총합 50MiB 상한을 넘으면 마지막 파일 내용도 읽지 않는다")
-    void uploadFiles_rejectsOversizedBatch() throws IOException {
+    void uploadFiles_rejectsOversizedBatch(boolean board) throws IOException {
         List<MultipartFile> files = IntStream.range(0, 6)
                 .mapToObj(index -> {
                     MultipartFile file = mock(MultipartFile.class);
@@ -207,7 +213,7 @@ class FileServiceTest {
                 })
                 .toList();
 
-        assertThatThrownBy(() -> fileService.uploadFiles(files))
+        assertThatThrownBy(() -> uploadWithProfile(files, board))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("전체 크기는 50MB 이하");
 
@@ -230,9 +236,10 @@ class FileServiceTest {
         verify(storageService).store(file, "general/" + atchFileSn);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 업로드 - DB 저장 실패 시 이번 요청에서 쓴 디스크 파일을 모두 보상 삭제한다")
-    void uploadFiles_compensatesStoredFilesWhenDatabaseSaveFails() throws IOException {
+    void uploadFiles_compensatesStoredFilesWhenDatabaseSaveFails(boolean board) throws IOException {
         List<MultipartFile> files = List.of(validJpeg("first.jpg"), validPng("second.png"));
         given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
         given(storageService.store(any(MultipartFile.class), anyString()))
@@ -241,7 +248,7 @@ class FileServiceTest {
                 .willReturn(FileDetail.builder().build())
                 .willThrow(new IllegalStateException("database unavailable"));
 
-        assertThatThrownBy(() -> fileService.uploadFiles(files))
+        assertThatThrownBy(() -> uploadWithProfile(files, board))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
 
@@ -413,17 +420,18 @@ class FileServiceTest {
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
     @DisplayName("파일 수정 - 원 업로더가 아니면 상세 조회와 물리 저장 전에 거부한다")
-    void updateFiles_deniedAssignmentHasNoDetailOrStorageSideEffect() {
+    void updateFiles_deniedAssignmentHasNoDetailOrStorageSideEffect(boolean board) {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
         given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(accessPolicy).assertAttachable(master);
 
-        assertThatThrownBy(() -> fileService.updateFiles(
-                atchFileSn, Collections.singletonList(validJpeg("new.jpg"))))
+        assertThatThrownBy(() -> updateWithProfile(
+                atchFileSn, Collections.singletonList(validJpeg("new.jpg")), board))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
@@ -580,6 +588,171 @@ class FileServiceTest {
         fileService.getAllFileList(pageable, null);
 
         verify(fileDetailRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @ParameterizedTest(name = "게시판 {0} 허용")
+    @MethodSource("validBoardVideos")
+    @DisplayName("게시판 업로드는 MIME 주장 대신 MP4 브랜드·WebM DocType을 확인한다")
+    void uploadBoardFiles_acceptsVideoContainers(String filename, byte[] content) throws IOException {
+        MockMultipartFile file = new MockMultipartFile("files", filename, "text/plain", content);
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored-video.bin");
+
+        assertThat(fileService.uploadBoardFiles(List.of(file))).isEqualTo(123L);
+
+        verify(storageService).store(file, "general/123");
+        verify(fileDetailRepository).save(argThat(detail -> filename.equals(detail.getOrgnlFileNm())));
+    }
+
+    @ParameterizedTest(name = "일반 경로 {0} 거부")
+    @MethodSource("validBoardVideos")
+    @DisplayName("게시판 영상 허용이 일반 첨부 생성·추가의 허용목록을 넓히지 않는다")
+    void generalUploads_stillRejectBoardVideoTypes(String filename, byte[] content) {
+        MockMultipartFile file = new MockMultipartFile("files", filename, "video/mp4", content);
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of(file)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
+
+        FileMaster master = new FileMaster(123L);
+        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
+        assertThatThrownBy(() -> fileService.updateFiles(123L, List.of(file)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
+
+        verify(fileMasterRepository, never()).save(any());
+        verify(fileDetailRepository, never()).save(any());
+        verifyNoInteractions(storageService);
+    }
+
+    @ParameterizedTest(name = "위장·잘린 영상 {0}: {1}")
+    @MethodSource("invalidBoardVideos")
+    @DisplayName("게시판 영상의 다른 포맷·잘린 헤더·DocType 위장을 저장 전에 거부한다")
+    void uploadBoardFiles_rejectsMalformedContainers(String filename, String reason, byte[] content) {
+        MockMultipartFile file = new MockMultipartFile("files", filename, "video/" + filename.substring(6), content);
+
+        assertThatThrownBy(() -> fileService.uploadBoardFiles(List.of(validJpeg("first.jpg"), file)))
+                .as(reason)
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
+
+        verifyNoInteractions(fileMasterRepository, fileDetailRepository, storageService);
+    }
+
+    @Test
+    @DisplayName("게시판 영상 추가도 원 업로더 확인 뒤 기존 묶음의 다음 순번에 저장한다")
+    void updateBoardFiles_appendsVideoAfterAuthorization() throws IOException {
+        FileMaster master = new FileMaster(123L);
+        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master))
+                .willReturn(List.of(FileDetail.builder().atchFileSeq(4).build()));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.mp4");
+        MockMultipartFile video = new MockMultipartFile("files", "media.mp4", "video/mp4", mp4Header("mp42"));
+
+        fileService.updateBoardFiles(123L, List.of(video));
+
+        var order = inOrder(accessPolicy, fileDetailRepository, storageService);
+        order.verify(accessPolicy).assertAttachable(master);
+        order.verify(fileDetailRepository).findByFileMaster(master);
+        order.verify(storageService).store(video, "general/123");
+        order.verify(fileDetailRepository).save(argThat(detail -> detail.getAtchFileSeq() == 5));
+        verify(fileMasterRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("게시판 영상 추가도 배치 중 하나가 위장이면 새 파일을 하나도 저장하지 않는다")
+    void updateBoardFiles_rejectsMixedInvalidBatchBeforeStorage() {
+        FileMaster master = new FileMaster(123L);
+        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
+        MockMultipartFile disguised = new MockMultipartFile("files", "media.mp4", "video/mp4", mp4Header("avif"));
+
+        assertThatThrownBy(() -> fileService.updateBoardFiles(123L, List.of(validJpeg("first.jpg"), disguised)))
+                .isInstanceOf(BusinessException.class);
+
+        verify(accessPolicy).assertAttachable(master);
+        verify(fileDetailRepository, never()).save(any());
+        verifyNoInteractions(storageService);
+    }
+
+    private Long uploadWithProfile(List<MultipartFile> files, boolean board) throws IOException {
+        return board ? fileService.uploadBoardFiles(files) : fileService.uploadFiles(files);
+    }
+
+    private void updateWithProfile(Long atchFileSn, List<MultipartFile> files, boolean board) throws IOException {
+        if (board) fileService.updateBoardFiles(atchFileSn, files);
+        else fileService.updateFiles(atchFileSn, files);
+    }
+
+    private static Stream<Arguments> validBoardVideos() {
+        byte[] paddedDocType = ebmlHeader(concat(
+                hex("ec 40 80"), new byte[128], docType("webm")));
+        return Stream.of(
+                Arguments.of("media.mp4", mp4Header("isom")),
+                Arguments.of("media.MP4", mp4Header("mp42")),
+                Arguments.of("media.mp4", mp4Header("M4V ")),
+                Arguments.of("media.webm", ebmlHeader(concat(hex("42 86 81 01"), docType("webm")))),
+                Arguments.of("media.webm", paddedDocType));
+    }
+
+    private static Stream<Arguments> invalidBoardVideos() {
+        byte[] tooLongMp4 = mp4Header("isom");
+        tooLongMp4[3] = 32;
+        byte[] incompleteBrandMp4 = mp4Header("isom");
+        incompleteBrandMp4[3] = 17;
+        byte[] extendedSizeMp4 = mp4Header("isom");
+        extendedSizeMp4[3] = 1;
+        byte[] oversizedEbml = ebmlHeader(concat(hex("ec 4f a0"), new byte[4000], docType("webm"), new byte[100]));
+        return Stream.of(
+                Arguments.of("media.mp4", "실행파일", hex("4d 5a 90 00")),
+                Arguments.of("media.mp4", "AVIF major brand와 MP4 compatible brand", mp4Header("avif")),
+                Arguments.of("media.mp4", "HEIC major brand", mp4Header("heic")),
+                Arguments.of("media.mp4", "QuickTime major brand", mp4Header("qt  ")),
+                Arguments.of("media.mp4", "선언된 box 크기보다 짧음", tooLongMp4),
+                Arguments.of("media.mp4", "잘린 compatible brand", incompleteBrandMp4),
+                Arguments.of("media.mp4", "지원하지 않는 확장 box 크기", extendedSizeMp4),
+                Arguments.of("media.mp4", "잘린 ftyp", java.util.Arrays.copyOf(mp4Header("isom"), 15)),
+                Arguments.of("media.mp4", "WebM 위장", ebmlHeader(docType("webm"))),
+                Arguments.of("media.webm", "MP4 위장", mp4Header("isom")),
+                Arguments.of("media.webm", "Matroska DocType", ebmlHeader(docType("matroska"))),
+                Arguments.of("media.webm", "DocType 부재", ebmlHeader(hex("42 86 81 01"))),
+                Arguments.of("media.webm", "Void 내부 문자열은 DocType이 아님", ebmlHeader(concat(hex("ec 87"), docType("webm")))),
+                Arguments.of("media.webm", "헤더 밖 DocType", concat(ebmlHeader(hex("42 86 81 01")), docType("webm"))),
+                Arguments.of("media.webm", "중복 DocType", ebmlHeader(concat(docType("webm"), docType("webm")))),
+                Arguments.of("media.webm", "잘린 DocType", ebmlHeader(hex("42 82 88 77 65 62 6d"))),
+                Arguments.of("media.webm", "잘린 Element ID", ebmlHeader(hex("42"))),
+                Arguments.of("media.webm", "0인 VINT marker", hex("1a 45 df a3 00")),
+                Arguments.of("media.webm", "알 수 없는 헤더 크기", concat(hex("1a 45 df a3 ff"), docType("webm"))),
+                Arguments.of("media.webm", "알 수 없는 필드 크기", ebmlHeader(hex("42 82 ff 77 65 62 6d"))),
+                Arguments.of("media.webm", "헤더 읽기 상한 초과", oversizedEbml));
+    }
+
+    private static byte[] mp4Header(String majorBrand) {
+        return java.nio.ByteBuffer.allocate(24).putInt(24)
+                .put("ftyp".getBytes(StandardCharsets.US_ASCII))
+                .put(majorBrand.getBytes(StandardCharsets.US_ASCII)).putInt(0)
+                .put("isommp42".getBytes(StandardCharsets.US_ASCII)).array();
+    }
+
+    private static byte[] docType(String value) {
+        return concat(new byte[] { 0x42, (byte) 0x82, (byte) (0x80 | value.length()) },
+                value.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    private static byte[] ebmlHeader(byte[] fields) {
+        byte[] size = fields.length < 127 ? new byte[] { (byte) (0x80 | fields.length) }
+                : new byte[] { (byte) (0x40 | (fields.length >> 8)), (byte) fields.length };
+        return concat(hex("1a 45 df a3"), size, fields);
+    }
+
+    private static byte[] hex(String value) {
+        return java.util.HexFormat.of().parseHex(value.replace(" ", ""));
+    }
+
+    private static byte[] concat(byte[]... parts) {
+        java.io.ByteArrayOutputStream result = new java.io.ByteArrayOutputStream();
+        for (byte[] part : parts) result.writeBytes(part);
+        return result.toByteArray();
     }
 
     private static MockMultipartFile validJpeg(String filename) {

@@ -1,5 +1,16 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-14 게시판 영상 재생 CSP 변경에 따른 보완 소스 재검토
+
+SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 `buildAppCsp`에 `media-src 'self' blob:`와 설명 주석만
+추가했다. 인증된 첨부를 받은 뒤 만드는 Blob URL의 영상 재생을 허용하며 외부 영상 호스트는 추가하지 않는다.
+토큰 검증·Origin 거부·Bearer 전달과 Strict·HttpOnly 쿠키 정책은 바뀌지 않았다. 탐지 원문과 나머지 보완
+소스의 해시는 기존 값과 일치한다.
+
+해당 보완 소스 해시와 승인 목록의 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·
+만료일과 보안 임계값은 유지한다. 근거는 `6984282c7`의 proxy diff 재검토이며 CodeQL 실행의 증거가 아니다.
+현재 탐지와의 exact-match는 해당 변경의 required `secure-coding` CI에서 판정한다.
+
 ## 2026-10-13 이관 PIT 변환기 범위 조건 변경에 따른 H2 테스트 경계 재검토(레거시 표준화 L1 PR-D 통합)
 
 PR-D(DEC-OPS-309)가 `migration-tool/build.gradle`의 PIT 범위 조건 한 곳만 바꿨다 — 변환기 범위의 대상 클래스 집합에
