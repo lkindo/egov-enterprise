@@ -11,7 +11,7 @@
       "fingerprint": "dec982be271ed34f:1",
       "sourceSha256": "28ff03fa4633d1d09ad939e390985da2e8a4c1f28256d00821a9df2465ed1dcc",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged. Re-reviewed 2026-10-14: proxy changes only add media-src self/blob to the app CSP for authenticated board video playback; token validation, Origin rejection, Strict HttpOnly cookie policy and Bearer forwarding are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
@@ -32,7 +32,7 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "6898966744923d41d7757a3c84ca6dabad4928d75fdb40f6a5e7c949aa155b1b"
+          "sha256": "64229126da513c119eb97371f5ed837d184feeb7f1b5923af69f9bdb0d838d64"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",

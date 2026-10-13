@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "58e2ff023e7adf9122fbebb6a038a1d2150602ba856231b898c86c0982d1679b"
+    "inventoryHash": "8f1b07786bae061aa8cc3898235bf35397bd4e0f072050ea29064bcaba276cb4"
   },
   "summary": {
-    "sourceFileCount": 683,
-    "records": 396,
-    "syntaxOccurrences": 471,
-    "ambiguousRecords": 348,
-    "unverifiedRecords": 396,
+    "sourceFileCount": 689,
+    "records": 397,
+    "syntaxOccurrences": 472,
+    "ambiguousRecords": 349,
+    "unverifiedRecords": 397,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 178,
+      "navigation-producer": 179,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 386,
+      "navigation": 387,
       "request-telemetry": 10
     }
   },
@@ -15794,6 +15794,46 @@
       "evidence": {
         "source": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E67548C529FD32",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/components/ui/BoardMedia.tsx",
+      "producerFile": "frontend/src/components/ui/BoardMedia.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/ui/BoardMedia.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
