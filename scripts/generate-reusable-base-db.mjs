@@ -84,7 +84,7 @@ export function parseDbGenerationArgs(argv) {
     return args;
   }
   if (args.profile && args.composition) fail('--profile and --composition are mutually exclusive.');
-  if (!args.profile && !args.composition) fail('--profile core|collaboration|demo 또는 --composition PATH가 필요하다.');
+  if (!args.profile && !args.composition) fail('--profile <시작 구성 id(config/modules/presets.json)> 또는 --composition PATH가 필요하다.');
   return args;
 }
 

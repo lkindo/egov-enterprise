@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectReusableGovernance, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
 import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from './reusable-source-frontend.mjs';
 import { composerProfile } from './project-composer-source.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { planJavaRemoval, pruneJava, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities, parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
@@ -242,7 +243,7 @@ function cleanupOwnedFixture(directory) {
   rmSync(resolved, { recursive: true });
 }
 
-for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
+for (const profileName of compositionProfiles()) {
   test(`${profileName} source projection rebuilds actual census, retains provenance, and leaves adoption pending`, () => {
     const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
     try {
@@ -257,7 +258,9 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       const java = pruneJava(output, ownership, profile);
       const support = modules.files['memoreport.json'].backend.supportFiles;
       assert.ok(support.length > 0, 'the memo report declares support files');
-      for (const file of support) assert.equal(existsSync(join(output, file)), profileName === 'demo', `${profileName}: domain support ${file}`);
+      for (const file of support) {
+        assert.equal(existsSync(join(output, file)), composition.resolvedDomains.includes('memoreport'), `${profileName}: domain support ${file}`);
+      }
       const markerBlocks = applyFrontendProjection(output, projector);
       // lock.frontend.markerBlocks: 소유 기능이 구성에 없어 걷은 블록 수와 그 블록이 있던 파일 수다(시작 구성과 직접 선택이 같은 셈).
       //   이 단언이 집계를 '내용이 바뀐 파일 수'로 바꾸는 변이를 잡는다(블록 수와 파일 수가 다르다).

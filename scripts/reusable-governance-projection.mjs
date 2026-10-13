@@ -5,6 +5,7 @@ import { generatePermissions } from './generate-permissions.mjs';
 import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, discoverPageRoutes, expectedRouting, inspectRouteRepository, parseConfigRedirectsSource, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -192,7 +193,7 @@ export function projectRemovedRouteAliases(outputRoot, upstreamRoutes) {
 
 export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sourceCommit, composition, projectSource = (_file, text) => text }) {
   assertSeparateProjectionRoot(sourceRoot, outputRoot);
-  if (!['core', 'collaboration', 'demo', 'custom'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
+  if (!compositionProfiles().includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
     throw new Error('Governance projection requires a known profile and exact upstream commit');
   }
   // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏 없는 투영은 어느 프로필에서도 만들지 않는다.

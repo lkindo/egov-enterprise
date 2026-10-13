@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { presetIds } from './composition-profiles.mjs';
 
 import {
   comparePullRequestPolicy,
@@ -966,7 +967,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
 
   const staticFullMatrix = reusableJob.replace(
     "      matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-matrix']) }}",
-    '      matrix:\n        profile: [core, collaboration, demo]\n        layout: [multi-module, single-module]',
+    `      matrix:\n        profile: [${presetIds().join(', ')}]\n        layout: [multi-module, single-module]`,
   );
   assert.doesNotMatch(staticFullMatrix,
     /matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-matrix'\]\) \}\}/,

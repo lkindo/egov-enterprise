@@ -4,6 +4,7 @@ import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { containedFile } from './adoption-review.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
@@ -100,7 +101,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
   try {
     metadata = readJson(root, PROJECTION_PATH);
     check(metadata.schemaVersion === 1 && metadata.authority === 'generated-reusable-governance-projection-not-environment-approval', 'Invalid projection metadata authority');
-    check(['core', 'collaboration', 'demo', 'custom'].includes(metadata.profile), 'Invalid projection profile');
+    check(compositionProfiles().includes(metadata.profile), 'Invalid projection profile');
     check(/^[a-f0-9]{40}$/u.test(metadata.sourceCommit ?? ''), 'Invalid upstream source commit');
     const snapshots = metadata.upstreamSnapshots ?? [];
     check(exact(snapshots.map(row => row.sourcePath).sort(), [...UPSTREAM_SOURCES].sort()), 'Upstream snapshot population must be exact');

@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { join, posix, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import test from 'node:test';
+import { presetIds } from './composition-profiles.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -49,13 +50,15 @@ function projected(source, profile, label) {
 const MODERATION = new URL('../frontend/src/app/admin/system/comments/CommentModerationClient.tsx', import.meta.url);
 const moderationSource = existsSync(MODERATION) ? readFileSync(MODERATION, 'utf8') : null;
 
+// 기대는 시작 구성 이름이 아니라 그 구성의 기능으로 정한다(11단계 C8) — 시작 구성이 늘어도 규칙이 그대로 맞는다.
 function boundaryErrors(source, profile, feature, moderation = moderationSource) {
   const text = projected(source, profile, paths[feature]);
+  const domains = new Set(presetComposition(profile).resolvedDomains);
   const errors = [];
   if (feature === 'search') {
     if (!text.includes('userSearchService.searchAssignableUsers(query)') || !text.includes('menuService.getHeadMenus()')) errors.push('core search was removed');
-    if (profile === 'core' && /boardUserService|ArticleResultItem|ArrowRight|MessageSquare|id: ['"]articles['"]/.test(text)) errors.push('excluded board search leaked into core');
-    if (profile !== 'core' && !text.includes('boardUserService.searchPosts(query)')) errors.push('included board search was removed');
+    if (!domains.has('board') && /boardUserService|ArticleResultItem|ArrowRight|MessageSquare|id: ['"]articles['"]/.test(text)) errors.push(`excluded board search leaked into ${profile}`);
+    if (domains.has('board') && !text.includes('boardUserService.searchPosts(query)')) errors.push('included board search was removed');
   }
   if (feature === 'monitoring') {
     for (const call of ['auditAdminService.getAuditLogs', 'systemLogAdminService.getSystemLogs', 'systemLogAdminService.getLoginLogs']) {
@@ -66,20 +69,20 @@ function boundaryErrors(source, profile, feature, moderation = moderationSource)
       errors.push('comments returned to the monitoring hub');
     }
     // 그 화면은 댓글과 함께 남고 빠진다(투영 마커가 아니라 파일 소유). 남는 구성에서는 삭제 통제(확인 뒤 대행 삭제)를 지킨다.
-    if (profile !== 'core' && moderation !== null) {
+    if (domains.has('comment') && moderation !== null) {
       if (!moderation.includes('commentMutationOptions.removeAdmin') || !moderation.includes('await confirm(')) errors.push('comment deletion lost its control');
     }
   }
   if (feature === 'maker') {
     if (!text.includes('boardAdminService.createBoardMaster(') || !text.includes('menuAdminService.createMenu(')) errors.push('included board creation was removed');
-    if (profile !== 'demo' && /communityUserService|communityOptions|htmlFor: ['"]cmntySn['"]/.test(text)) errors.push('excluded community ownership leaked into collaboration');
-    if (profile === 'demo' && !text.includes('communityUserService.getCommunityList(')) errors.push('included community selection was removed');
+    if (!domains.has('community') && /communityUserService|communityOptions|htmlFor: ['"]cmntySn['"]/.test(text)) errors.push(`excluded community ownership leaked into ${profile}`);
+    if (domains.has('community') && !text.includes('communityUserService.getCommunityList(')) errors.push('included community selection was removed');
   }
   return errors;
 }
 
-for (const profile of ['core', 'collaboration', 'demo']) {
-  test(`${profile} retains shared UI and includes optional axes only with their declared packs`, () => {
+for (const profile of presetIds()) {
+  test(`${profile} retains shared UI and includes optional axes only with their owning features`, () => {
     for (const [feature, source] of Object.entries(sources)) {
       // The maker belongs to collaboration; its internal demo boundary is checked here
       // even for core as a string fixture, while the artifact route inventory rejects it in core.

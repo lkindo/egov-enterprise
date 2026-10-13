@@ -330,7 +330,7 @@ test('CI CLI independently binds event selection, full discovery, and both compl
     write(file, fs.readFileSync(path.resolve(file), 'utf8'));
   }
   write('frontend/e2e/shard-duration-profile.json', JSON.stringify(loadDurationProfile()));
-  for (const script of ['playwright-result-contract.mjs', 'e2e-shard-plan.mjs', 'ci-change-scope.mjs', 'read-regular-file.mjs']) {
+  for (const script of ['playwright-result-contract.mjs', 'e2e-shard-plan.mjs', 'ci-change-scope.mjs', 'composition-profiles.mjs', 'read-regular-file.mjs']) {
     write(`scripts/${script}`, fs.readFileSync(path.resolve('scripts', script), 'utf8'));
   }
   write('event.json', JSON.stringify({ pull_request: { base: { sha: base }, head: { sha: head }, merge_commit_sha: null } }));

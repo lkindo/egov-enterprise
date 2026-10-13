@@ -10,8 +10,11 @@ import { fileURLToPath } from 'node:url';
 import {
   applyPushBaseCheck, classifyChangedFiles, githubOutputs, PR_REUSABLE_LAYOUT, pushBaseWasVerified, reusableMatrix,
 } from './ci-change-scope.mjs';
+import { presetIds } from './composition-profiles.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// 모든 시작 구성(presets.json 의 선언 순서). '모든 시작 구성' 기대는 이름을 열거하지 않고 이것을 쓴다(11단계 C8).
+const PRESET_IDS = presetIds();
 
 test('documentation and Atlas-only changes run governance without heavy leaves', () => {
   const result = classifyChangedFiles([
@@ -320,7 +323,7 @@ test('unknown and empty change sets fail closed to the full pipeline', () => {
     assert.equal(result.mutation, true);
     assert.equal(result.mutationMigrationTool, true);
     assert.equal(result.reusable, true);
-    assert.deepEqual(result.reusableProfiles, ['core', 'collaboration', 'demo']);
+    assert.deepEqual(result.reusableProfiles, PRESET_IDS);
   }
 });
 
@@ -349,7 +352,7 @@ test('reusable-base matrix only retains presets in which a changed feature file 
   const statsShell = classifyChangedFiles([
     'frontend/src/app/admin/stats/page.tsx',
   ]);
-  assert.deepEqual(statsShell.reusableProfiles, ['core', 'collaboration', 'demo']);
+  assert.deepEqual(statsShell.reusableProfiles, PRESET_IDS);
   const boardStats = classifyChangedFiles([
     'frontend/src/app/admin/stats/board/page.tsx',
   ]);
@@ -358,7 +361,7 @@ test('reusable-base matrix only retains presets in which a changed feature file 
   const sharedInput = classifyChangedFiles([
     'foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java',
   ]);
-  assert.deepEqual(sharedInput.reusableProfiles, ['core', 'collaboration', 'demo']);
+  assert.deepEqual(sharedInput.reusableProfiles, PRESET_IDS);
   assert.equal(sharedInput.reusableCustom, true);
 });
 
@@ -373,7 +376,7 @@ test('mixed reusable-base inputs take the conservative union and docs do not exp
     'business-app/src/main/java/nuri/business/service/survey/SurveyService.java',
     'api-server/src/main/java/nuri/config/AsyncConfig.java',
   ]);
-  assert.deepEqual(packAndCommon.reusableProfiles, ['core', 'collaboration', 'demo']);
+  assert.deepEqual(packAndCommon.reusableProfiles, PRESET_IDS);
 });
 
 // ADR-0027: PR 은 시작 구성마다 한 레이아웃, 그 밖의 실행은 두 레이아웃이다. 사용자 구성 2잡은 ci.yml 이 두 레이아웃을 그대로 둔다.
@@ -418,7 +421,8 @@ test('a preset outside the PR layout table falls back to both layouts and the ta
   // 표는 presets.json 의 ci.pr 선언이다(11단계 C5). 이 파일에 따로 적은 표가 남지 않는다.
   const presets = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'modules', 'presets.json'), 'utf8')).presets;
   assert.deepEqual(PR_REUSABLE_LAYOUT, Object.fromEntries(presets.filter(preset => preset.ci).map(preset => [preset.id, preset.ci.pr])));
-  assert.deepEqual(Object.keys(PR_REUSABLE_LAYOUT), ['core', 'collaboration', 'demo']);
+  // ADR-0027 의 PR 레이아웃: 제거가 가장 많은 core 와 Java 제거가 없는 demo 는 단일 모듈, collaboration 은 멀티 모듈이다.
+  assert.deepEqual(PR_REUSABLE_LAYOUT, { core: 'single-module', collaboration: 'multi-module', demo: 'single-module' });
   for (const [preset, layout] of Object.entries(PR_REUSABLE_LAYOUT)) {
     assert.ok(presets.some(entry => entry.id === preset), `PR layout table names a preset presets.json no longer has: ${preset}`);
     assert.ok(['multi-module', 'single-module'].includes(layout), `${preset}: ${layout}`);
@@ -426,12 +430,14 @@ test('a preset outside the PR layout table falls back to both layouts and the ta
 });
 
 /** 분류기와 config/modules 사본을 임시 저장소에 둔다. `edit(files)` 가 파일 이름 → 값을 고친다(null 이면 지운다). */
-function modulesFixture(t, edit = () => {}) {
+function modulesFixture(t, edit = () => {}, { expectFailure = false } = {}) {
   const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-modules-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
   fs.mkdirSync(path.join(root, 'config', 'modules'), { recursive: true });
-  fs.copyFileSync(path.join(repoRoot, 'scripts', 'ci-change-scope.mjs'), path.join(root, 'scripts', 'ci-change-scope.mjs'));
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs']) {
+    fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
+  }
   const directory = path.join(repoRoot, 'config', 'modules');
   const files = Object.fromEntries(fs.readdirSync(directory).filter(name => name.endsWith('.json'))
     .map(name => [name, JSON.parse(fs.readFileSync(path.join(directory, name), 'utf8'))]));
@@ -441,6 +447,7 @@ function modulesFixture(t, edit = () => {}) {
   }
   return (...args) => {
     const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', ...args], { cwd: root, encoding: 'utf8' });
+    if (expectFailure) return result;
     assert.equal(result.status, 0, result.stderr);
     return JSON.parse(result.stdout);
   };
@@ -485,8 +492,8 @@ test('a feature-owned file selects only the presets in which it survives', () =>
   // 두 기능이 함께 덮는 경로는 둘 다 있어야 남는다(게시판 디렉터리 안의 커뮤니티 리다이렉트 화면).
   expectProfiles('frontend/src/app/admin/community/boards/page.tsx', ['demo']);
   // 기능이 정해지지 않는 파일은 전수다.
-  expectProfiles('api-server/src/main/java/nuri/config/AsyncConfig.java', ['core', 'collaboration', 'demo']);
-  expectProfiles('frontend/src/app/layout.tsx', ['core', 'collaboration', 'demo']);
+  expectProfiles('api-server/src/main/java/nuri/config/AsyncConfig.java', PRESET_IDS);
+  expectProfiles('frontend/src/app/layout.tsx', PRESET_IDS);
 });
 
 test('feature ownership and preset membership are read from config/modules, not from a table in the classifier', (t) => {
@@ -498,22 +505,29 @@ test('feature ownership and preset membership are read from config/modules, not 
   });
   const expectProfiles = (file, expected) => assert.deepEqual(classify('--file', file).reusableProfiles, expected, `selection of ${file}`);
   expectProfiles('business-app/src/main/java/nuri/business/service/survey/SurveyService.java', ['collaboration', 'demo']);
-  expectProfiles('frontend/src/app/survey/page.tsx', ['core', 'collaboration', 'demo']);
+  expectProfiles('frontend/src/app/survey/page.tsx', PRESET_IDS);
   expectProfiles('frontend/src/app/admin/operation/error.tsx', ['collaboration', 'demo']);
   expectProfiles('frontend/src/app/admin/operation/rewards/page.tsx', ['demo']);
 });
 
-test('unreadable or malformed module declarations fail closed to every preset and both layouts', (t) => {
+test('malformed feature declarations fail closed to every declared preset and an unreadable preset declaration stops the classification', (t) => {
+  // 기능 파일의 모양이 다르면 소유를 읽지 못해도 시작 구성 id 는 presets.json 에서 읽어 모두 고른다(11단계 C8 — 종전에는 이 파일에
+  // 열거한 이름으로 닫았다).
   for (const edit of [
-    files => { files['presets.json'] = null; },
     files => { files['board.json'].id = 'boards'; },
     files => { files['board.json'].owns.frontend = 'src/app/admin/community/boards'; },
     files => { files['presets.json'].presets[0].domains.push('unknownfeature'); },
   ]) {
     const report = modulesFixture(t, edit)('--event', 'pull_request',
       '--file', 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java');
-    assert.deepEqual(report.reusableProfiles, ['core', 'collaboration', 'demo']);
-    assert.equal(report.reusableMatrix.include.length, 6);
+    assert.deepEqual(report.reusableProfiles, PRESET_IDS);
+    assert.equal(report.reusableMatrix.include.length, PRESET_IDS.length * 2);
+  }
+  // 시작 구성 선언 자체를 읽지 못하면 검증할 구성을 모르므로 분류를 멈춘다 — 재사용 검증을 건너뛰지 않는다.
+  for (const edit of [files => { files['presets.json'] = null; }, files => { files['presets.json'] = { schemaVersion: 2, presets: [] }; }]) {
+    const result = modulesFixture(t, edit, { expectFailure: true })('--file', 'business-app/src/main/java/nuri/business/service/survey/SurveyService.java');
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /시작 구성 선언을 읽지 못했다|시작 구성 id 가 비었거나/);
   }
 });
 
@@ -605,25 +619,32 @@ test('GitHub outputs are explicit strings for job conditions', () => {
   });
 });
 
-test('standalone exports without the profile catalog fail closed to every reusable profile', (t) => {
+test('a standalone export without the reusable generator has no presets, while a generator tree without preset declarations stops', (t) => {
   const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-scope-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
-  fs.copyFileSync(
-    path.join(repoRoot, 'scripts', 'ci-change-scope.mjs'),
-    path.join(root, 'scripts', 'ci-change-scope.mjs'),
-  );
-
-  const result = spawnSync(process.execPath, [
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs']) {
+    fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
+  }
+  const classify = () => spawnSync(process.execPath, [
     'scripts/ci-change-scope.mjs',
     '--file',
     'business-app/src/main/java/nuri/business/domain/demo/Sample.java',
   ], { cwd: root, encoding: 'utf8' });
 
-  assert.equal(result.status, 0, result.stderr);
-  const report = JSON.parse(result.stdout);
-  assert.deepEqual(report.reusableProfiles, ['core', 'collaboration', 'demo']);
-  assert.equal(report.reusableMatrix.include.length, 6);
+  // 독립 이관 제품처럼 재사용 생성기도 시작 구성 선언도 없으면 재사용 생성 대상이 없다(11단계 C8 — 종전에는 이 파일에 열거한
+  // 이름으로 닫았지만, 그 산출물은 그 구성을 만들 수 없다). 다른 검증은 종전대로 전수다.
+  const standalone = classify();
+  assert.equal(standalone.status, 0, standalone.stderr);
+  const report = JSON.parse(standalone.stdout);
+  assert.deepEqual(report.reusableProfiles, []);
+  assert.equal(report.reusable, false);
+  assert.equal(report.backend, true);
+  // 재사용 생성기가 있는 트리(원본 저장소)에서 시작 구성 선언이 사라지면 빈 목록으로 두지 않고 분류를 멈춘다.
+  fs.writeFileSync(path.join(root, 'scripts', 'generate-reusable-base-source.mjs'), '// 생성기 자리\n');
+  const withGenerator = classify();
+  assert.notEqual(withGenerator.status, 0);
+  assert.match(withGenerator.stderr, /시작 구성 선언을 읽지 못했다: config\/modules\/presets\.json/);
 });
 
 test('git discovery includes deletions so mixed doc and source changes cannot fast-pass', () => {

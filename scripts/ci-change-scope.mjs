@@ -1,13 +1,15 @@
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { presetIds } from './composition-profiles.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODULES_DIRECTORY = path.join(REPO_ROOT, 'config', 'modules');
 const MODULE_DECLARATION_FILES = new Set(['_schema.json', 'core.json', 'presets.json']);
-const DEFAULT_REUSABLE_PROFILE_NAMES = ['core', 'collaboration', 'demo'];
+/** 재사용 생성기. 이것도 시작 구성 선언도 없는 트리는 재사용 생성 대상이 없는 독립 산출물이다(reusableProfileNames). */
+const REUSABLE_GENERATOR = path.join(REPO_ROOT, 'scripts', 'generate-reusable-base-source.mjs');
 const stringList = value => Array.isArray(value) && value.every(item => typeof item === 'string');
 
 /**
@@ -38,9 +40,19 @@ function loadComposerModules() {
 }
 
 const COMPOSER_MODULES = loadComposerModules();
-const REUSABLE_PROFILE_NAMES = COMPOSER_MODULES
-  ? COMPOSER_MODULES.presets.map(preset => preset.id)
-  : DEFAULT_REUSABLE_PROFILE_NAMES;
+
+/**
+ * 재사용 생성 검증의 시작 구성 이름(11단계 C8 — 종전에는 이 파일에 이름을 열거해 두고 읽지 못하면 그것으로 닫았다). 기능 파일의 모양이
+ * 달라 소유를 읽지 못해도 시작 구성 id 는 presets.json 에서 따로 읽어 모든 시작 구성·두 레이아웃으로 닫는다. 재사용 생성기도 시작 구성
+ * 선언도 없는 트리(독립 이관 제품)는 재사용 생성 대상이 없으므로 빈 목록이다. 그 밖에 시작 구성 선언을 읽지 못하면 분류를 멈춘다 —
+ * 검증할 구성을 모르는 채로 재사용 검증을 건너뛰지 않는다.
+ */
+function reusableProfileNames() {
+  if (COMPOSER_MODULES) return COMPOSER_MODULES.presets.map(preset => preset.id);
+  if (!existsSync(MODULES_DIRECTORY) && !existsSync(REUSABLE_GENERATOR)) return [];
+  return presetIds(REPO_ROOT);
+}
+const REUSABLE_PROFILE_NAMES = reusableProfileNames();
 
 const REUSABLE_LAYOUTS = Object.freeze(['multi-module', 'single-module']);
 

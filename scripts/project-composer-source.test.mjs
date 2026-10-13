@@ -13,6 +13,7 @@ import { assertCompositionDatabaseLock, composerProfile,
 import { composerMarkerDeclarations, composerOwnership, loadComposerModules, markerDeclarationViolations, moduleDatabaseInventory, projectComposerModuleFiles,
   projectedModuleViolations, readComposerModuleFiles, sharedTableTransfers } from './composer-modules.mjs';
 import { activeCompositionEntry } from './generate-reusable-base-source.mjs';
+import { presetIds } from './composition-profiles.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
@@ -394,6 +395,52 @@ test('the generators and the deep plan project by feature ownership, never by pa
   const sortedUnique = values => [...new Set(values)].sort();
   assert.deepEqual(inventory.tables, sortedUnique([...catalog.core.tables, ...catalog.capabilities.flatMap(row => row.database.tables)]));
   assert.deepEqual(inventory.sequences, sortedUnique([...catalog.core.explicitSequences, ...catalog.capabilities.flatMap(row => row.database.explicitSequences)]));
+});
+
+/*
+ * [11단계 C8] 인증 시작 구성 id 는 presets.json 이 정한다. 스크립트(시험 포함)·도구·워크플로가 시작 구성 id 전부를 리터럴로 열거하면,
+ * 시작 구성을 더할 때(13b) 검사기가 새 구성을 모르는 이름으로 거부하거나 검증 범위에서 뺀다 — composition-profiles.mjs 의
+ * presetIds·compositionProfiles 를 읽는다. 따옴표 리터럴이나 맨 이름이 쉼표·`|` 로 이어져 모든 id 를 덮거나(여러 줄 배열·사용법
+ * 문장·YAML 행렬 포함), 한 줄에 모든 id 가 따옴표 리터럴로 나오면 열거로 센다. 특정 기능을 담은 시작 구성의 부분 목록과 한 시작
+ * 구성의 이름은 대상이 아니다.
+ */
+function presetEnumerations(text, ids) {
+  const alternatives = ids.map(id => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const item = `(?:'(?:${alternatives})'|"(?:${alternatives})"|\`(?:${alternatives})\`|(?<![\\w-])(?:${alternatives})(?![\\w-]))`;
+  const covers = segment => ids.every(id => new RegExp(`(?<![\\w-])${id}(?![\\w-])`).test(segment));
+  const lineOf = index => text.slice(0, index).split('\n').length;
+  const lines = new Set();
+  for (const match of text.matchAll(new RegExp(`${item}(?:\\s*[,|]\\s*${item})+`, 'g'))) if (covers(match[0])) lines.add(lineOf(match.index));
+  text.split('\n').forEach((line, index) => {
+    if (ids.every(id => [`'${id}'`, `"${id}"`, `\`${id}\``].some(quoted => line.includes(quoted)))) lines.add(index + 1);
+  });
+  return [...lines].sort((left, right) => left - right);
+}
+
+test('no script, tool or workflow enumerates the preset ids — they read presets.json', () => {
+  const ids = presetIds(root);
+  assert.ok(ids.length >= 2, `presets.json declares ${ids.length} presets`);
+  const scanned = files.filter(file => /^(?:scripts\/.+\.(?:mjs|cjs|js|ps1|sh)|tools\/.+\.(?:mjs|cjs|js)|\.github\/workflows\/.+\.ya?ml)$/.test(file));
+  assert.ok(scanned.length > 200, `scanned ${scanned.length} files — the scan is empty`);
+  const violations = scanned.flatMap(file => presetEnumerations(readFileSync(join(root, file), 'utf8').replace(/\r\n/g, '\n'), ids)
+    .map(line => `${file}:${line}`));
+  assert.deepEqual(violations, [], 'enumerated preset ids — read presets.json through composition-profiles.mjs');
+  // 판정 대조군: 견본은 id 에서 만든다(이 파일 자신이 열거가 되지 않게).
+  const quoted = ids.map(id => `'${id}'`);
+  for (const sample of [
+    `const names = [${quoted.join(', ')}];`,
+    `const names = new Set([${[...quoted, "'custom'"].join(', ')}]);`,
+    `const names = [\n  ${quoted.join(',\n  ')},\n];`,
+    `throw new Error('usage: --profile ${ids.join('|')}');`,
+    `        profile: [${ids.join(', ')}]`,
+    `if (!(${ids.map(id => `p === '${id}'`).join(' || ')})) fail();`,
+  ]) assert.deepEqual(presetEnumerations(sample, ids).length > 0, true, sample);
+  for (const sample of [
+    `const some = [${quoted.slice(0, -1).join(', ')}];`,
+    `const one = '${ids[0]}';`,
+    `const path = 'src/app/${ids.at(-1)}/page.tsx';`,
+    `const names = presetIds();`,
+  ]) assert.deepEqual(presetEnumerations(sample, ids), [], sample);
 });
 
 test('a shared table goes to the first selected consumer in declared order, not by pack rank', () => {

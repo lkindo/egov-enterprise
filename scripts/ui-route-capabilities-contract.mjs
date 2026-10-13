@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
+import { compositionProfiles, presetIds } from './composition-profiles.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
 
@@ -13,7 +14,6 @@ const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
 
 const KNOWN_ROLES = new Set(['ANONYMOUS', 'AUTHENTICATED', 'USER', 'ADMIN', 'SYSTEM', 'UNVERIFIED']);
-const KNOWN_PROFILES = new Set(['core', 'collaboration', 'demo', 'custom', 'UNVERIFIED']);
 const KNOWN_STATUSES = new Set(['live', 'partial', 'demo', 'unavailable', 'unverified']);
 const KNOWN_SURFACES = new Set(['authentication', 'authenticated-workspace', 'admin-console']);
 const KNOWN_SHELL_ACCESS = new Set(['public', 'authenticated', 'admin-system']);
@@ -702,6 +702,11 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 export function validateRouteCapabilities(manifest, repository) {
+  // 소유 프로필 어휘는 시작 구성 id·직접 선택·미검증이다(presets.json, 11단계 C8 — 종전에는 이름을 이 파일에 열거했다). 시연 화면
+  // (/admin/workflow)의 소유 'demo' 는 생성물 원장에도 그대로 실리므로(buildUnreviewedBaselineManifest) 생성물의 활성 구성이 무엇이든
+  // 받는다 — 생성물의 presets.json 에는 활성 구성 하나만 있어, 시연 화면을 담은 직접 선택 생성물이 제 원장을 거부하게 된다.
+  const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
+  const nonDemoPresets = presetIds().filter((profile) => profile !== 'demo');
   const errors = [];
   const warnings = [];
   const entries = Array.isArray(manifest?.routes) ? manifest.routes : [];
@@ -922,7 +927,7 @@ export function validateRouteCapabilities(manifest, repository) {
       }
     }
     if (!Array.isArray(entry.profileOwners) || entry.profileOwners.length === 0
-      || entry.profileOwners.some((profile) => !KNOWN_PROFILES.has(profile))
+      || entry.profileOwners.some((profile) => !knownProfiles.has(profile))
       || new Set(entry.profileOwners).size !== entry.profileOwners.length) {
       errors.push(`${label}: profileOwners must be a non-empty unique known-profile array`);
     }
@@ -983,7 +988,7 @@ export function validateRouteCapabilities(manifest, repository) {
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
     if (entry.capabilities?.some(({ status }) => status === 'demo')
-      && entry.profileOwners.some((profile) => ['core', 'collaboration'].includes(profile))) {
+      && entry.profileOwners.some((profile) => nonDemoPresets.includes(profile))) {
       errors.push(`${label}: demo capability leaks into a non-demo profile owner`);
     }
     if (entry.status === 'demo' && entry.decisionSafe !== false) {

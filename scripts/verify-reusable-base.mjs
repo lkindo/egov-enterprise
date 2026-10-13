@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { presetIds } from './composition-profiles.mjs';
 import { runCommand, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { projectionLedgerCoverageErrors } from './reusable-projection-ledger.mjs';
@@ -16,25 +17,31 @@ export function assertProjectionLedgerCoverage(root, output) {
   if (errors.length) throw new Error(`projection ledger: ${errors.join('; ')}`);
 }
 
+/** 공식 생성 검증은 인증 시작 구성만 받는다(presets.json, 11단계 C8). 직접 선택은 verify-project-composer 가 검증한다. */
+function assertPresetProfile(profile) {
+  const ids = presetIds();
+  if (!ids.includes(profile)) throw new Error(`profile must be one of ${ids.join(', ')}`);
+}
+
 export function parseBaseVerificationArgs(argv) {
   const options = { layout: 'multi-module' };
   const seen = new Set();
   for (let index = 0; index < argv.length; index += 2) {
     const option = argv[index];
     if (!['--profile', '--layout'].includes(option) || !argv[index + 1] || seen.has(option)) {
-      throw new Error('usage: --profile core|collaboration|demo [--layout multi-module|single-module]');
+      throw new Error(`usage: --profile ${presetIds().join('|')} [--layout multi-module|single-module]`);
     }
     seen.add(option);
     options[option.slice(2)] = argv[index + 1];
   }
-  if (!['core', 'collaboration', 'demo'].includes(options.profile)) throw new Error('profile must be core, collaboration or demo');
+  assertPresetProfile(options.profile);
   normalizeBackendLayout(options.layout);
   return options;
 }
 
 export async function verifyReusableBase({ root, profile, layout = 'multi-module', run = runCommand, verify = verifyReusableArtifact,
   checkLedger = assertProjectionLedgerCoverage } = {}) {
-  if (!['core', 'collaboration', 'demo'].includes(profile)) throw new Error('profile must be core, collaboration or demo');
+  assertPresetProfile(profile);
   normalizeBackendLayout(layout);
   root = resolve(root);
   const token = randomBytes(8).toString('hex');
