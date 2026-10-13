@@ -10,6 +10,8 @@ import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement,
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
 import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
+import { planPermissionProjection, readPermissionSources } from './reusable-permission-projection.mjs';
+import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 
 /*
  * 정밀 점검(설계서 10장 POST /api/plan/deep, C3). 생성기가 소스를 복사한 뒤에야 하던 투영과 게이트 승인 판정을
@@ -59,6 +61,7 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   JAVA_CASCADE_STALE: '연쇄 제거 승인 목록에 지워지지 않는 파일이 남아 있습니다',
   SOURCE_SURVIVAL: '선택한 기능의 소스가 투영 중 지워집니다',
   FRONTEND_SCREEN_EXTRA: '구성에 없는 화면이 투영 뒤에 남습니다',
+  PERMISSION_PROJECTION: '권한 정의(카탈로그·바인딩·묶음·화면 목록)를 구성으로 줄일 수 없습니다',
 });
 
 /**
@@ -67,8 +70,9 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
  * `outputParent` 는 생성기가 생성물 폴더를 만들 상위 폴더다(없어도 된다). 대소문자 구분을 그 자리에서 판정한다.
  * 차단 사유는 `{ code, label, files?, message? }` 로 모은다. label 은 화면이 그대로 보이는 한국어 문장이다.
  * 화면 생존의 기대값(`pageSurvival`)은 넘기지 않으면 `root` 의 라우트 원장과 카탈로그(`catalog`, 없으면 적재)로 만든다.
+ * 권한 투영 입력(`permissionSources` = 카탈로그·인가 원장·묶음 원장·화면 용어 원장·화면 목록 산출물)은 넘기지 않으면 `root` 에서 읽는다.
  */
-export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival }) {
+export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival, permissionSources }) {
   const started = performance.now();
   const profile = composerProfile(manifest, composition);
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
@@ -128,6 +132,18 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
       lostScreens.push(...screens.map(entry => entry.source));
       if (extra.length) block('FRONTEND_SCREEN_EXTRA', { files: extra.map(entry => entry.source), message: describeRoutes(extra) });
     } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
+  }
+
+  // 권한 투영(10단계 10b): 생성기는 Java·프런트 투영 뒤 카탈로그·인가 원장 바인딩·화면 목록·묶음 원장을 구성으로 줄인다. 같은 판정
+  // (planPermissionProjection — 생성기와 같은 모듈)을 미리 한다. 남는 바인딩이나 남는 화면의 진입 권한이 구성 밖 코드를 요구하거나,
+  // 묶음 원장이 남는 권한을 나누지 못하면 생성하면 같은 자리에서 실패한다. 두 투영이 모두 될 때만 판정한다(지워질 파일을 다 알아야 한다).
+  let permissionProjection = null;
+  if (java && frontend) {
+    try {
+      const keptScreenRoutes = new Set(discoverPageRoutes(root).filter(page => screenKept(page.source)).map(page => page.route));
+      permissionProjection = planPermissionProjection({ sourceRoot: root, composition, removed: file => removed.has(pathKey(file)),
+        keptScreenRoutes, sources: permissionSources ?? readPermissionSources(root) });
+    } catch (error) { block('PERMISSION_PROJECTION', { message: message(error) }); }
   }
 
   const removedGates = [
@@ -199,6 +215,8 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
     java: java && { removedFiles: java.removed.size, cascadeFiles: java.removed.size - javaDirect, files: [...java.removed].map(rel).sort() },
     frontend: frontend && { removedFiles: frontend.removed.size, cascadeFiles: frontend.removed.size - frontend.direct.size, files: [...frontend.removed].map(rel).sort() },
     removedGates,
+    // 생성물의 권한 카탈로그·바인딩·화면·묶음 수와 빠지는 묶음·생성 제외 권한(생성기와 같은지 시험이 대조한다). 화면에는 보내지 않는다.
+    permissionProjection,
     // 규칙으로 걷는 게이트 파일(승인만 대조하고 제거 수에는 세지 않는다). 화면에는 보내지 않는다.
     ruleRemovals,
     blockers,

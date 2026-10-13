@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import nuri.business.security.authorization.AuthorizationSnapshotService;
+import nuri.business.security.authorization.PermissionCodes;
 import org.flywaydb.core.Flyway;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
@@ -95,7 +96,7 @@ public class IsolatedAuthorizationRehearsalConfig {
                 if (!Integer.valueOf(1).equals(syntheticAdmin)) {
                     throw new IllegalStateException("Disposable content editor requires the seeded synthetic administrator");
                 }
-                for (String permission:java.util.List.of("NOTICE_EDIT","FAQ_EDIT")) {
+                for (String permission:contentEditorPermissions(PermissionCodes.ALL)) {
                     jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,frst_rgtr_id,crt_dt,last_mdfr_id,mdfcn_dt) "
                             + "VALUES ('ROLE_ADMIN','OPERATION',?,'E2E_FIXTURE',CURRENT_TIMESTAMP,'E2E_FIXTURE',CURRENT_TIMESTAMP) "
                             + "ON CONFLICT (authrt_cd,authrt_type_cd,authrt_grnt_cd) DO NOTHING",permission);
@@ -108,6 +109,15 @@ public class IsolatedAuthorizationRehearsalConfig {
         } catch (java.sql.SQLException failure) {
             throw new IllegalStateException("Cannot verify disposable content editor datasource",failure);
         }
+    }
+
+    /**
+     * Content-editor fixture permissions present in this build's permission catalog. A reusable projection keeps only
+     * its composition codes, and the authorization snapshot refuses a stored code outside the catalog, so a product
+     * without the board feature must not receive these grants (they would lock the administrator out).
+     */
+    static java.util.List<String> contentEditorPermissions(Set<String> catalog) {
+        return java.util.List.of("NOTICE_EDIT","FAQ_EDIT").stream().filter(catalog::contains).toList();
     }
 
     static Target validateTarget(Set<String> profiles,String url,String ack) {

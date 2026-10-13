@@ -142,9 +142,16 @@ class SecurityAuthAnnotationLinterTest {
         List<String> violations = operationViolations(registry,
                 discoverEndpoints(Set.of(RequestMethod.values())));
         Set<String> source = new TreeSet<>();
-        // The source-generated permission catalog is preserved in full. Its declaration parity is
-        // checked in full too; only actual MVC discovery is scoped to the approved retained sources.
+        // A reusable projection projects the permission catalog and the source operation bindings together with
+        // its composition: the catalog keeps the composition codes and the bindings keep rows whose handler source
+        // survives (plus EXTERNAL). The runtime manifest is generated from that ledger, so declaration parity is
+        // still checked in full against the whole ledger; MVC discovery stays scoped to the retained sources.
         loadRegistry(false).operationBindings().forEach(row -> source.add(row.signature()));
+        // The projected ledger keeps no binding whose handler source was removed: in the source repository the
+        // retained scope is the whole ledger, and in a projection a stale row would differ from the retained set.
+        Set<String> retained = new TreeSet<>();
+        registry.operationBindings().forEach(row -> retained.add(row.signature()));
+        compareExact("projected ledger/retained-handler operation bindings", retained, source, violations);
         Set<String> runtime = new TreeSet<>();
         permissionPolicy.bindings().forEach(row -> runtime.add(new OperationBinding(row.method(), row.path(),
                 row.handler(), row.access(), row.permission(), row.excludedGroups()).signature()));

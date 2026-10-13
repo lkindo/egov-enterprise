@@ -8,6 +8,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class IsolatedAuthorizationRehearsalConfigTest {
     @Test
+    void contentEditorFixtureGrantsOnlyPermissionsInThisBuildsCatalog() {
+        // 재사용 투영본의 카탈로그는 구성 코드뿐이다 — 게시판이 없는 생성물에 공지·FAQ 편집 배정을 넣으면 권한 스냅숏이 거부한다(10단계 10b).
+        assertThat(IsolatedAuthorizationRehearsalConfig.contentEditorPermissions(Set.of("NOTICE_EDIT","FAQ_EDIT","USER_READ")))
+                .containsExactly("NOTICE_EDIT","FAQ_EDIT");
+        assertThat(IsolatedAuthorizationRehearsalConfig.contentEditorPermissions(Set.of("USER_READ"))).isEmpty();
+    }
+
+    @Test
     void migrationOnlySmokeDoesNotAcquireSyntheticContentEditorPermissions() {
         var flyway=org.mockito.Mockito.mock(org.flywaydb.core.Flyway.class);
         var configuration=org.mockito.Mockito.mock(org.flywaydb.core.api.configuration.Configuration.class);

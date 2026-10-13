@@ -131,9 +131,10 @@ export function composerSourceFingerprint(root) {
  * outputRoot 는 계약 테스트용 이음새다. 기본값은 원본 저장소이고 CLI·서버는 넘기지 않는다.
  * 실제 생성기 스크립트는 저장소 build/ 밖 출력을 거부하므로, 운영 경로에서 다른 값을 넘기면
  * 생성이 실패할 뿐 출력이 새지 않는다.
+ * loadPermissionSources 도 계약 테스트용 이음새다(권한 정의가 없는 합성 저장소). 넘기지 않으면 정밀 점검이 root 에서 읽는다.
  */
 export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
-  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git', readiness } = {}) {
+  loadCatalog = loadProjectComposerCatalog, gitExecutable = 'git', readiness, loadPermissionSources } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   const gitRun = args => git(root, args, gitExecutable);
@@ -231,7 +232,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const files = gitRun(['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)
       .filter(file => !file.replaceAll('\\', '/').split('/').includes('build'));
     // 대소문자 구분은 생성물을 만들 폴더(composerOutputPaths 의 상위 폴더)에서 판정한다.
-    const result = compositionDeepPlan({ root, manifest, composition, catalog: loaded, files, outputParent: resolve(outputRoot, 'build/reusable-base/source') });
+    const result = compositionDeepPlan({ root, manifest, composition, catalog: loaded, files, outputParent: resolve(outputRoot, 'build/reusable-base/source'),
+      permissionSources: loadPermissionSources?.(root) });
     return { ...result, summary: deepSummary(result) };
   };
   const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness });

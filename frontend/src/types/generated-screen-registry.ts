@@ -30,11 +30,12 @@
 //   · 별칭(page-redirect·config-redirect)은 화면이 아니다. 목적지를 함께 적지만 링크하지 않는다. 화면 파일이 없는 앱
 //     설정(next.config) 리다이렉트도 별칭이다 — 앱 설정은 화면 파일보다 먼저 넘기므로, 목록에 없으면 그 경로가 동적
 //     형제(…/[id])로 풀린다.
-//   · 재사용 투영본은 권한 생성물(PAGE_PERMISSIONS)만 다시 만든다. 그 산출물에서 빠진 화면·별칭은 아래에서
-//     PAGE_PERMISSIONS 로 다시 거른다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도
-//     앱 설정이 그대로 넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다.
-//     묶음의 화면·관련 화면도 같이 거르고, 여는 화면(screens)이 하나도 남지 않은 묶음(그 투영본에 없는 업무의 묶음)은
-//     내지 않는다 — 관련 화면만 남아도 내지 않는다(생성기가 여는 화면 하나 이상을 요구하는 것과 같은 기준).
+//   · 재사용 투영본(생성물)은 이 목록을 구성으로 투영해 싣는다 — 남는 화면·별칭만 두고, 행에서 구성에 없는 권한을 빼고,
+//     묶음도 구성으로 줄인다(scripts/reusable-permission-projection.mjs). 아래의 PAGE_PERMISSIONS 거름은 같은 결과를 내는
+//     두 번째 거름이다(모든 page 파일은 PAGE_PERMISSIONS 에 정확한 키가 있다). 앱 설정 별칭은 투영본에서도 앱 설정이 그대로
+//     넘기므로, 화면 파일이 없거나 빠졌어도 넘어가는 화면(목적지 경로)이 투영본에 있으면 남는다. 묶음의 화면·관련 화면도 같이
+//     거르고, 여는 화면과 관련 화면이 모두 남지 않은 묶음은 내지 않는다. 생성물에서는 여는 화면 없이 관련 화면만 남은 묶음도
+//     낸다 — 누구나 들어가는 화면에서 그 권한으로 쓰는 일이 남았다(원본 묶음은 늘 여는 화면이 하나 이상이다).
 import { PAGE_PERMISSIONS, type PermissionCode } from '@/types/generated-permissions';
 
 export type ScreenPermissionSource = 'entry' | 'write' | 'display';
@@ -1852,7 +1853,7 @@ export const SCREEN_REGISTRY: readonly ScreenRegistryEntry[] = GENERATED_SCREENS
 export const SCREEN_ALIASES: readonly ScreenAlias[] = GENERATED_ALIASES.filter(isProjectedAlias);
 export const PERMISSION_BUNDLES: readonly PermissionBundle[] = GENERATED_BUNDLES
   .map(bundle => ({ ...bundle, screens: bundle.screens.filter(isProjected), relatedScreens: bundle.relatedScreens.filter(isProjected) }))
-  .filter(bundle => bundle.screens.length > 0);
+  .filter(bundle => bundle.screens.length > 0 || bundle.relatedScreens.length > 0);
 
 /**
  * 보호 권한 — 서버 SENSITIVE_ADMINISTRATION_PERMISSIONS 와 같은 집합이다(생성기 계약이 대조한다), 코드 순. 그룹에 새로

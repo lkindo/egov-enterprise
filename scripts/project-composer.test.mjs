@@ -755,9 +755,22 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   write(`frontend/${removed}/새 화면.tsx`);
   write(`frontend/${removed}/build/generated.ts`);
   write(`frontend/${removed}/debug.log`, 'ignored\n');
-  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real });
+  // 이 합성 저장소에는 권한 정의도 없다. 정밀 점검의 권한 투영 입력은 core 구성 코드를 모두 덮는 최소 원장으로 주입한다 — 홈 화면을
+  // 여는 묶음 하나(첫 코드)와 나머지 코드의 제외 행, 외부 핸들러 바인딩 하나다.
+  const [homeCode, ...otherCodes] = [...real.core.permissionCodes].sort();
+  const permissionSources = {
+    catalog: { permissions: real.core.permissionCodes.map(code => ({ code })) },
+    policies: { operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] },
+    bundles: { schemaVersion: 1, description: '시험용 묶음 원장', excluded: otherCodes.map(code => ({ code, reason: '시험용 합성 저장소에는 이 권한을 쓰는 화면이 없다.' })),
+      bundles: [{ id: 'home-viewer', name: '홈 조회', description: '홈 조회를 맡깁니다.', protected: false, permissions: [homeCode] }] },
+    visibleTerms: { terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] },
+    registry: { screens: [{ route: '/', entry: { permissions: [homeCode], mode: 'ANY' }, permissions: [{ code: homeCode, action: 'READ', source: 'entry' }] }] },
+  };
+  const loadPermissionSources = () => permissionSources;
+  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real, loadPermissionSources });
   const deep = engine.deep(core);
   assert.deepEqual(deep.blockers, []);
+  assert.equal(deep.permissionProjection.permissions, real.core.permissionCodes.length, 'the engine passes its permission sources to the deep plan');
   assert.deepEqual(deep.frontend.files, [`frontend/${removed}/새 화면.tsx`]);
   assert.equal(deep.summary, '제거: Java 0개(연쇄 0) · 프런트 1개(연쇄 0) · 검증 게이트 0건');
   // 화면을 연 뒤 원본이 바뀌었으면 점검하지 않는다(생성도 같은 이유로 거부한다).
@@ -780,7 +793,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
   }
   for (const output of [outputRoot, caseOutput]) {
-    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real }).deep(core);
+    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real, loadPermissionSources }).deep(core);
     assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), ['SOURCE_SURVIVAL']);
     assert.deepEqual(caseDeep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   }

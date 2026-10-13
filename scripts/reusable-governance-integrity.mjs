@@ -12,6 +12,9 @@ import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-com
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
 import { artifactScreenErrors } from './reusable-page-survival.mjs';
+import { buildPermissionArtifacts } from './generate-permissions.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_CATALOG_PATH, projectPermissionCatalog, projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
+import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact, validateScreenRegistry } from './screen-registry-model.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
@@ -85,6 +88,35 @@ export function buildGeneratedMemory({ profile, sourceCommit }) {
       `생성 시 두 기관 승인 원장은 pending으로 시작했다. 이후 상태는 위 원장이 소유한다. 기계 생성 일시나 원본의 검토자·날짜를 기관 재검토 증거로 사용하지 않는다.\n` +
       `실행한 검증과 미해결 항목은 현재 산출물에서 재확인한다. 원본 운영 메뉴 수·배포 이력·미해결 위험은 upstream 이력이며 현재 기관의 실측을 대신하지 않는다.\n`];
   }));
+}
+
+/**
+ * [10단계 10b] 생성물의 권한 투영 불변식. 생성기 자신을 믿지 않고 원본 스냅숏·구성·생성물 트리에서 다시 센다.
+ *   · 카탈로그 = 원본 카탈로그 스냅숏을 구성 코드와 생성물에 남는 page 로 줄인 것(값·순서 그대로).
+ *   · 권한 생성물(Java·TS 코드 상수, 런타임 카탈로그·바인딩, 시드 생성 블록)이 생성물의 카탈로그·인가 원장에서 다시 만든 것과 같다 —
+ *     그래서 런타임 바인딩 = 인가 원장이다.
+ *   · 인가 원장 바인딩의 핸들러 소스가 생성물에 있고(외부 핸들러 제외), 하네스 census 가 있으면 카탈로그·바인딩 수가 그 도출값과 같다.
+ *   · 화면 목록 산출물의 화면·별칭이 생성물 page 와 같고, 행·묶음의 권한이 카탈로그 안이며, 묶음이 묶음 원장(투영본 규칙)으로 다시
+ *     계산한 것과 같다.
+ */
+export function projectedPermissionArtifactErrors(root, { composition, upstreamCatalog, pageRoutes }) {
+  const errors = [];
+  try {
+    const expected = projectPermissionCatalog(upstreamCatalog, { permissionCodes: composition.permissionCodes, routes: pageRoutes }).catalog;
+    const catalog = readJson(root, PERMISSION_CATALOG_PATH);
+    if (!exact(catalog, expected)) errors.push('Projected permission catalog differs from the upstream catalog reduced to the composition');
+    const policies = readJson(root, AUTHORIZATION_POLICY_PATH);
+    errors.push(...projectedPermissionCoverageErrors(root, { catalog, bindings: policies.operationBindings ?? [],
+      permissionCodes: composition.permissionCodes }));
+    for (const [file, content] of Object.entries(buildPermissionArtifacts(root))) {
+      if (!existsSync(join(root, file)) || normalizedText(root, file) !== content.replace(/\r\n?/gu, '\n')) {
+        errors.push(`Generated permission artifact differs from the projected permission sources: ${file}`);
+      }
+    }
+    const registry = readScreenRegistryArtifact(normalizedText(root, SCREEN_REGISTRY_OUTPUT));
+    errors.push(...validateScreenRegistry(registry, root).map(error => `Projected screen registry: ${error}`));
+  } catch (error) { errors.push(`Projected permission artifacts cannot be verified: ${error.message}`); }
+  return errors;
 }
 
 export function inspectReusableGovernance(root = ROOT, { requireLock = true } = {}) {
@@ -176,6 +208,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
     if (composition) {
       errors.push(...artifactScreenErrors({ ledger: upstream.get('config/ui-route-capabilities.json'), catalog, composition,
         pageSources: new Set(actualPages.map(page => page.source)) }));
+      errors.push(...projectedPermissionArtifactErrors(root, { composition, upstreamCatalog: upstream.get(PERMISSION_CATALOG_PATH),
+        pageRoutes: new Set(actualPages.map(page => page.route)) }));
     }
     const census = readJson(root, 'config/ui-url-state-census.json');
     check(exact(census, buildUrlStateCensus({ repoRoot: root })), 'URL census drifted from current source');

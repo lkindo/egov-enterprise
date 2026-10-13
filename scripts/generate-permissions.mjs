@@ -3,9 +3,16 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const BASE_SEED = 'api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql';
+/** 권한 생성기가 쓰는 파일(buildPermissionArtifacts 의 키와 같다 — 시험이 대조한다). */
+export const PERMISSION_ARTIFACT_PATHS = Object.freeze([BASE_SEED,
+  'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java',
+  'business-core/src/main/resources/authorization/permission-catalog.json',
+  'business-core/src/main/resources/authorization/operation-bindings.json',
+  'frontend/src/types/generated-permissions.ts']);
 const BASE_BEGIN = '-- BEGIN GENERATED BASE OPERATION GRANTS';
 const BASE_END = '-- END GENERATED BASE OPERATION GRANTS';
 
@@ -15,8 +22,7 @@ const catalogText = fs.readFileSync(path.join(root, 'config/governance/permissio
 const catalog = JSON.parse(catalogText);
 const policyText = fs.readFileSync(path.join(root, 'config/governance/authorization-policies.json'), 'utf8');
 const policy = JSON.parse(policyText);
-if (!Array.isArray(catalog.permissions) || catalog.permissions.length < 200
-    || !Array.isArray(policy.operationBindings) || policy.operationBindings.length < 350) {
+if (!Array.isArray(catalog.permissions) || !Array.isArray(policy.operationBindings)) {
   throw new Error('Permission source coverage must not collapse');
 }
 const codes = catalog.permissions.map(row => row.code);
@@ -36,6 +42,12 @@ if (generatedProfile && (generatedProfile === 'custom' || fs.existsSync(path.joi
     throw new Error('Permission seed must bind a valid composition and generated profile');
   }
   selectedPermissions = new Set(composition.permissionCodes);
+  // [10단계 10b] 생성물은 권한 정의를 구성으로 투영했다(reusable-permission-projection.mjs). 원본 하한 대신 도출값과 정확히 비교한다 —
+  // 카탈로그 = 구성 코드, 바인딩 핸들러 소스가 생성물에 있음, 하네스 census 가 있으면 그 수와 같음.
+  const coverage = projectedPermissionCoverageErrors(root, { catalog, bindings: policy.operationBindings, permissionCodes: composition.permissionCodes });
+  if (coverage.length) throw new Error(`Projected permission coverage does not match the composition: ${coverage.join('; ')}`);
+} else if (catalog.permissions.length < 200 || policy.operationBindings.length < 350) {
+  throw new Error('Permission source coverage must not collapse');
 }
 for (const row of catalog.permissions) {
   if (!Array.isArray(row.defaultGroups) || new Set(row.defaultGroups).size !== row.defaultGroups.length

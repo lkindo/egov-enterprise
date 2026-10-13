@@ -10,6 +10,7 @@ import {
   PROTECTED_PERMISSIONS,
   SCREEN_REGISTRY_INPUTS,
   SCREEN_REGISTRY_OUTPUT,
+  UPSTREAM_ROUTE_LEDGER,
   buildScreenRegistry,
   generateScreenRegistry,
   readScreenRegistryArtifact,
@@ -18,6 +19,7 @@ import {
   validateScreenRegistry,
 } from './generate-screen-registry.mjs';
 import { discoverConfigRedirects, discoverPageRoutes, expectedRouting } from './ui-route-capabilities-contract.mjs';
+import { snapshotPathFor } from './reusable-governance-integrity.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -626,6 +628,36 @@ test('screens, aliases, labels, entry modes, and write/display permissions are d
     route: '/admin/things/[id]', label: null, labelSource: null, shellAccess: 'authenticated', dynamic: true,
     entry: { permissions: [], mode: 'ANY' }, permissions: [],
   });
+});
+
+/*
+ * [10단계 10b] 재사용 생성물의 라우트 원장은 검토 전('unverified')이다. 화면 목록을 생성물에서 다시 만들어도 원본 산출물과 같은 라벨이
+ * 나와야 데이터 투영과 재생성이 같다 — 같은 page 파일이면 원본 라우트 원장 스냅숏의 라벨을 쓴다. 생성물 원장이 검토한 라벨이 앞선다.
+ */
+test('an unreviewed generated route ledger takes screen labels from the upstream ledger snapshot of the same page file', t => {
+  const { dir, mutate, write } = fixture(t);
+  assert.equal(UPSTREAM_ROUTE_LEDGER, snapshotPathFor(SCREEN_REGISTRY_INPUTS.routes), 'the snapshot path is the projection snapshot');
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    for (const row of ledger.routes) if (row.route !== '/admin/hub/beta') row.visibleLabel = 'unverified';
+    ledger.routes.find(row => row.route === '/admin/hub/beta').visibleLabel = '허브 나(생성물 검토)';
+  });
+  const before = buildScreenRegistry(dir);
+  assert.deepEqual([byRoute(before, '/').label, byRoute(before, '/').labelSource], [null, null], 'no snapshot, no label');
+  write(UPSTREAM_ROUTE_LEDGER, `${JSON.stringify({ routes: [
+    { route: '/', source: 'frontend/src/app/page.tsx', visibleLabel: '업무 홈' },
+    // 다른 page 파일의 라벨은 쓰지 않는다.
+    { route: '/admin/hub/alpha', source: 'frontend/src/app/admin/hub/gamma/page.tsx', visibleLabel: '허브 가' },
+    { route: '/admin/hub/beta', source: 'frontend/src/app/admin/hub/beta/page.tsx', visibleLabel: '허브 나' },
+    { route: '/admin/things/[id]', source: 'frontend/src/app/admin/things/[id]/page.tsx', visibleLabel: 'unverified' },
+  ] }, null, 2)}\n`);
+  const registry = buildScreenRegistry(dir);
+  const label = route => [byRoute(registry, route).label, byRoute(registry, route).labelSource];
+  assert.deepEqual(label('/'), ['업무 홈', 'route-ledger']);
+  assert.deepEqual(label('/admin/hub/alpha'), [null, null]);
+  assert.deepEqual(label('/admin/hub/beta'), ['허브 나(생성물 검토)', 'route-ledger']);
+  assert.deepEqual(label('/admin/things/[id]'), [null, null]);
+  // 메뉴 라벨은 그대로 앞선다.
+  assert.deepEqual(label('/admin/things'), ['사물 관리', 'menu']);
 });
 
 test('entry permissions resolve exact routes before dynamic siblings and keep ALL modes; priority is entry > write > display', t => {
@@ -1459,14 +1491,19 @@ test('PERMISSION_BUNDLES keeps every bundle in the full repository and drops pro
   assert.equal(registry.bundles.length, 4, 'the generated list itself is not projected');
 });
 
-test('a bundle whose gated screens are all projected away is dropped even when related screens remain', async t => {
+test('a bundle whose gated screens are all projected away stays while a related screen remains and leaves when none remains', async t => {
   const { dir } = relatedFixture(t);
   const registry = buildScreenRegistry(dir);
   const pagePermissions = JSON.parse(fs.readFileSync(path.join(dir, SCREEN_REGISTRY_INPUTS.catalog), 'utf8')).pagePermissions;
-  // 진입 권한이 있는 화면을 모두 빼고 누구나 들어가는 업무 홈만 남긴다 — 그 투영본에는 이 묶음이 맡길 업무가 없다.
+  // [10단계 10b] 진입 권한이 있는 화면을 모두 빼고 누구나 들어가는 업무 홈만 남긴다. 업무 홈은 사물 등록(THING_CREATE)을 쓰기로
+  // 쓰므로 등록 묶음이 맡길 일이 남는다 — 묶음 투영 규칙(여는 화면 또는 관련 화면)과 같은 기준으로 남는다. 다른 묶음은 사라진다.
   const homeOnly = Object.fromEntries(Object.entries(pagePermissions).filter(([route]) => !GATED.includes(route)));
   const reduced = await loadRuntime(t, registry, homeOnly);
-  assert.deepEqual(reduced.PERMISSION_BUNDLES, []);
+  assert.deepEqual(reduced.PERMISSION_BUNDLES.map(bundle => [bundle.id, bundle.screens, bundle.relatedScreens]), [['thing-creator', [], ['/']]]);
+  // 관련 화면까지 빠지면 묶음도 사라진다.
+  const nothing = Object.fromEntries(Object.entries(homeOnly).filter(([route]) => route !== '/'));
+  const gone = await loadRuntime(t, registry, nothing);
+  assert.deepEqual(gone.PERMISSION_BUNDLES, []);
 });
 
 // ---------------------------------------------------------------- 실행 경로(H5)

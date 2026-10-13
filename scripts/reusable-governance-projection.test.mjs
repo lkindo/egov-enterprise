@@ -18,6 +18,9 @@ import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-compose
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { PROJECTION_LEDGER_PATH, buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { normalize, walk } from './reusable-source-tree.mjs';
+import { PERMISSION_ARTIFACT_PATHS } from './generate-permissions.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH } from './reusable-permission-projection.mjs';
+import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact } from './screen-registry-model.mjs';
 import { relative } from 'node:path';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -354,6 +357,28 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
       for (const [route, required] of Object.entries(projectedPermissions)) {
         assert.deepEqual(required, upstreamPermissions[route], `${route} authorization must not change`);
       }
+      // [10단계 10b] 권한 정의는 구성으로 함께 투영된다 — 카탈로그 = 구성 코드, 인가 원장 바인딩 = 핸들러 소스가 남는 행, 화면 목록·묶음의
+      // 권한 ⊆ 카탈로그. 모든 기능을 고른 구성은 권한 원장·런타임 생성물·묶음·화면 목록이 원본과 바이트가 같다.
+      const projectedCatalog = readJson(output, PERMISSION_CATALOG_PATH);
+      assert.deepEqual(projectedCatalog.permissions.map(row => row.code).sort(), [...composition.permissionCodes].sort());
+      const projectedBindings = readJson(output, AUTHORIZATION_POLICY_PATH).operationBindings;
+      const sourceBindings = readJson(ROOT, AUTHORIZATION_POLICY_PATH).operationBindings;
+      assert.equal(result.permissionProjection.operationBindings, projectedBindings.length);
+      assert.equal(result.permissionProjection.removedOperationBindings, sourceBindings.length - projectedBindings.length);
+      assert.ok(projectedBindings.every(row => row.access !== 'PERMISSION' || composition.permissionCodes.includes(row.permission)));
+      const projectedRegistry = readScreenRegistryArtifact(readFileSync(join(output, SCREEN_REGISTRY_OUTPUT), 'utf8'));
+      const catalogCodes = new Set(composition.permissionCodes);
+      assert.ok(projectedRegistry.screens.every(screen => screen.permissions.every(row => catalogCodes.has(row.code))));
+      assert.ok(projectedRegistry.bundles.length > 0 && projectedRegistry.bundles.every(bundle => bundle.permissions.every(code => catalogCodes.has(code))));
+      const sameText = path => readFileSync(join(output, path), 'utf8').replace(/\r\n?/gu, '\n') === readFileSync(join(ROOT, path), 'utf8').replace(/\r\n?/gu, '\n');
+      const permissionFiles = [PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, SCREEN_REGISTRY_OUTPUT, ...PERMISSION_ARTIFACT_PATHS];
+      if (profileName === 'demo') {
+        for (const path of permissionFiles) assert.ok(sameText(path), `demo: ${path} must equal the source`);
+        assert.equal(result.permissionProjection.removedOperationBindings, 0);
+      } else {
+        assert.ok(projectedBindings.length < sourceBindings.length, `${profileName}: bindings of removed handlers leave the ledger`);
+        for (const path of [PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, SCREEN_REGISTRY_OUTPUT]) assert.ok(!sameText(path), `${profileName}: ${path} is projected`);
+      }
       for (const snapshot of result.upstreamSnapshots) {
         assert.ok(existsSync(join(output, snapshot.path)));
         assert.equal(readFileSync(join(output, snapshot.path), 'utf8'), readFileSync(join(ROOT, snapshot.sourcePath), 'utf8').replace(/\r\n?/gu, '\n'));
@@ -373,6 +398,18 @@ for (const profileName of ['core', 'collaboration', 'demo', 'custom']) {
         }
         mutateFile(result.upstreamSnapshots[0].path, text => text + '\n', /snapshot hash mismatch/);
         mutateFile('frontend/src/proxy.ts', text => text + '\n// source-evidence mutation\n', /Source evidence scope changed|Inherited source evidence changed/);
+        // [10단계 10b] 묶음에 구성 밖 권한을 손으로 더하거나, 지워진 핸들러의 바인딩을 원장에 남기면 생성물 불변식이 붉다.
+        mutateFile(PERMISSION_BUNDLES_PATH, text => {
+          const changed = JSON.parse(text);
+          changed.bundles[0].permissions.push('MAIL_SEND');
+          return JSON.stringify(changed);
+        }, /Projected screen registry: permission bundle ledger is invalid: Unknown permission code in permission bundle basic-work: MAIL_SEND/);
+        mutateFile(AUTHORIZATION_POLICY_PATH, text => {
+          const changed = JSON.parse(text);
+          const stale = readJson(ROOT, AUTHORIZATION_POLICY_PATH).operationBindings.find(row => row.handler.includes('.MailApiController#'));
+          changed.operationBindings.push({ ...stale, access: 'AUTHENTICATED', permission: null });
+          return JSON.stringify(changed);
+        }, /operation binding handler has no source: nuri\.api\.controller\.business\.mail\.MailApiController#/);
         mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), profile: 'demo' }), /lock profile/);
         mutateFile('.agent/memory/project-context.md', text => text + '\nUpstream production state is approved here.\n', /Generated memory must separate/);
         mutateFile('config/ui-url-state-approval.json', text => {

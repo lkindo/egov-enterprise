@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { generatePermissions } from './generate-permissions.mjs';
-import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, discoverPageRoutes, expectedRouting, inspectRouteRepository, parseConfigRedirectsSource, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
+import { PERMISSION_ARTIFACT_PATHS, generatePermissions } from './generate-permissions.mjs';
+import { aggregateCapabilityStatus, buildUnreviewedBaselineManifest, expectedRouting, inspectRouteRepository, parseConfigRedirectsSource, validateRouteCapabilities } from './ui-route-capabilities-contract.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, applyPermissionSourceProjection, applyScreenAndBundleProjection } from './reusable-permission-projection.mjs';
+import { SCREEN_REGISTRY_OUTPUT } from './screen-registry-model.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
 import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
@@ -24,6 +26,9 @@ const CONTROL_SOURCES = [
   'frontend/next.config.ts',
   'frontend/src/lib/auth/page-authorization.ts',
 ];
+// [10단계 10b] 권한 투영이 다시 쓰는 파일 — 원본 소스 증거로 승계하지 않는다(sourceBindings 의 transformation 이름).
+const PERMISSION_PROJECTION_OUTPUTS = Object.freeze([PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH,
+  SCREEN_REGISTRY_OUTPUT, ...PERMISSION_ARTIFACT_PATHS]);
 
 function normalizedText(root, file) {
   return readFileSync(join(root, file), 'utf8').replace(/\r\n?/gu, '\n');
@@ -113,24 +118,16 @@ export function projectUrlApproval({ upstreamCensus, upstreamApproval, census, s
   };
 }
 
-/** Preserve page authorization values exactly; remove only pages absent from the artifact. */
-export function projectPagePermissions(outputRoot) {
-  const path = 'config/governance/permission-catalog.json';
-  const catalog = readJson(outputRoot, path);
-  const routes = new Set(discoverPageRoutes(outputRoot).map(row => row.route));
-  if (routes.size === 0) throw new Error('Cannot project an empty online route population');
-  for (const route of routes) {
-    if (!Object.hasOwn(catalog.pagePermissions ?? {}, route)) {
-      throw new Error(`Unregistered page permission in projected artifact: ${route}`);
-    }
-  }
-  const removed = Object.keys(catalog.pagePermissions).filter(route => !routes.has(route));
-  catalog.pagePermissions = Object.fromEntries(Object.entries(catalog.pagePermissions).filter(([route]) => routes.has(route)));
-  catalog.pagePermissionModes = Object.fromEntries(Object.entries(catalog.pagePermissionModes ?? {}).filter(([route]) => routes.has(route)));
-  writeJson(outputRoot, path, catalog);
+/**
+ * [10단계 10b] Project permission definitions with the composition: the catalog keeps the composition codes and the pages present
+ * in the artifact (page values unchanged), and authorization bindings drop rows whose handler source the projection removed. The
+ * runtime artifacts are then regenerated from these sources, so the source ledger and the runtime stay identical.
+ */
+export function projectPermissionDefinitions({ sourceRoot, outputRoot, composition }) {
+  const projection = applyPermissionSourceProjection({ sourceRoot, outputRoot, composition });
   // The catalog hash is shared by Java and TS: use its canonical generator, not a hand-edited TS map.
   generatePermissions(outputRoot);
-  return removed.sort();
+  return projection;
 }
 
 export function removeRedirectDeclarations(source, removedSources) {
@@ -228,7 +225,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     throw new Error('Upstream URL census drifted from the current source; projection cannot rebind stale approval');
   }
   const aliases = projectRemovedRouteAliases(outputRoot, new Set(upstreamRoutes.routes.map(row => row.route)));
-  const removedPagePermissions = projectPagePermissions(outputRoot);
+  const permissionDefinitions = projectPermissionDefinitions({ sourceRoot, outputRoot, composition });
+  const removedPagePermissions = permissionDefinitions.removedPagePermissions;
   const sourceBindings = new Map();
   const sourceUnchanged = file => {
     if (sourceBindings.has(file)) return sourceBindings.get(file).matches;
@@ -241,7 +239,8 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     sourceBindings.set(file, {
       source: file, upstreamSha256: sha256(original), projectedSha256: sha256(projected), matches,
       transformation: original === projected ? 'unchanged' : file === 'frontend/next.config.ts' ? 'excluded-destination-redirect-projection'
-        : slotPathKind(file)?.kind === 'registry' ? 'declared-slot-registry-projection' : 'declared-pack-marker-projection',
+        : slotPathKind(file)?.kind === 'registry' ? 'declared-slot-registry-projection'
+          : PERMISSION_PROJECTION_OUTPUTS.includes(file) ? 'composition-permission-projection' : 'declared-pack-marker-projection',
     });
     return matches;
   };
@@ -250,6 +249,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     asOf: upstreamRoutes.asOf,
     reviewBy: upstreamRoutes.menuSnapshot.review.reviewBy,
   });
+  // [10단계 10b] 화면 목록·묶음 원장을 구성으로 투영한다. 라우트 원장의 화면·shellAccess·라벨이 정해진 뒤(위)이고, capability 를 승계할지
+  // 정하는 판정(아래 sourceUnchanged)보다 앞이다 — 권한 작업대처럼 화면 목록·묶음 원장을 증거로 둔 화면은 바뀐 파일을 보고 승계하지 않는다.
+  const permissionScreens = applyScreenAndBundleProjection({ sourceRoot, outputRoot, ledger: routes });
   const unreviewedCapabilities = [];
   const originalRoutes = new Map(upstreamRoutes.routes.map(row => [row.route, row]));
   for (const route of routes.routes) {
@@ -317,6 +319,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     unreviewedUrlRecordIds: census.records.filter(record => !inherited.has(record.id)).map(record => record.id).sort(),
     sourceBindings: [...sourceBindings.values()].sort((a, b) => a.source.localeCompare(b.source)),
     removedPagePermissions, unreviewedCapabilities, ...aliases,
+    permissionProjection: { ...permissionDefinitions.summary, ...permissionScreens },
     projectedReviewScopes: reviewProjection.reviewScopes,
     codeScope: projectedCodeScope(outputRoot),
     activeArtifacts: ACTIVE_ARTIFACTS.map(path => ({ path, sha256: artifactTextSha256(outputRoot, path) })),

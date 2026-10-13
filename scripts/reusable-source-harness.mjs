@@ -6,6 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
 import { MANIFEST_PATH, ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
+import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 
 /**
  * 하네스 baseline 미러 상수 — 전부 메타 게이트({@code HarnessBaselineIntegrityTest})의 동명 선언과
@@ -185,6 +186,14 @@ export function projectedWriteHandlerCounts(source) {
   return { handlers, successful };
 }
 
+/** 생성물에 기록된 구성(거버넌스 투영이 쓴 스냅숏)의 권한 코드. 스냅숏을 다시 검증한다 — 임의의 코드 목록을 믿지 않는다. */
+function projectedPermissionCodes(output) {
+  const selectionPath = join(output, COMPOSER_SELECTION_PATH);
+  if (!existsSync(selectionPath)) fail(`Projected composition snapshot is missing: ${COMPOSER_SELECTION_PATH}`);
+  const selection = JSON.parse(readFileSync(selectionPath, 'utf8'));
+  return verifyProjectComposition(selection.composition, selection.catalog).permissionCodes;
+}
+
 export function writeReusableHarnessProfile(output, sourceManifest) {
   const projected = JSON.parse(readFileSync(join(output, 'config/reusable-base-profiles.json'), 'utf8'));
   const profileName = projected.sourcePolicy.generatedProfile;
@@ -251,6 +260,9 @@ export function writeReusableHarnessProfile(output, sourceManifest) {
     serviceGuards: authorization.serviceGuardPolicies.filter(row => activeType(row.target)).length,
     manualGuards: authorization.manualGuardPolicies.filter(row => sources.has(row.source)).length,
     productionSources: retained.length,
+    // [10단계 10b] 투영본의 권한 카탈로그 수는 구성의 권한 코드 수다(원본 하한 200 대신 정확히 비교 — SecurePathsDeclarationSyncLinterTest,
+    // generate-permissions). 바인딩 수는 위 operationBindings(원본 원장을 독립된 Java 제거 계획으로 거른 수)를 쓴다.
+    permissionCatalog: projectedPermissionCodes(output).length,
   };
   for (const module of ['business-core', 'business-app']) census[`entities:${module}`] = entities.filter(([path]) => path.startsWith(`${module}/`)).length;
   const snapshot = { schemaVersion: 1, profile: profileName, packs: profile.packs,

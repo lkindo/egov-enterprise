@@ -15,8 +15,10 @@ import { UPSTREAM_ATLAS, assertRemovedGatesAcknowledged, pruneHistoricalMigratio
 import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.mjs';
 import { copySourceTree, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
+import { AUTHORIZATION_POLICY_PATH, projectOperationBindings, readPermissionSources } from './reusable-permission-projection.mjs';
 
 const root = resolve(import.meta.dirname, '..');
+const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
 const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
 const catalog = loadProjectComposerCatalog(root);
 const files = trackedAndUntrackedFiles();
@@ -81,6 +83,13 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     assert.deepEqual(deep.ruleRemovals, ruleRemovals, `${label}: rule removals`);
     assert.ok(ruleRemovals['historical-migration-tests'].length > 0, `${label}: the rule selects real historical tests`);
     quietly(() => assertRemovedGatesAcknowledged(composition.profile, profile, java, frontend, ruleRemovals));
+
+    // 권한 투영(10단계 10b)도 생성기와 같다: 생성기는 투영한 트리에서 핸들러 소스가 사라진 바인딩을 뺀다.
+    const generatorBindings = projectOperationBindings(readJson(join(root, AUTHORIZATION_POLICY_PATH)).operationBindings, {
+      sourceExists: file => existsSync(join(root, file)), removed: file => !existsSync(join(output, file)) });
+    assert.deepEqual([deep.permissionProjection.operationBindings, deep.permissionProjection.removedOperationBindings],
+      [generatorBindings.bindings.length, generatorBindings.removed.length], `${label}: retained and removed operation bindings`);
+    assert.equal(deep.permissionProjection.permissions, composition.permissionCodes.length, `${label}: catalog = composition codes`);
   }
 });
 
@@ -89,6 +98,39 @@ test('a full product composition removes nothing and still reports a summary', (
   assert.deepEqual(deep.blockers, []);
   assert.deepEqual({ java: deep.java.removedFiles, frontend: deep.frontend.removedFiles, gates: deep.removedGates }, { java: 0, frontend: 0, gates: [] });
   assert.equal(deepSummary(deep), '제거: Java 0개(연쇄 0) · 프런트 0개(연쇄 0) · 검증 게이트 0건');
+  // 권한 투영은 아무것도 빼지 않는다(원본 parity).
+  const sources = readPermissionSources(root);
+  assert.deepEqual(deep.permissionProjection, {
+    permissions: sources.catalog.permissions.length, operationBindings: sources.policies.operationBindings.length, removedOperationBindings: 0,
+    screens: sources.registry.screens.length, bundles: sources.bundles.bundles.map(bundle => bundle.id), droppedBundles: [], generatedExclusions: [],
+  });
+});
+
+/*
+ * 권한 투영(10단계 10b)이 실패할 자리 — 남는 바인딩이 구성 밖 권한을 요구하거나 묶음 원장이 남는 권한을 나누지 못하면 생성기가 거버넌스
+ * 투영에서 멈춘다. 정밀 점검은 같은 판정을 미리 해 PERMISSION_PROJECTION 으로 막는다(투입 원장만 바꿔 만든다).
+ */
+test('a permission projection failure becomes a PERMISSION_PROJECTION blocker before Docker starts', () => {
+  const core = compose({ preset: 'core' });
+  const sources = readPermissionSources(root);
+  assert.deepEqual(codes(compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: sources })), []);
+  // core 에 남는 사용자 조회 바인딩 하나가 메일 발송 권한(구성 밖)을 요구하게 바꾼다.
+  const tampered = structuredClone(sources);
+  const binding = tampered.policies.operationBindings.find(row => row.handler.includes('.UserApiController#') && row.permission === 'USER_READ');
+  binding.permission = 'MAIL_SEND';
+  let deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: tampered });
+  assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
+  assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.PERMISSION_PROJECTION);
+  assert.match(deep.blockers[0].message, new RegExp(`retained operation binding ${binding.method} ${binding.path.replace(/[{}]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
+  assert.equal(deep.permissionProjection, null, 'a failed projection reports no counts');
+  // 묶음 원장이 남는 권한을 나누지 못하면(제외 행을 지움) 같은 사유로 막는다.
+  const unclassified = structuredClone(sources);
+  const excludedInCore = unclassified.bundles.excluded.find(row => core.permissionCodes.includes(row.code));
+  assert.ok(excludedInCore, 'the core composition holds an excluded permission for this proof');
+  unclassified.bundles.excluded = unclassified.bundles.excluded.filter(row => row !== excludedInCore);
+  deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: unclassified });
+  assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
+  assert.match(deep.blockers[0].message, new RegExp(`does not classify composition permissions: ${excludedInCore.code}`, 'u'));
 });
 
 /*
@@ -302,8 +344,16 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   const rows = routeRowsFromLedger({ routes: [['/', 'page.tsx'], ['/login', 'login/page.tsx'], ['/demo', 'demo/page.tsx']]
     .map(([route, page]) => ({ route, source: `frontend/src/app/${page}`, routing: { kind: 'page' } })) });
   const pageSurvival = { rows, expected: new Set(['/', '/login']) };
-  const plan = (files = listed, expectation = pageSurvival) => compositionDeepPlan({ root: fixture, manifest: small, composition: { profile: 'core' },
-    files, pageSurvival: expectation });
+  // 권한 정의도 없다. 권한 투영은 늘 판정하므로 최소 입력을 직접 넘긴다 — 홈 화면을 여는 묶음 하나와 그 권한(구성 코드)이 남고,
+  // 제외 도메인 핸들러의 바인딩 하나는 Java 투영이 핸들러를 지워 투영 원장에서 빠진다(구성 안 권한이라 핸들러 판정만 그 행을 뺀다).
+  const permissionSources = { catalog: { permissions: [{ code: 'HOME_READ' }] }, visibleTerms: { terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] },
+    bundles: { schemaVersion: 1, description: '시험용 묶음 원장', excluded: [], bundles: [
+      { id: 'home-viewer', name: '홈 조회', description: '홈 조회를 맡깁니다.', protected: false, permissions: ['HOME_READ'] }] },
+    registry: { screens: [{ route: '/', entry: { permissions: ['HOME_READ'], mode: 'ANY' }, permissions: [{ code: 'HOME_READ', action: 'READ', source: 'entry' }] }] },
+    policies: { operationBindings: [{ method: 'GET', path: '/api/v1/mails', handler: 'nuri.business.service.mail.MailService#list',
+      access: 'PERMISSION', permission: 'HOME_READ' }] } };
+  const plan = (files = listed, expectation = pageSurvival) => compositionDeepPlan({ root: fixture, manifest: small,
+    composition: { profile: 'core', permissionCodes: ['HOME_READ'] }, files, pageSurvival: expectation, permissionSources });
 
   let deep = plan([...listed, 'frontend/src/app/deleted.tsx', 'business-app/src/main/java/Deleted.java']);
   assert.deepEqual(deep.blockers, []);
@@ -311,6 +361,8 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   assert.deepEqual(deep.ruleRemovals['historical-migration-tests'], [], 'a historical test already removed by the cascade is not removed again by the rule');
   assert.deepEqual(deep.frontend.files, ['frontend/src/app/demo/page.tsx']);
   assert.deepEqual([deep.java.removedFiles, deep.java.cascadeFiles, deep.frontend.removedFiles, deep.frontend.cascadeFiles], [2, 1, 1, 0]);
+  assert.deepEqual([deep.permissionProjection.operationBindings, deep.permissionProjection.removedOperationBindings], [0, 1],
+    'the binding of a handler the Java projection removes leaves the projected ledger');
 
   write('frontend/src/app/demo/page.tsx', '// reusable-base:nope:start\nexport default function Page() { return null; }\n// reusable-base:nope:end\n');
   deep = plan();
@@ -326,7 +378,8 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   const keepsDemo = { ...small, packs: { ...small.packs, demo: { ...small.packs.demo, frontend: { removePaths: [] } } } };
-  deep = compositionDeepPlan({ root: fixture, manifest: keepsDemo, composition: { profile: 'core' }, files: listed, pageSurvival });
+  deep = compositionDeepPlan({ root: fixture, manifest: keepsDemo, composition: { profile: 'core', permissionCodes: ['HOME_READ'] },
+    files: listed, pageSurvival, permissionSources });
   assert.deepEqual(codes(deep), ['FRONTEND_SCREEN_EXTRA']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/demo/page.tsx']);
   // 정밀 점검이 이 두 사유로 막는 구성은 생성기도 같은 자리(투영 단계의 프런트 제거 뒤 화면 대조)에서 실패한다.
