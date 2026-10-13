@@ -131,7 +131,9 @@ function selectionItem(selection, closure) {
 
 /**
  * 시작 구성은 두 레이아웃, 단독 폐포는 (UTC 날짜 일수 + 정렬 순번) % 2 로 번갈아 한 레이아웃이다.
- * compositions 는 'preset:<id>' 또는 '<기능>+<기능>' 토큰 목록이다(기능 브랜치의 직접 선택 검증용).
+ * 전체 계획에서 기능 목록이 어떤 시작 구성과 같은 단독 폐포는 돌지 않는다 — 그 시작 구성이 같은 목록을 두 레이아웃으로 이미 돌고,
+ * 같은 목록은 같은 결과다(ADR-0028, 시작 구성 동치 계약). 2026-10-13 설문·결재 시작 구성이 그런 폐포 둘(survey·informalsanction)을 덮는다.
+ * compositions 는 'preset:<id>' 또는 '<기능>+<기능>' 토큰 목록이다(기능 브랜치의 직접 선택 검증용). 이름으로 고른 직접 선택은 건너뛰지 않는다.
  */
 export function nightlyPlan({ presets, domains, closureOf }, { compositions = '', layout = 'auto', date = new Date() } = {}) {
   if (!['auto', 'both', ...BACKEND_LAYOUTS].includes(layout)) throw new Error(`layout must be auto, both, ${BACKEND_LAYOUTS.join(' or ')}`);
@@ -143,9 +145,10 @@ export function nightlyPlan({ presets, domains, closureOf }, { compositions = ''
   const tokens = compositions.split(/[\s,]+/).filter(Boolean);
   if (tokens.length === 0) {
     for (const preset of presets) targets.set(`preset-${preset.id}`, presetItem(preset));
+    const presetLists = new Set(presets.map((preset) => preset.domains.join('+')));
     for (const id of domains) {
       const item = selectionItem([id], closureOf([id]));
-      if (!targets.has(item.id)) targets.set(item.id, item);
+      if (!targets.has(item.id) && !presetLists.has(item.domains)) targets.set(item.id, item);
     }
   }
   for (const token of tokens) {

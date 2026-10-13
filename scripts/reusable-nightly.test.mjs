@@ -53,23 +53,33 @@ const fixtureInput = (extraPresets = []) => ({
   closureOf: (ids) => [...new Set(ids.flatMap((id) => (id === 'board' || id === 'comment' ? ['board', 'comment'] : [id])))].sort(),
 });
 
-// ① 계획의 단독 폐포는 카탈로그의 단독 선택을 전수로 풀어 얻은 서로 다른 폐포와 같아야 한다.
-test('the plan holds every preset and every distinct single-selection closure of the real catalog', () => {
+// ① 계획의 단독 폐포는 카탈로그의 단독 선택을 전수로 풀어 얻은 서로 다른 폐포 가운데 시작 구성과 기능 목록이 다른 것과 같아야 한다.
+//    같은 목록의 폐포는 그 시작 구성이 두 레이아웃으로 덮는다(같은 목록 = 같은 결과, ADR-0028).
+test('the plan holds every preset and every distinct single-selection closure of the real catalog that no preset already covers', () => {
   const catalog = loadProjectComposerCatalog(ROOT);
   const input = catalogPlanInput(catalog);
   const plan = nightlyPlan(input, { date: new Date('2026-10-12T00:00:00Z') });
   const resolveDomains = (selection) => [...resolveProjectRecipe({ schemaVersion: 1, project: { name: 'probe' }, sourceRef: 'HEAD',
     selection, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, catalog).resolvedDomains].sort().join('+');
-  const expectedClosures = new Set(catalog.capabilities.filter((capability) => capability.available)
+  const allClosures = new Set(catalog.capabilities.filter((capability) => capability.available)
     .map((capability) => resolveDomains({ domains: [capability.id] })));
+  const presetLists = new Set(catalog.presets.map((preset) => resolveDomains({ preset: preset.id })));
+  const expectedClosures = new Set([...allClosures].filter((closure) => !presetLists.has(closure)));
   const closures = (matrix) => new Set(matrix.include.filter((item) => item.kind === 'selection').map((item) => item.domains));
   assert.deepEqual(closures(plan), expectedClosures);
   assert.deepEqual(new Set(plan.include.filter((item) => item.kind === 'preset').map((item) => item.target)),
     new Set(catalog.presets.map((preset) => preset.id)));
   assert.equal(plan.include.length, catalog.presets.length * 2 + expectedClosures.size, 'presets run both layouts, closures one');
+  // 건너뛴 폐포는 모두 같은 목록의 시작 구성이 두 레이아웃으로 덮는다. 지금은 설문·결재 시작 구성이 덮는 폐포 둘이다.
+  const covered = [...allClosures].filter((closure) => presetLists.has(closure)).sort();
+  assert.deepEqual(covered, ['informalsanction', 'survey']);
+  for (const closure of covered) {
+    assert.deepEqual(plan.include.filter((item) => item.kind === 'preset' && item.domains === closure).map((item) => item.layout),
+      ['multi-module', 'single-module'], closure);
+  }
 
   // 계획에서 기능 하나가 빠지면 폐포 집합이 달라져야 한다 — 대조가 공집합 비교로 통과하지 않는다는 대조군이다.
-  const dropped = nightlyPlan({ ...input, domains: input.domains.filter((id) => id !== 'survey') }, { date: new Date('2026-10-12T00:00:00Z') });
+  const dropped = nightlyPlan({ ...input, domains: input.domains.filter((id) => id !== 'event') }, { date: new Date('2026-10-12T00:00:00Z') });
   assert.notDeepEqual(closures(dropped), expectedClosures);
 
   const largest = [...catalog.presets].sort((a, b) => input.presets.find((p) => p.id === b.id).domains.length
@@ -78,11 +88,16 @@ test('the plan holds every preset and every distinct single-selection closure of
     [`${largest}/multi-module`, `${largest}/single-module`], 'only the largest preset carries the migration tests, in both layouts');
 });
 
-// ⑨ 카탈로그에 시작 구성이 늘면 이름을 고치지 않아도 계획이 따라간다.
-test('a preset added to the catalog joins the plan in both layouts', () => {
+// ⑨ 카탈로그에 시작 구성이 늘면 이름을 고치지 않아도 계획이 따라간다. 그 시작 구성과 기능 목록이 같은 단독 폐포는 빠지고,
+//    목록이 다른 폐포와 이름으로 고른 직접 선택은 남는다.
+test('a preset added to the catalog joins the plan in both layouts and covers the closure with the same list', () => {
   const plan = nightlyPlan(fixtureInput([{ id: 'approval', domains: ['survey'] }]), { date: new Date('2026-10-12T00:00:00Z') });
   assert.deepEqual(plan.include.filter((item) => item.target === 'approval').map((item) => item.layout), ['multi-module', 'single-module']);
-  assert.deepEqual(plan.include.filter((item) => item.kind === 'selection').map((item) => item.id), ['select-board-comment', 'select-survey']);
+  assert.deepEqual(plan.include.filter((item) => item.kind === 'selection').map((item) => item.id), ['select-board-comment']);
+  const wider = nightlyPlan(fixtureInput([{ id: 'approval', domains: ['comment', 'survey'] }]), { date: new Date('2026-10-12T00:00:00Z') });
+  assert.deepEqual(wider.include.filter((item) => item.kind === 'selection').map((item) => item.id), ['select-board-comment', 'select-survey']);
+  const named = nightlyPlan(fixtureInput([{ id: 'approval', domains: ['survey'] }]), { compositions: 'survey', layout: 'multi-module' });
+  assert.deepEqual(named.include.map((item) => item.id), ['select-survey']);
 });
 
 test('closures alternate their single layout by UTC day while presets keep both', () => {
