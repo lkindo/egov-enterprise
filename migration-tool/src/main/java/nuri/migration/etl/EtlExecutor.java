@@ -74,8 +74,24 @@ public class EtlExecutor {
         this.transformers = transformers;
     }
 
+    /**
+     * 테이블별 적재 결과. {@code sequenceResets} 는 원본 키를 쓴 컬럼의 시퀀스 재설정 기록이다(DEC-OPS-306) —
+     * 이름과 결과만 담고 키 값은 담지 않는다.
+     */
     public record TableResult(String sourceTable, String targetTable,
-                              long read, long transformed, long written, List<String> errors) {}
+                              long read, long transformed, long written, List<String> errors,
+                              List<TargetSequenceSynchronizer.SequenceReset> sequenceResets) {
+
+        public TableResult {
+            sequenceResets = sequenceResets == null ? List.of() : List.copyOf(sequenceResets);
+        }
+
+        /** 시퀀스 재설정 기록 도입 전 생성자 호환. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors) {
+            this(sourceTable, targetTable, read, transformed, written, errors, List.of());
+        }
+    }
 
     public List<TableResult> execute(MappingSpec spec, MigrationMode mode) {
         if (spec == null) {
@@ -149,6 +165,11 @@ public class EtlExecutor {
                     stateInitialized = true;
                 }
             } else {
+                // 원본 키를 쓰는 컬럼의 시퀀스를 행을 쓰기 전에 정한다. 정할 수 없으면 여기서 멈춘다(DEC-OPS-306).
+                List<TargetSequenceSynchronizer.Target> sequencePlan = commit
+                        ? planTargetSequences(targetDs, orderedTables)
+                        : List.of();
+                boolean tablesRan = false;
                 try (Connection sourceConnection = sourceDs.getConnection()) {
                     try {
                         sourceConnection.setReadOnly(true);
@@ -166,6 +187,7 @@ public class EtlExecutor {
                                 stateInitialized = true;
                             }
                             boolean sourceSessionFailed = false;
+                            tablesRan = true;
                             for (TableMapping table : orderedTables) {
                                 TableExecution execution = runTable(
                                         sourceConnection, targetDs, spec, table, registry, state, commit);
@@ -188,6 +210,10 @@ public class EtlExecutor {
                         throw propagate(failure);
                     }
                 }
+                if (tablesRan) {
+                    // 오류가 난 테이블도 앞선 chunk 는 남으므로 재설정한다. 앞으로만 옮기므로 재실행해도 같다.
+                    synchronizeTargetSequences(targetDs, sequencePlan, results);
+                }
             }
         } catch (SQLException sourceConnectionFailure) {
             if (stateInitialized) {
@@ -208,6 +234,77 @@ public class EtlExecutor {
             Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
         }
         return results;
+    }
+
+    private static List<TargetSequenceSynchronizer.Target> planTargetSequences(
+            DataSource targetDs,
+            List<TableMapping> orderedTables
+    ) {
+        try (Connection target = targetDs.getConnection()) {
+            return TargetSequenceSynchronizer.plan(target, orderedTables);
+        } catch (SQLException failure) {
+            throw new IllegalStateException("대상 시퀀스 카탈로그를 읽지 못해 적재를 시작하지 않습니다", failure);
+        }
+    }
+
+    /** 실행한 테이블마다 재설정 기록이나 실패를 결과에 붙인다. 실패는 그 테이블의 오류가 되어 run 을 FAILED 로 만든다. */
+    private static void synchronizeTargetSequences(
+            DataSource targetDs,
+            List<TargetSequenceSynchronizer.Target> plan,
+            List<TableResult> results
+    ) {
+        if (plan.isEmpty()) {
+            return;
+        }
+        Map<String, List<TargetSequenceSynchronizer.SequenceReset>> resets = new LinkedHashMap<>();
+        Map<String, List<String>> failures = new LinkedHashMap<>();
+        Set<String> ranTables = new HashSet<>();
+        for (TableResult result : results) {
+            ranTables.add(result.sourceTable().toLowerCase(Locale.ROOT));
+        }
+        try (Connection target = targetDs.getConnection()) {
+            for (TargetSequenceSynchronizer.Target planned : plan) {
+                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                if (!ranTables.contains(table)) {
+                    continue;
+                }
+                try {
+                    resets.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(TargetSequenceSynchronizer.apply(target, planned));
+                } catch (SQLException failure) {
+                    safeRollback(target);
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, "SQL_EXECUTION_FAILED"));
+                } catch (IllegalStateException failure) {
+                    safeRollback(target);
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, failure.getMessage()));
+                }
+            }
+        } catch (SQLException connectionFailure) {
+            for (TargetSequenceSynchronizer.Target planned : plan) {
+                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                if (ranTables.contains(table)) {
+                    failures.computeIfAbsent(table, ignored -> new ArrayList<>())
+                            .add(sequenceFailure(planned, "SQL_EXECUTION_FAILED"));
+                }
+            }
+        }
+        for (int i = 0; i < results.size(); i++) {
+            TableResult result = results.get(i);
+            String table = result.sourceTable().toLowerCase(Locale.ROOT);
+            if (!resets.containsKey(table) && !failures.containsKey(table)) {
+                continue;
+            }
+            List<String> errors = new ArrayList<>(result.errors());
+            errors.addAll(failures.getOrDefault(table, List.of()));
+            results.set(i, new TableResult(result.sourceTable(), result.targetTable(), result.read(),
+                    result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of())));
+        }
+    }
+
+    private static String sequenceFailure(TargetSequenceSynchronizer.Target planned, String reason) {
+        return "시퀀스 재설정 실패(" + planned.targetTable() + "." + planned.column() + "): " + reason;
     }
 
     private static void initializeCommitState(

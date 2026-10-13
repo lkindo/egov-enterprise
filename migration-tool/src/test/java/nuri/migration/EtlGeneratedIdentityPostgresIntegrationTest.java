@@ -178,7 +178,9 @@ class EtlGeneratedIdentityPostgresIntegrationTest {
         IdentityStrategy childIdentity = new IdentityStrategy(
                 TargetIdentityPolicy.PRESERVE,
                 List.of(component("CHILD_NO", IdentityValueType.SIGNED_INTEGER)),
-                List.of(component("child_id", IdentityValueType.SIGNED_INTEGER)));
+                List.of(component("child_id", IdentityValueType.SIGNED_INTEGER)),
+                // 시험 대상 child_id 는 시퀀스로 채번되지 않는다(DEC-OPS-306 none 선언).
+                Map.of("child_id", IdentityStrategy.NO_SEQUENCE));
         CompositeForeignKey parentReference = new CompositeForeignKey(
                 fixture.parentSource(),
                 List.of(component("TENANT_ID", IdentityValueType.TEXT),

@@ -116,8 +116,18 @@ Commit에는 `run.runId`, `run.sourceNamespace`, 모든 table의 결정적 `orde
 
 Identity는 두 계약을 지원한다.
 
-- 기존 단일 문자열 `idStrategy`는 target ID를 생성하고 `fkRef`로 자식 FK를 번역한다.
+- 기존 단일 문자열 `idStrategy`는 target ID를 생성하고 `fkRef`로 자식 FK를 번역한다. 생성 ID는 온라인 앱 [`IdGenerationUtil`](../../foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java)과 같은 `접두사 + 대문자 hex` 형식이며, `generator`는 접두사만 주므로 접두사를 포함해 20자다. 온라인의 20자 호출(`USR_`·`ORGNZT_`·`BBSMSTR_`)과 같고 `GROUP_`(온라인 16자)만 다르다. 형식 동등성은 foundation 원본을 시험 안에서 컴파일해 두 구현을 대조하는 [계약 시험](../../migration-tool/src/test/java/nuri/migration/keymap/StandardIdGeneratorTest.java)이 고정한다. migration-tool은 실행 시에도 Gradle 상으로도 foundation에 의존하지 않는다(DEC-OPS-306).
 - typed/composite `identity`는 `preserve`, `remap`, `target_generated` 정책과 TEXT·정수·decimal·boolean·UUID·시간·binary 타입을 명시한다. 복합 자식 FK는 `foreignKeys`에서 source/target component를 완전하게 선언한다. `target_generated`는 PostgreSQL `INSERT ... RETURNING`으로 행별 생성값을 얻는다.
+
+원본 키를 그대로 쓰는 `preserve`나 직접 컬럼 매핑이 identity·serial·`nextval` 기본값 컬럼에 값을 넣으면, 적재가 끝난 뒤 그 시퀀스를 원본 키 최댓값 뒤로 옮긴다(아래 적재 절). 시퀀스는 행을 쓰기 전에 대상 카탈로그로 정한다. `preserve` 정수 키가 카탈로그로 연결된 시퀀스가 없으면 온라인 앱이 `@SequenceGenerator` 전용 시퀀스(예: `sq_answer_no`)로 채번하는지 알 수 없으므로 적재를 시작하지 않는다. 이때는 `identity.targetSequences`에 시퀀스 이름이나 `none`을 선언한다. 선언은 `preserve`의 target component에만, 시퀀스 이름은 정수 키에만 쓸 수 있다.
+
+```yaml
+    identity:
+      policy: preserve
+      sourceComponents: [ { column: ANSWER_NO, type: signed_integer } ]
+      targetComponents: [ { column: answer_no, type: signed_integer } ]
+      targetSequences: { answer_no: sq_answer_no }
+```
 
 복합 identity와 기존 `idStrategy`는 함께 선언할 수 없다. Typed tuple은 versioned canonical encoding으로 keymap/checkpoint에 저장하며 partial-null 복합 FK, 타입·arity 불일치, 고아 FK는 실패한다. 단일 self-reference는 부모 ID를 먼저 예약하는 2-pass를 지원하지만 typed composite self-reference는 차단한다.
 
@@ -134,6 +144,8 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 일반 chunk는 target data INSERT, 신규 keymap, durable checkpoint를 **같은 target connection/transaction**에 기록한다. JDBC batch `updateCounts`가 각 1행을 증명하지 못하거나 하나라도 실패하면 chunk를 rollback하고 행 단위로 재변환·재시도한다. `target_generated`는 처음부터 행별 `INSERT ... RETURNING`·keymap·checkpoint transaction을 쓴다. Commit 또는 rollback 결과가 불확정하면 자동 재시도를 중단한다.
 
+원본 키를 쓴 컬럼의 시퀀스는 모든 table을 적재한 뒤 재설정한다(DEC-OPS-306). `max(컬럼)`이 시퀀스의 다음 값 이상일 때만 `setval`로 옮기고 이미 앞에 있으면 건드리지 않으므로, 다시 실행해도 같은 상태이며 시퀀스를 뒤로 돌리지 않는다. 오류가 난 table도 앞선 chunk가 남으므로 재설정한다. 실행 JSON의 `sequenceResets`에는 table·컬럼·시퀀스 이름과 결과(`ADVANCED`·`ALREADY_AHEAD`·`EMPTY_TABLE`·`DECLARED_NONE`)만 남기고 키 값은 남기지 않는다. 다음 경우는 행을 쓰기 전에 멈춘다: 기본값이 `nextval`인데 시퀀스를 찾지 못함, 연결된 시퀀스가 둘 이상, `GENERATED ALWAYS` identity, 선언한 시퀀스가 없거나 카탈로그와 다름, 위의 연결 없는 `preserve` 정수 키. 재설정 자체가 실패하면(시퀀스 상한 초과, 권한 부족) 그 table의 오류가 되어 run이 `FAILED`다. 이관 계정에는 해당 시퀀스의 SELECT·UPDATE 권한이 필요하고, 적재하는 동안 온라인 앱이 같은 table에 쓰지 않아야 한다. 카탈로그는 PostgreSQL 대상에서만 읽는다. 승인 workflow의 대상은 언제나 PostgreSQL이며, 그 밖의 대상(단위 시험의 H2)에서는 `preserve` 정수 키를 `none`으로 선언해야 진행한다.
+
 재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
 
 다음 경계는 원자적이지 않다.
@@ -141,6 +153,7 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 - 전체 run이 아니라 target chunk/row 단위로 commit하므로 뒤 chunk 실패 시 앞선 성공 chunk는 유지된다.
 - 단일 self-reference 2-pass는 data 적재 전에 예약 keymap을 별도 commit한다.
 - run 상태 갱신과 최종 report 판정은 data chunk transaction과 별도다.
+- 시퀀스 재설정은 모든 table 적재 뒤 별도 transaction이다. 그 전에 끝난 run은 재실행이 다시 맞춘다.
 - 현재 쓰기 정책은 INSERT-only이며 upsert·source delete 반영·CDC·전체 rollback은 없다.
 
 ## 실행 예시
@@ -195,4 +208,4 @@ npm run verify:migration
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*
+*표준 ID 형식·시퀀스 재설정 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

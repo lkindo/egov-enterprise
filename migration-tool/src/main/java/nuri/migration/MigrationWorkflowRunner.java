@@ -431,26 +431,29 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
         java.time.Instant started = java.time.Instant.now();
         // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
-        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null);
+        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null);
         MigrationReport report = null;
+        List<EtlExecutor.TableResult> results = null;
         try {
-            List<EtlExecutor.TableResult> results = executor.execute(
+            results = executor.execute(
                     mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged);
             report = verifier.verify(mapping, results, target);
             if (!report.ok()) {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다.");
             }
-            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results);
         } catch (Throwable failure) {
             rethrowJvmFatal(failure);
-            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results);
             throw failure;
         }
     }
 
     private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
-            MigrationMode mode, String status, java.time.Instant started, MigrationReport report) {
-        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report);
+            MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
+            List<EtlExecutor.TableResult> results) {
+        // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다.
+        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results);
         requireNoBoundCredentials(artifact, mapping);
         files.writeAtomic(path, artifact);
     }
