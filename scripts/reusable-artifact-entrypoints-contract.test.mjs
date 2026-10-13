@@ -71,6 +71,51 @@ test('producer fixtures and the actual generated product preserve a distinct non
   }
 });
 
+// Dependabot 은 워크플로 파일만 고치고 이 계약이 만드는 템플릿 문자열은 고치지 않는다. 그래서 액션을
+// 올리면 생성 제품 CI 만 옛 핀에 남는다. 템플릿이 쓰는 액션마다 원본 ci.yml 이 쓰는 핀이 하나뿐이고
+// 그 핀이 템플릿과 같아야 한다. 생성물 안에서는 원본 ci.yml 대신 생성 때 남긴 검증 이력 사본과 대조한다.
+// ci.yml 은 핀 뒤에 '# v7.1.0' 같은 판 주석을 단다. 템플릿은 주석 없이 핀만 쓴다.
+const ACTION_PIN = /^[ \t]*(?:-[ \t]+)?uses:[ \t]*([\w.-]+\/[\w./-]+)@([0-9a-f]{40})(?:[ \t]+#[^\n]*)?[ \t]*$/gm;
+function actionPins(workflow) {
+  const pins = new Map();
+  for (const [, action, sha] of workflow.matchAll(ACTION_PIN)) {
+    if (!pins.has(action)) pins.set(action, new Set());
+    pins.get(action).add(sha);
+  }
+  return pins;
+}
+function templatePinMismatches(template, upstreamCi) {
+  const upstream = actionPins(upstreamCi);
+  const errors = [];
+  for (const [action, shas] of actionPins(template)) {
+    const want = [...(upstream.get(action) ?? [])].sort();
+    const have = [...shas].sort();
+    if (want.length !== 1 || have.length !== 1 || want[0] !== have[0]) {
+      errors.push(`template ${action}@${have.join(',')} differs from ci.yml ${action}@${want.join(',') || '(none)'}`);
+    }
+  }
+  return errors;
+}
+
+test('the product CI template pins every action at the same SHA the upstream ci.yml uses', t => {
+  const root = fixture(t);
+  const template = read(root, '.github/workflows/ci.yml');
+  const upstreamCi = isArtifact ? read(ROOT, `${VERIFICATION_HISTORY}/.github/workflows/ci.yml`) : read(ROOT, '.github/workflows/ci.yml');
+  // 정규식이 템플릿의 핀을 하나도 못 읽으면 이 시험은 빈 대조로 통과한다. 읽은 액션 목록을 고정한다.
+  assert.deepEqual([...actionPins(template).keys()].sort(), ['actions/checkout', 'actions/setup-java', 'actions/setup-node',
+    'actions/upload-artifact', 'gradle/actions/setup-gradle', 'pnpm/action-setup']);
+  assert.deepEqual(templatePinMismatches(template, upstreamCi), []);
+  // 원본이 핀을 올렸는데 템플릿이 따라가지 않은 상태, 원본에 같은 액션의 핀이 둘인 상태, 원본에서 액션이 사라진 상태는 붉다.
+  const [, setupNode] = template.match(/uses: actions\/setup-node@([0-9a-f]{40})/);
+  const bumped = upstreamCi.replaceAll(`actions/setup-node@${setupNode}`, `actions/setup-node@${'a'.repeat(40)}`);
+  assert.notEqual(bumped, upstreamCi);
+  assert.deepEqual(templatePinMismatches(template, bumped), [`template actions/setup-node@${setupNode} differs from ci.yml actions/setup-node@${'a'.repeat(40)}`]);
+  const split = `${upstreamCi}\n      - uses: actions/setup-node@${'b'.repeat(40)}\n`;
+  assert.deepEqual(templatePinMismatches(template, split), [`template actions/setup-node@${setupNode} differs from ci.yml actions/setup-node@${[setupNode, 'b'.repeat(40)].sort().join(',')}`]);
+  const gone = upstreamCi.replace(/^.*uses: pnpm\/action-setup@.*$/gm, '');
+  assert.match(templatePinMismatches(template, gone).join('\n'), /^template pnpm\/action-setup@[0-9a-f]{40} differs from ci\.yml pnpm\/action-setup@\(none\)$/);
+});
+
 test('layout identity, single project shape and executable runtime aliases are enforced by the active contract', t => {
   const root = fixture(t, 'core', 'single-module');
   assert.deepEqual(validateReusableArtifactEntrypoints(root), []);
