@@ -167,9 +167,9 @@ npm run review:adoption:migration -- --environment institution-migration
 
 snapshot은 과거 근거다. active 원장이나 기관 승인을 대신하지 않으며, 과거 근거를 오늘 승인한 것처럼 날짜를 다시 쓰지 않는다. 기관의 실제 메뉴 노출·권한·접근성은 별도로 검토한다.
 
-[무결성 검사](../../scripts/reusable-governance-integrity.mjs)는 실제 소스·snapshot·승계 selector·원장 모집단·메모리·lock을 독립 대조한다. 활성 UI 계약은 검증된 적용범위에서 실행한다. 생산 저장소의 `npm run base:verify -- --profile core`와 CI의 세 프로필 matrix는 실제 DB·소스를 생성하여 이 계약과 Java 하네스·스키마·프런트 타입·lint·build까지 검사한다.
+[무결성 검사](../../scripts/reusable-governance-integrity.mjs)는 실제 소스·snapshot·승계 selector·원장 모집단·메모리·lock을 독립 대조한다. 활성 UI 계약은 검증된 적용범위에서 실행한다. 생산 저장소의 `npm run base:verify -- --profile core`와 CI의 시작 구성 matrix(PR 은 시작 구성 셋을 한 레이아웃씩, main 은 다섯을 두 레이아웃씩)는 실제 DB·소스를 생성하여 이 계약과 Java 하네스·스키마·프런트 타입·lint·build까지 검사한다.
 
-온라인 생성물의 CI는 자기 프로필에서 `node scripts/verify-reusable-artifact.mjs`를 직접 실행하는 `artifact-verification` job 하나다. 같은 job에서 기존 버전의 gitleaks working-tree·incremental 검사를 유지한다. 다른 프로필을 다시 생성하거나 원본 3프로필 matrix를 실행하지 않는다.
+온라인 생성물의 CI는 자기 프로필에서 `node scripts/verify-reusable-artifact.mjs`를 직접 실행하는 `artifact-verification` job 하나다. 같은 job에서 기존 버전의 gitleaks working-tree·incremental 검사를 유지한다. 다른 프로필을 다시 생성하거나 원본 시작 구성 matrix를 실행하지 않는다.
 
 생산 저장소의 13개 workflow, required-check 명세, package와 pre-push는 `config/governance/upstream-verification/`에 SHA-256이 붙은 비활성 이력으로 보존된다. 원본 CodeQL·E2E·mutation·배포·예약 작업은 기관 범위에 맞춰 별도로 결속해야 한다. 생성물 기본 CI를 원본 6개 required context와 동등한 검증이나 기관 운영 인증으로 해석하지 않는다.
 

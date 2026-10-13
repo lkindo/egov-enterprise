@@ -21,8 +21,8 @@ import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree
  */
 /**
  * 생성기 **규칙**으로 제거되는 게이트 묶음 — 프로필 선택이 아니라 투영 방식 자체가 원인이라 파일 단위
- * 승인 대신 규칙 단위 승인을 받는다. 파일 단위로 두면 migration 검증이 하나 늘 때마다 세 프로필의
- * 매니페스트가 함께 흔들려 소음만 남고 신호가 죽는다.
+ * 승인 대신 규칙 단위 승인을 받는다. 파일 단위로 두면 migration 검증이 하나 늘 때마다 모든 시작 구성의
+ * 기대치(presets.json)가 함께 흔들려 소음만 남고 신호가 죽는다.
  */
 const GATE_REMOVAL_RULES = {
   'historical-migration-tests':

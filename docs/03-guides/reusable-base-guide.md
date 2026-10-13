@@ -262,18 +262,24 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 
 ```json
 {
-  "id": "core",
+  "id": "example",
   "domains": [],
   "expected": {
     "gates": [
       { "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
         "reason": "선택 가능한 RBAC 검사 표면이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다." }
     ],
-    "gateRemovalRules": [],
-    "javaCascade": []
+    "gateRemovalRules": [
+      { "rule": "historical-migration-tests", "reason": "…" }
+    ],
+    "javaCascade": [
+      "api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java"
+    ]
   }
 }
 ```
+
+모양을 보이는 예시다(`example` 은 실제 시작 구성이 아니다). 실제 `core` 는 게이트 13건·규칙 2개·연쇄 106개다 — 값은 `presets.json` 이 정본이다.
 
 생성기와 정밀 점검은 이 승인을 `presets.json` 에서 읽는다(11단계 C3). `expected.gates` 는 기능 파일의 게이트 소유(`owns.gates`·
 `owns.rbacMatrix`)에서 계산한 목록과 정확히 같아야 한다(로더가 본다). 직접 선택 구성의 승인은 기대치 없이 그 게이트 소유에서
@@ -661,7 +667,7 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
 가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
 마커 블록으로 걷히거나 다른 기능이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 기능 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
-2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. 수리 뒤 모든 구성의 녹색 확인은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+2026-10-10 core 실제 생성물의 vitest 는 801개(파일이 아니라 `numTotalTestSuites` 로 센 suite 수로 보인다 — 위 표 아래 설명) 2,575건이 모두 통과한다. 수리 뒤 모든 구성의 녹색 확인은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
 Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다. Gradle 시험은 레이아웃마다 다르다.

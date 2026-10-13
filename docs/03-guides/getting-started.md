@@ -269,11 +269,11 @@ npm run review:migration
 
 ### 6.6 재사용 프로필과 기관 도입
 
-원본 저장소에서 `npm run base:verify -- --profile core`를 실행하면 새 일회용 DB와 소스 산출물을 만들어 실제 프로필을 검증한다. `collaboration`·`demo`도 각각 실행하며 Docker·Java 21·Node·pnpm이 필요하다. 이 명령의 개발 검증 산출물과 공식 릴리스 태그 산출물의 경계는 [재사용 Base 가이드](reusable-base-guide.md)를 따른다.
+원본 저장소에서 `npm run base:verify -- --profile core`를 실행하면 새 일회용 DB와 소스 산출물을 만들어 실제 프로필을 검증한다. `collaboration`·`demo`·`survey`·`approval`(시작 구성 선언 `config/modules/presets.json`)도 각각 실행하며 Docker·Java 21·Node·pnpm이 필요하다. 이 명령의 개발 검증 산출물과 공식 릴리스 태그 산출물의 경계는 [재사용 Base 가이드](reusable-base-guide.md)를 따른다.
 
 생성물의 `npm run verify`는 해당 프로필의 계약·하네스·스키마·프런트를 검증한다. 원본 제품의 회귀 테스트는 생산 저장소에서 계속 실행한다. 기술 검증 통과, 일반 검토 일정의 최신성, 실제 기관 운영 승인은 서로 다른 판정이다. 생성물의 온라인·이관 승인 원장은 모두 `pending`에서 시작하고, 원본 운영 메모리는 upstream 이력으로만 보존한다.
 
-생산 저장소의 CI는 기존 6개 required context와 3프로필 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 산출물 runner와 gitleaks working-tree·incremental 검사를 실행한다. 원본 13개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 연결해야 하며, 기본 생성물 CI를 원본과 동등한 검증이나 운영 인증으로 해석하지 않는다.
+생산 저장소의 CI는 기존 6개 required context와 시작 구성 생성 matrix(PR 은 시작 구성 셋을 한 레이아웃씩, main 은 다섯을 두 레이아웃씩)를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 산출물 runner와 gitleaks working-tree·incremental 검사를 실행한다. 원본 13개 workflow·required 명세·package·pre-push는 `config/governance/upstream-verification/`의 비활성 이력이다. CodeQL·E2E·mutation·외부 배포·예약 작업은 기관 범위에 맞춰 다시 연결해야 하며, 기본 생성물 CI를 원본과 동등한 검증이나 운영 인증으로 해석하지 않는다.
 
 생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`에 연결된다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행하며 모든 범위에서 공통 활성 계약을 먼저 검사한다. 생산자 전용 `base:*`와 기관 환경이 필요한 `verify:e2e`·`verify:ops` 별칭은 제거된다. 생성물 required-check 템플릿은 `remoteApplied: false`이고 브랜치·App이 미설정이므로 기관의 실제 ruleset과 런타임 검증을 별도로 구성한다. 자세한 명령별 범위는 [재사용 Base 가이드 §4](reusable-base-guide.md#4-산출물-검증)를 따른다.
 
@@ -291,7 +291,7 @@ npm run review:migration
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실제 PostgreSQL 스키마 검증 포함·Docker 필요, 브라우저 E2E와 원격 ruleset은 별도) |
 | Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
-| 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 세 프로필 각각 실행 |
+| 재사용 프로필 전체 기술 검증 | `npm run base:verify -- --profile core` | 새 격리 DB·소스 생성과 산출물 계약·Java·스키마·tsc·lint·build; 시작 구성 다섯 각각 실행 |
 | 독립 이관 기술 검증 | `npm run verify:migration` | migration-tool 테스트·bootJar; 실제 기관 적재 승인과 구분 |
 | 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest의 현재 설정 래칫 |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
