@@ -25,35 +25,23 @@
     "sequences": [],
     "sharedTables": [],
     "frontend": [
-      "src/app/admin/sanctn/workflow",
       "src/app/admin/system/ism",
-      "src/app/admin/workflow",
       "src/app/approvals",
       "src/services/business/user/approval",
       "src/app/components/dashboard/ApprovalHome.tsx",
       "src/queries/approval-home-query.ts",
       "src/extensions/informalsanction"
     ],
-    "frontendAny": [
-      {
-        "path": "src/app/admin/sanctn/WorkflowHubClient.tsx",
-        "with": [
-          "template"
-        ]
-      }
-    ],
+    "frontendAny": [],
     "routes": [
-      "/admin/sanctn/workflow",
       "/admin/system/ism",
-      "/admin/workflow",
       "/approvals"
     ],
     "exactRoutes": [],
     "menuTabs": [],
     "permissionDomains": [
       "INFORMAL",
-      "APPROVAL",
-      "WORKFLOW"
+      "APPROVAL"
     ],
     "gates": [
       {

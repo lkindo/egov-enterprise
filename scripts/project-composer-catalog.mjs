@@ -259,7 +259,9 @@ export function buildProjectComposerCatalog(root, declarations) {
     const data = inventory.get(domain);
     if (frontendOnlyDomains.has(domain)) {
       if (data.files.length) fail(`frontend-only capability has backend source: ${domain}`);
-      if (data.tables.length || feature.permissions.length) fail(`frontend-only capability declares tables or permission domains: ${domain}`);
+      // 권한 도메인은 둘 수 있다 — 화면 진입에만 쓰는 권한이면 백엔드가 없다(시연 기능의 워크플로우 예시 화면과 그 진입 권한
+      // WORKFLOW_READ, 2026-10-13). 서버 인가 census 가 그 권한을 부르지 않는지는 운영 계약(project-composer-catalog.test.mjs)이 본다.
+      if (data.tables.length) fail(`frontend-only capability declares tables: ${domain}`);
     } else if (!data.files.length) fail(`capability has no source: ${domain}`);
     const requires = [];
     for (const edge of data.edges) requires.push({ domain: edge.domain, kind: 'java', reason: `${domain} 소스가 ${edge.domain} 타입을 참조한다.`, evidence: edge.evidence });

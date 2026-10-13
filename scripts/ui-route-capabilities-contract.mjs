@@ -702,9 +702,10 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 export function validateRouteCapabilities(manifest, repository) {
-  // 소유 프로필 어휘는 시작 구성 id·직접 선택·미검증이다(presets.json, 11단계 C8 — 종전에는 이름을 이 파일에 열거했다). 시연 화면
-  // (/admin/workflow)의 소유 'demo' 는 생성물 원장에도 그대로 실리므로(buildUnreviewedBaselineManifest) 생성물의 활성 구성이 무엇이든
-  // 받는다 — 생성물의 presets.json 에는 활성 구성 하나만 있어, 시연 화면을 담은 직접 선택 생성물이 제 원장을 거부하게 된다.
+  // 소유 프로필 어휘는 시작 구성 id·직접 선택·미검증이다(presets.json, 11단계 C8 — 종전에는 이름을 이 파일에 열거했다). 시연 기능의
+  // 워크플로우 예시 화면(/admin/workflow, 2026-10-13 결재 기능에서 옮겼다)의 소유 'demo' 는 생성물 원장에도 그대로 실리므로
+  // (buildUnreviewedBaselineManifest) 생성물의 활성 구성이 무엇이든 받는다 — 생성물의 presets.json 에는 활성 구성 하나만 있어, 시연
+  // 기능을 담은 직접 선택 생성물이 제 원장을 거부하게 된다.
   const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
   const nonDemoPresets = presetIds().filter((profile) => profile !== 'demo');
   const errors = [];
@@ -937,6 +938,15 @@ export function validateRouteCapabilities(manifest, repository) {
     if (!Array.isArray(entry.directProjectionProfiles)
       || !exactArray(entry.directProjectionProfiles, directProjectionProfiles(entry.source, repository.profileProjections))) {
       errors.push(`${label}: directProjectionProfiles drifted from the preset compositions' frontend removePaths`);
+    }
+    // 확인한 소유(profileOwners)는 투영 관찰을 가리지 않는다. 원본 저장소에서 화면 소스를 지우지 않는 시작 구성은 모두 소유에 적혀야
+    // 한다 — 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 아래 데모 누수 가드가 그 구성을 보지 못한다(2026-10-13: 인증
+    // 시작 구성 '공통 기반 + 결재' 가 워크플로우 예시 화면을 실었는데 원장은 'demo' 만 적었다). 생성물은 자기 구성 하나만 알고 그
+    // 이름이 'custom' 일 수 있어 보지 않는다 — 원본 저장소의 이 대조가 모든 시작 구성을 이미 본다.
+    if (repository?.profileProjections?.projection === false && Array.isArray(entry.profileOwners)
+      && !entry.profileOwners.includes('UNVERIFIED') && Array.isArray(entry.directProjectionProfiles)) {
+      const omitted = entry.directProjectionProfiles.filter((profile) => !entry.profileOwners.includes(profile));
+      if (omitted.length) errors.push(`${label}: profileOwners omit presets that ship the screen: ${omitted.join(', ')}`);
     }
     if (!Array.isArray(entry.journeys)
       || entry.journeys.some((journey) => !isNonemptyString(journey))) {

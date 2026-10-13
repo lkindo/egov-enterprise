@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   analyzeRouteCapabilities,
+  directProjectionProfiles,
   discoverPageRoutes,
   expectedShellAccess,
   inspectRouteRepository,
@@ -506,6 +507,27 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
     validateRouteCapabilities(demoLeak, repository).errors.join('\n'),
     /demo capability leaks into a non-demo profile owner/,
   );
+
+  // 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 누수 가드가 그 구성을 보지 못한다(2026-10-13: 결재 기능이 워크플로우 예시
+  // 화면을 소유해 인증 시작 구성 '공통 기반 + 결재' 가 그 화면을 실었는데 원장은 'demo' 만 적었다). 결재 시작 구성이 화면을 지우지
+  // 않는 투영을 만들어, 투영을 그대로 따른 원장이 소유 누락으로 붉은지 본다.
+  const shipped = structuredClone(repository);
+  const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
+  assert.ok(approval?.removePaths.includes('src/app/admin/workflow'), 'the approval preset removes the workflow demo today');
+  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/app/admin/workflow');
+  const omitted = structuredClone(analysis.manifest);
+  const workflowEntry = omitted.routes.find(({ route }) => route === '/admin/workflow');
+  workflowEntry.directProjectionProfiles = directProjectionProfiles(workflowEntry.source, shipped.profileProjections);
+  assert.deepEqual(workflowEntry.directProjectionProfiles, ['approval', 'demo']);
+  assert.deepEqual(validateRouteCapabilities(omitted, shipped).errors, [
+    'route /admin/workflow: profileOwners omit presets that ship the screen: approval',
+  ]);
+  // 소유에 적으면 누락은 풀리고 누수 가드가 그 구성을 잡는다. 생성물(자기 구성 하나만 아는 투영)은 이 대조를 하지 않는다.
+  workflowEntry.profileOwners = ['approval', 'demo'];
+  assert.match(validateRouteCapabilities(omitted, shipped).errors.join('\n'), /demo capability leaks into a non-demo profile owner/);
+  workflowEntry.profileOwners = ['demo'];
+  shipped.profileProjections.projection = true;
+  assert.ok(!validateRouteCapabilities(omitted, shipped).errors.some((error) => error.includes('profileOwners omit')));
 
   const falseLive = structuredClone(analysis.manifest);
   const notification = falseLive.routes.find(({ route }) => route === '/admin/notifications');

@@ -3904,7 +3904,6 @@
         "UNVERIFIED"
       ],
       "directProjectionProfiles": [
-        "approval",
         "demo"
       ],
       "journeys": [],
@@ -10017,7 +10016,6 @@
         "demo"
       ],
       "directProjectionProfiles": [
-        "approval",
         "demo"
       ],
       "journeys": [],
