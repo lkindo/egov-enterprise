@@ -9,7 +9,7 @@ import { resolveProjectRecipe } from '../../scripts/project-composer-recipe.mjs'
 import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } from '../../scripts/project-composer.mjs';
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from '../../scripts/project-composer-menu-preview.mjs';
-import { composerPresentation, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
+import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
@@ -303,7 +303,7 @@ async function realCatalogPage(t, { preflight = passingPreflight, deep = passing
   };
   let release;
   const released = new Promise(resolve => { release = resolve; });
-  const app = createComposerServer({ engine: { catalog: () => ({ ...catalog, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(catalog, { routeKinds: loadRouteKinds(root) }) }), plan, diff: diffWith(catalog), preflight, deep,
+  const app = createComposerServer({ engine: { catalog: () => ({ ...catalog, sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), presentation: composerPresentation(catalog, { routeKinds: loadRouteKinds(root), ...loadComposerPresentationDeclarations(root) }) }), plan, diff: diffWith(catalog), preflight, deep,
     generate: async () => { await released; throw new Error('not generated in this test'); } } });
   const origin = await app.listen(0);
   t.after(() => app.close());
@@ -823,7 +823,7 @@ test('the real catalog renders feature areas, search, owned-count badges and Kor
   // 항상 포함되는 공통 기반의 크기(설계서 시안 18장).
   await expect(page.locator('#core-counts')).toHaveText(`테이블 ${real.core.tables.length} · 권한 ${real.core.permissionCodes.length} · 메뉴 경로 ${real.core.menuRoutes.length}`);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
-  const presentation = composerPresentation(real, { routeKinds: loadRouteKinds(root) });
+  const presentation = composerPresentation(real, { routeKinds: loadRouteKinds(root), ...loadComposerPresentationDeclarations(root) });
   const options = await page.locator('#preset option').allTextContents();
   assert.deepEqual(options, [...real.presets.map(preset => `${presentation.presets[preset.id].label} · ${preset.domains.length ? `업무 기능 ${preset.domains.length}개` : '업무 기능 없음'}`), '직접 선택']);
   assert.ok(options.includes('공통 기반만 · 업무 기능 없음') && options.includes('협업 기본 · 업무 기능 8개'), options.join(' / '));
