@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
 import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, planFrontendRemoval } from './reusable-source-frontend.mjs';
-import { describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
+import { convergeRedirectPages, describeRoutes, pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
@@ -165,24 +165,29 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   const exactFiles = new Set(relativeFiles);
   const screenKept = file => exactFiles.has(file) && !removed.has(pathKey(file));
   const lostScreens = [];
+  let routeRows = null;
   if (frontend) {
     try {
       const expectation = pageSurvival ?? pageSurvivalExpectation({ root, catalog: catalog ?? loadProjectComposerCatalog(root), composition });
       const { missing: screens, extra } = pageSurvivalViolations({ ...expectation, survives: screenKept });
+      // 같은 원장으로 수렴할 수 없으면(위에서 실패) 권한 투영은 판정하지 않는다 — 차단 사유는 FRONTEND_PROJECTION 하나다.
+      routeRows = expectation.rows;
       lostScreens.push(...screens.map(entry => entry.source));
       if (extra.length) block('FRONTEND_SCREEN_EXTRA', { files: extra.map(entry => entry.source), message: describeRoutes(extra) });
     } catch (error) { block('FRONTEND_PROJECTION', { message: message(error) }); }
   }
 
-  // 권한 투영(10단계 10b): 생성기는 Java·프런트 투영 뒤 카탈로그·인가 원장 바인딩·화면 목록·묶음 원장을 구성으로 줄인다. 같은 판정
-  // (planPermissionProjection — 생성기와 같은 모듈)을 미리 한다. 남는 바인딩이나 남는 화면의 진입 권한이 구성 밖 코드를 요구하거나,
-  // 묶음 원장이 남는 권한을 나누지 못하면 생성하면 같은 자리에서 실패한다. 두 투영이 모두 될 때만 판정한다(지워질 파일을 다 알아야 한다).
+  // 권한 투영(10단계 10b): 생성기는 Java·프런트 투영과 리다이렉트 정리 뒤 카탈로그·인가 원장 바인딩·화면 목록·묶음 원장을 구성으로 줄인다.
+  // 같은 판정(planPermissionProjection — 생성기와 같은 모듈)을 미리 한다. 남는 page(넘기는 page 포함)에 카탈로그 키가 없거나 그 진입 권한,
+  // 남는 바인딩이 구성 밖 코드를 요구하거나, 묶음 원장이 남는 권한을 나누지 못하면 생성하면 같은 자리에서 실패한다.
+  // 남는 page 는 생성기의 거버넌스 투영처럼 목적지가 사라진 리다이렉트 page 를 수렴할 때까지 뺀 집합이다(화면 생존 대조와 같은 규칙).
+  // 두 투영과 라우트 원장 읽기가 모두 될 때만 판정한다(지워질 파일을 다 알아야 한다).
   let permissionProjection = null;
-  if (java && frontend) {
+  if (java && frontend && routeRows) {
     try {
-      const keptScreenRoutes = new Set(discoverPageRoutes(root).filter(page => screenKept(page.source)).map(page => page.route));
+      const keptPageRoutes = convergeRedirectPages(discoverPageRoutes(root).filter(page => screenKept(page.source)).map(page => page.route), routeRows);
       permissionProjection = planPermissionProjection({ sourceRoot: root, composition, removed: file => removed.has(pathKey(file)),
-        keptScreenRoutes, sources: permissionSources ?? readPermissionSources(root) });
+        keptPageRoutes, sources: permissionSources ?? readPermissionSources(root) });
     } catch (error) { block('PERMISSION_PROJECTION', { message: message(error) }); }
   }
 
@@ -255,7 +260,8 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     java: java && { removedFiles: java.removed.size, cascadeFiles: java.removed.size - javaDirect, files: [...java.removed].map(rel).sort() },
     frontend: frontend && { removedFiles: frontend.removed.size, cascadeFiles: frontend.removed.size - frontend.direct.size, files: [...frontend.removed].map(rel).sort() },
     removedGates,
-    // 생성물의 권한 카탈로그·바인딩·화면·묶음 수와 빠지는 묶음·생성 제외 권한(생성기와 같은지 시험이 대조한다). 화면에는 보내지 않는다.
+    // 생성물의 권한 카탈로그·바인딩·화면·묶음 수와 빠지는 page 권한·묶음·생성 제외 권한(생성기와 같은지 시험이 대조한다 —
+    // project-composer-deep-parity.test.mjs 가 복사한 트리에서 생성기의 권한 투영 단계를 돌려 비교한다). 화면에는 보내지 않는다.
     permissionProjection,
     // 생성물 api-docs 의 연산·스키마·태그 수와 빠지는 연산 id(생성기와 같은지 시험이 대조한다). 화면에는 보내지 않는다.
     apiContract,

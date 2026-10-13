@@ -73,7 +73,10 @@ export function adoptionScope(repoRoot, { product, profile }) {
     'scripts/adoption-review.mjs', 'scripts/governance-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/release-images.mjs',
     'scripts/verify.mjs', 'scripts/verify-reusable-artifact.mjs',
     'reusable-base-lock.json', 'scripts/reusable-layout.mjs',
-    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs'];
+    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs',
+    // 승인 실행 사슬(이 파일·adoption-execute·verify-reusable-artifact·reusable-layout-runtime)이 import 시점에 돌리는 구성 이름 판정이다
+    // (11단계 C8). 이관 제품도 복사한다. 범위에 없으면 승인 뒤 바뀌어도 digest 가 그대로다.
+    'scripts/composition-profiles.mjs'];
   const lockPath = resolve(repoRoot, 'reusable-base-lock.json');
   const generatedProduct = existsSync(lockPath);
   // The generated-product verifier reads these aliases before launching Gradle. Bind
@@ -112,7 +115,7 @@ export function adoptionScope(repoRoot, { product, profile }) {
   const required = product === 'migration-tool'
     ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json', 'config/modules/presets.json'];
   if (generatedProduct) required.push('package.json', 'scripts/reusable-layout.mjs',
-    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs');
+    'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs', 'scripts/composition-profiles.mjs');
   for (const file of required) if (!files.has(file)) throw new Error(`missing product scope input: ${file}`);
   const inputs = [...files].sort(([a], [b]) => a.localeCompare(b, 'en'));
   return { product, profile, fileCount: inputs.length,

@@ -8,7 +8,7 @@ import { projectSourceTree } from './generate-reusable-base-source.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { composerOwnership } from './composer-modules.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
-import { routeRowsFromLedger } from './reusable-page-survival.mjs';
+import { expectedPageRoutes, readRouteRows, routeRowsFromLedger } from './reusable-page-survival.mjs';
 import { assertRemovedGatesAcknowledged, removedGateAcknowledgement } from './reusable-source-gates.mjs';
 import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.mjs';
 import { copySourceTree, normalize, walk } from './reusable-source-tree.mjs';
@@ -25,7 +25,7 @@ test('a full product composition removes nothing and still reports a summary', (
   // 권한 투영은 아무것도 빼지 않는다(원본 parity).
   const sources = readPermissionSources(root);
   assert.deepEqual(deep.permissionProjection, {
-    permissions: sources.catalog.permissions.length, operationBindings: sources.policies.operationBindings.length, removedOperationBindings: 0,
+    permissions: sources.catalog.permissions.length, removedPagePermissions: [], operationBindings: sources.policies.operationBindings.length, removedOperationBindings: 0,
     screens: sources.registry.screens.length, bundles: sources.bundles.bundles.map(bundle => bundle.id), droppedBundles: [], generatedExclusions: [],
   });
 });
@@ -55,6 +55,21 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
   deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: unclassified });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.match(deep.blockers[0].message, new RegExp(`does not classify composition permissions: ${excludedInCore.code}`, 'u'));
+  // 생성기는 화면 목록에 없는 넘기는 page 까지 카탈로그로 판정한다(트랙 B 검토 #1). core 에 남는 넘기는 page 의 진입 권한이
+  // 구성 밖 코드를 요구하면 같은 사유로 막는다.
+  const redirectNeeds = structuredClone(sources);
+  redirectNeeds.catalog.pagePermissions['/admin/security/role'] = [...redirectNeeds.catalog.pagePermissions['/admin/security/role'], 'MAIL_SEND'];
+  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: redirectNeeds });
+  assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
+  assert.match(deep.blockers[0].message, /retained page permissions need codes outside the composition: \/admin\/security\/role needs MAIL_SEND/);
+  // 대조군: 목적지가 이 구성에서 사라지는 넘기는 page 는 생성기의 거버넌스 투영이 지우므로 판정하지 않는다(화면 생존 대조와 같은 수렴).
+  // 같은 page 를 core 가 지우는 화면(메일 발송)으로 넘기게 한 라우트 원장으로 기대값을 다시 만든다.
+  const rows = new Map([...readRouteRows(root)].map(([route, row]) => [route,
+    route === '/admin/security/role' ? { ...row, target: '/admin/collaboration/mail-send' } : row]));
+  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: redirectNeeds,
+    pageSurvival: { rows, expected: expectedPageRoutes(catalog, core, rows) } });
+  assert.deepEqual(codes(deep), [], 'a redirect page whose destination the composition removes is not judged');
+  assert.ok(deep.permissionProjection.removedPagePermissions.includes('/admin/security/role'));
 });
 
 // api-docs 연산을 판정할 수 없으면(바인딩 없음·소스 없는 핸들러) 생성기는 Java 투영 뒤에 실패한다. 정밀 점검이 Docker 전에 같은 사유로 막는다.
@@ -158,7 +173,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   const pageSurvival = { rows, expected: new Set(['/', '/login']) };
   // 권한 정의도 없다. 권한 투영은 늘 판정하므로 최소 입력을 직접 넘긴다 — 홈 화면을 여는 묶음 하나와 그 권한(구성 코드)이 남고,
   // 제외 도메인 핸들러의 바인딩 하나는 Java 투영이 핸들러를 지워 투영 원장에서 빠진다(구성 안 권한이라 핸들러 판정만 그 행을 뺀다).
-  const permissionSources = { catalog: { permissions: [{ code: 'HOME_READ' }] }, visibleTerms: { terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] },
+  const permissionSources = { catalog: { permissions: [{ code: 'HOME_READ' }], pagePermissions: { '/': ['HOME_READ'], '/login': [], '/demo': [] } }, visibleTerms: { terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] },
     bundles: { schemaVersion: 1, description: '시험용 묶음 원장', excluded: [], bundles: [
       { id: 'home-viewer', name: '홈 조회', description: '홈 조회를 맡깁니다.', protected: false, permissions: ['HOME_READ'] }] },
     registry: { screens: [{ route: '/', entry: { permissions: ['HOME_READ'], mode: 'ANY' }, permissions: [{ code: 'HOME_READ', action: 'READ', source: 'entry' }] }] },

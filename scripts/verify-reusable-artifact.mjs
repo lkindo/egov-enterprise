@@ -9,7 +9,8 @@ import { compositionProfiles } from './composition-profiles.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 
 // 검증 단계 id 의 정본. 생성기 엔진·서버가 이 목록을 가져가 실패한 단계를 이름으로 말한다.
-// 이 파일은 다른 생성기 모듈을 가져오지 않는다(이관 제품이 이 파일과 reusable-layout.mjs 만 복사한다).
+// 이 파일은 구성 이름 판정(composition-profiles.mjs, Node 내장만)과 reusable-layout.mjs 밖의 생성기 모듈을 가져오지 않는다 — 이관 제품이
+// 이 셋을 함께 복사한다(generate-migration-product.mjs).
 export const VERIFICATION_STEP_IDS = Object.freeze(['governance', 'ui-governance', 'entrypoints', 'backend', 'typecheck', 'lint', 'build']);
 
 /** 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다. */

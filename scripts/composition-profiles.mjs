@@ -34,6 +34,11 @@ export function presetIds(root = REPOSITORY_ROOT) {
   if (!ids.length || ids.some(id => typeof id !== 'string' || !PRESET_ID.test(id)) || new Set(ids).size !== ids.length) {
     throw new Error(`${PRESET_DECLARATIONS} 의 시작 구성 id 가 비었거나 형식이 다르거나 겹친다: ${JSON.stringify(ids)}`);
   }
+  // 직접 선택 구성의 이름은 원본 시작 구성 id 가 될 수 없다(생성물 표지 active 가 있는 생성물만 그 하나로 둔다). 쓰면 생성기·검사기가
+  // 그 시작 구성을 직접 선택으로 보아 기대치 대조를 건너뛰고, compositionProfiles() 의 합집합이 두 이름을 하나로 숨긴다.
+  if (declared.active === undefined && ids.includes(CUSTOM_COMPOSITION)) {
+    throw new Error(`${PRESET_DECLARATIONS} 의 시작 구성 id 로 직접 선택 구성 이름(${CUSTOM_COMPOSITION})을 쓸 수 없다`);
+  }
   return ids;
 }
 
