@@ -22,7 +22,7 @@ clean v* release tag
 - 단일 정본: 현재 릴리스 소스
 - 프로필 SSOT: `config/reusable-base-profiles.json`
 - 생성기: `scripts/generate-reusable-base-db.mjs`, `scripts/generate-reusable-base-source.mjs`
-  - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(pack 마커·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
+  - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(마커 블록·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
   - DB 번들 단계: `reusable-db-postgres`(컨테이너·psql·pg_dump), `reusable-db-migrations`(버전 순서·권한 Contract 리허설) `.mjs`
 - 출력: `build/reusable-base/` 아래의 무시되는 릴리스 준비 산출물
 - 금지: 장기 template 브랜치 수동 동기화, 운영·공유 DB에서 테이블 삭제, 생성 SQL 수동 편집
@@ -37,11 +37,20 @@ clean v* release tag
 | `collaboration` | core + collaboration | core + 게시판·댓글·스크랩 + 메일·쪽지·알림·SMS·실시간 대시보드 |
 | `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
 
-프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
-소유한다. `board`·`comment`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
-테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`은 이
-매니페스트의 `appDomains`로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그 간선을 거꾸로 따라 정한다
-([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+프로필은 누적된다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
+pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
+클러스터와 `tb_tmplt_info`처럼 공유되는 테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트
+`scripts/delete-domain.ps1`은 기능 파일(`config/modules/<기능>.json`)로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그
+간선을 거꾸로 따라 정하며, 화면은 지우는 기능의 화면 소유로 지운다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
+
+생성기는 시작 구성도 기능 단위로 투영한다(2026-10-13 매니페스트 v2 11단계 C3). 제외 기능은 시작 구성의 기능 목록에서, 화면 제외 경로는
+기능 규칙에서 정하고 pack 의 `removePaths` 를 보지 않는다 — 같은 기능 목록의 직접 선택과 같은 결과다. 기능 소유·지원 파일·시작 구성
+기대치는 매니페스트 v2(`config/modules`)에서 읽는다. 소유 기능이 빠진 공유 테이블은 그 테이블 선언의 소비자 가운데 구성에 있는 첫
+기능이 넘겨받는다(순위를 보지 않는다). 생성물의 `config/modules` 에는 구성의 기능 파일·`core.json`·활성 구성 하나만 담은
+`presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 그 `presets.json` 의 `active` 가 생성물 표지다 — 권한 생성기·
+하네스 프로필·원장 계약·생성물 무결성 검사는 표지를 생성기 투영 구조(활성 구성 하나·기능 파일 집합)와 함께 확인하고, 구조가
+다르거나 lock 이 있는데 표지가 없으면 실패한다. 생성물에는 `config/reusable-base-profiles.json` 이 남지 않고 lock·하네스 프로필에도
+pack 이 없다(11단계 C5).
 
 ### 2.1 백엔드 출력 형태
 
@@ -250,6 +259,9 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 }
 ```
 
+생성기와 정밀 점검은 이 승인을 매니페스트 v2(`config/modules/presets.json` 의 `expected`)에서 읽는다(11단계 C3). 전환(C7) 전까지는
+매니페스트가 원천이므로 고친 뒤 `npm run modules:generate` 로 다시 만든다.
+
 - 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
 - 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
 - `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 매니페스트 안에 남긴다.
@@ -260,7 +272,10 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 (api-server main 50개 — 컨트롤러 34·요청·응답 DTO 11·연동·리스너 5 — 와 api-server 시험 52개, business-app 시험 3개).
 소유는 코드에서 도출되므로, 잘못 들어간 import 한 줄은 컨트롤러를 지우면서 기대치까지 함께 바꾼다(개인정보 census·컨트롤러
 하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `profiles.<name>.acknowledgedJavaCascade`
-에 적고, 생성기·정밀 점검(plan/deep)·운영 계약(`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다.
+에 적고(매니페스트 v2 의 `presets.json` `expected.javaCascade` 로 옮겨 적힌다), 생성기·정밀 점검(plan/deep)·운영 계약
+(`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다. 운영 계약은 2026-10-13(11단계 C4)부터
+`presets.json` 의 Java 게이트 승인(`expected.gates`)과 연쇄 목록을 읽어 시작 구성마다 생성기 계획과 대조한다 — 수가 아니라 목록이라
+게이트 하나가 사라지고 다른 하나가 살아나는 교체도 붉다.
 목록의 형식·중복도 이 대조가 본다. 사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 `java.cascadeRemoved` 에
 남는다. 직접 선택 구성은 기대치가 없어 lock 기록만 남긴다.
 
@@ -278,17 +293,25 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
 판정 원장을 JSON 으로 옮겼다. 승인 목록의 정본은 매니페스트다.
 
-**횡단 게이트를 되살리는 방식(DEC-OPS-089·090).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
-옮기고 항목마다 소유 pack 을 적는다. 원장은 셋이다 — `config/governance/privacy-access-census.json`,
-`input-contract-mirror-census.json`, `cross-domain-coupling-census.json`.
+**횡단 게이트를 되살리는 방식(DEC-OPS-089·090, 11단계 C4).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
+옮긴다. 원장은 셋이다 — `config/governance/privacy-access-census.json`, `input-contract-mirror-census.json`,
+`cross-domain-coupling-census.json`. 원장에 소유를 적지 않는다 — 2026-10-13 항목마다 적던 pack 태그 230개를 걷고, 남고 빠지는
+기대를 소스의 기능 소유에서 계산한다.
 
-- 게이트는 현재 트리 manifest 에 남은 pack 의 항목만 기대한다. 빠진 pack 항목은 **실제로 없을 때만** 부재로 인정한다
+- 게이트는 저장소에서 원장 전체를, 생성물에서는 생성기가 기록한 투영 계획(하네스 프로필의 `retainsType`·`retainsSource`)에서
+  소스가 모두 남은 항목만 기대한다. 시작 구성과 직접 선택이 같은 판정이다. 지운 항목은 **실제로 없을 때만** 부재로 인정한다
   — 타입 표적은 참조 타입 중 하나가 `ClassNotFoundException` 일 때, 결합 edge 는 소스 파일 중 하나가 없을 때다.
-  전부 남아 있으면 pack 태그가 틀린 것이고, 링크 오류는 판정할 수 없는 것이라 둘 다 red 다.
-- 태그는 **항목이 참조하는 소스가 모두** 살아남는 가장 작은 rank 누적 프로필이다. 생성기의 `planJavaRemoval` 을
-  rank 누적 프로필마다 불러 대조하는 node 계약(`scripts/*-census-contract.test.mjs`, 공용 판정은
-  `scripts/pack-tagged-registry.mjs`)이 CI 에서 지킨다. 실제 프로필에는 survey 만 더한 프로필이 없어 Java 게이트는
-  survey 와 demo 태그를 구분하지 못한다 — 그 구분은 이 계약만 한다.
+  전부 남아 있으면 투영 기록과 트리가 어긋난 것이고, 링크 오류는 판정할 수 없는 것이라 둘 다 red 다.
+- 기대 생존은 항목이 참조하는 **소스가 모두** 구성 안 기능(또는 core) 소유일 때만 참이다. 소유는 카탈로그가 연동을 계산할 때 쓰는
+  규칙(지원 파일 선언, 업무 앱 기능 디렉터리, foundation·business-core 는 core, api-server 는 참조하는 업무 패키지)을 그대로 쓴다.
+  node 계약(`scripts/*-census-contract.test.mjs`, 공용 판정은 `scripts/pack-tagged-registry.mjs`)이 시작 구성마다 생성기의
+  `planJavaRemoval` 을 불러 그 기대와 양방향으로 대조한다(`expected to survive in …`·`expected to be removed in …`).
+  시작 구성 셋은 설문을 늘 다른 demo 전용 기능과 함께 넣거나 빼므로, 협업 시작 구성에 설문만 더한 합성 구성도 함께 돈다
+  — 설문 소유를 다른 기능으로 잘못 정하면 그 구성만 잡는다('공통 기반 + 설문' 시작 구성이 생기면 걷는다).
+- api-server 의 기능 디렉터리 밖 파일은 참조하는 업무 패키지로 소유가 정해진다 — 생성기 연쇄와 같은 import 관계다. 그런 항목에서
+  '잘못 들어간 import 로 코어 항목이 사라지는' 신호(DEC-OPS-089)는 이 대조가 아니라 시작 구성의 Java 연쇄 exact 목록이 받친다.
+  지금 원장에서 그런 소스 파일은 셋이다(행사 외부인사 컨트롤러, 결재 기안·승인 요청 DTO — 항목 6개). 다른 api-server 파일을 거쳐 닿는 간접 참조는
+  소유 규칙이 core 로 보므로 이 대조가 붉다.
 - 표적 하한(anti-vacuity)은 프로필과 무관하게 원장 **전체**에 적용한다.
 - 원장 해시는 메타 게이트의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE` 의 `__sourceHash` 가 동결한다(생성기 미러 포함).
 - 게이트 판정은 각 게이트 파일 안에 둔다. 공용 Java 헬퍼로 빼면 그 파일이 `__sourceHash` 밖으로 나가고, 다른 게이트
@@ -307,14 +330,18 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
 - **슬롯 기여**(2026-10-11 슬롯 단계 PR-4): 기능이 자기 디렉터리의 기여 파일에 항목을 적고, 셸은 생성 레지스트리만 읽는다.
   기능이 빠지면 기여 파일이 기능과 함께 직접 지워지고 레지스트리가 남은 기여로 다시 렌더된다 — 셸 파일은 바뀌지 않는다.
   그 자리에 맞는 슬롯이 있으면 슬롯을 쓴다(아래 '슬롯 규칙').
-- **마커 블록**: 셸 파일 안의 pack 소유 코드를 `reusable-base:<pack>:start` / `…:end` 마커 블록으로 감싼다. 슬롯으로
-  옮기는 중이며, 남은 블록은 마커 소유 표의 이행 단계(step)·사유(reason)로 드러난다.
+- **마커 블록**: 셸 파일 안의 기능 소유 코드를 `reusable-base:<기능 id>:start` / `…:end` 마커 블록으로 감싼다. 토큰이 곧
+  소유 기능이다(11단계 C6 — 종전 토큰은 pack 이름이었다). 슬롯으로 옮기는 중이며, 남은 블록은 그 기능 파일
+  (`config/modules/<기능 id>.json`)의 `owns.markerBlocks` 에 적은 블록 수·이행 단계(step)·사유(reason)로 드러난다.
 
 생성기는 **마커 투영·레지스트리 렌더 → import cascade** 순서로 투영한다(`createFrontendProjector` → `pruneFrontend`).
 두 판정은 `scripts/reusable-source-frontend.mjs` 한 곳에 있다(2026-10-11 판정 통일).
 
-- 마커 블록은 공용 파서(`parsePackMarkerBlocks`)가 읽는다. 블록을 남기는지는 projector 가 한 번에 정한다 — 블록의 pack 이
-  프로필에 있고, 직접 선택이면 그 블록의 소유 기능(`project-composer-source.mjs` 의 `FRONTEND_MARKER_FILES`)이 모두 선택돼 있어야 한다.
+- 마커 블록은 공용 파서(`parseMarkerBlocks`)가 읽는다. 블록을 남기는지는 projector 가 한 번에 정한다 — 토큰의 기능이 구성에
+  있어야 한다. 시작 구성도 같다(11단계 C3). 토큰은 기능 파일의 기능 id 여야 하고(아니면 `unknown marker feature`), 그 파일의 블록이
+  그 기능 파일의 `owns.markerBlocks` 에 선언돼 있어야 한다(아니면 `Unclassified composer UI block`) — 블록은 조용히 남거나 빠지지
+  않는다. 필수 기반은 늘 있으므로 `core` 토큰은 없다. 마커 선언은 투영하는 트리가 아니라 스크립트가 속한 저장소의 `config/modules` 에서
+  읽는다(원본의 스크립트는 원본을, 생성물의 스크립트는 생성물을 투영한다). 도달성 census 도 시작 구성의 해석된 구성으로 투영한다(11단계 C5).
 - import 연쇄는 `planFrontendRemoval` 이 계산한다. 간선은 도달성 census 와 같은 토크나이저(`scripts/frontend-module-graph.mjs`)로
   읽고, 넘겨받은 파일 목록 안에서만 정확한 표기로 잇는다(`scripts/frontend-module-resolver.mjs`).
 - 생성기·정밀 점검·도달성 census·생존 시험·경계 계약·거버넌스 투영이 모두 이 함수들을 쓴다.
@@ -352,8 +379,10 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
      토크나이저와 대조한다)이 지키고, 따옴표는 `react/no-unescaped-entities` 경고가 lint 경고 상한에 걸려 먼저 막힌다. 생성기는
      의존성 설치 전에 돌므로 TypeScript 에 기대지 않는다. 원본 밖에서 고친 체크아웃의 숨은 간선은 생성물 타입 검사(산출물 검증)가
      깨진 import 로 늦게 잡는다.
-5. **상위 rank pack 블록은 하위 rank pack 블록의 import 에 기댈 수 있다**(예: demo 블록이 collaboration 블록의
-   `Link` 를 쓴다). 프로필은 rank 하향 폐쇄라 안전하다(`base:census` 가 강제). 반대 방향은 금지다.
+5. **블록은 자기 기능이 요구하는 기능의 블록 import 에 기댈 수 있다**(예: 커뮤니티 블록이 게시판 블록의 import 를 쓴다 —
+   커뮤니티는 게시판을 요구한다). 블록이 남는 구성에는 요구 기능도 있다(카탈로그의 필수 의존 폐포). 반대 방향과 요구 관계가
+   없는 기능 사이는 금지다 — 한쪽만 남는 구성에서 누락·미사용 import 로 타입 검사가 깨진다. 기준은 기능 사이의 요구 관계이고
+   순위(종전 pack 순위)가 아니다(11단계 C6).
 6. **공용 컴포넌트는 pack 소유 구현을 import 하지 않고 주입받는다.** 수신자 피커는 주소록 출처를 prop 으로 받고,
    조합 지점(메일·문자 화면)은 core 도우미(`useRecipientAddressBook`)로 슬롯 레지스트리에서 받아 넘긴다 — 공용 파일에
    마커를 흩뿌리지 않는다(아래 슬롯 규칙).
@@ -366,9 +395,10 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    않으므로 화면 생존을 바꾸는 잘못된 배치(경로를 다른 pack 의 removePaths 에 넣는 실수)는 잡힌다. 같은 프리셋 집합에서
    늘 함께 빠지는 pack 사이의 이동과 비화면 파일의 소유는 이 대조 밖이다(DEC-OPS-265).
 8. **판정은 실제 투영본의 타입·lint·build와 적용범위 계약이다.** 마커 편집은 전체 제품 빌드만으로 확인할 수 없다.
-   - 마커 블록을 더하거나 걷으면 `FRONTEND_MARKER_FILES` 의 파일별·pack 별 블록 수, 소유 기능, 이행 단계(step), 사유(reason)를
-     함께 고친다. 운영 계약(`project-composer-source.test.mjs`)이 공용 파서로 센 원본 블록 수와 표를 정확히 대조한다.
-     생성물에서는 남은 블록이 모두 그 프로필의 pack 인지만 본다.
+   - 마커 블록을 더하거나 걷으면 그 기능 파일 `owns.markerBlocks` 의 파일별 블록 수·이행 단계(step)·사유(reason)를 함께 고친다
+     (전환 C7 까지는 `scripts/composer-modules-generate.mjs` 의 `FEATURE_MARKER_BLOCKS` 를 고치고 `npm run modules:generate`).
+     운영 계약(`project-composer-source.test.mjs`)이 공용 파서로 센 원본 블록 수와 기능 파일 선언을 정확히 대조한다(마커 래칫).
+     생성물에서는 남은 블록의 토큰이 모두 그 생성물의 기능 파일에 있는 기능인지 파서가 본다.
    - 마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필과 두 레이아웃의 같은 경로를 실행한다.
    컴파일 성공만으로 모든 링크와 API의 런타임 동작이 증명되는 것은 아니다.
 
@@ -605,7 +635,7 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 총계·허용 목록·예시도 같은 원장으로 거른다([DEC-OPS-259](../../.agent/memory/decisions.md)). 총계 동결은 파일(화면)별 표를 함께 두어 합이 총계와 같게 하고,
 생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
 가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
-팩 마커로 걷히거나 다른 팩이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 팩 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
+마커 블록으로 걷히거나 다른 기능이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 기능 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
 2026-10-10 core 실제 생성물의 vitest 는 801개 파일 2,575건이 모두 통과한다. collaboration·직접 선택 구성의 실제 생성물 측정은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서

@@ -224,7 +224,9 @@ test('installer refuses its own source tree even when the Windows drive letter c
     rmSync(source, { recursive: true, force: true });
   });
   mkdirSync(join(source, 'scripts'));
-  for (const file of ['reusable-layout-runtime.mjs', 'reusable-single-module.mjs']) copyFileSync(join(ROOT, 'scripts', file), join(source, 'scripts', file));
+  for (const file of ['reusable-layout-runtime.mjs', 'reusable-single-module.mjs', 'composition-profiles.mjs']) {
+    copyFileSync(join(ROOT, 'scripts', file), join(source, 'scripts', file));
+  }
   const pkg = `${JSON.stringify({ scripts: { 'verify:migration': 'node scripts/verify.mjs migration', backend: 'gradlew.bat :api-server:bootRun' } }, null, 2)}\n`;
   writeFileSync(join(source, 'package.json'), pkg);
   const copy = await import(pathToFileURL(join(source, 'scripts', 'reusable-layout-runtime.mjs')).href);

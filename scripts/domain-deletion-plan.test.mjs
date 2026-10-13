@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { asciiJson, planDomainDeletion, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
+import { asciiJson, planDomainDeletion, planDomainFrontendPaths, planDomainJavaFiles, treeDeletionCatalog } from './domain-deletion-plan.mjs';
 import { stripJavaCommentsAndStringLiterals } from './reusable-source-java.mjs';
 import { MODULES_DIRECTORY } from './composer-modules.mjs';
 
@@ -20,20 +20,19 @@ import { MODULES_DIRECTORY } from './composer-modules.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = loadProjectComposerCatalog(ROOT);
 const SCRIPT = join(ROOT, 'scripts/domain-deletion-plan.mjs');
-const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
 const APP = 'business-app/src/main/java/nuri/business';
 
 /**
- * manifest·기능 파일과 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
- * 기능 파일(매니페스트 v2)은 원본 것을 모두 둔다 — 생성기는 C3 전까지 config/modules 를 투영하지 않고 그대로 복사하므로 생성물도
- * 그렇다. 기능 집합은 manifest 가 정한다. `edit` 로 기능 파일을 고친다.
+ * 기능 파일과 고른 기능의 업무 앱 생산 소스만 둔 임시 트리. 화면·권한 원장이 없어 카탈로그는 적재되지 않는다.
+ * 기능 파일(매니페스트 v2)은 `modules` 가 주어지면 그 기능의 파일만(생성물처럼 — 생성기는 config/modules 를 구성으로 투영한다,
+ * 11단계 C3), 아니면 원본 것을 모두 둔다(원본 트리·이미 지운 트리). 기능 집합은 기능 파일이 정한다. `edit` 로 기능 파일을 고친다.
  * `api` 면 api-server 생산 소스도 둔다 — api-server 디렉터리 소유 간선(DEC-OPS-280)도 카탈로그 없이 계산된다.
  */
-function treeWith({ manifest, domains, api = false, edit = () => {} }) {
+function treeWith({ domains, modules, api = false, edit = () => {} }) {
   const root = mkdtempSync(join(tmpdir(), 'domain-deletion-'));
   mkdirSync(join(root, MODULES_DIRECTORY), { recursive: true });
-  writeFileSync(join(root, 'config/reusable-base-profiles.json'), JSON.stringify(manifest));
-  for (const name of readdirSync(join(ROOT, MODULES_DIRECTORY)).filter(name => name.endsWith('.json'))) {
+  const kept = name => !modules || ['_schema.json', 'core.json', 'presets.json'].includes(name) || modules.includes(name.replace(/\.json$/, ''));
+  for (const name of readdirSync(join(ROOT, MODULES_DIRECTORY)).filter(name => name.endsWith('.json') && kept(name))) {
     const value = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, name), 'utf8'));
     edit(value);
     writeFileSync(join(root, MODULES_DIRECTORY, name), JSON.stringify(value));
@@ -141,8 +140,8 @@ test('the tree judgement yields exactly the catalog edges that deletion follows'
 // 다른 기능 디렉터리에 있는 지원 파일은 그 기능을 요구한다. 실례(커뮤니티가 쓰던 템플릿 배정 구현)는 DEC-OPS-280 에서 포트로
 // 바뀌어 사라졌으므로 합성 선언으로 규칙을 본다 — 실례만 바꾸고 단언을 지우면 이 간선 규칙의 red 가 사라진다.
 test('a support file declared in another feature directory makes its consumer require that feature', () => {
-  // 판정은 기능 파일(매니페스트 v2)의 지원 파일 선언을 읽는다. manifest 의 같은 선언은 생성기 Java 투영(planDomainJavaFiles)만 쓴다.
-  const root = treeWith({ manifest: MANIFEST, domains: ['mail', 'note'],
+  // 판정은 기능 파일(매니페스트 v2)의 지원 파일 선언을 읽는다. 함께 지울 Java(planDomainJavaFiles)도 같은 선언을 쓴다(11단계 C3).
+  const root = treeWith({ domains: ['mail', 'note'],
     edit: value => { if (value.id === 'note') value.backend.supportFiles = [`${APP}/service/mail/MailService.java`]; } });
   try {
     const tree = treeDeletionCatalog(root);
@@ -155,14 +154,13 @@ test('a support file declared in another feature directory makes its consumer re
 });
 
 test('a projected collaboration tree plans the same deletions without the full catalog', () => {
-  const collaboration = MANIFEST.packs.collaboration.backend.appDomains;
-  const root = treeWith({ domains: collaboration, manifest: { packs: { core: MANIFEST.packs.core, collaboration: MANIFEST.packs.collaboration },
-    clusters: MANIFEST.clusters.filter(cluster => cluster.pack === 'collaboration') } });
+  const collaboration = catalog.presets.find(preset => preset.id === 'collaboration').domains;
+  const root = treeWith({ domains: collaboration, modules: collaboration });
   try {
     const tree = treeDeletionCatalog(root);
-    // 기능 파일은 22개 모두 있지만(생성기가 복사한다) 이 트리의 기능은 manifest 가 정한다. 없는 기능은 삭제 계획을 내지 않는다.
+    // 생성물의 기능 파일은 구성의 것만 있다(생성기 투영, 11단계 C3). 없는 기능은 삭제 계획을 내지 않는다.
     assert.deepEqual(tree.capabilities.map(capability => capability.id), [...collaboration].sort());
-    assert.equal(readdirSync(join(root, MODULES_DIRECTORY)).length, readdirSync(join(ROOT, MODULES_DIRECTORY)).length);
+    assert.equal(readdirSync(join(root, MODULES_DIRECTORY)).length, collaboration.length + 3, 'feature files plus core, presets and the schema');
     assert.throws(() => planDomainDeletion({ catalog: tree, requested: ['survey'] }), /unknown domain: survey/);
     // 커뮤니티는 이 트리에 없다(demo pack) — 원본 표에서 트리에 있는 기능만 함께 지워진다.
     for (const domain of collaboration) {
@@ -216,7 +214,7 @@ test('files outside the domain directories go with the types they reference, jud
 
 test('a tree where a deletion already ran and a new domain was scaffolded still plans', () => {
   const gone = new Set(['informalsanction', 'reward']);
-  const root = treeWith({ manifest: MANIFEST, domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)), api: true });
+  const root = treeWith({ domains: Object.keys(SINGLE_DELETIONS).filter(domain => !gone.has(domain)), api: true });
   try {
     // generate-domain.ps1 가 만드는 새 도메인. 기능 파일이 없으므로 판정 대상이 아니고, 거부 사유도 아니다.
     mkdirSync(join(root, APP, 'domain/product'), { recursive: true });
@@ -270,4 +268,18 @@ test('delete-domain.ps1 takes its companions from the plan, not from manifest cl
   // 같은 이름 패키지(nuri.business.service.system.user 등)까지 걸려 실제로 깨지는 소스가 경고 소음에 묻힌다.
   assert.doesNotMatch(script, /nuri\.business\.\$layer\.\$d/u, 'no package-prefix sweep by domain name');
   assert.match(script, /\[void\]\$deletedTypeNames\.Add\("\$package\.\$\(\$file\.BaseName\)"\)/u);
+  // 화면은 기능 파일의 화면 소유(plan.frontendPaths)로 지운다(11단계 C5). v1 manifest 의 pack 경로를 읽지 않는다.
+  assert.match(script, /\$frontendRelPaths = @\(\$plan\.frontendPaths/u);
+  assert.doesNotMatch(script, /reusable-base-profiles|\$manifest|frontend\.removePaths/u, 'no v1 manifest or pack removal paths');
+});
+
+// 11단계 C5: 수동 삭제의 화면은 지우는 기능의 화면 소유다. 함께 소유한 화면은 소유한 기능을 모두 지울 때만 빠진다.
+test('manual deletion removes the screens the deleted features own, shared screens only with all their owners', () => {
+  const owned = planDomainFrontendPaths(ROOT, ['event']);
+  assert.ok(owned.includes('frontend/src/app/admin/operation/events'));
+  assert.ok(!owned.includes('frontend/src/app/admin/operation/rewards'), 'another feature keeps its own screen');
+  assert.ok(!owned.includes('frontend/src/app/admin/operation/error.tsx'), 'a shared screen stays while one owner remains');
+  assert.ok(planDomainFrontendPaths(ROOT, ['event', 'reward']).includes('frontend/src/app/admin/operation/error.tsx'),
+    'a shared screen goes with all its owners');
+  for (const path of planDomainFrontendPaths(ROOT, ['survey'])) assert.ok(existsSync(join(ROOT, path)), path);
 });

@@ -166,7 +166,9 @@ test('the full product (demo) projection is byte-identical to the source permiss
   write(PERMISSION_CATALOG_PATH, `${JSON.stringify(catalog, null, 2)}\n`);
   write(AUTHORIZATION_POLICY_PATH, `${JSON.stringify({ ...sources.policies, operationBindings: bindings.bindings }, null, 2)}\n`);
   write(BASE_SEED, read(BASE_SEED));
-  write('config/reusable-base-profiles.json', JSON.stringify({ sourcePolicy: { generatedProfile: demo.profile } }));
+  // 생성물 표지(11단계 C5): 활성 구성 하나와 그 구성의 기능 파일만 둔다.
+  write('config/modules/presets.json', JSON.stringify({ schemaVersion: 2, active: demo.profile, presets: [{ id: demo.profile, domains: demo.resolvedDomains }] }));
+  for (const domain of demo.resolvedDomains) write(`config/modules/${domain}.json`, JSON.stringify({ id: domain }));
   write(COMPOSER_SELECTION_PATH, JSON.stringify({ catalog: composerCatalog, composition: demo }));
   for (const row of bindings.bindings) {
     const source = bindingHandlerSource(row.handler, file => fs.existsSync(path.join(root, file)));

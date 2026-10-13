@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { basename, extname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { compositionProfiles } from './composition-profiles.mjs';
 
 /*
   온라인 통제 두 가지(`backup-recovery`·`crypto-lifecycle`)는 2026-09-21 에 공용 gap 인덱스에서
@@ -20,9 +21,6 @@ export const ADOPTION_CONTROLS = Object.freeze({
     'backup-recovery', 'crypto-lifecycle', 'attachment-operations', 'operational-assurance', 'execution-artifacts'],
   'migration-tool': ['source-target-identity', 'mapping-schema-driver', 'recovery-cutover', 'execution-artifacts'],
 });
-/** 생성물 lock 이 가질 수 있는 프로필. 프리셋 3개와 도메인 직접 선택(custom). 실행 진입점도 이 목록을 쓴다. */
-export const GENERATED_PROFILES = Object.freeze(['core', 'collaboration', 'demo', 'custom']);
-const PROFILES = new Set(GENERATED_PROFILES);
 const SHA256 = /^[a-f0-9]{64}$/;
 const nonempty = (value) => typeof value === 'string' && value.trim().length > 0;
 export const sha256 = (value) => createHash('sha256').update(value).digest('hex');
@@ -37,7 +35,9 @@ function sourceHash(file, bytes) {
 
 export function validateProductProfile(product, profile) {
   if (!Object.hasOwn(ADOPTION_CONTROLS, product)) throw new Error(`unsupported product: ${product}`);
-  if (product === 'online' ? !PROFILES.has(profile) : profile !== null) {
+  // 온라인 제품의 프로필은 시작 구성 id 와 직접 선택(custom)이다(presets.json, 11단계 C8). 이관 제품에는 시작 구성 선언이 없으므로
+  // 온라인일 때만 읽는다.
+  if (product === 'online' ? !compositionProfiles().includes(profile) : profile !== null) {
     throw new Error(`invalid profile for ${product}: ${profile}`);
   }
 }
@@ -91,7 +91,7 @@ export function adoptionScope(repoRoot, { product, profile }) {
     'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',
     'config/ui-route-capabilities.json', 'config/ui-quality-scenarios.json',
     'config/frontend-visible-terms.json', 'config/krds-profile-mapping.json',
-    'config/governance/permission-catalog.json', 'config/reusable-base-profiles.json',
+    'config/governance/permission-catalog.json', 'config/modules',
     'config/governance/reusable-governance-projection.json',
     'scripts/ui-url-state-census.mjs', 'scripts/ui-route-capabilities-contract.mjs', 'scripts/e2e-shard-plan.mjs'];
   const files = new Map();
@@ -107,8 +107,10 @@ export function adoptionScope(repoRoot, { product, profile }) {
     }
   }
   for (const file of roots) walk(file);
+  // 온라인 제품의 기능 소유·활성 구성 선언(매니페스트 v2, 11단계 C5)은 승인 범위에 반드시 들어간다 — 없으면 건너뛰지 않고 실패한다.
+  //   종전 v1 manifest 처럼 '없는 파일은 건너뛴다' 로 두면 기능 소유 선언이 승인 digest 에서 조용히 빠진다.
   const required = product === 'migration-tool'
-    ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json'];
+    ? ['migration-tool/build.gradle'] : ['frontend/package.json', 'config/ui-url-state-census.json', 'config/modules/presets.json'];
   if (generatedProduct) required.push('package.json', 'scripts/reusable-layout.mjs',
     'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs');
   for (const file of required) if (!files.has(file)) throw new Error(`missing product scope input: ${file}`);

@@ -8,7 +8,7 @@
     ralph: 'change', db: 'data', migration: 'data', gaps: 'evidence',
   };
   const labels = {
-    modules: '구성 모듈', domains: '도메인 소스', profiles: '재사용 프로필', packs: '기능 pack',
+    modules: '구성 모듈', domains: '도메인 소스', profiles: '재사용 시작 구성', features: '기능 선언',
     generators: '소스 생성 진입점',
     routes: '화면 역량', operations: 'API operation', constitutions: '헌법 조항',
     gates: '검증 게이트', runners: '실행 runner', executionProfiles: '검증 실행 프로필',
@@ -25,7 +25,7 @@
   function statusLabel(status) {
     const names = {
       'source-defined': '소스 정의', 'source-inventory': '소스 목록',
-      'declared-profile': '프로필 선언', 'declared-pack': 'pack 선언',
+      'declared-profile': '시작 구성 선언', 'declared-feature': '기능 선언',
       'documented-operation': 'API 문서 정의', 'normative-source': '헌법 원문',
       'registered-gate': '게이트 등록', 'registered-runner': 'runner 등록',
       'registered-execution-profile': '실행 프로필 등록', 'required-manifest': '필수 검사 명세',

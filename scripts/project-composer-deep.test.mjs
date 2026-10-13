@@ -8,7 +8,8 @@ import { compositionDigest, loadProjectComposerCatalog } from './project-compose
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { DEEP_BLOCKER_LABELS, compositionDeepPlan, deepSummary, directoryIgnoresCase, withoutRoot } from './project-composer-deep.mjs';
 import { projectSourceTree } from './generate-reusable-base-source.mjs';
-import { composerProfile, domainSupportFiles } from './project-composer-source.mjs';
+import { composerProfile, supportFileOwners } from './project-composer-source.mjs';
+import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
 import { readRouteRows, routeRowsFromLedger } from './reusable-page-survival.mjs';
 import { UPSTREAM_ATLAS, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas, removedGateAcknowledgement } from './reusable-source-gates.mjs';
@@ -21,8 +22,15 @@ import { isContractScopeFile, predictFromProjection, vanishedContractReferences 
 
 const root = resolve(import.meta.dirname, '..');
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
-const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
 const catalog = loadProjectComposerCatalog(root);
+// 생성기·정밀 점검은 매니페스트 v2 의 기능 소유·시작 구성 기대치로 투영한다(11단계 C3). 시험은 그 선언을 고쳐 차단 사유를 만든다.
+const modules = loadComposerModules(root);
+const ownership = composerOwnership(modules);
+const withExpectations = (preset, change) => {
+  const presetExpectations = structuredClone(modules.extras.presetExpectations);
+  change(presetExpectations[preset]);
+  return { ...modules, extras: { ...modules.extras, presetExpectations } };
+};
 const files = trackedAndUntrackedFiles();
 const compose = (selection, from = catalog) => resolveProjectRecipe({ schemaVersion: 1, project: { name: 'deep-test' }, sourceRef: 'main', selection,
   database: { vendor: 'postgresql' }, backendLayout: 'multi-module' }, from);
@@ -55,20 +63,20 @@ const caseSensitiveDirectory = prefix => {
  * 생성기의 단계(projectSourceTree·규칙 제거·승인 대조)를 실제로 돌려 지워진 파일 집합·개수·게이트가 정확히 같은지 대조한다.
  */
 test('the deep plan removes exactly the files, cascades and gates the generator projection removes', { timeout: 600_000 }, t => {
-  // 프리셋 경로(제외 pack 선언), 직접 선택(해석기가 계산한 제거 경로), 소비자가 소유한 지원 파일을 걷는 선택을 하나씩 본다.
+  // 시작 구성, 직접 선택, 소비자가 소유한 지원 파일을 걷는 선택을 하나씩 본다(모두 해석기가 계산한 제거 경로로 투영한다).
   const selections = [{ preset: 'core' }, { domains: ['mail'] }, { domains: ['template'] }];
   for (const selection of selections) {
     const composition = compose(selection);
     const label = JSON.stringify(selection);
-    const deep = compositionDeepPlan({ root, catalog, manifest, composition, files });
+    const deep = compositionDeepPlan({ root, catalog, composition, files, modules });
     assert.deepEqual(deep.blockers, [], `${label}: the real checkout has no projection blocker`);
 
     const output = mkdtempSync(join(tmpdir(), 'composer-deep-'));
     t.after(() => rmSync(output, { recursive: true, force: true, maxRetries: 5 }));
     copySourceTree(output, { sourceRoot: root, files: projectionFiles });
     const copied = projectionFiles.map(normalize).filter(file => isCopyableSourceFile(file, root) && (file.endsWith('.java') || file.startsWith('frontend/')));
-    const profile = composerProfile(manifest, composition);
-    const { java, frontend } = projectSourceTree(output, { manifest, profile: structuredClone(profile), composition, sourceRoot: root, catalog });
+    const profile = composerProfile(modules, composition);
+    const { java, frontend } = projectSourceTree(output, { ownership, profile: structuredClone(profile), composition, sourceRoot: root, catalog });
     const actuallyRemoved = copied.filter(file => !existsSync(join(output, file))).sort();
 
     assert.deepEqual([...deep.java.files, ...deep.frontend.files].filter(file => copied.includes(file)).sort(), actuallyRemoved,
@@ -107,7 +115,7 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
 });
 
 test('a full product composition removes nothing and still reports a summary', () => {
-  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'demo' }), files });
+  const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'demo' }), files });
   assert.deepEqual(deep.blockers, []);
   assert.deepEqual([deep.apiContract.removedOperations, deep.apiContract.removedSchemas, deep.apiContract.removedTags], [0, 0, 0]);
   assert.deepEqual({ java: deep.java.removedFiles, frontend: deep.frontend.removedFiles, gates: deep.removedGates }, { java: 0, frontend: 0, gates: [] });
@@ -127,12 +135,12 @@ test('a full product composition removes nothing and still reports a summary', (
 test('a permission projection failure becomes a PERMISSION_PROJECTION blocker before Docker starts', () => {
   const core = compose({ preset: 'core' });
   const sources = readPermissionSources(root);
-  assert.deepEqual(codes(compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: sources })), []);
+  assert.deepEqual(codes(compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: sources })), []);
   // core 에 남는 사용자 조회 바인딩 하나가 메일 발송 권한(구성 밖)을 요구하게 바꾼다.
   const tampered = structuredClone(sources);
   const binding = tampered.policies.operationBindings.find(row => row.handler.includes('.UserApiController#') && row.permission === 'USER_READ');
   binding.permission = 'MAIL_SEND';
-  let deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: tampered });
+  let deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: tampered });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.PERMISSION_PROJECTION);
   assert.match(deep.blockers[0].message, new RegExp(`retained operation binding ${binding.method} ${binding.path.replace(/[{}]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
@@ -142,7 +150,7 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
   const excludedInCore = unclassified.bundles.excluded.find(row => core.permissionCodes.includes(row.code));
   assert.ok(excludedInCore, 'the core composition holds an excluded permission for this proof');
   unclassified.bundles.excluded = unclassified.bundles.excluded.filter(row => row !== excludedInCore);
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: unclassified });
+  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: unclassified });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.match(deep.blockers[0].message, new RegExp(`does not classify composition permissions: ${excludedInCore.code}`, 'u'));
 });
@@ -151,7 +159,7 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
 test('an api-docs operation the contract projection cannot judge blocks the deep plan', () => {
   const contract = readSourceApiContract(root);
   const dropped = contract.bindings.find(binding => !binding.handler.startsWith('EXTERNAL#'));
-  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'core' }), files,
+  const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'core' }), files,
     apiContract: { doc: contract.doc, bindings: contract.bindings.filter(binding => binding !== dropped) } });
   assert.deepEqual(codes(deep), ['API_CONTRACT_PROJECTION']);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.API_CONTRACT_PROJECTION);
@@ -167,7 +175,7 @@ test('a surviving file that uses a contract name the composition removes blocks 
   const rebound = contract.bindings.map(binding => (binding.handler === 'nuri.api.controller.UserApiController#unlockUser'
     ? { ...binding, handler: 'nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook' } : binding));
   assert.notDeepEqual(rebound, contract.bindings, 'the unlock operation is bound');
-  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
+  const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
   const blocker = deep.blockers.find(entry => entry.code === 'API_CONTRACT_REFERENCE');
   assert.equal(blocker?.label, DEEP_BLOCKER_LABELS.API_CONTRACT_REFERENCE);
   assert.ok(blocker.files.includes('frontend/src/services/foundation/system/UserAdminService.ts'), JSON.stringify(blocker.files));
@@ -180,87 +188,79 @@ test('a surviving file that uses a contract name the composition removes blocks 
  */
 test('every generator failure point becomes a labelled blocker before Docker starts', () => {
   const core = compose({ preset: 'core' });
-  const coreGates = manifest.profiles.core.acknowledgedRemovedGates;
+  const coreGates = modules.extras.presetExpectations.core.gates;
   assert.ok(coreGates.length > 1, 'the core preset acknowledges removed gates');
 
-  // 승인 목록에서 실제로 지워지는 게이트 하나를 빼면 승인되지 않은 제거다.
-  const unacknowledged = structuredClone(manifest);
-  unacknowledged.profiles.core.acknowledgedRemovedGates = coreGates.slice(1);
-  let deep = compositionDeepPlan({ root, catalog, manifest: unacknowledged, composition: core, files });
+  // 승인 목록에서 실제로 지워지는 게이트 하나를 빼면 승인되지 않은 제거다. 승인은 시작 구성 선언(presets.json)에서 온다.
+  const unacknowledged = withExpectations('core', expected => { expected.gates = coreGates.slice(1); });
+  let deep = compositionDeepPlan({ root, catalog, modules: unacknowledged, composition: core, files });
   assert.deepEqual(codes(deep), ['GATE_UNACKNOWLEDGED']);
   assert.deepEqual(deep.blockers[0].files, [coreGates[0].file]);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.GATE_UNACKNOWLEDGED);
 
   // 지워지지 않는 게이트를 승인 목록에 두면 낡은 승인이다.
-  const stale = structuredClone(manifest);
-  stale.profiles.core.acknowledgedRemovedGates.push({ file: 'api-server/src/test/java/nuri/api/NotRemovedTest.java', reason: '시험용' });
-  deep = compositionDeepPlan({ root, catalog, manifest: stale, composition: core, files });
+  const stale = withExpectations('core', expected => { expected.gates.push({ file: 'api-server/src/test/java/nuri/api/NotRemovedTest.java', reason: '시험용' }); });
+  deep = compositionDeepPlan({ root, catalog, modules: stale, composition: core, files });
   assert.deepEqual(codes(deep), ['GATE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['api-server/src/test/java/nuri/api/NotRemovedTest.java']);
 
   // 시작 구성이 연쇄로 지우는 Java 도 생성기처럼 커밋된 기대치와 대조한다(설계서 C4).
-  const coreCascade = manifest.profiles.core.acknowledgedJavaCascade;
+  const coreCascade = modules.extras.presetExpectations.core.javaCascade;
   assert.ok(coreCascade.length > 1, 'the core preset acknowledges cascaded Java');
-  const cascadeUnacknowledged = structuredClone(manifest);
-  cascadeUnacknowledged.profiles.core.acknowledgedJavaCascade = coreCascade.slice(1);
-  deep = compositionDeepPlan({ root, catalog, manifest: cascadeUnacknowledged, composition: core, files });
+  const cascadeUnacknowledged = withExpectations('core', expected => { expected.javaCascade = coreCascade.slice(1); });
+  deep = compositionDeepPlan({ root, catalog, modules: cascadeUnacknowledged, composition: core, files });
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_UNACKNOWLEDGED']);
   assert.deepEqual(deep.blockers[0].files, [coreCascade[0]]);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.JAVA_CASCADE_UNACKNOWLEDGED);
-  const cascadeStale = structuredClone(manifest);
-  cascadeStale.profiles.core.acknowledgedJavaCascade.push('api-server/src/main/java/nuri/api/NotCascaded.java');
-  deep = compositionDeepPlan({ root, catalog, manifest: cascadeStale, composition: core, files });
+  const cascadeStale = withExpectations('core', expected => { expected.javaCascade.push('api-server/src/main/java/nuri/api/NotCascaded.java'); });
+  deep = compositionDeepPlan({ root, catalog, modules: cascadeStale, composition: core, files });
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['api-server/src/main/java/nuri/api/NotCascaded.java']);
-  const cascadeDeclaration = structuredClone(manifest);
-  cascadeDeclaration.profiles.core.acknowledgedJavaCascade = coreCascade[0];
-  deep = compositionDeepPlan({ root, catalog, manifest: cascadeDeclaration, composition: core, files });
+  const cascadeDeclaration = withExpectations('core', expected => { expected.javaCascade = coreCascade[0]; });
+  deep = compositionDeepPlan({ root, catalog, modules: cascadeDeclaration, composition: core, files });
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_DECLARATION', 'JAVA_CASCADE_UNACKNOWLEDGED']);
 
   // 승인 항목의 형식(사유 없음, 모르는 규칙)은 생성기가 대조 전에 거부한다.
-  const declaration = structuredClone(manifest);
-  declaration.profiles.core.acknowledgedRemovedGates[0] = { file: coreGates[0].file };
-  declaration.profiles.core.acknowledgedGateRemovalRules.push({ rule: 'no-such-rule', reason: '시험용' });
-  deep = compositionDeepPlan({ root, catalog, manifest: declaration, composition: core, files });
+  const declaration = withExpectations('core', expected => {
+    expected.gates[0] = { file: coreGates[0].file };
+    expected.gateRemovalRules.push({ rule: 'no-such-rule', reason: '시험용' });
+  });
+  deep = compositionDeepPlan({ root, catalog, modules: declaration, composition: core, files });
   assert.deepEqual(codes(deep), ['GATE_DECLARATION', 'GATE_UNACKNOWLEDGED']);
   assert.match(deep.blockers[0].message, /no-such-rule/);
 
   // 규칙 제거도 승인과 대조한다: 승인하지 않은 규칙, 더 이상 적용되지 않는 규칙.
-  const rules = structuredClone(manifest);
-  rules.profiles.core.acknowledgedGateRemovalRules = [];
-  deep = compositionDeepPlan({ root, catalog, manifest: rules, composition: core, files });
+  const rules = withExpectations('core', expected => { expected.gateRemovalRules = []; });
+  deep = compositionDeepPlan({ root, catalog, modules: rules, composition: core, files });
   assert.deepEqual(codes(deep), ['RULE_UNACKNOWLEDGED']);
   assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-atlas']);
   const historical = deep.ruleRemovals['historical-migration-tests'];
   assert.ok(historical.length > 0, 'the rule selects historical tests');
   const withoutHistorical = files.filter(file => !historical.includes(normalize(file)));
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files: withoutHistorical });
+  deep = compositionDeepPlan({ root, catalog, composition: core, files: withoutHistorical });
   assert.deepEqual(codes(deep), ['RULE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests']);
 
   // 원본 Atlas 자산이 생성물에 없으면 생성기는 규칙 제거에서 실패한다.
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files: files.filter(file => normalize(file) !== 'scripts/build-atlas.mjs') });
+  deep = compositionDeepPlan({ root, catalog, composition: core, files: files.filter(file => normalize(file) !== 'scripts/build-atlas.mjs') });
   assert.deepEqual(codes(deep), ['RULE_REMOVAL']);
   assert.match(deep.blockers[0].message, /Upstream Atlas asset is missing; review the Atlas removal rule: scripts\/build-atlas\.mjs/);
 
-  // 제외 pack 이 루트 레이아웃을 지우면 생성기는 투영 뒤 진입점 검사에서 실패한다(라우트가 아닌 진입점).
-  const entry = structuredClone(manifest);
-  entry.packs.demo.frontend.removePaths.push('src/app/layout.tsx');
-  deep = compositionDeepPlan({ root, catalog, manifest: entry, composition: core, files });
+  // 화면 제외 경로가 루트 레이아웃을 지우면 생성기는 투영 뒤 진입점 검사에서 실패한다(라우트가 아닌 진입점). 생성기·정밀 점검은
+  // 제외 경로를 구성(해석기)에서 받는다 — 구성을 고쳐 그 경로를 만든다.
+  const entry = { ...core, frontend: { ...core.frontend, removePaths: [...core.frontend.removePaths, 'src/app/layout.tsx'] } };
+  deep = compositionDeepPlan({ root, catalog, composition: entry, files });
   assert.deepEqual(codes(deep), ['FRONTEND_ENTRY']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/layout.tsx']);
 
   // 화면 생존 대조(slot 단계 PR-1): 구성이 남겨야 할 화면이 지워지면 SOURCE_SURVIVAL, 구성에 없는 화면이 남으면 FRONTEND_SCREEN_EXTRA 다.
   // 두 차단의 판정 경로는 아래 합성 저장소 시험이 생성기와 함께 본다. 여기서는 실제 카탈로그로만 보이는 경우를 본다.
-  // 기대값은 removePaths 로 거르지 않는다. 그래서 경로를 다른 pack 에 잘못 넣으면(댓글 관리를 demo 에) 그 기능을 고른 구성에서 빠진다.
-  // 해석기는 시작 구성의 제거 경로도 카탈로그 규칙에서 계산하므로(해석기 단일화, 11단계 C2) 그 화면을 남기라고 말한다. pack 모드로
-  // 투영하는 생성기(C3 전)만 그 실수를 따른다 — 정밀 점검이 그 차이를 소실로 잡는다.
-  const misplaced = structuredClone(manifest);
-  misplaced.packs.collaboration.frontend.removePaths = misplaced.packs.collaboration.frontend.removePaths.filter(path => path !== 'src/app/admin/system/comments');
-  misplaced.packs.demo.frontend.removePaths.push('src/app/admin/system/comments');
-  const misplacedComposition = compose({ preset: 'collaboration' });
-  assert.ok(misplacedComposition.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver keeps the screen of a selected feature');
-  deep = compositionDeepPlan({ root, catalog, manifest: misplaced, composition: misplacedComposition, files });
+  // 기대값은 제외 경로로 거르지 않고 기능 소유에서 계산한다. 그래서 제외 경로가 선택한 기능의 화면을 품으면(댓글 관리) 그 화면이 빠진다.
+  const collaboration = compose({ preset: 'collaboration' });
+  assert.ok(collaboration.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver keeps the screen of a selected feature');
+  const misplacedComposition = { ...collaboration, frontend: { ...collaboration.frontend,
+    removePaths: [...collaboration.frontend.removePaths, 'src/app/admin/system/comments'] } };
+  deep = compositionDeepPlan({ root, catalog, composition: misplacedComposition, files });
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/admin/system/comments/page.tsx']);
 
@@ -268,14 +268,18 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   const mail = compose({ domains: ['mail'] });
   const mailService = 'business-app/src/main/java/nuri/business/service/mail/MailService.java';
   assert.ok(files.map(normalize).includes(mailService), 'the mail service is part of the source tree');
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: mail, files: files.filter(file => normalize(file) !== mailService) });
+  deep = compositionDeepPlan({ root, catalog, composition: mail, files: files.filter(file => normalize(file) !== mailService) });
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
+  assert.deepEqual(deep.blockers[0].files, [mailService]);
+  // 시작 구성도 같은 생존 검사를 받는다(11단계 C3). 종전에는 직접 선택만 봐서, 시작 구성의 선택 기능 소스가 빠지면 화면 대조 말고는 말하지 않았다.
+  deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'collaboration' }), files: files.filter(file => normalize(file) !== mailService) });
+  assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL'], 'a preset checks the survival of its selected sources');
   assert.deepEqual(deep.blockers[0].files, [mailService]);
 
   // 선언된 지원 파일이 디스크에는 있어도 복사되지 않으면 생성기는 Java 투영에서 실패한다(무시된 파일).
-  const supportFile = [...domainSupportFiles(root, manifest).values()].flat()[0];
-  assert.ok(supportFile, 'the manifest declares domain support files');
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files: files.filter(file => normalize(file) !== supportFile) });
+  const supportFile = [...ownership.supportFiles.values()].flat()[0];
+  assert.ok(supportFile, 'the feature files declare domain support files');
+  deep = compositionDeepPlan({ root, catalog, composition: core, files: files.filter(file => normalize(file) !== supportFile) });
   assert.deepEqual(codes(deep), ['JAVA_PROJECTION']);
   assert.equal(deep.blockers[0].message, `Missing domain support file: ${supportFile}`);
 
@@ -286,7 +290,7 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   community.requires = community.requires.filter(edge => edge.domain !== 'board');
   const { catalogHash: ignored, ...body } = broken;
   broken.catalogHash = compositionDigest(body);
-  deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ domains: ['community'] }, broken), files });
+  deep = compositionDeepPlan({ root, catalog, composition: compose({ domains: ['community'] }, broken), files });
   const lost = deep.blockers.find(blocker => blocker.code === 'SOURCE_SURVIVAL');
   assert.ok(lost?.files.length > 0, JSON.stringify(codes(deep)));
   // 잃은 소스는 계획이 지우는 파일이거나, 목적지(지식 허브)가 지워져 거버넌스 수렴으로 함께 빠지는 리다이렉트 화면이다.
@@ -297,18 +301,17 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.ok(lost.files.includes('api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java'), 'the community user API is lost through its board reference');
   assert.ok(lost.files.some(file => file.startsWith('frontend/')) && lost.files.some(file => file.endsWith('.java')), 'both frontend and Java sources are lost');
 
-  // 프런트 pack 마커가 manifest 에 없는 pack 을 가리키면 생성기는 마커 투영에서 실패한다. 게이트·생존 판정은 하지 않는다.
-  const unknownPack = structuredClone(manifest);
-  delete unknownPack.packs.demo;
-  deep = compositionDeepPlan({ root, catalog, manifest: unknownPack, composition: core, files });
+  // 프런트 투영이 실패하면(대소문자만 다른 제외 경로) 생성기는 프런트 단계에서 실패한다. 게이트·생존 판정은 하지 않는다.
+  const caseOnly = { ...core, frontend: { ...core.frontend, removePaths: [...core.frontend.removePaths, 'src/app/Login'] } };
+  deep = compositionDeepPlan({ root, catalog, composition: caseOnly, files });
   assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION']);
-  assert.match(deep.blockers[0].message, /알 수 없는 frontend pack marker: demo/);
+  assert.match(deep.blockers[0].message, /frontend removePath 의 대소문자가 실제 경로와 다르다: src\/app\/Login/);
   assert.equal(deep.frontend, null);
 
-  // 지원 파일 선언이 잘못되면 생성기는 Java 투영에서 실패한다. 셀 수 없는 개수는 말하지 않는다.
-  const support = structuredClone(manifest);
-  support.packs.core.backend = { ...support.packs.core.backend, domainSupportFiles: { nothing: ['business-core/src/main/java/nuri/X.java'] } };
-  deep = compositionDeepPlan({ root, catalog, manifest: support, composition: core, files });
+  // 지원 파일 선언이 잘못되면 생성기는 Java 투영에서 실패한다(선언 검사는 기능 소유를 풀 때 한다). 셀 수 없는 개수는 말하지 않는다.
+  const support = { ...modules, declarations: { ...modules.declarations, supportFiles: () => supportFileOwners(root,
+    [{ owner: 'core', owned: [], domain: 'nothing', files: ['business-core/src/main/java/nuri/X.java'] }], ownership.domains) } };
+  deep = compositionDeepPlan({ root, catalog, modules: support, composition: core, files });
   assert.deepEqual(codes(deep), ['JAVA_PROJECTION']);
   assert.equal(deep.java, null);
   assert.equal(deepSummary(deep), '투영이 실패해 지워질 파일과 검증 게이트를 셀 수 없습니다');
@@ -361,10 +364,14 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   const fixture = mkdtempSync(join(tmpdir(), 'composer-deep-fixture-'));
   t.after(() => rmSync(fixture, { recursive: true, force: true, maxRetries: 5 }));
   const write = (file, text) => { mkdirSync(dirname(join(fixture, file)), { recursive: true }); writeFileSync(join(fixture, file), text); };
-  const small = { packs: { core: {}, demo: { backend: { appDomains: ['mail'] }, frontend: { removePaths: ['src/app/demo'] } } },
-    profiles: { core: { packs: ['core'], acknowledgedRemovedGates: [], acknowledgedGateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }],
-      // 시작 구성은 연쇄로 지우는 Java 를 승인해야 생성된다(설계서 C4) — 아래 과거 마이그레이션 검증이 그 연쇄다.
-      acknowledgedJavaCascade: ['api-server/src/test/java/nuri/api/schema/OldMailMigrationIntegrationTest.java'] } } };
+  // 합성 저장소의 기능 소유(메일 하나)와 시작 구성 기대치. 시작 구성은 연쇄로 지우는 Java 를 승인해야 생성된다(설계서 C4) —
+  // 아래 과거 마이그레이션 검증이 그 연쇄다.
+  const expected = { description: '시험용', gates: [], gateRemovalRules: [{ rule: 'upstream-atlas', reason: '시험용' }],
+    javaCascade: ['api-server/src/test/java/nuri/api/schema/OldMailMigrationIntegrationTest.java'] };
+  const small = { files: {}, declarations: { features: { mail: {} }, supportFiles: () => new Map() },
+    extras: { presetExpectations: { core: expected }, gateOwners: {}, rbac: { file: 'none', domains: [], surfaces: {} } } };
+  // 시작 구성 core: 메일을 고르지 않고 demo 화면을 지운다(해석기가 기능 규칙에서 계산하는 제외 경로를 직접 준다).
+  const coreOf = removePaths => ({ profile: 'core', packs: ['core'], resolvedDomains: [], frontend: { includedPaths: [], removePaths } });
   // 원본 Atlas 규칙 제거가 성공하도록 자산과 별칭을 둔다(규칙 제거는 늘 적용된다).
   const atlas = ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
   for (const file of atlas) write(file, file === 'package.json' ? '{"scripts":{"atlas:build":"x","atlas:check":"x"}}' : '// atlas\n');
@@ -392,8 +399,8 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   // api-docs 와 인가 원장(API 계약 쪽)도 없다. 연산 없는 계약을 넘긴다(API 계약 투영은 따로 시험한다).
   const apiContract = { doc: { openapi: '3.1.0', paths: {}, components: { schemas: {} } },
     bindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] };
-  const plan = (files = listed, expectation = pageSurvival) => compositionDeepPlan({ root: fixture, manifest: small,
-    composition: { profile: 'core', permissionCodes: ['HOME_READ'] }, files, pageSurvival: expectation, permissionSources, apiContract });
+  const plan = (files = listed, expectation = pageSurvival) => compositionDeepPlan({ root: fixture, modules: small,
+    composition: { ...coreOf(['src/app/demo']), permissionCodes: ['HOME_READ'] }, files, pageSurvival: expectation, permissionSources, apiContract });
 
   let deep = plan([...listed, 'frontend/src/app/deleted.tsx', 'business-app/src/main/java/Deleted.java']);
   assert.deepEqual(deep.blockers, []);
@@ -407,7 +414,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   write('frontend/src/app/demo/page.tsx', '// reusable-base:nope:start\nexport default function Page() { return null; }\n// reusable-base:nope:end\n');
   deep = plan();
   assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION'], 'the generator projects markers before it removes the page');
-  assert.match(deep.blockers[0].message, /알 수 없는 frontend pack marker: nope/);
+  assert.match(deep.blockers[0].message, /unknown marker feature: nope/);
 
   write('frontend/src/app/demo/page.tsx', 'export default function Page() { return null; }\n');
   deep = plan(listed.filter(file => file !== 'frontend/src/app/layout.tsx'));
@@ -417,31 +424,31 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   deep = plan(listed.filter(file => file !== 'frontend/src/app/login/page.tsx'));
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
-  const keepsDemo = { ...small, packs: { ...small.packs, demo: { ...small.packs.demo, frontend: { removePaths: [] } } } };
-  deep = compositionDeepPlan({ root: fixture, manifest: keepsDemo, composition: { profile: 'core', permissionCodes: ['HOME_READ'] },
+  deep = compositionDeepPlan({ root: fixture, modules: small, composition: { ...coreOf([]), permissionCodes: ['HOME_READ'] },
     files: listed, pageSurvival, permissionSources, apiContract });
   assert.deepEqual(codes(deep), ['FRONTEND_SCREEN_EXTRA']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/demo/page.tsx']);
   // 정밀 점검이 이 두 사유로 막는 구성은 생성기도 같은 자리(투영 단계의 프런트 제거 뒤 화면 대조)에서 실패한다.
-  const generated = (manifestForRun, drop = [], expectation = pageSurvival, prepare = () => {}) => {
+  const generated = (removePaths, drop = [], expectation = pageSurvival, prepare = () => {}) => {
     const output = mkdtempSync(join(tmpdir(), 'composer-deep-pages-'));
     t.after(() => rmSync(output, { recursive: true, force: true, maxRetries: 5 }));
     copySourceTree(output, { sourceRoot: fixture, files: listed.filter(file => !drop.includes(file)) });
     prepare(output);
-    return () => quietly(() => projectSourceTree(output, { manifest: manifestForRun, profile: structuredClone(manifestForRun.profiles.core),
-      composition: { profile: 'core' }, sourceRoot: fixture, pageSurvival: expectation }));
+    const composition = coreOf(removePaths);
+    return () => quietly(() => projectSourceTree(output, { ownership: composerOwnership(small), profile: composerProfile(small, composition),
+      composition, sourceRoot: fixture, pageSurvival: expectation }));
   };
-  assert.throws(generated(small, ['frontend/src/app/login/page.tsx']),
+  assert.throws(generated(['src/app/demo'], ['frontend/src/app/login/page.tsx']),
     error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]',
     'the generator fails on a lost screen and names it');
-  assert.throws(generated(keepsDemo), /Screens outside the composition survive projection: \/demo/);
-  assert.throws(generated(small, ['frontend/src/app/layout.tsx']), /frontend 필수 진입점이 projection에서 제거됐다: src\/app\/layout\.tsx/,
+  assert.throws(generated([]), /Screens outside the composition survive projection: \/demo/);
+  assert.throws(generated(['src/app/demo'], ['frontend/src/app/layout.tsx']), /frontend 필수 진입점이 projection에서 제거됐다: src\/app\/layout\.tsx/,
     'the generator fails without the root layout');
-  assert.doesNotThrow(generated(small));
+  assert.doesNotThrow(generated(['src/app/demo']));
   // 생성기도 화면을 디스크의 실제 page 파일 이름으로 본다 — 대소문자만 다른 이름(Page.tsx)은 대소문자를 가리지 않는 디스크에서도
   // 그 화면이 아니다(라우트는 이름 그대로다).
   const caseRenamed = output => renameSync(join(output, 'frontend/src/app/login/page.tsx'), join(output, 'frontend/src/app/login/Page.tsx'));
-  assert.throws(generated(small, [], pageSurvival, caseRenamed),
+  assert.throws(generated(['src/app/demo'], [], pageSurvival, caseRenamed),
     error => error instanceof ComposerError && error.code === 'SOURCE_SURVIVAL' && JSON.stringify(error.details.files) === '["frontend/src/app/login/page.tsx"]',
     'the generator reads the page file name exactly');
   // 기대값으로 대조할 수 없으면(원장에 없는 리다이렉트 목적지) 정밀 점검은 프런트 투영 차단으로 말하고, 생성기도 같은 판정에서 실패한다.
@@ -450,7 +457,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   deep = plan(listed, uncomparable);
   assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION']);
   assert.match(deep.blockers[0].message, /Redirect target was not an upstream page: \/nowhere \(\/login\)/);
-  assert.throws(generated(small, [], uncomparable), /Redirect target was not an upstream page: \/nowhere \(\/login\)/);
+  assert.throws(generated(['src/app/demo'], [], uncomparable), /Redirect target was not an upstream page: \/nowhere \(\/login\)/);
   // 판정할 수 없는 import 와 대소문자만 다른 import 대상은 정밀 점검과 생성기가 같은 자리(프런트 투영)에서 실패한다(슬롯 단계 PR-2).
   //   곧 지워질 파일이어도 같다. 해석은 디스크를 묻지 않으므로 대소문자를 가리지 않는 디스크에서도 실패한다.
   //   두 단언은 같은 판정 함수(planFrontendRemoval)를 지나므로, 판정을 지우는 변이는 정밀 점검 단언에서 먼저 붉다.
@@ -464,16 +471,17 @@ test('the deep plan sees exactly the files the generator copies and projects eve
     deep = plan();
     assert.deepEqual(codes(deep), ['FRONTEND_PROJECTION'], `deep plan blocks ${label}`);
     assert.match(deep.blockers[0].message, failure);
-    assert.throws(generated(small), failure, `the generator fails on ${label}`);
+    assert.throws(generated(['src/app/demo']), failure, `the generator fails on ${label}`);
   }
   write('frontend/src/app/demo/page.tsx', 'export default function Page() { return null; }\n');
   // 생성기는 기대값을 카탈로그나 미리 만든 기대값으로만 만든다(조용히 다시 적재하지 않는다).
-  assert.throws(() => projectSourceTree(fixture, { manifest: small, profile: small.profiles.core, composition: { profile: 'core' }, sourceRoot: fixture }),
+  assert.throws(() => projectSourceTree(fixture, { ownership: composerOwnership(small), profile: composerProfile(small, coreOf(['src/app/demo'])),
+    composition: coreOf(['src/app/demo']), sourceRoot: fixture }),
     /projectSourceTree needs the composition catalog or a page survival expectation/);
 
   // 규칙 판정이 예외로 멈추면 생성기는 거기서 실패하고 승인 대조까지 가지 않는다. 그 규칙을 '적용되지 않는 규칙'으로 몰면
   // 사용자가 맞는 승인을 지우고, 원인을 고친 뒤에는 승인되지 않은 규칙으로 다시 실패한다.
-  small.profiles.core.acknowledgedGateRemovalRules.push({ rule: 'historical-migration-tests', reason: '시험용' });
+  expected.gateRemovalRules.push({ rule: 'historical-migration-tests', reason: '시험용' });
   const keptHistorical = 'api-server/src/test/java/nuri/api/schema/KeptMigrationIntegrationTest.java';
   write(keptHistorical, 'package nuri.api.schema;\nclass KeptMigrationIntegrationTest {}\n');
   const withHistorical = [...listed, keptHistorical];
@@ -512,7 +520,7 @@ test('frontend remove paths are counted exactly as the generator deletes them', 
   const project = (output, path) => ({
     plan: () => planFrontendRemoval({ frontendRoot: join(output, 'frontend'), files: walk(join(output, 'frontend'), () => true), directPaths: [path],
       readSource: file => readFileSync(file, 'utf8') }),
-    prune: () => quietly(() => pruneFrontend(output, { packs: { core: {}, demo: { frontend: { removePaths: [path] } } } }, { packs: ['core'] })),
+    prune: () => quietly(() => pruneFrontend(output, [path])),
   });
   const expected = ['frontend/src/__tests__/demo-gate.test.ts', 'frontend/src/app/demo/demo.module.css', 'frontend/src/app/demo/page.tsx', 'frontend/src/app/uses-style.tsx'];
   for (const path of ['src/app/demo', 'src/app/demo/', './src/app/demo', 'src/app//demo']) {
@@ -543,7 +551,7 @@ test('a name that differs only in case from the Git list follows the disk, as th
   const mailService = 'business-app/src/main/java/nuri/business/service/mail/MailService.java';
   const listed = files.map(file => (normalize(file) === mailService ? mailService.toLowerCase() : file));
   assert.ok(listed.includes(mailService.toLowerCase()));
-  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ domains: ['mail'] }), files: listed });
+  const deep = compositionDeepPlan({ root, catalog, composition: compose({ domains: ['mail'] }), files: listed });
   if (existsSync(join(root, mailService.toLowerCase()))) {
     assert.deepEqual(deep.blockers, [], 'the survival check sees the disk name and must find the listed lower-case name');
   } else {
@@ -561,7 +569,7 @@ test('blocker messages name repository paths, never this computer\'s absolute ch
   assert.equal(withoutRoot(windows, JSON.stringify('D:\\work\\egov\\x')), JSON.stringify('.\\x'), 'a JSON-escaped root is hidden too');
   assert.equal(withoutRoot(windows, 'D:\\work\\egovother\\a.ts'), '.other\\a.ts', 'a sibling folder sharing the prefix is still not shown in full');
   assert.equal(withoutRoot('/home/me/egov', 'read /home/me/egov/frontend/a.ts'), 'read ./frontend/a.ts');
-  assert.equal(withoutRoot('/home/me/egov', '알 수 없는 frontend pack marker: demo (src/a.tsx:3)'), '알 수 없는 frontend pack marker: demo (src/a.tsx:3)');
+  assert.equal(withoutRoot('/home/me/egov', 'unknown marker feature: boarx (src/a.tsx:3)'), 'unknown marker feature: boarx (src/a.tsx:3)');
   // 루트 이름이 저장소 안 경로에도 나오면(도커 작업 폴더 /app·/src) 그 자리는 그대로 둔다. 바꾸면 없는 파일을 말한다.
   assert.equal(withoutRoot('/app', "ENOENT: open '/app/frontend/src/app/login/page.tsx' (src/app/demo/page.tsx:1)"),
     "ENOENT: open './frontend/src/app/login/page.tsx' (src/app/demo/page.tsx:1)");
@@ -589,7 +597,7 @@ test('letter case is judged in the folder the generator will write to, not in th
     if (!outputIgnoresCase) for (const [name, text] of [['pROBE.TXT', 'y'], ['Zeta.txt', 'z']]) writeFileSync(join(output, name), text);
     const outputParent = join(output, 'build', 'reusable-base', 'source');
     assert.equal(directoryIgnoresCase(outputParent), outputIgnoresCase, 'the nearest existing folder answers for the folders the generator creates');
-    const deep = compositionDeepPlan({ root, catalog, manifest, composition: mail, files: listed, outputParent });
+    const deep = compositionDeepPlan({ root, catalog, composition: mail, files: listed, outputParent });
     if (outputIgnoresCase && existsSync(join(root, mailService.toLowerCase()))) {
       assert.deepEqual(deep.blockers, [], 'a folder that ignores case finds the listed lower-case name');
     } else {

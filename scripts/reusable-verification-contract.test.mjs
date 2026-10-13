@@ -5,6 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { VERIFICATION_STEP_IDS, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { parseBaseVerificationArgs, verifyReusableBase } from './verify-reusable-base.mjs';
+import { presetIds } from './composition-profiles.mjs';
 import { parseWorkflowJobs, validateStaticContract } from './required-checks-contract.mjs';
 import { installReusableVerification } from './generate-reusable-base-source.mjs';
 
@@ -106,7 +107,7 @@ test('base verification CLI accepts both layouts and rejects ambiguous or unsupp
 });
 
 test('producer generates all stages into a fresh artifact and only removes its owned container', async (t) => {
-  for (const [profile, layout] of ['core', 'collaboration', 'demo'].flatMap(profile =>
+  for (const [profile, layout] of presetIds().flatMap(profile =>
     ['multi-module', 'single-module'].map(layout => [profile, layout]))) {
     const root = fixture(t);
     const calls = [];

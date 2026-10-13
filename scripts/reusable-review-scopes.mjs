@@ -17,24 +17,24 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-/** Canonical feature ownership is independent of observed source survival. */
-export function validateReviewScopeContract(contract, upstream, profiles) {
+/**
+ * Canonical feature ownership is independent of observed source survival. 소유는 기능 단위다(11단계 C5 — pack 을 걷었다). `catalog` 는
+ * 원본 카탈로그(생성물에서는 구성 스냅숏의 카탈로그)다. 기능이 없는 행(requiredDomains: [])은 공통 기반 소유라 모든 구성에 남는다.
+ */
+export function validateReviewScopeContract(contract, upstream, catalog) {
   assert(contract?.schemaVersion === 1 && contract.authority === 'reusable-review-scope-contract', 'Invalid review scope authority');
   assert(JSON.stringify(contract.sources) === JSON.stringify(REVIEW_MANIFEST_PATHS), 'Review scope source paths drifted');
   const populations = { scenarios: upstream.uiQuality.scenarios, pilots: upstream.visibleTerms.pilotCensus, mappings: upstream.krds.mapping };
-  const domains = new Set(Object.values(profiles.packs).flatMap(pack => pack.backend?.appDomains ?? []));
+  const domains = new Set((catalog?.capabilities ?? []).map(capability => capability.id));
+  assert(domains.size > 0, 'Review scope validation requires the composition catalog');
   const validateDomains = (row, label) => assert(Array.isArray(row.requiredDomains)
     && new Set(row.requiredDomains).size === row.requiredDomains.length
     && row.requiredDomains.every(domain => domains.has(domain)), `${label} has invalid required domains`);
   for (const [kind, population] of Object.entries(populations)) {
     assert(exactMembers(contract[kind]?.map(row => row.id), population.map(row => row.id)), `${kind} ownership must exactly cover upstream review population`);
     for (const row of contract[kind]) {
-      assert(Array.isArray(row.requiredPacks) && row.requiredPacks.length > 0 && new Set(row.requiredPacks).size === row.requiredPacks.length
-        && row.requiredPacks.every(pack => Object.hasOwn(profiles.packs, pack)), `${kind}/${row.id} has invalid required packs`);
+      assert(!Object.hasOwn(row, 'requiredPacks'), `${kind}/${row.id} still declares pack ownership`);
       validateDomains(row, `${kind}/${row.id}`);
-      assert((row.requiredPacks.every(pack => pack === 'core') || row.requiredDomains.length > 0)
-        && row.requiredDomains.every(domain => row.requiredPacks.some(pack => profiles.packs[pack].backend?.appDomains?.includes(domain))),
-      `${kind}/${row.id} domain ownership differs from required packs`);
     }
   }
   const overrides = new Set();
@@ -44,34 +44,27 @@ export function validateReviewScopeContract(contract, upstream, profiles) {
     overrides.add(key);
     const pilot = upstream.visibleTerms.pilotCensus.find(row => row.id === override.pilotId);
     assert(pilot?.sources.includes(override.source), `Unknown optional pilot source: ${key}`);
-    assert(Array.isArray(override.requiredPacks) && override.requiredPacks.length > 0
-      && override.requiredPacks.every(pack => Object.hasOwn(profiles.packs, pack)), `Invalid optional source packs: ${key}`);
-    // An exception needs the existing source ownership declaration, not a missing file.
-    assert(override.requiredPacks.some(pack => (profiles.packs[pack].frontend?.removePaths ?? []).some(path => {
-      const source = override.source.replace(/^frontend\//u, '');
-      return source === path || source.startsWith(`${path}/`);
-    })), `Optional source lacks declared pack removal ownership: ${key}`);
+    assert(!Object.hasOwn(override, 'requiredPacks'), `Optional source still declares pack ownership: ${key}`);
     validateDomains(override, `Optional source ${key}`);
-    assert(override.requiredDomains.length > 0 && override.requiredDomains.every(domain => override.requiredPacks.some(pack =>
-      profiles.packs[pack].backend?.appDomains?.includes(domain))), `Optional source domains differ from pack ownership: ${key}`);
+    assert(override.requiredDomains.length > 0, `Optional source needs a feature owner: ${key}`);
+    // An exception needs the existing source ownership declaration, not a missing file: 그 소스를 덮는 화면 규칙이 있고, 그 규칙의 기능이
+    // 모두 이 행의 기능이어야 한다 — 그래야 소스가 빠지는 구성과 이 행이 빠지는 구성이 같다.
+    const source = override.source.replace(/^frontend\//u, '');
+    assert((catalog.frontendRules ?? []).some(rule => (source === rule.path || source.startsWith(`${rule.path}/`))
+      && rule.domains.every(domain => override.requiredDomains.includes(domain))), `Optional source lacks declared feature removal ownership: ${key}`);
   }
 }
 
 /** Produce active manifests without increasing any measured/approved claim. */
-export function deriveProjectedReviewManifests({ outputRoot, upstream, contract, profiles, profile, routes, composition }) {
-  validateReviewScopeContract(contract, upstream, profiles);
-  const custom = profile === 'custom';
-  assert(!custom || (composition?.profile === profile && Array.isArray(composition.resolvedDomains)), 'Custom review scope requires a resolved composition');
-  const packs = new Set(custom ? composition.packs : profiles.profiles[profile]?.packs ?? []);
-  const domains = new Set(composition?.resolvedDomains ?? []);
-  assert(packs.size > 0, `Unknown review profile: ${profile}`);
+export function deriveProjectedReviewManifests({ outputRoot, upstream, contract, catalog, profile, routes, composition }) {
+  validateReviewScopeContract(contract, upstream, catalog);
+  // 시작 구성과 직접 선택이 같다 — 행의 기능이 모두 구성 안이면 남는다(11단계 C5, pack 을 보지 않는다).
+  assert(composition?.profile === profile && Array.isArray(composition.resolvedDomains), `Review scope requires the resolved composition: ${profile}`);
+  const domains = new Set(composition.resolvedDomains);
   const routeIndex = new Map(routes.routes.map(row => [row.route, row]));
-  const included = row => custom ? row.requiredDomains.every(domain => domains.has(domain)) : row.requiredPacks.every(pack => packs.has(pack));
-  const excluded = row => custom
-    ? { id: row.id, reason: 'required-domain-not-in-composition', requiredDomains: [...row.requiredDomains],
-      excludedDomains: row.requiredDomains.filter(domain => !domains.has(domain)) }
-    : { id: row.id, reason: 'required-pack-not-in-profile', requiredPacks: [...row.requiredPacks],
-      excludedPacks: row.requiredPacks.filter(pack => !packs.has(pack)) };
+  const included = row => row.requiredDomains.every(domain => domains.has(domain));
+  const excluded = row => ({ id: row.id, reason: 'required-domain-not-in-composition', requiredDomains: [...row.requiredDomains],
+    excludedDomains: row.requiredDomains.filter(domain => !domains.has(domain)) });
   const requireSource = (file, label) => assert(existsSync(join(outputRoot, file)), `${label}: included source is missing: ${file}`);
   const requireRoute = (route, label) => assert(routeIndex.has(route), `${label}: included route is missing: ${route}`);
   const result = structuredClone(upstream);
@@ -144,8 +137,7 @@ export function deriveProjectedReviewManifests({ outputRoot, upstream, contract,
     if (!included(owner)) {
       reviewScopes.krds.excludedMappings.push(excluded(owner));
       return { ...structuredClone(original), disposition: 'notApplicable', localEvidence: [],
-        reason: custom ? `The composition excludes required domains: ${owner.requiredDomains.filter(domain => !domains.has(domain)).join(', ')}.`
-          : `The ${profile} source profile excludes required packs: ${owner.requiredPacks.filter(pack => !packs.has(pack)).join(', ')}.` };
+        reason: `The composition excludes required domains: ${owner.requiredDomains.filter(domain => !domains.has(domain)).join(', ')}.` };
     }
     for (const source of original.localEvidence ?? []) requireSource(source, original.id);
     return structuredClone(original);

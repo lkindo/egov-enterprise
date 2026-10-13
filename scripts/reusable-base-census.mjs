@@ -2,6 +2,10 @@
 /**
  * reusable-base-census — 현재 소스의 도메인·테이블 경계가 base 프로필 계약과 일치하는지 검증한다.
  *
+ * [11단계 C5] 의존 방향(pack 순위) 검사는 카탈로그로 흡수했다 — 생성기는 pack·순위를 보지 않고(C3), 방향은 카탈로그의 시작 구성
+ * 닫힘 검사(필수 의존 폐포, 'preset is not closed under requires')와 엔티티 테이블 소유 대조가 본다. 이 census 는 v1 manifest 가
+ * 매니페스트 v2 의 원천인 동안(전환 C7 까지) 그 선언의 형식·소유·실재만 본다.
+ *
  * 이 스크립트는 base 산출물을 만들지 않는다. 먼저 현행 main이 안전하게 잘릴 수 있는지를 증명하는
  * 선행 게이트다. 배포 산출물은 릴리스 태그에서 별도 생성하며 장기 template 브랜치를 사용하지 않는다.
  *
@@ -137,9 +141,6 @@ function ownershipMaps(manifest, errors) {
   const sequenceOwners = new Map();
 
   for (const [packName, pack] of Object.entries(manifest.packs ?? {})) {
-    if (!Number.isInteger(pack.rank)) {
-      errors.push(`pack '${packName}' rank는 정수여야 한다.`);
-    }
     for (const domain of pack.backend?.appDomains ?? []) {
       if (domainOwners.has(domain)) {
         errors.push(`business-app domain '${domain}'이 ${domainOwners.get(domain)}와 ${packName}에 중복 배정됐다.`);
@@ -169,7 +170,6 @@ function ownershipMaps(manifest, errors) {
 export function validateReusableBase(manifest, repository) {
   const errors = [];
   const { domainOwners, tableOwners, sequenceOwners } = ownershipMaps(manifest, errors);
-  const packRank = (packName) => manifest.packs?.[packName]?.rank;
 
   for (const table of ['tb_authrt_info', 'tb_authrt_user_map', 'tb_authrt_grnt_map', 'tb_authrt_chg_hstry']) {
     if (tableOwners.get(table) !== 'core') errors.push(`authorization core table '${table}'은 core pack에 있어야 한다.`);
@@ -243,33 +243,16 @@ export function validateReusableBase(manifest, repository) {
     }
   }
 
+  // 업무 앱 도메인 사이의 간선은 보고만 한다. 방향(어느 기능이 어느 기능을 요구하는가)은 카탈로그가 Java 참조에서 계산하고, 시작
+  // 구성이 그 폐포에 닫혀 있는지 카탈로그 적재가 검사한다(11단계 C5 — pack 순위 검사를 걷었다).
   const edgeSet = new Set();
   for (const edge of repository.crossDomainEdges) {
     if (!domainOwners.has(edge.source) || !domainOwners.has(edge.target)) continue;
-    const sourcePack = domainOwners.get(edge.source);
-    const targetPack = domainOwners.get(edge.target);
-    const key = `${edge.source}->${edge.target}`;
-    edgeSet.add(key);
-    if (packRank(targetPack) > packRank(sourcePack)) {
-      errors.push(
-        `상위 pack 역참조 ${key}: ${sourcePack}이 ${targetPack}에 의존한다 (${edge.file}).`,
-      );
-    }
+    edgeSet.add(`${edge.source}->${edge.target}`);
   }
 
   for (const entity of repository.entityTables) {
-    const tablePack = tableOwners.get(entity.table);
-    if (!tablePack) {
-      errors.push(`entity table '${entity.table}'의 pack 소유자가 없다 (${entity.file}).`);
-      continue;
-    }
-    const sourcePack = entity.module === 'business-core' ? 'core' : domainOwners.get(entity.domain);
-    if (!sourcePack) continue;
-    if (packRank(tablePack) > packRank(sourcePack)) {
-      errors.push(
-        `entity ${entity.domain}(${sourcePack})가 상위 DB pack ${tablePack}의 ${entity.table}을 매핑한다 (${entity.file}).`,
-      );
-    }
+    if (!tableOwners.get(entity.table)) errors.push(`entity table '${entity.table}'의 pack 소유자가 없다 (${entity.file}).`);
   }
 
   /*
@@ -295,18 +278,8 @@ export function validateReusableBase(manifest, repository) {
         errors.push(`profile '${profileName}'이 실재하지 않는 게이트 '${entry.file}'의 제거를 승인한다 (개명·삭제된 승인은 다음 제거를 조용히 통과시킨다).`);
       }
     }
-    const ranks = [];
     for (const packName of profile.packs ?? []) {
       if (!manifest.packs?.[packName]) errors.push(`profile '${profileName}'이 없는 pack '${packName}'을 참조한다.`);
-      else ranks.push(packRank(packName));
-    }
-    if (ranks.length > 0) {
-      const max = Math.max(...ranks);
-      for (const [packName, pack] of Object.entries(manifest.packs)) {
-        if (pack.rank <= max && !(profile.packs ?? []).includes(packName)) {
-          errors.push(`profile '${profileName}'은 rank ${max}까지 사용하지만 하위 pack '${packName}'을 포함하지 않는다.`);
-        }
-      }
     }
   }
 
@@ -319,11 +292,6 @@ export function validateReusableBase(manifest, repository) {
         errors.push(`cluster '${cluster.id}'의 domain '${domain}'은 pack '${cluster.pack}'에 함께 있어야 한다.`);
       }
     }
-    for (const required of cluster.requiresDomains ?? []) {
-      if (packRank(domainOwners.get(required)) > packRank(cluster.pack)) {
-        errors.push(`cluster '${cluster.id}'이 상위 pack domain '${required}'에 역참조한다.`);
-      }
-    }
   }
 
   for (const contract of manifest.sharedTableContracts ?? []) {
@@ -331,11 +299,7 @@ export function validateReusableBase(manifest, repository) {
       errors.push(`shared table '${contract.table}'의 소유 pack이 '${contract.ownerPack}'과 다르다.`);
     }
     for (const consumer of contract.consumers ?? []) {
-      const consumerPack = domainOwners.get(consumer);
-      if (!consumerPack) errors.push(`shared table '${contract.table}' consumer '${consumer}'가 존재하지 않는다.`);
-      else if (packRank(contract.ownerPack) > packRank(consumerPack)) {
-        errors.push(`shared table '${contract.table}'이 consumer '${consumer}'보다 상위 pack에 있다.`);
-      }
+      if (!domainOwners.get(consumer)) errors.push(`shared table '${contract.table}' consumer '${consumer}'가 존재하지 않는다.`);
     }
   }
 
@@ -389,7 +353,7 @@ function printReport({ result }) {
   console.log(`manifest seqs    : ${result.summary.manifestSequenceCount} standalone`);
   console.log(`cross-domain edge: ${result.summary.crossDomainEdges.join(', ') || '(none)'}`);
   if (result.errors.length === 0) {
-    console.log('\n✅ profile ownership/의존 방향/테이블 계약 일치');
+    console.log('\n✅ profile ownership/테이블 계약 일치 (의존 방향은 카탈로그의 시작 구성 닫힘 검사)');
   } else {
     console.error('\n❌ reusable-base profile 계약 위반');
     for (const error of result.errors) console.error(`  - ${error}`);

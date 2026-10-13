@@ -1,12 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "입력 계약 미러(InputContractMirrorLinterTest)의 표적 원장. 요청 DTO 의 길이·enum·필수·읽기 전용·중첩 검증·달력 날짜 제약을 엔티티 저장 계약·api-docs.json 과 대조할 표적을 동결한다. 타입은 이진 이름(중첩은 $)이며, pack 은 참조 타입 소스가 모두 살아남는 가장 작은 재사용 pack 으로 scripts/input-contract-mirror-census-contract.test.mjs 가 생성기 제거 계획과 대조한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
-  "packs": [
-    "core",
-    "collaboration",
-    "survey",
-    "demo"
-  ],
+  "description": "입력 계약 미러(InputContractMirrorLinterTest)의 표적 원장. 요청 DTO 의 길이·enum·필수·읽기 전용·중첩 검증·달력 날짜 제약을 엔티티 저장 계약·api-docs.json 과 대조할 표적을 동결한다. 타입은 이진 이름(중첩은 $)이다. 생성물에서는 참조 타입 소스가 모두 남은 표적만 검사하며, scripts/input-contract-mirror-census-contract.test.mjs 가 그 생존을 기능 소유로 계산해 생성기 제거 계획과 대조한다. 편집하면 baseline-manifest 의 __registry 해시도 함께 바뀌어야 한다.",
   "lengthBindings": [
     {
       "entity": "nuri.business.domain.promotion.banner.Banner",
@@ -17,8 +11,7 @@
         "bnrImgNm",
         "bnrExpln",
         "rfltYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.promotion.popup.Popup",
@@ -32,8 +25,7 @@
         "popupWdthSz",
         "stopvewSetupYn",
         "ntceYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.community.Community",
@@ -44,8 +36,7 @@
         "regSeCd",
         "tmpltId",
         "useYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.user.entity.User",
@@ -53,8 +44,7 @@
       "fields": [
         "userId",
         "certDnVl"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.code.CommonCodeCategory",
@@ -64,8 +54,7 @@
         "clsfCdNm",
         "clsfCdExpln",
         "useYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.code.CommonCodeGroup",
@@ -76,8 +65,7 @@
         "cdIdExpln",
         "clsfCd",
         "useYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.code.CommonCode",
@@ -88,8 +76,7 @@
         "dtlCdNm",
         "dtlCdExpln",
         "useYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.group.GroupManage",
@@ -98,8 +85,7 @@
         "groupId",
         "groupNm",
         "groupDc"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.auth.Authority",
@@ -113,8 +99,7 @@
         "code": "authrtCd",
         "name": "authrtNm",
         "description": "authrtExpln"
-      },
-      "pack": "core"
+      }
     },
     {
       "entity": "nuri.business.domain.auth.AuthorityGrant",
@@ -126,8 +111,7 @@
       "entityFields": {
         "type": "authrtTypeCd",
         "code": "authrtGrntCd"
-      },
-      "pack": "core"
+      }
     },
     {
       "entity": "nuri.business.domain.auth.Authority",
@@ -141,8 +125,7 @@
         "code": "authrtCd",
         "name": "authrtNm",
         "description": "authrtExpln"
-      },
-      "pack": "core"
+      }
     },
     {
       "entity": "nuri.business.domain.auth.Authority",
@@ -152,8 +135,7 @@
       ],
       "entityFields": {
         "groupCode": "authrtCd"
-      },
-      "pack": "core"
+      }
     },
     {
       "entity": "nuri.business.domain.auth.Authority",
@@ -162,8 +144,7 @@
         "authrtCd",
         "authrtNm",
         "authrtExpln"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.user.entity.DeptManage",
@@ -173,8 +154,7 @@
         "ognzNm",
         "ognzExpln",
         "upOgnzId"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.board.BoardMaster",
@@ -191,8 +171,7 @@
         "useYn",
         "ansYn",
         "stsfdgYn"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.template.Template",
@@ -203,8 +182,7 @@
         "tmpltSeCd",
         "tmpltPath",
         "useYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.sms.Sms",
@@ -212,16 +190,14 @@
       "fields": [
         "sndngTelno",
         "sndngCn"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.sms.SmsRecptnId",
       "dto": "nuri.business.service.sms.dto.SmsRecptnDto",
       "fields": [
         "rcptnTelno"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.scrap.Scrap",
@@ -231,8 +207,7 @@
         "scrapUrl",
         "scrapExpln",
         "useYn"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.addressbook.AddressBook",
@@ -242,8 +217,7 @@
         "rlsScopeCd",
         "trgetOgnzId",
         "useYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.addressbook.AddressBookUser",
@@ -255,8 +229,7 @@
         "mblTelno",
         "ofcTelno",
         "faxNo"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.event.ExternalHr",
@@ -272,8 +245,7 @@
         "mdTelno",
         "endTelno",
         "emlAddr"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.memoreport.MemoReport",
@@ -283,8 +255,7 @@
         "memoRptYmd",
         "rptrId",
         "rptCn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.report.WorkReport",
@@ -294,8 +265,7 @@
         "rptCn",
         "rptSeCd",
         "rptYmd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.deptjob.DeptJobBox",
@@ -303,8 +273,7 @@
       "fields": [
         "deptTaskBoxNm",
         "deptId"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.deptjob.DeptJob",
@@ -314,8 +283,7 @@
         "deptTaskCn",
         "picId",
         "prrtyRnk"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.isg.InternetSvcGuidance",
@@ -324,8 +292,7 @@
         "itntSvcNm",
         "itntSvcExpln",
         "rfltYn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.schedule.Schedule",
@@ -340,8 +307,7 @@
         "schdlKndCd",
         "schdlPlcNm",
         "schdlImprtCd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.notification.Notification",
@@ -350,8 +316,7 @@
         "notiTtlNm",
         "notiCn",
         "linkUrl"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.informalsanction.InformalSanction",
@@ -361,8 +326,7 @@
         "aprvrId",
         "docTtl",
         "docCn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.informalsanction.InformalSanction",
@@ -374,8 +338,7 @@
       "entityFields": {
         "status": "aprvYn",
         "reason": "rjctRsnCn"
-      },
-      "pack": "demo"
+      }
     },
     {
       "entity": "nuri.business.domain.informalsanction.ApprovalTemporaryDraft",
@@ -384,8 +347,7 @@
         "taskSeCd",
         "docTtl",
         "docCn"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.board.Satisfaction",
@@ -394,8 +356,7 @@
         "bbsId",
         "dgstfnCn",
         "useYn"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.comment.Comment",
@@ -403,8 +364,7 @@
       "fields": [
         "bbsId",
         "ansCn"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.login.LoginPolicy",
@@ -417,8 +377,7 @@
         "bgngTm",
         "endTm",
         "otpUseYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.note.Note",
@@ -429,8 +388,7 @@
       ],
       "entityFields": {
         "noteSj": "noteTtl"
-      },
-      "pack": "collaboration"
+      }
     },
     {
       "entity": "nuri.business.domain.user.entity.UserAbsence",
@@ -438,8 +396,7 @@
       "fields": [
         "userId",
         "userAbsnYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.code.AdministCode",
@@ -452,8 +409,7 @@
         "useYn",
         "crtYmd",
         "ablYmd"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.menu.Menu",
@@ -464,8 +420,7 @@
         "relImgPath",
         "relImgNm",
         "modernRoute"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.menu.Menu",
@@ -475,8 +430,7 @@
         "modernRoute",
         "menuExpln",
         "useYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.menu.Menu",
@@ -486,8 +440,7 @@
         "modernRoute",
         "menuExpln",
         "useYn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.survey.SurveyQuestion",
@@ -495,8 +448,7 @@
       "fields": [
         "qstnTypeCd",
         "qstnCn"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "entity": "nuri.business.domain.survey.SurveyArticle",
@@ -504,8 +456,7 @@
       "fields": [
         "artclCn",
         "etcAnsYn"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "entity": "nuri.business.domain.survey.SurveyTemplate",
@@ -514,8 +465,7 @@
         "srvyTmpltTypeCd",
         "srvyTmpltPathNm",
         "srvyTmpltExpln"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "entity": "nuri.business.domain.help.Hpcm",
@@ -524,8 +474,7 @@
         "hlpSeCd",
         "hlpDfn",
         "hlpExpln"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.help.OnlineManual",
@@ -535,8 +484,7 @@
         "onlnMnlSeCd",
         "onlnMnlDfn",
         "onlnMnlExpln"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.notification.Notification",
@@ -545,8 +493,7 @@
         "notiTtlNm",
         "notiCn",
         "linkUrl"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.informalsanction.InformalSanction",
@@ -556,16 +503,14 @@
         "docTtl",
         "docCn",
         "aprvrId"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.memoreport.MemoReport",
       "dto": "nuri.business.service.memoreport.dto.MemoInstructionRequest",
       "fields": [
         "drctnMttr"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "entity": "nuri.business.domain.board.Board",
@@ -577,8 +522,7 @@
         "qnaSttsCd",
         "qnaCatCd",
         "pswd"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "entity": "nuri.business.domain.system.policy.SystemPolicy",
@@ -586,8 +530,7 @@
       "fields": [
         "plcyTtl",
         "plcyCn"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.user.entity.User",
@@ -608,8 +551,7 @@
         "groupId",
         "ognzId",
         "pstinstCd"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.user.entity.User",
@@ -627,8 +569,7 @@
         "mblTelno",
         "emlAddr",
         "ofcpsNm"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.user.entity.User",
@@ -637,16 +578,14 @@
         "userId",
         "pswdHint",
         "pswdCrans"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "entity": "nuri.business.domain.survey.SurveyResult",
       "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
       "fields": [
         "rspnsNm"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "entity": "nuri.business.domain.survey.SurveyResult",
@@ -654,8 +593,7 @@
       "fields": [
         "rspdntAnsCn",
         "etcAnsCn"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "entity": "nuri.business.domain.mail.SentMail",
@@ -667,8 +605,7 @@
       "entityFields": {
         "sj": "emlTtl",
         "emailCn": "emlCn"
-      },
-      "pack": "collaboration"
+      }
     },
     {
       "entity": "nuri.business.domain.reward.RewardManage",
@@ -692,8 +629,7 @@
         "sanctnerId": "atrzrId",
         "confmAt": "confmYn",
         "returnResn": "rtnRsnCn"
-      },
-      "pack": "demo"
+      }
     },
     {
       "entity": "nuri.business.domain.event.EventInfo",
@@ -706,8 +642,7 @@
         "prepMttr",
         "evntTypeCd",
         "evntAprvYn"
-      ],
-      "pack": "demo"
+      ]
     }
   ],
   "enumBindings": [
@@ -717,8 +652,7 @@
       "allowedValues": [
         "OPERATION",
         "NAVIGATION"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
@@ -726,8 +660,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
@@ -735,8 +668,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.promotion.banner.dto.BannerDto",
@@ -744,8 +676,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
@@ -753,8 +684,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
@@ -762,8 +692,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.community.dto.CommunityDto",
@@ -771,8 +700,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnClCodeDto",
@@ -780,8 +708,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnCodeDto",
@@ -789,8 +716,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnDetailCodeDto",
@@ -798,8 +724,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -807,8 +732,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -816,8 +740,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -825,8 +748,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -834,8 +756,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -843,8 +764,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.scrap.dto.ScrapDto",
@@ -852,8 +772,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.addressbook.dto.AddressBookDto",
@@ -861,8 +780,7 @@
       "allowedValues": [
         "Y",
         "N"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.user.dto.BulkStatusRequest",
@@ -871,82 +789,69 @@
         "P",
         "A",
         "D"
-      ],
-      "pack": "core"
+      ]
     }
   ],
   "nestedValidationBindings": [
     {
       "parent": "nuri.business.service.auth.dto.AuthorizationDto$ReplaceGrants",
       "field": "grants",
-      "item": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
-      "pack": "core"
+      "item": "nuri.business.service.auth.dto.AuthorizationDto$Grant"
     },
     {
       "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
       "field": "creations",
-      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
-      "pack": "core"
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation"
     },
     {
       "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
       "field": "placements",
-      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuPlacement",
-      "pack": "core"
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuPlacement"
     },
     {
       "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
       "field": "properties",
-      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
-      "pack": "core"
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties"
     },
     {
       "parent": "nuri.business.service.menu.dto.MenuStructureDto$MenuStructureSave",
       "field": "grants",
-      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange",
-      "pack": "core"
+      "item": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange"
     },
     {
       "parent": "nuri.business.service.sms.dto.SmsDto",
       "field": "recipients",
-      "item": "nuri.business.service.sms.dto.SmsRecptnDto",
-      "pack": "collaboration"
+      "item": "nuri.business.service.sms.dto.SmsRecptnDto"
     },
     {
       "parent": "nuri.business.service.addressbook.dto.AddressBookDto",
       "field": "adbkMan",
-      "item": "nuri.business.service.addressbook.dto.AddressBookUserDto",
-      "pack": "demo"
+      "item": "nuri.business.service.addressbook.dto.AddressBookUserDto"
     },
     {
       "parent": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
       "field": "stages",
-      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest",
-      "pack": "demo"
+      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest"
     },
     {
       "parent": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
       "field": "stages",
-      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest",
-      "pack": "demo"
+      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest"
     },
     {
       "parent": "nuri.business.service.notification.dto.NotificationDispatchRequest",
       "field": "recipients",
-      "item": "nuri.business.service.notification.dto.NotificationDispatchRequest$Recipient",
-      "pack": "collaboration"
+      "item": "nuri.business.service.notification.dto.NotificationDispatchRequest$Recipient"
     },
     {
       "parent": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
       "field": "answers",
-      "item": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer",
-      "pack": "survey"
+      "item": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer"
     },
     {
       "parent": "nuri.business.service.mail.dto.SentMailDto",
       "field": "recipients",
-      "item": "nuri.business.service.mail.dto.MailRecipientDto",
-      "pack": "collaboration"
+      "item": "nuri.business.service.mail.dto.MailRecipientDto"
     }
   ],
   "requiredBindings": [
@@ -958,8 +863,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
@@ -969,8 +873,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.community.dto.CommunityDto",
@@ -985,8 +888,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.user.dto.UserDto",
@@ -1008,8 +910,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnClCodeDto",
@@ -1019,8 +920,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnCodeDto",
@@ -1030,8 +930,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.CmmnDetailCodeDto",
@@ -1041,13 +940,11 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.group.dto.GroupManageDto",
-      "fields": [],
-      "pack": "core"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.auth.dto.AuthorizationDto$CreateGroup",
@@ -1062,8 +959,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.auth.dto.AuthorizationDto$Grant",
@@ -1078,8 +974,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.auth.dto.AuthorizationDto$CopyGroup",
@@ -1099,8 +994,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuGroupGrantChange",
@@ -1130,8 +1024,7 @@
           "constraint": "NotNull",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuCreation",
@@ -1151,8 +1044,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuStructureDto$MenuProperties",
@@ -1172,8 +1064,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.auth.dto.AuthorManageDto",
@@ -1188,8 +1079,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.department.dto.DeptManageDto",
@@ -1199,8 +1089,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardMasterDto",
@@ -1230,8 +1119,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.template.dto.TemplateDto",
@@ -1261,8 +1149,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.sms.dto.SmsDto",
@@ -1282,13 +1169,11 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.sms.dto.SmsRecptnDto",
-      "fields": [],
-      "pack": "collaboration"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.scrap.dto.ScrapDto",
@@ -1298,8 +1183,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.addressbook.dto.AddressBookDto",
@@ -1314,13 +1198,11 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.addressbook.dto.AddressBookUserDto",
-      "fields": [],
-      "pack": "demo"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.event.dto.ExternalHrDto",
@@ -1335,8 +1217,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
@@ -1351,8 +1232,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.report.dto.WorkReportDto",
@@ -1362,8 +1242,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.deptjob.dto.DeptJobBoxDto",
@@ -1373,13 +1252,11 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
-      "fields": [],
-      "pack": "core"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
@@ -1394,8 +1271,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.schedule.dto.ScheduleDto",
@@ -1405,8 +1281,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.notification.dto.NotificationDto",
@@ -1416,8 +1291,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.api.controller.business.approval.dto.ApprovalDraftRequest",
@@ -1427,8 +1301,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.api.controller.business.approval.dto.ApprovalConfirmRequest",
@@ -1438,13 +1311,11 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
-      "fields": [],
-      "pack": "demo"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.board.dto.SatisfactionDto",
@@ -1459,8 +1330,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.login.dto.LoginPolicyDto",
@@ -1470,8 +1340,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.domain.user.dto.UserAbsenceDto",
@@ -1481,8 +1350,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.code.dto.AdministCodeDto",
@@ -1492,8 +1360,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.menu.dto.MenuDto",
@@ -1508,8 +1375,7 @@
           "constraint": "NotNull",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.help.dto.HpcmDto",
@@ -1529,8 +1395,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.help.dto.OnlineManualDto",
@@ -1545,33 +1410,27 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.comment.dto.CommentDto",
-      "fields": [],
-      "pack": "collaboration"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.note.dto.NoteDto",
-      "fields": [],
-      "pack": "collaboration"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyQuestionDto",
-      "fields": [],
-      "pack": "survey"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyArticleDto",
-      "fields": [],
-      "pack": "survey"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyTemplateDto",
-      "fields": [],
-      "pack": "survey"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.notification.dto.NotificationDispatchRequest",
@@ -1591,8 +1450,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.informalsanction.dto.InformalSanctionDto",
@@ -1607,8 +1465,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.memoreport.dto.MemoInstructionRequest",
@@ -1618,8 +1475,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.BoardSaveRequest",
@@ -1639,8 +1495,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.api.controller.foundation.controller.system.policy.PolicyUpdateRequest",
@@ -1655,8 +1510,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.api.controller.UserProfileUpdateRequest",
@@ -1666,8 +1520,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.api.controller.UserSelfProfileUpdateRequest",
@@ -1677,8 +1530,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.user.dto.UserSignupRequest",
@@ -1698,8 +1550,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto",
@@ -1709,8 +1560,7 @@
           "constraint": "NotEmpty",
           "groups": []
         }
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyResponseSubmitDto$Answer",
@@ -1725,18 +1575,15 @@
           "constraint": "NotNull",
           "groups": []
         }
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "dto": "nuri.business.service.mail.dto.SentMailDto",
-      "fields": [],
-      "pack": "collaboration"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.reward.dto.RewardManageDto",
-      "fields": [],
-      "pack": "demo"
+      "fields": []
     },
     {
       "dto": "nuri.business.service.event.dto.EventInfoRequest",
@@ -1746,8 +1593,7 @@
           "constraint": "NotBlank",
           "groups": []
         }
-      ],
-      "pack": "demo"
+      ]
     }
   ],
   "requiredResponseFields": [
@@ -1757,8 +1603,7 @@
         "groups",
         "permissions",
         "authorizationVersion"
-      ],
-      "pack": "core"
+      ]
     }
   ],
   "readOnlyBindings": [
@@ -1768,8 +1613,7 @@
         "groups",
         "permissions",
         "authorizationVersion"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
@@ -1784,8 +1628,7 @@
         "crtDt",
         "editable",
         "deletable"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.report.dto.WorkReportDto",
@@ -1795,8 +1638,7 @@
         "userNm",
         "rptSttsCd",
         "rptTypeCd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.deptjob.dto.DeptJobBoxDto",
@@ -1807,8 +1649,7 @@
         "crtDt",
         "lastMdfrId",
         "mdfcnDt"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
@@ -1824,8 +1665,7 @@
         "mdfcnDt",
         "editable",
         "deletable"
-      ],
-      "pack": "core"
+      ]
     },
     {
       "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
@@ -1833,8 +1673,7 @@
         "itntSrvcSn",
         "lastMdfrId",
         "mdfcnDt"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.schedule.dto.ScheduleDto",
@@ -1849,8 +1688,7 @@
         "schdlIpAddr",
         "editable",
         "deletable"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.notification.dto.NotificationDto",
@@ -1861,8 +1699,7 @@
         "rcvrId",
         "readYn",
         "crtDt"
-      ],
-      "pack": "collaboration"
+      ]
     },
     {
       "dto": "nuri.business.service.reward.dto.RewardManageDto",
@@ -1876,22 +1713,19 @@
         "crtDt",
         "lastMdfrId",
         "mdfcnDt"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyInfoDto",
       "fields": [
         "responded"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "dto": "nuri.business.service.addressbook.dto.AddressBookUserDto",
       "fields": [
         "userId"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.informalsanction.dto.InformalSanctionDto",
@@ -1899,8 +1733,7 @@
         "references",
         "referenceViewer",
         "canAddReference"
-      ],
-      "pack": "demo"
+      ]
     }
   ],
   "calendarDateBindings": [
@@ -1909,8 +1742,7 @@
       "fields": [
         "schdlBgngYmd",
         "schdlEndYmd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.event.dto.EventInfoRequest",
@@ -1918,45 +1750,39 @@
         "evntBgngYmd",
         "evntEndYmd",
         "evntAprvYmd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.survey.dto.SurveyInfoDto",
       "fields": [
         "srvyBgngYmd",
         "srvyEndYmd"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "dto": "nuri.business.service.survey.dto.OnlinePollManageRequest",
       "fields": [
         "pollBgngYmd",
         "pollEndYmd"
-      ],
-      "pack": "survey"
+      ]
     },
     {
       "dto": "nuri.business.service.report.dto.WorkReportDto",
       "fields": [
         "rptYmd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.memoreport.dto.MemoReportDto",
       "fields": [
         "memoRptYmd"
-      ],
-      "pack": "demo"
+      ]
     },
     {
       "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "brdtYmd"
-      ],
-      "pack": "demo"
+      ]
     }
   ]
 }

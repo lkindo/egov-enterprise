@@ -113,6 +113,7 @@ test('institution approval requires the controls transferred from the gap index'
   const { root, write } = fixture(t);
   write('frontend/package.json', '{"private":true}\n');
   write('config/ui-url-state-census.json', '{}\n');
+  write('config/modules/presets.json', '{}\n');
 
   const evidencePath = 'docs/review.md';
   const digest = sha256(readFileSync(join(root, evidencePath)));
@@ -166,8 +167,15 @@ test('online deployment inputs invalidate approvals and text checkout line endin
   const { root, write } = fixture(t);
   write('frontend/package.json', '{"private":true}\n');
   write('config/ui-url-state-census.json', '{}\n');
+  // 기능 소유·활성 구성 선언(config/modules)은 필수 입력이다 — 없으면 승인 범위를 만들지 않는다(11단계 C5).
+  assert.throws(() => adoptionScope(root, { product: 'online', profile: 'demo' }), /missing product scope input: config\/modules\/presets\.json/);
+  write('config/modules/presets.json', '{}\n');
   const online = () => adoptionScope(root, { product: 'online', profile: 'demo' }).digest;
   let previous = online();
+  // 기능 파일도 범위에 든다 — 소유 선언이 바뀌면 승인이 무효가 된다.
+  write('config/modules/board.json', '{"id":"board"}\n');
+  assert.notEqual(online(), previous, 'config/modules/board.json');
+  previous = online();
   for (const file of ['frontend/Dockerfile', 'api-server/Dockerfile', 'docker-compose.prod.yml', 'scripts/deploy.sh',
     'scripts/release-images.mjs', 'frontend/scripts/validate-api-build-urls.mjs']) {
     write(file, 'fixture original\n');

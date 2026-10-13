@@ -68,12 +68,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Entity → DTO → OpenAPI → TypeScript/Zod 체인이 닫힌다.
  *
  * <p><b>표적 원장은 {@code config/governance/input-contract-mirror-census.json} 이다.</b> 종전에는 표적을 이 클래스의
- * 상수와 도메인 타입 import 로 두었는데, 재사용 base 투영은 제거된 pack 의 타입을 참조하는 파일을 통째로 지우므로
+ * 상수와 도메인 타입 import 로 두었는데, 재사용 base 투영은 빠진 기능의 타입을 참조하는 파일을 통째로 지우므로
  * <b>남는 코어 DTO 까지 검사하던 이 게이트가 축소 프로필에서 사라졌다</b>(GAP-PACK-001 ④). 원장은 항목마다 참조 타입의
- * 이진 이름과 소유 pack 을 적고, 이 게이트는 현재 트리의 pack manifest 에 남은 pack 의 항목만 검사한다. 빠진 pack 항목은
- * <b>참조 타입 중 하나가 {@code ClassNotFoundException} 일 때만</b> 부재로 인정한다 — 전부 로드되면 pack 태그가 틀린 것이고,
+ * 이진 이름을 적는다(소유는 적지 않는다 — 11단계 C4 에서 pack 태그를 걷었다). 저장소에서는 원장 전체를, 생성물에서는 참조 타입이
+ * 모두 생성기의 투영 계획({@link ReusableHarnessProfile#retainsType})에서 남은 항목만 검사한다. 지운 항목은
+ * <b>참조 타입 중 하나가 {@code ClassNotFoundException} 일 때만</b> 부재로 인정한다 — 전부 로드되면 투영 기록과 트리가 어긋난 것이고,
  * 링크 오류는 판정할 수 없는 것이라 둘 다 red 다. 표적 하한({@code MIN_*})은 프로필과 무관하게 원장 <b>전체</b>에 적용한다.
- * 태그가 생성기의 실제 제거 계획과 맞는지는 {@code scripts/input-contract-mirror-census-contract.test.mjs} 가 대조한다.
+ * 항목이 기능 소유대로 생성기의 실제 제거 계획에서 남고 빠지는지는 {@code scripts/input-contract-mirror-census-contract.test.mjs} 가
+ * 시작 구성마다 대조한다.
  *
  * <p>이 파일이 직접 참조하는 도메인 타입은 모든 프로필에 남는 business-core 권한·사용자 DTO 뿐이다.
  */
@@ -106,7 +108,6 @@ class InputContractMirrorLinterTest {
 
     private static final String API_DOCS_FILE = "api-docs.json";
     private static final String CENSUS_REGISTRY = "config/governance/input-contract-mirror-census.json";
-    private static final String PACK_MANIFEST = "config/reusable-base-profiles.json";
 
     // [2026-09-07] +3 (ISG itntSvcNm/itntSvcExpln/rfltYn).
     // [2026-09-08 PD-MYPG-001] 116 -> 111. MyPageContentDto 5필드가 빠졌다 — 그 DTO 를 걷었기
@@ -157,20 +158,19 @@ class InputContractMirrorLinterTest {
 
     private static Census census;
 
-    /** 현재 트리의 원장·pack manifest 로 해석한 표적. 한 테스트 JVM 에서 한 번만 읽는다. */
+    /** 현재 트리의 원장과 투영 계획으로 해석한 표적. 한 테스트 JVM 에서 한 번만 읽는다. */
     private static synchronized Census census() {
         if (census == null) {
             Path root = HarnessSourceIndex.repoRoot();
             Registry registry = Registry.parse(readRepoFile(root, CENSUS_REGISTRY));
-            Set<String> presentPacks = presentPacks(registry, readRepoFile(root, PACK_MANIFEST));
             ClassLoader loader = InputContractMirrorLinterTest.class.getClassLoader();
             ReusableHarnessProfile profile = ReusableHarnessProfile.current();
-            census = resolve(registry, presentPacks, name -> Class.forName(name, false, loader),
-                    profile.customDomains() ? spec -> {
-                        boolean retained = true;
-                        for (String type : spec.types()) retained &= profile.retainsType(type);
-                        return retained;
-                    } : spec -> presentPacks.contains(spec.pack()));
+            // 저장소에서는 retainsType 이 늘 참이라 원장 전체를, 생성물에서는 참조 타입이 모두 남은 표적만 검사한다.
+            census = resolve(registry, name -> Class.forName(name, false, loader), spec -> {
+                boolean retained = true;
+                for (String type : spec.types()) retained &= profile.retainsType(type);
+                return retained;
+            });
         }
         return census;
     }
@@ -255,7 +255,7 @@ class InputContractMirrorLinterTest {
         }
 
         failIfAny("[INPUT CONTRACT] Entity ↔ DTO 의미 제약 불일치", violations);
-        log.info("✅ 입력 계약 표적 미러(남은 pack {}): 길이 {}필드, enum {}필드.", census.presentPacks(),
+        log.info("✅ 입력 계약 표적 미러: 길이 {}필드, enum {}필드.",
                 census.lengthBindings().stream().mapToInt(binding -> binding.fields().size()).sum(),
                 census.enumBindings().size());
     }
@@ -476,87 +476,61 @@ class InputContractMirrorLinterTest {
     }
 
     @Test
-    @DisplayName("부정 증명: pack 필터는 참조 타입 중 하나의 '클래스 없음' 만 부재로 인정하고 태그·링크 오류·낡은 원장을 red 로 만든다")
-    void packFilterAcceptsOnlyMissingClassesAsAbsence() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['base','extra'],"
+    @DisplayName("부정 증명: 투영 필터는 참조 타입 중 하나의 '클래스 없음' 만 부재로 인정하고 기록 불일치·링크 오류·낡은 원장을 red 로 만든다")
+    void projectionFilterAcceptsOnlyMissingClassesAsAbsence() {
+        Registry registry = Registry.parse(json("{'schemaVersion':1,"
                 + "'lengthBindings':["
-                + "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name'],'pack':'base'},"
-                + "{'entity':'example.kept.KeptEntity','dto':'example.gone.GoneDto','fields':['name'],'pack':'extra'}],"
+                + "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name']},"
+                + "{'entity':'example.kept.KeptEntity','dto':'example.gone.GoneDto','fields':['name']}],"
                 + "'enumBindings':[],'nestedValidationBindings':[],"
                 + "'requiredBindings':["
-                + "{'dto':'example.kept.KeptDto','fields':[],'pack':'base'},"
-                + "{'dto':'example.gone.GoneDto','fields':[],'pack':'extra'}],"
+                + "{'dto':'example.kept.KeptDto','fields':[]},"
+                + "{'dto':'example.gone.GoneDto','fields':[]}],"
                 + "'requiredResponseFields':[],'readOnlyBindings':[],'calendarDateBindings':[]}"));
+        Predicate<Spec> everything = spec -> true;
+        // 엔티티는 남아도 된다 — 참조 타입 중 하나(DTO)가 지워진 표적만 빠진다.
+        Predicate<Spec> kept = spec -> spec.types().stream().noneMatch(type -> type.startsWith("example.gone."));
 
-        // ① 모든 pack 이 있으면 전 항목을 검사한다.
-        Census all = resolve(registry, Set.of("base", "extra"), name -> Object.class);
+        // ① 저장소(투영 아님)에서는 전 항목을 검사한다.
+        Census all = resolve(registry, name -> Object.class, everything);
         assertThat(all.lengthBindings()).hasSize(2);
 
-        // ② 빠진 pack 항목은 참조 타입 중 하나가 정말 없을 때만 빠진다(엔티티는 남아도 된다).
-        Census reduced = resolve(registry, Set.of("base"), name -> {
+        // ② 투영 계획이 지운 표적은 참조 타입 중 하나가 정말 없을 때만 빠진다.
+        Census reduced = resolve(registry, name -> {
             if (name.startsWith("example.gone.")) {
                 throw new ClassNotFoundException(name);
             }
             return Object.class;
-        });
+        }, kept);
         assertThat(reduced.lengthBindings()).hasSize(1);
         assertThat(reduced.requiredBindings()).hasSize(1);
 
-        // ③ 빠진 pack 인데 참조 타입이 모두 남아 있으면 pack 태그가 틀린 것이다.
-        assertThatThrownBy(() -> resolve(registry, Set.of("base"), name -> Object.class))
+        // ③ 지운 표적인데 참조 타입이 모두 남아 있으면 투영 기록과 트리가 어긋난 것이다.
+        assertThatThrownBy(() -> resolve(registry, name -> Object.class, kept))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("example.gone.GoneDto")
-                .hasMessageContaining("pack 태그");
+                .hasMessageContaining("투영 계획이 지운 표적");
 
         // ④ 링크 오류는 부재로 인정하지 않는다.
-        assertThatThrownBy(() -> resolve(registry, Set.of("base"), name -> {
+        assertThatThrownBy(() -> resolve(registry, name -> {
             if (name.startsWith("example.gone.")) {
                 throw new NoClassDefFoundError(name);
             }
             return Object.class;
-        }))
+        }, kept))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("링크 오류");
 
-        // ⑤ 남은 pack 항목의 타입이 없으면 원장이 낡은 것이다.
-        assertThatThrownBy(() -> resolve(registry, Set.of("base", "extra"), name -> {
+        // ⑤ 남아야 하는 표적의 타입이 없으면 원장이 낡은 것이다.
+        assertThatThrownBy(() -> resolve(registry, name -> {
             if (name.equals("example.kept.KeptEntity")) {
                 throw new ClassNotFoundException(name);
             }
             return Object.class;
-        }))
+        }, everything))
                 .isInstanceOf(AssertionError.class)
-                .hasMessageContaining("example.kept.KeptEntity");
-    }
-
-    @Test
-    @DisplayName("custom 입력 계약은 같은 pack의 선택 타입을 유지하고 누락·링크 오류·예상 밖 생존을 거부한다")
-    void customSourcePlanPreservesSelectedInputContracts() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['shared'],"
-                + "'lengthBindings':["
-                + "{'entity':'example.kept.Entity','dto':'example.kept.Dto','fields':['name'],'pack':'shared'},"
-                + "{'entity':'example.kept.Entity','dto':'example.gone.Dto','fields':['name'],'pack':'shared'}],"
-                + "'requiredBindings':[{'dto':'example.kept.Dto','fields':[],'pack':'shared'},"
-                + "{'dto':'example.gone.Dto','fields':[],'pack':'shared'}],"
-                + "'enumBindings':[],'nestedValidationBindings':[],'requiredResponseFields':[],"
-                + "'readOnlyBindings':[],'calendarDateBindings':[]}"));
-        Predicate<Spec> selected = spec -> spec.types().stream().noneMatch(type -> type.startsWith("example.gone."));
-        TypeResolver selectedClasses = name -> {
-            if (name.startsWith("example.gone.")) throw new ClassNotFoundException(name);
-            return Object.class;
-        };
-        Census projection = resolve(registry, Set.of("shared"), selectedClasses, selected);
-        assertThat(projection.lengthBindings()).hasSize(1);
-        assertThat(projection.requiredBindings()).hasSize(1);
-        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> {
-            throw new ClassNotFoundException(name);
-        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("example.kept.Dto");
-        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> Object.class, selected))
-                .isInstanceOf(AssertionError.class).hasMessageContaining("example.gone.Dto");
-        assertThatThrownBy(() -> resolve(registry, Set.of("shared"), name -> {
-            if (name.startsWith("example.gone.")) throw new NoClassDefFoundError(name);
-            return Object.class;
-        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("링크 오류");
+                .hasMessageContaining("example.kept.KeptEntity")
+                .hasMessageContaining("원장이 낡았습니다");
     }
 
     @Test
@@ -564,15 +538,12 @@ class InputContractMirrorLinterTest {
     void registryIsFailClosed() {
         String tail = "'enumBindings':[],'nestedValidationBindings':[],'requiredResponseFields':[],"
                 + "'readOnlyBindings':[],'calendarDateBindings':[]}";
-        String length = "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name'],'pack':'base'}";
-        String required = "{'dto':'example.kept.KeptDto','fields':[{'field':'name','constraint':'NotBlank','groups':[]}],'pack':'base'}";
-        String head = "{'schemaVersion':1,'packs':['base','extra'],";
+        String length = "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name']}";
+        String required = "{'dto':'example.kept.KeptDto','fields':[{'field':'name','constraint':'NotBlank','groups':[]}]}";
+        String head = "{'schemaVersion':1,";
 
-        assertThatThrownBy(() -> Registry.parse(json(head + "'packs':['base'],'lengthBindings':[],'requiredBindings':[]," + tail)))
+        assertThatThrownBy(() -> Registry.parse(json(head + "'enumBindings':[],'lengthBindings':[],'requiredBindings':[]," + tail)))
                 .as("중복 키").isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length.replace("'base'", "'other'")
-                + "],'requiredBindings':[" + required + "]," + tail)))
-                .as("어휘 밖 pack").isInstanceOf(AssertionError.class).hasMessageContaining("other");
         assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length.replace("example.kept.KeptDto", "example.kept.keptDto")
                 + "],'requiredBindings':[" + required + "]," + tail)))
                 .as("이진 이름 형식").isInstanceOf(AssertionError.class);
@@ -587,30 +558,28 @@ class InputContractMirrorLinterTest {
                 .as("길이 binding DTO 중복").isInstanceOf(AssertionError.class).hasMessageContaining("중복");
         assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length + "],'requiredBindings':[]," + tail)))
                 .as("필수·길이 DTO 집합 불일치").isInstanceOf(AssertionError.class).hasMessageContaining("집합");
-        assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length + "],'requiredBindings':["
-                + required.replace("'base'", "'extra'") + "]," + tail)))
-                .as("같은 DTO 의 pack 불일치").isInstanceOf(AssertionError.class).hasMessageContaining("pack");
-        assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length.replace("'pack'", "'note':'x','pack'")
+        assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length.replace("'fields'", "'note':'x','fields'")
                 + "],'requiredBindings':[" + required + "]," + tail)))
                 .as("모르는 필드").isInstanceOf(AssertionError.class).hasMessageContaining("note");
+        // 소유는 원장에 적지 않는다(11단계 C4) — 옛 pack 태그·어휘가 되살아나면 모르는 필드로 거부한다.
+        assertThatThrownBy(() -> Registry.parse(json(head + "'lengthBindings':[" + length.replace("'fields'", "'pack':'core','fields'")
+                + "],'requiredBindings':[" + required + "]," + tail)))
+                .as("옛 pack 태그").isInstanceOf(AssertionError.class).hasMessageContaining("'pack'");
+        assertThatThrownBy(() -> Registry.parse(json(head + "'packs':['core'],'lengthBindings':[" + length
+                + "],'requiredBindings':[" + required + "]," + tail)))
+                .as("옛 packs 어휘").isInstanceOf(AssertionError.class).hasMessageContaining("'packs'");
 
         String withResponse = head + "'lengthBindings':[" + length + "],'requiredBindings':[" + required + "],"
                 + tail.replace("'requiredResponseFields':[]", "'requiredResponseFields':[RESPONSE]");
         assertThatThrownBy(() -> Registry.parse(json(withResponse.replace("RESPONSE",
-                "{'dto':'example.kept.OtherDto','fields':['groups'],'pack':'base'}"))))
+                "{'dto':'example.kept.OtherDto','fields':['groups']}"))))
                 .as("필수 binding 없는 응답 전용 DTO").isInstanceOf(AssertionError.class).hasMessageContaining("requiredBindings");
-        assertThatThrownBy(() -> Registry.parse(json(withResponse.replace("RESPONSE",
-                "{'dto':'example.kept.KeptDto','fields':['groups'],'pack':'extra'}"))))
-                .as("응답 전용 필드 pack 불일치").isInstanceOf(AssertionError.class).hasMessageContaining("pack");
         assertThat(Registry.parse(json(withResponse.replace("RESPONSE",
-                "{'dto':'example.kept.KeptDto','fields':['groups'],'pack':'base'}"))).requiredResponseFields())
+                "{'dto':'example.kept.KeptDto','fields':['groups']}"))).requiredResponseFields())
                 .as("대조군: 짝이 맞으면 받는다").hasSize(1);
 
         Registry small = Registry.parse(json(head + "'lengthBindings':[" + length + "],'requiredBindings':[" + required + "]," + tail));
         assertThat(floorViolations(small)).as("하한은 원장 전체 기준으로 계산한다").isNotEmpty();
-        assertThat(presentPacks(small, json("{'packs':{'base':{}}}"))).containsExactly("base");
-        assertThatThrownBy(() -> presentPacks(small, json("{'packs':{'base':{},'newcomer':{}}}")))
-                .as("원장 어휘에 없는 manifest pack").isInstanceOf(AssertionError.class).hasMessageContaining("newcomer");
     }
 
     /** 원장 전체(프로필 무관) 표적 하한. 축소 프로필의 부분집합이 아니라 원장 자체의 축소를 막는다. */
@@ -632,16 +601,11 @@ class InputContractMirrorLinterTest {
     }
 
     /**
-     * 남은 pack 의 표적을 클래스로 해석한다. 순수 함수 — 클래스 로드는 주입된 resolver 로만 한다.
+     * 표적을 클래스로 해석한다. 순수 함수 — 클래스 로드는 주입된 resolver 로만 하고, 남길 표적은 투영 계획(저장소는 전부)이 정한다.
      *
-     * <p>빠진 pack 항목은 참조 타입 중 하나가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
+     * <p>투영 계획이 지운 표적은 참조 타입 중 하나가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
      */
-    static Census resolve(Registry registry, Set<String> presentPacks, TypeResolver resolver) {
-        return resolve(registry, presentPacks, resolver, spec -> presentPacks.contains(spec.pack()));
-    }
-
-    /** The declared source plan selects custom targets; all missing/linkage checks remain active. */
-    static Census resolve(Registry registry, Set<String> presentPacks, TypeResolver resolver, Predicate<Spec> included) {
+    static Census resolve(Registry registry, TypeResolver resolver, Predicate<Spec> included) {
         Map<String, Class<?>> loaded = new LinkedHashMap<>();
         List<String> violations = new ArrayList<>();
         for (Spec spec : registry.allSpecs()) {
@@ -655,8 +619,7 @@ class InputContractMirrorLinterTest {
                 } catch (ClassNotFoundException ex) {
                     anyMissing = true;
                     if (present) {
-                        violations.add(spec.label() + ": " + type + " 는 남은 pack '" + spec.pack()
-                                + "' 표적인데 클래스가 없습니다 — 원장이 낡았습니다.");
+                        violations.add(spec.label() + ": " + type + " 는 남아야 하는 표적의 타입인데 클래스가 없습니다 — 원장이 낡았습니다.");
                     }
                 } catch (LinkageError ex) {
                     linkageBroken = true;
@@ -664,12 +627,11 @@ class InputContractMirrorLinterTest {
                 }
             }
             if (!present && !anyMissing && !linkageBroken) {
-                violations.add(spec.label() + " 는 빠진 pack '" + spec.pack()
-                        + "' 표적으로 적혀 있는데 참조 타입이 모두 남아 있습니다 — pack 태그가 틀렸습니다.");
+                violations.add(spec.label() + " 는 투영 계획이 지운 표적인데 참조 타입이 모두 남아 있습니다 — 투영 기록과 트리가 어긋났습니다.");
             }
         }
         if (!violations.isEmpty()) {
-            throw new AssertionError("🔒 [INPUT CONTRACT] 표적 pack 판정 실패:\n   · " + String.join("\n   · ", violations));
+            throw new AssertionError("🔒 [INPUT CONTRACT] 표적 투영 판정 실패:\n   · " + String.join("\n   · ", violations));
         }
 
         List<LengthBinding> lengths = new ArrayList<>();
@@ -706,7 +668,7 @@ class InputContractMirrorLinterTest {
                 responseFields.put(loaded.get(spec.dto()), Set.copyOf(spec.fields()));
             }
         }
-        return new Census(registry, Set.copyOf(presentPacks), List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
+        return new Census(registry, List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
                 List.copyOf(required), Map.copyOf(responseFields),
                 fieldsBindings(registry.readOnlyBindings(), included, loaded),
                 fieldsBindings(registry.calendarDateBindings(), included, loaded));
@@ -720,24 +682,6 @@ class InputContractMirrorLinterTest {
             }
         }
         return List.copyOf(bindings);
-    }
-
-    /** 원장의 pack 어휘와 현재 트리 manifest 의 pack 을 대조해 남은 pack 을 돌려준다. */
-    static Set<String> presentPacks(Registry registry, String manifestJson) {
-        JsonNode packs = readJson(manifestJson, PACK_MANIFEST).get("packs");
-        if (packs == null || !packs.isObject() || packs.isEmpty()) {
-            throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
-        }
-        Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
-            String name = names.next();
-            if (!registry.packs().contains(name)) {
-                throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
-                        + " 의 packs 어휘에 없습니다. 새 pack 의 입력 계약 표적을 먼저 판정하십시오.");
-            }
-            present.add(name);
-        }
-        return present;
     }
 
     @Test
@@ -1217,7 +1161,7 @@ class InputContractMirrorLinterTest {
         Class<?> resolve(String binaryName) throws ClassNotFoundException;
     }
 
-    record Census(Registry registry, Set<String> presentPacks, List<LengthBinding> lengthBindings,
+    record Census(Registry registry, List<LengthBinding> lengthBindings,
                   List<EnumBinding> enumBindings, List<NestedValidationBinding> nestedValidationBindings,
                   List<RequiredBinding> requiredBindings, Map<Class<?>, Set<String>> requiredResponseFields,
                   List<FieldsBinding> readOnlyBindings, List<FieldsBinding> calendarDateBindings) {
@@ -1243,28 +1187,26 @@ class InputContractMirrorLinterTest {
     private record RequiredField(String field, Class<? extends Annotation> constraint, Set<String> groups) {
     }
 
-    /** 원장 항목의 공통 형태 — 판정에 필요한 참조 타입 이진 이름과 소유 pack. */
+    /** 원장 항목의 공통 형태 — 판정에 필요한 참조 타입 이진 이름. */
     interface Spec {
         String label();
-
-        String pack();
 
         List<String> types();
     }
 
-    record LengthSpec(String entity, String dto, List<String> fields, Map<String, String> entityFields, String pack) implements Spec {
+    record LengthSpec(String entity, String dto, List<String> fields, Map<String, String> entityFields) implements Spec {
         public String label() { return "lengthBindings " + dto; }
 
         public List<String> types() { return List.of(entity, dto); }
     }
 
-    record EnumSpec(String dto, String field, List<String> allowedValues, String pack) implements Spec {
+    record EnumSpec(String dto, String field, List<String> allowedValues) implements Spec {
         public String label() { return "enumBindings " + dto + "." + field; }
 
         public List<String> types() { return List.of(dto); }
     }
 
-    record NestedSpec(String parent, String field, String item, String pack) implements Spec {
+    record NestedSpec(String parent, String field, String item) implements Spec {
         public String label() { return "nestedValidationBindings " + parent + "." + field; }
 
         public List<String> types() { return List.of(parent, item); }
@@ -1273,7 +1215,7 @@ class InputContractMirrorLinterTest {
     record RequiredFieldSpec(String field, String constraint, List<String> groups) {
     }
 
-    record RequiredSpec(String dto, List<RequiredFieldSpec> fields, String pack) implements Spec {
+    record RequiredSpec(String dto, List<RequiredFieldSpec> fields) implements Spec {
         public String label() { return "requiredBindings " + dto; }
 
         public List<String> types() {
@@ -1284,13 +1226,13 @@ class InputContractMirrorLinterTest {
         }
     }
 
-    record FieldsSpec(String section, String dto, List<String> fields, String pack) implements Spec {
+    record FieldsSpec(String section, String dto, List<String> fields) implements Spec {
         public String label() { return section + " " + dto; }
 
         public List<String> types() { return List.of(dto); }
     }
 
-    record Registry(Set<String> packs, List<LengthSpec> lengthBindings, List<EnumSpec> enumBindings,
+    record Registry(List<LengthSpec> lengthBindings, List<EnumSpec> enumBindings,
                     List<NestedSpec> nestedValidationBindings, List<RequiredSpec> requiredBindings,
                     List<FieldsSpec> requiredResponseFields, List<FieldsSpec> readOnlyBindings,
                     List<FieldsSpec> calendarDateBindings) {
@@ -1312,29 +1254,19 @@ class InputContractMirrorLinterTest {
             Set<String> sections = Set.of("lengthBindings", "enumBindings", "nestedValidationBindings", "requiredBindings",
                     "requiredResponseFields", "readOnlyBindings", "calendarDateBindings");
             Set<String> topAllowed = new TreeSet<>(sections);
-            topAllowed.addAll(Set.of("schemaVersion", "description", "packs"));
+            topAllowed.addAll(Set.of("schemaVersion", "description"));
             Set<String> topRequired = new TreeSet<>(sections);
-            topRequired.addAll(Set.of("schemaVersion", "packs"));
+            topRequired.add("schemaVersion");
             requireFields(root, CENSUS_REGISTRY, topAllowed, topRequired);
             if (root.get("schemaVersion").asInt(-1) != 1) {
                 throw new AssertionError(CENSUS_REGISTRY + " schemaVersion 은 1 이어야 합니다.");
             }
-            Set<String> packs = new LinkedHashSet<>();
-            JsonNode packNodes = root.get("packs");
-            if (!packNodes.isArray() || packNodes.isEmpty()) {
-                throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
-            }
-            for (JsonNode pack : packNodes) {
-                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
-                    throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
-                }
-            }
 
             List<LengthSpec> lengths = new ArrayList<>();
-            Map<String, String> lengthPacks = new LinkedHashMap<>();
+            Set<String> lengthDtos = new LinkedHashSet<>();
             for (JsonNode node : array(root, "lengthBindings")) {
-                requireFields(node, "lengthBindings", Set.of("entity", "dto", "fields", "entityFields", "pack"),
-                        Set.of("entity", "dto", "fields", "pack"));
+                requireFields(node, "lengthBindings", Set.of("entity", "dto", "fields", "entityFields"),
+                        Set.of("entity", "dto", "fields"));
                 String dto = typeName(node, "dto");
                 Map<String, String> entityFields = new LinkedHashMap<>();
                 JsonNode mapping = node.get("entityFields");
@@ -1347,8 +1279,8 @@ class InputContractMirrorLinterTest {
                     }
                 }
                 LengthSpec spec = new LengthSpec(typeName(node, "entity"), dto, fieldList(node, "fields", false),
-                        Map.copyOf(entityFields), pack(node, packs));
-                if (lengthPacks.put(dto, spec.pack()) != null) {
+                        Map.copyOf(entityFields));
+                if (!lengthDtos.add(dto)) {
                     throw new AssertionError("길이 binding DTO 중복: " + dto);
                 }
                 lengths.add(spec);
@@ -1357,10 +1289,10 @@ class InputContractMirrorLinterTest {
             List<EnumSpec> enums = new ArrayList<>();
             Set<String> enumKeys = new LinkedHashSet<>();
             for (JsonNode node : array(root, "enumBindings")) {
-                requireFields(node, "enumBindings", Set.of("dto", "field", "allowedValues", "pack"),
-                        Set.of("dto", "field", "allowedValues", "pack"));
+                requireFields(node, "enumBindings", Set.of("dto", "field", "allowedValues"),
+                        Set.of("dto", "field", "allowedValues"));
                 EnumSpec spec = new EnumSpec(typeName(node, "dto"), fieldName(text(node, "field")),
-                        stringList(node, "allowedValues"), pack(node, packs));
+                        stringList(node, "allowedValues"));
                 if (!enumKeys.add(spec.dto() + "." + spec.field())) {
                     throw new AssertionError("enumBindings 중복: " + spec.dto() + "." + spec.field());
                 }
@@ -1369,16 +1301,15 @@ class InputContractMirrorLinterTest {
 
             List<NestedSpec> nested = new ArrayList<>();
             for (JsonNode node : array(root, "nestedValidationBindings")) {
-                requireFields(node, "nestedValidationBindings", Set.of("parent", "field", "item", "pack"),
-                        Set.of("parent", "field", "item", "pack"));
-                nested.add(new NestedSpec(typeName(node, "parent"), fieldName(text(node, "field")), typeName(node, "item"),
-                        pack(node, packs)));
+                requireFields(node, "nestedValidationBindings", Set.of("parent", "field", "item"),
+                        Set.of("parent", "field", "item"));
+                nested.add(new NestedSpec(typeName(node, "parent"), fieldName(text(node, "field")), typeName(node, "item")));
             }
 
             List<RequiredSpec> required = new ArrayList<>();
-            Map<String, String> requiredPacks = new LinkedHashMap<>();
+            Set<String> requiredDtos = new LinkedHashSet<>();
             for (JsonNode node : array(root, "requiredBindings")) {
-                requireFields(node, "requiredBindings", Set.of("dto", "fields", "pack"), Set.of("dto", "fields", "pack"));
+                requireFields(node, "requiredBindings", Set.of("dto", "fields"), Set.of("dto", "fields"));
                 String dto = typeName(node, "dto");
                 List<RequiredFieldSpec> fields = new ArrayList<>();
                 Set<String> fieldNames = new LinkedHashSet<>();
@@ -1403,42 +1334,38 @@ class InputContractMirrorLinterTest {
                     }
                     fields.add(new RequiredFieldSpec(field, constraint, List.copyOf(groups)));
                 }
-                RequiredSpec spec = new RequiredSpec(dto, List.copyOf(fields), pack(node, packs));
-                if (requiredPacks.put(dto, spec.pack()) != null) {
+                RequiredSpec spec = new RequiredSpec(dto, List.copyOf(fields));
+                if (!requiredDtos.add(dto)) {
                     throw new AssertionError("필수 binding DTO 중복: " + dto);
                 }
                 required.add(spec);
             }
-            if (!requiredPacks.keySet().equals(lengthPacks.keySet())) {
-                throw new AssertionError("필수 binding DTO 집합=" + new TreeSet<>(requiredPacks.keySet())
-                        + " 이 길이 binding DTO 집합=" + new TreeSet<>(lengthPacks.keySet()) + " 과 다릅니다.");
+            if (!requiredDtos.equals(lengthDtos)) {
+                throw new AssertionError("필수 binding DTO 집합=" + new TreeSet<>(requiredDtos)
+                        + " 이 길이 binding DTO 집합=" + new TreeSet<>(lengthDtos) + " 과 다릅니다.");
             }
-            if (!requiredPacks.equals(lengthPacks)) {
-                throw new AssertionError("같은 DTO 의 길이·필수 binding pack 이 다릅니다: 길이=" + lengthPacks + " 필수=" + requiredPacks);
-            }
+            // 같은 DTO 의 길이·필수·응답 전용 표적이 어느 구성에서나 함께 남고 빠지는지(소유 기능 집합이 같은지)는 원장에 소유를 적지 않으므로
+            // scripts/input-contract-mirror-census-contract.test.mjs 가 소스에서 계산해 본다(종전의 '같은 pack' 규칙).
 
             // 응답 전용 필수 필드는 필수 binding 검사 안에서만 소비된다 — 짝이 없는 DTO 는 받아 두고 영영 검사하지 않게 된다.
-            List<FieldsSpec> responseFields = fieldsSpecs(root, "requiredResponseFields", packs);
+            List<FieldsSpec> responseFields = fieldsSpecs(root, "requiredResponseFields");
             for (FieldsSpec spec : responseFields) {
-                if (!requiredPacks.containsKey(spec.dto())) {
+                if (!requiredDtos.contains(spec.dto())) {
                     throw new AssertionError("requiredResponseFields DTO 에 requiredBindings 항목이 없어 검사되지 않습니다: " + spec.dto());
-                }
-                if (!requiredPacks.get(spec.dto()).equals(spec.pack())) {
-                    throw new AssertionError("requiredResponseFields 의 pack 이 필수 binding pack 과 다릅니다: " + spec.dto());
                 }
             }
 
-            return new Registry(Set.copyOf(packs), List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
+            return new Registry(List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
                     List.copyOf(required), responseFields,
-                    fieldsSpecs(root, "readOnlyBindings", packs), fieldsSpecs(root, "calendarDateBindings", packs));
+                    fieldsSpecs(root, "readOnlyBindings"), fieldsSpecs(root, "calendarDateBindings"));
         }
 
-        private static List<FieldsSpec> fieldsSpecs(JsonNode root, String section, Set<String> packs) {
+        private static List<FieldsSpec> fieldsSpecs(JsonNode root, String section) {
             List<FieldsSpec> specs = new ArrayList<>();
             Set<String> dtos = new LinkedHashSet<>();
             for (JsonNode node : array(root, section)) {
-                requireFields(node, section, Set.of("dto", "fields", "pack"), Set.of("dto", "fields", "pack"));
-                FieldsSpec spec = new FieldsSpec(section, typeName(node, "dto"), fieldList(node, "fields", false), pack(node, packs));
+                requireFields(node, section, Set.of("dto", "fields"), Set.of("dto", "fields"));
+                FieldsSpec spec = new FieldsSpec(section, typeName(node, "dto"), fieldList(node, "fields", false));
                 if (!dtos.add(spec.dto())) {
                     throw new AssertionError(section + " DTO 중복: " + spec.dto());
                 }
@@ -1504,14 +1431,6 @@ class InputContractMirrorLinterTest {
                 throw new AssertionError(field + " 는 비어 있지 않고 중복이 없어야 합니다: " + node);
             }
             return List.copyOf(values);
-        }
-
-        private static String pack(JsonNode node, Set<String> packs) {
-            String value = node.path("pack").isString() ? node.get("pack").asString() : "";
-            if (!packs.contains(value)) {
-                throw new AssertionError("원장 항목의 pack '" + value + "' 가 packs 어휘 " + packs + " 에 없습니다: " + node);
-            }
-            return value;
         }
 
         private static void requireFields(JsonNode node, String section, Set<String> allowed, Set<String> required) {

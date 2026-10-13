@@ -8,7 +8,6 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const MANIFEST_PATH = join(ROOT, 'config', 'reusable-base-profiles.json');
 // 알려진 재배포 제한 스킬만 복사에서 제외한다. 나머지 자산의 라이선스 검토를 대신하지 않는다.
 const EXCLUDED_REUSABLE_SKILL_ROOTS = ['docx', 'pdf', 'pptx', 'xlsx']
   .map((skill) => `.agent/skills/${skill}`);

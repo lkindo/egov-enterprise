@@ -8,7 +8,8 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { HISTORICAL_SCHEMA_TEST_DIR, UPSTREAM_ATLAS, javaCascadeAcknowledgement, missingUpstreamAtlasAliases, missingUpstreamAtlasAssets,
   removedGateAcknowledgement, selectHistoricalMigrationTests } from './reusable-source-gates.mjs';
 import { isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
-import { assertComposerSourceSurvives, composerProfile, domainSupportFiles } from './project-composer-source.mjs';
+import { assertComposerSourceSurvives, composerProfile } from './project-composer-source.mjs';
+import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { withoutRoot } from './project-composer-errors.mjs';
 import { planPermissionProjection, readPermissionSources } from './reusable-permission-projection.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
@@ -77,11 +78,13 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
  * 화면 생존의 기대값(`pageSurvival`)은 넘기지 않으면 `root` 의 라우트 원장과 카탈로그(`catalog`, 없으면 적재)로 만든다.
  * 권한 투영 입력(`permissionSources` = 카탈로그·인가 원장·묶음 원장·화면 용어 원장·화면 목록 산출물)은 넘기지 않으면 `root` 에서 읽는다.
  * API 계약(`apiContract` = { doc, bindings })은 넘기지 않으면 `root` 의 api-docs 와 인가 원장에서 읽는다.
+ * 기능 소유와 시작 구성 기대치는 매니페스트 v2 에서 읽는다(`modules` — loadComposerModules 결과, 없으면 `root` 에서 적재). 생성기와 같다
+ * (11단계 C3) — 시작 구성도 직접 선택과 같은 판정이고 pack 을 보지 않는다.
  */
-export function compositionDeepPlan({ root, manifest, composition, files, outputParent, catalog, pageSurvival, permissionSources,
-  apiContract: apiContractSource }) {
+export function compositionDeepPlan({ root, composition, files, outputParent, catalog, pageSurvival, permissionSources,
+  apiContract: apiContractSource, modules = loadComposerModules(root) }) {
   const started = performance.now();
-  const profile = composerProfile(manifest, composition);
+  const profile = composerProfile(modules, composition);
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
   const pathKey = ignoresCase(root, relativeFiles, outputParent) ? path => path.toLowerCase() : path => path;
   const present = new Set(relativeFiles.map(pathKey));
@@ -91,16 +94,19 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const rel = path => normalize(relative(root, path));
 
   let java = null;
+  let ownership = null;
   try {
+    // 지원 파일 선언은 여기서 검사하며 푼다 — 잘못된 선언은 생성기와 같은 자리(Java 투영)에서 실패한다.
+    ownership = composerOwnership(modules);
     // 제외 도메인 폴더는 디스크가 아니라 복사할 파일 목록에서 훑는다(생성기는 복사한 트리를 훑는다).
     const walkDirectory = directory => {
       const prefix = pathKey(`${directory}${sep}`);
       return relativeFiles.map(file => join(root, file)).filter(path => pathKey(path).startsWith(prefix));
     };
-    const plan = planJavaRemoval(root, manifest, profile, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
+    const plan = planJavaRemoval(root, ownership, profile, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
       { walkDirectory });
     // 생성기는 복사한 트리에서 선언된 지원 파일을 찾는다. 디스크에만 있고 복사되지 않는 파일이면 거기서 실패한다.
-    for (const supportFiles of domainSupportFiles(root, manifest).values()) {
+    for (const supportFiles of ownership.supportFiles.values()) {
       for (const file of supportFiles) if (!present.has(pathKey(file))) throw new Error(`Missing domain support file: ${file}`);
     }
     java = plan;
@@ -120,7 +126,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   }
 
   const frontendRoot = join(root, 'frontend');
-  // 생성기처럼 모든 프런트 모듈 파일에 투영(직접 선택의 소유 기능과 pack 마커를 한 번에)을 먼저 하고, 그 내용으로 import 를 읽는다.
+  // 생성기처럼 모든 프런트 모듈 파일에 투영(구성의 화면 제외 경로와 마커 블록의 소유 기능)을 먼저 하고, 그 내용으로 import 를 읽는다.
   // 곧 지워질 파일의 마커 오류·판정할 수 없는 import 도 생성기는 투영 단계에서 실패하므로 여기서도 차단 사유가 된다.
   // 투영할 파일은 생성기와 같은 판정(isFrontendModuleFile)으로 고른다 — 연쇄 계획이 읽는 모든 파일이 이 맵에 있어야 한다.
   const frontendFiles = relativeFiles.filter(file => file.startsWith('frontend/')).map(file => join(root, file));
@@ -128,7 +134,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   let projected = new Map();
   try {
     // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
-    const projector = createFrontendProjector({ manifest, profile, composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
+    const projector = createFrontendProjector({ composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
     const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
     projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
     frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,
@@ -234,7 +240,7 @@ export function compositionDeepPlan({ root, manifest, composition, files, output
   const missing = [];
   if (java && frontend) {
     try {
-      assertComposerSourceSurvives(root, root, composition, manifest, { present: path => {
+      assertComposerSourceSurvives(root, root, composition, ownership, { present: path => {
         const file = normalize(path).replaceAll('\\', '/');
         if (!kept(file)) missing.push(file);
         return true;

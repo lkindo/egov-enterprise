@@ -95,7 +95,7 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
       `profile '${profileName}' 이 승인하지 않은 규칙으로 거버넌스 게이트를 제거한다: `
         + unacknowledgedRules.map((rule) => `${rule}(${ruleRemovals[rule].length}건)`).join(', ')
         + `\nconfig/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedGateRemovalRules 에 `
-        + '{ rule, reason } 으로 등재할 것.',
+        + '{ rule, reason } 으로 등재하고 npm run modules:generate 로 config/modules/presets.json 을 다시 만들 것(생성기는 그 파일을 읽는다).',
     );
   }
   if (staleRules.length) {
@@ -109,7 +109,8 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     fail(
       `profile '${profileName}' 이 승인하지 않은 거버넌스 게이트를 제거한다 (${unacknowledged.length}건):\n` +
         unacknowledged.map((file) => `  - ${file}`).join('\n') +
-        `\n정당한 제거라면 config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedRemovedGates 에 등재하고 사유를 커밋에 남길 것.`,
+        `\n정당한 제거라면 config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedRemovedGates 에 등재하고 사유를 커밋에 남길 것`
+        + '(npm run modules:generate 로 config/modules/presets.json 에 반영한다 — 생성기는 그 파일을 읽는다).',
     );
   }
   if (stale.length) {
@@ -161,7 +162,7 @@ export function assertJavaCascadeAcknowledged(profileName, profile, java) {
     fail(
       `profile '${profileName}' 이 승인하지 않은 Java 파일을 연쇄로 지운다 (${unacknowledged.length}건):\n`
         + unacknowledged.map((file) => `  - ${file}  <- ${reasons.get(file)}`).join('\n')
-        + `\n잘못 들어간 import 인지 먼저 보고, 정당한 연쇄라면 ${where} 에 적는다.`,
+        + `\n잘못 들어간 import 인지 먼저 보고, 정당한 연쇄라면 ${where} 에 적고 npm run modules:generate 로 config/modules/presets.json 에 반영한다.`,
     );
   }
   if (stale.length) {

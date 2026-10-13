@@ -4,14 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { detectProjection } from './pack-tagged-registry.mjs';
+import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
+import { compositionProfiles, presetIds } from './composition-profiles.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
 const MANIFEST_PATH = path.join(ROOT, 'config', 'ui-route-capabilities.json');
 
 const KNOWN_ROLES = new Set(['ANONYMOUS', 'AUTHENTICATED', 'USER', 'ADMIN', 'SYSTEM', 'UNVERIFIED']);
-const KNOWN_PROFILES = new Set(['core', 'collaboration', 'demo', 'custom', 'UNVERIFIED']);
 const KNOWN_STATUSES = new Set(['live', 'partial', 'demo', 'unavailable', 'unverified']);
 const KNOWN_SURFACES = new Set(['authentication', 'authenticated-workspace', 'admin-console']);
 const KNOWN_SHELL_ACCESS = new Set(['public', 'authenticated', 'admin-system']);
@@ -464,30 +466,61 @@ function pathCoveredByRemoval(frontendRelativeSource, removal) {
     || frontendRelativeSource.startsWith(`${normalizedRemoval}/`);
 }
 
-export function directProjectionProfiles(source, profileManifest) {
+/**
+ * 화면 소스를 직접 지우지 않는 시작 구성(directProjectionProfiles). `profileProjections` 는 시작 구성마다 생성기와 같은 해석기가 계산한
+ * 화면 제외 경로다(profileProjections). 연쇄 제거는 보지 않는다 — 그것은 도달성 census 와 생성기 화면 대조의 일이다.
+ */
+export function directProjectionProfiles(source, profileProjections) {
   const frontendRelative = source.replace(/^frontend\//, '');
-  const packNames = Object.keys(profileManifest.packs ?? {});
-  return Object.entries(profileManifest.profiles ?? {})
-    .filter(([, profile]) => {
-      const includedPacks = new Set(profile.packs ?? []);
-      return !packNames
-        .filter((packName) => !includedPacks.has(packName))
-        .flatMap((packName) => profileManifest.packs[packName]?.frontend?.removePaths ?? [])
-        .some((removal) => pathCoveredByRemoval(frontendRelative, removal));
-    })
-    .map(([profileName]) => profileName)
+  return profileProjections.profiles
+    .filter(({ removePaths }) => !removePaths.some((removal) => pathCoveredByRemoval(frontendRelative, removal)))
+    .map(({ profile }) => profile)
     .sort();
 }
 
+const presetRecipe = (preset) => ({ schemaVersion: 1, project: { name: 'route-ledger' }, sourceRef: 'main', selection: { preset } });
+const projectionsByRoot = new Map();
+/**
+ * 시작 구성마다 화면을 직접 지우는 경로(11단계 C5 — pack 대신 기능 소유). 원본 저장소에서는 카탈로그로 시작 구성을 풀어 생성기와 같은
+ * 해석기가 계산한 화면 제외 경로(composition.frontend.removePaths)를 쓰고, 생성물에서는 거버넌스 투영이 남긴 구성 스냅숏 하나를 쓴다
+ * — 생성물에는 원본 카탈로그를 적재할 원천이 없다. 생성물 판별은 매니페스트 v2 의 표지(presets.json 의 active)다. 표지가 구조와 맞지
+ * 않거나, 생성물인데 구성 스냅숏이 표지와 다르면 실패한다.
+ */
+export function profileProjections(repoRoot = ROOT) {
+  const root = path.resolve(repoRoot);
+  if (!projectionsByRoot.has(root)) {
+    const generated = detectGeneratedComposition(root);
+    let value;
+    if (generated.projection) {
+      const { composition } = JSON.parse(fs.readFileSync(path.join(root, COMPOSER_SELECTION_PATH), 'utf8'));
+      if (composition?.profile !== generated.profile || !Array.isArray(composition?.frontend?.removePaths)) {
+        throw new Error(`composer selection snapshot does not describe the generated composition: ${generated.profile}`);
+      }
+      value = { projection: true, profiles: [{ profile: generated.profile, removePaths: [...composition.frontend.removePaths] }] };
+    } else {
+      const catalog = loadProjectComposerCatalog(root);
+      value = { projection: false, profiles: catalog.presets.map((preset) => ({ profile: preset.id,
+        removePaths: [...resolveProjectRecipe(presetRecipe(preset.id), catalog).frontend.removePaths] })) };
+    }
+    projectionsByRoot.set(root, value);
+  }
+  return projectionsByRoot.get(root);
+}
+
 export function inspectRouteRepository(repoRoot = ROOT) {
-  const profilePath = path.join(repoRoot, 'config', 'reusable-base-profiles.json');
+  let projections;
   return {
     repoRoot,
     pages: discoverPageRoutes(repoRoot),
     proxy: readProxyAccessRules(repoRoot),
     configRedirects: discoverConfigRedirects(repoRoot),
-    profileManifest: JSON.parse(fs.readFileSync(profilePath, 'utf8')),
-    profileSource: normalize(path.relative(repoRoot, profilePath)),
+    // 시작 구성 투영은 원장 행을 만들거나 검사할 때만 푼다 — 화면·프록시·리다이렉트만 보는 호출자(거버넌스 투영의 별칭 정리 등)가
+    // 카탈로그를 적재하지 않게 한다.
+    get profileProjections() {
+      projections ??= profileProjections(repoRoot);
+      return projections;
+    },
+    profileSource: `${MODULES_DIRECTORY}/${PRESETS_FILE}`,
   };
 }
 
@@ -533,7 +566,7 @@ export function buildUnreviewedBaselineManifest(
       dataSource: aggregateDataSource(capabilities),
       supportedActions: aggregateActions(capabilities),
       profileOwners: ['UNVERIFIED'],
-      directProjectionProfiles: directProjectionProfiles(source, repository.profileManifest),
+      directProjectionProfiles: directProjectionProfiles(source, repository.profileProjections),
       journeys: [],
       visibleLabel: 'unverified',
       menuExposure: 'unverified',
@@ -575,7 +608,7 @@ export function buildUnreviewedBaselineManifest(
     notes: [
       'shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.',
       'admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.',
-      'directProjectionProfiles is a direct removePaths observation, not positive semantic profile ownership and not a full transitive artifact proof.',
+      'directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.',
       'unverified values are bounded review exceptions and keep G1 gateReady=false.',
       'Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.',
       'candidateStatus records a hypothesis only; it never upgrades the asserted status without current E4 evidence.',
@@ -669,6 +702,11 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 export function validateRouteCapabilities(manifest, repository) {
+  // 소유 프로필 어휘는 시작 구성 id·직접 선택·미검증이다(presets.json, 11단계 C8 — 종전에는 이름을 이 파일에 열거했다). 시연 화면
+  // (/admin/workflow)의 소유 'demo' 는 생성물 원장에도 그대로 실리므로(buildUnreviewedBaselineManifest) 생성물의 활성 구성이 무엇이든
+  // 받는다 — 생성물의 presets.json 에는 활성 구성 하나만 있어, 시연 화면을 담은 직접 선택 생성물이 제 원장을 거부하게 된다.
+  const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
+  const nonDemoPresets = presetIds().filter((profile) => profile !== 'demo');
   const errors = [];
   const warnings = [];
   const entries = Array.isArray(manifest?.routes) ? manifest.routes : [];
@@ -889,7 +927,7 @@ export function validateRouteCapabilities(manifest, repository) {
       }
     }
     if (!Array.isArray(entry.profileOwners) || entry.profileOwners.length === 0
-      || entry.profileOwners.some((profile) => !KNOWN_PROFILES.has(profile))
+      || entry.profileOwners.some((profile) => !knownProfiles.has(profile))
       || new Set(entry.profileOwners).size !== entry.profileOwners.length) {
       errors.push(`${label}: profileOwners must be a non-empty unique known-profile array`);
     }
@@ -897,8 +935,8 @@ export function validateRouteCapabilities(manifest, repository) {
       errors.push(`${label}: UNVERIFIED cannot be mixed with asserted profile owners`);
     }
     if (!Array.isArray(entry.directProjectionProfiles)
-      || !exactArray(entry.directProjectionProfiles, directProjectionProfiles(entry.source, repository.profileManifest))) {
-      errors.push(`${label}: directProjectionProfiles drifted from reusable-base removePaths`);
+      || !exactArray(entry.directProjectionProfiles, directProjectionProfiles(entry.source, repository.profileProjections))) {
+      errors.push(`${label}: directProjectionProfiles drifted from the preset compositions' frontend removePaths`);
     }
     if (!Array.isArray(entry.journeys)
       || entry.journeys.some((journey) => !isNonemptyString(journey))) {
@@ -950,7 +988,7 @@ export function validateRouteCapabilities(manifest, repository) {
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
     if (entry.capabilities?.some(({ status }) => status === 'demo')
-      && entry.profileOwners.some((profile) => ['core', 'collaboration'].includes(profile))) {
+      && entry.profileOwners.some((profile) => nonDemoPresets.includes(profile))) {
       errors.push(`${label}: demo capability leaks into a non-demo profile owner`);
     }
     if (entry.status === 'demo' && entry.decisionSafe !== false) {
@@ -966,26 +1004,20 @@ export function validateRouteCapabilities(manifest, repository) {
    * 원장에서 사라진 화면의 동결 항목은 아무것도 지키지 않으면서 신호 없이 남는다.
    * 실제로 2026-09-08 걷은 마이페이지 화면의 항목이 한 달 가까이 남아 있었다.
    *
-   * 원장에 없어도 되는 경우는 하나다 — 화면 파일도 없고, 어떤 프로필의 투영이 pack 제거 경로로
-   * 그 화면을 걷는 경우(축소 프로필에서 빠진 demo 화면)다. 모든 프로필이 남기는 화면이면
+   * 원장에 없어도 되는 경우는 하나다 — 화면 파일도 없고, 어떤 시작 구성의 투영이 기능 제외 경로로
+   * 그 화면을 걷는 경우(축소 구성에서 빠진 demo 화면)다. 모든 시작 구성이 남기는 화면이면
    * 투영으로 사라질 수 없으므로 동결 항목이 낡은 것이다.
    *
-   * 투영본의 manifest 는 자기 프로필과 포함된 pack 만 남겨 빠진 pack 의 제거 경로를 모른다. 그래서 투영본에서는
-   * 화면 파일이 없는 것만으로 투영이 걷은 화면으로 본다 — 원본 저장소에서 이 검사가 모든 동결 화면의 원장 행을
-   * 이미 요구했기 때문이다. 투영본 판별은 표지 하나가 아니라 생성기가 쓰는 구조까지 본다(detectProjection).
+   * 생성물은 자기 구성의 제외 경로만 알고 다른 시작 구성을 모른다. 그래서 생성물에서는 화면 파일이 없는 것만으로
+   * 투영이 걷은 화면으로 본다 — 원본 저장소에서 이 검사가 모든 동결 화면의 원장 행을 이미 요구했기 때문이다.
+   * 생성물 판별은 표지 하나가 아니라 생성기가 쓰는 구조까지 본다(profileProjections → detectGeneratedComposition).
    */
-  const profileManifest = repository?.profileManifest;
-  let projection = false;
-  try {
-    projection = profileManifest ? detectProjection(profileManifest).projection : false;
-  } catch (error) {
-    errors.push(error.message);
-  }
-  const profileCount = Object.keys(profileManifest?.profiles ?? {}).length;
+  const projections = repository?.profileProjections;
+  const profileCount = projections?.profiles?.length ?? 0;
   for (const route of Object.keys(KNOWN_ROUTE_CAPABILITIES)) {
     if (actualByRoute.has(route)) continue;
-    const removedByProjection = !expectedByRoute.has(route) && profileManifest && (projection
-      || directProjectionProfiles(`frontend/src/app${route}/page.tsx`, profileManifest).length < profileCount);
+    const removedByProjection = !expectedByRoute.has(route) && profileCount > 0 && (projections.projection
+      || directProjectionProfiles(`frontend/src/app${route}/page.tsx`, projections).length < profileCount);
     if (!removedByProjection) errors.push(`frozen capability expectation has no ledger route: ${route}`);
   }
 

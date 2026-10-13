@@ -20,13 +20,39 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildProjectComposerCatalog, v1ComposerDeclarations } from './project-composer-catalog.mjs';
 import { CAPABILITY_SUMMARIES, COMPOSER_AREAS, PRESET_LABELS } from './project-composer-presentation.mjs';
 import { UNASSIGNED_PERMISSION_GUIDANCE } from './project-composer-unassigned.mjs';
-import { FRONTEND_MARKER_FILES, GATE_OWNERS, MANAGEMENT_RBAC_SURFACES, RBAC, RBAC_DOMAINS } from './project-composer-source.mjs';
+import { GATE_OWNERS, MANAGEMENT_RBAC_SURFACES, RBAC, RBAC_DOMAINS } from './project-composer-source.mjs';
 import { CODE_GROUP_OWNERS } from './reusable-reference-data.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA } from './composer-modules.mjs';
 import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = 'config/reusable-base-profiles.json';
+/**
+ * PR 이 시작 구성마다 생성·검증하는 레이아웃 하나(ADR-0027). presets.json 의 `ci.pr` 로 옮긴다 — CI 분류기(ci-change-scope.mjs)가
+ * 그 선언을 읽는다(11단계 C5). 표에 없는 시작 구성은 `ci` 를 적지 않아 PR 에서도 두 레이아웃이다. 전환(C7) 뒤에는 presets.json 이 원천이다.
+ */
+const PRESET_PR_LAYOUTS = Object.freeze({
+  // 제거가 가장 많고 단일 모듈 변환이 함께 일어나는 경로다.
+  core: 'single-module',
+  collaboration: 'multi-module',
+  // Java 제거가 0이라 멀티 모듈 생성물은 backend-scope·frontend-scope 와 겹친다.
+  demo: 'single-module',
+});
+/**
+ * 기능별 마커 블록(11단계 C6). 마커 토큰은 블록을 소유한 기능 id 이고(그 기능이 구성에 있을 때만 블록이 남는다), 이 표는 기능 파일의
+ * owns.markerBlocks 로 옮긴다 — 프런트 투영과 마커 래칫은 기능 파일을 읽는다. 전환(C7) 뒤에는 기능 파일이 원천이다. 블록을 더하거나
+ * 걷으면 소스의 블록과 이 표를 함께 고치고 `npm run modules:generate` 로 다시 쓴다.
+ * - blocks: 그 파일에서 이 기능 토큰을 쓴 블록 수. 운영 계약이 공용 파서로 센 원본 수와 정확히 대조한다.
+ * - step: 블록을 걷어 낼 이행 단계(걷지 않고 남기는 블록은 '잔존(…)'), reason: 마커로 남겨 둔 이유.
+ */
+const FEATURE_MARKER_BLOCKS = Object.freeze({
+  board: [{ file: 'src/app/search/SearchClient.tsx', blocks: 7, step: '검색 이행(별도 PR, ADR-0009 승인 바인딩)',
+    reason: '통합 검색이 게시글 검색 결과를 직접 조립한다. 이 파일은 /search 검색어 승인 바인딩의 원천이다.' }],
+  // 커뮤니티 후속 C3(DEC-OPS-280): 커뮤니티가 게시판을 요구하고 게시판은 커뮤니티를 요구하지 않으므로 마커가 맞는 형태다 — 게시판만
+  //   고른 구성과 협업 기본에서 네 블록이 import 와 함께 빠진다.
+  community: [{ file: 'src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx', blocks: 4, step: '잔존(선택 외래 키 연동 칸)',
+    reason: '커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다.' }],
+});
 const PERMISSIONS = 'config/governance/permission-catalog.json';
 const byCodeUnits = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
@@ -47,9 +73,9 @@ export function v1ComposerExtras(root = ROOT) {
     })),
     gateOwners: Object.fromEntries(Object.entries(GATE_OWNERS).map(([file, owners]) => [file, [...owners]])),
     rbac: { file: RBAC, domains: [...RBAC_DOMAINS].sort(byCodeUnits), surfaces: Object.fromEntries(MANAGEMENT_RBAC_SURFACES) },
-    markerFiles: FRONTEND_MARKER_FILES.map(row => ({ file: row.file, blocks: { ...row.blocks },
-      owners: Object.fromEntries(Object.entries(row.owners).map(([token, owners]) => [token, [...owners]])), step: row.step, reason: row.reason }))
-      .sort((left, right) => byCodeUnits(left.file, right.file)),
+    markerBlocks: Object.entries(FEATURE_MARKER_BLOCKS)
+      .flatMap(([feature, rows]) => rows.map(row => ({ file: row.file, feature, blocks: row.blocks, step: row.step, reason: row.reason })))
+      .sort((left, right) => byCodeUnits(left.file, right.file) || byCodeUnits(left.feature, right.feature)),
     codeGroupOwners: { ...CODE_GROUP_OWNERS },
     presetExpectations: Object.fromEntries(Object.entries(manifest.profiles).map(([id, profile]) => [id, { description: profile.description,
       gates: (profile.acknowledgedRemovedGates ?? []).map(row => ({ ...row })),
@@ -90,6 +116,8 @@ export function composerModuleFiles(root = ROOT) {
     if (sequenceOwner.has(sequence)) fail(`sequence is mapped by two features of its pack: ${sequence}`);
     sequenceOwner.set(sequence, row.id);
   }
+  const unknownMarkerOwners = Object.keys(FEATURE_MARKER_BLOCKS).filter(id => !Object.hasOwn(declarations.features, id));
+  if (unknownMarkerOwners.length) fail(`marker blocks name an unknown feature: ${unknownMarkerOwners.join(', ')}`);
   const guidance = id => Object.entries(extras.unassigned).filter(([, row]) => row.owner === id).sort(([left], [right]) => byCodeUnits(left, right))
     .map(([code, row]) => ({ code, bundle: row.bundle, protected: row.protected, effect: row.effect }));
   const files = {};
@@ -115,8 +143,7 @@ export function composerModuleFiles(root = ROOT) {
           .map(([file, owners]) => ({ file, alsoRequires: owners.slice(1) })),
         rbacMatrix: extras.rbac.domains.includes(id)
           ? { surfaces: Object.entries(extras.rbac.surfaces).filter(([, owner]) => owner === id).map(([surface]) => surface) } : null,
-        markerBlocks: extras.markerFiles.flatMap(row => Object.entries(row.owners).filter(([, owners]) => owners[0] === id)
-          .map(([token, owners]) => ({ file: row.file, token, blocks: row.blocks[token], alsoRequires: owners.slice(1), step: row.step, reason: row.reason }))),
+        markerBlocks: (FEATURE_MARKER_BLOCKS[id] ?? []).map(row => ({ file: row.file, blocks: row.blocks, step: row.step, reason: row.reason })),
         commonCodeGroups: Object.entries(extras.codeGroupOwners).filter(([, owner]) => owner === id).map(([group]) => group).sort(byCodeUnits),
       },
       dependsOn: [
@@ -161,7 +188,8 @@ export function composerModuleFiles(root = ROOT) {
   files['presets.json'] = {
     schemaVersion: 2,
     presets: catalog.presets.map(preset => ({ id: preset.id, label: extras.presentation.presetLabels[preset.id], description: extras.presetExpectations[preset.id].description,
-      domains: [...preset.domains], expected: { gates: extras.presetExpectations[preset.id].gates, gateRemovalRules: extras.presetExpectations[preset.id].gateRemovalRules,
+      domains: [...preset.domains], ...(Object.hasOwn(PRESET_PR_LAYOUTS, preset.id) ? { ci: { pr: PRESET_PR_LAYOUTS[preset.id] } } : {}),
+      expected: { gates: extras.presetExpectations[preset.id].gates, gateRemovalRules: extras.presetExpectations[preset.id].gateRemovalRules,
         javaCascade: extras.presetExpectations[preset.id].javaCascade } })),
   };
   return files;

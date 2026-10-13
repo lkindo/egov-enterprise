@@ -306,16 +306,15 @@ function slotContributionInventory(root, declarations) {
 }
 
 /*
- * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기의 pack 모드 투영이 manifest removePaths 를 쓰는 동안만 남긴다 —
- * pack 소유(`capability.pack`, 시작 구성의 pack 목록)와, pack removePaths 가 기능 선언과 어긋나지 않는다는 검사다.
+ * v1 선언의 pack 축(11단계 매니페스트 v2 전환 전까지). 생성기 투영(C3)과 pack 을 읽던 옛 소비자(C5 — 생성물 투영 manifest·lock·거버넌스
+ * 투영·검토 범위·도달성 census·라우트 원장·CI 범위)는 모두 기능 소유로 옮겼다. 카탈로그·구성에는 더 이상 pack 이 없다. 남은 것은 v1
+ * manifest 가 기능 선언과 어긋나지 않는다는 검사뿐이다 — 전환(C7)에서 v1 manifest 와 함께 걷는다.
  */
 function v1PackAxis(manifest) {
   const packOf = new Map();
   for (const [packId, pack] of Object.entries(manifest.packs)) for (const domain of pack.backend?.appDomains ?? []) packOf.set(domain, packId);
   return {
     packOf,
-    // 시작 구성의 pack 목록. 프런트 제거 경로는 직접 선택과 같이 카탈로그 규칙에서 계산한다(해석기 단일화, 11단계 C2).
-    presets: new Map(Object.entries(manifest.profiles).map(([id, profile]) => [id, { packs: profile.packs }])),
     checkSlotDirectory(path, id) {
       const pack = packOf.get(id);
       if (!(manifest.packs[pack]?.frontend?.removePaths ?? []).includes(path)) fail(`slot contribution directory is missing from its pack removePaths: ${path} (${pack})`);
@@ -342,10 +341,9 @@ function v1PackAxis(manifest) {
 }
 
 /**
- * v2 카탈로그에 덧붙이는 v1 pack 축(11단계 C2~C3). 생성기가 pack 모드로 투영하는 동안 구성의 pack 목록(composition.packs)과 manifest
- * removePaths 검사는 v1 manifest 에서 와야 한다. manifest 의 기능·시작 구성이 config/modules 와 다르면(v1 을 고치고 다시 만들지 않음)
- * 여기서 멈춘다. 그 밖의 선언은 v2 만 읽는다. 생성기를 옮기는 C3 에서 걷는다. manifest 가 생성기 투영에 쓰이는 동안은 카탈로그 해시도
- * manifest 에 결속한다.
+ * v2 카탈로그에 덧붙이는 v1 검사(11단계 C2~C7). 카탈로그·구성은 pack 을 담지 않는다(C5). manifest 의 기능·시작 구성이 config/modules 와
+ * 다르거나(v1 을 고치고 다시 만들지 않음) pack removePaths 가 기능 선언과 어긋나면 여기서 멈춘다. 그 밖의 선언은 v2 만 읽는다.
+ * 카탈로그 해시는 전환(C7)까지 manifest 에도 결속한다 — 생성물 무결성 검사가 원본 manifest 스냅숏과 대조한다.
  */
 function v1PackOverlay(root, declarations) {
   const manifest = JSON.parse(readFileSync(join(root, MANIFEST), 'utf8'));
@@ -394,7 +392,7 @@ export function v1ComposerDeclarations(root = ROOT) {
 
 /**
  * Read-only producer inventory. Does not contact a DB, execute Git or create output.
- * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). 생성기가 pack 모드로 투영하는 동안(C3 전) pack 축만 v1 manifest 에서 덧붙인다.
+ * 선언은 매니페스트 v2(config/modules)에서 읽는다(11단계 C2). 전환(C7)까지 v1 manifest 와의 일치 검사만 덧붙인다.
  */
 export function loadProjectComposerCatalog(root = ROOT) {
   root = resolve(root);
@@ -560,7 +558,6 @@ export function buildProjectComposerCatalog(root, declarations) {
     return {
       // 카드 요약·영역 같은 화면 문구는 해시 밖의 표시 문구(project-composer-presentation.mjs)가 맡는다.
       id: domain, label: feature.label, available: true,
-      ...(declarations.legacy ? { pack: declarations.legacy.packOf.get(domain) } : {}),
       requires: requires.sort((a, b) => canonicalJson(a) < canonicalJson(b) ? -1 : canonicalJson(a) > canonicalJson(b) ? 1 : 0),
       backend: { sourcePaths: ['domain', 'service'].map(layer => `${APP_ROOT}/${layer}/${domain}`).filter(path => existsSync(join(root, path))), sourceFiles: data.files.sort() },
       database: { tables: sorted(data.tables), explicitSequences: sorted(data.sequences) },
@@ -596,8 +593,7 @@ export function buildProjectComposerCatalog(root, declarations) {
     const owns = (domain, table) => capabilities.find(capability => capability.id === domain)?.database.tables.includes(table);
     if (!owns(contract.sourceDomain, contract.childTable) || !owns(contract.targetDomain, contract.parentTable)) fail(`declared foreign key ownership drifted: ${contract.name}`);
   }
-  const presets = declarations.presets.map(preset => ({ id: preset.id, domains: sorted(preset.domains),
-    ...(declarations.legacy ? declarations.legacy.presets.get(preset.id) : {}) }));
+  const presets = declarations.presets.map(preset => ({ id: preset.id, domains: sorted(preset.domains) }));
   // 선택 연동: 발행·수신을 실제 소스에서 계산해 선언과 양방향으로 대조한다(설계서 9.1·B4).
   // 포트 연결도 같은 소유 판정으로 계산해 선언과 양방향으로 대조한다(11단계 C2). 네 모듈의 생산 Java 는 한 번만 읽는다.
   const supportOwners = new Map([...supportFiles].flatMap(([domain, files]) => files.map(file => [file, domain])));

@@ -7,6 +7,7 @@ import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_
 import { SCREEN_REGISTRY_OUTPUT } from './screen-registry-model.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
+import { compositionProfiles } from './composition-profiles.mjs';
 import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -189,7 +190,7 @@ export function projectRemovedRouteAliases(outputRoot, upstreamRoutes) {
 
 export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sourceCommit, composition, projectSource = (_file, text) => text }) {
   assertSeparateProjectionRoot(sourceRoot, outputRoot);
-  if (!['core', 'collaboration', 'demo', 'custom'].includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
+  if (!compositionProfiles().includes(profile) || !/^[a-f0-9]{40}$/u.test(sourceCommit)) {
     throw new Error('Governance projection requires a known profile and exact upstream commit');
   }
   // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏 없는 투영은 어느 프로필에서도 만들지 않는다.
@@ -292,9 +293,9 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   if (urlErrors.length) throw new Error(`Projected URL contract failed:\n${urlErrors.join('\n')}`);
   writeJson(outputRoot, URL_PATH, census);
   writeJson(outputRoot, APPROVAL_PATH, approval);
-  const originalProfiles = readJson(sourceRoot, 'config/reusable-base-profiles.json');
+  // 검토 범위는 기능 소유로 투영한다(11단계 C5) — 원본 카탈로그와 해석된 구성이 입력이다.
   const reviewProjection = deriveProjectedReviewManifests({
-    outputRoot, profile, routes, profiles: originalProfiles, composition,
+    outputRoot, profile, routes, catalog, composition,
     contract: readJson(sourceRoot, REVIEW_SCOPE_PATH),
     upstream: Object.fromEntries(Object.entries(REVIEW_MANIFEST_PATHS).map(([key, path]) => [key, readJson(sourceRoot, path)])),
   });
@@ -311,7 +312,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   const metadata = {
     schemaVersion: 1,
     authority: 'generated-reusable-governance-projection-not-environment-approval',
-    profile, packs: composition?.packs ?? originalProfiles.profiles[profile].packs, sourceCommit, upstreamSnapshots: snapshots,
+    profile, sourceCommit, upstreamSnapshots: snapshots,
     composition: compositionProvenance,
     routes: routes.routes.map(({ route, source }) => ({ route, source })),
     urlRecordIds: census.records.map(record => record.id).sort(),

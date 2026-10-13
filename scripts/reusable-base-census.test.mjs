@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { fileURLToPath } from 'node:url';
 import { analyzeRepository, validateReusableBase } from './reusable-base-census.mjs';
+import { buildProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { loadComposerModules } from './composer-modules.mjs';
 import { buildIsolatedContractSql, planAuthorizationMigrationStages, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages } from './reusable-db-migrations.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 
@@ -147,31 +150,24 @@ test('current reusable-base profile contract matches the repository', () => {
 });
 
 /**
- * [2026-08-29] 픽스처를 comment→board 로 뒤집었다.
- *
- * <p>종전에는 comment 를 상위 pack 으로 올려 `board->comment` 역참조를 기대했다. 그런데
- * 그 간선의 유일한 출처였던 `BoardEventListener` 의 `CommentRepository` 주입이 제거되면서
- * (댓글 수 동기화를 foundation 이벤트로 역전) **저장소에 board->comment 간선이 0건이 됐다**.
- * 실재하지 않는 간선을 기대하는 부정 테스트는 red 를 증명하지 못한다.
- *
- * <p>지금 실재하는 방향은 comment->board 다 — `Comment` 엔티티의 게시글 연관과
- * `CommentService` 의 `BoardErrorCode` 참조 2건.
+ * [11단계 C5] 의존 방향은 pack 순위가 아니라 카탈로그의 시작 구성 닫힘 검사다. 종전 시험은 게시판을 상위 pack 으로 올려
+ * `comment->board` 역참조를 기대했다(실재하는 방향 — `Comment` 엔티티의 게시글 연관과 `CommentService` 의 `BoardErrorCode` 참조).
+ * 같은 위반은 이제 '댓글을 담고 게시판을 빼는 시작 구성' 이고, 카탈로그 적재가 그것을 거부한다. census 는 순위를 보지 않는다.
  */
-test('rejects a lower profile depending on a higher profile domain', () => {
+test('the dependency direction is the catalog preset closure, not pack rank', () => {
   const manifest = structuredClone(baseline.manifest);
-  const highestRank = Math.max(...Object.values(manifest.packs).map((pack) => pack.rank));
   manifest.packs.collaboration.backend.appDomains =
     manifest.packs.collaboration.backend.appDomains.filter((domain) => domain !== 'board');
-  manifest.packs.synthetic_higher = {
-    rank: highestRank + 1,
-    backend: { appDomains: ['board'] },
-    database: { tables: [], sequences: [] },
-  };
-
+  manifest.packs.synthetic_higher = { rank: 99, backend: { appDomains: ['board'] }, database: { tables: [], sequences: [] } };
   const result = validateReusableBase(manifest, baseline.repository);
-
-  assert.ok(result.errors.some((error) => error.includes('상위 pack 역참조 comment->board')));
+  assert.ok(!result.errors.some((error) => error.includes('역참조') || error.includes('rank')), result.errors.join('\n'));
+  // 묶음(cluster) 소유 검사는 v1 선언의 형식이라 그대로다.
   assert.ok(result.errors.some((error) => error.includes("cluster 'board'")));
+  // 같은 방향 위반은 카탈로그가 거부한다 — 댓글은 게시판을 요구한다.
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const { declarations } = loadComposerModules(root);
+  const broken = { ...declarations, presets: [...declarations.presets, { id: 'broken', domains: ['comment'] }] };
+  assert.throws(() => buildProjectComposerCatalog(root, broken), /preset is not closed under requires: broken \(comment -> board\)/);
 });
 
 test('rejects duplicate physical table ownership', () => {

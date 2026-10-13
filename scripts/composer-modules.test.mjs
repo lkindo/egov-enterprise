@@ -19,7 +19,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
 import { buildProjectComposerCatalog, canonicalJson, loadProjectComposerCatalog, v1ComposerDeclarations } from './project-composer-catalog.mjs';
-import { MODULES_DIRECTORY, derivedRemovedGates, loadComposerModules } from './composer-modules.mjs';
+import { GENERATED_LOCK, MODULES_DIRECTORY, derivedRemovedGates, detectGeneratedComposition, loadComposerModules } from './composer-modules.mjs';
 import { composerModuleDrift, moduleFileDrift, v1ComposerExtras } from './composer-modules-generate.mjs';
 import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
 
@@ -164,6 +164,8 @@ test('copy in config/modules stays outside the catalog hash, while a user senten
       const preset = value.presets.find(row => row.id === 'collaboration');
       preset.label = '협업';
       preset.description = '바꾼 설명';
+      // CI 범위(PR 레이아웃, ADR-0027)도 생성 결과를 바꾸지 않는다(11단계 C5).
+      preset.ci = { pr: 'single-module' };
     });
     editModule(root, 'board.json', value => { value.unassignedPermissions[0].effect = '바꾼 안내입니다.'; });
     assert.equal(hashOf(), before, 'copy edits changed the catalog hash');
@@ -234,4 +236,38 @@ test('a v1 edit without regeneration is reported as drift instead of being follo
     rmSync(join(directory, 'extra.json'));
     for (const name of ['mail.json', 'isg.json']) restoreModule(root, name);
   }
+});
+
+// 11단계 C5: 생성물 표지는 presets.json 의 active 다. 하네스·원장 계약·권한 생성기가 이 판정을 쓴다.
+test('the generated-product marker needs the generator structure and cannot be spoofed by one field', (t) => {
+  const base = mkdtempSync(join(resolve(tmpdir()), 'egov-composer-marker-'));
+  t.after(() => rmSync(base, { recursive: true, force: true }));
+  const tree = (name, files, { lock = false } = {}) => {
+    const root = join(base, name);
+    mkdirSync(join(root, MODULES_DIRECTORY), { recursive: true });
+    for (const [file, value] of Object.entries(files)) writeFileSync(join(root, MODULES_DIRECTORY, file), JSON.stringify(value));
+    if (lock) writeFileSync(join(root, GENERATED_LOCK), '{}');
+    return root;
+  };
+  const presets = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, 'presets.json'), 'utf8'));
+  const survey = JSON.parse(readFileSync(join(ROOT, MODULES_DIRECTORY, 'survey.json'), 'utf8'));
+  const collaboration = presets.presets.find(preset => preset.id === 'collaboration');
+  // 원본: 표지가 없다.
+  assert.deepEqual(detectGeneratedComposition(ROOT), { projection: false });
+  // 생성물: 활성 구성 하나와 그 구성의 기능 파일만 있다.
+  const generated = tree('generated', { 'presets.json': { schemaVersion: 2, active: 'custom', presets: [{ id: 'custom', domains: ['survey'] }] },
+    'survey.json': survey }, { lock: true });
+  assert.deepEqual(detectGeneratedComposition(generated), { projection: true, profile: 'custom', domains: ['survey'] });
+  // 원본 presets.json 에 표지만 넣으면 구조가 아니다(시작 구성이 셋이다).
+  assert.throws(() => detectGeneratedComposition(tree('spoofed', { 'presets.json': { ...presets, active: 'core' } })),
+    /active='core' 인데 생성기 투영 구조가 아니다/);
+  // 구성 밖 기능 파일이 남거나 구성의 기능 파일이 없어도 구조가 아니다.
+  assert.throws(() => detectGeneratedComposition(tree('extra', { 'presets.json': { schemaVersion: 2, active: 'core',
+    presets: [presets.presets.find(preset => preset.id === 'core')] }, 'survey.json': survey })), /생성기 투영 구조가 아니다/);
+  assert.throws(() => detectGeneratedComposition(tree('missing', { 'presets.json': { schemaVersion: 2, active: 'collaboration',
+    presets: [collaboration] } })), /생성기 투영 구조가 아니다/);
+  // lock 이 있는 생성물에 표지가 없으면 원본으로 보지 않는다. presets.json 이 없으면 판정하지 못한다.
+  assert.throws(() => detectGeneratedComposition(tree('unmarked', { 'presets.json': presets }, { lock: true })),
+    /reusable-base-lock\.json 이 있는 생성물인데 config\/modules\/presets\.json 에 활성 구성 표지\(active\)가 없다/);
+  assert.throws(() => detectGeneratedComposition(tree('absent', {}, { lock: true })), /ENOENT/);
 });

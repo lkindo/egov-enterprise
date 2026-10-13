@@ -58,11 +58,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p><b>동결 원장은 {@code config/governance/cross-domain-coupling-census.json} 이다.</b> 종전에는 app→app·app→core
  * 개수만 상수로 동결했는데, 이제 edge(소유 파일·소유 도메인·대상 도메인·대상 모듈·참조 타입 FQN)를 <b>정확한 집합</b>으로
- * 비교한다 — 한 edge 가 사라지고 다른 edge 가 생겨 개수가 같아지는 교체도 red 다. 각 edge 에는 그 소유 파일과 참조
- * 타입이 모두 살아남는 가장 작은 재사용 pack 을 적는다. 축소 프로필(재사용 base 투영)에서는 남은 pack 의 edge 만
- * 기대하며, 빠진 pack 의 edge 는 <b>그 소스 파일 중 하나가 실제로 없을 때만</b> 기대에서 뺀다 — 전부 남아 있으면
- * pack 태그가 틀린 것이라 red 다. 태그가 생성기의 실제 제거 계획과 맞는지는
- * {@code scripts/cross-domain-coupling-census-contract.test.mjs} 가 대조한다.
+ * 비교한다 — 한 edge 가 사라지고 다른 edge 가 생겨 개수가 같아지는 교체도 red 다. 원장에 소유를 적지 않는다(11단계 C4 에서
+ * pack 태그를 걷었다). 저장소에서는 원장 전체를 기대하고, 생성물에서는 소유 파일과 참조 타입이 모두 생성기의 투영 계획
+ * ({@link ReusableHarnessProfile#retainsSource})에서 남은 edge 만 기대한다. 지운 edge 는 <b>그 소스 파일 중 하나가 실제로
+ * 없을 때만</b> 기대에서 뺀다 — 전부 남아 있으면 투영 기록과 트리가 어긋난 것이라 red 다. edge 가 기능 소유대로 생성기의
+ * 실제 제거 계획에서 남고 빠지는지는 {@code scripts/cross-domain-coupling-census-contract.test.mjs} 가 시작 구성마다 대조한다.
  *
  * <p><b>⚠ 구현 주의</b>: 주입 필드만 보면 import된 예외·메서드 signature·event listener 타입을 놓친다.
  * 이 게이트는 일반 import와 인라인 FQN을 실제 소유 모듈의 main 소스 파일로 해석하고,
@@ -78,7 +78,6 @@ class CrossDomainCouplingLinterTest {
 
     private static final String APP_SERVICE_BASE = "business-app/src/main/java/nuri/business/service";
     private static final String CENSUS_REGISTRY = "config/governance/cross-domain-coupling-census.json";
-    private static final String PACK_MANIFEST = "config/reusable-base-profiles.json";
 
     private static final Pattern IMPORT_DECL = Pattern.compile("^import\\s+(static\\s+)?([\\w.]+);", Pattern.MULTILINE);
 
@@ -141,11 +140,10 @@ class CrossDomainCouplingLinterTest {
     void auditCrossDomainCoupling() throws IOException {
         Path repoRoot = HarnessSourceIndex.repoRoot();
         Registry registry = Registry.parse(readRepoFile(repoRoot, CENSUS_REGISTRY));
-        Set<String> presentPacks = presentPacks(registry, readRepoFile(repoRoot, PACK_MANIFEST));
 
         Path base = repoRoot.resolve(APP_SERVICE_BASE);
-        // 축소 프로필에서는 business-app 서비스가 통째로 빠질 수 있다 — 그때 스캔 결과는 빈 집합이고,
-        //   원장이 남은 pack 의 edge 를 기대하면 아래 정확한 집합 비교가 red 로 말한다.
+        // 생성물에서는 business-app 서비스가 통째로 빠질 수 있다 — 그때 스캔 결과는 빈 집합이고,
+        //   원장이 남은 edge 를 기대하면 아래 정확한 집합 비교가 red 로 말한다.
         List<Path> sources = Files.isDirectory(base) ? HarnessSourceIndex.javaSources(base) : List.of();
 
         List<CouplingReference> actual = new ArrayList<>();
@@ -164,13 +162,12 @@ class CrossDomainCouplingLinterTest {
                     + " — 원장을 비워 결합 census 를 무력화하지 마십시오.");
         }
         ReusableHarnessProfile profile = ReusableHarnessProfile.current();
-        Set<String> expected = expectedEdgeKeys(registry,
-                profile.customDomains() ? edge -> {
+        // 저장소에서는 retainsSource 가 늘 참이라 원장 전체를, 생성물에서는 소스가 모두 남은 edge 만 기대한다.
+        Set<String> expected = expectedEdgeKeys(registry, edge -> {
                     boolean retained = true;
                     for (String path : edge.sourcePaths()) retained &= profile.retainsSource(path);
                     return retained;
-                } : edge -> presentPacks.contains(edge.pack()),
-                path -> Files.isRegularFile(repoRoot.resolve(path)), violations);
+                }, path -> Files.isRegularFile(repoRoot.resolve(path)), violations);
         violations.addAll(compare(expected, actual));
 
         if (!violations.isEmpty()) {
@@ -186,18 +183,18 @@ class CrossDomainCouplingLinterTest {
         }
 
         long appToApp = actual.stream().filter(reference -> reference.module().equals("business-app")).count();
-        log.info("✅ 교차 도메인 결합 census 일치 — 남은 pack {} 기준 edge {}건(app→app {}건, app→core {}건), 원장 전체 {}건.",
-                presentPacks, actual.size(), appToApp, actual.size() - appToApp, registry.edges().size());
+        log.info("✅ 교차 도메인 결합 census 일치 — {} 기준 edge {}건(app→app {}건, app→core {}건), 원장 전체 {}건.",
+                profile.projected() ? "생성물 투영" : "저장소", actual.size(), appToApp, actual.size() - appToApp, registry.edges().size());
     }
 
     @Test
-    @DisplayName("부정 증명: 원장 대조는 교체·누락·신규 edge 와 틀린 pack 태그를 red 로 만들고 실제 부재만 뺀다")
-    void registryComparisonIsExactAndPackAware() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['base','extra'],'edges':["
+    @DisplayName("부정 증명: 원장 대조는 교체·누락·신규 edge 와 투영 기록 불일치를 red 로 만들고 실제 부재만 뺀다")
+    void registryComparisonIsExactAndProjectionAware() {
+        Registry registry = Registry.parse(json("{'schemaVersion':1,'edges':["
                 + "{'file':'kept/KeptService.java','owner':'kept','target':'account','module':'business-core',"
-                + "'types':['nuri.business.service.account.AccountService'],'pack':'base'},"
+                + "'types':['nuri.business.service.account.AccountService']},"
                 + "{'file':'gone/GoneService.java','owner':'gone','target':'kept','module':'business-app',"
-                + "'types':['nuri.business.service.kept.KeptService'],'pack':'extra'}]}"));
+                + "'types':['nuri.business.service.kept.KeptService']}]}"));
         String keptKey = "business-core|kept/KeptService.java|kept->account|nuri.business.service.account.AccountService";
         String goneKey = "business-app|gone/GoneService.java|gone->kept|nuri.business.service.kept.KeptService";
         CouplingReference kept = new CouplingReference("business-core", "kept/KeptService.java", "kept", "account",
@@ -211,9 +208,9 @@ class CrossDomainCouplingLinterTest {
                 "business-app/src/main/java/nuri/business/service/gone/GoneService.java",
                 "business-core/src/main/java/nuri/business/service/account/AccountService.java");
 
-        // ① 모든 pack 이 있으면 두 edge 를 모두 기대하고, 정확히 같으면 위반이 없다.
+        // ① 저장소(투영 아님)에서는 두 edge 를 모두 기대하고, 정확히 같으면 위반이 없다.
         List<String> none = new ArrayList<>();
-        Set<String> all = expectedEdgeKeys(registry, Set.of("base", "extra"), realFiles::contains, none);
+        Set<String> all = expectedEdgeKeys(registry, edge -> true, realFiles::contains, none);
         assertThat(all).containsExactlyInAnyOrder(keptKey, goneKey);
         assertThat(compare(all, List.of(kept, gone))).isEmpty();
 
@@ -226,49 +223,31 @@ class CrossDomainCouplingLinterTest {
                 new TreeSet<>(Set.of("nuri.business.service.account.AccountRepository")));
         assertThat(compare(Set.of(keptKey), List.of(swapped))).hasSize(2);
 
-        // ④ 빠진 pack 의 edge 는 소스 중 하나가 실제로 없을 때만 기대에서 빠진다.
+        // ④ 투영 계획이 지운 edge 는 소스 중 하나가 실제로 없을 때만 기대에서 빠진다.
+        Predicate<Edge> keptOnly = edge -> edge.owner().equals("kept");
         List<String> dropped = new ArrayList<>();
-        Set<String> reduced = expectedEdgeKeys(registry, Set.of("base"),
+        Set<String> reduced = expectedEdgeKeys(registry, keptOnly,
                 path -> realFiles.contains(path) && !path.contains("/gone/"), dropped);
         assertThat(reduced).containsExactly(keptKey);
         assertThat(dropped).isEmpty();
+        assertThat(compare(reduced, List.of())).singleElement().asString().contains("사라진 edge");
 
-        // ⑤ 빠진 pack 인데 소스가 전부 남아 있으면 pack 태그가 틀린 것이다. 실제와 같은 파일 집합으로 판정한다 —
+        // ⑤ 지운 edge 인데 소스가 전부 남아 있으면 투영 기록과 트리가 어긋난 것이다. 실제와 같은 파일 집합으로 판정한다 —
         //    "모든 경로가 있다" 는 합성 술어로는 대상 모듈 밖 경로를 섞는 결함이 가려진다.
-        List<String> mistagged = new ArrayList<>();
-        expectedEdgeKeys(registry, Set.of("base"), realFiles::contains, mistagged);
-        assertThat(mistagged).singleElement().asString().contains("pack 태그").contains("gone/GoneService.java");
+        List<String> mismatched = new ArrayList<>();
+        expectedEdgeKeys(registry, keptOnly, realFiles::contains, mismatched);
+        assertThat(mismatched).singleElement().asString().contains("투영 계획이 지운 edge").contains("gone/GoneService.java");
     }
 
     @Test
-    @DisplayName("custom 도메인 투영은 같은 pack 안의 제외만 허용하고 선택 edge 소실·예상 밖 생존은 red다")
-    void customSourcePlanKeepsSelectedEdgesExact() {
-        Edge kept = new Edge("kept/KeptService.java", "kept", "account", "business-core",
-                Set.of("nuri.business.service.account.AccountService"), "shared");
-        Edge gone = new Edge("gone/GoneService.java", "gone", "account", "business-core",
-                Set.of("nuri.business.service.account.AccountService"), "shared");
-        Registry registry = new Registry(Set.of("shared"), List.of(kept, gone));
-        List<String> violations = new ArrayList<>();
-        Set<String> expected = expectedEdgeKeys(registry, edge -> edge.owner().equals("kept"),
-                path -> !path.contains("/gone/"), violations);
-        assertThat(expected).containsExactly(kept.key());
-        assertThat(violations).isEmpty();
-        assertThat(compare(expected, List.of())).singleElement().asString().contains("사라진 edge");
-        expectedEdgeKeys(registry, edge -> edge.owner().equals("kept"), path -> true, violations);
-        assertThat(violations).singleElement().asString().contains("gone/GoneService.java");
-    }
-
-    @Test
-    @DisplayName("부정 증명: 원장·pack 어휘의 형식 오류는 fail-closed 로 거부한다")
-    void registryAndVocabularyAreFailClosed() {
+    @DisplayName("부정 증명: 원장 형식 오류와 옛 pack 어휘는 fail-closed 로 거부한다")
+    void registryIsFailClosed() {
         String edge = "{'file':'kept/KeptService.java','owner':'kept','target':'account','module':'business-core',"
-                + "'types':['nuri.business.service.account.AccountService'],'pack':'base'}";
-        String head = "{'schemaVersion':1,'packs':['base'],'edges':[";
+                + "'types':['nuri.business.service.account.AccountService']}";
+        String head = "{'schemaVersion':1,'edges':[";
 
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'packs':['base'],'edges':[]}")))
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'edges':[],'edges':[]}")))
                 .as("중복 키").isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("'pack':'base'", "'pack':'other'") + "]}")))
-                .as("어휘 밖 pack").isInstanceOf(AssertionError.class).hasMessageContaining("other");
         assertThatThrownBy(() -> Registry.parse(json(head + edge + "," + edge + "]}")))
                 .as("중복 edge").isInstanceOf(AssertionError.class).hasMessageContaining("중복");
         assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("business-core", "foundation") + "]}")))
@@ -278,24 +257,22 @@ class CrossDomainCouplingLinterTest {
         assertThatThrownBy(() -> Registry.parse(json(head
                 + edge.replace("nuri.business.service.account.AccountService", "nuri.business.service.billing.Invoice") + "]}")))
                 .as("참조 타입이 대상 도메인 소속이 아님").isInstanceOf(AssertionError.class).hasMessageContaining("target");
-        assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("'pack':'base'", "'pack':'base','note':'x'") + "]}")))
+        assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("]}", "],'note':'x'}") + "]}")))
                 .as("모르는 필드").isInstanceOf(AssertionError.class).hasMessageContaining("note");
         assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("kept/KeptService.java", "../KeptService.java") + "]}")))
                 .as("경로 형식").isInstanceOf(AssertionError.class);
-
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['base','extra'],'edges':[" + edge + "]}"));
-        assertThat(presentPacks(registry, json("{'packs':{'base':{}}}"))).containsExactly("base");
-        assertThatThrownBy(() -> presentPacks(registry, json("{'packs':{'base':{},'newcomer':{}}}")))
-                .as("원장 어휘에 없는 manifest pack").isInstanceOf(AssertionError.class).hasMessageContaining("newcomer");
+        // 소유는 원장에 적지 않는다(11단계 C4) — 옛 pack 태그·어휘가 되살아나면 모르는 필드로 거부한다.
+        assertThatThrownBy(() -> Registry.parse(json(head + edge.replace("]}", "],'pack':'core'}") + "]}")))
+                .as("옛 pack 태그").isInstanceOf(AssertionError.class).hasMessageContaining("'pack'");
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['core'],'edges':[" + edge + "]}")))
+                .as("옛 packs 어휘").isInstanceOf(AssertionError.class).hasMessageContaining("'packs'");
+        assertThat(Registry.parse(json(head + edge + "]}")).edges()).as("대조군: 형식이 맞으면 받는다").hasSize(1);
     }
 
-    /** 남은 pack 기준 기대 edge 키. 빠진 pack 의 edge 는 소스 중 하나가 실제로 없을 때만 뺀다. */
-    static Set<String> expectedEdgeKeys(Registry registry, Set<String> presentPacks, Predicate<String> fileExists,
-                                        List<String> violations) {
-        return expectedEdgeKeys(registry, edge -> presentPacks.contains(edge.pack()), fileExists, violations);
-    }
-
-    /** Custom selection uses the lock-bound source plan; absent files never define ownership. */
+    /**
+     * 기대 edge 키. 남길 edge 는 투영 계획(저장소는 전부)이 정하고, 지운 edge 는 소스 중 하나가 실제로 없을 때만 뺀다 —
+     * 없는 파일이 소유를 정하지 않는다.
+     */
     static Set<String> expectedEdgeKeys(Registry registry, Predicate<Edge> included, Predicate<String> fileExists,
                                         List<String> violations) {
         Set<String> expected = new TreeSet<>();
@@ -306,8 +283,8 @@ class CrossDomainCouplingLinterTest {
             }
             boolean anyMissing = edge.sourcePaths().stream().anyMatch(path -> !fileExists.test(path));
             if (!anyMissing) {
-                violations.add(edge.file() + " (" + edge.owner() + " -> " + edge.target() + ") 는 빠진 pack '" + edge.pack()
-                        + "' 소유로 적혀 있는데 소스가 모두 남아 있습니다 — pack 태그가 틀렸습니다.");
+                violations.add(edge.file() + " (" + edge.owner() + " -> " + edge.target()
+                        + ") 는 투영 계획이 지운 edge 인데 소스가 모두 남아 있습니다 — 투영 기록과 트리가 어긋났습니다.");
             }
         }
         return expected;
@@ -424,24 +401,6 @@ class CrossDomainCouplingLinterTest {
         Files.writeString(dir.resolve("cross-domain-coupling.actual.json"), json.toString(), StandardCharsets.UTF_8);
     }
 
-    /** 원장의 pack 어휘와 현재 트리 manifest 의 pack 을 대조해 남은 pack 을 돌려준다. */
-    static Set<String> presentPacks(Registry registry, String manifestJson) {
-        JsonNode packs = readJson(manifestJson, PACK_MANIFEST).get("packs");
-        if (packs == null || !packs.isObject() || packs.isEmpty()) {
-            throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
-        }
-        Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
-            String name = names.next();
-            if (!registry.packs().contains(name)) {
-                throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
-                        + " 의 packs 어휘에 없습니다. 새 pack 의 결합 edge 를 먼저 판정하십시오.");
-            }
-            present.add(name);
-        }
-        return present;
-    }
-
     private static String readRepoFile(Path root, String relative) {
         try {
             return HarnessSourceIndex.read(root.resolve(relative));
@@ -481,7 +440,7 @@ class CrossDomainCouplingLinterTest {
     private record ResolvedType(String module, String fqn) {}
 
     /** 원장 edge 한 줄. {@code types} 는 해석된 main 소스 FQN 의 정렬된 집합이다. */
-    record Edge(String file, String owner, String target, String module, Set<String> types, String pack) {
+    record Edge(String file, String owner, String target, String module, Set<String> types) {
         String key() {
             return module + "|" + file + "|" + owner + "->" + target + "|" + String.join(",", types);
         }
@@ -500,24 +459,14 @@ class CrossDomainCouplingLinterTest {
         }
     }
 
-    record Registry(Set<String> packs, List<Edge> edges) {
+    record Registry(List<Edge> edges) {
 
         static Registry parse(String json) {
             JsonNode root = readJson(json, CENSUS_REGISTRY);
-            requireFields(root, CENSUS_REGISTRY, Set.of("schemaVersion", "description", "packs", "edges"),
-                    Set.of("schemaVersion", "packs", "edges"));
+            requireFields(root, CENSUS_REGISTRY, Set.of("schemaVersion", "description", "edges"),
+                    Set.of("schemaVersion", "edges"));
             if (root.get("schemaVersion").asInt(-1) != 1) {
                 throw new AssertionError(CENSUS_REGISTRY + " schemaVersion 은 1 이어야 합니다.");
-            }
-            Set<String> packs = new LinkedHashSet<>();
-            JsonNode packNodes = root.get("packs");
-            if (!packNodes.isArray() || packNodes.isEmpty()) {
-                throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
-            }
-            for (JsonNode pack : packNodes) {
-                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
-                    throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
-                }
             }
             JsonNode edgeNodes = root.get("edges");
             if (!edgeNodes.isArray()) {
@@ -526,13 +475,12 @@ class CrossDomainCouplingLinterTest {
             List<Edge> edges = new ArrayList<>();
             Set<String> keys = new LinkedHashSet<>();
             for (JsonNode node : edgeNodes) {
-                requireFields(node, "edges", Set.of("file", "owner", "target", "module", "types", "pack"),
-                        Set.of("file", "owner", "target", "module", "types", "pack"));
+                requireFields(node, "edges", Set.of("file", "owner", "target", "module", "types"),
+                        Set.of("file", "owner", "target", "module", "types"));
                 String file = text(node, "file");
                 String owner = text(node, "owner");
                 String target = text(node, "target");
                 String module = text(node, "module");
-                String pack = text(node, "pack");
                 if (!EDGE_FILE.matcher(file).matches()) {
                     throw new AssertionError("edges.file 은 서비스 기준 상대 .java 경로여야 합니다: " + file);
                 }
@@ -544,9 +492,6 @@ class CrossDomainCouplingLinterTest {
                 }
                 if (!TARGET_MODULES.contains(module)) {
                     throw new AssertionError("edges.module 은 " + TARGET_MODULES + " 중 하나여야 합니다: " + module);
-                }
-                if (!packs.contains(pack)) {
-                    throw new AssertionError("edges.pack '" + pack + "' 가 packs 어휘 " + packs + " 에 없습니다: " + file);
                 }
                 JsonNode typeNodes = node.get("types");
                 if (!typeNodes.isArray() || typeNodes.isEmpty()) {
@@ -566,13 +511,13 @@ class CrossDomainCouplingLinterTest {
                 if (!sortedTypes.equals(typeList)) {
                     throw new AssertionError("edges.types 는 중복 없이 정렬돼야 합니다: " + file + " " + typeList);
                 }
-                Edge edge = new Edge(file, owner, target, module, new TreeSet<>(typeList), pack);
+                Edge edge = new Edge(file, owner, target, module, new TreeSet<>(typeList));
                 if (!keys.add(edge.key())) {
                     throw new AssertionError("edges 에 중복 edge: " + edge.key());
                 }
                 edges.add(edge);
             }
-            return new Registry(Set.copyOf(packs), List.copyOf(edges));
+            return new Registry(List.copyOf(edges));
         }
 
         private static String text(JsonNode node, String field) {

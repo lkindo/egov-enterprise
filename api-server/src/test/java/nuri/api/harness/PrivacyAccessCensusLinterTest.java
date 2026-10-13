@@ -58,13 +58,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p><b>판정 원장은 소스가 아니라 {@code config/governance/privacy-access-census.json} 이다.</b>
  * 종전에는 선언 목록과 민감 응답 타입을 이 클래스의 상수·타입 참조로 두었는데, 재사용 base 투영은
- * 제거된 pack 의 타입을 참조하는 파일을 통째로 지우므로 <b>남는 코어 컨트롤러까지 검사하던 이 게이트가
- * 축소 프로필에서 사라졌다</b>(GAP-PACK-001 ④). 원장은 항목마다 소유 pack 을 적고, 이 게이트는
- * 현재 트리의 pack manifest 에 남은 pack 의 항목만 기대한다. 원장은 메타 게이트가 해시로 동결하고,
- * pack 태그가 생성기의 실제 제거 계획과 맞는지는 {@code scripts/privacy-access-census-contract.test.mjs} 가 대조한다.
+ * 빠진 기능의 타입을 참조하는 파일을 통째로 지우므로 <b>남는 코어 컨트롤러까지 검사하던 이 게이트가
+ * 축소 프로필에서 사라졌다</b>(GAP-PACK-001 ④). 저장소에서는 원장 전체를 기대하고, 생성물에서는 생성기가 남긴
+ * 타입의 항목만 기대한다 — 남김·지움은 생성기가 기록한 투영 계획({@link ReusableHarnessProfile#retainsType})으로 가린다.
+ * 원장에 소유를 적지 않는다(11단계 C4 에서 pack 태그를 걷었다). 항목이 기능 소유대로 생성기의 실제 제거 계획에서 남고 빠지는지는
+ * {@code scripts/privacy-access-census-contract.test.mjs} 가 시작 구성마다 대조한다. 원장은 메타 게이트가 해시로 동결한다.
  *
- * <p><b>빠진 pack 의 항목은 "클래스가 없다" 로만 인정한다.</b> 제외 pack 인데 클래스가 로드되면 pack 태그가
- * 틀린 것이고, 로드 중 링크 오류가 나면 판정할 수 없는 것이다 — 둘 다 조용히 건너뛰지 않고 red 다.
+ * <p><b>지운 항목은 "클래스가 없다" 로만 인정한다.</b> 투영 계획이 지운 타입인데 클래스가 로드되면 기록과 트리가
+ * 어긋난 것이고, 로드 중 링크 오류가 나면 판정할 수 없는 것이다 — 둘 다 조용히 건너뛰지 않고 red 다.
  *
  * <p><b>이 원장을 고칠 때 함께 판단할 것.</b> 본인 정보 조회(마이페이지)는 대상이 아니다 —
  * 자기 정보 열람을 증적에 섞으면 타인 조회 기록이 희석된다. 반대로 응답에 타인의 주민등록번호·
@@ -79,7 +80,6 @@ class PrivacyAccessCensusLinterTest {
 
     private static final String SCAN_BASE = "nuri";
     private static final String CENSUS_REGISTRY = "config/governance/privacy-access-census.json";
-    private static final String PACK_MANIFEST = "config/reusable-base-profiles.json";
 
     /**
      * 게이트 무결성(false-green 방지): 컨트롤러 스캔이 조용히 0으로 수렴하면 census 는
@@ -110,12 +110,11 @@ class PrivacyAccessCensusLinterTest {
     void privacyAccessHandlersMatchDeclaredCensus() {
         Path root = HarnessSourceIndex.repoRoot();
         Registry registry = Registry.parse(readRepoFile(root, CENSUS_REGISTRY));
-        Set<String> presentPacks = presentPacks(registry, readRepoFile(root, PACK_MANIFEST));
         ClassLoader loader = PrivacyAccessCensusLinterTest.class.getClassLoader();
         ReusableHarnessProfile profile = ReusableHarnessProfile.current();
+        // 저장소에서는 retainsType 이 늘 참이라 원장 전체를, 생성물에서는 생성기가 남긴 타입의 항목만 기대한다.
         Expectations expected = expectationsFor(registry, name -> Class.forName(name, false, loader),
-                profile.customDomains() ? entry -> profile.retainsType(entry.typeName())
-                        : entry -> presentPacks.contains(entry.pack()));
+                entry -> profile.retainsType(entry.typeName()));
 
         Set<String> actual = new TreeSet<>();
         Set<String> sensitiveGetHandlers = new TreeSet<>();
@@ -158,7 +157,7 @@ class PrivacyAccessCensusLinterTest {
         List<String> unanchored = new ArrayList<>(expected.controllers());
         unanchored.removeAll(scannedControllers);
         assertThat(unanchored)
-                .as("남은 pack 의 원장 컨트롤러는 모두 요청 매핑 컴포넌트로 스캔돼야 한다 — "
+                .as("남아야 하는 원장 컨트롤러는 모두 요청 매핑 컴포넌트로 스캔돼야 한다 — "
                         + "스캔 밖으로 빠진 컨트롤러는 부착 여부를 판정할 수 없다")
                 .isEmpty();
 
@@ -173,7 +172,7 @@ class PrivacyAccessCensusLinterTest {
             if (!unexpected.isEmpty()) {
                 sb.append("   · census 에 없는 신규 부착: ").append(unexpected).append('\n');
                 sb.append("     → 의도한 추가라면 ").append(CENSUS_REGISTRY)
-                        .append(" 의 declaredHandlers 에 소유 pack 과 함께 등재하십시오.\n");
+                        .append(" 의 declaredHandlers 에 등재하십시오.\n");
             }
             if (!missing.isEmpty()) {
                 sb.append("   · 선언됐지만 사라진 부착: ").append(missing).append('\n');
@@ -209,156 +208,110 @@ class PrivacyAccessCensusLinterTest {
     }
 
     @Test
-    @DisplayName("부정 증명: pack 필터는 '클래스 없음' 만 부재로 인정하고 태그 오류·링크 오류·누락을 red 로 만든다")
-    void packFilterAcceptsOnlyMissingClassesAsAbsence() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['base','extra'],"
+    @DisplayName("부정 증명: 투영 필터는 '클래스 없음' 만 부재로 인정하고 기록 오류·링크 오류·누락을 red 로 만든다")
+    void projectionFilterAcceptsOnlyMissingClassesAsAbsence() {
+        Registry registry = Registry.parse(json("{'schemaVersion':1,"
                 + "'declaredHandlers':["
-                + "{'controller':'example.kept.KeptController','method':'list','pack':'base'},"
-                + "{'controller':'example.gone.GoneController','method':'list','pack':'extra'}],"
+                + "{'controller':'example.kept.KeptController','method':'list'},"
+                + "{'controller':'example.gone.GoneController','method':'list'}],"
                 + "'sensitiveGetExemptions':["
-                + "{'controller':'example.gone.GoneController','method':'mine','pack':'extra','reason':'본인 조회'}],"
+                + "{'controller':'example.gone.GoneController','method':'mine','reason':'본인 조회'}],"
                 + "'knownSensitiveResponseTypes':["
-                + "{'type':'example.kept.KeptDto','pack':'base'},"
-                + "{'type':'example.gone.GoneDto','pack':'extra'}]}"));
+                + "{'type':'example.kept.KeptDto'},"
+                + "{'type':'example.gone.GoneDto'}]}"));
+        Predicate<Entry> everything = entry -> true;
+        Predicate<Entry> kept = entry -> entry.typeName().startsWith("example.kept.");
 
-        // ① 모든 pack 이 있으면 전 항목을 기대한다.
-        Expectations all = expectationsFor(registry, Set.of("base", "extra"), name -> Object.class);
+        // ① 저장소(투영 아님)에서는 전 항목을 기대한다.
+        Expectations all = expectationsFor(registry, name -> Object.class, everything);
         assertThat(all.handlers()).containsExactlyInAnyOrder(
                 "example.kept.KeptController#list", "example.gone.GoneController#list");
         assertThat(all.exemptions()).containsOnlyKeys("example.gone.GoneController#mine");
 
-        // ② 빠진 pack 의 클래스가 정말 없으면 그 항목만 조용히 빠진다.
-        Expectations reduced = expectationsFor(registry, Set.of("base"), name -> {
+        // ② 투영 계획이 지운 타입의 클래스가 정말 없으면 그 항목만 조용히 빠진다.
+        Expectations reduced = expectationsFor(registry, name -> {
             if (name.startsWith("example.gone.")) {
                 throw new ClassNotFoundException(name);
             }
             return Object.class;
-        });
+        }, kept);
         assertThat(reduced.handlers()).containsExactly("example.kept.KeptController#list");
         assertThat(reduced.exemptions()).isEmpty();
         assertThat(reduced.controllers()).containsExactly("example.kept.KeptController");
 
-        // ③ 빠진 pack 인데 클래스가 남아 있으면 pack 태그가 틀린 것이다.
-        assertThatThrownBy(() -> expectationsFor(registry, Set.of("base"), name -> Object.class))
+        // ③ 투영 계획이 지운 타입인데 클래스가 남아 있으면 기록과 트리가 어긋난 것이다.
+        assertThatThrownBy(() -> expectationsFor(registry, name -> Object.class, kept))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("example.gone.GoneController")
-                .hasMessageContaining("pack 태그");
+                .hasMessageContaining("투영 계획이 지운 타입");
 
-        // ④ 빠진 pack 의 클래스가 링크 오류로 로드되지 않으면 부재인지 판정할 수 없다.
-        assertThatThrownBy(() -> expectationsFor(registry, Set.of("base"), name -> {
+        // ④ 지운 타입의 클래스가 링크 오류로 로드되지 않으면 부재인지 판정할 수 없다.
+        assertThatThrownBy(() -> expectationsFor(registry, name -> {
             if (name.startsWith("example.gone.")) {
                 throw new NoClassDefFoundError(name);
             }
             return Object.class;
-        }))
+        }, kept))
                 .isInstanceOf(AssertionError.class)
                 .hasMessageContaining("링크 오류");
 
-        // ⑤ 남은 pack 의 클래스가 없으면 원장이 낡은 것이다.
-        assertThatThrownBy(() -> expectationsFor(registry, Set.of("base", "extra"), name -> {
+        // ⑤ 남아야 하는 타입의 클래스가 없으면 원장이 낡은 것이다.
+        assertThatThrownBy(() -> expectationsFor(registry, name -> {
             if (name.equals("example.kept.KeptDto")) {
                 throw new ClassNotFoundException(name);
             }
             return Object.class;
-        }))
+        }, everything))
                 .isInstanceOf(AssertionError.class)
-                .hasMessageContaining("example.kept.KeptDto");
+                .hasMessageContaining("example.kept.KeptDto")
+                .hasMessageContaining("원장이 낡았습니다");
     }
 
     @Test
-    @DisplayName("custom 개인정보 census는 같은 pack의 선택 핸들러를 유지하고 클래스 소실·예상 밖 생존을 거부한다")
-    void customSourcePlanPreservesSelectedPrivacyHandlers() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['shared'],"
-                + "'declaredHandlers':[{'controller':'example.kept.Controller','method':'list','pack':'shared'},"
-                + "{'controller':'example.gone.Controller','method':'list','pack':'shared'}],"
-                + "'sensitiveGetExemptions':[],'knownSensitiveResponseTypes':[]}"));
-        Predicate<Entry> selected = entry -> entry.typeName().startsWith("example.kept.");
-        Expectations projection = expectationsFor(registry, name -> {
-            if (name.startsWith("example.gone.")) throw new ClassNotFoundException(name);
-            return Object.class;
-        }, selected);
-        assertThat(projection.handlers()).containsExactly("example.kept.Controller#list");
-        assertThatThrownBy(() -> expectationsFor(registry, name -> {
-            throw new ClassNotFoundException(name);
-        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("example.kept.Controller");
-        assertThatThrownBy(() -> expectationsFor(registry, name -> Object.class, selected))
-                .isInstanceOf(AssertionError.class).hasMessageContaining("example.gone.Controller");
-        assertThatThrownBy(() -> expectationsFor(registry, name -> {
-            if (name.startsWith("example.gone.")) throw new NoClassDefFoundError(name);
-            return Object.class;
-        }, selected)).isInstanceOf(AssertionError.class).hasMessageContaining("링크 오류");
-    }
-
-    @Test
-    @DisplayName("부정 증명: 원장·pack 어휘의 형식 오류는 fail-closed 로 거부한다")
-    void registryAndVocabularyAreFailClosed() {
-        String entry = "{'controller':'example.kept.KeptController','method':'list','pack':'base'}";
+    @DisplayName("부정 증명: 원장 형식 오류와 옛 pack 어휘는 fail-closed 로 거부한다")
+    void registryIsFailClosed() {
+        String entry = "{'controller':'example.kept.KeptController','method':'list'}";
         String tail = "'sensitiveGetExemptions':[],'knownSensitiveResponseTypes':[]}";
 
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],"
-                + "'packs':['base'],'declaredHandlers':[" + entry + "]," + tail)))
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':[],"
+                + "'declaredHandlers':[" + entry + "]," + tail)))
                 .as("중복 키").isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'declaredHandlers':["
-                + "{'controller':'example.kept.KeptController','method':'list','pack':'other'}]," + tail)))
-                .as("어휘 밖 pack").isInstanceOf(AssertionError.class).hasMessageContaining("other");
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'declaredHandlers':["
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':["
                 + entry + "," + entry + "]," + tail)))
                 .as("중복 핸들러").isInstanceOf(AssertionError.class).hasMessageContaining("중복");
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'declaredHandlers':["
-                + "{'controller':'example.kept.Outer$Inner','method':'list','pack':'base'}]," + tail)))
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':["
+                + "{'controller':'example.kept.Outer$Inner','method':'list'}]," + tail)))
                 .as("중첩 타입").isInstanceOf(AssertionError.class);
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'declaredHandlers':[],"
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':[],"
                 + "'sensitiveGetExemptions':[{'controller':'example.kept.KeptController','method':'me',"
-                + "'pack':'base','reason':' '}],'knownSensitiveResponseTypes':[]}")))
+                + "'reason':' '}],'knownSensitiveResponseTypes':[]}")))
                 .as("빈 예외 사유").isInstanceOf(AssertionError.class).hasMessageContaining("사유");
-        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['base'],'declaredHandlers':["
-                + "{'controller':'example.kept.KeptController','method':'list','pack':'base','packs':'x'}],"
-                + tail)))
-                .as("모르는 필드").isInstanceOf(AssertionError.class).hasMessageContaining("packs");
-
-        Registry registry = Registry.parse(json("{'schemaVersion':1,'packs':['base','extra'],'declaredHandlers':["
-                + entry + "]," + tail));
-        assertThat(presentPacks(registry, json("{'packs':{'base':{}}}"))).containsExactly("base");
-        assertThatThrownBy(() -> presentPacks(registry, json("{'packs':{'base':{},'newcomer':{}}}")))
-                .as("원장 어휘에 없는 manifest pack").isInstanceOf(AssertionError.class)
-                .hasMessageContaining("newcomer");
-    }
-
-    /** 원장의 pack 어휘와 현재 트리 manifest 의 pack 을 대조해 남은 pack 을 돌려준다. */
-    static Set<String> presentPacks(Registry registry, String manifestJson) {
-        JsonNode packs = readJson(manifestJson, PACK_MANIFEST).get("packs");
-        if (packs == null || !packs.isObject() || packs.isEmpty()) {
-            throw new AssertionError(PACK_MANIFEST + " 의 packs 가 비어 있거나 객체가 아닙니다.");
-        }
-        Set<String> present = new TreeSet<>();
-        for (Iterator<String> names = packs.propertyNames().iterator(); names.hasNext(); ) {
-            String name = names.next();
-            if (!registry.packs().contains(name)) {
-                throw new AssertionError("pack manifest 의 '" + name + "' 가 " + CENSUS_REGISTRY
-                        + " 의 packs 어휘에 없습니다. 새 pack 의 개인정보 표면을 먼저 판정하십시오.");
-            }
-            present.add(name);
-        }
-        return present;
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':["
+                + "{'controller':'example.kept.KeptController','method':'list','extra':'x'}]," + tail)))
+                .as("모르는 필드").isInstanceOf(AssertionError.class).hasMessageContaining("extra");
+        // 소유는 원장에 적지 않는다(11단계 C4) — 옛 pack 태그·어휘가 되살아나면 모르는 필드로 거부한다.
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'declaredHandlers':["
+                + "{'controller':'example.kept.KeptController','method':'list','pack':'core'}]," + tail)))
+                .as("옛 pack 태그").isInstanceOf(AssertionError.class).hasMessageContaining("'pack'");
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1,'packs':['core'],'declaredHandlers':["
+                + entry + "]," + tail)))
+                .as("옛 packs 어휘").isInstanceOf(AssertionError.class).hasMessageContaining("'packs'");
+        assertThat(Registry.parse(json("{'schemaVersion':1,'declaredHandlers':[" + entry + "]," + tail)).declaredHandlers())
+                .as("대조군: 형식이 맞으면 받는다").hasSize(1);
     }
 
     /**
-     * 남은 pack 만의 기대 집합을 계산한다. 순수 함수 — 클래스 로드는 주입된 resolver 로만 한다.
+     * 기대 집합을 계산한다. 순수 함수 — 클래스 로드는 주입된 resolver 로만 하고, 남길 항목은 투영 계획(저장소는 전부)이 정한다.
      *
-     * <p>빠진 pack 의 항목은 resolver 가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
+     * <p>투영 계획이 지운 항목은 resolver 가 {@link ClassNotFoundException} 을 던질 때만 제외한다.
      */
-    static Expectations expectationsFor(Registry registry, Set<String> presentPacks, TypeResolver resolver) {
-        return expectationsFor(registry, resolver, entry -> presentPacks.contains(entry.pack()));
-    }
-
-    /** Custom targets come from the recorded source plan, independently of class loading. */
     static Expectations expectationsFor(Registry registry, TypeResolver resolver, Predicate<Entry> included) {
         List<String> violations = new ArrayList<>();
         Map<String, Class<?>> resolved = new LinkedHashMap<>();
         Set<String> judged = new HashSet<>();
         for (Entry entry : registry.allEntries()) {
             String type = entry.typeName();
-            if (!judged.add(type + "@" + entry.pack())) {
+            if (!judged.add(type)) {
                 continue;
             }
             boolean present = included.test(entry);
@@ -366,20 +319,18 @@ class PrivacyAccessCensusLinterTest {
                 Class<?> loaded = resolved.containsKey(type) ? resolved.get(type) : resolver.resolve(type);
                 resolved.put(type, loaded);
                 if (!present) {
-                    violations.add(type + " 는 빠진 pack '" + entry.pack()
-                            + "' 소유로 적혀 있는데 클래스가 남아 있습니다 — pack 태그가 틀렸습니다.");
+                    violations.add(type + " 는 투영 계획이 지운 타입인데 클래스가 남아 있습니다 — 투영 기록과 트리가 어긋났습니다.");
                 }
             } catch (ClassNotFoundException ex) {
                 if (present) {
-                    violations.add(type + " 는 남은 pack '" + entry.pack()
-                            + "' 소유인데 클래스가 없습니다 — 원장이 낡았습니다.");
+                    violations.add(type + " 는 남아야 하는 타입인데 클래스가 없습니다 — 원장이 낡았습니다.");
                 }
             } catch (LinkageError ex) {
                 violations.add(type + " 로드 중 링크 오류(" + ex + ") — 부재인지 판정할 수 없습니다.");
             }
         }
         if (!violations.isEmpty()) {
-            throw new AssertionError("🔒 [PRIVACY-ACCESS CENSUS] pack 판정 실패:\n   · "
+            throw new AssertionError("🔒 [PRIVACY-ACCESS CENSUS] 투영 판정 실패:\n   · "
                     + String.join("\n   · ", violations));
         }
 
@@ -418,13 +369,13 @@ class PrivacyAccessCensusLinterTest {
     }
 
     /** 원장 항목 한 줄. 핸들러 항목은 {@code controller}+{@code method}, 타입 항목은 {@code type} 만 쓴다. */
-    record Entry(String typeName, String method, String pack, String reason) {
+    record Entry(String typeName, String method, String reason) {
         String key() {
             return typeName + "#" + method;
         }
     }
 
-    record Registry(Set<String> packs, List<Entry> declaredHandlers, List<Entry> sensitiveGetExemptions,
+    record Registry(List<Entry> declaredHandlers, List<Entry> sensitiveGetExemptions,
                     List<Entry> knownSensitiveResponseTypes) {
 
         List<Entry> allEntries() {
@@ -436,26 +387,15 @@ class PrivacyAccessCensusLinterTest {
 
         static Registry parse(String json) {
             JsonNode root = readJson(json, CENSUS_REGISTRY);
-            requireFields(root, CENSUS_REGISTRY, Set.of("schemaVersion", "description", "packs",
+            requireFields(root, CENSUS_REGISTRY, Set.of("schemaVersion", "description",
                     "declaredHandlers", "sensitiveGetExemptions", "knownSensitiveResponseTypes"),
-                    Set.of("schemaVersion", "packs", "declaredHandlers", "sensitiveGetExemptions",
+                    Set.of("schemaVersion", "declaredHandlers", "sensitiveGetExemptions",
                             "knownSensitiveResponseTypes"));
             if (root.get("schemaVersion").asInt(-1) != 1) {
                 throw new AssertionError(CENSUS_REGISTRY + " schemaVersion 은 1 이어야 합니다.");
             }
-            Set<String> packs = new LinkedHashSet<>();
-            JsonNode packNodes = root.get("packs");
-            if (!packNodes.isArray() || packNodes.isEmpty()) {
-                throw new AssertionError(CENSUS_REGISTRY + " packs 는 비어 있지 않은 배열이어야 합니다.");
-            }
-            for (JsonNode pack : packNodes) {
-                if (!pack.isString() || pack.asString().isBlank() || !packs.add(pack.asString())) {
-                    throw new AssertionError(CENSUS_REGISTRY + " packs 에 빈 값·중복·비문자열이 있습니다: " + pack);
-                }
-            }
-            List<Entry> handlers = handlerEntries(root.get("declaredHandlers"), "declaredHandlers", packs, false);
-            List<Entry> exemptions = handlerEntries(root.get("sensitiveGetExemptions"), "sensitiveGetExemptions",
-                    packs, true);
+            List<Entry> handlers = handlerEntries(root.get("declaredHandlers"), "declaredHandlers", false);
+            List<Entry> exemptions = handlerEntries(root.get("sensitiveGetExemptions"), "sensitiveGetExemptions", true);
             Set<String> handlerKeys = new HashSet<>();
             for (Entry entry : handlers) {
                 handlerKeys.add(entry.key());
@@ -468,24 +408,23 @@ class PrivacyAccessCensusLinterTest {
             List<Entry> types = new ArrayList<>();
             Set<String> typeNames = new HashSet<>();
             for (JsonNode node : array(root.get("knownSensitiveResponseTypes"), "knownSensitiveResponseTypes")) {
-                requireFields(node, "knownSensitiveResponseTypes", Set.of("type", "pack"), Set.of("type", "pack"));
+                requireFields(node, "knownSensitiveResponseTypes", Set.of("type"), Set.of("type"));
                 String type = typeName(node.get("type"), "knownSensitiveResponseTypes");
                 if (!typeNames.add(type)) {
                     throw new AssertionError("knownSensitiveResponseTypes 에 중복 타입: " + type);
                 }
-                types.add(new Entry(type, null, pack(node.get("pack"), packs), null));
+                types.add(new Entry(type, null, null));
             }
-            return new Registry(Set.copyOf(packs), List.copyOf(handlers), List.copyOf(exemptions), List.copyOf(types));
+            return new Registry(List.copyOf(handlers), List.copyOf(exemptions), List.copyOf(types));
         }
 
-        private static List<Entry> handlerEntries(JsonNode nodes, String section, Set<String> packs,
-                                                  boolean requireReason) {
+        private static List<Entry> handlerEntries(JsonNode nodes, String section, boolean requireReason) {
             Set<String> allowed = requireReason
-                    ? Set.of("controller", "method", "pack", "reason", "note")
-                    : Set.of("controller", "method", "pack", "note");
+                    ? Set.of("controller", "method", "reason", "note")
+                    : Set.of("controller", "method", "note");
             Set<String> required = requireReason
-                    ? Set.of("controller", "method", "pack", "reason")
-                    : Set.of("controller", "method", "pack");
+                    ? Set.of("controller", "method", "reason")
+                    : Set.of("controller", "method");
             List<Entry> entries = new ArrayList<>();
             Set<String> keys = new HashSet<>();
             for (JsonNode node : array(nodes, section)) {
@@ -503,7 +442,7 @@ class PrivacyAccessCensusLinterTest {
                                 + " 에 검토 가능한 사유가 없습니다.");
                     }
                 }
-                Entry entry = new Entry(controller, method, pack(node.get("pack"), packs), reason);
+                Entry entry = new Entry(controller, method, reason);
                 if (!keys.add(entry.key())) {
                     throw new AssertionError(section + " 에 중복 핸들러: " + entry.key());
                 }
@@ -523,14 +462,6 @@ class PrivacyAccessCensusLinterTest {
             String value = node.isString() ? node.asString() : "";
             if (!TYPE_NAME.matcher(value).matches()) {
                 throw new AssertionError(section + " 의 타입 이름은 중첩 없는 FQN 이어야 합니다: " + node);
-            }
-            return value;
-        }
-
-        private static String pack(JsonNode node, Set<String> packs) {
-            String value = node.isString() ? node.asString() : "";
-            if (!packs.contains(value)) {
-                throw new AssertionError("원장 항목의 pack '" + value + "' 가 packs 어휘 " + packs + " 에 없습니다.");
             }
             return value;
         }

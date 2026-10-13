@@ -1,12 +1,12 @@
 /**
- * 개인정보 접근 census 원장(config/governance/privacy-access-census.json)의 pack 태그 계약.
+ * 개인정보 접근 census 원장(config/governance/privacy-access-census.json)의 소유 대조 계약.
  *
- * PrivacyAccessCensusLinterTest 는 현재 트리의 pack manifest 에 남은 pack 의 항목만 기대한다. 그 판정이
- * 옳으려면 **원장의 pack 태그가 재사용 base 생성기의 실제 제거 계획과 같아야** 한다 — 태그가 틀리면
- * 축소 프로필에서 게이트가 "빠진 pack 인데 클래스가 남았다" 로 red 가 되거나, 반대로 남은 표면을
- * 빠진 것으로 보고 조용히 검사를 생략한다. 판정은 공용 모듈 scripts/pack-tagged-registry.mjs 가 생성기의
- * planJavaRemoval 을 rank 누적 프로필마다 그대로 불러 한다(시뮬레이터가 아니라 생성기 판정).
- * 게이트 파일 생존·Java 게이트 제거 승인 exact·생성기 의존 판정의 인용 무시는 scripts/pack-tagged-registry.test.mjs 가 증명한다.
+ * PrivacyAccessCensusLinterTest 는 저장소에서 원장 전체를, 생성물에서는 생성기가 남긴 타입의 항목만 기대한다(투영 기록 retainsType).
+ * 그 판정이 옳으려면 **원장 항목이 생성기의 실제 제거 계획대로 남고 빠져야** 한다 — 어긋나면 생성물에서 게이트가 "지운 타입인데 클래스가
+ * 남았다" 로 red 가 되거나, 남은 표면을 빠진 것으로 보고 조용히 검사를 생략한다. 기대는 원장에 적지 않고 소유에서 계산한다(11단계 C4):
+ * 항목 타입 소스의 기능 소유가 모두 구성 안일 때만 남는다. 판정은 공용 모듈 scripts/pack-tagged-registry.mjs 가 시작 구성마다(그리고
+ * survey 를 가르는 합성 구성) 생성기의 planJavaRemoval 을 그대로 불러 양방향으로 한다(시뮬레이터가 아니라 생성기 판정).
+ * 게이트 파일 생존·시작 구성 Java 게이트·연쇄 exact·생성기 의존 판정의 인용 무시는 scripts/pack-tagged-registry.test.mjs 가 증명한다.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -14,10 +14,9 @@ import { join } from 'node:path';
 import test from 'node:test';
 
 import {
-  evaluateEntryTags,
-  evaluateProjectionPresence,
-  evaluateVocabulary,
-  mainSourceOf,
+  evaluateExpectedSurvival,
+  ledgerEntries,
+  ledgerViolations,
   normalize,
   readRepoJson,
   repositoryContext,
@@ -29,25 +28,10 @@ const GATE_FILE = 'api-server/src/test/java/nuri/api/harness/PrivacyAccessCensus
 /** 원장 항목을 (소스 파일로 확인할) 타입 단위로 편다. */
 export function registryTypeEntries(registry) {
   return [
-    ...registry.declaredHandlers.map((entry) => ({ type: entry.controller, pack: entry.pack, label: `${entry.controller}#${entry.method}` })),
-    ...registry.sensitiveGetExemptions.map((entry) => ({ type: entry.controller, pack: entry.pack, label: `${entry.controller}#${entry.method}` })),
-    ...registry.knownSensitiveResponseTypes.map((entry) => ({ type: entry.type, pack: entry.pack, label: entry.type })),
+    ...registry.declaredHandlers.map((entry) => ({ types: [entry.controller], label: `${entry.controller}#${entry.method}` })),
+    ...registry.sensitiveGetExemptions.map((entry) => ({ types: [entry.controller], label: `${entry.controller}#${entry.method}` })),
+    ...registry.knownSensitiveResponseTypes.map((entry) => ({ types: [entry.type], label: entry.type })),
   ];
-}
-
-/** 타입 항목을 공용 판정 입력으로 바꾼다. main 소스가 정확히 하나가 아니면 위반이다. */
-export function toTagEntries({ root, javaFiles, registry }) {
-  const entries = [];
-  const violations = [];
-  for (const entry of registryTypeEntries(registry)) {
-    const sources = mainSourceOf(root, javaFiles, entry.type);
-    if (sources.length !== 1) {
-      violations.push(`${entry.label}: main 소스 파일이 정확히 하나가 아니다 (${sources.length}건)`);
-      continue;
-    }
-    entries.push({ label: entry.label, pack: entry.pack, sources });
-  }
-  return { entries, violations };
 }
 
 /** Java 게이트의 컨트롤러 하한 판정과 같은 모집단: 클래스 선언 앞에 @RequestMapping 이 붙은 main 소스. */
@@ -58,34 +42,26 @@ export function isRequestMappedController(source) {
   return /@RequestMapping\b/.test(code.slice(0, classAt));
 }
 
-test('원장의 pack 어휘는 pack manifest 와 같다(투영본에서는 남은 pack 을 포함한다)', () => {
-  const { root, manifest, projection } = repositoryContext();
+test('원장에는 pack 어휘가 없다 — 남고 빠지는 기대는 소유에서 계산한다', async () => {
+  const { root } = await repositoryContext();
   const registry = readRepoJson(root, REGISTRY_PATH);
-  assert.deepEqual(evaluateVocabulary({
-    registryPacks: registry.packs,
-    manifest,
-    projection,
-    entryPacks: registryTypeEntries(registry).map((entry) => entry.pack),
-  }), []);
+  assert.equal(Object.hasOwn(registry, 'packs'), false, '최상위 packs 어휘가 남아 있다');
+  const tagged = [...registry.declaredHandlers, ...registry.sensitiveGetExemptions, ...registry.knownSensitiveResponseTypes]
+    .filter((entry) => Object.hasOwn(entry, 'pack'));
+  assert.deepEqual(tagged, [], '항목에 pack 태그가 남아 있다');
 });
 
-test('원장 pack 태그가 생성기의 실제 제거 계획과 일치한다', () => {
-  const { root, javaFiles, projection, prefixPlans, presentPacks } = repositoryContext();
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  const { entries, violations } = toTagEntries({ root, javaFiles, registry });
-  if (projection) {
-    const presence = evaluateProjectionPresence({ entries, presentPacks });
-    // 투영본에서는 빠진 pack 의 소스가 없어 "정확히 하나" 해석이 실패하는 것이 정상이다 — 남은 pack 항목만 해석 실패를 센다.
-    const presentFailures = violations.filter((line) => registryTypeEntries(registry)
-      .some((entry) => line.startsWith(`${entry.label}:`) && presentPacks.has(entry.pack)));
-    assert.deepEqual([...presentFailures, ...presence], []);
-    return;
-  }
-  assert.deepEqual([...violations, ...evaluateEntryTags({ entries, prefixPlans })], []);
+test('원장 항목이 소유대로 생성기의 실제 제거 계획에서 남고 빠진다', async () => {
+  const context = await repositoryContext();
+  const registry = readRepoJson(context.root, REGISTRY_PATH);
+  const raw = registryTypeEntries(registry);
+  const { entries, violations } = ledgerEntries(context, raw);
+  assert.ok(entries.length === raw.length && entries.length > 0, '판정할 항목이 비었다');
+  assert.deepEqual([...violations, ...ledgerViolations(context, entries)], []);
 });
 
-test('남는 요청 매핑 컨트롤러가 프로필마다 CONTROLLER_FLOOR 이상이다', () => {
-  const { root, projection, prefixPlans, javaFiles } = repositoryContext();
+test('남는 요청 매핑 컨트롤러가 구성마다 CONTROLLER_FLOOR 이상이다', async () => {
+  const { root, projection, compositions, javaFiles } = await repositoryContext();
   const gateSource = readFileSync(join(root, GATE_FILE), 'utf8');
   const floor = Number(gateSource.match(/\bCONTROLLER_FLOOR\s*=\s*(\d+)\s*;/)?.[1]);
   assert.ok(Number.isInteger(floor) && floor > 0, 'CONTROLLER_FLOOR 를 게이트 소스에서 읽지 못했다');
@@ -95,64 +71,41 @@ test('남는 요청 매핑 컨트롤러가 프로필마다 CONTROLLER_FLOOR 이�
     assert.ok(controllers.length >= floor, `투영본 컨트롤러 ${controllers.length} < ${floor}`);
     return;
   }
-  for (const { profile, plan } of prefixPlans) {
+  for (const { name, plan } of compositions) {
     const surviving = controllers.filter((path) => !plan.removed.has(path)).length;
-    assert.ok(surviving >= floor, `[${profile.packs.join(',')}] 남는 컨트롤러 ${surviving} < CONTROLLER_FLOOR ${floor}`);
+    assert.ok(surviving >= floor, `${name} 남는 컨트롤러 ${surviving} < CONTROLLER_FLOOR ${floor}`);
   }
 });
 
-test('부정 증명: 틀린 pack 태그는 생성기 계획과의 대조에서 red 다', (t) => {
-  const { root, javaFiles, projection, prefixPlans } = repositoryContext();
-  if (projection) {
-    t.diagnostic('투영본에는 제거 계획이 없어 합성 태그 대조를 저장소에서만 수행한다');
+test('부정 증명: 소유를 잘못 정하면 생성기 계획과의 대조에서 red 다', async (t) => {
+  const context = await repositoryContext();
+  if (context.projection) {
+    t.diagnostic('투영본에는 제거 계획이 없어 합성 소유 대조를 저장소에서만 수행한다');
     return;
   }
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  const tagViolations = (candidate) => {
-    const { entries, violations } = toTagEntries({ root, javaFiles, registry: candidate });
-    return [...violations, ...evaluateEntryTags({ entries, prefixPlans })];
-  };
-  const retag = (section, predicate, pack) => ({
-    ...registry,
-    [section]: registry[section].map((entry) => (predicate(entry) ? { ...entry, pack } : entry)),
-  });
+  const registry = readRepoJson(context.root, REGISTRY_PATH);
+  const { entries } = ledgerEntries(context, registryTypeEntries(registry));
+  const reown = (labelEnd, owner) => entries.map((entry) => (entry.label.endsWith(labelEnd)
+    ? { ...entry, owners: entry.sources.map(() => owner) } : entry));
   const cases = [
     {
-      name: 'collaboration 소유 SMS 수신자 조회를 core 로 적는다',
-      registry: retag('declaredHandlers', (entry) => entry.method === 'getSmsRecipients', 'core'),
-      expect: /getSmsRecipients \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
+      name: '협업 SMS 수신자 조회를 core 소유로 본다',
+      entries: reown('#getSmsRecipients', 'core'),
+      expect: /^expected to survive in preset core: .*SmsApiController#getSmsRecipients — 생성기가 지운다/,
     },
     {
-      name: 'demo 소유 주소록 조회를 survey 로 적는다',
-      registry: retag('declaredHandlers', (entry) => entry.method === 'getAddressBook', 'survey'),
-      expect: /getAddressBook \(pack=survey\) 는 프로필 \[core,collaboration,survey\] 에서 제거된다/,
-    },
-    {
-      name: 'core 소유 사용자 조회를 demo 로 적는다',
-      registry: retag('declaredHandlers', (entry) => entry.method === 'getUsers', 'demo'),
-      expect: /getUsers \(pack=demo\) 는 프로필 \[core\] 에서 남는다/,
-    },
-    {
-      name: 'collaboration 대시보드 컨트롤러를 core 로 적는다',
-      registry: {
-        ...registry,
-        sensitiveGetExemptions: [
-          ...registry.sensitiveGetExemptions,
-          { controller: 'nuri.api.controller.business.main.DashboardApiController', method: 'getDashboard', pack: 'core', reason: '합성' },
-        ],
-      },
-      expect: /DashboardApiController#getDashboard \(pack=core\) 는 프로필 \[core\] 에서 제거된다/,
+      name: 'core 사용자 조회를 주소록 소유로 본다',
+      entries: reown('UserApiController#getUsers', 'addressbook'),
+      expect: /^expected to be removed in preset core: .*UserApiController#getUsers — 구성 밖 소유 기능 \[addressbook\] 인데 생성기가 남긴다/,
     },
   ];
   for (const redCase of cases) {
-    const violations = tagViolations(redCase.registry);
+    const violations = evaluateExpectedSurvival({ entries: redCase.entries, compositions: context.compositions });
     assert.ok(violations.some((line) => redCase.expect.test(line)), `${redCase.name}: ${JSON.stringify(violations)}`);
   }
-  const ghost = {
-    ...registry,
-    knownSensitiveResponseTypes: [...registry.knownSensitiveResponseTypes, { type: 'nuri.example.NoSuchDto', pack: 'core' }],
-  };
-  assert.ok(tagViolations(ghost).some((line) => line.startsWith('nuri.example.NoSuchDto: main 소스 파일이 정확히 하나가 아니다')));
+  const ghost = { ...registry, knownSensitiveResponseTypes: [...registry.knownSensitiveResponseTypes, { type: 'nuri.example.NoSuchDto' }] };
+  assert.ok(ledgerEntries(context, registryTypeEntries(ghost)).violations
+    .some((line) => line.startsWith('nuri.example.NoSuchDto: nuri.example.NoSuchDto 의 main 소스 파일이 정확히 하나가 아니다')));
 });
 
 test('컨트롤러 판정은 클래스 선언 앞의 @RequestMapping 만 센다', () => {

@@ -113,12 +113,12 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ### 5.1 프로젝트 고유 기능 삭제
 
 ```powershell
-# manifest(config/reusable-base-profiles.json) 기반으로 도메인 BE 경로를 제거 (여러 도메인은 쉼표 구분)
+# 기능 파일(config/modules/<기능>.json) 기반으로 도메인 경로를 제거 (여러 도메인은 쉼표 구분)
 ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun   # 먼저 확인
 ./scripts/delete-domain.ps1 -DomainName "informalsanction"
 ```
 
-> `delete-domain.ps1`은 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 SSOT 로 소비한다. manifest 에 없는 도메인명은 즉시 에러이고, 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`·`dashboard`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 manifest 가 pack 단위(`frontend.removePaths`)로만 소유하므로 pack 도메인 전체를 지정할 때만 일괄 삭제되며, 그 외 화면 제거는 [재사용 Base 가이드](./reusable-base-guide.md)의 projection 을 사용한다. 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
+> `delete-domain.ps1`은 [기능 파일](../../config/modules/)을 SSOT 로 소비한다. 기능 파일이 없는 도메인명은 즉시 에러이고(알려진 기능을 함께 적는다), 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`·`dashboard`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 지우는 기능의 화면 소유(`owns.frontend`)와, 소유한 기능을 모두 지울 때의 함께 소유한 화면(`owns.frontendAny`)이다 — 생성기 투영의 화면 제외 규칙과 같다(11단계 C5, 종전에는 pack 도메인 전체를 지정할 때만 지웠다). 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
 > FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 [재사용 Base 가이드](./reusable-base-guide.md)의 projection·도달성 검사로 메뉴와 화면의 잔존 참조를 함께 확인한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)
