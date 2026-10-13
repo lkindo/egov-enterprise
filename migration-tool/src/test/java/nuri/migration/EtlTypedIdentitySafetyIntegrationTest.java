@@ -234,7 +234,17 @@ class EtlTypedIdentitySafetyIntegrationTest {
             List<IdentityComponentSpec> source,
             List<IdentityComponentSpec> target
     ) {
-        return new IdentityStrategy(policy, source, target);
+        if (policy != TargetIdentityPolicy.PRESERVE) {
+            return new IdentityStrategy(policy, source, target);
+        }
+        // 시험 대상 PK 는 시퀀스로 채번되지 않는다 — 정수 원본 키는 none 으로 선언한다(DEC-OPS-306).
+        Map<String, String> sequences = new java.util.HashMap<>();
+        for (IdentityComponentSpec component : target) {
+            if (component.type() == IdentityValueType.SIGNED_INTEGER) {
+                sequences.put(component.column(), IdentityStrategy.NO_SEQUENCE);
+            }
+        }
+        return new IdentityStrategy(policy, source, target, sequences);
     }
 
     private static TableMapping caseOrderTable(String source, String target, String where) {

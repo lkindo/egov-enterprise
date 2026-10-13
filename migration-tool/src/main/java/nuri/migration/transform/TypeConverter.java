@@ -3,6 +3,7 @@ package nuri.migration.transform;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Set;
@@ -98,7 +99,13 @@ public final class TypeConverter {
         if (s.length() == 10) {
             return LocalDate.parse(s, DateTimeFormatter.ISO_LOCAL_DATE);
         }
-        return parseTimestamp(s).toLocalDate();
+        // [2026-10-13 DEC-OPS-309] 시각이 붙은 값은 자정일 때만 date 로 받는다. 종전에는 시각을 조용히
+        //   버렸다(13:45 → 날짜만). 잘라 내는 것이 의도라면 mapping 이 transform: date-truncate 로 밝혀야 한다.
+        LocalDateTime timestamp = parseTimestamp(s);
+        if (!timestamp.toLocalTime().equals(LocalTime.MIDNIGHT)) {
+            throw conversionFailure();
+        }
+        return timestamp.toLocalDate();
     }
 
     private static LocalDateTime parseTimestamp(String s) {

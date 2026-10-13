@@ -172,6 +172,7 @@ class MigrationWorkflowRunnerTest {
         given(validator.validate(mapping)).willReturn(pass());
         given(validator.validateLiveSource(mapping, sourceJdbc)).willReturn(pass());
         given(validator.validateLiveTarget(mapping, targetJdbc)).willReturn(pass());
+        given(validator.validateTargetStandard(eq(mapping), any(), any())).willReturn(pass());
         List<EtlExecutor.TableResult> results = List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of()));
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
@@ -366,6 +367,69 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void planValidatesTheBoundTargetStandardAndNamesViolatingColumnsWithoutWritingThePlan() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("standard-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(
+                new ValidationResult(List.of("기본값 없는 NOT NULL 타깃 컬럼을 채우는 매핑·const 가 없습니다:"
+                        + " public.tb_user_info.frst_rgtr_id"), List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("target standard contract validation 실패로 중단했습니다: 기본값 없는 NOT NULL 타깃 컬럼을"
+                        + " 채우는 매핑·const 가 없습니다: public.tb_user_info.frst_rgtr_id");
+
+        assertThat(plan).doesNotExist();
+        ArgumentCaptor<CatalogSnapshot> inventorySnapshot = ArgumentCaptor.forClass(CatalogSnapshot.class);
+        verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), inventorySnapshot.capture());
+        assertThat(CatalogSnapshotDigester.sha256(inventorySnapshot.getValue()))
+                .isEqualTo(CatalogSnapshotDigester.sha256(snapshot));
+    }
+
+    @Test
+    void targetStandardGateCapsReportedErrorsAndFailsClosedWithoutAResult() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        List<String> many = java.util.stream.IntStream.rangeClosed(1, 22)
+                .mapToObj(index -> "violation-" + index).toList();
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any()))
+                .willReturn(new ValidationResult(many, List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + temp.resolve("capped.json"))))
+                .hasMessageContaining("violation-20 (외 2건)")
+                .hasMessageNotContaining("violation-21");
+
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(null);
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + temp.resolve("null.json"))))
+                .hasMessage("target standard contract validation 결과가 없어 중단했습니다.");
+    }
+
+    @Test
+    void loadRevalidatesTheTargetStandardAfterTheDigestCheckAndBeforeExecution() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+        given(validator.validateTargetStandard(eq(mapping), eq(targetFingerprint), any())).willReturn(
+                new ValidationResult(List.of("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_user_info.user_id"), List.of()));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=load", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan,
+                "--ack-adapter=postgresql-pg-catalog", "--ack-source-freeze")))
+                .hasMessageContaining("target standard contract validation 실패")
+                .hasMessageContaining("public.tb_user_info.user_id");
+
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+    }
+
+    @Test
     void planRejectsInvalidMappingBeforeTargetFingerprintOrArtifactWrite() throws Exception {
         Path inventory = temp.resolve("inventory.json");
         Path plan = temp.resolve("invalid-plan.json");
@@ -495,6 +559,7 @@ class MigrationWorkflowRunnerTest {
         verify(adapter).preflight(eq(sourceConnection), any(DiscoveryRequest.class));
         verify(adapter).discover(eq(sourceConnection), any(DiscoveryRequest.class));
         verify(fingerprinter).fingerprintBound(targetConnection, mapping, Set.of("public"));
+        verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), any());
         verify(executor).execute(
                 mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
         verify(validator, never()).validateLiveTarget(any(), any());
@@ -527,6 +592,59 @@ class MigrationWorkflowRunnerTest {
             assertThat(Files.readString(evidence)).contains("\"status\":\"FAILED\"")
                     .doesNotContain("sentinel-source-password", "jdbc:");
         }
+    }
+
+    @Test
+    void failedVerificationGateNamesTheFirstNonPassingTableWithoutRowValues() throws Exception {
+        // [2026-10-13 DEC-OPS-309] 행 변환 실패는 테이블·컬럼·행 순번으로 밝혀진다. 종전 gate 는 그것을 버렸다.
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+        String note = "오류 1건 — 첫 오류: 행 변환 실패(legacy.legacy_user, column=user_id, row=7): "
+                + "ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class))).willReturn(new MigrationReport(List.of(
+                new MigrationReport.TableReport("legacy.passed", "public.passed", 1, 1, 0, 0, -1,
+                        MigrationReport.Status.PASS, ""),
+                new MigrationReport.TableReport("legacy.legacy_user", "public.tb_user_info", 7, 6, 0, 1, -1,
+                        MigrationReport.Status.FAIL, note)), MigrationReport.Status.FAIL));
+
+        assertThatThrownBy(() -> load(inventory, plan))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
+                        + " 첫 실패: legacy.legacy_user — " + note);
+    }
+
+    @Test
+    void firstFailureIsEmptyForPassingReportsAndBoundedForLongNotes() {
+        assertThat(MigrationWorkflowRunner.firstFailure(new MigrationReport(List.of(
+                new MigrationReport.TableReport("a", "b", 1, 1, 1, 0, 1, MigrationReport.Status.PASS, "")),
+                MigrationReport.Status.PASS))).isEmpty();
+        String warned = MigrationWorkflowRunner.firstFailure(new MigrationReport(List.of(
+                new MigrationReport.TableReport("a", "b", 2, 1, 1, 0, 1, MigrationReport.Status.WARN, "x".repeat(900))),
+                MigrationReport.Status.WARN));
+        assertThat(warned).startsWith(" 첫 실패: a — xxx").endsWith("…").hasSize(601);
+    }
+
+    @Test
+    void legacyFlatCodemapStopsTheWorkflowBeforeAnySourceConnectionWithAMigrationMessage() throws Exception {
+        Files.writeString(mappingPath, """
+                tables: []
+                codemaps:
+                  user_status:
+                    "1": "A"
+                    default: "P"
+                """);
+        MigrationWorkflowRunner realLoaderRunner = new MigrationWorkflowRunner(
+                new MappingLoader(), validator, executor, verifier, introspector,
+                new SourceAdapterRegistry(List.of(adapter)), files, inventoryCodec, planCodec,
+                planner, new WorkflowReviewLoader(), fingerprinter, sourceEndpoints, transformers);
+
+        assertThatThrownBy(() -> realLoaderRunner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + temp.resolve("i.json"))))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageStartingWith("codemap 'user_status': codemap 의 옛 평면 형식")
+                .hasMessageContaining("unmapped: fallback", "DEC-OPS-309");
+        verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
     }
 
     @Test

@@ -200,6 +200,53 @@ test('shared ID contract changes select both modules and both PIT scopes', () =>
   }
 });
 
+test('online encryption sources select the migration suite that holds their compatibility contract', () => {
+  // OnlineRrnoConverterContractTest compiles the online converter, its crypto
+  // and the entities that declare protected columns (DEC-OPS-308).
+  for (const file of [
+    'business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java',
+    'foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java',
+    'foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java',
+    'foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java',
+    'business-core/src/main/java/nuri/business/domain/user/entity/User.java',
+    'business-core/src/main/java/nuri/business/domain/auth/mfa/MfaCredential.java',
+  ]) {
+    assert.ok(fs.existsSync(path.join(repoRoot, file)), `${file}: semantic input must exist`);
+    const result = classifyChangedFiles([file]);
+    for (const field of ['backend', 'migration']) {
+      assert.equal(result[field], true, `${file}: protected column contract lost ${field}`);
+    }
+  }
+  // A future converter elsewhere is still counted by the contract.
+  assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/NewSecretConverter.java']).migration, true);
+  assert.equal(classifyChangedFiles(['api-server/src/main/java/nuri/api/x/NewSecretConverter.java']).migration, true);
+  assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/Plain.java']).migration, false);
+});
+
+test('an online source that newly declares a protected column selects the migration suite by its content', () => {
+  // A new entity can attach the existing converter without touching any path the
+  // contract names; a service can call the online ciphers directly (DEC-OPS-308).
+  const entity = 'business-app/src/main/java/nuri/business/domain/x/Resident.java';
+  const service = 'business-core/src/main/java/nuri/business/service/x/SecretService.java';
+  const sources = {
+    [entity]: '@jakarta.persistence.Convert(converter = RrnoEncryptionConverter.class)\nprivate String rrno;',
+    [service]: 'import static nuri.foundation.core.util.CryptoUtil.encrypt;\nString v = CryptoUtil.encrypt(x);',
+  };
+  const readSource = file => sources[file] ?? null;
+  for (const file of [entity, service]) {
+    assert.equal(classifyChangedFiles([file], { readSource }).migration, true, `${file}: content trigger lost`);
+  }
+  assert.equal(classifyChangedFiles(['api-server/src/main/java/nuri/api/x/Cipher.java'],
+    { readSource: () => 'private final MfaSecretCipher cipher;' }).migration, true);
+  assert.equal(classifyChangedFiles([entity], { readSource: () => 'class Resident { String name; }' }).migration, false);
+  assert.equal(classifyChangedFiles([entity], { readSource: () => '@Converter(autoApply = false)' }).migration, false,
+    'a converter class declaration is selected by its *Converter.java path, not by content');
+  assert.equal(classifyChangedFiles([entity], { readSource: () => null }).migration, false, 'deleted file');
+  // The default reader looks at the working tree.
+  assert.equal(classifyChangedFiles(['business-core/src/main/java/nuri/business/service/auth/mfa/MfaSettings.java']).migration,
+    true);
+});
+
 test('target standard catalog and unknown toolchain inputs retain full fallback', () => {
   // MappingValidator's default catalog is the tracked root db_columns.json.
   // Do not classify it as an isolated migration fixture: it represents the

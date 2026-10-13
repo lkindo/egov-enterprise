@@ -60,6 +60,7 @@ import java.util.regex.Pattern;
 public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     private static final String POSTGRESQL_PRODUCT = "PostgreSQL";
+    private static final int MAX_REPORTED_ERRORS = 20;
 
     private final MappingLoader loader;
     private final MappingValidator validator;
@@ -237,6 +238,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         String executionContractDigest = MigrationExecutionContract.capture(
                 mapping, plannedAdapter, transformers).digest();
         TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
+        requireTargetStandard(validator.validateTargetStandard(
+                mapping, target, inventory.payload().toSnapshot()));
         Map<String, nuri.migration.plan.DispositionDecision> decisions = Map.of();
         if (options.review() != null) {
             WorkflowReview review = reviewLoader.load(
@@ -329,6 +332,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
             TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
+            requireTargetStandard(validator.validateTargetStandard(
+                    mapping, target, inventory.payload().toSnapshot()));
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -341,7 +346,12 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     private MappingSpec readMapping(WorkflowCliOptions options) {
         String content = files.readUtf8(options.mapping());
-        return Objects.requireNonNull(loader.loadContent(content), "mapping");
+        try {
+            return Objects.requireNonNull(loader.loadContent(content), "mapping");
+        } catch (MappingSpec.CodemapFormatException format) {
+            // [2026-10-13 DEC-OPS-309] 옛 codemap 형식은 옮겨 쓸 방법을 그대로 보여 준다(고정 문구 + codemap 이름).
+            throw gate(format.getMessage());
+        }
     }
 
     private MigrationPlan readWorkflowPlan(WorkflowCliOptions options) {
@@ -431,26 +441,45 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
         java.time.Instant started = java.time.Instant.now();
         // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
-        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null);
+        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null);
         MigrationReport report = null;
+        List<EtlExecutor.TableResult> results = null;
         try {
-            List<EtlExecutor.TableResult> results = executor.execute(
+            results = executor.execute(
                     mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged);
             report = verifier.verify(mapping, results, target);
             if (!report.ok()) {
-                throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다.");
+                throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
+                        + firstFailure(report));
             }
-            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results);
         } catch (Throwable failure) {
             rethrowJvmFatal(failure);
-            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results);
             throw failure;
         }
     }
 
+    /**
+     * [2026-10-13 DEC-OPS-309] 처음 PASS 가 아닌 테이블과 그 판정을 붙인다. 판정 문구는 테이블·컬럼 이름,
+     * 행 순번, 건수, 고정 코드와 키 digest(이 프로세스에서만 쓰는 무작위 키의 HMAC, {@code KeyDiagnostics})로만
+     * 만들어지며 행 값·키 원문·예외 원문을 담지 않는다.
+     */
+    static String firstFailure(MigrationReport report) {
+        for (MigrationReport.TableReport table : report.tables()) {
+            if (table.status() != MigrationReport.Status.PASS) {
+                String detail = " 첫 실패: " + table.source() + " — " + table.note();
+                return detail.length() <= 600 ? detail : detail.substring(0, 600) + "…";
+            }
+        }
+        return "";
+    }
+
     private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
-            MigrationMode mode, String status, java.time.Instant started, MigrationReport report) {
-        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report);
+            MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
+            List<EtlExecutor.TableResult> results) {
+        // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다.
+        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results);
         requireNoBoundCredentials(artifact, mapping);
         files.writeAtomic(path, artifact);
     }
@@ -522,6 +551,22 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private static void requireValid(ValidationResult result, String boundary) {
         if (result == null || !result.ok()) {
             throw gate(boundary + " validation 실패로 중단했습니다.");
+        }
+    }
+
+    /**
+     * 표준 계약 위반은 표·컬럼 이름과 타입·길이만 담으므로 그대로 보여 준다. 행 값·상수·자격은 메시지에 없다.
+     */
+    private static void requireTargetStandard(ValidationResult result) {
+        if (result == null) {
+            throw gate("target standard contract validation 결과가 없어 중단했습니다.");
+        }
+        if (!result.ok()) {
+            List<String> shown = result.errors().stream().limit(MAX_REPORTED_ERRORS).toList();
+            String more = result.errors().size() > shown.size()
+                    ? " (외 " + (result.errors().size() - shown.size()) + "건)" : "";
+            throw gate("target standard contract validation 실패로 중단했습니다: "
+                    + String.join(" | ", shown) + more);
         }
     }
 

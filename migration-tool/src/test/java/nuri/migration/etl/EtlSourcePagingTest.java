@@ -73,7 +73,9 @@ class EtlSourcePagingTest {
                                 new IdentityComponentSpec("ROW_SEQ", IdentityValueType.SIGNED_INTEGER)),
                         List.of(
                                 new IdentityComponentSpec("tenant_id", IdentityValueType.TEXT),
-                                new IdentityComponentSpec("row_seq", IdentityValueType.SIGNED_INTEGER))),
+                                new IdentityComponentSpec("row_seq", IdentityValueType.SIGNED_INTEGER)),
+                        // 시험 대상 PK 는 시퀀스로 채번되지 않는다(DEC-OPS-306 none 선언).
+                        Map.of("row_seq", IdentityStrategy.NO_SEQUENCE)),
                 List.of(new CompositeForeignKey(
                         "LEGACY_PARENT",
                         List.of(new IdentityComponentSpec("PARENT_ID", IdentityValueType.SIGNED_INTEGER)),

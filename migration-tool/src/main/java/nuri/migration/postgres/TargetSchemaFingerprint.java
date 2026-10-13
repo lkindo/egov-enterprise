@@ -6,13 +6,19 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-/** 실제 target JDBC metadata에서 얻은 mapped schema의 credential-free canonical fingerprint. */
+/**
+ * 실제 target JDBC metadata에서 얻은 mapped schema의 credential-free canonical fingerprint.
+ *
+ * <p>{@code standard} 는 승인 workflow({@code fingerprintBound})가 함께 읽은 live 컬럼 계약·표준 사전이다.
+ * 결속되지 않은 fingerprint 에서는 null 이며, 표준 검증은 null 을 "읽지 못함"으로 보고 실패한다.
+ */
 public record TargetSchemaFingerprint(
         int schemaVersion,
         String databaseProduct,
         String databaseVersion,
         String digest,
-        List<TableMetadata> tables) {
+        List<TableMetadata> tables,
+        TargetStandardSnapshot standard) {
 
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
@@ -24,6 +30,12 @@ public record TargetSchemaFingerprint(
         databaseVersion = requireText(databaseVersion, "databaseVersion");
         digest = requireText(digest, "digest");
         tables = canonicalTables(tables);
+    }
+
+    /** 표준 계약을 읽지 않은 fingerprint. */
+    public TargetSchemaFingerprint(int schemaVersion, String databaseProduct, String databaseVersion,
+                                   String digest, List<TableMetadata> tables) {
+        this(schemaVersion, databaseProduct, databaseVersion, digest, tables, null);
     }
 
     public static TargetSchemaFingerprint create(

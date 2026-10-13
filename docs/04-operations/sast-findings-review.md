@@ -1,5 +1,26 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-13 이관 PIT 변환기 범위 조건 변경에 따른 H2 테스트 경계 재검토(레거시 표준화 L1 PR-D 통합)
+
+PR-D(DEC-OPS-309)가 `migration-tool/build.gradle`의 PIT 범위 조건 한 곳만 바꿨다 — 변환기 범위의 대상 클래스 집합에
+`CodeTranslator`를 더했다. 의존 선언과 구성은 바뀌지 않았고 H2는 여전히 테스트 구성에만 있다. 같은 변경이
+`config/governance/gates.json`의 같은 범위 목록을 바꿨으므로 메타게이트의 두 registry 해시(gates.json·승인 목록)를 함께 재결속한다.
+
+변경된 보완 소스 하나와 승인 목록의 해시만 재결속한다. 예외의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다.
+근거는 build 파일 diff 의 재검토이며 CodeQL 실행의 증거가 아니다.
+
+## 2026-10-13 주민번호 변환기 호환 계약 시험 의존 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 온라인 주민번호 변환기 호환 계약 시험(DEC-OPS-308)이
+쓰는 테스트 의존 세 줄만 더했다 — `egovframe-rte-fdl-crypto`·`jakarta.persistence-api`의 `testImplementation`과
+`lombok`의 `testRuntimeOnly`다. eGov 암호가 끌어오는 `log4j-slf4j2-impl`은 루트 `build.gradle`의
+`configurations.all`이 빼며, `:migration-tool:dependencies --configuration testRuntimeClasspath`에 0건이다.
+H2는 여전히 테스트 구성에만 있고, 생성한 migration bootJar의 `BOOT-INF/lib` 64개에 H2·eGovFrame·Testcontainers
+라이브러리가 없다. 탐지 원문 `application-test.yml`과 나머지 보완 소스 5개의 해시는 기존 승인값과 일치한다.
+
+변경된 보완 소스 하나와 승인 목록의 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·
+만료일과 보안 임계값은 유지한다. 근거는 의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다.
+
 ## 2026-10-07 lombok 플러그인·bucket4j 상향에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스 두 개가 Dependabot 배치(#761·#849)로 바뀌었다. 루트 `build.gradle`은
