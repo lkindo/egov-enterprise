@@ -753,6 +753,26 @@ export function validateDispositionContract({
   const overlayRoutes = collectExactKeys(overlay.routes, 'route', 'overlay.routes', errors);
   comparePopulation(overlayRoutes, manifestRoutes, 'overlay.routes', errors);
   if (Array.isArray(overlay.routes)) overlay.routes.forEach((record, index) => validateRouteRecord(record, index, errors));
+  /*
+   * [2026-10-13 DEC-OPS-302] demo-isolated 는 시연 기능만 싣는 화면에만 맞는 처분이다(IA §8.2 — demo profile/sandbox).
+   * 시연이 아닌 시작 구성이 그 화면을 실으면 처분이 사실과 다르다. 결재 기안 화면은 2026-09-16 실제 기안 창을 열게 됐고
+   * 인증 시작 구성 '공통 기반 + 결재'(DEC-OPS-295)가 그 화면을 실었는데, 2026-08-23 의 demo-isolated 승인이 그대로 남아
+   * 아무 신호도 나지 않았다. 화면을 싣는 시작 구성은 라우트 원장의 directProjectionProfiles(시작 구성의 기능 제외 경로에서
+   * 계산하고 그 계약이 대조한다)에서 읽는다. 'demo' 한 이름만 비교한다 — 시작 구성 id 전부를 열거하지 않는다(DEC-OPS-293).
+   * 읽을 수 없으면 통과가 아니라 실패다.
+   */
+  const shippedProfilesByRoute = new Map((Array.isArray(manifest?.routes) ? manifest.routes : [])
+    .map((row) => [row?.route, row?.directProjectionProfiles]));
+  if (Array.isArray(overlay.routes)) {
+    overlay.routes.forEach((record, index) => {
+      if (record?.disposition !== 'demo-isolated') return;
+      const shipped = shippedProfilesByRoute.get(record.route);
+      const leaks = Array.isArray(shipped) ? shipped.filter((profile) => profile !== 'demo') : ['(unknown)'];
+      if (leaks.length > 0) {
+        errors.push(`routes[${index}] ${record.route}: demo-isolated route ships in non-demo presets: ${leaks.join(', ')}`);
+      }
+    });
+  }
 
   const manifestAliases = collectExactKeys(
     manifest?.externalAliases,
