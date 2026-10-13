@@ -322,7 +322,7 @@ export function derivePortConnections(root, ownerOf, files = javaSourceFiles(roo
   for (const [port, implemented] of [...implementations].sort(([left], [right]) => byCodeUnits(left, right))) {
     const featureImplementations = implemented.filter(row => owner(row.file) !== 'core');
     if (!featureImplementations.length) continue;
-    const name = port.replace(/[$]/gu, '\\$&');
+    const name = port.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
     // 포트 타입 뒤의 타입 인자(Port<String>)도 같은 포트다. 한 겹 중첩까지 본다.
     const type = `(?:[\\w$]+\\.)*${name}(?:\\s*<(?:[^<>;{}()=]|<[^<>;{}()=]*>)*>)?`;
     const injection = new RegExp(`(?:ObjectProvider|List|Optional|Collection|Set|Iterable)\\s*<\\s*${type}\\s*>`

@@ -45,7 +45,7 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
   let deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: tampered });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.PERMISSION_PROJECTION);
-  assert.match(deep.blockers[0].message, new RegExp(`retained operation binding ${binding.method} ${binding.path.replace(/[{}]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
+  assert.match(deep.blockers[0].message, new RegExp(`retained operation binding ${binding.method} ${binding.path.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
   assert.equal(deep.permissionProjection, null, 'a failed projection reports no counts');
   // 묶음 원장이 남는 권한을 나누지 못하면(제외 행을 지움) 같은 사유로 막는다.
   const unclassified = structuredClone(sources);

@@ -31,6 +31,7 @@ import {
   PROTECTED_PERMISSIONS, SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT, buildPermissionBundles, buildScreenFrame, byCodePoint,
   grantsScreenEntry, readJson, readScreenRegistryArtifact, relatesToOpenScreen, renderScreenRegistry, replacedTermFinder,
 } from './screen-registry-model.mjs';
+import { readTextIfPresent } from './reusable-source-tree.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
 
 export const PERMISSION_CATALOG_PATH = 'config/governance/permission-catalog.json';
@@ -290,7 +291,9 @@ export function applyScreenAndBundleProjection({ sourceRoot, outputRoot, ledger 
   writeJsonIfChanged(outputRoot, PERMISSION_BUNDLES_PATH, bundleProjection.ledger, sources.bundles);
   const registry = renderScreenRegistry(rows.screens, rows.aliases, bundles);
   const registryFile = path.join(outputRoot, SCREEN_REGISTRY_OUTPUT);
-  if (!fs.existsSync(registryFile) || fs.readFileSync(registryFile, 'utf8').replace(/\r\n?/gu, '\n') !== registry) {
+  // 확인하고 읽지 않고 읽기를 시도한다(TOCTOU, CodeQL js/file-system-race).
+  const current = readTextIfPresent(registryFile);
+  if (current === undefined || current.replace(/\r\n?/gu, '\n') !== registry) {
     fs.writeFileSync(registryFile, registry, 'utf8');
   }
   return {
@@ -327,8 +330,9 @@ export function projectedPermissionCoverageErrors(root, { catalog, bindings, per
     }
   }
   const censusFile = path.join(root, HARNESS_PROFILE_PATH);
-  if (fs.existsSync(censusFile)) {
-    const census = JSON.parse(fs.readFileSync(censusFile, 'utf8')).census ?? {};
+  const censusText = readTextIfPresent(censusFile);
+  if (censusText !== undefined) {
+    const census = JSON.parse(censusText).census ?? {};
     for (const [key, actual] of [['permissionCatalog', codes.length], ['operationBindings', bindings.length]]) {
       if (!Number.isInteger(census[key])) errors.push(`reusable harness census does not declare ${key}`);
       else if (census[key] !== actual) errors.push(`projected ${key} ${actual} differs from the reusable harness census ${census[key]}`);

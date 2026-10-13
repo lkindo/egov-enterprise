@@ -202,7 +202,7 @@ test('the deep permission plan refuses a retained binding, screen entry or redir
   const userRead = tampered.policies.operationBindings.find(row => row.permission === 'USER_READ' && !removed(handlerFile(row)));
   userRead.permission = 'MAIL_SEND';
   assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources: tampered }),
-    new RegExp(`retained operation binding ${userRead.method} ${userRead.path.replace(/[{}]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
+    new RegExp(`retained operation binding ${userRead.method} ${userRead.path.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
   // 남는 화면의 진입 권한이 구성 밖이면 실패한다.
   const screenTampered = structuredClone(sources);
   screenTampered.registry.screens.find(screen => screen.route === '/admin/system/menus').entry.permissions.push('MAIL_SEND');
