@@ -56,7 +56,8 @@ pitest {
     // transform/validate/verify mutants in the four required CI scopes. Keep them in the
     // full local nuri.* analysis, where their parent artifact/adapter checks can matter.
     if (targetClasses.get().toSet() == ['nuri.migration.transform.TransformerRegistry'].toSet()
-            || targetClasses.get().toSet() == ['nuri.migration.transform.TypeConverter'].toSet()
+            || targetClasses.get().toSet() == ['nuri.migration.transform.TypeConverter',
+                    'nuri.migration.transform.CodeTranslator'].toSet()
             || targetClasses.get().toSet() == ['nuri.migration.validate.*'].toSet()
             || targetClasses.get().toSet() == ['nuri.migration.verify.*'].toSet()) {
         excludedTestClasses = [

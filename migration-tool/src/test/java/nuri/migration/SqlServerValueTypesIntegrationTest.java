@@ -68,12 +68,24 @@ class SqlServerValueTypesIntegrationTest extends SqlServerPostgresTestSupport {
         assertThat(results).singleElement().satisfies(result -> {
             assertThat(result.read()).isEqualTo(2);
             assertThat(result.written()).isZero();
-            assertThat(result.errors()).hasSize(2).allSatisfy(error -> assertThat(error)
-                    .contains("ROW_TRANSFORM_FAILED").doesNotContain(overflow.toPlainString(), fractional.toPlainString()));
+            // [2026-10-13 DEC-OPS-309] 첫 실패 행에서 chunk 를 쓰지 않고 멈추므로 오류는 하나다.
+            assertThat(result.errors()).singleElement().asString()
+                    .contains("ROW_TRANSFORM_FAILED", "row=1").doesNotContain(overflow.toPlainString(), fractional.toPlainString());
         });
         assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + target, Long.class)).isZero();
         assertThat(checkpoints(spec.run().runId())).isZero();
         assertThat(verifier.verify(spec, results, targetJdbc()).ok()).isFalse();
+        // 둘째 값(소수부)도 따로 거부되는지 본다 — 첫 행을 빼고 같은 run 을 다시 돌린다.
+        sourceJdbc().update("DELETE FROM " + source + " WHERE id=1");
+        var fractionalOnly = execute(spec, MigrationMode.COMMIT);
+        assertThat(fractionalOnly).singleElement().satisfies(result -> {
+            assertThat(result.read()).isEqualTo(1);
+            assertThat(result.written()).isZero();
+            assertThat(result.errors()).singleElement().asString()
+                    .contains("ROW_TRANSFORM_FAILED", "row=1").doesNotContain(fractional.toPlainString());
+        });
+        assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + target, Long.class)).isZero();
+        assertThat(checkpoints(spec.run().runId())).isZero();
     }
 
     @Test

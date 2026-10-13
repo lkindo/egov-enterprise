@@ -1660,8 +1660,8 @@
             "scope": "migration-transform-converter",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
-            "classes": "nuri.migration.transform.TypeConverter",
-            "tests": "nuri.migration.transform.TypeConverterTest,nuri.migration.MigrationSafetyIntegrationTest"
+            "classes": "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator",
+            "tests": "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
           },
           {
             "scope": "migration-validate",

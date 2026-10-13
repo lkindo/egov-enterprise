@@ -1,7 +1,10 @@
 package nuri.migration.validate;
 
 import nuri.migration.discovery.CatalogObject;
+import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.NullPolicy;
+import nuri.migration.model.MappingSpec.UnmappedPolicy;
 
 import java.sql.Types;
 import java.util.Locale;
@@ -12,7 +15,7 @@ import java.util.function.Predicate;
  * 매핑 한 컬럼이 타깃에 쓰는 값의 종류와 선언 한계. 행 값을 보지 않고 매핑 선언과 승인 inventory 의
  * 소스 컬럼 선언만으로 정한다.
  *
- * <p>적용 순서는 ETL 과 같다: const → (source → codemap → transform → type 힌트) → fkRef.
+ * <p>적용 순서는 ETL 과 같다: const → (source → transform → codemap → type 힌트) → fkRef(DEC-OPS-309).
  * const 는 type 힌트 없이 문자열로 바인딩되고, fkRef 는 생성된 표준 ID 문자열로 바뀐다.
  * 등록되었지만 내장이 아닌 변환기는 출력 계약을 그 변환기가 소유하므로 검증하지 않는다(exempt).
  */
@@ -34,7 +37,7 @@ record TargetValueDomain(
 
     private static final int TIMESTAMP_TEXT_LENGTH = 29;
 
-    static TargetValueDomain of(ColumnMapping mapping, Map<String, Map<String, String>> codemaps,
+    static TargetValueDomain of(ColumnMapping mapping, Map<String, CodeMap> codemaps,
                                 Predicate<String> builtinTransformer, CatalogObject source) {
         if (mapping.constant() != null) {
             return new TargetValueDomain(Family.TEXT,
@@ -48,19 +51,19 @@ record TargetValueDomain(
             return exemptDomain();
         }
         TargetValueDomain value = fromSource(source);
-        Map<String, String> codemap = isBlank(mapping.codemap()) ? null : codemaps.get(mapping.codemap());
-        if (codemap != null) {
-            value = text(codemapLength(codemap, value));
-        }
         if (!isBlank(mapping.transform())) {
             if (!builtinTransformer.test(mapping.transform())) {
                 return exemptDomain();
             }
             value = switch (mapping.transform()) {
-                case "date" -> plain(Family.DATE);
+                case "date", "date-truncate" -> plain(Family.DATE);
                 case "timestamp" -> plain(Family.TIMESTAMP);
                 default -> text(value.textLength());
             };
+        }
+        CodeMap codemap = isBlank(mapping.codemap()) ? null : codemaps.get(mapping.codemap());
+        if (codemap != null) {
+            value = text(codemapLength(codemap, value));
         }
         if (!isBlank(mapping.type())) {
             value = hinted(mapping.type().toLowerCase(Locale.ROOT), value);
@@ -121,17 +124,27 @@ record TargetValueDomain(
         return decimal((int) (precision - scale), scale);
     }
 
-    private static Long codemapLength(Map<String, String> codemap, TargetValueDomain prior) {
+    /**
+     * codemap 이 내는 값의 최대 길이. 표준 코드와, 정책이 쓰는 대체값만 센다. 미매핑 코드를 그대로 통과시킬 때
+     * ({@code unmapped: passthrough})만 앞 단계 값의 길이가 남는다. 기본 {@code fail} 은 미매핑 코드를 쓰지 않는다.
+     */
+    private static Long codemapLength(CodeMap codemap, TargetValueDomain prior) {
         long longest = 0;
-        for (String mapped : codemap.values()) {
-            longest = Math.max(longest, mapped == null ? 0 : mapped.codePointCount(0, mapped.length()));
+        for (String mapped : codemap.values().values()) {
+            longest = Math.max(longest, length(mapped));
         }
-        if (codemap.containsKey("default")) {
+        if (codemap.unmapped() == UnmappedPolicy.FALLBACK || codemap.nullAs() == NullPolicy.FALLBACK) {
+            longest = Math.max(longest, length(codemap.fallback()));
+        }
+        if (codemap.unmapped() != UnmappedPolicy.PASSTHROUGH) {
             return longest;
         }
-        // 미매핑 값은 소스 값 그대로 통과한다.
         Long passThrough = prior.textLength();
         return passThrough == null ? null : Math.max(longest, passThrough);
+    }
+
+    private static long length(String value) {
+        return value == null ? 0 : value.codePointCount(0, value.length());
     }
 
     /** 이 값을 문자열로 바꿨을 때의 최대 길이(toString). 알 수 없으면 null. */

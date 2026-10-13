@@ -15,7 +15,8 @@ import java.util.function.Function;
  *
  * <p>{@link #protect} 는 온라인 변환기처럼 빈 값을 NULL 로 두고, 그 밖의 값을 암호화한 뒤 두 가지를 확인한다.
  * 암호문을 되읽어 원래 값이 나오는지(온라인 앱이 읽을 수 있는 값인지), 쓰려는 값이 평문 형태가 아니고 암호문
- * 형식인지. 하나라도 어긋나면 그 행을 쓰지 않는다. 오류 문구는 테이블·컬럼 이름만 담는다.
+ * 형식인지. 하나라도 어긋나면 그 행이 든 chunk 를 쓰지 않고 적재를 멈춘다(DEC-OPS-309). 오류 문구는 테이블·컬럼
+ * 이름과 고정 사유만 담는다.
  */
 public final class ColumnProtector {
 
@@ -106,11 +107,19 @@ public final class ColumnProtector {
         }
     }
 
-    /** 보호 컬럼 값을 쓰지 않기로 한 판정. 문구는 테이블·컬럼 이름만 담는다. */
+    /** 보호 컬럼 값을 쓰지 않기로 한 판정. 문구는 테이블·컬럼 이름과 고정 사유만 담는다. */
     public static final class ProtectedColumnException extends IllegalStateException {
+
+        private final String reason;
 
         ProtectedColumnException(String name, String reason) {
             super("PROTECTED_COLUMN " + name + ": " + reason);
+            this.reason = reason;
+        }
+
+        /** 값이 들어가지 않는 고정 사유. */
+        public String reason() {
+            return reason;
         }
     }
 }

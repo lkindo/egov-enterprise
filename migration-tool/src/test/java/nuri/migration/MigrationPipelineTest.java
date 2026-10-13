@@ -5,7 +5,7 @@ import nuri.migration.etl.MigrationMode;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.source.SourceIntrospector;
-import nuri.migration.transform.CodeMapper;
+import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ValidationResult;
@@ -171,9 +171,193 @@ class MigrationPipelineTest {
         assertThat(transformers.apply("trim", "  x ")).isEqualTo("x");
         assertThat(transformers.apply("upper", "ab")).isEqualTo("AB");
         assertThat(transformers.apply("unknown", "v")).isEqualTo("v"); // 미등록 → 원본
-        Map<String, String> cm = Map.of("1", "A", "0", "D", "default", "P");
-        assertThat(CodeMapper.map(cm, "1")).isEqualTo("A");
-        assertThat(CodeMapper.map(cm, "9")).isEqualTo("P"); // default
+        MappingSpec.CodeMap cm = loader.load(resource("mapping-sample.yml")).codemaps().get("user_status");
+        assertThat(cm.unmapped()).isEqualTo(MappingSpec.UnmappedPolicy.FALLBACK);
+        assertThat(CodeTranslator.map(cm, "1")).isEqualTo("A");
+        assertThat(CodeTranslator.map(cm, "9")).isEqualTo("P"); // 명시한 fallback
+    }
+
+    // [2026-10-13 DEC-OPS-309] codemap 형식. 옛 평면 형식은 의미가 바뀌었으므로 조용히 다르게 읽지 않고,
+    //   옮겨 쓸 방법을 알리며 거부한다. 표준 코드(값)는 문자열만 받는다 — Jackson YAML 은 따옴표 없는 yes·true 를
+    //   boolean, 01 을 정수 1 로 읽는다(2026-10-13 2.21.7 실측, Y·N 은 문자열로 남는다). 키(레거시 코드)는 적은 그대로다.
+
+    @Test
+    void codemapNewFormLoadsWithFailAsTheDefaultPolicyAndALegacyCodeNamedDefault(@TempDir Path tmp) throws Exception {
+        Path mapping = tmp.resolve("codemap.yml");
+        Files.writeString(mapping, """
+                tables: []
+                codemaps:
+                  use_flag:
+                    values:
+                      "1": "Y"
+                      "default": "N"
+                  status:
+                    values: { "A": "ACTIVE" }
+                    unmapped: passthrough
+                  plain_yn:
+                    values: { "1": Y, "0": N }
+                """, StandardCharsets.UTF_8);
+
+        MappingSpec spec = loader.load(mapping);
+
+        assertThat(CodeTranslator.map(spec.codemaps().get("plain_yn"), 0)).isEqualTo("N");
+        MappingSpec.CodeMap useFlag = spec.codemaps().get("use_flag");
+        assertThat(useFlag.unmapped()).isEqualTo(MappingSpec.UnmappedPolicy.FAIL);
+        assertThat(useFlag.fallback()).isNull();
+        assertThat(CodeTranslator.map(useFlag, "default")).isEqualTo("N"); // 레거시 코드값 default 는 그냥 코드다
+        assertThatThrownBy(() -> CodeTranslator.map(useFlag, "9"))
+                .isInstanceOf(CodeTranslator.UnmappedCodeException.class);
+        assertThat(CodeTranslator.map(spec.codemaps().get("status"), "B")).isEqualTo("B");
+    }
+
+    @Test
+    void legacyFlatCodemapFormFailsClosedWithAMigrationMessageInBothLoaderPaths(@TempDir Path tmp) throws Exception {
+        String flat = """
+                tables: []
+                codemaps:
+                  user_status:
+                    "1": "A"
+                    default: "P"
+                """;
+        Path mapping = tmp.resolve("legacy.yml");
+        Files.writeString(mapping, flat, StandardCharsets.UTF_8);
+
+        assertThatThrownBy(() -> loader.load(mapping))
+                .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                .hasMessageStartingWith("codemap 'user_status': ")
+                .hasMessageContaining("옛 평면 형식", "values", "unmapped: fallback", "unmapped: passthrough")
+                // 문법만 옮기면 오류 없이 값이 바뀌는 두 경로를 같은 문구가 알린다(검토 2026-10-13).
+                .hasMessageContaining("NULL 은 NULL 로 남습니다", "nullAs: fallback",
+                        "codemap → transform 에서 transform → codemap");
+        assertThatThrownBy(() -> loader.loadContent(flat))
+                .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                .hasMessageStartingWith("codemap 'user_status': ")
+                .hasMessageContaining("옛 평면 형식");
+    }
+
+    @Test
+    void nullAsFallbackRestoresTheOldDefaultMeaningForNullOnlyWhenDeclared(@TempDir Path tmp) throws Exception {
+        Path mapping = tmp.resolve("null-as.yml");
+        Files.writeString(mapping, """
+                tables: []
+                codemaps:
+                  migrated:
+                    values: { "1": "A" }
+                    unmapped: fallback
+                    fallback: "P"
+                    nullAs: fallback
+                  plain:
+                    values: { "1": "A" }
+                    unmapped: fallback
+                    fallback: "P"
+                """, StandardCharsets.UTF_8);
+
+        MappingSpec spec = loader.load(mapping);
+
+        assertThat(spec.codemaps().get("migrated").nullAs()).isEqualTo(MappingSpec.NullPolicy.FALLBACK);
+        assertThat(CodeTranslator.map(spec.codemaps().get("migrated"), null)).isEqualTo("P");
+        assertThat(spec.codemaps().get("plain").nullAs()).isEqualTo(MappingSpec.NullPolicy.KEEP);
+        assertThat(CodeTranslator.map(spec.codemaps().get("plain"), null)).isNull();
+        for (String nullAs : List.of("maybe", "[fallback]", "true")) {
+            Path invalid = tmp.resolve("null-as-" + Math.abs(nullAs.hashCode()) + ".yml");
+            Files.writeString(invalid, "tables: []\ncodemaps:\n  flags:\n    values: { \"1\": \"A\" }\n"
+                    + "    nullAs: " + nullAs + "\n", StandardCharsets.UTF_8);
+            assertThatThrownBy(() -> loader.load(invalid))
+                    .as(nullAs)
+                    .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                    .hasMessage("codemap 'flags': " + MappingSpec.CodemapFormatException.INVALID_NULL_AS);
+        }
+    }
+
+    /** values 가 맵인 새 형식의 필드 오타는 옛 평면 형식이 아니라 알 수 없는 필드로 알린다. */
+    @Test
+    void unknownFieldInTheNewFormIsNamedOnlyWhenItLooksLikeAFieldName(@TempDir Path tmp) throws Exception {
+        Path typo = tmp.resolve("typo.yml");
+        Files.writeString(typo, """
+                tables: []
+                codemaps:
+                  flags:
+                    values: { "1": "A" }
+                    unmaped: fallback
+                """, StandardCharsets.UTF_8);
+        Path odd = tmp.resolve("odd.yml");
+        Files.writeString(odd, """
+                tables: []
+                codemaps:
+                  flags:
+                    values: { "1": "A" }
+                    "SECRET-LEGACY 99": "B"
+                """, StandardCharsets.UTF_8);
+
+        assertThatThrownBy(() -> loader.load(typo))
+                .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                .hasMessage("codemap 'flags': codemap 에 알 수 없는 필드 'unmaped'가 있습니다"
+                        + " — values·unmapped·fallback·nullAs 만 씁니다.");
+        assertThatThrownBy(() -> loader.load(odd))
+                .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                .hasMessage("codemap 'flags': codemap 에 알 수 없는 필드가 있습니다"
+                        + " — values·unmapped·fallback·nullAs 만 씁니다.")
+                .hasMessageNotContaining("SECRET");
+    }
+
+    /** 키(레거시 코드)는 Jackson 이 적은 그대로 준다 — 따옴표 검사는 값(표준 코드)에만 적용된다. */
+    @Test
+    void unquotedCodemapKeysAreReadVerbatimWhileValuesMustBeQuoted(@TempDir Path tmp) throws Exception {
+        Path mapping = tmp.resolve("keys.yml");
+        Files.writeString(mapping, """
+                tables: []
+                codemaps:
+                  flags:
+                    values: { 01: "A", yes: "B", 1.0: "C", true: "D" }
+                """, StandardCharsets.UTF_8);
+
+        assertThat(loader.load(mapping).codemaps().get("flags").values())
+                .containsExactly(Map.entry("01", "A"), Map.entry("yes", "B"), Map.entry("1.0", "C"), Map.entry("true", "D"));
+    }
+
+    @Test
+    void codemapValuesMustBeQuotedTextAndMalformedFieldsFailWithoutEchoingCodes(@TempDir Path tmp) throws Exception {
+        for (String body : List.of(
+                "    values: { \"1\": yes }\n",
+                "    values: { \"1\": true }\n",
+                "    values: { \"1\": 01 }\n",
+                "    values: { \"1\": ~ }\n",
+                "    values: { \"1\": \"A\" }\n    unmapped: fallback\n    fallback: 7\n")) {
+            Path mapping = tmp.resolve("typed-" + Math.abs(body.hashCode()) + ".yml");
+            Files.writeString(mapping, "tables: []\ncodemaps:\n  flags:\n" + body, StandardCharsets.UTF_8);
+            assertThatThrownBy(() -> loader.load(mapping))
+                    .as(body)
+                    .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                    .hasMessage("codemap 'flags': " + MappingSpec.CodemapFormatException.NON_TEXT_CODE);
+        }
+        for (String body : List.of(
+                "    values: [\"1\"]\n",
+                "    unmapped: fail\n",
+                "    values: { \"1\": \"A\" }\n    unmapped: ignore\n",
+                "    values: { \"1\": \"A\" }\n    unmapped: [fail]\n")) {
+            Path mapping = tmp.resolve("shape-" + Math.abs(body.hashCode()) + ".yml");
+            Files.writeString(mapping, "tables: []\ncodemaps:\n  flags:\n" + body, StandardCharsets.UTF_8);
+            assertThatThrownBy(() -> loader.load(mapping))
+                    .as(body)
+                    .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                    .hasMessageStartingWith("codemap 'flags': codemap 의 ");
+        }
+    }
+
+    @Test
+    void codemapFormatMessageOmitsANameThatIsNotAPlainIdentifier(@TempDir Path tmp) throws Exception {
+        Path mapping = tmp.resolve("name.yml");
+        Files.writeString(mapping, """
+                tables: []
+                codemaps:
+                  "bad name; x":
+                    "1": "A"
+                """, StandardCharsets.UTF_8);
+
+        assertThatThrownBy(() -> loader.load(mapping))
+                .isInstanceOf(MappingSpec.CodemapFormatException.class)
+                .hasMessageStartingWith("codemap '<이름 생략>': ")
+                .hasMessageNotContaining("bad name");
     }
 
     @Test

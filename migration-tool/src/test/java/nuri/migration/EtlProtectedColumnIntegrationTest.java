@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 주민번호 컬럼 적재 경로(H2, DEC-OPS-308): 선언한 컬럼은 온라인 앱과 같은 암호문으로 쓰고, 키 부재·선언 누락은 행을
- * 쓰거나 실행 상태를 만들기 전에 멈추며, 온라인 앱이 되읽을 수 없는 값은 그 행만 쓰지 않는다.
+ * 쓰거나 실행 상태를 만들기 전에 멈추며, 온라인 앱이 되읽을 수 없는 값이 있으면 그 chunk 를 쓰지 않고 멈춘다(DEC-OPS-309).
  */
 @DisplayName("보호 컬럼 적재 — 평문을 대상 DB 에 쓰지 않는다")
 class EtlProtectedColumnIntegrationTest {
@@ -87,8 +87,8 @@ class EtlProtectedColumnIntegrationTest {
     }
 
     @Test
-    @DisplayName("온라인 앱이 되읽을 수 없는 값은 그 행만 쓰지 않고, 오류에는 테이블·컬럼만 남긴다")
-    void unreadableValueSkipsOnlyThatRow() {
+    @DisplayName("온라인 앱이 되읽을 수 없는 값이 있으면 그 chunk 를 쓰지 않고 멈추며, 오류에는 테이블·컬럼·행 위치와 고정 사유만 남긴다")
+    void unreadableValueStopsTheChunkWithoutWriting() {
         Fixture fixture = new Fixture();
         // 16바이트 배수이고 마지막 바이트가 1 이면 온라인 복호화가 1바이트를 걷어 낸다(trim 이 걷지 않게 변환을 뺀다).
         fixture.seed("('u1', 'Kim', '" + RRNO + "')", "('u2', 'Odd', 'ABCDEFGHIJKLMNO' || CHAR(1))");
@@ -97,11 +97,13 @@ class EtlProtectedColumnIntegrationTest {
                 fixture.spec("aria-egov-v1", null), MigrationMode.COMMIT);
 
         assertThat(results).singleElement().satisfies(result -> {
-            assertThat(result.written()).isEqualTo(1);
-            assertThat(result.errors()).containsExactly("행 변환 실패(LEGACY_USER): PROTECTED_COLUMN"
-                    + " tb_user_info.user_enrrno: 온라인 앱이 되읽을 수 없는 값입니다");
+            assertThat(result.written()).isZero();
+            assertThat(result.errors()).containsExactly("행 변환 실패(LEGACY_USER, column=user_enrrno, row=2): "
+                    + "ROW_TRANSFORM_FAILED:PROTECTED_COLUMN(온라인 앱이 되읽을 수 없는 값입니다)"
+                    + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다");
         });
-        assertThat(fixture.target().queryForList("SELECT user_nm FROM tb_user_info", String.class)).containsExactly("Kim");
+        // 같은 chunk 의 정상 행(u1)도 쓰지 않는다.
+        assertThat(fixture.target().queryForObject("SELECT count(*) FROM tb_user_info", Integer.class)).isZero();
     }
 
     private static EtlExecutor executor(String key) {

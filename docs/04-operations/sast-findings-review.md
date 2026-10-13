@@ -1,5 +1,14 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-13 이관 PIT 변환기 범위 조건 변경에 따른 H2 테스트 경계 재검토(레거시 표준화 L1 PR-D 통합)
+
+PR-D(DEC-OPS-309)가 `migration-tool/build.gradle`의 PIT 범위 조건 한 곳만 바꿨다 — 변환기 범위의 대상 클래스 집합에
+`CodeTranslator`를 더했다. 의존 선언과 구성은 바뀌지 않았고 H2는 여전히 테스트 구성에만 있다. 같은 변경이
+`config/governance/gates.json`의 같은 범위 목록을 바꿨으므로 메타게이트의 두 registry 해시(gates.json·승인 목록)를 함께 재결속한다.
+
+변경된 보완 소스 하나와 승인 목록의 해시만 재결속한다. 예외의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다.
+근거는 build 파일 diff 의 재검토이며 CodeQL 실행의 증거가 아니다.
+
 ## 2026-10-13 주민번호 변환기 호환 계약 시험 의존 추가에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 온라인 주민번호 변환기 호환 계약 시험(DEC-OPS-308)이

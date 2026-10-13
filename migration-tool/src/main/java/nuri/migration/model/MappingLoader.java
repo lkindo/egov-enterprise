@@ -2,6 +2,7 @@ package nuri.migration.model;
 
 import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.springframework.stereotype.Component;
 
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -49,12 +51,43 @@ public class MappingLoader {
         try {
             return resolve(yaml.readValue(content, MappingSpec.class));
         } catch (IOException failure) {
+            rethrowCodemapFormat(failure);
             throw new IllegalArgumentException("mapping YAML parsing failed");
         }
     }
 
     private MappingSpec parse(byte[] content) throws IOException {
-        return resolve(yaml.readValue(content, MappingSpec.class));
+        try {
+            return resolve(yaml.readValue(content, MappingSpec.class));
+        } catch (IOException failure) {
+            rethrowCodemapFormat(failure);
+            throw failure;
+        }
+    }
+
+    /**
+     * [2026-10-13 DEC-OPS-309] codemap 형식 오류는 일반 YAML 실패로 뭉개지 않고 옮겨 쓸 방법을 알린다.
+     * 메시지는 고정 문구와 codemap 이름(식별자 형식일 때만)뿐이다.
+     */
+    private static void rethrowCodemapFormat(IOException failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof MappingSpec.CodemapFormatException format) {
+                throw format.forCodemap(codemapName(failure));
+            }
+        }
+    }
+
+    private static String codemapName(IOException failure) {
+        if (!(failure instanceof JsonMappingException mapping)) {
+            return null;
+        }
+        List<JsonMappingException.Reference> path = mapping.getPath();
+        for (int i = 0; i + 1 < path.size(); i++) {
+            if ("codemaps".equals(path.get(i).getFieldName())) {
+                return path.get(i + 1).getFieldName();
+            }
+        }
+        return null;
     }
 
     private MappingSpec resolve(MappingSpec raw) {

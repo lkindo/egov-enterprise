@@ -1472,8 +1472,8 @@ jobs:
 
           - scope: migration-transform-converter
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.TypeConverter"
-            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.MigrationSafetyIntegrationTest"
+            classes: "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator"
+            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
           - scope: migration-validate

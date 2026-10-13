@@ -94,7 +94,10 @@ class MigrationVerifierTest {
             // 이 분기를 뒤집으면 오류가 난 이관이 PASS 가 된다.
             assertThat(report.overall()).isEqualTo(Status.FAIL);
             assertThat(report.ok()).isFalse();
-            assertThat(report.tables().get(0).note()).contains("오류 1건");
+            // [2026-10-13 DEC-OPS-309] 첫 오류를 함께 보여야 운영자가 어느 행·컬럼인지 안다.
+            assertThat(report.tables().get(0).note()).isEqualTo("오류 1건 — 첫 오류: PK 위반");
+            assertThat(verifier.verify(List.of(result(10, 10, 10, "첫째", "둘째")), targetWithRows(10))
+                    .tables().get(0).note()).isEqualTo("오류 2건 — 첫 오류: 첫째");
         }
 
         @Test

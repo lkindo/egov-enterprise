@@ -107,9 +107,11 @@ tables:
 
 codemaps:
   user_status:
-    "1": P
-    "0": D
-    default: A
+    values:              # 레거시 코드 → 표준 코드. 표준 코드(값)는 따옴표로 감싼다
+      "1": "P"
+      "0": "D"
+    # unmapped: fail(기본) | passthrough | fallback(+ fallback: "<표준 코드>")
+    # nullAs: keep(기본, NULL 은 NULL) | fallback(NULL 도 fallback 값으로)
 ```
 
 이 예시는 source의 `password_hash`가 현재 `EgovPasswordEncoder`와 호환된다는 사전 검증을 전제로 한다. 해시 형식이 다르면 원문 비밀번호를 복호화·재해시하지 말고, 별도의 강제 재설정/계정 활성화 정책과 매핑을 승인한 뒤 이관해야 한다. `pswd`는 target의 NOT NULL 컬럼이므로 정책 없이 생략할 수 없다.
@@ -137,11 +139,21 @@ codemaps:
 - 쓰려는 값이 주민번호 평문 형태가 아니다.
 - 쓰려는 값이 16바이트 배수의 표준 Base64다.
 
-하나라도 어긋나면 그 행만 쓰지 않는다. 오류에는 `PROTECTED_COLUMN <테이블>.<컬럼>`만 남기고 값과 키는 남기지 않는다.
+하나라도 어긋나면 다른 행 변환 실패와 같이 그 행이 든 chunk를 쓰지 않고 적재를 멈춘다(아래 적재 절, DEC-OPS-309). 오류는 `ROW_TRANSFORM_FAILED:PROTECTED_COLUMN(<고정 사유>)` 단계로 남고 값과 키는 남기지 않는다.
 
 호환은 [계약 시험](../../migration-tool/src/test/java/nuri/migration/protect/OnlineRrnoConverterContractTest.java)이 증명한다. 이 시험은 Gradle 프로젝트 의존 없이 온라인 원본(변환기·`CryptoUtil`·`ProjectCryptoConfig`)을 시험 안에서 컴파일한다. 그리고 온라인과 같은 Spring 설정으로 돌려 세 가지를 본다: 두 구현의 암호문이 같고 서로 되읽는지, 적재 경로의 결과를 온라인 변환기가 읽는지, 보호 목록이 온라인 엔티티의 `@Convert`·서비스 암호 컬럼과 정확히 같은지. 시험 범위 의존은 그 원본이 쓰는 외부 라이브러리(eGovFrame 암호·JPA API·Lombok)뿐이다. 프로젝트 의존을 쓰지 않은 이유는 생성 제품의 이관 모듈 독립 검사와 이관 단독 제품의 시험 컴파일이 깨지기 때문이다. 이관 단독 제품에서는 이 대조만 건너뛰고, eGov 구현으로 만든 고정 벡터 시험은 돈다.
 
 남은 경계: 키가 온라인 앱과 같은지는 도구가 확인하지 않는다. 다른 키로 쓴 암호문은 앱이 원래 값으로 읽지 못한다. 레거시가 이미 암호문을 갖고 있으면 그 값을 평문으로 보고 다시 암호화하므로, 먼저 복호화 경로를 정해야 한다(아직 없다).
+
+### 값 변환 순서와 codemap
+
+컬럼 값은 `transform → codemap → type → fkRef` 순서로 만들고, 보호 컬럼은 그 뒤 `encrypt` 로 암호화한다(위 절). `trim` 같은 정리가 코드 대조보다 먼저라 CHAR 원천의 공백 채움 때문에 코드가 어긋나지 않는다(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), 종전 순서는 `codemap → transform → type`). 순서가 바뀌었으므로 codemap 결과를 transform 으로 다듬던 매핑(예: `unmapped: passthrough` 뒤 `upper`)은 이제 transform 결과로 코드를 찾고 codemap 결과에는 transform 이 적용되지 않는다 — 옮길 때 대응표를 다시 확인한다.
+
+- codemap 은 `values`(레거시 코드 → 표준 코드)와 `unmapped` 정책을 갖는다. **기본은 `fail`** 이다 — `values` 에 없는 코드가 오면 그 행 변환이 실패한다. 그대로 통과는 `unmapped: passthrough`, 대체값은 `unmapped: fallback` 과 `fallback` 으로 명시할 때만 쓴다. `values` 가 비었거나 정책과 `fallback` 이 어긋나면 validate 가 오류를 내고 실행기도 같은 판정으로 거부한다.
+- 레거시 코드값 `default` 는 이제 평범한 코드다. 대체값을 `default` 키로 두던 **옛 평면 형식은 읽지 않는다**. 같은 파일을 새 의미로 조용히 다르게 해석하지 않으려고 loader 가 codemap 이름과 옮겨 쓸 방법을 밝혀 거부하고, 승인 workflow 는 그 문구로 gate 한다. 그 문구는 바뀐 의미 둘(아래 NULL, 위 적용 순서)도 함께 알린다. `values` 가 맵인 새 형식에 모르는 필드가 섞이면 옛 형식이 아니라 알 수 없는 필드로 알린다(이름은 식별자 형식일 때만 싣는다).
+- **표준 코드(`values` 의 값)와 `fallback` 은 문자열이어야 한다.** Jackson YAML(2.21.7 실측)은 따옴표 없는 `yes`·`true` 를 boolean, `01` 을 정수 1 로 읽는다. 이런 값은 형식 오류로 거부한다(`Y`·`N` 은 문자열로 남는다). 레거시 코드(`values` 의 키)는 따옴표가 없어도 적은 그대로 읽는다 — `01`·`1.0`·`yes` 는 그 글자 그대로의 코드다.
+- NULL 은 코드가 아니므로 기본으로 NULL 로 둔다. 옛 평면 형식의 `default` 는 NULL 도 대체값으로 바꿨으므로, 그 의미가 필요하면 `nullAs: fallback` 과 `fallback` 을 명시한다(`unmapped` 정책과 따로 정한다). 숫자 원천값은 표기를 정규화해 찾는다 — `NUMBER(5,1)` 의 `1.0` 과 `NUMBER(1)` 의 `1` 은 같은 코드 `"1"` 이다. 문자열 원천은 그대로 찾으므로 `"01"` 과 `"1"` 은 다른 코드다. 숫자 열에 쓰는 codemap 의 키는 정규형(`1`, `-3`, `2.5`)으로 적는다. 숫자처럼 보이지만 정규형이 아닌 키(`1.0`·`01`)는 숫자 열에서 닿지 않으므로 validate 가 경고한다(문자열 열의 정상 코드일 수 있어 오류는 아니다. 경고는 키 값 대신 위치만 밝힌다).
+- `type: date` 는 자정이 아닌 시각이 붙은 값을 거부한다. 종전에는 시각을 조용히 버렸다. 시각을 버리는 것이 의도면 `transform: date-truncate` 로 밝힌다. 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다. `date-truncate` 는 ISO 날짜·ISO 일시와 함께 `type: date` 가 받는 8자리 `yyyyMMdd` 도 그대로 받으므로, 두 표기가 섞인 컬럼도 이 변환기 하나로 옮긴다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 `date-truncate` 도 거부한다.
 
 Commit에는 `run.runId`, `run.sourceNamespace`, 모든 table의 결정적 `orderBy` 또는 `orderByKeys`, checkpoint 검증에 사용할 target identity가 필요하다. order tuple은 source transaction 안에서 유일성을 먼저 검사하며 이후 keyset pagination에 사용한다. `where`의 주석·세미콜론·DDL/DML token과 잘못된 식별자를 차단하지만, 신뢰된 mapping 작성과 독립 리뷰를 대체하지 않는다.
 
@@ -177,7 +189,9 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 원본 키를 쓴 컬럼의 시퀀스는 모든 table을 적재한 뒤 재설정한다(DEC-OPS-306). `max(컬럼)`이 시퀀스의 다음 값 이상일 때만 `setval`로 옮기고 이미 앞에 있으면 건드리지 않으므로, 다시 실행해도 같은 상태이며 시퀀스를 뒤로 돌리지 않는다. 오류가 난 table도 앞선 chunk가 남으므로 재설정한다. 실행 JSON의 `sequenceResets`에는 table·컬럼·시퀀스 이름과 결과(`ADVANCED`·`ALREADY_AHEAD`·`EMPTY_TABLE`·`DECLARED_NONE`)만 남기고 키 값은 남기지 않는다. 다음 경우는 행을 쓰기 전에 멈춘다: 기본값이 `nextval`인데 시퀀스를 찾지 못함, 연결된 시퀀스가 둘 이상, `GENERATED ALWAYS` identity, 선언한 시퀀스가 없거나 카탈로그와 다름, 위의 연결 없는 `preserve` 정수 키. 재설정 자체가 실패하면(시퀀스 상한 초과, 권한 부족) 그 table의 오류가 되어 run이 `FAILED`다. 이관 계정에는 해당 시퀀스의 SELECT·UPDATE 권한이 필요하고, 적재하는 동안 온라인 앱이 같은 table에 쓰지 않아야 한다. 카탈로그는 PostgreSQL 대상에서만 읽는다. 승인 workflow의 대상은 언제나 PostgreSQL이며, 그 밖의 대상(단위 시험의 H2)에서는 `preserve` 정수 키를 `none`으로 선언해야 진행한다.
 
-재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
+**행 변환 실패는 격리하지 않는다**(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), Q6 위임 결정). transform·codemap·type·fkRef·identity·보호 컬럼(`encrypt`) 중 하나라도 실패한 행이 있으면 그 chunk 는 한 행도 쓰지 않고, 이 chunk 에서 새로 만든 keymap 도 버린 뒤 테이블과 run 을 멈춘다. `target_generated` 도 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 남은 테이블은 읽지 않고 `RUN_STOPPED_BY_ROW_FAILURE` 로 결과에 남긴다. dry-run 도 같은 행에서 멈춰 commit 이 어디서 멈출지 보여 준다. **예외**: `target_generated` 부모는 dry-run 에서 DB 생성 identity 가 없어 keymap 을 등록하지 않는다. 그래서 그 부모를 복합 FK(`foreignKeys`)로 참조하는 자식은 dry-run 에서 FK 값이 있는 첫 행에서 고아(`FK_REF_FAILED`)로 멈추고 뒤 테이블은 `RUN_STOPPED_BY_ROW_FAILURE` 로 남는다. commit 에서는 부모 행이 `INSERT ... RETURNING` 으로 등록돼 같은 자식 행이 통과하므로, 이런 매핑의 dry-run 결과는 commit 이 멈출 위치가 아니고 그 뒤 테이블의 변환 검사도 하지 않은 것이다. 오류는 `행 변환 실패(<원천 테이블>, column=<타깃 컬럼>, row=<원천 정렬 순서의 위치>): ROW_TRANSFORM_FAILED:<단계>` 형식이며 값·키·예외 원문을 담지 않는다. 검증 보고서와 load gate 는 첫 실패를 이 문구로 밝힌다. 종전에는 실패 행만 건너뛰고 나머지를 커밋해 승인 없는 누락이 남았다. 승인된 예외 행만 격리하는 경로(L2 원장)는 아직 없으므로 지금은 모든 행 변환 실패가 fail-closed 다. **쓰기 단계의 위반은 여전히 행 단위로 격리된다** — batch 가 실패하면 행마다 다시 쓰고, 길이·NOT NULL·CHECK 를 어긴 행은 `ATOMIC_WRITE_FAILED` 로 남긴 채 나머지 행과 뒤 chunk·테이블은 커밋된다(run 은 FAIL). 이 승인 없는 부분 커밋은 [GAP-ETL-001](../../.agent/memory/known-gaps.md)이 추적한다. 쓰기 전에 변환 값의 길이·NOT NULL 을 검사하는 것이 다음 단계다.
+
+재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 행 변환 실패로 멈춘 run 은 원인을 고친 mapping(다시 승인한 plan)으로 같은 run 을 재개하면 마지막으로 커밋된 checkpoint 다음 행부터 적재한다([PostgreSQL 회귀](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)). 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
 
 다음 경계는 원자적이지 않다.
 
@@ -220,7 +234,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 
 - **live 계약**: 매핑 표의 `information_schema.columns`(타입·길이·정밀도·소수 자릿수·NULL 허용·기본값·identity·생성 컬럼)를 [읽고](../../migration-tool/src/main/java/nuri/migration/postgres/PostgresTargetStandardReader.java) JDBC metadata의 컬럼 집합과 대조한다. 권한으로 가려진 컬럼이 있거나 읽지 못하면 실패하며 코드젠 스냅샷으로 대신하지 않는다.
 - **표준 사전**: 대상 표와 같은 schema에 `meta_standard_terms`·`meta_standard_domains`가 있으면 컬럼 이름(영문약어)의 용어와 도메인을 찾는다. 존재는 권한과 무관한 `pg_class`로 판정한다. 하나만 있거나 읽지 못하거나 용어·도메인이 모호하거나 해석할 수 없으면 실패한다. 둘 다 없으면 도메인 대조만 생략하고, 용어가 없는 컬럼은 경고로 남긴다. 물리 타입이 도메인과 다른 종류면(숫자 도메인의 문자 컬럼 등) 실패하고, 같은 종류면 물리 컬럼과 도메인 중 좁은 한계를 적용한다. 일련번호 `NUMERIC` 도메인의 `bigint`처럼 현대화한 정수 컬럼은 같은 종류로 본다.
-- **값 종류**: const(type 힌트 없이 문자열로 바인딩), fkRef(생성 ID 문자열), 소스 inventory 선언, codemap, 내장 변환기, type 힌트 순서로 정한다. 형식이 조용히 바뀌거나 값이 손실되는 조합(날짜·논리값→문자, 시각→날짜, 근사 수치→정확 수치, 문자→숫자·날짜)은 실패한다. 내장이 아닌 변환기는 출력 계약을 그 변환기가 소유하므로 검사하지 않는다.
+- **값 종류**: const(type 힌트 없이 문자열로 바인딩), fkRef(생성 ID 문자열), 소스 inventory 선언, 내장 변환기, codemap, type 힌트 순서로 정한다(적재와 같은 순서). codemap 은 표준 코드와 정책이 쓰는 대체값의 길이로 정하고, 앞 단계 값의 길이는 `unmapped: passthrough` 일 때만 남는다. 형식이 조용히 바뀌거나 값이 손실되는 조합(날짜·논리값→문자, 시각→날짜, 근사 수치→정확 수치, 문자→숫자·날짜)은 실패한다. 내장이 아닌 변환기는 출력 계약을 그 변환기가 소유하므로 검사하지 않는다.
 - **길이·정밀도**: inventory의 소스 선언 길이, 정밀도와 소수 자릿수가 타깃 한계를 넘으면 실패한다. 선언을 확인할 수 없어도 실패한다. 다만 타깃이 길이 제한 없는 `text`·`numeric`이면 통과한다. 소수 자릿수 초과는 PostgreSQL이 오류 없이 반올림하므로 특히 막는다. 값을 줄여야 하면 내장이 아닌 변환기를 선언한다.
 - **NOT NULL**: 기본값·identity·생성식이 없는 NOT NULL 컬럼은 매핑·const·`idStrategy`·identity·복합 FK 중 하나가 채워야 한다. `GENERATED ALWAYS` 생성 컬럼과 `GENERATED ALWAYS` identity에는 쓸 수 없다.
 - **결속과 메시지**: 이 계약은 target schema digest(fingerprint v3)에 들어간다. plan 뒤에 스키마나 표준 사전이 바뀌면 load가 digest 불일치로 멈추고, load는 실행 직전에 같은 검증을 다시 한다. 오류는 앞의 20건을 보여 주며 표·컬럼 이름과 타입·길이만 싣는다. 행 값·const·codemap 값은 싣지 않는다.
@@ -250,4 +264,4 @@ npm run verify:migration
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*
+*표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정·값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

@@ -24,7 +24,7 @@ class TransformerRegistryTest {
     void builtinsRejectBinaryButExplicitBinaryTransformersRemainAvailable() {
         byte[] bytes = {0, 1, -1};
         assertThat(registry.apply(null, bytes)).isSameAs(bytes);
-        for (String name : new String[] {"trim", "upper", "lower", "date", "timestamp"}) {
+        for (String name : new String[] {"trim", "upper", "lower", "date", "timestamp", "date-truncate"}) {
             assertThatThrownBy(() -> registry.apply(name, bytes))
                     .isInstanceOf(IllegalArgumentException.class);
         }
@@ -35,7 +35,7 @@ class TransformerRegistryTest {
     @Test
     void 기본_등록_변환기가_모두_존재한다() {
         // `replaced boolean return with true/false` 뮤턴트를 양방향으로 잡는다.
-        for (String name : new String[] { "trim", "upper", "lower", "date", "timestamp" }) {
+        for (String name : new String[] { "trim", "upper", "lower", "date", "timestamp", "date-truncate" }) {
             assertThat(registry.has(name)).as(name + " 는 기본 등록돼야 한다").isTrue();
         }
         assertThat(registry.has("nope")).as("미등록 이름은 false").isFalse();
@@ -80,6 +80,38 @@ class TransformerRegistryTest {
         assertThat(registry.apply("timestamp", "2026-08-09T13:45:00")).isEqualTo(expected);
         // null 가드 — `replaced return value with null` 과 조건 뒤집기를 함께 잡는다.
         assertThat(registry.apply("timestamp", null)).isNull();
+    }
+
+    /**
+     * [2026-10-13 DEC-OPS-309] type: date 가 시각을 거부하므로, 시각을 버리는 것은 이 변환기로만 밝힌다.
+     * 8자리 yyyyMMdd 는 type: date 가 받는 무손실 표기라 같은 컬럼에 일시와 섞여 있어도 이 변환기 하나로 받는다.
+     */
+    @Test
+    void date_truncate_변환기는_명시적으로_시각을_버리고_오프셋은_거부한다() {
+        LocalDate day = LocalDate.of(2026, 8, 9);
+        assertThat(registry.apply("date-truncate", "20260809")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", " 20260809 ")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", 20260809)).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", "2026-08-09 13:45:00")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", "2026-08-09T13:45:00.123456")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", " 2026-08-09 ")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", LocalDateTime.of(2026, 8, 9, 23, 59, 59))).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", java.sql.Timestamp.valueOf("2026-08-09 07:00:00"))).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", day)).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", null)).isNull();
+        // 오프셋이 붙은 값은 어느 날짜인지 정할 수 없다.
+        for (Object ambiguous : new Object[] {"2026-08-09T13:45:00+09:00",
+                java.time.OffsetDateTime.of(2026, 8, 9, 1, 0, 0, 0, java.time.ZoneOffset.ofHours(9))}) {
+            assertThatThrownBy(() -> registry.apply("date-truncate", ambiguous))
+                    .as(String.valueOf(ambiguous))
+                    .isInstanceOf(RuntimeException.class);
+        }
+        // 없는 날짜·자리수가 틀린 숫자·ASCII 가 아닌 숫자는 날짜가 아니다.
+        for (Object malformed : new Object[] {"20260230", "2026080", "202608091", "２０２６０８０９"}) {
+            assertThatThrownBy(() -> registry.apply("date-truncate", malformed))
+                    .as(String.valueOf(malformed))
+                    .isInstanceOf(RuntimeException.class);
+        }
     }
 
     @Test

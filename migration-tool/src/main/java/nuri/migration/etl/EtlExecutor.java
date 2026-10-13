@@ -12,6 +12,7 @@ import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.jdbc.SourceReadStatements;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdStrategy;
@@ -26,7 +27,7 @@ import nuri.migration.state.KeyDiagnostics;
 import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.MigrationStateStore.CheckpointEntry;
 import nuri.migration.state.RowChecksum;
-import nuri.migration.transform.CodeMapper;
+import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,10 @@ import java.util.function.Function;
  * 다음으로 대체했다 — (1) {@link TableOrderer} 위상정렬로 부모 먼저, (2) 복합키 keyset page로 메모리 상한,
  * (3) {@link TypeConverter}로 {@code type} 활성화, (4) {@link KeyMapRegistry}로 {@code idStrategy} 채번 +
  * {@code fkRef} FK 번역(참조 무결성), (5) JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위 폴백으로 오류 격리).
+ *
+ * <p>[2026-10-13 DEC-OPS-309] 행 변환(transform·codemap·type·fkRef·identity) 실패는 격리하지 않는다 —
+ * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기(제약 위반) 실패에만 남는다 — 길이·NOT NULL·
+ * CHECK 위반 행은 빠지고 나머지는 커밋되는 승인 없는 부분 커밋이며 GAP-ETL-001 이 추적한다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
@@ -203,7 +208,14 @@ public class EtlExecutor {
                             }
                             boolean sourceSessionFailed = false;
                             tablesRan = true;
+                            TableMapping stoppedAt = null;
                             for (TableMapping table : orderedTables) {
+                                if (stoppedAt != null) {
+                                    // [2026-10-13 DEC-OPS-309] 앞 테이블의 행 변환 실패로 run 을 멈췄다.
+                                    //   남은 테이블은 읽지도 쓰지도 않고, 처리하지 않았다는 사실을 결과에 남긴다.
+                                    results.add(notProcessed(table, stoppedAt, state));
+                                    continue;
+                                }
                                 TableExecution execution = runTable(
                                         sourceConnection, targetDs, spec, table, registry, state, commit,
                                         protector);
@@ -212,6 +224,9 @@ public class EtlExecutor {
                                     sourceSessionFailed = true;
                                     safeRollback(sourceConnection);
                                     break;
+                                }
+                                if (execution.rowFailureStopped()) {
+                                    stoppedAt = table;
                                 }
                             }
                             if (!sourceSessionFailed) {
@@ -529,6 +544,7 @@ public class EtlExecutor {
                 protector);
         TableCounts counts = new TableCounts();
         boolean sourceSessionFailed = false;
+        boolean rowFailureStopped = false;
 
         Connection targetConn = null;
         try {
@@ -539,10 +555,10 @@ public class EtlExecutor {
             }
             preMintSelfReferences(sourceConnection, targetConn, t, reg);
             if (t.effectiveOrderKeys().isEmpty()) {
-                streamUnorderedDryRun(sourceConnection, spec, t, writePlan, reg, state,
+                rowFailureStopped = !streamUnorderedDryRun(sourceConnection, spec, t, writePlan, reg, state,
                         targetConn, counts, errors);
             } else {
-                readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
+                rowFailureStopped = !readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
                         targetConn, counts, errors);
             }
         } catch (SQLException failure) {
@@ -560,7 +576,16 @@ public class EtlExecutor {
         long durableWritten = state == null ? counts.written : state.count(t.source());
         return new TableExecution(
                 new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors),
-                sourceSessionFailed);
+                sourceSessionFailed, rowFailureStopped);
+    }
+
+    /** 행 변환 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
+    private static TableResult notProcessed(TableMapping table, TableMapping stoppedAt,
+                                            MigrationStateStore state) {
+        long durableWritten = state == null ? 0L : state.count(table.source());
+        return new TableResult(table.source(), table.target(), 0L, 0L, durableWritten,
+                List.of("적재 중단으로 처리하지 않음(" + table.source() + "): 앞 테이블 "
+                        + stoppedAt.source() + " 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE"));
     }
 
     private static TableResult preflightOrderTupleUniqueness(
@@ -604,10 +629,11 @@ public class EtlExecutor {
         }
     }
 
-    private void streamUnorderedDryRun(Connection source, MappingSpec spec, TableMapping table,
-                                       WritePlan writePlan,
-                                       KeyMapRegistry registry, MigrationStateStore state,
-                                       Connection target, TableCounts counts, List<String> errors) throws SQLException {
+    /** @return 끝까지 처리하면 true, 행 변환 실패로 멈추면 false */
+    private boolean streamUnorderedDryRun(Connection source, MappingSpec spec, TableMapping table,
+                                          WritePlan writePlan,
+                                          KeyMapRegistry registry, MigrationStateStore state,
+                                          Connection target, TableCounts counts, List<String> errors) throws SQLException {
         String sql = buildSourcePageSql(table, false);
         boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
         try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
@@ -621,24 +647,28 @@ public class EtlExecutor {
                     chunk.add(row);
                     retainedBytes += rowBytes(row);
                     if (chunk.size() == CHUNK || retainedBytes >= JdbcLobReader.PAGE_BYTES) {
-                        processChunk(chunk, spec, table, writePlan, registry, state,
-                                target, counts, errors);
+                        if (!processChunk(chunk, spec, table, writePlan, registry, state,
+                                target, counts, errors)) {
+                            return false;
+                        }
                         chunk.clear();
                         retainedBytes = 0;
                     }
                 }
                 if (!chunk.isEmpty()) {
-                    processChunk(chunk, spec, table, writePlan, registry, state,
+                    return processChunk(chunk, spec, table, writePlan, registry, state,
                             target, counts, errors);
                 }
             }
         }
+        return true;
     }
 
-    private void readKeysetPages(Connection source, MappingSpec spec, TableMapping table,
-                                 WritePlan writePlan,
-                                 KeyMapRegistry registry, MigrationStateStore state,
-                                 Connection target, TableCounts counts, List<String> errors) throws SQLException {
+    /** @return 끝까지 처리하면 true, 행 변환 실패로 멈추면 false */
+    private boolean readKeysetPages(Connection source, MappingSpec spec, TableMapping table,
+                                    WritePlan writePlan,
+                                    KeyMapRegistry registry, MigrationStateStore state,
+                                    Connection target, TableCounts counts, List<String> errors) throws SQLException {
         List<Object> cursor = null;
         Set<String> seenSourceKeys = new HashSet<>();
         Set<String> seenOrderDigests = new HashSet<>();
@@ -663,9 +693,10 @@ public class EtlExecutor {
                 }
                 accepted.add(row);
             }
-            if (!accepted.isEmpty()) {
-                processChunk(accepted, spec, table, writePlan, registry, state,
-                        target, counts, errors);
+            if (!accepted.isEmpty()
+                    && !processChunk(accepted, spec, table, writePlan, registry, state,
+                            target, counts, errors)) {
+                return false;
             }
             if (!page.rows().isEmpty()) {
                 cursor = orderValues(page.rows().get(page.rows().size() - 1), table);
@@ -674,11 +705,13 @@ public class EtlExecutor {
             accepted.clear();
             page.rows().clear();
         } while (hasMore);
+        return true;
     }
 
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}
 
-    private record TableExecution(TableResult result, boolean sourceSessionFailed) {}
+    private record TableExecution(TableResult result, boolean sourceSessionFailed,
+                                  boolean rowFailureStopped) {}
 
     private static final class TableCounts {
         private long read;
@@ -841,24 +874,36 @@ public class EtlExecutor {
         }
     }
 
-    private void processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
-                              WritePlan writePlan, KeyMapRegistry reg,
-                              MigrationStateStore state, Connection targetConn,
-                              TableCounts counts, List<String> errors) {
+    /**
+     * chunk 를 변환한 뒤 한 transaction 으로 쓴다.
+     *
+     * <p>[2026-10-13 DEC-OPS-309] 행 하나라도 변환(transform·codemap·type·fkRef·identity)에 실패하면
+     * 그 chunk 는 한 행도 쓰지 않는다. 이 chunk 에서 새로 만든 keymap 도 버리고 테이블과 run 을 멈춘다.
+     * 종전에는 실패 행만 건너뛰고 나머지를 커밋해, 승인 없는 누락이 적재된 채 run 만 FAIL 로 끝났다.
+     * 재개는 마지막으로 커밋된 checkpoint 에서 시작한다. 승인된 예외 행의 격리(Q6 원장)는 아직 없다.
+     *
+     * @return 계속 진행하면 true, 행 변환 실패로 멈추면 false
+     */
+    private boolean processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
+                                 WritePlan writePlan, KeyMapRegistry reg,
+                                 MigrationStateStore state, Connection targetConn,
+                                 TableCounts counts, List<String> errors) {
+        long firstOrdinal = counts.read - chunk.size() + 1;
         if (isTargetGenerated(t)) {
-            processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, counts, errors);
-            return;
+            return processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, counts, errors,
+                    firstOrdinal);
         }
         Checkpoint chunkCheckpoint = reg.checkpoint();
         List<PreparedRow> batch = new ArrayList<>(chunk.size());
-        for (Map<String, Object> row : chunk) {
+        for (int index = 0; index < chunk.size(); index++) {
+            Map<String, Object> row = chunk.get(index);
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
                 Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector());
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
-                    checkpoint = checkpoint(row, out, t, writePlan.targetColumns());
+                    checkpoint = identityCheckpoint(row, out, t, writePlan.targetColumns());
                     CheckpointEntry durable = state.find(t.source(), checkpoint.sourceKey());
                     if (durable != null) {
                         if (t.identity() != null
@@ -881,29 +926,88 @@ public class EtlExecutor {
                 }
                 batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
             } catch (RuntimeException failure) {
-                reg.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + t.source() + "): " + transformFailure(failure));
+                reg.rollback(chunkCheckpoint);
+                errors.add(rowFailureMessage(t, failure, firstOrdinal + index));
+                return false;
             }
         }
         if (batch.isEmpty()) {
             reg.rollback(chunkCheckpoint);
-            return;
+            return true;
         }
         if (targetConn == null) {
             // dry-run에서도 이후 자식 fkRef 검증에 성공한 부모 keymap은 필요하지만 pending 표식은 남기지 않는다.
             reg.accept(chunkCheckpoint);
-            return;
+            return true;
         }
         counts.written += writeChunkAtomically(
                 targetConn, writePlan.insertSql(), batch, spec, t, writePlan, reg, state,
                 chunkCheckpoint, errors);
+        return true;
+    }
+
+    /**
+     * 행 변환 실패를 테이블·컬럼·행 위치로만 밝힌다. 값·키·예외 원문은 담지 않는다.
+     * 행 위치는 이 테이블을 원천 정렬(orderBy/orderByKeys) 순서로 읽은 1부터의 순번이다.
+     */
+    static String rowFailureMessage(TableMapping table, RuntimeException failure, long ordinal) {
+        String column = failure instanceof RowTransformFailure classified ? classified.column : "-";
+        RowFailureReason reason = failure instanceof RowTransformFailure classified
+                ? classified.reason : RowFailureReason.ROW_FAILED;
+        String detail = failure instanceof RowTransformFailure classified && classified.detail != null
+                ? "(" + classified.detail + ")" : "";
+        return "행 변환 실패(" + table.source() + ", column=" + column + ", row=" + ordinal
+                + "): ROW_TRANSFORM_FAILED:" + reason.name() + detail
+                + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+    }
+
+    /** 행 변환이 어느 단계에서 실패했는지. 값은 담지 않는다. */
+    enum RowFailureReason {
+        TRANSFORM_FAILED,
+        CODEMAP_UNDEFINED,
+        CODEMAP_UNMAPPED,
+        CODEMAP_INPUT_INVALID,
+        TYPE_CONVERSION_FAILED,
+        FK_REF_ORPHAN,
+        FK_REF_FAILED,
+        IDENTITY_FAILED,
+        PROTECTED_COLUMN,
+        ROW_FAILED
+    }
+
+    /**
+     * 행 변환 실패의 컬럼과 단계. 원인 예외(원문에 값이 들어갈 수 있다)는 붙이지 않는다.
+     * {@code detail} 은 보호 컬럼 판정처럼 값이 들어가지 않는 고정 사유만 담는다.
+     */
+    static final class RowTransformFailure extends IllegalStateException {
+        private final String column;
+        private final RowFailureReason reason;
+        private final String detail;
+
+        RowTransformFailure(String column, RowFailureReason reason) {
+            this(column, reason, null);
+        }
+
+        RowTransformFailure(String column, RowFailureReason reason, String detail) {
+            super("row transform failed: " + reason.name());
+            this.column = column;
+            this.reason = reason;
+            this.detail = detail;
+        }
     }
 
     private record PreparedRow(Map<String, Object> source, Object[] arguments,
                                CheckpointEntry checkpoint) {}
 
-    /** generated identity는 JDBC batch가 반환값을 증명하지 못하므로 행별 INSERT ... RETURNING 경로만 사용한다. */
-    private void processGeneratedRows(
+    /**
+     * generated identity는 JDBC batch가 반환값을 증명하지 못하므로 행별 INSERT ... RETURNING 경로만 사용한다.
+     *
+     * <p>[2026-10-13 DEC-OPS-309] 행별로 커밋하므로 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 한 행이라도
+     * 변환에 실패하면 이 chunk 의 어느 행도 쓰지 않고 멈춘다.
+     *
+     * @return 계속 진행하면 true, 행 변환 실패로 멈추면 false
+     */
+    private boolean processGeneratedRows(
             List<Map<String, Object>> rows,
             MappingSpec spec,
             TableMapping table,
@@ -912,32 +1016,37 @@ public class EtlExecutor {
             MigrationStateStore state,
             Connection connection,
             TableCounts counts,
-            List<String> errors
+            List<String> errors,
+            long firstOrdinal
     ) {
         if (connection == null) {
-            for (Map<String, Object> row : rows) {
+            boolean completed = true;
+            for (int index = 0; index < rows.size(); index++) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
-                    transformRow(row, spec, table, registry, writePlan.protector());
+                    transformRow(rows.get(index), spec, table, registry, writePlan.protector());
                     counts.transformed++;
                 } catch (RuntimeException failure) {
-                    errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
+                    errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
+                    completed = false;
+                    break;
                 } finally {
                     registry.rollback(checkpoint);
                 }
             }
             errors.add(table.source()
                     + ": TARGET_GENERATED dry-run은 DB 생성 identity를 materialize할 수 없습니다");
-            return;
+            return completed;
         }
 
-        for (Map<String, Object> row : rows) {
+        Checkpoint chunkCheckpoint = registry.checkpoint();
+        List<GeneratedRow> prepared = new ArrayList<>(rows.size());
+        for (int index = 0; index < rows.size(); index++) {
+            Map<String, Object> row = rows.get(index);
             Checkpoint rowCheckpoint = registry.checkpoint();
-            Map<String, Object> transformed;
-            TypedKeyTuple sourceIdentity;
             try {
-                transformed = transformRow(row, spec, table, registry, writePlan.protector());
-                sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
+                Map<String, Object> transformed = transformRow(row, spec, table, registry, writePlan.protector());
+                TypedKeyTuple sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
                         sourceIdentity, 256, "tb_migration_checkpoint.source_key");
@@ -973,12 +1082,17 @@ public class EtlExecutor {
                     registry.rollback(rowCheckpoint);
                     continue;
                 }
+                prepared.add(new GeneratedRow(row, transformed, sourceIdentity));
             } catch (RuntimeException failure) {
-                registry.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
-                continue;
+                registry.rollback(chunkCheckpoint);
+                errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
+                return false;
             }
+        }
 
+        for (GeneratedRow candidate : prepared) {
+            Checkpoint rowCheckpoint = registry.checkpoint();
+            Map<String, Object> transformed = candidate.transformed();
             CheckpointEntry durableCheckpoint;
             try {
                 TypedKeyTuple generated = executeReturning(
@@ -987,9 +1101,9 @@ public class EtlExecutor {
                         toArguments(transformed, writePlan.insertColumns()),
                         table.identity().targetComponents());
                 applyTargetIdentity(transformed, table.identity().targetComponents(), generated);
-                registry.register(table.source(), sourceIdentity, generated);
+                registry.register(table.source(), candidate.sourceIdentity(), generated);
                 durableCheckpoint = checkpoint(
-                        row, transformed, table, writePlan.targetColumns());
+                        candidate.source(), transformed, table, writePlan.targetColumns());
                 registry.writePending(connection, rowCheckpoint);
                 state.write(connection, List.of(durableCheckpoint));
             } catch (SQLException | RuntimeException ignored) {
@@ -1002,7 +1116,11 @@ public class EtlExecutor {
                     List.of(durableCheckpoint), table.target());
             counts.written++;
         }
+        return true;
     }
+
+    private record GeneratedRow(Map<String, Object> source, Map<String, Object> transformed,
+                                TypedKeyTuple sourceIdentity) {}
 
     private TypedKeyTuple executeReturning(
             Connection connection,
@@ -1026,6 +1144,17 @@ public class EtlExecutor {
                 }
                 return TypedKeyTuple.of(values.toArray(TypedValue[]::new));
             }
+        }
+    }
+
+    /** checkpoint identity 를 만들지 못하면(대리키·target identity 없음) identity 단계의 행 변환 실패다. */
+    private CheckpointEntry identityCheckpoint(Map<String, Object> source, Map<String, Object> transformed,
+                                               TableMapping table, List<String> targetColumns) {
+        try {
+            return checkpoint(source, transformed, table, targetColumns);
+        } catch (RuntimeException failure) {
+            String column = targetIdentityColumn(table);
+            throw new RowTransformFailure(column == null ? "<identity>" : column, RowFailureReason.IDENTITY_FAILED);
         }
     }
 
@@ -1094,12 +1223,6 @@ public class EtlExecutor {
                 .toList());
     }
 
-    /** 보호 컬럼 판정은 테이블·컬럼 이름을 남기고, 그 밖의 변환 실패는 값이 담길 수 있어 고정 코드만 남긴다. */
-    private static String transformFailure(RuntimeException failure) {
-        return failure instanceof ColumnProtector.ProtectedColumnException
-                ? failure.getMessage() : "ROW_TRANSFORM_FAILED";
-    }
-
     private static Object[] toArguments(Map<String, Object> transformed, List<String> targetColumns) {
         Object[] arguments = new Object[targetColumns.size()];
         for (int i = 0; i < targetColumns.size(); i++) {
@@ -1116,16 +1239,9 @@ public class EtlExecutor {
             if (col.constant() != null) {
                 value = col.constant();
             } else if (col.source() != null) {
-                value = src.get(col.source().toLowerCase(Locale.ROOT));
-                if (col.codemap() != null && spec.codemaps().containsKey(col.codemap())) {
-                    if (value instanceof byte[]) throw new IllegalArgumentException("codemap cannot consume binary data");
-                    value = CodeMapper.map(spec.codemaps().get(col.codemap()), value == null ? null : value.toString());
-                }
-                value = transformers.apply(col.transform(), value);
-                value = TypeConverter.convert(col.type(), value);
-                value = applyFkRef(col, value, reg);
-                // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 행을 쓰지 않는다.
-                value = protector.protect(t.target(), col.target(), value);
+                value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg);
+                // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 chunk 를 쓰지 않는다.
+                value = protectColumn(protector, t, col, value);
             } else {
                 value = null;
             }
@@ -1137,9 +1253,67 @@ public class EtlExecutor {
             String newKey = reg.mintOrGet(t.source(), legacy == null ? null : legacy.toString(), id.generator());
             out.put(id.column(), newKey);
         }
-        applyCompositeForeignKeys(src, out, t, reg);
-        applyTypedIdentity(src, out, t, reg);
+        try {
+            applyCompositeForeignKeys(src, out, t, reg);
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure("<foreignKeys>", RowFailureReason.FK_REF_FAILED);
+        }
+        try {
+            applyTypedIdentity(src, out, t, reg);
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure("<identity>", RowFailureReason.IDENTITY_FAILED);
+        }
         return out;
+    }
+
+    /**
+     * 보호 컬럼이면 온라인 앱과 같은 암호문으로 바꾼다. 쓰지 않기로 한 판정은 고정 사유만 남기고,
+     * 그 밖의 실패(원문에 값이 들어갈 수 있다)는 사유 없이 PROTECTED_COLUMN 으로만 알린다(DEC-OPS-308·309).
+     */
+    private static Object protectColumn(ColumnProtector protector, TableMapping table, ColumnMapping col, Object value) {
+        try {
+            return protector.protect(table.target(), col.target(), value);
+        } catch (ColumnProtector.ProtectedColumnException refused) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.PROTECTED_COLUMN, refused.reason());
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.PROTECTED_COLUMN);
+        }
+    }
+
+    /**
+     * 한 컬럼의 값을 {@code transform → codemap → type → fkRef} 순서로 만든다.
+     * 실패하면 어느 단계였는지만 남기고 원인 예외(원문에 값이 들어갈 수 있다)는 버린다.
+     */
+    private Object columnValue(Object sourceValue, MappingSpec spec, ColumnMapping col, KeyMapRegistry reg) {
+        Object value;
+        try {
+            value = transformers.apply(col.transform(), sourceValue);
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.TRANSFORM_FAILED);
+        }
+        if (!isBlank(col.codemap())) {
+            CodeMap codemap = spec.codemaps().get(col.codemap());
+            if (codemap == null) {
+                throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_UNDEFINED);
+            }
+            try {
+                value = CodeTranslator.map(codemap, value);
+            } catch (CodeTranslator.UnmappedCodeException unmapped) {
+                throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_UNMAPPED);
+            } catch (RuntimeException invalid) {
+                throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_INPUT_INVALID);
+            }
+        }
+        try {
+            value = TypeConverter.convert(col.type(), value);
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.TYPE_CONVERSION_FAILED);
+        }
+        try {
+            return applyFkRef(col, value, reg);
+        } catch (RuntimeException failure) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.FK_REF_ORPHAN);
+        }
     }
 
     private void applyTypedIdentity(
@@ -1278,14 +1452,14 @@ public class EtlExecutor {
         return null;
     }
 
-    /** 자식 FK 값을 부모 키맵으로 신규 키에 번역. 미매핑(고아)은 예외로 격리(행 변환 실패). null 은 통과. */
+    /** 자식 FK 값을 부모 키맵으로 신규 키에 번역. 미매핑(고아)은 행 변환 실패다(값은 메시지에 싣지 않는다). null 은 통과. */
     private Object applyFkRef(ColumnMapping col, Object value, KeyMapRegistry reg) {
         if (col.fkRef() == null || col.fkRef().isBlank() || value == null) {
             return value;
         }
         String translated = reg.translate(col.fkRef(), value.toString());
         if (translated == null) {
-            throw new IllegalStateException("FK 고아: 부모 '" + col.fkRef() + "' 키맵에 '" + value + "' 없음");
+            throw new IllegalStateException("FK 고아: 부모 '" + col.fkRef() + "' 키맵에 대응 없음");
         }
         return translated;
     }

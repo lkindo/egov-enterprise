@@ -26,7 +26,7 @@ load는 plan 옆에 `<plan filename>.load-<UUID>.json`을 만든다. 적재 시�
 
 1. 소스·대상의 점검 창을 유지한다. 최초 승인 plan, 실행 JSON, 같은 `runId`·`sourceNamespace`를 보존한다. 새 run ID로 중복 삽입을 시도하지 않는다.
 2. `migration_control.tb_migration_run`, `tb_migration_checkpoint`, `tb_migration_key_map`을 읽어 커밋 범위를 확인한다. 원시 키와 업무 값을 일반 로그나 Git에 복사하지 않는다.
-3. 이미 커밋된 소스 행·대상 행·checkpoint를 변경하지 않는다. 실패한 미커밋 행의 데이터 오류만 권위 원천에서 수정한다. 스키마·mapping·변환 의미가 바뀌면 plan을 재작성·재승인한다.
+3. 이미 커밋된 소스 행·대상 행·checkpoint를 변경하지 않는다. 실패한 미커밋 행의 데이터 오류만 권위 원천에서 수정한다. 스키마·mapping·변환 의미가 바뀌면 plan을 재작성·재승인한다. 행 변환 실패(`ROW_TRANSFORM_FAILED`)면 실패 행이 있던 chunk 전체와 그 뒤 테이블이 미커밋이다. 오류의 `row=N` 은 원천 정렬(`orderBy`/`orderByKeys`) 순서의 위치이고 값은 담지 않는다. 미매핑 코드는 codemap 에 승인된 대응을 더하고, 시각이 붙은 날짜는 원천을 고치거나 `date-truncate` 를 승인한 뒤 재개한다([DEC-OPS-309](../../.agent/memory/decisions.md)). 쓰기 단계 위반(`ATOMIC_WRITE_FAILED` — 길이·NOT NULL·CHECK)은 다르다. 그 행만 미커밋이고 같은 chunk 의 다른 행과 뒤 테이블은 커밋돼 있다([GAP-ETL-001](../../.agent/memory/known-gaps.md)). 원인을 고친 뒤 같은 run 으로 재개하면 checkpoint 가 없는 그 행만 다시 쓴다.
 4. 동일 run으로 load를 재개한다. 기존 checkpoint의 checksum·identity를 대조한 뒤 완료 행은 재사용한다. target INSERT와 checkpoint는 같은 트랜잭션으로 기록된다.
 5. verifier의 target 실측 건수·checksum 대조가 `PASS`이고 run이 `COMPLETED`인지 확인한다. 키맵 부재·중복·행 변조·source checksum 차이는 실패다. 정상 재개를 위해 검증을 끄거나 checkpoint를 지우지 않는다.
 

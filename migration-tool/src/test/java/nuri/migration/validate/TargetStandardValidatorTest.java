@@ -8,11 +8,14 @@ import nuri.migration.discovery.SnapshotCapability;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
+import nuri.migration.model.MappingSpec.NullPolicy;
 import nuri.migration.model.MappingSpec.TableMapping;
+import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.postgres.TargetStandardSnapshot;
 import nuri.migration.postgres.TargetStandardSnapshot.ColumnContract;
@@ -298,12 +301,15 @@ class TargetStandardValidatorTest {
             ColumnMapping unregistered = new ColumnMapping("REG_DE", "reg_ymd", "not-registered", null, null, null, null);
             ColumnMapping builtinDate = new ColumnMapping("ITEM_ID", "reg_ymd", "date", null, null, null, null);
             ColumnMapping builtinTimestamp = new ColumnMapping("ITEM_ID", "reg_ymd", "timestamp", null, null, null, null);
+            ColumnMapping builtinTruncate = new ColumnMapping("ITEM_ID", "reg_ymd", "date-truncate", null, null, null, null);
             TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, varchar(1, "reg_ymd", 8)));
 
             assertThat(errors(spec(custom), target)).isEmpty();
             assertThat(errors(spec(unregistered), target)).isEmpty();
             assertThat(errors(spec(builtinDate), target)).singleElement().asString().contains("값 DATE");
             assertThat(errors(spec(builtinTimestamp), target)).singleElement().asString().contains("값 TIMESTAMP");
+            // date-truncate 는 날짜를 낸다(DEC-OPS-309) — 문자열 컬럼에 쓰면 종류가 다르다.
+            assertThat(errors(spec(builtinTruncate), target)).singleElement().asString().contains("값 DATE");
         }
 
         @Test
@@ -402,9 +408,9 @@ class TargetStandardValidatorTest {
         @Test
         void constantAndCodemapLengthsComeFromTheMappingWithoutPrintingThem() {
             String secret = "SECRET-CONST-VALUE";
-            Map<String, Map<String, String>> codemaps = new LinkedHashMap<>();
-            codemaps.put("closed", Map.of("1", "Y", "0", "N", "default", "N"));
-            codemaps.put("open", Map.of("1", "SECRET-CODE-VALUE"));
+            Map<String, CodeMap> codemaps = new LinkedHashMap<>();
+            codemaps.put("closed", new CodeMap(Map.of("1", "Y", "0", "N"), UnmappedPolicy.FALLBACK, "N"));
+            codemaps.put("open", new CodeMap(Map.of("1", "SECRET-CODE-VALUE"), UnmappedPolicy.PASSTHROUGH, null));
             TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT,
                     varchar(1, "frst_rgtr_id", 10), varchar(2, "use_yn", 1), varchar(3, "open_cd", 20)));
             MappingSpec spec = new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null, List.of(
@@ -421,8 +427,9 @@ class TargetStandardValidatorTest {
         }
 
         @Test
-        void codemapWithDefaultIsBoundByItsOwnValues() {
-            Map<String, Map<String, String>> codemaps = Map.of("wide", Map.of("1", "ABC", "default", "ABCDEF"));
+        void codemapWithFallbackIsBoundByItsOwnValues() {
+            Map<String, CodeMap> codemaps = Map.of("wide",
+                    new CodeMap(Map.of("1", "ABC"), UnmappedPolicy.FALLBACK, "ABCDEF"));
             MappingSpec spec = new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null, List.of(
                     new ColumnMapping("ITEM_NM", "code_cd", null, null, "wide", null, null)), null)), codemaps);
 
@@ -433,8 +440,25 @@ class TargetStandardValidatorTest {
         }
 
         @Test
-        void codemapWithoutDefaultKeepsUnmappedSourceLength() {
-            Map<String, Map<String, String>> codemaps = Map.of("open", Map.of("1", "LONGER-CODE-VALUE-XYZ"));
+        void failingCodemapIsBoundByItsCodesAndNullFallback() {
+            // 기본 unmapped: fail 은 미매핑 코드를 쓰지 않으므로 원천 길이(ITEM_NM 100)가 남지 않는다.
+            Map<String, CodeMap> codemaps = Map.of(
+                    "strict", new CodeMap(Map.of("1", "ABC"), UnmappedPolicy.FAIL, null),
+                    "nullable", new CodeMap(Map.of("1", "ABC"), UnmappedPolicy.FAIL, "ABCDEF", NullPolicy.FALLBACK));
+            TargetSchemaFingerprint narrow = target(table(StandardStatus.ABSENT, varchar(1, "code_cd", 5)));
+
+            assertThat(validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("ITEM_NM", "code_cd", null, null, "strict", null, null)), null)),
+                    codemaps), narrow, inventory()).errors()).isEmpty();
+            assertThat(validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("ITEM_NM", "code_cd", null, null, "nullable", null, null)), null)),
+                    codemaps), narrow, inventory()).errors()).singleElement().asString().contains("값 6");
+        }
+
+        @Test
+        void codemapPassthroughKeepsUnmappedSourceLength() {
+            Map<String, CodeMap> codemaps = Map.of("open",
+                    new CodeMap(Map.of("1", "LONGER-CODE-VALUE-XYZ"), UnmappedPolicy.PASSTHROUGH, null));
             MappingSpec spec = new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null, List.of(
                     new ColumnMapping("STATUS", "sttus_cd", null, null, "open", null, null)), null)), codemaps);
 

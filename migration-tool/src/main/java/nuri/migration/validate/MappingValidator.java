@@ -9,6 +9,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.protect.ColumnProtectionPlan;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -150,7 +151,31 @@ public class MappingValidator {
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
         // 온라인 앱이 암호화해 저장하는 컬럼은 encrypt 선언이 같아야 한다(DEC-OPS-308). 문구는 테이블·컬럼 이름만 담는다.
         errors.addAll(ColumnProtectionPlan.of(spec).violations());
+        validateCodemaps(spec.codemaps(), errors, warnings);
         return new ValidationResult(errors, warnings);
+    }
+
+    /**
+     * [2026-10-13 DEC-OPS-309] 실행기와 같은 판정으로 codemap 정의의 결함을 적재 전에 알린다.
+     * 숫자처럼 보이지만 정규형이 아닌 키(1.0·01)는 숫자 열에서 닿지 않으므로 경고한다 — 문자열 열의 정상 코드일 수
+     * 있어 오류로 막지 않는다. 경고는 키 값 대신 values 안의 위치만 밝힌다.
+     */
+    private static void validateCodemaps(Map<String, MappingSpec.CodeMap> codemaps, List<String> errors,
+                                         List<String> warnings) {
+        for (Map.Entry<String, MappingSpec.CodeMap> entry : codemaps.entrySet()) {
+            String problem = CodeTranslator.definitionProblem(entry.getValue());
+            if (problem != null) {
+                errors.add("codemap '" + entry.getKey() + "': " + problem);
+                continue;
+            }
+            List<Integer> positions = CodeTranslator.nonCanonicalNumericCodes(entry.getValue());
+            if (!positions.isEmpty()) {
+                warnings.add("codemap '" + entry.getKey() + "': values 의 "
+                        + String.join("·", positions.stream().map(String::valueOf).toList())
+                        + "번째 코드는 숫자처럼 보이지만 정규형이 아닙니다 — 숫자 원천값은 정규형(1.0·01 → 1)으로"
+                        + " 찾으므로 숫자 열에서는 이 코드에 닿지 않습니다. 문자열 열의 코드라면 그대로 두십시오.");
+            }
+        }
     }
 
     private static void validateCrossTableCycles(List<MappingSpec.TableMapping> tables,

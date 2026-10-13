@@ -595,6 +595,59 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void failedVerificationGateNamesTheFirstNonPassingTableWithoutRowValues() throws Exception {
+        // [2026-10-13 DEC-OPS-309] 행 변환 실패는 테이블·컬럼·행 순번으로 밝혀진다. 종전 gate 는 그것을 버렸다.
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+        String note = "오류 1건 — 첫 오류: 행 변환 실패(legacy.legacy_user, column=user_id, row=7): "
+                + "ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class))).willReturn(new MigrationReport(List.of(
+                new MigrationReport.TableReport("legacy.passed", "public.passed", 1, 1, 0, 0, -1,
+                        MigrationReport.Status.PASS, ""),
+                new MigrationReport.TableReport("legacy.legacy_user", "public.tb_user_info", 7, 6, 0, 1, -1,
+                        MigrationReport.Status.FAIL, note)), MigrationReport.Status.FAIL));
+
+        assertThatThrownBy(() -> load(inventory, plan))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
+                        + " 첫 실패: legacy.legacy_user — " + note);
+    }
+
+    @Test
+    void firstFailureIsEmptyForPassingReportsAndBoundedForLongNotes() {
+        assertThat(MigrationWorkflowRunner.firstFailure(new MigrationReport(List.of(
+                new MigrationReport.TableReport("a", "b", 1, 1, 1, 0, 1, MigrationReport.Status.PASS, "")),
+                MigrationReport.Status.PASS))).isEmpty();
+        String warned = MigrationWorkflowRunner.firstFailure(new MigrationReport(List.of(
+                new MigrationReport.TableReport("a", "b", 2, 1, 1, 0, 1, MigrationReport.Status.WARN, "x".repeat(900))),
+                MigrationReport.Status.WARN));
+        assertThat(warned).startsWith(" 첫 실패: a — xxx").endsWith("…").hasSize(601);
+    }
+
+    @Test
+    void legacyFlatCodemapStopsTheWorkflowBeforeAnySourceConnectionWithAMigrationMessage() throws Exception {
+        Files.writeString(mappingPath, """
+                tables: []
+                codemaps:
+                  user_status:
+                    "1": "A"
+                    default: "P"
+                """);
+        MigrationWorkflowRunner realLoaderRunner = new MigrationWorkflowRunner(
+                new MappingLoader(), validator, executor, verifier, introspector,
+                new SourceAdapterRegistry(List.of(adapter)), files, inventoryCodec, planCodec,
+                planner, new WorkflowReviewLoader(), fingerprinter, sourceEndpoints, transformers);
+
+        assertThatThrownBy(() -> realLoaderRunner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + temp.resolve("i.json"))))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageStartingWith("codemap 'user_status': codemap 의 옛 평면 형식")
+                .hasMessageContaining("unmapped: fallback", "DEC-OPS-309");
+        verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
+    }
+
+    @Test
     void loadDryRunRequiresExactAdapterAndSourceFreezeBeforeLiveDiscovery() throws Exception {
         Path inventory = temp.resolve("inventory.json");
         Path plan = temp.resolve("plan.json");
