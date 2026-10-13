@@ -42,8 +42,8 @@ clean v* release tag
 
 시작 구성은 이름 붙은 기능 목록이다([ADR-0028](../02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md)). 지금 `core` ⊂ `collaboration` ⊂ `demo` 는 포함 관계지만
 규칙이 아니다. `survey`·`approval` 은 공통 기반에 기능 하나를 더한 구성이라 `collaboration` 에
-들지 않는다(DEC-OPS-295). 결재 구성에는 알림이 없어, 알림까지 함께 보는 결재 통합 시험(`ApprovalWorkflowIntegrationTest`)이
-그 구성에서 빠진다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
+들지 않는다(DEC-OPS-295). 결재 구성에는 알림이 없어, 알림 행까지 보는 결재 시험 하나(`ApprovalReferenceNotificationIntegrationTest`)만
+그 구성에서 빠지고 나머지 결재 통합 시험(`ApprovalWorkflowIntegrationTest`)은 남는다(DEC-OPS-303). 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
 pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
 묶음(`dependsOn` 의 `bundle`)과 `tb_tmplt_info`처럼 공유되는 테이블 계약(`owns.sharedTables`)도 기능 파일에 명시한다. 수동 도메인 삭제 스크립트
 `scripts/delete-domain.ps1`은 기능 파일(`config/modules/<기능>.json`)로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그

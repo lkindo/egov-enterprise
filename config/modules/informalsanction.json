@@ -45,10 +45,14 @@
     ],
     "gates": [
       {
-        "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+        "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
         "alsoRequires": [
           "notification"
         ]
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+        "alsoRequires": []
       }
     ],
     "rbacMatrix": {
