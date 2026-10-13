@@ -16,6 +16,8 @@ import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.m
 import { copySourceTree, isCopyableSourceFile, normalize, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 import { AUTHORIZATION_POLICY_PATH, projectOperationBindings, readPermissionSources } from './reusable-permission-projection.mjs';
+import { projectSourceApiDocs, readSourceApiContract } from './reusable-contract-projection.mjs';
+import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
@@ -75,6 +77,17 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     assert.equal(deep.frontend.removedFiles, frontend.removedFiles, `${label}: frontend removal count`);
     assert.equal(deep.frontend.cascadeFiles, frontend.cascadedFiles, `${label}: frontend cascade count`);
     assert.deepEqual(deep.removedGates, [...java.removedGates.map(gate => gate.file), ...frontend.removedGates].sort(), `${label}: removed gates`);
+    // API 계약(10c-2): 정밀 점검이 말한 빠지는 연산은 생성기가 투영한 트리에서 판정한 것과 같다.
+    const contract = projectSourceApiDocs(root, file => !existsSync(join(output, file)));
+    assert.deepEqual(deep.apiContract.removedOperationIds, contract.removedOperations.map(operation => operation.operationId).sort(), `${label}: removed operations`);
+    assert.deepEqual({ ...deep.apiContract, removedOperationIds: undefined },
+      { ...contract.summary, removedOperationIds: undefined, keptAliasesWithoutBase: contract.keptAliasesWithoutBase }, `${label}: api-docs summary`);
+    assert.ok(deep.apiContract.removedOperations > 0, `${label}: the projection removes operations`);
+    // 사라진 계약 이름 판정(트랙 K 검토 #2): 정밀 점검이 투영 내용으로 미리 본 자리와, 생성기가 투영한 트리의 디스크 내용에서 찾는 자리가 같다.
+    const onDisk = vanishedContractReferences(copied.filter(file => isContractScopeFile(file) && existsSync(join(output, file)))
+      .map(file => ({ file, source: readFileSync(join(output, file), 'utf8') })), predictFromProjection(root, contract));
+    assert.deepEqual(deep.blockers.find(blocker => blocker.code === 'API_CONTRACT_REFERENCE')?.files ?? [],
+      [...new Set([...onDisk.hits, ...onDisk.issues].map(entry => entry.file))].sort(), `${label}: contract name references`);
     assert.ok(deep.java.cascadeFiles > 0 && deep.java.cascadeFiles < deep.java.removedFiles, `${label}: Java cascade is a strict part of the removal`);
     assert.match(deepSummary(deep), /^제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건$/);
 
@@ -96,6 +109,7 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
 test('a full product composition removes nothing and still reports a summary', () => {
   const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'demo' }), files });
   assert.deepEqual(deep.blockers, []);
+  assert.deepEqual([deep.apiContract.removedOperations, deep.apiContract.removedSchemas, deep.apiContract.removedTags], [0, 0, 0]);
   assert.deepEqual({ java: deep.java.removedFiles, frontend: deep.frontend.removedFiles, gates: deep.removedGates }, { java: 0, frontend: 0, gates: [] });
   assert.equal(deepSummary(deep), '제거: Java 0개(연쇄 0) · 프런트 0개(연쇄 0) · 검증 게이트 0건');
   // 권한 투영은 아무것도 빼지 않는다(원본 parity).
@@ -131,6 +145,34 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
   deep = compositionDeepPlan({ root, catalog, manifest, composition: core, files, permissionSources: unclassified });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.match(deep.blockers[0].message, new RegExp(`does not classify composition permissions: ${excludedInCore.code}`, 'u'));
+});
+
+// api-docs 연산을 판정할 수 없으면(바인딩 없음·소스 없는 핸들러) 생성기는 Java 투영 뒤에 실패한다. 정밀 점검이 Docker 전에 같은 사유로 막는다.
+test('an api-docs operation the contract projection cannot judge blocks the deep plan', () => {
+  const contract = readSourceApiContract(root);
+  const dropped = contract.bindings.find(binding => !binding.handler.startsWith('EXTERNAL#'));
+  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'core' }), files,
+    apiContract: { doc: contract.doc, bindings: contract.bindings.filter(binding => binding !== dropped) } });
+  assert.deepEqual(codes(deep), ['API_CONTRACT_PROJECTION']);
+  assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.API_CONTRACT_PROJECTION);
+  assert.equal(deep.blockers[0].message, `api-docs operation has no authorization binding: ${dropped.method} ${dropped.path}`);
+  assert.equal(deep.apiContract, null, 'a failed projection reports no api-docs summary');
+});
+
+// 남는 파일이 구성에서 빠지는 계약 이름을 쓰면 생성물의 tsc 가 약 10분 뒤에 깨진다(트랙 K 검토 #2). 생성기는 생성 타입을 다시 만든 직후
+// 그 자리를 밝히며 멈추고, 정밀 점검이 같은 판정으로 Docker 전에 막는다. core 사용자 관리 서비스가 쓰는 연산을 core 가 지우는 컨트롤러에
+// 묶어 그 서술자가 사라지게 한다.
+test('a surviving file that uses a contract name the composition removes blocks the deep plan', () => {
+  const contract = readSourceApiContract(root);
+  const rebound = contract.bindings.map(binding => (binding.handler === 'nuri.api.controller.UserApiController#unlockUser'
+    ? { ...binding, handler: 'nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook' } : binding));
+  assert.notDeepEqual(rebound, contract.bindings, 'the unlock operation is bound');
+  const deep = compositionDeepPlan({ root, catalog, manifest, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
+  const blocker = deep.blockers.find(entry => entry.code === 'API_CONTRACT_REFERENCE');
+  assert.equal(blocker?.label, DEEP_BLOCKER_LABELS.API_CONTRACT_REFERENCE);
+  assert.ok(blocker.files.includes('frontend/src/services/foundation/system/UserAdminService.ts'), JSON.stringify(blocker.files));
+  assert.match(blocker.message, /frontend\/src\/services\/foundation\/system\/UserAdminService\.ts:\d+ unlockUserOperation/);
+  assert.ok(deep.apiContract.removedOperationIds.includes('unlockUser'));
 });
 
 /*
@@ -211,19 +253,14 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   // 화면 생존 대조(slot 단계 PR-1): 구성이 남겨야 할 화면이 지워지면 SOURCE_SURVIVAL, 구성에 없는 화면이 남으면 FRONTEND_SCREEN_EXTRA 다.
   // 두 차단의 판정 경로는 아래 합성 저장소 시험이 생성기와 함께 본다. 여기서는 실제 카탈로그로만 보이는 경우를 본다.
   // 기대값은 removePaths 로 거르지 않는다. 그래서 경로를 다른 pack 에 잘못 넣으면(댓글 관리를 demo 에) 그 기능을 고른 구성에서 빠진다.
-  // 그 실수는 카탈로그의 프리셋 제거 경로에도 같이 들어간다 — 해석기의 retainedRoutes 도 그 화면을 빼므로, 기대값이 retainedRoutes
-  // 였다면 붉지 않았다(자기 참조). 카탈로그를 같은 실수로 만든 뒤 대조한다.
+  // 해석기는 시작 구성의 제거 경로도 카탈로그 규칙에서 계산하므로(해석기 단일화, 11단계 C2) 그 화면을 남기라고 말한다. pack 모드로
+  // 투영하는 생성기(C3 전)만 그 실수를 따른다 — 정밀 점검이 그 차이를 소실로 잡는다.
   const misplaced = structuredClone(manifest);
   misplaced.packs.collaboration.frontend.removePaths = misplaced.packs.collaboration.frontend.removePaths.filter(path => path !== 'src/app/admin/system/comments');
   misplaced.packs.demo.frontend.removePaths.push('src/app/admin/system/comments');
-  const misplacedCatalog = structuredClone(catalog);
-  const collaborationPreset = misplacedCatalog.presets.find(row => row.id === 'collaboration');
-  collaborationPreset.frontendRemovePaths = [...collaborationPreset.frontendRemovePaths, 'src/app/admin/system/comments'].sort();
-  const { catalogHash: unused, ...misplacedBody } = misplacedCatalog;
-  misplacedCatalog.catalogHash = compositionDigest(misplacedBody);
-  const misplacedComposition = compose({ preset: 'collaboration' }, misplacedCatalog);
-  assert.ok(!misplacedComposition.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver alone drops the misplaced screen');
-  deep = compositionDeepPlan({ root, catalog: misplacedCatalog, manifest: misplaced, composition: misplacedComposition, files });
+  const misplacedComposition = compose({ preset: 'collaboration' });
+  assert.ok(misplacedComposition.frontend.retainedRoutes.includes('/admin/system/comments'), 'the resolver keeps the screen of a selected feature');
+  deep = compositionDeepPlan({ root, catalog, manifest: misplaced, composition: misplacedComposition, files });
   assert.deepEqual(codes(deep), ['SOURCE_SURVIVAL']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/admin/system/comments/page.tsx']);
 
@@ -352,8 +389,11 @@ test('the deep plan sees exactly the files the generator copies and projects eve
     registry: { screens: [{ route: '/', entry: { permissions: ['HOME_READ'], mode: 'ANY' }, permissions: [{ code: 'HOME_READ', action: 'READ', source: 'entry' }] }] },
     policies: { operationBindings: [{ method: 'GET', path: '/api/v1/mails', handler: 'nuri.business.service.mail.MailService#list',
       access: 'PERMISSION', permission: 'HOME_READ' }] } };
+  // api-docs 와 인가 원장(API 계약 쪽)도 없다. 연산 없는 계약을 넘긴다(API 계약 투영은 따로 시험한다).
+  const apiContract = { doc: { openapi: '3.1.0', paths: {}, components: { schemas: {} } },
+    bindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] };
   const plan = (files = listed, expectation = pageSurvival) => compositionDeepPlan({ root: fixture, manifest: small,
-    composition: { profile: 'core', permissionCodes: ['HOME_READ'] }, files, pageSurvival: expectation, permissionSources });
+    composition: { profile: 'core', permissionCodes: ['HOME_READ'] }, files, pageSurvival: expectation, permissionSources, apiContract });
 
   let deep = plan([...listed, 'frontend/src/app/deleted.tsx', 'business-app/src/main/java/Deleted.java']);
   assert.deepEqual(deep.blockers, []);
@@ -379,7 +419,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   const keepsDemo = { ...small, packs: { ...small.packs, demo: { ...small.packs.demo, frontend: { removePaths: [] } } } };
   deep = compositionDeepPlan({ root: fixture, manifest: keepsDemo, composition: { profile: 'core', permissionCodes: ['HOME_READ'] },
-    files: listed, pageSurvival, permissionSources });
+    files: listed, pageSurvival, permissionSources, apiContract });
   assert.deepEqual(codes(deep), ['FRONTEND_SCREEN_EXTRA']);
   assert.deepEqual(deep.blockers[0].files, ['frontend/src/app/demo/page.tsx']);
   // 정밀 점검이 이 두 사유로 막는 구성은 생성기도 같은 자리(투영 단계의 프런트 제거 뒤 화면 대조)에서 실패한다.

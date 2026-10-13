@@ -747,6 +747,9 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   for (const file of ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', 'scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs',
     'frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts', 'scripts/atlas-catalog.test.mjs', 'scripts/atlas-generation.test.mjs']) write(file, '// atlas\n');
   write('package.json', JSON.stringify({ scripts: { 'atlas:build': 'x', 'atlas:check': 'x' } }));
+  // 정밀 점검은 api-docs 를 인가 원장으로 투영한다(10c-2). 이 저장소에는 문서화된 연산이 없다.
+  write('api-docs.json', JSON.stringify({ openapi: '3.1.0', paths: {}, components: { schemas: {} } }));
+  write('config/governance/authorization-policies.json', JSON.stringify({ operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] }));
   write('.gitignore', '*.log\n');
   git('add', '.');
   git('commit', '--quiet', '-m', 'first');

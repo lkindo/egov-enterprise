@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 2,
+  "id": "isg",
+  "label": "인터넷 서비스 안내",
+  "presentation": {
+    "area": "knowledge",
+    "order": 5,
+    "summary": "인터넷 서비스 안내 문구 등록·관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_intrn_svc"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/system/isg",
+      "src/services/foundation/system/InternetSvcGuidanceAdminService.ts"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/system/isg"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "SERVICE"
+    ],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

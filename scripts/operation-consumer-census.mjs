@@ -56,6 +56,8 @@
  *   · `unwired`(진짜 부채)는 **단조 감소 래칫**(`expected.unwiredMax`)에 걸린다. 늘리려면 상한을
  *     올려야 하고 그 변경은 diff 에 남는다.
  *   · 소비되기 시작했거나 사라진 operation 의 원장 항목은 stale 로 red 다 — 예외가 눌러앉지 못한다.
+ *   · `consumer-not-in-composition`(생성물 전용, Phase 2 10c-2)은 근거가 투영 원장에 적힌, 생성물에 없는 파일이어야
+ *     한다 — 원본에는 투영 원장이 없어 이 범주를 쓸 수 없다.
  *
  * Usage:
  *   node scripts/operation-consumer-census.mjs
@@ -67,6 +69,7 @@ import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectVerifiedMfaBffOperations } from './generated-boundary-census.mjs';
 import { SLOT_ROOT, slotConsumerPartition, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { PROJECTION_LEDGER_PATH, projectionLedgerErrors } from './reusable-projection-ledger.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 export const DEFAULT_REPO_ROOT = resolve(dirname(SCRIPT_PATH), '..');
@@ -96,6 +99,15 @@ export const CATEGORIES = Object.freeze({
    * 이 카테고리는 `unwired` 를 피하는 도피처가 되지 못한다.
    */
   'superseded-surface': { requiresEvidence: false, countsAsDebt: false, requiresSupersededBy: true },
+  /**
+   * 생성물 전용(Phase 2 10c-2): 핸들러는 선택한 기능과 함께 남는데, 원본의 소비자 파일을 구성의 투영이 모두 지웠다
+   * (예: 게시판이 소유한 공개 FAQ 연산의 소비자는 도움말 화면뿐이다).
+   *
+   * <p>근거는 투영 원장(reusable-projection-ledger.json)에 적혀 있고 생성물에 실제로 없는 파일이어야 한다(기계 검증). 원본에는
+   * 투영 원장이 없으므로 이 범주를 쓸 수 없다 — 원본의 미소비 연산을 숨기는 도피처가 되지 못한다. 원본 부채가 아니므로
+   * `unwired` 래칫에 세지 않는다. 생성기는 원본 경계 census 의 소비자 파일로만 근거를 적는다(reusable-contract-census.mjs).
+   */
+  'consumer-not-in-composition': { requiresEvidence: true, countsAsDebt: false, evidenceIsProjectionRemoval: true },
 });
 
 /** `/api/v1/auth/login` → `/auth/login`. BFF·부하 테스트는 base URL 을 따로 들고 접미만 쓴다. */
@@ -151,8 +163,25 @@ export function isAliasDuplicate(operation, byOperationId, consumed, ledgered = 
     && (consumed.has(base) || ledgered.has(base));
 }
 
+const isRepositoryRelative = (relativePath) => typeof relativePath === 'string' && relativePath !== '' && !isAbsolute(relativePath)
+  && !relativePath.includes('\\') && !relativePath.split('/').some((part) => part === '' || part === '.' || part === '..');
+
+/** 생성물의 투영 원장이 적은 지운 파일. 원장이 없거나(원본) 형식이 틀리면 error 를 돌려준다. */
+function readProjectionRemovals(repoRoot) {
+  const path = resolve(repoRoot, PROJECTION_LEDGER_PATH);
+  if (!existsSync(path)) {
+    return { files: new Set(), error: `category 'consumer-not-in-composition' exists only in a generated product — ${PROJECTION_LEDGER_PATH} is missing` };
+  }
+  let ledger;
+  try { ledger = JSON.parse(readFileSync(path, 'utf8')); } catch { return { files: new Set(), error: `${PROJECTION_LEDGER_PATH} is not valid JSON` }; }
+  const formatErrors = projectionLedgerErrors(ledger);
+  if (formatErrors.length) return { files: new Set(), error: formatErrors.join('; ') };
+  return { files: new Set(ledger.removedFiles) };
+}
+
 export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_ROOT }) {
   let verifiedMfaOperations;
+  let projectionRemovals;
   const errors = [];
   const operations = readOperations(apiDoc);
   const byOperationId = new Map(operations.map((operation) => [operation.operationId, operation]));
@@ -263,6 +292,20 @@ export function analyze({ apiDoc, boundaries, ledger, repoRoot = DEFAULT_REPO_RO
     const evidence = Array.isArray(entry.evidence) ? entry.evidence : [];
     if (evidence.length === 0) {
       errors.push({ code: 'MISSING_EVIDENCE', operationId: entry.operationId, message: `category '${entry.category}' requires at least one evidence file` });
+      continue;
+    }
+    if (category.evidenceIsProjectionRemoval) {
+      projectionRemovals ??= readProjectionRemovals(repoRoot);
+      const unproven = evidence.filter((relativePath) => !isRepositoryRelative(relativePath)
+        || !projectionRemovals.files.has(relativePath) || existsSync(resolve(repoRoot, relativePath)));
+      if (projectionRemovals.error || unproven.length > 0) {
+        errors.push({
+          code: 'UNPROVEN_EVIDENCE',
+          operationId: entry.operationId,
+          message: projectionRemovals.error
+            ?? `evidence must be consumer files the projection removed (listed in ${PROJECTION_LEDGER_PATH} and absent): ${unproven.join(', ')}`,
+        });
+      }
       continue;
     }
     const suffix = pathSuffix(operation.path);
@@ -892,7 +935,8 @@ export function loadJson(repoRoot, relativePath) {
   return JSON.parse(readFileSync(resolve(repoRoot, relativePath), 'utf8'));
 }
 
-export function runCensus(repoRoot = DEFAULT_REPO_ROOT) {
+/** `ts` 를 넘기지 않으면 `repoRoot` 의 frontend 에서 읽는다. 생성기는 생성물을 원본 frontend 의 TypeScript 로 잰다. */
+export function runCensus(repoRoot = DEFAULT_REPO_ROOT, { ts: suppliedTs } = {}) {
   const boundaries = loadJson(repoRoot, BOUNDARY_PATH);
   const ledger = loadJson(repoRoot, LEDGER_PATH);
   const result = analyze({
@@ -903,7 +947,7 @@ export function runCensus(repoRoot = DEFAULT_REPO_ROOT) {
   });
 
   // 축 2 — TypeScript 는 프런트 워크스페이스에만 있으므로 여기서 지연 로드한다.
-  const ts = createRequire(resolve(repoRoot, 'frontend', 'package.json'))('typescript');
+  const ts = suppliedTs ?? createRequire(resolve(repoRoot, 'frontend', 'package.json'))('typescript');
   const reachability = analyzeScreenReachability({ boundaries, repoRoot, ts });
 
   const orphanMax = ledger.expected?.screenOrphanMax;

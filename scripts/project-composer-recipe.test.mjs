@@ -108,12 +108,29 @@ test('empty/core selection, each independent capability, shared resources and pr
     assert.equal(plan.profile, preset.id);
     assert.deepEqual(plan.resolvedDomains, preset.domains);
     assert.deepEqual(plan.packs, preset.packs);
-    assert.deepEqual(plan.frontend.removePaths, preset.frontendRemovePaths);
+    assert.deepEqual(plan.autoIncluded, [], `${preset.id}: a preset is closed under requires`);
   }
   const collaboration = resolveProjectRecipe(recipe({ preset: 'collaboration' }), catalog);
   assert.ok(!collaboration.resolvedDomains.includes('help'));
   assert.ok(!collaboration.resolvedDomains.includes('community'));
   assert.equal(collaboration.optionalForeignKeys[0].name, 'fk_tb_bbs_master_tb_cmnty_info');
+});
+
+/*
+ * 시작 구성은 이름 붙은 기능 목록이다(해석기 단일화, 매니페스트 v2 11단계 C2). 같은 목록의 직접 선택과 해석 결과가 같다 —
+ * 구성 이름·레시피·해시와, 생성기를 옮기기 전(C3)까지 남는 pack 축만 다르다. 그래서 시작 구성의 프런트 제거 경로도 카탈로그 규칙이다.
+ */
+test('a preset resolves exactly like a direct selection of the same feature list', () => {
+  const comparable = ({ recipe: ignoredRecipe, profile, packs, recipeHash, compositionHash, ...rest }) => rest;
+  for (const preset of catalog.presets) {
+    const named = resolveProjectRecipe(recipe({ preset: preset.id }), catalog);
+    const listed = resolveProjectRecipe(recipe({ domains: preset.domains }), catalog);
+    assert.deepEqual(comparable(named), comparable(listed), preset.id);
+    assert.equal(named.profile, preset.id);
+  }
+  // 공통 기반만 고른 구성은 게시판·쪽지 화면 디렉터리를 통째로 지운다(직접 선택과 같다).
+  const core = resolveProjectRecipe(recipe({ preset: 'core' }), catalog);
+  for (const path of ['src/app/admin/community/boards', 'src/app/note']) assert.ok(core.frontend.removePaths.includes(path), path);
 });
 
 test('unsupported or unsafe recipes fail before any generation can start', () => {

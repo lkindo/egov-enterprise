@@ -280,17 +280,10 @@ const diffWith = catalog => (recipe, domain) => {
 };
 const realDiff = diffWith(real);
 /*
- * 시작 구성에서 직접 선택으로 바뀌며 들어오는 기능(화면을 함께 쓰는 기능 — 시작 구성은 그 간선을 따르지 않는다)은 허브 분해 H2 뒤
- * 실제 카탈로그에 없다. 그 전환을 보는 시험은 실제 카탈로그에 그 간선 둘(게시판이 도움말·커뮤니티 화면을 함께 쓴다)만 더한 카탈로그로
- * 돈다 — 나머지 기능·간선·문구·메뉴는 실제 그대로다.
+ * 시작 구성은 이름 붙은 기능 목록이고 같은 목록의 직접 선택과 결과가 같다(해석기 단일화, 매니페스트 v2 11단계 C2). 시작 구성에서 직접
+ * 선택으로 바뀌는 것만으로 들어오는 기능은 없으므로 그 전환을 따로 말하지 않는다. 종전에 그 전환을 보던 합성 카탈로그(게시판이 도움말·
+ * 커뮤니티 화면을 함께 쓰는 간선을 더한 것)는 시작 구성이 닫히지 않아 실제 카탈로그 적재라면 거부되므로 쓰지 않는다.
  */
-const sharedBoard = (() => {
-  const { catalogHash, ...body } = structuredClone(real);
-  body.capabilities.find(capability => capability.id === 'board').requires.push(
-    { domain: 'help', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '도움말을 함께 씁니다.' },
-    { domain: 'community', kind: 'shared-ui', customOnly: true, reason: 'x', evidence: 'x', userReason: '커뮤니티를 함께 씁니다.' });
-  return { ...body, catalogHash: compositionDigest(body) };
-})();
 /*
  * 업무 허브 분해 W1 뒤 실제 카탈로그에는 '목적지 없음' 메뉴가 생기는 구성이 없다 — 유일하던 '나의 업무'가 core 셸이 됐다(단독 22개·
  * 두 기능 231개·프리셋 3개 실측). 그 표시를 보는 시험은 나의 업무 화면을 업무 보고 소유로 되돌린 카탈로그로 돈다 — 나머지 기능·간선·
@@ -389,7 +382,9 @@ test('automatic inclusions from the real catalog show a chain, a user sentence, 
 /*
  * 접근성(E7, 설계서 14.1). 자동 포함 카드는 점선으로 나누고 키보드로 닿으며(aria-disabled — native disabled 면 Tab 순서에서
  * 빠진다), 누르면 체크를 바꾸지 않고 요약의 '왜 포함됐나'를 연다. 바꾼 것 때문에 자동 포함이 달라지면 상태 문장(알림 영역)이
- * 한 번 말하고, 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 같은 구성을 다시 확인하면 다시 말하지 않는다.
+ * 한 번 말하고, 카드를 눌러 시작 구성이 '직접 선택'으로 바뀐 사실도 말한다. 시작 구성은 같은 목록의 직접 선택과 결과가 같아
+ * (해석기 단일화, 11단계 C2) 전환 탓으로 들어오는 기능은 없다 — 늘거나 준 자동 포함은 바꾼 카드만 주어다. 같은 구성을 다시 확인하면
+ * 다시 말하지 않는다.
  */
 const AUTO_FROM_SCRAP = '게시판·지식, 댓글';
 const PLAN_READY = '포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.';
@@ -474,22 +469,34 @@ test('automatic cards stay reachable by keyboard, open their reason when pressed
 });
 
 test('unchecking a feature that another choice still needs says it stayed, not that something was added', { timeout: 60_000 }, async t => {
-  // 전환으로 들어오는 기능은 실제 카탈로그에 없어(허브 분해 H2) 게시판이 도움말·커뮤니티 화면을 함께 쓰는 간선을 더한 카탈로그로 본다.
-  const { page, pageErrors } = await realCatalogPage(t, { catalog: sharedBoard });
+  const { page, pageErrors } = await realCatalogPage(t);
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
   // 협업 기본은 게시판과 댓글을 직접 고른다. 댓글을 빼면 게시판이 댓글을 필요로 해 댓글은 자동 포함으로 남는다.
-  // 직접 선택으로 바뀌면서 게시판이 요구하는 세 기능도 함께 들어온다(시작 구성은 그 구성의 기능만 담는다).
-  // 그 세 기능은 댓글 해제 탓이 아니라 전환 탓이므로 나눠 말한다.
+  // 시작 구성은 같은 목록의 직접 선택과 결과가 같아(해석기 단일화) 직접 선택으로 바뀌는 것만으로 들어오는 기능은 없다.
+  // 다만 시작 구성 선택이 '직접 선택'으로 바뀐 것은 말한다(다른 컨트롤의 값이 바뀌었다).
   await page.locator('#preset').selectOption('collaboration');
   // 시작 구성의 계획이 온 뒤에 바꾼다(그 전에 바꾸면 공통 기반과 비교한 순변화를 말한다).
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#capability-comment')).toBeChecked();
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await page.locator('#capability-comment').uncheck();
-  await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. '
-    + '시작 구성이 ‘직접 선택’으로 바뀌며 함께 포함되는 기능이 2개 늘었습니다(커뮤니티, 도움말·온라인 매뉴얼). ' + PLAN_READY);
+  await expect(page.locator('#plan-status')).toHaveText('다른 선택이 필요로 해 함께 포함된 채 남은 기능: 댓글. 시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   await expect(page.locator('#capability-comment')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#capability-comment')).toBeChecked();
+  // 시작 구성으로 돌아가면 댓글을 직접 고르므로 '빠졌다' 고 말하지 않는다.
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 자동 포함 변화가 없어도 카드를 눌러 시작 구성 선택이 '직접 선택'으로 바뀐 사실은 말한다(다른 컨트롤의 값이 바뀌었다).
+  await page.locator('#capability-isg').check();
+  await expect(page.locator('#plan-status')).toHaveText('시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
+  await page.locator('#preset').selectOption('collaboration');
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  // 카드를 누르지 않고 같은 목록의 직접 선택으로만 바꾸면 결과가 같아 아무것도 말하지 않는다.
+  await page.locator('#preset').selectOption('custom');
+  await expect(page.locator('#domain-count')).toHaveText('8');
+  await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
+  await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   assert.deepEqual(pageErrors, []);
 });
 
@@ -912,14 +919,12 @@ test('deselecting a root hidden by search clears the search and focuses the root
 
 /*
  * 카드에 포커스나 마우스가 오면 고르거나 뺄 때 무엇이 늘고 주는지 한 줄로 보인다(설계서 10장·E3).
- * 빼도 남는 기능은 무엇이 붙잡는지 말하고, 직접 선택으로 바뀌며 생기는 변화도 감추지 않는다.
+ * 빼도 남는 기능은 무엇이 붙잡는지 말한다.
  * 자동 포함 카드는 직접 바꿀 수 없어 미리보기가 없고, 포커스 뒤에 도착한 문장은 그 카드에 대해서만 한 번 알린다.
  * 시간에 기대지 않도록 계획 요청은 미리 붙잡고, 구성이 바뀐 직후의 화면은 같은 이벤트 처리 안에서 읽는다.
  */
 test('feature cards preview what choosing or removing them changes before the click', { timeout: 60_000 }, async t => {
-  // 직접 선택으로 바뀌며 들어오는 기능(도움말 등)은 실제 카탈로그에 없어(허브 분해 H2) 그 간선을 더한 카탈로그로 본다.
-  const { page, pageErrors } = await realCatalogPage(t, { catalog: sharedBoard });
-  const realDiff = diffWith(sharedBoard);
+  const { page, pageErrors } = await realCatalogPage(t);
   const recipe = selection => ({ schemaVersion: 1, project: { name: 'my-service' }, sourceRef: 'HEAD', selection, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
   const labelOf = id => real.capabilities.find(item => item.id === id).label;
   const announced = page.locator('#capability-preview-status');
@@ -960,11 +965,11 @@ test('feature cards preview what choosing or removing them changes before the cl
   assert.equal(switched, '');
   await expect(page.locator('#domain-count')).toHaveText('8');
   await expect(page.locator('#preview-mail')).toHaveText(realDiff(recipe({ preset: 'collaboration' }), 'mail').summary);
-  // 시작 구성에서 게시판을 빼려 하면 댓글·스크랩이 붙잡고(쪽지는 허브 분해 H1 뒤, 실시간 대시보드는 Phase 2 9단계 뒤 붙잡지 않는다), 직접 선택이 되며
-  //   들어오는 기능도 밝힌다.
+  // 시작 구성에서 게시판을 빼려 하면 댓글·스크랩이 붙잡는다(쪽지는 허브 분해 H1 뒤, 실시간 대시보드는 Phase 2 9단계 뒤 붙잡지 않는다).
+  //   시작 구성은 같은 목록의 직접 선택과 같으므로(11단계 C2) 직접 선택이 되며 들어오는 기능은 없다.
   await page.locator('#capability-board').focus();
   const board = realDiff(recipe({ preset: 'collaboration' }), 'board').summary;
-  assert.match(board, /^빼도 댓글, 스크랩이 요구해 계속 포함됩니다 · 기능 \+2\(들어옴: /);
+  assert.equal(board, '빼도 댓글, 스크랩이 요구해 계속 포함됩니다.');
   await expect(page.locator('#preview-board')).toHaveText(board);
   // 포커스와 마우스는 따로 기다린다. 다른 카드를 지나가는 마우스가 포커스된 카드의 요청을 지우지 않고,
   // 마우스만 올린 카드는 미리보기를 받아도 알리지 않는다.
@@ -978,21 +983,23 @@ test('feature cards preview what choosing or removing them changes before the cl
   await page.waitForTimeout(300);
   await expect(announced).toHaveText(`${labelOf('survey')}: ${surveyInPreset}`);
   // 자동 포함이 될 카드도 계획을 확인하기 전에는 미리보기를 묻지 않는다. 계획 요청은 구성을 바꾸기 전에 붙잡는다.
+  // 게시판을 빼면 댓글·스크랩이 게시판을 요구하므로 게시판은 자동 포함이 된다. 포커스는 설문에 둔 채 누른다.
   const held = [];
   await page.route('**/api/plan', route => { held.push(route); });
-  await page.locator('#preset').selectOption('custom');
+  await page.locator('#capability-board').evaluate(input => input.click());
   await expect.poll(() => held.length).toBe(1);
-  await expect(page.locator('#capability-help')).toBeEnabled();
-  await page.locator('label').filter({ has: page.locator('#capability-help') }).hover();
+  await expect(page.locator('#capability-board')).toBeEnabled();
+  const beforeBoard = diffRequests.length;
+  await page.locator('label').filter({ has: page.locator('#capability-board') }).hover();
   // 미리보기 요청은 120ms 뒤에 나간다. 그보다 충분히 기다려도 요청이 없다.
   await page.waitForTimeout(500);
-  assert.ok(!diffRequests.includes('help'), diffRequests.join(','));
+  assert.ok(!diffRequests.slice(beforeBoard).includes('board'), diffRequests.join(','));
   for (const route of held.splice(0)) await route.continue();
-  await expect(page.locator('#capability-help')).toBeDisabled();
-  await page.locator('label').filter({ has: page.locator('#capability-help') }).hover();
+  await expect(page.locator('#capability-board')).toBeDisabled();
+  await page.locator('label').filter({ has: page.locator('#capability-board') }).hover();
   await page.waitForTimeout(500);
-  await expect(page.locator('#preview-help')).toBeHidden();
-  assert.ok(!diffRequests.includes('help'), diffRequests.join(','));
+  await expect(page.locator('#preview-board')).toBeHidden();
+  assert.ok(!diffRequests.slice(beforeBoard).includes('board'), diffRequests.join(','));
   // 카드를 누르면 포커스가 먼저 미리보기를 예약하고 곧 구성이 바뀐다. 그 요청은 계획 확인 전의 새 구성으로 나가지 않는다.
   // 게시판이 댓글을 요구하므로 댓글을 빼면 댓글은 자동 포함이 된다.
   await expect(page.locator('#capability-comment')).toBeEnabled();

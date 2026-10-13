@@ -49,6 +49,8 @@
     "screens:generate": "node scripts/generate-screen-registry.mjs",
     "slots:generate": "node scripts/slot-registry.mjs --write",
     "slots:check": "node scripts/slot-registry.mjs --check",
+    "modules:generate": "node scripts/composer-modules-generate.mjs --write",
+    "modules:check": "node scripts/composer-modules-generate.mjs --check",
     "verify:docs": "node scripts/verify.mjs docs",
     "verify:fast": "node scripts/verify.mjs fast",
     "verify:push": "node scripts/verify.mjs push",

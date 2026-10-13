@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 2,
+  "id": "event",
+  "label": "행사·외부인사",
+  "presentation": {
+    "area": "work",
+    "order": 1,
+    "summary": "행사와 행사별 외부인사 관리"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_event_info",
+      "tb_extrl_hr_info"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/operation/events",
+      "src/app/admin/operation/external-hr",
+      "src/app/admin/operation/rough-map",
+      "src/services/foundation/operation/ExternalHrAdminService.ts",
+      "src/services/foundation/operation/eventService.ts",
+      "src/services/foundation/operation/__tests__/eventService.test.ts"
+    ],
+    "frontendAny": [
+      {
+        "path": "src/app/admin/operation/error.tsx",
+        "with": [
+          "reward"
+        ]
+      }
+    ],
+    "routes": [
+      "/admin/operation/events",
+      "/admin/operation/external-hr",
+      "/admin/operation/rough-map"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "EVENT",
+      "EXT_HR"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
+    "rbacMatrix": {
+      "surfaces": [
+        "/api/v1/admin/operation/events"
+      ]
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

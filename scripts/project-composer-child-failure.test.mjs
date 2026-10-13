@@ -90,6 +90,13 @@ test('the engine reads only a well-formed report for its own stage and an allowe
     ['huge.json', { schemaVersion: 1, stage: 'database', code: 'CATALOG_DRIFT', details: { violations: ['x'.repeat(70 * 1024)] } }, 'database'],
   ]) assert.equal(readChildFailure(report(name, value), stage, root), null, name);
   assert.equal(readChildFailure(join(root, 'build', 'missing.json'), 'database', root), null);
+  // 소스 단계의 도구 없음은 원본 프런트 의존성뿐이다(10c-2). 그 단계가 쓰지 않는 도구 이름이면 분류하지 않는다.
+  const frontend = readChildFailure(report('frontend.json', { schemaVersion: 1, stage: 'source', code: 'TOOL_UNAVAILABLE', details: { tool: 'frontend', path: 'D:/x' } }), 'source', root);
+  assert.equal(frontend.code, 'TOOL_UNAVAILABLE');
+  assert.deepEqual(frontend.details, { tool: 'frontend' }, 'only the reviewed tool name is kept');
+  assert.equal(readChildFailure(report('docker.json', { schemaVersion: 1, stage: 'source', code: 'TOOL_UNAVAILABLE', details: { tool: 'docker' } }), 'source', root), null);
+  assert.equal(readChildFailure(report('no-tool.json', { schemaVersion: 1, stage: 'source', code: 'TOOL_UNAVAILABLE' }), 'source', root), null);
+  assert.equal(readChildFailure(report('db-tool.json', { schemaVersion: 1, stage: 'database', code: 'TOOL_UNAVAILABLE', details: { tool: 'frontend' } }), 'database', root), null);
   // 상한은 정확히 64KiB 다. 상한까지는 읽고 한 바이트라도 넘으면 버린다(파일을 한 번만 열어 상한+1 바이트까지만 읽는다).
   const exact = body => { const json = JSON.stringify({ schemaVersion: 1, stage: 'database', code: 'MENU_SNAPSHOT_STALE' }); return json + ' '.repeat(body - json.length); };
   assert.equal(readChildFailure(report('limit.json', exact(64 * 1024)), 'database', root)?.code, 'MENU_SNAPSHOT_STALE');

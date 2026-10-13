@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "id": "informalsanction",
+  "label": "약식 전자결재",
+  "presentation": {
+    "area": "work",
+    "order": 0,
+    "summary": "기안·결재·참조와 결재함"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_ifml_atrz_dtl",
+      "tb_ifml_atrz_hstry",
+      "tb_ifml_atrz_info",
+      "tb_ifml_atrz_prcs_hstry",
+      "tb_ifml_atrz_rfpr",
+      "tb_ifml_atrz_tmpr_strg",
+      "tb_ifml_atrz_tmpr_strg_dtl",
+      "tb_ifml_atrz_tmpr_strg_rfpr"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/sanctn/workflow",
+      "src/app/admin/system/ism",
+      "src/app/admin/workflow",
+      "src/app/approvals",
+      "src/services/business/user/approval",
+      "src/app/components/dashboard/ApprovalHome.tsx",
+      "src/queries/approval-home-query.ts",
+      "src/extensions/informalsanction"
+    ],
+    "frontendAny": [
+      {
+        "path": "src/app/admin/sanctn/WorkflowHubClient.tsx",
+        "with": [
+          "template"
+        ]
+      }
+    ],
+    "routes": [
+      "/admin/sanctn/workflow",
+      "/admin/system/ism",
+      "/admin/workflow",
+      "/approvals"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "INFORMAL",
+      "APPROVAL",
+      "WORKFLOW"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
+        "alsoRequires": [
+          "notification"
+        ]
+      }
+    ],
+    "rbacMatrix": {
+      "surfaces": []
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": [
+      "COM075"
+    ]
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 결재 순서 도래, 회수, 반려, 보완 요청과 답변, 결재자 변경, 참조자 지정, 최종 결과가 앱 알림으로 전달되지 않습니다. 재알림·결재자 변경·참조자 지정 화면은 알린다고 안내하지만 실제로는 전달되지 않습니다."
+    },
+    {
+      "to": "mail",
+      "via": "event:MailRequestedEvent",
+      "reason": "메일 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 메일이 가지 않습니다."
+    },
+    {
+      "to": "sms",
+      "via": "event:SmsRequestedEvent",
+      "reason": "문자 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 문자가 가지 않습니다."
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/informalsanction/home-sections.ts",
+        "reason": "약식 전자결재 기능이 없으면 업무 홈의 결재 대기 카드와 결재함 열기 단추만 사라지고 업무 홈은 그대로입니다."
+      }
+    ],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

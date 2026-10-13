@@ -28,6 +28,8 @@ import { MANIFEST_PATH, ROOT, copySourceTree, fail, git, initializeGeneratedRepo
   walk } from './reusable-source-tree.mjs';
 import { buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { installProjectedColumnCatalog } from './reusable-migration-catalog.mjs';
+import { assertFrontendToolchain, regenerateContractTypes, writeProjectedApiDocs } from './reusable-contract-projection.mjs';
+import { assertContractReferencesSurvive } from './reusable-contract-references.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
@@ -222,7 +224,7 @@ export function projectSourceTree(output, { manifest, profile, composition, sour
   return { java, frontend };
 }
 
-function main() {
+async function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
@@ -250,6 +252,8 @@ function main() {
   assertCompositionDatabaseLock(dbLock, composition);
   verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
 
+  // API 계약 생성물은 원본 frontend 의 도구로 다시 만든다(U5-A). 출력 폴더를 만들기 전에 확인해 잔재를 남기지 않는다.
+  assertFrontendToolchain(ROOT);
   const output = safeOutputPath(args.output, args.profile, sourceCommit.slice(0, 12), args.layout);
   mkdirSync(output, { recursive: true });
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
@@ -266,6 +270,14 @@ function main() {
   });
   // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
   if (composition.profile !== 'custom') assertJavaCascadeAcknowledged(args.profile, profile, java);
+  // API 계약(10c-2): Java 투영이 핸들러를 지운 연산을 api-docs 에서 빼고 스키마 폐포·태그를 정리한다. 정밀 점검이 같은 함수로 미리 본다.
+  const apiDocs = writeProjectedApiDocs(ROOT, output);
+  console.log(`[base-source] ${args.profile}: api-docs 를 구성 기준으로 다시 썼다(연산 ${apiDocs.summary.operations}개, 뺀 연산 ${apiDocs.summary.removedOperations}개).`);
+  // 생성 타입 3종(zod·operations·api.d.ts)은 frontend/src 라 거버넌스 투영의 codeScope 해시보다 먼저 다시 만든다.
+  const generatedTypes = regenerateContractTypes({ sourceRoot: ROOT, output });
+  // 남는 프런트 코드(시험 포함, tsconfig 범위)가 이 구성에서 사라진 계약 이름을 쓰면 생성물의 tsc 가 약 10분 뒤에야 깨진다. 여기서 파일을
+  //   밝히며 멈춘다. 정밀 점검이 같은 판정으로 미리 막는다(사라질 이름은 예측과 다시 만든 파일의 차이가 같아야 한다).
+  const contractReferences = assertContractReferencesSurvive({ sourceRoot: ROOT, output, projection: apiDocs, files: copiedFiles });
   installDatabaseBundle(output, dbBundle);
   // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
@@ -290,7 +302,13 @@ function main() {
   // 투영 원장(Phase 2 D6): 복사한 원본 파일 가운데 지금 없는 파일. 파일을 지우는 마지막 단계(검증 설치의 워크플로 정리,
   //   거버넌스 투영의 리다이렉트 페이지 정리) 뒤에 센다 — 앞에서 세면 그 뒤에 지운 파일이 원장에 없다(검토로 드러났다).
   //   단일모듈 배치는 build.gradle·settings.gradle 만 바꾸고 소스를 옮기지 않으므로 원장 경로는 그대로 유효하다.
-  const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copiedFiles));
+  const removedSourceFiles = buildProjectionLedger(output, copiedFiles);
+  const projectionLedger = writeProjectionLedger(output, removedSourceFiles);
+  // 경계·소비 census(10c-2)는 생성물 트리에서 다시 만든다. 소비 census 의 'consumer-not-in-composition' 근거가 투영 원장이라 그 뒤에 한다.
+  //   이 모듈은 적재할 때 원본 frontend 의 TypeScript 를 읽으므로 동적 import 로만 부른다 — 정적으로 부르면 frontend 를 설치하지 않은 곳에서
+  //   생성기 적재부터 실패한다(도구 확인은 출력 폴더를 만들기 전에 했다).
+  const { projectContractCensuses } = await import('./reusable-contract-census.mjs');
+  const contractCensus = projectContractCensuses({ sourceRoot: ROOT, output, removedFiles: removedSourceFiles.removedFiles });
 
   const lock = {
     schemaVersion: 1,
@@ -308,6 +326,7 @@ function main() {
     removedGates,
     removedHistoricalMigrationTests: removedHistoricalMigrationTests.count,
     projectionLedger,
+    contracts: { apiDocs: { ...apiDocs.summary, keptAliasesWithoutBase: apiDocs.keptAliasesWithoutBase }, generatedTypes, contractReferences, ...contractCensus },
     zdmWaivers,
     governance: {
       path: 'config/governance/reusable-governance-projection.json',

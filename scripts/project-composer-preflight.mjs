@@ -1,4 +1,5 @@
 import { statfsSync } from 'node:fs';
+import { FRONTEND_INSTALL_COMMAND } from './reusable-contract-projection.mjs';
 
 /*
  * 생성 전 환경 점검(설계서 14장·19장, E5). 생성은 Docker·Java 21·Node.js 22·pnpm 과 작업 트리를 쓰는데,
@@ -30,8 +31,10 @@ const javaHomeOf = value => (value ?? '').replaceAll('"', '').trim();
  * 실행 파일을 찾지 못한 실패는 `code: 'TOOL_UNAVAILABLE'` 로 온다.
  * `sourceCommit` 은 점검을 요청한 화면이 카탈로그를 받은 때의 원본 커밋이다.
  * `freeBytes` 는 출력 위치의 남은 공간을 돌려준다(테스트 이음새).
+ * `missingFrontendTools` 는 원본 frontend 에 설치되지 않은 생성 도구 목록이다(빈 배열이면 모두 있다). 생성기는 API 계약 생성물을
+ * 원본 frontend 의 TypeScript·openapi-typescript 로 다시 만든다(Phase 2 10c-2, U5-A).
  */
-export async function composerPreflight({ outputRoot, sourceCommit, probe, nodeVersion = process.versions.node,
+export async function composerPreflight({ outputRoot, sourceCommit, probe, missingFrontendTools, nodeVersion = process.versions.node,
   javaHome = process.env.JAVA_HOME, freeBytes = path => { const stats = statfsSync(path); return stats.bavail * stats.bsize; } }) {
   const attempt = async (command, args) => {
     try { return { ok: true, out: String(await probe(command, args)) }; }
@@ -74,6 +77,11 @@ export async function composerPreflight({ outputRoot, sourceCommit, probe, nodeV
   const pnpmVersion = pnpm.ok ? versionOf(pnpm.out) : null;
   if (pnpmVersion && pnpmVersion.major >= 9) check('pnpm', 'pass', 'pnpm 9 이상', { detail: pnpmVersion.text });
   else check('pnpm', 'block', 'pnpm 9 이상을 찾지 못했습니다. pnpm을 설치한 뒤 생성기를 다시 시작하세요.', { code: 'TOOL_UNAVAILABLE' });
+
+  // 생성기는 API 계약(api-docs·생성 타입·경계·소비 census)을 원본 frontend 의 도구로 다시 만든다. 설치는 생성기 서버를 다시 시작하지 않아도 된다.
+  if (!Array.isArray(missingFrontendTools)) check('frontend', 'block', '원본 프런트 의존성을 확인하지 못했습니다. 생성기를 다시 시작하세요.', { code: 'TOOL_UNAVAILABLE' });
+  else if (missingFrontendTools.length === 0) check('frontend', 'pass', '원본 프런트 의존성(TypeScript·openapi-typescript)이 설치돼 있습니다');
+  else check('frontend', 'block', `원본 프런트 의존성이 없어 API 계약을 다시 만들 수 없습니다. 저장소에서 ${FRONTEND_INSTALL_COMMAND} 를 실행한 뒤 다시 점검하세요.`, { code: 'TOOL_UNAVAILABLE' });
 
   // 이미지는 Linux 컨테이너 Docker 가 응답할 때만 볼 수 있다. 없어도 첫 생성이 내려받으므로 경고다.
   if (linuxDocker) {

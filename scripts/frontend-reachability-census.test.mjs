@@ -1136,12 +1136,20 @@ test('scripts have no static import cycle, so every entry point evaluates each m
   다른 잡 뒤에야 붉히고, 실행하지 않는 지연 로드 경로는 보지 못한다. 이 시험이 같은 제약을 운영 계약 단계에서 모든 참조 종류(정적·동적
   import, require, createRequire)에 건다. 계산된 import 는 판정할 수 없으므로 issue 로 막는다. 하한은 2026-10-11 실측(35·17·16·5·34)
   아래다. 야간 생성물 시험(reusable-nightly.yml)도 루트 설치 없이 reusable-nightly.mjs 를 돌리므로 같은 진입점으로 센다(2026-10-12 실측 38).
+
+  [Phase 2 10c-2 — 투영은 frontend 설치 없이] 생성기는 생성물의 API 계약 census 를 원본 frontend 의 TypeScript 로 다시 만든다(U5-A).
+  그 일을 하는 모듈(FRONTEND_TOOLCHAIN_MODULES)은 적재할 때 TypeScript 를 읽으므로, 생성기·정밀 점검·생성기 서버는 그 모듈을
+  동적 import 로만 부른다. 이 계약은 그 동적 간선 하나만 따라가지 않고 기록한다 — 같은 모듈로 가는 정적 import(또는 require)는
+  다른 모듈처럼 따라가 패키지 참조로 붉다. 그래서 생성기는 frontend 를 설치하지 않은 곳에서도 적재되고, 계약 단계에 이르러서야
+  도구 없음(TOOL_UNAVAILABLE)으로 멈춘다. 생성기 서버 폐포의 하한은 2026-10-13 실측(39) 아래다.
 */
+const FRONTEND_TOOLCHAIN_MODULES = new Set(['scripts/reusable-contract-census.mjs']);
 function scriptClosure(entry, overrides = new Map()) {
   const files = [];
   const issues = [];
   const packages = [];
   const missing = [];
+  const lazyToolchain = [];
   const queue = [entry];
   const seen = new Set();
   while (queue.length > 0) {
@@ -1155,16 +1163,18 @@ function scriptClosure(entry, overrides = new Map()) {
       if (specifier.startsWith('./') || specifier.startsWith('../')) {
         const target = posix.normalize(posix.join(posix.dirname(file), specifier));
         if (!overrides.has(target) && !existsSync(join(repoRoot, target))) missing.push(`${file} ${kind} ${specifier}`);
+        else if (kind === 'dynamic-import' && FRONTEND_TOOLCHAIN_MODULES.has(target)) lazyToolchain.push(`${file} -> ${target}`);
         else if (/\.[cm]?js$/.test(target)) queue.push(target);
       } else if (!isBuiltin(specifier)) {
         packages.push(`${file} ${kind} ${specifier}`);
       }
     }
   }
-  return { files, issues, packages, missing };
+  return { files, issues, packages, missing, lazyToolchain };
 }
 
-test('the generator and the deep plan load only Node built-in modules through their whole import closure', () => {
+test('projection loads without a frontend install: the generator, the deep plan and the composer server reach Node built-ins only', () => {
+  const lazy = new Map();
   for (const [entry, floor] of [
     ['scripts/generate-reusable-base-source.mjs', 30],
     ['scripts/project-composer-deep.mjs', 15],
@@ -1172,11 +1182,24 @@ test('the generator and the deep plan load only Node built-in modules through th
     ['scripts/verify-reusable-base.mjs', 4],
     ['scripts/verify-project-composer.mjs', 25],
     ['scripts/reusable-nightly.mjs', 35],
+    ['scripts/project-composer-server.mjs', 30],
   ]) {
     const closure = scriptClosure(entry);
     assert.ok(closure.files.length >= floor, `${entry}: the closure has only ${closure.files.length} files`);
     assert.deepEqual({ issues: closure.issues, packages: closure.packages, missing: closure.missing }, { issues: [], packages: [], missing: [] }, entry);
+    for (const edge of closure.lazyToolchain) lazy.set(edge, entry);
   }
+  // TypeScript 를 읽는 모듈은 생성기가 계약 단계에서만 동적으로 부른다. 그 모듈 자신은 frontend 패키지를 쓴다(경계가 실제로 있다).
+  assert.deepEqual([...lazy.keys()].sort(), ['scripts/generate-reusable-base-source.mjs -> scripts/reusable-contract-census.mjs']);
+  for (const module of FRONTEND_TOOLCHAIN_MODULES) {
+    assert.ok(scriptClosure(module).packages.some(reference => reference.endsWith(' typescript')), `${module} loads frontend TypeScript`);
+  }
+  // 대조: 그 모듈을 정적으로 import 하면 생성기 폐포에 TypeScript 가 들어와 붉다.
+  const generator = 'scripts/generate-reusable-base-source.mjs';
+  const generatorSource = readFileSync(join(repoRoot, generator), 'utf8');
+  const staticImport = scriptClosure(generator, new Map([[generator,
+    `import { projectContractCensuses } from './reusable-contract-census.mjs';\n${generatorSource}`]]));
+  assert.ok(staticImport.packages.some(reference => reference.endsWith(' typescript')), 'a static import of the TypeScript module must fail the closure');
   // 대조: 폐포 안 모듈이 패키지를 정적으로·지연으로 가져오거나 계산된 import 를 두면 붉다. 주석·문자열 속 패키지 이름은 import 가 아니다.
   const graph = 'scripts/frontend-module-graph.mjs';
   const source = readFileSync(join(repoRoot, graph), 'utf8');

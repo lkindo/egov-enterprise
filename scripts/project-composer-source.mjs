@@ -17,31 +17,42 @@ export function supportFileDirectoryDomain(file) {
 }
 
 export function domainSupportFiles(root, manifest) {
-  const result = new Map();
-  const owners = new Set();
-  const realRoot = realpathSync(root);
-  const appDomains = new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []));
+  const appDomains = Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []);
+  const entries = [];
   for (const [pack, value] of Object.entries(manifest.packs ?? {})) {
     const declarations = value.backend?.domainSupportFiles ?? {};
     if (!declarations || typeof declarations !== 'object' || Array.isArray(declarations)) throw new Error(`Invalid domain support declarations: ${pack}`);
-    for (const [domain, files] of Object.entries(declarations)) {
-      if (!value.backend?.appDomains?.includes(domain) || result.has(domain)
-        || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
-      for (const file of files) {
-        const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
-        if (typeof file !== 'string'
-          || !(/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
-            || (directoryDomain && directoryDomain !== domain && appDomains.has(directoryDomain)))
-          || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
-        const absolute = resolve(root, file);
-        if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
-        const child = relative(realRoot, realpathSync(absolute));
-        if (isAbsolute(child) || child === '..' || child.startsWith(`..${sep}`)
-          || child.split(sep).join('/') !== file) throw new Error(`Unsafe domain support file: ${file}`);
-        owners.add(file);
-      }
-      result.set(domain, [...files]);
+    for (const [domain, files] of Object.entries(declarations)) entries.push({ owner: pack, owned: value.backend?.appDomains ?? [], domain, files });
+  }
+  return supportFileOwners(root, entries, appDomains);
+}
+
+/**
+ * 지원 파일 선언의 공용 판정(manifest pack 선언과 매니페스트 v2 기능 파일이 함께 쓴다). `entries` 는 선언 순서의
+ * `{ owner, owned, domain, files }` 다 — owner 는 선언한 자리(pack 이름 또는 기능 id), owned 는 그 자리가 소유한 기능이다.
+ */
+export function supportFileOwners(root, entries, appDomainList) {
+  const result = new Map();
+  const owners = new Set();
+  const realRoot = realpathSync(root);
+  const appDomains = new Set(appDomainList);
+  for (const { owner: pack, owned, domain, files } of entries) {
+    if (!owned.includes(domain) || result.has(domain)
+      || !Array.isArray(files) || files.length === 0) throw new Error(`Invalid domain support owner: ${pack}/${domain}`);
+    for (const file of files) {
+      const directoryDomain = typeof file === 'string' ? supportFileDirectoryDomain(file) : null;
+      if (typeof file !== 'string'
+        || !(/^(?:foundation|business-core|api-server)\/src\/(?:main|test)\/java\/(?:[A-Za-z_$][\w$]*\/)+[A-Za-z_$][\w$]*\.java$/u.test(file)
+          || (directoryDomain && directoryDomain !== domain && appDomains.has(directoryDomain)))
+        || owners.has(file)) throw new Error(`Invalid or duplicate domain support file: ${file}`);
+      const absolute = resolve(root, file);
+      if (!existsSync(absolute) || !statSync(absolute).isFile()) throw new Error(`Missing domain support file: ${file}`);
+      const child = relative(realRoot, realpathSync(absolute));
+      if (isAbsolute(child) || child === '..' || child.startsWith(`..${sep}`)
+        || child.split(sep).join('/') !== file) throw new Error(`Unsafe domain support file: ${file}`);
+      owners.add(file);
     }
+    result.set(domain, [...files]);
   }
   return result;
 }
@@ -76,8 +87,8 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   }
 }
 
-const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
-const MANAGEMENT_RBAC_SURFACES = new Map([
+export const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
+export const MANAGEMENT_RBAC_SURFACES = new Map([
   ['/api/v1/admin/operation/events', 'event'],
   ['/api/v1/admin/operation/rewards', 'reward'],
   ['/api/v1/help/hpcm', 'help'],
@@ -87,10 +98,10 @@ const MANAGEMENT_RBAC_SURFACES = new Map([
   ['/api/v1/admin/system/templates', 'template'],
 ]);
 // Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
-const RBAC_DOMAINS = ['survey', 'promotion', 'informalsanction', 'event', 'reward', 'help', 'template'];
+export const RBAC_DOMAINS = ['survey', 'promotion', 'informalsanction', 'event', 'reward', 'help', 'template'];
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
 const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
-const GATE_OWNERS = {
+export const GATE_OWNERS = {
   'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
   'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
   // 결재 흐름 검증은 알림 리스너(NotificationRequestListener)도 참조해, 알림이 빠지면 함께 지워진다.

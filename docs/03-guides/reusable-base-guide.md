@@ -73,6 +73,8 @@ clean v* release tag
 - Docker와 실행 중인 PostgreSQL 컨테이너가 필요하다. 기본 컨테이너명은
   `egov-e2e-postgres`이며 `--container <name>`으로 바꿀 수 있다.
 - 생성기는 이름이 `test_reusable_base_*`인 일회용 DB만 만들고 종료 시 제거한다.
+- 원본 frontend 의존성이 설치돼 있어야 한다(`pnpm -C frontend install --frozen-lockfile`). 소스 생성기는 생성물의 API 계약을
+  원본의 TypeScript·openapi-typescript 로 다시 만들며(§3.5), 없으면 출력 폴더를 만들기 전에 `TOOL_UNAVAILABLE` 로 멈춘다.
 
 ### 3.2 DB 번들
 
@@ -179,6 +181,32 @@ Flyway 이력 표 항목만 원본에서 가져오고, 산출물의 스키마 �
 새 생성물은 그 코드를 모르므로 권한 스냅숏이 그 그룹 사용자의 인증을 막는다(fail-closed).
 그런 DB 에 새로 만든 소스를 배포하기 전에 구성 밖 OPERATION 배정을 정리하고 이력을 남긴다.
 이 절차는 업그레이드 키트(Phase 3)의 선행 조건이고, 기관 채택 `authorization` 통제의 확인 항목이다.
+
+API 계약 사슬도 구성으로 다시 만든다(Phase 2 10c-2, DEC-OPS-286). ① `api-docs.json` 은 인가 원장의 연산 바인딩으로
+핸들러 소스를 찾아, 투영이 지운 핸들러의 연산을 빼고 남는 문서에서 닿는 스키마와 쓰이는 태그만 남긴다([계약 투영](../../scripts/reusable-contract-projection.mjs)).
+바인딩이 없거나 소스를 찾지 못한 연산은 판정할 수 없어 생성이 실패하고, 정밀 점검이 같은 판정으로 미리 막는다.
+② 같은 단계에서 생성 타입 3종(`generated-zod`·`generated-operations`·`generated-api.d.ts`)을 원본의 생성기와
+원본 frontend 의 openapi-typescript 로 다시 만든다. ③ 투영 원장을 쓴 뒤 생성 경계 census 와 소비 census 원장을 생성물
+트리에서 다시 만든다([census 투영](../../scripts/reusable-contract-census.mjs)). 생성물에 없는 연산의 원장 항목은 빠지고,
+핸들러는 남는데 원본의 소비자 파일을 투영이 모두 지운 연산(예: 게시판의 공개 FAQ 연산 — 소비자는 도움말 화면뿐)은
+`consumer-not-in-composition` 으로 그 지운 파일을 근거로 적는다. 기대값(연산 수·세 래칫)은 생성물에서 잰 값이며,
+생성기는 생성물에서 소비 census 가 오류 0 인지 확인한다. 단 세 래칫은 부채의 상한이라 `unwiredMax`·`ungatedWriteMax` 가
+원본보다 커지면 그 연산·화면을 밝히며 실패하고, 화면 고아(`screenOrphanMax`)가 원본보다 늘면 원본 census 와 대조해 늘어난
+메서드를 lock(`contracts.consumer.screenOrphansAdded`)에 남긴다. 모든 기능을 고른 구성은 api-docs·생성 타입 3종·두 census 가
+원본과 같다. 생성물의 경로 린터는 api-docs ⊆ 컨트롤러도 본다. springdoc 으로 다시 추출한 문서와의 대조는 T2 야간 검증이 한다.
+
+생성 타입을 다시 만든 직후 생성기는 남는 프런트 코드(`frontend/tsconfig.json` 범위 — 시험 포함)가 이 구성에서 사라진 계약
+이름을 쓰지 않는지 본다([계약 이름 판정](../../scripts/reusable-contract-references.mjs)): 생성 모듈 셋의 이름 import·re-export·
+이름공간 멤버, generated-api 의 `components['schemas']['X']`·`operations['id']`·`paths['/p']` 리터럴 색인이다. 사라진 이름을 쓰면
+파일과 줄을 밝히며 멈추고(생성물의 tsc 가 약 10분 뒤에 깨질 자리), 판정할 수 없는 모양(동적 import, `export *`, 리터럴이 아닌 색인)도
+실패다. 정밀 점검은 원본 생성 파일과 투영 결과로 사라질 이름을 예측해 같은 판정을 미리 하고, 생성기는 그 예측이 다시 만든 파일의
+export 차이와 같은지도 본다. 어느 기능에도 속하지 않아 투영 뒤에 남던 공유 위치의 기능 코드(예: 댓글·만족도 폼 검증, 댓글 타입)는
+그 기능의 경로로 선언해 함께 지운다.
+
+springdoc 별칭(`_N`) 가운데 기본 연산이 다른 기능과 함께 빠지고 별칭만 남는 연산(예: 게시판은 있고 설문이 없는 구성의
+`getStats_1` — 기본 `getStats` 는 설문 소유)은 id 를 원본 그대로 두고 lock 의 `contracts.apiDocs.keptAliasesWithoutBase` 에 적는다.
+생성물에서 springdoc 으로 다시 추출하면 충돌이 없어 접미사 없이 나오므로, T2 의 springdoc 재추출 대조는 이 목록의 접미사 차이를
+정규화해야 하고, 생성물 유지자가 springdoc 으로 api-docs 를 다시 만들면 그 연산의 서술자 이름(`getStats_1Operation`)이 바뀐다.
 
 공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
 파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,

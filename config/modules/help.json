@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "help",
+  "label": "도움말·온라인 매뉴얼",
+  "presentation": {
+    "area": "knowledge",
+    "order": 2,
+    "summary": "도움말과 온라인 매뉴얼"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_hlp_info",
+      "tb_onln_mnl_info"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/system/hpcm",
+      "src/app/admin/uss/olh",
+      "src/app/help",
+      "src/services/business/user/help",
+      "src/services/foundation/system/HpcmAdminService.ts",
+      "src/services/foundation/user",
+      "src/extensions/help"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/system/hpcm",
+      "/admin/uss/olh",
+      "/help"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "HELP"
+    ],
+    "gates": [],
+    "rbacMatrix": {
+      "surfaces": [
+        "/api/v1/help/hpcm",
+        "/api/v1/help/manuals"
+      ]
+    },
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [
+    {
+      "to": "board",
+      "kind": "ui-import",
+      "reason": "도움말 센터의 자주 묻는 질문·질의응답이 게시판 API 를 부른다.",
+      "evidence": "frontend/src/services/business/user/help/HelpUserService.ts",
+      "symbol": "getPublicFaqsOperation"
+    }
+  ],
+  "foreignKeys": [],
+  "requires": [
+    {
+      "to": "board",
+      "userReason": "도움말 화면의 자주 묻는 질문·질의응답은 게시판 글입니다."
+    }
+  ],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/help/shell-links.ts",
+        "reason": "도움말 기능이 없으면 머리글·바닥글·오류 화면에서 도움말 화면으로 가는 링크만 사라지고 다른 기능은 그대로입니다."
+      }
+    ],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

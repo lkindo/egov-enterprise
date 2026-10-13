@@ -28,7 +28,7 @@ function preflightWith(overrides = {}, options = {}) {
     if (value instanceof Error || value === undefined) throw value ?? new Error('not found');
     return value;
   };
-  return composerPreflight({ outputRoot: 'D:/out', sourceCommit: HEAD, probe, nodeVersion: '22.17.1', javaHome: '',
+  return composerPreflight({ outputRoot: 'D:/out', sourceCommit: HEAD, probe, missingFrontendTools: [], nodeVersion: '22.17.1', javaHome: '',
     freeBytes: () => 250 * 1024 ** 3, ...options }).then(result => ({ ...result, calls }));
 }
 const byId = (result, id) => result.checks.find(check => check.id === id);
@@ -37,8 +37,8 @@ test('a healthy computer passes every check and reports only parsed versions', a
   const result = await preflightWith();
   assert.equal(result.blocked, false);
   assert.deepEqual(result.checks.map(check => [check.id, check.status]), [
-    ['docker', 'pass'], ['java', 'pass'], ['node', 'pass'], ['pnpm', 'pass'], ['image', 'pass'], ['worktree', 'pass'], ['source', 'pass'], ['disk', 'pass']]);
-  assert.deepEqual(result.checks.map(check => check.detail ?? null), ['29.1.3', '21.0.9', '22.17.1', '10.13.1', null, null, HEAD.slice(0, 12), '250.0GB']);
+    ['docker', 'pass'], ['java', 'pass'], ['node', 'pass'], ['pnpm', 'pass'], ['frontend', 'pass'], ['image', 'pass'], ['worktree', 'pass'], ['source', 'pass'], ['disk', 'pass']]);
+  assert.deepEqual(result.checks.map(check => check.detail ?? null), ['29.1.3', '21.0.9', '22.17.1', '10.13.1', null, null, null, HEAD.slice(0, 12), '250.0GB']);
   assert.equal(byId(result, 'disk').label, '출력 위치의 남은 공간이 충분합니다');
   assert.ok(result.calls.some(call => call.join(' ') === `docker image inspect --format {{.Id}} ${PREFLIGHT_IMAGE}`));
   assert.doesNotMatch(JSON.stringify(result.checks), /Temurin|OpenJDK Runtime|sha256|linux/);
@@ -64,6 +64,15 @@ test('other missing tools block with a restart, because the generator keeps the 
   assert.equal(byId(await preflightWith({ 'pnpm --version': '8.15.0' }), 'pnpm').status, 'block');
   assert.equal(byId(await preflightWith({}, { nodeVersion: '20.11.0' }), 'node').label, 'Node.js 22 이상이 필요합니다(지금 20.11.0). Node.js 22 이상으로 생성기를 다시 시작하세요.');
   assert.equal(byId(await preflightWith({ 'git status': new Error('not a repository') }), 'worktree').status, 'block');
+});
+
+test('missing source frontend tools block with the install command, because the generator rebuilds the API contract with them', async () => {
+  const missing = await preflightWith({}, { missingFrontendTools: ['frontend/node_modules/openapi-typescript/bin/cli.js'] });
+  assert.equal(missing.blocked, true);
+  assert.deepEqual(byId(missing, 'frontend'), { id: 'frontend', status: 'block', code: 'TOOL_UNAVAILABLE',
+    label: '원본 프런트 의존성이 없어 API 계약을 다시 만들 수 없습니다. 저장소에서 pnpm -C frontend install --frozen-lockfile 를 실행한 뒤 다시 점검하세요.' });
+  // 확인하지 못한 것은 통과가 아니다.
+  assert.equal(byId(await preflightWith({}, { missingFrontendTools: undefined }), 'frontend').status, 'block');
 });
 
 test('Java 21 with a JDK passes, a missing JDK or another Java warns, and an old or missing Java blocks', async () => {

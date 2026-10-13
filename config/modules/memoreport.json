@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 2,
+  "id": "memoreport",
+  "label": "메모 보고",
+  "presentation": {
+    "area": "work",
+    "order": 5,
+    "summary": "메모 보고와 지시"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": [
+      "foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java",
+      "business-core/src/main/java/nuri/business/service/user/UserDisplayNameLookupService.java",
+      "business-core/src/test/java/nuri/business/service/user/UserDisplayNameLookupServiceTest.java"
+    ]
+  },
+  "owns": {
+    "tables": [
+      "tb_memo_rpt_info"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/services/business/memoreport",
+      "src/app/admin/operation/memo-reports",
+      "src/extensions/memoreport"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/operation/memo-reports"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "MEMO_RPT"
+    ],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [
+    {
+      "to": "notification",
+      "via": "event:NotificationRequestedEvent",
+      "reason": "알림 기능이 없으면 메모 보고가 도착하거나, 지시가 달리거나 바뀌거나, 지시가 달린 보고가 삭제되어도 당사자에게 알림이 가지 않습니다. 지시 변경 확인창은 알린다고 안내하지만 실제로는 전달되지 않습니다."
+    }
+  ],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/memoreport/shell-links.ts",
+        "reason": "메모 보고 기능이 없으면 업무 보고 화면의 메모보고 관리 링크와 안내 문장만 사라지고 업무 보고는 그대로입니다."
+      }
+    ],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

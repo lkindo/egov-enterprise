@@ -392,6 +392,11 @@ function nightlyWorkflowErrors(source) {
     '        run: node scripts/reusable-nightly.mjs run --item "$NIGHTLY_ITEM" --contracts "$NIGHTLY_CONTRACTS"']) {
     if (!verify.split('\n').includes(line)) errors.push(`verify job must keep: ${line.trim()}`);
   }
+  // 생성기는 원본 frontend 의 도구로 생성물의 API 계약을 다시 만든다(10c-2). 생성 단계보다 앞에서 설치해야 한다.
+  const install = verify.indexOf('- name: Install source frontend tools for contract projection\n'
+    + '        run: pnpm install --frozen-lockfile\n        working-directory: frontend\n');
+  const generate = verify.indexOf('- name: Generate, verify and test the composition\n');
+  if (install < 0 || generate < 0 || install > generate) errors.push('the verify job installs the source frontend tools before it generates');
   if (!(jobs.get('plan') ?? '').includes('run: node scripts/reusable-nightly.mjs plan ')) errors.push('the plan job computes the matrix');
   if (!/- name: Retain the composition report\n {8}if: always\(\)\n(?: {8,}.*\n)* {10}if-no-files-found: error\n/.test(verify)) {
     errors.push('every composition keeps its report, failed or not');
@@ -434,6 +439,8 @@ test('the nightly workflow runs on demand only, read-only, without secrets and w
     [lf.replace('- name: Retain the composition report\n        if: always()\n', '- name: Retain the composition report\n'), /keeps its report/],
     [lf.replace('          if-no-files-found: error', '          if-no-files-found: warn'), /keeps its report/],
     [lf.replace('          printf', '          echo "${{ inputs.compositions }}"\n          printf'), /only through env/],
+    [lf.replace('      - name: Install source frontend tools for contract projection\n        run: pnpm install --frozen-lockfile\n'
+      + '        working-directory: frontend\n', ''), /installs the source frontend tools before it generates/],
   ]) {
     assert.notEqual(mutation, lf, String(expected));
     assert.match(nightlyWorkflowErrors(mutation).join('\n'), expected);
