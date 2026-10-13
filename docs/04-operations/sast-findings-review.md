@@ -1,5 +1,17 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-13 주민번호 변환기 호환 계약 시험 의존 추가에 따른 H2 테스트 경계 재검토
+
+SAST-FP-007의 보완 소스인 `migration-tool/build.gradle`에 온라인 주민번호 변환기 호환 계약 시험(DEC-OPS-308)이
+쓰는 테스트 의존 세 줄만 더했다 — `egovframe-rte-fdl-crypto`·`jakarta.persistence-api`의 `testImplementation`과
+`lombok`의 `testRuntimeOnly`다. eGov 암호가 끌어오는 `log4j-slf4j2-impl`은 루트 `build.gradle`의
+`configurations.all`이 빼며, `:migration-tool:dependencies --configuration testRuntimeClasspath`에 0건이다.
+H2는 여전히 테스트 구성에만 있고, 생성한 migration bootJar의 `BOOT-INF/lib` 64개에 H2·eGovFrame·Testcontainers
+라이브러리가 없다. 탐지 원문 `application-test.yml`과 나머지 보완 소스 5개의 해시는 기존 승인값과 일치한다.
+
+변경된 보완 소스 하나와 승인 목록의 registry 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·
+만료일과 보안 임계값은 유지한다. 근거는 의존성 선언의 재검토이며 CodeQL 실행의 증거가 아니다.
+
 ## 2026-10-07 lombok 플러그인·bucket4j 상향에 따른 H2 테스트 경계 재검토
 
 SAST-FP-007의 보완 소스 두 개가 Dependabot 배치(#761·#849)로 바뀌었다. 루트 `build.gradle`은
