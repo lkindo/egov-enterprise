@@ -279,7 +279,10 @@ class EtlCommitIntegrationTest {
         TableMapping typed = new TableMapping("LEGACY_TYPED", "tb_typed", null, null, List.of("ID"), null, List.of(
                 new ColumnMapping("OTHER_ID", "id", null, null, null, null, null),
                 new ColumnMapping("PAYLOAD", "payload", null, null, null, null, null)), null,
-                new IdentityStrategy(TargetIdentityPolicy.PRESERVE, List.of(sourceId), List.of(targetId)), List.of());
+                // 시험 대상 PK 는 시퀀스로 채번되지 않는다(DEC-OPS-306 none 선언). 선언이 없으면 PostgreSQL 이
+                // 아닌 대상은 시퀀스를 판정할 수 없어 행을 읽기 전에 멈추므로 identity 단계까지 가지 못한다.
+                new IdentityStrategy(TargetIdentityPolicy.PRESERVE, List.of(sourceId), List.of(targetId),
+                        Map.of("id", IdentityStrategy.NO_SEQUENCE)), List.of());
         MappingSpec spec = new MappingSpec(src, tgt, List.of(typed), Map.of(),
                 new RunContext("commit-typed-identity", "legacy-crm"));
 
