@@ -5,11 +5,11 @@
  *
  * 스키마(_schema.json) 검사는 여기서 하지 않는다(composer-modules-schema.mjs). 이 로더는 카탈로그를 거쳐 생성기·정밀 점검의 import
  * 폐포에 들어가는데, 그 폐포는 의존성 설치 전에 돌아 Node 내장 모듈만 쓴다(frontend-reachability-census.test.mjs). 스키마 검사는
- * 운영 계약(composer-modules.test.mjs)과 `npm run modules:check`·`modules:generate` 가 한다. 로더는 필수 파일·JSON 형식·파일 이름과
+ * 운영 계약(composer-modules.test.mjs)과 `npm run modules:check` 가 한다. 로더는 필수 파일·JSON 형식·파일 이름과
  * 파일 사이 대조를 하고, 소스와의 대조는 빌더가 한다.
  *
- * v2 JSON 만 읽는다 — v1 manifest·생성기 상수를 보지 않는다. 그래야 두 원천이 같은 카탈로그를 낸다는 동치 계약이 같은 데이터를
- * 두 번 읽는 착시가 되지 않는다(설계서 위험 8). 전환(C7)까지는 v2 파일을 v1 에서 만든다(composer-modules-generate.mjs).
+ * 이 디렉터리가 기능 소유의 유일한 원천이다(11단계 C7 전환). v1 manifest 와 그것을 v2 로 옮겨 쓰던 생성 스크립트·생성기 상수는 걷었다.
+ * 옛 선언 파일이 되살아나면 두 번째 소유 선언이 생기므로 읽기 전에 멈춘다(assertNoRetiredOwnershipDeclaration).
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -32,11 +32,18 @@ const compositionDigest = value => createHash('sha256').update(canonicalJson(val
 
 function fail(message) { throw new Error(`composer modules: ${message}`); }
 
-/** 생성기가 쓰는 v2 파일(저장소 기준 경로). merge:main 이 충돌을 고르지 않고 다시 만드는 출력이다. */
-export function composerModuleOutputs(root) {
-  let names = [];
-  try { names = readdirSync(join(root, MODULES_DIRECTORY)); } catch { names = []; }
-  return names.filter(name => name.endsWith('.json') && name !== MODULES_SCHEMA).sort(byCodeUnits).map(name => `${MODULES_DIRECTORY}/${name}`);
+/**
+ * 11단계 C7 에서 걷은 v1 선언 파일(pack·시작 구성·묶음을 적던 manifest). 기능 소유는 config/modules 하나에만 둔다 — 이 파일이
+ * 되살아나면 아무 소비자도 읽지 않는 두 번째 소유 선언이 조용히 낡아 간다. 생산 코드에서 이 이름을 적는 곳은 이 상수 하나다
+ * (운영 계약 project-composer-source.test.mjs 가 다른 참조를 막는다).
+ */
+export const RETIRED_OWNERSHIP_DECLARATION = 'config/reusable-base-profiles.json';
+
+/** 옛 소유 선언 파일이 있으면 멈춘다. 원본 저장소와 생성물이 모두 받는다(로더·생성물 표지 판정이 부른다). */
+export function assertNoRetiredOwnershipDeclaration(root) {
+  if (existsSync(join(resolve(root), RETIRED_OWNERSHIP_DECLARATION))) {
+    fail(`old ownership declaration remains: ${RETIRED_OWNERSHIP_DECLARATION} — 기능 소유는 ${MODULES_DIRECTORY} 가 원천이다. 옛 파일을 지우고 바꿀 내용은 기능 파일·core.json·presets.json 에 적는다`);
+  }
 }
 
 /**
@@ -44,6 +51,7 @@ export function composerModuleOutputs(root) {
  * modules:check 가 composer-modules-schema.mjs 로 한다(위 설명).
  */
 export function readComposerModuleFiles(root) {
+  assertNoRetiredOwnershipDeclaration(root);
   const directory = join(root, MODULES_DIRECTORY);
   const names = readdirSync(directory).filter(name => name.endsWith('.json')).sort(byCodeUnits);
   for (const required of [MODULES_SCHEMA, CORE_FILE, PRESETS_FILE]) if (!names.includes(required)) fail(`missing ${MODULES_DIRECTORY}/${required}`);
@@ -166,13 +174,14 @@ export function loadComposerModules(root) {
     frontendOnly: modules.filter(module => module.backend.frontendOnly).map(module => ({ domain: module.id, owner: module.id })),
     supportFiles: () => supportFileOwners(root, modules.filter(module => module.backend.supportFiles.length)
       .map(module => ({ owner: module.id, owned: [module.id], domain: module.id, files: [...module.backend.supportFiles] })), ids),
+    // 공동 화면(여러 기능이 한 화면 파일을 함께 소유해 직접 선택에서만 서로를 요구하는 간선)은 허브 분해 H1~H6 뒤 하나도 없다.
+    //   다시 필요해지면 기능 파일 스키마에 선언 자리를 두고 그 행으로 간선과 화면 생존 시험을 함께 둔다.
     sharedTables, bundleEdges, sharedUi: [], uiDependencies, jointFrontend, requiredForeignKeys, optionalForeignKeys, userReasons, presets,
     integrates: [...integrationsOf('core', core), ...modules.flatMap(module => integrationsOf(module.id, module))],
     registrationOnlyEvents: [...registrationEventsOf('core', core), ...modules.flatMap(module => registrationEventsOf(module.id, module))],
     registrationOnlyContributions: [...core.registrationOnly.contributions, ...modules.flatMap(module => module.registrationOnly.contributions)]
       .map(row => ({ path: row.path, reason: row.reason })),
     registrationOnlyPorts: [...registrationPortsOf('core', core), ...modules.flatMap(module => registrationPortsOf(module.id, module))],
-    legacy: null,
   };
 
   const areaIds = new Set(core.presentation.areas.map(area => area.id));
@@ -286,12 +295,14 @@ export function markerDeclarationViolations(rows, measured) {
 }
 
 /**
- * 생성기 투영이 읽는 기능 소유(11단계 C3). Java 투영의 제외 기능과 지원 파일을 manifest pack 이 아니라 기능 파일에서 얻는다 —
- * 시작 구성과 직접 선택이 같은 소유로 투영된다. `modules` 는 loadComposerModules 결과다. 지원 파일은 선언을 검사하며 푼다
- * (supportFileOwners) — 잘못된 선언은 여기서 실패하고, 생성기와 정밀 점검이 같은 자리에서 실패한다.
+ * 생성기 투영이 읽는 기능 소유(11단계 C3). Java 투영의 제외 기능과 지원 파일을 기능 파일에서 얻는다 — 시작 구성과 직접 선택이 같은
+ * 소유로 투영된다. `modules` 는 loadComposerModules 결과다. 지원 파일은 선언을 검사하며 푼다(supportFileOwners) — 잘못된 선언은
+ * 여기서 실패하고, 생성기와 정밀 점검이 같은 자리에서 실패한다. `rbac` 은 선택 기능 RBAC 매트릭스의 표면 소유(기능 파일의
+ * owns.rbacMatrix)다 — Java 투영이 그 매트릭스에서 남길 단언을 고른다(projectComposerJava, 11단계 C7 에서 생성기 상수를 대신한다).
  */
 export function composerOwnership(modules) {
-  return { domains: Object.keys(modules.declarations.features).sort(byCodeUnits), supportFiles: modules.declarations.supportFiles() };
+  return { domains: Object.keys(modules.declarations.features).sort(byCodeUnits), supportFiles: modules.declarations.supportFiles(),
+    rbac: modules.extras.rbac };
 }
 
 /**
@@ -301,6 +312,19 @@ export function composerOwnership(modules) {
 export function moduleDatabaseInventory(files) {
   const owned = Object.entries(files).filter(([name]) => ![MODULES_SCHEMA, PRESETS_FILE].includes(name)).map(([, value]) => value.owns);
   return { tables: sorted(owned.flatMap(owns => owns.tables)), sequences: sorted(owned.flatMap(owns => owns.sequences)) };
+}
+
+/**
+ * 원본 마이그레이션 전체를 빈 DB 에 적용한 물리 실측(core.json 의 databaseSnapshot — 11단계 C7 에서 v1 manifest 에서 옮겼다).
+ * DB 생성기가 시퀀스 수·표준 사전 행 수를, 재사용 census 가 테이블·독립 시퀀스 소유 수를 대조한다. `files` 는
+ * readComposerModuleFiles 결과다. 없으면 대조할 기준이 없으므로 실패한다.
+ */
+export function sourceDatabaseSnapshot(files) {
+  const snapshot = files[CORE_FILE]?.databaseSnapshot;
+  if (!snapshot || typeof snapshot !== 'object' || !snapshot.metaRows || typeof snapshot.metaRows !== 'object') {
+    fail(`${MODULES_DIRECTORY}/${CORE_FILE} 에 원본 스키마 실측(databaseSnapshot)이 없다`);
+  }
+  return snapshot;
 }
 
 /**
@@ -380,6 +404,7 @@ export function projectedModuleViolations({ names, read, composition }) {
  * 돌려주는 값: 원본이면 `{ projection: false }`, 생성물이면 `{ projection: true, profile, domains }`.
  */
 export function detectGeneratedComposition(root) {
+  assertNoRetiredOwnershipDeclaration(root);
   const directory = join(resolve(root), MODULES_DIRECTORY);
   const presetsFile = JSON.parse(readFileSync(join(directory, PRESETS_FILE), 'utf8'));
   if (presetsFile?.active === undefined) {

@@ -9,144 +9,18 @@ import { join, relative, sep } from 'node:path';
  * 메뉴·카드, 자기 행만 정리하는 리스너, 등록만 하는 기여자)는 적지 않는다. 화면 결합(shared-ui·ui-import)은
  * Phase 2 슬롯 전까지 requires 로 남고, 연동 종류도 event·port·fk-optional 셋뿐이다.
  *
- * 이벤트 연동의 근거는 손으로 적지 않는다. 카탈로그가 발행·수신 위치를 매번 계산하고(deriveEventTriples),
- * 계산된 연결은 INTEGRATES 또는 REGISTRATION_ONLY_EVENTS 중 정확히 한쪽에 있어야 한다.
- * Java 포트 연결도 계산한다(derivePortConnections, 11단계 C2). 계산된 (받는 기능 → 구현 기능, 포트)는 INTEGRATES(via port: 또는
- * ports) 또는 REGISTRATION_ONLY_PORTS 중 정확히 한쪽에 있어야 한다.
- * 포트·선택 FK 연동은 주석을 뺀 코드에서 정확히 한 번 나오는 문자열(anchor)로 근거를 단다.
+ * 선언은 기능 파일(config/modules/<기능>.json·core.json)의 integrates·registrationOnly 에만 있다(11단계 C7 — 이 모듈의 선언 상수를
+ * 걷었다). 이 모듈은 계산과 대조만 한다:
+ * - 이벤트 연동의 근거는 손으로 적지 않는다. 카탈로그가 발행·수신 위치를 매번 계산하고(deriveEventTriples), 계산된 연결은
+ *   integrates 또는 registrationOnly.events 중 정확히 한쪽에 있어야 한다.
+ * - Java 포트 연결도 계산한다(derivePortConnections, 11단계 C2). 계산된 (받는 기능 → 구현 기능, 포트)는 integrates(via port: 또는
+ *   ports) 또는 registrationOnly.ports 중 정확히 한쪽에 있어야 한다. 받는 쪽이 구현 기능의 데이터만 모으거나 그 기능의 항목만
+ *   내보내면 잃는 것이 없다(registrationOnly).
+ * - 슬롯 기여 파일(frontend/src/extensions/<기능>/<슬롯>.ts)은 integrates 의 근거(anchor)가 가리키거나(그 기여가 빠지면 다른 기능의
+ *   동작이 준다) registrationOnly.contributions 에 사유와 함께 있다(그 기능 자신의 진입점만 사라진다) — 정확히 한쪽이다.
+ * - 포트·선택 FK 연동은 주석을 뺀 코드에서 정확히 한 번 나오는 문자열(anchor)로 근거를 단다.
  * 문장은 평서문으로 쓰고 내부 클래스·경로를 담지 않는다 — 계획 화면에 그대로 나간다.
  */
-// 주소록의 수신자 피커 출처 기여(슬롯 단계 PR-4). 메일·문자 연동의 근거는 화면 쪽 사용 지점과 이 기여 파일이다.
-const RECIPIENT_PICKER_CONTRIBUTION = 'frontend/src/extensions/addressbook/recipient-picker-sources.ts';
-
-export const INTEGRATES = [
-  { from: 'core', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 부서 업무의 담당자를 지정하거나 바꿔도 새 담당자에게 업무 배정 알림이 가지 않습니다.' },
-  { from: 'board', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 다른 사람이 내 게시글에 댓글을 달아도 글쓴이에게 새 댓글 알림이 가지 않습니다.' },
-  { from: 'informalsanction', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 결재 순서 도래, 회수, 반려, 보완 요청과 답변, 결재자 변경, 참조자 지정, 최종 결과가 앱 알림으로 전달되지 않습니다. 재알림·결재자 변경·참조자 지정 화면은 알린다고 안내하지만 실제로는 전달되지 않습니다.' },
-  { from: 'memoreport', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 메모 보고가 도착하거나, 지시가 달리거나 바뀌거나, 지시가 달린 보고가 삭제되어도 당사자에게 알림이 가지 않습니다. 지시 변경 확인창은 알린다고 안내하지만 실제로는 전달되지 않습니다.' },
-  { from: 'note', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 쪽지를 보내도 받는 사람에게 새 쪽지 알림이 가지 않고, 받는 사람은 쪽지함을 직접 열어야 압니다.' },
-  { from: 'mail', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 메일 발송이 실패로 확정되어도 보낸 사람에게 실패 알림이 가지 않고, 메일 이력 화면을 직접 열어야 압니다.' },
-  { from: 'sms', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 문자 발송 일부가 실패해도 보낸 사람에게 실패 알림이 가지 않고, 문자 화면에서 수신자 결과를 직접 확인해야 합니다.' },
-  { from: 'community', to: 'notification', via: 'event:NotificationRequestedEvent',
-    reason: '알림 기능이 없으면 커뮤니티 가입 신청이 들어와도 승인 권한자에게 알림이 가지 않고, 승인·반려 결과도 신청자에게 알림으로 전달되지 않습니다.' },
-  { from: 'informalsanction', to: 'mail', via: 'event:MailRequestedEvent',
-    reason: '메일 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 메일이 가지 않습니다.' },
-  { from: 'informalsanction', to: 'sms', via: 'event:SmsRequestedEvent',
-    reason: '문자 기능이 없으면 결재가 최종 승인되거나 반려되어도 신청자에게 결과 문자가 가지 않습니다.' },
-  { from: 'mail', to: 'addressbook', via: 'port:RecipientAddressBookSource',
-    reason: '주소록 기능이 없으면 메일 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 직접 입력만 남습니다.',
-    anchors: [{ path: 'frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx', anchor: "useRecipientAddressBook('mail')" },
-      { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
-  { from: 'sms', to: 'addressbook', via: 'port:RecipientAddressBookSource',
-    reason: '주소록 기능이 없으면 문자 작성 화면의 받는 사람 고르기에서 주소록 탭이 사라지고 사용자·부서 검색과 번호 직접 입력만 남습니다.',
-    anchors: [{ path: 'frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx', anchor: "useRecipientAddressBook('sms')" },
-      { path: RECIPIENT_PICKER_CONTRIBUTION, anchor: "defineContributions('recipient-picker-sources'" }] },
-  // 업무 홈(Phase 2 9단계): 실시간 통계는 게시판 포트로 오늘 게시글 수를 센다. 포트 구현이 없으면 프레임이 provided=false 를 실어
-  //   화면이 카드를 그리지 않는다. 근거는 실시간 서비스에만 있는 줄이다(같은 포트 주입은 통계 서비스에도 있어 근거가 될 수 없다).
-  { from: 'dashboard', to: 'board', via: 'port:PostStatisticsContributor',
-    reason: '게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.',
-    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java',
-      anchor: 'CountSnapshot currentPosts = getTodayPostsCount();' }] },
-  // 게시판이 커뮤니티 회원 판정 포트(CommunityBoardAccessPort)로 받는 연결도 같은 저하다 — 커뮤니티가 없으면 회원 전용 게시판이 없다.
-  { from: 'board', to: 'community', via: 'fk-optional:fk_tb_bbs_master_tb_cmnty_info', ports: ['CommunityBoardAccessPort'],
-    reason: '커뮤니티 기능이 없으면 게시판 생성 마법사에서 커뮤니티 귀속 선택이 사라져 게시판을 커뮤니티 회원 전용으로 만들 수 없습니다.',
-    anchors: [{ path: 'api-server/src/main/resources/db/migration/V2_102__add_reference_integrity_fks.sql', anchor: 'ADD CONSTRAINT fk_tb_bbs_master_tb_cmnty_info' }] },
-  // DEC-OPS-280: 템플릿 배정 구현은 템플릿 기능의 서비스다. 커뮤니티는 포트를 선택 주입으로 받고 관리 창 후보도 커뮤니티 API 로 받는다.
-  { from: 'community', to: 'template', via: 'port:TemplateAssignmentPolicy',
-    reason: '템플릿 기능이 없으면 커뮤니티 관리 창에서 템플릿 칸이 사라집니다. 템플릿 값은 커뮤니티 화면 표시에 쓰이지 않습니다.',
-    anchors: [{ path: 'business-app/src/main/java/nuri/business/service/community/CommunityService.java',
-      anchor: 'ObjectProvider<nuri.foundation.core.template.TemplateAssignmentPolicy>' },
-    { path: 'frontend/src/components/business/community/CommunityManageDialog.tsx', anchor: 'communityAdminService.getTemplateOptions()' }] },
-];
-
-/*
- * 계산된 이벤트 연결 가운데 잃는 것이 없는 것. 수신 기능이 자기 행만 정리하므로, 그 기능이 없으면 정리할 행도 없다.
- * 계산과 정확히 맞아야 한다 — 이 목록에만 있고 계산에 없는 행, 두 목록에 모두 있는 행은 카탈로그가 거부한다.
- */
-export const REGISTRATION_ONLY_EVENTS = [
-  ...['addressbook', 'board', 'comment', 'community', 'notification'].map(to => ({ from: 'core', to, event: 'UserDeletionEvent',
-    reason: '사용자를 지울 때 그 사용자의 행을 함께 정리할 뿐이라, 이 기능이 없으면 정리할 행도 없습니다.' })),
-];
-
-/*
- * 계산된 포트 연결(derivePortConnections) 가운데 잃는 것이 없는 것(Phase 2 11단계 C2, GAP-COMPOSE-001 포트 부분). 받는 쪽이
- * 구현 기능의 데이터만 모으거나 그 기능의 항목만 내보내므로, 그 기능이 없으면 모을 것도 내보낼 것도 없다.
- * 계산과 정확히 맞아야 한다 — 이 목록에만 있고 계산에 없는 행, 연동 선언(via port: 또는 ports)과 이 목록에 모두 있는 행은 카탈로그가 거부한다.
- */
-export const REGISTRATION_ONLY_PORTS = [
-  ...['board', 'mail', 'memoreport', 'note', 'promotion', 'report', 'reward', 'schedule'].map(to => ({ from: 'core', to, port: 'AttachmentSourceContributor',
-    reason: '이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다.' })),
-  ...['board', 'informalsanction'].map(to => ({ from: 'core', to, port: 'DashboardItemProvider',
-    reason: '이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다.' })),
-  { from: 'core', to: 'board', port: 'DataUsageStatisticsContributor',
-    reason: '게시판 기능이 없으면 자료 이용 통계에 셀 게시물이 없고, 그 통계를 보이던 탭도 함께 빠져 다른 통계는 그대로입니다.' },
-  { from: 'core', to: 'board', port: 'PostStatisticsContributor',
-    reason: '게시판 기능이 없으면 게시물 통계에 셀 글이 없고, 그 수를 보이던 칸도 함께 빠져 다른 통계는 그대로입니다.' },
-  { from: 'core', to: 'community', port: 'CommunityBoardAccessPort',
-    reason: '커뮤니티 기능이 없으면 커뮤니티 회원 전용 게시판도 없어, 첨부 열람을 판정할 때 빠지는 것이 없습니다.' },
-  { from: 'core', to: 'notification', port: 'DurableWorkHandler',
-    reason: '알림 기능이 없으면 알림 전달 후속 작업도 생기지 않아, 후속 작업을 처리할 때 빠지는 것이 없습니다.' },
-  ...['board', 'community'].map(to => ({ from: 'template', to, port: 'TemplateReferenceContributor',
-    reason: '이 기능이 없으면 그 기능이 쓰는 템플릿도 없어, 템플릿을 지우기 전 사용처를 확인할 때 빠지는 것이 없습니다.' })),
-];
-
-/*
- * 기여 분류(슬롯 단계 PR-4). 슬롯 기여 파일(frontend/src/extensions/<기능>/<슬롯>.ts)마다 정확히 한쪽이어야 한다:
- * - INTEGRATES 의 근거(anchor)가 그 파일을 가리킨다 — 그 기여가 빠지면 다른 기능의 동작이 줄어든다(계획이 기능 저하로 알린다).
- * - 이 표에 사유와 함께 있다 — 기여가 빠져도 그 기능 자신의 진입점만 사라지고 잃는 것이 없다(REGISTRATION_ONLY_EVENTS 와 같은 뜻).
- * 연동 종류에 slot 을 두지 않는 대신, 선언 없이 들어온 새 기여는 카탈로그가 거부한다. 기여는 그 기능의 연동 근거만 될 수 있다.
- */
-export const REGISTRATION_ONLY_CONTRIBUTIONS = [
-  { path: 'frontend/src/extensions/help/shell-links.ts',
-    reason: '도움말 기능이 없으면 머리글·바닥글·오류 화면에서 도움말 화면으로 가는 링크만 사라지고 다른 기능은 그대로입니다.' },
-  { path: 'frontend/src/extensions/notification/header-widgets.ts',
-    reason: '알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다.' },
-  { path: 'frontend/src/extensions/scrap/post-actions.ts',
-    reason: '스크랩 기능이 없으면 게시글 상세의 스크랩 버튼만 사라지고 게시판 기능은 그대로입니다.' },
-  { path: 'frontend/src/extensions/community/hub-tabs.ts',
-    reason: '커뮤니티 기능이 없으면 지식 허브의 커뮤니티 탭과 그 머리 동작만 사라지고 위키·자주 묻는 질문·질의응답은 그대로입니다.' },
-  { path: 'frontend/src/extensions/note/hub-tabs.ts',
-    reason: '쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다.' },
-  { path: 'frontend/src/extensions/showcase/hub-tabs.ts',
-    reason: '시연 화면 기능이 없으면 감시 허브의 하네스 아틀라스 샘플 탭만 사라지고 로그·가동 상태 탭은 그대로입니다.' },
-  { path: 'frontend/src/extensions/scrap/hub-tabs.ts',
-    reason: '스크랩 기능이 없으면 협업 허브의 스크랩 탭만 사라지고 다른 탭은 그대로입니다.' },
-  { path: 'frontend/src/extensions/note/shell-links.ts',
-    reason: '쪽지 기능이 없으면 명령 센터의 협업 허브 바로가기만 사라지고 허브는 그대로입니다.' },
-  { path: 'frontend/src/extensions/addressbook/shell-links.ts',
-    reason: '주소록 기능이 없으면 협업 허브의 주소록 관리 링크만 사라지고 허브는 그대로입니다.' },
-  { path: 'frontend/src/extensions/mail/shell-links.ts',
-    reason: '메일 기능이 없으면 협업 허브의 메일 발송 링크만 사라지고 허브는 그대로입니다.' },
-  { path: 'frontend/src/extensions/report/shell-links.ts',
-    reason: '업무 보고 기능이 없으면 나의 업무 탭 줄의 업무 보고 탭만 사라지고 업무 관리 목록은 그대로입니다.' },
-  { path: 'frontend/src/extensions/schedule/shell-links.ts',
-    reason: '일정 기능이 없으면 나의 업무 탭 줄의 일정 탭만 사라지고 업무 관리 목록은 그대로입니다.' },
-  { path: 'frontend/src/extensions/memoreport/shell-links.ts',
-    reason: '메모 보고 기능이 없으면 업무 보고 화면의 메모보고 관리 링크와 안내 문장만 사라지고 업무 보고는 그대로입니다.' },
-  // 업무 홈(Phase 2 9단계): 기능마다 자기 데이터의 조각을 업무 홈에 기여한다. 빠지면 그 조각만 사라지고 업무 홈은 그대로다.
-  { path: 'frontend/src/extensions/board/home-sections.ts',
-    reason: '게시판 기능이 없으면 업무 홈의 게시판 글 수 카드·최근 글 목록·새 게시글 작성 단추만 사라지고 업무 홈은 그대로입니다.' },
-  { path: 'frontend/src/extensions/dashboard/home-sections.ts',
-    reason: '실시간 대시보드 기능이 없으면 업무 홈의 실시간 상태 구역만 사라지고 최근 활동 구역이 전체 폭을 씁니다.' },
-  { path: 'frontend/src/extensions/informalsanction/home-sections.ts',
-    reason: '약식 전자결재 기능이 없으면 업무 홈의 결재 대기 카드와 결재함 열기 단추만 사라지고 업무 홈은 그대로입니다.' },
-  { path: 'frontend/src/extensions/note/home-sections.ts',
-    reason: '쪽지 기능이 없으면 업무 홈의 안 읽은 쪽지 카드만 사라지고 업무 홈은 그대로입니다.' },
-  { path: 'frontend/src/extensions/promotion/home-sections.ts',
-    reason: '배너·팝업 기능이 없으면 업무 홈의 공지 팝업과 홍보 배너만 사라지고 업무 홈은 그대로입니다.' },
-  { path: 'frontend/src/extensions/board/stats-panels.ts',
-    reason: '게시판 기능이 없으면 통계 화면의 게시물·자료 이용 탭과 누적 게시물 칸만 사라지고 통계는 그대로입니다.' },
-  { path: 'frontend/src/extensions/survey/stats-panels.ts',
-    reason: '설문 기능이 없으면 통계 화면의 설문조사 분석 탭만 사라지고 통계는 그대로입니다.' },
-];
-
 export const INTEGRATION_KINDS = ['event', 'port', 'fk-optional'];
 const SCAN_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
 const APP_PREFIX = 'business-app/src/main/java/nuri/business/';
@@ -333,7 +207,7 @@ export function apiSourceOwner(path, domains) {
 }
 
 /**
- * 파일 소유 판정. domainSupportFiles 선언이 먼저, 그다음 업무 앱 디렉터리다. foundation·business-core 는 core 다.
+ * 파일 소유 판정. 기능 파일의 지원 파일 선언(backend.supportFiles)이 먼저, 그다음 업무 앱 디렉터리다. foundation·business-core 는 core 다.
  * 그 밖(주로 api-server)은 참조하는 업무 패키지로 정한다 — 생성기는 그 기능이 빠지면 참조 파일을 함께 지운다.
  * 여러 기능을 참조하는 api-server 파일은 그 가운데 디렉터리 소유 기능(apiSourceOwner)이 소유자다 — 카탈로그가 그 기능이 나머지
  * 참조 기능을 요구한다고 센다. 디렉터리 소유가 없으면 나머지를 모두 끌어오는 기능이 소유자다(그 기능이 있어야 파일이 남는다).
@@ -501,8 +375,10 @@ function anchorEvidence(root, { path, anchor }) {
 /**
  * 선언을 계산과 대조해 계획에 실을 연동 목록을 만든다. 순수 판정은 triples·canDegrade 를 받아 합성 입력으로 시험한다.
  */
-export function resolveIntegrations({ root, declared = INTEGRATES, registrationOnly = REGISTRATION_ONLY_EVENTS, triples, canDegrade, domains, optionalForeignKeys,
-  contributions = [], registrationOnlyContributions = REGISTRATION_ONLY_CONTRIBUTIONS, ports = null, registrationOnlyPorts = REGISTRATION_ONLY_PORTS }) {
+// 선언 인자는 기능 파일에서 온다(카탈로그가 loadComposerModules 의 declarations 를 넘긴다, 11단계 C7). 빠진 인자는 빈 선언이라
+// 계산된 연결이 '분류되지 않은 연결' 로 실패한다 — 조용히 넘어가지 않는다.
+export function resolveIntegrations({ root, declared = [], registrationOnly = [], triples, canDegrade, domains, optionalForeignKeys,
+  contributions = [], registrationOnlyContributions = [], ports = null, registrationOnlyPorts = [] }) {
   const fail = message => { throw new Error(`project-composer catalog: ${message}`); };
   const known = new Set(domains);
   const keys = new Set();
@@ -560,7 +436,7 @@ export function resolveIntegrations({ root, declared = INTEGRATES, registrationO
 }
 
 /**
- * 포트 분류 완전성(REGISTRATION_ONLY_PORTS 설명 참조). 연동 선언은 via 'port:<포트>' 또는 ports 로 포트 연결을 덮는다. via 의 포트가
+ * 포트 분류 완전성(위 설명의 포트 항목 참조). 연동 선언은 via 'port:<포트>' 또는 ports 로 포트 연결을 덮는다. via 의 포트가
  * Java 인터페이스가 아니면(수신자 피커의 주소록 출처 같은 화면 포트) 슬롯 기여 분류가 근거를 대조하므로 여기서는 보지 않는다.
  * 늘 함께 포함되어 저하될 수 없는 연결은 선언하지 않는다(이벤트와 같은 술어).
  */
@@ -601,7 +477,7 @@ function classifyPorts({ declared, ports: { interfaces, connections }, registrat
   }
 }
 
-/** 기여 분류 완전성(REGISTRATION_ONLY_CONTRIBUTIONS 설명 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다. */
+/** 기여 분류 완전성(위 설명의 기여 항목 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다. */
 function classifyContributions({ declared, contributions, registrationOnlyContributions, fail }) {
   const owners = new Map();
   for (const row of contributions) {

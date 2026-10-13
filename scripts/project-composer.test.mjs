@@ -77,20 +77,25 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
 
 test('unassigned-permission guidance stays exact with the permission catalog, bundles and protected set', async () => {
   const { PROTECTED_PERMISSIONS } = await import('./generate-screen-registry.mjs');
-  const { UNASSIGNED_PERMISSION_GUIDANCE, validateUnassignedGuidance } = await import('./project-composer-unassigned.mjs');
+  const { validateUnassignedGuidance } = await import('./project-composer-unassigned.mjs');
+  const { loadComposerModules } = await import('./composer-modules.mjs');
+  // 안내 표는 그 권한을 소유한 기능 파일(없으면 core.json)의 unassignedPermissions 다(11단계 C7 — 생성기 상수를 걷었다).
+  const guidance = Object.fromEntries(Object.entries(loadComposerModules(root).extras.unassigned)
+    .map(([code, row]) => [code, { bundle: row.bundle, protected: row.protected, effect: row.effect }]));
   const permissions = JSON.parse(readFileSync(join(root, 'config/governance/permission-catalog.json'), 'utf8'));
   const bundles = JSON.parse(readFileSync(join(root, 'config/governance/permission-bundles.json'), 'utf8'));
-  const rows = validateUnassignedGuidance({ permissions, bundles });
+  const rows = validateUnassignedGuidance({ guidance, permissions, bundles });
   for (const row of rows) assert.equal(row.protected, PROTECTED_PERMISSIONS.includes(row.code), `${row.code}: protected flag follows the protected set`);
   const withNew = structuredClone(permissions);
   withNew.permissions.push({ code: 'NEW_READ', domain: 'NEW', action: 'READ', name: '새 권한', defaultGroups: [] });
-  assert.throws(() => validateUnassignedGuidance({ permissions: withNew, bundles }), /unassigned permission lacks guidance: NEW_READ/);
+  assert.throws(() => validateUnassignedGuidance({ guidance, permissions: withNew, bundles }), /unassigned permission lacks guidance: NEW_READ/);
   const assigned = structuredClone(permissions);
   assigned.permissions.find(row => row.code === 'NOTICE_EDIT').defaultGroups = ['ROLE_ADMIN'];
-  assert.throws(() => validateUnassignedGuidance({ permissions: assigned, bundles }), /guidance names a permission with default groups or no catalog row: NOTICE_EDIT/);
-  const wrongBundle = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: 'account-recovery' } };
+  assert.throws(() => validateUnassignedGuidance({ guidance, permissions: assigned, bundles }), /guidance names a permission with default groups or no catalog row: NOTICE_EDIT/);
+  assert.throws(() => validateUnassignedGuidance({ permissions, bundles }), /guidance from the feature files is required/);
+  const wrongBundle = { ...guidance, ADT_LOG_READ: { ...guidance.ADT_LOG_READ, bundle: 'account-recovery' } };
   assert.throws(() => validateUnassignedGuidance({ guidance: wrongBundle, permissions, bundles }), /guidance bundle does not contain the permission: ADT_LOG_READ/);
-  const unbundled = { ...UNASSIGNED_PERMISSION_GUIDANCE, ADT_LOG_READ: { ...UNASSIGNED_PERMISSION_GUIDANCE.ADT_LOG_READ, bundle: null } };
+  const unbundled = { ...guidance, ADT_LOG_READ: { ...guidance.ADT_LOG_READ, bundle: null } };
   assert.throws(() => validateUnassignedGuidance({ guidance: unbundled, permissions, bundles }), /guidance without a bundle must be an excluded permission: ADT_LOG_READ/);
 });
 

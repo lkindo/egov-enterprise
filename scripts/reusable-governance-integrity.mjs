@@ -16,21 +16,26 @@ import { artifactScreenErrors } from './reusable-page-survival.mjs';
 import { buildPermissionArtifacts } from './generate-permissions.mjs';
 import { AUTHORIZATION_POLICY_PATH, PERMISSION_CATALOG_PATH, projectPermissionCatalog, projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
 import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact, validateScreenRegistry } from './screen-registry-model.mjs';
-import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition, projectedModuleViolations } from './composer-modules.mjs';
+import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition, hashedModuleDeclarations, projectedModuleViolations, readComposerModuleFiles } from './composer-modules.mjs';
 
 export const PROJECTION_PATH = 'config/governance/reusable-governance-projection.json';
 export const UPSTREAM_DIRECTORY = 'config/governance/upstream-review';
 export const MEMORY_PATHS = ['.agent/memory/project-context.md', '.agent/memory/decisions.md', '.agent/memory/known-gaps.md'];
-/** 원본 v1 manifest 의 스냅숏. 생성물에는 활성 manifest 가 없다(11단계 C5) — 구성 카탈로그 출처 해시가 전환(C7)까지 이 스냅숏에 결속된다. */
-const V1_MANIFEST = 'config/reusable-base-profiles.json';
+/**
+ * 원본 기능 선언(매니페스트 v2)의 스냅숏. 생성물의 config/modules 는 구성의 기능 파일만 담으므로, 구성 카탈로그의 출처 해시
+ * (provenance.modulesHash)는 원본 전체 선언의 이 스냅숏에 결속된다(11단계 C7 — 종전 v1 manifest 스냅숏을 대신한다). 디렉터리라
+ * 파일 하나로 적는다: 카탈로그 해시가 덮는 선언(hashedModuleDeclarations — 화면 문구·미배정 권한 안내·CI 범위를 뺀 값)을 파일
+ * 이름 → 값으로 담는다.
+ */
+const UPSTREAM_MODULES = MODULES_DIRECTORY;
 /** 생성물의 활성 구성 선언(생성물 표지). 원본 스냅숏은 두지 않는다 — 원본 presets.json 은 시작 구성 전부라 생성물의 것과 다르다. */
 const ACTIVE_COMPOSITION = `${MODULES_DIRECTORY}/${PRESETS_FILE}`;
 export const UPSTREAM_SOURCES = Object.freeze([
   'config/ui-url-state-census.json', 'config/ui-url-state-approval.json', 'config/ui-url-state-approval.schema.json',
   'config/ui-route-capabilities.json', ...Object.values(REVIEW_MANIFEST_PATHS),
-  V1_MANIFEST, 'config/governance/permission-catalog.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
+  UPSTREAM_MODULES, 'config/governance/permission-catalog.json', REVIEW_SCOPE_PATH, ...MEMORY_PATHS,
 ]);
-export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES.filter(path => path !== V1_MANIFEST), ACTIVE_COMPOSITION]);
+export const ACTIVE_ARTIFACTS = Object.freeze([...UPSTREAM_SOURCES.filter(path => path !== UPSTREAM_MODULES), ACTIVE_COMPOSITION]);
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HEX = /^[a-f0-9]{64}$/u;
 const sha256 = value => createHash('sha256').update(value).digest('hex');
@@ -39,7 +44,12 @@ const readJson = (root, file) => JSON.parse(normalizedText(root, file));
 const jsonText = value => `${JSON.stringify(value, null, 2)}\n`;
 export const canonicalJsonSha256 = value => sha256(jsonText(value));
 export const artifactTextSha256 = (root, file) => sha256(normalizedText(root, file));
-export const snapshotPathFor = source => `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`;
+export const snapshotPathFor = source => (source === UPSTREAM_MODULES ? `${UPSTREAM_DIRECTORY}/modules.json`
+  : `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`);
+/** 원본 출처의 스냅숏 본문(줄 끝 정규화). 기능 선언 디렉터리는 카탈로그 해시가 덮는 선언을 JSON 하나로 적는다(UPSTREAM_MODULES). */
+export function upstreamSnapshotText(sourceRoot, source) {
+  return source === UPSTREAM_MODULES ? jsonText(hashedModuleDeclarations(readComposerModuleFiles(sourceRoot))) : normalizedText(sourceRoot, source);
+}
 const exact = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
 const CODE_ROOTS = [
@@ -142,9 +152,9 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       check(snapshot.path === snapshotPathFor(snapshot.sourcePath), `Unexpected upstream snapshot location: ${snapshot.sourcePath}`);
       const text = normalizedText(root, snapshot.path);
       check(HEX.test(snapshot.sha256 ?? '') && sha256(text) === snapshot.sha256, `Upstream snapshot hash mismatch: ${snapshot.sourcePath}`);
-      upstream.set(snapshot.sourcePath, snapshot.sourcePath.endsWith('.json') ? JSON.parse(text) : text);
+      upstream.set(snapshot.sourcePath, snapshot.sourcePath.endsWith('.json') || snapshot.sourcePath === UPSTREAM_MODULES ? JSON.parse(text) : text);
     }
-    const originalProfiles = upstream.get(V1_MANIFEST);
+    const originalModules = upstream.get(UPSTREAM_MODULES);
     let composition;
     let catalog;
     if (metadata.composition) {
@@ -158,7 +168,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       catalog = selection.catalog;
       composition = verifyProjectComposition(selection.composition, catalog);
       check(composition.profile === metadata.profile, 'Composition profile differs from projection');
-      check(catalog.provenance.manifestHash === compositionDigest(originalProfiles), 'Composition catalog differs from upstream manifest snapshot');
+      check(catalog.provenance.modules === UPSTREAM_MODULES && catalog.provenance.modulesHash === compositionDigest(originalModules),
+        'Composition catalog differs from upstream module declaration snapshot');
       check(catalog.provenance.permissionsHash === compositionDigest(upstream.get('config/governance/permission-catalog.json')),
         'Composition catalog differs from upstream permission snapshot');
       for (const key of ['catalogHash', 'recipeHash', 'compositionHash']) check(metadata.composition[key] === composition[key], `Composition ${key} mismatch`);
@@ -166,9 +177,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       // 프리셋도 구성 경로로 생성한다(DEC-OPS-239). 구성 스냅숏이 없으면 어느 프로필이든 출처를 증명할 수 없다.
       check(false, 'Generated projection requires a resolved composition snapshot');
     }
-    // 생성물에는 v1 manifest 가 없다(11단계 C5). 활성 구성은 매니페스트 v2 의 표지(presets.json 의 active)이고, 표지·구조가 구성과 맞는지
-    // 본다. 생성물 표지 판정이 실패하면(표지 위장·구조 불일치) 여기서 붉다.
-    check(!existsSync(join(root, V1_MANIFEST)), 'Generated artifact must not carry the upstream v1 manifest');
+    // 활성 구성은 매니페스트 v2 의 표지(presets.json 의 active)이고, 표지·구조가 구성과 맞는지 본다. 생성물 표지 판정이 실패하면
+    // (표지 위장·구조 불일치, 걷은 v1 소유 선언 파일이 되살아남 — 'old ownership declaration remains') 여기서 붉다.
     // 표지 판정 실패는 오류로 적고 나머지 검사(기능 파일 집합·원장 등)를 계속한다 — 위장·구조 불일치의 원인이 함께 보이게 한다.
     let marker;
     try { marker = detectGeneratedComposition(root); } catch (error) { errors.push(error.message); }

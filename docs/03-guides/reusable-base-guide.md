@@ -14,13 +14,13 @@ clean v* release tag
         ├─ current V2 migrations ─> disposable PostgreSQL ─> profile DB V1 baseline
         │                                                   └─ second empty DB reapply
         │
-        └─ tracked source tree + profile manifest + verified DB bundle
+        └─ tracked source tree + config/modules + verified DB bundle
                                       └─ projected source ─> selected backend layout
                                                                    └─ compile / tsc / harness / schema gate
 ```
 
 - 단일 정본: 현재 릴리스 소스
-- 프로필 SSOT: `config/reusable-base-profiles.json`
+- 기능 소유·시작 구성 SSOT: [`config/modules`](../../config/modules/) — 기능 파일(`<기능 id>.json`)·`core.json`·`presets.json`. v1 manifest 는 11단계 C7 에서 걷었다.
 - 생성기: `scripts/generate-reusable-base-db.mjs`, `scripts/generate-reusable-base-source.mjs`
   - 소스 투영 단계: `reusable-source-tree`(복사·Git), `-java`(Java 제거 계획·투영), `-frontend`(마커 블록·연쇄 제거), `-gates`(게이트 제거 승인·하네스 조정), `-harness`(하네스 기준선 거울) `.mjs`
   - DB 번들 단계: `reusable-db-postgres`(컨테이너·psql·pg_dump), `reusable-db-migrations`(버전 순서·권한 Contract 리허설) `.mjs`
@@ -29,17 +29,18 @@ clean v* release tag
 
 ## 2. 프로필
 
-프로필의 실제 테이블·시퀀스 집합과 개수는 `config/reusable-base-profiles.json` 및 `npm run base:census` 출력이 정본이다.
+프로필(시작 구성)의 실제 테이블·시퀀스 집합은 `core.json`·기능 파일의 `owns` 이고, 원본 스키마의 물리 실측 수는 `core.json` 의
+`databaseSnapshot` 이다. `npm run base:census` 가 그 둘을 소스와 대조한다. 시작 구성은 `presets.json` 의 이름 붙은 기능 목록이다.
 
-| 프로필 | 포함 pack | 용도 |
+| 프로필 | 선택 기능 | 용도 |
 |---|---|---|
-| `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
-| `collaboration` | core + collaboration | core + 게시판·댓글·스크랩 + 메일·쪽지·알림·SMS·실시간 대시보드 |
-| `demo` | core + collaboration + survey + demo | 현재 제품의 전체 참조 기능 |
+| `core` | 없음 | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
+| `collaboration` | 게시판·댓글·스크랩·메일·쪽지·알림·문자·실시간 대시보드 | core + 협업 기본 |
+| `demo` | 선택 기능 22개 전부 | 현재 제품의 전체 참조 기능 |
 
 프로필은 누적된다. 시작 구성의 기능 목록은 필수 의존 폐포에 닫혀 있어야 하고(카탈로그 적재가 검사한다 — 11단계 C5 에서
 pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 기능만 소유한다. `board`·`comment`처럼 함께 선택해야 하는
-클러스터와 `tb_tmplt_info`처럼 공유되는 테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트
+묶음(`dependsOn` 의 `bundle`)과 `tb_tmplt_info`처럼 공유되는 테이블 계약(`owns.sharedTables`)도 기능 파일에 명시한다. 수동 도메인 삭제 스크립트
 `scripts/delete-domain.ps1`은 기능 파일(`config/modules/<기능>.json`)로 도메인을 확인하고, 동반 삭제는 생성기와 같은 카탈로그
 간선을 거꾸로 따라 정하며, 화면은 지우는 기능의 화면 소유로 지운다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
 
@@ -49,8 +50,9 @@ pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 �
 기능이 넘겨받는다(순위를 보지 않는다). 생성물의 `config/modules` 에는 구성의 기능 파일·`core.json`·활성 구성 하나만 담은
 `presets.json` 이 남고 생성물 무결성 검사가 그 집합을 구성과 대조한다. 그 `presets.json` 의 `active` 가 생성물 표지다 — 권한 생성기·
 하네스 프로필·원장 계약·생성물 무결성 검사는 표지를 생성기 투영 구조(활성 구성 하나·기능 파일 집합)와 함께 확인하고, 구조가
-다르거나 lock 이 있는데 표지가 없으면 실패한다. 생성물에는 `config/reusable-base-profiles.json` 이 남지 않고 lock·하네스 프로필에도
-pack 이 없다(11단계 C5).
+다르거나 lock 이 있는데 표지가 없으면 실패한다. lock·하네스 프로필에도 pack 이 없다(11단계 C5). 걷은 v1 소유 선언 파일
+(`config/reusable-base-profiles.json`)이 원본이나 생성물에 되살아나면 로더·카탈로그·생성물 표지 판정이 '옛 소유 선언이 남아 있다'
+(`old ownership declaration remains`)로 멈추고, 운영 계약이 생산 코드의 그 이름 참조를 막는다(11단계 C7).
 
 ### 2.1 백엔드 출력 형태
 
@@ -245,34 +247,38 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 없었던 것으로** 본다 — 아무 red 도 남지 않는 조용한 손실이다.
 
 그래서 소스 생성기는 제거된 게이트를 항상 **말하고**(콘솔 · `REUSABLE_BASE.md` · `reusable-base-lock.json`
-의 `removedGates`), 매니페스트의 명시적 승인과 exact 대조한다.
+의 `removedGates`), 시작 구성의 명시적 승인(`config/modules/presets.json` 의 `expected`)과 exact 대조한다.
 
 ```json
-"profiles": {
-  "core": {
-    "packs": ["core"],
-    "acknowledgedRemovedGates": [
+{
+  "id": "core",
+  "domains": [],
+  "expected": {
+    "gates": [
       { "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
-        "reason": "demo 소유 표면의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다." }
-    ]
+        "reason": "선택 가능한 RBAC 검사 표면이 모두 제외됨. 필수 core 인가는 기존 별도 매트릭스로 검사한다." }
+    ],
+    "gateRemovalRules": [],
+    "javaCascade": []
   }
 }
 ```
 
-생성기와 정밀 점검은 이 승인을 매니페스트 v2(`config/modules/presets.json` 의 `expected`)에서 읽는다(11단계 C3). 전환(C7) 전까지는
-매니페스트가 원천이므로 고친 뒤 `npm run modules:generate` 로 다시 만든다.
+생성기와 정밀 점검은 이 승인을 `presets.json` 에서 읽는다(11단계 C3). `expected.gates` 는 기능 파일의 게이트 소유(`owns.gates`·
+`owns.rbacMatrix`)에서 계산한 목록과 정확히 같아야 한다(로더가 본다). 직접 선택 구성의 승인은 기대치 없이 그 게이트 소유에서
+계산한다.
 
 - 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
 - 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
-- `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 매니페스트 안에 남긴다.
+- `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 `presets.json` 안에 남긴다.
 - 승인은 삭제를 **허용**하는 장치가 아니라 **조용할 수 없게** 만드는 장치다. 게이트가 사라지는 변경에서는
-  매니페스트와 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
+  기능 파일·`presets.json` 과 커밋 메시지가 함께 움직여 diff 에 의도가 드러난다.
 
 **연쇄로 지운 Java(DEC-OPS-264).** 게이트가 아닌 Java 도 선언이 아니라 타입 참조 연쇄로 빠진다 — core 는 105개다
 (api-server main 50개 — 컨트롤러 34·요청·응답 DTO 11·연동·리스너 5 — 와 api-server 시험 52개, business-app 시험 3개).
 소유는 코드에서 도출되므로, 잘못 들어간 import 한 줄은 컨트롤러를 지우면서 기대치까지 함께 바꾼다(개인정보 census·컨트롤러
-하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `profiles.<name>.acknowledgedJavaCascade`
-에 적고(매니페스트 v2 의 `presets.json` `expected.javaCascade` 로 옮겨 적힌다), 생성기·정밀 점검(plan/deep)·운영 계약
+하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `presets.json` 의
+`expected.javaCascade` 에 적고, 생성기·정밀 점검(plan/deep)·운영 계약
 (`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다. 운영 계약은 2026-10-13(11단계 C4)부터
 `presets.json` 의 Java 게이트 승인(`expected.gates`)과 연쇄 목록을 읽어 시작 구성마다 생성기 계획과 대조한다 — 수가 아니라 목록이라
 게이트 하나가 사라지고 다른 하나가 살아나는 교체도 붉다.
@@ -283,7 +289,7 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 `backend-build`에 집계한다. 게이트 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
-현재 core·collaboration 프로필은 각각 파일 게이트 6건(`acknowledgedRemovedGates`)과 역사 검증 규칙
+현재 core·collaboration 프로필은 각각 파일 게이트 6건(`presets.json` 의 `expected.gates`)과 역사 검증 규칙
 45건을 제외한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
 PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 Atlas 규칙(`upstream-atlas`)으로 Atlas HTML·생성기와
 그 계약 3건(`governance-atlas-contract`·`atlas-catalog`·`atlas-generation`)도 걷는다 — Atlas 는 원본의 운영 사실을 담고
@@ -291,7 +297,7 @@ PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 A
 pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **남는 코드도 검사하던 횡단 게이트는 모두 되살렸다** —
 `QueryCountGuardrailIntegrationTest`(DEC-OPS-084)와 `RbacAuthorizationMatrixTest`(DEC-OPS-085)는 pack 경계로 옮겼고,
 `PrivacyAccessCensusLinterTest`(DEC-OPS-089)·`InputContractMirrorLinterTest`·`CrossDomainCouplingLinterTest`(DEC-OPS-090)는
-판정 원장을 JSON 으로 옮겼다. 승인 목록의 정본은 매니페스트다.
+판정 원장을 JSON 으로 옮겼다. 승인 목록의 정본은 `presets.json` 의 `expected` 다.
 
 **횡단 게이트를 되살리는 방식(DEC-OPS-089·090, 11단계 C4).** 표적 목록을 게이트 소스의 상수·타입 참조에서 JSON 원장으로
 옮긴다. 원장은 셋이다 — `config/governance/privacy-access-census.json`, `input-contract-mirror-census.json`,
@@ -395,8 +401,7 @@ pack 의 표면만 검사하는 게이트라 검사 대상 자체가 없다. **�
    않으므로 화면 생존을 바꾸는 잘못된 배치(경로를 다른 pack 의 removePaths 에 넣는 실수)는 잡힌다. 같은 프리셋 집합에서
    늘 함께 빠지는 pack 사이의 이동과 비화면 파일의 소유는 이 대조 밖이다(DEC-OPS-265).
 8. **판정은 실제 투영본의 타입·lint·build와 적용범위 계약이다.** 마커 편집은 전체 제품 빌드만으로 확인할 수 없다.
-   - 마커 블록을 더하거나 걷으면 그 기능 파일 `owns.markerBlocks` 의 파일별 블록 수·이행 단계(step)·사유(reason)를 함께 고친다
-     (전환 C7 까지는 `scripts/composer-modules-generate.mjs` 의 `FEATURE_MARKER_BLOCKS` 를 고치고 `npm run modules:generate`).
+   - 마커 블록을 더하거나 걷으면 그 기능 파일 `owns.markerBlocks` 의 파일별 블록 수·이행 단계(step)·사유(reason)를 함께 고친다.
      운영 계약(`project-composer-source.test.mjs`)이 공용 파서로 센 원본 블록 수와 기능 파일 선언을 정확히 대조한다(마커 래칫).
      생성물에서는 남은 블록의 토큰이 모두 그 생성물의 기능 파일에 있는 기능인지 파서가 본다.
    - 마커를 추가·수정하면 `base:verify`로 영향 프로필을 생성·검증한다. CI도 세 프로필과 두 레이아웃의 같은 경로를 실행한다.
@@ -673,11 +678,12 @@ npm run base:generate-source -- \
 도메인·테이블·시퀀스 소유권이 바뀌면 다음 순서로 갱신한다.
 
 1. 현재 migration과 엔티티의 최종 물리 상태를 확인한다.
-2. `config/reusable-base-profiles.json`의 pack 소유권과 클러스터를 갱신한다.
-3. `npm run test:base-profile`에서 누락·중복·상향 의존이 없는지 확인한다.
+2. 기능 파일(`config/modules/<기능>.json`)의 `owns`·`dependsOn` 과 `core.json` 의 `owns`·`databaseSnapshot` 을 갱신하고
+   `npm run modules:check` 로 스키마·파일 사이 대조를 확인한다(이 디렉터리가 원천이다 — 다시 만드는 생성 스크립트는 없다).
+3. `npm run test:base-profile`에서 누락·중복·실측 수 불일치가 없는지 확인한다.
 4. core, collaboration, demo DB 번들을 레이아웃별로 생성해 빈 DB 재적용을 통과시킨다.
 5. 영향을 받는 소스 projection을 두 레이아웃으로 생성해 §4 게이트를 통과시킨다.
-6. 제거되는 거버넌스 게이트가 달라졌으면 `profiles.<name>.acknowledgedRemovedGates`를 사유와 함께
+6. 제거되는 거버넌스 게이트가 달라졌으면 기능 파일의 `owns.gates` 와 `presets.json` 의 `expected.gates` 를 사유와 함께
    갱신한다(§3.6). 승인 없이 게이트가 빠지면 생성이 FAIL한다.
 
 기존 운영 DB를 작은 프로필로 변환하는 용도로 이 파이프라인을 사용하지 않는다. 운영 데이터 축소는

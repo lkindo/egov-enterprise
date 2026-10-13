@@ -13,7 +13,7 @@
 
 ## 1. Executive summary
 
-이 저장소는 특정 기관에 즉시 납품할 수 있는 완성 제품이 아니라, 전자정부 기능을 현대 스택으로 구현한 **동작 가능한 참조 구현(reference implementation)**이자 신규 SI·재개발을 위한 **재사용 base**다. 코어와 선택 기능의 경계, `core`·`collaboration`·`demo` 프로필, 생성·검증 경로는 존재하지만, 실제 기관의 업무 우선순위·조직 구조·콘텐츠·법적 의무·지원 디바이스를 저장소가 대신 결정할 수는 없다. 이 경계의 정본은 [루트 README](../../README.md), [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md), [재사용 프로필 manifest](../../config/reusable-base-profiles.json)다.
+이 저장소는 특정 기관에 즉시 납품할 수 있는 완성 제품이 아니라, 전자정부 기능을 현대 스택으로 구현한 **동작 가능한 참조 구현(reference implementation)**이자 신규 SI·재개발을 위한 **재사용 base**다. 코어와 선택 기능의 경계, `core`·`collaboration`·`demo` 프로필, 생성·검증 경로는 존재하지만, 실제 기관의 업무 우선순위·조직 구조·콘텐츠·법적 의무·지원 디바이스를 저장소가 대신 결정할 수는 없다. 이 경계의 정본은 [루트 README](../../README.md), [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md), [재사용 시작 구성 선언](../../config/modules/presets.json)다.
 
 따라서 현대화의 연구 대상은 하나의 막연한 “사용자”가 아니라 다음 두 집단으로 나눈다.
 
@@ -36,7 +36,7 @@
 | 항목 | 현재 정의 | 근거와 한계 |
 |---|---|---|
 | 제품 형태 | 동작 가능한 전자정부 기능 참조판 + 재사용 base | [README](../../README.md), [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md). 기관별 완제품이라는 뜻이 아니다. |
-| 배포 단위 | 정확한 release tag에서 `core`, `collaboration`, `demo` 중 하나를 생성 | [프로필 manifest](../../config/reusable-base-profiles.json), [생성 가이드](../03-guides/reusable-base-guide.md). 생성 성공과 기관 적합성은 별개다. |
+| 배포 단위 | 정확한 release tag에서 `core`, `collaboration`, `demo` 중 하나를 생성 | [시작 구성 선언](../../config/modules/presets.json), [생성 가이드](../03-guides/reusable-base-guide.md). 생성 성공과 기관 적합성은 별개다. |
 | UI 언어 | 공통 프런트엔드는 한국어 우선 단일 언어 | [ADR-0002](../02-architecture/decisions/ADR-0002-korean-first-frontend.md). 파생 제품의 다국어 필요는 별도 제품 결정이다. |
 | UX 원칙 | 과업·신뢰 우선, 브랜드 중립, WCAG 2.2 A+AA 목표, 위험 기반 상태·복구 | [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md). 목표 선언만으로 준수를 뜻하지 않는다. |
 | UI 기능 상태 | route별로 `live`, `partial`, `demo`, `unavailable`, 미검증 상태를 분리하는 census 진행 중 | [capability manifest](../../config/ui-route-capabilities.json). 화면 존재나 API 문자열만으로 `live`를 확정하지 않는다. |
@@ -70,7 +70,7 @@
 | ID | 검증된 사실 | 제품상 의미 | 근거 |
 |---|---|---|---|
 | E-01 | 저장소는 참조 구현이며 release-tag 기반 재사용 base를 생성한다. | adopter 경험이 독립적인 핵심 UX다. | [README](../../README.md), [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md) |
-| E-02 | 프로필은 `core`, `collaboration`, `demo`이고 선택 pack과 물리 소유권이 manifest에 정의돼 있다. | 프로필 선택·생성·검증을 조사 과업에 포함할 수 있다. | [프로필 manifest](../../config/reusable-base-profiles.json) |
+| E-02 | 프로필은 `core`, `collaboration`, `demo`이고 선택 pack과 물리 소유권이 manifest에 정의돼 있다. | 프로필 선택·생성·검증을 조사 과업에 포함할 수 있다. | [시작 구성 선언](../../config/modules/presets.json) |
 | E-03 | UI는 한국어 우선이며 부분 번역을 다국어로 오인하지 않기로 했다. | 한국어 문해성·쉬운 언어를 기본 평가하되 파생 제품 언어 요구는 별도 수집한다. | [ADR-0002](../02-architecture/decisions/ADR-0002-korean-first-frontend.md) |
 | E-04 | 현대화 원칙은 사용자 과업, 브랜드 중립, WCAG 2.2 목표, 상태 진실성, 측정 기반 데이터 소유권을 우선한다. | 미학 중심 성공 기준을 사용할 수 없다. | [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) |
 | E-05 | 현재 계획 검토에는 활성 PRD·인터뷰·사용 로그·지원 문의 분류·RUM이 없다고 기록돼 있다. | 실제 top task와 목표치는 미확정이다. | [현대화 계획 §2.2](../02-architecture/ui-ux-modernization-plan.md#22-증거의-한계) |

@@ -35,12 +35,6 @@ import { assertContractReferencesSurvive } from './reusable-contract-references.
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const OUTPUT_ROOT = join(ROOT, 'build', 'reusable-base', 'source');
-/**
- * 원본의 v1 manifest. 생성물에는 두지 않는다(11단계 C5) — 생성물의 표지·활성 구성은 config/modules/presets.json(active)이고,
- * 하네스·무결성 검사·검토 범위·원장 계약이 그것을 읽는다. 원본 manifest 는 전환(C7)까지만 있다.
- */
-const V1_MANIFEST = 'config/reusable-base-profiles.json';
-
 /** 생성기 엔진이 이 자식을 부르는 단계 이름. 실패 보고는 이 단계에 허용된 코드만 쓴다. */
 export const CHILD_STAGE = 'source';
 
@@ -205,7 +199,7 @@ async function main() {
     resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
   args.profile = composition.profile;
   args.layout = composition.backendLayout;
-  // 투영은 매니페스트 v2(config/modules)의 기능 소유와 구성으로 한다(11단계 C3). v1 manifest 는 읽지 않는다(C5).
+  // 투영은 매니페스트 v2(config/modules)의 기능 소유와 구성으로 한다(11단계 C3). v1 manifest 는 C7 에서 걷었다.
   const modules = loadComposerModules(ROOT);
   const ownership = composerOwnership(modules);
   const profile = composerProfile(modules, composition);
@@ -254,8 +248,6 @@ async function main() {
   const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
   console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
-  // 복사한 v1 manifest 는 생성물에 남기지 않는다(투영 원장이 지운 파일로 적는다). 원본에 없으면(C7 뒤) 지울 것도 없다.
-  rmSync(join(output, V1_MANIFEST), { force: true });
   const projectedModules = writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
   installReusableVerification(output, args.layout);
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;

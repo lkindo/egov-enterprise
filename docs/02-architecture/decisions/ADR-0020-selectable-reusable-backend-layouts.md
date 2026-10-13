@@ -37,4 +37,4 @@
 
 임의 업무 기능 조합, 기능별 메뉴·권한 seed, 공통 구성 해석기, 선택 UI와 추가 DB는 [상세 설계](../project-composer-design.md)의 후속 범위다. 이 ADR은 그 설계 전체를 구현 완료 또는 운영 승인으로 승격하지 않으며, ADR-0001의 누적 프로필·릴리스 태그·원본 모듈 정책을 대체하지 않는다.
 
-실행 계약의 현재 원본은 [소스 생성기](../../../scripts/generate-reusable-base-source.mjs), [레이아웃 값](../../../scripts/reusable-layout.mjs), [단일모듈 어댑터](../../../scripts/reusable-single-module.mjs), [산출물 검증기](../../../scripts/verify-reusable-artifact.mjs), [프로필 manifest](../../../config/reusable-base-profiles.json)에서 확인한다.
+실행 계약의 현재 원본은 [소스 생성기](../../../scripts/generate-reusable-base-source.mjs), [레이아웃 값](../../../scripts/reusable-layout.mjs), [단일모듈 어댑터](../../../scripts/reusable-single-module.mjs), [산출물 검증기](../../../scripts/verify-reusable-artifact.mjs), [프로필 manifest](https://github.com/lkindo/egov-enterprise/blob/52527499a62d/config/reusable-base-profiles.json)에서 확인한다.

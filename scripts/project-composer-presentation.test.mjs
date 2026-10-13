@@ -2,18 +2,21 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolve } from 'node:path';
 import { canonicalJson, compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { CAPABILITY_SUMMARIES, COMPOSER_AREAS, PRESET_LABELS, composerPresentation, loadRouteKinds } from './project-composer-presentation.mjs';
+import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { createComposerEngine } from './project-composer.mjs';
 import { hashedModuleDeclarations, readComposerModuleFiles } from './composer-modules.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const catalog = loadProjectComposerCatalog(root);
 const routeKinds = loadRouteKinds(root);
-const present = (options = {}) => composerPresentation(catalog, { routeKinds, ...options });
+// 표시 문구는 매니페스트 v2(기능 파일·core.json·presets.json)의 것이다(11단계 C7 — 이 모듈의 상수를 걷었다).
+const declared = loadComposerPresentationDeclarations(root);
+const { areas: AREAS, summaries: SUMMARIES, presetLabels: PRESET_NAMES } = declared;
+const present = (options = {}) => composerPresentation(catalog, { routeKinds, ...declared, ...options });
 
 /*
  * 생성기 화면의 표시 문구(설계서 14.1·E3·E9). 영역·요약·시작 구성 이름은 실제 카탈로그와 정확히 대응해야 하고,
- * 카탈로그 해시 밖에 있어 문구를 고쳐도 구성 해시가 바뀌지 않는다. 화면 문구의 원천은 이 모듈 하나다.
+ * 카탈로그 해시 밖에 있어 문구를 고쳐도 구성 해시가 바뀌지 않는다. 화면 문구의 원천은 기능 파일·core.json·presets.json 이다.
  */
 test('every capability sits in exactly one area with one summary, and every preset has a Korean name', () => {
   const presentation = present();
@@ -59,7 +62,7 @@ test('presentation copy stays outside the catalog hash, so copy edits never chan
     assert.ok(!hashed.includes(text), `hashed catalog body carries presentation copy: ${text}`);
   }
   // 문구만 바꾼 표시 문구도 같은 카탈로그와 짝을 이룬다.
-  assert.equal(present({ summaries: { ...CAPABILITY_SUMMARIES, mail: '메일 보내기' } }).summaries.mail, '메일 보내기');
+  assert.equal(present({ summaries: { ...SUMMARIES, mail: '메일 보내기' } }).summaries.mail, '메일 보내기');
   assert.equal(loadProjectComposerCatalog(root).catalogHash, catalogHash);
 });
 
@@ -74,25 +77,26 @@ test('the screen badge counts only real pages from the route census, never redir
   withoutRoute.delete(survey[0]);
   assert.throws(() => present({ routeKinds: withoutRoute }), new RegExp(`route census lacks a capability route: survey ${survey[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
   assert.throws(() => composerPresentation(catalog), /route kinds from the route census are required/);
+  assert.throws(() => composerPresentation(catalog, { routeKinds }), /presentation declarations from config\/modules are required/);
 });
 
 test('a new capability without an area or summary, stale copy and developer text are refused', () => {
   const withAreas = areas => () => present({ areas });
-  const first = COMPOSER_AREAS[0];
-  const rest = COMPOSER_AREAS.slice(1);
+  const first = AREAS[0];
+  const rest = AREAS.slice(1);
   assert.throws(withAreas([{ ...first, domains: first.domains.slice(1) }, ...rest]), new RegExp(`capability has no area: ${first.domains[0]}`));
   assert.throws(withAreas([{ ...first, domains: [...first.domains, 'retired'] }, ...rest]), /area lists an unknown capability: .+\/retired/);
   assert.throws(withAreas([{ ...first, domains: [...first.domains, rest[0].domains[0]] }, ...rest]), /capability is in two areas/);
   assert.throws(withAreas([{ ...first, label: 'Communication' }, ...rest]), /area label contains Latin text/);
   assert.throws(withAreas([first, { ...rest[0], id: first.id }, ...rest.slice(1)]), /area is declared twice/);
   assert.throws(withAreas([first, { ...rest[0], label: first.label }, ...rest.slice(1)]), /area is declared twice/);
-  assert.throws(withAreas([...COMPOSER_AREAS, { id: 'empty', label: '빈 영역', domains: [] }]), /area has no capability: empty/);
-  const { mail, ...withoutMail } = CAPABILITY_SUMMARIES;
+  assert.throws(withAreas([...AREAS, { id: 'empty', label: '빈 영역', domains: [] }]), /area has no capability: empty/);
+  const { mail, ...withoutMail } = SUMMARIES;
   assert.throws(() => present({ summaries: withoutMail }), /capability has no summary: mail/);
-  assert.throws(() => present({ summaries: { ...CAPABILITY_SUMMARIES, stats: '업무 통계' } }), /summary has no capability: stats/);
-  assert.throws(() => present({ summaries: { ...CAPABILITY_SUMMARIES, mail: 'MailService 발송' } }), /summary contains Latin text/);
-  assert.throws(() => present({ summaries: { ...CAPABILITY_SUMMARIES, mail: '메'.repeat(31) } }), /summary is longer than 30 characters/);
-  const { demo, ...withoutDemo } = PRESET_LABELS;
+  assert.throws(() => present({ summaries: { ...SUMMARIES, stats: '업무 통계' } }), /summary has no capability: stats/);
+  assert.throws(() => present({ summaries: { ...SUMMARIES, mail: 'MailService 발송' } }), /summary contains Latin text/);
+  assert.throws(() => present({ summaries: { ...SUMMARIES, mail: '메'.repeat(31) } }), /summary is longer than 30 characters/);
+  const { demo, ...withoutDemo } = PRESET_NAMES;
   assert.throws(() => present({ presetLabels: withoutDemo }), /preset has no label: demo/);
-  assert.throws(() => present({ presetLabels: { ...PRESET_LABELS, archived: '보관' } }), /preset label has no preset: archived/);
+  assert.throws(() => present({ presetLabels: { ...PRESET_NAMES, archived: '보관' } }), /preset label has no preset: archived/);
 });

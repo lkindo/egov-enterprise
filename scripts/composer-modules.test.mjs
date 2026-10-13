@@ -1,55 +1,35 @@
 /*
- * 매니페스트 v2(config/modules) 계약(11단계 C1·C2).
+ * 매니페스트 v2(config/modules) 계약(11단계 C1·C2·C7).
  *
- * 1. v2 파일은 v1 선언에서 만든 파생물이다 — 디스크와 생성 결과가 같아야 한다(전환 C7 까지).
- * 2. 임시 동치 계약: 로더가 v2 JSON 만으로 만든 카탈로그와 해시 밖 선언이 v1 과 같다. v2 쪽은 manifest 가 없는 트리에서 만든다 —
- *    같은 데이터를 두 번 읽는 착시를 막는다(설계서 위험 8). v1 에만 있는 pack 축(capability.pack, 시작 구성의 pack·removePaths,
- *    공유 계약의 ownerPack)은 전환 전 생성기 pack 모드를 위한 값이라 비교에서 뺀다. 순서가 뜻이 없는 배열(화면 규칙·외래 키)은
- *    정렬해 비교한다.
- * 3. 스키마·파일 사이 대조·소스 대조가 선언 오류를 이유와 함께 거부한다. 스키마 검사(ajv)는 로더 밖(composer-modules-schema.mjs)에
- *    있다 — 로더는 생성기 import 폐포에 들어가 Node 내장 모듈만 쓴다. 그래서 이 계약이 실제 config/modules 를 스키마로 검사한다.
- * 4. 생성기가 읽는 카탈로그(loadProjectComposerCatalog)는 v2 카탈로그에 v1 pack 축만 덧붙인 것이다(C2~C3). v1 manifest 의 기능·시작
- *    구성이 v2 와 다르면 그 자리에서 멈춘다.
- * 5. 출처 해시(modulesHash)는 화면 문구·미배정 권한 안내를 빼고 계산한다 — 문구만 고치면 카탈로그 해시가 그대로다.
+ * 1. config/modules 는 기능 소유의 유일한 원천이다(C7 전환). 실제 파일이 스키마(_schema.json, ajv)와 맞고, 걷은 v1 소유 선언
+ *    (RETIRED_OWNERSHIP_DECLARATION)이 되살아나면 모든 읽는 자리가 '옛 소유 선언이 남아 있다' 로 멈춘다. 스키마 검사는 로더 밖
+ *    (composer-modules-schema.mjs)에 있다 — 로더는 생성기 import 폐포에 들어가 Node 내장 모듈만 쓴다.
+ * 2. 파일 사이 대조·소스 대조가 선언 오류를 이유와 함께 거부한다.
+ * 3. 출처 해시(modulesHash)는 화면 문구·미배정 권한 안내를 빼고 계산한다 — 문구만 고치면 카탈로그 해시가 그대로다.
+ * 4. 시작 구성은 필수 의존 폐포에 닫힌 이름 붙은 기능 목록이고, 게이트 기대치는 기능 파일의 게이트 소유에서 계산한 목록과 같다.
+ * 5. 생성물 표지(presets.json 의 active)는 생성기 투영 구조와 함께만 인정한다.
  */
 import assert from 'node:assert/strict';
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test, { after } from 'node:test';
-import { buildProjectComposerCatalog, canonicalJson, loadProjectComposerCatalog, v1ComposerDeclarations } from './project-composer-catalog.mjs';
-import { GENERATED_LOCK, MODULES_DIRECTORY, derivedRemovedGates, detectGeneratedComposition, loadComposerModules } from './composer-modules.mjs';
-import { composerModuleDrift, moduleFileDrift, v1ComposerExtras } from './composer-modules-generate.mjs';
+import { buildProjectComposerCatalog, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { GENERATED_LOCK, MODULES_DIRECTORY, RETIRED_OWNERSHIP_DECLARATION, derivedRemovedGates, detectGeneratedComposition,
+  loadComposerModules, readComposerModuleFiles } from './composer-modules.mjs';
 import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const v1Catalog = buildProjectComposerCatalog(ROOT, v1ComposerDeclarations(ROOT));
 const loadedCatalog = loadProjectComposerCatalog(ROOT);
 const modules = loadComposerModules(ROOT);
 
-const byPath = (left, right) => (left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
-const byName = (left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
-/** v1 의 pack 축을 빼고, 순서가 뜻이 없는 배열을 정렬한 카탈로그 본문. 시작 구성의 제거 경로는 C2 에서 카탈로그를 떠났다. */
-function comparable(catalog) {
-  const { provenance, catalogHash, ...body } = catalog;
-  return JSON.parse(canonicalJson({
-    ...body,
-    capabilities: body.capabilities.map(({ pack, ...rest }) => rest),
-    presets: body.presets.map(({ packs, frontendRemovePaths, ...rest }) => rest),
-    sharedTableContracts: body.sharedTableContracts.map(({ ownerPack, ...rest }) => rest),
-    frontendRules: [...body.frontendRules].sort(byPath),
-    requiredForeignKeys: [...body.requiredForeignKeys].sort(byName),
-    optionalForeignKeys: [...body.optionalForeignKeys].sort(byName),
-  }));
-}
-
 /**
- * v2 만 있는 트리: 카탈로그가 읽는 저장소 사실과 config/modules 를 복사하고 v1 manifest 는 두지 않는다. 시험끼리 한 트리를 쓰고
- * 기능 파일을 고친 시험은 원본으로 되돌린다(복사 비용이 커서다).
+ * 카탈로그가 읽는 저장소 사실과 config/modules 만 담은 트리. 시험끼리 한 트리를 쓰고 기능 파일을 고친 시험은 원본으로 되돌린다
+ * (복사 비용이 커서다).
  */
 let shared;
-function modulesOnlyFixture() {
+function modulesFixture() {
   if (shared) return shared;
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-composer-modules-'));
@@ -57,7 +37,7 @@ function modulesOnlyFixture() {
   for (const path of [MODULES_DIRECTORY, 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) copy(path);
   for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) copy(`${module}/src/main/java`);
   const { declarations } = modules;
-  for (const path of v1Catalog.frontendRules.map(rule => rule.path)) copy(`frontend/${path}`);
+  for (const path of loadedCatalog.frontendRules.map(rule => rule.path)) copy(`frontend/${path}`);
   copy('frontend/src/extensions');
   for (const file of new Set([...declarations.integrates.flatMap(edge => edge.anchors ?? []).map(anchor => anchor.path),
     ...declarations.uiDependencies.map(edge => edge.evidence), ...[...declarations.requiredForeignKeys, ...declarations.optionalForeignKeys].map(fk => fk.evidence),
@@ -80,58 +60,42 @@ const editModule = (root, name, edit) => {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 };
 
-let generated;
-test('config/modules is the v1 declarations rewritten as feature files (regenerate with npm run modules:generate)', () => {
-  const { expected, drift } = composerModuleDrift(ROOT);
-  generated = expected;
-  assert.deepEqual(drift, []);
-  assert.equal(Object.keys(expected).length, v1Catalog.capabilities.length + 2, 'one file per feature plus core.json and presets.json');
-  assert.deepEqual(Object.keys(modules.declarations.features).sort(), v1Catalog.capabilities.map(row => row.id));
+test('config/modules matches its schema and the catalog reads it alone', () => {
   // 로더는 스키마를 보지 않으므로 실제 파일의 스키마 검사는 여기서 한다.
-  assert.equal(validateComposerModuleSchema(ROOT), Object.keys(expected).length);
+  assert.equal(validateComposerModuleSchema(ROOT), Object.keys(readComposerModuleFiles(ROOT)).length);
+  assert.equal(Object.keys(modules.files).length, loadedCatalog.capabilities.length + 2, 'one file per feature plus core.json and presets.json');
+  assert.deepEqual(Object.keys(modules.declarations.features).sort(), loadedCatalog.capabilities.map(row => row.id));
+  // 카탈로그의 출처는 기능 파일과 권한 원장·소스뿐이다(v1 manifest 출처를 C7 에서 걷었다).
+  assert.deepEqual(Object.keys(loadedCatalog.provenance).sort(), ['modules', 'modulesHash', 'permissions', 'permissionsHash', 'sourceInventoryHash']);
+  assert.ok(loadedCatalog.capabilities.every(row => !Object.hasOwn(row, 'pack')));
+  assert.ok(loadedCatalog.presets.every(row => !Object.hasOwn(row, 'packs') && !Object.hasOwn(row, 'frontendRemovePaths')));
+  // 같은 기능 파일만 있는 트리에서도 같은 카탈로그가 나온다 — 저장소의 다른 선언 파일에 기대지 않는다.
+  const root = modulesFixture();
+  assert.equal(buildProjectComposerCatalog(root, loadComposerModules(root).declarations).catalogHash, loadedCatalog.catalogHash);
 });
 
-test('the catalog built from config/modules alone equals the v1 catalog apart from the v1 pack axis', () => {
-  const root = modulesOnlyFixture();
-  const v2Catalog = buildProjectComposerCatalog(root, loadComposerModules(root).declarations);
-  assert.deepEqual(comparable(v2Catalog), comparable(v1Catalog));
-  // v2 카탈로그에는 pack 축이 없다. 전환 전 생성기가 쓰는 pack 축은 v1 manifest 에서만 온다.
-  assert.ok(v2Catalog.capabilities.every(row => !Object.hasOwn(row, 'pack')));
-  assert.ok(v2Catalog.presets.every(row => !Object.hasOwn(row, 'packs') && !Object.hasOwn(row, 'frontendRemovePaths')));
-  assert.deepEqual(Object.keys(v2Catalog.provenance).sort(), ['modules', 'modulesHash', 'permissions', 'permissionsHash', 'sourceInventoryHash']);
-});
-
-test('the composer catalog is the v2 catalog with only the v1 pack axis added while generators still project by pack', () => {
-  assert.deepEqual(comparable(loadedCatalog), comparable(v1Catalog));
-  assert.deepEqual(loadedCatalog.capabilities.map(row => [row.id, row.pack]), v1Catalog.capabilities.map(row => [row.id, row.pack]));
-  assert.deepEqual(loadedCatalog.presets.map(row => [row.id, row.packs]), v1Catalog.presets.map(row => [row.id, row.packs]));
-  // 시작 구성의 프런트 제거 경로는 카탈로그에 없다 — 해석기가 직접 선택과 같은 규칙으로 계산한다.
-  assert.ok(loadedCatalog.presets.every(row => !Object.hasOwn(row, 'frontendRemovePaths')));
-  assert.deepEqual(Object.keys(loadedCatalog.provenance).sort(),
-    ['manifest', 'manifestHash', 'modules', 'modulesHash', 'permissions', 'permissionsHash', 'sourceInventoryHash']);
-});
-
-test('a v1 manifest edit that config/modules does not follow stops the composer catalog with the regeneration step', () => {
-  const root = modulesOnlyFixture();
-  const manifestPath = join(root, 'config/reusable-base-profiles.json');
-  const manifest = JSON.parse(readFileSync(join(ROOT, 'config/reusable-base-profiles.json'), 'utf8'));
+/*
+ * [11단계 C7] 걷은 v1 소유 선언이 되살아나면 아무 소비자도 읽지 않는 두 번째 소유 선언이 조용히 낡아 간다. 로더·카탈로그·생성물 표지
+ * 판정이 모두 읽기 전에 멈춘다(생산 코드의 다른 참조는 project-composer-source.test.mjs 의 grep 계약이 막는다).
+ */
+test('a restored old ownership declaration stops the loader, the catalog and the generated-product marker', () => {
+  const root = modulesFixture();
+  const retired = join(root, RETIRED_OWNERSHIP_DECLARATION);
+  mkdirSync(dirname(retired), { recursive: true });
+  writeFileSync(retired, '{}\n');
   try {
-    copyFileSync(join(ROOT, 'config/reusable-base-profiles.json'), manifestPath);
-    const drifted = structuredClone(manifest);
-    drifted.packs.demo.backend.appDomains = drifted.packs.demo.backend.appDomains.filter(domain => domain !== 'isg');
-    writeFileSync(manifestPath, JSON.stringify(drifted));
-    assert.throws(() => loadProjectComposerCatalog(root), /v1 manifest appDomains differ from config\/modules \(npm run modules:generate/);
-    const moved = structuredClone(manifest);
-    moved.profiles.collaboration.packs = ['core', 'collaboration', 'survey'];
-    writeFileSync(manifestPath, JSON.stringify(moved));
-    assert.throws(() => loadProjectComposerCatalog(root), /v1 manifest profile domains differ from presets\.json: collaboration/);
+    for (const read of [() => readComposerModuleFiles(root), () => loadComposerModules(root), () => loadProjectComposerCatalog(root),
+      () => detectGeneratedComposition(root)]) {
+      assert.throws(read, /old ownership declaration remains: config\/reusable-base-profiles\.json/);
+    }
   } finally {
-    rmSync(manifestPath, { force: true });
+    rmSync(retired, { force: true });
   }
+  assert.doesNotThrow(() => loadComposerModules(root));
 });
 
 test('a preset that is not closed under requires is a catalog defect, not something the resolver widens', () => {
-  const root = modulesOnlyFixture();
+  const root = modulesFixture();
   // 시작 구성도 직접 선택과 같은 간선을 따른다(해석기 단일화). 닫히지 않은 목록은 적재 때 거부한다.
   editModule(root, 'presets.json', value => { value.presets.find(row => row.id === 'core').domains = ['scrap']; });
   try {
@@ -142,8 +106,7 @@ test('a preset that is not closed under requires is a catalog defect, not someth
   }
 });
 
-test('the declarations outside the catalog hash equal their v1 constants', () => {
-  assert.deepEqual(JSON.parse(canonicalJson(modules.extras)), JSON.parse(canonicalJson(v1ComposerExtras(ROOT))));
+test('preset gate expectations equal the gates derived from feature gate ownership', () => {
   // 시작 구성의 게이트 기대치는 기능 파일의 게이트 소유에서 계산한 목록과 정확히 같다(직접 선택 승인과 같은 규칙).
   for (const preset of modules.declarations.presets) {
     assert.deepEqual(modules.extras.presetExpectations[preset.id].gates.map(row => row.file).sort(), derivedRemovedGates(modules.extras, preset.domains), preset.id);
@@ -153,7 +116,7 @@ test('the declarations outside the catalog hash equal their v1 constants', () =>
 test('copy in config/modules stays outside the catalog hash, while a user sentence is inside it', () => {
   // 화면 문구·미배정 권한 안내는 v1 에서도 해시 밖이었다(DEC-OPS-242 ④·244). 출처 해시가 기능 파일 전체를 덮으면 문구만 고쳐도
   // 카탈로그 해시·모든 구성 해시와 로컬 DB 번들 lock 이 바뀐다. 카탈로그 본문에 문구 문자열이 없다는 것만으로는 이를 보지 못한다.
-  const root = modulesOnlyFixture();
+  const root = modulesFixture();
   const hashOf = () => buildProjectComposerCatalog(root, loadComposerModules(root).declarations).catalogHash;
   const before = hashOf();
   const edited = ['mail.json', 'core.json', 'presets.json', 'board.json', 'help.json'];
@@ -178,7 +141,7 @@ test('copy in config/modules stays outside the catalog hash, while a user senten
 });
 
 test('the schema, cross-file checks and source checks refuse a broken feature file with its reason', () => {
-  const root = modulesOnlyFixture();
+  const root = modulesFixture();
   const restore = name => restoreModule(root, name);
   // 스키마: 모르는 키.
   editModule(root, 'board.json', value => { value.owns.bogus = []; });
@@ -219,23 +182,7 @@ test('the schema, cross-file checks and source checks refuse a broken feature fi
   writeFileSync(join(root, MODULES_DIRECTORY, 'isg.json'), '{');
   assert.throws(() => loadComposerModules(root), error => error.constructor === Error && /isg\.json is not valid JSON/.test(error.message));
   restore('isg.json');
-  assert.equal(buildProjectComposerCatalog(root, loadComposerModules(root).declarations).capabilities.length, v1Catalog.capabilities.length);
-});
-
-test('a v1 edit without regeneration is reported as drift instead of being followed silently', () => {
-  const root = modulesOnlyFixture();
-  const directory = join(root, MODULES_DIRECTORY);
-  assert.deepEqual(moduleFileDrift(directory, generated), []);
-  editModule(root, 'mail.json', value => { value.presentation.summary = '메일 발송'; });
-  writeFileSync(join(directory, 'extra.json'), '{}');
-  rmSync(join(directory, 'isg.json'));
-  try {
-    assert.deepEqual(moduleFileDrift(directory, generated),
-      ['missing config/modules/isg.json', 'stale config/modules/mail.json', 'unexpected config/modules/extra.json']);
-  } finally {
-    rmSync(join(directory, 'extra.json'));
-    for (const name of ['mail.json', 'isg.json']) restoreModule(root, name);
-  }
+  assert.equal(buildProjectComposerCatalog(root, loadComposerModules(root).declarations).capabilities.length, loadedCatalog.capabilities.length);
 });
 
 // 11단계 C5: 생성물 표지는 presets.json 의 active 다. 하네스·원장 계약·권한 생성기가 이 판정을 쓴다.

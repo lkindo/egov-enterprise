@@ -16,46 +16,6 @@ import { join } from 'node:path';
 import { loadComposerModules } from './composer-modules.mjs';
 
 export const ROUTE_CENSUS_PATH = 'config/ui-route-capabilities.json';
-// 아래 세 상수는 v1 선언이다. 매니페스트 v2 전환(11단계 C7)까지 v2 생성기(composer-modules-generate.mjs)만 읽고, 엔진은 기능 파일의
-// presentation 을 읽는다(loadComposerPresentationDeclarations).
-export const COMPOSER_AREAS = Object.freeze([
-  { id: 'communication', label: '소통·협업', domains: ['mail', 'sms', 'note', 'notification', 'addressbook', 'scrap', 'promotion'] },
-  { id: 'knowledge', label: '지식·커뮤니티', domains: ['board', 'comment', 'help', 'community', 'template', 'isg'] },
-  { id: 'work', label: '업무 지원', domains: ['informalsanction', 'event', 'reward', 'report', 'schedule', 'memoreport'] },
-  { id: 'participation', label: '분석·참여', domains: ['survey', 'dashboard'] },
-  { id: 'showcase', label: '시연·예제', domains: ['showcase'] },
-]);
-
-export const CAPABILITY_SUMMARIES = Object.freeze({
-  addressbook: '주소록과 연락처 관리',
-  board: '게시판과 자주 묻는 질문·질의응답·위키',
-  comment: '게시글 댓글과 댓글 관리',
-  community: '커뮤니티 개설·가입·회원 관리',
-  dashboard: '업무 홈 실시간 연결·오늘 게시글·전체 미읽음 알림',
-  event: '행사와 행사별 외부인사 관리',
-  help: '도움말과 온라인 매뉴얼',
-  informalsanction: '기안·결재·참조와 결재함',
-  isg: '인터넷 서비스 안내 문구 등록·관리',
-  mail: '메일 작성·발송과 발송 이력',
-  memoreport: '메모 보고와 지시',
-  note: '쪽지 보내기·받기',
-  notification: '알림 센터와 실시간 알림',
-  promotion: '홈 배너와 팝업 공지 관리',
-  report: '개인 업무 보고',
-  reward: '포상 기록 관리',
-  schedule: '개인·부서 일정',
-  scrap: '게시글 스크랩',
-  showcase: '화면 패턴 갤러리·브라우저 테마 설정·하네스 샘플',
-  sms: '문자 발송과 결과 확인',
-  survey: '설문조사와 여론조사·투표',
-  template: '커뮤니티가 고르는 템플릿 원장 관리',
-});
-
-export const PRESET_LABELS = Object.freeze({
-  core: '공통 기반만',
-  collaboration: '협업 기본',
-  demo: '전체 참조 기능',
-});
 
 function copyProblem(text, { max }) {
   if (typeof text !== 'string' || !text.trim()) return 'is empty';
@@ -76,9 +36,13 @@ export function loadRouteKinds(root) {
   return new Map(census.routes.map(row => [row.route, row.routing.kind]));
 }
 
-/** 카탈로그와 대조한 표시 문구. 어긋나면 이유와 함께 실패한다. */
-export function composerPresentation(catalog, { routeKinds, areas = COMPOSER_AREAS, summaries = CAPABILITY_SUMMARIES, presetLabels = PRESET_LABELS } = {}) {
+/**
+ * 카탈로그와 대조한 표시 문구. 어긋나면 이유와 함께 실패한다. 업무 영역·요약·시작 구성 이름은 매니페스트 v2 의 표시 문구다
+ * (loadComposerPresentationDeclarations — 11단계 C7 에서 이 모듈의 상수를 걷었다).
+ */
+export function composerPresentation(catalog, { routeKinds, areas, summaries, presetLabels } = {}) {
   if (!(routeKinds instanceof Map)) throw new Error('route kinds from the route census are required');
+  if (!Array.isArray(areas) || !summaries || !presetLabels) throw new Error('presentation declarations from config/modules are required');
   const ids = catalog.capabilities.map(capability => capability.id);
   const known = new Set(ids);
   const placed = new Map();

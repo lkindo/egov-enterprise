@@ -9,8 +9,8 @@ import { pathToFileURL } from 'node:url';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { assertCompositionDatabaseLock, composerProfile,
-  manifestOwnership, projectComposerJava, assertComposerSourceSurvives, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
-import { composerMarkerDeclarations, composerOwnership, loadComposerModules, markerDeclarationViolations, moduleDatabaseInventory, projectComposerModuleFiles,
+  projectComposerJava, assertComposerSourceSurvives, supportFileOwners, verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
+import { RETIRED_OWNERSHIP_DECLARATION, composerMarkerDeclarations, composerOwnership, loadComposerModules, markerDeclarationViolations, moduleDatabaseInventory, projectComposerModuleFiles,
   projectedModuleViolations, readComposerModuleFiles, sharedTableTransfers } from './composer-modules.mjs';
 import { activeCompositionEntry } from './generate-reusable-base-source.mjs';
 import { presetIds } from './composition-profiles.mjs';
@@ -21,7 +21,6 @@ import { deriveEventSources, requiresClosure, sourceOwner } from './project-comp
 import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const manifest = JSON.parse(readFileSync(join(root, 'config/reusable-base-profiles.json'), 'utf8'));
 const catalog = loadProjectComposerCatalog(root);
 // 생성기는 매니페스트 v2 의 기능 소유와 구성으로 투영한다(11단계 C3). 시험도 같은 입력을 쓴다.
 const modules = loadComposerModules(root);
@@ -38,9 +37,13 @@ const frontendSources = new Map(frontendFiles.filter(isFrontendModuleFile)
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
 // 소유 판정 시험도 생산 projector(createFrontendProjector)를 지난다 — 구성을 주면 기능 투영이다(시작 구성과 직접 선택이 같다).
 const projectCustom = (file, source, composition) => createFrontendProjector({ composition }).project(file, source).source;
-// 합성 manifest 의 기능 소유(v1 모양)로 생성기 Java 투영을 부른다. 생성기는 같은 모양을 매니페스트 v2 에서 얻는다(composerOwnership).
-const planWith = (directory, fixtureManifest, resolvedDomains, javaFiles) =>
-  planJavaRemoval(directory, manifestOwnership(directory, fixtureManifest), { resolvedDomains }, javaFiles);
+// 합성 기능 소유({ domains, support: 기능 → 지원 파일 })를 로더와 같은 판정(supportFileOwners)으로 푼다. 생성기는 같은 모양을
+// 기능 파일에서 얻는다(composerOwnership). 기능 목록에 없는 기능의 지원 파일 선언은 소유하지 않은 선언으로 거부된다.
+const fixtureOwnership = (directory, fixture) => ({ domains: [...fixture.domains].sort(), supportFiles: supportFileOwners(directory,
+  Object.entries(fixture.support).map(([domain, files]) => ({ owner: domain, owned: fixture.domains.includes(domain) ? [domain] : [], domain, files })),
+  fixture.domains) });
+const planWith = (directory, fixture, resolvedDomains, javaFiles) =>
+  planJavaRemoval(directory, fixtureOwnership(directory, fixture), { resolvedDomains }, javaFiles);
 const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
@@ -133,8 +136,12 @@ test('new management HTTP matrices project every selected surface and reject an 
   const paths = value => [...value.matchAll(/new ManagedSurface\("([^"]+)"/g)].map(match => match[1]);
   const sharedMethod = (value, name) => value.match(new RegExp(`^(?:    @[^\\r\\n]*\\r?\\n)*    (?:void|static Stream<Arguments>|private void) ${name}\\([\\s\\S]*?^    \\}`, 'm'))?.[0];
   assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
+  // 표면 소유의 원천은 기능 파일의 owns.rbacMatrix 다(11단계 C7 — 생성기 상수를 걷었다). 이 시험의 기대 표와 정확히 같다.
+  assert.deepEqual(ownership.rbac.surfaces, Object.fromEntries(owners));
+  assert.deepEqual([...ownership.rbac.domains].sort(), ['event', 'help', 'informalsanction', 'promotion', 'reward', 'survey', 'template']);
+  assert.throws(() => projectComposerJava(file, source, { resolvedDomains: ['help'] }), /RBAC projection needs the feature RBAC ownership/);
   for (const selected of [['event'], ['reward'], ['help'], ['promotion'], ['template'], ['survey'], ['informalsanction'], ['event', 'reward', 'help', 'promotion', 'template']]) {
-    const projected = projectComposerJava(file, source, { resolvedDomains: selected });
+    const projected = projectComposerJava(file, source, { resolvedDomains: selected }, ownership.rbac);
     assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
     if (selected.some(domain => [...owners.values()].includes(domain))) {
       for (const method of ['managementWriteRequiresItsExactHttpPermission', 'managementWritesWithoutExactPermission', 'exactManagementGrantsIndependentlyAllowRealHttpCrud', 'assertStoredName']) {
@@ -151,7 +158,7 @@ test('new management HTTP matrices project every selected surface and reject an 
     assert.ok(!profile.acknowledgedRemovedGates.some(row => row.file === file), `${selected}: the selected RBAC surface must retain its gate`);
     assert.equal(planJavaRemoval(root, ownership, profile, java).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
   }
-  assert.throws(() => projectComposerJava(file, source.replace('/api/v1/help/manuals', '/api/v1/help/new-api'), { resolvedDomains: ['help'] }), /RBAC.*(inventory|owner|contract).*drifted/i);
+  assert.throws(() => projectComposerJava(file, source.replace('/api/v1/help/manuals', '/api/v1/help/new-api'), { resolvedDomains: ['help'] }, ownership.rbac), /RBAC.*(inventory|owner|contract).*drifted/i);
 });
 
 function supportFixture(t) {
@@ -172,27 +179,25 @@ function supportFixture(t) {
     mkdirSync(dirname(join(directory, file)), { recursive: true });
     writeFileSync(join(directory, file), source);
   }
-  const manifest = { packs: { core: { backend: { appDomains: [] } }, demo: { backend: {
-    appDomains: ['memoreport'], domainSupportFiles: { memoreport: [...displayNameSupport] },
-  } } } };
-  return { directory, manifest, java: [...sources.keys()].map(file => join(directory, file)) };
+  const fixture = { domains: ['memoreport'], support: { memoreport: [...displayNameSupport] } };
+  return { directory, fixture, java: [...sources.keys()].map(file => join(directory, file)) };
 }
 
 test('domain support follows its selected consumer without weakening mandatory dependency guards', t => {
-  const { directory, manifest, java } = supportFixture(t);
-  const plan = planWith(directory, manifest, [], java);
+  const { directory, fixture, java } = supportFixture(t);
+  const plan = planWith(directory, fixture, [], java);
   for (const file of displayNameSupport) assert.ok(plan.removed.has(join(directory, file)), `${file}: excluded consumer must remove its support`);
-  assert.equal(planWith(directory, manifest, ['memoreport'], java).removed.size, 0);
+  assert.equal(planWith(directory, fixture, ['memoreport'], java).removed.size, 0);
   const required = join(directory, 'business-core/src/main/java/nuri/business/service/user/RequiredService.java');
   writeFileSync(required, 'package nuri.business.service.user; import nuri.foundation.core.user.UserDisplayNameLookup; class RequiredService { UserDisplayNameLookup lookup; }');
-  assert.throws(() => planWith(directory, manifest, [], [...java, required]), /필수 모듈이 제외 domain을 참조한다/);
+  assert.throws(() => planWith(directory, fixture, [], [...java, required]), /필수 모듈이 제외 domain을 참조한다/);
   // Java 투영은 pack 을 보지 않는다 — 해석된 기능 목록이 없는 pack 프로필은 투영하지 않고 실패한다(11단계 C3).
-  assert.throws(() => planJavaRemoval(directory, manifestOwnership(directory, manifest), { packs: ['core'] }, java), /해석된 기능 목록\(resolvedDomains\)이 필요하다/);
-  assert.throws(() => planJavaRemoval(directory, manifest, { resolvedDomains: [] }, java), /기능 소유\(기능 목록·지원 파일\)가 필요하다/);
+  assert.throws(() => planJavaRemoval(directory, fixtureOwnership(directory, fixture), { packs: ['core'] }, java), /해석된 기능 목록\(resolvedDomains\)이 필요하다/);
+  assert.throws(() => planJavaRemoval(directory, fixture, { resolvedDomains: [] }, java), /기능 소유\(기능 목록·지원 파일\)가 필요하다/);
 });
 
 test('domain support rejects unsafe, missing, duplicate and unowned declarations', t => {
-  const { directory, manifest, java } = supportFixture(t);
+  const { directory, fixture, java } = supportFixture(t);
   for (const files of [
     ['../outside.java'],
     ['foundation/src/main/java/../../outside.java'],
@@ -201,42 +206,42 @@ test('domain support rejects unsafe, missing, duplicate and unowned declarations
     ['api-server/src/main/java/nuri/api/integration/sms/Missing.java'],
     [displayNameSupport[0], displayNameSupport[0]],
   ]) {
-    const changed = structuredClone(manifest);
-    changed.packs.demo.backend.domainSupportFiles.memoreport = files;
+    const changed = structuredClone(fixture);
+    changed.support.memoreport = files;
     assert.throws(() => planWith(directory, changed, [], java), /support/i);
   }
-  const changed = structuredClone(manifest);
-  changed.packs.demo.backend.domainSupportFiles.unknown = [displayNameSupport[0]];
-  assert.throws(() => planWith(directory, changed, [], java), /support/i);
-  changed.packs.demo.backend.appDomains.push('unknown');
+  const changed = structuredClone(fixture);
+  changed.support.unknown = [displayNameSupport[0]];
+  assert.throws(() => planWith(directory, changed, [], java), /Invalid domain support owner: unknown\/unknown/);
+  changed.domains.push('unknown');
   assert.throws(() => planWith(directory, changed, [], java), /duplicate domain support/i);
   // 업무 앱 파일은 다른 선택 도메인의 디렉터리에 있을 때만 지원 파일이다. 자기 디렉터리는 이미 자기 소유이고,
-  // 어느 pack 에도 없는 도메인 디렉터리는 선택으로 되살릴 수 없다. 파일이 실제로 있어도 형식에서 거부한다.
+  // 어느 기능 파일에도 없는 도메인 디렉터리는 선택으로 되살릴 수 없다. 파일이 실제로 있어도 형식에서 거부한다.
   const own = 'business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java';
   const foreign = 'business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java';
   mkdirSync(dirname(join(directory, foreign)), { recursive: true });
   writeFileSync(join(directory, foreign), 'package nuri.business.service.orphan; class OrphanPolicy {}');
   for (const file of [own, foreign]) {
-    const rejected = structuredClone(manifest);
-    rejected.packs.demo.backend.domainSupportFiles.memoreport = [file];
+    const rejected = structuredClone(fixture);
+    rejected.support.memoreport = [file];
     assert.throws(() => planWith(directory, rejected, [], java), /Invalid or duplicate domain support file/, file);
   }
-  const accepted = structuredClone(manifest);
-  accepted.packs.core.backend.appDomains = ['orphan'];
-  accepted.packs.demo.backend.domainSupportFiles.memoreport = [foreign];
+  const accepted = structuredClone(fixture);
+  accepted.domains.push('orphan');
+  accepted.support.memoreport = [foreign];
   assert.ok(planWith(directory, accepted, ['orphan'], [...java, join(directory, foreign)]).removed.has(join(directory, foreign)),
     'a selected domain directory file owned by an excluded consumer is removed');
 });
 
 test('API support is removed or survives with its exact consumer and cannot silently disappear', t => {
-  const { directory, manifest, java } = supportFixture(t);
+  const { directory, fixture, java } = supportFixture(t);
   const file = 'api-server/src/main/java/nuri/api/integration/memoreport/LocalProperties.java';
   mkdirSync(dirname(join(directory, file)), { recursive: true });
   writeFileSync(join(directory, file), 'package nuri.api.integration.memoreport; class LocalProperties {}');
-  manifest.packs.demo.backend.domainSupportFiles.memoreport.push(file);
+  fixture.support.memoreport.push(file);
   const allJava = [...java, join(directory, file)];
-  assert.ok(planWith(directory, manifest, [], allJava).removed.has(join(directory, file)));
-  assert.equal(planWith(directory, manifest, ['memoreport'], allJava).removed.size, 0);
+  assert.ok(planWith(directory, fixture, [], allJava).removed.has(join(directory, file)));
+  assert.equal(planWith(directory, fixture, ['memoreport'], allJava).removed.size, 0);
   const output = join(directory, 'output');
   for (const source of allJava) {
     const path = relative(directory, source);
@@ -244,7 +249,7 @@ test('API support is removed or survives with its exact consumer and cannot sile
     writeFileSync(join(output, path), readFileSync(source));
   }
   const composition = { profile: 'custom', resolvedDomains: ['memoreport'], frontend: { includedPaths: [], removePaths: [] } };
-  const owned = manifestOwnership(directory, manifest);
+  const owned = fixtureOwnership(directory, fixture);
   assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, owned));
   rmSync(join(output, file));
   assert.throws(() => assertComposerSourceSurvives(directory, output, composition, owned), /Selected capability source was removed: api-server/);
@@ -279,20 +284,20 @@ test('a selected feature keeps the api-server controllers of its own directory e
 });
 
 test('a selected domain directory may lose only the support owned by an excluded consumer', t => {
-  const { directory, manifest } = supportFixture(t);
+  const { directory, fixture } = supportFixture(t);
   const foreign = 'business-app/src/main/java/nuri/business/service/orphan/OrphanPolicy.java';
   const sibling = 'business-app/src/main/java/nuri/business/service/orphan/OrphanService.java';
   for (const [file, source] of [[foreign, 'package nuri.business.service.orphan; class OrphanPolicy {}'], [sibling, 'package nuri.business.service.orphan; class OrphanService {}']]) {
     mkdirSync(dirname(join(directory, file)), { recursive: true });
     writeFileSync(join(directory, file), source);
   }
-  manifest.packs.core.backend.appDomains = ['orphan'];
-  manifest.packs.demo.backend.domainSupportFiles.memoreport = [foreign];
+  fixture.domains.push('orphan');
+  fixture.support.memoreport = [foreign];
   const output = join(directory, 'output');
   mkdirSync(dirname(join(output, sibling)), { recursive: true });
   writeFileSync(join(output, sibling), readFileSync(join(directory, sibling)));
   const composition = selected => ({ profile: 'custom', resolvedDomains: selected, frontend: { includedPaths: [], removePaths: [] } });
-  const owned = manifestOwnership(directory, manifest);
+  const owned = fixtureOwnership(directory, fixture);
   // 생성기가 템플릿 단독에서 커뮤니티 전용 구현을 지운 뒤 "선택된 소스가 지워졌다" 로 실패하던 경로다.
   assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition(['orphan']), owned));
   // 지워진 소스는 모두 모아 한 번에 알린다(정밀 점검과 같은 합집합). 메모 보고 서비스도 이 출력에 없어 함께 실린다.
@@ -304,7 +309,7 @@ test('a selected domain directory may lose only the support owned by an excluded
 });
 
 test('selected domain support cannot disappear from a custom artifact', t => {
-  const { directory, manifest } = supportFixture(t);
+  const { directory, fixture } = supportFixture(t);
   const output = join(directory, 'output');
   mkdirSync(output);
   const composition = { profile: 'custom', resolvedDomains: ['memoreport'], frontend: { includedPaths: [], removePaths: [] } };
@@ -313,9 +318,9 @@ test('selected domain support cannot disappear from a custom artifact', t => {
     mkdirSync(dirname(join(output, file)), { recursive: true });
     writeFileSync(join(output, file), readFileSync(join(directory, file)));
   }
-  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, manifestOwnership(directory, manifest)));
+  assert.doesNotThrow(() => assertComposerSourceSurvives(directory, output, composition, fixtureOwnership(directory, fixture)));
   rmSync(join(output, displayNameSupport[1]));
-  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, manifestOwnership(directory, manifest)), /Selected capability source/);
+  assert.throws(() => assertComposerSourceSurvives(directory, output, composition, fixtureOwnership(directory, fixture)), /Selected capability source/);
 });
 
 /*
@@ -384,17 +389,38 @@ test('the generators and the deep plan project by feature ownership, never by pa
     'scripts/reusable-governance-projection.mjs', 'scripts/generate-permissions.mjs', 'scripts/pack-tagged-registry.mjs',
     'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs', 'scripts/atlas-catalog.mjs',
     'scripts/domain-deletion-plan.mjs', 'scripts/reusable-source-frontend.mjs', 'scripts/project-composer-recipe.mjs',
-    'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs']) {
+    'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs', 'scripts/generate-reusable-base-source.mjs',
+    'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-base-census.mjs', 'scripts/project-composer-catalog.mjs']) {
     assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks|reusable-base-profiles/, file);
-  }
-  for (const file of ['scripts/generate-reusable-base-source.mjs', 'scripts/reusable-governance-integrity.mjs']) {
-    assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks/, file);
   }
   // DB 생성기가 원본 스키마와 대조하는 소유 목록은 기능 파일에서 온다 — 카탈로그의 core·기능 테이블·독립 시퀀스와 같다.
   const inventory = moduleDatabaseInventory(modules.files);
   const sortedUnique = values => [...new Set(values)].sort();
   assert.deepEqual(inventory.tables, sortedUnique([...catalog.core.tables, ...catalog.capabilities.flatMap(row => row.database.tables)]));
   assert.deepEqual(inventory.sequences, sortedUnique([...catalog.core.explicitSequences, ...catalog.capabilities.flatMap(row => row.database.explicitSequences)]));
+});
+
+/*
+ * [11단계 C7] 기능 소유는 config/modules 하나다. v1 manifest(`config/reusable-base-profiles.json`)와 그것을 v2 로 옮겨 쓰던 생성 스크립트·
+ * merge:main 단계·modules:generate 명령을 걷었다. 옛 파일이 되살아나거나, 생산 코드(스크립트·도구·워크플로·훅·앱 소스·설정)가 그 이름을
+ * 다시 적으면 두 번째 소유 선언이 조용히 생긴다. 이름을 적어도 되는 자리는 그 이름을 막는 로더의 상수(RETIRED_OWNERSHIP_DECLARATION)
+ * 하나다. 설정 가운데 지난 승인의 근거 문장(disposition overlay 의 evidence)은 기록이라 대상이 아니다.
+ */
+test('the old ownership declaration is gone and no production code names it again', () => {
+  assert.equal(existsSync(join(root, RETIRED_OWNERSHIP_DECLARATION)), false, `old ownership declaration remains: ${RETIRED_OWNERSHIP_DECLARATION}`);
+  assert.equal(existsSync(join(root, 'scripts/composer-modules-generate.mjs')), false, 'the v1 to v2 generator remains');
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  assert.equal(Object.hasOwn(pkg.scripts, 'modules:generate'), false, 'npm run modules:generate remains');
+  const production = file => /^(?:scripts\/.+\.(?:mjs|cjs|js|ps1|sh)|tools\/.+\.(?:mjs|cjs|js)|\.github\/.+\.(?:ya?ml|json)|\.githooks\/.+|package\.json|config\/.+\.json|(?:foundation|business-core|business-app|api-server|migration-tool)\/src\/main\/.+|frontend\/src\/.+\.(?:ts|tsx))$/.test(file)
+    && !/(?:\.test\.(?:mjs|ts|tsx)|\.test-helpers\.mjs|\/__tests__\/.*)$/.test(file)
+    && file !== 'config/ui-navigation-disposition-proposal.json';
+  const scanned = files.filter(production);
+  assert.ok(scanned.length > 1000, `scanned ${scanned.length} files — the scan is empty`);
+  const naming = scanned.filter(file => readFileSync(join(root, file), 'utf8').includes('reusable-base-profiles'));
+  assert.deepEqual(naming, ['scripts/composer-modules.mjs'], 'old ownership declaration remains in production code');
+  // 그 한 자리도 상수 정의 한 줄뿐이다.
+  const lines = readFileSync(join(root, 'scripts/composer-modules.mjs'), 'utf8').split(/\r?\n/).filter(line => line.includes('reusable-base-profiles'));
+  assert.deepEqual(lines, ["export const RETIRED_OWNERSHIP_DECLARATION = 'config/reusable-base-profiles.json';"]);
 });
 
 /*
@@ -988,12 +1014,12 @@ test('custom RBAC projection preserves selected assertions and removes only abse
   const source = readFileSync(join(root, file), 'utf8');
   // Phase 0c: 통계 단언은 core 매트릭스로 옮겼다. 이 클래스의 경계는 설문 표지가 잇는다.
   assert.doesNotMatch(source, /nuri\.business\.service\.stats|\/api\/v1\/admin\/system\/statistics/);
-  const survey = projectComposerJava(file, source, { resolvedDomains: ['survey'] });
+  const survey = projectComposerJava(file, source, { resolvedDomains: ['survey'] }, ownership.rbac);
   assert.match(survey, /SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class/);
   assert.match(survey, /explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup/);
   assert.match(survey, /ordinaryPollParticipantCannotCreateUpdateOrDeletePolls/);
   assert.doesNotMatch(survey, /@Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints/);
-  const promotion = projectComposerJava(file, source, { resolvedDomains: ['promotion'] });
+  const promotion = projectComposerJava(file, source, { resolvedDomains: ['promotion'] }, ownership.rbac);
   // 설문이 없으면 표지를 지워 남은 표면(배너·팝업)의 단언이 연쇄 제거되지 않게 한다.
   assert.doesNotMatch(promotion, /SurveyService/);
   assert.match(promotion, /get\(path\)\.with\(user\(ordinary\)\)\)\.andExpect\(status\(\)\.isForbidden\(\)\)/);
@@ -1001,10 +1027,10 @@ test('custom RBAC projection preserves selected assertions and removes only abse
   assert.doesNotMatch(promotion, /\/api\/v1\/admin\/system\/ism\/1\/confirm/);
   assert.doesNotMatch(promotion, /@Test void explicitSurvey/);
   // 커뮤니티는 이 매트릭스의 표면이 아니다 — 커뮤니티만 고르면 매트릭스가 통째로 빠진다(선언된 제거).
-  assert.equal(projectComposerJava(file, source, { resolvedDomains: ['community'] }), source);
-  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['promotion'] }), /contract drifted/);
-  assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['promotion'] }), /survey boundary marker drifted/);
-  assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['promotion'] }), /Mixed RBAC projection contract drifted/);
+  assert.equal(projectComposerJava(file, source, { resolvedDomains: ['community'] }, ownership.rbac), source);
+  assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['promotion'] }, ownership.rbac), /contract drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['promotion'] }, ownership.rbac), /survey boundary marker drifted/);
+  assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['promotion'] }, ownership.rbac), /Mixed RBAC projection contract drifted/);
 });
 
 test('selected-source survival rejects collateral deletion and allows explicitly excluded child features', t => {

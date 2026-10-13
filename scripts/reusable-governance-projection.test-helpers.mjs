@@ -15,7 +15,7 @@ import { compositionProfiles } from './composition-profiles.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { buildUrlStateCensus } from './ui-url-state-census.mjs';
 import { analyzeRouteCapabilities } from './ui-route-capabilities-contract.mjs';
-import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, snapshotPathFor } from './reusable-governance-integrity.mjs';
+import { canonicalJsonSha256, inspectReusableGovernance, MEMORY_PATHS, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
 import { REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -26,7 +26,7 @@ import { PERMISSION_ARTIFACT_PATHS } from './generate-permissions.mjs';
 import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH } from './reusable-permission-projection.mjs';
 import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact } from './screen-registry-model.mjs';
 import { activeCompositionEntry, writeProjectedModules } from './generate-reusable-base-source.mjs';
-import { MODULES_DIRECTORY, composerOwnership, loadComposerModules } from './composer-modules.mjs';
+import { MODULES_DIRECTORY, RETIRED_OWNERSHIP_DECLARATION, composerOwnership, loadComposerModules } from './composer-modules.mjs';
 import { relative } from 'node:path';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -114,8 +114,7 @@ export function registerProfileProjectionTests(shard) {
           `${profileName}: lock.frontend.markerBlocks`);
         assert.equal(Object.hasOwn(markerBlocks, 'excludedPacks'), false, `${profileName}: the projection does not report packs`);
         pruneFrontend(output, projector.directPaths);
-        // 생성기처럼 복사한 v1 manifest 를 생성물에 남기지 않는다(11단계 C5). 표지는 매니페스트 v2 의 활성 구성이다.
-        rmSync(join(output, 'config/reusable-base-profiles.json'));
+        // 표지는 매니페스트 v2 의 활성 구성이다(11단계 C5). v1 manifest 는 C7 에서 원본에서도 걷었다.
         writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
         writeFileSync(join(output, 'config/governance/migration-adoption-review.json'), JSON.stringify({ status: 'approved', owner: 'synthetic-upstream-operator' }));
         const result = projectReusableGovernance({
@@ -123,9 +122,9 @@ export function registerProfileProjectionTests(shard) {
           projectSource: (file, text) => projector.project(file, text).source,
         });
         const projectionLedger = writeProjectionLedger(output, buildProjectionLedger(output, copied));
-        // 지운 파일이 원장에 남는다. 복사한 v1 manifest 는 어느 구성에도 남기지 않으므로(11단계 C5) 아무것도 걷지 않는 demo 도 그 한 파일을 적는다.
-        assert.ok(projectionLedger.files > 0, `${profileName}: 지운 파일이 원장에 남는다`);
-        if (profileName === 'demo') assert.deepEqual(readJson(output, PROJECTION_LEDGER_PATH).removedFiles, ['config/reusable-base-profiles.json']);
+        // 지운 파일이 원장에 남는다. 아무것도 걷지 않는 demo 는 빈 원장이다 — 원본에 v1 manifest 가 없어 복사했다 지울 것도 없다(11단계 C7).
+        if (profileName === 'demo') assert.deepEqual(readJson(output, PROJECTION_LEDGER_PATH).removedFiles, []);
+        else assert.ok(projectionLedger.files > 0, `${profileName}: 지운 파일이 원장에 남는다`);
         const lock = { schemaVersion: 1, profile: profileName, sourceCommit,
           composition: { ...composition, sourceCommit }, projectionLedger,
           governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
@@ -255,8 +254,11 @@ export function registerProfileProjectionTests(shard) {
         }
         for (const snapshot of result.upstreamSnapshots) {
           assert.ok(existsSync(join(output, snapshot.path)));
-          assert.equal(readFileSync(join(output, snapshot.path), 'utf8'), readFileSync(join(ROOT, snapshot.sourcePath), 'utf8').replace(/\r\n?/gu, '\n'));
+          assert.equal(readFileSync(join(output, snapshot.path), 'utf8'), upstreamSnapshotText(ROOT, snapshot.sourcePath));
         }
+        // 기능 선언(config/modules)은 디렉터리라 카탈로그 해시가 덮는 선언을 JSON 하나로 적는다(11단계 C7 — v1 manifest 스냅숏을 대신한다).
+        assert.deepEqual(result.upstreamSnapshots.filter(snapshot => snapshot.sourcePath === MODULES_DIRECTORY).map(snapshot => snapshot.path),
+          ['config/governance/upstream-review/modules.json']);
         const projectedApproval = readJson(output, 'config/ui-url-state-approval.json');
         for (const row of projectedApproval.classes.filter(row => row.reviewState === 'approved')) {
           assert.deepEqual(row.approvals, approval.classes.find(original => original.classId === row.classId).approvals);
@@ -285,11 +287,17 @@ export function registerProfileProjectionTests(shard) {
             return JSON.stringify(changed);
           }, /operation binding handler has no source: nuri\.api\.controller\.business\.mail\.MailApiController#/);
           mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), profile: 'demo' }), /lock profile/);
-          // lock 에 pack 축이 되살아나거나 v1 manifest 가 다시 실리면 붉다(11단계 C5).
+          // lock 에 pack 축이 되살아나거나 걷은 v1 소유 선언이 다시 실리면 붉다(11단계 C5·C7).
           mutateFile('reusable-base-lock.json', text => JSON.stringify({ ...JSON.parse(text), packs: ['core'] }), /Source lock profile\/commit mismatch/);
-          writeFileSync(join(output, 'config/reusable-base-profiles.json'), readFileSync(join(ROOT, 'config/reusable-base-profiles.json')));
-          assert.match(inspectReusableGovernance(output).errors.join('\n'), /Generated artifact must not carry the upstream v1 manifest/);
-          rmSync(join(output, 'config/reusable-base-profiles.json'));
+          writeFileSync(join(output, RETIRED_OWNERSHIP_DECLARATION), '{}\n');
+          assert.match(inspectReusableGovernance(output).errors.join('\n'), /old ownership declaration remains: config\/reusable-base-profiles\.json/);
+          rmSync(join(output, RETIRED_OWNERSHIP_DECLARATION));
+          // 구성 카탈로그의 출처 해시는 원본 기능 선언 스냅숏에 결속된다(v1 manifest 스냅숏을 대신한다).
+          mutateFile(snapshotPathFor(MODULES_DIRECTORY), text => {
+            const changed = JSON.parse(text);
+            changed['board.json'].owns.tables = changed['board.json'].owns.tables.slice(1);
+            return `${JSON.stringify(changed, null, 2)}\n`;
+          }, /Upstream snapshot hash mismatch: config\/modules[\s\S]*Composition catalog differs from upstream module declaration snapshot/);
           // 표지가 빠지면(lock 은 있다) 생성물 판정이 실패한다.
           mutateFile('config/modules/presets.json', text => { const { active: _marker, ...rest } = JSON.parse(text); return JSON.stringify(rest); },
             /활성 구성 표지\(active\)가 없다/);

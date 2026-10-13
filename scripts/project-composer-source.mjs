@@ -16,29 +16,9 @@ export function supportFileDirectoryDomain(file) {
   return /^business-app\/src\/(?:main|test)\/java\/nuri\/business\/(?:domain|service)\/([a-z][a-z0-9_]*)\/(?:[A-Za-z_$][\w$]*\/)*[A-Za-z_$][\w$]*\.java$/u.exec(file)?.[1] ?? null;
 }
 
-export function domainSupportFiles(root, manifest) {
-  const appDomains = Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []);
-  const entries = [];
-  for (const [pack, value] of Object.entries(manifest.packs ?? {})) {
-    const declarations = value.backend?.domainSupportFiles ?? {};
-    if (!declarations || typeof declarations !== 'object' || Array.isArray(declarations)) throw new Error(`Invalid domain support declarations: ${pack}`);
-    for (const [domain, files] of Object.entries(declarations)) entries.push({ owner: pack, owned: value.backend?.appDomains ?? [], domain, files });
-  }
-  return supportFileOwners(root, entries, appDomains);
-}
-
 /**
- * v1 manifest 의 기능 소유(Java 투영 입력 모양, composerOwnership 과 같다). 생성기는 매니페스트 v2 소유를 쓴다(11단계 C3). 원장 계약도
- * 기능 소유로 판정한다(C4). 이 함수는 합성 manifest 로 트리를 꾸미는 시험 픽스처만 쓴다(전환 C7 에서 걷는다).
- */
-export function manifestOwnership(root, manifest) {
-  const domains = [...new Set(Object.values(manifest.packs ?? {}).flatMap(pack => pack.backend?.appDomains ?? []))].sort();
-  return { domains, supportFiles: domainSupportFiles(root, manifest) };
-}
-
-/**
- * 지원 파일 선언의 공용 판정(manifest pack 선언과 매니페스트 v2 기능 파일이 함께 쓴다). `entries` 는 선언 순서의
- * `{ owner, owned, domain, files }` 다 — owner 는 선언한 자리(pack 이름 또는 기능 id), owned 는 그 자리가 소유한 기능이다.
+ * 지원 파일 선언의 판정(매니페스트 v2 기능 파일의 backend.supportFiles). `entries` 는 선언 순서의 `{ owner, owned, domain, files }` 다 —
+ * owner 는 선언한 자리(기능 id), owned 는 그 자리가 소유한 기능이다. `appDomainList` 는 선택할 수 있는 기능 id 전부다.
  */
 export function supportFileOwners(root, entries, appDomainList) {
   const result = new Map();
@@ -96,35 +76,13 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
   }
 }
 
+/**
+ * 선택 기능 RBAC 매트릭스(데모 표면) 파일. 어느 표면을 어느 기능이 지키는지는 기능 파일의 owns.rbacMatrix 가 정한다(로더의 extras.rbac,
+ * composerOwnership 의 rbac — 게이트 소유·시작 구성 기대치와 같은 원천이다). 통계는 Phase 0c 에서 core 로 옮겨 core 매트릭스가 검사한다.
+ */
 export const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
-export const MANAGEMENT_RBAC_SURFACES = new Map([
-  ['/api/v1/admin/operation/events', 'event'],
-  ['/api/v1/admin/operation/rewards', 'reward'],
-  ['/api/v1/help/hpcm', 'help'],
-  ['/api/v1/help/manuals', 'help'],
-  ['/api/v1/admin/system/banners', 'promotion'],
-  ['/api/v1/admin/system/popups', 'promotion'],
-  ['/api/v1/admin/system/templates', 'template'],
-]);
-// Phase 0c: 통계는 core 로 옮겨 core 매트릭스가 검사한다. 이 데모 매트릭스의 선택 가능한 표면에서 뺐다.
-export const RBAC_DOMAINS = ['survey', 'promotion', 'informalsanction', 'event', 'reward', 'help', 'template'];
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
 const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
-export const GATE_OWNERS = {
-  'api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java': ['note', 'notification'],
-  'api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java': ['memoreport'],
-  // 결재 흐름 검증은 알림 리스너(NotificationRequestListener)도 참조해, 알림이 빠지면 함께 지워진다.
-  'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java': ['informalsanction', 'notification'],
-  'api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java': ['community'],
-  'api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java': ['community', 'template'],
-  'api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java': ['event'],
-  'api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java': ['notification'],
-  'api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java': ['board', 'community'],
-  'api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java': ['survey'],
-  'api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java': ['addressbook'],
-  'api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java': ['sms'],
-  'api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java': ['template'],
-};
 
 /**
  * 생성기가 투영에 쓰는 프로필(11단계 C3). 시작 구성과 직접 선택이 같은 모양이다 — 투영은 해석된 기능 목록(resolvedDomains)과 화면
@@ -171,7 +129,7 @@ function removeTest(source, name) {
   return source.slice(0, declaration.index) + source.slice(end);
 }
 
-function projectManagementRbacSurfaces(source, selected) {
+function projectManagementRbacSurfaces(source, selected, surfaces) {
   const inventory = /    static Stream<ManagedSurface> managementSurfaces\(\) \{\r?\n        return Stream\.of\(([\s\S]*?)\);\r?\n    \}/.exec(source);
   if (!inventory) throw new Error('Management RBAC surface inventory contract drifted');
   // Constructor records have a fixed textual shape; keep each selected record byte-for-byte,
@@ -179,9 +137,10 @@ function projectManagementRbacSurfaces(source, selected) {
   const constructors = [...inventory[1].matchAll(/                new ManagedSurface\("([^"]+)", "[A-Z_]+", "[A-Z_]+", "[A-Za-z][A-Za-z0-9_]*",\r?\n                        """\r?\n[\s\S]*?\r?\n                        """, "[^"]*", "[^"]*"\)/g)];
   const paths = constructors.map(match => match[1]);
   const remainder = constructors.reduce((value, match) => value.replace(match[0], ''), inventory[1]);
-  if (JSON.stringify(paths) !== JSON.stringify([...MANAGEMENT_RBAC_SURFACES.keys()])
+  // 표면 집합은 기능 파일의 owns.rbacMatrix 와 정확히 같아야 한다. 남기는 생성자의 순서는 시험 파일의 것을 그대로 둔다.
+  if (JSON.stringify([...paths].sort()) !== JSON.stringify(Object.keys(surfaces).sort()) || new Set(paths).size !== paths.length
       || !/^[\s,]*$/.test(remainder)) throw new Error('Management RBAC surface owner inventory drifted');
-  const retained = constructors.filter(match => selected.has(MANAGEMENT_RBAC_SURFACES.get(match[1])));
+  const retained = constructors.filter(match => selected.has(surfaces[match[1]]));
   if (retained.length === constructors.length) return source;
   if (retained.length) return source.replace(inventory[1], `\n${retained.map(match => match[0]).join(',\n')}`);
   source = source.replace(inventory[0], '');
@@ -198,12 +157,18 @@ function projectManagementRbacSurfaces(source, selected) {
   return source.replace(record[0], '');
 }
 
-/** Preserve every assertion for a selected surface in the formerly pack-wide RBAC test. */
-export function projectComposerJava(file, source, profile) {
+/**
+ * Preserve every assertion for a selected surface in the formerly pack-wide RBAC test. `rbac` 은 기능 파일의 RBAC 매트릭스 소유
+ * (composerOwnership(modules).rbac — { domains, surfaces: 표면 → 기능 })다. 그 파일이 아니면 읽지 않는다.
+ */
+export function projectComposerJava(file, source, profile, rbac) {
   if (!profile.resolvedDomains || file.replaceAll('\\', '/') !== RBAC) return source;
+  if (!Array.isArray(rbac?.domains) || rbac.surfaces === null || typeof rbac.surfaces !== 'object') {
+    throw new Error('RBAC projection needs the feature RBAC ownership (composerOwnership(modules).rbac)');
+  }
   const selected = new Set(profile.resolvedDomains);
-  if (!RBAC_DOMAINS.some(domain => selected.has(domain))) return source; // normal declared removal
-  source = projectManagementRbacSurfaces(source, selected);
+  if (!rbac.domains.some(domain => selected.has(domain))) return source; // normal declared removal
+  source = projectManagementRbacSurfaces(source, selected, rbac.surfaces);
   if (!selected.has('survey')) for (const method of [
     'adminReadsDemoOwnedAdministrativeSurfaces', 'ordinaryUserCannotReadDemoOwnedAdministrativeSurfaces',
     'anonymousDemoOwnedAdministrativeRequestsRequireAuthentication', 'explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup',

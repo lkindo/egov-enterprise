@@ -98,11 +98,11 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 // 복사할 파일 목록에서 고른다(디스크의 무시된 파일·대소문자만 다른 이름을 생성물과 같게 본다).
 // `projectSource` 는 판정 전에 소스를 구성에 맞게 고쳐 쓰는 투영이다. 소스를 고치지 않는 수동 삭제(domain-deletion-plan.mjs)는
 // 원문 그대로를 넘긴다 — 생성기처럼 고쳐 쓴 소스로 판정하면 실제로 남는 원문과 판정이 어긋난다.
-// `ownership` 은 기능 소유(기능 id 전부·기능 → 지원 파일, composerOwnership)이고 `profile.resolvedDomains` 는 남길 기능이다. 제외 기능은
-// 그 차집합이다 — pack 을 보지 않는다(11단계 C3). 시작 구성도 해석된 기능 목록으로 투영한다.
+// `ownership` 은 기능 소유(기능 id 전부·기능 → 지원 파일·RBAC 매트릭스 표면 소유, composerOwnership)이고 `profile.resolvedDomains` 는
+// 남길 기능이다. 제외 기능은 그 차집합이다 — pack 을 보지 않는다(11단계 C3). 시작 구성도 해석된 기능 목록으로 투영한다.
 export function planJavaRemoval(root, ownership, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
   { walkDirectory = (directory) => walk(directory, () => true),
-    projectSource = (file, source) => projectComposerJava(file, source, profile) } = {}) {
+    projectSource = (file, source) => projectComposerJava(file, source, profile, ownership?.rbac) } = {}) {
   if (!Array.isArray(profile?.resolvedDomains)) fail('Java 투영에는 해석된 기능 목록(resolvedDomains)이 필요하다.');
   if (!Array.isArray(ownership?.domains) || !(ownership.supportFiles instanceof Map)) fail('Java 투영에는 기능 소유(기능 목록·지원 파일)가 필요하다.');
   const support = ownership.supportFiles;
@@ -215,7 +215,7 @@ export function pruneJava(output, ownership, profile) {
   for (const directory of directDirectories) if (existsSync(directory)) rmSync(directory, { recursive: true });
   for (const path of walk(output, (candidate) => candidate.endsWith('.java'))) {
     const source = readFileSync(path, 'utf8');
-    const projected = projectComposerJava(normalize(relative(output, path)), source, profile);
+    const projected = projectComposerJava(normalize(relative(output, path)), source, profile, ownership.rbac);
     if (isErrorCodeSource(rel(path))) survivingErrorCodes.push({ path, source: projected });
     if (source !== projected) {
       writeFileSync(path, projected);

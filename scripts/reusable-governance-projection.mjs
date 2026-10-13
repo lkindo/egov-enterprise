@@ -8,7 +8,7 @@ import { SCREEN_REGISTRY_OUTPUT } from './screen-registry-model.mjs';
 import { approvedStateItemSelectors, buildUrlStateCensus, isUrlStateItemApproved, validateUrlStateCensus } from './ui-url-state-census.mjs';
 import { createPendingAdoptionReview } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
-import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor } from './reusable-governance-integrity.mjs';
+import { ACTIVE_ARTIFACTS, UPSTREAM_SOURCES, artifactTextSha256, buildGeneratedMemory, projectedCodeScope, snapshotPathFor, upstreamSnapshotText } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, REVIEW_MANIFEST_PATHS, REVIEW_SCOPE_PATH } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
@@ -213,7 +213,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     catalogHash: composition.catalogHash, recipeHash: composition.recipeHash, compositionHash: composition.compositionHash,
     menuSnapshotSha256 };
   const snapshots = UPSTREAM_SOURCES.map(path => {
-    const content = normalizedText(sourceRoot, path);
+    const content = upstreamSnapshotText(sourceRoot, path);
     const snapshotPath = snapshotPathFor(path);
     mkdirSync(dirname(join(outputRoot, snapshotPath)), { recursive: true });
     writeFileSync(join(outputRoot, snapshotPath), content, 'utf8');

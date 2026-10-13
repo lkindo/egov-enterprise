@@ -18,7 +18,6 @@ import {
 } from './merge-main-regenerate.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
-import { composerModuleOutputs } from './composer-modules.mjs';
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -132,17 +131,14 @@ test('slot contributions changed on both sides regenerate the slot registries be
     'a conflicted registry is regenerated, not picked');
 });
 
-test('a v1 declaration changed on one side and the v2 feature files on the other regenerate config/modules', () => {
-  // 매니페스트 v2 는 전환(11단계 C7)까지 v1 선언의 파생물이다. main 이 v1 manifest 를 고친 뒤 합치면 v2 를 고르지 않고 다시 만든다.
+test('config/modules is the source after the v2 transition — no generator rewrites a feature file', () => {
+  // 11단계 C7 전환 뒤 기능 파일은 손으로 쓰는 원천이다. 양쪽이 같은 기능 파일을 고친 충돌은 다시 만들지 않고 사람이 합친다.
   const ids = files => planRegeneration(files).map(generator => generator.id);
-  assert.deepEqual(ids({ ours: ['config/reusable-base-profiles.json'], theirs: ['scripts/project-composer-catalog.mjs'] }), ['composer-modules', 'atlas']);
-  const step = GENERATORS.find(generator => generator.id === 'composer-modules');
-  assert.deepEqual(step.outputs, composerModuleOutputs(path.resolve(import.meta.dirname, '..')));
-  assert.ok(step.outputs.includes('config/modules/board.json') && !step.outputs.includes('config/modules/_schema.json'),
-    'the hand-written schema is not a generated output');
-  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), ['composer-modules', 'atlas'],
-    'a conflicted feature file is regenerated, not picked');
-  assert.deepEqual(ids({ ours: ['config/reusable-base-profiles.json'], theirs: ['docs/a.md'] }), ['atlas'], 'a v1 edit on one side only is already consistent');
+  assert.deepEqual(ids({ ours: ['config/modules/board.json'], theirs: ['config/modules/board.json'] }), ['atlas'],
+    'a conflicted feature file is resolved by hand, not regenerated');
+  assert.ok(GENERATORS.every(generator => generator.outputs.every(output => !output.startsWith('config/modules/'))),
+    'no generator writes the feature files');
+  assert.equal(GENERATORS.some(generator => generator.id === 'composer-modules'), false);
 });
 
 test('the screen-registry step reads every input the generator declares and writes its output', () => {

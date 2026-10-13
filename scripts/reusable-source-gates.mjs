@@ -94,8 +94,8 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     fail(
       `profile '${profileName}' 이 승인하지 않은 규칙으로 거버넌스 게이트를 제거한다: `
         + unacknowledgedRules.map((rule) => `${rule}(${ruleRemovals[rule].length}건)`).join(', ')
-        + `\nconfig/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedGateRemovalRules 에 `
-        + '{ rule, reason } 으로 등재하고 npm run modules:generate 로 config/modules/presets.json 을 다시 만들 것(생성기는 그 파일을 읽는다).',
+        + `\nconfig/modules/presets.json 의 시작 구성 '${profileName}' expected.gateRemovalRules 에 `
+        + '{ rule, reason } 으로 등재할 것(직접 선택은 core 시작 구성의 규칙 승인을 쓴다).',
     );
   }
   if (staleRules.length) {
@@ -109,8 +109,8 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
     fail(
       `profile '${profileName}' 이 승인하지 않은 거버넌스 게이트를 제거한다 (${unacknowledged.length}건):\n` +
         unacknowledged.map((file) => `  - ${file}`).join('\n') +
-        `\n정당한 제거라면 config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedRemovedGates 에 등재하고 사유를 커밋에 남길 것`
-        + '(npm run modules:generate 로 config/modules/presets.json 에 반영한다 — 생성기는 그 파일을 읽는다).',
+        `\n정당한 제거라면 그 게이트를 지키는 기능 파일의 owns.gates 에 적고(시작 구성은 config/modules/presets.json 의 `
+        + `'${profileName}' expected.gates 에도 같은 파일을 사유와 함께 적는다) 사유를 커밋에 남길 것.`,
     );
   }
   if (stale.length) {
@@ -128,7 +128,7 @@ export function assertRemovedGatesAcknowledged(profileName, profile, java, front
 }
 
 /**
- * 프리셋의 Java 연쇄 제거(게이트 제외)와 manifest 의 {@code profiles.<name>.acknowledgedJavaCascade} 의 대조(설계서 C4).
+ * 프리셋의 Java 연쇄 제거(게이트 제외)와 presets.json 의 {@code expected.javaCascade}(프로필의 acknowledgedJavaCascade)의 대조(설계서 C4).
  *
  * <p>[왜] 연쇄 제거는 선언이 아니라 타입 참조로 정해진다. 잘못 들어간 import 한 줄이 core 컨트롤러나 동작 시험을 조용히
  * 지울 수 있고(DEC-OPS-084·085 는 이런 손실을 손으로 찾았다), 소유는 코드에서 도출되므로 그 import 가 기대치까지 함께
@@ -154,7 +154,7 @@ export function assertJavaCascadeAcknowledged(profileName, profile, java) {
   const files = java.cascadeRemoved.map((entry) => entry.file);
   const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, files);
   console.log(`[base-source] 선언이 아니라 연쇄로 지운 Java(게이트 제외): ${files.length}건`);
-  const where = `config/reusable-base-profiles.json 의 profiles.${profileName}.acknowledgedJavaCascade`;
+  const where = `config/modules/presets.json 의 시작 구성 '${profileName}' expected.javaCascade`;
   if (invalidEntries.length) fail(`${where} 항목은 .java 경로 문자열이어야 한다: ${JSON.stringify(invalidEntries[0])}`);
   if (duplicates.length) fail(`${where} 에 중복 항목이 있다: ${duplicates.join(', ')}`);
   if (unacknowledged.length) {
@@ -162,7 +162,7 @@ export function assertJavaCascadeAcknowledged(profileName, profile, java) {
     fail(
       `profile '${profileName}' 이 승인하지 않은 Java 파일을 연쇄로 지운다 (${unacknowledged.length}건):\n`
         + unacknowledged.map((file) => `  - ${file}  <- ${reasons.get(file)}`).join('\n')
-        + `\n잘못 들어간 import 인지 먼저 보고, 정당한 연쇄라면 ${where} 에 적고 npm run modules:generate 로 config/modules/presets.json 에 반영한다.`,
+        + `\n잘못 들어간 import 인지 먼저 보고, 정당한 연쇄라면 ${where} 에 적는다.`,
     );
   }
   if (stale.length) {

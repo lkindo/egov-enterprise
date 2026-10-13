@@ -667,7 +667,7 @@ function homeSectionViolations(entries, label, { file, importedFrom, readModule 
 }
 
 /**
- * 기여 파일 하나의 함정 규칙 위반. `ownPaths` 는 그 기능의 FEATURES.paths, `foreignPaths` 는 다른 기능의 FEATURES.paths 합집합이다
+ * 기여 파일 하나의 함정 규칙 위반. `ownPaths` 는 그 기능의 owns.frontend, `foreignPaths` 는 다른 기능의 owns.frontend 합집합이다
  * (둘 다 frontend 기준).
  * - .ts 만, JSX 금지, 최상위 문장은 import 와 default export(defineContributions('<파일 이름>', [...])) 하나뿐이다. 이름 있는 export·
  *   지역 선언·식 문장은 두지 않는다 — 모듈을 읽기만 해도 무언가 하는 기여(최상위 호출)를 막는다.
