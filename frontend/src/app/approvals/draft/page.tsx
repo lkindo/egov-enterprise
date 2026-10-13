@@ -3,7 +3,7 @@ import { SITE_IDENTITY } from '@/config/site-identity';
 import ApprovalDraftHubClient from './ApprovalDraftHubClient';
 
 export const metadata: Metadata = {
-  title: `결재 양식 작성 예시 | ${SITE_IDENTITY.frameworkName}`,
+  title: `새 결재 기안 | ${SITE_IDENTITY.frameworkName}`,
 };
 
 export default function ApprovalDraftPage() {

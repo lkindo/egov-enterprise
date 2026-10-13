@@ -727,6 +727,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java"
         },
         {
+          "id": "DB-APPROVAL-REFERENCE-NOTIFICATION",
+          "source": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-APPROVAL-WORKFLOW",
           "source": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowMigrationIntegrationTest.java"
         },

@@ -64,7 +64,9 @@ const WAVE1_APPROVED_ROUTES = [
   '/admin/survey/polls/manage',
   // '/admin/system/network' 은 DEC-OPS-129 로 퇴역했다(2026-09-25, 경로·API·권한 삭제).
   '/admin/workflow',
-  '/approvals/draft',
+  // '/approvals/draft' 의 웨이브 1 승인은 DEC-OPS-302 로 거뒀다(2026-10-13) — 2026-09-16 부터 실제 기안 창을 열게 되어
+  // demo-isolated 의 근거(목업·미전송 고지·e2e 11)가 사라졌고, 인증 시작 구성 '공통 기반 + 결재' 가 이 화면을 싣는다.
+  // 정본 /approvals 로의 consolidate-to-canonical 로 다시 제안한다(리다이렉트는 하지 않았다).
 ];
 const WAVE1_APPROVED_ALIASES = [
   '/admin/community/boards/insertBoardArticle',
@@ -466,6 +468,43 @@ test('invalid disposition and manifest/schema drift are semantic red fixtures', 
     validateSchemaDefinition(droppedConsumerGuardSchema).join('\n'),
     /proposed-state consumer and accepted-decision guard/i,
   );
+});
+
+/*
+  [2026-10-13 DEC-OPS-302] demo-isolated 는 시연 기능만 싣는 화면의 처분이다(IA §8.2). 결재 기안 화면은 실제 기안 창을 열게 되고
+  인증 시작 구성 '공통 기반 + 결재' 가 그 화면을 실었는데도 웨이브 1 의 demo-isolated 승인이 남아 있었다. 처분 계약은 그 화면을
+  싣는 시작 구성(라우트 원장의 directProjectionProfiles)을 보고, 시연이 아닌 구성이 하나라도 있으면 붉다.
+*/
+test('demo-isolated routes are not shipped by a non-demo preset', () => {
+  const demoLeak = /demo-isolated route ships in non-demo presets/u;
+  assert.doesNotMatch(validate(overlay).errors.join('\n'), demoLeak);
+
+  // 결재 기안 화면을 다시 demo-isolated 로 돌리면 그 화면을 싣는 '공통 기반 + 결재' 가 드러난다.
+  const reverted = clone(overlay);
+  const draftIndex = reverted.routes.findIndex(({ route }) => route === '/approvals/draft');
+  assert.ok(draftIndex >= 0, 'fixture requires the /approvals/draft overlay row');
+  reverted.routes[draftIndex].disposition = 'demo-isolated';
+  const revertedLeaks = validate(reverted).errors.filter((error) => demoLeak.test(error));
+  assert.deepEqual(revertedLeaks, [
+    `routes[${draftIndex}] /approvals/draft: demo-isolated route ships in non-demo presets: approval`,
+  ]);
+
+  // 대조군: 시연 구성만 싣는 화면 설정은 demo-isolated 로 남아도 통과한다.
+  const layoutIndex = overlay.routes.findIndex(({ route }) => route === '/admin/system/layout');
+  assert.equal(overlay.routes[layoutIndex]?.disposition, 'demo-isolated');
+  assert.deepEqual(manifest.routes.find(({ route }) => route === '/admin/system/layout')?.directProjectionProfiles, ['demo']);
+
+  // 시연 밖 구성이 그 화면을 싣게 되면 같은 처분이 붉다. 싣는 구성을 읽을 수 없어도 통과가 아니다.
+  const shippedByCore = clone(manifest);
+  shippedByCore.routes.find(({ route }) => route === '/admin/system/layout').directProjectionProfiles = ['core', 'demo'];
+  assert.ok(validate(overlay, { manifest: shippedByCore }).errors.includes(
+    `routes[${layoutIndex}] /admin/system/layout: demo-isolated route ships in non-demo presets: core`,
+  ));
+  const unknownShipping = clone(manifest);
+  delete unknownShipping.routes.find(({ route }) => route === '/admin/system/layout').directProjectionProfiles;
+  assert.ok(validate(overlay, { manifest: unknownShipping }).errors.includes(
+    `routes[${layoutIndex}] /admin/system/layout: demo-isolated route ships in non-demo presets: (unknown)`,
+  ));
 });
 
 test('the provisional direction cannot erase evidence blockers or drift from its accepted ADR', () => {

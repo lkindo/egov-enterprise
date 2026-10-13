@@ -71,7 +71,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '22'
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
@@ -97,7 +97,7 @@ ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}
       - name: Verify this generated product
         run: ${ARTIFACT_COMMAND}
       - name: Retain product verification
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: reusable-artifact-verification
           path: build/reports/reusable-base/full.json

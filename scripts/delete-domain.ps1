@@ -142,7 +142,7 @@ $remainingJava = Get-ChildItem -Path (Join-Path $RepoRoot 'foundation'), (Join-P
 $danglingRefs = @()
 if ($refPatterns.Count -gt 0) { $danglingRefs = @($remainingJava | Select-String -CaseSensitive -Pattern ($refPatterns -join '|')) }
 if ($danglingRefs.Count -gt 0) {
-    Write-Host "[WARN] 지우는 Java 타입을 참조하는 잔존 소스($(@($danglingRefs.Path | Select-Object -Unique).Count)개 파일) — 그대로 두면 컴파일이 깨진다:" -ForegroundColor Yellow
+    Write-Host "[WARN] 지우는 Java 타입의 이름이 남은 소스($(@($danglingRefs.Path | Select-Object -Unique).Count)개 파일) — 타입 참조면 그대로 두면 컴파일이 깨진다(문자열 속 이름은 컴파일과 무관하니 그 문자열이 가리키는 대상을 확인하라):" -ForegroundColor Yellow
     foreach ($ref in ($danglingRefs | Select-Object -First 40)) {
         $rel = $ref.Path.Substring($RepoRoot.Length).TrimStart('\', '/')
         Write-Host "    - ${rel}:$($ref.LineNumber)" -ForegroundColor Yellow

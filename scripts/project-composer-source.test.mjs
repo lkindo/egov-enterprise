@@ -55,7 +55,8 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
   ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
-  ['api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java', ['informalsanction', 'notification']],
+  ['api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java', ['informalsanction', 'notification']],
+  ['api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java', 'informalsanction'],
   ['api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java', ['board', 'community']],
   ['api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java', 'survey'],
 ];
