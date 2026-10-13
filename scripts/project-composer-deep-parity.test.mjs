@@ -2,15 +2,21 @@
 // 파일의 시험을 차례로 돌리고 파일끼리는 함께 돌리므로, 나눈 만큼 운영 계약 전체 실행이 짧아진다. 준비물은 함께 쓴다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { projectSourceTree } from './generate-reusable-base-source.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas } from './reusable-source-gates.mjs';
 import { copySourceTree, isCopyableSourceFile, normalize } from './reusable-source-tree.mjs';
-import { AUTHORIZATION_POLICY_PATH, projectOperationBindings } from './reusable-permission-projection.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, applyPermissionSourceProjection, applyScreenAndBundleProjection,
+  projectOperationBindings } from './reusable-permission-projection.mjs';
+import { projectRemovedRouteAliases } from './reusable-governance-projection.mjs';
+import { ROUTE_LEDGER_PATH } from './reusable-page-survival.mjs';
+import { SCREEN_REGISTRY_INPUTS, UPSTREAM_ROUTE_LEDGER } from './screen-registry-model.mjs';
+import { buildUnreviewedBaselineManifest, inspectRouteRepository } from './ui-route-capabilities-contract.mjs';
+import { COMPOSER_SELECTION_PATH } from './project-composer-recipe.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
 import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
 import { root, readJson, catalog, modules, ownership, files, compose, projectionFiles, quietly } from './project-composer-deep.test-helpers.mjs';
@@ -69,5 +75,30 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     assert.deepEqual([deep.permissionProjection.operationBindings, deep.permissionProjection.removedOperationBindings],
       [generatorBindings.bindings.length, generatorBindings.removed.length], `${label}: retained and removed operation bindings`);
     assert.equal(deep.permissionProjection.permissions, composition.permissionCodes.length, `${label}: catalog = composition codes`);
+    // 카탈로그 page·화면 목록·묶음 투영(트랙 B 검토 #1·#3)도 생성기와 같다: 복사한 트리에 생성기의 거버넌스 단계를 차례로 돌린다 —
+    // 목적지가 사라진 리다이렉트 정리(넘기는 page 를 지운다), 카탈로그·바인딩 투영(남는 page 전부를 판정한다), 라우트 원장이 정해진 뒤
+    // 화면 목록·묶음 투영. 정밀 점검은 원본 행을 거른 판정이라, 남는 page 모집단·화면 수·남는/빠지는 묶음·생성 제외 권한이 같아야 한다.
+    for (const file of [PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, SCREEN_REGISTRY_INPUTS.menus]) {
+      mkdirSync(dirname(join(output, file)), { recursive: true });
+      copyFileSync(join(root, file), join(output, file));
+    }
+    mkdirSync(dirname(join(output, UPSTREAM_ROUTE_LEDGER)), { recursive: true });
+    copyFileSync(join(root, ROUTE_LEDGER_PATH), join(output, UPSTREAM_ROUTE_LEDGER));
+    // 라우트 원장은 생성물 표지(활성 구성 하나와 그 기능 파일)와 구성 스냅숏으로 화면 제외 경로를 읽는다 — 생성기가 쓰는 모양을 둔다.
+    const writeOutput = (file, value) => { mkdirSync(dirname(join(output, file)), { recursive: true }); writeFileSync(join(output, file), JSON.stringify(value)); };
+    writeOutput('config/modules/presets.json', { schemaVersion: 2, active: composition.profile,
+      presets: [{ id: composition.profile, domains: composition.resolvedDomains }] });
+    for (const domain of composition.resolvedDomains) writeOutput(`config/modules/${domain}.json`, { id: domain });
+    writeOutput(COMPOSER_SELECTION_PATH, { catalog, composition });
+    projectRemovedRouteAliases(output, new Set(readJson(join(root, ROUTE_LEDGER_PATH)).routes.map(row => row.route)));
+    const generatorCatalog = applyPermissionSourceProjection({ sourceRoot: root, outputRoot: output, composition });
+    const generatorScreens = applyScreenAndBundleProjection({ sourceRoot: root, outputRoot: output,
+      ledger: buildUnreviewedBaselineManifest(inspectRouteRepository(output), {}) });
+    const { removedPagePermissions, screens, bundles, droppedBundles, generatedExclusions } = deep.permissionProjection;
+    assert.deepEqual({ removedPagePermissions, screens, bundles, droppedBundles, generatedExclusions }, {
+      removedPagePermissions: generatorCatalog.removedPagePermissions, screens: generatorScreens.screens, bundles: generatorScreens.bundles,
+      droppedBundles: generatorScreens.droppedBundles, generatedExclusions: generatorScreens.generatedExclusions,
+    }, `${label}: catalog pages, screens and bundles`);
+    assert.ok(removedPagePermissions.length > 0 && droppedBundles.length > 0, `${label}: the projection removes pages and bundles`);
   }
 });

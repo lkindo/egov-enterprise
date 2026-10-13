@@ -165,6 +165,8 @@ class HarnessBaselineIntegrityTest {
             "scripts/reusable-artifact-entrypoints-contract.mjs",
             "scripts/reusable-artifact-entrypoints-contract.test.mjs",
             "scripts/verify-reusable-artifact.mjs",
+            // 위 생성물 정책이 받는 구성 이름(시작 구성 id·custom)은 이 모듈이 정한다(11단계 C8) — 정책과 같은 경계에 묶는다.
+            "scripts/composition-profiles.mjs",
             "config/governance/reusable-harness-profile.json",
             "config/governance/authorization-policies.json",
             "config/governance/cross-domain-coupling-census.json",

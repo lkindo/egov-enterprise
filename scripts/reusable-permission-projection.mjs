@@ -215,20 +215,20 @@ export function readPermissionSources(sourceRoot, files = {}) {
 
 /**
  * 정밀 점검의 권한 투영 판정 — 디스크를 바꾸지 않고 생성기와 같은 판정을 미리 한다. `removed(rel)` 는 투영이 그 원본 파일을 지우는지,
- * `keptScreenRoutes` 는 생성물에 남는 화면 라우트다. 실패하면 던진다(정밀 점검이 PERMISSION_PROJECTION 차단 사유로 바꾼다).
+ * `keptPageRoutes` 는 생성물에 남는 page 라우트 전부다(화면과 넘기는 page — 거버넌스 투영의 리다이렉트 정리까지 한 뒤). 실패하면 던진다
+ * (정밀 점검이 PERMISSION_PROJECTION 차단 사유로 바꾼다).
+ * 카탈로그는 생성기와 같은 함수(projectPermissionCatalog)로 줄인다 — 남는 page 마다 카탈로그 키가 있고 진입 권한이 구성 코드인지 본다.
  * 생성기는 화면 행을 생성물 트리의 뼈대로 정하지만 묶음 판정에 쓰는 진입·쓰기 권한은 원본 행과 같으므로(투영이 대조한다) 원본 행을 거른다.
  */
-export function planPermissionProjection({ sourceRoot, composition, removed, keptScreenRoutes, sources = readPermissionSources(sourceRoot) }) {
+export function planPermissionProjection({ sourceRoot, composition, removed, keptPageRoutes, sources = readPermissionSources(sourceRoot) }) {
   const codes = composition.permissionCodes;
   const allowed = new Set(codes);
-  const known = new Set(sources.catalog.permissions.map(row => row.code));
-  const unknown = codes.filter(code => !known.has(code));
-  if (unknown.length) throw new Error(`composition permission codes are not in the catalog: ${unknown.join(', ')}`);
+  const catalog = projectPermissionCatalog(sources.catalog, { permissionCodes: codes, routes: keptPageRoutes });
   const bindings = projectOperationBindings(sources.policies.operationBindings,
     { sourceExists: file => fs.existsSync(path.join(sourceRoot, file)), removed });
   const bindingErrors = bindingPermissionErrors(bindings.bindings, codes);
   if (bindingErrors.length) throw new Error(bindingErrors.join('; '));
-  const screens = sources.registry.screens.filter(screen => keptScreenRoutes.has(screen.route)).map(screen => {
+  const screens = sources.registry.screens.filter(screen => keptPageRoutes.has(screen.route)).map(screen => {
     const outside = screen.entry.permissions.filter(code => !allowed.has(code));
     if (outside.length) throw new Error(`retained screen ${screen.route} needs entry permissions outside the composition: ${outside.join(', ')}`);
     return { ...screen, permissions: screen.permissions.filter(row => allowed.has(row.code)) };
@@ -237,6 +237,7 @@ export function planPermissionProjection({ sourceRoot, composition, removed, kep
   buildPermissionBundles(bundles.ledger, { screens, catalogCodes: codes, findReplacedTerm: replacedTermFinder(sources.visibleTerms), projected: true });
   return {
     permissions: codes.length,
+    removedPagePermissions: catalog.removedPagePermissions,
     operationBindings: bindings.bindings.length,
     removedOperationBindings: bindings.removed.length,
     screens: screens.length,

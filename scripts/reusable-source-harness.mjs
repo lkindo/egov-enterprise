@@ -31,6 +31,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-artifact-entrypoints-contract.mjs',
   'scripts/reusable-artifact-entrypoints-contract.test.mjs',
   'scripts/verify-reusable-artifact.mjs',
+  'scripts/composition-profiles.mjs',
   'config/governance/reusable-harness-profile.json',
   'config/governance/authorization-policies.json',
   'config/governance/cross-domain-coupling-census.json',

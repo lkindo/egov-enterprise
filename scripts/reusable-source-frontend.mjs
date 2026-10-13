@@ -106,13 +106,12 @@ function stripMarkerBlocks(lines, blocks) {
 /*
  * 마커 선언(기능 파일의 owns.markerBlocks, 11단계 C6)은 투영하는 트리가 아니라 이 스크립트가 속한 저장소의 config/modules 에서 읽는다 —
  * 원본 체크아웃의 스크립트는 원본을, 생성물의 스크립트는 생성물(구성의 기능 파일만 있다)을 투영한다. 시험의 합성 트리에는 기능 파일이
- * 없으므로 이 저장소의 선언을 쓴다. 마커 줄을 처음 만날 때 한 번 읽는다 — 마커 없는 파일만 투영하면 읽지 않는다.
+ * 없으므로 이 저장소의 선언을 쓴다. projector 마다 마커 줄을 처음 만날 때 한 번 읽는다 — 마커 없는 파일만 투영하면 읽지 않는다.
+ * 프로세스 전체에 한 번만 읽지 않는다: 오래 도는 생성기 화면 서버(project:ui)는 정밀 점검마다 카탈로그를 다시 적재하는데, 선언을
+ * 프로세스에 두면 pull 로 블록·기능이 바뀐 뒤에도 옛 선언으로 판정해 '알 수 없는 기능'·'Unclassified composer UI block' 으로 막는다.
  */
 const REPOSITORY_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-let repositoryMarkers;
-const markerDeclarations = () => (repositoryMarkers ??= composerMarkerDeclarations(readComposerModuleFiles(REPOSITORY_ROOT)));
-/** 마커 토큰 어휘 — 기능 파일의 기능 id. 모르는 토큰은 마커 줄에서 실패한다. */
-const KNOWN_MARKER_FEATURES = Object.freeze({ has: (feature) => markerDeclarations().features.has(feature) });
+const readMarkerDeclarations = () => composerMarkerDeclarations(readComposerModuleFiles(REPOSITORY_ROOT));
 
 /**
  * 한 구성의 프런트 투영(기능 투영). 생성기·정밀 점검·도달성 census 가 시작 구성과 직접 선택을 모두 이렇게 투영한다(11단계 C3·C5).
@@ -134,6 +133,10 @@ export function createFrontendProjector({ composition, files }) {
   }
   const selected = new Set(composition.resolvedDomains);
   const directPaths = [...composition.frontend.removePaths];
+  let declarations;
+  const markerDeclarations = () => (declarations ??= readMarkerDeclarations());
+  /** 마커 토큰 어휘 — 기능 파일의 기능 id. 모르는 토큰은 마커 줄에서 실패한다. */
+  const knownFeatures = Object.freeze({ has: (feature) => markerDeclarations().features.has(feature) });
   let slotOwners;
   const registryOwners = (slot, label) => {
     if (!files) fail(`슬롯 레지스트리를 투영하려면 복사할 프런트 파일 목록(files)이 필요하다: ${label}`);
@@ -148,7 +151,7 @@ export function createFrontendProjector({ composition, files }) {
     directPaths,
     project(path, source) {
       const label = String(path).replaceAll('\\', '/');
-      const { lines, blocks } = parseMarkerBlocks(source, { knownFeatures: KNOWN_MARKER_FEATURES, label });
+      const { lines, blocks } = parseMarkerBlocks(source, { knownFeatures, label });
       const slotFile = slotPathKind(label);
       if (slotFile && blocks.length) fail(`슬롯 파일은 마커를 둘 수 없다 — 기여는 파일 단위로 빠진다: ${label}`);
       if (slotFile?.kind === 'registry') {

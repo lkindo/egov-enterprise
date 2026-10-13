@@ -770,7 +770,8 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
   // 여는 묶음 하나(첫 코드)와 나머지 코드의 제외 행, 외부 핸들러 바인딩 하나다.
   const [homeCode, ...otherCodes] = [...real.core.permissionCodes].sort();
   const permissionSources = {
-    catalog: { permissions: real.core.permissionCodes.map(code => ({ code })) },
+    // 남는 page(홈·로그인)마다 카탈로그 키가 있어야 한다 — 생성기처럼 정밀 점검도 남는 page 전부를 카탈로그로 판정한다.
+    catalog: { permissions: real.core.permissionCodes.map(code => ({ code })), pagePermissions: { '/': [homeCode], '/login': [] } },
     policies: { operationBindings: [{ method: 'GET', path: '/actuator/health', handler: 'EXTERNAL#/actuator/health' }] },
     bundles: { schemaVersion: 1, description: '시험용 묶음 원장', excluded: otherCodes.map(code => ({ code, reason: '시험용 합성 저장소에는 이 권한을 쓰는 화면이 없다.' })),
       bundles: [{ id: 'home-viewer', name: '홈 조회', description: '홈 조회를 맡깁니다.', protected: false, permissions: [homeCode] }] },

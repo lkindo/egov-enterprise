@@ -181,31 +181,47 @@ test('the full product (demo) projection is byte-identical to the source permiss
 
 /*
  * 정밀 점검의 권한 투영 판정(planPermissionProjection)은 생성기의 판정과 같은 함수를 쓴다. 원본 저장소에서 core 구성 밖 권한을 쓰는
- * 핸들러를 지워지는 것으로 모사해, 남는 바인딩·화면이 구성 밖 권한을 요구하면 실패하는 것을 확인한다(실제 구성은 정밀 점검 시험이 본다).
+ * 핸들러를 지워지는 것으로 모사해, 남는 바인딩·화면·넘기는 page 가 구성 밖 권한을 요구하거나 남는 page 에 카탈로그 키가 없으면 실패하는
+ * 것을 확인한다(실제 구성은 정밀 점검 시험이 본다).
  */
-test('the deep permission plan refuses a retained binding or screen entry outside the composition', () => {
+test('the deep permission plan refuses a retained binding, screen entry or redirect page outside the composition', () => {
   const core = compose({ preset: 'core' });
   const codes = new Set(core.permissionCodes);
   const sources = readPermissionSources(root);
-  const keptScreenRoutes = new Set(['/', '/admin/system/menus']);
+  // 남는 page 는 화면과 넘기는 page 를 모두 담는다(/admin/security/role 은 권한 작업대로 넘기는 page 다).
+  const keptPageRoutes = new Set(['/', '/admin/system/menus', '/admin/security/role']);
   const handlerFile = row => bindingHandlerSource(row.handler, file => fs.existsSync(path.join(root, file)));
   const removedFiles = new Set(sources.policies.operationBindings.filter(row => row.access === 'PERMISSION' && !codes.has(row.permission))
     .map(handlerFile));
   const removed = file => removedFiles.has(file);
-  const plan = planPermissionProjection({ sourceRoot: root, composition: core, removed, keptScreenRoutes, sources });
+  const plan = planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources });
   assert.equal(plan.permissions, core.permissionCodes.length);
   assert.ok(plan.removedOperationBindings > 0 && plan.operationBindings > 0);
   // 남는(메일 밖) 바인딩 하나가 구성 밖 권한을 요구하게 만들면 실패한다.
   const tampered = structuredClone(sources);
   const userRead = tampered.policies.operationBindings.find(row => row.permission === 'USER_READ' && !removed(handlerFile(row)));
   userRead.permission = 'MAIL_SEND';
-  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptScreenRoutes, sources: tampered }),
+  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources: tampered }),
     new RegExp(`retained operation binding ${userRead.method} ${userRead.path.replace(/[{}]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
   // 남는 화면의 진입 권한이 구성 밖이면 실패한다.
   const screenTampered = structuredClone(sources);
   screenTampered.registry.screens.find(screen => screen.route === '/admin/system/menus').entry.permissions.push('MAIL_SEND');
-  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptScreenRoutes, sources: screenTampered }),
+  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources: screenTampered }),
     /retained screen \/admin\/system\/menus needs entry permissions outside the composition: MAIL_SEND/);
+  // 화면 목록에 없는 넘기는 page 도 생성기처럼 카탈로그로 판정한다 — 진입 권한이 구성 밖이면 실패한다(트랙 B 검토 #1).
+  const redirectTampered = structuredClone(sources);
+  assert.ok(!redirectTampered.registry.screens.some(screen => screen.route === '/admin/security/role'), '/admin/security/role is a redirect page');
+  redirectTampered.catalog.pagePermissions['/admin/security/role'] = [...redirectTampered.catalog.pagePermissions['/admin/security/role'], 'MAIL_SEND'];
+  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources: redirectTampered }),
+    /retained page permissions need codes outside the composition: \/admin\/security\/role needs MAIL_SEND/);
+  // 남는 page 에 카탈로그 키가 없으면 실패한다.
+  const unregistered = structuredClone(sources);
+  delete unregistered.catalog.pagePermissions['/admin/security/role'];
+  assert.throws(() => planPermissionProjection({ sourceRoot: root, composition: core, removed, keptPageRoutes, sources: unregistered }),
+    /Unregistered page permission in projected artifact: \/admin\/security\/role/);
+  // 구성에 남지 않는 page 의 카탈로그 행은 판정하지 않는다(대조군 — 생성물에서 빠지는 행이다).
+  assert.doesNotThrow(() => planPermissionProjection({ sourceRoot: root, composition: core, removed,
+    keptPageRoutes: new Set(['/', '/admin/system/menus']), sources: redirectTampered }));
 });
 
 /*

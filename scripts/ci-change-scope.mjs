@@ -238,6 +238,43 @@ const CROSS_STACK_CONTRACT = [
   /^Dockerfile$/,
 ];
 
+/**
+ * 생성기·도구 전용 경로(11단계 C11, CI 2차-b — 설계 13장 '투영 무영향 경로 목록은 계약으로 고정'). 재사용 생성기·생성기
+ * 화면·기능 선언만 바꾼 변경은 종전에 미분류 경로라 전 파이프라인을 돌았다(병합 PR 41개 중 16개). 이 표의 경로는 알려진
+ * 경로다 — 모든 시작 구성과 사용자 구성의 재사용 검증, 늘 도는 운영 계약(secret-scan), SAST 를 고르고, 그 밖의 축은
+ * 항목의 `axes` 만 켠다. 경로 문자열의 접두로 맞추고 먼저 맞는 항목이 이긴다.
+ *
+ * `axes` 는 그 경로를 문자열로 가리키거나(디렉터리째 읽기 포함) 실행하는 시험·조건부 CI 진입점이 도는 축이다. 운영 계약
+ * (ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 ci.yml 에서 다시 계산해 항목마다 정확히 같은지 본다 —
+ * 시험이 표의 경로를 새로 읽으면 그 축을 켜야 통과하고, 읽는 시험이 사라지면 축을 내려야 통과한다. 분류기 자신이 읽는
+ * composition-profiles.mjs 는 넣지 않는다(분류기가 자기 입력의 변경을 좁게 분류하지 않게 한다).
+ */
+export const GENERATOR_TOOL_PATHS = Object.freeze([
+  // 기능 선언(매니페스트 v2). 하네스가 생성물 표지(presets.json)와 디렉터리를, 기본 관리자 시드 스키마 검증이 기능 파일을
+  // 읽고, 생성기 화면 시험이 카탈로그를 실행한다.
+  { path: 'config/modules/', axes: ['backend', 'e2e', 'schema'] },
+  // 생성기 메뉴 스냅숏. 탭 목적지 cross-stack 계약도 읽는다.
+  { path: 'config/project-composer-menus.json', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
+  { path: 'scripts/composer-modules', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/domain-deletion-plan', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/verify-project-composer', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
+  // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
+  { path: 'tools/project-composer/', axes: ['e2e'] },
+].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
+
+export function generatorToolEntry(file) {
+  return GENERATOR_TOOL_PATHS.find(entry => normalizeFile(file).startsWith(entry.path)) ?? null;
+}
+
+function selectsToolAxis(file, axis) {
+  return generatorToolEntry(file)?.axes.includes(axis) ?? false;
+}
+
 function normalizeFile(file) {
   return String(file).trim().replaceAll('\\', '/').replace(/^\.\//, '');
 }
@@ -265,7 +302,8 @@ function isFrontend(file) {
 }
 
 function isKnown(file) {
-  return isDocumentationOnly(file) || isBackend(file) || isMigration(file) || isFrontend(file);
+  return isDocumentationOnly(file) || isBackend(file) || isMigration(file) || isFrontend(file)
+    || generatorToolEntry(file) !== null;
 }
 
 /**
@@ -284,8 +322,9 @@ function isE2eRelevant(file) {
  * 규칙이다: 업무 앱의 기능 패키지(business-app 의 domain·service/<기능 id>)와 기능 파일의 지원 파일(backend.supportFiles)은 그 기능이
  * 있어야 남고, 화면 경로(owns.frontend)는 그 경로를 덮는 기능이 모두 있어야, 함께 소유한 화면(owns.frontendAny)은 그 기능이나 with
  * 기능 가운데 하나라도 있어야 남는다. 그 조건을 모두 채우는 시작 구성을 고른다 — 연쇄 제거는 보지 않으므로 실제로 남는 구성보다
- * 넓은 쪽이다. 공통 모듈·api-server·기능이 정해지지 않는 파일은 모든 시작 구성이다(fail-closed). config/modules 자체는 알려진 경로가
- * 아니라 전수다 — 빠진 기능의 선언(화면 경로 등)도 그 기능이 없는 구성의 생성물을 바꾼다.
+ * 넓은 쪽이다. 공통 모듈·api-server·기능이 정해지지 않는 파일은 모든 시작 구성이다(fail-closed). config/modules 자체와 생성기·도구
+ * 전용 경로(GENERATOR_TOOL_PATHS)도 소유 기능이 없어 모든 시작 구성이다 — 빠진 기능의 선언(화면 경로 등)도 그 기능이 없는 구성의
+ * 생성물을 바꾼다.
  */
 function reusableProfilesForFile(file) {
   if (isDocumentationOnly(file)) return [];
@@ -330,18 +369,21 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = forceFull || files.length === 0 || unknownFiles.length > 0;
   const docsOnly = !full && files.every(isDocumentationOnly);
-  const atlas = files.some(file => file === 'frontend/public/governance_harness_atlas.html'
+  // 생성기·도구 전용 경로는 표의 축만 켠다(GENERATOR_TOOL_PATHS). 재사용 검증은 아래 selectedReusableProfiles 가 고른다 —
+  // 이 경로는 기능 소유가 없어 모든 시작 구성이다.
+  const tool = axis => files.some(file => selectsToolAxis(file, axis));
+  const atlas = tool('atlas') || files.some(file => file === 'frontend/public/governance_harness_atlas.html'
     || file.startsWith('frontend/atlas/')
     || file === 'scripts/build-atlas.mjs'
     || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
-  const backend = full || files.some(isBackend);
-  const migration = full || files.some(isMigration);
-  const frontend = full || files.some(isFrontend) || files.includes('api-docs.json');
+  const backend = full || files.some(isBackend) || tool('backend');
+  const migration = full || files.some(isMigration) || tool('migration');
+  const frontend = full || files.some(isFrontend) || files.includes('api-docs.json') || tool('frontend');
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
-  const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT));
-  const e2e = full || crossStack || files.some(isE2eRelevant);
-  const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT));
-  const mutationMigrationTool = full || files.some(isMigrationToolMutation);
+  const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT)) || tool('schema');
+  const e2e = full || crossStack || files.some(isE2eRelevant) || tool('e2e');
+  const mutation = full || files.some(file => matchesAny(file, MUTATION_RELEVANT)) || tool('mutation');
+  const mutationMigrationTool = full || files.some(isMigrationToolMutation) || tool('mutationMigrationTool');
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
   const reusableCustom = reusableProfiles.includes('core');
   const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });

@@ -19,6 +19,9 @@ const REPO_DIR = join(FRONTEND_DIR, '..');
  * 사람이 읽어서 잡을 수 없는 결함이므로 기계가 막는다.
  *
  * 허용: 탭(U+0009)·개행(U+000A)·캐리지리턴(U+000D).
+ *
+ * 저장소 scripts/ 는 늘 도는 운영 계약(scripts/source-control-characters.test.mjs)이 같은 규칙으로 본다(11단계 C11).
+ * 이 시험은 frontend 축에서만 돌아, 여기서 scripts/ 를 읽으면 생성기 스크립트만 바꾼 변경이 frontend 전체를 다시 돌려야 했다.
  */
 const ALLOWED = new Set([0x09, 0x0a, 0x0d]);
 
@@ -26,15 +29,11 @@ const ALLOWED = new Set([0x09, 0x0a, 0x0d]);
  * 의도적으로 제어문자를 쓰는 예외. **파일 단위 allowlist 가 아니라 이유를 적는 자리**다.
  * 새 항목을 넣으려면 "왜 이 문자가 데이터로서 필요한가"를 여기 남긴다.
  */
-const INTENTIONAL: Record<string, string> = {
-  // 코드 census 가 8줄 묶음을 해시할 때 쓰는 구분자. 소스에 나타날 수 없는 값이라야 안전하다.
-  'scripts/code-census.mjs': 'U+0001 을 줄 묶음 구분자로 사용(중복 코드 탐지 해시 키)',
-};
+const INTENTIONAL: Record<string, string> = {};
 
 const SCAN_ROOTS = [
   join(FRONTEND_DIR, 'src'),
   join(FRONTEND_DIR, 'e2e'),
-  join(REPO_DIR, 'scripts'),
 ];
 
 const SCAN_EXTENSIONS = ['.ts', '.tsx', '.mjs', '.js', '.css'];

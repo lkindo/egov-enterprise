@@ -282,6 +282,11 @@
     },
     "presets": {
       "type": "object", "additionalProperties": false, "required": ["schemaVersion", "presets"],
+      "if": { "properties": { "active": { "type": "string" } }, "required": ["active"] },
+      "else": {
+        "description": "직접 선택 구성의 이름(custom)은 원본 선언의 시작 구성 id 가 될 수 없다 — 쓰면 생성기·정밀 점검이 그 시작 구성을 직접 선택으로 보아 기대치 대조를 건너뛴다. 생성물(active 표지)만 직접 선택 구성 하나를 custom 으로 둔다.",
+        "properties": { "presets": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string", "not": { "const": "custom" } } } } } }
+      },
       "properties": {
         "schemaVersion": { "const": 2 },
         "active": {

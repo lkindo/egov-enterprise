@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { RBAC, supportFileOwners } from './project-composer-source.mjs';
+import { CUSTOM_COMPOSITION } from './composition-profiles.mjs';
 
 export const MODULES_DIRECTORY = 'config/modules';
 export const MODULES_SCHEMA = '_schema.json';
@@ -158,6 +159,9 @@ export function loadComposerModules(root) {
   const presetIds = new Set();
   const presets = presetsFile.presets.map(preset => {
     if (presetIds.has(preset.id)) fail(`duplicate preset: ${preset.id}`);
+    // 직접 선택 구성의 이름은 원본 시작 구성 id 가 될 수 없다 — 생성기·정밀 점검이 그 구성을 직접 선택으로 보아 기대치(게이트·Java 연쇄)
+    // 대조를 건너뛴다. 생성물(active 표지)만 직접 선택 구성 하나를 그 이름으로 둔다.
+    if (preset.id === CUSTOM_COMPOSITION && presetsFile.active === undefined) fail(`reserved preset id: ${preset.id} (the direct-selection composition)`);
     presetIds.add(preset.id);
     for (const domain of preset.domains) if (!known.has(domain)) fail(`preset ${preset.id} names an unknown feature: ${domain}`);
     return { id: preset.id, domains: [...preset.domains] };
