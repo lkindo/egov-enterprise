@@ -105,23 +105,24 @@ tables:
 
 codemaps:
   user_status:
-    values:              # 레거시 코드 → 표준 코드. 숫자처럼 보이는 코드는 따옴표로 감싼다
+    values:              # 레거시 코드 → 표준 코드. 표준 코드(값)는 따옴표로 감싼다
       "1": "P"
       "0": "D"
     # unmapped: fail(기본) | passthrough | fallback(+ fallback: "<표준 코드>")
+    # nullAs: keep(기본, NULL 은 NULL) | fallback(NULL 도 fallback 값으로)
 ```
 
 이 예시는 source의 `password_hash`가 현재 `EgovPasswordEncoder`와 호환된다는 사전 검증을 전제로 한다. 해시 형식이 다르면 원문 비밀번호를 복호화·재해시하지 말고, 별도의 강제 재설정/계정 활성화 정책과 매핑을 승인한 뒤 이관해야 한다. `pswd`는 target의 NOT NULL 컬럼이므로 정책 없이 생략할 수 없다.
 
 ### 값 변환 순서와 codemap
 
-컬럼 값은 `transform → codemap → type → fkRef` 순서로 만든다. `trim` 같은 정리가 코드 대조보다 먼저라 CHAR 원천의 공백 채움 때문에 코드가 어긋나지 않는다(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), 종전 순서는 `codemap → transform → type`).
+컬럼 값은 `transform → codemap → type → fkRef` 순서로 만든다. `trim` 같은 정리가 코드 대조보다 먼저라 CHAR 원천의 공백 채움 때문에 코드가 어긋나지 않는다(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), 종전 순서는 `codemap → transform → type`). 순서가 바뀌었으므로 codemap 결과를 transform 으로 다듬던 매핑(예: `unmapped: passthrough` 뒤 `upper`)은 이제 transform 결과로 코드를 찾고 codemap 결과에는 transform 이 적용되지 않는다 — 옮길 때 대응표를 다시 확인한다.
 
 - codemap 은 `values`(레거시 코드 → 표준 코드)와 `unmapped` 정책을 갖는다. **기본은 `fail`** 이다 — `values` 에 없는 코드가 오면 그 행 변환이 실패한다. 그대로 통과는 `unmapped: passthrough`, 대체값은 `unmapped: fallback` 과 `fallback` 으로 명시할 때만 쓴다. `values` 가 비었거나 정책과 `fallback` 이 어긋나면 validate 가 오류를 내고 실행기도 같은 판정으로 거부한다.
-- 레거시 코드값 `default` 는 이제 평범한 코드다. 대체값을 `default` 키로 두던 **옛 평면 형식은 읽지 않는다**. 같은 파일을 새 의미로 조용히 다르게 해석하지 않으려고 loader 가 codemap 이름과 옮겨 쓸 방법을 밝혀 거부하고, 승인 workflow 는 그 문구로 gate 한다.
-- 코드와 표준 코드는 문자열이어야 한다. Jackson YAML(2.21.7 실측)은 따옴표 없는 `yes`·`true` 를 boolean, `01` 을 정수 1 로 읽는다. 이런 값은 형식 오류로 거부한다(`Y`·`N` 은 문자열로 남는다).
-- NULL 은 코드가 아니므로 NULL 로 둔다. 숫자 원천값은 표기를 정규화해 찾는다 — `NUMBER(5,1)` 의 `1.0` 과 `NUMBER(1)` 의 `1` 은 같은 코드 `"1"` 이다. 문자열 원천은 그대로 찾으므로 `"01"` 과 `"1"` 은 다른 코드다. 숫자 열에 쓰는 codemap 의 키는 정규형(`1`, `-3`, `2.5`)으로 적는다.
-- `type: date` 는 자정이 아닌 시각이 붙은 값을 거부한다. 종전에는 시각을 조용히 버렸다. 시각을 버리는 것이 의도면 `transform: date-truncate` 로 밝힌다. 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 `date-truncate` 도 거부한다.
+- 레거시 코드값 `default` 는 이제 평범한 코드다. 대체값을 `default` 키로 두던 **옛 평면 형식은 읽지 않는다**. 같은 파일을 새 의미로 조용히 다르게 해석하지 않으려고 loader 가 codemap 이름과 옮겨 쓸 방법을 밝혀 거부하고, 승인 workflow 는 그 문구로 gate 한다. 그 문구는 바뀐 의미 둘(아래 NULL, 위 적용 순서)도 함께 알린다. `values` 가 맵인 새 형식에 모르는 필드가 섞이면 옛 형식이 아니라 알 수 없는 필드로 알린다(이름은 식별자 형식일 때만 싣는다).
+- **표준 코드(`values` 의 값)와 `fallback` 은 문자열이어야 한다.** Jackson YAML(2.21.7 실측)은 따옴표 없는 `yes`·`true` 를 boolean, `01` 을 정수 1 로 읽는다. 이런 값은 형식 오류로 거부한다(`Y`·`N` 은 문자열로 남는다). 레거시 코드(`values` 의 키)는 따옴표가 없어도 적은 그대로 읽는다 — `01`·`1.0`·`yes` 는 그 글자 그대로의 코드다.
+- NULL 은 코드가 아니므로 기본으로 NULL 로 둔다. 옛 평면 형식의 `default` 는 NULL 도 대체값으로 바꿨으므로, 그 의미가 필요하면 `nullAs: fallback` 과 `fallback` 을 명시한다(`unmapped` 정책과 따로 정한다). 숫자 원천값은 표기를 정규화해 찾는다 — `NUMBER(5,1)` 의 `1.0` 과 `NUMBER(1)` 의 `1` 은 같은 코드 `"1"` 이다. 문자열 원천은 그대로 찾으므로 `"01"` 과 `"1"` 은 다른 코드다. 숫자 열에 쓰는 codemap 의 키는 정규형(`1`, `-3`, `2.5`)으로 적는다. 숫자처럼 보이지만 정규형이 아닌 키(`1.0`·`01`)는 숫자 열에서 닿지 않으므로 validate 가 경고한다(문자열 열의 정상 코드일 수 있어 오류는 아니다. 경고는 키 값 대신 위치만 밝힌다).
+- `type: date` 는 자정이 아닌 시각이 붙은 값을 거부한다. 종전에는 시각을 조용히 버렸다. 시각을 버리는 것이 의도면 `transform: date-truncate` 로 밝힌다. 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다. `date-truncate` 는 ISO 날짜·ISO 일시와 함께 `type: date` 가 받는 8자리 `yyyyMMdd` 도 그대로 받으므로, 두 표기가 섞인 컬럼도 이 변환기 하나로 옮긴다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 `date-truncate` 도 거부한다.
 
 Commit에는 `run.runId`, `run.sourceNamespace`, 모든 table의 결정적 `orderBy` 또는 `orderByKeys`, checkpoint 검증에 사용할 target identity가 필요하다. order tuple은 source transaction 안에서 유일성을 먼저 검사하며 이후 keyset pagination에 사용한다. `where`의 주석·세미콜론·DDL/DML token과 잘못된 식별자를 차단하지만, 신뢰된 mapping 작성과 독립 리뷰를 대체하지 않는다.
 
@@ -145,7 +146,7 @@ Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다�
 
 일반 chunk는 target data INSERT, 신규 keymap, durable checkpoint를 **같은 target connection/transaction**에 기록한다. JDBC batch `updateCounts`가 각 1행을 증명하지 못하거나 하나라도 실패하면 chunk를 rollback하고 행 단위로 재변환·재시도한다. `target_generated`는 처음부터 행별 `INSERT ... RETURNING`·keymap·checkpoint transaction을 쓴다. Commit 또는 rollback 결과가 불확정하면 자동 재시도를 중단한다.
 
-**행 변환 실패는 격리하지 않는다**(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), Q6 위임 결정). transform·codemap·type·fkRef·identity 중 하나라도 실패한 행이 있으면 그 chunk 는 한 행도 쓰지 않고, 이 chunk 에서 새로 만든 keymap 도 버린 뒤 테이블과 run 을 멈춘다. `target_generated` 도 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 남은 테이블은 읽지 않고 `RUN_STOPPED_BY_ROW_FAILURE` 로 결과에 남긴다. dry-run 도 같은 행에서 멈춰 commit 이 어디서 멈출지 보여 준다. 오류는 `행 변환 실패(<원천 테이블>, column=<타깃 컬럼>, row=<원천 정렬 순서의 위치>): ROW_TRANSFORM_FAILED:<단계>` 형식이며 값·키·예외 원문을 담지 않는다. 검증 보고서와 load gate 는 첫 실패를 이 문구로 밝힌다. 종전에는 실패 행만 건너뛰고 나머지를 커밋해 승인 없는 누락이 남았다. 승인된 예외 행만 격리하는 경로(L2 원장)는 아직 없으므로 지금은 모든 행 변환 실패가 fail-closed 다. 행 단위 격리는 쓰기(제약 위반) 실패의 재시도 경로에만 남는다.
+**행 변환 실패는 격리하지 않는다**(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), Q6 위임 결정). transform·codemap·type·fkRef·identity 중 하나라도 실패한 행이 있으면 그 chunk 는 한 행도 쓰지 않고, 이 chunk 에서 새로 만든 keymap 도 버린 뒤 테이블과 run 을 멈춘다. `target_generated` 도 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 남은 테이블은 읽지 않고 `RUN_STOPPED_BY_ROW_FAILURE` 로 결과에 남긴다. dry-run 도 같은 행에서 멈춰 commit 이 어디서 멈출지 보여 준다. **예외**: `target_generated` 부모는 dry-run 에서 DB 생성 identity 가 없어 keymap 을 등록하지 않는다. 그래서 그 부모를 복합 FK(`foreignKeys`)로 참조하는 자식은 dry-run 에서 FK 값이 있는 첫 행에서 고아(`FK_REF_FAILED`)로 멈추고 뒤 테이블은 `RUN_STOPPED_BY_ROW_FAILURE` 로 남는다. commit 에서는 부모 행이 `INSERT ... RETURNING` 으로 등록돼 같은 자식 행이 통과하므로, 이런 매핑의 dry-run 결과는 commit 이 멈출 위치가 아니고 그 뒤 테이블의 변환 검사도 하지 않은 것이다. 오류는 `행 변환 실패(<원천 테이블>, column=<타깃 컬럼>, row=<원천 정렬 순서의 위치>): ROW_TRANSFORM_FAILED:<단계>` 형식이며 값·키·예외 원문을 담지 않는다. 검증 보고서와 load gate 는 첫 실패를 이 문구로 밝힌다. 종전에는 실패 행만 건너뛰고 나머지를 커밋해 승인 없는 누락이 남았다. 승인된 예외 행만 격리하는 경로(L2 원장)는 아직 없으므로 지금은 모든 행 변환 실패가 fail-closed 다. **쓰기 단계의 위반은 여전히 행 단위로 격리된다** — batch 가 실패하면 행마다 다시 쓰고, 길이·NOT NULL·CHECK 를 어긴 행은 `ATOMIC_WRITE_FAILED` 로 남긴 채 나머지 행과 뒤 chunk·테이블은 커밋된다(run 은 FAIL). 이 승인 없는 부분 커밋은 [GAP-ETL-001](../../.agent/memory/known-gaps.md)이 추적한다. 쓰기 전에 변환 값의 길이·NOT NULL 을 검사하는 것이 다음 단계다.
 
 재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 행 변환 실패로 멈춘 run 은 원인을 고친 mapping(다시 승인한 plan)으로 같은 run 을 재개하면 마지막으로 커밋된 checkpoint 다음 행부터 적재한다([PostgreSQL 회귀](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)). 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
 

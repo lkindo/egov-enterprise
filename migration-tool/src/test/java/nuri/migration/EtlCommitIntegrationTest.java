@@ -2,10 +2,14 @@ package nuri.migration;
 
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
+import nuri.migration.identity.IdentityValueType;
+import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.IdentityComponentSpec;
+import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.source.SourceIntrospector;
@@ -185,6 +189,145 @@ class EtlCommitIntegrationTest {
         assertThat(count(jdbc(tgt), "tb_org")).isZero();
     }
 
+    // ── 행 변환 실패의 단계 라벨(2026-10-13 PR-D 검토) ─────────────────────────
+    // 런북은 오류의 <단계> 로 운영자 조치를 안내한다. 단계마다 한 건씩 실제 실행으로 라벨을 고정한다.
+
+    @Test
+    void undefinedCodemapReferenceIsAStageFailureInsteadOfSkippingTheCodemap() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        seedSource(src, false);
+        seedTargetSchema(tgt);
+        // 검증기가 먼저 막지만, 실행기도 정의 없는 codemap 을 조용히 건너뛰지 않는다(종전: 원천 값을 그대로 썼다).
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(orgTable(
+                new ColumnMapping("ORG_NM", "org_nm", null, null, "missing_map", null, null))), Map.of(),
+                new RunContext("commit-undefined-codemap", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(results).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                "행 변환 실패(LEGACY_ORG, column=org_nm, row=1): ROW_TRANSFORM_FAILED:CODEMAP_UNDEFINED"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다"));
+        assertThat(count(jdbc(tgt), "tb_org")).isZero();
+    }
+
+    @Test
+    void binaryValueIntoACodemapIsAnInputStageFailureNotAnUnmappedCode() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        jdbc(src).execute("CREATE TABLE LEGACY_FLAG (FLAG_ID varchar(20), FLAG varbinary(4))");
+        jdbc(src).update("INSERT INTO LEGACY_FLAG VALUES ('f1', X'01')");
+        jdbc(tgt).execute("CREATE TABLE tb_flag (flag_id varchar(20) PRIMARY KEY, flag_cd varchar(1))");
+        TableMapping flag = new TableMapping("LEGACY_FLAG", "tb_flag", null, "FLAG_ID", "flag_id", List.of(
+                new ColumnMapping("FLAG_ID", "flag_id", null, null, null, null, null),
+                new ColumnMapping("FLAG", "flag_cd", null, null, "flag_map", null, null)), null);
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(flag),
+                Map.of("flag_map", MappingSpec.CodeMap.of(Map.of("1", "Y"))),
+                new RunContext("commit-binary-codemap", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(results).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                "행 변환 실패(LEGACY_FLAG, column=flag_cd, row=1): ROW_TRANSFORM_FAILED:CODEMAP_INPUT_INVALID"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다"));
+        assertThat(count(jdbc(tgt), "tb_flag")).isZero();
+    }
+
+    @Test
+    void throwingCustomTransformerIsATransformStageFailureWithoutItsMessage() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        seedSource(src, false);
+        seedTargetSchema(tgt);
+        TransformerRegistry registry = new TransformerRegistry();
+        registry.register("explode", "test:explode:v1", "0".repeat(64), value -> {
+            if ("Sales".equals(value)) {
+                throw new IllegalStateException("cannot transform Sales");
+            }
+            return value;
+        });
+        EtlExecutor exploding = new EtlExecutor(new SourceIntrospector(), registry);
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(orgTable(
+                new ColumnMapping("ORG_NM", "org_nm", "explode", null, null, null, null))), Map.of(),
+                new RunContext("commit-transform-failure", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = exploding.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(results).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                "행 변환 실패(LEGACY_ORG, column=org_nm, row=2): ROW_TRANSFORM_FAILED:TRANSFORM_FAILED"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다"));
+        assertThat(results.getFirst().errors().getFirst()).doesNotContain("Sales", "cannot transform");
+        // 같은 chunk 의 1행(HQ)도 쓰지 않는다.
+        assertThat(count(jdbc(tgt), "tb_org")).isZero();
+        assertThat(count(jdbc(tgt), "migration_control.tb_migration_key_map")).isZero();
+    }
+
+    @Test
+    void typedIdentityConflictIsAnIdentityStageFailure() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        DbConfig tgt = h2Config(tag + "tgt");
+        jdbc(src).execute("CREATE TABLE LEGACY_TYPED (ID bigint, OTHER_ID bigint, PAYLOAD varchar(20))");
+        jdbc(src).update("INSERT INTO LEGACY_TYPED VALUES (1, 1, 'a')");
+        jdbc(src).update("INSERT INTO LEGACY_TYPED VALUES (2, 9, 'b')"); // 컬럼 매핑 값과 PRESERVE identity 가 어긋난다
+        jdbc(tgt).execute("CREATE TABLE tb_typed (id bigint PRIMARY KEY, payload varchar(20))");
+        IdentityComponentSpec sourceId = new IdentityComponentSpec("ID", IdentityValueType.SIGNED_INTEGER);
+        IdentityComponentSpec targetId = new IdentityComponentSpec("id", IdentityValueType.SIGNED_INTEGER);
+        TableMapping typed = new TableMapping("LEGACY_TYPED", "tb_typed", null, null, List.of("ID"), null, List.of(
+                new ColumnMapping("OTHER_ID", "id", null, null, null, null, null),
+                new ColumnMapping("PAYLOAD", "payload", null, null, null, null, null)), null,
+                new IdentityStrategy(TargetIdentityPolicy.PRESERVE, List.of(sourceId), List.of(targetId)), List.of());
+        MappingSpec spec = new MappingSpec(src, tgt, List.of(typed), Map.of(),
+                new RunContext("commit-typed-identity", "legacy-crm"));
+
+        List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
+
+        assertThat(results).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                "행 변환 실패(LEGACY_TYPED, column=<identity>, row=2): ROW_TRANSFORM_FAILED:IDENTITY_FAILED"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다"));
+        assertThat(count(jdbc(tgt), "tb_typed")).isZero();
+        assertThat(count(jdbc(tgt), "migration_control.tb_migration_key_map")).isZero();
+    }
+
+    @Test
+    void targetGeneratedDryRunStopsAtTheFailingSecondRowAndStopsTheRun() {
+        String tag = "it" + SEQ.incrementAndGet();
+        DbConfig src = h2Config(tag + "src");
+        JdbcTemplate source = jdbc(src);
+        source.execute("CREATE TABLE LEGACY_GEN (CODE varchar(10), STAT varchar(1))");
+        source.update("INSERT INTO LEGACY_GEN VALUES ('a', '1')");
+        source.update("INSERT INTO LEGACY_GEN VALUES ('b', '9')"); // 미매핑 코드
+        source.execute("CREATE TABLE LEGACY_NEXT (NOTE_ID varchar(20), BODY varchar(50))");
+        source.update("INSERT INTO LEGACY_NEXT VALUES ('n1', 'memo')");
+        TableMapping generated = new TableMapping("LEGACY_GEN", "tb_gen", null, null, List.of("CODE"), null, List.of(
+                new ColumnMapping("CODE", "code", null, null, null, null, null),
+                new ColumnMapping("STAT", "stat_cd", null, null, "stat_map", null, null)), null,
+                new IdentityStrategy(TargetIdentityPolicy.TARGET_GENERATED,
+                        List.of(new IdentityComponentSpec("CODE", IdentityValueType.TEXT)),
+                        List.of(new IdentityComponentSpec("id", IdentityValueType.SIGNED_INTEGER))),
+                List.of());
+        TableMapping next = new TableMapping("LEGACY_NEXT", "tb_next", null, "NOTE_ID", "note_id", List.of(
+                new ColumnMapping("NOTE_ID", "note_id", null, null, null, null, null)), null);
+        MappingSpec dryRun = new MappingSpec(src, null, List.of(generated, next),
+                Map.of("stat_map", MappingSpec.CodeMap.of(Map.of("1", "A"))));
+
+        List<EtlExecutor.TableResult> results = executor.execute(dryRun, MigrationMode.DRY_RUN);
+
+        assertThat(results).extracting(EtlExecutor.TableResult::sourceTable).containsExactly("LEGACY_GEN", "LEGACY_NEXT");
+        EtlExecutor.TableResult gen = results.getFirst();
+        assertThat(gen.transformed()).isEqualTo(1);
+        assertThat(gen.errors()).containsExactly(
+                "행 변환 실패(LEGACY_GEN, column=stat_cd, row=2): ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다",
+                "LEGACY_GEN: TARGET_GENERATED dry-run은 DB 생성 identity를 materialize할 수 없습니다");
+        assertThat(results.get(1).read()).isZero();
+        assertThat(results.get(1).errors()).containsExactly("적재 중단으로 처리하지 않음(LEGACY_NEXT): 앞 테이블 "
+                + "LEGACY_GEN 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE");
+    }
+
     // ── fixtures ──────────────────────────────────────────────────────────
 
     private MappingSpec spec(DbConfig src, DbConfig tgt) {
@@ -207,6 +350,11 @@ class EtlCommitIntegrationTest {
 
         return new MappingSpec(src, tgt, List.of(user, org), codemaps,
                 new RunContext("commit-integration", "legacy-crm"));
+    }
+
+    private static TableMapping orgTable(ColumnMapping column) {
+        return new TableMapping("LEGACY_ORG", "tb_org", null, "ORG_ID", null, List.of(column),
+                new IdStrategy("org_id", "ORG", "ORG_ID"));
     }
 
     private void seedSource(DbConfig cfg, boolean withOrphan) {

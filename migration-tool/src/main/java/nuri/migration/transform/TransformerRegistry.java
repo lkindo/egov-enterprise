@@ -26,6 +26,8 @@ import nuri.migration.artifact.CanonicalArtifactDigest;
 public class TransformerRegistry {
 
     private static final Pattern SHA256 = Pattern.compile("[0-9a-f]{64}");
+    /** 8자리 yyyyMMdd. {@code \d} 는 ASCII 숫자만 뜻한다. */
+    private static final Pattern BASIC_DATE = Pattern.compile("\\d{8}");
 
     private final Map<String, Definition> transformers = new ConcurrentHashMap<>();
 
@@ -41,7 +43,7 @@ public class TransformerRegistry {
                 TransformerRegistry::parseTimestamp);
         // [2026-10-13 DEC-OPS-309] type: date 는 자정이 아닌 시각을 거부한다. 시각을 버리는 것이 의도일 때만
         //   이 변환기로 밝힌다 — 선택한 변환기는 실행 계약 digest 에 결속돼 승인 대상이 된다.
-        registerBuiltin("date-truncate", "builtin:date-truncate:iso-local-date-time:v1",
+        registerBuiltin("date-truncate", "builtin:date-truncate:iso-local-date-time-or-basic-date:v1",
                 TransformerRegistry::truncateToDate);
     }
 
@@ -137,12 +139,18 @@ public class TransformerRegistry {
         return LocalDateTime.parse(v.toString().trim().replace(' ', 'T'));
     }
 
-    /** ISO 날짜는 그대로, ISO 일시는 날짜만 남긴다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 실패한다. */
+    /**
+     * ISO 날짜와 8자리 {@code yyyyMMdd} 는 그대로(무손실 — {@code type: date} 가 받는 표기와 같다), ISO 일시는
+     * 날짜만 남긴다. 오프셋이 붙은 값은 어느 날짜인지 정할 수 없어 실패한다.
+     */
     private static Object truncateToDate(Object v) {
         if (v == null) {
             return null;
         }
         String text = v.toString().trim();
+        if (BASIC_DATE.matcher(text).matches()) {
+            return LocalDate.parse(text, DateTimeFormatter.BASIC_ISO_DATE);
+        }
         if (text.length() == 10) {
             return LocalDate.parse(text, DateTimeFormatter.ISO_LOCAL_DATE);
         }

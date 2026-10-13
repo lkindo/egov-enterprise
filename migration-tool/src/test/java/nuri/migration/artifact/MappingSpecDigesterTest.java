@@ -92,6 +92,14 @@ class MappingSpecDigesterTest {
                     .as(changed.toString())
                     .isNotEqualTo(MappingSpecDigester.sha256(baseline));
         }
+        // NULL 을 대체값으로 바꿀지(nullAs)도 승인 의미다.
+        MappingSpec.CodeMap keep = new MappingSpec.CodeMap(
+                Map.of("A", "ACTIVE"), MappingSpec.UnmappedPolicy.FALLBACK, "X", MappingSpec.NullPolicy.KEEP);
+        MappingSpec.CodeMap nullToFallback = new MappingSpec.CodeMap(
+                Map.of("A", "ACTIVE"), MappingSpec.UnmappedPolicy.FALLBACK, "X", MappingSpec.NullPolicy.FALLBACK);
+        assertThat(MappingSpecDigester.sha256(new MappingSpec(null, null, baseline.tables(), Map.of("status", keep), null)))
+                .isNotEqualTo(MappingSpecDigester.sha256(
+                        new MappingSpec(null, null, baseline.tables(), Map.of("status", nullToFallback), null)));
     }
 
     private static MappingSpec spec(DbConfig source, DbConfig target, RunContext run, String activeCode) {

@@ -82,10 +82,16 @@ class TransformerRegistryTest {
         assertThat(registry.apply("timestamp", null)).isNull();
     }
 
-    /** [2026-10-13 DEC-OPS-309] type: date 가 시각을 거부하므로, 시각을 버리는 것은 이 변환기로만 밝힌다. */
+    /**
+     * [2026-10-13 DEC-OPS-309] type: date 가 시각을 거부하므로, 시각을 버리는 것은 이 변환기로만 밝힌다.
+     * 8자리 yyyyMMdd 는 type: date 가 받는 무손실 표기라 같은 컬럼에 일시와 섞여 있어도 이 변환기 하나로 받는다.
+     */
     @Test
     void date_truncate_변환기는_명시적으로_시각을_버리고_오프셋은_거부한다() {
         LocalDate day = LocalDate.of(2026, 8, 9);
+        assertThat(registry.apply("date-truncate", "20260809")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", " 20260809 ")).isEqualTo(day);
+        assertThat(registry.apply("date-truncate", 20260809)).isEqualTo(day);
         assertThat(registry.apply("date-truncate", "2026-08-09 13:45:00")).isEqualTo(day);
         assertThat(registry.apply("date-truncate", "2026-08-09T13:45:00.123456")).isEqualTo(day);
         assertThat(registry.apply("date-truncate", " 2026-08-09 ")).isEqualTo(day);
@@ -93,10 +99,17 @@ class TransformerRegistryTest {
         assertThat(registry.apply("date-truncate", java.sql.Timestamp.valueOf("2026-08-09 07:00:00"))).isEqualTo(day);
         assertThat(registry.apply("date-truncate", day)).isEqualTo(day);
         assertThat(registry.apply("date-truncate", null)).isNull();
-        for (Object ambiguous : new Object[] {"2026-08-09T13:45:00+09:00", "20260809",
+        // 오프셋이 붙은 값은 어느 날짜인지 정할 수 없다.
+        for (Object ambiguous : new Object[] {"2026-08-09T13:45:00+09:00",
                 java.time.OffsetDateTime.of(2026, 8, 9, 1, 0, 0, 0, java.time.ZoneOffset.ofHours(9))}) {
             assertThatThrownBy(() -> registry.apply("date-truncate", ambiguous))
                     .as(String.valueOf(ambiguous))
+                    .isInstanceOf(RuntimeException.class);
+        }
+        // 없는 날짜·자리수가 틀린 숫자·ASCII 가 아닌 숫자는 날짜가 아니다.
+        for (Object malformed : new Object[] {"20260230", "2026080", "202608091", "２０２６０８０９"}) {
+            assertThatThrownBy(() -> registry.apply("date-truncate", malformed))
+                    .as(String.valueOf(malformed))
                     .isInstanceOf(RuntimeException.class);
         }
     }

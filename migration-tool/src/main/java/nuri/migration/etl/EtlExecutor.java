@@ -58,7 +58,8 @@ import java.util.Set;
  * {@code fkRef} FK 번역(참조 무결성), (5) JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위 폴백으로 오류 격리).
  *
  * <p>[2026-10-13 DEC-OPS-309] 행 변환(transform·codemap·type·fkRef·identity) 실패는 격리하지 않는다 —
- * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기(제약 위반) 실패에만 남는다.
+ * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기(제약 위반) 실패에만 남는다 — 길이·NOT NULL·
+ * CHECK 위반 행은 빠지고 나머지는 커밋되는 승인 없는 부분 커밋이며 GAP-ETL-001 이 추적한다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.

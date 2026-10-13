@@ -1,12 +1,15 @@
 package nuri.migration.transform;
 
 import nuri.migration.model.MappingSpec.CodeMap;
+import nuri.migration.model.MappingSpec.NullPolicy;
 import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +51,23 @@ class CodeTranslatorTest {
         assertThat(CodeTranslator.map(fallback, "1")).isEqualTo("Y");
         assertThat(CodeTranslator.map(fallback, "7")).isEqualTo("Z");
         assertThat(CodeTranslator.map(fallback, null)).as("NULL 은 코드가 아니므로 fallback 으로 바꾸지 않는다").isNull();
+    }
+
+    /** 옛 평면 형식의 default 는 NULL 도 바꿨다. 그 의미는 nullAs: fallback 으로 밝힐 때만 쓴다. */
+    @Test
+    void nullBecomesTheFallbackOnlyWithNullAsFallbackIndependentlyOfTheUnmappedPolicy() {
+        CodeMap nullOnly = new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FAIL, "N", NullPolicy.FALLBACK);
+        CodeMap both = new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, "Z", NullPolicy.FALLBACK);
+
+        assertThat(CodeTranslator.map(nullOnly, null)).isEqualTo("N");
+        assertThat(CodeTranslator.map(nullOnly, "1")).isEqualTo("Y");
+        assertThatThrownBy(() -> CodeTranslator.map(nullOnly, "9"))
+                .as("nullAs 는 미매핑 정책을 바꾸지 않는다")
+                .isInstanceOf(CodeTranslator.UnmappedCodeException.class);
+        assertThat(CodeTranslator.map(both, null)).isEqualTo("Z");
+        assertThat(CodeTranslator.map(both, "9")).isEqualTo("Z");
+        assertThat(CodeTranslator.map(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, "Z", NullPolicy.KEEP), null))
+                .isNull();
     }
 
     @Test
@@ -115,9 +135,19 @@ class CodeTranslatorTest {
         assertThat(CodeTranslator.definitionProblem(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, null)))
                 .isEqualTo("unmapped: fallback 에는 fallback 값이 필요합니다");
         assertThat(CodeTranslator.definitionProblem(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.PASSTHROUGH, "Z")))
-                .isEqualTo("fallback 값은 unmapped: fallback 일 때만 쓸 수 있습니다");
+                .isEqualTo("fallback 값은 unmapped: fallback 이나 nullAs: fallback 일 때만 쓸 수 있습니다");
         assertThat(CodeTranslator.definitionProblem(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FAIL, "Z")))
-                .isEqualTo("fallback 값은 unmapped: fallback 일 때만 쓸 수 있습니다");
+                .isEqualTo("fallback 값은 unmapped: fallback 이나 nullAs: fallback 일 때만 쓸 수 있습니다");
+        assertThat(CodeTranslator.definitionProblem(
+                new CodeMap(Map.of("1", "Y"), UnmappedPolicy.PASSTHROUGH, null, NullPolicy.FALLBACK)))
+                .isEqualTo("nullAs: fallback 에는 fallback 값이 필요합니다");
+        assertThat(CodeTranslator.definitionProblem(
+                new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, null, NullPolicy.FALLBACK)))
+                .isEqualTo("unmapped: fallback 에는 fallback 값이 필요합니다");
+        assertThat(CodeTranslator.definitionProblem(
+                new CodeMap(Map.of("1", "Y"), UnmappedPolicy.PASSTHROUGH, "Z", NullPolicy.FALLBACK))).isNull();
+        assertThat(CodeTranslator.definitionProblem(
+                new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FAIL, "Z", NullPolicy.FALLBACK))).isNull();
         assertThat(CodeTranslator.definitionProblem(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, "Z"))).isNull();
         assertThat(CodeTranslator.definitionProblem(new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, ""))).isNull();
         assertThat(CodeTranslator.definitionProblem(YN)).isNull();
@@ -151,5 +181,24 @@ class CodeTranslatorTest {
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThat(UnmappedPolicy.parse(" Passthrough ")).isEqualTo(UnmappedPolicy.PASSTHROUGH);
         assertThat(UnmappedPolicy.FALLBACK.externalName()).isEqualTo("fallback");
+        assertThat(implicit.nullAs()).isEqualTo(NullPolicy.KEEP);
+        assertThat(new CodeMap(Map.of("1", "Y"), null, null, null).nullAs()).isEqualTo(NullPolicy.KEEP);
+        assertThat(NullPolicy.parse(" Fallback ")).isEqualTo(NullPolicy.FALLBACK);
+        assertThat(NullPolicy.KEEP.externalName()).isEqualTo("keep");
+        assertThatThrownBy(() -> NullPolicy.parse(" ")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** 숫자 원천값은 정규형으로 찾으므로 정규형이 아닌 숫자 모양 키는 숫자 열에서 닿지 않는다 — 검증 경고의 근거다. */
+    @Test
+    void nonCanonicalNumericCodesAreReportedByPositionOnly() {
+        LinkedHashMap<String, String> values = new LinkedHashMap<>();
+        for (String code : List.of("1", "1.0", "01", "-3", "2.5", "+1", "-0", "yes", "1E+1", "0", "10", "1.50", "Y")) {
+            values.put(code, "S");
+        }
+
+        assertThat(CodeTranslator.nonCanonicalNumericCodes(CodeMap.of(values))).containsExactly(2, 3, 6, 7, 12);
+        assertThat(CodeTranslator.nonCanonicalNumericCodes(CodeMap.of(Map.of("1", "Y", "0", "N")))).isEmpty();
+        // 정규형 키는 같은 숫자 원천값과 실제로 만난다.
+        assertThat(CodeTranslator.map(CodeMap.of(values), new BigDecimal("2.50"))).isEqualTo("S");
     }
 }
