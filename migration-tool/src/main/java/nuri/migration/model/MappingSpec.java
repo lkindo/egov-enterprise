@@ -114,6 +114,10 @@ public record MappingSpec(
      * {@code transform}(변환기명)·{@code codemap}(코드맵명)·{@code type}(타입변환 힌트)은 선택.
      * {@code fkRef}(부모 소스 테이블명)가 있으면 이 컬럼의 소스 값을 그 부모의 키맵으로 번역해
      * 신규 대리키(esntl_id 등)로 재작성한다 — 부모 PK 재생성 시 자식 FK 무결성 보존의 핵심.
+     *
+     * <p>{@code encrypt}(보호 방식 id, 예: {@code aria-egov-v1})는 온라인 앱이 암호화해 저장하는 대상 컬럼에 쓴다.
+     * 이관 도구가 온라인 앱과 같은 암호문을 만들어 쓰며, 키는 실행 때 환경 변수로만 받는다(DEC-OPS-308). 비어 있으면
+     * 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
      */
     public record ColumnMapping(
             String source,
@@ -122,8 +126,15 @@ public record MappingSpec(
             String type,
             String codemap,
             String fkRef,
-            @JsonProperty("const") String constant
-    ) {}
+            @JsonProperty("const") String constant,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt
+    ) {
+        /** encrypt 도입 전 생성자 호환. */
+        public ColumnMapping(String source, String target, String transform, String type,
+                             String codemap, String fkRef, String constant) {
+            this(source, target, transform, type, codemap, fkRef, constant, null);
+        }
+    }
 
     /**
      * 표준 ID 생성 전략. {@code column}=타깃 PK 컬럼, {@code generator}=ID prefix,

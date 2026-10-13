@@ -5,6 +5,8 @@ import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceReadSessionPolicy;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.protect.ColumnProtector;
+import nuri.migration.protect.EgovAriaColumnCipher;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import nuri.migration.validate.MappingValidator;
@@ -48,7 +50,10 @@ public record MigrationExecutionContract(
             TypeConverter.class,
             MappingValidator.class,
             MigrationVerifier.class,
-            SourceLoadSurfaceGate.class);
+            SourceLoadSurfaceGate.class,
+            // 보호 컬럼 암호화(DEC-OPS-308). 승인 뒤 암호 구현이 바뀌면 같은 승인으로 적재하지 않는다.
+            ColumnProtector.class,
+            EgovAriaColumnCipher.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

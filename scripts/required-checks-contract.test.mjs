@@ -92,7 +92,8 @@ function assertProductMutationConcurrency(content) {
     'product PIT must reserve custom admission capacity with exactly four concurrent batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
-  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify']) {
+  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify',
+    'migration-protect']) {
     assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
   }
 }

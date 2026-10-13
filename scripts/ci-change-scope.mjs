@@ -166,6 +166,20 @@ const SHARED_ID_CONTRACT = [
   /^migration-tool\/src\/(?:main|test)\/java\/nuri\/migration\/keymap\/StandardIdGenerator(?:Test)?\.java$/,
 ];
 
+// EgovAriaColumnCipher independently mirrors the online RRNO encryption and
+// ProtectedTargetColumns mirrors the online encrypted columns (DEC-OPS-308).
+// OnlineRrnoConverterContractTest compiles these online sources inside the
+// migration suite, so an online-side change must run the migration suite too.
+// The migration-side files already select it through migration-tool/.
+const SHARED_PROTECTED_COLUMN_CONTRACT = [
+  /^business-core\/src\/main\/java\/nuri\/business\/domain\/common\/RrnoEncryptionConverter\.java$/,
+  /^foundation\/src\/main\/java\/nuri\/foundation\/core\/(?:util\/CryptoUtil|config\/ProjectCryptoConfig)\.java$/,
+  /^foundation\/src\/main\/java\/nuri\/foundation\/security\/mfa\/MfaSecretCipher\.java$/,
+  /^business-core\/src\/main\/java\/nuri\/business\/domain\/(?:user\/entity\/User|auth\/mfa\/MfaCredential)\.java$/,
+  // A new JPA converter may encrypt another column; the contract counts every @Convert.
+  /^(?:foundation|business-core|business-app)\/src\/main\/java\/.*Converter\.java$/,
+];
+
 const MUTATION_RELEVANT = [
   ...BACKEND_PRODUCTION,
   /^(?:foundation|business-core|business-app|api-server)\/src\/test\/java\//,
@@ -294,7 +308,7 @@ function isBackend(file) {
 
 function isMigration(file) {
   return file.startsWith('migration-tool/') || matchesAny(file, SHARED_GRADLE_INPUTS)
-    || matchesAny(file, SHARED_ID_CONTRACT);
+    || matchesAny(file, SHARED_ID_CONTRACT) || matchesAny(file, SHARED_PROTECTED_COLUMN_CONTRACT);
 }
 
 function isFrontend(file) {

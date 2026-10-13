@@ -25,6 +25,14 @@ dependencies {
     testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11'
     testRuntimeOnly libs.postgresql
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // 온라인 주민번호 변환기 호환 계약 시험 전용(DEC-OPS-308). 시험이 온라인 원본(변환기·CryptoUtil·암호 설정)을
+    // 직접 컴파일해 돌리는 데 필요한 외부 라이브러리다. 실행 classpath 에는 들어가지 않고, Gradle 프로젝트 의존도 아니다
+    // (이관 모듈은 온라인 프로젝트에 의존하지 않는다 — 생성 제품 검사·이관 단독 제품의 시험 컴파일).
+    testImplementation(libs.egovframe.rte.fdl.crypto) {
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+    }
+    testImplementation 'jakarta.persistence:jakarta.persistence-api'
+    testRuntimeOnly 'org.projectlombok:lombok'
 }
 
 bootJar {

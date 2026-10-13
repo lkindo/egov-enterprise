@@ -19,6 +19,7 @@ import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
+import nuri.migration.protect.ColumnProtector;
 import nuri.migration.schema.MigrationSchemaManager;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.KeyDiagnostics;
@@ -28,6 +29,7 @@ import nuri.migration.state.RowChecksum;
 import nuri.migration.transform.CodeMapper;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * ETL 실행기 — FK 위상정렬 → 스트리밍(keyset-fetch) 소스 조회 → 컬럼 매핑/코드맵/변환/타입강제/키맵 재작성 →
@@ -68,10 +71,20 @@ public class EtlExecutor {
     private final SourceIntrospector introspector;
     private final TransformerRegistry transformers;
     private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
+    /** 보호 컬럼 암호화 키를 주는 환경(DEC-OPS-308). 키는 이 경계로만 들어오고 어디에도 기록하지 않는다. */
+    private final Function<String, String> environment;
 
+    @Autowired
     public EtlExecutor(SourceIntrospector introspector, TransformerRegistry transformers) {
+        this(introspector, transformers, System::getenv);
+    }
+
+    /** 시험과 승인된 secret provider adapter 가 같은 키 경계를 쓴다. */
+    public EtlExecutor(SourceIntrospector introspector, TransformerRegistry transformers,
+                       Function<String, String> environment) {
         this.introspector = introspector;
         this.transformers = transformers;
+        this.environment = Objects.requireNonNull(environment, "environment");
     }
 
     /**
@@ -143,6 +156,8 @@ public class EtlExecutor {
         if (commit) {
             requireCommitContract(spec);
         }
+        // 보호 컬럼 선언 위반·키 부재는 연결을 열거나 실행 상태를 만들기 전에 멈춘다(DEC-OPS-308).
+        ColumnProtector protector = ColumnProtector.forRun(spec, environment);
         DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
         if (commit && targetDs == null) {
@@ -190,7 +205,8 @@ public class EtlExecutor {
                             tablesRan = true;
                             for (TableMapping table : orderedTables) {
                                 TableExecution execution = runTable(
-                                        sourceConnection, targetDs, spec, table, registry, state, commit);
+                                        sourceConnection, targetDs, spec, table, registry, state, commit,
+                                        protector);
                                 results.add(execution.result());
                                 if (execution.sourceSessionFailed()) {
                                     sourceSessionFailed = true;
@@ -500,7 +516,7 @@ public class EtlExecutor {
 
     private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
                                     TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
-                                    boolean commit) {
+                                    boolean commit, ColumnProtector protector) {
         List<String> errors = new ArrayList<>();
         List<String> targetCols = canonicalTargetColumns(t);
         List<String> insertCols = insertTargetColumns(t);
@@ -509,7 +525,8 @@ public class EtlExecutor {
                 targetCols,
                 insertCols,
                 returningCols,
-                buildInsertSql(t.target(), insertCols, returningCols));
+                buildInsertSql(t.target(), insertCols, returningCols),
+                protector);
         TableCounts counts = new TableCounts();
         boolean sourceSessionFailed = false;
 
@@ -673,7 +690,8 @@ public class EtlExecutor {
             List<String> targetColumns,
             List<String> insertColumns,
             List<String> returningColumns,
-            String insertSql
+            String insertSql,
+            ColumnProtector protector
     ) {}
 
     private SourcePage readSourcePage(Connection source, TableMapping table,
@@ -836,7 +854,7 @@ public class EtlExecutor {
         for (Map<String, Object> row : chunk) {
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
-                Map<String, Object> out = transformRow(row, spec, t, reg);
+                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector());
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
@@ -862,9 +880,9 @@ public class EtlExecutor {
                     }
                 }
                 batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException failure) {
                 reg.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + t.source() + "): ROW_TRANSFORM_FAILED");
+                errors.add("행 변환 실패(" + t.source() + "): " + transformFailure(failure));
             }
         }
         if (batch.isEmpty()) {
@@ -900,10 +918,10 @@ public class EtlExecutor {
             for (Map<String, Object> row : rows) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
-                    transformRow(row, spec, table, registry);
+                    transformRow(row, spec, table, registry, writePlan.protector());
                     counts.transformed++;
-                } catch (RuntimeException ignored) {
-                    errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                } catch (RuntimeException failure) {
+                    errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
                 } finally {
                     registry.rollback(checkpoint);
                 }
@@ -918,7 +936,7 @@ public class EtlExecutor {
             Map<String, Object> transformed;
             TypedKeyTuple sourceIdentity;
             try {
-                transformed = transformRow(row, spec, table, registry);
+                transformed = transformRow(row, spec, table, registry, writePlan.protector());
                 sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
@@ -955,9 +973,9 @@ public class EtlExecutor {
                     registry.rollback(rowCheckpoint);
                     continue;
                 }
-            } catch (RuntimeException ignored) {
+            } catch (RuntimeException failure) {
                 registry.rollback(rowCheckpoint);
-                errors.add("행 변환 실패(" + table.source() + "): ROW_TRANSFORM_FAILED");
+                errors.add("행 변환 실패(" + table.source() + "): " + transformFailure(failure));
                 continue;
             }
 
@@ -1076,6 +1094,12 @@ public class EtlExecutor {
                 .toList());
     }
 
+    /** 보호 컬럼 판정은 테이블·컬럼 이름을 남기고, 그 밖의 변환 실패는 값이 담길 수 있어 고정 코드만 남긴다. */
+    private static String transformFailure(RuntimeException failure) {
+        return failure instanceof ColumnProtector.ProtectedColumnException
+                ? failure.getMessage() : "ROW_TRANSFORM_FAILED";
+    }
+
     private static Object[] toArguments(Map<String, Object> transformed, List<String> targetColumns) {
         Object[] arguments = new Object[targetColumns.size()];
         for (int i = 0; i < targetColumns.size(); i++) {
@@ -1084,7 +1108,8 @@ public class EtlExecutor {
         return arguments;
     }
 
-    private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t, KeyMapRegistry reg) {
+    private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t,
+                                             KeyMapRegistry reg, ColumnProtector protector) {
         Map<String, Object> out = new LinkedHashMap<>();
         for (ColumnMapping col : t.columns()) {
             Object value;
@@ -1099,6 +1124,8 @@ public class EtlExecutor {
                 value = transformers.apply(col.transform(), value);
                 value = TypeConverter.convert(col.type(), value);
                 value = applyFkRef(col, value, reg);
+                // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 행을 쓰지 않는다.
+                value = protector.protect(t.target(), col.target(), value);
             } else {
                 value = null;
             }
@@ -1293,7 +1320,8 @@ public class EtlExecutor {
             Object[] arguments;
             CheckpointEntry durableCheckpoint;
             try {
-                Map<String, Object> transformed = transformRow(row.source(), spec, table, registry);
+                Map<String, Object> transformed = transformRow(
+                        row.source(), spec, table, registry, writePlan.protector());
                 arguments = toArguments(transformed, writePlan.insertColumns());
                 durableCheckpoint = checkpoint(
                         row.source(), transformed, table, writePlan.targetColumns());

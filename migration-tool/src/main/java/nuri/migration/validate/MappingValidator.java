@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.protect.ColumnProtectionPlan;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
@@ -145,6 +146,8 @@ public class MappingValidator {
             }
         }
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
+        // 온라인 앱이 암호화해 저장하는 컬럼은 encrypt 선언이 같아야 한다(DEC-OPS-308). 문구는 테이블·컬럼 이름만 담는다.
+        errors.addAll(ColumnProtectionPlan.of(spec).violations());
         return new ValidationResult(errors, warnings);
     }
 
