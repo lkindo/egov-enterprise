@@ -56,7 +56,7 @@
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
 | [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
-| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 현재 공백 진단, 표준용어 식별 방법론·용어 매핑 원장·도구 보강안(승인 전 Draft) |
+| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 현재 공백 진단, 표준용어 식별 방법론·용어 매핑 원장·도구 보강안([ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택, 진단·방법론 정본) |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest 증분 Mutation Testing 연동 설계 |
 | [dual-operator-coordination.md](02-architecture/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 

@@ -31,6 +31,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class RowChecksumTest {
 
     @Test
+    void keyDiagnosticsAreKeyedPerProcessSoSmallKeySpacesCannotBeReversed() throws Exception {
+        String rrno = "8001011234567";
+        String unsalted = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                .digest(rrno.getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(KeyDiagnostics.digest(rrno))
+                .matches("[0-9a-f]{64}")
+                .as("같은 실행 안에서는 같은 키를 대조할 수 있다").isEqualTo(KeyDiagnostics.digest(rrno))
+                .as("소금 없는 SHA-256 이면 주민번호를 전수 대입으로 되찾는다").isNotEqualTo(unsalted)
+                .isNotEqualTo(KeyDiagnostics.digest("8001011234568"));
+        assertThat(KeyDiagnostics.digest(null)).isEqualTo("<null>");
+    }
+
+    @Test
     void preservesTheDurableScalarChecksumAndCaseInsensitiveColumnLookup() throws Exception {
         List<String> columns = List.of("ID", "amount", "ACTIVE", "label", "created", "missing");
         Map<String, Object> row = new LinkedHashMap<>();

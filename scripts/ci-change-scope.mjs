@@ -177,8 +177,31 @@ const SHARED_PROTECTED_COLUMN_CONTRACT = [
   /^foundation\/src\/main\/java\/nuri\/foundation\/security\/mfa\/MfaSecretCipher\.java$/,
   /^business-core\/src\/main\/java\/nuri\/business\/domain\/(?:user\/entity\/User|auth\/mfa\/MfaCredential)\.java$/,
   // A new JPA converter may encrypt another column; the contract counts every @Convert.
-  /^(?:foundation|business-core|business-app)\/src\/main\/java\/.*Converter\.java$/,
+  /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\/.*Converter\.java$/,
 ];
+
+// The paths above cannot see an entity that newly declares @Convert or a service
+// that newly calls the online ciphers, so an online main source is also selected
+// by its content — the same four roots and forms the contract test counts
+// (FQN @jakarta.persistence.Convert, any argument order, static imports).
+// A deleted file has no content to read; deleting one of the known files above
+// is still selected by its path.
+const ONLINE_MAIN_JAVA = /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\/.+\.java$/;
+const PROTECTED_COLUMN_CONTENT = /@(?:jakarta\.persistence\.)?Convert\s*\(|\bCryptoUtil\s*\.\s*encrypt\b|\bMfaSecretCipher\b/;
+
+function readRepositorySource(file) {
+  try {
+    return readFileSync(path.join(REPO_ROOT, file), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+function declaresProtectedColumn(file, readSource) {
+  if (!ONLINE_MAIN_JAVA.test(file)) return false;
+  const source = readSource(file);
+  return typeof source === 'string' && PROTECTED_COLUMN_CONTENT.test(source);
+}
 
 const MUTATION_RELEVANT = [
   ...BACKEND_PRODUCTION,
@@ -378,7 +401,8 @@ function selectedReusableProfiles(files, { full, docsOnly }) {
  * Unknown or empty input deliberately selects the full pipeline. A false
  * positive costs runner time; a false negative silently removes evidence.
  */
-export function classifyChangedFiles(changedFiles, { forceFull = false, event = '' } = {}) {
+export function classifyChangedFiles(changedFiles,
+  { forceFull = false, event = '', readSource = readRepositorySource } = {}) {
   const files = [...new Set(changedFiles.map(normalizeFile).filter(Boolean))].sort();
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = forceFull || files.length === 0 || unknownFiles.length > 0;
@@ -391,7 +415,8 @@ export function classifyChangedFiles(changedFiles, { forceFull = false, event = 
     || file === 'scripts/build-atlas.mjs'
     || /^scripts\/atlas-[^/]+\.mjs$/.test(file));
   const backend = full || files.some(isBackend) || tool('backend');
-  const migration = full || files.some(isMigration) || tool('migration');
+  const migration = full || files.some(isMigration) || tool('migration')
+    || files.some(file => declaresProtectedColumn(file, readSource));
   const frontend = full || files.some(isFrontend) || files.includes('api-docs.json') || tool('frontend');
   const crossStack = full || files.some(file => matchesAny(file, CROSS_STACK_CONTRACT));
   const schema = full || files.some(file => matchesAny(file, SCHEMA_RELEVANT)) || tool('schema');

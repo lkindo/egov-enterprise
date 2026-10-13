@@ -462,7 +462,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     /**
      * [2026-10-13 DEC-OPS-309] 처음 PASS 가 아닌 테이블과 그 판정을 붙인다. 판정 문구는 테이블·컬럼 이름,
-     * 행 순번, 건수, 고정 코드로만 만들어지며 행 값·키·예외 원문을 담지 않는다.
+     * 행 순번, 건수, 고정 코드와 키 digest(이 프로세스에서만 쓰는 무작위 키의 HMAC, {@code KeyDiagnostics})로만
+     * 만들어지며 행 값·키 원문·예외 원문을 담지 않는다.
      */
     static String firstFailure(MigrationReport report) {
         for (MigrationReport.TableReport table : report.tables()) {

@@ -41,10 +41,16 @@ class TargetSequenceSynchronizerTest {
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("none 을 선언하세요");
 
-            List<TargetSequenceSynchronizer.Target> planned =
-                    TargetSequenceSynchronizer.plan(connection, List.of(item(Map.of("ID", "none")), textKey(), remap()));
+            // [사용자 Q9] remap 정수 키도 mapping 이 값을 넣으므로 선언이 없으면 멈춘다.
+            assertThatThrownBy(() -> TargetSequenceSynchronizer.plan(connection, List.of(remap(Map.of()))))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("tb_remap.id: PostgreSQL 이 아닌 대상은 시퀀스를 판정·재설정할 수 없습니다");
+
+            List<TargetSequenceSynchronizer.Target> planned = TargetSequenceSynchronizer.plan(connection,
+                    List.of(item(Map.of("ID", "none")), textKey(), remap(Map.of("id", "none"))));
             assertThat(planned).containsExactly(
-                    new TargetSequenceSynchronizer.Target("LEGACY_ITEM", "tb_item", "id", null));
+                    new TargetSequenceSynchronizer.Target("LEGACY_ITEM", "tb_item", "id", null),
+                    new TargetSequenceSynchronizer.Target("LEGACY_REMAP", "tb_remap", "id", null));
             assertThat(TargetSequenceSynchronizer.apply(connection, planned.getFirst())).isEqualTo(
                     new TargetSequenceSynchronizer.SequenceReset(
                             "tb_item", "id", null, TargetSequenceSynchronizer.Action.DECLARED_NONE));
@@ -102,10 +108,11 @@ class TargetSequenceSynchronizerTest {
                 List.of());
     }
 
-    private static TableMapping remap() {
+    private static TableMapping remap(Map<String, String> sequences) {
         return new TableMapping("LEGACY_REMAP", "tb_remap", null, null, List.of("ID"), null,
                 List.of(new ColumnMapping("NEW_ID", "id", null, null, null, null, null)), null,
-                new IdentityStrategy(TargetIdentityPolicy.REMAP, List.of(integer("ID")), List.of(integer("id"))),
+                new IdentityStrategy(TargetIdentityPolicy.REMAP, List.of(integer("ID")), List.of(integer("id")),
+                        sequences),
                 List.of());
     }
 

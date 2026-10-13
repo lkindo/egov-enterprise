@@ -70,11 +70,14 @@ class MappingTargetSequenceDslTest {
     }
 
     @Test
-    void declarationsAreOnlyForPreserveIntegerKeys() {
-        assertThatThrownBy(() -> new IdentityStrategy(TargetIdentityPolicy.REMAP,
+    void declarationsAreOnlyForPreserveOrRemapIntegerKeys() {
+        assertThatThrownBy(() -> new IdentityStrategy(TargetIdentityPolicy.TARGET_GENERATED,
                 List.of(integer("ID")), List.of(integer("id")), Map.of("id", "none")))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("identity targetSequences는 preserve 정책에서만 선언할 수 있습니다");
+                .hasMessage("identity targetSequences는 preserve·remap 정책에서만 선언할 수 있습니다");
+        assertThat(new IdentityStrategy(TargetIdentityPolicy.REMAP,
+                List.of(integer("ID")), List.of(integer("id")), Map.of("id", "sq_item")).declaredSequence("ID"))
+                .as("remap 도 mapping 이 대상 키 값을 넣는다").isEqualTo("sq_item");
         assertThatThrownBy(() -> preserve(Map.of("other", "none")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("identity targetSequences 키는 targetComponents 컬럼이어야 합니다: other");

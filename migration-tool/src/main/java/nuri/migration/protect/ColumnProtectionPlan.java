@@ -44,6 +44,7 @@ public final class ColumnProtectionPlan {
                 }
             }
             rejectKeyUse(table, violations);
+            rejectSourceKeyUse(table, violations);
         }
         return new ColumnProtectionPlan(columns, violations);
     }
@@ -116,6 +117,40 @@ public final class ColumnProtectionPlan {
         for (String column : keyColumns) {
             if (ProtectedTargetColumns.find(table.target(), column).isPresent()) {
                 violations.add(table.target() + "." + column + ": 보호 컬럼은 식별자·참조 키로 쓸 수 없습니다");
+            }
+        }
+    }
+
+    /**
+     * 암호화할 소스 값은 키로도 쓸 수 없다. 정렬 키·idStrategy.sourceKey·identity·복합 FK·fkRef 의 소스 값은 평문 그대로
+     * 제어 테이블({@code tb_migration_checkpoint.source_key}·{@code tb_migration_key_map.legacy_key})에 남기 때문이다.
+     * 주민번호만 키인 테이블은 지금 적재할 수 없다(GAP-MIG-002).
+     */
+    private static void rejectSourceKeyUse(TableMapping table, List<String> violations) {
+        List<String> keySources = new ArrayList<>(table.effectiveOrderKeys());
+        if (table.idStrategy() != null && table.idStrategy().sourceKey() != null) {
+            keySources.add(table.idStrategy().sourceKey());
+        }
+        if (table.identity() != null) {
+            table.identity().sourceComponents().stream().map(IdentityComponentSpec::column).forEach(keySources::add);
+        }
+        for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
+            foreignKey.sourceComponents().stream().map(IdentityComponentSpec::column).forEach(keySources::add);
+        }
+        for (ColumnMapping column : table.columns()) {
+            // encrypt 컬럼 자신의 fkRef 는 위(inspect)에서 따로 거부한다.
+            if (column != null && column.encrypt() == null && !isBlank(column.fkRef()) && !isBlank(column.source())) {
+                keySources.add(column.source());
+            }
+        }
+        for (ColumnMapping column : table.columns()) {
+            if (column == null || column.encrypt() == null || isBlank(column.source()) || column.target() == null) {
+                continue;
+            }
+            String source = column.source().trim();
+            if (keySources.stream().anyMatch(key -> key != null && key.trim().equalsIgnoreCase(source))) {
+                violations.add(table.target() + "." + column.target()
+                        + ": 암호화할 소스 값을 정렬·식별자·참조 키로 쓸 수 없습니다(평문이 제어 테이블에 남습니다)");
             }
         }
     }

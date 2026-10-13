@@ -114,6 +114,33 @@ class ColumnProtectionPlanTest {
     }
 
     @Test
+    @DisplayName("암호화할 소스 값은 정렬·식별자·참조 키의 소스로 쓸 수 없다 — 평문이 checkpoint·keymap 에 남는다")
+    void encryptedSourceValuesAreNeverKeySources() {
+        String message = "tb_user_info.user_enrrno: 암호화할 소스 값을 정렬·식별자·참조 키로 쓸 수 없습니다"
+                + "(평문이 제어 테이블에 남습니다)";
+        ColumnMapping rrno = column("JUMIN_NO", "user_enrrno", ARIA);
+        IdentityComponentSpec rrnoSource = new IdentityComponentSpec("jumin_no", IdentityValueType.TEXT);
+        IdentityComponentSpec esntlId = new IdentityComponentSpec("esntl_id", IdentityValueType.TEXT);
+        List<TableMapping> keyed = List.of(
+                keyedTable("jumin_no", List.of(), null, null, List.of(), rrno),
+                keyedTable(null, List.of("ID", " Jumin_No "), null, null, List.of(), rrno),
+                keyedTable("ID", List.of(), new IdStrategy("esntl_id", "USR_", "JUMIN_NO"), null, List.of(), rrno),
+                keyedTable("ID", List.of(), null, new IdentityStrategy(TargetIdentityPolicy.PRESERVE,
+                        List.of(rrnoSource), List.of(esntlId)), List.of(), rrno),
+                keyedTable("ID", List.of(), null, null, List.of(new CompositeForeignKey("LEGACY_PARENT",
+                        List.of(rrnoSource), List.of(new IdentityComponentSpec("parent_id", IdentityValueType.TEXT)))),
+                        rrno),
+                keyedTable("ID", List.of(), null, null, List.of(), rrno,
+                        new ColumnMapping("JUMIN_NO", "parent_id", null, null, null, "LEGACY_PARENT", null)));
+        for (TableMapping table : keyed) {
+            assertThat(plan(table).violations()).as(table.toString()).containsExactly(message);
+        }
+        assertThat(plan(keyedTable("ID", List.of(), new IdStrategy("esntl_id", "USR_", "ID"), null, List.of(), rrno,
+                new ColumnMapping("PARENT_NO", "parent_id", null, null, null, "LEGACY_PARENT", null))).violations())
+                .as("다른 소스 컬럼이 키면 통과한다").isEmpty();
+    }
+
+    @Test
     @DisplayName("빈 항목·대상 없는 항목은 건너뛴다(다른 검증이 따로 막는다)")
     void incompleteEntriesAreLeftToTheMappingValidator() {
         List<ColumnMapping> columns = new ArrayList<>(Arrays.asList(null, column("J", null, ARIA)));
@@ -163,6 +190,13 @@ class ColumnProtectionPlanTest {
 
     private static TableMapping table(String target, ColumnMapping... columns) {
         return new TableMapping("LEGACY", target, null, List.of(columns), null);
+    }
+
+    private static TableMapping keyedTable(String orderBy, List<String> orderByKeys, IdStrategy idStrategy,
+                                           IdentityStrategy identity, List<CompositeForeignKey> foreignKeys,
+                                           ColumnMapping... columns) {
+        return new TableMapping("LEGACY", "tb_user_info", null, orderBy, orderByKeys, null, List.of(columns),
+                idStrategy, identity, foreignKeys);
     }
 
     private static ColumnMapping column(String source, String target, String encrypt) {

@@ -160,7 +160,7 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 - FE artifact를 공유해 backend/frontend 완료를 다시 기다리는 의존성은 만들지 않았다. 각 E2E 스택은 자기 API rewrite·인증 설정에 맞춘 FE를 사용한다.
 - CodeQL 양언어 전수 분석, 기존 재사용 프로필/레이아웃, 의존성 snapshot readiness, PIT strict 기준을 유지한다.
 
-[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 14개 PIT scope의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 변경 파일만 골라 변이를 생략하는 선택은 도입하지 않았다.
+[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 15개 PIT scope(제품 10·이관 5)의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 변경 파일만 골라 변이를 생략하는 선택은 도입하지 않았다.
 
 Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.0에서 상향, DEC-OPS-237) `cache-provider: basic`을 명시했다. upstream writer는 backend 하나이며 backend가 명시적으로 false인 이관 전용 실행에서는 migration이 맡는다. 나머지 작업은 읽기 전용이고 독립 export 제품은 자체 writer를 유지한다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
 

@@ -3,6 +3,7 @@ package nuri.migration.validate;
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.etl.EtlExecutor;
+import nuri.migration.keymap.StandardIdGenerator;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -117,9 +118,19 @@ public final class TargetStandardValidator {
         }
         if (table.idStrategy() != null && table.idStrategy().column() != null) {
             ColumnContract idColumn = contract.column(table.idStrategy().column());
+            Long idLength = generatedIdLength(table);
             if (idColumn != null && TargetLimit.physical(idColumn).family() != Family.TEXT) {
                 errors.add("idStrategy 가 만드는 표준 ID 는 문자열이라 문자 컬럼이어야 합니다: "
                         + location(table, idColumn.name()));
+            } else if (idColumn != null && idLength != null) {
+                checkGeneratedId(table, idColumn, idLength, contract.standard() == StandardStatus.PRESENT, errors);
+            }
+            String prefix = table.idStrategy().generator();
+            if (prefix != null && StandardIdGenerator.hexLength(prefix) < StandardIdGenerator.MIN_HEX_LENGTH) {
+                errors.add("idStrategy 접두사가 길어 표준 ID 의 무작위 자릿수가 "
+                        + StandardIdGenerator.hexLength(prefix) + "자뿐입니다 — 온라인 앱의 최소 "
+                        + StandardIdGenerator.MIN_HEX_LENGTH + "자보다 짧아 충돌 위험이 큽니다: "
+                        + location(table, table.idStrategy().column()));
             }
         }
         for (ColumnMapping mapping : table.columns()) {
@@ -136,8 +147,8 @@ public final class TargetStandardValidator {
                                 boolean standardPresent, CatalogSnapshot inventory,
                                 List<String> errors, List<String> warnings) {
         String location = location(table, column.name());
-        TargetValueDomain value = TargetValueDomain.of(mapping, spec.codemaps(), builtinTransformer,
-                sourceColumn(table, mapping, inventory));
+        CatalogObject source = sourceColumn(table, mapping, inventory);
+        TargetValueDomain value = TargetValueDomain.of(mapping, spec.codemaps(), builtinTransformer, source);
         if (value.exempt()) {
             return;
         }
@@ -145,6 +156,22 @@ public final class TargetStandardValidator {
             errors.add("소스 컬럼의 타입을 승인 inventory 에서 확인할 수 없습니다(없음·모호·미지원): "
                     + location + " ← " + table.source() + "." + mapping.source());
             return;
+        }
+        if (mapping.encrypt() != null) {
+            // [DEC-OPS-308] 숫자·날짜를 문자열로 바꾸면 앞자리 0·표기가 달라져 다른 값이 암호화된다. 내장 변환기는
+            //   toString 으로 바꾸므로 정규화가 아니다 — 정규화는 내장이 아닌 변환기로 선언한다(그때는 위에서 exempt).
+            if (value.family() != Family.TEXT || TargetValueDomain.fromSource(source).family() != Family.TEXT) {
+                errors.add("암호화 컬럼은 문자열 소스 값만 암호화합니다 — 숫자·날짜는 앞자리 0·표기가 바뀌므로"
+                        + " 정규화하는 변환기를 선언하세요: " + location + " ← " + table.source() + "." + mapping.source());
+                return;
+            }
+            value = value.encrypted();
+        }
+        if (value.generatedKey() && value.maxChars() == null) {
+            Long parentIdLength = parentIdLength(spec, mapping.fkRef());
+            if (parentIdLength != null) {
+                value = TargetValueDomain.generatedKey(parentIdLength);
+            }
         }
         TargetLimit physical = TargetLimit.physical(column);
         check(value, physical, location, "물리 컬럼 " + column.dataType(), errors);
@@ -193,7 +220,8 @@ public final class TargetStandardValidator {
 
     private static void checkLength(TargetValueDomain value, TargetLimit limit, String location, String label,
                                     List<String> errors) {
-        if (limit.maxChars() == null || value.generatedKey()) {
+        // 부모 idStrategy 를 모르는 fkRef 값은 길이를 모른다 — 그때만 건너뛴다.
+        if (limit.maxChars() == null || (value.generatedKey() && value.maxChars() == null)) {
             return;
         }
         Long length = value.textLength();
@@ -271,6 +299,44 @@ public final class TargetStandardValidator {
         }
         List<CatalogObject> matches = SourceLoadSurfaceGate.sourceColumns(inventory, table, mapping.source());
         return matches.size() == 1 ? matches.getFirst() : null;
+    }
+
+    /** idStrategy 가 만드는 표준 ID 의 길이(접두사 + hex). 접두사가 없으면 null. */
+    private static Long generatedIdLength(TableMapping table) {
+        String prefix = table.idStrategy() == null ? null : table.idStrategy().generator();
+        if (prefix == null) {
+            return null;
+        }
+        return (long) prefix.trim().length() + StandardIdGenerator.hexLength(prefix);
+    }
+
+    /** fkRef 가 가리키는 부모 매핑의 표준 ID 길이. 부모가 idStrategy 를 쓰지 않으면 null. */
+    private static Long parentIdLength(MappingSpec spec, String fkRef) {
+        if (fkRef == null) {
+            return null;
+        }
+        return spec.tables().stream()
+                .filter(parent -> parent != null && parent.source() != null && parent.source().equalsIgnoreCase(fkRef))
+                .map(TargetStandardValidator::generatedIdLength)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** 표준 ID 길이를 물리 컬럼과, 사전이 있으면 표준 도메인 중 좁은 쪽과 대조한다(DEC-OPS-307 ②). */
+    private static void checkGeneratedId(TableMapping table, ColumnContract column, long length,
+                                         boolean standardPresent, List<String> errors) {
+        String location = location(table, column.name());
+        TargetValueDomain value = TargetValueDomain.generatedKey(length);
+        check(value, TargetLimit.physical(column), location, "물리 컬럼 " + column.dataType(), errors);
+        StandardTerm term = column.term();
+        if (!standardPresent || term == null || term.status() != TermStatus.FOUND) {
+            return;
+        }
+        TargetLimit domain = standardLimit(term);
+        if (domain != null && domain.family() == Family.TEXT) {
+            check(value, domain, location, "표준 도메인 " + term.domainName(), errors);
+        }
     }
 
     private static String location(TableMapping table, String column) {

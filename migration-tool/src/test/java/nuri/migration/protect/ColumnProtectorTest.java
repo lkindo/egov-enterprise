@@ -38,8 +38,25 @@ class ColumnProtectorTest {
         assertThat(protector.protect("tb_user_info", "user_enrrno", "  ")).isNull();
         assertThat(protector.protect("tb_user_info", "user_enrrno", null)).isNull();
         assertThat(protector.protect("tb_user_info", "user_nm", RRNO)).isEqualTo(RRNO);
-        assertThat(protector.protect("tb_user_info", "user_enrrno", 8001011234567L))
-                .isEqualTo(new EgovAriaColumnCipher(KEY).encrypt("8001011234567"));
+        assertThat(protector.protect("tb_user_info", "user_enrrno", new StringBuilder(RRNO)))
+                .as("LOB 를 읽은 문자열 같은 CharSequence 도 문자열로 본다").isEqualTo(written);
+    }
+
+    @Test
+    @DisplayName("문자열이 아닌 값은 암호화하지 않는다 — 숫자 표기가 앞자리 0 을 지운 다른 값을 암호화하기 때문이다")
+    void nonTextValuesAreNeverEncrypted() {
+        ColumnProtector protector = ColumnProtector.forRun(rrnoSpec(), environment(KEY));
+        String refused = "PROTECTED_COLUMN tb_user_info.user_enrrno: 문자열이 아닌 값은 암호화하지 않습니다"
+                + " — 정규화하는 변환기를 선언해 문자열로 넘기세요";
+        // Oracle NUMBER(13) 은 BigDecimal 로 읽힌다. toString 은 2000~2009년생의 앞자리 0 을 지운다.
+        for (Object value : new Object[] {new java.math.BigDecimal("0501013234567"), 8001011234567L, 8.0E12,
+                java.time.LocalDate.of(1980, 1, 1)}) {
+            assertThatThrownBy(() -> protector.protect("tb_user_info", "user_enrrno", value))
+                    .as(value.getClass().getSimpleName())
+                    .isInstanceOf(ColumnProtector.ProtectedColumnException.class)
+                    .hasMessage(refused)
+                    .hasMessageNotContaining("501013234567");
+        }
     }
 
     @Test
@@ -105,7 +122,7 @@ class ColumnProtectorTest {
     }
 
     @Test
-    @DisplayName("온라인 앱이 되읽지 못하는 값은 쓰지 않는다")
+    @DisplayName("같은 키로도 되읽지 못하는 값은 쓰지 않는다(키가 온라인 키와 같은지는 이 확인이 증명하지 않는다)")
     void valuesTheOnlineAppCannotReadBackAreRejected() {
         String unreadable = "PROTECTED_COLUMN tb_user_info.user_enrrno: 온라인 앱이 되읽을 수 없는 값입니다";
         // 16바이트 배수이고 마지막 바이트가 1 이면 온라인 복호화가 1바이트를 걷어 낸다.

@@ -682,6 +682,96 @@ class TargetStandardValidatorTest {
         }
     }
 
+    @Nested
+    @DisplayName("암호문·표준 ID 처럼 매핑이 직접 쓰지 않는 값도 실제로 쓰는 길이로 대조한다")
+    class WrittenValues {
+
+        private static final String RRNO_TOO_LONG = "값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.user_enrrno"
+                + " — 값 536, 물리 컬럼 character varying 길이 256";
+
+        @Test
+        void encryptedColumnIsCheckedByItsCiphertextLength() {
+            TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, varchar(1, "user_enrrno", 256)));
+
+            assertThat(errors(spec(encrypted("JUMIN", null)), target))
+                    .as("13자 주민번호의 암호문은 88자다").isEmpty();
+            assertThat(errors(spec(encrypted("ITEM_NM", null)), target))
+                    .as("평문 100자가 들어가도 암호문 536자는 들어가지 않는다").containsExactly(RRNO_TOO_LONG);
+            assertThat(TargetValueDomain.ciphertextLength(13)).isEqualTo(88);
+            assertThat(TargetValueDomain.ciphertextLength(48)).isEqualTo(256);
+            assertThat(TargetValueDomain.ciphertextLength(49)).isEqualTo(280);
+        }
+
+        @Test
+        void encryptedColumnTakesOnlyTextSourceValues() {
+            TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, varchar(1, "user_enrrno", 256)));
+            String numeric = "암호화 컬럼은 문자열 소스 값만 암호화합니다 — 숫자·날짜는 앞자리 0·표기가 바뀌므로"
+                    + " 정규화하는 변환기를 선언하세요: public.tb_item.user_enrrno ← legacy.legacy_item.";
+
+            assertThat(errors(spec(encrypted("JUMIN_NUM", null)), target)).containsExactly(numeric + "JUMIN_NUM");
+            assertThat(errors(spec(encrypted("JUMIN_NUM", "trim")), target))
+                    .as("내장 변환기는 toString 이라 정규화가 아니다").containsExactly(numeric + "JUMIN_NUM");
+            assertThat(errors(spec(encrypted("REG_DE", null)), target)).containsExactly(numeric + "REG_DE");
+            assertThat(errors(spec(encrypted("JUMIN", "date")), target)).containsExactly(numeric + "JUMIN");
+            assertThat(errors(spec(encrypted("JUMIN_NUM", "yyyymmdd")), target))
+                    .as("내장이 아닌 변환기는 출력 계약을 스스로 진다").isEmpty();
+        }
+
+        @Test
+        void generatedIdIsCheckedAgainstTheNarrowerOfColumnAndDomain() {
+            TableMapping table = new TableMapping(SOURCE, TARGET, null, null, List.of(), null,
+                    List.of(map("ITEM_ID", "item_id")), new IdStrategy("esntl_id", "ITEM_", "ITEM_ID"));
+
+            assertThat(errors(spec(table), target(table(StandardStatus.ABSENT,
+                    varchar(1, "item_id", 20), varchar(2, "esntl_id", 20))))).isEmpty();
+            assertThat(errors(spec(table), target(table(StandardStatus.ABSENT,
+                    varchar(1, "item_id", 20), varchar(2, "esntl_id", 16)))))
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.esntl_id — 값 20,"
+                            + " 물리 컬럼 character varying 길이 16");
+            assertThat(errors(spec(table), target(table(StandardStatus.PRESENT,
+                    withTerm(varchar(1, "item_id", 20), found("ITEM_ID", "ID V20", "VARCHAR", 20)),
+                    withTerm(varchar(2, "esntl_id", 20), found("ESNTL_ID", "ID V16", "VARCHAR", 16))))))
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.esntl_id — 값 20,"
+                            + " 표준 도메인 ID V16 길이 16");
+        }
+
+        @Test
+        void longPrefixesLeaveTooFewRandomDigits() {
+            TableMapping table = new TableMapping(SOURCE, TARGET, null, null, List.of(), null,
+                    List.of(map("ITEM_ID", "item_id")), new IdStrategy("esntl_id", " LONG_PREFIX_ ", "ITEM_ID"));
+
+            assertThat(errors(spec(table), target(table(StandardStatus.ABSENT,
+                    varchar(1, "item_id", 20), varchar(2, "esntl_id", 20)))))
+                    .containsExactly("idStrategy 접두사가 길어 표준 ID 의 무작위 자릿수가 8자뿐입니다 — 온라인 앱의 최소"
+                            + " 10자보다 짧아 충돌 위험이 큽니다: public.tb_item.esntl_id");
+            assertThat(errors(spec(new TableMapping(SOURCE, TARGET, null, null, List.of(), null,
+                    List.of(map("ITEM_ID", "item_id")), new IdStrategy("esntl_id", "PREFIX_10_", "ITEM_ID"))),
+                    target(table(StandardStatus.ABSENT, varchar(1, "item_id", 20), varchar(2, "esntl_id", 20)))))
+                    .as("hex 10자는 온라인 GROUP_ 과 같다").isEmpty();
+        }
+
+        @Test
+        void foreignKeyValuesUseTheParentGeneratedIdLength() {
+            TableMapping table = new TableMapping(SOURCE, TARGET, null, null, List.of(), null,
+                    List.of(map("ITEM_ID", "item_id"),
+                            new ColumnMapping("ITEM_ID", "parent_id", null, null, null, SOURCE, null)),
+                    new IdStrategy("esntl_id", "ITEM_", "ITEM_ID"));
+
+            assertThat(errors(spec(table), target(table(StandardStatus.ABSENT, varchar(1, "item_id", 20),
+                    varchar(2, "esntl_id", 20), varchar(3, "parent_id", 16)))))
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.parent_id — 값 20,"
+                            + " 물리 컬럼 character varying 길이 16");
+            assertThat(errors(spec(new TableMapping(SOURCE, TARGET, null, List.of(map("ITEM_ID", "item_id"),
+                    new ColumnMapping("ITEM_ID", "parent_id", null, null, null, "unknown_parent", null)), null)),
+                    target(table(StandardStatus.ABSENT, varchar(1, "item_id", 20), varchar(3, "parent_id", 16)))))
+                    .as("부모를 모르면 길이도 모른다").isEmpty();
+        }
+
+        private static ColumnMapping encrypted(String source, String transform) {
+            return new ColumnMapping(source, "user_enrrno", transform, null, null, null, null, "aria-egov-v1");
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // fixtures
 
@@ -788,6 +878,8 @@ class TargetStandardValidatorTest {
         objects.add(columnObject("legacy_item", "STATUS", Types.CHAR, 21, 0));
         objects.add(columnObject("legacy_item", "BODY", Types.CLOB, 0, 0));
         objects.add(columnObject("legacy_item", "REG_DE", Types.DATE, 10, 0));
+        objects.add(columnObject("legacy_item", "JUMIN", Types.VARCHAR, 13, 0));
+        objects.add(columnObject("legacy_item", "JUMIN_NUM", Types.NUMERIC, 13, 0));
         objects.add(columnObject("legacy_item", "REG_DT", Types.TIMESTAMP, 29, 6));
         objects.add(columnObject("legacy_item", "REG_TZ", Types.TIMESTAMP_WITH_TIMEZONE, 35, 6));
         objects.add(columnObject("legacy_item", "OPEN_TM", Types.TIME, 8, 0));

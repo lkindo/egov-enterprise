@@ -42,7 +42,7 @@ push/PR / workflow_dispatch
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
         ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
         ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 10개 배치·최대 5개 동시 실행)
-        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 4개를 한 슬롯에서 실행)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 5개를 한 슬롯에서 실행)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
             ├─ 전체 API·브라우저 모집단 분배 + 실행 목록/결과 대조
@@ -104,8 +104,8 @@ PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main
 
 동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
 E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어와
-`mutation-scope-migration`의 네 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
-남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 네 모집단과 각 75% 판정을 모두
+`mutation-scope-migration`의 다섯 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
+남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 다섯 모집단과 각 75% 판정을 모두
 같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
 재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음

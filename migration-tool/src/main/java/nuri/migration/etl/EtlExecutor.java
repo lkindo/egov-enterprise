@@ -60,9 +60,11 @@ import java.util.function.Function;
  * (3) {@link TypeConverter}로 {@code type} 활성화, (4) {@link KeyMapRegistry}로 {@code idStrategy} 채번 +
  * {@code fkRef} FK 번역(참조 무결성), (5) JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위 폴백으로 오류 격리).
  *
- * <p>[2026-10-13 DEC-OPS-309] 행 변환(transform·codemap·type·fkRef·identity) 실패는 격리하지 않는다 —
- * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기(제약 위반) 실패에만 남는다 — 길이·NOT NULL·
- * CHECK 위반 행은 빠지고 나머지는 커밋되는 승인 없는 부분 커밋이며 GAP-ETL-001 이 추적한다.
+ * <p>[2026-10-13 DEC-OPS-309] 행 변환(transform·codemap·type·fkRef·identity·보호 컬럼) 실패는 격리하지 않는다 —
+ * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기 단계에 남는다 — batch 가 실패하면 행마다 다시
+ * 쓰고, 그 행의 SQL 오류는 종류와 무관하게(길이·NOT NULL·CHECK·UNIQUE·대상 FK·일시 오류) {@code ATOMIC_WRITE_FAILED},
+ * 다시 변환하다 실패하면 {@code ROW_RETRY_TRANSFORM_FAILED}, TARGET_GENERATED 행의 쓰기·keymap 실패는
+ * {@code TARGET_GENERATED_WRITE_FAILED} 로 그 행만 빠지고 나머지는 커밋된다. 승인 없는 부분 커밋이며 GAP-ETL-001 이 추적한다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.

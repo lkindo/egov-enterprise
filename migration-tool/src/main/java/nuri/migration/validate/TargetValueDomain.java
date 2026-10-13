@@ -147,6 +147,30 @@ record TargetValueDomain(
         return value == null ? 0 : value.codePointCount(0, value.length());
     }
 
+    /**
+     * 보호 컬럼({@code encrypt})이 실제로 쓰는 값 — 평문이 아니라 Base64 암호문이다(DEC-OPS-308). 평문 길이를
+     * 모르면 길이도 모른다.
+     */
+    TargetValueDomain encrypted() {
+        Long plaintext = textLength();
+        return text(plaintext == null ? null : ciphertextLength(plaintext));
+    }
+
+    /**
+     * 평문 {@code chars} 자의 최대 암호문 길이. 한 글자는 UTF-8 로 최대 4바이트이고, 16바이트 블록으로 채운 뒤
+     * Base64 로 쓴다(13자 주민번호 → 88자).
+     */
+    static long ciphertextLength(long chars) {
+        long bytes = Math.max(1L, chars) * 4L;
+        long padded = (bytes + 15L) / 16L * 16L;
+        return 4L * ((padded + 2L) / 3L);
+    }
+
+    /** idStrategy 가 만드는 표준 ID — 그 컬럼과, 길이를 아는 fkRef 값(부모의 표준 ID)이다. */
+    static TargetValueDomain generatedKey(long chars) {
+        return new TargetValueDomain(Family.TEXT, chars, null, null, null, false, false, true);
+    }
+
     /** 이 값을 문자열로 바꿨을 때의 최대 길이(toString). 알 수 없으면 null. */
     Long textLength() {
         return switch (family) {

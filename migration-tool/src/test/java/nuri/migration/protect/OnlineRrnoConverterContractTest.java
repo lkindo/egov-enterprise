@@ -30,7 +30,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,13 +78,36 @@ class OnlineRrnoConverterContractTest {
             "tb_auth_otp_cert.otp_secret_encpt_cn",
             "foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java");
 
-    private static final Pattern CONVERT = Pattern.compile("@Convert\\s*\\(\\s*converter\\s*=\\s*([\\w.]+)\\.class\\s*\\)");
+    /**
+     * 온라인 암호를 직접 부르는 원본(정의 파일 제외). 새 사용처는 보호 컬럼이 늘었다는 뜻일 수 있다 — 그 컬럼을
+     * {@link #SERVICE_ENCRYPTED}·보호 목록에 더하거나 이 표에 사유와 함께 더한다.
+     */
+    private static final Map<String, Set<String>> ENCRYPTION_USERS = Map.of(
+            "CryptoUtil.encrypt", Set.of("business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java"),
+            "MfaSecretCipher", Set.of("business-core/src/main/java/nuri/business/service/auth/mfa/MfaSettings.java"));
+    private static final Map<String, String> ENCRYPTION_DEFINITIONS = Map.of(
+            "CryptoUtil.encrypt", "foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java",
+            "MfaSecretCipher", "foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java");
+    private static final Map<String, Pattern> ENCRYPTION_CALLS = Map.of(
+            "CryptoUtil.encrypt", Pattern.compile(
+                    "\\bCryptoUtil\\s*\\.\\s*encrypt\\b|import\\s+static\\s+[\\w.]*\\bCryptoUtil\\s*\\.\\s*(?:encrypt|\\*)"),
+            "MfaSecretCipher", Pattern.compile("\\bMfaSecretCipher\\b"));
+
+    /** 단순 이름·FQN({@code @jakarta.persistence.Convert}) 모두, 인자 순서와 무관하게 읽는다. */
+    private static final Pattern CONVERT = Pattern.compile("@(?:jakarta\\.persistence\\.)?Convert\\s*\\(([^)]*)\\)");
+    private static final Pattern CONVERTER_ARGUMENT = Pattern.compile("\\bconverter\\s*=\\s*([\\w.]+)\\.class");
+    private static final Pattern CONVERSION_DISABLED = Pattern.compile("\\bdisableConversion\\s*=\\s*true\\b");
     private static final Pattern COLUMN_NAME = Pattern.compile("@Column\\s*\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
     private static final Pattern TABLE_NAME = Pattern.compile("@Table\\s*\\(\\s*name\\s*=\\s*\"([^\"]+)\"");
     private static final Pattern AUTO_APPLY = Pattern.compile("@Converter\\s*\\([^)]*autoApply\\s*=\\s*true");
 
+    /**
+     * 키 절단은 UTF-16 코드 단위 32자다. 다바이트 키(32바이트를 넘는 한글)와, 32번째 코드 단위가 서로게이트 쌍을
+     * 가르는 키는 바이트 단위 절단으로 바뀌면 다른 키가 된다.
+     */
     private static final List<String> KEYS = List.of(
-            "migration-contract-key", "k".repeat(32), "0123456789abcdef0123456789abcdefTAIL", "한글키-주민번호-2026");
+            "migration-contract-key", "k".repeat(32), "0123456789abcdef0123456789abcdefTAIL", "한글키-주민번호-2026",
+            "가".repeat(20), "가".repeat(40), "a".repeat(31) + "😀tail");
 
     @TempDir
     static Path compiled;
@@ -196,20 +221,33 @@ class OnlineRrnoConverterContractTest {
     void protectedColumnListMatchesTheOnlineEntities() throws IOException {
         requireOnline();
         Map<String, ColumnProtection> online = new TreeMap<>();
+        Map<String, Set<String>> encryptionUsers = new TreeMap<>();
         for (Path file : onlineJavaSources()) {
             String source = Files.readString(file, StandardCharsets.UTF_8);
+            String relative = root.relativize(file).toString().replace('\\', '/');
             assertThat(AUTO_APPLY.matcher(source).find())
-                    .as("autoApply 변환기는 필드 선언 없이 적용돼 보호 컬럼을 셀 수 없다: %s", root.relativize(file))
+                    .as("autoApply 변환기는 필드 선언 없이 적용돼 보호 컬럼을 셀 수 없다: %s", relative)
                     .isFalse();
             Matcher convert = CONVERT.matcher(source);
             while (convert.find()) {
-                String converter = convert.group(1).substring(convert.group(1).lastIndexOf('.') + 1);
+                String converter = converterOf(convert.group(1));
+                if (converter == null) {
+                    continue; // disableConversion 은 변환기를 붙이지 않는다.
+                }
                 assertThat(CONVERTERS).as("새 @Convert 변환기 %s — 이관 도구 보호 목록과 이 계약을 함께 고친다", converter)
                         .containsKey(converter);
                 online.put(table(source, file) + "." + fieldColumn(source, convert.start(), file),
                         CONVERTERS.get(converter));
             }
+            for (String use : encryptionUsesIn(source)) {
+                if (!ENCRYPTION_DEFINITIONS.get(use).equals(relative)) {
+                    encryptionUsers.computeIfAbsent(use, ignored -> new TreeSet<>()).add(relative);
+                }
+            }
         }
+        assertThat(encryptionUsers)
+                .as("온라인 암호를 직접 부르는 원본이 바뀌었다 — 새 암호 컬럼이면 보호 목록·SERVICE_ENCRYPTED 와 함께 고친다")
+                .isEqualTo(new TreeMap<>(ENCRYPTION_USERS));
         for (Map.Entry<String, String> service : SERVICE_ENCRYPTED.entrySet()) {
             assertThat(root.resolve(service.getValue())).as("서비스 암호 클래스").isRegularFile();
             String[] tableColumn = service.getKey().split("\\.");
@@ -223,6 +261,50 @@ class OnlineRrnoConverterContractTest {
                 (left, right) -> left, TreeMap::new));
         assertThat(registry).isEqualTo(online);
         assertThat(online).containsEntry("tb_user_info.user_enrrno", ColumnProtection.ARIA_EGOV_V1);
+    }
+
+    @Test
+    @DisplayName("@Convert 는 FQN·인자 순서와 무관하게 읽고, 온라인 암호 호출은 정적 import 로도 센다")
+    void sourceScannersReadEveryDeclarationForm() {
+        // 온라인 원본 없이도 도는 판독기 시험이다 — 판독기가 놓치면 보호 목록 대조가 조용히 줄어든다.
+        String entity = """
+                @jakarta.persistence.Convert(converter = nuri.x.RrnoEncryptionConverter.class)
+                @Convert(attributeName = "a", converter = RrnoEncryptionConverter.class)
+                @Convert(disableConversion = true)
+                """;
+        Matcher convert = CONVERT.matcher(entity);
+        List<String> converters = new ArrayList<>();
+        while (convert.find()) {
+            converters.add(String.valueOf(converterOf(convert.group(1))));
+        }
+        assertThat(converters).containsExactly("RrnoEncryptionConverter", "RrnoEncryptionConverter", "null");
+        assertThat(converterOf("attributeName = \"a\"")).as("변환기도 해제도 아니면 실패한다").isEqualTo("<unreadable>");
+
+        assertThat(encryptionUsesIn("return CryptoUtil . encrypt(value);")).containsExactly("CryptoUtil.encrypt");
+        assertThat(encryptionUsesIn("import static nuri.foundation.core.util.CryptoUtil.encrypt;"))
+                .containsExactly("CryptoUtil.encrypt");
+        assertThat(encryptionUsesIn("private final MfaSecretCipher cipher;")).containsExactly("MfaSecretCipher");
+        assertThat(encryptionUsesIn("CryptoUtil.decrypt(value); CryptoUtilities.encrypt(x);")).isEmpty();
+    }
+
+    /** {@code @Convert(...)} 인자의 변환기 단순 이름. 해제면 null, 읽을 수 없으면 {@code <unreadable>}(대조에서 실패). */
+    private static String converterOf(String arguments) {
+        Matcher converter = CONVERTER_ARGUMENT.matcher(arguments);
+        if (converter.find()) {
+            String name = converter.group(1);
+            return name.substring(name.lastIndexOf('.') + 1);
+        }
+        return CONVERSION_DISABLED.matcher(arguments).find() ? null : "<unreadable>";
+    }
+
+    private static Set<String> encryptionUsesIn(String source) {
+        Set<String> uses = new TreeSet<>();
+        ENCRYPTION_CALLS.forEach((use, pattern) -> {
+            if (pattern.matcher(source).find()) {
+                uses.add(use);
+            }
+        });
+        return uses;
     }
 
     private static String table(String source, Path file) {

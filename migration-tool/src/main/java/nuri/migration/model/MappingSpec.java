@@ -339,10 +339,11 @@ public record MappingSpec(
     /**
      * 기존 문자열 idStrategy와 병용하지 않는 typed/composite identity DSL.
      *
-     * <p>{@code targetSequences} 는 {@code preserve} 에서만 쓰는 선택 선언이다 — 원본 키를 그대로 쓴 대상 컬럼이
-     * 카탈로그로 연결되지 않은 시퀀스(예: 온라인 앱의 {@code @SequenceGenerator} 전용 시퀀스)로 채번되면 그 이름을,
-     * 시퀀스로 채번되지 않으면 {@value #NO_SEQUENCE} 를 적는다. 적재가 끝나면 이 시퀀스를 원본 키 최댓값 뒤로
-     * 맞춘다(DEC-OPS-306). 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
+     * <p>{@code targetSequences} 는 mapping 이 대상 키 값을 넣는 {@code preserve}·{@code remap} 에서만 쓰는 선택
+     * 선언이다 — 그 대상 컬럼이 카탈로그로 연결되지 않은 시퀀스(예: 온라인 앱의 {@code @SequenceGenerator} 전용
+     * 시퀀스)로 채번되면 그 이름을, 시퀀스로 채번되지 않으면 {@value #NO_SEQUENCE} 를 적는다. 적재가 끝나면 이
+     * 시퀀스를 대상 키 최댓값 뒤로 맞춘다(DEC-OPS-306). 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가
+     * 바뀌지 않는다.
      */
     public record IdentityStrategy(
             TargetIdentityPolicy policy,
@@ -370,8 +371,8 @@ public record MappingSpec(
             sourceComponents = sourceComponents == null ? List.of() : List.copyOf(sourceComponents);
             targetComponents = targetComponents == null ? List.of() : List.copyOf(targetComponents);
             targetSequences = copyDeclarations(targetSequences);
-            if (!targetSequences.isEmpty() && policy != TargetIdentityPolicy.PRESERVE) {
-                throw new IllegalArgumentException("identity targetSequences는 preserve 정책에서만 선언할 수 있습니다");
+            if (!targetSequences.isEmpty() && policy == TargetIdentityPolicy.TARGET_GENERATED) {
+                throw new IllegalArgumentException("identity targetSequences는 preserve·remap 정책에서만 선언할 수 있습니다");
             }
             for (Map.Entry<String, String> declared : targetSequences.entrySet()) {
                 String column = declared.getKey();

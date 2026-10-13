@@ -219,7 +219,32 @@ test('online encryption sources select the migration suite that holds their comp
   }
   // A future converter elsewhere is still counted by the contract.
   assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/NewSecretConverter.java']).migration, true);
+  assert.equal(classifyChangedFiles(['api-server/src/main/java/nuri/api/x/NewSecretConverter.java']).migration, true);
   assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/Plain.java']).migration, false);
+});
+
+test('an online source that newly declares a protected column selects the migration suite by its content', () => {
+  // A new entity can attach the existing converter without touching any path the
+  // contract names; a service can call the online ciphers directly (DEC-OPS-308).
+  const entity = 'business-app/src/main/java/nuri/business/domain/x/Resident.java';
+  const service = 'business-core/src/main/java/nuri/business/service/x/SecretService.java';
+  const sources = {
+    [entity]: '@jakarta.persistence.Convert(converter = RrnoEncryptionConverter.class)\nprivate String rrno;',
+    [service]: 'import static nuri.foundation.core.util.CryptoUtil.encrypt;\nString v = CryptoUtil.encrypt(x);',
+  };
+  const readSource = file => sources[file] ?? null;
+  for (const file of [entity, service]) {
+    assert.equal(classifyChangedFiles([file], { readSource }).migration, true, `${file}: content trigger lost`);
+  }
+  assert.equal(classifyChangedFiles(['api-server/src/main/java/nuri/api/x/Cipher.java'],
+    { readSource: () => 'private final MfaSecretCipher cipher;' }).migration, true);
+  assert.equal(classifyChangedFiles([entity], { readSource: () => 'class Resident { String name; }' }).migration, false);
+  assert.equal(classifyChangedFiles([entity], { readSource: () => '@Converter(autoApply = false)' }).migration, false,
+    'a converter class declaration is selected by its *Converter.java path, not by content');
+  assert.equal(classifyChangedFiles([entity], { readSource: () => null }).migration, false, 'deleted file');
+  // The default reader looks at the working tree.
+  assert.equal(classifyChangedFiles(['business-core/src/main/java/nuri/business/service/auth/mfa/MfaSettings.java']).migration,
+    true);
 });
 
 test('target standard catalog and unknown toolchain inputs retain full fallback', () => {

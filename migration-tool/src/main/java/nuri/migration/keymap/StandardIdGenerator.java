@@ -27,6 +27,12 @@ public final class StandardIdGenerator {
     /** UUID 하이픈 제거 hex 의 자릿수 — {@code IdGenerationUtil.generateId} 의 length 상한과 같다. */
     static final int MAX_HEX_LENGTH = 32;
 
+    /**
+     * 온라인 앱이 쓰는 가장 짧은 hex 자릿수({@code GROUP_} + 10). 이보다 짧으면 충돌 위험이 커서 plan 이 거부한다
+     * ({@code TargetStandardValidator}).
+     */
+    public static final int MIN_HEX_LENGTH = 10;
+
     private StandardIdGenerator() {
     }
 
@@ -40,8 +46,12 @@ public final class StandardIdGenerator {
         if (prefix == null) {
             throw new IllegalArgumentException("prefix must not be null");
         }
-        String trimmed = prefix.trim();
-        return generate(trimmed, Math.max(1, DEFAULT_TOTAL_LENGTH - trimmed.length()));
+        return generate(prefix.trim(), hexLength(prefix));
+    }
+
+    /** {@link #generate(String)} 가 접두사 뒤에 붙이는 hex 자릿수. */
+    public static int hexLength(String prefix) {
+        return Math.max(1, DEFAULT_TOTAL_LENGTH - prefix.trim().length());
     }
 
     /**

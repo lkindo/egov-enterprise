@@ -85,7 +85,8 @@ public class MigrationVerifier {
 
             if (!r.errors().isEmpty()) {
                 status = Status.FAIL;
-                // [2026-10-13 DEC-OPS-309] 첫 오류를 함께 보인다. 실행기 오류 문구는 테이블·컬럼·행 순번·고정 코드뿐이다.
+                // [2026-10-13 DEC-OPS-309] 첫 오류를 함께 보인다. 실행기 오류 문구는 테이블·컬럼·행 순번·고정 코드와,
+                //   재개 대조 오류의 키 digest(KeyDiagnostics — 이 프로세스에서만 쓰는 무작위 키의 HMAC)뿐이다.
                 note = "오류 " + r.errors().size() + "건 — 첫 오류: " + r.errors().getFirst();
             } else if (scoped != null && scoped.error() != null) {
                 status = Status.FAIL;
