@@ -84,9 +84,12 @@ class ApprovalWorkflowIntegrationTest {
     @BeforeEach
     void availableParticipants() {
         // 알림 기능이 있으면(클래스) 알림 테이블도 있다. 리스너가 개명·이동되면 무력화를 확인할 수 없으므로 여기서 붉다.
+        // 수동 도메인 삭제(scripts/delete-domain.ps1)는 Java 소스만 지우고 Flyway DDL 을 남기므로, 알림만 수동으로 지운
+        // 트리에서도 여기서 붉다 — 그때 원인은 개명이 아니라 남은 알림 테이블(tb_user_noti, V2_0 baseline)이다.
         ClassLoader loader = getClass().getClassLoader();
         boolean listener = ClassUtils.isPresent(IN_APP_NOTIFICATION_LISTENER, loader);
-        assertThat(listener).as("알림 리스너 클래스와 알림 테이블은 함께 있거나 함께 없다")
+        assertThat(listener).as("알림 리스너 클래스와 알림 테이블은 함께 있거나 함께 없다 — 리스너가 개명·이동됐거나, "
+                        + "알림을 수동 삭제(delete-domain.ps1)해 Flyway DDL(tb_user_noti)만 남은 경우다")
                 .isEqualTo(jdbc.queryForObject("SELECT to_regclass('public.tb_user_noti') IS NOT NULL", Boolean.class));
         if (listener) {
             assertThat(applicationContext.getBeanNamesForType(ClassUtils.resolveClassName(IN_APP_NOTIFICATION_LISTENER, loader)))

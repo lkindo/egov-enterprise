@@ -10193,7 +10193,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 the capabilities were re-read from code and profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
+        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the visualization-metrics (demo) and unsupported server-search verdicts were re-read from code; the rest of the action list was not re-verified and is not exhaustive (the hub also withdraws, reminds, replaces approvers, requests and answers supplements, adds references and resubmits). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
       }
     },
     {
@@ -10270,7 +10270,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 the capabilities were re-read from code and profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
+        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the mock verdicts (form catalog demo, submit unavailable) were re-read from code and replaced by draft.compose; its action list was not re-verified and is not exhaustive (the draft dialog also saves and deletes temporary drafts). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
       }
     },
     {

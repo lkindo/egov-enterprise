@@ -279,7 +279,7 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 }
 ```
 
-모양을 보이는 예시다(`example` 은 실제 시작 구성이 아니다). 실제 `core` 는 게이트 13건·규칙 2개·연쇄 106개다 — 값은 `presets.json` 이 정본이다.
+모양을 보이는 예시다(`example` 은 실제 시작 구성이 아니다). 실제 `core` 는 게이트 14건·규칙 2개·연쇄 106개다 — 값은 `presets.json` 이 정본이다.
 
 생성기와 정밀 점검은 이 승인을 `presets.json` 에서 읽는다(11단계 C3). `expected.gates` 는 기능 파일의 게이트 소유(`owns.gates`·
 `owns.rbacMatrix`)에서 계산한 목록과 정확히 같아야 한다(로더가 본다). 직접 선택 구성의 승인은 기대치 없이 그 게이트 소유에서
