@@ -33,3 +33,4 @@
 | [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted |
 | [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 결정 2의 PR 레이아웃 일부는 DEC-OPS-296, 결정 4의 단독 폐포 계획 일부는 DEC-OPS-301로 대체 |
 | [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
+| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted |

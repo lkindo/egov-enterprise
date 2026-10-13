@@ -8,6 +8,8 @@
 
 모듈은 `foundation`이나 온라인 런타임에 의존하지 않는 독립 `bootJar`이며, 이관이 필요한 프로젝트에서만 실행한다. 직접 `--mapping=... --mode=dry-run|commit` 경로는 승인 artifact를 우회하므로 dry-run과 commit 모두 차단한다.
 
+레거시 컬럼의 의미 식별과 표준용어 확정(표준화 단계), 그 결과를 적재에 결속하는 용어 매핑 원장과 단계별 보강(L1~L4)은 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)가 정한다. 이 문서의 승인 계보·redaction·INSERT-only 경계는 그대로다.
+
 ```text
 mapping.yml + source DB
         │
