@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -153,5 +154,21 @@ class ScrapServiceTest {
 
         // Then
         verify(scrapRepository).delete(scrap);
+    }
+
+    @Test
+    @DisplayName("🔒 사용 중지(useYn='N') 스크랩은 단건 조회와 수정에서 404 로 거부된다")
+    void softDeletedScrapRejectedAsNotFound() {
+        Scrap inactive = Scrap.builder().scrapSn(5L).scrapNm("비활성").useYn("N").build();
+        given(scrapRepository.findById(5L)).willReturn(Optional.of(inactive));
+
+        assertThatThrownBy(() -> scrapService.getScrap(5L))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        ScrapDto dto = ScrapDto.builder().scrapSn(5L).scrapNm("수정 시도").build();
+        assertThatThrownBy(() -> scrapService.updateScrap(5L, "user1", dto))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 }

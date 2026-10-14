@@ -95,10 +95,15 @@ public class RewardManage extends BaseEntity {
 
     /** 화면이 편집하는 다섯 필드를 갱신한다(2026-09-05 DEC-OPS-036 — 종전 3필드 시그니처는 호출부가 0건이었다). */
     public void update(String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm, String cntrbCn) {
+        update(rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, this.atchFileSn);
+    }
+
+    public void update(String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm, String cntrbCn, Long atchFileSn) {
         this.rwrdUserId = rwrdUserId;
         this.rwrdCd = rwrdCd;
         this.rwrdYmd = rwrdYmd;
         this.rwrdNm = rwrdNm;
         this.cntrbCn = cntrbCn;
+        this.atchFileSn = atchFileSn;
     }
 }

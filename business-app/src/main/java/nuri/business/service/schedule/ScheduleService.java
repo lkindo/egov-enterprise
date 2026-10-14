@@ -136,6 +136,11 @@ public class ScheduleService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
 
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+
         entity.updateAll(
                 dto.getSchdlNm(),
                 dto.getSchdlCn(),
@@ -149,7 +154,8 @@ public class ScheduleService {
                 //   DTO 값을 그대로 넘기면 ① null 전송 시 담당자가 지워져 목록(schdlPicId 필터)에서 사라지고
                 //   ② 타인 loginId 로 바꿔 남의 일정으로 넘길 수 있다. create 만 막으면 이 경로로 우회된다.
                 entity.getSchdlPicId(),
-                dto.getReptSeCd());
+                dto.getReptSeCd(),
+                atchFileSn != null ? atchFileSn : entity.getAtchFileSn());
         
         entity.setLastMdfrId(userId);
     }

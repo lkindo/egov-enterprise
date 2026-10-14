@@ -337,8 +337,11 @@ public class SurveyResultService {
      * 고르면 합계가 20 이라, 10명 모두 고른 항목도 50% 로 보였다. 단일선택이면 두 분모는 같다.
      */
     public List<SurveyStatsDto> getStats(Long srvySn) {
-        Objects.requireNonNull(srvySn);
-        if (!infoRepository.existsById(srvySn)) {
+        SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(srvySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        if (!survey.isReleased()
+                && !nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")
+                && !nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_READ_ALL")) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
 

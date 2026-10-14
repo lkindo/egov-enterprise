@@ -53,19 +53,25 @@ public class SecurityUtil {
      */
     public static Optional<String> getCurrentEsntlId() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
- 
-        if (authentication == null) {
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
             return Optional.empty();
         }
- 
+
         String esntlId = null;
         if (authentication.getPrincipal() instanceof UserDetails springSecurityUser) {
             esntlId = springSecurityUser.getUsername();
         } else if (authentication.getPrincipal() instanceof String principalString) {
             esntlId = principalString;
         }
- 
-        return Optional.ofNullable(esntlId);
+
+        if (esntlId == null || esntlId.isBlank() || "anonymousUser".equals(esntlId)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(esntlId);
     }
  
     /**

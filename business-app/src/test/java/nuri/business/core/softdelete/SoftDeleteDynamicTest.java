@@ -69,4 +69,18 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
                 .extracting(board -> board.getPstSn())
                 .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
     }
+
+    @Test
+    @DisplayName("@DisableSoftDelete 문맥 내부에서 일반 서비스 메서드를 중첩 호출해도 비활성 상태가 유지되고 종료 후 복구된다")
+    void disableSoftDeleteSurvivesNestedRegularServiceCall() {
+        List<Board> results = testService.getAllBoardsAfterNestedRegularCall(testService);
+
+        assertThat(results)
+                .extracting(Board::getPstSn)
+                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
+
+        assertThat(testService.getAllBoards())
+                .extracting(Board::getPstSn)
+                .containsExactly(activeBoardId);
+    }
 }

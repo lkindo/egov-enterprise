@@ -38,6 +38,7 @@ public class ScrapService {
 
     public ScrapDto getScrap(@NonNull Long scrapSn) {
         Scrap entity = scrapRepository.findById(scrapSn)
+                .filter(s -> "Y".equals(s.getUseYn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_READ_ALL"); // [IDOR] 소유자/관리자만 조회
         return scrapMapper.toDto(entity);
@@ -62,6 +63,7 @@ public class ScrapService {
     @Transactional
     public void updateScrap(Long scrapSn, String userId, ScrapDto dto) {
         Scrap entity = scrapRepository.findById(Objects.requireNonNull(scrapSn))
+                .filter(s -> "Y".equals(s.getUseYn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCRAP_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
         // 요청 DTO 값을 반영한다(과거에는 entity 의 기존 값을 자기 자신에게 재대입해 수정이 무동작이었다).

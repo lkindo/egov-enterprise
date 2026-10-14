@@ -22,6 +22,8 @@ public class SoftDeleteAspect {
 
     private final EntityManager entityManager;
     private static final String FILTER_NAME = "softDeleteFilter";
+    private static final ThreadLocal<Integer> CALL_DEPTH = ThreadLocal.withInitial(() -> 0);
+    private static final ThreadLocal<Integer> DISABLE_DEPTH = ThreadLocal.withInitial(() -> 0);
 
     @Around("@within(org.springframework.stereotype.Service) || @within(org.springframework.transaction.annotation.Transactional) || @annotation(org.springframework.transaction.annotation.Transactional)")
     public Object handleSoftDeleteFilter(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -34,8 +36,14 @@ public class SoftDeleteAspect {
         }
 
         boolean hasDisableAnnotation = hasDisableSoftDeleteAnnotation(joinPoint);
-
+        int currentCallDepth = CALL_DEPTH.get() + 1;
+        CALL_DEPTH.set(currentCallDepth);
+        int currentDisableDepth = DISABLE_DEPTH.get() + (hasDisableAnnotation ? 1 : 0);
         if (hasDisableAnnotation) {
+            DISABLE_DEPTH.set(currentDisableDepth);
+        }
+
+        if (currentDisableDepth > 0) {
             log.debug(">>> SoftDelete disabled for method: {}", joinPoint.getSignature().toShortString());
             session.disableFilter(FILTER_NAME);
         } else {
@@ -46,9 +54,24 @@ public class SoftDeleteAspect {
         try {
             return joinPoint.proceed();
         } finally {
-            // 다른 세션의 재사용이나 잔여 작업 시 오염 방지를 위해 무조건 기본값으로 복구 활성화
+            int remainingDisableDepth = hasDisableAnnotation ? currentDisableDepth - 1 : currentDisableDepth;
+            int remainingCallDepth = currentCallDepth - 1;
+            if (remainingCallDepth <= 0) {
+                CALL_DEPTH.remove();
+                DISABLE_DEPTH.remove();
+            } else {
+                CALL_DEPTH.set(remainingCallDepth);
+                if (hasDisableAnnotation) {
+                    DISABLE_DEPTH.set(remainingDisableDepth);
+                }
+            }
+            // 중첩된 @DisableSoftDelete 문맥이 남아 있으면 비활성 상태를 유지하고, 최외곽 또는 일반 문맥으로 복귀하면 기본 필터를 복구한다.
             if (session != null && session.isOpen()) {
-                session.enableFilter(FILTER_NAME).setParameter("useYn", "Y");
+                if (remainingDisableDepth > 0) {
+                    session.disableFilter(FILTER_NAME);
+                } else {
+                    session.enableFilter(FILTER_NAME).setParameter("useYn", "Y");
+                }
             }
         }
     }

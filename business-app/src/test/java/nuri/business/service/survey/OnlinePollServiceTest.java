@@ -441,6 +441,58 @@ class OnlinePollServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("설문 수정 - 기존 항목은 PK(pollArtclSn)를 유지한 채 제자리 갱신하고, 투표 결과가 있는 항목 삭제는 409로 거부한다")
+    void updatePoll_UpdatesArticlesInPlaceAndRejectsDeletingVotedArticle() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
+            mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("admin"));
+
+            OnlinePollArticle first = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("기존 1").build();
+            OnlinePollArticle second = OnlinePollArticle.builder().pollArtclSn(12L).pollArtclNm("기존 2").build();
+            OnlinePollManage entity = OnlinePollManage.builder()
+                    .pollSn(1L)
+                    .pollNm("투표")
+                    .pollArticles(new ArrayList<>(List.of(first, second)))
+                    .build();
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+
+            // 1) 같은 개수로 수정 시 기존 엔티티(PK 11, 12)가 유지된 채 이름만 갱신된다
+            OnlinePollManageDto inPlaceDto = OnlinePollManageDto.builder()
+                    .pollSn(1L)
+                    .pollNm("투표 수정")
+                    .pollBgngYmd("20260101")
+                    .pollEndYmd("20261231")
+                    .pollArticles(List.of(
+                            OnlinePollArticleDto.builder().pollArtclNm("변경 1").build(),
+                            OnlinePollArticleDto.builder().pollArtclNm("변경 2").build()))
+                    .build();
+            onlinePollService.updatePoll(inPlaceDto);
+            assertThat(entity.getPollArticles()).hasSize(2);
+            assertThat(entity.getPollArticles().get(0).getPollArtclSn()).isEqualTo(11L);
+            assertThat(entity.getPollArticles().get(0).getPollArtclNm()).isEqualTo("변경 1");
+            assertThat(entity.getPollArticles().get(1).getPollArtclSn()).isEqualTo(12L);
+            assertThat(entity.getPollArticles().get(1).getPollArtclNm()).isEqualTo("변경 2");
+
+            // 2) 이미 득표가 있는 2번 항목(12L)을 줄이려 하면 RESOURCE_IN_USE 로 거부한다
+            given(pollResultRepository.countByPollArtclSnIn(List.of(12L)))
+                    .willReturn(List.<Object[]>of(new Object[]{12L, 3L}));
+            OnlinePollManageDto shrinkDto = OnlinePollManageDto.builder()
+                    .pollSn(1L)
+                    .pollNm("투표 수정")
+                    .pollBgngYmd("20260101")
+                    .pollEndYmd("20261231")
+                    .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclNm("변경 1").build()))
+                    .build();
+            assertThatThrownBy(() -> onlinePollService.updatePoll(shrinkDto))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+            assertThat(entity.getPollArticles()).hasSize(2);
+        }
+    }
+
     /*
      * GAP-POLL-001 — 자동폐기 여부는 이 필드를 묻는 화면이 하나도 없어 요청에 언제나 빠져 있다.
      * update 가 전체 치환이므로 그대로 넘기면 저장할 때마다 NULL 이 되는데, 컬럼이 NULL 을 받고

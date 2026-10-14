@@ -322,4 +322,21 @@ class AddressBookServiceTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getNm()).isEqualTo("Name");
     }
+
+    @Test
+    @DisplayName("🔒 논리 삭제된 주소록(useYn='N')은 상세 조회와 수정에서 404 로 차단된다")
+    void softDeletedAddressBookRejectedAsNotFound() {
+        AddressBook deleted = AddressBook.builder().adbkSn(99L).adbkNm("삭제됨").useYn("N").build();
+        given(addressBookRepository.findById(99L)).willReturn(Optional.of(deleted));
+        given(addressBookRepository.findByIdForUpdate(99L)).willReturn(Optional.of(deleted));
+
+        assertThatThrownBy(() -> addressBookService.getAddressBook(99L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        AddressBookDto updateDto = AddressBookDto.builder().adbkSn(99L).adbkNm("부활 시도").rlsScopeCd("PUB").build();
+        assertThatThrownBy(() -> addressBookService.updateAddressBook("user", updateDto))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
 }

@@ -104,6 +104,12 @@ public class Schedule extends BaseEntity implements Serializable {
 
     public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,
                        String schdlPlcNm, String schdlImprtCd, String schdlPicId, String reptSeCd) {
+        updateAll(schdlNm, schdlCn, schdlSeCd, schdlKndCd, schdlBgngYmd, schdlEndYmd,
+                schdlPlcNm, schdlImprtCd, schdlPicId, reptSeCd, this.atchFileSn);
+    }
+
+    public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,
+                       String schdlPlcNm, String schdlImprtCd, String schdlPicId, String reptSeCd, Long atchFileSn) {
         this.schdlNm = schdlNm;
         this.schdlCn = schdlCn;
         this.schdlSeCd = schdlSeCd;
@@ -114,5 +120,6 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlImprtCd = schdlImprtCd;
         this.schdlPicId = schdlPicId;
         this.reptSeCd = reptSeCd;
+        this.atchFileSn = atchFileSn;
     }
 }

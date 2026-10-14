@@ -142,27 +142,33 @@
       "supportingSources": [
         {
           "file": "build.gradle",
-          "sha256": "e7e3836b5070472303a7c5f1092e20d8d17b1392a1ae10968cc9f48b66eaf2f7"
+          "scope": "gradle-dependencies",
+          "sha256": "59e919c1156b32ae39caece6493215d6e02554f5778ee52b7c7ec19e0c05c64c"
         },
         {
           "file": "api-server/build.gradle",
-          "sha256": "6b3120d3d399b5ea43cd97987f3e9188141c6a0d8357e289ded229517f2d12c5"
+          "scope": "gradle-dependencies",
+          "sha256": "e97f7f2e331085b9ebbdff3f8983963f80d2c3035b12b2c758b1c7efd455daf0"
         },
         {
           "file": "foundation/build.gradle",
-          "sha256": "7daf1509aee186b52a3e08784ffbd0ee2ccdae4e160260bab06d42a418586dca"
+          "scope": "gradle-dependencies",
+          "sha256": "8dcbcd06fc46324f92b6c0e047a9e848a9d744b0be8a3d7df3797bcc4fbe343b"
         },
         {
           "file": "business-core/build.gradle",
-          "sha256": "90087f5296780aecd6ce692f2fe4f1accce58a742b0d9cd444efdc10648a430c"
+          "scope": "gradle-dependencies",
+          "sha256": "dcb97194a5e136604bcc529d1ec0dcb228c5b1c74f1c1c1a6e80ede5004ff6a9"
         },
         {
           "file": "business-app/build.gradle",
-          "sha256": "d297c2e626efe2d8e0e45e3811d82a8316bab9259a729a76c9130ca6564e2860"
+          "scope": "gradle-dependencies",
+          "sha256": "37901a8b19781b04de19b2b9284c7089448e0a498fe43b3416e343ecc212dc12"
         },
         {
           "file": "migration-tool/build.gradle",
-          "sha256": "df077f2b026c1fbe1ff86652615cd7b5b79bc224d763bd108596b3619a0188ae"
+          "scope": "gradle-dependencies",
+          "sha256": "c6ff232f34904d3aca0754bbf9bb6ad7570f0697f2c2a1532a75a13cadc0aa6f"
         }
       ]
     },
