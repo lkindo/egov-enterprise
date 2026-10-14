@@ -1,5 +1,6 @@
 package nuri.migration.etl;
 
+import nuri.migration.model.MappingSpec;
 import org.junit.jupiter.api.Test;
 
 import java.sql.PreparedStatement;
@@ -67,5 +68,22 @@ class EtlExecutorBatchCountTest {
         assertThat(result.read()).isEqualTo(Long.MAX_VALUE);
         assertThat(result.transformed()).isEqualTo(Long.MAX_VALUE);
         assertThat(result.written()).isEqualTo(Long.MAX_VALUE);
+    }
+
+    @Test
+    void writeFailureMessageCarriesOnlyTheRowPositionAndSqlState() {
+        MappingSpec.TableMapping table = new MappingSpec.TableMapping(
+                "LEGACY_ITEM", "tb_item", null, "ITEM_ID", null, List.of(), null);
+        SQLException withValue = new SQLException("Key (item_id)=(SECRET-VALUE) already exists", "23505");
+
+        assertThat(EtlExecutor.writeFailureMessage(table, 7L, "ATOMIC_WRITE_FAILED", withValue))
+                .isEqualTo("행 쓰기 실패(LEGACY_ITEM, target=tb_item, row=7): ATOMIC_WRITE_FAILED(SQLSTATE=23505)"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다")
+                .doesNotContain("SECRET-VALUE");
+        assertThat(EtlExecutor.writeFailureMessage(table, 0L, "ATOMIC_WRITE_FAILED:keymap/checkpoint",
+                new IllegalStateException("wrapped", new SQLException("x", "23503"))))
+                .contains("row=-)").contains("SQLSTATE=23503");
+        assertThat(EtlExecutor.sqlState(new SQLException("value 'abc'", "bad state"))).isEqualTo("-");
+        assertThat(EtlExecutor.sqlState(new RuntimeException("no sql state"))).isEqualTo("-");
     }
 }

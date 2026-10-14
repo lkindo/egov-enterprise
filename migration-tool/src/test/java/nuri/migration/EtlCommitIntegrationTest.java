@@ -138,7 +138,7 @@ class EtlCommitIntegrationTest {
                 .doesNotContain("LEGACY-ONLY-SENSITIVE");
         assertThat(results.get(1).read()).isZero();
         assertThat(results.get(1).errors()).containsExactly("적재 중단으로 처리하지 않음(LEGACY_NOTE): 앞 테이블 "
-                + "LEGACY_ORG 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE");
+                + "LEGACY_ORG 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE");
         assertThat(count(tgtJt, "tb_org")).isZero();
         assertThat(count(tgtJt, "tb_note")).isZero();
         assertThat(count(tgtJt, "migration_control.tb_migration_key_map")).isZero();
@@ -328,7 +328,7 @@ class EtlCommitIntegrationTest {
                 "LEGACY_GEN: TARGET_GENERATED dry-run은 DB 생성 identity를 materialize할 수 없습니다");
         assertThat(results.get(1).read()).isZero();
         assertThat(results.get(1).errors()).containsExactly("적재 중단으로 처리하지 않음(LEGACY_NEXT): 앞 테이블 "
-                + "LEGACY_GEN 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE");
+                + "LEGACY_GEN 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE");
     }
 
     // ── fixtures ──────────────────────────────────────────────────────────
