@@ -111,8 +111,51 @@ test('the retained approved findings match current source and defenses; retired 
   assert.equal(reviewedExceptions.findings.filter(e => e.language === 'java').length, 4);
   for (const entry of reviewedExceptions.findings) {
     assert.equal(sourceHash(repoRoot, entry.file), entry.sourceSha256, entry.id);
-    for (const source of entry.supportingSources) assert.equal(sourceHash(repoRoot, source.file), source.sha256, source.file);
+    for (const source of entry.supportingSources) assert.equal(sourceHash(repoRoot, source.file, source.scope), source.sha256, source.file);
   }
+});
+
+test('gradle-dependencies scope ignores non-dependency task edits while failing closed on dependency or unscoped H2 changes', () => {
+  const f = fixture();
+  fs.writeFileSync(path.join(f.root, 'build.gradle'), [
+    "plugins { id 'java' }",
+    "dependencies { testImplementation 'com.h2database:h2' }",
+    "pitest { targetClasses = ['nuri.example.*'] }",
+  ].join('\n'));
+  const initialHash = sourceHash(f.root, 'build.gradle', 'gradle-dependencies');
+  f.manifest.findings[0].supportingSources.push({
+    file: 'build.gradle',
+    scope: 'gradle-dependencies',
+    sha256: initialHash,
+  });
+  assert.equal(gateExitCode(f.apply()), 0);
+
+  // Editing non-dependency task blocks (pitest/jacoco/tasks) preserves the dependency surface hash.
+  fs.writeFileSync(path.join(f.root, 'build.gradle'), [
+    "plugins { id 'java' }",
+    "// task adjustment comment",
+    "dependencies { testImplementation 'com.h2database:h2' }",
+    "pitest { targetClasses = ['nuri.changed.*'] }",
+    "tasks.register('customCheck') { doLast { println 'ok' } }",
+  ].join('\n'));
+  assert.equal(sourceHash(f.root, 'build.gradle', 'gradle-dependencies'), initialHash);
+  assert.equal(gateExitCode(f.apply()), 0);
+
+  // Changing dependency scope or version invalidates the exception.
+  fs.writeFileSync(path.join(f.root, 'build.gradle'), [
+    "plugins { id 'java' }",
+    "dependencies { implementation 'com.h2database:h2' }",
+    "pitest { targetClasses = ['nuri.changed.*'] }",
+  ].join('\n'));
+  assert.throws(f.apply, /SAST exception source changed/);
+
+  // Smuggling H2 or dependency statements outside dependency blocks fails closed.
+  fs.writeFileSync(path.join(f.root, 'build.gradle'), [
+    "plugins { id 'java' }",
+    "dependencies { testImplementation 'org.junit.jupiter:junit-jupiter' }",
+    "tasks.register('sneaky') { implementation 'com.h2database:h2' }",
+  ].join('\n'));
+  assert.throws(f.apply, /Unscoped Gradle dependency statement/);
 });
 
 

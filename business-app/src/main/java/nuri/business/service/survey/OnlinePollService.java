@@ -222,14 +222,36 @@ public class OnlinePollService {
         entity.setLastMdfrId(currentUserId);
 
         if (dto.getPollArticles() != null) {
-            entity.getPollArticles().clear();
-            for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
-                OnlinePollArticle item = OnlinePollArticle.builder()
-                        .pollManage(entity)
-                        .pollArtclNm(itemDto.getPollArtclNm().length() > 100 ? itemDto.getPollArtclNm().substring(0, 100) : itemDto.getPollArtclNm())
-                        .build();
-                item.setFrstRgtrId(currentUserId);
-                entity.getPollArticles().add(item);
+            List<OnlinePollArticle> existing = entity.getPollArticles();
+            List<OnlinePollArticleDto> incoming = dto.getPollArticles();
+            if (existing.size() > incoming.size()) {
+                List<Long> removedIds = existing.subList(incoming.size(), existing.size()).stream()
+                        .map(OnlinePollArticle::getPollArtclSn)
+                        .filter(Objects::nonNull)
+                        .toList();
+                if (!removedIds.isEmpty() && !pollResultRepository.countByPollArtclSnIn(removedIds).isEmpty()) {
+                    throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
+                            "이미 투표 결과가 존재하는 항목은 삭제할 수 없습니다.");
+                }
+                existing.subList(incoming.size(), existing.size()).clear();
+            }
+            for (int i = 0; i < incoming.size(); i++) {
+                OnlinePollArticleDto itemDto = incoming.get(i);
+                String name = itemDto.getPollArtclNm().length() > 100
+                        ? itemDto.getPollArtclNm().substring(0, 100)
+                        : itemDto.getPollArtclNm();
+                if (i < existing.size()) {
+                    OnlinePollArticle item = existing.get(i);
+                    item.update(name);
+                    item.setLastMdfrId(currentUserId);
+                } else {
+                    OnlinePollArticle item = OnlinePollArticle.builder()
+                            .pollManage(entity)
+                            .pollArtclNm(name)
+                            .build();
+                    item.setFrstRgtrId(currentUserId);
+                    existing.add(item);
+                }
             }
         }
     }

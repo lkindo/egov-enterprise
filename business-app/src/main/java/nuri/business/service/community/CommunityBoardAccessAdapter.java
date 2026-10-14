@@ -29,6 +29,11 @@ public class CommunityBoardAccessAdapter implements CommunityBoardAccessPort {
         if (cmntySn == null || esntlId == null || esntlId.isBlank()) {
             return false;
         }
+        if (!communityRepository.findById(cmntySn)
+                .map(community -> "Y".equals(community.getUseYn()))
+                .orElse(false)) {
+            return false;
+        }
         return communityUserRepository.findById(new CommunityUserId(cmntySn, esntlId))
                 .map(member -> CommunityMemberStatus.APPROVED.matches(member.getMbrSttsCd()))
                 .orElse(false);

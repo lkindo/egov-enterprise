@@ -292,6 +292,7 @@ class FileServiceTest {
         FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
+                .orgnlFileNm("보고서_원본.jpg")
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
@@ -305,6 +306,7 @@ class FileServiceTest {
 
         // then
         assertThat(result).isNotNull();
+        assertThat(result.getFilename()).isEqualTo("보고서_원본.jpg");
         // [IDOR] 다운로드는 목록보다 노출이 크다 — 가드 호출을 여기서도 못박는다.
         verify(accessPolicy).assertReadable(master);
     }

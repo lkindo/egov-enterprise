@@ -47,6 +47,7 @@ public class NoteService {
      * 페이지 단위로 한 번에 조회해 행마다 조회하는 N+1 을 만들지 않는다. 이름만 싣고 연락처는 내보내지 않는다.
      */
     private final UserRepository userRepository;
+    private final nuri.business.service.file.AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     public Page<NoteDto> getReceivedNotes(String userId, String searchWrd, Pageable pageable) {
         Page<NoteRecptn> page = noteRecptnRepository
@@ -55,7 +56,7 @@ public class NoteService {
                 .map(r -> r.getNoteDsptch() != null ? r.getNoteDsptch().getSndrId() : null)
                 .toList());
         return page.map(recptn -> {
-            NoteDto dto = convertToDto(recptn);
+            NoteDto dto = convertRecptnToDto(recptn);
             dto.setTrnsmiterNm(names.get(dto.getDsptchUserId()));
             return dto;
         });
@@ -81,7 +82,7 @@ public class NoteService {
         Page<NoteTrnsmit> page = noteTrnsmitRepository
                 .searchNoteTrnsmits(searchWrd, userId, Objects.requireNonNull(pageable));
         if (page.isEmpty()) {
-            return page.map(this::convertToDto);
+            return page.map(this::convertTrnsmitToDto);
         }
 
         List<Long> sndngSns = page.getContent().stream()
@@ -97,7 +98,7 @@ public class NoteService {
                         Collectors.mapping(r -> toRecipient(r, names), Collectors.toList())));
 
         return page.map(entity -> {
-            NoteDto dto = convertToDto(entity);
+            NoteDto dto = convertTrnsmitToDto(entity);
             dto.setRecipients(bySndngSn.getOrDefault(entity.getNoteSndngSn(), List.of()));
             return dto;
         });
@@ -129,7 +130,7 @@ public class NoteService {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
             }
             // [2026-09-26 DIP V3] 보낸 쪽지 상세는 수신자와 수신자별 읽음을 싣는다 — 목록과 같은 기준(삭제하지 않은 사본).
-            NoteDto dto = convertToDto(trnsmit);
+            NoteDto dto = convertTrnsmitToDto(trnsmit);
             List<NoteRecptn> recptns = noteRecptnRepository
                     .findByNoteDsptchNoteSndngSnInAndDelYn(List.of(trnsmit.getNoteSndngSn()), "N");
             Map<String, String> names = userNames(recptns.stream().map(NoteRecptn::getRcvrId).toList());
@@ -149,7 +150,7 @@ public class NoteService {
             }
             // 소유자 검증을 통과한 뒤에만 읽음 처리한다 — 남의 쪽지를 '읽음' 으로 만들 수 없다.
             recptn.markOpened();
-            NoteDto dto = convertToDto(recptn);
+            NoteDto dto = convertRecptnToDto(recptn);
             dto.setTrnsmiterNm(userNames(java.util.Collections.singletonList(dto.getDsptchUserId()))
                     .get(dto.getDsptchUserId()));
             return dto;
@@ -195,9 +196,15 @@ public class NoteService {
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
             }
 
+            Long atchFileSn = dto.getAtchFileSn();
+            if (atchFileSn != null) {
+                attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+            }
+
             Note note = Note.builder()
                     .noteTtl(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
+                    .atchFileSn(atchFileSn)
                     .build();
             noteRepository.save(note);
 
@@ -308,24 +315,26 @@ public class NoteService {
         }
     }
 
-    private NoteDto convertToDto(NoteTrnsmit entity) {
+    private NoteDto convertTrnsmitToDto(NoteTrnsmit entity) {
         return NoteDto.builder()
                 .noteSndngSn(entity.getNoteSndngSn())
                 .noteSn(entity.getNote() != null ? entity.getNote().getNoteSn() : null)
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
+                .atchFileSn(entity.getNote() != null ? entity.getNote().getAtchFileSn() : null)
                 .dsptchUserId(entity.getSndrId())
                 .crtDt(entity.getCrtDt())
                 .build();
     }
 
-    private NoteDto convertToDto(NoteRecptn entity) {
+    private NoteDto convertRecptnToDto(NoteRecptn entity) {
         return NoteDto.builder()
                 .noteSndngSn(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteSndngSn() : null)
                 .noteRcptnSn(entity.getNoteRcptnSn())
                 .noteSn(entity.getNote() != null ? entity.getNote().getNoteSn() : null)
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
+                .atchFileSn(entity.getNote() != null ? entity.getNote().getAtchFileSn() : null)
                 .dsptchUserId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getSndrId() : null)
                 .rcverId(entity.getRcvrId())
                 .openYn(entity.getOpenYn())

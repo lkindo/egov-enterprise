@@ -48,6 +48,7 @@ public class OnlinePollManage extends BaseEntity {
     @Column(length = 1)
     private String pollAtmcDsuseYn = "N";
 
+    @org.hibernate.annotations.BatchSize(size = 100)
     @OneToMany(mappedBy = "pollManage", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OnlinePollArticle> pollArticles = new ArrayList<>();
 

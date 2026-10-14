@@ -242,7 +242,12 @@ public class SurveyService {
 
     // 설문 문항
     public List<SurveyQuestionDto> getQuestionList(Long srvySn) {
-        List<SurveyQuestion> questions = qesitmRepository.findBySrvySnOrderByQstnSnAsc(Objects.requireNonNull(srvySn));
+        SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(srvySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        if (!survey.isReleased() && !canEditSurveys()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        List<SurveyQuestion> questions = qesitmRepository.findBySrvySnOrderByQstnSnAsc(srvySn);
         List<Long> qstnSns = questions.stream().map(SurveyQuestion::getSrvyQstnSn).collect(Collectors.toList());
         // 문항마다 getItemList 하던 N+1 을, 전 문항 항목을 단일 IN 조회 후 문항ID 로 그룹핑하는 방식으로 제거.
         java.util.Map<Long, List<SurveyArticleDto>> itemsByQstn = qstnSns.isEmpty()

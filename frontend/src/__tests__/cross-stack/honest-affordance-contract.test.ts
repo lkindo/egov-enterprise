@@ -817,9 +817,9 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     const service = stripComments(
       readRepo('business-app/src/main/java/nuri/business/service/note/NoteService.java'),
     );
-    const start = service.indexOf('private NoteDto convertToDto(NoteTrnsmit');
+    const start = service.indexOf('private NoteDto convertTrnsmitToDto(NoteTrnsmit');
     expect(start, '발신 DTO 변환을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
-    const body = service.slice(start, service.indexOf('private NoteDto convertToDto(NoteRecptn'));
+    const body = service.slice(start, service.indexOf('private NoteDto convertRecptnToDto(NoteRecptn'));
     expect(
       body,
       '발신 DTO 가 읽음 상태를 담기 시작했다 — 상태 열을 되살리고 다건 수신자 집계 표현을 정하라.',

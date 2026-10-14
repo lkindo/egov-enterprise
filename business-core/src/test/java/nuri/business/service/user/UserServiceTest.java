@@ -300,6 +300,7 @@ class UserServiceTest {
             
             userService.updateUser("user1", UserDto.builder().build());
             verify(user).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+            verify(authorizationAdministration, never()).lockAdministration();
         }
     }
 
@@ -315,6 +316,7 @@ class UserServiceTest {
                     nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
             
             assertThrows(BusinessException.class, () -> userService.updateUser("user2", UserDto.builder().build()));
+            verify(authorizationAdministration, never()).lockAdministration();
         }
     }
 

@@ -50,9 +50,15 @@ public class FileApiController {
             @PathVariable Long atchFileSn,
             @PathVariable Integer fileSn) throws IOException {
         Resource resource = fileService.getFileResource(atchFileSn, fileSn);
+        String filename = resource.getFilename() != null ? resource.getFilename() : "download";
+        org.springframework.http.ContentDisposition.Builder dispositionBuilder =
+                org.springframework.http.ContentDisposition.attachment();
+        String contentDisposition = java.nio.charset.StandardCharsets.US_ASCII.newEncoder().canEncode(filename)
+                ? dispositionBuilder.filename(filename).build().toString()
+                : dispositionBuilder.filename(filename, java.nio.charset.StandardCharsets.UTF_8).build().toString();
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition)
                 .body(resource);
     }
 

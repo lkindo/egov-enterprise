@@ -193,7 +193,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("통계 - 비율은 설문 전체가 아니라 문항 단위 합계로 계산된다")
     void statsPercentageIsPerQuestion() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
                 .willReturn(List.of(question(301L, "만족하십니까", "1"), question(302L, "재이용 의향", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
@@ -220,7 +220,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("통계 - 응답 0건인 항목도 0% 행으로 포함된다")
     void statsIncludeZeroCountArticles() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예"), article(402L, 301L, "아니오")));
@@ -239,7 +239,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("통계 - 응답이 0건이어도 0 나눗셈 없이 0% 를 반환한다")
     void statsHandleZeroTotal() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "질문", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "예")));
@@ -258,7 +258,7 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("🚨 통계 - 복수선택 문항의 비율 분모는 응답자 수다 (DIP V8)")
     void statsMultiChoiceUsesRespondents() {
-        given(infoRepository.existsById(201L)).willReturn(true);
+        given(infoRepository.findById(201L)).willReturn(java.util.Optional.of(openSurvey()));
         given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question(301L, "관심 분야(복수)", "1")));
         given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
                 .willReturn(List.of(article(401L, 301L, "교육"), article(402L, 301L, "복지"), article(403L, 301L, "문화")));
@@ -275,8 +275,27 @@ class SurveyResultServiceTest {
     @Test
     @DisplayName("통계 - 존재하지 않는 설문이면 404")
     void statsRejectUnknownSurvey() {
-        given(infoRepository.existsById(999L)).willReturn(false);
+        given(infoRepository.findById(999L)).willReturn(java.util.Optional.empty());
         assertThatThrownBy(() -> service.getStats(999L)).isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("🔒 통계 - 작성 중인(비공개) 설문 통계는 관리자·편집 권한 없이는 404 로 차단한다")
+    void statsRejectDraftSurveyForGeneralRespondents() {
+        SurveyInfo draft = SurveyInfo.builder().srvySn(301L).srvyTtl("비공개 설문").srvyTmpltSn(101L).build();
+        given(infoRepository.findById(301L)).willReturn(java.util.Optional.of(draft));
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(301L)).willReturn(List.of());
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(false);
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_READ_ALL")).thenReturn(false);
+            assertThatThrownBy(() -> service.getStats(301L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(true);
+            assertThat(service.getStats(301L)).isEmpty();
+        }
     }
 
     // ---------- 제출 ----------

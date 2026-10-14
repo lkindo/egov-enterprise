@@ -65,12 +65,17 @@ public class RewardManageService {
     /** 새 포상의 승인 상태. 승인 절차가 생기기 전까지 모든 포상은 대기로 시작한다. */
     private static final String PENDING_APPROVAL = "N";
 
-    /** 포상 수정 — 화면이 편집하는 다섯 필드만 갱신한다(2026-09-05 DEC-OPS-036). 승인 필드는 승인 절차가 생길 때 다룬다. */
+    /** 포상 수정 — 화면이 편집하는 필드와 첨부파일을 갱신한다(2026-09-05 DEC-OPS-036). 승인 필드는 승인 절차가 생길 때 다룬다. */
     @Transactional
     public RewardManageDto updateReward(Long rwrdSn, RewardManageDto dto) {
         SecurityUtil.assertPermission("REWARD_UPDATE");
         RewardManage reward = findRequired(rwrdSn);
-        reward.update(dto.getRwardwnrId(), dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn());
+        Long atchFileSn = dto.getAtchFileSn();
+        if (atchFileSn != null && !Objects.equals(reward.getAtchFileSn(), atchFileSn)) {
+            attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+        }
+        reward.update(dto.getRwardwnrId(), dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn(),
+                atchFileSn != null ? atchFileSn : reward.getAtchFileSn());
         return convertToDto(reward);
     }
 

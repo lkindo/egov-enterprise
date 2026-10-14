@@ -439,6 +439,10 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 문항 목록 조회")
     void getQuestionList() {
+        SurveyInfo released = SurveyInfo.builder().srvySn(201L).srvyTtl("공개 설문").build();
+        released.changeRelease(true);
+        given(infoRepository.findById(201L)).willReturn(Optional.of(released));
+
         SurveyQuestion question = SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).qstnSn(1L).build();
         given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(201L)).willReturn(List.of(question));
 
@@ -450,6 +454,24 @@ class SurveyServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getSrvyQstnSn()).isEqualTo(301L);
         assertThat(result.get(0).getItems()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("🔒 작성 중인 설문의 문항 목록은 편집 권한 없는 사용자에게 404 로 숨긴다")
+    void getQuestionList_draftSurveyRejectedForNonEditors() {
+        SurveyInfo draft = SurveyInfo.builder().srvySn(301L).srvyTtl("작성 중").build();
+        given(infoRepository.findById(301L)).willReturn(Optional.of(draft));
+        given(qesitmRepository.findBySrvySnOrderByQstnSnAsc(301L)).willReturn(List.of());
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(false);
+            assertThatThrownBy(() -> surveyService.getQuestionList(301L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(true);
+            assertThat(surveyService.getQuestionList(301L)).isEmpty();
+        }
     }
 
     @Test

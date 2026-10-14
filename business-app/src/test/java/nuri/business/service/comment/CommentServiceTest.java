@@ -383,5 +383,15 @@ class CommentServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                         .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
+        Comment deleted = Comment.builder().ansSn(11L).bbsId("BBS_001").pstSn(7L).ansCn("deleted").useYn("N").build();
+        given(commentRepository.findById(11L)).willReturn(Optional.of(deleted));
+        assertThatThrownBy(() -> commentService.getCommentLocation(11L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
+        assertThatThrownBy(() -> commentService.updateComment(11L, "hack"))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
+                        .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
     }
 }

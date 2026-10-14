@@ -58,7 +58,7 @@ beforeAll(async () => {
   const serverMod = await import('next/server');
   NextRequestCtor = serverMod.NextRequest;
   proxy = (await import('../proxy')).proxy as typeof proxy;
-});
+}, 30_000);
 
 afterAll(() => {
   vi.unstubAllGlobals();

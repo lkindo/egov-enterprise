@@ -910,17 +910,19 @@ public class EtlExecutor {
                     if (durable != null) {
                         if (t.identity() != null
                                 && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
+                            reg.rollback(chunkCheckpoint);
                             errors.add("resume checkpoint/keymap missing for durable typed identity("
                                     + t.source() + ", sourceDigest="
                                     + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
-                            reg.rollback(rowCheckpoint);
-                            continue;
+                            return false;
                         }
                         if (!durable.rowChecksum().equals(checkpoint.rowChecksum())
                                 || !durable.targetKey().equals(checkpoint.targetKey())
                                 || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
+                            reg.rollback(chunkCheckpoint);
                             errors.add("resume checkpoint/source checksum 불일치(" + t.source()
                                     + ", sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
+                            return false;
                         }
                         reg.rollback(rowCheckpoint);
                         continue;
@@ -942,10 +944,12 @@ public class EtlExecutor {
             reg.accept(chunkCheckpoint);
             return true;
         }
+        int errorsBeforeWrite = errors.size();
         counts.written += writeChunkAtomically(
                 targetConn, writePlan.insertSql(), batch, spec, t, writePlan, reg, state,
                 chunkCheckpoint, errors);
-        return true;
+        return errors.subList(errorsBeforeWrite, errors.size()).stream()
+                .noneMatch(err -> err.contains("ROW_RETRY_TRANSFORM_FAILED"));
     }
 
     /**
@@ -1061,16 +1065,16 @@ public class EtlExecutor {
                     TypedKeyTuple durableTarget = TypedKeyEncoding.decode(durable.targetKey());
                     TypedKeyTuple mappedTarget = registry.translate(table.source(), sourceIdentity);
                     if (mappedTarget == null) {
+                        registry.rollback(chunkCheckpoint);
                         errors.add("resume checkpoint/keymap missing for durable generated identity("
                                 + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
-                        registry.rollback(rowCheckpoint);
-                        continue;
+                        return false;
                     }
                     if (!mappedTarget.equals(durableTarget)) {
+                        registry.rollback(chunkCheckpoint);
                         errors.add("resume checkpoint/keymap mismatch for durable generated identity("
                                 + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
-                        registry.rollback(rowCheckpoint);
-                        continue;
+                        return false;
                     }
                     applyTargetIdentity(transformed, table.identity().targetComponents(), durableTarget);
                     CheckpointEntry expected = checkpoint(
@@ -1078,8 +1082,10 @@ public class EtlExecutor {
                     if (!durable.rowChecksum().equals(expected.rowChecksum())
                             || !durable.targetKey().equals(expected.targetKey())
                             || !durable.targetTable().equalsIgnoreCase(expected.targetTable())) {
+                        registry.rollback(chunkCheckpoint);
                         errors.add("resume checkpoint/source checksum 불일치(" + table.source()
                                 + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
+                        return false;
                     }
                     registry.rollback(rowCheckpoint);
                     continue;
@@ -1504,7 +1510,7 @@ public class EtlExecutor {
             } catch (RuntimeException ignored) {
                 registry.rollback(rowCheckpoint);
                 errors.add("행 재변환 실패(" + table.source() + "): ROW_RETRY_TRANSFORM_FAILED");
-                continue;
+                break;
             }
 
             try {

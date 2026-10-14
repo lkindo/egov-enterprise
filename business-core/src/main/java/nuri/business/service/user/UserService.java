@@ -293,11 +293,18 @@ public class UserService extends BaseAbstractService {
          */
         @Transactional
         public void updateUser(@NonNull String userId, @NonNull UserDto userDto) {
-                authorizationAdministration.lockAdministration();
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
-                // [보안] 본인 또는 관리자만 수정 가능
+                // [보안] 본인 또는 관리자만 수정 가능 (인가 판정을 전역 잠금보다 먼저 수행)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(user.getEsntlId(), "USER_UPDATE");
+
+                boolean isSelf = Optional.ofNullable(user.getEsntlId())
+                        .equals(nuri.business.security.util.SecurityUtil.getCurrentEsntlId());
+                boolean departmentChanging = userDto.ognzId() != null
+                        && !java.util.Objects.equals(blankToNull(userDto.ognzId()), blankToNull(user.getOgnzId()));
+                if (!isSelf || departmentChanging) {
+                        authorizationAdministration.lockAdministration();
+                }
 
                 // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
                 //

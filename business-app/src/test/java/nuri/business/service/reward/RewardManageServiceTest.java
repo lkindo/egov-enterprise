@@ -213,15 +213,15 @@ class RewardManageServiceTest {
 
     // [2026-09-05 DEC-OPS-036] 수정·삭제 경로 — 종전에는 등록만 되고 고칠 수 없었다.
     @Test
-    @DisplayName("포상 수정 — 화면이 편집하는 다섯 필드를 갱신하고 식별자는 유지한다")
+    @DisplayName("포상 수정 — 화면이 편집하는 필드와 첨부파일을 갱신하고 식별자는 유지한다")
     void updateReward_Success() {
         authorize("REWARD_UPDATE");
         RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01")
-                .rwrdYmd("20260101").rwrdNm("Old").cntrbCn("old").build();
+                .rwrdYmd("20260101").rwrdNm("Old").cntrbCn("old").atchFileSn(100L).build();
         entity.setFrstRgtrId("foreign-writer");
         given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
         RewardManageDto dto = RewardManageDto.builder().rwrdSn(999L).rwardwnrId("U2").rwardCode("R02")
-                .rwardDe("20260202").rwardNm("New").pblenCn("new").build();
+                .rwardDe("20260202").rwardNm("New").pblenCn("new").atchFileSn(202L).build();
 
         RewardManageDto result = rewardManageService.updateReward(7L, dto);
 
@@ -231,7 +231,9 @@ class RewardManageServiceTest {
         assertThat(result.getRwardDe()).isEqualTo("20260202");
         assertThat(result.getRwardNm()).isEqualTo("New");
         assertThat(result.getPblenCn()).isEqualTo("new");
+        assertThat(result.getAtchFileSn()).isEqualTo(202L);
         assertThat(result.getFrstRgtrId()).isEqualTo("foreign-writer");
+        verify(attachmentAssignmentPolicy).assertAssignable(202L);
     }
 
     @Test

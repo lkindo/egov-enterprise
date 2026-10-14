@@ -176,10 +176,11 @@ class ScheduleServiceTest {
         // given
         Long schdlSn = 1L;
         String userId = "user1";
-        Schedule existingEntity = Schedule.builder().schdlSn(schdlSn).schdlNm("Old Title").build();
+        Schedule existingEntity = Schedule.builder().schdlSn(schdlSn).schdlNm("Old Title").atchFileSn(100L).build();
         ScheduleDto updateDto = ScheduleDto.builder()
                 .schdlSn(schdlSn)
                 .schdlNm("New Title")
+                .atchFileSn(202L)
                 .build();
 
         given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(existingEntity));
@@ -189,6 +190,8 @@ class ScheduleServiceTest {
 
         // then
         assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
+        assertThat(existingEntity.getAtchFileSn()).isEqualTo(202L);
+        verify(attachmentAssignmentPolicy).assertAssignable(202L);
     }
 
     @Test

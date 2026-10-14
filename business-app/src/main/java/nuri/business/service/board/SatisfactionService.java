@@ -111,6 +111,7 @@ public class SatisfactionService {
 
     private Satisfaction findOrThrow(Long satisfactionId) {
         return satisfactionRepository.findById(Objects.requireNonNull(satisfactionId))
+                .filter(entity -> "Y".equals(entity.getUseYn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 

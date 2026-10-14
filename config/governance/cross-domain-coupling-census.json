@@ -209,6 +209,15 @@
     {
       "file": "note/NoteService.java",
       "owner": "note",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ]
+    },
+    {
+      "file": "note/NoteService.java",
+      "owner": "note",
       "target": "user",
       "module": "business-core",
       "types": [

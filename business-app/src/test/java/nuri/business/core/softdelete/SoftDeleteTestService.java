@@ -23,4 +23,11 @@ public class SoftDeleteTestService {
     public List<Board> getAllBoardsWithDeleted() {
         return boardRepository.findAll();
     }
+
+    @DisableSoftDelete
+    public List<Board> getAllBoardsAfterNestedRegularCall(SoftDeleteTestService selfProxy) {
+        // 중첩된 일반 @Service 호출이 끝난 뒤에도 외곽 @DisableSoftDelete 문맥의 비활성 상태가 유지되어야 한다.
+        selfProxy.getAllBoards();
+        return boardRepository.findAll();
+    }
 }

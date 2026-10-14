@@ -331,4 +331,23 @@ class SatisfactionServiceTest {
         assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L))
                 .isInstanceOf(BusinessException.class);
     }
+
+    @Test
+    @DisplayName("🔒 이미 논리 삭제된 만족도(useYn='N')는 상세 조회·수정·삭제에서 404 로 거부된다")
+    void softDeletedSatisfactionRejectedAsNotFound() {
+        authenticateAs("owner", "USER");
+        Satisfaction deleted = satisfactionOwnedBy("owner");
+        deleted.delete();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(deleted));
+
+        assertThatThrownBy(() -> satisfactionService.getSatisfaction(10L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        assertThatThrownBy(() -> satisfactionService.updateSatisfaction(updateDto()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        assertThatThrownBy(() -> satisfactionService.deleteSatisfaction(10L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
 }

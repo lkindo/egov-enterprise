@@ -48,6 +48,22 @@ class SecurityUtilTest {
         var user = CustomUserDetails.builder().userId("loginA").esntlId("ESNTL_loginA").enabled(true).build();
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.unauthenticated(user, null));
         assertThat(SecurityUtil.getCurrentLoginId()).isEmpty();
+        assertThat(SecurityUtil.getCurrentEsntlId()).isEmpty();
+    }
+    @Test void anonymousPrincipalIsNeverTreatedAsEsntlId() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.AnonymousAuthenticationToken(
+                        "key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
+        assertThat(SecurityUtil.getCurrentEsntlId()).isEmpty();
+        assertThat(SecurityUtil.getCurrentUserId()).isEmpty();
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("anonymousUser", null, List.of()));
+        assertThat(SecurityUtil.getCurrentEsntlId()).isEmpty();
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("   ", null, List.of()));
+        assertThat(SecurityUtil.getCurrentEsntlId()).isEmpty();
     }
     @Test void currentUserNameComesFromPrincipalAndBlankIsEmpty() {
         // [DIP V8] 설문 응답자 이름의 출처. 이름이 비면 호출부가 로그인 ID 로 물러난다.
