@@ -194,6 +194,62 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
         assertTargetUntouched(fixture);
     }
 
+    @Test
+    void profileRereadsTheDiscoveredScopeAndWritesABoundArtifactWithoutTouchingTheSource() throws Exception {
+        Fixture fixture = fixture("profile", "varchar(100)", "varchar(100)", "text");
+        sourceJdbc().execute("ALTER TABLE " + fixture.sourceTable() + " COMMENT = '레거시 상태 표'");
+        sourceJdbc().execute("ALTER TABLE " + fixture.sourceTable()
+                + " MODIFY payload varchar(100) COMMENT '상태 코드'");
+        try (var connection = MYSQL.createConnection("");
+             var insert = connection.prepareStatement("INSERT INTO " + fixture.sourceTable() + " VALUES (?, ?)")) {
+            for (int id = 1; id <= 30; id++) {
+                insert.setLong(1, id);
+                insert.setString(2, id <= 20 ? "A" : "B");
+                insert.addBatch();
+            }
+            assertThat(insert.executeBatch()).hasSize(30);
+        }
+        command(fixture, "discover");
+        Path profile = fixture.mapping().resolveSibling("profile.json");
+
+        collect(fixture, "--command=profile", "--profile=" + profile);
+
+        var inventory = inventories.readEnvelope(Files.readString(fixture.inventory()));
+        var envelope = new nuri.migration.artifact.CollectionArtifactCodec().readProfile(Files.readString(profile));
+        assertThat(envelope.inventorySemanticDigest()).isEqualTo(inventory.semanticDigest());
+        assertThat(envelope.payload().complete()).isTrue();
+        var table = envelope.payload().tables().stream()
+                .filter(candidate -> candidate.name().equals(fixture.name())).findFirst().orElseThrow();
+        assertThat(table.status()).isEqualTo("PROFILED");
+        assertThat(table.rowsScanned()).isEqualTo(30);
+        assertThat(table.comment().text()).isEqualTo("레거시 상태 표");
+        var payload = table.columns().stream().filter(column -> column.name().equals("payload")).findFirst()
+                .orElseThrow();
+        assertThat(payload.comment().text()).isEqualTo("상태 코드");
+        assertThat(payload.valueFrequencies()).extracting(frequency -> frequency.value(), frequency -> frequency.rows())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("A", 20L),
+                        org.assertj.core.groups.Tuple.tuple("B", 10L));
+        assertThat(Files.readString(profile)).doesNotContain(MYSQL.getJdbcUrl(), MYSQL.getPassword());
+        assertThat(sourceJdbc().queryForObject("SELECT count(*) FROM " + fixture.sourceTable(), Long.class))
+                .isEqualTo(30);
+
+        sourceJdbc().execute("ALTER TABLE " + fixture.sourceTable() + " ADD COLUMN added_after varchar(10)");
+        String before = Files.readString(profile);
+        assertThatThrownBy(() -> collect(fixture, "--command=profile", "--profile=" + profile))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageContaining("source inventory digest");
+        assertThat(Files.readString(profile)).isEqualTo(before);
+        assertTargetUntouched(fixture);
+    }
+
+    private void collect(Fixture fixture, String... extra) {
+        List<String> arguments = new ArrayList<>(List.of("--mapping=" + fixture.mapping(),
+                "--inventory=" + fixture.inventory(), "--source-adapter=mysql-catalog",
+                "--schemas=" + MYSQL.getDatabaseName(), "--object-kinds=TABLE,COLUMN,PRIMARY_KEY"));
+        arguments.addAll(List.of(extra));
+        fixture.runner().run(new DefaultApplicationArguments(arguments.toArray(String[]::new)));
+    }
+
     private Fixture fixture(String scenario, String sourceType, String targetType, String mappingType) throws Exception {
         return fixture(scenario, sourceType, targetType, mappingType, null);
     }

@@ -58,13 +58,15 @@ import java.util.function.Function;
  * <p>재설계(2026-07-23): 기존 SKELETON(전량 메모리 로드 · 행단위 autocommit · 死 type/idStrategy · 무순서)을
  * 다음으로 대체했다 — (1) {@link TableOrderer} 위상정렬로 부모 먼저, (2) 복합키 keyset page로 메모리 상한,
  * (3) {@link TypeConverter}로 {@code type} 활성화, (4) {@link KeyMapRegistry}로 {@code idStrategy} 채번 +
- * {@code fkRef} FK 번역(참조 무결성), (5) JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위 폴백으로 오류 격리).
+ * {@code fkRef} FK 번역(참조 무결성), (5) JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위로 다시 써 실패 행을 찾는다).
  *
  * <p>[2026-10-13 DEC-OPS-309] 행 변환(transform·codemap·type·fkRef·identity·보호 컬럼) 실패는 격리하지 않는다 —
- * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 행단위 폴백은 쓰기 단계에 남는다 — batch 가 실패하면 행마다 다시
- * 쓰고, 그 행의 SQL 오류는 종류와 무관하게(길이·NOT NULL·CHECK·UNIQUE·대상 FK·일시 오류) {@code ATOMIC_WRITE_FAILED},
- * 다시 변환하다 실패하면 {@code ROW_RETRY_TRANSFORM_FAILED}, TARGET_GENERATED 행의 쓰기·keymap 실패는
- * {@code TARGET_GENERATED_WRITE_FAILED} 로 그 행만 빠지고 나머지는 커밋된다. 승인 없는 부분 커밋이며 GAP-ETL-001 이 추적한다.
+ * 그 chunk 를 쓰지 않고 테이블과 run 을 멈춘다.
+ *
+ * <p>[2026-10-14 DEC-OPS-310] 쓰기 단계 실패도 격리하지 않는다. batch 가 실패하면 같은 chunk 를 한 transaction 안에서
+ * 행마다 다시 쓴다 — 모두 성공하면 한 번에 커밋하고, 한 행이라도 SQL 오류({@code ATOMIC_WRITE_FAILED})나 재변환
+ * 실패({@code ROW_RETRY_TRANSFORM_FAILED})가 나면 chunk 전체를 롤백하고 테이블과 run 을 멈춘다. TARGET_GENERATED
+ * 행({@code TARGET_GENERATED_WRITE_FAILED})도 chunk 단위로 커밋한다. 오류는 행 순번과 SQLSTATE 만 밝힌다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
@@ -213,7 +215,7 @@ public class EtlExecutor {
                             TableMapping stoppedAt = null;
                             for (TableMapping table : orderedTables) {
                                 if (stoppedAt != null) {
-                                    // [2026-10-13 DEC-OPS-309] 앞 테이블의 행 변환 실패로 run 을 멈췄다.
+                                    // [2026-10-13 DEC-OPS-309·2026-10-14 DEC-OPS-310] 앞 테이블의 행 변환·쓰기 실패로 run 을 멈췄다.
                                     //   남은 테이블은 읽지도 쓰지도 않고, 처리하지 않았다는 사실을 결과에 남긴다.
                                     results.add(notProcessed(table, stoppedAt, state));
                                     continue;
@@ -581,13 +583,13 @@ public class EtlExecutor {
                 sourceSessionFailed, rowFailureStopped);
     }
 
-    /** 행 변환 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
+    /** 행 변환·쓰기 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
     private static TableResult notProcessed(TableMapping table, TableMapping stoppedAt,
                                             MigrationStateStore state) {
         long durableWritten = state == null ? 0L : state.count(table.source());
         return new TableResult(table.source(), table.target(), 0L, 0L, durableWritten,
                 List.of("적재 중단으로 처리하지 않음(" + table.source() + "): 앞 테이블 "
-                        + stoppedAt.source() + " 의 행 변환 실패 — RUN_STOPPED_BY_ROW_FAILURE"));
+                        + stoppedAt.source() + " 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE"));
     }
 
     private static TableResult preflightOrderTupleUniqueness(
@@ -883,8 +885,9 @@ public class EtlExecutor {
      * 그 chunk 는 한 행도 쓰지 않는다. 이 chunk 에서 새로 만든 keymap 도 버리고 테이블과 run 을 멈춘다.
      * 종전에는 실패 행만 건너뛰고 나머지를 커밋해, 승인 없는 누락이 적재된 채 run 만 FAIL 로 끝났다.
      * 재개는 마지막으로 커밋된 checkpoint 에서 시작한다. 승인된 예외 행의 격리(Q6 원장)는 아직 없다.
+     * [2026-10-14 DEC-OPS-310] 쓰기 단계 실패도 같다 — 이 chunk 는 한 행도 커밋하지 않고 멈춘다.
      *
-     * @return 계속 진행하면 true, 행 변환 실패로 멈추면 false
+     * @return 계속 진행하면 true, 행 변환·쓰기 실패로 멈추면 false
      */
     private boolean processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
                                  WritePlan writePlan, KeyMapRegistry reg,
@@ -928,7 +931,8 @@ public class EtlExecutor {
                         continue;
                     }
                 }
-                batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint));
+                batch.add(new PreparedRow(row, toArguments(out, writePlan.insertColumns()), checkpoint,
+                        firstOrdinal + index));
             } catch (RuntimeException failure) {
                 reg.rollback(chunkCheckpoint);
                 errors.add(rowFailureMessage(t, failure, firstOrdinal + index));
@@ -944,12 +948,11 @@ public class EtlExecutor {
             reg.accept(chunkCheckpoint);
             return true;
         }
-        int errorsBeforeWrite = errors.size();
-        counts.written += writeChunkAtomically(
+        WriteOutcome outcome = writeChunkAtomically(
                 targetConn, writePlan.insertSql(), batch, spec, t, writePlan, reg, state,
                 chunkCheckpoint, errors);
-        return errors.subList(errorsBeforeWrite, errors.size()).stream()
-                .noneMatch(err -> err.contains("ROW_RETRY_TRANSFORM_FAILED"));
+        counts.written += outcome.written();
+        return outcome.completed();
     }
 
     /**
@@ -1002,16 +1005,43 @@ public class EtlExecutor {
         }
     }
 
+    /**
+     * 쓰기 단계 실패를 대상 테이블과 행 위치, SQLSTATE 로만 밝힌다. 예외 원문에는 값이 들어갈 수 있어 싣지 않는다.
+     * {@code ordinal} 이 0 이하이면 특정 행이 아니라 chunk 의 keymap·checkpoint 기록 실패다.
+     */
+    static String writeFailureMessage(TableMapping table, long ordinal, String code, Throwable failure) {
+        String row = ordinal > 0 ? Long.toString(ordinal) : "-";
+        return "행 쓰기 실패(" + table.source() + ", target=" + table.target() + ", row=" + row + "): " + code
+                + "(SQLSTATE=" + sqlState(failure) + ") — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+    }
+
+    /** SQLSTATE 는 5자리 영숫자 코드만 싣는다. 값이 들어갈 수 있는 다른 문자열은 버린다. */
+    static String sqlState(Throwable failure) {
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            if (current instanceof SQLException sql && sql.getSQLState() != null
+                    && sql.getSQLState().matches("[0-9A-Z]{5}")) {
+                return sql.getSQLState();
+            }
+        }
+        return "-";
+    }
+
     private record PreparedRow(Map<String, Object> source, Object[] arguments,
-                               CheckpointEntry checkpoint) {}
+                               CheckpointEntry checkpoint, long ordinal) {}
+
+    /** chunk 쓰기 결과. {@code completed} 가 false 면 이 chunk 는 커밋하지 않았고 run 을 멈춘다. */
+    private record WriteOutcome(long written, boolean completed) {}
 
     /**
      * generated identity는 JDBC batch가 반환값을 증명하지 못하므로 행별 INSERT ... RETURNING 경로만 사용한다.
      *
-     * <p>[2026-10-13 DEC-OPS-309] 행별로 커밋하므로 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 한 행이라도
-     * 변환에 실패하면 이 chunk 의 어느 행도 쓰지 않고 멈춘다.
+     * <p>[2026-10-13 DEC-OPS-309] chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 한 행이라도 변환에 실패하면 이 chunk 의
+     * 어느 행도 쓰지 않고 멈춘다.
      *
-     * @return 계속 진행하면 true, 행 변환 실패로 멈추면 false
+     * <p>[2026-10-14 DEC-OPS-310] 쓰기도 chunk 를 한 transaction 으로 커밋한다. 한 행이라도 INSERT RETURNING·keymap·
+     * checkpoint 기록에 실패하면 chunk 전체를 롤백하고 멈춘다.
+     *
+     * @return 계속 진행하면 true, 행 변환·쓰기 실패로 멈추면 false
      */
     private boolean processGeneratedRows(
             List<Map<String, Object>> rows,
@@ -1090,7 +1120,7 @@ public class EtlExecutor {
                     registry.rollback(rowCheckpoint);
                     continue;
                 }
-                prepared.add(new GeneratedRow(row, transformed, sourceIdentity));
+                prepared.add(new GeneratedRow(row, transformed, sourceIdentity, firstOrdinal + index));
             } catch (RuntimeException failure) {
                 registry.rollback(chunkCheckpoint);
                 errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
@@ -1098,11 +1128,16 @@ public class EtlExecutor {
             }
         }
 
-        for (GeneratedRow candidate : prepared) {
-            Checkpoint rowCheckpoint = registry.checkpoint();
-            Map<String, Object> transformed = candidate.transformed();
-            CheckpointEntry durableCheckpoint;
-            try {
+        if (prepared.isEmpty()) {
+            registry.rollback(chunkCheckpoint);
+            return true;
+        }
+        List<CheckpointEntry> durableCheckpoints = new ArrayList<>(prepared.size());
+        long ordinal = 0L;
+        try {
+            for (GeneratedRow candidate : prepared) {
+                ordinal = candidate.ordinal();
+                Map<String, Object> transformed = candidate.transformed();
                 TypedKeyTuple generated = executeReturning(
                         connection,
                         writePlan.insertSql(),
@@ -1110,25 +1145,25 @@ public class EtlExecutor {
                         table.identity().targetComponents());
                 applyTargetIdentity(transformed, table.identity().targetComponents(), generated);
                 registry.register(table.source(), candidate.sourceIdentity(), generated);
-                durableCheckpoint = checkpoint(
-                        candidate.source(), transformed, table, writePlan.targetColumns());
-                registry.writePending(connection, rowCheckpoint);
-                state.write(connection, List.of(durableCheckpoint));
-            } catch (SQLException | RuntimeException ignored) {
-                rollbackAndDiscard(connection, registry, rowCheckpoint, table.target());
-                errors.add("원자 INSERT RETURNING/keymap/checkpoint 실패(" + table.target()
-                        + "): TARGET_GENERATED_WRITE_FAILED");
-                continue;
+                durableCheckpoints.add(checkpoint(
+                        candidate.source(), transformed, table, writePlan.targetColumns()));
             }
-            commitAndAccept(connection, registry, rowCheckpoint, state,
-                    List.of(durableCheckpoint), table.target());
-            counts.written++;
+            ordinal = 0L;
+            registry.writePending(connection, chunkCheckpoint);
+            state.write(connection, durableCheckpoints);
+        } catch (SQLException | RuntimeException failure) {
+            rollbackAndDiscard(connection, registry, chunkCheckpoint, table.target());
+            errors.add(writeFailureMessage(table, ordinal,
+                    "TARGET_GENERATED_WRITE_FAILED:INSERT_RETURNING/keymap/checkpoint", failure));
+            return false;
         }
+        commitAndAccept(connection, registry, chunkCheckpoint, state, durableCheckpoints, table.target());
+        counts.written += prepared.size();
         return true;
     }
 
     private record GeneratedRow(Map<String, Object> source, Map<String, Object> transformed,
-                                TypedKeyTuple sourceIdentity) {}
+                                TypedKeyTuple sourceIdentity, long ordinal) {}
 
     private TypedKeyTuple executeReturning(
             Connection connection,
@@ -1472,10 +1507,10 @@ public class EtlExecutor {
         return translated;
     }
 
-    private long writeChunkAtomically(Connection connection, String sql, List<PreparedRow> rows,
-                                      MappingSpec spec, TableMapping table, WritePlan writePlan,
-                                      KeyMapRegistry registry, MigrationStateStore state,
-                                      Checkpoint checkpoint, List<String> errors) {
+    private WriteOutcome writeChunkAtomically(Connection connection, String sql, List<PreparedRow> rows,
+                                              MappingSpec spec, TableMapping table, WritePlan writePlan,
+                                              KeyMapRegistry registry, MigrationStateStore state,
+                                              Checkpoint checkpoint, List<String> errors) {
         List<Object[]> batch = rows.stream().map(PreparedRow::arguments).toList();
         List<CheckpointEntry> checkpoints = rows.stream().map(PreparedRow::checkpoint).toList();
         long written;
@@ -1489,43 +1524,51 @@ public class EtlExecutor {
                     connection, sql, rows, spec, table, writePlan, registry, state, errors);
         }
         commitAndAccept(connection, registry, checkpoint, state, checkpoints, table.target());
-        return written;
+        return new WriteOutcome(written, true);
     }
 
-    private long writeRowsAtomically(Connection connection, String sql, List<PreparedRow> rows,
-                                     MappingSpec spec, TableMapping table, WritePlan writePlan,
-                                     KeyMapRegistry registry, MigrationStateStore state,
-                                     List<String> errors) {
+    /**
+     * batch 가 실패한 chunk 를 같은 transaction 안에서 행마다 다시 쓴다. 드라이버가 batch 결과를 증명하지 못한
+     * 경우처럼 행마다 쓰면 성공하는 chunk 는 그대로 한 번에 커밋한다. 한 행이라도 실패하면 chunk 전체를
+     * 롤백하고 처음 실패한 행만 밝힌 뒤 멈춘다 — 그 행을 빼고 나머지를 커밋하지 않는다(DEC-OPS-310).
+     */
+    private WriteOutcome writeRowsAtomically(Connection connection, String sql, List<PreparedRow> rows,
+                                             MappingSpec spec, TableMapping table, WritePlan writePlan,
+                                             KeyMapRegistry registry, MigrationStateStore state,
+                                             List<String> errors) {
+        Checkpoint chunkCheckpoint = registry.checkpoint();
+        List<CheckpointEntry> checkpoints = new ArrayList<>(rows.size());
         long written = 0L;
         for (PreparedRow row : rows) {
-            Checkpoint rowCheckpoint = registry.checkpoint();
             Object[] arguments;
-            CheckpointEntry durableCheckpoint;
             try {
                 Map<String, Object> transformed = transformRow(
                         row.source(), spec, table, registry, writePlan.protector());
                 arguments = toArguments(transformed, writePlan.insertColumns());
-                durableCheckpoint = checkpoint(
-                        row.source(), transformed, table, writePlan.targetColumns());
-            } catch (RuntimeException ignored) {
-                registry.rollback(rowCheckpoint);
-                errors.add("행 재변환 실패(" + table.source() + "): ROW_RETRY_TRANSFORM_FAILED");
-                break;
+                checkpoints.add(checkpoint(row.source(), transformed, table, writePlan.targetColumns()));
+            } catch (RuntimeException failure) {
+                rollbackAndDiscard(connection, registry, chunkCheckpoint, table.target());
+                errors.add(writeFailureMessage(table, row.ordinal(), "ROW_RETRY_TRANSFORM_FAILED", failure));
+                return new WriteOutcome(0L, false);
             }
-
             try {
-                int updateCount = executeSingle(connection, sql, arguments);
-                registry.writePending(connection, rowCheckpoint);
-                state.write(connection, List.of(durableCheckpoint));
-                commitAndAccept(connection, registry, rowCheckpoint, state,
-                        List.of(durableCheckpoint), table.target());
-                written += updateCount;
-            } catch (SQLException ignored) {
-                rollbackAndDiscard(connection, registry, rowCheckpoint, table.target());
-                errors.add("원자 INSERT/keymap 실패(" + table.target() + "): ATOMIC_WRITE_FAILED");
+                written += executeSingle(connection, sql, arguments);
+            } catch (SQLException failure) {
+                rollbackAndDiscard(connection, registry, chunkCheckpoint, table.target());
+                errors.add(writeFailureMessage(table, row.ordinal(), "ATOMIC_WRITE_FAILED", failure));
+                return new WriteOutcome(0L, false);
             }
         }
-        return written;
+        try {
+            registry.writePending(connection, chunkCheckpoint);
+            state.write(connection, checkpoints);
+        } catch (SQLException failure) {
+            rollbackAndDiscard(connection, registry, chunkCheckpoint, table.target());
+            errors.add(writeFailureMessage(table, 0L, "ATOMIC_WRITE_FAILED:keymap/checkpoint", failure));
+            return new WriteOutcome(0L, false);
+        }
+        commitAndAccept(connection, registry, chunkCheckpoint, state, checkpoints, table.target());
+        return new WriteOutcome(written, true);
     }
 
     private static long executeBatch(Connection connection, String sql, List<Object[]> batch) throws SQLException {

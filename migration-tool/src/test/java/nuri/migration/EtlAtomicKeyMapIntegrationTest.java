@@ -55,7 +55,7 @@ class EtlAtomicKeyMapIntegrationTest {
     }
 
     @Test
-    void failedDataRowKeepsNeitherDataNorKeyMapAndCannotFeedAChildFk() {
+    void failedDataRowRollsBackItsWholeChunkAndStopsTheRunBeforeTheChild() {
         DbPair databases = databases("row_fail");
         JdbcTemplate source = jdbc(databases.source());
         source.execute("CREATE TABLE LEGACY_ITEM (ITEM_ID varchar(20), ITEM_NM varchar(50))");
@@ -84,18 +84,21 @@ class EtlAtomicKeyMapIntegrationTest {
 
         EtlExecutor.TableResult parentResult = resultFor(results, "LEGACY_ITEM");
         EtlExecutor.TableResult childResult = resultFor(results, "LEGACY_CHILD");
-        assertThat(parentResult.written()).isEqualTo(1L);
-        assertThat(parentResult.errors()).isNotEmpty();
+        // [DEC-OPS-310] NOT NULL 위반 행('bad', ITEM_ID 정렬로 1번째)이 있는 chunk 는 정상 행('good')까지 커밋하지 않고 run 을 멈춘다.
+        assertThat(parentResult.written()).isZero();
+        assertThat(parentResult.errors()).containsExactly(
+                "행 쓰기 실패(LEGACY_ITEM, target=tb_item, row=1): ATOMIC_WRITE_FAILED(SQLSTATE=23502)"
+                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다");
+        assertThat(parentResult.errors().getFirst()).doesNotContain("bad", "good", "valid");
+        assertThat(childResult.read()).isZero();
         assertThat(childResult.written()).isZero();
         assertThat(childResult.errors()).containsExactly(
-                "행 변환 실패(LEGACY_CHILD, column=item_id, row=1): ROW_TRANSFORM_FAILED:FK_REF_ORPHAN"
-                        + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다");
-        assertThat(childResult.errors().getFirst()).doesNotContain("bad", "child-1");
-        assertThat(count(target, "tb_item")).isEqualTo(1L);
+                "적재 중단으로 처리하지 않음(LEGACY_CHILD): 앞 테이블 LEGACY_ITEM 의 행 실패"
+                        + " — RUN_STOPPED_BY_ROW_FAILURE");
+        assertThat(count(target, "tb_item")).isZero();
         assertThat(count(target, "tb_child")).isZero();
-        assertThat(target.queryForList(
-                "SELECT legacy_key FROM migration_control.tb_migration_key_map ORDER BY legacy_key", String.class))
-                .containsExactly("good");
+        assertThat(count(target, "migration_control.tb_migration_key_map")).isZero();
+        assertThat(count(target, "migration_control.tb_migration_checkpoint")).isZero();
     }
 
     @Test

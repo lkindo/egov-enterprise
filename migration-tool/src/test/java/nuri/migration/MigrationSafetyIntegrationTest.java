@@ -128,7 +128,7 @@ class MigrationSafetyIntegrationTest {
     }
 
     @Test
-    void failedRowCanBeFixedAndRetriedFromTheDurableCheckpoint() {
+    void failedRowLeavesItsChunkUnwrittenAndARetryAfterTheFixWritesTheWholeChunk() {
         DbPair db = databases("retry");
         JdbcTemplate source = jdbc(db.source());
         source.execute("CREATE TABLE LEGACY_NODE (NODE_ID varchar(20), PARENT_ID varchar(20), NODE_NM varchar(50))");
@@ -142,9 +142,10 @@ class MigrationSafetyIntegrationTest {
         source.update("UPDATE LEGACY_NODE SET NODE_NM='two' WHERE NODE_ID='02'");
         List<EtlExecutor.TableResult> retried = executor.execute(spec, MigrationMode.COMMIT);
 
+        // [DEC-OPS-310] NOT NULL 위반 행이 든 chunk 는 정상 행('01')까지 쓰지 않는다. 고친 뒤 다시 돌리면 chunk 전체를 쓴다.
         assertThat(failed).singleElement().satisfies(r -> {
-            assertThat(r.written()).isEqualTo(1);
-            assertThat(r.errors()).isNotEmpty();
+            assertThat(r.written()).isZero();
+            assertThat(r.errors()).singleElement().asString().contains("ATOMIC_WRITE_FAILED");
         });
         assertThat(retried).singleElement().satisfies(r -> {
             assertThat(r.written()).isEqualTo(2);

@@ -26,7 +26,7 @@ class EtlOraclePostgresIntegrationTest extends OraclePostgresTestSupport {
     private final MigrationVerifier verifier = new MigrationVerifier();
 
     @Test
-    void scalarLoadRollsBackFailedRowResumesAcrossPagesAndDetectsTargetTampering() {
+    void scalarLoadRollsBackTheFailedChunkResumesAcrossPagesAndDetectsTargetTampering() {
         var source = sourceJdbc();
         var target = targetJdbc();
         source.execute("CREATE TABLE LEGACY_RESUME (ID NUMBER(19) PRIMARY KEY, PAYLOAD VARCHAR2(200 CHAR))");
@@ -47,12 +47,13 @@ class EtlOraclePostgresIntegrationTest extends OraclePostgresTestSupport {
         var partial = execute(mapping, MigrationMode.COMMIT);
         assertThat(verifier.verify(mapping, partial, target).ok()).isFalse();
         assertThat(partial.getFirst().errors()).isNotEmpty();
-        // Per-row fallback rolls back ID 501 and commits all other rows, including the final page.
+        // [DEC-OPS-310] ID 501 이 든 두 번째 chunk(501~1000)는 통째로 롤백하고 run 을 멈춘다. 첫 chunk 만 남는다.
         long durable = target.queryForObject("SELECT count(*) FROM public.tb_oracle_resume", Long.class);
-        assertThat(durable).isEqualTo(1000);
-        assertThat(partial.getFirst().read()).isEqualTo(1001);
-        assertThat(partial.getFirst().written()).isEqualTo(1000);
-        assertThat(partial.getFirst().errors()).hasSize(1);
+        assertThat(durable).isEqualTo(500);
+        assertThat(partial.getFirst().read()).isEqualTo(1000);
+        assertThat(partial.getFirst().written()).isEqualTo(500);
+        assertThat(partial.getFirst().errors()).singleElement().asString()
+                .contains("row=501): ATOMIC_WRITE_FAILED(SQLSTATE=23514)");
         assertThat(checkpoints("scalar-recovery")).isEqualTo(durable);
         assertThat(target.queryForObject("SELECT count(*) FROM public.tb_oracle_resume WHERE id=501", Long.class)).isZero();
 
@@ -225,7 +226,7 @@ class EtlOraclePostgresIntegrationTest extends OraclePostgresTestSupport {
     }
 
     @Test
-    void lobBatchFailureRetriesDetachedContentsAndResumesOnlyTheRejectedRow() {
+    void lobBatchFailureRollsBackTheChunkAndLoadsDetachedContentsAfterTheFix() {
         sourceJdbc().execute("CREATE TABLE LEGACY_LOB_RETRY (ID NUMBER(19) PRIMARY KEY, BODY BLOB, PAYLOAD CLOB)");
         targetJdbc().execute("CREATE TABLE public.tb_oracle_lob_retry (id bigint PRIMARY KEY, body bytea, payload text, "
                 + "CHECK (id <> 2 OR left(payload, 5) = 'fixed'))");
@@ -245,12 +246,14 @@ class EtlOraclePostgresIntegrationTest extends OraclePostgresTestSupport {
         long largeObjectsBefore = largeObjects();
 
         var failed = execute(mapping, MigrationMode.COMMIT);
-        assertThat(failed.getFirst().written()).isEqualTo(2);
-        assertThat(failed.getFirst().errors()).isNotEmpty();
-        assertThat(checkpoints("lob-retry")).isEqualTo(2);
+        // [DEC-OPS-310] 거부된 행(id=2)이 든 chunk 는 정상 행까지 롤백하고 run 을 멈춘다.
+        assertThat(failed.getFirst().written()).isZero();
+        assertThat(failed.getFirst().errors()).singleElement().asString()
+                .contains("row=2): ATOMIC_WRITE_FAILED(SQLSTATE=23514)", "이 chunk 는 기록하지 않고 적재를 멈췄습니다");
+        assertThat(checkpoints("lob-retry")).isZero();
         assertThat(verifier.verify(mapping, failed, targetJdbc()).ok()).isFalse();
         assertThat(targetJdbc().queryForList("SELECT id FROM public.tb_oracle_lob_retry ORDER BY id", Long.class))
-                .containsExactly(1L, 3L);
+                .isEmpty();
         sourceJdbc().update("UPDATE LEGACY_LOB_RETRY SET PAYLOAD=TO_CLOB('fixed') || PAYLOAD WHERE ID=2");
 
         assertSuccessfulLoad(mapping, execute(mapping, MigrationMode.COMMIT), 3);

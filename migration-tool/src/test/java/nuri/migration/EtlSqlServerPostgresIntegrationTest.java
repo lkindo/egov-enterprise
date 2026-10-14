@@ -84,7 +84,7 @@ class EtlSqlServerPostgresIntegrationTest extends SqlServerPostgresTestSupport {
     }
 
     @Test
-    void scalarLoadResumesTheRejectedFiveHundredFirstRowAndDetectsTargetTampering() throws Exception {
+    void scalarLoadRollsBackTheChunkOfTheRejectedFiveHundredFirstRowAndDetectsTargetTampering() throws Exception {
         String source = sourceTable("resume");
         String target = targetTable("resume");
         sourceJdbc().execute("CREATE TABLE " + source + " (id bigint PRIMARY KEY, payload varchar(200))");
@@ -101,12 +101,14 @@ class EtlSqlServerPostgresIntegrationTest extends SqlServerPostgresTestSupport {
         assertDryRun(spec, 1001);
         var failed = execute(spec, MigrationMode.COMMIT);
         assertThat(failed).singleElement().satisfies(result -> {
-            assertThat(result.read()).isEqualTo(1001);
-            assertThat(result.written()).isEqualTo(1000);
-            assertThat(result.errors()).hasSize(1);
+            // [DEC-OPS-310] id=501 이 든 두 번째 chunk(501~1000)는 통째로 롤백하고 run 을 멈춘다.
+            assertThat(result.read()).isEqualTo(1000);
+            assertThat(result.written()).isEqualTo(500);
+            assertThat(result.errors()).singleElement().asString()
+                    .contains("row=501): ATOMIC_WRITE_FAILED(SQLSTATE=23514)");
         });
-        assertThat(rowCount(target)).isEqualTo(1000);
-        assertThat(checkpoints(spec.run().runId())).isEqualTo(1000);
+        assertThat(rowCount(target)).isEqualTo(500);
+        assertThat(checkpoints(spec.run().runId())).isEqualTo(500);
         assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + target + " WHERE id=501", Long.class)).isZero();
         assertThat(verifier.verify(spec, failed, targetJdbc()).ok()).isFalse();
         sourceJdbc().update("UPDATE " + source + " SET payload='fixed' WHERE id=501");
@@ -198,7 +200,7 @@ class EtlSqlServerPostgresIntegrationTest extends SqlServerPostgresTestSupport {
     }
 
     @Test
-    void mixedMaxFieldBatchFailureKeepsDetachedValuesAndResumesOnlyRejectedRow() throws Exception {
+    void mixedMaxFieldBatchFailureRollsBackTheChunkAndLoadsDetachedValuesAfterTheFix() throws Exception {
         String source = sourceTable("retry");
         String target = targetTable("retry");
         sourceJdbc().execute("CREATE TABLE " + source + " (id bigint PRIMARY KEY, body varbinary(max), payload nvarchar(max))");
@@ -218,11 +220,13 @@ class EtlSqlServerPostgresIntegrationTest extends SqlServerPostgresTestSupport {
                 column("id", "long", null), column("body", null, null), column("payload", null, null)), null);
         var spec = spec(table, "sqlserver-max-retry");
         var failed = execute(spec, MigrationMode.COMMIT);
-        assertThat(failed.getFirst().written()).isEqualTo(2);
-        assertThat(failed.getFirst().errors()).hasSize(1);
-        assertThat(checkpoints(spec.run().runId())).isEqualTo(2);
+        // [DEC-OPS-310] 거부된 행(id=2)이 든 chunk 는 정상 행까지 롤백하고 run 을 멈춘다.
+        assertThat(failed.getFirst().written()).isZero();
+        assertThat(failed.getFirst().errors()).singleElement().asString()
+                .contains("row=2): ATOMIC_WRITE_FAILED(SQLSTATE=23514)", "이 chunk 는 기록하지 않고 적재를 멈췄습니다");
+        assertThat(checkpoints(spec.run().runId())).isZero();
         assertThat(verifier.verify(spec, failed, targetJdbc()).ok()).isFalse();
-        assertThat(targetJdbc().queryForList("SELECT id FROM " + target + " ORDER BY id", Long.class)).containsExactly(1L, 3L);
+        assertThat(targetJdbc().queryForList("SELECT id FROM " + target + " ORDER BY id", Long.class)).isEmpty();
         sourceJdbc().update("UPDATE " + source + " SET payload=CONCAT(N'fixed',payload) WHERE id=2");
         assertSuccessfulLoad(spec, execute(spec, MigrationMode.COMMIT), 3);
         for (int id = 1; id <= 3; id++) {

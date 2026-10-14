@@ -33,12 +33,15 @@
     "nuri.migration.adapter.VendorCatalogQueryContractTest": 9,
     "nuri.migration.adapter.VendorCatalogQueryProjectionTest": 8,
     "nuri.migration.adapter.VendorSourceAdapterRegistryTest": 13,
+    "nuri.migration.appscan.AppSourceScannerTest": 1986,
+    "nuri.migration.appscan.SqlUsageExtractorTest": 45,
     "nuri.migration.artifact.ArtifactFileStoreTest": 47,
     "nuri.migration.artifact.ArtifactRecordValidationTest": 9,
     "nuri.migration.artifact.ArtifactRedactionGuardEdgeTest": 9,
     "nuri.migration.artifact.CatalogInventoryEndpointBindingTest": 33,
     "nuri.migration.artifact.CatalogInventoryScopeBindingTest": 11,
     "nuri.migration.artifact.CatalogSnapshotArtifactCodecTest": 63,
+    "nuri.migration.artifact.CollectionArtifactCodecTest": 176,
     "nuri.migration.artifact.MappingSpecDigesterTest": 7,
     "nuri.migration.artifact.MigrationExecutionArtifactSequenceResetTest": 10,
     "nuri.migration.artifact.MigrationExecutionContractTest": 94,
@@ -116,6 +119,8 @@
     "nuri.migration.plan.NotApplicableVisibilityPlanningTest": 1,    "nuri.migration.postgres.PostgresTargetSchemaFingerprinterTest": 34,
     "nuri.migration.postgres.TargetEnvironmentBindingPostgresIntegrationTest": 3203,
     "nuri.migration.postgres.TargetStandardPostgresIntegrationTest": 4627,
+    "nuri.migration.profile.ColumnProfilerTest": 90,
+    "nuri.migration.profile.SourceProfilerTest": 2369,
     "nuri.migration.protect.AriaEngineTest": 10,
     "nuri.migration.protect.ColumnProtectionPlanTest": 29,
     "nuri.migration.protect.ColumnProtectorTest": 18,
@@ -141,6 +146,7 @@
     "nuri.migration.verify.MigrationVerifierTypedIdentityTest": 514,
     "nuri.migration.workflow.SourceLoadSurfaceGateTest": 6,
     "nuri.migration.workflow.WorkflowReviewLoaderTest": 16,
-    "nuri.migration.WorkflowCliOptionsTest": 7
+    "nuri.migration.WorkflowCliOptionsTest": 7,
+    "nuri.migration.WorkflowCollectionCommandTest": 4933
   }
 }
