@@ -41,7 +41,9 @@ public record WorkflowCliOptions(
         Path appUsage,
         Path suggestions,
         Path ledgerDraft,
-        String metaSchema
+        String metaSchema,
+        Path skeleton,
+        Path ledger
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -57,6 +59,8 @@ public record WorkflowCliOptions(
             Set.of("command", "app-source", "app-usage"),
             WorkflowCommand.TERM_SUGGEST,
             Set.of("command", "mapping", "profile", "app-usage", "suggestions", "ledger-draft", "meta-schema"),
+            WorkflowCommand.MAPPING_GENERATE,
+            Set.of("command", "skeleton", "ledger", "inventory", "mapping"),
             WorkflowCommand.PLAN,
             Set.of("command", "mapping", "inventory", "plan", "review", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects", "target-schemas"),
@@ -97,8 +101,12 @@ public record WorkflowCliOptions(
         boolean sourceCommand = command == WorkflowCommand.DISCOVER || command == WorkflowCommand.PROFILE
                 || command == WorkflowCommand.PLAN || command == WorkflowCommand.LOAD;
         boolean suggestCommand = command == WorkflowCommand.TERM_SUGGEST;
-        Path mapping = requiredPath(arguments, command, "mapping", sourceCommand || suggestCommand);
-        Path inventory = requiredPath(arguments, command, "inventory", sourceCommand);
+        boolean generateCommand = command == WorkflowCommand.MAPPING_GENERATE;
+        // mapping-generate 의 --mapping 은 만들 mapping(출력)이다.
+        Path mapping = requiredPath(arguments, command, "mapping", sourceCommand || suggestCommand || generateCommand);
+        Path inventory = requiredPath(arguments, command, "inventory", sourceCommand || generateCommand);
+        Path skeleton = requiredPath(arguments, command, "skeleton", generateCommand);
+        Path ledger = requiredPath(arguments, command, "ledger", generateCommand);
         Path plan = requiredPath(arguments, command, "plan", command == WorkflowCommand.PLAN
                 || command == WorkflowCommand.VALIDATE || command == WorkflowCommand.LOAD);
         Path profile = requiredPath(arguments, command, "profile",
@@ -110,7 +118,12 @@ public record WorkflowCliOptions(
         Path ledgerDraft = optionalPath(arguments, "ledger-draft");
         String metaSchema = Objects.requireNonNullElse(optional(arguments, "meta-schema"), "public");
         if (suggestCommand) {
-            requireDistinct(suggestions, ledgerDraft, mapping, profile, appUsage);
+            requireDistinct("--suggestions 와 --ledger-draft 는 서로 다르고 입력 파일과도 다른 경로여야 합니다",
+                    suggestions, ledgerDraft, mapping, profile, appUsage);
+        }
+        if (generateCommand) {
+            requireDistinct("--mapping(만들 mapping)은 --skeleton·--ledger·--inventory 와 다른 경로여야 합니다",
+                    mapping, null, skeleton, ledger, inventory);
         }
         Path review = optionalPath(arguments, "review");
         String sourceAdapter = optional(arguments, "source-adapter");
@@ -137,11 +150,12 @@ public record WorkflowCliOptions(
                 catalogs, schemas, objectKinds, includeSystemObjects,
                 sourceDriverJars, sourceDriverClass, mode,
                 acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
-                profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema);
+                profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema,
+                skeleton, ledger);
     }
 
     /** 출력 파일(앞의 두 경로)이 서로 같거나 입력 파일과 같으면 한쪽이 조용히 덮이므로 거부한다. */
-    private static void requireDistinct(Path firstOutput, Path secondOutput, Path... inputs) {
+    private static void requireDistinct(String message, Path firstOutput, Path secondOutput, Path... inputs) {
         Set<Path> seen = new LinkedHashSet<>();
         for (Path input : inputs) {
             if (input != null) {
@@ -150,8 +164,7 @@ public record WorkflowCliOptions(
         }
         for (Path output : new Path[] {firstOutput, secondOutput}) {
             if (output != null && !seen.add(output.toAbsolutePath().normalize())) {
-                throw new IllegalArgumentException(
-                        "--suggestions 와 --ledger-draft 는 서로 다르고 입력 파일과도 다른 경로여야 합니다");
+                throw new IllegalArgumentException(message);
             }
         }
     }
@@ -162,11 +175,12 @@ public record WorkflowCliOptions(
             case "profile" -> WorkflowCommand.PROFILE;
             case "app-scan" -> WorkflowCommand.APP_SCAN;
             case "term-suggest" -> WorkflowCommand.TERM_SUGGEST;
+            case "mapping-generate" -> WorkflowCommand.MAPPING_GENERATE;
             case "plan" -> WorkflowCommand.PLAN;
             case "validate" -> WorkflowCommand.VALIDATE;
             case "load" -> WorkflowCommand.LOAD;
-            default -> throw new IllegalArgumentException(
-                    "unsupported --command; discover|profile|app-scan|term-suggest|plan|validate|load required");
+            default -> throw new IllegalArgumentException("unsupported --command;"
+                    + " discover|profile|app-scan|term-suggest|mapping-generate|plan|validate|load required");
         };
     }
 

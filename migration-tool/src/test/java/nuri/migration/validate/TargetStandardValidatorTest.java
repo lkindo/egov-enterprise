@@ -340,15 +340,18 @@ class TargetStandardValidatorTest {
                     .singleElement().asString().contains("값 UUID");
         }
 
+        // 날짜·시각 힌트는 날짜·시각 소스(REG_DT)로 본다 — 문자 소스는 구조 규칙이 따로 막는다(ADR-0029 L3a-2).
         @ParameterizedTest(name = "{0} 힌트 → {1}")
         @CsvSource({
-                "boolean, boolean, 0", "bool, character varying, 1",
-                "date, date, 0", "datetime, timestamp without time zone, 0", "timestamp, date, 1",
-                "double, double precision, 0", "string, text, 0", "varchar, text, 0", "char, text, 0",
-                "integer, integer, 0", "bigint, bigint, 0", "numeric, numeric, 0", "unknown-hint, jsonb, 0"
+                "boolean, boolean, 0, ITEM_ID", "bool, character varying, 1, ITEM_ID",
+                "date, date, 0, REG_DT", "datetime, timestamp without time zone, 0, REG_DT",
+                "timestamp, date, 1, REG_DT",
+                "double, double precision, 0, ITEM_ID", "string, text, 0, ITEM_ID", "varchar, text, 0, ITEM_ID",
+                "char, text, 0, ITEM_ID", "integer, integer, 0, ITEM_ID", "bigint, bigint, 0, ITEM_ID",
+                "numeric, numeric, 0, ITEM_ID", "unknown-hint, jsonb, 0, ITEM_ID"
         })
-        void typeHintDecidesValueFamily(String hint, String targetType, int expectedErrors) {
-            assertThat(errors(spec(hinted("ITEM_ID", "target_col", hint)),
+        void typeHintDecidesValueFamily(String hint, String targetType, int expectedErrors, String source) {
+            assertThat(errors(spec(hinted(source, "target_col", hint)),
                     target(table(StandardStatus.ABSENT, column(1, "target_col", targetType, null, null, null)))))
                     .hasSize(expectedErrors);
         }
@@ -783,8 +786,8 @@ class TargetStandardValidatorTest {
         private static final String DATE_INTO_TIMESTAMP = "값 타입이 타깃과 맞지 않습니다: public.tb_item.reg_dt — 값 DATE,"
                 + " 물리 컬럼 timestamp without time zone — 날짜를 그날 00:00 일시로 쓰려면 transform:"
                 + " timestamp-from-date 를 선언하세요";
-        private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기거나 시간대를 정하는"
-                + " 프로젝트 변환기(계약 버전·구현 digest 를 밝혀 등록)를 선언하세요";
+        private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기세요(시간대를 정하는"
+                + " 내장 변환기는 아직 없습니다)";
         private static final String ZONED_CONVERTED = "시간대가 있는 소스 값은 변환하면 실행 환경의 시간대에 따라 다른"
                 + " 날짜·시각이 됩니다 — " + ZONED_ESCAPE + ": public.tb_item.target_col ← legacy.legacy_item.";
         private static final String ZONED_KEPT = " — 시간대가 있는 값은 시간대 없는 컬럼에 쓰면 실행 환경의 시간대에 따라"
@@ -834,6 +837,34 @@ class TargetStandardValidatorTest {
                     .as("그날 00:00 일시로 밝히면 쓸 수 있다").isEmpty();
             assertThat(errors(spec(map("REG_DE", "reg_de")), target(table(StandardStatus.ABSENT,
                     column(1, "reg_de", "date", null, null, null))))).isEmpty();
+        }
+
+        @Test
+        void nonTemporalSourcesReachTimeColumnsOnlyThroughTransformersThatJudgeEachValue() {
+            TargetSchemaFingerprint dateColumn = target(table(StandardStatus.ABSENT,
+                    column(1, "reg_de", "date", null, null, null)));
+            TargetSchemaFingerprint timestampColumn = target(table(StandardStatus.ABSENT, timestamp(1, "reg_dt")));
+            String loose = "날짜·시각이 아닌 소스 값은 type(date·timestamp·datetime)이나 내장 date·timestamp 로 날짜·시각"
+                    + " 컬럼에 옮기지 않습니다 — 값마다 판정하는 date-text·timestamp-text·timestamp-from-date·"
+                    + "date-truncate 를 쓰세요: ";
+
+            for (ColumnMapping mapping : List.of(hinted("ITEM_NM", "reg_de", "date"),
+                    hinted("ITEM_NM", "reg_de", "DATE"), transformed("ITEM_NM", "reg_de", "date"),
+                    hinted("YMD_NUM", "reg_de", "date"))) {
+                assertThat(errors(spec(mapping), dateColumn)).as(mapping.toString())
+                        .containsExactly(loose + "public.tb_item.reg_de ← legacy.legacy_item." + mapping.source());
+            }
+            for (ColumnMapping mapping : List.of(hinted("ITEM_NM", "reg_dt", "timestamp"),
+                    hinted("ITEM_NM", "reg_dt", "datetime"), transformed("ITEM_NM", "reg_dt", "timestamp"))) {
+                assertThat(errors(spec(mapping), timestampColumn)).as(mapping.toString())
+                        .containsExactly(loose + "public.tb_item.reg_dt ← legacy.legacy_item.ITEM_NM");
+            }
+            assertThat(errors(spec(transformed("ITEM_NM", "reg_de", "date-text")), dateColumn)).isEmpty();
+            assertThat(errors(spec(transformed("YMD_NUM", "reg_de", "date-truncate")), dateColumn)).isEmpty();
+            assertThat(errors(spec(transformed("ITEM_NM", "reg_dt", "timestamp-text")), timestampColumn)).isEmpty();
+            assertThat(errors(spec(hinted("REG_DE", "reg_de", "date")), dateColumn))
+                    .as("날짜 소스를 그대로 옮기는 type 은 받는다").isEmpty();
+            assertThat(errors(spec(hinted("REG_DT", "reg_dt", "timestamp")), timestampColumn)).isEmpty();
         }
 
         @ParameterizedTest(name = "{0}")

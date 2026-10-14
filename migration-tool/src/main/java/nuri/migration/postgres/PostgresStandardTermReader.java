@@ -13,15 +13,17 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * 용어 매핑 원장의 확정 행을 대조할 표준 용어를 live 메타에서 읽는다(ADR-0029 결정 3). 폐기 여부는 V2_128 이 더한
- * {@code deprecated_yn} 이다. 그 컬럼이 없으면(표준 메타 확장 전 DB) 폐기 용어를 걸러낼 수 없으므로 읽지 않고 멈춘다.
+ * 용어 매핑 원장의 확정 행을 대조할 표준 용어를 live 메타에서 읽는다(ADR-0029 결정 3). 폐기 여부·허용값은 V2_128 이
+ * 더한 {@code deprecated_yn}·{@code allowed_values} 다. 그 컬럼이 없으면(표준 메타 확장 전 DB) 폐기 용어를 걸러낼 수 없으므로
+ * 읽지 않고 멈춘다. 허용값은 원장의 codemap 이 내는 표준 코드를 대조할 때 쓴다(ADR-0029 L3a-2).
  */
 public final class PostgresStandardTermReader {
 
-    private static final String DEPRECATED_COLUMN = """
-            SELECT 1
+    private static final String EXTENSION_COLUMNS = """
+            SELECT count(*)
               FROM information_schema.columns
-             WHERE table_schema = ? AND table_name = 'meta_standard_terms' AND column_name = 'deprecated_yn'
+             WHERE table_schema = ? AND table_name = 'meta_standard_terms'
+               AND column_name IN ('deprecated_yn', 'allowed_values')
             """;
 
     /** {@code engAbbrs} 는 대문자 영문약어다. 결과의 키도 대문자다. */
@@ -34,15 +36,15 @@ public final class PostgresStandardTermReader {
         if (engAbbrs.isEmpty()) {
             return Map.of();
         }
-        try (PreparedStatement check = connection.prepareStatement(DEPRECATED_COLUMN)) {
+        try (PreparedStatement check = connection.prepareStatement(EXTENSION_COLUMNS)) {
             check.setString(1, schema);
             try (ResultSet rows = check.executeQuery()) {
-                if (!rows.next()) {
+                if (!rows.next() || rows.getInt(1) != 2) {
                     throw new IllegalStateException("표준 메타가 확장(V2_128) 전이라 폐기 여부를 확인할 수 없습니다");
                 }
             }
         }
-        String sql = "SELECT upper(eng_abbr), term_name, domain_name, deprecated_yn FROM \"" + schema
+        String sql = "SELECT upper(eng_abbr), term_name, domain_name, deprecated_yn, allowed_values FROM \"" + schema
                 + "\".meta_standard_terms WHERE upper(eng_abbr) = ANY (?)";
         Map<String, StandardTermRecord> terms = new HashMap<>();
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -51,7 +53,7 @@ public final class PostgresStandardTermReader {
             try (ResultSet rows = statement.executeQuery()) {
                 while (rows.next()) {
                     terms.put(rows.getString(1), new StandardTermRecord(rows.getString(2), rows.getString(3),
-                            "Y".equals(rows.getString(4))));
+                            "Y".equals(rows.getString(4)), rows.getString(5)));
                 }
             }
         }

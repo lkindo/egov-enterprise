@@ -10,7 +10,7 @@
 |---|---|
 | 엔진·플러그인 | PIT 엔진 `1.25.9` 명시 고정, 루트 Gradle 플러그인 `1.19.0`, JUnit 5 플러그인 `1.2.1`; 하위 Java 모듈에 공통 적용 |
 | 대상 | `PIT_TARGET_CLASSES`·`PIT_TARGET_TESTS`의 쉼표 구분 클래스명 glob. 미설정 시 각각 `nuri.*` |
-| CI | 제품 10개 스코프(`mutation-scope`)와 이관 도구 7개 스코프(`mutation-scope-migration`, DEC-OPS-104·180·308·311, ADR-0029 L3a-1)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
+| CI | 제품 10개 스코프(`mutation-scope`)와 이관 도구 7개 스코프(`mutation-scope-migration`, DEC-OPS-104·180·308·311, ADR-0029 L3a-1·L3a-2)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
 | 하한 | `STRICT_MUTATION=true`일 때 75%, 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음 |
 | 빈 모집단 | `failWhenNoMutations = true`이므로 대상 오타·과도한 제외로 mutation이 0건이면 로컬도 실패 |
 | 결과 | 모듈별 `build/reports/pitest`의 HTML/XML; 정확한 하위 경로는 해당 실행 출력 확인 |

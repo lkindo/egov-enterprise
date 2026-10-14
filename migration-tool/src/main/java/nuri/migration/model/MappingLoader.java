@@ -56,6 +56,29 @@ public class MappingLoader {
         }
     }
 
+    /**
+     * [ADR-0029 L3a-2] 환경 변수를 치환하지 않고 구조만 확인한다 — skeleton 처럼 접속정보 자리표시를 글자 그대로 다시
+     * 써야 하는 입력에 쓴다. 자리표시 형식은 {@link #loadContent} 와 같은 판정으로 검사한다: password 는 비었거나
+     * {@code ${NAME}} 전체 값이어야 하고, 나머지 접속 값에 자리표시를 쓰면 전체 값 형식이어야 한다. 돌려준 MappingSpec 의
+     * 접속 값은 자리표시 그대로라 접속에 쓸 수 없다.
+     */
+    public MappingSpec parseUnresolved(String content) {
+        Objects.requireNonNull(content, "content");
+        MappingSpec raw;
+        try {
+            raw = yaml.readValue(content, MappingSpec.class);
+        } catch (IOException failure) {
+            rethrowCodemapFormat(failure);
+            throw new IllegalArgumentException("mapping YAML parsing failed");
+        }
+        if (raw == null) {
+            throw new IllegalArgumentException("mapping YAML 이 비어 있습니다");
+        }
+        checkPlaceholders(raw.source());
+        checkPlaceholders(raw.target());
+        return raw;
+    }
+
     private MappingSpec parse(byte[] content) throws IOException {
         try {
             return resolve(yaml.readValue(content, MappingSpec.class));
@@ -113,29 +136,53 @@ public class MappingLoader {
     }
 
     private String resolvePassword(String value) {
+        String name = passwordPlaceholder(value);
+        return name == null ? value : resolveEnvironment(name);
+    }
+
+    private String resolveValue(String value) {
+        String name = valuePlaceholder(value);
+        return name == null ? value : resolveEnvironment(name);
+    }
+
+    /** 치환하지 않고 {@link #resolveDbConfig} 와 같은 형식 검사만 한다. */
+    private static void checkPlaceholders(MappingSpec.DbConfig config) {
+        if (config == null) {
+            return;
+        }
+        valuePlaceholder(config.url());
+        valuePlaceholder(config.username());
+        passwordPlaceholder(config.password());
+        valuePlaceholder(config.driver());
+        valuePlaceholder(config.endpointId());
+    }
+
+    /** password 의 환경 변수 이름. 비었으면 null 이고, 그 밖에는 {@code ${NAME}} 전체 값만 받는다 — 평문은 거부한다. */
+    private static String passwordPlaceholder(String value) {
         if (value == null || value.isBlank()) {
-            return value;
+            return null;
         }
         Matcher matcher = ENV_PLACEHOLDER.matcher(value);
         if (!matcher.matches()) {
             throw new IllegalArgumentException(
                     "mapping DB password는 평문을 허용하지 않습니다. ${NAME} 전체 값 형식으로 주입하세요");
         }
-        return resolveEnvironment(matcher.group(1));
+        return matcher.group(1);
     }
 
-    private String resolveValue(String value) {
+    /** 접속 값의 환경 변수 이름. 글자 그대로의 값이면 null 이고, 자리표시를 쓰면 {@code ${NAME}} 전체 값 형식이어야 한다. */
+    private static String valuePlaceholder(String value) {
         if (value == null) {
             return null;
         }
         Matcher matcher = ENV_PLACEHOLDER.matcher(value);
         if (matcher.matches()) {
-            return resolveEnvironment(matcher.group(1));
+            return matcher.group(1);
         }
         if (value.contains("${")) {
             throw new IllegalArgumentException("mapping 환경 변수는 ${NAME} 전체 값 형식만 허용합니다");
         }
-        return value;
+        return null;
     }
 
     private String resolveEnvironment(String name) {

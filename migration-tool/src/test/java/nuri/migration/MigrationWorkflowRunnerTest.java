@@ -112,7 +112,10 @@ class MigrationWorkflowRunnerTest {
     private final TransformerRegistry transformers = new TransformerRegistry();
 
     private MigrationWorkflowRunner runner;
+    /** 원장을 선언하지 않은 mapping — plan·load 가 게이트로 멈춰야 한다. */
+    private MappingSpec unbound;
     private MappingSpec mapping;
+    private List<String> liveTermRow = List.of();
     private CatalogSnapshot snapshot;
     private TargetSchemaFingerprint targetFingerprint;
     private AdapterIdentity experimentalIdentity;
@@ -133,8 +136,11 @@ class MigrationWorkflowRunnerTest {
         TableMapping table = new TableMapping(
                 "legacy.legacy_user", "public.tb_user_info", null, "USER_ID", "user_id",
                 List.of(new ColumnMapping("USER_ID", "user_id", null, null, null, null, null)), null);
-        mapping = new MappingSpec(
+        unbound = new MappingSpec(
                 source, target, List.of(table), Map.of(), new RunContext("workflow-run", "legacy-source"));
+        // [ADR-0029 L3a-2, DEC-OPS-317] plan·load 는 원장을 선언한 mapping 만 받는다 — 기본 mapping 은 원장을 선언한다.
+        mapping = bind(unbound, ledgerText("CONFIRMED", CONFIRMED_HISTORY));
+        liveTerm("N");
         snapshot = snapshot(List.of(
                 object(ObjectKind.TABLE, "legacy_user"),
                 columnObject("legacy_user", "USER_ID", Types.VARCHAR)));
@@ -333,7 +339,7 @@ class MigrationWorkflowRunnerTest {
     @Test
     void planConnectsStableIdReviewDecisionsAndWritesBlockedDraftWithoutReview() throws Exception {
         CatalogObject view = object(ObjectKind.VIEW, "legacy_view");
-        CatalogSnapshot withView = snapshot(List.of(snapshot.objects().getFirst(), view));
+        CatalogSnapshot withView = snapshot(List.of(snapshot.objects().get(0), snapshot.objects().get(1), view));
         Path inventory = temp.resolve("inventory.json");
         Path blockedPlan = temp.resolve("blocked-plan.json");
         Path approvedPlan = temp.resolve("approved-plan.json");
@@ -347,10 +353,17 @@ class MigrationWorkflowRunnerTest {
 
         String mappingDigest = MappingSpecDigester.sha256(mapping);
         String executionContractDigest = executionContractDigest(mapping);
+        // [ADR-0029 L3a-2] 원장 coverage 는 inventory 컬럼으로 판정하므로 컬럼 객체도 inventory 에 두고 검토한다.
         Files.writeString(review, reviewYaml(
                 inventoryDigest(withView),
                 targetFingerprint.digest(), mappingDigest, executionContractDigest,
-                view.stableId()));
+                view.stableId()) + """
+                  "%s":
+                    disposition: TARGET_OWNED
+                    targetObject: public.tb_user_info.user_id
+                    reviewed: true
+                    rationale: approved mapped column target ownership
+                """.formatted(snapshot.objects().get(1).stableId()));
         runner.run(args(
                 "--command=plan", "--mapping=" + mappingPath,
                 "--inventory=" + inventory, "--plan=" + approvedPlan, "--review=" + review));
@@ -484,7 +497,7 @@ class MigrationWorkflowRunnerTest {
     @Test
     void reviewFreeTextCannotPersistBoundDatabaseCredentials() throws Exception {
         CatalogObject view = object(ObjectKind.VIEW, "legacy_view");
-        CatalogSnapshot withView = snapshot(List.of(snapshot.objects().getFirst(), view));
+        CatalogSnapshot withView = snapshot(List.of(snapshot.objects().get(0), snapshot.objects().get(1), view));
         Path inventory = temp.resolve("inventory.json");
         Path plan = temp.resolve("credential-plan.json");
         Path review = temp.resolve("review.yml");
@@ -501,7 +514,8 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> runner.run(args(
                 "--command=plan", "--mapping=" + mappingPath,
                 "--inventory=" + inventory, "--plan=" + plan, "--review=" + review)))
-                .isInstanceOf(MigrationExecutionException.class);
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("database credential이 artifact에 포함될 수 없습니다.");
 
         assertThat(plan).doesNotExist();
     }
@@ -948,22 +962,85 @@ class MigrationWorkflowRunnerTest {
         Path plan = temp.resolve("ledger-plan.json");
         files.writeAtomic(inventory, inventoryArtifact(snapshot));
         MappingSpec bound = ledgerMapping(ledgerText("CONFIRMED", CONFIRMED_HISTORY));
-        liveTerm("N");
 
         runner.run(args(
                 "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan));
 
         MigrationPlan written = planCodec.read(files.readUtf8(plan));
         assertThat(written.mappingDigest()).isEqualTo(MappingSpecDigester.sha256(bound))
-                .isNotEqualTo(MappingSpecDigester.sha256(mapping));
+                .isNotEqualTo(MappingSpecDigester.sha256(unbound));
         verify(targetConnection, org.mockito.Mockito.atLeastOnce()).setReadOnly(true);
+    }
+
+    @Test
+    void aMappingWithoutALedgerStopsThePlanAndTheLoadAtTheGate() throws Exception {
+        Path inventory = temp.resolve("unbound-inventory.json");
+        Path plan = temp.resolve("unbound-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        stub(unbound);
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
+        assertThat(plan).doesNotExist();
+
+        // 원장 없이 승인된 plan 이 있어도 load 는 쓰기 전에 멈춘다.
+        writeApprovedArtifacts(inventory, plan, snapshot, unbound);
+        assertThatThrownBy(() -> load(inventory, plan))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+    }
+
+    @Test
+    void aLedgerPathThatLeavesTheMappingDirectoryStopsThePlan() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("escape-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        Path nested = Files.createDirectory(temp.resolve("nested"));
+        Path nestedMapping = nested.resolve("mapping.yml");
+        Files.writeString(nestedMapping, "tables: []");
+        // 같은 바이트의 원장이 mapping 디렉터리 위에 있다 — 경로 검사가 없으면 plan 이 그대로 지나간다.
+        String text = ledgerText("CONFIRMED", CONFIRMED_HISTORY);
+        MappingSpec escaping = new MappingSpec(unbound.source(), unbound.target(), unbound.tables(),
+                unbound.codemaps(), unbound.run(), new MappingSpec.LedgerBinding("../term-ledger.yml",
+                LedgerFixtures.sha256(text)));
+        stub(escaping);
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + nestedMapping, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("용어 매핑 원장은 mapping 과 같은 디렉터리나 그 아래에 있어야 합니다.");
+        assertThat(plan).doesNotExist();
+    }
+
+    @Test
+    void aCodemapTheLedgerNamesMustBeDefinedInTheMapping() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("codemap-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        TableMapping coded = new TableMapping(
+                "legacy.legacy_user", "public.tb_user_info", null, "USER_ID", "user_id",
+                List.of(new ColumnMapping("USER_ID", "user_id", null, null, "user_code", null, null)), null);
+        String text = ledgerText("CONFIRMED", CONFIRMED_HISTORY).replace("    load: {}\n",
+                "    load: {codemap: user_code}\n");
+        MappingSpec bound = bind(new MappingSpec(unbound.source(), unbound.target(), List.of(coded), Map.of(),
+                unbound.run()), text);
+        stub(bound);
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("용어 매핑 원장 검증 실패로 중단했습니다: L1: load.codemap 이 mapping 의 codemaps 에 없습니다");
+        assertThat(plan).doesNotExist();
     }
 
     private static final String CONFIRMED_HISTORY = "[{to: REVIEWED, by: 검토자, at: \"2026-10-01\"},"
             + " {to: CONFIRMED, by: 업무담당, at: \"2026-10-02\"}]";
 
     private static String ledgerText(String status, String history) {
-        return "schemaVersion: 1\n"
+        return "schemaVersion: 2\n"
                 + "entries:\n"
                 + "  - id: L1\n"
                 + "    source: {table: legacy.legacy_user, column: USER_ID}\n"
@@ -971,38 +1048,62 @@ class MigrationWorkflowRunnerTest {
                 + "    term: {name: 사용자ID, engAbbr: USER_ID, domain: ID V20}\n"
                 + "    grade: EXACT\n"
                 + "    status: " + status + "\n"
+                + "    load: {}\n"
                 + "    conformance: {rate: 100}\n"
                 + "    history: " + history + "\n";
     }
 
+    /** 원장을 mapping 디렉터리에 쓰고 그 원장을 선언한 mapping 을 돌려준다. */
+    private MappingSpec bind(MappingSpec base, String ledgerText) throws Exception {
+        Files.writeString(temp.resolve(LedgerFixtures.FILE), ledgerText, java.nio.charset.StandardCharsets.UTF_8);
+        return new MappingSpec(base.source(), base.target(), base.tables(), base.codemaps(), base.run(),
+                new MappingSpec.LedgerBinding(LedgerFixtures.FILE, LedgerFixtures.sha256(ledgerText)));
+    }
+
     /** 원장을 선언한 mapping 을 로더가 돌려주게 하고, 그 mapping 에 대한 검증 대역을 맞춘다. */
     private MappingSpec ledgerMapping(String ledgerText) throws Exception {
-        Files.writeString(temp.resolve("term-ledger.yml"), ledgerText, java.nio.charset.StandardCharsets.UTF_8);
-        String sha = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
-                .digest(ledgerText.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-        MappingSpec bound = new MappingSpec(mapping.source(), mapping.target(), mapping.tables(), mapping.codemaps(),
-                mapping.run(), new MappingSpec.LedgerBinding("term-ledger.yml", sha));
-        given(loader.loadContent(any(String.class))).willReturn(bound);
-        given(validator.validate(bound)).willReturn(pass());
-        given(validator.validateTargetStandard(eq(bound), any(), any())).willReturn(pass());
-        given(fingerprinter.fingerprintBound(targetConnection, bound, Set.of("public"))).willReturn(targetFingerprint);
+        MappingSpec bound = bind(unbound, ledgerText);
+        stub(bound);
         return bound;
     }
 
-    /** live 메타 대조 질의(폐기 컬럼 확인 → 용어 조회)에 한 행을 돌려준다. */
+    /** 로더가 이 mapping 을 돌려주게 하고 정적·표준 검증과 대상 fingerprint 대역을 맞춘다. */
+    private void stub(MappingSpec spec) throws SQLException {
+        given(loader.loadContent(any(String.class))).willReturn(spec);
+        given(validator.validate(spec)).willReturn(pass());
+        given(validator.validateLiveSource(spec, sourceJdbc)).willReturn(pass());
+        given(validator.validateLiveTarget(spec, targetJdbc)).willReturn(pass());
+        given(validator.validateTargetStandard(eq(spec), any(), any())).willReturn(pass());
+        given(fingerprinter.fingerprintBound(targetConnection, spec, Set.of("public"))).willReturn(targetFingerprint);
+        given(executor.execute(eq(spec), any(MigrationMode.class), eq(sourceJdbc),
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean())).willReturn(List.of(
+                new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of())));
+    }
+
+    /**
+     * live 메타 대조 질의(확장 컬럼 확인 → 용어 조회)의 대역. 질의마다 새 결과를 돌려주므로 plan·load 를 이어 돌려도
+     * 같다. 용어 조회는 USER_ID 한 행(폐기 여부 {@code deprecated})이다.
+     */
     private void liveTerm(String deprecated) throws Exception {
-        java.sql.PreparedStatement statement = mock(java.sql.PreparedStatement.class);
-        java.sql.ResultSet check = mock(java.sql.ResultSet.class);
-        java.sql.ResultSet rows = mock(java.sql.ResultSet.class);
-        given(targetConnection.prepareStatement(org.mockito.ArgumentMatchers.anyString())).willReturn(statement);
+        liveTermRow = List.of("USER_ID", "사용자ID", "ID V20", deprecated);
         given(targetConnection.createArrayOf(eq("text"), any())).willReturn(mock(java.sql.Array.class));
-        given(statement.executeQuery()).willReturn(check, rows);
-        given(check.next()).willReturn(true);
-        given(rows.next()).willReturn(true, false);
-        given(rows.getString(1)).willReturn("USER_ID");
-        given(rows.getString(2)).willReturn("사용자ID");
-        given(rows.getString(3)).willReturn("ID V20");
-        given(rows.getString(4)).willReturn(deprecated);
+        given(targetConnection.prepareStatement(org.mockito.ArgumentMatchers.anyString())).willAnswer(invocation -> {
+            String sql = invocation.getArgument(0);
+            java.sql.PreparedStatement statement = mock(java.sql.PreparedStatement.class);
+            java.sql.ResultSet rows = mock(java.sql.ResultSet.class);
+            given(statement.executeQuery()).willReturn(rows);
+            if (sql.contains("information_schema.columns")) {
+                given(rows.next()).willReturn(true);
+                given(rows.getInt(1)).willReturn(2);
+            } else {
+                List<String> row = liveTermRow;
+                given(rows.next()).willReturn(true, false);
+                for (int index = 0; index < row.size(); index++) {
+                    given(rows.getString(index + 1)).willReturn(row.get(index));
+                }
+            }
+            return statement;
+        });
     }
 
     private void load(Path inventory, Path plan) {

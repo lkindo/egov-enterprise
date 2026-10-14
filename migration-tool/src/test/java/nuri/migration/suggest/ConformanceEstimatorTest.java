@@ -2,6 +2,7 @@ package nuri.migration.suggest;
 
 import nuri.migration.suggest.SuggestionReport.ConformanceEstimate;
 import nuri.migration.suggest.SuggestionReport.Violation;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -101,7 +102,7 @@ class ConformanceEstimatorTest {
         assertThat(estimate.rate()).isEqualByComparingTo("93.0");
         assertThat(estimate.violations()).containsExactly(new Violation("INVALID_DATE", 3L),
                 new Violation("PLACEHOLDER_DATE", 2L), new Violation("FORMAT", 2L));
-        assertThat(estimate.transform()).isNull();
+        assertThat(estimate.transform()).isEqualTo("transform:ymd8");
     }
 
     @Test
@@ -115,82 +116,130 @@ class ConformanceEstimatorTest {
     }
 
     @Test
-    void textDatesAndDateValuesNeedAProjectTransformerForTheEightDigitDomain() {
+    void fixedFormatDomainsAlwaysNameTheirStandardTransformer() {
         ConformanceEstimate dashed = ConformanceEstimator.estimate(column("REG_DT").text(40)
                 .pattern("YMD_DASHED", 20).pattern("YMD_SLASHED", 10).pattern("YMD_DOTTED", 10).build(), YMD8, null);
         assertThat(dashed.rate()).isEqualByComparingTo("100.0");
-        assertThat(dashed.transform()).isEqualTo("custom:ymd8");
+        assertThat(dashed.transform()).isEqualTo("transform:ymd8");
 
         ConformanceEstimate typed = ConformanceEstimator.estimate(column("REG_DT").temporal(5).build(), YMD8, null);
-        assertThat(typed.transform()).isEqualTo("custom:ymd8");
+        assertThat(typed.transform()).isEqualTo("transform:ymd8");
         assertThat(typed.rate()).isEqualByComparingTo("100.0");
+
+        ConformanceEstimate eight = ConformanceEstimator.estimate(column("REG_YMD").text(5).pattern("YMD8", 5)
+                .build(), YMD8, null);
+        assertThat(eight.transform()).as("이미 8자리여도 도메인 가드가 요구하는 변환기다").isEqualTo("transform:ymd8");
+        ConformanceEstimate nothingFits = ConformanceEstimator.estimate(column("REG_YMD").text(5).build(), YMD8,
+                null);
+        assertThat(nothingFits.violations()).containsExactly(new Violation("FORMAT", 5L));
+        assertThat(nothingFits.transform()).as("모양과 상관없이").isEqualTo("transform:ymd8");
 
         ConformanceEstimate toFourteen = ConformanceEstimator.estimate(column("REG_DT").temporal(4).build(),
                 domain("날짜/시간", "연월일시분초C14", "CHAR", 14), null);
-        assertThat(toFourteen.transform()).isEqualTo("custom:ymdhms14");
+        assertThat(toFourteen.transform()).isEqualTo("transform:ymdhms14");
+        assertThat(ConformanceEstimator.estimate(column("REG_DT").text(4).pattern("YMDHMS14", 4).build(),
+                domain("날짜/시간", "연월일시분초C14", "CHAR", 14), null).transform()).isEqualTo("transform:ymdhms14");
     }
 
     @Test
     void textDatesIntoADateColumnUseTheMappingTypeVocabulary() {
         ConformanceEstimate eight = ConformanceEstimator.estimate(column("REG_YMD").text(10)
                 .pattern("YMD8", 10).invalidDates(1).build(), DATE, null);
-        assertThat(eight.transform()).isEqualTo("type:date");
+        assertThat(eight.transform()).isEqualTo("transform:date-text");
         assertThat(eight.rate()).isEqualByComparingTo("90.0");
         assertThat(eight.violations()).containsExactly(new Violation("INVALID_DATE", 1L));
 
         ConformanceEstimate dashed = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("YMD_DASHED", 10).build(), DATE, null);
-        assertThat(dashed.transform()).isEqualTo("type:date");
+        assertThat(dashed.transform()).isEqualTo("transform:date-text");
         assertThat(dashed.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate stamp = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("DATETIME_TEXT", 10).pattern("DATETIME_DASHED", 10).build(), DATETIME, null);
-        assertThat(stamp.transform()).isEqualTo("type:timestamp");
+        assertThat(stamp.transform()).isEqualTo("transform:timestamp-text");
         assertThat(stamp.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate slashed = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("DATETIME_TEXT", 10).build(), DATETIME, null);
-        assertThat(slashed.transform()).isEqualTo("custom:date-text");
+        assertThat(slashed.transform()).isEqualTo("transform:timestamp-text");
         ConformanceEstimate bothSeparators = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("DATETIME_TEXT", 10).pattern("DATETIME_DASHED", 6).build(), DATETIME, null);
-        assertThat(bothSeparators.transform()).isEqualTo(ConformanceEstimator.MIXED);
+        assertThat(bothSeparators.transform()).as("timestamp-text 는 두 구분자를 다 읽는다")
+                .isEqualTo("transform:timestamp-text");
         assertThat(bothSeparators.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate basic = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("YMDHMS14", 10).build(), DATETIME, null);
-        assertThat(basic.transform()).isEqualTo("custom:date-text");
+        assertThat(basic.transform()).isEqualTo("transform:timestamp-text");
         assertThat(basic.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate mixed = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("YMD8", 5).pattern("DATETIME_TEXT", 5).pattern("DATETIME_DASHED", 5).build(), DATETIME,
                 null);
-        assertThat(mixed.transform()).isEqualTo(ConformanceEstimator.MIXED);
+        assertThat(mixed.transform()).isEqualTo("mixed").isEqualTo(ConformanceEstimator.MIXED);
 
         ConformanceEstimate shapes = ConformanceEstimator.estimate(column("REG_YMD").text(10)
                 .pattern("YMD8", 6).pattern("PLACEHOLDER_DATE", 1)
                 .pattern("YMD_DASHED", 4).pattern("PLACEHOLDER_DATE_TEXT", 1).build(), DATE, null);
         assertThat(shapes.rate()).isEqualByComparingTo("80.0");
         assertThat(shapes.violations()).containsExactly(new Violation("PLACEHOLDER_DATE", 2L));
-        assertThat(shapes.transform()).isEqualTo("type:date");
+        assertThat(shapes.transform()).isEqualTo("transform:date-text");
 
         ConformanceEstimate fourteen = ConformanceEstimator.estimate(column("REG_DT").temporal(2).text(3)
                 .pattern("DATETIME_TEXT", 3).build(), domain("날짜/시간", "연월일시분초C14", "CHAR", 14), null);
         assertThat(fourteen.rate()).isEqualByComparingTo("100.0");
+        assertThat(fourteen.transform()).isEqualTo("transform:ymdhms14");
         assertThat(category(column("REG_DT").text(20).pattern("YMD_SLASHED", 20))).isEqualTo("DATE_TEXT");
     }
 
     @Test
-    void flagsOtherThanUpperYnNeedACodemap() {
+    void timestampColumnsNameTheTransformerForDateOnlyAndDateTimeValues() {
+        ConformanceEstimate dateOnly = ConformanceEstimator.estimate(column("REG_DT").text(10)
+                .pattern("YMD8", 4).pattern("YMD_DASHED", 3).pattern("YMD_SLASHED", 2).pattern("YMD_DOTTED", 1)
+                .build(), DATETIME, null);
+        assertThat(dateOnly.transform()).isEqualTo("transform:timestamp-from-date");
+        assertThat(dateOnly.rate()).isEqualByComparingTo("100.0");
+
+        ConformanceEstimate dateTyped = ConformanceEstimator.estimate(column("REG_DT").declaredType("DATE", 91)
+                .temporal(5).build(), DATETIME, null);
+        assertThat(dateTyped.transform()).as("날짜 타입 값은 자정을 붙여야 일시 컬럼에 쓴다")
+                .isEqualTo("transform:timestamp-from-date");
+        ConformanceEstimate timestampTyped = ConformanceEstimator.estimate(column("REG_DT")
+                .declaredType("TIMESTAMP", 93).temporal(5).build(), DATETIME, null);
+        assertThat(timestampTyped.transform()).isNull();
+        ConformanceEstimate intoDate = ConformanceEstimator.estimate(column("REG_DT").declaredType("DATE", 91)
+                .temporal(5).build(), DATE, null);
+        assertThat(intoDate.transform()).as("날짜 컬럼에는 그대로 쓴다").isNull();
+
+        ConformanceEstimate mixedTyped = ConformanceEstimator.estimate(column("REG_DT").declaredType("DATE", 91)
+                .temporal(5).text(5).pattern("DATETIME_TEXT", 5).build(), DATETIME, null);
+        assertThat(mixedTyped.transform()).isEqualTo(ConformanceEstimator.MIXED);
+        ConformanceEstimate dateText = ConformanceEstimator.estimate(column("REG_DT").text(4)
+                .pattern("DATETIME_TEXT", 2).pattern("YMDHMS14", 2).build(), DATE, null);
+        assertThat(dateText.transform()).isEqualTo("transform:date-text");
+    }
+
+    @Test
+    void flagsNeedACodemapAndPlainYnNeedsTheYnTransformer() {
         ConformanceEstimate flags = ConformanceEstimator.estimate(column("USE_AT").text(10)
                 .pattern("YN", 4).pattern("YN_LOWER", 2).pattern("ONE_ZERO", 2).pattern("TRUE_FALSE", 2).build(),
                 YN, null);
         assertThat(flags.transform()).isEqualTo("codemap");
         assertThat(flags.rate()).isEqualByComparingTo("100.0");
+        assertThat(ConformanceEstimator.estimate(column("USE_AT").text(10).pattern("YN", 9).pattern("TRUE_FALSE", 1)
+                .build(), YN, null).transform()).as("플래그가 하나라도 섞이면").isEqualTo("codemap");
+        assertThat(ConformanceEstimator.estimate(column("USE_AT").text(10).pattern("ONE_ZERO", 10).build(), YN,
+                null).transform()).isEqualTo("codemap");
 
         ConformanceEstimate plain = ConformanceEstimator.estimate(column("USE_YN").text(10)
                 .pattern("YN", 9).build(), YN, null);
-        assertThat(plain.transform()).isNull();
+        assertThat(plain.transform()).isEqualTo("transform:yn");
         assertThat(plain.violations()).containsExactly(new Violation("FORMAT", 1L));
+        ConformanceEstimate lower = ConformanceEstimator.estimate(column("USE_YN").text(10)
+                .pattern("YN", 6).pattern("YN_LOWER", 4).build(), YN, null);
+        assertThat(lower.transform()).as("yn 은 대소문자를 가리지 않는다").isEqualTo("transform:yn");
+        assertThat(ConformanceEstimator.estimate(column("USE_YN").text(10).build(), YN, null).transform())
+                .as("Y·N 이 하나도 없으면 제안하지 않는다").isNull();
     }
 
     @Test
@@ -318,7 +367,7 @@ class ConformanceEstimatorTest {
                 .build(), YMD8, null, true);
         assertThat(sampled.rate()).isNull();
         assertThat(sampled.violations()).containsExactly(new Violation("SAMPLED", null));
-        assertThat(sampled.transform()).isNull();
+        assertThat(sampled.transform()).isEqualTo("transform:ymd8");
     }
 
     @Test
@@ -368,13 +417,34 @@ class ConformanceEstimatorTest {
         ConformanceEstimate time = ConformanceEstimator.estimate(column("REG_TM").text(4).pattern("HMS6", 3)
                 .build(), domain("날짜/시간", "시분초C6", "CHAR", 6), null);
         assertThat(time.rate()).isEqualByComparingTo("75.0");
+        assertThat(time.transform()).isEqualTo("transform:hms6");
     }
 
     @Test
     void withoutADomainOrValuesNothingIsEstimated() {
         assertThat(ConformanceEstimator.estimate(column("A").text(3).build(), null, null))
                 .isEqualTo(new ConformanceEstimate(null, List.of(), null));
-        assertThat(ConformanceEstimator.estimate(column("A").build(), YMD8, null).rate()).isNull();
+        assertThat(ConformanceEstimator.estimate(column("A").build(), YMD8, null))
+                .isEqualTo(new ConformanceEstimate(null, List.of(), null));
+    }
+
+    @Test
+    void everyHintIsInTheMappingVocabulary() {
+        LoadCapabilities capabilities = new LoadCapabilities();
+        List<ConformanceEstimate> estimates = List.of(
+                ConformanceEstimator.estimate(column("A").text(3).pattern("YMD8", 3).build(), YMD8, null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("YMD8", 3).build(), DATE, null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("YMD8", 3).build(), DATETIME, null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("DATETIME_TEXT", 3).build(), DATETIME,
+                        null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("HMS6", 3).build(),
+                        domain("날짜/시간", "시분초C6", "CHAR", 6), null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("YN", 3).build(), YN, null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("ONE_ZERO", 3).build(), YN, null),
+                ConformanceEstimator.estimate(column("A").text(3).pattern("INTEGER_TEXT", 3).build(), AMOUNT, null));
+        assertThat(estimates).extracting(ConformanceEstimate::transform).doesNotContainNull()
+                .allSatisfy(hint -> assertThat(capabilities.hint(hint)).as(hint).isTrue())
+                .noneMatch(hint -> hint.startsWith("custom:"));
     }
 
     @Test

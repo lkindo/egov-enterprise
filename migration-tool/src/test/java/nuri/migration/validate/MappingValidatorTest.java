@@ -109,6 +109,27 @@ class MappingValidatorTest {
     }
 
     @Test
+    @DisplayName("두 컬럼 항목이 같은 타깃 컬럼을 채우면 앞 값이 조용히 빠지므로 거절한다(ADR-0029 L3a-2)")
+    void twoColumnEntriesWritingTheSameTargetAreRejected() {
+        MappingSpec mapping = new MappingLoader(ignored -> null).loadContent("""
+                tables:
+                  - source: legacy_user
+                    target: tb_user_info
+                    columns:
+                      - { source: user_id, target: user_id }
+                      - { source: user_nm, target: user_nm }
+                      - { source: alias_nm, target: USER_NM }
+                      - { target: user_nm, const: 무명 }
+                """);
+
+        ValidationResult result = withSchema().validate(mapping);
+
+        assertThat(result.errors()).filteredOn(error -> error.contains("타깃 컬럼을 두")).containsExactly(
+                "tb_user_info: 같은 타깃 컬럼을 두 컬럼 항목이 채웁니다: USER_NM",
+                "tb_user_info: 같은 타깃 컬럼을 두 컬럼 항목이 채웁니다: user_nm");
+    }
+
+    @Test
     @DisplayName("YAML의 null 컬럼 항목은 해당 위치의 검증 오류로 거절한다")
     void nullColumnEntryFromYamlIsValidationError() {
         MappingSpec mapping = new MappingLoader(ignored -> null).loadContent("""

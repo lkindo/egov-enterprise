@@ -1466,7 +1466,7 @@ jobs:
           # 2026-09-29 실측: 종전 transform 결합 범위는 74 mutations, 15분 11초였다.
           # 두 클래스와 validate/verify를 독립 75% gate로 나눠 같은 모집단을 병렬 검증한다.
           # 2026-10-15 로컬 실측(ADR-0029 L3a-1 뒤): registry 60 mutations 100% 14초, converter 76 93% 15초,
-          # validate 619 94% 65초, verify 159 88% 41초.
+          # validate 619 94% 65초, verify 159 88% 41초. L3a-2 뒤 converter 86 95% 19초, validate 1000 mutations 94%, 82초(원장 v2 판정 표 포함).
           - scope: migration-transform-registry
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.transform.TransformerRegistry"
@@ -1481,7 +1481,7 @@ jobs:
           - scope: migration-validate
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
-            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest"
+            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest"
 
           - scope: migration-verify
             gradle: ":migration-tool:pitest"
@@ -1496,7 +1496,7 @@ jobs:
             tests: "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
 
           # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
-          # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-1 뒤) 1006 mutations, 91%, 92초다.
+          # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
@@ -1504,10 +1504,13 @@ jobs:
 
           # [ADR-0029 L3a-1] 표준 도메인 변환기. 이 경계가 뒤집히면 자리표시·달력 오류 날짜가 표준 값으로 적재되거나
           # 추정기가 위반으로 센 값이 실행에서 통과한다(DomainParityTest). 2026-10-15 로컬 실측 116 mutations, 100%, 10초다.
+          # [ADR-0029 L3a-2] 원장에서 mapping 을 만드는 생성기를 더했다 — 뒤집히면 접속 자리표시가 풀린 값으로 쓰이거나
+          # 원장에 없는 컬럼이 조용히 빠진다. 생성기와 plan 의 원장 대응이 함께 쓰는 표·컬럼 해석(InventoryTables)도 넣었다 —
+          # 뒤집히면 모호한 표나 표기만 다른 컬럼이 엉뚱한 inventory 컬럼으로 풀린다. L3a-2 뒤 로컬 실측 383 mutations, 93%, 42초다.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.domain.*"
-            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest"
+            classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables"
+            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

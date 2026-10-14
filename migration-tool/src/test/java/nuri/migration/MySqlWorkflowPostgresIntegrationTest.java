@@ -36,16 +36,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.DefaultApplicationArguments;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,11 +242,15 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
         List<TermLedger.Entry> rows = new LedgerDraftWriter().draft(report).entries().stream()
                 .filter(entry -> entry.source().table().equalsIgnoreCase(fixture.sourceTable())).toList();
         assertThat(rows).extracting(entry -> entry.source().column()).containsExactlyInAnyOrder("id", "payload");
+        // [ADR-0029 L3a-2] coverage 는 mapping 의 변환이 원장 load 와 같은지도 본다 — 검토자가 정한 load 를 둔다.
         List<TermLedger.Entry> confirmed = rows.stream().map(entry -> new TermLedger.Entry(entry.id(),
-                entry.source(), new TermLedger.ColumnRef(fixture.targetTable(), entry.source().column()),
-                entry.term(), entry.grade(), "CONFIRMED", entry.conformance(), null, null, List.of())).toList();
+                entry.source(), null, null, new TermLedger.ColumnRef(fixture.targetTable(), entry.source().column()),
+                entry.term(), null, entry.grade(), "CONFIRMED", new TermLedger.Load(null,
+                entry.source().column().equals("id") ? "long" : "text", null, List.of()), entry.conformance(), null,
+                null, List.of())).toList();
         assertThat(new TermLedgerValidator().coverage(
-                new TermLedger(TermLedger.CURRENT_SCHEMA_VERSION, confirmed), fixture.spec())).isEmpty();
+                new TermLedger(TermLedger.CURRENT_SCHEMA_VERSION, confirmed), fixture.spec(),
+                inventory.payload().toSnapshot())).isEmpty();
 
         sourceJdbc().execute("ALTER TABLE " + fixture.sourceTable() + " ADD COLUMN added_after varchar(10)");
         String before = Files.readString(profile);
@@ -280,7 +281,11 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
         sourceJdbc().execute("CREATE TABLE " + sourceTable + " (id bigint PRIMARY KEY, payload " + sourceType
                 + ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         targetJdbc().execute("CREATE TABLE " + targetTable + " (id bigint PRIMARY KEY, payload " + targetType + ")");
+        StandardMetaFixture.create(targetJdbc(), "public");
         Path directory = Files.createDirectory(temp.resolve(scenario));
+        String ledger = LedgerFixtures.write(directory, List.of(
+                LedgerFixtures.row(sourceTable, "id", targetTable, "id", null, "long"),
+                LedgerFixtures.row(sourceTable, "payload", targetTable, "payload", null, mappingType)));
         Path mappingPath = directory.resolve("mapping.yml");
         Files.writeString(mappingPath, """
                 source:
@@ -311,8 +316,7 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
                         target: payload
                 %s
                 """.formatted(name, sourceTable, targetTable,
-                (mappingType == null ? "" : "        type: " + mappingType + "\n")
-                        + (witness == null ? "" : "        transform: verifyFixturePayload\n")));
+                (mappingType == null ? "" : "        type: " + mappingType + "\n")) + ledger);
         var source = sourceConfig();
         var target = targetConfig();
         Map<String, String> environment = Map.of("WF_SOURCE_URL", source.url(), "WF_SOURCE_USER", source.username(),
@@ -323,15 +327,8 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
         json.writeValue(columns.toFile(), targetJdbc().queryForList(
                 "SELECT table_schema || '.' || table_name AS table_name, column_name FROM information_schema.columns"
                         + " WHERE table_schema = 'public' AND table_name = ? ORDER BY ordinal_position", name));
-        var transformers = new TransformerRegistry();
-        if (witness != null) {
-            try (InputStream implementation = PayloadWitness.class.getResourceAsStream(
-                    "MySqlWorkflowPostgresIntegrationTest$PayloadWitness.class")) {
-                assertThat(implementation).isNotNull();
-                String digest = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(implementation.readAllBytes()));
-                transformers.register("verifyFixturePayload", "1", digest, witness);
-            }
-        }
+        // [ADR-0029 L3a-2] 원장 load 는 내장 변환기만 받으므로 payload 를 변환 경로(transformers.apply) 안에서 지켜본다.
+        var transformers = witness == null ? new TransformerRegistry() : new WitnessingRegistry(witness);
         var introspector = new SourceIntrospector();
         var runner = new MigrationWorkflowRunner(loader, new MappingValidator(transformers, columns.toString()),
                 new EtlExecutor(introspector, transformers), new MigrationVerifier(), introspector,
@@ -433,7 +430,28 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
     private record Fixture(String name, String sourceTable, String targetTable, Path mapping, Path inventory,
                            Path plan, Path review, MappingSpec spec, MigrationWorkflowRunner runner) { }
 
-    /** Identity transform that witnesses complete field content during the public DRY_RUN. */
+    /**
+     * Registry whose transformation step ({@code apply}) witnesses the payload value — the mapping declares no project
+     * transformer because the term ledger accepts builtin transformers only (ADR-0029 L3a-2).
+     */
+    private static final class WitnessingRegistry extends TransformerRegistry {
+        private final PayloadWitness witness;
+
+        private WitnessingRegistry(PayloadWitness witness) {
+            this.witness = witness;
+        }
+
+        @Override
+        public Object apply(String name, Object value) {
+            Object applied = super.apply(name, value);
+            if (name == null && (value instanceof byte[] || value instanceof String)) {
+                witness.apply(value);
+            }
+            return applied;
+        }
+    }
+
+    /** Witnesses complete field content during the public DRY_RUN. */
     private static final class PayloadWitness implements UnaryOperator<Object> {
         private final Object expected;
         private int observed;

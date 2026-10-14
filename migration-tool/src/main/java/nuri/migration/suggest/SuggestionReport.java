@@ -60,9 +60,9 @@ public record SuggestionReport(
      * 문자열을 포함한 값의 수). 위반 종류는 행 수를 세는 {@code INVALID_DATE}·{@code PLACEHOLDER_DATE}·{@code FORMAT}·
      * {@code BLANK}·{@code NOT_ALLOWED} 와, 있으면 적합률을 비우는 {@code LENGTH_EXCEEDED}·{@code LENGTH_UNVERIFIED}·
      * {@code ALLOWED_VALUES_UNVERIFIED}·{@code UNSUPPORTED_VALUE_TYPE}·{@code SAMPLED}(행 수 제한으로 일부만 읽은 표)다.
-     * 셀 수 없는 위반은 {@code rows} 가 비어 있다. {@code transform} 은 mapping.yml 어휘
-     * ({@code type:date}·{@code type:timestamp}·{@code type:numeric}·{@code type:integer}·{@code type:bigint}·
-     * {@code codemap})이거나, 내장 변환이 없으면 {@code custom:*} 다. 행 단위 예외는 L3 가 다룬다.
+     * 셀 수 없는 위반은 {@code rows} 가 비어 있다. {@code transform} 은 mapping 어휘 그대로다(ADR-0029 L3a-2) —
+     * {@code transform:<내장 변환기>}·{@code type:<type>}·{@code codemap}, 한 load 로 처리할 수 없으면 {@code mixed},
+     * 변환이 필요 없으면 비어 있다. 행 단위 예외는 L3 가 다룬다.
      */
     public record ConformanceEstimate(BigDecimal rate, List<Violation> violations, String transform) {
 

@@ -1,19 +1,20 @@
 package nuri.migration.suggest;
 
+import nuri.migration.domain.DomainCategory;
 import nuri.migration.profile.SourceProfile.ColumnProfile;
 import nuri.migration.profile.SourceProfile.ValueFrequency;
 import nuri.migration.suggest.SuggestionReport.ConformanceEstimate;
 import nuri.migration.suggest.SuggestionReport.Violation;
+import nuri.migration.validate.ledger.LoadCapabilities;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * 프로파일 집계만으로 컬럼의 데이터 범주를 정하고, 후보 도메인에 얼마나 맞는지 추정한다(레거시 표준화 설계 §4.3).
@@ -23,18 +24,27 @@ import java.util.regex.Pattern;
  * 적합률을 내지 않는다. 적합률의 분모는 공백 문자열을 포함한 값의 수다. 문자 날짜의 달력 검사는 8자리·14자리 숫자
  * 모양에만 있고, 자리표시 날짜는 8자리와 하이픈 형태만 센다.</p>
  *
- * <p>변환 제안은 mapping.yml 어휘({@code type:date}·{@code type:timestamp}·{@code type:numeric}·{@code codemap})이거나,
- * 내장 변환이 없을 때 {@code custom:*}(프로젝트 변환기를 등록해야 한다)다. 모양마다 필요한 변환이 다르면
- * {@code custom:mixed} 다. 경과: ADR-0029 L3a-1 부터 {@code custom:ymd8}·{@code custom:ymdhms14}·{@code custom:date-text}
- * 는 같은 이름의 내장 도메인 변환기를 쓰라는 뜻이다(힌트 어휘는 L3a-2 에서 바뀐다). 같은 이름으로 프로젝트 변환기를
- * 등록하면 도메인 변환기가 아니게 되어 위반 코드와 nullify 를 잃는다.</p>
+ * <p>변환 제안은 mapping.yml 어휘 그대로다(ADR-0029 L3a-2) — {@code transform:<내장 변환기>}·{@code type:<type>}·
+ * {@code codemap}, 한 load 로 처리할 수 없으면 {@code mixed}, 변환이 필요 없으면 null. 8자리 날짜·14자리 일시·6자리 시각
+ * 도메인은 모양과 상관없이 표준 변환기({@code ymd8}·{@code ymdhms14}·{@code hms6})를 낸다 — 원장 도메인 가드가 그 변환기를
+ * 요구한다. 여부 도메인은 Y·N(대소문자 무시)만 있으면 {@code transform:yn}, 1·0·T·F 같은 플래그가 섞이면 극성을 사람이
+ * 정해야 하므로 {@code codemap} 이다. 날짜·시간 타입 도메인은 문자 날짜를 {@code transform:date-text}(날짜 컬럼) 또는
+ * {@code transform:timestamp-from-date}·{@code transform:timestamp-text}(일시 컬럼, 날짜만 있는 값·일시 값)로 낸다 — 비시간
+ * 소스의 {@code type:date}·{@code type:timestamp} 는 자리표시 날짜를 받으므로 제안하지 않는다.</p>
  */
 public final class ConformanceEstimator {
 
     /** 범주를 정하는 최소 비율. 이보다 낮으면 섞인 컬럼으로 본다. */
     static final double DOMINANT = 0.95;
-    static final String MIXED = "custom:mixed";
-    private static final Pattern ALLOWED_CODE = Pattern.compile("(?:^|,)\\s*([A-Za-z0-9]{1,12})\\s*:");
+    static final String MIXED = "mixed";
+    static final String CODEMAP = "codemap";
+    private static final String YMD8 = "transform:ymd8";
+    private static final String YMDHMS14 = "transform:ymdhms14";
+    private static final String HMS6 = "transform:hms6";
+    private static final String YN = "transform:yn";
+    private static final String DATE_TEXT = "transform:date-text";
+    private static final String TIMESTAMP_TEXT = "transform:timestamp-text";
+    private static final String TIMESTAMP_FROM_DATE = "transform:timestamp-from-date";
 
     private ConformanceEstimator() {}
 
@@ -83,37 +93,11 @@ public final class ConformanceEstimator {
     }
 
     /**
-     * 도메인 범주: DATE8·DATETIME14·TEMPORAL·TIME6·YN·CODE·NUMERIC·TEXT. 타깃 표준 검증도 여부 도메인을 이 판정으로
-     * 가린다(ADR-0029 L3a-1) — 범주 판정은 한 곳에만 둔다.
+     * 도메인 범주: DATE8·DATETIME14·TEMPORAL·TIME6·YN·CODE·NUMERIC·TEXT. 판정은 {@link DomainCategory} 한 곳에 있고
+     * (ADR-0029 L3a-2), 여기는 도메인이 없으면 TEXT 로 보는 것만 더한다.
      */
-    public static String domainCategory(StandardDictionary.Domain domain) {
-        if (domain == null) {
-            return "TEXT";
-        }
-        String name = domain.name() == null ? "" : domain.name();
-        String type = type(domain);
-        if (name.startsWith("연월일C8")) {
-            return "DATE8";
-        }
-        if (name.startsWith("연월일시분초C14")) {
-            return "DATETIME14";
-        }
-        if (type.equals("DATE") || type.equals("DATETIME") || type.equals("TIMESTAMP")) {
-            return "TEMPORAL";
-        }
-        if (name.startsWith("시분초C6")) {
-            return "TIME6";
-        }
-        if (name.startsWith("여부") || name.startsWith("유무")) {
-            return "YN";
-        }
-        if (type.equals("NUMERIC") || type.equals("NUMBER") || type.equals("INTEGER") || type.equals("BIGINT")) {
-            return "NUMERIC";
-        }
-        if (name.startsWith("코드")) {
-            return "CODE";
-        }
-        return "TEXT";
+    static String domainCategory(StandardDictionary.Domain domain) {
+        return domain == null ? DomainCategory.TEXT.name() : DomainCategory.of(domain.name(), domain.dataType()).name();
     }
 
     /**
@@ -163,39 +147,40 @@ public final class ConformanceEstimator {
         long ymd8Valid = Math.max(0, count(profile, "YMD8") - profile.ymd8Invalid()
                 - count(profile, "PLACEHOLDER_DATE"));
         long dashedValid = Math.max(0, count(profile, "YMD_DASHED") - count(profile, "PLACEHOLDER_DATE_TEXT"));
+        long separatedDates = dashedValid + count(profile, "YMD_SLASHED") + count(profile, "YMD_DOTTED");
         long datetime14Valid = Math.max(0, count(profile, "YMDHMS14") - profile.ymdhms14Invalid());
-        long datetimeDashed = count(profile, "DATETIME_DASHED");
-        long datetimeOther = Math.max(0, count(profile, "DATETIME_TEXT") - datetimeDashed);
         List<Violation> violations = new ArrayList<>();
         List<Shape> shapes = new ArrayList<>();
         switch (target) {
             case "DATE8" -> {
-                shapes.add(new Shape(ymd8Valid, null));
-                shapes.add(new Shape(dashedValid + count(profile, "YMD_SLASHED") + count(profile, "YMD_DOTTED"),
-                        "custom:ymd8"));
-                shapes.add(new Shape(profile.temporalValues(), "custom:ymd8"));
+                shapes.add(new Shape(ymd8Valid + separatedDates + profile.temporalValues(), YMD8));
                 add(violations, "INVALID_DATE", profile.ymd8Invalid());
                 add(violations, "PLACEHOLDER_DATE", placeholders(profile));
             }
             case "DATETIME14" -> {
-                shapes.add(new Shape(datetime14Valid, null));
-                shapes.add(new Shape(profile.temporalValues() + count(profile, "DATETIME_TEXT"),
-                        "custom:ymdhms14"));
+                shapes.add(new Shape(datetime14Valid + profile.temporalValues() + count(profile, "DATETIME_TEXT"),
+                        YMDHMS14));
                 add(violations, "INVALID_DATE", profile.ymdhms14Invalid());
             }
             case "TEMPORAL" -> {
-                shapes.add(new Shape(profile.temporalValues(), null));
-                shapes.add(new Shape(ymd8Valid + dashedValid, dateColumn ? "type:date" : "custom:date-text"));
-                shapes.add(new Shape(count(profile, "YMD_SLASHED") + count(profile, "YMD_DOTTED") + datetime14Valid
-                        + datetimeOther, "custom:date-text"));
-                shapes.add(new Shape(datetimeDashed, dateColumn ? "custom:date-text" : "type:timestamp"));
+                // 날짜 타입 소스 값은 일시 컬럼에 그대로 쓸 수 없다(L3a-1) — 자정을 붙여야 한다.
+                shapes.add(new Shape(profile.temporalValues(),
+                        !dateColumn && dateTyped(profile) ? TIMESTAMP_FROM_DATE : null));
+                long dateOnly = ymd8Valid + separatedDates;
+                long dateTime = datetime14Valid + count(profile, "DATETIME_TEXT");
+                if (dateColumn) {
+                    shapes.add(new Shape(dateOnly + dateTime, DATE_TEXT));
+                } else {
+                    shapes.add(new Shape(dateOnly, TIMESTAMP_FROM_DATE));
+                    shapes.add(new Shape(dateTime, TIMESTAMP_TEXT));
+                }
                 add(violations, "INVALID_DATE", profile.ymd8Invalid() + profile.ymdhms14Invalid());
                 add(violations, "PLACEHOLDER_DATE", placeholders(profile));
             }
-            case "TIME6" -> shapes.add(new Shape(count(profile, "HMS6"), null));
+            case "TIME6" -> shapes.add(new Shape(count(profile, "HMS6"), HMS6));
             case "YN" -> {
-                shapes.add(new Shape(count(profile, "YN"), null));
-                shapes.add(new Shape(flags(profile), "codemap"));
+                shapes.add(new Shape(count(profile, "YN") + count(profile, "YN_LOWER"), YN));
+                shapes.add(new Shape(count(profile, "ONE_ZERO") + count(profile, "TRUE_FALSE"), CODEMAP));
             }
             case "NUMERIC" -> {
                 shapes.add(new Shape(profile.numberValues(), null));
@@ -258,7 +243,7 @@ public final class ConformanceEstimator {
         BigDecimal rate = countable
                 ? BigDecimal.valueOf(valid * 100.0 / (nonNull + blanks)).setScale(1, RoundingMode.HALF_UP)
                 : null;
-        return new ConformanceEstimate(rate, violations, transform(shapes));
+        return new ConformanceEstimate(rate, violations, transform(target, shapes));
     }
 
     /**
@@ -290,19 +275,11 @@ public final class ConformanceEstimator {
     }
 
     /**
-     * 공통표준 허용값 원문에서 코드만 꺼낸다. 목록이 잘려 있거나({@code …}) 코드 목록으로 읽을 수 없으면 비운다 —
-     * 호출자는 빈 집합을 "허용값을 확인하지 못했다" 로 다룬다.
+     * 공통표준 허용값 원문에서 코드만 꺼낸다. 판정은 원장 검증이 codemap 의 표준 코드를 대조할 때와 같은
+     * {@link LoadCapabilities#allowedCodes} 한 곳에 있다(ADR-0029 L3a-2).
      */
     static Set<String> allowedCodes(String allowedValues) {
-        Set<String> codes = new LinkedHashSet<>();
-        if (allowedValues == null || allowedValues.contains("…") || allowedValues.contains("...")) {
-            return codes;
-        }
-        Matcher code = ALLOWED_CODE.matcher(allowedValues);
-        while (code.find()) {
-            codes.add(code.group(1));
-        }
-        return codes;
+        return LoadCapabilities.allowedCodes(allowedValues);
     }
 
     /** 여부 모양 값을 변환 뒤의 Y·N 으로 읽는다. 여부 모양이 아니면 비운다(형식 위반으로 이미 셌다). */
@@ -314,8 +291,31 @@ public final class ConformanceEstimator {
         };
     }
 
-    /** 모양마다 필요한 변환을 모은다. 하나면 그것이고, 둘 이상이면 한 변환기로 처리할 수 없다는 뜻에서 mixed 다. */
-    private static String transform(List<Shape> shapes) {
+    /**
+     * 모양마다 필요한 변환을 모은다. 하나면 그것이고, 둘 이상이면 한 load 로 처리할 수 없다는 뜻에서 mixed 다. 고정 표기
+     * 도메인(8자리 날짜·14자리 일시·6자리 시각)은 모양과 상관없이 그 표준 변환기이고, 여부 도메인은 플래그가 하나라도
+     * 있으면 codemap 이다 — {@code yn} 은 플래그를 받지 않는다.
+     */
+    private static String transform(String target, List<Shape> shapes) {
+        switch (target) {
+            case "DATE8" -> {
+                return YMD8;
+            }
+            case "DATETIME14" -> {
+                return YMDHMS14;
+            }
+            case "TIME6" -> {
+                return HMS6;
+            }
+            case "YN" -> {
+                if (shapes.stream().anyMatch(shape -> shape.rows() > 0 && CODEMAP.equals(shape.transform()))) {
+                    return CODEMAP;
+                }
+            }
+            default -> {
+                // 모양으로 정한다.
+            }
+        }
         Set<String> needed = new LinkedHashSet<>();
         for (Shape shape : shapes) {
             if (shape.rows() > 0 && shape.transform() != null) {
@@ -348,6 +348,11 @@ public final class ConformanceEstimator {
 
     private static long placeholders(ColumnProfile profile) {
         return count(profile, "PLACEHOLDER_DATE") + count(profile, "PLACEHOLDER_DATE_TEXT");
+    }
+
+    /** 소스 선언이 날짜 타입이다 — 시각이 없는 값이라 일시 컬럼에는 자정을 붙여 쓴다. */
+    private static boolean dateTyped(ColumnProfile profile) {
+        return profile.jdbcType() != null && profile.jdbcType() == Types.DATE;
     }
 
     private static long flags(ColumnProfile profile) {

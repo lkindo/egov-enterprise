@@ -31,9 +31,10 @@ mapping.yml + source DB
 | 명령 | 입력과 출력 | fail-closed 경계 |
 |---|---|---|
 | `discover` | `mapping.yml`과 source connection으로 요청한 catalog/schema/44개 object kind를 조사하고 canonical JSON inventory를 atomic write | source·target `endpointId` 존재를 요구하고, source endpoint digest·adapter product/version preflight·JDBC read-only signal·driver evidence·discovery scope를 inventory에 결속한다. raw DDL·JDBC URL·username/password는 artifact에 기록하지 않는다. |
-| `plan` | inventory, mapping, 현재 target PostgreSQL schema fingerprint와 선택적 `review.yml`을 결합해 schema v3 plan을 atomic write | inventory의 source endpoint·driver·adapter·scope, mapping digest, target fingerprint, migration-tool 구현 bytes·핵심 class·adapter read-session·선택 transformer 계약을 digest로 묶는다. 발견 객체 전부가 검토·분류되지 않거나 visibility finding이 남으면 `commitReady=false`다. live 대상 계약·표준 사전 검증([표준 계약 검증](#표준-계약-검증))에 실패하면 표·컬럼 이름을 밝히고 plan을 쓰지 않는다. |
+| `mapping-generate` | 사람이 쓴 skeleton·검토한 용어 매핑 원장·승인 inventory 로 `--mapping` 에 mapping.yml 을 atomic write([원장에서 mapping 만들기](#원장에서-mapping-만들기)) | DB 에 접속하지 않고 접속 자리표시를 치환하지 않는다. 원장은 출력 mapping 디렉터리 안에 있어야 하고, 원장 검증·소스 단위 완전성·자격·개인정보 값 검사·정적 검증을 모두 지나야 쓴다. 출력은 입력 파일과 다른 경로여야 한다. |
+| `plan` | inventory, mapping, 현재 target PostgreSQL schema fingerprint와 선택적 `review.yml`을 결합해 schema v3 plan을 atomic write | inventory의 source endpoint·driver·adapter·scope, mapping digest, target fingerprint, migration-tool 구현 bytes·핵심 class·adapter read-session·선택 transformer 계약을 digest로 묶는다. 발견 객체 전부가 검토·분류되지 않거나 visibility finding이 남으면 `commitReady=false`다. live 대상 계약·표준 사전 검증([표준 계약 검증](#표준-계약-검증))에 실패하면 표·컬럼 이름을 밝히고 plan을 쓰지 않는다. mapping 이 용어 매핑 원장을 선언하지 않았거나 원장 검증에 실패하면 plan 을 쓰지 않는다(DEC-OPS-317). |
 | `validate` | plan 한 개를 읽어 `commitReady`를 검사 | 승인 workflow는 정확히 plan schema v3만 허용한다. 이 명령은 live DB를 다시 읽거나 새 artifact를 만들지 않는다. |
-| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. plan 옆의 고유 실행 JSON에 `STARTED`를 먼저 저장하고 `PASS`/`FAILED`로 갱신한다. |
+| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. 원장 선언·원장 검증도 실행 직전에 다시 본다. plan 옆의 고유 실행 JSON에 `STARTED`를 먼저 저장하고 `PASS`/`FAILED`로 갱신한다. |
 
 Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 적용한다. 출력은 같은 디렉터리의 임시 파일을 `fsync`한 뒤 atomic replace하며 atomic move를 지원하지 않으면 실패한다. Inventory는 raw native definition 대신 definition hash만 보존하고, artifact redaction guard는 JDBC URL·credential·private key 형태를 차단한다.
 
@@ -64,26 +65,33 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 레거시 컬럼이 어느 표준 용어·대상 컬럼으로 가는지와 그 확정 이력을 담는 기관 이관 저장소의 검토 파일(YAML/JSON)이다([DEC-OPS-312](../../.agent/memory/decisions.md)). 원시 행 값·접속정보는 담지 않으며, 읽을 때 자격 검사와 개인정보 값 검사를 지나야 한다.
 
 ```yaml
-schemaVersion: 1
+schemaVersion: 2
 entries:
   - id: L1
-    source: {table: legacy.legacy_user, column: USER_ID}
-    target: {table: public.tb_user_info, column: user_id}
-    term: {name: 사용자ID, engAbbr: USER_ID, domain: ID V20}
+    source: {table: legacy.legacy_user, column: END_YMD}
+    target: {table: public.tb_user_info, column: end_ymd}
+    term: {name: 종료일자, engAbbr: END_YMD, domain: 연월일C8}   # 비표준 대상이면 nonStandardTarget: {reason: ...}
     grade: EXACT            # EXACT·SYNONYM·INFERRED·UNKNOWN
     status: CONFIRMED       # PROPOSED·REVIEWED·CONFIRMED·APPROVED_IGNORE·ARCHIVE·REGISTRATION_REQUESTED·REJECTED
-    conformance: {rate: 100}
+    load: {transform: ymd8, nullify: [{violation: PLACEHOLDER_DATE, maxRows: 12}]}   # 확정 행에 필수, {} = 변환 없음
+    conformance:
+      rate: 99.6            # 참고값. 셀 수 없었으면 비우고 unmeasured 에 이유를 적는다
+      transform: transform:ymd8
+      violations: [{type: PLACEHOLDER_DATE, rows: 12}]
+    note: 9999-12-31 은 종료일 없음의 자리표시다
     history:
       - {to: REVIEWED, by: 검토자, at: "2026-10-01"}
       - {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}
 ```
 
-- **mapping 결속**: mapping.yml 에 `ledger: {path: term-ledger.yml, sha256: <원장 파일 바이트의 SHA-256>}` 를 선언한다. path 는 mapping 파일 디렉터리 기준이다. 원장 digest 가 mapping digest 에 들어가므로 plan 뒤에 원장이 바뀌면 load 가 멈춘다. 원장을 선언하지 않은 mapping 은 종전과 같고 digest 도 그대로다.
+- **mapping 결속**: mapping.yml 에 `ledger: {path: term-ledger.yml, sha256: <원장 파일 바이트의 SHA-256>}` 를 선언한다. path 는 mapping 파일 디렉터리 기준이고 그 디렉터리 밖(`..`)을 가리키면 멈춘다. 원장 digest 가 mapping digest 에 들어가므로 plan 뒤에 원장이 바뀌면 load 가 멈춘다. 원장을 선언하지 않은 옛 artifact 의 digest 계산은 그대로지만, plan·load 는 원장 없는 mapping 을 받지 않는다(아래 필수화 시점).
 - **전이 이력**: `history` 는 `PROPOSED` 에서 지금 상태까지의 합법 전이여야 한다(`PROPOSED→REVIEWED→CONFIRMED` 등). 날짜는 거꾸로 갈 수 없고, 확정·이관 제외·외부 보관은 도구 이름(`term-suggest`·`migration-tool` 등)으로 기록할 수 없다.
-- **상태별 필수 항목**: 확정(`CONFIRMED`)은 표준 용어·대상 컬럼(표준 영문약어와 같은 이름)·적합률이 필요하고, 적합률이 100 이 아니면 승인된 예외(행 수 상한·사유)가 필요하다. `UNKNOWN` 은 확정할 수 없다. 이관 제외는 사유, 외부 보관은 보존 기한, 표준 등록 요청은 요청할 용어 이름이 필요하다.
-- **mapping 대조**: mapping 이 소스 컬럼에서 옮기는 모든 컬럼(상수 제외)이 같은 소스·대상의 확정 행을 가리켜야 한다.
-- **live 메타 대조**: plan·load 때 확정 행의 표준 용어가 대상 schema 의 `meta_standard_terms` 에 있고 이름·도메인이 같으며 폐기되지 않았는지 본다. 폐기 여부 컬럼(V2_128)이 없는 DB 에서는 대조를 멈춘다.
-- **필수화 시점**: 원장 선언은 지금 선택이다. 원장에서 mapping 을 만드는 경로(L3)가 생기면 필수로 바꾼다.
+- **상태별 필수 항목(형식 2, [DEC-OPS-316](../../.agent/memory/decisions.md))**: 확정(`CONFIRMED`)은 표준 용어·대상 컬럼(표준 영문약어와 같은 이름)·`load` 가 필요하다. 형식 1 원장은 읽지 않는다. 적합률은 참고값이다 — 확정하려면 적합률이나, 셀 수 없었던 이유(`unmeasured`, 추정기 코드)와 사유(`note`)가 있어야 하고 `SAMPLED` 로는 확정하지 않는다. 적합률이 100 미만이면 기록된 위반이나 승인 예외가 있어야 한다(위반 기록을 지워 확정하지 못하게). 기록된 위반마다 실행 시점 처리가 있어야 한다(`BLANK`·`PLACEHOLDER_DATE` 는 `nullify` 나 승인 예외 — `BLANK` 는 `unmapped: fail` codemap 이 공백의 표준 코드를 정하거나 멈추는 것으로도 된다, `INVALID_DATE`·`FORMAT` 은 그 값을 멈추는 load 와 승인 예외, `NOT_ALLOWED` 는 `unmapped: fail` codemap 만). 셀 수 없었던 위반에는 행 단위 판정이 있어야 한다(표준 도메인 변환기나 `type` — 문자 `type` 도 이진·XML·구조·배열·참조·ROWID·스트림 객체는 거부하고 문자로 읽은 LOB 만 받는다). 한 소스 컬럼은 대상 컬럼마다 확정 행을 둘 수 있고(유일 키에 대상 컬럼이 들어간다), 한 대상 컬럼은 mapping 의 컬럼 항목 하나만 채운다(mapping 정적 검증). 승인 예외는 `maxRows` 1~1000·사유·격리할 수 있는 코드만이며 격리 실행은 L3b 다. 날짜·일시·시각·여부 도메인은 표준 변환기(`ymd8`·`ymd8-truncate`, `ymdhms14`, `hms6`, `yn` 또는 codemap)를 load 에 둬야 하고, 값을 규칙으로 바꾸는 load(시각 버림·자정 붙임·`nullify`)에는 사유가 필요하다. `UNKNOWN` 은 확정할 수 없다(비표준 대상은 예외). 이관 제외는 사유, 외부 보관은 보존 기한, 표준 등록 요청은 요청할 용어 이름이 필요하다. 판정 표는 [LoadCapabilities](../../migration-tool/src/main/java/nuri/migration/validate/ledger/LoadCapabilities.java)다.
+- **비표준 대상(U1, [DEC-OPS-317](../../.agent/memory/decisions.md))**: 표준 용어가 없는 대상 컬럼은 `term` 대신 `nonStandardTarget: {reason}` 으로 확정한다. plan·load 가 대상 schema 의 `meta_standard_terms` 에 그 컬럼 이름의 용어가 없음을 확인할 때만 받는다(폐기 용어도 있다고 본다). 이 행에는 conformance 를 두지 않고 도메인 대조가 없으며, 물리 타입 검사([표준 계약 검증](#표준-계약-검증))는 그대로다.
+- **허용값을 확인하지 못한 코드(U3)**: `ALLOWED_VALUES_UNVERIFIED` 인 코드·여부 컬럼은 사유가 있으면 codemap 없이 확정한다. 허용값 대사는 L4 가 맡는다. 허용값을 읽을 수 있으면 codemap 이 내는 표준 코드(쓰이는 대체값 포함)는 그 안이어야 한다.
+- **mapping 대조(coverage)**: 원장과 mapping 의 소스 표를 승인 inventory 의 표·컬럼으로 해석해(표기가 달라도 같은 표) 세 가지를 본다. 정방향 — mapping 이 소스 컬럼에서 옮기는 모든 컬럼(상수 제외, fkRef 포함)이 같은 소스·대상의 기본 확정 행을 가리키고 transform·type·codemap·nullify 가 그 행의 `load` 와 정확히 같다. 역방향 — mapping 이 읽는 소스 표의 기본 확정 행은 모두 mapping 에 있고, mapping 이 읽지 않는 소스 표에는 확정 행이 없다. 소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부 보관 행이 정확히 하나다. 외부 보관·기본이 아닌 `mapping`·`via` 행은 실행할 수 없어 L3e·L3c·L3d 전까지 멈춘다.
+- **live 메타 대조**: plan·load 때 확정 행의 표준 용어가 대상 schema 의 `meta_standard_terms` 에 있고 이름·도메인이 같으며 폐기되지 않았는지 본다. 같은 영문약어라도 schema 마다 다른 용어로 본다. 폐기 여부·허용값 컬럼(V2_128)이 없는 DB 에서는 대조를 멈춘다.
+- **필수화 시점**: L3a-2 부터 plan·load 는 원장을 선언한 mapping 만 받는다(DEC-OPS-317). 원장 없는 mapping 은 "mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요" 로 멈춘다. 원장 `load` 는 내장 변환기만 받으므로 프로젝트 변환기는 workflow 에서 쓰지 못한다.
 
 V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·`allowed_values`(허용값)·`deprecated_yn`(폐기 여부)을 더하고, 저장소의 행정안전부 공통표준용어 CSV(2025-11 판) 값으로 5,683행을 채운다. CSV 에서 같은 영문약어가 서로 다른 값으로 두 번 나오는 TXPR_NM·BZMN_NM·CONM 은 근거가 없어 비운다. 공유 OCI DB 적용은 별도 승인이다.
 
@@ -98,10 +106,25 @@ V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·
 - **입력**: `--profile`(필수)과 `--app-usage`(선택)는 envelope 형식·본문 digest·자격·개인정보 검사를 다시 지난다. 표준 사전은 mapping 의 target 에서 `--meta-schema`(기본 `public`)의 `meta_standard_terms`·`meta_standard_words`·`meta_standard_domains` 를 읽는다. 동의어·허용값·폐기 여부 컬럼(V2_128)이 없으면 멈춘다.
 - **근거와 등급**: 컬럼 이름이 표준 영문약어와 같거나 코멘트가 용어명과 같으면 `EXACT`, 코멘트가 이음동의어면 `SYNONYM` 이다. 코멘트를 표준 단어로 끝까지 나눠 영문약어가 되거나(가장 긴 단어부터, 대표 단어 우선) 화면 라벨·목록 머리글·VO 라벨이 용어를 가리키면 `INFERRED` 다. 비교 전에 괄호 안 설명, 첫 `:`·`,`·`;` 뒤, 공백·밑줄을 지운다. 폐기 용어는 후보로 내지 않고, 후보가 없으면 `UNKNOWN` 이다.
 - **충돌**: 이름·코멘트·라벨이 함께 가리키는 용어가 없으면 `SOURCES_DISAGREE`, 데이터 모양이 후보 도메인과 맞지 않으면(예: 시분초 값에 연월일 도메인) `DATA_DOMAIN:<영문약어>` 를 남기고 그 후보를 `INFERRED` 로 낮춘다. 데이터 모양은 프로파일 값의 95% 이상이 같은 모양일 때만 정하고, 8자리·14자리 숫자는 달력에 있는 값이 그만큼일 때만 날짜·일시로 본다. 6자리 숫자는 시각·연월·금액이 같은 모양이고 0·1 은 건수일 수도 있어, 그런 모양은 날짜·시각 도메인과만 어긋난다고 본다. 숫자형 시각(`NUMBER(6)`)은 앞자리 0 이 사라져 시분초 모양으로 세지 않는다 — 충돌은 내지 않지만 적합률이 낮게 나온다.
-- **적합성 추정**: 후보마다 프로파일 집계로 도메인 적합률·위반·필요한 변환을 추정한다. 변환은 mapping.yml 어휘(`type:date`·`type:timestamp`·`type:numeric`·`type:integer`·`type:bigint`·`codemap`)이거나, 내장 변환이 없으면 프로젝트 변환기를 등록해야 한다는 뜻의 `custom:ymd8`·`custom:ymdhms14`·`custom:date-text` 이고, 모양마다 다르면 `custom:mixed` 다. 경과: L3a-1 부터 `ymd8`·`ymdhms14`·`date-text` 는 [내장 도메인 변환기](#표준-도메인-변환기와-nullify)이므로 이 세 힌트는 `transform:` 에 그 이름을 쓰라는 뜻이다(힌트 어휘는 L3a-2 에서 바뀐다). 같은 이름으로 프로젝트 변환기를 등록하면 그 이름은 도메인 변환기가 아니게 되어 위반 코드와 `nullify` 를 잃는다(거부가 `TRANSFORM_FAILED` 가 된다). 내장 `type:timestamp` 는 하이픈 날짜만 읽으므로 슬래시·점 일시에는 `custom:date-text` 를 낸다. 달력에 없는 날짜·자리표시 날짜·형식 밖 값·공백·허용값 밖 코드는 행 수를 센다. 적합률의 분모는 공백 문자열을 포함하고, 공백은 자유 문자 도메인이 아니면 위반이다. 달력 검사는 8자리·14자리 숫자 모양에만 있고, 자리표시 날짜는 8자리(`99991231`·`00000000`)와 하이픈(`9999-12-31`·`0000-00-00`) 형태만 센다 — 슬래시·점·일시·14자리 자리표시는 유효 값으로 들어간다. 길이·자릿수 초과(숫자형 값은 소스 선언 자릿수로 판정한다), 잘렸거나 코드 목록으로 읽을 수 없는 허용값, 집계로 확인할 수 없는 허용값, LOB·시각 전용 값, 행 수 제한으로 일부만 읽은 표가 있으면 적합률을 내지 않는다. 행 단위 판정과 예외 격리는 L3 다.
-- **출력**: 후보는 컬럼마다 최대 5개이고, 첫 후보가 같은 컬럼은 개념 군집으로 묶는다. 표 이름은 mapping 의 소스 표 표기(schema 가 있으면 `schema.table`, 없으면 `table`)다. catalog 는 넣지 않는다 — MySQL·MariaDB 는 catalog 가 늘 `def` 라 세 부분 이름을 거부하고, PostgreSQL·SQL Server 의 catalog 는 DB 이름이라 일반 식별자가 아닐 수 있다. 원장 coverage 가 mapping 의 소스 표 문자열과 대소문자만 무시하고 대조하므로 mapping 도 같은 표기를 쓴다. 산출물은 입력 digest(inventory·profile·app-usage)를 싣는다. `--ledger-draft` 를 주면 컬럼마다 `PROPOSED` 행(대상 비움)을 담은 원장 초안 YAML 을 쓰며, 이 초안은 원장 로더·검증기를 그대로 지난다. 따옴표가 필요한 식별자의 테이블(`SKIPPED_IDENTIFIER`)은 초안에서 빼고, 대소문자(또는 catalog)만 다른 소스 컬럼이 있으면 초안을 만들지 않는다. 후보와 초안은 둘 다 만들고 검사한 뒤에 쓰므로, 초안에서 멈추면 어느 파일도 새로 쓰지 않는다. 두 출력 경로는 서로 다르고 입력 파일과도 달라야 한다.
+- **적합성 추정**: 후보마다 프로파일 집계로 도메인 적합률·위반·필요한 변환을 추정한다. 변환 힌트는 mapping 어휘 그대로다([DEC-OPS-316](../../.agent/memory/decisions.md)) — `transform:<내장 변환기>`·`type:<type>`·`codemap`·`mixed`(모양마다 다른 변환이 필요)·없음. 날짜(`연월일C8`)·일시(`연월일시분초C14`)·시각(`시분초C6`) 도메인은 모양과 상관없이 `transform:ymd8`·`transform:ymdhms14`·`transform:hms6` 이고, 여부 도메인은 Y·N 만 있으면 `transform:yn`, 1·0·true·false 가 섞이면 `codemap` 이다. 그 밖의 날짜 컬럼은 문자 날짜면 `transform:date-text`, 일시 컬럼은 날짜만 있으면 `transform:timestamp-from-date`, 일시면 `transform:timestamp-text` 다. 경과: L3a-1 까지는 `custom:*` 어휘였다. 같은 이름으로 프로젝트 변환기를 등록하면 그 이름은 도메인 변환기가 아니게 되어 위반 코드와 `nullify` 를 잃는다(거부가 `TRANSFORM_FAILED` 가 된다). 달력에 없는 날짜·자리표시 날짜·형식 밖 값·공백·허용값 밖 코드는 행 수를 센다. 적합률의 분모는 공백 문자열을 포함하고, 공백은 자유 문자 도메인이 아니면 위반이다. 달력 검사는 8자리·14자리 숫자 모양에만 있고, 자리표시 날짜는 8자리(`99991231`·`00000000`)와 하이픈(`9999-12-31`·`0000-00-00`) 형태만 센다 — 슬래시·점·일시·14자리 자리표시는 유효 값으로 들어간다. 길이·자릿수 초과(숫자형 값은 소스 선언 자릿수로 판정한다), 잘렸거나 코드 목록으로 읽을 수 없는 허용값, 집계로 확인할 수 없는 허용값, LOB·시각 전용 값, 행 수 제한으로 일부만 읽은 표가 있으면 적합률을 내지 않는다. 행 단위 판정과 예외 격리는 L3 다.
+- **출력**: 후보는 컬럼마다 최대 5개이고, 첫 후보가 같은 컬럼은 개념 군집으로 묶는다. 표 이름은 mapping 의 소스 표 표기(schema 가 있으면 `schema.table`, 없으면 `table`)다. catalog 는 넣지 않는다 — MySQL·MariaDB 는 catalog 가 늘 `def` 라 세 부분 이름을 거부하고, PostgreSQL·SQL Server 의 catalog 는 DB 이름이라 일반 식별자가 아닐 수 있다. 원장 coverage 와 생성기는 이 표기를 승인 inventory 의 표로 해석하므로 mapping 과 표기가 달라도 같은 표면 된다. 산출물은 입력 digest(inventory·profile·app-usage)를 싣는다. `--ledger-draft` 를 주면 컬럼마다 `PROPOSED` 행(대상 비움)을 담은 원장 초안 YAML(형식 2)을 쓴다. 적합률을 셀 수 없었어도 힌트·센 위반·이유를 남기고, 힌트가 내장 변환기 하나로 정해지면 `load` 를 미리 채운다. 이 초안은 원장 로더·검증기를 그대로 지난다. 따옴표가 필요한 식별자의 테이블(`SKIPPED_IDENTIFIER`)은 초안에서 빼고, 대소문자(또는 catalog)만 다른 소스 컬럼이 있으면 초안을 만들지 않는다. 후보와 초안은 둘 다 만들고 검사한 뒤에 쓰므로, 초안에서 멈추면 어느 파일도 새로 쓰지 않는다. 두 출력 경로는 서로 다르고 입력 파일과도 달라야 한다.
 - **프로파일 판**: term-suggest 는 프로파일 판 2 만 받는다. 판 2 는 숫자형 값을 숫자 모양 문자(`INTEGER_TEXT`·`DECIMAL_TEXT`)로 다시 세지 않고, 하이픈 자리표시 날짜(`PLACEHOLDER_DATE_TEXT`)·하이픈 일시(`DATETIME_DASHED`)·14자리 일시의 달력 위반(`ymdhms14Invalid`)을 따로 센다. 판이 다르면 profile 을 다시 실행한다.
 - **외부 LLM**: 쓰지 않는다. 결정 Q3 의 승인 기록·전송 전 검사 가드는 LLM 경로를 둘 때 함께 만든다.
+
+### 원장에서 mapping 만들기
+
+`mapping-generate` 는 사람이 쓴 skeleton 과 검토한 원장으로 mapping.yml 을 만든다([DEC-OPS-316](../../.agent/memory/decisions.md), [생성기](../../migration-tool/src/main/java/nuri/migration/generate/MappingGenerator.java)). 만든 mapping 은 plan 이 다시 독립 검증한다 — 생성은 승인이 아니고 `--check` 같은 별도 대조 명령도 없다.
+
+```powershell
+./gradlew :migration-tool:bootRun --args="--command=mapping-generate --skeleton=skeleton.yml --ledger=term-ledger.yml --inventory=inventory.json --mapping=mapping.yml"
+```
+
+- **skeleton**: `ledger` 와 생성분 컬럼이 빠진 mapping.yml 이다. 접속·run·표(source·target·orderBy·idStrategy·identity·foreignKeys)·codemaps 와, `columns` 에는 `const`·`fkRef` 항목만 둔다. fkRef 항목의 변환은 원장이 정한다. 접속 값은 `${NAME}` 자리표시여야 하고 평문 비밀번호는 거부한다(mapping 로더와 같은 검사).
+- **트리 방식**: 생성기는 skeleton YAML 트리에서 `tables[i].columns`(덧붙이기와 fkRef 항목의 load)와 `ledger` 노드만 바꾼다. 그래서 접속 자리표시가 글자 그대로 남고, 같은 입력은 같은 바이트를 낸다. skeleton 의 주석·따옴표 표기는 남지 않으므로 검토자는 skeleton 원문과 생성물을 따로 본다.
+- **해석과 완전성**: skeleton 표와 원장의 모든 행을 승인 inventory 의 표·컬럼으로 해석한다(플래너·coverage 와 같은 [규칙](../../migration-tool/src/main/java/nuri/migration/discovery/InventoryTables.java)). 찾지 못하거나 모호하거나, 표에 COLUMN 객체가 없거나, 대소문자만 다른 컬럼이 있으면 멈춘다. skeleton 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부 보관 행이 정확히 하나여야 한다 — 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.
+- **컬럼 만들기**: 기본 확정 행마다 `{source: inventory 컬럼 이름, target, load}` 를 덧붙이고, 보호 컬럼이면 `encrypt` 를 정한다. 이관할 수 없는 보호 컬럼으로 확정했으면 멈춘다. skeleton fkRef 항목은 같은 소스 컬럼의 확정 행 load 를 받되 키 정규화(`trim`·`upper`·`lower`·문자 type)만 받는다. 한 대상 컬럼은 const·fkRef·확정 행 중 하나만 채운다 — plan 의 mapping 정적 검증도 같은 대상 컬럼을 두 컬럼 항목이 채우면 거부한다. 만든 mapping 은 plan 과 같은 원장 대응 검사(coverage)를 한 번 더 지난다.
+- **거부**: skeleton 에 없는 소스 표의 확정 행, 원장 행이 없는 skeleton 표, 외부 보관(L3e 전), 기본이 아닌 `mapping`(L3c 전), `via`(L3d 전), 확정되지 않은 컬럼. 문구는 행 ID·표·컬럼·상태와 고정 어휘이고 20건까지 보인다. 이관해야 할 데이터를 이관 제외로 돌려 생성기를 지나가지 않는다([복구 런북](../04-operations/migration-recovery-runbook.md)).
+- **출력**: `ledger: {path: <출력 디렉터리 기준 상대 경로>, sha256: <원장 바이트>}` 를 쓴다. 원장은 출력 mapping 디렉터리 안에 있어야 한다. 쓰기 전에 tables·codemaps 에 자격·개인정보 값 검사를, 다시 읽은 본문에 같은 값 확인과 mapping 정적 검증(`db_columns.json` 필요)을 한다.
 
 ### 결속되는 실행 의미
 
@@ -200,7 +223,7 @@ codemaps:
 - 암호화할 소스 컬럼을 정렬 키(`orderBy`·`orderByKeys`)·`idStrategy.sourceKey`·identity·복합 FK의 source component·`fkRef` 컬럼의 소스로도 쓴다. 이 값은 평문 그대로 `tb_migration_checkpoint.source_key`·`tb_migration_key_map.legacy_key`에 남기 때문이다. 주민번호만 키인 레거시 테이블은 지금 적재할 수 없다([GAP-MIG-002](../../.agent/memory/known-gaps.md)).
 - 키가 없다(dry-run 포함).
 
-값은 하나씩 확인한다. 문자열(LOB 를 읽은 문자열 포함)만 암호화한다. 숫자·날짜 값은 `toString` 이 앞자리 0 이나 표기를 바꿔(Oracle `NUMBER(13)` 의 `0501013234567` → `501013234567`) 다른 값을 암호화하므로 그 행에서 멈춘다 — 내장이 아닌 정규화 변환기로 문자열을 넘긴다. plan 도 문자열이 아닌 소스(내장 변환기를 거쳐도)를 거부한다. 온라인 변환기처럼 빈 값은 NULL로 둔다. 그 밖의 값은 암호화한 뒤 세 가지를 본다.
+값은 하나씩 확인한다. 문자열(LOB 를 읽은 문자열 포함)만 암호화한다. 숫자·날짜 값은 `toString` 이 앞자리 0 이나 표기를 바꿔(Oracle `NUMBER(13)` 의 `0501013234567` → `501013234567`) 다른 값을 암호화하므로 그 행에서 멈춘다 — 내장이 아닌 정규화 변환기로 문자열을 넘긴다. 다만 L3a-2 부터 원장 `load` 는 내장 변환기만 받으므로 이 경로는 승인 workflow(plan·load)에서 쓰지 못한다([GAP-MIG-002](../../.agent/memory/known-gaps.md)). plan 도 문자열이 아닌 소스(내장 변환기를 거쳐도)를 거부한다. 온라인 변환기처럼 빈 값은 NULL로 둔다. 그 밖의 값은 암호화한 뒤 세 가지를 본다.
 
 - 같은 키로 되읽으면 원래 값이 나온다. 온라인 복호화가 채움으로 오인해 걷어 내는 값은 여기서 걸린다. 키가 온라인 키와 같은지는 이 확인으로 알 수 없다.
 - 쓰려는 값이 주민번호 평문 형태가 아니다.
@@ -349,9 +372,10 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 외부 sourc
 - **값 종류**: const(type 힌트 없이 문자열로 바인딩), fkRef(생성 ID 문자열), 소스 inventory 선언, 내장 변환기, codemap, type 힌트 순서로 정한다(적재와 같은 순서). codemap 은 표준 코드와 정책이 쓰는 대체값의 길이로 정하고, 앞 단계 값의 길이는 `unmapped: passthrough` 일 때만 남는다. 형식이 조용히 바뀌거나 값이 손실되는 조합(날짜·논리값→문자, 시각→날짜, 날짜→일시, 근사 수치→정확 수치, 문자→숫자·날짜)은 실패한다. 내장이 아닌 변환기는 출력 계약을 그 변환기가 소유하므로 검사하지 않는다.
 - **표준 도메인 변환기**(ADR-0029 L3a-1): 변환기가 쓰는 값은 소스 길이와 무관하게 선언한다 — `ymd8`·`ymd8-truncate` 문자 8자, `ymdhms14` 14자, `hms6` 6자, `yn` 1자, `date-text`·`date-truncate` 날짜, `timestamp-text`·`timestamp-from-date` 일시. 그래서 `NUMBER(8)` 소스(문자로 쓰면 9자)도 `ymd8` 로 `varchar(8)` 에 쓴다. 변환기마다 받는 소스 종류([표](#표준-도메인-변환기와-nullify))를 inventory 의 JDBC 타입으로 판정해 받지 않는 종류(모든 행이 거부되는 조합)와 선언을 확인할 수 없는 소스는 실패한다.
 - **날짜→일시**: 날짜 값(날짜 소스·`type: date`·`date`·`date-text`·`date-truncate`)은 timestamp 컬럼에 쓰지 않는다. PostgreSQL 은 받지만 checkpoint 는 날짜(`2024-01-31`)로, verify 는 되읽은 일시(`2024-01-31 00:00:00.0`)로 checksum 을 만들어 맞지 않는다([PostgreSQL 재현](../../migration-tool/src/test/java/nuri/migration/StandardDomainTransformPostgresIntegrationTest.java)). 그날 00:00 일시로 쓰려면 `transform: timestamp-from-date` 를 선언한다 — 오류 문구가 그 변환기를 안내한다.
-- **시간대 소스**: 시간대가 있는 소스는 실행 환경(JVM·세션)의 시간대로 날짜·시각이 정해지므로 변환하지도, 시간대 없는 컬럼에 그대로 옮기지도 않는다. JDBC 타입(TIME·TIMESTAMP WITH TIMEZONE, Oracle `-101`·`-102`, SQL Server `-155`)이나 드라이버 타입 이름(`timestamptz`·`timetz`·`timestampltz`·`datetimetz`·`datetimeltz`·`datetimeoffset`, `with time zone`·`with local time zone` 을 담은 이름)으로 가린다 — PostgreSQL 드라이버는 `timestamptz`·`timetz` 를 TIMESTAMP·TIME 으로 알린다. MySQL·MariaDB 의 `TIMESTAMP` 는 UTC 로 저장하고 세션 `time_zone` 으로 바꿔 돌려주므로, 소스 제품이 MySQL·MariaDB 이고 타입 이름이 `TIMESTAMP` 이면 시간대가 있는 값으로 본다(`DATETIME` 은 아니다). 이런 소스는 내장 변환기·`type`·`codemap` 을 쓰면 실패하고, 그대로는 시간대 있는 컬럼(`timestamptz`·`timetz`)에만 옮길 수 있다 — 시간대 없는 `timestamp`·`time` 컬럼에 그대로 옮기는 매핑도 값 타입 불일치로 같은 안내와 함께 실패한다(종전에는 `timestamptz`→`timestamp`, `timetz`→`time` 이 통과했다). 거꾸로 시간대 없는 일시·시각을 `timestamptz`·`timetz` 컬럼에 쓰는 것도 막는다. 시간대 없는 표준 컬럼에 옮겨야 하면 시간대를 정하는 프로젝트 변환기를 계약 버전·구현 digest 와 함께 등록해 선언한다 — 그 변환기는 출력 계약을 스스로 지므로 이 검사를 받지 않는다. 도구 안에는 시간대를 정하는 내장 변환기가 없다.
+- **비시간 소스→날짜·시각 컬럼**(ADR-0029 L3a-2): 날짜·일시가 아닌 소스(문자·숫자 등)는 `type: date|timestamp|datetime` 이나 내장 `date`·`timestamp` 로 날짜·시각 컬럼에 옮기지 않는다 — 이 경로는 `99991231` 같은 자리표시를 날짜로 받고 값마다 위반을 판정하지 않는다. 값마다 판정하는 `date-text`·`timestamp-text`·`timestamp-from-date`·`date-truncate` 만 받는다. 원장에 기록된 위반이 낡았거나 비어 있어도 막도록 구조로 거부한다.
+- **시간대 소스**: 시간대가 있는 소스는 실행 환경(JVM·세션)의 시간대로 날짜·시각이 정해지므로 변환하지도, 시간대 없는 컬럼에 그대로 옮기지도 않는다. JDBC 타입(TIME·TIMESTAMP WITH TIMEZONE, Oracle `-101`·`-102`, SQL Server `-155`)이나 드라이버 타입 이름(`timestamptz`·`timetz`·`timestampltz`·`datetimetz`·`datetimeltz`·`datetimeoffset`, `with time zone`·`with local time zone` 을 담은 이름)으로 가린다 — PostgreSQL 드라이버는 `timestamptz`·`timetz` 를 TIMESTAMP·TIME 으로 알린다. MySQL·MariaDB 의 `TIMESTAMP` 는 UTC 로 저장하고 세션 `time_zone` 으로 바꿔 돌려주므로, 소스 제품이 MySQL·MariaDB 이고 타입 이름이 `TIMESTAMP` 이면 시간대가 있는 값으로 본다(`DATETIME` 은 아니다). 이런 소스는 내장 변환기·`type`·`codemap` 을 쓰면 실패하고, 그대로는 시간대 있는 컬럼(`timestamptz`·`timetz`)에만 옮길 수 있다 — 시간대 없는 `timestamp`·`time` 컬럼에 그대로 옮기는 매핑도 값 타입 불일치로 같은 안내와 함께 실패한다(종전에는 `timestamptz`→`timestamp`, `timetz`→`time` 이 통과했다). 거꾸로 시간대 없는 일시·시각을 `timestamptz`·`timetz` 컬럼에 쓰는 것도 막는다. 시간대 없는 표준 컬럼에 옮겨야 하면 시간대를 정하는 프로젝트 변환기를 계약 버전·구현 digest 와 함께 등록해 선언한다 — 그 변환기는 출력 계약을 스스로 지므로 이 검사를 받지 않는다. 다만 L3a-2 부터 원장 `load` 는 내장 변환기만 받으므로 이 경로는 승인 workflow(plan·load)에서 쓰지 못한다. 도구 안에는 시간대를 정하는 내장 변환기가 없다.
 - **여부·논리값 codemap**: 여부 도메인(도메인 이름이 `여부`·`유무` 로 시작 — 적합성 추정기와 같은 판정) 컬럼의 codemap 은 표준 코드와 쓰이는 대체값이 `Y`·`N` 이어야 하고 `unmapped: passthrough` 를 쓸 수 없다. 논리값 소스를 찾는 codemap 의 키는 원천 Boolean 의 표기 그대로다 — 변환 없이·`trim`·`lower` 뒤에는 정확히 `true`·`false`, `upper` 뒤에는 `TRUE`·`FALSE`. 그 밖의 내장 변환기 뒤에는 codemap 키를 정할 수 없어 실패한다.
-- **길이·정밀도**: inventory의 소스 선언 길이, 정밀도와 소수 자릿수가 타깃 한계를 넘으면 실패한다. 선언을 확인할 수 없어도 실패한다. 다만 타깃이 길이 제한 없는 `text`·`numeric`이면 통과한다. 소수 자릿수 초과는 PostgreSQL이 오류 없이 반올림하므로 특히 막는다. 값을 줄여야 하면 내장이 아닌 변환기를 선언한다.
+- **길이·정밀도**: inventory의 소스 선언 길이, 정밀도와 소수 자릿수가 타깃 한계를 넘으면 실패한다. 선언을 확인할 수 없어도 실패한다. 다만 타깃이 길이 제한 없는 `text`·`numeric`이면 통과한다. 소수 자릿수 초과는 PostgreSQL이 오류 없이 반올림하므로 특히 막는다. 값을 줄여야 하면 내장이 아닌 변환기를 선언한다 — 다만 L3a-2 부터 원장 `load` 는 내장 변환기만 받으므로 이 경로는 승인 workflow 에서 쓰지 못한다([GAP-MIG-002](../../.agent/memory/known-gaps.md)).
 - **보호 컬럼·생성 ID**: `encrypt` 컬럼은 평문이 아니라 Base64 암호문 길이로 대조한다(평문 N자 → 최대 4·⌈16·⌈4N/16⌉/3⌉자, 13자 주민번호 → 88자, 48자 → 256자). 소스가 문자열이 아니면(내장 변환기를 거쳐도) 실패한다. `idStrategy` 컬럼과 그 부모를 가리키는 `fkRef` 값은 생성 ID 길이(접두사 + hex, 기본 20자)로 물리 컬럼·도메인 중 좁은 쪽과 대조한다.
 - **NOT NULL**: 기본값·identity·생성식이 없는 NOT NULL 컬럼은 매핑·const·`idStrategy`·identity·복합 FK 중 하나가 채워야 한다. `GENERATED ALWAYS` 생성 컬럼과 `GENERATED ALWAYS` identity에는 쓸 수 없다. 기본값은 매핑하지 않은 컬럼에만 쓰인다 — 매핑한 컬럼은 NULL 도 명시해 바인딩한다(적재 절). 그래서 `nullify` 는 NULL 을 받는 컬럼에만 선언할 수 있고, 기본값이 있는 NOT NULL 컬럼도 거부한다.
 - **결속과 메시지**: 이 계약은 target schema digest(fingerprint v3)에 들어간다. plan 뒤에 스키마나 표준 사전이 바뀌면 load가 digest 불일치로 멈추고, load는 실행 직전에 같은 검증을 다시 한다. 오류는 앞의 20건을 보여 주며 표·컬럼 이름과 타입·길이만 싣는다. 행 값·const·codemap 값은 싣지 않는다.
@@ -383,4 +407,4 @@ npm run verify:migration
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*표준 도메인 변환기·nullify·격리 어휘 대응표·날짜→일시 차단·시간대 소스 검토: 2026-10-15. 표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정·값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*
+*원장 형식 2·원장에서 mapping 만들기·원장 필수화·비표준 대상·비시간 소스→날짜·시각 검토: 2026-10-15. 표준 도메인 변환기·nullify·격리 어휘 대응표·날짜→일시 차단·시간대 소스 검토: 2026-10-15. 표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정·값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

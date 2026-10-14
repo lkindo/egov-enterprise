@@ -28,6 +28,25 @@ class TypeConverterTest {
     }
 
     @Test
+    void aTextTypeRejectsObjectsWhoseStringFormIsNotTheValue() {
+        // 원장은 문자 type 을 추정기가 판정하지 못한 값 종류의 행 단위 판정으로 센다(ADR-0029 L3a-2).
+        for (Object notText : new Object[] {org.mockito.Mockito.mock(java.sql.SQLXML.class),
+                org.mockito.Mockito.mock(java.sql.Struct.class), org.mockito.Mockito.mock(java.sql.Array.class),
+                org.mockito.Mockito.mock(java.sql.Ref.class), org.mockito.Mockito.mock(java.sql.RowId.class),
+                new java.io.ByteArrayInputStream(new byte[] {1}), new java.io.StringReader("x")}) {
+            for (String type : new String[] {"text", "string", "varchar", "char"}) {
+                assertThatThrownBy(() -> TypeConverter.convert(type, notText)).as(type + " ← " + notText.getClass())
+                        .isInstanceOf(IllegalArgumentException.class).hasNoCause();
+            }
+        }
+        // 문자로 읽은 LOB(문자열)·숫자·날짜·논리값은 그대로 문자로 받는다.
+        assertThat(TypeConverter.convert("text", "CLOB 본문")).isEqualTo("CLOB 본문");
+        assertThat(TypeConverter.convert("varchar", 12)).isEqualTo("12");
+        assertThat(TypeConverter.convert("string", LocalDate.of(2026, 10, 15))).isEqualTo("2026-10-15");
+        assertThat(TypeConverter.convert("char", Boolean.TRUE)).isEqualTo("true");
+    }
+
+    @Test
     void nullAndBlankPassThroughButUnknownTypeFailsClosed() {
         assertThat(TypeConverter.convert("int", null)).isNull();
         assertThat(TypeConverter.convert(null, "x")).isEqualTo("x");

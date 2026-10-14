@@ -34,6 +34,7 @@ class TermSuggesterTest {
                 .containsExactly("등록일자", "REG_YMD", "연월일C8");
         assertThat(top.evidence()).containsExactly("NAME_ENG_ABBR");
         assertThat(top.conformance().rate()).isEqualByComparingTo("100.0");
+        assertThat(top.conformance().transform()).as("힌트는 mapping 어휘다(L3a-2)").isEqualTo("transform:ymd8");
         assertThat(suggestion.conflicts()).isEmpty();
     }
 

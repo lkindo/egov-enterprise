@@ -4,6 +4,7 @@ import nuri.migration.artifact.CatalogSnapshotDigester;
 import nuri.migration.artifact.MappingSpecDigester;
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
+import nuri.migration.discovery.InventoryTables;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.discovery.VisibilityStatus;
 import nuri.migration.model.MappingSpec;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -146,8 +146,9 @@ public final class MigrationPlanner {
                 blockers.add("MappingSpec 소스 테이블 미지정");
                 continue;
             }
+            // [ADR-0029 L3a-2] 생성기·원장 coverage 와 같은 규칙으로 표를 찾는다.
             List<CatalogObject> matches = tables.stream()
-                    .filter(table -> matches(mapping.source(), table))
+                    .filter(table -> InventoryTables.matches(mapping.source(), table))
                     .toList();
             if (matches.isEmpty()) {
                 blockers.add("MappingSpec 소스 테이블을 inventory에서 찾을 수 없음: " + mapping.source());
@@ -164,33 +165,6 @@ public final class MigrationPlanner {
             }
         }
         return Map.copyOf(resolved);
-    }
-
-    private static boolean matches(String declaredSource, CatalogObject table) {
-        String[] parts = declaredSource.trim().split("\\.", -1);
-        if (parts.length < 1 || parts.length > 3) {
-            return false;
-        }
-        boolean caseSensitive = table.quoted();
-        if (parts.length == 1) {
-            return identifierEquals(parts[0], table.name(), caseSensitive);
-        }
-        if (parts.length == 2) {
-            return identifierEquals(parts[0], table.schema(), caseSensitive)
-                    && identifierEquals(parts[1], table.name(), caseSensitive);
-        }
-        return identifierEquals(parts[0], table.catalog(), caseSensitive)
-                && identifierEquals(parts[1], table.schema(), caseSensitive)
-                && identifierEquals(parts[2], table.name(), caseSensitive);
-    }
-
-    private static boolean identifierEquals(String declared, String actual, boolean caseSensitive) {
-        if (actual == null) {
-            return false;
-        }
-        return caseSensitive
-                ? declared.equals(actual)
-                : declared.toLowerCase(Locale.ROOT).equals(actual.toLowerCase(Locale.ROOT));
     }
 
     private static MigrationObjectPlan planObject(
