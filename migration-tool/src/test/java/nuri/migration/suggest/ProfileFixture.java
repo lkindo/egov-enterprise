@@ -23,6 +23,8 @@ final class ProfileFixture {
     private long blanks;
     private long lob;
     private long other;
+    private String nativeType = "VARCHAR";
+    private int jdbcType = 12;
     private Long declaredSize = 100L;
     private Integer declaredScale;
     private long rareRows;
@@ -93,6 +95,12 @@ final class ProfileFixture {
         return this;
     }
 
+    ProfileFixture declaredType(String type, int sqlType) {
+        nativeType = type;
+        jdbcType = sqlType;
+        return this;
+    }
+
     ProfileFixture declared(Long size, Integer scale) {
         declaredSize = size;
         declaredScale = scale;
@@ -119,7 +127,7 @@ final class ProfileFixture {
         CommentEvidence evidence = comment == null
                 ? new CommentEvidence(null, false, null, "ABSENT")
                 : new CommentEvidence(comment, false, null, "MATCH");
-        return new ColumnProfile(name, 1, "VARCHAR", 12, declaredSize, declaredScale, true, values, 0, blanks,
+        return new ColumnProfile(name, 1, nativeType, jdbcType, declaredSize, declaredScale, true, values, 0, blanks,
                 text, number, temporal, lob, other, null, maxLength, 0, 0, frequencies.size(), false, patterns,
                 ymd8Invalid, ymdhms14Invalid, null, null, false,
                 frequencies, rareRows, rareRows == 0 ? 0 : 1, omitted, evidence);

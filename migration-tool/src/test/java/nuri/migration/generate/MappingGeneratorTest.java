@@ -1,0 +1,526 @@
+package nuri.migration.generate;
+
+import nuri.migration.discovery.CatalogObject;
+import nuri.migration.discovery.CatalogObject.ObjectReference;
+import nuri.migration.discovery.CatalogSnapshot;
+import nuri.migration.discovery.ObjectKind;
+import nuri.migration.discovery.SnapshotCapability;
+import nuri.migration.domain.DomainViolation;
+import nuri.migration.model.MappingLoader;
+import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.transform.TransformerRegistry;
+import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ledger.TermLedgerLoader;
+import nuri.migration.validate.ledger.TermLedgerValidator;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/**
+ * 원장에서 mapping 만들기(ADR-0029 L3a-2) — 트리 보존, 소스 단위 완전성, fkRef 키 정규화, 아직 실행할 수 없는 행 거부,
+ * 자격·개인정보 차단, 같은 입력의 같은 바이트.
+ */
+public class MappingGeneratorTest {
+
+    public static final String SKELETON = """
+            source:
+              url: ${SRC_URL}
+              username: ${SRC_USER}
+              password: ${SRC_PW}
+              driver: org.postgresql.Driver
+              endpointId: legacy-src
+            target:
+              url: ${TGT_URL}
+              username: ${TGT_USER}
+              password: ${TGT_PW}
+              endpointId: std-target
+            run:
+              runId: run-1
+              sourceNamespace: legacy
+            tables:
+              - source: legacy.DEPT_MST
+                target: tb_ognz_info
+                orderBy: DEPT_CD
+                idStrategy: {column: ognz_id, generator: OGNZ_, sourceKey: DEPT_CD}
+              - source: legacy.USER_MST
+                target: tb_user_info
+                orderBy: USER_SN
+                idStrategy: {column: esntl_id, generator: USRCNFRM_, sourceKey: USER_SN}
+                columns:
+                  - {source: DEPT_CD, target: ognz_id, fkRef: legacy.DEPT_MST}
+                  - {target: frst_rgtr_id, const: MIGRATION}
+            codemaps:
+              user_status:
+                values: {"1": "P", "0": "D"}
+            """;
+
+    public static final String LEDGER = """
+            schemaVersion: 2
+            entries:
+              - id: D1
+                source: {table: legacy.DEPT_MST, column: DEPT_CD}
+                grade: UNKNOWN
+                status: APPROVED_IGNORE
+                note: 부모 키로만 쓴다(idStrategy.sourceKey)
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+              - id: D2
+                source: {table: legacy.DEPT_MST, column: DEPT_NM}
+                target: {table: tb_ognz_info, column: ognz_nm}
+                term: {name: 조직명, engAbbr: OGNZ_NM, domain: 명V100}
+                grade: EXACT
+                status: CONFIRMED
+                load: {transform: trim}
+                conformance: {rate: 100}
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+              - id: U1
+                source: {table: legacy.USER_MST, column: USER_SN}
+                grade: UNKNOWN
+                status: APPROVED_IGNORE
+                note: 대리키 채번의 원천 키로만 쓴다
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+              - id: U2
+                source: {table: legacy.USER_MST, column: USER_ID}
+                target: {table: tb_user_info, column: user_id}
+                term: {name: 사용자ID, engAbbr: USER_ID, domain: ID V20}
+                grade: EXACT
+                status: CONFIRMED
+                load: {}
+                conformance: {rate: 100}
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+              - id: U3
+                source: {table: legacy.USER_MST, column: USER_NM}
+                target: {table: tb_user_info, column: user_nm}
+                term: {name: 사용자명, engAbbr: USER_NM, domain: 명V100}
+                grade: EXACT
+                status: CONFIRMED
+                load: {transform: trim}
+                conformance: {rate: 100}
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+              - id: U4
+                source: {table: legacy.USER_MST, column: END_YMD}
+                target: {table: tb_user_info, column: end_ymd}
+                term: {name: 종료일자, engAbbr: END_YMD, domain: 연월일C8}
+                grade: EXACT
+                status: CONFIRMED
+                load: {transform: ymd8, nullify: [{violation: PLACEHOLDER_DATE, maxRows: 12}]}
+                conformance:
+                  rate: 99.6
+                  transform: transform:ymd8
+                  violations: [{type: PLACEHOLDER_DATE, rows: 12}]
+                note: 99991231 자리표시는 종료일 없음으로 본다
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+              - id: U5
+                source: {table: legacy.USER_MST, column: DEPT_CD}
+                target: {table: tb_user_info, column: ognz_id}
+                term: {name: 조직ID, engAbbr: OGNZ_ID, domain: ID V20}
+                grade: EXACT
+                status: CONFIRMED
+                load: {transform: trim}
+                conformance: {rate: 100}
+                history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+              - id: H1
+                source: {table: legacy.LOG_HIST, column: LOG_SN}
+                grade: UNKNOWN
+                status: PROPOSED
+            """;
+
+    @TempDir
+    Path temp;
+
+    private MappingGenerator generator;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        Path columns = temp.resolve("db_columns.json");
+        Files.writeString(columns, """
+                [
+                  {"table_name": "tb_ognz_info", "column_name": "ognz_id"},
+                  {"table_name": "tb_ognz_info", "column_name": "ognz_nm"},
+                  {"table_name": "tb_user_info", "column_name": "esntl_id"},
+                  {"table_name": "tb_user_info", "column_name": "user_id"},
+                  {"table_name": "tb_user_info", "column_name": "user_nm"},
+                  {"table_name": "tb_user_info", "column_name": "end_ymd"},
+                  {"table_name": "tb_user_info", "column_name": "ognz_id"},
+                  {"table_name": "tb_user_info", "column_name": "user_enrrno"},
+                  {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"}
+                ]
+                """);
+        // 환경 변수를 늘 돌려주는 대역 — 생성기가 접속 값을 치환해 다시 쓰면 이 값이 출력에 드러난다.
+        MappingLoader loader = new MappingLoader(name -> "resolved-secret-" + name);
+        generator = new MappingGenerator(loader, new MappingValidator(new TransformerRegistry(), columns.toString()));
+    }
+
+    @Test
+    void confirmedRowsBecomeColumnsAndTheRestOfTheSkeletonIsKept() {
+        String text = generator.generate(SKELETON, LEDGER, "ledger.yml", inventory());
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(text);
+        assertThat(mapping.source().password()).isEqualTo("${SRC_PW}");
+        assertThat(mapping.target().url()).isEqualTo("${TGT_URL}");
+        assertThat(mapping.run()).isEqualTo(new MappingSpec.RunContext("run-1", "legacy"));
+        assertThat(mapping.tables().get(0).columns()).containsExactly(
+                new ColumnMapping("DEPT_NM", "ognz_nm", "trim", null, null, null, null));
+        assertThat(mapping.tables().get(0).idStrategy())
+                .isEqualTo(new MappingSpec.IdStrategy("ognz_id", "OGNZ_", "DEPT_CD"));
+        assertThat(mapping.tables().get(1).columns()).containsExactly(
+                new ColumnMapping("DEPT_CD", "ognz_id", "trim", null, null, "legacy.DEPT_MST", null),
+                new ColumnMapping(null, "frst_rgtr_id", null, null, null, null, "MIGRATION"),
+                new ColumnMapping("USER_ID", "user_id", null, null, null, null, null),
+                new ColumnMapping("USER_NM", "user_nm", "trim", null, null, null, null),
+                new ColumnMapping("END_YMD", "end_ymd", "ymd8", null, null, null, null, null,
+                        List.of(new MappingSpec.Nullify(DomainViolation.PLACEHOLDER_DATE, 12L))));
+        assertThat(mapping.codemaps()).containsOnlyKeys("user_status");
+        assertThat(mapping.ledger()).isEqualTo(new MappingSpec.LedgerBinding("ledger.yml", sha256(LEDGER)));
+        assertThat(text).startsWith(MappingGenerator.HEADER);
+        // 만든 mapping 은 원장의 확정 행만 옮긴다(plan·load 의 원장 coverage 와 같은 판정).
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(LEDGER), mapping, inventory()))
+                .isEmpty();
+    }
+
+    @Test
+    void connectionPlaceholdersStayLiteralAndNoResolvedValueIsWritten() {
+        // 비밀번호가 빈 접속(신뢰 인증)도 url·username 자리표시가 그대로 남는다 — 치환한 객체를 다시 쓰면 여기서 드러난다.
+        String blankPasswords = SKELETON.replace("password: ${SRC_PW}", "password: \"\"")
+                .replace("password: ${TGT_PW}", "password: \"\"");
+        assertThat(generator.generate(blankPasswords, LEDGER, "ledger.yml", inventory()))
+                .contains("${SRC_URL}", "${SRC_USER}", "${TGT_URL}", "${TGT_USER}")
+                .doesNotContain("resolved-secret-");
+
+        String text = generator.generate(SKELETON, LEDGER, "ledger.yml", inventory());
+
+        assertThat(text).contains("${SRC_PW}", "${SRC_URL}", "${TGT_PW}", "${TGT_USER}")
+                .doesNotContain("resolved-secret-");
+    }
+
+    @Test
+    void textThatLooksLikeANumberOrABooleanStaysText() {
+        String skeleton = SKELETON.replace("const: MIGRATION", "const: \"0001\"")
+                .replace("values: {\"1\": \"P\", \"0\": \"D\"}",
+                        "values: {\"1\": \"01\", \"0\": \"yes\", \"2\": \"1.0\"}");
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, LEDGER, "ledger.yml", inventory()));
+
+        assertThat(mapping.tables().get(1).columns().get(1).constant()).isEqualTo("0001");
+        assertThat(mapping.codemaps().get("user_status").values())
+                .containsExactly(Map.entry("1", "01"), Map.entry("0", "yes"), Map.entry("2", "1.0"));
+    }
+
+    @Test
+    void theSameInputsProduceTheSameBytes() {
+        String first = generator.generate(SKELETON, LEDGER, "ledger.yml", inventory());
+        String second = generator.generate(SKELETON, LEDGER, "ledger.yml", inventory());
+
+        assertThat(second).isEqualTo(first);
+        assertThat(generator.generate(SKELETON.replace("orderBy: USER_SN", "orderBy: \"USER_SN\""), LEDGER,
+                "ledger.yml", inventory())).isEqualTo(first);
+    }
+
+    @Test
+    void everyInventoryColumnOfASkeletonSourceNeedsAConfirmedOrADisposedRow() {
+        CatalogSnapshot withPhone = inventory("MOBILE_NO");
+
+        assertThatThrownBy(() -> generator.generate(SKELETON, LEDGER, "ledger.yml", withPhone))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessage("mapping 을 만들지 않았습니다: legacy.USER_MST.MOBILE_NO: mapping·원장 어디에도 없는"
+                        + " 컬럼입니다 — 옮기면 확정하고, 키로만 쓰거나 옮기지 않으면 이관 제외(APPROVED_IGNORE)와"
+                        + " 사유를 적으세요");
+
+        String proposed = LEDGER.replace("""
+                    term: {name: 사용자명, engAbbr: USER_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    term: {name: 사용자명, engAbbr: USER_NM, domain: 명V100}
+                    grade: EXACT
+                    status: REVIEWED
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}]
+                """);
+        assertThatThrownBy(() -> generator.generate(SKELETON, proposed, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(REVIEWED): 확정되지 않은 컬럼은"
+                        + " mapping 으로 만들 수 없습니다");
+    }
+
+    @Test
+    void aLongRefusalShowsTwentyEntriesAndCountsTheRest() {
+        String[] extra = new String[25];
+        for (int index = 0; index < extra.length; index++) {
+            extra[index] = "EXTRA_%02d".formatted(index);
+        }
+
+        assertThatThrownBy(() -> generator.generate(SKELETON, LEDGER, "ledger.yml", inventory(extra)))
+                .hasMessageContaining("legacy.USER_MST.EXTRA_19: mapping·원장 어디에도 없는 컬럼입니다")
+                .hasMessageNotContaining("EXTRA_20")
+                .hasMessageEndingWith(" (외 5건)");
+    }
+
+    @Test
+    void completenessCountsConfirmedRowsOfEveryMappingOfTheSource() {
+        // 분할 원장: USER_NM 은 기본이 아닌 매핑(user_ext)으로만 확정됐다. 완전성은 소스 단위라 이 컬럼은 빠지지 않고,
+        // L3c 전이라 그 행만 거부한다.
+        String split = LEDGER.replace("""
+                  - id: U3
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                """, """
+                  - id: U3
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                    mapping: user_ext
+                """);
+
+        assertThatThrownBy(() -> generator.generate(SKELETON, split, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(CONFIRMED): 기본 매핑이 아닌"
+                        + " mapping 은 아직 만들 수 없습니다(L3c 전)");
+    }
+
+    @Test
+    void rowsTheRuntimeCannotRunYetAndConfirmedRowsOutsideTheSkeletonAreRefused() {
+        String archived = LEDGER.replace("""
+                    status: APPROVED_IGNORE
+                    note: 대리키 채번의 원천 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    status: ARCHIVE
+                    archive: {retainUntil: "2031-12-31"}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: ARCHIVE, by: 업무담당, at: "2026-10-02"}]
+                """).replace("""
+                    source: {table: legacy.USER_MST, column: USER_ID}
+                """, """
+                    source: {table: legacy.USER_MST, column: USER_ID}
+                    via: {mapping: orders, lookup: cust}
+                """).replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    target: {table: tb_user_info, column: user_enrrno}
+                    term: {name: 주민등록번호, engAbbr: USER_ENRRNO, domain: 주민등록번호V256}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """);
+
+        assertThatThrownBy(() -> generator.generate(SKELETON, archived, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U1 legacy.USER_MST.USER_SN(ARCHIVE): 외부 보관(ARCHIVE)은 아직"
+                        + " mapping 으로 실행할 수 없습니다(L3e 전) | U2 legacy.USER_MST.USER_ID(CONFIRMED): 조회"
+                        + " 조인(via)은 아직 mapping 으로 만들 수 없습니다(L3d 전) | H1 legacy.LOG_HIST.LOG_SN(CONFIRMED):"
+                        + " skeleton 에 없는 소스 표의 확정 행입니다 — skeleton 에 그 표를 두세요")
+                .hasMessageNotContaining("APPROVED_IGNORE 로");
+    }
+
+    @Test
+    void aSkeletonTableWithoutLedgerRowsAndAnUnresolvableTableAreRefused() {
+        String withLog = SKELETON.replace("codemaps:", """
+                  - source: legacy.LOG_HIST
+                    target: tb_user_info
+                  - source: legacy.NO_SUCH
+                    target: tb_user_info
+                codemaps:""");
+        String noLogRows = LEDGER.substring(0, LEDGER.indexOf("  - id: H1"));
+
+        assertThatThrownBy(() -> generator.generate(withLog, noLogRows, "ledger.yml", inventory()))
+                .hasMessageContaining("skeleton tables[3] legacy.NO_SUCH: 소스 표를 inventory 에서 찾을 수 없습니다")
+                .hasMessageContaining("skeleton tables[2] legacy.LOG_HIST: 원장 행이 없는 표입니다");
+    }
+
+    @Test
+    void aForeignKeyColumnTakesOnlyKeyNormalizingLoads() {
+        String domainKey = LEDGER.replace("""
+                    term: {name: 조직ID, engAbbr: OGNZ_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                """, """
+                    term: {name: 조직ID, engAbbr: OGNZ_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: ymd8}
+                """);
+        String codedKey = domainKey.replace("load: {transform: ymd8}", "load: {codemap: user_status}");
+        String typedKey = domainKey.replace("load: {transform: ymd8}", "load: {transform: upper, type: string}");
+
+        String refusal = "mapping 을 만들지 않았습니다: U5 legacy.USER_MST.DEPT_CD(CONFIRMED): fkRef 컬럼의 load 는 키를"
+                + " 정규화하는 처리(trim·upper·lower·문자 type)만 받습니다 — 표준 도메인 변환기·codemap·nullify 는 부모"
+                + " 키를 바꿉니다";
+        assertThatThrownBy(() -> generator.generate(SKELETON, domainKey, "ledger.yml", inventory()))
+                .hasMessage(refusal);
+        assertThatThrownBy(() -> generator.generate(SKELETON, codedKey, "ledger.yml", inventory()))
+                .hasMessageStartingWith(refusal);
+        MappingSpec typed = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(SKELETON, typedKey, "ledger.yml", inventory()));
+        assertThat(typed.tables().get(1).columns().getFirst())
+                .isEqualTo(new ColumnMapping("DEPT_CD", "ognz_id", "upper", "string", null, "legacy.DEPT_MST", null));
+    }
+
+    @Test
+    void aConstantAndAConfirmedRowCannotFillTheSameTargetColumn() {
+        String overlapping = SKELETON.replace("{target: frst_rgtr_id, const: MIGRATION}",
+                "{target: user_nm, const: MIGRATION}");
+
+        assertThatThrownBy(() -> generator.generate(overlapping, LEDGER, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: legacy.USER_MST: 같은 대상 컬럼(user_nm)을 두 항목이 채웁니다"
+                        + " — 상수(const) 항목, 원장 행 U3");
+    }
+
+    @Test
+    void aProtectedTargetGetsItsEncryptionDeclaration() {
+        String rrn = LEDGER.replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: U6
+                    source: {table: legacy.USER_MST, column: RRN}
+                    target: {table: tb_user_info, column: user_enrrno}
+                    term: {name: 주민등록번호, engAbbr: USER_ENRRNO, domain: 주민등록번호V256}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """);
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(SKELETON, rrn, "ledger.yml", inventory("RRN")));
+
+        assertThat(mapping.tables().get(1).columns()).last()
+                .isEqualTo(new ColumnMapping("RRN", "user_enrrno", null, null, null, null, null, "aria-egov-v1"));
+    }
+
+    @Test
+    void confirmedRowsMustTargetTheSkeletonTableAndAColumnTheToolCanProduce() {
+        String withLog = SKELETON.replace("codemaps:", """
+                  - source: legacy.LOG_HIST
+                    target: tb_auth_otp_cert
+                codemaps:""");
+        String ledger = LEDGER.replace("""
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    target: {table: tb_auth_otp_cert, column: otp_secret_encpt_cn}
+                    term: {name: OTP비밀암호화내용, engAbbr: OTP_SECRET_ENCPT_CN, domain: 내용V4000}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """).replace("target: {table: tb_user_info, column: user_nm}", "target: {table: tb_user_detail, column: user_nm}");
+
+        assertThatThrownBy(() -> generator.generate(withLog, ledger, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(CONFIRMED): 확정 행의 대상 표가 skeleton"
+                        + " 의 대상 표(tb_user_info)와 다릅니다 | H1 legacy.LOG_HIST.LOG_SN(CONFIRMED): 이관 도구가 만들 수 없는"
+                        + " 보호 컬럼으로 확정했습니다 — 온라인 앱에서 다시 만드는 값이라 옮길 수 없습니다");
+    }
+
+    @Test
+    void aPlaintextPasswordSkeletonIsRefusedWithoutEchoingIt() {
+        assertThatThrownBy(() -> generator.generate(SKELETON.replace("password: ${TGT_PW}", "password: pa55-word"),
+                LEDGER, "ledger.yml", inventory()))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessage("mapping DB password는 평문을 허용하지 않습니다. ${NAME} 전체 값 형식으로 주입하세요");
+    }
+
+    @Test
+    void aPersonalLookingConstantIsNotWritten() {
+        String personal = SKELETON.replace("const: MIGRATION", "const: 010-1234-5678");
+
+        assertThatThrownBy(() -> generator.generate(personal, LEDGER, "ledger.yml", inventory()))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessage("mapping 의 tables 에 자격·개인정보로 보이는 값이 있어 쓰지 않았습니다");
+    }
+
+    @Test
+    void anInvalidLedgerIsRefusedBeforeAnythingIsBuilt() {
+        assertThatThrownBy(() -> generator.generate(SKELETON, LEDGER.replace("schemaVersion: 2", "schemaVersion: 1"),
+                "ledger.yml", inventory()))
+                .hasMessageStartingWith("용어 매핑 원장 형식 1 은 더 이상 읽지 않습니다");
+        assertThatThrownBy(() -> generator.generate(SKELETON, LEDGER.replace("    load: {}\n", ""), "ledger.yml",
+                inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U2: 확정에는 load(변환·type·codemap·nullify, 변환이 없으면 {})가"
+                        + " 필요합니다");
+    }
+
+    @Test
+    void theLedgerMustSitInsideTheOutputDirectory() {
+        Path output = temp.resolve("out").resolve("mapping.yml");
+
+        assertThat(MappingGenerator.ledgerPath(output, temp.resolve("out").resolve("ledger").resolve("terms.yml")))
+                .isEqualTo("ledger/terms.yml");
+        assertThat(MappingGenerator.ledgerPath(output, temp.resolve("out").resolve("x").resolve("..")
+                .resolve("terms.yml"))).isEqualTo("terms.yml");
+        assertThatThrownBy(() -> MappingGenerator.ledgerPath(output, temp.resolve("terms.yml")))
+                .hasMessage("용어 매핑 원장은 출력 mapping 과 같은 디렉터리나 그 아래에 있어야 합니다");
+        for (String path : List.of("../terms.yml", "/terms.yml", "a/./b.yml", "a\\b.yml", "C:x.yml", "")) {
+            assertThatThrownBy(() -> generator.generate(SKELETON, LEDGER, path, inventory())).as(path)
+                    .hasMessage("용어 매핑 원장 경로는 출력 mapping 디렉터리 기준의 상대 경로여야 합니다");
+        }
+    }
+
+    /** USER_MST·DEPT_MST·LOG_HIST 와 그 컬럼. {@code extra} 는 USER_MST 에 더하는 컬럼이다. */
+    public static CatalogSnapshot inventory(String... extra) {
+        CatalogObject dept = table("DEPT_MST");
+        CatalogObject user = table("USER_MST");
+        CatalogObject log = table("LOG_HIST");
+        // 산출물처럼 정의 순서와 다른 순서로 담는다 — 생성기는 정의 순서(ordinal)로 컬럼을 쓴다.
+        List<CatalogObject> objects = new ArrayList<>(List.of(log, user, dept,
+                column(dept, "DEPT_NM", 2), column(dept, "DEPT_CD", 1),
+                column(user, "DEPT_CD", 5), column(user, "END_YMD", 4), column(user, "USER_NM", 3),
+                column(user, "USER_ID", 2), column(user, "USER_SN", 1), column(log, "LOG_SN", 1)));
+        for (int index = 0; index < extra.length; index++) {
+            objects.add(column(user, extra[index], 6 + index));
+        }
+        return new CatalogSnapshot(CatalogSnapshot.CURRENT_SCHEMA_VERSION, Instant.parse("2026-10-14T00:00:00Z"),
+                new CatalogSnapshot.DatabaseInfo("LegacyDB", "1", "driver", "1"),
+                new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),
+                SnapshotCapability.unknown(), objects, List.of());
+    }
+
+    private static CatalogObject table(String name) {
+        return new CatalogObject(ObjectKind.TABLE, "db", "legacy", name, false, null, null, List.of(), Map.of());
+    }
+
+    private static CatalogObject column(CatalogObject table, String name, int ordinal) {
+        Map<String, String> attributes = new LinkedHashMap<>();
+        attributes.put("parentTable", table.name());
+        attributes.put("originalName", name);
+        attributes.put("jdbcType", "12");
+        attributes.put("ordinal", Integer.toString(ordinal));
+        return new CatalogObject(ObjectKind.COLUMN, "db", "legacy", table.name() + "." + name, false, null, null,
+                List.of(new ObjectReference(ObjectKind.TABLE, "db", "legacy", table.name())), attributes);
+    }
+
+    private static String sha256(String text) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
+                    .digest(text.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception impossible) {
+            throw new IllegalStateException(impossible);
+        }
+    }
+}

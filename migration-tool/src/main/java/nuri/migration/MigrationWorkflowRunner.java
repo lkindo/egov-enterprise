@@ -25,6 +25,7 @@ import nuri.migration.discovery.DiscoveryRequest;
 import nuri.migration.discovery.DiscoveryScope;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
+import nuri.migration.generate.MappingGenerator;
 import nuri.migration.jdbc.SourceJdbcEndpoint;
 import nuri.migration.jdbc.SourceJdbcEndpointFactory;
 import nuri.migration.model.MappingLoader;
@@ -70,7 +71,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/** 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로와 수집·식별 명령(profile·app-scan·term-suggest). */
+/**
+ * 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로와 수집·식별 명령(profile·app-scan·term-suggest),
+ * 원장에서 mapping 을 만드는 mapping-generate.
+ */
 @Component
 public final class MigrationWorkflowRunner implements ApplicationRunner {
 
@@ -207,6 +211,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 case PROFILE -> profile(options);
                 case APP_SCAN -> appScan(options);
                 case TERM_SUGGEST -> termSuggest(options);
+                case MAPPING_GENERATE -> mappingGenerate(options);
                 case PLAN -> plan(options);
                 case VALIDATE -> validate(options);
                 case LOAD -> load(options);
@@ -344,6 +349,26 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         }
     }
 
+    /**
+     * [ADR-0029 L3a-2] 사람이 쓴 skeleton 과 검토한 용어 매핑 원장, 승인 inventory 로 mapping 을 만든다. DB 에 접속하지
+     * 않고 접속 자리표시({@code ${NAME}})는 치환하지 않은 채 다시 쓴다. 원장은 만들 mapping 과 같은 디렉터리나 그 아래에
+     * 있어야 한다. 만든 mapping 은 plan 이 다시 독립 검증한다 — 생성은 승인이 아니다.
+     */
+    private void mappingGenerate(WorkflowCliOptions options) {
+        String skeleton = files.readUtf8(options.skeleton());
+        String ledger = files.readUtf8(options.ledger());
+        CatalogSnapshot inventory = inventoryCodec.readEnvelope(files.readUtf8(options.inventory()))
+                .payload().toSnapshot();
+        String mapping;
+        try {
+            String ledgerPath = MappingGenerator.ledgerPath(options.mapping(), options.ledger());
+            mapping = new MappingGenerator(loader, validator).generate(skeleton, ledger, ledgerPath, inventory);
+        } catch (MappingGenerator.Refused refused) {
+            throw gate(refused.getMessage());
+        }
+        files.writeAtomic(options.mapping(), mapping);
+    }
+
     private void plan(WorkflowCliOptions options) throws SQLException {
         MappingSpec mapping = readMapping(options);
         requireTarget(mapping);
@@ -369,7 +394,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
         requireTargetStandard(validator.validateTargetStandard(
                 mapping, target, inventory.payload().toSnapshot()));
-        requireLedger(options, mapping);
+        requireLedger(options, mapping, inventory.payload().toSnapshot());
         Map<String, nuri.migration.plan.DispositionDecision> decisions = Map.of();
         if (options.review() != null) {
             WorkflowReview review = reviewLoader.load(
@@ -464,7 +489,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
             requireTargetStandard(validator.validateTargetStandard(
                     mapping, target, inventory.payload().toSnapshot()));
-            requireLedger(options, mapping);
+            requireLedger(options, mapping, inventory.payload().toSnapshot());
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -702,22 +727,27 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     }
 
     /**
-     * [ADR-0029 결정 3, DEC-OPS-312] mapping 이 용어 매핑 원장을 선언했으면 그 파일 바이트가 선언한 digest 와 같은지,
-     * 원장 형식·전이 이력이 맞는지, mapping 이 옮기는 모든 컬럼이 확정 행을 가리키는지, 확정 행의 표준 용어가 live
-     * 메타에 있고 폐기되지 않았는지 본다. 원장을 선언하지 않은 mapping 은 종전대로다(원장에서 mapping 을 만드는 L3 에서
-     * 필수로 바꾼다).
+     * [ADR-0029 결정 3, DEC-OPS-312·317] mapping 은 용어 매핑 원장을 선언해야 한다. 그 파일은 mapping 과 같은 디렉터리나
+     * 그 아래에 있고 바이트가 선언한 digest 와 같아야 한다. 원장 형식·전이 이력, mapping 과 원장의 inventory 기준 대응
+     * (정방향·역방향·소스 단위 완전성·load 일치), codemap, 확정 행의 표준 용어가 live 메타에 있고 폐기되지 않았는지를
+     * 본다. 원장 없는 mapping 은 plan·load 하지 않는다(DEC-OPS-317).
      */
-    private void requireLedger(WorkflowCliOptions options, MappingSpec mapping) throws SQLException {
+    private void requireLedger(WorkflowCliOptions options, MappingSpec mapping, CatalogSnapshot inventory)
+            throws SQLException {
         MappingSpec.LedgerBinding binding = mapping.ledger();
         if (binding == null) {
-            return;
+            throw gate("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
         }
         if (binding.path() == null || binding.path().isBlank()
                 || binding.sha256() == null || !binding.sha256().matches("[0-9a-f]{64}")) {
             throw gate("mapping 의 ledger 선언에는 path 와 소문자 sha256 이 필요합니다.");
         }
-        java.nio.file.Path base = options.mapping().toAbsolutePath().getParent();
-        String content = files.readUtf8(base.resolve(binding.path()).normalize());
+        java.nio.file.Path base = options.mapping().toAbsolutePath().normalize().getParent();
+        java.nio.file.Path ledgerPath = base.resolve(binding.path()).normalize();
+        if (!ledgerPath.startsWith(base) || ledgerPath.equals(base)) {
+            throw gate("용어 매핑 원장은 mapping 과 같은 디렉터리나 그 아래에 있어야 합니다.");
+        }
+        String content = files.readUtf8(ledgerPath);
         if (!binding.sha256().equals(sha256Hex(content.getBytes(StandardCharsets.UTF_8)))) {
             throw gate("용어 매핑 원장 digest 가 mapping 의 선언과 다릅니다.");
         }
@@ -728,18 +758,25 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             throw gate(invalid.getMessage());
         }
         List<String> errors = new java.util.ArrayList<>(ledgerValidator.validate(ledger));
-        errors.addAll(ledgerValidator.coverage(ledger, mapping));
-        Map<String, TermLedgerValidator.StandardTermRecord> terms = new java.util.HashMap<>();
+        errors.addAll(ledgerValidator.coverage(ledger, mapping, inventory));
+        Map<TermLedgerValidator.TermKey, TermLedgerValidator.StandardTermRecord> terms = new java.util.HashMap<>();
+        String defaultSchema;
         try (Connection connection = open(introspector.jdbc(mapping.target()))) {
             connection.setReadOnly(true);
+            // schema 를 밝히지 않은 대상 표는 대상 표준 계약(fingerprint)처럼 연결의 현재 schema 로 읽는다.
+            String current = connection.getSchema();
+            defaultSchema = current == null || current.isBlank() ? TermLedgerValidator.DEFAULT_SCHEMA : current;
             for (Map.Entry<String, java.util.Set<String>> schema
-                    : ledgerValidator.confirmedTermsBySchema(ledger).entrySet()) {
-                terms.putAll(standardTerms.read(connection, schema.getKey(), schema.getValue()));
+                    : ledgerValidator.confirmedTermsBySchema(ledger, defaultSchema).entrySet()) {
+                // [ADR-0029 L3a-2] 같은 영문약어라도 schema 마다 다른 용어다 — schema 와 함께 키로 쓴다.
+                standardTerms.read(connection, schema.getKey(), schema.getValue()).forEach((abbreviation, record)
+                        -> terms.put(new TermLedgerValidator.TermKey(schema.getKey(), abbreviation), record));
             }
         } catch (IllegalStateException | IllegalArgumentException unreadable) {
             throw gate(unreadable.getMessage());
         }
-        errors.addAll(ledgerValidator.live(ledger, terms));
+        errors.addAll(ledgerValidator.codemaps(ledger, mapping.codemaps(), terms, defaultSchema));
+        errors.addAll(ledgerValidator.live(ledger, terms, defaultSchema));
         if (!errors.isEmpty()) {
             List<String> shown = errors.stream().limit(MAX_REPORTED_ERRORS).toList();
             String more = errors.size() > shown.size() ? " (외 " + (errors.size() - shown.size()) + "건)" : "";

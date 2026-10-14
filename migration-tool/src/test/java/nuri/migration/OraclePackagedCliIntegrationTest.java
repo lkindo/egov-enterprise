@@ -218,6 +218,13 @@ class OraclePackagedCliIntegrationTest extends OraclePostgresTestSupport {
         for (int step = 0; step < 17; step++) {
             assertThat(sourceJdbc().update("UPDATE " + sourceTable + " SET PAYLOAD=PAYLOAD||PAYLOAD WHERE ID=1")).isEqualTo(1);
         }
+        // [ADR-0029 L3a-2] plan·load 는 원장을 선언한 mapping 만 받는다. LOB 대상(bytea·text)은 표준 용어가 없는
+        //   비표준 대상으로 확정한다(DEC-OPS-317 U1) — live 메타가 그 컬럼에 용어가 없음을 증명한다.
+        StandardMetaFixture.create(targetJdbc(), "public");
+        String ledger = LedgerFixtures.write(directory, List.of(
+                LedgerFixtures.row(sourceTable, "ID", targetTable, "id", null, "long"),
+                LedgerFixtures.row(sourceTable, "PAYLOAD", targetTable, "payload"),
+                LedgerFixtures.row(sourceTable, "BODY", targetTable, "body")));
         Path mapping = directory.resolve("mapping.yml");
         Files.writeString(mapping, """
                 source:
@@ -248,7 +255,7 @@ class OraclePackagedCliIntegrationTest extends OraclePostgresTestSupport {
                         target: payload
                       - source: BODY
                         target: body
-                """.formatted(name, sourceTable, targetTable));
+                """.formatted(name, sourceTable, targetTable) + ledger);
         Path columns = directory.resolve("db-columns.json");
         json.writeValue(columns.toFile(), targetJdbc().queryForList(
                 "SELECT table_schema || '.' || table_name AS table_name, column_name FROM information_schema.columns"

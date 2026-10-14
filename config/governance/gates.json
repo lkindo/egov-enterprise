@@ -1676,7 +1676,7 @@
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.validate.*",
-            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest"
+            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest"
           },
           {
             "scope": "migration-verify",
@@ -1703,8 +1703,8 @@
             "scope": "migration-standardize",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
-            "classes": "nuri.migration.domain.*",
-            "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest"
+            "classes": "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables",
+            "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
           },
           {
             "scope": "business-core-auth",

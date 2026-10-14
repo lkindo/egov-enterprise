@@ -8,6 +8,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import nuri.migration.artifact.ArtifactRedactionGuard;
 import nuri.migration.suggest.SuggestionReport.Candidate;
 import nuri.migration.suggest.SuggestionReport.ColumnSuggestion;
+import nuri.migration.suggest.SuggestionReport.ConformanceEstimate;
+import nuri.migration.suggest.SuggestionReport.Violation;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import nuri.migration.validate.ledger.TermLedger;
 
 import java.util.ArrayList;
@@ -19,9 +22,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 후보 보고서에서 검토용 원장 초안을 만든다(ADR-0029 결정 2·3). 모든 행은 {@code PROPOSED} 이고 대상 표·컬럼은 비워
- * 둔다 — 대상과 확정은 사람이 정한다. 첫 후보의 용어·등급·추정 적합률만 옮기고, 후보가 없는 컬럼도
+ * 후보 보고서에서 검토용 원장 초안(형식 2)을 만든다(ADR-0029 결정 2·3, L3a-2). 모든 행은 {@code PROPOSED} 이고 대상
+ * 표·컬럼은 비워 둔다 — 대상과 확정은 사람이 정한다. 첫 후보의 용어·등급·적합성 추정을 옮기고, 후보가 없는 컬럼도
  * {@code UNKNOWN} 행으로 남겨 검토에서 빠지지 않게 한다.
+ *
+ * <p>적합성은 적합률을 셀 수 없었어도 변환 힌트·센 위반·셀 수 없었던 이유({@code unmeasured})를 남긴다 — 확정할 때 그
+ * 위반마다 처리를 정해야 하기 때문이다. 힌트가 내장 변환기 하나로 정해질 때만 {@code load} 를 미리 채우고, 그 밖의
+ * 처리(type·codemap·nullify·승인 예외)는 사람이 정한다.</p>
  *
  * <p>따옴표가 필요한 식별자의 테이블({@code SKIPPED_IDENTIFIER})은 적재기가 읽지 못해 mapping 에 들어갈 수 없으므로
  * 초안에 싣지 않는다(후보 보고서에는 남는다). 원장은 소스 컬럼을 대소문자 없이 가리고 표 이름에 catalog 를 넣지
@@ -31,6 +38,7 @@ public final class LedgerDraftWriter {
 
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
     private static final String SKIPPED_IDENTIFIER = "SKIPPED_IDENTIFIER";
+    private final LoadCapabilities capabilities = new LoadCapabilities();
     private final YAMLMapper yaml = YAMLMapper.builder()
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
             .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
@@ -60,12 +68,35 @@ public final class LedgerDraftWriter {
             Candidate top = column.candidates().isEmpty() ? null : column.candidates().getFirst();
             TermLedger.StandardTerm term = top == null ? null
                     : new TermLedger.StandardTerm(top.termName(), top.engAbbr(), top.domain());
-            TermLedger.Conformance conformance = top == null || top.conformance().rate() == null ? null
-                    : new TermLedger.Conformance(top.conformance().rate(), top.conformance().transform(), null);
+            TermLedger.Conformance conformance = top == null ? null : conformance(top.conformance());
+            String builtin = conformance == null ? null : capabilities.builtinOf(conformance.transform());
+            TermLedger.Load load = builtin == null ? null : new TermLedger.Load(builtin, null, null, List.of());
             entries.add(new TermLedger.Entry(id, new TermLedger.ColumnRef(column.table(), column.column()), null,
-                    term, column.grade(), "PROPOSED", conformance, null, null, List.of()));
+                    null, null, term, null, column.grade(), "PROPOSED", load, conformance, null, null, List.of()));
         }
         return new TermLedger(TermLedger.CURRENT_SCHEMA_VERSION, entries);
+    }
+
+    /**
+     * 추정을 원장 적합성으로 옮긴다. 적합률을 비우게 한 이유는 {@code unmeasured} 로, 행 수를 센 위반은
+     * {@code violations} 로 가른다. 옮길 것이 없으면(도메인 없음·값 없음) 비운다.
+     */
+    static TermLedger.Conformance conformance(ConformanceEstimate estimate) {
+        List<String> unmeasured = new ArrayList<>();
+        List<TermLedger.ViolationCount> violations = new ArrayList<>();
+        for (Violation violation : estimate.violations()) {
+            if (violation.type() != null && LoadCapabilities.UNMEASURED.contains(violation.type())) {
+                if (!unmeasured.contains(violation.type())) {
+                    unmeasured.add(violation.type());
+                }
+            } else {
+                violations.add(new TermLedger.ViolationCount(violation.type(), violation.rows()));
+            }
+        }
+        if (estimate.rate() == null && estimate.transform() == null && unmeasured.isEmpty() && violations.isEmpty()) {
+            return null;
+        }
+        return new TermLedger.Conformance(estimate.rate(), unmeasured, estimate.transform(), violations, null);
     }
 
     /** 원장 초안을 YAML 로 쓴다. 자격·개인정보로 보이는 값이 남아 있으면 쓰지 않는다. */

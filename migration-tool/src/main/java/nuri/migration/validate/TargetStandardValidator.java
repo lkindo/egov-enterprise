@@ -2,6 +2,7 @@ package nuri.migration.validate;
 
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
+import nuri.migration.domain.DomainCategory;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.keymap.StandardIdGenerator;
 import nuri.migration.model.MappingSpec;
@@ -17,8 +18,6 @@ import nuri.migration.postgres.TargetStandardSnapshot.StandardStatus;
 import nuri.migration.postgres.TargetStandardSnapshot.StandardTerm;
 import nuri.migration.postgres.TargetStandardSnapshot.TableContract;
 import nuri.migration.postgres.TargetStandardSnapshot.TermStatus;
-import nuri.migration.suggest.ConformanceEstimator;
-import nuri.migration.suggest.StandardDictionary;
 import nuri.migration.validate.TargetValueDomain.Family;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 
@@ -45,6 +44,8 @@ import java.util.regex.Pattern;
  *       TIMESTAMP 포함)는 변환하지도, 시간대 없는 컬럼에 그대로 옮기지도 않는다. 날짜 값은 timestamp 컬럼에 쓰지
  *       않는다(timestamp-from-date 로 밝힌다). nullify 는 NULL 을 받는 컬럼에만, 여부 도메인의 codemap 은 Y·N 만,
  *       Boolean 소스의 codemap 키는 그 표기(true·false, upper 뒤 TRUE·FALSE)만 받는다.</li>
+ *   <li>[ADR-0029 L3a-2] 날짜·시각이 아닌 소스는 type(date·timestamp·datetime)·내장 date·timestamp 로 날짜·시각
+ *       값으로 바꾸지 않는다. 값마다 판정하는 표준 도메인 변환기(date-text 등)만 받는다.</li>
  * </ul>
  *
  * <p>메시지는 표·컬럼 이름과 타입·길이만 말한다. 상수·코드맵 값과 행 값은 싣지 않는다.
@@ -52,13 +53,18 @@ import java.util.regex.Pattern;
 public final class TargetStandardValidator {
 
     private static final Pattern DOMAIN_SCALE = Pattern.compile("(\\d+),(\\d+)$");
+    /** 날짜·시각 컬럼 — 비시간 소스를 type·내장 date·timestamp 로 옮기지 않는다(ADR-0029 L3a-2). */
+    private static final Set<Family> TEMPORAL = java.util.EnumSet.of(Family.DATE, Family.TIMESTAMP, Family.TIMESTAMPTZ);
     /** 원천 Boolean 의 codemap 대조 키({@code CodeTranslator} 는 Boolean 을 toString 으로 찾는다). */
     private static final Set<String> BOOLEAN_CODES = Set.of("true", "false");
     /** 내장 {@code upper} 를 거친 원천 Boolean 의 codemap 대조 키. */
     private static final Set<String> UPPER_BOOLEAN_CODES = Set.of("TRUE", "FALSE");
-    /** 시간대가 있는 소스 값을 옮기는 길 — 시간대 있는 컬럼, 또는 시간대 규칙을 스스로 지는 프로젝트 변환기. */
-    private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기거나"
-            + " 시간대를 정하는 프로젝트 변환기(계약 버전·구현 digest 를 밝혀 등록)를 선언하세요";
+    /**
+     * 시간대가 있는 소스 값을 옮기는 길 — 시간대 있는 컬럼뿐이다. 원장 load 는 내장 변환기만 받아(ADR-0029 L3a-2, DEC-OPS-317)
+     * 시간대를 정하는 프로젝트 변환기는 승인 workflow 에서 쓸 수 없고, 그 일을 하는 내장 변환기는 아직 없다.
+     */
+    private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기세요(시간대를 정하는"
+            + " 내장 변환기는 아직 없습니다)";
 
     private final Predicate<String> builtinTransformer;
 
@@ -214,7 +220,17 @@ public final class TargetStandardValidator {
             }
         }
         TargetLimit physical = TargetLimit.physical(column);
+        int before = errors.size();
         check(value, physical, location, "물리 컬럼 " + column.dataType(), errors);
+        if (errors.size() == before && looseTemporal(mapping) && TEMPORAL.contains(physical.family())
+                && sourceFamily != Family.DATE && sourceFamily != Family.TIMESTAMP) {
+            // [ADR-0029 L3a-2] type·내장 date·timestamp 는 자리표시(99991231 등)를 날짜로 받고 형식 밖 값을 행마다
+            //   판정하지 않는다. 원장에 기록된 위반이 낡았거나 비어 있어도 막도록 구조로 거부한다.
+            errors.add("날짜·시각이 아닌 소스 값은 type(date·timestamp·datetime)이나 내장 date·timestamp 로 날짜·시각"
+                    + " 컬럼에 옮기지 않습니다 — 값마다 판정하는 date-text·timestamp-text·timestamp-from-date·"
+                    + "date-truncate 를 쓰세요: " + sourceLocation);
+            return;
+        }
         if (!standardPresent) {
             return;
         }
@@ -255,6 +271,17 @@ public final class TargetStandardValidator {
     }
 
     /**
+     * 값을 행마다 판정하지 않고 날짜·시각으로 바꾸는가 — {@code type: date|timestamp|datetime} 과 내장 {@code date}·
+     * {@code timestamp}. 날짜·시각 소스를 그대로 옮기는 데만 쓴다(ADR-0029 L3a-2).
+     */
+    private boolean looseTemporal(ColumnMapping mapping) {
+        String type = isBlank(mapping.type()) ? "" : mapping.type().trim().toLowerCase(java.util.Locale.ROOT);
+        return Set.of("date", "timestamp", "datetime").contains(type)
+                || (builtinTransformer.test(mapping.transform())
+                && Set.of("date", "timestamp").contains(mapping.transform()));
+    }
+
+    /**
      * 원천 Boolean 의 codemap 키. Boolean 은 toString 표기로 찾는다 — 변환 없이·{@code trim}·{@code lower} 뒤에는
      * true·false, {@code upper} 뒤에는 TRUE·FALSE 다. 다른 키는 닿지 않아 모든 행이 미매핑이 되거나 대체값이 된다. 그 밖의
      * 내장 변환기 뒤에는 키를 정할 수 없어 받지 않는다. 사용자 변환기는 여기 오지 않는다(exempt). 코드값은 싣지 않는다.
@@ -274,10 +301,9 @@ public final class TargetStandardValidator {
         }
     }
 
-    /** 여부 도메인인가. 범주 판정은 적합성 추정기와 같은 한 곳을 쓴다. */
+    /** 여부 도메인인가. 범주 판정은 적합성 추정기·원장 도메인 가드와 같은 {@link DomainCategory} 를 쓴다. */
     private static boolean yesNoDomain(StandardTerm term) {
-        return "YN".equals(ConformanceEstimator.domainCategory(new StandardDictionary.Domain(
-                null, term.domainName(), term.domainDataType(), term.domainLength())));
+        return DomainCategory.of(term.domainName(), term.domainDataType()) == DomainCategory.YN;
     }
 
     /**

@@ -121,10 +121,15 @@ public class MappingValidator {
             MappingSpec.IdStrategy id = t.idStrategy();
             validateIdStrategy(t, id, targetColumns, errors);
             validateTypedIdentity(t, sourceTables, targetColumns, errors);
+            Set<String> written = new HashSet<>();
             for (MappingSpec.ColumnMapping c : t.columns()) {
                 if (isBlank(c.target())) {
                     errors.add(t.target() + ": 타깃 컬럼 미지정");
                     continue;
+                }
+                // [ADR-0029 L3a-2] 실행기는 대상 컬럼마다 값 하나만 쓴다 — 두 항목이 같은 컬럼을 채우면 앞 값이 조용히 빠진다.
+                if (!written.add(normalize(c.target()))) {
+                    errors.add(t.target() + ": 같은 타깃 컬럼을 두 컬럼 항목이 채웁니다: " + c.target());
                 }
                 if (!targetColumns.isEmpty()) {
                     String key = normalize(t.target() + "." + c.target());

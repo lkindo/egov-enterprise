@@ -37,10 +37,8 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Types;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -178,6 +176,10 @@ class OracleWorkflowPostgresIntegrationTest extends OraclePostgresTestSupport {
         sourceJdbc().execute("CREATE TABLE " + sourceTable + " (ID NUMBER(10) PRIMARY KEY, PAYLOAD " + sourceType + ")");
         targetJdbc().execute("CREATE TABLE " + targetTable + " (id bigint PRIMARY KEY, payload " + targetType + ")");
         Path directory = Files.createDirectory(temp.resolve(scenario));
+        StandardMetaFixture.create(targetJdbc(), "public");
+        String ledger = LedgerFixtures.write(directory, List.of(
+                LedgerFixtures.row(sourceTable, "ID", targetTable, "id", null, "long"),
+                LedgerFixtures.row(sourceTable, "PAYLOAD", targetTable, "payload", null, mappingType)));
         Path mappingPath = directory.resolve("mapping.yml");
         Files.writeString(mappingPath, """
                 source:
@@ -208,8 +210,7 @@ class OracleWorkflowPostgresIntegrationTest extends OraclePostgresTestSupport {
                         target: payload
                 %s
                 """.formatted(name, sourceTable, targetTable,
-                (mappingType == null ? "" : "        type: " + mappingType + "\n")
-                        + (witness == null ? "" : "        transform: verifyFixturePayload\n")));
+                (mappingType == null ? "" : "        type: " + mappingType + "\n")) + ledger);
         MappingSpec.DbConfig source = sourceConfig();
         MappingSpec.DbConfig target = targetConfig();
         Map<String, String> environment = Map.of(
@@ -223,16 +224,8 @@ class OracleWorkflowPostgresIntegrationTest extends OraclePostgresTestSupport {
                 "SELECT table_schema || '.' || table_name AS table_name, column_name"
                         + " FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ?"
                         + " ORDER BY ordinal_position", name));
-        TransformerRegistry transformers = new TransformerRegistry();
-        if (witness != null) {
-            try (InputStream implementation = PayloadWitness.class.getResourceAsStream(
-                    "OracleWorkflowPostgresIntegrationTest$PayloadWitness.class")) {
-                assertThat(implementation).isNotNull();
-                String implementationDigest = HexFormat.of().formatHex(
-                        MessageDigest.getInstance("SHA-256").digest(implementation.readAllBytes()));
-                transformers.register("verifyFixturePayload", "1", implementationDigest, witness);
-            }
-        }
+        // [ADR-0029 L3a-2] 원장 load 는 내장 변환기만 받으므로 payload 를 변환 경로(transformers.apply) 안에서 지켜본다.
+        TransformerRegistry transformers = witness == null ? new TransformerRegistry() : new WitnessingRegistry(witness);
         SourceIntrospector introspector = new SourceIntrospector();
         MigrationWorkflowRunner runner = new MigrationWorkflowRunner(loader,
                 new MappingValidator(transformers, columns.toString()),
@@ -344,7 +337,28 @@ class OracleWorkflowPostgresIntegrationTest extends OraclePostgresTestSupport {
     private record Fixture(String name, String sourceTable, String targetTable, Path mapping, Path inventory,
                            Path plan, Path review, MappingSpec spec, MigrationWorkflowRunner runner) { }
 
-    /** Identity transform used only to witness full content during a public DRY_RUN. */
+    /**
+     * Registry whose transformation step ({@code apply}) witnesses the payload value — the mapping declares no project
+     * transformer because the term ledger accepts builtin transformers only (ADR-0029 L3a-2).
+     */
+    private static final class WitnessingRegistry extends TransformerRegistry {
+        private final PayloadWitness witness;
+
+        private WitnessingRegistry(PayloadWitness witness) {
+            this.witness = witness;
+        }
+
+        @Override
+        public Object apply(String name, Object value) {
+            Object applied = super.apply(name, value);
+            if (name == null && (value instanceof byte[] || value instanceof String)) {
+                witness.apply(value);
+            }
+            return applied;
+        }
+    }
+
+    /** Witnesses complete field content during the public DRY_RUN. */
     private static final class PayloadWitness implements UnaryOperator<Object> {
         private final Object expected;
         private int observed;

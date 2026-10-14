@@ -12,9 +12,10 @@
 
 1. 소스 쓰기 중지, 대상 쓰기 중지, DB·첨부·암호화 키의 일관된 백업을 준비한다. [백업·복원 런북](backup-and-restore-runbook.md)을 따르며, 외부 OCI DB에는 번들 Compose 절차를 그대로 실행하지 않는다.
 2. mapping의 source/target `endpointId`, run의 `runId`·`sourceNamespace`, JDBC 접속 위치를 확인한다. 업무 target은 `public.tb_example`처럼 스키마를 명시한다. 기본 허용 스키마는 `public`이며, 다른 스키마는 plan/load 양쪽에 같은 `--target-schemas=schema_a,schema_b`를 지정한다. 시스템 스키마와 `migration_control`은 업무 적재 대상으로 허용하지 않는다.
-3. discover → plan → review → plan → validate를 수행한다. target digest는 실제 스키마, 허용 스키마 목록, 자격증명을 제외한 설정·연결 JDBC 위치, PostgreSQL cluster system identifier, DB OID·이름·기본 스키마에 결속된다. 이전 스키마 전용 digest의 plan은 재작성·재승인해야 한다. 계정/암호 회전은 위치 digest를 바꾸지 않는다.
-4. load 직전에 실제 환경을 다시 조회해 승인 digest와 비교한다. 필요한 identity 조회가 거부되면 중단하며 약한 식별자로 대체하지 않는다. `pg_control_system()`은 클러스터 정보를 제공한다([PostgreSQL 17 문서](https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-CONTROLDATA)). 물리 복제본은 같은 cluster identifier를 가질 수 있으므로 네트워크 위치·점검 창·접속 경로도 계속 고정해야 한다.
-5. source adapter·driver·scope·변환 계약·실제 inventory 검증과 기존 `--ack-adapter`, `--ack-source-freeze` 조건도 충족해야 한다. `UNVERIFIED` vendor와 외부 driver의 commit 금지는 유지된다.
+3. mapping 은 검토한 용어 매핑 원장에서 `mapping-generate` 로 만든다. plan·load 는 원장을 선언하지 않은 mapping 을 받지 않는다(DEC-OPS-317). **이관해야 할 데이터를 APPROVED_IGNORE 로 우회하지 않는다** — 이관 제외는 키로만 쓰거나 업무상 옮기지 않기로 사유와 함께 정한 컬럼에만 쓴다. 확정하지 못한 컬럼은 원장에서 정하거나, 표준 용어가 없으면 비표준 대상(U1)으로 확정하고, 외부 보관(ARCHIVE)이 필요하면 그 실행 경로(L3e)를 기다린다.
+4. discover → plan → review → plan → validate를 수행한다. target digest는 실제 스키마, 허용 스키마 목록, 자격증명을 제외한 설정·연결 JDBC 위치, PostgreSQL cluster system identifier, DB OID·이름·기본 스키마에 결속된다. 이전 스키마 전용 digest의 plan은 재작성·재승인해야 한다. 계정/암호 회전은 위치 digest를 바꾸지 않는다.
+5. load 직전에 실제 환경을 다시 조회해 승인 digest와 비교한다. 필요한 identity 조회가 거부되면 중단하며 약한 식별자로 대체하지 않는다. `pg_control_system()`은 클러스터 정보를 제공한다([PostgreSQL 17 문서](https://www.postgresql.org/docs/17/functions-info.html#FUNCTIONS-CONTROLDATA)). 물리 복제본은 같은 cluster identifier를 가질 수 있으므로 네트워크 위치·점검 창·접속 경로도 계속 고정해야 한다.
+6. source adapter·driver·scope·변환 계약·실제 inventory 검증과 기존 `--ack-adapter`, `--ack-source-freeze` 조건도 충족해야 한다. `UNVERIFIED` vendor와 외부 driver의 commit 금지는 유지된다.
 
 ## 실행 결과와 중단 판정
 

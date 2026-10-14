@@ -51,6 +51,17 @@ public final class TypeConverter {
                 || "text".equals(lowerType) || "char".equals(lowerType);
     }
 
+    /**
+     * 문자 type 이 {@code toString} 으로 옮기면 값이 아닌 표기가 되는 객체 — XML·구조·배열·참조·ROWID·스트림. 문자로 읽은
+     * LOB(문자열)·숫자·날짜·논리값은 받는다. 원장은 문자 type 을 추정기가 판정하지 못한 값 종류의 행 단위 판정으로 센다
+     * (ADR-0029 L3a-2).
+     */
+    private static boolean notTextReadable(Object value) {
+        return value instanceof java.sql.SQLXML || value instanceof java.sql.Struct || value instanceof java.sql.Array
+                || value instanceof java.sql.Ref || value instanceof java.sql.RowId
+                || value instanceof java.io.InputStream || value instanceof java.io.Reader;
+    }
+
     public static Object convert(String type, Object value) {
         if (value instanceof java.sql.Blob || value instanceof java.sql.Clob) {
             throw conversionFailure();
@@ -61,6 +72,9 @@ public final class TypeConverter {
         if (value instanceof byte[]) throw conversionFailure();
         String t = type.toLowerCase(Locale.ROOT);
         if (!KNOWN.contains(t)) {
+            throw conversionFailure();
+        }
+        if (isTextType(t) && notTextReadable(value)) {
             throw conversionFailure();
         }
         String s = value instanceof String str ? str.trim() : value.toString().trim();
