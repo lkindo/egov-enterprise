@@ -1689,6 +1689,13 @@
             "tests": "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
           },
           {
+            "scope": "migration-collect",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.profile.*,nuri.migration.appscan.*",
+            "tests": "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest"
+          },
+          {
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",

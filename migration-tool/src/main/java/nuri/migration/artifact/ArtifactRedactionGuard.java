@@ -32,6 +32,47 @@ public final class ArtifactRedactionGuard {
         inspect(root, "$");
     }
 
+    /** 이 글자가 {@link #assertSafe} 에서 자격·접속정보로 걸리는지. 산출물에 싣기 전에 거르는 데 쓴다. */
+    public static boolean isSensitiveText(String value) {
+        return value != null && containsSensitiveValue(value);
+    }
+
+    /**
+     * [ADR-0029 L2a] 수집 산출물(profile·app-scan)에 주민등록번호·전화번호·이메일 값이 남지 않았는지 키와 값 모두
+     * 검사한다. 생성기가 거른 뒤의 마지막 경계다. inventory·plan 처럼 값이 실리지 않는 산출물에는 쓰지 않는다.
+     */
+    public static void assertNoPersonalValues(JsonNode root) {
+        inspectPersonal(root, "$");
+    }
+
+    private static void inspectPersonal(JsonNode node, String path) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isObject()) {
+            for (Map.Entry<String, JsonNode> field : node.properties()) {
+                if (!PersonalDataPatterns.find(field.getKey()).isEmpty()) {
+                    throw personal(path);
+                }
+                inspectPersonal(field.getValue(), path + "." + field.getKey());
+            }
+            return;
+        }
+        if (node.isArray()) {
+            for (int index = 0; index < node.size(); index++) {
+                inspectPersonal(node.get(index), path + "[" + index + "]");
+            }
+            return;
+        }
+        if (node.isTextual() && !PersonalDataPatterns.find(node.textValue()).isEmpty()) {
+            throw personal(path);
+        }
+    }
+
+    private static IllegalArgumentException personal(String path) {
+        return new IllegalArgumentException("개인정보로 보이는 값은 수집 산출물에 기록할 수 없습니다: " + path);
+    }
+
     private static void inspect(JsonNode node, String path) {
         if (node == null || node.isNull()) {
             return;

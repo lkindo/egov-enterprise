@@ -34,7 +34,11 @@ public record WorkflowCliOptions(
         String adapterAcknowledgement,
         String sourceDriverEvidenceAcknowledgement,
         boolean sourceFreezeAcknowledged,
-        Set<String> targetSchemas
+        Set<String> targetSchemas,
+        Path profile,
+        Long profileRowLimit,
+        Path appSource,
+        Path appUsage
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -42,6 +46,12 @@ public record WorkflowCliOptions(
             Set.of("command", "mapping", "inventory", "source-adapter", "schemas",
                     "catalogs", "object-kinds", "include-system-objects",
                     "source-driver-jar", "source-driver-class"),
+            WorkflowCommand.PROFILE,
+            Set.of("command", "mapping", "inventory", "profile", "profile-row-limit", "source-adapter",
+                    "schemas", "catalogs", "object-kinds", "include-system-objects",
+                    "source-driver-jar", "source-driver-class"),
+            WorkflowCommand.APP_SCAN,
+            Set.of("command", "app-source", "app-usage"),
             WorkflowCommand.PLAN,
             Set.of("command", "mapping", "inventory", "plan", "review", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects", "target-schemas"),
@@ -79,11 +89,16 @@ public record WorkflowCliOptions(
             throw new IllegalArgumentException("unknown workflow option: " + unknown.stream().sorted().toList());
         }
 
-        Path mapping = requiredPath(arguments, command, "mapping",
-                command == WorkflowCommand.DISCOVER || command == WorkflowCommand.PLAN || command == WorkflowCommand.LOAD);
-        Path inventory = requiredPath(arguments, command, "inventory",
-                command == WorkflowCommand.DISCOVER || command == WorkflowCommand.PLAN || command == WorkflowCommand.LOAD);
-        Path plan = requiredPath(arguments, command, "plan", command != WorkflowCommand.DISCOVER);
+        boolean sourceCommand = command == WorkflowCommand.DISCOVER || command == WorkflowCommand.PROFILE
+                || command == WorkflowCommand.PLAN || command == WorkflowCommand.LOAD;
+        Path mapping = requiredPath(arguments, command, "mapping", sourceCommand);
+        Path inventory = requiredPath(arguments, command, "inventory", sourceCommand);
+        Path plan = requiredPath(arguments, command, "plan", command == WorkflowCommand.PLAN
+                || command == WorkflowCommand.VALIDATE || command == WorkflowCommand.LOAD);
+        Path profile = requiredPath(arguments, command, "profile", command == WorkflowCommand.PROFILE);
+        Long profileRowLimit = positiveLong(arguments, "profile-row-limit");
+        Path appSource = requiredPath(arguments, command, "app-source", command == WorkflowCommand.APP_SCAN);
+        Path appUsage = requiredPath(arguments, command, "app-usage", command == WorkflowCommand.APP_SCAN);
         Path review = optionalPath(arguments, "review");
         String sourceAdapter = optional(arguments, "source-adapter");
         Set<String> catalogs = parseCsv(arguments, "catalogs");
@@ -108,18 +123,37 @@ public record WorkflowCliOptions(
                 command, mapping, inventory, plan, review, sourceAdapter,
                 catalogs, schemas, objectKinds, includeSystemObjects,
                 sourceDriverJars, sourceDriverClass, mode,
-                acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas);
+                acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
+                profile, profileRowLimit, appSource, appUsage);
     }
 
     private static WorkflowCommand parseCommand(String value) {
         return switch (value) {
             case "discover" -> WorkflowCommand.DISCOVER;
+            case "profile" -> WorkflowCommand.PROFILE;
+            case "app-scan" -> WorkflowCommand.APP_SCAN;
             case "plan" -> WorkflowCommand.PLAN;
             case "validate" -> WorkflowCommand.VALIDATE;
             case "load" -> WorkflowCommand.LOAD;
             default -> throw new IllegalArgumentException(
-                    "unsupported --command; discover|plan|validate|load required");
+                    "unsupported --command; discover|profile|app-scan|plan|validate|load required");
         };
+    }
+
+    private static Long positiveLong(ApplicationArguments arguments, String name) {
+        String value = optional(arguments, name);
+        if (value == null) {
+            return null;
+        }
+        try {
+            long parsed = Long.parseLong(value);
+            if (parsed > 0) {
+                return parsed;
+            }
+        } catch (NumberFormatException failure) {
+            // 아래에서 같은 문구로 거부한다.
+        }
+        throw new IllegalArgumentException("--" + name + "는 1 이상의 정수여야 합니다");
     }
 
     private static Path requiredPath(

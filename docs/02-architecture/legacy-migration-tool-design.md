@@ -37,6 +37,28 @@ mapping.yml + source DB
 
 Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 적용한다. 출력은 같은 디렉터리의 임시 파일을 `fsync`한 뒤 atomic replace하며 atomic move를 지원하지 않으면 실패한다. Inventory는 raw native definition 대신 definition hash만 보존하고, artifact redaction guard는 JDBC URL·credential·private key 형태를 차단한다.
 
+### 수집 명령(ADR-0029 L2a)
+
+표준화 단계의 근거를 모으는 두 명령이다. 둘 다 소스와 대상 DB 에 쓰지 않고, 만든 산출물은 승인 계보(plan·load)에 들어가지 않는다 — L2b 의 후보 생성과 사람의 검토가 읽는 입력이다([DEC-OPS-311](../../.agent/memory/decisions.md)).
+
+| 명령 | 입력과 출력 | fail-closed 경계 |
+|---|---|---|
+| `profile` | `mapping.yml`·inventory 와 같은 discovery scope 로 source 를 다시 조사한 뒤, inventory 의 테이블을 한 읽기 전용 트랜잭션으로 훑어 `--profile` 에 canonical JSON 을 쓴다. `--profile-row-limit` 로 테이블마다 읽을 행을 줄일 수 있고 잘린 테이블은 `truncated` 다. | source endpoint·driver evidence·scope 가 inventory 와 같아야 하고 live 재조사 digest 가 inventory semantic digest 와 같아야 한다(소스가 바뀌었으면 쓰지 않는다). 산출물은 그 digest 에 결속된다. SQL 오류로 읽지 못한 테이블은 `FAILED`·SQLSTATE 로 남기고 산출물을 쓴 뒤 non-zero 로 끝난다. |
+| `app-scan` | `--app-source` 디렉터리(읽기 전용)를 훑어 `--app-usage` 에 canonical JSON 을 쓴다. DB 에 접속하지 않는다. | 심볼릭 링크를 따라가지 않고 설정 파일(properties·yml·env·키 저장소)은 내용을 읽지 않는다. 동적 SQL·문자열 조합 SQL·해석하지 못한 XML·압축본·소스 없는 빌드 산출물은 `PARTIAL` 과 그 이유로 남긴다. |
+
+- **profile 이 싣는 것**: 컬럼마다 선언 정보(inventory 그대로), 행·NULL·공백 수, 값 종류(문자·숫자·일시·LOB·기타) 수, 문자 길이 최소·최대·합, 끝 공백 수, distinct 수(1,000 상한), 값 모양별 개수(`YMD8`·`HMS6`·`YN`·`PHONE`·`RRN` 등, 앞뒤 공백 제거 기준), 달력에 없는 8자리 날짜 수, 연도 범위, 코멘트다.
+- **값 빈도**: 개인정보 모양이 한 번도 없고, 값이 모두 문자·숫자이며, 서로 다른 값이 20개 이하이고, 모든 값이 대문자·숫자·`_.:-` 12자 이하인 컬럼만 싣는다. 그래도 5번 미만으로 나온 값은 행 수만 합친다. 소문자가 섞인 값(계정 ID 가 흔히 그렇다)은 싣지 않는다. 빠진 이유는 `frequencyOmittedReason` 이 말한다.
+- **코멘트**: JDBC `REMARKS` 로 다시 읽어 inventory 에 해시로 남은 코멘트와 대조한다(`MATCH`·`MISMATCH`·`NOT_IN_INVENTORY`·`INVENTORY_ONLY`·`ABSENT`). 개인정보로 보이는 부분은 `[REDACTED:종류]` 로 가리고, 자격처럼 보이는 코멘트는 원문을 싣지 않는다(`withheld`). Oracle 처럼 드라이버가 `REMARKS` 를 돌려주지 않으면 `INVENTORY_ONLY` 다.
+- **app-scan 이 싣는 것**: 컬럼(대문자 스네이크로 맞춘 이름)별 사용처 — SELECT 별칭, 조인 조건, 문자열 리터럴 비교·IN 목록, CASE·DECODE 의 코드 값과 라벨, INSERT·UPDATE 의 현재 시각 함수, 파라미터 바인딩, resultMap, VO 필드와 바로 앞 주석, 화면 라벨·목록 머리글·선택 목록 — 과 SQL 이 참조한 테이블, 코드 상수·enum, 요청 경로, 보안 설정의 경로별 접근 규칙이다. 파일 경로는 스캔 루트 아래 상대 경로다.
+- **판정하지 않는 것**: 사용처가 보이지 않는 컬럼을 미사용·제외로 판정하지 않는다(ADR-0029 결정 2). 산출물에 그런 필드가 없다.
+- **두 산출물의 공통 경계**: 쓰기 전에 자격 검사와 개인정보 값 검사(주민등록번호·전화번호·이메일)를 모두 지난다. 생성기가 거른 뒤에도 남은 것이 있으면 산출물을 만들지 않는다. 컬럼·테이블 이름은 JSON 키로 쓰지 않는다.
+- **한계**: 따옴표가 필요한 식별자(한글·공백·대소문자 혼합)의 테이블은 읽지 않고 `SKIPPED_IDENTIFIER` 로 남긴다 — 적재기와 같은 제한이다. app-scan 은 파서가 아니라 패턴이라 놓치는 사용처가 있다. MySQL 은 행을 하나씩 흘려 읽고, PostgreSQL 은 autocommit 을 끄고 500행씩 읽는다.
+
+```powershell
+./gradlew :migration-tool:bootRun --args="--command=profile --mapping=mapping.yml --inventory=inventory.json --profile=profile.json --source-adapter=postgresql-pg-catalog --schemas=legacy"
+./gradlew :migration-tool:bootRun --args="--command=app-scan --app-source=D:/legacy/src --app-usage=app-usage.json"
+```
+
 ### 결속되는 실행 의미
 
 - **Endpoint**: source inventory는 `endpointId`와 credential을 제거한 JDBC 위치 digest를 결속한다. Mapping digest에는 source/target `endpointId`가 포함된다.

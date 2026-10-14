@@ -7,10 +7,13 @@ import nuri.migration.adapter.ExecutionPolicy;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceAdapterRegistry;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.appscan.AppSourceScanner;
+import nuri.migration.appscan.AppUsageReport;
 import nuri.migration.artifact.ArtifactFileStore;
 import nuri.migration.artifact.CatalogSnapshotArtifactCodec;
 import nuri.migration.artifact.CatalogSnapshotArtifactEnvelope;
 import nuri.migration.artifact.CatalogSnapshotDigester;
+import nuri.migration.artifact.CollectionArtifactCodec;
 import nuri.migration.artifact.MappingSpecDigester;
 import nuri.migration.artifact.MigrationExecutionContract;
 import nuri.migration.artifact.MigrationExecutionArtifact;
@@ -29,6 +32,8 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.MigrationPlanner;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
+import nuri.migration.profile.SourceProfile;
+import nuri.migration.profile.SourceProfiler;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
@@ -46,6 +51,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -55,7 +61,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/** 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로. */
+/** 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로와 수집 명령(profile·app-scan). */
 @Component
 public final class MigrationWorkflowRunner implements ApplicationRunner {
 
@@ -76,6 +82,9 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private final PostgresTargetSchemaFingerprinter targetFingerprinter;
     private final SourceJdbcEndpointFactory sourceEndpoints;
     private final TransformerRegistry transformers;
+    private final SourceProfiler profiler = new SourceProfiler();
+    private final AppSourceScanner appScanner = new AppSourceScanner();
+    private final CollectionArtifactCodec collectionCodec = new CollectionArtifactCodec();
 
     @Autowired
     public MigrationWorkflowRunner(
@@ -181,6 +190,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             command = options.command();
             switch (command) {
                 case DISCOVER -> discover(options);
+                case PROFILE -> profile(options);
+                case APP_SCAN -> appScan(options);
                 case PLAN -> plan(options);
                 case VALIDATE -> validate(options);
                 case LOAD -> load(options);
@@ -213,6 +224,55 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 files.writeAtomic(options.inventory(), artifact);
             }
         }
+    }
+
+    /**
+     * [ADR-0029 L2a] inventory 와 같은 소스·드라이버·scope 인지, discover 뒤 소스가 바뀌지 않았는지(live 재조사 digest)
+     * 확인한 뒤에만 행을 읽는다. 읽지 못한 테이블이 있으면 산출물을 쓴 뒤 실패로 끝낸다 — 무엇을 읽었는지는 남긴다.
+     */
+    private void profile(WorkflowCliOptions options) throws SQLException {
+        MappingSpec mapping = readMapping(options);
+        requireSource(mapping);
+        requireWorkflowEndpointBindings(mapping);
+        CatalogSnapshotArtifactEnvelope inventory = inventoryCodec.readEnvelope(
+                files.readUtf8(options.inventory()));
+        requireSourceEndpointBinding(inventory.sourceEndpointBinding(), mapping.source());
+        requireBoundDriverEvidence(inventory.sourceDriverEvidence());
+        requireBoundDiscoveryScope(inventory.discoveryScope());
+        DiscoveryRequest request = options.discoveryRequest();
+        try (SourceJdbcEndpoint endpoint = openSourceEndpoint(mapping, options)) {
+            requireDriverEvidence(inventory.sourceDriverEvidence(), endpoint.evidence());
+            try (Connection connection = open(endpoint.jdbc())) {
+                connection.setReadOnly(true);
+                SourceAdapter adapter = adapters.resolve(connection, options.sourceAdapter());
+                DiscoveryScope currentScope = adapter.discoveryScope(request);
+                if (!inventory.discoveryScope().matches(adapter.id(), request)
+                        || !inventory.discoveryScope().equals(currentScope)) {
+                    throw gate("discovery scope exact binding 불일치로 profile을 중단했습니다.");
+                }
+                requirePreflight(adapter, connection, currentScope.effectiveRequest());
+                CatalogSnapshot live = adapter.discover(connection, currentScope.effectiveRequest());
+                requireEqual(inventory.semanticDigest(),
+                        CatalogSnapshotDigester.sha256(live, endpoint.evidence(), currentScope, mapping.source()),
+                        "source inventory digest");
+                SourceProfile profile = profiler.profile(
+                        connection, inventory.payload().toSnapshot(), options.profileRowLimit());
+                String artifact = collectionCodec.writeProfile(profile, inventory.semanticDigest());
+                requireNoBoundCredentials(artifact, mapping);
+                files.writeAtomic(options.profile(), artifact);
+                long failed = profile.tables().stream()
+                        .filter(table -> "FAILED".equals(table.status())).count();
+                if (failed > 0) {
+                    throw gate("profile 이 테이블 " + failed + "개를 읽지 못했습니다(산출물의 FAILED 행과 SQLSTATE 참고).");
+                }
+            }
+        }
+    }
+
+    /** [ADR-0029 L2a] 레거시 소스 디렉터리를 읽기 전용으로 훑는다. DB 에 접속하지 않는다. */
+    private void appScan(WorkflowCliOptions options) throws IOException {
+        AppUsageReport report = appScanner.scan(options.appSource());
+        files.writeAtomic(options.appUsage(), collectionCodec.writeAppUsage(report));
     }
 
     private void plan(WorkflowCliOptions options) throws SQLException {
