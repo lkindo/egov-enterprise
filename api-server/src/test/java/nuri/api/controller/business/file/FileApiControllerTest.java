@@ -103,6 +103,26 @@ class FileApiControllerTest extends ControllerTestSupport {
     }
 
     @Test
+    @DisplayName("한글 원본 파일명 다운로드 시 RFC 5987 UTF-8 Content-Disposition 헤더를 반환한다")
+    void downloadFile_NonAsciiFilename_UsesRfc5987Encoding() throws Exception {
+        byte[] content = "korean file content".getBytes();
+        Resource resource = new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return "보고서_최종.pdf";
+            }
+        };
+        given(fileService.getFileResource(101L, 2)).willReturn(resource);
+
+        mockMvc.perform(get("/api/v1/files/101/2"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        org.hamcrest.Matchers.containsString("filename*=UTF-8''%EB%B3%B4%EA%B3%A0%EC%84%9C_%EC%B5%9C%EC%A2%85.pdf")))
+                .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))
+                .andExpect(content().bytes(content));
+    }
+
+    @Test
     @DisplayName("파일 단건 삭제 성공 — 서비스에 (atchFileSn, fileSn) 그대로 위임한다")
     void deleteFile_Success() throws Exception {
         mockMvc.perform(delete("/api/v1/files/101/2")

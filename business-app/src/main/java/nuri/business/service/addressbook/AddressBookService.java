@@ -48,7 +48,6 @@ public class AddressBookService {
 
     public AddressBookDto getAddressBook(@NonNull Long adbkSn) {
         AddressBook entity = addressBookRepository.findById(adbkSn)
-                .filter(ab -> !"N".equals(ab.getUseYn()))
                 .orElseThrow(() -> new BusinessException("주소록을 찾을 수 없습니다: " + adbkSn, CommonErrorCode.RESOURCE_NOT_FOUND));
         // [IDOR] 소유자/관리자만 열람(PII) — 목록(searchAddressBooks)이 wrterId 로만 스코핑되므로 상세도 동일 가드가 필요하다.
         // 공개범위(rlsScopeCd) 예외는 두지 않는다: 코드값이 표준화돼 있지 않고('P'/'G'/'PUBLIC'/'COMPANY' 혼재)
@@ -102,7 +101,6 @@ public class AddressBookService {
     @Transactional
     public void updateAddressBook(String userId, AddressBookDto dto) {
         AddressBook entity = addressBookRepository.findByIdForUpdate(Objects.requireNonNull(dto.getAdbkSn()))
-                .filter(ab -> !"N".equals(ab.getUseYn()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정(PII)
 
