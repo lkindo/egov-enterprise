@@ -28,9 +28,13 @@ public record SuggestionReport(
         clusters = List.copyOf(Objects.requireNonNull(clusters, "clusters"));
     }
 
-    /** 소스 컬럼 하나의 후보. {@code grade} 는 첫 후보의 등급이고 후보가 없으면 {@code UNKNOWN} 이다. */
-    public record ColumnSuggestion(String table, String column, String dataCategory, String grade,
-                                   List<Candidate> candidates, List<String> conflicts) {
+    /**
+     * 소스 컬럼 하나의 후보. {@code table} 은 inventory 의 정규화 이름({@code catalog.schema.table})이고
+     * {@code tableStatus} 는 프로파일의 테이블 상태다. {@code grade} 는 첫 후보의 등급이고 후보가 없으면
+     * {@code UNKNOWN} 이다.
+     */
+    public record ColumnSuggestion(String table, String column, String tableStatus, String dataCategory,
+                                   String grade, List<Candidate> candidates, List<String> conflicts) {
 
         public ColumnSuggestion {
             candidates = List.copyOf(candidates);
@@ -39,8 +43,9 @@ public record SuggestionReport(
     }
 
     /**
-     * 표준 용어 후보. {@code evidence} 는 근거 종류다(예: {@code COMMENT_TERM_NAME}·{@code NAME_ENG_ABBR}·
-     * {@code USAGE_LABEL}). {@code conformance} 는 프로파일 집계로 추정한 도메인 적합성이다.
+     * 표준 용어 후보. {@code evidence} 는 근거 종류다 — {@code NAME_ENG_ABBR}, {@code COMMENT_TERM_NAME}·
+     * {@code COMMENT_SYNONYM}·{@code COMMENT_WORDS}, {@code USAGE_TERM_NAME}·{@code USAGE_SYNONYM}·{@code USAGE_WORDS}.
+     * {@code conformance} 는 프로파일 집계로 추정한 도메인 적합성이다.
      */
     public record Candidate(String termName, String engAbbr, String domain, String grade, List<String> evidence,
                             ConformanceEstimate conformance) {
@@ -52,7 +57,9 @@ public record SuggestionReport(
 
     /**
      * 프로파일 집계로 추정한 적합성. {@code rate} 는 판정할 수 있을 때만 있다(0~100, 소수 첫째 자리). 위반 행 수를
-     * 셀 수 없는 위반(최대 길이 초과 등)은 {@code rows} 가 비어 있다. 행 단위 예외는 L3 가 다룬다.
+     * 셀 수 없는 위반(최대 길이 초과 등)은 {@code rows} 가 비어 있다. {@code transform} 은 mapping.yml 어휘
+     * ({@code type:date}·{@code type:timestamp}·{@code type:numeric}·{@code type:integer}·{@code type:bigint}·
+     * {@code codemap})이거나, 내장 변환이 없으면 {@code custom:*} 다. 행 단위 예외는 L3 가 다룬다.
      */
     public record ConformanceEstimate(BigDecimal rate, List<Violation> violations, String transform) {
 

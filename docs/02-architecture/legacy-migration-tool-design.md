@@ -98,8 +98,9 @@ V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·
 - **입력**: `--profile`(필수)과 `--app-usage`(선택)는 envelope 형식·본문 digest·자격·개인정보 검사를 다시 지난다. 표준 사전은 mapping 의 target 에서 `--meta-schema`(기본 `public`)의 `meta_standard_terms`·`meta_standard_words`·`meta_standard_domains` 를 읽는다. 동의어·허용값·폐기 여부 컬럼(V2_128)이 없으면 멈춘다.
 - **근거와 등급**: 컬럼 이름이 표준 영문약어와 같거나 코멘트가 용어명과 같으면 `EXACT`, 코멘트가 이음동의어면 `SYNONYM` 이다. 코멘트를 표준 단어로 끝까지 나눠 영문약어가 되거나(가장 긴 단어부터, 대표 단어 우선) 화면 라벨·목록 머리글·VO 라벨이 용어를 가리키면 `INFERRED` 다. 비교 전에 괄호 안 설명, 첫 `:`·`,`·`;` 뒤, 공백·밑줄을 지운다. 폐기 용어는 후보로 내지 않고, 후보가 없으면 `UNKNOWN` 이다.
 - **충돌**: 이름·코멘트·라벨이 함께 가리키는 용어가 없으면 `SOURCES_DISAGREE`, 데이터 모양이 후보 도메인과 맞지 않으면(예: 시분초 값에 연월일 도메인) `DATA_DOMAIN:<영문약어>` 를 남기고 그 후보를 `INFERRED` 로 낮춘다. 데이터 모양은 프로파일 값의 95% 이상이 같은 모양일 때만 정한다.
-- **적합성 추정**: 후보마다 프로파일 집계로 도메인 적합률·위반·필요한 변환(`ymd8`·`date`·`ymdhms14`·`yn`)을 추정한다. 달력에 없는 날짜·자리표시 날짜·형식 밖 값·허용값 밖 코드는 행 수를 센다. 최대 길이 초과와 집계로 확인할 수 없는 허용값은 행 수 없이 보고하고 적합률을 내지 않는다. 행 단위 판정과 예외 격리는 L3 다.
-- **출력**: 후보는 컬럼마다 최대 5개이고, 첫 후보가 같은 컬럼은 개념 군집으로 묶는다. 산출물은 입력 digest(inventory·profile·app-usage)를 싣는다. `--ledger-draft` 를 주면 모든 컬럼을 `PROPOSED` 행(대상 비움)으로 담은 원장 초안 YAML 을 쓰며, 이 초안은 원장 로더·검증기를 그대로 지난다.
+- **적합성 추정**: 후보마다 프로파일 집계로 도메인 적합률·위반·필요한 변환을 추정한다. 변환은 mapping.yml 어휘(`type:date`·`type:timestamp`·`type:numeric`·`type:integer`·`type:bigint`·`codemap`)이거나, 내장 변환이 없으면 프로젝트 변환기를 등록해야 한다는 뜻의 `custom:ymd8`·`custom:ymdhms14`·`custom:date-text` 이고, 모양마다 다르면 `custom:mixed` 다. 달력에 없는 날짜·자리표시 날짜·형식 밖 값·허용값 밖 코드는 행 수를 센다(달력 검사는 8자리 숫자 모양에만 있다). 최대 길이 초과와 집계로 확인할 수 없는 허용값은 행 수 없이 보고하고 적합률을 내지 않는다. 행 단위 판정과 예외 격리는 L3 다.
+- **출력**: 후보는 컬럼마다 최대 5개이고, 첫 후보가 같은 컬럼은 개념 군집으로 묶는다. 표 이름은 inventory 의 정규화 이름(`catalog.schema.table`, 빈 부분은 뺀다)이다 — 원장 coverage 가 mapping 의 소스 표 문자열과 그대로 대조하므로 mapping 도 같은 표기를 쓴다. 산출물은 입력 digest(inventory·profile·app-usage)를 싣는다. `--ledger-draft` 를 주면 컬럼마다 `PROPOSED` 행(대상 비움)을 담은 원장 초안 YAML 을 쓰며, 이 초안은 원장 로더·검증기를 그대로 지난다. 따옴표가 필요한 식별자의 테이블(`SKIPPED_IDENTIFIER`)은 초안에서 빼고, 대소문자만 다른 소스 컬럼이 있으면 초안을 만들지 않는다.
+- **프로파일 판**: term-suggest 는 프로파일 판 2 만 받는다. 판 2 는 숫자형 값을 숫자 모양 문자(`INTEGER_TEXT`·`DECIMAL_TEXT`)로 다시 세지 않고, 구분자가 있는 자리표시 날짜를 `PLACEHOLDER_DATE_TEXT` 로 따로 센다. 판이 다르면 profile 을 다시 실행한다.
 - **외부 LLM**: 쓰지 않는다. 결정 Q3 의 승인 기록·전송 전 검사 가드는 LLM 경로를 둘 때 함께 만든다.
 
 ### 결속되는 실행 의미

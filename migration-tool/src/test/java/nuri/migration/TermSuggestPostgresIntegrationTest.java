@@ -54,6 +54,9 @@ class TermSuggestPostgresIntegrationTest {
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:17-alpine");
 
+    private static final String NO_EXTENSION =
+            "이 schema 에서 표준 메타 확장 컬럼(V2_128)을 찾지 못해 후보를 만들 수 없습니다";
+
     @TempDir
     Path temp;
 
@@ -66,7 +69,10 @@ class TermSuggestPostgresIntegrationTest {
             meta(connection, "dict_old", false);
             assertThatThrownBy(() -> new PostgresStandardDictionaryReader().read(connection, "dict_old"))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("표준 메타가 확장(V2_128) 전이라 후보를 만들 수 없습니다");
+                    .hasMessage(NO_EXTENSION);
+            assertThatThrownBy(() -> new PostgresStandardDictionaryReader().read(connection, "no_such_schema"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage(NO_EXTENSION);
             assertThatThrownBy(() -> new PostgresStandardDictionaryReader().read(connection, "x\"; DROP"))
                     .isInstanceOf(IllegalArgumentException.class);
 
@@ -114,6 +120,8 @@ class TermSuggestPostgresIntegrationTest {
         assertThat(new TermLedgerValidator().validate(ledger)).isEmpty();
         assertThat(ledger.entries()).extracting(TermLedger.Entry::status).containsOnly("PROPOSED");
         assertThat(ledger.entries().getFirst().term().engAbbr()).isEqualTo("REG_YMD");
+        assertThat(ledger.entries()).extracting(TermLedger.Entry::id)
+                .containsExactly("PUBLIC.LEGACY_USER.WRT_DT", "PUBLIC.LEGACY_USER.STLI_NM");
     }
 
     @Test
@@ -129,7 +137,16 @@ class TermSuggestPostgresIntegrationTest {
                 "--mapping=" + temp.resolve("mapping.yml"), "--profile=" + profile,
                 "--suggestions=" + temp.resolve("out.json"), "--meta-schema=dict_gate")))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessage("표준 메타가 확장(V2_128) 전이라 후보를 만들 수 없습니다");
+                .hasMessage(NO_EXTENSION);
+        assertThat(temp.resolve("out.json")).doesNotExist();
+
+        SourceProfile outdated = new SourceProfile(1, null, true, profile().tables());
+        Files.writeString(profile, new CollectionArtifactCodec().writeProfile(outdated, "a".repeat(64)));
+        assertThatThrownBy(() -> runner().run(args("--command=term-suggest",
+                "--mapping=" + temp.resolve("mapping.yml"), "--profile=" + profile,
+                "--suggestions=" + temp.resolve("out.json"))))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageStartingWith("프로파일 산출물의 판이 맞지 않습니다");
         assertThat(temp.resolve("out.json")).doesNotExist();
 
         Files.writeString(profile, "{}");

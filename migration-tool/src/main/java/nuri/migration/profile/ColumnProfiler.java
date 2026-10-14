@@ -87,7 +87,7 @@ public final class ColumnProfiler {
         if (value instanceof Number number) {
             numberValues++;
             String text = number instanceof BigDecimal decimal ? decimal.toPlainString() : number.toString();
-            classify(text);
+            classify(text, true);
             remember(text);
             return;
         }
@@ -119,15 +119,19 @@ public final class ColumnProfiler {
             trailingSpaces++;
         }
         String trimmed = text.strip();
-        classify(trimmed);
+        classify(trimmed, false);
         if (!PersonalDataPatterns.find(trimmed).isEmpty()) {
             personal = true;
         }
         remember(trimmed);
     }
 
-    private void classify(String trimmed) {
+    /** 숫자형 값은 숫자 모양 문자({@code INTEGER_TEXT}·{@code DECIMAL_TEXT})로 세지 않는다 — numberValues 가 센다. */
+    private void classify(String trimmed, boolean number) {
         for (ValuePattern pattern : ValuePattern.values()) {
+            if (number && (pattern == ValuePattern.INTEGER_TEXT || pattern == ValuePattern.DECIMAL_TEXT)) {
+                continue;
+            }
             if (pattern.matches(trimmed)) {
                 patterns.merge(pattern, 1L, Long::sum);
                 if (pattern.personal()) {

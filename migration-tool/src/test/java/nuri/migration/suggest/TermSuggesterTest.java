@@ -126,7 +126,7 @@ class TermSuggesterTest {
     }
 
     @Test
-    void columnsWithTheSameTopTermFormAConceptClusterAndSameNamedTablesAreQualified() {
+    void columnsWithTheSameTopTermFormAConceptClusterAndTablesUseTheInventoryName() {
         SourceProfile profile = new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(
                 table("OLD", "LEGACY_USER", column("REG_YMD").text(1).pattern("YMD8", 1)),
                 table("NEW", "LEGACY_USER", column("REGDT").comment("등록일자").text(1).pattern("YMD8", 1)),
@@ -135,7 +135,12 @@ class TermSuggesterTest {
         SuggestionReport report = suggester.suggest(profile, digest('a'), digest('b'), null, null);
 
         assertThat(report.columns()).extracting(ColumnSuggestion::table)
-                .containsExactly("OLD.LEGACY_USER", "NEW.LEGACY_USER", "CODE");
+                .containsExactly("OLD.LEGACY_USER", "NEW.LEGACY_USER", "NEW.CODE");
+        assertThat(report.columns()).extracting(ColumnSuggestion::tableStatus).containsOnly("PROFILED");
+        assertThat(TermSuggester.qualified(new TableProfile("ERP", "DBO", "EMP", "SKIPPED_IDENTIFIER", null, 0,
+                false, new CommentEvidence(null, false, null, "ABSENT"), List.of()))).isEqualTo("ERP.DBO.EMP");
+        assertThat(TermSuggester.qualified(new TableProfile(" ", null, "EMP", "PROFILED", null, 0,
+                false, new CommentEvidence(null, false, null, "ABSENT"), List.of()))).isEqualTo("EMP");
         assertThat(report.clusters()).containsExactly(new ConceptCluster("REG_YMD", "등록일자",
                 List.of("NEW.LEGACY_USER.REGDT", "OLD.LEGACY_USER.REG_YMD")));
         assertThat(report.grades()).isEqualTo(Map.of("EXACT", 3L));

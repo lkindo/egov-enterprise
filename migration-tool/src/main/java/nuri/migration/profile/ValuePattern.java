@@ -4,7 +4,11 @@ import java.util.regex.Pattern;
 
 /**
  * 프로파일이 세는 값 모양이다(레거시 표준화 설계 §4.1 프로파일 항목). 한 값이 여러 모양에 맞을 수 있고 각각 센다 —
- * {@code 20240131} 은 {@link #YMD8} 이면서 {@link #INTEGER_TEXT} 다. 앞뒤 공백을 지운 값으로 판정한다.
+ * 문자 {@code "20240131"} 은 {@link #YMD8} 이면서 {@link #INTEGER_TEXT} 다. 앞뒤 공백을 지운 값으로 판정한다.
+ *
+ * <p>숫자형 값({@code NUMBER(8)} 의 {@code 20240131} 등)은 날짜·여부 모양으로는 세지만 {@link #INTEGER_TEXT}·
+ * {@link #DECIMAL_TEXT} 로는 세지 않는다 — 숫자형 값은 {@code numberValues} 가 이미 센다. 두 모양은 숫자로 읽히는
+ * <em>문자</em> 값의 수다.</p>
  */
 public enum ValuePattern {
     /** 8자리 숫자. 달력에 있는 날짜인지는 따로 센다({@code ymd8Invalid}). */
@@ -21,7 +25,10 @@ public enum ValuePattern {
     TRUE_FALSE("(?i)true|false|t|f", false),
     INTEGER_TEXT("[-+]?\\d+", false),
     DECIMAL_TEXT("[-+]?\\d*\\.\\d+", false),
-    PLACEHOLDER_DATE("99991231|00000000|9999-12-31|0000-00-00", false),
+    /** 8자리 자리표시 날짜. {@link #YMD8} 이지만 달력 검사({@code ymd8Invalid})에서는 빠진다. */
+    PLACEHOLDER_DATE("99991231|00000000", false),
+    /** 구분자가 있는 자리표시 날짜. {@link #YMD_DASHED} 와 함께 센다. */
+    PLACEHOLDER_DATE_TEXT("9999-12-31|0000-00-00", false),
     PLACEHOLDER_TEXT("-|\\.|N/A|n/a|NULL|null", false),
     RRN("\\d{6}-?[1-8]\\d{6}", true),
     PHONE("0\\d{1,2}[-. ]?\\d{3,4}[-. ]?\\d{4}", true),

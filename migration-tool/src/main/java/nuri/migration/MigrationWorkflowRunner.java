@@ -307,6 +307,9 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         } catch (IllegalArgumentException invalid) {
             throw gate("수집 산출물을 읽지 못해 term-suggest 를 중단했습니다: " + invalid.getMessage());
         }
+        if (profile.payload().profileVersion() != SourceProfile.CURRENT_VERSION) {
+            throw gate("프로파일 산출물의 판이 맞지 않습니다(값 모양을 세는 규칙이 바뀌었습니다). profile 을 다시 실행하세요.");
+        }
         StandardDictionary dictionary;
         try (Connection connection = open(introspector.jdbc(mapping.target()))) {
             connection.setReadOnly(true);

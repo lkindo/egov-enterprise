@@ -34,7 +34,8 @@ public final class PostgresStandardDictionaryReader {
             check.setString(1, schema);
             try (ResultSet rows = check.executeQuery()) {
                 if (!rows.next() || rows.getInt(1) != 3) {
-                    throw new IllegalStateException("표준 메타가 확장(V2_128) 전이라 후보를 만들 수 없습니다");
+                    throw new IllegalStateException(
+                            "이 schema 에서 표준 메타 확장 컬럼(V2_128)을 찾지 못해 후보를 만들 수 없습니다");
                 }
             }
         }

@@ -82,7 +82,7 @@ class CollectionArtifactCodecTest {
     private static nuri.migration.suggest.SuggestionReport suggestions(String column) {
         return new nuri.migration.suggest.SuggestionReport(nuri.migration.suggest.SuggestionReport.CURRENT_VERSION,
                 INVENTORY, "b".repeat(64), null, Map.of("UNKNOWN", 1L), List.of(
-                new nuri.migration.suggest.SuggestionReport.ColumnSuggestion("LEGACY_USER", column, "TEXT", "UNKNOWN",
+                new nuri.migration.suggest.SuggestionReport.ColumnSuggestion("LEGACY_USER", column, "PROFILED", "TEXT", "UNKNOWN",
                         List.of(), List.of())), List.of());
     }
 
