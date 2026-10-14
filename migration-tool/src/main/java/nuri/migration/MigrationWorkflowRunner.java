@@ -31,6 +31,7 @@ import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.MigrationPlanner;
+import nuri.migration.postgres.PostgresStandardTermReader;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
 import nuri.migration.profile.SourceProfile;
 import nuri.migration.profile.SourceProfiler;
@@ -39,6 +40,9 @@ import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ValidationResult;
+import nuri.migration.validate.ledger.TermLedger;
+import nuri.migration.validate.ledger.TermLedgerLoader;
+import nuri.migration.validate.ledger.TermLedgerValidator;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import nuri.migration.workflow.WorkflowReview;
@@ -85,6 +89,9 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private final SourceProfiler profiler = new SourceProfiler();
     private final AppSourceScanner appScanner = new AppSourceScanner();
     private final CollectionArtifactCodec collectionCodec = new CollectionArtifactCodec();
+    private final TermLedgerLoader ledgerLoader = new TermLedgerLoader();
+    private final TermLedgerValidator ledgerValidator = new TermLedgerValidator();
+    private final PostgresStandardTermReader standardTerms = new PostgresStandardTermReader();
 
     @Autowired
     public MigrationWorkflowRunner(
@@ -300,6 +307,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         TargetSchemaFingerprint target = fingerprintTarget(mapping, options.targetSchemas());
         requireTargetStandard(validator.validateTargetStandard(
                 mapping, target, inventory.payload().toSnapshot()));
+        requireLedger(options, mapping);
         Map<String, nuri.migration.plan.DispositionDecision> decisions = Map.of();
         if (options.review() != null) {
             WorkflowReview review = reviewLoader.load(
@@ -394,6 +402,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
             requireTargetStandard(validator.validateTargetStandard(
                     mapping, target, inventory.payload().toSnapshot()));
+            requireLedger(options, mapping);
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -627,6 +636,61 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                     ? " (외 " + (result.errors().size() - shown.size()) + "건)" : "";
             throw gate("target standard contract validation 실패로 중단했습니다: "
                     + String.join(" | ", shown) + more);
+        }
+    }
+
+    /**
+     * [ADR-0029 결정 3, DEC-OPS-312] mapping 이 용어 매핑 원장을 선언했으면 그 파일 바이트가 선언한 digest 와 같은지,
+     * 원장 형식·전이 이력이 맞는지, mapping 이 옮기는 모든 컬럼이 확정 행을 가리키는지, 확정 행의 표준 용어가 live
+     * 메타에 있고 폐기되지 않았는지 본다. 원장을 선언하지 않은 mapping 은 종전대로다(원장에서 mapping 을 만드는 L3 에서
+     * 필수로 바꾼다).
+     */
+    private void requireLedger(WorkflowCliOptions options, MappingSpec mapping) throws SQLException {
+        MappingSpec.LedgerBinding binding = mapping.ledger();
+        if (binding == null) {
+            return;
+        }
+        if (binding.path() == null || binding.path().isBlank()
+                || binding.sha256() == null || !binding.sha256().matches("[0-9a-f]{64}")) {
+            throw gate("mapping 의 ledger 선언에는 path 와 소문자 sha256 이 필요합니다.");
+        }
+        java.nio.file.Path base = options.mapping().toAbsolutePath().getParent();
+        String content = files.readUtf8(base.resolve(binding.path()).normalize());
+        if (!binding.sha256().equals(sha256Hex(content.getBytes(StandardCharsets.UTF_8)))) {
+            throw gate("용어 매핑 원장 digest 가 mapping 의 선언과 다릅니다.");
+        }
+        TermLedger ledger;
+        try {
+            ledger = ledgerLoader.load(content);
+        } catch (IllegalArgumentException invalid) {
+            throw gate(invalid.getMessage());
+        }
+        List<String> errors = new java.util.ArrayList<>(ledgerValidator.validate(ledger));
+        errors.addAll(ledgerValidator.coverage(ledger, mapping));
+        Map<String, TermLedgerValidator.StandardTermRecord> terms = new java.util.HashMap<>();
+        try (Connection connection = open(introspector.jdbc(mapping.target()))) {
+            connection.setReadOnly(true);
+            for (Map.Entry<String, java.util.Set<String>> schema
+                    : ledgerValidator.confirmedTermsBySchema(ledger).entrySet()) {
+                terms.putAll(standardTerms.read(connection, schema.getKey(), schema.getValue()));
+            }
+        } catch (IllegalStateException | IllegalArgumentException unreadable) {
+            throw gate(unreadable.getMessage());
+        }
+        errors.addAll(ledgerValidator.live(ledger, terms));
+        if (!errors.isEmpty()) {
+            List<String> shown = errors.stream().limit(MAX_REPORTED_ERRORS).toList();
+            String more = errors.size() > shown.size() ? " (외 " + (errors.size() - shown.size()) + "건)" : "";
+            throw gate("용어 매핑 원장 검증 실패로 중단했습니다: " + String.join(" | ", shown) + more);
+        }
+    }
+
+    private static String sha256Hex(byte[] bytes) {
+        try {
+            return java.util.HexFormat.of().formatHex(
+                    java.security.MessageDigest.getInstance("SHA-256").digest(bytes));
+        } catch (java.security.NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
         }
     }
 

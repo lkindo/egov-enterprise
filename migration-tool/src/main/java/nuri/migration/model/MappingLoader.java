@@ -96,7 +96,8 @@ public class MappingLoader {
                 resolveDbConfig(raw.target()),
                 raw.tables(),
                 raw.codemaps(),
-                raw.run());
+                raw.run(),
+                raw.ledger());
     }
 
     private MappingSpec.DbConfig resolveDbConfig(MappingSpec.DbConfig config) {

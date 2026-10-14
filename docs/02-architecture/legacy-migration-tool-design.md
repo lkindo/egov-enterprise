@@ -59,6 +59,34 @@ Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 �
 ./gradlew :migration-tool:bootRun --args="--command=app-scan --app-source=D:/legacy/src --app-usage=app-usage.json"
 ```
 
+### 용어 매핑 원장(ADR-0029 L2b-1)
+
+레거시 컬럼이 어느 표준 용어·대상 컬럼으로 가는지와 그 확정 이력을 담는 기관 이관 저장소의 검토 파일(YAML/JSON)이다([DEC-OPS-312](../../.agent/memory/decisions.md)). 원시 행 값·접속정보는 담지 않으며, 읽을 때 자격 검사와 개인정보 값 검사를 지나야 한다.
+
+```yaml
+schemaVersion: 1
+entries:
+  - id: L1
+    source: {table: legacy.legacy_user, column: USER_ID}
+    target: {table: public.tb_user_info, column: user_id}
+    term: {name: 사용자ID, engAbbr: USER_ID, domain: ID V20}
+    grade: EXACT            # EXACT·SYNONYM·INFERRED·UNKNOWN
+    status: CONFIRMED       # PROPOSED·REVIEWED·CONFIRMED·APPROVED_IGNORE·ARCHIVE·REGISTRATION_REQUESTED·REJECTED
+    conformance: {rate: 100}
+    history:
+      - {to: REVIEWED, by: 검토자, at: "2026-10-01"}
+      - {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}
+```
+
+- **mapping 결속**: mapping.yml 에 `ledger: {path: term-ledger.yml, sha256: <원장 파일 바이트의 SHA-256>}` 를 선언한다. path 는 mapping 파일 디렉터리 기준이다. 원장 digest 가 mapping digest 에 들어가므로 plan 뒤에 원장이 바뀌면 load 가 멈춘다. 원장을 선언하지 않은 mapping 은 종전과 같고 digest 도 그대로다.
+- **전이 이력**: `history` 는 `PROPOSED` 에서 지금 상태까지의 합법 전이여야 한다(`PROPOSED→REVIEWED→CONFIRMED` 등). 날짜는 거꾸로 갈 수 없고, 확정·이관 제외·외부 보관은 도구 이름(`term-suggest`·`migration-tool` 등)으로 기록할 수 없다.
+- **상태별 필수 항목**: 확정(`CONFIRMED`)은 표준 용어·대상 컬럼(표준 영문약어와 같은 이름)·적합률이 필요하고, 적합률이 100 이 아니면 승인된 예외(행 수 상한·사유)가 필요하다. `UNKNOWN` 은 확정할 수 없다. 이관 제외는 사유, 외부 보관은 보존 기한, 표준 등록 요청은 요청할 용어 이름이 필요하다.
+- **mapping 대조**: mapping 이 소스 컬럼에서 옮기는 모든 컬럼(상수 제외)이 같은 소스·대상의 확정 행을 가리켜야 한다.
+- **live 메타 대조**: plan·load 때 확정 행의 표준 용어가 대상 schema 의 `meta_standard_terms` 에 있고 이름·도메인이 같으며 폐기되지 않았는지 본다. 폐기 여부 컬럼(V2_128)이 없는 DB 에서는 대조를 멈춘다.
+- **필수화 시점**: 원장 선언은 지금 선택이다. 원장에서 mapping 을 만드는 경로(L3)가 생기면 필수로 바꾼다.
+
+V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·`allowed_values`(허용값)·`deprecated_yn`(폐기 여부)을 더하고, 저장소의 행정안전부 공통표준용어 CSV(2025-11 판) 값으로 5,683행을 채운다. CSV 에서 같은 영문약어가 서로 다른 값으로 두 번 나오는 TXPR_NM·BZMN_NM·CONM 은 근거가 없어 비운다. 공유 OCI DB 적용은 별도 승인이다.
+
 ### 결속되는 실행 의미
 
 - **Endpoint**: source inventory는 `endpointId`와 credential을 제거한 JDBC 위치 digest를 결속한다. Mapping digest에는 source/target `endpointId`가 포함된다.

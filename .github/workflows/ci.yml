@@ -1479,7 +1479,7 @@ jobs:
           - scope: migration-validate
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
-            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest"
+            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest"
 
           - scope: migration-verify
             gradle: ":migration-tool:pitest"

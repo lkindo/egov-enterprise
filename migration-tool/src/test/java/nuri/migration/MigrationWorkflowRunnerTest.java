@@ -905,6 +905,106 @@ class MigrationWorkflowRunnerTest {
         verify(sourceEndpoint).close();
     }
 
+    @Test
+    void ledgerBytesThatDifferFromTheDeclaredDigestStopThePlanBeforeAnyRowIsChecked() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("ledger-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        ledgerMapping(ledgerText("CONFIRMED", CONFIRMED_HISTORY));
+        Files.writeString(temp.resolve("term-ledger.yml"), ledgerText("CONFIRMED", CONFIRMED_HISTORY) + "# edited");
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("용어 매핑 원장 digest 가 mapping 의 선언과 다릅니다.");
+        assertThat(plan).doesNotExist();
+    }
+
+    @Test
+    void anUnconfirmedRowOrADeprecatedLiveTermStopsThePlanAndNamesTheRow() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("ledger-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+
+        ledgerMapping(ledgerText("PROPOSED", "[]"));
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("용어 매핑 원장 검증 실패로 중단했습니다: legacy.legacy_user.USER_ID: 원장 행 L1 이"
+                        + " 확정되지 않았습니다(PROPOSED)");
+
+        ledgerMapping(ledgerText("CONFIRMED", CONFIRMED_HISTORY));
+        liveTerm("Y");
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("용어 매핑 원장 검증 실패로 중단했습니다: L1: 표준 용어 USER_ID 는 폐기됐습니다");
+        assertThat(plan).doesNotExist();
+    }
+
+    @Test
+    void aConfirmedLedgerIsBoundIntoTheMappingDigestOfThePlan() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("ledger-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        MappingSpec bound = ledgerMapping(ledgerText("CONFIRMED", CONFIRMED_HISTORY));
+        liveTerm("N");
+
+        runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan));
+
+        MigrationPlan written = planCodec.read(files.readUtf8(plan));
+        assertThat(written.mappingDigest()).isEqualTo(MappingSpecDigester.sha256(bound))
+                .isNotEqualTo(MappingSpecDigester.sha256(mapping));
+        verify(targetConnection, org.mockito.Mockito.atLeastOnce()).setReadOnly(true);
+    }
+
+    private static final String CONFIRMED_HISTORY = "[{to: REVIEWED, by: 검토자, at: \"2026-10-01\"},"
+            + " {to: CONFIRMED, by: 업무담당, at: \"2026-10-02\"}]";
+
+    private static String ledgerText(String status, String history) {
+        return "schemaVersion: 1\n"
+                + "entries:\n"
+                + "  - id: L1\n"
+                + "    source: {table: legacy.legacy_user, column: USER_ID}\n"
+                + "    target: {table: public.tb_user_info, column: user_id}\n"
+                + "    term: {name: 사용자ID, engAbbr: USER_ID, domain: ID V20}\n"
+                + "    grade: EXACT\n"
+                + "    status: " + status + "\n"
+                + "    conformance: {rate: 100}\n"
+                + "    history: " + history + "\n";
+    }
+
+    /** 원장을 선언한 mapping 을 로더가 돌려주게 하고, 그 mapping 에 대한 검증 대역을 맞춘다. */
+    private MappingSpec ledgerMapping(String ledgerText) throws Exception {
+        Files.writeString(temp.resolve("term-ledger.yml"), ledgerText, java.nio.charset.StandardCharsets.UTF_8);
+        String sha = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(ledgerText.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        MappingSpec bound = new MappingSpec(mapping.source(), mapping.target(), mapping.tables(), mapping.codemaps(),
+                mapping.run(), new MappingSpec.LedgerBinding("term-ledger.yml", sha));
+        given(loader.loadContent(any(String.class))).willReturn(bound);
+        given(validator.validate(bound)).willReturn(pass());
+        given(validator.validateTargetStandard(eq(bound), any(), any())).willReturn(pass());
+        given(fingerprinter.fingerprintBound(targetConnection, bound, Set.of("public"))).willReturn(targetFingerprint);
+        return bound;
+    }
+
+    /** live 메타 대조 질의(폐기 컬럼 확인 → 용어 조회)에 한 행을 돌려준다. */
+    private void liveTerm(String deprecated) throws Exception {
+        java.sql.PreparedStatement statement = mock(java.sql.PreparedStatement.class);
+        java.sql.ResultSet check = mock(java.sql.ResultSet.class);
+        java.sql.ResultSet rows = mock(java.sql.ResultSet.class);
+        given(targetConnection.prepareStatement(org.mockito.ArgumentMatchers.anyString())).willReturn(statement);
+        given(targetConnection.createArrayOf(eq("text"), any())).willReturn(mock(java.sql.Array.class));
+        given(statement.executeQuery()).willReturn(check, rows);
+        given(check.next()).willReturn(true);
+        given(rows.next()).willReturn(true, false);
+        given(rows.getString(1)).willReturn("USER_ID");
+        given(rows.getString(2)).willReturn("사용자ID");
+        given(rows.getString(3)).willReturn("ID V20");
+        given(rows.getString(4)).willReturn(deprecated);
+    }
+
     private void load(Path inventory, Path plan) {
         loadWithApprovals(
                 inventory, plan, true, "postgresql-pg-catalog", MigrationMode.DRY_RUN);
