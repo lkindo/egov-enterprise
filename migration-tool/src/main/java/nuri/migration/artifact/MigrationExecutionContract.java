@@ -3,6 +3,7 @@ package nuri.migration.artifact;
 import nuri.migration.adapter.AdapterIdentity;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.domain.DomainValues;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.protect.ColumnProtector;
@@ -53,7 +54,9 @@ public record MigrationExecutionContract(
             SourceLoadSurfaceGate.class,
             // 보호 컬럼 암호화(DEC-OPS-308). 승인 뒤 암호 구현이 바뀌면 같은 승인으로 적재하지 않는다.
             ColumnProtector.class,
-            EgovAriaColumnCipher.class);
+            EgovAriaColumnCipher.class,
+            // 표준 도메인 변환기(ADR-0029 L3a-1). 승인 뒤 받는 값·거부 사유가 바뀌면 같은 승인으로 적재하지 않는다.
+            DomainValues.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

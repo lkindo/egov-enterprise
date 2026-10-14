@@ -25,7 +25,9 @@ import java.util.regex.Pattern;
  *
  * <p>변환 제안은 mapping.yml 어휘({@code type:date}·{@code type:timestamp}·{@code type:numeric}·{@code codemap})이거나,
  * 내장 변환이 없을 때 {@code custom:*}(프로젝트 변환기를 등록해야 한다)다. 모양마다 필요한 변환이 다르면
- * {@code custom:mixed} 다.</p>
+ * {@code custom:mixed} 다. 경과: ADR-0029 L3a-1 부터 {@code custom:ymd8}·{@code custom:ymdhms14}·{@code custom:date-text}
+ * 는 같은 이름의 내장 도메인 변환기를 쓰라는 뜻이다(힌트 어휘는 L3a-2 에서 바뀐다). 같은 이름으로 프로젝트 변환기를
+ * 등록하면 도메인 변환기가 아니게 되어 위반 코드와 nullify 를 잃는다.</p>
  */
 public final class ConformanceEstimator {
 
@@ -80,8 +82,11 @@ public final class ConformanceEstimator {
         return "TEXT";
     }
 
-    /** 도메인 범주: DATE8·DATETIME14·TEMPORAL·TIME6·YN·CODE·NUMERIC·TEXT. */
-    static String domainCategory(StandardDictionary.Domain domain) {
+    /**
+     * 도메인 범주: DATE8·DATETIME14·TEMPORAL·TIME6·YN·CODE·NUMERIC·TEXT. 타깃 표준 검증도 여부 도메인을 이 판정으로
+     * 가린다(ADR-0029 L3a-1) — 범주 판정은 한 곳에만 둔다.
+     */
+    public static String domainCategory(StandardDictionary.Domain domain) {
         if (domain == null) {
             return "TEXT";
         }
@@ -132,8 +137,12 @@ public final class ConformanceEstimator {
     /** 모양 하나가 맞는 행 수와 그 모양을 도메인으로 옮길 변환. */
     private record Shape(long rows, String transform) {}
 
-    static ConformanceEstimate estimate(ColumnProfile profile, StandardDictionary.Domain domain,
-                                        String allowedValues) {
+    /**
+     * 표를 끝까지 읽은 프로파일의 적합성 추정. 표준 도메인 변환기 동치 시험({@code DomainParityTest})이 값 하나짜리
+     * 프로파일로 실행 판정과 대조한다(ADR-0029 L3a-1).
+     */
+    public static ConformanceEstimate estimate(ColumnProfile profile, StandardDictionary.Domain domain,
+                                               String allowedValues) {
         return estimate(profile, domain, allowedValues, false);
     }
 

@@ -68,7 +68,9 @@ class MigrationExecutionContractTest {
                 "nuri.migration.transform.TypeConverter",
                 "nuri.migration.validate.MappingValidator",
                 "nuri.migration.verify.MigrationVerifier",
-                "nuri.migration.workflow.SourceLoadSurfaceGate");
+                "nuri.migration.workflow.SourceLoadSurfaceGate",
+                // 표준 도메인 변환기의 받기·거부 규칙(ADR-0029 L3a-1)도 승인에 결속한다.
+                "nuri.migration.domain.DomainValues");
         assertThat(MigrationExecutionContract.implementationClassNamesForTesting())
                 .contains(
                         "nuri/migration/etl/TableOrderer.class",

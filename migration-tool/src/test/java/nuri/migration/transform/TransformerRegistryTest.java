@@ -1,10 +1,19 @@
 package nuri.migration.transform;
 
+import nuri.migration.artifact.CanonicalArtifactDigest;
+import nuri.migration.domain.DomainValueRejected;
+import nuri.migration.domain.DomainViolation;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -112,7 +121,124 @@ class TransformerRegistryTest {
                     .as(String.valueOf(malformed))
                     .isInstanceOf(RuntimeException.class);
         }
+        // [ADR-0029 L3a-1] v2 는 자리표시 날짜를 거부한다 — v1 은 9999-12-31 을 그대로 적재했다.
+        for (Object placeholder : new Object[] {"99991231", " 9999-12-31 ", 99991231}) {
+            assertThatThrownBy(() -> registry.apply("date-truncate", placeholder))
+                    .as(String.valueOf(placeholder))
+                    .isInstanceOfSatisfying(DomainValueRejected.class, rejected -> assertThat(rejected.violation())
+                            .isEqualTo(DomainViolation.PLACEHOLDER_DATE));
+        }
     }
+
+    /**
+     * [ADR-0029 L3a-1] 표준 도메인 변환기는 내장이고, 이진 값도 위반 코드로 거부한다 — 실행기가 그 코드를 기록한다.
+     * 같은 이름을 사용자 변환기로 덮어쓰면 도메인 변환기가 아니다.
+     */
+    @Test
+    void domainTransformersAreBuiltinsThatRejectBinaryWithAViolationCode() {
+        for (String name : DOMAIN_TRANSFORMERS) {
+            assertThat(registry.has(name)).as(name).isTrue();
+            assertThat(registry.isBuiltin(name)).as(name).isTrue();
+            assertThat(registry.isDomain(name)).as(name).isTrue();
+            assertThatThrownBy(() -> registry.apply(name, new byte[] {1}))
+                    .as(name)
+                    .isInstanceOfSatisfying(DomainValueRejected.class, rejected -> assertThat(rejected.violation())
+                            .isEqualTo(DomainViolation.UNSUPPORTED_VALUE_TYPE));
+        }
+        for (String name : new String[] {"trim", "upper", "lower", "date", "timestamp", "nope"}) {
+            assertThat(registry.isDomain(name)).as(name).isFalse();
+        }
+        assertThat(registry.isDomain(null)).isFalse();
+        registry.register("yn", "test:yn:v1", "0".repeat(64), value -> value);
+        assertThat(registry.isDomain("yn")).isFalse();
+        assertThat(registry.isBuiltin("yn")).isFalse();
+    }
+
+    /**
+     * 내장 변환기의 계약 id 는 실행 계약 digest 에 결속된다. date-truncate 는 v2 로 올렸으므로 v1 로 승인한 plan 은 다시
+     * 승인해야 한다 — id 가 조용히 바뀌거나 되돌아가면 이 시험이 알린다.
+     */
+    @Test
+    void domainTransformerContractIdsAreBoundToTheExecutionContract() {
+        Map<String, String> contractIds = new LinkedHashMap<>();
+        contractIds.put("date-text", "builtin:date-text:v1");
+        contractIds.put("date-truncate", "builtin:date-truncate:v2");
+        contractIds.put("hms6", "builtin:hms6:v1");
+        contractIds.put("timestamp-from-date", "builtin:timestamp-from-date:v1");
+        contractIds.put("timestamp-text", "builtin:timestamp-text:v1");
+        contractIds.put("yn", "builtin:yn:v1");
+        contractIds.put("ymd8", "builtin:ymd8:v1");
+        contractIds.put("ymd8-truncate", "builtin:ymd8-truncate:v1");
+        contractIds.put("ymdhms14", "builtin:ymdhms14:v1");
+        for (Map.Entry<String, String> entry : contractIds.entrySet()) {
+            String expected = CanonicalArtifactDigest.sha256(new ExpectedContract(1, "registry", List.of(
+                    new ExpectedEntry(entry.getKey(), entry.getValue(),
+                            CanonicalArtifactDigest.sha256(entry.getValue()), true))));
+            assertThat(registry.executionContractDigest(List.of(entry.getKey()), "registry"))
+                    .as(entry.getKey()).isEqualTo(expected);
+        }
+        assertThat(contractIds.keySet()).containsExactlyInAnyOrderElementsOf(DOMAIN_TRANSFORMERS);
+    }
+
+    /**
+     * 검증기는 nullify 가 그 load 가 낼 수 있는 코드인지 레지스트리의 선언으로 판정한다. 선언이 실제 거부와 어긋나면
+     * 낼 수 없는 위반의 nullify 가 통과하거나, 낼 수 있는 위반의 nullify 가 막힌다 — 실제로 던지는 코드를 모아 대조한다.
+     */
+    @Test
+    void declaredDomainViolationsAreExactlyTheCodesTheTransformerRejectsWith() {
+        Object[] probes = {"  ", "99991231", "20240231", "20240231120000", "2024-01-31 12:00:00", "abc",
+                LocalDateTime.of(2024, 1, 31, 12, 0), LocalTime.of(9, 30), new byte[] {1}};
+        Map<String, Set<DomainViolation>> expected = new LinkedHashMap<>();
+        Set<DomainViolation> shape = EnumSet.of(DomainViolation.BLANK, DomainViolation.FORMAT,
+                DomainViolation.UNSUPPORTED_VALUE_TYPE);
+        Set<DomainViolation> dateTime = with(shape, DomainViolation.INVALID_DATE);
+        Set<DomainViolation> truncated = with(dateTime, DomainViolation.PLACEHOLDER_DATE);
+        Set<DomainViolation> date = with(truncated, DomainViolation.TIME_PRESENT);
+        expected.put("ymd8", date);
+        expected.put("date-text", date);
+        expected.put("timestamp-from-date", date);
+        expected.put("ymd8-truncate", truncated);
+        expected.put("date-truncate", truncated);
+        expected.put("timestamp-text", truncated);
+        expected.put("ymdhms14", dateTime);
+        expected.put("hms6", shape);
+        expected.put("yn", shape);
+
+        for (Map.Entry<String, Set<DomainViolation>> entry : expected.entrySet()) {
+            Set<DomainViolation> observed = EnumSet.noneOf(DomainViolation.class);
+            for (Object probe : probes) {
+                try {
+                    registry.apply(entry.getKey(), probe);
+                } catch (DomainValueRejected rejected) {
+                    observed.add(rejected.violation());
+                }
+            }
+            assertThat(observed).as(entry.getKey() + " 가 실제로 던진 코드").isEqualTo(entry.getValue());
+            assertThat(registry.domainViolations(entry.getKey())).as(entry.getKey() + " 의 선언")
+                    .isEqualTo(entry.getValue());
+        }
+        assertThat(expected.keySet()).containsExactlyInAnyOrderElementsOf(DOMAIN_TRANSFORMERS);
+        for (String name : new String[] {"trim", "date", "timestamp", "nope"}) {
+            assertThat(registry.domainViolations(name)).as(name).isEmpty();
+        }
+        assertThat(registry.domainViolations(null)).isEmpty();
+        registry.register("ymd8", "test:ymd8:v1", "0".repeat(64), value -> value);
+        assertThat(registry.domainViolations("ymd8")).as("덮어쓴 이름은 도메인 변환기가 아니다").isEmpty();
+    }
+
+    private static Set<DomainViolation> with(Set<DomainViolation> base, DomainViolation added) {
+        Set<DomainViolation> union = EnumSet.copyOf(base);
+        union.add(added);
+        return union;
+    }
+
+    private static final List<String> DOMAIN_TRANSFORMERS = List.of("ymd8", "ymd8-truncate", "ymdhms14", "hms6",
+            "yn", "date-text", "date-truncate", "timestamp-text", "timestamp-from-date");
+
+    private record ExpectedEntry(String name, String contractVersion, String implementationDigest, boolean builtin) {}
+
+    private record ExpectedContract(int schemaVersion, String registryClassDigest,
+                                    List<ExpectedEntry> selectedTransformers) {}
 
     @Test
     void 이름이_비었거나_미등록이면_원본을_그대로_돌려준다() {

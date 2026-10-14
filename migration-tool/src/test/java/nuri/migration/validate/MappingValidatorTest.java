@@ -1,9 +1,11 @@
 package nuri.migration.validate;
 
+import nuri.migration.domain.DomainViolation;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.transform.TransformerRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -564,6 +566,104 @@ class MappingValidatorTest {
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(fk), null))));
 
             assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("fkRef", "source 컬럼"));
+        }
+    }
+
+    @Nested
+    @DisplayName("표준 도메인 변환기와 nullify 선언(ADR-0029 L3a-1)")
+    class DomainTransformerLoad {
+
+        private static final String LOCATION = "tb_user_info.user_nm: ";
+
+        private List<String> errors(ColumnMapping column) {
+            return withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_user", "tb_user_info", null, List.of(column), null)))).errors();
+        }
+
+        private ColumnMapping load(String transform, String type, String codemap, String constant,
+                                   List<Nullify> nullify) {
+            return new ColumnMapping(constant == null ? "end_ymd" : null, "user_nm", transform, type, codemap, null,
+                    constant, null, nullify);
+        }
+
+        @Test
+        @DisplayName("도메인 변환기는 type·codemap 과 함께 쓸 수 없다 — 변환기가 대상 표기를 정한다")
+        void domainTransformerOwnsTheTargetSpelling() {
+            assertThat(errors(load("ymd8", null, null, null, List.of()))).isEmpty();
+            assertThat(errors(load("ymd8", "date", null, null, List.of()))).containsExactly(LOCATION
+                    + "표준 도메인 변환기 'ymd8' 는 type 과 함께 쓸 수 없습니다 — 변환기가 대상 표기를 정합니다");
+            ValidationResult withCodemap = withSchema().validate(spec(List.of(new TableMapping("legacy_user",
+                    "tb_user_info", null, List.of(load("yn", null, "flags", null, List.of())), null)),
+                    Map.of("flags", new MappingSpec.CodeMap(Map.of("1", "Y"), MappingSpec.UnmappedPolicy.FAIL, null))));
+            assertThat(withCodemap.errors()).containsExactly(LOCATION
+                    + "표준 도메인 변환기 'yn' 는 codemap 과 함께 쓸 수 없습니다 — 변환기가 대상 표기를 정합니다");
+            assertThat(errors(load("trim", "date", null, null, List.of())))
+                    .as("도메인 변환기가 아니면 종전대로 둔다").isEmpty();
+        }
+
+        @Test
+        @DisplayName("암호화 컬럼에는 도메인 변환기를 쓸 수 없다 — 암호화할 평문이 바뀐다")
+        void encryptedColumnRejectsDomainTransformers(@TempDir Path tmp) throws IOException {
+            Path catalog = tmp.resolve("db_columns.json");
+            Files.writeString(catalog, "[{\"table_name\":\"tb_user_info\",\"column_name\":\"user_enrrno\"}]",
+                    StandardCharsets.UTF_8);
+            MappingValidator validator = new MappingValidator(new TransformerRegistry(), catalog.toString());
+
+            ValidationResult domain = validator.validate(spec(List.of(new TableMapping("legacy_user", "tb_user_info",
+                    null, List.of(new ColumnMapping("jumin", "user_enrrno", "ymd8", null, null, null, null,
+                            "aria-egov-v1")), null))));
+            ValidationResult plain = validator.validate(spec(List.of(new TableMapping("legacy_user", "tb_user_info",
+                    null, List.of(new ColumnMapping("jumin", "user_enrrno", "trim", null, null, null, null,
+                            "aria-egov-v1")), null))));
+
+            assertThat(domain.errors()).containsExactly("tb_user_info.user_enrrno: 표준 도메인 변환기 'ymd8' 는"
+                    + " 암호화 컬럼에 쓸 수 없습니다 — 암호화할 평문이 바뀝니다");
+            assertThat(plain.errors()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("nullify 는 그 load 가 실제로 낼 수 있는 위반에만 선언한다")
+        void nullifyCodesMustBeProducibleByTheLoad() {
+            String notProduced = " 는 이 컬럼의 load 가 내지 않는 위반입니다 — BLANK 는 표준 도메인 변환기나 비문자 type,"
+                    + " PLACEHOLDER_DATE 는 날짜 변환기가 냅니다";
+            List<Nullify> blank = List.of(new Nullify(DomainViolation.BLANK, 2L));
+            List<Nullify> placeholder = List.of(new Nullify(DomainViolation.PLACEHOLDER_DATE, 2L));
+
+            assertThat(errors(load("ymd8", null, null, null, placeholder))).isEmpty();
+            assertThat(errors(load("timestamp-text", null, null, null, placeholder))).isEmpty();
+            assertThat(errors(load("ymd8", null, null, null, blank))).isEmpty();
+            assertThat(errors(load(null, "int", null, null, blank))).as("비문자 type 의 공백").isEmpty();
+            assertThat(errors(load("hms6", null, null, null, placeholder)))
+                    .containsExactly(LOCATION + "nullify PLACEHOLDER_DATE" + notProduced);
+            assertThat(errors(load("ymdhms14", null, null, null, placeholder)))
+                    .containsExactly(LOCATION + "nullify PLACEHOLDER_DATE" + notProduced);
+            assertThat(errors(load(null, "int", null, null, placeholder)))
+                    .containsExactly(LOCATION + "nullify PLACEHOLDER_DATE" + notProduced);
+            assertThat(errors(load("trim", null, null, null, blank)))
+                    .containsExactly(LOCATION + "nullify BLANK" + notProduced);
+            assertThat(errors(load(null, "string", null, null, blank)))
+                    .as("문자 type 은 공백을 그대로 쓴다").containsExactly(LOCATION + "nullify BLANK" + notProduced);
+            assertThat(errors(load(null, null, null, "SYSTEM", blank)))
+                    .as("const 는 변환하지 않는다").containsExactly(LOCATION + "nullify BLANK" + notProduced);
+        }
+
+        @Test
+        @DisplayName("nullify 선언은 BLANK·PLACEHOLDER_DATE 만, 위반마다 한 번, 1 이상의 상한과 함께 둔다")
+        void nullifyDeclarationsAreBoundedAndUnique() {
+            assertThat(errors(load("ymd8", null, null, null, List.of(new Nullify(DomainViolation.FORMAT, 2L)))))
+                    .containsExactly(LOCATION + "nullify 는 BLANK·PLACEHOLDER_DATE 위반에만 선언할 수 있습니다");
+            assertThat(errors(load("ymd8", null, null, null,
+                    List.of(new Nullify(DomainViolation.PLACEHOLDER_DATE, 0L)))))
+                    .containsExactly(LOCATION + "nullify maxRows 는 1 이상이어야 합니다");
+            assertThat(errors(load("ymd8", null, null, null,
+                    List.of(new Nullify(DomainViolation.PLACEHOLDER_DATE, null)))))
+                    .containsExactly(LOCATION + "nullify maxRows 는 1 이상이어야 합니다");
+            assertThat(errors(load("ymd8", null, null, null, List.of(new Nullify(DomainViolation.BLANK, 1L),
+                    new Nullify(DomainViolation.BLANK, 5L)))))
+                    .containsExactly(LOCATION + "nullify 에 같은 위반을 두 번 선언할 수 없습니다");
+            assertThat(errors(load("ymd8", null, null, null, List.of(new Nullify(null, 0L)))))
+                    .as("위반이 없으면 나머지 판정 없이 그 항목만 알린다")
+                    .containsExactly(LOCATION + "nullify 항목에는 violation 이 필요합니다");
         }
     }
 

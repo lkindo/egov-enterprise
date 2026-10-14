@@ -3,6 +3,7 @@ package nuri.migration.validate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nuri.migration.discovery.CatalogSnapshot;
+import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -139,6 +141,7 @@ public class MappingValidator {
                 if (!isBlank(c.codemap()) && !spec.codemaps().containsKey(c.codemap())) {
                     errors.add(t.target() + "." + c.target() + ": 정의되지 않은 코드맵 '" + c.codemap() + "'");
                 }
+                validateDomainLoad(t, c, errors);
                 if (!isBlank(c.fkRef())) {
                     validateFkRef(t, c, sourceTables, errors);
                 }
@@ -153,6 +156,61 @@ public class MappingValidator {
         errors.addAll(ColumnProtectionPlan.of(spec).violations());
         validateCodemaps(spec.codemaps(), errors, warnings);
         return new ValidationResult(errors, warnings);
+    }
+
+    /**
+     * [ADR-0029 L3a-1] 표준 도메인 변환기는 대상 표기를 스스로 정하므로 같은 컬럼의 type·codemap 과 함께 쓸 수 없고,
+     * 암호화 컬럼에는 쓸 수 없다(암호화할 평문이 바뀐다). nullify 는 그 컬럼의 load 가 실제로 낼 수 있는 위반
+     * ({@code BLANK}·{@code PLACEHOLDER_DATE})에만, 1 이상의 상한과 함께 한 번씩 선언한다 — 실행기도 같은 선언을 다시
+     * 확인한다.
+     */
+    private void validateDomainLoad(MappingSpec.TableMapping table, MappingSpec.ColumnMapping column,
+                                    List<String> errors) {
+        String location = table.target() + "." + column.target();
+        if (transformers.isDomain(column.transform())) {
+            String label = location + ": 표준 도메인 변환기 '" + column.transform() + "' 는 ";
+            if (!isBlank(column.type())) {
+                errors.add(label + "type 과 함께 쓸 수 없습니다 — 변환기가 대상 표기를 정합니다");
+            }
+            if (!isBlank(column.codemap())) {
+                errors.add(label + "codemap 과 함께 쓸 수 없습니다 — 변환기가 대상 표기를 정합니다");
+            }
+            if (column.encrypt() != null) {
+                errors.add(label + "암호화 컬럼에 쓸 수 없습니다 — 암호화할 평문이 바뀝니다");
+            }
+        }
+        Set<DomainViolation> producible = nullifiable(column);
+        Set<DomainViolation> declared = EnumSet.noneOf(DomainViolation.class);
+        for (MappingSpec.Nullify rule : column.nullify()) {
+            if (rule.violation() == null) {
+                errors.add(location + ": nullify 항목에는 violation 이 필요합니다");
+                continue;
+            }
+            if (rule.violation() != DomainViolation.BLANK && rule.violation() != DomainViolation.PLACEHOLDER_DATE) {
+                errors.add(location + ": nullify 는 BLANK·PLACEHOLDER_DATE 위반에만 선언할 수 있습니다");
+            } else if (!producible.contains(rule.violation())) {
+                errors.add(location + ": nullify " + rule.violation() + " 는 이 컬럼의 load 가 내지 않는 위반입니다"
+                        + " — BLANK 는 표준 도메인 변환기나 비문자 type, PLACEHOLDER_DATE 는 날짜 변환기가 냅니다");
+            }
+            if (rule.maxRows() == null || rule.maxRows() < 1) {
+                errors.add(location + ": nullify maxRows 는 1 이상이어야 합니다");
+            }
+            if (!declared.add(rule.violation())) {
+                errors.add(location + ": nullify 에 같은 위반을 두 번 선언할 수 없습니다");
+            }
+        }
+    }
+
+    /** 이 컬럼의 load 가 nullify 로 넘길 수 있는 위반. const·source 없는 컬럼은 값을 변환하지 않아 없다. */
+    private Set<DomainViolation> nullifiable(MappingSpec.ColumnMapping column) {
+        Set<DomainViolation> producible = EnumSet.noneOf(DomainViolation.class);
+        if (column.constant() == null && !isBlank(column.source())) {
+            producible.addAll(transformers.domainViolations(column.transform()));
+            if (TypeConverter.isNonTextType(column.type())) {
+                producible.add(DomainViolation.BLANK);
+            }
+        }
+        return producible;
     }
 
     /**

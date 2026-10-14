@@ -1700,6 +1700,13 @@
             "tests": "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
           },
           {
+            "scope": "migration-standardize",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.domain.*",
+            "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest"
+          },
+          {
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 
@@ -140,6 +141,10 @@ public record MappingSpec(
      * <p>{@code encrypt}(보호 방식 id, 예: {@code aria-egov-v1})는 온라인 앱이 암호화해 저장하는 대상 컬럼에 쓴다.
      * 이관 도구가 온라인 앱과 같은 암호문을 만들어 쓰며, 키는 실행 때 환경 변수로만 받는다(DEC-OPS-308). 비어 있으면
      * 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
+     *
+     * <p>{@code nullify}(ADR-0029 L3a-1)는 표준 도메인 변환기나 비문자 {@code type} 이 거부한 값 가운데 선언한 위반
+     * ({@code BLANK}·{@code PLACEHOLDER_DATE})만 NULL 로 바꾸는 규칙이다. 위반마다 {@code maxRows} 상한을 두고, 표 전체에서
+     * 그보다 많으면 chunk 를 롤백하고 멈춘다. 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
      */
     public record ColumnMapping(
             String source,
@@ -149,12 +154,65 @@ public record MappingSpec(
             String codemap,
             String fkRef,
             @JsonProperty("const") String constant,
-            @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt
+            @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Nullify> nullify
     ) {
         /** encrypt 도입 전 생성자 호환. */
         public ColumnMapping(String source, String target, String transform, String type,
                              String codemap, String fkRef, String constant) {
-            this(source, target, transform, type, codemap, fkRef, constant, null);
+            this(source, target, transform, type, codemap, fkRef, constant, null, List.of());
+        }
+
+        /** nullify 도입 전 생성자 호환. */
+        public ColumnMapping(String source, String target, String transform, String type,
+                             String codemap, String fkRef, String constant, String encrypt) {
+            this(source, target, transform, type, codemap, fkRef, constant, encrypt, List.of());
+        }
+
+        public ColumnMapping {
+            nullify = nullify == null ? List.of() : List.copyOf(nullify);
+        }
+    }
+
+    /**
+     * 규칙 정제 한 건(ADR-0029 L3a-1). {@code violation} 으로 거부된 값을 NULL 로 바꾸되 표 전체에서 {@code maxRows} 행까지만
+     * 바꾼다. 실행기는 {@code BLANK}·{@code PLACEHOLDER_DATE} 와 1 이상의 상한만 받는다.
+     */
+    public record Nullify(DomainViolation violation, Long maxRows) {
+
+        /**
+         * mapping.yml 의 nullify 한 건을 읽는다. 위반은 이름 글자로만, 상한은 정수 스칼라로만 받는다 — 기본 역직렬화는
+         * {@code violation: 1} 을 enum 순서로, {@code maxRows: 2.7} 을 2 로 읽어 검토자가 본 글자와 승인 digest 가 뜻하는
+         * 값이 달라진다. 없는 필드는 null 로 두고 검증·실행 시작이 거부한다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static Nullify fromMapping(@JsonProperty("violation") Object violation,
+                                          @JsonProperty("maxRows") Object maxRows) {
+            return new Nullify(violationOf(violation), maxRowsOf(maxRows));
+        }
+
+        private static DomainViolation violationOf(Object raw) {
+            if (raw == null) {
+                return null;
+            }
+            if (raw instanceof String name) {
+                for (DomainViolation violation : DomainViolation.values()) {
+                    if (violation.name().equals(name)) {
+                        return violation;
+                    }
+                }
+            }
+            throw new IllegalArgumentException("nullify 의 violation 은 위반 이름(BLANK·PLACEHOLDER_DATE 등)이어야 합니다");
+        }
+
+        private static Long maxRowsOf(Object raw) {
+            if (raw == null) {
+                return null;
+            }
+            if (raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte) {
+                return ((Number) raw).longValue();
+            }
+            throw new IllegalArgumentException("nullify 의 maxRows 는 정수여야 합니다");
         }
     }
 

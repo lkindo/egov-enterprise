@@ -38,6 +38,19 @@ public final class TypeConverter {
         return type != null && KNOWN.contains(type.toLowerCase(Locale.ROOT));
     }
 
+    /**
+     * 알려진 비문자 type 인가. 실행기는 이런 type 에 오는 공백 문자를 변환 전에 {@code DOMAIN_VIOLATION(BLANK)} 로
+     * 판정한다(ADR-0029 L3a-1) — 아래의 공백 → NULL 관용은 mapping 이 {@code nullify} 로 밝힌 경우에만 쓰인다.
+     */
+    public static boolean isNonTextType(String type) {
+        return isKnown(type) && !isTextType(type.toLowerCase(Locale.ROOT));
+    }
+
+    private static boolean isTextType(String lowerType) {
+        return "string".equals(lowerType) || "varchar".equals(lowerType)
+                || "text".equals(lowerType) || "char".equals(lowerType);
+    }
+
     public static Object convert(String type, Object value) {
         if (value instanceof java.sql.Blob || value instanceof java.sql.Clob) {
             throw conversionFailure();
@@ -51,7 +64,7 @@ public final class TypeConverter {
             throw conversionFailure();
         }
         String s = value instanceof String str ? str.trim() : value.toString().trim();
-        if (s.isEmpty() && !("string".equals(t) || "varchar".equals(t) || "text".equals(t) || "char".equals(t))) {
+        if (s.isEmpty() && !isTextType(t)) {
             return null; // 빈 문자열 → 비문자 타입은 NULL(레거시 공백 관용)
         }
         try {
