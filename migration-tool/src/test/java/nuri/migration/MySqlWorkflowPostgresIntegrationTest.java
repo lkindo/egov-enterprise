@@ -19,8 +19,13 @@ import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.ObjectDisposition;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.suggest.LedgerDraftWriter;
+import nuri.migration.suggest.StandardDictionary;
+import nuri.migration.suggest.TermSuggester;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ledger.TermLedger;
+import nuri.migration.validate.ledger.TermLedgerValidator;
 import nuri.migration.verify.MigrationVerifier;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 import nuri.migration.workflow.WorkflowReview;
@@ -232,6 +237,19 @@ class MySqlWorkflowPostgresIntegrationTest extends MySqlPostgresTestSupport {
         assertThat(Files.readString(profile)).doesNotContain(MYSQL.getJdbcUrl(), MYSQL.getPassword());
         assertThat(sourceJdbc().queryForObject("SELECT count(*) FROM " + fixture.sourceTable(), Long.class))
                 .isEqualTo(30);
+
+        // [ADR-0029 L2b-2] 원장 초안의 표 이름은 catalog(def)를 빼서 이 mapping 의 소스 표기와 같아야 coverage 를
+        // 통과한다. 이 mapping 표기는 같은 클래스의 plan·load 시험이 live 소스 검증까지 통과시키는 것이다.
+        var report = new TermSuggester(new StandardDictionary(List.of(), List.of(), List.of())).suggest(
+                envelope.payload(), envelope.inventorySemanticDigest(), envelope.payloadDigest(), null, null);
+        List<TermLedger.Entry> rows = new LedgerDraftWriter().draft(report).entries().stream()
+                .filter(entry -> entry.source().table().equalsIgnoreCase(fixture.sourceTable())).toList();
+        assertThat(rows).extracting(entry -> entry.source().column()).containsExactlyInAnyOrder("id", "payload");
+        List<TermLedger.Entry> confirmed = rows.stream().map(entry -> new TermLedger.Entry(entry.id(),
+                entry.source(), new TermLedger.ColumnRef(fixture.targetTable(), entry.source().column()),
+                entry.term(), entry.grade(), "CONFIRMED", entry.conformance(), null, null, List.of())).toList();
+        assertThat(new TermLedgerValidator().coverage(
+                new TermLedger(TermLedger.CURRENT_SCHEMA_VERSION, confirmed), fixture.spec())).isEmpty();
 
         sourceJdbc().execute("ALTER TABLE " + fixture.sourceTable() + " ADD COLUMN added_after varchar(10)");
         String before = Files.readString(profile);

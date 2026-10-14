@@ -3,12 +3,13 @@ package nuri.migration.artifact;
 import com.fasterxml.jackson.databind.JsonNode;
 import nuri.migration.appscan.AppUsageReport;
 import nuri.migration.profile.SourceProfile;
+import nuri.migration.suggest.SuggestionReport;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * 수집 단계 산출물(ADR-0029 결정 1 — {@code profile}·{@code app-scan})을 canonical JSON envelope 로 쓰고 읽는다.
+ * 수집·식별 단계 산출물(ADR-0029 결정 1 — {@code profile}·{@code app-scan}·{@code term-suggest})을 canonical JSON envelope 로 쓰고 읽는다.
  *
  * <p>쓰기 전에 자격 검사({@link ArtifactRedactionGuard#assertSafe})와 개인정보 값 검사
  * ({@link ArtifactRedactionGuard#assertNoPersonalValues})를 모두 지난다. 생성기가 거른 뒤에도 남은 것이 있으면
@@ -19,6 +20,7 @@ public final class CollectionArtifactCodec {
     public static final int CURRENT_ENVELOPE_VERSION = 1;
     public static final String PROFILE_TYPE = "source-profile";
     public static final String APP_USAGE_TYPE = "app-usage";
+    public static final String SUGGESTION_TYPE = "term-suggestions";
     public static final String DIGEST_ALGORITHM = "SHA-256";
     private static final Pattern INVENTORY_DIGEST = Pattern.compile("[0-9a-f]{64}");
 
@@ -29,6 +31,10 @@ public final class CollectionArtifactCodec {
     /** {@code app-scan} 산출물. 소스 위치는 싣지 않고 소스 루트 아래 상대 경로만 싣는다. */
     public record AppUsageEnvelope(int envelopeVersion, String artifactType, String digestAlgorithm,
                                    String payloadDigest, AppUsageReport payload) {}
+
+    /** {@code term-suggest} 산출물. 입력 결속(inventory·profile·app-usage digest)은 본문이 싣는다. */
+    public record SuggestionEnvelope(int envelopeVersion, String artifactType, String digestAlgorithm,
+                                     String payloadDigest, SuggestionReport payload) {}
 
     public String writeProfile(SourceProfile profile, String inventorySemanticDigest) {
         Objects.requireNonNull(profile, "profile");
@@ -67,6 +73,24 @@ public final class CollectionArtifactCodec {
         AppUsageEnvelope envelope = CanonicalJsonSupport.read(Objects.requireNonNull(artifact, "artifact"),
                 AppUsageEnvelope.class);
         requireEnvelope(envelope.envelopeVersion(), envelope.artifactType(), APP_USAGE_TYPE,
+                envelope.digestAlgorithm(), envelope.payload());
+        requireDigest(envelope.payloadDigest(), envelope.payload());
+        requireCollectionSafe(CanonicalJsonSupport.tree(envelope.payload()));
+        return envelope;
+    }
+
+    public String writeSuggestions(SuggestionReport report) {
+        Objects.requireNonNull(report, "report");
+        requireCollectionSafe(CanonicalJsonSupport.tree(report));
+        SuggestionEnvelope envelope = new SuggestionEnvelope(CURRENT_ENVELOPE_VERSION, SUGGESTION_TYPE,
+                DIGEST_ALGORITHM, CanonicalSha256.digest(CanonicalJsonSupport.bytes(report)), report);
+        return CanonicalJsonSupport.string(envelope);
+    }
+
+    public SuggestionEnvelope readSuggestions(String artifact) {
+        SuggestionEnvelope envelope = CanonicalJsonSupport.read(Objects.requireNonNull(artifact, "artifact"),
+                SuggestionEnvelope.class);
+        requireEnvelope(envelope.envelopeVersion(), envelope.artifactType(), SUGGESTION_TYPE,
                 envelope.digestAlgorithm(), envelope.payload());
         requireDigest(envelope.payloadDigest(), envelope.payload());
         requireCollectionSafe(CanonicalJsonSupport.tree(envelope.payload()));

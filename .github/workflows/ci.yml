@@ -1497,8 +1497,8 @@ jobs:
           # 사용처가 조용히 빠진다. 2026-10-14 로컬 실측 697 mutations, 90%, 92초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.profile.*,nuri.migration.appscan.*"
-            tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest"
+            classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
+            tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

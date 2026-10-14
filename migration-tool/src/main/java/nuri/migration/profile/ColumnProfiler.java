@@ -64,6 +64,7 @@ public final class ColumnProfiler {
     private boolean distinctCapped;
     private final EnumMap<ValuePattern, Long> patterns = new EnumMap<>(ValuePattern.class);
     private long ymd8Invalid;
+    private long ymdhms14Invalid;
     private Integer minYear;
     private Integer maxYear;
     private boolean personal;
@@ -87,7 +88,7 @@ public final class ColumnProfiler {
         if (value instanceof Number number) {
             numberValues++;
             String text = number instanceof BigDecimal decimal ? decimal.toPlainString() : number.toString();
-            classify(text);
+            classify(text, true);
             remember(text);
             return;
         }
@@ -119,15 +120,19 @@ public final class ColumnProfiler {
             trailingSpaces++;
         }
         String trimmed = text.strip();
-        classify(trimmed);
+        classify(trimmed, false);
         if (!PersonalDataPatterns.find(trimmed).isEmpty()) {
             personal = true;
         }
         remember(trimmed);
     }
 
-    private void classify(String trimmed) {
+    /** 숫자형 값은 숫자 모양 문자({@code INTEGER_TEXT}·{@code DECIMAL_TEXT})로 세지 않는다 — numberValues 가 센다. */
+    private void classify(String trimmed, boolean number) {
         for (ValuePattern pattern : ValuePattern.values()) {
+            if (number && (pattern == ValuePattern.INTEGER_TEXT || pattern == ValuePattern.DECIMAL_TEXT)) {
+                continue;
+            }
             if (pattern.matches(trimmed)) {
                 patterns.merge(pattern, 1L, Long::sum);
                 if (pattern.personal()) {
@@ -142,6 +147,21 @@ public final class ColumnProfiler {
             } else {
                 year(date.getYear());
             }
+        }
+        if (ValuePattern.YMDHMS14.matches(trimmed) && !calendarDateTime(trimmed)) {
+            ymdhms14Invalid++;
+        }
+    }
+
+    /** 14자리 숫자가 달력에 있는 날짜와 하루 안의 시각(시 00~23·분 00~59·초 00~59)인지. */
+    private static boolean calendarDateTime(String ymdhms14) {
+        try {
+            LocalDateTime.of(Integer.parseInt(ymdhms14.substring(0, 4)), Integer.parseInt(ymdhms14.substring(4, 6)),
+                    Integer.parseInt(ymdhms14.substring(6, 8)), Integer.parseInt(ymdhms14.substring(8, 10)),
+                    Integer.parseInt(ymdhms14.substring(10, 12)), Integer.parseInt(ymdhms14.substring(12, 14)));
+            return true;
+        } catch (DateTimeException failure) {
+            return false;
         }
     }
 
@@ -227,7 +247,7 @@ public final class ColumnProfiler {
                 declaration.size(), declaration.scale(), declaration.nullable(),
                 rows, nulls, blanks, textValues, numberValues, temporalValues, lobValues, otherValues,
                 minLength, maxLength, totalLength, trailingSpaces,
-                counts.size(), distinctCapped, matches, ymd8Invalid, minYear, maxYear, personal,
+                counts.size(), distinctCapped, matches, ymd8Invalid, ymdhms14Invalid, minYear, maxYear, personal,
                 frequencies, rareRows, rareDistinct, omitted, comment);
     }
 

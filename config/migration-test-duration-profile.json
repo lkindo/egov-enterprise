@@ -117,7 +117,8 @@
     "nuri.migration.OracleWorkflowPostgresIntegrationTest": 18953,
     "nuri.migration.plan.CatalogCollisionWorkflowTest": 8,
     "nuri.migration.plan.MigrationPlannerTest": 14,
-    "nuri.migration.plan.NotApplicableVisibilityPlanningTest": 1,    "nuri.migration.postgres.PostgresTargetSchemaFingerprinterTest": 34,
+    "nuri.migration.plan.NotApplicableVisibilityPlanningTest": 1,
+    "nuri.migration.postgres.PostgresTargetSchemaFingerprinterTest": 34,
     "nuri.migration.postgres.PostgresStandardTermReaderIntegrationTest": 3000,
     "nuri.migration.postgres.TargetEnvironmentBindingPostgresIntegrationTest": 3203,
     "nuri.migration.postgres.TargetStandardPostgresIntegrationTest": 4627,
@@ -151,6 +152,10 @@
     "nuri.migration.workflow.SourceLoadSurfaceGateTest": 6,
     "nuri.migration.workflow.WorkflowReviewLoaderTest": 16,
     "nuri.migration.WorkflowCliOptionsTest": 7,
-    "nuri.migration.WorkflowCollectionCommandTest": 4933
+    "nuri.migration.WorkflowCollectionCommandTest": 4933,
+    "nuri.migration.suggest.ConformanceEstimatorTest": 90,
+    "nuri.migration.suggest.LedgerDraftWriterTest": 800,
+    "nuri.migration.suggest.TermSuggesterTest": 360,
+    "nuri.migration.TermSuggestPostgresIntegrationTest": 3500
   }
 }

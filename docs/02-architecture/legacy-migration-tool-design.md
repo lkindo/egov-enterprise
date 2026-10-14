@@ -87,6 +87,22 @@ entries:
 
 V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·`allowed_values`(허용값)·`deprecated_yn`(폐기 여부)을 더하고, 저장소의 행정안전부 공통표준용어 CSV(2025-11 판) 값으로 5,683행을 채운다. CSV 에서 같은 영문약어가 서로 다른 값으로 두 번 나오는 TXPR_NM·BZMN_NM·CONM 은 근거가 없어 비운다. 공유 OCI DB 적용은 별도 승인이다.
 
+### 용어 후보(ADR-0029 L2b-2)
+
+`term-suggest` 는 수집 산출물과 대상 DB 의 표준 사전으로 레거시 컬럼마다 표준 용어 후보를 만든다([DEC-OPS-313](../../.agent/memory/decisions.md)). 대상 DB 는 읽기만 하고 소스에는 접속하지 않는다. 결과는 원장 검토의 입력일 뿐 plan·load 의 승인 계보에 들어가지 않는다.
+
+```powershell
+./gradlew :migration-tool:bootRun --args="--command=term-suggest --mapping=mapping.yml --profile=profile.json --app-usage=app-usage.json --suggestions=suggestions.json --ledger-draft=term-ledger.draft.yml"
+```
+
+- **입력**: `--profile`(필수)과 `--app-usage`(선택)는 envelope 형식·본문 digest·자격·개인정보 검사를 다시 지난다. 표준 사전은 mapping 의 target 에서 `--meta-schema`(기본 `public`)의 `meta_standard_terms`·`meta_standard_words`·`meta_standard_domains` 를 읽는다. 동의어·허용값·폐기 여부 컬럼(V2_128)이 없으면 멈춘다.
+- **근거와 등급**: 컬럼 이름이 표준 영문약어와 같거나 코멘트가 용어명과 같으면 `EXACT`, 코멘트가 이음동의어면 `SYNONYM` 이다. 코멘트를 표준 단어로 끝까지 나눠 영문약어가 되거나(가장 긴 단어부터, 대표 단어 우선) 화면 라벨·목록 머리글·VO 라벨이 용어를 가리키면 `INFERRED` 다. 비교 전에 괄호 안 설명, 첫 `:`·`,`·`;` 뒤, 공백·밑줄을 지운다. 폐기 용어는 후보로 내지 않고, 후보가 없으면 `UNKNOWN` 이다.
+- **충돌**: 이름·코멘트·라벨이 함께 가리키는 용어가 없으면 `SOURCES_DISAGREE`, 데이터 모양이 후보 도메인과 맞지 않으면(예: 시분초 값에 연월일 도메인) `DATA_DOMAIN:<영문약어>` 를 남기고 그 후보를 `INFERRED` 로 낮춘다. 데이터 모양은 프로파일 값의 95% 이상이 같은 모양일 때만 정하고, 8자리·14자리 숫자는 달력에 있는 값이 그만큼일 때만 날짜·일시로 본다. 6자리 숫자는 시각·연월·금액이 같은 모양이고 0·1 은 건수일 수도 있어, 그런 모양은 날짜·시각 도메인과만 어긋난다고 본다. 숫자형 시각(`NUMBER(6)`)은 앞자리 0 이 사라져 시분초 모양으로 세지 않는다 — 충돌은 내지 않지만 적합률이 낮게 나온다.
+- **적합성 추정**: 후보마다 프로파일 집계로 도메인 적합률·위반·필요한 변환을 추정한다. 변환은 mapping.yml 어휘(`type:date`·`type:timestamp`·`type:numeric`·`type:integer`·`type:bigint`·`codemap`)이거나, 내장 변환이 없으면 프로젝트 변환기를 등록해야 한다는 뜻의 `custom:ymd8`·`custom:ymdhms14`·`custom:date-text` 이고, 모양마다 다르면 `custom:mixed` 다. 내장 `type:timestamp` 는 하이픈 날짜만 읽으므로 슬래시·점 일시에는 `custom:date-text` 를 낸다. 달력에 없는 날짜·자리표시 날짜·형식 밖 값·공백·허용값 밖 코드는 행 수를 센다. 적합률의 분모는 공백 문자열을 포함하고, 공백은 자유 문자 도메인이 아니면 위반이다. 달력 검사는 8자리·14자리 숫자 모양에만 있고, 자리표시 날짜는 8자리(`99991231`·`00000000`)와 하이픈(`9999-12-31`·`0000-00-00`) 형태만 센다 — 슬래시·점·일시·14자리 자리표시는 유효 값으로 들어간다. 길이·자릿수 초과(숫자형 값은 소스 선언 자릿수로 판정한다), 잘렸거나 코드 목록으로 읽을 수 없는 허용값, 집계로 확인할 수 없는 허용값, LOB·시각 전용 값, 행 수 제한으로 일부만 읽은 표가 있으면 적합률을 내지 않는다. 행 단위 판정과 예외 격리는 L3 다.
+- **출력**: 후보는 컬럼마다 최대 5개이고, 첫 후보가 같은 컬럼은 개념 군집으로 묶는다. 표 이름은 mapping 의 소스 표 표기(schema 가 있으면 `schema.table`, 없으면 `table`)다. catalog 는 넣지 않는다 — MySQL·MariaDB 는 catalog 가 늘 `def` 라 세 부분 이름을 거부하고, PostgreSQL·SQL Server 의 catalog 는 DB 이름이라 일반 식별자가 아닐 수 있다. 원장 coverage 가 mapping 의 소스 표 문자열과 대소문자만 무시하고 대조하므로 mapping 도 같은 표기를 쓴다. 산출물은 입력 digest(inventory·profile·app-usage)를 싣는다. `--ledger-draft` 를 주면 컬럼마다 `PROPOSED` 행(대상 비움)을 담은 원장 초안 YAML 을 쓰며, 이 초안은 원장 로더·검증기를 그대로 지난다. 따옴표가 필요한 식별자의 테이블(`SKIPPED_IDENTIFIER`)은 초안에서 빼고, 대소문자(또는 catalog)만 다른 소스 컬럼이 있으면 초안을 만들지 않는다. 후보와 초안은 둘 다 만들고 검사한 뒤에 쓰므로, 초안에서 멈추면 어느 파일도 새로 쓰지 않는다. 두 출력 경로는 서로 다르고 입력 파일과도 달라야 한다.
+- **프로파일 판**: term-suggest 는 프로파일 판 2 만 받는다. 판 2 는 숫자형 값을 숫자 모양 문자(`INTEGER_TEXT`·`DECIMAL_TEXT`)로 다시 세지 않고, 하이픈 자리표시 날짜(`PLACEHOLDER_DATE_TEXT`)·하이픈 일시(`DATETIME_DASHED`)·14자리 일시의 달력 위반(`ymdhms14Invalid`)을 따로 센다. 판이 다르면 profile 을 다시 실행한다.
+- **외부 LLM**: 쓰지 않는다. 결정 Q3 의 승인 기록·전송 전 검사 가드는 LLM 경로를 둘 때 함께 만든다.
+
 ### 결속되는 실행 의미
 
 - **Endpoint**: source inventory는 `endpointId`와 credential을 제거한 JDBC 위치 digest를 결속한다. Mapping digest에는 source/target `endpointId`가 포함된다.
