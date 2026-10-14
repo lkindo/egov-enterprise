@@ -65,6 +65,28 @@ class CollectionArtifactCodecTest {
     }
 
     @Test
+    void termSuggestionsRoundTripAndAPersonalValueStopsTheWrite() {
+        String artifact = codec.writeSuggestions(suggestions("REGDT"));
+
+        CollectionArtifactCodec.SuggestionEnvelope envelope = codec.readSuggestions(artifact);
+        assertThat(envelope.artifactType()).isEqualTo(CollectionArtifactCodec.SUGGESTION_TYPE);
+        assertThat(envelope.payload()).isEqualTo(suggestions("REGDT"));
+        assertThatThrownBy(() -> codec.readSuggestions(artifact.replace("REGDT", "REGDX")))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("digest");
+        assertThatThrownBy(() -> codec.readSuggestions(codec.writeAppUsage(usage("Y"))))
+                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> codec.writeSuggestions(suggestions("hong@example.com")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    private static nuri.migration.suggest.SuggestionReport suggestions(String column) {
+        return new nuri.migration.suggest.SuggestionReport(nuri.migration.suggest.SuggestionReport.CURRENT_VERSION,
+                INVENTORY, "b".repeat(64), null, Map.of("UNKNOWN", 1L), List.of(
+                new nuri.migration.suggest.SuggestionReport.ColumnSuggestion("LEGACY_USER", column, "TEXT", "UNKNOWN",
+                        List.of(), List.of())), List.of());
+    }
+
+    @Test
     void personalPatternsIgnoreDigitsInsideHexAndRedactInPlace() {
         assertThat(PersonalDataPatterns.find("sha256:0101234567890123456789abcdef0123456789")).isEmpty();
         assertThat(PersonalDataPatterns.find("REG_DT_20240101")).isEmpty();

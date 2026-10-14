@@ -31,12 +31,17 @@ import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.MigrationPlanner;
+import nuri.migration.postgres.PostgresStandardDictionaryReader;
 import nuri.migration.postgres.PostgresStandardTermReader;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
 import nuri.migration.profile.SourceProfile;
 import nuri.migration.profile.SourceProfiler;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.source.SourceIntrospector;
+import nuri.migration.suggest.LedgerDraftWriter;
+import nuri.migration.suggest.StandardDictionary;
+import nuri.migration.suggest.SuggestionReport;
+import nuri.migration.suggest.TermSuggester;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ValidationResult;
@@ -65,7 +70,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-/** 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로와 수집 명령(profile·app-scan). */
+/** 승인 artifact에 결속된 discover -> plan -> validate -> load 실행 경로와 수집·식별 명령(profile·app-scan·term-suggest). */
 @Component
 public final class MigrationWorkflowRunner implements ApplicationRunner {
 
@@ -92,6 +97,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private final TermLedgerLoader ledgerLoader = new TermLedgerLoader();
     private final TermLedgerValidator ledgerValidator = new TermLedgerValidator();
     private final PostgresStandardTermReader standardTerms = new PostgresStandardTermReader();
+    private final PostgresStandardDictionaryReader dictionaryReader = new PostgresStandardDictionaryReader();
+    private final LedgerDraftWriter ledgerDrafts = new LedgerDraftWriter();
 
     @Autowired
     public MigrationWorkflowRunner(
@@ -199,6 +206,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 case DISCOVER -> discover(options);
                 case PROFILE -> profile(options);
                 case APP_SCAN -> appScan(options);
+                case TERM_SUGGEST -> termSuggest(options);
                 case PLAN -> plan(options);
                 case VALIDATE -> validate(options);
                 case LOAD -> load(options);
@@ -280,6 +288,43 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private void appScan(WorkflowCliOptions options) throws IOException {
         AppUsageReport report = appScanner.scan(options.appSource());
         files.writeAtomic(options.appUsage(), collectionCodec.writeAppUsage(report));
+    }
+
+    /**
+     * [ADR-0029 L2b] profile·app-scan 산출물과 대상 DB 의 표준 사전(V2_128 확장)으로 용어 후보를 만든다. 대상 DB 는
+     * 읽기만 하고 소스에는 접속하지 않는다. 후보와 원장 초안은 검토의 입력일 뿐 plan·load 의 승인 계보가 아니다.
+     */
+    private void termSuggest(WorkflowCliOptions options) throws SQLException {
+        MappingSpec mapping = readMapping(options);
+        requireTarget(mapping);
+        CollectionArtifactCodec.ProfileEnvelope profile;
+        CollectionArtifactCodec.AppUsageEnvelope usage = null;
+        try {
+            profile = collectionCodec.readProfile(files.readUtf8(options.profile()));
+            if (options.appUsage() != null) {
+                usage = collectionCodec.readAppUsage(files.readUtf8(options.appUsage()));
+            }
+        } catch (IllegalArgumentException invalid) {
+            throw gate("수집 산출물을 읽지 못해 term-suggest 를 중단했습니다: " + invalid.getMessage());
+        }
+        StandardDictionary dictionary;
+        try (Connection connection = open(introspector.jdbc(mapping.target()))) {
+            connection.setReadOnly(true);
+            dictionary = dictionaryReader.read(connection, options.metaSchema());
+        } catch (IllegalStateException | IllegalArgumentException unreadable) {
+            throw gate(unreadable.getMessage());
+        }
+        SuggestionReport report = new TermSuggester(dictionary).suggest(profile.payload(),
+                profile.inventorySemanticDigest(), profile.payloadDigest(),
+                usage == null ? null : usage.payload(), usage == null ? null : usage.payloadDigest());
+        String artifact = collectionCodec.writeSuggestions(report);
+        requireNoBoundCredentials(artifact, mapping);
+        files.writeAtomic(options.suggestions(), artifact);
+        if (options.ledgerDraft() != null) {
+            String draft = ledgerDrafts.write(ledgerDrafts.draft(report));
+            requireNoBoundCredentials(draft, mapping);
+            files.writeAtomic(options.ledgerDraft(), draft);
+        }
     }
 
     private void plan(WorkflowCliOptions options) throws SQLException {

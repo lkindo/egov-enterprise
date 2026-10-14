@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-/** [ADR-0029 L2a] 수집 명령 profile·app-scan 의 CLI 계약과 app-scan 실행 경로. */
+/** [ADR-0029 L2a·L2b] 수집 명령 profile·app-scan 과 식별 명령 term-suggest 의 CLI 계약, app-scan 실행 경로. */
 class WorkflowCollectionCommandTest {
 
     @TempDir
@@ -74,6 +74,44 @@ class WorkflowCollectionCommandTest {
                 .hasMessageContaining("unknown workflow option");
         assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
                 "--command=discover", "--mapping=m.yml", "--inventory=i.json", "--profile=p.json")))
+                .hasMessageContaining("unknown workflow option");
+    }
+
+    @Test
+    void termSuggestReadsCollectedArtifactsAndWritesItsOwnOutputs() {
+        WorkflowCliOptions options = WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--mapping=mapping.yml", "--profile=profile.json",
+                "--app-usage=app-usage.json", "--suggestions=suggestions.json", "--ledger-draft=draft.yml",
+                "--meta-schema=std"));
+
+        assertThat(options.command()).isEqualTo(WorkflowCommand.TERM_SUGGEST);
+        assertThat(options.suggestions()).isEqualTo(Path.of("suggestions.json"));
+        assertThat(options.ledgerDraft()).isEqualTo(Path.of("draft.yml"));
+        assertThat(options.metaSchema()).isEqualTo("std");
+        assertThat(options.inventory()).isNull();
+
+        WorkflowCliOptions minimal = WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--mapping=mapping.yml", "--profile=profile.json",
+                "--suggestions=suggestions.json"));
+        assertThat(minimal.appUsage()).isNull();
+        assertThat(minimal.ledgerDraft()).isNull();
+        assertThat(minimal.metaSchema()).isEqualTo("public");
+
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--mapping=mapping.yml", "--profile=profile.json")))
+                .hasMessageContaining("--suggestions is required");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--profile=profile.json", "--suggestions=s.json")))
+                .hasMessageContaining("--mapping is required");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--mapping=mapping.yml", "--suggestions=s.json")))
+                .hasMessageContaining("--profile is required");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=term-suggest", "--mapping=mapping.yml", "--profile=profile.json",
+                "--suggestions=s.json", "--inventory=inventory.json")))
+                .hasMessageContaining("unknown workflow option");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=plan", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--suggestions=s.json")))
                 .hasMessageContaining("unknown workflow option");
     }
 

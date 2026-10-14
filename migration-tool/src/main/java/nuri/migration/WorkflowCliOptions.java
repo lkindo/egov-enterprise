@@ -38,7 +38,10 @@ public record WorkflowCliOptions(
         Path profile,
         Long profileRowLimit,
         Path appSource,
-        Path appUsage
+        Path appUsage,
+        Path suggestions,
+        Path ledgerDraft,
+        String metaSchema
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -52,6 +55,8 @@ public record WorkflowCliOptions(
                     "source-driver-jar", "source-driver-class"),
             WorkflowCommand.APP_SCAN,
             Set.of("command", "app-source", "app-usage"),
+            WorkflowCommand.TERM_SUGGEST,
+            Set.of("command", "mapping", "profile", "app-usage", "suggestions", "ledger-draft", "meta-schema"),
             WorkflowCommand.PLAN,
             Set.of("command", "mapping", "inventory", "plan", "review", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects", "target-schemas"),
@@ -91,14 +96,19 @@ public record WorkflowCliOptions(
 
         boolean sourceCommand = command == WorkflowCommand.DISCOVER || command == WorkflowCommand.PROFILE
                 || command == WorkflowCommand.PLAN || command == WorkflowCommand.LOAD;
-        Path mapping = requiredPath(arguments, command, "mapping", sourceCommand);
+        boolean suggestCommand = command == WorkflowCommand.TERM_SUGGEST;
+        Path mapping = requiredPath(arguments, command, "mapping", sourceCommand || suggestCommand);
         Path inventory = requiredPath(arguments, command, "inventory", sourceCommand);
         Path plan = requiredPath(arguments, command, "plan", command == WorkflowCommand.PLAN
                 || command == WorkflowCommand.VALIDATE || command == WorkflowCommand.LOAD);
-        Path profile = requiredPath(arguments, command, "profile", command == WorkflowCommand.PROFILE);
+        Path profile = requiredPath(arguments, command, "profile",
+                command == WorkflowCommand.PROFILE || suggestCommand);
         Long profileRowLimit = positiveLong(arguments, "profile-row-limit");
         Path appSource = requiredPath(arguments, command, "app-source", command == WorkflowCommand.APP_SCAN);
         Path appUsage = requiredPath(arguments, command, "app-usage", command == WorkflowCommand.APP_SCAN);
+        Path suggestions = requiredPath(arguments, command, "suggestions", suggestCommand);
+        Path ledgerDraft = optionalPath(arguments, "ledger-draft");
+        String metaSchema = Objects.requireNonNullElse(optional(arguments, "meta-schema"), "public");
         Path review = optionalPath(arguments, "review");
         String sourceAdapter = optional(arguments, "source-adapter");
         Set<String> catalogs = parseCsv(arguments, "catalogs");
@@ -124,7 +134,7 @@ public record WorkflowCliOptions(
                 catalogs, schemas, objectKinds, includeSystemObjects,
                 sourceDriverJars, sourceDriverClass, mode,
                 acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
-                profile, profileRowLimit, appSource, appUsage);
+                profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema);
     }
 
     private static WorkflowCommand parseCommand(String value) {
@@ -132,11 +142,12 @@ public record WorkflowCliOptions(
             case "discover" -> WorkflowCommand.DISCOVER;
             case "profile" -> WorkflowCommand.PROFILE;
             case "app-scan" -> WorkflowCommand.APP_SCAN;
+            case "term-suggest" -> WorkflowCommand.TERM_SUGGEST;
             case "plan" -> WorkflowCommand.PLAN;
             case "validate" -> WorkflowCommand.VALIDATE;
             case "load" -> WorkflowCommand.LOAD;
             default -> throw new IllegalArgumentException(
-                    "unsupported --command; discover|profile|app-scan|plan|validate|load required");
+                    "unsupported --command; discover|profile|app-scan|term-suggest|plan|validate|load required");
         };
     }
 
