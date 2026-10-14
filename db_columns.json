@@ -80,6 +80,18 @@
     "column_name": "domain_name"
   },
   {
+    "table_name": "meta_standard_terms",
+    "column_name": "synonyms"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "allowed_values"
+  },
+  {
+    "table_name": "meta_standard_terms",
+    "column_name": "deprecated_yn"
+  },
+  {
     "table_name": "meta_standard_words",
     "column_name": "word_name"
   },

@@ -27,14 +27,28 @@ public record MappingSpec(
         DbConfig target,
         List<TableMapping> tables,
         Map<String, CodeMap> codemaps,
-        RunContext run
+        RunContext run,
+        @JsonInclude(JsonInclude.Include.NON_NULL) LedgerBinding ledger
 ) {
 
     /** 기존 dry-run/단위 테스트 호환 생성자. COMMIT은 명시적 run 계약을 별도로 강제한다. */
     public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
                        Map<String, CodeMap> codemaps) {
-        this(source, target, tables, codemaps, null);
+        this(source, target, tables, codemaps, null, null);
     }
+
+    /** 용어 매핑 원장 도입 전 생성자 호환. 원장이 없으면 mapping 의미와 digest 가 그대로다. */
+    public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
+                       Map<String, CodeMap> codemaps, RunContext run) {
+        this(source, target, tables, codemaps, run, null);
+    }
+
+    /**
+     * [ADR-0029 결정 3, DEC-OPS-312] 용어 매핑 원장 결속. {@code path} 는 mapping 파일이 있는 디렉터리 기준이고
+     * {@code sha256} 은 원장 파일 바이트의 SHA-256(소문자 hex)이다. 선언하면 mapping digest 에 들어가 plan·load 가
+     * 같은 원장을 요구하고, mapping 이 옮기는 모든 컬럼이 원장의 확정 행을 가리켜야 한다.
+     */
+    public record LedgerBinding(String path, String sha256) {}
 
     public MappingSpec {
         tables = tables == null ? List.of() : tables;
