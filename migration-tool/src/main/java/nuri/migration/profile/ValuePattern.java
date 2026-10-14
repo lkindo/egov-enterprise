@@ -17,6 +17,9 @@ public enum ValuePattern {
     YMD_SLASHED("\\d{4}/\\d{2}/\\d{2}", false),
     YMD_DOTTED("\\d{4}\\.\\d{2}\\.\\d{2}", false),
     DATETIME_TEXT("\\d{4}[-/.]\\d{2}[-/.]\\d{2}[ T]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d{1,9})?)?", false),
+    /** {@link #DATETIME_TEXT} 가운데 날짜 구분자가 하이픈인 값. 내장 {@code type: timestamp} 가 읽는 표기는 이것뿐이다. */
+    DATETIME_DASHED("\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d{1,9})?)?", false),
+    /** 14자리 숫자. 달력·시각에 있는 값인지는 따로 센다({@code ymdhms14Invalid}). */
     YMDHMS14("\\d{14}", false),
     HMS6("(?:[01]\\d|2[0-3])[0-5]\\d[0-5]\\d", false),
     YN("[YN]", false),
@@ -27,7 +30,10 @@ public enum ValuePattern {
     DECIMAL_TEXT("[-+]?\\d*\\.\\d+", false),
     /** 8자리 자리표시 날짜. {@link #YMD8} 이지만 달력 검사({@code ymd8Invalid})에서는 빠진다. */
     PLACEHOLDER_DATE("99991231|00000000", false),
-    /** 구분자가 있는 자리표시 날짜. {@link #YMD_DASHED} 와 함께 센다. */
+    /**
+     * 하이픈 자리표시 날짜. {@link #YMD_DASHED} 와 함께 센다. 슬래시·점·일시·14자리 자리표시는 세지 않는다 — 그런
+     * 값은 그 모양의 유효 값으로 들어간다.
+     */
     PLACEHOLDER_DATE_TEXT("9999-12-31|0000-00-00", false),
     PLACEHOLDER_TEXT("-|\\.|N/A|n/a|NULL|null", false),
     RRN("\\d{6}-?[1-8]\\d{6}", true),

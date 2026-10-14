@@ -137,13 +137,56 @@ class TermSuggesterTest {
         assertThat(report.columns()).extracting(ColumnSuggestion::table)
                 .containsExactly("OLD.LEGACY_USER", "NEW.LEGACY_USER", "NEW.CODE");
         assertThat(report.columns()).extracting(ColumnSuggestion::tableStatus).containsOnly("PROFILED");
-        assertThat(TermSuggester.qualified(new TableProfile("ERP", "DBO", "EMP", "SKIPPED_IDENTIFIER", null, 0,
-                false, new CommentEvidence(null, false, null, "ABSENT"), List.of()))).isEqualTo("ERP.DBO.EMP");
-        assertThat(TermSuggester.qualified(new TableProfile(" ", null, "EMP", "PROFILED", null, 0,
-                false, new CommentEvidence(null, false, null, "ABSENT"), List.of()))).isEqualTo("EMP");
+        assertThat(TermSuggester.qualified(tableIn("ERP", "DBO", "EMP"))).isEqualTo("DBO.EMP");
+        assertThat(TermSuggester.qualified(tableIn("def", "legacy", "tb_user"))).isEqualTo("legacy.tb_user");
+        assertThat(TermSuggester.qualified(tableIn("legacy-db", "public", "tb_user"))).isEqualTo("public.tb_user");
+        assertThat(TermSuggester.qualified(tableIn("ERP", " ", "EMP"))).isEqualTo("EMP");
+        assertThat(TermSuggester.qualified(tableIn(" ", null, "EMP"))).isEqualTo("EMP");
         assertThat(report.clusters()).containsExactly(new ConceptCluster("REG_YMD", "등록일자",
                 List.of("NEW.LEGACY_USER.REGDT", "OLD.LEGACY_USER.REG_YMD")));
         assertThat(report.grades()).isEqualTo(Map.of("EXACT", 3L));
+    }
+
+    @Test
+    void skippedTablesKeepTheirStatusInTheReportAndStayOutOfTheDraft() {
+        TableProfile skipped = new TableProfile(null, "PUBLIC", "Emp", "SKIPPED_IDENTIFIER", null, 0, false,
+                new CommentEvidence(null, false, null, "ABSENT"), List.of(column("REG_YMD").build()));
+        SuggestionReport report = suggester.suggest(profile(skipped, table("EMP", column("REG_YMD").text(1)
+                .pattern("YMD8", 1))), digest('a'), digest('b'), null, null);
+
+        assertThat(report.columns()).extracting(ColumnSuggestion::table, ColumnSuggestion::tableStatus)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("PUBLIC.Emp", "SKIPPED_IDENTIFIER"),
+                        org.assertj.core.groups.Tuple.tuple("PUBLIC.EMP", "PROFILED"));
+        assertThat(new LedgerDraftWriter().draft(report).entries())
+                .extracting(entry -> entry.source().table()).containsExactly("PUBLIC.EMP");
+    }
+
+    @Test
+    void aTableReadOnlyUpToTheRowLimitHasNoConformanceRate() {
+        TableProfile truncated = new TableProfile(null, "PUBLIC", "LEGACY_USER", "PROFILED", null, 10, true,
+                new CommentEvidence(null, false, null, "ABSENT"),
+                List.of(column("REG_YMD").text(10).pattern("YMD8", 10).build()));
+        Candidate top = suggester.suggest(profile(truncated), digest('a'), digest('b'), null, null)
+                .columns().getFirst().candidates().getFirst();
+
+        assertThat(top.conformance().rate()).isNull();
+        assertThat(top.conformance().violations())
+                .containsExactly(new SuggestionReport.Violation("SAMPLED", null));
+    }
+
+    @Test
+    void numericCountsAndSixDigitValuesDoNotContradictAnExactName() {
+        ColumnSuggestion count = single(column("ATCH_FILE_CNT").number(100).declared(10L, 0)
+                .pattern("ONE_ZERO", 96));
+        assertThat(count.dataCategory()).isEqualTo("FLAG");
+        assertThat(count.conflicts()).isEmpty();
+        assertThat(count.grade()).isEqualTo("EXACT");
+        assertThat(count.candidates().getFirst().conformance().rate()).isEqualByComparingTo("100.0");
+
+        ColumnSuggestion yearMonth = single(column("BSNS_YM").text(180).pattern("HMS6", 180));
+        assertThat(yearMonth.dataCategory()).isEqualTo("TIME6");
+        assertThat(yearMonth.conflicts()).isEmpty();
+        assertThat(yearMonth.grade()).isEqualTo("EXACT");
     }
 
     @Test
@@ -198,6 +241,11 @@ class TermSuggesterTest {
                 new CommentEvidence(null, false, null, "ABSENT"), built);
     }
 
+    private static TableProfile tableIn(String catalog, String schema, String name) {
+        return new TableProfile(catalog, schema, name, "PROFILED", null, 0, false,
+                new CommentEvidence(null, false, null, "ABSENT"), List.of());
+    }
+
     private static AppUsageReport.UsageEvidence evidence(String kind, String table, String label) {
         return new AppUsageReport.UsageEvidence(kind, "web/user.jsp", 3, table, null, null, null, label);
     }
@@ -219,7 +267,9 @@ class TermSuggesterTest {
                 term("사용자명", "USER_NM", "명V100", List.of(), null, false),
                 term("사용여부", "USE_YN", "여부C1", List.of(), "Y : 예, N : 아니오", false),
                 term("법정리명", "STLI_NM", "명V100", List.of(), null, true),
-                term("상태코드", "STTS_CD", "코드C3", List.of(), "A01 : 신청", false)));
+                term("상태코드", "STTS_CD", "코드C3", List.of(), "A01 : 신청", false),
+                term("첨부파일수", "ATCH_FILE_CNT", "수N10", List.of(), null, false),
+                term("사업연월", "BSNS_YM", "연월C6", List.of(), null, false)));
         for (String suffix : List.of("F", "B", "E", "A", "D", "C")) {
             terms.add(term("임시" + suffix, "TMP_" + suffix, "명V100", List.of("임시값"), null, false));
         }
@@ -235,7 +285,9 @@ class TermSuggesterTest {
                 new StandardDictionary.Domain("날짜/시간", "연월일C8", "CHAR", 8),
                 new StandardDictionary.Domain("명칭", "명V100", "VARCHAR", 100),
                 new StandardDictionary.Domain("코드", "여부C1", "CHAR", 1),
-                new StandardDictionary.Domain("코드", "코드C3", "VARCHAR", 3)));
+                new StandardDictionary.Domain("코드", "코드C3", "VARCHAR", 3),
+                new StandardDictionary.Domain("수량", "수N10", "NUMERIC", 10),
+                new StandardDictionary.Domain("날짜/시간", "연월C6", "CHAR", 6)));
     }
 
     private static StandardDictionary.Term term(String name, String abbr, String domain, List<String> synonyms,

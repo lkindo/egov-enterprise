@@ -320,12 +320,26 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         SuggestionReport report = new TermSuggester(dictionary).suggest(profile.payload(),
                 profile.inventorySemanticDigest(), profile.payloadDigest(),
                 usage == null ? null : usage.payload(), usage == null ? null : usage.payloadDigest());
-        String artifact = collectionCodec.writeSuggestions(report);
+        // 두 산출물을 모두 만들고 검사한 뒤에 쓴다 — 초안에서 멈추면 후보만 새로 쓰인 채 남지 않는다.
+        String artifact;
+        String draft = null;
+        String draftValues = null;
+        try {
+            artifact = collectionCodec.writeSuggestions(report);
+            if (options.ledgerDraft() != null) {
+                TermLedger ledger = ledgerDrafts.draft(report);
+                draft = ledgerDrafts.write(ledger);
+                draftValues = ledgerDrafts.values(ledger);
+            }
+        } catch (IllegalArgumentException refused) {
+            throw gate("term-suggest 산출물을 쓰지 않았습니다: " + refused.getMessage());
+        }
         requireNoBoundCredentials(artifact, mapping);
+        if (draft != null) {
+            requireNoBoundCredentials(draftValues, mapping);
+        }
         files.writeAtomic(options.suggestions(), artifact);
-        if (options.ledgerDraft() != null) {
-            String draft = ledgerDrafts.write(ledgerDrafts.draft(report));
-            requireNoBoundCredentials(draft, mapping);
+        if (draft != null) {
             files.writeAtomic(options.ledgerDraft(), draft);
         }
     }

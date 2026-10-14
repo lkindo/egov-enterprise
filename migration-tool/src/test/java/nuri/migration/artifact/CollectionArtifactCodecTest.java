@@ -98,7 +98,7 @@ class CollectionArtifactCodecTest {
     private static SourceProfile profile(String comment, String code) {
         CommentEvidence evidence = new CommentEvidence(comment, false, null, "MATCH");
         ColumnProfile column = new ColumnProfile("STAT_CD", 1, "CHAR", 1, 1L, 0, true, 10, 0, 0, 10, 0, 0, 0, 0,
-                1, 1, 10, 0, 1, false, Map.of("YN", 0L), 0, null, null, false,
+                1, 1, 10, 0, 1, false, Map.of("YN", 0L), 0, 0, null, null, false,
                 List.of(new ValueFrequency(code, 10)), 0, 0, null, evidence);
         return new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(new TableProfile(
                 null, "PUBLIC", "LEGACY_USER", "PROFILED", null, 10, false,

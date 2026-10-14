@@ -76,7 +76,20 @@ class LedgerDraftWriterTest {
                 column("erp.dbo.emp", "name", "UNKNOWN", List.of())));
         assertThatThrownBy(() -> writer.draft(collision))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("대소문자만 다른 소스 컬럼");
+                .hasMessageContaining("대소문자만 다른(또는 catalog 만 다른) 소스 컬럼");
+    }
+
+    @Test
+    void theValuesForTheCredentialCheckLeaveOutTheFixedKeys() {
+        TermLedger draft = writer.draft(report(List.of(
+                column("legacy.tb_user", "reg_ymd", "EXACT", List.of(candidate("100.0"))))));
+
+        String values = writer.values(draft);
+
+        assertThat(values.lines()).contains("legacy.tb_user", "reg_ymd", "legacy.tb_user.reg_ymd", "REG_YMD",
+                "PROPOSED", "custom:ymd8");
+        assertThat(values).doesNotContain("source").doesNotContain("table").doesNotContain("conformance");
+        assertThat(writer.write(draft)).contains("source:");
     }
 
     @Test

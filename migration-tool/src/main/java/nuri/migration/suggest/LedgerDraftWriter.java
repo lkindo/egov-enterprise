@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
  * {@code UNKNOWN} 행으로 남겨 검토에서 빠지지 않게 한다.
  *
  * <p>따옴표가 필요한 식별자의 테이블({@code SKIPPED_IDENTIFIER})은 적재기가 읽지 못해 mapping 에 들어갈 수 없으므로
- * 초안에 싣지 않는다(후보 보고서에는 남는다). 원장은 소스 컬럼을 대소문자 없이 가리므로, 대소문자만 다른 두 컬럼이
- * 있으면 초안을 만들지 않는다 — 한쪽을 조용히 버리지 않는다.</p>
+ * 초안에 싣지 않는다(후보 보고서에는 남는다). 원장은 소스 컬럼을 대소문자 없이 가리고 표 이름에 catalog 를 넣지
+ * 않으므로, 그렇게 보아 같은 컬럼이 둘 이상이면 초안을 만들지 않는다 — 한쪽을 조용히 버리지 않는다.</p>
  */
 public final class LedgerDraftWriter {
 
@@ -49,8 +49,8 @@ public final class LedgerDraftWriter {
             }
             if (!sources.add(column.table().toLowerCase(Locale.ROOT) + '\u0000'
                     + column.column().toLowerCase(Locale.ROOT))) {
-                throw new IllegalArgumentException(
-                        "대소문자만 다른 소스 컬럼이 있어 원장 초안을 만들 수 없습니다(원장은 대소문자를 가리지 않습니다)");
+                throw new IllegalArgumentException("대소문자만 다른(또는 catalog 만 다른) 소스 컬럼이 있어 원장 초안을"
+                        + " 만들 수 없습니다(원장은 대소문자를 가리지 않고 표 이름에 catalog 를 넣지 않습니다)");
             }
             String id = column.table() + "." + column.column();
             if (!ID.matcher(id).matches() || !ids.add(id)) {
@@ -78,6 +78,25 @@ public final class LedgerDraftWriter {
             return yaml.writeValueAsString(tree);
         } catch (JsonProcessingException impossible) {
             throw new IllegalStateException("원장 초안을 쓰지 못했습니다");
+        }
+    }
+
+    /**
+     * 초안에 담긴 값만 줄마다 이어 붙인다. 접속정보 대조는 이것으로 한다 — YAML 키({@code source}·{@code table} 등)는
+     * 고정 어휘라 짧은 endpoint ID 와 같은 단어여도 접속정보가 아니다.
+     */
+    public String values(TermLedger ledger) {
+        Objects.requireNonNull(ledger, "ledger");
+        StringBuilder text = new StringBuilder();
+        collect(withoutNulls(yaml.valueToTree(ledger)), text);
+        return text.toString();
+    }
+
+    private static void collect(JsonNode node, StringBuilder text) {
+        if (node.isContainerNode()) {
+            node.forEach(child -> collect(child, text));
+        } else {
+            text.append(node.asText()).append('\n');
         }
     }
 

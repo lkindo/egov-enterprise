@@ -88,7 +88,7 @@ public final class TermSuggester {
         for (TableProfile table : profile.tables()) {
             String tableRef = qualified(table);
             for (ColumnProfile column : table.columns()) {
-                columns.add(column(tableRef, table.name(), table.status(), column, labels));
+                columns.add(column(tableRef, table, column, labels));
             }
         }
         Map<String, Long> grades = new TreeMap<>();
@@ -97,7 +97,7 @@ public final class TermSuggester {
                 appUsageDigest, grades, columns, clusters(columns));
     }
 
-    private ColumnSuggestion column(String tableRef, String tableName, String tableStatus, ColumnProfile column,
+    private ColumnSuggestion column(String tableRef, TableProfile table, ColumnProfile column,
                                     Map<String, List<String>> labels) {
         Map<String, Set<String>> evidence = new LinkedHashMap<>();
         Map<String, String> grade = new HashMap<>();
@@ -118,7 +118,7 @@ public final class TermSuggester {
         }
         String upperColumn = column.name().toUpperCase(Locale.ROOT);
         List<String> found = new ArrayList<>(labels.getOrDefault(
-                tableName.toUpperCase(Locale.ROOT) + "\u0000" + upperColumn, List.of()));
+                table.name().toUpperCase(Locale.ROOT) + "\u0000" + upperColumn, List.of()));
         found.addAll(labels.getOrDefault("\u0000" + upperColumn, List.of()));
         for (String label : found) {
             for (Match match : match(label, "USAGE", false)) {
@@ -144,7 +144,7 @@ public final class TermSuggester {
             }
             candidates.add(new Candidate(term.name(), term.engAbbr(), term.domain(), candidateGrade,
                     List.copyOf(entry.getValue()),
-                    ConformanceEstimator.estimate(column, domain, term.allowedValues())));
+                    ConformanceEstimator.estimate(column, domain, term.allowedValues(), table.truncated())));
         }
         candidates.sort(Comparator.comparing((Candidate candidate) -> -RANK.get(candidate.grade()))
                 .thenComparing(candidate -> -candidate.evidence().size())
@@ -152,21 +152,18 @@ public final class TermSuggester {
         List<Candidate> shown = candidates.size() > MAX_CANDIDATES
                 ? List.copyOf(candidates.subList(0, MAX_CANDIDATES)) : candidates;
         String columnGrade = shown.isEmpty() ? "UNKNOWN" : shown.getFirst().grade();
-        return new ColumnSuggestion(tableRef, column.name(), tableStatus, data, columnGrade, shown, conflicts);
+        return new ColumnSuggestion(tableRef, column.name(), table.status(), data, columnGrade, shown, conflicts);
     }
 
     /**
-     * inventory 의 정규화 이름과 같은 표기({@code catalog.schema.table}, 빈 부분은 뺀다)다. 원장 coverage 는 mapping 의
-     * 소스 표 문자열과 이 이름을 그대로 대조하므로, mapping 도 같은 표기를 써야 한다.
+     * mapping 의 소스 표 표기다 — schema 가 있으면 {@code schema.table}, 없으면 {@code table}. catalog 는 넣지 않는다:
+     * MySQL·MariaDB 는 catalog 가 늘 {@code def} 라 세 부분 이름을 거부하고, PostgreSQL·SQL Server 의 catalog 는 DB
+     * 이름이라 일반 식별자가 아닐 수 있다. 원장 coverage 는 mapping 의 소스 표 문자열과 이 이름을 대소문자만 무시하고
+     * 대조하므로, mapping 도 같은 표기를 써야 한다. 이 표기는 plan 의 두 부분 이름 해석(schema·table)과 같다.
      */
     static String qualified(TableProfile table) {
-        StringBuilder name = new StringBuilder();
-        for (String part : new String[] {table.catalog(), table.schema(), table.name()}) {
-            if (part != null && !part.isBlank()) {
-                name.append(name.isEmpty() ? "" : ".").append(part);
-            }
-        }
-        return name.toString();
+        return table.schema() == null || table.schema().isBlank() ? table.name()
+                : table.schema() + "." + table.name();
     }
 
     /** 근거 묶음(이름·코멘트·라벨) 가운데 비어 있지 않은 것이 둘 이상인데 함께 가리키는 용어가 없으면 충돌이다. */

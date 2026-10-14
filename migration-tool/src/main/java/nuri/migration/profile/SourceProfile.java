@@ -15,8 +15,8 @@ import java.util.Objects;
 public record SourceProfile(int profileVersion, Long rowLimit, boolean complete, List<TableProfile> tables) {
 
     /**
-     * 2: 숫자형 값을 숫자 모양 문자로 세지 않고, 구분자가 있는 자리표시 날짜를 따로 센다(DEC-OPS-313). 판이 다른
-     * 프로파일은 term-suggest 가 받지 않는다 — 같은 이름의 수가 다른 뜻이기 때문이다.
+     * 2: 숫자형 값을 숫자 모양 문자로 세지 않고, 하이픈 자리표시 날짜·하이픈 일시·14자리 일시의 달력 위반을 따로
+     * 센다(DEC-OPS-313). 판이 다른 프로파일은 term-suggest 가 받지 않는다 — 같은 이름의 수가 다른 뜻이기 때문이다.
      */
     public static final int CURRENT_VERSION = 2;
 
@@ -81,6 +81,7 @@ public record SourceProfile(int profileVersion, Long rowLimit, boolean complete,
             boolean distinctCapped,
             Map<String, Long> patternMatches,
             long ymd8Invalid,
+            long ymdhms14Invalid,
             Integer minYear,
             Integer maxYear,
             boolean personalPatternDetected,

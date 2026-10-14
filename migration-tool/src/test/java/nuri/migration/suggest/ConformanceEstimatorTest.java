@@ -78,7 +78,14 @@ class ConformanceEstimatorTest {
         assertThat(ConformanceEstimator.compatible("TIME6", "TIME6")).isTrue();
         assertThat(ConformanceEstimator.compatible("TIME6", "DATE8")).isFalse();
         assertThat(ConformanceEstimator.compatible("YN", "CODE")).isTrue();
-        assertThat(ConformanceEstimator.compatible("FLAG", "NUMERIC")).isFalse();
+        assertThat(ConformanceEstimator.compatible("FLAG", "NUMERIC")).isTrue();
+        assertThat(ConformanceEstimator.compatible("FLAG", "TEXT")).isFalse();
+        assertThat(ConformanceEstimator.compatible("TIME6", "NUMERIC")).isTrue();
+        assertThat(ConformanceEstimator.compatible("TIME6", "TEXT")).isTrue();
+        assertThat(ConformanceEstimator.compatible("TIME6", "YN")).isFalse();
+        assertThat(ConformanceEstimator.compatible("NUMERIC", "TIME6")).isTrue();
+        assertThat(ConformanceEstimator.compatible("NUMERIC", "YN")).isFalse();
+        assertThat(ConformanceEstimator.compatible("UNSUPPORTED", "DATE8")).isTrue();
         assertThat(ConformanceEstimator.compatible("NUMERIC", "TEXT")).isTrue();
         assertThat(ConformanceEstimator.compatible("NUMERIC", "DATE8")).isFalse();
         assertThat(ConformanceEstimator.compatible("TEXT", "DATE8")).isTrue();
@@ -137,9 +144,17 @@ class ConformanceEstimatorTest {
         assertThat(dashed.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate stamp = ConformanceEstimator.estimate(column("REG_DT").text(10)
-                .pattern("DATETIME_TEXT", 10).build(), DATETIME, null);
+                .pattern("DATETIME_TEXT", 10).pattern("DATETIME_DASHED", 10).build(), DATETIME, null);
         assertThat(stamp.transform()).isEqualTo("type:timestamp");
         assertThat(stamp.rate()).isEqualByComparingTo("100.0");
+
+        ConformanceEstimate slashed = ConformanceEstimator.estimate(column("REG_DT").text(10)
+                .pattern("DATETIME_TEXT", 10).build(), DATETIME, null);
+        assertThat(slashed.transform()).isEqualTo("custom:date-text");
+        ConformanceEstimate bothSeparators = ConformanceEstimator.estimate(column("REG_DT").text(10)
+                .pattern("DATETIME_TEXT", 10).pattern("DATETIME_DASHED", 6).build(), DATETIME, null);
+        assertThat(bothSeparators.transform()).isEqualTo(ConformanceEstimator.MIXED);
+        assertThat(bothSeparators.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate basic = ConformanceEstimator.estimate(column("REG_DT").text(10)
                 .pattern("YMDHMS14", 10).build(), DATETIME, null);
@@ -147,7 +162,8 @@ class ConformanceEstimatorTest {
         assertThat(basic.rate()).isEqualByComparingTo("100.0");
 
         ConformanceEstimate mixed = ConformanceEstimator.estimate(column("REG_DT").text(10)
-                .pattern("YMD8", 5).pattern("DATETIME_TEXT", 5).build(), DATETIME, null);
+                .pattern("YMD8", 5).pattern("DATETIME_TEXT", 5).pattern("DATETIME_DASHED", 5).build(), DATETIME,
+                null);
         assertThat(mixed.transform()).isEqualTo(ConformanceEstimator.MIXED);
 
         ConformanceEstimate shapes = ConformanceEstimator.estimate(column("REG_YMD").text(10)
@@ -179,17 +195,18 @@ class ConformanceEstimatorTest {
 
     @Test
     void numbersAreCountedOnceAndTheRateNeverExceedsAHundred() {
-        ConformanceEstimate numbers = ConformanceEstimator.estimate(column("AMT").number(10).build(), AMOUNT, null);
+        ConformanceEstimate numbers = ConformanceEstimator.estimate(column("AMT").number(10).declared(15L, 0)
+                .build(), AMOUNT, null);
         assertThat(numbers.rate()).isEqualByComparingTo("100.0");
         assertThat(numbers.transform()).isNull();
 
-        ConformanceEstimate text = ConformanceEstimator.estimate(column("AMT").number(6).text(4)
+        ConformanceEstimate text = ConformanceEstimator.estimate(column("AMT").number(6).text(4).declared(12L, 2)
                 .pattern("INTEGER_TEXT", 1).pattern("DECIMAL_TEXT", 2).build(), AMOUNT, null);
         assertThat(text.rate()).isEqualByComparingTo("90.0");
         assertThat(text.violations()).containsExactly(new Violation("FORMAT", 1L));
         assertThat(text.transform()).isEqualTo("type:numeric");
 
-        ConformanceEstimate overlapping = ConformanceEstimator.estimate(column("AMT").number(10)
+        ConformanceEstimate overlapping = ConformanceEstimator.estimate(column("AMT").number(10).declared(10L, 0)
                 .pattern("INTEGER_TEXT", 10).build(), AMOUNT, null);
         assertThat(overlapping.rate()).isEqualByComparingTo("100.0");
 
@@ -218,8 +235,107 @@ class ConformanceEstimatorTest {
 
         ConformanceEstimate truncatedList = ConformanceEstimator.estimate(column("STTS_CD").text(10)
                 .value("ZZZ", 10).build(), CODE3, "A01 : 신청, B01 : 승인 …");
-        assertThat(truncatedList.rate()).isEqualByComparingTo("100.0");
-        assertThat(truncatedList.violations()).isEmpty();
+        assertThat(truncatedList.rate()).isNull();
+        assertThat(truncatedList.violations()).containsExactly(new Violation("ALLOWED_VALUES_UNVERIFIED", null));
+
+        ConformanceEstimate unreadable = ConformanceEstimator.estimate(column("STTS_CD").text(10)
+                .value("ZZZ", 10).build(), CODE3, "자유 서술");
+        assertThat(unreadable.rate()).isNull();
+
+        ConformanceEstimate noList = ConformanceEstimator.estimate(column("STTS_CD").text(10)
+                .value("ZZZ", 10).build(), CODE3, null);
+        assertThat(noList.rate()).isEqualByComparingTo("100.0");
+        assertThat(noList.violations()).isEmpty();
+    }
+
+    @Test
+    void rareYnValuesAreUnverifiedOnlyWhenTheyHaveTheYnShape() {
+        ConformanceEstimate format = ConformanceEstimator.estimate(column("USE_YN").text(102).pattern("YN", 100)
+                .value("Y", 50).value("N", 50).rare(2).build(), YN, "Y : 예, N : 아니오");
+        assertThat(format.violations()).containsExactly(new Violation("FORMAT", 2L));
+        assertThat(format.rate()).isEqualByComparingTo("98.0");
+
+        ConformanceEstimate shaped = ConformanceEstimator.estimate(column("USE_YN").text(53).pattern("YN", 53)
+                .value("Y", 50).rare(3).build(), YN, "Y : 예, N : 아니오");
+        assertThat(shaped.violations()).containsExactly(new Violation("ALLOWED_VALUES_UNVERIFIED", 3L));
+        assertThat(shaped.rate()).isNull();
+    }
+
+    @Test
+    void blankStringsCountInTheDenominatorAndAreViolationsOutsideFreeText() {
+        ConformanceEstimate date = ConformanceEstimator.estimate(column("REG_YMD").text(1).pattern("YMD8", 1)
+                .blanks(9).build(), YMD8, null);
+        assertThat(date.rate()).isEqualByComparingTo("10.0");
+        assertThat(date.violations()).containsExactly(new Violation("BLANK", 9L));
+
+        ConformanceEstimate name = ConformanceEstimator.estimate(column("USER_NM").text(1).blanks(9).build(),
+                NAME100, null);
+        assertThat(name.rate()).isEqualByComparingTo("100.0");
+        assertThat(name.violations()).isEmpty();
+
+        ConformanceEstimate onlyBlanks = ConformanceEstimator.estimate(column("REG_YMD").blanks(4).build(), YMD8,
+                null);
+        assertThat(onlyBlanks.rate()).isEqualByComparingTo("0.0");
+        assertThat(category(column("REG_YMD").blanks(4))).isEqualTo("EMPTY");
+    }
+
+    @Test
+    void lobAndTimeOnlyValuesCannotBeEstimated() {
+        assertThat(category(column("CN").lob(2))).isEqualTo("UNSUPPORTED");
+        assertThat(category(column("REG_TM").other(2))).isEqualTo("UNSUPPORTED");
+        ConformanceEstimate content = ConformanceEstimator.estimate(column("CN").lob(2).build(), NAME100, null);
+        assertThat(content.rate()).isNull();
+        assertThat(content.violations()).containsExactly(new Violation("UNSUPPORTED_VALUE_TYPE", 2L));
+    }
+
+    @Test
+    void numericWidthComesFromTheLongestTextOrTheDeclaredPrecision() {
+        ConformanceEstimate wideText = ConformanceEstimator.estimate(column("AMT").text(3).maxLength(20)
+                .pattern("INTEGER_TEXT", 3).build(), AMOUNT, null);
+        assertThat(wideText.rate()).isNull();
+        assertThat(wideText.violations()).containsExactly(new Violation("LENGTH_UNVERIFIED", null));
+
+        ConformanceEstimate wideNumber = ConformanceEstimator.estimate(column("AMT").number(3).declared(20L, 0)
+                .build(), AMOUNT, null);
+        assertThat(wideNumber.violations()).containsExactly(new Violation("LENGTH_UNVERIFIED", null));
+        assertThat(ConformanceEstimator.estimate(column("AMT").number(3).declared(null, null).build(), AMOUNT,
+                null).rate()).isNull();
+        assertThat(ConformanceEstimator.estimate(column("AMT").number(3).declared(15L, 0).build(), AMOUNT, null)
+                .rate()).isEqualByComparingTo("100.0");
+
+        StandardDictionary.Domain number10 = domain("번호", "번호V10", "VARCHAR", 10);
+        assertThat(ConformanceEstimator.estimate(column("NO").number(3).declared(8L, 0).build(), number10, null)
+                .rate()).isEqualByComparingTo("100.0");
+        assertThat(ConformanceEstimator.estimate(column("NO").number(3).declared(8L, 2).build(), number10, null)
+                .rate()).isEqualByComparingTo("100.0");
+        assertThat(ConformanceEstimator.estimate(column("NO").number(3).declared(9L, 2).build(), number10, null)
+                .violations()).containsExactly(new Violation("LENGTH_UNVERIFIED", null));
+    }
+
+    @Test
+    void aSampledTableHasNoRate() {
+        ConformanceEstimate sampled = ConformanceEstimator.estimate(column("REG_YMD").text(10).pattern("YMD8", 10)
+                .build(), YMD8, null, true);
+        assertThat(sampled.rate()).isNull();
+        assertThat(sampled.violations()).containsExactly(new Violation("SAMPLED", null));
+        assertThat(sampled.transform()).isNull();
+    }
+
+    @Test
+    void fourteenDigitSerialNumbersAreNotDateTimes() {
+        assertThat(category(column("SN").number(40).pattern("YMDHMS14", 40).invalidDateTimes(40)))
+                .isEqualTo("NUMERIC");
+        assertThat(category(column("REG_DT").text(40).pattern("YMDHMS14", 40).invalidDateTimes(1)))
+                .isEqualTo("DATETIME14");
+        ConformanceEstimate fourteen = ConformanceEstimator.estimate(column("REG_DT").text(10)
+                .pattern("YMDHMS14", 10).invalidDateTimes(2).build(), domain("날짜/시간", "연월일시분초C14", "CHAR",
+                14), null);
+        assertThat(fourteen.rate()).isEqualByComparingTo("80.0");
+        assertThat(fourteen.violations()).containsExactly(new Violation("INVALID_DATE", 2L));
+        ConformanceEstimate stamp = ConformanceEstimator.estimate(column("REG_DT").text(10)
+                .pattern("YMDHMS14", 10).invalidDateTimes(2).build(), DATETIME, null);
+        assertThat(stamp.violations()).containsExactly(new Violation("INVALID_DATE", 2L));
+        assertThat(stamp.rate()).isEqualByComparingTo("80.0");
     }
 
     @Test

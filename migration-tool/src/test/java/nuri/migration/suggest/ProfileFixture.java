@@ -19,6 +19,12 @@ final class ProfileFixture {
     private long temporal;
     private Integer maxLength;
     private long ymd8Invalid;
+    private long ymdhms14Invalid;
+    private long blanks;
+    private long lob;
+    private long other;
+    private Long declaredSize = 100L;
+    private Integer declaredScale;
     private long rareRows;
     private String omitted;
     private final Map<String, Long> patterns = new HashMap<>();
@@ -67,6 +73,32 @@ final class ProfileFixture {
         return this;
     }
 
+    ProfileFixture invalidDateTimes(long rows) {
+        ymdhms14Invalid = rows;
+        return this;
+    }
+
+    ProfileFixture blanks(long rows) {
+        blanks = rows;
+        return this;
+    }
+
+    ProfileFixture lob(long rows) {
+        lob = rows;
+        return this;
+    }
+
+    ProfileFixture other(long rows) {
+        other = rows;
+        return this;
+    }
+
+    ProfileFixture declared(Long size, Integer scale) {
+        declaredSize = size;
+        declaredScale = scale;
+        return this;
+    }
+
     ProfileFixture value(String value, long rows) {
         frequencies.add(new ValueFrequency(value, rows));
         return this;
@@ -83,12 +115,13 @@ final class ProfileFixture {
     }
 
     ColumnProfile build() {
-        long values = text + number + temporal;
+        long values = text + number + temporal + blanks + lob + other;
         CommentEvidence evidence = comment == null
                 ? new CommentEvidence(null, false, null, "ABSENT")
                 : new CommentEvidence(comment, false, null, "MATCH");
-        return new ColumnProfile(name, 1, "VARCHAR", 12, 100L, null, true, values, 0, 0, text, number, temporal,
-                0, 0, null, maxLength, 0, 0, frequencies.size(), false, patterns, ymd8Invalid, null, null, false,
+        return new ColumnProfile(name, 1, "VARCHAR", 12, declaredSize, declaredScale, true, values, 0, blanks,
+                text, number, temporal, lob, other, null, maxLength, 0, 0, frequencies.size(), false, patterns,
+                ymd8Invalid, ymdhms14Invalid, null, null, false,
                 frequencies, rareRows, rareRows == 0 ? 0 : 1, omitted, evidence);
     }
 }

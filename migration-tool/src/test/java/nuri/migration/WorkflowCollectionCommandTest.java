@@ -19,6 +19,8 @@ import org.springframework.boot.DefaultApplicationArguments;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -100,6 +102,17 @@ class WorkflowCollectionCommandTest {
         assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
                 "--command=term-suggest", "--mapping=mapping.yml", "--profile=profile.json")))
                 .hasMessageContaining("--suggestions is required");
+        for (String[] clash : List.of(
+                new String[] {"--suggestions=out.json", "--ledger-draft=./out.json"},
+                new String[] {"--suggestions=profile.json"},
+                new String[] {"--suggestions=s.json", "--ledger-draft=mapping.yml"},
+                new String[] {"--suggestions=s.json", "--app-usage=usage.json", "--ledger-draft=usage.json"})) {
+            List<String> arguments = new ArrayList<>(List.of("--command=term-suggest", "--mapping=mapping.yml",
+                    "--profile=profile.json"));
+            arguments.addAll(List.of(clash));
+            assertThatThrownBy(() -> WorkflowCliOptions.parse(args(arguments.toArray(String[]::new))))
+                    .hasMessageContaining("서로 다르고 입력 파일과도 다른 경로");
+        }
         assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
                 "--command=term-suggest", "--profile=profile.json", "--suggestions=s.json")))
                 .hasMessageContaining("--mapping is required");

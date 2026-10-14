@@ -29,9 +29,9 @@ public record SuggestionReport(
     }
 
     /**
-     * 소스 컬럼 하나의 후보. {@code table} 은 inventory 의 정규화 이름({@code catalog.schema.table})이고
-     * {@code tableStatus} 는 프로파일의 테이블 상태다. {@code grade} 는 첫 후보의 등급이고 후보가 없으면
-     * {@code UNKNOWN} 이다.
+     * 소스 컬럼 하나의 후보. {@code table} 은 mapping 의 소스 표 표기({@code schema.table}, schema 가 없으면
+     * {@code table})이고 {@code tableStatus} 는 프로파일의 테이블 상태다. {@code grade} 는 첫 후보의 등급이고 후보가
+     * 없으면 {@code UNKNOWN} 이다.
      */
     public record ColumnSuggestion(String table, String column, String tableStatus, String dataCategory,
                                    String grade, List<Candidate> candidates, List<String> conflicts) {
@@ -56,8 +56,11 @@ public record SuggestionReport(
     }
 
     /**
-     * 프로파일 집계로 추정한 적합성. {@code rate} 는 판정할 수 있을 때만 있다(0~100, 소수 첫째 자리). 위반 행 수를
-     * 셀 수 없는 위반(최대 길이 초과 등)은 {@code rows} 가 비어 있다. {@code transform} 은 mapping.yml 어휘
+     * 프로파일 집계로 추정한 적합성. {@code rate} 는 판정할 수 있을 때만 있다(0~100, 소수 첫째 자리, 분모는 공백
+     * 문자열을 포함한 값의 수). 위반 종류는 행 수를 세는 {@code INVALID_DATE}·{@code PLACEHOLDER_DATE}·{@code FORMAT}·
+     * {@code BLANK}·{@code NOT_ALLOWED} 와, 있으면 적합률을 비우는 {@code LENGTH_EXCEEDED}·{@code LENGTH_UNVERIFIED}·
+     * {@code ALLOWED_VALUES_UNVERIFIED}·{@code UNSUPPORTED_VALUE_TYPE}·{@code SAMPLED}(행 수 제한으로 일부만 읽은 표)다.
+     * 셀 수 없는 위반은 {@code rows} 가 비어 있다. {@code transform} 은 mapping.yml 어휘
      * ({@code type:date}·{@code type:timestamp}·{@code type:numeric}·{@code type:integer}·{@code type:bigint}·
      * {@code codemap})이거나, 내장 변환이 없으면 {@code custom:*} 다. 행 단위 예외는 L3 가 다룬다.
      */

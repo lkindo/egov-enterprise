@@ -111,8 +111,8 @@ class TermSuggestPostgresIntegrationTest {
         assertThat(report.inventorySemanticDigest()).isEqualTo("a".repeat(64));
         assertThat(report.columns()).extracting(SuggestionReport.ColumnSuggestion::column,
                         SuggestionReport.ColumnSuggestion::grade)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("WRT_DT", "SYNONYM"),
-                        org.assertj.core.groups.Tuple.tuple("STLI_NM", "UNKNOWN"));
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("wrt_dt", "SYNONYM"),
+                        org.assertj.core.groups.Tuple.tuple("stli_nm", "UNKNOWN"));
         assertThat(Files.readString(suggestions)).doesNotContain(POSTGRES.getPassword())
                 .doesNotContain(POSTGRES.getJdbcUrl());
 
@@ -121,7 +121,29 @@ class TermSuggestPostgresIntegrationTest {
         assertThat(ledger.entries()).extracting(TermLedger.Entry::status).containsOnly("PROPOSED");
         assertThat(ledger.entries().getFirst().term().engAbbr()).isEqualTo("REG_YMD");
         assertThat(ledger.entries()).extracting(TermLedger.Entry::id)
-                .containsExactly("PUBLIC.LEGACY_USER.WRT_DT", "PUBLIC.LEGACY_USER.STLI_NM");
+                .containsExactly("public.legacy_user.wrt_dt", "public.legacy_user.stli_nm");
+        assertThat(ledger.entries()).extracting(entry -> entry.source().table()).containsOnly("public.legacy_user");
+    }
+
+    @Test
+    void aDraftThatCannotBeMadeLeavesNeitherOutputBehind() throws Exception {
+        try (Connection connection = open()) {
+            meta(connection, "dict_draft", true);
+        }
+        Path profile = temp.resolve("profile.json");
+        SourceProfile twins = new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(
+                table("legacy_user", column("wrt_dt", "작성일자", Map.of("YMD8", 4L))),
+                table("LEGACY_USER", column("WRT_DT", "작성일자", Map.of("YMD8", 4L)))));
+        Files.writeString(profile, new CollectionArtifactCodec().writeProfile(twins, "a".repeat(64)));
+        bindTarget();
+
+        assertThatThrownBy(() -> runner().run(args("--command=term-suggest",
+                "--mapping=" + temp.resolve("mapping.yml"), "--profile=" + profile, "--meta-schema=dict_draft",
+                "--suggestions=" + temp.resolve("out.json"), "--ledger-draft=" + temp.resolve("draft.yml"))))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageStartingWith("term-suggest 산출물을 쓰지 않았습니다: 대소문자만 다른");
+        assertThat(temp.resolve("out.json")).doesNotExist();
+        assertThat(temp.resolve("draft.yml")).doesNotExist();
     }
 
     @Test
@@ -160,9 +182,12 @@ class TermSuggestPostgresIntegrationTest {
     private void bindTarget() throws Exception {
         MappingSpec.DbConfig target = new MappingSpec.DbConfig(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(),
                 POSTGRES.getPassword(), "org.postgresql.Driver", "target");
+        // endpoint ID 가 초안 YAML 의 고정 키(source)와 같은 단어여도 접속정보로 오인하지 않는다.
+        MappingSpec.DbConfig source = new MappingSpec.DbConfig("jdbc:mysql://legacy-host/erp", "legacy_reader",
+                "legacy-secret-1", "com.mysql.cj.jdbc.Driver", "source");
         Files.writeString(temp.resolve("mapping.yml"), "target: {}\n");
         given(loader.loadContent(any(String.class)))
-                .willReturn(new MappingSpec(null, target, List.of(), Map.of()));
+                .willReturn(new MappingSpec(source, target, List.of(), Map.of()));
         given(introspector.jdbc(target)).willReturn(new JdbcTemplate(new DriverManagerDataSource(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())));
     }
@@ -174,17 +199,20 @@ class TermSuggestPostgresIntegrationTest {
                 new MigrationPlanner(), new WorkflowReviewLoader(), mock(PostgresTargetSchemaFingerprinter.class));
     }
 
+    /** pgjdbc inventory 와 같은 모양이다 — catalog 는 현재 DB 이름, schema·표·컬럼은 소문자. */
     private static SourceProfile profile() {
-        return new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(new TableProfile(null,
-                "PUBLIC", "LEGACY_USER", "PROFILED", null, 4, false,
-                new CommentEvidence(null, false, null, "ABSENT"), List.of(
-                        column("WRT_DT", "작성일자", Map.of("YMD8", 4L)),
-                        column("STLI_NM", "법정리명", Map.of())))));
+        return new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(table("legacy_user",
+                column("wrt_dt", "작성일자", Map.of("YMD8", 4L)), column("stli_nm", "법정리명", Map.of()))));
+    }
+
+    private static TableProfile table(String name, ColumnProfile... columns) {
+        return new TableProfile(POSTGRES.getDatabaseName(), "public", name, "PROFILED", null, 4, false,
+                new CommentEvidence(null, false, null, "ABSENT"), List.of(columns));
     }
 
     private static ColumnProfile column(String name, String comment, Map<String, Long> patterns) {
         return new ColumnProfile(name, 1, "VARCHAR", 12, 20L, null, true, 4, 0, 0, 4, 0, 0, 0, 0, 1, 8, 32, 0, 4,
-                false, patterns, 0, null, null, false, List.of(), 0, 0, null,
+                false, patterns, 0, 0, null, null, false, List.of(), 0, 0, null,
                 new CommentEvidence(comment, false, null, "MATCH"));
     }
 

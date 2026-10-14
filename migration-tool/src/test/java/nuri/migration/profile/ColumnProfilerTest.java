@@ -121,6 +121,24 @@ class ColumnProfilerTest {
     }
 
     @Test
+    void dashedDateTimesAndFourteenDigitCalendarMistakesAreCountedSeparately() {
+        ColumnProfiler profiler = new ColumnProfiler();
+        profiler.accept("2024-01-31 10:00:00");
+        profiler.accept("2024-01-31T10:00");
+        profiler.accept("2024/01/31 10:00:00");
+        profiler.accept("2024.01.31 10:00");
+        profiler.accept("20240131235959");
+        profiler.accept("20240131240000");
+        profiler.accept(new BigDecimal("98765432100000"));
+
+        ColumnProfile profile = profiler.finish(DECLARATION, NO_COMMENT);
+
+        assertThat(profile.patternMatches()).containsEntry("DATETIME_TEXT", 4L).containsEntry("DATETIME_DASHED", 2L)
+                .containsEntry("YMDHMS14", 3L);
+        assertThat(profile.ymdhms14Invalid()).isEqualTo(2);
+    }
+
+    @Test
     void temporalLobAndNumericValuesAreCountedByKindWithoutListingValues() {
         ColumnProfiler profiler = new ColumnProfiler();
         profiler.accept(Timestamp.valueOf("2021-05-01 10:00:00"));

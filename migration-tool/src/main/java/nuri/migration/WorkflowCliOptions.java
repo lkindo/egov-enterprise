@@ -109,6 +109,9 @@ public record WorkflowCliOptions(
         Path suggestions = requiredPath(arguments, command, "suggestions", suggestCommand);
         Path ledgerDraft = optionalPath(arguments, "ledger-draft");
         String metaSchema = Objects.requireNonNullElse(optional(arguments, "meta-schema"), "public");
+        if (suggestCommand) {
+            requireDistinct(suggestions, ledgerDraft, mapping, profile, appUsage);
+        }
         Path review = optionalPath(arguments, "review");
         String sourceAdapter = optional(arguments, "source-adapter");
         Set<String> catalogs = parseCsv(arguments, "catalogs");
@@ -135,6 +138,22 @@ public record WorkflowCliOptions(
                 sourceDriverJars, sourceDriverClass, mode,
                 acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
                 profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema);
+    }
+
+    /** 출력 파일(앞의 두 경로)이 서로 같거나 입력 파일과 같으면 한쪽이 조용히 덮이므로 거부한다. */
+    private static void requireDistinct(Path firstOutput, Path secondOutput, Path... inputs) {
+        Set<Path> seen = new LinkedHashSet<>();
+        for (Path input : inputs) {
+            if (input != null) {
+                seen.add(input.toAbsolutePath().normalize());
+            }
+        }
+        for (Path output : new Path[] {firstOutput, secondOutput}) {
+            if (output != null && !seen.add(output.toAbsolutePath().normalize())) {
+                throw new IllegalArgumentException(
+                        "--suggestions 와 --ledger-draft 는 서로 다르고 입력 파일과도 다른 경로여야 합니다");
+            }
+        }
     }
 
     private static WorkflowCommand parseCommand(String value) {
