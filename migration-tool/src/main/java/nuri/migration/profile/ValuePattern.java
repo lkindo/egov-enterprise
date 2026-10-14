@@ -1,5 +1,7 @@
 package nuri.migration.profile;
 
+import nuri.migration.domain.DomainPlaceholders;
+
 import java.util.regex.Pattern;
 
 /**
@@ -29,13 +31,13 @@ public enum ValuePattern {
     INTEGER_TEXT("[-+]?\\d+", false),
     DECIMAL_TEXT("[-+]?\\d*\\.\\d+", false),
     /** 8자리 자리표시 날짜. {@link #YMD8} 이지만 달력 검사({@code ymd8Invalid})에서는 빠진다. */
-    PLACEHOLDER_DATE("99991231|00000000", false),
+    PLACEHOLDER_DATE(DomainPlaceholders.regex(DomainPlaceholders.DATE8), false),
     /**
      * 하이픈 자리표시 날짜. {@link #YMD_DASHED} 와 함께 센다. 슬래시·점·일시·14자리 자리표시는 세지 않는다 — 그런
      * 값은 그 모양의 유효 값으로 들어간다.
      */
-    PLACEHOLDER_DATE_TEXT("9999-12-31|0000-00-00", false),
-    PLACEHOLDER_TEXT("-|\\.|N/A|n/a|NULL|null", false),
+    PLACEHOLDER_DATE_TEXT(DomainPlaceholders.regex(DomainPlaceholders.DATE_DASHED), false),
+    PLACEHOLDER_TEXT(DomainPlaceholders.regex(DomainPlaceholders.TEXT), false),
     RRN("\\d{6}-?[1-8]\\d{6}", true),
     PHONE("0\\d{1,2}[-. ]?\\d{3,4}[-. ]?\\d{4}", true),
     EMAIL("[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}", true);
@@ -53,7 +55,11 @@ public enum ValuePattern {
         return personal;
     }
 
-    boolean matches(String trimmed) {
+    /**
+     * 앞뒤 공백을 지운 값이 이 모양인지. 표준 도메인 변환기도 이 판정으로 모양을 가른다 — 추정과 실행이 같은 값을 같은
+     * 모양으로 보게 하기 위해서다(ADR-0029 L3a-1).
+     */
+    public boolean matches(String trimmed) {
         return pattern.matcher(trimmed).matches();
     }
 }

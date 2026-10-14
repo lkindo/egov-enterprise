@@ -2,6 +2,8 @@ package nuri.migration.etl;
 
 import nuri.migration.adapter.EvidenceLevel;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.domain.DomainValueRejected;
+import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.JdbcTypedValueCodec;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.identity.TypedKeyEncoding;
@@ -18,6 +20,7 @@ import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
+import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.protect.ColumnProtector;
@@ -42,6 +45,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,6 +73,10 @@ import java.util.function.Function;
  * 행마다 다시 쓴다 — 모두 성공하면 한 번에 커밋하고, 한 행이라도 SQL 오류({@code ATOMIC_WRITE_FAILED})나 재변환
  * 실패({@code ROW_RETRY_TRANSFORM_FAILED})가 나면 chunk 전체를 롤백하고 테이블과 run 을 멈춘다. TARGET_GENERATED
  * 행({@code TARGET_GENERATED_WRITE_FAILED})도 chunk 단위로 커밋한다. 오류는 행 순번과 SQLSTATE 만 밝힌다.
+ *
+ * <p>[ADR-0029 L3a-1] 표준 도메인 변환기의 거부는 {@code DOMAIN_VIOLATION(<코드>)} 로, 비문자 {@code type} 에 오는
+ * 공백 문자는 변환 전에 {@code DOMAIN_VIOLATION(BLANK)} 로 멈춘다. mapping 이 {@code nullify} 로 밝힌 위반만 NULL 로
+ * 바꾸고 컬럼별로 세며, 상한을 넘으면 그 chunk 를 롤백하고 {@code NULLIFY_CAP_EXCEEDED} 로 멈춘다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
@@ -98,20 +108,30 @@ public class EtlExecutor {
 
     /**
      * 테이블별 적재 결과. {@code sequenceResets} 는 원본 키를 쓴 컬럼의 시퀀스 재설정 기록이다(DEC-OPS-306) —
-     * 이름과 결과만 담고 키 값은 담지 않는다.
+     * 이름과 결과만 담고 키 값은 담지 않는다. {@code nullified} 는 대상 컬럼마다 {@code nullify} 로 NULL 이 된 행 수다
+     * (ADR-0029 L3a-1) — 실행마다 표 전체를 다시 읽으므로 표 전체의 수이고, 값은 담지 않는다.
      */
     public record TableResult(String sourceTable, String targetTable,
                               long read, long transformed, long written, List<String> errors,
-                              List<TargetSequenceSynchronizer.SequenceReset> sequenceResets) {
+                              List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
+                              Map<String, Long> nullified) {
 
         public TableResult {
             sequenceResets = sequenceResets == null ? List.of() : List.copyOf(sequenceResets);
+            nullified = nullified == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(nullified));
         }
 
         /** 시퀀스 재설정 기록 도입 전 생성자 호환. */
         public TableResult(String sourceTable, String targetTable,
                            long read, long transformed, long written, List<String> errors) {
-            this(sourceTable, targetTable, read, transformed, written, errors, List.of());
+            this(sourceTable, targetTable, read, transformed, written, errors, List.of(), Map.of());
+        }
+
+        /** nullify 집계 도입 전 생성자 호환. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors,
+                           List<TargetSequenceSynchronizer.SequenceReset> sequenceResets) {
+            this(sourceTable, targetTable, read, transformed, written, errors, sequenceResets, Map.of());
         }
     }
 
@@ -167,6 +187,7 @@ public class EtlExecutor {
         }
         // 보호 컬럼 선언 위반·키 부재는 연결을 열거나 실행 상태를 만들기 전에 멈춘다(DEC-OPS-308).
         ColumnProtector protector = ColumnProtector.forRun(spec, environment);
+        requireNullifyRules(spec);
         DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
         if (commit && targetDs == null) {
@@ -334,7 +355,8 @@ public class EtlExecutor {
             List<String> errors = new ArrayList<>(result.errors());
             errors.addAll(failures.getOrDefault(table, List.of()));
             results.set(i, new TableResult(result.sourceTable(), result.targetTable(), result.read(),
-                    result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of())));
+                    result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of()),
+                    result.nullified()));
         }
     }
 
@@ -404,6 +426,32 @@ public class EtlExecutor {
                             + ": checkpoint/verifier용 targetKey 또는 idStrategy.column이 필수입니다");
                 }
                 SourceIntrospector.ident(targetIdentity);
+            }
+        }
+    }
+
+    /**
+     * nullify 선언을 연결을 열기 전에 확인한다(ADR-0029 L3a-1). {@code BLANK}·{@code PLACEHOLDER_DATE} 만, 위반마다 한 번,
+     * 상한은 1 이상이어야 한다 — 그 밖의 선언으로 위반을 NULL 로 바꾸지 않는다. 오류는 테이블·컬럼 이름만 밝힌다.
+     */
+    static void requireNullifyRules(MappingSpec spec) {
+        for (TableMapping table : spec.tables()) {
+            for (ColumnMapping column : table.columns()) {
+                Set<DomainViolation> declared = EnumSet.noneOf(DomainViolation.class);
+                for (Nullify rule : column.nullify()) {
+                    String label = table.source() + "." + column.target();
+                    if (rule == null || (rule.violation() != DomainViolation.BLANK
+                            && rule.violation() != DomainViolation.PLACEHOLDER_DATE)) {
+                        throw new IllegalArgumentException(label
+                                + ": nullify 는 BLANK·PLACEHOLDER_DATE 위반에만 선언할 수 있습니다");
+                    }
+                    if (rule.maxRows() == null || rule.maxRows() < 1) {
+                        throw new IllegalArgumentException(label + ": nullify maxRows 는 1 이상이어야 합니다");
+                    }
+                    if (!declared.add(rule.violation())) {
+                        throw new IllegalArgumentException(label + ": nullify 에 같은 위반을 두 번 선언할 수 없습니다");
+                    }
+                }
             }
         }
     }
@@ -579,7 +627,8 @@ public class EtlExecutor {
         }
         long durableWritten = state == null ? counts.written : state.count(t.source());
         return new TableExecution(
-                new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors),
+                new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors,
+                        List.of(), counts.nullified.columns()),
                 sourceSessionFailed, rowFailureStopped);
     }
 
@@ -721,6 +770,44 @@ public class EtlExecutor {
         private long read;
         private long transformed;
         private long written;
+        private final NullifyTally nullified = new NullifyTally();
+    }
+
+    /** 한 행에서 nullify 로 NULL 이 된 컬럼과 위반. 값은 담지 않는다. */
+    private record Nullified(String column, DomainViolation violation, long maxRows) {}
+
+    /**
+     * 표 하나에서 nullify 로 NULL 이 된 값의 수(ADR-0029 L3a-1). 실행마다 표 전체를 다시 읽으므로 끝까지 적재한 실행의
+     * 집계가 곧 표 집계다 — 이미 커밋된 행도 checkpoint 대조를 위해 다시 변환되며 함께 센다. 멈춘 실행의 집계는
+     * {@code transformed} 처럼 변환한 행의 수라 롤백한 chunk 의 앞선 행도 들어 있다. 쓰기 재시도의 재변환은 세지 않는다.
+     */
+    private static final class NullifyTally {
+        private final Map<String, Long> columns = new LinkedHashMap<>();
+        private final Map<RuleKey, Long> rules = new HashMap<>();
+
+        /**
+         * 변환에 성공한 행 하나의 정제를 더한다. 위반의 상한을 넘으면 그 컬럼과 위반만 밝혀 멈추고, 그 행은 세지 않는다
+         * — 집계는 상한을 넘지 않는다. 한 행에서 같은 컬럼은 한 번만 NULL 이 되므로 규칙 키도 행 안에서 겹치지 않는다.
+         */
+        void add(List<Nullified> row) {
+            for (Nullified nullified : row) {
+                long count = rules.getOrDefault(new RuleKey(nullified.column(), nullified.violation()), 0L) + 1;
+                if (count > nullified.maxRows()) {
+                    throw new RowTransformFailure(nullified.column(), RowFailureReason.NULLIFY_CAP_EXCEEDED,
+                            nullified.violation().name());
+                }
+            }
+            for (Nullified nullified : row) {
+                columns.merge(nullified.column(), 1L, Long::sum);
+                rules.merge(new RuleKey(nullified.column(), nullified.violation()), 1L, Long::sum);
+            }
+        }
+
+        Map<String, Long> columns() {
+            return columns;
+        }
+
+        private record RuleKey(String column, DomainViolation violation) {}
     }
 
     private record WritePlan(
@@ -904,7 +991,7 @@ public class EtlExecutor {
             Map<String, Object> row = chunk.get(index);
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
-                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector());
+                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector(), counts.nullified);
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
@@ -973,6 +1060,10 @@ public class EtlExecutor {
     /** 행 변환이 어느 단계에서 실패했는지. 값은 담지 않는다. */
     enum RowFailureReason {
         TRANSFORM_FAILED,
+        /** 표준 도메인 변환기 또는 비문자 type 의 공백 판정이 거부했다. detail 은 위반 코드다(ADR-0029 L3a-1). */
+        DOMAIN_VIOLATION,
+        /** nullify 로 NULL 이 된 행이 그 위반의 maxRows 를 넘었다. detail 은 위반 코드다. */
+        NULLIFY_CAP_EXCEEDED,
         CODEMAP_UNDEFINED,
         CODEMAP_UNMAPPED,
         CODEMAP_INPUT_INVALID,
@@ -1060,7 +1151,7 @@ public class EtlExecutor {
             for (int index = 0; index < rows.size(); index++) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
-                    transformRow(rows.get(index), spec, table, registry, writePlan.protector());
+                    transformRow(rows.get(index), spec, table, registry, writePlan.protector(), counts.nullified);
                     counts.transformed++;
                 } catch (RuntimeException failure) {
                     errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
@@ -1081,7 +1172,8 @@ public class EtlExecutor {
             Map<String, Object> row = rows.get(index);
             Checkpoint rowCheckpoint = registry.checkpoint();
             try {
-                Map<String, Object> transformed = transformRow(row, spec, table, registry, writePlan.protector());
+                Map<String, Object> transformed = transformRow(
+                        row, spec, table, registry, writePlan.protector(), counts.nullified);
                 TypedKeyTuple sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
@@ -1274,15 +1366,20 @@ public class EtlExecutor {
         return arguments;
     }
 
+    /**
+     * 행 하나를 대상 컬럼 값으로 바꾼다. {@code tally} 가 있으면 nullify 정제를 세고 상한을 확인한다 — 쓰기 재시도의
+     * 재변환은 같은 행을 두 번 세지 않도록 null 을 넘긴다(정제 자체는 똑같이 한다).
+     */
     private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t,
-                                             KeyMapRegistry reg, ColumnProtector protector) {
+                                             KeyMapRegistry reg, ColumnProtector protector, NullifyTally tally) {
         Map<String, Object> out = new LinkedHashMap<>();
+        List<Nullified> nullified = new ArrayList<>(0);
         for (ColumnMapping col : t.columns()) {
             Object value;
             if (col.constant() != null) {
                 value = col.constant();
             } else if (col.source() != null) {
-                value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg);
+                value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg, nullified);
                 // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 chunk 를 쓰지 않는다.
                 value = protectColumn(protector, t, col, value);
             } else {
@@ -1306,6 +1403,9 @@ public class EtlExecutor {
         } catch (RuntimeException failure) {
             throw new RowTransformFailure("<identity>", RowFailureReason.IDENTITY_FAILED);
         }
+        if (tally != null) {
+            tally.add(nullified);
+        }
         return out;
     }
 
@@ -1326,13 +1426,26 @@ public class EtlExecutor {
     /**
      * 한 컬럼의 값을 {@code transform → codemap → type → fkRef} 순서로 만든다.
      * 실패하면 어느 단계였는지만 남기고 원인 예외(원문에 값이 들어갈 수 있다)는 버린다.
+     *
+     * <p>[ADR-0029 L3a-1] 표준 도메인 변환기의 거부는 위반 코드로 남긴다. 비문자 {@code type} 에 공백 문자가 오면 변환
+     * 전에 {@code BLANK} 위반이다(제어 문자뿐이면 {@code FORMAT}) — 종전에는 {@link TypeConverter} 가 조용히 NULL 로
+     * 바꿨다. 두 경우 모두 mapping 이 {@code nullify} 로 그 위반을 밝혔을 때만 NULL 로 바꾸고 {@code nullified} 에 남긴다.
+     * 내장 {@code date}·{@code timestamp} 가 표기를 읽지 못하면 {@code TRANSFORM_FAILED(FORMAT)} 이다.
      */
-    private Object columnValue(Object sourceValue, MappingSpec spec, ColumnMapping col, KeyMapRegistry reg) {
+    private Object columnValue(Object sourceValue, MappingSpec spec, ColumnMapping col, KeyMapRegistry reg,
+                               List<Nullified> nullified) {
         Object value;
         try {
             value = transformers.apply(col.transform(), sourceValue);
+        } catch (DomainValueRejected rejected) {
+            if (!transformers.isDomain(col.transform())) {
+                // 사용자 변환기가 던진 위반 코드는 인정하지 않는다 — nullify·격리 어휘를 위조하지 못하게 한다.
+                throw new RowTransformFailure(col.target(), RowFailureReason.TRANSFORM_FAILED);
+            }
+            value = nullifyOrReject(col, rejected.violation(), nullified);
         } catch (RuntimeException failure) {
-            throw new RowTransformFailure(col.target(), RowFailureReason.TRANSFORM_FAILED);
+            throw new RowTransformFailure(col.target(), RowFailureReason.TRANSFORM_FAILED,
+                    builtinParseFailure(col.transform(), sourceValue));
         }
         if (!isBlank(col.codemap())) {
             CodeMap codemap = spec.codemaps().get(col.codemap());
@@ -1347,6 +1460,10 @@ public class EtlExecutor {
                 throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_INPUT_INVALID);
             }
         }
+        DomainViolation typeViolation = TypeConverter.isNonTextType(col.type()) ? emptyText(value) : null;
+        if (typeViolation != null) {
+            value = nullifyOrReject(col, typeViolation, nullified);
+        }
         try {
             value = TypeConverter.convert(col.type(), value);
         } catch (RuntimeException failure) {
@@ -1357,6 +1474,45 @@ public class EtlExecutor {
         } catch (RuntimeException failure) {
             throw new RowTransformFailure(col.target(), RowFailureReason.FK_REF_ORPHAN);
         }
+    }
+
+    /** 선언한 nullify 가 있으면 NULL 로 바꾸고 기록한다. 없으면 위반 코드만 밝혀 멈춘다. */
+    private static Object nullifyOrReject(ColumnMapping col, DomainViolation violation, List<Nullified> nullified) {
+        for (Nullify rule : col.nullify()) {
+            if (rule.violation() == violation) {
+                nullified.add(new Nullified(col.target(), violation, rule.maxRows()));
+                return null;
+            }
+        }
+        throw new RowTransformFailure(col.target(), RowFailureReason.DOMAIN_VIOLATION, violation.name());
+    }
+
+    /**
+     * type 경로에서 {@link TypeConverter} 가 조용히 NULL 로 바꿀 문자(trim 결과가 빈 문자열)의 위반. 프로파일러가 공백으로
+     * 세는 문자(isBlank)만 {@code BLANK} 다. NUL 채움처럼 제어 문자만 있는 값은 프로파일러·추정기·도메인 변환기가 모두
+     * 형식 위반으로 보므로 {@code FORMAT} 이고, nullify 로 NULL 이 되지 않는다. 문자가 아닌 값과 나머지는 null 이다.
+     */
+    static DomainViolation emptyText(Object value) {
+        if (!(value instanceof CharSequence) && !(value instanceof Character)) {
+            return null;
+        }
+        String text = value.toString();
+        if (text.isBlank()) {
+            return DomainViolation.BLANK;
+        }
+        return text.trim().isEmpty() ? DomainViolation.FORMAT : null;
+    }
+
+    /**
+     * 내장 {@code date}·{@code timestamp} 가 문자·숫자 값의 표기를 읽지 못한 실패의 사유({@code FORMAT}). 격리 어휘가 이
+     * 사유로 형식 위반을 가린다(설계서 격리 어휘 대응표). 사용자 변환기·그 밖의 값 종류의 실패는 사유 없이 남겨 격리할 수
+     * 없게 한다. 값은 싣지 않는다.
+     */
+    private String builtinParseFailure(String transform, Object sourceValue) {
+        boolean parser = "date".equals(transform) || "timestamp".equals(transform);
+        boolean text = sourceValue instanceof CharSequence || sourceValue instanceof Character
+                || sourceValue instanceof Number;
+        return parser && text && transformers.isBuiltin(transform) ? DomainViolation.FORMAT.name() : null;
     }
 
     private void applyTypedIdentity(
@@ -1543,7 +1699,7 @@ public class EtlExecutor {
             Object[] arguments;
             try {
                 Map<String, Object> transformed = transformRow(
-                        row.source(), spec, table, registry, writePlan.protector());
+                        row.source(), spec, table, registry, writePlan.protector(), null);
                 arguments = toArguments(transformed, writePlan.insertColumns());
                 checkpoints.add(checkpoint(row.source(), transformed, table, writePlan.targetColumns()));
             } catch (RuntimeException failure) {

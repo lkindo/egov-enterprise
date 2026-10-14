@@ -5,6 +5,7 @@ import nuri.migration.discovery.CatalogObject.ObjectReference;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.discovery.SnapshotCapability;
+import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
@@ -14,6 +15,7 @@ import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.NullPolicy;
+import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.postgres.TargetSchemaFingerprint;
@@ -235,7 +237,7 @@ class TargetStandardValidatorTest {
         @ParameterizedTest(name = "{0} → {1}: {2}")
         @CsvSource({
                 "REG_DE, date, true",
-                "REG_DE, timestamp without time zone, true",
+                "REG_DE, timestamp without time zone, false",
                 "REG_DE, timestamp with time zone, false",
                 "REG_DT, timestamp without time zone, true",
                 "REG_DT, date, false",
@@ -245,7 +247,9 @@ class TargetStandardValidatorTest {
                 "USE_AT, boolean, true",
                 "USE_AT, character varying, false",
                 "OPEN_TM, time without time zone, true",
-                "OPEN_TM, time with time zone, true",
+                "OPEN_TM, time with time zone, false",
+                "TIME_TZ, time with time zone, true",
+                "TIME_TZ, time without time zone, false",
                 "PHOTO, bytea, true",
                 "PHOTO, character varying, false",
                 "RATE, double precision, true",
@@ -772,6 +776,296 @@ class TargetStandardValidatorTest {
         }
     }
 
+    @Nested
+    @DisplayName("표준 도메인 변환기와 정제 선언을 live 계약으로 대조한다(ADR-0029 L3a-1)")
+    class StandardDomainTransformers {
+
+        private static final String DATE_INTO_TIMESTAMP = "값 타입이 타깃과 맞지 않습니다: public.tb_item.reg_dt — 값 DATE,"
+                + " 물리 컬럼 timestamp without time zone — 날짜를 그날 00:00 일시로 쓰려면 transform:"
+                + " timestamp-from-date 를 선언하세요";
+        private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기거나 시간대를 정하는"
+                + " 프로젝트 변환기(계약 버전·구현 digest 를 밝혀 등록)를 선언하세요";
+        private static final String ZONED_CONVERTED = "시간대가 있는 소스 값은 변환하면 실행 환경의 시간대에 따라 다른"
+                + " 날짜·시각이 됩니다 — " + ZONED_ESCAPE + ": public.tb_item.target_col ← legacy.legacy_item.";
+        private static final String ZONED_KEPT = " — 시간대가 있는 값은 시간대 없는 컬럼에 쓰면 실행 환경의 시간대에 따라"
+                + " 다른 일시·시각이 됩니다. " + ZONED_ESCAPE;
+
+        @Test
+        void ymd8WritesEightCharactersWhateverTheSourceLength() {
+            ColumnMapping fromNumber = transformed("YMD_NUM", "end_ymd", "ymd8");
+
+            assertThat(errors(spec(fromNumber), target(table(StandardStatus.ABSENT, varchar(1, "end_ymd", 8)))))
+                    .as("NUMBER(8) 를 문자로 쓰면 부호 자리까지 9자지만 ymd8 은 8자를 낸다").isEmpty();
+            assertThat(errors(spec(fromNumber), target(table(StandardStatus.ABSENT, varchar(1, "end_ymd", 7)))))
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.end_ymd — 값 8,"
+                            + " 물리 컬럼 character varying 길이 7");
+            assertThat(errors(spec(transformed("ITEM_NM", "end_ymd", "ymd8")),
+                    target(table(StandardStatus.ABSENT, varchar(1, "end_ymd", 8)))))
+                    .as("100자 문자 소스도 8자로 쓴다").isEmpty();
+        }
+
+        @ParameterizedTest(name = "{0} 은 {1} 에 맞고 {2} 에는 맞지 않는다")
+        @CsvSource({
+                "ymd8-truncate, REG_DT, 'character varying,8', 'character varying,7'",
+                "ymdhms14, ITEM_NM, 'character varying,14', 'character varying,13'",
+                "hms6, ITEM_NM, 'character varying,6', 'character varying,5'",
+                "yn, ITEM_NM, 'character varying,1', 'integer,'",
+                "date-text, ITEM_NM, 'date,', 'character varying,10'",
+                "date-truncate, REG_DT, 'date,', 'timestamp without time zone,'",
+                "timestamp-text, ITEM_NM, 'timestamp without time zone,', 'date,'",
+                "timestamp-from-date, REG_DE, 'timestamp without time zone,', 'character varying,29'"
+        })
+        void eachDomainTransformerDeclaresItsOutput(String transform, String source, String fits, String misfits) {
+            assertThat(errors(spec(transformed(source, "target_col", transform)), target(table(StandardStatus.ABSENT,
+                    declared(fits))))).as(transform + " → " + fits).isEmpty();
+            assertThat(errors(spec(transformed(source, "target_col", transform)), target(table(StandardStatus.ABSENT,
+                    declared(misfits))))).as(transform + " → " + misfits).hasSize(1);
+        }
+
+        @Test
+        void dateValuesCannotBeWrittenIntoTimestampColumns() {
+            TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, timestamp(1, "reg_dt")));
+
+            assertThat(errors(spec(map("REG_DE", "reg_dt")), target)).containsExactly(DATE_INTO_TIMESTAMP);
+            assertThat(errors(spec(hinted("ITEM_NM", "reg_dt", "date")), target)).containsExactly(DATE_INTO_TIMESTAMP);
+            assertThat(errors(spec(transformed("ITEM_NM", "reg_dt", "date-text")), target))
+                    .containsExactly(DATE_INTO_TIMESTAMP);
+            assertThat(errors(spec(transformed("REG_DE", "reg_dt", "timestamp-from-date")), target))
+                    .as("그날 00:00 일시로 밝히면 쓸 수 있다").isEmpty();
+            assertThat(errors(spec(map("REG_DE", "reg_de")), target(table(StandardStatus.ABSENT,
+                    column(1, "reg_de", "date", null, null, null))))).isEmpty();
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource({"PG_TZ", "ORA_TZ", "ORA_LTZ", "MS_DTO", "REG_TZ", "CUBRID_TZ", "GENERIC_TZ", "GENERIC_LTZ",
+                "PG_TIMETZ", "TIME_TZ"})
+        void timeZoneSourcesAreNotConvertedIntoLocalDatesOrTimes(String source) {
+            String rejected = ZONED_CONVERTED + source;
+            TargetSchemaFingerprint text = target(table(StandardStatus.ABSENT, varchar(1, "target_col", 8)));
+            TargetSchemaFingerprint local = target(table(StandardStatus.ABSENT, timestamp(1, "target_col")));
+
+            assertThat(errors(spec(transformed(source, "target_col", "ymd8")), text)).containsExactly(rejected);
+            assertThat(errors(spec(transformed(source, "target_col", "timestamp-text")), local))
+                    .containsExactly(rejected);
+            assertThat(errors(spec(hinted(source, "target_col", "timestamp")), local)).containsExactly(rejected);
+            assertThat(errors(spec(transformed(source, "target_col", "yyyymmdd")), text))
+                    .as("사용자 변환기는 시간대 규칙을 스스로 진다").isEmpty();
+        }
+
+        @Test
+        void postgresTimestamptzReportedAsTimestampIsStillAZonedValue() {
+            assertThat(errors(spec(map("PG_TZ", "chg_dt")), target(table(StandardStatus.ABSENT, timestamp(1, "chg_dt")))))
+                    .as("그대로 옮겨도 시간대 없는 컬럼에는 쓰지 않고 그 이유를 말한다")
+                    .containsExactly("값 타입이 타깃과 맞지 않습니다: public.tb_item.chg_dt — 값 TIMESTAMPTZ,"
+                            + " 물리 컬럼 timestamp without time zone" + ZONED_KEPT);
+            assertThat(errors(spec(map("PG_TZ", "chg_dt")), target(table(StandardStatus.ABSENT,
+                    column(1, "chg_dt", "timestamp with time zone", null, null, null))))).isEmpty();
+            assertThat(errors(spec(map("REG_DT", "chg_dt")), target(table(StandardStatus.ABSENT, timestamp(1, "chg_dt")))))
+                    .as("시간대 없는 timestamp 는 그대로다").isEmpty();
+            assertThat(errors(spec(map("LOCAL_DT", "chg_dt")), target(table(StandardStatus.ABSENT,
+                    timestamp(1, "chg_dt"))))).as("타입 이름이 시간대를 말하지 않으면 지역 일시다").isEmpty();
+            assertThat(errors(spec(transformed("LOCAL_DT", "end_ymd", "ymd8")), target(table(StandardStatus.ABSENT,
+                    varchar(1, "end_ymd", 8))))).isEmpty();
+        }
+
+        @Test
+        void zonedTimesAreNotKeptInLocalTimeColumns() {
+            TargetSchemaFingerprint local = target(table(StandardStatus.ABSENT,
+                    column(1, "open_tm", "time without time zone", null, null, null)));
+            TargetSchemaFingerprint zoned = target(table(StandardStatus.ABSENT,
+                    column(1, "open_tm", "time with time zone", null, null, null)));
+
+            assertThat(errors(spec(map("PG_TIMETZ", "open_tm")), local))
+                    .as("PostgreSQL 드라이버는 timetz 를 TIME 으로 알린다 — 타입 이름으로 가린다")
+                    .containsExactly("값 타입이 타깃과 맞지 않습니다: public.tb_item.open_tm — 값 TIMETZ,"
+                            + " 물리 컬럼 time without time zone" + ZONED_KEPT);
+            assertThat(errors(spec(map("TIME_TZ", "open_tm")), local)).singleElement().asString()
+                    .contains("값 TIMETZ").endsWith(ZONED_KEPT);
+            assertThat(errors(spec(map("PG_TIMETZ", "open_tm")), zoned)).isEmpty();
+            assertThat(errors(spec(map("TIME_TZ", "open_tm")), zoned)).isEmpty();
+            assertThat(errors(spec(map("OPEN_TM", "open_tm")), local)).as("시간대 없는 시각은 그대로다").isEmpty();
+            assertThat(errors(spec(map("OPEN_TM", "open_tm")), zoned))
+                    .as("시간대 없는 시각을 timetz 에 쓰면 실행 환경의 시간대가 붙는다 — timestamp→timestamptz 와 같다")
+                    .containsExactly("값 타입이 타깃과 맞지 않습니다: public.tb_item.open_tm — 값 TIME,"
+                            + " 물리 컬럼 time with time zone");
+        }
+
+        @ParameterizedTest(name = "{0}")
+        @CsvSource({"MySQL", "MariaDB"})
+        void sessionZonedTimestampsOfMySqlAndMariaDbAreZoned(String product) {
+            CatalogSnapshot inventory = productInventory(product);
+            TargetSchemaFingerprint text = target(table(StandardStatus.ABSENT, varchar(1, "target_col", 8)));
+            TargetSchemaFingerprint local = target(table(StandardStatus.ABSENT, timestamp(1, "target_col")));
+            TargetSchemaFingerprint zoned = target(table(StandardStatus.ABSENT,
+                    column(1, "target_col", "timestamp with time zone", null, null, null)));
+
+            assertThat(validator.validate(spec(transformed("MY_TS", "target_col", "ymd8")), text, inventory).errors())
+                    .containsExactly(ZONED_CONVERTED + "MY_TS");
+            assertThat(validator.validate(spec(hinted("MY_TS", "target_col", "date")), target(table(
+                    StandardStatus.ABSENT, column(1, "target_col", "date", null, null, null))), inventory).errors())
+                    .containsExactly(ZONED_CONVERTED + "MY_TS");
+            assertThat(validator.validate(spec(map("MY_TS", "target_col")), local, inventory).errors())
+                    .containsExactly("값 타입이 타깃과 맞지 않습니다: public.tb_item.target_col — 값 TIMESTAMPTZ,"
+                            + " 물리 컬럼 timestamp without time zone" + ZONED_KEPT);
+            assertThat(validator.validate(spec(map("MY_TS", "target_col")), zoned, inventory).errors()).isEmpty();
+            assertThat(validator.validate(spec(transformed("MY_DT", "target_col", "ymd8")), text, inventory).errors())
+                    .as("DATETIME 은 시간대가 없다").isEmpty();
+            assertThat(validator.validate(spec(map("MY_DT", "target_col")), local, inventory).errors()).isEmpty();
+            assertThat(validator.validate(spec(transformed("MY_TS", "target_col", "ymd8")), text,
+                    productInventory("Oracle")).errors())
+                    .as("다른 제품의 TIMESTAMP 이름은 시간대를 말하지 않는다").isEmpty();
+        }
+
+        @ParameterizedTest(name = "{0} ← {1}: {2}")
+        @CsvSource({
+                "ymd8, YMD_NUM, true", "ymd8, QTY, true", "ymd8, REG_DE, true", "ymd8, REG_DT, true",
+                "ymd8, BODY, true", "ymd8, USE_AT, false", "ymd8, OPEN_TM, false", "ymd8, RATE, false",
+                "ymd8, PHOTO, false",
+                "date-text, REG_DT, true", "timestamp-from-date, REG_DE, true", "date-truncate, OPEN_TM, false",
+                "ymdhms14, REG_DT, true", "ymdhms14, AMOUNT, true", "ymdhms14, REG_DE, false",
+                "timestamp-text, REG_DE, false",
+                "hms6, OPEN_TM, true", "hms6, QTY, true", "hms6, REG_DT, false",
+                "yn, USE_AT, true", "yn, ITEM_NM, true", "yn, QTY, false", "yn, REG_DE, false"
+        })
+        void domainTransformersOnlyTakeSourceKindsTheyCanRead(String transform, String source, boolean accepted) {
+            String targetType = transform.startsWith("date") ? "date"
+                    : transform.startsWith("timestamp") ? "timestamp without time zone" : "text";
+            List<String> errors = errors(spec(transformed(source, "target_col", transform)),
+                    target(table(StandardStatus.ABSENT, column(1, "target_col", targetType, null, null, null))));
+
+            if (accepted) {
+                assertThat(errors).as(transform + " ← " + source).isEmpty();
+            } else {
+                assertThat(errors).as(transform + " ← " + source).singleElement().asString()
+                        .startsWith("표준 도메인 변환기 '" + transform + "' 는 ")
+                        .endsWith(" 소스 값을 받지 않습니다 — 모든 행이 거부됩니다: public.tb_item.target_col"
+                                + " ← legacy.legacy_item." + source);
+            }
+        }
+
+        @Test
+        void undiscoveredSourceOfADomainTransformerIsUnknown() {
+            assertThat(errors(spec(transformed("NOT_DISCOVERED", "end_ymd", "ymd8")),
+                    target(table(StandardStatus.ABSENT, varchar(1, "end_ymd", 8)))))
+                    .containsExactly("소스 컬럼의 타입을 승인 inventory 에서 확인할 수 없습니다(없음·모호·미지원):"
+                            + " public.tb_item.end_ymd ← legacy.legacy_item.NOT_DISCOVERED");
+        }
+
+        @Test
+        void nullifyNeedsANullableTargetEvenWhenTheColumnHasADefault() {
+            ColumnMapping cleaned = new ColumnMapping("ITEM_NM", "end_ymd", "ymd8", null, null, null, null, null,
+                    List.of(new Nullify(DomainViolation.PLACEHOLDER_DATE, 3L)));
+            String rejected = "nullify 는 NULL 을 받는 타깃 컬럼에만 선언할 수 있습니다 — 매핑한 컬럼은 NULL 을 명시해"
+                    + " 쓰므로 기본값이 있어도 NOT NULL 이 거부합니다: public.tb_item.end_ymd";
+
+            assertThat(errors(spec(cleaned), target(table(StandardStatus.ABSENT, varchar(1, "end_ymd", 8))))).isEmpty();
+            assertThat(errors(spec(cleaned), target(table(StandardStatus.ABSENT,
+                    withDefault(required(varchar(1, "end_ymd", 8))))))).containsExactly(rejected);
+            assertThat(errors(spec(cleaned), target(table(StandardStatus.ABSENT,
+                    required(varchar(1, "end_ymd", 8)))))).containsExactly(rejected);
+        }
+
+        @Test
+        void yesNoDomainCodemapsWriteOnlyYOrN() {
+            ColumnContract useYn = withTerm(varchar(1, "use_yn", 1), found("USE_YN", "여부C1", "CHAR", 1));
+            ColumnContract code = withTerm(varchar(1, "use_yn", 1), found("USE_YN", "코드C1", "CHAR", 1));
+            Map<String, CodeMap> codemaps = new LinkedHashMap<>();
+            codemaps.put("flags", new CodeMap(Map.of("1", "Y", "0", "N"), UnmappedPolicy.FAIL, null));
+            codemaps.put("odd", new CodeMap(Map.of("1", "Y", "0", "X"), UnmappedPolicy.FAIL, null));
+            codemaps.put("odd_fallback", new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FALLBACK, "Z"));
+            codemaps.put("null_fallback", new CodeMap(Map.of("1", "Y"), UnmappedPolicy.FAIL, "Z", NullPolicy.FALLBACK));
+            codemaps.put("open", new CodeMap(Map.of("1", "Y", "0", "N"), UnmappedPolicy.PASSTHROUGH, null));
+            String values = "여부 도메인 컬럼의 codemap 은 Y·N 만 내야 합니다(codemap '";
+            String passthrough = "여부 도메인 컬럼의 codemap 은 unmapped: passthrough 를 쓸 수 없습니다 — 미매핑 레거시 값이"
+                    + " 그대로 들어갑니다(codemap 'open'): public.tb_item.use_yn";
+
+            assertThat(codemapErrors("flags", codemaps, useYn)).isEmpty();
+            assertThat(codemapErrors("odd", codemaps, useYn))
+                    .containsExactly(values + "odd'): public.tb_item.use_yn");
+            assertThat(codemapErrors("odd_fallback", codemaps, useYn))
+                    .containsExactly(values + "odd_fallback'): public.tb_item.use_yn");
+            assertThat(codemapErrors("null_fallback", codemaps, useYn))
+                    .containsExactly(values + "null_fallback'): public.tb_item.use_yn");
+            assertThat(codemapErrors("open", codemaps, useYn)).contains(passthrough);
+            assertThat(codemapErrors("odd", codemaps, code)).as("여부 도메인이 아니면 대조하지 않는다").isEmpty();
+            assertThat(String.join("\n", codemapErrors("odd_fallback", codemaps, useYn)))
+                    .as("코드값은 싣지 않는다").doesNotContain("Z").doesNotContain("X");
+        }
+
+        @Test
+        void booleanSourceCodemapKeysAreExactlyTrueAndFalse() {
+            Map<String, CodeMap> codemaps = new LinkedHashMap<>();
+            codemaps.put("bool", new CodeMap(Map.of("true", "Y", "false", "N"), UnmappedPolicy.FAIL, null));
+            codemaps.put("digits", new CodeMap(Map.of("1", "Y", "0", "N"), UnmappedPolicy.FAIL, null));
+            codemaps.put("half", new CodeMap(Map.of("true", "Y"), UnmappedPolicy.FALLBACK, "N"));
+            codemaps.put("extra", new CodeMap(Map.of("true", "Y", "false", "N", "1", "Y"), UnmappedPolicy.FAIL, null));
+            ColumnContract useYn = varchar(1, "use_yn", 1);
+            String rejected = "Boolean 소스의 codemap 키는 true·false 두 개여야 합니다(codemap '";
+
+            assertThat(booleanErrors("bool", codemaps, useYn)).isEmpty();
+            assertThat(booleanErrors("digits", codemaps, useYn))
+                    .containsExactly(rejected + "digits'): public.tb_item.use_yn ← legacy.legacy_item.USE_AT");
+            assertThat(booleanErrors("half", codemaps, useYn))
+                    .containsExactly(rejected + "half'): public.tb_item.use_yn ← legacy.legacy_item.USE_AT");
+            assertThat(booleanErrors("extra", codemaps, useYn))
+                    .containsExactly(rejected + "extra'): public.tb_item.use_yn ← legacy.legacy_item.USE_AT");
+            assertThat(validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("ITEM_NM", "use_yn", null, null, "digits", null, null)), null)),
+                    codemaps), target(table(StandardStatus.ABSENT, useYn)), inventory()).errors())
+                    .as("문자 소스는 대조하지 않는다").isEmpty();
+        }
+
+        @Test
+        void booleanSourceCodemapKeysFollowTheBuiltinTransformBeforeThem() {
+            Map<String, CodeMap> codemaps = new LinkedHashMap<>();
+            codemaps.put("bool", new CodeMap(Map.of("true", "Y", "false", "N"), UnmappedPolicy.FAIL, null));
+            codemaps.put("upper_bool", new CodeMap(Map.of("TRUE", "Y", "FALSE", "N"), UnmappedPolicy.FAIL, null));
+            codemaps.put("yn_fallback", new CodeMap(Map.of("Y", "Y", "N", "N"), UnmappedPolicy.FALLBACK, "N"));
+            ColumnContract useYn = varchar(1, "use_yn", 1);
+            String location = "'): public.tb_item.use_yn ← legacy.legacy_item.USE_AT";
+
+            assertThat(booleanErrors("yn_fallback", "trim", codemaps, useYn))
+                    .as("trim 은 Boolean 을 true·false 로 바꾼다 — 다른 키는 모든 행을 대체값으로 만든다")
+                    .containsExactly("Boolean 소스의 codemap 키는 true·false 두 개여야 합니다(codemap 'yn_fallback"
+                            + location);
+            assertThat(booleanErrors("bool", "trim", codemaps, useYn)).isEmpty();
+            assertThat(booleanErrors("bool", "lower", codemaps, useYn)).isEmpty();
+            assertThat(booleanErrors("bool", "upper", codemaps, useYn))
+                    .containsExactly("Boolean 소스의 codemap 키는 TRUE·FALSE(upper 뒤) 두 개여야 합니다(codemap 'bool"
+                            + location);
+            assertThat(booleanErrors("upper_bool", "upper", codemaps, useYn)).isEmpty();
+            assertThat(booleanErrors("bool", "date", codemaps, useYn))
+                    .containsExactly("Boolean 소스에는 내장 변환기 'date' 뒤에 codemap 을 쓸 수 없습니다 — 변환한 값이"
+                            + " codemap 키에 닿지 않습니다(codemap 'bool" + location);
+        }
+
+        private List<String> booleanErrors(String codemap, String transform, Map<String, CodeMap> codemaps,
+                                           ColumnContract column) {
+            return validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("USE_AT", "use_yn", transform, null, codemap, null, null)), null)),
+                    codemaps), target(table(StandardStatus.ABSENT, column)), inventory()).errors();
+        }
+
+        private List<String> codemapErrors(String codemap, Map<String, CodeMap> codemaps, ColumnContract column) {
+            return validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("STATUS_CD", "use_yn", null, null, codemap, null, null)), null)),
+                    codemaps), target(table(StandardStatus.PRESENT, column)), inventory()).errors();
+        }
+
+        private List<String> booleanErrors(String codemap, Map<String, CodeMap> codemaps, ColumnContract column) {
+            return validator.validate(new MappingSpec(null, null, List.of(new TableMapping(SOURCE, TARGET, null,
+                    List.of(new ColumnMapping("USE_AT", "use_yn", null, null, codemap, null, null)), null)),
+                    codemaps), target(table(StandardStatus.ABSENT, column)), inventory()).errors();
+        }
+
+        /** {@code "타입,길이"} — 길이가 비면 null. */
+        private static ColumnContract declared(String typeAndLength) {
+            String[] parts = typeAndLength.split(",", -1);
+            Integer length = parts[1].isEmpty() ? null : Integer.valueOf(parts[1]);
+            return column(1, "target_col", parts[0], length, null, null);
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // fixtures
 
@@ -803,6 +1097,10 @@ class TargetStandardValidatorTest {
 
     private static ColumnMapping constant(String target, String value) {
         return new ColumnMapping(null, target, null, null, null, null, value);
+    }
+
+    private static ColumnMapping transformed(String source, String target, String transform) {
+        return new ColumnMapping(source, target, transform, null, null, null, null);
     }
 
     private static TargetSchemaFingerprint target(TableContract... tables) {
@@ -900,7 +1198,42 @@ class TargetStandardValidatorTest {
         objects.add(columnObject("legacy_item", "ODD", Types.OTHER, 10, 0));
         objects.add(columnObject("legacy_item", "NUM_UNSPECIFIED", Types.NUMERIC, 0, 0));
         objects.add(columnObject("legacy_item", "FRACTION", Types.NUMERIC, 2, 2));
+        objects.add(columnObject("legacy_item", "YMD_NUM", Types.NUMERIC, 8, 0));
+        objects.add(columnObject("legacy_item", "STATUS_CD", Types.VARCHAR, 2, 0));
+        // 시간대가 있는 소스 — JDBC 타입 번호로만, 또는 드라이버 타입 이름으로만 알 수 있는 경우를 모두 둔다.
+        objects.add(nativeColumn("PG_TZ", Types.TIMESTAMP, "timestamptz"));
+        objects.add(nativeColumn("CUBRID_TZ", Types.TIMESTAMP, "DATETIMELTZ"));
+        objects.add(nativeColumn("ORA_TZ", -101, "TIMESTAMP(6) WITH TIME ZONE"));
+        objects.add(nativeColumn("ORA_LTZ", -102, "TIMESTAMP(6) WITH LOCAL TIME ZONE"));
+        objects.add(nativeColumn("MS_DTO", -155, "datetimeoffset"));
+        objects.add(nativeColumn("GENERIC_TZ", Types.TIMESTAMP, "TIMESTAMP ( 6 )  WITH TIME ZONE"));
+        objects.add(nativeColumn("GENERIC_LTZ", Types.TIMESTAMP, "timestamp(3) with local time zone"));
+        objects.add(nativeColumn("LOCAL_DT", Types.TIMESTAMP, "TIMESTAMP(6)"));
+        objects.add(nativeColumn("PG_TIMETZ", Types.TIME, "timetz"));
+        objects.add(nativeColumn("TIME_TZ", Types.TIME_WITH_TIMEZONE, "time with time zone"));
         return inventory(objects);
+    }
+
+    /**
+     * {@code product} 제품의 inventory — MySQL·MariaDB 드라이버는 TIMESTAMP 와 DATETIME 을 모두 JDBC TIMESTAMP 로,
+     * 타입 이름만 다르게 알린다.
+     */
+    private static CatalogSnapshot productInventory(String product) {
+        List<CatalogObject> objects = new ArrayList<>();
+        objects.add(tableObject("legacy_item"));
+        objects.add(nativeColumn("MY_TS", Types.TIMESTAMP, "TIMESTAMP"));
+        objects.add(nativeColumn("MY_DT", Types.TIMESTAMP, "DATETIME"));
+        return new CatalogSnapshot(CatalogSnapshot.CURRENT_SCHEMA_VERSION, Instant.parse("2026-10-13T00:00:00Z"),
+                new CatalogSnapshot.DatabaseInfo(product, "8.4", "driver", "1"),
+                new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),
+                SnapshotCapability.unknown(), objects, List.of());
+    }
+
+    private static CatalogObject nativeColumn(String column, int jdbcType, String nativeType) {
+        return new CatalogObject(ObjectKind.COLUMN, "db", "legacy", "legacy_item." + column, false, null, null,
+                List.of(new ObjectReference(ObjectKind.TABLE, "db", "legacy", "legacy_item")),
+                Map.of("parentTable", "legacy_item", "originalName", column, "jdbcType", Integer.toString(jdbcType),
+                        "nativeType", nativeType, "size", "35", "scale", "6"));
     }
 
     private static CatalogSnapshot inventory(List<CatalogObject> objects) {

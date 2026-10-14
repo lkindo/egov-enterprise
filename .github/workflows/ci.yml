@@ -1453,7 +1453,7 @@ jobs:
     needs: [change-scope]
     if: ${{ !cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' }}
     runs-on: ubuntu-latest
-    # 여섯 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
+    # 일곱 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
     timeout-minutes: 30
     strategy:
       # 짧은 scope들을 한 슬롯에서 실행해 초기 runner를 E2E/reusable에 양보한다.
@@ -1465,6 +1465,8 @@ jobs:
         include:
           # 2026-09-29 실측: 종전 transform 결합 범위는 74 mutations, 15분 11초였다.
           # 두 클래스와 validate/verify를 독립 75% gate로 나눠 같은 모집단을 병렬 검증한다.
+          # 2026-10-15 로컬 실측(ADR-0029 L3a-1 뒤): registry 60 mutations 100% 14초, converter 76 93% 15초,
+          # validate 619 94% 65초, verify 159 88% 41초.
           - scope: migration-transform-registry
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.transform.TransformerRegistry"
@@ -1494,11 +1496,18 @@ jobs:
             tests: "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
 
           # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
-          # 사용처가 조용히 빠진다. 2026-10-14 로컬 실측 697 mutations, 90%, 92초다.
+          # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-1 뒤) 1006 mutations, 91%, 92초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
             tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
+
+          # [ADR-0029 L3a-1] 표준 도메인 변환기. 이 경계가 뒤집히면 자리표시·달력 오류 날짜가 표준 값으로 적재되거나
+          # 추정기가 위반으로 센 값이 실행에서 통과한다(DomainParityTest). 2026-10-15 로컬 실측 116 mutations, 100%, 10초다.
+          - scope: migration-standardize
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.domain.*"
+            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

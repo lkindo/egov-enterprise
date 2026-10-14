@@ -92,6 +92,18 @@ class TypeConverterTest {
         assertThat(TypeConverter.isKnown(null)).isFalse();
     }
 
+    /** [ADR-0029 L3a-1] 실행기는 이 판정으로 비문자 type 의 공백을 변환 전에 BLANK 위반으로 멈춘다. */
+    @Test
+    void nonTextTypesAreTheKnownTypesOtherThanTheFourTextTypes() {
+        for (String type : new String[] {"int", "Integer", "long", "bigint", "decimal", "numeric", "double",
+                "boolean", "bool", "date", "TIMESTAMP", "datetime", "uuid"}) {
+            assertThat(TypeConverter.isNonTextType(type)).as(type).isTrue();
+        }
+        for (String type : new String[] {"string", "varchar", "TEXT", "char", "nope", " ", null}) {
+            assertThat(TypeConverter.isNonTextType(type)).as(String.valueOf(type)).isFalse();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // [2026-08-09 뮤테이션 보강] PIT 이 TypeConverter 에서 10개를 살려 보냈다.
     //   이 클래스는 **데이터 마이그레이션의 타입 변환기**다 — 값이 잘못 변환되면

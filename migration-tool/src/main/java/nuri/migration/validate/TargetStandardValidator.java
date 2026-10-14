@@ -5,8 +5,11 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.keymap.StandardIdGenerator;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.NullPolicy;
 import nuri.migration.model.MappingSpec.TableMapping;
+import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.postgres.TargetStandardSnapshot;
 import nuri.migration.postgres.TargetStandardSnapshot.ColumnContract;
@@ -14,6 +17,8 @@ import nuri.migration.postgres.TargetStandardSnapshot.StandardStatus;
 import nuri.migration.postgres.TargetStandardSnapshot.StandardTerm;
 import nuri.migration.postgres.TargetStandardSnapshot.TableContract;
 import nuri.migration.postgres.TargetStandardSnapshot.TermStatus;
+import nuri.migration.suggest.ConformanceEstimator;
+import nuri.migration.suggest.StandardDictionary;
 import nuri.migration.validate.TargetValueDomain.Family;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 
@@ -36,6 +41,10 @@ import java.util.regex.Pattern;
  *       물리 컬럼과 도메인 중 더 좁은 쪽을 적용한다.</li>
  *   <li>기본값 없는 NOT NULL 컬럼은 매핑·const·ID 전략이 반드시 채워야 한다.</li>
  *   <li>live 계약을 읽지 못하면 실패한다. 코드젠 스냅샷으로 대신하지 않는다.</li>
+ *   <li>[ADR-0029 L3a-1] 표준 도메인 변환기는 받을 수 있는 소스 값 종류만 받는다. 시간대가 있는 소스(MySQL·MariaDB
+ *       TIMESTAMP 포함)는 변환하지도, 시간대 없는 컬럼에 그대로 옮기지도 않는다. 날짜 값은 timestamp 컬럼에 쓰지
+ *       않는다(timestamp-from-date 로 밝힌다). nullify 는 NULL 을 받는 컬럼에만, 여부 도메인의 codemap 은 Y·N 만,
+ *       Boolean 소스의 codemap 키는 그 표기(true·false, upper 뒤 TRUE·FALSE)만 받는다.</li>
  * </ul>
  *
  * <p>메시지는 표·컬럼 이름과 타입·길이만 말한다. 상수·코드맵 값과 행 값은 싣지 않는다.
@@ -43,6 +52,13 @@ import java.util.regex.Pattern;
 public final class TargetStandardValidator {
 
     private static final Pattern DOMAIN_SCALE = Pattern.compile("(\\d+),(\\d+)$");
+    /** 원천 Boolean 의 codemap 대조 키({@code CodeTranslator} 는 Boolean 을 toString 으로 찾는다). */
+    private static final Set<String> BOOLEAN_CODES = Set.of("true", "false");
+    /** 내장 {@code upper} 를 거친 원천 Boolean 의 codemap 대조 키. */
+    private static final Set<String> UPPER_BOOLEAN_CODES = Set.of("TRUE", "FALSE");
+    /** 시간대가 있는 소스 값을 옮기는 길 — 시간대 있는 컬럼, 또는 시간대 규칙을 스스로 지는 프로젝트 변환기. */
+    private static final String ZONED_ESCAPE = "그대로 시간대 있는 컬럼(timestamptz·timetz)에 옮기거나"
+            + " 시간대를 정하는 프로젝트 변환기(계약 버전·구현 digest 를 밝혀 등록)를 선언하세요";
 
     private final Predicate<String> builtinTransformer;
 
@@ -147,20 +163,44 @@ public final class TargetStandardValidator {
                                 boolean standardPresent, CatalogSnapshot inventory,
                                 List<String> errors, List<String> warnings) {
         String location = location(table, column.name());
+        String sourceLocation = location + " ← " + table.source() + "." + mapping.source();
+        if (!mapping.nullify().isEmpty() && !column.nullable()) {
+            // INSERT 는 매핑한 컬럼을 모두 바인딩하므로 NULL 도 명시해 쓴다 — DEFAULT 는 적용되지 않는다.
+            errors.add("nullify 는 NULL 을 받는 타깃 컬럼에만 선언할 수 있습니다 — 매핑한 컬럼은 NULL 을 명시해 쓰므로"
+                    + " 기본값이 있어도 NOT NULL 이 거부합니다: " + location);
+        }
         CatalogObject source = sourceColumn(table, mapping, inventory);
-        TargetValueDomain value = TargetValueDomain.of(mapping, spec.codemaps(), builtinTransformer, source);
+        String sourceProduct = inventory.database().productName();
+        TargetValueDomain value = TargetValueDomain.of(mapping, spec.codemaps(), builtinTransformer, source,
+                sourceProduct);
         if (value.exempt()) {
             return;
         }
-        if (value.family() == Family.UNKNOWN) {
-            errors.add("소스 컬럼의 타입을 승인 inventory 에서 확인할 수 없습니다(없음·모호·미지원): "
-                    + location + " ← " + table.source() + "." + mapping.source());
+        if (TargetValueDomain.zoneAware(source, sourceProduct) && convertsSourceValue(mapping)) {
+            errors.add("시간대가 있는 소스 값은 변환하면 실행 환경의 시간대에 따라 다른 날짜·시각이 됩니다 — " + ZONED_ESCAPE
+                    + ": " + sourceLocation);
             return;
+        }
+        Set<Family> domainInputs = builtinTransformer.test(mapping.transform())
+                ? TargetValueDomain.domainInputs(mapping.transform()) : null;
+        Family sourceFamily = TargetValueDomain.fromSource(source, sourceProduct).family();
+        if (value.family() == Family.UNKNOWN || (domainInputs != null && sourceFamily == Family.UNKNOWN)) {
+            errors.add("소스 컬럼의 타입을 승인 inventory 에서 확인할 수 없습니다(없음·모호·미지원): " + sourceLocation);
+            return;
+        }
+        if (domainInputs != null && !domainInputs.contains(sourceFamily)) {
+            errors.add("표준 도메인 변환기 '" + mapping.transform() + "' 는 " + sourceFamily
+                    + " 소스 값을 받지 않습니다 — 모든 행이 거부됩니다: " + sourceLocation);
+            return;
+        }
+        CodeMap codemap = isBlank(mapping.codemap()) ? null : spec.codemaps().get(mapping.codemap());
+        if (codemap != null && sourceFamily == Family.BOOLEAN) {
+            checkBooleanCodemap(mapping, codemap, sourceLocation, errors);
         }
         if (mapping.encrypt() != null) {
             // [DEC-OPS-308] 숫자·날짜를 문자열로 바꾸면 앞자리 0·표기가 달라져 다른 값이 암호화된다. 내장 변환기는
             //   toString 으로 바꾸므로 정규화가 아니다 — 정규화는 내장이 아닌 변환기로 선언한다(그때는 위에서 exempt).
-            if (value.family() != Family.TEXT || TargetValueDomain.fromSource(source).family() != Family.TEXT) {
+            if (value.family() != Family.TEXT || sourceFamily != Family.TEXT) {
                 errors.add("암호화 컬럼은 문자열 소스 값만 암호화합니다 — 숫자·날짜는 앞자리 0·표기가 바뀌므로"
                         + " 정규화하는 변환기를 선언하세요: " + location + " ← " + table.source() + "." + mapping.source());
                 return;
@@ -187,6 +227,9 @@ public final class TargetStandardValidator {
             errors.add("표준 용어의 도메인을 확정할 수 없습니다(" + term.status() + "): " + location);
             return;
         }
+        if (codemap != null && yesNoDomain(term)) {
+            checkYesNoCodemap(mapping.codemap(), codemap, location, errors);
+        }
         TargetLimit domain = standardLimit(term);
         if (domain == null) {
             errors.add("표준 도메인을 해석할 수 없습니다(" + term.domainName() + "): " + location);
@@ -203,12 +246,67 @@ public final class TargetStandardValidator {
         }
     }
 
+    /**
+     * 소스 값을 바꾸는가 — 내장 변환기(표준 도메인 변환기 포함)·type·codemap. 시간대가 있는 소스는 이 경로에서 실행
+     * 환경의 시간대로 날짜·시각이 정해진다. 사용자 변환기는 출력 계약을 스스로 지므로 여기 오지 않는다(exempt).
+     */
+    private boolean convertsSourceValue(ColumnMapping mapping) {
+        return builtinTransformer.test(mapping.transform()) || !isBlank(mapping.type()) || !isBlank(mapping.codemap());
+    }
+
+    /**
+     * 원천 Boolean 의 codemap 키. Boolean 은 toString 표기로 찾는다 — 변환 없이·{@code trim}·{@code lower} 뒤에는
+     * true·false, {@code upper} 뒤에는 TRUE·FALSE 다. 다른 키는 닿지 않아 모든 행이 미매핑이 되거나 대체값이 된다. 그 밖의
+     * 내장 변환기 뒤에는 키를 정할 수 없어 받지 않는다. 사용자 변환기는 여기 오지 않는다(exempt). 코드값은 싣지 않는다.
+     */
+    private static void checkBooleanCodemap(ColumnMapping mapping, CodeMap codemap, String sourceLocation,
+                                            List<String> errors) {
+        String transform = mapping.transform();
+        boolean upper = "upper".equals(transform);
+        if (!upper && !isBlank(transform) && !"trim".equals(transform) && !"lower".equals(transform)) {
+            errors.add("Boolean 소스에는 내장 변환기 '" + transform + "' 뒤에 codemap 을 쓸 수 없습니다 — 변환한 값이"
+                    + " codemap 키에 닿지 않습니다(codemap '" + mapping.codemap() + "'): " + sourceLocation);
+            return;
+        }
+        if (!codemap.values().keySet().equals(upper ? UPPER_BOOLEAN_CODES : BOOLEAN_CODES)) {
+            errors.add("Boolean 소스의 codemap 키는 " + (upper ? "TRUE·FALSE(upper 뒤)" : "true·false")
+                    + " 두 개여야 합니다(codemap '" + mapping.codemap() + "'): " + sourceLocation);
+        }
+    }
+
+    /** 여부 도메인인가. 범주 판정은 적합성 추정기와 같은 한 곳을 쓴다. */
+    private static boolean yesNoDomain(StandardTerm term) {
+        return "YN".equals(ConformanceEstimator.domainCategory(new StandardDictionary.Domain(
+                null, term.domainName(), term.domainDataType(), term.domainLength())));
+    }
+
+    /**
+     * 여부 도메인 컬럼의 codemap 은 Y·N 만 내야 한다. 미매핑 코드를 그대로 통과시키면 레거시 플래그(1·T 등)가 그대로
+     * 들어가므로 {@code unmapped: passthrough} 도 받지 않는다. 코드값은 싣지 않는다.
+     */
+    private static void checkYesNoCodemap(String name, CodeMap codemap, String location, List<String> errors) {
+        boolean fallbackUsed = codemap.unmapped() == UnmappedPolicy.FALLBACK || codemap.nullAs() == NullPolicy.FALLBACK;
+        if (!codemap.values().values().stream().allMatch(TargetStandardValidator::yesNoCode)
+                || (fallbackUsed && !yesNoCode(codemap.fallback()))) {
+            errors.add("여부 도메인 컬럼의 codemap 은 Y·N 만 내야 합니다(codemap '" + name + "'): " + location);
+        }
+        if (codemap.unmapped() == UnmappedPolicy.PASSTHROUGH) {
+            errors.add("여부 도메인 컬럼의 codemap 은 unmapped: passthrough 를 쓸 수 없습니다 — 미매핑 레거시 값이 그대로"
+                    + " 들어갑니다(codemap '" + name + "'): " + location);
+        }
+    }
+
     private static void check(TargetValueDomain value, TargetLimit limit, String location, String label,
                               List<String> errors) {
         if (!value.compatibleWith(limit.family())) {
             errors.add("값 타입이 타깃과 맞지 않습니다: " + location + " — 값 " + value.family()
                     + (value.constant() ? "(const 는 type 힌트 없이 문자열로 바인딩됨)" : "")
-                    + ", " + label);
+                    + ", " + label
+                    + (value.family() == Family.DATE && limit.family() == Family.TIMESTAMP
+                    ? " — 날짜를 그날 00:00 일시로 쓰려면 transform: timestamp-from-date 를 선언하세요" : "")
+                    + (value.family() == Family.TIMESTAMPTZ || value.family() == Family.TIMETZ
+                    ? " — 시간대가 있는 값은 시간대 없는 컬럼에 쓰면 실행 환경의 시간대에 따라 다른 일시·시각이 됩니다. "
+                    + ZONED_ESCAPE : ""));
             return;
         }
         if (limit.family() == Family.TEXT) {
@@ -345,5 +443,13 @@ public final class TargetStandardValidator {
 
     private static String normalize(String value) {
         return value.toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean yesNoCode(String code) {
+        return "Y".equals(code) || "N".equals(code);
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

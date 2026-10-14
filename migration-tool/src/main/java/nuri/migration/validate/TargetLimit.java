@@ -43,7 +43,8 @@ record TargetLimit(Family family, Long maxChars, Integer integerRank, Integer in
             case "real", "double precision" -> of(Family.APPROXIMATE);
             case "boolean" -> of(Family.BOOLEAN);
             case "date" -> of(Family.DATE);
-            case "time without time zone", "time with time zone" -> of(Family.TIME);
+            case "time without time zone" -> of(Family.TIME);
+            case "time with time zone" -> of(Family.TIMETZ);
             case "timestamp without time zone" -> of(Family.TIMESTAMP);
             case "timestamp with time zone" -> of(Family.TIMESTAMPTZ);
             case "bytea" -> of(Family.BINARY);

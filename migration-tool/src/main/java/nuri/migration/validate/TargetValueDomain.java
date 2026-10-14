@@ -7,9 +7,12 @@ import nuri.migration.model.MappingSpec.NullPolicy;
 import nuri.migration.model.MappingSpec.UnmappedPolicy;
 
 import java.sql.Types;
+import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 /**
  * 매핑 한 컬럼이 타깃에 쓰는 값의 종류와 선언 한계. 행 값을 보지 않고 매핑 선언과 승인 inventory 의
@@ -29,16 +32,45 @@ record TargetValueDomain(
         boolean constant,
         boolean generatedKey) {
 
-    /** 값·타깃 공통 종류. UNKNOWN 은 소스 선언을 확인하지 못한 값, OTHER 는 지원하지 않는 타깃 타입이다. */
+    /**
+     * 값·타깃 공통 종류. UNKNOWN 은 소스 선언을 확인하지 못한 값, OTHER 는 지원하지 않는 타깃 타입이다.
+     * TIMESTAMPTZ·TIMETZ 는 시간대가 있는 값으로, 시간대 없는 종류와 섞지 않는다(ADR-0029 L3a-1).
+     */
     enum Family {
-        TEXT, INTEGER, DECIMAL, APPROXIMATE, BOOLEAN, DATE, TIME, TIMESTAMP, TIMESTAMPTZ, BINARY, UUID,
+        TEXT, INTEGER, DECIMAL, APPROXIMATE, BOOLEAN, DATE, TIME, TIMETZ, TIMESTAMP, TIMESTAMPTZ, BINARY, UUID,
         OTHER, UNKNOWN
     }
 
     private static final int TIMESTAMP_TEXT_LENGTH = 29;
 
+    /** 타입 이름의 정밀도 표기, 예: {@code TIMESTAMP(6) WITH TIME ZONE}. */
+    private static final Pattern PRECISION = Pattern.compile("\\(\\s*\\d+\\s*\\)");
+    /** Oracle TIMESTAMPTZ(-101)·TIMESTAMPLTZ(-102), SQL Server DATETIMEOFFSET(-155) 는 드라이버 고유 번호다. */
+    private static final Set<Integer> ZONED_JDBC_TYPES = Set.of(
+            Types.TIME_WITH_TIMEZONE, Types.TIMESTAMP_WITH_TIMEZONE, -101, -102, -155);
+    private static final Set<String> ZONED_NATIVE_TYPES = Set.of(
+            "timestamptz", "timetz", "timestampltz", "datetimetz", "datetimeltz", "datetimeoffset");
+    /**
+     * 세션 시간대로 바꿔 읽는 제품의 {@code TIMESTAMP}. MySQL·MariaDB 의 TIMESTAMP 는 UTC 로 저장하고 세션
+     * {@code time_zone} 으로 바꿔 돌려주므로 이름만으로는 PostgreSQL 의 시간대 없는 {@code timestamp} 와 갈리지 않는다
+     * — 소스 제품 이름과 함께 본다.
+     */
+    private static final Set<String> SESSION_ZONED_PRODUCTS = Set.of("mysql", "mariadb");
+
+    private static final Set<Family> DATE_INPUTS =
+            EnumSet.of(Family.TEXT, Family.INTEGER, Family.DECIMAL, Family.DATE, Family.TIMESTAMP);
+    private static final Set<Family> DATE_TIME_INPUTS =
+            EnumSet.of(Family.TEXT, Family.INTEGER, Family.DECIMAL, Family.TIMESTAMP);
+    private static final Map<String, Set<Family>> DOMAIN_INPUTS = Map.of(
+            "ymd8", DATE_INPUTS, "ymd8-truncate", DATE_INPUTS, "date-text", DATE_INPUTS,
+            "date-truncate", DATE_INPUTS, "timestamp-from-date", DATE_INPUTS,
+            "ymdhms14", DATE_TIME_INPUTS, "timestamp-text", DATE_TIME_INPUTS,
+            "hms6", EnumSet.of(Family.TEXT, Family.INTEGER, Family.DECIMAL, Family.TIME),
+            "yn", EnumSet.of(Family.TEXT, Family.BOOLEAN));
+
+    /** {@code sourceProduct} 는 승인 inventory 의 소스 제품 이름이다(시간대 판정, {@link #zoneAware}). */
     static TargetValueDomain of(ColumnMapping mapping, Map<String, CodeMap> codemaps,
-                                Predicate<String> builtinTransformer, CatalogObject source) {
+                                Predicate<String> builtinTransformer, CatalogObject source, String sourceProduct) {
         if (mapping.constant() != null) {
             return new TargetValueDomain(Family.TEXT,
                     (long) mapping.constant().codePointCount(0, mapping.constant().length()),
@@ -50,14 +82,19 @@ record TargetValueDomain(
         if (isBlank(mapping.source())) {
             return exemptDomain();
         }
-        TargetValueDomain value = fromSource(source);
+        TargetValueDomain value = fromSource(source, sourceProduct);
         if (!isBlank(mapping.transform())) {
             if (!builtinTransformer.test(mapping.transform())) {
                 return exemptDomain();
             }
             value = switch (mapping.transform()) {
-                case "date", "date-truncate" -> plain(Family.DATE);
-                case "timestamp" -> plain(Family.TIMESTAMP);
+                case "date", "date-truncate", "date-text" -> plain(Family.DATE);
+                case "timestamp", "timestamp-text", "timestamp-from-date" -> plain(Family.TIMESTAMP);
+                // [ADR-0029 L3a-1] 표준 도메인 변환기는 소스 길이와 무관하게 표준 표기 길이를 낸다.
+                case "ymd8", "ymd8-truncate" -> text(8L);
+                case "ymdhms14" -> text(14L);
+                case "hms6" -> text(6L);
+                case "yn" -> text(1L);
                 default -> text(value.textLength());
             };
         }
@@ -88,8 +125,12 @@ record TargetValueDomain(
         };
     }
 
-    /** 승인 inventory 의 JDBC 컬럼 선언(jdbcType·size·scale)으로 소스 값의 종류를 정한다. */
-    static TargetValueDomain fromSource(CatalogObject source) {
+    /**
+     * 승인 inventory 의 JDBC 컬럼 선언(jdbcType·size·scale)으로 소스 값의 종류를 정한다. 시간대가 있는 일시·시각
+     * ({@link #zoneAware})은 TIMESTAMPTZ·TIMETZ 로 따로 둔다 — 그대로 옮겨도 시간대 없는 컬럼에 쓰면 실행 환경의
+     * 시간대로 값이 정해지기 때문이다(ADR-0029 L3a-1).
+     */
+    static TargetValueDomain fromSource(CatalogObject source, String sourceProduct) {
         if (source == null) {
             return plain(Family.UNKNOWN);
         }
@@ -109,12 +150,56 @@ record TargetValueDomain(
             case Types.REAL, Types.FLOAT, Types.DOUBLE -> plain(Family.APPROXIMATE);
             case Types.BIT, Types.BOOLEAN -> plain(Family.BOOLEAN);
             case Types.DATE -> plain(Family.DATE);
-            case Types.TIME, Types.TIME_WITH_TIMEZONE -> plain(Family.TIME);
-            case Types.TIMESTAMP -> plain(Family.TIMESTAMP);
+            // PostgreSQL 드라이버는 timetz·timestamptz 를 TIME·TIMESTAMP 로, MySQL·MariaDB 는 세션 시간대로 바꾸는
+            //   TIMESTAMP 를 TIMESTAMP 로 알린다 — 타입 이름과 제품으로 시간대를 가린다(ADR-0029 L3a-1).
+            case Types.TIME -> plain(zoneAware(source, sourceProduct) ? Family.TIMETZ : Family.TIME);
+            case Types.TIME_WITH_TIMEZONE -> plain(Family.TIMETZ);
+            case Types.TIMESTAMP -> plain(zoneAware(source, sourceProduct) ? Family.TIMESTAMPTZ : Family.TIMESTAMP);
             case Types.TIMESTAMP_WITH_TIMEZONE -> plain(Family.TIMESTAMPTZ);
             case Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY, Types.BLOB -> plain(Family.BINARY);
             default -> plain(Family.UNKNOWN);
         };
+    }
+
+    /**
+     * 시간대가 있는 소스 컬럼인가. 그 값은 실행 환경(JVM·세션)의 시간대로 지역 날짜·시각이 정해지므로 변환하거나
+     * 시간대 없는 컬럼에 옮기면 조용히 달라진다(ADR-0029 L3a-1). JDBC 타입과 드라이버의 타입 이름({@code nativeType})
+     * 둘 다 본다 — PostgreSQL 은 {@code timestamptz}·{@code timetz} 를 TIMESTAMP·TIME 으로, Oracle·SQL Server 는
+     * 드라이버 고유 번호로 알린다. MySQL·MariaDB 의 {@code TIMESTAMP} 는 소스 제품 이름으로 가린다.
+     */
+    static boolean zoneAware(CatalogObject source, String sourceProduct) {
+        if (source == null) {
+            return false;
+        }
+        Integer jdbcType = integerAttribute(source, "jdbcType");
+        if (jdbcType != null && ZONED_JDBC_TYPES.contains(jdbcType)) {
+            return true;
+        }
+        String nativeType = source.attributes().get("nativeType");
+        if (nativeType == null) {
+            return false;
+        }
+        String type = PRECISION.matcher(nativeType.toLowerCase(Locale.ROOT)).replaceAll("")
+                .replaceAll("\\s+", " ").trim();
+        return ZONED_NATIVE_TYPES.contains(type) || type.contains("with time zone")
+                || type.contains("with local time zone")
+                || ("timestamp".equals(type) && sessionZonedProduct(sourceProduct));
+    }
+
+    private static boolean sessionZonedProduct(String sourceProduct) {
+        if (sourceProduct == null) {
+            return false;
+        }
+        String product = sourceProduct.toLowerCase(Locale.ROOT);
+        return SESSION_ZONED_PRODUCTS.stream().anyMatch(product::contains);
+    }
+
+    /**
+     * 표준 도메인 변환기가 받는 소스 값 종류(ADR-0029 L3a-1). 도메인 변환기가 아니면 null. 표에 없는 종류는 실행하면
+     * 모든 행이 거부되는 조합이라 적재 전에 막는다 — 시간대가 있는 소스는 {@link #zoneAware} 가 먼저 막는다.
+     */
+    static Set<Family> domainInputs(String transform) {
+        return transform == null ? null : DOMAIN_INPUTS.get(transform);
     }
 
     private static TargetValueDomain sourceDecimal(Long precision, Integer scale) {
@@ -198,9 +283,12 @@ record TargetValueDomain(
             case INTEGER, DECIMAL -> target == Family.INTEGER || target == Family.DECIMAL
                     || target == Family.APPROXIMATE || target == Family.TEXT;
             case APPROXIMATE -> target == Family.APPROXIMATE || target == Family.TEXT;
-            case DATE -> target == Family.DATE || target == Family.TIMESTAMP;
+            // [ADR-0029 L3a-1] 날짜를 timestamp 컬럼에 쓰면 DB 는 받지만 되읽은 일시와 checksum 이 어긋난다 —
+            //   그날 00:00 일시로 쓰려면 timestamp-from-date 를 선언한다.
+            case DATE -> target == Family.DATE;
             case UUID -> target == Family.UUID || target == Family.TEXT;
-            case BOOLEAN, TIME, TIMESTAMP, TIMESTAMPTZ, BINARY -> target == family;
+            // 시간대 있는 값과 없는 값은 서로 옮기지 않는다 — 어느 쪽이든 실행 환경의 시간대가 값을 정한다.
+            case BOOLEAN, TIME, TIMETZ, TIMESTAMP, TIMESTAMPTZ, BINARY -> target == family;
             case OTHER, UNKNOWN -> false;
         };
     }
