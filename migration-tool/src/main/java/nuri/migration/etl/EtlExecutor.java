@@ -1367,7 +1367,11 @@ public class EtlExecutor {
         return new ChunkLookups(resolved);
     }
 
-    /** 조회 표에서 이 키들의 행을 읽는다. 키 값은 바인딩하고 문구에 싣지 않는다. */
+    /**
+     * 조회 표에서 이 키들의 행을 읽는다. 키 값은 바인딩하고 문구에 싣지 않는다. 값은 주 표와 같은 {@link #readRow}
+     * ({@link JdbcLobReader})로 읽는다 — 드라이버 고유 시각 값도 {@code Timestamp} 로 와서 도메인 변환기가 시각으로 본다
+     * (ADR-0029 L4-B R1).
+     */
     private static List<Map<String, Object>> readLookupRows(Connection source, Lookup lookup, List<String> columns,
                                                             List<Object> keys, boolean boundedVariableValues)
             throws SQLException {
@@ -1583,7 +1587,8 @@ public class EtlExecutor {
                         for (int i = 0; i < labels.length; i++) {
                             for (String key : table.effectiveOrderKeys()) {
                                 if (labels[i].equalsIgnoreCase(key)) boundary.put(labels[i], boundedVariableValues
-                                        ? JdbcLobReader.read(result, i + 1, true) : result.getObject(i + 1));
+                                        ? JdbcLobReader.read(result, i + 1, true)
+                                        : JdbcLobReader.scalar(result, i + 1));
                             }
                         }
                         String lastOrderDigest = orderDigest(rows.getLast(), table);
@@ -1699,7 +1704,8 @@ public class EtlExecutor {
         try (PreparedStatement statement = SourceReadStatements.prepare(sourceConnection, sql);
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                Object raw = boundedVariableValues ? JdbcLobReader.read(result, 1, true) : result.getObject(1);
+                Object raw = boundedVariableValues
+                        ? JdbcLobReader.read(result, 1, true) : JdbcLobReader.scalar(result, 1);
                 if (raw == null || raw.toString().isBlank()) {
                     throw new SQLException(table.source() + ": 자기참조 sourceKey가 null/blank입니다");
                 }

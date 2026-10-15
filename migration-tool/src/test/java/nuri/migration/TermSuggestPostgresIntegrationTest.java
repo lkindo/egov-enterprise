@@ -206,7 +206,7 @@ class TermSuggestPostgresIntegrationTest {
     }
 
     private static TableProfile table(String name, ColumnProfile... columns) {
-        return new TableProfile(POSTGRES.getDatabaseName(), "public", name, "PROFILED", null, 4, false,
+        return new TableProfile(POSTGRES.getDatabaseName(), "public", name, "PROFILED", null, null, 4, false,
                 new CommentEvidence(null, false, null, "ABSENT"), List.of(columns));
     }
 

@@ -297,7 +297,7 @@ test('migration duration profile exactly covers source tests and produces three 
   const profile = loadMigrationDurationProfile();
   const classes = discoverMigrationTestClasses();
   assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
-  assert.equal(classes.length, 174);
+  assert.equal(classes.length, 175);
   const plan = buildMigrationShardPlan(profile, classes);
   assert.equal(plan.length, 3);
   assert.deepEqual(plan.flatMap(({ classes: selected }) => selected).sort(), classes);

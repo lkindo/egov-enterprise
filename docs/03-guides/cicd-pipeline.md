@@ -33,7 +33,7 @@ push/PR / workflow_dispatch
         ├─ secret-scan (분류 직후 운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
         ├─ backend-scope (backend=true: 온라인 4모듈 빌드·테스트·커버리지·OpenAPI 신선도)
         ├─ backend-schema-scope (schema=true: backend와 병렬 PostgreSQL schema-validation)
-        ├─ migration-test-scope (migration=true: 123개 이관 테스트 클래스를 3개 matrix로 정확히 분배)
+        ├─ migration-test-scope (migration=true: 이관 테스트 클래스 전부를 3개 matrix로 정확히 분배)
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (frontend-scope 완료 뒤 영향받는 시작 구성 profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout(survey·approval 은 PR 에서 뺀다), 그 밖에는 두 layout)
         ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
@@ -89,8 +89,11 @@ history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하�
 
 E2E와 두 PIT source는 `change-scope`만 선행 조건으로 가진다. 각 job이 필요한 코드와 실행 환경을 직접 빌드하며, backend/frontend artifact를 기다리지 않는다. frontend build/bundle과 unit/coverage도 서로 산출물을 소비하지 않으므로 분류 직후 별도 source로 시작하고 `frontend-build`가 둘을 모두 집계한다. `migration-test-scope`도 분류 직후 세 leaf를 시작하고 `migration-scope`가 세 결과와 증거를 합친다. `backend-build`는 온라인 `backend-scope`, 병렬 `backend-schema-scope`, 집계된 `migration-scope`, 영향받는 재사용 profile×layout과 core 영향 시 별도 custom×layout 결과를 각각 검사한다. E2E/PIT가 먼저 성공해도 선택된 다른 required 검사의 실패를 상쇄하지 못한다. CodeQL은 소스 변경에서 Java·JavaScript/TypeScript 양언어 분석을 유지한다.
 
-이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 성공한 Linux run의
-JUnit XML에서 발견한 123개 소스 테스트 클래스를 정확히 덮고, 측정 시간을 LPT 방식으로 41개씩 나눈다. 각 leaf는
+이관 테스트 분할의 입력은 [duration profile](../../config/migration-test-duration-profile.json)이다. 소스 테스트 클래스
+전부(현재 수는 [이관 검증 계약](../../scripts/migration-verification-contract.test.mjs)이 고정한다)를 정확히 덮고, 시간을
+LPT 방식으로 세 shard 에 나눈다 — 세 shard 합의 차는 1ms 이하여야 한다. 프로필의 `source` 는 마지막으로 시간을 잰 성공한
+Linux run 이다. 그 뒤 더한 클래스의 값은 그 run 의 측정이 아니라 로컬 실측이나 균형을 맞춘 추정이며, 다음 CI 실측 때
+그 run 의 JUnit XML 로 다시 잰다. 각 leaf는
 실제 XML 클래스 census와 manifest를 확인한 뒤 `.exec`를 보존한다. aggregate는 세 manifest의 좌표·클래스·측정
 commit, 각 leaf의 XML census, 정확히 세 개의 비어 있지 않은 `.exec`를 다시 확인한다. 그 후에만 기존 LINE 85%·
 BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 새 테스트나 stale 테스트, leaf 누락, 빈 실행 데이터는

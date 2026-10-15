@@ -1,5 +1,6 @@
 package nuri.migration.validate.ledger;
 
+import nuri.migration.discovery.CatalogObject;
 import nuri.migration.domain.DomainCategory;
 import nuri.migration.domain.DomainViolation;
 import nuri.migration.model.MappingSpec;
@@ -7,6 +8,7 @@ import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import nuri.migration.validate.ledger.TermLedger.Load;
 
+import java.sql.Types;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -52,6 +54,16 @@ public final class LoadCapabilities {
     /** 표준 도메인 변환기가 아닌 내장 날짜·일시 파서. 읽지 못한 문자는 {@code FORMAT} 으로 멈춘다. */
     private static final Set<String> PARSERS = Set.of("date", "timestamp");
     private static final Set<String> TEMPORAL_TYPES = Set.of("date", "timestamp", "datetime");
+    /**
+     * 고정 길이 문자 소스의 codemap 앞에 trim 이 없을 때의 사유(ADR-0029 L4-B R3). 생성기와 coverage 가 같은 문구를 쓴다.
+     */
+    public static final String FIXED_WIDTH_TRIM_REQUIRED = "고정 길이 문자(CHAR·NCHAR) 소스의 codemap 앞에는"
+            + " transform: trim 이 필요합니다 — 공백으로 채운 값은 codemap 키와 맞지 않아, unmapped: fail 이면 실행에서"
+            + " CODEMAP_UNMAPPED 로 멈추고 passthrough·fallback 이면 그 값이 그대로 가거나 대체값이 됩니다(적합성 추정은"
+            + " 공백을 깎아 셉니다)";
+    /** 드라이버가 알리는 고정 길이 문자 타입 이름(정밀도 표기를 뺀 소문자). PostgreSQL 은 {@code bpchar} 로 알린다. */
+    private static final Set<String> FIXED_WIDTH_CHARACTER = Set.of("char", "nchar", "bpchar", "character",
+            "national char", "national character");
     /** fkRef 컬럼이 받는 키 정규화 변환기 — CHAR 공백 채움 자식 키를 VARCHAR 부모 키와 맞출 때 쓴다. */
     private static final Set<String> KEY_TRANSFORMS = Set.of("trim", "upper", "lower");
     private static final Set<DomainViolation> NULLIFY_CODES = EnumSet.of(DomainViolation.BLANK,
@@ -234,6 +246,41 @@ public final class LoadCapabilities {
                 && (load.transform() == null || KEY_TRANSFORMS.contains(load.transform()))
                 && (load.type() == null
                 || (TypeConverter.isKnown(load.type()) && !TypeConverter.isNonTextType(load.type())));
+    }
+
+    /**
+     * 고정 길이 문자 소스의 codemap 이 공백을 깎지 않고 대조하는가(ADR-0029 L4-B R3) — codemap 이 있고 transform 이
+     * {@code trim} 이 아니며 소스가 {@link #fixedWidthCharacter} 다. 표준 도메인 변환기는 원장이 codemap 과 함께 쓰지 못하게
+     * 하므로 공백을 깎는 앞 처리는 trim 하나다. 생성기(원장 load)와 coverage(mapping 컬럼)가 같은 판정을 쓴다 — 생성기를 거치지
+     * 않은 mapping 도 plan·load 에서 막힌다.
+     */
+    public static boolean untrimmedFixedWidthCodemap(String transform, String codemap, CatalogObject sourceColumn) {
+        return codemap != null && !"trim".equals(transform) && fixedWidthCharacter(sourceColumn);
+    }
+
+    /**
+     * inventory 원래 타입이 공백으로 채워 오는 고정 길이 문자인가. 드라이버가 알린 타입 이름({@code nativeType})으로 정하고,
+     * 이름이 없을 때만 JDBC 타입(CHAR·NCHAR)으로 정한다 — SQL Server {@code uniqueidentifier}·MySQL {@code ENUM} 처럼 JDBC
+     * CHAR 로 알리지만 공백을 채우지 않는 타입은 이름으로 가린다. 선언 길이({@code size})가 1 이면 아니다 — 값이 있으면 늘 꽉
+     * 차서 공백이 붙지 않고, 공백 하나뿐인 값은 trim 해도 codemap 키와 맞지 않는다. MySQL·MariaDB 는 기본 설정에서 조회 때 끝
+     * 공백을 지우지만 세션 sql_mode({@code PAD_CHAR_TO_FULL_LENGTH})를 inventory 가 담지 않아 다른 vendor 와 같이 본다.
+     */
+    static boolean fixedWidthCharacter(CatalogObject column) {
+        if (column == null) {
+            return false;
+        }
+        String size = column.attributes().get("size");
+        if (size != null && size.trim().equals("1")) {
+            return false;
+        }
+        String nativeType = column.attributes().get("nativeType");
+        if (nativeType != null && !nativeType.isBlank()) {
+            String type = nativeType.toLowerCase(Locale.ROOT).replaceAll("\\(.*\\)", " ").replaceAll("\\s+", " ")
+                    .trim();
+            return FIXED_WIDTH_CHARACTER.contains(type);
+        }
+        String jdbcType = column.attributes().get("jdbcType");
+        return String.valueOf(Types.CHAR).equals(jdbcType) || String.valueOf(Types.NCHAR).equals(jdbcType);
     }
 
     /** 값을 정해진 규칙으로 바꾸는 load 인가 — 시각 버림·자정 붙임 변환기나 nullify. 원장 사유(note)가 필요하다. */

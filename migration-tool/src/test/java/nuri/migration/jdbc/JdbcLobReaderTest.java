@@ -10,11 +10,15 @@ import java.io.StringReader;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.TimeZone;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -90,6 +94,131 @@ class JdbcLobReaderTest {
         when(result.getObject(1)).thenReturn("uuid");
         assertThat(JdbcLobReader.read(result, 1, true)).isEqualTo("uuid");
         verify(result, never()).getCharacterStream(1);
+    }
+
+    /**
+     * ADR-0029 L4-B R1 — Oracle {@code TIMESTAMP(n)} 은 {@code getObject} 로 {@code oracle.sql.TIMESTAMP} 를 준다. 본 읽기·
+     * 정렬 경계·자기참조 키·프로파일러가 같은 {@link JdbcLobReader#scalar} 로 드라이버가 준 지역 일시를 {@link Timestamp} 로
+     * 받아야 도메인 변환기·보관 덤프가 시각으로 판정하고 정렬 digest 가 같은 표기를 본다.
+     */
+    @Test
+    void driverSpecificTimestampObjectsAreReadAsJdbcTimestampsOnEveryReadPath() throws Exception {
+        LocalDateTime local = LocalDateTime.of(2024, 1, 31, 13, 45, 10, 123456000);
+        for (boolean bounded : new boolean[]{false, true}) {
+            ResultSet result = driverSpecificTimestamp("TIMESTAMP");
+            when(result.getObject(1, LocalDateTime.class)).thenReturn(local, local, null);
+            when(result.getObject(1)).thenReturn(new Object());
+            assertThat(JdbcLobReader.read(result, 1, bounded)).isEqualTo(Timestamp.valueOf(local));
+            assertThat(JdbcLobReader.scalar(result, 1)).isEqualTo(Timestamp.valueOf(local));
+            assertThat(JdbcLobReader.read(result, 1, bounded)).isNull();
+            verify(result, never()).getObject(1);
+            verify(result, never()).getTimestamp(1);
+        }
+    }
+
+    /**
+     * JVM 기본 시간대에 없는 지역 일시(일광절약 간격)는 {@link Timestamp} 로 바꾸면 한 시간 밀린다 — 정렬 키라면 keyset 커서가
+     * 그 사이 행을 건너뛴다. 바꾸지 않고 고정 사유로 멈춘다. 간격 밖의 같은 날 시각과 고정 오프셋 시간대는 그대로 읽는다.
+     */
+    @Test
+    void aLocalTimestampInsideTheJvmZoneGapStopsTheReadInsteadOfShiftingAnHour() throws Exception {
+        LocalDateTime gap = LocalDateTime.of(1987, 5, 10, 2, 30);
+        LocalDateTime outside = LocalDateTime.of(1987, 5, 10, 4, 30);
+        TimeZone original = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+            assertThat(Timestamp.valueOf(gap).toLocalDateTime()).as("Timestamp 가 간격 안 시각을 민다(전제)")
+                    .isNotEqualTo(gap);
+            for (boolean bounded : new boolean[]{false, true}) {
+                ResultSet result = driverSpecificTimestamp("TIMESTAMP");
+                when(result.getObject(1, LocalDateTime.class)).thenReturn(gap, outside);
+                assertThatThrownBy(() -> JdbcLobReader.read(result, 1, bounded))
+                        .isInstanceOf(JdbcLobReader.ContentReadException.class)
+                        .hasMessage("LOCAL_TIMESTAMP_IN_ZONE_GAP");
+                assertThat(((Timestamp) JdbcLobReader.scalar(result, 1)).toLocalDateTime()).isEqualTo(outside);
+            }
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            ResultSet fixed = driverSpecificTimestamp("TIMESTAMP");
+            when(fixed.getObject(1, LocalDateTime.class)).thenReturn(gap);
+            assertThat(((Timestamp) JdbcLobReader.scalar(fixed, 1)).toLocalDateTime()).isEqualTo(gap);
+        } finally {
+            TimeZone.setDefault(original);
+        }
+    }
+
+    /**
+     * 지역 일시를 주지 못하는 드라이버, 값 클래스·타입 이름을 알리지 못하는 드라이버, 이름이 시간대를 말하는 타입은
+     * {@code getObject} 그대로다 — L4-B 전과 같고 오프셋을 잃지 않는다.
+     */
+    @Test
+    void driversThatCannotProveALocalTimestampKeepTheirObject() throws Exception {
+        Object driverObject = new Object();
+        ResultSet noLocal = driverSpecificTimestamp("TIMESTAMP");
+        when(noLocal.getObject(1, LocalDateTime.class)).thenThrow(new SQLFeatureNotSupportedException());
+        when(noLocal.getObject(1)).thenReturn(driverObject);
+        assertThat(JdbcLobReader.scalar(noLocal, 1)).isSameAs(driverObject);
+
+        ResultSet noClass = longResult(Types.TIMESTAMP);
+        when(noClass.getMetaData().getColumnClassName(1)).thenThrow(new SQLFeatureNotSupportedException());
+        when(noClass.getObject(1)).thenReturn(driverObject);
+        assertThat(JdbcLobReader.scalar(noClass, 1)).isSameAs(driverObject);
+
+        ResultSet noTypeName = longResult(Types.TIMESTAMP);
+        when(noTypeName.getMetaData().getColumnClassName(1)).thenReturn("vendor.sql.TIMESTAMP");
+        when(noTypeName.getMetaData().getColumnTypeName(1)).thenThrow(new SQLFeatureNotSupportedException());
+        when(noTypeName.getObject(1)).thenReturn(driverObject);
+        assertThat(JdbcLobReader.scalar(noTypeName, 1)).isSameAs(driverObject);
+
+        for (String zoned : new String[]{"TIMESTAMP WITH TIME ZONE", "datetimetz", "TIMESTAMPTZ"}) {
+            ResultSet result = driverSpecificTimestamp(zoned);
+            when(result.getObject(1)).thenReturn(driverObject);
+            assertThat(JdbcLobReader.scalar(result, 1)).as(zoned).isSameAs(driverObject);
+            verify(result, never()).getObject(1, LocalDateTime.class);
+        }
+    }
+
+    /**
+     * 지역 일시 변환을 미지원({@link SQLFeatureNotSupportedException})이 아닌 다른 오류로 거절하는 드라이버는 {@code getObject} 로
+     * 물러나지 않고 고정 사유로 멈춘다 — 값마다 표기가 갈리면 정렬 digest·keyset 커서가 어긋난다. 드라이버 문구는 싣지 않는다.
+     */
+    @Test
+    void aDriverThatRejectsTheLocalTimestampConversionStopsWithAFixedReason() throws Exception {
+        for (boolean bounded : new boolean[]{false, true}) {
+            ResultSet result = driverSpecificTimestamp("TIMESTAMP");
+            when(result.getObject(1, LocalDateTime.class))
+                    .thenThrow(new SQLException("Unsupported conversion of 2024-01-31", "99999"));
+            when(result.getObject(1)).thenReturn(new Object());
+            assertThatThrownBy(() -> JdbcLobReader.read(result, 1, bounded))
+                    .isInstanceOf(JdbcLobReader.ContentReadException.class)
+                    .hasMessage("LOCAL_TIMESTAMP_READ_FAILED");
+            assertThatThrownBy(() -> JdbcLobReader.scalar(result, 1))
+                    .isInstanceOf(JdbcLobReader.ContentReadException.class)
+                    .hasMessage("LOCAL_TIMESTAMP_READ_FAILED");
+            verify(result, never()).getObject(1);
+        }
+    }
+
+    /** {@code java.} 클래스로 알리는 값과 클래스를 알리지 않는 드라이버, TIMESTAMP 밖 시각 타입은 getObject 그대로다. */
+    @Test
+    void javaReportedTimestampsAndOtherTemporalTypesKeepTheirObject() throws Exception {
+        Object localDateTime = LocalDateTime.of(2024, 1, 31, 13, 45, 10);
+        Object timestamp = Timestamp.valueOf("2024-01-31 13:45:10");
+        Object[][] cases = {
+                {Types.TIMESTAMP, "java.time.LocalDateTime", localDateTime},
+                {Types.TIMESTAMP, "java.sql.Timestamp", timestamp},
+                {Types.TIMESTAMP, null, timestamp},
+                {Types.DATE, "oracle.sql.DATE", timestamp},
+                {Types.TIMESTAMP_WITH_TIMEZONE, "oracle.sql.TIMESTAMPTZ", timestamp},
+                {-101, "oracle.sql.TIMESTAMPTZ", timestamp}};
+        for (Object[] scenario : cases) {
+            ResultSet result = longResult((Integer) scenario[0]);
+            when(result.getMetaData().getColumnClassName(1)).thenReturn((String) scenario[1]);
+            when(result.getObject(1)).thenReturn(scenario[2]);
+            assertThat(JdbcLobReader.read(result, 1, false)).isSameAs(scenario[2]);
+            assertThat(JdbcLobReader.scalar(result, 1)).isSameAs(scenario[2]);
+            verify(result, never()).getTimestamp(1);
+            verify(result, never()).getObject(1, LocalDateTime.class);
+        }
     }
 
     @Test
@@ -316,6 +445,14 @@ class JdbcLobReaderTest {
         ResultSetMetaData metadata = mock(ResultSetMetaData.class);
         when(result.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnType(1)).thenReturn(type);
+        return result;
+    }
+
+    /** Oracle {@code TIMESTAMP(n)} 처럼 JDBC TIMESTAMP 를 드라이버 고유 클래스로 알리는 열. */
+    private static ResultSet driverSpecificTimestamp(String typeName) throws SQLException {
+        ResultSet result = longResult(Types.TIMESTAMP);
+        when(result.getMetaData().getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+        when(result.getMetaData().getColumnTypeName(1)).thenReturn(typeName);
         return result;
     }
 

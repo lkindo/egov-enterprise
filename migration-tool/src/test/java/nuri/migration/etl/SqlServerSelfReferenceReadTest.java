@@ -18,7 +18,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,7 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-/** Self-reference key reservation must apply the same SQL Server MAX bound as row reads. */
+/**
+ * Self-reference key reservation must apply the same SQL Server MAX bound and the same scalar value reading as row
+ * reads.
+ */
 class SqlServerSelfReferenceReadTest {
     private static final String SOURCE_TABLE = "dbo.tb_self_reference";
     private static final String KEY_SQL = "SELECT legacy_key FROM " + SOURCE_TABLE + " ORDER BY legacy_key";
@@ -86,6 +91,9 @@ class SqlServerSelfReferenceReadTest {
         when(source.prepareStatement(KEY_SQL)).thenReturn(statement);
         when(statement.executeQuery()).thenReturn(rows);
         when(rows.next()).thenReturn(true, false);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(rows.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnType(1)).thenReturn(Types.VARCHAR);
         when(rows.getObject(1)).thenReturn("tiny-source-key");
         var registry = new KeyMapRegistry("self-reference-unit", "synthetic-source");
 
@@ -94,12 +102,42 @@ class SqlServerSelfReferenceReadTest {
         assertThat(registry.translate(SOURCE_TABLE, "tiny-source-key")).startsWith("TEST_");
         assertThat(registry.hasPending()).isFalse();
         verify(rows).getObject(1);
-        verify(rows, never()).getMetaData();
+        verify(rows, never()).getTimestamp(anyInt());
         verify(rows, never()).getCharacterStream(anyInt());
+        verify(rows, never()).getBinaryStream(anyInt());
         verify(rows).close();
         verify(statement).close();
         verify(statement).setFetchSize(1);
         verify(source, never()).prepareStatement(anyString(), anyInt(), anyInt());
+    }
+
+    /**
+     * ADR-0029 L4-B R1 — 자기참조 키도 본 읽기와 같은 {@link JdbcLobReader#scalar} 로 읽는다. Oracle {@code TIMESTAMP(n)}
+     * 키는 {@code oracle.sql.TIMESTAMP} 가 아니라 {@link Timestamp} 의 표기로 예약해야 본 읽기의 fkRef 가 같은 키를 찾는다.
+     */
+    @Test
+    void driverSpecificTimestampSelfReferenceKeysAreReservedFromTheJdbcTimestamp() throws Exception {
+        Connection source = sourceConnection("Oracle", "Oracle JDBC driver");
+        PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet rows = mock(ResultSet.class);
+        when(source.prepareStatement(KEY_SQL)).thenReturn(statement);
+        when(statement.executeQuery()).thenReturn(rows);
+        when(rows.next()).thenReturn(true, false);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(rows.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnType(1)).thenReturn(Types.TIMESTAMP);
+        when(metadata.getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+        when(metadata.getColumnTypeName(1)).thenReturn("TIMESTAMP");
+        Timestamp key = Timestamp.valueOf("2024-01-31 13:45:10.123456");
+        when(rows.getObject(1, LocalDateTime.class)).thenReturn(key.toLocalDateTime());
+        when(rows.getObject(1)).thenThrow(new AssertionError("driver-specific timestamps must not reach getObject"));
+        var registry = new KeyMapRegistry("self-reference-unit", "synthetic-source");
+
+        preMint(source, null, registry);
+
+        assertThat(registry.translate(SOURCE_TABLE, key.toString())).startsWith("TEST_");
+        verify(rows, never()).getObject(anyInt());
+        verify(rows, never()).getTimestamp(anyInt());
     }
 
     private static Connection sourceConnection(String product, String driver) throws SQLException {
