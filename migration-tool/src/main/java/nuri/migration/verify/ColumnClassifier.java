@@ -26,17 +26,24 @@ import java.util.Set;
  *   <li>fkRef·조회·생성 키 — 값 검사를 하지 않는다. at_most_one 조회는 대상 NULL 하한만 본다.</li>
  *   <li>원천 타입 모름·LOB·지원하지 않는 타입 — NULL 계정·표본을 하지 않는다.</li>
  *   <li>사용자 변환기 — NULL 보존을 가정하지 못해 NULL 계정·표본을 하지 않는다.</li>
- *   <li>그 밖 — NULL 계정을 한다. 정확 수치·시간대 없는 날짜일시를 변환 없이 같은 종류로 옮기면 합·최소최대를 한다.</li>
+ *   <li>그 밖 — NULL 계정을 한다. 정확 수치·시간대 없는 날짜일시를 변환 없이 같은 종류로 옮기면 합·최소최대를 한다.
+ *       부동소수(Oracle BINARY_FLOAT·BINARY_DOUBLE 포함)는 합·최소최대를 {@link CoverageReason#FLOAT} 로, 값을 바꾸지 않는
+ *       {@code type} 이 날짜와 일시의 종류만 바꾸면(Oracle DATE 를 {@code type: date} 로 date 에, DATE 를
+ *       {@code type: timestamp} 로 timestamp 에) 최소최대를 {@link CoverageReason#UNSUPPORTED_VALUE_TYPE} 로 남긴다.</li>
  * </ol>
  * <p>형식 도메인(YMD8·YMDHMS14·HMS6·YN)은 대상만 보는 검사라 암호화가 아니면 언제나 판정한다. 판정하지 않는 검사는 그 검사가
  * 이 컬럼에 쓰일 수 있을 때만 사유로 남긴다.</p>
  */
 public final class ColumnClassifier {
 
+    /** Oracle 드라이버가 BINARY_FLOAT·BINARY_DOUBLE 에 알리는 고유 JDBC 타입(OracleTypes 100·101). */
+    private static final int ORACLE_BINARY_FLOAT = 100;
+    private static final int ORACLE_BINARY_DOUBLE = 101;
     private static final Set<Integer> INTEGRAL = Set.of(Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT);
     private static final Set<Integer> EXACT = Set.of(Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT,
             Types.DECIMAL, Types.NUMERIC);
-    private static final Set<Integer> FLOATING = Set.of(Types.FLOAT, Types.REAL, Types.DOUBLE);
+    private static final Set<Integer> FLOATING = Set.of(Types.FLOAT, Types.REAL, Types.DOUBLE, ORACLE_BINARY_FLOAT,
+            ORACLE_BINARY_DOUBLE);
     private static final Set<Integer> LOB = Set.of(Types.BLOB, Types.CLOB, Types.NCLOB, Types.LONGVARBINARY,
             Types.LONGVARCHAR, Types.LONGNVARCHAR, Types.BINARY, Types.VARBINARY);
     private static final Set<Integer> UNSUPPORTED = Set.of(Types.SQLXML, Types.ARRAY, Types.STRUCT, Types.OTHER,
@@ -172,6 +179,9 @@ public final class ColumnClassifier {
                 && (facts.transformKind() == TransformKind.NONE || facts.transformKind() == TransformKind.BUILTIN)) {
             gaps.add(new Gap(ReconciliationCheck.SUM, CoverageReason.TEXT_DEFERRED));
             gaps.add(new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.TEXT_DEFERRED));
+        } else if (aggregate == Aggregate.NONE && temporalKindOnlyChanges(facts, codemap)) {
+            // 값은 그대로인데 날짜와 일시의 종류가 달라 원천·대상 최소최대를 같은 종류로 비교하지 못한다.
+            gaps.add(new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.UNSUPPORTED_VALUE_TYPE));
         }
         boolean sampled = !custom && !facts.nullify();
         return new ColumnCheck(target, source, sourceType, aggregate, !custom, code, codemap, nullFallbackable,
@@ -233,6 +243,29 @@ public final class ColumnClassifier {
                     ? Aggregate.TEMPORAL : Aggregate.NONE;
         }
         return Aggregate.NONE;
+    }
+
+    /**
+     * 값을 바꾸지 않는 {@code type} 이 날짜와 일시의 종류만 바꾸는가 — 일시 원천(Oracle DATE 도 JDBC TIMESTAMP 다)을
+     * {@code type: date}(자정이 아닌 시각은 거부한다)로 date 에, 날짜 원천을 {@code type: timestamp}·{@code datetime} 으로
+     * timestamp 에 옮긴다. 원천 최소최대(일시·날짜)와 대상 최소최대(날짜·일시)는 같은 종류로 비교하지 못한다.
+     */
+    private static boolean temporalKindOnlyChanges(ColumnFacts facts, String codemap) {
+        SourceColumnType source = facts.sourceType();
+        ColumnContract target = facts.target();
+        if (facts.origin() != Origin.SOURCE || source == null || target == null || facts.type() == null
+                || facts.transformKind() != TransformKind.NONE || codemap != null) {
+            return false;
+        }
+        String type = facts.type().toLowerCase(Locale.ROOT);
+        if (source.jdbcType() == Types.TIMESTAMP) {
+            return type.equals("date") && target.dataType().equals("date");
+        }
+        if (source.jdbcType() == Types.DATE) {
+            return (type.equals("timestamp") || type.equals("datetime"))
+                    && target.dataType().equals("timestamp without time zone");
+        }
+        return false;
     }
 
     /** 대상이 문자형이고 표준 용어의 도메인이 형식 도메인이면 그 범주. 아니면 null. */

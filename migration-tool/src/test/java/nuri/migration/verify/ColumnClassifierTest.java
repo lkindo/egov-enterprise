@@ -95,6 +95,58 @@ class ColumnClassifierTest {
     }
 
     @Test
+    @DisplayName("Oracle BINARY_FLOAT·BINARY_DOUBLE(고유 JDBC 타입 100·101)도 부동소수로 판정해 사유를 남긴다")
+    void oracleBinaryFloatingIsFloat() {
+        for (int jdbcType : new int[] {100, 101}) {
+            ColumnCheck check = ColumnClassifier.classify(facts()
+                    .source("RATE", new SourceColumnType(jdbcType, "BINARY", 0L, null))
+                    .target(contract("double precision")).build());
+
+            assertThat(check.aggregate()).isEqualTo(Aggregate.NONE);
+            assertThat(check.nonNull()).isTrue();
+            assertThat(check.sampled()).isTrue();
+            assertThat(check.gaps()).as("JDBC 타입 " + jdbcType).containsExactly(
+                    new Gap(ReconciliationCheck.SUM, CoverageReason.FLOAT),
+                    new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.FLOAT));
+        }
+        assertThat(ColumnClassifier.classify(facts().source("RATE", new SourceColumnType(101, "BINARY_DOUBLE", 0L,
+                        null)).lookup("rate", false).build()).gaps())
+                .as("조회 컬럼도 합·최소최대 사유를 남긴다")
+                .contains(new Gap(ReconciliationCheck.SUM, CoverageReason.LOOKUP),
+                        new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.LOOKUP));
+    }
+
+    @Test
+    @DisplayName("type 이 날짜와 일시의 종류만 바꾸면 최소최대를 UNSUPPORTED_VALUE_TYPE 으로 남긴다")
+    void temporalKindChangeIsRecorded() {
+        // Oracle DATE 는 inventory 에 JDBC TIMESTAMP 로 온다 — type: date(자정만 받는다)로 date 에 옮긴다.
+        ColumnCheck oracleDate = ColumnClassifier.classify(facts().source("D", TIMESTAMP).type("date")
+                .target(contract("date")).build());
+        assertThat(oracleDate.aggregate()).isEqualTo(Aggregate.NONE);
+        assertThat(oracleDate.nonNull()).isTrue();
+        assertThat(oracleDate.sampled()).isTrue();
+        assertThat(oracleDate.gaps()).containsExactly(
+                new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.UNSUPPORTED_VALUE_TYPE));
+        assertThat(ColumnClassifier.classify(facts().source("D", DATE).type("timestamp")
+                .target(contract("timestamp without time zone")).build()).gaps())
+                .containsExactly(new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.UNSUPPORTED_VALUE_TYPE));
+        assertThat(ColumnClassifier.classify(facts().source("D", DATE).type("datetime")
+                .target(contract("timestamp without time zone")).build()).gaps())
+                .containsExactly(new Gap(ReconciliationCheck.MIN_MAX, CoverageReason.UNSUPPORTED_VALUE_TYPE));
+        // 대조군 — 값이 바뀔 수 있는 옮김(type 없는 일시→날짜)과 같은 종류, 변환기·codemap, 계약 없음은 사유를 더하지 않는다.
+        assertThat(ColumnClassifier.classify(facts().source("T", TIMESTAMP).target(contract("date")).build()).gaps())
+                .isEmpty();
+        assertThat(ColumnClassifier.classify(facts().source("D", DATE).type("date").target(contract("date"))
+                .build()).gaps()).isEmpty();
+        assertThat(ColumnClassifier.classify(facts().source("T", TIMESTAMP).type("date")
+                .transform("ymd8-truncate", TransformKind.DOMAIN).target(contract("date")).build()).gaps()).isEmpty();
+        assertThat(ColumnClassifier.classify(facts().source("T", TIMESTAMP).type("date").build()).gaps())
+                .as("계약을 읽지 않았으면 사유 없이 생략한다").isEmpty();
+        assertThat(ColumnClassifier.classify(facts().source("D", DATE).type("timestamp").target(contract("date"))
+                .build()).gaps()).isEmpty();
+    }
+
+    @Test
     @DisplayName("문자 직접 컬럼은 합·최소최대를 TEXT_DEFERRED 로 미룬다")
     void textDirectIsDeferred() {
         ColumnCheck check = ColumnClassifier.classify(facts().source("NM", VARCHAR)
