@@ -242,6 +242,34 @@ public final class LoadCapabilities {
                 || !load.nullify().isEmpty());
     }
 
+    /**
+     * 확정 행이 mapping 컬럼에 옮길 승인 행 격리(ADR-0029 L3b). 승인 예외의 위반 가운데 load 의 nullify 가 NULL 로 바꾸는
+     * 위반은 행이 실패하지 않으므로 뺀다. 남는 위반이 없거나 승인 예외가 없으면 null 이다. 생성기와 coverage 가 같은
+     * 판정을 쓴다 — 원장 순서를 그대로 둬 같은 원장은 같은 mapping 을 낸다.
+     */
+    public static MappingSpec.Isolate isolate(TermLedger.Entry entry) {
+        if (entry == null || entry.conformance() == null || entry.conformance().approvedExceptions() == null) {
+            return null;
+        }
+        TermLedger.ApprovedExceptions approved = entry.conformance().approvedExceptions();
+        List<String> violations = approved.violations().stream()
+                .filter(code -> !nullifies(entry.load(), code))
+                .toList();
+        return violations.isEmpty() ? null : new MappingSpec.Isolate(entry.id(), approved.maxRows(), violations);
+    }
+
+    private static boolean nullifies(Load load, String code) {
+        if (load == null || code == null) {
+            return false;
+        }
+        for (MappingSpec.Nullify rule : load.nullify()) {
+            if (rule.violation() != null && rule.violation().name().equals(code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** load 가 nullify 를 선언했는가. */
     static boolean nullified(Load load, DomainViolation violation) {
         if (load == null) {

@@ -30,19 +30,26 @@ public record MappingSpec(
         List<TableMapping> tables,
         Map<String, CodeMap> codemaps,
         RunContext run,
-        @JsonInclude(JsonInclude.Include.NON_NULL) LedgerBinding ledger
+        @JsonInclude(JsonInclude.Include.NON_NULL) LedgerBinding ledger,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) List<ArchiveDump> archives
 ) {
 
     /** 기존 dry-run/단위 테스트 호환 생성자. COMMIT은 명시적 run 계약을 별도로 강제한다. */
     public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
                        Map<String, CodeMap> codemaps) {
-        this(source, target, tables, codemaps, null, null);
+        this(source, target, tables, codemaps, null, null, List.of());
     }
 
     /** 용어 매핑 원장 도입 전 생성자 호환. 원장이 없으면 mapping 의미와 digest 가 그대로다. */
     public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
                        Map<String, CodeMap> codemaps, RunContext run) {
-        this(source, target, tables, codemaps, run, null);
+        this(source, target, tables, codemaps, run, null, List.of());
+    }
+
+    /** 외부 보관 덤프 도입 전 생성자 호환. 보관 선언이 없으면 mapping 의미와 digest 가 그대로다. */
+    public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
+                       Map<String, CodeMap> codemaps, RunContext run, LedgerBinding ledger) {
+        this(source, target, tables, codemaps, run, ledger, List.of());
     }
 
     /**
@@ -55,6 +62,123 @@ public record MappingSpec(
     public MappingSpec {
         tables = tables == null ? List.of() : tables;
         codemaps = codemaps == null ? Map.of() : codemaps;
+        // null 항목은 그대로 두고 검증이 위치와 함께 거부한다(tables 와 같다).
+        archives = archives == null ? List.of() : archives;
+    }
+
+    /**
+     * 보관 선언의 {@code source} 를 읽는 표 매핑 — 같은 source 표기(앞뒤 공백·대소문자 무시)의 표 매핑이다. 없으면 null 이고,
+     * 그 보관은 덤프만 하는 표다(ADR-0029 L3e). 같은 표를 다른 표기로 적었는지는 원장 coverage 가 inventory 로 따로 본다.
+     *
+     * <p>[ADR-0029 L3c] 한 소스를 여러 매핑이 나눠 읽으면 보관 컬럼은 keymap 소유 매핑(idStrategy·typed identity)의 읽기에,
+     * 소유 매핑이 없으면 id 를 생략한 매핑의 읽기에 붙인다. 둘 다 없으면 선언 순서의 첫 매핑을 돌려주고, 그런 보관 선언은
+     * mapping 검증이 거부한다({@link #archiveReaderAmbiguous}).</p>
+     */
+    public TableMapping mappedTableOf(String archiveSource) {
+        List<TableMapping> readers = archiveReaders(archiveSource);
+        if (readers.isEmpty()) {
+            return null;
+        }
+        if (readers.size() == 1) {
+            return readers.getFirst();
+        }
+        for (TableMapping table : readers) {
+            if (table.ownsKeyMap()) {
+                return table;
+            }
+        }
+        for (TableMapping table : readers) {
+            if (table.id() == null) {
+                return table;
+            }
+        }
+        return readers.getFirst();
+    }
+
+    /**
+     * 보관 선언의 {@code source} 를 여러 매핑이 나눠 읽는데 keymap 소유 매핑도 id 를 생략한 매핑도 없어 보관 컬럼을 붙일 읽기를
+     * 정할 수 없는가(ADR-0029 L3c·L3e).
+     */
+    public boolean archiveReaderAmbiguous(String archiveSource) {
+        List<TableMapping> readers = archiveReaders(archiveSource);
+        return readers.size() > 1
+                && readers.stream().noneMatch(table -> table.ownsKeyMap() || table.id() == null);
+    }
+
+    private List<TableMapping> archiveReaders(String archiveSource) {
+        if (archiveSource == null || archiveSource.isBlank()) {
+            return List.of();
+        }
+        String wanted = archiveSource.trim().toLowerCase(Locale.ROOT);
+        List<TableMapping> readers = new ArrayList<>(1);
+        for (TableMapping table : tables) {
+            if (table != null && table.source() != null && table.source().trim().toLowerCase(Locale.ROOT).equals(wanted)) {
+                readers.add(table);
+            }
+        }
+        return readers;
+    }
+
+    /**
+     * 외부 보관 덤프 선언 한 건(ADR-0029 L3e). COMMIT load 가 적재와 같은 원천 읽기 세션 안에서 {@code source} 표의
+     * {@code columns} 원시 값을 정렬 키와 함께 덤프 파일에 쓰고, 기관이 {@code retainUntil}(yyyy-MM-dd)까지 보관한다.
+     * {@code ledgerEntries} 는 {@code columns} 와 같은 순서의 원장 외부 보관(ARCHIVE) 행 ID 다. mapping-generate 가 원장
+     * ARCHIVE 행을 (소스 표, 보존 기한) 으로 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다.
+     *
+     * <p>{@code source} 를 표 매핑이 읽으면(매핑된 표) 그 매핑의 where·정렬 키를 그대로 쓰고 읽는 행을 모두 덤프한다 —
+     * 보관 선언에 {@code where}·{@code orderByKeys} 를 따로 두면 오류다. 덤프만 하는 표는 skeleton 의 {@code orderByKeys}
+     * (필수)·{@code where}(선택)를 받는다. 빈 칸은 직렬화하지 않는다.</p>
+     */
+    public record ArchiveDump(
+            String id,
+            String source,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String where,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> orderByKeys,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> columns,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ledgerEntries,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String retainUntil) {
+
+        public ArchiveDump {
+            orderByKeys = orderByKeys == null ? List.of() : List.copyOf(orderByKeys);
+            columns = columns == null ? List.of() : List.copyOf(columns);
+            ledgerEntries = ledgerEntries == null ? List.of() : List.copyOf(ledgerEntries);
+        }
+
+        /**
+         * mapping.yml 의 보관 선언 한 건을 읽는다. 이름·기한은 문자로만, 목록은 문자의 목록으로만 받는다 —
+         * {@code columns: [1]}·{@code retainUntil: 20311231} 처럼 검토자가 본 글자와 승인 digest 가 뜻하는 값이 갈리는
+         * 표기를 거부한다. 없는 필드는 비워 두고 검증이 거부한다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static ArchiveDump fromMapping(@JsonProperty("id") Object id,
+                                              @JsonProperty("source") Object source,
+                                              @JsonProperty("where") Object where,
+                                              @JsonProperty("orderByKeys") Object orderByKeys,
+                                              @JsonProperty("columns") Object columns,
+                                              @JsonProperty("ledgerEntries") Object ledgerEntries,
+                                              @JsonProperty("retainUntil") Object retainUntil) {
+            return new ArchiveDump(text(id), text(source), text(where), names(orderByKeys), names(columns),
+                    names(ledgerEntries), text(retainUntil));
+        }
+
+        private static String text(Object raw) {
+            if (raw == null || raw instanceof String) {
+                return (String) raw;
+            }
+            throw new IllegalArgumentException("archives 의 id·source·where·retainUntil 은 따옴표로 감쌀 수 있는 문자여야"
+                    + " 합니다");
+        }
+
+        private static List<String> names(Object raw) {
+            if (raw == null) {
+                return List.of();
+            }
+            if (raw instanceof List<?> list && list.stream().allMatch(String.class::isInstance)) {
+                return list.stream().map(String.class::cast).toList();
+            }
+            throw new IllegalArgumentException("archives 의 orderByKeys·columns·ledgerEntries 는 이름 문자의 목록이어야"
+                    + " 합니다");
+        }
     }
 
     /** JDBC 접속 정보(소스/타깃 공통). */
@@ -206,6 +330,9 @@ public record MappingSpec(
      * <p>{@code nullify}(ADR-0029 L3a-1)는 표준 도메인 변환기나 비문자 {@code type} 이 거부한 값 가운데 선언한 위반
      * ({@code BLANK}·{@code PLACEHOLDER_DATE})만 NULL 로 바꾸는 규칙이다. 위반마다 {@code maxRows} 상한을 두고, 표 전체에서
      * 그보다 많으면 chunk 를 롤백하고 멈춘다. 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
+     *
+     * <p>{@code isolate}(ADR-0029 L3b)는 원장이 승인한 위반으로 이 컬럼이 거부한 행을 적재하지 않고 격리하는 선언이다
+     * ({@link Isolate}). 없으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
      */
     public record ColumnMapping(
             String source,
@@ -216,22 +343,77 @@ public record MappingSpec(
             String fkRef,
             @JsonProperty("const") String constant,
             @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt,
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Nullify> nullify
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Nullify> nullify,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Isolate isolate
     ) {
         /** encrypt 도입 전 생성자 호환. */
         public ColumnMapping(String source, String target, String transform, String type,
                              String codemap, String fkRef, String constant) {
-            this(source, target, transform, type, codemap, fkRef, constant, null, List.of());
+            this(source, target, transform, type, codemap, fkRef, constant, null, List.of(), null);
         }
 
         /** nullify 도입 전 생성자 호환. */
         public ColumnMapping(String source, String target, String transform, String type,
                              String codemap, String fkRef, String constant, String encrypt) {
-            this(source, target, transform, type, codemap, fkRef, constant, encrypt, List.of());
+            this(source, target, transform, type, codemap, fkRef, constant, encrypt, List.of(), null);
+        }
+
+        /** isolate 도입 전 생성자 호환. */
+        public ColumnMapping(String source, String target, String transform, String type,
+                             String codemap, String fkRef, String constant, String encrypt, List<Nullify> nullify) {
+            this(source, target, transform, type, codemap, fkRef, constant, encrypt, nullify, null);
         }
 
         public ColumnMapping {
             nullify = nullify == null ? List.of() : List.copyOf(nullify);
+        }
+    }
+
+    /**
+     * 승인 행 격리 한 건(ADR-0029 L3b). 이 컬럼이 원장 행 {@code ledgerEntry} 가 승인한 위반 {@code violations} 로만 거부한
+     * 행은 적재하지 않고 순번과 함께 센다. 원장 행마다 표 전체에서 {@code maxRows} 행까지만 격리하고, 넘으면 멈춘다.
+     * mapping-generate 가 원장의 승인 예외 가운데 nullify 로 NULL 이 되지 않는 위반만 옮긴다 — plan·load 의 원장 대조가
+     * 같은 판정으로 양방향을 맞춘다.
+     */
+    public record Isolate(String ledgerEntry, Long maxRows, List<String> violations) {
+
+        public Isolate {
+            violations = violations == null ? List.of() : List.copyOf(violations);
+        }
+
+        /**
+         * mapping.yml 의 isolate 한 건을 읽는다. 원장 행 ID 는 문자로만, 상한은 정수 스칼라로만, 위반은 이름 문자의
+         * 목록으로만 받는다 — nullify 와 같이 {@code maxRows: 2.7}·{@code violations: [1]} 처럼 검토자가 본 글자와 승인
+         * digest 가 뜻하는 값이 갈리는 표기를 거부한다. 없는 필드는 비워 두고 검증이 거부한다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static Isolate fromMapping(@JsonProperty("ledgerEntry") Object ledgerEntry,
+                                          @JsonProperty("maxRows") Object maxRows,
+                                          @JsonProperty("violations") Object violations) {
+            if (ledgerEntry != null && !(ledgerEntry instanceof String)) {
+                throw new IllegalArgumentException("isolate 의 ledgerEntry 는 원장 행 ID 문자여야 합니다");
+            }
+            return new Isolate((String) ledgerEntry, maxRowsOf(maxRows), violationsOf(violations));
+        }
+
+        private static Long maxRowsOf(Object raw) {
+            if (raw == null) {
+                return null;
+            }
+            if (raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte) {
+                return ((Number) raw).longValue();
+            }
+            throw new IllegalArgumentException("isolate 의 maxRows 는 정수여야 합니다");
+        }
+
+        private static List<String> violationsOf(Object raw) {
+            if (raw == null) {
+                return List.of();
+            }
+            if (raw instanceof List<?> list && list.stream().allMatch(String.class::isInstance)) {
+                return list.stream().map(String.class::cast).toList();
+            }
+            throw new IllegalArgumentException("isolate 의 violations 는 위반 이름(INVALID_DATE 등) 문자의 목록이어야 합니다");
         }
     }
 

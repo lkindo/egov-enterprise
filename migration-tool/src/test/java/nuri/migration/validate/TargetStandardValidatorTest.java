@@ -6,6 +6,7 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.discovery.SnapshotCapability;
 import nuri.migration.domain.DomainViolation;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
@@ -541,7 +542,8 @@ class TargetStandardValidatorTest {
                     target(table(StandardStatus.ABSENT, integer(1, "amt"))))).hasSize(1);
             assertThat(errors(spec(hinted("ITEM_ID", "amt", "decimal")),
                     target(table(StandardStatus.ABSENT, column(1, "amt", "numeric", null, 10, 2)))))
-                    .singleElement().asString().contains("확인할 수 없습니다");
+                    .as("[ADR-0029 L3b] 문자 소스 → decimal 의 정밀도는 행마다 값 한계 가드가 판정한다(RowGuards)")
+                    .isEmpty();
             assertThat(errors(spec(hinted("PRICE", "amt", "decimal")),
                     target(table(StandardStatus.ABSENT, column(1, "amt", "numeric", null, 10, 2))))).isEmpty();
             assertThat(errors(spec(hinted("QTY", "amt", "numeric")),
@@ -1094,6 +1096,193 @@ class TargetStandardValidatorTest {
             String[] parts = typeAndLength.split(",", -1);
             Integer length = parts[1].isEmpty() ? null : Integer.valueOf(parts[1]);
             return column(1, "target_col", parts[0], length, null, null);
+        }
+    }
+
+    @Nested
+    @DisplayName("행 단위 값 한계 가드로 옮기는 컬럼과 그 한계(ADR-0029 L3b)")
+    class RowGuards {
+
+        private static final String UNKNOWN_PRECISION = "값의 선언 정밀도·소수 자릿수를 확인할 수 없습니다: public.tb_item.amt";
+
+        @Test
+        void onlyTextSourcesTypedAsDecimalMoveTheirPrecisionCheckToTheRowGuard() {
+            TargetSchemaFingerprint numeric = target(table(StandardStatus.ABSENT, column(1, "amt", "numeric", null, 10, 2)));
+            TargetSchemaFingerprint integer = target(table(StandardStatus.ABSENT, integer(1, "amt")));
+
+            assertThat(errors(spec(hinted("ITEM_ID", "amt", "decimal")), numeric)).isEmpty();
+            assertThat(guards(spec(hinted("ITEM_ID", "amt", "decimal")), numeric))
+                    .containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, 8, 2, null, false)));
+            assertThat(errors(spec(hinted("ITEM_NM", "amt", "NUMERIC")), integer)).isEmpty();
+            assertThat(guards(spec(hinted("ITEM_NM", "amt", "NUMERIC")), integer))
+                    .containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, null, null, 3, false)));
+            ColumnMapping trimmed = new ColumnMapping("ITEM_ID", "amt", "trim", "decimal", null, null, null);
+            assertThat(errors(spec(trimmed), numeric)).as("내장 문자 변환 뒤에도 문자다").isEmpty();
+            assertThat(guards(spec(trimmed), numeric)).containsOnlyKeys("amt");
+
+            assertThat(errors(spec(map("ORACLE_NUMBER", "amt")), target(table(StandardStatus.ABSENT, bigint(1, "amt")))))
+                    .as("선언을 모르는 숫자 소스는 그대로 정적으로 막는다")
+                    .containsExactly(UNKNOWN_PRECISION + " — 물리 컬럼 bigint");
+            assertThat(guards(spec(map("ORACLE_NUMBER", "amt")), target(table(StandardStatus.ABSENT, bigint(1, "amt")))))
+                    .isEmpty();
+            assertThat(errors(spec(hinted("REG_DE", "amt", "decimal")), numeric)).as("날짜 소스는 옮기지 않는다")
+                    .containsExactly(UNKNOWN_PRECISION + " — 물리 컬럼 numeric");
+            ColumnMapping dated = new ColumnMapping("ITEM_ID", "amt", "date", "decimal", null, null, null);
+            assertThat(errors(spec(dated), numeric)).as("문자 소스라도 날짜로 바꾼 값은 옮기지 않는다")
+                    .containsExactly(UNKNOWN_PRECISION + " — 물리 컬럼 numeric");
+            assertThat(errors(spec(hinted("ITEM_ID", "amt", "decimal")),
+                    target(table(StandardStatus.ABSENT, varchar(1, "amt", 10)))))
+                    .as("길이 판정은 옮기지 않는다")
+                    .containsExactly("값의 선언 최대 길이를 확인할 수 없습니다: public.tb_item.amt — 물리 컬럼"
+                            + " character varying 길이 10");
+        }
+
+        @Test
+        void theLimitIsTheNarrowerOfThePhysicalColumnAndTheDomainAndNotNullIgnoresTheDefault() {
+            ColumnContract amount = withDefault(required(withTerm(column(1, "amt", "numeric", null, 15, 6),
+                    found("AMT", "수N15,2", "NUMERIC", 15))));
+
+            assertThat(errors(spec(hinted("ITEM_ID", "amt", "decimal")), target(table(StandardStatus.PRESENT, amount))))
+                    .isEmpty();
+            assertThat(guards(spec(hinted("ITEM_ID", "amt", "decimal")), target(table(StandardStatus.PRESENT, amount))))
+                    .containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, 9, 2, null, true)));
+            assertThat(guards(spec(hinted("ITEM_ID", "amt", "decimal")), target(table(StandardStatus.ABSENT, amount))))
+                    .as("사전이 없으면 물리 컬럼만").containsExactly(
+                            Map.entry("amt", new TargetValueGuard.Limit(null, 9, 6, null, true)));
+            ColumnContract bigintDomain = withTerm(bigint(1, "amt"), found("AMT", "수N10", "NUMERIC", 10));
+            assertThat(guards(spec(hinted("ITEM_ID", "amt", "numeric")), target(table(StandardStatus.PRESENT,
+                    bigintDomain)))).containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, 10, 0, 4, false)));
+        }
+
+        @Test
+        void isolatedColumnsAreGuardedWithTheirStaticChecksKept() {
+            ColumnMapping isolated = new ColumnMapping("ITEM_NM", "item_nm", null, null, null, null, null, null,
+                    List.of(), new MappingSpec.Isolate("L1", 3L, List.of("REQUIRED_MISSING")));
+            ColumnContract named = required(withTerm(varchar(1, "item_nm", 200), found("ITEM_NM", "명V150",
+                    "VARCHAR", 150)));
+
+            assertThat(errors(spec(isolated, map("ITEM_ID", "item_id")),
+                    target(table(StandardStatus.PRESENT, named, varchar(2, "item_id", 20))))).isEmpty();
+            assertThat(guards(spec(isolated, map("ITEM_ID", "item_id")),
+                    target(table(StandardStatus.PRESENT, named, varchar(2, "item_id", 20)))))
+                    .as("격리 선언이 없는 컬럼은 가드를 받지 않는다")
+                    .containsExactly(Map.entry("item_nm", new TargetValueGuard.Limit(150L, null, null, null, true)));
+            assertThat(errors(spec(isolated), target(table(StandardStatus.ABSENT, varchar(1, "item_nm", 50)))))
+                    .as("격리 컬럼도 선언 길이의 정적 판정은 그대로다")
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.item_nm — 값 100,"
+                            + " 물리 컬럼 character varying 길이 50");
+        }
+
+        @Test
+        @DisplayName("[DEC-OPS-322] 원장이 승인한 LENGTH_EXCEEDED·PRECISION_EXCEEDED 의 정적 판정만 값 한계 가드로 옮긴다")
+        void approvedLengthAndPrecisionExceptionsMoveTheirStaticJudgementToTheRowGuard() {
+            TargetSchemaFingerprint narrowText = target(table(StandardStatus.ABSENT, varchar(1, "item_nm", 50)));
+            ColumnMapping lengthApproved = isolated("ITEM_NM", "item_nm", null, "LENGTH_EXCEEDED");
+            assertThat(errors(spec(lengthApproved), narrowText)).as("선언 100자 → 50자도 행마다 판정한다").isEmpty();
+            assertThat(guards(spec(lengthApproved), narrowText))
+                    .containsExactly(Map.entry("item_nm", new TargetValueGuard.Limit(50L, null, null, null, false)));
+            ColumnMapping unknownLength = isolated("BODY", "item_nm", null, "LENGTH_EXCEEDED");
+            assertThat(errors(spec(unknownLength), narrowText)).as("선언 길이를 모르는 CLOB 도 옮긴다").isEmpty();
+            ColumnContract domainNarrower = withTerm(varchar(1, "item_nm", 200), found("ITEM_NM", "명V40", "VARCHAR", 40));
+            assertThat(errors(spec(lengthApproved), target(table(StandardStatus.PRESENT, domainNarrower))))
+                    .as("표준 도메인 길이 판정도 옮긴다").isEmpty();
+            assertThat(guards(spec(lengthApproved), target(table(StandardStatus.PRESENT, domainNarrower))))
+                    .containsExactly(Map.entry("item_nm", new TargetValueGuard.Limit(40L, null, null, null, false)));
+
+            TargetSchemaFingerprint narrowDecimal = target(table(StandardStatus.ABSENT,
+                    column(1, "amt", "numeric", null, 10, 2)));
+            ColumnMapping precisionApproved = isolated("AMOUNT", "amt", null, "PRECISION_EXCEEDED");
+            assertThat(errors(spec(precisionApproved), narrowDecimal)).as("numeric(12,4) → numeric(10,2)").isEmpty();
+            assertThat(guards(spec(precisionApproved), narrowDecimal))
+                    .containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, 8, 2, null, false)));
+            assertThat(errors(spec(isolated("BIG", "amt", null, "PRECISION_EXCEEDED")),
+                    target(table(StandardStatus.ABSENT, integer(1, "amt"))))).as("bigint → integer 범위도 옮긴다")
+                    .isEmpty();
+            assertThat(errors(spec(isolated("ORACLE_NUMBER", "amt", null, "PRECISION_EXCEEDED")), narrowDecimal))
+                    .as("선언 정밀도를 모르는 수도 옮긴다").isEmpty();
+        }
+
+        @Test
+        @DisplayName("[DEC-OPS-322] 그 코드를 승인하지 않았거나 가드가 길이를 재지 않는 값은 정적 판정이 그대로 멈춘다")
+        void columnsWithoutTheApprovedCodeOrWithValuesTheGuardCannotMeasureKeepTheStaticJudgement() {
+            TargetSchemaFingerprint narrowText = target(table(StandardStatus.ABSENT, varchar(1, "item_nm", 50)));
+            String tooLong = "값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.item_nm — 값 100, 물리 컬럼 character"
+                    + " varying 길이 50";
+            assertThat(errors(spec(isolated("ITEM_NM", "item_nm", null, "PRECISION_EXCEEDED", "FORMAT")), narrowText))
+                    .as("정밀도만 승인한 문자 컬럼").containsExactly(tooLong);
+            assertThat(errors(spec(map("ITEM_NM", "item_nm")), narrowText)).as("isolate 가 없는 컬럼")
+                    .containsExactly(tooLong);
+
+            TargetSchemaFingerprint narrowDecimal = target(table(StandardStatus.ABSENT,
+                    column(1, "amt", "numeric", null, 10, 2)));
+            assertThat(errors(spec(isolated("AMOUNT", "amt", null, "LENGTH_EXCEEDED")), narrowDecimal))
+                    .as("길이만 승인한 수 컬럼")
+                    .containsExactly("소수 자릿수가 타깃보다 많아 반올림됩니다: public.tb_item.amt — 값 4, 물리 컬럼 numeric 2");
+
+            assertThat(errors(spec(isolated("ITEM_ID", "item_nm", "uuid", "LENGTH_EXCEEDED")),
+                    target(table(StandardStatus.ABSENT, varchar(1, "item_nm", 10)))))
+                    .as("가드는 UUID 표기 길이를 재지 않는다")
+                    .containsExactly("값의 선언 최대 길이가 타깃보다 깁니다: public.tb_item.item_nm — 값 36, 물리 컬럼"
+                            + " character varying 길이 10");
+            assertThat(errors(spec(isolated("REG_DE", "item_nm", null, "LENGTH_EXCEEDED")), narrowText))
+                    .as("값 종류가 맞지 않는 것은 늘 정적이다")
+                    .containsExactly("값 타입이 타깃과 맞지 않습니다: public.tb_item.item_nm — 값 DATE, 물리 컬럼 character"
+                            + " varying");
+        }
+
+        private static ColumnMapping isolated(String source, String target, String type, String... violations) {
+            return new ColumnMapping(source, target, null, type, null, null, null, null, List.of(),
+                    new MappingSpec.Isolate("L1", 3L, List.of(violations)));
+        }
+
+        @Test
+        void relaxedColumnsOfTargetGeneratedMappingsAreGuardedToo() {
+            TableMapping generated = new TableMapping(SOURCE, TARGET, null, "ITEM_ID", List.of(), null,
+                    List.of(hinted("ITEM_ID", "amt", "decimal")), null,
+                    new IdentityStrategy(TargetIdentityPolicy.TARGET_GENERATED,
+                            List.of(new IdentityComponentSpec("ITEM_ID", IdentityValueType.TEXT)),
+                            List.of(new IdentityComponentSpec("item_sn", IdentityValueType.SIGNED_INTEGER))),
+                    List.of());
+
+            assertThat(guards(spec(generated), target(table(StandardStatus.ABSENT,
+                    column(1, "amt", "numeric", null, 5, 2), identity(bigint(2, "item_sn"), "BY DEFAULT")))))
+                    .containsExactly(Map.entry("amt", new TargetValueGuard.Limit(null, 3, 2, null, false)));
+        }
+
+        @Test
+        void guardsCannotBeComputedWithoutTheLiveContract() {
+            MappingSpec spec = spec(hinted("ITEM_ID", "amt", "decimal"));
+            TableMapping table = spec.tables().getFirst();
+
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> validator.rowGuards(spec, table, null, inventory()))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("값 한계 가드에 쓸 타깃 live 계약 또는 소스 inventory 가 없습니다");
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> validator.rowGuards(spec, table,
+                            target(new TableContract("public", "tb_other", ContractStatus.READ, StandardStatus.ABSENT,
+                                    List.of(varchar(1, "x", 1)))), inventory()))
+                    .hasMessage("값 한계 가드에 쓸 타깃 표 계약이 없습니다: public.tb_item");
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> validator.rowGuards(spec, table,
+                            target(table(StandardStatus.ABSENT, varchar(1, "other", 1))), inventory()))
+                    .hasMessage("값 한계 가드에 쓸 타깃 컬럼 계약이 없습니다: public.tb_item.amt");
+        }
+
+        @Test
+        void theWorkflowHandsGuardsToTheExecutorPerSourceTableOnlyForTablesThatNeedThem() {
+            TableMapping guarded = new TableMapping(SOURCE, TARGET, null, List.of(hinted("ITEM_ID", "amt", "decimal")),
+                    null);
+            TableMapping plain = new TableMapping("legacy.legacy_note", "public.tb_note", null,
+                    List.of(map("ITEM_ID", "note_id")), null);
+            MappingSpec spec = new MappingSpec(null, null, List.of(guarded, plain), Map.of());
+            TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, column(1, "amt", "numeric", null, 10, 2)),
+                    new TableContract("public", "tb_note", ContractStatus.READ, StandardStatus.ABSENT,
+                            List.of(varchar(1, "note_id", 20))));
+
+            assertThat(new MappingValidator(transformers, "unused-db-columns.json").rowGuards(spec, target, inventory()))
+                    .containsExactly(Map.entry(SOURCE, Map.of("amt", new TargetValueGuard.Limit(null, 8, 2, null, false))));
+        }
+
+        private Map<String, TargetValueGuard.Limit> guards(MappingSpec spec, TargetSchemaFingerprint target) {
+            return validator.rowGuards(spec, spec.tables().getFirst(), target, inventory());
         }
     }
 

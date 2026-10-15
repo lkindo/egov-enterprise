@@ -7,6 +7,7 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.etl.SourceProjection;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.sql.Types;
@@ -17,7 +18,12 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-/** 승인 inventory에서 현재 ETL row reader가 안전하게 처리하지 못하는 표면을 차단한다. */
+/**
+ * 승인 inventory에서 현재 ETL row reader가 안전하게 처리하지 못하는 표면을 차단한다.
+ *
+ * <p>[ADR-0029 L3e] 같은 읽기 세션에서 덤프하는 보관 컬럼(매핑된 표의 보관 컬럼, 덤프만 하는 표의 정렬 키·보관 컬럼)도 같은
+ * 규칙으로 본다 — inventory 에 없거나, 지원하지 않는 LOB·vendor 타입이면 막는다.</p>
+ */
 public final class SourceLoadSurfaceGate {
 
     private static final Set<Integer> LOB_TYPES = Set.of(
@@ -90,7 +96,36 @@ public final class SourceLoadSurfaceGate {
                     .filter(candidate -> matches(candidate, table))
                     .flatMap(candidate -> SourceProjection.requiredColumns(candidate).stream())
                     .forEach(column -> requiredColumns.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+            // [ADR-0029 L3e] 매핑된 표의 보관 컬럼은 적재와 같은 SELECT 로 읽는다(분할한 소스면 keymap 소유 매핑이나 id 를
+            //   생략한 매핑의 읽기).
+            for (ArchiveDump dump : mapping.archives()) {
+                if (dump != null && mapping.mappedTableOf(dump.source()) != null && matches(dump.source(), table)) {
+                    dump.columns().forEach(column -> requiredColumns.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+                }
+            }
             inspectRequired(snapshot, table, requiredColumns, policy, true, blockers);
+        }
+        for (ArchiveDump dump : mapping.archives()) {
+            if (dump == null || mapping.mappedTableOf(dump.source()) != null) {
+                continue;
+            }
+            List<CatalogObject> dumpTables = snapshot.objects().stream()
+                    .filter(object -> object.kind() == ObjectKind.TABLE)
+                    .filter(table -> matches(dump.source(), table))
+                    .toList();
+            if (dumpTables.isEmpty()) {
+                blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
+                continue;
+            }
+            LinkedHashMap<String, String> required = new LinkedHashMap<>();
+            dump.orderByKeys().forEach(column -> required.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+            dump.columns().forEach(column -> required.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+            for (CatalogObject table : dumpTables) {
+                if (!policy.quotedIdentifiersSupported() && table.quoted()) {
+                    blockers.add(Blocker.QUOTED_IDENTIFIER);
+                }
+                inspectRequired(snapshot, table, required, policy, true, blockers);
+            }
         }
         return List.copyOf(blockers);
     }
@@ -108,6 +143,9 @@ public final class SourceLoadSurfaceGate {
                 .filter(column -> belongsTo(column, table.referenceId()))
                 .toList();
         for (String required : requiredColumns.values()) {
+            if (required == null) {
+                continue; // 선언 오류는 mapping 정적 검증이 위치와 함께 알린다.
+            }
             List<CatalogObject> matches = tableColumns.stream()
                     .filter(column -> identifierEquals(
                             required,

@@ -145,6 +145,32 @@ class WorkflowCliOptionsTest {
                 .hasMessageNotContaining(digest);
     }
 
+    @Test
+    void theArchiveDirectoryIsALoadCommitOptionThatIsNeverRendered() {
+        // [ADR-0029 L3e] 보관 디렉터리는 commit load 에서만 받는다 — dry-run 은 파일을 쓰지 않고, 다른 명령은 모른다.
+        Path directory = Path.of("/srv/sentinel-private-dumps");
+        WorkflowCliOptions options = WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--mode=commit",
+                "--archive-dir=" + directory));
+
+        assertThat(options.archiveDir()).isEqualTo(directory);
+        assertThat(options.toString()).doesNotContain("sentinel");
+        assertThat(WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--mode=commit"))
+                .archiveDir()).isNull();
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json",
+                "--archive-dir=" + directory)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("--archive-dir 는 commit 에서만 씁니다 — dry-run 은 보관 파일을 쓰지 않습니다");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=plan", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json",
+                "--archive-dir=" + directory)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("unknown")
+                .hasMessageNotContaining("sentinel");
+    }
+
     private static DefaultApplicationArguments args(String... values) {
         return new DefaultApplicationArguments(values);
     }

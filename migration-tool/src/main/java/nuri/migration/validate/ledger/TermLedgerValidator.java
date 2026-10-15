@@ -355,6 +355,12 @@ public final class TermLedgerValidator {
                 if (entry.archive() == null || date(entry.archive().retainUntil()) == null) {
                     errors.add(id + ": 외부 보관에는 보존 기한(archive.retainUntil, yyyy-MM-dd)이 필요합니다");
                 }
+                // [DEC-OPS-321 U2] 덤프는 원시 값을 담고 주민등록번호 모양은 과잉 탐지라 가리지 않는다 — 사람이 확인해야 한다.
+                if (entry.archive() == null
+                        || !TermLedger.Archive.PERSONAL_DATA_ACKNOWLEDGED.equals(entry.archive().personalData())) {
+                    errors.add(id + ": 외부 보관에는 덤프(정렬 키 값 포함)가 주민등록번호·전화번호·이메일 모양 값을 가리지 않고"
+                            + " 기관 통제 아래 남긴다는 사람 확인(archive.personalData: acknowledged)이 필요합니다");
+                }
             }
             case "REGISTRATION_REQUESTED" -> {
                 if (entry.term() == null || blank(entry.term().name())) {
@@ -467,7 +473,9 @@ public final class TermLedgerValidator {
             case "UNSUPPORTED_VALUE_TYPE" -> capabilities.judgesValueType(load) ? null
                     : "추정기가 판정하지 못한 값 종류(UNSUPPORTED_VALUE_TYPE)가 있어 load 가 행마다 판정해야 합니다 —"
                     + " 표준 도메인 변환기나 type 을 두세요";
-            // 길이·자릿수 초과는 쓰기 단계와 정적 판정이 멈춘다(fail-closed). 격리는 L3b 의 값 한계 가드와 승인 예외로 한다.
+            // 길이·자릿수 초과는 쓰기 단계와 정적 판정이 멈춘다(fail-closed). [DEC-OPS-322] 승인 예외에 LENGTH_EXCEEDED·
+            //   PRECISION_EXCEEDED 가 있으면 그 컬럼의 선언 길이·정밀도 정적 판정을 값 한계 가드로 옮겨 상한 안의 행을
+            //   격리한다. 그 코드를 승인하지 않은 컬럼은 정적 판정이 그대로 멈춘다(TargetStandardValidator).
             case "LENGTH_EXCEEDED", "LENGTH_UNVERIFIED" -> null;
             // DEC-OPS-317 U3: codemap(unmapped: fail)이 없으면 사유로 확정한다 — 허용값 대사는 L4 가 맡는다.
             case "ALLOWED_VALUES_UNVERIFIED" -> (load != null && load.codemap() != null) || !blank(entry.note()) ? null
@@ -510,19 +518,22 @@ public final class TermLedgerValidator {
      *       옮기지 않는다.</li>
      *   <li>정방향 — mapping 이 소스 컬럼에서 옮기는 컬럼(상수 아님, fkRef 포함)마다 같은 소스·같은 매핑 id·대상의 확정
      *       행이 하나 있고, mapping 의 transform·type·codemap·nullify 가 그 행의 load 와 정확히 같다. 원장 행의 mapping 을
-     *       생략하면 그 소스의 기본 매핑(id 없음)이다(ADR-0029 L3c). fkRef 컬럼의 load 는 키 정규화뿐이다(생성기와 같은 판정).</li>
+     *       생략하면 그 소스의 기본 매핑(id 없음)이다(ADR-0029 L3c). fkRef 컬럼의 load 는 키 정규화뿐이다(생성기와 같은 판정).
+     *       mapping 의 isolate 는 그 행의 승인 예외 가운데 nullify 로 덮이지 않는 위반과 양방향으로 정확히 같다
+     *       ({@link LoadCapabilities#isolate}, ADR-0029 L3b).</li>
      *   <li>역방향 — 확정 행은 모두 mapping 에 있다. 확정 행의 매핑 id 가 mapping 에 없거나, mapping 이 읽지 않는 소스 표의
      *       확정 행이면 오류다.</li>
-     *   <li>소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부
-     *       보관 행이 정확히 하나다.</li>
+     *   <li>외부 보관(ADR-0029 L3e) — mapping 의 보관 선언과 원장 ARCHIVE 행이 양방향으로 정확히 같다(같은 컬럼·순서·보존
+     *       기한, 행마다 정확히 한 선언).</li>
+     *   <li>소스 단위 완전성 — mapping 이 읽는 소스 표와 덤프만 하는 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나
+     *       이관 제외·외부 보관 행이 정확히 하나다.</li>
      * </ol>
      *
      * <p>[ADR-0029 L3d] 조회 컬럼({@code alias.COLUMN})은 조회 표의 inventory 컬럼으로 풀어, 같은 조회 경로({@code via}:
      * 그 매핑 id·별칭)의 확정 행과 맞춘다. 조회만 하는 표도 소스 단위 완전성을 받는다 — 조회 키처럼 옮기지 않는 컬럼은
      * 이관 제외와 사유로 적는다.</p>
      *
-     * <p>아직 실행할 수 없는 행(외부 보관)은 거부한다 — mapping 으로 옮겨지지 않은 채 원장에만 남지 않게 한다. 문구는
-     * 행 ID·표·컬럼·상태와 고정 어휘다.</p>
+     * <p>문구는 행 ID·표·컬럼·상태와 고정 어휘다.</p>
      */
     public List<String> coverage(TermLedger ledger, MappingSpec mapping, CatalogSnapshot inventory) {
         Objects.requireNonNull(ledger, "ledger");
@@ -555,14 +566,12 @@ public final class TermLedgerValidator {
             }
             rowTables.add(table);
             rowColumns.add(column);
-            if ("ARCHIVE".equals(entry.status())) {
-                errors.add(row(entry) + ": 외부 보관(ARCHIVE)은 아직 실행할 수 없습니다(L3e 전) — 이관해야 할 데이터를"
-                        + " 이관 제외로 돌리지 마세요");
-            }
         }
         conflicts(entries, rowColumns, errors);
 
         Map<String, CatalogObject> mappedTables = new LinkedHashMap<>();
+        // 매핑이 주 소스로 읽는 표(조회만 하는 표 제외) — 보관 선언이 매핑의 읽기에 붙는지 정한다(ADR-0029 L3e·L3d).
+        Set<String> readSources = new HashSet<>();
         Set<String> mappedIds = new HashSet<>();
         Map<String, MappingSpec.TableMapping> byId = new HashMap<>();
         Set<Integer> used = new HashSet<>();
@@ -578,6 +587,7 @@ public final class TermLedgerValidator {
             }
             CatalogObject sourceTable = resolution.table();
             mappedTables.putIfAbsent(sourceTable.stableId(), sourceTable);
+            readSources.add(sourceTable.stableId());
             mappedIds.add(sourceTable.stableId() + '\u0000' + table.effectiveId());
             InventoryTables.TableColumns columns = tableColumns(inventory, sourceTable, table.source(),
                     columnsByTable, reported, errors);
@@ -633,7 +643,13 @@ public final class TermLedgerValidator {
                     : ": 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요"));
         }
 
-        for (CatalogObject table : mappedTables.values()) {
+        Map<String, CatalogObject> dumpOnlyTables = archives(mapping, inventory, entries, rowColumns, readSources,
+                columnsByTable, reported, errors);
+
+        // 조회만 하는 표를 덤프하면 두 목록에 함께 있다 — 한 번만 본다.
+        Map<String, CatalogObject> sourceTables = new LinkedHashMap<>(mappedTables);
+        dumpOnlyTables.forEach(sourceTables::putIfAbsent);
+        for (CatalogObject table : sourceTables.values()) {
             InventoryTables.TableColumns columns = columnsByTable.get(table.stableId());
             if (columns == null || columns.problem() != null) {
                 continue;
@@ -769,6 +785,115 @@ public final class TermLedgerValidator {
             errors.add(where + ": mapping 의 변환(transform·type·codemap·nullify)이 원장 행 " + entry.id()
                     + " 의 load 와 다릅니다 — mapping-generate 로 다시 만드세요");
         }
+        // [ADR-0029 L3b] 격리는 원장 승인 예외에서만 온다 — mapping 에만 있거나 원장에만 있거나 내용이 다르면 거부한다.
+        if (!Objects.equals(column.isolate(), LoadCapabilities.isolate(entry))) {
+            errors.add(where + ": mapping 의 격리(isolate)가 원장 행 " + entry.id() + " 의 승인 예외(nullify 로 NULL 이"
+                    + " 되지 않는 위반)와 다릅니다 — mapping-generate 로 다시 만드세요");
+        }
+    }
+
+    /**
+     * [ADR-0029 L3e] mapping 의 보관 선언과 원장 외부 보관(ARCHIVE) 행을 양방향으로 맞춘다. 선언한 컬럼은 모두 같은
+     * inventory 컬럼의 ARCHIVE 행(같은 순서의 {@code ledgerEntries}, 같은 보존 기한)이고, ARCHIVE 행은 모두 정확히 한 선언에
+     * 있다. 매핑된 표의 보관은 그 매핑과 같은 source 표기로 적는다 — load 가 그 표기로 매핑의 읽기에 보관 컬럼을 붙인다.
+     * 덤프만 하는 같은 표의 보관 선언끼리도 같은 표기를 쓴다 — load 가 표기마다 따로 읽는다.
+     * 덤프만 하는 표의 정렬 키는 inventory 컬럼이어야 한다. 돌려주는 값은 덤프만 하는 표(inventory stableId → 표)이고 소스
+     * 단위 완전성이 함께 본다.
+     */
+    private static Map<String, CatalogObject> archives(MappingSpec mapping, CatalogSnapshot inventory,
+            List<Entry> entries, List<CatalogObject> rowColumns, Set<String> readSources,
+            Map<String, InventoryTables.TableColumns> columnsByTable, Set<String> reported, List<String> errors) {
+        Map<String, Integer> byId = new HashMap<>();
+        for (int index = 0; index < entries.size(); index++) {
+            if (entries.get(index).id() != null) {
+                byId.putIfAbsent(entries.get(index).id(), index);
+            }
+        }
+        Map<String, CatalogObject> dumpOnly = new LinkedHashMap<>();
+        Map<String, String> dumpOnlyNotation = new HashMap<>();
+        Set<Integer> archived = new HashSet<>();
+        for (int position = 0; position < mapping.archives().size(); position++) {
+            MappingSpec.ArchiveDump archive = mapping.archives().get(position);
+            if (archive == null || blank(archive.source())) {
+                continue; // 정적 mapping 검증이 위치와 함께 알린다.
+            }
+            String label = "보관 선언 archives[" + position + "]"
+                    + (archive.id() != null && MAPPING_ID.matcher(archive.id()).matches() ? "(" + archive.id() + ")" : "");
+            InventoryTables.Resolution resolution = InventoryTables.resolve(inventory, archive.source());
+            if (!resolution.resolved()) {
+                errors.add(label + " 소스 표 " + archive.source() + ": " + resolution.problem());
+                continue;
+            }
+            CatalogObject table = resolution.table();
+            InventoryTables.TableColumns columns = tableColumns(inventory, table, archive.source(), columnsByTable,
+                    reported, errors);
+            if (columns.problem() != null) {
+                continue;
+            }
+            if (readSources.contains(table.stableId())) {
+                if (mapping.mappedTableOf(archive.source()) == null) {
+                    errors.add(label + ": 매핑된 소스 표를 매핑과 다른 표기(" + archive.source() + ")로 적었습니다 — 매핑과"
+                            + " 같은 source 표기를 쓰세요");
+                }
+            } else {
+                dumpOnly.putIfAbsent(table.stableId(), table);
+                // 같은 표를 다른 표기로 적으면 mapping 검증·load 가 다른 표로 보아 따로 읽는다 — 한 번 읽어 나눠 쓰지 않는다.
+                String notation = archive.source().trim().toLowerCase(Locale.ROOT);
+                String first = dumpOnlyNotation.putIfAbsent(table.stableId(), notation);
+                if (first != null && !first.equals(notation)) {
+                    errors.add(label + ": 덤프만 하는 소스 표를 다른 보관 선언과 다른 표기(" + archive.source() + ")로"
+                            + " 적었습니다 — 같은 표의 보관 선언은 같은 source 표기를 쓰세요");
+                }
+                for (String key : archive.orderByKeys()) {
+                    if (key != null && columns.columns().stream()
+                            .noneMatch(candidate -> InventoryTables.columnMatches(key, candidate))) {
+                        errors.add(label + ": 정렬 키 " + key + " 가 inventory 의 이 표에 없습니다");
+                    }
+                }
+            }
+            int pairs = Math.min(archive.columns().size(), archive.ledgerEntries().size());
+            for (int pair = 0; pair < pairs; pair++) {
+                String name = archive.columns().get(pair);
+                String ledgerId = archive.ledgerEntries().get(pair);
+                CatalogObject column = name == null ? null : columns.columns().stream()
+                        .filter(candidate -> InventoryTables.columnMatches(name, candidate))
+                        .findFirst().orElse(null);
+                if (column == null) {
+                    errors.add(label + ": 보관 컬럼 " + name + " 이 inventory 의 이 표에 없습니다");
+                    continue;
+                }
+                Integer index = ledgerId == null ? null : byId.get(ledgerId);
+                if (index == null) {
+                    errors.add(label + ": 원장 행 " + ledgerId + " 이 원장에 없습니다");
+                    continue;
+                }
+                Entry entry = entries.get(index);
+                if (!"ARCHIVE".equals(entry.status())) {
+                    errors.add(label + ": 원장 행 " + entry.id() + " 은 외부 보관(ARCHIVE) 행이 아닙니다("
+                            + entry.status() + ")");
+                    continue;
+                }
+                if (rowColumns.get(index) != column) {
+                    errors.add(label + ": 원장 행 " + entry.id() + " 의 소스 컬럼이 보관 컬럼 " + name + " 과 다릅니다");
+                    continue;
+                }
+                if (entry.archive() == null || !Objects.equals(entry.archive().retainUntil(), archive.retainUntil())) {
+                    errors.add(label + ": 보존 기한이 원장 행 " + entry.id() + " 과 다릅니다 — 보존 기한이 다른 행은 같은"
+                            + " 덤프에 섞지 않습니다");
+                }
+                if (!archived.add(index)) {
+                    errors.add(label + ": 원장 행 " + entry.id() + " 을 두 보관 선언이 가리킵니다");
+                }
+            }
+        }
+        for (int index = 0; index < entries.size(); index++) {
+            Entry entry = entries.get(index);
+            if ("ARCHIVE".equals(entry.status()) && !archived.contains(index) && rowColumns.get(index) != null) {
+                errors.add(row(entry) + ": 외부 보관 행이 mapping 의 archives 에 없습니다 — mapping-generate 로 다시"
+                        + " 만드세요");
+            }
+        }
+        return dumpOnly;
     }
 
     /** 표의 컬럼을 한 번만 열거하고, 판정할 수 없으면 그 표마다 한 번 알린다. */

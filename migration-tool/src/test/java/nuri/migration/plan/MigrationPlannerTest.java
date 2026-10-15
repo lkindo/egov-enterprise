@@ -384,6 +384,30 @@ class MigrationPlannerTest {
                 "LOOKUP_INPUT 이지만 어떤 매핑도 조회하지 않는 객체: " + customer.stableId());
     }
 
+    /**
+     * [ADR-0029 L3d·L3e] 조회 조인이 읽는 표를 함께 보관하면 덤프만 하는 표지만 처분은 LOOKUP_INPUT 하나다 — EXPORT_ONLY 를
+     * 함께 요구하면 두 처분을 동시에 만족할 수 없다.
+     */
+    @Test
+    void aLookedUpTableThatIsAlsoDumpedNeedsOnlyItsLookupInputDisposition() {
+        CatalogObject orders = object(ObjectKind.TABLE, "legacy", "orders");
+        CatalogObject customer = object(ObjectKind.TABLE, "legacy", "customer");
+        CatalogSnapshot snapshot = snapshot(List.of(orders, customer), List.of());
+        MappingSpec lookup = lookupMapping("legacy.customer");
+        MappingSpec archived = new MappingSpec(null, null, lookup.tables(), Map.of(), null, null, List.of(
+                new MappingSpec.ArchiveDump("legacy_customer_20311231", "legacy.customer", null, List.of("cust_no"),
+                        List.of("memo"), List.of("U9"), "2031-12-31")));
+
+        MigrationPlan plan = new MigrationPlanner().plan(snapshot, archived, Map.of(customer.stableId(),
+                new DispositionDecision(ObjectDisposition.LOOKUP_INPUT, null, true, "주문이 고객명을 조회하고 메모는 보관한다")),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(plan.commitReady()).as(plan.readiness().blockers().toString()).isTrue();
+        assertThat(new MigrationPlanner().plan(snapshot, archived, Map.of(customer.stableId(),
+                new DispositionDecision(ObjectDisposition.EXPORT_ONLY, null, true, "보관만 한다")), TARGET_SCHEMA_DIGEST)
+                .readiness().blockers()).as("조회하는 표의 처분은 LOOKUP_INPUT 규칙이 정한다").containsExactly(
+                "조회 조인이 읽는 표의 disposition 은 LOOKUP_INPUT 이어야 합니다: " + customer.stableId());
+    }
+
     private static MappingSpec lookupMapping(String lookupSource) {
         MappingSpec.Lookup cust = new MappingSpec.Lookup("cust", lookupSource, null,
                 new MappingSpec.LookupKey("cust_no", "cust_no"), MappingSpec.LookupCardinality.EXACTLY_ONE, null);
@@ -398,6 +422,39 @@ class MigrationPlannerTest {
         return new TableMapping(source, target, null, "user_id", List.of(), "user_id",
                 List.of(new ColumnMapping("user_id", "user_id", null, "string", null, null, null)), null, null,
                 List.of(), id);
+    }
+
+    @Test
+    @DisplayName("덤프만 하는 보관 표는 review 의 EXPORT_ONLY 명시 결정이 있어야 실행할 수 있다(ADR-0029 L3e)")
+    void aDumpOnlyArchiveTableNeedsAReviewedExportOnlyDecision() {
+        CatalogObject users = object(ObjectKind.TABLE, "legacy", "legacy_user");
+        CatalogObject log = object(ObjectKind.TABLE, "legacy", "legacy_log");
+        CatalogSnapshot snapshot = snapshot(List.of(users, log), List.of());
+        MappingSpec base = mapping("legacy.legacy_user", "tb_user_info");
+        MappingSpec archived = new MappingSpec(null, null, base.tables(), Map.of(), null, null, List.of(
+                new MappingSpec.ArchiveDump("legacy_user_20311231", "legacy.legacy_user", null, List.of(),
+                        List.of("ETC1"), List.of("U7"), "2031-12-31"),
+                new MappingSpec.ArchiveDump("legacy_log_20311231", "legacy.legacy_log", null, List.of("LOG_SN"),
+                        List.of("LOG_MSG"), List.of("H2"), "2031-12-31")));
+        String blocker = "보관만 하는 표는 review 에서 EXPORT_ONLY 로 정해야 합니다: " + log.stableId();
+
+        MigrationPlan exported = new MigrationPlanner().plan(snapshot, archived, Map.of(log.stableId(),
+                new DispositionDecision(ObjectDisposition.EXPORT_ONLY, null, true, "보관 덤프로만 남긴다")),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(exported.commitReady()).isTrue();
+        assertThat(exported.mappingDigest()).isEqualTo(MappingSpecDigester.sha256(archived))
+                .isNotEqualTo(MappingSpecDigester.sha256(base));
+
+        MigrationPlan ignored = new MigrationPlanner().plan(snapshot, archived, Map.of(log.stableId(),
+                approvedIgnore("버린다")), TARGET_SCHEMA_DIGEST);
+        assertThat(ignored.commitReady()).isFalse();
+        assertThat(ignored.readiness().blockers()).containsExactly(blocker);
+        assertThat(new MigrationPlanner().plan(snapshot, archived, Map.of(log.stableId(),
+                new DispositionDecision(ObjectDisposition.EXPORT_ONLY, null, false, "검토 전")), TARGET_SCHEMA_DIGEST)
+                .readiness().blockers()).contains(blocker);
+        assertThat(new MigrationPlanner().plan(snapshot(List.of(users), List.of()), archived, Map.of(),
+                TARGET_SCHEMA_DIGEST).readiness().blockers())
+                .containsExactly("MappingSpec 보관 선언 소스 테이블을 inventory에서 찾을 수 없음: legacy.legacy_log");
     }
 
     private static DispositionDecision approvedIgnore(String rationale) {

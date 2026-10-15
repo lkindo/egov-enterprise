@@ -1492,6 +1492,7 @@ jobs:
 
           # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
           # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.
+          # [ADR-0029 L3e] 암호화할 소스 값을 보관 덤프에 넣지 않는 판정도 이 범위 시험이 덮는다 — 뒤집히면 평문이 덤프에 남는다.
           # 온라인 원본을 컴파일하는 호환 계약 시험은 뮤턴트마다 javac 를 돌리므로 넣지 않는다(일반 시험이 돌린다).
           - scope: migration-protect
             gradle: ":migration-tool:pitest"
@@ -1512,10 +1513,18 @@ jobs:
           # 뒤집히면 모호한 표나 표기만 다른 컬럼이 엉뚱한 inventory 컬럼으로 풀린다. L3a-2 뒤 로컬 실측 383 mutations, 93%, 42초다.
           # L3c 뒤(생성기가 매핑 id 마다 컬럼을 만든다) 395 mutations, 94%, 39초다. L3d 뒤(조회 경로 행으로 조회 컬럼을 만든다)
           # 425 mutations, 94%, 74초다.
+          # [ADR-0029 L3b] 승인 행 격리 판정·상한(isolate)과 값 한계 가드(domain.TargetValueGuard)를 더했다 — 뒤집히면 승인 밖
+          # 실패가 격리되거나, 상한을 넘겨 격리하거나, PostgreSQL 이 조용히 반올림하는 값이 통과한다. 범위를 새로 세우지 않고
+          # 넓혔다(별도 범위는 10분 넘을 때). 2026-10-15 로컬 실측 558 mutations, 93%, 59초. 같은 날 validate 1082 94% 98초,
+          # verify 201 86% 52초(격리 집계 대조 포함).
+          # [ADR-0029 L3e] 같은 세션 보관 덤프·격리 키 반출(archive.*)을 더했다 — 뒤집히면 덤프에 행이 빠지거나 멈춘 표의
+          # 파일이 남거나, 기존 파일을 덮어쓰거나, Git 작업 트리·승인 산출물 옆에 원시 값이 쓰인다. 2026-10-15 로컬 실측(검토
+          # 반영 뒤) 977 mutations, 91%(archive 309, 88%), 108초. 같은 날 validate 1173 94% 125초, verify 268 93% 59초(덤프
+          # 행 수·격리 키 반출 대조 포함), protect 199 98% 23초.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables"
-            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
+            classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"
+            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest,nuri.migration.archive.ArchiveFileWriterTest,nuri.migration.archive.ArchiveLocationGuardTest,nuri.migration.archive.ArchiveRunTest"
 
           # [ADR-0029 L3c, DEC-OPS-319] 매핑 키·keymap 소유 매핑 판정, 매핑 단위 실행 순서, checkpoint 의 mapping_id 범위와
           # 재개 가드. 뒤집히면 한 소스를 나눈 매핑 하나가 조용히 빠지거나, 형제 매핑을 거치는 의존이 순환으로 막히거나,

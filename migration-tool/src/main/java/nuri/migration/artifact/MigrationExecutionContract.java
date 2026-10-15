@@ -3,8 +3,13 @@ package nuri.migration.artifact;
 import nuri.migration.adapter.AdapterIdentity;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveFileWriter;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.domain.DomainValues;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
+import nuri.migration.isolate.IsolationTally;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.lookup.LookupResolver;
 import nuri.migration.lookup.LookupRules;
 import nuri.migration.mapping.MappingIndex;
@@ -60,11 +65,19 @@ public record MigrationExecutionContract(
             EgovAriaColumnCipher.class,
             // 표준 도메인 변환기(ADR-0029 L3a-1). 승인 뒤 받는 값·거부 사유가 바뀌면 같은 승인으로 적재하지 않는다.
             DomainValues.class,
+            // 승인 행 격리·값 한계 가드(ADR-0029 L3b). 승인 뒤 격리 판정·상한·한계가 바뀌면 같은 승인으로 적재하지 않는다.
+            TargetValueGuard.class,
+            RowIsolationPolicy.class,
+            IsolationTally.class,
             // 매핑 키·keymap 소유 매핑·부모 판정(ADR-0029 L3c). 승인 뒤 실행 순서·FK 번역 대상이 바뀌면 같은 승인으로 적재하지 않는다.
             MappingIndex.class,
             // 조회 조인의 규칙·짝 판정(ADR-0029 L3d). 승인 뒤 짝을 정하는 방식이 바뀌면 같은 승인으로 적재하지 않는다.
             LookupRules.class,
-            LookupResolver.class);
+            LookupResolver.class,
+            // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e). 승인 뒤 덤프 형식·대상 행·파일 쓰기가 바뀌면 같은 승인으로 적재하지
+            // 않는다.
+            ArchiveRun.class,
+            ArchiveFileWriter.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

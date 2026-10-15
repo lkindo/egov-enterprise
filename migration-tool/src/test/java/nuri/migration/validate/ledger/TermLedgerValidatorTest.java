@@ -56,6 +56,8 @@ class TermLedgerValidatorTest {
             new Transition("CONFIRMED", "업무담당", "2026-10-02"));
     private static final List<Transition> REVIEWED_PATH = List.of(new Transition("REVIEWED", "검토자", "2026-10-01"));
     private static final Load NONE = new Load(null, null, null, List.of());
+    private static final String PERSONAL_DATA_UNACKNOWLEDGED = "외부 보관에는 덤프(정렬 키 값 포함)가 주민등록번호·전화번호·"
+            + "이메일 모양 값을 가리지 않고 기관 통제 아래 남긴다는 사람 확인(archive.personalData: acknowledged)이 필요합니다";
 
     private final TermLedgerValidator validator = new TermLedgerValidator();
 
@@ -133,7 +135,7 @@ class TermLedgerValidatorTest {
         Entry register = row("D8", "h").term(null).target(null).grade("INFERRED").status("REGISTRATION_REQUESTED")
                 .conformance(null).load(null).history(path("REGISTRATION_REQUESTED")).build();
         Entry archived = row("D9", "i").term(null).target(null).grade("UNKNOWN").status("ARCHIVE").conformance(null)
-                .load(null).archive(new Archive("2027-01-01")).history(path("ARCHIVE")).build();
+                .load(null).archive(acknowledged("2027-01-01")).history(path("ARCHIVE")).build();
 
         List<String> errors = validator.validate(ledger(noTerm, wrongColumn, noLoad, ignore, archive, register,
                 archived));
@@ -146,7 +148,23 @@ class TermLedgerValidatorTest {
                 "D3: 확정에는 load(변환·type·codemap·nullify, 변환이 없으면 {})가 필요합니다",
                 "D6: 이관 제외에는 사유(note)가 필요합니다",
                 "D7: 외부 보관에는 보존 기한(archive.retainUntil, yyyy-MM-dd)이 필요합니다",
+                "D7: " + PERSONAL_DATA_UNACKNOWLEDGED,
                 "D8: 표준 등록 요청에는 요청할 용어 이름이 필요합니다");
+    }
+
+    @Test
+    void anArchiveRowNeedsTheHumanAcknowledgementThatTheDumpKeepsPersonalLookingValues() {
+        // [DEC-OPS-321 U2] 덤프는 주민등록번호 모양(과잉 탐지)을 가리지 않는다 — 사람의 확인 없이는 plan 이 멈춘다.
+        Entry missing = archiveRow("P1", "a", new Archive("2031-12-31")).build();
+        Entry other = archiveRow("P2", "b", new Archive("2031-12-31", "yes")).build();
+        Entry none = archiveRow("P3", "c", null).build();
+        Entry fine = archiveRow("P4", "d", acknowledged("2031-12-31")).build();
+
+        assertThat(validator.validate(ledger(missing, other, none, fine))).containsExactly(
+                "P1: " + PERSONAL_DATA_UNACKNOWLEDGED,
+                "P2: " + PERSONAL_DATA_UNACKNOWLEDGED,
+                "P3: 외부 보관에는 보존 기한(archive.retainUntil, yyyy-MM-dd)이 필요합니다",
+                "P3: " + PERSONAL_DATA_UNACKNOWLEDGED);
     }
 
     @Test
@@ -431,9 +449,9 @@ class TermLedgerValidatorTest {
         Entry ignored = row("K7", "USER_ID").term(null).target(null).status("APPROVED_IGNORE").note("키로만 쓴다")
                 .load(null).conformance(null).history(path("APPROVED_IGNORE")).build();
         Entry archivedTwice = row("K8", "ETC").term(null).target(null).status("ARCHIVE").load(null).conformance(null)
-                .archive(new Archive("2027-01-01")).history(path("ARCHIVE")).build();
+                .archive(acknowledged("2027-01-01")).history(path("ARCHIVE")).build();
         Entry archivedAgain = row("K9", "etc").term(null).target(null).status("ARCHIVE").load(null).conformance(null)
-                .archive(new Archive("2027-01-01")).history(path("ARCHIVE")).build();
+                .archive(acknowledged("2027-01-01")).history(path("ARCHIVE")).build();
 
         assertThat(validator.validate(ledger(first, sameDefault, otherMapping, viaLookup, sameVia, reviewedToo,
                 ignored, archivedTwice, archivedAgain))).containsExactly(
@@ -566,12 +584,13 @@ class TermLedgerValidatorTest {
                 + " skeleton 에 그 id 의 매핑을 두고 mapping-generate 로 다시 만드세요";
         assertThat(validator.coverage(ledger(split, reviewing, main, joined, archived), mapping(), inventory))
                 .containsExactly(
-                        "C5 legacy.legacy_user.ETC(ARCHIVE): 외부 보관(ARCHIVE)은 아직 실행할 수 없습니다(L3e 전) — 이관해야"
-                                + " 할 데이터를 이관 제외로 돌리지 마세요",
                         missingSplit,
                         // [ADR-0029 L3d] 조회 경로 행은 그 매핑 id 가 mapping 에 있어야 한다.
                         "C4 legacy.legacy_user.USER_ID(CONFIRMED): 조회 경로의 매핑(orders)이 mapping 에 없습니다 —"
-                                + " skeleton 에 그 id 의 매핑을 두고 mapping-generate 로 다시 만드세요");
+                                + " skeleton 에 그 id 의 매핑을 두고 mapping-generate 로 다시 만드세요",
+                        // [ADR-0029 L3e] 외부 보관 행은 mapping 의 보관 선언에 있어야 한다.
+                        "C5 legacy.legacy_user.ETC(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 —"
+                                + " mapping-generate 로 다시 만드세요");
         assertThat(validator.coverage(ledger(split, reviewing, ignored), mapping(), inventory)).containsExactly(
                 "legacy.legacy_user.USER_ID: 이 매핑의 확정 행이 없습니다 — 원장 행 C1 은 다른 mapping·조회 경로입니다",
                 missingSplit);
@@ -626,6 +645,30 @@ class TermLedgerValidatorTest {
                         + " 행 V3 의 load 와 다릅니다 — mapping-generate 로 다시 만드세요");
     }
 
+    /**
+     * [ADR-0029 L3d·L3e] 조회만 하는 표의 컬럼을 외부 보관하면 그 표는 덤프만 하는 표다 — 매핑이 주 소스로 읽지 않으므로
+     * "매핑과 다른 표기" 로 거부하지 않고, 소스 단위 완전성은 한 번만 본다.
+     */
+    @Test
+    void aLookedUpTableCanAlsoBeArchivedAsADumpOnlyTable() {
+        Entry user = row("V1", "USER_ID").mapping("users").build();
+        Entry etc = row("V2", "ETC").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("쓰지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry otherName = row("V3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).build();
+        Entry otherKey = archiveRow("V4", "Y", acknowledged("2031-12-31")).sourceTable("legacy.legacy_other").build();
+        MappingSpec lookup = lookupMapping(new ColumnMapping("oth.X", "user_nm", null, null, null, null, null));
+        MappingSpec archived = new MappingSpec(null, null, lookup.tables(), Map.of(), null, null, List.of(
+                new MappingSpec.ArchiveDump("legacy_other_20311231", "legacy.legacy_other", null, List.of("Y"),
+                        List.of("Y"), List.of("V4"), "2031-12-31")));
+
+        assertThat(validator.validate(ledger(user, etc, otherName, otherKey))).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey), archived, lookupInventory())).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey), lookup, lookupInventory()))
+                .as("보관 선언이 없으면 외부 보관 행이 남는다").containsExactly("V4 legacy.legacy_other.Y(ARCHIVE): 외부 보관 행이"
+                        + " mapping 의 archives 에 없습니다 — mapping-generate 로 다시 만드세요");
+    }
+
     @Test
     void anUnusedViaRowNamesWhyItsLookupPathIsMissing() {
         Entry user = row("W1", "USER_ID").mapping("users").build();
@@ -651,6 +694,86 @@ class TermLedgerValidatorTest {
                         + " skeleton 의 그 매핑에 lookups 를 두세요",
                 "W7 legacy.legacy_user.USER_ID(CONFIRMED): 조회 별칭(users/oth)이 읽는 표가 원장 행의 소스 표와 다릅니다",
                 "W8 legacy.legacy_other.Y(CONFIRMED): 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요");
+    }
+
+    @Test
+    void archiveDeclarationsAndArchiveRowsMatchInBothDirections() {
+        // [ADR-0029 L3e] 선언한 컬럼은 같은 순서의 ARCHIVE 행이고, ARCHIVE 행은 모두 정확히 한 선언에 있다.
+        Entry userId = row("A1", "USER_ID").build();
+        Entry etc = archiveRow("A2", "ETC", acknowledged("2031-12-31")).build();
+        Entry memo = archiveRow("A3", "MEMO", acknowledged("2031-12-31")).build();
+        Entry note = archiveRow("A4", "NOTE", acknowledged("2030-06-30")).build();
+        TermLedger ledger = ledger(userId, etc, memo, note);
+        CatalogSnapshot inventory = inventory("USER_ID", "ETC", "MEMO", "NOTE");
+        MappingSpec.ArchiveDump late = archive("legacy_user_20311231", "legacy.legacy_user", "2031-12-31",
+                List.of("ETC", "MEMO"), List.of("A2", "A3"));
+        MappingSpec.ArchiveDump early = archive("legacy_user_20300630", "legacy.legacy_user", "2030-06-30",
+                List.of("NOTE"), List.of("A4"));
+
+        assertThat(validator.validate(ledger)).isEmpty();
+        assertThat(validator.coverage(ledger, archived(late, early), inventory)).isEmpty();
+        assertThat(validator.coverage(ledger, archived(late), inventory)).containsExactly(
+                "A4 legacy.legacy_user.NOTE(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 — mapping-generate"
+                        + " 로 다시 만드세요");
+        assertThat(validator.coverage(ledger, archived(archive("legacy_user_20311231", "legacy.legacy_user",
+                "2031-12-31", List.of("ETC", "NOTE"), List.of("A2", "A4")), early), inventory)).containsExactly(
+                "보관 선언 archives[0](legacy_user_20311231): 보존 기한이 원장 행 A4 과 다릅니다 — 보존 기한이 다른 행은"
+                        + " 같은 덤프에 섞지 않습니다",
+                "보관 선언 archives[1](legacy_user_20300630): 원장 행 A4 을 두 보관 선언이 가리킵니다",
+                "A3 legacy.legacy_user.MEMO(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 — mapping-generate"
+                        + " 로 다시 만드세요");
+        assertThat(validator.coverage(ledger, archived(archive("legacy_user_20311231", "legacy.legacy_user",
+                "2031-12-31", List.of("MEMO", "ETC", "USER_ID", "GONE"), List.of("A2", "A3", "A1", "Z9")), early),
+                inventory)).containsExactly(
+                "보관 선언 archives[0](legacy_user_20311231): 원장 행 A2 의 소스 컬럼이 보관 컬럼 MEMO 과 다릅니다",
+                "보관 선언 archives[0](legacy_user_20311231): 원장 행 A3 의 소스 컬럼이 보관 컬럼 ETC 과 다릅니다",
+                "보관 선언 archives[0](legacy_user_20311231): 원장 행 A1 은 외부 보관(ARCHIVE) 행이 아닙니다(CONFIRMED)",
+                "보관 선언 archives[0](legacy_user_20311231): 보관 컬럼 GONE 이 inventory 의 이 표에 없습니다",
+                "A2 legacy.legacy_user.ETC(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 — mapping-generate"
+                        + " 로 다시 만드세요",
+                "A3 legacy.legacy_user.MEMO(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 — mapping-generate"
+                        + " 로 다시 만드세요");
+        assertThat(validator.coverage(ledger, archived(archive("legacy_user_20311231", "LEGACY_USER", "2031-12-31",
+                List.of("ETC", "MEMO"), List.of("A2", "A3")), early), inventory)).as("같은 표를 다른 표기로 적었다")
+                .containsExactly("보관 선언 archives[0](legacy_user_20311231): 매핑된 소스 표를 매핑과 다른 표기"
+                        + "(LEGACY_USER)로 적었습니다 — 매핑과 같은 source 표기를 쓰세요");
+    }
+
+    @Test
+    void aDumpOnlyTableNeedsInventoryOrderKeysAndEveryColumnDisposed() {
+        Entry userId = row("A1", "USER_ID").build();
+        Entry x = archiveRow("O1", "X", acknowledged("2031-12-31")).sourceTable("legacy.legacy_other").build();
+        Entry key = row("O2", "SN").sourceTable("legacy.legacy_other").term(null).target(null).grade("UNKNOWN")
+                .status("APPROVED_IGNORE").note("덤프 행의 정렬 키로만 쓴다").load(null).conformance(null)
+                .history(path("APPROVED_IGNORE")).build();
+        CatalogSnapshot inventory = inventory(List.of("USER_ID"), List.of("X", "SN", "Y"));
+        MappingSpec.ArchiveDump dumpOnly = new MappingSpec.ArchiveDump("legacy_other_20311231", "legacy.legacy_other",
+                null, List.of("SN"), List.of("X"), List.of("O1"), "2031-12-31");
+
+        assertThat(validator.coverage(ledger(userId, x, key), archived(dumpOnly), inventory)).containsExactly(
+                "legacy_other.Y: mapping·원장 어디에도 없는 컬럼입니다 — 옮기면 확정하고, 키로만 쓰거나 옮기지 않으면 이관"
+                        + " 제외(APPROVED_IGNORE)와 사유를 적으세요");
+        assertThat(validator.coverage(ledger(userId, x, key), archived(dumpOnly),
+                inventory(List.of("USER_ID"), List.of("X", "SN")))).isEmpty();
+        assertThat(validator.coverage(ledger(userId, x, key), archived(new MappingSpec.ArchiveDump(
+                "legacy_other_20311231", "legacy.legacy_other", null, List.of("NO_KEY"), List.of("X"), List.of("O1"),
+                "2031-12-31")), inventory(List.of("USER_ID"), List.of("X", "SN")))).containsExactly(
+                "보관 선언 archives[0](legacy_other_20311231): 정렬 키 NO_KEY 가 inventory 의 이 표에 없습니다");
+
+        // 같은 덤프만 하는 표를 다른 표기로 두 번 적으면 load 가 따로 읽는다 — 한 번 읽어 나눠 쓰는 규칙을 피한다.
+        Entry y = archiveRow("O3", "Y", acknowledged("2035-12-31")).sourceTable("legacy.legacy_other").build();
+        CatalogSnapshot both = inventory(List.of("USER_ID"), List.of("X", "SN", "Y"));
+        assertThat(validator.coverage(ledger(userId, x, key, y), archived(dumpOnly, otherDump(" LEGACY.legacy_other ")),
+                both)).as("대소문자·공백만 다른 표기는 같은 표기다").isEmpty();
+        assertThat(validator.coverage(ledger(userId, x, key, y), archived(dumpOnly, otherDump("LEGACY_OTHER")), both))
+                .containsExactly("보관 선언 archives[1](legacy_other_20351231): 덤프만 하는 소스 표를 다른 보관 선언과 다른"
+                        + " 표기(LEGACY_OTHER)로 적었습니다 — 같은 표의 보관 선언은 같은 source 표기를 쓰세요");
+    }
+
+    /** legacy.legacy_other 의 컬럼 Y 를 2035-12-31 까지 보관하는 덤프만 하는 표의 선언. */
+    private static MappingSpec.ArchiveDump otherDump(String source) {
+        return new MappingSpec.ArchiveDump("legacy_other_20351231", source, null, List.of("SN"), List.of("Y"),
+                List.of("O3"), "2035-12-31");
     }
 
     @Test
@@ -699,6 +822,48 @@ class TermLedgerValidatorTest {
                     .containsExactly("legacy.legacy_user.USER_ID: mapping 의 변환(transform·type·codemap·nullify)이 원장 행"
                             + " D1 의 load 와 다릅니다 — mapping-generate 로 다시 만드세요");
         }
+    }
+
+    @Test
+    void theMappingMustCarryExactlyTheIsolationLeftAfterNullifyInBothDirections() {
+        Load cleaned = load("ymd8", nullify(DomainViolation.PLACEHOLDER_DATE, 12L));
+        Entry approved = row("D1", "USER_ID").load(cleaned)
+                .conformance(rated(new ApprovedExceptions(3L, "원천 정정 대기", List.of("INVALID_DATE", "PLACEHOLDER_DATE")),
+                        v("PLACEHOLDER_DATE", 12), v("INVALID_DATE", 3)))
+                .note("자리표시는 종료일 없음으로 본다").build();
+        Entry covered = row("D2", "USER_ID").load(cleaned)
+                .conformance(rated(new ApprovedExceptions(3L, "원천 정정 대기", List.of("PLACEHOLDER_DATE")),
+                        v("PLACEHOLDER_DATE", 12)))
+                .note("자리표시는 종료일 없음으로 본다").build();
+        MappingSpec.Isolate expected = new MappingSpec.Isolate("D1", 3L, List.of("INVALID_DATE"));
+        CatalogSnapshot inventory = inventory("USER_ID");
+
+        assertThat(validator.validate(ledger(approved))).isEmpty();
+        assertThat(LoadCapabilities.isolate(approved)).as("nullify 가 NULL 로 바꾸는 위반은 격리하지 않는다")
+                .isEqualTo(expected);
+        assertThat(LoadCapabilities.isolate(covered)).as("모두 nullify 로 덮이면 격리가 없다").isNull();
+        assertThat(LoadCapabilities.isolate(row("D3", "USER_ID").build())).isNull();
+        assertThat(validator.coverage(ledger(approved), mapping(isolated(cleaned, expected)), inventory)).isEmpty();
+        assertThat(validator.coverage(ledger(covered), mapping(isolated(cleaned, null)), inventory)).isEmpty();
+
+        String drift = ": mapping 의 격리(isolate)가 원장 행 D1 의 승인 예외(nullify 로 NULL 이 되지 않는 위반)와"
+                + " 다릅니다 — mapping-generate 로 다시 만드세요";
+        for (MappingSpec.Isolate drifted : java.util.Arrays.asList(null,
+                new MappingSpec.Isolate("D1", 3L, List.of("INVALID_DATE", "PLACEHOLDER_DATE")),
+                new MappingSpec.Isolate("D1", 4L, List.of("INVALID_DATE")),
+                new MappingSpec.Isolate("D9", 3L, List.of("INVALID_DATE")),
+                new MappingSpec.Isolate("D1", 3L, List.of("FORMAT")))) {
+            assertThat(validator.coverage(ledger(approved), mapping(isolated(cleaned, drifted)), inventory))
+                    .as(String.valueOf(drifted)).containsExactly("legacy.legacy_user.USER_ID" + drift);
+        }
+        assertThat(validator.coverage(ledger(covered), mapping(isolated(cleaned, expected)), inventory))
+                .as("원장에 없는 격리를 mapping 에만 두지 못한다")
+                .containsExactly("legacy.legacy_user.USER_ID" + drift.replace("D1", "D2"));
+    }
+
+    private static ColumnMapping isolated(Load load, MappingSpec.Isolate isolate) {
+        return new ColumnMapping("USER_ID", "user_id", load.transform(), load.type(), load.codemap(), null, null, null,
+                load.nullify(), isolate);
     }
 
     @Test
@@ -826,6 +991,27 @@ class TermLedgerValidatorTest {
         return new Conformance(rate == null ? null : new BigDecimal(rate), unmeasured, hint, List.of(), null);
     }
 
+    private static Archive acknowledged(String retainUntil) {
+        return new Archive(retainUntil, Archive.PERSONAL_DATA_ACKNOWLEDGED);
+    }
+
+    /** legacy.legacy_user 의 외부 보관 행(용어·대상·load·적합성 없음). */
+    private static Row archiveRow(String id, String column, Archive archive) {
+        return row(id, column).term(null).target(null).grade("UNKNOWN").status("ARCHIVE").load(null).conformance(null)
+                .archive(archive).history(path("ARCHIVE"));
+    }
+
+    private static MappingSpec.ArchiveDump archive(String id, String source, String retainUntil, List<String> columns,
+                                                   List<String> ledgerEntries) {
+        return new MappingSpec.ArchiveDump(id, source, null, List.of(), columns, ledgerEntries, retainUntil);
+    }
+
+    /** {@link #mapping()} 에 보관 선언을 더한다. */
+    private static MappingSpec archived(MappingSpec.ArchiveDump... archives) {
+        MappingSpec base = mapping();
+        return new MappingSpec(null, null, base.tables(), Map.of(), null, null, List.of(archives));
+    }
+
     private static List<Transition> path(String status) {
         return List.of(new Transition("REVIEWED", "검토자", "2026-10-01"), new Transition(status, "업무담당", "2026-10-02"));
     }
@@ -861,13 +1047,20 @@ class TermLedgerValidatorTest {
 
     /** legacy.legacy_user(컬럼은 정의 순서대로)와 컬럼 X 하나인 legacy.legacy_other. */
     private static CatalogSnapshot inventory(String... columns) {
+        return inventory(List.of(columns), List.of("X"));
+    }
+
+    /** legacy.legacy_user 와 legacy.legacy_other 의 컬럼(정의 순서대로). */
+    private static CatalogSnapshot inventory(List<String> userColumns, List<String> otherColumns) {
         List<CatalogObject> objects = new ArrayList<>();
         objects.add(table("legacy_user"));
         objects.add(table("legacy_other"));
-        for (int index = 0; index < columns.length; index++) {
-            objects.add(column("legacy_user", columns[index], index + 1));
+        for (int index = 0; index < userColumns.size(); index++) {
+            objects.add(column("legacy_user", userColumns.get(index), index + 1));
         }
-        objects.add(column("legacy_other", "X", 1));
+        for (int index = 0; index < otherColumns.size(); index++) {
+            objects.add(column("legacy_other", otherColumns.get(index), index + 1));
+        }
         return new CatalogSnapshot(CatalogSnapshot.CURRENT_SCHEMA_VERSION, Instant.parse("2026-10-14T00:00:00Z"),
                 new CatalogSnapshot.DatabaseInfo("LegacyDB", "1", "driver", "1"),
                 new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),

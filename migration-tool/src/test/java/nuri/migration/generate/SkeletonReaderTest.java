@@ -88,6 +88,34 @@ class SkeletonReaderTest {
     }
 
     @Test
+    void archivesHoldOnlyDumpOnlyTablesWithTheirOrderAndFilter() {
+        // [ADR-0029 L3e] 덤프만 하는 표는 source·orderByKeys·where 만 — 나머지는 원장 ARCHIVE 행에서 만든다.
+        String dumpOnly = SKELETON + """
+                archives:
+                  - {source: legacy.LOG_HIST, orderByKeys: [LOG_SN], where: "LOG_SN > 0"}
+                """;
+        assertThat(reader.read(dumpOnly).spec().archives()).singleElement().satisfies(archive -> {
+            assertThat(archive.source()).isEqualTo("legacy.LOG_HIST");
+            assertThat(archive.orderByKeys()).containsExactly("LOG_SN");
+            assertThat(archive.where()).isEqualTo("LOG_SN > 0");
+        });
+
+        assertThatThrownBy(() -> reader.read(dumpOnly.replace("where: \"LOG_SN > 0\"",
+                "columns: [LOG_MSG], ledgerEntries: [H2], retainUntil: \"2031-12-31\"")))
+                .hasMessage("skeleton archives[0](legacy.LOG_HIST): skeleton 의 archives 에는 source·orderByKeys·where 만"
+                        + " 둡니다 — id·columns·ledgerEntries·retainUntil 은 원장의 외부 보관(ARCHIVE) 행에서 만듭니다");
+        assertThatThrownBy(() -> reader.read(dumpOnly.replace("orderByKeys: [LOG_SN], ", "")))
+                .hasMessage("skeleton archives[0](legacy.LOG_HIST): 덤프만 하는 표에는 정렬 키(orderByKeys)가 필요합니다");
+        assertThatThrownBy(() -> reader.read(dumpOnly.replace("source: legacy.LOG_HIST", "source: LEGACY.user_mst")))
+                .hasMessage("skeleton archives[0](LEGACY.user_mst): 매핑하는 표는 skeleton 의 archives 에 두지 않습니다 —"
+                        + " 그 표의 보관은 원장 ARCHIVE 행으로 만들고 매핑의 where·정렬을 씁니다");
+        assertThatThrownBy(() -> reader.read(dumpOnly + "  - {source: LEGACY.log_hist, orderByKeys: [LOG_SN]}\n"))
+                .hasMessage("skeleton archives[1](LEGACY.log_hist): 같은 덤프만 하는 표를 두 번 두었습니다");
+        assertThatThrownBy(() -> reader.read(dumpOnly.replace("source: legacy.LOG_HIST, ", "")))
+                .hasMessage("skeleton archives[0]: 덤프만 하는 표에는 source 가 필요합니다");
+    }
+
+    @Test
     void theLedgerDeclarationAndAnEmptyTableListAreRefused() {
         assertThatThrownBy(() -> reader.read(SKELETON + "ledger: {path: ledger.yml, sha256: abc}\n"))
                 .hasMessage("skeleton 에는 ledger 를 두지 않습니다 — mapping-generate 가 원장 선언을 씁니다");

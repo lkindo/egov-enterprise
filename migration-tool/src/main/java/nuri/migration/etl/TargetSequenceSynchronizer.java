@@ -39,7 +39,8 @@ import java.util.Set;
  *       행을 쓰기 전에 드러난다.</li>
  *   <li>{@link #apply} — 적재가 끝난 뒤 시퀀스가 다음에 내줄 번호 묶음({@code 다음 값 - 증가폭 + 1} 부터 다음 값까지,
  *       Hibernate pooled optimizer 가 쓰는 범위)에 {@code max(컬럼)} 이하 값이 있으면 {@code setval(시퀀스, max)} 로
- *       옮긴다. 이미 앞에 있으면 건드리지 않으므로 다시 실행해도 같은 상태이고, 시퀀스를 뒤로 돌리지 않는다.</li>
+ *       옮긴다. 이미 앞에 있으면 건드리지 않으므로 다시 실행해도 같은 상태이고, 시퀀스를 뒤로 돌리지 않는다. 승인 격리로
+ *       적재하지 않은 행의 키가 더 크면 그 키까지 옮긴다(ADR-0029 L3b).</li>
  * </ol>
  *
  * <p>기록에는 대상 테이블·컬럼·시퀀스 이름과 결과만 남기고 키 값(최댓값·시퀀스 값)은 남기지 않는다 — 실행 artifact 의
@@ -143,19 +144,29 @@ public final class TargetSequenceSynchronizer {
      * @throws IllegalStateException 시퀀스가 내림차순이거나 원본 키가 시퀀스 상한을 넘는 경우
      */
     static SequenceReset apply(Connection target, Target planned) throws SQLException {
+        return apply(target, planned, null);
+    }
+
+    /**
+     * [ADR-0029 L3b] {@code isolatedMax} 는 승인 격리로 적재하지 않은 행이 이 컬럼에 썼을 정수 키의 최댓값이다(없으면
+     * null). 재설정 목표는 대상 최댓값과 이 값 중 큰 쪽이다 — cutover 뒤 온라인 앱이 격리된 번호를 다시 내주지 않게 하고,
+     * 데이터를 고친 뒤 같은 번호로 다시 적재할 수 있게 한다. 이 값도 기록하지 않는다.
+     */
+    static SequenceReset apply(Connection target, Target planned, BigInteger isolatedMax) throws SQLException {
         if (planned.sequence() == null) {
             return new SequenceReset(planned.targetTable(), planned.column(), null, Action.DECLARED_NONE);
         }
         target.setAutoCommit(false);
         BigDecimal max = maxKey(target, planned);
-        if (max == null) {
+        if (max == null && isolatedMax == null) {
             target.commit();
             return reset(planned, Action.EMPTY_TABLE);
         }
-        if (max.stripTrailingZeros().scale() > 0) {
+        if (max != null && max.stripTrailingZeros().scale() > 0) {
             throw new IllegalStateException("원본 키에 소수 값이 있어 시퀀스를 맞출 수 없습니다");
         }
-        BigInteger highest = max.toBigIntegerExact();
+        BigInteger highest = max == null ? isolatedMax
+                : isolatedMax == null ? max.toBigIntegerExact() : max.toBigIntegerExact().max(isolatedMax);
         SequenceState state = sequenceState(target, planned.sequence());
         if (state.increment().signum() <= 0) {
             throw new IllegalStateException("내림차순 시퀀스는 원본 키에 맞출 수 없습니다");

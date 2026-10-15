@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Institution entry point. --execute is explicit; source CI never invokes deployment or load. */
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, normalize, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adoptionScope, containedFile, sha256, validateAdoptionReview } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
@@ -51,7 +51,7 @@ export function executionPlan(root, path, environmentId) {
       env: { API_IMAGE_REF: value.images.api, FRONTEND_IMAGE_REF: value.images.frontend } };
   }
   exactKeys(value.migration, ['jar', 'mapping', 'inventory', 'plan', 'mode', 'sourceAdapter', 'schemas', 'ackSourceFreeze',
-    'ackControlSchemaUpgrade']);
+    'ackControlSchemaUpgrade', 'archiveDir']);
   const migration = value.migration;
   // [ADR-0029 L3c] 이미 있는 제어 스키마를 올리는 확인은 선택 boolean 이고 commit 에서만 쓴다. 승인 범위 밖 값은 거부한다.
   if (migration.ackControlSchemaUpgrade !== undefined
@@ -64,6 +64,16 @@ export function executionPlan(root, path, environmentId) {
     || !Array.isArray(migration.schemas) || migration.schemas.length === 0
     || migration.schemas.some(schema => typeof schema !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(schema))) {
     throw new Error('execution wrapper currently requires the reviewed PostgreSQL adapter, schemas, mode and freeze acknowledgement');
+  }
+  // [ADR-0029 L3e] 보관 덤프·격리 키 반출 디렉터리는 commit 에서만, 검토한 절대 경로로, 이 저장소 밖에만 둔다. 링크·승인
+  // 산출물·Git 작업 트리 검사는 load 가 다시 한다(ArchiveLocationGuard). 원시 값 덤프가 검토 범위에 섞이지 않게 한다.
+  const archiveDir = migration.archiveDir;
+  if (archiveDir !== undefined) {
+    const outside = typeof archiveDir === 'string' && isAbsolute(archiveDir)
+      && (rel => rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))(relative(root, archiveDir));
+    if (migration.mode !== 'commit' || !outside || normalize(archiveDir) !== archiveDir) {
+      throw new Error('archiveDir must be a normalized absolute path outside the repository and is allowed only for commit');
+    }
   }
   const files = {};
   for (const role of ['jar', 'mapping', 'inventory', 'plan']) {
@@ -80,7 +90,8 @@ export function executionPlan(root, path, environmentId) {
     '--command=load', `--mapping=${files.mapping}`, `--inventory=${files.inventory}`, `--plan=${files.plan}`,
     `--mode=${migration.mode}`, `--source-adapter=${migration.sourceAdapter}`, `--schemas=${migration.schemas.join(',')}`,
     `--ack-adapter=${migration.sourceAdapter}`, '--ack-source-freeze',
-    ...(migration.ackControlSchemaUpgrade === true ? ['--ack-control-schema-upgrade'] : [])], env: {} };
+    ...(migration.ackControlSchemaUpgrade === true ? ['--ack-control-schema-upgrade'] : []),
+    ...(archiveDir === undefined ? [] : [`--archive-dir=${archiveDir}`])], env: {} };
 }
 
 export function executeAdoption({ root, path, environmentId, execute = false, run = runCommand } = {}) {

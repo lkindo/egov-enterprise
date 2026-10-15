@@ -192,6 +192,45 @@ class SourceLoadSurfaceGateTest {
                 Map.of("parentTable", "legacy_dept", "originalName", name, "jdbcType", Integer.toString(jdbcType)));
     }
 
+    @Test
+    void archivedColumnsAreReadInTheSameSessionSoTheyPassTheSameGate() {
+        // [ADR-0029 L3e] 매핑된 표의 보관 컬럼과 덤프만 하는 표의 정렬 키·보관 컬럼도 같은 규칙으로 본다.
+        MappingSpec archived = new MappingSpec(null, null, mapping().tables(), Map.of(), null, null, List.of(
+                new MappingSpec.ArchiveDump("legacy_user_20311231", "legacy.legacy_user", null, List.of(),
+                        List.of("MEMO"), List.of("U7"), "2031-12-31"),
+                new MappingSpec.ArchiveDump("legacy_log_20291231", "legacy.legacy_log", null, List.of("LOG_NO"),
+                        List.of("NOTE"), List.of("L2"), "2029-12-31")));
+        CatalogObject userId = column("USER_ID", false, Integer.toString(Types.VARCHAR));
+        CatalogObject log = new CatalogObject(ObjectKind.TABLE, "db", "legacy", "legacy_log", false, null, null,
+                List.of(), Map.of());
+        CatalogObject logNo = logColumn("LOG_NO", Types.INTEGER);
+        CatalogObject note = logColumn("NOTE", Types.VARCHAR);
+
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId,
+                column("MEMO", false, Integer.toString(Types.VARCHAR)), log, logNo, note), archived, POLICY)).isEmpty();
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId,
+                column("MEMO", false, Integer.toString(Types.CLOB)), log, logNo, note), archived, POLICY))
+                .as("보관 컬럼도 스트리밍하지 못하는 LOB 면 막는다").containsExactly(LOB_STREAMING);
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId, log, logNo, note), archived,
+                POLICY)).as("inventory 에 없는 보관 컬럼").containsExactly(COLUMN_DISCOVERY_MISSING);
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId,
+                column("MEMO", false, Integer.toString(Types.VARCHAR)), log, note), archived, POLICY))
+                .as("inventory 에 없는 덤프만 하는 표의 정렬 키").containsExactly(COLUMN_DISCOVERY_MISSING);
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId,
+                column("MEMO", false, Integer.toString(Types.VARCHAR))), archived, POLICY))
+                .as("inventory 에 없는 덤프만 하는 표").containsExactly(COLUMN_DISCOVERY_MISSING);
+        assertThat(SourceLoadSurfaceGate.blockers(snapshot(table(false), userId,
+                column("MEMO", false, Integer.toString(Types.VARCHAR)), new CatalogObject(ObjectKind.TABLE, "db",
+                        "legacy", "legacy_log", true, null, null, List.of(), Map.of()), logNo, note), archived, POLICY))
+                .containsExactly(QUOTED_IDENTIFIER);
+    }
+
+    private static CatalogObject logColumn(String name, int jdbcType) {
+        return new CatalogObject(ObjectKind.COLUMN, "db", "legacy", "legacy_log." + name, false, null, null,
+                List.of(new ObjectReference(ObjectKind.TABLE, "db", "legacy", "legacy_log")),
+                Map.of("parentTable", "legacy_log", "originalName", name, "jdbcType", Integer.toString(jdbcType)));
+    }
+
     private static MappingSpec mapping() {
         return mappingWithSourceColumn("USER_ID");
     }

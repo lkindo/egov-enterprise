@@ -116,8 +116,25 @@ public record TermLedger(Integer schemaVersion, List<Entry> entries) {
         }
     }
 
-    /** 외부 보관(ARCHIVE)의 보존 기한(yyyy-MM-dd). */
-    public record Archive(String retainUntil) {}
+    /**
+     * 외부 보관(ARCHIVE)의 보존 기한(yyyy-MM-dd)과 개인정보 모양 값의 사람 확인(ADR-0029 L3e, DEC-OPS-321 U2).
+     *
+     * <p>덤프는 원시 값을 그대로 담는다 — 보관 컬럼 값과, 행마다 붙는 정렬 키 원값(덤프만 하는 표의 정렬 키가 이관 제외
+     * 컬럼이어도)이다. 주민등록번호 모양 값은 탐지가 넓어(과잉 탐지) 덤프에서 가리거나 막지 않고 기관 통제 아래 그대로
+     * 두며, load 가 보관 컬럼과 정렬 키 컬럼마다 주민등록번호·전화번호·이메일 모양 건수를 실행 증거에 남긴다. 그래서 외부
+     * 보관 행은 그 덤프 전체에 대해 그 사실을 사람이 확인했다는 {@code personalData: acknowledged} 를 가져야 한다 — 확인은
+     * ARCHIVE 전이와 같이 사람의 결정이다(전이 이력이 도구 이름을 거부한다).</p>
+     */
+    public record Archive(String retainUntil, String personalData) {
+
+        /** {@code personalData} 가 받는 유일한 값. */
+        public static final String PERSONAL_DATA_ACKNOWLEDGED = "acknowledged";
+
+        /** 개인정보 모양 확인 도입 전 생성자 호환. 확인이 없으므로 검증이 외부 보관 행을 거부한다. */
+        public Archive(String retainUntil) {
+            this(retainUntil, null);
+        }
+    }
 
     /** 상태 전이 한 번. {@code by} 는 사람, {@code at} 은 yyyy-MM-dd 다. */
     public record Transition(String to, String by, String at) {}
