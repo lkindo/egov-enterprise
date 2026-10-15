@@ -1,5 +1,7 @@
 package nuri.migration;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import nuri.migration.adapter.EvidenceLevel;
@@ -37,6 +39,7 @@ import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.plan.DispositionDecision;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.ObjectDisposition;
+import nuri.migration.postgres.PostgresReconciliationQueries;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.profile.SourceProfile;
@@ -48,7 +51,9 @@ import nuri.migration.suggest.LedgerDraftWriter;
 import nuri.migration.suggest.SuggestionReport;
 import nuri.migration.suggest.SuggestionReport.ColumnSuggestion;
 import nuri.migration.transform.TransformerRegistry;
+import nuri.migration.validate.CodeSetPrecheck;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ProductCodeBindings;
 import nuri.migration.validate.ledger.LoadCapabilities;
 import nuri.migration.validate.ledger.TermLedger;
 import nuri.migration.validate.ledger.TermLedger.ApprovedExceptions;
@@ -60,8 +65,16 @@ import nuri.migration.validate.ledger.TermLedger.NonStandardTarget;
 import nuri.migration.validate.ledger.TermLedger.Transition;
 import nuri.migration.validate.ledger.TermLedgerLoader;
 import nuri.migration.validate.ledger.TermLedgerValidator;
+import nuri.migration.verify.ColumnCheck;
+import nuri.migration.verify.ColumnReplay;
+import nuri.migration.verify.CoverageReason;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
+import nuri.migration.verify.ReconciliationEvidence;
+import nuri.migration.verify.ReconciliationPlan;
+import nuri.migration.verify.ReconciliationPlanner;
+import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.SourceAggregates;
 import nuri.migration.workflow.WorkflowReview;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -69,6 +82,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,11 +92,15 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,10 +110,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * Oracle Free 를 원천으로 표준화 이관 전체를 한 번 돌리는 리허설(ADR-0029 L4-B, DEC-OPS-323).
@@ -103,6 +125,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * discover → profile → term-suggest → 원장 확정(시험이 사람 역할) → mapping-generate → plan·review·validate → 공개 DRY_RUN
  * 으로 지난다. 공개 COMMIT 은 Oracle 이 {@code UNVERIFIED} 라 막히는 것을 보고, 승인 workflow 밑의 엔진으로 COMMIT·verify
  * 한다(기존 vendor 리허설·L3b 시험과 같은 길). 증거 등급은 바꾸지 않는다 — 합성 데이터·Free 이미지는 기관 증거가 아니다.</p>
+ *
+ * <p>[ADR-0029 L4 O2] 나눈 매핑(대리키 공유)·조회 조인·덤프만 하는 표의 보관 덤프와 load 안 대사(원천 집계·대상 누적·물리 FK
+ * 증명·공통코드 허용값)를 같은 Oracle 원천에서 끝까지 돌리는 리허설도 이 클래스에 둔다.</p>
  *
  * <p>표준 출력과 JUnit XML 에는 클래스 이름·null 여부·건수만 남긴다. 값을 대조하는 단언은 다른 행의 키(순번)나 건수만
  * 실패 문구에 싣는다 — 행 값·코멘트 본문·접속 정보를 남기지 않는다.</p>
@@ -122,6 +147,26 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
             "USE_AT", "STAT_CD", "DEPT_CD", "PHOTO", "MEMO");
     private static final List<Transition> CONFIRMED = List.of(new Transition("REVIEWED", "검토자", "2026-10-15"),
             new Transition("CONFIRMED", "업무담당", "2026-10-15"));
+    private static final List<Transition> IGNORED = List.of(new Transition("REVIEWED", "검토자", "2026-10-15"),
+            new Transition("APPROVED_IGNORE", "업무담당", "2026-10-15"));
+    private static final List<Transition> ARCHIVED = List.of(new Transition("REVIEWED", "검토자", "2026-10-15"),
+            new Transition("ARCHIVE", "업무담당", "2026-10-15"));
+    /** O2 직원 표의 행 수 — keyset page(500행) 셋에 걸친다. */
+    private static final int EMPLOYEES = 1200;
+    /** '' 로 넣은 직원명(MOD 97 = 0) — Oracle 은 NULL 로 저장한다. */
+    private static final int EMPTY_NAMES = EMPLOYEES / 97;
+    /** 자리표시 가입일(MOD 150 = 75) — nullify PLACEHOLDER_DATE. */
+    private static final int O2_PLACEHOLDERS = 8;
+    /** 이메일이 없는 직원(MOD 50 = 0). */
+    private static final int NO_EMAIL = EMPLOYEES / 50;
+    /** 부서 조회에 짝이 없는 키(D999)를 가진 직원 — maxMissing 과 같다. */
+    private static final List<Long> UNKNOWN_DEPT = List.of(13L, 1013L);
+    /** 덤프만 하는 옛 로그 표의 행 수와 기록 일시의 기준. */
+    private static final int OLD_LOGS = 400;
+    private static final LocalDateTime LOG_BASE = LocalDateTime.of(2019, 1, 1, 0, 0);
+    private static final String RETAIN_UNTIL = "2031-12-31";
+    /** 덤프 행 원문의 NUMBER(12,2) 토큰. */
+    private static final Pattern AMOUNT_TOKEN = Pattern.compile("\"AMOUNT\":(-?[0-9][0-9.eE+-]*)");
     private static final String STOPPED = "이 chunk 는 기록하지 않고 적재를 멈췄습니다";
     private static final String ADAPTER = "oracle-catalog";
     private static final String ORACLE_DRIVER = "oracle.jdbc.OracleDriver";
@@ -571,12 +616,31 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         String ledgerEntry = rows.get("JOIN_YMD").id();
         assertThat(dryRun.mode()).isEqualTo("DRY_RUN");
         assertThat(dryRun.status()).isEqualTo("PASS");
-        // 실행 JSON 형식 5(ADR-0029 L4) — 기본 매핑은 매핑 id 를, DRY_RUN 은 제어 스키마 기록을, 조회가 없으면 짝 없는
-        //   행 기록을 싣지 않는다.
+        // 실행 JSON 형식 5(ADR-0029 L3c·L3d·L4 D2) — 기본 매핑은 매핑 id 를, DRY_RUN 은 제어 스키마 기록을, 조회가 없으면 짝
+        //   없는 행 기록을 싣지 않는다. 승인 load 의 DRY_RUN 은 Oracle 원천 집계로 조회 행 수만 대사하고 쓰기 세션은 검사하지
+        //   않는다.
         assertThat(dryRun.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(5);
         assertThat(dryRun.controlSchema()).isNull();
         assertThat(dryRun.lookupMisses()).isEmpty();
         assertThat(dryRunText).doesNotContain("\"controlSchema\"", "\"lookupMisses\"", "\"mapping\":");
+        assertThat(dryRun.reconciliation()).isNotNull();
+        assertThat(dryRun.reconciliation().replicationRole()).isEqualTo("NOT_CHECKED");
+        assertThat(dryRun.reconciliation().mappings()).singleElement().satisfies(mapping -> {
+            assertThat(mapping.source()).isEqualTo(r.sourceTable());
+            assertThat(mapping.target()).isEqualTo(r.targetTable());
+            assertThat(mapping.status()).isEqualTo("PASS");
+            assertThat(mapping.checks()).extracting(ReconciliationEvidence.CheckRecord::check,
+                    ReconciliationEvidence.CheckRecord::status).containsExactly(
+                    org.assertj.core.groups.Tuple.tuple("SOURCE_ROWS", "PASS"));
+        });
+        // codemap 결과 종류 — 격리한 3행은 세지 않고, 미매핑 그대로 쓰기·대체값이 없으며 모든 키가 한 번 이상 맞았다.
+        assertThat(dryRun.reconciliation().codemapUse()).containsExactly(
+                new ReconciliationEvidence.CodemapUseRecord(r.targetTable(), "use_yn", "use_at",
+                        ROWS - INVALID_DATES.size(), 0, 0, 0, List.of()),
+                new ReconciliationEvidence.CodemapUseRecord(r.targetTable(), "stat_cd", "stat_cd",
+                        ROWS - INVALID_DATES.size(), 0, 0, 0, List.of()));
+        assertThat(dryRun.reconciliation().references()).isEmpty();
+        assertThat(dryRun.reconciliation().codeSets()).as("DRY_RUN 은 대상 쪽 대사를 하지 않는다").isEmpty();
         assertThat(dryRun.tables()).singleElement().satisfies(table -> {
             assertThat(table.mapping()).isNull();
             assertThat(table.read()).isEqualTo(ROWS);
@@ -662,8 +726,9 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         String commitText = MigrationExecutionArtifact.encode(plan, MigrationMode.COMMIT, "PASS", Instant.now(),
                 verified, results, outcome, new MigrationExecutionArtifact.ControlSchemaRecord(
                         before.appliedVersion() == null ? "none" : before.appliedVersion(), after.appliedVersion()));
+        // 대사 수집 없이 부른 엔진 경로라 형식 5 의 reconciliation 블록이 없다 — 대사는 O2 리허설이 엔진 경로로 본다.
         assertThat(commitText).contains("\"isolated\":3", "\"ordinals\":[10,600,1300]", "\"action\":\"ADVANCED\"",
-                "\"schemaVersion\":5", "\"after\":\"2\"}");
+                "\"schemaVersion\":5", "\"after\":\"2\"}").doesNotContain("\"reconciliation\"");
         Map<String, String> commitForbidden = forbidden();
         commitForbidden.put("보관 디렉터리", dumps.toString());
         commitForbidden.put("보관 디렉터리(/ 구분)", dumps.toString().replace('\\', '/'));
@@ -682,6 +747,442 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         assertThat(targetJdbc().queryForObject("INSERT INTO " + r.targetTable() + " (user_nm) VALUES ('온라인')"
                 + " RETURNING user_no", Long.class))
                 .as("온라인 앱의 다음 번호는 격리한 마지막 키(1300) 뒤다 — 정밀도 없는 NUMBER 키의 시퀀스 재설정").isEqualTo(1301L);
+    }
+
+    /**
+     * [ADR-0029 L4 O2] 표준화 이관의 나머지 경로를 Oracle 원천에서 끝까지 돌린다. 한 원천 표를 대리키를 채번하는 기본 매핑과
+     * EMAIL·PHOTO 를 옮기는 확장 매핑으로 나누고(L3c — 확장 매핑은 자기 원천을 fkRef 로 가리켜 같은 대리키를 쓴다), 두 조회
+     * 조인(VARCHAR2 키, NUMBER(3)↔NUMBER(10,0) 키 — 짝 없음 2행 ≤ maxMissing)으로 값을 모으며(L3d — 두 NUMBER 키는 드라이버가
+     * 모두 scale 0 값으로 주므로 키 정규화를 가리지는 않는다. 정규화는 LookupResolver 단위 시험이 본다), 적재하지 않는 옛 로그
+     * 표를 같은 원천 읽기 세션에서 덤프한다(L3e — TIMESTAMP(6)·RAW·NUMBER(12,2) 값). 원장 확정(분할 id·via·ARCHIVE)과
+     * mapping-generate, plan·review·validate, 공개 DRY_RUN 을 지나 승인 workflow 밑의 엔진으로 COMMIT 하고, load 안 대사(L4 D2·D7)를
+     * Oracle 원천 집계로 판정한다 — 정밀도 없는 NUMBER 합({@code SUM(col)}, 소수가 든 비율), 정밀도 있는 NUMBER 합
+     * ({@code DECIMAL(38,s)}), DATE·TIMESTAMP(6)(R1) 최소·최대, {@code ''} 를 NULL 로 저장하는 Oracle 의 NULL 계정, 표본 재계산,
+     * 날짜와 일시의 종류만 바꾸는 옮김의 판정 사유. 원천 집계 문장이 실패하면 같은 읽기 트랜잭션에서 COUNT 전용 문장으로 물러나는
+     * 길(Oracle 읽기 전용 트랜잭션의 savepoint)도 본다. 접속 사용자 이름을 대문자로 적은 설정이 discover 에서 멈추는 한계
+     * (GAP-MIG-001)도 고정한다.
+     *
+     * <p>공개 COMMIT 은 Oracle 이 {@code UNVERIFIED} 라 막힌다(위 O1 리허설이 본다). 증거 등급은 바꾸지 않는다. fixture 는 수천 행이라
+     * ORA-01555(snapshot too old)는 재지 않는다 — 운영 규모 검증 몫이다. 값은 단언에만 쓰고 출력하지 않는다.</p>
+     */
+    @Test
+    void splitLookupDumpAndReconciliationRehearsalRunsOnAnOracleSource() throws Exception {
+        O2 o = o2Rehearsal();
+        Rehearsal r = o.rehearsal();
+        try {
+            // 1. discover·profile·term-suggest — O1 과 같은 길이다. 조회 표·덤프만 하는 표도 같은 owner 범위에 있다.
+            r.command("discover");
+            CatalogSnapshot inventory = inventories.readEnvelope(Files.readString(r.inventory())).payload().toSnapshot();
+            assertThat(inventory.visibilityFindings()).isEmpty();
+            assertThat(inventory.objects()).filteredOn(object -> object.kind() == ObjectKind.TABLE)
+                    .extracting(CatalogObject::name)
+                    .contains(r.sourceName(), o.deptName(), o.gradeName(), o.logName());
+            // 접속 설정의 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적으면 inventory 의 owner(= schema = 사용자 이름)가 승인
+            //   workflow 의 credential 검사에 걸려 discover 부터 멈춘다 — 검사가 schema 한정 이름과 자격을 가리지 않는다
+            //   (GAP-MIG-001). 이 단언은 그 한계를 고정한다. 검사 규칙을 바꾸면 붉어져 문서·gap 을 함께 고치게 한다.
+            Rehearsal upperUser = withSourceUser(r, sourceConfig().username().toUpperCase(Locale.ROOT));
+            assertThatThrownBy(() -> upperUser.command("discover")).isInstanceOf(MigrationExecutionException.class)
+                    .hasMessageContaining("database credential이 artifact에 포함될 수 없습니다");
+            assertThat(upperUser.inventory()).doesNotExist();
+            r.command("profile", "--profile=" + r.profile());
+            r.command("term-suggest", "--profile=" + r.profile(), "--suggestions=" + r.suggestions(),
+                    "--ledger-draft=" + r.draft());
+            for (Path artifact : List.of(r.profile(), r.suggestions(), r.draft())) {
+                String text = Files.readString(artifact);
+                assertThat(leaks(text, o2Forbidden())).as(artifact.getFileName() + " 에 나온 원시 값·접속 정보의 종류")
+                        .isEmpty();
+                assertThat(userNameLeaks(text)).as(artifact.getFileName() + " 에서 schema 한정 이름 밖의 사용자 이름")
+                        .isZero();
+            }
+
+            // 2. 원장 확정 — 시험이 검토자·업무담당 역할을 한다. 분할 id(emp·emp_ext), 조회 경로(via), 외부 보관(ARCHIVE),
+            //   조회·정렬 키만 쓰는 컬럼의 이관 제외.
+            TermLedger draft = new TermLedgerLoader().load(Files.readString(r.draft()));
+            Map<String, String> roles = Map.of(r.sourceTable(), "EMP", o.deptTable(), "DEPT", o.gradeTable(), "GRADE",
+                    o.logTable(), "LOG");
+            Map<String, Entry> rows = new LinkedHashMap<>();
+            for (Entry entry : draft.entries()) {
+                roles.entrySet().stream().filter(role -> role.getKey().equalsIgnoreCase(entry.source().table()))
+                        .findFirst().ifPresent(role -> rows.put(role.getValue() + "."
+                                + entry.source().column().toUpperCase(Locale.ROOT), entry));
+            }
+            assertThat(rows.keySet()).containsExactlyInAnyOrder("EMP.EMP_NO", "EMP.EMP_NM", "EMP.JOIN_YMD",
+                    "EMP.HIRED_DT", "EMP.SALARY", "EMP.STAT_CD", "EMP.DEPT_CD", "EMP.GRADE_NO", "EMP.EMAIL", "EMP.PHOTO",
+                    "EMP.UPDATED_AT", "EMP.RATE", "EMP.CONTRACT_DT", "DEPT.DEPT_CD", "DEPT.DEPT_NM", "GRADE.GRADE_NO",
+                    "GRADE.GRADE_NM", "LOG.LOG_NO", "LOG.LOG_AT", "LOG.RAW_DATA", "LOG.AMOUNT");
+            TermLedger ledger = o2Ledger(o, rows);
+            Files.writeString(r.ledger(), new LedgerDraftWriter().write(ledger), StandardCharsets.UTF_8);
+
+            // 3. mapping-generate — 나눈 두 매핑(대리키 공유), 기본 매핑의 두 조회, 덤프만 하는 표의 보관 선언.
+            r.command("mapping-generate", "--skeleton=" + r.skeleton(), "--ledger=" + r.ledger(),
+                    "--mapping=" + r.mapping());
+            String generated = Files.readString(r.mapping());
+            assertThat(leaks(generated, o2Forbidden())).as("만든 mapping 에 나온 원시 값·접속 정보의 종류").isEmpty();
+            assertThat(userNameLeaks(generated)).as("만든 mapping 에서 schema 한정 이름 밖의 사용자 이름(보관 id 등)")
+                    .isZero();
+            MappingSpec spec = r.loader().load(r.mapping());
+            assertThat(spec.tables()).extracting(TableMapping::id, TableMapping::source, TableMapping::target)
+                    .containsExactly(tuple("emp", r.sourceTable(), r.targetTable()),
+                            tuple("emp_ext", r.sourceTable(), o.extTarget()));
+            TableMapping employees = spec.tables().getFirst();
+            assertThat(employees.idStrategy()).isEqualTo(new MappingSpec.IdStrategy("emp_id", "EMP_", "EMP_NO"));
+            assertThat(employees.lookups()).containsExactly(
+                    new Lookup("dept", o.deptTable(), null, new LookupKey("DEPT_CD", "DEPT_CD"),
+                            LookupCardinality.AT_MOST_ONE, (long) UNKNOWN_DEPT.size()),
+                    new Lookup("grade", o.gradeTable(), null, new LookupKey("GRADE_NO", "GRADE_NO"),
+                            LookupCardinality.EXACTLY_ONE, null));
+            assertThat(employees.columns()).extracting(ColumnMapping::source, ColumnMapping::target)
+                    .contains(tuple("dept.DEPT_NM", "dept_nm"), tuple("grade.GRADE_NM", "grade_nm"));
+            assertThat(spec.tables().get(1).columns())
+                    .extracting(ColumnMapping::source, ColumnMapping::target, ColumnMapping::fkRef)
+                    .containsExactlyInAnyOrder(tuple("EMP_NO", "emp_id", r.sourceTable()),
+                            tuple("EMAIL", "email_addr", null), tuple("PHOTO", "photo", null));
+            assertThat(spec.archives()).singleElement().satisfies(dump -> {
+                assertThat(dump.source()).isEqualTo(o.logTable());
+                assertThat(dump.orderByKeys()).containsExactly("LOG_NO");
+                assertThat(dump.columns()).containsExactly("LOG_AT", "RAW_DATA", "AMOUNT");
+                assertThat(dump.ledgerEntries()).containsExactly(rows.get("LOG.LOG_AT").id(),
+                        rows.get("LOG.RAW_DATA").id(), rows.get("LOG.AMOUNT").id());
+                assertThat(dump.retainUntil()).isEqualTo(RETAIN_UNTIL);
+            });
+            assertThat(new TermLedgerValidator().coverage(ledger, spec, inventory)).isEmpty();
+
+            // 4. plan → review → validate. 조회만 하는 표는 LOOKUP_INPUT, 덤프만 하는 표는 EXPORT_ONLY 다.
+            reviewAndValidate(r, null, Set.of(o.deptName(), o.gradeName()));
+
+            // 5. 공개 DRY_RUN — 두 매핑의 원천 행 수를 Oracle 원천 집계로 대사하고, 조회 짝 없음과 덤프할 행을 센다. 대상에 쓰지
+            //   않는다.
+            r.command("load", "--mode=dry-run", "--ack-adapter=" + ADAPTER, "--ack-source-freeze");
+            List<Path> artifacts = executionArtifacts(r);
+            assertThat(artifacts).hasSize(1);
+            String dryRunText = Files.readString(artifacts.getFirst());
+            MigrationExecutionArtifact dryRun = json.readValue(dryRunText, MigrationExecutionArtifact.class);
+            assertThat(dryRun.mode()).isEqualTo("DRY_RUN");
+            assertThat(dryRun.status()).isEqualTo("PASS");
+            assertThat(dryRun.schemaVersion()).isEqualTo(5);
+            assertThat(dryRun.tables()).extracting(MigrationExecutionArtifact.TableCounts::mapping,
+                            MigrationExecutionArtifact.TableCounts::read, MigrationExecutionArtifact.TableCounts::written,
+                            MigrationExecutionArtifact.TableCounts::errors,
+                            MigrationExecutionArtifact.TableCounts::isolated, MigrationExecutionArtifact.TableCounts::status)
+                    .containsExactly(tuple("emp", (long) EMPLOYEES, 0L, 0L, 0L, "PASS"),
+                            tuple("emp_ext", (long) EMPLOYEES, 0L, 0L, 0L, "PASS"));
+            assertThat(dryRun.lookupMisses()).containsExactly(new MigrationExecutionArtifact.LookupMissRecord(
+                    r.sourceTable(), "emp", "dept", UNKNOWN_DEPT.size()));
+            assertThat(dryRun.archives()).singleElement().satisfies(archive -> {
+                assertThat(archive.dumpOnly()).isTrue();
+                assertThat(archive.source()).isEqualTo(o.logTable());
+                assertThat(archive.rows()).isEqualTo(OLD_LOGS);
+                assertThat(archive.file()).as("DRY_RUN 은 덤프 파일을 쓰지 않는다").isNull();
+            });
+            assertThat(dryRun.reconciliation().replicationRole()).isEqualTo("NOT_CHECKED");
+            assertThat(dryRun.reconciliation().mappings()).extracting(ReconciliationEvidence.MappingRecord::mapping,
+                    ReconciliationEvidence.MappingRecord::status).containsExactly(tuple("emp", "PASS"),
+                    tuple("emp_ext", "PASS"));
+            assertThat(dryRun.reconciliation().mappings()).allSatisfy(mapping -> assertThat(mapping.checks())
+                    .extracting(ReconciliationEvidence.CheckRecord::check, ReconciliationEvidence.CheckRecord::status,
+                            ReconciliationEvidence.CheckRecord::rows)
+                    .as("DRY_RUN 은 Oracle 원천 집계로 조회 행 수만 대사한다")
+                    .containsExactly(tuple("SOURCE_ROWS", "PASS", (long) EMPLOYEES)));
+            assertThat(leaks(dryRunText, o2Forbidden())).as("DRY_RUN 실행 JSON 에 나온 원시 값·접속 정보의 종류").isEmpty();
+            assertThat(userNameLeaks(dryRunText)).as("DRY_RUN 실행 JSON 에서 schema 한정 이름 밖의 사용자 이름").isZero();
+            assertThat(rowsOf(r.targetTable()) + rowsOf(o.extTarget())).isZero();
+
+            // 6. 엔진 COMMIT — 승인 load 처럼 승인 fingerprint 의 대상 계약으로 값 한계 가드·대사 계획을 만들고, 덤프는 저장소 밖
+            //   보관 디렉터리에 같은 원천 읽기 세션으로 쓴다(공개 COMMIT 은 UNVERIFIED 라 막힌다).
+            MigrationPlan plan = plans.read(Files.readString(r.plan()));
+            Path dumps = Files.createDirectory(temp.resolve("dumps")).toRealPath();
+            ArchiveRun archives = ArchiveRun.writing(dumps, CanonicalArtifactDigest.sha256(plan), plan.mappingDigest());
+            MigrationSchemaManager controlSchemas = new MigrationSchemaManager();
+            MigrationSchemaManager.ControlSchemaStatus before = controlSchemas.inspect(targetJdbc());
+            assertThat(before.upgradeRequired()).isFalse();
+            ReconciledEngine engine = reconciledEngine(r, spec, inventory, plan, archives);
+            MigrationSchemaManager.ControlSchemaStatus after = controlSchemas.inspect(targetJdbc());
+            // 나눈 두 매핑은 같은 (원천, where) 라 원천 집계 문장 하나를 나눠 쓴다.
+            assertThat(engine.reconciliation().aggregateGroups()).singleElement()
+                    .satisfies(group -> assertThat(group.labels()).hasSize(2));
+            List<TableResult> results = engine.results();
+            assertThat(results).extracting(TableResult::mappingId).containsExactly("emp", "emp_ext");
+            assertThat(results).allSatisfy(result -> {
+                assertThat(result.errors()).isEmpty();
+                assertThat(result.read()).isEqualTo(EMPLOYEES);
+                assertThat(result.transformed()).isEqualTo(EMPLOYEES);
+                assertThat(result.written()).isEqualTo(EMPLOYEES);
+                assertThat(result.isolated()).isZero();
+            });
+            assertThat(results.getFirst().lookupMisses()).containsExactly(Map.entry("dept", (long) UNKNOWN_DEPT.size()));
+            assertThat(results.getFirst().nullified()).containsExactly(Map.entry("join_ymd", (long) O2_PLACEHOLDERS));
+            assertThat(results.get(1).lookupMisses()).isEmpty();
+
+            // 덤프 — 덤프한 행 수 = 원천에서 읽은 행 수이고, TIMESTAMP(6)(R1 — 드라이버 고유 값을 Timestamp 로)·RAW·NUMBER(12,2)
+            //   값이 원천 fixture 와 같게 쓰였다.
+            ArchiveOutcome outcome = archives.outcome();
+            assertThat(outcome.errors()).isEmpty();
+            assertThat(outcome.keyExports()).isEmpty();
+            assertThat(outcome.dumps()).singleElement().satisfies(dump -> {
+                assertThat(dump.dumpOnly()).isTrue();
+                assertThat(dump.source()).isEqualTo(o.logTable());
+                assertThat(dump.sourceRows()).isEqualTo(OLD_LOGS);
+                assertThat(dump.rows()).isEqualTo(OLD_LOGS);
+                assertThat(dump.retainUntil()).isEqualTo(RETAIN_UNTIL);
+                assertThat(dump.ledgerEntries()).containsExactly(rows.get("LOG.LOG_AT").id(),
+                        rows.get("LOG.RAW_DATA").id(), rows.get("LOG.AMOUNT").id());
+            });
+            assertThat(dumpMismatches(dumps.resolve(outcome.dumps().getFirst().fileName())))
+                    .as("덤프 행(정렬 키|LOG_AT|RAW_DATA|AMOUNT)이 원천 fixture 와 다른 위치").isEmpty();
+
+            // 7. verify — 적재 대조와 대사(L4 D2·D7)를 함께 판정한다.
+            MigrationReport verified = verifier.verify(spec, results, targetJdbc(), outcome, engine.reconciliation());
+            assertThat(verified.ok()).as(verified.toSummary()).isTrue();
+            ReconciliationEvidence evidence = verified.reconciliation();
+            assertThat(evidence.replicationRole()).isEqualTo("ORIGIN");
+            assertThat(evidence.mappings()).extracting(ReconciliationEvidence.MappingRecord::source,
+                    ReconciliationEvidence.MappingRecord::mapping, ReconciliationEvidence.MappingRecord::target,
+                    ReconciliationEvidence.MappingRecord::status).containsExactly(
+                    tuple(r.sourceTable(), "emp", r.targetTable(), "PASS"),
+                    tuple(r.sourceTable(), "emp_ext", o.extTarget(), "PASS"));
+            // 집계 실패로 물러난 판정이 없다 — Oracle 집계 문장(정밀도 없는 NUMBER 는 SUM(col) 이라 소수가 든 비율의 합이 맞고,
+            //   정밀도 있는 NUMBER 는 DECIMAL(38,s) 캐스트)과 DATE·TIMESTAMP(6) 최소·최대 값을 그대로 판정했다. TIMESTAMP(6) 의
+            //   원천 최소·최대는 드라이버 고유 값이라 집계 결과도 R1 을 지나야 판정된다.
+            assertThat(evidence.mappings().getFirst().checks()).extracting(ReconciliationEvidence.CheckRecord::check,
+                    ReconciliationEvidence.CheckRecord::column, ReconciliationEvidence.CheckRecord::status)
+                    .containsExactlyInAnyOrder(
+                            tuple("SOURCE_ROWS", null, "PASS"),
+                            tuple("NON_NULL", "emp_no", "PASS"), tuple("SUM", "emp_no", "PASS"),
+                            tuple("MIN_MAX", "emp_no", "PASS"),
+                            tuple("NON_NULL", "emp_nm", "PASS"),
+                            tuple("NON_NULL", "join_ymd", "PASS"), tuple("DOMAIN", "join_ymd", "PASS"),
+                            tuple("NON_NULL", "hired_dt", "PASS"), tuple("MIN_MAX", "hired_dt", "PASS"),
+                            tuple("NON_NULL", "salary_amt", "PASS"), tuple("SUM", "salary_amt", "PASS"),
+                            tuple("MIN_MAX", "salary_amt", "PASS"),
+                            tuple("NON_NULL", "stat_cd", "PASS"), tuple("CODE_DISTRIBUTION", "stat_cd", "PASS"),
+                            tuple("NON_NULL", "dept_cd", "PASS"),
+                            tuple("LOOKUP_NULL_FLOOR", "dept_nm", "PASS"),
+                            tuple("NON_NULL", "updated_at", "PASS"), tuple("MIN_MAX", "updated_at", "PASS"),
+                            tuple("NON_NULL", "rate", "PASS"), tuple("SUM", "rate", "PASS"),
+                            tuple("MIN_MAX", "rate", "PASS"),
+                            tuple("NON_NULL", "contract_dt", "PASS"),
+                            tuple("SAMPLE", null, "PASS"));
+            assertThat(evidence.mappings().getFirst().checks())
+                    .filteredOn(check -> List.of("NON_NULL", "LOOKUP_NULL_FLOOR", "SAMPLE").contains(check.check()))
+                    .extracting(ReconciliationEvidence.CheckRecord::check, ReconciliationEvidence.CheckRecord::column,
+                            ReconciliationEvidence.CheckRecord::rows)
+                    .as("Oracle 이 '' 를 NULL 로 둔 직원명·nullify 한 가입일·짝 없는 부서의 NULL 계정")
+                    .contains(tuple("NON_NULL", "emp_nm", (long) (EMPLOYEES - EMPTY_NAMES)),
+                            tuple("NON_NULL", "join_ymd", (long) (EMPLOYEES - O2_PLACEHOLDERS)),
+                            tuple("LOOKUP_NULL_FLOOR", "dept_nm", (long) UNKNOWN_DEPT.size()));
+            assertThat(evidence.mappings().getFirst().checks()).filteredOn(check -> "SAMPLE".equals(check.check()))
+                    .singleElement().satisfies(sample -> {
+                        assertThat(sample.columns()).as("직접·type·trim+codemap 컬럼만 재계산한다(nullify·조회·생성 키 제외)")
+                                .isEqualTo(9);
+                        assertThat(sample.rows()).isEqualTo(240L);
+                    });
+            // 판정하지 않은 검사는 설계상 대상 밖(조회·문자 합·비표준 도메인)과, 값은 그대로인데 날짜와 일시의 종류만 바뀌는
+            //   계약 날짜의 최소·최대뿐이다 — 집계 실패·원천 타입 모름 같은 물러남 사유는 없다. nullify 한 가입일의 표본은 설계상
+            //   사유 없이 빠진다(표본은 실행기의 NULL 대체를 다시 하지 않는다).
+            assertThat(evidence.mappings().getFirst().notCovered()).extracting(ReconciliationEvidence.GapRecord::column,
+                            ReconciliationEvidence.GapRecord::check, ReconciliationEvidence.GapRecord::reason)
+                    .containsExactlyInAnyOrder(
+                            tuple("emp_no", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("emp_nm", "DOMAIN", "NON_STANDARD_TARGET"), tuple("emp_nm", "SUM", "TEXT_DEFERRED"),
+                            tuple("emp_nm", "MIN_MAX", "TEXT_DEFERRED"),
+                            tuple("hired_dt", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("salary_amt", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("dept_cd", "DOMAIN", "NON_STANDARD_TARGET"), tuple("dept_cd", "SUM", "TEXT_DEFERRED"),
+                            tuple("dept_cd", "MIN_MAX", "TEXT_DEFERRED"),
+                            tuple("dept_nm", "DOMAIN", "NON_STANDARD_TARGET"), tuple("dept_nm", "NON_NULL", "LOOKUP"),
+                            tuple("dept_nm", "SAMPLE", "LOOKUP"),
+                            tuple("grade_nm", "DOMAIN", "NON_STANDARD_TARGET"), tuple("grade_nm", "NON_NULL", "LOOKUP"),
+                            tuple("grade_nm", "SAMPLE", "LOOKUP"),
+                            tuple("updated_at", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("rate", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("contract_dt", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("contract_dt", "MIN_MAX", "UNSUPPORTED_VALUE_TYPE"));
+            assertThat(evidence.mappings().get(1).checks()).extracting(ReconciliationEvidence.CheckRecord::check,
+                            ReconciliationEvidence.CheckRecord::column, ReconciliationEvidence.CheckRecord::status,
+                            ReconciliationEvidence.CheckRecord::rows)
+                    .containsExactlyInAnyOrder(tuple("SOURCE_ROWS", null, "PASS", (long) EMPLOYEES),
+                            tuple("NON_NULL", "email_addr", "PASS", (long) (EMPLOYEES - NO_EMAIL)),
+                            tuple("SAMPLE", null, "PASS", 240L));
+            assertThat(evidence.mappings().get(1).checks()).filteredOn(check -> "SAMPLE".equals(check.check()))
+                    .singleElement().satisfies(sample -> assertThat(sample.columns()).as("이메일만 재계산한다").isEqualTo(1));
+            assertThat(evidence.mappings().get(1).notCovered()).extracting(ReconciliationEvidence.GapRecord::column,
+                            ReconciliationEvidence.GapRecord::check, ReconciliationEvidence.GapRecord::reason)
+                    .containsExactlyInAnyOrder(
+                            tuple("emp_id", "DOMAIN", "NON_STANDARD_TARGET"), tuple("emp_id", "NON_NULL", "FKREF"),
+                            tuple("emp_id", "SUM", "FKREF"), tuple("emp_id", "MIN_MAX", "FKREF"),
+                            tuple("emp_id", "SAMPLE", "FKREF"),
+                            tuple("email_addr", "DOMAIN", "NON_STANDARD_TARGET"),
+                            tuple("email_addr", "SUM", "TEXT_DEFERRED"), tuple("email_addr", "MIN_MAX", "TEXT_DEFERRED"),
+                            tuple("photo", "DOMAIN", "NON_STANDARD_TARGET"), tuple("photo", "NON_NULL", "LOB"),
+                            tuple("photo", "SAMPLE", "LOB"));
+            // 확장 표의 fkRef 는 물리 FK 로 증명된다(쓰기 세션이 origin 이고 RI 트리거가 켜져 있었다).
+            assertThat(evidence.references()).extracting(ReconciliationEvidence.ReferenceRecord::child,
+                            ReconciliationEvidence.ReferenceRecord::columns, ReconciliationEvidence.ReferenceRecord::parent,
+                            ReconciliationEvidence.ReferenceRecord::method, ReconciliationEvidence.ReferenceRecord::status)
+                    .containsExactly(tuple(o.extTarget(), List.of("emp_id"), r.targetTable(), "PROVEN", "PASS"));
+            assertThat(evidence.uniqueIndexes()).hasSize(2)
+                    .allSatisfy(index -> assertThat(index.status()).isEqualTo("PASS"));
+            assertThat(evidence.orphanCandidates()).isEmpty();
+            // D7 — 메타 허용값이 있는 상태 코드는 대상 컬럼 전체를 허용값과 대조하고, 대조 원천이 없는 비표준 코드는 서명 대상이다.
+            assertThat(evidence.codeSets()).extracting(ReconciliationEvidence.CodeSetRecord::column,
+                            ReconciliationEvidence.CodeSetRecord::source, ReconciliationEvidence.CodeSetRecord::status,
+                            ReconciliationEvidence.CodeSetRecord::ledgerEntry)
+                    .containsExactlyInAnyOrder(tuple("stat_cd", "ALLOWED_VALUES", "PASS", rows.get("EMP.STAT_CD").id()),
+                            tuple("dept_cd", "UNRECONCILED", "UNRECONCILED", rows.get("EMP.DEPT_CD").id()));
+            assertThat(evidence.codeSets()).extracting(ReconciliationEvidence.CodeSetRecord::column,
+                            ReconciliationEvidence.CodeSetRecord::nonNullRows,
+                            ReconciliationEvidence.CodeSetRecord::missingRows)
+                    .as("대상 컬럼 전체(1,200행)를 대조했다 — 0행 대조의 공허한 PASS 가 아니다")
+                    .containsExactlyInAnyOrder(tuple("stat_cd", (long) EMPLOYEES, null),
+                            tuple("dept_cd", (long) EMPLOYEES, null));
+            assertThat(evidence.codemapUse()).containsExactly(new ReconciliationEvidence.CodemapUseRecord(
+                    r.targetTable(), "stat_cd", "stat_cd", EMPLOYEES, 0, 0, 0, List.of()));
+
+            // 8. 실행 JSON 형식 5 — 대사 기록을 그대로 싣고 값·경로·접속 정보는 싣지 않는다.
+            String commitText = MigrationExecutionArtifact.encode(plan, MigrationMode.COMMIT, "PASS", Instant.now(),
+                    verified, results, outcome, new MigrationExecutionArtifact.ControlSchemaRecord(
+                            before.appliedVersion() == null ? "none" : before.appliedVersion(), after.appliedVersion()));
+            MigrationExecutionArtifact commit = json.readValue(commitText, MigrationExecutionArtifact.class);
+            assertThat(commit.schemaVersion()).isEqualTo(5);
+            assertThat(commit.reconciliation()).as("실행 JSON 이 대사 기록을 그대로 싣는다").isEqualTo(evidence);
+            assertThat(commit.lookupMisses()).containsExactly(new MigrationExecutionArtifact.LookupMissRecord(
+                    r.sourceTable(), "emp", "dept", UNKNOWN_DEPT.size()));
+            assertThat(commit.archives()).singleElement().satisfies(archive -> {
+                assertThat(archive.dumpOnly()).isTrue();
+                assertThat(archive.rows()).isEqualTo(OLD_LOGS);
+                assertThat(archive.file()).isEqualTo(outcome.dumps().getFirst().fileName());
+            });
+            Map<String, String> commitForbidden = o2Forbidden();
+            commitForbidden.put("보관 디렉터리", dumps.toString());
+            commitForbidden.put("보관 디렉터리(/ 구분)", dumps.toString().replace('\\', '/'));
+            assertThat(leaks(commitText, commitForbidden)).as("COMMIT 실행 JSON 에 나온 원시 값·경로·접속 정보의 종류")
+                    .isEmpty();
+            assertThat(userNameLeaks(commitText)).as("COMMIT 실행 JSON 에서 schema 한정 이름 밖의 사용자 이름(덤프 파일 이름 등)")
+                    .isZero();
+
+            // 9. 대상 값 — 원천에서 따로 계산한 결과와 같다(어긋나면 위치만 보인다). 확장 표는 기본 표와 같은 대리키를 쓴다.
+            assertThat(mismatches(expectedEmployeeRows(o), actualEmployeeRows(o)))
+                    .as("표준화한 직원 행(번호|이름|가입일|입사일시|급여|상태|부서|부서명|직급명|변경시각|비율|계약일)이 원천 계산과"
+                            + " 다른 위치").isEmpty();
+            assertThat(sourceJdbc().queryForObject("SELECT COUNT(EMP_NM) FROM " + r.sourceTable(), Long.class))
+                    .as("Oracle 은 '' 를 NULL 로 저장한다").isEqualTo(EMPLOYEES - EMPTY_NAMES);
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + r.targetTable() + " WHERE emp_nm IS NULL",
+                    Long.class)).isEqualTo(EMPTY_NAMES);
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + r.targetTable()
+                    + " WHERE dept_nm IS NULL AND dept_cd = 'D999'", Long.class)).isEqualTo(UNKNOWN_DEPT.size());
+            assertThat(rowsOf(o.extTarget())).isEqualTo(EMPLOYEES);
+            String sameRow = "SELECT count(*) FROM " + o.extTarget() + " e JOIN " + r.targetTable()
+                    + " m ON m.emp_id = e.emp_id WHERE e.email_addr IS NOT DISTINCT FROM CASE WHEN %s %% 50 = 0 THEN NULL"
+                    + " ELSE 'emp' || %s || '@example.test' END";
+            assertThat(targetJdbc().queryForObject(sameRow.formatted("m.emp_no", "m.emp_no"), Long.class))
+                    .as("확장 행은 같은 원천 행의 기본 행과 대리키를 함께 쓴다").isEqualTo(EMPLOYEES);
+            assertThat(targetJdbc().queryForObject(sameRow.formatted("(m.emp_no + 1)", "(m.emp_no + 1)"), Long.class))
+                    .as("대조군 — 다른 원천 행과 짝 지으면 맞는 행이 없다").isZero();
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + MigrationSchemaManager.CONTROL_SCHEMA
+                    + ".tb_migration_key_map WHERE run_id = ? AND source_namespace = ?", Long.class,
+                    spec.run().runId(), spec.run().sourceNamespace())).as("대리키는 원천 행마다 한 번 채번한다")
+                    .isEqualTo(EMPLOYEES);
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + r.targetTable() + " WHERE emp_id NOT IN"
+                    + " (SELECT new_key FROM " + MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_key_map"
+                    + " WHERE run_id = ? AND source_namespace = ?)", Long.class, spec.run().runId(),
+                    spec.run().sourceNamespace())).isZero();
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + o.extTarget()
+                    + " WHERE photo = '\\x89504e47'::bytea", Long.class)).isEqualTo(3L);
+            assertThat(targetJdbc().queryForObject("SELECT count(*) FROM " + o.extTarget()
+                    + " WHERE photo IS NOT NULL", Long.class)).isEqualTo(3L);
+
+            // 10. 원천 집계 문장이 실패하면 COUNT 전용으로 물러난다. 실행기 순서(읽기 전용 → READ COMMITTED → autocommit 끔)로 연
+            //   Oracle 트랜잭션에서 savepoint 를 만들고 되돌릴 수 있는지, 실패한 문장 뒤 같은 세션이 이어지는지 탐침이 관측하고
+            //   (출력은 지원 여부·SQLSTATE·건수뿐), 실행기에 수치로 더할 수 없는 문자 컬럼의 합을 끼운 대사 계획을 넣어 본다.
+            String table = r.sourceTable();
+            try (Connection reader = ORACLE.createConnection("")) {
+                reader.setReadOnly(true);
+                reader.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                reader.setAutoCommit(false);
+                Savepoint mark = null;
+                String savepoint;
+                try {
+                    mark = reader.setSavepoint();
+                    savepoint = "set";
+                } catch (SQLException rejected) {
+                    savepoint = "rejected(SQLSTATE=" + rejected.getSQLState() + ")";
+                }
+                String failedState = null;
+                try (Statement statement = reader.createStatement();
+                     ResultSet summed = statement.executeQuery("SELECT SUM(CAST(EMP_NM AS DECIMAL(38,0))) FROM " + table)) {
+                    summed.next();
+                } catch (SQLException failed) {
+                    failedState = failed.getSQLState();
+                }
+                String rollback = "none";
+                if (mark != null) {
+                    try {
+                        reader.rollback(mark);
+                        rollback = "ok";
+                    } catch (SQLException rejected) {
+                        rollback = "rejected(SQLSTATE=" + rejected.getSQLState() + ")";
+                    }
+                }
+                long continued = count(reader, table);
+                String release = "none";
+                if (mark != null) {
+                    try {
+                        reader.releaseSavepoint(mark);
+                        release = "ok";
+                    } catch (SQLException rejected) {
+                        release = rejected.getClass().getSimpleName() + "(SQLSTATE=" + rejected.getSQLState() + ")";
+                    }
+                }
+                reader.rollback();
+                System.out.printf("O2 savepoint probe: read-only READ COMMITTED savepoint=%s failed aggregate SQLSTATE=%s"
+                        + " rollback-to-savepoint=%s COUNT after=%d release=%s%n", savepoint, failedState, rollback,
+                        continued, release);
+                // 실행기의 물러남이 기대는 드라이버 사실을 고정한다 — 바뀌면 문서(readiness O2)와 함께 다시 판정한다.
+                assertThat(savepoint).as("읽기 전용 READ COMMITTED 트랜잭션에서 savepoint 를 만든다").isEqualTo("set");
+                assertThat(failedState).as("문자 컬럼의 수치 합은 Oracle 이 실행 중에 거절한다").isEqualTo("42000");
+                assertThat(rollback).as("실패한 문장 뒤 savepoint 로 되돌린다").isEqualTo("ok");
+                assertThat(release).as("savepoint 해제는 드라이버가 지원하지 않는다(실행기는 무시한다)")
+                        .startsWith("SQLFeatureNotSupportedException");
+                // Oracle 은 문장 단위로 되돌리므로 savepoint 가 없어도 이 수는 같다 — 세션이 살아 있다는 것만 보인다.
+                assertThat(continued).as("실패한 문장 뒤에도 같은 읽기 트랜잭션이 이어진다").isEqualTo(EMPLOYEES);
+            }
+            ReconciliationPlan real = engine.reconciliation().plan();
+            ReconciliationPlan.MappingPlan employeePlan = real.mappings().getFirst();
+            List<ColumnCheck> probeColumns = new ArrayList<>(employeePlan.columns());
+            probeColumns.add(new ColumnCheck("probe_sum", "emp_nm", new ColumnCheck.SourceColumnType(Types.VARCHAR,
+                    "VARCHAR2", 50L, null), ColumnCheck.Aggregate.NUM, false, false, null, false, null, null, false, null,
+                    List.of()));
+            ReconciliationPlan.MappingPlan probePlan = new ReconciliationPlan.MappingPlan(employeePlan.label(),
+                    employeePlan.source(), employeePlan.mappingId(), employeePlan.where(), employeePlan.target(),
+                    probeColumns, employeePlan.targetPrimaryKey(), employeePlan.preservedKey(), employeePlan.isolates(),
+                    employeePlan.generatedIdentity());
+            ReconciliationRun fallback = ReconciliationRun.of(new ReconciliationPlan(true,
+                            List.of(probePlan, real.mappings().get(1)), real.references(), real.startConstraints(),
+                            real.mappedTables(), real.codeSets()),
+                    new ColumnReplay(transformers, spec.codemaps()), null);
+            ArchiveRun countedDumps = ArchiveRun.counting();
+            List<TableResult> counted = executor.execute(spec, MigrationMode.DRY_RUN, sourceJdbc(), null, oraclePolicy(),
+                    true, Map.of(), countedDumps, false, fallback);
+            assertThat(counted).allSatisfy(result -> {
+                assertThat(result.errors()).as("COUNT 전용으로 물러나 행을 읽는다").isEmpty();
+                assertThat(result.read()).isEqualTo(EMPLOYEES);
+            });
+            SourceAggregates measured = fallback.source(probePlan.aggregateGroup());
+            assertThat(measured.rows()).isEqualTo(EMPLOYEES);
+            assertThat(measured.nonNull("emp_nm")).as("NULL 계정은 COUNT 전용 문장이 잰다").isEqualTo(EMPLOYEES - EMPTY_NAMES);
+            assertThat(measured.aggregateGap("salary")).as("같은 묶음의 합·최소·최대는 판정하지 않는다")
+                    .isEqualTo(CoverageReason.SOURCE_AGGREGATE_FAILED);
+            assertThat(measured.aggregateGap("hired_dt")).isEqualTo(CoverageReason.SOURCE_AGGREGATE_FAILED);
+            MigrationReport countedReport = verifier.verify(spec, counted, null, countedDumps.outcome(), fallback);
+            assertThat(countedReport.ok()).as(countedReport.toSummary()).isTrue();
+            assertThat(countedReport.reconciliation().mappings()).flatExtracting(ReconciliationEvidence.MappingRecord::checks)
+                    .extracting(ReconciliationEvidence.CheckRecord::check, ReconciliationEvidence.CheckRecord::status)
+                    .containsExactly(tuple("SOURCE_ROWS", "PASS"), tuple("SOURCE_ROWS", "PASS"));
+        } finally {
+            for (String table : List.of(r.sourceTable(), o.deptTable(), o.gradeTable(), o.logTable())) {
+                sourceJdbc().execute("DROP TABLE " + table + " PURGE");
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -884,18 +1385,95 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
 
     private static Entry standard(Rehearsal r, Entry draft, String targetColumn, Load load,
                                   ApprovedExceptions exceptions, String note) {
+        return standard(draft, null, r.targetTable(), targetColumn, load, exceptions, note);
+    }
+
+    /** 초안의 용어·등급·적합성 추정을 그대로 쓰는 확정 행. {@code mapping} 은 나눈 매핑의 id 다(기본 매핑은 null). */
+    private static Entry standard(Entry draft, String mapping, String targetTable, String targetColumn, Load load,
+                                  ApprovedExceptions exceptions, String note) {
         assertThat(draft.term()).as(draft.source().column() + " 의 초안 용어").isNotNull();
         assertThat(draft.term().engAbbr()).isEqualToIgnoringCase(targetColumn);
         Conformance estimate = draft.conformance();
         Conformance conformance = new Conformance(estimate.rate(), estimate.unmeasured(), estimate.transform(),
                 estimate.violations(), exceptions);
-        return new Entry(draft.id(), draft.source(), null, null, new ColumnRef(r.targetTable(), targetColumn),
+        return new Entry(draft.id(), draft.source(), mapping, null, new ColumnRef(targetTable, targetColumn),
                 draft.term(), null, draft.grade(), "CONFIRMED", load, conformance, null, note, CONFIRMED);
     }
 
     private static Entry nonStandard(Rehearsal r, Entry draft, String targetColumn, Load load, String reason) {
-        return new Entry(draft.id(), draft.source(), null, null, new ColumnRef(r.targetTable(), targetColumn), null,
+        return nonStandard(draft, null, null, r.targetTable(), targetColumn, load, reason);
+    }
+
+    /** 비표준 대상(U1) 확정 행. {@code mapping} 은 나눈 매핑의 id, {@code via} 는 조회 경로다(둘 중 하나만 둔다). */
+    private static Entry nonStandard(Entry draft, String mapping, TermLedger.Via via, String targetTable,
+                                     String targetColumn, Load load, String reason) {
+        return new Entry(draft.id(), draft.source(), mapping, via, new ColumnRef(targetTable, targetColumn), null,
                 new NonStandardTarget(reason), draft.grade(), "CONFIRMED", load, null, null, null, CONFIRMED);
+    }
+
+    /** 이관 제외 — 조회 키·정렬 키로만 쓰는 컬럼. */
+    private static Entry ignored(Entry draft, String note) {
+        return new Entry(draft.id(), draft.source(), null, null, null, null, null, draft.grade(), "APPROVED_IGNORE",
+                null, null, null, note, IGNORED);
+    }
+
+    /** 외부 보관 — 덤프 전체(정렬 키 값 포함)의 개인정보 모양 확인을 함께 둔다. */
+    private static Entry archived(Entry draft) {
+        return new Entry(draft.id(), draft.source(), null, null, null, null, null, draft.grade(), "ARCHIVE", null, null,
+                new TermLedger.Archive(RETAIN_UNTIL, TermLedger.Archive.PERSONAL_DATA_ACKNOWLEDGED), null, ARCHIVED);
+    }
+
+    /**
+     * O2 원장. 직원 번호는 기본 매핑에서 정수 값으로 옮기고, 확장 매핑에서는 대리키를 함께 쓰는 fkRef 컬럼이 된다 — 같은 원천
+     * 컬럼의 확정 행이 매핑마다 하나씩이라 둘째 행은 초안 id 에 {@code .ext} 를 붙인다. 표준 용어는 가입일자·상태코드뿐이고
+     * 나머지는 비표준 대상(U1)이다.
+     */
+    private static TermLedger o2Ledger(O2 o, Map<String, Entry> rows) {
+        String main = o.rehearsal().targetTable();
+        String ext = o.extTarget();
+        Entry key = rows.get("EMP.EMP_NO");
+        Entry sharedKey = new Entry(key.id() + ".ext", key.source(), null, null, null, null, null, key.grade(),
+                "PROPOSED", null, null, null, null, List.of());
+        List<Entry> entries = List.of(
+                nonStandard(key, "emp", null, main, "emp_no", new Load(null, "long", null, List.of()),
+                        "직원 번호 — 표준 용어가 없는 대상"),
+                nonStandard(sharedKey, "emp_ext", null, ext, "emp_id", empty(),
+                        "확장 표가 기본 표와 함께 쓰는 대리키 — 표준 용어가 없는 대상 키"),
+                nonStandard(rows.get("EMP.EMP_NM"), "emp", null, main, "emp_nm", empty(),
+                        "직원 이름 — 표준 용어가 없는 대상"),
+                standard(rows.get("EMP.JOIN_YMD"), "emp", main, "join_ymd", new Load("ymd8", null, null, List.of(
+                                new MappingSpec.Nullify(DomainViolation.PLACEHOLDER_DATE, (long) O2_PLACEHOLDERS))),
+                        null, "자리표시 가입일은 값이 없는 것으로 본다"),
+                nonStandard(rows.get("EMP.HIRED_DT"), "emp", null, main, "hired_dt", empty(),
+                        "입사 일시 — 표준 용어가 없는 대상"),
+                nonStandard(rows.get("EMP.SALARY"), "emp", null, main, "salary_amt", empty(),
+                        "급여 — 표준 용어가 없는 대상"),
+                standard(rows.get("EMP.STAT_CD"), "emp", main, "stat_cd", new Load("trim", null, "stat_cd", List.of()),
+                        null, null),
+                nonStandard(rows.get("EMP.DEPT_CD"), "emp", null, main, "dept_cd", empty(),
+                        "부서 코드 — 표준 용어가 없는 대상"),
+                ignored(rows.get("EMP.GRADE_NO"), "직급 조회의 키로만 쓴다"),
+                nonStandard(rows.get("EMP.EMAIL"), "emp_ext", null, ext, "email_addr", empty(),
+                        "이메일 — 확장 표로 나눈다, 표준 용어가 없는 대상"),
+                nonStandard(rows.get("EMP.PHOTO"), "emp_ext", null, ext, "photo", empty(),
+                        "사진 — 확장 표로 나눈다, 표준 용어가 없는 대상"),
+                nonStandard(rows.get("EMP.UPDATED_AT"), "emp", null, main, "updated_at", empty(),
+                        "변경 시각 — 표준 용어가 없는 대상"),
+                nonStandard(rows.get("EMP.RATE"), "emp", null, main, "rate", empty(),
+                        "배분 비율 — 표준 용어가 없는 대상"),
+                nonStandard(rows.get("EMP.CONTRACT_DT"), "emp", null, main, "contract_dt",
+                        new Load(null, "date", null, List.of()), "계약 날짜 — 표준 용어가 없는 대상"),
+                ignored(rows.get("DEPT.DEPT_CD"), "부서 조회의 키로만 쓴다"),
+                nonStandard(rows.get("DEPT.DEPT_NM"), null, new TermLedger.Via("emp", "dept"), main, "dept_nm",
+                        empty(), "부서 이름 — 조회로 모은다, 표준 용어가 없는 대상"),
+                ignored(rows.get("GRADE.GRADE_NO"), "직급 조회의 키로만 쓴다"),
+                nonStandard(rows.get("GRADE.GRADE_NM"), null, new TermLedger.Via("emp", "grade"), main, "grade_nm",
+                        empty(), "직급 이름 — 조회로 모은다, 표준 용어가 없는 대상"),
+                ignored(rows.get("LOG.LOG_NO"), "덤프 행의 정렬 키로만 쓴다"),
+                archived(rows.get("LOG.LOG_AT")),
+                archived(rows.get("LOG.RAW_DATA")),
+                archived(rows.get("LOG.AMOUNT")));
+        return new TermLedger(TermLedger.CURRENT_SCHEMA_VERSION, entries);
     }
 
     private static Load empty() {
@@ -917,6 +1495,14 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
     }
 
     private void reviewAndValidate(Rehearsal r) throws Exception {
+        reviewAndValidate(r, r.targetTable(), Set.of());
+    }
+
+    /**
+     * plan → review → plan → validate. 매핑한 원천 표는 AUTO_DATA_LOAD({@code mappedTarget} 이 null 이면 플래너가 매핑의 대상을
+     * 쓴다 — 나눈 매핑은 둘), {@code lookups} 에 이름이 있는 표는 LOOKUP_INPUT, 나머지 객체는 EXPORT_ONLY 다.
+     */
+    private void reviewAndValidate(Rehearsal r, String mappedTarget, Set<String> lookups) throws Exception {
         r.command("plan");
         MigrationPlan draft = plans.read(Files.readString(r.plan()));
         assertThat(draft.commitReady()).isFalse();
@@ -925,10 +1511,13 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         CatalogSnapshot snapshot = inventories.readEnvelope(Files.readString(r.inventory())).payload().toSnapshot();
         Map<String, DispositionDecision> decisions = new LinkedHashMap<>();
         for (CatalogObject object : snapshot.objects()) {
-            boolean mapped = object.kind() == ObjectKind.TABLE && object.name().equals(r.sourceName());
+            boolean table = object.kind() == ObjectKind.TABLE;
+            boolean mapped = table && object.name().equals(r.sourceName());
+            boolean lookup = table && lookups.contains(object.name());
             decisions.put(object.stableId(), new DispositionDecision(
-                    mapped ? ObjectDisposition.AUTO_DATA_LOAD : ObjectDisposition.EXPORT_ONLY,
-                    mapped ? r.targetTable() : null, true, "Disposable Oracle standardization rehearsal review"));
+                    mapped ? ObjectDisposition.AUTO_DATA_LOAD
+                            : lookup ? ObjectDisposition.LOOKUP_INPUT : ObjectDisposition.EXPORT_ONLY,
+                    mapped ? mappedTarget : null, true, "Disposable Oracle standardization rehearsal review"));
         }
         new YAMLMapper().writeValue(r.review().toFile(), new WorkflowReview(WorkflowReview.CURRENT_SCHEMA_VERSION,
                 draft.sourceInventoryDigest(), draft.targetSchemaDigest(), draft.mappingDigest(),
@@ -952,6 +1541,310 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         }
         return executor.execute(spec, mode, sourceJdbc(), mode == MigrationMode.COMMIT ? targetJdbc() : null,
                 oraclePolicy(), true, guards, archives == null ? ArchiveRun.counting() : archives);
+    }
+
+    /** 엔진 COMMIT 의 결과와 그 실행의 대사 수집. */
+    private record ReconciledEngine(List<TableResult> results, ReconciliationRun reconciliation) {}
+
+    /**
+     * 대사를 켠 엔진 COMMIT — 승인 load 와 같은 순서다. 승인 plan 의 대상 fingerprint(제약 스냅숏 포함)를 다시 읽어 같은지 보고,
+     * 그 live 계약으로 값 한계 가드를, 승인 load 와 같은 조립({@link MigrationWorkflowRunner#approvedReconciliationPlan} —
+     * 원장 검증·live 표준 용어·공통코드 쓰기 전 게이트 → {@link ReconciliationPlanner})으로 대사 계획을 만든다. 대상 질의는
+     * PostgreSQL 대상에 보낸다.
+     */
+    private ReconciledEngine reconciledEngine(Rehearsal r, MappingSpec spec, CatalogSnapshot inventory,
+                                              MigrationPlan plan, ArchiveRun archives) throws Exception {
+        Map<String, Map<String, TargetValueGuard.Limit>> guards;
+        TargetSchemaFingerprint target;
+        try (Connection connection = targetJdbc().getDataSource().getConnection()) {
+            target = new PostgresTargetSchemaFingerprinter().fingerprintBound(connection, spec, Set.of("public"));
+            assertThat(target.digest()).as("승인 plan 의 대상 fingerprint 와 같다").isEqualTo(plan.targetSchemaDigest());
+            guards = new MappingValidator(transformers, r.directory().resolve("db-columns.json").toString())
+                    .rowGuards(spec, target, inventory);
+        }
+        assertThat(CodeSetPrecheck.requiredGroups(spec, ProductCodeBindings.ALL, "public"))
+                .as("제품 공통코드 바인딩 컬럼을 쓰지 않는다").isEmpty();
+        WorkflowCliOptions options = WorkflowCliOptions.parse(new DefaultApplicationArguments(new String[] {
+                "--command=load", "--mapping=" + r.mapping(), "--inventory=" + r.inventory(), "--plan=" + r.plan(),
+                "--mode=commit"}));
+        ReconciliationPlan reconciliation = r.runner().approvedReconciliationPlan(options, spec, inventory, target);
+        ReconciliationRun run = ReconciliationRun.of(reconciliation, new ColumnReplay(transformers, spec.codemaps()),
+                new PostgresReconciliationQueries(targetJdbc()));
+        List<TableResult> results = executor.execute(spec, MigrationMode.COMMIT, sourceJdbc(), targetJdbc(),
+                oraclePolicy(), true, guards, archives, false, run);
+        return new ReconciledEngine(results, run);
+    }
+
+    /**
+     * 같은 skeleton·대상 계약으로 접속 사용자 이름만 바꾼 리허설(새 디렉터리). 원천 접속은 같은 계정이다 — Oracle 은 따옴표 없이
+     * 만든 사용자 이름을 대소문자 없이 받는다.
+     */
+    private Rehearsal withSourceUser(Rehearsal r, String username) throws Exception {
+        Path directory = Files.createDirectory(r.directory().resolveSibling(r.directory().getFileName() + "-user"));
+        Files.copy(r.skeleton(), directory.resolve("skeleton.yml"));
+        MappingSpec.DbConfig source = sourceConfig();
+        MappingSpec.DbConfig target = targetConfig();
+        Map<String, String> environment = Map.of(
+                "RH_SOURCE_URL", source.url(), "RH_SOURCE_USER", username,
+                "RH_SOURCE_PASSWORD", source.password(), "RH_TARGET_URL", target.url(),
+                "RH_TARGET_USER", target.username(), "RH_TARGET_PASSWORD", target.password());
+        MappingLoader loader = new MappingLoader(environment::get);
+        SourceIntrospector introspector = new SourceIntrospector();
+        MigrationWorkflowRunner runner = new MigrationWorkflowRunner(loader,
+                new MappingValidator(transformers, r.directory().resolve("db-columns.json").toString()),
+                new EtlExecutor(introspector, transformers), new MigrationVerifier(), introspector,
+                new SourceJdbcEndpointFactory(introspector), transformers);
+        return new Rehearsal(r.sourceName(), r.sourceTable(), r.targetTable(), directory, loader, runner);
+    }
+
+    /** O2 리허설 — 직원 표(나누고 조회한다)·부서·직급(조회만 한다)·옛 로그(덤프만 한다) 원천과 두 대상 표. */
+    private record O2(Rehearsal rehearsal, String extTarget, String deptName, String deptTable, String gradeName,
+                      String gradeTable, String logName, String logTable) {}
+
+    /**
+     * O2 원천 표 넷(한글 COMMENT ON)과 대상 표 둘, skeleton·실행기를 만든다. DDL·DML 은 19c 에도 있는 구문만 썼다(19c 에서는
+     * 실행하지 않았다).
+     *
+     * <ul>
+     *   <li>LEG_EMP — 정밀도 없는 NUMBER 키, '' 로 넣은 이름 12행(Oracle 은 NULL 로 저장), 자리표시 가입일 8행, 자정이 아닌 DATE,
+     *       NUMBER(12,2) 급여, 공백으로 채운 CHAR(3) 상태, 짝 없는 부서 코드(D999) 2행, NUMBER(3) 직급 번호, 이메일 없는 24행,
+     *       앞 3행만 값이 있는 BLOB, 마이크로초가 든 TIMESTAMP(6)(원천 최소·최대가 R1 을 지난다), 소수가 든 정밀도 없는
+     *       NUMBER(합이 캐스트 없는 {@code SUM(col)} 이어야 맞는다), 자정인 DATE({@code type: date} 로 date 에 옮긴다)</li>
+     *   <li>LEG_DEPT(VARCHAR2 키)·LEG_GRADE(NUMBER(10,0) 키) — 조회만 한다</li>
+     *   <li>LEG_LOG_OLD — TIMESTAMP(6)·RAW·NUMBER(12,2), 적재하지 않고 덤프만 한다</li>
+     * </ul>
+     *
+     * <p>대상 확장 표는 기본 표의 대리키를 물리 FK 로 가리킨다.</p>
+     */
+    private O2 o2Rehearsal() throws Exception {
+        String suffix = suffix();
+        String lower = suffix.toLowerCase(Locale.ROOT);
+        String empName = "LEG_EMP_" + suffix;
+        String deptName = "LEG_DEPT_" + suffix;
+        String gradeName = "LEG_GRADE_" + suffix;
+        String logName = "LEG_LOG_OLD_" + suffix;
+        String emp = owner() + "." + empName;
+        String dept = owner() + "." + deptName;
+        String grade = owner() + "." + gradeName;
+        String log = owner() + "." + logName;
+        String empTarget = "public.tb_rh_emp_" + lower;
+        String extTarget = "public.tb_rh_emp_ext_" + lower;
+        JdbcTemplate oracle = sourceJdbc();
+        oracle.execute("CREATE TABLE " + dept + " (DEPT_CD VARCHAR2(10) PRIMARY KEY, DEPT_NM VARCHAR2(50 CHAR))");
+        oracle.update("INSERT INTO " + dept + " SELECT 'D00' || LEVEL, '부서D00' || LEVEL FROM DUAL CONNECT BY LEVEL <= 5");
+        oracle.execute("CREATE TABLE " + grade + " (GRADE_NO NUMBER(10,0) PRIMARY KEY, GRADE_NM VARCHAR2(30 CHAR))");
+        oracle.update("INSERT INTO " + grade + " SELECT LEVEL, '직급' || LEVEL FROM DUAL CONNECT BY LEVEL <= 9");
+        oracle.execute("CREATE TABLE " + emp + " (EMP_NO NUMBER PRIMARY KEY, EMP_NM VARCHAR2(50 CHAR), JOIN_YMD CHAR(8),"
+                + " HIRED_DT DATE, SALARY NUMBER(12,2), STAT_CD CHAR(3), DEPT_CD VARCHAR2(10), GRADE_NO NUMBER(3),"
+                + " EMAIL VARCHAR2(100), PHOTO BLOB, UPDATED_AT TIMESTAMP(6), RATE NUMBER, CONTRACT_DT DATE)");
+        oracle.update("INSERT INTO " + emp
+                + " (EMP_NO, EMP_NM, JOIN_YMD, HIRED_DT, SALARY, STAT_CD, DEPT_CD, GRADE_NO, EMAIL, UPDATED_AT, RATE,"
+                + " CONTRACT_DT)"
+                + " SELECT LEVEL, CASE WHEN MOD(LEVEL, 97) = 0 THEN '' ELSE '직원' || LEVEL END,"
+                + " CASE WHEN MOD(LEVEL, 150) = 75 THEN '00000000'"
+                + " ELSE TO_CHAR(DATE '2015-01-01' + LEVEL, 'YYYYMMDD') END,"
+                + " DATE '2010-03-01' + LEVEL * 3 + (1 + MOD(LEVEL, 23)) / 24 + 11 / 1440,"
+                + " LEVEL * 1000 + MOD(LEVEL, 100) / 100,"
+                + " CASE WHEN MOD(LEVEL, 7) = 0 THEN 'D' ELSE 'A' END,"
+                + " CASE WHEN LEVEL IN (" + csv(UNKNOWN_DEPT) + ") THEN 'D999' ELSE 'D00' || TO_CHAR(MOD(LEVEL, 5) + 1) END,"
+                + " MOD(LEVEL, 9) + 1,"
+                + " CASE WHEN MOD(LEVEL, 50) = 0 THEN NULL ELSE 'emp' || LEVEL || '@example.test' END,"
+                + " TIMESTAMP '2020-06-01 00:00:00' + NUMTODSINTERVAL(LEVEL * 53, 'MINUTE')"
+                + " + NUMTODSINTERVAL(LEVEL / 1000000, 'SECOND'),"
+                + " LEVEL / 8,"
+                + " DATE '2018-01-01' + LEVEL"
+                + " FROM DUAL CONNECT BY LEVEL <= " + EMPLOYEES);
+        oracle.update("UPDATE " + emp + " SET PHOTO = HEXTORAW('89504E47') WHERE EMP_NO <= 3");
+        oracle.execute("CREATE TABLE " + log + " (LOG_NO NUMBER(10) PRIMARY KEY, LOG_AT TIMESTAMP(6), RAW_DATA RAW(16),"
+                + " AMOUNT NUMBER(12,2))");
+        oracle.update("INSERT INTO " + log + " SELECT LEVEL, TIMESTAMP '2019-01-01 00:00:00'"
+                + " + NUMTODSINTERVAL(LEVEL * 37, 'MINUTE') + NUMTODSINTERVAL(LEVEL / 1000000, 'SECOND'),"
+                + " HEXTORAW(LPAD(TO_CHAR(LEVEL, 'FMXXXXXXXX'), 8, '0')), LEVEL * 10.25"
+                + " FROM DUAL CONNECT BY LEVEL <= " + OLD_LOGS);
+        Map<String, Map<String, String>> comments = new LinkedHashMap<>();
+        comments.put(emp, Map.of("", "레거시 직원", "EMP_NO", "직원번호", "EMP_NM", "직원명", "JOIN_YMD", "가입일자",
+                "HIRED_DT", "입사일시", "SALARY", "급여", "STAT_CD", "상태코드", "DEPT_CD", "부서코드", "GRADE_NO",
+                "직급번호", "EMAIL", "이메일"));
+        comments.put(dept, Map.of("", "레거시 부서", "DEPT_CD", "부서코드", "DEPT_NM", "부서명"));
+        comments.put(grade, Map.of("", "레거시 직급", "GRADE_NO", "직급번호", "GRADE_NM", "직급명"));
+        comments.put(log, Map.of("", "레거시 옛 접속 로그", "LOG_NO", "로그번호", "LOG_AT", "기록일시", "RAW_DATA",
+                "원시자료", "AMOUNT", "금액"));
+        for (Map.Entry<String, Map<String, String>> table : comments.entrySet()) {
+            for (Map.Entry<String, String> comment : table.getValue().entrySet()) {
+                oracle.execute(comment.getKey().isEmpty()
+                        ? "COMMENT ON TABLE " + table.getKey() + " IS '" + comment.getValue() + "'"
+                        : "COMMENT ON COLUMN " + table.getKey() + "." + comment.getKey() + " IS '" + comment.getValue()
+                        + "'");
+            }
+        }
+        for (Map.Entry<String, String> comment : Map.of("PHOTO", "사진", "UPDATED_AT", "변경시각", "RATE", "배분비율",
+                "CONTRACT_DT", "계약날짜").entrySet()) {
+            oracle.execute("COMMENT ON COLUMN " + emp + "." + comment.getKey() + " IS '" + comment.getValue() + "'");
+        }
+        targetJdbc().execute("CREATE TABLE " + empTarget + " (emp_id varchar(20) PRIMARY KEY, emp_no bigint,"
+                + " emp_nm varchar(50), join_ymd varchar(8), hired_dt timestamp, salary_amt numeric(12,2),"
+                + " stat_cd varchar(3), dept_cd varchar(10), dept_nm varchar(50), grade_nm varchar(30),"
+                + " updated_at timestamp(6), rate numeric, contract_dt date)");
+        targetJdbc().execute("CREATE TABLE " + extTarget + " (emp_id varchar(20) PRIMARY KEY REFERENCES " + empTarget
+                + " (emp_id), email_addr varchar(100), photo bytea)");
+
+        Path directory = Files.createDirectory(temp.resolve("rehearsal"));
+        Files.writeString(directory.resolve("skeleton.yml"), """
+                source:
+                  url: ${RH_SOURCE_URL}
+                  username: ${RH_SOURCE_USER}
+                  password: ${RH_SOURCE_PASSWORD}
+                  driver: oracle.jdbc.OracleDriver
+                  endpointId: disposable-oracle-source
+                target:
+                  url: ${RH_TARGET_URL}
+                  username: ${RH_TARGET_USER}
+                  password: ${RH_TARGET_PASSWORD}
+                  driver: org.postgresql.Driver
+                  endpointId: disposable-postgres-target
+                run:
+                  runId: rehearsal-o2-%1$s
+                  sourceNamespace: oracle-rehearsal-o2-fixture
+                tables:
+                  - source: %2$s
+                    id: emp
+                    target: %3$s
+                    orderBy: EMP_NO
+                    idStrategy: {column: emp_id, generator: EMP_, sourceKey: EMP_NO}
+                    lookups:
+                      - {alias: dept, source: %4$s, key: {from: DEPT_CD, to: DEPT_CD}, cardinality: at_most_one, maxMissing: 2}
+                      - {alias: grade, source: %5$s, key: {from: GRADE_NO, to: GRADE_NO}, cardinality: exactly_one}
+                  - source: %2$s
+                    id: emp_ext
+                    target: %6$s
+                    orderBy: EMP_NO
+                    targetKey: emp_id
+                    columns:
+                      - {source: EMP_NO, target: emp_id, fkRef: %2$s}
+                archives:
+                  - {source: %7$s, orderByKeys: [LOG_NO]}
+                codemaps:
+                  stat_cd:
+                    values: {"A": "A01", "D": "A02"}
+                """.formatted(lower, emp, empTarget, dept, grade, extTarget, log), StandardCharsets.UTF_8);
+        MappingSpec.DbConfig source = sourceConfig();
+        MappingSpec.DbConfig target = targetConfig();
+        Map<String, String> environment = Map.of(
+                "RH_SOURCE_URL", source.url(), "RH_SOURCE_USER", source.username(),
+                "RH_SOURCE_PASSWORD", source.password(), "RH_TARGET_URL", target.url(),
+                "RH_TARGET_USER", target.username(), "RH_TARGET_PASSWORD", target.password());
+        MappingLoader loader = new MappingLoader(environment::get);
+        Path columns = directory.resolve("db-columns.json");
+        json.writeValue(columns.toFile(), targetJdbc().queryForList(
+                "SELECT table_schema || '.' || table_name AS table_name, column_name"
+                        + " FROM information_schema.columns WHERE table_schema = 'public' AND table_name IN (?, ?)"
+                        + " ORDER BY table_name, ordinal_position", "tb_rh_emp_" + lower, "tb_rh_emp_ext_" + lower));
+        SourceIntrospector introspector = new SourceIntrospector();
+        MigrationWorkflowRunner runner = new MigrationWorkflowRunner(loader,
+                new MappingValidator(transformers, columns.toString()), new EtlExecutor(introspector, transformers),
+                new MigrationVerifier(), introspector, new SourceJdbcEndpointFactory(introspector), transformers);
+        return new O2(new Rehearsal(empName, emp, empTarget, directory, loader, runner), extTarget, deptName, dept,
+                gradeName, grade, logName, log);
+    }
+
+    /**
+     * O2 산출물에 나오면 안 되는 문자열 — 원시 값(이름·이메일·부서명·직급명·자리표시 가입일, 키 7 행의 급여·입사 일시와 덤프만
+     * 하는 표의 기록 일시·RAW)과 일회용 접속 정보. 접속 사용자 이름은 {@link #userNameLeaks} 가 따로 본다.
+     */
+    private static Map<String, String> o2Forbidden() {
+        Map<String, String> probes = new LinkedHashMap<>();
+        probes.put("직원 이름", "직원7");
+        probes.put("이메일", "emp7@example.test");
+        probes.put("부서 이름", "부서D001");
+        probes.put("직급 이름", "직급3");
+        probes.put("자리표시 가입일", "00000000");
+        probes.put("급여", "7000.07");
+        probes.put("입사 일시(ISO)", "2010-03-22T08:11");
+        probes.put("입사 일시", "2010-03-22 08:11");
+        probes.put("덤프 기록 일시", LOG_BASE.plusMinutes(37L * 7).plusNanos(7000L).toString());
+        probes.put("덤프 RAW", Base64.getEncoder().encodeToString(ByteBuffer.allocate(4).putInt(7).array()));
+        probes.put("원천 JDBC URL", ORACLE.getJdbcUrl());
+        probes.put("원천 비밀번호", ORACLE.getPassword());
+        probes.put("대상 JDBC URL", POSTGRES.getJdbcUrl());
+        probes.put("대상 비밀번호", POSTGRES.getPassword());
+        return probes;
+    }
+
+    /**
+     * 접속 사용자 이름이 나온 곳의 수(대소문자 무시). Oracle 은 owner 로 로그인해야 가시성을 증명하므로 schema 식별자 — Oracle 이
+     * 저장한 대문자 그대로, 앞뒤에 식별자 문자가 없는 것({@code OWNER.표}, 그 꼴로 시작하는 원장 행 id, 프로파일의 schema 값) —
+     * 에는 사용자 이름이 늘 있다. 그 꼴만 빼고 센다. 보관 id 처럼 다른 대소문자로 바꾸거나 다른 이름에 이어 붙인 사본은 남아서
+     * 센다. 승인 workflow 의 credential 검사는 설정에 적은 그대로(대소문자 구분) 찾으므로 이 검사가 더 엄격하다(GAP-MIG-001).
+     */
+    private static int userNameLeaks(String text) {
+        String schema = "(?<![\\p{L}\\p{N}_$#])" + Pattern.quote(owner()) + "(?![\\p{L}\\p{N}_$#])";
+        String rest = Pattern.compile(schema).matcher(text).replaceAll("");
+        return (int) Pattern.compile("(?i)" + Pattern.quote(sourceConfig().username())).matcher(rest).results().count();
+    }
+
+    /**
+     * 덤프 파일을 원천 fixture 와 대조해 어긋난 위치(1부터, 최대 5개)를 돌려준다. 값은 싣지 않는다. 기록 일시는 ISO 지역 일시,
+     * RAW 는 {@code {"$base64": …}}, NUMBER(12,2) 는 지수 없는 수로 써야 한다.
+     */
+    private static List<String> dumpMismatches(Path file) throws Exception {
+        ObjectMapper exact = new ObjectMapper().enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+        List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+        List<String> problems = new ArrayList<>();
+        List<String> header = new ArrayList<>();
+        exact.readTree(lines.getFirst()).path("columns").forEach(name -> header.add(name.asText()));
+        if (!header.equals(List.of("LOG_AT", "RAW_DATA", "AMOUNT"))) {
+            problems.add("header columns");
+        }
+        if (lines.size() != OLD_LOGS + 1) {
+            problems.add("rows " + (lines.size() - 1) + " != " + OLD_LOGS);
+        }
+        for (int index = 1; index < lines.size() && problems.size() < 5; index++) {
+            JsonNode row = exact.readTree(lines.get(index));
+            long key = row.path("k").path(0).asLong();
+            JsonNode values = row.path("v");
+            JsonNode amount = values.path("AMOUNT");
+            // 원문 토큰 — 4100 처럼 끝이 0 인 값을 드라이버가 음수 scale 로 주면 지수 표기가 될 수 있다.
+            Matcher amountToken = AMOUNT_TOKEN.matcher(lines.get(index));
+            boolean same = key == index
+                    && amountToken.find() && amountToken.group(1).chars().noneMatch(c -> c == 'e' || c == 'E')
+                    && LOG_BASE.plusMinutes(37L * key).plusNanos(key * 1000L).toString()
+                    .equals(values.path("LOG_AT").asText(null))
+                    && Base64.getEncoder().encodeToString(ByteBuffer.allocate(4).putInt((int) key).array())
+                    .equals(values.path("RAW_DATA").path("$base64").asText(null))
+                    && amount.isNumber()
+                    && amount.decimalValue().compareTo(BigDecimal.valueOf(key).multiply(new BigDecimal("10.25"))) == 0;
+            if (!same) {
+                problems.add("position " + index);
+            }
+        }
+        return problems;
+    }
+
+    /** 원천에서 계산한 직원 표준화 결과 — 자리표시 가입일과 짝 없는 부서명은 NULL, 상태 코드는 codemap 결과다. */
+    private static List<String> expectedEmployeeRows(O2 o) {
+        return sourceJdbc().queryForList("SELECT e.EMP_NO || '|' || NVL(e.EMP_NM, 'NULL') || '|'"
+                + " || CASE WHEN e.JOIN_YMD = '00000000' THEN 'NULL' ELSE e.JOIN_YMD END || '|'"
+                + " || TO_CHAR(e.HIRED_DT, 'YYYY-MM-DD HH24:MI:SS') || '|' || TO_CHAR(e.SALARY, 'FM9999999990.00')"
+                + " || '|' || DECODE(TRIM(e.STAT_CD), 'A', 'A01', 'D', 'A02') || '|' || e.DEPT_CD"
+                + " || '|' || NVL(d.DEPT_NM, 'NULL') || '|' || g.GRADE_NM"
+                + " || '|' || TO_CHAR(e.UPDATED_AT, 'YYYY-MM-DD HH24:MI:SS.FF6') || '|' || TO_CHAR(e.RATE, 'FM9999990.000')"
+                + " || '|' || TO_CHAR(e.CONTRACT_DT, 'YYYY-MM-DD') FROM " + o.rehearsal().sourceTable() + " e"
+                + " LEFT JOIN " + o.deptTable() + " d ON d.DEPT_CD = e.DEPT_CD"
+                + " JOIN " + o.gradeTable() + " g ON g.GRADE_NO = e.GRADE_NO ORDER BY e.EMP_NO", String.class);
+    }
+
+    private static List<String> actualEmployeeRows(O2 o) {
+        return targetJdbc().queryForList("SELECT emp_no || '|' || coalesce(emp_nm, 'NULL') || '|'"
+                + " || coalesce(join_ymd, 'NULL') || '|' || to_char(hired_dt, 'YYYY-MM-DD HH24:MI:SS') || '|'"
+                + " || to_char(salary_amt, 'FM9999999990.00') || '|' || stat_cd || '|' || dept_cd"
+                + " || '|' || coalesce(dept_nm, 'NULL') || '|' || grade_nm"
+                + " || '|' || to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS.US') || '|' || to_char(rate, 'FM9999990.000')"
+                + " || '|' || to_char(contract_dt, 'YYYY-MM-DD') FROM " + o.rehearsal().targetTable()
+                + " ORDER BY emp_no", String.class);
+    }
+
+    private static long rowsOf(String table) {
+        return targetJdbc().queryForObject("SELECT count(*) FROM " + table, Long.class);
     }
 
     /** 생성기를 거치지 않고 한 컬럼의 trim 을 뺀 mapping(R3 가 막는 조합). */
