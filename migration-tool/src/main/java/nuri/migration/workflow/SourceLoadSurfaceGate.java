@@ -11,8 +11,8 @@ import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -62,24 +62,48 @@ public final class SourceLoadSurfaceGate {
                 .filter(table -> mapping.tables().stream()
                         .anyMatch(candidate -> matches(candidate, table)))
                 .toList();
+        // [ADR-0029 L3d] 조회 표 — 조회 키와 조회 컬럼의 형식 증거를 본다. 조회 행은 한 번에 읽으므로 LOB 는 받지 않는다.
+        List<CatalogObject> lookupTables = snapshot.objects().stream()
+                .filter(object -> object.kind() == ObjectKind.TABLE)
+                .filter(table -> mapping.tables().stream()
+                        .flatMap(candidate -> candidate.lookups().stream())
+                        .anyMatch(lookup -> lookup != null && matches(lookup.source(), table)))
+                .toList();
         EnumSet<Blocker> blockers = EnumSet.noneOf(Blocker.class);
         if (!policy.quotedIdentifiersSupported()
-                && mappedTables.stream().anyMatch(CatalogObject::quoted)) {
+                && (mappedTables.stream().anyMatch(CatalogObject::quoted)
+                || lookupTables.stream().anyMatch(CatalogObject::quoted))) {
             blockers.add(Blocker.QUOTED_IDENTIFIER);
+        }
+        for (CatalogObject table : lookupTables) {
+            LinkedHashMap<String, String> requiredColumns = new LinkedHashMap<>();
+            for (TableMapping candidate : mapping.tables()) {
+                for (MappingSpec.Lookup lookup : candidate.lookups()) {
+                    if (lookup != null && matches(lookup.source(), table)) {
+                        SourceProjection.lookupColumns(candidate, lookup)
+                                .forEach(column -> requiredColumns.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+                    }
+                }
+            }
+            inspectRequired(snapshot, table, requiredColumns, policy, false, blockers);
         }
 
         for (CatalogObject table : mappedTables) {
-            TableMapping tableMapping = mapping.tables().stream()
+            // [ADR-0029 L3c] 한 소스를 나눈 매핑들이 요구하는 컬럼의 합집합을 본다 — 첫 매핑만 보면 다른 매핑이 읽는
+            //   컬럼의 형식 증거가 빠진다.
+            LinkedHashMap<String, String> requiredColumns = new LinkedHashMap<>();
+            mapping.tables().stream()
                     .filter(candidate -> matches(candidate, table))
-                    .findFirst()
-                    .orElseThrow();
-            List<String> required = new ArrayList<>(SourceProjection.requiredColumns(tableMapping));
+                    .flatMap(candidate -> SourceProjection.requiredColumns(candidate).stream())
+                    .forEach(column -> requiredColumns.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+            // [ADR-0029 L3e] 매핑된 표의 보관 컬럼은 적재와 같은 SELECT 로 읽는다(분할한 소스면 keymap 소유 매핑이나 id 를
+            //   생략한 매핑의 읽기).
             for (ArchiveDump dump : mapping.archives()) {
-                if (dump != null && mapping.mappedTableOf(dump.source()) == tableMapping) {
-                    required.addAll(dump.columns());
+                if (dump != null && mapping.mappedTableOf(dump.source()) != null && matches(dump.source(), table)) {
+                    dump.columns().forEach(column -> requiredColumns.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
                 }
             }
-            inspectRequired(snapshot, table, required, policy, blockers);
+            inspectRequired(snapshot, table, requiredColumns, policy, true, blockers);
         }
         for (ArchiveDump dump : mapping.archives()) {
             if (dump == null || mapping.mappedTableOf(dump.source()) != null) {
@@ -93,13 +117,14 @@ public final class SourceLoadSurfaceGate {
                 blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
                 continue;
             }
-            List<String> required = new ArrayList<>(dump.orderByKeys());
-            required.addAll(dump.columns());
+            LinkedHashMap<String, String> required = new LinkedHashMap<>();
+            dump.orderByKeys().forEach(column -> required.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
+            dump.columns().forEach(column -> required.putIfAbsent(column.toLowerCase(Locale.ROOT), column));
             for (CatalogObject table : dumpTables) {
                 if (!policy.quotedIdentifiersSupported() && table.quoted()) {
                     blockers.add(Blocker.QUOTED_IDENTIFIER);
                 }
-                inspectRequired(snapshot, table, required, policy, blockers);
+                inspectRequired(snapshot, table, required, policy, true, blockers);
             }
         }
         return List.copyOf(blockers);
@@ -108,18 +133,22 @@ public final class SourceLoadSurfaceGate {
     private static void inspectRequired(
             CatalogSnapshot snapshot,
             CatalogObject table,
-            List<String> required,
+            LinkedHashMap<String, String> requiredColumns,
             SourceReadSessionPolicy policy,
+            boolean largeValues,
             EnumSet<Blocker> blockers
     ) {
         List<CatalogObject> tableColumns = snapshot.objects().stream()
                 .filter(object -> object.kind() == ObjectKind.COLUMN)
                 .filter(column -> belongsTo(column, table.referenceId()))
                 .toList();
-        for (String name : required) {
+        for (String required : requiredColumns.values()) {
+            if (required == null) {
+                continue; // 선언 오류는 mapping 정적 검증이 위치와 함께 알린다.
+            }
             List<CatalogObject> matches = tableColumns.stream()
                     .filter(column -> identifierEquals(
-                            name,
+                            required,
                             column.attributes().get("originalName"),
                             column.quoted()))
                     .toList();
@@ -127,7 +156,7 @@ public final class SourceLoadSurfaceGate {
                 blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
                 continue;
             }
-            matches.forEach(column -> inspectColumn(column, policy, blockers));
+            matches.forEach(column -> inspectColumn(column, policy, largeValues, blockers));
         }
     }
 
@@ -136,14 +165,19 @@ public final class SourceLoadSurfaceGate {
      * 대조하고, 이름이 겹쳐 둘 이상 나오면 그대로 돌려줘 호출부가 모호함을 판정하게 한다.
      */
     public static List<CatalogObject> sourceColumns(CatalogSnapshot snapshot, TableMapping mapping, String column) {
-        Objects.requireNonNull(snapshot, "snapshot");
         Objects.requireNonNull(mapping, "mapping");
+        return sourceColumns(snapshot, mapping.source(), column);
+    }
+
+    /** 소스 표 표기로 한 컬럼 선언을 찾는다(조회 표 포함, ADR-0029 L3d). */
+    public static List<CatalogObject> sourceColumns(CatalogSnapshot snapshot, String source, String column) {
+        Objects.requireNonNull(snapshot, "snapshot");
         if (column == null || column.isBlank()) {
             return List.of();
         }
         List<String> tables = snapshot.objects().stream()
                 .filter(object -> object.kind() == ObjectKind.TABLE)
-                .filter(table -> matches(mapping, table))
+                .filter(table -> matches(source, table))
                 .map(CatalogObject::referenceId)
                 .toList();
         return snapshot.objects().stream()
@@ -154,9 +188,11 @@ public final class SourceLoadSurfaceGate {
                 .toList();
     }
 
+    /** {@code largeValues} 가 false 면(조회 표) 정책과 무관하게 LOB·긴 값을 받지 않는다. */
     private static void inspectColumn(
             CatalogObject column,
             SourceReadSessionPolicy policy,
+            boolean largeValues,
             EnumSet<Blocker> blockers
     ) {
         if (!policy.quotedIdentifiersSupported() && column.quoted()) {
@@ -174,9 +210,9 @@ public final class SourceLoadSurfaceGate {
             blockers.add(Blocker.COLUMN_TYPE_EVIDENCE_MISSING);
             return;
         }
-        boolean supportedLocator = policy.lobStreamingSupported()
+        boolean supportedLocator = largeValues && policy.lobStreamingSupported()
                 && (parsed == Types.BLOB || parsed == Types.CLOB);
-        boolean supportedLongValue = policy.longValueStreamingSupported()
+        boolean supportedLongValue = largeValues && policy.longValueStreamingSupported()
                 && (parsed == Types.LONGVARCHAR || parsed == Types.LONGVARBINARY);
         if (LOB_TYPES.contains(parsed) && !supportedLocator && !supportedLongValue) {
             blockers.add(Blocker.LOB_STREAMING);

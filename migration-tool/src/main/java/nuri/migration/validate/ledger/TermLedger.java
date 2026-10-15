@@ -57,7 +57,10 @@ public record TermLedger(Integer schemaVersion, List<Entry> entries) {
     /** 컬럼 위치. 표 이름은 mapping 의 {@code source}·{@code target} 과 같은 표기다. */
     public record ColumnRef(String table, String column) {}
 
-    /** 조회 조인 경로(ADR-0029 L3d). 이 컬럼을 {@code mapping} 이 별칭 {@code lookup} 의 조회로 읽는다. */
+    /**
+     * 조회 조인 경로(ADR-0029 L3d). 이 컬럼을 매핑 id {@code mapping} 의 별칭 {@code lookup} 조회로 읽는다. 원장 행의
+     * {@code source} 는 조회 표의 컬럼이고, 같은 행에 {@code mapping} 을 함께 두지 않는다.
+     */
     public record Via(String mapping, String lookup) {}
 
     /** 표준 용어. {@code engAbbr} 는 live 메타 {@code meta_standard_terms.eng_abbr} 와 대조한다. */

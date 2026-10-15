@@ -71,7 +71,8 @@ public class MigrationVerifier {
     MigrationReport verify(List<TableResult> results, JdbcTemplate targetJt) {
         List<MappingSpec.TableMapping> expected = results == null ? List.of() : results.stream()
                 .map(result -> new MappingSpec.TableMapping(
-                        result.sourceTable(), result.targetTable(), null, List.of(), null))
+                        result.sourceTable(), result.targetTable(), null, null, List.of(), null, List.of(), null,
+                        null, List.of(), result.mappingId()))
                 .toList();
         return verify(new MappingSpec(null, null, expected, Map.of()), results, targetJt);
     }
@@ -152,7 +153,7 @@ public class MigrationVerifier {
 
             tables.add(new TableReport(r.sourceTable(), r.targetTable(),
                     r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note,
-                    r.isolated()));
+                    r.mappingId(), r.isolated()));
             overall = worst(overall, status);
         }
         String archiveError = archiveError(spec, actualResults, archives, commit);
@@ -183,7 +184,8 @@ public class MigrationVerifier {
      *   <li>보관 선언이 있으면 결과가 있어야 하고, 덤프·반출 실패가 없어야 한다.</li>
      *   <li>COMMIT 에 보관 선언이나 isolate 가 있으면 파일을 썼어야 하고, dry-run 은 파일을 쓰지 않는다.</li>
      *   <li>선언한 덤프마다 결과가 정확히 하나이고 보존 기한·원장 행이 선언과 같다. 덤프 행 수 = 그 읽기의 행 수이고, 매핑된
-     *       표는 그 수가 표의 조회 수와 같다. COMMIT 덤프는 파일 이름·바이트·SHA-256 이 있다.</li>
+     *       표는 그 수가 보관을 읽는 매핑의 조회 수와 같다(분할한 소스는 그 매핑의 where 가 모든 매핑의 행을 덮어야 한다).
+     *       COMMIT 덤프는 파일 이름·바이트·SHA-256 이 있다.</li>
      *   <li>COMMIT 에서 격리한 행이 있는 표마다 반출이 하나이고 반출 행 수 = 격리 수다. 격리하지 않은 표의 반출은 없다.</li>
      * </ul>
      */
@@ -226,7 +228,11 @@ public class MigrationVerifier {
                 return "덤프만 하는 표의 보관이 매핑된 표로 기록됨: " + dump.id();
             }
             if (mapped != null) {
-                TableResult result = resultOf(results, mapped.source());
+                // [ADR-0029 L3c·L3e] 덤프 행 = 읽는 매핑의 조회는 그 조회가 소스의 모든 매핑이 읽은 행을 덮을 때만 완전하다.
+                if (!spec.archiveReaderCoversSource(dump.source())) {
+                    return "분할한 소스의 보관이 다른 where 로 나눈 매핑의 행을 덮지 않음: " + dump.id();
+                }
+                TableResult result = resultOf(results, mapped);
                 if (dumped.dumpOnly() || result == null || dumped.sourceRows() != result.read()) {
                     return "보관 덤프 행(" + dumped.rows() + ") ≠ 조회(" + (result == null ? "-" : result.read())
                             + "): " + dump.id();
@@ -269,9 +275,11 @@ public class MigrationVerifier {
         return null;
     }
 
-    private static TableResult resultOf(List<TableResult> results, String source) {
+    /** 이 매핑의 결과 — 소스와 매핑 id 가 같아야 한다(ADR-0029 L3c, 기본 매핑은 id 가 null). */
+    private static TableResult resultOf(List<TableResult> results, MappingSpec.TableMapping mapping) {
         for (TableResult result : results) {
-            if (normalize(result.sourceTable()).equals(normalize(source))) {
+            if (normalize(result.sourceTable()).equals(normalize(mapping.source()))
+                    && Objects.equals(result.mappingId(), mapping.id())) {
                 return result;
             }
         }
@@ -348,8 +356,8 @@ public class MigrationVerifier {
             return null;
         }
         return spec.tables().stream()
-                .filter(table -> identity(table.source(), table.target())
-                        .equals(identity(result.sourceTable(), result.targetTable())))
+                .filter(table -> identity(table.source(), table.id(), table.target())
+                        .equals(identity(result.sourceTable(), result.mappingId(), result.targetTable())))
                 .findFirst()
                 .orElse(null);
     }
@@ -361,7 +369,7 @@ public class MigrationVerifier {
         }
         List<MigrationStateStore.CheckpointEntry> checkpoints;
         try {
-            checkpoints = MigrationStateStore.read(target, spec.run(), table.source());
+            checkpoints = MigrationStateStore.read(target, spec.run(), table.source(), table.effectiveId());
         } catch (RuntimeException e) {
             return new ScopedVerification(-1L, "run scoped checkpoint 대조 실패 — 성공을 증명할 수 없음");
         }
@@ -652,11 +660,11 @@ public class MigrationVerifier {
         }
         Map<String, Long> expected = new LinkedHashMap<>();
         for (MappingSpec.TableMapping table : expectedTables) {
-            expected.merge(identity(table.source(), table.target()), 1L, Long::sum);
+            expected.merge(identity(table.source(), table.id(), table.target()), 1L, Long::sum);
         }
         Map<String, Long> actual = new LinkedHashMap<>();
         for (TableResult result : results) {
-            actual.merge(identity(result.sourceTable(), result.targetTable()), 1L, Long::sum);
+            actual.merge(identity(result.sourceTable(), result.mappingId(), result.targetTable()), 1L, Long::sum);
         }
         if (expectedTables.size() != results.size() || !expected.equals(actual)) {
             return "실행 결과 cardinality/identity 불일치: expected=" + expected + ", actual=" + actual;
@@ -664,8 +672,10 @@ public class MigrationVerifier {
         return null;
     }
 
-    private static String identity(String source, String target) {
-        return normalize(source) + " -> " + normalize(target);
+    /** 결과와 매핑을 잇는 식별 — 소스·매핑 id(ADR-0029 L3c, 기본 매핑은 생략)·대상. */
+    private static String identity(String source, String mappingId, String target) {
+        String mapping = mappingId == null || mappingId.isEmpty() ? "" : "#" + mappingId;
+        return normalize(source) + mapping + " -> " + normalize(target);
     }
 
     private static String normalize(String value) {

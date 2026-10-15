@@ -74,7 +74,15 @@ class MigrationExecutionContractTest {
                 // 승인 행 격리 판정·상한과 값 한계 가드(ADR-0029 L3b)도 승인에 결속한다.
                 "nuri.migration.domain.TargetValueGuard",
                 "nuri.migration.isolate.RowIsolationPolicy",
-                "nuri.migration.isolate.IsolationTally");
+                "nuri.migration.isolate.IsolationTally",
+                // 매핑 키·keymap 소유 매핑·부모 판정(ADR-0029 L3c)도 승인에 결속한다.
+                "nuri.migration.mapping.MappingIndex",
+                // 조회 조인의 규칙·짝 판정(ADR-0029 L3d)도 승인에 결속한다.
+                "nuri.migration.lookup.LookupRules",
+                "nuri.migration.lookup.LookupResolver",
+                // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e)도 승인에 결속한다.
+                "nuri.migration.archive.ArchiveRun",
+                "nuri.migration.archive.ArchiveFileWriter");
         assertThat(MigrationExecutionContract.implementationClassNamesForTesting())
                 .contains(
                         "nuri/migration/etl/TableOrderer.class",

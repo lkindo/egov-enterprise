@@ -1,6 +1,7 @@
 package nuri.migration.isolate;
 
 import nuri.migration.identity.TargetIdentityPolicy;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.Isolate;
@@ -187,7 +188,10 @@ public final class RowIsolationPolicy {
      * <ul>
      *   <li>target_generated 매핑 — 대상이 만든 키를 행마다 되읽으므로 격리 행의 자리를 정할 수 없다.</li>
      *   <li>자기참조 매핑 — 적재 전에 모든 행의 키를 먼저 채번해 커밋한다(preMint).</li>
-     *   <li>다른 매핑의 fkRef·foreignKeys 가 부모로 가리키는 매핑 — 격리한 부모를 참조하는 자식이 고아가 된다.</li>
+     *   <li>분할한 소스의 매핑(ADR-0029 L3c) — 한 소스를 여러 매핑이 나눠 읽으면 매핑마다 읽기·순번·격리 집계가 따로라
+     *       같은 소스 행이 한 매핑에서는 격리되고 다른 매핑에서는 적재돼 반쪽만 남는다.</li>
+     *   <li>다른 매핑의 fkRef·foreignKeys 가 부모로 가리키는 매핑 — 격리한 부모를 참조하는 자식이 고아가 된다. 부모는
+     *       소스 이름이 아니라 {@link MappingIndex#parent} 가 푸는 소유 매핑이다.</li>
      * </ul>
      */
     public static String tableBlocker(List<TableMapping> tables, TableMapping table) {
@@ -196,11 +200,16 @@ public final class RowIsolationPolicy {
         if (table.identity() != null && table.identity().policy() == TargetIdentityPolicy.TARGET_GENERATED) {
             return "target_generated 매핑";
         }
-        if (table.source() == null) {
+        if (table.source() == null || table.source().isBlank()) {
             return null;
         }
+        MappingIndex index = MappingIndex.of(tables);
+        if (index.mappingsOf(table.source()).size() > 1) {
+            return "분할한 소스의 매핑";
+        }
         for (ColumnMapping column : table.columns()) {
-            if (column != null && column.fkRef() != null && column.fkRef().equalsIgnoreCase(table.source())) {
+            if (column != null && column.fkRef() != null && !column.fkRef().isBlank()
+                    && index.resolvesTo(column.fkRef(), table)) {
                 return "자기참조 매핑";
             }
         }
@@ -209,12 +218,14 @@ public final class RowIsolationPolicy {
                 continue;
             }
             for (ColumnMapping column : other.columns()) {
-                if (column != null && column.fkRef() != null && column.fkRef().equalsIgnoreCase(table.source())) {
+                if (column != null && column.fkRef() != null && !column.fkRef().isBlank()
+                        && index.resolvesTo(column.fkRef(), table)) {
                     return "다른 매핑이 부모로 참조하는 매핑";
                 }
             }
             for (CompositeForeignKey foreignKey : other.foreignKeys()) {
-                if (foreignKey.parentSource().equalsIgnoreCase(table.source())) {
+                if (foreignKey != null && foreignKey.parentSource() != null
+                        && index.resolvesTo(foreignKey.parentSource(), table)) {
                     return "다른 매핑이 부모로 참조하는 매핑";
                 }
             }

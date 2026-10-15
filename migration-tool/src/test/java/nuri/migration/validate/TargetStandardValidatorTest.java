@@ -1281,6 +1281,40 @@ class TargetStandardValidatorTest {
                     .containsExactly(Map.entry(SOURCE, Map.of("amt", new TargetValueGuard.Limit(null, 8, 2, null, false))));
         }
 
+        /**
+         * [ADR-0029 L3c·L3d] 가드 표의 키는 매핑 라벨이다 — 소스를 나눈 매핑은 {@code source#id} 마다 자기 가드를 갖고, 조회 조인을
+         * 쓰는 매핑(id 필수)도 그렇다. 소스 이름으로 묶으면 나눈 매핑의 가드가 서로를 덮고, 실행기가 라벨로 찾을 때 비어
+         * PostgreSQL 이 numeric 값을 조용히 반올림한다.
+         */
+        @Test
+        void guardsAreKeyedByTheMappingLabelForSplitAndLookupMappings() {
+            TableMapping main = new TableMapping(SOURCE, TARGET, null, "ITEM_ID", List.of(), null,
+                    List.of(hinted("ITEM_ID", "amt", "decimal")), null, null, List.of(), "main");
+            TableMapping extension = new TableMapping(SOURCE, "public.tb_item_ext", null, "ITEM_ID", List.of(), null,
+                    List.of(hinted("ITEM_NM", "fee", "decimal")), null, null, List.of(), "ext");
+            TableMapping orders = new TableMapping("legacy.legacy_order", "public.tb_order", null, "ITEM_ID",
+                    List.of(), null, List.of(hinted("ORDER_AMT", "amt", "decimal")), null, null, List.of(), "orders",
+                    List.of(new MappingSpec.Lookup("item", SOURCE, null, new MappingSpec.LookupKey("ITEM_ID", "ITEM_ID"),
+                            MappingSpec.LookupCardinality.EXACTLY_ONE, null)));
+            MappingSpec spec = new MappingSpec(null, null, List.of(main, extension, orders), Map.of());
+            TargetSchemaFingerprint target = target(table(StandardStatus.ABSENT, column(1, "amt", "numeric", null, 10, 2)),
+                    new TableContract("public", "tb_item_ext", ContractStatus.READ, StandardStatus.ABSENT,
+                            List.of(column(1, "fee", "numeric", null, 7, 2))),
+                    new TableContract("public", "tb_order", ContractStatus.READ, StandardStatus.ABSENT,
+                            List.of(column(1, "amt", "numeric", null, 12, 3))));
+            List<CatalogObject> objects = new ArrayList<>(inventory().objects());
+            objects.add(tableObject("legacy_order"));
+            objects.add(columnObject("legacy_order", "ITEM_ID", Types.VARCHAR, 20, 0));
+            objects.add(columnObject("legacy_order", "ORDER_AMT", Types.VARCHAR, 20, 0));
+
+            assertThat(new MappingValidator(transformers, "unused-db-columns.json").rowGuards(spec, target,
+                    inventory(objects))).containsExactly(
+                    Map.entry(SOURCE + "#main", Map.of("amt", new TargetValueGuard.Limit(null, 8, 2, null, false))),
+                    Map.entry(SOURCE + "#ext", Map.of("fee", new TargetValueGuard.Limit(null, 5, 2, null, false))),
+                    Map.entry("legacy.legacy_order#orders",
+                            Map.of("amt", new TargetValueGuard.Limit(null, 9, 3, null, false))));
+        }
+
         private Map<String, TargetValueGuard.Limit> guards(MappingSpec spec, TargetSchemaFingerprint target) {
             return validator.rowGuards(spec, spec.tables().getFirst(), target, inventory());
         }

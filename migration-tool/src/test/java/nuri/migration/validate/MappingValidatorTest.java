@@ -5,6 +5,9 @@ import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.Lookup;
+import nuri.migration.model.MappingSpec.LookupCardinality;
+import nuri.migration.model.MappingSpec.LookupKey;
 import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.transform.TransformerRegistry;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -426,6 +430,56 @@ class MappingValidatorTest {
         }
 
         @Test
+        @DisplayName("[ADR-0029 L3c] 한 소스를 id 로 나눈 매핑은 허용하고, 확장 매핑의 자기 소스 fkRef 는 소유 매핑의 키를 쓴다")
+        void splitMappingsWithIdsAreAllowedAndTheExtensionUsesTheOwnersKeyMap() {
+            TableMapping owner = new TableMapping("legacy_user", "tb_user_info", null, "user_sn", List.of(), null,
+                    List.of(col("nm", "user_nm")), new MappingSpec.IdStrategy("esntl_id", "USR", "user_sn"), null,
+                    List.of(), null);
+            TableMapping extension = new TableMapping("LEGACY_USER", "tb_ognz_info", null, "user_sn", List.of(),
+                    "ognz_id", List.of(new ColumnMapping("user_sn", "ognz_id", null, null, null, "legacy_user", null)),
+                    null, null, List.of(), "ext");
+
+            assertThat(withSchema().validate(spec(List.of(extension, owner))).errors()).isEmpty();
+
+            TableMapping secondOwner = new TableMapping("legacy_user", "tb_ognz_info", null, "user_sn", List.of(),
+                    null, List.of(), new MappingSpec.IdStrategy("ognz_id", "OGN", "user_sn"), null, List.of(), "copy");
+            assertThat(withSchema().validate(spec(List.of(owner, secondOwner))).errors()).anySatisfy(e ->
+                    assertThat(e).contains("legacy_user", "keymap 을 만드는 매핑", "둘 이상"));
+
+            TableMapping unowned = new TableMapping("legacy_user", "tb_ognz_info", null, "user_sn", List.of(),
+                    "ognz_id", List.of(col("user_sn", "ognz_id")), null, null, List.of(), "plain");
+            TableMapping child = new TableMapping("legacy_dept", "tb_ognz_info", null, "dept_id", List.of(),
+                    "ognz_id", List.of(new ColumnMapping("user_sn", "ognz_id", null, null, null, "legacy_user", null)),
+                    null, null, List.of(), null);
+            TableMapping plainOwner = new TableMapping("legacy_user", "tb_user_info", null, "user_sn", List.of(),
+                    "user_id", List.of(col("user_sn", "user_id")), null, null, List.of(), null);
+            assertThat(withSchema().validate(spec(List.of(plainOwner, unowned, child))).errors()).anySatisfy(e ->
+                    assertThat(e).contains("fkRef 부모 소스 테이블 'legacy_user'", "keymap 을 만드는 매핑"));
+        }
+
+        @Test
+        @DisplayName("[ADR-0029 L3c] 형제 매핑을 거치는 의존은 소스 단위로는 순환이어도 매핑 단위로는 순환이 아니다")
+        void dependencyThroughASiblingMappingIsNotReportedAsACycle() {
+            TableMapping userOwner = new TableMapping("legacy_user", "tb_user_info", null, "user_sn", List.of(), null,
+                    List.of(col("nm", "user_nm")), new MappingSpec.IdStrategy("esntl_id", "USR", "user_sn"), null,
+                    List.of(), null);
+            TableMapping userExt = new TableMapping("legacy_user", "tb_ognz_info", null, "user_sn", List.of(),
+                    "ognz_id", List.of(new ColumnMapping("dept_id", "ognz_id", null, null, null, "legacy_dept", null)),
+                    null, null, List.of(), "ext");
+            TableMapping dept = new TableMapping("legacy_dept", "tb_user_info", null, "dept_id", List.of(), null,
+                    List.of(new ColumnMapping("head_sn", "user_id", null, null, null, "legacy_user", null)),
+                    new MappingSpec.IdStrategy("esntl_id", "DPT", "dept_id"), null, List.of(), null);
+
+            assertThat(withSchema().validate(spec(List.of(userExt, dept, userOwner))).errors()).isEmpty();
+
+            TableMapping cyclic = new TableMapping("legacy_user", "tb_user_info", null, "user_sn", List.of(), null,
+                    List.of(new ColumnMapping("dept_id", "ognz_id", null, null, null, "legacy_dept", null)),
+                    new MappingSpec.IdStrategy("esntl_id", "USR", "user_sn"), null, List.of(), null);
+            assertThat(withSchema().validate(spec(List.of(cyclic, dept))).errors()).anySatisfy(e ->
+                    assertThat(e).contains("교차 테이블 FK 순환", "legacy_user", "legacy_dept"));
+        }
+
+        @Test
         @DisplayName("where는 단일 읽기 조건식만 허용하고 주석·추가 SQL을 차단한다")
         void unsafeWhereFragmentIsError() {
             ValidationResult r = withSchema().validate(spec(List.of(
@@ -746,6 +800,25 @@ class MappingValidatorTest {
         }
 
         @Test
+        @DisplayName("[ADR-0029 L3c] 한 소스를 나눈 매핑에는 어느 매핑에도 isolate 를 둘 수 없다")
+        void aSourceSplitIntoSeveralMappingsCannotIsolate() {
+            TableMapping extension = new TableMapping("LEGACY_USER", "tb_ognz_info", null, "USER_SN", List.of(),
+                    "ognz_id", List.of(new ColumnMapping("OGNZ_CD", "ognz_id", null, null, null, null, null)),
+                    null, null, List.of(), "ext");
+            TableMapping isolatedExtension = new TableMapping("legacy_user", "tb_ognz_info", null, "USER_SN",
+                    List.of(), "ognz_id", List.of(new ColumnMapping("END_YMD", "ognz_id", "ymd8", null, null, null,
+                    null, null, List.of(), APPROVED)), null, null, List.of(), "ext");
+
+            assertThat(errors(users("USER_SN", List.of(), isolated(APPROVED)), extension))
+                    .as("keymap 을 만드는 소유 매핑에도").containsExactly("legacy_user: 분할한 소스의 매핑" + NOT_ON);
+            assertThat(errors(users("USER_SN", List.of(), isolated(null)), isolatedExtension))
+                    .as("id 로 나눈 확장 매핑에도")
+                    .containsExactly("legacy_user#ext: 분할한 소스의 매핑" + NOT_ON);
+            assertThat(errors(users("USER_SN", List.of(), isolated(APPROVED)))).as("나누지 않은 소스는 격리할 수 있다")
+                    .isEmpty();
+        }
+
+        @Test
         @DisplayName("암호화·fkRef·값을 변환하지 않는 컬럼에는 둘 수 없다")
         void encryptedForeignKeyAndConstantColumnsCannotIsolate(@TempDir Path tmp) throws IOException {
             Path catalog = tmp.resolve("db_columns.json");
@@ -917,6 +990,70 @@ class MappingValidatorTest {
                     "USE_YN = 'Y'", List.of("LOG_SN"), List.of("LOG_NOTE"), List.of("H3"), "2030-12-31")))
                     .containsExactly("archives[1](legacy_log_20301231): 같은 덤프만 하는 표의 보관 선언은 where·정렬 키가"
                             + " 같아야 합니다 — 한 번 읽어 나눠 씁니다");
+        }
+
+        @Test
+        @DisplayName("[ADR-0029 L3c] 분할한 소스의 보관은 keymap 소유 매핑이나 id 를 생략한 매핑의 읽기에 붙는다")
+        void aSplitSourcesArchiveAttachesToTheOwnerOrTheDefaultMapping() {
+            MappingSpec.ArchiveDump dump = mapped("legacy_user_20311231", "2031-12-31", List.of("ETC1"),
+                    List.of("U7"));
+            TableMapping owner = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(), null,
+                    List.of(new ColumnMapping("USER_NM", "user_nm", null, null, null, null, null)),
+                    new IdStrategy("esntl_id", "USR_", "USER_SN"), null, List.of(), "main");
+            TableMapping extension = new TableMapping("legacy_user", "tb_ognz_info", null, "USER_SN", List.of(),
+                    "ognz_id", List.of(new ColumnMapping("OGNZ_CD", "ognz_id", null, null, null, null, null)), null,
+                    null, List.of(), "ext");
+            TableMapping secondExtension = new TableMapping("legacy_user", "tb_ognz_info", null, "USER_SN",
+                    List.of(), "ognz_id", List.of(new ColumnMapping("UP_CD", "ognz_id", null, null, null, null, null)),
+                    null, null, List.of(), "ext2");
+            MappingSpec withOwner = new MappingSpec(null, null, List.of(extension, owner), Map.of(), null, null,
+                    List.of(dump));
+            MappingSpec withDefault = new MappingSpec(null, null, List.of(extension, users), Map.of(), null, null,
+                    List.of(dump));
+
+            assertThat(errors(List.of(extension, owner), dump)).isEmpty();
+            assertThat(withOwner.mappedTableOf("LEGACY_USER")).as("선언 순서가 아니라 keymap 소유 매핑이다")
+                    .isSameAs(owner);
+            assertThat(withDefault.mappedTableOf("legacy_user")).as("소유 매핑이 없으면 id 를 생략한 매핑이다")
+                    .isSameAs(users);
+            assertThat(errors(List.of(extension, secondExtension), dump)).containsExactly(
+                    "archives[0](legacy_user_20311231): 분할한 소스의 보관은 keymap 소유 매핑이나 id 를 생략한 매핑의 읽기에"
+                            + " 붙습니다 — 둘 다 없어 보관 컬럼을 붙일 읽기를 정할 수 없습니다");
+        }
+
+        @Test
+        @DisplayName("[ADR-0029 L3c·L3e] 분할한 소스의 보관은 읽는 매핑이 그 소스의 모든 매핑이 읽는 행을 읽을 때만 받는다")
+        void aSplitSourcesArchiveNeedsAReaderThatReadsEveryMappingsRows() {
+            MappingSpec.ArchiveDump dump = mapped("legacy_user_20311231", "2031-12-31", List.of("ETC1"),
+                    List.of("U7"));
+            String refusal = "archives[0](legacy_user_20311231): 분할한 소스의 보관은 읽는 매핑에 where 가 없거나 그"
+                    + " 소스의 모든 매핑이 같은 where 를 써야 합니다 — 다른 where 로 적재한 행의 보관 컬럼이 덤프에서"
+                    + " 빠집니다";
+
+            // 소유 매핑(main)이 읽는다 — where 가 없으면 형제 매핑이 where 로 나눠 읽는 행도 덮는다.
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere(null)), dump)).isEmpty();
+            assertThat(errors(List.of(extensionWhere(" KIND = 'C' "), ownerWhere("KIND = 'C'")), dump))
+                    .as("앞뒤 공백만 다른 같은 where").isEmpty();
+            assertThat(errors(List.of(extensionWhere(null), ownerWhere("KIND = 'P'")), dump))
+                    .as("형제 매핑이 소스의 모든 행을 읽는다").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere("KIND = 'P'")), dump))
+                    .as("where 로 나눈 분할").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND='P'"), ownerWhere("KIND = 'P'")), dump))
+                    .as("같은 뜻의 다른 표기는 같은 행을 읽는다고 증명할 수 없다").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere("KIND = 'P'"))))
+                    .as("보관이 없으면 where 로 나눈 분할을 막지 않는다").isEmpty();
+        }
+
+        private static TableMapping ownerWhere(String where) {
+            return new TableMapping("legacy_user", "tb_user_info", where, "USER_SN", List.of(), null,
+                    List.of(new ColumnMapping("USER_NM", "user_nm", null, null, null, null, null)),
+                    new IdStrategy("esntl_id", "USR_", "USER_SN"), null, List.of(), "main");
+        }
+
+        private static TableMapping extensionWhere(String where) {
+            return new TableMapping("legacy_user", "tb_ognz_info", where, "USER_SN", List.of(), "ognz_id",
+                    List.of(new ColumnMapping("OGNZ_CD", "ognz_id", null, null, null, null, null)), null, null,
+                    List.of(), "ext");
         }
 
         @Test
@@ -1096,5 +1233,85 @@ class MappingValidatorTest {
         assertThat(missing.errors()).containsExactly("tb_user_info.user_enrrno: 온라인 앱이 암호화해 저장하는 컬럼입니다"
                 + " — encrypt: aria-egov-v1 를 선언해야 평문으로 쓰지 않습니다");
         assertThat(declared.errors()).isEmpty();
+    }
+
+    @Nested
+    @DisplayName("조회 조인(lookups, ADR-0029 L3d)")
+    class LookupJoin {
+
+        private TableMapping orders(String id, String orderBy, Lookup lookup, ColumnMapping... columns) {
+            return new TableMapping("public.legacy_orders", "tb_user_info", null, orderBy, List.of(), "user_id",
+                    List.of(columns), null, null, List.of(), id, List.of(lookup));
+        }
+
+        private Lookup lookup(String source, String where, String from, String to) {
+            return new Lookup("cust", source, where, new LookupKey(from, to), LookupCardinality.EXACTLY_ONE, null);
+        }
+
+        @Test
+        @DisplayName("정적 검증은 실행기와 같은 조회 규칙과 조회 표 where 의 안전성을 본다")
+        void staticValidationAppliesTheLookupRulesAndTheWhereSafety() {
+            TableMapping good = orders("orders", "order_no", lookup("public.legacy_customer", "use_yn = 'Y'",
+                    "cust_no", "cust_no"), col("order_no", "user_id"), col("cust.cust_nm", "user_nm"));
+            TableMapping unsafe = orders("orders", "order_no", lookup("public.legacy_customer",
+                    "1=1; DELETE FROM legacy_customer", "cust_no", "cust_no"), col("order_no", "user_id"),
+                    col("cust.cust_nm", "user_nm"));
+            TableMapping anonymous = orders(null, "order_no", lookup("public.legacy_customer", null, "cust_no",
+                    "cust_no"), col("order_no", "user_id"), col("cust.cust_nm", "user_nm"));
+
+            assertThat(withSchema().validate(spec(List.of(good))).errors()).isEmpty();
+            assertThat(withSchema().validate(spec(List.of(unsafe))).errors()).containsExactly(
+                    "public.legacy_orders#orders.lookups[cust]: where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문"
+                            + " 금지)");
+            assertThat(withSchema().validate(spec(List.of(anonymous))).errors()).containsExactly(
+                    "public.legacy_orders: 조회 조인(lookups)을 쓰는 매핑에는 id 가 필요합니다 — 원장의 via.mapping 이 이"
+                            + " id 를 가리킵니다");
+        }
+
+        /** H2 의 실제 metadata 로 조회 표·키·조회 컬럼의 실재와 키 계열을 본다. */
+        @Test
+        @DisplayName("live source 는 조회 표·조회 키·조회 컬럼이 실재하고 키 두 컬럼이 같은 계열인지 본다")
+        void liveSourceChecksTheLookupTableItsColumnsAndTheKeyFamily() {
+            JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
+                    "jdbc:h2:mem:lookup_live;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "sa", ""));
+            jdbc.execute("CREATE TABLE IF NOT EXISTS legacy_orders (order_no BIGINT, cust_no BIGINT, cust_cd CHAR(3),"
+                    + " cust_txt VARCHAR(10), rate DOUBLE PRECISION)");
+            jdbc.execute("CREATE TABLE IF NOT EXISTS legacy_customer (cust_no NUMERIC(12,0), cust_nm VARCHAR(50),"
+                    + " cust_cd CHAR(3), cust_txt VARCHAR(10), rate DOUBLE PRECISION)");
+            List<Map.Entry<TableMapping, List<String>>> cases = List.of(
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "cust_no", "cust_no"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm")), List.of()),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "cust_txt",
+                            "cust_txt"), col("order_no", "user_id"), col("cust.cust_nm", "user_nm")), List.of()),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_nowhere", null, "cust_no", "cust_no"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm")),
+                            List.of("실 source에 없는 조회 표 또는 metadata 접근 불가: public.legacy_nowhere")),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "cust_id", "cust_id"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm"), col("cust.missing", "cnt")),
+                            List.of("실 source에 없는 조회 키 컬럼: public.legacy_orders.cust_id",
+                                    "실 source에 없는 조회 키 컬럼: public.legacy_customer.cust_id",
+                                    "실 source에 없는 조회 컬럼: public.legacy_customer.missing")),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "cust_cd", "cust_cd"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm")),
+                            List.of("public.legacy_orders#orders.lookups[cust]: 조회 키는 가변 길이 문자(VARCHAR 계열)나"
+                                    + " 정수·고정소수 컬럼이어야 합니다 — CHAR 는 공백 채움 비교가 DBMS 마다 달라 받지 않습니다:"
+                                    + " CHARACTER / CHARACTER")),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "rate", "rate"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm")),
+                            List.of("public.legacy_orders#orders.lookups[cust]: 조회 키는 가변 길이 문자(VARCHAR 계열)나"
+                                    + " 정수·고정소수 컬럼이어야 합니다 — CHAR 는 공백 채움 비교가 DBMS 마다 달라 받지 않습니다:"
+                                    + " DOUBLE PRECISION / DOUBLE PRECISION")),
+                    Map.entry(orders("orders", "order_no", lookup("public.legacy_customer", null, "cust_no", "cust_txt"),
+                            col("order_no", "user_id"), col("cust.cust_nm", "user_nm")),
+                            List.of("public.legacy_orders#orders.lookups[cust]: 조회 키 두 컬럼의 계열(문자·수)이 다릅니다:"
+                                    + " BIGINT / CHARACTER VARYING")));
+
+            for (Map.Entry<TableMapping, List<String>> entry : cases) {
+                ValidationResult result = withSchema().validateLiveSource(spec(List.of(entry.getKey())), jdbc);
+
+                assertThat(result.errors()).as("%s", entry.getKey().lookups())
+                        .containsExactlyElementsOf(entry.getValue());
+            }
+        }
     }
 }

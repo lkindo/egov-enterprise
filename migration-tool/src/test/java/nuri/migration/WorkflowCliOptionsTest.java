@@ -56,6 +56,33 @@ class WorkflowCliOptionsTest {
     }
 
     @Test
+    void controlSchemaUpgradeAcknowledgementIsAValuelessCommitOnlyLoadFlag() {
+        // [ADR-0029 L3c] 이미 있는 제어 스키마를 올리는 확인은 commit load 에서만, 값 없이 받는다.
+        WorkflowCliOptions commit = WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--mode=commit",
+                "--ack-control-schema-upgrade"));
+        assertThat(commit.controlSchemaUpgradeAcknowledged()).isTrue();
+        assertThat(WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--mode=commit"))
+                .controlSchemaUpgradeAcknowledged()).isFalse();
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json",
+                "--ack-control-schema-upgrade")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("--mode=commit");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=load", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json", "--mode=commit",
+                "--ack-control-schema-upgrade=true")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("ack-control-schema-upgrade");
+        assertThatThrownBy(() -> WorkflowCliOptions.parse(args(
+                "--command=plan", "--mapping=m.yml", "--inventory=i.json", "--plan=p.json",
+                "--ack-control-schema-upgrade")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("unknown");
+    }
+
+    @Test
     void acceptsOrderedRepeatableExternalDriverJarsAndOptionalClassOverride() {
         Path first = Path.of("C:\\drivers\\vendor.jar");
         Path second = Path.of("C:\\drivers\\dependency.jar");

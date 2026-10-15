@@ -6,6 +6,8 @@ import nuri.migration.domain.DomainCategory;
 import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.keymap.StandardIdGenerator;
+import nuri.migration.lookup.LookupRef;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
@@ -582,6 +584,14 @@ public final class TargetStandardValidator {
         if (mapping.source() == null || mapping.source().isBlank()) {
             return null;
         }
+        // [ADR-0029 L3d] 조회 컬럼(alias.COLUMN)은 조회 표의 컬럼이다. 별칭이 없으면 찾지 않는다(타입 확인 불가로 알린다).
+        LookupRef ref = LookupRef.parse(mapping.source());
+        if (ref != null) {
+            MappingSpec.Lookup lookup = table.lookup(ref.alias());
+            List<CatalogObject> matches = lookup == null || lookup.source() == null ? List.of()
+                    : SourceLoadSurfaceGate.sourceColumns(inventory, lookup.source(), ref.column());
+            return matches.size() == 1 ? matches.getFirst() : null;
+        }
         List<CatalogObject> matches = SourceLoadSurfaceGate.sourceColumns(inventory, table, mapping.source());
         return matches.size() == 1 ? matches.getFirst() : null;
     }
@@ -595,17 +605,16 @@ public final class TargetStandardValidator {
         return (long) prefix.trim().length() + StandardIdGenerator.hexLength(prefix);
     }
 
-    /** fkRef 가 가리키는 부모 매핑의 표준 ID 길이. 부모가 idStrategy 를 쓰지 않으면 null. */
+    /**
+     * fkRef 가 가리키는 부모 매핑의 표준 ID 길이. 부모가 idStrategy 를 쓰지 않으면 null. [ADR-0029 L3c] 부모는 그 소스의
+     * keymap 소유 매핑이다 — 한 소스를 나눈 매핑 가운데 키를 만드는 매핑의 접두사로 길이를 정한다.
+     */
     private static Long parentIdLength(MappingSpec spec, String fkRef) {
         if (fkRef == null) {
             return null;
         }
-        return spec.tables().stream()
-                .filter(parent -> parent != null && parent.source() != null && parent.source().equalsIgnoreCase(fkRef))
-                .map(TargetStandardValidator::generatedIdLength)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+        TableMapping parent = MappingIndex.of(spec.tables()).parent(fkRef);
+        return parent == null ? null : generatedIdLength(parent);
     }
 
     /** 표준 ID 길이를 물리 컬럼과, 사전이 있으면 표준 도메인 중 좁은 쪽과 대조한다(DEC-OPS-307 ②). */

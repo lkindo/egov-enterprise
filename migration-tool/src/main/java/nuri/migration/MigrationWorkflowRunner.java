@@ -43,6 +43,7 @@ import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
 import nuri.migration.profile.SourceProfile;
 import nuri.migration.profile.SourceProfiler;
 import nuri.migration.postgres.TargetSchemaFingerprint;
+import nuri.migration.schema.MigrationSchemaManager;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.suggest.LedgerDraftWriter;
 import nuri.migration.suggest.StandardDictionary;
@@ -108,6 +109,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private final PostgresStandardTermReader standardTerms = new PostgresStandardTermReader();
     private final PostgresStandardDictionaryReader dictionaryReader = new PostgresStandardDictionaryReader();
     private final LedgerDraftWriter ledgerDrafts = new LedgerDraftWriter();
+    /** 제어 스키마 상태 확인(ADR-0029 L3c). 시험은 대역을 넣는다. */
+    private MigrationSchemaManager schemaManager = new MigrationSchemaManager();
 
     @Autowired
     public MigrationWorkflowRunner(
@@ -200,6 +203,11 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         this.targetFingerprinter = Objects.requireNonNull(targetFingerprinter, "targetFingerprinter");
         this.sourceEndpoints = Objects.requireNonNull(sourceEndpoints, "sourceEndpoints");
         this.transformers = Objects.requireNonNull(transformers, "transformers");
+    }
+
+    /** 시험 전용 — 실제 대상 없이 제어 스키마 상태를 정한다. */
+    void schemaManagerForTesting(MigrationSchemaManager manager) {
+        this.schemaManager = Objects.requireNonNull(manager, "manager");
     }
 
     @Override
@@ -506,6 +514,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                     source,
                     readSessionPolicy,
                     options.sourceFreezeAcknowledged(),
+                    options.controlSchemaUpgradeAcknowledged(),
                     rowGuards,
                     archiveDirectory);
         }
@@ -627,45 +636,75 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             JdbcTemplate source,
             SourceReadSessionPolicy readSessionPolicy,
             boolean sourceFreezeAcknowledged,
+            boolean controlSchemaUpgradeAcknowledged,
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
             java.nio.file.Path archiveDirectory
     ) {
         requireValid(validator.validateLiveSource(mapping, source), "live source schema");
         JdbcTemplate target = null;
+        MigrationExecutionArtifact.ControlSchemaRecord controlSchema = null;
         if (mode == MigrationMode.COMMIT) {
             target = introspector.jdbc(mapping.target());
             requireValid(validator.validateLiveTarget(mapping, target), "live target schema");
+            // [ADR-0029 L3c] 이미 있는 제어 스키마를 올려야 하면 확인 옵션 없이는 증거도 남기지 않고 시작 전에 멈춘다.
+            MigrationSchemaManager.ControlSchemaStatus before = schemaManager.inspect(target);
+            if (before.upgradeRequired() && !controlSchemaUpgradeAcknowledged) {
+                throw gate(new MigrationSchemaManager.ControlSchemaUpgradeRequired(before.appliedVersion()).getMessage());
+            }
+            controlSchema = new MigrationExecutionArtifact.ControlSchemaRecord(version(before), null);
         }
         java.nio.file.Path evidence = planPath.resolveSibling(
                 planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
         java.time.Instant started = java.time.Instant.now();
         // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
-        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null, null);
+        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null, null, controlSchema);
         // [ADR-0029 L3e] COMMIT 은 보관 디렉터리에 덤프·격리 키를 쓴다(파일 머리에 승인 plan·mapping digest). dry-run 은 센다.
         ArchiveRun archives = archiveDirectory == null ? ArchiveRun.counting()
                 : ArchiveRun.writing(archiveDirectory, CanonicalArtifactDigest.sha256(plan), plan.mappingDigest());
         // 표의 덤프·격리 키를 최종 이름으로 옮길 때마다 STARTED 증거를 다시 쓴다 — 실행이 강제로 끝나도 옮긴 파일은 어떤
         //   증거에 실린다(옮김과 다시 쓰기 사이에 끝나면 남는 파일은 런북이 다룬다).
+        MigrationExecutionArtifact.ControlSchemaRecord startedControlSchema = controlSchema;
         archives.onPublished(outcome -> writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started,
-                null, null, outcome));
+                null, null, outcome, startedControlSchema));
         MigrationReport report = null;
         List<EtlExecutor.TableResult> results = null;
         try {
             results = executor.execute(
-                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards, archives);
+                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards, archives,
+                    controlSchemaUpgradeAcknowledged);
             report = verifier.verify(mapping, results, target, archives.outcome());
             if (!report.ok()) {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
                         + firstFailure(report));
             }
             writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results,
-                    archives.outcome());
+                    archives.outcome(), afterControlSchema(controlSchema, target));
         } catch (Throwable failure) {
             rethrowJvmFatal(failure);
             writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results,
-                    archives.outcome());
+                    archives.outcome(), afterControlSchema(controlSchema, target));
             throw failure;
         }
+    }
+
+    /** 제어 스키마 버전 표기 — 처음 만드는 대상은 none 이다. */
+    private static String version(MigrationSchemaManager.ControlSchemaStatus status) {
+        return status.appliedVersion() == null ? "none" : status.appliedVersion();
+    }
+
+    /** 실행 뒤 버전을 읽는다. 읽지 못하면 unknown 으로 남긴다 — 원래 실패를 가리지 않는다. */
+    private MigrationExecutionArtifact.ControlSchemaRecord afterControlSchema(
+            MigrationExecutionArtifact.ControlSchemaRecord before, JdbcTemplate target) {
+        if (before == null || target == null) {
+            return before;
+        }
+        String after;
+        try {
+            after = version(schemaManager.inspect(target));
+        } catch (RuntimeException unreadable) {
+            after = "unknown";
+        }
+        return new MigrationExecutionArtifact.ControlSchemaRecord(before.before(), after);
     }
 
     /**
@@ -685,10 +724,12 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
             MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
-            List<EtlExecutor.TableResult> results, ArchiveOutcome archives) {
+            List<EtlExecutor.TableResult> results, ArchiveOutcome archives,
+            MigrationExecutionArtifact.ControlSchemaRecord controlSchema) {
         // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다. 보관 덤프(ADR-0029 L3e)는 파일
-        //   이름(디렉터리 제외)·행 수·SHA-256·개인정보 모양 수만 실린다.
-        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results, archives);
+        //   이름(디렉터리 제외)·행 수·SHA-256·개인정보 모양 수만 실린다. 제어 스키마 버전(ADR-0029 L3c)은 적용 전후만 실린다.
+        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results, archives,
+                controlSchema);
         requireNoBoundCredentials(artifact, mapping);
         files.writeAtomic(path, artifact);
     }
