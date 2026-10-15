@@ -24,6 +24,7 @@ import nuri.migration.artifact.MigrationExecutionArtifact;
 import nuri.migration.artifact.MigrationPlanArtifactCodec;
 import nuri.migration.artifact.SourceDriverEvidence;
 import nuri.migration.artifact.SourceEndpointBinding;
+import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.DiscoveryRequest;
 import nuri.migration.discovery.DiscoveryScope;
@@ -84,9 +85,11 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -272,7 +275,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 CatalogSnapshot snapshot = adapter.discover(connection, scope.effectiveRequest());
                 String artifact = inventoryCodec.write(
                         snapshot, endpoint.evidence(), scope, mapping.source());
-                requireNoBoundCredentials(artifact, mapping);
+                requireNoBoundCredentials(artifact, mapping, sourceSchemaNames(snapshot, scope));
                 files.writeAtomic(options.inventory(), artifact);
             }
         }
@@ -310,7 +313,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 SourceProfile profile = profiler.profile(
                         connection, inventory.payload().toSnapshot(), options.profileRowLimit());
                 String artifact = collectionCodec.writeProfile(profile, inventory.semanticDigest());
-                requireNoBoundCredentials(artifact, mapping);
+                requireNoBoundCredentials(artifact, mapping, sourceSchemaNames(inventory));
                 files.writeAtomic(options.profile(), artifact);
                 long failed = profile.tables().stream()
                         .filter(table -> "FAILED".equals(table.status())).count();
@@ -371,9 +374,10 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         } catch (IllegalArgumentException refused) {
             throw gate("term-suggest 산출물을 쓰지 않았습니다: " + refused.getMessage());
         }
-        requireNoBoundCredentials(artifact, mapping);
+        Set<String> profiledSchemas = sourceSchemaNames(profile.payload());
+        requireNoBoundCredentials(artifact, mapping, profiledSchemas);
         if (draft != null) {
-            requireNoBoundCredentials(draftValues, mapping);
+            requireNoBoundCredentials(draftValues, mapping, profiledSchemas);
         }
         files.writeAtomic(options.suggestions(), artifact);
         if (draft != null) {
@@ -442,7 +446,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 inventory.payload().toSnapshot(), mapping, decisions, target.digest(),
                 inventory.semanticDigest(), executionContractDigest);
         String artifact = planCodec.write(plan);
-        requireNoBoundCredentials(artifact, mapping);
+        requireNoBoundCredentials(artifact, mapping, sourceSchemaNames(inventory));
         files.writeAtomic(options.plan(), artifact);
     }
 
@@ -538,7 +542,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                     options.controlSchemaUpgradeAcknowledged(),
                     rowGuards,
                     archiveDirectory,
-                    reconciliation);
+                    reconciliation,
+                    sourceSchemaNames(inventory));
         }
     }
 
@@ -661,7 +666,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             boolean controlSchemaUpgradeAcknowledged,
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
             java.nio.file.Path archiveDirectory,
-            ReconciliationPlan reconciliationPlan
+            ReconciliationPlan reconciliationPlan,
+            Set<String> sourceSchemas
     ) {
         requireValid(validator.validateLiveSource(mapping, source), "live source schema");
         JdbcTemplate target = null;
@@ -680,15 +686,16 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
         java.time.Instant started = java.time.Instant.now();
         // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
-        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null, null, controlSchema);
+        writeExecutionEvidence(evidence, plan, mapping, sourceSchemas, mode, "STARTED", started, null, null, null,
+                controlSchema);
         // [ADR-0029 L3e] COMMIT 은 보관 디렉터리에 덤프·격리 키를 쓴다(파일 머리에 승인 plan·mapping digest). dry-run 은 센다.
         ArchiveRun archives = archiveDirectory == null ? ArchiveRun.counting()
                 : ArchiveRun.writing(archiveDirectory, CanonicalArtifactDigest.sha256(plan), plan.mappingDigest());
         // 표의 덤프·격리 키를 최종 이름으로 옮길 때마다 STARTED 증거를 다시 쓴다 — 실행이 강제로 끝나도 옮긴 파일은 어떤
         //   증거에 실린다(옮김과 다시 쓰기 사이에 끝나면 남는 파일은 런북이 다룬다).
         MigrationExecutionArtifact.ControlSchemaRecord startedControlSchema = controlSchema;
-        archives.onPublished(outcome -> writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started,
-                null, null, outcome, startedControlSchema));
+        archives.onPublished(outcome -> writeExecutionEvidence(evidence, plan, mapping, sourceSchemas, mode, "STARTED",
+                started, null, null, outcome, startedControlSchema));
         // [ADR-0029 L4 D2·D7] 대사 수집 홀더 — 실행기가 채우고 verifier 가 읽는다. 값은 증거에 실리지 않는다. dry-run 은 대상
         //   질의가 없어 원천 행 수만 판정한다.
         ReconciliationRun reconciliation = ReconciliationRun.of(reconciliationPlan,
@@ -705,11 +712,11 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
                         + firstFailure(report));
             }
-            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results,
+            writeExecutionEvidence(evidence, plan, mapping, sourceSchemas, mode, "PASS", started, report, results,
                     archives.outcome(), afterControlSchema(controlSchema, target));
         } catch (Throwable failure) {
             rethrowJvmFatal(failure);
-            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results,
+            writeExecutionEvidence(evidence, plan, mapping, sourceSchemas, mode, "FAILED", started, report, results,
                     archives.outcome(), afterControlSchema(controlSchema, target));
             throw failure;
         }
@@ -751,14 +758,14 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     }
 
     private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
-            MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
+            Set<String> sourceSchemas, MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
             List<EtlExecutor.TableResult> results, ArchiveOutcome archives,
             MigrationExecutionArtifact.ControlSchemaRecord controlSchema) {
         // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다. 보관 덤프(ADR-0029 L3e)는 파일
         //   이름(디렉터리 제외)·행 수·SHA-256·개인정보 모양 수만 실린다. 제어 스키마 버전(ADR-0029 L3c)은 적용 전후만 실린다.
         String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results, archives,
                 controlSchema);
-        requireNoBoundCredentials(artifact, mapping);
+        requireNoBoundCredentials(artifact, mapping, sourceSchemas);
         files.writeAtomic(path, artifact);
     }
 
@@ -1020,19 +1027,67 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         }
     }
 
-    private static void requireNoBoundCredentials(String artifact, MappingSpec mapping) {
-        requireAbsent(artifact, mapping.source());
-        requireAbsent(artifact, mapping.target());
+    /**
+     * 산출물에 접속 URL·사용자 이름·비밀번호·endpointId 가 없는지 본다. 원천 사용자 이름만 예외가 하나 있다(GAP-MIG-001,
+     * DEC-OPS-326) — Oracle 처럼 owner 가 곧 접속 사용자인 DB 는 schema 한정 이름이 사용자 이름을 담는다. 그래서 원천 사용자
+     * 이름이 원천 schema 이름(inventory 의 discovery scope·객체 schema, term-suggest 는 프로파일의 표 schema) 중 하나와
+     * 대소문자 없이 같으면 그 이름은 inventory 가 이미 싣는 schema 이름이고 사용자 이름으로는 검사하지 않는다. 쓰려는 산출물
+     * 자체에는 그 이름이 없을 수 있다(scope 에만 있는 schema 등) — 산출물 전체로는 새 값이 아니다. 종전에는 소문자로 적은 설정이 대소문자만 달라 통과하고 대문자로 적은 설정은 멈췄다. 비밀번호·URL·
+     * endpointId 와 대상 접속 정보는 그대로 막는다.
+     */
+    private static void requireNoBoundCredentials(String artifact, MappingSpec mapping, Set<String> sourceSchemas) {
+        requireAbsent(artifact, mapping.source(), sourceSchemas);
+        requireAbsent(artifact, mapping.target(), Set.of());
     }
 
-    private static void requireAbsent(String artifact, MappingSpec.DbConfig config) {
+    private static void requireAbsent(String artifact, MappingSpec.DbConfig config, Set<String> ownerSchemas) {
         if (config == null) {
             return;
         }
         requireAbsent(artifact, config.url());
-        requireAbsent(artifact, config.username());
+        if (!namesOwnerSchema(config.username(), ownerSchemas)) {
+            requireAbsent(artifact, config.username());
+        }
         requireAbsent(artifact, config.password());
         requireAbsent(artifact, config.endpointId());
+    }
+
+    static boolean namesOwnerSchema(String username, Set<String> ownerSchemas) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        for (String schema : ownerSchemas) {
+            if (schema != null && schema.equalsIgnoreCase(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** inventory 에 실린 원천 schema 이름 — discovery scope 가 지정한 것과 객체가 속한 것. */
+    private static Set<String> sourceSchemaNames(CatalogSnapshot snapshot, DiscoveryScope scope) {
+        Set<String> names = new LinkedHashSet<>(scope.schemas());
+        for (CatalogObject object : snapshot.objects()) {
+            if (object.schema() != null) {
+                names.add(object.schema());
+            }
+        }
+        return Set.copyOf(names);
+    }
+
+    private static Set<String> sourceSchemaNames(CatalogSnapshotArtifactEnvelope inventory) {
+        return sourceSchemaNames(inventory.payload().toSnapshot(), inventory.discoveryScope());
+    }
+
+    /** 프로파일에 실린 원천 schema 이름 — term-suggest 산출물은 프로파일의 표 이름만 옮긴다. */
+    private static Set<String> sourceSchemaNames(SourceProfile profile) {
+        Set<String> names = new LinkedHashSet<>();
+        for (SourceProfile.TableProfile table : profile.tables()) {
+            if (table.schema() != null) {
+                names.add(table.schema());
+            }
+        }
+        return Set.copyOf(names);
     }
 
     private static void requireAbsent(String artifact, String sensitive) {
