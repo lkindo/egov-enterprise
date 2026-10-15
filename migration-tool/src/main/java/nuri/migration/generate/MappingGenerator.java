@@ -60,7 +60,9 @@ import java.util.TreeMap;
  *   <li>완전성은 소스 표 단위다 — skeleton 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나, 이관 제외·외부 보관
  *       행이 정확히 하나여야 한다. 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.</li>
  *   <li>확정 행마다 컬럼을 만든다({@code load} 를 옮기고, 보호 컬럼이면 {@code encrypt} 를 정한다). skeleton 의 fkRef
- *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다.</li>
+ *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다. 고정 길이 문자(CHAR·NCHAR, 선언 길이
+ *       1 제외) 소스의 codemap 앞에는 {@code transform: trim} 이 있어야 한다 — 조회 컬럼은 조회 표의 원래 타입으로 정한다
+ *       (ADR-0029 L4-B R3, coverage 와 같은 판정).</li>
  *   <li>skeleton 에 없는 표·매핑 id 의 확정 행과 skeleton 에 없는 표의 외부 보관 행은 거부한다. 한 소스 표를 나눈
  *       skeleton 표(ADR-0029 L3c)는 매핑 id 마다 그 id 의 확정 행으로 컬럼을 만든다 — 원장 행의 mapping 을 생략하면 그
  *       소스의 기본 매핑(id 없음)이다.</li>
@@ -587,7 +589,7 @@ public final class MappingGenerator {
                         continue;
                     }
                     ObjectNode node = column(skeleton.spec(), entry, mapping, InventoryTables.columnName(column),
-                            targets, errors);
+                            column, targets, errors);
                     if (node != null) {
                         columnNodes.add(node);
                     }
@@ -607,7 +609,8 @@ public final class MappingGenerator {
                         }
                         // 조회 컬럼도 그 조회 경로 행의 승인 예외를 isolate 로 옮긴다(ADR-0029 L3b·L3d) — 조회 실패는 격리하지 않는다.
                         ObjectNode node = column(skeleton.spec(), entry, mapping,
-                                lookup.lookup().alias() + "." + InventoryTables.columnName(column), targets, errors);
+                                lookup.lookup().alias() + "." + InventoryTables.columnName(column), column, targets,
+                                errors);
                         if (node != null) {
                             columnNodes.add(node);
                         }
@@ -780,11 +783,19 @@ public final class MappingGenerator {
     /**
      * 확정 행 하나의 컬럼 노드. 대상 표가 다르거나 이관할 수 없는 보호 컬럼이면 null 이다. 원장 승인 예외 가운데 nullify 로
      * NULL 이 되지 않는 위반이 남으면 {@code isolate} 로 옮기고(ADR-0029 L3b), 격리할 수 없는 표·컬럼이면 거부한다.
+     * {@code sourceColumn} 은 mapping 에 쓸 소스 표기(조회 컬럼이면 {@code alias.COLUMN}, ADR-0029 L3d)이고
+     * {@code inventoryColumn} 은 그 값을 읽는 표(조회 컬럼이면 조회 표)의 inventory 컬럼이다 — 고정 길이 문자 판정(L4-B R3)은
+     * 이 원래 타입으로 한다.
      */
     private static ObjectNode column(MappingSpec skeleton, Entry entry, TableMapping mapping, String sourceColumn,
-                                     Map<String, String> targets, List<String> errors) {
+                                     CatalogObject inventoryColumn, Map<String, String> targets, List<String> errors) {
         if (!entry.target().table().equalsIgnoreCase(mapping.target())) {
             errors.add(row(entry) + ": 확정 행의 대상 표가 skeleton 의 대상 표(" + mapping.target() + ")와 다릅니다");
+            return null;
+        }
+        Load load = entry.load();
+        if (LoadCapabilities.untrimmedFixedWidthCodemap(load.transform(), load.codemap(), inventoryColumn)) {
+            errors.add(row(entry) + ": " + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
             return null;
         }
         Optional<ProtectedTargetColumns.Entry> protectedColumn =
@@ -800,7 +811,6 @@ public final class MappingGenerator {
         ObjectNode node = JsonNodeFactory.instance.objectNode();
         node.put("source", sourceColumn);
         node.put("target", entry.target().column());
-        Load load = entry.load();
         if (load.transform() != null) {
             node.put("transform", load.transform());
         }

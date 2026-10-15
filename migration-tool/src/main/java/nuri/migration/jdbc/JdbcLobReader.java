@@ -5,7 +5,12 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
+import java.util.Locale;
 
 /** Detaches bounded LOB contents while their JDBC result and connection are still open. */
 public final class JdbcLobReader {
@@ -22,7 +27,8 @@ public final class JdbcLobReader {
 
     /** SQL Server reports MAX values as ordinary variable types; stream them before materialization. */
     public static Object read(ResultSet result, int column, boolean boundedVariableValues) throws SQLException {
-        int type = result.getMetaData().getColumnType(column);
+        ResultSetMetaData metadata = result.getMetaData();
+        int type = metadata.getColumnType(column);
         if (type == Types.LONGVARBINARY || (boundedVariableValues && type == Types.VARBINARY)) {
             try (var input = result.getBinaryStream(column)) {
                 if (input == null) return null;
@@ -58,7 +64,77 @@ public final class JdbcLobReader {
                 throw failure;
             }
         }
-        return detach(result.getObject(column));
+        return detach(scalar(result, column, metadata, type));
+    }
+
+    /**
+     * LOB 를 풀지 않고 값 하나를 읽는다. 시각 값을 드라이버 고유 객체로 주는 드라이버는 {@link Timestamp} 로 바꾼다 —
+     * Oracle {@code TIMESTAMP(n)} 은 {@code getObject} 로 {@code oracle.sql.TIMESTAMP} 가 와서 도메인 변환기·보관 덤프·
+     * 프로파일러가 시각으로 보지 못했다(ADR-0029 L4-B R1). 바꾸는 것은 JDBC 타입이 {@code TIMESTAMP} 이고 드라이버가 알린 값
+     * 클래스가 {@code java.} 밖이며 타입 이름이 시간대를 말하지 않을 때뿐이다. {@code java.} 클래스로 알리는 값(MySQL 의
+     * {@code LocalDateTime} 등), 클래스를 알리지 않거나 알리지 못하는 드라이버, 시간대 있는 타입은 {@code getObject} 그대로다.
+     *
+     * <p>드라이버가 준 지역 일시({@code getObject(…, LocalDateTime.class)})를 JVM 기본 시간대의 {@link Timestamp} 로 바꾼다.
+     * 그 시간대에 없는 시각(일광절약 간격, 예: Asia/Seoul 1987-05-10 02:30)은 {@link Timestamp} 가 한 시간 뒤로 밀어 값이
+     * 바뀌고, 정렬 키라면 keyset 커서가 그 사이 행을 건너뛴다. 그래서 바꾸지 않고 {@code LOCAL_TIMESTAMP_IN_ZONE_GAP} 으로
+     * 멈춘다 — 고정 오프셋 시간대(예: {@code -Duser.timezone=UTC})로 실행하면 간격이 없다. 지역 일시를 지원하지 않는다고
+     * ({@link SQLFeatureNotSupportedException}) 알리는 드라이버는 {@code getObject} 그대로다(L4-B 전과 같다). 다른 오류로
+     * 거절하면 {@code getObject} 로 물러나지 않고 {@code LOCAL_TIMESTAMP_READ_FAILED} 로 멈춘다 — 값마다 표기가 갈리면 정렬
+     * digest·keyset 커서가 어긋나기 때문이다. CUBRID 드라이버(11.3.1·11.3.2)는 시각 타입을 모두 {@code java.sql.Timestamp} 로
+     * 알려 이 판정에 오지 않는다(바이트코드 확인). Tibero 드라이버는 확인하지 않았다.</p>
+     *
+     * <p>같은 표의 값을 읽는 경로(본 읽기·정렬 경계·자기참조 키·프로파일러)는 이 메서드를 함께 써야 정렬 digest 가 같은
+     * 표기를 본다. 나눈 매핑(ADR-0029 L3c)의 읽기와 조회 표 읽기(L3d)도 {@link #read} 를 거쳐 이 판정을 받는다.</p>
+     */
+    public static Object scalar(ResultSet result, int column) throws SQLException {
+        ResultSetMetaData metadata = result.getMetaData();
+        return scalar(result, column, metadata, metadata.getColumnType(column));
+    }
+
+    private static Object scalar(ResultSet result, int column, ResultSetMetaData metadata, int type)
+            throws SQLException {
+        if (type != Types.TIMESTAMP || !driverSpecificLocalTimestamp(metadata, column)) {
+            return result.getObject(column);
+        }
+        LocalDateTime local;
+        try {
+            local = result.getObject(column, LocalDateTime.class);
+        } catch (SQLFeatureNotSupportedException unsupported) {
+            return result.getObject(column);
+        } catch (SQLException rejected) {
+            throw new ContentReadException("LOCAL_TIMESTAMP_READ_FAILED");
+        }
+        if (local == null) {
+            return null;
+        }
+        Timestamp timestamp = Timestamp.valueOf(local);
+        if (!timestamp.toLocalDateTime().equals(local)) {
+            throw new ContentReadException("LOCAL_TIMESTAMP_IN_ZONE_GAP");
+        }
+        return timestamp;
+    }
+
+    /** 드라이버 고유 클래스로 알리는 시간대 없는 일시인가. 알리지 못하는 드라이버는 아니라고 본다. */
+    private static boolean driverSpecificLocalTimestamp(ResultSetMetaData metadata, int column) throws SQLException {
+        String reported;
+        try {
+            reported = metadata.getColumnClassName(column);
+        } catch (SQLFeatureNotSupportedException unsupported) {
+            return false;
+        }
+        if (reported == null || reported.startsWith("java.")) {
+            return false;
+        }
+        String typeName;
+        try {
+            typeName = metadata.getColumnTypeName(column);
+        } catch (SQLFeatureNotSupportedException unsupported) {
+            return false;
+        }
+        // 시간대 있는 값을 TIMESTAMP 로 알리는 드라이버가 있어도 지역 일시로 바꾸지 않는다 — 오프셋을 잃는다. Oracle 은 시간대
+        // 타입을 -101·-102 로 따로 알려 여기 오지 않는다(23.26.3 실측). 다른 드라이버의 표기는 확인하지 않았다.
+        String name = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
+        return !name.contains("zone") && !name.endsWith("tz");
     }
 
     public static Object detach(Object value) throws SQLException {

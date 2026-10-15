@@ -11,6 +11,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import nuri.migration.validate.ledger.TermLedgerLoader;
 import nuri.migration.validate.ledger.TermLedgerValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -159,6 +160,7 @@ public class MappingGeneratorTest {
                   {"table_name": "tb_user_info", "column_name": "ognz_id"},
                   {"table_name": "tb_user_info", "column_name": "user_enrrno"},
                   {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"},
+                  {"table_name": "tb_user_info", "column_name": "user_stts_cd"},
                   {"table_name": "tb_user_detail", "column_name": "esntl_id"},
                   {"table_name": "tb_user_detail", "column_name": "user_nm"},
                   {"table_name": "tb_user_detail", "column_name": "dept_nm"}
@@ -871,6 +873,204 @@ public class MappingGeneratorTest {
 
         assertThat(mapping.tables().get(1).columns()).last()
                 .isEqualTo(new ColumnMapping("RRN", "user_enrrno", null, null, null, null, null, "aria-egov-v1"));
+    }
+
+    /**
+     * ADR-0029 L4-B R3 — 고정 길이 문자 소스의 codemap 은 공백을 깎은 값으로 대조해야 한다. 적합성 추정은 공백을 깎아 세지만
+     * codemap 은 원값('A␠␠')으로 대조하므로, trim 없이 만들면 실행에서 CODEMAP_UNMAPPED 로 멈춘다.
+     */
+    @Test
+    void aFixedWidthCharacterSourceNeedsTrimBeforeItsCodemap() {
+        String coded = LEDGER.replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: U6
+                    source: {table: legacy.USER_MST, column: STAT_CD}
+                    target: {table: tb_user_info, column: user_stts_cd}
+                    term: {name: 사용자상태코드, engAbbr: USER_STTS_CD, domain: 코드C1}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {codemap: user_status}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """);
+        String upper = coded.replace("load: {codemap: user_status}", "load: {transform: upper, codemap: user_status}");
+        String trimmed = coded.replace("load: {codemap: user_status}", "load: {transform: trim, codemap: user_status}");
+        String refusal = "mapping 을 만들지 않았습니다: U6 legacy.USER_MST.STAT_CD(CONFIRMED): "
+                + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED;
+
+        for (String[] fixedWidth : new String[][]{{"CHAR", "1"}, {"NCHAR", "-15"}, {"bpchar", "1"}}) {
+            CatalogSnapshot inventory = withStatusType(fixedWidth[0], fixedWidth[1]);
+            assertThatThrownBy(() -> generator.generate(SKELETON, coded, "ledger.yml", inventory))
+                    .hasMessage(refusal);
+            assertThatThrownBy(() -> generator.generate(SKELETON, upper, "ledger.yml", inventory))
+                    .hasMessage(refusal);
+            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                    generator.generate(SKELETON, trimmed, "ledger.yml", inventory));
+            assertThat(mapping.tables().get(1).columns()).last()
+                    .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", "trim", null, "user_status", null, null));
+        }
+        // 가변 길이 문자, JDBC CHAR 로 알리지만 공백을 채우지 않는 타입, 선언 길이 1 은 trim 없이도 만든다.
+        for (String[] variable : new String[][]{{"VARCHAR2", "12", null}, {"uniqueidentifier", "1", null},
+                {"ENUM", "1", null}, {"CHAR", "1", "1"}}) {
+            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(generator.generate(SKELETON, coded,
+                    "ledger.yml", withStatusType(variable[0], variable[1], variable[2])));
+            assertThat(mapping.tables().get(1).columns()).last()
+                    .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", null, null, "user_status", null, null));
+        }
+    }
+
+    /**
+     * ADR-0029 L4-B R3 × L3c·L3d — 나눈 매핑(user_ext)의 확정 행과 조회 경로(via) 확정 행도 같은 판정을 받는다. 조회 컬럼은
+     * 조회 표(DEPT_MST) 컬럼의 원래 타입으로 정한다 — 주 표(USER_MST)에 같은 이름의 가변 길이 컬럼이 있어도 막히고, 반대면
+     * 지난다. 만든 mapping 은 plan 의 원장 대응 검사도 지난다.
+     */
+    @Test
+    void splitAndViaRowsGetTheFixedWidthTrimRuleFromTheTableTheyAreReadFrom() {
+        // 나눈 매핑 — USER_MST.STAT_CD(CHAR) 를 user_ext 로 확정한다.
+        String splitCoded = splitLedger() + """
+                  - id: U6
+                    source: {table: legacy.USER_MST, column: STAT_CD}
+                    mapping: user_ext
+                    target: {table: tb_user_detail, column: dept_nm}
+                    term: {name: 부서명, engAbbr: DEPT_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {codemap: user_status}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """;
+        String splitTrimmed = splitCoded.replace("load: {codemap: user_status}",
+                "load: {transform: trim, codemap: user_status}");
+        CatalogSnapshot fixedStatus = withStatusType("CHAR", "1");
+        assertThatThrownBy(() -> generator.generate(splitSkeleton(), splitCoded, "ledger.yml", fixedStatus))
+                .hasMessage("mapping 을 만들지 않았습니다: U6 legacy.USER_MST.STAT_CD(CONFIRMED): "
+                        + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        MappingSpec split = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(splitSkeleton(), splitTrimmed, "ledger.yml", fixedStatus));
+        assertThat(split.tables().get(2).columns()).last()
+                .isEqualTo(new ColumnMapping("STAT_CD", "dept_nm", "trim", null, "user_status", null, null));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(splitTrimmed), split, fixedStatus))
+                .isEmpty();
+
+        // 조회 경로 — DEPT_MST.DEPT_SE 를 user_dept 매핑이 별칭 dept 로 읽는다. USER_MST 에도 같은 이름 컬럼이 있다.
+        String skeleton = SKELETON.replace("codemaps:", """
+                  - source: legacy.USER_MST
+                    id: user_dept
+                    target: tb_user_detail
+                    orderBy: USER_SN
+                    targetKey: esntl_id
+                    columns:
+                      - {source: USER_SN, target: esntl_id, fkRef: legacy.USER_MST}
+                    lookups:
+                      - {alias: dept, source: legacy.DEPT_MST, key: {from: DEPT_CD, to: DEPT_CD}, cardinality: exactly_one}
+                codemaps:""");
+        String viaCoded = LEDGER.replace("""
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 대리키 채번의 원천 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    mapping: user_dept
+                    target: {table: tb_user_detail, column: esntl_id}
+                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """) + """
+                  - id: X1
+                    source: {table: legacy.DEPT_MST, column: DEPT_SE}
+                    via: {mapping: user_dept, lookup: dept}
+                    target: {table: tb_user_detail, column: dept_nm}
+                    term: {name: 부서명, engAbbr: DEPT_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {codemap: user_status}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                  - id: U7
+                    source: {table: legacy.USER_MST, column: DEPT_SE}
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 옮기지 않는 구분 컬럼
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """;
+        String viaTrimmed = viaCoded.replace("load: {codemap: user_status}",
+                "load: {transform: trim, codemap: user_status}");
+        CatalogSnapshot fixedLookup = withDeptSe("CHAR", "VARCHAR2");
+        assertThatThrownBy(() -> generator.generate(skeleton, viaCoded, "ledger.yml", fixedLookup))
+                .hasMessage("mapping 을 만들지 않았습니다: X1 legacy.DEPT_MST.DEPT_SE(CONFIRMED): "
+                        + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        MappingSpec via = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, viaTrimmed, "ledger.yml", fixedLookup));
+        assertThat(via.tables().get(2).columns()).last()
+                .isEqualTo(new ColumnMapping("dept.DEPT_SE", "dept_nm", "trim", null, "user_status", null, null));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(viaTrimmed), via, fixedLookup))
+                .isEmpty();
+        // 조회 표 컬럼이 가변 길이면 주 표의 같은 이름 컬럼이 CHAR 여도 trim 없이 만든다.
+        CatalogSnapshot variableLookup = withDeptSe("VARCHAR2", "CHAR");
+        MappingSpec bare = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, viaCoded, "ledger.yml", variableLookup));
+        assertThat(bare.tables().get(2).columns()).last()
+                .isEqualTo(new ColumnMapping("dept.DEPT_SE", "dept_nm", null, null, "user_status", null, null));
+    }
+
+    /** {@link #inventory} 에 DEPT_MST.DEPT_SE 와 USER_MST.DEPT_SE 를 더하고 각 타입(선언 길이 2)을 정한다. */
+    private static CatalogSnapshot withDeptSe(String lookupType, String mainType) {
+        CatalogSnapshot inventory = inventory("DEPT_SE");
+        List<CatalogObject> objects = new ArrayList<>();
+        CatalogObject dept = null;
+        for (CatalogObject object : inventory.objects()) {
+            if (object.name().equals("USER_MST.DEPT_SE")) {
+                objects.add(retyped(object, mainType, null, "2"));
+            } else {
+                objects.add(object);
+            }
+            if (object.kind() == ObjectKind.TABLE && object.name().equals("DEPT_MST")) {
+                dept = object;
+            }
+        }
+        objects.add(retyped(column(dept, "DEPT_SE", 3), lookupType, null, "2"));
+        return new CatalogSnapshot(inventory.schemaVersion(), inventory.discoveredAt(), inventory.database(),
+                inventory.environment(), inventory.snapshotCapability(), objects, inventory.visibilityFindings());
+    }
+
+    /** {@link #inventory} 에 USER_MST.STAT_CD 를 더하고 그 타입을 정한다. */
+    private static CatalogSnapshot withStatusType(String nativeType, String jdbcType) {
+        return withStatusType(nativeType, jdbcType, null);
+    }
+
+    /** {@link #inventory} 에 USER_MST.STAT_CD 를 더하고 그 타입·선언 길이를 정한다. */
+    private static CatalogSnapshot withStatusType(String nativeType, String jdbcType, String size) {
+        CatalogSnapshot inventory = inventory("STAT_CD");
+        List<CatalogObject> objects = new ArrayList<>();
+        for (CatalogObject object : inventory.objects()) {
+            objects.add(object.name().equals("USER_MST.STAT_CD") ? retyped(object, nativeType, jdbcType, size)
+                    : object);
+        }
+        return new CatalogSnapshot(inventory.schemaVersion(), inventory.discoveredAt(), inventory.database(),
+                inventory.environment(), inventory.snapshotCapability(), objects, inventory.visibilityFindings());
+    }
+
+    private static CatalogObject retyped(CatalogObject column, String nativeType, String jdbcType, String size) {
+        Map<String, String> attributes = new LinkedHashMap<>(column.attributes());
+        attributes.remove("jdbcType");
+        if (nativeType != null) {
+            attributes.put("nativeType", nativeType);
+        }
+        if (jdbcType != null) {
+            attributes.put("jdbcType", jdbcType);
+        }
+        if (size != null) {
+            attributes.put("size", size);
+        }
+        return new CatalogObject(column.kind(), column.catalog(), column.schema(), column.name(), column.quoted(),
+                column.nativeDefinition(), column.definitionHash(), column.dependencies(), attributes);
     }
 
     @Test

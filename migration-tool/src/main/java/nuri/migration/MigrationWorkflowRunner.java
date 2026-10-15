@@ -315,7 +315,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 long failed = profile.tables().stream()
                         .filter(table -> "FAILED".equals(table.status())).count();
                 if (failed > 0) {
-                    throw gate("profile 이 테이블 " + failed + "개를 읽지 못했습니다(산출물의 FAILED 행과 SQLSTATE 참고).");
+                    throw gate("profile 이 테이블 " + failed + "개를 읽지 못했습니다(산출물의 FAILED 행의 SQLSTATE·failureReason 참고).");
                 }
             }
         }

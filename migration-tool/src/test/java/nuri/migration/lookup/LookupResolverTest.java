@@ -51,7 +51,11 @@ class LookupResolverTest {
         assertThat(LookupResolver.key(null)).isNull();
         assertThat(LookupResolver.key("")).isEqualTo(new Key(false, ""));
         assertThat(LookupResolver.key(" ")).isEqualTo(new Key(false, " "));
-        for (Object unsupported : List.of(1.5d, 2.5f, Date.valueOf("2026-01-01"), new byte[] {1}, true)) {
+        // 시각 값도 키가 아니다 — 읽기 도우미가 Oracle TIMESTAMP 를 java.sql.Timestamp 로 바꿔도(ADR-0029 L4-B R1) 정규화하지
+        //   않고 KEY_TYPE 으로 멈춘다.
+        for (Object unsupported : List.of(1.5d, 2.5f, Date.valueOf("2026-01-01"), new byte[] {1}, true,
+                java.sql.Timestamp.valueOf("2026-01-01 10:00:00.123456"),
+                java.time.LocalDateTime.of(2026, 1, 1, 10, 0))) {
             assertThatThrownBy(() -> LookupResolver.key(unsupported)).as(String.valueOf(unsupported))
                     .isInstanceOf(IllegalArgumentException.class).hasMessage("lookup key type");
         }

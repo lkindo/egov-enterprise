@@ -1483,6 +1483,9 @@ jobs:
             tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
+          # [ADR-0029 L4-B] 고정 길이 문자 소스 codemap 앞 trim 판정(R3, LoadCapabilities)을 생성기와 coverage 가 함께 쓴다 —
+          # 뒤집히면 손으로 쓴 mapping 이 plan 을 지난다. 2026-10-15 로컬 실측 1190 mutations, 95%, 103초. L3c·L3d 병합 뒤(나눈
+          # 매핑·조회 컬럼에도 같은 판정) 1250 mutations, 94%, 128초.
           - scope: migration-validate
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
@@ -1504,6 +1507,10 @@ jobs:
 
           # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
           # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
+          # [ADR-0029 L4-B] Oracle 코멘트 사전 뷰 읽기(R2)도 이 범위다 — 뒤집히면 Oracle 코멘트 근거가 사라진다. 드라이버
+          # 고유 시각 값 판정(R1, jdbc.JdbcLobReader)은 PIT 범위 밖이고 JdbcLobReaderTest·EtlSourcePagingTest·리허설 IT 가
+          # 지킨다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다. 프로파일러가 값 읽기 고정 사유를 FAILED 행의
+          # failureReason 에 남긴 뒤(L4-B 통합 검토) 1025 mutations, 92%, 108초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
@@ -1524,6 +1531,10 @@ jobs:
           # 파일이 남거나, 기존 파일을 덮어쓰거나, Git 작업 트리·승인 산출물 옆에 원시 값이 쓰인다. 2026-10-15 로컬 실측(검토
           # 반영 뒤) 977 mutations, 91%(archive 309, 88%), 108초. 같은 날 validate 1173 94% 125초, verify 268 93% 59초(덤프
           # 행 수·격리 키 반출 대조 포함), protect 199 98% 23초.
+          # [ADR-0029 L4-B] 생성기가 CHAR·NCHAR 소스 codemap 앞에 trim 을 요구한다(R3, 판정은 migration-validate 의
+          # LoadCapabilities) — 뒤집히면 공백 채운 코드가 실행에서 미매핑으로 멈추거나 그대로·대체값으로 쓰인다. 2026-10-15
+          # 검토 반영 뒤 로컬 실측 978 mutations, 92%, 102초. L3c·L3d 병합 뒤(조회 컬럼은 조회 표 타입으로 판정) 1038 mutations,
+          # 92%, 135초.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"

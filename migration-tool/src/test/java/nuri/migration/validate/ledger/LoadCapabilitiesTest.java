@@ -1,5 +1,7 @@
 package nuri.migration.validate.ledger;
 
+import nuri.migration.discovery.CatalogObject;
+import nuri.migration.discovery.ObjectKind;
 import nuri.migration.domain.DomainCategory;
 import nuri.migration.domain.DomainViolation;
 import nuri.migration.model.MappingSpec;
@@ -7,7 +9,9 @@ import nuri.migration.validate.ledger.TermLedger.Load;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -174,6 +178,60 @@ class LoadCapabilitiesTest {
                 "TIME_PRESENT", "FORMAT");
         assertThat(LoadCapabilities.ISOLATABLE).doesNotContain("NOT_ALLOWED", "UNSUPPORTED_VALUE_TYPE");
         assertThat(LoadCapabilities.MAX_EXCEPTION_ROWS).isEqualTo(1000);
+    }
+
+    /**
+     * ADR-0029 L4-B R3 — 공백으로 채워 오는 고정 길이 문자는 드라이버가 알린 타입 이름으로 정하고, 이름이 없을 때만 JDBC
+     * 타입으로 정한다. 선언 길이 1 은 값이 늘 꽉 차 공백이 붙지 않는다.
+     */
+    @Test
+    void fixedWidthCharacterIsDecidedByTheNativeTypeNameThenTheJdbcTypeAndNotForWidthOne() {
+        for (String[] fixedWidth : new String[][]{{"CHAR", "12", "3"}, {"nchar", "12", null}, {"bpchar", null, "8"},
+                {"character(3)", "1", "3"}, {"National  Character", "-15", "2"}, {"CHAR(3 BYTE)", "1", "3"},
+                {null, "1", "3"}, {"  ", "-15", null}, {"CHAR", "1", " 2 "}}) {
+            assertThat(LoadCapabilities.fixedWidthCharacter(typedColumn(fixedWidth[0], fixedWidth[1], fixedWidth[2])))
+                    .as("%s/%s/%s", fixedWidth[0], fixedWidth[1], fixedWidth[2]).isTrue();
+        }
+        for (String[] variable : new String[][]{{"VARCHAR2", "1", "3"}, {"uniqueidentifier", "1", "36"},
+                {"ENUM", "1", "5"}, {"character varying", "12", "3"}, {"nchar varying", "-9", "3"}, {null, "12", "3"},
+                {null, null, null}, {"", null, "3"}, {"CHAR", "1", "1"}, {"NCHAR", "-15", " 1"}, {null, "1", "1"}}) {
+            assertThat(LoadCapabilities.fixedWidthCharacter(typedColumn(variable[0], variable[1], variable[2])))
+                    .as("%s/%s/%s", variable[0], variable[1], variable[2]).isFalse();
+        }
+        assertThat(LoadCapabilities.fixedWidthCharacter(null)).isFalse();
+    }
+
+    /** codemap 이 있고 trim 이 아닌 고정 길이 문자 소스만 걸린다 — 생성기와 coverage 가 함께 쓴다. */
+    @Test
+    void anUntrimmedCodemapIsRefusedOnlyOnAFixedWidthCharacterSource() {
+        CatalogObject padded = typedColumn("CHAR", "1", "3");
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap(null, "status", padded)).isTrue();
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap("upper", "status", padded)).isTrue();
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap("trim", "status", padded)).isFalse();
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap(null, null, padded)).isFalse();
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap(null, "status", typedColumn("VARCHAR2", "12", "3")))
+                .isFalse();
+        assertThat(LoadCapabilities.untrimmedFixedWidthCodemap(null, "status", typedColumn("CHAR", "1", "1")))
+                .isFalse();
+        assertThat(LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED).contains("transform: trim", "unmapped: fail",
+                "passthrough·fallback");
+    }
+
+    private static CatalogObject typedColumn(String nativeType, String jdbcType, String size) {
+        Map<String, String> attributes = new LinkedHashMap<>();
+        attributes.put("parentTable", "USER_MST");
+        attributes.put("originalName", "STAT_CD");
+        if (nativeType != null) {
+            attributes.put("nativeType", nativeType);
+        }
+        if (jdbcType != null) {
+            attributes.put("jdbcType", jdbcType);
+        }
+        if (size != null) {
+            attributes.put("size", size);
+        }
+        return new CatalogObject(ObjectKind.COLUMN, "db", "legacy", "USER_MST.STAT_CD", false, null, null, List.of(),
+                attributes);
     }
 
     /** 추정기 위반 BLANK·PLACEHOLDER_DATE·INVALID_DATE·FORMAT·NOT_ALLOWED 가 이 load 에서 받는 코드. */

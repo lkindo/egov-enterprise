@@ -779,6 +779,10 @@ public final class TermLedgerValidator {
             errors.add(where + ": fkRef 컬럼의 원장 행 " + entry.id() + " load 는 키를 정규화하는 처리(trim·upper·"
                     + "lower·문자 type)만 받습니다 — 표준 도메인 변환기·codemap·nullify 는 부모 키를 바꿉니다");
         }
+        // [ADR-0029 L4-B R3] 생성기와 같은 판정을 실제로 실행될 mapping 컬럼에 다시 한다 — 손으로 쓴 mapping 도 막힌다.
+        if (LoadCapabilities.untrimmedFixedWidthCodemap(column.transform(), column.codemap(), inventoryColumn)) {
+            errors.add(where + "(원장 행 " + entry.id() + "): " + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        }
         if (!Objects.equals(column.transform(), load.transform()) || !Objects.equals(column.type(), load.type())
                 || !Objects.equals(column.codemap(), load.codemap())
                 || !Objects.equals(nonNullList(column.nullify()), load.nullify())) {

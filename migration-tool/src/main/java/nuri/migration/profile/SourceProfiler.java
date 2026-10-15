@@ -5,6 +5,7 @@ import nuri.migration.artifact.PersonalDataPatterns;
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.ObjectKind;
+import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.profile.ColumnProfiler.ColumnDeclaration;
 import nuri.migration.profile.SourceProfile.ColumnProfile;
 import nuri.migration.profile.SourceProfile.CommentEvidence;
@@ -12,6 +13,7 @@ import nuri.migration.profile.SourceProfile.TableProfile;
 import nuri.migration.source.SourceIntrospector;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -34,13 +36,16 @@ import java.util.Set;
  *   <li>모든 테이블을 한 연결·한 트랜잭션에서 읽고 끝나면 롤백한다. 소스에 쓰지 않는다.</li>
  *   <li>SQL 오류는 그 테이블을 {@code FAILED} 와 SQLSTATE 로 남기고 다음 테이블로 간다. 산출물의 {@code complete}
  *       가 거짓이 되고, 실행기는 산출물을 쓴 뒤 실패로 끝낸다.</li>
- *   <li>코멘트는 JDBC REMARKS 로 다시 읽어 inventory 에 해시로 남은 코멘트와 대조한다.</li>
+ *   <li>코멘트는 JDBC REMARKS 로 다시 읽어 inventory 에 해시로 남은 코멘트와 대조한다. Oracle 은 드라이버가 REMARKS 를
+ *       주지 않아 소유자 한정 사전 뷰에서 읽는다({@link #oracleColumnComments}).</li>
+ *   <li>값은 적재기와 같은 {@link JdbcLobReader#scalar} 로 읽는다 — 드라이버 고유 시각 객체도 시각으로 센다.</li>
  * </ul>
  */
 public final class SourceProfiler {
 
     private static final int FETCH_SIZE = 500;
     private static final String MYSQL = "MySQL";
+    private static final String ORACLE = "Oracle";
 
     public SourceProfile profile(Connection connection, CatalogSnapshot inventory, Long rowLimit) throws SQLException {
         Objects.requireNonNull(connection, "connection");
@@ -81,14 +86,16 @@ public final class SourceProfiler {
                 .sorted(Comparator.comparing(ColumnDeclaration::ordinal,
                         Comparator.nullsLast(Comparator.naturalOrder())).thenComparing(ColumnDeclaration::name))
                 .toList();
-        Map<String, String> remarks = columnRemarks(connection, table);
-        CommentEvidence tableComment = comment(tableRemarks(connection, table),
+        boolean oracle = ORACLE.equals(product);
+        Map<String, String> remarks = oracle ? oracleColumnComments(connection, table) : columnRemarks(connection, table);
+        CommentEvidence tableComment = comment(oracle ? oracleTableComment(connection, table)
+                        : tableRemarks(connection, table),
                 commentHashes.get(commentKey(table.catalog(), table.schema(), table.name())));
         String qualified = qualifiedSource(table);
         if (qualified == null || declarations.isEmpty()
                 || declarations.stream().anyMatch(column -> !safeIdentifier(column.name()))) {
             return new TableProfile(table.catalog(), table.schema(), table.name(), "SKIPPED_IDENTIFIER", null,
-                    0L, false, tableComment, unscanned(declarations, table, remarks, commentHashes));
+                    null, 0L, false, tableComment, unscanned(declarations, table, remarks, commentHashes));
         }
         List<ColumnProfiler> profilers = declarations.stream().map(column -> new ColumnProfiler()).toList();
         String select = "SELECT " + String.join(", ", declarations.stream().map(ColumnDeclaration::name).toList())
@@ -107,14 +114,16 @@ public final class SourceProfiler {
                     }
                     scanned++;
                     for (int index = 0; index < profilers.size(); index++) {
-                        profilers.get(index).accept(rows.getObject(index + 1));
+                        profilers.get(index).accept(JdbcLobReader.scalar(rows, index + 1));
                     }
                 }
             }
         } catch (SQLException failure) {
             connection.rollback();
+            // 값 읽기 도우미의 고정 사유(일광절약 간격 등)는 SQLSTATE 가 없다 — 사유를 따로 남겨야 운영자가 원인을 안다.
+            String reason = failure instanceof JdbcLobReader.ContentReadException content ? content.reason() : null;
             return new TableProfile(table.catalog(), table.schema(), table.name(), "FAILED",
-                    sqlState(failure), 0L, false, tableComment,
+                    sqlState(failure), reason, 0L, false, tableComment,
                     unscanned(declarations, table, remarks, commentHashes));
         }
         List<ColumnProfile> columnProfiles = new ArrayList<>();
@@ -123,7 +132,7 @@ public final class SourceProfiler {
             columnProfiles.add(profilers.get(index).finish(declaration,
                     columnComment(table, declaration.name(), remarks, commentHashes)));
         }
-        return new TableProfile(table.catalog(), table.schema(), table.name(), "PROFILED", null,
+        return new TableProfile(table.catalog(), table.schema(), table.name(), "PROFILED", null, null,
                 scanned, truncated, tableComment, columnProfiles);
     }
 
@@ -200,6 +209,59 @@ public final class SourceProfiler {
             return null;
         }
         return null;
+    }
+
+    /**
+     * Oracle 컬럼 코멘트. ojdbc 는 연결 속성 {@code remarksReporting} 이 꺼져 있으면(기본) REMARKS 를 null 로 주므로
+     * (ojdbc11 23.26.3 실측) 소유자 한정 사전 뷰 {@code ALL_COL_COMMENTS} 에서 읽는다(ADR-0029 L4-B R2). discovery 와 가시성 증명은 바꾸지 않아
+     * inventory 에는 Oracle 코멘트 해시가 없고, 대조는 {@code NOT_IN_INVENTORY} 다. 읽지 못하면 코멘트가 없는 것으로 본다.
+     */
+    private static Map<String, String> oracleColumnComments(Connection connection, CatalogObject table) {
+        String owner = owner(table);
+        if (owner == null) {
+            return Map.of();
+        }
+        Map<String, String> remarks = new HashMap<>();
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT COLUMN_NAME, COMMENTS FROM ALL_COL_COMMENTS WHERE OWNER = ? AND TABLE_NAME = ?")) {
+            statement.setString(1, owner);
+            statement.setString(2, table.name());
+            try (ResultSet rows = statement.executeQuery()) {
+                // COLUMN_NAME 은 NOT NULL 이다. 코멘트가 없는 컬럼의 null 은 comment() 가 없는 것으로 본다.
+                while (rows.next()) {
+                    remarks.put(rows.getString(1), rows.getString(2));
+                }
+            }
+        } catch (SQLException failure) {
+            return Map.of();
+        }
+        return remarks;
+    }
+
+    /** Oracle 표 코멘트. {@link #oracleColumnComments} 와 같은 이유로 {@code ALL_TAB_COMMENTS} 에서 읽는다. */
+    private static String oracleTableComment(Connection connection, CatalogObject table) {
+        String owner = owner(table);
+        if (owner == null) {
+            return null;
+        }
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = ? AND TABLE_NAME = ?")) {
+            statement.setString(1, owner);
+            statement.setString(2, table.name());
+            try (ResultSet rows = statement.executeQuery()) {
+                return rows.next() ? rows.getString(1) : null;
+            }
+        } catch (SQLException failure) {
+            return null;
+        }
+    }
+
+    /** 표를 가진 소유자 — 스키마, 없으면 카탈로그다({@link #qualifiedSource} 와 같은 순서). */
+    private static String owner(CatalogObject table) {
+        if (table.schema() != null && !table.schema().isBlank()) {
+            return table.schema();
+        }
+        return table.catalog() != null && !table.catalog().isBlank() ? table.catalog() : null;
     }
 
     private static Map<String, Set<String>> commentHashes(CatalogSnapshot inventory) {

@@ -632,6 +632,62 @@ adapter/freeze 승인과 공개 COMMIT 금지는 유지한다. 다른 Oracle rel
 GB/TB 규모·전체 JVM 힙 보장·cutover·전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
 Tibero는 위 라이선스 기동 실패로 discover·load를 아직 실측하지 않았다.
 
+## 이관 Oracle Free 표준화 리허설
+
+2026-10-15 Oracle Free 를 원천으로 표준화 이관 전체를 시험 클래스 하나에서 돌렸다([리허설 시험](../../migration-tool/src/test/java/nuri/migration/OracleStandardizationRehearsalIntegrationTest.java), ADR-0029 L4-B, [DEC-OPS-323](../../.agent/memory/decisions.md)). 합성 데이터만 쓴다. 공개 workflow 는 DRY_RUN 까지 가고, COMMIT 은 승인 게이트 아래의 엔진으로 한다(위 vendor 리허설과 같은 길). Oracle 의 `UNVERIFIED`·`MANUAL_ONLY` 등급과 공개 COMMIT 차단은 그대로다 — 합성 데이터와 Free 이미지는 기관 증거가 아니다.
+
+| 항목 | 값 |
+|---|---|
+| 원천 이미지 | `gvenzl/oracle-free@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093`(`23-slim-faststart`). 시험 지원 클래스가 이 digest 로 고정한다 — 기존 Oracle 시험 6개도 같은 이미지를 쓴다 |
+| 원천 버전 | Oracle AI Database 26ai Free Release 23.26.3.0.0, `VERSION_FULL` 23.26.3.0.0(일반 계정이 읽는 `PRODUCT_COMPONENT_VERSION` 에서 읽었다) |
+| 문자 집합 | `NLS_CHARACTERSET` AL32UTF8, `NLS_NCHAR_CHARACTERSET` AL16UTF16 |
+| 드라이버 | ojdbc11 23.26.3.0.0, JAR SHA-256 `764cc3f88454d1be117e155d01ed617467b984c9c68f13090dd6083799d2bb8c`. inventory 의 BUNDLED 드라이버 증거가 이 JAR 바이트에 결속된다 |
+| 대상 | PostgreSQL 17.10(`postgres:17-alpine`), V2_128 형태의 표준 사전(동의어·허용값·폐기 여부). 원천과 달리 digest 로 고정하지 않은 태그라 다시 받으면 버전이 바뀔 수 있다(재현 한계) |
+
+fixture 는 한글 `COMMENT ON` 이 달린 `LEG_USER` 1,300행이다. 가입일 `CHAR(8)` 에 자리표시 `00000000` 12행·달력에 없는 날짜 3행(키 10·600·1,300)·공백 8자 5행, 자정이 아닌 `DATE`, 소수 초가 든 `TIMESTAMP(6)`, 사용 여부 `CHAR(1)` 의 플래그 `1` 4행, 공백으로 채운 `CHAR(3)` 상태 코드, 정밀도 없는 `NUMBER` 키, BLOB·CLOB 을 둔다. DDL·DML 은 19c 에도 있는 구문만 썼다(19c 에서는 실행하지 않았다).
+
+| 단계 | 결과 |
+|---|---|
+| discover | 소유자 범위, 가시성 결과 없음, 드라이버 증거 = 번들 ojdbc JAR 바이트 |
+| profile | 위반 수가 fixture 와 정확히 같다(자리표시 12·달력 3·공백 5). `TIMESTAMP(6)` 1,300값을 시간형으로 세고 연도 범위를 낸다(R1). 표·컬럼 코멘트가 사전 뷰에서 온다(대조 `NOT_IN_INVENTORY`, R2). `CHAR(3)` 값 1,300개 모두 끝 공백이 있다 |
+| term-suggest | 이름이 표준 약어와 다른 컬럼(최종 로그인·종료 시각·사용 여부)도 코멘트 용어명으로 `EXACT` 후보를 받는다. 프로파일·후보·원장 초안에 시험이 찾는 원시 값(달력 오류·자리표시 가입일·이름·메모)과 일회용 접속 정보가 없다 |
+| 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 초안을 확정한다 — 가입일 `ymd8` + nullify(자리표시 12·공백 5) + 승인 예외 3, 최종 로그인 `ymdhms14`, 종료 시각 `ymd8-truncate`, `CHAR(3)` 상태 코드 `trim` + codemap, `CHAR(1)` 사용 여부 codemap(선언 길이 1 은 R3 대상이 아니다), 비표준 대상(U1) 4. 만든 mapping 의 컬럼 처리·isolate 가 원장과 대상 컬럼마다 같다 |
+| plan·review·validate | `commitReady=true`. 공개 COMMIT 은 `--archive-dir` 없이 거절되고, 있어도 `UNVERIFIED` 로 거절된다. 보관 디렉터리·대상은 비어 있다 |
+| 공개 DRY_RUN | `PASS`, 읽음 1,300, nullified 17, 격리 3(순번 10·600·1,300), 대상 무쓰기. 실행 JSON 에 값이 없다 |
+| 엔진 COMMIT·verify | 1,297행 적재, 격리 키 반출 3행(순번·정렬 키·위반, 저장소 밖 임시 디렉터리), verify `PASS`. 대상 값이 원천에서 따로 계산한 표준화 결과와 모두 같다. 정밀도 없는 `NUMBER` 키의 시퀀스가 격리한 마지막 키 뒤로 가서 온라인 다음 번호가 1,301 이다 |
+| 부정 | 원장 상한 2 → 셋째 격리 행(1,300)에서 `ISOLATION_CAP_EXCEEDED`. trim 없는 `CHAR(3)` codemap 원장은 생성기가, 손으로 쓴 같은 mapping 은 plan 의 원장 대응 검사(coverage)가 같은 판정으로 거부한다(R3). 그 mapping 을 엔진에 바로 넣으면 `unmapped: fail` 이라 첫 행에서 `CODEMAP_UNMAPPED` 로 멈춘다. 다른 driver JAR 로 load 하면 드라이버 증거 불일치로 거절하는 단계는 기존 [packaged CLI 시험](../../migration-tool/src/test/java/nuri/migration/OraclePackagedCliIntegrationTest.java)(`changed-source-driver`)이 덮어 리허설에 두지 않았다 |
+| TIMESTAMP 정렬 키 | 1,001행이 page 경계 둘을 넘어도 소수 초까지 같은 값으로 쓰이고, 같은 run 을 다시 돌려도 무중복이다. 첫 경계에 걸친 중복 키는 dry-run 이 `SQL_EXECUTION_FAILED` 로 멈춘다 |
+| 조회·나눈 매핑(L3c·L3d 병합 뒤) | 주문 1,001행을 두 매핑으로 나누고(`ord_h`·`ord`), `ord` 가 사용자 표를 별칭으로 조회한다. 나눈 매핑이 읽는 `TIMESTAMP(6)` 와 조회 표의 `TIMESTAMP(6)` 이 모두 `ymd8-truncate` 를 지나 원천에서 따로 계산한 값과 같고, checkpoint 는 매핑마다 1,001행이다(제어 스키마 V2). 조회 표의 `CHAR(3)` 코드는 trim 없는 codemap 이면 첫 행에서 `CODEMAP_UNMAPPED` 로 멈춘다. `TIMESTAMP` 를 조회 키로 쓰면 승인 load 의 live 원천 검사가 실행 전에 조회 키 계열로 거부하고, 실행기에 바로 넣어도 행마다 `LOOKUP_KEY_TYPE` 으로 멈춘다(심층 방어) |
+
+탐침이 남긴 드라이버 사실은 아래와 같다. 출력은 클래스 이름·null 여부·건수뿐이다.
+
+- **R1** `TIMESTAMP(6)` 은 JDBC `TIMESTAMP`(93)인데 `getObject` 가 `oracle.sql.TIMESTAMP` 를 준다. `DATE` 는 `java.sql.Timestamp` 다. 도메인 변환기·보관 덤프·프로파일러가 이 값을 시각으로 보지 못해, 드라이버가 알린 클래스가 `java.` 밖이면 드라이버가 준 지역 일시(`getObject(…, LocalDateTime.class)`)를 `Timestamp` 로 바꾼다. 시간대 있는 두 타입(-101·-102)은 그대로 둔다. 두 클래스의 `toString` 은 이 fixture(2025년, 일광절약 간격 밖)에서 소수 초가 있어도 없어도 같았고 탐침이 단언한다. JVM 시간대를 Asia/Seoul 로 두고 일광절약 간격의 `1987-05-10 02:30` 을 읽으면 드라이버의 지역 일시는 그대로였지만 `getTimestamp` 는 한 시간 밀었다 — 정렬 키라면 keyset 커서가 그 사이 행을 건너뛴다. 그래서 그런 값은 바꾸지 않고 `LOCAL_TIMESTAMP_IN_ZONE_GAP` 으로 멈춘다(탐침이 단언한다). 드라이버가 지역 일시 변환을 미지원(`SQLFeatureNotSupportedException`)이 아닌 다른 오류로 거절하면 `getObject` 로 물러나지 않고 `LOCAL_TIMESTAMP_READ_FAILED` 로 멈춘다 — 값마다 표기가 갈리면 정렬 digest 가 어긋난다(단위 시험). 프로파일러는 이런 고정 사유를 `FAILED` 행의 `failureReason` 에 남긴다 — SQLSTATE 가 없어 종전에는 원인이 사라졌다.
+- **R2** 드라이버 기본 설정은 `REMARKS` 를 주지 않는다(표·컬럼 8개 중 0). 사전 뷰 `ALL_TAB_COMMENTS`·`ALL_COL_COMMENTS` 는 3건을 준다.
+- **R3** `CHAR`·`NCHAR` 은 선언 길이까지 공백으로 채워 온다. 적합성 추정은 공백을 깎아 세고 codemap 은 깎지 않고 대조하므로 생성기가 trim 을 요구한다(모든 vendor).
+- **R7** 실행기 순서(읽기 전용 → READ COMMITTED → autocommit 끔)로 연 트랜잭션에서도 다른 세션의 커밋이 다음 문장에 보였다(COUNT 2 → 3) — 문장 단위 스냅숏이었다(원인은 판정하지 않았다). 그래서 여러 문장을 읽는 load 는 source freeze 에 기댄다.
+
+```sh
+./gradlew :migration-tool:test --tests 'nuri.migration.OracleStandardizationRehearsalIntegrationTest' --console=plain
+```
+
+2026-10-15 로컬에서 두 번 실행해 두 번 모두 3건이 통과했다(실패·skip 0, 컨테이너 기동 포함 88.9초·76.3초). 검토 반영 뒤 다시 실행해 3건이 통과했다(47.9초). main(L3c·L3d)을 합친 뒤 조회·나눈 매핑 시험을 더해 4건이 통과했다(57.1초). 통합 검토 지적을 반영한 뒤 다시 실행해 4건이 통과했다(53.6초). 본 리허설은 DRY_RUN 실행 JSON 이 형식 4(기본 매핑의 매핑 id·제어 스키마·조회 기록 없음)인지와, 엔진 COMMIT 전후 제어 스키마가 V2 이고 checkpoint 의 매핑 id 가 기본 매핑('')인지도 본다. CI 실행 기록은 아직 없다 — PR CI 의 이관 shard 가 돌린다(배정은 duration profile 이 정한다). 수정 R1·R2·R3 을 하나씩 되돌리면 리허설이 각각 프로파일의 시간형 수, 프로파일 코멘트, 생성기 거부 단언에서 붉다. 일광절약 간격 판정을 되돌리면 `JdbcLobReaderTest` 가 붉다. 검토 반영 뒤 R3 판정은 생성기와 coverage 가 함께 쓰는 `LoadCapabilities` 로 옮겼다 — 판정을 끄거나 선언 길이 1 제외를 빼면 `LoadCapabilitiesTest`·`TermLedgerValidatorTest`·`MappingGeneratorTest` 가 붉다. PIT 는 `migration-collect` 1,024 mutations·91%(146초), 검토 반영 뒤 `migration-validate` 1,190 mutations·95%(103초), `migration-standardize` 978 mutations·92%(102초)다. main(L3c·L3d)을 합친 뒤 `migration-validate` 1,250 mutations·94%, `migration-standardize` 1,038 mutations·92%, `migration-collect` 1,024 mutations·91% 였고, 통합 검토 지적(프로파일러 사유)을 반영한 뒤 `migration-collect` 는 1,025 mutations·92%(108초)다. R3 판정에는 살아남은 변이가 없고, R2 의 소유자 없는 표 분기와 사전 뷰 읽기 실패 분기에서 빈 코멘트를 돌려주는 변이 둘이 살아남는다(빈 코멘트는 코멘트가 없는 것으로 보아 결과가 같다). R1 의 판정(`JdbcLobReader`)은 PIT 범위 밖이고 단위 시험·리허설이 지킨다.
+
+통합 검토 뒤 읽기 경로와 새 판정을 하나씩 되돌려 다시 돌렸다. 한 번에 변이 하나이고, 모두 의도한 단언에서 붉었다(JUnit XML 은 로컬에만 있다).
+
+| 되돌린 것 | 붉어진 시험과 단언 |
+|---|---|
+| 조회 표 읽기(`readLookupRows`)를 `getObject` 로 | 리허설 조회·나눈 매핑 시험 — 조회 컬럼 `join_ymd` 가 `DOMAIN_VIOLATION(UNSUPPORTED_VALUE_TYPE)` |
+| `JdbcLobReader` 의 `TIMESTAMP` 변환을 끔 | 같은 시험 — 나눈 매핑 `ord_h` 의 `ord_ymd` 가 `DOMAIN_VIOLATION(UNSUPPORTED_VALUE_TYPE)` |
+| live 원천 검사가 `TIMESTAMP` 조회 키를 받게 | 같은 시험 — 승인 load 의 조회 키 거부 단언(오류 0건) |
+| 정렬 경계 읽기를 `getObject` 로 | `EtlSourcePagingTest` 경계 시험. 리허설 경계 시험은 이 fixture 에서 두 표기가 같아 통과한다 |
+| 자기참조 키 읽기를 `getObject` 로 | `SqlServerSelfReferenceReadTest` 드라이버 고유 TIMESTAMP 시험 |
+| 프로파일러 읽기를 `getObject` 로 | `SourceProfilerTest` Oracle 시험의 시간형 수(1 → 0)와 사유 시험 |
+| 일반 오류 거절 처리(`LOCAL_TIMESTAMP_READ_FAILED`) 제거 | `JdbcLobReaderTest` 거절 시험 — 드라이버 `SQLException` 이 그대로 나온다 |
+| 프로파일러가 사유를 버리게 | `SourceProfilerTest` 사유 시험 — `failureReason` 이 null |
+| `failureReason` 의 `@JsonInclude(NON_NULL)` 제거 | `CollectionArtifactCodecTest` — 사유 없는 프로파일 본문에 키가 생긴다 |
+
+한계: 1,300행 합성 fixture 라 `ORA-01555`·운영 규모·장시간 세션은 재지 않았다. 19c 에서는 실행하지 않았다(지원 클래스가 `MIGRATION_ORACLE19C_IMAGE` 를 받지만 이 클래스로 돌려 본 적은 없다). Tibero 는 라이선스가 없다. 탐색은 여전히 `REMARKS` 만 읽어 inventory 에 Oracle 코멘트 해시가 없다. R1 은 Oracle 에서만 실측했다 — 시간대 있는 값을 JDBC `TIMESTAMP` 와 고유 클래스로 알리는 다른 드라이버는 타입 이름(zone·tz)으로만 가린다. CUBRID 드라이버(11.3.1·11.3.2)는 시각 타입을 모두 `java.sql.Timestamp` 로 알려 R1 판정 밖이다(바이트코드 확인, 실행하지 않았다). Tibero 드라이버는 확인하지 않았다. `DATE` 처럼 드라이버가 `java.sql.Timestamp` 로 주는 값은 R1 판정 밖이라 JVM 시간대의 일광절약 간격에서 밀릴 수 있다(실행으로 확인하지 않았다) — 그런 시각이 있을 수 있는 데이터는 고정 오프셋 시간대(`-Duser.timezone=UTC`)로 실행한다. R3 은 고정 길이 문자만 막는다 — 끝 공백이 든 `VARCHAR` 코드는 적합성 추정이 공백을 깎아 세지만 codemap 은 깎지 않고 대조하므로, 프로파일의 끝 공백 수(`trailingSpaces`)를 보고 원장에 `trim` 을 적는다. 이 절은 엔진 수준의 조회·나눈 매핑 읽기(R1·R3 적용)만 본다. 원장→mapping-generate 를 거치는 승인 workflow 의 분할·조회와 보관 덤프·대사의 Oracle 단계(O2)는 L4-B 병합 뒤 후속 PR 범위다.
+
 ## 이관 CUBRID 실행 환경과 검증 경계
 
 2026-09-16 공식 `cubrid/cubrid:11.4` 이미지의 고정 digest
