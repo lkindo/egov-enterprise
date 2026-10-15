@@ -303,6 +303,103 @@ class MigrationPlannerTest {
                 assertThat(blocker).contains("타깃 객체", "TARGET_OWNED"));
     }
 
+    @Test
+    @DisplayName("[ADR-0029 L3c] 한 표를 나눈 매핑은 대상을 모두 싣고, 같은 표를 두 기본 매핑·두 표기로 쓰면 막는다")
+    void splitMappingsShareOneTablePlanAndTheSameTableWrittenTwoWaysIsBlocked() {
+        CatalogObject table = object(ObjectKind.TABLE, "legacy", "legacy_user");
+        CatalogSnapshot snapshot = snapshot(List.of(table), List.of());
+        TableMapping main = splitTable("legacy.legacy_user", "tb_user_info", null);
+        TableMapping detail = splitTable("LEGACY.LEGACY_USER", "tb_user_detail", "detail");
+
+        MigrationPlan split = new MigrationPlanner().plan(snapshot,
+                new MappingSpec(null, null, List.of(main, detail), Map.of()), Map.of(), TARGET_SCHEMA_DIGEST);
+
+        assertThat(split.commitReady()).as(split.readiness().blockers().toString()).isTrue();
+        assertThat(split.objects()).singleElement().satisfies(plan -> {
+            assertThat(plan.disposition()).isEqualTo(ObjectDisposition.AUTO_DATA_LOAD);
+            assertThat(plan.targetObject()).isEqualTo("tb_user_detail, tb_user_info");
+        });
+
+        MigrationPlan twoDefaults = new MigrationPlanner().plan(snapshot, new MappingSpec(null, null,
+                List.of(main, splitTable("LEGACY.LEGACY_USER", "tb_user_copy", null)), Map.of()), Map.of(),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(twoDefaults.commitReady()).isFalse();
+        assertThat(twoDefaults.readiness().blockers()).anySatisfy(blocker -> assertThat(blocker)
+                .contains("MappingSpec 매핑 판정 실패", "중복 소스 테이블 매핑 금지"));
+
+        // 같은 inventory 표를 다른 표기(schema 생략)로 적은 분할은 제어 테이블의 source_table 이 갈리므로 막는다.
+        MigrationPlan twoWays = new MigrationPlanner().plan(snapshot, new MappingSpec(null, null,
+                List.of(main, splitTable("legacy_user", "tb_user_detail", "detail")), Map.of()), Map.of(),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(twoWays.commitReady()).isFalse();
+        assertThat(twoWays.readiness().blockers()).anySatisfy(blocker -> assertThat(blocker)
+                .contains("소스 표기가 다릅니다", "legacy_user"));
+    }
+
+    /**
+     * [ADR-0029 L3d] 조회만 하는 표는 플래너가 자동으로 검토 표시를 달지 않는다 — 검토자가 LOOKUP_INPUT 으로 밝혀야 하고,
+     * 조회하지 않는 표에 LOOKUP_INPUT 을 달거나 조회하는 표를 다른 처분으로 두면 막는다.
+     */
+    @Test
+    void aLookedUpTableNeedsAnExplicitLookupInputAndLookupInputNeedsALookup() {
+        CatalogObject orders = object(ObjectKind.TABLE, "legacy", "orders");
+        CatalogObject customer = object(ObjectKind.TABLE, "legacy", "customer");
+        CatalogObject log = object(ObjectKind.TABLE, "legacy", "log_hist");
+        CatalogSnapshot snapshot = snapshot(List.of(orders, customer, log), List.of());
+        MappingSpec mapping = lookupMapping("legacy.customer");
+        DispositionDecision lookupInput = new DispositionDecision(ObjectDisposition.LOOKUP_INPUT, null, true,
+                "주문이 고객명을 조회한다");
+        DispositionDecision logIgnored = approvedIgnore("이관하지 않는 로그");
+
+        MigrationPlan undecided = new MigrationPlanner().plan(snapshot, mapping, Map.of(log.stableId(), logIgnored),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(undecided.commitReady()).isFalse();
+        assertThat(undecided.readiness().blockers()).contains("미분류 객체: " + customer.stableId());
+
+        MigrationPlan declared = new MigrationPlanner().plan(snapshot, mapping,
+                Map.of(customer.stableId(), lookupInput, log.stableId(), logIgnored), TARGET_SCHEMA_DIGEST);
+        assertThat(declared.commitReady()).as(declared.readiness().blockers().toString()).isTrue();
+        assertThat(declared.objects()).filteredOn(plan -> plan.sourceObjectId().equals(customer.stableId()))
+                .singleElement().satisfies(plan -> {
+                    assertThat(plan.disposition()).isEqualTo(ObjectDisposition.LOOKUP_INPUT);
+                    assertThat(plan.dataMappingPresent()).isFalse();
+                    assertThat(plan.automatic()).isFalse();
+                });
+
+        MigrationPlan ignored = new MigrationPlanner().plan(snapshot, mapping,
+                Map.of(customer.stableId(), approvedIgnore("조회만 한다"), log.stableId(), logIgnored),
+                TARGET_SCHEMA_DIGEST);
+        assertThat(ignored.readiness().blockers()).containsExactly(
+                "조회 조인이 읽는 표의 disposition 은 LOOKUP_INPUT 이어야 합니다: " + customer.stableId());
+
+        MigrationPlan misplaced = new MigrationPlanner().plan(snapshot, mapping,
+                Map.of(customer.stableId(), lookupInput, log.stableId(), lookupInput), TARGET_SCHEMA_DIGEST);
+        assertThat(misplaced.readiness().blockers()).containsExactly(
+                "LOOKUP_INPUT 이지만 어떤 매핑도 조회하지 않는 객체: " + log.stableId());
+
+        MigrationPlan missing = new MigrationPlanner().plan(snapshot, lookupMapping("legacy.nowhere"),
+                Map.of(customer.stableId(), lookupInput, log.stableId(), logIgnored), TARGET_SCHEMA_DIGEST);
+        assertThat(missing.readiness().blockers()).containsExactlyInAnyOrder(
+                "MappingSpec 조회 표를 inventory에서 찾을 수 없음: legacy.nowhere",
+                "LOOKUP_INPUT 이지만 어떤 매핑도 조회하지 않는 객체: " + customer.stableId());
+    }
+
+    private static MappingSpec lookupMapping(String lookupSource) {
+        MappingSpec.Lookup cust = new MappingSpec.Lookup("cust", lookupSource, null,
+                new MappingSpec.LookupKey("cust_no", "cust_no"), MappingSpec.LookupCardinality.EXACTLY_ONE, null);
+        TableMapping orders = new TableMapping("legacy.orders", "tb_order", null, "order_no", List.of(), "order_no",
+                List.of(new ColumnMapping("order_no", "order_no", null, null, null, null, null),
+                        new ColumnMapping("cust.cust_nm", "cust_nm", null, null, null, null, null)),
+                null, null, List.of(), "orders", List.of(cust));
+        return new MappingSpec(null, null, List.of(orders), Map.of());
+    }
+
+    private static TableMapping splitTable(String source, String target, String id) {
+        return new TableMapping(source, target, null, "user_id", List.of(), "user_id",
+                List.of(new ColumnMapping("user_id", "user_id", null, "string", null, null, null)), null, null,
+                List.of(), id);
+    }
+
     private static DispositionDecision approvedIgnore(String rationale) {
         return new DispositionDecision(ObjectDisposition.APPROVED_IGNORE, null, true, rationale);
     }

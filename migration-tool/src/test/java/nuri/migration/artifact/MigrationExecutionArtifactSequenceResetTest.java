@@ -58,6 +58,60 @@ class MigrationExecutionArtifactSequenceResetTest {
                 .contains("\"nullified\":[]");
     }
 
+    /**
+     * [ADR-0029 L3c] 나눈 매핑은 표 집계에 매핑 id 를, COMMIT 은 제어 스키마 버전의 적용 전후를 남긴다. 기본 매핑과 두 값이
+     * 없는 실행의 증거에는 그 필드가 없다(종전과 같은 바이트).
+     */
+    @Test
+    void splitMappingIdAndControlSchemaVersionsAppearOnlyWhenPresent() throws Exception {
+        var report = new nuri.migration.verify.MigrationReport(List.of(
+                new nuri.migration.verify.MigrationReport.TableReport("legacy_user", "tb_user", 2, 2, 2, 0, 2,
+                        nuri.migration.verify.MigrationReport.Status.PASS, ""),
+                new nuri.migration.verify.MigrationReport.TableReport("legacy_user", "tb_user_addr", 2, 2, 2, 0, 2,
+                        nuri.migration.verify.MigrationReport.Status.PASS, "", "addr")),
+                nuri.migration.verify.MigrationReport.Status.PASS);
+
+        String json = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
+                Instant.parse("2026-10-15T00:00:00Z"), report, List.of(),
+                new MigrationExecutionArtifact.ControlSchemaRecord("1", "2"));
+
+        assertThat(json).contains("\"target\":\"tb_user_addr\",\"read\":2", "\"mapping\":\"addr\"",
+                "\"controlSchema\":{\"before\":\"1\",\"after\":\"2\"}");
+        assertThat(json.split("\"mapping\"", -1)).hasSize(2);
+        String started = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "STARTED",
+                Instant.parse("2026-10-15T00:00:00Z"), null, null, new MigrationExecutionArtifact.ControlSchemaRecord("none", null));
+        assertThat(started).contains("\"controlSchema\":{\"before\":\"none\"}");
+        assertThat(MigrationExecutionArtifact.encode(plan(), MigrationMode.DRY_RUN, "PASS",
+                Instant.parse("2026-10-15T00:00:00Z"), report, List.of())).doesNotContain("controlSchema");
+    }
+
+    /**
+     * [ADR-0029 L3d] at_most_one 조회의 짝 없는 행은 소스·매핑 id·별칭·행 수로만 남긴다(키·값 없음). 짝 없는 행이 없는 실행의
+     * 증거에는 그 필드가 없다(종전과 같은 바이트).
+     */
+    @Test
+    void lookupMissesAreRecordedBySourceMappingAndAliasOnlyWhenPresent() throws Exception {
+        EtlExecutor.TableResult orders = new EtlExecutor.TableResult("legacy_orders", "tb_order", 3, 3, 3, List.of(),
+                List.of(), java.util.Map.of(), "orders", new java.util.LinkedHashMap<>(java.util.Map.of("cust", 2L)));
+        EtlExecutor.TableResult untouched = new EtlExecutor.TableResult("legacy_note", "tb_note", 1, 1, 1, List.of());
+
+        String json = MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "PASS", Instant.parse("2026-10-15T00:00:00Z"), null,
+                List.of(orders, untouched));
+
+        MigrationExecutionArtifact artifact = new ObjectMapper().readValue(json, MigrationExecutionArtifact.class);
+        assertThat(artifact.lookupMisses()).containsExactly(
+                new MigrationExecutionArtifact.LookupMissRecord("legacy_orders", "orders", "cust", 2));
+        assertThat(json).contains(
+                "\"lookupMisses\":[{\"source\":\"legacy_orders\",\"mapping\":\"orders\",\"lookup\":\"cust\",\"rows\":2}]");
+        assertThat(MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "PASS", Instant.parse("2026-10-15T00:00:00Z"), null,
+                List.of(untouched))).doesNotContain("lookupMisses");
+        assertThat(MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "STARTED", Instant.parse("2026-10-15T00:00:00Z"), null))
+                .doesNotContain("lookupMisses");
+    }
+
     private static MigrationPlan plan() {
         PlanCoverage coverage = new PlanCoverage(0, 0, 0, 0);
         return new MigrationPlan(MigrationPlan.CURRENT_SCHEMA_VERSION, "b".repeat(64), "c".repeat(64),

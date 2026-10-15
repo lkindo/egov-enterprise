@@ -13,6 +13,7 @@ import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.InventoryTables;
 import nuri.migration.generate.SkeletonReader.Skeleton;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
@@ -58,7 +59,11 @@ import java.util.Set;
  *       행이 정확히 하나여야 한다. 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.</li>
  *   <li>확정 행마다 컬럼을 만든다({@code load} 를 옮기고, 보호 컬럼이면 {@code encrypt} 를 정한다). skeleton 의 fkRef
  *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다.</li>
- *   <li>아직 실행하지 못하는 행(외부 보관·기본이 아닌 매핑·조회 조인)과 skeleton 에 없는 표의 확정 행은 거부한다.</li>
+ *   <li>아직 실행하지 못하는 행(외부 보관)과 skeleton 에 없는 표·매핑 id 의 확정 행은 거부한다. 한 소스 표를
+ *       나눈 skeleton 표(ADR-0029 L3c)는 매핑 id 마다 그 id 의 확정 행으로 컬럼을 만든다 — 원장 행의 mapping 을 생략하면
+ *       그 소스의 기본 매핑(id 없음)이다.</li>
+ *   <li>조회 경로(via) 확정 행(ADR-0029 L3d)은 skeleton 의 그 id 의 표가 선언한 별칭(lookups)으로 {@code alias.COLUMN}
+ *       컬럼을 만든다. 별칭이 없거나 별칭이 다른 표를 읽으면 거부한다. 조회만 하는 표도 소스 단위 완전성을 받는다.</li>
  *   <li>원장 선언은 출력 mapping 디렉터리 기준 경로와 원장 바이트의 SHA-256 이다.</li>
  *   <li>만든 mapping 을 다시 읽어 정적 mapping 검증과 자격·개인정보 값 검사, plan 과 같은 원장 대응 검사
  *       ({@link TermLedgerValidator#coverage})를 지나야 한다.</li>
@@ -138,7 +143,7 @@ public final class MappingGenerator {
 
         List<String> errors = new ArrayList<>();
         Resolved resolved = resolve(skeleton, ledger, inventory, errors);
-        rejectUnsupported(ledger, resolved, errors);
+        rejectUnsupported(skeleton, ledger, resolved, errors);
         complete(skeleton, ledger, resolved, errors);
         ObjectNode root = skeleton.tree().deepCopy();
         build(skeleton, ledger, resolved, root, errors);
@@ -172,20 +177,52 @@ public final class MappingGenerator {
             List<CatalogObject> rowTables,
             List<CatalogObject> rowColumns,
             List<CatalogObject> skeletonTables,
-            Map<String, InventoryTables.TableColumns> columns) {
+            Map<String, InventoryTables.TableColumns> columns,
+            List<LookupTable> lookupTables) {
+
+        /** 원장 행의 조회 경로가 가리키는 skeleton 조회. 그 id 의 skeleton 표가 그 별칭을 선언하지 않았으면 null. */
+        LookupTable via(TermLedger.Via via, Skeleton skeleton) {
+            for (LookupTable lookup : lookupTables) {
+                String id = skeleton.spec().tables().get(lookup.skeletonIndex()).id();
+                if (via.mapping().equals(id) && via.lookup().equals(lookup.lookup().alias())) {
+                    return lookup;
+                }
+            }
+            return null;
+        }
+
+        /** 이 skeleton 표가 선언한 조회. */
+        List<LookupTable> lookupsOf(int skeletonIndex) {
+            return lookupTables.stream().filter(lookup -> lookup.skeletonIndex() == skeletonIndex).toList();
+        }
 
         boolean inSkeleton(CatalogObject table) {
             return skeletonTables.stream().anyMatch(candidate -> candidate != null
                     && candidate.stableId().equals(table.stableId()));
         }
+
+        /** 이 소스 표를 이 매핑 id 로 읽는 skeleton 표가 있는가. */
+        boolean inSkeleton(CatalogObject table, String mappingId, Skeleton skeleton) {
+            for (int index = 0; index < skeletonTables.size(); index++) {
+                CatalogObject candidate = skeletonTables.get(index);
+                if (candidate != null && candidate.stableId().equals(table.stableId())
+                        && skeleton.spec().tables().get(index).effectiveId().equals(mappingId)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
+
+    /** skeleton 표 하나가 선언한 조회와 그 조회 표(ADR-0029 L3d). */
+    private record LookupTable(int skeletonIndex, MappingSpec.Lookup lookup, CatalogObject table) {}
 
     private static Resolved resolve(Skeleton skeleton, TermLedger ledger, CatalogSnapshot inventory,
                                     List<String> errors) {
         Map<String, InventoryTables.TableColumns> columns = new LinkedHashMap<>();
         Set<String> reported = new HashSet<>();
         List<CatalogObject> skeletonTables = new ArrayList<>();
-        Map<String, Integer> seen = new HashMap<>();
+        Map<String, String> stableIds = new HashMap<>();
         List<TableMapping> tables = skeleton.spec().tables();
         for (int index = 0; index < tables.size(); index++) {
             String source = tables.get(index).source();
@@ -196,13 +233,30 @@ public final class MappingGenerator {
                 continue;
             }
             CatalogObject table = resolution.table();
-            Integer previous = seen.putIfAbsent(table.stableId(), index);
-            if (previous != null) {
-                errors.add("skeleton tables[" + index + "] " + source + ": skeleton tables[" + previous
-                        + "] 와 같은 inventory 표를 가리킵니다 — 한 소스 표는 한 번만 둡니다(분할은 L3c 부터)");
-            }
+            stableIds.put(source, table.stableId());
             skeletonTables.add(table);
             tableColumns(inventory, table, source, columns, reported, errors);
+        }
+        // [ADR-0029 L3c] 한 소스 표를 나눈 skeleton 표는 매핑 id 로 가린다. 같은 (표, id) 가 둘이거나 keymap 을 만드는 표가
+        //   둘이거나 같은 표를 다르게 적으면 plan·실행기와 같은 판정(MappingIndex)으로 거부한다.
+        MappingIndex.of(tables, stableIds::get).errors()
+                .forEach(error -> errors.add("skeleton: " + error));
+        // [ADR-0029 L3d] skeleton 표가 선언한 조회의 조회 표. 선언 오류는 만든 mapping 의 정적 검증(LookupRules)이 알린다.
+        List<LookupTable> lookupTables = new ArrayList<>();
+        for (int index = 0; index < tables.size(); index++) {
+            for (MappingSpec.Lookup lookup : tables.get(index).lookups()) {
+                if (lookup == null || lookup.alias() == null || lookup.source() == null) {
+                    continue;
+                }
+                InventoryTables.Resolution resolution = InventoryTables.resolve(inventory, lookup.source());
+                if (!resolution.resolved()) {
+                    errors.add("skeleton tables[" + index + "].lookups[" + lookup.alias() + "] " + lookup.source() + ": "
+                            + resolution.problem());
+                    continue;
+                }
+                lookupTables.add(new LookupTable(index, lookup, resolution.table()));
+                tableColumns(inventory, resolution.table(), lookup.source(), columns, reported, errors);
+            }
         }
         List<CatalogObject> rowTables = new ArrayList<>();
         List<CatalogObject> rowColumns = new ArrayList<>();
@@ -227,7 +281,7 @@ public final class MappingGenerator {
             }
             rowColumns.add(column);
         }
-        return new Resolved(rowTables, rowColumns, skeletonTables, columns);
+        return new Resolved(rowTables, rowColumns, skeletonTables, columns, lookupTables);
     }
 
     /** 표의 컬럼을 한 번만 열거하고, 판정할 수 없으면 그 표마다 한 번 알린다. */
@@ -243,7 +297,7 @@ public final class MappingGenerator {
     }
 
     /** 아직 실행할 수 없는 행과 skeleton 밖의 확정 행. 이관 제외로 돌리라고 안내하지 않는다. */
-    private static void rejectUnsupported(TermLedger ledger, Resolved resolved, List<String> errors) {
+    private static void rejectUnsupported(Skeleton skeleton, TermLedger ledger, Resolved resolved, List<String> errors) {
         for (int index = 0; index < ledger.entries().size(); index++) {
             Entry entry = ledger.entries().get(index);
             if ("ARCHIVE".equals(entry.status())) {
@@ -254,13 +308,22 @@ public final class MappingGenerator {
                 continue;
             }
             if (entry.via() != null) {
-                errors.add(row(entry) + ": 조회 조인(via)은 아직 mapping 으로 만들 수 없습니다(L3d 전)");
-            } else if (entry.mapping() != null) {
-                errors.add(row(entry) + ": 기본 매핑이 아닌 mapping 은 아직 만들 수 없습니다(L3c 전)");
+                LookupTable lookup = resolved.via(entry.via(), skeleton);
+                CatalogObject table = resolved.rowTables().get(index);
+                if (lookup == null) {
+                    errors.add(row(entry) + ": 조회 경로(" + entry.via().mapping() + "/" + entry.via().lookup()
+                            + ")를 선언한 skeleton 표가 없습니다 — skeleton 의 그 id 의 표에 lookups 를 두세요");
+                } else if (table != null && !lookup.table().stableId().equals(table.stableId())) {
+                    errors.add(row(entry) + ": 조회 경로의 조회 표(" + lookup.lookup().source()
+                            + ")가 원장 행의 소스 표와 다릅니다");
+                }
             } else {
                 CatalogObject table = resolved.rowTables().get(index);
                 if (table != null && !resolved.inSkeleton(table)) {
                     errors.add(row(entry) + ": skeleton 에 없는 소스 표의 확정 행입니다 — skeleton 에 그 표를 두세요");
+                } else if (table != null && !resolved.inSkeleton(table, effectiveMapping(entry), skeleton)) {
+                    errors.add(row(entry) + ": 확정 행의 매핑(" + (entry.mapping() == null ? "기본 매핑" : entry.mapping())
+                            + ")을 읽는 skeleton 표가 없습니다 — skeleton 에 그 id 의 표를 두세요");
                 }
             }
         }
@@ -271,12 +334,30 @@ public final class MappingGenerator {
      * 제외·외부 보관 행이 정확히 하나여야 한다.
      */
     private static void complete(Skeleton skeleton, TermLedger ledger, Resolved resolved, List<String> errors) {
+        Set<String> checked = new HashSet<>();
+        List<CatalogObject> tables = new ArrayList<>();
+        List<String> sources = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
         for (int index = 0; index < resolved.skeletonTables().size(); index++) {
-            CatalogObject table = resolved.skeletonTables().get(index);
-            if (table == null) {
+            String source = skeleton.spec().tables().get(index).source();
+            tables.add(resolved.skeletonTables().get(index));
+            sources.add(source);
+            labels.add("skeleton tables[" + index + "] " + source);
+        }
+        // [ADR-0029 L3d] 조회만 하는 표도 소스 단위 완전성을 받는다.
+        for (LookupTable lookup : resolved.lookupTables()) {
+            tables.add(lookup.table());
+            sources.add(lookup.lookup().source());
+            labels.add("skeleton tables[" + lookup.skeletonIndex() + "].lookups[" + lookup.lookup().alias() + "] "
+                    + lookup.lookup().source());
+        }
+        for (int index = 0; index < tables.size(); index++) {
+            CatalogObject table = tables.get(index);
+            // 나눈 표는 한 번만 본다 — 완전성은 소스 표 단위다(매핑을 합쳐 확정 행이 하나 이상).
+            if (table == null || !checked.add(table.stableId())) {
                 continue;
             }
-            String source = skeleton.spec().tables().get(index).source();
+            String source = sources.get(index);
             List<Integer> rows = new ArrayList<>();
             for (int row = 0; row < ledger.entries().size(); row++) {
                 CatalogObject rowTable = resolved.rowTables().get(row);
@@ -285,7 +366,7 @@ public final class MappingGenerator {
                 }
             }
             if (rows.isEmpty()) {
-                errors.add("skeleton tables[" + index + "] " + source + ": 원장 행이 없는 표입니다 — term-suggest"
+                errors.add(labels.get(index) + ": 원장 행이 없는 표입니다 — term-suggest"
                         + " --ledger-draft 로 초안을 만들어 검토하세요");
                 continue;
             }
@@ -357,13 +438,33 @@ public final class MappingGenerator {
             for (CatalogObject column : columns.columns()) {
                 for (int row = 0; row < ledger.entries().size(); row++) {
                     Entry entry = ledger.entries().get(row);
-                    if (resolved.rowColumns().get(row) != column || !defaultConfirmed(entry)
+                    if (resolved.rowColumns().get(row) != column || !confirmedFor(entry, mapping)
                             || consumed.contains(row)) {
                         continue;
                     }
                     ObjectNode node = column(entry, mapping, InventoryTables.columnName(column), targets, errors);
                     if (node != null) {
                         columnNodes.add(node);
+                    }
+                }
+            }
+            // [ADR-0029 L3d] 이 표가 선언한 조회마다 그 조회 경로의 확정 행으로 alias.COLUMN 컬럼을 만든다.
+            for (LookupTable lookup : resolved.lookupsOf(index)) {
+                InventoryTables.TableColumns lookupColumns = resolved.columns().get(lookup.table().stableId());
+                if (lookupColumns == null || lookupColumns.problem() != null) {
+                    continue;
+                }
+                for (CatalogObject column : lookupColumns.columns()) {
+                    for (int row = 0; row < ledger.entries().size(); row++) {
+                        Entry entry = ledger.entries().get(row);
+                        if (resolved.rowColumns().get(row) != column || !viaFor(entry, mapping, lookup.lookup())) {
+                            continue;
+                        }
+                        ObjectNode node = column(entry, mapping,
+                                lookup.lookup().alias() + "." + InventoryTables.columnName(column), targets, errors);
+                        if (node != null) {
+                            columnNodes.add(node);
+                        }
                     }
                 }
             }
@@ -390,7 +491,7 @@ public final class MappingGenerator {
         Integer match = null;
         for (int row = 0; row < ledger.entries().size(); row++) {
             Entry candidate = ledger.entries().get(row);
-            if (resolved.rowColumns().get(row) != inventoryColumn.get() || !defaultConfirmed(candidate)) {
+            if (resolved.rowColumns().get(row) != inventoryColumn.get() || !confirmedFor(candidate, mapping)) {
                 continue;
             }
             if (match == null || candidate.target().column().equalsIgnoreCase(column.target())) {
@@ -484,8 +585,20 @@ public final class MappingGenerator {
         return true;
     }
 
-    private static boolean defaultConfirmed(Entry entry) {
-        return "CONFIRMED".equals(entry.status()) && entry.mapping() == null && entry.via() == null;
+    /** 이 skeleton 표(매핑 id)가 직접 옮기는 확정 행 — mapping 을 생략한 행은 그 소스의 기본 매핑이다(ADR-0029 L3c). */
+    private static boolean confirmedFor(Entry entry, TableMapping mapping) {
+        return "CONFIRMED".equals(entry.status()) && entry.via() == null
+                && effectiveMapping(entry).equals(mapping.effectiveId());
+    }
+
+    /** 이 skeleton 표(매핑 id)가 이 조회로 옮기는 확정 행(ADR-0029 L3d). */
+    private static boolean viaFor(Entry entry, TableMapping mapping, MappingSpec.Lookup lookup) {
+        return "CONFIRMED".equals(entry.status()) && entry.via() != null && mapping.id() != null
+                && mapping.id().equals(entry.via().mapping()) && lookup.alias().equals(entry.via().lookup());
+    }
+
+    private static String effectiveMapping(Entry entry) {
+        return entry.mapping() == null ? TableMapping.DEFAULT_ID : entry.mapping();
     }
 
     /**

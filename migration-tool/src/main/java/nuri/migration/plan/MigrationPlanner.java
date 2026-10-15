@@ -7,6 +7,7 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.InventoryTables;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.discovery.VisibilityStatus;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.TableMapping;
 
@@ -94,8 +95,9 @@ public final class MigrationPlanner {
         }
 
         List<String> plannerBlockers = new ArrayList<>();
-        Map<String, TableMapping> resolvedMappings = resolveMappings(
+        Map<String, List<TableMapping>> resolvedMappings = resolveMappings(
                 snapshot.objects(), mapping.tables(), plannerBlockers);
+        Set<String> lookedUp = resolveLookups(snapshot.objects(), mapping.tables(), plannerBlockers);
         List<MigrationObjectPlan> objectPlans = snapshot.objects().stream()
                 .map(object -> planObject(object, resolvedMappings.get(object.stableId()), decisions.get(object.stableId())))
                 .toList();
@@ -104,6 +106,17 @@ public final class MigrationPlanner {
                 .filter(object -> object.disposition() != ObjectDisposition.AUTO_DATA_LOAD)
                 .forEach(object -> plannerBlockers.add(
                         "MappingSpec 데이터 매핑과 disposition 충돌: " + object.sourceObjectId()));
+        // [ADR-0029 L3d] 조회만 하는 표는 검토자가 LOOKUP_INPUT 으로 밝혀야 하고, LOOKUP_INPUT 은 실제로 조회하는 표에만 단다.
+        for (MigrationObjectPlan object : objectPlans) {
+            boolean lookup = object.disposition() == ObjectDisposition.LOOKUP_INPUT;
+            if (lookup && !lookedUp.contains(object.sourceObjectId())) {
+                plannerBlockers.add("LOOKUP_INPUT 이지만 어떤 매핑도 조회하지 않는 객체: " + object.sourceObjectId());
+            } else if (!lookup && !object.dataMappingPresent() && object.disposition() != null
+                    && lookedUp.contains(object.sourceObjectId())) {
+                plannerBlockers.add("조회 조인이 읽는 표의 disposition 은 LOOKUP_INPUT 이어야 합니다: "
+                        + object.sourceObjectId());
+            }
+        }
 
         int unclassified = Math.toIntExact(objectPlans.stream()
                 .filter(object -> object.disposition() == null)
@@ -132,14 +145,19 @@ public final class MigrationPlanner {
                 readiness);
     }
 
-    private static Map<String, TableMapping> resolveMappings(
+    /**
+     * 매핑을 inventory 표로 푼다. [ADR-0029 L3c] 한 표를 나눈 매핑은 같은 표 아래 모두 모인다. 매핑 키(inventory stableId,
+     * 매핑 id)의 중복·keymap 소유 매핑 둘·같은 표를 다르게 적은 표기는 {@link MappingIndex} 와 같은 판정으로 blocker 다.
+     */
+    private static Map<String, List<TableMapping>> resolveMappings(
             List<CatalogObject> objects,
             List<TableMapping> mappings,
             List<String> blockers) {
         List<CatalogObject> tables = objects.stream()
                 .filter(object -> object.kind() == ObjectKind.TABLE)
                 .toList();
-        Map<String, TableMapping> resolved = new HashMap<>();
+        Map<String, List<TableMapping>> resolved = new HashMap<>();
+        Map<String, String> stableIds = new HashMap<>();
 
         for (TableMapping mapping : mappings) {
             if (mapping.source() == null || mapping.source().isBlank()) {
@@ -159,23 +177,62 @@ public final class MigrationPlanner {
                 continue;
             }
             CatalogObject table = matches.getFirst();
-            TableMapping previous = resolved.putIfAbsent(table.stableId(), mapping);
-            if (previous != null) {
-                blockers.add("한 inventory 테이블에 MappingSpec 매핑이 중복됨: " + table.stableId());
+            stableIds.put(mapping.source(), table.stableId());
+            resolved.computeIfAbsent(table.stableId(), ignored -> new ArrayList<>()).add(mapping);
+        }
+        MappingIndex index = MappingIndex.of(mappings, stableIds::get);
+        index.errors().forEach(error -> blockers.add("한 inventory 테이블의 MappingSpec 매핑 판정 실패: " + error));
+        Map<String, List<TableMapping>> copy = new HashMap<>();
+        resolved.forEach((id, list) -> copy.put(id, List.copyOf(list)));
+        return Map.copyOf(copy);
+    }
+
+    /**
+     * 조회 조인(lookups)이 읽는 표를 inventory 표로 푼다(ADR-0029 L3d). 찾지 못하거나 모호하면 blocker 다. 소스 표 해석과
+     * 같은 규칙({@link InventoryTables#matches})이다.
+     */
+    private static Set<String> resolveLookups(
+            List<CatalogObject> objects,
+            List<TableMapping> mappings,
+            List<String> blockers) {
+        List<CatalogObject> tables = objects.stream()
+                .filter(object -> object.kind() == ObjectKind.TABLE)
+                .toList();
+        Set<String> lookedUp = new HashSet<>();
+        for (TableMapping mapping : mappings) {
+            for (MappingSpec.Lookup lookup : mapping.lookups()) {
+                if (lookup == null || lookup.source() == null || lookup.source().isBlank()) {
+                    blockers.add("MappingSpec 조회 표 미지정: " + MappingIndex.label(mapping));
+                    continue;
+                }
+                List<CatalogObject> matches = tables.stream()
+                        .filter(table -> InventoryTables.matches(lookup.source(), table))
+                        .toList();
+                if (matches.size() != 1) {
+                    blockers.add((matches.isEmpty() ? "MappingSpec 조회 표를 inventory에서 찾을 수 없음: "
+                            : "MappingSpec 조회 표가 inventory에서 모호함: ") + lookup.source());
+                    continue;
+                }
+                lookedUp.add(matches.getFirst().stableId());
             }
         }
-        return Map.copyOf(resolved);
+        return lookedUp;
     }
 
     private static MigrationObjectPlan planObject(
             CatalogObject object,
-            TableMapping tableMapping,
+            List<TableMapping> tableMappings,
             DispositionDecision decision) {
+        // [ADR-0029 L3c] 나눈 표의 대상은 정렬해 ", " 로 잇는다. plan 형식(v3)은 그대로다.
+        boolean mapped = tableMappings != null && !tableMappings.isEmpty();
+        List<String> targets = mapped ? tableMappings.stream().map(TableMapping::target)
+                .filter(Objects::nonNull).distinct().sorted().toList() : List.of();
+        String mappedTarget = targets.isEmpty() ? null : String.join(", ", targets);
         if (decision != null) {
             boolean automatic = decision.disposition() == ObjectDisposition.AUTO_DATA_LOAD;
             String target = decision.targetObject();
-            if (target == null && automatic && tableMapping != null) {
-                target = tableMapping.target();
+            if (target == null && automatic && mapped) {
+                target = mappedTarget;
             }
             return new MigrationObjectPlan(
                     object.stableId(),
@@ -185,17 +242,17 @@ public final class MigrationPlanner {
                     target,
                     decision.reviewed(),
                     automatic,
-                    tableMapping != null,
+                    mapped,
                     decision.rationale());
         }
 
-        if (object.kind() == ObjectKind.TABLE && tableMapping != null) {
+        if (object.kind() == ObjectKind.TABLE && mapped) {
             return new MigrationObjectPlan(
                     object.stableId(),
                     object.kind(),
                     object.qualifiedName(),
                     ObjectDisposition.AUTO_DATA_LOAD,
-                    tableMapping.target(),
+                    mappedTarget,
                     true,
                     true,
                     true,

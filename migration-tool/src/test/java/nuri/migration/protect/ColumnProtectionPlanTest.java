@@ -138,6 +138,19 @@ class ColumnProtectionPlanTest {
         assertThat(plan(keyedTable("ID", List.of(), new IdStrategy("esntl_id", "USR_", "ID"), null, List.of(), rrno,
                 new ColumnMapping("PARENT_NO", "parent_id", null, null, null, "LEGACY_PARENT", null))).violations())
                 .as("다른 소스 컬럼이 키면 통과한다").isEmpty();
+        // [ADR-0029 L3d] 조회 키도 키다 — 주 표 쪽(key.from)과 조회 표 쪽(alias.key.to) 모두.
+        assertThat(plan(lookupTable("JUMIN_NO", "CUST_NO", rrno)).violations()).containsExactly(message);
+        assertThat(plan(lookupTable("CUST_NO", "JUMIN_NO", column("cust.jumin_no", "user_enrrno", ARIA)))
+                .violations()).containsExactly(message);
+        assertThat(plan(lookupTable("CUST_NO", "CUST_NO", column("cust.JUMIN_NO", "user_enrrno", ARIA)))
+                .violations()).as("조회 키가 아닌 조회 컬럼은 암호화할 수 있다").isEmpty();
+    }
+
+    private static TableMapping lookupTable(String from, String to, ColumnMapping... columns) {
+        MappingSpec.Lookup cust = new MappingSpec.Lookup("cust", "LEGACY_CUST", null, new MappingSpec.LookupKey(from, to),
+                MappingSpec.LookupCardinality.EXACTLY_ONE, null);
+        return new TableMapping("LEGACY", "tb_user_info", null, "ID", List.of(), "user_id", List.of(columns), null,
+                null, List.of(), "orders", List.of(cust));
     }
 
     @Test

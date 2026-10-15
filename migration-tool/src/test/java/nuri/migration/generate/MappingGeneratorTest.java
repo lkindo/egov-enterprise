@@ -158,7 +158,10 @@ public class MappingGeneratorTest {
                   {"table_name": "tb_user_info", "column_name": "end_ymd"},
                   {"table_name": "tb_user_info", "column_name": "ognz_id"},
                   {"table_name": "tb_user_info", "column_name": "user_enrrno"},
-                  {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"}
+                  {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"},
+                  {"table_name": "tb_user_detail", "column_name": "esntl_id"},
+                  {"table_name": "tb_user_detail", "column_name": "user_nm"},
+                  {"table_name": "tb_user_detail", "column_name": "dept_nm"}
                 ]
                 """);
         // 환경 변수를 늘 돌려주는 대역 — 생성기가 접속 값을 치환해 다시 쓰면 이 값이 출력에 드러난다.
@@ -276,7 +279,7 @@ public class MappingGeneratorTest {
     @Test
     void completenessCountsConfirmedRowsOfEveryMappingOfTheSource() {
         // 분할 원장: USER_NM 은 기본이 아닌 매핑(user_ext)으로만 확정됐다. 완전성은 소스 단위라 이 컬럼은 빠지지 않고,
-        // L3c 전이라 그 행만 거부한다.
+        // 그 id 의 skeleton 표가 없다는 것만 거부한다(ADR-0029 L3c).
         String split = LEDGER.replace("""
                   - id: U3
                     source: {table: legacy.USER_MST, column: USER_NM}
@@ -287,8 +290,68 @@ public class MappingGeneratorTest {
                 """);
 
         assertThatThrownBy(() -> generator.generate(SKELETON, split, "ledger.yml", inventory()))
-                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(CONFIRMED): 기본 매핑이 아닌"
-                        + " mapping 은 아직 만들 수 없습니다(L3c 전)");
+                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(CONFIRMED): 확정 행의 매핑(user_ext)을"
+                        + " 읽는 skeleton 표가 없습니다 — skeleton 에 그 id 의 표를 두세요");
+    }
+
+    /**
+     * [ADR-0029 L3c] 한 소스 표를 둘로 나눈 skeleton — 매핑 id 마다 그 id 의 확정 행으로 컬럼을 만든다. 확장 매핑은 자기 소스를
+     * fkRef 로 가리켜 기본 매핑(keymap 소유)의 대리키를 함께 쓴다.
+     */
+    @Test
+    void aSplitSkeletonGetsTheConfirmedColumnsOfEachMappingId() {
+        String skeleton = SKELETON.replace("codemaps:", """
+                  - source: legacy.USER_MST
+                    id: user_ext
+                    target: tb_user_detail
+                    orderBy: USER_SN
+                    targetKey: esntl_id
+                    columns:
+                      - {source: USER_SN, target: esntl_id, fkRef: legacy.USER_MST}
+                codemaps:""");
+        String ledger = LEDGER.replace("""
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 대리키 채번의 원천 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    mapping: user_ext
+                    target: {table: tb_user_detail, column: esntl_id}
+                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """).replace("""
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                    target: {table: tb_user_info, column: user_nm}
+                """, """
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                    mapping: user_ext
+                    target: {table: tb_user_detail, column: user_nm}
+                """);
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, ledger, "ledger.yml", inventory()));
+
+        assertThat(mapping.tables()).extracting(MappingSpec.TableMapping::id).containsExactly(null, null, "user_ext");
+        assertThat(mapping.tables().get(1).columns()).extracting(ColumnMapping::target)
+                .containsExactly("ognz_id", "frst_rgtr_id", "user_id", "end_ymd");
+        assertThat(mapping.tables().get(2).columns()).containsExactly(
+                new ColumnMapping("USER_SN", "esntl_id", null, null, null, "legacy.USER_MST", null),
+                new ColumnMapping("USER_NM", "user_nm", "trim", null, null, null, null));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping, inventory()))
+                .isEmpty();
+
+        // 같은 id 의 skeleton 표가 둘이면 매핑 키가 겹친다.
+        String twice = skeleton.replace("codemaps:", """
+                  - source: LEGACY.USER_MST
+                    id: user_ext
+                    target: tb_user_detail
+                codemaps:""");
+        assertThatThrownBy(() -> generator.generate(twice, ledger, "ledger.yml", inventory()))
+                .hasMessageContaining("skeleton: 중복 소스 테이블 매핑 금지: 'LEGACY.USER_MST#user_ext'");
     }
 
     @Test
@@ -326,9 +389,78 @@ public class MappingGeneratorTest {
         assertThatThrownBy(() -> generator.generate(SKELETON, archived, "ledger.yml", inventory()))
                 .hasMessage("mapping 을 만들지 않았습니다: U1 legacy.USER_MST.USER_SN(ARCHIVE): 외부 보관(ARCHIVE)은 아직"
                         + " mapping 으로 실행할 수 없습니다(L3e 전) | U2 legacy.USER_MST.USER_ID(CONFIRMED): 조회"
-                        + " 조인(via)은 아직 mapping 으로 만들 수 없습니다(L3d 전) | H1 legacy.LOG_HIST.LOG_SN(CONFIRMED):"
-                        + " skeleton 에 없는 소스 표의 확정 행입니다 — skeleton 에 그 표를 두세요")
+                        + " 경로(orders/cust)를 선언한 skeleton 표가 없습니다 — skeleton 의 그 id 의 표에 lookups 를 두세요"
+                        + " | H1 legacy.LOG_HIST.LOG_SN(CONFIRMED): skeleton 에 없는 소스 표의 확정 행입니다 — skeleton 에"
+                        + " 그 표를 두세요")
                 .hasMessageNotContaining("APPROVED_IGNORE 로");
+    }
+
+    /**
+     * [ADR-0029 L3d] 조회 경로(via) 확정 행은 skeleton 의 그 id 의 표가 선언한 별칭으로 {@code alias.COLUMN} 컬럼이 된다. 같은
+     * 컬럼을 직접 옮기는 행(D2)과 조회로 옮기는 행(X1)은 따로 확정된다. 조회만 하는 표도 완전해야 한다.
+     */
+    @Test
+    void viaRowsBecomeLookupColumnsOfTheSkeletonTableThatDeclaresTheAlias() {
+        String skeleton = SKELETON.replace("codemaps:", """
+                  - source: legacy.USER_MST
+                    id: user_dept
+                    target: tb_user_detail
+                    orderBy: USER_SN
+                    targetKey: esntl_id
+                    columns:
+                      - {source: USER_SN, target: esntl_id, fkRef: legacy.USER_MST}
+                    lookups:
+                      - {alias: dept, source: legacy.DEPT_MST, key: {from: DEPT_CD, to: DEPT_CD}, cardinality: exactly_one}
+                codemaps:""");
+        String ledger = LEDGER.replace("""
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 대리키 채번의 원천 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    mapping: user_dept
+                    target: {table: tb_user_detail, column: esntl_id}
+                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """) + """
+                  - id: X1
+                    source: {table: legacy.DEPT_MST, column: DEPT_NM}
+                    via: {mapping: user_dept, lookup: dept}
+                    target: {table: tb_user_detail, column: dept_nm}
+                    term: {name: 부서명, engAbbr: DEPT_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """;
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, ledger, "ledger.yml", inventory()));
+
+        assertThat(mapping.tables().get(2).id()).isEqualTo("user_dept");
+        assertThat(mapping.tables().get(2).columns()).containsExactly(
+                new ColumnMapping("USER_SN", "esntl_id", null, null, null, "legacy.USER_MST", null),
+                new ColumnMapping("dept.DEPT_NM", "dept_nm", "trim", null, null, null, null));
+        assertThat(mapping.tables().get(2).lookups()).containsExactly(new MappingSpec.Lookup("dept", "legacy.DEPT_MST",
+                null, new MappingSpec.LookupKey("DEPT_CD", "DEPT_CD"), MappingSpec.LookupCardinality.EXACTLY_ONE, null));
+        assertThat(mapping.tables().get(0).columns()).containsExactly(
+                new ColumnMapping("DEPT_NM", "ognz_nm", "trim", null, null, null, null));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping, inventory()))
+                .isEmpty();
+
+        // 별칭이 다른 표를 읽으면 그 행을 조회 컬럼으로 만들지 않는다.
+        String otherTable = skeleton.replace("source: legacy.DEPT_MST, key", "source: legacy.LOG_HIST, key");
+        assertThatThrownBy(() -> generator.generate(otherTable, ledger, "ledger.yml", inventory()))
+                .hasMessageContaining("X1 legacy.DEPT_MST.DEPT_NM(CONFIRMED): 조회 경로의 조회 표(legacy.LOG_HIST)가 원장 행의"
+                        + " 소스 표와 다릅니다")
+                // 조회만 하는 표도 완전해야 한다 — LOG_HIST 의 확정되지 않은 행이 그대로 드러난다.
+                .hasMessageContaining("H1 legacy.LOG_HIST.LOG_SN(PROPOSED): 확정되지 않은 컬럼은 mapping 으로 만들 수"
+                        + " 없습니다");
     }
 
     @Test

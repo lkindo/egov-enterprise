@@ -12,8 +12,21 @@ public record MigrationReport(List<TableReport> tables, Status overall) {
 
     public enum Status { PASS, WARN, FAIL }
 
+    /** {@code mappingId} 는 한 소스를 나눈 매핑의 id 다(ADR-0029 L3c). 기본 매핑은 null 이다. */
     public record TableReport(String source, String target, long read, long transformed, long written,
-                              long errors, long targetRows, Status status, String note) {}
+                              long errors, long targetRows, Status status, String note, String mappingId) {
+
+        /** 매핑 id 도입 전 생성자 호환 — 기본 매핑이다. */
+        public TableReport(String source, String target, long read, long transformed, long written,
+                           long errors, long targetRows, Status status, String note) {
+            this(source, target, read, transformed, written, errors, targetRows, status, note, null);
+        }
+
+        /** 문구 라벨 — 기본 매핑은 소스 그대로, 나눈 매핑은 {@code source#id} 다. */
+        public String label() {
+            return mappingId == null ? source : source + "#" + mappingId;
+        }
+    }
 
     public boolean ok() {
         return overall == Status.PASS;
@@ -23,7 +36,7 @@ public record MigrationReport(List<TableReport> tables, Status overall) {
         StringBuilder sb = new StringBuilder("=== Migration Report ===\n");
         for (TableReport t : tables) {
             sb.append(String.format("  [%-4s] %-20s -> %-20s read=%d transformed=%d written=%d errors=%d targetRows=%s%s%n",
-                    t.status(), t.source(), t.target(), t.read(), t.transformed(), t.written(), t.errors(),
+                    t.status(), t.label(), t.target(), t.read(), t.transformed(), t.written(), t.errors(),
                     t.targetRows() < 0 ? "-" : String.valueOf(t.targetRows()),
                     t.note() == null || t.note().isBlank() ? "" : "  (" + t.note() + ")"));
         }

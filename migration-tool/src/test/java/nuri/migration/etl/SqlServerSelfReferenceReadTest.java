@@ -2,6 +2,7 @@ package nuri.migration.etl;
 
 import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.keymap.KeyMapRegistry;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -117,11 +118,12 @@ class SqlServerSelfReferenceReadTest {
                 new ColumnMapping("parent_key", "parent_id", null, "text", null, SOURCE_TABLE, null)),
                 new IdStrategy("id", "TEST_", "legacy_key"));
         var executor = new EtlExecutor(mock(SourceIntrospector.class), new TransformerRegistry());
+        // [ADR-0029 L3c] 자기참조 판정은 매핑 색인(keymap 소유 매핑)으로 한다.
         var helper = EtlExecutor.class.getDeclaredMethod("preMintSelfReferences", Connection.class,
-                Connection.class, TableMapping.class, KeyMapRegistry.class);
+                Connection.class, MappingIndex.class, TableMapping.class, KeyMapRegistry.class);
         helper.setAccessible(true);
         try {
-            helper.invoke(executor, source, target, table, registry);
+            helper.invoke(executor, source, target, MappingIndex.of(List.of(table)), table, registry);
         } catch (InvocationTargetException failure) {
             if (failure.getCause() instanceof Exception cause) throw cause;
             if (failure.getCause() instanceof Error cause) throw cause;

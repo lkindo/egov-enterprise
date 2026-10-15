@@ -5,6 +5,8 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.InventoryTables;
 import nuri.migration.domain.DomainCategory;
 import nuri.migration.domain.DomainViolation;
+import nuri.migration.lookup.LookupRef;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.NullPolicy;
@@ -32,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -191,6 +194,10 @@ public final class TermLedgerValidator {
         }
         if (entry.mapping() != null && !MAPPING_ID.matcher(entry.mapping()).matches()) {
             errors.add(id + ": mapping 은 매핑 id 형식(소문자로 시작하는 소문자·숫자·밑줄 63자 이내)이어야 합니다");
+        }
+        if (entry.mapping() != null && entry.via() != null) {
+            // [ADR-0029 L3d] 조회 표의 컬럼을 읽는 매핑은 via.mapping 이다 — mapping 을 함께 두면 어느 매핑인지 갈린다.
+            errors.add(id + ": 조회 경로(via) 행에는 mapping 을 두지 않습니다 — 그 컬럼을 읽는 매핑은 via.mapping 입니다");
         }
         if (entry.via() != null && (entry.via().mapping() == null || entry.via().lookup() == null
                 || !MAPPING_ID.matcher(entry.via().mapping()).matches()
@@ -501,17 +508,21 @@ public final class TermLedgerValidator {
      * <ol>
      *   <li>충돌 — 표기가 다른 행도 같은 inventory 컬럼이면 확정되지 않은 행은 하나이고, 처분한 컬럼을 확정 행이
      *       옮기지 않는다.</li>
-     *   <li>정방향 — mapping 이 소스 컬럼에서 옮기는 컬럼(상수 아님, fkRef 포함)마다 같은 소스·대상의 기본 확정 행이
-     *       하나 있고, mapping 의 transform·type·codemap·nullify 가 그 행의 load 와 정확히 같다. fkRef 컬럼의 load 는
-     *       키 정규화뿐이다(생성기와 같은 판정).</li>
-     *   <li>역방향 — mapping 이 읽는 소스 표의 기본 확정 행은 모두 mapping 에 있다. mapping 이 읽지 않는 소스 표에는
-     *       확정 행이 없다.</li>
+     *   <li>정방향 — mapping 이 소스 컬럼에서 옮기는 컬럼(상수 아님, fkRef 포함)마다 같은 소스·같은 매핑 id·대상의 확정
+     *       행이 하나 있고, mapping 의 transform·type·codemap·nullify 가 그 행의 load 와 정확히 같다. 원장 행의 mapping 을
+     *       생략하면 그 소스의 기본 매핑(id 없음)이다(ADR-0029 L3c). fkRef 컬럼의 load 는 키 정규화뿐이다(생성기와 같은 판정).</li>
+     *   <li>역방향 — 확정 행은 모두 mapping 에 있다. 확정 행의 매핑 id 가 mapping 에 없거나, mapping 이 읽지 않는 소스 표의
+     *       확정 행이면 오류다.</li>
      *   <li>소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부
      *       보관 행이 정확히 하나다.</li>
      * </ol>
      *
-     * <p>아직 실행할 수 없는 행(외부 보관, 기본이 아닌 mapping, 조회 조인)은 거부한다 — mapping 으로 옮겨지지 않은 채
-     * 원장에만 남지 않게 한다. 문구는 행 ID·표·컬럼·상태와 고정 어휘다.</p>
+     * <p>[ADR-0029 L3d] 조회 컬럼({@code alias.COLUMN})은 조회 표의 inventory 컬럼으로 풀어, 같은 조회 경로({@code via}:
+     * 그 매핑 id·별칭)의 확정 행과 맞춘다. 조회만 하는 표도 소스 단위 완전성을 받는다 — 조회 키처럼 옮기지 않는 컬럼은
+     * 이관 제외와 사유로 적는다.</p>
+     *
+     * <p>아직 실행할 수 없는 행(외부 보관)은 거부한다 — mapping 으로 옮겨지지 않은 채 원장에만 남지 않게 한다. 문구는
+     * 행 ID·표·컬럼·상태와 고정 어휘다.</p>
      */
     public List<String> coverage(TermLedger ledger, MappingSpec mapping, CatalogSnapshot inventory) {
         Objects.requireNonNull(ledger, "ledger");
@@ -547,18 +558,19 @@ public final class TermLedgerValidator {
             if ("ARCHIVE".equals(entry.status())) {
                 errors.add(row(entry) + ": 외부 보관(ARCHIVE)은 아직 실행할 수 없습니다(L3e 전) — 이관해야 할 데이터를"
                         + " 이관 제외로 돌리지 마세요");
-            } else if ("CONFIRMED".equals(entry.status()) && entry.via() != null) {
-                errors.add(row(entry) + ": 조회 조인(via)은 아직 실행할 수 없습니다(L3d 전)");
-            } else if ("CONFIRMED".equals(entry.status()) && entry.mapping() != null) {
-                errors.add(row(entry) + ": 기본 매핑이 아닌 mapping 은 아직 실행할 수 없습니다(L3c 전)");
             }
         }
         conflicts(entries, rowColumns, errors);
 
         Map<String, CatalogObject> mappedTables = new LinkedHashMap<>();
+        Set<String> mappedIds = new HashSet<>();
+        Map<String, MappingSpec.TableMapping> byId = new HashMap<>();
         Set<Integer> used = new HashSet<>();
         Set<CatalogObject> mappedColumns = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (MappingSpec.TableMapping table : mapping.tables()) {
+            if (table.id() != null) {
+                byId.putIfAbsent(table.id(), table);
+            }
             InventoryTables.Resolution resolution = InventoryTables.resolve(inventory, table.source());
             if (!resolution.resolved()) {
                 errors.add("mapping 소스 표 " + table.source() + ": " + resolution.problem());
@@ -566,13 +578,38 @@ public final class TermLedgerValidator {
             }
             CatalogObject sourceTable = resolution.table();
             mappedTables.putIfAbsent(sourceTable.stableId(), sourceTable);
+            mappedIds.add(sourceTable.stableId() + '\u0000' + table.effectiveId());
             InventoryTables.TableColumns columns = tableColumns(inventory, sourceTable, table.source(),
                     columnsByTable, reported, errors);
             for (MappingSpec.ColumnMapping column : table.columns()) {
-                if (column.source() == null || column.constant() != null) {
+                if (column.source() == null || column.constant() != null || LookupRef.parse(column.source()) != null) {
+                    continue; // 조회 컬럼은 아래에서 조회 표로 맞춘다.
+                }
+                forward(table, column, column.source(), columns, entries, rowColumns, used, mappedColumns,
+                        entry -> directConfirmed(entry) && effectiveMapping(entry).equals(table.effectiveId()),
+                        errors);
+            }
+            for (MappingSpec.Lookup lookup : table.lookups()) {
+                if (lookup == null || lookup.source() == null || lookup.alias() == null) {
+                    continue; // 선언 오류는 mapping 정적 검증(LookupRules)이 알린다.
+                }
+                InventoryTables.Resolution lookupResolution = InventoryTables.resolve(inventory, lookup.source());
+                if (!lookupResolution.resolved()) {
+                    errors.add("mapping 조회 표 " + lookup.source() + ": " + lookupResolution.problem());
                     continue;
                 }
-                forward(table, column, columns, entries, rowColumns, used, mappedColumns, errors);
+                CatalogObject lookupTable = lookupResolution.table();
+                mappedTables.putIfAbsent(lookupTable.stableId(), lookupTable);
+                InventoryTables.TableColumns lookupColumns = tableColumns(inventory, lookupTable, lookup.source(),
+                        columnsByTable, reported, errors);
+                for (MappingSpec.ColumnMapping column : table.columns()) {
+                    LookupRef ref = LookupRef.parse(column.source());
+                    if (ref == null || column.constant() != null || !lookup.alias().equals(ref.alias())) {
+                        continue;
+                    }
+                    forward(table, column, ref.column(), lookupColumns, entries, rowColumns, used, mappedColumns,
+                            entry -> viaConfirmed(entry, table.effectiveId(), lookup.alias()), errors);
+                }
             }
         }
 
@@ -580,13 +617,20 @@ public final class TermLedgerValidator {
             Entry entry = entries.get(index);
             CatalogObject table = rowTables.get(index);
             InventoryTables.TableColumns columns = table == null ? null : columnsByTable.get(table.stableId());
-            if (!defaultConfirmed(entry) || table == null || used.contains(index)
+            if (!"CONFIRMED".equals(entry.status()) || table == null || used.contains(index)
                     || (columns != null && columns.problem() != null) || rowColumns.get(index) == null) {
                 continue; // 찾지 못한 컬럼·열거하지 못한 표는 그 사유 하나로 알린다.
             }
-            errors.add(row(entry) + (mappedTables.containsKey(table.stableId())
-                    ? ": 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요"
-                    : ": mapping 이 읽지 않는 소스 표의 확정 행입니다 — mapping-generate 로 다시 만드세요"));
+            if (entry.via() != null) {
+                errors.add(row(entry) + unusedVia(entry, table, byId, inventory));
+                continue;
+            }
+            errors.add(row(entry) + (!mappedTables.containsKey(table.stableId())
+                    ? ": mapping 이 읽지 않는 소스 표의 확정 행입니다 — mapping-generate 로 다시 만드세요"
+                    : !mappedIds.contains(table.stableId() + '\u0000' + effectiveMapping(entry))
+                    ? ": 확정 행의 매핑(" + mappingLabel(entry) + ")이 mapping 에 없습니다 — skeleton 에 그 id 의 매핑을 두고"
+                            + " mapping-generate 로 다시 만드세요"
+                    : ": 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요"));
         }
 
         for (CatalogObject table : mappedTables.values()) {
@@ -627,17 +671,44 @@ public final class TermLedgerValidator {
         return errors;
     }
 
-    /** mapping 컬럼 하나를 같은 inventory 컬럼의 기본 확정 행과 맞춘다. */
-    private static void forward(MappingSpec.TableMapping table, MappingSpec.ColumnMapping column,
+    /**
+     * 조회 경로 행이 mapping 에 쓰이지 않은 사유(ADR-0029 L3d). 읽는 매핑이 없거나, 그 매핑이 별칭을 선언하지 않았거나,
+     * 별칭이 다른 표를 읽거나, 그 컬럼을 읽는 항목이 없다.
+     */
+    private static String unusedVia(Entry entry, CatalogObject table, Map<String, MappingSpec.TableMapping> byId,
+                                    CatalogSnapshot inventory) {
+        MappingSpec.TableMapping reader = byId.get(entry.via().mapping());
+        if (reader == null) {
+            return ": 조회 경로의 매핑(" + entry.via().mapping() + ")이 mapping 에 없습니다 — skeleton 에 그 id 의 매핑을 두고"
+                    + " mapping-generate 로 다시 만드세요";
+        }
+        MappingSpec.Lookup lookup = reader.lookup(entry.via().lookup());
+        if (lookup == null) {
+            return ": 조회 경로의 별칭(" + entry.via().lookup() + ")을 매핑 " + entry.via().mapping()
+                    + " 이 선언하지 않았습니다 — skeleton 의 그 매핑에 lookups 를 두세요";
+        }
+        InventoryTables.Resolution resolution = InventoryTables.resolve(inventory, lookup.source());
+        if (!resolution.resolved() || !resolution.table().stableId().equals(table.stableId())) {
+            return ": 조회 별칭(" + entry.via().mapping() + "/" + entry.via().lookup() + ")이 읽는 표가 원장 행의 소스 표와"
+                    + " 다릅니다";
+        }
+        return ": 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요";
+    }
+
+    /**
+     * mapping 컬럼 하나를 같은 inventory 컬럼의 확정 행과 맞춘다. {@code mine} 은 이 컬럼이 쓸 수 있는 확정 행 — 직접 옮기면
+     * 같은 매핑 id 의 조회 경로 없는 행, 조회 컬럼이면 같은 매핑 id·별칭의 조회 경로 행이다(ADR-0029 L3d).
+     */
+    private static void forward(MappingSpec.TableMapping table, MappingSpec.ColumnMapping column, String sourceColumn,
                                 InventoryTables.TableColumns columns, List<Entry> entries,
                                 List<CatalogObject> rowColumns, Set<Integer> used,
-                                Set<CatalogObject> mappedColumns, List<String> errors) {
-        String where = table.source() + "." + column.source();
+                                Set<CatalogObject> mappedColumns, Predicate<Entry> mine, List<String> errors) {
+        String where = MappingIndex.label(table) + "." + column.source();
         if (columns.problem() != null) {
             return;
         }
         CatalogObject inventoryColumn = columns.columns().stream()
-                .filter(candidate -> InventoryTables.columnMatches(column.source(), candidate))
+                .filter(candidate -> InventoryTables.columnMatches(sourceColumn, candidate))
                 .findFirst().orElse(null);
         if (inventoryColumn == null) {
             errors.add(where + ": 소스 컬럼이 inventory 의 이 표에 없습니다");
@@ -653,7 +724,7 @@ public final class TermLedgerValidator {
                 continue;
             }
             Entry entry = entries.get(index);
-            if (defaultConfirmed(entry)) {
+            if (mine.test(entry)) {
                 confirmed.add(index);
                 // 한 소스 컬럼은 대상 컬럼마다 확정 행을 둘 수 있으므로 같은 대상의 행과 맞춘다.
                 if (complete(entry.target()) && entry.target().column().equalsIgnoreCase(column.target())) {
@@ -666,12 +737,12 @@ public final class TermLedgerValidator {
             }
         }
         if (sameTarget.size() > 1) {
-            errors.add(where + ": 같은 소스 컬럼·대상 컬럼의 기본 확정 행이 둘 이상입니다(원장 표 표기가 다른 행)");
+            errors.add(where + ": 같은 소스 컬럼·매핑·대상 컬럼의 확정 행이 둘 이상입니다(원장 표 표기가 다른 행)");
             return;
         }
         if (confirmed.isEmpty()) {
             errors.add(elsewhere != null
-                    ? where + ": 기본 매핑의 확정 행이 없습니다 — 원장 행 " + elsewhere.id() + " 은 다른 mapping·조회 경로입니다"
+                    ? where + ": 이 매핑의 확정 행이 없습니다 — 원장 행 " + elsewhere.id() + " 은 다른 mapping·조회 경로입니다"
                     : unconfirmed != null
                     ? where + ": 원장 행 " + unconfirmed.id() + " 이 확정되지 않았습니다(" + unconfirmed.status() + ")"
                     : where + ": 원장에 없는 매핑입니다");
@@ -760,8 +831,24 @@ public final class TermLedgerValidator {
         return entry.id() + (complete(entry.source()) ? " " + label(entry.source()) : "") + "(" + entry.status() + ")";
     }
 
-    private static boolean defaultConfirmed(Entry entry) {
-        return "CONFIRMED".equals(entry.status()) && entry.mapping() == null && entry.via() == null;
+    /** 조회 경로 없이 mapping 이 직접 옮기는 확정 행(ADR-0029 L3c 부터 기본이 아닌 매핑 포함). */
+    private static boolean directConfirmed(Entry entry) {
+        return "CONFIRMED".equals(entry.status()) && entry.via() == null;
+    }
+
+    /** 이 매핑 id 가 이 별칭으로 조회해 옮기는 확정 행(ADR-0029 L3d). */
+    private static boolean viaConfirmed(Entry entry, String mappingId, String alias) {
+        return "CONFIRMED".equals(entry.status()) && entry.via() != null
+                && mappingId.equals(entry.via().mapping()) && alias.equals(entry.via().lookup());
+    }
+
+    /** 원장 행의 실효 매핑 id. 생략하면 그 소스의 기본 매핑이다. */
+    private static String effectiveMapping(Entry entry) {
+        return entry.mapping() == null ? MappingSpec.TableMapping.DEFAULT_ID : entry.mapping();
+    }
+
+    private static String mappingLabel(Entry entry) {
+        return entry.mapping() == null ? "기본 매핑" : entry.mapping();
     }
 
     /**

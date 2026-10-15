@@ -43,7 +43,8 @@ public record WorkflowCliOptions(
         Path ledgerDraft,
         String metaSchema,
         Path skeleton,
-        Path ledger
+        Path ledger,
+        boolean controlSchemaUpgradeAcknowledged
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -70,7 +71,8 @@ public record WorkflowCliOptions(
             Set.of("command", "mapping", "inventory", "plan", "mode", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects",
                     "source-driver-jar", "source-driver-class",
-                    "ack-adapter", "ack-source-driver", "ack-source-freeze", "target-schemas"));
+                    "ack-adapter", "ack-source-driver", "ack-source-freeze", "ack-control-schema-upgrade",
+                    "target-schemas"));
 
     public WorkflowCliOptions {
         command = Objects.requireNonNull(command, "command");
@@ -143,6 +145,11 @@ public record WorkflowCliOptions(
         String acknowledgement = optional(arguments, "ack-adapter");
         String sourceDriverAcknowledgement = optionalDigest(arguments, "ack-source-driver");
         boolean freeze = flag(arguments, "ack-source-freeze");
+        // [ADR-0029 L3c] 이미 있는 제어 스키마를 올리는 확인. dry-run 은 대상 제어 스키마를 건드리지 않으므로 받지 않는다.
+        boolean controlSchemaUpgrade = flag(arguments, "ack-control-schema-upgrade");
+        if (controlSchemaUpgrade && mode != MigrationMode.COMMIT) {
+            throw new IllegalArgumentException("--ack-control-schema-upgrade 는 --mode=commit 에서만 씁니다");
+        }
         Set<String> targetSchemas = arguments.containsOption("target-schemas")
                 ? parseCsv(arguments, "target-schemas") : Set.of("public");
         return new WorkflowCliOptions(
@@ -151,7 +158,7 @@ public record WorkflowCliOptions(
                 sourceDriverJars, sourceDriverClass, mode,
                 acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
                 profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema,
-                skeleton, ledger);
+                skeleton, ledger, controlSchemaUpgrade);
     }
 
     /** 출력 파일(앞의 두 경로)이 서로 같거나 입력 파일과 같으면 한쪽이 조용히 덮이므로 거부한다. */

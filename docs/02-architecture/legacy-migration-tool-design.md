@@ -32,9 +32,9 @@ mapping.yml + source DB
 |---|---|---|
 | `discover` | `mapping.yml`과 source connection으로 요청한 catalog/schema/44개 object kind를 조사하고 canonical JSON inventory를 atomic write | source·target `endpointId` 존재를 요구하고, source endpoint digest·adapter product/version preflight·JDBC read-only signal·driver evidence·discovery scope를 inventory에 결속한다. raw DDL·JDBC URL·username/password는 artifact에 기록하지 않는다. |
 | `mapping-generate` | 사람이 쓴 skeleton·검토한 용어 매핑 원장·승인 inventory 로 `--mapping` 에 mapping.yml 을 atomic write([원장에서 mapping 만들기](#원장에서-mapping-만들기)) | DB 에 접속하지 않고 접속 자리표시를 치환하지 않는다. 원장은 출력 mapping 디렉터리 안에 있어야 하고, 원장 검증·소스 단위 완전성·자격·개인정보 값 검사·정적 검증을 모두 지나야 쓴다. 출력은 입력 파일과 다른 경로여야 한다. |
-| `plan` | inventory, mapping, 현재 target PostgreSQL schema fingerprint와 선택적 `review.yml`을 결합해 schema v3 plan을 atomic write | inventory의 source endpoint·driver·adapter·scope, mapping digest, target fingerprint, migration-tool 구현 bytes·핵심 class·adapter read-session·선택 transformer 계약을 digest로 묶는다. 발견 객체 전부가 검토·분류되지 않거나 visibility finding이 남으면 `commitReady=false`다. live 대상 계약·표준 사전 검증([표준 계약 검증](#표준-계약-검증))에 실패하면 표·컬럼 이름을 밝히고 plan을 쓰지 않는다. mapping 이 용어 매핑 원장을 선언하지 않았거나 원장 검증에 실패하면 plan 을 쓰지 않는다(DEC-OPS-317). |
+| `plan` | inventory, mapping, 현재 target PostgreSQL schema fingerprint와 선택적 `review.yml`을 결합해 schema v3 plan을 atomic write | inventory의 source endpoint·driver·adapter·scope, mapping digest, target fingerprint, migration-tool 구현 bytes·핵심 class·adapter read-session·선택 transformer 계약을 digest로 묶는다. 발견 객체 전부가 검토·분류되지 않거나 visibility finding이 남으면 `commitReady=false`다. live 대상 계약·표준 사전 검증([표준 계약 검증](#표준-계약-검증))에 실패하면 표·컬럼 이름을 밝히고 plan을 쓰지 않는다. mapping 이 용어 매핑 원장을 선언하지 않았거나 원장 검증에 실패하면 plan 을 쓰지 않는다(DEC-OPS-317). 조회 조인이 읽기만 하는 표는 `review.yml` 이 `LOOKUP_INPUT` 으로 밝혀야 한다([조회 조인](#조회-조인adr-0029-l3d)). |
 | `validate` | plan 한 개를 읽어 `commitReady`를 검사 | 승인 workflow는 정확히 plan schema v3만 허용한다. 이 명령은 live DB를 다시 읽거나 새 artifact를 만들지 않는다. |
-| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. 원장 선언·원장 검증도 실행 직전에 다시 본다. plan 옆의 고유 실행 JSON에 `STARTED`를 먼저 저장하고 `PASS`/`FAILED`로 갱신한다. |
+| `load` | mapping·inventory·plan과 동일 discovery scope로 source를 다시 조사하고 `dry-run` 또는 `commit` 실행 | source endpoint/driver/scope/inventory, mapping, target PostgreSQL fingerprint, 실행 구현 계약을 모두 다시 exact-match한다. 불일치·미승인 adapter/driver/freeze·검증 WARN/FAIL은 non-zero 종료다. 원장 선언·원장 검증도 실행 직전에 다시 본다. COMMIT 은 조회 표의 조회 키 유일성을 행을 읽기 전에 증명한다. plan 옆의 고유 실행 JSON에 `STARTED`를 먼저 저장하고 `PASS`/`FAILED`로 갱신한다. |
 
 Workflow 파일은 UTF-8 regular file, 최대 16 MiB, symlink 금지 계약을 적용한다. 출력은 같은 디렉터리의 임시 파일을 `fsync`한 뒤 atomic replace하며 atomic move를 지원하지 않으면 실패한다. Inventory는 raw native definition 대신 definition hash만 보존하고, artifact redaction guard는 JDBC URL·credential·private key 형태를 차단한다.
 
@@ -89,7 +89,7 @@ entries:
 - **상태별 필수 항목(형식 2, [DEC-OPS-316](../../.agent/memory/decisions.md))**: 확정(`CONFIRMED`)은 표준 용어·대상 컬럼(표준 영문약어와 같은 이름)·`load` 가 필요하다. 형식 1 원장은 읽지 않는다. 적합률은 참고값이다 — 확정하려면 적합률이나, 셀 수 없었던 이유(`unmeasured`, 추정기 코드)와 사유(`note`)가 있어야 하고 `SAMPLED` 로는 확정하지 않는다. 적합률이 100 미만이면 기록된 위반이나 승인 예외가 있어야 한다(위반 기록을 지워 확정하지 못하게). 기록된 위반마다 실행 시점 처리가 있어야 한다(`BLANK`·`PLACEHOLDER_DATE` 는 `nullify` 나 승인 예외 — `BLANK` 는 `unmapped: fail` codemap 이 공백의 표준 코드를 정하거나 멈추는 것으로도 된다, `INVALID_DATE`·`FORMAT` 은 그 값을 멈추는 load 와 승인 예외, `NOT_ALLOWED` 는 `unmapped: fail` codemap 만). 셀 수 없었던 위반에는 행 단위 판정이 있어야 한다(표준 도메인 변환기나 `type` — 문자 `type` 도 이진·XML·구조·배열·참조·ROWID·스트림 객체는 거부하고 문자로 읽은 LOB 만 받는다). 한 소스 컬럼은 대상 컬럼마다 확정 행을 둘 수 있고(유일 키에 대상 컬럼이 들어간다), 한 대상 컬럼은 mapping 의 컬럼 항목 하나만 채운다(mapping 정적 검증). 승인 예외는 `maxRows` 1~1000·사유·격리할 수 있는 코드만이며 격리 실행은 L3b 다. 날짜·일시·시각·여부 도메인은 표준 변환기(`ymd8`·`ymd8-truncate`, `ymdhms14`, `hms6`, `yn` 또는 codemap)를 load 에 둬야 하고, 값을 규칙으로 바꾸는 load(시각 버림·자정 붙임·`nullify`)에는 사유가 필요하다. `UNKNOWN` 은 확정할 수 없다(비표준 대상은 예외). 이관 제외는 사유, 외부 보관은 보존 기한, 표준 등록 요청은 요청할 용어 이름이 필요하다. 판정 표는 [LoadCapabilities](../../migration-tool/src/main/java/nuri/migration/validate/ledger/LoadCapabilities.java)다.
 - **비표준 대상(U1, [DEC-OPS-317](../../.agent/memory/decisions.md))**: 표준 용어가 없는 대상 컬럼은 `term` 대신 `nonStandardTarget: {reason}` 으로 확정한다. plan·load 가 대상 schema 의 `meta_standard_terms` 에 그 컬럼 이름의 용어가 없음을 확인할 때만 받는다(폐기 용어도 있다고 본다). 이 행에는 conformance 를 두지 않고 도메인 대조가 없으며, 물리 타입 검사([표준 계약 검증](#표준-계약-검증))는 그대로다.
 - **허용값을 확인하지 못한 코드(U3)**: `ALLOWED_VALUES_UNVERIFIED` 인 코드·여부 컬럼은 사유가 있으면 codemap 없이 확정한다. 허용값 대사는 L4 가 맡는다. 허용값을 읽을 수 있으면 codemap 이 내는 표준 코드(쓰이는 대체값 포함)는 그 안이어야 한다.
-- **mapping 대조(coverage)**: 원장과 mapping 의 소스 표를 승인 inventory 의 표·컬럼으로 해석해(표기가 달라도 같은 표) 세 가지를 본다. 정방향 — mapping 이 소스 컬럼에서 옮기는 모든 컬럼(상수 제외, fkRef 포함)이 같은 소스·대상의 기본 확정 행을 가리키고 transform·type·codemap·nullify 가 그 행의 `load` 와 정확히 같다. 역방향 — mapping 이 읽는 소스 표의 기본 확정 행은 모두 mapping 에 있고, mapping 이 읽지 않는 소스 표에는 확정 행이 없다. 소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부 보관 행이 정확히 하나다. 외부 보관·기본이 아닌 `mapping`·`via` 행은 실행할 수 없어 L3e·L3c·L3d 전까지 멈춘다.
+- **mapping 대조(coverage)**: 원장과 mapping 의 소스 표를 승인 inventory 의 표·컬럼으로 해석해(표기가 달라도 같은 표) 세 가지를 본다. 정방향 — mapping 이 소스 컬럼에서 옮기는 모든 컬럼(상수 제외, fkRef 포함)이 같은 소스·같은 매핑 id·대상의 확정 행을 가리키고 transform·type·codemap·nullify 가 그 행의 `load` 와 정확히 같다. 원장 행의 `mapping` 을 생략하면 그 소스의 기본 매핑(id 없음)이다. 역방향 — 확정 행은 모두 mapping 에 있다. 확정 행의 매핑 id 가 mapping 에 없거나 mapping 이 읽지 않는 소스 표의 확정 행이면 오류다. 소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부 보관 행이 정확히 하나다. 외부 보관 행은 실행할 수 없어 L3e 전까지 멈춘다. 기본이 아닌 `mapping` 행은 L3c 부터 그 id 의 매핑([매핑 식별자와 분할](#매핑-식별자와-분할adr-0029-l3c))으로, `via` 행은 L3d 부터 그 매핑 id 의 별칭으로 조회하는 컬럼([조회 조인](#조회-조인adr-0029-l3d))으로 실행한다. `via` 행에는 `mapping` 을 두지 않는다 — 그 컬럼을 읽는 매핑은 `via.mapping` 이다.
 - **live 메타 대조**: plan·load 때 확정 행의 표준 용어가 대상 schema 의 `meta_standard_terms` 에 있고 이름·도메인이 같으며 폐기되지 않았는지 본다. 같은 영문약어라도 schema 마다 다른 용어로 본다. 폐기 여부·허용값 컬럼(V2_128)이 없는 DB 에서는 대조를 멈춘다.
 - **필수화 시점**: L3a-2 부터 plan·load 는 원장을 선언한 mapping 만 받는다(DEC-OPS-317). 원장 없는 mapping 은 "mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요" 로 멈춘다. 원장 `load` 는 내장 변환기만 받으므로 프로젝트 변환기는 workflow 에서 쓰지 못한다.
 
@@ -122,8 +122,8 @@ V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·
 - **skeleton**: `ledger` 와 생성분 컬럼이 빠진 mapping.yml 이다. 접속·run·표(source·target·orderBy·idStrategy·identity·foreignKeys)·codemaps 와, `columns` 에는 `const`·`fkRef` 항목만 둔다. fkRef 항목의 변환은 원장이 정한다. 접속 값은 `${NAME}` 자리표시여야 하고 평문 비밀번호는 거부한다(mapping 로더와 같은 검사).
 - **트리 방식**: 생성기는 skeleton YAML 트리에서 `tables[i].columns`(덧붙이기와 fkRef 항목의 load)와 `ledger` 노드만 바꾼다. 그래서 접속 자리표시가 글자 그대로 남고, 같은 입력은 같은 바이트를 낸다. skeleton 의 주석·따옴표 표기는 남지 않으므로 검토자는 skeleton 원문과 생성물을 따로 본다.
 - **해석과 완전성**: skeleton 표와 원장의 모든 행을 승인 inventory 의 표·컬럼으로 해석한다(플래너·coverage 와 같은 [규칙](../../migration-tool/src/main/java/nuri/migration/discovery/InventoryTables.java)). 찾지 못하거나 모호하거나, 표에 COLUMN 객체가 없거나, 대소문자만 다른 컬럼이 있으면 멈춘다. skeleton 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부 보관 행이 정확히 하나여야 한다 — 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.
-- **컬럼 만들기**: 기본 확정 행마다 `{source: inventory 컬럼 이름, target, load}` 를 덧붙이고, 보호 컬럼이면 `encrypt` 를 정한다. 이관할 수 없는 보호 컬럼으로 확정했으면 멈춘다. skeleton fkRef 항목은 같은 소스 컬럼의 확정 행 load 를 받되 키 정규화(`trim`·`upper`·`lower`·문자 type)만 받는다. 한 대상 컬럼은 const·fkRef·확정 행 중 하나만 채운다 — plan 의 mapping 정적 검증도 같은 대상 컬럼을 두 컬럼 항목이 채우면 거부한다. 만든 mapping 은 plan 과 같은 원장 대응 검사(coverage)를 한 번 더 지난다.
-- **거부**: skeleton 에 없는 소스 표의 확정 행, 원장 행이 없는 skeleton 표, 외부 보관(L3e 전), 기본이 아닌 `mapping`(L3c 전), `via`(L3d 전), 확정되지 않은 컬럼. 문구는 행 ID·표·컬럼·상태와 고정 어휘이고 20건까지 보인다. 이관해야 할 데이터를 이관 제외로 돌려 생성기를 지나가지 않는다([복구 런북](../04-operations/migration-recovery-runbook.md)).
+- **컬럼 만들기**: skeleton 표(매핑 id)마다 그 id 의 확정 행마다 `{source: inventory 컬럼 이름, target, load}` 를 덧붙이고, 보호 컬럼이면 `encrypt` 를 정한다. 이관할 수 없는 보호 컬럼으로 확정했으면 멈춘다. skeleton fkRef 항목은 같은 소스 컬럼의 확정 행 load 를 받되 키 정규화(`trim`·`upper`·`lower`·문자 type)만 받는다. skeleton 표가 `lookups` 를 선언하면 그 매핑 id·별칭의 조회 경로(`via`) 확정 행마다 `{source: <별칭>.<조회 표 컬럼>, target, load}` 를 덧붙이고, 조회만 하는 표도 소스 단위 완전성을 받는다. 한 대상 컬럼은 const·fkRef·확정 행 중 하나만 채운다 — plan 의 mapping 정적 검증도 같은 대상 컬럼을 두 컬럼 항목이 채우면 거부한다. 만든 mapping 은 plan 과 같은 원장 대응 검사(coverage)를 한 번 더 지난다.
+- **거부**: skeleton 에 없는 소스 표의 확정 행, 그 매핑 id 를 읽는 skeleton 표가 없는 확정 행, 원장 행이 없는 skeleton 표, 같은 (소스, 매핑 id) 가 둘이거나 keymap 을 만드는 표가 둘인 skeleton, 외부 보관(L3e 전), 선언한 skeleton 표가 없거나 다른 표를 읽는 조회 경로(`via`), 확정되지 않은 컬럼. 문구는 행 ID·표·컬럼·상태와 고정 어휘이고 20건까지 보인다. 이관해야 할 데이터를 이관 제외로 돌려 생성기를 지나가지 않는다([복구 런북](../04-operations/migration-recovery-runbook.md)).
 - **출력**: `ledger: {path: <출력 디렉터리 기준 상대 경로>, sha256: <원장 바이트>}` 를 쓴다. 원장은 출력 mapping 디렉터리 안에 있어야 한다. 쓰기 전에 tables·codemaps 에 자격·개인정보 값 검사를, 다시 읽은 본문에 같은 값 확인과 mapping 정적 검증(`db_columns.json` 필요)을 한다.
 
 ### 결속되는 실행 의미
@@ -305,7 +305,7 @@ mapping 이 대상 키 값을 넣는 `preserve`·`remap`이나 직접 컬럼 매
       targetSequences: { answer_no: sq_answer_no }
 ```
 
-복합 identity와 기존 `idStrategy`는 함께 선언할 수 없다. Typed tuple은 versioned canonical encoding으로 keymap/checkpoint에 저장하며 partial-null 복합 FK, 타입·arity 불일치, 고아 FK는 실패한다. 단일 self-reference는 부모 ID를 먼저 예약하는 2-pass를 지원하지만 typed composite self-reference는 차단한다.
+한 소스 표를 여러 대상으로 나누는 표 매핑의 `id` 와 keymap 소유 규칙은 [매핑 식별자와 분할](#매핑-식별자와-분할adr-0029-l3c)에, 다른 소스 표를 단일 키로 조회해 그 컬럼을 읽는 `lookups` 와 `alias.COLUMN` 은 [조회 조인](#조회-조인adr-0029-l3d)에 둔다. 복합 identity와 기존 `idStrategy`는 함께 선언할 수 없다. Typed tuple은 versioned canonical encoding으로 keymap/checkpoint에 저장하며 partial-null 복합 FK, 타입·arity 불일치, 고아 FK는 실패한다. 단일 self-reference는 부모 ID를 먼저 예약하는 2-pass를 지원하지만 typed composite self-reference는 차단한다.
 
 ## 적재, transaction과 재시작 의미
 
@@ -314,7 +314,7 @@ Load는 adapter가 승인한 격리 수준으로 **source connection 하나와 r
 Target에는 migration-tool 전용 Flyway가 `migration_control` schema와 다음 상태를 생성·검증한다.
 
 - `tb_migration_key_map`: `(run_id, source_namespace, source_table, legacy_key)`별 typed/legacy key 대응
-- `tb_migration_checkpoint`: 같은 run/source/table의 source identity, target identity, transformed-row SHA-256
+- `tb_migration_checkpoint`: 같은 run/source/table/매핑(`mapping_id`, 기본 매핑은 빈 문자열)의 source identity, target identity, transformed-row SHA-256 — 제어 스키마 V2([매핑 식별자와 분할](#매핑-식별자와-분할adr-0029-l3c))
 - `tb_migration_run`: `RUNNING`, `LOADED`, `COMPLETED`, `FAILED` 상태
 - `tb_migration_schema_history`: migration-tool runtime schema 전용 Flyway history
 
@@ -327,6 +327,67 @@ INSERT는 매핑한 대상 컬럼을 모두 나열하고 NULL 값도 명시해 �
 **행 변환 실패는 격리하지 않는다**(2026-10-13 [DEC-OPS-309](../../.agent/memory/decisions.md), Q6 위임 결정). transform·codemap·type·fkRef·identity·보호 컬럼(`encrypt`) 중 하나라도 실패한 행이 있으면 — 표준 도메인 변환기의 거부(`DOMAIN_VIOLATION(<코드>)`)와 `nullify` 상한 초과(`NULLIFY_CAP_EXCEEDED(<코드>)`)도 같다 — 그 chunk 는 한 행도 쓰지 않고, 이 chunk 에서 새로 만든 keymap 도 버린 뒤 테이블과 run 을 멈춘다. `target_generated` 도 chunk 의 모든 행을 먼저 변환한 뒤에 쓴다. 남은 테이블은 읽지 않고 `RUN_STOPPED_BY_ROW_FAILURE` 로 결과에 남긴다. dry-run 도 같은 행에서 멈춰 commit 이 어디서 멈출지 보여 준다. **예외**: `target_generated` 부모는 dry-run 에서 DB 생성 identity 가 없어 keymap 을 등록하지 않는다. 그래서 그 부모를 복합 FK(`foreignKeys`)로 참조하는 자식은 dry-run 에서 FK 값이 있는 첫 행에서 고아(`FK_REF_FAILED`)로 멈추고 뒤 테이블은 `RUN_STOPPED_BY_ROW_FAILURE` 로 남는다. commit 에서는 부모 행이 `INSERT ... RETURNING` 으로 등록돼 같은 자식 행이 통과하므로, 이런 매핑의 dry-run 결과는 commit 이 멈출 위치가 아니고 그 뒤 테이블의 변환 검사도 하지 않은 것이다. 오류는 `행 변환 실패(<원천 테이블>, column=<타깃 컬럼>, row=<원천 정렬 순서의 위치>): ROW_TRANSFORM_FAILED:<단계>` 형식이며 값·키·예외 원문을 담지 않는다. 검증 보고서와 load gate 는 첫 실패를 이 문구로 밝힌다. 종전에는 실패 행만 건너뛰고 나머지를 커밋해 승인 없는 누락이 남았다. 승인된 예외 행만 격리하는 경로(L2 원장)는 아직 없으므로 지금은 모든 행 변환 실패가 fail-closed 다. **쓰기 단계의 오류도 격리하지 않는다**(2026-10-14 [DEC-OPS-310](../../.agent/memory/decisions.md)). batch 가 실패하면 같은 chunk 를 한 transaction 안에서 행마다 다시 쓴다 — 드라이버가 batch 결과를 증명하지 못한 경우처럼 행마다 쓰면 모두 성공하는 chunk 는 그대로 한 번에 커밋한다. 한 행이라도 SQL 오류(`ATOMIC_WRITE_FAILED` — 길이·NOT NULL·CHECK·UNIQUE·대상 FK·일시 오류)나 재변환 실패(`ROW_RETRY_TRANSFORM_FAILED`)가 나면 chunk 전체를 롤백하고 테이블과 run 을 멈춘다. `target_generated` 도 chunk 를 한 transaction 으로 커밋하고, `INSERT ... RETURNING`·keymap·checkpoint 중 하나라도 실패하면(`TARGET_GENERATED_WRITE_FAILED`) chunk 전체를 롤백한다. 오류는 `행 쓰기 실패(<원천 테이블>, target=<대상 테이블>, row=<원천 정렬 순서의 위치>): <코드>(SQLSTATE=<5자리>)` 형식이고 처음 실패한 행만 밝힌다. 예외 원문은 값이 들어갈 수 있어 싣지 않는다. keymap·checkpoint 기록 실패처럼 특정 행이 아니면 `row=-` 이다. 승인된 예외 행만 격리하는 경로는 ADR-0029 L3 에서 L2 원장과 함께 만든다.
 
 재실행은 같은 `runId + sourceNamespace`의 keymap/checkpoint를 preload한다. 행 변환 실패로 멈춘 run 은 원인을 고친 mapping(다시 승인한 plan)으로 같은 run 을 재개하면 마지막으로 커밋된 checkpoint 다음 행부터 적재한다([PostgreSQL 회귀](../../migration-tool/src/test/java/nuri/migration/EtlPartialLoadRecoveryPostgresIntegrationTest.java)). 동일 source identity의 target identity와 transformed-row checksum이 같으면 이미 완료된 행으로 인정하고, checksum·target identity·target table이 달라지면 실패한다. 사후 verifier도 run-scoped checkpoint 수, target identity 유일성, target 행 재조회 checksum을 대조한다.
+
+### 매핑 식별자와 분할(ADR-0029 L3c)
+
+한 소스 표를 여러 대상으로 나눌 수 있다(1:N 분할, [DEC-OPS-319](../../.agent/memory/decisions.md)). 판정은 한 곳([MappingIndex](../../migration-tool/src/main/java/nuri/migration/mapping/MappingIndex.java))이 하고 정적 검증·실행 순서·실행기·플래너·생성기가 같은 규칙을 쓴다.
+
+```yaml
+tables:
+  - source: legacy.user_mst            # 기본 매핑 — keymap 을 만든다
+    target: public.tb_user_info
+    orderBy: USER_SN
+    idStrategy: {column: esntl_id, generator: USRCNFRM_, sourceKey: USER_SN}
+    columns: [...]
+  - source: legacy.user_mst            # 같은 표기를 쓴다
+    id: user_addr
+    target: public.tb_user_addr
+    orderBy: USER_SN
+    targetKey: esntl_id
+    columns:
+      - {source: USER_SN, target: esntl_id, fkRef: legacy.user_mst}   # 소유 매핑의 대리키를 함께 쓴다
+      - {source: ADDR, target: addr}
+```
+
+- **매핑 id**: `id` 는 `[a-z][a-z0-9_]{0,62}` 이고 mapping 전체에서 유일하다. 같은 소스에서 id 를 생략할 수 있는 매핑은 하나뿐이고 그 실효 id 는 빈 문자열이다. 분할한 매핑은 소스 표를 같은 표기로 적는다 — 플래너는 같은 inventory 표를 다르게 적은 매핑을 막는다(제어 테이블의 `source_table` 이 갈리기 때문이다). id 를 생략한 mapping 의 digest 는 종전과 같다.
+- **keymap 소유 규칙**: 같은 소스에서 keymap 을 만드는 매핑(`idStrategy`·`identity`)은 많아야 하나다. `fkRef`·`foreignKeys` 의 부모 소스는 그 소유 매핑으로 풀린다. 소유 매핑이 아닌 매핑이 자기 소스를 `fkRef` 로 가리키면 자기참조가 아니라 소유 매핑에 대한 일반 간선이다(1:1 확장 표의 대리키 공유) — 확장 쪽 checkpoint 의 target key 는 `targetKey` 로 정한다. keymap 은 소스 표 단위 그대로라, 이 규칙이 같은 소스에서 서로 다른 생성 ID 가 조용히 갈리는 경로를 막는다. where 로 행을 나눈 분할에서 두 대상이 모두 생성 키를 요구하는 경우도 이 규칙이 정적으로 거부한다.
+- **실행 순서**: 노드는 (소스, 매핑 id) 이고 간선은 소유 매핑으로 잇는다. 형제 매핑을 거치는 의존은 소스 단위로는 순환처럼 보여도 매핑 단위로는 DAG 다. 분할한 매핑마다 같은 읽기 세션 안에서 소스를 따로 읽는다. 결과·보고·실행 증거는 기본 매핑을 종전 이름 그대로, 나눈 매핑을 `source#id` 로 가린다(실행 증거의 `tables[].mapping`).
+- **제어 스키마 V2**: `tb_migration_checkpoint` 에 `mapping_id` 를 더하고 PK 를 `(run_id, source_namespace, source_table, mapping_id, source_key)` 로, 대상 키 색인을 `mapping_id` 포함으로 다시 만든다([V2](../../migration-tool/src/main/resources/db/migration-tool/V2__add_mapping_id_to_checkpoint.sql)). 기존 행은 기본 매핑(`''`)으로 채우고 채운 뒤 DEFAULT 를 지워 `mapping_id` 를 빠뜨린 INSERT 가 바로 실패한다. V1 이 만든 이름과 다른 PK 를 가진 표면 적용이 멈춘다. keymap 은 바꾸지 않는다.
+- **업그레이드 확인**: 대상에 이미 있는 제어 스키마(적용된 버전이 있거나 checkpoint 표가 있다)에 이 도구가 적용할 버전이 남았으면, COMMIT 은 `--ack-control-schema-upgrade` 없이는 실행 증거도 남기지 않고 시작 전에 멈춘다(`CONTROL_SCHEMA_UPGRADE_UNACKNOWLEDGED`). 처음 만드는 대상은 확인이 필요 없다. 확인은 run 과 run 사이에, 진행 중인 run 이 없을 때 한다 — 적용은 Flyway 이력 잠금 아래 한 번에 하고 PostgreSQL 에서는 실패하면 통째로 되돌아간다. 실행 증거의 `controlSchema: {before, after}` 가 적용 전후 버전을 남긴다(처음 만든 대상은 `before: none`). 기관 실행 wrapper 는 선택 항목 `ackControlSchemaUpgrade` 로 넘긴다.
+- **재개 가드**: COMMIT 은 시작할 때 이 run 의 checkpoint 에 있는 (소스, 매핑 id) 가운데 mapping 에 같은 소스는 있는데 그 id 가 없거나, 그 id 의 매핑이 checkpoint 에 기록된 것과 다른 대상 표에 쓰는 것이 있으면 run 상태를 바꾸거나 행을 쓰기 전에 멈춘다(`MAPPING_ID_CHANGED`) — 바꾼 id 의 매핑이 이미 적재한 행을 다시 쓰기 때문이다. 기본 id 를 다른 대상의 매핑에 넘기고 원래 매핑에 새 id 를 주는 개명도 같다. id 를 되돌리거나 새 runId 로 적재한다. V1 run 은 V2 로 올린 뒤 기본 매핑으로 같은 run 을 이어서 재개한다.
+- **원장**: 확정 행의 `mapping` 이 그 id 의 매핑을 가리킨다. 생성기는 skeleton 표(매핑 id)마다 그 id 의 확정 행으로 컬럼을 만들고, 소스 단위 완전성은 매핑을 합쳐 본다.
+
+### 조회 조인(ADR-0029 L3d)
+
+여러 소스 표의 값을 한 대상 표로 모을 때 주 표의 행마다 다른 소스 표를 단일 키로 조회한다(N:1, [DEC-OPS-320](../../.agent/memory/decisions.md)). 규칙은 [LookupRules](../../migration-tool/src/main/java/nuri/migration/lookup/LookupRules.java), 짝 판정은 [LookupResolver](../../migration-tool/src/main/java/nuri/migration/lookup/LookupResolver.java) 한 곳이고 정적 검증과 실행기가 같은 판정을 쓴다. 제어 테이블은 바꾸지 않는다.
+
+```yaml
+tables:
+  - source: legacy.orders
+    id: orders                     # 조회를 쓰는 매핑에는 id 가 필요하다(원장 via.mapping)
+    target: public.tb_order
+    orderByKeys: [ORDER_NO]        # 조회를 쓰면 모드와 무관하게 필수
+    targetKey: order_no
+    lookups:
+      - alias: cust
+        source: legacy.customer
+        where: "USE_YN = 'Y'"      # 조회 표에만 거는 읽기 조건
+        key: {from: CUST_NO, to: CUST_NO}
+        cardinality: exactly_one   # 또는 at_most_one + maxMissing
+    columns:
+      - {source: ORDER_NO, target: order_no}
+      - {source: cust.CUST_NM, target: cust_nm}
+```
+
+- **선언**: 별칭은 `[a-z][a-z0-9_]{0,62}` 이고 매핑 안에서 유일하다. 키는 단일 컬럼 하나씩이다(복합 키는 받지 않는다). `at_most_one` 은 0 이상의 `maxMissing` 이 필요하고 `exactly_one` 에는 둘 수 없다. 컬럼 항목의 `alias.COLUMN` 은 선언한 별칭만 가리키고 `fkRef` 로 번역할 수 없다. 어떤 컬럼도 읽지 않는 조회는 거부한다. 조회를 선언하지 않은 mapping 의 digest 는 종전과 같다.
+- **순서 키가 필요한 이유**: 순서 없는 dry-run 은 결과를 연 채 chunk 를 처리하고, MySQL 은 열린 스트리밍 결과가 있는 동안 다른 문장을 거부한다. 조회는 keyset page(최대 500행)를 다 읽어 결과를 닫은 뒤 보낸다.
+- **실행**: page 마다 같은 연결·같은 읽기 트랜잭션에서 `SELECT <키>, <읽는 컬럼> FROM <조회 표> WHERE (<where>) AND <키> IN (?…)` 를 500개 키씩(Oracle IN 목록 1,000·SQL Server 파라미터 2,100 아래) 보낸다. 조회한 값은 행에 `alias.column` 으로 넣고 그 뒤 변환 순서는 일반 컬럼과 같다. 행 checksum 에 조회 값이 들어가므로 첫 실행 뒤 조회 표의 값이 바뀌면 재개가 checksum 불일치로 멈춘다.
+- **키 비교**: 계열(가변 길이 문자·정수/고정소수)과 정규화한 글자로 비교한다 — 수는 뒤 0 을 지워 BIGINT 10 과 NUMERIC 10.0 이 같은 키다. 문자는 공백·대소문자를 고치지 않는다. 빈 문자열도 키다 — 짝은 DB 가 정한다(Oracle 은 '' 를 NULL 로 저장해 읽으면 NULL 이다). live 검증은 두 키 컬럼이 같은 계열인지 보고, CHAR 키(공백 채움 비교가 DBMS 마다 다르다)와 그 밖의 타입을 거부한다. DB 의 비교 의미(대소문자를 무시하는 collation, 뒤 공백을 무시하는 비교)가 이 비교와 다르면 키가 있는 행을 모두 `LOOKUP_KEY_MISMATCH` 로 멈춘다 — DB 가 돌려준 조회 행의 키가 요청한 키와 정규화해 같지 않을 때, 그리고 정확히 같은 글자의 짝이 없는 키를 같은 읽기 세션에서 다시 물어 DB 가 행을 돌려줄 때다. 다시 묻지 않으면 'abc' 행만 있는 조회 표를 'abc'·'ABC' 가 함께 든 page 로 물을 때 'ABC' 가 짝 없는 행이 되어 판정이 page 구성에 따라 갈린다.
+- **멈춤**: 같은 키의 조회 행이 둘 이상이면 `LOOKUP_FANOUT`, `exactly_one` 인데 짝이 없거나 키가 NULL 이면 `LOOKUP_MISSING`, 키 값이 문자·정수·고정소수가 아니면 `LOOKUP_KEY_TYPE` 이다. `at_most_one` 은 짝이 없으면(키가 NULL 이어도) 읽는 컬럼에 NULL 을 넣고 별칭마다 세며, 표 전체에서 `maxMissing` 을 넘으면 `LOOKUP_MISSING_CAP_EXCEEDED` 다. 모두 행 변환 실패와 같이 그 chunk 를 쓰지 않고 run 을 멈추며 격리하지 않는다(`행 변환 실패(<원천>#<id>, column=<별칭>, row=N): ROW_TRANSFORM_FAILED:LOOKUP_*`). COMMIT 은 시작할 때 조회 표(where 적용)의 NULL 아닌 키가 DB 비교 의미로 유일한지 증명하고, 증명하지 못하면 행을 읽기 전에 `LOOKUP_KEY_UNIQUENESS_UNPROVEN(<별칭>)` 으로 멈춘다. 짝 없는 행 수는 결과와 실행 증거의 `lookupMisses` 에 남는다(값·키 없음).
+- **plan**: 조회만 하는 표는 플래너가 자동으로 검토 표시를 달지 않는다. `review.yml` 이 그 표의 처분을 `LOOKUP_INPUT` 으로 밝혀야 하고, 조회하지 않는 표에 `LOOKUP_INPUT` 을 달거나 조회하는 표를 다른 처분(이관 제외 등)으로 두면 막는다. 조회 표를 inventory 에서 찾지 못하거나 모호하면 막는다. 적재 표면 검사는 조회 키와 조회 컬럼의 형식 증거도 보고, 조회 행은 한 번에 읽으므로 조회 컬럼의 LOB 는 adapter 가 흘려 읽을 수 있어도 막는다.
+- **보호 컬럼**: 조회 키(주 표의 `key.from`, 조회 표의 `alias.key.to`)도 키로 센다 — 암호화할 소스 값으로 다른 표를 찾지 않는다. 키가 아닌 조회 컬럼은 `encrypt` 로 암호화할 수 있다.
+- **원장**: 조회 컬럼은 `via: {mapping, lookup}` 이 있는 확정 행이다(원장 행의 `source` 는 조회 표의 컬럼). 같은 컬럼을 직접 매핑과 조회 매핑에서 함께 써도 다른 행이다. 조회만 하는 표도 소스 단위 완전성을 받으므로 조회 키처럼 옮기지 않는 컬럼은 이관 제외와 사유로 적는다 — 원장 행이 없는 조회 표 컬럼이 있으면 plan 이 멈춘다.
+- **범위 밖**: 복합·CHAR 키 조회, 여러 단계 조인, 조회 표의 LOB, 별도 매핑 둘이 같은 대상으로 들어가는 N:1 합집합.
 
 다음 경계는 원자적이지 않다.
 
@@ -407,4 +468,4 @@ npm run verify:migration
 현재 테스트 목록은 [migration-tool/src/test/java](../../migration-tool/src/test/java)와 실행 보고서가 정본이다. Mapping/artifact/adapter/discovery/visibility/plan binding, 실제 YAML endpoint binding, 외부 driver 격리, typed·composite·generated identity, 단일 source read session, chunk/row data-keymap-checkpoint 원자성, durable resume/checksum, PostgreSQL target 환경 결속과 strict 종료를 검사한다. [프로세스 종료 회귀](../../migration-tool/src/test/java/nuri/migration/EtlCrashRecoveryPostgresIntegrationTest.java)는 격리 PostgreSQL의 1,501행·30MB 초과 text/bytea를 사용해 실제 자식 JVM 종료, 500행 체크포인트 재개, 재실행 무중복·변조 탐지를 검증한다. Docker가 필요한 경로와 로컬 실행 결과의 범위는 [검증 기록](../04-operations/readiness-followups.md#이관-프로세스-종료와-큰-필드)을 따른다. 다른 source vendor·운영 규모·권한·cutover/rollback 증거는 별도로 필요하다.
 
 ---
-*원장 형식 2·원장에서 mapping 만들기·원장 필수화·비표준 대상·비시간 소스→날짜·시각 검토: 2026-10-15. 표준 도메인 변환기·nullify·격리 어휘 대응표·날짜→일시 차단·시간대 소스 검토: 2026-10-15. 표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정·값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*
+*조회 조인·`via`·`LOOKUP_INPUT`·조회 키 유일성 사전 검사 검토: 2026-10-15. 매핑 식별자·1:N 분할·keymap 소유 규칙·제어 스키마 V2·업그레이드 확인·재개 가드 검토: 2026-10-15. 원장 형식 2·원장에서 mapping 만들기·원장 필수화·비표준 대상·비시간 소스→날짜·시각 검토: 2026-10-15. 표준 도메인 변환기·nullify·격리 어휘 대응표·날짜→일시 차단·시간대 소스 검토: 2026-10-15. 표준 계약 검증 도입·보호 컬럼 암호화·표준 ID 형식·시퀀스 재설정·값 변환 순서·codemap·행 변환 실패 의미 검토: 2026-10-13. 기관 도입·검증 진입점 검토: 2026-09-14. Target binding·실행 JSON·PostgreSQL 복구 검토: 2026-09-10. 운영 적용 여부는 별도 증거를 요구한다.*

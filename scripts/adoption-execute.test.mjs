@@ -161,6 +161,25 @@ test('verifier or layout mutation during single-module verification prevents the
   }
 });
 
+test('the control schema upgrade acknowledgement is an optional reviewed boolean that only a commit load forwards', (t) => {
+  // [ADR-0029 L3c] 이미 있는 제어 스키마를 올리는 확인 — 생략하면 넘기지 않고, true 는 commit 에서만 넘긴다.
+  const { root, path, plan, approve } = fixture(t);
+  assert.ok(!executionPlan(root, path, 'fixture-env').args.includes('--ack-control-schema-upgrade'));
+  approve({ ...plan, migration: { ...plan.migration, mode: 'commit', ackControlSchemaUpgrade: true } });
+  const commit = executionPlan(root, path, 'fixture-env');
+  assert.ok(commit.args.includes('--mode=commit'));
+  assert.equal(commit.args.at(-1), '--ack-control-schema-upgrade');
+  approve({ ...plan, migration: { ...plan.migration, mode: 'commit', ackControlSchemaUpgrade: false } });
+  assert.ok(!executionPlan(root, path, 'fixture-env').args.includes('--ack-control-schema-upgrade'));
+  for (const invalid of [{ mode: 'dry-run', ackControlSchemaUpgrade: true }, { mode: 'commit', ackControlSchemaUpgrade: 'true' }]) {
+    approve({ ...plan, migration: { ...plan.migration, ...invalid } });
+    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
+      run: () => assert.fail('an unreviewed control schema acknowledgement may not run') }), /ackControlSchemaUpgrade/);
+  }
+  approve({ ...plan, migration: { ...plan.migration, ackControlSchemaUpgradeX: true } });
+  assert.throws(() => executionPlan(root, path, 'fixture-env'), /fields/);
+});
+
 test('wrong environment, altered execution plan and altered JAR/mapping/inventory/plan never reach verification or load', (t) => {
   const value = fixture(t);
   const { root, path, write, plan, approve } = value;

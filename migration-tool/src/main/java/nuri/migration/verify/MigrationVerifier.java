@@ -55,7 +55,8 @@ public class MigrationVerifier {
     MigrationReport verify(List<TableResult> results, JdbcTemplate targetJt) {
         List<MappingSpec.TableMapping> expected = results == null ? List.of() : results.stream()
                 .map(result -> new MappingSpec.TableMapping(
-                        result.sourceTable(), result.targetTable(), null, List.of(), null))
+                        result.sourceTable(), result.targetTable(), null, null, List.of(), null, List.of(), null,
+                        null, List.of(), result.mappingId()))
                 .toList();
         return verify(new MappingSpec(null, null, expected, Map.of()), results, targetJt);
     }
@@ -113,7 +114,8 @@ public class MigrationVerifier {
             }
 
             tables.add(new TableReport(r.sourceTable(), r.targetTable(),
-                    r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note));
+                    r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note,
+                    r.mappingId()));
             overall = worst(overall, status);
         }
         if (commit && spec != null && spec.run() != null) {
@@ -137,8 +139,8 @@ public class MigrationVerifier {
             return null;
         }
         return spec.tables().stream()
-                .filter(table -> identity(table.source(), table.target())
-                        .equals(identity(result.sourceTable(), result.targetTable())))
+                .filter(table -> identity(table.source(), table.id(), table.target())
+                        .equals(identity(result.sourceTable(), result.mappingId(), result.targetTable())))
                 .findFirst()
                 .orElse(null);
     }
@@ -150,7 +152,7 @@ public class MigrationVerifier {
         }
         List<MigrationStateStore.CheckpointEntry> checkpoints;
         try {
-            checkpoints = MigrationStateStore.read(target, spec.run(), table.source());
+            checkpoints = MigrationStateStore.read(target, spec.run(), table.source(), table.effectiveId());
         } catch (RuntimeException e) {
             return new ScopedVerification(-1L, "run scoped checkpoint 대조 실패 — 성공을 증명할 수 없음");
         }
@@ -441,11 +443,11 @@ public class MigrationVerifier {
         }
         Map<String, Long> expected = new LinkedHashMap<>();
         for (MappingSpec.TableMapping table : expectedTables) {
-            expected.merge(identity(table.source(), table.target()), 1L, Long::sum);
+            expected.merge(identity(table.source(), table.id(), table.target()), 1L, Long::sum);
         }
         Map<String, Long> actual = new LinkedHashMap<>();
         for (TableResult result : results) {
-            actual.merge(identity(result.sourceTable(), result.targetTable()), 1L, Long::sum);
+            actual.merge(identity(result.sourceTable(), result.mappingId(), result.targetTable()), 1L, Long::sum);
         }
         if (expectedTables.size() != results.size() || !expected.equals(actual)) {
             return "실행 결과 cardinality/identity 불일치: expected=" + expected + ", actual=" + actual;
@@ -453,8 +455,10 @@ public class MigrationVerifier {
         return null;
     }
 
-    private static String identity(String source, String target) {
-        return normalize(source) + " -> " + normalize(target);
+    /** 결과와 매핑을 잇는 식별 — 소스·매핑 id(ADR-0029 L3c, 기본 매핑은 생략)·대상. */
+    private static String identity(String source, String mappingId, String target) {
+        String mapping = mappingId == null || mappingId.isEmpty() ? "" : "#" + mappingId;
+        return normalize(source) + mapping + " -> " + normalize(target);
     }
 
     private static String normalize(String value) {

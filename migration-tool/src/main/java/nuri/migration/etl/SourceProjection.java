@@ -1,8 +1,10 @@
 package nuri.migration.etl;
 
+import nuri.migration.lookup.LookupRef;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
+import nuri.migration.model.MappingSpec.Lookup;
 import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.util.LinkedHashMap;
@@ -16,11 +18,17 @@ public final class SourceProjection {
     private SourceProjection() {
     }
 
+    /**
+     * 주 표에서 읽을 컬럼. [ADR-0029 L3d] 조회 컬럼({@code alias.COLUMN})은 주 표의 컬럼이 아니라 빼고, 조회 키를 만드는
+     * {@code key.from} 은 더한다.
+     */
     public static List<String> requiredColumns(TableMapping table) {
         Objects.requireNonNull(table, "table");
         LinkedHashMap<String, String> columns = new LinkedHashMap<>();
         for (ColumnMapping column : table.columns()) {
-            add(columns, column.source());
+            if (LookupRef.parse(column.source()) == null) {
+                add(columns, column.source());
+            }
         }
         if (table.idStrategy() != null) {
             add(columns, table.idStrategy().sourceKey());
@@ -32,6 +40,40 @@ public final class SourceProjection {
             addComponents(columns, foreignKey.sourceComponents());
         }
         table.effectiveOrderKeys().forEach(column -> add(columns, column));
+        for (Lookup lookup : table.lookups()) {
+            if (lookup != null && lookup.key() != null) {
+                add(columns, lookup.key().from());
+            }
+        }
+        return List.copyOf(columns.values());
+    }
+
+    /**
+     * 조회 표에서 읽을 컬럼(ADR-0029 L3d) — 키({@code key.to})가 먼저이고, 이 매핑이 그 별칭으로 읽는 컬럼이 선언 순서로
+     * 뒤따른다. 대소문자만 다른 같은 컬럼은 한 번만 읽는다.
+     */
+    public static List<String> lookupColumns(TableMapping table, Lookup lookup) {
+        Objects.requireNonNull(table, "table");
+        Objects.requireNonNull(lookup, "lookup");
+        LinkedHashMap<String, String> columns = new LinkedHashMap<>();
+        if (lookup.key() != null) {
+            add(columns, lookup.key().to());
+        }
+        lookupValueColumns(table, lookup).forEach(column -> add(columns, column));
+        return List.copyOf(columns.values());
+    }
+
+    /** 이 매핑이 그 별칭으로 읽어 대상에 옮기는 조회 컬럼(선언 순서, 대소문자만 다른 컬럼은 한 번). */
+    public static List<String> lookupValueColumns(TableMapping table, Lookup lookup) {
+        Objects.requireNonNull(table, "table");
+        Objects.requireNonNull(lookup, "lookup");
+        LinkedHashMap<String, String> columns = new LinkedHashMap<>();
+        for (ColumnMapping column : table.columns()) {
+            LookupRef ref = column == null ? null : LookupRef.parse(column.source());
+            if (ref != null && ref.alias().equals(lookup.alias())) {
+                add(columns, ref.column());
+            }
+        }
         return List.copyOf(columns.values());
     }
 

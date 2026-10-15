@@ -2,6 +2,7 @@ package nuri.migration.etl;
 
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -67,8 +68,11 @@ public final class TargetSequenceSynchronizer {
     /** 값 없이 이름과 결과만 남는 재설정 기록 — 실행 artifact 에 그대로 실린다. */
     public record SequenceReset(String targetTable, String column, String sequence, Action action) {}
 
-    /** 쓰기 전에 정한 재설정 대상. {@code sequence} 가 null 이면 none 선언이다. */
-    record Target(String sourceTable, String targetTable, String column, String sequence) {}
+    /**
+     * 쓰기 전에 정한 재설정 대상. {@code sequence} 가 null 이면 none 선언이다. {@code mapping} 은 결과에 붙일 매핑 라벨이다
+     * (기본 매핑은 소스 표기, 나눈 매핑은 {@code source#id} — ADR-0029 L3c).
+     */
+    record Target(String mapping, String targetTable, String column, String sequence) {}
 
     private static final Set<IdentityValueType> INTEGER_KEY_TYPES = Set.of(
             IdentityValueType.SIGNED_INTEGER, IdentityValueType.UNSIGNED_INTEGER, IdentityValueType.DECIMAL);
@@ -191,7 +195,7 @@ public final class TargetSequenceSynchronizer {
                         + ": PostgreSQL 이 아닌 대상은 시퀀스를 판정·재설정할 수 없습니다"
                         + " — 시퀀스로 채번되지 않는 키라면 identity.targetSequences 에 none 을 선언하세요");
             }
-            planned.add(new Target(table.source(), table.target(), column, null));
+            planned.add(new Target(MappingIndex.label(table), table.target(), column, null));
         }
     }
 
@@ -220,7 +224,7 @@ public final class TargetSequenceSynchronizer {
                     throw new IllegalStateException(label
                             + ": none 으로 선언했지만 카탈로그가 시퀀스 " + linked.getFirst() + " 를 연결합니다");
                 }
-                planned.add(new Target(table.source(), table.target(), column, null));
+                planned.add(new Target(MappingIndex.label(table), table.target(), column, null));
                 return;
             }
             String resolved = sequence(target, declared);
@@ -231,7 +235,7 @@ public final class TargetSequenceSynchronizer {
                 throw new IllegalStateException(label + ": 선언한 시퀀스 " + resolved
                         + " 와 카탈로그가 연결한 시퀀스 " + linked + " 가 다릅니다");
             }
-            planned.add(requirePrivileges(target, label, new Target(table.source(), table.target(), column, resolved)));
+            planned.add(requirePrivileges(target, label, new Target(MappingIndex.label(table), table.target(), column, resolved)));
             return;
         }
         if (linked.size() > 1) {
@@ -239,7 +243,7 @@ public final class TargetSequenceSynchronizer {
         }
         if (linked.size() == 1) {
             planned.add(requirePrivileges(target, label,
-                    new Target(table.source(), table.target(), column, linked.getFirst())));
+                    new Target(MappingIndex.label(table), table.target(), column, linked.getFirst())));
             return;
         }
         if (catalog.defaultExpression().toLowerCase(Locale.ROOT).contains("nextval(")) {

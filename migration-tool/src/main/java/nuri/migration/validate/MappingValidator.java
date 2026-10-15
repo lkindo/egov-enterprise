@@ -6,6 +6,10 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
+import nuri.migration.lookup.LookupRef;
+import nuri.migration.lookup.LookupRules;
+import nuri.migration.mapping.MappingIndex;
+import nuri.migration.mapping.MappingKey;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.protect.ColumnProtectionPlan;
@@ -81,16 +85,12 @@ public class MappingValidator {
             return new ValidationResult(errors, warnings);
         }
         Set<String> targetColumns = loadTargetColumns(errors);
-        Map<String, MappingSpec.TableMapping> sourceTables = new LinkedHashMap<>();
-        for (MappingSpec.TableMapping t : spec.tables()) {
-            if (!isBlank(t.source())) {
-                MappingSpec.TableMapping previous = sourceTables.putIfAbsent(normalize(t.source()), t);
-                if (previous != null) {
-                    errors.add("중복 소스 테이블 매핑 금지: '" + t.source()
-                            + "' — 한 소스 테이블은 한 번만 선언해야 실행 결과 식별성이 보장됩니다");
-                }
-            }
-        }
+        // [ADR-0029 L3c] 매핑은 (소스, 매핑 id) 로 유일하고, 소스마다 keymap 을 만드는 매핑은 하나다. 부모 소스는 그
+        //   소유 매핑으로 푼다 — 실행 순서·실행기와 같은 판정기(MappingIndex)를 쓴다.
+        MappingIndex sourceTables = MappingIndex.of(spec.tables());
+        errors.addAll(sourceTables.errors());
+        // [ADR-0029 L3d] 조회 조인 — 실행기와 같은 규칙(LookupRules)이다.
+        errors.addAll(LookupRules.violations(spec.tables()));
 
         for (MappingSpec.TableMapping t : spec.tables()) {
             validateIdentifier("소스 테이블", t.source(), errors);
@@ -117,6 +117,12 @@ public class MappingValidator {
             }
             if (!isBlank(t.where()) && UNSAFE_WHERE.matcher(t.where()).find()) {
                 errors.add(t.source() + ": where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
+            }
+            for (MappingSpec.Lookup lookup : t.lookups()) {
+                if (lookup != null && !isBlank(lookup.where()) && UNSAFE_WHERE.matcher(lookup.where()).find()) {
+                    errors.add(MappingIndex.label(t) + ".lookups[" + lookup.alias()
+                            + "]: where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
+                }
             }
             MappingSpec.IdStrategy id = t.idStrategy();
             validateIdStrategy(t, id, targetColumns, errors);
@@ -241,30 +247,28 @@ public class MappingValidator {
         }
     }
 
+    /**
+     * 매핑 사이의 FK 순환을 찾는다. [ADR-0029 L3c] 노드는 매핑 키(소스, 매핑 id)이고 부모는 소스의 keymap 소유 매핑이다
+     * — 형제 매핑을 거치는 의존은 소스 단위로는 순환처럼 보여도 매핑 단위로는 DAG 다.
+     */
     private static void validateCrossTableCycles(List<MappingSpec.TableMapping> tables,
-                                                  Map<String, MappingSpec.TableMapping> sourceTables,
+                                                  MappingIndex sourceTables,
                                                   List<String> errors) {
         Map<String, Set<String>> dependencies = new LinkedHashMap<>();
         for (MappingSpec.TableMapping table : tables) {
-            if (isBlank(table.source())) {
+            MappingKey self = sourceTables.key(table);
+            if (self == null) {
                 continue;
             }
-            String child = normalize(table.source());
+            String child = self.label();
             dependencies.putIfAbsent(child, new HashSet<>());
             for (MappingSpec.ColumnMapping column : table.columns()) {
-                if (isBlank(column.fkRef())) {
-                    continue;
-                }
-                String parent = normalize(column.fkRef());
-                if (sourceTables.containsKey(parent) && !parent.equals(child)) {
-                    dependencies.get(child).add(parent);
+                if (!isBlank(column.fkRef())) {
+                    addDependency(sourceTables, column.fkRef(), self, dependencies.get(child));
                 }
             }
             for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
-                String parent = normalize(foreignKey.parentSource());
-                if (sourceTables.containsKey(parent) && !parent.equals(child)) {
-                    dependencies.get(child).add(parent);
-                }
+                addDependency(sourceTables, foreignKey.parentSource(), self, dependencies.get(child));
             }
         }
 
@@ -273,6 +277,14 @@ public class MappingValidator {
         Set<String> reported = new HashSet<>();
         for (String node : dependencies.keySet()) {
             detectCycle(node, dependencies, state, path, reported, errors);
+        }
+    }
+
+    private static void addDependency(MappingIndex sourceTables, String parentSource, MappingKey self,
+                                      Set<String> dependencies) {
+        MappingKey parent = sourceTables.key(sourceTables.parent(parentSource));
+        if (parent != null && !parent.equals(self)) {
+            dependencies.add(parent.label());
         }
     }
 
@@ -335,7 +347,7 @@ public class MappingValidator {
     }
 
     private static void validateFkRef(MappingSpec.TableMapping child, MappingSpec.ColumnMapping column,
-                                      Map<String, MappingSpec.TableMapping> sourceTables,
+                                      MappingIndex sourceTables,
                                       List<String> errors) {
         String location = child.target() + "." + column.target();
         if (isBlank(column.source())) {
@@ -345,10 +357,13 @@ public class MappingValidator {
             errors.add(location + ": fkRef와 const를 함께 선언할 수 없습니다 — FK 번역이 우회됩니다");
         }
 
-        MappingSpec.TableMapping parent = sourceTables.get(normalize(column.fkRef()));
+        MappingSpec.TableMapping parent = sourceTables.parent(column.fkRef());
         if (parent == null) {
-            errors.add(location + ": fkRef 부모 소스 테이블 '" + column.fkRef()
-                    + "' 이 매핑에 없음 — 모든 자식 행이 고아가 됩니다");
+            errors.add(sourceTables.mappingsOf(column.fkRef()).isEmpty()
+                    ? location + ": fkRef 부모 소스 테이블 '" + column.fkRef()
+                            + "' 이 매핑에 없음 — 모든 자식 행이 고아가 됩니다"
+                    : location + ": fkRef 부모 소스 테이블 '" + column.fkRef()
+                            + "' 을 나눈 매핑 가운데 keymap 을 만드는 매핑(idStrategy)이 없습니다 — 한 매핑이 키를 만들어야 합니다");
             return;
         }
         if (!isComplete(parent.idStrategy())) {
@@ -366,7 +381,7 @@ public class MappingValidator {
 
     private static void validateTypedIdentity(
             MappingSpec.TableMapping table,
-            Map<String, MappingSpec.TableMapping> sourceTables,
+            MappingIndex sourceTables,
             Set<String> targetColumns,
             List<String> errors
     ) {
@@ -422,7 +437,7 @@ public class MappingValidator {
             validateStaticTargetColumns(
                     table, "foreign key", foreignKey.targetComponents(), targetColumns, errors);
 
-            MappingSpec.TableMapping parent = sourceTables.get(normalize(foreignKey.parentSource()));
+            MappingSpec.TableMapping parent = sourceTables.parent(foreignKey.parentSource());
             if (parent == null) {
                 errors.add(table.source() + ": composite foreign key parent mapping 없음: "
                         + foreignKey.parentSource());
@@ -556,7 +571,9 @@ public class MappingValidator {
                     continue;
                 }
                 for (MappingSpec.ColumnMapping column : table.columns()) {
-                    if (!isBlank(column.source()) && !liveColumns.containsKey(normalize(column.source()))) {
+                    // 조회 컬럼(alias.COLUMN)은 조회 표에서 따로 본다(ADR-0029 L3d).
+                    if (!isBlank(column.source()) && LookupRef.parse(column.source()) == null
+                            && !liveColumns.containsKey(normalize(column.source()))) {
                         errors.add("실 source에 없는 컬럼: " + table.source() + "." + column.source());
                     }
                 }
@@ -581,10 +598,72 @@ public class MappingValidator {
                             "source", table.source(), "foreign key source",
                             foreignKey.sourceComponents(), liveColumns, errors);
                 }
+                for (MappingSpec.Lookup lookup : table.lookups()) {
+                    if (lookup == null || lookup.key() == null || isBlank(lookup.source())) {
+                        continue; // 정적 규칙(LookupRules)이 알린다.
+                    }
+                    if ((mysqlSchemaMode || mariaDbSchemaMode) && lookup.source().split("\\.", -1).length > 2) {
+                        errors.add(mysqlSchemaMode ? "MYSQL_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED"
+                                : "MARIADB_SOURCE_CATALOG_QUALIFICATION_UNSUPPORTED");
+                        continue;
+                    }
+                    QualifiedName lookupName = qualifiedName(lookup.source(), defaultCatalog, defaultSchema);
+                    validateLiveLookup(table, lookup, liveColumns, metadataColumnInfo(metadata,
+                            lookupName.catalog(), lookupName.schema(), lookupName.table(), cubridDriver), errors);
+                }
             }
             return null;
         });
         return new ValidationResult(errors, List.of());
+    }
+
+    /**
+     * [ADR-0029 L3d] 조회 표와 그 컬럼이 실재하고, 조회 키 두 컬럼이 같은 계열(가변 길이 문자 또는 정수·고정소수)인지
+     * 본다. CHAR 키는 공백 채움 비교가 DBMS 마다 달라 받지 않는다. 문구는 표·컬럼 이름과 타입 이름뿐이다.
+     */
+    private static void validateLiveLookup(MappingSpec.TableMapping table, MappingSpec.Lookup lookup,
+                                           Map<String, ColumnMetadata> mainColumns,
+                                           Map<String, ColumnMetadata> lookupColumns, List<String> errors) {
+        if (lookupColumns.isEmpty()) {
+            errors.add("실 source에 없는 조회 표 또는 metadata 접근 불가: " + lookup.source());
+            return;
+        }
+        ColumnMetadata from = mainColumns.get(normalize(lookup.key().from()));
+        ColumnMetadata to = lookupColumns.get(normalize(lookup.key().to()));
+        if (from == null) {
+            errors.add("실 source에 없는 조회 키 컬럼: " + table.source() + "." + lookup.key().from());
+        }
+        if (to == null) {
+            errors.add("실 source에 없는 조회 키 컬럼: " + lookup.source() + "." + lookup.key().to());
+        }
+        for (MappingSpec.ColumnMapping column : table.columns()) {
+            LookupRef ref = LookupRef.parse(column.source());
+            if (ref != null && ref.alias().equals(lookup.alias())
+                    && !lookupColumns.containsKey(normalize(ref.column()))) {
+                errors.add("실 source에 없는 조회 컬럼: " + lookup.source() + "." + ref.column());
+            }
+        }
+        if (from == null || to == null) {
+            return;
+        }
+        String at = MappingIndex.label(table) + ".lookups[" + lookup.alias() + "]";
+        Boolean fromNumeric = lookupKeyFamily(from.jdbcType());
+        Boolean toNumeric = lookupKeyFamily(to.jdbcType());
+        if (fromNumeric == null || toNumeric == null) {
+            errors.add(at + ": 조회 키는 가변 길이 문자(VARCHAR 계열)나 정수·고정소수 컬럼이어야 합니다 — CHAR 는 공백 채움"
+                    + " 비교가 DBMS 마다 달라 받지 않습니다: " + from.typeName() + " / " + to.typeName());
+        } else if (!fromNumeric.equals(toNumeric)) {
+            errors.add(at + ": 조회 키 두 컬럼의 계열(문자·수)이 다릅니다: " + from.typeName() + " / " + to.typeName());
+        }
+    }
+
+    /** 조회 키 계열 — 수면 true, 가변 길이 문자면 false, 받지 않는 타입이면 null. */
+    private static Boolean lookupKeyFamily(int jdbcType) {
+        return switch (jdbcType) {
+            case Types.VARCHAR, Types.NVARCHAR -> false;
+            case Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.NUMERIC, Types.DECIMAL -> true;
+            default -> null;
+        };
     }
 
     /**

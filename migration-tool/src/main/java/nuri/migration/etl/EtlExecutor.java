@@ -13,6 +13,11 @@ import nuri.migration.keymap.KeyMapRegistry;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.jdbc.SourceReadStatements;
+import nuri.migration.lookup.LookupMisses;
+import nuri.migration.lookup.LookupResolver;
+import nuri.migration.lookup.LookupRules;
+import nuri.migration.mapping.MappingIndex;
+import nuri.migration.mapping.MappingKey;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
@@ -20,6 +25,7 @@ import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
+import nuri.migration.model.MappingSpec.Lookup;
 import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -49,6 +55,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -109,16 +116,38 @@ public class EtlExecutor {
     /**
      * 테이블별 적재 결과. {@code sequenceResets} 는 원본 키를 쓴 컬럼의 시퀀스 재설정 기록이다(DEC-OPS-306) —
      * 이름과 결과만 담고 키 값은 담지 않는다. {@code nullified} 는 대상 컬럼마다 {@code nullify} 로 NULL 이 된 행 수다
-     * (ADR-0029 L3a-1) — 실행마다 표 전체를 다시 읽으므로 표 전체의 수이고, 값은 담지 않는다.
+     * (ADR-0029 L3a-1) — 실행마다 표 전체를 다시 읽으므로 표 전체의 수이고, 값은 담지 않는다. {@code mappingId} 는 한
+     * 소스를 나눈 매핑의 id 다(ADR-0029 L3c) — 기본 매핑은 null 이다. {@code lookupMisses} 는 {@code at_most_one} 조회
+     * 별칭마다 짝이 없어 NULL 을 넣은 행 수다(ADR-0029 L3d) — {@code nullified} 와 같은 범위의 수다.
      */
     public record TableResult(String sourceTable, String targetTable,
                               long read, long transformed, long written, List<String> errors,
                               List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
-                              Map<String, Long> nullified) {
+                              Map<String, Long> nullified, String mappingId, Map<String, Long> lookupMisses) {
 
         public TableResult {
             sequenceResets = sequenceResets == null ? List.of() : List.copyOf(sequenceResets);
             nullified = nullified == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(nullified));
+            mappingId = mappingId == null || mappingId.isEmpty() ? null : mappingId;
+            lookupMisses = lookupMisses == null ? Map.of()
+                    : Collections.unmodifiableMap(new LinkedHashMap<>(lookupMisses));
+        }
+
+        /** 조회 조인 도입 전 생성자 호환 — 조회하지 않은 매핑이다. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors,
+                           List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
+                           Map<String, Long> nullified, String mappingId) {
+            this(sourceTable, targetTable, read, transformed, written, errors, sequenceResets, nullified, mappingId,
+                    Map.of());
+        }
+
+        /** 매핑 id 도입 전 생성자 호환 — 기본 매핑이다. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors,
+                           List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
+                           Map<String, Long> nullified) {
+            this(sourceTable, targetTable, read, transformed, written, errors, sequenceResets, nullified, null);
         }
 
         /** 시퀀스 재설정 기록 도입 전 생성자 호환. */
@@ -171,6 +200,22 @@ public class EtlExecutor {
             SourceReadSessionPolicy sourceReadPolicy,
             boolean sourceFreezeAcknowledged
     ) {
+        return execute(spec, mode, sourceJt, targetJt, sourceReadPolicy, sourceFreezeAcknowledged, false);
+    }
+
+    /**
+     * {@code controlSchemaUpgradeAcknowledged}(ADR-0029 L3c)가 있어야 이미 있는 제어 스키마를 이 도구의 버전으로 올린다.
+     * 없는데 올려야 하면 COMMIT 은 행을 읽거나 쓰기 전에 멈춘다. 처음 만드는 대상은 확인이 필요 없다.
+     */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt,
+            SourceReadSessionPolicy sourceReadPolicy,
+            boolean sourceFreezeAcknowledged,
+            boolean controlSchemaUpgradeAcknowledged
+    ) {
         if (spec == null) {
             throw new IllegalArgumentException("mapping spec이 없습니다.");
         }
@@ -182,6 +227,13 @@ public class EtlExecutor {
         }
         requireSourceReadSession(sourceReadPolicy, sourceFreezeAcknowledged);
         boolean commit = mode == MigrationMode.COMMIT;
+        // [ADR-0029 L3c] 매핑 키 중복·keymap 소유 매핑 둘·id 형식 오류는 모드와 무관하게 연결을 열기 전에 멈춘다.
+        MappingIndex index = requireMappingIndex(spec.tables());
+        // [ADR-0029 L3d] 조회 조인의 선언 오류(id·순서 키 없음, 별칭 미선언 등)도 연결을 열기 전에 멈춘다.
+        List<String> lookupViolations = LookupRules.violations(spec.tables());
+        if (!lookupViolations.isEmpty()) {
+            throw new IllegalArgumentException(lookupViolations.getFirst());
+        }
         if (commit) {
             requireCommitContract(spec);
         }
@@ -206,7 +258,8 @@ public class EtlExecutor {
             requireCompositeForeignKeyOrder(orderedTables);
             if (orderedTables.isEmpty()) {
                 if (commit) {
-                    initializeCommitState(targetJt, registry, state);
+                    initializeCommitState(targetJt, registry, state, spec.tables(),
+                            controlSchemaUpgradeAcknowledged);
                     stateInitialized = true;
                 }
             } else {
@@ -228,7 +281,8 @@ public class EtlExecutor {
                             safeRollback(sourceConnection);
                         } else {
                             if (commit) {
-                                initializeCommitState(targetJt, registry, state);
+                                initializeCommitState(targetJt, registry, state, spec.tables(),
+                                        controlSchemaUpgradeAcknowledged);
                                 stateInitialized = true;
                             }
                             boolean sourceSessionFailed = false;
@@ -242,7 +296,7 @@ public class EtlExecutor {
                                     continue;
                                 }
                                 TableExecution execution = runTable(
-                                        sourceConnection, targetDs, spec, table, registry, state, commit,
+                                        sourceConnection, targetDs, spec, index, table, registry, state, commit,
                                         protector);
                                 results.add(execution.result());
                                 if (execution.sourceSessionFailed()) {
@@ -314,13 +368,14 @@ public class EtlExecutor {
         }
         Map<String, List<TargetSequenceSynchronizer.SequenceReset>> resets = new LinkedHashMap<>();
         Map<String, List<String>> failures = new LinkedHashMap<>();
+        // [ADR-0029 L3c] 결과와 재설정 대상은 매핑 라벨로 잇는다 — 한 소스를 나눈 두 매핑의 재설정이 서로 섞이지 않는다.
         Set<String> ranTables = new HashSet<>();
         for (TableResult result : results) {
-            ranTables.add(result.sourceTable().toLowerCase(Locale.ROOT));
+            ranTables.add(resultLabel(result));
         }
         try (Connection target = targetDs.getConnection()) {
             for (TargetSequenceSynchronizer.Target planned : plan) {
-                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                String table = planned.mapping().toLowerCase(Locale.ROOT);
                 if (!ranTables.contains(table)) {
                     continue;
                 }
@@ -339,7 +394,7 @@ public class EtlExecutor {
             }
         } catch (SQLException connectionFailure) {
             for (TargetSequenceSynchronizer.Target planned : plan) {
-                String table = planned.sourceTable().toLowerCase(Locale.ROOT);
+                String table = planned.mapping().toLowerCase(Locale.ROOT);
                 if (ranTables.contains(table)) {
                     failures.computeIfAbsent(table, ignored -> new ArrayList<>())
                             .add(sequenceFailure(planned, "SQL_EXECUTION_FAILED"));
@@ -348,7 +403,7 @@ public class EtlExecutor {
         }
         for (int i = 0; i < results.size(); i++) {
             TableResult result = results.get(i);
-            String table = result.sourceTable().toLowerCase(Locale.ROOT);
+            String table = resultLabel(result);
             if (!resets.containsKey(table) && !failures.containsKey(table)) {
                 continue;
             }
@@ -356,22 +411,53 @@ public class EtlExecutor {
             errors.addAll(failures.getOrDefault(table, List.of()));
             results.set(i, new TableResult(result.sourceTable(), result.targetTable(), result.read(),
                     result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of()),
-                    result.nullified()));
+                    result.nullified(), result.mappingId(), result.lookupMisses()));
         }
+    }
+
+    /** 결과의 매핑 라벨(소문자). {@link TargetSequenceSynchronizer.Target#mapping} 과 같은 규칙이다. */
+    private static String resultLabel(TableResult result) {
+        String label = result.mappingId() == null ? result.sourceTable() : result.sourceTable() + "#" + result.mappingId();
+        return label.toLowerCase(Locale.ROOT);
     }
 
     private static String sequenceFailure(TargetSequenceSynchronizer.Target planned, String reason) {
         return "시퀀스 재설정 실패(" + planned.targetTable() + "." + planned.column() + "): " + reason;
     }
 
+    /**
+     * 제어 스키마를 만들거나(확인이 있으면) 올리고, 기존 keymap·checkpoint 를 읽는다. 재개 가드(ADR-0029 L3c)가 이 run 의
+     * checkpoint 에 있는데 mapping 에 없는 매핑 id 를 찾으면 run 상태를 바꾸거나 행을 쓰기 전에 멈춘다.
+     */
     private static void initializeCommitState(
             JdbcTemplate target,
             KeyMapRegistry registry,
-            MigrationStateStore state
+            MigrationStateStore state,
+            List<TableMapping> declared,
+            boolean controlSchemaUpgradeAcknowledged
     ) {
-        new MigrationSchemaManager().migrateAndValidate(target);
+        new MigrationSchemaManager().migrateAndValidate(target, controlSchemaUpgradeAcknowledged);
         registry.preload(target); // 재실행 멱등: 기존 대응 재사용
-        state.initialize(target);
+        state.initialize(target, declared);
+    }
+
+    /** 매핑 색인 오류를 고정 어휘로 알린다. 문구는 소스 표기·매핑 id 뿐이다. */
+    private static MappingIndex requireMappingIndex(List<TableMapping> tables) {
+        MappingIndex index = MappingIndex.of(tables);
+        if (!index.errors().isEmpty()) {
+            throw new IllegalArgumentException(index.errors().getFirst());
+        }
+        return index;
+    }
+
+    /** 결과·문구에서 매핑을 가리는 라벨. 기본 매핑은 소스 표기 그대로다. */
+    private static String label(TableMapping table) {
+        return MappingIndex.label(table);
+    }
+
+    /** 결과에 싣는 매핑 id. 기본 매핑은 null 이다(실행 증거에 싣지 않는다). */
+    private static String resultMappingId(TableMapping table) {
+        return table.id();
     }
 
     private static void requireSourceReadSession(
@@ -400,29 +486,30 @@ public class EtlExecutor {
             throw new IllegalArgumentException(
                     "commit 모드에는 run.runId와 run.sourceNamespace가 필수입니다");
         }
+        MappingIndex index = MappingIndex.of(spec.tables());
         for (TableMapping table : spec.tables()) {
-            validateIdentityContract(spec, table);
+            validateIdentityContract(spec, index, table);
             if (!isBlank(table.orderBy()) && !table.orderByKeys().isEmpty()) {
-                throw new IllegalArgumentException(table.source()
+                throw new IllegalArgumentException(label(table)
                         + ": orderBy와 orderByKeys를 함께 선언할 수 없습니다");
             }
             List<String> orderKeys = table.effectiveOrderKeys();
             if (orderKeys.isEmpty()) {
-                throw new IllegalArgumentException(table.source()
+                throw new IllegalArgumentException(label(table)
                         + ": commit 모드에는 명시적 orderBy/orderByKeys source key가 필수입니다");
             }
             Set<String> distinct = new HashSet<>();
             for (String orderKey : orderKeys) {
                 SourceIntrospector.ident(orderKey);
                 if (!distinct.add(orderKey.toLowerCase(Locale.ROOT))) {
-                    throw new IllegalArgumentException(table.source()
+                    throw new IllegalArgumentException(label(table)
                             + ": orderByKeys 중복 금지: " + orderKey);
                 }
             }
             if (table.identity() == null) {
                 String targetIdentity = targetIdentityColumn(table);
                 if (isBlank(targetIdentity)) {
-                    throw new IllegalArgumentException(table.source()
+                    throw new IllegalArgumentException(label(table)
                             + ": checkpoint/verifier용 targetKey 또는 idStrategy.column이 필수입니다");
                 }
                 SourceIntrospector.ident(targetIdentity);
@@ -439,7 +526,7 @@ public class EtlExecutor {
             for (ColumnMapping column : table.columns()) {
                 Set<DomainViolation> declared = EnumSet.noneOf(DomainViolation.class);
                 for (Nullify rule : column.nullify()) {
-                    String label = table.source() + "." + column.target();
+                    String label = label(table) + "." + column.target();
                     if (rule == null || (rule.violation() != DomainViolation.BLANK
                             && rule.violation() != DomainViolation.PLACEHOLDER_DATE)) {
                         throw new IllegalArgumentException(label
@@ -456,24 +543,24 @@ public class EtlExecutor {
         }
     }
 
-    private static void validateIdentityContract(MappingSpec spec, TableMapping table) {
+    private static void validateIdentityContract(MappingSpec spec, MappingIndex index, TableMapping table) {
         IdentityStrategy identity = table.identity();
         if (identity == null) {
             if (!table.foreignKeys().isEmpty()) {
-                throw new IllegalArgumentException(table.source()
+                throw new IllegalArgumentException(label(table)
                         + ": composite foreignKeys에는 typed identity가 필수입니다");
             }
             return;
         }
         if (table.idStrategy() != null) {
-            throw new IllegalArgumentException(table.source()
+            throw new IllegalArgumentException(label(table)
                     + ": legacy idStrategy와 typed identity를 함께 선언할 수 없습니다");
         }
-        requireComponents(table.source(), "sourceComponents", identity.sourceComponents());
-        requireComponents(table.source(), "targetComponents", identity.targetComponents());
+        requireComponents(label(table), "sourceComponents", identity.sourceComponents());
+        requireComponents(label(table), "targetComponents", identity.targetComponents());
         if (identity.policy() == TargetIdentityPolicy.PRESERVE
                 && identity.sourceComponents().size() != identity.targetComponents().size()) {
-            throw new IllegalArgumentException(table.source() + ": PRESERVE identity arity 불일치");
+            throw new IllegalArgumentException(label(table) + ": PRESERVE identity arity 불일치");
         }
         if (identity.policy() == TargetIdentityPolicy.REMAP) {
             Set<String> valueProducers = new HashSet<>();
@@ -489,7 +576,7 @@ public class EtlExecutor {
             }
             for (IdentityComponentSpec target : identity.targetComponents()) {
                 if (!valueProducers.contains(target.column().toLowerCase(Locale.ROOT))) {
-                    throw new IllegalArgumentException(table.source()
+                    throw new IllegalArgumentException(label(table)
                             + ": REMAP target identity component 값 생성 mapping 없음: "
                             + target.column());
                 }
@@ -498,28 +585,28 @@ public class EtlExecutor {
         if (identity.policy() == TargetIdentityPolicy.TARGET_GENERATED
                 && (spec.target() == null || spec.target().url() == null
                 || !spec.target().url().toLowerCase(Locale.ROOT).startsWith("jdbc:postgresql:"))) {
-            throw new IllegalArgumentException(table.source()
+            throw new IllegalArgumentException(label(table)
                     + ": TARGET_GENERATED는 PostgreSQL INSERT ... RETURNING target에서만 지원됩니다");
         }
         for (CompositeForeignKey foreignKey : table.foreignKeys()) {
-            requireComponents(table.source(), "foreignKeys.sourceComponents", foreignKey.sourceComponents());
-            requireComponents(table.source(), "foreignKeys.targetComponents", foreignKey.targetComponents());
+            requireComponents(label(table), "foreignKeys.sourceComponents", foreignKey.sourceComponents());
+            requireComponents(label(table), "foreignKeys.targetComponents", foreignKey.targetComponents());
             if (foreignKey.sourceComponents().size() != foreignKey.targetComponents().size()) {
-                throw new IllegalArgumentException(table.source()
+                throw new IllegalArgumentException(label(table)
                         + ": composite foreign key source/target arity 불일치");
             }
-            TableMapping parent = spec.tables().stream()
-                    .filter(candidate -> candidate.source() != null
-                            && candidate.source().equalsIgnoreCase(foreignKey.parentSource()))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException(table.source()
-                            + ": composite foreign key parent mapping 없음: " + foreignKey.parentSource()));
+            // [ADR-0029 L3c] 부모 소스는 그 소스의 keymap 소유 매핑으로 푼다.
+            TableMapping parent = index.parent(foreignKey.parentSource());
+            if (parent == null) {
+                throw new IllegalArgumentException(label(table)
+                        + ": composite foreign key parent mapping 없음: " + foreignKey.parentSource());
+            }
             if (parent.identity() == null
                     || !sameOrderedTypes(
                             parent.identity().sourceComponents(), foreignKey.sourceComponents())
                     || !sameOrderedTypes(
                             parent.identity().targetComponents(), foreignKey.targetComponents())) {
-                throw new IllegalArgumentException(table.source()
+                throw new IllegalArgumentException(label(table)
                         + ": composite foreign key component arity/type 순서가 parent typed identity와 불일치합니다");
             }
         }
@@ -557,23 +644,30 @@ public class EtlExecutor {
         }
     }
 
+    /**
+     * 복합 FK 의 부모(소스의 keymap 소유 매핑, ADR-0029 L3c)가 자식보다 먼저 실행되는지 본다. 부모가 자기 자신이면
+     * 생성 identity 선채번이 안전하지 않아 막는다. 소유 매핑이 아닌 매핑이 자기 소스를 가리키면 형제 소유 매핑이 부모다.
+     */
     static void requireCompositeForeignKeyOrder(List<TableMapping> orderedTables) {
-        Map<String, Integer> order = new LinkedHashMap<>();
+        MappingIndex index = MappingIndex.of(orderedTables);
+        Map<MappingKey, Integer> order = new LinkedHashMap<>();
         for (int i = 0; i < orderedTables.size(); i++) {
-            order.put(orderedTables.get(i).source().toLowerCase(Locale.ROOT), i);
+            MappingKey key = index.key(orderedTables.get(i));
+            if (key != null) {
+                order.put(key, i);
+            }
         }
         for (int childIndex = 0; childIndex < orderedTables.size(); childIndex++) {
             TableMapping child = orderedTables.get(childIndex);
             for (CompositeForeignKey foreignKey : child.foreignKeys()) {
-                String parent = foreignKey.parentSource().toLowerCase(Locale.ROOT);
-                String self = child.source().toLowerCase(Locale.ROOT);
-                if (parent.equals(self)) {
-                    throw new IllegalArgumentException(child.source()
+                if (index.resolvesTo(foreignKey.parentSource(), child)) {
+                    throw new IllegalArgumentException(label(child)
                             + ": typed composite self reference is blocked; generated identity pre-mint is unsafe");
                 }
-                Integer parentIndex = order.get(parent);
+                MappingKey parent = index.key(index.parent(foreignKey.parentSource()));
+                Integer parentIndex = parent == null ? null : order.get(parent);
                 if (parentIndex == null || parentIndex >= childIndex) {
-                    throw new IllegalArgumentException(child.source()
+                    throw new IllegalArgumentException(label(child)
                             + ": composite foreign key requires explicit parent-first order: "
                             + foreignKey.parentSource());
                 }
@@ -582,8 +676,8 @@ public class EtlExecutor {
     }
 
     private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
-                                    TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
-                                    boolean commit, ColumnProtector protector) {
+                                    MappingIndex index, TableMapping t, KeyMapRegistry reg,
+                                    MigrationStateStore state, boolean commit, ColumnProtector protector) {
         List<String> errors = new ArrayList<>();
         List<String> targetCols = canonicalTargetColumns(t);
         List<String> insertCols = insertTargetColumns(t);
@@ -605,7 +699,7 @@ public class EtlExecutor {
                 targetConn.setReadOnly(false);
                 targetConn.setAutoCommit(false);
             }
-            preMintSelfReferences(sourceConnection, targetConn, t, reg);
+            preMintSelfReferences(sourceConnection, targetConn, index, t, reg);
             if (t.effectiveOrderKeys().isEmpty()) {
                 rowFailureStopped = !streamUnorderedDryRun(sourceConnection, spec, t, writePlan, reg, state,
                         targetConn, counts, errors);
@@ -617,7 +711,7 @@ public class EtlExecutor {
             sourceSessionFailed = true;
             String reason = failure instanceof JdbcLobReader.ContentReadException content
                     ? content.reason() : "SQL_EXECUTION_FAILED";
-            errors.add("이관 실패(" + t.source() + "): " + reason);
+            errors.add("이관 실패(" + label(t) + "): " + reason);
             safeRollback(targetConn);
         } catch (Throwable failure) {
             safeRollback(targetConn);
@@ -625,22 +719,27 @@ public class EtlExecutor {
         } finally {
             safeClose(targetConn);
         }
-        long durableWritten = state == null ? counts.written : state.count(t.source());
+        long durableWritten = state == null ? counts.written : state.count(t.source(), t.effectiveId());
         return new TableExecution(
                 new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors,
-                        List.of(), counts.nullified.columns()),
+                        List.of(), counts.nullified.columns(), resultMappingId(t), counts.lookupMisses.counts()),
                 sourceSessionFailed, rowFailureStopped);
     }
 
     /** 행 변환·쓰기 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
     private static TableResult notProcessed(TableMapping table, TableMapping stoppedAt,
                                             MigrationStateStore state) {
-        long durableWritten = state == null ? 0L : state.count(table.source());
+        long durableWritten = state == null ? 0L : state.count(table.source(), table.effectiveId());
         return new TableResult(table.source(), table.target(), 0L, 0L, durableWritten,
-                List.of("적재 중단으로 처리하지 않음(" + table.source() + "): 앞 테이블 "
-                        + stoppedAt.source() + " 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE"));
+                List.of("적재 중단으로 처리하지 않음(" + label(table) + "): 앞 테이블 "
+                        + label(stoppedAt) + " 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE"),
+                List.of(), Map.of(), resultMappingId(table));
     }
 
+    /**
+     * COMMIT 을 시작하기 전에 순서 키 튜플의 유일성을, [ADR-0029 L3d] 그다음 조회 표(where 적용)의 조회 키 유일성을 같은
+     * 읽기 트랜잭션에서 증명한다. 증명하지 못하면 행을 읽거나 쓰기 전에 멈춘다.
+     */
     private static TableResult preflightOrderTupleUniqueness(
             Connection source,
             List<TableMapping> orderedTables
@@ -651,10 +750,42 @@ public class EtlExecutor {
             } catch (SQLException ignored) {
                 return new TableResult(
                         table.source(), table.target(), 0, 0, 0,
-                        List.of("이관 실패(" + table.source() + "): SQL_EXECUTION_FAILED"));
+                        List.of("이관 실패(" + label(table) + "): SQL_EXECUTION_FAILED"),
+                        List.of(), Map.of(), resultMappingId(table));
+            }
+        }
+        for (TableMapping table : orderedTables) {
+            for (Lookup lookup : table.lookups()) {
+                try {
+                    requireUniqueLookupKey(source, lookup);
+                } catch (SQLException ignored) {
+                    return new TableResult(
+                            table.source(), table.target(), 0, 0, 0,
+                            List.of("이관 실패(" + label(table) + "): LOOKUP_KEY_UNIQUENESS_UNPROVEN(" + lookup.alias()
+                                    + ") — 조회 표의 키가 유일하지 않거나 확인하지 못했습니다"),
+                            List.of(), Map.of(), resultMappingId(table));
+                }
             }
         }
         return null;
+    }
+
+    /** 조회 표(where 적용)에서 NULL 이 아닌 조회 키가 둘 이상인 값이 없음을 DB 의 비교 의미로 증명한다. */
+    private static void requireUniqueLookupKey(Connection source, Lookup lookup) throws SQLException {
+        String key = SourceIntrospector.ident(lookup.key().to());
+        String sql = "SELECT " + key + ", COUNT(*) FROM " + SourceIntrospector.qualifiedIdent(lookup.source())
+                + " WHERE " + (isBlank(lookup.where()) ? "" : "(" + lookup.where() + ") AND ") + key + " IS NOT NULL"
+                + " GROUP BY " + key + " HAVING COUNT(*) > 1";
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
+            statement.setMaxRows(1);
+            try (ResultSet duplicates = statement.executeQuery()) {
+                if (duplicates.next()) {
+                    throw new SQLException("LOOKUP_KEY_UNIQUENESS_UNPROVEN");
+                }
+            }
+        } catch (SQLException ignored) {
+            throw new SQLException("LOOKUP_KEY_UNIQUENESS_UNPROVEN");
+        }
     }
 
     /** 같은 source transaction의 DB 비교 의미로 keyset order tuple 유일성을 먼저 증명한다. */
@@ -687,6 +818,10 @@ public class EtlExecutor {
                                           WritePlan writePlan,
                                           KeyMapRegistry registry, MigrationStateStore state,
                                           Connection target, TableCounts counts, List<String> errors) throws SQLException {
+        if (!table.lookups().isEmpty()) {
+            // [ADR-0029 L3d] 열린 결과를 읽는 동안 조회 문장을 보낼 수 없다. 규칙(LookupRules)이 먼저 막는다.
+            throw new IllegalStateException(label(table) + ": 조회 조인에는 순서 키가 필요합니다");
+        }
         String sql = buildSourcePageSql(table, false);
         boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
         try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
@@ -700,7 +835,7 @@ public class EtlExecutor {
                     chunk.add(row);
                     retainedBytes += rowBytes(row);
                     if (chunk.size() == CHUNK || retainedBytes >= JdbcLobReader.PAGE_BYTES) {
-                        if (!processChunk(chunk, spec, table, writePlan, registry, state,
+                        if (!processChunk(chunk, ChunkLookups.NONE, spec, table, writePlan, registry, state,
                                 target, counts, errors)) {
                             return false;
                         }
@@ -709,7 +844,7 @@ public class EtlExecutor {
                     }
                 }
                 if (!chunk.isEmpty()) {
-                    return processChunk(chunk, spec, table, writePlan, registry, state,
+                    return processChunk(chunk, ChunkLookups.NONE, spec, table, writePlan, registry, state,
                             target, counts, errors);
                 }
             }
@@ -746,8 +881,10 @@ public class EtlExecutor {
                 }
                 accepted.add(row);
             }
+            // [ADR-0029 L3d] 페이지를 다 읽어 결과를 닫은 뒤, 같은 연결·같은 읽기 트랜잭션에서 조회 표를 읽는다.
+            ChunkLookups lookups = accepted.isEmpty() ? ChunkLookups.NONE : resolveLookups(source, table, accepted);
             if (!accepted.isEmpty()
-                    && !processChunk(accepted, spec, table, writePlan, registry, state,
+                    && !processChunk(accepted, lookups, spec, table, writePlan, registry, state,
                             target, counts, errors)) {
                 return false;
             }
@@ -763,6 +900,134 @@ public class EtlExecutor {
 
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}
 
+    /**
+     * [ADR-0029 L3d] chunk 의 조회 키로 조회 표를 읽어 행에 {@code alias.column} 값을 넣고 행마다 조회 결과를 남긴다. 조회
+     * 표는 키 IN 조건으로 {@link LookupResolver#MAX_KEYS_PER_QUERY} 개씩 같은 연결·같은 읽기 트랜잭션에서 읽는다. 멈출 행은
+     * 그 행의 처리 차례에 {@link ChunkLookups#check} 가 알린다 — chunk 의 앞 행이 다른 이유로 먼저 실패하면 그쪽이 먼저다.
+     */
+    private ChunkLookups resolveLookups(Connection source, TableMapping table, List<Map<String, Object>> rows)
+            throws SQLException {
+        if (table.lookups().isEmpty()) {
+            return ChunkLookups.NONE;
+        }
+        boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
+        Map<Map<String, Object>, List<RowLookup>> resolved = new IdentityHashMap<>();
+        for (Lookup lookup : table.lookups()) {
+            String from = lookup.key().from().toLowerCase(Locale.ROOT);
+            List<Object> keys = new ArrayList<>(rows.size());
+            for (Map<String, Object> row : rows) {
+                keys.add(row.get(from));
+            }
+            LookupResolver.Request request = LookupResolver.request(keys);
+            List<String> read = SourceProjection.lookupColumns(table, lookup);
+            List<Map<String, Object>> fetched = new ArrayList<>();
+            for (List<Object> batch : request.batches()) {
+                fetched.addAll(readLookupRows(source, lookup, read, batch, boundedVariableValues));
+            }
+            String keyColumn = lookup.key().to().toLowerCase(Locale.ROOT);
+            // 정확히 같은 글자의 짝이 없는 키를 DB 에 다시 묻는다 — DB 가 찾으면 비교 의미가 달라 chunk 구성과 무관하게 멈춘다.
+            boolean unmatchedFoundByDatabase = false;
+            for (List<Object> batch : LookupResolver.batches(
+                    LookupResolver.unmatchedBindValues(request, keyColumn, fetched))) {
+                if (lookupKeyExists(source, lookup, batch)) {
+                    unmatchedFoundByDatabase = true;
+                    break;
+                }
+            }
+            List<String> values = SourceProjection.lookupValueColumns(table, lookup).stream()
+                    .map(column -> column.toLowerCase(Locale.ROOT))
+                    .toList();
+            List<LookupResolver.Outcome> outcomes = LookupResolver.match(lookup, request, keyColumn, values, fetched,
+                    unmatchedFoundByDatabase);
+            long maxMissing = lookup.maxMissing() == null ? 0L : lookup.maxMissing();
+            for (int index = 0; index < rows.size(); index++) {
+                LookupResolver.Outcome outcome = outcomes.get(index);
+                Map<String, Object> row = rows.get(index);
+                if (outcome.failure() == null) {
+                    row.putAll(outcome.values());
+                }
+                resolved.computeIfAbsent(row, ignored -> new ArrayList<>(1))
+                        .add(new RowLookup(lookup.alias(), outcome, maxMissing));
+            }
+        }
+        return new ChunkLookups(resolved);
+    }
+
+    /** 조회 표에서 이 키들의 행을 읽는다. 키 값은 바인딩하고 문구에 싣지 않는다. */
+    private static List<Map<String, Object>> readLookupRows(Connection source, Lookup lookup, List<String> columns,
+                                                            List<Object> keys, boolean boundedVariableValues)
+            throws SQLException {
+        String select = String.join(", ", columns.stream().map(SourceIntrospector::ident).toList());
+        List<Map<String, Object>> rows = new ArrayList<>();
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, lookupSql(lookup, select, keys))) {
+            bindLookupKeys(statement, keys);
+            try (ResultSet result = statement.executeQuery()) {
+                String[] labels = lowerLabels(result.getMetaData());
+                while (result.next()) {
+                    rows.add(readRow(result, labels, boundedVariableValues));
+                }
+            }
+        }
+        return rows;
+    }
+
+    /** DB 의 비교 의미로 이 키들 가운데 하나라도 조회 표(where 적용)에 행이 있는가. 키 값은 바인딩한다. */
+    private static boolean lookupKeyExists(Connection source, Lookup lookup, List<Object> keys) throws SQLException {
+        String key = SourceIntrospector.ident(lookup.key().to());
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, lookupSql(lookup, key, keys))) {
+            statement.setMaxRows(1);
+            bindLookupKeys(statement, keys);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
+        }
+    }
+
+    private static String lookupSql(Lookup lookup, String select, List<Object> keys) {
+        return "SELECT " + select + " FROM " + SourceIntrospector.qualifiedIdent(lookup.source())
+                + " WHERE " + (isBlank(lookup.where()) ? "" : "(" + lookup.where() + ") AND ")
+                + SourceIntrospector.ident(lookup.key().to())
+                + " IN (" + String.join(", ", Collections.nCopies(keys.size(), "?")) + ")";
+    }
+
+    private static void bindLookupKeys(PreparedStatement statement, List<Object> keys) throws SQLException {
+        for (int index = 0; index < keys.size(); index++) {
+            statement.setObject(index + 1, keys.get(index));
+        }
+    }
+
+    /** 한 행의 조회 하나의 결과와 그 조회의 짝 없는 행 상한. */
+    private record RowLookup(String alias, LookupResolver.Outcome outcome, long maxMissing) {}
+
+    /** 한 chunk 의 행마다 조회 결과(ADR-0029 L3d). 행 처리 차례에 멈출 행을 알리고 짝 없는 행을 센다. 값은 담지 않는다. */
+    private static final class ChunkLookups {
+        static final ChunkLookups NONE = new ChunkLookups(new IdentityHashMap<>());
+
+        private final Map<Map<String, Object>, List<RowLookup>> rows;
+
+        private ChunkLookups(Map<Map<String, Object>, List<RowLookup>> rows) {
+            this.rows = rows;
+        }
+
+        /** 이 행의 조회가 멈추게 하면 그 사유로, 짝 없는 행이 상한을 넘으면 {@code LOOKUP_MISSING_CAP_EXCEEDED} 로 멈춘다. */
+        void check(Map<String, Object> row, LookupMisses misses) {
+            for (RowLookup lookup : rows.getOrDefault(row, List.of())) {
+                LookupResolver.Outcome outcome = lookup.outcome();
+                if (outcome.failure() != null) {
+                    throw new RowTransformFailure(lookup.alias(), switch (outcome.failure()) {
+                        case FANOUT -> RowFailureReason.LOOKUP_FANOUT;
+                        case MISSING -> RowFailureReason.LOOKUP_MISSING;
+                        case KEY_TYPE -> RowFailureReason.LOOKUP_KEY_TYPE;
+                        case KEY_MISMATCH -> RowFailureReason.LOOKUP_KEY_MISMATCH;
+                    });
+                }
+                if (outcome.missed() && !misses.add(lookup.alias(), lookup.maxMissing())) {
+                    throw new RowTransformFailure(lookup.alias(), RowFailureReason.LOOKUP_MISSING_CAP_EXCEEDED);
+                }
+            }
+        }
+    }
+
     private record TableExecution(TableResult result, boolean sourceSessionFailed,
                                   boolean rowFailureStopped) {}
 
@@ -771,6 +1036,7 @@ public class EtlExecutor {
         private long transformed;
         private long written;
         private final NullifyTally nullified = new NullifyTally();
+        private final LookupMisses lookupMisses = new LookupMisses();
     }
 
     /** 한 행에서 nullify 로 NULL 이 된 컬럼과 위반. 값은 담지 않는다. */
@@ -908,10 +1174,16 @@ public class EtlExecutor {
         }
     }
 
-    private void preMintSelfReferences(Connection sourceConnection, Connection targetConn,
+    /**
+     * 자기참조 매핑의 키를 먼저 채번한다. [ADR-0029 L3c] 자기참조는 fkRef 가 자기 소스를 가리키고 그 소스의 부모(keymap
+     * 소유 매핑)가 이 매핑일 때뿐이다. 소유 매핑이 아닌 매핑이 자기 소스를 가리키면 형제 소유 매핑의 keymap 을 번역할
+     * 뿐이라(실행 순서가 소유 매핑을 먼저 둔다) 선채번하지 않는다.
+     */
+    private void preMintSelfReferences(Connection sourceConnection, Connection targetConn, MappingIndex index,
                                        TableMapping table, KeyMapRegistry registry) throws SQLException {
         boolean selfReference = table.columns().stream().anyMatch(column ->
-                !isBlank(column.fkRef()) && column.fkRef().equalsIgnoreCase(table.source()));
+                !isBlank(column.fkRef()) && index.sameSource(table, column.fkRef())
+                        && (index.parent(column.fkRef()) == null || index.resolvesTo(column.fkRef(), table)));
         if (!selfReference) {
             return;
         }
@@ -976,13 +1248,13 @@ public class EtlExecutor {
      *
      * @return 계속 진행하면 true, 행 변환·쓰기 실패로 멈추면 false
      */
-    private boolean processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
-                                 WritePlan writePlan, KeyMapRegistry reg,
+    private boolean processChunk(List<Map<String, Object>> chunk, ChunkLookups lookups, MappingSpec spec,
+                                 TableMapping t, WritePlan writePlan, KeyMapRegistry reg,
                                  MigrationStateStore state, Connection targetConn,
                                  TableCounts counts, List<String> errors) {
         long firstOrdinal = counts.read - chunk.size() + 1;
         if (isTargetGenerated(t)) {
-            return processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, counts, errors,
+            return processGeneratedRows(chunk, lookups, spec, t, writePlan, reg, state, targetConn, counts, errors,
                     firstOrdinal);
         }
         Checkpoint chunkCheckpoint = reg.checkpoint();
@@ -991,18 +1263,19 @@ public class EtlExecutor {
             Map<String, Object> row = chunk.get(index);
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
+                lookups.check(row, counts.lookupMisses);
                 Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector(), counts.nullified);
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
                     checkpoint = identityCheckpoint(row, out, t, writePlan.targetColumns());
-                    CheckpointEntry durable = state.find(t.source(), checkpoint.sourceKey());
+                    CheckpointEntry durable = state.find(t.source(), t.effectiveId(), checkpoint.sourceKey());
                     if (durable != null) {
                         if (t.identity() != null
                                 && reg.checkpoint().pendingSize() > rowCheckpoint.pendingSize()) {
                             reg.rollback(chunkCheckpoint);
                             errors.add("resume checkpoint/keymap missing for durable typed identity("
-                                    + t.source() + ", sourceDigest="
+                                    + label(t) + ", sourceDigest="
                                     + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
                             return false;
                         }
@@ -1010,7 +1283,7 @@ public class EtlExecutor {
                                 || !durable.targetKey().equals(checkpoint.targetKey())
                                 || !durable.targetTable().equalsIgnoreCase(checkpoint.targetTable())) {
                             reg.rollback(chunkCheckpoint);
-                            errors.add("resume checkpoint/source checksum 불일치(" + t.source()
+                            errors.add("resume checkpoint/source checksum 불일치(" + label(t)
                                     + ", sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
                             return false;
                         }
@@ -1052,7 +1325,7 @@ public class EtlExecutor {
                 ? classified.reason : RowFailureReason.ROW_FAILED;
         String detail = failure instanceof RowTransformFailure classified && classified.detail != null
                 ? "(" + classified.detail + ")" : "";
-        return "행 변환 실패(" + table.source() + ", column=" + column + ", row=" + ordinal
+        return "행 변환 실패(" + label(table) + ", column=" + column + ", row=" + ordinal
                 + "): ROW_TRANSFORM_FAILED:" + reason.name() + detail
                 + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
     }
@@ -1072,6 +1345,16 @@ public class EtlExecutor {
         FK_REF_FAILED,
         IDENTITY_FAILED,
         PROTECTED_COLUMN,
+        /** 조회 키가 같은 조회 행이 둘 이상이다(ADR-0029 L3d). column 은 조회 별칭이다. */
+        LOOKUP_FANOUT,
+        /** exactly_one 조회에 짝이 없거나 키가 비었다. */
+        LOOKUP_MISSING,
+        /** at_most_one 조회의 짝 없는 행이 maxMissing 을 넘었다. */
+        LOOKUP_MISSING_CAP_EXCEEDED,
+        /** 조회 키 값이 문자·정수·고정소수가 아니다. */
+        LOOKUP_KEY_TYPE,
+        /** DB 가 돌려준 조회 행의 키가 요청한 키와 정규화해 같지 않다 — DB 비교 의미(collation·뒤 공백)가 다르다. */
+        LOOKUP_KEY_MISMATCH,
         ROW_FAILED
     }
 
@@ -1102,7 +1385,7 @@ public class EtlExecutor {
      */
     static String writeFailureMessage(TableMapping table, long ordinal, String code, Throwable failure) {
         String row = ordinal > 0 ? Long.toString(ordinal) : "-";
-        return "행 쓰기 실패(" + table.source() + ", target=" + table.target() + ", row=" + row + "): " + code
+        return "행 쓰기 실패(" + label(table) + ", target=" + table.target() + ", row=" + row + "): " + code
                 + "(SQLSTATE=" + sqlState(failure) + ") — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
     }
 
@@ -1136,6 +1419,7 @@ public class EtlExecutor {
      */
     private boolean processGeneratedRows(
             List<Map<String, Object>> rows,
+            ChunkLookups lookups,
             MappingSpec spec,
             TableMapping table,
             WritePlan writePlan,
@@ -1151,6 +1435,7 @@ public class EtlExecutor {
             for (int index = 0; index < rows.size(); index++) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
+                    lookups.check(rows.get(index), counts.lookupMisses);
                     transformRow(rows.get(index), spec, table, registry, writePlan.protector(), counts.nullified);
                     counts.transformed++;
                 } catch (RuntimeException failure) {
@@ -1161,7 +1446,7 @@ public class EtlExecutor {
                     registry.rollback(checkpoint);
                 }
             }
-            errors.add(table.source()
+            errors.add(label(table)
                     + ": TARGET_GENERATED dry-run은 DB 생성 identity를 materialize할 수 없습니다");
             return completed;
         }
@@ -1172,13 +1457,14 @@ public class EtlExecutor {
             Map<String, Object> row = rows.get(index);
             Checkpoint rowCheckpoint = registry.checkpoint();
             try {
+                lookups.check(row, counts.lookupMisses);
                 Map<String, Object> transformed = transformRow(
                         row, spec, table, registry, writePlan.protector(), counts.nullified);
                 TypedKeyTuple sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
                         sourceIdentity, 256, "tb_migration_checkpoint.source_key");
-                CheckpointEntry durable = state.find(table.source(), encodedSource);
+                CheckpointEntry durable = state.find(table.source(), table.effectiveId(), encodedSource);
                 if (durable != null) {
                     if (!TypedKeyEncoding.isTyped(durable.targetKey())) {
                         throw new IllegalStateException(table.source()
@@ -1189,13 +1475,13 @@ public class EtlExecutor {
                     if (mappedTarget == null) {
                         registry.rollback(chunkCheckpoint);
                         errors.add("resume checkpoint/keymap missing for durable generated identity("
-                                + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
+                                + label(table) + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         return false;
                     }
                     if (!mappedTarget.equals(durableTarget)) {
                         registry.rollback(chunkCheckpoint);
                         errors.add("resume checkpoint/keymap mismatch for durable generated identity("
-                                + table.source() + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
+                                + label(table) + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         return false;
                     }
                     applyTargetIdentity(transformed, table.identity().targetComponents(), durableTarget);
@@ -1205,7 +1491,7 @@ public class EtlExecutor {
                             || !durable.targetKey().equals(expected.targetKey())
                             || !durable.targetTable().equalsIgnoreCase(expected.targetTable())) {
                         registry.rollback(chunkCheckpoint);
-                        errors.add("resume checkpoint/source checksum 불일치(" + table.source()
+                        errors.add("resume checkpoint/source checksum 불일치(" + label(table)
                                 + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         return false;
                     }
@@ -1301,7 +1587,8 @@ public class EtlExecutor {
                     tupleFromValues(source, table.identity().sourceComponents()),
                     table.target(),
                     tupleFromValues(transformed, table.identity().targetComponents()),
-                    RowChecksum.calculate(targetColumns, transformed));
+                    RowChecksum.calculate(targetColumns, transformed),
+                    table.effectiveId());
         }
         String sourceKey = sourceKey(source, table);
         Object targetValue = transformed.get(targetIdentityColumn(table));
@@ -1309,7 +1596,7 @@ public class EtlExecutor {
             throw new IllegalStateException(table.source() + ": target identity가 null/blank입니다");
         }
         return new CheckpointEntry(table.source(), sourceKey, table.target(), targetValue.toString(),
-                RowChecksum.calculate(targetColumns, transformed));
+                RowChecksum.calculate(targetColumns, transformed), table.effectiveId());
     }
 
     private String sourceKey(Map<String, Object> source, TableMapping table) {

@@ -4,6 +4,7 @@ import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
+import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -91,6 +92,47 @@ class TableOrdererTest {
         assertThatThrownBy(() -> TableOrderer.order(List.of(a, b)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("FK 순환", "a", "b");
+    }
+
+    /** [ADR-0029 L3c] 한 소스를 나눈 매핑은 두 노드다 — 소스 이름을 노드로 쓰면 한쪽이 조용히 빠진다. */
+    @Test
+    void splitMappingsOfOneSourceAreBothOrderedAndTheExtensionFollowsTheKeyMapOwner() {
+        TableMapping extension = split("USER", "detail", null, fk("esntl_id", "USER"));
+        TableMapping owner = split("USER", null, new IdStrategy("esntl_id", "USR", "USER_ID"), plain("name"));
+
+        List<TableMapping> ordered = TableOrderer.order(List.of(extension, owner));
+
+        // 확장 매핑이 자기 소스를 fkRef 로 가리키면 자기참조가 아니라 소유 매핑에 대한 간선이다.
+        assertThat(ordered).containsExactly(owner, extension);
+    }
+
+    /**
+     * 형제 매핑을 거치는 의존 — 소스 단위로는 USER ↔ DEPT 순환이지만 매핑 단위로는 USER 소유 → DEPT → USER#ext 다.
+     */
+    @Test
+    void dependencyThroughASiblingMappingIsADagNotASourceLevelCycle() {
+        TableMapping userOwner = split("USER", null, new IdStrategy("esntl_id", "USR", "USER_ID"), plain("name"));
+        TableMapping userExt = split("USER", "ext", null, fk("dept_id", "DEPT"));
+        TableMapping dept = split("DEPT", null, new IdStrategy("dept_id", "DPT", "DEPT_ID"), fk("head_id", "USER"));
+
+        List<TableMapping> ordered = TableOrderer.order(List.of(userExt, dept, userOwner));
+
+        assertThat(ordered).containsExactly(userOwner, dept, userExt);
+    }
+
+    @Test
+    void duplicateMappingKeyCannotBeOrdered() {
+        TableMapping first = split("USER", "detail", null, plain("a"));
+        TableMapping second = split("user", "detail", null, plain("b"));
+
+        assertThatThrownBy(() -> TableOrderer.order(List.of(first, second)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("같은 매핑 키", "user#detail");
+    }
+
+    private static TableMapping split(String source, String id, IdStrategy idStrategy, ColumnMapping... cols) {
+        return new TableMapping(source, "t_" + source.toLowerCase() + (id == null ? "" : "_" + id), null, null,
+                List.of(), "pk", List.of(cols), idStrategy, null, List.of(), id);
     }
 
     private static TableMapping typedTable(String source, List<CompositeForeignKey> foreignKeys) {

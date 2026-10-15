@@ -283,11 +283,11 @@ export function validateCriticalMutationTargets(scopes) {
 function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 17 scopes`);
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
     return;
   }
-  if (expected.length !== 17) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 17 scopes`);
+  if (expected.length !== 18) {
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
   }
   errors.push(...validateCriticalMutationTargets(expected).map(error => `${setLabel}: ${error}`));
 

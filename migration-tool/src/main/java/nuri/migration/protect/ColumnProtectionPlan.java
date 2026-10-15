@@ -124,7 +124,8 @@ public final class ColumnProtectionPlan {
     /**
      * 암호화할 소스 값은 키로도 쓸 수 없다. 정렬 키·idStrategy.sourceKey·identity·복합 FK·fkRef 의 소스 값은 평문 그대로
      * 제어 테이블({@code tb_migration_checkpoint.source_key}·{@code tb_migration_key_map.legacy_key})에 남기 때문이다.
-     * 주민번호만 키인 테이블은 지금 적재할 수 없다(GAP-MIG-002).
+     * 주민번호만 키인 테이블은 지금 적재할 수 없다(GAP-MIG-002). [ADR-0029 L3d] 조회 키({@code key.from}, 조회 표 쪽은
+     * {@code alias.key.to})도 키로 센다 — 암호화할 값으로 다른 표를 찾지 않는다.
      */
     private static void rejectSourceKeyUse(TableMapping table, List<String> violations) {
         List<String> keySources = new ArrayList<>(table.effectiveOrderKeys());
@@ -136,6 +137,14 @@ public final class ColumnProtectionPlan {
         }
         for (MappingSpec.CompositeForeignKey foreignKey : table.foreignKeys()) {
             foreignKey.sourceComponents().stream().map(IdentityComponentSpec::column).forEach(keySources::add);
+        }
+        for (MappingSpec.Lookup lookup : table.lookups()) {
+            if (lookup != null && lookup.key() != null) {
+                keySources.add(lookup.key().from());
+                if (lookup.alias() != null && lookup.key().to() != null) {
+                    keySources.add(lookup.alias() + "." + lookup.key().to());
+                }
+            }
         }
         for (ColumnMapping column : table.columns()) {
             // encrypt 컬럼 자신의 fkRef 는 위(inspect)에서 따로 거부한다.

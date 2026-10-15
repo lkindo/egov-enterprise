@@ -50,8 +50,15 @@ export function executionPlan(root, path, environmentId) {
       command: 'bash', args: ['scripts/deploy.sh', manifestPath],
       env: { API_IMAGE_REF: value.images.api, FRONTEND_IMAGE_REF: value.images.frontend } };
   }
-  exactKeys(value.migration, ['jar', 'mapping', 'inventory', 'plan', 'mode', 'sourceAdapter', 'schemas', 'ackSourceFreeze']);
+  exactKeys(value.migration, ['jar', 'mapping', 'inventory', 'plan', 'mode', 'sourceAdapter', 'schemas', 'ackSourceFreeze',
+    'ackControlSchemaUpgrade']);
   const migration = value.migration;
+  // [ADR-0029 L3c] 이미 있는 제어 스키마를 올리는 확인은 선택 boolean 이고 commit 에서만 쓴다. 승인 범위 밖 값은 거부한다.
+  if (migration.ackControlSchemaUpgrade !== undefined
+    && (typeof migration.ackControlSchemaUpgrade !== 'boolean'
+      || (migration.ackControlSchemaUpgrade && migration.mode !== 'commit'))) {
+    throw new Error('ackControlSchemaUpgrade must be a boolean and true only for a reviewed commit load');
+  }
   if (value.images !== undefined || value.releaseManifest !== undefined || !['dry-run', 'commit'].includes(migration.mode)
     || migration.sourceAdapter !== 'postgresql-pg-catalog' || migration.ackSourceFreeze !== true
     || !Array.isArray(migration.schemas) || migration.schemas.length === 0
@@ -72,7 +79,8 @@ export function executionPlan(root, path, environmentId) {
   return { product, profile, environmentId, command: 'java', args: ['-jar', files.jar,
     '--command=load', `--mapping=${files.mapping}`, `--inventory=${files.inventory}`, `--plan=${files.plan}`,
     `--mode=${migration.mode}`, `--source-adapter=${migration.sourceAdapter}`, `--schemas=${migration.schemas.join(',')}`,
-    `--ack-adapter=${migration.sourceAdapter}`, '--ack-source-freeze'], env: {} };
+    `--ack-adapter=${migration.sourceAdapter}`, '--ack-source-freeze',
+    ...(migration.ackControlSchemaUpgrade === true ? ['--ack-control-schema-upgrade'] : [])], env: {} };
 }
 
 export function executeAdoption({ root, path, environmentId, execute = false, run = runCommand } = {}) {

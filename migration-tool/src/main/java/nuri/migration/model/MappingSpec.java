@@ -8,6 +8,7 @@ import nuri.migration.domain.DomainViolation;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -80,7 +81,19 @@ public record MappingSpec(
     /** 재시작 가능한 이관 실행의 영속 identity. 두 값 모두 COMMIT에서 필수다. */
     public record RunContext(String runId, String sourceNamespace) {}
 
-    /** 소스 테이블 → 타깃 테이블 매핑. */
+    /**
+     * 소스 테이블 → 타깃 테이블 매핑.
+     *
+     * <p>{@code id}(ADR-0029 L3c)는 한 소스 표를 여러 대상으로 나눌 때(1:N 분할) 매핑을 가리는 식별자다. 형식은
+     * {@code [a-z][a-z0-9_]{0,62}} 이고 mapping 전체에서 유일하다. 같은 소스에서 id 를 생략할 수 있는 매핑은 하나뿐이다.
+     * 같은 소스에서 keymap 을 만드는 매핑(idStrategy·identity)도 하나뿐이고, fkRef·foreignKeys 의 부모는 그 매핑이다
+     * ({@code nuri.migration.mapping.MappingIndex}). 비어 있으면 직렬화하지 않아 분할하지 않은 mapping 의 digest 가
+     * 바뀌지 않는다.
+     *
+     * <p>{@code lookups}(ADR-0029 L3d)는 다른 소스 표를 단일 키로 조회해 그 컬럼을 {@code alias.COLUMN} 으로 읽는
+     * 조회 조인이다({@link Lookup}). 쓰는 매핑에는 id 와 순서 키가 필요하다. 비어 있으면 직렬화하지 않아 조회하지 않는
+     * mapping 의 digest 가 바뀌지 않는다.
+     */
     public record TableMapping(
             String source,
             String target,
@@ -91,8 +104,31 @@ public record MappingSpec(
             List<ColumnMapping> columns,
             IdStrategy idStrategy,
             IdentityStrategy identity,
-            List<CompositeForeignKey> foreignKeys
+            List<CompositeForeignKey> foreignKeys,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String id,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Lookup> lookups
     ) {
+        /** 기본 매핑(id 없음)의 실효 id — checkpoint {@code mapping_id} 의 값이다. */
+        public static final String DEFAULT_ID = "";
+
+        /** 조회 조인 도입 전 canonical 생성자 호환 — 조회하지 않는다. */
+        public TableMapping(String source, String target, String where, String orderBy,
+                            List<String> orderByKeys, String targetKey, List<ColumnMapping> columns,
+                            IdStrategy idStrategy, IdentityStrategy identity,
+                            List<CompositeForeignKey> foreignKeys, String id) {
+            this(source, target, where, orderBy, orderByKeys, targetKey, columns, idStrategy, identity,
+                    foreignKeys, id, List.of());
+        }
+
+        /** 매핑 id 도입 전 canonical 생성자 호환 — 기본 매핑이다. */
+        public TableMapping(String source, String target, String where, String orderBy,
+                            List<String> orderByKeys, String targetKey, List<ColumnMapping> columns,
+                            IdStrategy idStrategy, IdentityStrategy identity,
+                            List<CompositeForeignKey> foreignKeys) {
+            this(source, target, where, orderBy, orderByKeys, targetKey, columns, idStrategy, identity,
+                    foreignKeys, null);
+        }
+
         /** identity DSL 도입 전 canonical 생성자 호환. */
         public TableMapping(String source, String target, String where, String orderBy,
                             List<String> orderByKeys, String targetKey,
@@ -119,6 +155,31 @@ public record MappingSpec(
             orderByKeys = orderByKeys == null ? List.of() : List.copyOf(orderByKeys);
             columns = columns == null ? List.of() : columns;
             foreignKeys = foreignKeys == null ? List.of() : List.copyOf(foreignKeys);
+            // null 항목도 그대로 둔다 — 검증기가 위치를 밝혀 거부한다.
+            lookups = lookups == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(lookups));
+        }
+
+        /** 실효 매핑 id. 생략하면 {@link #DEFAULT_ID} 다. 형식은 검증기와 실행기가 확인한다. */
+        public String effectiveId() {
+            return id == null ? DEFAULT_ID : id;
+        }
+
+        /** 이 별칭의 조회 조인. 없으면 null 이다. */
+        public Lookup lookup(String alias) {
+            if (alias == null) {
+                return null;
+            }
+            for (Lookup lookup : lookups) {
+                if (lookup != null && alias.equals(lookup.alias())) {
+                    return lookup;
+                }
+            }
+            return null;
+        }
+
+        /** 이 매핑이 소스 표의 keymap 을 만드는가(idStrategy·typed identity) — keymap 소유 매핑이다. */
+        public boolean ownsKeyMap() {
+            return idStrategy != null || identity != null;
         }
 
         /** 새 복합키가 없으면 기존 단일 {@code orderBy}를 그대로 사용한다. */
@@ -213,6 +274,63 @@ public record MappingSpec(
                 return ((Number) raw).longValue();
             }
             throw new IllegalArgumentException("nullify 의 maxRows 는 정수여야 합니다");
+        }
+    }
+
+    /**
+     * 조회 조인 한 건(ADR-0029 L3d). 매핑의 행마다 {@code key.from}(이 매핑 소스의 컬럼) 값으로 {@code source} 표에서
+     * {@code key.to} 가 같은 행을 같은 읽기 세션에서 찾고, 그 행의 컬럼을 {@code alias.COLUMN} 으로 읽게 한다. 단일 키만
+     * 받고 짝은 많아야 하나다 — 둘 이상이면 멈춘다({@code LOOKUP_FANOUT}). {@link LookupCardinality#EXACTLY_ONE} 은 짝이
+     * 없거나 키가 비면 멈추고, {@link LookupCardinality#AT_MOST_ONE} 은 조회한 컬럼에 NULL 을 넣되 표 전체에서
+     * {@code maxMissing} 행까지만 받는다. {@code where} 는 조회 표에만 거는 읽기 조건이다.
+     */
+    public record Lookup(String alias, String source, String where, LookupKey key,
+                         LookupCardinality cardinality, Long maxMissing) {
+
+        /**
+         * mapping.yml 의 lookup 한 건을 읽는다. {@code maxMissing} 은 정수 스칼라로만 받는다 — 기본 역직렬화는
+         * {@code maxMissing: 2.7} 을 2 로 읽어 검토자가 본 글자와 승인 digest 가 뜻하는 값이 달라진다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static Lookup fromMapping(@JsonProperty("alias") String alias,
+                                         @JsonProperty("source") String source,
+                                         @JsonProperty("where") String where,
+                                         @JsonProperty("key") LookupKey key,
+                                         @JsonProperty("cardinality") LookupCardinality cardinality,
+                                         @JsonProperty("maxMissing") Object maxMissing) {
+            if (maxMissing != null && !(maxMissing instanceof Integer || maxMissing instanceof Long
+                    || maxMissing instanceof Short || maxMissing instanceof Byte)) {
+                throw new IllegalArgumentException("lookup 의 maxMissing 은 정수여야 합니다");
+            }
+            return new Lookup(alias, source, where, key, cardinality,
+                    maxMissing == null ? null : ((Number) maxMissing).longValue());
+        }
+    }
+
+    /** 조회 키 — {@code from} 은 이 매핑 소스의 컬럼, {@code to} 는 조회 표의 컬럼이다. 단일 컬럼만 받는다. */
+    public record LookupKey(String from, String to) {}
+
+    /** 조회 짝의 수. 둘 이상은 어느 쪽이든 멈춘다. */
+    public enum LookupCardinality {
+        /** 짝이 정확히 하나여야 한다. 없거나 키가 비면 멈춘다({@code LOOKUP_MISSING}). */
+        EXACTLY_ONE,
+        /** 짝이 없으면 조회한 컬럼을 NULL 로 두고 세며, {@code maxMissing} 을 넘으면 멈춘다. */
+        AT_MOST_ONE;
+
+        /** 적은 그대로의 이름({@code exactly_one}·{@code at_most_one})만 받는다. */
+        @JsonCreator
+        public static LookupCardinality parse(String value) {
+            for (LookupCardinality cardinality : values()) {
+                if (cardinality.externalName().equals(value)) {
+                    return cardinality;
+                }
+            }
+            throw new IllegalArgumentException("lookup 의 cardinality 는 exactly_one·at_most_one 중 하나여야 합니다");
+        }
+
+        @JsonValue
+        public String externalName() {
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 

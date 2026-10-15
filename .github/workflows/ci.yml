@@ -1453,7 +1453,7 @@ jobs:
     needs: [change-scope]
     if: ${{ !cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['mutation-migration-tool'] == 'true' }}
     runs-on: ubuntu-latest
-    # 일곱 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
+    # 여덟 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
     timeout-minutes: 30
     strategy:
       # 짧은 scope들을 한 슬롯에서 실행해 초기 runner를 E2E/reusable에 양보한다.
@@ -1467,6 +1467,8 @@ jobs:
           # 두 클래스와 validate/verify를 독립 75% gate로 나눠 같은 모집단을 병렬 검증한다.
           # 2026-10-15 로컬 실측(ADR-0029 L3a-1 뒤): registry 60 mutations 100% 14초, converter 76 93% 15초,
           # validate 619 94% 65초, verify 159 88% 41초. L3a-2 뒤 converter 86 95% 19초, validate 1000 mutations 94%, 82초(원장 v2 판정 표 포함).
+          # L3c 뒤(매핑 id·checkpoint mapping_id) validate 999 94% 75초, verify 163 87% 34초. registry·converter 는 바뀌지 않아 다시 재지 않았다.
+          # L3d 뒤(조회 조인·via·LOOKUP_INPUT) validate 1057 94% 123초. verify·registry·converter 는 바뀌지 않아 다시 재지 않았다.
           - scope: migration-transform-registry
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.transform.TransformerRegistry"
@@ -1489,6 +1491,7 @@ jobs:
             tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
 
           # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
+          # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.
           # 온라인 원본을 컴파일하는 호환 계약 시험은 뮤턴트마다 javac 를 돌리므로 넣지 않는다(일반 시험이 돌린다).
           - scope: migration-protect
             gradle: ":migration-tool:pitest"
@@ -1507,10 +1510,22 @@ jobs:
           # [ADR-0029 L3a-2] 원장에서 mapping 을 만드는 생성기를 더했다 — 뒤집히면 접속 자리표시가 풀린 값으로 쓰이거나
           # 원장에 없는 컬럼이 조용히 빠진다. 생성기와 plan 의 원장 대응이 함께 쓰는 표·컬럼 해석(InventoryTables)도 넣었다 —
           # 뒤집히면 모호한 표나 표기만 다른 컬럼이 엉뚱한 inventory 컬럼으로 풀린다. L3a-2 뒤 로컬 실측 383 mutations, 93%, 42초다.
+          # L3c 뒤(생성기가 매핑 id 마다 컬럼을 만든다) 395 mutations, 94%, 39초다. L3d 뒤(조회 경로 행으로 조회 컬럼을 만든다)
+          # 425 mutations, 94%, 74초다.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables"
             tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
+
+          # [ADR-0029 L3c, DEC-OPS-319] 매핑 키·keymap 소유 매핑 판정, 매핑 단위 실행 순서, checkpoint 의 mapping_id 범위와
+          # 재개 가드. 뒤집히면 한 소스를 나눈 매핑 하나가 조용히 빠지거나, 형제 매핑을 거치는 의존이 순환으로 막히거나,
+          # 매핑 id 를 바꾼 재개가 이미 적재한 행을 다시 쓴다. 2026-10-15 로컬 실측 118 mutations, 95%, 12초다.
+          # [ADR-0029 L3d, DEC-OPS-320] 조회 조인의 선언 규칙·짝 판정(nuri.migration.lookup.*)을 더했다 — 뒤집히면 짝이 둘 이상인
+          # 행이나 짝 없는 행이 조용히 적재되거나, 순서 키 없는 조회가 열린 스트리밍 결과 위에서 실행된다. 204 mutations, 96%, 27초다.
+          - scope: migration-runtime-state
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.mapping.*,nuri.migration.state.MigrationStateStore,nuri.migration.etl.TableOrderer,nuri.migration.lookup.*"
+            tests: "nuri.migration.mapping.MappingIndexTest,nuri.migration.etl.TableOrdererTest,nuri.migration.state.MigrationStateStoreTest,nuri.migration.lookup.LookupResolverTest,nuri.migration.lookup.LookupRulesTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
