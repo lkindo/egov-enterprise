@@ -1030,8 +1030,9 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     /**
      * 산출물에 접속 URL·사용자 이름·비밀번호·endpointId 가 없는지 본다. 원천 사용자 이름만 예외가 하나 있다(GAP-MIG-001,
      * DEC-OPS-326) — Oracle 처럼 owner 가 곧 접속 사용자인 DB 는 schema 한정 이름이 사용자 이름을 담는다. 그래서 원천 사용자
-     * 이름이 원천 schema 이름 중 하나와 대소문자 없이 같으면 그 이름은 산출물이 늘 싣는 schema 이름이고 사용자 이름으로는
-     * 검사하지 않는다. 종전에는 소문자로 적은 설정이 대소문자만 달라 통과하고 대문자로 적은 설정은 멈췄다. 비밀번호·URL·
+     * 이름이 원천 schema 이름(inventory 의 discovery scope·객체 schema, term-suggest 는 프로파일의 표 schema) 중 하나와
+     * 대소문자 없이 같으면 그 이름은 inventory 가 이미 싣는 schema 이름이고 사용자 이름으로는 검사하지 않는다. 쓰려는 산출물
+     * 자체에는 그 이름이 없을 수 있다(scope 에만 있는 schema 등) — 산출물 전체로는 새 값이 아니다. 종전에는 소문자로 적은 설정이 대소문자만 달라 통과하고 대문자로 적은 설정은 멈췄다. 비밀번호·URL·
      * endpointId 와 대상 접속 정보는 그대로 막는다.
      */
     private static void requireNoBoundCredentials(String artifact, MappingSpec mapping, Set<String> sourceSchemas) {

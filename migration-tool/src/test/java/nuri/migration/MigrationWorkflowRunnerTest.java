@@ -574,6 +574,47 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void aSourceUsernameThatIsNotASourceSchemaIsStillRefusedOnItsOwn() throws Exception {
+        // [DEC-OPS-326] 예외는 원천 schema 이름과 같은 원천 사용자 이름뿐이다 — schema 가 아닌 사용자 이름은 비밀번호 없이
+        //   혼자 실려도 plan 이 멈춘다. inventory 의 schema 집합으로 판정하는 plan 경로다.
+        CatalogObject view = object(ObjectKind.VIEW, "legacy_view");
+        CatalogSnapshot withView = snapshot(List.of(snapshot.objects().get(0), snapshot.objects().get(1), view));
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("username-plan.json");
+        Path review = temp.resolve("review.yml");
+        files.writeAtomic(inventory, inventoryArtifact(withView));
+        Files.writeString(review, reviewYaml(
+                inventoryDigest(withView),
+                targetFingerprint.digest(),
+                MappingSpecDigester.sha256(mapping),
+                executionContractDigest(mapping),
+                view.stableId()).replace("reviewed export-only object", "reviewed by sentinel-source-user"));
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan, "--review=" + review)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("database credential이 artifact에 포함될 수 없습니다.");
+        assertThat(plan).doesNotExist();
+    }
+
+    @Test
+    void aTargetUsernameThatNamesASourceSchemaIsStillRefused() throws Exception {
+        // [DEC-OPS-326] 대상 접속 정보에는 예외가 없다 — 대상 사용자 이름이 원천 schema 이름과 같으면 discover 가 멈춘다.
+        DbConfig target = mapping.target();
+        DbConfig named = new DbConfig(target.url(), "legacy", target.password(), target.driver(), target.endpointId());
+        given(loader.loadContent(any(String.class))).willReturn(
+                new MappingSpec(mapping.source(), named, mapping.tables(), Map.of(), mapping.run()));
+        Path inventory = temp.resolve("target-user-inventory.json");
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + inventory)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("database credential이 artifact에 포함될 수 없습니다.");
+        assertThat(inventory).doesNotExist();
+    }
+
+    @Test
     void validateRechecksSemanticsAndRejectsBlockedOrTamperedPlans() throws Exception {
         Path blocked = temp.resolve("blocked.json");
         CatalogSnapshot withView = snapshot(List.of(object(ObjectKind.VIEW, "legacy_view")));

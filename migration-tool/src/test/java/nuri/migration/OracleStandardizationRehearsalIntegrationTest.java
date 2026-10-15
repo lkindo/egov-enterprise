@@ -778,7 +778,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                     .extracting(CatalogObject::name)
                     .contains(r.sourceName(), o.deptName(), o.gradeName(), o.logName());
             // 접속 설정의 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적어도 discover 가 통과한다(DEC-OPS-326) — 원천 사용자
-            //   이름이 원천 schema(owner) 이름과 대소문자 없이 같으면 산출물이 늘 싣는 schema 이름으로 보고 사용자 이름
+            //   이름이 원천 schema(owner) 이름과 대소문자 없이 같으면 inventory 가 이미 싣는 schema 이름으로 보고 사용자 이름
             //   검사에서 뺀다. 같은 원천이므로 inventory 의 객체도 같다. 비밀번호·URL·endpointId 는 그대로 막는다(러너 단위 시험).
             Rehearsal upperUser = withSourceUser(r, sourceConfig().username().toUpperCase(Locale.ROOT));
             upperUser.command("discover");
