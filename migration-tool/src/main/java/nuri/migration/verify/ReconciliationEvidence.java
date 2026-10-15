@@ -1,6 +1,8 @@
 package nuri.migration.verify;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import nuri.migration.validate.CodeSetTarget;
+import nuri.migration.verify.CodeSetReconciler.CodeSetVerdict;
 import nuri.migration.verify.ConstraintProof.UniqueProof;
 import nuri.migration.verify.ReconciliationJudge.CheckResult;
 import nuri.migration.verify.ReconciliationJudge.MappingReconciliation;
@@ -104,9 +106,43 @@ public record ReconciliationEvidence(
         }
     }
 
-    /** [ADR-0029 L4 D7] 공통코드·허용값 대사 한 컬럼의 기록. 필드는 D7 판정이 정한다. */
-    public record CodeSetRecord() {}
+    /**
+     * [ADR-0029 L4 D7] 공통코드·허용값 대사 한 컬럼의 기록. {@code group} 은 그룹 id(카탈로그 메타)이고 상세코드·허용값 값은
+     * 싣지 않는다. {@code source} 는 {@code COMMON_CODE}·{@code ALLOWED_VALUES}·{@code UNRECONCILED}, {@code status} 는
+     * {@code PASS}·{@code FAIL}·{@code RECORDED}·{@code UNRECONCILED} 다. 건수는 센 것만 싣는다.
+     */
+    public record CodeSetRecord(String target, String column, String source,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) String group,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) String use,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) String ledgerEntry,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long nonNullRows,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long missingRows,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long missingDistinct,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long inactiveRows,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long outsideRows,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) Long distinct,
+                                boolean groupAbsent, boolean deferred, String status,
+                                @JsonInclude(JsonInclude.Include.NON_NULL) String reason) {
 
-    /** [ADR-0029 L4 D7] codemap 결과 종류와 맞지 않은 키 위치의 기록. 필드는 D7 판정이 정한다. */
-    public record CodemapUseRecord() {}
+        public static CodeSetRecord of(CodeSetVerdict verdict) {
+            CodeSetTarget target = verdict.target();
+            return new CodeSetRecord(target.table(), target.column(), target.source().name(), target.group(),
+                    target.use() == null ? null : target.use().name(), target.ledgerEntry(), verdict.nonNull(),
+                    verdict.missing(), verdict.missingDistinct(), verdict.inactive(), verdict.outside(),
+                    verdict.distinct(), target.groupAbsent(), target.deferred(), verdict.status().name(),
+                    verdict.reason());
+        }
+    }
+
+    /**
+     * [ADR-0029 L4 D7] (대상, 컬럼, codemap)마다 codemap 결과 종류 행 수와 한 번도 맞지 않은 {@code values} 키의 위치(1부터).
+     * 키·코드값은 싣지 않는다.
+     */
+    public record CodemapUseRecord(String target, String column, String codemap, long mapped, long passthrough,
+                                   long fallback, long nullFallback, List<Integer> unusedKeyPositions) {
+
+        public CodemapUseRecord {
+            unusedKeyPositions = unusedKeyPositions == null ? List.of() : List.copyOf(unusedKeyPositions);
+        }
+    }
 }

@@ -49,6 +49,61 @@ test('code group owners match the capability that owns every production file rea
   for (const owner of Object.values(CODE_GROUP_OWNERS)) assert.ok(catalog.capabilities.some(capability => capability.id === owner), owner);
 });
 
+// [ADR-0029 L4 D7, DEC-OPS-325] 이관 도구의 공통코드 바인딩 카탈로그 — 생산 Java 가 읽는 그룹과 양방향으로 맞춘다.
+const BINDINGS = 'migration-tool/src/main/java/nuri/migration/validate/ProductCodeBindings.java';
+const BINDING_ROW = /new Binding\("([a-z0-9_]+)", "([a-z0-9_]+)", "(COM\d{3})", Use\.(VALIDATE|DISPLAY), (true|false)\)/g;
+
+/** 생산 Java(migration-tool 제외)가 읽는 공통코드 그룹 리터럴. 주석 속 리터럴은 세지 않는다. */
+function productionCodeGroups() {
+  const groups = new Set();
+  for (const javaRoot of JAVA_ROOTS) for (const absolute of javaFiles(join(root, javaRoot))) {
+    for (const match of stripComments(readFileSync(absolute, 'utf8')).matchAll(/"(COM\d{3})"/g)) groups.add(match[1]);
+  }
+  return groups;
+}
+
+/** 카탈로그의 바인딩 행. 주석을 지운 소스에서 한 줄 모양으로만 읽고, 모양이 다른 행이 있으면 멈춘다. */
+function codeBindingRows(source) {
+  const code = stripComments(source);
+  const rows = [...code.matchAll(BINDING_ROW)].map(match => ({ table: match[1], column: match[2], group: match[3], use: match[4], trim: match[5] === 'true' }));
+  const declared = (code.match(/new Binding\(/g) ?? []).length;
+  if (!rows.length || rows.length !== declared) throw new Error(`바인딩 행 ${declared}개 중 ${rows.length}개만 읽었다 — 한 줄 모양을 지킨다`);
+  return rows;
+}
+
+test('the migration tool code bindings cover every production code group and only bind real columns of the same owner', () => {
+  const rows = codeBindingRows(readFileSync(join(root, BINDINGS), 'utf8'));
+  const groups = productionCodeGroups();
+  // 정방향: 앱이 읽는 그룹은 모두 카탈로그에 있다 — 새 그룹 검증을 더하면 이관 대사도 따라온다.
+  assert.deepEqual([...groups].filter(group => !rows.some(row => row.group === group)).sort(), []);
+  // 쓰기 검증 바인딩은 결재 본표의 업무 구분 하나다(InformalSanctionService 의 상신 검증).
+  assert.deepEqual(rows.filter(row => row.use === 'VALIDATE').map(row => `${row.table}.${row.column}`), ['tb_ifml_atrz_info.task_se_cd']);
+  // 역방향: 이 구성에 있는 표의 바인딩은 실제 컬럼을 가리키고, 그 그룹을 앱이 읽으며, 표와 그룹의 소유 기능이 같다
+  //   (같이 남고 같이 빠져야 생성물에서 표만 남고 그룹 헤더가 빠지는 일이 없다 — DEC-OPS-262).
+  const columns = JSON.parse(readFileSync(join(root, 'db_columns.json'), 'utf8'));
+  const catalog = loadProjectComposerCatalog(root);
+  const tableOwner = table => catalog.capabilities.find(capability => capability.database.tables.includes(table))?.id
+    ?? (catalog.core.tables.includes(table) ? 'core' : null);
+  let checked = 0;
+  for (const row of rows) {
+    if (!columns.some(column => column.table_name === row.table)) continue;
+    checked += 1;
+    assert.ok(columns.some(column => column.table_name === row.table && column.column_name === row.column), `${row.table}.${row.column} 컬럼이 없다`);
+    assert.ok(groups.has(row.group), `${row.group} 를 읽는 생산 Java 가 없다`);
+    assert.equal(tableOwner(row.table), CODE_GROUP_OWNERS[row.group] ?? 'core', `${row.table} 과 ${row.group} 의 소유 기능이 다르다`);
+  }
+  // 빈 대조는 통과가 아니다 — core 표(tb_sys_log)의 바인딩은 어느 구성에도 있다.
+  assert.ok(checked >= 1 && rows.some(row => row.table === 'tb_sys_log'), `대조한 바인딩 ${checked}개`);
+});
+
+test('the code binding reader refuses rows it cannot read and ignores commented rows', () => {
+  const row = 'new Binding("tb_a", "a_cd", "COM001", Use.DISPLAY, false)';
+  assert.deepEqual(codeBindingRows(`${row},\n// new Binding("tb_b", "b_cd", "COM002", Use.VALIDATE, true)`),
+    [{ table: 'tb_a', column: 'a_cd', group: 'COM001', use: 'DISPLAY', trim: false }]);
+  assert.throws(() => codeBindingRows(`${row},\nnew Binding("tb_b", "b_cd", GROUP, Use.DISPLAY, false)`), /2개 중 1개/);
+  assert.throws(() => codeBindingRows('List.of()'), /0개 중 0개/);
+});
+
 test('the board master seed only inserts board masters and its IDs are read back exactly', () => {
   const seed = readFileSync(join(root, BOARD_MASTER_SEED), 'utf8');
   const code = stripComments(seed, { kind: 'sql' });
