@@ -61,7 +61,8 @@ import java.util.TreeMap;
  *       행이 정확히 하나여야 한다. 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.</li>
  *   <li>확정 행마다 컬럼을 만든다({@code load} 를 옮기고, 보호 컬럼이면 {@code encrypt} 를 정한다). skeleton 의 fkRef
  *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다. 고정 길이 문자(CHAR·NCHAR, 선언 길이
- *       1 제외) 소스의 codemap 앞에는 {@code transform: trim} 이 있어야 한다(ADR-0029 L4-B R3, coverage 와 같은 판정).</li>
+ *       1 제외) 소스의 codemap 앞에는 {@code transform: trim} 이 있어야 한다 — 조회 컬럼은 조회 표의 원래 타입으로 정한다
+ *       (ADR-0029 L4-B R3, coverage 와 같은 판정).</li>
  *   <li>skeleton 에 없는 표·매핑 id 의 확정 행과 skeleton 에 없는 표의 외부 보관 행은 거부한다. 한 소스 표를 나눈
  *       skeleton 표(ADR-0029 L3c)는 매핑 id 마다 그 id 의 확정 행으로 컬럼을 만든다 — 원장 행의 mapping 을 생략하면 그
  *       소스의 기본 매핑(id 없음)이다.</li>

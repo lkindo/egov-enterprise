@@ -81,7 +81,7 @@ public final class JdbcLobReader {
      * {@code getObject} 그대로다(L4-B 전과 같다).</p>
      *
      * <p>같은 표의 값을 읽는 경로(본 읽기·정렬 경계·자기참조 키·프로파일러)는 이 메서드를 함께 써야 정렬 digest 가 같은
-     * 표기를 본다.</p>
+     * 표기를 본다. 나눈 매핑(ADR-0029 L3c)의 읽기와 조회 표 읽기(L3d)도 {@link #read} 를 거쳐 이 판정을 받는다.</p>
      */
     public static Object scalar(ResultSet result, int column) throws SQLException {
         ResultSetMetaData metadata = result.getMetaData();

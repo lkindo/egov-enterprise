@@ -27,8 +27,13 @@ import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.jdbc.SourceJdbcEndpointFactory;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.Lookup;
+import nuri.migration.model.MappingSpec.LookupCardinality;
+import nuri.migration.model.MappingSpec.LookupKey;
 import nuri.migration.model.MappingSpec.TableMapping;
+import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.plan.DispositionDecision;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.ObjectDisposition;
@@ -37,6 +42,7 @@ import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.profile.SourceProfile;
 import nuri.migration.profile.SourceProfile.ColumnProfile;
 import nuri.migration.profile.SourceProfile.TableProfile;
+import nuri.migration.schema.MigrationSchemaManager;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.suggest.LedgerDraftWriter;
 import nuri.migration.suggest.SuggestionReport;
@@ -363,6 +369,95 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         }
     }
 
+    /**
+     * [ADR-0029 L3c·L3d × L4-B R1·R3] 조회 표 행과 나눈 매핑의 행도 주 표와 같은 읽기 도우미({@link JdbcLobReader})로 읽는다.
+     * 조회 표의 {@code TIMESTAMP(6)} 값과 나눈 매핑이 읽는 {@code TIMESTAMP(6)} 값이 {@code Timestamp} 로 와서 도메인 변환기가
+     * 시각으로 본다(R1). 조회 표의 {@code CHAR(3)} 코드는 공백으로 채워 오므로 codemap 앞 trim 이 없으면 첫 행에서 멈춘다 —
+     * 생성기와 coverage 가 조회 컬럼에도 trim 을 요구하는 이유다(R3). {@code TIMESTAMP} 는 조회 키로 쓸 수 없어 정규화가
+     * 어긋나는 대신 키 형식 실패로 멈춘다. 1,001행이라 조회는 chunk(500행)마다 따로 돈다.
+     */
+    @Test
+    void lookupAndSplitReadsShareTheTimestampReaderAndAPaddedLookupCodeNeedsTrim() throws Exception {
+        String suffix = suffix();
+        String users = owner() + ".LEG_LKU_" + suffix;
+        String orders = owner() + ".LEG_ORD_" + suffix;
+        String orderTarget = "public.tb_rh_ord_" + suffix.toLowerCase(Locale.ROOT);
+        String historyTarget = "public.tb_rh_ord_h_" + suffix.toLowerCase(Locale.ROOT);
+        JdbcTemplate oracle = sourceJdbc();
+        oracle.execute("CREATE TABLE " + users + " (USER_NO NUMBER(10) PRIMARY KEY, JOINED_AT TIMESTAMP(6),"
+                + " STAT_CD CHAR(3))");
+        oracle.execute("CREATE TABLE " + orders + " (ORD_NO NUMBER(10) PRIMARY KEY, USER_NO NUMBER(10),"
+                + " ORD_AT TIMESTAMP(6))");
+        try {
+            // 하루의 끝과 시작에 걸친 소수 초 — 시각을 시간대로 옮기면 날짜가 바뀐다.
+            oracle.update("INSERT INTO " + users + " VALUES (1, TIMESTAMP '2025-03-04 23:59:59.999999', 'A')");
+            oracle.update("INSERT INTO " + users + " VALUES (2, TIMESTAMP '2026-12-31 00:00:00.000001', 'D')");
+            oracle.update("INSERT INTO " + orders + " SELECT LEVEL, MOD(LEVEL, 2) + 1, TIMESTAMP '2025-01-01"
+                    + " 00:00:00.123456' + NUMTODSINTERVAL(LEVEL * 7, 'HOUR') FROM DUAL CONNECT BY LEVEL <= 1001");
+            targetJdbc().execute("CREATE TABLE " + orderTarget + " (ord_no bigint PRIMARY KEY, join_ymd varchar(8),"
+                    + " user_stat varchar(3))");
+            targetJdbc().execute("CREATE TABLE " + historyTarget + " (ord_no bigint PRIMARY KEY,"
+                    + " ord_ymd varchar(8))");
+            String runId = "rehearsal-lku-" + suffix.toLowerCase(Locale.ROOT);
+            MappingSpec spec = lookupAndSplit(orders, users, orderTarget, historyTarget, runId, "trim");
+
+            List<TableResult> loaded = executor.execute(spec, MigrationMode.COMMIT, sourceJdbc(), targetJdbc(),
+                    oraclePolicy(), true);
+
+            assertThat(loaded).extracting(TableResult::mappingId).containsExactlyInAnyOrder("ord", "ord_h");
+            assertThat(loaded).allSatisfy(result -> {
+                assertThat(result.errors()).isEmpty();
+                assertThat(result.read()).isEqualTo(1001);
+                assertThat(result.written()).isEqualTo(1001);
+                assertThat(result.lookupMisses()).isEmpty();
+            });
+            MigrationReport report = verifier.verify(spec, loaded, targetJdbc());
+            assertThat(report.ok()).as(report.toSummary()).isTrue();
+            List<String> expectedOrders = oracle.queryForList("SELECT o.ORD_NO || '|' || TO_CHAR(u.JOINED_AT,"
+                    + " 'YYYYMMDD') || '|' || DECODE(TRIM(u.STAT_CD), 'A', 'A01', 'D', 'A02') FROM " + orders + " o"
+                    + " JOIN " + users + " u ON u.USER_NO = o.USER_NO ORDER BY o.ORD_NO", String.class);
+            List<String> writtenOrders = targetJdbc().queryForList("SELECT ord_no || '|' || join_ymd || '|' ||"
+                    + " user_stat FROM " + orderTarget + " ORDER BY ord_no", String.class);
+            assertThat(mismatches(expectedOrders, writtenOrders))
+                    .as("조회 표의 TIMESTAMP·CHAR 값을 원천 계산과 같게 옮긴 행(어긋난 순번만 보인다)").isEmpty();
+            List<String> expectedHistory = oracle.queryForList("SELECT ORD_NO || '|' || TO_CHAR(ORD_AT, 'YYYYMMDD')"
+                    + " FROM " + orders + " ORDER BY ORD_NO", String.class);
+            List<String> writtenHistory = targetJdbc().queryForList("SELECT ord_no || '|' || ord_ymd FROM "
+                    + historyTarget + " ORDER BY ord_no", String.class);
+            assertThat(mismatches(expectedHistory, writtenHistory))
+                    .as("나눈 매핑이 읽은 TIMESTAMP 값을 원천 계산과 같게 옮긴 행").isEmpty();
+            // 제어 스키마 V2 — 나눈 매핑은 같은 소스 키를 매핑마다 따로 기록한다.
+            assertThat(targetJdbc().queryForList("SELECT mapping_id || ':' || count(*) FROM "
+                    + MigrationSchemaManager.CONTROL_SCHEMA + ".tb_migration_checkpoint WHERE run_id = ?"
+                    + " GROUP BY mapping_id ORDER BY mapping_id", String.class, runId))
+                    .containsExactly("ord:1001", "ord_h:1001");
+
+            // trim 없는 codemap 은 공백으로 채운 조회 코드('A  ')를 짝 짓지 못해 첫 행에서 멈춘다. 문구에 값이 없다.
+            List<TableResult> untrimmed = executor.execute(lookupAndSplit(orders, users, orderTarget, historyTarget,
+                    runId + "-bare", null), MigrationMode.DRY_RUN, sourceJdbc(), null, oraclePolicy(), true);
+            TableResult bare = untrimmed.stream().filter(result -> "ord".equals(result.mappingId())).findFirst()
+                    .orElseThrow();
+            assertThat(bare.errors()).containsExactly("행 변환 실패(" + orders + "#ord, column=user_stat, row=1):"
+                    + " ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — " + STOPPED);
+
+            // TIMESTAMP 를 조회 키로 쓰면 행마다 키 형식 실패다 — 정규화가 어긋난 짝을 만들지 않는다.
+            TableMapping byTime = new TableMapping(orders, orderTarget, null, "ORD_NO", List.of(), "ord_no",
+                    List.of(new ColumnMapping("ORD_NO", "ord_no", null, null, null, null, null),
+                            new ColumnMapping("usr.STAT_CD", "user_stat", "trim", null, "stat", null, null)),
+                    null, null, List.of(), "ord_t", List.of(new Lookup("usr", users, null,
+                    new LookupKey("ORD_AT", "JOINED_AT"), LookupCardinality.EXACTLY_ONE, null)));
+            List<TableResult> timeKeyed = executor.execute(new MappingSpec(sourceConfig(), targetConfig(),
+                    List.of(byTime), spec.codemaps(), new MappingSpec.RunContext(runId + "-time",
+                    "oracle-rehearsal-lookup")), MigrationMode.DRY_RUN, sourceJdbc(), null, oraclePolicy(), true);
+            assertThat(timeKeyed).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
+                    "행 변환 실패(" + orders + "#ord_t, column=usr, row=1): ROW_TRANSFORM_FAILED:LOOKUP_KEY_TYPE — "
+                            + STOPPED));
+        } finally {
+            oracle.execute("DROP TABLE " + orders + " PURGE");
+            oracle.execute("DROP TABLE " + users + " PURGE");
+        }
+    }
+
     @Test
     void standardizationRehearsalRunsFromProfileThroughTheLedgerToADryRunAndAnEngineCommit() throws Exception {
         Rehearsal r = rehearsal();
@@ -470,7 +565,14 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         String ledgerEntry = rows.get("JOIN_YMD").id();
         assertThat(dryRun.mode()).isEqualTo("DRY_RUN");
         assertThat(dryRun.status()).isEqualTo("PASS");
+        // 실행 JSON 형식 4(ADR-0029 L3c·L3d) — 기본 매핑은 매핑 id 를, DRY_RUN 은 제어 스키마 기록을, 조회가 없으면 짝 없는
+        //   행 기록을 싣지 않는다.
+        assertThat(dryRun.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
+        assertThat(dryRun.controlSchema()).isNull();
+        assertThat(dryRun.lookupMisses()).isEmpty();
+        assertThat(dryRunText).doesNotContain("\"controlSchema\"", "\"lookupMisses\"", "\"mapping\":");
         assertThat(dryRun.tables()).singleElement().satisfies(table -> {
+            assertThat(table.mapping()).isNull();
             assertThat(table.read()).isEqualTo(ROWS);
             assertThat(table.written()).isZero();
             assertThat(table.errors()).isZero();
@@ -507,7 +609,18 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         // 10. 엔진 COMMIT + verify — 승인 workflow 와 같은 값 한계 가드, 격리 키는 저장소 밖 보관 디렉터리로 반출한다.
         MigrationPlan plan = plans.read(Files.readString(r.plan()));
         ArchiveRun archives = ArchiveRun.writing(dumps, CanonicalArtifactDigest.sha256(plan), plan.mappingDigest());
+        // 승인 workflow 처럼 적재 전후 제어 스키마 버전을 본다(ADR-0029 L3c). 같은 대상을 쓰는 다른 시험이 먼저 만들었으면 V2
+        //   그대로이고, 처음이면 none 에서 V2 가 된다 — 어느 쪽이든 올릴 버전이 남지 않는다.
+        MigrationSchemaManager controlSchemas = new MigrationSchemaManager();
+        MigrationSchemaManager.ControlSchemaStatus before = controlSchemas.inspect(targetJdbc());
+        assertThat(before.upgradeRequired()).isFalse();
         List<TableResult> results = engine(r, spec, MigrationMode.COMMIT, inventory, archives);
+        MigrationSchemaManager.ControlSchemaStatus after = controlSchemas.inspect(targetJdbc());
+        assertThat(after).isEqualTo(new MigrationSchemaManager.ControlSchemaStatus("2", false));
+        assertThat(targetJdbc().queryForList("SELECT DISTINCT mapping_id FROM " + MigrationSchemaManager.CONTROL_SCHEMA
+                + ".tb_migration_checkpoint WHERE run_id = ?", String.class, spec.run().runId()))
+                .as("기본 매핑의 checkpoint 는 매핑 id '' 로 기록한다(제어 스키마 V2)")
+                .containsExactly(TableMapping.DEFAULT_ID);
         TableResult loaded = single(results);
         assertThat(loaded.errors()).isEmpty();
         assertThat(loaded.read()).isEqualTo(ROWS);
@@ -541,8 +654,10 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         MigrationReport verified = verifier.verify(spec, results, targetJdbc(), outcome);
         assertThat(verified.ok()).as(verified.toSummary()).isTrue();
         String commitText = MigrationExecutionArtifact.encode(plan, MigrationMode.COMMIT, "PASS", Instant.now(),
-                verified, results, outcome);
-        assertThat(commitText).contains("\"isolated\":3", "\"ordinals\":[10,600,1300]", "\"action\":\"ADVANCED\"");
+                verified, results, outcome, new MigrationExecutionArtifact.ControlSchemaRecord(
+                        before.appliedVersion() == null ? "none" : before.appliedVersion(), after.appliedVersion()));
+        assertThat(commitText).contains("\"isolated\":3", "\"ordinals\":[10,600,1300]", "\"action\":\"ADVANCED\"",
+                "\"schemaVersion\":4", "\"after\":\"2\"}");
         Map<String, String> commitForbidden = forbidden();
         commitForbidden.put("보관 디렉터리", dumps.toString());
         commitForbidden.put("보관 디렉터리(/ 구분)", dumps.toString().replace('\\', '/'));
@@ -935,6 +1050,29 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                 new ColumnMapping("NOTE", "note", null, null, null, null, null)), null);
         return new MappingSpec(sourceConfig(), targetConfig(), List.of(table), Map.of(),
                 new MappingSpec.RunContext(runId, "oracle-rehearsal-events"));
+    }
+
+    /**
+     * 주문을 둘로 나눈 매핑 — {@code ord} 는 사용자 표를 별칭 {@code usr} 로 조회해 가입일(ymd8-truncate)·상태 코드(codemap)를
+     * 옮기고, {@code ord_h} 는 같은 주문의 주문 일시(ymd8-truncate)를 옮긴다. {@code codeTransform} 은 상태 코드 codemap 앞
+     * 변환이다(null 이면 없음).
+     */
+    private static MappingSpec lookupAndSplit(String orders, String users, String orderTarget, String historyTarget,
+                                              String runId, String codeTransform) {
+        TableMapping order = new TableMapping(orders, orderTarget, null, "ORD_NO", List.of(), "ord_no", List.of(
+                new ColumnMapping("ORD_NO", "ord_no", null, null, null, null, null),
+                new ColumnMapping("usr.JOINED_AT", "join_ymd", "ymd8-truncate", null, null, null, null),
+                new ColumnMapping("usr.STAT_CD", "user_stat", codeTransform, null, "stat", null, null)),
+                null, null, List.of(), "ord", List.of(new Lookup("usr", users, null,
+                new LookupKey("USER_NO", "USER_NO"), LookupCardinality.EXACTLY_ONE, null)));
+        TableMapping history = new TableMapping(orders, historyTarget, null, "ORD_NO", List.of(), "ord_no", List.of(
+                new ColumnMapping("ORD_NO", "ord_no", null, null, null, null, null),
+                new ColumnMapping("ORD_AT", "ord_ymd", "ymd8-truncate", null, null, null, null)),
+                null, null, List.of(), "ord_h");
+        // 나눈 매핑을 먼저 둔다 — 주 표 읽기만 하는 ord_h 가 조회를 하는 ord 보다 먼저 돌아 두 읽기 경로를 따로 판정한다.
+        return new MappingSpec(sourceConfig(), targetConfig(), List.of(history, order),
+                Map.of("stat", new CodeMap(Map.of("A", "A01", "D", "A02"), UnmappedPolicy.FAIL, null)),
+                new MappingSpec.RunContext(runId, "oracle-rehearsal-lookup"));
     }
 
     private static SourceReadSessionPolicy oraclePolicy() {

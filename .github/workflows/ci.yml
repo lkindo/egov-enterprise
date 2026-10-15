@@ -1481,7 +1481,8 @@ jobs:
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
           # [ADR-0029 L4-B] 고정 길이 문자 소스 codemap 앞 trim 판정(R3, LoadCapabilities)을 생성기와 coverage 가 함께 쓴다 —
-          # 뒤집히면 손으로 쓴 mapping 이 plan 을 지난다. 2026-10-15 로컬 실측 1190 mutations, 95%, 103초.
+          # 뒤집히면 손으로 쓴 mapping 이 plan 을 지난다. 2026-10-15 로컬 실측 1190 mutations, 95%, 103초. L3c·L3d 병합 뒤(나눈
+          # 매핑·조회 컬럼에도 같은 판정) 1250 mutations, 94%, 128초.
           - scope: migration-validate
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
@@ -1528,7 +1529,8 @@ jobs:
           # 행 수·격리 키 반출 대조 포함), protect 199 98% 23초.
           # [ADR-0029 L4-B] 생성기가 CHAR·NCHAR 소스 codemap 앞에 trim 을 요구한다(R3, 판정은 migration-validate 의
           # LoadCapabilities) — 뒤집히면 공백 채운 코드가 실행에서 미매핑으로 멈추거나 그대로·대체값으로 쓰인다. 2026-10-15
-          # 검토 반영 뒤 로컬 실측 978 mutations, 92%, 102초.
+          # 검토 반영 뒤 로컬 실측 978 mutations, 92%, 102초. L3c·L3d 병합 뒤(조회 컬럼은 조회 표 타입으로 판정) 1038 mutations,
+          # 92%, 135초.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"

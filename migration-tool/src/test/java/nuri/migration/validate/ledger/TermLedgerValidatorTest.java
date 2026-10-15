@@ -531,6 +531,49 @@ class TermLedgerValidatorTest {
         assertThat(validator.coverage(ledger(untrimmed), mapping(bare), typedInventory("VARCHAR2", "3"))).isEmpty();
     }
 
+    /**
+     * ADR-0029 L4-B R3 × L3c·L3d — 나눈 매핑(id)의 컬럼과 조회 컬럼({@code alias.COLUMN})도 손으로 쓴 mapping 에서 같은 판정을
+     * 받는다. 조회 컬럼은 조회 표 컬럼의 원래 타입으로 정한다 — 주 표에 같은 이름의 가변 길이 컬럼이 있어도 막힌다.
+     */
+    @Test
+    void splitAndLookupColumnsGetTheFixedWidthTrimRuleFromTheTableTheyAreReadFrom() {
+        // 나눈 매핑 user_ext 가 CHAR(3) STAT_CD 를 trim 없이 codemap 에 넣는다.
+        Entry split = row("S1", "STAT_CD").mapping("user_ext").target("public.tb_user_ext", "user_id")
+                .load(new Load(null, null, "user_status", List.of())).build();
+        MappingSpec splitMapping = new MappingSpec(null, null, List.of(new TableMapping("legacy.legacy_user",
+                "public.tb_user_ext", null, "STAT_CD", List.of(), "user_id", List.of(new ColumnMapping("STAT_CD",
+                "user_id", null, null, "user_status", null, null)), null, null, List.of(), "user_ext")), Map.of());
+        assertThat(validator.coverage(ledger(split), splitMapping, typedInventory("CHAR", "3"))).containsExactly(
+                "legacy.legacy_user#user_ext.STAT_CD(원장 행 S1): " + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        assertThat(validator.coverage(ledger(split), splitMapping, typedInventory("VARCHAR2", "3"))).isEmpty();
+
+        // 조회 컬럼 oth.X — 조회 표 legacy_other.X 가 CHAR(3), 주 표 legacy_user.X 는 VARCHAR2(3) 다.
+        Entry user = row("V1", "USER_ID").mapping("users").build();
+        Entry etc = row("V2", "ETC").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("쓰지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry mainX = row("V6", "X").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("옮기지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry otherKey = row("V4", "Y").sourceTable("legacy.legacy_other").status("APPROVED_IGNORE").term(null)
+                .target(null).load(null).conformance(null).note("조회 키로만 쓴다").history(path("APPROVED_IGNORE"))
+                .build();
+        Entry untrimmed = row("V3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).load(new Load(null, null, "user_status", List.of())).build();
+        Entry trimmed = row("V3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).load(new Load("trim", null, "user_status", List.of())).build();
+        MappingSpec bare = lookupMapping(new ColumnMapping("oth.X", "user_nm", null, null, "user_status", null, null));
+        MappingSpec withTrim = lookupMapping(new ColumnMapping("oth.X", "user_nm", "trim", null, "user_status", null,
+                null));
+
+        assertThat(validator.coverage(ledger(user, etc, mainX, untrimmed, otherKey), bare,
+                lookupInventory("CHAR", "VARCHAR2"))).containsExactly("legacy.legacy_user#users.oth.X(원장 행 V3): "
+                + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        assertThat(validator.coverage(ledger(user, etc, mainX, trimmed, otherKey), withTrim,
+                lookupInventory("CHAR", "VARCHAR2"))).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, mainX, untrimmed, otherKey), bare,
+                lookupInventory("VARCHAR2", "CHAR"))).as("조회 표 컬럼이 가변 길이면 주 표 컬럼 타입과 무관하게 지난다")
+                .isEmpty();
+    }
+
     @Test
     void aNonStandardTargetIsConfirmedWithAReasonInsteadOfATermAndWithoutConformance() {
         Entry binary = nonStandard("B1", "PHOTO", "photo").build();
@@ -1061,6 +1104,29 @@ class TermLedgerValidatorTest {
                 new CatalogSnapshot.DatabaseInfo("LegacyDB", "1", "driver", "1"),
                 new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),
                 SnapshotCapability.unknown(), objects, List.of());
+    }
+
+    /**
+     * {@link #lookupInventory()} 에 legacy_user.X 를 더하고 조회 표 legacy_other.X 와 주 표 legacy_user.X 의 타입(선언 길이
+     * 3)을 정한다.
+     */
+    private static CatalogSnapshot lookupInventory(String lookupType, String mainType) {
+        CatalogSnapshot base = lookupInventory();
+        List<CatalogObject> objects = new ArrayList<>();
+        for (CatalogObject object : base.objects()) {
+            objects.add(object.name().equals("legacy_other.X") ? typed(object, lookupType, "3") : object);
+        }
+        objects.add(typed(column("legacy_user", "X", 3), mainType, "3"));
+        return new CatalogSnapshot(base.schemaVersion(), base.discoveredAt(), base.database(), base.environment(),
+                base.snapshotCapability(), objects, base.visibilityFindings());
+    }
+
+    private static CatalogObject typed(CatalogObject column, String nativeType, String size) {
+        Map<String, String> attributes = new java.util.LinkedHashMap<>(column.attributes());
+        attributes.put("nativeType", nativeType);
+        attributes.put("size", size);
+        return new CatalogObject(column.kind(), column.catalog(), column.schema(), column.name(), column.quoted(),
+                column.nativeDefinition(), column.definitionHash(), column.dependencies(), attributes);
     }
 
     /** legacy.legacy_user(컬럼은 정의 순서대로)와 컬럼 X 하나인 legacy.legacy_other. */
