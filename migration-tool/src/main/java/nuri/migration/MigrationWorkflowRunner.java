@@ -526,11 +526,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             // [ADR-0029 L3b] isolate·완화 컬럼의 값 한계는 위에서 검증한 같은 live 계약으로 정한다.
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards = validator.rowGuards(
                     mapping, target, inventory.payload().toSnapshot());
-            // [ADR-0029 L4 D2·D7] 대사 계획 — 승인 fingerprint(시작 제약 포함)·inventory·원장 문맥으로 만든다. 값은 없다.
-            List<CodeSetTarget> codeSets = CodeSetTargets.of(mapping, ledger.ledger(), ledger.terms(),
-                    ledger.defaultSchema(), ProductCodeBindings.ALL, ledger.precheck());
-            ReconciliationPlan reconciliation = ReconciliationPlanner.plan(
-                    mapping, inventory.payload().toSnapshot(), target, codeSets, transformers);
+            ReconciliationPlan reconciliation = reconciliationPlan(
+                    mapping, inventory.payload().toSnapshot(), target, ledger);
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -858,6 +855,27 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private record LedgerContext(TermLedger ledger,
                                  Map<TermLedgerValidator.TermKey, TermLedgerValidator.StandardTermRecord> terms,
                                  String defaultSchema, CodeSetPrecheck.PrecheckResult precheck) {}
+
+    /**
+     * [ADR-0029 L4 D2·D7] 대사 계획 — 승인 fingerprint(시작 제약 포함)·inventory·원장 문맥으로 만든다. 값은 없다.
+     */
+    private ReconciliationPlan reconciliationPlan(MappingSpec mapping, CatalogSnapshot inventory,
+                                                  TargetSchemaFingerprint target, LedgerContext ledger) {
+        List<CodeSetTarget> codeSets = CodeSetTargets.of(mapping, ledger.ledger(), ledger.terms(),
+                ledger.defaultSchema(), ProductCodeBindings.ALL, ledger.precheck());
+        return ReconciliationPlanner.plan(mapping, inventory, target, codeSets, transformers);
+    }
+
+    /**
+     * 승인 load 와 같은 조립으로 대사 계획을 만든다 — 원장 검증({@link #requireLedger})을 지난 문맥과
+     * {@link #reconciliationPlan}. 공개 COMMIT 이 막힌 원천(Oracle 은 {@code UNVERIFIED})의 리허설이 엔진 COMMIT 에 이 계획을
+     * 넣어, load 의 조립이 바뀌면 리허설도 따라 바뀐다. {@code options} 에서는 mapping 경로(원장 위치의 기준)만 쓴다.
+     */
+    ReconciliationPlan approvedReconciliationPlan(WorkflowCliOptions options, MappingSpec mapping,
+                                                  CatalogSnapshot inventory, TargetSchemaFingerprint target)
+            throws SQLException {
+        return reconciliationPlan(mapping, inventory, target, requireLedger(options, mapping, inventory));
+    }
 
     /**
      * [ADR-0029 결정 3, DEC-OPS-312·317] mapping 은 용어 매핑 원장을 선언해야 한다. 그 파일은 mapping 과 같은 디렉터리나
