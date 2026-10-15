@@ -486,6 +486,8 @@ public class MappingGeneratorTest {
      */
     @Test
     void aViaRowsApprovedExceptionsBecomeTheIsolationOfItsLookupColumn() {
+        // [ADR-0029 L4 D2, P3] 격리하는 보존 키 표는 참조 선언이나 '참조 없음' 확인이 필요하다 — skeleton 의 표 수준
+        //   verify 는 생성 mapping 에 그대로 남는다.
         String skeleton = SKELETON.replace("codemaps:", """
                   - source: legacy.LOG_HIST
                     id: log_dept
@@ -494,6 +496,7 @@ public class MappingGeneratorTest {
                     targetKey: esntl_id
                     lookups:
                       - {alias: dept, source: legacy.DEPT_MST, key: {from: DEPT_CD, to: DEPT_CD}, cardinality: exactly_one}
+                    verify: {referencedBy: none, reason: 이 키를 복사하는 표가 없다}
                 codemaps:""");
         String ledger = LEDGER.replace("""
                   - id: H1
@@ -540,8 +543,18 @@ public class MappingGeneratorTest {
                 new ColumnMapping("LOG_SN", "esntl_id", null, null, null, null, null),
                 new ColumnMapping("dept.DEPT_NM", "dept_nm", "trim", null, null, null, null, null, List.of(),
                         new MappingSpec.Isolate("X1", 2L, List.of("LENGTH_EXCEEDED"))));
+        assertThat(mapping.tables().get(2).verify())
+                .isEqualTo(new MappingSpec.VerifyDeclaration(List.of(), "none", "이 키를 복사하는 표가 없다"));
         assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping,
                 inventoryWithLog("DEPT_CD"))).isEmpty();
+
+        assertThatThrownBy(() -> generator.generate(skeleton.replace(
+                "    verify: {referencedBy: none, reason: 이 키를 복사하는 표가 없다}\n", ""),
+                ledger, "ledger.yml", inventoryWithLog("DEPT_CD")))
+                .as("verify 가 없으면 생성 mapping 의 정적 검증이 거부한다")
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessageContaining("mapping 정적 검증: legacy.LOG_HIST#log_dept:")
+                .hasMessageContaining("VERIFY_REFERENCES_REQUIRED");
     }
 
     @Test

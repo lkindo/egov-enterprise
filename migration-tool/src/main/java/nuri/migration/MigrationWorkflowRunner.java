@@ -37,6 +37,8 @@ import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.MigrationPlanner;
+import nuri.migration.postgres.PostgresCodeGroupReader;
+import nuri.migration.postgres.PostgresReconciliationQueries;
 import nuri.migration.postgres.PostgresStandardDictionaryReader;
 import nuri.migration.postgres.PostgresStandardTermReader;
 import nuri.migration.postgres.PostgresTargetSchemaFingerprinter;
@@ -50,13 +52,23 @@ import nuri.migration.suggest.StandardDictionary;
 import nuri.migration.suggest.SuggestionReport;
 import nuri.migration.suggest.TermSuggester;
 import nuri.migration.transform.TransformerRegistry;
+import nuri.migration.validate.CodeGroupReader;
+import nuri.migration.validate.CodeGroupState;
+import nuri.migration.validate.CodeSetPrecheck;
+import nuri.migration.validate.CodeSetTarget;
+import nuri.migration.validate.CodeSetTargets;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ProductCodeBindings;
 import nuri.migration.validate.ValidationResult;
 import nuri.migration.validate.ledger.TermLedger;
 import nuri.migration.validate.ledger.TermLedgerLoader;
 import nuri.migration.validate.ledger.TermLedgerValidator;
+import nuri.migration.verify.ColumnReplay;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
+import nuri.migration.verify.ReconciliationPlan;
+import nuri.migration.verify.ReconciliationPlanner;
+import nuri.migration.verify.ReconciliationRun;
 import nuri.migration.workflow.WorkflowReview;
 import nuri.migration.workflow.WorkflowReviewLoader;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
@@ -111,6 +123,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     private final LedgerDraftWriter ledgerDrafts = new LedgerDraftWriter();
     /** 제어 스키마 상태 확인(ADR-0029 L3c). 시험은 대역을 넣는다. */
     private MigrationSchemaManager schemaManager = new MigrationSchemaManager();
+    /** 대상 공통코드 그룹 읽기(ADR-0029 L4 D7). 시험은 대역을 넣는다. */
+    private CodeGroupReader codeGroupReader = new PostgresCodeGroupReader();
 
     @Autowired
     public MigrationWorkflowRunner(
@@ -208,6 +222,11 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     /** 시험 전용 — 실제 대상 없이 제어 스키마 상태를 정한다. */
     void schemaManagerForTesting(MigrationSchemaManager manager) {
         this.schemaManager = Objects.requireNonNull(manager, "manager");
+    }
+
+    /** 시험 전용 — 실제 대상 없이 공통코드 그룹을 정한다. */
+    void codeGroupReaderForTesting(CodeGroupReader reader) {
+        this.codeGroupReader = Objects.requireNonNull(reader, "reader");
     }
 
     @Override
@@ -503,10 +522,12 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             requireEqual(plan.targetSchemaDigest(), target.digest(), "target schema digest");
             requireTargetStandard(validator.validateTargetStandard(
                     mapping, target, inventory.payload().toSnapshot()));
-            requireLedger(options, mapping, inventory.payload().toSnapshot());
+            LedgerContext ledger = requireLedger(options, mapping, inventory.payload().toSnapshot());
             // [ADR-0029 L3b] isolate·완화 컬럼의 값 한계는 위에서 검증한 같은 live 계약으로 정한다.
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards = validator.rowGuards(
                     mapping, target, inventory.payload().toSnapshot());
+            ReconciliationPlan reconciliation = reconciliationPlan(
+                    mapping, inventory.payload().toSnapshot(), target, ledger);
             executeApproved(
                     options.plan(), plan,
                     mapping,
@@ -516,7 +537,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                     options.sourceFreezeAcknowledged(),
                     options.controlSchemaUpgradeAcknowledged(),
                     rowGuards,
-                    archiveDirectory);
+                    archiveDirectory,
+                    reconciliation);
         }
     }
 
@@ -638,7 +660,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             boolean sourceFreezeAcknowledged,
             boolean controlSchemaUpgradeAcknowledged,
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
-            java.nio.file.Path archiveDirectory
+            java.nio.file.Path archiveDirectory,
+            ReconciliationPlan reconciliationPlan
     ) {
         requireValid(validator.validateLiveSource(mapping, source), "live source schema");
         JdbcTemplate target = null;
@@ -666,13 +689,18 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         MigrationExecutionArtifact.ControlSchemaRecord startedControlSchema = controlSchema;
         archives.onPublished(outcome -> writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started,
                 null, null, outcome, startedControlSchema));
+        // [ADR-0029 L4 D2·D7] 대사 수집 홀더 — 실행기가 채우고 verifier 가 읽는다. 값은 증거에 실리지 않는다. dry-run 은 대상
+        //   질의가 없어 원천 행 수만 판정한다.
+        ReconciliationRun reconciliation = ReconciliationRun.of(reconciliationPlan,
+                new ColumnReplay(transformers, mapping.codemaps()),
+                target == null ? null : new PostgresReconciliationQueries(target));
         MigrationReport report = null;
         List<EtlExecutor.TableResult> results = null;
         try {
             results = executor.execute(
                     mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards, archives,
-                    controlSchemaUpgradeAcknowledged);
-            report = verifier.verify(mapping, results, target, archives.outcome());
+                    controlSchemaUpgradeAcknowledged, reconciliation);
+            report = verifier.verify(mapping, results, target, archives.outcome(), reconciliation);
             if (!report.ok()) {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
                         + firstFailure(report));
@@ -821,12 +849,45 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
     }
 
     /**
+     * 원장 검증을 지난 문맥 — 원장, live 표준 용어((schema, 영문약어) 키), 기본 schema, 공통코드 쓰기 전 게이트 결과
+     * (ADR-0029 L4 D7). load 가 공통코드 대사 대상을 정하는 데 쓴다.
+     */
+    private record LedgerContext(TermLedger ledger,
+                                 Map<TermLedgerValidator.TermKey, TermLedgerValidator.StandardTermRecord> terms,
+                                 String defaultSchema, CodeSetPrecheck.PrecheckResult precheck) {}
+
+    /**
+     * [ADR-0029 L4 D2·D7] 대사 계획 — 승인 fingerprint(시작 제약 포함)·inventory·원장 문맥으로 만든다. 값은 없다.
+     */
+    private ReconciliationPlan reconciliationPlan(MappingSpec mapping, CatalogSnapshot inventory,
+                                                  TargetSchemaFingerprint target, LedgerContext ledger) {
+        List<CodeSetTarget> codeSets = CodeSetTargets.of(mapping, ledger.ledger(), ledger.terms(),
+                ledger.defaultSchema(), ProductCodeBindings.ALL, ledger.precheck());
+        return ReconciliationPlanner.plan(mapping, inventory, target, codeSets, transformers);
+    }
+
+    /**
+     * 승인 load 와 같은 조립으로 대사 계획을 만든다 — 원장 검증({@link #requireLedger})을 지난 문맥과
+     * {@link #reconciliationPlan}. 공개 COMMIT 이 막힌 원천(Oracle 은 {@code UNVERIFIED})의 리허설이 엔진 COMMIT 에 이 계획을
+     * 넣어, load 의 조립이 바뀌면 리허설도 따라 바뀐다. {@code options} 에서는 mapping 경로(원장 위치의 기준)만 쓴다.
+     */
+    ReconciliationPlan approvedReconciliationPlan(WorkflowCliOptions options, MappingSpec mapping,
+                                                  CatalogSnapshot inventory, TargetSchemaFingerprint target)
+            throws SQLException {
+        return reconciliationPlan(mapping, inventory, target, requireLedger(options, mapping, inventory));
+    }
+
+    /**
      * [ADR-0029 결정 3, DEC-OPS-312·317] mapping 은 용어 매핑 원장을 선언해야 한다. 그 파일은 mapping 과 같은 디렉터리나
      * 그 아래에 있고 바이트가 선언한 digest 와 같아야 한다. 원장 형식·전이 이력, mapping 과 원장의 inventory 기준 대응
      * (정방향·역방향·소스 단위 완전성·load 일치), codemap, 확정 행의 표준 용어가 live 메타에 있고 폐기되지 않았는지를
      * 본다. 원장 없는 mapping 은 plan·load 하지 않는다(DEC-OPS-317).
+     *
+     * <p>[ADR-0029 L4 D7, DEC-OPS-325] 같은 읽기 전용 연결에서 mapping 이 쓰는 공통코드 바인딩 컬럼의 그룹을 읽어 쓰기 전
+     * 게이트({@link CodeSetPrecheck})를 돈다 — 쓰기 검증 바인딩은 codemap(미매핑 그대로 쓰기 아님)이나 상수로 채우고 그 출력이
+     * 사용 중 상세코드여야 한다. 오류는 원장 오류와 같은 목록으로 멈춘다. 공통코드 표를 읽지 못하면 SQLSTATE 만 밝혀 멈춘다.
      */
-    private void requireLedger(WorkflowCliOptions options, MappingSpec mapping, CatalogSnapshot inventory)
+    private LedgerContext requireLedger(WorkflowCliOptions options, MappingSpec mapping, CatalogSnapshot inventory)
             throws SQLException {
         MappingSpec.LedgerBinding binding = mapping.ledger();
         if (binding == null) {
@@ -855,6 +916,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         errors.addAll(ledgerValidator.coverage(ledger, mapping, inventory));
         Map<TermLedgerValidator.TermKey, TermLedgerValidator.StandardTermRecord> terms = new java.util.HashMap<>();
         String defaultSchema;
+        CodeSetPrecheck.PrecheckResult precheck;
         try (Connection connection = open(introspector.jdbc(mapping.target()))) {
             connection.setReadOnly(true);
             // schema 를 밝히지 않은 대상 표는 대상 표준 계약(fingerprint)처럼 연결의 현재 schema 로 읽는다.
@@ -866,9 +928,11 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 standardTerms.read(connection, schema.getKey(), schema.getValue()).forEach((abbreviation, record)
                         -> terms.put(new TermLedgerValidator.TermKey(schema.getKey(), abbreviation), record));
             }
+            precheck = codeSetPrecheck(connection, mapping, defaultSchema);
         } catch (IllegalStateException | IllegalArgumentException unreadable) {
             throw gate(unreadable.getMessage());
         }
+        errors.addAll(precheck.errors());
         errors.addAll(ledgerValidator.codemaps(ledger, mapping.codemaps(), terms, defaultSchema));
         errors.addAll(ledgerValidator.live(ledger, terms, defaultSchema));
         if (!errors.isEmpty()) {
@@ -876,6 +940,31 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             String more = errors.size() > shown.size() ? " (외 " + (errors.size() - shown.size()) + "건)" : "";
             throw gate("용어 매핑 원장 검증 실패로 중단했습니다: " + String.join(" | ", shown) + more);
         }
+        return new LedgerContext(ledger, terms, defaultSchema, precheck);
+    }
+
+    /**
+     * [ADR-0029 L4 D7] mapping 이 쓰는 바인딩 컬럼의 공통코드 그룹을 schema 마다 읽어 쓰기 전 게이트를 돈다. 바인딩 컬럼이
+     * 없으면 공통코드 표를 읽지 않는다. 상세코드 값은 메모리에만 두고, 읽기 오류는 SQLSTATE 만 밝힌다.
+     */
+    private CodeSetPrecheck.PrecheckResult codeSetPrecheck(Connection connection, MappingSpec mapping,
+                                                           String defaultSchema) {
+        Map<String, java.util.Set<String>> required =
+                CodeSetPrecheck.requiredGroups(mapping, ProductCodeBindings.ALL, defaultSchema);
+        if (required.isEmpty()) {
+            return CodeSetPrecheck.check(mapping, ProductCodeBindings.ALL, Map.of(), defaultSchema);
+        }
+        Map<String, Map<String, CodeGroupState>> groups = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, java.util.Set<String>> schema : required.entrySet()) {
+            try {
+                groups.put(schema.getKey(), codeGroupReader.read(connection, schema.getKey(), schema.getValue()));
+            } catch (SQLException unreadable) {
+                throw gate("공통코드 표를 읽지 못했습니다(SQLSTATE="
+                        + (unreadable.getSQLState() == null ? "unknown" : unreadable.getSQLState())
+                        + ") — 이관 역할에 tb_com_cd·tb_com_dtl_cd SELECT 가 필요합니다");
+            }
+        }
+        return CodeSetPrecheck.check(mapping, ProductCodeBindings.ALL, groups, defaultSchema);
     }
 
     private static String sha256Hex(byte[] bytes) {

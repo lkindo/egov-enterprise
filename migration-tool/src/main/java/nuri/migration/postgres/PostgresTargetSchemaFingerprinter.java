@@ -26,9 +26,19 @@ import java.util.Set;
 /** MappingSpec가 쓰는 target table/column/PK만 실제 JDBC metadata에서 읽는 read-only fingerprinter. */
 public final class PostgresTargetSchemaFingerprinter {
 
-    private final PostgresTargetStandardReader standardReader = new PostgresTargetStandardReader();
+    /** bound digest 형식. 4 는 물리 제약 스냅숏을 결속한다(ADR-0029 L4 D2). */
+    static final int BOUND_VERSION = 4;
 
-    /** 승인 workflow는 schema뿐 아니라 실제 접속 환경과 허용 스키마를 함께 검증한다. */
+    private final PostgresTargetStandardReader standardReader = new PostgresTargetStandardReader();
+    private final PostgresTargetConstraintReader constraintReader = new PostgresTargetConstraintReader();
+
+    /**
+     * 승인 workflow는 schema뿐 아니라 실제 접속 환경과 허용 스키마를 함께 검증한다.
+     *
+     * <p>[ADR-0029 L4 D2] 형식 4 는 매핑 대상 표의 FK·유일 인덱스·CHECK 이름·FK 자식 쪽 RI 트리거 상태도 같은 연결에서 읽어
+     * digest 에 결속한다. plan 뒤 제약이 빠지거나 RI 트리거가 꺼지면 load 가 digest 불일치로 쓰기 전에 멈추고(H1, DEC-OPS-324),
+     * 대사는 이 스냅숏을 적재 시작의 제약 상태로 쓴다.
+     */
     public TargetSchemaFingerprint fingerprintBound(Connection connection, MappingSpec mapping,
                                                      Set<String> allowedSchemas) throws SQLException {
         if (allowedSchemas == null || allowedSchemas.isEmpty()
@@ -48,12 +58,20 @@ public final class PostgresTargetSchemaFingerprinter {
         TargetSchemaFingerprint schema = fingerprint(connection, mapping);
         // 표준 검증이 쓰는 live 컬럼 계약·표준 사전을 같은 연결에서 읽고 digest 에 결속한다(DEC-OPS-307).
         TargetStandardSnapshot standard = standardReader.read(connection, standardTables(schema), jdbcColumns(schema));
-        String digest = nuri.migration.artifact.CanonicalArtifactDigest.sha256(Map.of(
-                "version", 3, "environment", environment, "schema", schema.digest(),
+        TargetConstraintSnapshot constraints = constraintReader.read(connection, schema.tables());
+        String digest = boundDigest(environment, schema.digest(), standard, constraints, allowedSchemas);
+        return new TargetSchemaFingerprint(BOUND_VERSION, schema.databaseProduct(), schema.databaseVersion(), digest,
+                schema.tables(), standard, constraints);
+    }
+
+    /** bound digest 재료. 형식·접속 환경·schema digest·표준 계약·제약 스냅숏·허용 스키마를 함께 결속한다. */
+    static String boundDigest(String environment, String schemaDigest, TargetStandardSnapshot standard,
+                              TargetConstraintSnapshot constraints, Set<String> allowedSchemas) {
+        return nuri.migration.artifact.CanonicalArtifactDigest.sha256(Map.of(
+                "version", BOUND_VERSION, "environment", environment, "schema", schemaDigest,
                 "standard", nuri.migration.artifact.CanonicalArtifactDigest.sha256(standard),
+                "constraints", nuri.migration.artifact.CanonicalArtifactDigest.sha256(constraints),
                 "allowedSchemas", allowedSchemas.stream().sorted().toList()));
-        return new TargetSchemaFingerprint(3, schema.databaseProduct(), schema.databaseVersion(), digest,
-                schema.tables(), standard);
     }
 
     private static Map<String, Set<String>> standardTables(TargetSchemaFingerprint schema) {

@@ -9,6 +9,7 @@ import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.verify.MigrationReport;
+import nuri.migration.verify.ReconciliationEvidence;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -41,6 +42,13 @@ import java.util.Map;
  * 이고, 두 값이 없으면 싣지 않는다. {@code lookupMisses} 는 {@code at_most_one} 조회의 별칭마다 짝이 없어 NULL 을 넣은 행
  * 수다 — 키·값은 담지 않고, 짝 없는 행이 없으면 싣지 않는다. 형식 1·2·3 증거도 읽을 수 있다(없는 목록은 비어 있고 없는
  * 값은 null 이다).
+ *
+ * <p>형식 5(ADR-0029 L4 D2·D7): {@code reconciliation} 은 load 안 대사의 판정 기록이다 — 매핑마다 검사 이름·결과·건수·
+ * 판정하지 않은 검사와 사유 코드, 참조(자식·부모 표와 컬럼 이름·출처·증명/대조 방법·고아 행 수), 유일 인덱스 집행, 격리 키
+ * 후보의 건수, 공통코드·허용값 대사(대상 컬럼·원천·그룹 id·원장 행 id·건수·상태), codemap 결과 종류 수와 맞지 않은 키의
+ * 위치, 쓰기 세션의 복제 역할을 싣는다. 원천 집계·합·최소·최대·코드값·허용값·키·digest 는 싣지 않는다 — 판정에 쓴 값은
+ * 직렬화하지 않는 홀더에만 있다. 대사를 하지 않은 실행은 싣지 않는다. 형식 1~4 증거도 읽을 수 있다({@code reconciliation} 은
+ * null 이다).
  */
 public record MigrationExecutionArtifact(int schemaVersion, String planDigest, String mappingDigest,
         String targetDigest, String mode, String status, String startedAt, String updatedAt,
@@ -48,13 +56,14 @@ public record MigrationExecutionArtifact(int schemaVersion, String planDigest, S
         List<IsolationRecord> isolations, List<ArchiveRecord> archives, List<IsolatedKeyRecord> isolatedKeyExports,
         KeymapRetention keymapRetention,
         @JsonInclude(JsonInclude.Include.NON_NULL) ControlSchemaRecord controlSchema,
-        @JsonInclude(JsonInclude.Include.NON_EMPTY) List<LookupMissRecord> lookupMisses) {
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) List<LookupMissRecord> lookupMisses,
+        @JsonInclude(JsonInclude.Include.NON_NULL) ReconciliationEvidence reconciliation) {
 
     /**
      * 지금 쓰는 실행 증거 형식. 형식 1 은 격리 기록이, 형식 2 는 보관 덤프 기록이, 형식 3 은 매핑 id·제어 스키마 버전·조회
-     * 짝 없는 행 기록이 없다.
+     * 짝 없는 행 기록이, 형식 4 는 대사 기록이 없다.
      */
-    public static final int CURRENT_SCHEMA_VERSION = 4;
+    public static final int CURRENT_SCHEMA_VERSION = 5;
 
     /** 덤프를 쓴 실행이 남기는 keymap 보존 의무(ADR-0029 L3e, DEC-OPS-321). */
     public static final String KEYMAP_RETENTION_DUTY = "keymap 은 덤프의 가장 늦은 retainUntil 까지 보존";
@@ -199,7 +208,7 @@ public record MigrationExecutionArtifact(int schemaVersion, String planDigest, S
         var artifact = new MigrationExecutionArtifact(CURRENT_SCHEMA_VERSION, CanonicalArtifactDigest.sha256(plan),
                 plan.mappingDigest(), plan.targetSchemaDigest(), mode.name(), status,
                 startedAt.toString(), Instant.now().toString(), counts, resets, nullified, isolations, dumps,
-                keyExports, retention, controlSchema, lookupMisses);
+                keyExports, retention, controlSchema, lookupMisses, report == null ? null : report.reconciliation());
         try {
             String json = new ObjectMapper().writeValueAsString(artifact);
             ArtifactRedactionGuard.assertSafe(new ObjectMapper().readTree(json));

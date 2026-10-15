@@ -77,6 +77,74 @@ class MigrationVerifierTypedIdentityTest {
         assertThat(runStatus(fixture.jdbc(), otherRun)).isEqualTo("RUNNING");
     }
 
+    /**
+     * [ADR-0029 L4 D2] typed 재조회 패스가 대상 행을 대사 누적에 넘기고, 대사가 FAIL 이면 run 상태도 FAILED 로 기록한다 — 대상
+     * 쪽 대사를 run 상태 기록 뒤로 옮기면 COMPLETED 로 남는다.
+     */
+    @Test
+    void reconciliationObservesTypedRowsAndRecordsAFailureAsAFailedRun() throws Exception {
+        List<EtlExecutor.TableResult> results =
+                List.of(new EtlExecutor.TableResult("legacy_order", "tb_order", 2, 2, 2, List.of()));
+
+        Fixture passing = reconciledOrders();
+        MigrationReport passed = verifier.verify(passing.spec(), results, passing.jdbc(), null, reconciliation(0));
+
+        assertThat(passed.overall()).isEqualTo(MigrationReport.Status.PASS);
+        assertThat(passed.reconciliation().mappings()).singleElement().satisfies(mapping -> assertThat(
+                mapping.checks()).contains(new ReconciliationEvidence.CheckRecord("NON_NULL", "payload", "PASS", null,
+                1L, null, null)));
+        assertThat(runStatus(passing.jdbc(), passing.spec().run())).isEqualTo("COMPLETED");
+
+        Fixture orphaned = reconciledOrders();
+        MigrationReport failed = verifier.verify(orphaned.spec(), results, orphaned.jdbc(), null, reconciliation(1));
+
+        assertThat(failed.overall()).isEqualTo(MigrationReport.Status.FAIL);
+        assertThat(failed.tables()).extracting(MigrationReport.TableReport::source).contains("<references>");
+        assertThat(runStatus(orphaned.jdbc(), orphaned.spec().run())).isEqualTo("FAILED");
+    }
+
+    private Fixture reconciledOrders() throws Exception {
+        Fixture fixture = compositeFixture(true);
+        fixture.jdbc().update("INSERT INTO tb_order VALUES ('A', 1, 'one')");
+        fixture.jdbc().update("INSERT INTO tb_order VALUES ('B', 2, NULL)");
+        addCheckpoint(fixture, "legacy-a", composite("A", 1), row("A", 1, "one"));
+        addCheckpoint(fixture, "legacy-b", composite("B", 2), row("B", 2, null));
+        return fixture;
+    }
+
+    /** 원천 2행·payload NULL 아닌 1행. {@code orphans} 가 있으면 고아를 세는 선언 참조 하나를 둔다. */
+    private static ReconciliationRun reconciliation(long orphans) {
+        ColumnCheck payload = new ColumnCheck("payload", "payload", null, ColumnCheck.Aggregate.NONE, true, false,
+                null, false, null, null, false, null, List.of());
+        List<DeclaredReference> references = orphans == 0 ? List.of() : List.of(new DeclaredReference("tb_order",
+                List.of("payload"), "tb_order", List.of("payload"), DeclaredReference.Origin.DECLARED));
+        ReconciliationPlan plan = new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                "legacy_order", "legacy_order", null, null, "tb_order", List.of(payload),
+                List.of("tenant_id", "order_id"), false, false, true)), references, null, List.of(), List.of());
+        ReconciliationRun run = ReconciliationRun.of(plan,
+                new ColumnReplay(new nuri.migration.transform.TransformerRegistry(), Map.of()),
+                new TargetReconciliationQueries() {
+                    @Override
+                    public long count(String sql, List<Object> args) {
+                        return orphans;
+                    }
+
+                    @Override
+                    public Map<String, Long> counts(String sql, List<Object> args) {
+                        return Map.of();
+                    }
+
+                    @Override
+                    public nuri.migration.postgres.TargetConstraintSnapshot constraints(
+                            List<nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata> tables) {
+                        return null;
+                    }
+                });
+        ReconciliationRun.AggregateGroup group = run.aggregateGroups().iterator().next();
+        run.recordSource(group.key(), group.query().parse(new Object[]{2L, 1L}, true));
+        return run;
+    }
+
     @Test
     void verifiesTypedSingleKeyWithoutComparingTkEncodingToThePhysicalPk() throws Exception {
         Fixture fixture = singleFixture();

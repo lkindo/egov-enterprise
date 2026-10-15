@@ -16,10 +16,27 @@ import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.protect.ColumnProtector;
 import nuri.migration.protect.EgovAriaColumnCipher;
+import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import nuri.migration.validate.CodeSetPrecheck;
+import nuri.migration.validate.CodeSetTargets;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ProductCodeBindings;
+import nuri.migration.validate.VerifyReferenceRules;
+import nuri.migration.verify.CodeSetReconciler;
+import nuri.migration.verify.ColumnClassifier;
+import nuri.migration.verify.ColumnReplay;
+import nuri.migration.verify.ConstraintProof;
+import nuri.migration.verify.DomainConformance;
 import nuri.migration.verify.MigrationVerifier;
+import nuri.migration.verify.ReconciliationJudge;
+import nuri.migration.verify.ReconciliationPlanner;
+import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.ReconciliationValues;
+import nuri.migration.verify.ReferenceChecks;
+import nuri.migration.verify.SourceAggregateQuery;
+import nuri.migration.verify.TargetTally;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 import org.springframework.boot.system.ApplicationHome;
 
@@ -77,7 +94,27 @@ public record MigrationExecutionContract(
             // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e). 승인 뒤 덤프 형식·대상 행·파일 쓰기가 바뀌면 같은 승인으로 적재하지
             // 않는다.
             ArchiveRun.class,
-            ArchiveFileWriter.class);
+            ArchiveFileWriter.class,
+            // load 안 대사·공통코드 대사의 판정(ADR-0029 L4 D2·D7). 승인 뒤 무엇을 어떻게 대사하는지가 바뀌면 같은 승인으로
+            // 적재하지 않는다.
+            ColumnClassifier.class,
+            SourceAggregateQuery.class,
+            ReconciliationJudge.class,
+            DomainConformance.class,
+            ColumnReplay.class,
+            ConstraintProof.class,
+            ReferenceChecks.class,
+            ReconciliationPlanner.class,
+            // 표본 간격·종류 상한·격리 행 기여(수집)와 대상 누적·표본 비교(누적)도 판정이다.
+            ReconciliationRun.class,
+            TargetTally.class,
+            ReconciliationValues.class,
+            CodeSetReconciler.class,
+            ProductCodeBindings.class,
+            CodeSetPrecheck.class,
+            CodeSetTargets.class,
+            VerifyReferenceRules.class,
+            CodeTranslator.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

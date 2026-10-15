@@ -11,6 +11,10 @@ import java.util.Objects;
  *
  * <p>{@code standard} 는 승인 workflow({@code fingerprintBound})가 함께 읽은 live 컬럼 계약·표준 사전이다.
  * 결속되지 않은 fingerprint 에서는 null 이며, 표준 검증은 null 을 "읽지 못함"으로 보고 실패한다.
+ *
+ * <p>{@code constraints}(ADR-0029 L4 D2)는 같은 연결에서 읽은 매핑 대상 표의 물리 제약 스냅숏이다(bound 형식 4). 대사가
+ * 적재 시작의 제약 상태로 쓰고, 결속되지 않은 fingerprint 에서는 null 이다 — 대사는 null 을 "읽지 못함"으로 보고 제약을
+ * 증명하지 않는다.
  */
 public record TargetSchemaFingerprint(
         int schemaVersion,
@@ -18,7 +22,8 @@ public record TargetSchemaFingerprint(
         String databaseVersion,
         String digest,
         List<TableMetadata> tables,
-        TargetStandardSnapshot standard) {
+        TargetStandardSnapshot standard,
+        TargetConstraintSnapshot constraints) {
 
     public static final int CURRENT_SCHEMA_VERSION = 1;
 
@@ -35,7 +40,13 @@ public record TargetSchemaFingerprint(
     /** 표준 계약을 읽지 않은 fingerprint. */
     public TargetSchemaFingerprint(int schemaVersion, String databaseProduct, String databaseVersion,
                                    String digest, List<TableMetadata> tables) {
-        this(schemaVersion, databaseProduct, databaseVersion, digest, tables, null);
+        this(schemaVersion, databaseProduct, databaseVersion, digest, tables, null, null);
+    }
+
+    /** 제약 스냅숏을 읽지 않은 fingerprint — bound 형식 3 까지의 호출부 호환. */
+    public TargetSchemaFingerprint(int schemaVersion, String databaseProduct, String databaseVersion,
+                                   String digest, List<TableMetadata> tables, TargetStandardSnapshot standard) {
+        this(schemaVersion, databaseProduct, databaseVersion, digest, tables, standard, null);
     }
 
     public static TargetSchemaFingerprint create(

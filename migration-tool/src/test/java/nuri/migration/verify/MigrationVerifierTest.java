@@ -4,6 +4,7 @@ import nuri.migration.archive.ArchiveOutcome;
 import nuri.migration.etl.EtlExecutor.TableResult;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.postgres.TargetConstraintSnapshot;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
 import org.junit.jupiter.api.DisplayName;
@@ -633,6 +634,346 @@ class MigrationVerifierTest {
         private static ArchiveOutcome.Dumped splitDump(long rows) {
             return new ArchiveOutcome.Dumped("src_dump", "src_tbl", false, rows, rows, "archive-src.jsonl", 11, SHA,
                     "2031-12-31", List.of("U7"), Map.of());
+        }
+    }
+
+    @Nested
+    @DisplayName("load 안 대사(ADR-0029 L4 D2·D7)")
+    class Reconciliation {
+
+        private final MappingSpec spec = new MappingSpec(null, null,
+                List.of(new MappingSpec.TableMapping("src_tbl", "tgt_tbl", null, List.of(), null)), Map.of());
+
+        /** 고아 수·공통코드 건수를 정해 두고 받은 문장을 기록하는 대상 질의 대역. */
+        private final class FakeQueries implements TargetReconciliationQueries {
+            private final long orphans;
+            private final Map<String, Long> codeCounts;
+            private final List<String> statements = new java.util.ArrayList<>();
+            private final List<List<Object>> arguments = new java.util.ArrayList<>();
+            private TargetConstraintSnapshot end;
+            private String failure;
+            private String constraintFailure;
+
+            private FakeQueries(long orphans, Map<String, Long> codeCounts) {
+                this.orphans = orphans;
+                this.codeCounts = codeCounts;
+            }
+
+            @Override
+            public long count(String sql, List<Object> args) {
+                statements.add(sql);
+                arguments.add(args);
+                if (failure != null) {
+                    throw new ReconciliationQueryException(failure);
+                }
+                return orphans;
+            }
+
+            @Override
+            public Map<String, Long> counts(String sql, List<Object> args) {
+                statements.add(sql);
+                return codeCounts;
+            }
+
+            @Override
+            public TargetConstraintSnapshot constraints(
+                    List<nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata> tables) {
+                if (constraintFailure != null) {
+                    throw new ReconciliationQueryException(constraintFailure);
+                }
+                return end;
+            }
+        }
+
+        private ReconciliationRun run(long sourceRows, List<DeclaredReference> references,
+                                      List<nuri.migration.validate.CodeSetTarget> codeSets,
+                                      TargetReconciliationQueries queries, ColumnCheck... columns) {
+            return run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "tgt_tbl", List.of(columns), List.of(), true, false, false)),
+                    references, null, List.of(), codeSets), sourceRows, queries);
+        }
+
+        private ReconciliationRun run(ReconciliationPlan plan, long sourceRows, TargetReconciliationQueries queries) {
+            ReconciliationRun run = ReconciliationRun.of(plan,
+                    new ColumnReplay(new nuri.migration.transform.TransformerRegistry(), Map.of()), queries);
+            ReconciliationRun.AggregateGroup group = run.aggregateGroups().iterator().next();
+            Object[] values = new Object[1 + (int) plan.mappings().getFirst().columns().stream()
+                    .filter(ColumnCheck::nonNull).count()];
+            java.util.Arrays.fill(values, sourceRows);
+            run.recordSource(group.key(), group.query().parse(values, true));
+            return run;
+        }
+
+        /** 대상 표 하나 — 자식 FK 하나와 유일 인덱스 하나. */
+        private TargetConstraintSnapshot constraints(String trigger, boolean indexValid) {
+            return new TargetConstraintSnapshot(1, List.of(new TargetConstraintSnapshot.TableConstraints("public",
+                    "tgt_tbl", List.of(new TargetConstraintSnapshot.Constraint("fk_tgt_parent", "f",
+                    List.of("parent_id"), "public", "parent", List.of("id"), true, List.of(trigger, trigger))),
+                    List.of(new TargetConstraintSnapshot.UniqueIndex("uq_tgt_code", List.of("code"), indexValid,
+                            true)))));
+        }
+
+        @Test
+        @DisplayName("증명한 물리 FK 는 세지 않고, 집행되지 않은 유일 인덱스는 <references> 를 FAIL 로 만든다")
+        void provenForeignKeysAreNotScannedAndUnenforcedUniqueIndexesFail() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.end = constraints("O", false);
+            ReconciliationRun run = run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "public.tgt_tbl", List.of(), List.of(), true, false, false)),
+                    List.of(), constraints("O", true), List.of(), List.of()), 10, queries);
+            run.replicationRole(true);
+
+            MigrationReport report = verifier.verify(new MappingSpec(null, null, List.of(
+                    new MappingSpec.TableMapping("src_tbl", "public.tgt_tbl", null, List.of(), null)), Map.of()),
+                    List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
+                    null, run);
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note())
+                            .isEqualTo("유일 인덱스 미집행(public.tgt_tbl.uq_tgt_code): CONSTRAINT_NOT_ENFORCED"));
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("PROVEN");
+                assertThat(record.status()).isEqualTo("PASS");
+                assertThat(record.origin()).isEqualTo("PHYSICAL");
+            });
+            assertThat(report.reconciliation().replicationRole()).isEqualTo("ORIGIN");
+            assertThat(queries.statements).as("증명한 FK 는 세지 않는다").isEmpty();
+
+            FakeQueries scanned = new FakeQueries(0, Map.of());
+            scanned.end = constraints("D", true);
+            ReconciliationRun disabled = run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "public.tgt_tbl", List.of(), List.of(), true, false, false)),
+                    List.of(), constraints("O", true), List.of(), List.of()), 10, scanned);
+            disabled.replicationRole(true);
+            MigrationReport rescanned = verifier.verify(new MappingSpec(null, null, List.of(
+                    new MappingSpec.TableMapping("src_tbl", "public.tgt_tbl", null, List.of(), null)), Map.of()),
+                    List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
+                    null, disabled);
+            assertThat(rescanned.overall()).as("끝에서 꺼진 RI 트리거는 증명이 아니라 대조다").isEqualTo(Status.PASS);
+            assertThat(rescanned.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).as("고아가 0 이어도 증명하지 못한 이유가 남는다")
+                        .isEqualTo("TRIGGER_NOT_ENABLED");
+            });
+            assertThat(scanned.statements).hasSize(1);
+        }
+
+        /** 시작 제약이 있는 계획 하나로 COMMIT 검증을 돌린다. */
+        private MigrationReport verifyWithStart(FakeQueries queries, java.util.function.Consumer<ReconciliationRun> setup) {
+            ReconciliationRun run = run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "public.tgt_tbl", List.of(), List.of(), true, false, false)),
+                    List.of(), constraints("O", true), List.of(), List.of()), 10, queries);
+            run.replicationRole(true);
+            setup.accept(run);
+            return verifier.verify(new MappingSpec(null, null, List.of(
+                    new MappingSpec.TableMapping("src_tbl", "public.tgt_tbl", null, List.of(), null)), Map.of()),
+                    List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
+                    null, run);
+        }
+
+        @Test
+        @DisplayName("끝 제약을 읽지 못하면 유일 인덱스는 SQLSTATE 를 붙인 FAIL 이고 FK 는 고아 대조로 내려간다")
+        void anUnreadableEndSnapshotFailsUniqueIndexesWithTheSqlState() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.constraintFailure = "42501";
+
+            MigrationReport report = verifyWithStart(queries, run -> { });
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note()).isEqualTo(
+                            "유일 인덱스 판정 불가(public.tgt_tbl.uq_tgt_code): CONSTRAINTS_UNREAD(SQLSTATE=42501)"));
+            assertThat(report.reconciliation().uniqueIndexes()).singleElement()
+                    .satisfies(record -> assertThat(record.status()).isEqualTo("FAIL"));
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).isEqualTo("CONSTRAINTS_UNREAD");
+            });
+        }
+
+        @Test
+        @DisplayName("재개로 건너뛴 행이 있는 대상의 FK 는 증명하지 않고 고아를 센다")
+        void aResumedTargetIsScanned() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.end = constraints("O", true);
+
+            MigrationReport report = verifyWithStart(queries, run -> run.table("src_tbl").resumed());
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).isEqualTo("PRIOR_EXECUTION_ROWS");
+            });
+            assertThat(queries.statements).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("COMMIT 인데 대상 질의가 없으면 참조·유일 인덱스·공통코드를 건너뛰지 않고 FAIL 이다")
+        void aCommitWithoutTargetQueriesFails() {
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(), List.of(), null));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note())
+                            .isEqualTo("대상 대사 질의 없음: RECONCILIATION_INPUT_MISSING"));
+        }
+
+        @Test
+        @DisplayName("참조 대사 질의가 실패하면 SQLSTATE 만 밝혀 <references> 가 FAIL 이다")
+        void aFailedReferenceQueryFailsWithTheSqlStateOnly() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.failure = "42P01";
+            DeclaredReference reference = new DeclaredReference("public.child", List.of("parent_id"), "public.parent",
+                    List.of("parent_id"), DeclaredReference.Origin.DECLARED);
+
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(reference), List.of(), queries));
+
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note()).isEqualTo("참조 대사 실패(public.child(parent_id) →"
+                            + " public.parent): REFERENCE_QUERY_FAILED(SQLSTATE=42P01)"));
+        }
+
+        @Test
+        @DisplayName("격리한 보존 키를 같은 이름으로 복사한 자식의 행 수는 후보로만 남고 판정하지 않는다")
+        void isolatedKeyCandidatesAreCountedButNotJudged() {
+            FakeQueries queries = new FakeQueries(3, Map.of());
+            nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata parent = table("tgt_tbl", "id");
+            nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata child = table("child_tbl", "id");
+            ReconciliationRun run = run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "public.tgt_tbl", List.of(), List.of("id"), true, true, false)),
+                    List.of(), null, List.of(parent, child), List.of()), 10, queries);
+            run.table("src_tbl").isolated(Map.of("id", 7L), Map.of("id", 7L));
+
+            MigrationReport report = verifier.verify(new MappingSpec(null, null, List.of(
+                    new MappingSpec.TableMapping("src_tbl", "public.tgt_tbl", null, List.of(), null)), Map.of()),
+                    List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
+                    null, run);
+
+            assertThat(report.overall()).as("후보는 판정에 쓰지 않는다").isEqualTo(Status.PASS);
+            assertThat(report.reconciliation().orphanCandidates()).containsExactly(
+                    new ReconciliationEvidence.CandidateRecord("public.tgt_tbl", "public.child_tbl", "id", 3L, null));
+            assertThat(queries.arguments).as("격리 키는 바인딩으로만 간다").containsExactly(List.of(7L));
+        }
+
+        private nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata table(String name, String column) {
+            return new nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata(null, "public", name, "TABLE",
+                    List.of(new nuri.migration.postgres.TargetSchemaFingerprint.ColumnMetadata(column,
+                            java.sql.Types.BIGINT, "int8", 19, 0, 0, null, 1, false, false)),
+                    new nuri.migration.postgres.TargetSchemaFingerprint.PrimaryKeyMetadata(name + "_pk", List.of(
+                            new nuri.migration.postgres.TargetSchemaFingerprint.PrimaryKeyColumn((short) 1, column))));
+        }
+
+        @Test
+        @DisplayName("원천 행 수가 조회 수와 다르면 PASS 였던 표도 FAIL 이다")
+        void aSourceRowMismatchFailsAPassingTable() {
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(11, List.of(), List.of(), new FakeQueries(0, Map.of())));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables().getFirst().note()).isEqualTo("대사 불일치(src_tbl, check=SOURCE_ROWS)");
+            assertThat(report.reconciliation().mappings()).singleElement().satisfies(mapping -> {
+                assertThat(mapping.status()).isEqualTo("FAIL");
+                assertThat(mapping.checks()).singleElement().satisfies(check -> {
+                    assertThat(check.check()).isEqualTo("SOURCE_ROWS");
+                    assertThat(check.mismatches()).isEqualTo(1L);
+                });
+            });
+            assertThat(verifier.verify(spec, List.of(result(10, 10, 10, "이관 실패(src_tbl): X")), targetWithRows(10),
+                    null, run(11, List.of(), List.of(), new FakeQueries(0, Map.of()))).tables().getFirst().note())
+                    .as("이미 FAIL 인 표는 원래 사유를 둔다").startsWith("오류 1건");
+        }
+
+        @Test
+        @DisplayName("판정하지 않은 검사만 있는 표는 PASS 이고 그 사유는 기록에 남는다")
+        void notCoveredChecksAloneKeepTheTablePassing() {
+            ColumnCheck encrypted = new ColumnCheck("enc", null, null, ColumnCheck.Aggregate.NONE, false, false, null,
+                    false, null, null, false, null, List.of(new ColumnCheck.Gap(ReconciliationCheck.NON_NULL,
+                    CoverageReason.ENCRYPTED)));
+
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(), List.of(), new FakeQueries(0, Map.of()), encrypted));
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.reconciliation().mappings()).singleElement().satisfies(mapping -> {
+                assertThat(mapping.status()).isEqualTo("PASS");
+                assertThat(mapping.notCovered()).containsExactly(
+                        new ReconciliationEvidence.GapRecord("enc", "NON_NULL", "ENCRYPTED"));
+            });
+        }
+
+        @Test
+        @DisplayName("선언 참조에 짝 없는 행이 있으면 <references> 가 FAIL 이다")
+        void orphanReferencesFailTheReferencesRow() {
+            FakeQueries queries = new FakeQueries(2, Map.of());
+            DeclaredReference reference = new DeclaredReference("public.child", List.of("parent_id"), "public.parent",
+                    List.of("parent_id"), DeclaredReference.Origin.DECLARED);
+
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(reference), List.of(), queries));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note())
+                            .isEqualTo("고아 참조(public.child(parent_id) → public.parent): ORPHAN_REFERENCE 2건"));
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.status()).isEqualTo("FAIL");
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.orphans()).isEqualTo(2L);
+            });
+            assertThat(queries.statements).containsExactly(ReferenceChecks.orphanSql(reference));
+        }
+
+        @Test
+        @DisplayName("쓰기 검증 공통코드 컬럼에 그룹에 없는 코드가 있으면 <code-sets> 가 FAIL 이다")
+        void codeSetFailuresFailTheCodeSetsRow() {
+            nuri.migration.validate.CodeSetTarget target = nuri.migration.validate.CodeSetTarget.commonCode(
+                    "public.tb_ifml_atrz_info", "task_se_cd", nuri.migration.validate.ProductCodeBindings.ALL.getFirst(),
+                    false, false);
+            FakeQueries queries = new FakeQueries(0, Map.of("nn_0", 3L, "missing_0", 1L, "missing_distinct_0", 1L,
+                    "inactive_0", 0L));
+
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(), List.of(target), queries));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<code-sets>")).singleElement()
+                    .satisfies(table -> assertThat(table.note()).isEqualTo("공통코드 대사 불일치("
+                            + "public.tb_ifml_atrz_info.task_se_cd, source=COMMON_CODE(COM075)): CODE_MISSING 1건"));
+            assertThat(report.reconciliation().codeSets()).singleElement()
+                    .satisfies(record -> assertThat(record.status()).isEqualTo("FAIL"));
+        }
+
+        @Test
+        @DisplayName("dry-run 은 원천 행 수만 판정하고 대상 질의를 보내지 않는다")
+        void aDryRunJudgesSourceRowsOnly() {
+            FakeQueries queries = new FakeQueries(5, Map.of());
+            ColumnCheck amount = new ColumnCheck("amt", "amt", null, ColumnCheck.Aggregate.NONE, true, false, null,
+                    false, null, null, false, null, List.of());
+            DeclaredReference reference = new DeclaredReference("public.child", List.of("parent_id"), "public.parent",
+                    List.of("parent_id"), DeclaredReference.Origin.DECLARED);
+
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), null, null,
+                    run(10, List.of(reference), List.of(), queries, amount));
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.reconciliation().replicationRole()).isEqualTo("NOT_CHECKED");
+            assertThat(report.reconciliation().mappings()).singleElement().satisfies(mapping -> assertThat(
+                    mapping.checks()).extracting(ReconciliationEvidence.CheckRecord::check).containsExactly("SOURCE_ROWS"));
+            assertThat(report.reconciliation().references()).isEmpty();
+            assertThat(queries.statements).isEmpty();
+        }
+
+        @Test
+        @DisplayName("대사하지 않는 검증은 종전과 같고 기록이 없다")
+        void anInactiveRunKeepsThePreviousReport() {
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    ReconciliationRun.none());
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.reconciliation()).isNull();
         }
     }
 

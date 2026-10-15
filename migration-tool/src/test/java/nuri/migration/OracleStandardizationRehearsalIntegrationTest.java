@@ -571,9 +571,9 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         String ledgerEntry = rows.get("JOIN_YMD").id();
         assertThat(dryRun.mode()).isEqualTo("DRY_RUN");
         assertThat(dryRun.status()).isEqualTo("PASS");
-        // 실행 JSON 형식 4(ADR-0029 L3c·L3d) — 기본 매핑은 매핑 id 를, DRY_RUN 은 제어 스키마 기록을, 조회가 없으면 짝 없는
+        // 실행 JSON 형식 5(ADR-0029 L4) — 기본 매핑은 매핑 id 를, DRY_RUN 은 제어 스키마 기록을, 조회가 없으면 짝 없는
         //   행 기록을 싣지 않는다.
-        assertThat(dryRun.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
+        assertThat(dryRun.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(5);
         assertThat(dryRun.controlSchema()).isNull();
         assertThat(dryRun.lookupMisses()).isEmpty();
         assertThat(dryRunText).doesNotContain("\"controlSchema\"", "\"lookupMisses\"", "\"mapping\":");
@@ -663,7 +663,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                 verified, results, outcome, new MigrationExecutionArtifact.ControlSchemaRecord(
                         before.appliedVersion() == null ? "none" : before.appliedVersion(), after.appliedVersion()));
         assertThat(commitText).contains("\"isolated\":3", "\"ordinals\":[10,600,1300]", "\"action\":\"ADVANCED\"",
-                "\"schemaVersion\":4", "\"after\":\"2\"}");
+                "\"schemaVersion\":5", "\"after\":\"2\"}");
         Map<String, String> commitForbidden = forbidden();
         commitForbidden.put("보관 디렉터리", dumps.toString());
         commitForbidden.put("보관 디렉터리(/ 구분)", dumps.toString().replace('\\', '/'));
@@ -823,6 +823,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                     target: %s
                     orderBy: USER_NO
                     targetKey: user_no
+                    verify: {referencedBy: none, reason: 리허설 대상 키를 복사하는 표가 없다}
                 codemaps:
                   use_at:
                     values: {"Y": "Y", "N": "N", "1": "Y"}
@@ -961,7 +962,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                 column.fkRef(), column.constant(), column.encrypt(), column.nullify(), column.isolate())).toList();
         TableMapping changed = new TableMapping(table.source(), table.target(), table.where(), table.orderBy(),
                 table.orderByKeys(), table.targetKey(), columns, table.idStrategy(), table.identity(),
-                table.foreignKeys());
+                table.foreignKeys(), table.id(), table.lookups(), table.verify());
         return new MappingSpec(spec.source(), spec.target(), List.of(changed), spec.codemaps(), spec.run(),
                 spec.ledger(), spec.archives());
     }

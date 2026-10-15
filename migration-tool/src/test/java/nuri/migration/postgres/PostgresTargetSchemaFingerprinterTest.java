@@ -169,6 +169,89 @@ class PostgresTargetSchemaFingerprinterTest {
                 .doesNotContain("target-test-password");
     }
 
+    /**
+     * [ADR-0029 L4 D2] bound 형식 4 는 제약 스냅숏을 결속한다 — plan 뒤 FK·유일 인덱스·CHECK 이름·RI 트리거 상태가 바뀌면
+     * load 가 digest 불일치로 쓰기 전에 멈춘다. 실제 카탈로그 읽기는 PostgreSQL 통합 시험이 본다.
+     */
+    @Test
+    @DisplayName("bound digest는 제약 스냅숏이 다르면 다르고 정렬 순서와는 무관하다")
+    void boundDigestBindsTheConstraintSnapshot() {
+        TargetStandardSnapshot standard = new TargetStandardSnapshot(1, List.of());
+        TargetConstraintSnapshot enabled = constraints(List.of("O", "O"), true);
+        TargetConstraintSnapshot reordered = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child",
+                        List.copyOf(enabled.tables().getFirst().constraints()).reversed(),
+                        enabled.tables().getFirst().uniqueIndexes())));
+        String approved = PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard, enabled,
+                java.util.Set.of("public"));
+
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard, reordered,
+                java.util.Set.of("public"))).isEqualTo(approved);
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard,
+                constraints(List.of("D", "D"), true), java.util.Set.of("public"))).isNotEqualTo(approved);
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard,
+                constraints(List.of("O", "O"), false), java.util.Set.of("public"))).isNotEqualTo(approved);
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard,
+                new TargetConstraintSnapshot(1, List.of()), java.util.Set.of("public"))).isNotEqualTo(approved);
+        assertThat(approved).matches("[0-9a-f]{64}");
+        assertThat(PostgresTargetSchemaFingerprinter.BOUND_VERSION).isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("제약·트리거 행 버전(xmin)은 bound digest 에 들어가지 않는다 — 대사가 시작·끝 비교에만 쓴다")
+    void catalogVersionsStayOutOfTheBoundDigest() {
+        TargetStandardSnapshot standard = new TargetStandardSnapshot(1, List.of());
+        TargetConstraintSnapshot plain = constraints(List.of("O", "O"), true);
+        TargetConstraintSnapshot versioned = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child", List.of(
+                        new TargetConstraintSnapshot.Constraint("fk_child_parent", "f", List.of("parent_id"),
+                                "public", "tb_parent", List.of("parent_id"), true, List.of("O", "O"),
+                                List.of("c:812", "t:813", "t:814"))), List.of())));
+        TargetConstraintSnapshot unversioned = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child", List.of(
+                        new TargetConstraintSnapshot.Constraint("fk_child_parent", "f", List.of("parent_id"),
+                                "public", "tb_parent", List.of("parent_id"), true, List.of("O", "O"))),
+                        List.of())));
+
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard, versioned,
+                java.util.Set.of("public"))).isEqualTo(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema",
+                standard, unversioned, java.util.Set.of("public")));
+        assertThat(versioned.tables().getFirst().constraints().getFirst().catalogVersions())
+                .containsExactly("c:812", "t:813", "t:814");
+        assertThat(plain.tables().getFirst().constraints().get(1).catalogVersions()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("제약 스냅숏은 이름 순서로 정렬하고 FK 트리거 상태도 정렬한다")
+    void constraintSnapshotIsCanonical() {
+        TargetConstraintSnapshot snapshot = constraints(List.of("O", "A"), true);
+
+        assertThat(snapshot.tables().getFirst().constraints())
+                .extracting(TargetConstraintSnapshot.Constraint::name)
+                .containsExactly("ck_child", "fk_child_parent", "pk_child");
+        assertThat(snapshot.tables().getFirst().constraints().get(1).triggerStates()).containsExactly("A", "O");
+        assertThat(snapshot.table("PUBLIC", "TB_CHILD")).isNotNull();
+        assertThat(snapshot.table("public", "tb_other")).isNull();
+        assertThatThrownBy(() -> new TargetConstraintSnapshot.Constraint("x", "t", null, null, null, null, true,
+                null)).isInstanceOf(IllegalArgumentException.class);
+        TargetSchemaFingerprint compat = new TargetSchemaFingerprint(3, "PostgreSQL", "17", "d".repeat(64),
+                List.of(), null);
+        assertThat(compat.constraints()).isNull();
+    }
+
+    private static TargetConstraintSnapshot constraints(List<String> triggerStates, boolean indexValid) {
+        return new TargetConstraintSnapshot(1, List.of(new TargetConstraintSnapshot.TableConstraints("public",
+                "tb_child",
+                List.of(new TargetConstraintSnapshot.Constraint("pk_child", "p", List.of("child_id"), null, null,
+                                null, true, null),
+                        new TargetConstraintSnapshot.Constraint("fk_child_parent", "f", List.of("parent_id"),
+                                "public", "tb_parent", List.of("parent_id"), true, triggerStates),
+                        new TargetConstraintSnapshot.Constraint("ck_child", "c", List.of(), null, null, null, true,
+                                null)),
+                List.of(new TargetConstraintSnapshot.UniqueIndex("pk_child", List.of("child_id"), indexValid,
+                        true)))));
+    }
+
     private static MappingSpec mapping(List<TableMapping> tables) {
         return new MappingSpec(null, null, tables, Map.of());
     }

@@ -1457,7 +1457,8 @@ jobs:
     timeout-minutes: 30
     strategy:
       # 짧은 scope들을 한 슬롯에서 실행해 초기 runner를 E2E/reusable에 양보한다.
-      # run 36575378891의 합산 실측은 약 4분 12초이며 대상·테스트·75% gate는 그대로다.
+      # run 36575378891의 합산 실측은 약 4분 12초였다(ADR-0029 L4 전). 대상·테스트·75% gate는 그대로다. L4 뒤 CI 합산은 아직
+      # 재지 않았다 — 로컬에서 verify·validate 가 종전보다 길다(아래 실측). verify 가 CI 에서 10분에 다가가면 범위를 나눈다.
       max-parallel: 1
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
@@ -1469,6 +1470,10 @@ jobs:
           # validate 619 94% 65초, verify 159 88% 41초. L3a-2 뒤 converter 86 95% 19초, validate 1000 mutations 94%, 82초(원장 v2 판정 표 포함).
           # L3c 뒤(매핑 id·checkpoint mapping_id) validate 999 94% 75초, verify 163 87% 34초. registry·converter 는 바뀌지 않아 다시 재지 않았다.
           # L3d 뒤(조회 조인·via·LOOKUP_INPUT) validate 1057 94% 123초. verify·registry·converter 는 바뀌지 않아 다시 재지 않았다.
+          # ADR-0029 L4(load 안 대사·공통코드 대사, DEC-OPS-324·325) 뒤 2026-10-16 로컬 실측(Gradle 기동 포함, 다른 작업과 겹치지
+          # 않은 실행): 검토 지적 반영·L4-B 병합 뒤 verify 1172 mutations 93%(시험 강도 96%) 200초, validate 1496 95%(97%) 121초,
+          # converter 87 95% 20초(검토 지적 반영 전 같은 날, 범위 코드는 바뀌지 않았다). 판정은 verify·validate 의 순수
+          # 클래스에 두고 대상 DB 질의는 postgres 패키지 구현에 둬 범위를 새로 세우지 않았다. registry 는 바뀌지 않아 다시 재지 않았다.
           - scope: migration-transform-registry
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.transform.TransformerRegistry"
@@ -1486,12 +1491,12 @@ jobs:
           - scope: migration-validate
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
-            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest"
+            tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest,nuri.migration.validate.VerifyReferenceRulesTest,nuri.migration.validate.CodeSetPrecheckTest,nuri.migration.validate.CodeSetTargetsTest"
 
           - scope: migration-verify
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.verify.*"
-            tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
+            tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest,nuri.migration.verify.ReconciliationJudgeTest,nuri.migration.verify.ReconciliationRunTest,nuri.migration.verify.ReconciliationPlannerTest,nuri.migration.verify.ColumnClassifierTest,nuri.migration.verify.SourceAggregateQueryTest,nuri.migration.verify.ReconciliationValuesTest,nuri.migration.verify.TargetTallyTest,nuri.migration.verify.DomainConformanceTest,nuri.migration.verify.ColumnReplayTest,nuri.migration.verify.ConstraintProofTest,nuri.migration.verify.ReferenceChecksTest,nuri.migration.verify.CodeSetReconcilerTest"
 
           # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
           # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.

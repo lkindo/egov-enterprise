@@ -120,6 +120,17 @@ public final class RowChecksum {
         digest.update((byte) ':');
     }
 
+    /**
+     * 체크섬이 컬럼 값을 비교하는 정규형(ADR-0029 L4 D2). 대사의 표본 비교·코드 분포가 체크섬과 같은 규칙으로 같음을
+     * 판정하게 한다 — 이진 값은 체크섬과 같은 {@code base64:} 표기다. 체크섬 계산 자체는 바뀌지 않는다.
+     */
+    public static String canonicalValue(Object value) {
+        if (value instanceof byte[] bytes) {
+            return "base64:" + Base64.getEncoder().encodeToString(bytes);
+        }
+        return canonical(value);
+    }
+
     private static String canonical(Object value) {
         if (value == null) {
             return "<null>";

@@ -775,6 +775,21 @@ class MappingValidatorTest {
         }
 
         @Test
+        @DisplayName("[ADR-0029 L4 D2, P3] 키를 그대로 쓰는 표의 isolate 는 참조 선언이나 '참조 없음' 확인이 필요하다")
+        void aPreservedKeyTableThatIsolatesNeedsAVerifyDeclaration() {
+            TableMapping preserved = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(),
+                    "esntl_id", List.of(isolated(APPROVED)), null, null, List.of());
+            TableMapping confirmed = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(),
+                    "esntl_id", List.of(isolated(APPROVED)), null, null, List.of(), null, List.of(),
+                    new MappingSpec.VerifyDeclaration(List.of(), "none", "이 키를 복사하는 표가 없다"));
+
+            assertThat(errors(preserved)).containsExactly("legacy_user: isolate 가 있고 키를 그대로 쓰는 표는 이 표를"
+                    + " 가리키는 verify.references 나 verify.referencedBy: none 과 사유가 필요합니다 — 격리한 행을 가리키는"
+                    + " 자식을 찾게 합니다(VERIFY_REFERENCES_REQUIRED)");
+            assertThat(errors(confirmed)).isEmpty();
+        }
+
+        @Test
         @DisplayName("다른 매핑이 부모로 참조하거나 자기참조·target_generated 인 표에는 둘 수 없다")
         void parentSelfReferencingAndTargetGeneratedTablesCannotIsolate() {
             TableMapping child = new TableMapping("legacy_ognz", "tb_ognz_info", null, "OGNZ_SN", null, List.of(

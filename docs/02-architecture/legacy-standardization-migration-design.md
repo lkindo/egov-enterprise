@@ -24,12 +24,12 @@
 | ID | 공백 | 근거 |
 |---|---|---|
 | D1 | 매핑 검증은 "타깃 컬럼이 존재하는가"만 본다. `meta_standard_terms`·`meta_standard_domains`의 타입·길이 일치, 대상 NOT NULL 컬럼 커버리지, 값 길이 초과를 검사하지 않는다. 비교 원천도 live 메타가 아니라 코드젠 스냅샷 `db_columns.json`이다. | [MappingValidator](../../migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java) |
-| D2 | 사후 검증은 행 수·checksum·target identity 중심이다. 고아 FK, NOT NULL·UNIQUE 위반, 도메인 적합성, 집계 parity, 샘플 diff는 클래스 주석에 "남은 로드맵"으로만 있다. | [MigrationVerifier](../../migration-tool/src/main/java/nuri/migration/verify/MigrationVerifier.java) |
+| D2 | 사후 검증은 행 수·checksum·target identity 중심이다. 고아 FK, NOT NULL·UNIQUE 위반, 도메인 적합성, 집계 parity, 샘플 diff는 클래스 주석에 "남은 로드맵"으로만 있다. (2026-10-15: L4 가 load 안 대사로 행 수·NULL 계정·정확 수치 합·최소최대·코드 분포·형식 도메인·표본 재계산과 물리 FK·유일 인덱스 집행 증명, 고아 참조 대조를 구현했다. 물리 유일 인덱스 밖의 논리 UNIQUE·문자 길이 parity·새 세션 독립 재조회 표본은 미뤘다 — UNIQUE·샘플 diff 는 일부만 채운다, [DEC-OPS-324](../../.agent/memory/decisions.md).) | [MigrationVerifier](../../migration-tool/src/main/java/nuri/migration/verify/MigrationVerifier.java) |
 | D3 | 매핑은 테이블 1:1·컬럼 1:1이다. 한 소스 테이블은 한 번만 선언할 수 있어 1:N 분할이 불가능하고, 조인(N:1)·컬럼 결합·분할도 없다. 정규화 이관의 핵심 패턴이 표현되지 않는다. | [MappingSpec](../../migration-tool/src/main/java/nuri/migration/model/MappingSpec.java), MappingValidator의 중복 소스 금지 |
 | D4 | 내장 변환은 `trim`·`upper`·`lower`·`date`·`timestamp`뿐이다. 표준 일자 `VARCHAR(8)`(YYYYMMDD)·시각 HHmmss 문자열을 만드는 변환이 없고 `date`는 `LocalDate`를 반환한다. custom 변환은 코드 수정과 version·digest 등록이 필요하다. | [TransformerRegistry](../../migration-tool/src/main/java/nuri/migration/transform/TransformerRegistry.java), [TypeConverter](../../migration-tool/src/main/java/nuri/migration/transform/TypeConverter.java) |
 | D5 | 이관 도구의 표준 ID는 주석상 foundation과 "동일한 형태"지만 실제로는 소문자 hex이고, [IdGenerationUtil](../../foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java)은 대문자로 만든다. `PRESERVE` 적재 뒤 대상 시퀀스를 재설정(`setval`)하는 단계가 없어, 시퀀스 기반 PK라면 온라인 앱의 첫 INSERT가 충돌할 수 있다. (정정 2026-10-13: `PRESERVE` 만이 아니다 — `remap` 과 직접 컬럼 매핑도 대상 키 값을 넣으므로 같은 충돌이 난다. L1 은 셋 모두를 재설정한다, [DEC-OPS-306](../../.agent/memory/decisions.md).) | [StandardIdGenerator](../../migration-tool/src/main/java/nuri/migration/keymap/StandardIdGenerator.java) |
 | D6 | 도구는 Flyway가 이미 만든 대상 테이블에만 적재한다. 표준 모델에 없는 레거시 업무 테이블을 위한 표준 설계 보조(용어 후보·미등록 용어 보고·DDL 초안)가 없다. | [ADR-0008 §4](decisions/ADR-0008-multi-source-approved-migration-workflow.md) |
-| D7 | `codemaps`는 YAML 안의 독립 사전이며 대상 공통코드 원장과 대조하지 않는다. | MappingSpec |
+| D7 | `codemaps`는 YAML 안의 독립 사전이며 대상 공통코드 원장과 대조하지 않는다. (2026-10-15: L4 가 제품 공통코드 바인딩 카탈로그, 쓰기 검증 컬럼의 쓰기 전 게이트, 적재 뒤 공통코드·메타 허용값 대사를 구현했다. 대조할 원천이 없는 코드 컬럼은 `UNRECONCILED` 로 남겨 컷오버 전에 사람이 서명한다, [DEC-OPS-325](../../.agent/memory/decisions.md).) | MappingSpec |
 
 ### 2.2 애플리케이션 이관 관점
 

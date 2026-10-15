@@ -10,15 +10,34 @@ import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.identity.TypedValue;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.isolate.RowIsolationPolicy;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
+import nuri.migration.postgres.TargetConstraintSnapshot;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.KeyDiagnostics;
 import nuri.migration.state.MigrationStateStore;
 import nuri.migration.state.RowChecksum;
+import nuri.migration.verify.CodeSetReconciler.CodeSetVerdict;
+import nuri.migration.verify.ConstraintProof.ProofResult;
+import nuri.migration.verify.ConstraintProof.UniqueProof;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
+import nuri.migration.verify.ReconciliationEvidence.CandidateRecord;
+import nuri.migration.verify.ReconciliationEvidence.CodeSetRecord;
+import nuri.migration.verify.ReconciliationEvidence.MappingRecord;
+import nuri.migration.verify.ReconciliationEvidence.ReferenceRecord;
+import nuri.migration.verify.ReconciliationEvidence.UniqueRecord;
+import nuri.migration.verify.ReconciliationJudge.ExecutionTotals;
+import nuri.migration.verify.ReconciliationJudge.MappingReconciliation;
+import nuri.migration.verify.ReconciliationPlan.MappingPlan;
+import nuri.migration.verify.ReconciliationRun.MappingTally;
+import nuri.migration.verify.ReferenceChecks.CandidateResult;
+import nuri.migration.verify.ReferenceChecks.CandidateTask;
+import nuri.migration.verify.ReferenceChecks.Candidates;
+import nuri.migration.verify.ReferenceChecks.ReferenceTask;
+import nuri.migration.verify.ReferenceChecks.ReferenceVerdict;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.SqlParameterValue;
@@ -39,6 +58,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -54,8 +74,16 @@ import java.util.function.Function;
  * <p>[ADR-0029 L3e] 보관 덤프의 행 수는 그 표의 조회 수와 같아야 하고(재개로 건너뛴 행·격리한 행 포함), 선언한 덤프가 모두
  * 있어야 하며, COMMIT 에서 격리한 행의 키는 반출돼야 한다. 어긋나면 {@code <archives>} 행이 FAIL 이다.
  *
- * <p>남은 로드맵(설계문서 §7 P4): 고아 FK/NOT-NULL/UNIQUE 스캔, meta_standard_domains 도메인 적합성,
- * 집계 체크섬 parity와 샘플 N행 소스↔타깃 diff.
+ * <p>[ADR-0029 L4 D2·D7] 대사가 활성이면({@link ReconciliationRun}) 같은 대상 재조회 패스에서 매핑마다 대상 쪽을
+ * 누적해({@link TargetTally}) 원천 집계·실행기 수집과 맞춘다({@link ReconciliationJudge}) — 행 수, NULL 계정, 정확 수치 합,
+ * 최소·최대, codemap 결과 분포, 조회 NULL 하한, 형식 도메인, 표본 재계산. 판정이 FAIL 이면 PASS 였던 표도 FAIL 이다. COMMIT 은
+ * 이어서 물리 FK·유일 인덱스의 집행을 카탈로그로 증명하고({@link ConstraintProof}), 증명하지 못한 FK 와 선언 참조의 짝 없는 행을
+ * 대상 DB 안에서 세며({@link ReferenceChecks} — FAIL 이면 {@code <references>} 행), 공통코드·허용값 대사를 한다
+ * ({@link CodeSetReconciler} — FAIL 이면 {@code <code-sets>} 행). COMMIT 인데 대상 질의가 없으면 이 판정을 건너뛰지 않고
+ * {@code <references>} 행을 {@code RECONCILIATION_INPUT_MISSING} 으로 FAIL 시킨다. 모두 run 상태를 기록하기 전에 판정한다. 값 없는 기록은
+ * {@link MigrationReport#reconciliation()} 에 싣는다.
+ *
+ * <p>남은 로드맵: 논리 UNIQUE(물리 유일 인덱스 밖의 업무 유일성), 문자 길이 parity, 새 세션 재조회 표본.
  */
 @Component
 public class MigrationVerifier {
@@ -63,6 +91,10 @@ public class MigrationVerifier {
     private static final int VERIFY_BATCH = 500;
     /** 보관 덤프·격리 키 반출 판정의 보고 행 이름(ADR-0029 L3e). */
     static final String ARCHIVES = "<archives>";
+    /** 물리 제약 증명·고아 참조 대사의 보고 행 이름(ADR-0029 L4 D2). */
+    static final String REFERENCES = "<references>";
+    /** 공통코드·허용값 대사의 보고 행 이름(ADR-0029 L4 D7). */
+    static final String CODE_SETS = "<code-sets>";
     private static final int RUNTIME_KEY_MAX = 256;
 
     private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
@@ -91,7 +123,18 @@ public class MigrationVerifier {
      */
     public MigrationReport verify(MappingSpec spec, List<TableResult> results, JdbcTemplate targetJt,
                                   ArchiveOutcome archives) {
+        return verify(spec, results, targetJt, archives, ReconciliationRun.none());
+    }
+
+    /**
+     * {@code reconciliation} 은 같은 실행의 대사 수집이다(ADR-0029 L4 D2·D7). 활성이면 매핑마다 대사를 판정하고, COMMIT 은 물리
+     * 제약 증명·고아 참조·공통코드 대사까지 마친 뒤 run 상태를 기록한다. 비활성이면 종전과 같다.
+     */
+    public MigrationReport verify(MappingSpec spec, List<TableResult> results, JdbcTemplate targetJt,
+                                  ArchiveOutcome archives, ReconciliationRun reconciliation) {
+        Objects.requireNonNull(reconciliation, "reconciliation");
         boolean commit = targetJt != null;
+        List<MappingRecord> reconciled = new ArrayList<>();
         List<TableResult> actualResults = results == null ? List.of() : results;
         List<TableReport> tables = new ArrayList<>(actualResults.size() + 1);
         Status overall = Status.PASS;
@@ -105,9 +148,16 @@ public class MigrationVerifier {
 
         for (TableResult r : actualResults) {
             MappingSpec.TableMapping mapping = findMapping(spec, r);
+            String label = mapping == null ? reportLabel(r) : MappingIndex.label(mapping);
+            MappingPlan mappingPlan = reconciliation.active() ? reconciliation.plan().mapping(label) : null;
+            TargetTally tally = commit && mappingPlan != null ? reconciliation.targetTally(label) : null;
             ScopedVerification scoped = commit && spec != null && spec.run() != null
-                    ? verifyScoped(targetJt, spec, mapping, r)
+                    ? verifyScoped(targetJt, spec, mapping, r, tally)
                     : null;
+            if (tally != null && (scoped == null || scoped.error() != null)) {
+                // 대상 패스가 끝까지 돌지 않았다 — 대상 쪽 검사는 판정하지 않는다.
+                tally.incomplete();
+            }
             long targetRows = !commit ? -1L
                     : scoped == null ? targetRowCount(targetJt, r.targetTable()) : scoped.rows();
             String isolationError = isolationError(mapping, r);
@@ -150,6 +200,24 @@ public class MigrationVerifier {
                 status = Status.PASS;
                 note = "";
             }
+            if (reconciliation.active()) {
+                if (mappingPlan == null) {
+                    if (status != Status.FAIL) {
+                        status = Status.FAIL;
+                        note = "대사 계획에 없는 매핑(" + label + "): RECONCILIATION_INPUT_MISSING";
+                    }
+                } else {
+                    MappingReconciliation judged = ReconciliationJudge.judge(mappingPlan,
+                            reconciliation.source(mappingPlan.aggregateGroup()), reconciliation.table(label), tally,
+                            new ExecutionTotals(r.read(), r.isolated(), r.nullified(), r.lookupMisses()), commit);
+                    reconciled.add(MappingRecord.of(r.sourceTable(), r.mappingId(), r.targetTable(), judged));
+                    // 이미 FAIL 인 표는 원래 사유를 그대로 둔다.
+                    if (judged.status() == ReconciliationVerdict.FAIL && status != Status.FAIL) {
+                        status = Status.FAIL;
+                        note = judged.firstFailure();
+                    }
+                }
+            }
 
             tables.add(new TableReport(r.sourceTable(), r.targetTable(),
                     r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note,
@@ -160,6 +228,28 @@ public class MigrationVerifier {
         if (archiveError != null) {
             tables.add(new TableReport(ARCHIVES, ARCHIVES, 0L, 0L, 0L, 1L, -1L, Status.FAIL, archiveError));
             overall = Status.FAIL;
+        }
+        ReconciliationEvidence evidence = null;
+        if (reconciliation.active()) {
+            // [ADR-0029 L4 D2·D7] run 상태를 기록하기 전에 대상 쪽 대사를 마친다 — 대사가 FAIL 이면 run 도 FAILED 다.
+            //   COMMIT 인데 대상 질의가 없으면 참조·유일 인덱스·공통코드를 판정할 수 없으므로 건너뛰지 않고 실패한다.
+            TargetSide target = !commit ? TargetSide.NONE
+                    : reconciliation.queries() == null ? TargetSide.MISSING_QUERIES
+                    : reconcileTarget(reconciliation);
+            if (target.referenceFailure() != null) {
+                tables.add(new TableReport(REFERENCES, REFERENCES, 0L, 0L, 0L, 1L, -1L, Status.FAIL,
+                        target.referenceFailure()));
+                overall = Status.FAIL;
+            }
+            if (target.codeSetFailure() != null) {
+                tables.add(new TableReport(CODE_SETS, CODE_SETS, 0L, 0L, 0L, 1L, -1L, Status.FAIL,
+                        target.codeSetFailure()));
+                overall = Status.FAIL;
+            }
+            evidence = new ReconciliationEvidence(
+                    ReconciliationEvidence.replicationRole(commit ? reconciliation.replicationRoleOrigin() : null),
+                    reconciled, target.references(), target.uniqueIndexes(), target.candidates(), target.codeSets(),
+                    CodeSetReconciler.codemapUse(reconciliation));
         }
         if (commit && spec != null && spec.run() != null) {
             try {
@@ -172,10 +262,135 @@ public class MigrationVerifier {
                 overall = Status.FAIL;
             }
         }
-        return new MigrationReport(tables, overall);
+        return new MigrationReport(tables, overall, evidence);
     }
 
     private record ScopedVerification(long rows, String error) {}
+
+    /** 대상 쪽 대사의 값 없는 기록과 처음 실패한 문구(없으면 null). */
+    private record TargetSide(List<ReferenceRecord> references, List<UniqueRecord> uniqueIndexes,
+                              List<CandidateRecord> candidates, List<CodeSetRecord> codeSets,
+                              String referenceFailure, String codeSetFailure) {
+
+        private static final TargetSide NONE = new TargetSide(List.of(), List.of(), List.of(), List.of(), null, null);
+        private static final TargetSide MISSING_QUERIES = new TargetSide(List.of(), List.of(), List.of(), List.of(),
+                "대상 대사 질의 없음: RECONCILIATION_INPUT_MISSING", null);
+    }
+
+    /**
+     * [ADR-0029 L4 D2·D7] COMMIT 의 대상 쪽 대사. 끝 제약 스냅숏을 읽어 물리 FK·유일 인덱스의 집행을 증명하고, 증명하지 못한 FK
+     * 와 선언 참조는 대상 DB 안에서 짝 없는 행을 센다(값은 JVM 으로 오지 않는다). 격리 키 후보는 건수만 센다. 이어 공통코드·
+     * 허용값 대사를 표마다 문장 하나로 한다. 질의가 실패하면 SQLSTATE 만 남긴다. 끝 제약을 읽지 못하면 그 SQLSTATE 를 사유에
+     * 붙이고, 이번 실행 전에 같은 run 이 쓴 행(재개로 건너뛴 행)이 있는 매핑 대상의 FK 는 증명하지 않는다.
+     */
+    private static TargetSide reconcileTarget(ReconciliationRun run) {
+        TargetReconciliationQueries queries = run.queries();
+        ReconciliationPlan plan = run.plan();
+        TargetConstraintSnapshot end;
+        String endUnread = null;
+        try {
+            end = queries.constraints(plan.mappedTables());
+        } catch (ReconciliationQueryException unreadable) {
+            end = null;
+            endUnread = CoverageReason.CONSTRAINTS_UNREAD.name() + "(SQLSTATE="
+                    + (unreadable.sqlState() == null ? "unknown" : unreadable.sqlState()) + ")";
+        } catch (RuntimeException unreadable) {
+            end = null;
+            endUnread = CoverageReason.CONSTRAINTS_UNREAD.name() + "(SQLSTATE=unknown)";
+        }
+        Set<String> mapped = new HashSet<>();
+        Set<String> priorRows = new HashSet<>();
+        for (MappingPlan mapping : plan.mappings()) {
+            mapped.add(mapping.target());
+            if (run.table(mapping.label()).resumedRows() > 0) {
+                priorRows.add(mapping.target());
+            }
+        }
+        ProofResult proof = ConstraintProof.prove(plan.startConstraints(), end, endUnread,
+                run.replicationRoleOrigin(), mapped, priorRows);
+        List<ReferenceTask> tasks = ReferenceChecks.tasks(plan.references(), proof);
+        List<ReferenceRecord> references = new ArrayList<>(tasks.size());
+        String referenceFailure = null;
+        for (ReferenceTask task : tasks) {
+            ReferenceVerdict verdict = task.method() == ReferenceChecks.Method.PROVEN
+                    ? ReferenceChecks.proven(task) : scan(queries, task);
+            references.add(ReferenceRecord.of(verdict));
+            if (verdict.status() == ReconciliationVerdict.FAIL && referenceFailure == null) {
+                referenceFailure = referenceNote(verdict);
+            }
+        }
+        List<UniqueRecord> uniqueIndexes = new ArrayList<>(proof.uniqueIndexes().size());
+        for (UniqueProof unique : proof.uniqueIndexes()) {
+            uniqueIndexes.add(UniqueRecord.of(unique));
+            if (unique.status() == ReconciliationVerdict.FAIL && referenceFailure == null) {
+                referenceFailure = (ConstraintProof.CONSTRAINT_NOT_ENFORCED.equals(unique.reason())
+                        ? "유일 인덱스 미집행(" : "유일 인덱스 판정 불가(") + unique.table() + "." + unique.index() + "): "
+                        + unique.reason();
+            }
+        }
+        Map<String, MappingTally> tallies = new LinkedHashMap<>();
+        plan.mappings().forEach(mapping -> tallies.put(mapping.label().toLowerCase(Locale.ROOT),
+                run.table(mapping.label())));
+        Candidates candidates = ReferenceChecks.candidates(plan, tallies,
+                tasks.stream().map(ReferenceTask::reference).toList());
+        List<CandidateRecord> candidateRecords = new ArrayList<>();
+        candidates.unresolved().forEach(result -> candidateRecords.add(CandidateRecord.of(result)));
+        for (CandidateTask task : candidates.tasks()) {
+            candidateRecords.add(CandidateRecord.of(countCandidate(queries, task)));
+        }
+        List<CodeSetRecord> codeSets = new ArrayList<>();
+        String codeSetFailure = null;
+        for (CodeSetVerdict verdict : CodeSetReconciler.reconcile(plan.codeSets(), queries)) {
+            codeSets.add(CodeSetRecord.of(verdict));
+            if (verdict.failed() && codeSetFailure == null) {
+                codeSetFailure = CodeSetReconciler.failureNote(verdict);
+            }
+        }
+        return new TargetSide(references, uniqueIndexes, candidateRecords, codeSets, referenceFailure,
+                codeSetFailure);
+    }
+
+    /** 증명하지 못한 참조의 짝 없는 행을 센다. 질의 실패는 SQLSTATE 만 남긴 FAIL 이다. */
+    private static ReferenceVerdict scan(TargetReconciliationQueries queries, ReferenceTask task) {
+        try {
+            return ReferenceChecks.judge(task, queries.count(ReferenceChecks.orphanSql(task.reference()), List.of()));
+        } catch (ReconciliationQueryException failure) {
+            return ReferenceChecks.failed(task, failure.sqlState());
+        } catch (RuntimeException invalid) {
+            // 식별자 검증 실패 등 — 세지 못했으므로 FAIL 이다.
+            return ReferenceChecks.failed(task, null);
+        }
+    }
+
+    /** 격리 키 후보의 건수. 세지 못하면 FAIL 이 아니라 그 사실을 기록한다. */
+    private static CandidateResult countCandidate(TargetReconciliationQueries queries, CandidateTask task) {
+        try {
+            long rows = 0;
+            for (List<Object> batch : ReferenceChecks.candidateBatches(task)) {
+                rows += queries.count(ReferenceChecks.candidateSql(task, batch.size()), batch);
+            }
+            return ReferenceChecks.candidateResult(task, rows);
+        } catch (RuntimeException failure) {
+            return ReferenceChecks.candidateFailed(task);
+        }
+    }
+
+    /** 참조 FAIL 문구 — 표·컬럼 이름, 사유 코드, 건수만. */
+    private static String referenceNote(ReferenceVerdict verdict) {
+        DeclaredReference reference = verdict.reference();
+        String target = reference.child() + "(" + String.join(",", reference.childColumns()) + ") → "
+                + reference.parent();
+        if (ReferenceChecks.ORPHAN_REFERENCE.equals(verdict.reason())) {
+            return "고아 참조(" + target + "): " + ReferenceChecks.ORPHAN_REFERENCE + " " + verdict.orphans() + "건";
+        }
+        return "참조 대사 실패(" + target + "): " + verdict.reason();
+    }
+
+    /** 매핑을 찾지 못한 결과의 라벨 — 기본 매핑은 소스, 나눈 매핑은 {@code source#id}. */
+    private static String reportLabel(TableResult result) {
+        return result.mappingId() == null ? String.valueOf(result.sourceTable())
+                : result.sourceTable() + "#" + result.mappingId();
+    }
 
     /**
      * [ADR-0029 L3e] 보관 덤프·격리 키 반출이 실행과 맞는지 본다. 맞으면 null. 문구는 보관 id·표 이름·건수·고정 사유뿐이다.
@@ -363,7 +578,7 @@ public class MigrationVerifier {
     }
 
     private ScopedVerification verifyScoped(JdbcTemplate target, MappingSpec spec,
-                                             MappingSpec.TableMapping table, TableResult result) {
+                                             MappingSpec.TableMapping table, TableResult result, TargetTally tally) {
         if (table == null) {
             return new ScopedVerification(-1L, "run scoped 검증 매핑을 찾을 수 없음");
         }
@@ -380,7 +595,7 @@ public class MigrationVerifier {
         }
 
         if (table.identity() != null) {
-            return verifyTypedScoped(target, table, checkpoints);
+            return verifyTypedScoped(target, table, checkpoints, tally);
         }
 
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
@@ -416,7 +631,7 @@ public class MigrationVerifier {
                         selectPrefix + placeholders + ")", arguments, columns, row -> {
                             Object actualKey = valueIgnoreCase(row, targetKey);
                             return actualKey == null ? null : actualKey.toString();
-                        });
+                        }, tally == null ? null : tally::observe);
                 if (rows.missingIdentity()) {
                     return new ScopedVerification(checkpoints.size(),
                             "run scoped target identity가 null: " + targetKey);
@@ -445,7 +660,8 @@ public class MigrationVerifier {
     private ScopedVerification verifyTypedScoped(
             JdbcTemplate target,
             MappingSpec.TableMapping table,
-            List<MigrationStateStore.CheckpointEntry> checkpoints
+            List<MigrationStateStore.CheckpointEntry> checkpoints,
+            TargetTally tally
     ) {
         List<String> columns = EtlExecutor.canonicalTargetColumns(table);
         List<IdentityComponentSpec> components = table.identity().targetComponents();
@@ -501,7 +717,8 @@ public class MigrationVerifier {
                 TargetBatch rows = readTargetChecksums(target,
                         selectPrefix + typedTuplePredicate(components, batch.size()), arguments,
                         columns, row -> TypedKeyEncoding.encode(tupleFromRow(row, components),
-                                RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key"));
+                                RUNTIME_KEY_MAX, "tb_migration_checkpoint.target_key"),
+                        tally == null ? null : tally::observe);
                 for (TypedCheckpoint item : batch) {
                     MigrationStateStore.CheckpointEntry checkpoint = item.checkpoint();
                     TargetRowSummary matched = rows.byKey().get(checkpoint.targetKey());
@@ -524,10 +741,13 @@ public class MigrationVerifier {
         return new ScopedVerification(checkpoints.size(), null);
     }
 
-    /** Keep only identity/count/checksum per batch; large target values live for one row. */
+    /**
+     * Keep only identity/count/checksum per batch; large target values live for one row. {@code observer}(ADR-0029 L4 D2)는
+     * 행마다 그 경로의 대상 키와 함께 대사 누적에 넘긴다 — 대상 스캔을 늘리지 않는다. null 이면 넘기지 않는다.
+     */
     private static TargetBatch readTargetChecksums(
             JdbcTemplate target, String sql, Object[] arguments, List<String> columns,
-            Function<Map<String, Object>, String> identity
+            Function<Map<String, Object>, String> identity, BiConsumer<Map<String, Object>, String> observer
     ) {
         return target.execute((ConnectionCallback<TargetBatch>) connection -> {
             boolean ownTransaction = connection.getAutoCommit();
@@ -565,6 +785,9 @@ public class MigrationVerifier {
                             String key = identity.apply(row);
                             if (key == null) {
                                 return new TargetBatch(summaries, true);
+                            }
+                            if (observer != null) {
+                                observer.accept(row, key);
                             }
                             String checksum = RowChecksum.calculate(columns, row);
                             summaries.compute(key, (ignored, previous) -> previous == null

@@ -30,6 +30,18 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @ResourceLock("java.util.TimeZone.default")
 class RowChecksumTest {
 
+    /** [ADR-0029 L4 D2] 대사의 표본·코드 비교가 체크섬과 같은 정규형을 쓴다. 이진 값은 체크섬과 같은 base64 표기다. */
+    @Test
+    void canonicalValueMatchesTheChecksumSpelling() {
+        assertThat(RowChecksum.canonicalValue(null)).isEqualTo("<null>");
+        assertThat(RowChecksum.canonicalValue(new BigDecimal("1.50"))).isEqualTo("1.5");
+        assertThat(RowChecksum.canonicalValue(LocalDateTime.of(2024, 1, 31, 10, 0)))
+                .isEqualTo(Timestamp.valueOf("2024-01-31 10:00:00").toString());
+        assertThat(RowChecksum.canonicalValue(new byte[]{1, 2, 3})).isEqualTo("base64:AQID");
+        assertThatThrownBy(() -> RowChecksum.canonicalValue(mock(Clob.class)))
+                .hasMessage("LOB_CONTENT_NOT_MATERIALIZED");
+    }
+
     @Test
     void keyDiagnosticsAreKeyedPerProcessSoSmallKeySpacesCannotBeReversed() throws Exception {
         String rrno = "8001011234567";

@@ -1676,14 +1676,14 @@
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.validate.*",
-            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest"
+            "tests": "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest,nuri.migration.validate.VerifyReferenceRulesTest,nuri.migration.validate.CodeSetPrecheckTest,nuri.migration.validate.CodeSetTargetsTest"
           },
           {
             "scope": "migration-verify",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
             "classes": "nuri.migration.verify.*",
-            "tests": "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest"
+            "tests": "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest,nuri.migration.verify.ReconciliationJudgeTest,nuri.migration.verify.ReconciliationRunTest,nuri.migration.verify.ReconciliationPlannerTest,nuri.migration.verify.ColumnClassifierTest,nuri.migration.verify.SourceAggregateQueryTest,nuri.migration.verify.ReconciliationValuesTest,nuri.migration.verify.TargetTallyTest,nuri.migration.verify.DomainConformanceTest,nuri.migration.verify.ColumnReplayTest,nuri.migration.verify.ConstraintProofTest,nuri.migration.verify.ReferenceChecksTest,nuri.migration.verify.CodeSetReconcilerTest"
           },
           {
             "scope": "migration-protect",

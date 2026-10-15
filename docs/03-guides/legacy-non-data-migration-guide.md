@@ -18,7 +18,7 @@
 | 첨부 | 메타데이터 행 적재(일반 매핑) | 실물 파일 복사, 경로 계산, 본문 속 첨부 URL 수정, 출처 대조 | §5 |
 | view·routine·trigger·job 등 | disposition 분류와 미분류 차단 | 대상 객체 생성·재구현 | §6.1 |
 | 시퀀스 | 도구가 키를 넣은 컬럼의 시퀀스 재설정 | 스크립트·화면으로 넣은 행의 시퀀스 | §6.2 |
-| 공통코드 | codemap 변환 | 대상 공통코드 원장과의 대조, 상세코드 공급 | §6.3 |
+| 공통코드 | codemap 변환, 쓰기 검증 컬럼의 쓰기 전 게이트, 적재 뒤 공통코드·허용값 대사(DEC-OPS-325) | 상세코드 공급, 대조 원천 없는 코드 컬럼(`UNRECONCILED`)의 값 확인 | §6.3 |
 | 암호·해시 컬럼 | 주민등록번호 호환 암호화 | 키 일치 증명, 레거시 암호문 복호화, 비밀번호 해시 변환 | §6.4 |
 | 예약 작업·후속 작업 | `JOB`·`EVENT` 를 재구현 대상으로 분류 | 레거시 작업·대기열 이관, 보존 스케줄러 조정 | §6.5 |
 
@@ -374,8 +374,18 @@ SELECT ps.sequencename, ps.last_value
 | `tb_bbs_master.bbs_type_cd`·`bbs_atrb_cd` | `COM004`·`COM009` | 이름 표시만 한다. `COM004` 그룹은 원본에 없다(GAP-BOARD-002) |
 | `tb_sys_log.prcs_se_cd` | `COM033` | 이름 표시만 한다 |
 
-**도구가 하지 않는 것.** codemap 은 mapping 안의 독립 사전이라 결과값이 대상 상세코드에 있는지 보지 않는다(설계 D7, L4 에서 보강).
-상세코드를 공급하지 않는다. 적재분은 공통코드 변경 이력에 남지 않는다 — 이력은 앱 화면의 변경만 기록하고 소급하지 않는다(DEC-OPS-176).
+**도구가 하는 것**(ADR-0029 L4, DEC-OPS-325, [설계](../02-architecture/legacy-migration-tool-design.md#공통코드-대사adr-0029-l4-d7)).
+위 표의 바인딩을 이관 도구도 카탈로그로 갖는다. plan·load 는 쓰기 전에 `COM075` 결재 본표 컬럼이 codemap(미매핑 그대로 쓰기 아님)이나 상수로 채워지고
+그 출력이 사용 중 상세코드인지 본다 — 그룹이 없거나 출력이 사용 중이 아니면 행을 쓰지 않고 멈춘다. 다만 같은 mapping 이 같은 schema 의
+`tb_com_cd`·`tb_com_dtl_cd` 를 함께 적재하면 그룹·상세코드 판정을 미루고(`deferred`) 적재 뒤 대사가 FAIL 로 알린다 — 행은 이미 커밋된 뒤다.
+상세코드를 먼저 별도 run 으로 넣으면 쓰기 전에 막힌다(codemap·상수 필수 규칙은 미루지 않는다, [설계](../02-architecture/legacy-migration-tool-design.md#공통코드-대사adr-0029-l4-d7)). COMMIT 은 적재 뒤 mapping 이 쓴 바인딩 컬럼과
+메타 허용값을 읽을 수 있는 코드 컬럼의 값 전체를 대상 DB 안에서 세어 실행 JSON 의 `reconciliation.codeSets` 에 건수로 남긴다(결재 본표·허용값은 어긋나면 FAIL,
+표시 전용은 기록만). 대조할 원천이 없는 코드 컬럼은 `UNRECONCILED` 로 남는다 — load 는 PASS 이고 컷오버 전에 업무 소유자가 아래 Q-C2 로 값을 보고 서명한다.
+표시 전용 바인딩의 `RECORDED` 가운데 `missingRows`·`inactiveRows` 가 0 이 아닌 것도 화면에 이름이 비는 코드라 같이 확인·서명한다.
+이관 역할에 `tb_com_cd`·`tb_com_dtl_cd` SELECT 가 필요하다.
+
+**도구가 하지 않는 것.** 상세코드를 공급하지 않는다. mapping 이 쓰지 않은 컬럼(스크립트·화면으로 넣은 값)은 세지 않는다 — 그런 바인딩 컬럼은 아래 Q-C3 으로 대조한다.
+적재분은 공통코드 변경 이력에 남지 않는다 — 이력은 앱 화면의 변경만 기록하고 소급하지 않는다(DEC-OPS-176).
 
 **절차.** 상세코드는 업무 데이터보다 먼저 넣는다. 건수가 적으면 공통코드 화면으로 넣는다(이력·캐시 무효화가 함께 된다). 많으면 도구 매핑으로
 `tb_com_dtl_cd` 에 넣되, 앱이 떠 있으면 `commonCodes` 캐시(10분)가 남으므로 앱 기동 전에 넣는다. codemap 의 출력값은 이 상세코드 집합 안에서 고른다.
@@ -389,7 +399,17 @@ SELECT b.cd_id, c.cd_id IS NOT NULL AS group_exists,
   LEFT JOIN tb_com_dtl_cd d ON d.cd_id = b.cd_id
  GROUP BY b.cd_id, c.cd_id;
 
--- Q-C2 업무 값이 사용 중 상세코드 밖에 있는 경우. 컬럼·그룹을 바꿔 위 표의 줄마다 돌린다. 0 이 기대값이다.
+-- Q-C2 대조 원천이 없는 코드 컬럼(실행 JSON codeSets 의 UNRECONCILED 행)과 건수가 있는 표시 전용 RECORDED 행의 값 확인.
+--      표·컬럼을 그 행의 것으로 바꾼다. 업무 소유자가 값마다 의미를 확인하고 서명한다. mapping 이 쓴 바인딩 컬럼의 실패 판정(쓰기 검증·허용값)은
+--      도구가 codeSets 에 남기므로 여기서 다시 하지 않는다.
+SELECT t.<컬럼> AS code, count(*) AS rows
+  FROM <표> t
+ WHERE t.<컬럼> IS NOT NULL
+ GROUP BY t.<컬럼>
+ ORDER BY rows DESC;
+
+-- Q-C3 mapping 이 쓰지 않은 바인딩 컬럼(스크립트·화면·직접 적재로 채운 값)이 사용 중 상세코드 밖에 있는 경우. 컬럼·그룹을 바꿔 위 표의 줄마다
+--      돌린다. 0 이 기대값이다. mapping 이 쓴 컬럼은 codeSets 가 대신한다.
 SELECT a.task_se_cd, count(*) AS rows
   FROM tb_ifml_atrz_info a
  WHERE a.task_se_cd IS NOT NULL
@@ -470,7 +490,7 @@ SELECT 'tb_sys_log', count(*) FROM tb_sys_log WHERE crt_dt < date_trunc('day', n
 
 | 통제 | 이 문서에서 나오는 근거 |
 |---|---|
-| `mapping-schema-driver` | 주민등록번호 법적 근거·키 일치 확인, Q-E1 |
+| `mapping-schema-driver` | 주민등록번호 법적 근거·키 일치 확인, Q-E1, `UNRECONCILED`·건수 있는 `RECORDED` 코드 컬럼의 Q-C2 확인·서명, mapping 밖 바인딩 컬럼의 Q-C3 |
 | `recovery-cutover` | §2 순서, 백업 세트, Q-S1·Q-J2 판단 |
 | `authorization`(온라인) | 역할 대응표 승인, Q-A1~Q-A5, 기본 그룹 없는 권한 배정 |
 | `attachment-operations`(온라인) | 실물 복사 SHA-256 대조, Q-F2·Q-F3 집계, 허용 밖 파일 처분, 정합성 점검 결과 |
@@ -481,7 +501,7 @@ SELECT 'tb_sys_log', count(*) FROM tb_sys_log WHERE crt_dt < date_trunc('day', n
 ## 8. 한계와 갱신 조건
 
 - 쿼리는 2026-10-15 main 의 스키마 기준이다. 표·컬럼이 바뀌면 이 문서를 함께 고친다. Q-M1 은 `MenuDto` 패턴의 옮김이라 둘이 다르면 `MenuDto` 가 맞다.
-- ADR-0029 L4 의 verify 확장(고아 FK·UNIQUE·NOT NULL·도메인 적합성·집계 대사)과 공통코드 대조가 들어오면 Q-C2 등 겹치는 쿼리를 도구 결과로 바꾸고 이 문서에서 걷는다.
+- ADR-0029 L4 의 load 안 대사(DEC-OPS-324)와 공통코드 대사(DEC-OPS-325)가 들어왔다. mapping 이 쓴 바인딩 컬럼의 상세코드 대조는 실행 JSON 의 `reconciliation.codeSets` 로 바뀌었고, Q-C2 는 `UNRECONCILED` 값 확인용, Q-C3 은 mapping 밖 바인딩 컬럼용으로 남긴다. 고아 참조는 mapping 이 적재한 표의 물리 FK·선언 참조만 도구가 세므로, 이 문서의 나머지 쿼리(배정·메뉴·첨부·시퀀스)는 그대로 쓴다.
 - 이 문서의 쿼리 결과는 그 시점의 실측이다. 운영 승인이나 cutover 완료를 뜻하지 않는다.
 
 *검토: 2026-10-15(그날 main 의 스키마 기준).*
