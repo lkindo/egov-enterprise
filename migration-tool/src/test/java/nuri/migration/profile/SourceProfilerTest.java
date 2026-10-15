@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -194,7 +195,57 @@ class SourceProfilerTest {
         SourceProfile profile = profiler.profile(connection, snapshot(objects), null);
 
         assertThat(profile.tables().getFirst().failureSqlState()).isEqualTo("42P01");
+        assertThat(profile.tables().getFirst().failureReason()).isNull();
         verify(connection, times(2)).rollback();
+    }
+
+    /**
+     * ADR-0029 L4-B R1 — 값 읽기 도우미가 고정 사유로 멈추면(일광절약 간격의 지역 일시 등) SQLSTATE 가 없다. 그 사유를 FAILED
+     * 행에 남겨야 운영자가 원인을 알고, 다음 테이블은 그대로 읽는다. 드라이버 문구는 싣지 않는다.
+     */
+    @Test
+    void aValueReadStopKeepsItsFixedReasonOnTheFailedTable() throws Exception {
+        TimeZone original = TimeZone.getDefault();
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+            Connection connection = mock(Connection.class);
+            DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+            given(connection.getMetaData()).willReturn(metadata);
+            given(metadata.getDatabaseProductName()).willReturn("Vendor");
+            ResultSet empty = mock(ResultSet.class);
+            given(metadata.getColumns(any(), any(), any(), any())).willReturn(empty);
+            given(metadata.getTables(any(), any(), any(), any())).willReturn(empty);
+            Statement statement = mock(Statement.class);
+            given(connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY))
+                    .willReturn(statement);
+            ResultSet gapRows = mock(ResultSet.class);
+            given(statement.executeQuery("SELECT LOGIN_AT FROM PUBLIC.GAP")).willReturn(gapRows);
+            given(gapRows.next()).willReturn(true, false);
+            ResultSetMetaData rowMetadata = mock(ResultSetMetaData.class);
+            given(gapRows.getMetaData()).willReturn(rowMetadata);
+            given(rowMetadata.getColumnType(1)).willReturn(Types.TIMESTAMP);
+            given(rowMetadata.getColumnClassName(1)).willReturn("vendor.sql.TIMESTAMP");
+            given(rowMetadata.getColumnTypeName(1)).willReturn("TIMESTAMP");
+            given(gapRows.getObject(1, LocalDateTime.class)).willReturn(LocalDateTime.of(1987, 5, 10, 2, 30));
+            given(statement.executeQuery("SELECT ID FROM PUBLIC.NEXT")).willReturn(empty);
+            List<CatalogObject> objects = new ArrayList<>(table("GAP", false));
+            objects.addAll(columns("GAP", "LOGIN_AT"));
+            objects.addAll(table("NEXT", false));
+            objects.addAll(columns("NEXT", "ID"));
+
+            SourceProfile profile = profiler.profile(connection, snapshot(objects), null);
+
+            assertThat(profile.complete()).isFalse();
+            TableProfile gap = profile.tables().stream().filter(t -> t.name().equals("GAP")).findFirst().orElseThrow();
+            assertThat(gap.status()).isEqualTo("FAILED");
+            assertThat(gap.failureSqlState()).isNull();
+            assertThat(gap.failureReason()).isEqualTo("LOCAL_TIMESTAMP_IN_ZONE_GAP");
+            TableProfile next = profile.tables().stream().filter(t -> t.name().equals("NEXT")).findFirst().orElseThrow();
+            assertThat(next.status()).isEqualTo("PROFILED");
+            assertThat(next.failureReason()).isNull();
+        } finally {
+            TimeZone.setDefault(original);
+        }
     }
 
     /**

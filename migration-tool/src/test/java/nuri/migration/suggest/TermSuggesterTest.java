@@ -150,7 +150,7 @@ class TermSuggesterTest {
 
     @Test
     void skippedTablesKeepTheirStatusInTheReportAndStayOutOfTheDraft() {
-        TableProfile skipped = new TableProfile(null, "PUBLIC", "Emp", "SKIPPED_IDENTIFIER", null, 0, false,
+        TableProfile skipped = new TableProfile(null, "PUBLIC", "Emp", "SKIPPED_IDENTIFIER", null, null, 0, false,
                 new CommentEvidence(null, false, null, "ABSENT"), List.of(column("REG_YMD").build()));
         SuggestionReport report = suggester.suggest(profile(skipped, table("EMP", column("REG_YMD").text(1)
                 .pattern("YMD8", 1))), digest('a'), digest('b'), null, null);
@@ -164,7 +164,7 @@ class TermSuggesterTest {
 
     @Test
     void aTableReadOnlyUpToTheRowLimitHasNoConformanceRate() {
-        TableProfile truncated = new TableProfile(null, "PUBLIC", "LEGACY_USER", "PROFILED", null, 10, true,
+        TableProfile truncated = new TableProfile(null, "PUBLIC", "LEGACY_USER", "PROFILED", null, null, 10, true,
                 new CommentEvidence(null, false, null, "ABSENT"),
                 List.of(column("REG_YMD").text(10).pattern("YMD8", 10).build()));
         Candidate top = suggester.suggest(profile(truncated), digest('a'), digest('b'), null, null)
@@ -238,12 +238,12 @@ class TermSuggesterTest {
         for (ProfileFixture column : columns) {
             built.add(column.build());
         }
-        return new TableProfile(null, schema, name, "PROFILED", null, 10, false,
+        return new TableProfile(null, schema, name, "PROFILED", null, null, 10, false,
                 new CommentEvidence(null, false, null, "ABSENT"), built);
     }
 
     private static TableProfile tableIn(String catalog, String schema, String name) {
-        return new TableProfile(catalog, schema, name, "PROFILED", null, 0, false,
+        return new TableProfile(catalog, schema, name, "PROFILED", null, null, 0, false,
                 new CommentEvidence(null, false, null, "ABSENT"), List.of());
     }
 

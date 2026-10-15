@@ -36,6 +36,23 @@ class CollectionArtifactCodecTest {
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("digest");
     }
 
+    /**
+     * ADR-0029 L4-B — FAILED 행의 고정 사유는 있을 때만 본문에 싣는다. 없으면 키가 없어 사유 필드 전에 만든 프로파일이 같은
+     * 바이트·digest 로 다시 읽힌다(키를 늘 쓰면 기존 산출물이 digest 불일치로 거부된다).
+     */
+    @Test
+    void aFailureReasonIsWrittenOnlyWhenPresentSoEarlierProfilesKeepTheirDigest() {
+        String withoutReason = codec.writeProfile(profile("상태코드", "A"), INVENTORY);
+        assertThat(withoutReason).doesNotContain("failureReason");
+
+        SourceProfile failed = new SourceProfile(SourceProfile.CURRENT_VERSION, null, false, List.of(new TableProfile(
+                null, "PUBLIC", "LEGACY_USER", "FAILED", null, "LOCAL_TIMESTAMP_IN_ZONE_GAP", 0, false,
+                new CommentEvidence(null, false, null, "ABSENT"), List.of())));
+        String withReason = codec.writeProfile(failed, INVENTORY);
+        assertThat(withReason).contains("\"failureReason\":\"LOCAL_TIMESTAMP_IN_ZONE_GAP\"");
+        assertThat(codec.readProfile(withReason).payload()).isEqualTo(failed);
+    }
+
     @Test
     void profileWithoutABoundInventoryIsNotWritten() {
         assertThatThrownBy(() -> codec.writeProfile(profile("상태코드", "A"), "not-a-digest"))
@@ -101,7 +118,7 @@ class CollectionArtifactCodecTest {
                 1, 1, 10, 0, 1, false, Map.of("YN", 0L), 0, 0, null, null, false,
                 List.of(new ValueFrequency(code, 10)), 0, 0, null, evidence);
         return new SourceProfile(SourceProfile.CURRENT_VERSION, null, true, List.of(new TableProfile(
-                null, "PUBLIC", "LEGACY_USER", "PROFILED", null, 10, false,
+                null, "PUBLIC", "LEGACY_USER", "PROFILED", null, null, 10, false,
                 new CommentEvidence(null, false, null, "ABSENT"), List.of(column))));
     }
 

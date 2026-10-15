@@ -373,8 +373,9 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
      * [ADR-0029 L3c·L3d × L4-B R1·R3] 조회 표 행과 나눈 매핑의 행도 주 표와 같은 읽기 도우미({@link JdbcLobReader})로 읽는다.
      * 조회 표의 {@code TIMESTAMP(6)} 값과 나눈 매핑이 읽는 {@code TIMESTAMP(6)} 값이 {@code Timestamp} 로 와서 도메인 변환기가
      * 시각으로 본다(R1). 조회 표의 {@code CHAR(3)} 코드는 공백으로 채워 오므로 codemap 앞 trim 이 없으면 첫 행에서 멈춘다 —
-     * 생성기와 coverage 가 조회 컬럼에도 trim 을 요구하는 이유다(R3). {@code TIMESTAMP} 는 조회 키로 쓸 수 없어 정규화가
-     * 어긋나는 대신 키 형식 실패로 멈춘다. 1,001행이라 조회는 chunk(500행)마다 따로 돈다.
+     * 생성기와 coverage 가 조회 컬럼에도 trim 을 요구하는 이유다(R3). {@code TIMESTAMP} 조회 키는 승인 load 의 live 원천
+     * 검사(조회 키 계열)가 실행 전에 거부하고, 실행기에 바로 넣어도 정규화가 어긋난 짝 대신 키 형식 실패로 멈춘다(심층 방어).
+     * 1,001행이라 조회는 chunk(500행)마다 따로 돈다.
      */
     @Test
     void lookupAndSplitReadsShareTheTimestampReaderAndAPaddedLookupCodeNeedsTrim() throws Exception {
@@ -440,15 +441,20 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
             assertThat(bare.errors()).containsExactly("행 변환 실패(" + orders + "#ord, column=user_stat, row=1):"
                     + " ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — " + STOPPED);
 
-            // TIMESTAMP 를 조회 키로 쓰면 행마다 키 형식 실패다 — 정규화가 어긋난 짝을 만들지 않는다.
+            // TIMESTAMP 조회 키 — 승인 load 는 실행 전 live 원천 검사가 조회 키 계열로 먼저 거부한다. 실행기에 바로 넣어도
+            // 정규화가 어긋난 짝을 만들지 않고 행마다 키 형식 실패로 멈춘다(심층 방어).
             TableMapping byTime = new TableMapping(orders, orderTarget, null, "ORD_NO", List.of(), "ord_no",
                     List.of(new ColumnMapping("ORD_NO", "ord_no", null, null, null, null, null),
                             new ColumnMapping("usr.STAT_CD", "user_stat", "trim", null, "stat", null, null)),
                     null, null, List.of(), "ord_t", List.of(new Lookup("usr", users, null,
                     new LookupKey("ORD_AT", "JOINED_AT"), LookupCardinality.EXACTLY_ONE, null)));
-            List<TableResult> timeKeyed = executor.execute(new MappingSpec(sourceConfig(), targetConfig(),
-                    List.of(byTime), spec.codemaps(), new MappingSpec.RunContext(runId + "-time",
-                    "oracle-rehearsal-lookup")), MigrationMode.DRY_RUN, sourceJdbc(), null, oraclePolicy(), true);
+            MappingSpec timeSpec = new MappingSpec(sourceConfig(), targetConfig(), List.of(byTime), spec.codemaps(),
+                    new MappingSpec.RunContext(runId + "-time", "oracle-rehearsal-lookup"));
+            assertThat(new MappingValidator(transformers, "db_columns.json").validateLiveSource(timeSpec, sourceJdbc())
+                    .errors()).as("승인 load 의 live 원천 검사가 실행기보다 먼저 거부한다")
+                    .anySatisfy(error -> assertThat(error).contains("lookups[usr]").contains("조회 키는 가변 길이 문자"));
+            List<TableResult> timeKeyed = executor.execute(timeSpec, MigrationMode.DRY_RUN, sourceJdbc(), null,
+                    oraclePolicy(), true);
             assertThat(timeKeyed).singleElement().satisfies(result -> assertThat(result.errors()).containsExactly(
                     "행 변환 실패(" + orders + "#ord_t, column=usr, row=1): ROW_TRANSFORM_FAILED:LOOKUP_KEY_TYPE — "
                             + STOPPED));

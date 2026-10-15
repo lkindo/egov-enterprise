@@ -1506,7 +1506,8 @@ jobs:
           # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
           # [ADR-0029 L4-B] Oracle 코멘트 사전 뷰 읽기(R2)도 이 범위다 — 뒤집히면 Oracle 코멘트 근거가 사라진다. 드라이버
           # 고유 시각 값 판정(R1, jdbc.JdbcLobReader)은 PIT 범위 밖이고 JdbcLobReaderTest·EtlSourcePagingTest·리허설 IT 가
-          # 지킨다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다.
+          # 지킨다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다. 프로파일러가 값 읽기 고정 사유를 FAILED 행의
+          # failureReason 에 남긴 뒤(L4-B 통합 검토) 1025 mutations, 92%, 108초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"

@@ -77,8 +77,11 @@ public final class JdbcLobReader {
      * <p>드라이버가 준 지역 일시({@code getObject(…, LocalDateTime.class)})를 JVM 기본 시간대의 {@link Timestamp} 로 바꾼다.
      * 그 시간대에 없는 시각(일광절약 간격, 예: Asia/Seoul 1987-05-10 02:30)은 {@link Timestamp} 가 한 시간 뒤로 밀어 값이
      * 바뀌고, 정렬 키라면 keyset 커서가 그 사이 행을 건너뛴다. 그래서 바꾸지 않고 {@code LOCAL_TIMESTAMP_IN_ZONE_GAP} 으로
-     * 멈춘다 — 고정 오프셋 시간대(예: {@code -Duser.timezone=UTC})로 실행하면 간격이 없다. 지역 일시를 주지 못하는 드라이버는
-     * {@code getObject} 그대로다(L4-B 전과 같다).</p>
+     * 멈춘다 — 고정 오프셋 시간대(예: {@code -Duser.timezone=UTC})로 실행하면 간격이 없다. 지역 일시를 지원하지 않는다고
+     * ({@link SQLFeatureNotSupportedException}) 알리는 드라이버는 {@code getObject} 그대로다(L4-B 전과 같다). 다른 오류로
+     * 거절하면 {@code getObject} 로 물러나지 않고 {@code LOCAL_TIMESTAMP_READ_FAILED} 로 멈춘다 — 값마다 표기가 갈리면 정렬
+     * digest·keyset 커서가 어긋나기 때문이다. CUBRID 드라이버(11.3.1·11.3.2)는 시각 타입을 모두 {@code java.sql.Timestamp} 로
+     * 알려 이 판정에 오지 않는다(바이트코드 확인). Tibero 드라이버는 확인하지 않았다.</p>
      *
      * <p>같은 표의 값을 읽는 경로(본 읽기·정렬 경계·자기참조 키·프로파일러)는 이 메서드를 함께 써야 정렬 digest 가 같은
      * 표기를 본다. 나눈 매핑(ADR-0029 L3c)의 읽기와 조회 표 읽기(L3d)도 {@link #read} 를 거쳐 이 판정을 받는다.</p>
@@ -98,6 +101,8 @@ public final class JdbcLobReader {
             local = result.getObject(column, LocalDateTime.class);
         } catch (SQLFeatureNotSupportedException unsupported) {
             return result.getObject(column);
+        } catch (SQLException rejected) {
+            throw new ContentReadException("LOCAL_TIMESTAMP_READ_FAILED");
         }
         if (local == null) {
             return null;

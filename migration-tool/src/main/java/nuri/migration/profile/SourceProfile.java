@@ -1,5 +1,7 @@
 package nuri.migration.profile;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,13 +26,18 @@ public record SourceProfile(int profileVersion, Long rowLimit, boolean complete,
         tables = List.copyOf(Objects.requireNonNull(tables, "tables"));
     }
 
-    /** 테이블 하나의 프로파일. {@code status} 는 {@code PROFILED}·{@code SKIPPED_IDENTIFIER}·{@code FAILED} 다. */
+    /**
+     * 테이블 하나의 프로파일. {@code status} 는 {@code PROFILED}·{@code SKIPPED_IDENTIFIER}·{@code FAILED} 다.
+     * {@code failureReason} 은 SQLSTATE 가 없는 도구 고정 사유(예: {@code LOCAL_TIMESTAMP_IN_ZONE_GAP}, ADR-0029 L4-B)다. 없으면
+     * 본문에 키를 쓰지 않아 이 필드 전에 만든 프로파일의 digest 가 그대로다.
+     */
     public record TableProfile(
             String catalog,
             String schema,
             String name,
             String status,
             String failureSqlState,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String failureReason,
             long rowsScanned,
             boolean truncated,
             CommentEvidence comment,

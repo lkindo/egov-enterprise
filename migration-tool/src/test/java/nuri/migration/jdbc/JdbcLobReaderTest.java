@@ -177,6 +177,27 @@ class JdbcLobReaderTest {
         }
     }
 
+    /**
+     * 지역 일시 변환을 미지원({@link SQLFeatureNotSupportedException})이 아닌 다른 오류로 거절하는 드라이버는 {@code getObject} 로
+     * 물러나지 않고 고정 사유로 멈춘다 — 값마다 표기가 갈리면 정렬 digest·keyset 커서가 어긋난다. 드라이버 문구는 싣지 않는다.
+     */
+    @Test
+    void aDriverThatRejectsTheLocalTimestampConversionStopsWithAFixedReason() throws Exception {
+        for (boolean bounded : new boolean[]{false, true}) {
+            ResultSet result = driverSpecificTimestamp("TIMESTAMP");
+            when(result.getObject(1, LocalDateTime.class))
+                    .thenThrow(new SQLException("Unsupported conversion of 2024-01-31", "99999"));
+            when(result.getObject(1)).thenReturn(new Object());
+            assertThatThrownBy(() -> JdbcLobReader.read(result, 1, bounded))
+                    .isInstanceOf(JdbcLobReader.ContentReadException.class)
+                    .hasMessage("LOCAL_TIMESTAMP_READ_FAILED");
+            assertThatThrownBy(() -> JdbcLobReader.scalar(result, 1))
+                    .isInstanceOf(JdbcLobReader.ContentReadException.class)
+                    .hasMessage("LOCAL_TIMESTAMP_READ_FAILED");
+            verify(result, never()).getObject(1);
+        }
+    }
+
     /** {@code java.} 클래스로 알리는 값과 클래스를 알리지 않는 드라이버, TIMESTAMP 밖 시각 타입은 getObject 그대로다. */
     @Test
     void javaReportedTimestampsAndOtherTemporalTypesKeepTheirObject() throws Exception {

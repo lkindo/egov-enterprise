@@ -95,7 +95,7 @@ public final class SourceProfiler {
         if (qualified == null || declarations.isEmpty()
                 || declarations.stream().anyMatch(column -> !safeIdentifier(column.name()))) {
             return new TableProfile(table.catalog(), table.schema(), table.name(), "SKIPPED_IDENTIFIER", null,
-                    0L, false, tableComment, unscanned(declarations, table, remarks, commentHashes));
+                    null, 0L, false, tableComment, unscanned(declarations, table, remarks, commentHashes));
         }
         List<ColumnProfiler> profilers = declarations.stream().map(column -> new ColumnProfiler()).toList();
         String select = "SELECT " + String.join(", ", declarations.stream().map(ColumnDeclaration::name).toList())
@@ -120,8 +120,10 @@ public final class SourceProfiler {
             }
         } catch (SQLException failure) {
             connection.rollback();
+            // 값 읽기 도우미의 고정 사유(일광절약 간격 등)는 SQLSTATE 가 없다 — 사유를 따로 남겨야 운영자가 원인을 안다.
+            String reason = failure instanceof JdbcLobReader.ContentReadException content ? content.reason() : null;
             return new TableProfile(table.catalog(), table.schema(), table.name(), "FAILED",
-                    sqlState(failure), 0L, false, tableComment,
+                    sqlState(failure), reason, 0L, false, tableComment,
                     unscanned(declarations, table, remarks, commentHashes));
         }
         List<ColumnProfile> columnProfiles = new ArrayList<>();
@@ -130,7 +132,7 @@ public final class SourceProfiler {
             columnProfiles.add(profilers.get(index).finish(declaration,
                     columnComment(table, declaration.name(), remarks, commentHashes)));
         }
-        return new TableProfile(table.catalog(), table.schema(), table.name(), "PROFILED", null,
+        return new TableProfile(table.catalog(), table.schema(), table.name(), "PROFILED", null, null,
                 scanned, truncated, tableComment, columnProfiles);
     }
 
