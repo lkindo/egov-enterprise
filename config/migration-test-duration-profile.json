@@ -130,6 +130,7 @@
     "nuri.migration.OracleDiscoveryVisibilityIntegrationTest": 18100,
     "nuri.migration.OracleMetadataIntegrationTest": 18316,
     "nuri.migration.OraclePackagedCliIntegrationTest": 65319,
+    "nuri.migration.OracleStandardizationRehearsalIntegrationTest": 88875,
     "nuri.migration.OracleWorkflowPostgresIntegrationTest": 18953,
     "nuri.migration.plan.CatalogCollisionWorkflowTest": 8,
     "nuri.migration.plan.MigrationPlannerTest": 14,

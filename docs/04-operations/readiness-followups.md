@@ -632,6 +632,47 @@ adapter/freeze 승인과 공개 COMMIT 금지는 유지한다. 다른 Oracle rel
 GB/TB 규모·전체 JVM 힙 보장·cutover·전체 백업 복원은 [복구 런북](migration-recovery-runbook.md#전체-롤백과-cutover)의 별도 검증이다.
 Tibero는 위 라이선스 기동 실패로 discover·load를 아직 실측하지 않았다.
 
+## 이관 Oracle Free 표준화 리허설
+
+2026-10-15 Oracle Free 를 원천으로 표준화 이관 전체를 시험 클래스 하나에서 돌렸다([리허설 시험](../../migration-tool/src/test/java/nuri/migration/OracleStandardizationRehearsalIntegrationTest.java), ADR-0029 L4-B, [DEC-OPS-323](../../.agent/memory/decisions.md)). 합성 데이터만 쓴다. 공개 workflow 는 DRY_RUN 까지 가고, COMMIT 은 승인 게이트 아래의 엔진으로 한다(위 vendor 리허설과 같은 길). Oracle 의 `UNVERIFIED`·`MANUAL_ONLY` 등급과 공개 COMMIT 차단은 그대로다 — 합성 데이터와 Free 이미지는 기관 증거가 아니다.
+
+| 항목 | 값 |
+|---|---|
+| 원천 이미지 | `gvenzl/oracle-free@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093`(`23-slim-faststart`). 시험 지원 클래스가 이 digest 로 고정한다 — 기존 Oracle 시험 6개도 같은 이미지를 쓴다 |
+| 원천 버전 | Oracle AI Database 26ai Free Release 23.26.3.0.0, `VERSION_FULL` 23.26.3.0.0. fixture 계정은 `V$INSTANCE` 를 읽지 못해(SQLSTATE 42000) `PRODUCT_COMPONENT_VERSION` 으로 읽었다 |
+| 문자 집합 | `NLS_CHARACTERSET` AL32UTF8, `NLS_NCHAR_CHARACTERSET` AL16UTF16 |
+| 드라이버 | ojdbc11 23.26.3.0.0, JAR SHA-256 `764cc3f88454d1be117e155d01ed617467b984c9c68f13090dd6083799d2bb8c`. inventory 의 BUNDLED 드라이버 증거가 이 JAR 바이트에 결속된다 |
+| 대상 | PostgreSQL 17.10(`postgres:17-alpine`), V2_128 형태의 표준 사전(동의어·허용값·폐기 여부) |
+
+fixture 는 한글 `COMMENT ON` 이 달린 `LEG_USER` 1,300행이다. 가입일 `CHAR(8)` 에 자리표시 `00000000` 12행·달력에 없는 날짜 3행(키 10·600·1,300)·공백 8자 5행, 자정이 아닌 `DATE`, 소수 초가 든 `TIMESTAMP(6)`, 사용 여부 `CHAR(1)` 의 플래그 `1` 4행, 공백으로 채운 `CHAR(3)` 상태 코드, 정밀도 없는 `NUMBER` 키, BLOB·CLOB 을 둔다. DDL·DML 은 19c 와 같은 문법이다.
+
+| 단계 | 결과 |
+|---|---|
+| discover | 소유자 범위, 가시성 결과 없음, 드라이버 증거 = 번들 ojdbc JAR 바이트 |
+| profile | 위반 수가 fixture 와 정확히 같다(자리표시 12·달력 3·공백 5). `TIMESTAMP(6)` 1,300값을 시간형으로 세고 연도 범위를 낸다(R1). 표·컬럼 코멘트가 사전 뷰에서 온다(대조 `NOT_IN_INVENTORY`, R2). `CHAR(3)` 값 1,300개 모두 끝 공백이 있다 |
+| term-suggest | 이름이 표준 약어와 다른 컬럼(최종 로그인·종료 시각·사용 여부)도 코멘트 용어명으로 `EXACT` 후보를 받는다. 프로파일·후보·원장 초안에 원시 값·접속 정보가 없다 |
+| 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 초안을 확정한다 — 가입일 `ymd8` + nullify(자리표시 12·공백 5) + 승인 예외 3, 최종 로그인 `ymdhms14`, 종료 시각 `ymd8-truncate`, 두 CHAR 코드 `trim` + codemap, 비표준 대상(U1) 4. 만든 mapping 의 컬럼 처리·isolate 가 원장과 대상 컬럼마다 같다 |
+| plan·review·validate | `commitReady=true`. 공개 COMMIT 은 `--archive-dir` 없이 거절되고, 있어도 `UNVERIFIED` 로 거절된다. 보관 디렉터리·대상은 비어 있다 |
+| 공개 DRY_RUN | `PASS`, 읽음 1,300, nullified 17, 격리 3(순번 10·600·1,300), 대상 무쓰기. 실행 JSON 에 값이 없다 |
+| 엔진 COMMIT·verify | 1,297행 적재, 격리 키 반출 3행(저장소 밖 임시 디렉터리), verify `PASS`. 대상 값이 원천에서 따로 계산한 표준화 결과와 모두 같다. 정밀도 없는 `NUMBER` 키의 시퀀스가 격리한 마지막 키 뒤로 가서 온라인 다음 번호가 1,301 이다 |
+| 부정 | 원장 상한 2 → 셋째 격리 행(1,300)에서 `ISOLATION_CAP_EXCEEDED`. trim 없는 CHAR codemap 원장은 생성기가 거부한다(R3). 생성기를 거치지 않은 같은 mapping 은 첫 행에서 `CODEMAP_UNMAPPED` 로 멈춘다 |
+| TIMESTAMP 정렬 키 | 1,001행이 page 경계 둘을 넘어도 소수 초까지 같은 값으로 쓰이고, 같은 run 을 다시 돌려도 무중복이다. 첫 경계에 걸친 중복 키는 dry-run 이 `SQL_EXECUTION_FAILED` 로 멈춘다 |
+
+탐침이 남긴 드라이버 사실은 아래와 같다. 출력은 클래스 이름·null 여부·건수뿐이다.
+
+- **R1** `TIMESTAMP(6)` 은 JDBC `TIMESTAMP`(93)인데 `getObject` 가 `oracle.sql.TIMESTAMP` 를 준다. `DATE` 는 `java.sql.Timestamp` 다. 도메인 변환기·보관 덤프·프로파일러가 이 값을 시각으로 보지 못해, 드라이버가 알린 클래스가 `java.` 밖이면 `getTimestamp` 로 읽는다. 시간대 있는 두 타입(-101·-102)은 그대로 둔다. 두 클래스의 `toString` 은 소수 초가 있어도 없어도 같았다 — 그래서 정렬 경계 읽기만 되돌려도 경계 중복 판정은 같다.
+- **R2** 드라이버 기본 설정은 `REMARKS` 를 주지 않는다(표·컬럼 8개 중 0). 사전 뷰 `ALL_TAB_COMMENTS`·`ALL_COL_COMMENTS` 는 3건을 준다.
+- **R3** `CHAR`·`NCHAR` 은 선언 길이까지 공백으로 채워 온다. 적합성 추정은 공백을 깎아 세고 codemap 은 깎지 않고 대조하므로 생성기가 trim 을 요구한다(모든 vendor).
+- **R7** 실행기 순서(읽기 전용 → READ COMMITTED → autocommit 끔)로 연 트랜잭션에서도 다른 세션의 커밋이 다음 문장에 보였다(COUNT 2 → 3). ojdbc 의 `setReadOnly(true)` 는 트랜잭션 수준 스냅숏을 만들지 않으므로 여러 문장을 읽는 load 는 source freeze 에 기댄다.
+
+```sh
+./gradlew :migration-tool:test --tests 'nuri.migration.OracleStandardizationRehearsalIntegrationTest' --console=plain
+```
+
+2026-10-15 로컬에서 두 번 실행해 두 번 모두 3건이 통과했다(실패·skip 0, 컨테이너 기동 포함 88.9초·76.3초). PR CI 가 이관 shard 에서 실행한다. 수정 R1·R2·R3 을 하나씩 되돌리면 리허설이 각각 프로파일의 시간형 수, 프로파일 코멘트, 생성기 거부 단언에서 붉다. 정렬 경계 읽기만 되돌리면 두 클래스의 `toString` 이 같아 경계 시험은 그대로 통과한다(무손실). 같은 날 PIT 는 `migration-collect` 1,024 mutations·91%(146초), `migration-standardize` 987 mutations·92%(153초)다. R3 판정에는 살아남은 변이가 없고, R2 의 소유자 없는 표 분기에서 빈 코멘트를 돌려주는 변이 하나가 살아남는다(빈 코멘트는 코멘트가 없는 것으로 보아 결과가 같다).
+
+한계: 1,300행 합성 fixture 라 `ORA-01555`·운영 규모·장시간 세션은 재지 않았다. 19c 재리허설은 하지 않았다 — 같은 클래스를 `MIGRATION_ORACLE19C_IMAGE` 로 수동 실행할 수 있다. Tibero 는 라이선스가 없다. 탐색은 여전히 `REMARKS` 만 읽어 inventory 에 Oracle 코멘트 해시가 없다. `getTimestamp` 는 `DATE` 처럼 JVM 기본 시간대의 벽시계 값이라 일광절약 간격 안의 시각은 달라질 수 있다. 분할·조회·보관 덤프·대사의 Oracle 단계(O2)는 L4-C 범위다.
+
 ## 이관 CUBRID 실행 환경과 검증 경계
 
 2026-09-16 공식 `cubrid/cubrid:11.4` 이미지의 고정 digest

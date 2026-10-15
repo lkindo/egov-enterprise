@@ -1498,6 +1498,8 @@ jobs:
 
           # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
           # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
+          # [ADR-0029 L4-B] Oracle 코멘트 사전 뷰 읽기와 드라이버 고유 시각 값 읽기(R1·R2)도 이 범위다 — 뒤집히면 Oracle
+          # 코멘트 근거가 사라지거나 TIMESTAMP 를 시각으로 세지 못한다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다.
           - scope: migration-collect
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
@@ -1516,6 +1518,8 @@ jobs:
           # 파일이 남거나, 기존 파일을 덮어쓰거나, Git 작업 트리·승인 산출물 옆에 원시 값이 쓰인다. 2026-10-15 로컬 실측(검토
           # 반영 뒤) 977 mutations, 91%(archive 309, 88%), 108초. 같은 날 validate 1173 94% 125초, verify 268 93% 59초(덤프
           # 행 수·격리 키 반출 대조 포함), protect 199 98% 23초.
+          # [ADR-0029 L4-B] 생성기가 CHAR·NCHAR 소스 codemap 앞에 trim 을 요구한다(R3) — 뒤집히면 공백 채운 코드가 실행에서야
+          # CODEMAP_UNMAPPED 로 멈춘다. 2026-10-15 로컬 실측 987 mutations, 92%, 153초.
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"

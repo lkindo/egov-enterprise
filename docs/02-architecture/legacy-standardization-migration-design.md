@@ -208,7 +208,7 @@ LLM은 후보 생성에 쓸 수 있지만 결과는 제안이다. 컬럼명·코
 | ID·시퀀스 | foundation 생성 규칙과 일치시키고 계약 테스트로 고정, 대상 키 값을 넣는 적재(`preserve`·`remap`·직접 컬럼) 후 시퀀스 재설정 단계 | D5 |
 | 민감 컬럼 | 암호화·재설정 정책을 원장 필드로 강제하고, 평문 패턴이 암호화 대상 컬럼에 들어가면 실패 | A1 |
 | 공통코드 대조 | 코드맵 결과값을 대상 공통코드 원장과 대조 | D7 |
-| 벤더 증거 | Oracle·Tibero 실DB rehearsal로 증거 등급 상향 후 commit 허용 | A4 |
+| 벤더 증거 | Oracle 실DB rehearsal로 표준화 파이프라인(수집·원장·mapping 생성·DRY_RUN·엔진 COMMIT)을 실측한다(L4-B, Free 23.26.3·합성 데이터). 증거 등급과 공개 commit 차단은 기관의 실제 버전·계정·규모·드라이버로 리허설한 뒤 따로 정한다([DEC-OPS-323](../../.agent/memory/decisions.md)). Tibero 는 라이선스가 없어 하지 않는다 | A4 |
 
 ## 7. 우선순위
 
@@ -256,4 +256,4 @@ LLM은 후보 생성에 쓸 수 있지만 결과는 제안이다. 컬럼명·코
 - 레거시 애플리케이션 코드의 자동 변환
 
 ---
-*작성 2026-10-13, DRAFT. 같은 날 코멘트 우선 후보 추정, 도메인 적합성 판정, 레거시 소스 필수 입력 전제와 충돌 판정 원칙(§4.1·§4.3)을 반영했다. 같은 날 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)로 채택했고, [이관 도구 설계](legacy-migration-tool-design.md)와 공용 gap 인덱스는 L1 변경이 갱신했다.*
+*작성 2026-10-13, DRAFT. 같은 날 코멘트 우선 후보 추정, 도메인 적합성 판정, 레거시 소스 필수 입력 전제와 충돌 판정 원칙(§4.1·§4.3)을 반영했다. 같은 날 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)로 채택했고, [이관 도구 설계](legacy-migration-tool-design.md)와 공용 gap 인덱스는 L1 변경이 갱신했다. 2026-10-15 L4-B 가 §6 벤더 증거 행을 실측 범위로 정리했다(등급 상향은 하지 않았다).*
