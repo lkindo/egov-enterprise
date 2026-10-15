@@ -105,6 +105,31 @@ public record MappingSpec(
                 && readers.stream().noneMatch(table -> table.ownsKeyMap() || table.id() == null);
     }
 
+    /** {@link #archiveReaderCoversSource} 가 거짓일 때의 고정 문구 — 표 이름만 앞에 붙고 where 글자는 싣지 않는다. */
+    public static final String SPLIT_ARCHIVE_WHERE_MISMATCH = "분할한 소스의 보관은 읽는 매핑에 where 가 없거나 그 소스의"
+            + " 모든 매핑이 같은 where 를 써야 합니다 — 다른 where 로 적재한 행의 보관 컬럼이 덤프에서 빠집니다";
+
+    /**
+     * 보관 선언의 {@code source} 를 읽는 매핑({@link #mappedTableOf})이 그 소스의 모든 매핑이 읽는 행을 읽는가(ADR-0029
+     * L3c·L3e). 덤프는 읽는 매핑의 where 로 걸러진 행만 담으므로, 다른 매핑이 다른 where 로 적재한 행의 보관 컬럼이 덤프에서
+     * 빠지지 않아야 한다. 읽는 매핑에 where 가 없거나(소스의 모든 행), 그 소스의 모든 매핑이 앞뒤 공백을 뺀 같은 where
+     * 글자를 쓰면 참이다. 매핑이 하나이거나 없으면 참이다. 같은 뜻의 다른 표기는 같은 행을 읽는다고 증명할 수 없어 거짓이다.
+     * 거짓이면 검증·실행기·생성기가 {@link #SPLIT_ARCHIVE_WHERE_MISMATCH} 로 거부한다.
+     */
+    public boolean archiveReaderCoversSource(String archiveSource) {
+        List<TableMapping> readers = archiveReaders(archiveSource);
+        if (readers.size() < 2) {
+            return true;
+        }
+        String readerWhere = whereText(mappedTableOf(archiveSource));
+        return readerWhere == null || readers.stream().allMatch(table -> readerWhere.equals(whereText(table)));
+    }
+
+    private static String whereText(TableMapping table) {
+        String where = table == null ? null : table.where();
+        return where == null || where.isBlank() ? null : where.trim();
+    }
+
     private List<TableMapping> archiveReaders(String archiveSource) {
         if (archiveSource == null || archiveSource.isBlank()) {
             return List.of();

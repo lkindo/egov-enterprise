@@ -21,6 +21,7 @@ import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.jdbc.SourceReadStatements;
 import nuri.migration.lookup.LookupMisses;
+import nuri.migration.lookup.LookupRef;
 import nuri.migration.lookup.LookupResolver;
 import nuri.migration.lookup.LookupRules;
 import nuri.migration.mapping.MappingIndex;
@@ -502,6 +503,10 @@ public class EtlExecutor {
                 // [ADR-0029 L3c] 분할한 소스의 보관은 keymap 소유 매핑이나 id 를 생략한 매핑의 읽기에 붙는다.
                 throw new IllegalArgumentException(dump.source()
                         + ": 분할한 소스의 보관을 붙일 읽기(keymap 소유 매핑이나 id 를 생략한 매핑)가 없습니다");
+            }
+            if (!spec.archiveReaderCoversSource(dump.source())) {
+                // 덤프는 읽는 매핑의 where 로 걸러진 행만 담는다 — 다른 where 의 매핑이 적재한 행의 보관 값이 빠진다.
+                throw new IllegalArgumentException(dump.source() + ": " + MappingSpec.SPLIT_ARCHIVE_WHERE_MISMATCH);
             }
             TableMapping mapped = spec.mappedTableOf(dump.source());
             if (mapped != null && (dump.where() != null || !dump.orderByKeys().isEmpty())) {
@@ -1442,6 +1447,37 @@ public class EtlExecutor {
             }
         }
 
+        /**
+         * [ADR-0029 L3b·L3d] 수집 모드에서 짝 없는 at_most_one 조회의 컬럼은 NULL 이 된다. 그 컬럼에서 난 실패(NOT NULL 대상의
+         * {@code REQUIRED_MISSING} 등)는 원장이 조회 표 컬럼에 승인한 위반이 아니라 짝이 없어서 난 것이다 — 격리하면 짝 없는
+         * 행이 maxMissing 에 세이지 않은 채 다른 원인으로 기록된다. 조회 실패처럼 격리하지 않고 {@code LOOKUP_MISSING} 으로
+         * 멈춘다. 짝이 없어도 다른 컬럼의 실패로 격리하는 행은 그대로다(적재하지 않으니 짝 없는 행으로 세지 않는다).
+         */
+        void requireNoFailureOfMissedLookup(Map<String, Object> row, TableMapping table,
+                                            List<RuntimeException> failures) {
+            Set<String> missed = new HashSet<>();
+            for (RowLookup lookup : rows.getOrDefault(row, List.of())) {
+                if (lookup.outcome().missed()) {
+                    missed.add(lookup.alias().toLowerCase(Locale.ROOT));
+                }
+            }
+            if (missed.isEmpty()) {
+                return;
+            }
+            for (RuntimeException failure : failures) {
+                if (!(failure instanceof RowTransformFailure classified) || classified.column == null) {
+                    continue;
+                }
+                for (ColumnMapping column : table.columns()) {
+                    LookupRef ref = column == null || column.target() == null ? null : LookupRef.parse(column.source());
+                    if (ref != null && column.target().equalsIgnoreCase(classified.column)
+                            && missed.contains(ref.alias().toLowerCase(Locale.ROOT))) {
+                        throw new RowTransformFailure(ref.alias(), RowFailureReason.LOOKUP_MISSING);
+                    }
+                }
+            }
+        }
+
         /** 짝 없는 행을 센다. 상한을 넘으면 {@code LOOKUP_MISSING_CAP_EXCEEDED} 로 멈춘다. 적재할 행에만 부른다. */
         void countMisses(Map<String, Object> row, LookupMisses misses) {
             for (RowLookup lookup : rows.getOrDefault(row, List.of())) {
@@ -1738,6 +1774,8 @@ public class EtlExecutor {
                 Map<String, Object> out = transformRow(row, spec, t, reg, writePlan, counts.nullified, failures);
                 if (failures != null && !failures.isEmpty()) {
                     reg.rollback(rowCheckpoint);
+                    // 짝 없는 조회의 NULL 로 그 조회 컬럼이 실패했으면 격리하지 않고 멈춘다(LOOKUP_MISSING).
+                    lookups.requireNoFailureOfMissedLookup(row, t, failures);
                     String stopped = isolateRow(row, out, t, writePlan, state, counts.isolated, counts.archive,
                             failures, firstOrdinal + index);
                     if (stopped != null) {
@@ -1927,7 +1965,10 @@ public class EtlExecutor {
         PROTECTED_COLUMN,
         /** 조회 키가 같은 조회 행이 둘 이상이다(ADR-0029 L3d). column 은 조회 별칭이다. */
         LOOKUP_FANOUT,
-        /** exactly_one 조회에 짝이 없거나 키가 비었다. */
+        /**
+         * exactly_one 조회에 짝이 없거나 키가 비었다. isolate 가 있는 표(수집 모드)에서 짝 없는 at_most_one 조회의 컬럼이
+         * 실패한 행도 같다 — 그 실패는 짝이 없어서 났으므로 격리하지 않는다.
+         */
         LOOKUP_MISSING,
         /** at_most_one 조회의 짝 없는 행이 maxMissing 을 넘었다. */
         LOOKUP_MISSING_CAP_EXCEEDED,

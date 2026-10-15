@@ -345,6 +345,8 @@ public class MappingValidator {
                 if (spec.archiveReaderAmbiguous(archive.source())) {
                     errors.add(label + ": 분할한 소스의 보관은 keymap 소유 매핑이나 id 를 생략한 매핑의 읽기에 붙습니다 — 둘 다 없어"
                             + " 보관 컬럼을 붙일 읽기를 정할 수 없습니다");
+                } else if (!spec.archiveReaderCoversSource(archive.source())) {
+                    errors.add(label + ": " + MappingSpec.SPLIT_ARCHIVE_WHERE_MISMATCH);
                 }
                 if (archive.where() != null || !archive.orderByKeys().isEmpty()) {
                     errors.add(label + ": 매핑된 표의 보관은 그 매핑의 where·정렬 키를 그대로 씁니다 — 보관 선언에"

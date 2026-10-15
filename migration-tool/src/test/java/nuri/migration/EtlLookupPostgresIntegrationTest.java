@@ -1,9 +1,14 @@
 package nuri.migration;
 
+import nuri.migration.adapter.EvidenceLevel;
+import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveRun;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.Isolate;
 import nuri.migration.model.MappingSpec.Lookup;
 import nuri.migration.model.MappingSpec.LookupCardinality;
 import nuri.migration.model.MappingSpec.LookupKey;
@@ -13,12 +18,15 @@ import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +48,9 @@ class EtlLookupPostgresIntegrationTest {
 
     private final EtlExecutor executor = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry());
     private final MigrationVerifier verifier = new MigrationVerifier();
+
+    @TempDir
+    Path temp;
 
     /** 주 표 BIGINT 키 ↔ 조회 표 NUMERIC 키. where 가 고른 행만 조회하고 그 밖의 같은 키 행은 짝이 아니다. */
     @Test
@@ -235,6 +246,88 @@ class EtlLookupPostgresIntegrationTest {
                 .hasMessageStartingWith("public.legacy_unordered_orders: 조회 조인(lookups)을 쓰는 매핑에는 id 가");
     }
 
+    /**
+     * [ADR-0029 L3b·L3d] 조회 컬럼에도 isolate 를 둘 수 있다(원장 via 행의 승인 예외). 고객명이 대상 길이를 넘는 주문은 그
+     * 위반으로 격리하고, 짝이 없으면서 다른 컬럼(금액)의 승인 위반으로 격리한 주문은 짝 없는 행으로 세지 않는다 — 적재한 짝
+     * 없는 행만 maxMissing 에 센다.
+     */
+    @Test
+    void anApprovedViolationOfALookupColumnIsIsolatedAndOnlyLoadedRowsCountAsMissing() throws Exception {
+        Fixture fixture = fixture("iso_cols", "lookup-iso-cols-run");
+        fixture.jdbc().execute("DROP TABLE public.tb_iso_cols_order");
+        fixture.jdbc().execute("CREATE TABLE public.tb_iso_cols_order (order_no bigint PRIMARY KEY,"
+                + " cust_nm varchar(5), amt numeric(3,2))");
+        fixture.customers("(1, '김가', 'Y'), (2, '아주긴고객이름', 'Y')");
+        fixture.orders("(10, 1, 1.00), (11, 2, 2.00), (12, 7, 12.00), (13, 8, 3.00)");
+        MappingSpec mapping = fixture.isolating(cust(LookupCardinality.AT_MOST_ONE, 1L),
+                new ColumnMapping("amt", "amt", null, null, null, null, null, null, List.of(),
+                        new Isolate("A1", 1L, List.of("PRECISION_EXCEEDED"))),
+                new ColumnMapping("cust.cust_nm", "cust_nm", null, null, null, null, null, null, List.of(),
+                        new Isolate("X1", 1L, List.of("LENGTH_EXCEEDED"))));
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = Map.of("public.legacy_iso_cols_orders#orders",
+                Map.of("amt", new TargetValueGuard.Limit(null, 1, 2, null, false),
+                        "cust_nm", new TargetValueGuard.Limit(5L, null, null, null, false)));
+
+        List<EtlExecutor.TableResult> results = isolatingCommit(mapping, guards);
+
+        assertThat(results).singleElement().satisfies(result -> {
+            assertThat(result.errors()).isEmpty();
+            assertThat(result.read()).isEqualTo(4);
+            assertThat(result.isolated()).isEqualTo(2);
+            assertThat(result.written()).isEqualTo(2);
+            assertThat(result.lookupMisses()).as("격리한 12 는 짝이 없어도 세지 않는다 — 세면 상한 1 을 넘는다")
+                    .containsExactly(entry("cust", 1L));
+        });
+        assertThat(fixture.jdbc().queryForList("SELECT order_no FROM public.tb_iso_cols_order ORDER BY order_no",
+                Long.class)).containsExactly(10L, 13L);
+        assertThat(fixture.count("SELECT count(*) FROM public.tb_iso_cols_order WHERE cust_nm IS NULL")).isEqualTo(1);
+    }
+
+    /**
+     * [ADR-0029 L3b·L3d] 짝 없는 at_most_one 행의 조회 컬럼은 NULL 이 된다. 대상이 NULL 을 받지 않을 때 그 컬럼에 원장이
+     * 승인한 {@code REQUIRED_MISSING} 이 있어도 격리하지 않는다 — 짝 없음은 원장이 조회 표의 NULL 값에 승인한 위반이 아니고,
+     * 격리하면 maxMissing(0 이어도)에 세이지 않는다. 조회 실패처럼 {@code LOOKUP_MISSING} 으로 멈춘다. exactly_one 의 짝
+     * 없음도 isolate 가 있는 표에서 그대로 멈춘다.
+     */
+    @Test
+    void aMissingPartnerIsNeverIsolatedThroughTheNullItLeavesInALookupColumn() throws Exception {
+        Fixture fixture = fixture("iso_null", "lookup-iso-null-run");
+        fixture.jdbc().execute("ALTER TABLE public.tb_iso_null_order ALTER COLUMN cust_nm SET NOT NULL");
+        fixture.customers("(1, '김가', 'Y')");
+        fixture.orders("(10, 1, 1.00), (11, 7, 2.00)");
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = Map.of("public.legacy_iso_null_orders#orders",
+                Map.of("cust_nm", new TargetValueGuard.Limit(50L, null, null, null, true)));
+        String stopped = "행 변환 실패(public.legacy_iso_null_orders#orders, column=cust, row=2):"
+                + " ROW_TRANSFORM_FAILED:LOOKUP_MISSING — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+
+        for (Lookup lookup : List.of(cust(LookupCardinality.AT_MOST_ONE, 0L), cust(LookupCardinality.AT_MOST_ONE, 5L),
+                cust(LookupCardinality.EXACTLY_ONE, null))) {
+            MappingSpec mapping = fixture.isolating(lookup, new ColumnMapping("amt", "amt", null, null, null, null,
+                    null), new ColumnMapping("cust.cust_nm", "cust_nm", null, null, null, null, null, null, List.of(),
+                    new Isolate("X1", 1L, List.of("REQUIRED_MISSING"))));
+
+            List<EtlExecutor.TableResult> results = isolatingCommit(mapping, guards);
+
+            assertThat(results).as(lookup.cardinality() + "/" + lookup.maxMissing()).singleElement()
+                    .satisfies(result -> {
+                        assertThat(result.errors()).containsExactly(stopped);
+                        assertThat(result.isolated()).isZero();
+                        assertThat(result.written()).isZero();
+                    });
+        }
+        assertThat(fixture.count("SELECT count(*) FROM public.tb_iso_null_order")).isZero();
+    }
+
+    /** isolate 가 있는 COMMIT — 격리 키를 반출할 보관 디렉터리와 대상 계약의 값 한계 가드를 함께 넘긴다. */
+    private List<EtlExecutor.TableResult> isolatingCommit(MappingSpec mapping,
+                                                         Map<String, Map<String, TargetValueGuard.Limit>> guards)
+            throws Exception {
+        Path archive = Files.createDirectory(temp.toRealPath().resolve("archive-" + System.nanoTime()));
+        return executor.execute(mapping, MigrationMode.COMMIT, jdbc(), jdbc(),
+                SourceReadSessionPolicy.repeatableRead(EvidenceLevel.UNVERIFIED, "lookup isolation test"), true,
+                guards, ArchiveRun.writing(archive, "b".repeat(64), "c".repeat(64)));
+    }
+
     private static Lookup cust(LookupCardinality cardinality, Long maxMissing) {
         return new Lookup("cust", null, "use_yn = 'Y'", new LookupKey("cust_no", "cust_no"), cardinality, maxMissing);
     }
@@ -285,6 +378,17 @@ class EtlLookupPostgresIntegrationTest {
                             new ColumnMapping("amt", "amt", null, null, null, null, null),
                             new ColumnMapping("cust.cust_nm", "cust_nm", null, null, null, null, null)),
                     null, null, List.of(), "orders", List.of(bound)));
+        }
+
+        /** {@link #mapping} 과 같은 표·조회에 주어진 컬럼(isolate 포함)을 둔다. 주문번호는 늘 옮긴다. */
+        MappingSpec isolating(Lookup lookup, ColumnMapping... columns) {
+            Lookup bound = new Lookup(lookup.alias(), "public.legacy_" + name + "_customer", lookup.where(),
+                    lookup.key(), lookup.cardinality(), lookup.maxMissing());
+            List<ColumnMapping> all = new java.util.ArrayList<>();
+            all.add(new ColumnMapping("order_no", "order_no", null, null, null, null, null));
+            all.addAll(List.of(columns));
+            return spec(new TableMapping("public.legacy_" + name + "_orders", "public.tb_" + name + "_order", null,
+                    "order_no", List.of(), "order_no", all, null, null, List.of(), "orders", List.of(bound)));
         }
 
         MappingSpec spec(TableMapping table) {

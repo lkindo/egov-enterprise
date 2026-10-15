@@ -300,37 +300,8 @@ public class MappingGeneratorTest {
      */
     @Test
     void aSplitSkeletonGetsTheConfirmedColumnsOfEachMappingId() {
-        String skeleton = SKELETON.replace("codemaps:", """
-                  - source: legacy.USER_MST
-                    id: user_ext
-                    target: tb_user_detail
-                    orderBy: USER_SN
-                    targetKey: esntl_id
-                    columns:
-                      - {source: USER_SN, target: esntl_id, fkRef: legacy.USER_MST}
-                codemaps:""");
-        String ledger = LEDGER.replace("""
-                    grade: UNKNOWN
-                    status: APPROVED_IGNORE
-                    note: 대리키 채번의 원천 키로만 쓴다
-                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
-                """, """
-                    mapping: user_ext
-                    target: {table: tb_user_detail, column: esntl_id}
-                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
-                    grade: EXACT
-                    status: CONFIRMED
-                    load: {}
-                    conformance: {rate: 100}
-                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
-                """).replace("""
-                    source: {table: legacy.USER_MST, column: USER_NM}
-                    target: {table: tb_user_info, column: user_nm}
-                """, """
-                    source: {table: legacy.USER_MST, column: USER_NM}
-                    mapping: user_ext
-                    target: {table: tb_user_detail, column: user_nm}
-                """);
+        String skeleton = splitSkeleton();
+        String ledger = splitLedger();
 
         MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
                 generator.generate(skeleton, ledger, "ledger.yml", inventory()));
@@ -352,6 +323,223 @@ public class MappingGeneratorTest {
                 codemaps:""");
         assertThatThrownBy(() -> generator.generate(twice, ledger, "ledger.yml", inventory()))
                 .hasMessageContaining("skeleton: 중복 소스 테이블 매핑 금지: 'LEGACY.USER_MST#user_ext'");
+    }
+
+    /** USER_MST 를 기본 매핑(keymap 소유)과 확장 매핑 user_ext 로 나눈 skeleton. */
+    private static String splitSkeleton() {
+        return SKELETON.replace("codemaps:", """
+                  - source: legacy.USER_MST
+                    id: user_ext
+                    target: tb_user_detail
+                    orderBy: USER_SN
+                    targetKey: esntl_id
+                    columns:
+                      - {source: USER_SN, target: esntl_id, fkRef: legacy.USER_MST}
+                codemaps:""");
+    }
+
+    /** {@link #splitSkeleton} 의 원장 — USER_SN·USER_NM 은 user_ext 로 확정한다. */
+    private static String splitLedger() {
+        return LEDGER.replace("""
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 대리키 채번의 원천 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                """, """
+                    mapping: user_ext
+                    target: {table: tb_user_detail, column: esntl_id}
+                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """).replace("""
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                    target: {table: tb_user_info, column: user_nm}
+                """, """
+                    source: {table: legacy.USER_MST, column: USER_NM}
+                    mapping: user_ext
+                    target: {table: tb_user_detail, column: user_nm}
+                """);
+    }
+
+    /**
+     * [ADR-0029 L3c·L3e] 나눈 소스의 외부 보관 행은 보관 선언 하나가 된다(소스 표가 같다). 실행은 keymap 소유 매핑의 읽기에
+     * 붙이므로 그 매핑의 where 가 나눈 다른 매핑의 행을 덮어야 한다 — 소유 매핑에만 where 가 있으면 만들지 않는다.
+     */
+    @Test
+    void aSplitSourcesArchiveRowsBecomeOneDeclarationReadByTheOwnerWhoseWhereMustCoverTheSplit() {
+        String ledger = splitLedger().replace("  - id: H1\n", archiveRows("legacy.USER_MST", "U7", "ETC1",
+                "2031-12-31") + "  - id: H1\n");
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(splitSkeleton(), ledger, "ledger.yml", inventory("ETC1")));
+
+        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("legacy_user_mst_20311231",
+                "legacy.USER_MST", null, List.of(), List.of("ETC1"), List.of("U7"), "2031-12-31"));
+        assertThat(mapping.mappedTableOf("legacy.USER_MST")).isSameAs(mapping.tables().get(1));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping,
+                inventory("ETC1"))).isEmpty();
+
+        String extensionWhere = splitSkeleton().replace("    id: user_ext\n", "    id: user_ext\n"
+                + "    where: \"USER_SN > 0\"\n");
+        assertThat(generator.generate(extensionWhere, ledger, "ledger.yml", inventory("ETC1")))
+                .as("확장 매핑만 where 로 일부를 읽으면 소유 매핑의 읽기가 덮는다").contains("archives:");
+        String ownerWhere = splitSkeleton().replace("    target: tb_user_info\n    orderBy: USER_SN\n",
+                "    target: tb_user_info\n    where: \"USER_SN > 0\"\n    orderBy: USER_SN\n");
+        assertThatThrownBy(() -> generator.generate(ownerWhere, ledger, "ledger.yml", inventory("ETC1")))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessageContaining("archives[0](legacy_user_mst_20311231): 분할한 소스의 보관은 읽는 매핑에 where 가"
+                        + " 없거나 그 소스의 모든 매핑이 같은 where 를 써야 합니다");
+    }
+
+    /** [ADR-0029 L3b·L3c] 나눈 소스의 매핑에는 격리를 두지 않는다 — 승인 예외가 남은 확정 행은 만들지 않는다. */
+    @Test
+    void approvedExceptionsOnASplitSourceAreRefused() {
+        String ledger = splitLedger().replace("""
+                    target: {table: tb_user_detail, column: user_nm}
+                    term: {name: 사용자명, engAbbr: USER_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                """, """
+                    target: {table: tb_user_detail, column: user_nm}
+                    term: {name: 사용자명, engAbbr: USER_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100, approvedExceptions: {maxRows: 2, reason: 원천 정정 대기, violations: [FORMAT]}}
+                """);
+
+        assertThatThrownBy(() -> generator.generate(splitSkeleton(), ledger, "ledger.yml", inventory()))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessage("mapping 을 만들지 않았습니다: U3 legacy.USER_MST.USER_NM(CONFIRMED): 이 표는 격리할 수"
+                        + " 없습니다 — 데이터를 바로잡거나 nullify 로 처리하세요(분할한 소스의 매핑)");
+    }
+
+    /**
+     * [ADR-0029 L3d·L3e] 조회만 하는 표를 덤프도 하면 컬럼 완전성은 조회 표 판정 한 번만 본다 — 덤프만 하는 표의 판정이 같은
+     * 컬럼에 다른 안내(외부 보관·이관 제외 중 하나)를 덧붙이지 않는다.
+     */
+    @Test
+    void aLookupOnlyTableThatIsAlsoDumpedIsCheckedOnceAsALookupTable() {
+        String skeleton = splitSkeleton().replace("codemaps:", """
+                    lookups:
+                      - {alias: log, source: legacy.LOG_HIST, key: {from: USER_SN, to: LOG_SN}, cardinality: exactly_one}
+                archives:
+                  - {source: legacy.LOG_HIST, orderByKeys: [LOG_SN]}
+                codemaps:""");
+        String ledger = splitLedger().replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 조회 키와 덤프 행의 정렬 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                  - id: X1
+                    source: {table: legacy.LOG_HIST, column: LOG_MSG}
+                    via: {mapping: user_ext, lookup: log}
+                    target: {table: tb_user_detail, column: dept_nm}
+                    term: {name: 부서명, engAbbr: DEPT_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """ + archiveRows("legacy.LOG_HIST", "H2", "LOG_IP", "2031-12-31"));
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, ledger, "ledger.yml", inventoryWithLog("LOG_MSG", "LOG_IP")));
+
+        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("legacy_log_hist_20311231",
+                "legacy.LOG_HIST", null, List.of("LOG_SN"), List.of("LOG_IP"), List.of("H2"), "2031-12-31"));
+        assertThat(mapping.mappedTableOf("legacy.LOG_HIST")).as("조회만 하는 표는 덤프만 하는 표다").isNull();
+        assertThat(mapping.tables().get(2).columns()).contains(
+                new ColumnMapping("log.LOG_MSG", "dept_nm", "trim", null, null, null, null));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping,
+                inventoryWithLog("LOG_MSG", "LOG_IP"))).isEmpty();
+
+        String undecided = ledger + """
+                  - id: L9
+                    source: {table: legacy.LOG_HIST, column: LOG_ETC}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """;
+        assertThatThrownBy(() -> generator.generate(skeleton, undecided, "ledger.yml",
+                inventoryWithLog("LOG_MSG", "LOG_IP", "LOG_ETC")))
+                .hasMessage("mapping 을 만들지 않았습니다: L9 legacy.LOG_HIST.LOG_ETC(PROPOSED): 확정되지 않은 컬럼은"
+                        + " mapping 으로 만들 수 없습니다");
+    }
+
+    /**
+     * [ADR-0029 L3b·L3d] 조회 경로(via) 확정 행의 승인 예외는 그 조회 컬럼({@code alias.COLUMN})의 isolate 가 된다 — 나누지 않은
+     * 소스의 조회 매핑이면 격리할 수 있다. 조회 실패(LOOKUP_*)는 실행기가 따로 멈춘다.
+     */
+    @Test
+    void aViaRowsApprovedExceptionsBecomeTheIsolationOfItsLookupColumn() {
+        String skeleton = SKELETON.replace("codemaps:", """
+                  - source: legacy.LOG_HIST
+                    id: log_dept
+                    target: tb_user_detail
+                    orderBy: LOG_SN
+                    targetKey: esntl_id
+                    lookups:
+                      - {alias: dept, source: legacy.DEPT_MST, key: {from: DEPT_CD, to: DEPT_CD}, cardinality: exactly_one}
+                codemaps:""");
+        String ledger = LEDGER.replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    mapping: log_dept
+                    target: {table: tb_user_detail, column: esntl_id}
+                    term: {name: 고유ID, engAbbr: ESNTL_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                  - id: H3
+                    source: {table: legacy.LOG_HIST, column: DEPT_CD}
+                    grade: UNKNOWN
+                    status: APPROVED_IGNORE
+                    note: 조회 키로만 쓴다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: APPROVED_IGNORE, by: 업무담당, at: "2026-10-02"}]
+                  - id: X1
+                    source: {table: legacy.DEPT_MST, column: DEPT_NM}
+                    via: {mapping: log_dept, lookup: dept}
+                    target: {table: tb_user_detail, column: dept_nm}
+                    term: {name: 부서명, engAbbr: DEPT_NM, domain: 명V100}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance:
+                      unmeasured: [LENGTH_EXCEEDED]
+                      approvedExceptions: {maxRows: 2, reason: 원천 정정 대기, violations: [LENGTH_EXCEEDED]}
+                    note: 길이는 쓰기 전에 행마다 본다
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """);
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(skeleton, ledger, "ledger.yml", inventoryWithLog("DEPT_CD")));
+
+        assertThat(mapping.tables().get(2).id()).isEqualTo("log_dept");
+        assertThat(mapping.tables().get(2).columns()).containsExactly(
+                new ColumnMapping("LOG_SN", "esntl_id", null, null, null, null, null),
+                new ColumnMapping("dept.DEPT_NM", "dept_nm", "trim", null, null, null, null, null, List.of(),
+                        new MappingSpec.Isolate("X1", 2L, List.of("LENGTH_EXCEEDED"))));
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping,
+                inventoryWithLog("DEPT_CD"))).isEmpty();
     }
 
     @Test

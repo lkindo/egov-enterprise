@@ -1022,6 +1022,41 @@ class MappingValidatorTest {
         }
 
         @Test
+        @DisplayName("[ADR-0029 L3c·L3e] 분할한 소스의 보관은 읽는 매핑이 그 소스의 모든 매핑이 읽는 행을 읽을 때만 받는다")
+        void aSplitSourcesArchiveNeedsAReaderThatReadsEveryMappingsRows() {
+            MappingSpec.ArchiveDump dump = mapped("legacy_user_20311231", "2031-12-31", List.of("ETC1"),
+                    List.of("U7"));
+            String refusal = "archives[0](legacy_user_20311231): 분할한 소스의 보관은 읽는 매핑에 where 가 없거나 그"
+                    + " 소스의 모든 매핑이 같은 where 를 써야 합니다 — 다른 where 로 적재한 행의 보관 컬럼이 덤프에서"
+                    + " 빠집니다";
+
+            // 소유 매핑(main)이 읽는다 — where 가 없으면 형제 매핑이 where 로 나눠 읽는 행도 덮는다.
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere(null)), dump)).isEmpty();
+            assertThat(errors(List.of(extensionWhere(" KIND = 'C' "), ownerWhere("KIND = 'C'")), dump))
+                    .as("앞뒤 공백만 다른 같은 where").isEmpty();
+            assertThat(errors(List.of(extensionWhere(null), ownerWhere("KIND = 'P'")), dump))
+                    .as("형제 매핑이 소스의 모든 행을 읽는다").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere("KIND = 'P'")), dump))
+                    .as("where 로 나눈 분할").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND='P'"), ownerWhere("KIND = 'P'")), dump))
+                    .as("같은 뜻의 다른 표기는 같은 행을 읽는다고 증명할 수 없다").containsExactly(refusal);
+            assertThat(errors(List.of(extensionWhere("KIND = 'C'"), ownerWhere("KIND = 'P'"))))
+                    .as("보관이 없으면 where 로 나눈 분할을 막지 않는다").isEmpty();
+        }
+
+        private static TableMapping ownerWhere(String where) {
+            return new TableMapping("legacy_user", "tb_user_info", where, "USER_SN", List.of(), null,
+                    List.of(new ColumnMapping("USER_NM", "user_nm", null, null, null, null, null)),
+                    new IdStrategy("esntl_id", "USR_", "USER_SN"), null, List.of(), "main");
+        }
+
+        private static TableMapping extensionWhere(String where) {
+            return new TableMapping("legacy_user", "tb_ognz_info", where, "USER_SN", List.of(), "ognz_id",
+                    List.of(new ColumnMapping("OGNZ_CD", "ognz_id", null, null, null, null, null)), null, null,
+                    List.of(), "ext");
+        }
+
+        @Test
         @DisplayName("선언은 id·보존 기한·같은 순서의 원장 행을 갖고, 컬럼·원장 행·(표, 기한)은 한 번씩이다")
         void declarationsAreNamedDatedPairedAndUnique() {
             assertThat(errors(List.of(users), mapped("Legacy-User", "2031-12-31", List.of("ETC1"), List.of("U7"))))

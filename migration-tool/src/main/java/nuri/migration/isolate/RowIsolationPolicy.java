@@ -190,7 +190,6 @@ public final class RowIsolationPolicy {
      *   <li>자기참조 매핑 — 적재 전에 모든 행의 키를 먼저 채번해 커밋한다(preMint).</li>
      *   <li>분할한 소스의 매핑(ADR-0029 L3c) — 한 소스를 여러 매핑이 나눠 읽으면 매핑마다 읽기·순번·격리 집계가 따로라
      *       같은 소스 행이 한 매핑에서는 격리되고 다른 매핑에서는 적재돼 반쪽만 남는다.</li>
-     *   <li>자기참조 매핑 — 적재 전에 모든 행의 키를 먼저 채번해 커밋한다(preMint).</li>
      *   <li>다른 매핑의 fkRef·foreignKeys 가 부모로 가리키는 매핑 — 격리한 부모를 참조하는 자식이 고아가 된다. 부모는
      *       소스 이름이 아니라 {@link MappingIndex#parent} 가 푸는 소유 매핑이다.</li>
      * </ul>

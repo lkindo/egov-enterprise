@@ -595,6 +595,45 @@ class MigrationVerifierTest {
                     List.of(mapped(10, 10, null, 0, null), log(true, null)), List.of(export("src_tbl", 2, SHA)),
                     List.of()))).isEqualTo("격리 키 반출이 모드와 맞지 않거나 두 번 있음: src_tbl");
         }
+
+        /**
+         * [ADR-0029 L3c·L3e] 분할한 소스의 덤프는 그 보관을 읽는 매핑(keymap 소유 매핑)의 조회와 대조한다 — 같은 소스의 다른
+         * 매핑(where 로 일부만 읽는다)의 조회가 아니다. 그 매핑이 결과에서 먼저 와도 같다.
+         */
+        @Test
+        @DisplayName("분할한 소스의 덤프 행은 보관을 읽는 소유 매핑의 조회와 대조한다")
+        void aSplitSourcesDumpIsComparedWithTheOwningMappingsRead() {
+            MappingSpec.TableMapping owner = new MappingSpec.TableMapping("src_tbl", "tgt_main", null, "ID", List.of(),
+                    null, List.of(new MappingSpec.ColumnMapping("NM", "nm", null, null, null, null, null)),
+                    new MappingSpec.IdStrategy("esntl_id", "MBR", "ID"), null, List.of(), "main");
+            MappingSpec.TableMapping corp = new MappingSpec.TableMapping("src_tbl", "tgt_corp", "KIND = 'C'", "ID",
+                    List.of(), "esntl_id", List.of(new MappingSpec.ColumnMapping("ID", "esntl_id", null, null, null,
+                    "src_tbl", null)), null, null, List.of(), "corp");
+            MappingSpec spec = new MappingSpec(null, null, List.of(corp, owner), Map.of(), null, null,
+                    List.of(new MappingSpec.ArchiveDump("src_dump", "src_tbl", null, List.of(), List.of("ETC1"),
+                            List.of("U7"), "2031-12-31")));
+            List<TableResult> results = List.of(
+                    new TableResult("src_tbl", "tgt_corp", 4, 4, 4, List.of(), List.of(), Map.of(), "corp"),
+                    new TableResult("src_tbl", "tgt_main", 10, 10, 10, List.of(), List.of(), Map.of(), "main"));
+
+            assertThat(spec.mappedTableOf("src_tbl")).isSameAs(owner);
+            assertThat(MigrationVerifier.archiveError(spec, results, written(List.of(splitDump(10)), List.of()), true))
+                    .isNull();
+            assertThat(MigrationVerifier.archiveError(spec, results, written(List.of(splitDump(4)), List.of()), true))
+                    .as("형제 매핑의 조회만큼 덤프한 결과").isEqualTo("보관 덤프 행(4) ≠ 조회(10): src_dump");
+
+            MappingSpec narrowed = new MappingSpec(null, null, List.of(corp, new MappingSpec.TableMapping("src_tbl",
+                    "tgt_main", "KIND = 'P'", "ID", List.of(), null, owner.columns(), owner.idStrategy(), null,
+                    List.of(), "main")), Map.of(), null, null, spec.archives());
+            assertThat(MigrationVerifier.archiveError(narrowed, results, written(List.of(splitDump(10)), List.of()),
+                    true)).as("읽는 매핑의 where 가 형제 매핑의 행을 덮지 않으면 수가 맞아도 FAIL")
+                    .isEqualTo("분할한 소스의 보관이 다른 where 로 나눈 매핑의 행을 덮지 않음: src_dump");
+        }
+
+        private static ArchiveOutcome.Dumped splitDump(long rows) {
+            return new ArchiveOutcome.Dumped("src_dump", "src_tbl", false, rows, rows, "archive-src.jsonl", 11, SHA,
+                    "2031-12-31", List.of("U7"), Map.of());
+        }
     }
 
     @Nested

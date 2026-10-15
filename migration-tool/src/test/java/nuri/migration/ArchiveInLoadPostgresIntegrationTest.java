@@ -366,6 +366,69 @@ class ArchiveInLoadPostgresIntegrationTest {
         assertThat(count(fixture, fixture.targetTable("nk"))).isZero();
     }
 
+    /**
+     * [ADR-0029 L3c·L3e] 나눈 소스의 보관은 id 를 생략한 매핑의 읽기에 붙는다. 그 매핑에 where 가 없으면 where 로 일부만 읽는
+     * 다른 매핑(법인 회원)이 적재한 행까지 덤프가 덮는다 — 덤프 행 = 그 매핑의 조회 = 소스 전체다. 읽는 매핑에만 where 가
+     * 있으면 다른 매핑이 적재할 행의 보관 값이 빠지므로 행을 읽기 전에 멈춘다.
+     */
+    @Test
+    void aSplitSourcesDumpCoversEveryRowAnyOfItsMappingsReadAndANarrowerReaderStopsBeforeReading() throws Exception {
+        Fixture fixture = fixture("split");
+        Path dumps = dumpDirectory();
+        String members = fixture.sourceTable("MEMBER");
+        fixture.source().execute("CREATE TABLE " + members + " (ID int PRIMARY KEY, KIND varchar(1), NM varchar(20),"
+                + " ETC1 varchar(40))");
+        fixture.source().update("INSERT INTO " + members + " (ID, KIND, NM, ETC1) SELECT X, CASE WHEN MOD(X, 3) = 0"
+                + " THEN 'C' ELSE 'P' END, CONCAT('n', X), CONCAT('memo', X) FROM SYSTEM_RANGE(1, 12)");
+        fixture.target().execute("CREATE TABLE " + fixture.targetTable("member")
+                + " (id bigint PRIMARY KEY, nm varchar(20))");
+        fixture.target().execute("CREATE TABLE " + fixture.targetTable("corp")
+                + " (id bigint PRIMARY KEY, kind varchar(1))");
+        TableMapping corp = new TableMapping(members, fixture.targetTable("corp"), "KIND = 'C'", "ID", List.of(), "id",
+                List.of(new ColumnMapping("ID", "id", null, null, null, null, null),
+                        new ColumnMapping("KIND", "kind", null, null, null, null, null)), null, null, List.of(), "corp");
+        ArchiveDump dump = new ArchiveDump("legacy_member_20311231", members, null, List.of(), List.of("ETC1"),
+                List.of("M9"), "2031-12-31");
+        MappingSpec spec = fixture.spec(List.of(corp, members(fixture, null)), List.of(dump));
+        CatalogSnapshot inventory = inventoryOf(Map.of(members, Map.of("ID", Types.INTEGER, "KIND", Types.VARCHAR,
+                "NM", Types.VARCHAR, "ETC1", Types.VARCHAR)));
+        ArchiveRun archives = ArchiveRun.writing(dumps, PLAN, MAPPING);
+
+        List<TableResult> results = run(fixture, spec, MigrationMode.COMMIT, inventory, archives);
+
+        assertThat(results).allSatisfy(result -> assertThat(result.errors()).isEmpty());
+        assertThat(results).filteredOn(result -> result.mappingId() == null).singleElement()
+                .satisfies(result -> assertThat(result.read()).isEqualTo(12));
+        assertThat(results).filteredOn(result -> "corp".equals(result.mappingId())).singleElement()
+                .satisfies(result -> assertThat(result.read()).isEqualTo(4));
+        ArchiveOutcome.Dumped dumped = archives.outcome().dumps().getFirst();
+        assertThat(archives.outcome().dumps()).hasSize(1);
+        assertThat(dumped.rows()).as("법인 회원 4행을 포함한 소스 전체").isEqualTo(12);
+        List<JsonNode> lines = lines(Files.readAllBytes(dumps.resolve(dumped.fileName())));
+        assertThat(lines.subList(1, lines.size()).stream().map(line -> line.get("k").get(0).asInt()))
+                .as("다른 매핑이 적재한 3·6·9·12 의 보관 값도 덤프에 있다").containsExactly(1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+                        11, 12);
+        assertThat(verifier.verify(spec, results, fixture.target(), archives.outcome()).ok()).isTrue();
+
+        Path narrowedDumps = dumpDirectory();
+        MappingSpec narrowed = fixture.spec(List.of(corp, members(fixture, "KIND = 'P'")), List.of(dump));
+        assertThatThrownBy(() -> run(fixture, narrowed, MigrationMode.COMMIT, inventory,
+                ArchiveRun.writing(narrowedDumps, PLAN, MAPPING)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage(members + ": 분할한 소스의 보관은 읽는 매핑에 where 가 없거나 그 소스의 모든 매핑이 같은 where"
+                        + " 를 써야 합니다 — 다른 where 로 적재한 행의 보관 컬럼이 덤프에서 빠집니다");
+        try (Stream<Path> files = Files.list(narrowedDumps)) {
+            assertThat(files).as("행을 읽기 전에 멈춘다").isEmpty();
+        }
+    }
+
+    /** 나눈 소스의 id 를 생략한 매핑 — 보관 덤프를 읽는다. */
+    private static TableMapping members(Fixture fixture, String where) {
+        return new TableMapping(fixture.sourceTable("MEMBER"), fixture.targetTable("member"), where, "ID", List.of(),
+                "id", List.of(new ColumnMapping("ID", "id", null, null, null, null, null),
+                        new ColumnMapping("NM", "nm", null, null, null, null, null)), null, null, List.of(), null);
+    }
+
     private String archiveNote(MappingSpec spec, List<TableResult> results, Fixture fixture, ArchiveOutcome outcome) {
         MigrationReport report = verifier.verify(spec, results, fixture.target(), outcome);
         assertThat(report.ok()).isFalse();
@@ -460,6 +523,11 @@ class ArchiveInLoadPostgresIntegrationTest {
         tables.put(fixture.sourceTable("USER"), Map.of("ID", Types.INTEGER, "END_YMD", Types.VARCHAR,
                 "NM", Types.VARCHAR, "ETC1", Types.VARCHAR, "RMRK2", Types.VARCHAR));
         tables.put(fixture.sourceTable("LOG"), Map.of("LOG_NO", Types.INTEGER, "MEMO", Types.VARCHAR));
+        return inventoryOf(tables);
+    }
+
+    /** H2 소스 표의 승인 inventory — 검증기가 읽는 jdbcType 선언만 둔다. */
+    private static CatalogSnapshot inventoryOf(Map<String, Map<String, Integer>> tables) {
         List<CatalogObject> objects = new ArrayList<>();
         for (Map.Entry<String, Map<String, Integer>> table : tables.entrySet()) {
             objects.add(new CatalogObject(ObjectKind.TABLE, "db", "PUBLIC", table.getKey(), false, null, null,
