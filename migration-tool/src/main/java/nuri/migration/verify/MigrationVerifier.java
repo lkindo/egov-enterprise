@@ -79,7 +79,8 @@ import java.util.function.Function;
  * 최소·최대, codemap 결과 분포, 조회 NULL 하한, 형식 도메인, 표본 재계산. 판정이 FAIL 이면 PASS 였던 표도 FAIL 이다. COMMIT 은
  * 이어서 물리 FK·유일 인덱스의 집행을 카탈로그로 증명하고({@link ConstraintProof}), 증명하지 못한 FK 와 선언 참조의 짝 없는 행을
  * 대상 DB 안에서 세며({@link ReferenceChecks} — FAIL 이면 {@code <references>} 행), 공통코드·허용값 대사를 한다
- * ({@link CodeSetReconciler} — FAIL 이면 {@code <code-sets>} 행). 모두 run 상태를 기록하기 전에 판정한다. 값 없는 기록은
+ * ({@link CodeSetReconciler} — FAIL 이면 {@code <code-sets>} 행). COMMIT 인데 대상 질의가 없으면 이 판정을 건너뛰지 않고
+ * {@code <references>} 행을 {@code RECONCILIATION_INPUT_MISSING} 으로 FAIL 시킨다. 모두 run 상태를 기록하기 전에 판정한다. 값 없는 기록은
  * {@link MigrationReport#reconciliation()} 에 싣는다.
  *
  * <p>남은 로드맵: 논리 UNIQUE(물리 유일 인덱스 밖의 업무 유일성), 문자 길이 parity, 새 세션 재조회 표본.
@@ -231,8 +232,10 @@ public class MigrationVerifier {
         ReconciliationEvidence evidence = null;
         if (reconciliation.active()) {
             // [ADR-0029 L4 D2·D7] run 상태를 기록하기 전에 대상 쪽 대사를 마친다 — 대사가 FAIL 이면 run 도 FAILED 다.
-            TargetSide target = commit && reconciliation.queries() != null
-                    ? reconcileTarget(reconciliation) : TargetSide.NONE;
+            //   COMMIT 인데 대상 질의가 없으면 참조·유일 인덱스·공통코드를 판정할 수 없으므로 건너뛰지 않고 실패한다.
+            TargetSide target = !commit ? TargetSide.NONE
+                    : reconciliation.queries() == null ? TargetSide.MISSING_QUERIES
+                    : reconcileTarget(reconciliation);
             if (target.referenceFailure() != null) {
                 tables.add(new TableReport(REFERENCES, REFERENCES, 0L, 0L, 0L, 1L, -1L, Status.FAIL,
                         target.referenceFailure()));
@@ -270,25 +273,41 @@ public class MigrationVerifier {
                               String referenceFailure, String codeSetFailure) {
 
         private static final TargetSide NONE = new TargetSide(List.of(), List.of(), List.of(), List.of(), null, null);
+        private static final TargetSide MISSING_QUERIES = new TargetSide(List.of(), List.of(), List.of(), List.of(),
+                "대상 대사 질의 없음: RECONCILIATION_INPUT_MISSING", null);
     }
 
     /**
      * [ADR-0029 L4 D2·D7] COMMIT 의 대상 쪽 대사. 끝 제약 스냅숏을 읽어 물리 FK·유일 인덱스의 집행을 증명하고, 증명하지 못한 FK
      * 와 선언 참조는 대상 DB 안에서 짝 없는 행을 센다(값은 JVM 으로 오지 않는다). 격리 키 후보는 건수만 센다. 이어 공통코드·
-     * 허용값 대사를 표마다 문장 하나로 한다. 질의가 실패하면 SQLSTATE 만 남긴다.
+     * 허용값 대사를 표마다 문장 하나로 한다. 질의가 실패하면 SQLSTATE 만 남긴다. 끝 제약을 읽지 못하면 그 SQLSTATE 를 사유에
+     * 붙이고, 이번 실행 전에 같은 run 이 쓴 행(재개로 건너뛴 행)이 있는 매핑 대상의 FK 는 증명하지 않는다.
      */
     private static TargetSide reconcileTarget(ReconciliationRun run) {
         TargetReconciliationQueries queries = run.queries();
         ReconciliationPlan plan = run.plan();
         TargetConstraintSnapshot end;
+        String endUnread = null;
         try {
             end = queries.constraints(plan.mappedTables());
+        } catch (ReconciliationQueryException unreadable) {
+            end = null;
+            endUnread = CoverageReason.CONSTRAINTS_UNREAD.name() + "(SQLSTATE="
+                    + (unreadable.sqlState() == null ? "unknown" : unreadable.sqlState()) + ")";
         } catch (RuntimeException unreadable) {
             end = null;
+            endUnread = CoverageReason.CONSTRAINTS_UNREAD.name() + "(SQLSTATE=unknown)";
         }
         Set<String> mapped = new HashSet<>();
-        plan.mappings().forEach(mapping -> mapped.add(mapping.target()));
-        ProofResult proof = ConstraintProof.prove(plan.startConstraints(), end, run.replicationRoleOrigin(), mapped);
+        Set<String> priorRows = new HashSet<>();
+        for (MappingPlan mapping : plan.mappings()) {
+            mapped.add(mapping.target());
+            if (run.table(mapping.label()).resumedRows() > 0) {
+                priorRows.add(mapping.target());
+            }
+        }
+        ProofResult proof = ConstraintProof.prove(plan.startConstraints(), end, endUnread,
+                run.replicationRoleOrigin(), mapped, priorRows);
         List<ReferenceTask> tasks = ReferenceChecks.tasks(plan.references(), proof);
         List<ReferenceRecord> references = new ArrayList<>(tasks.size());
         String referenceFailure = null;
@@ -304,8 +323,9 @@ public class MigrationVerifier {
         for (UniqueProof unique : proof.uniqueIndexes()) {
             uniqueIndexes.add(UniqueRecord.of(unique));
             if (unique.status() == ReconciliationVerdict.FAIL && referenceFailure == null) {
-                referenceFailure = "유일 인덱스 미집행(" + unique.table() + "." + unique.index() + "): "
-                        + ConstraintProof.CONSTRAINT_NOT_ENFORCED;
+                referenceFailure = (ConstraintProof.CONSTRAINT_NOT_ENFORCED.equals(unique.reason())
+                        ? "유일 인덱스 미집행(" : "유일 인덱스 판정 불가(") + unique.table() + "." + unique.index() + "): "
+                        + unique.reason();
             }
         }
         Map<String, MappingTally> tallies = new LinkedHashMap<>();

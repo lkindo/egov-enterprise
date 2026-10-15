@@ -184,6 +184,7 @@ public final class ReconciliationRun {
         private final List<List<Object>> isolatedKeys = new ArrayList<>();
         private final Map<String, Map<String, Object>> samples = new LinkedHashMap<>();
         private long isolatedRows;
+        private long resumedRows;
         private boolean keyUnknown;
 
         private MappingTally(ReconciliationRun run, MappingPlan plan) {
@@ -276,6 +277,20 @@ public final class ReconciliationRun {
 
         public long isolatedRows() {
             return isolatedRows;
+        }
+
+        /**
+         * 재개로 건너뛴 행 하나 — 이번 실행 전에 같은 run 이 커밋한 행이다. 이 실행의 카탈로그 스냅숏은 그 행을 쓸 때의 FK 집행을
+         * 증명하지 못하므로 verifier 가 그 대상의 FK 를 고아 대조로 내린다.
+         */
+        public void resumed() {
+            if (!noop()) {
+                resumedRows++;
+            }
+        }
+
+        public long resumedRows() {
+            return resumedRows;
         }
 
         public long isolatedNonNull(String column) {

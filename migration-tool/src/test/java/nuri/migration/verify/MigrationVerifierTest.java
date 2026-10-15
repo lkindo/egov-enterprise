@@ -652,6 +652,7 @@ class MigrationVerifierTest {
             private final List<List<Object>> arguments = new java.util.ArrayList<>();
             private TargetConstraintSnapshot end;
             private String failure;
+            private String constraintFailure;
 
             private FakeQueries(long orphans, Map<String, Long> codeCounts) {
                 this.orphans = orphans;
@@ -677,6 +678,9 @@ class MigrationVerifierTest {
             @Override
             public TargetConstraintSnapshot constraints(
                     List<nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata> tables) {
+                if (constraintFailure != null) {
+                    throw new ReconciliationQueryException(constraintFailure);
+                }
                 return end;
             }
         }
@@ -747,9 +751,73 @@ class MigrationVerifierTest {
                     List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
                     null, disabled);
             assertThat(rescanned.overall()).as("끝에서 꺼진 RI 트리거는 증명이 아니라 대조다").isEqualTo(Status.PASS);
-            assertThat(rescanned.reconciliation().references()).singleElement()
-                    .satisfies(record -> assertThat(record.method()).isEqualTo("SCANNED"));
+            assertThat(rescanned.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).as("고아가 0 이어도 증명하지 못한 이유가 남는다")
+                        .isEqualTo("TRIGGER_NOT_ENABLED");
+            });
             assertThat(scanned.statements).hasSize(1);
+        }
+
+        /** 시작 제약이 있는 계획 하나로 COMMIT 검증을 돌린다. */
+        private MigrationReport verifyWithStart(FakeQueries queries, java.util.function.Consumer<ReconciliationRun> setup) {
+            ReconciliationRun run = run(new ReconciliationPlan(true, List.of(new ReconciliationPlan.MappingPlan(
+                    "src_tbl", "src_tbl", null, null, "public.tgt_tbl", List.of(), List.of(), true, false, false)),
+                    List.of(), constraints("O", true), List.of(), List.of()), 10, queries);
+            run.replicationRole(true);
+            setup.accept(run);
+            return verifier.verify(new MappingSpec(null, null, List.of(
+                    new MappingSpec.TableMapping("src_tbl", "public.tgt_tbl", null, List.of(), null)), Map.of()),
+                    List.of(new TableResult("src_tbl", "public.tgt_tbl", 10, 10, 10, List.of())), targetWithRows(10),
+                    null, run);
+        }
+
+        @Test
+        @DisplayName("끝 제약을 읽지 못하면 유일 인덱스는 SQLSTATE 를 붙인 FAIL 이고 FK 는 고아 대조로 내려간다")
+        void anUnreadableEndSnapshotFailsUniqueIndexesWithTheSqlState() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.constraintFailure = "42501";
+
+            MigrationReport report = verifyWithStart(queries, run -> { });
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note()).isEqualTo(
+                            "유일 인덱스 판정 불가(public.tgt_tbl.uq_tgt_code): CONSTRAINTS_UNREAD(SQLSTATE=42501)"));
+            assertThat(report.reconciliation().uniqueIndexes()).singleElement()
+                    .satisfies(record -> assertThat(record.status()).isEqualTo("FAIL"));
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).isEqualTo("CONSTRAINTS_UNREAD");
+            });
+        }
+
+        @Test
+        @DisplayName("재개로 건너뛴 행이 있는 대상의 FK 는 증명하지 않고 고아를 센다")
+        void aResumedTargetIsScanned() {
+            FakeQueries queries = new FakeQueries(0, Map.of());
+            queries.end = constraints("O", true);
+
+            MigrationReport report = verifyWithStart(queries, run -> run.table("src_tbl").resumed());
+
+            assertThat(report.overall()).isEqualTo(Status.PASS);
+            assertThat(report.reconciliation().references()).singleElement().satisfies(record -> {
+                assertThat(record.method()).isEqualTo("SCANNED");
+                assertThat(record.proofNote()).isEqualTo("PRIOR_EXECUTION_ROWS");
+            });
+            assertThat(queries.statements).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("COMMIT 인데 대상 질의가 없으면 참조·유일 인덱스·공통코드를 건너뛰지 않고 FAIL 이다")
+        void aCommitWithoutTargetQueriesFails() {
+            MigrationReport report = verifier.verify(spec, List.of(result(10, 10, 10)), targetWithRows(10), null,
+                    run(10, List.of(), List.of(), null));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).filteredOn(table -> table.source().equals("<references>")).singleElement()
+                    .satisfies(table -> assertThat(table.note())
+                            .isEqualTo("대상 대사 질의 없음: RECONCILIATION_INPUT_MISSING"));
         }
 
         @Test

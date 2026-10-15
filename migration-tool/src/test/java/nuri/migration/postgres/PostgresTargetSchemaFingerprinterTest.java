@@ -198,6 +198,30 @@ class PostgresTargetSchemaFingerprinterTest {
     }
 
     @Test
+    @DisplayName("제약·트리거 행 버전(xmin)은 bound digest 에 들어가지 않는다 — 대사가 시작·끝 비교에만 쓴다")
+    void catalogVersionsStayOutOfTheBoundDigest() {
+        TargetStandardSnapshot standard = new TargetStandardSnapshot(1, List.of());
+        TargetConstraintSnapshot plain = constraints(List.of("O", "O"), true);
+        TargetConstraintSnapshot versioned = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child", List.of(
+                        new TargetConstraintSnapshot.Constraint("fk_child_parent", "f", List.of("parent_id"),
+                                "public", "tb_parent", List.of("parent_id"), true, List.of("O", "O"),
+                                List.of("c:812", "t:813", "t:814"))), List.of())));
+        TargetConstraintSnapshot unversioned = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child", List.of(
+                        new TargetConstraintSnapshot.Constraint("fk_child_parent", "f", List.of("parent_id"),
+                                "public", "tb_parent", List.of("parent_id"), true, List.of("O", "O"))),
+                        List.of())));
+
+        assertThat(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema", standard, versioned,
+                java.util.Set.of("public"))).isEqualTo(PostgresTargetSchemaFingerprinter.boundDigest("env", "schema",
+                standard, unversioned, java.util.Set.of("public")));
+        assertThat(versioned.tables().getFirst().constraints().getFirst().catalogVersions())
+                .containsExactly("c:812", "t:813", "t:814");
+        assertThat(plain.tables().getFirst().constraints().get(1).catalogVersions()).isEmpty();
+    }
+
+    @Test
     @DisplayName("제약 스냅숏은 이름 순서로 정렬하고 FK 트리거 상태도 정렬한다")
     void constraintSnapshotIsCanonical() {
         TargetConstraintSnapshot snapshot = constraints(List.of("O", "A"), true);

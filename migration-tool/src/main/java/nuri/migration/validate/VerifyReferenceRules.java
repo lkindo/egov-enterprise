@@ -8,6 +8,9 @@ import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.model.MappingSpec.VerifyDeclaration;
 import nuri.migration.model.MappingSpec.VerifyReference;
+import nuri.migration.postgres.TargetConstraintSnapshot;
+import nuri.migration.postgres.TargetConstraintSnapshot.TableConstraints;
+import nuri.migration.postgres.TargetConstraintSnapshot.UniqueIndex;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.postgres.TargetSchemaFingerprint.ColumnMetadata;
 import nuri.migration.postgres.TargetSchemaFingerprint.TableMetadata;
@@ -37,7 +40,10 @@ import java.util.Set;
  *       isolate 규칙이 먼저 거부하므로 이 규칙을 겹쳐 알리지 않는다.</li>
  * </ul>
  *
- * <p>live 규칙({@link #liveViolations})은 승인 fingerprint 로 자식·부모 컬럼이 대상에 있고 짝마다 타입 계열이 같은지 본다.</p>
+ * <p>live 규칙({@link #liveViolations})은 승인 fingerprint 로 자식·부모 컬럼이 대상에 있고 짝마다 타입 계열이 같은지 본다.
+ * 매핑 대상의 유일 인덱스가 이미 집행되지 않으면({@code indisvalid}·{@code indisready} 가운데 하나라도 거짓) plan·load 가 쓰기
+ * 전에 멈춘다({@code UNIQUE_INDEX_NOT_ENFORCED}) — 그런 인덱스는 적재 중 중복을 받고, 적재 뒤 대사는 행을 다 쓴 뒤에야 FAIL
+ * 한다.</p>
  */
 public final class VerifyReferenceRules {
 
@@ -145,6 +151,32 @@ public final class VerifyReferenceRules {
                                 + parent.name() + "." + parentName + " 은 타입 계열이 다릅니다"
                                 + "(VERIFY_REFERENCE_TYPE_MISMATCH)");
                     }
+                }
+            }
+        }
+        errors.addAll(unenforcedUniqueIndexes(spec, target));
+        return errors;
+    }
+
+    /** 승인 fingerprint 의 제약 스냅숏에서 이미 집행되지 않는 매핑 대상 유일 인덱스. 스냅숏이 없으면 보지 않는다. */
+    static List<String> unenforcedUniqueIndexes(MappingSpec spec, TargetSchemaFingerprint target) {
+        TargetConstraintSnapshot constraints = target.constraints();
+        if (constraints == null) {
+            return List.of();
+        }
+        List<String> errors = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (TableMapping table : spec.tables()) {
+            TableMetadata metadata = table == null ? null : table(target, table.target());
+            if (metadata == null || !seen.add((metadata.schema() + "." + metadata.name()).toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            TableConstraints found = constraints.table(metadata.schema(), metadata.name());
+            for (UniqueIndex index : found == null ? List.<UniqueIndex>of() : found.uniqueIndexes()) {
+                if (!index.valid() || !index.ready()) {
+                    errors.add(metadata.schema() + "." + metadata.name() + ": 유일 인덱스 " + index.name()
+                            + " 이 집행되지 않습니다(indisvalid·indisready) — 행을 쓰기 전에 멈춥니다"
+                            + "(UNIQUE_INDEX_NOT_ENFORCED)");
                 }
             }
         }

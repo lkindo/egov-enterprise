@@ -74,9 +74,11 @@ function codeBindingRows(source) {
 test('the migration tool code bindings cover every production code group and only bind real columns of the same owner', () => {
   const rows = codeBindingRows(readFileSync(join(root, BINDINGS), 'utf8'));
   const groups = productionCodeGroups();
-  // 정방향: 앱이 읽는 그룹은 모두 카탈로그에 있다 — 새 그룹 검증을 더하면 이관 대사도 따라온다.
+  // 정방향: 앱이 읽는 그룹은 모두 카탈로그에 있다 — 새 그룹 리터럴은 바인딩 행이 없으면 여기서 멈춘다. 다만 이 검사는 그룹이 있는지만
+  //   본다. 이미 표시(DISPLAY)로 묶인 그룹을 앱이 새로 쓰기 검증하게 되어도 녹색이므로, 그때는 사람이 바인딩 표에서 VALIDATE 로 바꾸고
+  //   아래 동결 목록을 함께 고친다(결재 검증은 그룹을 상수로 읽어 리터럴로 쓰기 검증 경로를 가를 수 없다).
   assert.deepEqual([...groups].filter(group => !rows.some(row => row.group === group)).sort(), []);
-  // 쓰기 검증 바인딩은 결재 본표의 업무 구분 하나다(InformalSanctionService 의 상신 검증).
+  // 쓰기 검증 바인딩은 결재 본표의 업무 구분 하나다(InformalSanctionService 의 상신 검증). 손으로 동결한 목록이다.
   assert.deepEqual(rows.filter(row => row.use === 'VALIDATE').map(row => `${row.table}.${row.column}`), ['tb_ifml_atrz_info.task_se_cd']);
   // 역방향: 이 구성에 있는 표의 바인딩은 실제 컬럼을 가리키고, 그 그룹을 앱이 읽으며, 표와 그룹의 소유 기능이 같다
   //   (같이 남고 같이 빠져야 생성물에서 표만 남고 그룹 헤더가 빠지는 일이 없다 — DEC-OPS-262).

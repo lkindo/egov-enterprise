@@ -74,16 +74,21 @@ public record ReconciliationEvidence(
         }
     }
 
-    /** 참조 하나의 판정 기록. {@code method} 는 {@code PROVEN}·{@code SCANNED} 다. */
+    /**
+     * 참조 하나의 판정 기록. {@code method} 는 {@code PROVEN}·{@code SCANNED} 다. {@code proofNote} 는 물리 FK 의 증명 메모 —
+     * {@code SCANNED} 면 증명하지 못한 이유(예: {@code TRIGGER_NOT_ENABLED}), {@code PROVEN} 이면 기존 행을 검사하지 않은
+     * {@code NOT_VALIDATED} 다. 고아가 0 이어도 남는다.
+     */
     public record ReferenceRecord(String child, List<String> columns, String parent, String origin, String method,
                                   String status, @JsonInclude(JsonInclude.Include.NON_NULL) Long orphans,
-                                  @JsonInclude(JsonInclude.Include.NON_NULL) String reason) {
+                                  @JsonInclude(JsonInclude.Include.NON_NULL) String reason,
+                                  @JsonInclude(JsonInclude.Include.NON_NULL) String proofNote) {
 
         public static ReferenceRecord of(ReferenceVerdict verdict) {
             DeclaredReference reference = verdict.reference();
             return new ReferenceRecord(reference.child(), reference.childColumns(), reference.parent(),
                     reference.origin().name(), verdict.method().name(), verdict.status().name(), verdict.orphans(),
-                    verdict.reason());
+                    verdict.reason(), verdict.proofNote());
         }
     }
 

@@ -57,7 +57,9 @@ import nuri.migration.validate.ledger.TermLedger.StandardTerm;
 import nuri.migration.validate.ledger.TermLedger.Transition;
 import nuri.migration.validate.ledger.TermLedgerValidator.StandardTermRecord;
 import nuri.migration.validate.ledger.TermLedgerValidator.TermKey;
+import nuri.migration.verify.ColumnCheck;
 import nuri.migration.verify.ColumnReplay;
+import nuri.migration.verify.CoverageReason;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationReport.TableReport;
 import nuri.migration.verify.MigrationVerifier;
@@ -68,6 +70,7 @@ import nuri.migration.verify.ReconciliationEvidence.MappingRecord;
 import nuri.migration.verify.ReconciliationPlan;
 import nuri.migration.verify.ReconciliationPlanner;
 import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.SourceAggregates;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -411,10 +414,126 @@ class ReconciliationPostgresIntegrationTest {
                         assertThat(reference.origin()).isEqualTo("PHYSICAL");
                         assertThat(reference.method()).isEqualTo("SCANNED");
                         assertThat(reference.orphans()).isEqualTo(1L);
+                        assertThat(reference.proofNote()).as("증명하지 못한 이유가 증거에 남는다")
+                                .isEqualTo("TRIGGER_NOT_ENABLED");
                     });
             assertThat(table(loaded.report(), "<references>").note()).isEqualTo("고아 참조(" + child + "(gp_id) → "
                     + fixture.tgt("tb_gp") + "): ORPHAN_REFERENCE 1건");
         }
+    }
+
+    /**
+     * 적재 시작(승인 fingerprint)과 끝의 트리거 상태가 모두 O 여도 그 사이 트리거를 껐다 켰으면 증명이 아니다 — 트리거 행이 다시
+     * 쓰여 행 버전(xmin)이 바뀐다. 꺼진 동안 들어간 고아를 센다.
+     */
+    @Test
+    void triggersDisabledAndReEnabledDuringTheLoadAreNotProof() throws Exception {
+        Fixture fixture = fixture();
+        JdbcTemplate jdbc = jdbc();
+        Case physical = physicalForeignKey(fixture);
+        String child = fixture.tgt("tb_gc");
+        TargetSchemaFingerprint start = fingerprint(physical.spec(), fixture.target());
+        jdbc.execute("ALTER TABLE " + child + " DISABLE TRIGGER ALL");
+        ReconciliationRun run = ReconciliationRun.of(
+                ReconciliationPlanner.plan(physical.spec(), physical.inventory(), start, List.of(), transformers),
+                new ColumnReplay(transformers, physical.spec().codemaps()), new PostgresReconciliationQueries(jdbc));
+
+        ArchiveRun archives = ArchiveRun.counting();
+        List<TableResult> results = executor.execute(physical.spec(), MigrationMode.COMMIT, jdbc(), jdbc, SESSION,
+                true, Map.of(), archives, false, run);
+        jdbc.execute("ALTER TABLE " + child + " ENABLE TRIGGER ALL");
+        MigrationReport report = verifier.verify(physical.spec(), results, jdbc, archives.outcome(), run);
+
+        assertThat(results).allSatisfy(result -> assertThat(result.errors()).isEmpty());
+        assertThat(count(child)).as("꺼진 동안 고아 행이 들어갔다").isEqualTo(2);
+        assertThat(report.ok()).isFalse();
+        assertThat(report.reconciliation().references()).singleElement().satisfies(reference -> {
+            assertThat(reference.method()).as("시작·끝 상태는 같아도 행 버전이 다르다").isEqualTo("SCANNED");
+            assertThat(reference.proofNote()).isEqualTo("CATALOG_ROW_CHANGED");
+            assertThat(reference.orphans()).isEqualTo(1L);
+        });
+    }
+
+    /**
+     * {@code NOT VALID} 로 더한 FK(DEC-OPS-106)도 RI 트리거가 이번 run 의 쓰기를 검사하므로 증명한다. 그 전부터 있던 고아는
+     * 검사하지 않았다는 메모만 남기고, 이번 run 이 쓰지 않은 그 행 때문에 load 가 실패하지 않는다.
+     */
+    @Test
+    void aNotValidForeignKeyWithAnOlderOrphanIsProvenAndNoted() throws Exception {
+        Fixture fixture = fixture();
+        JdbcTemplate jdbc = jdbc();
+        Case clean = foreignKeyCase(fixture, false);
+        String child = fixture.tgt("tb_gc");
+        jdbc.execute("ALTER TABLE " + child + " DROP CONSTRAINT " + foreignKeyName(jdbc, child));
+        jdbc.update("INSERT INTO " + child + " VALUES (100, 999)");
+        jdbc.execute("ALTER TABLE " + child + " ADD CONSTRAINT fk_gc_gp FOREIGN KEY (gp_id) REFERENCES "
+                + fixture.tgt("tb_gp") + " (id) NOT VALID");
+
+        Loaded loaded = load(fixture, clean.spec(), clean.inventory(), List.of());
+
+        assertThat(loaded.report().ok()).withFailMessage(summary(loaded.report())).isTrue();
+        assertThat(loaded.report().reconciliation().references()).singleElement().satisfies(reference -> {
+            assertThat(reference.method()).isEqualTo("PROVEN");
+            assertThat(reference.status()).isEqualTo("PASS");
+            assertThat(reference.proofNote()).as("기존 행은 검사하지 않았다").isEqualTo("NOT_VALIDATED");
+        });
+    }
+
+    /** 같은 runId 로 다시 적재하면 앞 실행이 쓴 행은 이번 실행의 카탈로그 스냅숏이 증명하지 못한다 — 고아를 센다. */
+    @Test
+    void aResumedRunCountsOrphansInsteadOfProvingTheForeignKey() throws Exception {
+        Fixture fixture = fixture();
+        Case clean = foreignKeyCase(fixture, false);
+
+        Loaded first = load(fixture, clean.spec(), clean.inventory(), List.of());
+        Loaded again = load(fixture, clean.spec(), clean.inventory(), List.of());
+
+        assertThat(first.report().reconciliation().references()).singleElement()
+                .satisfies(reference -> assertThat(reference.method()).isEqualTo("PROVEN"));
+        assertThat(again.report().ok()).withFailMessage(summary(again.report())).isTrue();
+        assertThat(again.report().reconciliation().references()).singleElement().satisfies(reference -> {
+            assertThat(reference.method()).isEqualTo("SCANNED");
+            assertThat(reference.proofNote()).isEqualTo("PRIOR_EXECUTION_ROWS");
+            assertThat(reference.orphans()).isZero();
+        });
+    }
+
+    /**
+     * PostgreSQL 은 실패한 문장 하나가 읽기 트랜잭션 전체를 막는다(25P02). 원천 집계가 실패하면 savepoint 로 되돌려 COUNT 전용
+     * 문장으로 물러나고, 행은 그대로 읽는다 — 합·최소·최대만 판정하지 않는다.
+     */
+    @Test
+    void aFailedSourceAggregateRollsBackToItsSavepointAndFallsBackToCounts() throws Exception {
+        Fixture fixture = fixture();
+        JdbcTemplate jdbc = jdbc();
+        jdbc.execute("CREATE TABLE " + fixture.src("legacy_nm") + " (id int PRIMARY KEY, nm varchar(10))");
+        jdbc.update("INSERT INTO " + fixture.src("legacy_nm") + " VALUES (1, 'a'), (2, 'b'), (3, NULL)");
+        jdbc.execute("CREATE TABLE " + fixture.tgt("tb_nm") + " (id bigint PRIMARY KEY, nm varchar(10))");
+        MappingSpec spec = spec(fixture, Map.of(), new TableMapping(fixture.src("legacy_nm"), fixture.tgt("tb_nm"),
+                null, "id", List.of(), "id", List.of(plain("id", "id"), plain("nm", "nm")), null, null, List.of()));
+        ReconciliationPlan planned = ReconciliationPlanner.plan(spec, inventory(fixture.source(), Map.of("legacy_nm",
+                List.of(integer("id"), text("nm", 10)))), fingerprint(spec, fixture.target()), List.of(), transformers);
+        ReconciliationPlan.MappingPlan only = planned.mappings().getFirst();
+        // 문자 컬럼을 정수 합으로 계획해 원천 집계 문장의 캐스트가 실행 중에 실패하게 한다.
+        ColumnCheck forced = new ColumnCheck("nm", "nm", new ColumnCheck.SourceColumnType(Types.BIGINT, "int8", 19L,
+                0), ColumnCheck.Aggregate.NUM, true, false, null, false, null, null, false, null, List.of());
+        ReconciliationRun run = ReconciliationRun.of(new ReconciliationPlan(true, List.of(
+                new ReconciliationPlan.MappingPlan(only.label(), only.source(), only.mappingId(), only.where(),
+                        only.target(), List.of(forced), only.targetPrimaryKey(), only.preservedKey(), only.isolates(),
+                        only.generatedIdentity())), List.of(), null, List.of(), List.of()),
+                new ColumnReplay(transformers, spec.codemaps()), null);
+
+        List<TableResult> results = executor.execute(spec, MigrationMode.DRY_RUN, jdbc(), null, SESSION, true,
+                Map.of(), ArchiveRun.counting(), false, run);
+
+        assertThat(results).singleElement().satisfies(result -> {
+            assertThat(result.errors()).as("되돌린 뒤 COUNT 전용 문장과 본 읽기가 같은 트랜잭션에서 계속된다").isEmpty();
+            assertThat(result.read()).isEqualTo(3);
+        });
+        SourceAggregates aggregates = run.source(run.plan().mappings().getFirst().aggregateGroup());
+        assertThat(aggregates.rows()).isEqualTo(3);
+        assertThat(aggregates.nonNull("nm")).isEqualTo(2);
+        assertThat(aggregates.aggregateGap("nm")).isEqualTo(CoverageReason.SOURCE_AGGREGATE_FAILED);
     }
 
     /** replica 세션에서는 RI 트리거가 발화하지 않는다 — 쓰기 연결의 역할이 origin 이 아니면 그 표를 한 행도 쓰지 않는다. */
@@ -875,11 +994,21 @@ class ReconciliationPostgresIntegrationTest {
 
     /** 물리 FK 로 묶인 부모(하나)와 자식(둘, 하나는 없는 부모를 가리킨다). */
     private static Case physicalForeignKey(Fixture fixture) {
+        return foreignKeyCase(fixture, true);
+    }
+
+    private static String foreignKeyName(JdbcTemplate jdbc, String child) {
+        return jdbc.queryForObject("SELECT conname FROM pg_constraint WHERE contype = 'f' AND conrelid = ?::regclass",
+                String.class, child);
+    }
+
+    /** 물리 FK 로 묶인 부모(하나)와 자식. {@code orphan} 이면 자식 하나가 없는 부모를 가리킨다. */
+    private static Case foreignKeyCase(Fixture fixture, boolean orphan) {
         JdbcTemplate jdbc = jdbc();
         jdbc.execute("CREATE TABLE " + fixture.src("legacy_gp") + " (id int PRIMARY KEY)");
         jdbc.execute("CREATE TABLE " + fixture.src("legacy_gc") + " (id int PRIMARY KEY, gp_id int)");
         jdbc.update("INSERT INTO " + fixture.src("legacy_gp") + " VALUES (1)");
-        jdbc.update("INSERT INTO " + fixture.src("legacy_gc") + " VALUES (1, 1), (2, 99)");
+        jdbc.update("INSERT INTO " + fixture.src("legacy_gc") + " VALUES (1, 1), (2, " + (orphan ? 99 : 1) + ")");
         jdbc.execute("CREATE TABLE " + fixture.tgt("tb_gp") + " (id bigint PRIMARY KEY)");
         jdbc.execute("CREATE TABLE " + fixture.tgt("tb_gc") + " (id bigint PRIMARY KEY, gp_id bigint REFERENCES "
                 + fixture.tgt("tb_gp") + " (id))");

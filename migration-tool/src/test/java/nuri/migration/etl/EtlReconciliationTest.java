@@ -77,8 +77,8 @@ class EtlReconciliationTest {
 
         assertThat(results).allSatisfy(result -> assertThat(result.errors()).isEmpty());
         assertThat(statements.stream().filter(sql -> sql.startsWith("SELECT COUNT(*)")).toList())
-                .as("묶음마다 문장 하나").singleElement().asString()
-                .contains("COUNT(amt)", "SUM(CAST(amt AS DECIMAL(38,0)))", "MIN(amt)", "MAX(amt)");
+                .as("묶음마다 문장 하나 — 컬럼은 mapping 철자").singleElement().asString()
+                .contains("COUNT(AMT)", "SUM(CAST(AMT AS DECIMAL(38,0)))", "MIN(AMT)", "MAX(AMT)");
         ReconciliationPlan plan = run.plan();
         SourceAggregates aggregates = run.source(plan.mapping("LEGACY_ITEM#a").aggregateGroup());
         assertThat(aggregates).isSameAs(run.source(plan.mapping("LEGACY_ITEM#b").aggregateGroup()));
@@ -127,7 +127,7 @@ class EtlReconciliationTest {
     }
 
     @Test
-    @DisplayName("COUNT 전용 문장도 실패하면 행을 읽지 않고 멈춘다")
+    @DisplayName("COUNT 전용 문장도 실패하면 행을 읽지 않고 SQLSTATE 만 밝혀 멈춘다")
     void aFailedCountStopsBeforeReading() {
         DbConfig source = seededSource();
         MappingSpec spec = new MappingSpec(source, null, List.of(mapping("tb_item_a", null)), Map.of("stts", STATUS));
@@ -139,7 +139,8 @@ class EtlReconciliationTest {
                 POLICY, true, Map.of(), ArchiveRun.counting(), false, run);
 
         assertThat(results).singleElement().satisfies(result -> {
-            assertThat(result.errors()).containsExactly("이관 실패(LEGACY_ITEM): SOURCE_AGGREGATE_FAILED");
+            // 메시지·SQL 원문은 싣지 않고 SQLSTATE 로 원인(권한·형 변환·없는 컬럼)을 가른다. H2 의 없는 컬럼은 42S22 다.
+            assertThat(result.errors()).containsExactly("이관 실패(LEGACY_ITEM): SOURCE_AGGREGATE_FAILED(SQLSTATE=42S22)");
             assertThat(result.read()).isZero();
         });
         assertThat(run.source(run.plan().mappings().getFirst().aggregateGroup())).isNull();
@@ -169,6 +170,29 @@ class EtlReconciliationTest {
         assertThat(run.table("LEGACY_ITEM").codeKinds("stts_cd"))
                 .containsExactly(Map.entry(CodeTranslator.Translation.Kind.MAPPED, 3L));
         assertThat(run.replicationRoleOrigin()).as("PostgreSQL 대상이 아니면 확인하지 않는다").isNull();
+    }
+
+    @Test
+    @DisplayName("같은 run 을 다시 돌리면 재개로 건너뛴 행을 센다 — 이번 실행의 카탈로그 스냅숏은 그 행을 증명하지 못한다")
+    void aResumedRunCountsTheRowsItSkipped() {
+        DbConfig source = seededSource();
+        DbConfig target = h2("tgt");
+        jdbc(target).execute("CREATE TABLE tb_item_a (item_id int PRIMARY KEY, nm varchar(20), amt bigint,"
+                + " stts_cd varchar(10))");
+        MappingSpec spec = new MappingSpec(source, target, List.of(mapping("tb_item_a", null)), Map.of("stts", STATUS),
+                new RunContext("reconcile-resume", "legacy"));
+        ReconciliationRun first = run(spec);
+        ReconciliationRun second = run(spec);
+
+        List<EtlExecutor.TableResult> written = executor.execute(spec, MigrationMode.COMMIT, jdbc(source), jdbc(target),
+                POLICY, true, Map.of(), ArchiveRun.counting(), false, first);
+        List<EtlExecutor.TableResult> resumed = executor.execute(spec, MigrationMode.COMMIT, jdbc(source), jdbc(target),
+                POLICY, true, Map.of(), ArchiveRun.counting(), false, second);
+
+        assertThat(written).singleElement().satisfies(result -> assertThat(result.errors()).isEmpty());
+        assertThat(resumed).singleElement().satisfies(result -> assertThat(result.errors()).isEmpty());
+        assertThat(first.table("LEGACY_ITEM").resumedRows()).isZero();
+        assertThat(second.table("LEGACY_ITEM").resumedRows()).isEqualTo(3);
     }
 
     private static ReconciliationRun run(MappingSpec spec, ColumnCheck... extra) {

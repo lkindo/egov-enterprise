@@ -45,6 +45,8 @@ public enum CoverageReason {
     NO_ROWS,
     /** 격리한 행의 대상 키를 알지 못한다. */
     ISOLATED_KEY_UNKNOWN,
+    /** 격리한 행이 있는 표의 PK 가 두 컬럼 이상이라 후보를 세지 않았다. */
+    COMPOSITE_KEY,
     /** 후보 참조 질의가 실패했다. */
     CANDIDATE_QUERY_FAILED,
     /** 물리 제약 스냅숏을 읽지 못했다. */

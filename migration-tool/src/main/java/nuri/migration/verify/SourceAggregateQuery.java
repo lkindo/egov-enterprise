@@ -22,6 +22,10 @@ import java.util.Objects;
  * 소수는 {@code DECIMAL(38,s)} 로 바꿔 더하고, 정밀도가 없는 수(Oracle {@code NUMBER} 등)는 그대로 더한다. 이 문장이 실패하면
  * 실행기는 {@link #countOnlySql()} 로 물러나고, 합·최소·최대는 {@link CoverageReason#SOURCE_AGGREGATE_FAILED} 다. 두 문장의
  * COUNT 위치는 같다. 식별자는 {@link SourceIntrospector} 로 검증하고 값을 바인딩하지 않는다.</p>
+ *
+ * <p>컬럼은 소문자 이름으로 하나로 합치지만(본 읽기의 SELECT 와 같다) 문장에는 mapping 에 적힌 철자를 쓴다 — SQL Server 의
+ * 대소문자를 가리는 정렬처럼 따옴표 없는 이름도 대소문자를 가리는 원천이 있다. SQL Server 원천은 {@code COUNT} 가
+ * {@code int} 라 21억 행을 넘으면 넘치므로 {@code COUNT_BIG} 을 쓴다({@link #sql(boolean)}).</p>
  */
 public final class SourceAggregateQuery {
 
@@ -41,13 +45,14 @@ public final class SourceAggregateQuery {
         Map<String, AggregateColumn> merged = new LinkedHashMap<>();
         for (AggregateColumn column : Objects.requireNonNull(columns, "columns")) {
             String name = column.column().toLowerCase(Locale.ROOT);
-            SourceIntrospector.ident(name);
+            SourceIntrospector.ident(column.identifier());
             AggregateColumn previous = merged.get(name);
             merged.put(name, previous == null
-                    ? new AggregateColumn(name, column.nonNull(), column.aggregate(), column.type())
+                    ? new AggregateColumn(name, column.nonNull(), column.aggregate(), column.type(),
+                    column.identifier())
                     : new AggregateColumn(name, previous.nonNull() || column.nonNull(),
                     previous.aggregate() != Aggregate.NONE ? previous.aggregate() : column.aggregate(),
-                    previous.type() != null ? previous.type() : column.type()));
+                    previous.type() != null ? previous.type() : column.type(), previous.identifier()));
         }
         return new SourceAggregateQuery(source, where == null || where.isBlank() ? null : where,
                 List.copyOf(merged.values()));
@@ -63,12 +68,22 @@ public final class SourceAggregateQuery {
 
     /** 전체 집계 문장. */
     public String sql() {
-        return statement(true);
+        return sql(false);
+    }
+
+    /** 전체 집계 문장. {@code bigCount} 면 {@code COUNT_BIG} 으로 센다(SQL Server). */
+    public String sql(boolean bigCount) {
+        return statement(true, bigCount);
     }
 
     /** COUNT 전용 문장(물러남). */
     public String countOnlySql() {
-        return statement(false);
+        return countOnlySql(false);
+    }
+
+    /** COUNT 전용 문장(물러남). {@code bigCount} 면 {@code COUNT_BIG} 으로 센다(SQL Server). */
+    public String countOnlySql(boolean bigCount) {
+        return statement(false, bigCount);
     }
 
     /** {@link #sql()}(full) 또는 {@link #countOnlySql()} 결과 한 행을 읽는다. 값은 JDBC 에서 읽은 그대로 넘긴다. */
@@ -132,17 +147,18 @@ public final class SourceAggregateQuery {
         return "SourceAggregateQuery[" + source + "]";
     }
 
-    private String statement(boolean full) {
+    private String statement(boolean full, boolean bigCount) {
+        String count = bigCount ? "COUNT_BIG" : "COUNT";
         List<String> items = new ArrayList<>();
-        items.add("COUNT(*)");
+        items.add(count + "(*)");
         for (AggregateColumn column : columns) {
             if (column.nonNull()) {
-                items.add("COUNT(" + SourceIntrospector.ident(column.column()) + ")");
+                items.add(count + "(" + SourceIntrospector.ident(column.identifier()) + ")");
             }
         }
         if (full) {
             for (AggregateColumn column : columns) {
-                String ident = SourceIntrospector.ident(column.column());
+                String ident = SourceIntrospector.ident(column.identifier());
                 if (column.aggregate() == Aggregate.NUM) {
                     items.add(sumExpression(ident, column.type()));
                 }
@@ -200,14 +216,25 @@ public final class SourceAggregateQuery {
 
     private record Layout(int size, Map<String, Integer> count, Map<String, Integer> aggregate) {}
 
-    /** 집계 컬럼 하나. {@code type} 은 합의 캐스트를 정한다. */
-    public record AggregateColumn(String column, boolean nonNull, Aggregate aggregate, SourceColumnType type) {
+    /**
+     * 집계 컬럼 하나. {@code column} 은 결과를 찾는 소문자 이름, {@code identifier} 는 문장에 쓰는 mapping 철자(대소문자만
+     * 다를 수 있다. 다르면 {@code column} 을 쓴다), {@code type} 은 합의 캐스트를 정한다.
+     */
+    public record AggregateColumn(String column, boolean nonNull, Aggregate aggregate, SourceColumnType type,
+                                  String identifier) {
 
         public AggregateColumn {
             if (column == null || column.isBlank()) {
                 throw new IllegalArgumentException("aggregate column must not be blank");
             }
             aggregate = aggregate == null ? Aggregate.NONE : aggregate;
+            if (identifier == null || !identifier.equalsIgnoreCase(column)) {
+                identifier = column;
+            }
+        }
+
+        public AggregateColumn(String column, boolean nonNull, Aggregate aggregate, SourceColumnType type) {
+            this(column, nonNull, aggregate, type, column);
         }
 
         /** 컬럼 계획에서 만든다. 원천 컬럼이 없으면 null. */
@@ -215,7 +242,8 @@ public final class SourceAggregateQuery {
             if (check.sourceColumn() == null || (!check.nonNull() && check.aggregate() == Aggregate.NONE)) {
                 return null;
             }
-            return new AggregateColumn(check.sourceColumn(), check.nonNull(), check.aggregate(), check.sourceType());
+            return new AggregateColumn(check.sourceColumn(), check.nonNull(), check.aggregate(), check.sourceType(),
+                    check.sourceIdentifier());
         }
     }
 }

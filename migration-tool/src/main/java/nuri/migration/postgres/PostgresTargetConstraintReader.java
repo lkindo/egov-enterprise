@@ -20,7 +20,8 @@ import java.util.Objects;
  *
  * <p>표마다 {@code pg_constraint}(PK·UNIQUE·FK·CHECK)와 {@code pg_index} 의 유일 인덱스를 읽는다. FK 는 자식 쪽 RI 트리거
  * ({@code tgisinternal} 이고 {@code tgrelid = conrelid})의 {@code tgenabled} 를 함께 읽는다 — 대사가 FK 집행을
- * {@code tgenabled IN ('O','A')} 로 증명한다. 대상 표를 가리키는 FK 는 읽지 않는다.
+ * {@code tgenabled IN ('O','A')} 로 증명한다. FK 는 제약 행과 그 트리거 행의 {@code xmin} 도 읽는다 — 적재 중 트리거를
+ * 껐다 켜면 상태가 같아도 행 버전이 바뀐다. 대상 표를 가리키는 FK 는 읽지 않는다.
  */
 public final class PostgresTargetConstraintReader {
 
@@ -41,7 +42,12 @@ public final class PostgresTargetConstraintReader {
                    ARRAY(SELECT t.tgenabled::text
                          FROM pg_trigger t
                          WHERE t.tgconstraint = con.oid AND t.tgrelid = con.conrelid AND t.tgisinternal
-                         ORDER BY 1) AS trigger_states
+                         ORDER BY 1) AS trigger_states,
+                   con.xmin::text AS constraint_version,
+                   ARRAY(SELECT t.xmin::text
+                         FROM pg_trigger t
+                         WHERE t.tgconstraint = con.oid AND t.tgrelid = con.conrelid AND t.tgisinternal
+                         ORDER BY t.oid) AS trigger_versions
             FROM pg_constraint con
             JOIN pg_class cl ON cl.oid = con.conrelid
             JOIN pg_namespace ns ON ns.oid = cl.relnamespace
@@ -98,7 +104,9 @@ public final class PostgresTargetConstraintReader {
                             foreignKey ? rows.getString("ref_table") : null,
                             foreignKey ? strings(rows.getArray("ref_columns")) : List.of(),
                             rows.getBoolean("validated"),
-                            foreignKey ? strings(rows.getArray("trigger_states")) : List.of()));
+                            foreignKey ? strings(rows.getArray("trigger_states")) : List.of(),
+                            foreignKey ? versions(rows.getString("constraint_version"),
+                                    strings(rows.getArray("trigger_versions"))) : List.of()));
                 }
             }
         }
@@ -119,6 +127,14 @@ public final class PostgresTargetConstraintReader {
             }
         }
         return indexes;
+    }
+
+    /** 제약 행 버전 뒤에 트리거 행 버전(oid 순)을 둔다. */
+    private static List<String> versions(String constraint, List<String> triggers) {
+        List<String> versions = new ArrayList<>(triggers.size() + 1);
+        versions.add("c:" + constraint);
+        triggers.forEach(trigger -> versions.add("t:" + trigger));
+        return versions;
     }
 
     private static List<String> strings(Array array) throws SQLException {

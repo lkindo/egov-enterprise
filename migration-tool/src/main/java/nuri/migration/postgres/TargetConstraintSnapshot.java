@@ -1,5 +1,7 @@
 package nuri.migration.postgres;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -63,9 +65,14 @@ public record TargetConstraintSnapshot(int schemaVersion, List<TableConstraints>
     /**
      * {@code pg_constraint} 한 행. {@code type} 은 {@code p}·{@code u}·{@code f}·{@code c} 다. 참조 표·컬럼과
      * {@code triggerStates}(자식 쪽 RI 트리거의 {@code tgenabled}, 정렬)는 FK 에만 있다. CHECK 는 이름·검증 여부만 담는다.
+     *
+     * <p>{@code catalogVersions} 는 FK 의 {@code pg_constraint} 행과 자식 쪽 RI 트리거 행의 {@code xmin}(트랜잭션 번호, 값이
+     * 아니다)이다. 트리거를 껐다 다시 켜면 상태는 같아도 행 버전이 바뀐다 — 대사가 적재 시작과 끝을 비교한다. 직렬화하지 않으므로
+     * bound digest 에 들어가지 않는다(plan 뒤 바뀌어도 그 자체로는 load 를 막지 않는다).</p>
      */
     public record Constraint(String name, String type, List<String> columns, String refSchema, String refTable,
-                             List<String> refColumns, boolean validated, List<String> triggerStates) {
+                             List<String> refColumns, boolean validated, List<String> triggerStates,
+                             @JsonIgnore List<String> catalogVersions) {
 
         public Constraint {
             name = requireText(name, "constraint.name");
@@ -76,6 +83,13 @@ public record TargetConstraintSnapshot(int schemaVersion, List<TableConstraints>
             columns = columns == null ? List.of() : List.copyOf(columns);
             refColumns = refColumns == null ? List.of() : List.copyOf(refColumns);
             triggerStates = triggerStates == null ? List.of() : triggerStates.stream().sorted().toList();
+            catalogVersions = catalogVersions == null ? List.of() : List.copyOf(catalogVersions);
+        }
+
+        /** 행 버전을 읽지 않은 제약(시험·목). */
+        public Constraint(String name, String type, List<String> columns, String refSchema, String refTable,
+                          List<String> refColumns, boolean validated, List<String> triggerStates) {
+            this(name, type, columns, refSchema, refTable, refColumns, validated, triggerStates, null);
         }
 
         public boolean foreignKey() {

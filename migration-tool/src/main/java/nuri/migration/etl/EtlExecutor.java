@@ -115,8 +115,9 @@ import java.util.function.Function;
  *
  * <p>[ADR-0029 L4 D2·D7] 대사가 활성이면({@link ReconciliationRun}) 행을 읽기 전에 같은 원천 읽기 세션에서 (소스, where)
  * 묶음마다 집계 문장 하나(행 수·NULL 아닌 수·정확 수치 합·최소·최대)를 savepoint 안에서 보내고, 실패하면 COUNT 전용 문장으로
- * 물러난다(그것도 실패하면 {@code SOURCE_AGGREGATE_FAILED} 로 멈춘다). COMMIT 은 대상 쓰기 연결의
- * {@code session_replication_role} 이 origin 이 아니면 그 표를 쓰지 않는다. 실패 없이 변환한 행의 codemap 결과(쓰기 재시도의
+ * 물러난다(그것도 실패하면 {@code SOURCE_AGGREGATE_FAILED(SQLSTATE)} 로 멈춘다). COMMIT 은 원천을 읽기 전에 대상 연결 하나로,
+ * 그리고 표마다 쓰기 연결을 열 때 {@code session_replication_role} 이 origin 인지 보고 아니면 쓰지 않는다. 재개로 건너뛴 행은
+ * 매핑마다 센다 — verifier 가 그 대상의 FK 를 이번 실행의 카탈로그로 증명하지 않는다. 실패 없이 변환한 행의 codemap 결과(쓰기 재시도의
  * 재변환 제외)·표본 원값·격리 행의 기여와 대상 PK 는 대사 홀더에만 모으고 결과·문구에 싣지 않는다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
@@ -419,8 +420,13 @@ public class EtlExecutor {
                         sourceConnection.setReadOnly(true);
                         sourceConnection.setTransactionIsolation(sourceReadPolicy.jdbcIsolation());
                         sourceConnection.setAutoCommit(false);
-                        TableResult preflightFailure =
-                                preflightOrderTupleUniqueness(sourceConnection, orderedTables, commit);
+                        // [ADR-0029 L4 D2] 원천 표를 훑기 전에 대상 쓰기 세션의 복제 역할을 한 번 본다. 표마다 쓰기 연결을 열 때도
+                        //   다시 본다.
+                        TableResult roleFailure = commit
+                                ? requireOriginRole(targetDs, orderedTables, reconciliation)
+                                : null;
+                        TableResult preflightFailure = roleFailure != null ? roleFailure
+                                : preflightOrderTupleUniqueness(sourceConnection, orderedTables, commit);
                         // [ADR-0029 L3e] 덤프만 하는 표의 정렬 키 NULL 부재·유일성은 어느 모드든 행을 읽거나 쓰기 전에 증명한다.
                         String archivePreflight = preflightFailure == null
                                 ? preflightDumpOnlyKeys(sourceConnection, dumpOnlyReads)
@@ -1142,9 +1148,32 @@ public class EtlExecutor {
     }
 
     /**
-     * [ADR-0029 L4 D2] PostgreSQL 대상 쓰기 연결의 {@code session_replication_role} 이 origin 인가. replica·local 세션에서는 RI
-     * 트리거가 발화하지 않아 물리 FK 집행을 증명할 수 없으므로 그 표를 쓰지 않는다. 결과는 대사 홀더에 남긴다. PostgreSQL 이
-     * 아니면 확인하지 않는다(승인 workflow 의 대상은 PostgreSQL 이다).
+     * [ADR-0029 L4 D2] 대사가 활성이면 원천을 읽기 전에 대상 연결 하나로 복제 역할을 본다. origin 이 아니면 첫 표의 결과에 고정
+     * 사유만 남기고 아무것도 읽지 않는다 — 원천 표 전체를 훑는 집계·사전 검사보다 먼저 멈춘다.
+     */
+    private static TableResult requireOriginRole(DataSource targetDs, List<TableMapping> orderedTables,
+                                                 ReconciliationRun reconciliation) {
+        if (!reconciliation.active() || orderedTables.isEmpty()) {
+            return null;
+        }
+        try (Connection target = targetDs.getConnection()) {
+            if (replicationRoleOrigin(target, reconciliation)) {
+                return null;
+            }
+        } catch (SQLException failure) {
+            throw new IllegalStateException("대상 세션의 복제 역할을 읽지 못해 적재를 시작하지 않습니다", failure);
+        }
+        TableMapping first = orderedTables.getFirst();
+        return new TableResult(first.source(), first.target(), 0, 0, 0,
+                List.of("이관 실패(" + label(first) + "): SESSION_REPLICATION_ROLE_NOT_ORIGIN"),
+                List.of(), Map.of(), resultMappingId(first));
+    }
+
+    /**
+     * [ADR-0029 L4 D2] PostgreSQL 대상 쓰기 연결의 {@code session_replication_role} 이 origin 인가. replica 세션에서는 기본
+     * ({@code tgenabled = 'O'}) RI 트리거가 발화하지 않아 물리 FK 집행을 증명할 수 없으므로 그 표를 쓰지 않는다. local 세션은
+     * 기본 트리거가 발화하지만 origin 만 받는다(보수적). 결과는 대사 홀더에 남긴다. PostgreSQL 이 아니면 확인하지 않는다(승인
+     * workflow 의 대상은 PostgreSQL 이다).
      */
     private static boolean replicationRoleOrigin(Connection target, ReconciliationRun reconciliation)
             throws SQLException {
@@ -1226,15 +1255,18 @@ public class EtlExecutor {
      * savepoint 로 되돌리고 COUNT 전용 문장으로 물러난다 — 그 묶음의 합·최소·최대는 판정하지 않는다
      * ({@code SOURCE_AGGREGATE_FAILED}). PostgreSQL 은 실패한 문장이 읽기 트랜잭션 전체를 막으므로 savepoint 가 필요하다.
      * savepoint 를 만들 수 없으면 없이 보내고, COUNT 전용 문장도 실패하면 행을 읽지 않고 멈춘다(그 묶음의 첫 매핑 결과에
-     * 고정 사유만 남긴다). 집계 값은 대사 홀더에만 두고 결과·문구에 싣지 않는다. 비활성이면 아무 문장도 보내지 않는다.
+     * 고정 사유와 SQLSTATE 만 남긴다 — 원천 권한·형 변환·세션 설정을 가르는 근거다). 집계 값은 대사 홀더에만 두고 결과·문구에
+     * 싣지 않는다. SQL Server 원천은 {@code COUNT_BIG} 으로 센다. 비활성이면 아무 문장도 보내지 않는다.
      */
     private static TableResult measureSourceAggregates(Connection source, List<TableMapping> orderedTables,
-                                                       ReconciliationRun reconciliation) {
+                                                       ReconciliationRun reconciliation) throws SQLException {
         if (!reconciliation.active()) {
             return null;
         }
+        boolean bigCount = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
         for (AggregateGroup group : reconciliation.aggregateGroups()) {
-            SourceAggregates aggregates = readSourceAggregates(source, group);
+            AggregateRead read = readSourceAggregates(source, group, bigCount);
+            SourceAggregates aggregates = read.aggregates();
             if (aggregates == null) {
                 TableMapping table = orderedTables.stream()
                         .filter(candidate -> group.labels().stream()
@@ -1243,7 +1275,7 @@ public class EtlExecutor {
                 String label = table == null ? group.source() : label(table);
                 return new TableResult(table == null ? group.source() : table.source(),
                         table == null ? group.source() : table.target(), 0, 0, 0,
-                        List.of("이관 실패(" + label + "): SOURCE_AGGREGATE_FAILED"),
+                        List.of("이관 실패(" + label + "): SOURCE_AGGREGATE_FAILED(SQLSTATE=" + read.sqlState() + ")"),
                         List.of(), Map.of(), table == null ? null : resultMappingId(table));
             }
             reconciliation.recordSource(group.key(), aggregates);
@@ -1251,13 +1283,16 @@ public class EtlExecutor {
         return null;
     }
 
-    /** 집계 문장, 실패하면 COUNT 전용 문장. 둘 다 실패하면 null. */
-    private static SourceAggregates readSourceAggregates(Connection source, AggregateGroup group) {
+    /** 원천 집계 결과. 둘 다 실패했으면 {@code aggregates} 가 null 이고 COUNT 전용 문장의 SQLSTATE(없으면 {@code -})를 담는다. */
+    private record AggregateRead(SourceAggregates aggregates, String sqlState) {}
+
+    /** 집계 문장, 실패하면 COUNT 전용 문장. 둘 다 실패하면 집계 없이 COUNT 전용 문장의 SQLSTATE 만 돌려준다. */
+    private static AggregateRead readSourceAggregates(Connection source, AggregateGroup group, boolean bigCount) {
         Savepoint savepoint = savepoint(source);
         try {
-            SourceAggregates full = readAggregateRow(source, group.query().sql(), group, true);
+            SourceAggregates full = readAggregateRow(source, group.query().sql(bigCount), group, true);
             releaseSavepoint(source, savepoint);
-            return full;
+            return new AggregateRead(full, null);
         } catch (SQLException | RuntimeException aggregateFailed) {
             if (savepoint != null) {
                 try {
@@ -1268,11 +1303,12 @@ public class EtlExecutor {
             }
         }
         try {
-            SourceAggregates counts = readAggregateRow(source, group.query().countOnlySql(), group, false);
+            SourceAggregates counts = readAggregateRow(source, group.query().countOnlySql(bigCount), group, false);
             releaseSavepoint(source, savepoint);
-            return counts;
+            return new AggregateRead(counts, null);
         } catch (SQLException | RuntimeException countFailed) {
-            return null;
+            // 메시지·SQL 원문은 버린다 — 형 변환 오류 문구에는 원천 값이 들어간다.
+            return new AggregateRead(null, sqlState(countFailed));
         }
     }
 
@@ -1982,6 +2018,7 @@ public class EtlExecutor {
                                     + ", sourceDigest=" + KeyDiagnostics.digest(checkpoint.sourceKey()) + ")");
                             return false;
                         }
+                        counts.reconciliation.resumed();
                         reg.rollback(rowCheckpoint);
                         continue;
                     }
@@ -2291,6 +2328,7 @@ public class EtlExecutor {
                                 + ", sourceDigest=" + KeyDiagnostics.digest(encodedSource) + ")");
                         return false;
                     }
+                    counts.reconciliation.resumed();
                     registry.rollback(rowCheckpoint);
                     continue;
                 }

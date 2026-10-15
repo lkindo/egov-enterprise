@@ -52,7 +52,7 @@ class CodeSetReconcilerTest {
             "L-2");
 
     @Test
-    @DisplayName("같은 표의 대상은 문장 하나로 세고, trim 바인딩은 공백을 지운 값으로 세며 인자는 바인딩만 한다")
+    @DisplayName("같은 표의 대상은 문장 하나로 세고, 상세코드는 바인딩마다 LEFT JOIN 하나로 찾으며 인자는 문장 순서대로 바인딩만 한다")
     void oneStatementPerTable() {
         List<TableQuery> queries = CodeSetReconciler.queries(List.of(VALIDATE, LOG, ALLOWED, UNRECONCILED));
 
@@ -60,31 +60,36 @@ class CodeSetReconcilerTest {
         TableQuery approval = queries.getFirst();
         assertThat(approval.table()).isEqualTo("public.tb_ifml_atrz_info");
         assertThat(approval.targets()).containsExactly(0, 2, 3);
-        assertThat(approval.sql()).isEqualTo("SELECT count(task_se_cd) AS nn_0, "
-                + "count(*) FILTER (WHERE task_se_cd IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.tb_com_dtl_cd d"
-                + " WHERE d.cd_id = ? AND d.dtl_cd = task_se_cd)) AS missing_0, "
-                + "count(DISTINCT task_se_cd) FILTER (WHERE NOT EXISTS (SELECT 1 FROM public.tb_com_dtl_cd d"
-                + " WHERE d.cd_id = ? AND d.dtl_cd = task_se_cd)) AS missing_distinct_0, "
-                + "count(*) FILTER (WHERE task_se_cd IS NOT NULL AND EXISTS (SELECT 1 FROM public.tb_com_dtl_cd d"
-                + " WHERE d.cd_id = ? AND d.dtl_cd = task_se_cd AND d.use_yn IS DISTINCT FROM 'Y')) AS inactive_0, "
-                + "count(stts_cd) AS nn_2, count(*) FILTER (WHERE stts_cd IS NOT NULL AND NOT (stts_cd = ANY (?)))"
-                + " AS outside_2, count(kind_cd) AS nn_3, count(DISTINCT kind_cd) AS distinct_3"
-                + " FROM public.tb_ifml_atrz_info");
-        assertThat(approval.args()).containsExactly("COM075", "COM075", "COM075", List.of("02", PROBE));
-        assertThat(queries.get(1).sql()).startsWith("SELECT count(trim(prcs_se_cd)) AS nn_1, ")
-                .contains("d.dtl_cd = trim(prcs_se_cd)", "count(DISTINCT trim(prcs_se_cd))")
-                .endsWith(" FROM public.tb_sys_log");
-        assertThat(queries.get(1).args()).containsExactly("COM033", "COM033", "COM033");
+        assertThat(approval.sql()).isEqualTo("SELECT count(t.task_se_cd) AS nn_0, "
+                + "count(*) FILTER (WHERE t.task_se_cd IS NOT NULL AND d0.dtl_cd IS NULL) AS missing_0, "
+                + "count(DISTINCT t.task_se_cd) FILTER (WHERE d0.dtl_cd IS NULL) AS missing_distinct_0, "
+                + "count(*) FILTER (WHERE d0.dtl_cd IS NOT NULL AND d0.use_yn IS DISTINCT FROM 'Y') AS inactive_0, "
+                + "count(t.stts_cd) AS nn_2, count(*) FILTER (WHERE t.stts_cd IS NOT NULL AND NOT (t.stts_cd = ANY (?)))"
+                + " AS outside_2, count(t.kind_cd) AS nn_3, count(DISTINCT t.kind_cd) AS distinct_3"
+                + " FROM public.tb_ifml_atrz_info t"
+                + " LEFT JOIN public.tb_com_dtl_cd d0 ON d0.cd_id = ? AND d0.dtl_cd = t.task_se_cd");
+        // 인자는 문장에 나오는 순서다 — SELECT 목록의 허용값이 JOIN 의 그룹 id 보다 앞이다.
+        assertThat(approval.args()).containsExactly(List.of("02", PROBE), "COM075");
+        assertThat(queries.get(1).sql()).startsWith("SELECT count(trim(t.prcs_se_cd)) AS nn_1, ")
+                .contains("d1.dtl_cd = trim(t.prcs_se_cd)", "count(DISTINCT trim(t.prcs_se_cd))")
+                .endsWith(" FROM public.tb_sys_log t LEFT JOIN public.tb_com_dtl_cd d1 ON d1.cd_id = ? AND"
+                        + " d1.dtl_cd = trim(t.prcs_se_cd)");
+        assertThat(queries.get(1).args()).containsExactly("COM033");
+        // 바인딩 컬럼 이름이 상세코드 표의 컬럼과 같아도 대상 표의 컬럼을 가리킨다.
+        assertThat(CodeSetReconciler.queries(List.of(new CodeSetTarget("public.tb_y", "use_yn", Source.COMMON_CODE,
+                "COM001", Use.VALIDATE, false, null, null, false, false))).getFirst().sql())
+                .contains("count(t.use_yn) AS nn_0", "d0.dtl_cd = t.use_yn", "d0.use_yn IS DISTINCT FROM 'Y'")
+                .doesNotContain("= use_yn");
         assertThat(String.join(" ", queries.stream().map(TableQuery::sql).toList())).doesNotContain(PROBE);
         assertThat(approval.toString()).isEqualTo("TableQuery[public.tb_ifml_atrz_info, targets=3]");
         assertThat(CodeSetReconciler.queries(List.of())).isEmpty();
         // 공통코드 표는 대상 표의 schema 에서 찾는다. schema 가 없으면 기본 schema 다.
         assertThat(CodeSetReconciler.queries(List.of(new CodeSetTarget("app.tb_x", "x_cd", Source.COMMON_CODE,
                 "COM001", Use.DISPLAY, false, null, null, false, false))).getFirst().sql())
-                .contains("FROM app.tb_com_dtl_cd d").doesNotContain("public.").endsWith(" FROM app.tb_x");
+                .contains("LEFT JOIN app.tb_com_dtl_cd d0").doesNotContain("public.").contains(" FROM app.tb_x t ");
         assertThat(CodeSetReconciler.queries(List.of(new CodeSetTarget("tb_x", "x_cd", Source.COMMON_CODE,
                 "COM001", Use.DISPLAY, false, null, null, false, false))).getFirst().sql())
-                .contains("FROM public.tb_com_dtl_cd d").endsWith(" FROM tb_x");
+                .contains("LEFT JOIN public.tb_com_dtl_cd d0").contains(" FROM tb_x t ");
         assertThatThrownBy(() -> CodeSetReconciler.queries(List.of(CodeSetTarget.unreconciled("public.tb_x",
                 "x;drop", "L")))).isInstanceOf(IllegalArgumentException.class);
     }
@@ -272,7 +277,9 @@ class CodeSetReconcilerTest {
         @Override
         public Map<String, Long> counts(String sql, List<Object> args) {
             statements.add(sql);
-            String table = sql.substring(sql.lastIndexOf(" FROM ") + " FROM ".length());
+            // 대상 표는 별칭 t 앞의 식별자다(IS DISTINCT FROM·LEFT JOIN 과 구분한다).
+            java.util.regex.Matcher from = java.util.regex.Pattern.compile(" FROM (\\S+) t(?: |$)").matcher(sql);
+            String table = from.find() ? from.group(1) : "";
             if (failures.containsKey(table)) {
                 throw new ReconciliationQueryException(failures.get(table));
             }

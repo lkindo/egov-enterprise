@@ -23,6 +23,8 @@ import java.util.List;
  * @param sampled          표본 재계산 비교에 넣는가
  * @param replay           표본 재계산 방법. 표본이 아니면 null 이다
  * @param gaps             판정하지 않는 검사와 그 이유
+ * @param sourceIdentifier mapping 에 적힌 원천 컬럼 철자 — 원천 집계 문장의 식별자다(대소문자를 가리는 원천은 소문자로 바꾸면
+ *                         다른 컬럼이다). 없으면 {@code sourceColumn}
  */
 public record ColumnCheck(
         String targetColumn,
@@ -37,7 +39,8 @@ public record ColumnCheck(
         String lookupAlias,
         boolean sampled,
         ColumnReplay.Column replay,
-        List<Gap> gaps) {
+        List<Gap> gaps,
+        String sourceIdentifier) {
 
     public ColumnCheck {
         if (targetColumn == null || targetColumn.isBlank()) {
@@ -48,6 +51,18 @@ public record ColumnCheck(
         if (sampled && replay == null) {
             throw new IllegalArgumentException("sampled column needs a replay");
         }
+        if (sourceIdentifier == null || sourceColumn == null
+                || !sourceIdentifier.equalsIgnoreCase(sourceColumn)) {
+            sourceIdentifier = sourceColumn;
+        }
+    }
+
+    /** 원천 철자가 소문자 원천 컬럼과 같은 계획. */
+    public ColumnCheck(String targetColumn, String sourceColumn, SourceColumnType sourceType, Aggregate aggregate,
+                       boolean nonNull, boolean code, String codemap, boolean nullFallbackable, DomainCategory domain,
+                       String lookupAlias, boolean sampled, ColumnReplay.Column replay, List<Gap> gaps) {
+        this(targetColumn, sourceColumn, sourceType, aggregate, nonNull, code, codemap, nullFallbackable, domain,
+                lookupAlias, sampled, replay, gaps, sourceColumn);
     }
 
     /** 합·최소·최대 종류. {@link #NUM} 은 정확 수치, {@link #TEMPORAL} 은 시간대 없는 날짜·일시다. */

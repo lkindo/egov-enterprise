@@ -22,7 +22,9 @@ import java.util.TreeSet;
 /**
  * [ADR-0029 L4 D7] 적재 뒤 공통코드·허용값 대사. 대상 컬럼 <b>전체</b>(이전 run·직접 적재한 행 포함 — INSERT 전용이라 컷오버
  * 상태에 다 들어간다)를 대상 DB 안에서 센다. 대상 표마다 문장 하나({@code FILTER} 집계)를 보내고 그룹 id·허용값은 바인딩만
- * 한다. 값은 JVM 으로 오지 않고 건수만 온다.
+ * 한다. 값은 JVM 으로 오지 않고 건수만 온다. 대상 표에는 별칭 {@code t} 를 두고 컬럼을 늘 {@code t.} 로 가리킨다 — 바인딩
+ * 컬럼 이름이 상세코드 표의 컬럼({@code use_yn} 등)과 같아도 상세코드 쪽으로 해석되지 않는다. 상세코드는 바인딩마다
+ * {@code LEFT JOIN} 하나로 찾는다({@code (cd_id, dtl_cd)} 가 PK 라 행이 늘지 않는다).
  *
  * <p>판정(사용자 결정 L4-P2, DEC-OPS-325): 쓰기 검증 바인딩은 그룹에 없거나 사용 중이 아닌 코드가 있으면 FAIL, 표시 바인딩은
  * 건수만 기록, 메타 허용값은 밖의 코드가 있으면 FAIL, 대조할 원천이 없는 코드 컬럼은 {@code UNRECONCILED} 로 남겨 컷오버
@@ -93,38 +95,42 @@ public final class CodeSetReconciler {
         List<TableQuery> queries = new ArrayList<>();
         for (Map.Entry<String, List<Integer>> table : byTable.entrySet()) {
             List<String> select = new ArrayList<>();
-            List<Object> args = new ArrayList<>();
+            List<Object> selectArgs = new ArrayList<>();
+            StringBuilder joins = new StringBuilder();
+            List<Object> joinArgs = new ArrayList<>();
             for (int index : table.getValue()) {
                 CodeSetTarget target = targets.get(index);
-                String column = SourceIntrospector.ident(target.column());
+                String column = "t." + SourceIntrospector.ident(target.column());
                 String value = target.trim() ? "trim(" + column + ")" : column;
                 select.add("count(" + value + ") AS nn_" + index);
                 switch (target.source()) {
                     case COMMON_CODE -> {
                         String detail = SourceIntrospector.qualifiedIdent(schema(target.table()) + "." + DETAIL_TABLE);
-                        String absent = "NOT EXISTS (SELECT 1 FROM " + detail + " d WHERE d.cd_id = ? AND d.dtl_cd = "
-                                + value + ")";
-                        select.add("count(*) FILTER (WHERE " + value + " IS NOT NULL AND " + absent + ") AS missing_"
-                                + index);
-                        select.add("count(DISTINCT " + value + ") FILTER (WHERE " + absent + ") AS missing_distinct_"
-                                + index);
-                        select.add("count(*) FILTER (WHERE " + value + " IS NOT NULL AND EXISTS (SELECT 1 FROM "
-                                + detail + " d WHERE d.cd_id = ? AND d.dtl_cd = " + value
-                                + " AND d.use_yn IS DISTINCT FROM 'Y')) AS inactive_" + index);
-                        args.add(target.group());
-                        args.add(target.group());
-                        args.add(target.group());
+                        String alias = "d" + index;
+                        joins.append(" LEFT JOIN ").append(detail).append(' ').append(alias).append(" ON ")
+                                .append(alias).append(".cd_id = ? AND ").append(alias).append(".dtl_cd = ")
+                                .append(value);
+                        joinArgs.add(target.group());
+                        select.add("count(*) FILTER (WHERE " + value + " IS NOT NULL AND " + alias
+                                + ".dtl_cd IS NULL) AS missing_" + index);
+                        select.add("count(DISTINCT " + value + ") FILTER (WHERE " + alias
+                                + ".dtl_cd IS NULL) AS missing_distinct_" + index);
+                        select.add("count(*) FILTER (WHERE " + alias + ".dtl_cd IS NOT NULL AND " + alias
+                                + ".use_yn IS DISTINCT FROM 'Y') AS inactive_" + index);
                     }
                     case ALLOWED_VALUES -> {
                         select.add("count(*) FILTER (WHERE " + value + " IS NOT NULL AND NOT (" + value
                                 + " = ANY (?))) AS outside_" + index);
-                        args.add(List.copyOf(target.allowed()));
+                        selectArgs.add(List.copyOf(target.allowed()));
                     }
                     case UNRECONCILED -> select.add("count(DISTINCT " + value + ") AS distinct_" + index);
                 }
             }
+            // 인자는 문장에 나오는 순서다 — SELECT 목록(허용값) 다음 JOIN(그룹 id).
+            List<Object> args = new ArrayList<>(selectArgs);
+            args.addAll(joinArgs);
             queries.add(new TableQuery(table.getKey(), "SELECT " + String.join(", ", select) + " FROM "
-                    + SourceIntrospector.qualifiedIdent(table.getKey()), args, table.getValue()));
+                    + SourceIntrospector.qualifiedIdent(table.getKey()) + " t" + joins, args, table.getValue()));
         }
         return queries;
     }

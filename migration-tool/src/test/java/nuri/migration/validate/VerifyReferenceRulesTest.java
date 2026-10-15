@@ -8,6 +8,7 @@ import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.model.MappingSpec.VerifyDeclaration;
 import nuri.migration.model.MappingSpec.VerifyReference;
+import nuri.migration.postgres.TargetConstraintSnapshot;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.postgres.TargetSchemaFingerprint.ColumnMetadata;
 import nuri.migration.postgres.TargetSchemaFingerprint.PrimaryKeyColumn;
@@ -149,6 +150,33 @@ class VerifyReferenceRulesTest {
                 + " 없습니다(VERIFY_REFERENCE_COLUMN_MISSING)");
         assertThat(VerifyReferenceRules.liveViolations(spec, new TargetSchemaFingerprint(1, "PostgreSQL", "17", "d",
                 List.of()))).as("결속하지 않은 fingerprint 는 보지 않는다").isEmpty();
+    }
+
+    @Test
+    @DisplayName("live — 매핑 대상의 유일 인덱스가 이미 집행되지 않으면 쓰기 전에 멈춘다")
+    void anUnenforcedUniqueIndexStopsBeforeWriting() {
+        MappingSpec spec = spec(parent(null, null), child(declaration(reference())));
+        TargetSchemaFingerprint base = fingerprint(Types.BIGINT, "int8", 0, Types.BIGINT, "int8", 0);
+
+        assertThat(VerifyReferenceRules.liveViolations(spec, withIndexes(base, true, true))).isEmpty();
+        assertThat(VerifyReferenceRules.liveViolations(spec, withIndexes(base, false, true))).containsExactly(
+                "public.tb_child: 유일 인덱스 uq_tb_child_code 이 집행되지 않습니다(indisvalid·indisready) — 행을 쓰기 전에"
+                        + " 멈춥니다(UNIQUE_INDEX_NOT_ENFORCED)");
+        assertThat(VerifyReferenceRules.liveViolations(spec, withIndexes(base, true, false))).hasSize(1);
+        assertThat(VerifyReferenceRules.liveViolations(spec(parent(null, null)), withIndexes(base, false, false)))
+                .as("매핑하지 않은 표의 인덱스는 보지 않는다").isEmpty();
+        assertThat(VerifyReferenceRules.liveViolations(spec(child(declaration(reference())),
+                child(declaration(reference()))), withIndexes(base, false, true)))
+                .as("같은 대상을 나눈 매핑도 한 번만 알린다").hasSize(1);
+    }
+
+    private static TargetSchemaFingerprint withIndexes(TargetSchemaFingerprint base, boolean valid, boolean ready) {
+        TargetConstraintSnapshot constraints = new TargetConstraintSnapshot(1, List.of(
+                new TargetConstraintSnapshot.TableConstraints("public", "tb_child", List.of(),
+                        List.of(new TargetConstraintSnapshot.UniqueIndex("uq_tb_child_code", List.of("code"), valid,
+                                ready)))));
+        return new TargetSchemaFingerprint(base.schemaVersion(), base.databaseProduct(), base.databaseVersion(),
+                base.digest(), base.tables(), base.standard(), constraints);
     }
 
     @Test

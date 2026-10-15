@@ -32,8 +32,11 @@ import nuri.migration.verify.DomainConformance;
 import nuri.migration.verify.MigrationVerifier;
 import nuri.migration.verify.ReconciliationJudge;
 import nuri.migration.verify.ReconciliationPlanner;
+import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.ReconciliationValues;
 import nuri.migration.verify.ReferenceChecks;
 import nuri.migration.verify.SourceAggregateQuery;
+import nuri.migration.verify.TargetTally;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 import org.springframework.boot.system.ApplicationHome;
 
@@ -102,6 +105,10 @@ public record MigrationExecutionContract(
             ConstraintProof.class,
             ReferenceChecks.class,
             ReconciliationPlanner.class,
+            // 표본 간격·종류 상한·격리 행 기여(수집)와 대상 누적·표본 비교(누적)도 판정이다.
+            ReconciliationRun.class,
+            TargetTally.class,
+            ReconciliationValues.class,
             CodeSetReconciler.class,
             ProductCodeBindings.class,
             CodeSetPrecheck.class,

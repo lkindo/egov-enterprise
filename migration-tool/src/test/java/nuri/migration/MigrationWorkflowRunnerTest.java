@@ -922,8 +922,12 @@ class MigrationWorkflowRunnerTest {
 
         loadCommit(inventory, plan, true, "postgresql-pg-catalog");
 
+        ArgumentCaptor<ReconciliationRun> executed = ArgumentCaptor.forClass(ReconciliationRun.class);
         verify(executor).execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
-                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false), any(ReconciliationRun.class));
+                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false), executed.capture());
+        // [ADR-0029 L4 D2·D7] COMMIT 은 대상 질의를 넘긴다 — 없으면 verifier 가 참조·유일 인덱스·공통코드를 판정하지 못한다.
+        assertThat(executed.getValue().queries()).as("COMMIT 은 대상 질의가 있다")
+                .isInstanceOf(nuri.migration.postgres.PostgresReconciliationQueries.class);
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("fresh-plan.json.load-"))
                     .findFirst().orElseThrow();

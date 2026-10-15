@@ -71,8 +71,9 @@ class ReconciliationRunTest {
         List<AggregateGroup> groups = new ArrayList<>(run.aggregateGroups());
         assertThat(groups).hasSize(2);
         assertThat(groups.getFirst().labels()).containsExactly("legacy.orders#a", "legacy.orders#b");
-        assertThat(groups.getFirst().query().sql()).isEqualTo("SELECT COUNT(*), COUNT(amt), COUNT(nm), "
-                + "SUM(CAST(amt AS DECIMAL(38,0))), MIN(amt), MAX(amt) FROM legacy.orders WHERE kind = 'A'");
+        // 문장의 컬럼은 mapping 철자다(AMT·NM) — 결과는 소문자 이름으로 찾는다.
+        assertThat(groups.getFirst().query().sql()).isEqualTo("SELECT COUNT(*), COUNT(AMT), COUNT(NM), "
+                + "SUM(CAST(AMT AS DECIMAL(38,0))), MIN(AMT), MAX(AMT) FROM legacy.orders WHERE kind = 'A'");
         assertThat(groups.get(1).labels()).containsExactly("legacy.orders#c");
         assertThat(ReconciliationPlan.groupKey("Legacy.Orders", " x = 'A' "))
                 .isEqualTo(ReconciliationPlan.groupKey("legacy.orders", "x = 'A'"))

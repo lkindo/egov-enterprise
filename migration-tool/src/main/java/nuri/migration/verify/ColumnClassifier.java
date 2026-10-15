@@ -176,7 +176,8 @@ public final class ColumnClassifier {
         boolean sampled = !custom && !facts.nullify();
         return new ColumnCheck(target, source, sourceType, aggregate, !custom, code, codemap, nullFallbackable,
                 domain, null, sampled,
-                sampled ? ColumnReplay.Column.source(facts.transform(), codemap, facts.type()) : null, gaps);
+                sampled ? ColumnReplay.Column.source(facts.transform(), codemap, facts.type()) : null, gaps,
+                facts.sourceColumn());
     }
 
     /** 값을 보는 검사(NULL 계정·표본, 쓰일 수 있으면 합·최소최대·코드 분포)를 같은 이유로 하지 않는다. */

@@ -38,13 +38,13 @@ class SourceAggregateQueryTest {
     }
 
     @Test
-    @DisplayName("한 문장에 COUNT(*)·COUNT(c)·SUM·MIN·MAX 를 담고 합은 정밀도대로 캐스트한다")
+    @DisplayName("한 문장에 COUNT(*)·COUNT(c)·SUM·MIN·MAX 를 담고 합은 정밀도대로 캐스트한다 — 컬럼은 mapping 철자 그대로")
     void fullStatement() {
-        assertThat(query(null).sql()).isEqualTo("SELECT COUNT(*), COUNT(nm), COUNT(qty), COUNT(ordered), "
-                + "SUM(CAST(qty AS DECIMAL(38,0))), MIN(qty), MAX(qty), "
-                + "SUM(CAST(amt AS DECIMAL(38,2))), MIN(amt), MAX(amt), "
-                + "SUM(raw), MIN(raw), MAX(raw), "
-                + "MIN(ordered), MAX(ordered) FROM legacy.orders");
+        assertThat(query(null).sql()).isEqualTo("SELECT COUNT(*), COUNT(NM), COUNT(QTY), COUNT(ORDERED), "
+                + "SUM(CAST(QTY AS DECIMAL(38,0))), MIN(QTY), MAX(QTY), "
+                + "SUM(CAST(AMT AS DECIMAL(38,2))), MIN(AMT), MAX(AMT), "
+                + "SUM(RAW), MIN(RAW), MAX(RAW), "
+                + "MIN(ORDERED), MAX(ORDERED) FROM legacy.orders");
         assertThat(query("deleted_yn = 'N'").sql()).endsWith(" FROM legacy.orders WHERE deleted_yn = 'N'");
         assertThat(query("  ").sql()).endsWith(" FROM legacy.orders");
     }
@@ -53,7 +53,38 @@ class SourceAggregateQueryTest {
     @DisplayName("COUNT 전용 문장은 COUNT 위치가 전체 문장과 같다")
     void countOnlyStatement() {
         assertThat(query("deleted_yn = 'N'").countOnlySql()).isEqualTo(
-                "SELECT COUNT(*), COUNT(nm), COUNT(qty), COUNT(ordered) FROM legacy.orders WHERE deleted_yn = 'N'");
+                "SELECT COUNT(*), COUNT(NM), COUNT(QTY), COUNT(ORDERED) FROM legacy.orders WHERE deleted_yn = 'N'");
+    }
+
+    @Test
+    @DisplayName("대소문자가 섞인 원천 컬럼은 mapping 철자로 보내고 결과는 소문자 이름으로 찾는다")
+    void mixedCaseIdentifiersKeepTheMappingSpelling() {
+        // 계획은 원천 컬럼을 소문자로 들고 mapping 철자를 따로 든다(ColumnClassifier). 대소문자를 가리는 원천(SQL Server
+        //   *_CS_* 정렬 등)에서 소문자로 바꾸면 다른 컬럼이다.
+        ColumnCheck planned = new ColumnCheck("customer_id", "customerid", INT, Aggregate.NUM, true, false, null, false,
+                null, null, false, null, List.of(), "CustomerId");
+        SourceAggregateQuery query = SourceAggregateQuery.of("dbo.Orders", null,
+                List.of(AggregateColumn.of(planned)));
+
+        assertThat(query.sql()).isEqualTo("SELECT COUNT(*), COUNT(CustomerId), "
+                + "SUM(CAST(CustomerId AS DECIMAL(38,0))), MIN(CustomerId), MAX(CustomerId) FROM dbo.Orders");
+        assertThat(query.countOnlySql()).isEqualTo("SELECT COUNT(*), COUNT(CustomerId) FROM dbo.Orders");
+        SourceAggregates aggregates = query.parse(new Object[]{3L, 2L, new BigDecimal("7"), 3, 4}, true);
+        assertThat(aggregates.nonNull("customerid")).isEqualTo(2L);
+        assertThat(aggregates.sum("customerid")).isEqualByComparingTo("7");
+        assertThat(new ColumnCheck("c", "c", INT, Aggregate.NUM, true, false, null, false, null, null, false, null,
+                List.of(), "other").sourceIdentifier()).as("철자가 다른 컬럼을 가리키면 소문자 이름을 쓴다")
+                .isEqualTo("c");
+    }
+
+    @Test
+    @DisplayName("SQL Server 원천은 COUNT_BIG 으로 센다 — COUNT 는 int 라 21억 행에서 넘친다")
+    void bigCountForSqlServer() {
+        assertThat(query(null).sql(true)).startsWith("SELECT COUNT_BIG(*), COUNT_BIG(NM), COUNT_BIG(QTY), "
+                + "COUNT_BIG(ORDERED), SUM(CAST(QTY AS DECIMAL(38,0)))");
+        assertThat(query(null).countOnlySql(true)).isEqualTo(
+                "SELECT COUNT_BIG(*), COUNT_BIG(NM), COUNT_BIG(QTY), COUNT_BIG(ORDERED) FROM legacy.orders");
+        assertThat(query(null).sql(false)).isEqualTo(query(null).sql());
     }
 
     @Test
@@ -63,7 +94,7 @@ class SourceAggregateQueryTest {
                 new AggregateColumn("A", false, Aggregate.NONE, null),
                 new AggregateColumn("a", true, Aggregate.NUM, INT)));
 
-        assertThat(merged.sql()).isEqualTo("SELECT COUNT(*), COUNT(a), SUM(CAST(a AS DECIMAL(38,0))), MIN(a), MAX(a) "
+        assertThat(merged.sql()).isEqualTo("SELECT COUNT(*), COUNT(A), SUM(CAST(A AS DECIMAL(38,0))), MIN(A), MAX(A) "
                 + "FROM t");
         assertThat(merged.columns()).hasSize(1);
     }

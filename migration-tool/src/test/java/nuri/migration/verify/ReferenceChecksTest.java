@@ -56,6 +56,25 @@ class ReferenceChecksTest {
             assertThat(task.reference().origin()).isEqualTo(Origin.PHYSICAL);
         });
         assertThat(ReferenceChecks.proven(tasks.getFirst()).status()).isEqualTo(ReconciliationVerdict.PASS);
+        assertThat(ReferenceChecks.proven(tasks.getFirst()).proofNote()).isNull();
+    }
+
+    @Test
+    @DisplayName("증명 메모는 판정마다 남는다 — 고아가 0 인 SCANNED 와 NOT VALID 로 증명한 PROVEN 도")
+    void proofNoteIsCarriedThroughEveryVerdict() {
+        ReferenceTask unproven = ReferenceChecks.tasks(List.of(), proof(false)).getFirst();
+        ReferenceTask notValidated = ReferenceChecks.tasks(List.of(), new ProofResult(true, List.of(
+                new ForeignKeyProof(PHYSICAL, "fk_child_parent", true, ConstraintProof.NOT_VALIDATED)), List.of()))
+                .getFirst();
+
+        assertThat(ReferenceChecks.judge(unproven, 0).proofNote()).isEqualTo("TRIGGER_NOT_ENABLED");
+        assertThat(ReferenceChecks.judge(unproven, 0).reason()).as("PASS 에는 FAIL 사유가 없다").isNull();
+        assertThat(ReferenceChecks.judge(unproven, 2).proofNote()).isEqualTo("TRIGGER_NOT_ENABLED");
+        assertThat(ReferenceChecks.failed(unproven, "42501").proofNote()).isEqualTo("TRIGGER_NOT_ENABLED");
+        assertThat(notValidated.method()).isEqualTo(Method.PROVEN);
+        assertThat(ReferenceChecks.proven(notValidated).proofNote()).isEqualTo(ConstraintProof.NOT_VALIDATED);
+        assertThat(ReconciliationEvidence.ReferenceRecord.of(ReferenceChecks.judge(unproven, 0)).proofNote())
+                .as("증거 기록에도 실린다").isEqualTo("TRIGGER_NOT_ENABLED");
     }
 
     @Test
@@ -139,7 +158,7 @@ class ReferenceChecksTest {
     }
 
     @Test
-    @DisplayName("격리가 없거나 키를 다시 만들거나 PK 가 두 컬럼이면 후보가 없고, 키를 모르면 ISOLATED_KEY_UNKNOWN 이다")
+    @DisplayName("격리가 없거나 키를 다시 만들면 후보가 없고, PK 가 두 컬럼이면 COMPOSITE_KEY, 키를 모르면 ISOLATED_KEY_UNKNOWN 이다")
     void candidateConditions() {
         ReconciliationRun noIsolation = runWith(parent(true, List.of("parent_id")));
         ReconciliationRun regenerated = runWith(parent(false, List.of("parent_id")));
@@ -153,8 +172,15 @@ class ReferenceChecksTest {
                 .tasks()).isEmpty();
         assertThat(ReferenceChecks.candidates(regenerated.plan(), tallies(regenerated, "legacy.parent"), List.of())
                 .tasks()).isEmpty();
-        assertThat(ReferenceChecks.candidates(composite.plan(), tallies(composite, "legacy.parent"), List.of())
-                .tasks()).isEmpty();
+        Candidates compositeCandidates = ReferenceChecks.candidates(composite.plan(),
+                tallies(composite, "legacy.parent"), List.of());
+        assertThat(compositeCandidates.tasks()).isEmpty();
+        assertThat(compositeCandidates.unresolved()).singleElement().satisfies(result -> {
+            assertThat(result.parent()).isEqualTo("public.tb_parent");
+            assertThat(result.reason()).as("세지 않았다는 사실을 남긴다").isEqualTo(CoverageReason.COMPOSITE_KEY);
+        });
+        assertThat(ReferenceChecks.candidates(regenerated.plan(), tallies(regenerated, "legacy.parent"), List.of())
+                .unresolved()).as("키를 다시 만든 표는 후보 대상이 아니다").isEmpty();
         Candidates unknown = ReferenceChecks.candidates(unknownKey.plan(), tallies(unknownKey, "legacy.parent"),
                 List.of());
         assertThat(unknown.tasks()).isEmpty();
