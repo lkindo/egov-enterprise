@@ -17,8 +17,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -236,7 +236,7 @@ class SourceProfilerTest {
         given(rowMetadata.getColumnClassName(2)).willReturn("oracle.sql.TIMESTAMP");
         given(rows.getObject(1)).willReturn("A  ");
         given(rows.getObject(2)).willReturn(new Object());
-        given(rows.getTimestamp(2)).willReturn(Timestamp.valueOf("2024-01-31 13:45:10.123456"));
+        given(rows.getObject(2, LocalDateTime.class)).willReturn(LocalDateTime.of(2024, 1, 31, 13, 45, 10, 123456000));
         List<CatalogObject> objects = new ArrayList<>(table("LEGACY_USER", false));
         objects.addAll(columns("LEGACY_USER", "STAT_CD", "END_DT"));
 

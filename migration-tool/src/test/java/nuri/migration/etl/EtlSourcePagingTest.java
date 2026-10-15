@@ -114,6 +114,7 @@ class EtlSourcePagingTest {
     /**
      * ADR-0029 L4-B R1 — 페이지 경계의 정렬 값도 본 읽기와 같은 {@link nuri.migration.jdbc.JdbcLobReader#scalar} 로
      * 읽는다. Oracle {@code TIMESTAMP(n)} 정렬 키를 {@code getObject} 로 읽으면 경계 digest 가 본 읽기와 다른 값 종류를 본다.
+     * Oracle 리허설 IT 의 경계 시험은 두 값의 표기가 같아 이 회귀를 보지 못하므로 이 시험이 지킨다.
      */
     @Test
     void aDriverSpecificTimestampOrderKeyIsReadAsAJdbcTimestampAcrossThePageBoundary() throws Exception {
@@ -133,11 +134,12 @@ class EtlSourcePagingTest {
         when(metadata.getColumnLabel(1)).thenReturn("END_DT");
         when(metadata.getColumnType(1)).thenReturn(Types.TIMESTAMP);
         when(metadata.getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+        when(metadata.getColumnTypeName(1)).thenReturn("TIMESTAMP");
         AtomicInteger position = new AtomicInteger();
         when(rows.next()).thenAnswer(invocation -> position.incrementAndGet() <= 501);
         LocalDateTime first = LocalDateTime.of(2024, 1, 1, 0, 0);
-        when(rows.getTimestamp(1)).thenAnswer(invocation ->
-                Timestamp.valueOf(first.plusSeconds(position.get()).withNano(123456000)));
+        when(rows.getObject(1, LocalDateTime.class)).thenAnswer(invocation ->
+                first.plusSeconds(position.get()).withNano(123456000));
         when(rows.getObject(1)).thenThrow(new AssertionError("driver-specific timestamps must not reach getObject"));
         var executor = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry());
         Method read = EtlExecutor.class.getDeclaredMethod("readSourcePage", Connection.class, TableMapping.class,
@@ -164,7 +166,8 @@ class EtlSourcePagingTest {
                 .isEqualTo(Timestamp.valueOf(first.plusSeconds(500).withNano(123456000)));
         assertThat(hasMore.invoke(page)).isEqualTo(true);
         verify(rows, never()).getObject(anyInt());
-        verify(rows, times(501)).getTimestamp(1);
+        verify(rows, never()).getTimestamp(anyInt());
+        verify(rows, times(501)).getObject(1, LocalDateTime.class);
     }
 
     @Test

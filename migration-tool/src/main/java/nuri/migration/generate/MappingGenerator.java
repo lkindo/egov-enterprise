@@ -33,7 +33,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,8 +59,8 @@ import java.util.TreeMap;
  *   <li>완전성은 소스 표 단위다 — skeleton 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나, 이관 제외·외부 보관
  *       행이 정확히 하나여야 한다. 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.</li>
  *   <li>확정 행마다 컬럼을 만든다({@code load} 를 옮기고, 보호 컬럼이면 {@code encrypt} 를 정한다). skeleton 의 fkRef
- *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다. 고정 길이 문자(CHAR·NCHAR) 소스의
- *       codemap 앞에는 {@code transform: trim} 이 있어야 한다(ADR-0029 L4-B R3).</li>
+ *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다. 고정 길이 문자(CHAR·NCHAR, 선언 길이
+ *       1 제외) 소스의 codemap 앞에는 {@code transform: trim} 이 있어야 한다(ADR-0029 L4-B R3, coverage 와 같은 판정).</li>
  *   <li>확정 행의 승인 예외 가운데 nullify 로 NULL 이 되지 않는 위반만 {@code isolate} 로 옮긴다(ADR-0029 L3b). 격리할
  *       수 없는 표(target_generated·자기참조·다른 매핑의 부모)·컬럼(암호화·fkRef)에 그런 위반이 남으면 거부한다 — 이관
  *       제외로 돌리라고 안내하지 않는다.</li>
@@ -83,9 +82,6 @@ public final class MappingGenerator {
     static final String HEADER = "# mapping-generate 가 skeleton 과 용어 매핑 원장에서 만든 파일입니다. 직접 고치지 말고"
             + " skeleton 이나 원장을 고친 뒤 다시 만드세요.\n";
     private static final Set<String> SOURCE_DISPOSITIONS = Set.of("APPROVED_IGNORE", "ARCHIVE");
-    /** 드라이버가 알리는 고정 길이 문자 타입 이름(정밀도 표기를 뺀 소문자). PostgreSQL 은 {@code bpchar} 로 알린다. */
-    private static final Set<String> FIXED_WIDTH_CHARACTER = Set.of("char", "nchar", "bpchar", "character",
-            "national char", "national character");
 
     private final SkeletonReader skeletons;
     private final MappingLoader loader;
@@ -669,11 +665,8 @@ public final class MappingGenerator {
             return null;
         }
         Load load = entry.load();
-        // 표준 도메인 변환기는 codemap 과 함께 쓸 수 없으므로(원장 검증) 공백을 깎는 앞 처리는 trim 하나다.
-        if (load.codemap() != null && !"trim".equals(load.transform()) && fixedWidthCharacter(inventoryColumn)) {
-            errors.add(row(entry) + ": 고정 길이 문자(CHAR·NCHAR) 소스의 codemap 앞에는 transform: trim 이 필요합니다 —"
-                    + " 공백으로 채운 값이 codemap 키와 맞지 않아 실행에서 CODEMAP_UNMAPPED 로 멈춥니다(적합성 추정은 공백을"
-                    + " 깎아 셉니다)");
+        if (LoadCapabilities.untrimmedFixedWidthCodemap(load.transform(), load.codemap(), inventoryColumn)) {
+            errors.add(row(entry) + ": " + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
             return null;
         }
         Optional<ProtectedTargetColumns.Entry> protectedColumn =
@@ -732,22 +725,6 @@ public final class MappingGenerator {
             isolate.violations().forEach(codes::add);
         }
         return node;
-    }
-
-    /**
-     * inventory 원래 타입이 고정 길이 문자인가. 드라이버가 알린 타입 이름({@code nativeType})으로 정하고, 이름이 없을 때만
-     * JDBC 타입(CHAR·NCHAR)으로 정한다 — SQL Server {@code uniqueidentifier}·MySQL {@code ENUM} 처럼 JDBC CHAR 로 알리지만
-     * 공백을 채우지 않는 타입은 이름으로 가린다.
-     */
-    static boolean fixedWidthCharacter(CatalogObject column) {
-        String nativeType = column.attributes().get("nativeType");
-        if (nativeType != null && !nativeType.isBlank()) {
-            String type = nativeType.toLowerCase(Locale.ROOT).replaceAll("\\(.*\\)", " ").replaceAll("\\s+", " ")
-                    .trim();
-            return FIXED_WIDTH_CHARACTER.contains(type);
-        }
-        String jdbcType = column.attributes().get("jdbcType");
-        return String.valueOf(Types.CHAR).equals(jdbcType) || String.valueOf(Types.NCHAR).equals(jdbcType);
     }
 
     /**

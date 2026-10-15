@@ -53,6 +53,7 @@ import nuri.migration.validate.ledger.TermLedger.Load;
 import nuri.migration.validate.ledger.TermLedger.NonStandardTarget;
 import nuri.migration.validate.ledger.TermLedger.Transition;
 import nuri.migration.validate.ledger.TermLedgerLoader;
+import nuri.migration.validate.ledger.TermLedgerValidator;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import nuri.migration.workflow.WorkflowReview;
@@ -67,18 +68,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -206,6 +211,10 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                 boolean wholeSame = rows.getObject("T").toString().equals(JdbcLobReader.scalar(rows, 2).toString());
                 System.out.printf("R1 probe: toString same as Timestamp — fractional=%s whole=%s; R3 probe: CHAR·NCHAR"
                         + " padded=true%n", fractionalSame, wholeSame);
+                // 정렬 경계 읽기를 되돌려도 리허설 경계 시험이 통과하는 이유(일광절약 간격 밖의 fixture)다 — 그 회귀는
+                // EtlSourcePagingTest 가 지킨다.
+                assertThat(fractionalSame).as("소수 초가 있는 값의 두 표기가 같다").isTrue();
+                assertThat(wholeSame).as("정수 초 값의 두 표기가 같다").isTrue();
             }
 
             // R2 — 드라이버 기본 설정은 코멘트(REMARKS)를 주지 않고, 사전 뷰는 준다.
@@ -254,6 +263,40 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                         before, after);
                 assertThat(before).isEqualTo(2L);
                 assertThat(after).as("다른 세션의 커밋이 같은 트랜잭션의 다음 문장에 보인다").isEqualTo(3L);
+            }
+
+            // R1 — JVM 기본 시간대에 없는 지역 일시(Asia/Seoul 1987-05-10 02:30)는 getTimestamp 가 한 시간 민다. 드라이버가
+            // 준 지역 일시는 그대로이고, 같은 도우미는 바꾸지 않고 멈춘다. 지역 이름 대신 오프셋으로 세션 시간대를 보내
+            // 시간대 파일 없이 연결한다.
+            source.update("INSERT INTO " + table + " (ID, T) VALUES (9, TIMESTAMP '1987-05-10 02:30:00')");
+            LocalDateTime gap = LocalDateTime.of(1987, 5, 10, 2, 30);
+            TimeZone original = TimeZone.getDefault();
+            try {
+                TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+                Properties properties = new Properties();
+                properties.setProperty("user", ORACLE.getUsername());
+                properties.setProperty("password", ORACLE.getPassword());
+                properties.setProperty("oracle.jdbc.timezoneAsRegion", "false");
+                try (Connection connection = DriverManager.getConnection(ORACLE.getJdbcUrl(), properties);
+                     Statement statement = connection.createStatement();
+                     ResultSet rows = statement.executeQuery("SELECT T FROM " + table + " WHERE ID = 9")) {
+                    assertThat(rows.next()).isTrue();
+                    boolean driverLocal = gap.equals(rows.getObject(1, LocalDateTime.class));
+                    boolean shifted = !gap.equals(rows.getTimestamp(1).toLocalDateTime());
+                    String reason = null;
+                    try {
+                        JdbcLobReader.scalar(rows, 1);
+                    } catch (JdbcLobReader.ContentReadException stopped) {
+                        reason = stopped.reason();
+                    }
+                    System.out.printf("R1 gap probe: driver local exact=%s getTimestamp shifted=%s scalar=%s%n",
+                            driverLocal, shifted, reason);
+                    assertThat(driverLocal).as("드라이버가 준 지역 일시는 간격 안 시각 그대로다").isTrue();
+                    assertThat(shifted).as("getTimestamp 는 간격 안 시각을 민다(전제)").isTrue();
+                    assertThat(reason).isEqualTo("LOCAL_TIMESTAMP_IN_ZONE_GAP");
+                }
+            } finally {
+                TimeZone.setDefault(original);
             }
         } finally {
             source.execute("DROP TABLE " + table + " PURGE");
@@ -397,8 +440,9 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         r.command("mapping-generate", "--skeleton=" + r.skeleton(), "--ledger=" + r.ledger(),
                 "--mapping=" + r.mapping());
         String generated = Files.readString(r.mapping());
-        assertThat(generated).contains("${RH_SOURCE_URL}", "${RH_TARGET_PASSWORD}");
         assertThat(leaks(generated, forbidden())).as("만든 mapping 에 나온 원시 값·접속 정보의 종류").isEmpty();
+        assertThat(generated.contains("${RH_SOURCE_URL}") && generated.contains("${RH_TARGET_PASSWORD}"))
+                .as("접속 자리표시가 풀리지 않고 남는다").isTrue();
         MappingSpec spec = r.loader().load(r.mapping());
         assertThat(loads(spec)).as("mapping 컬럼과 원장 확정 행의 load·isolate 가 대상 컬럼마다 같다")
                 .isEqualTo(loads(ledger));
@@ -450,11 +494,15 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                 .hasMessageContaining(rows.get("STAT_CD").id() + " " + r.sourceTable() + ".STAT_CD(CONFIRMED):"
                         + " 고정 길이 문자(CHAR·NCHAR) 소스의 codemap 앞에는 transform: trim 이 필요합니다");
         assertThat(r.directory().resolve("no-trim").resolve("mapping.yml")).doesNotExist();
+        assertThat(new TermLedgerValidator().coverage(confirmed(r, rows, 3L, false), withoutTrim(spec, "stat_cd"),
+                inventory)).as("손으로 쓴 같은 mapping 도 plan 의 원장 대응 검사가 같은 판정으로 막는다")
+                .containsExactly(r.sourceTable() + ".STAT_CD(원장 행 " + rows.get("STAT_CD").id() + "): "
+                        + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
         TableResult untrimmed = single(engine(r, withoutTrim(spec, "stat_cd"), MigrationMode.DRY_RUN, inventory, null));
         assertThat(untrimmed.errors()).singleElement().asString()
                 .startsWith("행 변환 실패(" + r.sourceTable() + ", column=stat_cd, row=1): ")
-                .contains("CODEMAP_UNMAPPED", STOPPED)
-                .doesNotContain("A  ");
+                .contains("CODEMAP_UNMAPPED", STOPPED);
+        assertThat(untrimmed.errors().getFirst().contains("A  ")).as("실패 문구에 공백 채운 코드 값이 없다").isFalse();
 
         // 10. 엔진 COMMIT + verify — 승인 workflow 와 같은 값 한계 가드, 격리 키는 저장소 밖 보관 디렉터리로 반출한다.
         MigrationPlan plan = plans.read(Files.readString(r.plan()));
@@ -479,12 +527,17 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
             assertThat(export.source()).isEqualTo(r.sourceTable());
             assertThat(export.rows()).isEqualTo(INVALID_DATES.size());
         });
-        List<Long> exported = new ArrayList<>();
+        List<String> exported = new ArrayList<>();
         List<String> keyLines = Files.readAllLines(dumps.resolve(outcome.keyExports().getFirst().fileName()));
         for (String line : keyLines.subList(1, keyLines.size())) {
-            exported.add(json.readTree(line).get("ordinal").asLong());
+            var exportedRow = json.readTree(line);
+            exported.add(exportedRow.get("ordinal").asLong() + "|" + exportedRow.get("k") + "|"
+                    + exportedRow.get("violations"));
         }
-        assertThat(exported).as("격리 키 반출은 격리한 행의 순번이다").isEqualTo(INVALID_DATES);
+        // 정렬 키(USER_NO)는 fixture 의 일련번호라 민감 값이 아니다. 고칠 행을 가리키는 것이 반출의 목적이다.
+        assertThat(exported).as("격리 키 반출은 격리한 행의 순번·정렬 키·위반이다").containsExactlyElementsOf(
+                INVALID_DATES.stream().map(key -> key + "|[" + key + "]|[{\"ledgerEntry\":\"" + ledgerEntry
+                        + "\",\"column\":\"join_ymd\",\"violation\":\"INVALID_DATE\"}]").toList());
         MigrationReport verified = verifier.verify(spec, results, targetJdbc(), outcome);
         assertThat(verified.ok()).as(verified.toSummary()).isTrue();
         String commitText = MigrationExecutionArtifact.encode(plan, MigrationMode.COMMIT, "PASS", Instant.now(),
@@ -578,7 +631,8 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
     }
 
     /**
-     * 합성 원천 표(약 1,300행, 한글 COMMENT ON)와 대상 표, skeleton·실행기를 만든다. DDL·DML 은 19c 와 같은 문법이다.
+     * 합성 원천 표(약 1,300행, 한글 COMMENT ON)와 대상 표, skeleton·실행기를 만든다. DDL·DML 은 19c 에도 있는 구문만
+     * 썼다(19c 에서는 실행하지 않았다).
      *
      * <ul>
      *   <li>JOIN_YMD CHAR(8) — 자리표시 00000000 12행, 달력에 없는 20240231 3행(ID 10·600·1300), 공백 8자 5행</li>
@@ -676,8 +730,9 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
 
     /**
      * 초안 행을 확정한다. 표준 용어가 있는 컬럼은 초안의 용어·등급·적합성 추정을 그대로 쓰고, 용어가 없는 컬럼은 비표준
-     * 대상(U1)이다. {@code maxRows} 는 달력에 없는 가입일의 승인 예외 상한이고, {@code trimCodes} 가 거짓이면 CHAR 코드의
-     * codemap 앞 trim 을 빼 둔다(R3 거부 시험).
+     * 대상(U1)이다. {@code maxRows} 는 달력에 없는 가입일의 승인 예외 상한이고, {@code trimCodes} 가 거짓이면 CHAR(3)
+     * 상태 코드의 codemap 앞 trim 을 빼 둔다(R3 거부 시험). CHAR(1) 사용 여부는 선언 길이 1 이라 공백이 붙지 않아 늘 codemap
+     * 만 쓴다.
      */
     private static TermLedger confirmed(Rehearsal r, Map<String, Entry> rows, long maxRows, boolean trimCodes) {
         String code = trimCodes ? "trim" : null;
@@ -695,7 +750,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
                         null, null),
                 standard(r, rows.get("END_DT"), "end_ymd", new Load("ymd8-truncate", null, null, List.of()), null,
                         "종료 시각은 버리고 날짜만 둔다"),
-                standard(r, rows.get("USE_AT"), "use_yn", new Load(code, null, "use_at", List.of()), null,
+                standard(r, rows.get("USE_AT"), "use_yn", new Load(null, null, "use_at", List.of()), null,
                         "레거시 플래그 1 은 사용(Y)으로 본다"),
                 standard(r, rows.get("STAT_CD"), "stat_cd", new Load(code, null, "stat_cd", List.of()), null, null),
                 nonStandard(r, rows.get("DEPT_CD"), "dept_cd", empty(), "부서 코드 — 표준 용어가 없는 대상"),
@@ -845,6 +900,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         probes.put("메모 본문", "메모 1");
         probes.put("원천 JDBC URL", ORACLE.getJdbcUrl());
         probes.put("원천 비밀번호", ORACLE.getPassword());
+        probes.put("대상 JDBC URL", POSTGRES.getJdbcUrl());
         probes.put("대상 비밀번호", POSTGRES.getPassword());
         return probes;
     }
@@ -925,7 +981,7 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
         }
     }
 
-    /** 리허설 환경 기록(readiness). 버전·문자셋·드라이버뿐이다. V$INSTANCE 는 fixture 사용자가 읽지 못한다. */
+    /** 리허설 환경 기록(readiness). 버전·문자셋·드라이버뿐이다. 버전은 일반 계정이 읽는 PRODUCT_COMPONENT_VERSION 에서 읽는다. */
     private static void environment() throws Exception {
         try (Connection connection = ORACLE.createConnection("")) {
             String versionFull = sourceJdbc().queryForObject("SELECT VERSION_FULL FROM PRODUCT_COMPONENT_VERSION"

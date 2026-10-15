@@ -504,6 +504,24 @@ class TermLedgerValidatorTest {
                         + " type)만 받습니다 — 표준 도메인 변환기·codemap·nullify 는 부모 키를 바꿉니다");
     }
 
+    /**
+     * ADR-0029 L4-B R3 — 고정 길이 문자 소스의 codemap 앞 trim 은 생성기만이 아니라 plan·load 의 coverage 도 본다. 원장과
+     * 똑같이 손으로 쓴 mapping 도 막히고, 선언 길이 1·가변 길이 문자는 trim 없이 지난다.
+     */
+    @Test
+    void aFixedWidthCharacterCodemapNeedsTrimEvenWhenTheMappingWasWrittenByHand() {
+        Entry untrimmed = row("C1", "STAT_CD").load(new Load(null, null, "user_status", List.of())).build();
+        Entry trimmed = row("C2", "STAT_CD").load(new Load("trim", null, "user_status", List.of())).build();
+        ColumnMapping bare = new ColumnMapping("STAT_CD", "user_id", null, null, "user_status", null, null);
+        ColumnMapping withTrim = new ColumnMapping("STAT_CD", "user_id", "trim", null, "user_status", null, null);
+
+        assertThat(validator.coverage(ledger(untrimmed), mapping(bare), typedInventory("CHAR", "3")))
+                .containsExactly("legacy.legacy_user.STAT_CD(원장 행 C1): " + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED);
+        assertThat(validator.coverage(ledger(trimmed), mapping(withTrim), typedInventory("CHAR", "3"))).isEmpty();
+        assertThat(validator.coverage(ledger(untrimmed), mapping(bare), typedInventory("CHAR", "1"))).isEmpty();
+        assertThat(validator.coverage(ledger(untrimmed), mapping(bare), typedInventory("VARCHAR2", "3"))).isEmpty();
+    }
+
     @Test
     void aNonStandardTargetIsConfirmedWithAReasonInsteadOfATermAndWithoutConformance() {
         Entry binary = nonStandard("B1", "PHOTO", "photo").build();
@@ -930,6 +948,26 @@ class TermLedgerValidatorTest {
                 new CatalogSnapshot.DatabaseInfo("LegacyDB", "1", "driver", "1"),
                 new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),
                 SnapshotCapability.unknown(), objects, List.of());
+    }
+
+    /** legacy.legacy_user 의 컬럼 STAT_CD 하나 — 드라이버가 알린 타입 이름과 선언 길이를 정한다. */
+    private static CatalogSnapshot typedInventory(String nativeType, String size) {
+        CatalogSnapshot inventory = inventory("STAT_CD");
+        List<CatalogObject> objects = new ArrayList<>();
+        for (CatalogObject object : inventory.objects()) {
+            if (!object.name().equals("legacy_user.STAT_CD")) {
+                objects.add(object);
+                continue;
+            }
+            Map<String, String> attributes = new java.util.LinkedHashMap<>(object.attributes());
+            attributes.put("nativeType", nativeType);
+            attributes.put("size", size);
+            objects.add(new CatalogObject(object.kind(), object.catalog(), object.schema(), object.name(),
+                    object.quoted(), object.nativeDefinition(), object.definitionHash(), object.dependencies(),
+                    attributes));
+        }
+        return new CatalogSnapshot(inventory.schemaVersion(), inventory.discoveredAt(), inventory.database(),
+                inventory.environment(), inventory.snapshotCapability(), objects, inventory.visibilityFindings());
     }
 
     private static CatalogObject table(String name) {

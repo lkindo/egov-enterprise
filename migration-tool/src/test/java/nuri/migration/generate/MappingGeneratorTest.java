@@ -11,6 +11,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.validate.MappingValidator;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import nuri.migration.validate.ledger.TermLedgerLoader;
 import nuri.migration.validate.ledger.TermLedgerValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -565,9 +566,8 @@ public class MappingGeneratorTest {
                 """);
         String upper = coded.replace("load: {codemap: user_status}", "load: {transform: upper, codemap: user_status}");
         String trimmed = coded.replace("load: {codemap: user_status}", "load: {transform: trim, codemap: user_status}");
-        String refusal = "mapping 을 만들지 않았습니다: U6 legacy.USER_MST.STAT_CD(CONFIRMED): 고정 길이 문자(CHAR·NCHAR)"
-                + " 소스의 codemap 앞에는 transform: trim 이 필요합니다 — 공백으로 채운 값이 codemap 키와 맞지 않아 실행에서"
-                + " CODEMAP_UNMAPPED 로 멈춥니다(적합성 추정은 공백을 깎아 셉니다)";
+        String refusal = "mapping 을 만들지 않았습니다: U6 legacy.USER_MST.STAT_CD(CONFIRMED): "
+                + LoadCapabilities.FIXED_WIDTH_TRIM_REQUIRED;
 
         for (String[] fixedWidth : new String[][]{{"CHAR", "1"}, {"NCHAR", "-15"}, {"bpchar", "1"}}) {
             CatalogSnapshot inventory = withStatusType(fixedWidth[0], fixedWidth[1]);
@@ -580,47 +580,34 @@ public class MappingGeneratorTest {
             assertThat(mapping.tables().get(1).columns()).last()
                     .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", "trim", null, "user_status", null, null));
         }
-        // 가변 길이 문자와 JDBC CHAR 로 알리지만 공백을 채우지 않는 타입은 trim 없이도 만든다.
-        for (String[] variable : new String[][]{{"VARCHAR2", "12"}, {"uniqueidentifier", "1"}, {"ENUM", "1"}}) {
-            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
-                    generator.generate(SKELETON, coded, "ledger.yml", withStatusType(variable[0], variable[1])));
+        // 가변 길이 문자, JDBC CHAR 로 알리지만 공백을 채우지 않는 타입, 선언 길이 1 은 trim 없이도 만든다.
+        for (String[] variable : new String[][]{{"VARCHAR2", "12", null}, {"uniqueidentifier", "1", null},
+                {"ENUM", "1", null}, {"CHAR", "1", "1"}}) {
+            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(generator.generate(SKELETON, coded,
+                    "ledger.yml", withStatusType(variable[0], variable[1], variable[2])));
             assertThat(mapping.tables().get(1).columns()).last()
                     .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", null, null, "user_status", null, null));
         }
     }
 
-    /** 고정 길이 문자는 드라이버가 알린 타입 이름으로 정하고, 이름이 없을 때만 JDBC 타입으로 정한다. */
-    @Test
-    void fixedWidthCharacterIsDecidedByTheNativeTypeNameAndOnlyWithoutItByTheJdbcType() {
-        for (String[] fixedWidth : new String[][]{{"CHAR", "12"}, {"nchar", "12"}, {"bpchar", null},
-                {"character(3)", "1"}, {"National  Character", "-15"}, {"CHAR(3 BYTE)", "1"}, {null, "1"},
-                {"  ", "-15"}}) {
-            assertThat(MappingGenerator.fixedWidthCharacter(typed(fixedWidth[0], fixedWidth[1])))
-                    .as("%s/%s", fixedWidth[0], fixedWidth[1]).isTrue();
-        }
-        for (String[] variable : new String[][]{{"VARCHAR2", "1"}, {"uniqueidentifier", "1"}, {"ENUM", "1"},
-                {"character varying", "12"}, {"nchar varying", "-9"}, {null, "12"}, {null, null}, {"", null}}) {
-            assertThat(MappingGenerator.fixedWidthCharacter(typed(variable[0], variable[1])))
-                    .as("%s/%s", variable[0], variable[1]).isFalse();
-        }
-    }
-
     /** {@link #inventory} 에 USER_MST.STAT_CD 를 더하고 그 타입을 정한다. */
     private static CatalogSnapshot withStatusType(String nativeType, String jdbcType) {
+        return withStatusType(nativeType, jdbcType, null);
+    }
+
+    /** {@link #inventory} 에 USER_MST.STAT_CD 를 더하고 그 타입·선언 길이를 정한다. */
+    private static CatalogSnapshot withStatusType(String nativeType, String jdbcType, String size) {
         CatalogSnapshot inventory = inventory("STAT_CD");
         List<CatalogObject> objects = new ArrayList<>();
         for (CatalogObject object : inventory.objects()) {
-            objects.add(object.name().equals("USER_MST.STAT_CD") ? retyped(object, nativeType, jdbcType) : object);
+            objects.add(object.name().equals("USER_MST.STAT_CD") ? retyped(object, nativeType, jdbcType, size)
+                    : object);
         }
         return new CatalogSnapshot(inventory.schemaVersion(), inventory.discoveredAt(), inventory.database(),
                 inventory.environment(), inventory.snapshotCapability(), objects, inventory.visibilityFindings());
     }
 
-    private static CatalogObject typed(String nativeType, String jdbcType) {
-        return retyped(column(table("USER_MST"), "STAT_CD", 6), nativeType, jdbcType);
-    }
-
-    private static CatalogObject retyped(CatalogObject column, String nativeType, String jdbcType) {
+    private static CatalogObject retyped(CatalogObject column, String nativeType, String jdbcType, String size) {
         Map<String, String> attributes = new LinkedHashMap<>(column.attributes());
         attributes.remove("jdbcType");
         if (nativeType != null) {
@@ -628,6 +615,9 @@ public class MappingGeneratorTest {
         }
         if (jdbcType != null) {
             attributes.put("jdbcType", jdbcType);
+        }
+        if (size != null) {
+            attributes.put("size", size);
         }
         return new CatalogObject(column.kind(), column.catalog(), column.schema(), column.name(), column.quoted(),
                 column.nativeDefinition(), column.definitionHash(), column.dependencies(), attributes);

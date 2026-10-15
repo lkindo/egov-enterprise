@@ -19,6 +19,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -125,8 +126,9 @@ class SqlServerSelfReferenceReadTest {
         when(rows.getMetaData()).thenReturn(metadata);
         when(metadata.getColumnType(1)).thenReturn(Types.TIMESTAMP);
         when(metadata.getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+        when(metadata.getColumnTypeName(1)).thenReturn("TIMESTAMP");
         Timestamp key = Timestamp.valueOf("2024-01-31 13:45:10.123456");
-        when(rows.getTimestamp(1)).thenReturn(key);
+        when(rows.getObject(1, LocalDateTime.class)).thenReturn(key.toLocalDateTime());
         when(rows.getObject(1)).thenThrow(new AssertionError("driver-specific timestamps must not reach getObject"));
         var registry = new KeyMapRegistry("self-reference-unit", "synthetic-source");
 
@@ -134,6 +136,7 @@ class SqlServerSelfReferenceReadTest {
 
         assertThat(registry.translate(SOURCE_TABLE, key.toString())).startsWith("TEST_");
         verify(rows, never()).getObject(anyInt());
+        verify(rows, never()).getTimestamp(anyInt());
     }
 
     private static Connection sourceConnection(String product, String driver) throws SQLException {
