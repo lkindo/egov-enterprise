@@ -137,7 +137,7 @@ npm run migration:export -- --output build/migration-product/my-institution
 | control | 검토 내용 |
 |---|---|
 | `source-target-identity` | 실제 source/target 식별·접속 대상·쓰기 권한·허용 범위 |
-| `mapping-schema-driver` | mapping, target schema, driver 및 이관 실행 계약의 정합. 보호 컬럼(주민등록번호 등, `encrypt`)을 이관하면 그 법적 근거와, 이관 호스트의 `MIGRATION_ALGORITHM_KEY` 가 온라인 `ALGORITHM_KEY` 와 같다는 확인(도구는 이 일치를 증명하지 못한다 — [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) 결정 4). 키 값은 근거 파일에 적지 않는다. 원장 승인 예외로 행을 격리하면(`isolate`) 원장 행마다의 위반·상한(`maxRows`, 최대 1000)·사유와, 실행 JSON 형식 2 의 `isolated`·`isolations` 가 그 상한 안이라는 확인 |
+| `mapping-schema-driver` | mapping, target schema, driver 및 이관 실행 계약의 정합. 보호 컬럼(주민등록번호 등, `encrypt`)을 이관하면 그 법적 근거와, 이관 호스트의 `MIGRATION_ALGORITHM_KEY` 가 온라인 `ALGORITHM_KEY` 와 같다는 확인(도구는 이 일치를 증명하지 못한다 — [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) 결정 4). 키 값은 근거 파일에 적지 않는다. 원장 승인 예외로 행을 격리하면(`isolate`) 원장 행마다의 위반·상한(`maxRows`, 최대 1000)·사유와, 실행 JSON 의 `isolated`·`isolations` 가 그 상한 안이라는 확인. 외부 보관(ARCHIVE)·격리가 있으면 보관 덤프·격리 키 파일의 위치(저장소·승인 산출물·Git 작업 트리 밖 `archiveDir`)·보존 기한·접근 통제(권한·암호화·폐기 절차 — Windows 는 0600 을 강제하지 못한다)와, 주민등록번호 모양 값을 덤프에 그대로 두는 U2 결정([DEC-OPS-321](../../.agent/memory/decisions.md))에 따른 원장 `archive.personalData: acknowledged` 확인(덤프 행마다 실리는 정렬 키 원값 포함), 실행 JSON 의 `archives`(보관·정렬 키 컬럼별 모양 수)·`isolatedKeyExports`·`keymapRetention` 과 파일 SHA-256 대조, 강제 종료 뒤 남은 임시 파일·증거에 없는 덤프의 폐기 기록. 덤프 파일·값은 근거 파일에 넣지 않는다 |
 | `recovery-cutover` | 실패·재개·중복 방지, 백업·복구·cutover와 운영 책임 |
 | `execution-artifacts` | 실행할 JAR·mapping·inventory·plan의 경로·SHA-256, mode·adapter·schema·source freeze 확인이 담긴 descriptor |
 
@@ -147,7 +147,7 @@ npm run review:adoption:migration -- --environment institution-migration
 
 이 기관 검토 원장은 [ADR-0008](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md)의 discover → plan → validate → load 승인 artifact와 대상 identity 검사를 대체하지 않는다. 원장 검증을 통과해도 실제 쓰기는 이관 도구 자체의 안전 경계와 운영 승인 절차를 거친다. 승인 원장만으로 실제 복구·cutover 검증이 완료되었다고 주장하지 않는다.
 
-이관 실행 descriptor는 `product: migration-tool`, `profile: null`, 실제 `environmentId`와 `migration`을 기록한다. `migration.jar`·`mapping`·`inventory`·`plan`은 각각 `{path, sha256}`이며 저장소 내부의 실재 파일을 가리킨다. 나머지는 `mode: dry-run` 또는 `commit`, `sourceAdapter: postgresql-pg-catalog`, source `schemas` 배열, 실제 동결을 확인한 `ackSourceFreeze: true`다. wrapper는 현재 built-in PostgreSQL adapter만 지원한다. 기존 CLI의 다른 조사 경로를 지원 완료로 승격하지 않는다.
+이관 실행 descriptor는 `product: migration-tool`, `profile: null`, 실제 `environmentId`와 `migration`을 기록한다. `migration.jar`·`mapping`·`inventory`·`plan`은 각각 `{path, sha256}`이며 저장소 내부의 실재 파일을 가리킨다. 나머지는 `mode: dry-run` 또는 `commit`, `sourceAdapter: postgresql-pg-catalog`, source `schemas` 배열, 실제 동결을 확인한 `ackSourceFreeze: true`다. 선택 키 `archiveDir` 는 `commit` 에서만 받는 보관 덤프·격리 키 반출 디렉터리로, 이 저장소 밖의 정규화한 절대 경로여야 하며 load 에 `--archive-dir` 로 전달된다(ADR-0029 L3e). mapping 에 외부 보관이나 `isolate` 가 있으면 commit 은 이 키 없이 시작하지 않는다. wrapper는 현재 built-in PostgreSQL adapter만 지원한다. 기존 CLI의 다른 조사 경로를 지원 완료로 승격하지 않는다.
 
 [migration-execution.example.json](../../config/governance/migration-execution.example.json)을 복사해 실제 대상과
 파일 SHA-256을 작성한다. 독립 이관 소스 제품에도 같은 예시를 제공하며 기본 빈 값으로는 실행되지 않는다.

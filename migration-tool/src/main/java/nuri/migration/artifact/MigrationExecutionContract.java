@@ -3,6 +3,8 @@ package nuri.migration.artifact;
 import nuri.migration.adapter.AdapterIdentity;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveFileWriter;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.domain.DomainValues;
 import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
@@ -63,7 +65,11 @@ public record MigrationExecutionContract(
             // 승인 행 격리·값 한계 가드(ADR-0029 L3b). 승인 뒤 격리 판정·상한·한계가 바뀌면 같은 승인으로 적재하지 않는다.
             TargetValueGuard.class,
             RowIsolationPolicy.class,
-            IsolationTally.class);
+            IsolationTally.class,
+            // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e). 승인 뒤 덤프 형식·대상 행·파일 쓰기가 바뀌면 같은 승인으로 적재하지
+            // 않는다.
+            ArchiveRun.class,
+            ArchiveFileWriter.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {

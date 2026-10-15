@@ -1,5 +1,6 @@
 package nuri.migration.verify;
 
+import nuri.migration.archive.ArchiveOutcome;
 import nuri.migration.etl.EtlExecutor.TableResult;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.model.MappingSpec;
@@ -405,6 +406,194 @@ class MigrationVerifierTest {
             assertThat(unmatched.tables()).extracting(TableReport::note)
                     .as("실행 계약 불일치와 따로 그 표의 격리 집계도 증명하지 않는다")
                     .contains("격리 집계를 대조할 매핑을 찾을 수 없음");
+        }
+    }
+
+    /**
+     * [ADR-0029 L3e] 같은 세션 보관 덤프와 격리 키 반출. 덤프 행 수 = 그 읽기의 행 수 = 표의 조회 수, 선언한 덤프마다 결과 하나,
+     * COMMIT 의 파일 증거, 격리 행 수 = 반출 행 수가 맞아야 PASS 다. 어긋나면 마지막 {@code <archives>} 행이 FAIL 이다.
+     */
+    @Nested
+    @DisplayName("보관 덤프·격리 키 반출")
+    class ArchiveDumps {
+
+        private static final String SHA = "f".repeat(64);
+        private static final IsolationTally.Isolation TWO =
+                new IsolationTally.Isolation("U4", "end_ymd", "PLACEHOLDER_DATE", 2, List.of(3L, 7L));
+
+        private static MappingSpec archiving(boolean withArchives) {
+            MappingSpec.ColumnMapping endYmd = new MappingSpec.ColumnMapping("END_YMD", "end_ymd", "ymd8", null, null,
+                    null, null, null, List.of(), new MappingSpec.Isolate("U4", 3L, List.of("PLACEHOLDER_DATE")));
+            MappingSpec.TableMapping table = new MappingSpec.TableMapping("src_tbl", "tgt_tbl", null, "ID", "id",
+                    List.of(endYmd), null);
+            List<MappingSpec.ArchiveDump> archives = withArchives ? List.of(
+                    new MappingSpec.ArchiveDump("src_dump", "src_tbl", null, List.of(), List.of("ETC1"),
+                            List.of("U7"), "2031-12-31"),
+                    new MappingSpec.ArchiveDump("log_dump", "log_tbl", null, List.of("LOG_NO"), List.of("MEMO"),
+                            List.of("L2"), "2029-12-31")) : List.of();
+            return new MappingSpec(null, null, List.of(table), Map.of(), null, null, archives);
+        }
+
+        private static TableResult loaded(long isolated) {
+            return new TableResult("src_tbl", "tgt_tbl", 10, 10 - isolated, 10 - isolated, List.of(), List.of(),
+                    Map.of(), isolated, isolated == 0 ? List.of() : List.of(TWO));
+        }
+
+        private static ArchiveOutcome.Dumped mapped(long rows, long sourceRows, String file, long bytes, String sha) {
+            return new ArchiveOutcome.Dumped("src_dump", "src_tbl", false, sourceRows, rows, file, bytes, sha,
+                    "2031-12-31", List.of("U7"), Map.of());
+        }
+
+        private static ArchiveOutcome.Dumped log(boolean dumpOnly, String file) {
+            return new ArchiveOutcome.Dumped("log_dump", "log_tbl", dumpOnly, 3, 3, file, file == null ? 0 : 9,
+                    file == null ? null : SHA, "2029-12-31", List.of("L2"), Map.of());
+        }
+
+        private static ArchiveOutcome.KeyExport export(String source, long rows, String sha) {
+            return new ArchiveOutcome.KeyExport(source, rows, "isolated-" + source + ".jsonl", 7, sha);
+        }
+
+        private static ArchiveOutcome written(List<ArchiveOutcome.Dumped> dumps, List<ArchiveOutcome.KeyExport> exports) {
+            return new ArchiveOutcome(true, dumps, exports, List.of());
+        }
+
+        private static final ArchiveOutcome COMPLETE = written(
+                List.of(mapped(10, 10, "archive-src.jsonl", 11, SHA), log(true, "archive-log.jsonl")),
+                List.of(export("src_tbl", 2, SHA)));
+
+        private String note(MappingSpec spec, TableResult result, JdbcTemplate target, ArchiveOutcome outcome) {
+            MigrationReport report = verifier.verify(spec, List.of(result), target, outcome);
+            assertThat(report.overall()).as(report.toSummary()).isEqualTo(Status.FAIL);
+            assertThat(report.tables().getLast().source()).isEqualTo("<archives>");
+            assertThat(report.tables().getLast().errors()).isEqualTo(1);
+            return report.tables().getLast().note();
+        }
+
+        private String commitNote(ArchiveOutcome outcome) {
+            return note(archiving(true), loaded(2), targetWithRows(8), outcome);
+        }
+
+        @Test
+        @DisplayName("덤프·반출이 실행과 맞으면 PASS 다(commit·dry-run)")
+        void matchingDumpsAndExportsPass() {
+            MigrationReport commit = verifier.verify(archiving(true), List.of(loaded(2)), targetWithRows(8), COMPLETE);
+            MigrationReport dryRun = verifier.verify(archiving(true), List.of(new TableResult("src_tbl", "tgt_tbl", 10,
+                    8, 0, List.of(), List.of(), Map.of(), 2, List.of(TWO))), null, new ArchiveOutcome(false,
+                    List.of(mapped(10, 10, null, 0, null), log(true, null)), List.of(), List.of()));
+            MigrationReport noIsolation = verifier.verify(archiving(true), List.of(loaded(0)), targetWithRows(10),
+                    written(COMPLETE.dumps(), List.of()));
+
+            assertThat(commit.overall()).as(commit.toSummary()).isEqualTo(Status.PASS);
+            assertThat(commit.tables()).extracting(TableReport::source).containsExactly("src_tbl");
+            assertThat(dryRun.overall()).as(dryRun.toSummary()).isEqualTo(Status.PASS);
+            assertThat(noIsolation.overall()).as(noIsolation.toSummary()).isEqualTo(Status.PASS);
+            assertThat(verifier.verify(archiving(false), List.of(loaded(2)), targetWithRows(8)).overall())
+                    .as("보관 선언 없이 결과 없이 검증하면 격리 반출은 보지 않는다").isEqualTo(Status.PASS);
+        }
+
+        @Test
+        @DisplayName("덤프 결과가 없거나 실패했거나 모드와 맞지 않으면 FAIL 이다")
+        void missingFailedOrModeMismatchedOutcomesFail() {
+            assertThat(note(archiving(true), loaded(2), targetWithRows(8), null))
+                    .isEqualTo("보관 선언이 있는데 보관 덤프 결과가 없음 — 덤프를 증명할 수 없음");
+            assertThat(verifier.verify(archiving(true), List.of(loaded(2)), targetWithRows(8)).overall())
+                    .as("결과 없는 3인자 검증도 보관 선언이 있으면 FAIL").isEqualTo(Status.FAIL);
+            assertThat(commitNote(new ArchiveOutcome(true, COMPLETE.dumps(), COMPLETE.keyExports(),
+                    List.of("보관 덤프 읽기 실패(log_tbl): SQL_EXECUTION_FAILED"))))
+                    .isEqualTo("보관 덤프·격리 키 반출 실패 — 보관 덤프 읽기 실패(log_tbl): SQL_EXECUTION_FAILED");
+            assertThat(note(archiving(false), loaded(2), targetWithRows(8),
+                    new ArchiveOutcome(false, List.of(), List.of(), List.of())))
+                    .as("isolate 만 있어도 COMMIT 은 파일을 써야 한다")
+                    .isEqualTo("보관 디렉터리 없이 적재함 — 덤프·격리 키를 증명할 수 없음");
+            assertThat(note(archiving(true), new TableResult("src_tbl", "tgt_tbl", 10, 8, 0, List.of(), List.of(),
+                    Map.of(), 2, List.of(TWO)), null, COMPLETE)).isEqualTo("dry-run 이 보관 파일을 씀");
+        }
+
+        @Test
+        @DisplayName("선언한 덤프마다 결과가 정확히 하나이고 선언과 같아야 한다")
+        void everyDeclaredDumpHasExactlyOneMatchingResult() {
+            ArchiveOutcome.Dumped src = COMPLETE.dumps().getFirst();
+            ArchiveOutcome.Dumped logDump = COMPLETE.dumps().get(1);
+            List<ArchiveOutcome.KeyExport> exports = COMPLETE.keyExports();
+
+            assertThat(commitNote(written(List.of(src, src, logDump), exports)))
+                    .isEqualTo("보관 덤프 결과가 두 번 있음: src_dump");
+            assertThat(commitNote(written(List.of(src), exports))).isEqualTo("보관 덤프 결과 없음: log_dump");
+            assertThat(commitNote(written(List.of(new ArchiveOutcome.Dumped("src_dump", "src_tbl", false, 10, 10,
+                    "f", 1, SHA, "2032-12-31", List.of("U7"), Map.of()), logDump), exports)))
+                    .isEqualTo("보관 덤프 결과가 선언(보존 기한·원장 행)과 다름: src_dump");
+            assertThat(commitNote(written(List.of(new ArchiveOutcome.Dumped("src_dump", "src_tbl", false, 10, 10,
+                    "f", 1, SHA, "2031-12-31", List.of("U8"), Map.of()), logDump), exports)))
+                    .isEqualTo("보관 덤프 결과가 선언(보존 기한·원장 행)과 다름: src_dump");
+            assertThat(commitNote(written(List.of(src, logDump, new ArchiveOutcome.Dumped("extra", "src_tbl", false,
+                    10, 10, "f", 1, SHA, null, List.of(), Map.of())), exports)))
+                    .isEqualTo("선언하지 않은 보관 덤프: extra");
+        }
+
+        @Test
+        @DisplayName("덤프 행 수 = 읽은 행 수 = 매핑된 표의 조회 수다")
+        void dumpRowsEqualTheRowsReadAndTheTableRead() {
+            ArchiveOutcome.Dumped logDump = COMPLETE.dumps().get(1);
+            List<ArchiveOutcome.KeyExport> exports = COMPLETE.keyExports();
+
+            assertThat(commitNote(written(List.of(mapped(9, 10, "f", 1, SHA), logDump), exports)))
+                    .isEqualTo("보관 덤프 행(9) ≠ 읽은 행(10): src_dump");
+            assertThat(commitNote(written(List.of(mapped(11, 10, "f", 1, SHA), logDump), exports)))
+                    .isEqualTo("보관 덤프 행(11) ≠ 읽은 행(10): src_dump");
+            assertThat(commitNote(written(List.of(mapped(9, 9, "f", 1, SHA), logDump), exports)))
+                    .isEqualTo("보관 덤프 행(9) ≠ 조회(10): src_dump");
+            assertThat(commitNote(written(List.of(new ArchiveOutcome.Dumped("src_dump", "src_tbl", true, 10, 10, "f",
+                    1, SHA, "2031-12-31", List.of("U7"), Map.of()), logDump), exports)))
+                    .as("매핑된 표의 덤프를 덤프만 한 것으로 기록").isEqualTo("보관 덤프 행(10) ≠ 조회(10): src_dump");
+            assertThat(commitNote(written(List.of(COMPLETE.dumps().getFirst(), log(false, "f")), exports)))
+                    .isEqualTo("덤프만 하는 표의 보관이 매핑된 표로 기록됨: log_dump");
+            MappingSpec otherTable = new MappingSpec(null, null, List.of(new MappingSpec.TableMapping("src_tbl",
+                    "tgt_tbl", null, "ID", "id", List.of(), null)), Map.of(), null, null, archiving(true).archives());
+            assertThat(MigrationVerifier.archiveError(otherTable, List.of(new TableResult("x_tbl", "tgt_tbl", 10, 10, 10,
+                    List.of())), COMPLETE, true)).isEqualTo("보관 덤프 행(10) ≠ 조회(-): src_dump");
+        }
+
+        @Test
+        @DisplayName("COMMIT 덤프는 파일 이름·바이트·SHA-256 이 있고 dry-run 덤프에는 파일이 없다")
+        void commitDumpsCarryFileEvidenceAndDryRunDumpsDoNot() {
+            ArchiveOutcome.Dumped logDump = COMPLETE.dumps().get(1);
+            List<ArchiveOutcome.KeyExport> exports = COMPLETE.keyExports();
+
+            for (ArchiveOutcome.Dumped broken : List.of(mapped(10, 10, null, 11, SHA), mapped(10, 10, "f", 0, SHA),
+                    mapped(10, 10, "f", 11, null), mapped(10, 10, "f", 11, "F".repeat(64)))) {
+                assertThat(commitNote(written(List.of(broken, logDump), exports)))
+                        .isEqualTo("보관 덤프 파일 증거가 모드와 맞지 않음: src_dump");
+            }
+            assertThat(note(archiving(true), new TableResult("src_tbl", "tgt_tbl", 10, 8, 0, List.of(), List.of(),
+                    Map.of(), 2, List.of(TWO)), null, new ArchiveOutcome(false, List.of(mapped(10, 10, "f", 0, null),
+                    log(true, null)), List.of(), List.of())))
+                    .isEqualTo("보관 덤프 파일 증거가 모드와 맞지 않음: src_dump");
+        }
+
+        @Test
+        @DisplayName("COMMIT 에서 격리한 행이 있는 표마다 반출이 하나이고 반출 행 수 = 격리 수다")
+        void isolatedRowsAreExportedOncePerTableWithTheSameCount() {
+            List<ArchiveOutcome.Dumped> dumps = COMPLETE.dumps();
+
+            assertThat(commitNote(written(dumps, List.of()))).isEqualTo("격리 키 반출(0) ≠ 격리(2): src_tbl");
+            assertThat(commitNote(written(dumps, List.of(export("src_tbl", 1, SHA)))))
+                    .isEqualTo("격리 키 반출(1) ≠ 격리(2): src_tbl");
+            assertThat(commitNote(written(dumps, List.of(export("src_tbl", 2, null)))))
+                    .isEqualTo("격리 키 반출(2) ≠ 격리(2): src_tbl");
+            assertThat(commitNote(written(dumps, List.of(export("src_tbl", 2, "x")))))
+                    .isEqualTo("격리 키 반출(2) ≠ 격리(2): src_tbl");
+            assertThat(commitNote(written(dumps, List.of(new ArchiveOutcome.KeyExport("src_tbl", 2, null, 7, SHA)))))
+                    .isEqualTo("격리 키 반출(2) ≠ 격리(2): src_tbl");
+            assertThat(commitNote(written(dumps, List.of(export("src_tbl", 2, SHA), export("SRC_TBL", 2, SHA)))))
+                    .isEqualTo("격리 키 반출이 모드와 맞지 않거나 두 번 있음: SRC_TBL");
+            assertThat(commitNote(written(dumps, List.of(export("src_tbl", 2, SHA), export("other_tbl", 1, SHA)))))
+                    .isEqualTo("실행 결과에 없는 표의 격리 키 반출: other_tbl");
+            assertThat(note(archiving(true), loaded(0), targetWithRows(10), written(dumps,
+                    List.of(export("src_tbl", 1, SHA))))).isEqualTo("격리하지 않은 표의 격리 키 반출: src_tbl");
+            assertThat(note(archiving(true), new TableResult("src_tbl", "tgt_tbl", 10, 8, 0, List.of(), List.of(),
+                    Map.of(), 2, List.of(TWO)), null, new ArchiveOutcome(false,
+                    List.of(mapped(10, 10, null, 0, null), log(true, null)), List.of(export("src_tbl", 2, SHA)),
+                    List.of()))).isEqualTo("격리 키 반출이 모드와 맞지 않거나 두 번 있음: src_tbl");
         }
     }
 

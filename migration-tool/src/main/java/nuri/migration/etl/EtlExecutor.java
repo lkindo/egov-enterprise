@@ -2,6 +2,10 @@ package nuri.migration.etl;
 
 import nuri.migration.adapter.EvidenceLevel;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveRun;
+import nuri.migration.archive.ArchiveRun.DumpOnlyRead;
+import nuri.migration.archive.ArchiveRun.TableArchive;
+import nuri.migration.archive.ArchiveWriteException;
 import nuri.migration.domain.DomainValueRejected;
 import nuri.migration.domain.DomainViolation;
 import nuri.migration.domain.TargetValueGuard;
@@ -17,6 +21,7 @@ import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
 import nuri.migration.jdbc.SourceReadStatements;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.CompositeForeignKey;
@@ -89,6 +94,11 @@ import java.util.function.Function;
  * 커밋된 행·상한 초과는 종전처럼 멈춘다. 격리·완화 컬럼은 쓰기 전에 값 한계 가드({@link TargetValueGuard})를 받는다.
  * 쓰기 단계 실패는 여전히 격리하지 않는다(DEC-OPS-310).
  *
+ * <p>[ADR-0029 L3e] 보관 덤프는 적재와 같은 원천 읽기 세션에서 쓴다({@link ArchiveRun}). 매핑된 표는 보관 컬럼을 같은 SELECT
+ * 에 더해 읽은 행을 모두(재개로 건너뛴 행·격리한 행 포함) 덤프하고, 덤프만 하는 표는 매핑된 표들 다음에 keyset 으로 읽는다.
+ * 격리한 행은 정렬 키 원값·순번·위반 코드를 반출한다. COMMIT 에 보관 선언이나 isolate 가 있으면 보관 디렉터리 없이 시작하지
+ * 않는다 — 덤프·격리 키 없이 적재하지 않는다.
+ *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
  */
@@ -97,6 +107,8 @@ public class EtlExecutor {
 
     /** 스트리밍 fetch/배치 청크 크기. */
     private static final int CHUNK = 500;
+    /** 정렬 키가 NULL 인 행이 있다 — keyset 이 다시 읽지 못하므로 읽기 전에 멈춘다. */
+    static final String ORDER_KEY_NULL = "ORDER_KEY_NULL";
 
     private final SourceIntrospector introspector;
     private final TransformerRegistry transformers;
@@ -212,9 +224,30 @@ public class EtlExecutor {
             boolean sourceFreezeAcknowledged,
             Map<String, Map<String, TargetValueGuard.Limit>> rowGuards
     ) {
+        return execute(spec, mode, sourceJt, targetJt, sourceReadPolicy, sourceFreezeAcknowledged, rowGuards,
+                ArchiveRun.counting());
+    }
+
+    /**
+     * 승인 workflow 의 실행 경계(ADR-0029 L3e). {@code archives} 는 보관 덤프·격리 키 반출을 받는다 — COMMIT 은 load 가 검사한
+     * 보관 디렉터리에 쓰는 {@link ArchiveRun#writing}, dry-run 은 세기만 하는 {@link ArchiveRun#counting} 이다. COMMIT 에 보관
+     * 선언이나 isolate 가 있는데 파일을 쓰지 않는 {@code archives} 면 연결을 열기 전에 멈춘다. 결과는
+     * {@link ArchiveRun#outcome()} 으로 읽는다.
+     */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt,
+            SourceReadSessionPolicy sourceReadPolicy,
+            boolean sourceFreezeAcknowledged,
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
+            ArchiveRun archives
+    ) {
         if (spec == null) {
             throw new IllegalArgumentException("mapping spec이 없습니다.");
         }
+        Objects.requireNonNull(archives, "archives");
         if (spec.source() == null) {
             throw new IllegalArgumentException("mapping.source 접속 설정이 없습니다.");
         }
@@ -231,6 +264,8 @@ public class EtlExecutor {
         requireNullifyRules(spec);
         Map<String, Map<String, TargetValueGuard.Limit>> guards = normalizeGuards(rowGuards);
         requireIsolationRules(spec, guards);
+        requireArchiveRules(spec, archives, commit);
+        List<DumpOnlyRead> dumpOnlyReads = ArchiveRun.dumpOnlyReads(spec);
         DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
         if (commit && targetDs == null) {
@@ -265,11 +300,17 @@ public class EtlExecutor {
                         sourceConnection.setReadOnly(true);
                         sourceConnection.setTransactionIsolation(sourceReadPolicy.jdbcIsolation());
                         sourceConnection.setAutoCommit(false);
-                        TableResult preflightFailure = commit
-                                ? preflightOrderTupleUniqueness(sourceConnection, orderedTables)
+                        TableResult preflightFailure =
+                                preflightOrderTupleUniqueness(sourceConnection, orderedTables, commit);
+                        // [ADR-0029 L3e] 덤프만 하는 표의 정렬 키 NULL 부재·유일성은 어느 모드든 행을 읽거나 쓰기 전에 증명한다.
+                        String archivePreflight = preflightFailure == null
+                                ? preflightDumpOnlyKeys(sourceConnection, dumpOnlyReads)
                                 : null;
                         if (preflightFailure != null) {
                             results.add(preflightFailure);
+                            safeRollback(sourceConnection);
+                        } else if (archivePreflight != null) {
+                            archives.fail(archivePreflight);
                             safeRollback(sourceConnection);
                         } else {
                             if (commit) {
@@ -289,7 +330,7 @@ public class EtlExecutor {
                                 TableExecution execution = runTable(
                                         sourceConnection, targetDs, spec, table, registry, state, commit,
                                         protector, guards.getOrDefault(lower(table.source()), Map.of()),
-                                        sequenceColumns(sequencePlan, table));
+                                        sequenceColumns(sequencePlan, table), archives);
                                 results.add(execution.result());
                                 isolatedKeys.put(lower(table.source()), execution.isolatedKeys());
                                 if (execution.sourceSessionFailed()) {
@@ -299,6 +340,14 @@ public class EtlExecutor {
                                 }
                                 if (execution.rowFailureStopped()) {
                                     stoppedAt = table;
+                                }
+                            }
+                            // [ADR-0029 L3e] 덤프만 하는 표는 매핑된 표를 모두 마친 같은 읽기 세션에서 읽는다. 앞에서 멈췄으면
+                            //   읽지 않는다 — 그 덤프는 결과에 없고 검증이 실패로 판정한다.
+                            if (!sourceSessionFailed && stoppedAt == null) {
+                                sourceSessionFailed = !dumpOnlyTables(sourceConnection, dumpOnlyReads, archives);
+                                if (sourceSessionFailed) {
+                                    safeRollback(sourceConnection);
                                 }
                             }
                             if (!sourceSessionFailed) {
@@ -333,10 +382,115 @@ public class EtlExecutor {
             throw new IllegalStateException("처리 종료 후 미확정 keymap이 남았습니다 — 이관 결과를 신뢰할 수 없습니다");
         }
         if (stateInitialized) {
-            boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty());
+            boolean failed = results.stream().anyMatch(result -> !result.errors().isEmpty())
+                    || !archives.outcome().errors().isEmpty();
             Objects.requireNonNull(state).mark(targetJt, failed ? "FAILED" : "LOADED");
         }
         return results;
+    }
+
+    /**
+     * [ADR-0029 L3e] 보관·격리 키 반출 전제를 연결을 열기 전에 확인한다. COMMIT 에 보관 선언이나 isolate 가 있으면 보관
+     * 디렉터리가 있어야 하고(덤프·격리 키 없이 적재하지 않는다), dry-run 은 파일을 쓰지 않는다. 보관은 적재 run 과 함께 하므로
+     * 표 매핑이 있어야 하고, 보관 id 는 한 번씩, 매핑된 표의 보관은 그 매핑의 where·정렬 키를 쓰며(따로 두면 오류), 덤프에는
+     * 정렬 키가 있어야 한다. 덤프 머리(컬럼·원장 행·보존 기한)도 여기서 확인한다. 오류는 표 이름과 고정 문구뿐이다.
+     */
+    static void requireArchiveRules(MappingSpec spec, ArchiveRun archives, boolean commit) {
+        if (commit && ArchiveRun.required(spec) && !archives.writesFiles()) {
+            throw new IllegalArgumentException("commit 에서 보관 선언(archives)이나 격리(isolate)가 있으면 보관 디렉터리"
+                    + "(--archive-dir)가 필요합니다 — 덤프·격리 키 없이 적재하지 않습니다");
+        }
+        if (!commit && archives.writesFiles()) {
+            throw new IllegalArgumentException("dry-run 은 보관 파일을 쓰지 않습니다 — 보관 디렉터리는 commit 에서만 씁니다");
+        }
+        if (spec.archives().isEmpty()) {
+            return;
+        }
+        if (spec.tables().isEmpty()) {
+            throw new IllegalArgumentException("보관 선언만 있는 mapping 은 실행할 수 없습니다 — 보관은 적재 run 과 함께 합니다");
+        }
+        Set<String> ids = new HashSet<>();
+        for (ArchiveDump dump : spec.archives()) {
+            if (dump == null || isBlank(dump.id()) || isBlank(dump.source()) || !ids.add(dump.id())) {
+                throw new IllegalArgumentException("보관 선언의 id·source 가 비었거나 id 가 겹칩니다");
+            }
+            TableMapping mapped = spec.mappedTableOf(dump.source());
+            if (mapped != null && (dump.where() != null || !dump.orderByKeys().isEmpty())) {
+                throw new IllegalArgumentException(dump.source()
+                        + ": 매핑된 표의 보관은 그 매핑의 where·정렬 키를 씁니다 — 보관 선언에 따로 둘 수 없습니다");
+            }
+            List<String> keys = mapped == null ? dump.orderByKeys() : mapped.effectiveOrderKeys();
+            if (keys.isEmpty()) {
+                throw new IllegalArgumentException(dump.source() + ": 보관 덤프에는 정렬 키가 필요합니다");
+            }
+            SourceIntrospector.qualifiedIdent(dump.source());
+            keys.forEach(SourceIntrospector::ident);
+            dump.columns().forEach(SourceIntrospector::ident);
+        }
+        archives.check(spec);
+    }
+
+    /**
+     * [ADR-0029 L3e] 덤프만 하는 표의 정렬 키가 NULL 인 행이 없고 정렬 키가 유일한지 같은 읽기 세션의 DB 비교 의미로 먼저
+     * 증명한다. 증명하지 못하면 표 이름과 고정 사유를 돌려준다(행을 읽거나 쓰지 않는다).
+     */
+    private static String preflightDumpOnlyKeys(Connection source, List<DumpOnlyRead> reads) {
+        for (DumpOnlyRead read : reads) {
+            try {
+                requireNonNullOrderKeys(source, read.table());
+                requireUniqueOrderTuple(source, read.table());
+            } catch (SQLException failure) {
+                return ORDER_KEY_NULL.equals(failure.getMessage())
+                        ? "보관 덤프 정렬 키 확인 실패(" + read.table().source() + "): " + ORDER_KEY_NULL
+                        : "보관 덤프 정렬 키 유일성 확인 실패(" + read.table().source() + "): ORDER_TUPLE_UNIQUENESS_UNPROVEN";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * [ADR-0029 L3e] 덤프만 하는 표를 keyset 으로 읽어 덤프한다(적재하지 않는다). 읽기·쓰기에 실패하면 실패를 남기고 남은
+     * 표를 읽지 않는다 — 원천 SQL 실패면 false 를 돌려 읽기 세션을 되돌린다.
+     */
+    private boolean dumpOnlyTables(Connection source, List<DumpOnlyRead> reads, ArchiveRun archives) {
+        for (DumpOnlyRead read : reads) {
+            TableMapping table = read.table();
+            try (TableArchive archive = archives.dumpOnlyTable(read)) {
+                long rows = 0;
+                Set<String> seenOrderDigests = new HashSet<>();
+                List<Object> cursor = null;
+                boolean hasMore;
+                do {
+                    SourcePage page = readSourcePage(source, table, cursor, List.of());
+                    hasMore = page.hasMore();
+                    for (Map<String, Object> row : page.rows()) {
+                        rows++;
+                        if (!seenOrderDigests.add(orderDigest(row, table))) {
+                            throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+                        }
+                        archive.row(row);
+                    }
+                    if (!page.rows().isEmpty()) {
+                        cursor = orderValues(page.rows().getLast(), table);
+                    }
+                    page.rows().clear();
+                } while (hasMore);
+                archive.complete(rows);
+            } catch (SQLException failure) {
+                String reason = failure instanceof JdbcLobReader.ContentReadException content
+                        ? content.reason() : "SQL_EXECUTION_FAILED";
+                archives.fail("보관 덤프 읽기 실패(" + table.source() + "): " + reason);
+                return false;
+            } catch (ArchiveWriteException failure) {
+                archives.fail("보관 덤프를 쓰지 못했습니다(" + table.source() + "): " + failure.reason());
+                return true;
+            } catch (IllegalStateException failure) {
+                // 정렬 키가 NULL·공백인 행이나 읽기에 없는 보관 컬럼 — 값은 싣지 않는다.
+                archives.fail("보관 덤프를 마치지 못했습니다(" + table.source() + "): ARCHIVE_ROW_REJECTED");
+                return true;
+            }
+        }
+        return true;
     }
 
     private static List<TargetSequenceSynchronizer.Target> planTargetSequences(
@@ -721,8 +875,18 @@ public class EtlExecutor {
     private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
                                     TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
                                     boolean commit, ColumnProtector protector,
-                                    Map<String, TargetValueGuard.Limit> guards, Set<String> sequenceColumns) {
+                                    Map<String, TargetValueGuard.Limit> guards, Set<String> sequenceColumns,
+                                    ArchiveRun archives) {
         List<String> errors = new ArrayList<>();
+        // [ADR-0029 L3e] 이 표의 보관 덤프를 읽기 전에 연다(COMMIT 은 파일 이름을 예약한다). 못 열면 읽지 않고 멈춘다.
+        TableArchive archive;
+        try {
+            archive = archives.mappedTable(spec, t);
+        } catch (ArchiveWriteException failure) {
+            errors.add(archiveFailure(t, failure));
+            return new TableExecution(new TableResult(t.source(), t.target(), 0L, 0L,
+                    state == null ? 0L : state.count(t.source()), errors), false, true, Map.of());
+        }
         List<String> targetCols = canonicalTargetColumns(t);
         List<String> insertCols = insertTargetColumns(t);
         List<String> returningCols = returningTargetColumns(t);
@@ -737,7 +901,7 @@ public class EtlExecutor {
                 isolation,
                 sequenceColumns);
         TableCounts counts = new TableCounts(isolation.active()
-                ? new IsolationTally(t.source(), isolation.caps()) : null);
+                ? new IsolationTally(t.source(), isolation.caps()) : null, archive);
         boolean sourceSessionFailed = false;
         boolean rowFailureStopped = false;
 
@@ -756,6 +920,14 @@ public class EtlExecutor {
                 rowFailureStopped = !readKeysetPages(sourceConnection, spec, t, writePlan, reg, state,
                         targetConn, counts, errors);
             }
+            if (!rowFailureStopped && errors.isEmpty()) {
+                // [ADR-0029 L3e] 끝까지 읽은 표만 덤프·격리 키 파일을 최종 이름으로 옮긴다. 덤프 행 수 = 조회 수를 검증이 본다.
+                archive.complete(counts.read);
+            }
+        } catch (ArchiveWriteException failure) {
+            errors.add(archiveFailure(t, failure));
+            rowFailureStopped = true;
+            safeRollback(targetConn);
         } catch (SQLException failure) {
             sourceSessionFailed = true;
             String reason = failure instanceof JdbcLobReader.ContentReadException content
@@ -766,6 +938,8 @@ public class EtlExecutor {
             safeRollback(targetConn);
             throw propagate(failure);
         } finally {
+            // 마치지 않은 이 실행의 덤프·격리 키 파일은 지운다(마친 파일은 그대로).
+            archive.close();
             safeClose(targetConn);
         }
         long durableWritten = state == null ? counts.written : state.count(t.source());
@@ -778,6 +952,12 @@ public class EtlExecutor {
                 isolated == null ? Map.of() : isolated.maxPreservedKeys());
     }
 
+    /** 보관 파일을 열거나 쓰지 못해 멈춘 표의 오류. 사유 코드만 싣고 경로·값은 싣지 않는다(ADR-0029 L3e). */
+    private static String archiveFailure(TableMapping table, ArchiveWriteException failure) {
+        return "보관 파일을 쓰지 못했습니다(" + table.source() + "): " + failure.reason()
+                + " — 이 표의 보관 파일은 지우고 적재를 멈췄습니다";
+    }
+
     /** 행 변환·쓰기 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
     private static TableResult notProcessed(TableMapping table, TableMapping stoppedAt,
                                             MigrationStateStore state) {
@@ -787,20 +967,61 @@ public class EtlExecutor {
                         + stoppedAt.source() + " 의 행 실패 — RUN_STOPPED_BY_ROW_FAILURE"));
     }
 
+    /**
+     * 행을 읽기 전에 정렬 키를 증명한다. 정렬 키가 있는 표는 어느 모드든 NULL 키 행이 없어야 하고(첫 page 밖의 NULL 키 행은
+     * keyset 이 다시 읽지 못해 조용히 빠진다 — ADR-0029 L3e 검토), commit 은 정렬 키 유일성도 증명한다.
+     */
     private static TableResult preflightOrderTupleUniqueness(
             Connection source,
-            List<TableMapping> orderedTables
+            List<TableMapping> orderedTables,
+            boolean commit
     ) {
         for (TableMapping table : orderedTables) {
             try {
-                requireUniqueOrderTuple(source, table);
-            } catch (SQLException ignored) {
+                if (!table.effectiveOrderKeys().isEmpty()) {
+                    requireNonNullOrderKeys(source, table);
+                }
+                if (commit) {
+                    requireUniqueOrderTuple(source, table);
+                }
+            } catch (SQLException failure) {
+                String reason = ORDER_KEY_NULL.equals(failure.getMessage()) ? ORDER_KEY_NULL : "SQL_EXECUTION_FAILED";
                 return new TableResult(
                         table.source(), table.target(), 0, 0, 0,
-                        List.of("이관 실패(" + table.source() + "): SQL_EXECUTION_FAILED"));
+                        List.of("이관 실패(" + table.source() + "): " + reason));
             }
         }
         return null;
+    }
+
+    /**
+     * keyset 의 다음 page 조건({@code >}·{@code =})은 NULL 을 다시 읽지 못한다. NULL 을 뒤로 정렬하는 소스(PostgreSQL·
+     * Oracle)는 첫 page 밖의 NULL 키 행을 적재·덤프에서 조용히 빠뜨리고, 읽은 행으로 센 수끼리 대조하는 검증도 그 손실을
+     * 보지 못한다. 같은 읽기 세션에서 그런 행이 없음을 먼저 증명한다 — 있으면 {@link #ORDER_KEY_NULL}, 증명하지 못하면
+     * 정렬 키 유일성 실패와 같은 사유다.
+     */
+    private static void requireNonNullOrderKeys(Connection source, TableMapping table) throws SQLException {
+        List<String> orderKeys = table.effectiveOrderKeys();
+        if (orderKeys.isEmpty()) {
+            throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+        }
+        String nulls = String.join(" OR ", orderKeys.stream()
+                .map(key -> SourceIntrospector.ident(key) + " IS NULL")
+                .toList());
+        String sql = "SELECT 1 FROM " + SourceIntrospector.qualifiedIdent(table.source())
+                + " WHERE " + (isBlank(table.where()) ? "" : "(" + table.where() + ") AND ") + "(" + nulls + ")";
+        boolean found;
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
+            statement.setMaxRows(1);
+            try (ResultSet rows = statement.executeQuery()) {
+                found = rows.next();
+            }
+        } catch (SQLException ignored) {
+            throw new SQLException("ORDER_TUPLE_UNIQUENESS_UNPROVEN");
+        }
+        if (found) {
+            throw new SQLException(ORDER_KEY_NULL);
+        }
     }
 
     /** 같은 source transaction의 DB 비교 의미로 keyset order tuple 유일성을 먼저 증명한다. */
@@ -873,7 +1094,7 @@ public class EtlExecutor {
         Set<String> seenOrderDigests = new HashSet<>();
         boolean hasMore;
         do {
-            SourcePage page = readSourcePage(source, table, cursor);
+            SourcePage page = readSourcePage(source, table, cursor, counts.archive.columns());
             hasMore = page.hasMore();
             List<Map<String, Object>> accepted = new ArrayList<>(page.rows().size());
             for (Map<String, Object> row : page.rows()) {
@@ -890,6 +1111,8 @@ public class EtlExecutor {
                             "중복 order identity(" + table.source() + "): orderDigest="
                                     + orderDigest);
                 }
+                // [ADR-0029 L3e] 읽은 행은 모두 덤프한다 — 재개로 건너뛸 행·격리할 행도 같은 읽기의 행이다.
+                counts.archive.row(row);
                 accepted.add(row);
             }
             if (!accepted.isEmpty()
@@ -920,9 +1143,12 @@ public class EtlExecutor {
         private final NullifyTally nullified = new NullifyTally();
         /** isolate 를 선언한 표에서만 있다(ADR-0029 L3b). */
         private final IsolationTally isolated;
+        /** 이 표의 보관 덤프와 격리 키 반출(ADR-0029 L3e). 보관이 없어도 있다. */
+        private final TableArchive archive;
 
-        private TableCounts(IsolationTally isolated) {
+        private TableCounts(IsolationTally isolated, TableArchive archive) {
             this.isolated = isolated;
+            this.archive = archive;
         }
     }
 
@@ -978,9 +1204,10 @@ public class EtlExecutor {
             Set<String> sequenceColumns
     ) {}
 
+    /** {@code extraColumns} 는 같은 SELECT 에 더해 읽을 보관 컬럼이다(ADR-0029 L3e). */
     private SourcePage readSourcePage(Connection source, TableMapping table,
-                                      List<Object> cursor) throws SQLException {
-        String sql = buildSourcePageSql(table, cursor != null);
+                                      List<Object> cursor, List<String> extraColumns) throws SQLException {
+        String sql = buildSourcePageSql(table, cursor != null, extraColumns);
         boolean boundedVariableValues = "Microsoft SQL Server".equals(source.getMetaData().getDatabaseProductName());
         try (PreparedStatement statement = SourceReadStatements.prepare(source, sql)) {
             if (cursor != null) {
@@ -1020,7 +1247,22 @@ public class EtlExecutor {
     }
 
     static String buildSourcePageSql(TableMapping table, boolean seek) {
-        List<String> sourceColumns = SourceProjection.requiredColumns(table);
+        return buildSourcePageSql(table, seek, List.of());
+    }
+
+    /**
+     * {@code extraColumns}(보관 컬럼, ADR-0029 L3e)를 적재 projection 뒤에 더한다 — 이미 읽는 컬럼은 한 번만 읽는다(대소문자
+     * 무시). 적재·checkpoint 판정은 표 매핑의 컬럼만 쓰므로 더한 컬럼이 그 의미를 바꾸지 않는다.
+     */
+    static String buildSourcePageSql(TableMapping table, boolean seek, List<String> extraColumns) {
+        List<String> sourceColumns = new ArrayList<>(SourceProjection.requiredColumns(table));
+        Set<String> projected = new HashSet<>();
+        sourceColumns.forEach(column -> projected.add(column.toLowerCase(Locale.ROOT)));
+        for (String extra : extraColumns) {
+            if (projected.add(extra.toLowerCase(Locale.ROOT))) {
+                sourceColumns.add(extra);
+            }
+        }
         String projection = sourceColumns.isEmpty()
                 ? "1 AS __migration_row__"
                 : String.join(", ", sourceColumns.stream()
@@ -1162,8 +1404,8 @@ public class EtlExecutor {
                 Map<String, Object> out = transformRow(row, spec, t, reg, writePlan, counts.nullified, failures);
                 if (failures != null && !failures.isEmpty()) {
                     reg.rollback(rowCheckpoint);
-                    String stopped = isolateRow(row, out, t, writePlan, state, counts.isolated, failures,
-                            firstOrdinal + index);
+                    String stopped = isolateRow(row, out, t, writePlan, state, counts.isolated, counts.archive,
+                            failures, firstOrdinal + index);
                     if (stopped != null) {
                         reg.rollback(chunkCheckpoint);
                         errors.add(stopped);
@@ -1250,10 +1492,13 @@ public class EtlExecutor {
      * 격리하지 않는다 — 대상에 남은 행을 적재하지 않은 것으로 셀 수 없다. 격리하면 원장 행마다 세고, 상한을 넘으면 멈춘다.
      * 격리 행이 시퀀스 컬럼에 썼을 정수 키도 모은다(시퀀스 재설정 목표). 그 키를 모르면(격리한 컬럼 자신이 시퀀스 컬럼이다)
      * 재설정이 그 번호를 넘지 못하므로 멈춘다. 문구는 표·컬럼·행 순번·코드와 원장 행 ID 뿐이다.
+     *
+     * <p>[ADR-0029 L3e] 격리한 행은 정렬 키 원값·순번·위반 코드를 반출한다(COMMIT). 반출하지 못하면 멈춘다 — 격리한 행을
+     * 다시 찾을 키 없이 적재를 마치지 않는다.
      */
     private String isolateRow(Map<String, Object> row, Map<String, Object> out, TableMapping t, WritePlan plan,
-                              MigrationStateStore state, IsolationTally tally, List<RuntimeException> raised,
-                              long ordinal) {
+                              MigrationStateStore state, IsolationTally tally, TableArchive archive,
+                              List<RuntimeException> raised, long ordinal) {
         List<RowIsolationPolicy.Failure> failures = new ArrayList<>(raised.size() + 1);
         raised.forEach(failure -> failures.add(failureOf(failure)));
         RowIsolationPolicy.Failure identity = missingIdentity(out, t, failures);
@@ -1286,10 +1531,17 @@ public class EtlExecutor {
                         + " 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
             }
         }
+        List<RowIsolationPolicy.Match> matches = ((RowIsolationPolicy.Isolated) decision).matches();
         try {
-            tally.add(ordinal, ((RowIsolationPolicy.Isolated) decision).matches(), keys);
+            tally.add(ordinal, matches, keys);
         } catch (IsolationTally.CapExceeded exceeded) {
             return exceeded.getMessage() + " — ISOLATION_CAP_EXCEEDED, 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+        }
+        try {
+            archive.isolated(row, ordinal, matches);
+        } catch (ArchiveWriteException failure) {
+            return "격리 키를 반출하지 못했습니다(" + t.source() + ", row=" + ordinal + "): " + failure.reason()
+                    + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
         }
         return null;
     }

@@ -9,7 +9,11 @@ import nuri.migration.adapter.SourceAdapterRegistry;
 import nuri.migration.adapter.SourceReadSessionPolicy;
 import nuri.migration.appscan.AppSourceScanner;
 import nuri.migration.appscan.AppUsageReport;
+import nuri.migration.archive.ArchiveLocationGuard;
+import nuri.migration.archive.ArchiveOutcome;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.artifact.ArtifactFileStore;
+import nuri.migration.artifact.CanonicalArtifactDigest;
 import nuri.migration.artifact.CatalogSnapshotArtifactCodec;
 import nuri.migration.artifact.CatalogSnapshotArtifactEnvelope;
 import nuri.migration.artifact.CatalogSnapshotDigester;
@@ -430,6 +434,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         if (mapping.tables().isEmpty()) {
             throw gate("load할 table mapping이 없습니다.");
         }
+        java.nio.file.Path archiveDirectory = requireArchiveDirectory(options, mapping);
 
         CatalogSnapshotArtifactEnvelope inventory = inventoryCodec.readEnvelope(
                 files.readUtf8(options.inventory()));
@@ -501,7 +506,38 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                     source,
                     readSessionPolicy,
                     options.sourceFreezeAcknowledged(),
-                    rowGuards);
+                    rowGuards,
+                    archiveDirectory);
+        }
+    }
+
+    /**
+     * [ADR-0029 L3e] 보관 덤프·격리 키 반출 디렉터리를 연결을 열기 전에 정한다. COMMIT 에 보관 선언이나 isolate 가 있으면
+     * {@code --archive-dir} 가 필요하다 — 덤프·격리 키 없이 적재하지 않는다. 디렉터리는 절대 경로이고 링크가 없으며
+     * mapping·plan·원장·inventory 파일의 디렉터리와 그 아래, Git 작업 트리 밖이어야 한다. 디렉터리가 없으면 null 이다.
+     */
+    private static java.nio.file.Path requireArchiveDirectory(WorkflowCliOptions options, MappingSpec mapping) {
+        if (options.mode() == MigrationMode.COMMIT && ArchiveRun.required(mapping) && options.archiveDir() == null) {
+            throw gate("commit 에서 보관 선언(archives)이나 격리(isolate)가 있으면 --archive-dir 가 필요합니다 — 덤프·격리 키"
+                    + " 없이 적재하지 않습니다.");
+        }
+        if (options.archiveDir() == null) {
+            return null;
+        }
+        List<java.nio.file.Path> inputs = new java.util.ArrayList<>(List.of(
+                options.mapping(), options.plan(), options.inventory()));
+        MappingSpec.LedgerBinding binding = mapping.ledger();
+        if (binding != null && binding.path() != null && !binding.path().isBlank()) {
+            try {
+                inputs.add(options.mapping().toAbsolutePath().normalize().getParent().resolve(binding.path()));
+            } catch (java.nio.file.InvalidPathException invalid) {
+                // 원장 선언 검사가 같은 경로를 거부한다.
+            }
+        }
+        try {
+            return ArchiveLocationGuard.requireSafeDirectory(options.archiveDir(), inputs);
+        } catch (IllegalArgumentException unsafe) {
+            throw gate(unsafe.getMessage());
         }
     }
 
@@ -591,7 +627,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             JdbcTemplate source,
             SourceReadSessionPolicy readSessionPolicy,
             boolean sourceFreezeAcknowledged,
-            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
+            java.nio.file.Path archiveDirectory
     ) {
         requireValid(validator.validateLiveSource(mapping, source), "live source schema");
         JdbcTemplate target = null;
@@ -603,21 +640,30 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
                 planPath.getFileName() + ".load-" + java.util.UUID.randomUUID() + ".json");
         java.time.Instant started = java.time.Instant.now();
         // 증거 경로에 쓰지 못하면 적재를 시작하지 않는다. 중단 시 STARTED는 성공을 뜻하지 않는다.
-        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null);
+        writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started, null, null, null);
+        // [ADR-0029 L3e] COMMIT 은 보관 디렉터리에 덤프·격리 키를 쓴다(파일 머리에 승인 plan·mapping digest). dry-run 은 센다.
+        ArchiveRun archives = archiveDirectory == null ? ArchiveRun.counting()
+                : ArchiveRun.writing(archiveDirectory, CanonicalArtifactDigest.sha256(plan), plan.mappingDigest());
+        // 표의 덤프·격리 키를 최종 이름으로 옮길 때마다 STARTED 증거를 다시 쓴다 — 실행이 강제로 끝나도 옮긴 파일은 어떤
+        //   증거에 실린다(옮김과 다시 쓰기 사이에 끝나면 남는 파일은 런북이 다룬다).
+        archives.onPublished(outcome -> writeExecutionEvidence(evidence, plan, mapping, mode, "STARTED", started,
+                null, null, outcome));
         MigrationReport report = null;
         List<EtlExecutor.TableResult> results = null;
         try {
             results = executor.execute(
-                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards);
-            report = verifier.verify(mapping, results, target);
+                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards, archives);
+            report = verifier.verify(mapping, results, target, archives.outcome());
             if (!report.ok()) {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."
                         + firstFailure(report));
             }
-            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "PASS", started, report, results,
+                    archives.outcome());
         } catch (Throwable failure) {
             rethrowJvmFatal(failure);
-            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results);
+            writeExecutionEvidence(evidence, plan, mapping, mode, "FAILED", started, report, results,
+                    archives.outcome());
             throw failure;
         }
     }
@@ -639,9 +685,10 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
 
     private void writeExecutionEvidence(java.nio.file.Path path, MigrationPlan plan, MappingSpec mapping,
             MigrationMode mode, String status, java.time.Instant started, MigrationReport report,
-            List<EtlExecutor.TableResult> results) {
-        // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다.
-        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results);
+            List<EtlExecutor.TableResult> results, ArchiveOutcome archives) {
+        // 시퀀스 재설정 기록(DEC-OPS-306)도 이름과 결과만 실린다 — 키 값은 실리지 않는다. 보관 덤프(ADR-0029 L3e)는 파일
+        //   이름(디렉터리 제외)·행 수·SHA-256·개인정보 모양 수만 실린다.
+        String artifact = MigrationExecutionArtifact.encode(plan, mode, status, started, report, results, archives);
         requireNoBoundCredentials(artifact, mapping);
         files.writeAtomic(path, artifact);
     }

@@ -29,6 +29,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -39,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -56,6 +59,8 @@ public class MappingValidator {
             "(?is)(;|--|/\\*|\\*/|\\b(select|insert|update|delete|merge|drop|alter|create|truncate|call|copy|grant|revoke)\\b)");
     /** 원장 행 ID 형식(용어 매핑 원장과 같다). */
     private static final Pattern LEDGER_ENTRY = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
+    /** 보관 선언 id 형식 — 매핑 id 와 같다(ADR-0029 L3e). 덤프 파일 이름에 들어간다. */
+    private static final Pattern ARCHIVE_ID = Pattern.compile("[a-z][a-z0-9_]{0,62}");
     private static final String ISOLATABLE_CODES = "INVALID_DATE·PLACEHOLDER_DATE·TIME_PRESENT·FORMAT·BLANK·"
             + "CODEMAP_UNMAPPED·LENGTH_EXCEEDED·PRECISION_EXCEEDED·REQUIRED_MISSING";
 
@@ -165,6 +170,7 @@ public class MappingValidator {
             }
         }
         validateIsolation(spec, errors);
+        validateArchives(spec, errors);
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
         // 온라인 앱이 암호화해 저장하는 컬럼은 encrypt 선언이 같아야 한다(DEC-OPS-308). 문구는 테이블·컬럼 이름만 담는다.
         errors.addAll(ColumnProtectionPlan.of(spec).violations());
@@ -257,6 +263,117 @@ public class MappingValidator {
             if (blocker != null) {
                 errors.add(table.source() + ": " + blocker + "에는 isolate 를 둘 수 없습니다");
             }
+        }
+    }
+
+    /**
+     * [ADR-0029 L3e] 외부 보관 선언의 정적 전제. 보관은 COMMIT load 의 같은 읽기 세션 안에서 쓰므로 보관만 있는 mapping 은
+     * 받지 않는다(빈 tables 는 검증이 FAIL 로 본다). 선언마다 매핑 id 형식의 유일한 id, 소스 표, 1개 이상의 컬럼과 같은
+     * 순서·같은 수의 원장 행 ID, yyyy-MM-dd 보존 기한이 있어야 한다. 매핑된 표(같은 source 표기의 표 매핑이 있음)는 그
+     * 매핑의 where·정렬 키를 그대로 쓰므로 따로 선언하면 오류이고, 그 매핑에 정렬 키가 있어야 덤프 행의 키가 정해진다. 덤프만
+     * 하는 표는 정렬 키(필수)·where(선택, 단일 읽기 조건식)를 선언하고, 같은 표의 선언끼리 같아야 한다. 한 소스 컬럼은 한
+     * 선언에만, 한 원장 행은 한 컬럼에만, (소스 표, 보존 기한) 은 한 선언에만 둔다. 암호화 대상의 소스 컬럼은
+     * {@link ColumnProtectionPlan} 이 따로 막는다. 문구는 위치·id·표·컬럼 이름만 담는다.
+     */
+    private static void validateArchives(MappingSpec spec, List<String> errors) {
+        if (spec.archives().isEmpty()) {
+            return;
+        }
+        if (spec.tables().isEmpty()) {
+            errors.add("보관(archives)만 있는 mapping 은 실행할 수 없습니다 — 보관은 적재 run 과 같은 읽기 세션에서 씁니다");
+        }
+        Set<String> ids = new HashSet<>();
+        Set<String> retentions = new HashSet<>();
+        Map<String, String> dumpedColumns = new HashMap<>();
+        Map<String, String> ledgerEntries = new HashMap<>();
+        Map<String, MappingSpec.ArchiveDump> dumpOnlyReads = new HashMap<>();
+        for (int position = 0; position < spec.archives().size(); position++) {
+            MappingSpec.ArchiveDump archive = spec.archives().get(position);
+            if (archive == null) {
+                errors.add("archives[" + position + "]: 보관 선언 항목은 null일 수 없습니다");
+                continue;
+            }
+            boolean namedId = archive.id() != null && ARCHIVE_ID.matcher(archive.id()).matches();
+            String label = "archives[" + position + "]" + (namedId ? "(" + archive.id() + ")" : "");
+            if (!namedId) {
+                errors.add(label + ": 보관 id 는 소문자로 시작하는 소문자·숫자·밑줄 63자 이내여야 합니다");
+            } else if (!ids.add(archive.id())) {
+                errors.add(label + ": 같은 보관 id 가 두 번 있습니다");
+            }
+            if (isBlank(archive.source())) {
+                errors.add(label + ": 보관할 소스 표(source)가 필요합니다");
+                continue;
+            }
+            validateIdentifier("보관 소스 테이블", archive.source(), errors);
+            String source = normalize(archive.source().trim());
+            if (archiveDate(archive.retainUntil()) == null) {
+                errors.add(label + ": 보존 기한(retainUntil)은 yyyy-MM-dd 날짜여야 합니다");
+            } else if (!retentions.add(source + '\u0000' + archive.retainUntil())) {
+                errors.add(label + ": 같은 소스 표·보존 기한의 보관 선언이 둘입니다 — 하나로 묶습니다");
+            }
+            if (archive.columns().isEmpty()) {
+                errors.add(label + ": 보관할 컬럼(columns)이 필요합니다");
+            }
+            for (String column : archive.columns()) {
+                validateColumnIdentifier(label + ": columns", column, errors);
+                if (!isBlank(column)) {
+                    String previous = dumpedColumns.putIfAbsent(source + '\u0000' + normalize(column.trim()), label);
+                    if (previous != null) {
+                        errors.add(label + ": 같은 소스 컬럼(" + column + ")을 두 번 보관합니다 — " + previous);
+                    }
+                }
+            }
+            if (archive.ledgerEntries().size() != archive.columns().size()) {
+                errors.add(label + ": ledgerEntries 는 columns 와 같은 순서·같은 수의 원장 행 ID 여야 합니다");
+            }
+            for (String entry : archive.ledgerEntries()) {
+                if (entry == null || !LEDGER_ENTRY.matcher(entry).matches()) {
+                    errors.add(label + ": ledgerEntries 는 원장 행 ID 형식(영문·숫자·_.- 64자 이내)이어야 합니다");
+                } else if (ledgerEntries.putIfAbsent(entry, label) != null) {
+                    errors.add(label + ": 같은 원장 행(" + entry + ")을 두 보관 컬럼이 가리킵니다");
+                }
+            }
+            MappingSpec.TableMapping mapped = spec.mappedTableOf(archive.source());
+            if (mapped != null) {
+                if (archive.where() != null || !archive.orderByKeys().isEmpty()) {
+                    errors.add(label + ": 매핑된 표의 보관은 그 매핑의 where·정렬 키를 그대로 씁니다 — 보관 선언에"
+                            + " where·orderByKeys 를 두지 않습니다");
+                }
+                if (mapped.effectiveOrderKeys().isEmpty()) {
+                    errors.add(label + ": 보관하는 매핑된 표에는 orderBy·orderByKeys 가 필요합니다 — 덤프 행의 키를 정할 수"
+                            + " 없습니다");
+                }
+                continue;
+            }
+            if (archive.orderByKeys().isEmpty()) {
+                errors.add(label + ": 덤프만 하는 표의 보관에는 정렬 키(orderByKeys)가 필요합니다");
+            }
+            Set<String> keys = new HashSet<>();
+            for (String key : archive.orderByKeys()) {
+                validateColumnIdentifier(label + ": orderByKeys", key, errors);
+                if (!isBlank(key) && !keys.add(normalize(key))) {
+                    errors.add(label + ": orderByKeys 중복 금지: " + key);
+                }
+            }
+            if (archive.where() != null && (archive.where().isBlank() || UNSAFE_WHERE.matcher(archive.where()).find())) {
+                errors.add(label + ": where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
+            }
+            MappingSpec.ArchiveDump first = dumpOnlyReads.putIfAbsent(source, archive);
+            if (first != null && (!Objects.equals(first.where(), archive.where())
+                    || !first.orderByKeys().equals(archive.orderByKeys()))) {
+                errors.add(label + ": 같은 덤프만 하는 표의 보관 선언은 where·정렬 키가 같아야 합니다 — 한 번 읽어 나눠 씁니다");
+            }
+        }
+    }
+
+    private static LocalDate archiveDate(String value) {
+        if (value == null || !value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException invalid) {
+            return null;
         }
     }
 

@@ -2,6 +2,7 @@ package nuri.migration;
 
 import nuri.migration.adapter.EvidenceLevel;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.artifact.MigrationExecutionArtifact;
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogObject.ObjectReference;
@@ -40,12 +41,14 @@ import nuri.migration.validate.TargetStandardValidator;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.Types;
 import java.time.Instant;
@@ -80,6 +83,9 @@ class EtlApprovedExceptionPostgresIntegrationTest {
     private final TransformerRegistry transformers = new TransformerRegistry();
     private final EtlExecutor executor = new EtlExecutor(new SourceIntrospector(), transformers);
     private final MigrationVerifier verifier = new MigrationVerifier();
+
+    @TempDir
+    Path archiveRoot;
 
     @Test
     void approvedPlaceholdersAreIsolatedWithinTheCapAndDryRunPredictsTheSamePositions() throws Exception {
@@ -119,7 +125,7 @@ class EtlApprovedExceptionPostgresIntegrationTest {
 
         String artifact = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
                 Instant.parse("2026-10-15T00:00:00Z"), report, results);
-        assertThat(artifact).contains("\"schemaVersion\":2", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
+        assertThat(artifact).contains("\"schemaVersion\":3", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
                 "\"violation\":\"PLACEHOLDER_DATE\"", "\"ordinals\":[10,600,1201]");
         assertThat(artifact).as("격리 증거에는 값·키가 없다").doesNotContain(PLACEHOLDER, "n10", "n600", "n1201");
     }
@@ -463,9 +469,18 @@ class EtlApprovedExceptionPostgresIntegrationTest {
 
     private List<TableResult> execute(Fixture fixture, MappingSpec spec, MigrationMode mode,
                                       Map<String, Map<String, TargetValueGuard.Limit>> guards) {
+        // [ADR-0029 L3e] isolate 가 있는 COMMIT 은 격리 키를 반출할 보관 디렉터리 없이 시작하지 않는다.
+        ArchiveRun archives;
+        try {
+            archives = mode == MigrationMode.COMMIT
+                    ? ArchiveRun.writing(archiveRoot.toRealPath(), "b".repeat(64), "c".repeat(64))
+                    : ArchiveRun.counting();
+        } catch (java.io.IOException unreadable) {
+            throw new IllegalStateException(unreadable);
+        }
         return executor.execute(spec, mode, fixture.source(), mode == MigrationMode.COMMIT ? fixture.target() : null,
                 SourceReadSessionPolicy.repeatableRead(EvidenceLevel.UNVERIFIED, "approved exception test"), true,
-                guards);
+                guards, archives);
     }
 
     /** 승인 workflow 와 같은 길 — live 대상 계약으로 값 한계 가드를 정한다. */
