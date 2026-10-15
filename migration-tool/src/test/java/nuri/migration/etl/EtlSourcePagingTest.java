@@ -18,10 +18,17 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +36,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class EtlSourcePagingTest {
 
@@ -95,6 +109,62 @@ class EtlSourcePagingTest {
 
         assertThat(EtlExecutor.buildSourcePageSql(table, false))
                 .isEqualTo("SELECT 1 AS __migration_row__ FROM LEGACY_CONSTANT_ROWS");
+    }
+
+    /**
+     * ADR-0029 L4-B R1 — 페이지 경계의 정렬 값도 본 읽기와 같은 {@link nuri.migration.jdbc.JdbcLobReader#scalar} 로
+     * 읽는다. Oracle {@code TIMESTAMP(n)} 정렬 키를 {@code getObject} 로 읽으면 경계 digest 가 본 읽기와 다른 값 종류를 본다.
+     */
+    @Test
+    void aDriverSpecificTimestampOrderKeyIsReadAsAJdbcTimestampAcrossThePageBoundary() throws Exception {
+        TableMapping table = new TableMapping("LEGACY_LOG", "tb_log", null, null, List.of("END_DT"), null,
+                List.of(new ColumnMapping("END_DT", "end_dt", null, "timestamp", null, null, null)), null);
+        Connection source = mock(Connection.class);
+        DatabaseMetaData database = mock(DatabaseMetaData.class);
+        when(source.getMetaData()).thenReturn(database);
+        when(database.getDatabaseProductName()).thenReturn("Oracle");
+        PreparedStatement statement = mock(PreparedStatement.class);
+        when(source.prepareStatement(anyString())).thenReturn(statement);
+        ResultSet rows = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(rows);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(rows.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(metadata.getColumnLabel(1)).thenReturn("END_DT");
+        when(metadata.getColumnType(1)).thenReturn(Types.TIMESTAMP);
+        when(metadata.getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+        AtomicInteger position = new AtomicInteger();
+        when(rows.next()).thenAnswer(invocation -> position.incrementAndGet() <= 501);
+        LocalDateTime first = LocalDateTime.of(2024, 1, 1, 0, 0);
+        when(rows.getTimestamp(1)).thenAnswer(invocation ->
+                Timestamp.valueOf(first.plusSeconds(position.get()).withNano(123456000)));
+        when(rows.getObject(1)).thenThrow(new AssertionError("driver-specific timestamps must not reach getObject"));
+        var executor = new EtlExecutor(new SourceIntrospector(), new TransformerRegistry());
+        Method read = EtlExecutor.class.getDeclaredMethod("readSourcePage", Connection.class, TableMapping.class,
+                List.class, List.class);
+        read.setAccessible(true);
+
+        Object page;
+        try {
+            page = read.invoke(executor, source, table, null, List.of());
+        } catch (InvocationTargetException failure) {
+            if (failure.getCause() instanceof Exception cause) throw cause;
+            if (failure.getCause() instanceof Error cause) throw cause;
+            throw failure;
+        }
+
+        Method pageRows = page.getClass().getDeclaredMethod("rows");
+        Method hasMore = page.getClass().getDeclaredMethod("hasMore");
+        pageRows.setAccessible(true);
+        hasMore.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> read500 = (List<Map<String, Object>>) pageRows.invoke(page);
+        assertThat(read500).hasSize(500);
+        assertThat(read500.getLast().get("end_dt"))
+                .isEqualTo(Timestamp.valueOf(first.plusSeconds(500).withNano(123456000)));
+        assertThat(hasMore.invoke(page)).isEqualTo(true);
+        verify(rows, never()).getObject(anyInt());
+        verify(rows, times(501)).getTimestamp(1);
     }
 
     @Test

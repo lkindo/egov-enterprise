@@ -13,8 +13,12 @@ import org.mockito.InOrder;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -192,6 +197,115 @@ class SourceProfilerTest {
         verify(connection, times(2)).rollback();
     }
 
+    /**
+     * ADR-0029 L4-B R2 — ojdbc 는 REMARKS 를 주지 않으므로 Oracle 코멘트는 소유자 한정 사전 뷰에서 읽는다. inventory 에는
+     * 해시가 없어 대조는 NOT_IN_INVENTORY 다. R1 — 값은 적재기와 같은 {@code JdbcLobReader.scalar} 로 읽어 드라이버 고유
+     * 시각 객체도 시각으로 센다.
+     */
+    @Test
+    void oracleCommentsComeFromOwnerScopedDictionaryViewsAndDriverTimestampsCountAsTemporal() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        given(connection.getMetaData()).willReturn(metadata);
+        given(metadata.getDatabaseProductName()).willReturn("Oracle");
+        // 드라이버 메타데이터는 코멘트를 주지 않는다(ojdbc 의 REMARKS 는 null) — 사전 뷰를 읽지 않으면 코멘트가 사라진다.
+        ResultSet noRemarks = mock(ResultSet.class);
+        given(metadata.getColumns(any(), any(), any(), any())).willReturn(noRemarks);
+        given(metadata.getTables(any(), any(), any(), any())).willReturn(noRemarks);
+        PreparedStatement columnComments = dictionary(connection, ORACLE_COLUMN_COMMENTS);
+        ResultSet columnRows = mock(ResultSet.class);
+        given(columnComments.executeQuery()).willReturn(columnRows);
+        given(columnRows.next()).willReturn(true, true, false);
+        given(columnRows.getString(1)).willReturn("STAT_CD", "END_DT");
+        given(columnRows.getString(2)).willReturn("상태코드", (String) null);
+        PreparedStatement tableComments = dictionary(connection, ORACLE_TABLE_COMMENTS);
+        ResultSet tableRows = mock(ResultSet.class);
+        given(tableComments.executeQuery()).willReturn(tableRows);
+        given(tableRows.next()).willReturn(true);
+        given(tableRows.getString(1)).willReturn("레거시 사용자");
+        Statement statement = mock(Statement.class);
+        given(connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY))
+                .willReturn(statement);
+        ResultSet rows = mock(ResultSet.class);
+        given(statement.executeQuery("SELECT STAT_CD, END_DT FROM PUBLIC.LEGACY_USER")).willReturn(rows);
+        given(rows.next()).willReturn(true, false);
+        ResultSetMetaData rowMetadata = mock(ResultSetMetaData.class);
+        given(rows.getMetaData()).willReturn(rowMetadata);
+        given(rowMetadata.getColumnType(1)).willReturn(Types.CHAR);
+        given(rowMetadata.getColumnType(2)).willReturn(Types.TIMESTAMP);
+        given(rowMetadata.getColumnClassName(2)).willReturn("oracle.sql.TIMESTAMP");
+        given(rows.getObject(1)).willReturn("A  ");
+        given(rows.getObject(2)).willReturn(new Object());
+        given(rows.getTimestamp(2)).willReturn(Timestamp.valueOf("2024-01-31 13:45:10.123456"));
+        List<CatalogObject> objects = new ArrayList<>(table("LEGACY_USER", false));
+        objects.addAll(columns("LEGACY_USER", "STAT_CD", "END_DT"));
+
+        TableProfile table = profiler.profile(connection, snapshot(objects), null).tables().getFirst();
+
+        assertThat(table.status()).isEqualTo("PROFILED");
+        assertThat(table.comment().text()).isEqualTo("레거시 사용자");
+        assertThat(table.comment().inventoryMatch()).isEqualTo("NOT_IN_INVENTORY");
+        ColumnProfile status = column(table, "STAT_CD");
+        assertThat(status.comment().text()).isEqualTo("상태코드");
+        assertThat(status.comment().inventoryMatch()).isEqualTo("NOT_IN_INVENTORY");
+        assertThat(status.trailingSpaces()).isEqualTo(1);
+        ColumnProfile end = column(table, "END_DT");
+        assertThat(end.comment().inventoryMatch()).isEqualTo("ABSENT");
+        assertThat(end.temporalValues()).isEqualTo(1);
+        assertThat(end.otherValues()).isZero();
+        assertThat(end.minYear()).isEqualTo(2024);
+        for (PreparedStatement dictionary : List.of(columnComments, tableComments)) {
+            verify(dictionary).setString(1, "PUBLIC");
+            verify(dictionary).setString(2, "LEGACY_USER");
+        }
+        verify(metadata, never()).getColumns(any(), any(), any(), any());
+        verify(metadata, never()).getTables(any(), any(), any(), any());
+    }
+
+    /** 스키마가 비면 카탈로그를 소유자로 쓰고, 소유자가 없으면 묻지 않으며, 사전 뷰를 읽지 못하면 코멘트가 없는 것이다. */
+    @Test
+    void oracleDictionaryOwnerFallsBackToTheCatalogAndUnreadableCommentsAreAbsent() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        given(connection.getMetaData()).willReturn(metadata);
+        given(metadata.getDatabaseProductName()).willReturn("Oracle");
+        // 드라이버 메타데이터는 코멘트를 주지 않는다(ojdbc 의 REMARKS 는 null) — 사전 뷰를 읽지 않으면 코멘트가 사라진다.
+        ResultSet noRemarks = mock(ResultSet.class);
+        given(metadata.getColumns(any(), any(), any(), any())).willReturn(noRemarks);
+        given(metadata.getTables(any(), any(), any(), any())).willReturn(noRemarks);
+        PreparedStatement columnComments = dictionary(connection, ORACLE_COLUMN_COMMENTS);
+        given(columnComments.executeQuery()).willThrow(new java.sql.SQLException("denied", "42000"));
+        PreparedStatement tableComments = dictionary(connection, ORACLE_TABLE_COMMENTS);
+        given(tableComments.executeQuery()).willThrow(new java.sql.SQLException("denied", "42000"));
+        Statement statement = mock(Statement.class);
+        given(connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY))
+                .willReturn(statement);
+        ResultSet empty = mock(ResultSet.class);
+        given(statement.executeQuery(any())).willReturn(empty);
+        List<CatalogObject> objects = new ArrayList<>(List.of(
+                new CatalogObject(ObjectKind.TABLE, "LEGACY", "", "BY_CATALOG", false, null, null, List.of(),
+                        Map.of()),
+                new CatalogObject(ObjectKind.COLUMN, "LEGACY", "", "BY_CATALOG.ID", false, null, null, List.of(),
+                        Map.of("parentTable", "BY_CATALOG", "originalName", "ID")),
+                new CatalogObject(ObjectKind.TABLE, null, null, "NO_OWNER", false, null, null, List.of(), Map.of()),
+                new CatalogObject(ObjectKind.COLUMN, null, null, "NO_OWNER.ID", false, null, null, List.of(),
+                        Map.of("parentTable", "NO_OWNER", "originalName", "ID"))));
+
+        SourceProfile profile = profiler.profile(connection, snapshot(objects), null);
+
+        assertThat(profile.complete()).isTrue();
+        for (TableProfile table : profile.tables()) {
+            assertThat(table.comment().inventoryMatch()).isEqualTo("ABSENT");
+            assertThat(table.columns().getFirst().comment().inventoryMatch()).isEqualTo("ABSENT");
+        }
+        verify(columnComments).setString(1, "LEGACY");
+        verify(tableComments).setString(1, "LEGACY");
+        verify(connection, times(1)).prepareStatement(ORACLE_COLUMN_COMMENTS);
+        verify(connection, times(1)).prepareStatement(ORACLE_TABLE_COMMENTS);
+        verify(statement).executeQuery("SELECT ID FROM LEGACY.BY_CATALOG");
+        verify(statement).executeQuery("SELECT ID FROM NO_OWNER");
+    }
+
     @Test
     void rejectsNonPositiveRowLimits() throws Exception {
         try (Connection connection = h2()) {
@@ -213,6 +327,17 @@ class SourceProfilerTest {
                         + "', '010-2222-" + (1000 + index) + "', '2024010" + (index % 9 + 1) + "')");
             }
         }
+    }
+
+    private static final String ORACLE_COLUMN_COMMENTS =
+            "SELECT COLUMN_NAME, COMMENTS FROM ALL_COL_COMMENTS WHERE OWNER = ? AND TABLE_NAME = ?";
+    private static final String ORACLE_TABLE_COMMENTS =
+            "SELECT COMMENTS FROM ALL_TAB_COMMENTS WHERE OWNER = ? AND TABLE_NAME = ?";
+
+    private static PreparedStatement dictionary(Connection connection, String sql) throws Exception {
+        PreparedStatement statement = mock(PreparedStatement.class);
+        given(connection.prepareStatement(sql)).willReturn(statement);
+        return statement;
     }
 
     private static ColumnProfile column(TableProfile table, String name) {

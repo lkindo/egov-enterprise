@@ -12,7 +12,9 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -90,6 +92,48 @@ class JdbcLobReaderTest {
         when(result.getObject(1)).thenReturn("uuid");
         assertThat(JdbcLobReader.read(result, 1, true)).isEqualTo("uuid");
         verify(result, never()).getCharacterStream(1);
+    }
+
+    /**
+     * ADR-0029 L4-B R1 — Oracle {@code TIMESTAMP(n)} 은 {@code getObject} 로 {@code oracle.sql.TIMESTAMP} 를 준다. 본 읽기·
+     * 정렬 경계·자기참조 키·프로파일러가 같은 {@link JdbcLobReader#scalar} 로 {@link Timestamp} 를 받아야 도메인 변환기·
+     * 보관 덤프가 시각으로 판정하고 정렬 digest 가 같은 표기를 본다.
+     */
+    @Test
+    void driverSpecificTimestampObjectsAreReadAsJdbcTimestampsOnEveryReadPath() throws Exception {
+        Timestamp value = Timestamp.valueOf("2024-01-31 13:45:10.123456");
+        for (boolean bounded : new boolean[]{false, true}) {
+            ResultSet result = longResult(Types.TIMESTAMP);
+            when(result.getMetaData().getColumnClassName(1)).thenReturn("oracle.sql.TIMESTAMP");
+            when(result.getTimestamp(1)).thenReturn(value, value, null);
+            when(result.getObject(1)).thenReturn(new Object());
+            assertThat(JdbcLobReader.read(result, 1, bounded)).isSameAs(value);
+            assertThat(JdbcLobReader.scalar(result, 1)).isSameAs(value);
+            assertThat(JdbcLobReader.read(result, 1, bounded)).isNull();
+            verify(result, never()).getObject(1);
+        }
+    }
+
+    /** {@code java.} 클래스로 알리는 값과 클래스를 알리지 않는 드라이버, TIMESTAMP 밖 시각 타입은 getObject 그대로다. */
+    @Test
+    void javaReportedTimestampsAndOtherTemporalTypesKeepTheirObject() throws Exception {
+        Object localDateTime = LocalDateTime.of(2024, 1, 31, 13, 45, 10);
+        Object timestamp = Timestamp.valueOf("2024-01-31 13:45:10");
+        Object[][] cases = {
+                {Types.TIMESTAMP, "java.time.LocalDateTime", localDateTime},
+                {Types.TIMESTAMP, "java.sql.Timestamp", timestamp},
+                {Types.TIMESTAMP, null, timestamp},
+                {Types.DATE, "oracle.sql.DATE", timestamp},
+                {Types.TIMESTAMP_WITH_TIMEZONE, "oracle.sql.TIMESTAMPTZ", timestamp},
+                {-101, "oracle.sql.TIMESTAMPTZ", timestamp}};
+        for (Object[] scenario : cases) {
+            ResultSet result = longResult((Integer) scenario[0]);
+            when(result.getMetaData().getColumnClassName(1)).thenReturn((String) scenario[1]);
+            when(result.getObject(1)).thenReturn(scenario[2]);
+            assertThat(JdbcLobReader.read(result, 1, false)).isSameAs(scenario[2]);
+            assertThat(JdbcLobReader.scalar(result, 1)).isSameAs(scenario[2]);
+            verify(result, never()).getTimestamp(1);
+        }
     }
 
     @Test

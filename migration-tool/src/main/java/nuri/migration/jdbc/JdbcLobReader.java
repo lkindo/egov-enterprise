@@ -5,6 +5,7 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Types;
 
 /** Detaches bounded LOB contents while their JDBC result and connection are still open. */
@@ -22,7 +23,8 @@ public final class JdbcLobReader {
 
     /** SQL Server reports MAX values as ordinary variable types; stream them before materialization. */
     public static Object read(ResultSet result, int column, boolean boundedVariableValues) throws SQLException {
-        int type = result.getMetaData().getColumnType(column);
+        ResultSetMetaData metadata = result.getMetaData();
+        int type = metadata.getColumnType(column);
         if (type == Types.LONGVARBINARY || (boundedVariableValues && type == Types.VARBINARY)) {
             try (var input = result.getBinaryStream(column)) {
                 if (input == null) return null;
@@ -58,7 +60,31 @@ public final class JdbcLobReader {
                 throw failure;
             }
         }
-        return detach(result.getObject(column));
+        return detach(scalar(result, column, metadata, type));
+    }
+
+    /**
+     * LOB 를 풀지 않고 값 하나를 읽는다. 시각 값을 드라이버 고유 객체로 주는 드라이버는 {@link java.sql.Timestamp} 로 읽는다 —
+     * Oracle {@code TIMESTAMP(n)} 은 {@code getObject} 로 {@code oracle.sql.TIMESTAMP} 가 와서 도메인 변환기·보관 덤프·
+     * 프로파일러가 시각으로 보지 못했다(ADR-0029 L4-B R1). 바꾸는 것은 JDBC 타입이 {@code TIMESTAMP} 이고 드라이버가 알린 값
+     * 클래스가 {@code java.} 밖일 때뿐이다. {@code java.} 클래스로 알리는 값(MySQL 의 {@code LocalDateTime} 등)과 클래스를
+     * 알리지 않는 드라이버는 {@code getObject} 그대로다. 같은 표의 값을 읽는 경로(본 읽기·정렬 경계·자기참조 키·프로파일러)는
+     * 이 메서드를 함께 써야 정렬 digest 가 같은 표기를 본다.
+     */
+    public static Object scalar(ResultSet result, int column) throws SQLException {
+        ResultSetMetaData metadata = result.getMetaData();
+        return scalar(result, column, metadata, metadata.getColumnType(column));
+    }
+
+    private static Object scalar(ResultSet result, int column, ResultSetMetaData metadata, int type)
+            throws SQLException {
+        if (type == Types.TIMESTAMP) {
+            String reported = metadata.getColumnClassName(column);
+            if (reported != null && !reported.startsWith("java.")) {
+                return result.getTimestamp(column);
+            }
+        }
+        return result.getObject(column);
     }
 
     public static Object detach(Object value) throws SQLException {

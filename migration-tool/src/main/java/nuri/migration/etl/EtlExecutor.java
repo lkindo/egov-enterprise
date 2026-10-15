@@ -1226,7 +1226,8 @@ public class EtlExecutor {
                         for (int i = 0; i < labels.length; i++) {
                             for (String key : table.effectiveOrderKeys()) {
                                 if (labels[i].equalsIgnoreCase(key)) boundary.put(labels[i], boundedVariableValues
-                                        ? JdbcLobReader.read(result, i + 1, true) : result.getObject(i + 1));
+                                        ? JdbcLobReader.read(result, i + 1, true)
+                                        : JdbcLobReader.scalar(result, i + 1));
                             }
                         }
                         String lastOrderDigest = orderDigest(rows.getLast(), table);
@@ -1336,7 +1337,8 @@ public class EtlExecutor {
         try (PreparedStatement statement = SourceReadStatements.prepare(sourceConnection, sql);
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                Object raw = boundedVariableValues ? JdbcLobReader.read(result, 1, true) : result.getObject(1);
+                Object raw = boundedVariableValues
+                        ? JdbcLobReader.read(result, 1, true) : JdbcLobReader.scalar(result, 1);
                 if (raw == null || raw.toString().isBlank()) {
                     throw new SQLException(table.source() + ": 자기참조 sourceKey가 null/blank입니다");
                 }

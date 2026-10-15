@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Disposable synthetic databases only; no application or deployment credentials. */
 @Testcontainers
 abstract class OraclePostgresTestSupport {
+    static final String ORACLE_FREE_IMAGE =
+            "gvenzl/oracle-free@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093";
     protected static final JdbcDatabaseContainer<?> ORACLE = oracleFixture();
     @Container
     protected static final PostgreSQLContainer POSTGRES = postgresFixture();
@@ -102,7 +104,8 @@ abstract class OraclePostgresTestSupport {
             Runtime.getRuntime().addShutdownHook(new Thread(fixture::stop, "migration-oracle19c-fixture-stop"));
             return fixture;
         }
-        OracleContainer fixture = new OracleContainer("gvenzl/oracle-free:23-slim-faststart");
+        // 23-slim-faststart(23.26.3) 의 digest 로 고정한다 — 떠 있는 태그는 재현되지 않는다(ADR-0029 L4-B).
+        OracleContainer fixture = new OracleContainer(ORACLE_FREE_IMAGE);
         fixture.withUsername("migration_fixture_reader")
                 .withPassword(UUID.randomUUID().toString())
                 // Keep the default Oracle Free lifecycle and allowance unchanged.

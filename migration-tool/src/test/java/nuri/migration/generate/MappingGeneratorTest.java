@@ -158,7 +158,8 @@ public class MappingGeneratorTest {
                   {"table_name": "tb_user_info", "column_name": "end_ymd"},
                   {"table_name": "tb_user_info", "column_name": "ognz_id"},
                   {"table_name": "tb_user_info", "column_name": "user_enrrno"},
-                  {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"}
+                  {"table_name": "tb_user_info", "column_name": "frst_rgtr_id"},
+                  {"table_name": "tb_user_info", "column_name": "user_stts_cd"}
                 ]
                 """);
         // 환경 변수를 늘 돌려주는 대역 — 생성기가 접속 값을 치환해 다시 쓰면 이 값이 출력에 드러난다.
@@ -538,6 +539,98 @@ public class MappingGeneratorTest {
 
         assertThat(mapping.tables().get(1).columns()).last()
                 .isEqualTo(new ColumnMapping("RRN", "user_enrrno", null, null, null, null, null, "aria-egov-v1"));
+    }
+
+    /**
+     * ADR-0029 L4-B R3 — 고정 길이 문자 소스의 codemap 은 공백을 깎은 값으로 대조해야 한다. 적합성 추정은 공백을 깎아 세지만
+     * codemap 은 원값('A␠␠')으로 대조하므로, trim 없이 만들면 실행에서 CODEMAP_UNMAPPED 로 멈춘다.
+     */
+    @Test
+    void aFixedWidthCharacterSourceNeedsTrimBeforeItsCodemap() {
+        String coded = LEDGER.replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: U6
+                    source: {table: legacy.USER_MST, column: STAT_CD}
+                    target: {table: tb_user_info, column: user_stts_cd}
+                    term: {name: 사용자상태코드, engAbbr: USER_STTS_CD, domain: 코드C1}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {codemap: user_status}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """);
+        String upper = coded.replace("load: {codemap: user_status}", "load: {transform: upper, codemap: user_status}");
+        String trimmed = coded.replace("load: {codemap: user_status}", "load: {transform: trim, codemap: user_status}");
+        String refusal = "mapping 을 만들지 않았습니다: U6 legacy.USER_MST.STAT_CD(CONFIRMED): 고정 길이 문자(CHAR·NCHAR)"
+                + " 소스의 codemap 앞에는 transform: trim 이 필요합니다 — 공백으로 채운 값이 codemap 키와 맞지 않아 실행에서"
+                + " CODEMAP_UNMAPPED 로 멈춥니다(적합성 추정은 공백을 깎아 셉니다)";
+
+        for (String[] fixedWidth : new String[][]{{"CHAR", "1"}, {"NCHAR", "-15"}, {"bpchar", "1"}}) {
+            CatalogSnapshot inventory = withStatusType(fixedWidth[0], fixedWidth[1]);
+            assertThatThrownBy(() -> generator.generate(SKELETON, coded, "ledger.yml", inventory))
+                    .hasMessage(refusal);
+            assertThatThrownBy(() -> generator.generate(SKELETON, upper, "ledger.yml", inventory))
+                    .hasMessage(refusal);
+            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                    generator.generate(SKELETON, trimmed, "ledger.yml", inventory));
+            assertThat(mapping.tables().get(1).columns()).last()
+                    .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", "trim", null, "user_status", null, null));
+        }
+        // 가변 길이 문자와 JDBC CHAR 로 알리지만 공백을 채우지 않는 타입은 trim 없이도 만든다.
+        for (String[] variable : new String[][]{{"VARCHAR2", "12"}, {"uniqueidentifier", "1"}, {"ENUM", "1"}}) {
+            MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
+                    generator.generate(SKELETON, coded, "ledger.yml", withStatusType(variable[0], variable[1])));
+            assertThat(mapping.tables().get(1).columns()).last()
+                    .isEqualTo(new ColumnMapping("STAT_CD", "user_stts_cd", null, null, "user_status", null, null));
+        }
+    }
+
+    /** 고정 길이 문자는 드라이버가 알린 타입 이름으로 정하고, 이름이 없을 때만 JDBC 타입으로 정한다. */
+    @Test
+    void fixedWidthCharacterIsDecidedByTheNativeTypeNameAndOnlyWithoutItByTheJdbcType() {
+        for (String[] fixedWidth : new String[][]{{"CHAR", "12"}, {"nchar", "12"}, {"bpchar", null},
+                {"character(3)", "1"}, {"National  Character", "-15"}, {"CHAR(3 BYTE)", "1"}, {null, "1"},
+                {"  ", "-15"}}) {
+            assertThat(MappingGenerator.fixedWidthCharacter(typed(fixedWidth[0], fixedWidth[1])))
+                    .as("%s/%s", fixedWidth[0], fixedWidth[1]).isTrue();
+        }
+        for (String[] variable : new String[][]{{"VARCHAR2", "1"}, {"uniqueidentifier", "1"}, {"ENUM", "1"},
+                {"character varying", "12"}, {"nchar varying", "-9"}, {null, "12"}, {null, null}, {"", null}}) {
+            assertThat(MappingGenerator.fixedWidthCharacter(typed(variable[0], variable[1])))
+                    .as("%s/%s", variable[0], variable[1]).isFalse();
+        }
+    }
+
+    /** {@link #inventory} 에 USER_MST.STAT_CD 를 더하고 그 타입을 정한다. */
+    private static CatalogSnapshot withStatusType(String nativeType, String jdbcType) {
+        CatalogSnapshot inventory = inventory("STAT_CD");
+        List<CatalogObject> objects = new ArrayList<>();
+        for (CatalogObject object : inventory.objects()) {
+            objects.add(object.name().equals("USER_MST.STAT_CD") ? retyped(object, nativeType, jdbcType) : object);
+        }
+        return new CatalogSnapshot(inventory.schemaVersion(), inventory.discoveredAt(), inventory.database(),
+                inventory.environment(), inventory.snapshotCapability(), objects, inventory.visibilityFindings());
+    }
+
+    private static CatalogObject typed(String nativeType, String jdbcType) {
+        return retyped(column(table("USER_MST"), "STAT_CD", 6), nativeType, jdbcType);
+    }
+
+    private static CatalogObject retyped(CatalogObject column, String nativeType, String jdbcType) {
+        Map<String, String> attributes = new LinkedHashMap<>(column.attributes());
+        attributes.remove("jdbcType");
+        if (nativeType != null) {
+            attributes.put("nativeType", nativeType);
+        }
+        if (jdbcType != null) {
+            attributes.put("jdbcType", jdbcType);
+        }
+        return new CatalogObject(column.kind(), column.catalog(), column.schema(), column.name(), column.quoted(),
+                column.nativeDefinition(), column.definitionHash(), column.dependencies(), attributes);
     }
 
     @Test
