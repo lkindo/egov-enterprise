@@ -7,16 +7,23 @@ import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.etl.SourceProjection;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
-/** 승인 inventory에서 현재 ETL row reader가 안전하게 처리하지 못하는 표면을 차단한다. */
+/**
+ * 승인 inventory에서 현재 ETL row reader가 안전하게 처리하지 못하는 표면을 차단한다.
+ *
+ * <p>[ADR-0029 L3e] 같은 읽기 세션에서 덤프하는 보관 컬럼(매핑된 표의 보관 컬럼, 덤프만 하는 표의 정렬 키·보관 컬럼)도 같은
+ * 규칙으로 본다 — inventory 에 없거나, 지원하지 않는 LOB·vendor 타입이면 막는다.</p>
+ */
 public final class SourceLoadSurfaceGate {
 
     private static final Set<Integer> LOB_TYPES = Set.of(
@@ -66,25 +73,62 @@ public final class SourceLoadSurfaceGate {
                     .filter(candidate -> matches(candidate, table))
                     .findFirst()
                     .orElseThrow();
-            List<CatalogObject> tableColumns = snapshot.objects().stream()
-                    .filter(object -> object.kind() == ObjectKind.COLUMN)
-                    .filter(column -> belongsTo(column, table.referenceId()))
-                    .toList();
-            for (String required : SourceProjection.requiredColumns(tableMapping)) {
-                List<CatalogObject> matches = tableColumns.stream()
-                        .filter(column -> identifierEquals(
-                                required,
-                                column.attributes().get("originalName"),
-                                column.quoted()))
-                        .toList();
-                if (matches.isEmpty()) {
-                    blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
-                    continue;
+            List<String> required = new ArrayList<>(SourceProjection.requiredColumns(tableMapping));
+            for (ArchiveDump dump : mapping.archives()) {
+                if (dump != null && mapping.mappedTableOf(dump.source()) == tableMapping) {
+                    required.addAll(dump.columns());
                 }
-                matches.forEach(column -> inspectColumn(column, policy, blockers));
+            }
+            inspectRequired(snapshot, table, required, policy, blockers);
+        }
+        for (ArchiveDump dump : mapping.archives()) {
+            if (dump == null || mapping.mappedTableOf(dump.source()) != null) {
+                continue;
+            }
+            List<CatalogObject> dumpTables = snapshot.objects().stream()
+                    .filter(object -> object.kind() == ObjectKind.TABLE)
+                    .filter(table -> matches(dump.source(), table))
+                    .toList();
+            if (dumpTables.isEmpty()) {
+                blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
+                continue;
+            }
+            List<String> required = new ArrayList<>(dump.orderByKeys());
+            required.addAll(dump.columns());
+            for (CatalogObject table : dumpTables) {
+                if (!policy.quotedIdentifiersSupported() && table.quoted()) {
+                    blockers.add(Blocker.QUOTED_IDENTIFIER);
+                }
+                inspectRequired(snapshot, table, required, policy, blockers);
             }
         }
         return List.copyOf(blockers);
+    }
+
+    private static void inspectRequired(
+            CatalogSnapshot snapshot,
+            CatalogObject table,
+            List<String> required,
+            SourceReadSessionPolicy policy,
+            EnumSet<Blocker> blockers
+    ) {
+        List<CatalogObject> tableColumns = snapshot.objects().stream()
+                .filter(object -> object.kind() == ObjectKind.COLUMN)
+                .filter(column -> belongsTo(column, table.referenceId()))
+                .toList();
+        for (String name : required) {
+            List<CatalogObject> matches = tableColumns.stream()
+                    .filter(column -> identifierEquals(
+                            name,
+                            column.attributes().get("originalName"),
+                            column.quoted()))
+                    .toList();
+            if (matches.isEmpty()) {
+                blockers.add(Blocker.COLUMN_DISCOVERY_MISSING);
+                continue;
+            }
+            matches.forEach(column -> inspectColumn(column, policy, blockers));
+        }
     }
 
     /**
@@ -156,10 +200,14 @@ public final class SourceLoadSurfaceGate {
     }
 
     private static boolean matches(TableMapping mapping, CatalogObject table) {
-        if (mapping.source() == null) {
+        return matches(mapping.source(), table);
+    }
+
+    private static boolean matches(String source, CatalogObject table) {
+        if (source == null) {
             return false;
         }
-        String[] parts = mapping.source().trim().split("\\.", -1);
+        String[] parts = source.trim().split("\\.", -1);
         boolean caseSensitive = table.quoted();
         return switch (parts.length) {
             case 1 -> identifierEquals(parts[0], table.name(), caseSensitive);

@@ -865,6 +865,143 @@ class MappingValidatorTest {
     }
 
     @Nested
+    @DisplayName("외부 보관 선언(ADR-0029 L3e)")
+    class ArchiveDeclaration {
+
+        private final TableMapping users = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(),
+                null, List.of(new ColumnMapping("USER_NM", "user_nm", null, null, null, null, null)), null, null,
+                List.of());
+
+        private List<String> errors(List<TableMapping> tables, MappingSpec.ArchiveDump... archives) {
+            return withSchema().validate(new MappingSpec(null, null, tables, Map.of(), null, null, List.of(archives)))
+                    .errors();
+        }
+
+        private MappingSpec.ArchiveDump mapped(String id, String retainUntil, List<String> columns,
+                                               List<String> entries) {
+            return new MappingSpec.ArchiveDump(id, "legacy_user", null, List.of(), columns, entries, retainUntil);
+        }
+
+        private MappingSpec.ArchiveDump dumpOnly(String id, String where, List<String> keys, List<String> columns,
+                                                 List<String> entries) {
+            return new MappingSpec.ArchiveDump(id, "legacy_log", where, keys, columns, entries, "2031-12-31");
+        }
+
+        @Test
+        @DisplayName("매핑된 표는 그 매핑의 읽기를 쓰고, 덤프만 하는 표는 정렬 키·where 를 스스로 선언한다")
+        void aMappedTableUsesItsMappingsReadAndADumpOnlyTableDeclaresItsOwn() {
+            MappingSpec.ArchiveDump fine = mapped("legacy_user_20311231", "2031-12-31", List.of("ETC1", "RMRK2"),
+                    List.of("U7", "U8"));
+            assertThat(errors(List.of(users), fine)).isEmpty();
+            assertThat(errors(List.of(users), new MappingSpec.ArchiveDump("legacy_user_20311231", "LEGACY_USER",
+                    "USE_YN = 'Y'", List.of("USER_SN"), List.of("ETC1"), List.of("U7"), "2031-12-31")))
+                    .containsExactly("archives[0](legacy_user_20311231): 매핑된 표의 보관은 그 매핑의 where·정렬 키를 그대로"
+                            + " 씁니다 — 보관 선언에 where·orderByKeys 를 두지 않습니다");
+            TableMapping unordered = new TableMapping("legacy_user", "tb_user_info", null,
+                    List.of(new ColumnMapping("USER_NM", "user_nm", null, null, null, null, null)), null);
+            assertThat(errors(List.of(unordered), fine)).containsExactly("archives[0](legacy_user_20311231): 보관하는"
+                    + " 매핑된 표에는 orderBy·orderByKeys 가 필요합니다 — 덤프 행의 키를 정할 수 없습니다");
+
+            assertThat(errors(List.of(users), dumpOnly("legacy_log_20311231", "USE_YN = 'Y'", List.of("LOG_SN"),
+                    List.of("LOG_MSG"), List.of("H2")))).isEmpty();
+            assertThat(errors(List.of(users), dumpOnly("legacy_log_20311231", null, List.of(), List.of("LOG_MSG"),
+                    List.of("H2")))).containsExactly("archives[0](legacy_log_20311231): 덤프만 하는 표의 보관에는 정렬"
+                    + " 키(orderByKeys)가 필요합니다");
+            for (String unsafe : List.of("1=1; DELETE FROM legacy_log", "LOG_SN > 0 -- x", " ")) {
+                assertThat(errors(List.of(users), dumpOnly("legacy_log_20311231", unsafe, List.of("LOG_SN"),
+                        List.of("LOG_MSG"), List.of("H2")))).as(unsafe).containsExactly("archives[0](legacy_log_20311231):"
+                        + " where에는 단일 읽기 조건식만 허용됩니다(주석·세미콜론·SQL 문 금지)");
+            }
+            assertThat(errors(List.of(users), dumpOnly("legacy_log_20311231", null, List.of("LOG_SN"),
+                    List.of("LOG_MSG"), List.of("H2")), new MappingSpec.ArchiveDump("legacy_log_20301231", "legacy_log",
+                    "USE_YN = 'Y'", List.of("LOG_SN"), List.of("LOG_NOTE"), List.of("H3"), "2030-12-31")))
+                    .containsExactly("archives[1](legacy_log_20301231): 같은 덤프만 하는 표의 보관 선언은 where·정렬 키가"
+                            + " 같아야 합니다 — 한 번 읽어 나눠 씁니다");
+        }
+
+        @Test
+        @DisplayName("선언은 id·보존 기한·같은 순서의 원장 행을 갖고, 컬럼·원장 행·(표, 기한)은 한 번씩이다")
+        void declarationsAreNamedDatedPairedAndUnique() {
+            assertThat(errors(List.of(users), mapped("Legacy-User", "2031-12-31", List.of("ETC1"), List.of("U7"))))
+                    .containsExactly("archives[0]: 보관 id 는 소문자로 시작하는 소문자·숫자·밑줄 63자 이내여야 합니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-02-30", List.of("ETC1"), List.of("U7"))))
+                    .containsExactly("archives[0](a): 보존 기한(retainUntil)은 yyyy-MM-dd 날짜여야 합니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-12-31", List.of(), List.of())))
+                    .containsExactly("archives[0](a): 보관할 컬럼(columns)이 필요합니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-12-31", List.of("ETC1", "RMRK2"), List.of("U7"))))
+                    .containsExactly("archives[0](a): ledgerEntries 는 columns 와 같은 순서·같은 수의 원장 행 ID 여야 합니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-12-31", List.of("ETC1"), List.of("U 7"))))
+                    .containsExactly("archives[0](a): ledgerEntries 는 원장 행 ID 형식(영문·숫자·_.- 64자 이내)이어야"
+                            + " 합니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-12-31", List.of("ETC1"), List.of("U7")),
+                    mapped("a", "2030-12-31", List.of("ETC2"), List.of("U8")))).containsExactly(
+                    "archives[1](a): 같은 보관 id 가 두 번 있습니다");
+            assertThat(errors(List.of(users), mapped("a", "2031-12-31", List.of("ETC1"), List.of("U7")),
+                    mapped("b", "2031-12-31", List.of("etc1"), List.of("U7")))).containsExactly(
+                    "archives[1](b): 같은 소스 표·보존 기한의 보관 선언이 둘입니다 — 하나로 묶습니다",
+                    "archives[1](b): 같은 소스 컬럼(etc1)을 두 번 보관합니다 — archives[0](a)",
+                    "archives[1](b): 같은 원장 행(U7)을 두 보관 컬럼이 가리킵니다");
+        }
+
+        @Test
+        @DisplayName("보관은 적재 run 과 함께만 쓴다 — 보관만 있는 mapping 은 받지 않는다")
+        void archivesAloneCannotRun() {
+            assertThat(errors(List.of(), dumpOnly("legacy_log_20311231", null, List.of("LOG_SN"), List.of("LOG_MSG"),
+                    List.of("H2")))).containsExactly("보관(archives)만 있는 mapping 은 실행할 수 없습니다 — 보관은 적재 run 과"
+                    + " 같은 읽기 세션에서 씁니다");
+        }
+
+        @Test
+        @DisplayName("암호화해 적재할 소스 값은 보관할 수 없다")
+        void anEncryptedSourceCannotBeArchived(@TempDir Path tmp) throws IOException {
+            Path catalog = tmp.resolve("db_columns.json");
+            Files.writeString(catalog, "[{\"table_name\":\"tb_user_info\",\"column_name\":\"user_enrrno\"}]",
+                    StandardCharsets.UTF_8);
+            MappingValidator validator = new MappingValidator(new TransformerRegistry(), catalog.toString());
+            TableMapping encrypted = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(), null,
+                    List.of(new ColumnMapping("JUMIN", "user_enrrno", null, null, null, null, null, "aria-egov-v1")),
+                    null, null, List.of());
+
+            assertThat(validator.validate(new MappingSpec(null, null, List.of(encrypted), Map.of(), null, null,
+                    List.of(mapped("a", "2031-12-31", List.of("ETC1", "jumin"), List.of("U7", "U8"))))).errors())
+                    .containsExactly("tb_user_info.user_enrrno: 암호화할 소스 값은 외부 보관 덤프에 넣을 수 없습니다(덤프에"
+                            + " 평문으로 남습니다)");
+            assertThat(validator.validate(new MappingSpec(null, null, List.of(encrypted), Map.of(), null, null,
+                    List.of(mapped("a", "2031-12-31", List.of("ETC1"), List.of("U7"))))).errors()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("YAML 은 보관 선언을 글자 그대로만 읽는다")
+        void yamlIsReadStrictly() {
+            MappingLoader loader = new MappingLoader(ignored -> null);
+            String template = """
+                    tables:
+                      - source: legacy_user
+                        target: tb_user_info
+                        orderBy: USER_SN
+                        columns:
+                          - { source: USER_NM, target: user_nm }
+                    archives:
+                      - %s
+                    """;
+
+            assertThat(loader.loadContent(template.formatted("{ id: legacy_user_20311231, source: legacy_user,"
+                    + " columns: [ETC1], ledgerEntries: [U7], retainUntil: 2031-12-31 }")).archives())
+                    .containsExactly(new MappingSpec.ArchiveDump("legacy_user_20311231", "legacy_user", null, List.of(),
+                            List.of("ETC1"), List.of("U7"), "2031-12-31"));
+            for (String invalid : List.of("{ id: a, source: legacy_user, columns: [1], ledgerEntries: [U7] }",
+                    "{ id: a, source: legacy_user, columns: [ETC1], ledgerEntries: [U7], retainUntil: 20311231 }",
+                    "{ id: 7, source: legacy_user, columns: [ETC1], ledgerEntries: [U7] }",
+                    "{ id: a, source: legacy_user, columns: [ETC1], ledgerEntries: U7 }",
+                    "{ id: a, source: legacy_user, columns: [ETC1], ledgerEntries: [U7], reason: x }")) {
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> loader.loadContent(template.formatted(invalid)))
+                        .as(invalid).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("mapping YAML parsing failed");
+            }
+        }
+    }
+
+    @Nested
     @DisplayName("표준 스키마 대조 (db_columns.json)")
     class TargetColumnCheck {
 

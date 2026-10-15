@@ -43,7 +43,8 @@ public record WorkflowCliOptions(
         Path ledgerDraft,
         String metaSchema,
         Path skeleton,
-        Path ledger
+        Path ledger,
+        Path archiveDir
 ) {
 
     private static final Map<WorkflowCommand, Set<String>> ALLOWED = Map.of(
@@ -70,7 +71,7 @@ public record WorkflowCliOptions(
             Set.of("command", "mapping", "inventory", "plan", "mode", "source-adapter",
                     "schemas", "catalogs", "object-kinds", "include-system-objects",
                     "source-driver-jar", "source-driver-class",
-                    "ack-adapter", "ack-source-driver", "ack-source-freeze", "target-schemas"));
+                    "ack-adapter", "ack-source-driver", "ack-source-freeze", "target-schemas", "archive-dir"));
 
     public WorkflowCliOptions {
         command = Objects.requireNonNull(command, "command");
@@ -145,13 +146,18 @@ public record WorkflowCliOptions(
         boolean freeze = flag(arguments, "ack-source-freeze");
         Set<String> targetSchemas = arguments.containsOption("target-schemas")
                 ? parseCsv(arguments, "target-schemas") : Set.of("public");
+        // [ADR-0029 L3e] 보관 덤프·격리 키 반출 디렉터리. 위치 검사(절대 경로·링크·승인 산출물·Git 트리)는 load 가 한다.
+        Path archiveDir = optionalPath(arguments, "archive-dir");
+        if (archiveDir != null && mode != MigrationMode.COMMIT) {
+            throw new IllegalArgumentException("--archive-dir 는 commit 에서만 씁니다 — dry-run 은 보관 파일을 쓰지 않습니다");
+        }
         return new WorkflowCliOptions(
                 command, mapping, inventory, plan, review, sourceAdapter,
                 catalogs, schemas, objectKinds, includeSystemObjects,
                 sourceDriverJars, sourceDriverClass, mode,
                 acknowledgement, sourceDriverAcknowledgement, freeze, targetSchemas,
                 profile, profileRowLimit, appSource, appUsage, suggestions, ledgerDraft, metaSchema,
-                skeleton, ledger);
+                skeleton, ledger, archiveDir);
     }
 
     /** 출력 파일(앞의 두 경로)이 서로 같거나 입력 파일과 같으면 한쪽이 조용히 덮이므로 거부한다. */

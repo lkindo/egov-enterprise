@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { ADOPTION_CONTROLS, adoptionScope, createPendingAdoptionReview, sha256 } from './adoption-review.mjs';
 import { executeAdoption, executionPlan } from './adoption-execute.mjs';
@@ -159,6 +159,25 @@ test('verifier or layout mutation during single-module verification prevents the
       } }), /scope digest mismatch/);
     assert.deepEqual(calls, [['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]]);
   }
+});
+
+test('the reviewed archive directory reaches load only for commit, as a normalized absolute path outside the repository', (t) => {
+  // [ADR-0029 L3e] 보관 덤프·격리 키 반출 디렉터리. 원시 값 덤프가 검토 범위(저장소)에 섞이지 않게 한다.
+  const { root, path, plan, approve } = fixture(t);
+  const outside = mkdtempSync(join(resolve(tmpdir()), 'egov-archive-dir-'));
+  t.after(() => rmSync(outside, { recursive: true, force: true }));
+  approve({ ...plan, migration: { ...plan.migration, mode: 'commit', archiveDir: outside } });
+  const execution = executionPlan(root, path, 'fixture-env');
+  assert.ok(execution.args.includes('--mode=commit'));
+  assert.equal(execution.args.at(-1), `--archive-dir=${outside}`);
+  approve({ ...plan, migration: { ...plan.migration, mode: 'commit' } });
+  assert.ok(!executionPlan(root, path, 'fixture-env').args.some(arg => arg.startsWith('--archive-dir')));
+  for (const archiveDir of [join(root, 'dumps'), root, 'relative/dumps', `${outside}${sep}..${sep}${basename(outside)}`, 7, null]) {
+    approve({ ...plan, migration: { ...plan.migration, mode: 'commit', archiveDir } });
+    assert.throws(() => executionPlan(root, path, 'fixture-env'), /archiveDir must be a normalized absolute path outside the repository/, String(archiveDir));
+  }
+  approve({ ...plan, migration: { ...plan.migration, archiveDir: outside } });
+  assert.throws(() => executionPlan(root, path, 'fixture-env'), /allowed only for commit/);
 });
 
 test('wrong environment, altered execution plan and altered JAR/mapping/inventory/plan never reach verification or load', (t) => {

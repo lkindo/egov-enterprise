@@ -120,7 +120,8 @@ public class MappingLoader {
                 raw.tables(),
                 raw.codemaps(),
                 raw.run(),
-                raw.ledger());
+                raw.ledger(),
+                raw.archives());
     }
 
     private MappingSpec.DbConfig resolveDbConfig(MappingSpec.DbConfig config) {
