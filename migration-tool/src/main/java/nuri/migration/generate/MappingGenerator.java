@@ -674,9 +674,9 @@ public final class MappingGenerator {
         }
         for (Map.Entry<String, List<Integer>> retention : byRetention.entrySet()) {
             ObjectNode declaration = declarations.addObject();
-            String name = table.schema() == null || table.schema().isBlank() ? table.name()
-                    : table.schema() + "_" + table.name();
-            declaration.put("id", archiveId(name, retention.getKey(), ids));
+            // schema 는 id 에 넣지 않는다 — source 에 있다. Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로,
+            //   소문자로 바꾼 schema 가 곧 사용자 이름이 되어 실행 증거의 credential 검사가 증거 쓰기를 막는다(ADR-0029 L4 O2).
+            declaration.put("id", archiveId(table.name(), retention.getKey(), ids));
             declaration.put("source", source);
             if (where != null) {
                 declaration.put("where", where);
@@ -696,7 +696,7 @@ public final class MappingGenerator {
     }
 
     /**
-     * 보관 선언 id — 소스 표 이름(schema_표)을 소문자·숫자·밑줄로 바꾸고 보존 기한(yyyymmdd)을 붙인다. 소문자로 시작하지
+     * 보관 선언 id — 소스 표 이름(schema 제외)을 소문자·숫자·밑줄로 바꾸고 보존 기한(yyyymmdd)을 붙인다. 소문자로 시작하지
      * 않으면 {@code archive_} 를 앞에 두고 63자에 맞춰 자르며, 겹치면 {@code _2}·{@code _3} 을 붙인다.
      */
     static String archiveId(String tableName, String retainUntil, Set<String> taken) {

@@ -378,7 +378,7 @@ public class MappingGeneratorTest {
         MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
                 generator.generate(splitSkeleton(), ledger, "ledger.yml", inventory("ETC1")));
 
-        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("legacy_user_mst_20311231",
+        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("user_mst_20311231",
                 "legacy.USER_MST", null, List.of(), List.of("ETC1"), List.of("U7"), "2031-12-31"));
         assertThat(mapping.mappedTableOf("legacy.USER_MST")).isSameAs(mapping.tables().get(1));
         assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(ledger), mapping,
@@ -392,7 +392,7 @@ public class MappingGeneratorTest {
                 "    target: tb_user_info\n    where: \"USER_SN > 0\"\n    orderBy: USER_SN\n");
         assertThatThrownBy(() -> generator.generate(ownerWhere, ledger, "ledger.yml", inventory("ETC1")))
                 .isInstanceOf(MappingGenerator.Refused.class)
-                .hasMessageContaining("archives[0](legacy_user_mst_20311231): 분할한 소스의 보관은 읽는 매핑에 where 가"
+                .hasMessageContaining("archives[0](user_mst_20311231): 분할한 소스의 보관은 읽는 매핑에 where 가"
                         + " 없거나 그 소스의 모든 매핑이 같은 where 를 써야 합니다");
     }
 
@@ -460,7 +460,7 @@ public class MappingGeneratorTest {
         MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
                 generator.generate(skeleton, ledger, "ledger.yml", inventoryWithLog("LOG_MSG", "LOG_IP")));
 
-        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("legacy_log_hist_20311231",
+        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("log_hist_20311231",
                 "legacy.LOG_HIST", null, List.of("LOG_SN"), List.of("LOG_IP"), List.of("H2"), "2031-12-31"));
         assertThat(mapping.mappedTableOf("legacy.LOG_HIST")).as("조회만 하는 표는 덤프만 하는 표다").isNull();
         assertThat(mapping.tables().get(2).columns()).contains(
@@ -667,10 +667,14 @@ public class MappingGeneratorTest {
 
         MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(text);
         assertThat(mapping.archives()).containsExactly(
-                new MappingSpec.ArchiveDump("legacy_user_mst_20300630", "legacy.USER_MST", null, List.of(),
+                new MappingSpec.ArchiveDump("user_mst_20300630", "legacy.USER_MST", null, List.of(),
                         List.of("MEMO"), List.of("U8"), "2030-06-30"),
-                new MappingSpec.ArchiveDump("legacy_user_mst_20311231", "legacy.USER_MST", null, List.of(),
+                new MappingSpec.ArchiveDump("user_mst_20311231", "legacy.USER_MST", null, List.of(),
                         List.of("ETC1", "RMRK2"), List.of("U7", "U9"), "2031-12-31"));
+        // [ADR-0029 L4 O2] id 에 schema 를 넣지 않는다 — Oracle 은 로그인 사용자가 schema 소유자라, 소문자로 바꾼 schema 가
+        //   실행 증거에 실리면 credential 검사가 증거 쓰기를 막는다.
+        assertThat(mapping.archives()).extracting(MappingSpec.ArchiveDump::id)
+                .as("보관 id 는 표 이름과 보존 기한이다(schema 는 source 에 있다)").noneMatch(id -> id.contains("legacy"));
         assertThat(mapping.tables().get(1).columns()).as("보관 컬럼은 적재하지 않는다")
                 .noneMatch(column -> column.source() != null
                         && List.of("ETC1", "MEMO", "RMRK2").contains(column.source()));
@@ -705,7 +709,7 @@ public class MappingGeneratorTest {
         MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(
                 generator.generate(skeleton, ledger, "ledger.yml", inventoryWithLog("LOG_MSG")));
 
-        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("legacy_log_hist_20311231",
+        assertThat(mapping.archives()).containsExactly(new MappingSpec.ArchiveDump("log_hist_20311231",
                 "legacy.LOG_HIST", "LOG_SN > 0", List.of("LOG_SN"), List.of("LOG_MSG"), List.of("H2"), "2031-12-31"));
         assertThat(mapping.tables()).extracting(MappingSpec.TableMapping::source)
                 .containsExactly("legacy.DEPT_MST", "legacy.USER_MST");

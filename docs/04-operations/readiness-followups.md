@@ -651,7 +651,7 @@ fixture 는 한글 `COMMENT ON` 이 달린 `LEG_USER` 1,300행이다. 가입일 
 | discover | 소유자 범위, 가시성 결과 없음, 드라이버 증거 = 번들 ojdbc JAR 바이트 |
 | profile | 위반 수가 fixture 와 정확히 같다(자리표시 12·달력 3·공백 5). `TIMESTAMP(6)` 1,300값을 시간형으로 세고 연도 범위를 낸다(R1). 표·컬럼 코멘트가 사전 뷰에서 온다(대조 `NOT_IN_INVENTORY`, R2). `CHAR(3)` 값 1,300개 모두 끝 공백이 있다 |
 | term-suggest | 이름이 표준 약어와 다른 컬럼(최종 로그인·종료 시각·사용 여부)도 코멘트 용어명으로 `EXACT` 후보를 받는다. 프로파일·후보·원장 초안에 시험이 찾는 원시 값(달력 오류·자리표시 가입일·이름·메모)과 일회용 접속 정보가 없다 |
-| 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 초안을 확정한다 — 가입일 `ymd8` + nullify(자리표시 12·공백 5) + 승인 예외 3, 최종 로그인 `ymdhms14`, 종료 시각 `ymd8-truncate`, `CHAR(3)` 상태 코드 `trim` + codemap, `CHAR(1)` 사용 여부 codemap(선언 길이 1 은 R3 대상이 아니다), 비표준 대상(U1) 4. 만든 mapping 의 컬럼 처리·isolate 가 원장과 대상 컬럼마다 같다 |
+| 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 초안을 확정한다 — 가입일 `ymd8` + nullify(자리표시 12·공백 5) + 승인 예외 3, 최종 로그인 `ymdhms14`, 종료 시각 `ymd8-truncate`, `CHAR(3)` 상태 코드 `trim` + codemap, `CHAR(1)` 사용 여부 codemap(선언 길이 1 은 R3 대상이 아니다), 비표준 대상(U1) 4. 만든 mapping 의 컬럼 처리·isolate 가 원장과 대상 컬럼마다 같다. 격리하는 보존 키 표라 L4-C 뒤에는 skeleton 에 `verify.referencedBy: none` 과 사유를 둔다(P3) |
 | plan·review·validate | `commitReady=true`. 공개 COMMIT 은 `--archive-dir` 없이 거절되고, 있어도 `UNVERIFIED` 로 거절된다. 보관 디렉터리·대상은 비어 있다 |
 | 공개 DRY_RUN | `PASS`, 읽음 1,300, nullified 17, 격리 3(순번 10·600·1,300), 대상 무쓰기. 실행 JSON 에 값이 없다 |
 | 엔진 COMMIT·verify | 1,297행 적재, 격리 키 반출 3행(순번·정렬 키·위반, 저장소 밖 임시 디렉터리), verify `PASS`. 대상 값이 원천에서 따로 계산한 표준화 결과와 모두 같다. 정밀도 없는 `NUMBER` 키의 시퀀스가 격리한 마지막 키 뒤로 가서 온라인 다음 번호가 1,301 이다 |
@@ -670,7 +670,7 @@ fixture 는 한글 `COMMENT ON` 이 달린 `LEG_USER` 1,300행이다. 가입일 
 ./gradlew :migration-tool:test --tests 'nuri.migration.OracleStandardizationRehearsalIntegrationTest' --console=plain
 ```
 
-2026-10-15 로컬에서 두 번 실행해 두 번 모두 3건이 통과했다(실패·skip 0, 컨테이너 기동 포함 88.9초·76.3초). 검토 반영 뒤 다시 실행해 3건이 통과했다(47.9초). main(L3c·L3d)을 합친 뒤 조회·나눈 매핑 시험을 더해 4건이 통과했다(57.1초). 통합 검토 지적을 반영한 뒤 다시 실행해 4건이 통과했다(53.6초). 본 리허설은 DRY_RUN 실행 JSON 이 형식 4(기본 매핑의 매핑 id·제어 스키마·조회 기록 없음)인지와, 엔진 COMMIT 전후 제어 스키마가 V2 이고 checkpoint 의 매핑 id 가 기본 매핑('')인지도 본다. CI 실행 기록은 아직 없다 — PR CI 의 이관 shard 가 돌린다(배정은 duration profile 이 정한다). 수정 R1·R2·R3 을 하나씩 되돌리면 리허설이 각각 프로파일의 시간형 수, 프로파일 코멘트, 생성기 거부 단언에서 붉다. 일광절약 간격 판정을 되돌리면 `JdbcLobReaderTest` 가 붉다. 검토 반영 뒤 R3 판정은 생성기와 coverage 가 함께 쓰는 `LoadCapabilities` 로 옮겼다 — 판정을 끄거나 선언 길이 1 제외를 빼면 `LoadCapabilitiesTest`·`TermLedgerValidatorTest`·`MappingGeneratorTest` 가 붉다. PIT 는 `migration-collect` 1,024 mutations·91%(146초), 검토 반영 뒤 `migration-validate` 1,190 mutations·95%(103초), `migration-standardize` 978 mutations·92%(102초)다. main(L3c·L3d)을 합친 뒤 `migration-validate` 1,250 mutations·94%, `migration-standardize` 1,038 mutations·92%, `migration-collect` 1,024 mutations·91% 였고, 통합 검토 지적(프로파일러 사유)을 반영한 뒤 `migration-collect` 는 1,025 mutations·92%(108초)다. R3 판정에는 살아남은 변이가 없고, R2 의 소유자 없는 표 분기와 사전 뷰 읽기 실패 분기에서 빈 코멘트를 돌려주는 변이 둘이 살아남는다(빈 코멘트는 코멘트가 없는 것으로 보아 결과가 같다). R1 의 판정(`JdbcLobReader`)은 PIT 범위 밖이고 단위 시험·리허설이 지킨다.
+2026-10-15 로컬에서 두 번 실행해 두 번 모두 3건이 통과했다(실패·skip 0, 컨테이너 기동 포함 88.9초·76.3초). 검토 반영 뒤 다시 실행해 3건이 통과했다(47.9초). main(L3c·L3d)을 합친 뒤 조회·나눈 매핑 시험을 더해 4건이 통과했다(57.1초). 통합 검토 지적을 반영한 뒤 다시 실행해 4건이 통과했다(53.6초). 본 리허설은 DRY_RUN 실행 JSON 이 형식 5(기본 매핑의 매핑 id·제어 스키마·조회 기록 없음, 원천 행 수만 판정한 대사 기록 — L4-C 병합 뒤)인지와, 엔진 COMMIT 전후 제어 스키마가 V2 이고 checkpoint 의 매핑 id 가 기본 매핑('')인지도 본다. CI 실행 기록은 아직 없다 — PR CI 의 이관 shard 가 돌린다(배정은 duration profile 이 정한다). 수정 R1·R2·R3 을 하나씩 되돌리면 리허설이 각각 프로파일의 시간형 수, 프로파일 코멘트, 생성기 거부 단언에서 붉다. 일광절약 간격 판정을 되돌리면 `JdbcLobReaderTest` 가 붉다. 검토 반영 뒤 R3 판정은 생성기와 coverage 가 함께 쓰는 `LoadCapabilities` 로 옮겼다 — 판정을 끄거나 선언 길이 1 제외를 빼면 `LoadCapabilitiesTest`·`TermLedgerValidatorTest`·`MappingGeneratorTest` 가 붉다. PIT 는 `migration-collect` 1,024 mutations·91%(146초), 검토 반영 뒤 `migration-validate` 1,190 mutations·95%(103초), `migration-standardize` 978 mutations·92%(102초)다. main(L3c·L3d)을 합친 뒤 `migration-validate` 1,250 mutations·94%, `migration-standardize` 1,038 mutations·92%, `migration-collect` 1,024 mutations·91% 였고, 통합 검토 지적(프로파일러 사유)을 반영한 뒤 `migration-collect` 는 1,025 mutations·92%(108초)다. R3 판정에는 살아남은 변이가 없고, R2 의 소유자 없는 표 분기와 사전 뷰 읽기 실패 분기에서 빈 코멘트를 돌려주는 변이 둘이 살아남는다(빈 코멘트는 코멘트가 없는 것으로 보아 결과가 같다). R1 의 판정(`JdbcLobReader`)은 PIT 범위 밖이고 단위 시험·리허설이 지킨다.
 
 통합 검토 뒤 읽기 경로와 새 판정을 하나씩 되돌려 다시 돌렸다. 한 번에 변이 하나이고, 모두 의도한 단언에서 붉었다(JUnit XML 은 로컬에만 있다).
 
@@ -686,7 +686,61 @@ fixture 는 한글 `COMMENT ON` 이 달린 `LEG_USER` 1,300행이다. 가입일 
 | 프로파일러가 사유를 버리게 | `SourceProfilerTest` 사유 시험 — `failureReason` 이 null |
 | `failureReason` 의 `@JsonInclude(NON_NULL)` 제거 | `CollectionArtifactCodecTest` — 사유 없는 프로파일 본문에 키가 생긴다 |
 
-한계: 1,300행 합성 fixture 라 `ORA-01555`·운영 규모·장시간 세션은 재지 않았다. 19c 에서는 실행하지 않았다(지원 클래스가 `MIGRATION_ORACLE19C_IMAGE` 를 받지만 이 클래스로 돌려 본 적은 없다). Tibero 는 라이선스가 없다. 탐색은 여전히 `REMARKS` 만 읽어 inventory 에 Oracle 코멘트 해시가 없다. R1 은 Oracle 에서만 실측했다 — 시간대 있는 값을 JDBC `TIMESTAMP` 와 고유 클래스로 알리는 다른 드라이버는 타입 이름(zone·tz)으로만 가린다. CUBRID 드라이버(11.3.1·11.3.2)는 시각 타입을 모두 `java.sql.Timestamp` 로 알려 R1 판정 밖이다(바이트코드 확인, 실행하지 않았다). Tibero 드라이버는 확인하지 않았다. `DATE` 처럼 드라이버가 `java.sql.Timestamp` 로 주는 값은 R1 판정 밖이라 JVM 시간대의 일광절약 간격에서 밀릴 수 있다(실행으로 확인하지 않았다) — 그런 시각이 있을 수 있는 데이터는 고정 오프셋 시간대(`-Duser.timezone=UTC`)로 실행한다. R3 은 고정 길이 문자만 막는다 — 끝 공백이 든 `VARCHAR` 코드는 적합성 추정이 공백을 깎아 세지만 codemap 은 깎지 않고 대조하므로, 프로파일의 끝 공백 수(`trailingSpaces`)를 보고 원장에 `trim` 을 적는다. 이 절은 엔진 수준의 조회·나눈 매핑 읽기(R1·R3 적용)만 본다. 원장→mapping-generate 를 거치는 승인 workflow 의 분할·조회와 보관 덤프·대사의 Oracle 단계(O2)는 L4-B 병합 뒤 후속 PR 범위다.
+한계: 1,300행 합성 fixture 라 `ORA-01555`·운영 규모·장시간 세션은 재지 않았다. 19c 에서는 실행하지 않았다(지원 클래스가 `MIGRATION_ORACLE19C_IMAGE` 를 받지만 이 클래스로 돌려 본 적은 없다). Tibero 는 라이선스가 없다. 탐색은 여전히 `REMARKS` 만 읽어 inventory 에 Oracle 코멘트 해시가 없다. R1 은 Oracle 에서만 실측했다 — 시간대 있는 값을 JDBC `TIMESTAMP` 와 고유 클래스로 알리는 다른 드라이버는 타입 이름(zone·tz)으로만 가린다. CUBRID 드라이버(11.3.1·11.3.2)는 시각 타입을 모두 `java.sql.Timestamp` 로 알려 R1 판정 밖이다(바이트코드 확인, 실행하지 않았다). Tibero 드라이버는 확인하지 않았다. `DATE` 처럼 드라이버가 `java.sql.Timestamp` 로 주는 값은 R1 판정 밖이라 JVM 시간대의 일광절약 간격에서 밀릴 수 있다(실행으로 확인하지 않았다) — 그런 시각이 있을 수 있는 데이터는 고정 오프셋 시간대(`-Duser.timezone=UTC`)로 실행한다. R3 은 고정 길이 문자만 막는다 — 끝 공백이 든 `VARCHAR` 코드는 적합성 추정이 공백을 깎아 세지만 codemap 은 깎지 않고 대조하므로, 프로파일의 끝 공백 수(`trailingSpaces`)를 보고 원장에 `trim` 을 적는다. 위 조회·나눈 매핑 시험은 엔진 수준의 읽기(R1·R3 적용)만 본다. 원장→mapping-generate 를 거치는 승인 workflow 의 분할·조회와 보관 덤프·대사의 Oracle 단계는 아래 O2 가 본다.
+
+### O2 — 분할·조회·보관 덤프·load 안 대사(ADR-0029 L4)
+
+L4-C(load 안 대사·공통코드 대사·실행 JSON 형식 5)를 합친 뒤 같은 시험 클래스에 O2 리허설을 더했다(시험 메서드 `splitLookupDumpAndReconciliationRehearsalRunsOnAnOracleSource`, 새 시험 클래스 없음). 원천 표 넷과 대상 표 둘이다.
+
+- `LEG_EMP` 1,200행(keyset page 셋) — 정밀도 없는 `NUMBER` 키, `''` 로 넣은 이름 12행(Oracle 은 NULL 로 저장한다), 자리표시 가입일 `00000000` 8행, 자정이 아닌 `DATE`, `NUMBER(12,2)` 급여, 공백으로 채운 `CHAR(3)` 상태, 부서 조회에 짝이 없는 코드 2행, `NUMBER(3)` 직급 번호, 이메일 없는 24행, 앞 3행만 값이 있는 BLOB, 마이크로초가 든 `TIMESTAMP(6)` 변경 시각, 1/8 단위 소수가 든 정밀도 없는 `NUMBER` 비율, 자정인 `DATE` 계약 날짜
+- `LEG_DEPT`(`VARCHAR2` 키)·`LEG_GRADE`(`NUMBER(10,0)` 키) — 조회만 한다. 두 `NUMBER` 키는 드라이버가 모두 scale 0 값으로 주므로 이 fixture 는 조회 키 정규화를 가리지 않는다(정규화는 `LookupResolverTest` 가 본다)
+- `LEG_LOG_OLD` 400행(`TIMESTAMP(6)`·`RAW(16)`·`NUMBER(12,2)`) — 적재하지 않고 덤프만 한다
+- 대상 기본 표와, 기본 표의 대리키를 물리 FK 로 가리키는 확장 표
+
+| 단계 | 결과 |
+|---|---|
+| discover | 소문자로 적은 사용자 이름으로는 통과한다. 같은 계정을 Oracle 이 저장한 꼴(대문자)로 적으면 inventory 의 owner(= schema = 사용자 이름)가 credential 검사에 걸려 inventory 를 쓰지 않고 멈춘다 — 아래 결함 절의 남은 한계이며 시험이 단언으로 고정한다 |
+| 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 확정한다 — 분할 id 둘(`emp`: 대리키 `EMP_` 채번·조회 둘, `emp_ext`: 이메일·사진과 같은 원천을 fkRef 로 가리키는 대리키), 조회 경로(via) 둘, 덤프만 하는 표의 외부 보관 셋과 정렬 키 이관 제외, 조회 키 이관 제외. 표준 용어는 가입일(`ymd8` + nullify 8)·상태 코드(`trim` + codemap)뿐이고 나머지는 비표준 대상(U1)이다 — 변경 시각·비율은 변환 없이, 계약 날짜는 `type: date` 로 옮긴다. 만든 mapping 이 원장과 대응한다(coverage 0건) |
+| plan·review·validate | 조회만 하는 표 `LOOKUP_INPUT`, 덤프만 하는 표 `EXPORT_ONLY` 로 `commitReady=true` |
+| 공개 DRY_RUN | `PASS`, 두 매핑 각 1,200행 읽음·무쓰기, 부서 조회 짝 없음 2(`maxMissing` 2 안), 덤프할 행 400(파일 없음). 형식 5 대사는 두 매핑 모두 원천 행 수(`SOURCE_ROWS`)만 판정해 `PASS`, 쓰기 세션 검사는 `NOT_CHECKED` |
+| 엔진 COMMIT | 승인 plan 의 대상 fingerprint(제약 포함)를 다시 읽어 같은지 보고, 승인 load 와 같은 조립(runner 의 `approvedReconciliationPlan` — 원장 검증·live 표준 용어·공통코드 쓰기 전 게이트)으로 대사 계획을 만든다. 나눈 두 매핑은 원천 집계 문장 하나를 나눠 쓴다. 두 매핑 각 1,200행 적재, nullified 8, 짝 없음 2. 덤프 400행 = 읽은 400행이고, 기록 일시(`TIMESTAMP(6)` → R1 로 `Timestamp` → ISO 지역 일시)·RAW(`$base64`)·`NUMBER(12,2)` 가 원천 fixture 와 같다. `NUMBER(12,2)` 는 덤프 원문 토큰에 지수 표기가 없다 — 이 fixture 의 값으로는 쓰기 설정을 가리지 않는다(아래) |
+| 대사(verify) | 두 매핑 `PASS`, 쓰기 세션 `ORIGIN`. 기본 매핑은 원천 행 수, NULL 계정 10컬럼(`''`→NULL 12행·nullify 8행 포함), 합(정밀도 없는 `NUMBER` 는 `SUM(col)` — 소수가 든 비율의 합이 맞는다, `NUMBER(12,2)` 는 `DECIMAL(38,2)` 캐스트), 최소·최대(`NUMBER` 셋·`DATE`·`TIMESTAMP(6)` — 마지막은 원천 집계 결과도 R1 을 지난다), codemap 분포, 형식 도메인(가입일), 조회 NULL 하한, 표본 240행×9컬럼이 모두 `PASS` 다. 판정하지 않은 검사는 설계상 대상 밖(조회·문자 합·비표준 도메인·fkRef·LOB)과 계약 날짜의 최소·최대(값은 그대로인데 날짜와 일시의 종류만 바뀐다, `UNSUPPORTED_VALUE_TYPE`)뿐이고, 집계 실패·원천 타입 모름으로 물러난 검사는 없다 — 두 매핑의 `NOT_COVERED` 목록을 정확히 단언한다. nullify 한 가입일은 설계상 사유 없이 표본에서 빠진다(표본은 실행기의 NULL 대체를 다시 하지 않는다). 확장 매핑은 원천 행 수·이메일 NULL 계정·표본(240행×1컬럼)이 `PASS` 다. 확장 표의 fkRef 는 물리 FK 로 증명(`PROVEN`), 유일 인덱스 2개 `PASS`, 상태 코드는 대상 1,200행을 메타 허용값과 대조해 `PASS`, 대조 원천이 없는 비표준 부서 코드는 `UNRECONCILED`(1,200행, 서명 대상) |
+| 증거의 값·접속 정보 | 프로파일·후보·원장 초안·mapping·두 실행 JSON(형식 5 — 대사 기록을 그대로 싣는다)에 시험이 찾는 원시 값(이름·이메일·부서명·직급명·자리표시 가입일, 키 7 행의 급여·입사 일시, 덤프 표의 기록 일시·RAW), URL·비밀번호·보관 경로가 없다. 접속 사용자 이름(대소문자 무시)은 schema 한정 원천 이름(`OWNER.표`, 그 꼴로 시작하는 원장 행 id)에만 있다 |
+| 대상 값 | 직원 행(변경 시각은 마이크로초까지, 비율, 계약 날짜 포함)이 원천에서 따로 계산한 표준화 결과와 같다. 확장 행은 같은 원천 행의 기본 행과 대리키를 함께 쓰고(다른 원천 행과 짝 지은 대조군은 0행), 대리키는 원천 행마다 한 번 채번했다 |
+| 집계 실패 물러남 | 실행기 순서로 연 Oracle 읽기 전용 READ COMMITTED 트랜잭션에서 savepoint 를 만들 수 있고, 수치로 더할 수 없는 합(SQLSTATE 42000)을 savepoint 로 되돌린 뒤 같은 트랜잭션이 이어진다(COUNT 1,200 — Oracle 은 문장 단위로 되돌리므로 savepoint 가 없어도 이 수는 같다). savepoint 해제는 드라이버가 지원하지 않는다(`SQLFeatureNotSupportedException` — 실행기는 무시한다). 시험이 넷을 모두 단언한다. 그런 합을 끼운 대사 계획으로 실행기를 돌리면 COUNT 전용 문장으로 물러나 1,200행을 읽고, 원천 행 수·NULL 계정은 재고 그 묶음의 합·최소·최대는 `SOURCE_AGGREGATE_FAILED` 로 판정하지 않는다 |
+
+L4-C 가 확인하지 못한 것으로 남긴 Oracle 동작은 위 실측으로 닫는다 — 집계 문장(`CAST(… AS DECIMAL(38,s))`, 정밀도 없는 `NUMBER` 의 `SUM(col)`, `DATE`·`TIMESTAMP(6)` 최소·최대)이 Oracle 에서 실패 없이 돌았고, `TIMESTAMP(6)` 집계 결과는 R1 을 지나 판정됐으며(L4-C 명세 F19), 읽기 전용 트랜잭션의 savepoint 와 실패 뒤 물러남이 동작한다. 정규형도 어긋나지 않았다 — `NUMBER` 는 `BigDecimal`, `DATE`·`TIMESTAMP(6)` 은 `Timestamp` 로 와서 대상 PostgreSQL 값과 같은 정규형으로 비교됐다.
+
+**O2 가 찾은 결함 1 — 보관 id 에 실린 사용자 이름(L3e, main 코드).** 2026-10-16 첫 실행에서 공개 DRY_RUN 이 실행 증거를 쓰지 못하고 `database credential이 artifact에 포함될 수 없습니다` 로 멈췄다. 생성기가 보관 id 를 소문자 `schema_표_보존기한` 으로 만들었고, Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로(위 탐색 실측) 그 schema 가 곧 사용자 이름이다. 승인 workflow 의 credential 검사는 8자 이상 사용자 이름을 설정에 적은 그대로(대소문자 구분) 찾으므로, 사용자 이름을 소문자로 적은 설정에서 보관 기록의 id·덤프 파일 이름에 실린 소문자 사본이 걸렸다. 관측한 것은 공개 DRY_RUN 이다 — COMMIT 도 같은 증거 경로를 지나므로 같다고 본다(추론, Oracle 공개 COMMIT 은 `UNVERIFIED` 라 실행할 수 없다). 보관 id 를 표 이름(schema 제외)과 보존 기한으로 만들도록 고쳤다. 같은 이름의 표가 둘이면 종전대로 `_2` 를 붙인다. 이 규칙 전에 만든 mapping 을 다시 생성하면 보관 id 가 바뀌어 mapping digest 가 달라지므로 plan 부터 다시 승인한다.
+
+이 수정은 소문자 사본만 없앤다. owner(= 사용자) 이름은 schema 한정 원천 이름(`OWNER.표`)과 그 꼴로 시작하는 원장 행 id(64자 이하면 `OWNER.표.컬럼` 그대로)로 inventory·plan·mapping·실행 JSON(`tables[].source`·`lookupMisses[].source`·`reconciliation.mappings[].source`·`archives[].ledgerEntries`·`codeSets[].ledgerEntry`)에 남는다. 그래서 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적은 설정은 첫 산출물인 inventory 에서 credential 검사에 걸려 discover 부터 멈춘다 — O2 가 실측해 단언으로 고정했다. 8자 미만 이름은 단어 경계로 찾고 마침표는 경계이므로 길이와 상관없이 같다(코드 판독). schema 이름이 접속 사용자 이름과 같은 대소문자인 다른 vendor 원천도 같다(코드 판독, 실행하지 않았다). 검사가 schema 한정 이름과 자격을 가리게 할지는 판정 규칙을 바꾸는 결정이라 [GAP-MIG-001](../../.agent/memory/known-gaps.md) 에 남겼다 — 그때까지 Oracle 접속 설정의 사용자 이름은 소문자로 적는다.
+
+**O2 가 찾은 결함 2 — 대사 분류의 사유 누락(L4-C 코드).** 분류기는 쓸 수 있는 검사를 판정하지 않을 때 사유를 남겨야 하는데(`ColumnClassifier` 계약) 두 경우를 사유 없이 뺐다. Oracle `DATE` 는 inventory 에 JDBC `TIMESTAMP` 로 와서, `type: date` 로 date 에 옮기면 최소·최대가 사유 없이 빠졌다 — O2 의 계약 날짜가 그 경우이고, 같은 옮김을 `DATE` 로 알리는 원천은 최소·최대를 판정한다. Oracle `BINARY_FLOAT`·`BINARY_DOUBLE`(드라이버 고유 JDBC 100·101)은 부동소수로 판정되지 않아 합·최소·최대가 `FLOAT` 사유 없이 빠졌다(코드 판독, 단위 시험만). 값은 그대로인데 날짜와 일시의 종류만 바꾸는 옮김은 최소·최대를 `UNSUPPORTED_VALUE_TYPE` 으로, 두 고유 타입은 `FLOAT` 으로 남기도록 고쳤다. nullify 컬럼의 표본 제외는 계약대로라 바꾸지 않았다.
+
+O2 의 새 판정과 단언을 하나씩 되돌려 다시 돌렸다. 한 번에 변이 하나이고, 모두 의도한 단언에서 붉었다(JUnit XML 은 로컬에만 있다). 위 열 줄은 첫 판에서, 아래 여섯 줄은 검토 반영 뒤(2026-10-16) 돌렸다. 덤프 쓰기의 지수 없는 수 설정(`WRITE_BIGDECIMAL_AS_PLAIN`)을 끄는 변이는 붉지 않았다 — 이 fixture 에서 드라이버가 지수 표기가 될 값을 주지 않았다. 그 설정은 `ArchiveFileWriterTest`(`1E+3` → `1000`)가 지킨다.
+
+| 되돌린 것 | 붉어진 단언 |
+|---|---|
+| `JdbcLobReader` 의 `TIMESTAMP` 변환(R1)을 끔 | 공개 DRY_RUN 의 `<archives>` — 덤프 값 종류 거부(`ARCHIVE_VALUE_TYPE_UNSUPPORTED`). R1 이 덤프 경로에도 적용된다는 증거다 |
+| 정밀도 있는 `NUMBER` 합을 `DECIMAL(38,0)` 으로 캐스트 | verify — `salary_amt` 의 `SUM` 불일치 |
+| 원천 최소·최대를 바꿔 읽음 | verify — `hired_dt` 의 `MIN_MAX` 불일치 |
+| 실행기가 원천 NULL 문자를 `''` 로 씀 | verify — `emp_nm`·`email_addr` 의 `NON_NULL` 불일치 |
+| 표본 재계산에서 codemap 을 뺌 | verify — `stat_cd` 의 `SAMPLE` 불일치 |
+| 조회 NULL 하한을 엄격 부등호로 | verify — `dept_nm` 의 `LOOKUP_NULL_FLOOR` |
+| 덤프만 하는 표의 첫 행을 쓰지 않음 | 공개 DRY_RUN 의 `<archives>` — 덤프 행(399) ≠ 읽은 행(400) |
+| RI 트리거 증명을 끔 | 참조 기록의 `PROVEN` 단언(실제 `SCANNED`) |
+| 집계 실패 뒤 COUNT 전용으로 물러나지 않음 | 물러남 단계 — 실행기가 `SOURCE_AGGREGATE_FAILED` 로 행을 읽지 않는다 |
+| 원천 `COUNT(*)` 를 1 늘림 | O1·O2 의 공개 DRY_RUN 이 `SOURCE_ROWS` 불일치로 멈춘다 — DRY_RUN 의 대사가 Oracle 원천 집계로 판정한다 |
+| 원천 집계 결과 읽기(`readAggregateRow`)를 `getObject` 로 | 기본 매핑 판정 목록 — `updated_at` 의 `MIN_MAX` 가 `PASS` 대신 `NOT_COVERED` 다. 집계 결과도 R1 을 지난다는 증거다(L4-C 명세 F19) |
+| 정밀도 없는 `NUMBER` 합도 `DECIMAL(38,0)` 으로 캐스트 | verify — `rate` 의 `SUM` 불일치 |
+| 날짜와 일시의 종류만 바뀌는 옮김의 사유를 뺌(결함 2) | 기본 매핑 `NOT_COVERED` 정확 목록(`contract_dt` 의 `MIN_MAX` 가 빠진다)과 `ColumnClassifierTest` |
+| Oracle 고유 부동소수 타입(100·101)을 부동소수에서 뺌(결함 2) | `ColumnClassifierTest` — 사유가 비고, 조회 컬럼의 합·최소·최대 사유도 빠진다(단위 시험만) |
+| 보관 id 에 schema 를 다시 넣음(결함 1) | 만든 mapping 의 사용자 이름 검사(schema 식별자 밖 1곳). `MappingGeneratorTest` 4건이 기대 id 에서 붉다 |
+| credential 검사가 사용자 이름을 보지 않게 | 대문자 사용자 이름 discover 의 거절 단언 — 예외가 나지 않는다 |
+
+2026-10-16 로컬에서 클래스 전체를 실행해 5건이 통과했다(첫 판: 실패·skip 0, 컨테이너 기동 포함 90.0초, O2 17.7초). 검토 반영 뒤 다시 실행해 5건이 통과했다(실패·skip 0, 컨테이너 기동 포함 72.0초, O2 16.0초). 같은 실행에서 generate·validate·verify·etl·jdbc·profile·suggest·artifact·lookup·archive 패키지와 `MigrationWorkflowRunnerTest`·`TermSuggestPostgresIntegrationTest` 를 함께 돌려 95클래스 980건이 실패 0 이었다(skip 3 — Windows 심볼릭 링크 2·POSIX 권한 1). O2 만 따로 돌리면 Gradle·컨테이너 기동 포함 62~68초였다. PIT `migration-standardize` 는 보관 id 수정 뒤 1,036 mutations·92% 다. 분류기를 고친 뒤 `migration-verify` PIT 는 돌리지 않았다 — L4-C 브랜치가 넓힌 범위의 시험 목록으로 다시 잰다. O2 로 이 클래스의 시간이 늘지만 이관 duration profile 의 이 클래스 값(88,875ms)은 고치지 않았다 — L4-C 병합 뒤 새 main 위로 O2 를 옮길 때 이 클래스를 포함해 profile 을 실측으로 다시 만든다(지금 `migration-verification-contract` 의 2건 red 는 L4-C 의 새 시험 클래스 16개가 profile 에 없어서다). CI 실행 기록은 아직 없다.
+
+한계: 1,200행 합성 fixture 라 `ORA-01555`(snapshot too old)·운영 규모·장시간 세션은 재지 않았다. 공개 COMMIT 은 Oracle 이 `UNVERIFIED` 라 엔진 COMMIT 으로 갈음했고 증거 등급은 그대로다. 19c 에서는 실행하지 않았다. 원천 READ COMMITTED 에서 원천 집계와 본 읽기는 다른 문장이라, 대사의 원천 행 수 일치는 source freeze 를 전제로 한다(위 R7). 대상 PostgreSQL 이미지는 digest 로 고정하지 않았다. 판별력을 red 로 확인하지 않은 단언이 있다 — 유일 인덱스 2개 `PASS`, keymap 1회 채번, DRY_RUN 의 조회 짝 없음 기록, 공통코드 대사의 행 수, 집계 묶음 공유, 확장 매핑 표본의 컬럼 수, savepoint 탐침의 네 관측, 그리고 L4-B 리허설에 더한 DRY_RUN codemap 결과 종류 수(병합 조정).
 
 ## 이관 CUBRID 실행 환경과 검증 경계
 
