@@ -9,6 +9,8 @@ import nuri.migration.adapter.PreflightSeverity;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceAdapterRegistry;
 import nuri.migration.adapter.SourceReadSessionPolicy;
+import nuri.migration.archive.ArchiveOutcome;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.artifact.ArtifactFileStore;
 import nuri.migration.artifact.CatalogSnapshotArtifactCodec;
 import nuri.migration.artifact.CatalogSnapshotDigester;
@@ -74,7 +76,9 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
@@ -183,8 +187,8 @@ class MigrationWorkflowRunnerTest {
         List<EtlExecutor.TableResult> results = List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of()));
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any())).willReturn(results);
-        given(verifier.verify(eq(mapping), eq(results), nullable(JdbcTemplate.class)))
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class))).willReturn(results);
+        given(verifier.verify(eq(mapping), eq(results), nullable(JdbcTemplate.class), any(ArchiveOutcome.class)))
                 .willReturn(new MigrationReport(List.of(), MigrationReport.Status.PASS));
 
         runner = new MigrationWorkflowRunner(
@@ -334,7 +338,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("source endpoint");
         verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
         verify(sourceEndpoints, never()).open(any(), anyList(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -440,7 +444,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("target standard contract validation 실패")
                 .hasMessageContaining("public.tb_user_info.user_id");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -492,7 +496,7 @@ class MigrationWorkflowRunnerTest {
                 "--ack-source-freeze")))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("scope");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -576,12 +580,14 @@ class MigrationWorkflowRunnerTest {
         verify(fingerprinter).fingerprintBound(targetConnection, mapping, Set.of("public"));
         verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), any());
         verify(executor).execute(
-                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true, Map.of());
+                eq(mapping), eq(MigrationMode.DRY_RUN), eq(sourceJdbc), isNull(), eq(readSessionPolicy), eq(true),
+                eq(Map.of()), argThat(archives -> !archives.writesFiles()));
         verify(validator, never()).validateLiveTarget(any(), any());
         InOrder lifetime = inOrder(sourceEndpoint, executor);
         lifetime.verify(sourceEndpoint).jdbc();
         lifetime.verify(executor).execute(
-                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true, Map.of());
+                eq(mapping), eq(MigrationMode.DRY_RUN), eq(sourceJdbc), isNull(), eq(readSessionPolicy), eq(true),
+                eq(Map.of()), argThat(archives -> !archives.writesFiles()));
         lifetime.verify(sourceEndpoint).close();
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("plan.json.load-"))
@@ -598,7 +604,7 @@ class MigrationWorkflowRunnerTest {
         Path plan = temp.resolve("plan.json");
         writeApprovedArtifacts(inventory, plan, snapshot, mapping);
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any()))
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class)))
                 .willThrow(new IllegalStateException("sentinel-source-password"));
         assertThatThrownBy(() -> load(inventory, plan)).isInstanceOf(MigrationExecutionException.class);
         try (var entries = Files.list(temp)) {
@@ -617,7 +623,7 @@ class MigrationWorkflowRunnerTest {
         writeApprovedArtifacts(inventory, plan, snapshot, mapping);
         String note = "오류 1건 — 첫 오류: 행 변환 실패(legacy.legacy_user, column=user_id, row=7): "
                 + "ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
-        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class))).willReturn(new MigrationReport(List.of(
+        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class), any(ArchiveOutcome.class))).willReturn(new MigrationReport(List.of(
                 new MigrationReport.TableReport("legacy.passed", "public.passed", 1, 1, 0, 0, -1,
                         MigrationReport.Status.PASS, ""),
                 new MigrationReport.TableReport("legacy.legacy_user", "public.tb_user_info", 7, 6, 0, 1, -1,
@@ -684,7 +690,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("exact");
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -701,7 +707,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("unsupported");
 
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -752,7 +758,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("target schema");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -769,7 +775,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("driver evidence");
 
         verify(sourceDataSource, never()).getConnection();
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
         verify(sourceEndpoint).close();
     }
 
@@ -816,7 +822,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("execution contract");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -851,7 +857,150 @@ class MigrationWorkflowRunnerTest {
                 .doesNotThrowAnyException();
         verify(validator).validateLiveTarget(mapping, targetJdbc);
         verify(executor).execute(
-                mapping, MigrationMode.COMMIT, sourceJdbc, targetJdbc, readSessionPolicy, true, guards);
+                eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc), eq(readSessionPolicy),
+                eq(true), eq(guards), argThat(archives -> !archives.writesFiles()));
+    }
+
+    @Test
+    void aCommitWithArchivesOrIsolationNeedsASafeArchiveDirectoryBeforeAnyConnection() throws Exception {
+        // [ADR-0029 L3e] 보관 선언·isolate 가 있는 COMMIT 은 --archive-dir 없이 시작하지 않는다 — 덤프·격리 키 없이 적재하지
+        //   않는다. 디렉터리가 승인 산출물 옆이면 원시 값 덤프가 섞이므로 그것도 연결 전에 멈춘다.
+        Path inventory = temp.resolve("archived-inventory.json");
+        Path plan = temp.resolve("archived-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        MappingSpec archived = new MappingSpec(unbound.source(), unbound.target(), unbound.tables(), unbound.codemaps(),
+                unbound.run(), mapping.ledger(), List.of(new MappingSpec.ArchiveDump("legacy_user_20311231",
+                "legacy.legacy_user", null, List.of(), List.of("ETC1"), List.of("U7"), "2031-12-31")));
+        stub(archived);
+        writeApprovedArtifacts(inventory, plan, snapshot, archived);
+
+        assertThatThrownBy(() -> loadCommit(inventory, plan, true, "postgresql-pg-catalog"))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("commit 에서 보관 선언(archives)이나 격리(isolate)가 있으면 --archive-dir 가 필요합니다 — 덤프·격리"
+                        + " 키 없이 적재하지 않습니다.");
+        assertThatThrownBy(() -> runner.run(args("--command=load", "--mapping=" + mappingPath,
+                "--inventory=" + inventory, "--plan=" + plan, "--mode=commit", "--ack-source-freeze",
+                "--ack-adapter=postgresql-pg-catalog", "--archive-dir=" + temp.toRealPath())))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("보관 디렉터리는 mapping·plan·원장·inventory 파일이 있는 디렉터리나 그 아래에 둘 수 없습니다"
+                        + " — 원시 값 덤프가 승인 산출물과 섞입니다");
+        verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
+
+        // 보관 선언 없이 isolate 만 있어도 격리 행의 키를 반출하므로 같은 게이트다.
+        TableMapping user = unbound.tables().getFirst();
+        MappingSpec isolatesOnly = new MappingSpec(unbound.source(), unbound.target(), List.of(new TableMapping(
+                user.source(), user.target(), null, "USER_ID", "user_id", List.of(
+                        new ColumnMapping("USER_ID", "user_id", null, null, null, null, null),
+                        new ColumnMapping("END_YMD", "end_ymd", "ymd8", null, null, null, null, null, List.of(),
+                                new MappingSpec.Isolate("U4", 3L, List.of("PLACEHOLDER_DATE")))), null)),
+                unbound.codemaps(), unbound.run(), mapping.ledger(), List.of());
+        stub(isolatesOnly);
+        assertThatThrownBy(() -> loadCommit(inventory, plan, true, "postgresql-pg-catalog"))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("commit 에서 보관 선언(archives)이나 격리(isolate)가 있으면 --archive-dir 가 필요합니다 — 덤프·격리"
+                        + " 키 없이 적재하지 않습니다.");
+        verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
+    }
+
+    @Test
+    void everyPublishedDumpOrKeyFileIsWrittenIntoTheStartedEvidenceBeforeTheRunEnds() throws Exception {
+        // [ADR-0029 L3e] 표의 파일을 최종 이름으로 옮길 때마다 STARTED 증거를 다시 쓴다 — 실행이 강제로 끝나 PASS·FAILED 를
+        //   쓰지 못해도 옮긴 파일은 어떤 증거에 실린다.
+        Path outside = outsideGitTempRoot();
+        org.junit.jupiter.api.Assumptions.assumeTrue(outside != null, "Git 작업 트리 밖의 임시 디렉터리가 없습니다");
+        Path dumps = Files.createTempDirectory(outside, "runner-evidence-").toRealPath();
+        try {
+            Path inventory = temp.resolve("inventory.json");
+            Path plan = temp.resolve("plan.json");
+            writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+            List<String> midRun = new java.util.ArrayList<>();
+            given(executor.execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
+                    eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class))).willAnswer(invocation -> {
+                        ArchiveRun archives = invocation.getArgument(7);
+                        try (ArchiveRun.TableArchive table = archives.mappedTable(mapping, mapping.tables().getFirst())) {
+                            table.isolated(Map.of("user_id", "u1"), 1, List.of(
+                                    new nuri.migration.isolate.RowIsolationPolicy.Match("U4", "user_id", "BLANK")));
+                            table.complete(1);
+                        }
+                        try (java.util.stream.Stream<Path> files = Files.list(temp)) {
+                            for (Path evidence : files.filter(path -> path.getFileName().toString()
+                                    .startsWith("plan.json.load-")).toList()) {
+                                midRun.add(Files.readString(evidence));
+                            }
+                        }
+                        return List.of(new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1,
+                                0, List.of()));
+                    });
+
+            runner.run(args("--command=load", "--mapping=" + mappingPath, "--inventory=" + inventory,
+                    "--plan=" + plan, "--mode=commit", "--ack-source-freeze", "--ack-adapter=postgresql-pg-catalog",
+                    "--archive-dir=" + dumps));
+
+            String exported;
+            try (java.util.stream.Stream<Path> files = Files.list(dumps)) {
+                exported = files.map(path -> path.getFileName().toString()).filter(name -> name.startsWith("isolated-"))
+                        .findFirst().orElseThrow();
+            }
+            assertThat(midRun).as("실행 중의 증거").singleElement().asString()
+                    .contains("\"status\":\"STARTED\"", "\"isolatedKeyExports\":[{\"source\":\"legacy.legacy_user\","
+                            + "\"file\":\"" + exported + "\"")
+                    .doesNotContain(dumps.toString(), "u1");
+        } finally {
+            try (java.util.stream.Stream<Path> files = Files.list(dumps)) {
+                for (Path file : files.toList()) {
+                    Files.deleteIfExists(file);
+                }
+            }
+            Files.deleteIfExists(dumps);
+        }
+    }
+
+    @Test
+    void anApprovedArchiveDirectoryOutsideTheInputsReachesTheExecutorAsAWritingRun() throws Exception {
+        // [ADR-0029 L3e] 검사를 지난 디렉터리만 실행기에 쓰는 보관 실행으로 넘어가고, 검증도 그 결과를 받는다.
+        Path outside = outsideGitTempRoot();
+        org.junit.jupiter.api.Assumptions.assumeTrue(outside != null, "Git 작업 트리 밖의 임시 디렉터리가 없습니다");
+        Path dumps = Files.createTempDirectory(outside, "runner-archive-").toRealPath();
+        try {
+            Path inventory = temp.resolve("inventory.json");
+            Path plan = temp.resolve("plan.json");
+            writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+
+            assertThatCode(() -> runner.run(args("--command=load", "--mapping=" + mappingPath,
+                    "--inventory=" + inventory, "--plan=" + plan, "--mode=commit", "--ack-source-freeze",
+                    "--ack-adapter=postgresql-pg-catalog", "--archive-dir=" + dumps)))
+                    .doesNotThrowAnyException();
+            verify(executor).execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
+                    eq(readSessionPolicy), eq(true), any(), argThat(ArchiveRun::writesFiles));
+            verify(verifier).verify(eq(mapping), any(), eq(targetJdbc), argThat(ArchiveOutcome::writesFiles));
+        } finally {
+            Files.deleteIfExists(dumps);
+        }
+    }
+
+    /** Git 작업 트리 밖의 운영체제 임시 디렉터리. 없으면 null — Gradle 은 시험 임시 디렉터리를 저장소 안에 둘 수 있다. */
+    private static Path outsideGitTempRoot() {
+        for (String candidate : new String[] {System.getProperty("java.io.tmpdir"), System.getenv("TMPDIR"),
+                System.getenv("TEMP"), System.getenv("TMP"), "/tmp"}) {
+            if (candidate == null || candidate.isBlank()) {
+                continue;
+            }
+            try {
+                Path root = Path.of(candidate).toRealPath();
+                boolean inGit = false;
+                for (Path current = root; current != null; current = current.getParent()) {
+                    inGit |= Files.exists(current.resolve(".git"));
+                }
+                if (Files.isDirectory(root) && !inGit) {
+                    return root;
+                }
+            } catch (java.io.IOException | java.nio.file.InvalidPathException ignored) {
+                // 다음 후보를 본다.
+            }
+        }
+        return null;
     }
 
     @Test
@@ -995,7 +1144,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessage("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any());
     }
 
     @Test
@@ -1081,7 +1230,7 @@ class MigrationWorkflowRunnerTest {
         given(validator.validateTargetStandard(eq(spec), any(), any())).willReturn(pass());
         given(fingerprinter.fingerprintBound(targetConnection, spec, Set.of("public"))).willReturn(targetFingerprint);
         given(executor.execute(eq(spec), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any())).willReturn(List.of(
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class))).willReturn(List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of())));
     }
 

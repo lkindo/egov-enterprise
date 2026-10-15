@@ -180,6 +180,26 @@ class ColumnProtectionPlanTest {
         assertThat(ColumnProtectionPlan.of(mapping).columns()).containsOnlyKeys("tb_user_info.user_enrrno");
     }
 
+    @Test
+    @DisplayName("암호화해 적재할 소스 값은 외부 보관 덤프에 넣을 수 없다 — 같은 표의 다른 컬럼·다른 표의 같은 이름은 막지 않는다")
+    void encryptedSourceValuesAreNeverArchived() {
+        TableMapping users = new TableMapping("legacy.USER_MST", "tb_user_info", null, "USER_SN", "user_sn",
+                List.of(column("USER_SN", "user_sn", null), column("JUMIN", "user_enrrno", ARIA)), null);
+        String plaintext = "tb_user_info.user_enrrno: 암호화할 소스 값은 외부 보관 덤프에 넣을 수 없습니다(덤프에 평문으로"
+                + " 남습니다)";
+
+        assertThat(archived(users, " LEGACY.user_mst ", " jumin ")).as("표기·대소문자·공백이 달라도 같은 컬럼이다")
+                .containsExactly(plaintext);
+        assertThat(archived(users, "legacy.USER_MST", "ETC1")).as("암호화하지 않는 컬럼의 보관").isEmpty();
+        assertThat(archived(users, "legacy.LOG", "JUMIN")).as("다른 표의 같은 이름 컬럼").isEmpty();
+    }
+
+    private static List<String> archived(TableMapping table, String source, String column) {
+        return ColumnProtectionPlan.of(new MappingSpec(null, null, List.of(table), Map.of(), null, null,
+                List.of(new MappingSpec.ArchiveDump("legacy_user_20311231", source, null, List.of(), List.of(column),
+                        List.of("U7"), "2031-12-31")))).violations();
+    }
+
     private static List<String> violations(ColumnMapping column) {
         return plan(table("tb_user_info", column)).violations();
     }

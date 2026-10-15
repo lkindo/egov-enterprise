@@ -104,6 +104,13 @@ public final class MigrationPlanner {
                 .filter(object -> object.disposition() != ObjectDisposition.AUTO_DATA_LOAD)
                 .forEach(object -> plannerBlockers.add(
                         "MappingSpec 데이터 매핑과 disposition 충돌: " + object.sourceObjectId()));
+        // [ADR-0029 L3e] 덤프만 하는 표는 적재하지 않고 보관만 한다 — 검토자가 EXPORT_ONLY 로 명시해야 한다.
+        Set<String> dumpOnly = resolveDumpOnlyTables(snapshot.objects(), mapping, resolvedMappings, plannerBlockers);
+        objectPlans.stream()
+                .filter(object -> dumpOnly.contains(object.sourceObjectId()))
+                .filter(object -> object.disposition() != ObjectDisposition.EXPORT_ONLY || !object.reviewed())
+                .forEach(object -> plannerBlockers.add(
+                        "보관만 하는 표는 review 에서 EXPORT_ONLY 로 정해야 합니다: " + object.sourceObjectId()));
 
         int unclassified = Math.toIntExact(objectPlans.stream()
                 .filter(object -> object.disposition() == null)
@@ -165,6 +172,41 @@ public final class MigrationPlanner {
             }
         }
         return Map.copyOf(resolved);
+    }
+
+    /**
+     * 보관 선언의 소스 표 가운데 표 매핑이 읽지 않는 표(덤프만 하는 표)의 inventory stableId. 표를 찾지 못하거나 모호하면
+     * blocker 다. 매핑된 표인지는 inventory 의 같은 표로 정한다 — 표기만 다른 선언은 원장 coverage 가 따로 막는다.
+     */
+    private static Set<String> resolveDumpOnlyTables(
+            List<CatalogObject> objects,
+            MappingSpec mapping,
+            Map<String, TableMapping> resolvedMappings,
+            List<String> blockers) {
+        List<CatalogObject> tables = objects.stream()
+                .filter(object -> object.kind() == ObjectKind.TABLE)
+                .toList();
+        Set<String> dumpOnly = new HashSet<>();
+        for (MappingSpec.ArchiveDump archive : mapping.archives()) {
+            if (archive == null || archive.source() == null || archive.source().isBlank()) {
+                blockers.add("MappingSpec 보관 선언 소스 테이블 미지정");
+                continue;
+            }
+            List<CatalogObject> matches = tables.stream()
+                    .filter(table -> InventoryTables.matches(archive.source(), table))
+                    .toList();
+            if (matches.size() != 1) {
+                blockers.add((matches.isEmpty()
+                        ? "MappingSpec 보관 선언 소스 테이블을 inventory에서 찾을 수 없음: "
+                        : "MappingSpec 보관 선언 소스 테이블이 inventory에서 모호함: ") + archive.source());
+                continue;
+            }
+            String id = matches.getFirst().stableId();
+            if (!resolvedMappings.containsKey(id)) {
+                dumpOnly.add(id);
+            }
+        }
+        return dumpOnly;
     }
 
     private static MigrationObjectPlan planObject(

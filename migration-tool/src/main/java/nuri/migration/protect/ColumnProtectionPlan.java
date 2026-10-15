@@ -46,6 +46,7 @@ public final class ColumnProtectionPlan {
             rejectKeyUse(table, violations);
             rejectSourceKeyUse(table, violations);
         }
+        rejectArchiveUse(spec, violations);
         return new ColumnProtectionPlan(columns, violations);
     }
 
@@ -151,6 +152,34 @@ public final class ColumnProtectionPlan {
             if (keySources.stream().anyMatch(key -> key != null && key.trim().equalsIgnoreCase(source))) {
                 violations.add(table.target() + "." + column.target()
                         + ": 암호화할 소스 값을 정렬·식별자·참조 키로 쓸 수 없습니다(평문이 제어 테이블에 남습니다)");
+            }
+        }
+    }
+
+    /**
+     * [ADR-0029 L3e] 암호화해 적재할 소스 값은 외부 보관 덤프에 넣을 수 없다 — 덤프는 원시 값을 평문 그대로 담으므로 대상에서
+     * 암호화한 값이 덤프에 평문으로 남는다. 보관 선언이 읽는 매핑된 표(같은 source 표기)의 encrypt 컬럼 소스와 보관 컬럼을
+     * 대조한다. 원장은 같은 소스 컬럼을 확정·보관에 함께 두지 못하게 막지만, 손으로 고친 mapping 도 여기서 멈춘다.
+     */
+    private static void rejectArchiveUse(MappingSpec spec, List<String> violations) {
+        for (MappingSpec.ArchiveDump archive : spec.archives()) {
+            if (archive == null) {
+                continue;
+            }
+            TableMapping table = spec.mappedTableOf(archive.source());
+            if (table == null || table.target() == null) {
+                continue;
+            }
+            for (ColumnMapping column : table.columns()) {
+                if (column == null || column.encrypt() == null || isBlank(column.source()) || column.target() == null) {
+                    continue;
+                }
+                String source = column.source().trim();
+                if (archive.columns().stream()
+                        .anyMatch(dumped -> dumped != null && dumped.trim().equalsIgnoreCase(source))) {
+                    violations.add(table.target() + "." + column.target()
+                            + ": 암호화할 소스 값은 외부 보관 덤프에 넣을 수 없습니다(덤프에 평문으로 남습니다)");
+                }
             }
         }
     }

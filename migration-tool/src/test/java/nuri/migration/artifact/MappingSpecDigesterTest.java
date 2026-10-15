@@ -102,6 +102,40 @@ class MappingSpecDigesterTest {
                         new MappingSpec(null, null, baseline.tables(), Map.of("status", nullToFallback), null)));
     }
 
+    @Test
+    void bindsArchiveDeclarationsWhileAMappingWithoutArchivesKeepsItsPreviousDigest() {
+        // [ADR-0029 L3e] 보관 선언이 없으면 보관 도입 전 material(같은 이름의 칸)과 같은 바이트를 digest 한다.
+        MappingSpec baseline = spec(null, null, new RunContext("run-a", "namespace-a"), "ACTIVE");
+        assertThat(MappingSpecDigester.sha256(baseline)).isEqualTo(CanonicalArtifactDigest.sha256(new PreArchiveMaterial(
+                null, null, "run-a", "namespace-a", baseline.tables(), baseline.codemaps())));
+
+        MappingSpec.ArchiveDump archive = new MappingSpec.ArchiveDump("legacy_child_20311231", "legacy_child", null,
+                List.of(), List.of("ETC1"), List.of("U7"), "2031-12-31");
+        MappingSpec archived = withArchives(baseline, archive);
+        assertThat(MappingSpecDigester.sha256(archived)).isNotEqualTo(MappingSpecDigester.sha256(baseline));
+        assertThat(MappingSpecDigester.sha256(withArchives(baseline, new MappingSpec.ArchiveDump(
+                "legacy_child_20311231", "legacy_child", null, List.of(), List.of("ETC1"), List.of("U7"), "2032-12-31"))))
+                .as("보존 기한을 바꾸면 다시 승인해야 한다").isNotEqualTo(MappingSpecDigester.sha256(archived));
+        assertThat(MappingSpecDigester.sha256(withArchives(baseline, new MappingSpec.ArchiveDump(
+                "legacy_child_20311231", "legacy_child", null, List.of(), List.of("ETC1", "ETC2"), List.of("U7", "U9"),
+                "2031-12-31")))).as("보관 컬럼을 더하면 다시 승인해야 한다")
+                .isNotEqualTo(MappingSpecDigester.sha256(archived));
+    }
+
+    /** 보관 도입 전 MappingSpecDigester 의 material — canonical JSON 은 칸 이름 순이라 같은 칸이면 같은 바이트다. */
+    private record PreArchiveMaterial(
+            String sourceEndpointId,
+            String targetEndpointId,
+            String runId,
+            String sourceNamespace,
+            List<TableMapping> tables,
+            Map<String, MappingSpec.CodeMap> codemaps) {}
+
+    private static MappingSpec withArchives(MappingSpec base, MappingSpec.ArchiveDump... archives) {
+        return new MappingSpec(base.source(), base.target(), base.tables(), base.codemaps(), base.run(), base.ledger(),
+                List.of(archives));
+    }
+
     private static MappingSpec spec(DbConfig source, DbConfig target, RunContext run, String activeCode) {
         IdentityStrategy identity = new IdentityStrategy(
                 TargetIdentityPolicy.PRESERVE,

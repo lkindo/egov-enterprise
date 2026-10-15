@@ -1,5 +1,7 @@
 package nuri.migration.verify;
 
+import nuri.migration.archive.ArchiveOutcome;
+import nuri.migration.archive.ArchiveRun;
 import nuri.migration.etl.EtlExecutor.TableResult;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.identity.JdbcTypedValueCodec;
@@ -9,6 +11,7 @@ import nuri.migration.identity.TypedValue;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.model.MappingSpec.ArchiveDump;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.state.KeyDiagnostics;
@@ -34,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -47,6 +51,9 @@ import java.util.function.Function;
  * <p>[ADR-0029 L3b] 승인 격리가 있으면 조회 = 변환 + 격리여야 하고(어긋나면 FAIL), 격리 집계가 mapping 의 isolate
  * 선언(원장 행·컬럼·위반, 원장 행마다 상한)과 맞아야 한다. 기록 = 변환은 그대로다.
  *
+ * <p>[ADR-0029 L3e] 보관 덤프의 행 수는 그 표의 조회 수와 같아야 하고(재개로 건너뛴 행·격리한 행 포함), 선언한 덤프가 모두
+ * 있어야 하며, COMMIT 에서 격리한 행의 키는 반출돼야 한다. 어긋나면 {@code <archives>} 행이 FAIL 이다.
+ *
  * <p>남은 로드맵(설계문서 §7 P4): 고아 FK/NOT-NULL/UNIQUE 스캔, meta_standard_domains 도메인 적합성,
  * 집계 체크섬 parity와 샘플 N행 소스↔타깃 diff.
  */
@@ -54,6 +61,8 @@ import java.util.function.Function;
 public class MigrationVerifier {
 
     private static final int VERIFY_BATCH = 500;
+    /** 보관 덤프·격리 키 반출 판정의 보고 행 이름(ADR-0029 L3e). */
+    static final String ARCHIVES = "<archives>";
     private static final int RUNTIME_KEY_MAX = 256;
 
     private final JdbcTypedValueCodec identityCodec = new JdbcTypedValueCodec();
@@ -67,7 +76,20 @@ public class MigrationVerifier {
         return verify(new MappingSpec(null, null, expected, Map.of()), results, targetJt);
     }
 
+    /**
+     * 보관 덤프 결과 없이 검증한다. mapping 에 보관 선언이 있으면 덤프를 증명할 수 없으므로 FAIL 이다(ADR-0029 L3e) — 승인
+     * workflow 는 {@link #verify(MappingSpec, List, JdbcTemplate, ArchiveOutcome)} 를 쓴다.
+     */
     public MigrationReport verify(MappingSpec spec, List<TableResult> results, JdbcTemplate targetJt) {
+        return verify(spec, results, targetJt, null);
+    }
+
+    /**
+     * {@code archives} 는 같은 실행의 보관 덤프·격리 키 반출 결과다(ADR-0029 L3e). 덤프 행 수가 그 표의 조회 수와 같고,
+     * 선언한 덤프가 모두 있고, COMMIT 에서 격리한 행의 키가 반출됐는지 함께 본다.
+     */
+    public MigrationReport verify(MappingSpec spec, List<TableResult> results, JdbcTemplate targetJt,
+                                  ArchiveOutcome archives) {
         boolean commit = targetJt != null;
         List<TableResult> actualResults = results == null ? List.of() : results;
         List<TableReport> tables = new ArrayList<>(actualResults.size() + 1);
@@ -133,6 +155,11 @@ public class MigrationVerifier {
                     r.isolated()));
             overall = worst(overall, status);
         }
+        String archiveError = archiveError(spec, actualResults, archives, commit);
+        if (archiveError != null) {
+            tables.add(new TableReport(ARCHIVES, ARCHIVES, 0L, 0L, 0L, 1L, -1L, Status.FAIL, archiveError));
+            overall = Status.FAIL;
+        }
         if (commit && spec != null && spec.run() != null) {
             try {
                 new MigrationStateStore(spec.run()).mark(
@@ -148,6 +175,108 @@ public class MigrationVerifier {
     }
 
     private record ScopedVerification(long rows, String error) {}
+
+    /**
+     * [ADR-0029 L3e] 보관 덤프·격리 키 반출이 실행과 맞는지 본다. 맞으면 null. 문구는 보관 id·표 이름·건수·고정 사유뿐이다.
+     *
+     * <ul>
+     *   <li>보관 선언이 있으면 결과가 있어야 하고, 덤프·반출 실패가 없어야 한다.</li>
+     *   <li>COMMIT 에 보관 선언이나 isolate 가 있으면 파일을 썼어야 하고, dry-run 은 파일을 쓰지 않는다.</li>
+     *   <li>선언한 덤프마다 결과가 정확히 하나이고 보존 기한·원장 행이 선언과 같다. 덤프 행 수 = 그 읽기의 행 수이고, 매핑된
+     *       표는 그 수가 표의 조회 수와 같다. COMMIT 덤프는 파일 이름·바이트·SHA-256 이 있다.</li>
+     *   <li>COMMIT 에서 격리한 행이 있는 표마다 반출이 하나이고 반출 행 수 = 격리 수다. 격리하지 않은 표의 반출은 없다.</li>
+     * </ul>
+     */
+    static String archiveError(MappingSpec spec, List<TableResult> results, ArchiveOutcome archives,
+                               boolean commit) {
+        List<ArchiveDump> declared = spec == null ? List.of() : spec.archives();
+        boolean required = spec != null && ArchiveRun.required(spec);
+        if (archives == null) {
+            return declared.isEmpty() ? null : "보관 선언이 있는데 보관 덤프 결과가 없음 — 덤프를 증명할 수 없음";
+        }
+        if (!archives.errors().isEmpty()) {
+            return "보관 덤프·격리 키 반출 실패 — " + archives.errors().getFirst();
+        }
+        if (commit && required && !archives.writesFiles()) {
+            return "보관 디렉터리 없이 적재함 — 덤프·격리 키를 증명할 수 없음";
+        }
+        if (!commit && archives.writesFiles()) {
+            return "dry-run 이 보관 파일을 씀";
+        }
+        Map<String, ArchiveOutcome.Dumped> byId = new LinkedHashMap<>();
+        for (ArchiveOutcome.Dumped dumped : archives.dumps()) {
+            if (byId.put(dumped.id(), dumped) != null) {
+                return "보관 덤프 결과가 두 번 있음: " + dumped.id();
+            }
+        }
+        for (ArchiveDump dump : declared) {
+            ArchiveOutcome.Dumped dumped = byId.remove(dump.id());
+            if (dumped == null) {
+                return "보관 덤프 결과 없음: " + dump.id();
+            }
+            if (!Objects.equals(dumped.retainUntil(), dump.retainUntil())
+                    || !dumped.ledgerEntries().equals(dump.ledgerEntries())) {
+                return "보관 덤프 결과가 선언(보존 기한·원장 행)과 다름: " + dump.id();
+            }
+            if (dumped.rows() != dumped.sourceRows()) {
+                return "보관 덤프 행(" + dumped.rows() + ") ≠ 읽은 행(" + dumped.sourceRows() + "): " + dump.id();
+            }
+            MappingSpec.TableMapping mapped = spec.mappedTableOf(dump.source());
+            if (mapped == null && !dumped.dumpOnly()) {
+                return "덤프만 하는 표의 보관이 매핑된 표로 기록됨: " + dump.id();
+            }
+            if (mapped != null) {
+                TableResult result = resultOf(results, mapped.source());
+                if (dumped.dumpOnly() || result == null || dumped.sourceRows() != result.read()) {
+                    return "보관 덤프 행(" + dumped.rows() + ") ≠ 조회(" + (result == null ? "-" : result.read())
+                            + "): " + dump.id();
+                }
+            }
+            if (archives.writesFiles()
+                    ? dumped.fileName() == null || dumped.bytes() <= 0 || dumped.sha256() == null
+                            || !dumped.sha256().matches("[0-9a-f]{64}")
+                    : dumped.fileName() != null) {
+                return "보관 덤프 파일 증거가 모드와 맞지 않음: " + dump.id();
+            }
+        }
+        if (!byId.isEmpty()) {
+            return "선언하지 않은 보관 덤프: " + byId.keySet().iterator().next();
+        }
+        Map<String, ArchiveOutcome.KeyExport> exports = new LinkedHashMap<>();
+        for (ArchiveOutcome.KeyExport export : archives.keyExports()) {
+            if (!archives.writesFiles() || exports.put(normalize(export.source()), export) != null) {
+                return "격리 키 반출이 모드와 맞지 않거나 두 번 있음: " + export.source();
+            }
+        }
+        if (!archives.writesFiles()) {
+            return null;
+        }
+        for (TableResult result : results) {
+            ArchiveOutcome.KeyExport export = exports.remove(normalize(result.sourceTable()));
+            if (result.isolated() > 0 && (export == null || export.rows() != result.isolated()
+                    || export.fileName() == null || export.sha256() == null
+                    || !export.sha256().matches("[0-9a-f]{64}"))) {
+                return "격리 키 반출(" + (export == null ? 0 : export.rows()) + ") ≠ 격리(" + result.isolated()
+                        + "): " + result.sourceTable();
+            }
+            if (result.isolated() == 0 && export != null) {
+                return "격리하지 않은 표의 격리 키 반출: " + result.sourceTable();
+            }
+        }
+        if (!exports.isEmpty()) {
+            return "실행 결과에 없는 표의 격리 키 반출: " + exports.values().iterator().next().source();
+        }
+        return null;
+    }
+
+    private static TableResult resultOf(List<TableResult> results, String source) {
+        for (TableResult result : results) {
+            if (normalize(result.sourceTable()).equals(normalize(source))) {
+                return result;
+            }
+        }
+        return null;
+    }
 
     /**
      * [ADR-0029 L3b] 격리 집계가 mapping 의 isolate 선언과 맞는지 본다. 격리 무리는 선언한 (원장 행, 컬럼, 위반)뿐이고, 무리의

@@ -29,19 +29,26 @@ public record MappingSpec(
         List<TableMapping> tables,
         Map<String, CodeMap> codemaps,
         RunContext run,
-        @JsonInclude(JsonInclude.Include.NON_NULL) LedgerBinding ledger
+        @JsonInclude(JsonInclude.Include.NON_NULL) LedgerBinding ledger,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) List<ArchiveDump> archives
 ) {
 
     /** 기존 dry-run/단위 테스트 호환 생성자. COMMIT은 명시적 run 계약을 별도로 강제한다. */
     public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
                        Map<String, CodeMap> codemaps) {
-        this(source, target, tables, codemaps, null, null);
+        this(source, target, tables, codemaps, null, null, List.of());
     }
 
     /** 용어 매핑 원장 도입 전 생성자 호환. 원장이 없으면 mapping 의미와 digest 가 그대로다. */
     public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
                        Map<String, CodeMap> codemaps, RunContext run) {
-        this(source, target, tables, codemaps, run, null);
+        this(source, target, tables, codemaps, run, null, List.of());
+    }
+
+    /** 외부 보관 덤프 도입 전 생성자 호환. 보관 선언이 없으면 mapping 의미와 digest 가 그대로다. */
+    public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
+                       Map<String, CodeMap> codemaps, RunContext run, LedgerBinding ledger) {
+        this(source, target, tables, codemaps, run, ledger, List.of());
     }
 
     /**
@@ -54,6 +61,87 @@ public record MappingSpec(
     public MappingSpec {
         tables = tables == null ? List.of() : tables;
         codemaps = codemaps == null ? Map.of() : codemaps;
+        // null 항목은 그대로 두고 검증이 위치와 함께 거부한다(tables 와 같다).
+        archives = archives == null ? List.of() : archives;
+    }
+
+    /**
+     * 보관 선언의 {@code source} 를 읽는 표 매핑 — 같은 source 표기(앞뒤 공백·대소문자 무시)의 첫 표 매핑이다. 없으면 null 이고,
+     * 그 보관은 덤프만 하는 표다(ADR-0029 L3e). 같은 표를 다른 표기로 적었는지는 원장 coverage 가 inventory 로 따로 본다.
+     */
+    public TableMapping mappedTableOf(String archiveSource) {
+        if (archiveSource == null || archiveSource.isBlank()) {
+            return null;
+        }
+        String wanted = archiveSource.trim().toLowerCase(Locale.ROOT);
+        for (TableMapping table : tables) {
+            if (table != null && table.source() != null && table.source().trim().toLowerCase(Locale.ROOT).equals(wanted)) {
+                return table;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 외부 보관 덤프 선언 한 건(ADR-0029 L3e). COMMIT load 가 적재와 같은 원천 읽기 세션 안에서 {@code source} 표의
+     * {@code columns} 원시 값을 정렬 키와 함께 덤프 파일에 쓰고, 기관이 {@code retainUntil}(yyyy-MM-dd)까지 보관한다.
+     * {@code ledgerEntries} 는 {@code columns} 와 같은 순서의 원장 외부 보관(ARCHIVE) 행 ID 다. mapping-generate 가 원장
+     * ARCHIVE 행을 (소스 표, 보존 기한) 으로 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다.
+     *
+     * <p>{@code source} 를 표 매핑이 읽으면(매핑된 표) 그 매핑의 where·정렬 키를 그대로 쓰고 읽는 행을 모두 덤프한다 —
+     * 보관 선언에 {@code where}·{@code orderByKeys} 를 따로 두면 오류다. 덤프만 하는 표는 skeleton 의 {@code orderByKeys}
+     * (필수)·{@code where}(선택)를 받는다. 빈 칸은 직렬화하지 않는다.</p>
+     */
+    public record ArchiveDump(
+            String id,
+            String source,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String where,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> orderByKeys,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> columns,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> ledgerEntries,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String retainUntil) {
+
+        public ArchiveDump {
+            orderByKeys = orderByKeys == null ? List.of() : List.copyOf(orderByKeys);
+            columns = columns == null ? List.of() : List.copyOf(columns);
+            ledgerEntries = ledgerEntries == null ? List.of() : List.copyOf(ledgerEntries);
+        }
+
+        /**
+         * mapping.yml 의 보관 선언 한 건을 읽는다. 이름·기한은 문자로만, 목록은 문자의 목록으로만 받는다 —
+         * {@code columns: [1]}·{@code retainUntil: 20311231} 처럼 검토자가 본 글자와 승인 digest 가 뜻하는 값이 갈리는
+         * 표기를 거부한다. 없는 필드는 비워 두고 검증이 거부한다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static ArchiveDump fromMapping(@JsonProperty("id") Object id,
+                                              @JsonProperty("source") Object source,
+                                              @JsonProperty("where") Object where,
+                                              @JsonProperty("orderByKeys") Object orderByKeys,
+                                              @JsonProperty("columns") Object columns,
+                                              @JsonProperty("ledgerEntries") Object ledgerEntries,
+                                              @JsonProperty("retainUntil") Object retainUntil) {
+            return new ArchiveDump(text(id), text(source), text(where), names(orderByKeys), names(columns),
+                    names(ledgerEntries), text(retainUntil));
+        }
+
+        private static String text(Object raw) {
+            if (raw == null || raw instanceof String) {
+                return (String) raw;
+            }
+            throw new IllegalArgumentException("archives 의 id·source·where·retainUntil 은 따옴표로 감쌀 수 있는 문자여야"
+                    + " 합니다");
+        }
+
+        private static List<String> names(Object raw) {
+            if (raw == null) {
+                return List.of();
+            }
+            if (raw instanceof List<?> list && list.stream().allMatch(String.class::isInstance)) {
+                return list.stream().map(String.class::cast).toList();
+            }
+            throw new IllegalArgumentException("archives 의 orderByKeys·columns·ledgerEntries 는 이름 문자의 목록이어야"
+                    + " 합니다");
+        }
     }
 
     /** JDBC 접속 정보(소스/타깃 공통). */

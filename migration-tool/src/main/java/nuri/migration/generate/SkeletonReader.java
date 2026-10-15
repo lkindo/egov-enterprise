@@ -11,13 +11,17 @@ import nuri.migration.model.MappingSpec.TableMapping;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * mapping skeleton 을 읽는다(ADR-0029 L3a-2). skeleton 은 사람이 쓰고 Git 으로 검토하는 mapping.yml 형태로, 원장에서 만들
  * 컬럼과 원장 선언({@code ledger})이 빠져 있다. 표마다 {@code columns} 에는 상수({@code const})와 부모 키 번역
- * ({@code fkRef}) 항목만 둔다 — 나머지 컬럼과 fkRef 항목의 변환은 원장의 확정 행 {@code load} 에서 온다.
+ * ({@code fkRef}) 항목만 둔다 — 나머지 컬럼과 fkRef 항목의 변환은 원장의 확정 행 {@code load} 에서 온다. 덤프만 하는 표는
+ * {@code archives} 에 {@code source}·{@code orderByKeys}·{@code where} 로만 둔다(ADR-0029 L3e).
  *
  * <p>YAML 트리와 함께 같은 본문을 {@link MappingLoader#parseUnresolved} 로 읽어 구조와 접속 자리표시 형식을 확인한다.
  * 그 검사는 {@link MappingLoader#loadContent} 와 같은 판정이라 평문 password 는 여기서 멈춘다. 환경 변수는 치환하지
@@ -81,12 +85,54 @@ public final class SkeletonReader {
                 }
             }
         }
+        archives(root, spec, errors);
         if (!errors.isEmpty()) {
             List<String> shown = errors.stream().limit(MAX_REPORTED).toList();
             String more = errors.size() > shown.size() ? " (외 " + (errors.size() - shown.size()) + "건)" : "";
             throw new IllegalArgumentException(String.join(" | ", shown) + more);
         }
         return new Skeleton(root, spec);
+    }
+
+    /**
+     * [ADR-0029 L3e] skeleton 의 {@code archives} 에는 덤프만 하는 표를 표마다 하나씩 {@code source}·{@code orderByKeys}
+     * (필수)·{@code where}(선택)로만 둔다. 보관 컬럼·원장 행·보존 기한·id 는 원장 ARCHIVE 행에서 만든다. 매핑하는 표의 보관은
+     * 그 매핑의 where·정렬을 쓰므로 여기 두지 않는다 — 같은 표인지는 생성기가 inventory 로 다시 본다.
+     */
+    private static void archives(ObjectNode root, MappingSpec spec, List<String> errors) {
+        JsonNode node = root.get("archives");
+        if (node == null) {
+            return;
+        }
+        if (!node.isArray() || node.size() != spec.archives().size()) {
+            errors.add("skeleton 의 archives 는 덤프만 하는 표의 목록이어야 합니다");
+            return;
+        }
+        Set<String> sources = new HashSet<>();
+        for (int index = 0; index < spec.archives().size(); index++) {
+            MappingSpec.ArchiveDump archive = spec.archives().get(index);
+            String where = "skeleton archives[" + index + "]";
+            if (archive == null || !node.get(index).isObject() || blank(archive.source())) {
+                errors.add(where + ": 덤프만 하는 표에는 source 가 필요합니다");
+                continue;
+            }
+            where += "(" + archive.source() + ")";
+            if (archive.id() != null || !archive.columns().isEmpty() || !archive.ledgerEntries().isEmpty()
+                    || archive.retainUntil() != null) {
+                errors.add(where + ": skeleton 의 archives 에는 source·orderByKeys·where 만 둡니다 — id·columns·"
+                        + "ledgerEntries·retainUntil 은 원장의 외부 보관(ARCHIVE) 행에서 만듭니다");
+            }
+            if (archive.orderByKeys().isEmpty()) {
+                errors.add(where + ": 덤프만 하는 표에는 정렬 키(orderByKeys)가 필요합니다");
+            }
+            if (spec.mappedTableOf(archive.source()) != null) {
+                errors.add(where + ": 매핑하는 표는 skeleton 의 archives 에 두지 않습니다 — 그 표의 보관은 원장 ARCHIVE 행으로"
+                        + " 만들고 매핑의 where·정렬을 씁니다");
+            }
+            if (!sources.add(archive.source().trim().toLowerCase(Locale.ROOT))) {
+                errors.add(where + ": 같은 덤프만 하는 표를 두 번 두었습니다");
+            }
+        }
     }
 
     private static boolean blank(String value) {

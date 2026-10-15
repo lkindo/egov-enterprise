@@ -53,6 +53,9 @@ import java.util.regex.Pattern;
  *   <li>[ADR-0029 L3b] 문자 소스를 type decimal·numeric 으로 바꾸는 컬럼은 선언 정밀도를 알 수 없어도 정적으로 막지
  *       않고 행마다 값 한계 가드({@link TargetValueGuard})로 판정한다({@link #rowGuards}). isolate 를 선언한 컬럼도
  *       같은 가드를 받는다. 그 밖의 정밀도·길이 판정은 그대로 정적이다.</li>
+ *   <li>[DEC-OPS-322] 원장이 LENGTH_EXCEEDED·PRECISION_EXCEEDED 를 승인한 isolate 컬럼은 그 코드의 선언 길이·정밀도
+ *       정적 판정을 값 한계 가드로 옮긴다 — 소스 선언이 대상보다 길거나 모르는 컬럼도 상한 안의 행을 격리하고, 넘으면
+ *       멈춘다. 가드가 길이를 재지 않는 값 종류(날짜·UUID 등)와 그 코드를 승인하지 않은 컬럼은 그대로 정적이다.</li>
  * </ul>
  *
  * <p>메시지는 표·컬럼 이름과 타입·길이만 말한다. 상수·코드맵 값과 행 값은 싣지 않는다.
@@ -228,7 +231,10 @@ public final class TargetStandardValidator {
         }
         TargetLimit physical = TargetLimit.physical(column);
         // [ADR-0029 L3b] 문자 소스 → decimal·numeric 의 정밀도는 행마다 값 한계 가드가 판정한다(rowGuards).
-        boolean rowJudged = rowJudgedPrecision(spec, mapping, source, sourceProduct);
+        // [DEC-OPS-322] 원장이 LENGTH_EXCEEDED·PRECISION_EXCEEDED 를 승인한 isolate 컬럼은 선언 길이·정밀도 판정을 통째로
+        //   값 한계 가드로 옮긴다 — 상한 안의 행만 격리하고 넘으면 멈춘다(fail-closed). 승인하지 않은 컬럼은 그대로 정적이다.
+        RowJudged rowJudged = new RowJudged(rowJudgedPrecision(spec, mapping, source, sourceProduct),
+                lengthToRowGuard(mapping, value), precisionToRowGuard(mapping, value));
         int before = errors.size();
         check(value, physical, location, "물리 컬럼 " + column.dataType(), rowJudged, errors);
         if (errors.size() == before && looseTemporal(mapping) && TEMPORAL.contains(physical.family())
@@ -437,12 +443,42 @@ public final class TargetStandardValidator {
 
     private static void check(TargetValueDomain value, TargetLimit limit, String location, String label,
                               List<String> errors) {
-        check(value, limit, location, label, false, errors);
+        check(value, limit, location, label, RowJudged.NONE, errors);
     }
 
-    /** {@code rowJudged} 면 선언 정밀도를 알 수 없어도 오류로 두지 않는다 — 행마다 값 한계 가드가 판정한다(ADR-0029 L3b). */
+    /**
+     * 정적 판정 가운데 행마다 값 한계 가드로 옮긴 몫. {@code unknownPrecision} 은 선언 정밀도를 모르는 것만(ADR-0029 L3b),
+     * {@code length}·{@code precision} 은 선언 길이·정밀도 판정 전부다(DEC-OPS-322).
+     */
+    private record RowJudged(boolean unknownPrecision, boolean length, boolean precision) {
+        static final RowJudged NONE = new RowJudged(false, false, false);
+    }
+
+    /**
+     * [DEC-OPS-322] 원장이 LENGTH_EXCEEDED 를 승인한 isolate 컬럼인가 — 그 컬럼의 선언 길이 판정을 값 한계 가드로 옮긴다.
+     * 가드가 길이를 재는 값(문자·정확한 수)만 옮긴다. 날짜·UUID 처럼 가드가 길이를 재지 않는 값은 정적 판정을 그대로 받는다
+     * — 옮기면 판정 없이 쓰기 단계까지 간다.
+     */
+    private static boolean lengthToRowGuard(ColumnMapping mapping, TargetValueDomain value) {
+        return approvesIsolation(mapping, TargetValueGuard.Violation.LENGTH_EXCEEDED)
+                && (value.family() == Family.TEXT || value.isExactNumeric());
+    }
+
+    /** [DEC-OPS-322] 원장이 PRECISION_EXCEEDED 를 승인한 isolate 컬럼의 정확한 수인가 — 정밀도 판정을 값 한계 가드로 옮긴다. */
+    private static boolean precisionToRowGuard(ColumnMapping mapping, TargetValueDomain value) {
+        return approvesIsolation(mapping, TargetValueGuard.Violation.PRECISION_EXCEEDED) && value.isExactNumeric();
+    }
+
+    private static boolean approvesIsolation(ColumnMapping mapping, TargetValueGuard.Violation violation) {
+        return mapping.isolate() != null && mapping.isolate().violations().contains(violation.name());
+    }
+
+    /**
+     * {@code rowJudged} 가 옮긴 판정은 오류로 두지 않는다 — 행마다 값 한계 가드({@link #rowGuards})가 판정한다. 값 종류와 대상의
+     * 호환은 늘 정적으로 본다.
+     */
     private static void check(TargetValueDomain value, TargetLimit limit, String location, String label,
-                              boolean rowJudged, List<String> errors) {
+                              RowJudged rowJudged, List<String> errors) {
         if (!value.compatibleWith(limit.family())) {
             errors.add("값 타입이 타깃과 맞지 않습니다: " + location + " — 값 " + value.family()
                     + (value.constant() ? "(const 는 type 힌트 없이 문자열로 바인딩됨)" : "")
@@ -455,9 +491,13 @@ public final class TargetStandardValidator {
             return;
         }
         if (limit.family() == Family.TEXT) {
-            checkLength(value, limit, location, label, errors);
+            if (!rowJudged.length()) {
+                checkLength(value, limit, location, label, errors);
+            }
         } else if (limit.isExactNumeric() && value.isExactNumeric()) {
-            checkCapacity(value, limit, location, label, rowJudged, errors);
+            if (!rowJudged.precision()) {
+                checkCapacity(value, limit, location, label, rowJudged.unknownPrecision(), errors);
+            }
         }
     }
 
