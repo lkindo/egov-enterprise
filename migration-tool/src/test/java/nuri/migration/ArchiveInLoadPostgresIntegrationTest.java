@@ -180,7 +180,7 @@ class ArchiveInLoadPostgresIntegrationTest {
 
         String artifact = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
                 Instant.parse("2026-10-15T00:00:00Z"), report, results, outcome);
-        assertThat(artifact).contains("\"schemaVersion\":4", "\"file\":\"" + userDump.fileName() + "\"",
+        assertThat(artifact).contains("\"schemaVersion\":5", "\"file\":\"" + userDump.fileName() + "\"",
                 "\"sha256\":\"" + userDump.sha256() + "\"", "\"rows\":1250", "\"retainUntil\":\"2031-12-31\"",
                 "{\"column\":\"ETC1\",\"rrn\":2,\"phone\":0,\"email\":0}",
                 "\"keyPersonalData\":[{\"column\":\"ID\",\"rrn\":0,\"phone\":0,\"email\":0}]",

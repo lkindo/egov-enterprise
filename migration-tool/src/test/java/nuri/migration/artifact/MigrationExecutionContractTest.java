@@ -82,7 +82,22 @@ class MigrationExecutionContractTest {
                 "nuri.migration.lookup.LookupResolver",
                 // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e)도 승인에 결속한다.
                 "nuri.migration.archive.ArchiveRun",
-                "nuri.migration.archive.ArchiveFileWriter");
+                "nuri.migration.archive.ArchiveFileWriter",
+                // load 안 대사·공통코드 대사의 판정(ADR-0029 L4 D2·D7)도 승인에 결속한다.
+                "nuri.migration.verify.ColumnClassifier",
+                "nuri.migration.verify.SourceAggregateQuery",
+                "nuri.migration.verify.ReconciliationJudge",
+                "nuri.migration.verify.DomainConformance",
+                "nuri.migration.verify.ColumnReplay",
+                "nuri.migration.verify.ConstraintProof",
+                "nuri.migration.verify.ReferenceChecks",
+                "nuri.migration.verify.ReconciliationPlanner",
+                "nuri.migration.verify.CodeSetReconciler",
+                "nuri.migration.validate.ProductCodeBindings",
+                "nuri.migration.validate.CodeSetPrecheck",
+                "nuri.migration.validate.CodeSetTargets",
+                "nuri.migration.validate.VerifyReferenceRules",
+                "nuri.migration.transform.CodeTranslator");
         assertThat(MigrationExecutionContract.implementationClassNamesForTesting())
                 .contains(
                         "nuri/migration/etl/TableOrderer.class",

@@ -50,6 +50,11 @@ import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import nuri.migration.validate.ledger.LoadCapabilities;
+import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.ReconciliationRun.AggregateGroup;
+import nuri.migration.verify.ReconciliationRun.CodeHit;
+import nuri.migration.verify.ReconciliationRun.MappingTally;
+import nuri.migration.verify.SourceAggregates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -61,6 +66,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -106,6 +112,12 @@ import java.util.function.Function;
  * 에 더해 읽은 행을 모두(재개로 건너뛴 행·격리한 행 포함) 덤프하고, 덤프만 하는 표는 매핑된 표들 다음에 keyset 으로 읽는다.
  * 격리한 행은 정렬 키 원값·순번·위반 코드를 반출한다. COMMIT 에 보관 선언이나 isolate 가 있으면 보관 디렉터리 없이 시작하지
  * 않는다 — 덤프·격리 키 없이 적재하지 않는다.
+ *
+ * <p>[ADR-0029 L4 D2·D7] 대사가 활성이면({@link ReconciliationRun}) 행을 읽기 전에 같은 원천 읽기 세션에서 (소스, where)
+ * 묶음마다 집계 문장 하나(행 수·NULL 아닌 수·정확 수치 합·최소·최대)를 savepoint 안에서 보내고, 실패하면 COUNT 전용 문장으로
+ * 물러난다(그것도 실패하면 {@code SOURCE_AGGREGATE_FAILED} 로 멈춘다). COMMIT 은 대상 쓰기 연결의
+ * {@code session_replication_role} 이 origin 이 아니면 그 표를 쓰지 않는다. 실패 없이 변환한 행의 codemap 결과(쓰기 재시도의
+ * 재변환 제외)·표본 원값·격리 행의 기여와 대상 PK 는 대사 홀더에만 모으고 결과·문구에 싣지 않는다.
  *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
@@ -320,10 +332,33 @@ public class EtlExecutor {
             ArchiveRun archives,
             boolean controlSchemaUpgradeAcknowledged
     ) {
+        return execute(spec, mode, sourceJt, targetJt, sourceReadPolicy, sourceFreezeAcknowledged, rowGuards, archives,
+                controlSchemaUpgradeAcknowledged, ReconciliationRun.none());
+    }
+
+    /**
+     * 승인 workflow 의 전체 실행 경계에 load 안 대사(ADR-0029 L4 D2·D7)의 수집을 더한다. {@code reconciliation} 이 활성이면
+     * 행을 읽기 전에 같은 원천 읽기 세션에서 (소스, where) 묶음마다 원천 집계를 재고, COMMIT 대상 쓰기 연결의
+     * {@code session_replication_role} 을 확인하며, 실패 없이 변환한 행의 codemap 결과·표본 원값과 격리 행의 기여를
+     * {@code reconciliation} 에만 모은다. 비활성({@link ReconciliationRun#none()})이면 종전과 같다.
+     */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt,
+            SourceReadSessionPolicy sourceReadPolicy,
+            boolean sourceFreezeAcknowledged,
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards,
+            ArchiveRun archives,
+            boolean controlSchemaUpgradeAcknowledged,
+            ReconciliationRun reconciliation
+    ) {
         if (spec == null) {
             throw new IllegalArgumentException("mapping spec이 없습니다.");
         }
         Objects.requireNonNull(archives, "archives");
+        Objects.requireNonNull(reconciliation, "reconciliation");
         if (spec.source() == null) {
             throw new IllegalArgumentException("mapping.source 접속 설정이 없습니다.");
         }
@@ -390,11 +425,18 @@ public class EtlExecutor {
                         String archivePreflight = preflightFailure == null
                                 ? preflightDumpOnlyKeys(sourceConnection, dumpOnlyReads)
                                 : null;
+                        // [ADR-0029 L4 D2] 원천 집계는 어느 모드든 행을 읽기 전에 같은 읽기 세션에서 잰다. 잴 수 없으면 멈춘다.
+                        TableResult aggregateFailure = preflightFailure == null && archivePreflight == null
+                                ? measureSourceAggregates(sourceConnection, orderedTables, reconciliation)
+                                : null;
                         if (preflightFailure != null) {
                             results.add(preflightFailure);
                             safeRollback(sourceConnection);
                         } else if (archivePreflight != null) {
                             archives.fail(archivePreflight);
+                            safeRollback(sourceConnection);
+                        } else if (aggregateFailure != null) {
+                            results.add(aggregateFailure);
                             safeRollback(sourceConnection);
                         } else {
                             if (commit) {
@@ -415,7 +457,7 @@ public class EtlExecutor {
                                 TableExecution execution = runTable(
                                         sourceConnection, targetDs, spec, index, table, registry, state, commit,
                                         protector, guards.getOrDefault(lower(MappingIndex.label(table)), Map.of()),
-                                        sequenceColumns(sequencePlan, table), archives);
+                                        sequenceColumns(sequencePlan, table), archives, reconciliation);
                                 results.add(execution.result());
                                 isolatedKeys.put(lower(MappingIndex.label(table)), execution.isolatedKeys());
                                 if (execution.sourceSessionFailed()) {
@@ -1013,7 +1055,7 @@ public class EtlExecutor {
                                     MappingIndex index, TableMapping t, KeyMapRegistry reg,
                                     MigrationStateStore state, boolean commit, ColumnProtector protector,
                                     Map<String, TargetValueGuard.Limit> guards, Set<String> sequenceColumns,
-                                    ArchiveRun archives) {
+                                    ArchiveRun archives, ReconciliationRun reconciliation) {
         List<String> errors = new ArrayList<>();
         // [ADR-0029 L3e] 이 표의 보관 덤프를 읽기 전에 연다(COMMIT 은 파일 이름을 예약한다). 못 열면 읽지 않고 멈춘다.
         TableArchive archive;
@@ -1039,7 +1081,8 @@ public class EtlExecutor {
                 isolation,
                 sequenceColumns);
         TableCounts counts = new TableCounts(isolation.active()
-                ? new IsolationTally(label(t), isolation.caps()) : null, archive);
+                ? new IsolationTally(label(t), isolation.caps()) : null, archive,
+                reconciliation.table(lower(label(t))));
         boolean sourceSessionFailed = false;
         boolean rowFailureStopped = false;
 
@@ -1049,6 +1092,13 @@ public class EtlExecutor {
                 targetConn = targetDs.getConnection();
                 targetConn.setReadOnly(false);
                 targetConn.setAutoCommit(false);
+                // [ADR-0029 L4 D2] 물리 FK 집행 증명의 전제 — 쓰기 세션이 RI 트리거를 끄지 않았다(origin). 아니면 쓰지 않는다.
+                if (reconciliation.active() && !replicationRoleOrigin(targetConn, reconciliation)) {
+                    errors.add("이관 실패(" + label(t) + "): SESSION_REPLICATION_ROLE_NOT_ORIGIN");
+                    return new TableExecution(new TableResult(t.source(), t.target(), 0L, 0L,
+                            state == null ? 0L : state.count(t.source(), t.effectiveId()), errors, List.of(),
+                            Map.of(), resultMappingId(t)), false, true, Map.of());
+                }
             }
             preMintSelfReferences(sourceConnection, targetConn, index, t, reg);
             if (t.effectiveOrderKeys().isEmpty()) {
@@ -1089,6 +1139,25 @@ public class EtlExecutor {
                         isolated == null ? List.of() : isolated.isolations()),
                 sourceSessionFailed, rowFailureStopped,
                 isolated == null ? Map.of() : isolated.maxPreservedKeys());
+    }
+
+    /**
+     * [ADR-0029 L4 D2] PostgreSQL 대상 쓰기 연결의 {@code session_replication_role} 이 origin 인가. replica·local 세션에서는 RI
+     * 트리거가 발화하지 않아 물리 FK 집행을 증명할 수 없으므로 그 표를 쓰지 않는다. 결과는 대사 홀더에 남긴다. PostgreSQL 이
+     * 아니면 확인하지 않는다(승인 workflow 의 대상은 PostgreSQL 이다).
+     */
+    private static boolean replicationRoleOrigin(Connection target, ReconciliationRun reconciliation)
+            throws SQLException {
+        if (!"PostgreSQL".equals(target.getMetaData().getDatabaseProductName())) {
+            return true;
+        }
+        boolean origin;
+        try (Statement statement = target.createStatement();
+             ResultSet rows = statement.executeQuery("SELECT current_setting('session_replication_role')")) {
+            origin = rows.next() && "origin".equals(rows.getString(1));
+        }
+        reconciliation.replicationRole(origin);
+        return origin;
     }
 
     /** 보관 파일을 열거나 쓰지 못해 멈춘 표의 오류. 사유 코드만 싣고 경로·값은 싣지 않는다(ADR-0029 L3e). */
@@ -1150,6 +1219,97 @@ public class EtlExecutor {
             }
         }
         return null;
+    }
+
+    /**
+     * [ADR-0029 L4 D2] (소스, where) 묶음마다 원천 집계 문장 하나를 본 읽기와 같은 읽기 세션에서 보낸다. 집계 문장이 실패하면
+     * savepoint 로 되돌리고 COUNT 전용 문장으로 물러난다 — 그 묶음의 합·최소·최대는 판정하지 않는다
+     * ({@code SOURCE_AGGREGATE_FAILED}). PostgreSQL 은 실패한 문장이 읽기 트랜잭션 전체를 막으므로 savepoint 가 필요하다.
+     * savepoint 를 만들 수 없으면 없이 보내고, COUNT 전용 문장도 실패하면 행을 읽지 않고 멈춘다(그 묶음의 첫 매핑 결과에
+     * 고정 사유만 남긴다). 집계 값은 대사 홀더에만 두고 결과·문구에 싣지 않는다. 비활성이면 아무 문장도 보내지 않는다.
+     */
+    private static TableResult measureSourceAggregates(Connection source, List<TableMapping> orderedTables,
+                                                       ReconciliationRun reconciliation) {
+        if (!reconciliation.active()) {
+            return null;
+        }
+        for (AggregateGroup group : reconciliation.aggregateGroups()) {
+            SourceAggregates aggregates = readSourceAggregates(source, group);
+            if (aggregates == null) {
+                TableMapping table = orderedTables.stream()
+                        .filter(candidate -> group.labels().stream()
+                                .anyMatch(label -> label.equalsIgnoreCase(label(candidate))))
+                        .findFirst().orElse(null);
+                String label = table == null ? group.source() : label(table);
+                return new TableResult(table == null ? group.source() : table.source(),
+                        table == null ? group.source() : table.target(), 0, 0, 0,
+                        List.of("이관 실패(" + label + "): SOURCE_AGGREGATE_FAILED"),
+                        List.of(), Map.of(), table == null ? null : resultMappingId(table));
+            }
+            reconciliation.recordSource(group.key(), aggregates);
+        }
+        return null;
+    }
+
+    /** 집계 문장, 실패하면 COUNT 전용 문장. 둘 다 실패하면 null. */
+    private static SourceAggregates readSourceAggregates(Connection source, AggregateGroup group) {
+        Savepoint savepoint = savepoint(source);
+        try {
+            SourceAggregates full = readAggregateRow(source, group.query().sql(), group, true);
+            releaseSavepoint(source, savepoint);
+            return full;
+        } catch (SQLException | RuntimeException aggregateFailed) {
+            if (savepoint != null) {
+                try {
+                    source.rollback(savepoint);
+                } catch (SQLException ignored) {
+                    // 되돌리지 못하면 COUNT 전용 문장도 실패해 멈춘다.
+                }
+            }
+        }
+        try {
+            SourceAggregates counts = readAggregateRow(source, group.query().countOnlySql(), group, false);
+            releaseSavepoint(source, savepoint);
+            return counts;
+        } catch (SQLException | RuntimeException countFailed) {
+            return null;
+        }
+    }
+
+    private static SourceAggregates readAggregateRow(Connection source, String sql, AggregateGroup group,
+                                                     boolean full) throws SQLException {
+        try (PreparedStatement statement = SourceReadStatements.prepare(source, sql);
+             ResultSet rows = statement.executeQuery()) {
+            if (!rows.next()) {
+                throw new SQLException("SOURCE_AGGREGATE_UNREADABLE");
+            }
+            Object[] values = new Object[rows.getMetaData().getColumnCount()];
+            for (int column = 0; column < values.length; column++) {
+                // 본 읽기와 같은 값 읽기다 — 벤더 값 타입의 변환도 같다.
+                values[column] = JdbcLobReader.read(rows, column + 1, false);
+            }
+            return group.query().parse(values, full);
+        }
+    }
+
+    /** savepoint 를 만들 수 없는 드라이버는 null — savepoint 없이 보낸다. */
+    private static Savepoint savepoint(Connection source) {
+        try {
+            return source.setSavepoint();
+        } catch (SQLException | RuntimeException unsupported) {
+            return null;
+        }
+    }
+
+    private static void releaseSavepoint(Connection source, Savepoint savepoint) {
+        if (savepoint == null) {
+            return;
+        }
+        try {
+            source.releaseSavepoint(savepoint);
+        } catch (SQLException | RuntimeException ignored) {
+            // 해제하지 못한 savepoint 는 읽기 트랜잭션이 끝날 때 함께 사라진다.
+        }
     }
 
     /** 조회 표(where 적용)에서 NULL 이 아닌 조회 키가 둘 이상인 값이 없음을 DB 의 비교 의미로 증명한다. */
@@ -1502,10 +1662,13 @@ public class EtlExecutor {
         private final IsolationTally isolated;
         /** 이 표의 보관 덤프와 격리 키 반출(ADR-0029 L3e). 보관이 없어도 있다. */
         private final TableArchive archive;
+        /** 이 매핑의 대사 수집(ADR-0029 L4 D2·D7). 대사가 비활성이면 아무 일도 하지 않는 수집이다. */
+        private final MappingTally reconciliation;
 
-        private TableCounts(IsolationTally isolated, TableArchive archive) {
+        private TableCounts(IsolationTally isolated, TableArchive archive, MappingTally reconciliation) {
             this.isolated = isolated;
             this.archive = archive;
+            this.reconciliation = reconciliation;
         }
     }
 
@@ -1771,13 +1934,14 @@ public class EtlExecutor {
                 } else {
                     lookups.check(row, counts.lookupMisses);
                 }
-                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan, counts.nullified, failures);
+                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan, counts.nullified, failures,
+                        counts.reconciliation);
                 if (failures != null && !failures.isEmpty()) {
                     reg.rollback(rowCheckpoint);
                     // 짝 없는 조회의 NULL 로 그 조회 컬럼이 실패했으면 격리하지 않고 멈춘다(LOOKUP_MISSING).
                     lookups.requireNoFailureOfMissedLookup(row, t, failures);
                     String stopped = isolateRow(row, out, t, writePlan, state, counts.isolated, counts.archive,
-                            failures, firstOrdinal + index);
+                            counts.reconciliation, failures, firstOrdinal + index);
                     if (stopped != null) {
                         reg.rollback(chunkCheckpoint);
                         errors.add(stopped);
@@ -1792,6 +1956,8 @@ public class EtlExecutor {
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
                     checkpoint = identityCheckpoint(row, out, t, writePlan.targetColumns());
+                    // [ADR-0029 L4 D2] 표본은 재개로 건너뛸 행도 포함한다 — 대상에 있는 행이다.
+                    counts.reconciliation.accepted(firstOrdinal + index, row, checkpoint.targetKey());
                     CheckpointEntry durable = state.find(t.source(), t.effectiveId(), checkpoint.sourceKey());
                     if (durable != null) {
                         if (t.identity() != null
@@ -1873,7 +2039,7 @@ public class EtlExecutor {
      */
     private String isolateRow(Map<String, Object> row, Map<String, Object> out, TableMapping t, WritePlan plan,
                               MigrationStateStore state, IsolationTally tally, TableArchive archive,
-                              List<RuntimeException> raised, long ordinal) {
+                              MappingTally reconciliation, List<RuntimeException> raised, long ordinal) {
         List<RowIsolationPolicy.Failure> failures = new ArrayList<>(raised.size() + 1);
         raised.forEach(failure -> failures.add(failureOf(failure)));
         RowIsolationPolicy.Failure identity = missingIdentity(out, t, failures);
@@ -1918,6 +2084,8 @@ public class EtlExecutor {
             return "격리 키를 반출하지 못했습니다(" + label(t) + ", row=" + ordinal + "): " + failure.reason()
                     + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
         }
+        // [ADR-0029 L4 D2] 실제로 격리한 행만 원천 집계에서 뺄 기여(NULL 아닌 수·합)와 대상 PK 를 남긴다.
+        reconciliation.isolated(row, out);
         return null;
     }
 
@@ -2057,7 +2225,8 @@ public class EtlExecutor {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
                     lookups.check(rows.get(index), counts.lookupMisses);
-                    transformRow(rows.get(index), spec, table, registry, writePlan, counts.nullified, null);
+                    transformRow(rows.get(index), spec, table, registry, writePlan, counts.nullified, null,
+                            counts.reconciliation);
                     counts.transformed++;
                 } catch (RuntimeException failure) {
                     errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
@@ -2080,7 +2249,7 @@ public class EtlExecutor {
             try {
                 lookups.check(row, counts.lookupMisses);
                 Map<String, Object> transformed = transformRow(
-                        row, spec, table, registry, writePlan, counts.nullified, null);
+                        row, spec, table, registry, writePlan, counts.nullified, null, counts.reconciliation);
                 TypedKeyTuple sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
@@ -2284,16 +2453,18 @@ public class EtlExecutor {
      */
     private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t,
                                              KeyMapRegistry reg, WritePlan plan, NullifyTally tally,
-                                             List<RuntimeException> collector) {
+                                             List<RuntimeException> collector, MappingTally reconciliation) {
         Map<String, Object> out = new LinkedHashMap<>();
         List<Nullified> nullified = new ArrayList<>(0);
+        List<CodeHit> codes = new ArrayList<>(0);
         for (ColumnMapping col : t.columns()) {
             try {
                 Object value;
                 if (col.constant() != null) {
                     value = col.constant();
                 } else if (col.source() != null) {
-                    value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg, nullified);
+                    value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg, nullified,
+                            codes);
                     // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 chunk 를 쓰지 않는다.
                     value = protectColumn(plan.protector(), t, col, value);
                 } else {
@@ -2332,6 +2503,10 @@ public class EtlExecutor {
         }
         if (tally != null) {
             tally.add(nullified);
+        }
+        // [ADR-0029 L4 D2·D7] codemap 결과는 nullify 와 같은 자리·같은 규칙으로 센다 — 실패 없이 변환한 행만, 재시도는 빼고.
+        if (reconciliation != null) {
+            reconciliation.codes(codes);
         }
         return out;
     }
@@ -2382,7 +2557,7 @@ public class EtlExecutor {
      * 내장 {@code date}·{@code timestamp} 가 표기를 읽지 못하면 {@code TRANSFORM_FAILED(FORMAT)} 이다.
      */
     private Object columnValue(Object sourceValue, MappingSpec spec, ColumnMapping col, KeyMapRegistry reg,
-                               List<Nullified> nullified) {
+                               List<Nullified> nullified, List<CodeHit> codes) {
         Object value;
         try {
             value = transformers.apply(col.transform(), sourceValue);
@@ -2402,7 +2577,9 @@ public class EtlExecutor {
                 throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_UNDEFINED);
             }
             try {
-                value = CodeTranslator.map(codemap, value);
+                CodeTranslator.Translation translation = CodeTranslator.translate(codemap, value);
+                value = translation.value();
+                codes.add(new CodeHit(col.target(), col.codemap(), translation));
             } catch (CodeTranslator.UnmappedCodeException unmapped) {
                 throw new RowTransformFailure(col.target(), RowFailureReason.CODEMAP_UNMAPPED);
             } catch (RuntimeException invalid) {
@@ -2647,8 +2824,9 @@ public class EtlExecutor {
         for (PreparedRow row : rows) {
             Object[] arguments;
             try {
+                // 재변환은 nullify·codemap 결과를 두 번 세지 않는다(L3a-1·L4 D2).
                 Map<String, Object> transformed = transformRow(
-                        row.source(), spec, table, registry, writePlan, null, null);
+                        row.source(), spec, table, registry, writePlan, null, null, null);
                 arguments = toArguments(transformed, writePlan.insertColumns());
                 checkpoints.add(checkpoint(row.source(), transformed, table, writePlan.targetColumns()));
             } catch (RuntimeException failure) {

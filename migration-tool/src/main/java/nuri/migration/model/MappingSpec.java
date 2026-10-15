@@ -242,6 +242,10 @@ public record MappingSpec(
      * <p>{@code lookups}(ADR-0029 L3d)는 다른 소스 표를 단일 키로 조회해 그 컬럼을 {@code alias.COLUMN} 으로 읽는
      * 조회 조인이다({@link Lookup}). 쓰는 매핑에는 id 와 순서 키가 필요하다. 비어 있으면 직렬화하지 않아 조회하지 않는
      * mapping 의 digest 가 바뀌지 않는다.
+     *
+     * <p>{@code verify}(ADR-0029 L4 D2)는 물리 FK 없이 키를 복사하는 참조와 격리 부모의 '참조 없음' 확인이다
+     * ({@link VerifyDeclaration}). 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다 — 내용 없는
+     * {@code verify: {}} 도 선언 없음으로 읽는다.
      */
     public record TableMapping(
             String source,
@@ -255,10 +259,20 @@ public record MappingSpec(
             IdentityStrategy identity,
             List<CompositeForeignKey> foreignKeys,
             @JsonInclude(JsonInclude.Include.NON_NULL) String id,
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Lookup> lookups
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Lookup> lookups,
+            @JsonInclude(JsonInclude.Include.NON_NULL) VerifyDeclaration verify
     ) {
         /** 기본 매핑(id 없음)의 실효 id — checkpoint {@code mapping_id} 의 값이다. */
         public static final String DEFAULT_ID = "";
+
+        /** 대사 선언 도입 전 canonical 생성자 호환 — 참조를 선언하지 않는다. */
+        public TableMapping(String source, String target, String where, String orderBy,
+                            List<String> orderByKeys, String targetKey, List<ColumnMapping> columns,
+                            IdStrategy idStrategy, IdentityStrategy identity,
+                            List<CompositeForeignKey> foreignKeys, String id, List<Lookup> lookups) {
+            this(source, target, where, orderBy, orderByKeys, targetKey, columns, idStrategy, identity,
+                    foreignKeys, id, lookups, null);
+        }
 
         /** 조회 조인 도입 전 canonical 생성자 호환 — 조회하지 않는다. */
         public TableMapping(String source, String target, String where, String orderBy,
@@ -306,6 +320,9 @@ public record MappingSpec(
             foreignKeys = foreignKeys == null ? List.of() : List.copyOf(foreignKeys);
             // null 항목도 그대로 둔다 — 검증기가 위치를 밝혀 거부한다.
             lookups = lookups == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(lookups));
+            if (verify != null && verify.empty()) {
+                verify = null;
+            }
         }
 
         /** 실효 매핑 id. 생략하면 {@link #DEFAULT_ID} 다. 형식은 검증기와 실행기가 확인한다. */
@@ -337,6 +354,55 @@ public record MappingSpec(
                 return orderByKeys;
             }
             return orderBy == null || orderBy.isBlank() ? List.of() : List.of(orderBy);
+        }
+    }
+
+    /**
+     * [ADR-0029 L4 D2] 표 하나의 대사 선언. {@code references} 는 이 매핑의 대상 표가 물리 FK 없이 다른 대상 표의 키를
+     * 복사한 컬럼이다 — load 의 대사가 대상 DB 안에서 짝 없는 행을 센다. {@code referencedBy: none} 과 {@code reason} 은
+     * 이 표의 키를 복사하는 표가 없다는 업무 확인이다. isolate 가 있고 키를 그대로 쓰는 표는 둘 중 하나가 있어야 plan 이
+     * 통과한다(P3, DEC-OPS-324). 형식은 검증기({@code VerifyReferenceRules})가 본다.
+     *
+     * <pre>
+     * verify:
+     *   references:
+     *     - columns: [parent_id]
+     *       parent: public.tb_parent
+     *       parentColumns: [parent_id]
+     * verify: {referencedBy: none, reason: "이 키를 복사하는 표가 없다 — 업무 확인 2026-10"}
+     * </pre>
+     */
+    public record VerifyDeclaration(
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<VerifyReference> references,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String referencedBy,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String reason) {
+
+        /** {@code referencedBy} 가 받는 유일한 값. */
+        public static final String REFERENCED_BY_NONE = "none";
+
+        public VerifyDeclaration {
+            // null 항목도 그대로 둔다 — 검증기가 위치를 밝혀 거부한다.
+            references = references == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(references));
+        }
+
+        /** 참조도 '참조 없음' 확인도 없는가. */
+        public boolean empty() {
+            return references.isEmpty() && referencedBy == null && reason == null;
+        }
+
+        /** {@code referencedBy: none} 이고 사유가 있는가. */
+        public boolean confirmedUnreferenced() {
+            return REFERENCED_BY_NONE.equals(referencedBy) && reason != null && !reason.isBlank();
+        }
+    }
+
+    /** [ADR-0029 L4 D2] 물리 FK 없는 참조 하나 — 이 표의 {@code columns} 가 {@code parent} 표의 {@code parentColumns} 를 가리킨다. */
+    public record VerifyReference(List<String> columns, String parent, List<String> parentColumns) {
+
+        public VerifyReference {
+            columns = columns == null ? List.of() : Collections.unmodifiableList(new ArrayList<>(columns));
+            parentColumns = parentColumns == null ? List.of()
+                    : Collections.unmodifiableList(new ArrayList<>(parentColumns));
         }
     }
 

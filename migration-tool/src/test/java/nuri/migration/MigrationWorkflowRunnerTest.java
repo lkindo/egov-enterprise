@@ -49,6 +49,7 @@ import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ValidationResult;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
+import nuri.migration.verify.ReconciliationRun;
 import nuri.migration.workflow.WorkflowReviewLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -191,8 +192,9 @@ class MigrationWorkflowRunnerTest {
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of()));
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
                 nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class),
-                anyBoolean())).willReturn(results);
-        given(verifier.verify(eq(mapping), eq(results), nullable(JdbcTemplate.class), any(ArchiveOutcome.class)))
+                anyBoolean(), any(ReconciliationRun.class))).willReturn(results);
+        given(verifier.verify(eq(mapping), eq(results), nullable(JdbcTemplate.class), any(ArchiveOutcome.class),
+                any(ReconciliationRun.class)))
                 .willReturn(new MigrationReport(List.of(), MigrationReport.Status.PASS));
 
         runner = new MigrationWorkflowRunner(
@@ -345,7 +347,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("source endpoint");
         verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
         verify(sourceEndpoints, never()).open(any(), anyList(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -451,7 +453,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("target standard contract validation 실패")
                 .hasMessageContaining("public.tb_user_info.user_id");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -503,7 +505,7 @@ class MigrationWorkflowRunnerTest {
                 "--ack-source-freeze")))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("scope");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -588,13 +590,13 @@ class MigrationWorkflowRunnerTest {
         verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), any());
         verify(executor).execute(
                 eq(mapping), eq(MigrationMode.DRY_RUN), eq(sourceJdbc), isNull(), eq(readSessionPolicy), eq(true),
-                eq(Map.of()), argThat(archives -> !archives.writesFiles()), eq(false));
+                eq(Map.of()), argThat(archives -> !archives.writesFiles()), eq(false), any(ReconciliationRun.class));
         verify(validator, never()).validateLiveTarget(any(), any());
         InOrder lifetime = inOrder(sourceEndpoint, executor);
         lifetime.verify(sourceEndpoint).jdbc();
         lifetime.verify(executor).execute(
                 eq(mapping), eq(MigrationMode.DRY_RUN), eq(sourceJdbc), isNull(), eq(readSessionPolicy), eq(true),
-                eq(Map.of()), argThat(archives -> !archives.writesFiles()), eq(false));
+                eq(Map.of()), argThat(archives -> !archives.writesFiles()), eq(false), any(ReconciliationRun.class));
         lifetime.verify(sourceEndpoint).close();
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("plan.json.load-"))
@@ -612,7 +614,7 @@ class MigrationWorkflowRunnerTest {
         writeApprovedArtifacts(inventory, plan, snapshot, mapping);
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
                 nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class),
-                anyBoolean()))
+                anyBoolean(), any(ReconciliationRun.class)))
                 .willThrow(new IllegalStateException("sentinel-source-password"));
         assertThatThrownBy(() -> load(inventory, plan)).isInstanceOf(MigrationExecutionException.class);
         try (var entries = Files.list(temp)) {
@@ -631,7 +633,8 @@ class MigrationWorkflowRunnerTest {
         writeApprovedArtifacts(inventory, plan, snapshot, mapping);
         String note = "오류 1건 — 첫 오류: 행 변환 실패(legacy.legacy_user, column=user_id, row=7): "
                 + "ROW_TRANSFORM_FAILED:CODEMAP_UNMAPPED — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
-        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class), any(ArchiveOutcome.class))).willReturn(new MigrationReport(List.of(
+        given(verifier.verify(eq(mapping), any(), nullable(JdbcTemplate.class), any(ArchiveOutcome.class),
+                any(ReconciliationRun.class))).willReturn(new MigrationReport(List.of(
                 new MigrationReport.TableReport("legacy.passed", "public.passed", 1, 1, 0, 0, -1,
                         MigrationReport.Status.PASS, ""),
                 new MigrationReport.TableReport("legacy.legacy_user", "public.tb_user_info", 7, 6, 0, 1, -1,
@@ -698,7 +701,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("exact");
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -715,7 +718,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("unsupported");
 
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -766,7 +769,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("target schema");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -783,7 +786,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("driver evidence");
 
         verify(sourceDataSource, never()).getConnection();
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
         verify(sourceEndpoint).close();
     }
 
@@ -830,7 +833,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("execution contract");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -866,7 +869,8 @@ class MigrationWorkflowRunnerTest {
         verify(validator).validateLiveTarget(mapping, targetJdbc);
         verify(executor).execute(
                 eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc), eq(readSessionPolicy),
-                eq(true), eq(guards), argThat(archives -> !archives.writesFiles()), eq(false));
+                eq(true), eq(guards), argThat(archives -> !archives.writesFiles()), eq(false),
+                any(ReconciliationRun.class));
     }
 
     @Test
@@ -884,7 +888,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> loadCommit(inventory, plan, true, "postgresql-pg-catalog"))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("--ack-control-schema-upgrade", "CONTROL_SCHEMA_UPGRADE_UNACKNOWLEDGED");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
         try (var entries = Files.list(temp)) {
             assertThat(entries.map(path -> path.getFileName().toString()))
                     .noneMatch(name -> name.startsWith("upgrade-plan.json.load-"));
@@ -895,7 +899,7 @@ class MigrationWorkflowRunnerTest {
                 "--ack-control-schema-upgrade"));
 
         verify(executor).execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
-                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(true));
+                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(true), any(ReconciliationRun.class));
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("upgrade-plan.json.load-"))
                     .findFirst().orElseThrow();
@@ -919,7 +923,7 @@ class MigrationWorkflowRunnerTest {
         loadCommit(inventory, plan, true, "postgresql-pg-catalog");
 
         verify(executor).execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
-                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false));
+                eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false), any(ReconciliationRun.class));
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("fresh-plan.json.load-"))
                     .findFirst().orElseThrow();
@@ -953,7 +957,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessage("보관 디렉터리는 mapping·plan·원장·inventory 파일이 있는 디렉터리나 그 아래에 둘 수 없습니다"
                         + " — 원시 값 덤프가 승인 산출물과 섞입니다");
         verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
 
         // 보관 선언 없이 isolate 만 있어도 격리 행의 키를 반출하므로 같은 게이트다.
         TableMapping user = unbound.tables().getFirst();
@@ -969,7 +973,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessage("commit 에서 보관 선언(archives)이나 격리(isolate)가 있으면 --archive-dir 가 필요합니다 — 덤프·격리"
                         + " 키 없이 적재하지 않습니다.");
         verify(sourceEndpoints, never()).open(any(), anyList(), nullable(String.class));
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -985,7 +989,8 @@ class MigrationWorkflowRunnerTest {
             writeApprovedArtifacts(inventory, plan, snapshot, mapping);
             List<String> midRun = new java.util.ArrayList<>();
             given(executor.execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
-                    eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false))).willAnswer(invocation -> {
+                    eq(readSessionPolicy), eq(true), any(), any(ArchiveRun.class), eq(false),
+                    any(ReconciliationRun.class))).willAnswer(invocation -> {
                         ArchiveRun archives = invocation.getArgument(7);
                         try (ArchiveRun.TableArchive table = archives.mappedTable(mapping, mapping.tables().getFirst())) {
                             table.isolated(Map.of("user_id", "u1"), 1, List.of(
@@ -1041,8 +1046,10 @@ class MigrationWorkflowRunnerTest {
                     "--ack-adapter=postgresql-pg-catalog", "--archive-dir=" + dumps)))
                     .doesNotThrowAnyException();
             verify(executor).execute(eq(mapping), eq(MigrationMode.COMMIT), eq(sourceJdbc), eq(targetJdbc),
-                    eq(readSessionPolicy), eq(true), any(), argThat(ArchiveRun::writesFiles), eq(false));
-            verify(verifier).verify(eq(mapping), any(), eq(targetJdbc), argThat(ArchiveOutcome::writesFiles));
+                    eq(readSessionPolicy), eq(true), any(), argThat(ArchiveRun::writesFiles), eq(false),
+                    any(ReconciliationRun.class));
+            verify(verifier).verify(eq(mapping), any(), eq(targetJdbc), argThat(ArchiveOutcome::writesFiles),
+                    any(ReconciliationRun.class));
         } finally {
             Files.deleteIfExists(dumps);
         }
@@ -1194,6 +1201,69 @@ class MigrationWorkflowRunnerTest {
         verify(targetConnection, org.mockito.Mockito.atLeastOnce()).setReadOnly(true);
     }
 
+    /**
+     * [ADR-0029 L4 D7, DEC-OPS-325] 쓰기 검증 공통코드 컬럼을 codemap 없이 채우는 mapping 은 plan 이 원장 검증과 같은 읽기 전용
+     * 연결에서 그룹을 읽어 멈춘다. 그룹 읽기 오류는 SQLSTATE 만 밝힌다.
+     */
+    @Test
+    void aValidatedCodeColumnWithoutACodemapStopsThePlanAtTheCodeGate() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("code-plan.json");
+        files.writeAtomic(inventory, inventoryArtifact(snapshot));
+        MappingSpec approval = new MappingSpec(unbound.source(), unbound.target(), List.of(new TableMapping(
+                "legacy.legacy_user", "public.tb_ifml_atrz_info", null, "USER_ID", "task_se_cd",
+                List.of(new ColumnMapping("USER_ID", "task_se_cd", null, null, null, null, null)), null)),
+                Map.of(), unbound.run());
+        MappingSpec bound = bind(approval, LedgerFixtures.nonStandard(List.of(LedgerFixtures.row(
+                "legacy.legacy_user", "USER_ID", "public.tb_ifml_atrz_info", "task_se_cd"))));
+        stub(bound);
+        List<String> reads = new java.util.ArrayList<>();
+        runner.codeGroupReaderForTesting((connection, schema, groups) -> {
+            reads.add(schema + groups);
+            return Map.of("COM075", new nuri.migration.validate.CodeGroupState(true, Set.of("A01"), Set.of()));
+        });
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessageStartingWith("용어 매핑 원장 검증 실패로 중단했습니다:")
+                .hasMessageContaining("public.tb_ifml_atrz_info.task_se_cd: 쓰기 검증하는 공통코드 컬럼(COM075)은"
+                        + " codemap(미매핑 그대로 쓰기 아님)이나 상수로 채웁니다(VALIDATE_BINDING_CODEMAP_REQUIRED)");
+        assertThat(plan).doesNotExist();
+        assertThat(reads).containsExactly("public[COM075]");
+
+        runner.codeGroupReaderForTesting((connection, schema, groups) -> {
+            throw new SQLException("permission denied for table tb_com_cd sentinel-value", "42501");
+        });
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=plan", "--mapping=" + mappingPath, "--inventory=" + inventory, "--plan=" + plan)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("공통코드 표를 읽지 못했습니다(SQLSTATE=42501) — 이관 역할에 tb_com_cd·tb_com_dtl_cd SELECT 가"
+                        + " 필요합니다");
+        assertThat(plan).doesNotExist();
+    }
+
+    /** [ADR-0029 L4 D2·D7] load 는 실행기와 verifier 에 같은 활성 대사를 넘긴다. dry-run 은 대상 질의가 없다. */
+    @Test
+    void loadHandsTheSameActiveReconciliationToTheExecutorAndTheVerifier() throws Exception {
+        Path inventory = temp.resolve("inventory.json");
+        Path plan = temp.resolve("plan.json");
+        writeApprovedArtifacts(inventory, plan, snapshot, mapping);
+
+        load(inventory, plan);
+
+        ArgumentCaptor<ReconciliationRun> executed = ArgumentCaptor.forClass(ReconciliationRun.class);
+        ArgumentCaptor<ReconciliationRun> verified = ArgumentCaptor.forClass(ReconciliationRun.class);
+        verify(executor).execute(eq(mapping), eq(MigrationMode.DRY_RUN), eq(sourceJdbc), isNull(),
+                eq(readSessionPolicy), eq(true), eq(Map.of()), any(ArchiveRun.class), eq(false), executed.capture());
+        verify(verifier).verify(eq(mapping), any(), isNull(), any(ArchiveOutcome.class), verified.capture());
+        assertThat(verified.getValue()).isSameAs(executed.getValue());
+        assertThat(executed.getValue().active()).isTrue();
+        assertThat(executed.getValue().queries()).as("dry-run 은 대상 질의가 없다").isNull();
+        assertThat(executed.getValue().plan().mapping("legacy.legacy_user").target())
+                .isEqualTo("public.tb_user_info");
+    }
+
     @Test
     void aMappingWithoutALedgerStopsThePlanAndTheLoadAtTheGate() throws Exception {
         Path inventory = temp.resolve("unbound-inventory.json");
@@ -1212,7 +1282,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessage("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -1299,7 +1369,7 @@ class MigrationWorkflowRunnerTest {
         given(fingerprinter.fingerprintBound(targetConnection, spec, Set.of("public"))).willReturn(targetFingerprint);
         given(executor.execute(eq(spec), any(MigrationMode.class), eq(sourceJdbc),
                 nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any(), any(ArchiveRun.class),
-                anyBoolean())).willReturn(List.of(
+                anyBoolean(), any(ReconciliationRun.class))).willReturn(List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of())));
     }
 

@@ -176,6 +176,8 @@ public class MappingValidator {
             }
         }
         validateIsolation(spec, errors);
+        // [ADR-0029 L4 D2] 대사 선언(verify)의 형식과 P3 — 격리하는 보존 키 표는 참조 선언이나 '참조 없음' 확인이 필요하다.
+        errors.addAll(VerifyReferenceRules.violations(spec));
         validateArchives(spec, errors);
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
         // 온라인 앱이 암호화해 저장하는 컬럼은 encrypt 선언이 같아야 한다(DEC-OPS-308). 문구는 테이블·컬럼 이름만 담는다.
@@ -873,7 +875,15 @@ public class MappingValidator {
      */
     public ValidationResult validateTargetStandard(MappingSpec spec, TargetSchemaFingerprint target,
                                                    CatalogSnapshot inventory) {
-        return new TargetStandardValidator(transformers::isBuiltin).validate(spec, target, inventory);
+        ValidationResult standard = new TargetStandardValidator(transformers::isBuiltin).validate(spec, target, inventory);
+        // [ADR-0029 L4 D2] 대사 선언의 자식·부모 컬럼이 승인 fingerprint 에 있고 짝의 타입 계열이 같은지도 본다.
+        List<String> references = VerifyReferenceRules.liveViolations(spec, target);
+        if (references.isEmpty()) {
+            return standard;
+        }
+        List<String> errors = new ArrayList<>(standard.errors());
+        errors.addAll(references);
+        return new ValidationResult(errors, standard.warnings());
     }
 
     /**

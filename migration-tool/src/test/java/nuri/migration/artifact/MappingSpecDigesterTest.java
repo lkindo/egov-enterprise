@@ -1,5 +1,6 @@
 package nuri.migration.artifact;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.model.MappingSpec;
@@ -120,6 +121,42 @@ class MappingSpecDigesterTest {
                 "legacy_child_20311231", "legacy_child", null, List.of(), List.of("ETC1", "ETC2"), List.of("U7", "U9"),
                 "2031-12-31")))).as("보관 컬럼을 더하면 다시 승인해야 한다")
                 .isNotEqualTo(MappingSpecDigester.sha256(archived));
+    }
+
+    @Test
+    void bindsVerifyDeclarationsWhileAMappingWithoutThemKeepsItsPreviousDigest() {
+        // [ADR-0029 L4 D2] verify 가 없으면 표 매핑은 verify 도입 전 칸(같은 이름·같은 생략 규칙)과 같은 바이트다.
+        MappingSpec baseline = spec(null, null, new RunContext("run-a", "namespace-a"), "ACTIVE");
+        TableMapping table = baseline.tables().getFirst();
+        assertThat(CanonicalArtifactDigest.sha256(table)).isEqualTo(CanonicalArtifactDigest.sha256(new PreVerifyTable(
+                table.source(), table.target(), table.where(), table.orderBy(), table.orderByKeys(), table.targetKey(),
+                table.columns(), table.idStrategy(), table.identity(), table.foreignKeys(), table.id(),
+                table.lookups())));
+
+        MappingSpec.VerifyDeclaration none = new MappingSpec.VerifyDeclaration(List.of(), "none", "업무 확인");
+        MappingSpec declared = withVerify(baseline, none);
+        assertThat(MappingSpecDigester.sha256(declared)).isNotEqualTo(MappingSpecDigester.sha256(baseline));
+        assertThat(MappingSpecDigester.sha256(withVerify(baseline, new MappingSpec.VerifyDeclaration(List.of(
+                new MappingSpec.VerifyReference(List.of("parent_id"), "public.tb_parent", List.of("parent_id"))),
+                null, null)))).as("참조 선언을 바꾸면 다시 승인해야 한다")
+                .isNotEqualTo(MappingSpecDigester.sha256(declared));
+        assertThat(MappingSpecDigester.sha256(withVerify(baseline, new MappingSpec.VerifyDeclaration(null, null, null))))
+                .as("내용 없는 verify 는 선언 없음이다").isEqualTo(MappingSpecDigester.sha256(baseline));
+    }
+
+    /** verify 도입 전 표 매핑의 칸 — canonical JSON 은 칸 이름 순이다. */
+    private record PreVerifyTable(String source, String target, String where, String orderBy, List<String> orderByKeys,
+                                  String targetKey, List<ColumnMapping> columns, MappingSpec.IdStrategy idStrategy,
+                                  IdentityStrategy identity, List<CompositeForeignKey> foreignKeys,
+                                  @JsonInclude(JsonInclude.Include.NON_NULL) String id,
+                                  @JsonInclude(JsonInclude.Include.NON_EMPTY) List<MappingSpec.Lookup> lookups) {}
+
+    private static MappingSpec withVerify(MappingSpec base, MappingSpec.VerifyDeclaration verify) {
+        TableMapping table = base.tables().getFirst();
+        return new MappingSpec(base.source(), base.target(), List.of(new TableMapping(table.source(), table.target(),
+                table.where(), table.orderBy(), table.orderByKeys(), table.targetKey(), table.columns(),
+                table.idStrategy(), table.identity(), table.foreignKeys(), table.id(), table.lookups(), verify)),
+                base.codemaps(), base.run(), base.ledger(), base.archives());
     }
 
     /** 보관 도입 전 MappingSpecDigester 의 material — canonical JSON 은 칸 이름 순이라 같은 칸이면 같은 바이트다. */

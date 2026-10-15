@@ -7,10 +7,17 @@ import java.util.List;
  *
  * <p>기존 stub(카운트 에코, {@code ok=errors==0})은 쓰기 유실·유령 기록을 성공으로 숨겼다(false-green).
  * 이제 {@link MigrationVerifier}가 타깃을 재조회해 실증 등급을 부여한다(오케스트레이션 §4 증거 기반 완료).
+ *
+ * <p>{@code reconciliation}(ADR-0029 L4 D2·D7)은 load 안 대사의 값 없는 판정 기록이다. 대사를 하지 않은 검증은 null 이다.
  */
-public record MigrationReport(List<TableReport> tables, Status overall) {
+public record MigrationReport(List<TableReport> tables, Status overall, ReconciliationEvidence reconciliation) {
 
     public enum Status { PASS, WARN, FAIL }
+
+    /** 대사 도입 전 생성자 호환 — 대사 기록이 없다. */
+    public MigrationReport(List<TableReport> tables, Status overall) {
+        this(tables, overall, null);
+    }
 
     /**
      * {@code mappingId} 는 한 소스를 나눈 매핑의 id 다(ADR-0029 L3c). 기본 매핑은 null 이다. {@code isolated} 는 원장이

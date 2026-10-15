@@ -125,7 +125,7 @@ class EtlApprovedExceptionPostgresIntegrationTest {
 
         String artifact = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
                 Instant.parse("2026-10-15T00:00:00Z"), report, results);
-        assertThat(artifact).contains("\"schemaVersion\":4", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
+        assertThat(artifact).contains("\"schemaVersion\":5", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
                 "\"violation\":\"PLACEHOLDER_DATE\"", "\"ordinals\":[10,600,1201]");
         assertThat(artifact).as("격리 증거에는 값·키가 없다").doesNotContain(PLACEHOLDER, "n10", "n600", "n1201");
     }

@@ -7,9 +7,24 @@ import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.etl.TargetSequenceSynchronizer.Action;
 import nuri.migration.etl.TargetSequenceSynchronizer.SequenceReset;
+import nuri.migration.model.MappingSpec;
 import nuri.migration.plan.MigrationPlan;
 import nuri.migration.plan.MigrationPlanValidator;
 import nuri.migration.plan.PlanCoverage;
+import nuri.migration.postgres.TargetStandardSnapshot;
+import nuri.migration.transform.CodeTranslator;
+import nuri.migration.transform.TransformerRegistry;
+import nuri.migration.verify.CodeSetReconciler;
+import nuri.migration.verify.ColumnCheck;
+import nuri.migration.verify.ColumnClassifier;
+import nuri.migration.verify.ColumnReplay;
+import nuri.migration.verify.ReconciliationEvidence;
+import nuri.migration.verify.ReconciliationJudge;
+import nuri.migration.verify.ReconciliationPlan;
+import nuri.migration.verify.ReconciliationRun;
+import nuri.migration.verify.ReconciliationVerdict;
+import nuri.migration.verify.SourceAggregates;
+import nuri.migration.verify.TargetTally;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -135,7 +150,7 @@ class MigrationExecutionArtifactSequenceResetTest {
                 Instant.parse("2026-10-15T00:00:00Z"), null, List.of(), outcome);
 
         MigrationExecutionArtifact artifact = new ObjectMapper().readValue(json, MigrationExecutionArtifact.class);
-        assertThat(artifact.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
+        assertThat(artifact.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(5);
         assertThat(artifact.archives()).extracting(MigrationExecutionArtifact.ArchiveRecord::file)
                 .containsExactly("archive-user.jsonl", "archive-log.jsonl");
         assertThat(artifact.archives().getFirst().personalData()).containsExactly(
@@ -175,11 +190,92 @@ class MigrationExecutionArtifactSequenceResetTest {
 
         MigrationExecutionArtifact read = new ObjectMapper().readValue(formatThree, MigrationExecutionArtifact.class);
 
-        assertThat(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
+        assertThat(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(5);
         assertThat(read.schemaVersion()).isEqualTo(3);
         assertThat(read.tables()).singleElement().satisfies(table -> assertThat(table.mapping()).isNull());
         assertThat(read.controlSchema()).isNull();
         assertThat(read.lookupMisses()).isEmpty();
+        assertThat(read.reconciliation()).isNull();
+    }
+
+    /** 형식 5(ADR-0029 L4 D2·D7)는 형식 4 증거도 읽는다 — 대사 기록이 없고 그 값은 null 이다. */
+    @Test
+    void formatFiveStillReadsAFormatFourEvidence() throws Exception {
+        String formatFour = "{\"schemaVersion\":4,\"planDigest\":\"a\",\"mappingDigest\":\"b\",\"targetDigest\":\"c\","
+                + "\"mode\":\"COMMIT\",\"status\":\"PASS\",\"startedAt\":\"2026-10-15T00:00:00Z\",\"updatedAt\":\"2026-10-15T00:00:01Z\","
+                + "\"tables\":[{\"source\":\"legacy_user\",\"target\":\"tb_user\",\"read\":2,\"written\":2,\"errors\":0,"
+                + "\"targetRows\":2,\"status\":\"PASS\",\"isolated\":0,\"mapping\":\"addr\"}],\"sequenceResets\":[],\"nullified\":[],"
+                + "\"isolations\":[],\"archives\":[],\"isolatedKeyExports\":[],\"keymapRetention\":null,"
+                + "\"controlSchema\":{\"before\":\"1\",\"after\":\"2\"},"
+                + "\"lookupMisses\":[{\"source\":\"legacy_orders\",\"mapping\":\"orders\",\"lookup\":\"cust\",\"rows\":2}]}";
+
+        MigrationExecutionArtifact read = new ObjectMapper().readValue(formatFour, MigrationExecutionArtifact.class);
+
+        assertThat(read.schemaVersion()).isEqualTo(4);
+        assertThat(read.tables()).singleElement().satisfies(table -> assertThat(table.mapping()).isEqualTo("addr"));
+        assertThat(read.controlSchema()).isEqualTo(new MigrationExecutionArtifact.ControlSchemaRecord("1", "2"));
+        assertThat(read.reconciliation()).isNull();
+        assertThat(MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "STARTED",
+                Instant.parse("2026-10-15T00:00:00Z"), null)).as("대사를 하지 않은 실행은 싣지 않는다")
+                .doesNotContain("reconciliation");
+    }
+
+    /**
+     * [ADR-0029 L4 D2·D7] 대사 기록은 검사 이름·결과·건수·사유 코드만 싣는다. 원천 합·최소·최대와 codemap 의 원값·결과값은
+     * 판정에 쓰였어도 증거에 없다 — 판정 값은 직렬화하지 않는 홀더에만 있다.
+     */
+    @Test
+    void reconciliationEvidenceCarriesVerdictsAndCountsButNoValues() throws Exception {
+        MappingSpec.CodeMap codemap = MappingSpec.CodeMap.of(java.util.Map.of("probe-7f3a", "probe-out-9c1d"));
+        ColumnCheck amount = ColumnClassifier.classify(new ColumnClassifier.ColumnFacts("amt",
+                ColumnClassifier.Origin.SOURCE, "AMT", null, null, false, false, false, false,
+                new ColumnCheck.SourceColumnType(java.sql.Types.BIGINT, "int8", 19L, 0), null,
+                ColumnClassifier.TransformKind.NONE, null, false, null, false,
+                new TargetStandardSnapshot.ColumnContract("amt", 1, "bigint", null, 64, 0, true, false, null, false,
+                        null)));
+        ColumnCheck status = ColumnClassifier.classify(new ColumnClassifier.ColumnFacts("stts_cd",
+                ColumnClassifier.Origin.SOURCE, "STTS", null, null, false, false, false, false,
+                new ColumnCheck.SourceColumnType(java.sql.Types.VARCHAR, "varchar", 20L, 0), null,
+                ColumnClassifier.TransformKind.NONE, "status", false, null, false,
+                new TargetStandardSnapshot.ColumnContract("stts_cd", 2, "character varying", 20, null, null, true,
+                        false, null, false, null)));
+        ReconciliationPlan.MappingPlan mapping = new ReconciliationPlan.MappingPlan("legacy.t", "legacy.t", null, null,
+                "public.t", List.of(amount, status), List.of("amt"), true, false, false);
+        ReconciliationRun run = ReconciliationRun.of(new ReconciliationPlan(true, List.of(mapping), List.of(), null,
+                List.of(), List.of()), new ColumnReplay(new TransformerRegistry(), java.util.Map.of("status", codemap)),
+                null);
+        ReconciliationRun.AggregateGroup group = run.aggregateGroups().iterator().next();
+        SourceAggregates source = group.query().parse(new Object[]{2L, 2L, 2L,
+                new java.math.BigDecimal("918273645"), 1L, 918273644L}, true);
+        run.recordSource(group.key(), source);
+        for (int row = 0; row < 2; row++) {
+            run.table("legacy.t").codes(List.of(new ReconciliationRun.CodeHit("stts_cd", "status",
+                    CodeTranslator.translate(codemap, "probe-7f3a"))));
+        }
+        TargetTally target = run.targetTally("legacy.t");
+        target.observe(java.util.Map.of("amt", 1L, "stts_cd", "probe-out-9c1d"), "1");
+        target.observe(java.util.Map.of("amt", 918273644L, "stts_cd", "probe-out-9c1d"), "918273644");
+        ReconciliationJudge.MappingReconciliation judged = ReconciliationJudge.judge(mapping, source,
+                run.table("legacy.t"), target, new ReconciliationJudge.ExecutionTotals(2, 0, java.util.Map.of(),
+                        java.util.Map.of()), true);
+        assertThat(judged.status()).isEqualTo(ReconciliationVerdict.PASS);
+        var report = new nuri.migration.verify.MigrationReport(List.of(new nuri.migration.verify.MigrationReport.TableReport(
+                "legacy.t", "public.t", 2, 2, 2, 0, 2, nuri.migration.verify.MigrationReport.Status.PASS, "")),
+                nuri.migration.verify.MigrationReport.Status.PASS, new ReconciliationEvidence("ORIGIN",
+                List.of(ReconciliationEvidence.MappingRecord.of("legacy.t", null, "public.t", judged)), List.of(),
+                List.of(), List.of(), List.of(), CodeSetReconciler.codemapUse(run)));
+
+        String json = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
+                Instant.parse("2026-10-15T00:00:00Z"), report, List.of());
+
+        assertThat(json).contains("\"schemaVersion\":5", "\"reconciliation\":{\"replicationRole\":\"ORIGIN\"",
+                        "\"check\":\"SUM\",\"column\":\"amt\",\"status\":\"PASS\"",
+                        "\"check\":\"CODE_DISTRIBUTION\",\"column\":\"stts_cd\",\"status\":\"PASS\"",
+                        "\"codemapUse\":[{\"target\":\"public.t\",\"column\":\"stts_cd\",\"codemap\":\"status\",\"mapped\":2")
+                .doesNotContain("probe-7f3a", "probe-out-9c1d", "918273645", "918273644");
+        MigrationExecutionArtifact read = new ObjectMapper().readValue(json, MigrationExecutionArtifact.class);
+        assertThat(read.reconciliation().mappings()).singleElement()
+                .satisfies(record -> assertThat(record.status()).isEqualTo("PASS"));
     }
 
     private static MigrationPlan plan() {
