@@ -699,7 +699,7 @@ L4-C(load 안 대사·공통코드 대사·실행 JSON 형식 5)를 합친 뒤 �
 
 | 단계 | 결과 |
 |---|---|
-| discover | 소문자로 적은 사용자 이름으로는 통과한다. 같은 계정을 Oracle 이 저장한 꼴(대문자)로 적으면 inventory 의 owner(= schema = 사용자 이름)가 credential 검사에 걸려 inventory 를 쓰지 않고 멈춘다 — 아래 결함 절의 남은 한계이며 시험이 단언으로 고정한다 |
+| discover | 사용자 이름을 소문자로 적어도, Oracle 이 저장한 꼴(대문자)로 적어도 통과하고 두 inventory 의 객체가 같다. 종전에는 대문자로 적으면 inventory 의 owner(= schema = 사용자 이름)가 credential 검사에 걸려 멈췄다 — 아래 결함 절의 후속(DEC-OPS-326)으로 고쳤다 |
 | 원장 확정·mapping-generate | 시험이 검토자·업무담당 역할로 확정한다 — 분할 id 둘(`emp`: 대리키 `EMP_` 채번·조회 둘, `emp_ext`: 이메일·사진과 같은 원천을 fkRef 로 가리키는 대리키), 조회 경로(via) 둘, 덤프만 하는 표의 외부 보관 셋과 정렬 키 이관 제외, 조회 키 이관 제외. 표준 용어는 가입일(`ymd8` + nullify 8)·상태 코드(`trim` + codemap)뿐이고 나머지는 비표준 대상(U1)이다 — 변경 시각·비율은 변환 없이, 계약 날짜는 `type: date` 로 옮긴다. 만든 mapping 이 원장과 대응한다(coverage 0건) |
 | plan·review·validate | 조회만 하는 표 `LOOKUP_INPUT`, 덤프만 하는 표 `EXPORT_ONLY` 로 `commitReady=true` |
 | 공개 DRY_RUN | `PASS`, 두 매핑 각 1,200행 읽음·무쓰기, 부서 조회 짝 없음 2(`maxMissing` 2 안), 덤프할 행 400(파일 없음). 형식 5 대사는 두 매핑 모두 원천 행 수(`SOURCE_ROWS`)만 판정해 `PASS`, 쓰기 세션 검사는 `NOT_CHECKED` |
@@ -713,7 +713,9 @@ L4-C 가 확인하지 못한 것으로 남긴 Oracle 동작은 위 실측으로 
 
 **O2 가 찾은 결함 1 — 보관 id 에 실린 사용자 이름(L3e, main 코드).** 2026-10-16 첫 실행에서 공개 DRY_RUN 이 실행 증거를 쓰지 못하고 `database credential이 artifact에 포함될 수 없습니다` 로 멈췄다. 생성기가 보관 id 를 소문자 `schema_표_보존기한` 으로 만들었고, Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로(위 탐색 실측) 그 schema 가 곧 사용자 이름이다. 승인 workflow 의 credential 검사는 8자 이상 사용자 이름을 설정에 적은 그대로(대소문자 구분) 찾으므로, 사용자 이름을 소문자로 적은 설정에서 보관 기록의 id·덤프 파일 이름에 실린 소문자 사본이 걸렸다. 관측한 것은 공개 DRY_RUN 이다 — COMMIT 도 같은 증거 경로를 지나므로 같다고 본다(추론, Oracle 공개 COMMIT 은 `UNVERIFIED` 라 실행할 수 없다). 보관 id 를 표 이름(schema 제외)과 보존 기한으로 만들도록 고쳤다. 같은 이름의 표가 둘이면 종전대로 `_2` 를 붙인다. 이 규칙 전에 만든 mapping 을 다시 생성하면 보관 id 가 바뀌어 mapping digest 가 달라지므로 plan 부터 다시 승인한다.
 
-이 수정은 소문자 사본만 없앤다. owner(= 사용자) 이름은 schema 한정 원천 이름(`OWNER.표`)과 그 꼴로 시작하는 원장 행 id(64자 이하면 `OWNER.표.컬럼` 그대로)로 inventory·plan·mapping·실행 JSON(`tables[].source`·`lookupMisses[].source`·`reconciliation.mappings[].source`·`archives[].ledgerEntries`·`codeSets[].ledgerEntry`)에 남는다. 그래서 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적은 설정은 첫 산출물인 inventory 에서 credential 검사에 걸려 discover 부터 멈춘다 — O2 가 실측해 단언으로 고정했다. 8자 미만 이름은 단어 경계로 찾고 마침표는 경계이므로 길이와 상관없이 같다(코드 판독). schema 이름이 접속 사용자 이름과 같은 대소문자인 다른 vendor 원천도 같다(코드 판독, 실행하지 않았다). 검사가 schema 한정 이름과 자격을 가리게 할지는 판정 규칙을 바꾸는 결정이라 [GAP-MIG-001](../../.agent/memory/known-gaps.md) 에 남겼다 — 그때까지 Oracle 접속 설정의 사용자 이름은 소문자로 적는다.
+이 수정은 소문자 사본만 없앤다. owner(= 사용자) 이름은 schema 한정 원천 이름(`OWNER.표`)과 그 꼴로 시작하는 원장 행 id(64자 이하면 `OWNER.표.컬럼` 그대로)로 inventory·plan·mapping·실행 JSON(`tables[].source`·`lookupMisses[].source`·`reconciliation.mappings[].source`·`archives[].ledgerEntries`·`codeSets[].ledgerEntry`)에 남는다. 그래서 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적은 설정은 첫 산출물인 inventory 에서 credential 검사에 걸려 discover 부터 멈췄다 — O2 가 실측했다. 소문자로 적은 설정은 산출물에 같은 이름이 대문자로 남는데도 대소문자만 달라 통과했다. 8자 미만 이름은 단어 경계로 찾고 마침표는 경계이므로 길이와 상관없이 같다(코드 판독). schema 이름이 접속 사용자 이름과 같은 대소문자인 다른 vendor 원천도 같다(코드 판독, 실행하지 않았다).
+
+**후속(2026-10-16, DEC-OPS-326).** 원천 사용자 이름이 원천 schema 이름(inventory 의 discovery scope·객체 schema, term-suggest 는 프로파일의 표 schema)과 대소문자 없이 같으면, 그 이름은 산출물이 늘 싣는 schema 이름이라 사용자 이름 검사에서 뺀다. 비밀번호·URL·endpointId 와 대상 접속 정보는 그대로 막는다 — 비밀번호가 schema 이름과 같아도 멈춘다. 새로 드러나는 값은 없다. 종전에도 소문자 설정에서 같은 이름이 대문자로 산출물에 남았고, 검사는 대소문자만 달라 통과했을 뿐이다. 리허설은 대문자로 적은 설정의 discover 가 통과하고 inventory 의 객체가 소문자 설정과 같은지 본다. 산출물에 접속 계정 이름을 남기지 않으려면 owner 와 다른 읽기 전용 이관 계정으로 접속한다.
 
 **O2 가 찾은 결함 2 — 대사 분류의 사유 누락(L4-C 코드).** 분류기는 쓸 수 있는 검사를 판정하지 않을 때 사유를 남겨야 하는데(`ColumnClassifier` 계약) 두 경우를 사유 없이 뺐다. Oracle `DATE` 는 inventory 에 JDBC `TIMESTAMP` 로 와서, `type: date` 로 date 에 옮기면 최소·최대가 사유 없이 빠졌다 — O2 의 계약 날짜가 그 경우이고, 같은 옮김을 `DATE` 로 알리는 원천은 최소·최대를 판정한다. Oracle `BINARY_FLOAT`·`BINARY_DOUBLE`(드라이버 고유 JDBC 100·101)은 부동소수로 판정되지 않아 합·최소·최대가 `FLOAT` 사유 없이 빠졌다(코드 판독, 단위 시험만). 값은 그대로인데 날짜와 일시의 종류만 바꾸는 옮김은 최소·최대를 `UNSUPPORTED_VALUE_TYPE` 으로, 두 고유 타입은 `FLOAT` 으로 남기도록 고쳤다. nullify 컬럼의 표본 제외는 계약대로라 바꾸지 않았다.
 
@@ -736,7 +738,7 @@ O2 의 새 판정과 단언을 하나씩 되돌려 다시 돌렸다. 한 번에 
 | 날짜와 일시의 종류만 바뀌는 옮김의 사유를 뺌(결함 2) | 기본 매핑 `NOT_COVERED` 정확 목록(`contract_dt` 의 `MIN_MAX` 가 빠진다)과 `ColumnClassifierTest` |
 | Oracle 고유 부동소수 타입(100·101)을 부동소수에서 뺌(결함 2) | `ColumnClassifierTest` — 사유가 비고, 조회 컬럼의 합·최소·최대 사유도 빠진다(단위 시험만) |
 | 보관 id 에 schema 를 다시 넣음(결함 1) | 만든 mapping 의 사용자 이름 검사(schema 식별자 밖 1곳). `MappingGeneratorTest` 4건이 기대 id 에서 붉다 |
-| credential 검사가 사용자 이름을 보지 않게 | 대문자 사용자 이름 discover 의 거절 단언 — 예외가 나지 않는다 |
+| credential 검사가 사용자 이름을 보지 않게 | 대문자 사용자 이름 discover 의 거절 단언 — 예외가 나지 않는다(DEC-OPS-326 전의 단언. 지금은 통과를 단언한다) |
 
 2026-10-16 로컬에서 클래스 전체를 실행해 5건이 통과했다(첫 판: 실패·skip 0, 컨테이너 기동 포함 90.0초, O2 17.7초). 검토 반영 뒤 다시 실행해 5건이 통과했다(실패·skip 0, 컨테이너 기동 포함 72.0초, O2 16.0초). 같은 실행에서 generate·validate·verify·etl·jdbc·profile·suggest·artifact·lookup·archive 패키지와 `MigrationWorkflowRunnerTest`·`TermSuggestPostgresIntegrationTest` 를 함께 돌려 95클래스 980건이 실패 0 이었다(skip 3 — Windows 심볼릭 링크 2·POSIX 권한 1). O2 만 따로 돌리면 Gradle·컨테이너 기동 포함 62~68초였다. PIT `migration-standardize` 는 보관 id 수정 뒤 1,036 mutations·92% 다. 분류기를 고친 뒤 `migration-verify` PIT 는 돌리지 않았다 — L4-C 브랜치가 넓힌 범위의 시험 목록으로 다시 잰다. O2 로 이 클래스의 시간이 늘지만 이관 duration profile 의 이 클래스 값(88,875ms)은 고치지 않았다 — L4-C 병합 뒤 새 main 위로 O2 를 옮길 때 이 클래스를 포함해 profile 을 실측으로 다시 만든다(지금 `migration-verification-contract` 의 2건 red 는 L4-C 의 새 시험 클래스 16개가 profile 에 없어서다). CI 실행 기록은 아직 없다.
 

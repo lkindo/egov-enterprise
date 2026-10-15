@@ -759,8 +759,8 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
      * Oracle 원천 집계로 판정한다 — 정밀도 없는 NUMBER 합({@code SUM(col)}, 소수가 든 비율), 정밀도 있는 NUMBER 합
      * ({@code DECIMAL(38,s)}), DATE·TIMESTAMP(6)(R1) 최소·최대, {@code ''} 를 NULL 로 저장하는 Oracle 의 NULL 계정, 표본 재계산,
      * 날짜와 일시의 종류만 바꾸는 옮김의 판정 사유. 원천 집계 문장이 실패하면 같은 읽기 트랜잭션에서 COUNT 전용 문장으로 물러나는
-     * 길(Oracle 읽기 전용 트랜잭션의 savepoint)도 본다. 접속 사용자 이름을 대문자로 적은 설정이 discover 에서 멈추는 한계
-     * (GAP-MIG-001)도 고정한다.
+     * 길(Oracle 읽기 전용 트랜잭션의 savepoint)도 본다. 접속 사용자 이름을 Oracle 이 저장한 대문자로 적은 설정도 discover 를
+     * 통과하는지 본다(DEC-OPS-326).
      *
      * <p>공개 COMMIT 은 Oracle 이 {@code UNVERIFIED} 라 막힌다(위 O1 리허설이 본다). 증거 등급은 바꾸지 않는다. fixture 는 수천 행이라
      * ORA-01555(snapshot too old)는 재지 않는다 — 운영 규모 검증 몫이다. 값은 단언에만 쓰고 출력하지 않는다.</p>
@@ -777,13 +777,14 @@ class OracleStandardizationRehearsalIntegrationTest extends OraclePostgresTestSu
             assertThat(inventory.objects()).filteredOn(object -> object.kind() == ObjectKind.TABLE)
                     .extracting(CatalogObject::name)
                     .contains(r.sourceName(), o.deptName(), o.gradeName(), o.logName());
-            // 접속 설정의 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적으면 inventory 의 owner(= schema = 사용자 이름)가 승인
-            //   workflow 의 credential 검사에 걸려 discover 부터 멈춘다 — 검사가 schema 한정 이름과 자격을 가리지 않는다
-            //   (GAP-MIG-001). 이 단언은 그 한계를 고정한다. 검사 규칙을 바꾸면 붉어져 문서·gap 을 함께 고치게 한다.
+            // 접속 설정의 사용자 이름을 Oracle 이 저장한 꼴(대문자)로 적어도 discover 가 통과한다(DEC-OPS-326) — 원천 사용자
+            //   이름이 원천 schema(owner) 이름과 대소문자 없이 같으면 산출물이 늘 싣는 schema 이름으로 보고 사용자 이름
+            //   검사에서 뺀다. 같은 원천이므로 inventory 의 객체도 같다. 비밀번호·URL·endpointId 는 그대로 막는다(러너 단위 시험).
             Rehearsal upperUser = withSourceUser(r, sourceConfig().username().toUpperCase(Locale.ROOT));
-            assertThatThrownBy(() -> upperUser.command("discover")).isInstanceOf(MigrationExecutionException.class)
-                    .hasMessageContaining("database credential이 artifact에 포함될 수 없습니다");
-            assertThat(upperUser.inventory()).doesNotExist();
+            upperUser.command("discover");
+            assertThat(inventories.readEnvelope(Files.readString(upperUser.inventory())).payload().toSnapshot()
+                    .objects()).extracting(CatalogObject::stableId)
+                    .containsExactlyInAnyOrderElementsOf(inventory.objects().stream().map(CatalogObject::stableId).toList());
             r.command("profile", "--profile=" + r.profile());
             r.command("term-suggest", "--profile=" + r.profile(), "--suggestions=" + r.suggestions(),
                     "--ledger-draft=" + r.draft());

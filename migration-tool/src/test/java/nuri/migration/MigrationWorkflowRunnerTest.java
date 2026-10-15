@@ -235,6 +235,45 @@ class MigrationWorkflowRunnerTest {
     }
 
     @Test
+    void aSourceUsernameThatNamesASourceSchemaIsNotACredentialButAPasswordThatDoesStillIs() throws Exception {
+        // [GAP-MIG-001, DEC-OPS-326] Oracle 처럼 owner 가 곧 접속 사용자면 schema 한정 이름이 사용자 이름을 담는다. 원천
+        //   사용자 이름이 원천 schema 이름과 같으면 사용자 이름 검사에서 뺀다. 비밀번호는 schema 이름과 같아도 막는다.
+        DbConfig source = mapping.source();
+        DbConfig owner = new DbConfig(source.url(), "legacy", source.password(), source.driver(), source.endpointId());
+        MappingSpec ownerMapping = new MappingSpec(owner, mapping.target(), mapping.tables(), Map.of(), mapping.run());
+        given(loader.loadContent(any(String.class))).willReturn(ownerMapping);
+        given(sourceEndpoints.open(eq(owner), anyList(), nullable(String.class))).willReturn(sourceEndpoint);
+        Path inventory = temp.resolve("owner-inventory.json");
+
+        runner.run(args("--command=discover", "--mapping=" + mappingPath, "--inventory=" + inventory));
+
+        assertThat(files.readUtf8(inventory)).contains("\"legacy\"");
+
+        DbConfig leakingPassword = new DbConfig(
+                source.url(), source.username(), "legacy", source.driver(), source.endpointId());
+        given(loader.loadContent(any(String.class))).willReturn(
+                new MappingSpec(leakingPassword, mapping.target(), mapping.tables(), Map.of(), mapping.run()));
+        given(sourceEndpoints.open(eq(leakingPassword), anyList(), nullable(String.class))).willReturn(sourceEndpoint);
+        Path refused = temp.resolve("password-inventory.json");
+
+        assertThatThrownBy(() -> runner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + refused)))
+                .isInstanceOf(MigrationExecutionException.class)
+                .hasMessage("database credential이 artifact에 포함될 수 없습니다.");
+        assertThat(refused).doesNotExist();
+    }
+
+    @Test
+    void anOwnerSchemaMatchIgnoresCaseButNeedsTheWholeName() {
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema("LEGACY", Set.of("legacy"))).isTrue();
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema("legacy", Set.of("archive", "LEGACY"))).isTrue();
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema("legacy_ro", Set.of("legacy"))).isFalse();
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema("legacy", Set.of())).isFalse();
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema(" ", Set.of(" "))).isFalse();
+        assertThat(MigrationWorkflowRunner.namesOwnerSchema(null, Set.of("legacy"))).isFalse();
+    }
+
+    @Test
     void discoverLoadsEndpointBindingsFromRealYamlAndWritesInventory() throws Exception {
         MappingLoader realLoader = new MappingLoader(Map.of(
                 "SOURCE_DB_URL", mapping.source().url(),
