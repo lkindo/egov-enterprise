@@ -335,12 +335,12 @@ mapping 이 대상 키 값을 넣는 `preserve`·`remap`이나 직접 컬럼 매
 
 ```yaml
 archives:
-  - id: legacy_user_mst_20311231
+  - id: user_mst_20311231
     source: legacy.user_mst          # 매핑된 표 — 그 매핑의 where·정렬 키를 그대로 쓴다(따로 두면 오류)
     columns: [ETC1, RMRK2]
     ledgerEntries: [U7, U8]          # columns 와 같은 순서의 원장 외부 보관 행 ID
     retainUntil: 2031-12-31
-  - id: legacy_log_20291231
+  - id: access_log_20291231
     source: legacy.access_log        # 덤프만 하는 표 — review 에서 EXPORT_ONLY 로 결정한다
     orderByKeys: [LOG_NO]            # 필수, 유일해야 한다
     where: "log_dt >= '2020-01-01'"  # 선택, 단일 읽기 조건식
@@ -349,7 +349,7 @@ archives:
     retainUntil: 2029-12-31
 ```
 
-- **선언**: mapping-generate 가 원장 외부 보관 행을 (소스 표, 보존 기한)마다 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다. 선언은 mapping digest 에 들어간다(없으면 digest 가 그대로다). 보관만 있고 표 매핑이 없는 mapping, 같은 id·같은 컬럼·같은 원장 행의 중복, 암호화 대상(`encrypt`)의 소스 컬럼 보관은 mapping 검증이 거부한다.
+- **선언**: mapping-generate 가 원장 외부 보관 행을 (소스 표, 보존 기한)마다 묶어 만든다 — 보존 기한이 다른 행은 같은 덤프에 섞지 않는다. id 는 표 이름(schema 제외)과 보존 기한이다 — schema 는 `source` 에 있다. Oracle 은 로그인 사용자가 schema 소유자여야 가시성을 증명하므로, 소문자로 바꾼 schema 를 id 에 넣으면 사용자 이름을 소문자로 적은 접속 설정에서 그 사본이 실행 증거(보관 기록의 id·덤프 파일 이름)에 실려 credential 검사가 증거 쓰기를 막았다(2026-10-16 O2 리허설의 공개 DRY_RUN 실측). 이 규칙은 소문자 사본만 없앤다 — owner(= 사용자) 이름은 schema 한정 원천 이름으로 모든 산출물에 남고, 사용자 이름을 대문자로 적은 설정은 discover 부터 같은 검사에 멈춘다(GAP-MIG-001). 선언은 mapping digest 에 들어간다(없으면 digest 가 그대로다). 이 규칙 전에 만든 mapping 을 다시 생성하면 보관 id 가 바뀌어 mapping digest 가 달라지므로 plan 부터 다시 승인한다. 보관만 있고 표 매핑이 없는 mapping, 같은 id·같은 컬럼·같은 원장 행의 중복, 암호화 대상(`encrypt`)의 소스 컬럼 보관은 mapping 검증이 거부한다.
 - **실행 조건**: commit 에 보관 선언이나 `isolate` 가 있으면 `--archive-dir` 가 필요하다(adoption-execute descriptor 의 `archiveDir` — commit 에서만, 저장소 밖의 정규화한 절대 경로). load 는 시작 전에 디렉터리가 절대 경로이고, 경로 어디에도 링크가 없으며(실제 경로와 다르면 거부), mapping·plan·원장·inventory 파일의 디렉터리와 그 아래가 아니고, 그 위 어디에도 `.git` 이 없고, POSIX 에서 다른 사용자(기타)가 쓸 수 없으며, 강제로 끝난 이전 실행이 남긴 임시 파일·빈 예약이 없는지 본다([ArchiveLocationGuard](../../migration-tool/src/main/java/nuri/migration/archive/ArchiveLocationGuard.java)). dry-run 은 파일을 쓰지 않고 덤프할 행 수와 개인정보 모양 수만 센다 — 쓸 수 없는 값 종류는 commit 과 같은 사유로 멈춘다.
 - **매핑된 표**: 보관 컬럼을 적재와 같은 SELECT 에 더하고, 읽은 행을 모두 쓴다 — 재개로 건너뛴 행과 격리한 행도 들어간다. 한 소스를 여러 매핑이 나눠 읽으면(L3c) 보관 컬럼은 keymap 소유 매핑의 읽기에, 소유 매핑이 없으면 id 를 생략한 매핑의 읽기에 붙고 덤프 행 수는 그 매핑의 조회 수와 맞춘다. 둘 다 없으면 mapping 검증이 거부한다. 덤프는 그 매핑의 where 로 걸러진 행만 담으므로 그 매핑에 where 가 없거나 그 소스의 모든 매핑이 같은 where(앞뒤 공백만 무시한 같은 글자)를 써야 한다 — where 로 나눈 다른 매핑이 적재한 행의 보관 값이 빠지기 때문이다. 아니면 mapping 검증·mapping-generate·load 가 거부하고 verify 도 FAIL 이다. 조회만 하는 표(L3d)를 보관하면 덤프만 하는 표로 읽고, 그 처분은 `LOOKUP_INPUT` 이다(`EXPORT_ONLY` 를 따로 요구하지 않는다). 적재·checkpoint 판정은 표 매핑의 컬럼만 쓰므로 더한 컬럼이 그 의미를 바꾸지 않는다.
 - **덤프만 하는 표**: 매핑된 표를 모두 마친 뒤 같은 읽기 세션에서 정렬 키 keyset 으로 읽는다. 정렬 키가 NULL 인 행이 없고 정렬 키가 유일한지 어느 모드든 행을 읽거나 쓰기 전에 증명하고, 증명하지 못하면 적재를 시작하지 않는다(`ORDER_KEY_NULL`·`ORDER_TUPLE_UNIQUENESS_UNPROVEN`). keyset 의 다음 page 조건(`>`·`=`)은 NULL 을 다시 읽지 못해, NULL 을 뒤로 정렬하는 원천(PostgreSQL·Oracle)에서는 첫 page 밖의 NULL 키 행이 조용히 빠지고 읽은 행으로 센 수끼리의 대조도 그 손실을 보지 못하기 때문이다. 매핑된 표도 정렬 키가 있으면 어느 모드든 같은 NULL 검사를 먼저 받는다(`이관 실패(<표>): ORDER_KEY_NULL`). 앞 표에서 run 이 멈췄으면 읽지 않는다.
