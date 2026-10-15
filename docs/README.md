@@ -119,6 +119,7 @@
 | [cicd-pipeline.md](03-guides/cicd-pipeline.md) | CI/CD 파이프라인 |
 | [api-documentation-guide.md](03-guides/api-documentation-guide.md) | API 설계·문서화 (OpenAPI) |
 | [db-standardization-manual.md](03-guides/db-standardization-manual.md) | DB 표준화·거버넌스 매뉴얼 |
+| [legacy-non-data-migration-guide.md](03-guides/legacy-non-data-migration-guide.md) | 레거시 이관의 권한·메뉴·첨부·시퀀스·공통코드·암호 컬럼 등 비데이터 객체 처리 절차 |
 | [identity-model-guide.md](03-guides/identity-model-guide.md) | 정체성 모델 사용 규약 |
 | [security-hardening-playbook.md](03-guides/security-hardening-playbook.md) | 보안 강화·인증 플레이북 |
 | [cross-cutting-conventions.md](03-guides/cross-cutting-conventions.md) | 횡단관심사 관례 |
