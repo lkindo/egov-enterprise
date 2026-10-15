@@ -1,6 +1,7 @@
 package nuri.migration.verify;
 
 import nuri.migration.etl.EtlExecutor.TableResult;
+import nuri.migration.isolate.IsolationTally;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
@@ -277,6 +278,133 @@ class MigrationVerifierTest {
             assertThat(missing.tables().get(0).note()).contains("cardinality/identity");
             assertThat(wrongTarget.overall()).isEqualTo(Status.FAIL);
             assertThat(wrongTarget.tables().get(0).note()).contains("src_tbl -> tgt_tbl", "other_tgt");
+        }
+    }
+
+    /**
+     * [ADR-0029 L3b] 승인 격리. 격리한 행은 적재하지 않았을 뿐 읽은 행이다 — 조회 = 변환 + 격리여야 PASS 이고, 격리 집계는
+     * mapping 의 isolate 선언(원장 행·컬럼·위반, 원장 행마다 상한)과 맞아야 한다. 기록 = 변환은 그대로다.
+     */
+    @Nested
+    @DisplayName("승인 행 격리")
+    class ApprovedIsolation {
+
+        private static final IsolationTally.Isolation TWO_PLACEHOLDERS =
+                new IsolationTally.Isolation("U4", "end_ymd", "PLACEHOLDER_DATE", 2, List.of(3L, 7L));
+
+        private static MappingSpec isolating(long maxRows, String... violations) {
+            MappingSpec.ColumnMapping endYmd = new MappingSpec.ColumnMapping("END_YMD", "end_ymd", "ymd8", null, null,
+                    null, null, null, List.of(), new MappingSpec.Isolate("U4", maxRows, List.of(violations)));
+            MappingSpec.TableMapping table = new MappingSpec.TableMapping("src_tbl", "tgt_tbl", null, "ID", "id",
+                    List.of(endYmd), null);
+            return new MappingSpec(null, null, List.of(table), Map.of());
+        }
+
+        private static TableResult isolated(long read, long transformed, long written, long isolated,
+                                            IsolationTally.Isolation... groups) {
+            return new TableResult("src_tbl", "tgt_tbl", read, transformed, written, List.of(), List.of(), Map.of(),
+                    isolated, List.of(groups));
+        }
+
+        @Test
+        @DisplayName("조회 = 변환 + 격리이고 격리가 선언 안이면 PASS 다(commit·dry-run)")
+        void readEqualsTransformedPlusIsolatedPasses() {
+            MappingSpec spec = isolating(3, "PLACEHOLDER_DATE");
+            TableResult result = isolated(10, 8, 8, 2, TWO_PLACEHOLDERS);
+
+            MigrationReport commit = verifier.verify(spec, List.of(result), targetWithRows(8));
+            MigrationReport dryRun = verifier.verify(spec, List.of(isolated(10, 8, 0, 2, TWO_PLACEHOLDERS)), null);
+
+            assertThat(commit.overall()).as(commit.toSummary()).isEqualTo(Status.PASS);
+            assertThat(commit.tables()).singleElement().satisfies(table -> assertThat(table.isolated()).isEqualTo(2));
+            assertThat(commit.toSummary()).contains("isolated=2");
+            assertThat(dryRun.overall()).as(dryRun.toSummary()).isEqualTo(Status.PASS);
+        }
+
+        @Test
+        @DisplayName("조회가 변환 + 격리와 다르면 FAIL 이다 — 어느 행이 사라졌는지 증명할 수 없다")
+        void aGapBetweenReadAndTransformedPlusIsolatedFails() {
+            MigrationReport report = verifier.verify(isolating(3, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 7, 7, 2, TWO_PLACEHOLDERS)), targetWithRows(7));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables().getFirst().note()).isEqualTo("조회(10) ≠ 변환(7) + 격리(2) — 격리 집계 불일치");
+        }
+
+        @Test
+        @DisplayName("격리해도 기록 = 변환은 그대로 본다")
+        void writtenMustStillEqualTransformed() {
+            MigrationReport report = verifier.verify(isolating(3, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 7, 2, TWO_PLACEHOLDERS)), targetWithRows(7));
+
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables().getFirst().note()).contains("쓰기 유실");
+        }
+
+        @Test
+        @DisplayName("원장 행마다 상한·선언·순번이 맞지 않는 격리 집계는 FAIL 이다")
+        void isolationsMustStayWithinTheDeclarationAndItsCap() {
+            assertThat(verifier.verify(isolating(1, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 8, 2, TWO_PLACEHOLDERS)), targetWithRows(8)).tables().getFirst().note())
+                    .isEqualTo("격리 상한 초과(원장 행 U4, 상한 1): 격리 2행");
+            assertThat(verifier.verify(isolating(3, "INVALID_DATE"),
+                    List.of(isolated(10, 8, 8, 2, TWO_PLACEHOLDERS)), targetWithRows(8)).tables().getFirst().note())
+                    .isEqualTo("선언하지 않은 격리: 원장 행 U4, end_ymd, PLACEHOLDER_DATE");
+            assertThat(verifier.verify(isolating(3, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 8, 2, new IsolationTally.Isolation("U4", "end_ymd", "PLACEHOLDER_DATE", 2,
+                            List.of(3L, 11L)))), targetWithRows(8)).tables().getFirst().note())
+                    .isEqualTo("격리 행 순번이 조회 범위 밖: 원장 행 U4");
+            assertThat(verifier.verify(isolating(3, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 7, 7, 3, TWO_PLACEHOLDERS)), targetWithRows(7)).tables().getFirst().note())
+                    .isEqualTo("격리 행 수(3) ≠ 격리 순번(2) — 격리 집계 불일치");
+            MappingSpec undeclared = new MappingSpec(null, null, List.of(new MappingSpec.TableMapping(
+                    "src_tbl", "tgt_tbl", null, List.of(), null)), Map.of());
+            assertThat(verifier.verify(undeclared, List.of(isolated(10, 8, 8, 2, TWO_PLACEHOLDERS)), targetWithRows(8))
+                    .overall()).as("isolate 선언이 없는 표의 격리").isEqualTo(Status.FAIL);
+        }
+
+        @Test
+        @DisplayName("상한·순번 범위의 경계 안쪽은 PASS 이고 한 칸 바깥은 FAIL 이다")
+        void theCapAndTheOrdinalRangeAreInclusive() {
+            IsolationTally.Isolation firstAndLast =
+                    new IsolationTally.Isolation("U4", "end_ymd", "PLACEHOLDER_DATE", 2, List.of(1L, 10L));
+
+            MigrationReport atTheEdges = verifier.verify(isolating(2, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 8, 2, firstAndLast)), targetWithRows(8));
+
+            assertThat(atTheEdges.overall()).as(atTheEdges.toSummary()).isEqualTo(Status.PASS);
+            assertThat(verifier.verify(isolating(2, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 8, 2, new IsolationTally.Isolation("U4", "end_ymd", "PLACEHOLDER_DATE", 2,
+                            List.of(0L, 10L)))), targetWithRows(8)).tables().getFirst().note())
+                    .isEqualTo("격리 행 순번이 조회 범위 밖: 원장 행 U4");
+        }
+
+        @Test
+        @DisplayName("증명할 수 없는 격리 집계는 PASS 가 아니다")
+        void isolationTalliesThatCannotBeProvenFail() {
+            MappingSpec spec = isolating(3, "PLACEHOLDER_DATE");
+
+            assertThat(verifier.verify(spec, List.of(isolated(10, 10, 10, -1)), targetWithRows(10)).tables()
+                    .getFirst().note()).isEqualTo("격리 행 수가 음수 — 격리 집계를 증명할 수 없음");
+            assertThat(verifier.verify(spec, List.of(isolated(10, 10, 10, 0, TWO_PLACEHOLDERS)), targetWithRows(10))
+                    .tables().getFirst().note()).as("격리 행이 0 인데 순번이 있다")
+                    .isEqualTo("격리 행 수(0) ≠ 격리 순번(2) — 격리 집계 불일치");
+            assertThat(verifier.verify(spec, List.of(isolated(10, 8, 8, 2)), targetWithRows(8)).tables().getFirst()
+                    .note()).as("격리 행이 있는데 순번이 없다").isEqualTo("격리 행 수(2) ≠ 격리 순번(0) — 격리 집계 불일치");
+            assertThat(verifier.verify(spec, List.of(isolated(10, 8, 8, 2, new IsolationTally.Isolation("U4",
+                    "end_ymd", "PLACEHOLDER_DATE", 3, List.of(3L, 7L)))), targetWithRows(8)).tables().getFirst()
+                    .note()).isEqualTo("격리 행 수와 순번 수가 다름: 원장 행 U4");
+            assertThat(verifier.verify(isolating(0, "PLACEHOLDER_DATE"),
+                    List.of(isolated(10, 8, 8, 2, TWO_PLACEHOLDERS)), targetWithRows(8)).tables().getFirst().note())
+                    .isEqualTo("isolate 선언이 올바르지 않아 격리 집계를 증명할 수 없음");
+            MappingSpec otherTable = new MappingSpec(null, null, List.of(new MappingSpec.TableMapping(
+                    "other_tbl", "tgt_tbl", null, List.of(), null)), Map.of());
+            MigrationReport unmatched = verifier.verify(otherTable, List.of(isolated(10, 8, 0, 2, TWO_PLACEHOLDERS)),
+                    null);
+            assertThat(unmatched.overall()).isEqualTo(Status.FAIL);
+            assertThat(unmatched.tables()).extracting(TableReport::note)
+                    .as("실행 계약 불일치와 따로 그 표의 격리 집계도 증명하지 않는다")
+                    .contains("격리 집계를 대조할 매핑을 찾을 수 없음");
         }
     }
 

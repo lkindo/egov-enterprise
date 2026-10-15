@@ -3,6 +3,7 @@ package nuri.migration.validate;
 import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.domain.DomainCategory;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.keymap.StandardIdGenerator;
 import nuri.migration.model.MappingSpec;
@@ -14,6 +15,7 @@ import nuri.migration.model.MappingSpec.UnmappedPolicy;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.postgres.TargetStandardSnapshot;
 import nuri.migration.postgres.TargetStandardSnapshot.ColumnContract;
+import nuri.migration.postgres.TargetStandardSnapshot.ContractStatus;
 import nuri.migration.postgres.TargetStandardSnapshot.StandardStatus;
 import nuri.migration.postgres.TargetStandardSnapshot.StandardTerm;
 import nuri.migration.postgres.TargetStandardSnapshot.TableContract;
@@ -22,9 +24,11 @@ import nuri.migration.validate.TargetValueDomain.Family;
 import nuri.migration.workflow.SourceLoadSurfaceGate;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -46,6 +50,9 @@ import java.util.regex.Pattern;
  *       Boolean 소스의 codemap 키는 그 표기(true·false, upper 뒤 TRUE·FALSE)만 받는다.</li>
  *   <li>[ADR-0029 L3a-2] 날짜·시각이 아닌 소스는 type(date·timestamp·datetime)·내장 date·timestamp 로 날짜·시각
  *       값으로 바꾸지 않는다. 값마다 판정하는 표준 도메인 변환기(date-text 등)만 받는다.</li>
+ *   <li>[ADR-0029 L3b] 문자 소스를 type decimal·numeric 으로 바꾸는 컬럼은 선언 정밀도를 알 수 없어도 정적으로 막지
+ *       않고 행마다 값 한계 가드({@link TargetValueGuard})로 판정한다({@link #rowGuards}). isolate 를 선언한 컬럼도
+ *       같은 가드를 받는다. 그 밖의 정밀도·길이 판정은 그대로 정적이다.</li>
  * </ul>
  *
  * <p>메시지는 표·컬럼 이름과 타입·길이만 말한다. 상수·코드맵 값과 행 값은 싣지 않는다.
@@ -220,8 +227,10 @@ public final class TargetStandardValidator {
             }
         }
         TargetLimit physical = TargetLimit.physical(column);
+        // [ADR-0029 L3b] 문자 소스 → decimal·numeric 의 정밀도는 행마다 값 한계 가드가 판정한다(rowGuards).
+        boolean rowJudged = rowJudgedPrecision(spec, mapping, source, sourceProduct);
         int before = errors.size();
-        check(value, physical, location, "물리 컬럼 " + column.dataType(), errors);
+        check(value, physical, location, "물리 컬럼 " + column.dataType(), rowJudged, errors);
         if (errors.size() == before && looseTemporal(mapping) && TEMPORAL.contains(physical.family())
                 && sourceFamily != Family.DATE && sourceFamily != Family.TIMESTAMP) {
             // [ADR-0029 L3a-2] type·내장 date·timestamp 는 자리표시(99991231 등)를 날짜로 받고 형식 밖 값을 행마다
@@ -258,8 +267,112 @@ public final class TargetStandardValidator {
         }
         if (domain.family() == Family.TEXT || domain.isExactNumeric()) {
             // 날짜·시각 도메인은 길이가 없다 — 종류 일치(sameKind)로 충분하다.
-            check(value, domain, location, "표준 도메인 " + term.domainName(), errors);
+            check(value, domain, location, "표준 도메인 " + term.domainName(), rowJudged, errors);
         }
+    }
+
+    /**
+     * [ADR-0029 L3b] 행마다 값 한계 가드({@link TargetValueGuard})를 받는 컬럼과 그 한계. isolate 를 선언한 컬럼과, 정적
+     * 정밀도 판정을 행 단위로 옮긴 컬럼(문자 소스 → type decimal·numeric)이다 — 옮긴 컬럼은 격리 선언과 무관하게 늘
+     * 가드를 받는다(target_generated 매핑 포함). 한계는 validate 와 같은 live 계약으로 정한 물리 컬럼과 표준 도메인 중 좁은
+     * 쪽이고, NOT NULL 은 기본값 여부와 무관하다(INSERT 가 NULL 도 명시해 바인딩한다). 키는 mapping 의 대상 컬럼 이름이다.
+     * 계약을 읽지 못하면(validate 가 먼저 막는다) 판정할 수 없어 거부한다. 문구는 표·컬럼 이름만 담는다.
+     */
+    public Map<String, TargetValueGuard.Limit> rowGuards(MappingSpec spec, TableMapping table,
+                                                         TargetSchemaFingerprint target, CatalogSnapshot inventory) {
+        Objects.requireNonNull(spec, "spec");
+        Objects.requireNonNull(table, "table");
+        TargetStandardSnapshot snapshot = target == null ? null : target.standard();
+        if (snapshot == null || inventory == null) {
+            throw new IllegalStateException("값 한계 가드에 쓸 타깃 live 계약 또는 소스 inventory 가 없습니다");
+        }
+        String[] parts = table.target() == null ? new String[0] : table.target().split("\\.", -1);
+        TableContract contract = parts.length == 2 ? snapshot.table(parts[0], parts[1]) : null;
+        if (contract == null || contract.contract() != ContractStatus.READ) {
+            throw new IllegalStateException("값 한계 가드에 쓸 타깃 표 계약이 없습니다: " + table.target());
+        }
+        boolean standardPresent = contract.standard() == StandardStatus.PRESENT;
+        String sourceProduct = inventory.database().productName();
+        Map<String, TargetValueGuard.Limit> guards = new LinkedHashMap<>();
+        for (ColumnMapping mapping : table.columns()) {
+            if (mapping == null || mapping.target() == null) {
+                continue;
+            }
+            if (mapping.isolate() == null
+                    && !rowJudgedPrecision(spec, mapping, sourceColumn(table, mapping, inventory), sourceProduct)) {
+                continue;
+            }
+            ColumnContract column = contract.column(mapping.target());
+            if (column == null) {
+                throw new IllegalStateException("값 한계 가드에 쓸 타깃 컬럼 계약이 없습니다: "
+                        + location(table, mapping.target()));
+            }
+            guards.put(mapping.target(), guardLimit(column, standardPresent));
+        }
+        return guards;
+    }
+
+    /**
+     * 정적 정밀도 판정을 행 단위로 옮기는 컬럼인가 — 문자 소스의 문자 값을 type decimal·numeric 으로 바꾼다. 값마다
+     * 자릿수가 달라 선언으로는 정밀도를 알 수 없다. const·fkRef·암호화 컬럼과 사용자 변환기는 해당하지 않는다.
+     */
+    private boolean rowJudgedPrecision(MappingSpec spec, ColumnMapping mapping, CatalogObject source,
+                                       String sourceProduct) {
+        if (mapping.constant() != null || !isBlank(mapping.fkRef()) || isBlank(mapping.source())
+                || mapping.encrypt() != null) {
+            return false;
+        }
+        String type = isBlank(mapping.type()) ? "" : mapping.type().trim().toLowerCase(Locale.ROOT);
+        if (!type.equals("decimal") && !type.equals("numeric")) {
+            return false;
+        }
+        if (TargetValueDomain.fromSource(source, sourceProduct).family() != Family.TEXT) {
+            return false;
+        }
+        ColumnMapping untyped = new ColumnMapping(mapping.source(), mapping.target(), mapping.transform(), null,
+                mapping.codemap(), mapping.fkRef(), mapping.constant(), mapping.encrypt(), mapping.nullify(),
+                mapping.isolate());
+        TargetValueDomain prior = TargetValueDomain.of(untyped, spec.codemaps(), builtinTransformer, source,
+                sourceProduct);
+        return !prior.exempt() && prior.family() == Family.TEXT;
+    }
+
+    /** 물리 컬럼과, 사전이 있고 같은 종류면 표준 도메인을 합친 가드 한계 — 둘 중 좁은 쪽이다. */
+    private static TargetValueGuard.Limit guardLimit(ColumnContract column, boolean standardPresent) {
+        TargetLimit physical = TargetLimit.physical(column);
+        List<TargetLimit> limits = new ArrayList<>(List.of(physical));
+        StandardTerm term = column.term();
+        if (standardPresent && term != null && term.status() == TermStatus.FOUND) {
+            TargetLimit domain = standardLimit(term);
+            if (domain != null && domain.sameKind(physical)) {
+                limits.add(domain);
+            }
+        }
+        Long maxChars = null;
+        Integer intDigits = null;
+        Integer scale = null;
+        Integer rank = null;
+        for (TargetLimit limit : limits) {
+            switch (limit.family()) {
+                case TEXT -> maxChars = narrower(maxChars, limit.maxChars());
+                case INTEGER -> rank = narrower(rank, limit.integerRank());
+                case DECIMAL -> {
+                    intDigits = narrower(intDigits, limit.intDigits());
+                    scale = narrower(scale, limit.scale());
+                }
+                default -> {
+                    // 길이·정밀도가 없는 종류 — NOT NULL 만 본다.
+                }
+            }
+        }
+        return new TargetValueGuard.Limit(maxChars, intDigits, scale, rank, !column.nullable());
+    }
+
+    private static <T extends Comparable<T>> T narrower(T current, T candidate) {
+        if (current == null) {
+            return candidate;
+        }
+        return candidate == null || current.compareTo(candidate) <= 0 ? current : candidate;
     }
 
     /**
@@ -324,6 +437,12 @@ public final class TargetStandardValidator {
 
     private static void check(TargetValueDomain value, TargetLimit limit, String location, String label,
                               List<String> errors) {
+        check(value, limit, location, label, false, errors);
+    }
+
+    /** {@code rowJudged} 면 선언 정밀도를 알 수 없어도 오류로 두지 않는다 — 행마다 값 한계 가드가 판정한다(ADR-0029 L3b). */
+    private static void check(TargetValueDomain value, TargetLimit limit, String location, String label,
+                              boolean rowJudged, List<String> errors) {
         if (!value.compatibleWith(limit.family())) {
             errors.add("값 타입이 타깃과 맞지 않습니다: " + location + " — 값 " + value.family()
                     + (value.constant() ? "(const 는 type 힌트 없이 문자열로 바인딩됨)" : "")
@@ -338,7 +457,7 @@ public final class TargetStandardValidator {
         if (limit.family() == Family.TEXT) {
             checkLength(value, limit, location, label, errors);
         } else if (limit.isExactNumeric() && value.isExactNumeric()) {
-            checkCapacity(value, limit, location, label, errors);
+            checkCapacity(value, limit, location, label, rowJudged, errors);
         }
     }
 
@@ -359,7 +478,7 @@ public final class TargetStandardValidator {
     }
 
     private static void checkCapacity(TargetValueDomain value, TargetLimit limit, String location, String label,
-                                      List<String> errors) {
+                                      boolean rowJudged, List<String> errors) {
         if (value.family() == Family.INTEGER && limit.family() == Family.INTEGER) {
             if (value.integerRank() > limit.integerRank()) {
                 errors.add("정수 범위가 타깃보다 넓습니다: " + location + " — " + label);
@@ -372,7 +491,9 @@ public final class TargetStandardValidator {
         Integer intDigits = value.intDigits();
         Integer scale = value.scale();
         if (intDigits == null || scale == null) {
-            errors.add("값의 선언 정밀도·소수 자릿수를 확인할 수 없습니다: " + location + " — " + label);
+            if (!rowJudged) {
+                errors.add("값의 선언 정밀도·소수 자릿수를 확인할 수 없습니다: " + location + " — " + label);
+            }
             return;
         }
         if (scale > limit.scale()) {

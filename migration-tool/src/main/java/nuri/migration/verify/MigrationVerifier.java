@@ -6,6 +6,8 @@ import nuri.migration.identity.JdbcTypedValueCodec;
 import nuri.migration.identity.TypedKeyEncoding;
 import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.identity.TypedValue;
+import nuri.migration.isolate.IsolationTally;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.source.SourceIntrospector;
@@ -27,10 +29,12 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -39,6 +43,9 @@ import java.util.function.Function;
  * <p>재설계(2026-07-23): 18줄 카운트-에코 stub 을 실측 검증으로 대체. 등급 규칙 —
  * FAIL: 오류 존재 · (commit) 기록≠변환(쓰기 유실) · (commit) 타깃 실측행 &lt; 기록(유령 기록).
  * WARN: 변환≠조회(행 드롭/증폭; strict CLI에서는 실패 종료). PASS: 조회==변환==기록 & 오류 0.
+ *
+ * <p>[ADR-0029 L3b] 승인 격리가 있으면 조회 = 변환 + 격리여야 하고(어긋나면 FAIL), 격리 집계가 mapping 의 isolate
+ * 선언(원장 행·컬럼·위반, 원장 행마다 상한)과 맞아야 한다. 기록 = 변환은 그대로다.
  *
  * <p>남은 로드맵(설계문서 §7 P4): 고아 FK/NOT-NULL/UNIQUE 스캔, meta_standard_domains 도메인 적합성,
  * 집계 체크섬 parity와 샘플 N행 소스↔타깃 diff.
@@ -80,6 +87,7 @@ public class MigrationVerifier {
                     : null;
             long targetRows = !commit ? -1L
                     : scoped == null ? targetRowCount(targetJt, r.targetTable()) : scoped.rows();
+            String isolationError = isolationError(mapping, r);
             Status status;
             String note;
 
@@ -100,7 +108,15 @@ public class MigrationVerifier {
             } else if (commit && r.written() != r.transformed()) {
                 status = Status.FAIL;
                 note = "기록(" + r.written() + ") ≠ 변환(" + r.transformed() + ") — 쓰기 유실";
-            } else if (r.transformed() != r.read()) {
+            } else if (isolationError != null) {
+                status = Status.FAIL;
+                note = isolationError;
+            } else if (r.isolated() > 0 && r.transformed() + r.isolated() != r.read()) {
+                // [ADR-0029 L3b] 격리한 행은 적재하지 않았을 뿐 읽은 행이다. 합이 어긋나면 어느 행이 사라졌는지 증명할 수 없다.
+                status = Status.FAIL;
+                note = "조회(" + r.read() + ") ≠ 변환(" + r.transformed() + ") + 격리(" + r.isolated()
+                        + ") — 격리 집계 불일치";
+            } else if (r.transformed() + r.isolated() != r.read()) {
                 status = Status.WARN;
                 note = "변환(" + r.transformed() + ") ≠ 조회(" + r.read()
                         + ") — 행 드롭/증폭 cardinality 불일치";
@@ -113,7 +129,8 @@ public class MigrationVerifier {
             }
 
             tables.add(new TableReport(r.sourceTable(), r.targetTable(),
-                    r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note));
+                    r.read(), r.transformed(), r.written(), r.errors().size(), targetRows, status, note,
+                    r.isolated()));
             overall = worst(overall, status);
         }
         if (commit && spec != null && spec.run() != null) {
@@ -131,6 +148,71 @@ public class MigrationVerifier {
     }
 
     private record ScopedVerification(long rows, String error) {}
+
+    /**
+     * [ADR-0029 L3b] 격리 집계가 mapping 의 isolate 선언과 맞는지 본다. 격리 무리는 선언한 (원장 행, 컬럼, 위반)뿐이고, 무리의
+     * 행 수는 순번 수와 같고, 순번은 1..조회 안이며, 원장 행마다 격리한 행(순번의 합집합)이 그 상한 이하이고, 모든 순번의
+     * 합집합이 격리 행 수와 같아야 한다. 맞으면 null. 문구는 원장 행 ID·컬럼·코드·건수만 담는다.
+     */
+    private static String isolationError(MappingSpec.TableMapping mapping, TableResult result) {
+        if (result.isolated() < 0) {
+            return "격리 행 수가 음수 — 격리 집계를 증명할 수 없음";
+        }
+        if (result.isolated() == 0 && result.isolations().isEmpty()) {
+            return null;
+        }
+        if (mapping == null) {
+            return "격리 집계를 대조할 매핑을 찾을 수 없음";
+        }
+        Map<String, Long> caps;
+        try {
+            caps = RowIsolationPolicy.of(mapping).caps();
+        } catch (IllegalArgumentException invalid) {
+            return "isolate 선언이 올바르지 않아 격리 집계를 증명할 수 없음";
+        }
+        Map<String, Set<Long>> rowsByEntry = new LinkedHashMap<>();
+        Set<Long> all = new HashSet<>();
+        for (IsolationTally.Isolation isolation : result.isolations()) {
+            if (!declared(mapping, isolation)) {
+                return "선언하지 않은 격리: 원장 행 " + isolation.ledgerEntry() + ", " + isolation.column() + ", "
+                        + isolation.violation();
+            }
+            if (isolation.rows() != isolation.ordinals().size()) {
+                return "격리 행 수와 순번 수가 다름: 원장 행 " + isolation.ledgerEntry();
+            }
+            for (Long ordinal : isolation.ordinals()) {
+                if (ordinal == null || ordinal < 1 || ordinal > result.read()) {
+                    return "격리 행 순번이 조회 범위 밖: 원장 행 " + isolation.ledgerEntry();
+                }
+                rowsByEntry.computeIfAbsent(isolation.ledgerEntry(), ignored -> new HashSet<>()).add(ordinal);
+                all.add(ordinal);
+            }
+        }
+        for (Map.Entry<String, Set<Long>> entry : rowsByEntry.entrySet()) {
+            long cap = caps.get(entry.getKey());
+            if (entry.getValue().size() > cap) {
+                return "격리 상한 초과(원장 행 " + entry.getKey() + ", 상한 " + cap + "): 격리 "
+                        + entry.getValue().size() + "행";
+            }
+        }
+        if (all.size() != result.isolated()) {
+            return "격리 행 수(" + result.isolated() + ") ≠ 격리 순번(" + all.size() + ") — 격리 집계 불일치";
+        }
+        return null;
+    }
+
+    /** 격리 무리가 mapping 컬럼의 isolate(같은 원장 행, 그 위반 포함)에 선언돼 있는가. */
+    private static boolean declared(MappingSpec.TableMapping mapping, IsolationTally.Isolation isolation) {
+        for (MappingSpec.ColumnMapping column : mapping.columns()) {
+            MappingSpec.Isolate isolate = column.isolate();
+            if (isolate != null && column.target() != null && column.target().equalsIgnoreCase(isolation.column())
+                    && isolate.ledgerEntry() != null && isolate.ledgerEntry().equals(isolation.ledgerEntry())
+                    && isolate.violations().contains(isolation.violation())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private static MappingSpec.TableMapping findMapping(MappingSpec spec, TableResult result) {
         if (spec == null) {

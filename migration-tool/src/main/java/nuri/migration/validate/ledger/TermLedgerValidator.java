@@ -460,7 +460,9 @@ public final class TermLedgerValidator {
             case "UNSUPPORTED_VALUE_TYPE" -> capabilities.judgesValueType(load) ? null
                     : "추정기가 판정하지 못한 값 종류(UNSUPPORTED_VALUE_TYPE)가 있어 load 가 행마다 판정해야 합니다 —"
                     + " 표준 도메인 변환기나 type 을 두세요";
-            // 길이·자릿수 초과는 쓰기 단계와 정적 판정이 멈춘다(fail-closed). 격리는 L3b 의 값 한계 가드와 승인 예외로 한다.
+            // 길이·자릿수 초과는 쓰기 단계와 정적 판정이 멈춘다(fail-closed). L3b 의 값 한계 가드와 승인 예외는 정적
+            //   판정을 통과한 컬럼(변환 뒤 길어진 값 등)의 행만 격리한다 — 소스 선언이 대상보다 길거나 모르는 컬럼은
+            //   승인 예외가 있어도 plan 의 표준 검증이 멈춘다. 그 판정을 행 가드로 옮길지는 미결이다(DEC-OPS-318).
             case "LENGTH_EXCEEDED", "LENGTH_UNVERIFIED" -> null;
             // DEC-OPS-317 U3: codemap(unmapped: fail)이 없으면 사유로 확정한다 — 허용값 대사는 L4 가 맡는다.
             case "ALLOWED_VALUES_UNVERIFIED" -> (load != null && load.codemap() != null) || !blank(entry.note()) ? null
@@ -503,7 +505,8 @@ public final class TermLedgerValidator {
      *       옮기지 않는다.</li>
      *   <li>정방향 — mapping 이 소스 컬럼에서 옮기는 컬럼(상수 아님, fkRef 포함)마다 같은 소스·대상의 기본 확정 행이
      *       하나 있고, mapping 의 transform·type·codemap·nullify 가 그 행의 load 와 정확히 같다. fkRef 컬럼의 load 는
-     *       키 정규화뿐이다(생성기와 같은 판정).</li>
+     *       키 정규화뿐이다(생성기와 같은 판정). mapping 의 isolate 는 그 행의 승인 예외 가운데 nullify 로 덮이지 않는
+     *       위반과 양방향으로 정확히 같다({@link LoadCapabilities#isolate}, ADR-0029 L3b).</li>
      *   <li>역방향 — mapping 이 읽는 소스 표의 기본 확정 행은 모두 mapping 에 있다. mapping 이 읽지 않는 소스 표에는
      *       확정 행이 없다.</li>
      *   <li>소스 단위 완전성 — mapping 이 읽는 소스 표의 모든 inventory 컬럼은 확정 행이 하나 이상이거나 이관 제외·외부
@@ -697,6 +700,11 @@ public final class TermLedgerValidator {
                 || !Objects.equals(nonNullList(column.nullify()), load.nullify())) {
             errors.add(where + ": mapping 의 변환(transform·type·codemap·nullify)이 원장 행 " + entry.id()
                     + " 의 load 와 다릅니다 — mapping-generate 로 다시 만드세요");
+        }
+        // [ADR-0029 L3b] 격리는 원장 승인 예외에서만 온다 — mapping 에만 있거나 원장에만 있거나 내용이 다르면 거부한다.
+        if (!Objects.equals(column.isolate(), LoadCapabilities.isolate(entry))) {
+            errors.add(where + ": mapping 의 격리(isolate)가 원장 행 " + entry.id() + " 의 승인 예외(nullify 로 NULL 이"
+                    + " 되지 않는 위반)와 다릅니다 — mapping-generate 로 다시 만드세요");
         }
     }
 

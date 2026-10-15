@@ -689,6 +689,182 @@ class MappingValidatorTest {
     }
 
     @Nested
+    @DisplayName("승인 행 격리 선언(ADR-0029 L3b)")
+    class IsolateDeclaration {
+
+        private static final String NOT_ON = "에는 isolate 를 둘 수 없습니다";
+        private static final MappingSpec.Isolate APPROVED = new MappingSpec.Isolate("U4", 3L, List.of("INVALID_DATE"));
+        private static final IdStrategy USER_ID = new IdStrategy("esntl_id", "USR_", "USER_SN");
+
+        private List<String> errors(TableMapping... tables) {
+            return withSchema().validate(spec(List.of(tables))).errors();
+        }
+
+        private ColumnMapping isolated(MappingSpec.Isolate isolate) {
+            return new ColumnMapping("END_YMD", "user_nm", "ymd8", null, null, null, null, null, List.of(), isolate);
+        }
+
+        private TableMapping users(String orderBy, List<String> orderByKeys, ColumnMapping... columns) {
+            return new TableMapping("legacy_user", "tb_user_info", null, orderBy, orderByKeys, null, List.of(columns),
+                    USER_ID, null, List.of());
+        }
+
+        @Test
+        @DisplayName("isolate 가 있는 표는 모드와 무관하게 순서 키가 필요하다")
+        void anIsolatedTableNeedsAnOrderKey() {
+            assertThat(errors(users(null, List.of(), isolated(APPROVED)))).containsExactly(
+                    "legacy_user: isolate 가 있는 표에는 orderBy·orderByKeys 가 필요합니다 — 순서 없이 읽으면 격리 행의"
+                            + " 순번이 정해지지 않습니다");
+            assertThat(errors(users("USER_SN", List.of(), isolated(APPROVED)))).isEmpty();
+            assertThat(errors(users(null, List.of("USER_SN"), isolated(APPROVED)))).isEmpty();
+            assertThat(errors(users(null, List.of(), isolated(null)))).as("선언이 없으면 종전대로").isEmpty();
+        }
+
+        @Test
+        @DisplayName("다른 매핑이 부모로 참조하거나 자기참조·target_generated 인 표에는 둘 수 없다")
+        void parentSelfReferencingAndTargetGeneratedTablesCannotIsolate() {
+            TableMapping child = new TableMapping("legacy_ognz", "tb_ognz_info", null, "OGNZ_SN", null, List.of(
+                    new ColumnMapping("OWNER_SN", "ognz_id", null, null, null, "LEGACY_USER", null)), null);
+            TableMapping selfReferencing = users("USER_SN", List.of(), isolated(APPROVED),
+                    new ColumnMapping("UP_SN", "ognz_id", null, null, null, "legacy_user", null));
+            TableMapping generated = new TableMapping("legacy_user", "tb_user_info", null, "USER_SN", List.of(), null,
+                    List.of(isolated(APPROVED)), null, new MappingSpec.IdentityStrategy(
+                    nuri.migration.identity.TargetIdentityPolicy.TARGET_GENERATED,
+                    List.of(new MappingSpec.IdentityComponentSpec("USER_SN",
+                            nuri.migration.identity.IdentityValueType.SIGNED_INTEGER)),
+                    List.of(new MappingSpec.IdentityComponentSpec("esntl_id",
+                            nuri.migration.identity.IdentityValueType.TEXT))), List.of());
+
+            assertThat(errors(users("USER_SN", List.of(), isolated(APPROVED)), child))
+                    .containsExactly("legacy_user: 다른 매핑이 부모로 참조하는 매핑" + NOT_ON);
+            assertThat(errors(selfReferencing)).containsExactly("legacy_user: 자기참조 매핑" + NOT_ON);
+            assertThat(errors(generated)).containsExactly("legacy_user: target_generated 매핑" + NOT_ON);
+            assertThat(errors(users("USER_SN", List.of(), isolated(APPROVED), new ColumnMapping("OWNER_SN", "ognz_id",
+                    null, null, null, "legacy_ognz", null)), new TableMapping("legacy_ognz", "tb_ognz_info", null,
+                    "OGNZ_SN", null, List.of(), new IdStrategy("ognz_id", "OGNZ_", "OGNZ_SN"))))
+                    .as("부모를 참조하는 자식은 격리할 수 있다 — 막는 것은 부모다").isEmpty();
+        }
+
+        @Test
+        @DisplayName("암호화·fkRef·값을 변환하지 않는 컬럼에는 둘 수 없다")
+        void encryptedForeignKeyAndConstantColumnsCannotIsolate(@TempDir Path tmp) throws IOException {
+            Path catalog = tmp.resolve("db_columns.json");
+            Files.writeString(catalog, "[{\"table_name\":\"tb_user_info\",\"column_name\":\"user_enrrno\"},"
+                    + "{\"table_name\":\"tb_user_info\",\"column_name\":\"ognz_id\"},"
+                    + "{\"table_name\":\"tb_user_info\",\"column_name\":\"esntl_id\"},"
+                    + "{\"table_name\":\"tb_user_info\",\"column_name\":\"frst_rgtr_id\"},"
+                    + "{\"table_name\":\"tb_ognz_info\",\"column_name\":\"ognz_id\"}]", StandardCharsets.UTF_8);
+            MappingValidator validator = new MappingValidator(new TransformerRegistry(), catalog.toString());
+            TableMapping parent = new TableMapping("legacy_ognz", "tb_ognz_info", null, "OGNZ_SN", null, List.of(),
+                    new IdStrategy("ognz_id", "OGNZ_", "OGNZ_SN"));
+            TableMapping users = users("USER_SN", List.of(),
+                    new ColumnMapping("JUMIN", "user_enrrno", null, null, null, null, null, "aria-egov-v1", List.of(),
+                            new MappingSpec.Isolate("U6", 3L, List.of("BLANK"))),
+                    new ColumnMapping("DEPT_CD", "ognz_id", "trim", null, null, "legacy_ognz", null, null, List.of(),
+                            new MappingSpec.Isolate("U5", 3L, List.of("FORMAT"))),
+                    new ColumnMapping(null, "frst_rgtr_id", null, null, null, null, "MIGRATION", null, List.of(),
+                            new MappingSpec.Isolate("U8", 3L, List.of("LENGTH_EXCEEDED"))));
+
+            assertThat(validator.validate(spec(List.of(users, parent))).errors()).containsExactly(
+                    "tb_user_info.user_enrrno: 암호화 컬럼" + NOT_ON,
+                    "tb_user_info.ognz_id: fkRef 컬럼" + NOT_ON,
+                    "tb_user_info.frst_rgtr_id: 값을 변환하지 않는 컬럼(const·source 없음)" + NOT_ON);
+        }
+
+        @Test
+        @DisplayName("선언은 원장 행 ID·1~1000 상한·격리할 수 있는 코드를 한 번씩, nullify 가 덮지 않는 위반만 담는다")
+        void declarationsAreBoundedIsolatableAndNotCoveredByNullify() {
+            String location = "tb_user_info.user_nm: ";
+            String codes = "isolate 의 위반은 격리할 수 있는 코드(INVALID_DATE·PLACEHOLDER_DATE·TIME_PRESENT·FORMAT·BLANK·"
+                    + "CODEMAP_UNMAPPED·LENGTH_EXCEEDED·PRECISION_EXCEEDED·REQUIRED_MISSING)를 한 번씩 둡니다";
+
+            assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate("U 4", 3L,
+                    List.of("FORMAT")))))).containsExactly(location
+                    + "isolate.ledgerEntry 는 원장 행 ID 형식(영문·숫자·_.- 64자 이내)이어야 합니다");
+            assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate(null, 3L,
+                    List.of("FORMAT")))))).containsExactly(location
+                    + "isolate.ledgerEntry 는 원장 행 ID 형식(영문·숫자·_.- 64자 이내)이어야 합니다");
+            for (Long cap : java.util.Arrays.asList(0L, 1001L, null)) {
+                assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate("U4", cap,
+                        List.of("FORMAT")))))).as(String.valueOf(cap))
+                        .containsExactly(location + "isolate maxRows 는 1~1000 이어야 합니다");
+            }
+            assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate("U4", 1000L,
+                    List.of("FORMAT")))))).isEmpty();
+            assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate("U4", 3L, List.of())))))
+                    .containsExactly(location + "isolate 에는 격리할 위반(violations)이 필요합니다");
+            for (List<String> invalid : List.of(List.of("NOT_ALLOWED"), List.of("UNSUPPORTED_VALUE_TYPE"),
+                    List.of("format"), List.of("FORMAT", "FORMAT"))) {
+                assertThat(errors(users("USER_SN", List.of(), isolated(new MappingSpec.Isolate("U4", 3L, invalid)))))
+                        .as(invalid.toString()).containsExactly(location + codes);
+            }
+            ColumnMapping covered = new ColumnMapping("END_YMD", "user_nm", "ymd8", null, null, null, null, null,
+                    List.of(new Nullify(DomainViolation.PLACEHOLDER_DATE, 5L)),
+                    new MappingSpec.Isolate("U4", 3L, List.of("INVALID_DATE", "PLACEHOLDER_DATE")));
+            assertThat(errors(users("USER_SN", List.of(), covered))).containsExactly(location
+                    + "nullify 로 NULL 이 되는 위반(PLACEHOLDER_DATE)은 격리하지 않습니다 — 그 행은 실패하지 않습니다");
+        }
+
+        @Test
+        @DisplayName("한 원장 행은 한 컬럼의 isolate 만 가리킨다")
+        void oneLedgerEntryIsolatesOneColumn() {
+            TableMapping shared = users("USER_SN", List.of(), isolated(APPROVED),
+                    new ColumnMapping("CNT", "cnt", null, "integer", null, null, null, null, List.of(),
+                            new MappingSpec.Isolate("U4", 3L, List.of("FORMAT"))));
+
+            assertThat(errors(shared)).containsExactly("tb_user_info.cnt: 같은 원장 행(U4)을 두 컬럼의 isolate 가"
+                    + " 가리킵니다 — user_nm, cnt");
+        }
+
+        @Test
+        @DisplayName("YAML 은 isolate 를 글자 그대로만 읽고, 선언은 mapping digest 에 결속된다")
+        void yamlIsReadStrictlyAndTheDeclarationIsBoundToTheDigest() {
+            MappingLoader loader = new MappingLoader(ignored -> null);
+            String template = """
+                    tables:
+                      - source: legacy_user
+                        target: tb_user_info
+                        orderBy: USER_SN
+                        columns:
+                          - { source: END_YMD, target: user_nm, transform: ymd8, isolate: %s }
+                    """;
+
+            assertThat(loader.loadContent(template.formatted(
+                    "{ ledgerEntry: U4, maxRows: 3, violations: [INVALID_DATE, FORMAT] }")).tables().getFirst()
+                    .columns().getFirst().isolate())
+                    .isEqualTo(new MappingSpec.Isolate("U4", 3L, List.of("INVALID_DATE", "FORMAT")));
+            assertThat(loader.loadContent(template.formatted("{ ledgerEntry: U4 }")).tables().getFirst().columns()
+                    .getFirst().isolate()).as("빠진 칸은 검증이 거부한다")
+                    .isEqualTo(new MappingSpec.Isolate("U4", null, List.of()));
+            for (String invalid : List.of("{ ledgerEntry: U4, maxRows: 2.7, violations: [FORMAT] }",
+                    "{ ledgerEntry: U4, maxRows: '3', violations: [FORMAT] }",
+                    "{ ledgerEntry: U4, maxRows: 3, violations: FORMAT }",
+                    "{ ledgerEntry: U4, maxRows: 3, violations: [1] }",
+                    "{ ledgerEntry: U4, maxRows: 3, violations: [~] }",
+                    "{ ledgerEntry: 4, maxRows: 3, violations: [FORMAT] }",
+                    "{ ledgerEntry: U4, maxRows: 3, violations: [FORMAT], reason: x }")) {
+                org.assertj.core.api.Assertions.assertThatThrownBy(() -> loader.loadContent(template.formatted(invalid)))
+                        .as(invalid).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("mapping YAML parsing failed");
+            }
+
+            ColumnMapping undeclared = new ColumnMapping("END_YMD", "user_nm", "ymd8", null, null, null, null, null,
+                    List.of());
+            ColumnMapping declared = isolated(APPROVED);
+            ColumnMapping widened = isolated(new MappingSpec.Isolate("U4", 4L, List.of("INVALID_DATE")));
+            String legacy = nuri.migration.artifact.MappingSpecDigester.sha256(spec(List.of(users("USER_SN",
+                    List.of(), new ColumnMapping("END_YMD", "user_nm", "ymd8", null, null, null, null)))));
+            assertThat(nuri.migration.artifact.MappingSpecDigester.sha256(spec(List.of(users("USER_SN", List.of(),
+                    undeclared))))).as("선언이 없으면 digest 가 그대로다").isEqualTo(legacy);
+            assertThat(nuri.migration.artifact.MappingSpecDigester.sha256(spec(List.of(users("USER_SN", List.of(),
+                    declared))))).isNotEqualTo(legacy)
+                    .as("상한을 넓히면 다시 승인해야 한다")
+                    .isNotEqualTo(nuri.migration.artifact.MappingSpecDigester.sha256(spec(List.of(users("USER_SN",
+                            List.of(), widened)))));
+        }
+    }
+
+    @Nested
     @DisplayName("표준 스키마 대조 (db_columns.json)")
     class TargetColumnCheck {
 

@@ -1703,8 +1703,8 @@
             "scope": "migration-standardize",
             "job": "mutation-scope-migration",
             "gradle": ":migration-tool:pitest",
-            "classes": "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables",
-            "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
+            "classes": "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*",
+            "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest"
           },
           {
             "scope": "business-core-auth",

@@ -482,6 +482,93 @@ public class MappingGeneratorTest {
         }
     }
 
+    @Test
+    void approvedExceptionsNotCoveredByNullifyBecomeTheColumnsIsolation() {
+        String approved = LEDGER.replace("""
+                      violations: [{type: PLACEHOLDER_DATE, rows: 12}]
+                """, """
+                      violations: [{type: PLACEHOLDER_DATE, rows: 12}, {type: INVALID_DATE, rows: 3}]
+                      approvedExceptions: {maxRows: 3, reason: 원천 정정 대기, violations: [INVALID_DATE, PLACEHOLDER_DATE]}
+                """);
+
+        String text = generator.generate(SKELETON, approved, "ledger.yml", inventory());
+
+        MappingSpec mapping = new MappingLoader(name -> "x").parseUnresolved(text);
+        assertThat(mapping.tables().get(1).columns()).last().isEqualTo(new ColumnMapping("END_YMD", "end_ymd", "ymd8",
+                null, null, null, null, null, List.of(new MappingSpec.Nullify(DomainViolation.PLACEHOLDER_DATE, 12L)),
+                new MappingSpec.Isolate("U4", 3L, List.of("INVALID_DATE"))));
+        assertThat(mapping.tables().get(1).columns()).filteredOn(column -> !"end_ymd".equals(column.target()))
+                .allSatisfy(column -> assertThat(column.isolate()).isNull());
+        assertThat(generator.generate(SKELETON, approved, "ledger.yml", inventory())).isEqualTo(text);
+        assertThat(new TermLedgerValidator().coverage(new TermLedgerLoader().load(approved), mapping, inventory()))
+                .isEmpty();
+
+        String allCovered = approved.replace("violations: [INVALID_DATE, PLACEHOLDER_DATE]",
+                "violations: [PLACEHOLDER_DATE]").replace(", {type: INVALID_DATE, rows: 3}", "");
+        assertThat(new MappingLoader(name -> "x").parseUnresolved(
+                generator.generate(SKELETON, allCovered, "ledger.yml", inventory())).tables().get(1).columns())
+                .as("nullify 가 모두 덮으면 격리를 쓰지 않는다").allSatisfy(column -> assertThat(column.isolate()).isNull());
+    }
+
+    @Test
+    void unhandledViolationsOnATableOrColumnThatCannotIsolateAreRefusedWithoutAdvisingToIgnore() {
+        String exceptions = "approvedExceptions: {maxRows: 2, reason: 원천 정정 대기, violations: [FORMAT]}";
+        String parent = LEDGER.replace("""
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                  - id: U1
+                """, """
+                    load: {transform: trim}
+                    conformance: {rate: 100, %s}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                  - id: U1
+                """.formatted(exceptions));
+        String foreignKey = LEDGER.replace("""
+                    term: {name: 조직ID, engAbbr: OGNZ_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100}
+                """, """
+                    term: {name: 조직ID, engAbbr: OGNZ_ID, domain: ID V20}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {transform: trim}
+                    conformance: {rate: 100, %s}
+                """.formatted(exceptions));
+        String encrypted = LEDGER.replace("""
+                  - id: H1
+                    source: {table: legacy.LOG_HIST, column: LOG_SN}
+                    grade: UNKNOWN
+                    status: PROPOSED
+                """, """
+                  - id: U6
+                    source: {table: legacy.USER_MST, column: RRN}
+                    target: {table: tb_user_info, column: user_enrrno}
+                    term: {name: 주민등록번호, engAbbr: USER_ENRRNO, domain: 주민등록번호V256}
+                    grade: EXACT
+                    status: CONFIRMED
+                    load: {}
+                    conformance: {rate: 100, %s}
+                    history: [{to: REVIEWED, by: 검토자, at: "2026-10-01"}, {to: CONFIRMED, by: 업무담당, at: "2026-10-02"}]
+                """.formatted(exceptions));
+        String refusal = ": 이 표는 격리할 수 없습니다 — 데이터를 바로잡거나 nullify 로 처리하세요";
+
+        assertThatThrownBy(() -> generator.generate(SKELETON, parent, "ledger.yml", inventory()))
+                .isInstanceOf(MappingGenerator.Refused.class)
+                .hasMessage("mapping 을 만들지 않았습니다: D2 legacy.DEPT_MST.DEPT_NM(CONFIRMED)" + refusal
+                        + "(다른 매핑이 부모로 참조하는 매핑)")
+                .hasMessageNotContaining("APPROVED_IGNORE");
+        assertThatThrownBy(() -> generator.generate(SKELETON, foreignKey, "ledger.yml", inventory()))
+                .hasMessage("mapping 을 만들지 않았습니다: U5 legacy.USER_MST.DEPT_CD(CONFIRMED)" + refusal
+                        + "(fkRef 컬럼)")
+                .hasMessageNotContaining("APPROVED_IGNORE");
+        assertThatThrownBy(() -> generator.generate(SKELETON, encrypted, "ledger.yml", inventory("RRN")))
+                .hasMessage("mapping 을 만들지 않았습니다: U6 legacy.USER_MST.RRN(CONFIRMED)" + refusal + "(암호화 컬럼)")
+                .hasMessageNotContaining("APPROVED_IGNORE");
+    }
+
     /** USER_MST·DEPT_MST·LOG_HIST 와 그 컬럼. {@code extra} 는 USER_MST 에 더하는 컬럼이다. */
     public static CatalogSnapshot inventory(String... extra) {
         CatalogObject dept = table("DEPT_MST");

@@ -1507,10 +1507,14 @@ jobs:
           # [ADR-0029 L3a-2] 원장에서 mapping 을 만드는 생성기를 더했다 — 뒤집히면 접속 자리표시가 풀린 값으로 쓰이거나
           # 원장에 없는 컬럼이 조용히 빠진다. 생성기와 plan 의 원장 대응이 함께 쓰는 표·컬럼 해석(InventoryTables)도 넣었다 —
           # 뒤집히면 모호한 표나 표기만 다른 컬럼이 엉뚱한 inventory 컬럼으로 풀린다. L3a-2 뒤 로컬 실측 383 mutations, 93%, 42초다.
+          # [ADR-0029 L3b] 승인 행 격리 판정·상한(isolate)과 값 한계 가드(domain.TargetValueGuard)를 더했다 — 뒤집히면 승인 밖
+          # 실패가 격리되거나, 상한을 넘겨 격리하거나, PostgreSQL 이 조용히 반올림하는 값이 통과한다. 범위를 새로 세우지 않고
+          # 넓혔다(별도 범위는 10분 넘을 때). 2026-10-15 로컬 실측 558 mutations, 93%, 59초. 같은 날 validate 1082 94% 98초,
+          # verify 201 86% 52초(격리 집계 대조 포함).
           - scope: migration-standardize
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables"
-            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest"
+            classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*"
+            tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

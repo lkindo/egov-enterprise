@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.domain.DomainViolation;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.identity.IdentityValueType;
 import nuri.migration.identity.TargetIdentityPolicy;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.postgres.TargetSchemaFingerprint;
 import nuri.migration.protect.ColumnProtectionPlan;
@@ -13,6 +15,7 @@ import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -30,6 +33,7 @@ import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,6 +54,10 @@ public class MappingValidator {
 
     private static final Pattern UNSAFE_WHERE = Pattern.compile(
             "(?is)(;|--|/\\*|\\*/|\\b(select|insert|update|delete|merge|drop|alter|create|truncate|call|copy|grant|revoke)\\b)");
+    /** 원장 행 ID 형식(용어 매핑 원장과 같다). */
+    private static final Pattern LEDGER_ENTRY = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
+    private static final String ISOLATABLE_CODES = "INVALID_DATE·PLACEHOLDER_DATE·TIME_PRESENT·FORMAT·BLANK·"
+            + "CODEMAP_UNMAPPED·LENGTH_EXCEEDED·PRECISION_EXCEEDED·REQUIRED_MISSING";
 
     private final TransformerRegistry transformers;
     private final String dbColumnsPath;
@@ -156,6 +164,7 @@ public class MappingValidator {
                 }
             }
         }
+        validateIsolation(spec, errors);
         validateCrossTableCycles(spec.tables(), sourceTables, errors);
         // 온라인 앱이 암호화해 저장하는 컬럼은 encrypt 선언이 같아야 한다(DEC-OPS-308). 문구는 테이블·컬럼 이름만 담는다.
         errors.addAll(ColumnProtectionPlan.of(spec).violations());
@@ -202,6 +211,74 @@ public class MappingValidator {
             }
             if (!declared.add(rule.violation())) {
                 errors.add(location + ": nullify 에 같은 위반을 두 번 선언할 수 없습니다");
+            }
+        }
+    }
+
+    /**
+     * [ADR-0029 L3b] 승인 행 격리 선언의 정적 전제. 격리 행의 순번이 정해지도록 isolate 가 있는 표는 모드와 무관하게
+     * 순서 키(orderBy·orderByKeys)를 둔다 — 순서 없는 dry-run 은 원천 키를 계산할 수 없고 순번이 결정적이지 않다. 격리하면
+     * 안 되는 표(target_generated·자기참조·다른 매핑의 부모)와 컬럼(암호화·fkRef·값을 변환하지 않는 컬럼)에는 둘 수 없다
+     * ({@link RowIsolationPolicy}). 선언은 원장 행 ID 형식·1~1000 상한·격리할 수 있는 코드를 한 번씩, 그 컬럼의 nullify 가
+     * NULL 로 바꾸지 않는 위반만 담고, 한 원장 행은 한 컬럼만 가리킨다. 문구는 표·컬럼 이름과 원장 행 ID 만 담는다.
+     */
+    private static void validateIsolation(MappingSpec spec, List<String> errors) {
+        for (MappingSpec.TableMapping table : spec.tables()) {
+            boolean declared = false;
+            Map<String, String> ledgerEntries = new HashMap<>();
+            for (MappingSpec.ColumnMapping column : table.columns()) {
+                MappingSpec.Isolate isolate = column.isolate();
+                if (isolate == null) {
+                    continue;
+                }
+                declared = true;
+                String location = table.target() + "." + column.target();
+                String blocker = RowIsolationPolicy.columnBlocker(column);
+                if (blocker != null) {
+                    errors.add(location + ": " + blocker + "에는 isolate 를 둘 수 없습니다");
+                }
+                validateIsolateShape(location, column, isolate, errors);
+                if (isolate.ledgerEntry() != null && LEDGER_ENTRY.matcher(isolate.ledgerEntry()).matches()) {
+                    String previous = ledgerEntries.putIfAbsent(isolate.ledgerEntry(), column.target());
+                    if (previous != null) {
+                        errors.add(location + ": 같은 원장 행(" + isolate.ledgerEntry() + ")을 두 컬럼의 isolate 가"
+                                + " 가리킵니다 — " + previous + ", " + column.target());
+                    }
+                }
+            }
+            if (!declared) {
+                continue;
+            }
+            if (table.effectiveOrderKeys().isEmpty()) {
+                errors.add(table.source() + ": isolate 가 있는 표에는 orderBy·orderByKeys 가 필요합니다 — 순서 없이 읽으면"
+                        + " 격리 행의 순번이 정해지지 않습니다");
+            }
+            String blocker = RowIsolationPolicy.tableBlocker(spec.tables(), table);
+            if (blocker != null) {
+                errors.add(table.source() + ": " + blocker + "에는 isolate 를 둘 수 없습니다");
+            }
+        }
+    }
+
+    private static void validateIsolateShape(String location, MappingSpec.ColumnMapping column,
+                                             MappingSpec.Isolate isolate, List<String> errors) {
+        if (isolate.ledgerEntry() == null || !LEDGER_ENTRY.matcher(isolate.ledgerEntry()).matches()) {
+            errors.add(location + ": isolate.ledgerEntry 는 원장 행 ID 형식(영문·숫자·_.- 64자 이내)이어야 합니다");
+        }
+        if (isolate.maxRows() == null || isolate.maxRows() < 1
+                || isolate.maxRows() > LoadCapabilities.MAX_EXCEPTION_ROWS) {
+            errors.add(location + ": isolate maxRows 는 1~" + LoadCapabilities.MAX_EXCEPTION_ROWS + " 이어야 합니다");
+        }
+        if (isolate.violations().isEmpty()) {
+            errors.add(location + ": isolate 에는 격리할 위반(violations)이 필요합니다");
+        } else if (!LoadCapabilities.ISOLATABLE.containsAll(isolate.violations())
+                || Set.copyOf(isolate.violations()).size() != isolate.violations().size()) {
+            errors.add(location + ": isolate 의 위반은 격리할 수 있는 코드(" + ISOLATABLE_CODES + ")를 한 번씩 둡니다");
+        }
+        for (MappingSpec.Nullify rule : column.nullify()) {
+            if (rule.violation() != null && isolate.violations().contains(rule.violation().name())) {
+                errors.add(location + ": nullify 로 NULL 이 되는 위반(" + rule.violation().name() + ")은 격리하지"
+                        + " 않습니다 — 그 행은 실패하지 않습니다");
             }
         }
     }
@@ -594,6 +671,24 @@ public class MappingValidator {
     public ValidationResult validateTargetStandard(MappingSpec spec, TargetSchemaFingerprint target,
                                                    CatalogSnapshot inventory) {
         return new TargetStandardValidator(transformers::isBuiltin).validate(spec, target, inventory);
+    }
+
+    /**
+     * [ADR-0029 L3b] load 가 실행기에 넘기는 값 한계 가드 — 표마다(키: mapping 의 소스 표 이름) isolate 컬럼과 정적 정밀도
+     * 판정을 행 단위로 옮긴 컬럼의 한계다. {@link #validateTargetStandard} 가 통과한 같은 live 계약으로만 부른다. 가드를 받는
+     * 컬럼이 없는 표는 싣지 않는다.
+     */
+    public Map<String, Map<String, TargetValueGuard.Limit>> rowGuards(MappingSpec spec, TargetSchemaFingerprint target,
+                                                                       CatalogSnapshot inventory) {
+        TargetStandardValidator standard = new TargetStandardValidator(transformers::isBuiltin);
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = new LinkedHashMap<>();
+        for (MappingSpec.TableMapping table : spec.tables()) {
+            Map<String, TargetValueGuard.Limit> limits = standard.rowGuards(spec, table, target, inventory);
+            if (!limits.isEmpty()) {
+                guards.put(table.source(), limits);
+            }
+        }
+        return guards;
     }
 
     /**

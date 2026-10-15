@@ -23,6 +23,7 @@ import nuri.migration.artifact.SourceEndpointBinding;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.DiscoveryRequest;
 import nuri.migration.discovery.DiscoveryScope;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.generate.MappingGenerator;
@@ -490,13 +491,17 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             requireTargetStandard(validator.validateTargetStandard(
                     mapping, target, inventory.payload().toSnapshot()));
             requireLedger(options, mapping, inventory.payload().toSnapshot());
+            // [ADR-0029 L3b] isolate·완화 컬럼의 값 한계는 위에서 검증한 같은 live 계약으로 정한다.
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards = validator.rowGuards(
+                    mapping, target, inventory.payload().toSnapshot());
             executeApproved(
                     options.plan(), plan,
                     mapping,
                     options.mode(),
                     source,
                     readSessionPolicy,
-                    options.sourceFreezeAcknowledged());
+                    options.sourceFreezeAcknowledged(),
+                    rowGuards);
         }
     }
 
@@ -585,7 +590,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             MigrationMode mode,
             JdbcTemplate source,
             SourceReadSessionPolicy readSessionPolicy,
-            boolean sourceFreezeAcknowledged
+            boolean sourceFreezeAcknowledged,
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards
     ) {
         requireValid(validator.validateLiveSource(mapping, source), "live source schema");
         JdbcTemplate target = null;
@@ -602,7 +608,7 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
         List<EtlExecutor.TableResult> results = null;
         try {
             results = executor.execute(
-                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged);
+                    mapping, mode, source, target, readSessionPolicy, sourceFreezeAcknowledged, rowGuards);
             report = verifier.verify(mapping, results, target);
             if (!report.ok()) {
                 throw gate("migration verification이 PASS가 아니므로 load를 실패 처리합니다."

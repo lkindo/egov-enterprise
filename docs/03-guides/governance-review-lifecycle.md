@@ -137,7 +137,7 @@ npm run migration:export -- --output build/migration-product/my-institution
 | control | 검토 내용 |
 |---|---|
 | `source-target-identity` | 실제 source/target 식별·접속 대상·쓰기 권한·허용 범위 |
-| `mapping-schema-driver` | mapping, target schema, driver 및 이관 실행 계약의 정합. 보호 컬럼(주민등록번호 등, `encrypt`)을 이관하면 그 법적 근거와, 이관 호스트의 `MIGRATION_ALGORITHM_KEY` 가 온라인 `ALGORITHM_KEY` 와 같다는 확인(도구는 이 일치를 증명하지 못한다 — [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) 결정 4). 키 값은 근거 파일에 적지 않는다 |
+| `mapping-schema-driver` | mapping, target schema, driver 및 이관 실행 계약의 정합. 보호 컬럼(주민등록번호 등, `encrypt`)을 이관하면 그 법적 근거와, 이관 호스트의 `MIGRATION_ALGORITHM_KEY` 가 온라인 `ALGORITHM_KEY` 와 같다는 확인(도구는 이 일치를 증명하지 못한다 — [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) 결정 4). 키 값은 근거 파일에 적지 않는다. 원장 승인 예외로 행을 격리하면(`isolate`) 원장 행마다의 위반·상한(`maxRows`, 최대 1000)·사유와, 실행 JSON 형식 2 의 `isolated`·`isolations` 가 그 상한 안이라는 확인 |
 | `recovery-cutover` | 실패·재개·중복 방지, 백업·복구·cutover와 운영 책임 |
 | `execution-artifacts` | 실행할 JAR·mapping·inventory·plan의 경로·SHA-256, mode·adapter·schema·source freeze 확인이 담긴 descriptor |
 

@@ -4,7 +4,10 @@ import nuri.migration.adapter.AdapterIdentity;
 import nuri.migration.adapter.SourceAdapter;
 import nuri.migration.adapter.SourceReadSessionPolicy;
 import nuri.migration.domain.DomainValues;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
+import nuri.migration.isolate.IsolationTally;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.protect.ColumnProtector;
 import nuri.migration.protect.EgovAriaColumnCipher;
@@ -56,7 +59,11 @@ public record MigrationExecutionContract(
             ColumnProtector.class,
             EgovAriaColumnCipher.class,
             // 표준 도메인 변환기(ADR-0029 L3a-1). 승인 뒤 받는 값·거부 사유가 바뀌면 같은 승인으로 적재하지 않는다.
-            DomainValues.class);
+            DomainValues.class,
+            // 승인 행 격리·값 한계 가드(ADR-0029 L3b). 승인 뒤 격리 판정·상한·한계가 바뀌면 같은 승인으로 적재하지 않는다.
+            TargetValueGuard.class,
+            RowIsolationPolicy.class,
+            IsolationTally.class);
 
     public MigrationExecutionContract {
         if (schemaVersion != CURRENT_SCHEMA_VERSION) {
