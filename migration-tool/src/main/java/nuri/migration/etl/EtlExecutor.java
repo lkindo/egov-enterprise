@@ -4,11 +4,14 @@ import nuri.migration.adapter.EvidenceLevel;
 import nuri.migration.adapter.SourceReadSessionPolicy;
 import nuri.migration.domain.DomainValueRejected;
 import nuri.migration.domain.DomainViolation;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.identity.JdbcTypedValueCodec;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.identity.TypedKeyEncoding;
 import nuri.migration.identity.TypedKeyTuple;
 import nuri.migration.identity.TypedValue;
+import nuri.migration.isolate.IsolationTally;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.keymap.KeyMapRegistry;
 import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.jdbc.JdbcLobReader;
@@ -20,6 +23,7 @@ import nuri.migration.model.MappingSpec.CompositeForeignKey;
 import nuri.migration.model.MappingSpec.IdStrategy;
 import nuri.migration.model.MappingSpec.IdentityComponentSpec;
 import nuri.migration.model.MappingSpec.IdentityStrategy;
+import nuri.migration.model.MappingSpec.Isolate;
 import nuri.migration.model.MappingSpec.Nullify;
 import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
@@ -33,11 +37,13 @@ import nuri.migration.state.RowChecksum;
 import nuri.migration.transform.CodeTranslator;
 import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
+import nuri.migration.validate.ledger.LoadCapabilities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -78,6 +84,11 @@ import java.util.function.Function;
  * 공백 문자는 변환 전에 {@code DOMAIN_VIOLATION(BLANK)} 로 멈춘다. mapping 이 {@code nullify} 로 밝힌 위반만 NULL 로
  * 바꾸고 컬럼별로 세며, 상한을 넘으면 그 chunk 를 롤백하고 {@code NULLIFY_CAP_EXCEEDED} 로 멈춘다.
  *
+ * <p>[ADR-0029 L3b] DEC-OPS-309 의 예외는 하나다 — 원장이 승인한 위반으로만 실패한 행은 mapping 의 {@code isolate} 가
+ * 선언한 상한 안에서 적재하지 않고 격리한다(순번과 함께 센다). 판정은 행의 모든 실패를 모아서 하고, 승인 밖 실패·이미
+ * 커밋된 행·상한 초과는 종전처럼 멈춘다. 격리·완화 컬럼은 쓰기 전에 값 한계 가드({@link TargetValueGuard})를 받는다.
+ * 쓰기 단계 실패는 여전히 격리하지 않는다(DEC-OPS-310).
+ *
  * <p>남은 로드맵: PG COPY 고속경로, dead-letter 격리 테이블(현재 오류 리스트),
  * commit 결과 불확정 reconciliation — 설계문서 §7 참조.
  */
@@ -109,16 +120,20 @@ public class EtlExecutor {
     /**
      * 테이블별 적재 결과. {@code sequenceResets} 는 원본 키를 쓴 컬럼의 시퀀스 재설정 기록이다(DEC-OPS-306) —
      * 이름과 결과만 담고 키 값은 담지 않는다. {@code nullified} 는 대상 컬럼마다 {@code nullify} 로 NULL 이 된 행 수다
-     * (ADR-0029 L3a-1) — 실행마다 표 전체를 다시 읽으므로 표 전체의 수이고, 값은 담지 않는다.
+     * (ADR-0029 L3a-1) — 실행마다 표 전체를 다시 읽으므로 표 전체의 수이고, 값은 담지 않는다. {@code isolated} 는 원장이
+     * 승인한 위반으로만 실패해 적재하지 않은 행 수, {@code isolations} 는 (원장 행, 컬럼, 위반)마다의 행 수와 모든 행 순번이다
+     * (ADR-0029 L3b) — 값·키는 담지 않는다. 끝까지 적재한 실행에서 {@code read == transformed + isolated} 다.
      */
     public record TableResult(String sourceTable, String targetTable,
                               long read, long transformed, long written, List<String> errors,
                               List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
-                              Map<String, Long> nullified) {
+                              Map<String, Long> nullified, long isolated,
+                              List<IsolationTally.Isolation> isolations) {
 
         public TableResult {
             sequenceResets = sequenceResets == null ? List.of() : List.copyOf(sequenceResets);
             nullified = nullified == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(nullified));
+            isolations = isolations == null ? List.of() : List.copyOf(isolations);
         }
 
         /** 시퀀스 재설정 기록 도입 전 생성자 호환. */
@@ -132,6 +147,15 @@ public class EtlExecutor {
                            long read, long transformed, long written, List<String> errors,
                            List<TargetSequenceSynchronizer.SequenceReset> sequenceResets) {
             this(sourceTable, targetTable, read, transformed, written, errors, sequenceResets, Map.of());
+        }
+
+        /** 승인 행 격리 도입 전 생성자 호환. */
+        public TableResult(String sourceTable, String targetTable,
+                           long read, long transformed, long written, List<String> errors,
+                           List<TargetSequenceSynchronizer.SequenceReset> sequenceResets,
+                           Map<String, Long> nullified) {
+            this(sourceTable, targetTable, read, transformed, written, errors, sequenceResets, nullified, 0L,
+                    List.of());
         }
     }
 
@@ -171,6 +195,23 @@ public class EtlExecutor {
             SourceReadSessionPolicy sourceReadPolicy,
             boolean sourceFreezeAcknowledged
     ) {
+        return execute(spec, mode, sourceJt, targetJt, sourceReadPolicy, sourceFreezeAcknowledged, Map.of());
+    }
+
+    /**
+     * 승인 workflow 의 실행 경계. {@code rowGuards} 는 표마다(키: mapping 의 소스 표 이름) 값 한계 가드를 받는 대상 컬럼과
+     * 그 한계다(ADR-0029 L3b) — 승인 workflow 가 live 대상 계약으로 정한다({@code MappingValidator#rowGuards}). isolate 를
+     * 선언한 컬럼에 가드가 없으면 연결을 열기 전에 멈춘다.
+     */
+    public List<TableResult> execute(
+            MappingSpec spec,
+            MigrationMode mode,
+            JdbcTemplate sourceJt,
+            JdbcTemplate targetJt,
+            SourceReadSessionPolicy sourceReadPolicy,
+            boolean sourceFreezeAcknowledged,
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards
+    ) {
         if (spec == null) {
             throw new IllegalArgumentException("mapping spec이 없습니다.");
         }
@@ -188,6 +229,8 @@ public class EtlExecutor {
         // 보호 컬럼 선언 위반·키 부재는 연결을 열거나 실행 상태를 만들기 전에 멈춘다(DEC-OPS-308).
         ColumnProtector protector = ColumnProtector.forRun(spec, environment);
         requireNullifyRules(spec);
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = normalizeGuards(rowGuards);
+        requireIsolationRules(spec, guards);
         DataSource sourceDs = requireDataSource(sourceJt, "source JDBC");
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
         if (commit && targetDs == null) {
@@ -215,6 +258,8 @@ public class EtlExecutor {
                         ? planTargetSequences(targetDs, orderedTables)
                         : List.of();
                 boolean tablesRan = false;
+                // [ADR-0029 L3b] 격리한 행이 시퀀스 컬럼에 썼을 정수 키 최댓값(표 → 컬럼). 메모리에만 두고 결과에 싣지 않는다.
+                Map<String, Map<String, BigInteger>> isolatedKeys = new HashMap<>();
                 try (Connection sourceConnection = sourceDs.getConnection()) {
                     try {
                         sourceConnection.setReadOnly(true);
@@ -243,8 +288,10 @@ public class EtlExecutor {
                                 }
                                 TableExecution execution = runTable(
                                         sourceConnection, targetDs, spec, table, registry, state, commit,
-                                        protector);
+                                        protector, guards.getOrDefault(lower(table.source()), Map.of()),
+                                        sequenceColumns(sequencePlan, table));
                                 results.add(execution.result());
+                                isolatedKeys.put(lower(table.source()), execution.isolatedKeys());
                                 if (execution.sourceSessionFailed()) {
                                     sourceSessionFailed = true;
                                     safeRollback(sourceConnection);
@@ -268,7 +315,7 @@ public class EtlExecutor {
                 }
                 if (tablesRan) {
                     // 오류가 난 테이블도 앞선 chunk 는 남으므로 재설정한다. 앞으로만 옮기므로 재실행해도 같다.
-                    synchronizeTargetSequences(targetDs, sequencePlan, results);
+                    synchronizeTargetSequences(targetDs, sequencePlan, results, isolatedKeys);
                 }
             }
         } catch (SQLException sourceConnectionFailure) {
@@ -303,11 +350,15 @@ public class EtlExecutor {
         }
     }
 
-    /** 실행한 테이블마다 재설정 기록이나 실패를 결과에 붙인다. 실패는 그 테이블의 오류가 되어 run 을 FAILED 로 만든다. */
+    /**
+     * 실행한 테이블마다 재설정 기록이나 실패를 결과에 붙인다. 실패는 그 테이블의 오류가 되어 run 을 FAILED 로 만든다.
+     * {@code isolatedKeys} 는 표·컬럼마다 격리한 행의 정수 키 최댓값이다 — 재설정 목표가 그 번호 뒤까지 간다(ADR-0029 L3b).
+     */
     private static void synchronizeTargetSequences(
             DataSource targetDs,
             List<TargetSequenceSynchronizer.Target> plan,
-            List<TableResult> results
+            List<TableResult> results,
+            Map<String, Map<String, BigInteger>> isolatedKeys
     ) {
         if (plan.isEmpty()) {
             return;
@@ -324,9 +375,11 @@ public class EtlExecutor {
                 if (!ranTables.contains(table)) {
                     continue;
                 }
+                BigInteger isolatedMax = isolatedKeys.getOrDefault(table, Map.of())
+                        .get(planned.column().toLowerCase(Locale.ROOT));
                 try {
                     resets.computeIfAbsent(table, ignored -> new ArrayList<>())
-                            .add(TargetSequenceSynchronizer.apply(target, planned));
+                            .add(TargetSequenceSynchronizer.apply(target, planned, isolatedMax));
                 } catch (SQLException failure) {
                     safeRollback(target);
                     failures.computeIfAbsent(table, ignored -> new ArrayList<>())
@@ -356,7 +409,7 @@ public class EtlExecutor {
             errors.addAll(failures.getOrDefault(table, List.of()));
             results.set(i, new TableResult(result.sourceTable(), result.targetTable(), result.read(),
                     result.transformed(), result.written(), errors, resets.getOrDefault(table, List.of()),
-                    result.nullified()));
+                    result.nullified(), result.isolated(), result.isolations()));
         }
     }
 
@@ -454,6 +507,90 @@ public class EtlExecutor {
                 }
             }
         }
+    }
+
+    /**
+     * 승인 행 격리 선언을 연결을 열기 전에 확인한다(ADR-0029 L3b). mapping 정적 검증과 같은 전제 — 순서 키가 있고, 격리하면
+     * 안 되는 표(target_generated·자기참조·다른 매핑의 부모)와 컬럼(암호화·fkRef·값을 변환하지 않는 컬럼)이 아니며, 위반은
+     * 격리할 수 있는 코드를 한 번씩 그 컬럼의 nullify 밖에서만 담고, 원장 행마다 상한이 하나다 — 를 다시 보고, isolate 컬럼마다
+     * 값 한계 가드가 있어야 한다. 그 밖의 선언으로 행을 적재하지 않고 넘기지 않는다. 오류는 표·컬럼 이름만 밝힌다.
+     */
+    static void requireIsolationRules(MappingSpec spec, Map<String, Map<String, TargetValueGuard.Limit>> guards) {
+        for (TableMapping table : spec.tables()) {
+            RowIsolationPolicy policy = RowIsolationPolicy.of(table);
+            if (!policy.active()) {
+                continue;
+            }
+            policy.caps();
+            if (table.effectiveOrderKeys().isEmpty()) {
+                throw new IllegalArgumentException(table.source()
+                        + ": isolate 가 있는 표에는 orderBy·orderByKeys 가 필요합니다");
+            }
+            String tableBlocker = RowIsolationPolicy.tableBlocker(spec.tables(), table);
+            if (tableBlocker != null) {
+                throw new IllegalArgumentException(table.source() + ": " + tableBlocker + "에는 isolate 를 둘 수 없습니다");
+            }
+            Map<String, TargetValueGuard.Limit> tableGuards = guards.getOrDefault(lower(table.source()), Map.of());
+            for (ColumnMapping column : table.columns()) {
+                Isolate isolate = column.isolate();
+                if (isolate == null) {
+                    continue;
+                }
+                String label = table.source() + "." + column.target();
+                String columnBlocker = RowIsolationPolicy.columnBlocker(column);
+                if (columnBlocker != null) {
+                    throw new IllegalArgumentException(label + ": " + columnBlocker + "에는 isolate 를 둘 수 없습니다");
+                }
+                Set<String> codes = new HashSet<>();
+                for (String code : isolate.violations()) {
+                    if (!LoadCapabilities.ISOLATABLE.contains(code) || !codes.add(code)) {
+                        throw new IllegalArgumentException(label
+                                + ": isolate 위반은 격리할 수 있는 코드를 한 번씩만 담습니다");
+                    }
+                    if (column.nullify().stream().anyMatch(rule -> rule.violation().name().equals(code))) {
+                        throw new IllegalArgumentException(label
+                                + ": nullify 가 NULL 로 바꾸는 위반은 isolate 에 둘 수 없습니다");
+                    }
+                }
+                if (!tableGuards.containsKey(column.target())) {
+                    throw new IllegalArgumentException(label + ": isolate 컬럼의 값 한계 가드가 없습니다"
+                            + " — 승인 workflow(load)가 대상 계약으로 정한 가드와 함께 실행하세요");
+                }
+            }
+        }
+    }
+
+    /** 표 이름을 소문자로 맞춘 가드 표. null 이면 비어 있다. */
+    private static Map<String, Map<String, TargetValueGuard.Limit>> normalizeGuards(
+            Map<String, Map<String, TargetValueGuard.Limit>> rowGuards) {
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = new HashMap<>();
+        if (rowGuards == null) {
+            return guards;
+        }
+        for (Map.Entry<String, Map<String, TargetValueGuard.Limit>> table : rowGuards.entrySet()) {
+            if (table.getKey() == null || table.getValue() == null) {
+                throw new IllegalArgumentException("값 한계 가드의 표 이름과 한계는 비어 있을 수 없습니다");
+            }
+            if (guards.put(lower(table.getKey()), Map.copyOf(table.getValue())) != null) {
+                throw new IllegalArgumentException("값 한계 가드에 같은 표가 두 번 있습니다: " + table.getKey());
+            }
+        }
+        return guards;
+    }
+
+    /** 이 표에서 시퀀스를 재설정할 대상 컬럼(소문자). COMMIT 이 아니거나 none 선언뿐이면 비어 있다. */
+    private static Set<String> sequenceColumns(List<TargetSequenceSynchronizer.Target> plan, TableMapping table) {
+        Set<String> columns = new HashSet<>();
+        for (TargetSequenceSynchronizer.Target planned : plan) {
+            if (planned.sequence() != null && planned.sourceTable().equalsIgnoreCase(table.source())) {
+                columns.add(planned.column().toLowerCase(Locale.ROOT));
+            }
+        }
+        return columns;
+    }
+
+    private static String lower(String value) {
+        return value.toLowerCase(Locale.ROOT);
     }
 
     private static void validateIdentityContract(MappingSpec spec, TableMapping table) {
@@ -583,18 +720,24 @@ public class EtlExecutor {
 
     private TableExecution runTable(Connection sourceConnection, DataSource targetDs, MappingSpec spec,
                                     TableMapping t, KeyMapRegistry reg, MigrationStateStore state,
-                                    boolean commit, ColumnProtector protector) {
+                                    boolean commit, ColumnProtector protector,
+                                    Map<String, TargetValueGuard.Limit> guards, Set<String> sequenceColumns) {
         List<String> errors = new ArrayList<>();
         List<String> targetCols = canonicalTargetColumns(t);
         List<String> insertCols = insertTargetColumns(t);
         List<String> returningCols = returningTargetColumns(t);
+        RowIsolationPolicy isolation = RowIsolationPolicy.of(t);
         WritePlan writePlan = new WritePlan(
                 targetCols,
                 insertCols,
                 returningCols,
                 buildInsertSql(t.target(), insertCols, returningCols),
-                protector);
-        TableCounts counts = new TableCounts();
+                protector,
+                guards,
+                isolation,
+                sequenceColumns);
+        TableCounts counts = new TableCounts(isolation.active()
+                ? new IsolationTally(t.source(), isolation.caps()) : null);
         boolean sourceSessionFailed = false;
         boolean rowFailureStopped = false;
 
@@ -626,10 +769,13 @@ public class EtlExecutor {
             safeClose(targetConn);
         }
         long durableWritten = state == null ? counts.written : state.count(t.source());
+        IsolationTally isolated = counts.isolated;
         return new TableExecution(
                 new TableResult(t.source(), t.target(), counts.read, counts.transformed, durableWritten, errors,
-                        List.of(), counts.nullified.columns()),
-                sourceSessionFailed, rowFailureStopped);
+                        List.of(), counts.nullified.columns(), isolated == null ? 0L : isolated.isolated(),
+                        isolated == null ? List.of() : isolated.isolations()),
+                sourceSessionFailed, rowFailureStopped,
+                isolated == null ? Map.of() : isolated.maxPreservedKeys());
     }
 
     /** 행 변환·쓰기 실패로 run 이 멈춘 뒤의 테이블. 앞서 커밋된 checkpoint 수만 기록 건수로 보인다. */
@@ -763,14 +909,21 @@ public class EtlExecutor {
 
     private record SourcePage(List<Map<String, Object>> rows, boolean hasMore) {}
 
+    /** {@code isolatedKeys} 는 격리한 행이 시퀀스 컬럼(소문자)에 썼을 정수 키 최댓값이다. 결과·문구에 싣지 않는다. */
     private record TableExecution(TableResult result, boolean sourceSessionFailed,
-                                  boolean rowFailureStopped) {}
+                                  boolean rowFailureStopped, Map<String, BigInteger> isolatedKeys) {}
 
     private static final class TableCounts {
         private long read;
         private long transformed;
         private long written;
         private final NullifyTally nullified = new NullifyTally();
+        /** isolate 를 선언한 표에서만 있다(ADR-0029 L3b). */
+        private final IsolationTally isolated;
+
+        private TableCounts(IsolationTally isolated) {
+            this.isolated = isolated;
+        }
     }
 
     /** 한 행에서 nullify 로 NULL 이 된 컬럼과 위반. 값은 담지 않는다. */
@@ -810,12 +963,19 @@ public class EtlExecutor {
         private record RuleKey(String column, DomainViolation violation) {}
     }
 
+    /**
+     * 표 하나의 쓰기 계획. {@code guards} 는 값 한계 가드를 받는 대상 컬럼과 한계, {@code isolation} 은 isolate 선언,
+     * {@code sequenceColumns} 는 적재 뒤 시퀀스를 재설정할 대상 컬럼(소문자)이다(ADR-0029 L3b).
+     */
     private record WritePlan(
             List<String> targetColumns,
             List<String> insertColumns,
             List<String> returningColumns,
             String insertSql,
-            ColumnProtector protector
+            ColumnProtector protector,
+            Map<String, TargetValueGuard.Limit> guards,
+            RowIsolationPolicy isolation,
+            Set<String> sequenceColumns
     ) {}
 
     private SourcePage readSourcePage(Connection source, TableMapping table,
@@ -971,8 +1131,14 @@ public class EtlExecutor {
      * <p>[2026-10-13 DEC-OPS-309] 행 하나라도 변환(transform·codemap·type·fkRef·identity)에 실패하면
      * 그 chunk 는 한 행도 쓰지 않는다. 이 chunk 에서 새로 만든 keymap 도 버리고 테이블과 run 을 멈춘다.
      * 종전에는 실패 행만 건너뛰고 나머지를 커밋해, 승인 없는 누락이 적재된 채 run 만 FAIL 로 끝났다.
-     * 재개는 마지막으로 커밋된 checkpoint 에서 시작한다. 승인된 예외 행의 격리(Q6 원장)는 아직 없다.
+     * 재개는 마지막으로 커밋된 checkpoint 에서 시작한다.
      * [2026-10-14 DEC-OPS-310] 쓰기 단계 실패도 같다 — 이 chunk 는 한 행도 커밋하지 않고 멈춘다.
+     *
+     * <p>[ADR-0029 L3b] isolate 를 선언한 표는 수집 모드로 돈다. 행마다 모든 컬럼 단계와 idStrategy 채번·복합 FK·typed
+     * identity 까지 평가해 실패를 모두 모으고, 실패가 있으면 그 행의 채번을 되돌린다 — 승인된 컬럼 위반 뒤에 식별자·FK
+     * 실패가 숨지 않는다. 모든 실패가 그 컬럼의 승인 위반이면 행을 적재하지 않고 원장 행마다 센다({@link #isolateRow}).
+     * 하나라도 아니면, 이미 커밋된 행이면, 원장 행의 상한을 넘으면 지금처럼 chunk 를 쓰지 않고 멈춘다. isolate 가 없는 표는
+     * 종전 경로 그대로다. 쓰기 단계 실패는 격리하지 않는다(DEC-OPS-310).
      *
      * @return 계속 진행하면 true, 행 변환·쓰기 실패로 멈추면 false
      */
@@ -985,13 +1151,26 @@ public class EtlExecutor {
             return processGeneratedRows(chunk, spec, t, writePlan, reg, state, targetConn, counts, errors,
                     firstOrdinal);
         }
+        boolean collect = writePlan.isolation().active();
         Checkpoint chunkCheckpoint = reg.checkpoint();
         List<PreparedRow> batch = new ArrayList<>(chunk.size());
         for (int index = 0; index < chunk.size(); index++) {
             Map<String, Object> row = chunk.get(index);
             Checkpoint rowCheckpoint = reg.checkpoint();
             try {
-                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan.protector(), counts.nullified);
+                List<RuntimeException> failures = collect ? new ArrayList<>(0) : null;
+                Map<String, Object> out = transformRow(row, spec, t, reg, writePlan, counts.nullified, failures);
+                if (failures != null && !failures.isEmpty()) {
+                    reg.rollback(rowCheckpoint);
+                    String stopped = isolateRow(row, out, t, writePlan, state, counts.isolated, failures,
+                            firstOrdinal + index);
+                    if (stopped != null) {
+                        reg.rollback(chunkCheckpoint);
+                        errors.add(stopped);
+                        return false;
+                    }
+                    continue;
+                }
                 counts.transformed++;
                 CheckpointEntry checkpoint = null;
                 if (state != null) {
@@ -1047,14 +1226,99 @@ public class EtlExecutor {
      * 행 위치는 이 테이블을 원천 정렬(orderBy/orderByKeys) 순서로 읽은 1부터의 순번이다.
      */
     static String rowFailureMessage(TableMapping table, RuntimeException failure, long ordinal) {
-        String column = failure instanceof RowTransformFailure classified ? classified.column : "-";
-        RowFailureReason reason = failure instanceof RowTransformFailure classified
-                ? classified.reason : RowFailureReason.ROW_FAILED;
-        String detail = failure instanceof RowTransformFailure classified && classified.detail != null
-                ? "(" + classified.detail + ")" : "";
-        return "행 변환 실패(" + table.source() + ", column=" + column + ", row=" + ordinal
-                + "): ROW_TRANSFORM_FAILED:" + reason.name() + detail
-                + " — 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+        return rowFailureMessage(table, failureOf(failure), ordinal, "");
+    }
+
+    private static String rowFailureMessage(TableMapping table, RowIsolationPolicy.Failure failure, long ordinal,
+                                            String note) {
+        String detail = failure.detail() != null ? "(" + failure.detail() + ")" : "";
+        return "행 변환 실패(" + table.source() + ", column=" + failure.column() + ", row=" + ordinal
+                + "): ROW_TRANSFORM_FAILED:" + failure.reason() + detail
+                + " — " + note + "이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+    }
+
+    /** 실행기의 행 변환 실패를 격리 판정의 실패로 옮긴다. 분류되지 않은 실패는 어느 컬럼의 것인지 모르는 ROW_FAILED 다. */
+    private static RowIsolationPolicy.Failure failureOf(RuntimeException failure) {
+        if (failure instanceof RowTransformFailure classified) {
+            return new RowIsolationPolicy.Failure(classified.column, classified.reason.name(), classified.detail);
+        }
+        return new RowIsolationPolicy.Failure("-", RowFailureReason.ROW_FAILED.name(), null);
+    }
+
+    /**
+     * [ADR-0029 L3b] 실패한 행 하나를 격리하거나 멈출 이유를 돌려준다(격리하면 null). 이미 커밋된 checkpoint 가 있는 행은
+     * 격리하지 않는다 — 대상에 남은 행을 적재하지 않은 것으로 셀 수 없다. 격리하면 원장 행마다 세고, 상한을 넘으면 멈춘다.
+     * 격리 행이 시퀀스 컬럼에 썼을 정수 키도 모은다(시퀀스 재설정 목표). 그 키를 모르면(격리한 컬럼 자신이 시퀀스 컬럼이다)
+     * 재설정이 그 번호를 넘지 못하므로 멈춘다. 문구는 표·컬럼·행 순번·코드와 원장 행 ID 뿐이다.
+     */
+    private String isolateRow(Map<String, Object> row, Map<String, Object> out, TableMapping t, WritePlan plan,
+                              MigrationStateStore state, IsolationTally tally, List<RuntimeException> raised,
+                              long ordinal) {
+        List<RowIsolationPolicy.Failure> failures = new ArrayList<>(raised.size() + 1);
+        raised.forEach(failure -> failures.add(failureOf(failure)));
+        RowIsolationPolicy.Failure identity = missingIdentity(out, t, failures);
+        if (identity != null) {
+            failures.add(identity);
+        }
+        boolean durable = state != null && state.find(t.source(), sourceKey(row, t)) != null;
+        RowIsolationPolicy.Decision decision = plan.isolation().decide(failures, durable);
+        if (decision instanceof RowIsolationPolicy.Stopped stopped) {
+            return rowFailureMessage(t, stopped.failure(), ordinal, "격리하지 않음(" + stopped.cause().name() + "), ");
+        }
+        Map<String, BigInteger> keys = new HashMap<>();
+        for (String column : plan.sequenceColumns()) {
+            String key = keyIgnoreCase(out, column);
+            if (key == null) {
+                // 실패한 컬럼의 값은 out 에 없다. 격리 행이 시퀀스 컬럼에 쓸 키를 모르면 재설정 목표가 대상 최댓값에서
+                //   멈춰, 데이터를 고쳐 다시 적재할 번호를 온라인 앱이 먼저 내줄 수 있다.
+                return "행 변환 실패(" + t.source() + ", column=" + column + ", row=" + ordinal
+                        + "): ISOLATION_KEY_UNKNOWN — 격리 행이 시퀀스 컬럼에 쓸 키를 몰라 재설정 목표를 정할 수 없어"
+                        + " 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+            }
+            try {
+                BigInteger value = IsolationTally.integerKey(out.get(key));
+                if (value != null) {
+                    keys.put(column, value);
+                }
+            } catch (IllegalArgumentException fractional) {
+                return "행 변환 실패(" + t.source() + ", column=" + column + ", row=" + ordinal
+                        + "): ISOLATION_KEY_NOT_INTEGER — 격리 행의 키로 시퀀스 재설정 목표를 정할 수 없어"
+                        + " 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+            }
+        }
+        try {
+            tally.add(ordinal, ((RowIsolationPolicy.Isolated) decision).matches(), keys);
+        } catch (IsolationTally.CapExceeded exceeded) {
+            return exceeded.getMessage() + " — ISOLATION_CAP_EXCEEDED, 이 chunk 는 기록하지 않고 적재를 멈췄습니다";
+        }
+        return null;
+    }
+
+    /**
+     * [ADR-0029 L3b] 실패가 있는 행은 checkpoint identity 를 만들지 않으므로 대상 identity 가 비었는지 여기서 본다 — 그
+     * 행에 실패가 없었다면 커밋 경로({@link #identityCheckpoint})가 {@code IDENTITY_FAILED} 로 멈췄을 것이다(idStrategy 의
+     * 소스 키나 targetKey 의 값이 NULL·공백). 승인된 컬럼 위반 뒤에 그 실패가 숨지 않게 같은 실패를 돌려준다. typed identity 는
+     * applyTypedIdentity 가 이미 평가했고, identity 컬럼 자신이 실패해 값을 모르면 그 실패가 판정한다. 없으면 null.
+     */
+    static RowIsolationPolicy.Failure missingIdentity(Map<String, Object> out, TableMapping table,
+                                                      List<RowIsolationPolicy.Failure> failures) {
+        if (table.identity() != null) {
+            return null;
+        }
+        String column = targetIdentityColumn(table);
+        if (column == null) {
+            return new RowIsolationPolicy.Failure("<identity>", RowFailureReason.IDENTITY_FAILED.name(), null);
+        }
+        for (RowIsolationPolicy.Failure failure : failures) {
+            if (column.equalsIgnoreCase(failure.column())) {
+                return null;
+            }
+        }
+        Object value = out.get(column);
+        if (value == null || value.toString().isBlank()) {
+            return new RowIsolationPolicy.Failure(column, RowFailureReason.IDENTITY_FAILED.name(), null);
+        }
+        return null;
     }
 
     /** 행 변환이 어느 단계에서 실패했는지. 값은 담지 않는다. */
@@ -1151,7 +1415,7 @@ public class EtlExecutor {
             for (int index = 0; index < rows.size(); index++) {
                 Checkpoint checkpoint = registry.checkpoint();
                 try {
-                    transformRow(rows.get(index), spec, table, registry, writePlan.protector(), counts.nullified);
+                    transformRow(rows.get(index), spec, table, registry, writePlan, counts.nullified, null);
                     counts.transformed++;
                 } catch (RuntimeException failure) {
                     errors.add(rowFailureMessage(table, failure, firstOrdinal + index));
@@ -1173,7 +1437,7 @@ public class EtlExecutor {
             Checkpoint rowCheckpoint = registry.checkpoint();
             try {
                 Map<String, Object> transformed = transformRow(
-                        row, spec, table, registry, writePlan.protector(), counts.nullified);
+                        row, spec, table, registry, writePlan, counts.nullified, null);
                 TypedKeyTuple sourceIdentity = tupleFromValues(row, table.identity().sourceComponents());
                 counts.transformed++;
                 String encodedSource = TypedKeyEncoding.encode(
@@ -1369,44 +1633,85 @@ public class EtlExecutor {
     /**
      * 행 하나를 대상 컬럼 값으로 바꾼다. {@code tally} 가 있으면 nullify 정제를 세고 상한을 확인한다 — 쓰기 재시도의
      * 재변환은 같은 행을 두 번 세지 않도록 null 을 넘긴다(정제 자체는 똑같이 한다).
+     *
+     * <p>[ADR-0029 L3b] {@code collector} 가 있으면 수집 모드다 — 실패를 던지지 않고 모으며 남은 컬럼·idStrategy 채번·
+     * 복합 FK·typed identity 까지 평가한다. 실패를 모은 행은 nullify 를 세지 않는다(적재하지 않으므로). 채번은 호출자가
+     * 되돌린다. {@code collector} 가 null 이면 종전처럼 첫 실패를 던진다.
      */
     private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t,
-                                             KeyMapRegistry reg, ColumnProtector protector, NullifyTally tally) {
+                                             KeyMapRegistry reg, WritePlan plan, NullifyTally tally,
+                                             List<RuntimeException> collector) {
         Map<String, Object> out = new LinkedHashMap<>();
         List<Nullified> nullified = new ArrayList<>(0);
         for (ColumnMapping col : t.columns()) {
-            Object value;
-            if (col.constant() != null) {
-                value = col.constant();
-            } else if (col.source() != null) {
-                value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg, nullified);
-                // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 chunk 를 쓰지 않는다.
-                value = protectColumn(protector, t, col, value);
-            } else {
-                value = null;
+            try {
+                Object value;
+                if (col.constant() != null) {
+                    value = col.constant();
+                } else if (col.source() != null) {
+                    value = columnValue(src.get(col.source().toLowerCase(Locale.ROOT)), spec, col, reg, nullified);
+                    // 보호 컬럼은 변환의 마지막에 온라인 앱과 같은 암호문으로 바꾼다. 평문 형태면 이 chunk 를 쓰지 않는다.
+                    value = protectColumn(plan.protector(), t, col, value);
+                } else {
+                    value = null;
+                }
+                // [ADR-0029 L3b] 격리·완화 컬럼은 변환을 마친 값(보호 컬럼 암호화 뒤)이 대상 한계에 드는지 쓰기 전에 본다.
+                //   쓰기 단계 오류(SQLSTATE)는 격리하지 않으므로(DEC-OPS-310) 격리할 수 있는 위반은 여기서 코드로 알린다.
+                guardValue(plan.guards(), col, value);
+                out.put(col.target(), value);
+            } catch (RuntimeException failure) {
+                collectOrThrow(collector, failure);
             }
-            out.put(col.target(), value);
         }
         IdStrategy id = t.idStrategy();
         if (id != null && id.column() != null) {
-            Object legacy = id.sourceKey() == null ? null : src.get(id.sourceKey().toLowerCase(Locale.ROOT));
-            String newKey = reg.mintOrGet(t.source(), legacy == null ? null : legacy.toString(), id.generator());
-            out.put(id.column(), newKey);
+            try {
+                Object legacy = id.sourceKey() == null ? null : src.get(id.sourceKey().toLowerCase(Locale.ROOT));
+                String newKey = reg.mintOrGet(t.source(), legacy == null ? null : legacy.toString(), id.generator());
+                out.put(id.column(), newKey);
+            } catch (RuntimeException failure) {
+                collectOrThrow(collector, failure);
+            }
         }
         try {
             applyCompositeForeignKeys(src, out, t, reg);
         } catch (RuntimeException failure) {
-            throw new RowTransformFailure("<foreignKeys>", RowFailureReason.FK_REF_FAILED);
+            collectOrThrow(collector, new RowTransformFailure("<foreignKeys>", RowFailureReason.FK_REF_FAILED));
         }
         try {
             applyTypedIdentity(src, out, t, reg);
         } catch (RuntimeException failure) {
-            throw new RowTransformFailure("<identity>", RowFailureReason.IDENTITY_FAILED);
+            collectOrThrow(collector, new RowTransformFailure("<identity>", RowFailureReason.IDENTITY_FAILED));
+        }
+        if (collector != null && !collector.isEmpty()) {
+            return out;
         }
         if (tally != null) {
             tally.add(nullified);
         }
         return out;
+    }
+
+    private static void collectOrThrow(List<RuntimeException> collector, RuntimeException failure) {
+        if (collector == null) {
+            throw failure;
+        }
+        collector.add(failure);
+    }
+
+    /**
+     * [ADR-0029 L3b] 값 한계 가드를 받는 컬럼이면 값이 대상 길이·정밀도·NOT NULL 안인지 본다. 넘으면
+     * {@code DOMAIN_VIOLATION(<코드>)} 로 알리고 값은 싣지 않는다. 가드가 없는 컬럼은 종전처럼 정적 판정과 쓰기 단계가 맡는다.
+     */
+    private static void guardValue(Map<String, TargetValueGuard.Limit> guards, ColumnMapping col, Object value) {
+        TargetValueGuard.Limit limit = guards.get(col.target());
+        if (limit == null) {
+            return;
+        }
+        TargetValueGuard.Violation violation = TargetValueGuard.check(value, limit);
+        if (violation != null) {
+            throw new RowTransformFailure(col.target(), RowFailureReason.DOMAIN_VIOLATION, violation.name());
+        }
     }
 
     /**
@@ -1699,7 +2004,7 @@ public class EtlExecutor {
             Object[] arguments;
             try {
                 Map<String, Object> transformed = transformRow(
-                        row.source(), spec, table, registry, writePlan.protector(), null);
+                        row.source(), spec, table, registry, writePlan, null, null);
                 arguments = toArguments(transformed, writePlan.insertColumns());
                 checkpoints.add(checkpoint(row.source(), transformed, table, writePlan.targetColumns()));
             } catch (RuntimeException failure) {

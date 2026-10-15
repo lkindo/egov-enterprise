@@ -13,6 +13,7 @@ import nuri.migration.discovery.CatalogObject;
 import nuri.migration.discovery.CatalogSnapshot;
 import nuri.migration.discovery.InventoryTables;
 import nuri.migration.generate.SkeletonReader.Skeleton;
+import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
@@ -58,6 +59,9 @@ import java.util.Set;
  *       행이 정확히 하나여야 한다. 키로만 쓰는 컬럼은 이관 제외와 사유로 적는다.</li>
  *   <li>확정 행마다 컬럼을 만든다({@code load} 를 옮기고, 보호 컬럼이면 {@code encrypt} 를 정한다). skeleton 의 fkRef
  *       항목은 같은 소스 컬럼의 확정 행 load 를 받되 키를 정규화하는 처리만 받는다.</li>
+ *   <li>확정 행의 승인 예외 가운데 nullify 로 NULL 이 되지 않는 위반만 {@code isolate} 로 옮긴다(ADR-0029 L3b). 격리할
+ *       수 없는 표(target_generated·자기참조·다른 매핑의 부모)·컬럼(암호화·fkRef)에 그런 위반이 남으면 거부한다 — 이관
+ *       제외로 돌리라고 안내하지 않는다.</li>
  *   <li>아직 실행하지 못하는 행(외부 보관·기본이 아닌 매핑·조회 조인)과 skeleton 에 없는 표의 확정 행은 거부한다.</li>
  *   <li>원장 선언은 출력 mapping 디렉터리 기준 경로와 원장 바이트의 SHA-256 이다.</li>
  *   <li>만든 mapping 을 다시 읽어 정적 mapping 검증과 자격·개인정보 값 검사, plan 과 같은 원장 대응 검사
@@ -361,7 +365,8 @@ public final class MappingGenerator {
                             || consumed.contains(row)) {
                         continue;
                     }
-                    ObjectNode node = column(entry, mapping, InventoryTables.columnName(column), targets, errors);
+                    ObjectNode node = column(skeleton.spec(), entry, mapping, InventoryTables.columnName(column),
+                            targets, errors);
                     if (node != null) {
                         columnNodes.add(node);
                     }
@@ -418,6 +423,10 @@ public final class MappingGenerator {
                     + " — 표준 도메인 변환기·codemap·nullify 는 부모 키를 바꿉니다");
             return;
         }
+        if (LoadCapabilities.isolate(entry) != null) {
+            errors.add(notIsolatable(entry, "fkRef 컬럼"));
+            return;
+        }
         if (load.transform() != null) {
             node.put("transform", load.transform());
         }
@@ -426,8 +435,11 @@ public final class MappingGenerator {
         }
     }
 
-    /** 확정 행 하나의 컬럼 노드. 대상 표가 다르거나 이관할 수 없는 보호 컬럼이면 null 이다. */
-    private static ObjectNode column(Entry entry, TableMapping mapping, String sourceColumn,
+    /**
+     * 확정 행 하나의 컬럼 노드. 대상 표가 다르거나 이관할 수 없는 보호 컬럼이면 null 이다. 원장 승인 예외 가운데 nullify 로
+     * NULL 이 되지 않는 위반이 남으면 {@code isolate} 로 옮기고(ADR-0029 L3b), 격리할 수 없는 표·컬럼이면 거부한다.
+     */
+    private static ObjectNode column(MappingSpec skeleton, Entry entry, TableMapping mapping, String sourceColumn,
                                      Map<String, String> targets, List<String> errors) {
         if (!entry.target().table().equalsIgnoreCase(mapping.target())) {
             errors.add(row(entry) + ": 확정 행의 대상 표가 skeleton 의 대상 표(" + mapping.target() + ")와 다릅니다");
@@ -470,7 +482,42 @@ public final class MappingGenerator {
             }
         }
         protectedColumn.ifPresent(registered -> node.put("encrypt", registered.protection().id()));
+        MappingSpec.Isolate isolate = LoadCapabilities.isolate(entry);
+        if (isolate != null) {
+            String blocker = RowIsolationPolicy.tableBlocker(skeleton.tables(), mapping);
+            if (blocker == null) {
+                blocker = RowIsolationPolicy.columnBlocker(new ColumnMapping(sourceColumn, entry.target().column(),
+                        load.transform(), load.type(), load.codemap(), null, null,
+                        protectedColumn.map(registered -> registered.protection().id()).orElse(null),
+                        load.nullify()));
+            }
+            if (blocker != null) {
+                errors.add(notIsolatable(entry, blocker));
+                return null;
+            }
+            ObjectNode rule = node.putObject("isolate");
+            rule.put("ledgerEntry", isolate.ledgerEntry());
+            putCount(rule, "maxRows", isolate.maxRows());
+            ArrayNode codes = rule.putArray("violations");
+            isolate.violations().forEach(codes::add);
+        }
         return node;
+    }
+
+    /**
+     * 격리할 수 없는 표·컬럼에 처리되지 않은 위반이 남았다. 이관 제외로 돌리라고 안내하지 않는다 — 옮겨야 할 데이터다.
+     */
+    private static String notIsolatable(Entry entry, String blocker) {
+        return row(entry) + ": 이 표는 격리할 수 없습니다 — 데이터를 바로잡거나 nullify 로 처리하세요(" + blocker + ")";
+    }
+
+    /** 정수 값을 int 폭에 들어가면 int 로 쓴다 — 같은 입력이 같은 바이트를 낸다. */
+    private static void putCount(ObjectNode node, String field, long value) {
+        if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
+            node.put(field, (int) value);
+        } else {
+            node.put(field, value);
+        }
     }
 
     /** 한 대상 컬럼은 한 항목만 채운다. 먼저 채운 항목을 문구에 밝힌다. */

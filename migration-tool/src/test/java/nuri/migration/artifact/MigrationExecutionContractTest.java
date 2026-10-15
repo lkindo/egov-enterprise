@@ -70,7 +70,11 @@ class MigrationExecutionContractTest {
                 "nuri.migration.verify.MigrationVerifier",
                 "nuri.migration.workflow.SourceLoadSurfaceGate",
                 // 표준 도메인 변환기의 받기·거부 규칙(ADR-0029 L3a-1)도 승인에 결속한다.
-                "nuri.migration.domain.DomainValues");
+                "nuri.migration.domain.DomainValues",
+                // 승인 행 격리 판정·상한과 값 한계 가드(ADR-0029 L3b)도 승인에 결속한다.
+                "nuri.migration.domain.TargetValueGuard",
+                "nuri.migration.isolate.RowIsolationPolicy",
+                "nuri.migration.isolate.IsolationTally");
         assertThat(MigrationExecutionContract.implementationClassNamesForTesting())
                 .contains(
                         "nuri/migration/etl/TableOrderer.class",

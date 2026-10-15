@@ -145,6 +145,9 @@ public record MappingSpec(
      * <p>{@code nullify}(ADR-0029 L3a-1)는 표준 도메인 변환기나 비문자 {@code type} 이 거부한 값 가운데 선언한 위반
      * ({@code BLANK}·{@code PLACEHOLDER_DATE})만 NULL 로 바꾸는 규칙이다. 위반마다 {@code maxRows} 상한을 두고, 표 전체에서
      * 그보다 많으면 chunk 를 롤백하고 멈춘다. 비어 있으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
+     *
+     * <p>{@code isolate}(ADR-0029 L3b)는 원장이 승인한 위반으로 이 컬럼이 거부한 행을 적재하지 않고 격리하는 선언이다
+     * ({@link Isolate}). 없으면 직렬화하지 않아 선언 없는 mapping 의 digest 가 바뀌지 않는다.
      */
     public record ColumnMapping(
             String source,
@@ -155,22 +158,77 @@ public record MappingSpec(
             String fkRef,
             @JsonProperty("const") String constant,
             @JsonInclude(JsonInclude.Include.NON_NULL) String encrypt,
-            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Nullify> nullify
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<Nullify> nullify,
+            @JsonInclude(JsonInclude.Include.NON_NULL) Isolate isolate
     ) {
         /** encrypt 도입 전 생성자 호환. */
         public ColumnMapping(String source, String target, String transform, String type,
                              String codemap, String fkRef, String constant) {
-            this(source, target, transform, type, codemap, fkRef, constant, null, List.of());
+            this(source, target, transform, type, codemap, fkRef, constant, null, List.of(), null);
         }
 
         /** nullify 도입 전 생성자 호환. */
         public ColumnMapping(String source, String target, String transform, String type,
                              String codemap, String fkRef, String constant, String encrypt) {
-            this(source, target, transform, type, codemap, fkRef, constant, encrypt, List.of());
+            this(source, target, transform, type, codemap, fkRef, constant, encrypt, List.of(), null);
+        }
+
+        /** isolate 도입 전 생성자 호환. */
+        public ColumnMapping(String source, String target, String transform, String type,
+                             String codemap, String fkRef, String constant, String encrypt, List<Nullify> nullify) {
+            this(source, target, transform, type, codemap, fkRef, constant, encrypt, nullify, null);
         }
 
         public ColumnMapping {
             nullify = nullify == null ? List.of() : List.copyOf(nullify);
+        }
+    }
+
+    /**
+     * 승인 행 격리 한 건(ADR-0029 L3b). 이 컬럼이 원장 행 {@code ledgerEntry} 가 승인한 위반 {@code violations} 로만 거부한
+     * 행은 적재하지 않고 순번과 함께 센다. 원장 행마다 표 전체에서 {@code maxRows} 행까지만 격리하고, 넘으면 멈춘다.
+     * mapping-generate 가 원장의 승인 예외 가운데 nullify 로 NULL 이 되지 않는 위반만 옮긴다 — plan·load 의 원장 대조가
+     * 같은 판정으로 양방향을 맞춘다.
+     */
+    public record Isolate(String ledgerEntry, Long maxRows, List<String> violations) {
+
+        public Isolate {
+            violations = violations == null ? List.of() : List.copyOf(violations);
+        }
+
+        /**
+         * mapping.yml 의 isolate 한 건을 읽는다. 원장 행 ID 는 문자로만, 상한은 정수 스칼라로만, 위반은 이름 문자의
+         * 목록으로만 받는다 — nullify 와 같이 {@code maxRows: 2.7}·{@code violations: [1]} 처럼 검토자가 본 글자와 승인
+         * digest 가 뜻하는 값이 갈리는 표기를 거부한다. 없는 필드는 비워 두고 검증이 거부한다. 오류는 고정 문구다.
+         */
+        @JsonCreator
+        public static Isolate fromMapping(@JsonProperty("ledgerEntry") Object ledgerEntry,
+                                          @JsonProperty("maxRows") Object maxRows,
+                                          @JsonProperty("violations") Object violations) {
+            if (ledgerEntry != null && !(ledgerEntry instanceof String)) {
+                throw new IllegalArgumentException("isolate 의 ledgerEntry 는 원장 행 ID 문자여야 합니다");
+            }
+            return new Isolate((String) ledgerEntry, maxRowsOf(maxRows), violationsOf(violations));
+        }
+
+        private static Long maxRowsOf(Object raw) {
+            if (raw == null) {
+                return null;
+            }
+            if (raw instanceof Integer || raw instanceof Long || raw instanceof Short || raw instanceof Byte) {
+                return ((Number) raw).longValue();
+            }
+            throw new IllegalArgumentException("isolate 의 maxRows 는 정수여야 합니다");
+        }
+
+        private static List<String> violationsOf(Object raw) {
+            if (raw == null) {
+                return List.of();
+            }
+            if (raw instanceof List<?> list && list.stream().allMatch(String.class::isInstance)) {
+                return list.stream().map(String.class::cast).toList();
+            }
+            throw new IllegalArgumentException("isolate 의 violations 는 위반 이름(INVALID_DATE 등) 문자의 목록이어야 합니다");
         }
     }
 

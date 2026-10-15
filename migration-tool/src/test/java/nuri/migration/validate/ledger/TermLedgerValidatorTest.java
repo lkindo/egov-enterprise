@@ -612,6 +612,48 @@ class TermLedgerValidatorTest {
     }
 
     @Test
+    void theMappingMustCarryExactlyTheIsolationLeftAfterNullifyInBothDirections() {
+        Load cleaned = load("ymd8", nullify(DomainViolation.PLACEHOLDER_DATE, 12L));
+        Entry approved = row("D1", "USER_ID").load(cleaned)
+                .conformance(rated(new ApprovedExceptions(3L, "원천 정정 대기", List.of("INVALID_DATE", "PLACEHOLDER_DATE")),
+                        v("PLACEHOLDER_DATE", 12), v("INVALID_DATE", 3)))
+                .note("자리표시는 종료일 없음으로 본다").build();
+        Entry covered = row("D2", "USER_ID").load(cleaned)
+                .conformance(rated(new ApprovedExceptions(3L, "원천 정정 대기", List.of("PLACEHOLDER_DATE")),
+                        v("PLACEHOLDER_DATE", 12)))
+                .note("자리표시는 종료일 없음으로 본다").build();
+        MappingSpec.Isolate expected = new MappingSpec.Isolate("D1", 3L, List.of("INVALID_DATE"));
+        CatalogSnapshot inventory = inventory("USER_ID");
+
+        assertThat(validator.validate(ledger(approved))).isEmpty();
+        assertThat(LoadCapabilities.isolate(approved)).as("nullify 가 NULL 로 바꾸는 위반은 격리하지 않는다")
+                .isEqualTo(expected);
+        assertThat(LoadCapabilities.isolate(covered)).as("모두 nullify 로 덮이면 격리가 없다").isNull();
+        assertThat(LoadCapabilities.isolate(row("D3", "USER_ID").build())).isNull();
+        assertThat(validator.coverage(ledger(approved), mapping(isolated(cleaned, expected)), inventory)).isEmpty();
+        assertThat(validator.coverage(ledger(covered), mapping(isolated(cleaned, null)), inventory)).isEmpty();
+
+        String drift = ": mapping 의 격리(isolate)가 원장 행 D1 의 승인 예외(nullify 로 NULL 이 되지 않는 위반)와"
+                + " 다릅니다 — mapping-generate 로 다시 만드세요";
+        for (MappingSpec.Isolate drifted : java.util.Arrays.asList(null,
+                new MappingSpec.Isolate("D1", 3L, List.of("INVALID_DATE", "PLACEHOLDER_DATE")),
+                new MappingSpec.Isolate("D1", 4L, List.of("INVALID_DATE")),
+                new MappingSpec.Isolate("D9", 3L, List.of("INVALID_DATE")),
+                new MappingSpec.Isolate("D1", 3L, List.of("FORMAT")))) {
+            assertThat(validator.coverage(ledger(approved), mapping(isolated(cleaned, drifted)), inventory))
+                    .as(String.valueOf(drifted)).containsExactly("legacy.legacy_user.USER_ID" + drift);
+        }
+        assertThat(validator.coverage(ledger(covered), mapping(isolated(cleaned, expected)), inventory))
+                .as("원장에 없는 격리를 mapping 에만 두지 못한다")
+                .containsExactly("legacy.legacy_user.USER_ID" + drift.replace("D1", "D2"));
+    }
+
+    private static ColumnMapping isolated(Load load, MappingSpec.Isolate isolate) {
+        return new ColumnMapping("USER_ID", "user_id", load.transform(), load.type(), load.codemap(), null, null, null,
+                load.nullify(), isolate);
+    }
+
+    @Test
     void confirmedTermsAreComparedWithLiveMetaPerSchemaAndDeprecatedTermsAreRejected() {
         Entry missing = row("M1", "A").target("public.x", "user_id").build();
         Entry renamed = row("M2", "B").target("app.x", "user_id").build();

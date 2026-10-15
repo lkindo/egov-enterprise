@@ -23,6 +23,7 @@ import nuri.migration.discovery.DiscoveryRequest;
 import nuri.migration.discovery.DiscoveryScope;
 import nuri.migration.discovery.ObjectKind;
 import nuri.migration.discovery.SnapshotCapability;
+import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.jdbc.SourceJdbcEndpoint;
@@ -182,7 +183,7 @@ class MigrationWorkflowRunnerTest {
         List<EtlExecutor.TableResult> results = List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of()));
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean())).willReturn(results);
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any())).willReturn(results);
         given(verifier.verify(eq(mapping), eq(results), nullable(JdbcTemplate.class)))
                 .willReturn(new MigrationReport(List.of(), MigrationReport.Status.PASS));
 
@@ -333,7 +334,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("source endpoint");
         verify(fingerprinter, never()).fingerprintBound(any(), any(), any());
         verify(sourceEndpoints, never()).open(any(), anyList(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -439,7 +440,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("target standard contract validation 실패")
                 .hasMessageContaining("public.tb_user_info.user_id");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -491,7 +492,7 @@ class MigrationWorkflowRunnerTest {
                 "--ack-source-freeze")))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("scope");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -575,12 +576,12 @@ class MigrationWorkflowRunnerTest {
         verify(fingerprinter).fingerprintBound(targetConnection, mapping, Set.of("public"));
         verify(validator).validateTargetStandard(eq(mapping), eq(targetFingerprint), any());
         verify(executor).execute(
-                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
+                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true, Map.of());
         verify(validator, never()).validateLiveTarget(any(), any());
         InOrder lifetime = inOrder(sourceEndpoint, executor);
         lifetime.verify(sourceEndpoint).jdbc();
         lifetime.verify(executor).execute(
-                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true);
+                mapping, MigrationMode.DRY_RUN, sourceJdbc, null, readSessionPolicy, true, Map.of());
         lifetime.verify(sourceEndpoint).close();
         try (var entries = Files.list(temp)) {
             Path evidence = entries.filter(path -> path.getFileName().toString().startsWith("plan.json.load-"))
@@ -597,7 +598,7 @@ class MigrationWorkflowRunnerTest {
         Path plan = temp.resolve("plan.json");
         writeApprovedArtifacts(inventory, plan, snapshot, mapping);
         given(executor.execute(eq(mapping), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean()))
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any()))
                 .willThrow(new IllegalStateException("sentinel-source-password"));
         assertThatThrownBy(() -> load(inventory, plan)).isInstanceOf(MigrationExecutionException.class);
         try (var entries = Files.list(temp)) {
@@ -683,7 +684,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("exact");
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -700,7 +701,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("unsupported");
 
         verify(adapter, never()).discover(any(), any());
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -751,7 +752,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("target schema");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -768,7 +769,7 @@ class MigrationWorkflowRunnerTest {
                 .hasMessageContaining("driver evidence");
 
         verify(sourceDataSource, never()).getConnection();
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
         verify(sourceEndpoint).close();
     }
 
@@ -815,7 +816,7 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("execution contract");
 
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -841,12 +842,16 @@ class MigrationWorkflowRunnerTest {
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessageContaining("exact");
 
+        // [ADR-0029 L3b] 값 한계 가드는 표준 검증과 같은 live 계약으로 정한 것을 그대로 실행기에 넘긴다.
+        Map<String, Map<String, TargetValueGuard.Limit>> guards = Map.of("legacy.legacy_user",
+                Map.of("user_nm", new TargetValueGuard.Limit(8L, null, null, null, true)));
+        given(validator.rowGuards(eq(mapping), eq(targetFingerprint), any())).willReturn(guards);
         clearInvocations(executor);
         assertThatCode(() -> loadCommit(inventory, plan, true, "postgresql-pg-catalog"))
                 .doesNotThrowAnyException();
         verify(validator).validateLiveTarget(mapping, targetJdbc);
         verify(executor).execute(
-                mapping, MigrationMode.COMMIT, sourceJdbc, targetJdbc, readSessionPolicy, true);
+                mapping, MigrationMode.COMMIT, sourceJdbc, targetJdbc, readSessionPolicy, true, guards);
     }
 
     @Test
@@ -990,7 +995,7 @@ class MigrationWorkflowRunnerTest {
         assertThatThrownBy(() -> load(inventory, plan))
                 .isInstanceOf(MigrationExecutionException.class)
                 .hasMessage("mapping 은 용어 매핑 원장을 선언해야 합니다 — mapping-generate 로 만드세요");
-        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean());
+        verify(executor, never()).execute(any(), any(), any(), any(), any(), anyBoolean(), any());
     }
 
     @Test
@@ -1076,7 +1081,7 @@ class MigrationWorkflowRunnerTest {
         given(validator.validateTargetStandard(eq(spec), any(), any())).willReturn(pass());
         given(fingerprinter.fingerprintBound(targetConnection, spec, Set.of("public"))).willReturn(targetFingerprint);
         given(executor.execute(eq(spec), any(MigrationMode.class), eq(sourceJdbc),
-                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean())).willReturn(List.of(
+                nullable(JdbcTemplate.class), eq(readSessionPolicy), anyBoolean(), any())).willReturn(List.of(
                 new EtlExecutor.TableResult("legacy.legacy_user", "public.tb_user_info", 1, 1, 0, List.of())));
     }
 
