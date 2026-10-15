@@ -14,5 +14,10 @@ public enum ObjectDisposition {
     EXTERNALIZE,
     EXPORT_ONLY,
     APPROVED_IGNORE,
+    /**
+     * 적재하지 않고 다른 매핑의 조회 조인(lookups)만 읽는 표(ADR-0029 L3d). 플래너는 자동으로 달지 않는다 — 검토자가
+     * 명시해야 하고, 어떤 매핑도 조회하지 않는 표에 달면 막는다.
+     */
+    LOOKUP_INPUT,
     BLOCKED
 }

@@ -9,6 +9,9 @@ import nuri.migration.domain.DomainViolation;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.CodeMap;
 import nuri.migration.model.MappingSpec.ColumnMapping;
+import nuri.migration.model.MappingSpec.Lookup;
+import nuri.migration.model.MappingSpec.LookupCardinality;
+import nuri.migration.model.MappingSpec.LookupKey;
 import nuri.migration.model.MappingSpec.NullPolicy;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.model.MappingSpec.UnmappedPolicy;
@@ -41,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TermLedgerValidatorTest {
 
     private static final StandardTerm USER_ID = new StandardTerm("사용자ID", "USER_ID", "ID V20");
+    private static final StandardTerm USER_NM = new StandardTerm("사용자명", "USER_NM", "명V100");
     private static final StandardTerm END_YMD = new StandardTerm("종료일자", "END_YMD", "연월일C8");
     private static final StandardTerm REG_DT = new StandardTerm("등록일시", "REG_DT", "연월일시분초C14");
     private static final StandardTerm REG_TM = new StandardTerm("등록시각", "REG_TM", "시분초C6");
@@ -422,11 +426,16 @@ class TermLedgerValidatorTest {
         Entry badVia = row("M4", "d").via(new Via("orders", null)).build();
         Entry fine = row("M5", "e").mapping("user_main").via(new Via("orders", "cust")).build();
 
-        assertThat(validator.validate(ledger(onProposed, onIgnore, badMapping, badVia, fine))).containsExactly(
+        Entry viaOnly = row("M6", "f").via(new Via("orders", "cust")).build();
+
+        assertThat(validator.validate(ledger(onProposed, onIgnore, badMapping, badVia, fine, viaOnly)))
+                .containsExactly(
                 "M1: mapping·via 는 확정 행에만 둡니다",
                 "M2: 이관 제외·외부 보관 행에는 mapping·via 를 둘 수 없습니다 — 매핑과 무관하게 소스 컬럼을 처분합니다",
                 "M3: mapping 은 매핑 id 형식(소문자로 시작하는 소문자·숫자·밑줄 63자 이내)이어야 합니다",
-                "M4: via 에는 매핑 id(mapping)와 조회 별칭(lookup)이 매핑 id 형식으로 필요합니다");
+                "M4: via 에는 매핑 id(mapping)와 조회 별칭(lookup)이 매핑 id 형식으로 필요합니다",
+                // [ADR-0029 L3d] 조회 경로 행의 매핑은 via.mapping 이다 — mapping 을 함께 두면 어느 매핑인지 갈린다.
+                "M5: 조회 경로(via) 행에는 mapping 을 두지 않습니다 — 그 컬럼을 읽는 매핑은 via.mapping 입니다");
     }
 
     @Test
@@ -577,7 +586,7 @@ class TermLedgerValidatorTest {
     }
 
     @Test
-    void coverageUsesTheDefaultMappingRowAndRefusesRowsTheRuntimeCannotRunYet() {
+    void coverageMatchesRowsToTheirMappingIdAndRefusesRowsTheRuntimeCannotRunYet() {
         Entry split = row("C1", "USER_ID").mapping("user_ext").target("public.tb_user_ext", "user_id").build();
         Entry reviewing = row("C2", "USER_ID").status("REVIEWED").history(REVIEWED_PATH).build();
         Entry main = row("C3", "USER_ID").build();
@@ -588,15 +597,121 @@ class TermLedgerValidatorTest {
         Entry ignored = row("C6", "ETC").status("APPROVED_IGNORE").history(path("APPROVED_IGNORE")).build();
 
         assertThat(validator.coverage(ledger(reviewing, main, ignored), mapping(), inventory)).isEmpty();
+        // [ADR-0029 L3c] 기본이 아닌 매핑의 확정 행은 그 id 의 매핑이 mapping 에 있어야 한다.
+        String missingSplit = "C1 legacy.legacy_user.USER_ID(CONFIRMED): 확정 행의 매핑(user_ext)이 mapping 에 없습니다 —"
+                + " skeleton 에 그 id 의 매핑을 두고 mapping-generate 로 다시 만드세요";
         assertThat(validator.coverage(ledger(split, reviewing, main, joined, archived), mapping(), inventory))
                 .containsExactly(
-                        "C1 legacy.legacy_user.USER_ID(CONFIRMED): 기본 매핑이 아닌 mapping 은 아직 실행할 수 없습니다(L3c 전)",
-                        "C4 legacy.legacy_user.USER_ID(CONFIRMED): 조회 조인(via)은 아직 실행할 수 없습니다(L3d 전)",
+                        missingSplit,
+                        // [ADR-0029 L3d] 조회 경로 행은 그 매핑 id 가 mapping 에 있어야 한다.
+                        "C4 legacy.legacy_user.USER_ID(CONFIRMED): 조회 경로의 매핑(orders)이 mapping 에 없습니다 —"
+                                + " skeleton 에 그 id 의 매핑을 두고 mapping-generate 로 다시 만드세요",
+                        // [ADR-0029 L3e] 외부 보관 행은 mapping 의 보관 선언에 있어야 한다.
                         "C5 legacy.legacy_user.ETC(ARCHIVE): 외부 보관 행이 mapping 의 archives 에 없습니다 —"
                                 + " mapping-generate 로 다시 만드세요");
         assertThat(validator.coverage(ledger(split, reviewing, ignored), mapping(), inventory)).containsExactly(
-                "C1 legacy.legacy_user.USER_ID(CONFIRMED): 기본 매핑이 아닌 mapping 은 아직 실행할 수 없습니다(L3c 전)",
-                "legacy.legacy_user.USER_ID: 기본 매핑의 확정 행이 없습니다 — 원장 행 C1 은 다른 mapping·조회 경로입니다");
+                "legacy.legacy_user.USER_ID: 이 매핑의 확정 행이 없습니다 — 원장 행 C1 은 다른 mapping·조회 경로입니다",
+                missingSplit);
+
+        // 나눈 매핑이 mapping 에 있으면 매핑 id 마다 제 확정 행과 맞는다. 다른 id 의 행을 빌려 쓰지 않는다.
+        TableMapping user = new TableMapping("legacy.legacy_user", "public.tb_user_info", null, "USER_ID", List.of(),
+                "user_id", List.of(new ColumnMapping("USER_ID", "user_id", null, null, null, null, null)), null, null,
+                List.of(), null);
+        TableMapping ext = new TableMapping("legacy.legacy_user", "public.tb_user_ext", null, "USER_ID", List.of(),
+                "user_id", List.of(new ColumnMapping("USER_ID", "user_id", null, null, null, null, null)), null, null,
+                List.of(), "user_ext");
+        MappingSpec splitMapping = new MappingSpec(null, null, List.of(user, ext), Map.of());
+        assertThat(validator.coverage(ledger(split, main, ignored), splitMapping, inventory)).isEmpty();
+        assertThat(validator.coverage(ledger(main, ignored), splitMapping, inventory)).containsExactly(
+                "legacy.legacy_user#user_ext.USER_ID: 이 매핑의 확정 행이 없습니다 — 원장 행 C3 은 다른 mapping·조회 경로입니다");
+    }
+
+    /**
+     * [ADR-0029 L3d] 조회 컬럼은 조회 표의 inventory 컬럼과 같은 조회 경로(매핑 id·별칭)의 확정 행으로 맞춘다. 조회만 하는
+     * 표도 소스 단위 완전성을 받아, 원장 행이 없는 조회 표 컬럼은 plan 에서 멈춘다.
+     */
+    @Test
+    void lookupColumnsMatchTheirViaRowsAndTheLookupTableMustBeComplete() {
+        Entry user = row("V1", "USER_ID").mapping("users").build();
+        Entry etc = row("V2", "ETC").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("쓰지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry otherName = row("V3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).build();
+        Entry otherKey = row("V4", "Y").sourceTable("legacy.legacy_other").status("APPROVED_IGNORE").term(null)
+                .target(null).load(null).conformance(null).note("조회 키로만 쓴다").history(path("APPROVED_IGNORE"))
+                .build();
+        CatalogSnapshot inventory = lookupInventory();
+        MappingSpec mapping = lookupMapping(new ColumnMapping("oth.X", "user_nm", null, null, null, null, null));
+
+        assertThat(validator.validate(ledger(user, etc, otherName, otherKey))).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey), mapping, inventory)).isEmpty();
+        // 조회 표의 컬럼에 원장 행이 없으면 plan 이 멈춘다 — 조회 키처럼 옮기지 않는 컬럼도 이관 제외와 사유로 적는다.
+        assertThat(validator.coverage(ledger(user, etc, otherName), mapping, inventory)).containsExactly(
+                "legacy_other.Y: mapping·원장 어디에도 없는 컬럼입니다 — 옮기면 확정하고, 키로만 쓰거나 옮기지 않으면 이관"
+                        + " 제외(APPROVED_IGNORE)와 사유를 적으세요");
+        // 같은 컬럼이라도 조회 경로 없는 행은 조회 컬럼의 짝이 아니다.
+        Entry direct = row("V5", "X").sourceTable("legacy.legacy_other").target("public.tb_user_info", "user_nm")
+                .build();
+        assertThat(validator.coverage(ledger(user, etc, direct, otherKey), mapping, inventory)).containsExactly(
+                "legacy.legacy_user#users.oth.X: 이 매핑의 확정 행이 없습니다 — 원장 행 V5 은 다른 mapping·조회 경로입니다",
+                "V5 legacy.legacy_other.X(CONFIRMED): 확정 행의 매핑(기본 매핑)이 mapping 에 없습니다 — skeleton 에 그"
+                        + " id 의 매핑을 두고 mapping-generate 로 다시 만드세요");
+        // 조회 컬럼의 변환은 그 확정 행의 load 와 같아야 한다.
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey),
+                lookupMapping(new ColumnMapping("oth.X", "user_nm", "trim", null, null, null, null)), inventory))
+                .containsExactly("legacy.legacy_user#users.oth.X: mapping 의 변환(transform·type·codemap·nullify)이 원장"
+                        + " 행 V3 의 load 와 다릅니다 — mapping-generate 로 다시 만드세요");
+    }
+
+    /**
+     * [ADR-0029 L3d·L3e] 조회만 하는 표의 컬럼을 외부 보관하면 그 표는 덤프만 하는 표다 — 매핑이 주 소스로 읽지 않으므로
+     * "매핑과 다른 표기" 로 거부하지 않고, 소스 단위 완전성은 한 번만 본다.
+     */
+    @Test
+    void aLookedUpTableCanAlsoBeArchivedAsADumpOnlyTable() {
+        Entry user = row("V1", "USER_ID").mapping("users").build();
+        Entry etc = row("V2", "ETC").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("쓰지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry otherName = row("V3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).build();
+        Entry otherKey = archiveRow("V4", "Y", acknowledged("2031-12-31")).sourceTable("legacy.legacy_other").build();
+        MappingSpec lookup = lookupMapping(new ColumnMapping("oth.X", "user_nm", null, null, null, null, null));
+        MappingSpec archived = new MappingSpec(null, null, lookup.tables(), Map.of(), null, null, List.of(
+                new MappingSpec.ArchiveDump("legacy_other_20311231", "legacy.legacy_other", null, List.of("Y"),
+                        List.of("Y"), List.of("V4"), "2031-12-31")));
+
+        assertThat(validator.validate(ledger(user, etc, otherName, otherKey))).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey), archived, lookupInventory())).isEmpty();
+        assertThat(validator.coverage(ledger(user, etc, otherName, otherKey), lookup, lookupInventory()))
+                .as("보관 선언이 없으면 외부 보관 행이 남는다").containsExactly("V4 legacy.legacy_other.Y(ARCHIVE): 외부 보관 행이"
+                        + " mapping 의 archives 에 없습니다 — mapping-generate 로 다시 만드세요");
+    }
+
+    @Test
+    void anUnusedViaRowNamesWhyItsLookupPathIsMissing() {
+        Entry user = row("W1", "USER_ID").mapping("users").build();
+        Entry etc = row("W2", "ETC").status("APPROVED_IGNORE").term(null).target(null).load(null).conformance(null)
+                .note("쓰지 않는 컬럼").history(path("APPROVED_IGNORE")).build();
+        Entry otherName = row("W3", "X").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .term(USER_NM).build();
+        Entry unknownMapping = row("W5", "Y").sourceTable("legacy.legacy_other").via(new Via("orders", "oth"))
+                .target("public.tb_user_info", "cnt").build();
+        Entry unknownAlias = row("W6", "Y").sourceTable("legacy.legacy_other").via(new Via("users", "dept"))
+                .target("public.tb_user_info", "cnt").build();
+        Entry otherTable = row("W7", "USER_ID").via(new Via("users", "oth")).target("public.tb_user_info", "cnt")
+                .build();
+        Entry unread = row("W8", "Y").sourceTable("legacy.legacy_other").via(new Via("users", "oth"))
+                .target("public.tb_user_info", "cnt").build();
+        MappingSpec mapping = lookupMapping(new ColumnMapping("oth.X", "user_nm", null, null, null, null, null));
+
+        assertThat(validator.coverage(ledger(user, etc, otherName, unknownMapping, unknownAlias, otherTable, unread),
+                mapping, lookupInventory())).containsExactly(
+                "W5 legacy.legacy_other.Y(CONFIRMED): 조회 경로의 매핑(orders)이 mapping 에 없습니다 — skeleton 에 그 id 의"
+                        + " 매핑을 두고 mapping-generate 로 다시 만드세요",
+                "W6 legacy.legacy_other.Y(CONFIRMED): 조회 경로의 별칭(dept)을 매핑 users 이 선언하지 않았습니다 —"
+                        + " skeleton 의 그 매핑에 lookups 를 두세요",
+                "W7 legacy.legacy_user.USER_ID(CONFIRMED): 조회 별칭(users/oth)이 읽는 표가 원장 행의 소스 표와 다릅니다",
+                "W8 legacy.legacy_other.Y(CONFIRMED): 확정 행이 mapping 에 없습니다 — mapping-generate 로 다시 만드세요");
     }
 
     @Test
@@ -926,6 +1041,26 @@ class TermLedgerValidatorTest {
     private static MappingSpec mapping(ColumnMapping column) {
         return new MappingSpec(null, null, List.of(new TableMapping("legacy.legacy_user", "public.tb_user_info",
                 null, "USER_ID", "user_id", List.of(column), null)), Map.of());
+    }
+
+    /** USER_ID 를 옮기고 legacy_other 를 별칭 oth 로 조회하는 매핑 users(ADR-0029 L3d). */
+    private static MappingSpec lookupMapping(ColumnMapping lookupColumn) {
+        Lookup other = new Lookup("oth", "legacy.legacy_other", null, new LookupKey("USER_ID", "Y"),
+                LookupCardinality.EXACTLY_ONE, null);
+        return new MappingSpec(null, null, List.of(new TableMapping("legacy.legacy_user", "public.tb_user_info", null,
+                "USER_ID", List.of(), "user_id", List.of(new ColumnMapping("USER_ID", "user_id", null, null, null,
+                null, null), lookupColumn), null, null, List.of(), "users", List.of(other))), Map.of());
+    }
+
+    /** legacy.legacy_user(USER_ID·ETC)와 컬럼 X·Y 인 legacy.legacy_other. */
+    private static CatalogSnapshot lookupInventory() {
+        List<CatalogObject> objects = new ArrayList<>(List.of(table("legacy_user"), table("legacy_other"),
+                column("legacy_user", "USER_ID", 1), column("legacy_user", "ETC", 2),
+                column("legacy_other", "X", 1), column("legacy_other", "Y", 2)));
+        return new CatalogSnapshot(CatalogSnapshot.CURRENT_SCHEMA_VERSION, Instant.parse("2026-10-14T00:00:00Z"),
+                new CatalogSnapshot.DatabaseInfo("LegacyDB", "1", "driver", "1"),
+                new CatalogSnapshot.EnvironmentInfo("db", "legacy", "UTF-8", "C", "UTC"),
+                SnapshotCapability.unknown(), objects, List.of());
     }
 
     /** legacy.legacy_user(컬럼은 정의 순서대로)와 컬럼 X 하나인 legacy.legacy_other. */

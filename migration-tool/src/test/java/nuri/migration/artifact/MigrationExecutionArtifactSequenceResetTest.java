@@ -61,6 +61,60 @@ class MigrationExecutionArtifactSequenceResetTest {
     }
 
     /**
+     * [ADR-0029 L3c] 나눈 매핑은 표 집계에 매핑 id 를, COMMIT 은 제어 스키마 버전의 적용 전후를 남긴다. 기본 매핑과 두 값이
+     * 없는 실행의 증거에는 그 필드가 없다(종전과 같은 바이트).
+     */
+    @Test
+    void splitMappingIdAndControlSchemaVersionsAppearOnlyWhenPresent() throws Exception {
+        var report = new nuri.migration.verify.MigrationReport(List.of(
+                new nuri.migration.verify.MigrationReport.TableReport("legacy_user", "tb_user", 2, 2, 2, 0, 2,
+                        nuri.migration.verify.MigrationReport.Status.PASS, ""),
+                new nuri.migration.verify.MigrationReport.TableReport("legacy_user", "tb_user_addr", 2, 2, 2, 0, 2,
+                        nuri.migration.verify.MigrationReport.Status.PASS, "", "addr")),
+                nuri.migration.verify.MigrationReport.Status.PASS);
+
+        String json = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
+                Instant.parse("2026-10-15T00:00:00Z"), report, List.of(),
+                new MigrationExecutionArtifact.ControlSchemaRecord("1", "2"));
+
+        assertThat(json).contains("\"target\":\"tb_user_addr\",\"read\":2", "\"mapping\":\"addr\"",
+                "\"controlSchema\":{\"before\":\"1\",\"after\":\"2\"}");
+        assertThat(json.split("\"mapping\"", -1)).hasSize(2);
+        String started = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "STARTED",
+                Instant.parse("2026-10-15T00:00:00Z"), null, null, new MigrationExecutionArtifact.ControlSchemaRecord("none", null));
+        assertThat(started).contains("\"controlSchema\":{\"before\":\"none\"}");
+        assertThat(MigrationExecutionArtifact.encode(plan(), MigrationMode.DRY_RUN, "PASS",
+                Instant.parse("2026-10-15T00:00:00Z"), report, List.of())).doesNotContain("controlSchema");
+    }
+
+    /**
+     * [ADR-0029 L3d] at_most_one 조회의 짝 없는 행은 소스·매핑 id·별칭·행 수로만 남긴다(키·값 없음). 짝 없는 행이 없는 실행의
+     * 증거에는 그 필드가 없다(종전과 같은 바이트).
+     */
+    @Test
+    void lookupMissesAreRecordedBySourceMappingAndAliasOnlyWhenPresent() throws Exception {
+        EtlExecutor.TableResult orders = new EtlExecutor.TableResult("legacy_orders", "tb_order", 3, 3, 3, List.of(),
+                List.of(), java.util.Map.of(), "orders", new java.util.LinkedHashMap<>(java.util.Map.of("cust", 2L)));
+        EtlExecutor.TableResult untouched = new EtlExecutor.TableResult("legacy_note", "tb_note", 1, 1, 1, List.of());
+
+        String json = MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "PASS", Instant.parse("2026-10-15T00:00:00Z"), null,
+                List.of(orders, untouched));
+
+        MigrationExecutionArtifact artifact = new ObjectMapper().readValue(json, MigrationExecutionArtifact.class);
+        assertThat(artifact.lookupMisses()).containsExactly(
+                new MigrationExecutionArtifact.LookupMissRecord("legacy_orders", "orders", "cust", 2));
+        assertThat(json).contains(
+                "\"lookupMisses\":[{\"source\":\"legacy_orders\",\"mapping\":\"orders\",\"lookup\":\"cust\",\"rows\":2}]");
+        assertThat(MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "PASS", Instant.parse("2026-10-15T00:00:00Z"), null,
+                List.of(untouched))).doesNotContain("lookupMisses");
+        assertThat(MigrationExecutionArtifact.encode(
+                plan(), MigrationMode.COMMIT, "STARTED", Instant.parse("2026-10-15T00:00:00Z"), null))
+                .doesNotContain("lookupMisses");
+    }
+
+    /**
      * 보관 덤프·격리 키 반출(ADR-0029 L3e)은 파일 이름·행 수·SHA-256·보존 기한·개인정보 모양 수만 남기고, 덤프를 쓴 실행은
      * 가장 늦은 보존 기한까지의 keymap 보존 의무를 남긴다. dry-run 덤프는 파일이 없어 그 의무가 없다.
      */
@@ -81,7 +135,7 @@ class MigrationExecutionArtifactSequenceResetTest {
                 Instant.parse("2026-10-15T00:00:00Z"), null, List.of(), outcome);
 
         MigrationExecutionArtifact artifact = new ObjectMapper().readValue(json, MigrationExecutionArtifact.class);
-        assertThat(artifact.schemaVersion()).isEqualTo(3);
+        assertThat(artifact.schemaVersion()).isEqualTo(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
         assertThat(artifact.archives()).extracting(MigrationExecutionArtifact.ArchiveRecord::file)
                 .containsExactly("archive-user.jsonl", "archive-log.jsonl");
         assertThat(artifact.archives().getFirst().personalData()).containsExactly(
@@ -105,6 +159,27 @@ class MigrationExecutionArtifactSequenceResetTest {
         assertThat(MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "STARTED",
                 Instant.parse("2026-10-15T00:00:00Z"), null))
                 .contains("\"archives\":[]", "\"isolatedKeyExports\":[]", "\"keymapRetention\":null");
+    }
+
+    /**
+     * 형식 4(ADR-0029 L3b~L3e 통합)는 앞 형식의 증거도 읽는다 — 형식 3 증거에는 매핑 id·제어 스키마·짝 없는 행이 없고 그
+     * 값은 비어 있다.
+     */
+    @Test
+    void formatFourStillReadsAFormatThreeEvidence() throws Exception {
+        String formatThree = "{\"schemaVersion\":3,\"planDigest\":\"a\",\"mappingDigest\":\"b\",\"targetDigest\":\"c\","
+                + "\"mode\":\"COMMIT\",\"status\":\"PASS\",\"startedAt\":\"2026-10-15T00:00:00Z\",\"updatedAt\":\"2026-10-15T00:00:01Z\","
+                + "\"tables\":[{\"source\":\"legacy_user\",\"target\":\"tb_user\",\"read\":2,\"written\":2,\"errors\":0,"
+                + "\"targetRows\":2,\"status\":\"PASS\",\"isolated\":0}],\"sequenceResets\":[],\"nullified\":[],"
+                + "\"isolations\":[],\"archives\":[],\"isolatedKeyExports\":[],\"keymapRetention\":null}";
+
+        MigrationExecutionArtifact read = new ObjectMapper().readValue(formatThree, MigrationExecutionArtifact.class);
+
+        assertThat(MigrationExecutionArtifact.CURRENT_SCHEMA_VERSION).isEqualTo(4);
+        assertThat(read.schemaVersion()).isEqualTo(3);
+        assertThat(read.tables()).singleElement().satisfies(table -> assertThat(table.mapping()).isNull());
+        assertThat(read.controlSchema()).isNull();
+        assertThat(read.lookupMisses()).isEmpty();
     }
 
     private static MigrationPlan plan() {

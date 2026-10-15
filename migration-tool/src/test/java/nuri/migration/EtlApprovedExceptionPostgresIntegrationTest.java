@@ -125,7 +125,7 @@ class EtlApprovedExceptionPostgresIntegrationTest {
 
         String artifact = MigrationExecutionArtifact.encode(plan(), MigrationMode.COMMIT, "PASS",
                 Instant.parse("2026-10-15T00:00:00Z"), report, results);
-        assertThat(artifact).contains("\"schemaVersion\":3", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
+        assertThat(artifact).contains("\"schemaVersion\":4", "\"isolated\":3", "\"ledgerEntry\":\"U4\"",
                 "\"violation\":\"PLACEHOLDER_DATE\"", "\"ordinals\":[10,600,1201]");
         assertThat(artifact).as("격리 증거에는 값·키가 없다").doesNotContain(PLACEHOLDER, "n10", "n600", "n1201");
     }
@@ -323,6 +323,45 @@ class EtlApprovedExceptionPostgresIntegrationTest {
         assertThat(single(rounded).errors()).isEmpty();
         assertThat(fixture.target().queryForObject("SELECT amt::text FROM " + target + " WHERE code = 'B'",
                 String.class)).isEqualTo("123.46");
+    }
+
+    /**
+     * [ADR-0029 L3c] 값 한계 가드는 매핑 라벨({@code source#id})로 넘겨진다. 한 소스를 나눈 두 매핑이 서로 다른 컬럼을
+     * 가드받아도 각자의 가드를 쓴다 — 소스 이름으로 묶으면 뒤 매핑의 가드가 앞 매핑의 것을 덮거나 실행기가 찾지 못해, 앞
+     * 매핑의 numeric 값이 조용히 반올림된다.
+     */
+    @Test
+    void eachSplitMappingUsesTheGuardsOfItsOwnLabelSoAnOverPreciseValueStopsInsteadOfBeingRounded() throws Exception {
+        Fixture fixture = fixture("split_guard");
+        String source = fixture.sourceTable("ITEM");
+        String mainTarget = fixture.targetTable("item");
+        String extTarget = fixture.targetTable("item_ext");
+        fixture.source().execute("CREATE TABLE " + source + " (CODE varchar(10) PRIMARY KEY, AMT varchar(20),"
+                + " FEE varchar(20))");
+        fixture.source().update("INSERT INTO " + source + " VALUES ('A', '12.34', '1.5'), ('B', '123.456', '2.25')");
+        fixture.target().execute("CREATE TABLE " + mainTarget + " (code varchar(20) PRIMARY KEY, amt numeric(5,2))");
+        fixture.target().execute("CREATE TABLE " + extTarget + " (code varchar(20) PRIMARY KEY, fee numeric(5,2))");
+        TableMapping main = new TableMapping(source, mainTarget, null, "CODE", List.of(), "code", List.of(
+                plain("CODE", "code"), new ColumnMapping("AMT", "amt", null, "decimal", null, null, null)), null, null,
+                List.of(), "main");
+        TableMapping extension = new TableMapping(source, extTarget, null, "CODE", List.of(), "code", List.of(
+                plain("CODE", "code"), new ColumnMapping("FEE", "fee", null, "decimal", null, null, null)), null, null,
+                List.of(), "ext");
+        MappingSpec spec = fixture.spec(main, extension);
+        CatalogSnapshot inventory = inventory(Map.of(source, columns("CODE", Types.VARCHAR, "AMT", Types.VARCHAR,
+                "FEE", Types.VARCHAR)));
+
+        assertThat(guards(fixture, spec, inventory)).containsExactly(
+                Map.entry(source + "#main", Map.of("amt", new TargetValueGuard.Limit(null, 3, 2, null, false))),
+                Map.entry(source + "#ext", Map.of("fee", new TargetValueGuard.Limit(null, 3, 2, null, false))));
+
+        List<TableResult> results = run(fixture, spec, MigrationMode.COMMIT, inventory);
+
+        assertThat(results).filteredOn(result -> "main".equals(result.mappingId())).singleElement()
+                .satisfies(result -> assertThat(result.errors()).containsExactly("행 변환 실패(" + source
+                        + "#main, column=amt, row=2): ROW_TRANSFORM_FAILED:DOMAIN_VIOLATION(PRECISION_EXCEEDED) — "
+                        + STOPPED));
+        assertThat(count(fixture, mainTarget)).as("반올림해 쓰지 않는다").isZero();
     }
 
     @Test

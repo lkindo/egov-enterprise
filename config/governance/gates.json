@@ -1707,6 +1707,13 @@
             "tests": "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest,nuri.migration.archive.ArchiveFileWriterTest,nuri.migration.archive.ArchiveLocationGuardTest,nuri.migration.archive.ArchiveRunTest"
           },
           {
+            "scope": "migration-runtime-state",
+            "job": "mutation-scope-migration",
+            "gradle": ":migration-tool:pitest",
+            "classes": "nuri.migration.mapping.*,nuri.migration.state.MigrationStateStore,nuri.migration.etl.TableOrderer,nuri.migration.lookup.*",
+            "tests": "nuri.migration.mapping.MappingIndexTest,nuri.migration.etl.TableOrdererTest,nuri.migration.state.MigrationStateStoreTest,nuri.migration.lookup.LookupResolverTest,nuri.migration.lookup.LookupRulesTest"
+          },
+          {
             "scope": "business-core-auth",
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",

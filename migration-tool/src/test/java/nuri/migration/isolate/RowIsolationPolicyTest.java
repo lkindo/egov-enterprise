@@ -174,6 +174,56 @@ class RowIsolationPolicyTest {
     }
 
     @Test
+    void aSourceSplitIntoSeveralMappingsCannotIsolateInAnyOfThem() {
+        // [ADR-0029 L3c] 한 소스를 나눈 매핑은 매핑마다 따로 읽고 세므로 한쪽만 격리하면 행이 반쪽만 남는다.
+        TableMapping owner = new TableMapping("legacy.user_mst", "public.tb_user_info", null, null,
+                List.of("USER_SN"), "esntl_id", List.of(column("END_YMD", "end_ymd",
+                new Isolate("U4", 3L, List.of("PLACEHOLDER_DATE")))), null, null, List.of(), null);
+        TableMapping extension = new TableMapping(" LEGACY.USER_MST ", "public.tb_user_addr", null, null,
+                List.of("USER_SN"), "esntl_id", List.of(column("ADDR", "addr", null)), null, null, List.of(), "addr");
+        TableMapping alone = new TableMapping("legacy.dept_mst", "public.tb_ognz_info", null, null,
+                List.of("DEPT_CD"), "ognz_id", List.of(column("END_YMD", "end_ymd",
+                new Isolate("U5", 3L, List.of("PLACEHOLDER_DATE")))), null, null, List.of(), "dept");
+        List<TableMapping> tables = List.of(owner, extension, alone);
+
+        assertThat(RowIsolationPolicy.tableBlocker(tables, owner)).isEqualTo("분할한 소스의 매핑");
+        assertThat(RowIsolationPolicy.tableBlocker(tables, extension)).as("표기·대소문자가 달라도 같은 소스다")
+                .isEqualTo("분할한 소스의 매핑");
+        assertThat(RowIsolationPolicy.tableBlocker(tables, alone)).as("id 가 있어도 나누지 않은 소스는 격리할 수 있다")
+                .isNull();
+    }
+
+    @Test
+    void theParentOfAFkRefIsTheOwningMappingNotTheSourceName() {
+        // [ADR-0029 L3c] fkRef 가 가리키는 부모는 MappingIndex 가 푸는 소유 매핑이다 — 표기만 다른 이름도 같은 부모다.
+        TableMapping parent = new TableMapping("legacy.dept_mst", "public.tb_ognz_info", null, null,
+                List.of("DEPT_CD"), null, List.of(column("DEPT_NM", "ognz_nm", null)),
+                new nuri.migration.model.MappingSpec.IdStrategy("ognz_id", "uuid", "DEPT_CD"), null, List.of(),
+                "dept");
+        TableMapping child = new TableMapping("legacy.user_mst", "public.tb_user_info", null, "USER_SN", "esntl_id",
+                List.of(new ColumnMapping("DEPT_CD", "ognz_id", null, null, null, " Legacy.Dept_Mst ", null)), null);
+
+        assertThat(RowIsolationPolicy.tableBlocker(List.of(parent, child), parent))
+                .isEqualTo("다른 매핑이 부모로 참조하는 매핑");
+        assertThat(RowIsolationPolicy.tableBlocker(List.of(parent, child), child)).isNull();
+    }
+
+    @Test
+    void lookupFailuresAreNeverIsolated() {
+        // [ADR-0029 L3d] 조회 실패는 격리 대상이 아니다 — 대응표에 없고, 그 컬럼에 isolate 가 있어도 멈춘다.
+        RowIsolationPolicy lookupColumn = RowIsolationPolicy.of(table(
+                column("cust.CUST_NM", "cust_nm", new Isolate("U9", 3L, List.of("FORMAT", "REQUIRED_MISSING")))));
+        for (String reason : List.of("LOOKUP_FANOUT", "LOOKUP_MISSING", "LOOKUP_MISSING_CAP_EXCEEDED",
+                "LOOKUP_KEY_TYPE", "LOOKUP_KEY_MISMATCH", "LOOKUP_KEY_UNIQUENESS_UNPROVEN")) {
+            assertThat(RowIsolationPolicy.isolationCode(reason, null)).as(reason).isNull();
+            assertThat(RowIsolationPolicy.isolationCode(reason, "FORMAT")).as(reason).isNull();
+            Failure failure = new Failure("cust_nm", reason, null);
+            assertThat(lookupColumn.decide(List.of(failure), false)).as(reason)
+                    .isEqualTo(new Stopped(StopCause.NOT_ISOLATABLE, failure));
+        }
+    }
+
+    @Test
     void columnsWhoseValuesCannotBeIsolatedAreNamed() {
         assertThat(RowIsolationPolicy.columnBlocker(new ColumnMapping("RRN", "user_enrrno", null, null, null, null,
                 null, "aria-egov-v1"))).isEqualTo("암호화 컬럼");

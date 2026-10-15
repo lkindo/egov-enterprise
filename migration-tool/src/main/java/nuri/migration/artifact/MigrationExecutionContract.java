@@ -10,6 +10,9 @@ import nuri.migration.domain.TargetValueGuard;
 import nuri.migration.etl.EtlExecutor;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.isolate.RowIsolationPolicy;
+import nuri.migration.lookup.LookupResolver;
+import nuri.migration.lookup.LookupRules;
+import nuri.migration.mapping.MappingIndex;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.protect.ColumnProtector;
 import nuri.migration.protect.EgovAriaColumnCipher;
@@ -66,6 +69,11 @@ public record MigrationExecutionContract(
             TargetValueGuard.class,
             RowIsolationPolicy.class,
             IsolationTally.class,
+            // 매핑 키·keymap 소유 매핑·부모 판정(ADR-0029 L3c). 승인 뒤 실행 순서·FK 번역 대상이 바뀌면 같은 승인으로 적재하지 않는다.
+            MappingIndex.class,
+            // 조회 조인의 규칙·짝 판정(ADR-0029 L3d). 승인 뒤 짝을 정하는 방식이 바뀌면 같은 승인으로 적재하지 않는다.
+            LookupRules.class,
+            LookupResolver.class,
             // 같은 세션 보관 덤프·격리 키 반출(ADR-0029 L3e). 승인 뒤 덤프 형식·대상 행·파일 쓰기가 바뀌면 같은 승인으로 적재하지
             // 않는다.
             ArchiveRun.class,
