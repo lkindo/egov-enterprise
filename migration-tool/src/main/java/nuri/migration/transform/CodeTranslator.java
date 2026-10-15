@@ -77,22 +77,47 @@ public final class CodeTranslator {
      * NULL 은 {@code nullAs: fallback} 일 때만 대체값이 되고, 아니면 NULL 이다.
      */
     public static String map(CodeMap codemap, Object sourceValue) {
+        return translate(codemap, sourceValue).value();
+    }
+
+    /**
+     * [ADR-0029 L4 D2·D7] {@link #map} 과 같은 판정·예외로 결과와 그 종류를 함께 돌려준다. 대사가 codemap 결과 분포와
+     * 종류(대응·통과·대체·NULL 대체)를 세는 데 쓴다. 맞은 키는 표 위치를 셀 때만 쓰고 증거에는 위치만 싣는다.
+     */
+    public static Translation translate(CodeMap codemap, Object sourceValue) {
         if (definitionProblem(codemap) != null) {
             throw new IllegalArgumentException("codemap definition is invalid");
         }
         if (sourceValue == null) {
-            return codemap.nullAs() == NullPolicy.FALLBACK ? codemap.fallback() : null;
+            return codemap.nullAs() == NullPolicy.FALLBACK
+                    ? new Translation(codemap.fallback(), Translation.Kind.NULL_FALLBACK, null)
+                    : new Translation(null, Translation.Kind.NULL_KEPT, null);
         }
         String code = lookupKey(sourceValue);
         String mapped = codemap.values().get(code);
         if (mapped != null) {
-            return mapped;
+            return new Translation(mapped, Translation.Kind.MAPPED, code);
         }
         return switch (codemap.unmapped()) {
-            case PASSTHROUGH -> code;
-            case FALLBACK -> codemap.fallback();
+            case PASSTHROUGH -> new Translation(code, Translation.Kind.PASSTHROUGH, null);
+            case FALLBACK -> new Translation(codemap.fallback(), Translation.Kind.FALLBACK, null);
             case FAIL -> throw new UnmappedCodeException();
         };
+    }
+
+    /**
+     * codemap 한 번 적용의 결과(ADR-0029 L4). {@code matchedKey} 는 {@link Kind#MAPPED} 일 때 {@code values} 에서 맞은
+     * 키다. 값을 담으므로 직렬화하지 않고, {@code toString} 은 종류만 보인다.
+     */
+    public record Translation(String value, Kind kind, String matchedKey) {
+
+        /** 결과의 종류. 대체는 미매핑 코드의 대체, NULL 대체는 {@code nullAs: fallback} 이다. */
+        public enum Kind { MAPPED, PASSTHROUGH, FALLBACK, NULL_FALLBACK, NULL_KEPT }
+
+        @Override
+        public String toString() {
+            return "Translation[" + kind + "]";
+        }
     }
 
     /** 대조에 쓰는 코드 표기. 숫자는 정규화하고, 이진 값은 코드가 될 수 없다. */

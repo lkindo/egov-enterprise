@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 /**
  * 실제 PostgreSQL 의 information_schema·표준 사전으로 표준 계약을 읽고 검증한다(DEC-OPS-307).
@@ -109,6 +110,85 @@ class TargetStandardPostgresIntegrationTest {
 
             assertThat(dictionaryChanged).isNotEqualTo(approved);
             assertThat(defaultAdded).isNotEqualTo(approved);
+        }
+    }
+
+    /**
+     * [ADR-0029 L4 D2] bound 형식 4 의 제약 스냅숏. 실제 카탈로그에서 매핑 대상 표의 FK·유일 인덱스·CHECK 이름·FK 자식 쪽
+     * RI 트리거 상태를 읽고(대상을 가리키는 FK·참조 표는 담지 않는다), 꺼진·replica 전용 트리거와 FK 삭제가 승인 digest 를
+     * 바꾼다.
+     */
+    @Test
+    void constraintSnapshotReadsTheCatalogAndBindsTheApprovalDigest() throws Exception {
+        try (Connection connection = open(); Statement statement = connection.createStatement()) {
+            createStandardSchema(connection, "std_constraint");
+            statement.execute("CREATE TABLE std_constraint.tb_parent (parent_id bigint PRIMARY KEY)");
+            statement.execute("ALTER TABLE std_constraint.tb_item ADD COLUMN parent_id bigint"
+                    + " CONSTRAINT fk_item_parent REFERENCES std_constraint.tb_parent (parent_id)");
+            statement.execute("ALTER TABLE std_constraint.tb_item ADD CONSTRAINT ck_item_amt CHECK (amt >= 0)");
+            statement.execute("CREATE UNIQUE INDEX ux_item_nm ON std_constraint.tb_item (lower(item_nm))");
+            statement.execute("CREATE TABLE std_constraint.tb_grandchild (id bigint PRIMARY KEY,"
+                    + " item_id varchar(20) REFERENCES std_constraint.tb_item (item_id))");
+            MappingSpec mapping = mapping("std_constraint", plainMapping());
+            TargetSchemaFingerprint approved = fingerprints.fingerprintBound(
+                    connection, mapping, Set.of("std_constraint"));
+
+            assertThat(approved.schemaVersion()).isEqualTo(4);
+            assertThat(approved.constraints().tables()).extracting(TargetConstraintSnapshot.TableConstraints::table)
+                    .containsExactly("tb_item");
+            TargetConstraintSnapshot.TableConstraints item = approved.constraints().table("std_constraint", "tb_item");
+            assertThat(item.constraints()).extracting(TargetConstraintSnapshot.Constraint::name,
+                    TargetConstraintSnapshot.Constraint::type).containsExactly(
+                    tuple("ck_item_amt", "c"), tuple("fk_item_parent", "f"), tuple("tb_item_pkey", "p"));
+            TargetConstraintSnapshot.Constraint foreignKey = item.constraints().get(1);
+            assertThat(foreignKey.columns()).containsExactly("parent_id");
+            assertThat(foreignKey.refSchema()).isEqualTo("std_constraint");
+            assertThat(foreignKey.refTable()).isEqualTo("tb_parent");
+            assertThat(foreignKey.refColumns()).containsExactly("parent_id");
+            assertThat(foreignKey.validated()).isTrue();
+            assertThat(foreignKey.triggerStates()).containsExactly("O", "O");
+            assertThat(item.constraints().getFirst().columns()).as("CHECK 는 이름만").isEmpty();
+            assertThat(item.constraints().get(2).columns()).containsExactly("item_id");
+            assertThat(item.uniqueIndexes()).extracting(TargetConstraintSnapshot.UniqueIndex::name)
+                    .containsExactly("tb_item_pkey", "ux_item_nm");
+            assertThat(item.uniqueIndexes().get(1).columns())
+                    .containsExactly(TargetConstraintSnapshot.UniqueIndex.EXPRESSION);
+            assertThat(item.uniqueIndexes()).allMatch(index -> index.valid() && index.ready());
+
+            statement.execute("ALTER TABLE std_constraint.tb_item DISABLE TRIGGER ALL");
+            TargetSchemaFingerprint disabled = fingerprints.fingerprintBound(
+                    connection, mapping, Set.of("std_constraint"));
+            statement.execute("ALTER TABLE std_constraint.tb_item ENABLE TRIGGER ALL");
+            // ENABLE REPLICA TRIGGER 는 ALL 을 받지 않는다 — FK 의 자식 쪽 내부 트리거를 이름으로 바꾼다.
+            List<String> triggers = new java.util.ArrayList<>();
+            try (var rows = statement.executeQuery("SELECT t.tgname FROM pg_trigger t JOIN pg_constraint c"
+                    + " ON c.oid = t.tgconstraint WHERE c.conname = 'fk_item_parent'"
+                    + " AND t.tgrelid = 'std_constraint.tb_item'::regclass")) {
+                while (rows.next()) {
+                    triggers.add(rows.getString(1));
+                }
+            }
+            assertThat(triggers).hasSize(2);
+            for (String trigger : triggers) {
+                statement.execute("ALTER TABLE std_constraint.tb_item ENABLE REPLICA TRIGGER \"" + trigger + "\"");
+            }
+            TargetSchemaFingerprint replica = fingerprints.fingerprintBound(
+                    connection, mapping, Set.of("std_constraint"));
+            for (String trigger : triggers) {
+                statement.execute("ALTER TABLE std_constraint.tb_item ENABLE TRIGGER \"" + trigger + "\"");
+            }
+            String restored = fingerprints.fingerprintBound(connection, mapping, Set.of("std_constraint")).digest();
+            statement.execute("ALTER TABLE std_constraint.tb_item DROP CONSTRAINT fk_item_parent");
+            String dropped = fingerprints.fingerprintBound(connection, mapping, Set.of("std_constraint")).digest();
+
+            assertThat(disabled.constraints().table("std_constraint", "tb_item").constraints().get(1).triggerStates())
+                    .containsOnly("D");
+            assertThat(replica.constraints().table("std_constraint", "tb_item").constraints().get(1).triggerStates())
+                    .containsOnly("R");
+            assertThat(disabled.digest()).isNotEqualTo(approved.digest());
+            assertThat(replica.digest()).isNotEqualTo(approved.digest());
+            assertThat(restored).isEqualTo(approved.digest());
+            assertThat(dropped).isNotEqualTo(approved.digest());
         }
     }
 

@@ -201,4 +201,37 @@ class CodeTranslatorTest {
         // 정규형 키는 같은 숫자 원천값과 실제로 만난다.
         assertThat(CodeTranslator.map(CodeMap.of(values), new BigDecimal("2.50"))).isEqualTo("S");
     }
+
+    /** [ADR-0029 L4 D2·D7] translate 는 map 과 같은 판정이고 결과 종류와 맞은 키를 함께 준다. 종류가 대사 증거의 근거다. */
+    @Test
+    void translateReportsTheKindOfEachResult() {
+        CodeMap codemap = new CodeMap(Map.of("1", "A01"), UnmappedPolicy.PASSTHROUGH, "Z", NullPolicy.FALLBACK);
+        CodeMap fallback = new CodeMap(Map.of("1", "A01"), UnmappedPolicy.FALLBACK, "Z", NullPolicy.KEEP);
+
+        assertThat(CodeTranslator.translate(codemap, new BigDecimal("1.0")))
+                .isEqualTo(new CodeTranslator.Translation("A01", CodeTranslator.Translation.Kind.MAPPED, "1"));
+        assertThat(CodeTranslator.translate(codemap, "7"))
+                .isEqualTo(new CodeTranslator.Translation("7", CodeTranslator.Translation.Kind.PASSTHROUGH, null));
+        assertThat(CodeTranslator.translate(codemap, null))
+                .isEqualTo(new CodeTranslator.Translation("Z", CodeTranslator.Translation.Kind.NULL_FALLBACK, null));
+        assertThat(CodeTranslator.translate(fallback, "7"))
+                .isEqualTo(new CodeTranslator.Translation("Z", CodeTranslator.Translation.Kind.FALLBACK, null));
+        assertThat(CodeTranslator.translate(fallback, null))
+                .isEqualTo(new CodeTranslator.Translation(null, CodeTranslator.Translation.Kind.NULL_KEPT, null));
+        assertThat(CodeTranslator.translate(codemap, "LEGACY-SECRET").toString())
+                .isEqualTo("Translation[PASSTHROUGH]");
+        assertThatThrownBy(() -> CodeTranslator.translate(YN, "9"))
+                .isInstanceOf(CodeTranslator.UnmappedCodeException.class);
+        assertThatThrownBy(() -> CodeTranslator.translate(new CodeMap(Map.of(), UnmappedPolicy.FAIL, null), "1"))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("codemap definition is invalid");
+    }
+
+    @Test
+    void mapIsTheValueOfTranslate() {
+        CodeMap codemap = new CodeMap(Map.of("1", "A01", "2", "A02"), UnmappedPolicy.FALLBACK, "Z",
+                NullPolicy.FALLBACK);
+        for (Object raw : new Object[]{"1", 2, new BigDecimal("2.00"), "9", null}) {
+            assertThat(CodeTranslator.map(codemap, raw)).isEqualTo(CodeTranslator.translate(codemap, raw).value());
+        }
+    }
 }
