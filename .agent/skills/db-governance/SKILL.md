@@ -18,10 +18,9 @@ live DB를 조회하지 못한 경우 저장소 스키마만으로 “표준 100
 ## 진단 절차
 
 1. 대상 컬럼의 한글 comment와 업무 의미를 확인한다.
-2. `meta_standard_terms`의 복합 용어를 먼저 조회하고, 없을 때만 표준 단어 조합을 검토한다.
-3. 용어의 `domain_name`으로 `meta_standard_domains`를 조회해 타입과 길이를 결정한다.
-4. 실제 물리 컬럼·constraint·index와 Flyway·JPA·DTO 영향을 대조한다.
-5. 변경이 필요하면 Expand → Migrate → Contract 단계, 데이터 보존, rollback·재시도 조건을 설계한다.
+2. [DB 헌법 제5조](../../knowledge/db-standard-constitution/artifacts/constitution.md)와 [표준 조회 가이드](../../knowledge/db-standard-constitution/artifacts/standard_terms.md)의 순서대로 `meta_standard_words`(단어 조합) → `meta_standard_terms`(용어·영문 약어 확정) → `meta_standard_domains`(타입·길이)를 조회한다. 필요한 단어·용어가 없으면 임의로 설계하지 않고 사용자에게 보고해 등록을 요청한다(DB 헌법 제9조).
+3. 실제 물리 컬럼·constraint·index와 Flyway·JPA·DTO 영향을 대조한다.
+4. 변경이 필요하면 DB 헌법 제7조 2의 Expand → Sync → Redirect → Contract 단계와 데이터 보존, rollback·재시도 조건을 설계한다. 단계별 의무(waiver·선행 Expand 릴리스 기록·관측 기간)는 `zero-downtime-migration-planner` 스킬을 따른다.
 
 ## 하드 스톱
 

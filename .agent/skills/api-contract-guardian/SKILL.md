@@ -24,17 +24,7 @@ REST Controller, 외부 요청·응답 DTO, 공통 응답, 예외 매핑 또는 
 
 1. 변경 전후 DTO 필드·타입·nullable·validation·HTTP status를 비교한다.
 2. DB 컬럼을 반영한 DTO라면 대상 환경의 live 메타와 물리 제약을 확인한다. 접근할 수 없으면 저장소 Flyway만 확인했다는 한계를 남긴다.
-3. 기본 경로인 오프라인 codegen을 실행한다.
-
-```bash
-pnpm -C frontend codegen:file
-pnpm -C frontend codegen:zod
-pnpm -C frontend codegen:verify
-pnpm -C frontend codegen:verify:zod
-pnpm -C frontend type-check
-```
-
-서버가 실제로 기동된 작업에서만 `pnpm -C frontend codegen:ts`를 선택한다. stale `api-docs.json`을 임의 생성하거나 npm lockfile을 만들지 않는다.
+3. `api-docs.json` 추출과 생성 계약 재생성·드리프트 점검은 [API 문서 가이드](../../../docs/03-guides/api-documentation-guide.md)의 절차를 따르고(오프라인 기본, 명령 구성은 `frontend/package.json`), 이어서 `pnpm -C frontend type-check`를 실행한다. stale `api-docs.json`을 임의 생성하거나 npm lockfile을 만들지 않는다.
 
 4. 제거·rename·타입 축소·optional→required 변경은 breaking change로 분류하고 실제 프런트 소비자를 검색한다.
 5. 호환 계층, 프런트 동시 수정, 버전 전환 중 하나를 선택하고 그 근거를 보고한다.

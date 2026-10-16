@@ -31,7 +31,7 @@
 | 정적 캔버스가 단일 단계 결재라는 낡은 설명을 고정 | [제품 설명](../../frontend/src/app/admin/workflow/WorkflowClient.tsx)과 [데모 검사](../../frontend/e2e/journeys/workflow-demo.spec.ts)를 다단계 승인·합의·반려·재상신과 캔버스 비연동 경계에 맞춤 |
 | API-only와 다중 역할 검사에도 자동 fixture가 기본 page를 준비 | [API fixture](../../frontend/e2e/fixtures/api-test.ts)와 [브라우저 fixture](../../frontend/e2e/fixtures/browser-test.ts) 분리 |
 
-현재 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**다. 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
+2026-09-21 이행 시점에 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**였다(현재 수는 Playwright 목록에서 센다). 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
 
 ## 3. 기능 변경 한 건의 표준 흐름
 

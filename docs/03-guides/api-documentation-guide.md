@@ -21,8 +21,11 @@ http://localhost:8080/swagger-ui.html
 ### API Docs (JSON) 다운로드
 
 ```bash
-curl http://localhost:8080/v3/api-docs > api-docs.json
+# 저장소 루트의 api-docs.json 은 추적 파일(계약 정본)이라 덮어쓰지 않는다 — 조회용 사본은 다른 이름으로 받는다.
+mkdir -p build && curl http://localhost:8080/v3/api-docs > build/api-docs.local.json
 ```
+
+추적 파일 `api-docs.json` 을 갱신할 때는 실행 중인 서버가 아니라 아래 [정적 추출](#api-문서-자동-내보내기-정적-추출)을 쓴다.
 
 ---
 

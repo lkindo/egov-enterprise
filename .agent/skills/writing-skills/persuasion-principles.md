@@ -4,7 +4,7 @@
 
 LLMs respond to the same persuasion principles as humans. Understanding this psychology helps you design more effective skills - not to manipulate, but to ensure critical practices are followed even under pressure.
 
-**Research foundation:** Meincke et al. (2025) tested 7 persuasion principles with N=28,000 AI conversations. Persuasion techniques more than doubled compliance rates (33% ??72%, p < .001).
+**Research foundation:** Meincke et al. (2025) tested 7 persuasion principles with N=28,000 AI conversations. Persuasion techniques more than doubled compliance rates (33% → 72%, p < .001).
 
 ## The Seven Principles
 
@@ -23,8 +23,8 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-??Write code before test? Delete it. Start over. No exceptions.
-??Consider writing tests first when feasible.
+✅ Write code before test? Delete it. Start over. No exceptions.
+❌ Consider writing tests first when feasible.
 ```
 
 ### 2. Commitment
@@ -42,8 +42,8 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-??When you find a skill, you MUST announce: "I'm using [Skill Name]"
-??Consider letting your partner know which skill you're using.
+✅ When you find a skill, you MUST announce: "I'm using [Skill Name]"
+❌ Consider letting your partner know which skill you're using.
 ```
 
 ### 3. Scarcity
@@ -61,8 +61,8 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-??After completing a task, IMMEDIATELY request code review before proceeding.
-??You can review code when convenient.
+✅ After completing a task, IMMEDIATELY request code review before proceeding.
+❌ You can review code when convenient.
 ```
 
 ### 4. Social Proof
@@ -80,8 +80,8 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-??Checklists without TodoWrite tracking = steps get skipped. Every time.
-??Some people find TodoWrite helpful for checklists.
+✅ Checklists without TodoWrite tracking = steps get skipped. Every time.
+❌ Some people find TodoWrite helpful for checklists.
 ```
 
 ### 5. Unity
@@ -98,8 +98,8 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-??We're colleagues working together. I need your honest technical judgment.
-??You should probably tell me if I'm wrong.
+✅ We're colleagues working together. I need your honest technical judgment.
+❌ You should probably tell me if I'm wrong.
 ```
 
 ### 6. Reciprocity
@@ -147,7 +147,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 **LLMs are parahuman:**
 - Trained on human text containing these patterns
 - Authority language precedes compliance in training data
-- Commitment sequences (statement ??action) frequently modeled
+- Commitment sequences (statement → action) frequently modeled
 - Social proof patterns (everyone does X) establish norms
 
 ## Ethical Use
@@ -172,7 +172,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Meincke, L., Shapiro, D., Duckworth, A. L., Mollick, E., Mollick, L., & Cialdini, R. (2025).** Call Me A Jerk: Persuading AI to Comply with Objectionable Requests. University of Pennsylvania.
 - Tested 7 principles with N=28,000 LLM conversations
-- Compliance increased 33% ??72% with persuasion techniques
+- Compliance increased 33% → 72% with persuasion techniques
 - Authority, commitment, scarcity most effective
 - Validates parahuman model of LLM behavior
 

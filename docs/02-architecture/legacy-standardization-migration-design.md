@@ -1,6 +1,6 @@
 # 레거시 시스템 표준화 이관 설계
 
-> **상태: 채택됨 — [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)(2026-10-13).** 이 문서는 채택 전 진단과 표준용어 식별 방법론의 설계 근거를 보존한다. §1~2의 공백, §6~8의 보강안·우선순위·검증 계획은 아래 진단 시점의 기록이며, §9의 결정 질문은 ADR-0029가 닫았다. 일부 행에 붙인 후속 정정은 전체 구현 상태표가 아니다. 현행 CLI·원장·적재 계약은 [이관 도구 설계](legacy-migration-tool-design.md), 재현 가능한 미해결 항목은 [활성 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
+> **상태: 채택 전 진단 기록 — 결정은 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)(2026-10-13 채택)와 그 후속 [ADR-0031](decisions/ADR-0031-migration-ledger-confirmation-followup.md)(원장 확정 조건·chunk 실패 처리), 현행 동작은 [이관 도구 설계](legacy-migration-tool-design.md)가 정본이다.** 이 문서는 채택 전 진단과 표준용어 식별 방법론의 설계 근거를 보존한다. §1~2의 공백, §6~8의 보강안·우선순위·검증 계획은 아래 진단 시점의 기록이며, §9의 결정 질문은 ADR-0029가 닫았다. 일부 행에 붙인 후속 정정은 전체 구현 상태표가 아니다. 현행 CLI·원장·적재 계약은 [이관 도구 설계](legacy-migration-tool-design.md), 재현 가능한 미해결 항목은 [활성 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
 - 진단 기준: `main` `0fab2c798`(2026-10-13)의 소스·문서 정적 조사. 테스트·DB 실측은 하지 않았다.
 - **전제**: 이관 시 레거시 DB와 함께 **레거시 애플리케이션 소스**(SQL 매퍼·VO·화면·설정)를 입력으로 제공한다. 표준화는 이 소스의 사용처 근거를 포함해 진행한다.

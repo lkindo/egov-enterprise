@@ -15,7 +15,7 @@
 
 ## 2. Profile과 Color Mode
 
-브랜드와 색상 모드는 독립된 축이다.
+브랜드와 색상 모드, 밀도는 독립된 축이다.
 
 | 축 | 후보 | 의미 |
 |---|---|---|
@@ -24,6 +24,7 @@
 | Brand profile | `premium` | 참조판·민간 파생 프로젝트용 선택 프로필. 기존 Hub Blue와 선택적 rich effect를 여기서 소유 |
 | Color mode | `light`, `dark` | profile과 독립적인 명도 체계 |
 | Contrast strategy | forced-colors/high-contrast | 운영체제 모드와 공공 프로필 요구에 따른 별도 전략 |
+| Density | `comfortable`(기본), `compact` | 서버 환경변수 `UI_DENSITY`를 allowlist로 검증해 `<html data-density>` 한 곳에 싣는 배포 단위 축. profile·color mode와 직교하며 라우트·화면별로 고르지 않는다(DEC-OPS-015). 값과 토큰은 [작업 화면 문법 카탈로그 §4](work-screen-grammar-catalog.md#4-밀도-계약)가 정본이다 |
 
 정부 masthead·운영기관 식별자는 단순 theme flag가 아니다. 적용 자격과 기관명·콘텐츠 구성, KRDS mapping이 확인된 경우에만 활성화한다. 기본 core나 premium profile에서 정부 서비스로 오인시킬 요소를 켜지 않는다.
 

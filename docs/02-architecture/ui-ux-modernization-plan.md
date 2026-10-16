@@ -12,7 +12,7 @@
 
 **기술 스택:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query 5, React Hook Form/Zod, Vitest/Testing Library, Playwright, axe-core, Spring Boot API, Flyway.
 
-**상태:** Recommended · ADR-0007 reference-default IA 승인 · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 로컬 구현 · 원안 그대로의 착수는 거부 · G0와 기관 채택 G1 미통과 및 route별 disposition 미완결로 theme·파일럿·대규모 이식 보류
+**상태(2026-10-17 현행화):** Recommended · ADR-0007 reference-default IA 승인 · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 구현 · 원안 그대로의 착수는 거부 · 업무 화면의 대규모 이행은 이 계획의 웨이브가 아니라 [업무 화면 문법 카탈로그](work-screen-grammar-catalog.md#7-이행-순서와-소비-계약) W1~W5로 진행해 완료했다(DEC-OPS-022·026) · brand profile은 `BRAND_THEME`(`premium`·`krds-aligned`, 기본 `premium`) 배포 단위 배선과 직교 밀도 축(DEC-OPS-014·015)까지 구현했고 `krds-standard`는 구현하지 않았다 · G0와 기관 채택 G1 미통과, route별 disposition 미완결 · 아래 본문은 2026-08-20 검토 기록이다
 
 **검토일:** 2026-08-20
 
@@ -988,7 +988,7 @@ priority = (task value × frequency × failure cost × accessibility risk × rea
 
 **Files:**
 
-- Modify: `config/reusable-base-profiles.json`
+- Modify: 기능 선언 `config/modules`(작성 당시 `config/reusable-base-profiles.json` — DEC-OPS-294 로 대체돼 지금은 없다)
 - Modify: reusable-base generator/verifier scripts
 - Create/Modify: route ownership and static reference contracts
 - Modify: `docs/03-guides/reusable-base-guide.md`

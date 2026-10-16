@@ -52,20 +52,20 @@ Check for:
 ```markdown
 ## Code Review Summary
 
-### ðŸ”´ Critical (Must Fix)
+### 🔴 Critical (Must Fix)
 - **[File:Line]** [Issue description]
   - **Why:** [Explanation]
   - **Fix:** [Suggested fix]
 
-### ðŸŸ¡ Suggestions (Should Consider)
+### 🟡 Suggestions (Should Consider)
 - **[File:Line]** [Issue description]
   - **Why:** [Explanation]
   - **Fix:** [Suggested fix]
 
-### ðŸŸ¢ Nits (Optional)
+### 🟢 Nits (Optional)
 - **[File:Line]** [Minor suggestion]
 
-### âœ… What's Good
+### ✅ What's Good
 - [Positive feedback on good patterns]
 ```
 

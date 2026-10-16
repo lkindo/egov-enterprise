@@ -52,8 +52,9 @@ Use the read-only DB bridge (`node .agent/scripts/db-bridge.js`) to query `infor
 ### Phase 3: Contract Synchronization Auditing
 Audit boundaries between Frontend and Backend:
 ```
-Java DTO -> Spring Controller/OpenAPI -> api-docs.json -> pnpm codegen:file + codegen:zod -> generated types/schemas -> frontend consumer
+Java DTO -> Spring Controller/OpenAPI -> api-docs.json -> generated types/schemas -> frontend consumer
 ```
+For the regeneration commands and drift checks, follow [the API documentation guide](../../../docs/03-guides/api-documentation-guide.md); do not restate them here.
 Verify that modifying any field in the Spring JPA entity triggers contract updates across the entire pipeline.
 
 ---

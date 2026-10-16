@@ -1,6 +1,6 @@
 # UI/UX 작업 동선 개선과 적용 범위
 
-검증 기준일: 2026-09-11(§2.1 관리 콘솔의 메뉴·화면·권한과 §3의 권한 편집 잠금 서술은 2026-10-02). 60개 활성 메뉴 목적지와 공통 화면 소스를 조사한 뒤, 기존 API와 권한 의미를 보존하면서 탐색 누락·입력 손실·중복 생성 위험을 줄이는 변경을 적용했다. 이 문서는 현재 구현의 안내이며 헌법이나 인가 정책을 대체하지 않는다.
+검증 기준일: 2026-09-11(§2.1 관리 콘솔의 메뉴·화면·권한과 §3의 권한 편집 잠금 서술은 2026-10-02). 당시 60개 활성 메뉴 목적지와 공통 화면 소스를 조사한 뒤(현재 메뉴 수는 [CTX-016](../../.agent/memory/project-context.md)), 기존 API와 권한 의미를 보존하면서 탐색 누락·입력 손실·중복 생성 위험을 줄이는 변경을 적용했다. 이 문서는 현재 구현의 안내이며 헌법이나 인가 정책을 대체하지 않는다.
 
 ## 1. 화면의 기본 구성
 
@@ -31,7 +31,7 @@ flowchart TD
 |---|---|---|
 | UX01 로그인 분리 | 업무 내비게이션을 마운트하지 않는 전용 레이아웃, 페이지 초점 흐름 | ApplicationFrame·LoginClient |
 | UX02 셸 치수 | 헤더 56px, 데스크톱 사이드바 256px, 동일 높이 변수로 본문 배치 | header·sidebar·globals.css |
-| UX03 이름과 동작 | 업무/일정·사용자/부서/부재·통계·모니터링 제목을 현재 작업에 맞춤. 부재 화면에서 사용자 등록 제거 | WorkHubClient·UserOrgHubClient·IntelligenceHubClient·MonitoringHubClient |
+| UX03 이름과 동작 | 업무/일정·사용자/부서/부재·통계·모니터링 제목을 현재 작업에 맞춤. 부재 화면에서 사용자 등록 제거 | 나의 업무(`frontend/src/app/admin/work-hub/page.tsx`·[탭 줄](../../frontend/src/components/business/work-hub/work-hub-tabs.tsx), 2026-10-12 업무 허브 분해로 `WorkHubClient` 를 나눴다)·UserOrgHubClient·IntelligenceHubClient·MonitoringHubClient |
 | UX04 지식 탐색 | 20건 단위 페이지 이동, 조회순을 서버 전체 정렬로 요청, 검색·정렬 변경 시 첫 페이지 | KnowledgeHubClient·knowledgeService |
 | UX05 편집 손실 | 그룹·사용자 선택, 권한 영역 전환, 메뉴·링크·라우터·브라우저 이동 보호 | UnsavedChangesContext·권한 편집기 |
 | UX06 기안 모달 | 상신 중 StandardModal의 `closeDisabled` 연결 | ApprovalDraftDialog |
@@ -48,7 +48,7 @@ flowchart TD
 | UX17 편집 방식 | 권한은 선택/편집, 짧은 결재는 모달, 게시판 생성은 단계형, 메일·업무 등록은 전용 폼. 주요 장문 폼에 이동 보호 | 무조건 하나의 팝업/폼으로 통일하지 않음 |
 | UX18 문서 | A5의 실제 소비자 설명을 현재 권한 그룹 편집기와 구분하고 이 문서를 문서 인덱스·Atlas에 연결 | 업무 화면 문법 카탈로그 |
 
-전체 60개 메뉴는 조사 모집단이다. 모든 메뉴의 CRUD를 새로 구현하거나 모든 화면의 인증된 E2E를 다시 수행했다는 의미가 아니다.
+전체 60개 메뉴는 2026-09-11 조사 모집단이다. 모든 메뉴의 CRUD를 새로 구현하거나 모든 화면의 인증된 E2E를 다시 수행했다는 의미가 아니다.
 
 ### 2.1 관리 콘솔의 메뉴·화면·권한 (2026-10-02)
 

@@ -1,6 +1,6 @@
 # Adopter 기준선 재동결 절차 (Baseline Refreeze Runbook)
 
-> [ERP 전환 마스터플랜](../02-architecture/erp-transformation-master-plan.html) Track B **D10** 산출물 — 사용자 위임(2026-08-23)에 따른 집행이다.
+> [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html) Track B **D10** 산출물 — 사용자 위임(2026-08-23)에 따른 집행이다.
 > 이 문서는 파생 제품(adopter)이 이 저장소를 base 로 채택한 뒤, 자체 밀도·브랜드·래칫 **기준선을 자기 제품의 실측값으로 재동결**하는 절차를 정의한다.
 
 ## 1. 배경과 원칙
@@ -25,14 +25,14 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 | # | 축 | 동결 위치 | 재동결 방법 |
 |---|---|---|---|
-| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 `BASELINE` 상수 | red 실측 → 상수 갱신 (§3) |
-| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 `BASELINE` 상수 | red 실측 → 상수 갱신 (§3) |
+| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 `BASELINE` 상수와 파일별 `BASELINE_BY_FILE` 표 | red 실측 → 표와 상수를 함께 갱신 (§3) |
+| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 `BASELINE` 상수·파일별 `BASELINE_BY_FILE` 표와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표와 상수를 함께 갱신 (§3) |
 | 3 | URL 상태 census | [config/ui-url-state-census.json](../../config/ui-url-state-census.json) | `node scripts/ui-url-state-census.mjs --write` (§4) |
 | 4 | 거버넌스 게이트 exact census | [config/governance/gates.json](../../config/governance/gates.json) | manifest 를 실제 게이트 소스와 함께 갱신 (§5) |
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |
 | 6 | e2e shard 시간 프로필 | [frontend/e2e/shard-duration-profile.json](../../frontend/e2e/shard-duration-profile.json) | 자기 CI 성공 run 실측으로 재작성 (§7) |
 | 7 | 컨트롤 고정 높이 덮어쓰기 | [work-screen-grammar-contract.test.ts](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts) 의 `CONTROL_HEIGHT_OVERRIDES` 파일별 수 | red 실측 → 파일별 수 갱신 (§3) |
-| 8 | 메시지 번들 계약 | [MessageBundleContractTest](../../foundation/src/test/java/nuri/foundation/core/config/MessageBundleContractTest.java) 의 `MIN_ERROR_CODES`·`MIN_BEAN_VALIDATION_REFS` 하한과 고아 키 단언 | 축소 프로필은 빠진 pack 의 ErrorCode·요청 DTO 가 사라져 하한이 미달하고, 그 ErrorCode 의 번들 키가 고아로 남는다(core 실측: ErrorCode 36·Bean Validation 참조 7, 게시판 B001~B006 고아). 고아 키는 지우고 하한은 제품 실측으로 다시 정한다 — 하한을 낮추는 이유를 커밋에 남긴다 |
+| 8 | 메시지 번들 계약 | [MessageBundleContractTest](../../foundation/src/test/java/nuri/foundation/core/config/MessageBundleContractTest.java) 의 `MIN_ERROR_CODES`·`MIN_BEAN_VALIDATION_REFS` 하한과 고아 키 단언 | 생성기가 빠진 기능의 ErrorCode 번들 키를 걷고 하한을 지운 몫만큼 내린다([reusable-source-messages.mjs](../../scripts/reusable-source-messages.mjs), DEC-OPS-257). 기관이 이후 ErrorCode·요청 DTO 를 더하거나 지운 변경분만 red 실측으로 고아 키를 정리하고 하한을 다시 정한다 — 하한을 낮추는 이유를 커밋에 남긴다 |
 
 마지막으로 required checks 결속(§8)을 adopter 자신의 원격 저장소에 다시 건다.
 
@@ -40,8 +40,10 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 두 게이트는 소스 스캔 총 occurrence 가 상수와 **정확히 같아야** green 이다(감소도 red — 개선분을 baseline 하향으로 확정해야 한다).
 
-- [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) — success/warning/destructive 계열 팔레트 하드코딩. 현재 base 동결값 `BASELINE = 656`.
-- [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) — 중립+브랜드 액센트 하드코딩. 현재 base 동결값 `BASELINE = 69`.
+- [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) — success/warning/destructive 계열 팔레트 하드코딩.
+- [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) — 중립+브랜드 액센트 하드코딩과 보조 글자 불투명도(`MUTED_OPACITY_BASELINE`, 파일별).
+
+두 게이트 모두 파일별 `BASELINE_BY_FILE` 표가 실측과 같아야 하고, 그 합이 `BASELINE` 상수와 같아야 한다. 현재 동결값은 이 문서가 아니라 테스트 파일이 정본이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로(`frozenInProjection`, DEC-OPS-259) 손대지 않는다.
 
 절차:
 
@@ -52,10 +54,10 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
    ```
 
 2. red 실패 메시지가 실측 총계와 방향(증가/감소)을 출력한다. **이 출력값이 유일한 재동결 근거다.** 추정·수기 집계로 상수를 바꾸지 않는다.
-3. 감소(개선)면 `BASELINE` 을 실측값으로 내린다. 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
+3. 감소(개선)면 해당 파일의 `BASELINE_BY_FILE` 값과 `BASELINE` 을 함께 실측값으로 내린다. 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
 4. 재실행해 green 을 확인하고, baseline 변경을 diff 리뷰로 승인받는다.
 
-컨트롤 고정 높이 덮어쓰기 동결도 같은 절차다. 차이는 총계가 아니라 **파일별 수**라는 점이다 — pack 을 빼면 사라진 파일의 항목이 "줄었다" 로 red 가 되므로 그 항목을 지운다. 수가 늘면 올리지 말고 해당 컨트롤을 `--control-h` 로 되돌린다.
+컨트롤 고정 높이 덮어쓰기 동결도 같은 절차다. 차이는 총계 없이 **파일별 수**만 둔다는 점이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로 손대지 않고, 기관이 이후 지우거나 바꾼 파일의 항목만 고친다. 수가 늘면 올리지 말고 해당 컨트롤을 `--control-h` 로 되돌린다.
 
 ```powershell
 pnpm -C frontend exec vitest run src/__tests__/work-screen-grammar-contract.test.ts
@@ -70,7 +72,7 @@ node scripts/ui-url-state-census.mjs --write
 ```
 
 - **수기 편집 금지** — 이 파일은 생성물이다. `--write` 로만 재생성한다.
-- 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(base 의 분류 초안: [url-state-privacy-classification-draft.md](../archived/url-state-privacy-classification-draft.md)).
+- 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(검색 상태 URL 허용 경계는 [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md), 승인 원장은 [config/ui-url-state-approval.json](../../config/ui-url-state-approval.json)).
 - census 재생성은 사람의 승인을 갱신하지 않는다. 승인 원장의 census hash가 달라지면 관련 분류·범위·근거를 다시 확인한 뒤 원장을 결속한다. 새 검색 surface·자격증명 key는 즉시 차단 대상이며 날짜 연장으로 해결할 수 없다.
 - `reviewBy`는 기존 정기 검토 일정으로 유지한다. 경과는 `npm run review:status`의 운영 신호이며 정상 코드 계약을 자동 무효화하지 않는다. 원본 snapshot과 기관 `pending` 검토는 별도 자료다.
 

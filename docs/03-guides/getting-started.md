@@ -10,8 +10,8 @@
 | 레이어 | 모듈 | 역할 | 재사용 정책 |
 |---|---|---|---|
 | Backend Core | `foundation` | 응답봉투·예외·감사엔티티·보안백본(JWT/IAM)·crypto·i18n·config | **필수(불변 코어)** |
-| Backend Admin | `business-core` | user·auth·code·menu·program·organization·log·system 등 관리 도메인 | **필수** |
-| Backend App | `business-app` | 프로젝트 고유/참조 도메인(survey·community·banner·popup·operation 등) | **선택(삭제·교체 대상)** |
+| Backend Admin | `business-core` | user·auth·code·menu·organization·log·system 등 관리 도메인 | **필수** |
+| Backend App | `business-app` | 프로젝트 고유/참조 도메인(survey·community·promotion·event·reward 등) | **선택(삭제·교체 대상)** |
 | Web Runtime | `api-server` | Controller·Security·Flyway·WebSocket·Batch | 필수 |
 | Migration CLI | `migration-tool` | 레거시 소스→표준 스키마 매핑·검증·ETL | **선택(이관 기간에만)** |
 | Frontend | `frontend` | Next.js 16 App Router | 필수(화면은 선택 삭제) |
@@ -72,7 +72,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 
 운영에서 반드시 설정하지만 fail-fast 는 아닌 값: `CORS_ORIGIN_1` / `CORS_ORIGIN_2`(운영 CORS 오리진). 미설정 시 `application-prod.yml` 의 `example.com` 기본값으로 **기동은 된다**. `docker-compose.prod.yml` 은 이 값과 메일 발신자·로그인 잠금·첨부 점검 등 운영 조정 변수를 값 없는 형태로 전달하며, 호스트/`.env` 에 값이 있을 때만 컨테이너에 들어간다(빈 값 `VAR=` 은 앱 기본값을 덮으므로 쓰지 않는다). 전달 목록은 `scripts/deploy-env-forwarding-contract.test.mjs` 가 앱이 읽는 변수와 대조한다.
  
-> 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
+> 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 템플릿에서 만드는 루트 `.env`·`frontend/.env.local`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
 
 선택 환경변수(시크릿 아님): `BRAND_THEME` — 브랜드 프로필 축(`premium`|`krds-aligned`, 미설정 시 premium, allowlist 밖 값은 premium 강등). 새 브랜드 추가는 [design-tokens.md의 "30분 브랜드 프로필"](design-tokens.md#1-30분-브랜드-프로필--새-브랜드-추가-레시피)을 따른다.
  
@@ -118,7 +118,7 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ./scripts/delete-domain.ps1 -DomainName "informalsanction"
 ```
 
-> `delete-domain.ps1`은 [기능 파일](../../config/modules/)을 SSOT 로 소비한다. 기능 파일이 없는 도메인명은 즉시 에러이고(알려진 기능을 함께 적는다), 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`·`dashboard`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 지우는 기능의 화면 소유(`owns.frontend`)와, 소유한 기능을 모두 지울 때의 함께 소유한 화면(`owns.frontendAny`)이다 — 생성기 투영의 화면 제외 규칙과 같다(11단계 C5, 종전에는 pack 도메인 전체를 지정할 때만 지웠다). 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
+> `delete-domain.ps1`은 [기능 파일](../../config/modules/)을 SSOT 로 소비한다. 기능 파일이 없는 도메인명은 즉시 에러이고(알려진 기능을 함께 적는다), 지우는 도메인을 요구하는 도메인은 자동 동반 삭제된다. 판정은 생성기와 같은 간선 규칙(코드 참조·지원 파일·생성 묶음 선언)을 지금 트리에서 계산해 거꾸로 따라가는 `scripts/domain-deletion-plan.mjs` 가 하므로 생성물·이미 지운 트리·새 도메인을 스캐폴드한 트리에서도 동작하며, 지우는 도메인이 요구하는 도메인은 남는다(예: `informalsanction` 을 지우면 `reward`, `board` 를 지우면 `comment`·`scrap`, 그리고 게시판 목록 API 를 쓰는 `community`). 업무 앱 디렉터리 밖의 Java 파일(지우는 타입을 참조하는 api-server 컨트롤러·시험, 지원 파일)은 디렉터리 이름이 아니라 생성기 Java 투영과 같은 판정으로 골라 함께 지운다(행사·포상 컨트롤러는 `controller/business/operation`, 결재 컨트롤러는 `controller/business/approval` 에 있다). 삭제 후에는 지운 Java 타입을 참조하는 잔존 소스와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 지우는 기능의 화면 소유(`owns.frontend`)와, 소유한 기능을 모두 지울 때의 함께 소유한 화면(`owns.frontendAny`)이다 — 생성기 투영의 화면 제외 규칙과 같다(11단계 C5, 종전에는 pack 도메인 전체를 지정할 때만 지웠다). 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
 > FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 [재사용 Base 가이드](./reusable-base-guide.md)의 projection·도달성 검사로 메뉴와 화면의 잔존 참조를 함께 확인한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)

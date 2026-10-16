@@ -74,7 +74,7 @@ frontend/
 
 ## 단위 테스트
 
-### 백엔드 (JUnit 5 + Mockito)
+### 백엔드 (JUnit 6 Jupiter + Mockito)
 
 Mockito 단위 테스트는 외부 의존성을 모두 mock하고 상태뿐 아니라 중요한 협력 호출도 검증한다. 현재 생성자 의존성과 메서드 계약을 반영한 예는 [UserServiceTest.java](../../business-core/src/test/java/nuri/business/service/user/UserServiceTest.java)를 따른다. 문서의 축약 예제를 복사해 현재 서비스 API를 추정하지 않는다.
 
@@ -124,8 +124,8 @@ public @interface IntegrationTest {
 > **보안 검증 경계:** `TestSecurityConfig`는 `anyRequest().permitAll()`을 사용하므로 이 stereotype의
 > MockMvc 성공은 production 인증·인가 체인의 증거가 아닙니다. 서비스·HTTP 계약 검증에만 사용하고,
 > 401/403·역할·소유권을 단언하는 테스트는 production `ApiSecurityConfig`를 로드하는 보안 테스트 기반을
-> 사용합니다. 남은 stereotype 분리 과제는
-> [GAP-TEST-001](../../.agent/memory/known-gaps.md)에서 관리합니다.
+> 사용합니다. 테스트가 production 체인을 우회하는 지점(`SecurityFilterChain` `@Bean`·`mock-security*` 프로필)은
+> [TestSecurityChainOverrideLinterTest](../../api-server/src/test/java/nuri/api/harness/TestSecurityChainOverrideLinterTest.java)가 동결합니다.
 
 ### 사용 예시
 
@@ -152,26 +152,17 @@ public @interface IntegrationTest {
 
 ### 실행 명령어와 격리 경계
 
-일반 개발 DB나 이미 열린 개발 서버에 E2E를 붙이지 않는다. 격리 runner가 새 DB와 자신이 소유한 API·Next 프로세스를 준비하고, 테스트 전에 실제 연결·실행 소유권을 확인한다. `.env`의 외부 DB 주소를 실행 대상으로 삼거나 boolean 승인 환경변수만으로 이 검증을 우회하지 않는다.
+일반 개발 DB나 이미 열린 개발 서버에 E2E를 붙이지 않는다. 격리 runner가 새 DB와 자신이 소유한 API·Next 프로세스를 준비하고, 테스트 전에 실제 연결·실행 소유권을 확인한다. runner는 저장소 루트나 `frontend/`에 `.env`·`.env.local` 같은 환경 파일이 있으면 시작하지 않는다. 그래서 `make bootstrap`으로 환경 파일을 만든 개발 클론이 아니라 `.env`가 없는 격리 worktree에서 실행한다.
 
 ```bash
 # 타입 검사와 새 격리 스택의 전체 API·브라우저 검증
 npm run verify:e2e
 
-# 특정 계약을 새 격리 스택에서 진단
-node scripts/run-isolated-e2e.mjs -- --project=api-contract e2e/contracts/authorization.spec.ts
+# 특정 spec만 같은 격리 경계에서 진단
 node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/department-work.spec.ts
-
-# 실행 없이 모집단 확인(서버·DB 불필요)
-pnpm -C frontend exec playwright test --list
-
-# E2E 타입 검사(루트 tsc는 e2e를 제외)
-pnpm -C frontend type-check:e2e
 ```
 
-PR과 main/master push는 [ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)의 같은 영향 분류로 온라인·독립 이관 등의 실행 범위를 정한다. 비교 불가·미지 입력·수동 실행은 전체를 선택한다. E2E는 [ADR-0023](../02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)에 따라 PR의 검토된 화면 수정만 spec 단위로 선별하고, main이나 공유·미지·신규·삭제 입력은 전수 실행한다. 전체 discovery에서 선별 파일의 테스트 좌표를 대조하며 두 shard와 실패 기준을 유지한다. 로컬 worker는 격리 스택의 자원 사용을 제한하기 위해 1, CI는 기존 측정 설정인 2다.
-
-CI는 실행 전 `--list --reporter=json`으로 만든 목록을 결과 계약의 `--inventory`로 전달한다. 배정한 파일뿐 아니라 테스트 ID·project·실제 실행 결과를 대조해 누락·예상 밖 skip·flaky를 차단한다. 현재 profile은 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480), SHA `56aa75d7`의 workers=2 실측이다. 50개 파일·135개 본 테스트(API 36 + browser 99)가 각 한 번씩 통과했고 setup 총 4회는 제외한 파일 가중치 합이 548,848ms다. skip/retry/flaky/오류는 모두 0이며 이전 측정 출처는 `source.previousSource`에 남겼다. 현재 가중치는 한 실행의 관측값이다. E2E 재편 결과는 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699), 후속 모듈 분리와 캐시의 required 결과·전체 시간은 [분리·캐시 실측](../02-architecture/testing-process-redesign.md#94-독립-모듈-실행과-캐시-저장복원-검증)에 원본 실행을 연결한다.
+spec·태그 단위 진단, 모집단 목록, E2E 타입 검사, CI shard 배정·inventory 대조와 현재 duration 가중치는 [E2E 운영 Runbook](./e2e-test-guide.md)이 정본이다. PR과 main push의 실행 범위는 [ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)·[ADR-0023](../02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)을 따른다.
 
 ### UI/UX 변경 전 기준선 계약
 
@@ -364,8 +355,6 @@ pnpm -C frontend exec playwright install --with-deps chromium
 ## 중앙 하네스 레지스트리와 실행 분리
 
 [governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 38개·ArchUnit 10개·schema-validation 49개, runner catalog 7개, execution profile 7개, quality population 3개와 quality ratchet 15개를 관리한다(2026-09-10 실측 — 정확한 현재 수는 이 문서가 아니라 registry 계약 실행 출력이 정본이다). [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
-
-2026-10-06 미사용 인증 주입을 정리하면서 생산 호출이 없는 구형 `OtpService` wrapper를 제거했다. 생성 부작용은 라이브러리 초기화뿐이며, 실제 인증은 `legacyOtpRequired → MfaService → TotpVerifier` 경로를 사용한다. 삭제된 구현만 호출하던 전용 테스트 5건은 함께 퇴역시키고, 현재 OTP 생성·정상 및 오답 거부·재사용 방지·등록 URI는 [TotpVerifierTest](../../foundation/src/test/java/nuri/foundation/security/mfa/TotpVerifierTest.java), [MfaServiceTest](../../business-core/src/test/java/nuri/business/service/auth/mfa/MfaServiceTest.java), [MfaFlowIntegrationTest](../../api-server/src/test/java/nuri/api/schema/MfaFlowIntegrationTest.java)로 검증한다. Auth 테스트의 주입되지 않는 OTP mock 검증은 실제 MFA 호출 검증으로 대체했다. 삭제된 서비스의 readOnly 예외만 축소하고, 하네스 baseline은 실제 메타 게이트 산출값과 대조해 해당 예외 항목과 판정 소스 해시만 갱신한다. 현재 인증 구현과 googleauth 의존성은 유지한다.
 
 | 계층 | 발견 계약 | 실행 경로 |
 |---|---|---|

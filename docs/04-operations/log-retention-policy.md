@@ -23,7 +23,7 @@
 |---|---|---|---|
 | `tb_web_log` | 만료 배치 파기 | `web-months: 24`; 요청 URL·행위자·IP를 포함 | 실제 수집 필드가 법정 접속기록 요건을 충족하는지 확인 |
 | `tb_sys_log` | 만료 배치 파기 | `sys-months: 24` | 시스템 처리 로그의 개인정보·감사 범위를 인수처가 분류 |
-| `tb_login_log` | 성공 로그인 비동기 기록 + 관리자·통계 조회 + 만료 배치 파기 | `login-months: 24` | 실패·OTP 거부 등 성공 이전 경로는 현재 기록 범위가 아님 |
+| `tb_login_log` | 성공과 실패 로그인 비동기 기록(실패는 `err_cd`에 사유 코드, DEC-OPS-135 ⑤) + 관리자·통계 조회 + 만료 배치 파기 | `login-months: 24` | 실패 사유(비밀번호 불일치·잠금·정책 거부·OTP 등)는 이 기록에만 남고 응답은 같은 401이다. 비동기 기록이라 저장 실패가 로그인 결과를 바꾸지 않는다 |
 | `tb_user_log` | 사용자 삭제 시 정리 + 만료 백스톱 | `user-months: 24` | 접속기록이 아닌 개인 사용통계로 취급. 참조 무결성 확인 |
 | `tb_privacy_log` | `@PrivacyAccess` 선언 핸들러의 응답 전 준비를 동기 기록 + 만료 배치 파기 | `privacy-months: 24` | 기록 저장 실패 시 응답 본문을 내보내지 않는다. 준비 기록은 클라이언트 수신 완료의 증거가 아니다 |
 | `tb_sys_adt_log` | 민감 요청 시도·응답 전 준비·처리 결과 및 트랜잭션에 결속한 변경 기록 | `sensitive-months: 24` | 요청 ID로 상태를 연결한다. 응답 중단·거부·실패를 성공과 구분하며 OTP·복구코드·요청 본문을 저장하지 않는다 |
@@ -32,7 +32,7 @@
 정본 구현:
 
 - [`LogRetentionScheduler`](../../business-core/src/main/java/nuri/business/service/log/LogRetentionScheduler.java)
-- [`AuthServiceImpl`](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java)의 성공 로그인 기록과
+- [`AuthServiceImpl`](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java)의 성공·실패 로그인 기록과
   [`LogService`](../../business-core/src/main/java/nuri/business/service/log/LogService.java)의 비동기 저장
 - [`application.yml`](../../api-server/src/main/resources/application.yml)의 `nuri.log.retention.*`
 - [`SensitiveAuditService`](../../business-core/src/main/java/nuri/business/service/log/SensitiveAuditService.java)의 독립 기록 트랜잭션과 업무 트랜잭션 결속 기록
@@ -132,5 +132,5 @@ SELECT min(crt_dt), max(crt_dt), count(*) FROM tb_login_log;
 6. 이 정책과 [pending-decisions.md](pending-decisions.md) 갱신
 
 미결인 원형보존 대 가명화와 외부 로그 수집 스택은 각각 `PD-LOG-001`, `PD-OPS-001`에서 결정한다.
-로그인 실패까지 감사 범위에 포함해야 한다면 별도 요구사항과 실패 응답 지연·정보노출·비동기 실패 관측 계약을
-정한 뒤 현재 성공 경로를 확장한다.
+로그인 실패는 2026-09-25부터 사유 코드와 함께 기록한다([AuthServiceImpl](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java)의 `recordLoginFailure`, [사유 코드](../../business-core/src/main/java/nuri/business/service/auth/LoginFailureReason.java)).
+비동기 기록 실패의 관측 계약은 아직 없다.

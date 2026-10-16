@@ -9,7 +9,7 @@ description: Use when implementation is complete, all tests pass, and you need t
 
 Guide completion of development work by presenting clear options and handling chosen workflow.
 
-**Core principle:** Verify tests ??Present options ??Execute choice ??Clean up.
+**Core principle:** Verify tests → Present options → Execute choice → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
@@ -66,6 +66,8 @@ Which option?
 ### Step 4: Execute Choice
 
 #### Option 1: Merge Locally
+
+> ⚠ **This repository: do not offer Option 1 when the base branch is `main`.** `main` is merged only through a PR whose required CI is green ([.github/required-checks.json](../../../.github/required-checks.json), [CI guide](../../../docs/03-guides/cicd-pipeline.md)); required CI is the merge authority and local tests are not. Use Option 2, and merge only when the user asks (AGENTS.md "공유 워킹트리와 Git"). Local merges are only for non-`main` branches the user asked to combine.
 
 ```bash
 # Switch to base branch
@@ -153,10 +155,10 @@ git worktree remove <worktree-path>
 
 | Option | Merge | Push | Keep Worktree | Cleanup Branch |
 |--------|-------|------|---------------|----------------|
-| 1. Merge locally | ??| - | - | ??|
-| 2. Create PR | - | ??| ??| - |
-| 3. Keep as-is | - | - | ??| - |
-| 4. Discard | - | - | - | ??(force) |
+| 1. Merge locally | ✓ | - | - | ✓ |
+| 2. Create PR | - | ✓ | ✓ | - |
+| 3. Keep as-is | - | - | ✓ | - |
+| 4. Discard | - | - | - | ✓ (force) |
 
 ## Common Mistakes
 
@@ -165,7 +167,7 @@ git worktree remove <worktree-path>
 - **Fix:** Always verify tests before offering options
 
 **Open-ended questions**
-- **Problem:** "What should I do next?" ??ambiguous
+- **Problem:** "What should I do next?" → ambiguous
 - **Fix:** Present exactly 4 structured options
 
 **Automatic worktree cleanup**

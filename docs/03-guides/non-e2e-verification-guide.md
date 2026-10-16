@@ -76,8 +76,8 @@ Playwright E2E는 브라우저 사용자 흐름을 검증하지만 서비스 분
 pnpm -C frontend exec tsc --noEmit
 pnpm -C frontend exec vitest run <target>
 
-# 관련 브라우저 spec
-pnpm -C frontend exec playwright test <spec>
+# 관련 브라우저 spec(.env 가 없는 격리 worktree에서 새 격리 스택으로 실행)
+node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/<spec>  # e2e/contracts 는 --project=api-contract
 ```
 
 ## 완료 보고

@@ -20,6 +20,7 @@
 | PD-NOTE-002 | blocked-input | 미개봉 쪽지 회수 기능을 제품에 넣을지 | 회수는 삭제 정책과 다른 사용자 계약이다. | 요구사항이 없으면 구현하지 않는다. 채택 시 수신·읽음과 동시성 의미를 먼저 정의한다. | [NoteApiController](../../api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java) |
 | PD-BIZ-001 | blocked-input | 별도 사업코드/BIZ master 개념을 향후 지원할지 | 현재 이벤트의 잘못된 `biz_cd`는 제거됐고, 별도 권위 원천은 없다. | 인수처의 사업코드 원천과 소비자가 제시될 때만 신규 모델을 설계한다. | [DB migration](../../api-server/src/main/resources/db/migration) |
 | PD-BIZ-002 | blocked-input | 남아 있는 `biz_yr` 의미를 `evnt_yr`로 개명할지 | 이름 변경은 API·DB·문서 소비자 계약을 함께 바꾼다. | 실제 의미와 외부 소비자를 확인한 후 별도 DB 변경으로 수행한다. | [DB constitution](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) |
+| PD-DIP-001 | blocked-input | 2026-09 도메인 개선 프로그램(DIP)이 범위 밖으로 둔 기능을 만들지: ① 업무 상태·마감·진척, 일정의 시각·반복 ② 결재 첨부·대결·위임 ③ 공지 고정·읽음 표시, 조회수의 사용자별 중복 제거 ④ 엑셀 대량 등록(행정구역·공통코드), 공통코드를 화면 라벨 원천으로 전환 ⑤ 다중 인스턴스 공유 집계·캐시 ⑥ 투표 자동폐기 스케줄러, 업무보고 수신자 | 만들지 않았고 화면도 약속하지 않는다. 결재의 서버 임시저장은 DEC-OPS-219로 들였다. 대시보드 30초 재사용·실시간 연결 수는 인스턴스마다 따로 센다. 주소록 사용자 검색 UI·공개 가입 UI는 DEC-OPS-069의 현 상태 유지 결정이라 이 행의 대상이 아니다. 2026-10-17 활성 Gap 인덱스의 GAP-DIP-001에서 옮겼다. | 기관 요구가 확인되면 항목마다 설계·결정을 따로 연다. 일괄로 만들지 않는다. | [결정 인덱스](../../.agent/memory/decisions.md), [DEC-OPS-069 원문](../archived/operational-decisions-history.md#dec-ops-069) |
 
 ## 데이터·운영 결정
 
@@ -42,5 +43,5 @@
 ## 결정과 별개로 남은 실행 조건
 
 - CSP의 `style-src 'unsafe-inline'`은 2026-08-30 런타임 style 주입 검토 후 accepted-risk로 유지한다. nonce 기반 `script-src`는 적용돼 있으며 style 세분화 재개 조건은 [GAP-FE-001](../../.agent/memory/known-gaps.md)을 따른다.
-- 격리 PostgreSQL의 혼합 100 VU k6와 장애 복구는 [검증 기록](readiness-followups.md#혼합-부하와-장애-복구)에 있다. 운영 규모 부하·NVD 전체 스캔·인증 ZAP은 [검증 사각지대 런북](verification-blindspots.md)의 외부 증거 경계로 관리한다.
+- 격리 PostgreSQL의 혼합 100 VU k6와 장애 복구는 [검증 기록](readiness-followups.md#혼합-부하와-장애-복구)에 있다. 운영 규모 부하·NVD 전체 스캔·운영 환경의 인증 ZAP(저장소의 주간 인증 API 스캔은 DEC-OPS-126)은 [검증 사각지대 런북](verification-blindspots.md)의 외부 증거 경계로 관리한다.
 - 단순 리팩터 아이디어나 완료 항목은 이 레지스트리에 두지 않는다. 필요해지면 구체적 목표·근거·소유자를 갖춘 이슈로 새로 만든다.
