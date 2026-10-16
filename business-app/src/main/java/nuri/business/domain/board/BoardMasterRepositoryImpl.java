@@ -29,7 +29,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
     @Override
     public Page<BoardMasterSearchResult> searchBoardMasters(BoardMasterSearchCondition condition,
             @NonNull Pageable pageable) {
-        QCommonCode commonCodeTy = new QCommonCode("commonCodeTy");
         QCommonCode commonCodeAttr = new QCommonCode("commonCodeAttr");
 
         BooleanBuilder builder = new BooleanBuilder();
@@ -37,12 +36,14 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
             builder.and(boardMaster.useYn.eq(condition.getUseYn()));
         }
 
+        /*
+         * [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 검색 축은 게시판명 하나다.
+         * 종전에는 searchCnd '0' 이면 게시판명, '1' 이면 공통코드 COM004 의 유형 이름으로 걸렀다. 그런데 COM004 는
+         * 원본·공유 DB 어디에도 없어 유형 이름은 늘 비었고('1' 은 늘 0건), 화면은 searchCnd 를 보내지 않아 검색어가
+         * 아예 무시됐다. 유형 이름의 정본은 이제 화면 상수(frontend/src/lib/board/board-types.ts)라 서버는 코드만 다룬다.
+         */
         if (StringUtils.hasText(condition.getSearchWrd())) {
-            if ("0".equals(condition.getSearchCnd())) {
-                builder.and(boardMaster.bbsTtl.contains(condition.getSearchWrd()));
-            } else if ("1".equals(condition.getSearchCnd())) {
-                builder.and(commonCodeTy.dtlCdNm.contains(condition.getSearchWrd()));
-            }
+            builder.and(boardMaster.bbsTtl.contains(condition.getSearchWrd()));
         }
 
         if (StringUtils.hasText(condition.getTrgtId())) {
@@ -60,7 +61,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
         JPAQuery<BoardMasterSearchResult> query = queryFactory.select(Projections.fields(BoardMasterSearchResult.class,
                 boardMaster.bbsId,
                 boardMaster.bbsTypeCd,
-                commonCodeTy.dtlCdNm.as("bbsTypeCdNm"),
                 boardMaster.bbsAtrbCd,
                 commonCodeAttr.dtlCdNm.as("bbsAtrbCdNm"),
                 boardMaster.bbsTtl,
@@ -68,8 +68,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.useYn,
                 boardMaster.crtDt.as("crtDt")))
                 .from(boardMaster)
-                .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")));
 
@@ -86,8 +84,6 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         Long totalResult = queryFactory.select(Wildcard.count)
                 .from(boardMaster)
-                .leftJoin(commonCodeTy)
-                .on(boardMaster.bbsTypeCd.eq(commonCodeTy.dtlCd).and(commonCodeTy.cdId.eq("COM004")))
                 .where(builder)
                 .fetchOne();
         long total = totalResult != null ? totalResult : 0L;

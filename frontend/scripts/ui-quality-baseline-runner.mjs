@@ -1585,7 +1585,7 @@ async function exactSyntheticMenus(api, fixture) {
 async function exactSyntheticBoards(api, fixture) {
   const data = await safeApiData(api, 'GET', withSafeQuery(
     '/api/v1/admin/system/board-masters',
-    { searchCondition: '0', searchKeyword: fixture.boardTitle, pageIndex: 1, pageUnit: 100 },
+    { searchKeyword: fixture.boardTitle, pageIndex: 1, pageUnit: 100 },
   ), { reasonCode: 'synthetic-board-readback-failed' });
   const list = Array.isArray(data?.list) ? data.list : [];
   return list.filter((board) => board?.bbsTtl === fixture.boardTitle);

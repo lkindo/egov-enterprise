@@ -22,14 +22,18 @@ const mocks = vi.hoisted(() => ({
       bbsId: 'BBS-A',
       bbsTtl: '첫 번째 게시판',
       bbsExpln: '첫 번째 설명',
-      bbsTypeCdNm: '일반 게시판',
+      // [2026-10-16 DEC-OPS-332] 서버는 유형 이름(bbsTypeCdNm)을 싣지 않는다 — 코드와 템플릿만 온다.
+      bbsTypeCd: 'BBST04',
+      tmpltId: 'TMPLT_QNA',
       useYn: 'N',
     },
     {
       bbsId: 'BBS-B',
       bbsTtl: '두 번째 게시판',
       bbsExpln: '두 번째 설명',
-      bbsTypeCdNm: '일반 게시판',
+      // 시드 질의응답 게시판처럼 코드와 템플릿이 정본의 짝이 아니다(BBST03 은 정본에서 갤러리다).
+      bbsTypeCd: 'BBST03',
+      tmpltId: 'TMPLT_QNA',
       useYn: 'N',
     },
   ],
@@ -531,6 +535,24 @@ describe('BoardMasterListClient selection contract', () => {
     fireEvent.click(blocked);
     // 잠근 버튼이 이동을 일으키면 목적지에서 404 를 만난다.
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  /*
+    [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 유형 이름은 공통코드 COM004 가 아니라 게시판 유형 정본에서 읽는다.
+    COM004 는 어디에도 없어 종전 서버 조인은 이름을 늘 비웠고 화면은 코드만 보였다. 정본의 짝이 아닌 행(시드·라이브
+    게시판)은 이름을 지어내지 않고 코드를 그대로 보인다 — 코드만으로 이름을 붙이면 질의응답 게시판을 갤러리라고 부른다.
+  */
+  it('유형 배지는 정본의 이름을 보이고, 정본의 짝이 아닌 행은 코드를 그대로 보인다', () => {
+    render(<BoardMasterListClient />);
+    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
+
+    const firstRow = within(table).getByText('첫 번째 게시판').closest('tr');
+    const secondRow = within(table).getByText('두 번째 게시판').closest('tr');
+    expect(firstRow).not.toBeNull();
+    expect(secondRow).not.toBeNull();
+    expect(within(firstRow as HTMLElement).getByText('Professional Q&A')).toBeInTheDocument();
+    expect(within(secondRow as HTMLElement).getByText('BBST03')).toBeInTheDocument();
+    expect(within(table).queryByText('Visual Gallery')).toBeNull();
   });
 
   it('사용 중인 게시판은 게시글 목록 열기가 열려 있고 그 게시판으로 이동한다', () => {

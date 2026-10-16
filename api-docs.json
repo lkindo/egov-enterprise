@@ -42415,9 +42415,6 @@
             "maxLength": 12,
             "minLength": 0
           },
-          "bbsTypeCdNm": {
-            "type": "string"
-          },
           "bbsAtrbCd": {
             "type": "string",
             "maxLength": 12,
@@ -52676,9 +52673,6 @@
           "bbsTypeCd": {
             "type": "string"
           },
-          "bbsTypeCdNm": {
-            "type": "string"
-          },
           "bbsAtrbCd": {
             "type": "string"
           },
@@ -52775,9 +52769,6 @@
             "type": "string"
           },
           "bbsTypeCd": {
-            "type": "string"
-          },
-          "bbsTypeCdNm": {
             "type": "string"
           },
           "bbsAtrbCd": {

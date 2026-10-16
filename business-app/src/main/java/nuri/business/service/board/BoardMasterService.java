@@ -56,17 +56,17 @@ public class BoardMasterService extends BaseAbstractService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    public Page<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword, @NonNull Pageable pageable) {
+    /** 게시판 마스터 목록. 검색어는 게시판명에 건다(DEC-OPS-332 — 검색 축은 게시판명 하나다). */
+    public Page<BoardMasterDto> getBoardMasterList(String searchKeyword, @NonNull Pageable pageable) {
         BoardMasterSearchCondition cond = new BoardMasterSearchCondition();
-        cond.setSearchCnd(searchCondition);
         cond.setSearchWrd(searchKeyword);
         return boardMasterRepository.searchBoardMasters(cond, Objects.requireNonNull(pageable))
                 .map(this::toDto);
     }
 
-    public List<BoardMasterDto> getBoardMasterList(String searchCondition, String searchKeyword) {
+    public List<BoardMasterDto> getBoardMasterList(String searchKeyword) {
         Pageable pageable = PageRequest.of(0, 1000);
-        return getBoardMasterList(searchCondition, searchKeyword, pageable).getContent();
+        return getBoardMasterList(searchKeyword, pageable).getContent();
     }
 
     /**
@@ -274,7 +274,6 @@ public class BoardMasterService extends BaseAbstractService {
                 .bbsId(projection.getBbsId())
                 .bbsTtl(projection.getBbsTtl())
                 .bbsTypeCd(projection.getBbsTypeCd())
-                .bbsTypeCdNm(projection.getBbsTypeCdNm())
                 .bbsAtrbCd(projection.getBbsAtrbCd())
                 .bbsAtrbCdNm(projection.getBbsAtrbCdNm())
                 .tmpltId(projection.getTmpltId())

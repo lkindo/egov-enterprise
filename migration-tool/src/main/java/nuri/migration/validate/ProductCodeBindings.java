@@ -33,11 +33,12 @@ public final class ProductCodeBindings {
 
     // 운영 계약이 이 줄 모양을 읽는다 — 한 줄에 하나, 이 순서·리터럴 그대로 둔다.
     // 결재 본표만 VALIDATE 다: 임시저장은 다시 상신할 때 검증하고, 이력은 이름만 보인다.
+    // 게시판 유형(tb_bbs_master.bbs_type_cd)은 공통코드에 묶이지 않는다 — 앱이 COM004 를 읽지 않고 유형 이름은 화면
+    // 상수가 정본이다(DEC-OPS-332). 그래서 이 표에 행이 없다.
     public static final List<Binding> ALL = List.of(
             new Binding("tb_ifml_atrz_info", "task_se_cd", "COM075", Use.VALIDATE, false),
             new Binding("tb_ifml_atrz_tmpr_strg", "task_se_cd", "COM075", Use.DISPLAY, false),
             new Binding("tb_ifml_atrz_hstry", "task_se_cd", "COM075", Use.DISPLAY, false),
-            new Binding("tb_bbs_master", "bbs_type_cd", "COM004", Use.DISPLAY, false),
             new Binding("tb_bbs_master", "bbs_atrb_cd", "COM009", Use.DISPLAY, false),
             new Binding("tb_sys_log", "prcs_se_cd", "COM033", Use.DISPLAY, true));
 

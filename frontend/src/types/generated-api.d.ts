@@ -6948,7 +6948,6 @@ export interface components {
             bbsTtl: string;
             bbsExpln?: string;
             bbsTypeCd: string;
-            bbsTypeCdNm?: string;
             bbsAtrbCd: string;
             bbsAtrbCdNm?: string;
             /** @enum {string} */
@@ -10811,7 +10810,6 @@ export interface components {
             bbsId: string;
             bbsTtl: string;
             bbsTypeCd: string;
-            bbsTypeCdNm?: string;
             bbsAtrbCd: string;
             bbsAtrbCdNm?: string;
             tmpltId?: string;
@@ -10846,7 +10844,6 @@ export interface components {
             bbsTtl: string;
             bbsExpln?: string;
             bbsTypeCd: string;
-            bbsTypeCdNm?: string;
             bbsAtrbCd: string;
             bbsAtrbCdNm?: string;
             ansPsbltyYn?: string;

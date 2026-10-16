@@ -47,6 +47,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { BoardMasterDtoSchema } from '@/types/generated-zod';
 import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
+import { boardTypeLabel } from '@/lib/board/board-types';
 
 export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
   bbsTtl: true,
@@ -385,7 +386,8 @@ export function BoardMasterListClient() {
       accessor: (board: BoardMasterSummary) => (
         <div className="min-w-0 max-w-[400px] text-left">
           <Badge variant="secondary" className="border border-border bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
-            {board.bbsTypeCdNm ?? board.bbsTypeCd}
+            {/* [2026-10-16 DEC-OPS-332] 유형 이름은 서버가 싣지 않는다 — 정본(lib/board/board-types)에서 읽는다. */}
+            {boardTypeLabel(board.bbsTypeCd, board.tmpltId)}
           </Badge>
         </div>
       )
@@ -509,8 +511,8 @@ export function BoardMasterListClient() {
           [2026-08-29] 라벨에서 '시스템 ID' 를 걷는다.
           표 첫 열이 게시판명 아래에 bbsId 를 함께 보여 주므로 그 ID 를 붙여 넣으면 찾을 수
           있다고 읽혔지만, 서버가 보는 축은 명칭뿐이다 — BoardMasterRepositoryImpl 은
-          searchCnd '0' 이면 bbsTtl, '1' 이면 게시판 유형명(dtlCdNm)만 걸고 bbsId 축이 없다.
-          게다가 BoardAdminService 는 searchCnd 를 항상 '0' 으로 보낸다.
+          [2026-10-16 DEC-OPS-332] 서버의 검색 축은 게시판명(bbsTtl) 하나다 — bbsId 축은 없다. 종전에는
+          searchCnd '0' 일 때만 게시판명에 걸었는데 이 화면은 searchCnd 를 보내지 않아 검색어가 무시됐다.
 
           라벨을 '게시판 명칭' 이 아니라 '게시판명' 으로 둔 이유: 편집 모달에도 '게시판 명칭'
           입력이 있어 접근 가능한 이름이 겹치면 두 컨트롤을 구분할 수 없다(실측 — 기존 스펙
