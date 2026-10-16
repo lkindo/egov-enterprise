@@ -99,15 +99,17 @@ export default function MemoReportManagementClient() {
   //   **권한 있는 SYSTEM 관리자에게 '전체' 탭이 사라졌다** — 라우트는 열어 주는데 화면만
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
   const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
-  // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)이나 전체 수정 권한자만 남긴다.
-  //   서버(MemoReportService.assertRecipientOrAdmin)와 같은 규칙이며 서버가 다시 판정한다.
+  // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)만 남긴다.
+  //   서버(MemoReportService.assertRecipient)와 같은 규칙이며 서버가 다시 판정한다.
   //   [2026-10-01] 서버가 판정한 instructable 을 먼저 쓴다 — 종전 화면은 지시 기능 권한(MEMO_RPT_INSTRUCT)을 보지 않아
   //   권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다. 힌트가 없는 목록 행에서는 같은 규칙으로 계산한다.
+  //   [2026-10-16 GAP-MEMO-001] 전체 수정 권한자도 수신자가 아니면 지시를 남기지 못한다 — 지시에는 작성자 칸이 없어
+  //   보고한 사람에게는 수신자의 지시처럼 보였다.
   const canInstruct = (report: { rptrId?: string; instructable?: boolean | null } | null | undefined) =>
     typeof report?.instructable === 'boolean'
       ? report.instructable
       : canPermission(user, 'MEMO_RPT_INSTRUCT')
-        && (canPermission(user, 'MEMO_RPT_UPDATE_ALL') || (!!user?.esntlId && !!report?.rptrId && user.esntlId === report.rptrId));
+        && !!user?.esntlId && !!report?.rptrId && user.esntlId === report.rptrId;
   const { toast } = useToast();
   const confirm = useConfirm();
 
@@ -725,8 +727,8 @@ export default function MemoReportManagementClient() {
                   [2026-08-28] 지시사항 등록 배선. 서버는 PATCH /{sn}/instr-cn 을 갖췄고
                   프런트 서비스에도 updateDrctMatter 가 있었는데 호출부가 0건이었다 — 화면은
                   '남기는 기능은 아직 제공되지 않습니다' 라고 고지만 했다.
-                  [2026-09-25 DIP I7] 지시는 수신자·관리자만 남긴다. 작성자에게는 입력을 보이지 않는다 —
-                  보여 주면 누를 때마다 403 이 나는 죽은 어포던스가 된다.
+                  [2026-09-25 DIP I7] 지시는 수신자만 남긴다(2026-10-16 GAP-MEMO-001 — 관리자 우회 없음).
+                  작성자·관리자에게는 입력을 보이지 않는다 — 보여 주면 누를 때마다 403 이 나는 죽은 어포던스가 된다.
                 */}
                 {canInstruct(detail ?? detailTarget) && (
                 <Form {...instructionForm}>

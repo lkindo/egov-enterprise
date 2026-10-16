@@ -230,24 +230,22 @@ public class MemoReportService {
                 new nuri.foundation.core.event.NotificationRequestedEvent(receiverEsntlId, title, content, route));
     }
 
-    /** 지시가 달렸는가. 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 본문을 바꾸지 않는다(P9). */
     /**
-     * [2026-10-01] 지시를 남길 수 있는가 — 지시 기능 권한과 수신자·전체 수정 권한 규칙(assertRecipientOrAdmin)을
-     * boolean 으로 계산한다. 종전 화면은 기능 권한을 보지 않아, 권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다.
+     * [2026-10-01] 지시를 남길 수 있는가 — 지시 기능 권한과 수신자 규칙(assertRecipient)을 boolean 으로 계산한다.
+     * 종전 화면은 기능 권한을 보지 않아, 권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다.
+     * [2026-10-16 GAP-MEMO-001] 전체 수정 권한(MEMO_RPT_UPDATE_ALL)은 더 이상 지시를 열지 않는다 — 쓰기 가드와 같다.
      * 표시용 힌트이며 실제 차단은 쓰기 경로가 집행한다.
      */
     private boolean canInstruct(MemoReport entity) {
         if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT")) {
             return false;
         }
-        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")) {
-            return true;
-        }
         return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
                 .filter(id -> id.equals(entity.getRptrId()))
                 .isPresent();
     }
 
+    /** 지시가 달렸는가. 지시는 그때의 본문을 두고 내린 것이라, 달린 뒤에는 본문을 바꾸지 않는다(P9). */
     private static boolean hasInstruction(MemoReport entity) {
         return org.springframework.util.StringUtils.hasText(entity.getDrctnMttr());
     }
@@ -317,7 +315,7 @@ public class MemoReportService {
     public void updateDrctMatter(Long memoRptSn, String instrCn) {
         MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        assertRecipientOrAdmin(entity); // [IDOR] 지시는 보고를 받은 사람·관리자만 남긴다
+        assertRecipient(entity); // [IDOR] 지시는 보고를 받은 사람만 남긴다 — 관리자 우회 없음(GAP-MEMO-001)
         // [2026-10-01] 이미 지시가 있던 보고에 다른 지시를 남기면 '변경' 으로 알린다 — 종전에는 같은 제목의 알림이라
         //   작성자가 새 지시인지 바뀐 지시인지 구분할 수 없었다.
         boolean replacing = hasInstruction(entity) && !Objects.equals(entity.getDrctnMttr(), instrCn);
@@ -333,15 +331,16 @@ public class MemoReportService {
     }
 
     /**
-     * 지시사항 작성 권한. 보고의 <b>수신자</b>({@code rptrId}, esntlId 축) 또는 전체 수정 권한자만 통과한다.
+     * 지시사항 작성 권한. 보고의 <b>수신자</b>({@code rptrId}, esntlId 축)만 통과한다 — 관리자 우회는 없다.
      *
      * <p>지시는 보고를 받은 사람이 작성자에게 내리는 것이다. 종전에는 열람 가드(작성자·수신자·관리자)를
      * 그대로 써서 <b>작성자가 수신자의 지시를 덮어쓸 수 있었다</b>(2026-09-25 DIP I7, D9).</p>
+     *
+     * <p>[2026-10-16 GAP-MEMO-001] 전체 수정 권한(MEMO_RPT_UPDATE_ALL) 우회를 걷었다. 지시에는 작성자 칸이 없어,
+     * 수신자가 아닌 사람이 단 지시도 보고한 사람에게는 수신자의 지시처럼 보였다. 본문 대행 수정(updateMemoReport)은
+     * 그 권한으로 그대로 한다.</p>
      */
-    private void assertRecipientOrAdmin(MemoReport entity) {
-        if (nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")) {
-            return;
-        }
+    private void assertRecipient(MemoReport entity) {
         String esntlId = currentEsntlIdOrDeny();
         if (!esntlId.equals(entity.getRptrId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
