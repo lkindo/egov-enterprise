@@ -15,6 +15,8 @@
     "tables": [
       "tb_ifml_atrz_dtl",
       "tb_ifml_atrz_hstry",
+      "tb_ifml_atrz_indv_apln",
+      "tb_ifml_atrz_indv_apln_dtl",
       "tb_ifml_atrz_info",
       "tb_ifml_atrz_prcs_hstry",
       "tb_ifml_atrz_rfpr",
@@ -30,6 +32,7 @@
       "src/services/business/user/approval",
       "src/app/components/dashboard/ApprovalHome.tsx",
       "src/queries/approval-home-query.ts",
+      "src/queries/approval-notification-action.ts",
       "src/extensions/informalsanction"
     ],
     "frontendAny": [],
@@ -89,6 +92,10 @@
       {
         "path": "frontend/src/extensions/informalsanction/home-sections.ts",
         "reason": "약식 전자결재 기능이 없으면 업무 홈의 결재 대기 카드와 결재함 열기 단추만 사라지고 업무 홈은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/informalsanction/notification-actions.ts",
+        "reason": "약식 전자결재 기능이 없으면 머리글 알림 카드의 바로 승인 단추만 사라지고, 알림 드로어와 카드의 바로가기 링크는 그대로입니다."
       }
     ],
     "ports": []

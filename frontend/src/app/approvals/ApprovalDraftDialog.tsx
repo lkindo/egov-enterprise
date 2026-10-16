@@ -7,6 +7,7 @@ import { ArrowDown, ArrowUp, FileText, History, Plus, RefreshCcw, Save, UserPlus
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ApproverInlinePicker, INELIGIBLE_REASONS, REFERENCE_INELIGIBLE_REASONS } from './ApproverInlinePicker';
+import { ApprovalSavedLinesPanel } from './ApprovalSavedLinesPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormErrorSummary } from '@/components/ui/form';
@@ -26,6 +27,7 @@ import type { UserSearchResult } from '@/services/business/user/UserSearchServic
 import {
   approvalUserService,
   type ApprovalReferee,
+  type ApprovalSavedLine,
   type ApprovalStageRequest,
   type ApprovalTemporaryDraft,
   type ApprovalTemporaryDraftReference,
@@ -47,9 +49,11 @@ const contentSchema = ApprovalDraftRequestSchema.pick({ taskSeCd: true, docTtl: 
   docCn: z.string().max(4000, '본문은 4000자 이내로 입력해 주세요.'),
   reqYmd: z.string().regex(/^\d{8}$/, '신청일을 확인해 주세요.'),
 });
+/** 결재자가 없는 단계의 오류 — 상신과 나의 결재선 저장이 같은 자리(그 단계의 결재자 칸)에 같은 문구로 둔다. */
+const EMPTY_STAGE_MESSAGE = '이 단계의 결재자를 선택해 주세요.';
 const stageSchema = ApprovalStageRequestSchema.extend({
   kind: z.enum(['APPROVAL', 'AGREEMENT']),
-  approverIds: z.array(z.string().trim().min(1).max(20)).min(1, '이 단계의 결재자를 선택해 주세요.').max(10, '한 단계에는 최대 10명을 지정할 수 있습니다.'),
+  approverIds: z.array(z.string().trim().min(1).max(20)).min(1, EMPTY_STAGE_MESSAGE).max(10, '한 단계에는 최대 10명을 지정할 수 있습니다.'),
 });
 const draftSchema = ApprovalDraftRequestSchema.extend({ ...contentSchema.shape,
   stages: z.array(stageSchema).min(1, '결재 단계를 추가해 주세요.').max(10, '결재는 최대 10단계입니다.'),
@@ -105,7 +109,7 @@ function refereesFrom(document: InformalSanctionDto | undefined, selfId: string 
   }).map(person => ({ esntlId: person.userId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined }));
 }
 
-function describeLine(line: LineSuggestion): string {
+function describeLine(line: Pick<LineSuggestion, 'stages'>): string {
   return (line.stages ?? []).map((stage, index) => `${index + 1}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'} ${(stage.approvers ?? []).map(person => person.userNm || person.esntlId).join(', ')}`).join(' → ');
 }
 
@@ -235,6 +239,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
    * 창을 열 때 임시저장을 이어 쓸지 묻지 않는다 — 목록에서 사용자가 고른다.
    */
   const canSaveTemporary = !resubmission && canPermission(user, 'APPROVAL_CREATE');
+  // [2026-10-16 D2] 나의 결재선 — 저장·불러오기 API 가 기안 권한을 요구한다. 재상신에서도 결재선을 다시 지정하므로 쓴다.
+  const canUseSavedLines = canPermission(user, 'APPROVAL_CREATE');
   // 복제 기안 창에도 둔다. 상한(20건) 안내와 409(C014) 문구가 이 목록을 가리키므로, 없으면 창을 닫아야 지울 수 있다.
   const showsTemporaryList = canSaveTemporary;
   // 이 창이 이어 쓰는 임시저장(번호·읽은 버전). 저장하면 받은 버전으로, 상신하면 서버가 이 버전과 함께 지운다.
@@ -326,23 +332,54 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
     setNotice(`${index + 1}단계를 삭제했습니다. 남은 결재 순서를 확인해 주세요.`);
     focusAfterRender(() => stageHeadings.current.get(nextFocusKey));
   };
-  /** 제안된 결재선을 그대로 가져온다. 지금 결재자가 될 수 없는 사람은 다음 단계의 사전 확인이 알려 준다. */
-  const applyLine = (line: LineSuggestion) => {
-    touch(); draftValidation.setFormErrors({}, false);
+  /**
+   * 가져온 결재선으로 편집기의 단계를 바꾼다(제안·나의 결재선 공통). 본인은 빼고, 결재선에 든 사람이 참조자로 골라져 있으면 참조자에서
+   * 뺀다 — 한 사람이 결재자이면서 참조자일 수 없다. 조용히 빼지 않고 돌려준 안내 문장으로 말한다. 넣을 사람이 없으면 null.
+   */
+  const adoptLine = (line: Pick<LineSuggestion, 'stages'>): string | null => {
     const next = (line.stages ?? []).map(stage => ({
       key: nextKey.current++,
       kind: (stage.kind === 'AGREEMENT' ? 'AGREEMENT' : 'APPROVAL') as ApprovalStageRequest['kind'],
       users: (stage.approvers ?? []).filter(person => person.esntlId && person.esntlId !== user?.esntlId)
         .map(person => ({ esntlId: person.esntlId, userNm: person.userNm, deptNm: person.deptNm })),
     }));
-    if (next.length === 0) return;
+    if (next.length === 0) return null;
+    touch(); draftValidation.setFormErrors({}, false);
     setStages(next);
-    // 가져온 결재선에 참조자로 고른 사람이 있으면 참조자에서 뺀다 — 한 사람이 결재자이면서 참조자일 수 없다. 조용히 빼지 않고 말한다.
     const nextIds = new Set(next.flatMap(stage => stage.users.map(person => person.esntlId ?? '')));
     const moved = referees.filter(person => nextIds.has(person.esntlId ?? ''));
     if (moved.length > 0) setReferees(current => current.filter(person => !nextIds.has(person.esntlId ?? '')));
-    setNotice(`결재선을 가져왔습니다: ${describeLine(line)}${moved.length > 0
-      ? ` 결재선에 든 ${moved.map(person => person.userNm || UNKNOWN_USER).join(', ')}는 참조자에서 뺐습니다.` : ''}`);
+    return moved.length > 0 ? ` 결재선에 든 ${moved.map(person => person.userNm || UNKNOWN_USER).join(', ')}는 참조자에서 뺐습니다.` : '';
+  };
+  /** 제안된 결재선을 그대로 가져온다. 지금 결재자가 될 수 없는 사람은 다음 단계의 사전 확인이 알려 준다. */
+  const applyLine = (line: LineSuggestion) => {
+    const movedNotice = adoptLine(line);
+    if (movedNotice === null) return;
+    setNotice(`결재선을 가져왔습니다: ${describeLine(line)}${movedNotice}`);
+  };
+  /**
+   * [2026-10-16 D2] 나의 결재선을 가져온다. 서버는 지금 결재자로 지정할 수 있는 사람만 보내고, 자격을 잃은 사람은 이름 없이 그 수만
+   * 보낸다 — 빠진 사람이 있으면 그 사실을 말한다(조용히 줄어든 결재선을 상신하지 않게).
+   */
+  const applySavedLine = (line: ApprovalSavedLine) => {
+    const movedNotice = adoptLine(line);
+    if (movedNotice === null) {
+      setNotice(`‘${line.aplnNm}’ 결재선에 지금 결재자로 지정할 수 있는 사람이 없어 가져오지 않았습니다.`);
+      return;
+    }
+    const dropped = line.droppedApproverCount ?? 0;
+    const droppedStages = line.droppedStageCount ?? 0;
+    const droppedNotice = dropped > 0
+      ? ` 지금 결재자로 지정할 수 없는 ${dropped}명(사용 중이 아니거나 결재 권한을 잃은 사람)은 뺐습니다.${droppedStages > 0 ? ` 그래서 ${droppedStages}개 단계가 빠졌습니다.` : ''} 결재선을 확인해 주세요.`
+      : '';
+    setNotice(`‘${line.aplnNm}’ 결재선을 가져왔습니다: ${describeLine(line)}${droppedNotice}${movedNotice}`);
+  };
+  /**
+   * 나의 결재선 저장이 결재자 없는 단계를 만났다 — 상신과 같이 그 단계의 결재자 칸에 오류를 두고 첫 칸으로 옮긴다. 요약은 그 칸을
+   * 편집기의 번호('2단계 결재자')로 부른다.
+   */
+  const reportEmptyStages = (indexes: readonly number[]) => {
+    draftValidation.setFormErrors(Object.fromEntries(indexes.map(index => [`stages.${index}.approverIds`, EMPTY_STAGE_MESSAGE])));
   };
   /** 최근 결재자를 마지막 단계에 더한다. */
   const addRecent = (person: ApproverProfile) => {
@@ -739,6 +776,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
           {step === 1 && <>
             {resubmission && <p className="rounded-md bg-muted p-3 text-sm">이전 결재선을 가져왔습니다. 결재자와 순서를 다시 확인해 주세요. 이전 차수는 이력에 보존됩니다.</p>}
             {template && !temporaryDraft && <p className="rounded-md bg-muted p-3 text-sm">복제한 문서의 결재선입니다. 결재자와 순서를 다시 확인해 주세요.</p>}
+            {canUseSavedLines && <ApprovalSavedLinesPanel stages={values.stages} disabled={submitting || savingTemporary} onApply={applySavedLine} onNotice={setNotice} onEmptyStages={reportEmptyStages} />}
             {!resubmission && suggestions.data && (suggestions.data.lines?.length || suggestions.data.otherLines?.length || suggestions.data.recentApprovers?.length) ? (
               <section aria-label="결재선 제안" className="space-y-3 rounded-md border border-border p-3">
                 {[...(suggestions.data.lines ?? []), ...(suggestions.data.otherLines ?? [])].length > 0 && <div className="space-y-2">

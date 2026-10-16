@@ -271,6 +271,62 @@ export interface HomeSection extends SlotEntry {
   readonly activityNote?: string;
 }
 
+/** notification-actions 가 받는 알림 맥락. 호스트(머리글 알림 드로어)가 만든다. */
+export interface NotificationActionContext {
+  readonly notificationId: number;
+  /** 알림 제목(없으면 빈 문자열). */
+  readonly title: string;
+  /** 항목의 match 가 그 알림의 이동 경로에서 읽은 대상(예: 결재 문서 번호). */
+  readonly target: string;
+  readonly queryClient: QueryClient;
+}
+
+/**
+ * 대기 처리가 끝난 모습. 실제로 보냈으면 done(알릴 문장), 보내기 전에 되돌렸으면 undone 이다 — 되돌린 곳이 호스트가 아니어도
+ * (결재함의 '처리 예정' 처럼 같은 대기열을 나눠 쓰는 다른 화면) undone 으로 끝난다.
+ */
+export type NotificationActionSettlement =
+  | { readonly kind: 'done'; readonly message: string }
+  | { readonly kind: 'undone' };
+
+/**
+ * notification-actions 의 submit 이 돌려주는 결과. 일정 시간 뒤에 보내는 처리(되돌리기 창)면 undo·undoMs·settled 를 함께 준다 —
+ * 호스트가 되돌리기 단추를 그 시간 동안 두고, settled 가 끝나면 결과를 알린다. 어디서 되돌렸든 settled 는 undone 으로 끝난다.
+ */
+export interface NotificationActionOutcome {
+  /** 누른 직후 알릴 문장(예: 10초 뒤 처리합니다). */
+  readonly message: string;
+  /** 아직 보내지 않았으면 취소하고 true. 이미 보냈으면 false. */
+  readonly undo?: () => boolean;
+  /** 되돌릴 수 있는 시간(ms). */
+  readonly undoMs?: number;
+  /** 되돌렸을 때 알릴 문장. 없으면 호스트가 '처리를 되돌렸습니다.' 라고 한다. */
+  readonly undoneMessage?: string;
+  /** 실제로 보냈으면 알릴 문장으로, 보내기 전에 되돌렸으면 undone 으로 끝나고, 보낸 처리가 실패하면 그 오류로 거절된다. */
+  readonly settled?: Promise<NotificationActionSettlement>;
+}
+
+/**
+ * notification-actions — 머리글 알림 드로어의 알림 카드에 붙는 바로 처리 단추(결재 차례 알림의 [승인] 등). 호스트(알림 드로어)가
+ * 잠금·상태 문구·토스트·되돌리기 단추·[열기] 링크를 소유하고, 항목은 알림을 고르는 함수(match)와 쓰기 함수(submit)만 준다.
+ * 두 함수는 기능 소유 모듈(src/queries 등)에 두고 기여는 그 이름만 가리킨다(기여는 데이터다). submit 은 폼 검증 census 가 쓰기로
+ * 읽는 이름이다 — 다른 이름으로 바꾸지 않는다. 판정(차례인가·버전)은 submit 이 서버에서 다시 읽어 한다 — 알림은 지난 사실이다.
+ */
+export interface NotificationAction extends SlotEntry {
+  /** 같은 슬롯 안의 순서(작은 값 먼저). */
+  readonly order: number;
+  /** 단추 글자와 진행 중 글자. */
+  readonly label: string;
+  readonly busyLabel: string;
+  /** 접근 이름 접두 — 호스트가 `${name}: ${알림 제목}` 으로 붙인다. */
+  readonly name: string;
+  /** 서버 사유가 없을 때 쓰는 실패 문구. */
+  readonly failureMessage: string;
+  /** 이 알림에 이 단추를 둘지. 내부 이동 경로에서 대상을 읽으면 그 값을, 아니면 null. */
+  readonly match: (linkUrl: string) => string | null;
+  readonly submit: (context: NotificationActionContext) => Promise<NotificationActionOutcome>;
+}
+
 /**
  * delivery-channels — 이 구성에 있는 전달 채널(GAP-COMPOSE-001). 채널 기능이 항목 하나를 기여하고, 화면은 core 도우미
  * (lib/delivery-channels.ts 의 hasDeliveryChannel)로 그 채널이 있는지만 묻는다. 채널 기능이 빠진 구성에서는 기여가 함께 지워져
@@ -291,6 +347,7 @@ export interface SlotMap {
   'header-widgets': HeaderWidget;
   'post-actions': PostAction;
   'home-sections': HomeSection;
+  'notification-actions': NotificationAction;
 }
 export type SlotId = keyof SlotMap;
 /** 한 기능이 한 슬롯에 기여하는 항목들. 레지스트리는 이것을 기능(owner) 코드 포인트 순으로 모은 배열이다. */

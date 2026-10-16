@@ -515,6 +515,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/approvals/saved-lines/{savedLineSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Approval Saved Line
+         * @description 저장한 결재선 하나를 불러옵니다. 지금 결재자로 지정할 수 있는 사람만 싣고, 그사이 사용 중지됐거나 결재 권한을 잃은 사람은 이름 없이 빼서 그 수(droppedApproverCount)와 사람이 모두 빠진 단계 수(droppedStageCount)를 돌려줍니다. 내 결재선이 아니면 404 입니다.
+         */
+        get: operations["getApprovalSavedLine"];
+        /**
+         * Update Approval Saved Line
+         * @description 저장한 결재선의 이름과 결재선을 통째로 바꿉니다(덮어쓰기). 저장과 같은 자격 검사를 지나야 하며, 다른 결재선과 이름이 겹치면 409(C008) 입니다. 내 결재선이 아니면 404 입니다.
+         */
+        put: operations["updateApprovalSavedLine"];
+        post?: never;
+        /**
+         * Delete Approval Saved Line
+         * @description 저장한 결재선을 지웁니다. 되살릴 수 없습니다. 내 결재선이 아니면 404 입니다.
+         */
+        delete: operations["deleteApprovalSavedLine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/users/{userId}": {
         parameters: {
             query?: never;
@@ -2310,6 +2338,30 @@ export interface paths {
          * @description 작성 중인 기안을 임시저장합니다. 업무 구분·제목·본문·결재선 중 하나는 있어야 하고, 결재자가 없는 단계는 받지 않습니다. 결재자 자격은 저장할 때 보지 않습니다. 한 사람이 20건까지 둘 수 있으며 넘으면 409(C014) 입니다. 알림은 나가지 않습니다.
          */
         post: operations["createApprovalTemporaryDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/approvals/saved-lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Approval Saved Lines
+         * @description 내가 저장한 결재선 목록입니다(이름 순, 최대 20개). 결재자는 싣지 않고 단계·결재자 수만 돌려줍니다.
+         */
+        get: operations["getApprovalSavedLines"];
+        put?: never;
+        /**
+         * Create Approval Saved Line
+         * @description 지금 결재선을 이름을 붙여 저장합니다. 결재자가 모두 지금 결재자로 지정할 수 있는 사람(본인 아님·사용 중·결재 권한)이어야 하며, 아니면 400 입니다. 한 사람이 20개까지 둘 수 있으며 넘으면 409(C014), 같은 이름이 있으면 409(C008) 입니다.
+         */
+        post: operations["createApprovalSavedLine"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6296,6 +6348,35 @@ export interface components {
             /** Format: date-time */
             mdfcnDt?: string;
         };
+        /** @description 나의 결재선 저장 요청 — 주인은 현재 사용자로 고정된다 */
+        ApprovalSavedLineRequest: {
+            /** @description 결재선 이름. 같은 사람의 결재선끼리 겹칠 수 없다 */
+            aplnNm: string;
+            /** @description 진행 순서대로 나열한 결재 단계(1~10단계). 결재자가 없는 단계는 보낼 수 없다 */
+            stages: components["schemas"]["ApprovalStageRequest"][];
+        };
+        ApiResponseApprovalSavedLineSummaryDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ApprovalSavedLineSummaryDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApprovalSavedLineSummaryDto: {
+            /** Format: int64 */
+            savedLineSn?: number;
+            aplnNm?: string;
+            /** Format: int32 */
+            stageCount?: number;
+            /** Format: int32 */
+            approverCount?: number;
+            /** Format: date-time */
+            mdfcnDt?: string;
+        };
         UserProfileUpdateRequest: {
             userNm: string;
             emplNo?: string;
@@ -9440,6 +9521,40 @@ export interface components {
             dtlCdExpln?: string;
             /** @description 사용여부 */
             useYn: string;
+        };
+        ApiResponseListApprovalSavedLineSummaryDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ApprovalSavedLineSummaryDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseApprovalSavedLineDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ApprovalSavedLineDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApprovalSavedLineDto: {
+            /** Format: int64 */
+            savedLineSn?: number;
+            aplnNm?: string;
+            stages?: components["schemas"]["ApprovalLineStageDto"][];
+            /** Format: int32 */
+            droppedApproverCount?: number;
+            /** Format: int32 */
+            droppedStageCount?: number;
+            /** Format: date-time */
+            mdfcnDt?: string;
         };
         ApiResponseApprovalSuggestionsDto: {
             success?: boolean;
@@ -14918,6 +15033,211 @@ export interface operations {
             header?: never;
             path: {
                 temporaryDraftSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getApprovalSavedLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                savedLineSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseApprovalSavedLineDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateApprovalSavedLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                savedLineSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalSavedLineRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseApprovalSavedLineSummaryDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteApprovalSavedLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                savedLineSn: number;
             };
             cookie?: never;
         };
@@ -25651,6 +25971,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseApprovalTemporaryDraftSummaryDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getApprovalSavedLines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListApprovalSavedLineSummaryDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    createApprovalSavedLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApprovalSavedLineRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseApprovalSavedLineSummaryDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

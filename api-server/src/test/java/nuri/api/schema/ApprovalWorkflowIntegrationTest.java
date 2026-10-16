@@ -71,6 +71,7 @@ class ApprovalWorkflowIntegrationTest {
     private static final String IN_APP_NOTIFICATION_LISTENER = "nuri.business.service.notification.listener.NotificationRequestListener";
     @Autowired private InformalSanctionService service;
     @Autowired private nuri.business.service.informalsanction.ApprovalTemporaryDraftService drafts;
+    @Autowired private nuri.business.service.informalsanction.ApprovalSavedLineService savedLines;
     @Autowired private nuri.api.controller.business.approval.InformalSanctionApiController legacyController;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private ApplicationContext applicationContext;
@@ -126,6 +127,7 @@ class ApprovalWorkflowIntegrationTest {
         jdbc.update("DELETE FROM tb_ifml_atrz_tmpr_strg_dtl WHERE ifml_atrz_tmpr_strg_sn IN "
                 + "(SELECT ifml_atrz_tmpr_strg_sn FROM tb_ifml_atrz_tmpr_strg WHERE aplcnt_id=?)", DRAFTER);
         jdbc.update("DELETE FROM tb_ifml_atrz_tmpr_strg WHERE aplcnt_id=?", DRAFTER);
+        jdbc.update("DELETE FROM tb_ifml_atrz_indv_apln WHERE user_id=?", DRAFTER);
         jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", DRAFTER);
     }
 
@@ -399,6 +401,65 @@ class ApprovalWorkflowIntegrationTest {
         assertThat(drafts.getTemporaryDrafts(DRAFTER)).isEmpty();
     }
 
+    /**
+     * [2026-10-16 D2] 나의 결재선. 실제 PostgreSQL 에서 저장·목록·불러오기·덮어쓰기(같은 단계·사람을 다시 넣어도 기본 키가
+     * 부딪히지 않는다)·지우기를 하고, 이름 유니크·주인 한정·20개 상한·불러올 때의 자격 재판정을 본다.
+     */
+    @Test
+    void savedLineRoundTripsAndRechecksEligibilityOnPostgres() {
+        seedDrafter();
+        authenticate(DRAFTER);
+        var line = List.of(stage(ApprovalStageKind.AGREEMENT, FIRST, SECOND), stage(ApprovalStageKind.APPROVAL, FINAL));
+        var saved = savedLines.createSavedLine(DRAFTER, savedLineRequest("팀장 결재", line));
+        long sn = saved.savedLineSn();
+        assertThat(saved.stageCount()).isEqualTo(2);
+        assertThat(saved.approverCount()).isEqualTo(3);
+        assertThat(saved.mdfcnDt()).isNotNull();
+
+        var overwritten = savedLines.updateSavedLine(DRAFTER, sn, savedLineRequest("팀장 결재", line));
+        assertThat(overwritten.savedLineSn()).as("같은 단계·사람을 다시 넣어도 기본 키가 부딪히지 않는다").isEqualTo(sn);
+        assertThatThrownBy(() -> savedLines.createSavedLine(DRAFTER, savedLineRequest("팀장 결재",
+                List.of(stage(ApprovalStageKind.APPROVAL, FINAL))))).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
+        assertThat(savedLines.getSavedLines(DRAFTER)).extracting(l -> l.savedLineSn(), l -> l.aplnNm())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(sn, "팀장 결재"));
+
+        // 저장한 뒤 SECOND 가 결재 권한을 잃었다 — 불러오면 이름 없이 빠지고 그 수만 온다.
+        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(List.of(FIRST, FINAL));
+        var loaded = savedLines.getSavedLine(DRAFTER, sn);
+        assertThat(loaded.droppedApproverCount()).isEqualTo(1);
+        assertThat(loaded.droppedStageCount()).isZero();
+        assertThat(loaded.stages()).extracting(s -> s.kind())
+                .containsExactly(ApprovalStageKind.AGREEMENT, ApprovalStageKind.APPROVAL);
+        assertThat(loaded.stages()).flatExtracting(s -> s.approvers()).extracting(p -> p.esntlId())
+                .containsExactly(FIRST, FINAL);
+        assertThatThrownBy(() -> savedLines.createSavedLine(DRAFTER, savedLineRequest("권한 잃은 사람", line)))
+                .as("저장도 지금 자격으로 판정한다").isInstanceOf(BusinessException.class).hasMessageContaining("1단계");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_indv_apln WHERE user_id=?", Integer.class, DRAFTER))
+                .isEqualTo(1);
+
+        authenticate(OWNER);
+        assertThatThrownBy(() -> savedLines.getSavedLine(OWNER, sn)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        assertThatThrownBy(() -> savedLines.deleteSavedLine(OWNER, sn)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        authenticate(DRAFTER);
+        for (int i = 2; i <= 20; i++) {
+            savedLines.createSavedLine(DRAFTER, savedLineRequest("결재선 " + i, List.of(stage(ApprovalStageKind.APPROVAL, FINAL))));
+        }
+        assertThatThrownBy(() -> savedLines.createSavedLine(DRAFTER, savedLineRequest("스물한째",
+                List.of(stage(ApprovalStageKind.APPROVAL, FINAL))))).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
+        assertThat(savedLines.getSavedLines(DRAFTER)).hasSize(20);
+
+        savedLines.deleteSavedLine(DRAFTER, sn);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_indv_apln_dtl WHERE ifml_atrz_indv_apln_sn=?",
+                Integer.class, sn)).as("결재선 행은 결재선과 함께 지워진다").isZero();
+        assertThatThrownBy(() -> savedLines.deleteSavedLine(DRAFTER, sn)).isInstanceOf(BusinessException.class)
+                .extracting("errorCode").isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
     /** 지운 임시저장은 결재선까지 사라지고, 같은 번호로 다시 지우면 404 다. */
     @Test
     void deletingTemporaryDraftRemovesItsLine() {
@@ -656,6 +717,11 @@ class ApprovalWorkflowIntegrationTest {
             String title, List<ApprovalStageRequest> stages, Integer version) {
         return nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.builder()
                 .taskSeCd("WF").docTtl(title).stages(stages).version(version).build();
+    }
+
+    private static nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest savedLineRequest(
+            String name, List<ApprovalStageRequest> stages) {
+        return nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest.builder().aplnNm(name).stages(stages).build();
     }
 
     private int countApprovals() {

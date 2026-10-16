@@ -13,6 +13,8 @@ import {
   AdministCodeDtoResponseSchema,
   ApiResponseAddressBookDtoResponseSchema,
   ApiResponseAdministCodeDtoResponseSchema,
+  ApiResponseApprovalSavedLineDtoResponseSchema,
+  ApiResponseApprovalSavedLineSummaryDtoResponseSchema,
   ApiResponseApprovalSuggestionsDtoResponseSchema,
   ApiResponseApprovalTemporaryDraftDtoResponseSchema,
   ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema,
@@ -50,6 +52,7 @@ import {
   ApiResponseInstitutionCodeDtoResponseSchema,
   ApiResponseIntegerResponseSchema,
   ApiResponseInternetSvcGuidanceDtoResponseSchema,
+  ApiResponseListApprovalSavedLineSummaryDtoResponseSchema,
   ApiResponseListApprovalTemporaryDraftSummaryDtoResponseSchema,
   ApiResponseListApproverProfileDtoResponseSchema,
   ApiResponseListBannerDtoResponseSchema,
@@ -181,6 +184,9 @@ import {
   ApprovalDraftRequestRequestSchema,
   ApprovalReferenceAddRequestRequestSchema,
   ApprovalResubmissionRequestRequestSchema,
+  ApprovalSavedLineDtoResponseSchema,
+  ApprovalSavedLineRequestRequestSchema,
+  ApprovalSavedLineSummaryDtoResponseSchema,
   ApprovalSuggestionsDtoResponseSchema,
   ApprovalSupplementAnswerRequestRequestSchema,
   ApprovalSupplementRequestRequestSchema,
@@ -1482,6 +1488,63 @@ export const deleteApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "temporaryDraftSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getApprovalSavedLineOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getApprovalSavedLine",
+  method: "get",
+  path: "/api/v1/approvals/saved-lines/{savedLineSn}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "savedLineSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => ApprovalSavedLineDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalSavedLineDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const updateApprovalSavedLineOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updateApprovalSavedLine",
+  method: "put",
+  path: "/api/v1/approvals/saved-lines/{savedLineSn}",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "savedLineSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: ApprovalSavedLineRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => ApprovalSavedLineSummaryDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalSavedLineSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const deleteApprovalSavedLineOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "deleteApprovalSavedLine",
+  method: "delete",
+  path: "/api/v1/approvals/saved-lines/{savedLineSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "savedLineSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,
@@ -4594,6 +4657,44 @@ export const createApprovalTemporaryDraftOperation = /*#__PURE__*/ (() => {
   requestSchema: ApprovalTemporaryDraftRequestRequestSchema.strict(),
   responseSchema: z.lazy(() => ApprovalTemporaryDraftSummaryDtoResponseSchema),
   envelopeSchema: ApiResponseApprovalTemporaryDraftSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getApprovalSavedLinesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getApprovalSavedLines",
+  method: "get",
+  path: "/api/v1/approvals/saved-lines",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => ApprovalSavedLineSummaryDtoResponseSchema)),
+  envelopeSchema: ApiResponseListApprovalSavedLineSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const createApprovalSavedLineOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "createApprovalSavedLine",
+  method: "post",
+  path: "/api/v1/approvals/saved-lines",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: ApprovalSavedLineRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => ApprovalSavedLineSummaryDtoResponseSchema),
+  envelopeSchema: ApiResponseApprovalSavedLineSummaryDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

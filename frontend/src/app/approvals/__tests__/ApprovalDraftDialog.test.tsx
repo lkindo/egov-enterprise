@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), searchAssignableUsers: vi.fn(), toast: vi.fn(), confirm: vi.fn(),
-  listTemporaryDrafts: vi.fn(), getTemporaryDraft: vi.fn(), createTemporaryDraft: vi.fn(), updateTemporaryDraft: vi.fn(), deleteTemporaryDraft: vi.fn() }));
+  listTemporaryDrafts: vi.fn(), getTemporaryDraft: vi.fn(), createTemporaryDraft: vi.fn(), updateTemporaryDraft: vi.fn(), deleteTemporaryDraft: vi.fn(),
+  listSavedLines: vi.fn(), getSavedLine: vi.fn(), createSavedLine: vi.fn(), updateSavedLine: vi.fn(), deleteSavedLine: vi.fn() }));
 // 기안자. 임시저장 동작은 기안 권한(APPROVAL_CREATE)이 있어야 보인다 — 권한을 빼는 시험은 permissions 를 바꾼다.
 const auth = vi.hoisted(() => ({ user: { esntlId: 'DRAFTER', authorizationVersion: 'test-v1', permissions: ['APPROVAL_CREATE'] as string[] } }));
 // 피커가 찾는 사람들. 홍기안은 기안자 본인이다.
@@ -67,7 +68,7 @@ describe('ApprovalDraftDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     auth.user.permissions = ['APPROVAL_CREATE'];
-    mocks.listTemporaryDrafts.mockResolvedValue([]);
+    mocks.listTemporaryDrafts.mockResolvedValue([]); mocks.listSavedLines.mockResolvedValue([]);
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);
@@ -109,6 +110,20 @@ describe('ApprovalDraftDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
     await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith({ taskSeCd: '01', docTtl: '출장 승인 요청', docCn: '출장 일정과 예산을 확인해 주세요.', reqYmd: '20260916', stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }] }));
     expect(onCreated).toHaveBeenCalledWith(88); expect(onClose).toHaveBeenCalled();
+  });
+  it('나의 결재선 저장은 결재자 없는 단계가 있으면 상신과 같이 그 단계의 결재자 칸을 편집기 번호로 가리키고 그 칸으로 옮긴다', async () => {
+    renderDialog(); await fillContent();
+    fireEvent.click(screen.getByRole('button', { name: '다음 단계 추가' })); await pick(2, '김결재');
+    fireEvent.click(screen.getByRole('button', { name: '이 결재선 저장' }));
+    fireEvent.change(await screen.findByLabelText('결재선 이름'), { target: { value: '가운데 빈 결재선' } });
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    const emptyStagePicker = screen.getByRole('button', { name: '1단계 결재자 선택' });
+    await waitFor(() => expect(emptyStagePicker).toHaveFocus());
+    expect(emptyStagePicker).toHaveAttribute('aria-invalid', 'true');
+    const summaries = await screen.findAllByRole('alert');
+    expect(summaries.some(alert => alert.textContent?.includes('1단계 결재자') && alert.textContent.includes('이 단계의 결재자를 선택해 주세요.'))).toBe(true);
+    expect(screen.getByRole('button', { name: '2단계 결재자 추가' })).not.toHaveAttribute('aria-invalid');
+    expect(mocks.createSavedLine).not.toHaveBeenCalled();
   });
   it('순차 단계 안의 여러 명과 합의 전원 동의를 미리보기와 요청에 보존한다', async () => {
     renderDialog(); await fillContent(); await pick(1, '김결재'); await pick(1, '이합의', true);

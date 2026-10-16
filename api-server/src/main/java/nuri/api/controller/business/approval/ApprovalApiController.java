@@ -28,6 +28,7 @@ public class ApprovalApiController {
     private final InformalSanctionService approvalService;
     private final nuri.business.service.informalsanction.ApprovalLineAssistService lineAssistService;
     private final nuri.business.service.informalsanction.ApprovalTemporaryDraftService temporaryDraftService;
+    private final nuri.business.service.informalsanction.ApprovalSavedLineService savedLineService;
 
     @Operation(summary = "Get Approval Detail", description = "참여한 결재의 내용·단계·처리 이력을 조회합니다. 결재자는 참여한 차수만 보고, "
             + "기안자와 참조자는 모든 차수를 봅니다(참조자는 한 번 지정되면 반려·회수·승인 뒤에도, 재상신에서 빠져도 계속 읽습니다). "
@@ -296,6 +297,64 @@ public class ApprovalApiController {
     public ResponseEntity<ApiResponse<Void>> deleteApprovalTemporaryDraft(
             @PathVariable Long temporaryDraftSn, @LoginUser CustomUserDetails userDetails) {
         temporaryDraftService.deleteTemporaryDraft(userDetails.getEsntlId(), temporaryDraftSn);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /**
+     * [2026-10-16 결재 동선 개선 D2] 나의 결재선. 주인 본인만 읽고 고치며(관리자 열람 없음), 남의 번호는 없는 번호와 같이 404 다.
+     * 결재자 자격(본인 아님·사용 중·결재 권한)은 저장할 때와 불러올 때 모두 판정한다. 결재 표에 들어가지 않으므로 대기함·알림·
+     * 통계·결재선 제안에 섞이지 않는다.
+     */
+    @Operation(summary = "List Approval Saved Lines",
+            description = "내가 저장한 결재선 목록입니다(이름 순, 최대 20개). 결재자는 싣지 않고 단계·결재자 수만 돌려줍니다.")
+    @GetMapping("/saved-lines")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLines')")
+    public ResponseEntity<ApiResponse<java.util.List<nuri.business.service.informalsanction.dto.ApprovalSavedLineSummaryDto>>> getApprovalSavedLines(
+            @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(savedLineService.getSavedLines(userDetails.getEsntlId())));
+    }
+
+    @Operation(summary = "Get Approval Saved Line",
+            description = "저장한 결재선 하나를 불러옵니다. 지금 결재자로 지정할 수 있는 사람만 싣고, 그사이 사용 중지됐거나 결재 권한을 잃은 "
+                    + "사람은 이름 없이 빼서 그 수(droppedApproverCount)와 사람이 모두 빠진 단계 수(droppedStageCount)를 돌려줍니다. "
+                    + "내 결재선이 아니면 404 입니다.")
+    @GetMapping("/saved-lines/{savedLineSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLine')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalSavedLineDto>> getApprovalSavedLine(
+            @PathVariable Long savedLineSn, @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(savedLineService.getSavedLine(userDetails.getEsntlId(), savedLineSn)));
+    }
+
+    @Operation(summary = "Create Approval Saved Line",
+            description = "지금 결재선을 이름을 붙여 저장합니다. 결재자가 모두 지금 결재자로 지정할 수 있는 사람(본인 아님·사용 중·결재 권한)이어야 하며, "
+                    + "아니면 400 입니다. 한 사람이 20개까지 둘 수 있으며 넘으면 409(C014), 같은 이름이 있으면 409(C008) 입니다.")
+    @PostMapping("/saved-lines")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalSavedLineSummaryDto>> createApprovalSavedLine(
+            @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(savedLineService.createSavedLine(userDetails.getEsntlId(), request)));
+    }
+
+    @Operation(summary = "Update Approval Saved Line",
+            description = "저장한 결재선의 이름과 결재선을 통째로 바꿉니다(덮어쓰기). 저장과 같은 자격 검사를 지나야 하며, 다른 결재선과 이름이 "
+                    + "겹치면 409(C008) 입니다. 내 결재선이 아니면 404 입니다.")
+    @PutMapping("/saved-lines/{savedLineSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#updateApprovalSavedLine')")
+    public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalSavedLineSummaryDto>> updateApprovalSavedLine(
+            @PathVariable Long savedLineSn, @LoginUser CustomUserDetails userDetails,
+            @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                savedLineService.updateSavedLine(userDetails.getEsntlId(), savedLineSn, request)));
+    }
+
+    @Operation(summary = "Delete Approval Saved Line",
+            description = "저장한 결재선을 지웁니다. 되살릴 수 없습니다. 내 결재선이 아니면 404 입니다.")
+    @DeleteMapping("/saved-lines/{savedLineSn}")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine')")
+    public ResponseEntity<ApiResponse<Void>> deleteApprovalSavedLine(
+            @PathVariable Long savedLineSn, @LoginUser CustomUserDetails userDetails) {
+        savedLineService.deleteSavedLine(userDetails.getEsntlId(), savedLineSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

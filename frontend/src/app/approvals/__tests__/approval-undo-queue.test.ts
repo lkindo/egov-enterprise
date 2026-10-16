@@ -5,6 +5,7 @@ import {
   commitApprovalNow,
   flushApprovalCommits,
   pendingApprovalCommits,
+  queuedApprovalLabel,
   scheduleApprovalCommit,
   subscribeApprovalCommits,
 } from '../approval-undo-queue';
@@ -72,5 +73,25 @@ describe('approval-undo-queue', () => {
     unsubscribe();
     cancelApprovalCommit(7);
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('누가 취소하든 올린 쪽의 onCancel 을 한 번 부르고, 보냈으면 부르지 않는다 — 결재함과 알림 카드가 같은 대기열을 나눠 쓴다', async () => {
+    const onCancel = vi.fn();
+    const run = vi.fn().mockResolvedValue(undefined);
+    scheduleApprovalCommit(8, run, { onCancel, label: { title: '출장', actionNm: '동의' } });
+    expect(queuedApprovalLabel(8)).toEqual({ title: '출장', actionNm: '동의' });
+    // 다른 화면(결재함의 '처리 예정')이 같은 번호로 되돌린다.
+    expect(cancelApprovalCommit(8)).toBe(true);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(cancelApprovalCommit(8)).toBe(false);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(queuedApprovalLabel(8)).toBeUndefined();
+
+    const sentCancel = vi.fn();
+    scheduleApprovalCommit(9, run, { onCancel: sentCancel });
+    await vi.advanceTimersByTimeAsync(APPROVAL_UNDO_MS);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(cancelApprovalCommit(9)).toBe(false);
+    expect(sentCancel).not.toHaveBeenCalled();
   });
 });

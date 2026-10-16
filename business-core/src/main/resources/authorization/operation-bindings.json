@@ -3126,5 +3126,40 @@
     "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft",
     "access": "PERMISSION",
     "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/saved-lines",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLines",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLine",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/approvals/saved-lines",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalSavedLine",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+    "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine",
+    "access": "PERMISSION",
+    "permission": "APPROVAL_CREATE"
   }
 ]

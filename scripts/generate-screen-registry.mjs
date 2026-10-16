@@ -77,13 +77,14 @@ export {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * 레이아웃 셸 — 슬롯 레지스트리를 읽지만 어느 화면에도 속하지 않는 앱 틀(머리글·바닥글·오류 화면·명령 센터). 이 셸만 그리는 기여
+ * 레이아웃 셸 — 슬롯 레지스트리를 읽지만 어느 화면에도 속하지 않는 앱 틀(머리글·바닥글·오류 화면·명령 센터·머리글 알림 드로어). 이 셸만 그리는 기여
  * 항목의 노출 술어(머리글 알림의 NOTI_READ 등)는 귀속할 화면이 없다(10단계 10a). 목록의 파일은 슬롯 소비자여야 하고 어느 화면에도
  * 귀속되지 않아야 한다 — 생성기가 확인한다. 화면에 닿는 셸을 여기 두면 그 화면의 술어가 조용히 빠지므로 실패한다.
  */
 export const LAYOUT_SHELL_FILES = Object.freeze([
   'frontend/src/app/components/layout/footer.tsx',
   'frontend/src/app/components/layout/header.tsx',
+  'frontend/src/app/components/ui/app-notification-drawer.tsx',
   'frontend/src/app/components/ui/global-command-center.tsx',
   'frontend/src/app/error.tsx',
 ]);

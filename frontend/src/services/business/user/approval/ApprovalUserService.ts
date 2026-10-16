@@ -9,6 +9,7 @@ import {
   ApprovalSupplementAnswerRequestSchema,
   ApprovalSupplementRequestSchema,
   ApprovalTemporaryDraftRequestSchema,
+  ApprovalSavedLineRequestSchema,
   ApproverCheckRequestSchema,
   ApproverReplaceRequestSchema,
 } from '@/types/generated-zod';
@@ -37,6 +38,11 @@ import {
   updateApprovalTemporaryDraftOperation,
   deleteApprovalTemporaryDraftOperation,
   addReferencesOperation,
+  getApprovalSavedLinesOperation,
+  getApprovalSavedLineOperation,
+  createApprovalSavedLineOperation,
+  updateApprovalSavedLineOperation,
+  deleteApprovalSavedLineOperation,
 } from '@/types/generated-operations';
 
 /** 기안 시 고르는 업무 구분 — 서버가 COM075 에서 내려주는 공통코드 행. */
@@ -71,6 +77,15 @@ export interface ApprovalTemporaryDraftReference {
 /** 저장·이어 쓰기 응답. 번호와 버전이 있는 것을 확인한 뒤에만 돌려준다 — 없으면 다음 저장이 남의 변경을 덮는다. */
 export type SavedApprovalTemporaryDraft = ApprovalTemporaryDraftSummary & ApprovalTemporaryDraftReference;
 export type ResumedApprovalTemporaryDraft = ApprovalTemporaryDraft & ApprovalTemporaryDraftReference;
+/**
+ * 나의 결재선(2026-10-16 D2). 이름을 붙여 저장해 둔 개인 결재선이다 — 한 사람이 20개까지, 같은 이름은 둘 수 없다.
+ * 저장과 불러오기 모두 서버가 결재자 자격(본인 아님·사용 중·결재 권한)을 지금 기준으로 다시 판정한다.
+ */
+export type ApprovalSavedLineRequest = components['schemas']['ApprovalSavedLineRequest'];
+/** 목록 한 줄 — 결재자는 싣지 않고 단계·사람 수만 싣는다. 불러오기가 단건 조회로 지금 자격을 판정한다. */
+export type ApprovalSavedLineSummary = components['schemas']['ApprovalSavedLineSummaryDto'];
+/** 불러온 결재선. 지금 고를 수 있는 사람만 오고, 자격을 잃은 사람은 이름 없이 빠진 수(droppedApproverCount)만 온다. */
+export type ApprovalSavedLine = components['schemas']['ApprovalSavedLineDto'];
 
 /**
  * 결재함(사용자) 서비스.
@@ -336,6 +351,39 @@ class ApprovalUserService extends ApiService {
   /** 임시저장 삭제. 결재선 행은 서버가 함께 지운다. */
   async deleteTemporaryDraft(temporaryDraftSn: number): Promise<void> {
     return this.executeGenerated(deleteApprovalTemporaryDraftOperation, { path: { temporaryDraftSn }, config: QUIET });
+  }
+
+  /** 나의 결재선 목록 — 이름 순, 최대 20개. 배열이다(한 번에 다 읽는다). */
+  async listSavedLines(): Promise<ApprovalSavedLineSummary[]> {
+    const response = await this.executeGenerated(getApprovalSavedLinesOperation, { config: QUIET });
+    if (!Array.isArray(response)) throw new Error('나의 결재선 목록 응답이 목록 계약과 일치하지 않습니다.');
+    return response;
+  }
+
+  /** 결재선 불러오기 — 지금 결재자로 지정할 수 있는 사람만 오고, 빠진 사람 수가 함께 온다. */
+  async getSavedLine(savedLineSn: number): Promise<ApprovalSavedLine> {
+    const response = await this.executeGenerated(getApprovalSavedLineOperation, { path: { savedLineSn }, config: QUIET });
+    if (response.savedLineSn !== savedLineSn) throw new Error('결재선 응답이 요청한 결재선과 일치하지 않습니다.');
+    return response;
+  }
+
+  /** 지금 결재선을 이름을 붙여 저장한다. 자격 없는 결재자가 있으면 400, 20개를 넘으면 409(C014), 같은 이름이 있으면 409(C008)다. */
+  async createSavedLine(request: ApprovalSavedLineRequest): Promise<ApprovalSavedLineSummary> {
+    return this.executeGenerated(createApprovalSavedLineOperation, { body: ApprovalSavedLineRequestSchema.parse(request), config: QUIET });
+  }
+
+  /** 같은 이름의 결재선을 지금 결재선으로 바꾼다(덮어쓰기). 저장과 같은 자격 검사를 지난다. */
+  async updateSavedLine(savedLineSn: number, request: ApprovalSavedLineRequest): Promise<ApprovalSavedLineSummary> {
+    return this.executeGenerated(updateApprovalSavedLineOperation, {
+      path: { savedLineSn },
+      body: ApprovalSavedLineRequestSchema.parse(request),
+      config: QUIET,
+    });
+  }
+
+  /** 결재선 삭제. 결재선 행은 서버가 함께 지운다. */
+  async deleteSavedLine(savedLineSn: number): Promise<void> {
+    return this.executeGenerated(deleteApprovalSavedLineOperation, { path: { savedLineSn }, config: QUIET });
   }
 }
 

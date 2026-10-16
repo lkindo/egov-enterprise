@@ -133,16 +133,19 @@ class InputContractMirrorLinterTest {
     //   프로그램 API 를 걷었기 때문이다. 검증 약화가 아니라 검증 대상의 소멸이다(H2 아님). 테이블은 남지만 쓰는 경로가 없다.
     // [2026-10-05 프로그램 원장 참조 퇴역] 251 -> 250. MenuDto.prgrmFileNm 이 빠졌다 — 앱이 그 컬럼을 더 이상 매핑하지 않아
     //   요청·응답에서 필드를 걷었다(GAP-PROGRAM-001). 같은 이유로 검증 대상의 소멸이다.
-    private static final int MIN_LENGTH_FIELDS = 250;
+    // [2026-10-16 결재 동선 개선 D2] 250 -> 251. 나의 결재선 요청(ApprovalSavedLineRequest)의 결재선명을 표(V2_129 apln_nm 200)와
+    //   대조한다. 중첩 +1(그 요청의 결재 단계 목록).
+    private static final int MIN_LENGTH_FIELDS = 251;
     private static final int MIN_ENUM_FIELDS = 18;
-    private static final int MIN_NESTED_VALIDATION_FIELDS = 12;
+    private static final int MIN_NESTED_VALIDATION_FIELDS = 13;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
     // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
     // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).
     // [2026-09-24 GAP-CONTRACT-001] +19 (위 요청 DTO 13개 중 필수 제약을 가진 10개의 NotBlank/NotNull/NotEmpty 전체).
     // [2026-10-02 관리 콘솔 UX 2단계] 78 → 92(원장 실측과 같게) — CopyGroup 3, MenuGroupGrantChange 5, MenuCreation 3, MenuProperties 3.
     // [2026-10-04 프로그램 목록 퇴역] 92 → 91. 걷은 ProgramDto 의 등록 그룹 파일명 필수 1건이 대상과 함께 사라졌다.
-    private static final int MIN_REQUIRED_FIELDS = 91;
+    // [2026-10-16 결재 동선 개선 D2] 91 → 93. 나의 결재선 요청의 이름(NotBlank)·결재 단계 목록(NotNull).
+    private static final int MIN_REQUIRED_FIELDS = 93;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
     private static final int MIN_CALENDAR_DATE_FIELDS = 12;

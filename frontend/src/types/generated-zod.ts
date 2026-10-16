@@ -478,6 +478,41 @@ export const ApprovalTemporaryDraftSummaryDtoSchema = /*#__PURE__*/ (() => z.obj
 export type ApprovalTemporaryDraftSummaryDto = z.infer<typeof ApprovalTemporaryDraftSummaryDtoSchema>;
 
 // ==========================================================================
+// ApprovalSavedLineRequest Schema
+// ==========================================================================
+export const ApprovalSavedLineRequestSchema = /*#__PURE__*/ (() => z.object({
+  aplnNm: z.string().min(0).max(200),
+  stages: z.array(z.lazy(() => ApprovalStageRequestSchema)).min(1).max(10),
+}))();
+export type ApprovalSavedLineRequest = z.infer<typeof ApprovalSavedLineRequestSchema>;
+
+// ==========================================================================
+// ApiResponseApprovalSavedLineSummaryDto Schema
+// ==========================================================================
+export const ApiResponseApprovalSavedLineSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSavedLineSummaryDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseApprovalSavedLineSummaryDto = z.infer<typeof ApiResponseApprovalSavedLineSummaryDtoSchema>;
+
+// ==========================================================================
+// ApprovalSavedLineSummaryDto Schema
+// ==========================================================================
+export const ApprovalSavedLineSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional(),
+  aplnNm: z.string().optional(),
+  stageCount: z.number().int().optional(),
+  approverCount: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalSavedLineSummaryDto = z.infer<typeof ApprovalSavedLineSummaryDtoSchema>;
+
+// ==========================================================================
 // UserProfileUpdateRequest Schema
 // ==========================================================================
 export const UserProfileUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -3360,6 +3395,47 @@ export const CommonCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.string().min(0).max(1),
 }))();
 export type CommonCodeDto = z.infer<typeof CommonCodeDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListApprovalSavedLineSummaryDto Schema
+// ==========================================================================
+export const ApiResponseListApprovalSavedLineSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApprovalSavedLineSummaryDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseListApprovalSavedLineSummaryDto = z.infer<typeof ApiResponseListApprovalSavedLineSummaryDtoSchema>;
+
+// ==========================================================================
+// ApiResponseApprovalSavedLineDto Schema
+// ==========================================================================
+export const ApiResponseApprovalSavedLineDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSavedLineDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseApprovalSavedLineDto = z.infer<typeof ApiResponseApprovalSavedLineDtoSchema>;
+
+// ==========================================================================
+// ApprovalSavedLineDto Schema
+// ==========================================================================
+export const ApprovalSavedLineDtoSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional(),
+  aplnNm: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoSchema)).optional(),
+  droppedApproverCount: z.number().int().optional(),
+  droppedStageCount: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalSavedLineDto = z.infer<typeof ApprovalSavedLineDtoSchema>;
 
 // ==========================================================================
 // ApiResponseApprovalSuggestionsDto Schema
@@ -6292,6 +6368,52 @@ export const ApprovalTemporaryDraftSummaryDtoResponseSchema = /*#__PURE__*/ (() 
   approverCount: z.number().int().optional().nullable(),
   referenceCount: z.number().int().optional().nullable(),
   version: z.number().int().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const ApprovalSavedLineRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  aplnNm: z.string().min(0).max(200),
+  stages: z.array(z.lazy(() => ApprovalStageRequestRequestSchema.strict())).min(1).max(10),
+}))();
+
+export const ApprovalSavedLineRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  aplnNm: z.string().min(0).max(200),
+  stages: z.array(z.lazy(() => ApprovalStageRequestResponseSchema)).min(1).max(10),
+}))();
+
+export const ApiResponseApprovalSavedLineSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSavedLineSummaryDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseApprovalSavedLineSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ApprovalSavedLineSummaryDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalSavedLineSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional(),
+  aplnNm: z.string().optional(),
+  stageCount: z.number().int().optional(),
+  approverCount: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalSavedLineSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional().nullable(),
+  aplnNm: z.string().optional().nullable(),
+  stageCount: z.number().int().optional().nullable(),
+  approverCount: z.number().int().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
@@ -10312,6 +10434,64 @@ export const CommonCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   dtlCdNm: z.string().min(0).max(100),
   dtlCdExpln: z.string().min(0).max(4000).optional().nullable(),
   useYn: z.string().min(0).max(1),
+}))();
+
+export const ApiResponseListApprovalSavedLineSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => ApprovalSavedLineSummaryDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseListApprovalSavedLineSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => ApprovalSavedLineSummaryDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApiResponseApprovalSavedLineDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ApprovalSavedLineDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseApprovalSavedLineDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => ApprovalSavedLineDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalSavedLineDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional(),
+  aplnNm: z.string().optional(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoRequestSchema.strict())).optional(),
+  droppedApproverCount: z.number().int().optional(),
+  droppedStageCount: z.number().int().optional(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalSavedLineDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  savedLineSn: z.number().int().optional().nullable(),
+  aplnNm: z.string().optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalLineStageDtoResponseSchema)).optional().nullable(),
+  droppedApproverCount: z.number().int().optional().nullable(),
+  droppedStageCount: z.number().int().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
 export const ApiResponseApprovalSuggestionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({

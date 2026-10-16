@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { pendingApprovalCommits, scheduleApprovalCommit } from '../approval-undo-queue';
 
 const mocks = vi.hoisted(() => ({
   cancelDraft: vi.fn(),
@@ -968,6 +969,22 @@ describe('ApprovalHubClient 결재 동선 검토 수정', () => {
     fireEvent.click(screen.getByRole('button', { name: '‘둘째 문서’ 승인 지금 처리' }));
     await waitFor(() => expect(screen.getByRole('button', { name: '다음 쪽 문서 #99 상세 열기' })).toHaveFocus());
     await waitFor(() => expect(mocks.confirmMutation).toHaveBeenCalledTimes(2));
+  });
+
+  it('알림 카드에서 올린 합의 단계 승인은 처리 예정에 동의로 보이고, 여기서 되돌리면 올린 쪽(카드)에 되돌림을 알린다', async () => {
+    // 알림 카드는 결재함의 기록 없이 같은 대기열에 올린다 — 이름과 동사(동의)는 대기열이 들고 있다.
+    const run = vi.fn().mockResolvedValue(undefined);
+    const onCancel = vi.fn();
+    scheduleApprovalCommit(77, run, { onCancel, label: { title: '합의 문서', actionNm: '동의' } });
+    renderClient();
+    const queueRegion = await screen.findByRole('region', { name: '처리 예정' });
+    expect(within(queueRegion).getByText(/‘합의 문서’ 동의를 10초 뒤 처리합니다/)).toBeInTheDocument();
+    fireEvent.click(within(queueRegion).getByRole('button', { name: '‘합의 문서’ 동의 되돌리기' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(pendingApprovalCommits()).toEqual([]);
+    await waitFor(() => expect(screen.queryByRole('region', { name: '처리 예정' })).not.toBeInTheDocument());
+    expect(screen.getByText(/‘합의 문서’ 처리를 되돌렸습니다/)).toBeInTheDocument();
+    expect(run).not.toHaveBeenCalled();
   });
 
   it('여러 건 승인 영역은 이름 있는 영역으로 보조기술에 드러난다 (F25)', async () => {

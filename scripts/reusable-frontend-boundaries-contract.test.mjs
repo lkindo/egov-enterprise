@@ -943,7 +943,7 @@ test('hub tab modules: contributable names exactly the hub-tabs contributions, a
  * 렌더되므로 따라가지 않는다. 소유도 생성기의 제거 규칙(카탈로그 frontendRules)을 그대로 쓴다 — 파일을 덮는 규칙이 하나라도 기여
  * 기능의 폐포에서 빠지면 그 파일은 지워진다. 첫 일치 기능 하나만 보면 겹친 경로(게시판 접두 + 커뮤니티 정확 경로)에서 커뮤니티 누락을 놓친다.
  */
-function contributionClosureViolations({ catalog, edges, files }) {
+function featureRules(catalog) {
   const covering = file => catalog.frontendRules.filter(({ path }) => {
     const root = path.replace(/\/+$/, '');
     return file === root || file.startsWith(`${root}/`) || file.replace(/\.tsx?$/, '') === root.replace(/\.tsx?$/, '');
@@ -951,20 +951,31 @@ function contributionClosureViolations({ catalog, edges, files }) {
   // project-composer-recipe.mjs 의 includeRule 과 같다: any 는 하나라도, 나머지는 모두 남아야 규칙이 남는다.
   const kept = (rule, included) => (rule.mode === 'any' ? rule.domains.some(domain => included.has(domain)) : rule.domains.every(domain => included.has(domain)));
   const requires = new Map(catalog.capabilities.map(capability => [capability.id, capability.requires.map(edge => edge.domain)]));
-  const closureOf = id => {
-    const closure = new Set([id]);
+  const closureOf = ids => {
+    const closure = new Set(ids);
     for (const current of closure) for (const next of requires.get(current) ?? []) closure.add(next);
     return closure;
   };
+  return { covering, kept, closureOf };
+}
+
+// 시작 파일에서 import 간선으로 닿는 파일 전부. 레지스트리는 구성마다 다시 렌더되므로 따라가지 않는다.
+function reachedWithoutRegistries(start, edges) {
+  const reached = new Set([start]);
+  for (const path of reached) for (const { to } of edges.get(path) ?? []) {
+    if (slotPathKind(frontendRel(to))?.kind === 'registry') continue;
+    reached.add(to);
+  }
+  return reached;
+}
+
+function contributionClosureViolations({ catalog, edges, files }) {
+  const { covering, kept, closureOf } = featureRules(catalog);
   const violations = [];
   for (const kind of files.map(frontendRel).map(file => slotPathKind(file)).filter(row => row?.kind === 'contribution')) {
     const start = join(frontendRoot, kind.file);
-    const allowed = closureOf(kind.owner);
-    const reached = new Set([start]);
-    for (const path of reached) for (const { to } of edges.get(path) ?? []) {
-      if (slotPathKind(frontendRel(to))?.kind === 'registry') continue;
-      reached.add(to);
-    }
+    const allowed = closureOf([kind.owner]);
+    const reached = reachedWithoutRegistries(start, edges);
     for (const path of reached) {
       for (const rule of covering(frontendRel(path)).filter(row => !kept(row, allowed))) {
         const owner = `${rule.domains.join('·')}${rule.mode === 'any' ? '(하나 이상)' : ''}`;
@@ -995,6 +1006,46 @@ test('contribution closure: what a contribution imports belongs to the features 
     overlapped.set(boardContribution, [...(edges.get(boardContribution) ?? []), { to: communityPage }]);
     assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: overlapped, files: inputs.files }).join('\n'),
       /frontend\/src\/extensions\/board\/stats-panels\.ts → frontend\/src\/app\/admin\/community\/boards\/page\.tsx: 소유 community 는 board 가 요구하는 기능 밖이다/);
+  }
+});
+
+/*
+ * 슬롯 셸 경계(2026-10-16 알림 카드 바로 승인, DEC-OPS-328). 레지스트리를 읽는 셸은 그 슬롯에 기여하는 기능의 코드에 import 로 닿지
+ * 않는다 — 닿으면 그 기능을 뺀 구성에서 연쇄로 셸이 지워진다(알림 드로어가 결재 코드를 가져오면 알림만 고른 구성의 머리글이 사라진다).
+ * 셸 자신을 덮는 기능이 요구하는 기능은 셸과 함께 남으므로 예외다. 판정은 기여 폐포와 같은 간선·소유 규칙을 쓴다.
+ */
+function slotConsumerImportViolations({ catalog, edges, files }) {
+  const { covering, kept, closureOf } = featureRules(catalog);
+  const contributions = discoverSlotContributions(files.map(frontendRel));
+  const violations = [];
+  for (const slot of Object.keys(SLOT_REGISTRY_CONSUMERS)) {
+    const contributors = new Set(contributions.get(slot) ?? []);
+    for (const consumer of slotConsumerFiles(slot)) {
+      const start = join(repoRoot, consumer);
+      const allowed = closureOf(covering(frontendRel(start)).flatMap(rule => rule.domains));
+      for (const path of reachedWithoutRegistries(start, edges)) {
+        for (const rule of covering(frontendRel(path)).filter(row => !kept(row, allowed))) {
+          const leaked = rule.domains.filter(domain => contributors.has(domain));
+          if (leaked.length > 0) violations.push(`${consumer} → ${relOf(path)}: ${slot} 에 기여하는 ${leaked.join('·')} 의 파일이다`);
+        }
+      }
+    }
+  }
+  return [...new Set(violations)].sort();
+}
+
+test('slot consumers do not import what a contributing feature owns', () => {
+  const inputs = readProjectionInputs();
+  const { edges } = planFrontendRemoval({ frontendRoot, files: inputs.files, directPaths: [], readSource: inputs.original });
+  assert.deepEqual(slotConsumerImportViolations({ catalog: inputs.catalog, edges, files: inputs.files }), []);
+  // 대조: 알림 드로어(알림 소유)가 결재의 바로 승인 모듈을 가져오면 notification-actions 에 기여하는 결재의 파일이라 붉다.
+  const drawer = join(frontendRoot, 'src/app/components/ui/app-notification-drawer.tsx');
+  const approvalAction = join(frontendRoot, 'src/queries/approval-notification-action.ts');
+  if (existsSync(drawer) && existsSync(approvalAction)) {
+    const leaked = new Map(edges);
+    leaked.set(drawer, [...(edges.get(drawer) ?? []), { to: approvalAction }]);
+    assert.match(slotConsumerImportViolations({ catalog: inputs.catalog, edges: leaked, files: inputs.files }).join('\n'),
+      /frontend\/src\/app\/components\/ui\/app-notification-drawer\.tsx → frontend\/src\/queries\/approval-notification-action\.ts: notification-actions 에 기여하는 informalsanction 의 파일이다/);
   }
 });
 

@@ -121,6 +121,15 @@
       ]
     },
     {
+      "file": "informalsanction/ApprovalSavedLineService.java",
+      "owner": "informalsanction",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.repository.UserRepository"
+      ]
+    },
+    {
       "file": "informalsanction/ApprovalTemporaryDraftService.java",
       "owner": "informalsanction",
       "target": "user",
