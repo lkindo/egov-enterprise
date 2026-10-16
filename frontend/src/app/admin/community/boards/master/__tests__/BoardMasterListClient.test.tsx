@@ -126,8 +126,10 @@ describe('BoardMasterListClient selection contract', () => {
   async function openSettings(user: ReturnType<typeof userEvent.setup>) {
     render(<BoardMasterListClient />);
     await user.click(screen.getByRole('button', { name: '첫 번째 게시판 설정 편집' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('게시판 명칭·소개·사용 여부를 수정합니다.')).toBeInTheDocument();
     return {
-      dialog: await screen.findByRole('dialog'),
+      dialog,
       title: await screen.findByRole('textbox', { name: '게시판 명칭' }),
       description: screen.getByRole('textbox', { name: '게시판 소개' }),
       cancel: screen.getByRole('button', { name: '취소' }),

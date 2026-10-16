@@ -595,7 +595,7 @@ export function BoardMasterListClient() {
             <DialogHeader>
               <DialogTitle className="text-base font-semibold text-foreground">게시판 설정</DialogTitle>
               <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
-                게시판 이름·설명·사용 여부를 수정합니다.
+                게시판 명칭·소개·사용 여부를 수정합니다.
               </DialogDescription>
             </DialogHeader>
           </div>

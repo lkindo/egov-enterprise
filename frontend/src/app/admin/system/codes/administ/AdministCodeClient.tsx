@@ -299,7 +299,7 @@ export default function AdministCodeClient({
  headingLevel={embedded ? 2 : 1}
  showBreadcrumb={!embedded}
  description="법정동·행정동 코드 체계를 조회·등록하고 정정합니다."
- breadcrumbItems={[{ label: '시스템관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
+ breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
  filterStateKey="system-codes-administ"
  totalCount={error ? undefined : total}
  actions={

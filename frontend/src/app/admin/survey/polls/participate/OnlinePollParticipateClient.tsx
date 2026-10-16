@@ -155,7 +155,7 @@ export default function OnlinePollParticipateClient() {
   if (loading && viewMode === 'list') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[200px] gap-3">
-        <h1 className="sr-only">여론조사 목록을 불러오는 중</h1>
+        <h1 className="sr-only">투표 목록을 불러오는 중</h1>
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         <p className="text-muted-foreground text-[length:var(--font-size-body)]">투표를 불러오는 중입니다…</p>
       </div>
@@ -166,7 +166,7 @@ export default function OnlinePollParticipateClient() {
     <div className="space-y-4 pb-8">
       <PageHeader
         title="투표 참여"
-        breadcrumbs={[{ label: '커뮤니티' }, { label: '여론조사 참여' }]}
+        breadcrumbs={[{ label: '커뮤니티' }, { label: '투표 참여' }]}
       />
 
       <div className="space-y-4">

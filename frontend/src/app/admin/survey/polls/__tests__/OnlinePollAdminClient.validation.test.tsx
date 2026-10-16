@@ -39,7 +39,9 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
   }) => <main>{actions}{filter}{children}</main>,
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: () => <div>설문 목록</div>,
+  StandardDataTable: ({ columns }: { columns: { header: string }[] }) => (
+    <div>설문 목록: {columns.map((c) => c.header).join(', ')}</div>
+  ),
 }));
 vi.mock('@/components/ui/dialog', () => ({
   Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) => open ? <>{children}</> : null,
@@ -92,6 +94,8 @@ describe('OnlinePollAdminClient validation', () => {
 
     const dialog = screen.getByRole('region', { name: '신규 설문 등록' });
     const title = within(dialog).getByLabelText('설문명');
+    expect(screen.getByText(/설문 목록: 설문명, 기간/)).toBeInTheDocument();
+    expect(title).toHaveAttribute('placeholder', '설문명...');
     fireEvent.click(within(dialog).getByRole('button', { name: /설문 등록/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();

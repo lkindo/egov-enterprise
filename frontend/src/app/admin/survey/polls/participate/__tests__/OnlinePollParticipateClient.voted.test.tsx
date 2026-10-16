@@ -27,7 +27,12 @@ vi.mock('@/app/components/ui/toast', () => {
   return { useToast: () => stable };
 });
 vi.mock('@/app/components/layout/page-header', () => ({
-  PageHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
+  PageHeader: ({ title, breadcrumbs }: { title: string; breadcrumbs?: { label: string }[] }) => (
+    <header>
+      <nav aria-label="현재 위치">{breadcrumbs?.map((b) => b.label).join(' / ')}</nav>
+      <h1>{title}</h1>
+    </header>
+  ),
 }));
 
 import OnlinePollParticipateClient from '../OnlinePollParticipateClient';
@@ -72,11 +77,14 @@ describe('투표 참여 화면의 참여 여부 (DIP V7)', () => {
     expect(screen.queryByText('참여 완료 · 결과 보기')).toBeNull();
   });
 
-  it('조회 실패와 빈 목록을 투표라는 이름으로 말한다', async () => {
+  it('조회 실패와 빈 목록·로딩·브레드크럼을 투표 참여라는 이름으로 말한다', async () => {
     mocks.getPollList.mockRejectedValueOnce(new Error('down'));
     render(<OnlinePollParticipateClient />);
 
+    expect(screen.getByRole('heading', { level: 1, name: '투표 목록을 불러오는 중' })).toBeInTheDocument();
     expect(await screen.findByText('투표 목록을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: '투표 참여' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: '현재 위치' })).toHaveTextContent('커뮤니티 / 투표 참여');
   });
 
   it('투표 후 늦은 항목 재조회가 새로 연 다른 투표의 항목과 모드를 덮어쓰지 않는다', async () => {
