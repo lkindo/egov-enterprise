@@ -1,16 +1,11 @@
 import { z } from 'zod';
 import { ApiService } from '@/services/core/ApiService';
-import { requirePageResponse } from '@/services/core/page-response';
-import { PageResponse, SearchParams } from '@/types/foundation/system';
 import type { AxiosRequestConfig } from 'axios';
-import type { components, operations } from '@/types/generated-api';
+import type { components } from '@/types/generated-api';
 import { MenuStructureItemResponseSchema, MenuStructureResponseSchema } from '@/types/generated-zod';
 import {
-  createMenuCreationOperation,
   createMenuOperation,
   getAllMenusOperation,
-  getMenuCreationManageListOperation,
-  getMenuListOperation,
   getMenuOperation,
   getMenuStructureOperation,
   type GeneratedOperationRequest,
@@ -29,13 +24,6 @@ export interface Menu {
   useYn?: string;
 }
 
-interface MenuCreate {
-  authrtCd: string;
-  menuSn: number;
-  crtrId: string;
-}
-
-type MenuSearchQuery = NonNullable<operations['getMenuList']['parameters']['query']>;
 type MenuWire = components['schemas']['MenuDto'];
 
 /**
@@ -66,45 +54,6 @@ export type MenuStructureItem = z.infer<typeof menuStructureItemSchema>;
 /** 저장 요청(PUT /menus/structure). 바뀐 부모의 형제 전체 1..n, 바뀐 기존 메뉴의 속성 네 칸 전체, 삭제, 그룹별 메뉴 표시 변경. */
 export type MenuStructureSave = GeneratedOperationRequest<'saveMenuStructure'>;
 
-const MENU_QUERY_KEYS = [
-  'searchCondition',
-  'searchKeyword',
-  'searchUseYn',
-  'pageIndex',
-  'pageUnit',
-  'pageSize',
-  'firstIndex',
-  'lastIndex',
-  'recordCountPerPage',
-  'searchKeywordFrom',
-  'searchKeywordTo',
-] as const satisfies readonly (keyof MenuSearchQuery)[];
-
-function toMenuSearchQuery(params?: SearchParams): MenuSearchQuery {
-  const query: MenuSearchQuery = {};
-  if (!params) return { searchKeyword: '' };
-
-  const generatedParams = params as Partial<MenuSearchQuery>;
-  for (const key of MENU_QUERY_KEYS) {
-    const value = generatedParams[key];
-    if (value !== undefined) Object.assign(query, { [key]: value });
-  }
-
-  query.searchKeyword = params.searchKeyword || params.searchWrd || '';
-  if (params.pageIndex === undefined) {
-    if (params.page !== undefined) query.pageIndex = params.page + 1;
-    else if (params.pageNo !== undefined) query.pageIndex = params.pageNo;
-  }
-  if (params.pageUnit === undefined && params.size !== undefined) query.pageUnit = params.size;
-  if (params.recordCountPerPage === undefined && params.size !== undefined) {
-    query.recordCountPerPage = params.size;
-  }
-  if (params.pageUnit === undefined && params.size === undefined && generatedParams.pageSize !== undefined) {
-    query.pageUnit = generatedParams.pageSize;
-  }
-  return query;
-}
-
 function toMenuRequest(data: Partial<Menu>): MenuWire {
   const source = data as Partial<MenuWire> & Partial<Menu> & {
     children?: Partial<Menu>[];
@@ -132,15 +81,6 @@ function toMenuRequest(data: Partial<Menu>): MenuWire {
  * 메뉴 관리 서비스 (Admin)
  */
 class MenuAdminService extends ApiService {
-  /** 메뉴 목록 조회 */
-  async getMenuList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<Menu>> {
-    const response = await this.executeGenerated(getMenuListOperation, {
-      query: toMenuSearchQuery(params),
-      config,
-    });
-    return requirePageResponse(response as PageResponse<Menu>, '메뉴');
-  }
-
   /** 메뉴 전체 트리 조회 */
   async getAllMenus(config?: AxiosRequestConfig): Promise<Menu[]> {
     return this.executeGenerated(getAllMenusOperation, { config }) as Promise<Menu[]>;
@@ -189,25 +129,11 @@ class MenuAdminService extends ApiService {
    * [2026-10-02 D2] 메뉴 한 건 수정·순서 일괄 수정·삭제 메서드는 걷었다 — 메뉴 화면은 구조·속성·그룹 표시를 한 초안으로
    * saveMenuStructure 한 번에 저장한다. 서버 API(updateMenu·updateMenuOrder·deleteMenu)는 남아 있고 operation 원장에
    * 대체된 표면으로 적혀 있다(DEC-OPS-208).
+   *
+   * [2026-10-16 DEC-OPS-336] 페이지 검색 목록(getMenuList)과 권한별 메뉴 생성 관리(getMenuCreationManageList·
+   * saveMenuCreation)도 걷었다 — 화면은 전체 트리(getAllMenus·getMenuStructure)로 그리고, 권한별 메뉴는
+   * 권한 화면(getAuthors·getAuthorMenus)이 읽으며, 권한별 메뉴 할당 저장은 서버가 늘 거부한다(통합 권한 화면 저장).
    */
-
-  /** 권한별 메뉴 생성 관리 목록 조회 */
-  async getMenuCreationManageList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<MenuCreate>> {
-    const response = await this.executeGenerated(getMenuCreationManageListOperation, {
-      query: toMenuSearchQuery(params),
-      config,
-    });
-    return requirePageResponse(response as PageResponse<MenuCreate>, '메뉴');
-  }
-
-  /** 권한별 메뉴 할당 저장 */
-  async saveMenuCreation(authorCode: string, menuNos: number[], config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createMenuCreationOperation, {
-      path: { authorCode },
-      body: menuNos,
-      config,
-    });
-  }
 }
 
 export const menuAdminService = new MenuAdminService();

@@ -27,30 +27,22 @@ describe('generated system boundary wave 3', () => {
     client.requestRaw.mockResolvedValue(envelope(undefined));
   });
 
-  it('MenuAdminService의 6개 경계를 operation descriptor로 실행한다', async () => {
+  it('MenuAdminService의 3개 경계를 operation descriptor로 실행한다', async () => {
     const menu = { menuNo: 7, menuNm: '메뉴', menuOrdr: 1 };
     client.getRaw
-      .mockResolvedValueOnce(envelope(page([menu])))
       .mockResolvedValueOnce(envelope([menu]))
-      .mockResolvedValueOnce(envelope(menu))
-      .mockResolvedValueOnce(envelope(page([])));
+      .mockResolvedValueOnce(envelope(menu));
 
-    await menuAdminService.getMenuList({ page: 0, size: 20, searchWrd: '메뉴' });
     await menuAdminService.getAllMenus();
     await menuAdminService.getMenu(7);
     await menuAdminService.createMenu({ menuNm: '메뉴', menuOrdr: 1 });
-    await menuAdminService.getMenuCreationManageList({ page: 0, size: 20 });
-    await menuAdminService.saveMenuCreation('ROLE_ADMIN', [1, 2]);
 
     expect(client.getRaw.mock.calls.map(([url]) => url)).toEqual([
-      'admin/system/menus',
       'admin/system/menus/all',
       'admin/system/menus/7',
-      'admin/system/menus/creation-manage',
     ]);
     expect(client.requestRaw.mock.calls.map(([request]) => [request.method, request.url])).toEqual([
       ['post', 'admin/system/menus'],
-      ['post', 'admin/system/menus/creation/ROLE_ADMIN'],
     ]);
   });
 

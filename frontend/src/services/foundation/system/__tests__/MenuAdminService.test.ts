@@ -32,13 +32,6 @@ describe('MenuAdminService', () => {
     vi.mocked(client.requestRaw).mockResolvedValue({ success: true, code: 'S000', message: '성공' });
   });
 
-  it('getMenuList should call correct API', async () => {
-    await menuAdminService.getMenuList({ page: 1 });
-    expect(client.getRaw).toHaveBeenCalledWith('admin/system/menus', expect.objectContaining({
-      params: expect.objectContaining({ pageIndex: 2 }) 
-    }));
-  });
- 
   it('createMenu should call post', async () => {
     const data = { menuNm: 'Test', menuOrdr: 1 };
     await menuAdminService.createMenu(data);
