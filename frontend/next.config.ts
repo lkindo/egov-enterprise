@@ -118,7 +118,9 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()',
           },
-          { key: 'Reporting-Endpoints', value: 'csp-endpoint="/api/security/csp"' },
+          // Reporting-Endpoints 는 여기 두지 않는다. report-to 그룹은 CSP 가 있는 응답에서만 의미가
+          //   있고, CSP 와 그 그룹 정의는 src/proxy.ts 가 같은 상수(CSP_REPORT_PATH)로 문서 응답에 단다.
+          //   여기에 리터럴로 다시 두면 수집 경로가 바뀔 때 한쪽만 낡는다(csp-policy 계약이 막는다).
         ],
       },
     ];

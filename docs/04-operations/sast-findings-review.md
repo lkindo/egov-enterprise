@@ -1,5 +1,11 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-17 Reporting-Endpoints 단일 소스화에 따른 보완 소스 재검토
+
+SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 Reporting-Endpoints 그룹 정의 위의 설명 주석만 바뀌었다. 같은 변경에서 `next.config.ts`가 모든 경로에 리터럴로 달던 같은 헤더를 걷어, CSP와 그 그룹 정의를 proxy 한 곳에서만 단다. 토큰 검증·Origin 거부·Bearer 전달과 Strict·HttpOnly 쿠키 정책은 바뀌지 않았다.
+
+해당 보완 소스 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 근거는 proxy diff 재검토이며 CodeQL 실행의 증거가 아니다. 현재 탐지와의 exact-match는 해당 변경의 required `secure-coding` CI에서 판정한다.
+
 ## 2026-10-16 rewrite 프록시 연결 재사용 제거에 따른 보완 소스 재검토
 
 SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 `/api/v1`·`/actuator`·`/ws` 요청에 `Connection: close` 를
