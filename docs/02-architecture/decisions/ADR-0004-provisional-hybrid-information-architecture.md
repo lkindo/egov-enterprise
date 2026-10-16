@@ -1,7 +1,6 @@
 # ADR-0004: 하이브리드 정보구조를 검증용 잠정 방향으로 채택
 
 - **Status:** Accepted — provisional direction only
-- **후속 결정:** 잠정(provisional) 지위와 승인 대기 경계는 참조-기본 범위에서 [ADR-0007](ADR-0007-reference-default-ia-approval.md)이 종료한다. 하이브리드 방향은 유지한다. 아래 본문은 당시 승인 기록이다.
 - **Date:** 2026-08-21
 - **Decision owners:** repository owner / frontend architecture
 - **Related:** [ADR-0003](ADR-0003-frontend-ux-modernization-principles.md), [정보구조 결정 패키지](../../01-product/information-architecture.md), [route capability manifest](../../../config/ui-route-capabilities.json), [navigation disposition overlay](../../../config/ui-navigation-disposition-proposal.json)

@@ -48,4 +48,4 @@ ADR-0004는 과업 중심 내비게이션 + 명시적 관리 센터의 하이브
 - [ADR-0004](ADR-0004-provisional-hybrid-information-architecture.md) — 하이브리드 방향의 구조 근거(본 ADR이 그 잠정 지위를 종료)
 - [IA 문서 §8.4·§13·§14](../../01-product/information-architecture.md) — disposition 장치, open input, 워크숍 결정 기록
 - [pending-decisions](../../04-operations/pending-decisions.md) — PD-UX-001 잔여 범위(개별 disposition)와 PD-UX-002
-- [DEC-OPS-013](../../archived/operational-decisions-history.md#dec-ops-013) — owner 지명과 승인 채널
+- [DEC-OPS-013](../../../.agent/memory/decisions.md) — owner 지명과 승인 채널
