@@ -45,7 +45,7 @@ refresh_triggers:
 제품·아키텍처 결정의 정본은 [ADR 디렉터리](../../docs/02-architecture/decisions/README.md)다. 이 파일은 Accepted ADR과 장기적인 운영 결정을 찾기 위한 인덱스이며 ADR 내용을 복제하거나 바꾸지 않는다. 제안·보류 항목은 결정으로 기록하지 않고 [known-gaps.md](known-gaps.md)에 둔다.
 
 - 허용 상태: `accepted`, `superseded`, `rejected`.
-- 기존 결정의 전문은 소급 편집하지 않는다. 운영 결정의 변경은 후속 DEC가 `supersedes`로 연결하고, Accepted ADR의 규범 변경은 후속 ADR로 대체한 뒤 인덱스에 연결한다.
+- 기존 결정의 전문은 소급 편집하지 않는다. 운영 결정의 변경은 후속 DEC가 `supersedes`로 연결하고, Accepted ADR의 규범 변경은 후속 ADR로 대체한 뒤 인덱스에 연결한다. 이 규칙(2026-10-17) 전에 운영 결정이 ADR 일부를 대체한 경우는 해당 ADR 머리의 "후속 결정" 줄과 ADR 색인 상태 열로 표시한다.
 - 행의 시행일·당시 수치는 결정 배경이며 현재 구현 수치가 아니다. 현행 상태는 [project-context.md](project-context.md)·[known-gaps.md](known-gaps.md)와 링크된 코드에서 확인한다. 재검증일은 인덱스·참조 점검일이며 과거 승인이나 외부 운영 증거를 새로 부여하지 않는다.
 - 헌법과 `AGENTS.md`의 실질 정책 변경은 사용자 명시 요청이 먼저다.
 

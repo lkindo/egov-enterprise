@@ -1,7 +1,7 @@
 # ADR-0027 — 재사용 검증의 입장 순서·PR 레이아웃 선별과 생성물 야간 시험
 
 - 상태: Accepted
-- 후속 결정: 결정 2의 PR 제외 선언과 결정 4의 중복 단독 폐포 제거는 [ADR-0030](ADR-0030-reusable-ci-selection-followup.md)이 대체한다. 아래 본문·수치는 당시 승인 기록이다.
+- 후속 결정: 결정 2의 PR 제외 선언과 결정 4의 중복 단독 폐포 제거는 [ADR-0030](ADR-0030-reusable-ci-selection-followup.md)이 대체한다. 결정 2의 레이아웃 표 위치(분류기 상수)는 [DEC-OPS-291](../../archived/operational-decisions-history.md#dec-ops-291)이 `config/modules/presets.json`의 `ci.pr`로 옮겼다. 아래 본문·수치는 당시 승인 기록이다.
 - 결정일: 2026-10-12
 - 승인 범위: 사용자 결정(2026-10-12) — 사용자 구성 검증의 분류 직후 시작과 되돌림 조건, PR 의 시작 구성당 한 레이아웃·main 전수,
   T2 예산(26잡/밤·동시 10·06:17 KST·잡 60분)과 첫 녹색 수동 실행 뒤 예약, 기능 브랜치 검증의 `workflow_dispatch` 위임

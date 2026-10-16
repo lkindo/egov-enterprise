@@ -2,7 +2,7 @@
 
 > **상위 규범:** [프런트엔드 UX 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) · [ADR-0003](decisions/ADR-0003-frontend-ux-modernization-principles.md)(과업 우선) · [ADR-0006](decisions/ADR-0006-css-only-responsive-table.md)(CSS-only 반응형) · [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md)(참조-기본 IA) · [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)(통제된 URL 검색 상태)
 >
-> **실행 계획:** [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html) Phase 3~5 · **디자인 시스템:** [frontend-design-system.md](frontend-design-system.md)
+> **실행 계획:** [UI/UX 현대화 실행 계획](ui-ux-modernization-plan.md) · **디자인 시스템:** [frontend-design-system.md](frontend-design-system.md) · W1~W5 이행 당시 계획: [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html) Phase 3~5(보관)
 >
 > **이 문서의 지위:** 파생 스펙이다. 토큰 값의 정본은 [globals.css](../../frontend/src/app/globals.css)와 프로필 CSS, 라우트 처분의 정본은 [disposition overlay](../../config/ui-navigation-disposition-proposal.json), 색·접근성 하한의 정본은 헌법이다. 충돌하면 원본을 먼저 고치고 이 문서를 함께 갱신한다.
 

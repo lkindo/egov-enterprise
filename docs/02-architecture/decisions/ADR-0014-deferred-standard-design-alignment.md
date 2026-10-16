@@ -1,6 +1,7 @@
 # ADR-0014: 보류 6개 컬럼의 표준 설계 정합
 
 - 상태: Accepted
+- 후속 결정: 결정 2·3의 메뉴→프로그램 연결과 연결 프로그램 삭제 409는 [DEC-OPS-224](../../archived/operational-decisions-history.md#dec-ops-224)가 퇴역으로, 결정 1·2의 프로그램 원장(`tb_prgrm_lst`)·`prgrm_file_nm`·메뉴→프로그램 FK는 [DEC-OPS-231](../../archived/operational-decisions-history.md#dec-ops-231)이 폐기(V2_127)로 대체한다. 결정 4의 HHmmss와 결정 5의 암호화 주민번호는 유지한다. 아래 본문은 당시 승인 기록이다.
 - 결정일: 2026-09-09
 - 승인: 사용자가 보류 6개 권장안을 검토하고, 변경일자가 별도 컬럼임을 확인한 뒤 권장안대로 작업 진행을 요청했다.
 - 선행: [ADR-0013](ADR-0013-standard-text-length-alignment.md)

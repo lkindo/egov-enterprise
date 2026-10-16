@@ -61,14 +61,9 @@ public record PostRequest(
 ) {}
 ```
 
-API 계약 변경 뒤에는 서버 기동에 의존하지 않는 오프라인 codegen을 기본으로 실행한다.
+API 계약을 바꾸면 `api-docs.json` 추출과 프런트 생성 타입(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) 재생성·드리프트 점검을 [API 문서화 가이드](../../../../docs/03-guides/api-documentation-guide.md)의 절차대로 실행한다. 명령은 `frontend/package.json` 스크립트(오프라인 기본, `syncContract`는 `api-docs.json` 정규화까지 포함)가 정본이며 여기에 복제하지 않는다.
 
-입력이 바뀌면 [OpenAPI 추출 절차](../../../../docs/03-guides/api-documentation-guide.md)에 따라 `api-docs.json`부터 갱신한 후 아래 명령을 실행한다. `codegen:zod`는 `generated-zod.ts`와 `generated-operations.ts`를 함께 생성한다. 날짜 입력은 [Ymd](../../../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 사용하되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
-
-```bash
-pnpm -C frontend codegen:file
-pnpm -C frontend codegen:zod
-```
+날짜 입력은 [Ymd](../../../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 사용하되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
 
 ## 4. 서비스 계층 인가
 

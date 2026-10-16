@@ -1,6 +1,7 @@
 # ADR-0001: 코어/앱 제품 경계와 배포 기준
 
 - 상태: Accepted
+- 후속 결정: 결정의 'base는 `core`·`collaboration`·`demo` 프로필 중 하나를 선택해 생성한다'와 `config/reusable-base-profiles.json` SSOT 문장은 [ADR-0028](ADR-0028-presets-are-named-domain-lists.md)이 대체한다. 정확한 릴리스 태그에서 공식 생성하는 요건은 유지한다. 아래 본문은 당시 승인 기록이다.
 - 결정일: 2026-08-15 (2026-08-16 생성 파이프라인 확정)
 - 관련: `business-core`, `business-app`, `template/reusable-base`
 

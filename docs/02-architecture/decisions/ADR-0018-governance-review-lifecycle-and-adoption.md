@@ -1,6 +1,7 @@
 # ADR-0018: 기술 계약·정기 검토·기관 도입 승인 분리
 
 - 상태: Accepted
+- 후속 결정: 결정 7의 '세 프로필' 산출물 검증과 결정 8의 '원본 pack 계약' 모집단은 시작 구성과 기능 소유(`config/modules`)로 바뀌었다 — [ADR-0028](ADR-0028-presets-are-named-domain-lists.md), [DEC-OPS-289](../../archived/operational-decisions-history.md#dec-ops-289)·[291](../../archived/operational-decisions-history.md#dec-ops-291)·[295](../../archived/operational-decisions-history.md#dec-ops-295). 생성 후 기술 게이트와 명시 소유권 원칙은 유지한다. 아래 본문은 당시 승인 기록이다.
 - 결정일: 2026-09-14
 - 승인 근거: 사용자가 재사용 프레임워크와 레거시 이관 도구의 장기 사용을 위해 제시된 “D + E, 이후 F 확대”를 명시 승인했다. 후속 정합 감사에서 확인한 산출물 하네스·원장·메모리·실행 경계의 권장 수정 순서도 승인했다.
 - 범위: URL-state, route capabilities, UI quality, KRDS 매핑, 화면 용어·E2E duration profile의 일반 최신성, 프로필별 산출물 검증과 원장·메모리 투영, 온라인 제품·독립 migration-tool의 기관 도입·실행 검증.

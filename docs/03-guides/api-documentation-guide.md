@@ -109,6 +109,10 @@ public record CommonCodeResponse(
 
 ```bash
 # 오프라인(기본, api-docs.json 기반) — 서버 불필요
+# codegen:file → codegen:zod → format:api-docs(api-docs.json 정규화)를 한 번에 실행
+pnpm -C frontend syncContract
+
+# 단계별로 돌릴 때(이 경우 api-docs.json 정규화는 따로 하지 않는다)
 pnpm -C frontend codegen:file
 pnpm -C frontend codegen:zod   # generated-zod.ts 동기화
 

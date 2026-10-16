@@ -199,4 +199,3 @@
 | 거버넌스·하네스 설명 지도 | [Governance & Harness Atlas](../frontend/public/governance_harness_atlas.html) — 설명용 파생 문서 |
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |
-| Gemini 역사 지원 자산 | [.gemini/tasks/](../.gemini/tasks/) — 활성 세션 저널은 두지 않고 기존 census·archive 지원 자산만 유지 |

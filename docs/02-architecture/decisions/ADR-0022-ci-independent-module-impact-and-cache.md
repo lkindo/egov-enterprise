@@ -3,8 +3,8 @@
 - 상태: Accepted
 - 결정일: 2026-09-21
 - 승인 범위: 사용자 요청에 따른 캐시·모듈 선별 구현. E2E spec 선별 실행은 포함하지 않는다.
-- 부분 대체: [ADR-0021](ADR-0021-isolated-layered-testing-process.md) 결정 4의 main/master 전수 강제, [DEC-OPS-104](../../../.agent/memory/decisions.md)의 이관 PIT가 온라인 mutation의 부분집합이라는 조건
-- 후속 결정: E2E 결정 8은 [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md)의 PR 선별·main 전수 정책으로 대체한다.
+- 부분 대체: [ADR-0021](ADR-0021-isolated-layered-testing-process.md) 결정 4의 main/master 전수 강제, [DEC-OPS-104](../../archived/operational-decisions-history.md#dec-ops-104)의 이관 PIT가 온라인 mutation의 부분집합이라는 조건
+- 후속 결정: E2E 결정 8은 [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md)의 PR 선별·main 전수 정책으로 대체한다. 결정 7의 v6.3.0 commit 지정은 [DEC-OPS-237](../../archived/operational-decisions-history.md#dec-ops-237)이 v6.4.0 commit으로 대체한다(`cache-provider: basic`은 유지). 결정 5의 PIT 범위 수(온라인 8·이관 2)는 [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) 결정 5가 나눴고 이후 이관 범위가 더 늘었다. 현재 범위는 [gate registry](../../../config/governance/gates.json)가 정본이다. 아래 본문은 당시 승인 기록이다.
 - 관련: [CI 가이드](../../03-guides/cicd-pipeline.md), [테스트 프로세스와 실측 한계](../testing-process-redesign.md#93-독립-모듈-분리와-캐시-변경의-비교-기준)
 
 ## 맥락

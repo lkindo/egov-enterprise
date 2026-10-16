@@ -1,6 +1,7 @@
 # ADR-0003: 사용자 과업 중심 프런트엔드 UX 현대화 원칙
 
 - **Status:** Accepted
+- **후속 결정:** Decision §5 가운데 개인정보·민감 검색어를 URL에 두지 않는 절대 금지 부분만 [ADR-0009](ADR-0009-controlled-url-search-state.md)가 화면별 계약 아래 허용으로 대체한다. 아래 본문은 당시 승인 기록이다.
 - **Date:** 2026-08-20
 - **Decision owners:** repository owner / frontend architecture
 - **Related:** [ADR-0001](ADR-0001-core-app-product-boundary.md), [ADR-0002](ADR-0002-korean-first-frontend.md), [UI/UX 현대화 계획](../ui-ux-modernization-plan.md), [프런트엔드 헌법](../../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)

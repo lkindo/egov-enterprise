@@ -9,7 +9,7 @@
 
 ### 제1조 (명칭의 형식)
 1. 모든 오브젝트 및 컬럼의 명칭은 **소문자 Snake Case**를 사용함을 원칙으로 한다.
-2. 명칭은 의미론적으로 명확해야 하며, 약어는 반드시 [표준 용어 사전](./standard_terms.md)에서 승인된 것만을 사용한다.
+2. 명칭은 의미론적으로 명확해야 하며, 약어는 반드시 제2조의 표준 메타 테이블에 등록된 것만을 사용한다. 조회 절차는 [표준 데이터 조회·적용 가이드](./standard_terms.md)가 안내한다.
 3. 모든 명칭은 단수형(Singular)을 사용하며, 복수형 사용을 금지한다.
 
 ### 제2조 (데이터 거버넌스의 원천)
@@ -73,7 +73,7 @@
    - **전수 스캔**: 검사 대상은 baseline(`V2_0`)을 포함한 마이그레이션 디렉토리 전체 `.sql`이며, 신규 델타에 한정하지 않는다. 소스 열거는 `HarnessSourceIndex`를 사용한다.
    - **신규 예외의 승인 결속**: 해당 위반 라인의 `-- linter:ignore ZDM-YYYY-NNNN <reason>` 또는 파일 전체의 `-- linter:disable-file ZDM-YYYY-NNNN <reason>`를 [zdm-waivers.json](../../../../config/governance/zdm-waivers.json)의 `id`·`path`·`directive`·`reason`·`owner`·`approvedAt`·`expiresAt`·`evidence`와 1:1로 결속한다. 마커만으로는 통과하지 않으며, 자유형 신규 마커·미등록·중복·사유 누락·만료·경로 불일치를 차단한다.
    - **선행 Expand 검증**: Contract 성격의 `DROP TABLE`·`DROP SEQUENCE`·`DROP COLUMN`·테이블/컬럼 `RENAME` waiver에는 실제 선행 파일을 가리키는 `expandMigration`이 필요하다. 자기참조·후행 버전·해석 불가능한 Flyway 버전은 실패한다. 버전 선후 확인은 Sync·Redirect 완료나 실제 구버전 소비 종료의 자동 증명이 아니다.
-   - **선행 Expand 배포·관측 기록**: 2026-09-16 이후 Contract waiver는 `expandRelease{tag,deployedAt,environment,evidence}`를 남기고, 린터가 릴리스 태그 형식·배포일·배포 후 7일 관측 기간과 [릴리스 기록](../../../../docs/04-operations/migration-release-log.md)의 해당 태그 행(선행 Expand 포함·Contract 미포함)을 대조한다([DEC-OPS-101](../../../memory/decisions.md)). 이전 승인분 13건은 동결분이며 소급 승인이 아니다. 이 대조는 기록 검증일 뿐 실제 배포·관측의 증명이 아니다.
+   - **선행 Expand 배포·관측 기록**: 2026-09-16 이후 Contract waiver는 `expandRelease{tag,deployedAt,environment,evidence}`를 남기고, 린터가 릴리스 태그 형식·배포일·배포 후 7일 관측 기간과 [릴리스 기록](../../../../docs/04-operations/migration-release-log.md)의 해당 태그 행(선행 Expand 포함·Contract 미포함)을 대조한다([DEC-OPS-101](../../../memory/decisions.md)). 예외는 두 가지이며 린터가 `id·path·expandMigration` 조합이 정확히 일치할 때만 이 대조를 건너뛴다 — ① 2026-09-16 이전 승인분 13건(`PRE_POLICY_CONTRACT_WAIVERS`)은 동결분이며 소급 승인이 아니다. ② 사용자가 이 한 건만 승인한 같은 릴리스 예외로, [V2_127](../../../../api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql)의 waiver ZDM-2026-0041~0043(`USER_APPROVED_SAME_RELEASE_CONTRACTS`, [DEC-OPS-233](../../../memory/decisions.md))이다. 두 예외 모두 선행 Expand의 실재·버전 선후 검사는 그대로 받고, 운영 중인 도입 기관은 ②를 승계하지 않는다. 이 대조는 기록 검증일 뿐 실제 배포·관측의 증명이 아니다.
    - **기존 부채 보존**: 레지스트리 도입 전 자유형 마커는 `legacy-debt-unapproved`로 별도 동결한다. 파일 fingerprint·마커 수·owner·reviewBy를 검증하며, 이 동결을 소급 승인으로 해석하거나 적용 완료 Flyway의 checksum을 바꾸지 않는다. 실제 잠금·동기화·배포 순서의 증거는 [이행 가이드](../../../../docs/02-architecture/zero-downtime-migration.md)에 따라 별도 확보한다.
 
 

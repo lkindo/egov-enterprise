@@ -2,6 +2,8 @@
 
 **Status:** Accepted
 
+**후속 결정:** §1·§6의 소스 adapter 6종 열거는 [DEC-OPS-110](../../archived/operational-decisions-history.md#dec-ops-110)이 CUBRID를 포함한 7종으로 대체한다. 아래 본문은 당시 승인 기록이다.
+
 **Date:** 2026-08-31
 
 **Deciders:** lkindo
@@ -107,6 +109,6 @@ identity는 유형이 부여된 단일/복합 tuple이며 `PRESERVE`, `REMAP`, P
 ## Related decisions and standards
 
 - [ADR-0001 — 코어/앱 제품 경계](ADR-0001-core-app-product-boundary.md)
-- [`DEC-OPS-005` — 독립·선택형 offline ETL](../../../.agent/memory/decisions.md)
+- [`DEC-OPS-005` — 독립·선택형 offline ETL](../../archived/operational-decisions-history.md#dec-ops-005)
 - [DB 표준화 헌법](../../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)
 - [레거시 이관 도구 설계](../legacy-migration-tool-design.md)
