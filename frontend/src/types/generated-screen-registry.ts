@@ -383,8 +383,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"MEMO_RPT_INSTRUCT","action":"INSTRUCT","source":"write"},
       {"code":"MEMO_RPT_READ","action":"READ","source":"entry"},
       {"code":"MEMO_RPT_READ_ALL","action":"READ_ALL","source":"display"},
-      {"code":"MEMO_RPT_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"MEMO_RPT_UPDATE_ALL","action":"UPDATE_ALL","source":"display"}
+      {"code":"MEMO_RPT_UPDATE","action":"UPDATE","source":"write"}
     ]
   },
   {
@@ -1746,7 +1745,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
   {
     "id": "others-work-data-proxy",
     "name": "다른 사람 업무 자료 대행",
-    "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고를 대신 조회하고 고치거나 지우는 일과, 다른 사람의 메모 보고를 대신 조회하고 지우는 일을 맡깁니다(메모 보고의 본문 수정과 지시는 맡기지 않습니다). 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
+    "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고·메모 보고를 대신 조회하고 고치거나 지우는 일을 맡깁니다. 메모 보고의 지시는 보고를 받은 사람만 남길 수 있어 이 묶음으로도 달거나 바꾸지 못하고, 지시가 달린 메모 보고는 본문을 고칠 수 없습니다. 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
     "protected": false,
     "permissions": [
       "ADBK_DELETE",
@@ -1764,6 +1763,8 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "MEMO_RPT_DELETE_ALL",
       "MEMO_RPT_READ",
       "MEMO_RPT_READ_ALL",
+      "MEMO_RPT_UPDATE",
+      "MEMO_RPT_UPDATE_ALL",
       "SCHEDULE_DELETE",
       "SCHEDULE_DELETE_ALL",
       "SCHEDULE_READ",

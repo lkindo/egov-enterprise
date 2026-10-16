@@ -101,7 +101,7 @@ afterEach(() => {
 describe('메모보고 열람', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // 수신자(ROW.rptrId) 본인으로 연다 — 지시사항은 수신자·전체 수정 권한자만 남긴다(DIP I7).
+    // 수신자(ROW.rptrId) 본인으로 연다 — 지시사항은 수신자만 남긴다(DIP I7, GAP-MEMO-001).
     mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_B', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_INSTRUCT'], authorizationVersion: 'v1' };
     const page = { list: [ROW], total: 1 };
     mocks.getReceivedReports.mockResolvedValue(page);
@@ -172,9 +172,25 @@ describe('메모보고 열람', () => {
     expect(screen.queryByRole('button', { name: '지시사항 등록' })).not.toBeInTheDocument();
   });
 
-  it('수신자가 아니어도 전체 수정 권한자는 지시사항을 남길 수 있다 (DIP I7)', async () => {
+  /**
+   * [2026-10-16 GAP-MEMO-001] 지시는 수신자만 남긴다. 종전에는 전체 수정 권한(MEMO_RPT_UPDATE_ALL)이 지시도 열었는데,
+   * 지시에는 작성자 칸이 없어 보고한 사람에게는 수신자의 지시처럼 보였다. 힌트 없는 행에서 화면이 계산할 때도 같다.
+   */
+  it('전체 수정 권한자라도 수신자가 아니면 힌트 없는 행에서 지시 입력을 계산해 내지 않는다 (GAP-MEMO-001)', async () => {
     mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_ADMIN', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_UPDATE_ALL', 'MEMO_RPT_INSTRUCT'], authorizationVersion: 'v1' };
     mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+
+    expect(await screen.findByText('등록된 지시사항이 없습니다.')).toBeVisible();
+    expect(screen.queryByLabelText('지시사항 남기기', { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '지시사항 등록' })).not.toBeInTheDocument();
+  });
+
+  it('서버 판정(instructable=true)이 오면 그대로 따른다 — 화면은 서버 판정을 먼저 쓴다', async () => {
+    mocks.user = { role: 'ROLE_ADMIN', esntlId: 'USR_ADMIN', permissions: ['MEMO_RPT_READ_ALL', 'MEMO_RPT_INSTRUCT'], authorizationVersion: 'v1' };
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: undefined, instructable: true });
     renderClient();
 
     fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));

@@ -1422,10 +1422,10 @@
       "method": "PATCH",
       "path": "/api/v1/memo-reports/{memoRptSn}/instr-cn",
       "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter",
-      "policy": "OWNER_OR_ADMIN",
+      "policy": "STRICT_OWNER",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter')",
       "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "MemoReportService#assertRecipientOrAdmin"
+      "guardRef": "MemoReportService#assertRecipient"
     },
     {
       "method": "POST",
@@ -4463,16 +4463,20 @@
       ]
     },
     {
-      "target": "MemoReportService#assertRecipientOrAdmin",
+      "target": "MemoReportService#assertRecipient",
       "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
-      "policy": "OWNER_OR_ADMIN",
+      "policy": "STRICT_OWNER",
       "denyReferences": 1,
       "requiredTokens": [
-        "SecurityUtil.hasPermission(\"MEMO_RPT_UPDATE_ALL\")",
+        "String esntlId = currentEsntlIdOrDeny();",
         "!esntlId.equals(entity.getRptrId())",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
       ],
-      "forbiddenTokens": []
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission(",
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrPermission"
+      ]
     },
     {
       "target": "DeptJobService#assertCanReassign",
