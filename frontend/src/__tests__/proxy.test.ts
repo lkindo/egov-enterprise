@@ -252,3 +252,41 @@ describe('proxy 인증 게이트', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * GAP-FE-002 · DEC-OPS-333 — rewrite 프록시는 백엔드 연결을 유휴 상태로 다시 쓰지 않는다.
+ *
+ * 불변식: 유휴 연결은 클라이언트가 서버보다 먼저 닫아야 한다. Next 16 rewrite(httpxy)의 keep-alive Agent 는 timeout 이
+ * 없고 주입할 수 없으며, Node 22 Agent 는 그때 서버의 `Keep-Alive: timeout=N` 힌트를 무시한다 — 클라이언트 유휴 수명이
+ * 무한이라 Tomcat(20초)보다 짧게 만들 방법이 없다. 그래서 유휴 재사용 자체를 없앤다: 미들웨어가 `Connection: close` 를
+ * 싣고, httpxy 는 그 헤더를 백엔드에 그대로 보내 요청마다 새 연결을 맺는다. 여기서는 미들웨어의 헤더 덮어쓰기를 고정하고,
+ * 설치된 Next 의 rewrite 함수가 그 헤더로 소켓을 다시 쓰지 않는다는 것은 scripts/frontend-proxy-keepalive-contract.test.mjs 가 고정한다.
+ */
+describe('rewrite 프록시 백엔드 연결 (GAP-FE-002)', () => {
+  const overridden = (response: Response) => response.headers.get('x-middleware-override-headers')?.split(',') ?? [];
+
+  it.each(['/api/v1/boards/posts', '/actuator/health', '/ws/info'])('토큰 없는 프록시 요청 %s 도 백엔드에 Connection: close 를 싣는다', async (path) => {
+    const response = await proxy(new NextRequestCtor(`http://localhost:3001${path}`, { headers: { connection: 'keep-alive' } }));
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(overridden(response)).toContain('connection');
+    expect(response.headers.get('x-middleware-request-connection')).toBe('close');
+  });
+
+  it('토큰을 주입하는 프록시 요청에도 함께 싣는다', async () => {
+    const response = await proxy(new NextRequestCtor('http://localhost:3001/api/v1/boards/posts', {
+      headers: { cookie: 'accessToken=fixture-token', connection: 'keep-alive' } }));
+    expect(response.headers.get('x-middleware-request-authorization')).toBe('Bearer fixture-token');
+    expect(response.headers.get('x-middleware-request-connection')).toBe('close');
+  });
+
+  it('WebSocket 업그레이드 요청의 Connection 은 그대로 둔다', async () => {
+    const response = await proxy(new NextRequestCtor('http://localhost:3001/ws/123/abc/websocket', {
+      headers: { connection: 'Upgrade', upgrade: 'websocket' } }));
+    expect(response.headers.get('x-middleware-request-connection')).toBe('Upgrade');
+  });
+
+  it('프록시가 아닌 페이지 요청의 헤더는 덮어쓰지 않는다', async () => {
+    const response = await proxy(requestWith(null, '/login'));
+    expect(response.headers.get('x-middleware-request-connection')).toBeNull();
+  });
+});

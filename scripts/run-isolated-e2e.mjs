@@ -108,6 +108,18 @@ export function discoveryArguments(selection, fullInventory = false) {
   return [...(fullInventory ? ['--project=api-contract', '--project=full-suite'] : selection), '--list', '--reporter=json'];
 }
 
+// [GAP-FE-002 · DEC-OPS-333] Playwright 1.63 request contexts use `new http.Agent({ keepAlive: true })` without a
+// timeout, and a Node 22 agent without a timeout ignores the server's Keep-Alive hint: an idle socket lives as long
+// as its context, i.e. at most one run. Next's Node server closes idle sockets after 5 s (+1 s buffer), so a context
+// that rested ~6 s sent its next request into the closing socket (ECONNRESET). The server must outlive every client
+// idle period, so its idle timeout exceeds the longest possible run (the CI e2e job limit is checked by a contract).
+export const E2E_WEB_KEEP_ALIVE_TIMEOUT_MS = 3_600_000;
+
+export function frontendStartArguments(next, webPort) {
+  return [next, 'start', '--hostname', '127.0.0.1', '--port', String(webPort),
+    '--keepAliveTimeout', String(E2E_WEB_KEEP_ALIVE_TIMEOUT_MS)];
+}
+
 export async function main(arguments_ = process.argv.slice(2)) {
   const ciCompose = arguments_[0] === '--ci-compose';
   const coverage = arguments_[0] === '--coverage';
@@ -281,7 +293,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
       mkdirSync(environment.E2E_ENTERPRISE_LAB_OUTPUT_DIR, { mode: 0o700 });
       writeFileSync(environment.E2E_ENTERPRISE_LAB_RECEIPT, JSON.stringify(receipt, null, 2), { flag: 'wx', mode: 0o600 });
     }
-    web = launch('frontend', process.execPath, [next, 'start', '--hostname', '127.0.0.1', '--port', String(webPort)], frontend, environment);
+    web = launch('frontend', process.execPath, frontendStartArguments(next, webPort), frontend, environment);
     await waitReady(`${webUrl}/login`, web);
     control = createServer((request, response) => {
       const actualToken = Buffer.from(request.headers.authorization ?? '');
