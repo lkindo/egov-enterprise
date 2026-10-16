@@ -9,6 +9,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
@@ -103,9 +104,14 @@ export function ApprovalReferencePanel({ document, disabled }: ApprovalReference
     setSavingReferences(true);
     try {
       const names = picked.map(person => person.userNm || UNKNOWN_USER).join(', ');
+      // [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 알림을 받는다고 말하지 않는다(서버 동작은 그대로다).
+      const notifies = hasDeliveryChannel('notification');
+      const reads = notifies
+        ? '지정한 사람은 결재 의견과 처리 이력을 포함한 이 문서의 모든 차수를 계속 읽고, 이 차수가 최종 승인·반려되면 알림을 받습니다.'
+        : '지정한 사람은 결재 의견과 처리 이력을 포함한 이 문서의 모든 차수를 계속 읽습니다.';
       const ok = await askConfirm({
         title: '참조자 지정',
-        message: `‘${title}’ 문서에 ${picked.length}명을 참조자로 지정합니다: ${names}. 지정한 사람은 결재 의견과 처리 이력을 포함한 이 문서의 모든 차수를 계속 읽고, 이 차수가 최종 승인·반려되면 알림을 받습니다. 지정은 되돌릴 수 없습니다.`,
+        message: `‘${title}’ 문서에 ${picked.length}명을 참조자로 지정합니다: ${names}. ${reads} 지정은 되돌릴 수 없습니다.`,
         confirmText: '참조자 지정',
       });
       if (!ok) return;
@@ -115,7 +121,7 @@ export function ApprovalReferencePanel({ document, disabled }: ApprovalReference
       setError('');
       setNotice('');
       toast(added > 0
-        ? `${added}명을 참조자로 지정했습니다. 이 문서에 처음 지정된 사람에게 알림이 갑니다.`
+        ? `${added}명을 참조자로 지정했습니다.${notifies ? ' 이 문서에 처음 지정된 사람에게 알림이 갑니다.' : ''}`
         : '고른 사람은 이미 이 차수의 참조자라 새로 지정하지 않았습니다.', 'success');
     } catch (failure) {
       // 그사이 기안자가 참조자를 지정했거나 다른 결재자가 처리해 버전이 바뀌었을 수 있다 — 서버가 말한 사유를 보이고 다시 읽는다.

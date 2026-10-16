@@ -14,6 +14,7 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { toDisplayDateTime } from '@/lib/format-date';
+import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { ApprovalSupplementAnswerRequestSchema } from '@/types/generated-zod';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
 import { approvalKeys, approvalMutationOptions } from '@/queries/approval-query-options';
@@ -44,7 +45,8 @@ interface ApprovalCollaborationPanelProps {
 /**
  * 진행 중인 결재를 기안자가 따라가는 도구(2026-10-03 결재 동선 개선 — 추적).
  *
- * <p>보완 요청에 답하기(본문을 함께 고칠 수 있고 앞서 한 승인은 유지된다), 차례인 결재자에게 다시 알리기(하루 한 번),
+ * <p>보완 요청에 답하기(본문을 함께 고칠 수 있고 앞서 한 승인은 유지된다), 차례인 결재자에게 다시 알리기(하루 한 번, 알림 기능이
+ * 있는 구성에서만),
  * 아직 처리하지 않은 결재자를 다른 사람으로 바꾸기, 그리고 그 모든 처리의 기록을 한곳에 둔다.
  * 각 버튼은 서버가 내려준 힌트(canAnswerSupplement·canRemind·canReplaceApprover)로만 보인다.
  */
@@ -84,10 +86,13 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
     .filter(person => person.status === 'WAITING' || person.status === 'ACTIVE')
     .map(person => ({ stage: stage.order, person })));
   const canAnswer = canWrite && Boolean(document.canAnswerSupplement) && supplement !== undefined;
-  const canRemind = canWrite && Boolean(document.canRemind);
+  // [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 재알림이 아무에게도 닿지 않는다 — 서버 힌트가 참이어도 재알림 단추와
+  //   '하루 한 번' 안내를 두지 않고, 결재자 바꾸기 확인도 알린다고 말하지 않는다. 서버의 재알림 API 는 그대로다(표시만 바뀐다).
+  const notifies = hasDeliveryChannel('notification');
+  const canRemind = notifies && canWrite && Boolean(document.canRemind);
   // [2026-10-03] 오늘 이미 보냈으면 서버는 canRemind 를 끄고 remindedToday 를 켠다. 종전에는 canRemind 로만 버튼을 그려
   //   보낸 순간 버튼과 '하루 한 번' 안내가 함께 사라졌다 — 막힌 버튼과 사유를 남긴다.
-  const remindedToday = canWrite && Boolean(document.remindedToday);
+  const remindedToday = notifies && canWrite && Boolean(document.remindedToday);
   const showRemind = canRemind || remindedToday;
   const canReplace = canWrite && Boolean(document.canReplaceApprover);
   if (!supplement && !showRemind && !canReplace && history.length === 0) return null;
@@ -175,10 +180,10 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
       const toNm = to.userNm || '선택한 사람';
       const ok = await confirm({
         title: '결재자 바꾸기',
-        message: `${from.userNm} 대신 ${toNm}에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다. `
-          + (from.active
-            ? `${from.userNm}에게는 결재선에서 빠졌다고, ${toNm}에게는 지금 차례라고 알립니다.`
-            : `${from.userNm}에게는 결재선에서 빠졌다고 알리고, ${toNm}에게는 그 단계 차례가 되면 알립니다.`),
+        message: `${from.userNm} 대신 ${toNm}에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다.`
+          + (!notifies ? '' : from.active
+            ? ` ${from.userNm}에게는 결재선에서 빠졌다고, ${toNm}에게는 지금 차례라고 알립니다.`
+            : ` ${from.userNm}에게는 결재선에서 빠졌다고 알리고, ${toNm}에게는 그 단계 차례가 되면 알립니다.`),
         confirmText: '결재자 바꾸기',
       });
       if (!ok) return;

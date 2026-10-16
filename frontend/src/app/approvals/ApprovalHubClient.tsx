@@ -48,6 +48,7 @@ import {
   type ApprovalTab,
 } from '@/queries/approval-query-options';
 import { canPermission } from '@/lib/auth/permissions';
+import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { getTodayYmd } from '@/lib/date/today-ymd';
@@ -675,7 +676,8 @@ export default function ApprovalHubClient() {
     setPendingAction('ASK');
     try {
       await supplementMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn, question, version: item.version });
-      toast('보완을 요청했습니다. 기안자가 답하면 알림이 옵니다.', 'success');
+      // [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 답하면 알림이 온다고 말하지 않는다.
+      toast(hasDeliveryChannel('notification') ? '보완을 요청했습니다. 기안자가 답하면 알림이 옵니다.' : '보완을 요청했습니다.', 'success');
       // 답을 기다리는 문서는 여러 건 승인에서 뺀다 — 답을 받기 전에 승인되지 않게 한다.
       setBulkSelected(current => current.filter(entry => entry !== sanctionKey(item)));
       setRejectReason('');

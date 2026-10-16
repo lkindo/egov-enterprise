@@ -13,6 +13,13 @@ vi.mock('@/services/business/user/approval/ApprovalUserService', () => ({
   approvalUserService: { addReferences: mocks.addReferences, checkApprovers: mocks.checkApprovers },
 }));
 vi.mock('@/services/business/user/UserSearchService', () => ({ userSearchService: { searchAssignableUsers: mocks.searchAssignableUsers } }));
+// [2026-10-16 GAP-COMPOSE-001] 알림 기능(전달 채널)이 구성에 있는지를 시험마다 정한다. 실제 레지스트리를 그대로 쓰면 알림이
+//   빠진 생성물에서 이 파일의 기대가 달라지므로 레지스트리를 감싸 두 구성을 모두 고정한다. 기본은 알림이 있는 구성(전체 제품)이다.
+const channels = vi.hoisted(() => ({ notification: true }));
+vi.mock('@/extensions/generated-delivery-channels', () => ({
+  get deliveryChannels() { return channels.notification ? [[{ id: 'notification', visibleWhen: { always: '시험' } }]] : []; },
+}));
+beforeEach(() => { channels.notification = true; });
 import { ApprovalReferencePanel } from '../ApprovalReferencePanel';
 import { approvalKeys } from '@/queries/approval-query-options';
 
@@ -210,5 +217,37 @@ describe('ApprovalReferencePanel (D4)', () => {
     renderPanel(DOCUMENT, true);
     expect(screen.getByRole('button', { name: '참조자 추가' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '참조자 지정 (0명)' })).toBeDisabled();
+  });
+});
+
+/**
+ * [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 참조자 지정 확인과 완료 안내가 알림을 받는다고 말하지 않는다(서버 동작은
+ * 그대로다). 알림이 있는 구성의 문장은 종전과 같다 — 글자 그대로 대조한다.
+ */
+describe('ApprovalReferencePanel — 알림 기능 유무', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    auth.user.permissions = ['APPROVAL_APPROVE', 'APPROVAL_CREATE'];
+    mocks.confirm.mockResolvedValue(true);
+    mocks.addReferences.mockResolvedValue(1);
+    mocks.searchAssignableUsers.mockImplementation(async (keyword: string) => PEOPLE.filter(person => person.userNm.includes(keyword)));
+    mocks.checkApprovers.mockImplementation(async (ids: string[]) => ids.map(profile));
+  });
+
+  it.each([
+    [true,
+      '‘출장비 정산’ 문서에 1명을 참조자로 지정합니다: 최참조. 지정한 사람은 결재 의견과 처리 이력을 포함한 이 문서의 모든 차수를 계속 읽고, 이 차수가 최종 승인·반려되면 알림을 받습니다. 지정은 되돌릴 수 없습니다.',
+      '1명을 참조자로 지정했습니다. 이 문서에 처음 지정된 사람에게 알림이 갑니다.'],
+    [false,
+      '‘출장비 정산’ 문서에 1명을 참조자로 지정합니다: 최참조. 지정한 사람은 결재 의견과 처리 이력을 포함한 이 문서의 모든 차수를 계속 읽습니다. 지정은 되돌릴 수 없습니다.',
+      '1명을 참조자로 지정했습니다.'],
+  ])('참조자 지정 확인과 완료 안내(알림 %s)', async (notifies, message, done) => {
+    channels.notification = notifies;
+    renderPanel();
+    await choose('최참조');
+    fireEvent.click(screen.getByRole('button', { name: '참조자 지정 (1명)' }));
+    await waitFor(() => expect(mocks.addReferences).toHaveBeenCalledWith(31, ['READER'], 4));
+    expect(mocks.confirm.mock.calls[0][0].message).toBe(message);
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(done, 'success'));
   });
 });
