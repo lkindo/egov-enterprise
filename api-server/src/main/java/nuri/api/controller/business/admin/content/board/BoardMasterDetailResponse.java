@@ -13,7 +13,6 @@ public record BoardMasterDetailResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String bbsTtl,
         String bbsExpln,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String bbsTypeCd,
-        String bbsTypeCdNm,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String bbsAtrbCd,
         String bbsAtrbCdNm,
         String ansPsbltyYn,
@@ -35,7 +34,7 @@ public record BoardMasterDetailResponse(
     static BoardMasterDetailResponse from(BoardMasterDto dto) {
         return new BoardMasterDetailResponse(
                 dto.getBbsId(), dto.getBbsTtl(), dto.getBbsExpln(),
-                dto.getBbsTypeCd(), dto.getBbsTypeCdNm(),
+                dto.getBbsTypeCd(),
                 dto.getBbsAtrbCd(), dto.getBbsAtrbCdNm(),
                 dto.getAnsPsbltyYn(), dto.getFileAtchPsbltyYn(),
                 dto.getAtchPsbltyFileQty(), dto.getAtchPsbltyFileSz(),

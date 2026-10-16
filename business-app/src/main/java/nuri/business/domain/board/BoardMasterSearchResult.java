@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 public class BoardMasterSearchResult {
     private String bbsId;
     private String bbsTypeCd;
-    private String bbsTypeCdNm;
     private String bbsAtrbCd;
     private String bbsAtrbCdNm;
     private String bbsTtl;

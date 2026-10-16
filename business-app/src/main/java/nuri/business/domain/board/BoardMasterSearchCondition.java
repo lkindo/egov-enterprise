@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class BoardMasterSearchCondition {
     private String useYn;
-    private String searchCnd; // 0: BBS_NM, 1: BBS_TY_CODE_NM
+    /** 게시판명 검색어. 검색 축은 게시판명 하나다(유형 이름 축은 COM004 와 함께 걷었다 — DEC-OPS-332). */
     private String searchWrd;
     private String trgtId;
     private boolean notUsedOnly;

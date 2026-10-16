@@ -36,7 +36,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시판 목록 조회 성공")
     void getBoardMasters_Success() throws Exception {
         Page<BoardMasterDto> page = new PageImpl<>(List.of(BoardMasterDto.builder().bbsId("BBS_001").bbsTtl("Test Board").build()));
-        given(boardMasterService.getBoardMasterList(any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardMasterService.getBoardMasterList(any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/board-masters")
                 .accept(MediaType.APPLICATION_JSON))

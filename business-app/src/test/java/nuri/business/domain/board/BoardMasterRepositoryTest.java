@@ -125,9 +125,9 @@ class BoardMasterRepositoryTest {
     }
 
     @Test
-    @DisplayName("BoardMaster 검색 테스트 (QueryDSL)")
+    @DisplayName("검색어는 게시판명에만 걸리고 검색 조건 없이도 적용된다 — 유형 이름 축(COM004)은 없다")
     void searchTest() {
-        // Given
+        // Given — 공통코드 COM004 가 있는 환경을 흉내 낸다. 목록은 그 이름을 읽지도 검색하지도 않는다(DEC-OPS-332).
         BoardMaster master = BoardMaster.builder()
                 .bbsId("BBS_TEST_002")
                 .bbsTtl("Searchable Board")
@@ -135,7 +135,14 @@ class BoardMasterRepositoryTest {
                 .bbsAtrbCd("BBSA01")
                 .useYn("Y")
                 .build();
-        boardMasterRepository.save(master);
+        BoardMaster other = BoardMaster.builder()
+                .bbsId("BBS_TEST_003")
+                .bbsTtl("Other Board")
+                .bbsTypeCd("BBST01")
+                .bbsAtrbCd("BBSA01")
+                .useYn("Y")
+                .build();
+        boardMasterRepository.saveAll(List.of(master, other));
 
         CommonCode code = CommonCode.builder()
                 .dtlCd("BBST01")
@@ -144,24 +151,37 @@ class BoardMasterRepositoryTest {
                 .useYn("Y")
                 .build();
         commonCodeRepository.save(code);
-        
+
         em.flush();
         em.clear();
 
-        // 1. Name search
+        // 1. 화면은 검색 조건 없이 검색어만 보낸다 — 종전에는 이 경우 검색어가 무시돼 두 행이 모두 나왔다.
         BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
         condition.setSearchWrd("Searchable");
-        condition.setSearchCnd("0"); // bbsTtl
         Page<BoardMasterSearchResult> results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
-        assertThat(results.getContent()).isNotEmpty();
-        assertThat(results.getContent().get(0).getBbsTtl()).contains("Searchable");
+        assertThat(results.getContent()).extracting(BoardMasterSearchResult::getBbsId).containsExactly("BBS_TEST_002");
+        assertThat(results.getTotalElements()).isEqualTo(1);
+        assertThat(results.getContent().get(0).getBbsTypeCd()).isEqualTo("BBST01");
 
-        // 2. Type search
+        // 2. 유형 이름으로는 찾지 않는다 — COM004 의 이름은 목록이 읽지 않는다.
         condition.setSearchWrd("General");
-        condition.setSearchCnd("1"); // bbsTypeCdNm
         results = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
-        assertThat(results.getContent()).isNotEmpty();
-        assertThat(results.getContent().get(0).getBbsTypeCdNm()).isEqualTo("General Board");
+        assertThat(results.getContent()).isEmpty();
+        assertThat(results.getTotalElements()).isZero();
+    }
+
+    @Test
+    @DisplayName("게시판 마스터 목록은 공통코드 COM004 를 조인하지 않는다(GAP-BOARD-002)")
+    void searchDoesNotReadTheBoardTypeCodeGroup() throws IOException {
+        String source = Files.readString(
+                Path.of("src", "main", "java", "nuri", "business", "domain", "board",
+                        "BoardMasterRepositoryImpl.java"),
+                StandardCharsets.UTF_8);
+
+        // 주석은 COM004 를 언급할 수 있다 — 코드의 문자열 리터럴만 본다.
+        assertThat(source).doesNotContain("\"COM004\"");
+        // 속성 그룹(COM009)은 그대로 이름을 붙인다.
+        assertThat(source).contains("\"COM009\"");
     }
 
     @Test
@@ -182,7 +202,6 @@ class BoardMasterRepositoryTest {
         em.clear();
 
         BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
-        condition.setSearchCnd("0");
         condition.setSearchWrd("Paging board");
 
         Page<BoardMasterSearchResult> first = boardMasterRepository.searchBoardMasters(

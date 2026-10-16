@@ -412,8 +412,10 @@ mapping 검증([VerifyReferenceRules](../../migration-tool/src/main/java/nuri/mi
 |---|---|---|
 | `tb_ifml_atrz_info.task_se_cd` | `COM075` | VALIDATE — 상신·재상신이 사용 중 상세코드만 받는다 |
 | `tb_ifml_atrz_tmpr_strg.task_se_cd`·`tb_ifml_atrz_hstry.task_se_cd` | `COM075` | DISPLAY — 임시저장은 다시 상신할 때 검증하고, 이력은 이름만 보인다 |
-| `tb_bbs_master.bbs_type_cd`·`bbs_atrb_cd` | `COM004`·`COM009` | DISPLAY. `COM004` 그룹은 원본에 없다(GAP-BOARD-002) |
+| `tb_bbs_master.bbs_atrb_cd` | `COM009` | DISPLAY |
 | `tb_sys_log.prcs_se_cd` | `COM033` | DISPLAY. 앱이 공백을 지우고 조인해 대사도 `trim(c)` 로 센다 |
+
+게시판 유형(`tb_bbs_master.bbs_type_cd`)은 바인딩이 없다. 앱이 공통코드를 읽지 않고 유형 이름은 화면의 [게시판 유형 정본](../../frontend/src/lib/board/board-types.ts)에서 읽는다([DEC-OPS-332](../../.agent/memory/decisions.md)). 그래서 이 컬럼에는 제품 바인딩이 없고(원장 확정 행의 표준 용어가 코드 범주면 허용값을 읽을 수 있을 때 `ALLOWED_VALUES`, 읽을 수 없으면 `UNRECONCILED`), 정본 밖 코드는 화면에 코드 그대로 보인다.
 
 - **쓰기 전 게이트**([CodeSetPrecheck](../../migration-tool/src/main/java/nuri/migration/validate/CodeSetPrecheck.java)): plan·load 는 원장 검증과 같은 읽기 전용 연결에서 mapping 이 쓰는 바인딩 컬럼의 그룹을 읽는다. VALIDATE 컬럼은 codemap(`unmapped: passthrough` 아님)이나 상수로 채워야 한다(`VALIDATE_BINDING_CODEMAP_REQUIRED`) — 이 컬럼은 상세코드로 허용값을 확인할 수 있어 U3(codemap 없는 확정)의 전제가 성립하지 않는다. codemap 의 표준 코드와 쓰이는 fallback, 상수가 모두 사용 중 상세코드여야 한다(`CODE_OUTPUT_NOT_ACTIVE`, 문구는 codemap 이름과 `values` 위치만 싣는다). 그룹 머리가 없으면 VALIDATE 는 멈추고(`CODE_GROUP_ABSENT` — 참조 데이터를 먼저 넣는다), DISPLAY 는 통과해 대사가 `groupAbsent` 로 남긴다. 같은 schema 의 공통코드 표(`tb_com_cd`·`tb_com_dtl_cd`)를 함께 적재하면 그 schema 의 그룹·상세코드 판정을 미루고(`deferred`) 적재 뒤 대사가 본다 — codemap·상수 필수 규칙은 미루지 않는다. 공통코드 표를 읽지 못하면 SQLSTATE 만 밝혀 멈춘다 — 이관 역할에 `tb_com_cd`·`tb_com_dtl_cd` SELECT 가 필요하다.
 - **대사 대상**([CodeSetTargets](../../migration-tool/src/main/java/nuri/migration/validate/CodeSetTargets.java)): mapping 이 쓰는 컬럼 가운데 바인딩이 있으면 `COMMON_CODE`, 원장 확정 행의 표준 용어가 코드 범주이고 live 메타 허용값을 읽을 수 있으면 `ALLOWED_VALUES` 다. 둘 중 load 를 실패시킬 원천(VALIDATE 바인딩·메타 허용값)이 없는 코드 컬럼 — 표준 용어가 코드 범주인데 live 허용값을 읽을 수 없는 확정 행(U3)과, 비표준 대상(U1) 확정 행 가운데 codemap 을 쓰거나 이름이 `_cd` 로 끝나는 행 — 은 `UNRECONCILED` 다. DISPLAY 바인딩은 실패 원천이 아니므로 그 컬럼도 `UNRECONCILED` 를 받는다(사용자 결정 L4-P2). 여부 범주는 D2 의 형식 도메인이 판정한다.

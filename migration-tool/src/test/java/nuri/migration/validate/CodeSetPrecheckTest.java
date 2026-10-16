@@ -37,9 +37,9 @@ class CodeSetPrecheckTest {
             Set.of(PROBE_INACTIVE));
 
     @Test
-    @DisplayName("바인딩 카탈로그는 여섯 행이고 쓰기 검증은 결재 본표의 업무 구분 하나다")
+    @DisplayName("바인딩 카탈로그는 다섯 행이고 쓰기 검증은 결재 본표의 업무 구분 하나다")
     void catalog() {
-        assertThat(ProductCodeBindings.ALL).hasSize(6);
+        assertThat(ProductCodeBindings.ALL).hasSize(5);
         assertThat(ProductCodeBindings.ALL).filteredOn(binding -> binding.use() == Use.VALIDATE)
                 .singleElement().satisfies(binding -> {
                     assertThat(binding.table()).isEqualTo("tb_ifml_atrz_info");
@@ -51,6 +51,8 @@ class CodeSetPrecheckTest {
         assertThat(ProductCodeBindings.of("tb_bbs_master", "bbs_atrb_cd")).extracting(Binding::group)
                 .containsExactly("COM009");
         assertThat(ProductCodeBindings.of("public.tb_bbs_master", "bbs_nm")).isEmpty();
+        // 게시판 유형은 공통코드에 묶이지 않는다 — 앱이 COM004 를 읽지 않는다(DEC-OPS-332).
+        assertThat(ProductCodeBindings.of("public.tb_bbs_master", "bbs_type_cd")).isEmpty();
         assertThat(ProductCodeBindings.of("public.tb_ifml_atrz_info_x", "task_se_cd")).isEmpty();
         assertThat(ProductCodeBindings.of(null, "task_se_cd")).isEmpty();
         assertThat(ProductCodeBindings.of("tb_sys_log", " ")).isEmpty();
@@ -200,7 +202,7 @@ class CodeSetPrecheckTest {
                 table("public.tb_sys_log", column("P", "prcs_se_cd", null, null)));
 
         assertThat(CodeSetPrecheck.requiredGroups(spec, ProductCodeBindings.ALL, "Public")).containsExactly(
-                Map.entry("public", Set.of("COM033", "COM075")), Map.entry("app", Set.of("COM004", "COM009")));
+                Map.entry("public", Set.of("COM033", "COM075")), Map.entry("app", Set.of("COM009")));
         assertThat(CodeSetPrecheck.requiredGroups(spec(Map.of(), table("public.tb_note", column("A", "note_cd", null,
                 null))), ProductCodeBindings.ALL, "public")).isEmpty();
         assertThat(CodeSetPrecheck.requiredGroups(spec(Map.of(), table("tb_sys_log", column("P", "prcs_se_cd", null,

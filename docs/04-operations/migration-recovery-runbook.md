@@ -105,7 +105,7 @@ ADR-0029 L4 부터 load 는 적재 뒤 대사를 지나야 PASS 다([DEC-OPS-324
 - `NOT_COVERED`(`mappings[].notCovered`·`checks[].status`·`uniqueIndexes[].status`), `codeSets` 의 `UNRECONCILED`, `orphanCandidates` 는 load 를 막지 않는다. 업무 소유자가 확인하고 서명한다. `codeSets` 의 `RECORDED`(표시 바인딩) 가운데 `missingRows`·`inactiveRows` 가 0 이 아니거나 질의 실패 사유(`CODE_SET_QUERY_FAILED`)가 붙은 것도 같다 — 화면에 이름이 비는 코드다. `UNRECONCILED` 컬럼의 값은 [비데이터 객체 이관 가이드](../03-guides/legacy-non-data-migration-guide.md#63-공통코드)의 Q-C2 로 읽기 전용 확인한다. `orphanCandidates` 가 0 이 아니면 그 자식 컬럼이 정말 격리 키를 가리키는지 보고, 가리키면 원천을 고쳐 다시 적재하거나 참조를 선언한다.
 - `references[].proofNote` 를 본다. `origin` 이 `PHYSICAL` 이고 `method` 가 `SCANNED` 이며 메모가 `TRIGGER_NOT_ENABLED`·`CATALOG_ROW_CHANGED`·`REPLICATION_ROLE_UNPROVEN` 이면 RI 트리거나 세션 설정이 적재 중 집행되지 않았다는 뜻이다 — 고아가 0 이어도 컷오버 전에 트리거·제약 상태를 바로잡거나 서명한다. `PRIOR_EXECUTION_ROWS` 는 재개한 run 이라 고아를 센 것이다. `method` 가 `PROVEN` 이고 메모가 `NOT_VALIDATED` 이면 이번 run 의 쓰기는 증명됐지만 `NOT VALID` FK 라 그 전부터 있던 행은 검사되지 않았다 — `VALIDATE CONSTRAINT` 나 읽기 전용 `NOT EXISTS` 쿼리로 확인하고 서명한다.
 - 물리 FK 를 증명하지 못하면 대사가 매핑 대상과 그 FK 의 부모 표를 읽는다. 매핑하지 않은 부모 표도 읽으므로 이관 역할에 그 표의 `SELECT` 가 필요하다 — 없으면 `REFERENCE_QUERY_FAILED(SQLSTATE=42501)` 로 FAIL 이다.
-- `codeSets` 의 `groupAbsent`(표시 전용 그룹의 머리가 대상에 없음 — 예: COM004, GAP-BOARD-002)와 `deferred`(같은 run 이 공통코드 표를 적재함)는 사유를 기록한다.
+- `codeSets` 의 `groupAbsent`(표시 전용 그룹의 머리가 대상에 없음 — 예: 참조 데이터(DEC-OPS-262)를 아직 넣지 않은 대상의 COM033)와 `deferred`(같은 run 이 공통코드 표를 적재함)는 사유를 기록한다.
 - `SOURCE_ROWS` FAIL 은 원천이 읽는 동안 바뀌었다는 신호다 — READ COMMITTED 원천은 집계와 본 읽기가 다른 문장이다. source freeze 를 다시 확인한다.
 
 대사가 FAIL 이면 트래픽을 열지 않는다. 원인(공통코드 등록, 원천 정정, 참조 선언)을 고친 뒤 같은 runId 로 다시 load 한다 — 비용은 위 재개 절 10번과 같다. 대사를 끄는 옵션은 없다. 실행 JSON 에는 검사 이름·결과·건수·사유 코드만 있고 값·합·키는 없으므로, 값 확인은 기관 환경에서 읽기 전용 쿼리로 한다.

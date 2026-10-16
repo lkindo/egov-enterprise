@@ -43,8 +43,11 @@ test('code group owners match the capability that owns every production file rea
   assert.deepEqual(mismatches, []);
   // 표의 그룹은 생산 코드가 실제로 읽는다(읽는 곳이 사라진 선언을 남기지 않는다).
   assert.deepEqual(Object.keys(CODE_GROUP_OWNERS).filter(group => !readers.has(group)), []);
-  // 빈 스캔은 통과가 아니다 — 2026-10-10 실측 core 그룹(COM033)과 표의 세 그룹을 읽는다.
-  assert.ok(readers.has('COM033') && readers.size >= 4, `읽힌 코드 그룹: ${[...readers.keys()].join(', ')}`);
+  // 빈 스캔은 통과가 아니다 — core 그룹(COM033)과 표의 두 그룹(COM009·COM075)을 읽는다. 2026-10-10 실측은 네 그룹이었고
+  //   2026-10-16 게시판 목록이 COM004 를 걷어 셋이 됐다(DEC-OPS-332 — 유형 이름은 화면 상수가 정본이다).
+  assert.ok(readers.has('COM033') && readers.size >= 3, `읽힌 코드 그룹: ${[...readers.keys()].join(', ')}`);
+  // 게시판 유형 이름은 공통코드에서 읽지 않는다 — 다시 읽으면 화면 상수와 정본이 둘이 된다(GAP-BOARD-002).
+  assert.equal(readers.has('COM004'), false, `COM004 를 읽는 생산 Java: ${(readers.get('COM004') ?? []).map(file => file.path).join(', ')}`);
   // 표의 소유자는 실제 기능이다.
   for (const owner of Object.values(CODE_GROUP_OWNERS)) assert.ok(catalog.capabilities.some(capability => capability.id === owner), owner);
 });
@@ -122,11 +125,11 @@ test('the reference data plan keeps core groups and only the selected capabiliti
   assert.equal(omitCodeGroupsSql(full), '');
 
   const core = referenceDataPlan([], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS);
-  assert.deepEqual(core, { omittedCodeGroups: ['COM004', 'COM009', 'COM075'], includeBoardMasters: false, tables: [CODE_GROUP_TABLE] });
-  assert.equal(omitCodeGroupsSql(core), "DELETE FROM public.tb_com_cd WHERE cd_id IN ('COM004', 'COM009', 'COM075');");
+  assert.deepEqual(core, { omittedCodeGroups: ['COM009', 'COM075'], includeBoardMasters: false, tables: [CODE_GROUP_TABLE] });
+  assert.equal(omitCodeGroupsSql(core), "DELETE FROM public.tb_com_cd WHERE cd_id IN ('COM009', 'COM075');");
 
   const approvalOnly = referenceDataPlan(['informalsanction'], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS);
-  assert.deepEqual(approvalOnly.omittedCodeGroups, ['COM004', 'COM009']);
+  assert.deepEqual(approvalOnly.omittedCodeGroups, ['COM009']);
 
   // 게시판 기능과 게시판 마스터 표는 함께 있거나 함께 없다.
   assert.throws(() => referenceDataPlan(['board'], [CODE_GROUP_TABLE], CODE_GROUP_OWNERS), /어긋난다/);

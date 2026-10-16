@@ -43,7 +43,7 @@ class CodeSetReconcilerTest {
     private static final CodeSetTarget VALIDATE = CodeSetTarget.commonCode("public.tb_ifml_atrz_info", "task_se_cd",
             ProductCodeBindings.ALL.getFirst(), false, false);
     private static final CodeSetTarget LOG = CodeSetTarget.commonCode("public.tb_sys_log", "prcs_se_cd",
-            ProductCodeBindings.ALL.get(5), false, false);
+            ProductCodeBindings.ALL.get(4), false, false);
     private static final CodeSetTarget HISTORY = CodeSetTarget.commonCode("public.tb_ifml_atrz_hstry", "task_se_cd",
             ProductCodeBindings.ALL.get(2), false, true);
     private static final CodeSetTarget ALLOWED = CodeSetTarget.allowedValues("public.tb_ifml_atrz_info", "stts_cd",

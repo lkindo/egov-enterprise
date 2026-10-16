@@ -371,8 +371,12 @@ SELECT ps.sequencename, ps.last_value
 | 업무 컬럼 | 그룹 | 앱이 하는 일 |
 |---|---|---|
 | `tb_ifml_atrz_info.task_se_cd` | `COM075` | 상신이 사용 중 상세코드만 받는다 |
-| `tb_bbs_master.bbs_type_cd`·`bbs_atrb_cd` | `COM004`·`COM009` | 이름 표시만 한다. `COM004` 그룹은 원본에 없다(GAP-BOARD-002) |
+| `tb_bbs_master.bbs_atrb_cd` | `COM009` | 이름 표시만 한다 |
 | `tb_sys_log.prcs_se_cd` | `COM033` | 이름 표시만 한다 |
+
+게시판 유형(`tb_bbs_master.bbs_type_cd`)은 공통코드가 아니다. 유형 코드와 이름의 정본은 화면의
+[게시판 유형 표](../../frontend/src/lib/board/board-types.ts)다(`BBST01`~`BBST07`, 템플릿과 1:1, DEC-OPS-332). 레거시 유형 코드는 codemap 으로
+이 코드 가운데 하나로 옮기되, 그 게시판의 템플릿(`tmplt_id`)과 짝이 맞게 `bbs_type_cd` 와 `tmplt_id` 를 함께 정하는 것은 이관 설계자의 몫이다(도구는 짝을 검증하지 않는다). 표에 없거나 짝이 다른 코드는 화면에 이름 없이 코드 그대로 보인다.
 
 **도구가 하는 것**(ADR-0029 L4, DEC-OPS-325, [설계](../02-architecture/legacy-migration-tool-design.md#공통코드-대사adr-0029-l4-d7)).
 위 표의 바인딩을 이관 도구도 카탈로그로 갖는다. plan·load 는 쓰기 전에 `COM075` 결재 본표 컬럼이 codemap(미매핑 그대로 쓰기 아님)이나 상수로 채워지고
@@ -394,7 +398,7 @@ SELECT ps.sequencename, ps.last_value
 -- Q-C1 앱이 쓰는 그룹과 사용 중 상세코드 수. COM075 는 1 이상이어야 결재 상신이 된다.
 SELECT b.cd_id, c.cd_id IS NOT NULL AS group_exists,
        count(d.dtl_cd) FILTER (WHERE d.use_yn = 'Y') AS active_details
-  FROM (VALUES ('COM075'), ('COM004'), ('COM009'), ('COM033')) AS b(cd_id)
+  FROM (VALUES ('COM075'), ('COM009'), ('COM033')) AS b(cd_id)
   LEFT JOIN tb_com_cd c ON c.cd_id = b.cd_id
   LEFT JOIN tb_com_dtl_cd d ON d.cd_id = b.cd_id
  GROUP BY b.cd_id, c.cd_id;

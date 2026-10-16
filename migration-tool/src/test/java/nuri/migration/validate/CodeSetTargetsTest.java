@@ -52,9 +52,9 @@ class CodeSetTargetsTest {
         MappingSpec mapping = spec(Map.of(),
                 table("tb_ifml_atrz_info", column("TASK", "task_se_cd", null, null), column("T", "title", null, null)),
                 table("PUBLIC.TB_SYS_LOG", column("P", "PRCS_SE_CD", null, null)),
-                table("public.tb_bbs_master", column("TY", "bbs_type_cd", null, null)));
+                table("public.tb_bbs_master", column("AT", "bbs_atrb_cd", null, null)));
         PrecheckResult precheck = new PrecheckResult(List.of(), Set.of("public"),
-                Set.of(new ColumnKey("public.tb_bbs_master", "bbs_type_cd")));
+                Set.of(new ColumnKey("public.tb_bbs_master", "bbs_atrb_cd")));
 
         List<CodeSetTarget> targets = CodeSetTargets.of(mapping, null, Map.of(), "public", ProductCodeBindings.ALL,
                 precheck);
@@ -65,7 +65,7 @@ class CodeSetTargetsTest {
                         "COM075", Use.VALIDATE, false),
                 org.assertj.core.groups.Tuple.tuple("public.tb_sys_log", "prcs_se_cd", Source.COMMON_CODE, "COM033",
                         Use.DISPLAY, true),
-                org.assertj.core.groups.Tuple.tuple("public.tb_bbs_master", "bbs_type_cd", Source.COMMON_CODE, "COM004",
+                org.assertj.core.groups.Tuple.tuple("public.tb_bbs_master", "bbs_atrb_cd", Source.COMMON_CODE, "COM009",
                         Use.DISPLAY, false));
         assertThat(targets).allSatisfy(target -> assertThat(target.deferred()).isTrue());
         assertThat(targets).extracting(CodeSetTarget::groupAbsent).containsExactly(false, false, true);
@@ -147,17 +147,17 @@ class CodeSetTargetsTest {
     @Test
     @DisplayName("표시 바인딩은 실패 원천이 아니므로 그 컬럼의 U1·U3 확정은 서명 대상으로 남는다(L4-P2)")
     void displayBindingIsNotAFailSource() {
-        MappingSpec mapping = spec(Map.of(), table("public.tb_bbs_master", column("TY", "bbs_type_cd", "ty", null)),
+        MappingSpec mapping = spec(Map.of(), table("public.tb_bbs_master", column("AT", "bbs_atrb_cd", "at", null)),
                 table("public.tb_ifml_atrz_hstry", column("TASK", "task_se_cd", null, null)));
-        TermLedger ledger = ledger(nonStandard("B-1", "public.tb_bbs_master", "bbs_type_cd", "ty"),
+        TermLedger ledger = ledger(nonStandard("B-1", "public.tb_bbs_master", "bbs_atrb_cd", "at"),
                 confirmed("H-1", "public.tb_ifml_atrz_hstry", "task_se_cd", TYPE_CODE));
 
         List<CodeSetTarget> targets = CodeSetTargets.of(mapping, ledger, TERMS, "public", ProductCodeBindings.ALL,
                 PrecheckResult.empty());
 
         assertThat(targets).extracting(CodeSetTarget::column, CodeSetTarget::source, CodeSetTarget::use)
-                .containsExactly(org.assertj.core.groups.Tuple.tuple("bbs_type_cd", Source.COMMON_CODE, Use.DISPLAY),
-                        org.assertj.core.groups.Tuple.tuple("bbs_type_cd", Source.UNRECONCILED, null),
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("bbs_atrb_cd", Source.COMMON_CODE, Use.DISPLAY),
+                        org.assertj.core.groups.Tuple.tuple("bbs_atrb_cd", Source.UNRECONCILED, null),
                         org.assertj.core.groups.Tuple.tuple("task_se_cd", Source.COMMON_CODE, Use.DISPLAY),
                         org.assertj.core.groups.Tuple.tuple("task_se_cd", Source.UNRECONCILED, null));
     }

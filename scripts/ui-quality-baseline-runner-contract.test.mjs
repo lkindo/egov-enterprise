@@ -1322,22 +1322,25 @@ test('synthetic board readback and cleanup use the actual title search and pagin
   const repository = readFileSync(join(repoRoot,
     'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'), 'utf8');
   assert.match(controller, /@ModelAttribute BaseSearchDto searchDto/);
-  assert.match(controller, /searchDto\.getSearchCondition\(\), searchDto\.getSearchKeyword\(\), pageable/);
+  // [DEC-OPS-332] 검색 축은 게시판명 하나라 컨트롤러·서비스는 searchCondition 을 읽지 않는다.
+  assert.match(controller, /getBoardMasterList\(searchDto\.getSearchKeyword\(\), pageable\)/);
+  assert.doesNotMatch(controller, /getSearchCondition/);
   assert.match(controller, /Pageable pageable = searchDto\.toPageable\(\)/);
   assert.match(dto, /private int pageUnit = 10/);
   assert.match(dto, /PageRequest\.of\(zeroBasedPageIndex\(\), effectivePageUnit\(\)\)/);
   assert.match(dto, /return pageUnit > 0 \? pageUnit : DEFAULT_PAGE_UNIT/);
-  assert.match(service, /cond\.setSearchCnd\(searchCondition\)/);
   assert.match(service, /cond\.setSearchWrd\(searchKeyword\)/);
-  const titleCondition = repository.match(/if \("([^"\n]+)"\.equals\(condition\.getSearchCnd\(\)\)\) \{\s*builder\.and\(boardMaster\.bbsTtl\.contains/)?.[1];
-  assert.ok(titleCondition, 'the repository must declare its title-search condition');
+  assert.doesNotMatch(service, /setSearchCnd/);
+  // 검색어는 조건 분기 없이 게시판명(bbsTtl)에 걸린다 — 분기가 돌아오면 검색어가 다시 조용히 무시될 수 있다.
+  assert.match(repository, /if \(StringUtils\.hasText\(condition\.getSearchWrd\(\)\)\) \{\s*builder\.and\(boardMaster\.bbsTtl\.contains/);
+  assert.doesNotMatch(repository, /getSearchCnd/);
   const body = runnerSource.match(/async function exactSyntheticBoards\(api, fixture\) \{([\s\S]*?)\n\}/)?.[1];
   assert.ok(body);
   const query = body.match(/\{ ([^{}]+) \},\s*\n\s*\), \{ reasonCode:/)?.[1];
   assert.ok(query, 'the fixture query must remain inspectable');
   const entries = Object.fromEntries(query.split(', ').map((entry) => entry.split(': ')));
   assert.deepEqual(entries, {
-    searchCondition: `'${titleCondition}'`, searchKeyword: 'fixture.boardTitle', pageIndex: '1', pageUnit: '100',
+    searchKeyword: 'fixture.boardTitle', pageIndex: '1', pageUnit: '100',
   }, 'readback must search the unique title with the page-size field the endpoint actually binds');
   for (const helper of ['waitForSyntheticBoardDeploy', 'cleanupSyntheticBoardDeploy', 'syntheticBoardResidueCount']) {
     const caller = runnerSource.match(new RegExp(String.raw`async function ${helper}\(api, fixture\) \{([\s\S]*?)\n\}`))?.[1];
