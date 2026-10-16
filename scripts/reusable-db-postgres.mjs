@@ -146,6 +146,39 @@ export function dump(container, user, database, args) {
   );
 }
 
+/**
+ * 표를 기본 키 순서로 다시 쓰는 SQL(GAP-REPRO-001). pg_dump 의 데이터 덤프는 행을 물리 순서로 내보내므로, 같은 구성을
+ * 다시 만들어도 행 순서가 달라져 seed 파일과 lock 해시가 흔들렸다. CLUSTER 로 기본 키 순서로 다시 쓴 뒤 클러스터 표시는
+ * 지운다. 기본 키가 없는 표는 순서를 정할 수 없으므로 실패한다.
+ */
+export function orderByPrimaryKeySql(tables) {
+  if (!Array.isArray(tables) || tables.length === 0) fail('행 순서를 정할 표가 없다');
+  const names = tables.map((table) => `'${assertIdentifier(table, 'seed table')}'`).join(', ');
+  return [
+    'DO $$',
+    'DECLARE target text; pk text;',
+    'BEGIN',
+    `  FOREACH target IN ARRAY ARRAY[${names}]::text[] LOOP`,
+    '    SELECT i.relname INTO pk FROM pg_index x',
+    '      JOIN pg_class t ON t.oid = x.indrelid JOIN pg_class i ON i.oid = x.indexrelid',
+    '      JOIN pg_namespace n ON n.oid = t.relnamespace',
+    "      WHERE n.nspname = 'public' AND t.relname = target AND x.indisprimary;",
+    "    IF pk IS NULL THEN RAISE EXCEPTION 'seed table % has no primary key to order rows', target; END IF;",
+    "    EXECUTE format('CLUSTER public.%I USING %I', target, pk);",
+    "    EXECUTE format('ALTER TABLE public.%I SET WITHOUT CLUSTER', target);",
+    '  END LOOP;',
+    'END $$;',
+  ].join('\n');
+}
+
+/** 표 데이터를 기본 키 순서로 덤프한다. 번들의 데이터 seed 는 이 함수로만 만든다(GAP-REPRO-001). */
+export function dumpTableData(container, user, database, tables, args = []) {
+  restore(container, user, database, orderByPrimaryKeySql(tables));
+  return dump(container, user, database, [
+    '--data-only', ...args, ...tables.map((table) => `--table=public.${assertIdentifier(table, 'seed table')}`),
+  ]);
+}
+
 export function restore(container, user, database, sql) {
   dockerExec(
     container,
