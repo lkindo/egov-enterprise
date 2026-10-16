@@ -1352,3 +1352,32 @@ httpxy 와 같은 설정의 Agent 로 한 번 요청한 뒤 유휴 시간을 두
   - 백엔드 요청에 `Connection: close` 를 싣는다. 재사용을 없애지만 요청마다 새 연결을 맺는다.
   - Tomcat 유지 시간을 늘린다. 빈도만 줄어든다.
 - 하지 않는다: flaky 차단 계약 완화, 재시도로 덮기, `node_modules` 패치, 측정 없는 timeout 조정.
+
+**조치와 전후 재현 (2026-10-16, DEC-OPS-333)**
+
+설치된 Next 16.4.0 의 `proxy-request.js` 는 agent 를 넘기지 않고 httpxy `ProxyServer` 를 만든다. `rewrites()` 에는 Agent·유휴 수명 설정이 없다. 대신 httpxy 는 요청 `Connection` 헤더가 upgrade 가 아니면 keep-alive 전용 Agent 를 쓰고, `Connection: close` 를 받으면 그 값을 백엔드에 그대로 보내 요청마다 새 연결을 맺는다. 미들웨어의 요청 헤더 덮어쓰기는 rewrite 요청에 반영되고(`next dev` + 기록용 백엔드로 확인: 백엔드가 `connection: close` 와 요청마다 다른 원격 포트를 받았다), `connection` 은 미들웨어 응답 헤더 필터(`ipcForbiddenHeaders`)와 무관한 경로다.
+
+- **치른 비용(적대적 검토 P2)**: httpxy 응답 미들웨어가 백엔드의 `Connection: close` 를 브라우저 응답에도 복사한다. 그래서 edge 없이 Next 를 직접 노출한 배포(HTTP/1.1)에서는 `/api/v1` 호출마다 브라우저↔Next 연결도 새로 맺는다(실측: 클라이언트 free 소켓 0개, 대조군 keep-alive 1개). 운영 형상은 edge 가 이미 비업그레이드 요청에 `close` 를 싣고 로컬 loopback 은 비용이 미미해 영향이 작다. edge 없는 직접 노출 배포는 이 설정과 맞지 않으니 권장하지 않는다.
+- 후보 선택: ① Agent 주입은 수단이 없고 ② Tomcat 유지 시간 연장은 경계만 미룬다. ③ 요청에 `Connection: close` 를 싣는 것이 "클라이언트가 먼저 닫는다" 를 구조로 만든다. 비용은 요청마다 새 연결(루프백·같은 망 TCP)이며 edge 운영 형상은 이미 같다.
+- (A) 격리 Tomcat 11.0.26(기본 `connectionTimeout=20000`) + 설치된 httpxy + Node 22.23, 이벤트 루프 400ms 점유 후 요청:
+
+| 구간 | 수정 전 | 수정 후 |
+|---|---|---|
+| 19.8초 점유 | 0/5 실패 | 0/5 |
+| 19.9초 점유 | 2/5 실패 (`socket hang up`) | 0/5 |
+| 19.95초 점유 | 4/5 실패 | 0/5 |
+| 20.1초 점유 | 3/5 실패 | 0/5 |
+| 유휴만 19.0~21.0초(8구간×3) | 0/24 | 0/24 |
+
+  수정 전 합계 9/20(재사용 소켓 20/20), 수정 후 0/20(재사용 소켓 0/20). 2026-09-30 기록의 15/15 와 수치가 다른 것은 이번 실행이 다른 에이전트의 Gradle·빌드와 같은 기계에서 돌아 타이머 편차가 컸기 때문이다. 같은 원인(재사용 소켓의 `ECONNRESET`)이고 경계는 같다.
+- (B) Playwright 1.63 요청 컨텍스트는 `new http.Agent({ keepAlive: true })`(timeout 없음)를 컨텍스트 수명 동안 쓰고, Node HTTP 서버의 `keepAliveTimeout` 기본은 5초(+1초 버퍼)다. 같은 클라이언트 구성으로 서버를 기본값과 `keepAliveTimeout=3600000` 으로 비교했다(서버 응답 `Keep-Alive: timeout=5` 대 `timeout=3600`).
+
+| 구간(경계 6초) | 기본 서버 | 수정 서버 |
+|---|---|---|
+| 5.8·5.9·5.95초 점유 후 요청, 각 5회 | 15/15 실패 (`ECONNRESET`, 재사용 소켓) | 0/15 |
+| 6.1초 점유(경계 뒤 대조군) | 0/5 | 0/5 |
+| 유휴만 5.0~7.0초 | 1/21 실패(5.95초) | 0/21 |
+
+  수정은 러너가 `next start` 에 `--keepAliveTimeout 3600000` 을 넘기는 것이다. 값은 e2e 잡 한도(30분)보다 길어야 하며 계약이 비교한다. 요청 컨텍스트는 한 실행보다 오래 살 수 없으므로 클라이언트 유휴가 서버 유휴를 넘지 못한다.
+- 회귀 방지: `scripts/frontend-proxy-keepalive-contract.test.mjs`(운영 계약)가 미들웨어의 `Connection: close` 배선, 러너 인자, 서버 유휴 수명 > e2e 잡 한도, 설치된 Next `proxyRequest` 의 연결 재사용 대조(keep-alive 는 같은 포트 재사용, close 는 요청마다 다른 포트)를 고정하고, `proxy.test.ts` 가 헤더 덮어쓰기와 WebSocket 업그레이드 예외를 고정한다.
+- 증명하지 못한 것: CI e2e 의 실제 flaky 감소는 실행이 쌓여야 알 수 있다. 격리 재현은 같은 오류의 결정적 발생과 소멸을 보여 줄 뿐 CI 빈도를 예측하지 않는다. 운영 edge 형상과 `next start` 가 아닌 standalone 서버(`node server.js`, 컨테이너 이미지)의 유휴 수명은 바꾸지 않았다.

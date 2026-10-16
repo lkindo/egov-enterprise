@@ -301,6 +301,11 @@ function applyDocumentSecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+/** httpxy 가 WebSocket 프록시로 보는 요청과 같은 판정이다(`Upgrade` 헤더 또는 `Connection` 의 upgrade 토큰). */
+function isUpgradeRequest(headers: Headers): boolean {
+  return headers.has('upgrade') || /(?:^|,)\s*upgrade\s*(?:$|,)/i.test(headers.get('connection') ?? '');
+}
+
 function isEncodedAuthTokenPath(pathname: string): boolean {
   if (!pathname.includes('%')) return false;
   try {
@@ -361,13 +366,19 @@ export async function proxy(request: NextRequest) {
   //   그 iframe 을 차단해 net::ERR_BLOCKED_BY_RESPONSE 가 난다(2026-07-26 CI 실측).
   //   인증 집행은 /api/v1·/actuator 와 동일하게 **백엔드가 authoritative** 하므로 여기서는 토큰만 주입한다.
   if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator') || pathname.startsWith('/ws')) {
+    const requestHeaders = new Headers(request.headers);
     const accessToken = request.cookies.get('accessToken')?.value;
-    if (accessToken) {
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('Authorization', `Bearer ${accessToken}`);
-      return NextResponse.next({ request: { headers: requestHeaders } });
-    }
-    return NextResponse.next();
+    if (accessToken) requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+    // [GAP-FE-002 · DEC-OPS-333] rewrite 프록시가 백엔드 연결을 유휴 상태로 다시 쓰지 않게 한다.
+    //   Next 16 rewrite 는 httpxy 의 모듈 전역 keep-alive Agent(timeout 없음, 주입 수단 없음)를 쓴다.
+    //   Node 22 Agent 는 자기 timeout 이 0 이면 서버의 `Keep-Alive: timeout=20` 힌트를 무시해 유휴 소켓을
+    //   무기한 들고 있고, Tomcat 은 20초에 닫는다. 그 경계에서 이벤트 루프가 바쁘면 닫힌 소켓에 요청이
+    //   실려 `socket hang up` → 500 이 된다. `Connection: close` 를 실으면 httpxy 가 그 헤더를 그대로 보내
+    //   요청마다 새 연결을 맺고 응답 뒤 닫는다 — 다시 쓸 유휴 소켓이 없어 경합이 생길 수 없다.
+    //   edge 운영 형상은 이미 이 헤더를 싣고 들어오므로 edge 없는 실행(CI e2e·로컬)만 그 형상과 같아진다.
+    //   WebSocket 업그레이드는 `Connection: upgrade` 가 있어야 하므로 건드리지 않는다.
+    if (!isUpgradeRequest(requestHeaders)) requestHeaders.set('Connection', 'close');
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // 2-a. Atlas 정적 문서 — nonce 를 심을 수 없는 자체 inline <script> 문서라 Phase 2 정책을 유지한다.
