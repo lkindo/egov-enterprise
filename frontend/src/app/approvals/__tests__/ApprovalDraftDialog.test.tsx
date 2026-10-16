@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ createDraft: vi.fn(), resubmit: vi.fn(), getDetail: vi.fn(), getTaskTypes: vi.fn(), getLineSuggestions: vi.fn(), checkApprovers: vi.fn(), searchAssignableUsers: vi.fn(), toast: vi.fn(), confirm: vi.fn(),
-  listTemporaryDrafts: vi.fn(), getTemporaryDraft: vi.fn(), createTemporaryDraft: vi.fn(), updateTemporaryDraft: vi.fn(), deleteTemporaryDraft: vi.fn() }));
+  listTemporaryDrafts: vi.fn(), getTemporaryDraft: vi.fn(), createTemporaryDraft: vi.fn(), updateTemporaryDraft: vi.fn(), deleteTemporaryDraft: vi.fn(),
+  listSavedLines: vi.fn(), getSavedLine: vi.fn(), createSavedLine: vi.fn(), updateSavedLine: vi.fn(), deleteSavedLine: vi.fn() }));
 // 기안자. 임시저장 동작은 기안 권한(APPROVAL_CREATE)이 있어야 보인다 — 권한을 빼는 시험은 permissions 를 바꾼다.
 const auth = vi.hoisted(() => ({ user: { esntlId: 'DRAFTER', authorizationVersion: 'test-v1', permissions: ['APPROVAL_CREATE'] as string[] } }));
 // 피커가 찾는 사람들. 홍기안은 기안자 본인이다.
@@ -60,7 +61,7 @@ describe('ApprovalDraftDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     auth.user.permissions = ['APPROVAL_CREATE'];
-    mocks.listTemporaryDrafts.mockResolvedValue([]);
+    mocks.listTemporaryDrafts.mockResolvedValue([]); mocks.listSavedLines.mockResolvedValue([]);
     mocks.confirm.mockResolvedValue(false);
     mocks.getTaskTypes.mockResolvedValue([{ dtlCd: '01', dtlCdNm: '일반', useYn: 'Y' }, { dtlCd: '99', dtlCdNm: '폐기', useYn: 'N' }]);
     mocks.createDraft.mockResolvedValue(88); mocks.resubmit.mockResolvedValue(88);

@@ -958,6 +958,7 @@ test('the source slot predicates are attributed item by item to the screens that
     'dashboard/home-sections.ts realtime DASHBOARD_READ → /',
     'informalsanction/home-sections.ts approval-open APPROVAL_READ → /',
     'informalsanction/home-sections.ts approval-pending APPROVAL_READ → /',
+    'informalsanction/notification-actions.ts approval-approve APPROVAL_APPROVE → layout',
     'note/home-sections.ts unread-notes NOTE_READ → /',
     `note/hub-tabs.ts MESSAGES NOTE_READ → ${collaboration}`,
     'notification/header-widgets.ts notification-bell NOTI_READ → layout',

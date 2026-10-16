@@ -350,6 +350,13 @@
       ]
     },
     {
+      "entity": "nuri.business.domain.informalsanction.ApprovalSavedLine",
+      "dto": "nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest",
+      "fields": [
+        "aplnNm"
+      ]
+    },
+    {
       "entity": "nuri.business.domain.board.Satisfaction",
       "dto": "nuri.business.service.board.dto.SatisfactionDto",
       "fields": [
@@ -839,6 +846,11 @@
       "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest"
     },
     {
+      "parent": "nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest",
+      "field": "stages",
+      "item": "nuri.business.service.informalsanction.dto.ApprovalStageRequest"
+    },
+    {
       "parent": "nuri.business.service.notification.dto.NotificationDispatchRequest",
       "field": "recipients",
       "item": "nuri.business.service.notification.dto.NotificationDispatchRequest$Recipient"
@@ -1316,6 +1328,21 @@
     {
       "dto": "nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest",
       "fields": []
+    },
+    {
+      "dto": "nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest",
+      "fields": [
+        {
+          "field": "aplnNm",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "stages",
+          "constraint": "NotNull",
+          "groups": []
+        }
+      ]
     },
     {
       "dto": "nuri.business.service.board.dto.SatisfactionDto",

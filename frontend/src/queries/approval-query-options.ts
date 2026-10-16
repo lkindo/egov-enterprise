@@ -7,6 +7,7 @@ import {
   approvalUserService,
   type ApprovalDraftRequest,
   type ApprovalResubmissionRequest,
+  type ApprovalSavedLineRequest,
   type ApprovalSupplementAnswer,
   type ApprovalTemporaryDraftReference,
   type ApprovalTemporaryDraftRequest,
@@ -61,12 +62,22 @@ export const approvalKeys = {
   temporaryDrafts: () => [...approvalKeys.all, 'temporary-drafts'] as const,
   temporaryDraftList: () => [...approvalKeys.temporaryDrafts(), 'list'] as const,
   temporaryDraft: (temporaryDraftSn: number) => [...approvalKeys.temporaryDrafts(), 'detail', temporaryDraftSn] as const,
+  /** 나의 결재선(D2). 임시저장과 같은 이유로 'detail'·'list' 접두 밖에 둔다 — 결재선 번호는 문서 번호와 다른 순번이다. */
+  savedLines: () => [...approvalKeys.all, 'saved-lines'] as const,
+  savedLineList: () => [...approvalKeys.savedLines(), 'list'] as const,
+  savedLine: (savedLineSn: number) => [...approvalKeys.savedLines(), 'detail', savedLineSn] as const,
 };
 
 /** 상신할 내용과, 이어 쓴 임시저장이 있으면 그 번호·버전. */
 export interface ApprovalCreateInput {
   request: ApprovalDraftRequest;
   temporaryDraft?: ApprovalTemporaryDraftReference;
+}
+
+/** 나의 결재선 저장. 번호가 없으면 새로 만들고, 있으면 그 결재선을 지금 결재선으로 바꾼다(같은 이름 덮어쓰기). */
+export interface ApprovalSavedLineSaveInput {
+  savedLineSn?: number;
+  request: ApprovalSavedLineRequest;
 }
 
 /** 임시저장. 번호가 없으면 새로 만들고, 있으면 그 버전으로 바꾼다. */
@@ -127,6 +138,22 @@ export const approvalQueryOptions = {
     staleTime: 0,
     throwOnError: false,
   }),
+  /**
+   * 나의 결재선 목록(D2). 다른 화면·기기에서 저장한 것이 보이도록 펼칠 때마다 다시 읽는다(최대 20개라 가볍다). 실패는 기안 창 안에서
+   * 안내한다 — 목록 하나 때문에 기안 창 전체를 오류 화면으로 바꾸지 않는다.
+   */
+  savedLines: () => queryOptions({
+    queryKey: approvalKeys.savedLineList(),
+    queryFn: () => approvalUserService.listSavedLines(),
+    staleTime: 0,
+    throwOnError: false,
+  }),
+  /** 결재선 불러오기 — 결재자 자격은 지금 기준이라 늘 다시 읽는다(옛 캐시로 자격을 잃은 사람을 넣지 않는다). */
+  savedLine: (savedLineSn: number) => queryOptions({
+    queryKey: approvalKeys.savedLine(savedLineSn),
+    queryFn: () => approvalUserService.getSavedLine(savedLineSn),
+    staleTime: 0,
+  }),
   /** 이어 쓰기 상세. 방금 다른 곳에서 고친 내용을 옛 캐시로 덮어 열지 않도록 늘 다시 읽는다. */
   temporaryDraft: (temporaryDraftSn: number) => queryOptions({
     queryKey: approvalKeys.temporaryDraft(temporaryDraftSn),
@@ -178,6 +205,22 @@ export const approvalMutationOptions = {
     mutationFn: async (temporaryDraftSn: number) => {
       await approvalUserService.deleteTemporaryDraft(temporaryDraftSn);
       await queryClient.invalidateQueries({ queryKey: approvalKeys.temporaryDrafts() });
+    },
+  }),
+  /** 나의 결재선은 결재 목록·결재선 제안에 섞이지 않는다 — 결재선 key 만 다시 읽는다. */
+  saveSavedLine: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async ({ savedLineSn, request }: ApprovalSavedLineSaveInput) => {
+      const saved = savedLineSn === undefined
+        ? await approvalUserService.createSavedLine(request)
+        : await approvalUserService.updateSavedLine(savedLineSn, request);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.savedLines() });
+      return saved;
+    },
+  }),
+  deleteSavedLine: (queryClient: QueryClient) => mutationOptions({
+    mutationFn: async (savedLineSn: number) => {
+      await approvalUserService.deleteSavedLine(savedLineSn);
+      await queryClient.invalidateQueries({ queryKey: approvalKeys.savedLines() });
     },
   }),
   /** 회수 후에도 같은 문서의 상세와 차수 이력을 최신화한다. */

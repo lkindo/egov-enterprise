@@ -1,19 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { QueryClientContext } from '@tanstack/react-query';
 import { X,
-  Bell,  
-  ShieldAlert,  
-  Activity,  
-  Database,  
-  Zap,  
+  Bell,
+  ShieldAlert,
+  Activity,
+  Database,
+  Zap,
   AlertTriangle,
-  Trash2 } from 'lucide-react';
+  Trash2,
+  Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toDisplayDateTime } from '@/lib/format-date';
+import { failureMessage } from '@/lib/safe-error-log';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/app/components/ui/toast';
 import { Dialog as DialogPrimitive } from 'radix-ui';
+import { notificationActions } from '@/extensions/generated-notification-actions';
+import { useSlotEntries } from '@/extensions/use-slot-entries';
+import type { NotificationAction } from '@/extensions/slots';
 
 interface Notification {
   id: number;
@@ -71,9 +78,105 @@ interface AppNotificationDrawerProps {
  */
 type FilterType = 'ALL' | 'UNREAD';
 
+/**
+ * 알림 카드의 바로 처리 결과(notification-actions 슬롯). 단추를 누른 알림마다 하나다. 판정·대기열에 올리는 중(진행 중)은 따로
+ * pendingNotificationId 로 둔다.
+ * - queued: 되돌릴 수 있는 대기 처리 — 되돌리기 단추를 둔다
+ * - done·undone·failed: 끝난 결과 문장(실패는 사유)
+ */
+type ActionState =
+  | { readonly phase: 'queued'; readonly token: number; readonly message: string; readonly undo: () => boolean; readonly undoneMessage: string }
+  | { readonly phase: 'done' | 'undone' | 'failed'; readonly message: string };
+
 export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, onDelete, error, onRetry, loading = false, unreadCount = 0, centerHref }: AppNotificationDrawerProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
   const hasUnreadNotifications = unreadCount > 0 || notifications.some(n => !n.isRead);
+  /*
+    [2026-10-16] 알림 카드의 바로 처리 단추는 다른 기능이 notification-actions 슬롯에 기여한다(결재 차례 알림의 [승인]). 이 드로어는
+    알림 기능 소유라 결재 코드를 import 하지 않는다 — 결재가 빠진 구성에서 레지스트리가 비면 단추만 사라지고 드로어는 남는다.
+    잠금(알림마다 한 번)·상태 문구·토스트·되돌리기 단추·[열기] 링크는 이 호스트가 소유하고, 기여는 match·submit 만 준다(post-actions 선례).
+    쿼리 클라이언트가 없는 곳(공급자 밖)에서는 단추를 두지 않는다 — submit 이 문서를 다시 읽어야 한다.
+  */
+  const contributedActions = useSlotEntries(notificationActions);
+  const queryClient = useContext(QueryClientContext);
+  const { toast } = useToast();
+  const [actionStates, setActionStates] = useState<Record<number, ActionState>>({});
+  const [announcement, setAnnouncement] = useState('');
+  // 판정·대기열에 올리는 중인 알림. 그동안 모든 바로 처리 단추를 잠근다(누른 단추는 aria-busy).
+  const [pendingNotificationId, setPendingNotificationId] = useState<number | null>(null);
+  // 같은 알림을 연달아 눌러도 한 번만 보낸다 — 렌더를 기다리지 않는 동기 잠금이다.
+  const pendingNotificationRef = useRef(new Set<number>());
+  // 되돌린 뒤에 늦게 끝난 결과가 상태를 덮지 않게 대기 처리마다 표지를 둔다.
+  const nextToken = useRef(0);
+  const queuedCount = Object.values(actionStates).filter(state => state.phase === 'queued').length;
+  // 되돌릴 수 있는 대기 처리가 있으면 탭을 닫기 전에 한 번 묻는다 — 닫으면 그 처리가 보내지지 않는다(결재함과 같다).
+  useEffect(() => {
+    if (queuedCount === 0) return undefined;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [queuedCount]);
+
+  const setActionState = (id: number, state: ActionState) => setActionStates(current => ({ ...current, [id]: state }));
+  // 지금 그 알림에 걸린 대기 처리의 표지. 되돌리거나 결과가 나면 지운다.
+  const queuedTokenRef = useRef(new Map<number, number>());
+
+  /** 대기 처리의 결과를 그 대기 처리가 아직 살아 있을 때만 반영한다(되돌린 뒤에 끝난 결과는 버린다). */
+  const followQueued = (notif: Notification, action: NotificationAction, token: number, settled: Promise<string>) => {
+    settled.then((message) => {
+      if (queuedTokenRef.current.get(notif.id) !== token) return;
+      queuedTokenRef.current.delete(notif.id);
+      setActionState(notif.id, { phase: 'done', message });
+      setAnnouncement(message);
+      toast(message, 'success');
+    }, (settleError: unknown) => {
+      if (queuedTokenRef.current.get(notif.id) !== token) return;
+      queuedTokenRef.current.delete(notif.id);
+      setActionState(notif.id, { phase: 'failed', message: failureMessage(settleError, action.failureMessage) });
+      toast(action.failureMessage, 'error');
+    });
+  };
+
+  /** 바로 처리. 같은 알림은 한 번만 보낸다(동기 잠금). 판정 실패·서버 거부는 사유를 카드 아래에, 무엇을 못 했는지는 토스트로 알린다. */
+  const handleNotificationAction = async (notif: Notification, action: NotificationAction, target: string) => {
+    if (!queryClient || pendingNotificationRef.current.has(notif.id)) return;
+    pendingNotificationRef.current.add(notif.id);
+    setPendingNotificationId(notif.id);
+    try {
+      const outcome = await action.submit({ notificationId: notif.id, title: notif.title ?? '', target, queryClient });
+      if (!notif.isRead) onMarkRead(notif.id);
+      setAnnouncement(outcome.message);
+      if (outcome.undo && outcome.settled) {
+        const token = nextToken.current++;
+        queuedTokenRef.current.set(notif.id, token);
+        setActionState(notif.id, { phase: 'queued', token, message: outcome.message, undo: outcome.undo,
+          undoneMessage: outcome.undoneMessage ?? '처리를 되돌렸습니다.' });
+        followQueued(notif, action, token, outcome.settled);
+      } else {
+        setActionState(notif.id, { phase: 'done', message: outcome.message });
+        toast(outcome.message, 'success');
+      }
+    } catch (submitError: unknown) {
+      setActionState(notif.id, { phase: 'failed', message: failureMessage(submitError, action.failureMessage) });
+      toast(action.failureMessage, 'error');
+    } finally {
+      pendingNotificationRef.current.delete(notif.id);
+      setPendingNotificationId(null);
+    }
+  };
+
+  /** 되돌리기. 아직 보내지 않았으면 취소하고, 이미 보냈으면 그 사실을 말한다(결과는 곧 온다). */
+  const undoNotificationAction = (id: number) => {
+    const state = actionStates[id];
+    if (state?.phase !== 'queued') return;
+    if (!state.undo()) {
+      setAnnouncement('이미 보낸 처리라 되돌릴 수 없습니다. 결과를 곧 알려 드립니다.');
+      return;
+    }
+    queuedTokenRef.current.delete(id);
+    setActionState(id, { phase: 'undone', message: state.undoneMessage });
+    setAnnouncement(state.undoneMessage);
+  };
 
   const filteredNotifications = activeFilter === 'UNREAD' ? notifications.filter((n) => !n.isRead) : notifications;
 
@@ -165,6 +268,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
              */}
           </div>
 
+          {/* 바로 처리의 진행·결과를 보조기술에 알린다(카드 안 문구와 같은 문장). 목록의 '불러오는 중' 상태(role=status)와 겹치지 않게
+              역할 없이 live 영역만 두고, 바로 처리 단추가 있을 때만 둔다. */}
+          {queryClient && contributedActions.length > 0 && <p aria-live="polite" className="sr-only">{announcement}</p>}
+
           {/* Notification Stream */}
           <div className="custom-scrollbar relative z-10 flex-1 space-y-2 overflow-y-auto p-3">
              {/* [2026-08-04] 조회 실패를 '알림 없음' 으로 렌더하지 않는다.
@@ -206,6 +313,13 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
              ) : (
                 filteredNotifications.map((notif) => {
                   const canMarkRead = !notif.linkUrl && !notif.isRead;
+                  // 이 알림에 붙는 바로 처리 단추(슬롯 기여). 목적지 링크가 있는 카드만 고른다 — 그 카드는 버튼이 아니라 중첩 단추가 생기지 않는다.
+                  const linkUrl = notif.linkUrl;
+                  const matchedActions = linkUrl && queryClient
+                    ? contributedActions.flatMap(action => { const target = action.match(linkUrl); return target ? [{ action, target }] : []; })
+                    : [];
+                  const actionState = actionStates[notif.id];
+                  const actionTitle = notif.title || '알림';
                   /* 목적지 링크가 있으면 카드와 링크를 중첩 인터랙션으로 만들지 않는다.
                      링크가 없는 미읽음 알림만 카드 자체가 "읽음 처리" 버튼 역할을 한다. */
                   const cardClassName = cn(
@@ -254,7 +368,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                          하지 않는다. 오히려 반대로, 이동하면서 읽음 처리도 되는 것이 맞다 —
                          사용자가 알림을 눌러 업무로 갔는데 그 알림이 미읽음으로 남으면 안 된다.
                       */}
-                      {notif.linkUrl ? (
+                      {notif.linkUrl && matchedActions.length === 0 ? (
                         <Link
                           href={notif.linkUrl}
                           aria-label={`${notif.title || '알림'} 업무로 이동`}
@@ -268,6 +382,53 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                         </Link>
                       ) : null}
                     </div>
+
+                    {/*
+                      [2026-10-16] 바로 처리 단추(예: 결재 차례 알림의 [승인])와 [열기]. 처리 결과·되돌리기·실패 사유를 카드 안에 남긴다.
+                      [열기] 는 '바로가기' 와 같은 목적지다 — 단추가 붙은 카드는 두 동작을 나란히 둔다.
+                    */}
+                    {notif.linkUrl && matchedActions.length > 0 && (
+                      <div className="relative z-10 mt-2 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {actionState?.phase === 'queued' ? (
+                            <Button type="button" size="sm" variant="outline" aria-label={`되돌리기: ${actionTitle}`} onClick={() => undoNotificationAction(notif.id)}>
+                              <Undo2 aria-hidden="true" /> 되돌리기
+                            </Button>
+                          ) : matchedActions.map(({ action, target }) => {
+                            return (
+                              <Button
+                                key={action.id}
+                                type="button"
+                                size="sm"
+                                aria-label={`${action.name}: ${actionTitle}`}
+                                aria-busy={pendingNotificationId === notif.id || undefined}
+                                disabled={pendingNotificationId !== null || actionState?.phase === 'done'}
+                                onClick={() => { void handleNotificationAction(notif, action, target); }}
+                              >
+                                {pendingNotificationId === notif.id ? action.busyLabel : action.label}
+                              </Button>
+                            );
+                          })}
+                          <Button asChild size="sm" variant="ghost">
+                            <Link
+                              href={notif.linkUrl}
+                              aria-label={`열기: ${actionTitle}`}
+                              onClick={() => {
+                                if (!notif.isRead) onMarkRead(notif.id);
+                                onClose();
+                              }}
+                            >
+                              열기
+                            </Link>
+                          </Button>
+                        </div>
+                        {actionState && (
+                          <p role={actionState.phase === 'failed' ? 'alert' : undefined} className={cn('text-xs', actionState.phase === 'failed' ? 'text-destructive-emphasis' : 'text-muted-foreground')}>
+                            {actionState.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Background Decoration */}
                     </>

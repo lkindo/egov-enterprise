@@ -163,7 +163,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   //   (POST /approvals/{id}/references)를 더했다.
   // 2026-10-04 프로그램 목록 퇴역: 435 -> 430. 프로그램 API 5개(목록·상세·등록·수정·삭제)를 걷었다.
   // 2026-10-12 커뮤니티 후속 C2: 430 -> 431. 커뮤니티 관리 창의 템플릿 후보(GET /admin/content/community/template-options)를 더했다.
-  assert.equal(operations.length, 431);
+  // 2026-10-16 나의 결재선: 431 -> 436. 저장한 결재선 목록·열기·저장·고치기·지우기(/approvals/saved-lines)를 더했다.
+  assert.equal(operations.length, 436);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

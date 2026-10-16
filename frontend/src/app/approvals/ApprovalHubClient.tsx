@@ -52,6 +52,7 @@ import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { linkedTab } from './approval-tabs';
+import { documentLabel, isAgreementStage, withObjectParticle } from './approval-decision';
 
 const EMPTY_APPROVALS: InformalSanctionDto[] = [];
 const NO_QUEUED: number[] = [];
@@ -149,10 +150,6 @@ function sanctionKey(item: InformalSanctionDto): string {
   return String(item.ifmlAtrzSn ?? '');
 }
 
-function documentLabel(item: InformalSanctionDto): string {
-  return item.docTtl || `#${item.ifmlAtrzSn}`;
-}
-
 /**
  * 서버 일시의 한국 날짜(yyyyMMdd). 시간대 표기가 없는 값은 서버 시각(Asia/Seoul) 그대로이므로 날짜 부분을 읽는다.
  * 브라우저 시간대로 해석하지 않는다 — 해외·UTC 환경에서 날짜가 하루 밀린다.
@@ -187,15 +184,6 @@ function currentTurn(item: InformalSanctionDto, now: number) {
   return { waiting, days };
 }
 
-/** 처리 동사에 목적격 조사를 붙인다 — '승인을', '동의를'. */
-function withObjectParticle(actionNm: string): string {
-  return actionNm === '동의' ? '동의를' : `${actionNm}을`;
-}
-
-/** 이 단계가 합의(전원 동의) 단계인가 — 처리 동사를 '승인' 대신 '동의' 로 부른다. */
-function isAgreementStage(item: InformalSanctionDto): boolean {
-  return item.stages?.find(stage => stage.status === 'ACTIVE')?.kind === 'AGREEMENT';
-}
 
 /**
  * 보는 사람이 이 문서의 보이는 결재선에 있는가(차례가 온 사람·아직 차례 전인 사람 모두). 이전 차수 참조자가 이 차수 결재자가 되면

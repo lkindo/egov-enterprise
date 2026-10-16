@@ -1914,6 +1914,42 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/api/v1/approvals/saved-lines",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalSavedLineService#createSavedLine",
+      "handlerRequiredTokens": [
+        "savedLineService.createSavedLine(userDetails.getEsntlId(), request)"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalSavedLine",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#updateApprovalSavedLine')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalSavedLineService#lockOwnedLine",
+      "handlerRequiredTokens": [
+        "savedLineService.updateSavedLine(userDetails.getEsntlId(), savedLineSn, request)"
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "ApprovalSavedLineService#lockOwnedLine",
+      "handlerRequiredTokens": [
+        "savedLineService.deleteSavedLine(userDetails.getEsntlId(), savedLineSn)"
+      ]
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/menus/bookmarks/{menuNo}",
       "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",
@@ -3787,6 +3823,17 @@
       ]
     },
     {
+      "target": "ApprovalSavedLineService#assertOwner",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "DurableJobAdministrationService#getJobs",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -4565,6 +4612,88 @@
       "requiredTokens": [
         "assertApplicant(applicant);",
         "draftRepository.deleteOwnedVersion(temporaryDraftSn, applicant, temporaryDraftVersion) == 0"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalSavedLineService#getSavedLines",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalSavedLineService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOwner(owner);",
+        "lineRepository.findTop20ByUserIdOrderByAplnNmAscIfmlAtrzIndvAplnSnAsc(owner)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalSavedLineService#getSavedLine",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalSavedLineService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOwner(owner);",
+        "findByIfmlAtrzIndvAplnSnAndUserId(Objects.requireNonNull(savedLineSn), owner)",
+        "lineAssistService.checkApprovers(owner, ids)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalSavedLineService#createSavedLine",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalSavedLineService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockLineOwner(owner);",
+        "assertEligible(owner, content.stages());",
+        "ApprovalSavedLine.create(owner,"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalSavedLineService#updateSavedLine",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalSavedLineService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockOwnedLine(owner, savedLineSn);",
+        "assertEligible(owner, content.stages());"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "ApprovalSavedLineService#lockOwnedLine",
+      "source": "business-app/src/main/java/nuri/business/service/informalsanction/ApprovalSavedLineService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertOwner(owner);",
+        "lineRepository.findOwnedForUpdate(Objects.requireNonNull(savedLineSn), owner)"
       ],
       "forbiddenTokens": [
         "SecurityUtil.hasRole(",
@@ -7778,6 +7907,41 @@
       "method": "DELETE",
       "path": "/api/v1/approvals/temporary-drafts/{temporaryDraftSn}",
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalTemporaryDraft",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/saved-lines",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLines",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#getApprovalSavedLine",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/approvals/saved-lines",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#updateApprovalSavedLine",
+      "access": "PERMISSION",
+      "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/approvals/saved-lines/{savedLineSn}",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine",
       "access": "PERMISSION",
       "permission": "APPROVAL_CREATE"
     }

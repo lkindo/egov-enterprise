@@ -28,6 +28,9 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     @MockitoBean
     private nuri.business.service.informalsanction.ApprovalTemporaryDraftService temporaryDraftService;
 
+    @MockitoBean
+    private nuri.business.service.informalsanction.ApprovalSavedLineService savedLineService;
+
     @Test
     @WithMockCustomUser
     @DisplayName("승인은 C 상태 코드로 요청할 수 있다")
@@ -419,6 +422,69 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                     .andExpect(status().isBadRequest());
         }
         verifyNoInteractions(temporaryDraftService);
+    }
+
+    /**
+     * [2026-10-16 D2] 나의 결재선은 인증 주체 본인의 것만 다룬다 — 경로의 번호와 본문은 그대로 넘기되 주인은 언제나 로그인한
+     * 사람의 esntlId 다.
+     */
+    @Test
+    @WithMockCustomUser(username = "drafter", esntlId = "DRAFTER_ESNTL")
+    @DisplayName("나의 결재선 목록·불러오기·저장·덮어쓰기·지우기는 현재 사용자의 esntlId 로 부른다")
+    void savedLineEndpointsUseCurrentUser() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/saved-lines"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/approvals/saved-lines/3"))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/saved-lines")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"aplnNm":"팀장 결재","stages":[{"kind":"AGREEMENT","approverIds":["A","B"]}]}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/approvals/saved-lines/3").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"aplnNm":"팀장 결재","stages":[{"kind":"APPROVAL","approverIds":["C"]}]}
+                                """))
+                .andExpect(status().isOk());
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/approvals/saved-lines/3")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(savedLineService).getSavedLines("DRAFTER_ESNTL");
+        verify(savedLineService).getSavedLine("DRAFTER_ESNTL", 3L);
+        var created = org.mockito.ArgumentCaptor.forClass(
+                nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest.class);
+        verify(savedLineService).createSavedLine(org.mockito.ArgumentMatchers.eq("DRAFTER_ESNTL"), created.capture());
+        org.assertj.core.api.Assertions.assertThat(created.getValue().getAplnNm()).isEqualTo("팀장 결재");
+        org.assertj.core.api.Assertions.assertThat(created.getValue().getStages()).singleElement()
+                .satisfies(stage -> org.assertj.core.api.Assertions.assertThat(stage.approverIds()).containsExactly("A", "B"));
+        verify(savedLineService).updateSavedLine(org.mockito.ArgumentMatchers.eq("DRAFTER_ESNTL"),
+                org.mockito.ArgumentMatchers.eq(3L), org.mockito.ArgumentMatchers.any());
+        verify(savedLineService).deleteSavedLine("DRAFTER_ESNTL", 3L);
+        verifyNoInteractions(approvalService, temporaryDraftService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("나의 결재선 요청은 이름·길이·결재선 형식을 서비스 전에 400 으로 막는다")
+    void rejectsMalformedSavedLineBeforeService() throws Exception {
+        String line = "\"stages\":[{\"kind\":\"APPROVAL\",\"approverIds\":[\"A\"]}]";
+        String[][] cases = {
+                {"POST", "/api/v1/approvals/saved-lines", "{" + line + "}"},
+                {"POST", "/api/v1/approvals/saved-lines", "{\"aplnNm\":\"  \"," + line + "}"},
+                {"POST", "/api/v1/approvals/saved-lines", "{\"aplnNm\":\"" + "가".repeat(201) + "\"," + line + "}"},
+                {"POST", "/api/v1/approvals/saved-lines", "{\"aplnNm\":\"이름\"}"},
+                {"POST", "/api/v1/approvals/saved-lines", "{\"aplnNm\":\"이름\",\"stages\":[]}"},
+                {"POST", "/api/v1/approvals/saved-lines", "{\"aplnNm\":\"이름\",\"stages\":[{\"kind\":\"APPROVAL\",\"approverIds\":[]}]}"},
+                {"PUT", "/api/v1/approvals/saved-lines/3", "{\"aplnNm\":\"이름\",\"stages\":[null]}"},
+        };
+        for (String[] c : cases) {
+            var request = "PUT".equals(c[0]) ? put(c[1]) : org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(c[1]);
+            mockMvc.perform(request.with(csrf()).contentType(MediaType.APPLICATION_JSON).content(c[2]))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(savedLineService);
     }
 
     /**

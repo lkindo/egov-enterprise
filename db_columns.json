@@ -1900,6 +1900,66 @@
     "column_name": "mdfcn_dt"
   },
   {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "ifml_atrz_indv_apln_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "apln_nm"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "ifml_atrz_indv_apln_sn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "atrz_seq"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "user_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "acrd_yn"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_ifml_atrz_indv_apln_dtl",
+    "column_name": "mdfcn_dt"
+  },
+  {
     "table_name": "tb_ifml_atrz_info",
     "column_name": "aprv_yn"
   },

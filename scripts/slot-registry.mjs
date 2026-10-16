@@ -47,6 +47,8 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
     knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
     monitoring: ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
   },
+  // 머리글 알림 드로어(알림 기능 소유, 앱 틀)가 알림 카드의 바로 처리 단추를 그린다 — 결재 차례 알림의 [승인] 등.
+  'notification-actions': ['frontend/src/app/components/ui/app-notification-drawer.tsx'],
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
   'recipient-picker-sources': ['frontend/src/app/components/ui/recipient-picker-sources.ts'],
   // 나의 업무 탭 줄·업무 보고 머리 링크는 core 도우미 하나가 읽는다(업무 허브 분해 W1) — 기능 화면은 레지스트리를 직접 읽지 않는다.

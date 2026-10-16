@@ -98,6 +98,7 @@ class ApprovalWorkflowMigrationIntegrationTest extends SharedPostgresMigrationTe
 
             assertTemporaryDraftSchema(statement);
             assertReferenceSchema(statement, revision);
+            assertSavedLineSchema(statement);
         }
     }
 
@@ -338,6 +339,107 @@ class ApprovalWorkflowMigrationIntegrationTest extends SharedPostgresMigrationTe
         try (var table = statement.executeQuery("SELECT obj_description('tb_ifml_atrz_tmpr_strg'::regclass, 'pg_class')")) {
             assertThat(table.next()).isTrue();
             assertThat(table.getString(1)).startsWith("비공식결재임시저장");
+        }
+    }
+
+    /**
+     * V2_129(2026-10-16 D2): 나의 결재선. 주인은 실제 사용자 행에 묶이고 그 행과 함께 지워지며, 결재선 행은 결재선과 함께
+     * 지워진다. 같은 주인의 결재선 이름은 겹치지 않고 비울 수 없다. 결재선의 사람에는 FK 가 없다(남의 결재선에 든 사람을 지울 때
+     * 막히지 않는다). 단계와 유형은 결재 표와 같은 제약을 지닌다.
+     */
+    private void assertSavedLineSchema(Statement statement) throws SQLException {
+        statement.executeUpdate("""
+                INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd)
+                VALUES ('WF_LINER','wf_liner','line fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD')),
+                       ('WF_LINE_LEAVER','wf_line_leaver','line fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))
+                """);
+        long line = insertSavedLine(statement, "WF_LINER", "팀장 결재");
+        assertThat(statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_indv_apln_dtl(ifml_atrz_indv_apln_sn,atrz_seq,user_id,crt_dt,mdfcn_dt)
+                VALUES (%d,1,'WF_NOBODY',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(line))).as("결재선의 사람에는 FK 가 없다").isEqualTo(1);
+        try (var row = statement.executeQuery(
+                "SELECT acrd_yn FROM tb_ifml_atrz_indv_apln_dtl WHERE ifml_atrz_indv_apln_sn=" + line)) {
+            assertThat(row.next()).isTrue();
+            assertThat(row.getString(1)).isEqualTo("N");
+        }
+        assertThatThrownBy(() -> insertSavedLine(statement, "WF_LINER", "팀장 결재"))
+                .isInstanceOf(SQLException.class).hasMessageContaining("uk_tb_ifml_atrz_indv_apln_user_id_apln_nm");
+        assertThat(insertSavedLine(statement, "WF_LINE_LEAVER", "팀장 결재")).as("이름은 주인마다 따로다").isPositive();
+        assertThatThrownBy(() -> insertSavedLine(statement, "WF_LINER", "   "))
+                .isInstanceOf(SQLException.class).hasMessageContaining("ck_tb_ifml_atrz_indv_apln_apln_nm");
+        assertThatThrownBy(() -> insertSavedLine(statement, "WF_UNKNOWN_USER", "이름"))
+                .isInstanceOf(SQLException.class).hasMessageContaining("fk_tb_ifml_atrz_indv_apln_tb_user_info");
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_indv_apln_dtl(ifml_atrz_indv_apln_sn,atrz_seq,user_id,crt_dt,mdfcn_dt)
+                VALUES (-1,1,'WF_APPROVER',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """)).isInstanceOf(SQLException.class).hasMessageContaining("foreign key");
+        for (String seq : new String[]{"0", "11"}) {
+            assertThatThrownBy(() -> statement.executeUpdate("""
+                    INSERT INTO tb_ifml_atrz_indv_apln_dtl(ifml_atrz_indv_apln_sn,atrz_seq,user_id,crt_dt,mdfcn_dt)
+                    VALUES (%d,%s,'WF_SEQ',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                    """.formatted(line, seq))).isInstanceOf(SQLException.class)
+                    .hasMessageContaining("ck_tb_ifml_atrz_indv_apln_dtl_atrz_seq");
+        }
+        assertThatThrownBy(() -> statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_indv_apln_dtl(ifml_atrz_indv_apln_sn,atrz_seq,user_id,acrd_yn,crt_dt,mdfcn_dt)
+                VALUES (%d,2,'WF_KIND','X',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(line))).isInstanceOf(SQLException.class)
+                .hasMessageContaining("ck_tb_ifml_atrz_indv_apln_dtl_acrd_yn");
+
+        // 결재선을 지우면 결재선 행도 함께 지워진다.
+        statement.executeUpdate("DELETE FROM tb_ifml_atrz_indv_apln WHERE ifml_atrz_indv_apln_sn=" + line);
+        assertThat(count(statement, "tb_ifml_atrz_indv_apln_dtl WHERE ifml_atrz_indv_apln_sn=" + line)).isZero();
+        // 사용자 행을 지우면 그 사람의 결재선과 결재선 행이 함께 지워진다 — 개인 설정을 고아로 남기지 않는다.
+        long leaving = insertSavedLine(statement, "WF_LINE_LEAVER", "떠나는 사람 결재선");
+        statement.executeUpdate("""
+                INSERT INTO tb_ifml_atrz_indv_apln_dtl(ifml_atrz_indv_apln_sn,atrz_seq,user_id,acrd_yn,crt_dt,mdfcn_dt)
+                VALUES (%d,1,'WF_LINER','Y',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """.formatted(leaving));
+        statement.executeUpdate("DELETE FROM tb_user_info WHERE esntl_id='WF_LINE_LEAVER'");
+        assertThat(count(statement, "tb_ifml_atrz_indv_apln WHERE user_id='WF_LINE_LEAVER'")).isZero();
+        assertThat(count(statement, "tb_ifml_atrz_indv_apln_dtl WHERE ifml_atrz_indv_apln_sn=" + leaving)).isZero();
+
+        try (var sequence = statement.executeQuery(
+                "SELECT pg_get_serial_sequence('tb_ifml_atrz_indv_apln','ifml_atrz_indv_apln_sn')")) {
+            assertThat(sequence.next()).isTrue();
+            assertThat(sequence.getString(1)).isEqualTo("public.sq_ifml_atrz_indv_apln_sn");
+        }
+        try (var term = statement.executeQuery("""
+                SELECT term_name, domain_name FROM meta_standard_terms WHERE eng_abbr='IFML_ATRZ_INDV_APLN_SN'
+                """)) {
+            assertThat(term.next()).isTrue();
+            assertThat(term.getString(1)).isEqualTo("비공식결재개인결재선일련번호");
+            assertThat(term.getString(2)).isEqualTo("일련번호N19");
+        }
+        try (var comments = statement.executeQuery("""
+                SELECT c.relname || '.' || a.attname, col_description(c.oid, a.attnum)
+                FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid
+                WHERE c.relname IN ('tb_ifml_atrz_indv_apln','tb_ifml_atrz_indv_apln_dtl')
+                  AND a.attname IN ('user_id','frst_rgtr_id')
+                ORDER BY 1
+                """)) {
+            java.util.Map<String, String> byColumn = new java.util.LinkedHashMap<>();
+            while (comments.next()) byColumn.put(comments.getString(1), comments.getString(2));
+            assertThat(byColumn).hasSize(4);
+            assertThat(byColumn.get("tb_ifml_atrz_indv_apln.user_id")).contains("esntlId");
+            assertThat(byColumn.get("tb_ifml_atrz_indv_apln_dtl.user_id")).contains("esntlId");
+            assertThat(byColumn.get("tb_ifml_atrz_indv_apln.frst_rgtr_id")).contains("loginId");
+            assertThat(byColumn.get("tb_ifml_atrz_indv_apln_dtl.frst_rgtr_id")).contains("loginId");
+        }
+        try (var table = statement.executeQuery("SELECT obj_description('tb_ifml_atrz_indv_apln'::regclass, 'pg_class')")) {
+            assertThat(table.next()).isTrue();
+            assertThat(table.getString(1)).startsWith("비공식결재개인결재선");
+        }
+    }
+
+    private static long insertSavedLine(Statement statement, String owner, String name) throws SQLException {
+        try (var row = statement.executeQuery("""
+                INSERT INTO tb_ifml_atrz_indv_apln(user_id,apln_nm,crt_dt,mdfcn_dt)
+                VALUES ('%s','%s',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) RETURNING ifml_atrz_indv_apln_sn
+                """.formatted(owner, name))) {
+            assertThat(row.next()).isTrue();
+            return row.getLong(1);
         }
     }
 
