@@ -200,7 +200,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       inclusionNotes: inclusionNotes(composition, current),
       degradationNotes: degradationNotes(composition, current),
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
-      unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root)).filter(row => composition.permissionCodes.includes(row.code))
+      unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root, { permissionCodes: composition.permissionCodes }))
+        .filter(row => composition.permissionCodes.includes(row.code))
         .map(row => ({ ...row, owner: owner(row.code) })),
       outputDirectory: `build/reusable-base/source/${composition.project.name}-<generation-id>`,
       // 공통 기반 시작 구성과 비교해 이 구성이 더하는 메뉴를 표시한다(설계서 E8). 그 시작 구성이 없거나 풀리지 않으면
