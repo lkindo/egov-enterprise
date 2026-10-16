@@ -5,12 +5,12 @@ import type { NotificationAction, NotificationActionOutcome, NotificationActionS
 
 /*
   [2026-10-16] 알림 카드의 바로 처리 단추는 다른 기능이 notification-actions 슬롯에 기여한다. 이 시험은 알림 기능 소유의 호스트
-  계약이라 결재에 기대지 않는다 — 가짜 기여로 잠금·되돌리기·결과·실패 사유·노출 술어·[열기] 를 본다. 실제 결재 기여의 판정은
+  계약이라 결재에 기대지 않는다 — 결재가 없는 구성에도 남으므로 권한 코드도 알림 기능 것만 쓴다. 가짜 기여로 잠금·되돌리기·결과·실패 사유·노출 술어·[열기] 를 본다. 실제 결재 기여의 판정은
   src/queries/__tests__/approval-notification-action.test.ts 가 본다.
 */
 const mocks = vi.hoisted(() => ({
   registry: [] as SlotContributions<'notification-actions'>[],
-  user: { esntlId: 'APPROVER', authorizationVersion: 'v1', permissions: ['APPROVAL_APPROVE'] as string[] },
+  user: { esntlId: 'APPROVER', authorizationVersion: 'v1', permissions: ['NOTI_DISPATCH'] as string[] },
   toast: vi.fn(),
 }));
 vi.mock('@/extensions/generated-notification-actions', () => ({ get notificationActions() { return mocks.registry; } }));
@@ -24,7 +24,7 @@ const notifications = [
   { id: 2, title: '결재 결과', message: '승인되었습니다.', time: '2026-10-16T09:01:00', isRead: false, linkUrl: '/approvals?tab=SUBMITTED&doc=41' },
 ];
 
-function action(submit: NotificationAction['submit'], visibleWhen: NotificationAction['visibleWhen'] = { permissions: ['APPROVAL_APPROVE'] }): NotificationAction {
+function action(submit: NotificationAction['submit'], visibleWhen: NotificationAction['visibleWhen'] = { permissions: ['NOTI_DISPATCH'] }): NotificationAction {
   return {
     id: 'probe-approve', order: 10, label: '승인', busyLabel: '확인 중…', name: '결재 바로 승인',
     failureMessage: '결재를 승인하지 못했습니다.', visibleWhen,
@@ -49,7 +49,7 @@ function deferred<T>() {
 describe('AppNotificationDrawer notification-actions host', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.user.permissions = ['APPROVAL_APPROVE'];
+    mocks.user.permissions = ['NOTI_DISPATCH'];
     mocks.registry = [];
   });
 
@@ -64,7 +64,7 @@ describe('AppNotificationDrawer notification-actions host', () => {
   });
 
   it('노출 술어의 권한이 없으면 단추를 두지 않는다', () => {
-    mocks.user.permissions = ['APPROVAL_READ'];
+    mocks.user.permissions = ['NOTI_READ'];
     mocks.registry = [[action(vi.fn())]];
     renderDrawer();
     expect(screen.queryByRole('button', { name: /결재 바로 승인/ })).not.toBeInTheDocument();
