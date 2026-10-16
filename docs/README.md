@@ -127,7 +127,6 @@
 | [frontend-content-style.md](03-guides/frontend-content-style.md) | 한국어 우선 UI 문구·오류·복구·도메인 용어 계약 |
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
 | [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택, 관리 콘솔의 메뉴 관리·화면 관리·권한 작업대의 현재 구현과 검증 경계 |
-| [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
 | [evidence-first-improvement-loop-prompt.md](03-guides/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 시작 구성 다섯의 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 | [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |
@@ -143,7 +142,6 @@
 | [source-simplification-results-2026-10-06.md](04-operations/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
 | [source-simplification-recheck-2026-10-07.md](04-operations/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
 | [adversarial-reassessment-2026-09-27.md](04-operations/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
-| [evidence-first-improvement-verification-2026-09-27.md](04-operations/evidence-first-improvement-verification-2026-09-27.md) | R0–R9 로컬 검증 결과와 미완료 경계 — 실제 제목·설문 E2E, Lighthouse 비교, 승인·운영 증거 대기 |
 | [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
@@ -153,12 +151,10 @@
 | [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
 | [durable-work-recovery.md](04-operations/durable-work-recovery.md) | 후속 작업 상태·시도 한도·감사와 결속한 재처리, 교체 파일 보호와 중단 후 재개 |
 | [sms-provider-operations.md](04-operations/sms-provider-operations.md) | SENS 설정, 접수·최종 전달 구분과 불확실한 발송의 재전송 방지 |
-| [enterprise-improvement-verification.md](04-operations/enterprise-improvement-verification.md) | 5개 개선 우선순위의 구현·격리 검증·red 증거와 같은 평가 기준의 재평가 |
 | [mfa-operations.md](04-operations/mfa-operations.md) | TOTP 등록·로그인·분실 복구, 키 설정·백업, 세션 폐기·감사와 보호계정 단계 적용 경계 |
 | [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
 | [migration-release-log.md](04-operations/migration-release-log.md) | 마이그레이션이 어느 릴리스로 언제 배포됐는지의 기록 — Contract waiver의 선행 Expand 관측 기간 근거 |
-| [improvement-validation-2026-09-09.md](04-operations/improvement-validation-2026-09-09.md) | 개선 우선순위 1~6의 검증 범위와 OCI 표준 불일치 적용 검토안 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [observability-baseline.md](04-operations/observability-baseline.md) | 요청·첨부 점검·영속 작업 상태 지표, 9개 경보와 실제 promtool 시간 흐름 검증 |
