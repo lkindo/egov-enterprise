@@ -38,6 +38,7 @@ import {
   commitApprovalNow,
   flushApprovalCommits,
   pendingApprovalCommits,
+  queuedApprovalLabel,
   scheduleApprovalCommit,
   subscribeApprovalCommits,
 } from './approval-undo-queue';
@@ -563,7 +564,7 @@ export default function ApprovalHubClient() {
         forgetQueued(id);
         setCommittingIds(current => current.filter(entry => entry !== id));
       }
-    });
+    }, { label: { title, actionNm } });
     if (!accepted) return;
     setQueuedDocs(current => ({ ...current, [id]: { title, actionNm, item, reason } }));
     // 단건으로 처리한 문서는 여러 건 승인의 선택에서 뺀다 — 되돌려도 다시 고른 것으로 남지 않는다.
@@ -577,10 +578,12 @@ export default function ApprovalHubClient() {
   };
 
   const undoApprove = (id: number) => {
+    // 알림 카드에서 올린 승인은 이 화면의 기록이 없다 — 대기열이 올릴 때 받은 이름을 취소 전에 읽어 둔다.
+    const label = queuedApprovalLabel(id);
     if (!cancelApprovalCommit(id)) return;
     const entry = queuedDocs[id];
     forgetQueued(id);
-    const title = entry?.title ?? `#${id}`;
+    const title = entry?.title ?? label?.title ?? `#${id}`;
     const outcome = entry ? settleOpinion(entry.item, entry.reason) : 'kept';
     if (outcome === 'restored') {
       setAnnouncement(`‘${title}’ 처리를 되돌렸습니다. 문서는 그대로 대기 중입니다.${entry?.reason ? ' 적었던 의견을 다시 채웠습니다.' : ''}`);
@@ -1025,11 +1028,13 @@ export default function ApprovalHubClient() {
         {queued.length > 0 && (
           <section className="space-y-2 rounded-md border border-primary/40 bg-primary/10 p-3" aria-label="처리 예정">
             {queued.map((id) => {
-              // 이름은 대기열에 올릴 때 기억해 둔다 — 페이지·탭을 옮겨 목록에 없어도 '#번호' 로 바뀌지 않는다.
+              // 이름은 대기열에 올릴 때 기억해 둔다 — 페이지·탭을 옮겨 목록에 없어도 '#번호' 로 바뀌지 않는다. 알림 카드에서 올린
+              // 승인은 이 화면의 기록이 없어 대기열이 받은 이름(합의 단계면 '동의')을 쓴다.
               const entry = queuedDocs[id];
+              const label = queuedApprovalLabel(id);
               const listed = list.find(item => item.ifmlAtrzSn === id);
-              const title = entry?.title ?? (listed ? documentLabel(listed) : `#${id}`);
-              const actionNm = entry?.actionNm ?? '승인';
+              const title = entry?.title ?? label?.title ?? (listed ? documentLabel(listed) : `#${id}`);
+              const actionNm = entry?.actionNm ?? label?.actionNm ?? (listed && isAgreementStage(listed) ? '동의' : '승인');
               return (
                 <div key={id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span>‘{title}’ {withObjectParticle(actionNm)} {APPROVAL_UNDO_MS / 1000}초 뒤 처리합니다.</span>

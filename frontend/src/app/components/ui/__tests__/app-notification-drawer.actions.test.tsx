@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NotificationAction, NotificationActionOutcome, SlotContributions } from '@/extensions/slots';
+import type { NotificationAction, NotificationActionOutcome, NotificationActionSettlement, SlotContributions } from '@/extensions/slots';
 
 /*
   [2026-10-16] 알림 카드의 바로 처리 단추는 다른 기능이 notification-actions 슬롯에 기여한다. 이 시험은 알림 기능 소유의 호스트
@@ -78,7 +78,7 @@ describe('AppNotificationDrawer notification-actions host', () => {
   });
 
   it('연달아 눌러도 한 번만 보내고, 되돌릴 수 있는 처리는 되돌리기를 둔 뒤 결과를 알린다', async () => {
-    const settled = deferred<string>();
+    const settled = deferred<NotificationActionSettlement>();
     const undo = vi.fn(() => true);
     const submit = vi.fn(async (): Promise<NotificationActionOutcome> => ({ message: '10초 뒤 처리합니다.', undo, undoMs: 10_000, settled: settled.promise, undoneMessage: '되돌렸습니다.' }));
     mocks.registry = [[action(submit)]];
@@ -90,7 +90,7 @@ describe('AppNotificationDrawer notification-actions host', () => {
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ notificationId: 1, title: '결재 요청', target: '41' }));
     expect(handlers.onMarkRead).toHaveBeenCalledWith(1);
     expect(screen.getByText('10초 뒤 처리합니다.', { selector: 'p:not([aria-live])' })).toBeInTheDocument();
-    await act(async () => { settled.resolve('승인했습니다.'); await settled.promise; });
+    await act(async () => { settled.resolve({ kind: 'done', message: '승인했습니다.' }); await settled.promise; });
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('승인했습니다.', 'success'));
     expect(screen.queryByRole('button', { name: '되돌리기: 결재 요청' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' })).toBeDisabled();
@@ -98,7 +98,7 @@ describe('AppNotificationDrawer notification-actions host', () => {
   });
 
   it('되돌리면 대기 처리를 취소하고, 뒤늦게 끝난 결과가 상태를 덮지 않는다', async () => {
-    const settled = deferred<string>();
+    const settled = deferred<NotificationActionSettlement>();
     const undo = vi.fn(() => true);
     mocks.registry = [[action(async () => ({ message: '10초 뒤 처리합니다.', undo, undoMs: 10_000, settled: settled.promise, undoneMessage: '승인 처리를 되돌렸습니다.' }))]];
     renderDrawer();
@@ -106,8 +106,34 @@ describe('AppNotificationDrawer notification-actions host', () => {
     fireEvent.click(await screen.findByRole('button', { name: '되돌리기: 결재 요청' }));
     expect(undo).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('승인 처리를 되돌렸습니다.', { selector: 'p:not([aria-live])' })).toBeInTheDocument();
-    await act(async () => { settled.resolve('늦은 결과'); await settled.promise; });
+    await act(async () => { settled.resolve({ kind: 'done', message: '늦은 결과' }); await settled.promise; });
     expect(mocks.toast).not.toHaveBeenCalledWith('늦은 결과', 'success');
+    expect(screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' })).toBeEnabled();
+  });
+
+  it('같은 대기열을 나눠 쓰는 결재함에서 되돌려 settled 가 되돌림으로 끝나면, 카드도 되돌림으로 옮기고 이탈 경고를 거둔다', async () => {
+    const settled = deferred<NotificationActionSettlement>();
+    // 결재함이 먼저 취소했으므로 이 카드의 되돌리기는 할 일이 없다(누르면 '이미 보냈다' 고 잘못 말하던 결함).
+    const undo = vi.fn(() => false);
+    mocks.registry = [[action(async () => ({ message: '10초 뒤 처리합니다.', undo, undoMs: 10_000, settled: settled.promise, undoneMessage: '승인 처리를 되돌렸습니다.' }))]];
+    renderDrawer();
+    const approve = screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' });
+    fireEvent.click(approve);
+    await screen.findByRole('button', { name: '되돌리기: 결재 요청' });
+    const queuedLeave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(queuedLeave);
+    expect(queuedLeave.defaultPrevented).toBe(true);
+
+    await act(async () => { settled.resolve({ kind: 'undone' }); await settled.promise; });
+
+    expect(await screen.findByText('승인 처리를 되돌렸습니다.', { selector: 'p:not([aria-live])' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '되돌리기: 결재 요청' })).not.toBeInTheDocument();
+    const leave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(leave);
+    expect(leave.defaultPrevented).toBe(false);
+    expect(undo).not.toHaveBeenCalled();
+    expect(mocks.toast).not.toHaveBeenCalled();
+    // 대기 중에는 [승인] 자리에 되돌리기가 있었다 — 되돌림으로 옮기면 [승인] 이 다시 그려지고 누를 수 있다.
     expect(screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' })).toBeEnabled();
   });
 
@@ -123,7 +149,7 @@ describe('AppNotificationDrawer notification-actions host', () => {
   });
 
   it('보낸 뒤의 서버 거부도 사유를 경보로 보인다', async () => {
-    const settled = deferred<string>();
+    const settled = deferred<NotificationActionSettlement>();
     mocks.registry = [[action(async () => ({ message: '10초 뒤 처리합니다.', undo: () => true, undoMs: 10_000, settled: settled.promise }))]];
     renderDrawer();
     fireEvent.click(screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' }));

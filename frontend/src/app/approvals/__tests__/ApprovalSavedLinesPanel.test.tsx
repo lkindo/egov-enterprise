@@ -15,9 +15,11 @@ const TWO_STAGES: Stage[] = [{ kind: 'AGREEMENT', approverIds: ['BOSS', 'PEER'] 
 
 function renderPanel(stages: Stage[] = TWO_STAGES) {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false }, queries: { retry: false } } });
-  const onApply = vi.fn(); const onNotice = vi.fn();
-  render(<QueryClientProvider client={queryClient}><ApprovalSavedLinesPanel stages={stages} disabled={false} onApply={onApply} onNotice={onNotice} /></QueryClientProvider>);
-  return { onApply, onNotice };
+  const onApply = vi.fn(); const onNotice = vi.fn(); const onEmptyStages = vi.fn();
+  render(<QueryClientProvider client={queryClient}>
+    <ApprovalSavedLinesPanel stages={stages} disabled={false} onApply={onApply} onNotice={onNotice} onEmptyStages={onEmptyStages} />
+  </QueryClientProvider>);
+  return { onApply, onNotice, onEmptyStages };
 }
 function conflict(code: string, status = 409) {
   return Object.assign(new Error(`synthetic ${code}`), { response: { status, data: { code } } });
@@ -83,19 +85,36 @@ describe('ApprovalSavedLinesPanel', () => {
     expect(mocks.createSavedLine).not.toHaveBeenCalled();
   });
 
-  it('결재자를 지정한 단계만 저장하고 빠진 단계 수를 말한다', async () => {
-    const { onNotice } = renderPanel([...TWO_STAGES, { kind: 'APPROVAL', approverIds: [] }]);
+  it('편집기의 단계를 그대로 저장한다', async () => {
+    const { onNotice, onEmptyStages } = renderPanel();
     await screen.findByRole('button', { name: /^나의 결재선 \(2/ });
     await openSave('  새 결재선 ');
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     await waitFor(() => expect(mocks.createSavedLine).toHaveBeenCalledWith({ aplnNm: '새 결재선', stages: TWO_STAGES }));
     expect(mocks.updateSavedLine).not.toHaveBeenCalled();
-    await waitFor(() => expect(onNotice).toHaveBeenCalledWith('‘새 결재선’ 결재선을 저장했습니다. 결재자가 없는 단계 1개는 저장하지 않았습니다.'));
+    await waitFor(() => expect(onNotice).toHaveBeenCalledWith('‘새 결재선’ 결재선을 저장했습니다.'));
+    expect(onEmptyStages).not.toHaveBeenCalled();
     expect(screen.queryByLabelText('결재선 이름')).not.toBeInTheDocument();
   });
 
-  it('결재자가 한 명도 없으면 저장하지 않는다', async () => {
-    renderPanel([{ kind: 'APPROVAL', approverIds: [] }]); await openSave('빈 결재선');
+  it('결재자가 없는 단계가 하나라도 있으면 저장하지 않고 편집기의 단계 순서를 넘긴다 — 빼고 보내면 서버가 매기는 단계 번호가 어긋난다', async () => {
+    // 1단계가 비고 2단계에 자격 없는 사람이 있으면, 빼고 보낸 종전 동작은 서버가 '1단계' 라고 답해 엉뚱한 단계를 가리켰다.
+    const { onEmptyStages, onNotice } = renderPanel([
+      { kind: 'APPROVAL', approverIds: [] }, { kind: 'APPROVAL', approverIds: ['RETIRED'] }, { kind: 'AGREEMENT', approverIds: [] },
+    ]);
+    await openSave('가운데 빈 결재선');
+    fireEvent.click(screen.getByRole('button', { name: '저장' }));
+    await waitFor(() => expect(onEmptyStages).toHaveBeenCalledWith([0, 2]));
+    expect(mocks.createSavedLine).not.toHaveBeenCalled();
+    expect(mocks.updateSavedLine).not.toHaveBeenCalled();
+    expect(onNotice).not.toHaveBeenCalled();
+    // 이름은 맞으므로 이름 칸은 오류가 아니고, 저장 칸은 열린 채 이름을 지킨다.
+    expect(screen.getByLabelText('결재선 이름')).toHaveValue('가운데 빈 결재선');
+    expect(screen.getByLabelText('결재선 이름')).not.toHaveAttribute('aria-invalid');
+  });
+
+  it('단계가 하나도 없으면 저장하지 않는다', async () => {
+    renderPanel([]); await openSave('빈 결재선');
     fireEvent.click(screen.getByRole('button', { name: '저장' }));
     // 이름 칸 아래와 오류 요약에 함께 보인다.
     expect(await screen.findAllByText(/결재자를 지정한 단계가 없어 저장할 수 없습니다/)).not.toHaveLength(0);

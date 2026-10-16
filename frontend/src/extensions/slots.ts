@@ -282,8 +282,16 @@ export interface NotificationActionContext {
 }
 
 /**
+ * 대기 처리가 끝난 모습. 실제로 보냈으면 done(알릴 문장), 보내기 전에 되돌렸으면 undone 이다 — 되돌린 곳이 호스트가 아니어도
+ * (결재함의 '처리 예정' 처럼 같은 대기열을 나눠 쓰는 다른 화면) undone 으로 끝난다.
+ */
+export type NotificationActionSettlement =
+  | { readonly kind: 'done'; readonly message: string }
+  | { readonly kind: 'undone' };
+
+/**
  * notification-actions 의 submit 이 돌려주는 결과. 일정 시간 뒤에 보내는 처리(되돌리기 창)면 undo·undoMs·settled 를 함께 준다 —
- * 호스트가 되돌리기 단추를 그 시간 동안 두고, settled 가 끝나면 결과를 알린다. undo 로 되돌렸으면 settled 는 끝나지 않을 수 있다.
+ * 호스트가 되돌리기 단추를 그 시간 동안 두고, settled 가 끝나면 결과를 알린다. 어디서 되돌렸든 settled 는 undone 으로 끝난다.
  */
 export interface NotificationActionOutcome {
   /** 누른 직후 알릴 문장(예: 10초 뒤 처리합니다). */
@@ -294,8 +302,8 @@ export interface NotificationActionOutcome {
   readonly undoMs?: number;
   /** 되돌렸을 때 알릴 문장. 없으면 호스트가 '처리를 되돌렸습니다.' 라고 한다. */
   readonly undoneMessage?: string;
-  /** 실제 처리가 끝나면 알릴 문장으로 끝나고, 실패하면 그 오류로 거절된다. */
-  readonly settled?: Promise<string>;
+  /** 실제로 보냈으면 알릴 문장으로, 보내기 전에 되돌렸으면 undone 으로 끝나고, 보낸 처리가 실패하면 그 오류로 거절된다. */
+  readonly settled?: Promise<NotificationActionSettlement>;
 }
 
 /**

@@ -13,6 +13,25 @@ export const APPROVAL_UNDO_MS = 10_000;
 interface PendingCommit {
   timer: ReturnType<typeof setTimeout>;
   run: () => Promise<void>;
+  onCancel?: () => void;
+  label?: QueuedApprovalLabel;
+}
+
+/** 대기 중인 승인을 다른 화면이 말할 때 쓰는 이름 — 결재함과 알림 카드가 같은 대기열을 나눠 쓴다. */
+export interface QueuedApprovalLabel {
+  title: string;
+  /** '승인' 또는 합의 단계의 '동의'. */
+  actionNm: string;
+}
+
+export interface ScheduleApprovalOptions {
+  delayMs?: number;
+  /**
+   * 보내기 전에 누가 취소했을 때 부른다. 대기열은 결재함과 알림 카드가 나눠 쓰므로, 올린 쪽이 아닌 화면이 되돌려도
+   * 올린 쪽이 '되돌림' 을 알아야 한다(그러지 않으면 올린 쪽은 끝나지 않는 대기에 머문다).
+   */
+  onCancel?: () => void;
+  label?: QueuedApprovalLabel;
 }
 
 const pending = new Map<number, PendingCommit>();
@@ -39,21 +58,28 @@ export function pendingApprovalCommits(): number[] {
  * 같은 문서에 이미 대기 중인 승인이 있으면 새로 잡지 않고 false 를 돌려준다(연타 차단).
  * run 의 성공·실패 처리는 호출자가 run 안에서 한다 — 이 모듈은 언제 보낼지만 정한다.
  */
-export function scheduleApprovalCommit(ifmlAtrzSn: number, run: () => Promise<void>, delayMs = APPROVAL_UNDO_MS): boolean {
+export function scheduleApprovalCommit(ifmlAtrzSn: number, run: () => Promise<void>,
+  { delayMs = APPROVAL_UNDO_MS, onCancel, label }: ScheduleApprovalOptions = {}): boolean {
   if (pending.has(ifmlAtrzSn)) return false;
   const timer = setTimeout(() => { void commit(ifmlAtrzSn); }, delayMs);
-  pending.set(ifmlAtrzSn, { timer, run });
+  pending.set(ifmlAtrzSn, { timer, run, onCancel, label });
   notify();
   return true;
 }
 
-/** 아직 보내지 않았으면 취소하고 true. 이미 보냈거나 없으면 false. */
+/** 대기 중인 승인을 올릴 때 받은 이름. 없거나 이름 없이 올렸으면 undefined. */
+export function queuedApprovalLabel(ifmlAtrzSn: number): QueuedApprovalLabel | undefined {
+  return pending.get(ifmlAtrzSn)?.label;
+}
+
+/** 아직 보내지 않았으면 취소하고 true(올린 쪽의 onCancel 을 부른다). 이미 보냈거나 없으면 false. */
 export function cancelApprovalCommit(ifmlAtrzSn: number): boolean {
   const entry = pending.get(ifmlAtrzSn);
   if (!entry) return false;
   clearTimeout(entry.timer);
   pending.delete(ifmlAtrzSn);
   notify();
+  entry.onCancel?.();
   return true;
 }
 

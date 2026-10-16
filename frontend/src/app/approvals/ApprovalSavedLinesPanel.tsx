@@ -36,8 +36,13 @@ function responseError(error: unknown): { status?: number; code?: string } {
 }
 
 interface ApprovalSavedLinesPanelProps {
-  /** 지금 결재선 편집기의 단계. 결재자가 없는 단계는 저장하지 않는다(서버도 받지 않는다). */
+  /** 지금 결재선 편집기의 단계. 결재자가 없는 단계가 하나라도 있으면 저장하지 않는다(서버도 받지 않는다). */
   stages: readonly ApprovalStageRequest[];
+  /**
+   * 결재자가 없는 단계(편집기의 0부터 센 순서)가 있어 저장을 멈췄다. 기안 창이 상신과 같은 자리(그 단계의 결재자 칸)에 오류를 두고
+   * 첫 칸으로 옮긴다 — 빈 단계를 빼고 저장하면 서버가 거부 문구에 매기는 단계 번호가 편집기의 번호와 어긋난다.
+   */
+  onEmptyStages: (indexes: readonly number[]) => void;
   /** 기안 창이 상신·임시저장 중이면 잠근다. */
   disabled: boolean;
   /** 불러온 결재선을 편집기에 넣는다. 지금 결재자로 지정할 수 있는 사람만 온다 — 빠진 사람 수는 line.droppedApproverCount 다. */
@@ -54,7 +59,7 @@ interface ApprovalSavedLinesPanelProps {
  * 저장할 때와 불러올 때 모두 서버가 결재자 자격(본인 아님·사용 중·결재 권한)을 지금 기준으로 다시 판정한다. 불러올 때 자격을 잃은
  * 사람은 이름 없이 빠지고 그 수만 온다 — 화면은 그 사실을 말한다. 개인 결재선만 둔다(공용 결재선은 범위 밖).
  */
-export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice }: ApprovalSavedLinesPanelProps) {
+export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice, onEmptyStages }: ApprovalSavedLinesPanelProps) {
   const queryClient = useQueryClient();
   // 확인 대화 함수. 이름을 `confirm` 으로 두지 않는다 — 쓰기 권한 census(축 3)가 이 파일이 import 하는 결재 쿼리 모듈의
   // `confirm`(승인·반려, APPROVAL_APPROVE)을 이름으로 맞춰, 승인하지 않는 화면을 승인 권한이 필요한 화면으로 센다(기안 창과 같다).
@@ -77,7 +82,6 @@ export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice }:
     focusTargets: { aplnNm: () => nameRef.current },
   });
   const lines = savedLines.data ?? [];
-  const savable = stages.filter(stage => stage.approverIds.length > 0);
   const busy = disabled || saving || loadingSn !== null || deletingSn !== null;
 
   /** 결재선 불러오기. 지금 자격으로 판정한 결과를 서버에서 다시 읽는다 — 목록을 읽은 뒤 자격을 잃은 사람을 넣지 않는다. */
@@ -128,15 +132,21 @@ export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice }:
   };
 
   /**
-   * '이 결재선 저장'. 결재자가 없는 단계는 빼고 저장하며 그 사실을 말한다. 같은 이름의 결재선이 있으면 바꿀지 묻고 그 결재선을
-   * 바꾼다. 자격 없는 결재자가 있으면 서버가 단계 번호를 밝혀 거부한다(사전 확인과 같은 판정).
+   * '이 결재선 저장'. 결재자가 없는 단계가 있으면 저장하지 않고 그 단계를 가리킨다(상신과 같다). 같은 이름의 결재선이 있으면 바꿀지
+   * 묻고 그 결재선을 바꾼다. 자격 없는 결재자가 있으면 서버가 단계 번호를 밝혀 거부한다(사전 확인과 같은 판정) — 단계를 빼지 않고
+   * 보내므로 그 번호가 편집기의 번호와 같다.
    */
   const handleSaveLine = async () => {
     if (pendingRef.current) return;
     const request = validation.validate({ aplnNm: name });
     if (!request) return;
-    if (savable.length === 0) {
+    if (stages.length === 0) {
       validation.setFormErrors({ aplnNm: '결재자를 지정한 단계가 없어 저장할 수 없습니다. 결재자를 먼저 지정해 주세요.' });
+      return;
+    }
+    const emptyStages = stages.flatMap((stage, index) => (stage.approverIds.length === 0 ? [index] : []));
+    if (emptyStages.length > 0) {
+      onEmptyStages(emptyStages);
       return;
     }
     const existing = lines.find(line => line.aplnNm === request.aplnNm);
@@ -156,12 +166,11 @@ export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice }:
         return;
       }
       setSaving(true); setServerError('');
-      const dropped = stages.length - savable.length;
       await saveMutation.mutateAsync({
         savedLineSn: existing?.savedLineSn,
-        request: { aplnNm: request.aplnNm, stages: savable.map(stage => ({ kind: stage.kind, approverIds: [...stage.approverIds] })) },
+        request: { aplnNm: request.aplnNm, stages: stages.map(stage => ({ kind: stage.kind, approverIds: [...stage.approverIds] })) },
       });
-      onNotice(`‘${request.aplnNm}’ 결재선을 ${existing ? '지금 결재선으로 바꿨습니다' : '저장했습니다'}.${dropped > 0 ? ` 결재자가 없는 단계 ${dropped}개는 저장하지 않았습니다.` : ''}`);
+      onNotice(`‘${request.aplnNm}’ 결재선을 ${existing ? '지금 결재선으로 바꿨습니다' : '저장했습니다'}.`);
       setName(''); setSaveOpen(false);
       requestAnimationFrame(() => toggleRef.current?.focus());
     } catch (error: unknown) {
@@ -229,7 +238,7 @@ export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice }:
           <Button type="button" size="sm" variant="ghost" disabled={saving} onClick={() => { setSaveOpen(false); setName(''); validation.setFormErrors({}, false); requestAnimationFrame(() => toggleRef.current?.focus()); }}>취소</Button>
         </div>
         {validation.errors.aplnNm && <p {...validation.messageProps('aplnNm')} className="text-sm text-destructive-emphasis" />}
-        <p className="text-xs text-muted-foreground">결재자를 지정한 단계만 저장합니다. 같은 이름이 있으면 그 결재선을 바꿀지 묻습니다.</p>
+        <p className="text-xs text-muted-foreground">결재자가 없는 단계가 있으면 저장하지 않습니다. 같은 이름이 있으면 그 결재선을 바꿀지 묻습니다.</p>
       </div>}
     </section>
   );

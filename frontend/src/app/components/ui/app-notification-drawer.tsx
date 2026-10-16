@@ -20,7 +20,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { notificationActions } from '@/extensions/generated-notification-actions';
 import { useSlotEntries } from '@/extensions/use-slot-entries';
-import type { NotificationAction } from '@/extensions/slots';
+import type { NotificationAction, NotificationActionSettlement } from '@/extensions/slots';
 
 interface Notification {
   id: number;
@@ -121,14 +121,24 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
   // 지금 그 알림에 걸린 대기 처리의 표지. 되돌리거나 결과가 나면 지운다.
   const queuedTokenRef = useRef(new Map<number, number>());
 
-  /** 대기 처리의 결과를 그 대기 처리가 아직 살아 있을 때만 반영한다(되돌린 뒤에 끝난 결과는 버린다). */
-  const followQueued = (notif: Notification, action: NotificationAction, token: number, settled: Promise<string>) => {
-    settled.then((message) => {
+  /**
+   * 대기 처리의 결과를 그 대기 처리가 아직 살아 있을 때만 반영한다(여기서 되돌린 뒤에 끝난 결과는 버린다). 같은 대기열을 나눠 쓰는
+   * 다른 화면(결재함의 '처리 예정')이 되돌리면 settled 가 undone 으로 끝나므로 이 카드도 되돌림으로 옮긴다 — 그러지 않으면 대기에
+   * 머물러 이탈 경고가 남고 되돌리기 단추가 '이미 보냈다' 고 말한다.
+   */
+  const followQueued = (notif: Notification, action: NotificationAction, token: number,
+    settled: Promise<NotificationActionSettlement>, undoneMessage: string) => {
+    settled.then((settlement) => {
       if (queuedTokenRef.current.get(notif.id) !== token) return;
       queuedTokenRef.current.delete(notif.id);
-      setActionState(notif.id, { phase: 'done', message });
-      setAnnouncement(message);
-      toast(message, 'success');
+      if (settlement.kind === 'undone') {
+        setActionState(notif.id, { phase: 'undone', message: undoneMessage });
+        setAnnouncement(undoneMessage);
+        return;
+      }
+      setActionState(notif.id, { phase: 'done', message: settlement.message });
+      setAnnouncement(settlement.message);
+      toast(settlement.message, 'success');
     }, (settleError: unknown) => {
       if (queuedTokenRef.current.get(notif.id) !== token) return;
       queuedTokenRef.current.delete(notif.id);
@@ -148,10 +158,10 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
       setAnnouncement(outcome.message);
       if (outcome.undo && outcome.settled) {
         const token = nextToken.current++;
+        const undoneMessage = outcome.undoneMessage ?? '처리를 되돌렸습니다.';
         queuedTokenRef.current.set(notif.id, token);
-        setActionState(notif.id, { phase: 'queued', token, message: outcome.message, undo: outcome.undo,
-          undoneMessage: outcome.undoneMessage ?? '처리를 되돌렸습니다.' });
-        followQueued(notif, action, token, outcome.settled);
+        setActionState(notif.id, { phase: 'queued', token, message: outcome.message, undo: outcome.undo, undoneMessage });
+        followQueued(notif, action, token, outcome.settled, undoneMessage);
       } else {
         setActionState(notif.id, { phase: 'done', message: outcome.message });
         toast(outcome.message, 'success');

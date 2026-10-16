@@ -49,9 +49,11 @@ const contentSchema = ApprovalDraftRequestSchema.pick({ taskSeCd: true, docTtl: 
   docCn: z.string().max(4000, '본문은 4000자 이내로 입력해 주세요.'),
   reqYmd: z.string().regex(/^\d{8}$/, '신청일을 확인해 주세요.'),
 });
+/** 결재자가 없는 단계의 오류 — 상신과 나의 결재선 저장이 같은 자리(그 단계의 결재자 칸)에 같은 문구로 둔다. */
+const EMPTY_STAGE_MESSAGE = '이 단계의 결재자를 선택해 주세요.';
 const stageSchema = ApprovalStageRequestSchema.extend({
   kind: z.enum(['APPROVAL', 'AGREEMENT']),
-  approverIds: z.array(z.string().trim().min(1).max(20)).min(1, '이 단계의 결재자를 선택해 주세요.').max(10, '한 단계에는 최대 10명을 지정할 수 있습니다.'),
+  approverIds: z.array(z.string().trim().min(1).max(20)).min(1, EMPTY_STAGE_MESSAGE).max(10, '한 단계에는 최대 10명을 지정할 수 있습니다.'),
 });
 const draftSchema = ApprovalDraftRequestSchema.extend({ ...contentSchema.shape,
   stages: z.array(stageSchema).min(1, '결재 단계를 추가해 주세요.').max(10, '결재는 최대 10단계입니다.'),
@@ -371,6 +373,13 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
       ? ` 지금 결재자로 지정할 수 없는 ${dropped}명(사용 중이 아니거나 결재 권한을 잃은 사람)은 뺐습니다.${droppedStages > 0 ? ` 그래서 ${droppedStages}개 단계가 빠졌습니다.` : ''} 결재선을 확인해 주세요.`
       : '';
     setNotice(`‘${line.aplnNm}’ 결재선을 가져왔습니다: ${describeLine(line)}${droppedNotice}${movedNotice}`);
+  };
+  /**
+   * 나의 결재선 저장이 결재자 없는 단계를 만났다 — 상신과 같이 그 단계의 결재자 칸에 오류를 두고 첫 칸으로 옮긴다. 요약은 그 칸을
+   * 편집기의 번호('2단계 결재자')로 부른다.
+   */
+  const reportEmptyStages = (indexes: readonly number[]) => {
+    draftValidation.setFormErrors(Object.fromEntries(indexes.map(index => [`stages.${index}.approverIds`, EMPTY_STAGE_MESSAGE])));
   };
   /** 최근 결재자를 마지막 단계에 더한다. */
   const addRecent = (person: ApproverProfile) => {
@@ -767,7 +776,7 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
           {step === 1 && <>
             {resubmission && <p className="rounded-md bg-muted p-3 text-sm">이전 결재선을 가져왔습니다. 결재자와 순서를 다시 확인해 주세요. 이전 차수는 이력에 보존됩니다.</p>}
             {template && !temporaryDraft && <p className="rounded-md bg-muted p-3 text-sm">복제한 문서의 결재선입니다. 결재자와 순서를 다시 확인해 주세요.</p>}
-            {canUseSavedLines && <ApprovalSavedLinesPanel stages={values.stages} disabled={submitting || savingTemporary} onApply={applySavedLine} onNotice={setNotice} />}
+            {canUseSavedLines && <ApprovalSavedLinesPanel stages={values.stages} disabled={submitting || savingTemporary} onApply={applySavedLine} onNotice={setNotice} onEmptyStages={reportEmptyStages} />}
             {!resubmission && suggestions.data && (suggestions.data.lines?.length || suggestions.data.otherLines?.length || suggestions.data.recentApprovers?.length) ? (
               <section aria-label="결재선 제안" className="space-y-3 rounded-md border border-border p-3">
                 {[...(suggestions.data.lines ?? []), ...(suggestions.data.otherLines ?? [])].length > 0 && <div className="space-y-2">
