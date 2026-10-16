@@ -183,7 +183,7 @@ export default function OnlinePollAdminClient() {
 
   const columns: Column<OnlinePollDto>[] = [
     {
-      header: '설문 명',
+      header: '설문명',
       accessor: (item) => (
         <div className="flex items-center gap-2">
           <Vote size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -342,7 +342,7 @@ export default function OnlinePollAdminClient() {
               <Input
                 id="new-poll-name"
                 {...validation.fieldProps('pollNm')}
-                placeholder="설문 명..."
+                placeholder="설문명..."
                 value={newPoll.pollNm}
                 onChange={(e) => {
                   validation.clearError('pollNm');
