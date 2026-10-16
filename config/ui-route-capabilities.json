@@ -6783,7 +6783,7 @@
         "survey"
       ],
       "journeys": [],
-      "visibleLabel": "행정 표준코드 관리",
+      "visibleLabel": "행정 구역 코드 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {

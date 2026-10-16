@@ -648,7 +648,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/system/codes/administ",
-    "label": "행정 표준코드 관리",
+    "label": "행정 구역 코드 관리",
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,

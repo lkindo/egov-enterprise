@@ -4,13 +4,12 @@ import { PageResponse } from '@/types/foundation/system';
 import AdministCodeClient from './AdministCodeClient';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
 import { SITE_IDENTITY } from '@/config/site-identity';
 import { logErrorSafely } from '@/lib/safe-error-log';
 
 export const metadata = {
-  title: `행정코드 관리 | ${SITE_IDENTITY.frameworkName}`,
+  title: `행정 구역 코드 관리 | ${SITE_IDENTITY.frameworkName}`,
   description: '법정동 및 행정동 코드를 관리합니다.',
 };
 
@@ -38,11 +37,7 @@ export default async function AdministCodePage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader
-        title="행정 표준코드 관리"
-        breadcrumbs={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '행정 코드' }]}
-      />
-      
+      {/* 제목·브레드크럼은 A1 셸(WorkListPage)이 소유한다. */}
       <Suspense fallback={
         <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-muted/50 rounded-lg border-2 border-dashed border-border animate-pulse">
             <div className="w-20 h-11 rounded-lg bg-muted/50 flex items-center justify-center">
