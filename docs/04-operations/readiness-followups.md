@@ -1357,6 +1357,7 @@ httpxy 와 같은 설정의 Agent 로 한 번 요청한 뒤 유휴 시간을 두
 
 설치된 Next 16.4.0 의 `proxy-request.js` 는 agent 를 넘기지 않고 httpxy `ProxyServer` 를 만든다. `rewrites()` 에는 Agent·유휴 수명 설정이 없다. 대신 httpxy 는 요청 `Connection` 헤더가 upgrade 가 아니면 keep-alive 전용 Agent 를 쓰고, `Connection: close` 를 받으면 그 값을 백엔드에 그대로 보내 요청마다 새 연결을 맺는다. 미들웨어의 요청 헤더 덮어쓰기는 rewrite 요청에 반영되고(`next dev` + 기록용 백엔드로 확인: 백엔드가 `connection: close` 와 요청마다 다른 원격 포트를 받았다), `connection` 은 미들웨어 응답 헤더 필터(`ipcForbiddenHeaders`)와 무관한 경로다.
 
+- **치른 비용(적대적 검토 P2)**: httpxy 응답 미들웨어가 백엔드의 `Connection: close` 를 브라우저 응답에도 복사한다. 그래서 edge 없이 Next 를 직접 노출한 배포(HTTP/1.1)에서는 `/api/v1` 호출마다 브라우저↔Next 연결도 새로 맺는다(실측: 클라이언트 free 소켓 0개, 대조군 keep-alive 1개). 운영 형상은 edge 가 이미 비업그레이드 요청에 `close` 를 싣고 로컬 loopback 은 비용이 미미해 영향이 작다. edge 없는 직접 노출 배포는 이 설정과 맞지 않으니 권장하지 않는다.
 - 후보 선택: ① Agent 주입은 수단이 없고 ② Tomcat 유지 시간 연장은 경계만 미룬다. ③ 요청에 `Connection: close` 를 싣는 것이 "클라이언트가 먼저 닫는다" 를 구조로 만든다. 비용은 요청마다 새 연결(루프백·같은 망 TCP)이며 edge 운영 형상은 이미 같다.
 - (A) 격리 Tomcat 11.0.26(기본 `connectionTimeout=20000`) + 설치된 httpxy + Node 22.23, 이벤트 루프 400ms 점유 후 요청:
 

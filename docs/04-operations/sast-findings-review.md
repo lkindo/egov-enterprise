@@ -4,7 +4,7 @@
 
 SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 `/api/v1`·`/actuator`·`/ws` 요청에 `Connection: close` 를
 더 싣는다(WebSocket 업그레이드 제외, GAP-FE-002·DEC-OPS-333). 요청 헤더 복사를 토큰 유무와 무관하게 앞으로 옮겼으나
-토큰이 없으면 원 헤더가 그대로 전달되는 점은 같고, 토큰 검증·Origin 거부·Bearer 주입 조건과 쿠키 정책은 바뀌지 않았다.
+토큰이 없을 때도 이제는 `Connection: close` 를 싣고 요청 헤더를 override 목록으로 넘기지만(종전에는 `NextResponse.next()` 만 불렀다), 바뀌는 헤더는 `Connection` 뿐이고 토큰 검증·Origin 거부·Bearer 주입 조건과 쿠키 정책은 바뀌지 않았다.
 인증·인가 판정에 닿지 않는 전송 헤더 변경이다.
 
 해당 보완 소스 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다.
