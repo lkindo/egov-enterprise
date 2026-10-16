@@ -40,7 +40,23 @@
   "dependsOn": [],
   "foreignKeys": [],
   "requires": [],
-  "integrates": [],
+  "integrates": [
+    {
+      "to": "memoreport",
+      "via": "port:WorkReportLinks",
+      "reason": "메모 보고 기능이 없으면 업무 보고 화면 머리의 메모보고 관리 링크와 메모 보고를 쓰라는 안내 문장이 사라집니다. 업무 보고 목록과 등록은 그대로입니다.",
+      "anchors": [
+        {
+          "path": "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
+          "anchor": "useWorkReportLinks()"
+        },
+        {
+          "path": "frontend/src/extensions/memoreport/shell-links.ts",
+          "anchor": "defineContributions('shell-links'"
+        }
+      ]
+    }
+  ],
   "registrationOnly": {
     "events": [],
     "contributions": [
