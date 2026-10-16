@@ -6,7 +6,7 @@ import test from 'node:test';
 import { assertDeclaredCrossDomainForeignKeys, assertSchemaPreserved, buildCompositionAdminSeed, canEnterMenuRoute, projectCompositionNavigation, canonicalConstraintDefinition, projectCompositionMenus,
   schemaSnapshotHash, schemaSnapshotSql, selectSchemaSnapshot, verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { assertCompositionOperationGrants, dropTemporaryDatabases, generatedMigrationSessionSql, parseDbGenerationArgs, safeDbOutputPath } from './generate-reusable-base-db.mjs';
-import { sanitizePgDump } from './reusable-db-postgres.mjs';
+import { orderByPrimaryKeySql, sanitizePgDump } from './reusable-db-postgres.mjs';
 
 test('composition DB requires exact default group/code grants and keeps available unassigned capabilities ungranted', () => {
   const catalog = { permissions: [
@@ -303,4 +303,19 @@ test('group navigation keeps original grants for selected menus, drops empty cat
   assert.equal(can('/admin/system/menus', ['MENU_READ']), false);
   assert.equal(can('/admin/system/menus', ['MENU_READ', 'MENU_UPDATE']), true);
   assert.equal(can('/Admin/user/manage', []), false, 'case does not bypass the gate');
+});
+
+test('data seeds are dumped in primary key order so the same composition yields the same bundle (GAP-REPRO-001)', () => {
+  const sql = orderByPrimaryKeySql(['meta_standard_terms', 'tb_com_cd']);
+  assert.match(sql, /ARRAY\['meta_standard_terms', 'tb_com_cd'\]::text\[\]/);
+  assert.match(sql, /x\.indisprimary/);
+  assert.match(sql, /CLUSTER public\.%I USING %I/);
+  assert.match(sql, /SET WITHOUT CLUSTER/);
+  assert.match(sql, /IF pk IS NULL THEN RAISE EXCEPTION 'seed table % has no primary key to order rows'/);
+  assert.throws(() => orderByPrimaryKeySql([]), /행 순서를 정할 표가 없다/);
+  assert.throws(() => orderByPrimaryKeySql(["tb_x'; DROP TABLE tb_y; --"]), /식별자가 안전하지 않다/);
+  // 번들의 데이터 seed(표준 메타·참조 데이터)는 모두 dumpTableData 를 지난다 — 직접 --data-only 로 덤프하면 물리 순서로 돌아간다.
+  const generator = readFileSync(new URL('./generate-reusable-base-db.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(generator, /--data-only/);
+  assert.equal(generator.match(/dumpTableData\(args\.container/g)?.length, 2);
 });
