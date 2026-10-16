@@ -35,6 +35,10 @@ test('the plan explains degraded integrations by missing feature and lists permi
   assert.equal(plan.unassignedPermissions.find(row => row.code === 'DWORK_RETRY').bundle, null);
   const withBoard = createComposerEngine().plan({ ...recipe(), selection: { domains: ['board'] } });
   assert.deepEqual(withBoard.unassignedPermissions.filter(row => row.owner === 'board').map(row => row.code), ['FAQ_EDIT', 'NOTICE_EDIT']);
+  // 안내는 묶음을 생성물에 실릴 이름으로 부른다 — 게시판만 고르면 '게시판·커뮤니티 운영'은 커뮤니티·템플릿 권한이 빠져 남은 권한 표시가
+  // 붙는다(DEC-OPS-330). 권한이 그대로인 묶음('계정 복구')은 원본 이름이다(위).
+  assert.match(withBoard.unassignedPermissions.find(row => row.code === 'NOTICE_EDIT').howToAssign,
+    /^권한 작업대에서 '게시판·커뮤니티 운영\(이 구성에 남은 권한\)' 묶음을 그룹에 더하면/);
 });
 
 /*
