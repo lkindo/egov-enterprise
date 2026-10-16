@@ -94,11 +94,14 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     const generatorCatalog = applyPermissionSourceProjection({ sourceRoot: root, outputRoot: output, composition });
     const generatorScreens = applyScreenAndBundleProjection({ sourceRoot: root, outputRoot: output,
       ledger: buildUnreviewedBaselineManifest(inspectRouteRepository(output), {}) });
-    const { removedPagePermissions, screens, bundles, droppedBundles, generatedExclusions } = deep.permissionProjection;
-    assert.deepEqual({ removedPagePermissions, screens, bundles, droppedBundles, generatedExclusions }, {
+    const { removedPagePermissions, screens, bundles, reducedBundles, droppedBundles, generatedExclusions } = deep.permissionProjection;
+    assert.deepEqual({ removedPagePermissions, screens, bundles, reducedBundles, droppedBundles, generatedExclusions }, {
       removedPagePermissions: generatorCatalog.removedPagePermissions, screens: generatorScreens.screens, bundles: generatorScreens.bundles,
-      droppedBundles: generatorScreens.droppedBundles, generatedExclusions: generatorScreens.generatedExclusions,
+      reducedBundles: generatorScreens.reducedBundles, droppedBundles: generatorScreens.droppedBundles,
+      generatedExclusions: generatorScreens.generatedExclusions,
     }, `${label}: catalog pages, screens and bundles`);
     assert.ok(removedPagePermissions.length > 0 && droppedBundles.length > 0, `${label}: the projection removes pages and bundles`);
+    // 권한이 빠진 묶음은 이름·설명을 원본에서 들고 가지 않는다(GAP-COMPOSE-001) — 세 구성 모두 '기본 업무'의 권한이 줄어든다.
+    assert.ok(reducedBundles.includes('basic-work'), `${label}: the basic work bundle loses permissions`);
   }
 });
