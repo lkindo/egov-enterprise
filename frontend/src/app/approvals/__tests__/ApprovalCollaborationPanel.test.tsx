@@ -20,6 +20,14 @@ vi.mock('@/app/components/ui/user-picker', () => ({
   ),
 }));
 
+// [2026-10-16 GAP-COMPOSE-001] 알림 기능(전달 채널)이 구성에 있는지를 시험마다 정한다. 실제 레지스트리를 그대로 쓰면 알림이
+//   빠진 생성물에서 이 파일의 기대가 달라지므로 레지스트리를 감싸 두 구성을 모두 고정한다. 기본은 알림이 있는 구성(전체 제품)이다.
+const channels = vi.hoisted(() => ({ notification: true }));
+vi.mock('@/extensions/generated-delivery-channels', () => ({
+  get deliveryChannels() { return channels.notification ? [[{ id: 'notification', visibleWhen: { always: '시험' } }]] : []; },
+}));
+beforeEach(() => { channels.notification = true; });
+
 import { ApprovalCollaborationPanel } from '../ApprovalCollaborationPanel';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
 
@@ -219,5 +227,55 @@ describe('ApprovalCollaborationPanel', () => {
     fireEvent.change(screen.getByRole('textbox', { name: /보완 답변/ }), { target: { value: '답' } });
     fireEvent.click(screen.getByRole('button', { name: '보완 답변 보내기' }));
     await waitFor(() => expect(mocks.answerSupplement).toHaveBeenCalledWith(7, { answer: '답', version: 3 }));
+  });
+});
+
+/**
+ * [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성. 재알림은 아무에게도 닿지 않으므로 서버 힌트가 참이어도 단추와 '하루 한 번'
+ * 안내를 두지 않고, 결재자 바꾸기 확인은 알린다고 말하지 않는다. 서버 재알림 API 는 그대로다(표시만 바뀐다). 알림이 있는 구성의
+ * 문구는 종전과 같다 — 확인 문장을 글자 그대로 대조한다.
+ */
+describe('ApprovalCollaborationPanel — 알림 기능 유무', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.confirm.mockResolvedValue(true);
+    mocks.replaceApprover.mockResolvedValue(undefined);
+  });
+
+  it('알림이 없으면 서버가 재알림을 허용해도 단추와 하루 한 번 안내가 없고, 그것뿐이면 패널을 그리지 않는다', () => {
+    channels.notification = false;
+    const { container, unmount } = renderPanel({ canRemind: true });
+    expect(container).toBeEmptyDOMElement();
+    unmount();
+
+    renderPanel({ canRemind: false, remindedToday: true, canReplaceApprover: true });
+    expect(screen.getByRole('region', { name: '결재 진행 관리' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /재알림/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/하루(한국 날짜 기준)/)).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '결재 진행 관리' })).not.toHaveTextContent(/알림|알리|알립/);
+    expect(screen.getByRole('button', { name: '부장 결재자 바꾸기' })).toBeInTheDocument();
+  });
+
+  it('알림이 있으면 재알림 단추와 하루 한 번 안내가 그대로다', () => {
+    renderPanel({ canRemind: true });
+    expect(screen.getByRole('button', { name: '차례인 결재자에게 재알림' })).toHaveAccessibleDescription('재알림은 하루(한국 날짜 기준) 한 번 보낼 수 있습니다.');
+  });
+
+  it.each([
+    [true, 'boss', '부장 대신 새결재자에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다. 부장에게는 결재선에서 빠졌다고, 새결재자에게는 지금 차례라고 알립니다.'],
+    [true, 'chief', '본부장 대신 새결재자에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다. 본부장에게는 결재선에서 빠졌다고 알리고, 새결재자에게는 그 단계 차례가 되면 알립니다.'],
+    [false, 'boss', '부장 대신 새결재자에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다.'],
+    [false, 'chief', '본부장 대신 새결재자에게 이 결재를 맡깁니다. 앞서 처리한 결재는 그대로입니다.'],
+  ])('결재자 바꾸기 확인 문장(알림 %s, 바꾸는 사람 %s)', async (notifies, userId, message) => {
+    channels.notification = notifies;
+    renderPanel({ canReplaceApprover: true, stages: [
+      { order: 1, kind: 'APPROVAL', status: 'ACTIVE', approvers: [{ userId: 'boss', userNm: '부장', status: 'ACTIVE' }] },
+      { order: 2, kind: 'APPROVAL', status: 'WAITING', approvers: [{ userId: 'chief', userNm: '본부장', status: 'WAITING' }] },
+    ] });
+    fireEvent.click(screen.getByRole('button', { name: `${userId === 'boss' ? '부장' : '본부장'} 결재자 바꾸기` }));
+    fireEvent.click(screen.getByRole('button', { name: '새결재자 고르기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0].message).toBe(message);
+    await waitFor(() => expect(mocks.replaceApprover).toHaveBeenCalledWith(7, userId, 'NEW', 3));
   });
 });

@@ -13,6 +13,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
@@ -330,7 +331,10 @@ export default function MemoReportManagementClient() {
       if (previous && previous !== values.drctnMttr.trim()) {
         const ok = await confirm({
           title: '지시 바꾸기',
-          message: '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않고, 보고한 사람에게 지시가 변경되었다고 알립니다.',
+          // [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 보고한 사람에게 알린다고 말하지 않는다(서버 동작은 그대로다).
+          message: hasDeliveryChannel('notification')
+            ? '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않고, 보고한 사람에게 지시가 변경되었다고 알립니다.'
+            : '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않습니다.',
           confirmText: '바꾸기',
         });
         if (!ok) return;

@@ -54,6 +54,10 @@
       {
         "path": "frontend/src/extensions/notification/header-widgets.ts",
         "reason": "알림 기능이 없으면 머리글의 알림 벨만 사라지고 다른 기능은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/notification/delivery-channels.ts",
+        "reason": "알림 기능이 없으면 결재·메모 보고 화면이 재알림 단추를 감추고 알린다고 안내하지 않습니다."
       }
     ],
     "ports": []
