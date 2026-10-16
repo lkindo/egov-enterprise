@@ -120,7 +120,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
 
     it('searchKeyword/pageIndex/pageUnit와 config를 변형 없이 보존한다', async () => {
       const { signal } = new AbortController();
-      const params = { searchCondition: '1', searchKeyword: '공지사항', pageIndex: 2, pageUnit: 20 };
+      const params = { searchKeyword: '공지사항', pageIndex: 2, pageUnit: 20 };
       await boardAdminService.getBoardMasterList(params, { timeout: 5000, signal });
 
       expect(client.get).toHaveBeenCalledWith('admin/system/board-masters', {
