@@ -10,7 +10,7 @@
 >
 > 권위: 비규범 검토·적용 기록. 정책·제품 결정·운영 적용을 승인하거나 변경하지 않는다.
 
-1–11절은 보강 전 `fcdf13c2c`를 조사한 근거와 설계다. 당시 누락·수치·실험 결과를 현재 생성물의 결함이나 상태로 읽지 않는다. 적용 범위는 [12절](#12-적용-결과와-검증-경계), 현재 사용법·생성 절차는 [Atlas 가이드](governance-atlas-guide.md), 현재 목록은 [Atlas](../../frontend/public/governance_harness_atlas.html)를 따른다.
+1–11절은 보강 전 `fcdf13c2c`를 조사한 근거와 설계다. 당시 누락·수치·실험 결과를 현재 생성물의 결함이나 상태로 읽지 않는다. 적용 범위는 [12절](#12-적용-결과와-검증-경계), 현재 사용법·생성 절차는 [Atlas 가이드](../03-guides/governance-atlas-guide.md), 현재 목록은 [Atlas](../../frontend/public/governance_harness_atlas.html)를 따른다.
 
 ## 1. 검토 결론과 목표
 
@@ -34,7 +34,7 @@
 ### 2.1 확인 범위
 
 - [프로젝트 개요](../../README.md), [모듈 선언](../../settings.gradle), core/app의 실제 domain 디렉터리.
-- [AGENTS](../../AGENTS.md), [SOP](orchestration-protocol.md), 3대 헌법과 공용 메모리.
+- [AGENTS](../../AGENTS.md), [SOP](../03-guides/orchestration-protocol.md), 3대 헌법과 공용 메모리.
 - [문서 인덱스](../README.md), 아키텍처·제품·개발·운영 문서 및 Accepted ADR.
 - [재사용 프로필](https://github.com/lkindo/egov-enterprise/blob/52527499a62d/config/reusable-base-profiles.json), [라우트 역량 목록](../../config/ui-route-capabilities.json), [API 소비자 목록](../../config/governance/operation-consumer-census.json), [인가 정책](../../config/governance/authorization-policies.json).
 - [게이트 registry](../../config/governance/gates.json), [검증 진입점](../../scripts/verify.mjs), [CI](../../.github/workflows/ci.yml), [릴리스](../../.github/workflows/release.yml), [배포 스크립트](../../scripts/deploy.sh).
@@ -197,7 +197,7 @@ flowchart LR
 |---|---|---|
 | 대시보드 조회 | 기존 9단계 유지. Suspense 안 서버 자식의 미리 채우기와 오류 전파 설명 정합화(Phase 2 9단계에서 대시보드 로더가 게시판 조회 모듈로 옮겨 갔다) | [board-home-query](../../frontend/src/queries/board-home-query.ts) |
 | 로그인·갱신·로그아웃 | 쿠키·JWT·refresh 저장/회전·실패 처리의 연결 추가 | [AuthServiceImpl](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java), [로그인 BFF](../../frontend/src/app/api/auth/login/route.ts) |
-| 일정 또는 게시글 쓰기 | 화면 검증→API 입력→서비스 인가→트랜잭션→DB 제약→응답→화면 오류의 실제 사례 | [입력 검증 가이드](frontend-form-validation-loop.md), [횡단관심사](cross-cutting-conventions.md) |
+| 일정 또는 게시글 쓰기 | 화면 검증→API 입력→서비스 인가→트랜잭션→DB 제약→응답→화면 오류의 실제 사례 | [입력 검증 가이드](../03-guides/frontend-form-validation-loop.md), [횡단관심사](../03-guides/cross-cutting-conventions.md) |
 | 결재 상태 변경·알림 | 승인 권한과 본 업무 커밋 이후 비동기 알림의 경계를 분리 | [InformalSanctionService](../../business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java) |
 | 첨부 업로드·다운로드·점검 | DB 메타데이터와 파일 실물, 권한, 정합성 보고의 관계 | [운영 후속 계약](../04-operations/readiness-followups.md), [백업 런북](../04-operations/backup-and-restore-runbook.md) |
 | 레거시 이관 | 기존 설명 유지. dry-run/PASS/STARTED/FAILED와 부분 커밋·재개·전체 복원 구별 | [이관 복구 런북](../04-operations/migration-recovery-runbook.md) |
@@ -321,7 +321,7 @@ flowchart LR
 
 ### 7.2 검증 선택표
 
-Atlas는 [verify.mjs](../../scripts/verify.mjs)와 [SOP 검증 범위](orchestration-protocol.md)를 근거로 다음 항목을 표시해야 한다.
+Atlas는 [verify.mjs](../../scripts/verify.mjs)와 [SOP 검증 범위](../03-guides/orchestration-protocol.md)를 근거로 다음 항목을 표시해야 한다.
 
 - docs / fast / push / be / fe / full / e2e / ops 각각의 대상·실행 명령·필요 환경·생성 근거.
 - `full`의 범위 밖인 브라우저 E2E와 원격 ruleset 대조.
@@ -366,7 +366,7 @@ flowchart TD
 
 | 증상 | 먼저 확인할 경계 | 연결할 설명 |
 |---|---|---|
-| 401 / 403 | 인증 만료·토큰 전달 / 도메인 인가 | [보안 플레이북](security-hardening-playbook.md), [정체성 가이드](identity-model-guide.md) |
+| 401 / 403 | 인증 만료·토큰 전달 / 도메인 인가 | [보안 플레이북](../03-guides/security-hardening-playbook.md), [정체성 가이드](../03-guides/identity-model-guide.md) |
 | 503·Retry-After | 인증 저장소 가용성·연결·세션 유지 | [JWT 필터](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java), [운영 후속 계약](../04-operations/readiness-followups.md) |
 | 첨부 다운로드 실패·점검 이상 | DB 메타와 파일 실물·점검 완주 여부 | [백업 런북](../04-operations/backup-and-restore-runbook.md), [운영 후속 계약](../04-operations/readiness-followups.md) |
 | 성능 저하 | 요청 구간·쿼리·부하 조건·캐시 | [DB 최적화](../04-operations/database-optimization-guide.md), [부하 시험](../04-operations/load-test-guide.md) |

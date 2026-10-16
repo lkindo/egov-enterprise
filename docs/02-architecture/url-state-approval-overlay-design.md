@@ -136,5 +136,5 @@ URL은 인가 증거가 아니다. 검색 결과와 상세 객체의 인증·역
 - [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)
 - [ADR-0018](decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)
 - [URL-state 부류 승인 근거](../04-operations/url-state-class-approval-evidence.md)
-- [URL-state 분류 초안](../01-product/url-state-classification-draft.md) — 역사적 결정 입력물
+- [URL-state 분류 초안](../archived/url-state-classification-draft.md) — 역사적 결정 입력물
 - [사용자 결정 대기 레지스트리](../04-operations/pending-decisions.md)

@@ -1160,9 +1160,11 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 
 ## 13. 헌법 개정 결정
 
-### 13.1 왜 선행 개정이 필요한가
+> **역사적 개정 근거(2026-08-20):** 이 절은 ADR-0003 채택 당시의 개정 전 문제와 처리 결정을 보존한다. 현재 구현에는 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)과 [ADR-0003](decisions/ADR-0003-frontend-ux-modernization-principles.md)을 적용하며, 아래 조항별 표를 새로운 개정 요청이나 현행 규칙으로 사용하지 않는다.
 
-현행 헌법은 시각적 놀라움, 고정 Hub Blue, 필수 micro-interaction을 최상위 미학으로 두며 다음 구현 세부를 절대 규칙으로 만든다.
+### 13.1 왜 선행 개정이 필요했는가
+
+개정 전 헌법은 시각적 놀라움, 고정 Hub Blue, 필수 micro-interaction을 최상위 미학으로 두며 다음 구현 세부를 절대 규칙으로 만들었다.
 
 - 모든 server fetch/cache를 TanStack Query로만 관리.
 - 민감 데이터를 Zustand 또는 SessionStorage에 저장.
@@ -1172,7 +1174,7 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 - 모든 UI element에 4.5:1 대비 의무.
 - image `priority`, visualization `ssr:false`, 전역 `refetchQueries()` 같은 구체 API.
 
-이는 브랜드 중립 재사용 base, current dependency, 보안, WCAG 기준, 실제 데이터 소유권, 위험 기반 상호작용과 충돌한다. 원안처럼 P6에서 뒤늦게 개정하면 P1~P5가 현행 헌법을 위반한 채 진행된다. 따라서 ADR-0003과 헌법 개정은 구현보다 앞선다.
+이는 브랜드 중립 재사용 base, 당시 의존성, 보안, WCAG 기준, 실제 데이터 소유권, 위험 기반 상호작용과 충돌했다. 원안처럼 P6에서 뒤늦게 개정하면 P1~P5가 개정 전 헌법을 위반한 채 진행되므로, ADR-0003 채택과 헌법 개정을 구현보다 앞서 반영했다.
 
 ### 13.2 조항별 처리
 

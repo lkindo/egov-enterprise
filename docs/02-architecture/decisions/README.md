@@ -31,6 +31,8 @@
 | [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted |
 | [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted |
 | [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted |
-| [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 결정 2의 PR 레이아웃 일부는 DEC-OPS-296, 결정 4의 단독 폐포 계획 일부는 DEC-OPS-301로 대체 |
+| [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — PR 제외 선언·야간 중복 폐포 제거는 ADR-0030으로 대체 |
 | [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
-| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 결정 8의 쓰기 단계 fail-closed 시점(L3와 함께)은 DEC-OPS-310, 결정 3의 비표준 대상 부분(표준 용어가 없는 대상 컬럼의 확정)은 DEC-OPS-317로, 결정 3의 확정 조건(적합률 100%·승인 예외)은 DEC-OPS-316(적합률 참고값·unmeasured 확정)과 DEC-OPS-317(U3 허용값 미확인 확정)로, 실행 단계 표의 L3 PR 경계(1~2개)는 DEC-OPS-315·319(PR 5개)로 대체 |
+| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 원장 확정·쓰기 실패 처리·L3 경계는 ADR-0031로 대체 |
+| [ADR-0030](ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 | Accepted |
+| [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건과 chunk 실패 처리 | Accepted |

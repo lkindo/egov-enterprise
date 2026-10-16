@@ -72,16 +72,16 @@ pnpm -C frontend codegen:zod
 
 ## 4. 서비스 계층 인가
 
-컨트롤러 인가만으로 끝내지 않고 쓰기와 민감 조회에서 서비스 계층 가드를 다시 적용한다. 소유자 필드의 식별자 축과 관리자 우회 허용 여부를 먼저 결정한다.
+컨트롤러 인가만으로 끝내지 않고 쓰기와 민감 조회에서 서비스 계층 가드를 다시 적용한다. 소유자 필드의 식별자 축과 소유자 외 대행 허용 여부를 먼저 결정한다. 그룹 이름이나 관리자 역할로 권한을 추론하지 않고, 대행이 허용된 업무에서만 해당 기능 권한을 사용한다.
 
-| 의도 | 표준 헬퍼 | 식별자 축 | 관리자 우회 |
+| 의도 | 표준 헬퍼 | 식별자 축 | 소유자 외 대행 |
 |---|---|---|---|
-| 감사 컬럼 작성자 | `assertOwnerOrAdmin` | `loginId` | 허용 |
-| 도메인 소유자 | `assertOwnerOrAdminByEsntlId` | `esntlId` | 허용 |
-| 결재·신청 등 본인 행위 | `assertOwnerByEsntlId` | `esntlId` | 불가 |
-| 관리자 전용 | `assertAdmin` | 역할 | 해당 없음 |
+| 감사 컬럼 작성자 또는 대행 권한 보유자 | `assertOwnerOrPermission(ownerLoginId, permissionCode)` | `loginId` | 지정한 기능 권한이 있을 때만 |
+| 도메인 소유자 또는 대행 권한 보유자 | `assertOwnerOrPermissionByEsntlId(ownerEsntlId, permissionCode)` | `esntlId` | 지정한 기능 권한이 있을 때만 |
+| 결재·신청 등 본인 행위 | `assertOwnerByEsntlId(ownerEsntlId)` | `esntlId` | 불가 |
+| 특정 기능 권한 필수 | `assertPermission(permissionCode)` | 기능 권한 | 소유권·관계 검사는 별도 |
 
-도메인별 수기 가드를 표준 헬퍼로 기계 치환하면 의미가 약해질 수 있다. 변경 전 [식별자 모델 가이드](../../../../docs/03-guides/identity-model-guide.md)와 기존 네거티브 테스트를 확인한다.
+결재자·수신자·참여자 본인처럼 대행할 수 없는 관계 검사는 그대로 유지한다. 도메인별 수기 가드를 표준 헬퍼로 기계 치환하면 의미가 약해질 수 있다. 변경 전 [식별자 모델 가이드](../../../../docs/03-guides/identity-model-guide.md)와 기존 네거티브 테스트를 확인한다.
 
 ## 5. 오류 코드
 

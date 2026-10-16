@@ -5,9 +5,11 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-09-30
-verified_against: dc5dea7e49cbdfbaaf138ac3942764d54a46fb60
+verified_at: 2026-10-17
+verified_against: 55a4539569494036788db468296f7ca1eea38d45
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
+  - ../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md
   - ../../docs/02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md
   - ../../docs/02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md
   - ../../docs/02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md
@@ -40,6 +42,8 @@ refresh_triggers:
 ---
 
 # 공용 프로젝트 컨텍스트
+
+`verified_at`·`verified_against`는 인덱스 구조·참조를 점검한 날짜와 작업 시작 커밋이다. 2026-10-17 정리는 과거 승인·DB·CI·운영 실측을 재실행한 것이 아니며, 각 행의 시행일·검증일과 증거 경계는 그대로다.
 
 ## 이 문서의 권위와 읽기 순서
 

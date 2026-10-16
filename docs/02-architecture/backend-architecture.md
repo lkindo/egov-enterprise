@@ -136,7 +136,7 @@ public class BoardService {
 - JSON 정상 응답은 공통 래퍼 `ApiResponse<T>`를 사용한다. 파일 다운로드·전체 결과 스트림은 [백엔드 헌법 제6조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)의 승인 예외이며, `ResponseContractLinterTest`가 정확한 파일·핸들러 목록과 전송 계약을 검사한다. Entity 직접 반환은 금지한다.
 
 ### 4.4 Validation 연쇄 동기화 (DB ➔ BE ➔ FE)
-- DTO의 유효성 검증 규칙(`@Size`, `@NotNull` 등)은 DB 물리 제약조건과 100% 동일하게 연쇄 동기화되어야 한다. [백엔드 헌법 제16조]
+- DTO의 유효성 검증 규칙(`@Size`, `@NotNull` 등)은 실제 저장 경로의 DB 물리 제약조건과 표준 메타에 부합해야 한다. 업무 사양에 따라 더 좁은 길이·논리 검증을 둘 수 있지만 물리 한계를 약화할 수는 없다. 예를 들어 권한명은 물리 길이 100자 안에서 승인된 제품 입력 제한 60자를 유지한다([ADR-0013](decisions/ADR-0013-standard-text-length-alignment.md)). [백엔드 헌법 제16조]
 - **동기화 파이프라인**: `PostgreSQL 물리 스키마` ➔ `Spring Boot DTO Validation` ➔ `Next.js Zod Schema`
 - 현재 집행 범위는 표적 Entity→DTO→OpenAPI 계약과 생성 타입·Zod 정합 검사, 실제 PostgreSQL 스키마 검증이다. 전체 필드의 업무 의미까지 자동 증명하지 않으며 날짜·기간·기존 데이터 경계는 [입력 계약 검증 범위](../04-operations/readiness-followups.md#날짜입력-계약)를 따른다.
 
@@ -151,41 +151,13 @@ public class BoardService {
 
 ### 5.1 SecurityUtil을 통한 보안 검증 사용 예시
 
-컨트롤러에서 인가를 넘겨받더라도, 비즈니스 레이어의 안전을 보호하기 위해 서비스 메서드 내부에서 아래와 같이 **이중 권한 재검증(Defence in Depth)**을 상시 기동해야 한다.
+컨트롤러의 기능 인가와 별개로, 서비스는 해당 자원의 소유권·관계 조건을 다시 검사한다. 예를 들어 [주소록 삭제 서비스](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java)는 잠금 조회로 가져온 주소록의 작성자(`loginId`)와 `ADBK_DELETE_ALL` 대행 권한을 다음 가드로 확인한다.
 
 ```java
-package nuri.business.service;
-
-import nuri.business.security.util.SecurityUtil;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-@Service
-public class DocumentService {
-
-    @Transactional
-    public void deleteDocument(String docId) {
-        // 1. 소유권/IDOR 가드는 loginId 축으로 재검증한다.
-        //    (간결형: SecurityUtil.assertOwnerOrAdmin(doc.getRegisterId()) 한 줄로 대체 가능)
-        String currentLoginId = SecurityUtil.getCurrentLoginId()
-            .orElseThrow(() -> new AccessDeniedException("비인증 사용자는 요청을 수행할 수 없습니다."));
-
-        // 2. 관리자 권한 여부 추출
-        boolean isAdmin = SecurityUtil.hasRole("ROLE_ADMIN");
-
-        // 3. 비즈니스 이중 검증 집행 (소유주를 registerId=loginId 로 저장한 도메인)
-        DocumentEntity doc = repo.findById(docId).orElseThrow();
-        if (!doc.getRegisterId().equals(currentLoginId) && !isAdmin) {
-            throw new AccessDeniedException("본인의 문서만 삭제할 권한이 있습니다.");
-        }
-        // ※ 소유주를 esntlId 로 저장하는 도메인(Board.userId 등)에서만 SecurityUtil.getCurrentEsntlId() 를 사용한다.
-        //   (SecurityUtil.getCurrentUserId() 는 @Deprecated — esntlId 를 반환하며 IdentityAxisLinterTest 가 프로덕션 호출 0 을 강제)
-
-        repo.delete(doc);
-    }
-}
+SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_DELETE_ALL");
 ```
+
+소유자를 `esntlId`로 저장하는 도메인은 `assertOwnerOrPermissionByEsntlId`를 사용한다. 결재자·수신자·참여자 본인처럼 대행을 허용하지 않는 행위는 `assertOwnerByEsntlId` 또는 해당 관계의 엄격한 검사를 유지한다. 그룹 이름이나 관리자 역할은 우회 근거가 아니다. 기능 자체의 재검증에는 `assertPermission(permissionCode)`를 사용하며, 식별자 축과 도메인별 적용 기준은 [식별자 모델 가이드](../03-guides/identity-model-guide.md)를 따른다.
 
 ---
 

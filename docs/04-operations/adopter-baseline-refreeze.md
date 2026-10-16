@@ -70,7 +70,7 @@ node scripts/ui-url-state-census.mjs --write
 ```
 
 - **수기 편집 금지** — 이 파일은 생성물이다. `--write` 로만 재생성한다.
-- 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(base 의 분류 초안: [url-state-privacy-classification-draft.md](url-state-privacy-classification-draft.md)).
+- 재생성 후 diff 를 리뷰한다: 새로 잡힌 URL 상태가 개인정보·프라이버시 분류 대상인지 확인한다(base 의 분류 초안: [url-state-privacy-classification-draft.md](../archived/url-state-privacy-classification-draft.md)).
 - census 재생성은 사람의 승인을 갱신하지 않는다. 승인 원장의 census hash가 달라지면 관련 분류·범위·근거를 다시 확인한 뒤 원장을 결속한다. 새 검색 surface·자격증명 key는 즉시 차단 대상이며 날짜 연장으로 해결할 수 없다.
 - `reviewBy`는 기존 정기 검토 일정으로 유지한다. 경과는 `npm run review:status`의 운영 신호이며 정상 코드 계약을 자동 무효화하지 않는다. 원본 snapshot과 기관 `pending` 검토는 별도 자료다.
 

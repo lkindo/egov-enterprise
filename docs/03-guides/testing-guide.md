@@ -2,7 +2,7 @@
 
 본 프로젝트는 단위 테스트, 통합 테스트, E2E 테스트를 포함한 다양한 테스트 계층을 사용합니다.
 
-테스트 설계 → 소유 계층 선택 → 구현·부정 검증 → PR/main 실행 → 실패 진단·중복 정리의 전체 절차는 [테스트 프로세스 재설계안](../02-architecture/testing-process-redesign.md)을 참조한다. 아래 가이드는 그 절차의 실행 경로와 증거 경계를 설명한다.
+현재 실행 경로와 증거 경계는 이 가이드, [E2E 런북](e2e-test-guide.md), [CI 가이드](cicd-pipeline.md)를 따른다. 테스트 소유 계층·격리 설계의 이유와 당시 이행 측정은 [테스트 프로세스 재설계안](../02-architecture/testing-process-redesign.md)에 보존한다.
 
 ---
 

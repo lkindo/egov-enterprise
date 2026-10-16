@@ -83,19 +83,11 @@ DB 헌법 제8조 1항은 Audit 4종 컬럼을 생성자(`frst_rgtr_id`), 생성
 
 Repeatable seed는 재실행해도 같은 결과가 나야 하지만 모든 충돌을 `DO UPDATE`로 덮어쓰지 않는다. 애플리케이션이 계속 소유하는 기준값만 명시적으로 갱신하고, 운영자가 변경할 수 있는 값이나 최초 프로비저닝 값은 `DO NOTHING` 또는 별도 승인 절차로 보존한다. 충돌 키는 실제 PK/UNIQUE 제약을 확인해 선택한다.
 
-### 4.1 멱등성 SQL 모범 예시
+### 4.1 현재 시드 정본
 
-```sql
--- 운영 변경을 보존해야 하는 최초 행
-INSERT INTO tb_role_info (role_id, role_nm, role_expln, role_crt_ymd)
-VALUES ('ROLE_USER', '일반 사용자', '기본 사용자 역할', CURRENT_DATE)
-ON CONFLICT (role_id) DO NOTHING;
+현재 그룹·사용자 초기화와 기존 운영자 값 보존 방식은 [`R__seed_framework.sql`](../../api-server/src/main/resources/db/migration/R__seed_framework.sql)을 정본으로 확인한다. 이 파일의 구 역할 테이블 분기는 [ADR-0016](../02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) 전환 전 환경을 위한 조건부 호환 경로이므로 현행 스키마의 일반 시드 예시로 사용하지 않는다.
 
--- 기준 데이터가 코드 릴리스에 의해 계속 소유되는 경우에만
--- ON CONFLICT (...) DO UPDATE SET <권위 있는 필드만> = EXCLUDED.<필드>;
-```
-
-현재 운영 시드의 경계와 관리자 비밀번호 보존 방식은 [`R__seed_framework.sql`](../../api-server/src/main/resources/db/migration/R__seed_framework.sql)을 정본으로 확인한다. seed 변경은 빈 DB 재실행뿐 아니라 기존 행이 있는 DB에서 운영자 값을 덮어쓰지 않는지도 검증한다.
+새 seed는 대상 테이블의 현재 PK/UNIQUE와 데이터 소유권을 확인한 뒤 작성한다. 빈 DB 재실행뿐 아니라 기존 행이 있는 DB에서 운영자 값을 덮어쓰지 않는지도 검증한다.
 
 ---
 

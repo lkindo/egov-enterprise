@@ -1,8 +1,8 @@
 # 디자인 토큰 구현 가이드
 
-이 문서는 [프론트엔드 UX 헌법](./constitution.md)의 토큰 적용 진입점이다. 실제 토큰 이름과 값의 정본은 `frontend/src/app/globals.css`이며, 상세 마이그레이션 규칙은 [디자인 토큰 가이드](../../../../docs/03-guides/design-tokens.md)에 둔다. 색상값·잔여 건수·완료 이력을 이 문서에 중복 기록하지 않는다.
+이 문서는 [프론트엔드 UX 헌법](./constitution.md)의 토큰 적용 진입점이다. 토큰 값은 [프로필 CSS](../../../../frontend/src/styles/themes/)가 소유하며, `globals.css`는 Tailwind 노출과 공통 밀도 오버라이드를 연결한다. 토큰 구조·적용·검증의 정본은 [디자인 토큰 가이드](../../../../docs/03-guides/design-tokens.md)다. 색상값·잔여 건수·완료 이력을 이 문서에 중복 기록하지 않는다.
 
-> 현재 `globals.css`는 기존 light/dark 구현의 정본이다. `krds-standard`·`krds-aligned`·`premium` 브랜드 프로필 분리는 [ADR-0003](../../../../docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)의 목표 상태이며, 구현·검증 전에는 지원 완료로 표현하지 않는다.
+> `premium`·`krds-aligned`의 브랜드 프로필 × light/dark 배선은 구현돼 있다. 지원 프로필은 [브랜드 선택기](../../../../frontend/src/lib/theme/brand-theme.ts), `krds-standard`의 미구현 범위와 KRDS 준수 주장 경계는 [프로필 추적 매트릭스](../../../../docs/02-architecture/krds-profile-mapping.md)를 따른다. 프로필 구현을 접근성·KRDS 준수 완료로 표현하지 않는다.
 
 ## 적용 원칙
 
@@ -11,7 +11,7 @@
 3. 테마와 무관하게 어두운 표면은 `surface-inverse` 계열을 사용한다.
 4. 성공·주의·정보·위험은 `success`, `warning`, `info`, `destructive` 계열을 사용한다.
 5. 대시보드 카테고리 구분은 `hub-*` 계열을 사용하되 상태 의미와 혼용하지 않는다.
-6. 간격·반경·z-index·motion은 기존 컴포넌트와 `globals.css`의 토큰을 재사용한다. 임의 수치를 새 전역 규약처럼 문서화하지 않는다.
+6. 간격·반경·z-index·motion은 기존 컴포넌트와 디자인 토큰 가이드가 지정한 토큰을 재사용한다. 임의 수치를 새 전역 규약처럼 문서화하지 않는다.
 7. 브랜드 프로필과 light/dark/high-contrast 전략은 독립된 축이며 모든 지원 조합이 같은 시맨틱 토큰 이름과 접근성 하한을 제공해야 한다.
 
 ## 현재 토큰군

@@ -59,7 +59,7 @@ SAST-FP-007의 보완 소스 두 개가 Dependabot 배치(#761·#849)로 바뀌�
 
 API·core fallback 설정에서 동일한 BCrypt 전용 생성만 `PasswordEncoders.create()`로 옮기고 core 생성자의 미사용 `Environment`를 제거했다. encoding id `bcrypt`, 기본 cost 10, legacy SHA-256을 인증 provider에서 검증 후 재해싱하는 경로는 동일하다. 두 설정의 filter chain 본문과 활성화 annotation을 기준 커밋 `e0066946cb55c2135d9df3a66baa739f6ba8211b`와 직접 비교해 변경 없음을 확인했다.
 
-SAST-FP-001·002의 현재 탐지 행은 133·50이며 두 설정의 소스·지원 해시만 재결속했다. 008은 지원하는 API 설정 해시만 갱신했다. 승인 6건·규칙·fingerprint·만료일은 그대로다. 정책·예외·실행 연결과 부정 fixture 17개가 통과했다. 새 CodeQL 전체 분석 결과를 뜻하지 않으며, 새 탐지와 fingerprint 일치는 required secure-coding CI에서 다시 판정한다. 암호·API·인증 provider 회귀 결과는 [정비 결과](source-simplification-results-2026-10-06.md)에 기록한다.
+SAST-FP-001·002의 현재 탐지 행은 133·50이며 두 설정의 소스·지원 해시만 재결속했다. 008은 지원하는 API 설정 해시만 갱신했다. 승인 6건·규칙·fingerprint·만료일은 그대로다. 정책·예외·실행 연결과 부정 fixture 17개가 통과했다. 새 CodeQL 전체 분석 결과를 뜻하지 않으며, 새 탐지와 fingerprint 일치는 required secure-coding CI에서 다시 판정한다. 암호·API·인증 provider 회귀 결과는 [정비 결과](../archived/source-simplification-results-2026-10-06.md)에 기록한다.
 
 
 ## 2026-10-06 감사 코드 미사용 import 정리에 따른 재검토

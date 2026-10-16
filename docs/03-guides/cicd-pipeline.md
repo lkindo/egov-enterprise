@@ -41,7 +41,7 @@ push/PR / workflow_dispatch
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
         ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
-        ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 10개 배치·최대 5개 동시 실행)
+        ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 배치 실행; 동시 수는 ci.yml 참조)
         ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 8개를 한 슬롯에서 실행)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
@@ -471,12 +471,11 @@ open build/reports/jacoco/aggregated/index.html
 
 임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [커버리지 워크플로](../../.agent/workflows/coverage.md)를 따른다.
 
-### Playwright 리포트
+### Playwright 실행 결과
 
-```bash
-pnpm -C frontend exec playwright test --reporter=html
-pnpm -C frontend exec playwright show-report
-```
+테스트는 `npm run test:e2e:isolated`로 실행한다. 직접 `playwright test`를 호출하면 소유한 격리 환경의 manifest가 없어 setup에서 거부된다. 상세 실행·진단 절차는 [E2E 런북](e2e-test-guide.md)을 따른다.
+
+격리 runner는 로컬에서 `build/isolated-e2e/<run-id>/results.json`을 남기고, CI에서는 blob·line·JSON reporter를 사용한다. `--reporter`를 전달해도 runner가 정해진 reporter로 바꾸므로 HTML 생성 옵션으로 안내하지 않는다. 별도로 생성·다운로드한 HTML 보고서가 있을 때만 `pnpm -C frontend exec playwright show-report <보고서 디렉터리>`로 연다.
 
 ### 로컬 사전 게이트 (git hooks)
 

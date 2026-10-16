@@ -30,7 +30,6 @@
 
 [information-architecture.md](01-product/information-architecture.md) — ADR-0007의 참조-기본 IA와 route disposition 경계. 개인정보성 업무 검색어의 현행 URL 정책은 ADR-0009가 규율한다. 별도의 비규범 `class-governed` 컨테이너에는 4개 부류의 독립 승인 기록과 3개 미해결 부류가 있다.
 
-[url-state-classification-draft.md](01-product/url-state-classification-draft.md) — ADR-0009 이전 URL-state 분류의 **역사적 결정 입력물**. 검색어 절대 금지·보류 제안은 현행 정책이 아니다.
 
 ## 02-architecture — 설계
 
@@ -50,13 +49,13 @@
 | [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
 | [authorization-db-evidence.json](02-architecture/authorization-db-evidence.json) | 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
-| [testing-process-redesign.md](02-architecture/testing-process-redesign.md) | 테스트 설계·작성·격리 실행·진단·유지 프로세스와 E2E 27→50개 파일의 계약별 재편·중복 POM 정리 근거 |
+| [testing-process-redesign.md](02-architecture/testing-process-redesign.md) | 테스트 책임·격리 설계와 이행 근거; 현재 명령·CI 설정은 테스트·E2E·CI 가이드 참조 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
 | [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
-| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 현재 공백 진단, 표준용어 식별 방법론·용어 매핑 원장·도구 보강안([ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택, 진단·방법론 정본) |
+| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13), 표준용어 식별 방법론·용어 매핑 원장·도구 보강안([ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택, 진단·방법론 정본) |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest 증분 Mutation Testing 연동 설계 |
 | [dual-operator-coordination.md](02-architecture/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 
@@ -103,6 +102,8 @@
 | [ADR-0027](02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) |
 | [ADR-0028](02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 |
 | [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 흐름, 용어 매핑 원장·민감 컬럼 호환 암호화·외부 LLM 가드와 L1~L4 단계 |
+| [ADR-0030](02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 |
+| [ADR-0031](02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건·chunk 실패 처리와 단계 경계 |
 
 ## 03-guides — 개발 지침
 
@@ -112,7 +113,6 @@
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
 | [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
 | [governance-review-lifecycle.md](03-guides/governance-review-lifecycle.md) | 실제 시계 검토 보고, 기관 도입 preflight, 프로필 원장·메모리 투영과 무결성, 독립 이관 검증 |
-| [governance-atlas-improvement-plan.md](03-guides/governance-atlas-improvement-plan.md) | Atlas 보강 조사·설계·적용 결과와 검증 경계 |
 | [testing-guide.md](03-guides/testing-guide.md) | **테스트 SSOT** — 단위/통합/E2E 전략 |
 | [e2e-test-guide.md](03-guides/e2e-test-guide.md) | E2E 운영 Runbook |
 | [non-e2e-verification-guide.md](03-guides/non-e2e-verification-guide.md) | E2E 범위 밖 기능의 정밀 검증 |
@@ -138,9 +138,6 @@
 | 문서 | 내용 |
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
-| [source-simplification-audit-2026-10-06.md](04-operations/source-simplification-audit-2026-10-06.md) | 전체 소스 정적 조사 — 미사용·중복·레거시·비표준·복잡도 정비 후보 29개와 근거·검증·실행 순서 |
-| [source-simplification-results-2026-10-06.md](04-operations/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
-| [source-simplification-recheck-2026-10-07.md](04-operations/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
 | [adversarial-reassessment-2026-09-27.md](04-operations/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
 | [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
@@ -164,7 +161,6 @@
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 날짜 입력·화면 연결·정기 첨부 점검의 운영 계약과 검증 경계 |
 | [standard-length-alignment-runbook.md](04-operations/standard-length-alignment-runbook.md) | 표준 길이의 단계별 스키마·애플리케이션 전환과 실패·복구 검증 |
-| [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
 
@@ -176,6 +172,16 @@
 |---|---|
 | [PRD.MD](archived/PRD.MD) | 초기 제품 요구의 역사 원본 — 대체 PRD 확정 전 보존 또는 tombstone 축약 |
 | [TRD.MD](archived/TRD.MD) | 초기 기술 요구 역사 원본 — PRD와 함께 보존 여부 결정 |
+| [url-state-classification-draft.md](archived/url-state-classification-draft.md) | ADR-0009 이전 URL-state 분류의 **역사적 결정 입력물**. 검색어 절대 금지·보류 제안은 현행 정책이 아니다. |
+| [governance-atlas-improvement-plan.md](archived/governance-atlas-improvement-plan.md) | Atlas 보강 조사·설계·적용 결과와 검증 경계 |
+| [source-simplification-audit-2026-10-06.md](archived/source-simplification-audit-2026-10-06.md) | 전체 소스 정적 조사 — 미사용·중복·레거시·비표준·복잡도 정비 후보 29개와 근거·검증·실행 순서 |
+| [source-simplification-results-2026-10-06.md](archived/source-simplification-results-2026-10-06.md) | 조사 후 순차 정비 — 변경 범위·입력 호환성·조회 수·검증 결과와 남은 경계 |
+| [source-simplification-recheck-2026-10-07.md](archived/source-simplification-recheck-2026-10-07.md) | PR #846 재검증과 추가 전수 정비 — 부서 트리 회귀 수정, 6단계 정비 범위·바뀐 동작·남긴 것과 검증 결과 |
+| [url-state-privacy-classification-draft.md](archived/url-state-privacy-classification-draft.md) | ADR-0009 이전 URL-state 프라이버시 분류의 **역사적 초안** — 현행 검색 정책은 ADR-0009, 부류별 검토 상태는 비규범 `class-governed` 컨테이너를 확인 |
+
+### 운영 결정 원문 보존
+
+[operational-decisions-history.md](archived/operational-decisions-history.md)는 짧은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
 
 ---
 
