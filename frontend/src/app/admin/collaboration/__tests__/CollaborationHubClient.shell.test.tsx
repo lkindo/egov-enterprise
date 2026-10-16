@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollaborationHubFrame } from '../collaboration-hub-frame';
 
 /**
- * 협업 허브 core 셸의 호스트 계약(허브 분해 H1). 셸은 기능 코드를 모르고 hub-tabs·shell-links 레지스트리만 읽는다 — 여기서는 두
+ * 협업 허브 core 셸의 호스트 계약(허브 분해 H1). 셸은 기능 코드를 모르고 hub-tabs-collaboration·shell-links 레지스트리만 읽는다 — 여기서는 두
  * 레지스트리를 가짜 기여로 바꿔 셸이 하는 일만 본다. 실제 쪽지·스크랩 탭은 각 기능의 시험이 실제 레지스트리로 본다.
  * 가짜 기여의 권한·목적지는 core 의 것(사용자 관리·메뉴 관리, USER_READ·MENU_READ)이다 — 생성물은 권한 목록과 화면을 구성으로 줄이므로
  * (Phase 2 10단계 10b) 기능의 화면·권한을 쓰면 그 기능이 빠진 구성에서 셸 규칙이 아니라 대역이 깨진다.
@@ -21,7 +21,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(mocks.query),
 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => mocks.auth, useOptionalAuth: () => mocks.auth }));
-vi.mock('@/extensions/generated-hub-tabs', () => ({ hubTabs: [mocks.tabs] }));
+vi.mock('@/extensions/generated-hub-tabs-collaboration', () => ({ hubTabsCollaboration: [mocks.tabs] }));
 vi.mock('@/extensions/generated-shell-links', () => ({ shellLinks: [mocks.links] }));
 
 import CollaborationHubClient from '../CollaborationHubClient';
@@ -30,8 +30,8 @@ import { metadata } from '../page';
 const view = (text: string) => function FakeTab() {
   return <CollaborationHubFrame description={`${text} 설명`}><p>{text} 본문</p></CollaborationHubFrame>;
 };
-const tab = (id: string, order: number, label: string, hub = 'collaboration') =>
-  ({ id, hub, order, label, view: { Component: view(label) }, visibleWhen: { always: '시험' } });
+const tab = (id: string, order: number, label: string) =>
+  ({ id, order, label, view: { Component: view(label) }, visibleWhen: { always: '시험' } });
 const tabNames = () => within(screen.getByRole('tablist', { name: '협업 데이터 구분' })).getAllByRole('tab')
   .map((element) => [element.textContent, element.getAttribute('aria-selected')]);
 
@@ -39,8 +39,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.query = '';
   mocks.auth = { user: USER, loading: false };
-  // 순서는 order 가 정한다(레지스트리 순서가 아니다). 다른 허브의 탭은 그리지 않는다. 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다.
-  mocks.tabs.splice(0, Infinity, tab('SCRAPS', 20, '스크랩'), tab('COMMUNITY', 5, '커뮤니티', 'knowledge'), tab('MESSAGES', 10, '쪽지'));
+  // 순서는 order 가 정한다(레지스트리 순서가 아니다). 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다. 레지스트리는 협업 허브
+  //   전용이라(GAP-SLOT-001) 다른 허브의 탭이 섞일 수 없다 — 경계 계약이 허브 탭 기여의 슬롯과 탭 해석 모듈을 대조한다.
+  mocks.tabs.splice(0, Infinity, tab('SCRAPS', 20, '스크랩'), tab('MESSAGES', 10, '쪽지'));
   mocks.links.splice(0, Infinity,
     { id: 'menus', placement: 'collaboration-hub', order: 20, href: '/admin/system/menus', label: '메뉴 관리', visibleWhen: { page: '/admin/system/menus' } },
     { id: 'help', placement: 'header', order: 10, href: '/help', label: '도움말', visibleWhen: { page: '/help' } },
@@ -84,7 +85,7 @@ describe('협업 허브 core 셸', () => {
   });
 
   it('탭이 하나도 없는 구성에서는 빈 상태를 말하고 탭 목록·탭 패널을 그리지 않는다', () => {
-    mocks.tabs.splice(0, Infinity, tab('COMMUNITY', 5, '커뮤니티', 'knowledge'));
+    mocks.tabs.splice(0, Infinity);
     mocks.links.splice(0, Infinity);
     render(<CollaborationHubClient />);
     expect(screen.getByRole('heading', { level: 1, name: '협업 및 네트워크 허브' })).toBeInTheDocument();

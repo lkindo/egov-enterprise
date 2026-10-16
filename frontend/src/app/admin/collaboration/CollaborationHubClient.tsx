@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useOptionalAuth } from '@/contexts/AuthContext';
-import { isHubTab, visibleEntries, type HubTabViews, type ShellLink } from '@/extensions/slots';
-import { hubTabs } from '@/extensions/generated-hub-tabs';
+import { visibleEntries, type HubTabViews, type ShellLink } from '@/extensions/slots';
+import { hubTabsCollaboration } from '@/extensions/generated-hub-tabs-collaboration';
 import { shellLinks } from '@/extensions/generated-shell-links';
 import { CollaborationHubChromeProvider, CollaborationHubFrame } from './collaboration-hub-frame';
 import { parseCollaborationTab } from './collaboration-tabs';
 
 /**
- * 협업 허브 셸(core, 허브 분해 H1). 탭은 기능의 hub-tabs 기여(쪽지·스크랩)이고, 머리 링크는 shell-links 의 collaboration-hub
+ * 협업 허브 셸(core, 허브 분해 H1). 탭은 기능의 hub-tabs-collaboration 기여(쪽지·스크랩)이고, 머리 링크는 shell-links 의 collaboration-hub
  * 배치(주소록 관리·메일 발송)다. 셸은 기능 코드를 import 하지 않는다 — 기능이 빠진 구성에서는 그 기여 파일이 함께 지워지고
  * 레지스트리가 남은 기여로 다시 만들어진다. 탭이 하나도 없는 구성(core 등)에는 정직한 빈 상태를 그린다. 탭 기여는 있는데 권한으로
  * 모두 가려졌으면(H5 — 탭은 그 목록 API 권한으로 보인다) 구성이 아니라 권한 때문이라고 말한다.
@@ -29,7 +29,6 @@ import { parseCollaborationTab } from './collaboration-tabs';
  */
 const HUB_PARAM_KEYS = ['tab'] as const;
 
-const isCollaborationTab = isHubTab('collaboration');
 const isHubLink = (link: ShellLink) => link.placement === 'collaboration-hub';
 
 /** 열린 탭의 뷰. 탭을 바꾸면 key 가 바뀌어 뷰가 다시 마운트된다 — 검색어 같은 탭 상태가 비워진다. */
@@ -46,9 +45,10 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
   // 권한 상태를 아직 모르면(서버가 사용자를 넘기지 못해 다시 확인하는 동안) 권한으로 가린 탭이 아직 없다. 그때 빈 상태를 말하지 않는다.
   const permissionPending = auth?.loading === true;
 
-  const tabs = useMemo(() => visibleEntries(user, hubTabs, isCollaborationTab), [user]);
+  // 레지스트리는 협업 허브 전용이다(hub-tabs-collaboration, GAP-SLOT-001) — 다른 허브의 탭 뷰는 이 화면의 번들에 실리지 않는다.
+  const tabs = useMemo(() => visibleEntries(user, hubTabsCollaboration), [user]);
   // 이 구성에 협업 탭 기여가 있는가(권한과 무관). 있는데 보이는 탭이 없으면 권한 때문이다.
-  const contributed = hubTabs.some((entries) => entries.some(isCollaborationTab));
+  const contributed = hubTabsCollaboration.some((entries) => entries.length > 0);
   const links = useMemo(() => visibleEntries(user, shellLinks, isHubLink), [user]);
 
   // [P1-7] 탭은 URL 파생값이다. 공유·새로고침·뒤로가기가 그대로 복원된다. 이 구성에 없는 탭이면 페이지 기본 탭, 그것도 없으면 첫 탭이다.

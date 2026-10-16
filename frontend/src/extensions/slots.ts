@@ -110,7 +110,8 @@ export interface PostAction extends SlotEntry {
 }
 
 /**
- * hub-tabs 의 허브별 탭 뷰. 허브마다 탭이 하는 일이 달라 뷰 모양을 허브별로 둔다 — 허브를 더할 때는 키 하나를 더한다.
+ * 허브 탭(hub-tabs-<허브>)의 허브별 탭 뷰. 허브마다 탭이 하는 일이 달라 뷰 모양을 허브별로 둔다 — 허브를 더할 때는 키 하나와
+ * SlotMap 의 슬롯 하나(`'hub-tabs-<허브>': HubTab<'<허브>'>`)를 같은 변경에서 더한다(경계 계약이 둘을 대조한다).
  * 뷰는 기능 모듈이 내보낸 값이고 기여는 그 이름(또는 이름만 담은 객체)만 가리킨다(기여는 데이터다).
  */
 export interface HubTabViews {
@@ -144,24 +145,18 @@ export interface HubTabViews {
 export type HubId = keyof HubTabViews;
 
 /**
- * hub-tabs — 허브 셸의 탭. id 는 그 탭의 `?tab=` 값(대문자 식별자)이고 슬롯 전체에서 유일하다. 그 허브의 코어 탭과 겹치지 않고,
- * 허브의 탭 해석 모듈(`*-tabs.ts` 의 TAB_HUB.contributable)이 이 기여 파일을 지목해야 한다(경계 계약). 셸은 자기 허브의 항목만
- * 고른다(isHubTab) — 쓰기 귀속(축 3·화면 목록)도 허브별 소비자 표를 따른다.
+ * hub-tabs-<허브> — 허브 셸의 탭(GAP-SLOT-001). 허브마다 슬롯과 레지스트리가 따로라 허브 셸은 자기 허브의 레지스트리 하나만 읽고,
+ * 다른 허브의 탭 뷰를 번들에 싣지 않는다. 허브는 슬롯 이름이 정하므로 항목에 hub 를 적지 않는다. id 는 그 탭의 `?tab=` 값(대문자
+ * 식별자)이고 그 허브 슬롯 안에서 유일하다. 그 허브의 코어 탭과 겹치지 않고, 허브의 탭 해석 모듈(`*-tabs.ts` 의 TAB_HUB.contributable)이
+ * 이 기여 파일을 지목해야 한다(경계 계약). 쓰기 귀속(축 3·화면 목록)은 그 허브 레지스트리를 읽는 셸로 이어진다.
  */
-export type HubTab = {
-  [H in HubId]: SlotEntry & {
-    readonly hub: H;
-    /** 같은 허브 안의 순서(작은 값 먼저). */
-    readonly order: number;
-    /** 탭 버튼 글자. */
-    readonly label: string;
-    readonly view: HubTabViews[H];
-  };
-}[HubId];
-
-/** 셸이 자기 허브의 항목만 고르는 술어(타입을 좁힌다). */
-export const isHubTab = <H extends HubId>(hub: H) =>
-  (entry: HubTab): entry is Extract<HubTab, { readonly hub: H }> => entry.hub === hub;
+export interface HubTab<H extends HubId> extends SlotEntry {
+  /** 같은 허브 안의 순서(작은 값 먼저). */
+  readonly order: number;
+  /** 탭 버튼 글자. */
+  readonly label: string;
+  readonly view: HubTabViews[H];
+}
 
 /** 통계 셸이 고른 집계 기간. 고르지 않으면 undefined 이고 서버 기본값(최근 1개월)을 집계한다. */
 export interface StatsDateRange {
@@ -340,7 +335,9 @@ export interface DeliveryChannel extends SlotEntry {
 
 export interface SlotMap {
   'delivery-channels': DeliveryChannel;
-  'hub-tabs': HubTab;
+  'hub-tabs-collaboration': HubTab<'collaboration'>;
+  'hub-tabs-knowledge': HubTab<'knowledge'>;
+  'hub-tabs-monitoring': HubTab<'monitoring'>;
   'stats-panels': StatsPanel;
   'recipient-picker-sources': RecipientPickerSource;
   'shell-links': ShellLink;

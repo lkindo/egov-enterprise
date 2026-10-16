@@ -757,12 +757,14 @@ test('dashboard, notifications and optional address book blocks follow their dom
   for (const shell of ['frontend/src/app/components/layout/header.tsx', 'frontend/src/app/components/layout/footer.tsx', 'frontend/src/app/error.tsx']) {
     assert.equal(project(shell), readFileSync(join(root, shell), 'utf8'), shell);
   }
-  //   [허브 분해 H1] 협업 허브 탭(hub-tabs)도 같다. 셸 링크 레지스트리에는 메일 자신의 협업 허브 링크만 남는다.
+  //   [허브 분해 H1] 허브 탭(허브마다 hub-tabs-<허브>, GAP-SLOT-001)도 같다. 셸 링크 레지스트리에는 메일 자신의 협업 허브 링크만 남는다.
   for (const [shellRegistry, empty] of [
     ['frontend/src/extensions/generated-header-widgets.ts', "headerWidgets: readonly SlotContributions<'header-widgets'>[] = [];"],
     ['frontend/src/extensions/generated-shell-links.ts', "shellLinks: readonly SlotContributions<'shell-links'>[] = [mail];"],
     ['frontend/src/extensions/generated-post-actions.ts', "postActions: readonly SlotContributions<'post-actions'>[] = [];"],
-    ['frontend/src/extensions/generated-hub-tabs.ts', "hubTabs: readonly SlotContributions<'hub-tabs'>[] = [];"],
+    ['frontend/src/extensions/generated-hub-tabs-collaboration.ts', "hubTabsCollaboration: readonly SlotContributions<'hub-tabs-collaboration'>[] = [];"],
+    ['frontend/src/extensions/generated-hub-tabs-knowledge.ts', "hubTabsKnowledge: readonly SlotContributions<'hub-tabs-knowledge'>[] = [];"],
+    ['frontend/src/extensions/generated-hub-tabs-monitoring.ts', "hubTabsMonitoring: readonly SlotContributions<'hub-tabs-monitoring'>[] = [];"],
     ['frontend/src/extensions/generated-home-sections.ts', "homeSections: readonly SlotContributions<'home-sections'>[] = [];"],
   ]) {
     const shellRendered = projector.project(shellRegistry, readFileSync(join(root, shellRegistry), 'utf8')).source;

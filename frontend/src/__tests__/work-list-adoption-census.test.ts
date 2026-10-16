@@ -134,7 +134,7 @@ const OTHER_SHELL_IMPORTS = [
 ];
 /**
  * A1 셸을 감싼 허브 틀(허브 분해 H1). 틀이 WorkListPage 를 경유하므로 채택 수에는 틀 하나만 센다. 틀에 조각을 넘기는 탭 뷰(기능의
- * hub-tabs 기여 뷰)는 직접 조립이 아니고, 셸 화면 규칙(G2 조회/Enter·총 건수 단일 표기)은 탭 뷰에도 그대로 적용한다.
+ * hub-tabs-<허브> 기여 뷰)는 직접 조립이 아니고, 셸 화면 규칙(G2 조회/Enter·총 건수 단일 표기)은 탭 뷰에도 그대로 적용한다.
  */
 const A1_FRAME_IMPORTS = ['admin/collaboration/collaboration-hub-frame'];
 

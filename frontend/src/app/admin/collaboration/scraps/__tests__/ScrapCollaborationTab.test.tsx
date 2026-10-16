@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * 협업 허브 스크랩 탭의 **등록·수정 진입점** 계약(DEC-OPS-079). 스크랩 탭은 스크랩 소유 hub-tabs 기여라(허브 분해 H1) 이 시험도
+ * 협업 허브 스크랩 탭의 **등록·수정 진입점** 계약(DEC-OPS-079). 스크랩 탭은 스크랩 소유 hub-tabs-collaboration 기여라(허브 분해 H1) 이 시험도
  * 스크랩 디렉터리에 두고 실제 레지스트리로 허브를 그린다 — 스크랩이 빠진 구성에서는 기능과 함께 지워진다.
  *
  * ── 이 파일이 막는 회귀 ──────────────────────────────────────────────────────

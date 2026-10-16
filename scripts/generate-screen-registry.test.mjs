@@ -960,11 +960,11 @@ test('the source slot predicates are attributed item by item to the screens that
     'informalsanction/home-sections.ts approval-pending APPROVAL_READ → /',
     'informalsanction/notification-actions.ts approval-approve APPROVAL_APPROVE·APPROVAL_READ → layout',
     'note/home-sections.ts unread-notes NOTE_READ → /',
-    `note/hub-tabs.ts MESSAGES NOTE_READ → ${collaboration}`,
+    `note/hub-tabs-collaboration.ts MESSAGES NOTE_READ → ${collaboration}`,
     'notification/header-widgets.ts notification-bell NOTI_READ → layout',
     'promotion/home-sections.ts popup POPUP_READ → /',
     'promotion/home-sections.ts banner BANNER_READ → /',
-    `scrap/hub-tabs.ts SCRAPS SCRAP_READ → ${collaboration}`,
+    `scrap/hub-tabs-collaboration.ts SCRAPS SCRAP_READ → ${collaboration}`,
     'scrap/post-actions.ts scrap SCRAP_CREATE → /admin/community/boards/detail',
     'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, /admin/stats/report, '
       + '/admin/stats/screen, /admin/stats/user',

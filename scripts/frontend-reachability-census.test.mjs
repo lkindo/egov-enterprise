@@ -200,7 +200,7 @@ const COLLABORATION_SURVIVORS = [
   'frontend/src/app/admin/help/KnowledgeHubClient.tsx',
   'frontend/src/app/admin/help/knowledge-tabs.ts',
   'frontend/src/lib/board/qna-status.ts',
-  'frontend/src/extensions/generated-hub-tabs.ts',
+  'frontend/src/extensions/generated-hub-tabs-knowledge.ts',
   // [2026-09-15 GAP-PACK-001] pack 별로 가른 사용자 서비스 회귀 테스트 — 아래 CORE_SURVIVORS 주석 참조.
   'frontend/src/services/business/user/__tests__/CoreUserServices.test.ts',
   'frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts',
@@ -231,6 +231,8 @@ const CORE_SURVIVORS = [
   //   화면이 아닌 파일만 둔다.
   'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx',
   'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
+  // [GAP-SLOT-001] 허브 탭 레지스트리는 허브마다 따로다. 감시 허브 셸은 자기 허브의 레지스트리만 읽는다.
+  'frontend/src/extensions/generated-hub-tabs-monitoring.ts',
   // [Phase 0c] 통계 셸과 게시판 데이터를 쓰지 않는 통계 화면은 core 다. [허브 분해 H4] 셸은 게시판·설문 탭을 stats-panels
   //   레지스트리로 받는다 — 기능 코드를 다시 import 하거나 레지스트리 렌더가 빠지면 core 투영에서 통계 화면 전체가 연쇄로 사라진다.
   'frontend/src/extensions/generated-stats-panels.ts',
@@ -251,12 +253,14 @@ const CORE_SURVIVORS = [
   'frontend/src/extensions/generated-header-widgets.ts',
   // [스크랩 슬롯] 게시글 상세 부가 동작 레지스트리. core 에서는 소비자(게시글 상세)가 빠져도 레지스트리는 빈 배열로 남는다.
   'frontend/src/extensions/generated-post-actions.ts',
-  // [허브 분해 H1] 협업 허브는 core 셸이다 — 탭(쪽지·스크랩)은 hub-tabs 기여, 머리 링크는 shell-links 기여다. 셸이 기능 코드를 다시
+  // [허브 분해 H1] 협업 허브는 core 셸이다 — 탭(쪽지·스크랩)은 hub-tabs-collaboration 기여, 머리 링크는 shell-links 기여다. 셸이 기능 코드를 다시
   //   import 하면 core 투영에서 허브가 연쇄로 사라진다. 명령 센터도 바로가기를 shell-links 레지스트리에서 받는다.
   'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx',
   'frontend/src/app/admin/collaboration/collaboration-hub-frame.tsx',
   'frontend/src/app/admin/collaboration/collaboration-tabs.ts',
-  'frontend/src/extensions/generated-hub-tabs.ts',
+  'frontend/src/extensions/generated-hub-tabs-collaboration.ts',
+  // [GAP-SLOT-001] 지식 허브(게시판 셸)가 빠진 core 에서도 그 허브의 레지스트리는 빈 배열로 남는다(post-actions 와 같다).
+  'frontend/src/extensions/generated-hub-tabs-knowledge.ts',
   'frontend/src/app/components/ui/global-command-center.tsx',
   // [업무 허브 분해 W1] 나의 업무 탭 줄은 core 도우미다 — 업무 보고·일정 탭은 shell-links 기여다. 도우미가 기능 코드를 import 하면
   //   core 투영에서 도우미와 그것을 쓰는 업무 관리 목록(나의 업무·업무 관리 두 라우트)이 연쇄로 사라진다.
@@ -289,7 +293,7 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     );
   }
   // [2026-09-27 DIP B5 F11] 하네스 아틀라스(정적 스킬 카탈로그·예시 계측 로그)는 demo pack 소유 샘플이다. 허브에는 시연 기능의
-  //   hub-tabs 기여로만 붙으므로(허브 분해 H3), removePaths 에서 빠지면 탭은 사라지고 파일만 core 에 고아로 남는다.
+  //   hub-tabs-monitoring 기여로만 붙으므로(허브 분해 H3), removePaths 에서 빠지면 탭은 사라지고 파일만 core 에 고아로 남는다.
   const harnessAtlas = byFile(census, 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx');
   assert.equal(
     harnessAtlas.profileRemovalConstraints.find((constraint) => constraint.profile === 'core')?.removal,
@@ -304,19 +308,19 @@ test('core 프로필에서 살아남아야 하는 파일은 core 투영의 연�
     ['frontend/src/extensions/scrap/post-actions.ts', ['core']],
     // [허브 분해 H1] 협업 허브 탭·머리 링크·명령 센터 바로가기 기여도 기능과 함께 직접 지워진다. 스크랩 화면 디렉터리도 직접 지운다 —
     //   그 page 는 core 셸만 import 해 연쇄로는 남는다(그러면 core 에 스크랩 화면이 남는다).
-    ['frontend/src/extensions/note/hub-tabs.ts', ['core']],
-    ['frontend/src/extensions/scrap/hub-tabs.ts', ['core']],
+    ['frontend/src/extensions/note/hub-tabs-collaboration.ts', ['core']],
+    ['frontend/src/extensions/scrap/hub-tabs-collaboration.ts', ['core']],
     ['frontend/src/extensions/note/shell-links.ts', ['core']],
     ['frontend/src/extensions/mail/shell-links.ts', ['core']],
     ['frontend/src/extensions/addressbook/shell-links.ts', ['core', 'collaboration']],
     ['frontend/src/app/admin/collaboration/scraps/page.tsx', ['core']],
     // [허브 분해 H2] 지식 허브 커뮤니티 탭 기여와 그 머리 동작은 커뮤니티와 함께, 지식 허브 셸은 게시판과 함께 직접 지워진다.
-    ['frontend/src/extensions/community/hub-tabs.ts', ['core', 'collaboration']],
+    ['frontend/src/extensions/community/hub-tabs-knowledge.ts', ['core', 'collaboration']],
     ['frontend/src/components/business/community/knowledge-community-tab.tsx', ['core', 'collaboration']],
     ['frontend/src/app/admin/help/KnowledgeHubClient.tsx', ['core']],
     ['frontend/src/lib/board/qna-status.ts', ['core']],
     // [허브 분해 H3] 감시 허브의 하네스 아틀라스 탭 기여도 시연 기능과 함께 직접 지워진다(허브는 core 셸이라 남는다).
-    ['frontend/src/extensions/showcase/hub-tabs.ts', ['core', 'collaboration']],
+    ['frontend/src/extensions/showcase/hub-tabs-monitoring.ts', ['core', 'collaboration']],
     // [허브 분해 H6] 댓글 및 평가 관리는 댓글 기능의 독립 화면이다 — 감시 허브(core)는 남고 이 화면은 댓글과 함께 직접 지워진다.
     ['frontend/src/app/admin/system/comments/CommentModerationClient.tsx', ['core']],
     // [허브 분해 H4] 통계 셸의 게시판·설문 기여도 기능과 함께 직접 지워진다(셸·요약은 core 라 남는다).

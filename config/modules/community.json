@@ -103,7 +103,7 @@
     "events": [],
     "contributions": [
       {
-        "path": "frontend/src/extensions/community/hub-tabs.ts",
+        "path": "frontend/src/extensions/community/hub-tabs-knowledge.ts",
         "reason": "커뮤니티 기능이 없으면 지식 허브의 커뮤니티 탭과 그 머리 동작만 사라지고 위키·자주 묻는 질문·질의응답은 그대로입니다."
       }
     ],

@@ -435,12 +435,11 @@ test('가로채기 판정이 실제 모집단에서 공허하지 않다', () => 
  */
 test('슬롯 기여와 기여만 import 하는 모듈은 소비 셸의 라우트로 귀속한다', () => {
   const sources = new Map(Object.entries({
-    // 주석 속 hub 인용은 값이 아니다 — 지식 허브로 새면 /admin/help 가 함께 적힌다.
-    'frontend/src/extensions/note/hub-tabs.ts': [
+    // 허브 탭은 허브마다 슬롯이 따로다(GAP-SLOT-001) — 협업 허브 슬롯의 기여는 지식 허브 셸(다른 슬롯의 소비자)로 새지 않는다.
+    'frontend/src/extensions/note/hub-tabs-collaboration.ts': [
       "import { defineContributions } from '@/extensions/slots';",
       "import { NoteTab } from '@/app/note/NoteTab';",
-      "// hub: 'knowledge' 는 인용일 뿐이다",
-      "export default defineContributions('hub-tabs', [{ id: 'MESSAGES', hub: 'collaboration', view: { Component: NoteTab } }]);",
+      "export default defineContributions('hub-tabs-collaboration', [{ id: 'MESSAGES', view: { Component: NoteTab } }]);",
     ].join('\n'),
     'frontend/src/extensions/slots.ts': 'export const defineContributions = (slot, entries) => entries;',
     'frontend/src/app/note/NoteTab.tsx': [
@@ -459,10 +458,8 @@ test('슬롯 기여와 기여만 import 하는 모듈은 소비 셸의 라우트
     'frontend/src/app/components/Header.tsx': "export const isHeaderLink = (link) => link.placement === 'header';",
   }));
   const consumerTable = {
-    'hub-tabs': {
-      collaboration: ['frontend/src/app/admin/collaboration/HubClient.tsx'],
-      knowledge: ['frontend/src/app/admin/help/KnowledgeHub.tsx'],
-    },
+    'hub-tabs-collaboration': ['frontend/src/app/admin/collaboration/HubClient.tsx'],
+    'hub-tabs-knowledge': ['frontend/src/app/admin/help/KnowledgeHub.tsx'],
     'shell-links': ['frontend/src/app/components/Header.tsx', 'frontend/src/app/admin/collaboration/HubClient.tsx'],
   };
   sources.set('frontend/src/app/admin/help/KnowledgeHub.tsx', 'export const KnowledgeHub = () => null;');
@@ -476,7 +473,7 @@ test('슬롯 기여와 기여만 import 하는 모듈은 소비 셸의 라우트
   const routes = Object.fromEntries([...attributed].map(([file, contexts]) => [file, contexts.map(({ routePattern }) => routePattern)]));
 
   assert.deepEqual(routes, {
-    'frontend/src/extensions/note/hub-tabs.ts': ['/admin/collaboration'],
+    'frontend/src/extensions/note/hub-tabs-collaboration.ts': ['/admin/collaboration'],
     'frontend/src/app/note/NoteTab.tsx': ['/admin/collaboration'],
     'frontend/src/app/note/note-helper.ts': ['/admin/collaboration'],
     // 배치 리터럴로 거르는 셸만 그 기여를 그린다. 공용 셸(머리글)이 그리는 기여는 라우트를 특정하지 못한다.

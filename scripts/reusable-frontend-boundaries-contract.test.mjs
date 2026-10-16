@@ -11,8 +11,8 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { createFrontendProjector, isFrontendModuleFile, parseMarkerBlocks, planFrontendRemoval } from './reusable-source-frontend.mjs';
 import { isCopyableSourceFile, normalize, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
-import { SLOT_CONSUMER_PARTITION_KEYS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, renderSlotRegistry, slotConsumerFiles,
-  slotConsumerPartition, slotConsumersByHub, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
+import { SLOT_CONSUMER_PARTITION_KEYS, SLOT_REGISTRY_CONSUMERS, discoverSlotContributions, hubOfTabSlot, hubTabSlot, renderSlotRegistry,
+  slotConsumerFiles, slotConsumerPartition, slotPathKind, slotRegistryPath } from './slot-registry.mjs';
 import { readContributionEntries } from './operation-consumer-census.mjs';
 import { runInNewContext } from 'node:vm';
 
@@ -367,19 +367,38 @@ test('direct selections that reach a check unit no earlier configuration checked
  */
 const LINK_SLOTS = new Set(['shell-links', 'stats-panels']);
 const LINK_KEYS = new Set(['href', 'url', 'link', 'moreHref']);
-/** 슬롯 종류 상한(설계서 16.5). */
-const MAX_SLOTS = 10;
+/**
+ * 슬롯 종류 상한(설계서 16.5). 종류는 SlotMap 의 항목 타입이다 — 허브 탭은 허브마다 슬롯(hub-tabs-<허브>)을 두지만 항목 타입은
+ * HubTab<허브> 하나라 한 종류로 센다(GAP-SLOT-001). 같은 항목 타입을 여러 슬롯이 쓰는 것은 허브 탭뿐이다(아래 시험).
+ */
+const MAX_SLOT_KINDS = 10;
 const SLOTS_SOURCE = join(frontendRoot, 'src/extensions/slots.ts');
 
 const repoRel = path => normalize(relative(repoRoot, path));
 const frontendRel = path => normalize(relative(frontendRoot, path));
 
-/** SlotMap 인터페이스의 키(슬롯 이름). 타입 원천에서 읽는다. */
-function slotMapKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
+/** SlotMap 인터페이스의 멤버(슬롯 이름 → 항목 타입 원문). 타입 원천에서 읽는다. */
+function slotMapMembers(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
   const file = ts.createSourceFile(SLOTS_SOURCE, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const map = file.statements.find(node => ts.isInterfaceDeclaration(node) && node.name.text === 'SlotMap');
   assert.ok(map, 'slots.ts declares the SlotMap interface');
-  return map.members.map(member => (ts.isStringLiteral(member.name) || ts.isIdentifier(member.name) ? member.name.text : `<${ts.SyntaxKind[member.name.kind]}>`));
+  return map.members.map(member => ({
+    slot: ts.isStringLiteral(member.name) || ts.isIdentifier(member.name) ? member.name.text : `<${ts.SyntaxKind[member.name.kind]}>`,
+    type: member.type,
+  }));
+}
+
+/** SlotMap 인터페이스의 키(슬롯 이름). */
+function slotMapKeys(source) {
+  return slotMapMembers(source).map(({ slot }) => slot);
+}
+
+/** 슬롯의 종류(항목 타입 이름 — 타입 인자는 뺀다)와 타입 인자 원문. 타입 참조가 아니면 원문 그대로를 종류로 본다. */
+function slotKindOf(type) {
+  if (type && ts.isTypeReferenceNode(type)) {
+    return { kind: type.typeName.getText(), args: (type.typeArguments ?? []).map(argument => argument.getText()) };
+  }
+  return { kind: type?.getText() ?? '?', args: [] };
 }
 
 /** shell-links 의 배치(닫힌 목록). 소비 셸이 있는 자리만 둔다. */
@@ -516,7 +535,7 @@ function hubViewKeys(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
 
 /**
  * 허브 탭 해석 모듈(`src/app/** /*-tabs.ts` 의 TAB_HUB)을 import 없이 평가한다 — 탭 목적지 계약과 같은 방법이다(실행 import 를 두지
- * 않는 모듈이라 생성물에서도 읽힌다). slotHub 가 있는 모듈만 hub-tabs 기여를 받는 허브다.
+ * 않는 모듈이라 생성물에서도 읽힌다). slotHub 가 있는 모듈만 허브 탭 기여를 받는 허브이고, 그 기여 슬롯은 hub-tabs-<slotHub> 다.
  */
 function hubTabModules(files = readProjectionInputs().files) {
   const modules = new Map();
@@ -531,27 +550,35 @@ function hubTabModules(files = readProjectionInputs().files) {
   return modules;
 }
 
+/** 허브 탭 항목의 키(닫힌 목록). 허브는 슬롯 이름이 정하므로 항목에 hub 를 두지 않는다(GAP-SLOT-001). */
+const HUB_TAB_KEYS = new Set(['id', 'order', 'label', 'view', 'visibleWhen']);
+
 /**
- * hub-tabs 항목 규칙(허브 분해 H1). 셸은 이 값으로 탭을 그리고 `?tab=` 을 읽으므로 기여 원문에서 정적으로 판정한다.
- * - hub 는 HubTabViews 키 리터럴, id 는 대문자 식별자 리터럴(`?tab=` 값), order 는 숫자 리터럴, view 는 import 한 이름이나 이름만 담은 객체.
+ * 허브 탭(hub-tabs-<허브>) 항목 규칙(허브 분해 H1, GAP-SLOT-001). 셸은 이 값으로 탭을 그리고 `?tab=` 을 읽으므로 기여 원문에서 정적으로
+ * 판정한다. hub 는 슬롯 이름에서 온다.
+ * - 슬롯의 허브는 HubTabViews 키다. 항목 키는 id·order·label·view·visibleWhen 뿐이다.
+ * - id 는 대문자 식별자 리터럴(`?tab=` 값), order 는 숫자 리터럴, view 는 import 한 이름이나 이름만 담은 객체.
  * - id 는 그 허브 탭 해석의 contributable 이 이 파일을 지목하는 탭이고, 셸 고유 탭(parse(id) 가 기여 없이 받는 값)이 아니다.
  */
-function hubTabViolations(entries, label, { file, hubs = hubViewKeys(), modules = hubTabModules() } = {}) {
+function hubTabViolations(entries, label, { file, hub, hubs = hubViewKeys(), modules = hubTabModules() } = {}) {
   const violations = [];
+  if (!hubs.includes(hub)) violations.push(`${label}: 허브 탭 슬롯의 허브(${hub})는 ${hubs.join('·')} 가운데 하나다(hub-tabs-<허브>)`);
   const text = node => (node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined);
   const prop = (object, name) => object.properties.find(property => ts.isPropertyAssignment(property)
     && ts.isIdentifier(property.name) && property.name.text === name);
   for (const element of entries.elements) {
     if (!ts.isObjectLiteralExpression(element)) {
-      violations.push(`${label}: hub-tabs 항목은 객체 리터럴이다`);
+      violations.push(`${label}: 허브 탭 항목은 객체 리터럴이다`);
       continue;
     }
     const id = text(prop(element, 'id')?.initializer);
-    const hub = text(prop(element, 'hub')?.initializer);
     const order = prop(element, 'order')?.initializer;
     const view = prop(element, 'view')?.initializer;
     const name = id ?? '?';
-    if (!hubs.includes(hub)) violations.push(`${label}: ${name} 의 hub 는 ${hubs.join('·')} 리터럴이다`);
+    for (const property of element.properties) {
+      const key = property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) ? property.name.text : '?';
+      if (!HUB_TAB_KEYS.has(key)) violations.push(`${label}: ${name} 의 키 ${key} 는 허브 탭 항목 키(${[...HUB_TAB_KEYS].join('·')})가 아니다`);
+    }
     if (id === undefined || !/^[A-Z][A-Z0-9_]*$/.test(id)) violations.push(`${label}: ${name} 의 id 는 \`?tab=\` 값인 대문자 식별자 리터럴이다`);
     if (!order || !ts.isNumericLiteral(order)) violations.push(`${label}: ${name} 의 order 는 숫자 리터럴이다`);
     const named = node => node && ts.isIdentifier(node);
@@ -559,7 +586,7 @@ function hubTabViolations(entries, label, { file, hubs = hubViewKeys(), modules 
       && view.properties.every(property => ts.isPropertyAssignment(property) && named(property.initializer))))) {
       violations.push(`${label}: ${name} 의 view 는 import 한 이름이거나 이름만 담은 객체다`);
     }
-    if (hub === undefined || id === undefined || !hubs.includes(hub)) continue;
+    if (id === undefined || !hubs.includes(hub)) continue;
     const tabs = modules.get(hub);
     if (!tabs) {
       violations.push(`${label}: ${name} — 허브 ${hub} 의 탭 해석 모듈(TAB_HUB.slotHub)이 없다`);
@@ -757,7 +784,7 @@ function contributionViolations({ file, source, owner, slot, ownPaths, foreignPa
       value(element);
     }
     if (slot === 'shell-links') violations.push(...shellLinkViolations(entries, label));
-    if (slot === 'hub-tabs') violations.push(...hubTabViolations(entries, label, { file: label }));
+    if (hubOfTabSlot(slot) !== null) violations.push(...hubTabViolations(entries, label, { file: label, hub: hubOfTabSlot(slot) }));
     if (slot === 'stats-panels') violations.push(...statsPanelViolations(entries, label));
     if (slot === 'home-sections') violations.push(...homeSectionViolations(entries, label, { file, importedFrom, readModule }));
   }
@@ -801,23 +828,68 @@ test('slot registries: the source registry is the render of its contributions an
   }
 });
 
-test('slot names are one spelling: SlotMap keys, registries and contribution file names are the same set of at most ten', () => {
+/**
+ * SlotMap 의 슬롯 종류(항목 타입)와 허브 탭 슬롯 규칙의 위반(GAP-SLOT-001). 종류는 MAX_SLOT_KINDS 이하이고, 항목 타입을 여러 슬롯이 나눠 쓰는
+ * 것은 허브 탭(HubTab)뿐이다. 허브 탭 슬롯은 HubTabViews 키마다 정확히 하나(hub-tabs-<허브>)이고 항목 타입은 HubTab<'<허브>'> 다.
+ */
+function slotKindViolations(source = readFileSync(SLOTS_SOURCE, 'utf8')) {
+  const violations = [];
+  const members = slotMapMembers(source).map(member => ({ ...member, ...slotKindOf(member.type) }));
+  const bySlotKind = new Map();
+  for (const { slot, kind } of members) bySlotKind.set(kind, [...(bySlotKind.get(kind) ?? []), slot]);
+  if (bySlotKind.size === 0 || bySlotKind.size > MAX_SLOT_KINDS) violations.push(`SlotMap 의 슬롯 종류가 ${bySlotKind.size} 이다(1..${MAX_SLOT_KINDS})`);
+  for (const [kind, slots] of bySlotKind) {
+    if (slots.length > 1 && kind !== 'HubTab') violations.push(`항목 타입 ${kind} 를 여러 슬롯(${slots.join(', ')})이 쓴다 — 허브 탭만 허브마다 슬롯을 둔다`);
+  }
+  const hubs = hubViewKeys(source);
+  const hubSlots = members.filter(({ slot, kind }) => kind === 'HubTab' || hubOfTabSlot(slot) !== null);
+  for (const { slot, kind, args } of hubSlots) {
+    const hub = hubOfTabSlot(slot);
+    if (hub === null || !hubs.includes(hub)) violations.push(`${slot}: 허브 탭 슬롯 이름은 hub-tabs-<HubTabViews 키> 다`);
+    if (kind !== 'HubTab' || args.length !== 1 || args[0] !== `'${hub}'`) violations.push(`${slot}: 항목 타입은 HubTab<'${hub}'> 다(${kind}<${args.join(', ')}>)`);
+  }
+  const declared = hubSlots.map(({ slot }) => slot).sort();
+  const expected = hubs.map(hubTabSlot).sort();
+  if (JSON.stringify(declared) !== JSON.stringify(expected)) violations.push(`허브 탭 슬롯(${declared.join(', ')})이 HubTabViews 키(${expected.join(', ')})와 다르다`);
+  return violations;
+}
+
+test('slot names are one spelling: SlotMap keys, registries and contribution file names are the same set, of at most ten kinds', () => {
   const files = readProjectionInputs().files.map(frontendRel);
   const kinds = files.map(file => slotPathKind(file)).filter(Boolean);
   const registries = [...new Set(kinds.filter(kind => kind.kind === 'registry').map(kind => kind.slot))].sort();
   const contributed = [...new Set(kinds.filter(kind => kind.kind === 'contribution').map(kind => kind.slot))].sort();
   const keys = [...slotMapKeys()].sort();
-  assert.ok(keys.length > 0 && keys.length <= MAX_SLOTS, `SlotMap has ${keys.length} slots (1..${MAX_SLOTS})`);
+  assert.deepEqual(slotKindViolations(), [], 'slot kinds and hub tab slots');
   assert.deepEqual(registries, keys, 'every SlotMap key has a generated registry and every registry has a key');
   assert.deepEqual(contributed, keys, 'every SlotMap key has a source contribution file and every contribution file name is a key');
   assert.deepEqual(Object.keys(SLOT_REGISTRY_CONSUMERS).sort(), keys, 'every slot has its consumer row');
-  // 허브별로 적은 슬롯은 hub-tabs 하나이고, 그 허브 이름은 HubTabViews 키와 같다(셸이 고르는 허브 = 귀속하는 허브).
-  assert.deepEqual(keys.filter(slot => slotConsumersByHub(slot)), ['hub-tabs'], 'only hub-tabs lists consumers per hub');
-  assert.deepEqual(Object.keys(slotConsumersByHub('hub-tabs')).sort(), [...hubViewKeys()].sort(), 'hub-tabs consumer hubs are the HubTabViews keys');
-  // 대조: 키 하나를 더하면 레지스트리·기여·소비자가 없어 붉다.
+  // 허브 탭 슬롯마다 소비자는 그 허브 셸 하나이고, 허브 셸마다 허브 탭 레지스트리는 하나다(GAP-SLOT-001). 셸은 그 허브 탭 해석 모듈을
+  // 쓴다 — 허브 탭 해석 모듈과 같은 디렉터리의 셸이다.
+  const modules = hubTabModules();
+  const shells = hubViewKeys().map(hub => {
+    const consumers = slotConsumerFiles(hubTabSlot(hub));
+    assert.equal(consumers.length, 1, `${hubTabSlot(hub)}: one consumer`);
+    assert.equal(slotConsumerPartition(hubTabSlot(hub)), null, `${hubTabSlot(hub)}: not partitioned`);
+    assert.equal(posix.dirname(consumers[0]), posix.dirname(modules.get(hub)?.file ?? ''), `${hubTabSlot(hub)}: the consumer is the shell next to its tab module`);
+    return consumers[0];
+  });
+  assert.equal(new Set(shells).size, shells.length, 'each hub shell consumes one hub tab registry');
+  // 대조: 키 하나를 더하면 레지스트리·기여·소비자가 없어 붉다. 슬롯 종류 규칙은 아래 합성 원천으로 붉다.
   const probe = readFileSync(SLOTS_SOURCE, 'utf8').replace("'recipient-picker-sources': RecipientPickerSource;",
     "'recipient-picker-sources': RecipientPickerSource;\n  'probe-slot': RecipientPickerSource;");
   assert.deepEqual(slotMapKeys(probe).sort(), [...keys, 'probe-slot'].sort(), 'the key reader sees an added key');
+  assert.match(slotKindViolations(probe).join('\n'), /항목 타입 RecipientPickerSource 를 여러 슬롯\(recipient-picker-sources, probe-slot\)이 쓴다/);
+  const source = readFileSync(SLOTS_SOURCE, 'utf8');
+  const hubLine = "'hub-tabs-knowledge': HubTab<'knowledge'>;";
+  assert.ok(source.includes(hubLine), 'the fixture finds the knowledge hub tab slot');
+  assert.match(slotKindViolations(source.replace(hubLine, "'hub-tabs-knowledge': HubTab<'collaboration'>;")).join('\n'),
+    /hub-tabs-knowledge: 항목 타입은 HubTab<'knowledge'> 다/);
+  assert.match(slotKindViolations(source.replace(hubLine, '')).join('\n'), /허브 탭 슬롯\(.*\)이 HubTabViews 키\(.*hub-tabs-knowledge.*\)와 다르다/);
+  assert.match(slotKindViolations(source.replace(hubLine, `${hubLine}\n  'hub-tabs-wiki': HubTab<'wiki'>;`)).join('\n'),
+    /hub-tabs-wiki: 허브 탭 슬롯 이름은 hub-tabs-<HubTabViews 키> 다/);
+  const extraKinds = Array.from({ length: MAX_SLOT_KINDS }, (_, index) => `  'probe-${index}': Probe${index};`).join('\n');
+  assert.match(slotKindViolations(source.replace(hubLine, `${hubLine}\n${extraKinds}`)).join('\n'), /슬롯 종류가 \d+ 이다\(1\.\.10\)/);
 });
 
 /** 통계 패널(stats-panels) 항목 타입이 두는 배치(placement 리터럴). slots.ts 의 통계 타입 구간에서 읽는다. */
@@ -855,8 +927,8 @@ test('partitioned consumer rows: the values are the slot type values, and every 
   const files = new Map(inputs.files.map(file => [frontendRel(file), inputs.original(file)])
     .filter(([file]) => slotPathKind(file)?.kind === 'contribution'));
   assert.deepEqual(partitionViolations(files), [], 'every item of a partitioned slot is drawn by a consumer of its value');
-  assert.deepEqual(Object.keys(SLOT_CONSUMER_PARTITION_KEYS).sort(), ['hub-tabs', 'stats-panels']);
-  assert.deepEqual(Object.keys(slotConsumerPartition('hub-tabs').consumers).sort(), [...hubViewKeys()].sort(), 'hub-tabs: one row per hub view');
+  // 허브 탭은 허브마다 슬롯이라(GAP-SLOT-001) 나누지 않는다 — 나눈 슬롯은 stats-panels 하나다.
+  assert.deepEqual(Object.keys(SLOT_CONSUMER_PARTITION_KEYS).sort(), ['stats-panels']);
   assert.deepEqual(Object.keys(slotConsumerPartition('stats-panels').consumers).sort(), statsPanelPlacements(),
     'stats-panels: one row per placement of the stats panel types');
   assert.deepEqual(statsPanelPlacements(), ['hub-tab', 'overview-card']);
@@ -867,41 +939,31 @@ test('partitioned consumer rows: the values are the slot type values, and every 
     assert.deepEqual(partitionViolations(new Map([[board, files.get(board)]]), withoutOverview),
       [`frontend/${board} TOTAL_POSTS: placement 'overview-card' 를 그리는 소비자가 없다(소비자 없는 배치)`]);
   }
-  // 대조: 모르는 배치·배치 없는 항목·모르는 허브.
+  // 대조: 모르는 배치·배치 없는 항목. 나누지 않은 슬롯(허브 탭)의 항목은 판정 대상이 아니다.
   const synthetic = new Map([
     ['src/extensions/probe/stats-panels.ts', "export default [{ id: 'A', placement: 'bogus', visibleWhen: { always: '시험' } },\n"
       + "  { id: 'B', visibleWhen: { always: '시험' } }];\n"],
-    ['src/extensions/probe/hub-tabs.ts', "export default [{ id: 'C', hub: 'nowhere', visibleWhen: { always: '시험' } }];\n"],
+    ['src/extensions/probe/hub-tabs-collaboration.ts', "export default [{ id: 'C', visibleWhen: { always: '시험' } }];\n"],
   ]);
   assert.deepEqual(partitionViolations(synthetic), [
-    "frontend/src/extensions/probe/hub-tabs.ts C: hub 'nowhere' 를 그리는 소비자가 없다(소비자 없는 배치)",
     "frontend/src/extensions/probe/stats-panels.ts A: placement 'bogus' 를 그리는 소비자가 없다(소비자 없는 배치)",
     "frontend/src/extensions/probe/stats-panels.ts B: placement 'null' 를 그리는 소비자가 없다(소비자 없는 배치)",
   ]);
 });
 
-/** 원본(또는 생성물)의 hub-tabs 기여 항목 (hub, id, 파일). 생성물에서 투영으로 빠진 기여는 없다. */
+/** 원본(또는 생성물)의 허브 탭 기여 항목 (허브, id, 파일). 허브는 슬롯 이름(hub-tabs-<허브>)에서 온다. 생성물에서 투영으로 빠진 기여는 없다. */
 function hubTabContributionRows(inputs = readProjectionInputs()) {
   const rows = [];
-  for (const kind of inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(row => row?.kind === 'contribution' && row.slot === 'hub-tabs')) {
+  for (const kind of inputs.files.map(frontendRel).map(file => slotPathKind(file))
+    .filter(row => row?.kind === 'contribution' && hubOfTabSlot(row.slot) !== null)) {
     const label = `frontend/${kind.file}`;
     const ast = ts.createSourceFile(label, inputs.original(join(frontendRoot, kind.file)), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const visit = node => {
-      if (ts.isObjectLiteralExpression(node)) {
-        const value = name => node.properties.find(property => ts.isPropertyAssignment(property) && ts.isIdentifier(property.name)
-          && property.name.text === name)?.initializer;
-        const hub = value('hub');
-        const id = value('id');
-        if (hub && id && ts.isStringLiteral(hub) && ts.isStringLiteral(id)) rows.push(`${hub.text}:${id.text}:${label}`);
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(ast);
+    for (const entry of readContributionEntries(ts, ast)) rows.push(`${hubOfTabSlot(kind.slot)}:${entry.id}:${label}`);
   }
   return rows.sort();
 }
 
-test('hub tab modules: contributable names exactly the hub-tabs contributions, and the hub rules redden', () => {
+test('hub tab modules: contributable names exactly the hub tab contributions, and the hub rules redden', () => {
   const inputs = readProjectionInputs();
   const modules = hubTabModules();
   assert.deepEqual([...modules.keys()].sort(), [...hubViewKeys()].sort(), 'every hub in HubTabViews has one tab module with TAB_HUB.slotHub');
@@ -910,30 +972,37 @@ test('hub tab modules: contributable names exactly the hub-tabs contributions, a
   const removed = existsSync(ledgerPath) ? new Set(JSON.parse(readFileSync(ledgerPath, 'utf8')).removedFiles ?? []) : new Set();
   const declared = [...modules].flatMap(([hub, { hub: tabHub }]) => Object.entries(tabHub.contributable ?? {})
     .filter(([, path]) => !removed.has(path)).map(([tab, path]) => `${hub}:${tab}:${path}`)).sort();
-  assert.deepEqual(hubTabContributionRows(inputs), declared, 'hub-tabs contributions and TAB_HUB.contributable are the same (hub, tab, file) set');
+  assert.deepEqual(hubTabContributionRows(inputs), declared, 'hub tab contributions and TAB_HUB.contributable are the same (hub, tab, file) set');
   assert.ok(removed.size > 0 || declared.length > 0, 'the source has contributed hub tabs');
-  // 대조: 합성 기여로 규칙마다 붉음을 본다.
-  const fixture = entry => `import { X } from '@/app/x';\nimport { defineContributions } from '@/extensions/slots';\nexport default defineContributions('hub-tabs', [\n${entry}\n]);\n`;
-  const entry = ({ id = 'MESSAGES', hub = 'collaboration', order = '10', view = '{ Component: X }' } = {}) =>
-    `  {\n    id: '${id}',\n    hub: '${hub}',\n    order: ${order},\n    label: '쪽지',\n    view: ${view},\n    visibleWhen: { always: '사유' },\n  }`;
-  const violations = (source, file = 'frontend/src/extensions/note/hub-tabs.ts') => {
+  // 대조: 합성 기여로 규칙마다 붉음을 본다. 허브는 기여 파일 이름(슬롯)이 정한다.
+  const fixture = (entry, slot = 'hub-tabs-collaboration') =>
+    `import { X } from '@/app/x';\nimport { defineContributions } from '@/extensions/slots';\nexport default defineContributions('${slot}', [\n${entry}\n]);\n`;
+  const entry = ({ id = 'MESSAGES', order = '10', view = '{ Component: X }', extra = '' } = {}) =>
+    `  {\n    id: '${id}',${extra}\n    order: ${order},\n    label: '쪽지',\n    view: ${view},\n    visibleWhen: { always: '사유' },\n  }`;
+  const violations = (source, file = 'frontend/src/extensions/note/hub-tabs-collaboration.ts') => {
     const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     const call = ast.statements.find(ts.isExportAssignment).expression;
-    return hubTabViolations(call.arguments[1], file, { file, modules }).join('\n');
+    const hub = hubOfTabSlot(slotPathKind(file).slot);
+    return hubTabViolations(call.arguments[1], file, { file, hub, modules }).join('\n');
   };
   assert.equal(violations(fixture(entry())), '', 'the source shape is green');
-  assert.match(violations(fixture(entry({ hub: 'nowhere' }))), /MESSAGES 의 hub 는 .* 리터럴이다/);
-  // 다른 허브(지식 허브 — 허브 분해 H2)에 기여하면 그 허브의 contributable 이 이 탭을 지목하지 않는다.
-  assert.match(violations(fixture(entry({ hub: 'knowledge' }))), /MESSAGES — .*knowledge-tabs\.ts 의 TAB_HUB\.contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  assert.match(violations(fixture(entry(), 'hub-tabs-nowhere'), 'frontend/src/extensions/note/hub-tabs-nowhere.ts'),
+    /허브 탭 슬롯의 허브\(nowhere\)는 .* 가운데 하나다/);
+  // 다른 허브(지식 허브 — 허브 분해 H2)의 슬롯에 기여하면 그 허브의 contributable 이 이 탭을 지목하지 않는다.
+  assert.match(violations(fixture(entry(), 'hub-tabs-knowledge'), 'frontend/src/extensions/note/hub-tabs-knowledge.ts'),
+    /MESSAGES — .*knowledge-tabs\.ts 의 TAB_HUB\.contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  // 종전 꼴의 hub 키는 항목 키가 아니다 — 슬롯 이름과 어긋난 hub 가 조용히 남지 않는다.
+  assert.match(violations(fixture(entry({ extra: "\n    hub: 'knowledge'," }))), /MESSAGES 의 키 hub 는 허브 탭 항목 키/);
   assert.match(violations(fixture(entry({ id: 'messages' }))), /messages 의 id 는 `\?tab=` 값인 대문자 식별자 리터럴이다/);
   assert.match(violations(fixture(entry({ order: "'10'" }))), /MESSAGES 의 order 는 숫자 리터럴이다/);
   assert.match(violations(fixture(entry({ view: '{ Component: X, other: 1 }' }))), /view 는 import 한 이름이거나 이름만 담은 객체다/);
   assert.match(violations(fixture(entry({ id: 'COMMUNITY' }))), /COMMUNITY — .*contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
-  assert.match(violations(fixture(entry()), 'frontend/src/extensions/mail/hub-tabs.ts'), /MESSAGES — .*contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
+  assert.match(violations(fixture(entry()), 'frontend/src/extensions/mail/hub-tabs-collaboration.ts'), /MESSAGES — .*contributable 이 이 탭을 이 기여 파일로 지목하지 않는다/);
   const coreTabs = new Map([...modules].map(([hub, row]) => [hub, { ...row, hub: { ...row.hub, parse: raw => (raw === 'MESSAGES' ? raw : null) } }]));
   const ast = ts.createSourceFile('x.ts', fixture(entry()), ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   assert.match(hubTabViolations(ast.statements.find(ts.isExportAssignment).expression.arguments[1], 'x.ts',
-    { file: 'frontend/src/extensions/note/hub-tabs.ts', modules: coreTabs }).join('\n'), /MESSAGES — 허브 collaboration 의 셸 고유 탭과 겹친다/);
+    { file: 'frontend/src/extensions/note/hub-tabs-collaboration.ts', hub: 'collaboration', modules: coreTabs }).join('\n'),
+  /MESSAGES — 허브 collaboration 의 셸 고유 탭과 겹친다/);
 });
 
 /*
@@ -996,7 +1065,7 @@ test('contribution closure: what a contribution imports belongs to the features 
   const leaked = new Map(edges);
   leaked.set(view, [...(edges.get(view) ?? []), { to: scrapService }]);
   assert.match(contributionClosureViolations({ catalog: inputs.catalog, edges: leaked, files: inputs.files }).join('\n'),
-    /frontend\/src\/extensions\/note\/hub-tabs\.ts → frontend\/src\/services\/business\/user\/ScrapService\.ts: 소유 scrap 는 note 가 요구하는 기능 밖이다/);
+    /frontend\/src\/extensions\/note\/hub-tabs-collaboration\.ts → frontend\/src\/services\/business\/user\/ScrapService\.ts: 소유 scrap 는 note 가 요구하는 기능 밖이다/);
   // 대조: 겹친 경로는 덮는 규칙 모두가 남아야 남는다. 게시판 접두와 커뮤니티 정확 경로가 함께 덮는 파일에 게시판 기여가 닿으면,
   // 첫 일치 기능(게시판)만 보던 판정은 통과시켰지만 게시판만 고른 구성에서 그 파일은 지워진다.
   const boardContribution = join(frontendRoot, 'src/extensions/board/stats-panels.ts');

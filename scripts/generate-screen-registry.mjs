@@ -158,7 +158,7 @@ export function buildScreenRegistry(root = repoRoot) {
     }
   };
   /*
-    [10단계 10a] 소비자를 값별로 나눈 슬롯(hub-tabs 는 허브별, stats-panels 는 배치별)의 기여는 항목마다 그 값의 소비자에게만 닿는다
+    [10단계 10a] 소비자를 값별로 나눈 슬롯(stats-panels 는 배치별)의 기여는 항목마다 그 값의 소비자에게만 닿는다
     (축 3 의 importersOf 가 항목의 값으로 reader 를 가른다). 그런데 쓰기·canPermission 리터럴은 어느 항목이 그 모듈을 가리키는지 모른 채
     기여 파일을 거쳐 올라온다. 한 기여 파일의 항목이 여러 값에 걸쳐 있으면(게시판 → 통계: 셸 탭 둘과 요약 칸 하나) 그 쓰기·표시가 모든
     값의 소비자 화면에 함께 붙으므로 거부한다 — 조용히 넓게 붙이면 권한 작업대가 그 화면에 없는 권한을 보인다. 값마다 기여 파일을 나누면
@@ -219,8 +219,9 @@ export function buildScreenRegistry(root = repoRoot) {
 
   /*
     [10단계 10a] 표시 — 슬롯 기여 항목의 노출 술어(visibleWhen.permissions). 판독기는 축 3 의 항목 단위 판독기 하나이고(파일 단위로
-    합치지 않는다), 항목을 그리는 셸은 그 항목의 값(hub·placement)이 가리키는 소비자뿐이다. 셸의 화면은 셸이 놓인 디렉터리가 아니라 셸을
-    그리는 화면이다(screensOf 의 slotConsumerShells). page·always 술어는 귀속하지 않는다(맨 위 주석).
+    합치지 않는다), 항목을 그리는 셸은 그 슬롯의 소비자이고 나눈 슬롯이면 그 항목의 값(placement)이 가리키는 소비자뿐이다. 허브 탭은
+    허브마다 슬롯이 따로라(hub-tabs-<허브>, GAP-SLOT-001) 그 허브 셸 하나다. 셸의 화면은 셸이 놓인 디렉터리가 아니라 셸을 그리는
+    화면이다(screensOf 의 slotConsumerShells). page·always 술어는 귀속하지 않는다(맨 위 주석).
   */
   const projectionRemoved = (() => {
     const ledgerFile = path.join(root, PROJECTION_LEDGER_PATH);

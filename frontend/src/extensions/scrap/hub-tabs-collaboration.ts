@@ -8,10 +8,9 @@ import { ScrapCollaborationTab } from '@/app/admin/collaboration/scraps/ScrapCol
  * 노출은 탭이 부르는 내 스크랩 목록 API 와 같은 권한(SCRAP_READ)이다(허브 분해 H5). 종전에는 탭이 보였고 목록이 403 이었다.
  * 기본 그룹은 화면이 같다. 노출일 뿐 인가는 서버가 한다(H3).
  */
-export default defineContributions('hub-tabs', [
+export default defineContributions('hub-tabs-collaboration', [
   {
     id: 'SCRAPS',
-    hub: 'collaboration',
     order: 20,
     label: '스크랩',
     view: { Component: ScrapCollaborationTab },
