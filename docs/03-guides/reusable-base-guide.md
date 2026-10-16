@@ -118,6 +118,7 @@ npm run base:generate-db -- --profile collaboration --layout single-module
 소스 생성기는 검증된 같은 구성의 번들만 받는다.
 `R__seed_demo.sql` 자체는 번들에 복사하지 않는다. 그 안의 게시판 마스터 행은 게시판 기능을 고른 구성에서만 참조 데이터 시드에 들어간다.
 공통코드 그룹은 core 소유가 기본이고, 게시판(COM004·COM009)·결재(COM075) 그룹은 그 기능을 고를 때만 싣는다. 상세 코드는 원본도 시드하지 않는다(PD-DB-003).
+데이터 seed(표준 메타·참조 데이터)는 덤프 직전에 표를 기본 키 순서로 다시 써서(`CLUSTER`) 행 순서가 실행·구성과 무관하다. 그래서 내용이 같으면 파일 해시도 같다. 기본 키가 없는 표는 seed 로 덤프할 수 없다.
 
 ### 3.3 day-1 관리자 부트스트랩
 
@@ -454,7 +455,8 @@ PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 A
    지워지는 것이다. 링크 항목은 같은 객체의 `{ page: '<자기 목적지>' }` 만 관리 링크 census 가 게이트로 인정하고, 목적지가
    리터럴이 아니면 붉다. 술어는 그 기여가 부르는 API 의 권한과 맞춘다 — 다르면 보이는데 열면 403 이거나, 쓸 수 있는데
    감춘다. 수신자 피커의 주소록 출처는 목록·단건 API 와 같은 `{ permissions: ['ADBK_READ'] }` 다(PR-5). `always` 는 판정할
-   권한이 없을 때만 쓴다. 셸 링크(`shell-links`)는 `{ page: 자기 href }` 만 쓰고, 목적지는 앱 안 경로다(`//`·`/\` 로
+   권한이 없을 때만 쓴다. 전달 채널(`delivery-channels`)은 구성의 사실이라 `always` 하나만 쓰고(타입이 묶는다), 화면은 core
+   도우미 `hasDeliveryChannel` 로 채널이 있는지만 묻는다(GAP-COMPOSE-001). 셸 링크(`shell-links`)는 `{ page: 자기 href }` 만 쓰고, 목적지는 앱 안 경로다(`//`·`/\` 로
    시작하면 브라우저가 외부 주소로 읽는다). 주체 없이 거르는 바닥글·오류 화면 배치는 `/admin` 밖 목적지만 둔다. 머리글·명령 센터 배치는 아이콘이 있는 목록이라 아이콘이
    필요하다(협업 허브 머리 배치는 필요 없다). 업무 보고 머리 배치(`work-report`)도 아이콘 단추라 아이콘이 필요하다.
    나의 업무 탭 줄 배치(`work-hub`)는 글자 탭이라 아이콘을 두지 않고, id·목적지가 core 탭(업무 관리)과 겹치지 않는다 — id 가
@@ -667,7 +669,7 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
 가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
 마커 블록으로 걷히거나 다른 기능이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 기능 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
-2026-10-10 core 실제 생성물의 vitest 는 801개(파일이 아니라 `numTotalTestSuites` 로 센 suite 수로 보인다 — 위 표 아래 설명) 2,575건이 모두 통과한다. 수리 뒤 모든 구성의 녹색 확인은 [GAP-BASE-002](../../.agent/memory/known-gaps.md)가 추적한다.
+2026-10-10 core 실제 생성물의 vitest 는 801개(파일이 아니라 `numTotalTestSuites` 로 센 suite 수로 보인다 — 위 표 아래 설명) 2,575건이 모두 통과한다. 수리 뒤 T2 예약 실행 연속 두 번이 모든 구성의 두 레이아웃에서 녹색이었다(2026-10-16, [GAP-BASE-002 종료](../../.agent/memory/known-gaps.md)).
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
 Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend exec vitest run` 을 차례로 돌린다. Gradle 시험은 레이아웃마다 다르다.

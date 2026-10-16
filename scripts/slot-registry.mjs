@@ -39,6 +39,8 @@ const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
  * 그 시험이 함께 등록된다).
  */
 export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
+  // 전달 채널(GAP-COMPOSE-001): 결재·메모 보고 화면은 core 도우미 하나로 묻는다 — 기능 화면은 레지스트리를 직접 읽지 않는다.
+  'delivery-channels': ['frontend/src/lib/delivery-channels.ts'],
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
   // 업무 홈(Phase 2 9단계): 셸이 배치마다 그리고, 서버 자식이 보이는 기여의 조회를 미리 채운다. 둘 다 '/' 화면이다.
   'home-sections': ['frontend/src/app/UnifiedDashboardClient.tsx', 'frontend/src/app/home-data-boundary.tsx'],

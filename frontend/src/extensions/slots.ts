@@ -319,7 +319,19 @@ export interface NotificationAction extends SlotEntry {
   readonly submit: (context: NotificationActionContext) => Promise<NotificationActionOutcome>;
 }
 
+/**
+ * delivery-channels — 이 구성에 있는 전달 채널(GAP-COMPOSE-001). 채널 기능이 항목 하나를 기여하고, 화면은 core 도우미
+ * (lib/delivery-channels.ts 의 hasDeliveryChannel)로 그 채널이 있는지만 묻는다. 채널 기능이 빠진 구성에서는 기여가 함께 지워져
+ * 레지스트리가 비고, 화면은 그 채널로 보낸다고 말하거나 보내는 컨트롤을 두지 않는다. 구성의 사실이라 보는 사람마다 다르지 않다 —
+ * 노출 술어는 always 하나다.
+ */
+export interface DeliveryChannel extends SlotEntry {
+  readonly id: 'notification';
+  readonly visibleWhen: { readonly always: string };
+}
+
 export interface SlotMap {
+  'delivery-channels': DeliveryChannel;
   'hub-tabs': HubTab;
   'stats-panels': StatsPanel;
   'recipient-picker-sources': RecipientPickerSource;

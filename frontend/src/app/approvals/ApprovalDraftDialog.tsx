@@ -21,6 +21,7 @@ import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { canPermission } from '@/lib/auth/permissions';
+import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { ApprovalDraftRequestSchema, ApprovalStageRequestSchema } from '@/types/generated-zod';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import {
@@ -172,6 +173,8 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
   // 확인 대화 함수. 이름을 `confirm` 으로 두지 않는다 — 쓰기 권한 census(축 3)가 이 파일이 import 하는 결재 쿼리 모듈의
   // `confirm`(승인·반려, APPROVAL_APPROVE)을 이름으로 맞춰, 승인하지 않는 기안 창을 승인 권한이 필요한 화면으로 센다.
   const askConfirm = useConfirm();
+  // [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 참조자가 알림을 받는다고 말하지 않는다(서버 동작은 그대로다).
+  const notifies = hasDeliveryChannel('notification');
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const source = resubmission ?? template;
@@ -830,14 +833,18 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
                 권한·사용 중 여부로 고르고 결재선에 든 사람은 고를 수 없다. */}
             <section aria-labelledby="approval-referees-heading" className="space-y-3 rounded-md border border-border p-4">
               <h3 id="approval-referees-heading" className="font-semibold">참조자 (선택)</h3>
-              <p id="approval-referee-help" className="text-sm text-muted-foreground">참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 알림이 가고, 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 {REFERENCE_LIMIT}명까지 지정할 수 있습니다.</p>
+              <p id="approval-referee-help" className="text-sm text-muted-foreground">{notifies
+                ? '참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 알림이 가고, 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 '
+                : '참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 '}{REFERENCE_LIMIT}명까지 지정할 수 있습니다.</p>
               <p className="text-sm text-muted-foreground">이번 차수에 참조자를 한 명이라도 지정하면 이 차수에는 결재자가 참조자를 더할 수 없습니다. 지정하지 않으면 지금 차례인 결재자가 더할 수 있습니다.</p>
               {template && !temporaryDraft && carriedRefereeCount > 0 && <p className="text-sm">복제한 문서의 참조자 {carriedRefereeCount}명을 가져왔습니다. 참조자는 상신할 때 다시 확인합니다.</p>}
               {referees.length > 0
                 ? <ul aria-label="참조자" className="space-y-1">{referees.map(person => <li key={person.esntlId} className="flex items-center justify-between gap-2 text-sm"><span className="inline-flex flex-wrap items-center gap-1">{person.userNm || UNKNOWN_USER}{person.deptNm ? ` · ${person.deptNm}` : ''}<AbsenceBadge absent={person.absent} /></span><Button type="button" variant="ghost" size="sm" aria-label={`${person.userNm || UNKNOWN_USER} 참조자에서 제외`} onClick={() => toggleReferee(person, false)}>제외</Button></li>)}</ul>
                 : <p className="text-sm text-muted-foreground">{resubmission ? '이번 차수에 지정할 참조자가 없습니다.' : '참조자를 지정하지 않았습니다.'}</p>}
               {earlierReferees.length > 0 && <div className="space-y-1 rounded-md border border-dashed border-border p-3 text-sm">
-                <p>이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다. 다시 지정하면 이번 차수의 최종 결과 알림도 받습니다.</p>
+                <p>{notifies
+                  ? '이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다. 다시 지정하면 이번 차수의 최종 결과 알림도 받습니다.'
+                  : '이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다.'}</p>
                 <ul aria-label="계속 읽는 이전 참조자" className="space-y-1">{earlierReferees.map(person => <li key={person.userId} className="flex items-center justify-between gap-2"><span>{person.userNm || UNKNOWN_USER}{person.deptNm ? ` · ${person.deptNm}` : ''}{person.atrzCycl ? ` · ${person.atrzCycl}차 지정` : ''}</span><Button type="button" variant="ghost" size="sm" aria-label={`${person.userNm || UNKNOWN_USER} 이번 차수 참조자로 다시 지정`} disabled={lineIds.includes(person.userId ?? '')} onClick={() => toggleReferee({ esntlId: person.userId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined }, true)}>다시 지정</Button></li>)}</ul>
               </div>}
               <Button ref={refereePickerButton} type="button" variant="outline" {...draftValidation.fieldProps('references')} aria-describedby={[draftValidation.fieldProps('references')['aria-describedby'], 'approval-referee-help'].filter(Boolean).join(' ')} aria-expanded={refereePickerOpen} disabled={!refereePickerOpen && refereeTotal >= REFERENCE_LIMIT} onClick={() => { setNotice(''); setRefereePickerOpen(current => !current); }}><UserPlus aria-hidden="true" />{referees.length ? '참조자 추가' : '참조자 선택'}</Button>
@@ -868,7 +875,9 @@ export function ApprovalDraftDialog({ isOpen, onClose, onCreated, resubmission, 
               {referees.length > 0 && <p className="flex flex-wrap items-center gap-1 break-words">이번 차수 지정: {referees.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || UNKNOWN_USER}<AbsenceBadge absent={person.absent} /></span>)}</p>}
               {earlierReferees.length > 0 && <p className="break-words text-muted-foreground">계속 읽는 이전 참조자: {earlierReferees.map(person => person.userNm || UNKNOWN_USER).join(', ')}</p>}
             </section>}
-            {referees.length > 0 && <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">이번 차수에 지정한 참조자는 이 차수가 최종 승인·반려되면 알림을 받고, 이 문서에 처음 지정되는 사람은 상신할 때도 알림을 받습니다. 지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.</p>}
+            {referees.length > 0 && <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{notifies
+              ? '이번 차수에 지정한 참조자는 이 차수가 최종 승인·반려되면 알림을 받고, 이 문서에 처음 지정되는 사람은 상신할 때도 알림을 받습니다. 지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'
+              : '지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'}</p>}
             <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">각 단계의 전원이 승인해야 다음 단계가 시작됩니다. 누구든 한 명이 반려하면 문서 전체가 반려되어 남은 결재는 종료됩니다.</p>
           </>}
           <div className="space-y-2 border-t border-border pt-4">

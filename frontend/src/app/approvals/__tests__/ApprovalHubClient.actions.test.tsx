@@ -123,6 +123,14 @@ vi.mock('../ApprovalStepper', () => ({
   ),
 }));
 
+// [2026-10-16 GAP-COMPOSE-001] 알림 기능(전달 채널)이 구성에 있는지를 시험마다 정한다. 실제 레지스트리를 그대로 쓰면 알림이
+//   빠진 생성물에서 이 파일의 기대가 달라지므로 레지스트리를 감싸 두 구성을 모두 고정한다. 기본은 알림이 있는 구성(전체 제품)이다.
+const channels = vi.hoisted(() => ({ notification: true }));
+vi.mock('@/extensions/generated-delivery-channels', () => ({
+  get deliveryChannels() { return channels.notification ? [[{ id: 'notification', visibleWhen: { always: '시험' } }]] : []; },
+}));
+beforeEach(() => { channels.notification = true; });
+
 import ApprovalHubClient from '../ApprovalHubClient';
 import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 
@@ -403,6 +411,18 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     await waitFor(() => expect(mocks.requestSupplement).toHaveBeenCalledWith(73, '금액을 적어 주세요', 5));
     expect(mocks.confirm).not.toHaveBeenCalled();
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('보완을 요청했습니다. 기안자가 답하면 알림이 옵니다.', 'success'));
+  });
+
+  it('알림 기능이 없는 구성에서는 보완 요청 뒤 답하면 알림이 온다고 말하지 않는다 (GAP-COMPOSE-001)', async () => {
+    channels.notification = false;
+    mocks.getDetail.mockImplementation(async (id: number) => ({ ...pendingApproval, ifmlAtrzSn: id, version: 5, canApprove: true, canRequestSupplement: true }));
+    renderClient();
+    const ask = await screen.findByRole('button', { name: '보완 요청' });
+    fireEvent.change(screen.getByRole('textbox', { name: '결재 의견 (반려·보완 요청 시 필수)' }), { target: { value: '금액을 적어 주세요' } });
+    fireEvent.click(ask);
+    await waitFor(() => expect(mocks.requestSupplement).toHaveBeenCalledWith(73, '금액을 적어 주세요', 5));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('보완을 요청했습니다.', 'success'));
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.stringContaining('알림'), 'success');
   });
 
   it('보완 요청이 열려 있으면 결재자에게 보완 요청 버튼을 보이지 않는다', async () => {

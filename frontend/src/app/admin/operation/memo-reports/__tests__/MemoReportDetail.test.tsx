@@ -52,6 +52,13 @@ vi.mock('@/services/business/memoreport/memoReportService', () => ({
     deleteMemoReport: mocks.deleteMemoReport,
   },
 }));
+// [2026-10-16 GAP-COMPOSE-001] 알림 기능(전달 채널)이 구성에 있는지를 시험마다 정한다. 실제 레지스트리를 그대로 쓰면 알림이
+//   빠진 생성물에서 이 파일의 기대가 달라지므로 레지스트리를 감싸 두 구성을 모두 고정한다. 기본은 알림이 있는 구성(전체 제품)이다.
+const channels = vi.hoisted(() => ({ notification: true }));
+vi.mock('@/extensions/generated-delivery-channels', () => ({
+  get deliveryChannels() { return channels.notification ? [[{ id: 'notification', visibleWhen: { always: '시험' } }]] : []; },
+}));
+beforeEach(() => { channels.notification = true; });
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/user-picker', () => ({
@@ -213,6 +220,24 @@ describe('메모보고 열람', () => {
     fireEvent.click(screen.getByRole('button', { name: '지시사항 바꾸기' }));
     await waitFor(() => expect(mocks.updateDrctMatter).toHaveBeenCalledWith(5, '10월로 미룹니다.'));
     expect(mocks.toast).toHaveBeenCalledWith('지시사항을 바꿨습니다.', 'success');
+  });
+
+  it.each([
+    [true, '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않고, 보고한 사람에게 지시가 변경되었다고 알립니다.'],
+    [false, '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않습니다.'],
+  ])('지시 바꾸기 확인은 알림 기능이 있을 때만 보고한 사람에게 알린다고 말한다(알림 %s, GAP-COMPOSE-001)', async (notifies, message) => {
+    channels.notification = notifies;
+    mocks.getMemoReport.mockResolvedValue({ ...ROW, drctnMttr: '9월까지 검토 바랍니다.', instructable: true });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    fireEvent.change(await screen.findByLabelText('지시사항 다시 남기기', { exact: false }), {
+      target: { value: '10월로 미룹니다.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '지시사항 바꾸기' }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm.mock.calls[0][0]).toEqual(expect.objectContaining({ title: '지시 바꾸기', message }));
+    await waitFor(() => expect(mocks.updateDrctMatter).toHaveBeenCalledWith(5, '10월로 미룹니다.'));
   });
 
   it('목록에서 지시가 달린 보고를 구분한다', async () => {

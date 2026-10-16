@@ -20,7 +20,7 @@ import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMen
   schemaSnapshotSql, selectSchemaSnapshot, assertDeclaredCrossDomainForeignKeys,
   assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
-import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, git, inspectContainer, listObjects, listSequenceDetails, psql,
+import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, dumpTableData, git, inspectContainer, listObjects, listSequenceDetails, psql,
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
 import { BOARD_MASTER_SEED, REFERENCE_SEED_NAME, boardMasterIds, omitCodeGroupsSql, referenceDataPlan } from './reusable-reference-data.mjs';
@@ -293,13 +293,9 @@ async function main() {
       dump(args.container, user, workingDb, ['--schema-only']),
       `Reusable Base ${args.profile} schema baseline`,
     );
+    // 데이터 seed 는 기본 키 순서로 덤프한다 — 물리 순서는 실행마다 달라 같은 구성의 해시가 흔들렸다(GAP-REPRO-001).
     const metaParts = ['meta_standard_domains', 'meta_standard_terms', 'meta_standard_words'].map((table) =>
-      dump(args.container, user, workingDb, [
-        '--data-only',
-        '--column-inserts',
-        '--rows-per-insert=500',
-        `--table=public.${table}`,
-      ]),
+      dumpTableData(args.container, user, workingDb, [table], ['--column-inserts', '--rows-per-insert=500']),
     );
     const metaSeed = sanitizePgDump(Buffer.concat(metaParts), '표준용어 최종 snapshot seed');
 
@@ -316,9 +312,8 @@ async function main() {
     for (const group of referencePlan.omittedCodeGroups) {
       if (referenceCodeGroups.includes(group)) fail(`참조 데이터: 선택하지 않은 기능의 코드 그룹 ${group} 이 남았다`);
     }
-    const referenceSeed = sanitizePgDump(dump(args.container, user, workingDb, [
-      '--data-only', '--column-inserts', '--on-conflict-do-nothing', ...referencePlan.tables.map((table) => `--table=public.${table}`),
-    ]), '선택 구성 참조 데이터 seed(공통코드 그룹·게시판 마스터)');
+    const referenceSeed = sanitizePgDump(dumpTableData(args.container, user, workingDb, referencePlan.tables,
+      ['--column-inserts', '--on-conflict-do-nothing']), '선택 구성 참조 데이터 seed(공통코드 그룹·게시판 마스터)');
 
     mkdirSync(join(output, 'db', 'migration'), { recursive: true });
     writeFileSync(join(output, 'db', 'migration', 'V1_0__baseline.sql'), baseline, 'utf8');

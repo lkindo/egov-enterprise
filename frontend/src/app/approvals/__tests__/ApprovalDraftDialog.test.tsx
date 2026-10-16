@@ -28,6 +28,13 @@ vi.mock('@/components/ui/select', () => {
     SelectItem: ({ value, children }: { value: string; children: React.ReactNode }) => <option value={value}>{children}</option>,
   };
 });
+// [2026-10-16 GAP-COMPOSE-001] 알림 기능(전달 채널)이 구성에 있는지를 시험마다 정한다. 실제 레지스트리를 그대로 쓰면 알림이
+//   빠진 생성물에서 이 파일의 기대가 달라지므로 레지스트리를 감싸 두 구성을 모두 고정한다. 기본은 알림이 있는 구성(전체 제품)이다.
+const channels = vi.hoisted(() => ({ notification: true }));
+vi.mock('@/extensions/generated-delivery-channels', () => ({
+  get deliveryChannels() { return channels.notification ? [[{ id: 'notification', visibleWhen: { always: '시험' } }]] : []; },
+}));
+beforeEach(() => { channels.notification = true; });
 import { ApprovalDraftDialog } from '../ApprovalDraftDialog';
 
 function renderDialog(props: Partial<React.ComponentProps<typeof ApprovalDraftDialog>> = {}) {
@@ -996,5 +1003,35 @@ describe('ApprovalDraftDialog 참조자 (D4)', () => {
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
     fireEvent.click(screen.getByRole('button', { name: '결재 상신' }));
     await waitFor(() => expect(mocks.createDraft).toHaveBeenCalledWith(expect.objectContaining({ stages: [{ kind: 'APPROVAL', approverIds: ['BOSS'] }], references: ['READER'] })));
+  });
+
+  /**
+   * [2026-10-16 GAP-COMPOSE-001] 알림 기능이 없는 구성에서는 참조자 안내(도움말·이전 참조자·최종 확인)가 알림을 말하지 않는다. 서버
+   * 동작은 그대로다. 알림이 있는 구성의 문장은 종전과 같다 — 글자 그대로 대조한다.
+   */
+  it.each([
+    [true,
+      '참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 알림이 가고, 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 20명까지 지정할 수 있습니다.',
+      '이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다. 다시 지정하면 이번 차수의 최종 결과 알림도 받습니다.',
+      '이번 차수에 지정한 참조자는 이 차수가 최종 승인·반려되면 알림을 받고, 이 문서에 처음 지정되는 사람은 상신할 때도 알림을 받습니다. 지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'],
+    [false,
+      '참조자는 결재하지 않고 문서를 읽기만 합니다. 지정하면 문서가 승인·반려·회수되어도 계속 읽을 수 있으며 지정은 되돌릴 수 없습니다. 결재 조회 권한이 있는 사용 중인 사람을 결재선과 겹치지 않게 한 문서에 20명까지 지정할 수 있습니다.',
+      '이번 차수에 지정하지 않았지만 이 문서를 계속 읽는 참조자입니다.',
+      '지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'],
+  ])('참조자 안내는 알림 기능이 있을 때만 알림을 말한다(알림 %s)', async (notifies, help, earlierNote, warning) => {
+    channels.notification = notifies;
+    const resubmission = { ifmlAtrzSn: 88, aplcntId: 'DRAFTER', taskSeCd: '01', docTtl: '반려된 문서', docCn: '', version: 7, aprvYn: 'R', atrzCycl: 2,
+      stages: [{ order: 1, kind: 'APPROVAL' as const, status: 'REJECTED' as const, approvers: [{ userId: 'BOSS', userNm: '김결재', status: 'REJECTED' as const }] }],
+      references: [{ userId: 'OLDREF', userNm: '구참조', deptNm: '총무팀', atrzCycl: 2, designator: 'DRAFTER' as const }] };
+    renderDialog({ resubmission });
+    await screen.findByRole('combobox', { name: '업무 구분' }); fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(document.getElementById('approval-referee-help')?.textContent).toBe(help);
+    expect(screen.getByRole('list', { name: '계속 읽는 이전 참조자' }).previousElementSibling?.textContent).toBe(earlierNote);
+    if (!notifies) expect(screen.getByRole('dialog')).not.toHaveTextContent(/알림/);
+
+    fireEvent.click(screen.getByRole('button', { name: '구참조 이번 차수 참조자로 다시 지정' }));
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
+    expect(screen.getByText(warning)).toBeInTheDocument();
+    if (!notifies) expect(screen.getByRole('dialog')).not.toHaveTextContent(/알림/);
   });
 });
