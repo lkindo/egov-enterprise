@@ -26,7 +26,8 @@ test('a full product composition removes nothing and still reports a summary', (
   const sources = readPermissionSources(root);
   assert.deepEqual(deep.permissionProjection, {
     permissions: sources.catalog.permissions.length, removedPagePermissions: [], operationBindings: sources.policies.operationBindings.length, removedOperationBindings: 0,
-    screens: sources.registry.screens.length, bundles: sources.bundles.bundles.map(bundle => bundle.id), droppedBundles: [], generatedExclusions: [],
+    screens: sources.registry.screens.length, bundles: sources.bundles.bundles.map(bundle => bundle.id), reducedBundles: [], droppedBundles: [],
+    generatedExclusions: [],
   });
 });
 

@@ -5,9 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, bindingHandlerSource, bindingPermissionErrors,
+  AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, REDUCED_BUNDLE_DESCRIPTION, bindingHandlerSource, bindingPermissionErrors,
   generatedExclusionReason, planPermissionProjection, projectOperationBindings, projectPermissionBundleLedger, projectPermissionCatalog,
-  projectScreenRegistryRows, readPermissionSources,
+  projectScreenRegistryRows, readPermissionSources, reducedBundleName,
 } from './reusable-permission-projection.mjs';
 import { BASE_SEED, PERMISSION_ARTIFACT_PATHS, buildPermissionArtifacts } from './generate-permissions.mjs';
 import {
@@ -94,13 +94,17 @@ const LEDGER = { schemaVersion: 1, description: '시험용 묶음 원장', bundl
   // 보호 권한만 빠지면 보호 표시도 다시 정한다.
   { id: 'thing-security', name: '사물 보안', description: '사물 보안을 맡깁니다.', protected: true, permissions: ['THING_READ', 'THING_UPDATE', 'AUTHRT_GRANT'] },
   { id: 'widget-only', name: '위젯', description: '위젯을 맡깁니다.', protected: false, permissions: ['WIDGET_ADMIN'] },
+  // 권한이 하나도 빠지지 않는 묶음 — 이름·설명을 원본 그대로 둔다.
+  { id: 'thing-full', name: '사물 전체', description: '사물 조회·등록·수정을 맡깁니다.', protected: false,
+    permissions: ['THING_READ', 'THING_CREATE', 'THING_UPDATE'] },
 ], excluded: [{ code: 'THING_DELETE', reason: '시험용 — 묶음으로 맡기지 않는다.' }, { code: 'WIDGET_PURGE', reason: '시험용 — 위젯 파기.' }] };
 const CODES = ['GADGET_READ', 'THING_CREATE', 'THING_DELETE', 'THING_READ', 'THING_UPDATE'];
 const TERMS = replacedTermFinder({ terms: [{ id: 'term-hub', sourceTerms: ['허브'], decision: 'replace-by-task-context' }] });
 
 test('bundles keep reduced permissions while they open or relate a screen; the remaining permissions become generated exclusions', () => {
   const projection = projectPermissionBundleLedger(LEDGER, { codes: CODES, screens: SCREENS });
-  assert.deepEqual(projection.kept, ['thing-viewer', 'thing-creator', 'thing-security']);
+  assert.deepEqual(projection.kept, ['thing-viewer', 'thing-creator', 'thing-security', 'thing-full']);
+  assert.deepEqual(projection.reduced, ['thing-viewer', 'thing-creator', 'thing-security']);
   assert.deepEqual(projection.dropped, [
     { id: 'gadget-viewer', reason: 'no-screen-in-composition' },
     { id: 'thing-viewer-plus', reason: 'same-permissions-as:thing-viewer' },
@@ -110,7 +114,17 @@ test('bundles keep reduced permissions while they open or relate a screen; the r
     ['thing-viewer', ['THING_READ'], false],
     ['thing-creator', ['THING_CREATE'], false],
     ['thing-security', ['THING_READ', 'THING_UPDATE'], false],
+    ['thing-full', ['THING_READ', 'THING_CREATE', 'THING_UPDATE'], false],
   ]);
+  // 권한이 빠진 묶음은 원본 이름을 출처로만 남기고 설명을 고정 문장으로 바꾼다 — 원본 설명은 빠진 기능(위젯·보안)을 맡긴다고 말한다.
+  // 빠진 것이 없는 묶음은 이름·설명이 원본과 바이트가 같다(GAP-COMPOSE-001).
+  assert.deepEqual(projection.ledger.bundles.map(bundle => [bundle.id, bundle.name, bundle.description]), [
+    ['thing-viewer', '사물 조회(이 구성에 남은 권한)', REDUCED_BUNDLE_DESCRIPTION],
+    ['thing-creator', '사물 등록(이 구성에 남은 권한)', REDUCED_BUNDLE_DESCRIPTION],
+    ['thing-security', reducedBundleName('사물 보안'), REDUCED_BUNDLE_DESCRIPTION],
+    ['thing-full', '사물 전체', '사물 조회·등록·수정을 맡깁니다.'],
+  ]);
+  assert.equal(REDUCED_BUNDLE_DESCRIPTION, '원본 묶음에서 이 구성에 없는 기능의 권한을 뺐습니다. 맡기는 일은 묶음을 고르면 보이는 화면 목록으로 확인하세요.');
   assert.deepEqual(projection.generatedExclusions, ['GADGET_READ']);
   assert.deepEqual(projection.ledger.excluded, [
     { code: 'THING_DELETE', reason: '시험용 — 묶음으로 맡기지 않는다.' },
@@ -119,7 +133,10 @@ test('bundles keep reduced permissions while they open or relate a screen; the r
   // 투영본 규칙으로는 관련 화면만 남은 묶음이 통과하고, 생성 결과가 카탈로그를 빠짐없이 나눈다.
   const bundles = buildPermissionBundles(projection.ledger, { screens: SCREENS, catalogCodes: CODES, findReplacedTerm: TERMS, projected: true });
   assert.deepEqual(bundles.map(bundle => [bundle.id, bundle.screens, bundle.relatedScreens]),
-    [['thing-viewer', ['/things'], []], ['thing-creator', [], ['/']], ['thing-security', ['/things'], []]]);
+    [['thing-viewer', ['/things'], []], ['thing-creator', [], ['/']], ['thing-security', ['/things'], []], ['thing-full', ['/things'], ['/']]]);
+  // 화면 목록에 싣는 묶음도 투영한 이름·설명을 그대로 들고 간다(권한 작업대의 묶음 대화상자가 이것을 보인다).
+  assert.deepEqual(bundles.map(bundle => [bundle.name, bundle.description]),
+    projection.ledger.bundles.map(bundle => [bundle.name, bundle.description]));
   // 원본 규칙(여는 화면 하나 이상)은 그대로다 — 투영 결과를 원본 규칙에 넣으면 실패한다.
   assert.throws(() => buildPermissionBundles(projection.ledger, { screens: SCREENS, catalogCodes: CODES, findReplacedTerm: TERMS }),
     /Permission bundle thing-creator opens no screen/);

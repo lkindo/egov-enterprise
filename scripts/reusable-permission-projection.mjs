@@ -127,17 +127,33 @@ export function projectPermissionCatalog(catalog, { permissionCodes, routes }) {
 export const generatedExclusionReason = names => `생성 제외: 원본 묶음(${names.join(', ')})에 있던 권한이지만 이 구성에서 그 묶음이 여는 화면과 `
   + '관련 화면이 남지 않았다. 필요하면 권한 작업대의 기능별 권한 표에서 직접 준다.';
 
+/*
+ * 권한이 줄어든 묶음의 이름·설명(GAP-COMPOSE-001, DEC-OPS-330). 원본 이름·설명은 원본 묶음의 권한 전부를 두고 쓴 문장이라, 권한이
+ * 하나라도 빠지면 빠진 기능을 맡긴다고 말할 수 있다(core 의 '기본 업무'는 권한 72개 중 11개만 남는데 설명은 결재·게시판·쪽지를 말했다).
+ * 그래서 줄어든 묶음은 기능을 열거하지 않는 고정 문장을 쓴다 — 새 기능 설명을 지어내지 않는다. 이름은 원본 이름을 출처로만 남기고
+ * 남은 권한이라는 표시를 붙인다. 묶음이 실제로 맡기는 일은 권한 작업대가 그 묶음의 권한 수와 여는 화면·관련 화면(화면 목록의 이름)으로
+ * 보인다. 화면 이름을 설명에 옮겨 적지 않는 까닭: 화면 이름에는 묶음 문구가 쓰면 안 되는 용어가 있다(예: '통합 코드 관리 허브' —
+ * buildPermissionBundles 의 화면 용어 검사가 막는다). 권한이 하나도 빠지지 않은 묶음은 이름·설명을 원본 그대로 둔다(모든 기능을 고른
+ * 구성은 묶음 원장이 원본과 바이트가 같다).
+ */
+export const REDUCED_BUNDLE_NAME_SUFFIX = '(이 구성에 남은 권한)';
+export const REDUCED_BUNDLE_DESCRIPTION = '원본 묶음에서 이 구성에 없는 기능의 권한을 뺐습니다. 맡기는 일은 묶음을 고르면 보이는 화면 목록으로 확인하세요.';
+export const reducedBundleName = name => `${name}${REDUCED_BUNDLE_NAME_SUFFIX}`;
+
 /**
  * 묶음 원장을 구성으로 줄인다(묶음 투영 규칙). `screens` 는 생성물의 화면 목록 행(진입 권한·쓰기 권한)이다.
  *   ① 묶음 권한을 구성 코드로 줄인다(원장 순서). 남는 권한이 없으면 뺀다.
  *   ② 여는 화면(진입 권한 충족)이나 관련 화면(누구나 들어가는 화면에서 그 권한으로 쓰기)이 하나도 없으면 뺀다.
  *   ③ 줄인 권한 집합이 앞에서 남긴 묶음과 같으면 뺀다(같은 권한을 두 이름으로 보이지 않는다 — 원본 생성기도 같은 집합을 거부한다).
  *   ④ 보호 표시를 남은 권한으로 다시 정한다.
+ *   ⑤ 권한이 하나라도 빠진 묶음은 이름에 남은 권한 표시를 붙이고 설명을 고정 문장으로 바꾼다(reducedBundleName·REDUCED_BUNDLE_DESCRIPTION).
+ *     빠진 것이 없는 묶음은 이름·설명이 원본과 같다.
  * 원본 제외 행은 구성 코드만 남기고, ②로 뺀 묶음에만 있던 남는 권한은 생성 제외 행으로 더한다. 결과는 원본처럼 카탈로그를 빠짐없이 나눈다.
  */
 export function projectPermissionBundleLedger(ledger, { codes, screens }) {
   const allowed = new Set(codes);
   const kept = [];
+  const reduced = [];
   const dropped = [];
   const signatures = new Map();
   const droppedOwners = new Map(); // code → 그 코드를 품었다가 ②로 빠진 원본 묶음 이름
@@ -155,7 +171,15 @@ export function projectPermissionBundleLedger(ledger, { codes, screens }) {
     const signature = [...permissions].sort(byCodePoint).join(',');
     if (signatures.has(signature)) { dropped.push({ id: bundle.id, reason: `same-permissions-as:${signatures.get(signature)}` }); continue; }
     signatures.set(signature, bundle.id);
-    kept.push({ ...bundle, protected: PROTECTED_PERMISSIONS.some(code => granted.has(code)), permissions });
+    // 원본 원장의 묶음 권한은 겹치지 않으므로(buildPermissionBundles 가 검사한다) 수가 같으면 빠진 권한이 없다.
+    const lost = permissions.length !== bundle.permissions.length;
+    if (lost) reduced.push(bundle.id);
+    kept.push({
+      ...bundle,
+      ...(lost ? { name: reducedBundleName(bundle.name), description: REDUCED_BUNDLE_DESCRIPTION } : {}),
+      protected: PROTECTED_PERMISSIONS.some(code => granted.has(code)),
+      permissions,
+    });
   }
   const bundled = new Set(kept.flatMap(bundle => bundle.permissions));
   const sourceExcluded = (ledger.excluded ?? []).filter(row => allowed.has(row.code));
@@ -168,6 +192,7 @@ export function projectPermissionBundleLedger(ledger, { codes, screens }) {
   return {
     ledger: { ...structuredClone(ledger), bundles: kept, excluded: [...sourceExcluded, ...generatedExclusions] },
     kept: kept.map(bundle => bundle.id),
+    reduced,
     dropped,
     generatedExclusions: generatedExclusions.map(row => row.code),
   };
@@ -243,6 +268,7 @@ export function planPermissionProjection({ sourceRoot, composition, removed, kep
     removedOperationBindings: bindings.removed.length,
     screens: screens.length,
     bundles: bundles.kept,
+    reducedBundles: bundles.reduced,
     droppedBundles: bundles.dropped,
     generatedExclusions: bundles.generatedExclusions,
   };
@@ -300,6 +326,7 @@ export function applyScreenAndBundleProjection({ sourceRoot, outputRoot, ledger 
     screens: rows.screens.length,
     aliases: rows.aliases.length,
     bundles: bundleProjection.kept,
+    reducedBundles: bundleProjection.reduced,
     droppedBundles: bundleProjection.dropped,
     generatedExclusions: bundleProjection.generatedExclusions,
   };
