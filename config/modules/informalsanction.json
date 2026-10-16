@@ -54,6 +54,10 @@
         ]
       },
       {
+        "file": "api-server/src/test/java/nuri/api/schema/ApprovalSavedLineConcurrencyIntegrationTest.java",
+        "alsoRequires": []
+      },
+      {
         "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
         "alsoRequires": []
       }
