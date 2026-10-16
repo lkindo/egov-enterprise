@@ -97,7 +97,7 @@ describe('memoReportService generated instruction contract', () => {
       // 수정·삭제 capability는 서로 독립적인 서버 판정이며 요청에서 받지 않는다.
       'editable',
       'deletable',
-      // [2026-10-01] 지시 가능 여부도 서버 판정이다(지시 기능 권한 + 수신자·전체 수정 권한).
+      // [2026-10-01] 지시 가능 여부도 서버 판정이다(지시 기능 권한 + 수신자 — 2026-10-16 GAP-MEMO-001 부터 관리자 우회 없음).
       'instructable',
     ] as const;
     type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;

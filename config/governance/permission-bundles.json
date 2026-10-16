@@ -145,12 +145,12 @@
     {
       "id": "others-work-data-proxy",
       "name": "다른 사람 업무 자료 대행",
-      "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고를 대신 조회하고 고치거나 지우는 일과, 다른 사람의 메모 보고를 대신 조회하고 지우는 일을 맡깁니다(메모 보고의 본문 수정과 지시는 맡기지 않습니다). 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
+      "description": "업무 지원 담당자에게 다른 사람의 주소록·일정·스크랩·부서 업무·업무 보고·메모 보고를 대신 조회하고 고치거나 지우는 일을 맡깁니다. 메모 보고의 지시는 보고를 받은 사람만 남길 수 있어 이 묶음으로도 달거나 바꾸지 못하고, 지시가 달린 메모 보고는 본문을 고칠 수 없습니다. 남의 메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다. 작성자 본인이 아니어도 남의 자료를 바꾸거나 지울 수 있으므로 꼭 필요한 담당자에게만 주세요.",
       "protected": false,
       "permissions": [
         "ADBK_DELETE", "ADBK_DELETE_ALL", "ADBK_READ", "ADBK_READ_ALL", "ADBK_UPDATE", "ADBK_UPDATE_ALL",
         "DEPT_JOB_DELETE", "DEPT_JOB_DELETE_ALL", "DEPT_JOB_READ", "DEPT_JOB_UPDATE", "DEPT_JOB_UPDATE_ALL",
-        "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL", "MEMO_RPT_READ", "MEMO_RPT_READ_ALL",
+        "MEMO_RPT_DELETE", "MEMO_RPT_DELETE_ALL", "MEMO_RPT_READ", "MEMO_RPT_READ_ALL", "MEMO_RPT_UPDATE", "MEMO_RPT_UPDATE_ALL",
         "SCHEDULE_DELETE", "SCHEDULE_DELETE_ALL", "SCHEDULE_READ", "SCHEDULE_READ_ALL", "SCHEDULE_UPDATE", "SCHEDULE_UPDATE_ALL",
         "SCRAP_DELETE", "SCRAP_DELETE_ALL", "SCRAP_READ", "SCRAP_READ_ALL", "SCRAP_UPDATE", "SCRAP_UPDATE_ALL",
         "WORK_RPT_DELETE", "WORK_RPT_DELETE_ALL", "WORK_RPT_READ", "WORK_RPT_READ_ALL", "WORK_RPT_UPDATE", "WORK_RPT_UPDATE_ALL"
@@ -211,10 +211,6 @@
     {
       "code": "INFORMAL_UPDATE_ALL",
       "reason": "관리 경로(PUT /api/v1/admin/system/ism/{id})의 진입 권한일 뿐이다. InformalSanctionService 가 신청자 본인만 고치게 해(assertOwnerByEsntlId) 남의 결재를 대신 고치지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
-    },
-    {
-      "code": "MEMO_RPT_UPDATE_ALL",
-      "reason": "남의 메모 보고 본문을 고치는 대행 권한이지만, 서버(MemoReportService.assertRecipientOrAdmin)는 같은 권한으로 지시 작성도 허용한다. 지시 권한(MEMO_RPT_INSTRUCT)은 일반 사용자 기본 권한('기본 업무' 묶음)이라, 이 권한을 받은 사람은 수신자가 아니어도 모든 메모 보고에 지시를 달거나 바꿀 수 있다. 지시에는 작성자 칸이 없어 보고한 사람에게는 수신자가 내린 지시처럼 보인다 — 지시는 보고를 받은 사람의 행위다(DEC-OPS-138 ⑤·154). 서버가 지시 판정을 이 권한과 분리하기 전에는 묶음으로 맡기지 않는다. 필요한 그룹에 기능별 권한 표에서 따로 준다."
     },
     {
       "code": "WORKFLOW_READ",
