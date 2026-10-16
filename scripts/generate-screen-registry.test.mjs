@@ -275,6 +275,32 @@ function javaCode(file) {
   return codeWithoutComments(fs.readFileSync(path.join(root, file), 'utf8')).code;
 }
 
+/**
+ * 메서드 선언(signature, 공백 그대로) 바로 뒤의 본문 — 여는 중괄호부터 짝이 맞는 닫는 중괄호까지(양 끝 포함).
+ * 선언이 정확히 한 번 있어야 한다. 문자열 속 중괄호는 세지 않는다.
+ */
+function javaMethodBody(code, signature) {
+  const at = code.indexOf(signature);
+  assert.ok(at >= 0 && code.indexOf(signature, at + 1) < 0, `exactly one declaration of ${signature}`);
+  const open = code.indexOf('{', at + signature.length);
+  assert.ok(open >= 0 && /^\s*$/u.test(code.slice(at + signature.length, open)), `${signature} opens its body`);
+  let depth = 0;
+  for (let index = open; index < code.length; index += 1) {
+    const char = code[index];
+    if (char === '"' || char === '\'') {
+      let end = index + 1;
+      while (end < code.length && code[end] !== char) end += code[end] === '\\' ? 2 : 1;
+      index = end;
+    } else if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return code.slice(open, index + 1);
+    }
+  }
+  assert.fail(`${signature} body is not closed`);
+}
+
 test('excluded permissions stay excluded only while the facts their reasons cite still hold', () => {
   const ledger = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.bundles), 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.catalog), 'utf8'));
@@ -335,19 +361,42 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.ok(proxy, 'the work data proxy bundle exists');
   assert.equal(proxy.permissions.some(code => /^FILE_/u.test(code)), false, 'the proxy bundle grants no attachment permission');
   assert.match(proxy.description, /메모 보고·업무 보고에 붙은 첨부파일은 작성자 개인 자료라 이 묶음으로도 열 수 없습니다/u);
-  // ③ 메모 보고 전체 수정(MEMO_RPT_UPDATE_ALL) — 서버가 같은 권한으로 지시 작성도 허용하고(assertRecipientOrAdmin), 지시
-  //    권한은 일반 사용자 기본 권한이며, 지시에는 작성자 칸이 없다. 서버가 지시 판정을 분리하면 다시 분류한다.
-  assert.ok(excluded.has('MEMO_RPT_UPDATE_ALL'));
+  // ③ 메모 보고 전체 수정(MEMO_RPT_UPDATE_ALL) — 2026-10-03 에는 서버가 같은 권한으로 지시 작성도 허용해서(지시에는 작성자
+  //    칸이 없어 수신자의 지시처럼 보였다) 묶음에서 뺐다(DEC-OPS-214). 2026-10-16 GAP-MEMO-001 로 지시가 수신자 전용이 되어
+  //    이 권한은 남의 메모 보고 본문만 대행해 고친다 — 그래서 '다른 사람 업무 자료 대행'에 넣었다(DEC-OPS-331). 서버가 이 권한으로
+  //    지시를 다시 열면(가드·힌트·다른 Java 판정 어디서든) 아래 단언이 실패해 다시 분류하게 한다.
+  assert.equal(excluded.has('MEMO_RPT_UPDATE_ALL'), false, 'the memo full update permission is bundled, not excluded');
+  for (const code of ['MEMO_RPT_UPDATE', 'MEMO_RPT_UPDATE_ALL']) {
+    assert.ok(proxy.permissions.includes(code), `the work data proxy bundle grants ${code}`);
+  }
   const memoService = javaCode('business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java');
-  assert.match(memoService,
-    /private void assertRecipientOrAdmin\(MemoReport entity\) \{\s*if \([\w.]*SecurityUtil\.hasPermission\("MEMO_RPT_UPDATE_ALL"\)\) \{\s*return;/u,
-    'the full update permission passes the instruction guard');
-  assert.match(memoService, /public void updateDrctMatter\([^)]*\) \{[^}]*assertRecipientOrAdmin\(entity\);/u, 'instructions use that guard');
+  const recipientGuard = javaMethodBody(memoService, 'private void assertRecipient(MemoReport entity)');
+  assert.match(recipientGuard,
+    /^\{\s*String esntlId = currentEsntlIdOrDeny\(\);\s*if \(!esntlId\.equals\(entity\.getRptrId\(\)\)\) \{\s*throw new BusinessException\(CommonErrorCode\.ACCESS_DENIED\);\s*\}\s*\}$/u,
+    'the instruction guard admits the recipient only');
+  assert.match(javaMethodBody(memoService, 'public void updateDrctMatter(Long memoRptSn, String instrCn)'), /\bassertRecipient\(entity\);/u,
+    'instructions use the recipient-only guard');
+  const instructHint = javaMethodBody(memoService, 'private boolean canInstruct(MemoReport entity)');
+  assert.deepEqual([...instructHint.matchAll(/hasPermission\("([A-Z_]+)"\)/gu)].map(match => match[1]), ['MEMO_RPT_INSTRUCT'],
+    'the instructable hint asks only for the instruction permission');
+  assert.match(instructHint, /\.filter\(id -> id\.equals\(entity\.getRptrId\(\)\)\)/u, 'the instructable hint requires the recipient');
+  // 이 권한이 실제로 하는 일 — 남의 보고 본문 대행 수정(작성자·전체 수정 권한), 지시가 달린 보고는 그래도 고치지 못한다(409).
+  const bodyUpdate = javaMethodBody(memoService, 'public void updateMemoReport(Long memoRptSn, String userId, MemoReportDto dto)');
+  assert.match(bodyUpdate, /SecurityUtil\.assertOwnerOrPermission\(entity\.getFrstRgtrId\(\), "MEMO_RPT_UPDATE_ALL"\);/u,
+    'the full update permission edits other people\'s report bodies');
+  assert.match(bodyUpdate, /if \(hasInstruction\(entity\)\) \{\s*throw new BusinessException\(CommonErrorCode\.RESOURCE_IN_USE,/u,
+    'an instructed report body stays fixed even for the full update permission');
+  // 서버의 다른 어떤 Java 판정도 이 권한을 보지 않는다 — 새 판정이 생기면(지시든 다른 일이든) 묶음 분류를 다시 본다.
+  const memoUpdateAllJudges = javaFiles
+    .filter(file => codeWithoutComments(fs.readFileSync(file, 'utf8')).strings.some(literal => /(?<![A-Z0-9_])MEMO_RPT_UPDATE_ALL(?![A-Z0-9_])/u.test(literal)))
+    .map(file => path.relative(root, file).split(path.sep).join('/'));
+  assert.deepEqual(memoUpdateAllJudges, ['business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java']);
+  assert.deepEqual([...memoService.matchAll(/"MEMO_RPT_UPDATE_ALL"/gu)].length, 2, 'only the body edit guard and the editable hint read it');
   assert.match(javaCode('business-app/src/main/java/nuri/business/domain/memoreport/MemoReport.java'),
     /public void updateDrctMatter\(String drctnMttr, LocalDateTime drctnMttrRegDt\)/u, 'an instruction records no author');
   assert.ok(catalog.permissions.find(row => row.code === 'MEMO_RPT_INSTRUCT')?.defaultGroups.includes('ROLE_USER'), 'instructing is a user default');
   assert.ok(ledger.bundles.find(bundle => bundle.id === 'basic-work')?.permissions.includes('MEMO_RPT_INSTRUCT'));
-  assert.match(proxy.description, /메모 보고의 본문 수정과 지시는 맡기지 않습니다/u);
+  assert.match(proxy.description, /메모 보고의 지시는 보고를 받은 사람만 남길 수 있어 이 묶음으로도 달거나 바꾸지 못하고, 지시가 달린 메모 보고는 본문을 고칠 수 없습니다/u);
   // 워크플로우 데모 화면은 시연 기능 파일이 소유한다(종전 v1 manifest 의 demo pack → 11단계 C5 의 약식 결재 → 2026-10-13 시연 —
   // 인증 시작 구성 '공통 기반 + 결재' 에 정적 목업이 실리지 않게 했다). 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
   assert.ok(excluded.has('WORKFLOW_READ'));

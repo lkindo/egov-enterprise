@@ -515,7 +515,7 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("🔐 작성자는 지시사항을 쓸 수 없다 — 지시는 수신자·관리자만 남긴다 (DIP I7)")
+    @DisplayName("🔐 작성자는 지시사항을 쓸 수 없다 — 지시는 수신자만 남긴다 (DIP I7, GAP-MEMO-001)")
     void updateDrctMatter_rejectsWriter() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
@@ -641,8 +641,8 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("수신자와 전체 수정 권한자는 지시사항을 남긴다 (DIP I7)")
-    void updateDrctMatter_allowsRecipientAndAdmin() {
+    @DisplayName("수신자는 지시사항을 남긴다 (DIP I7)")
+    void updateDrctMatter_allowsRecipient() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
@@ -650,14 +650,52 @@ class MemoReportServiceTest {
 
         memoReportService.updateDrctMatter(1L, "수신자 지시");
         assertThat(entity.getDrctnMttr()).isEqualTo("수신자 지시");
+    }
 
+    /*
+      [2026-10-16 GAP-MEMO-001] 지시는 수신자만 남긴다 — 전체 수정 권한(MEMO_RPT_UPDATE_ALL)도 우회하지 못한다.
+      지시에는 작성자 칸이 없어, 수신자가 아닌 사람이 단 지시도 보고한 사람에게는 수신자의 지시처럼 보였다.
+      관리자는 남의 보고 본문을 대행 수정할 수 있지만(updateMemoReport) 지시를 새로 달거나 바꾸지는 못한다.
+    */
+    @Test
+    @DisplayName("🔐 전체 수정·삭제·열람 권한이 있어도 수신자가 아니면 지시를 달거나 바꾸지 못한다 (GAP-MEMO-001)")
+    void updateDrctMatter_rejectsAdminWithUpdateAll() {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
+        entity.updateDrctMatter("수신자 지시", java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-admin"));
-        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL"))
-                .thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
 
-        memoReportService.updateDrctMatter(1L, "관리자 지시");
-        assertThat(entity.getDrctnMttr()).isEqualTo("관리자 지시");
+        BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
+                () -> memoReportService.updateDrctMatter(1L, "관리자 지시"));
+
+        assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
+        assertThat(entity.getDrctnMttr()).as("수신자의 지시를 덮지 않는다").isEqualTo("수신자 지시");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest(name = "instruct={0}, updateAll={1}, recipient={2} -> instructable={3}")
+    @CsvSource({
+            "true, false, true, true",
+            "true, true, true, true",
+            "true, true, false, false",
+            "true, false, false, false",
+            "false, true, true, false",
+            "false, false, true, false"
+    })
+    @DisplayName("instructable: 지시 기능 권한과 수신자 여부로만 판정한다 — 전체 수정 권한은 지시를 열지 않는다 (GAP-MEMO-001)")
+    void instructableMatchesRecipientOnlyGuard(boolean instruct, boolean updateAll, boolean recipient, boolean expected) {
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
+        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of(recipient ? "esntl-recipient" : "esntl-admin"));
+        // 열람은 수신자이거나 전체 열람 권한으로 통과시킨다 — 판정 대상은 지시 힌트뿐이다.
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL")).thenReturn(true);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT")).thenReturn(instruct);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_UPDATE_ALL")).thenReturn(updateAll);
+
+        assertThat(memoReportService.getMemoReport(1L).getInstructable()).isEqualTo(expected);
     }
 
     /*

@@ -23,7 +23,7 @@ import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs
 import { PROJECTION_LEDGER_PATH, buildProjectionLedger, writeProjectionLedger } from './reusable-projection-ledger.mjs';
 import { normalize, walk } from './reusable-source-tree.mjs';
 import { PERMISSION_ARTIFACT_PATHS } from './generate-permissions.mjs';
-import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH } from './reusable-permission-projection.mjs';
+import { AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, PERMISSION_CATALOG_PATH, REDUCED_BUNDLE_DESCRIPTION, reducedBundleName } from './reusable-permission-projection.mjs';
 import { SCREEN_REGISTRY_OUTPUT, readScreenRegistryArtifact } from './screen-registry-model.mjs';
 import { activeCompositionEntry, writeProjectedModules } from './generate-reusable-base-source.mjs';
 import { MODULES_DIRECTORY, RETIRED_OWNERSHIP_DECLARATION, composerOwnership, loadComposerModules } from './composer-modules.mjs';
@@ -244,6 +244,28 @@ export function registerProfileProjectionTests(shard) {
         const catalogCodes = new Set(composition.permissionCodes);
         assert.ok(projectedRegistry.screens.every(screen => screen.permissions.every(row => catalogCodes.has(row.code))));
         assert.ok(projectedRegistry.bundles.length > 0 && projectedRegistry.bundles.every(bundle => bundle.permissions.every(code => catalogCodes.has(code))));
+        // GAP-COMPOSE-001(DEC-OPS-330): 권한이 하나라도 빠진 묶음은 원본 이름·설명을 들고 가지 않는다 — 원본 문장은 빠진 기능을 맡긴다고 말할
+        // 수 있다. 이름은 원본 이름에 남은 권한 표시를 붙이고 설명은 고정 문장이다. 빠진 것이 없는 묶음은 원본과 같고, 화면 목록도 같은 문장이다.
+        const sourceBundles = new Map(readJson(ROOT, PERMISSION_BUNDLES_PATH).bundles.map(bundle => [bundle.id, bundle]));
+        const projectedBundles = readJson(output, PERMISSION_BUNDLES_PATH).bundles;
+        const reducedBundles = projectedBundles.filter(bundle => sourceBundles.get(bundle.id).permissions.length !== bundle.permissions.length)
+          .map(bundle => bundle.id);
+        assert.deepEqual(result.permissionProjection.reducedBundles, reducedBundles, `${profileName}: reduced bundles`);
+        for (const bundle of projectedBundles) {
+          const source = sourceBundles.get(bundle.id);
+          assert.deepEqual([bundle.name, bundle.description], reducedBundles.includes(bundle.id)
+            ? [reducedBundleName(source.name), REDUCED_BUNDLE_DESCRIPTION] : [source.name, source.description], `${profileName}: ${bundle.id} bundle text`);
+        }
+        assert.deepEqual(projectedRegistry.bundles.map(bundle => [bundle.id, bundle.name, bundle.description]),
+          projectedBundles.map(bundle => [bundle.id, bundle.name, bundle.description]), `${profileName}: the screen registry carries the projected bundle text`);
+        if (profileName === 'demo') assert.deepEqual(reducedBundles, [], 'demo: no bundle loses a permission');
+        else assert.ok(reducedBundles.includes('basic-work'), `${profileName}: the basic work bundle loses permissions`);
+        if (profileName === 'core') {
+          // core 의 '기본 업무'는 원본 권한 72개 가운데 일부만 남는다 — 원본 설명이 말하던 결재·게시판·쪽지를 싣지 않는다.
+          const basic = projectedBundles.find(bundle => bundle.id === 'basic-work');
+          assert.equal(basic.name, '기본 업무(이 구성에 남은 권한)');
+          assert.doesNotMatch(basic.description, /결재|게시판|쪽지/u);
+        }
         const sameText = path => readFileSync(join(output, path), 'utf8').replace(/\r\n?/gu, '\n') === readFileSync(join(ROOT, path), 'utf8').replace(/\r\n?/gu, '\n');
         const permissionFiles = [PERMISSION_CATALOG_PATH, AUTHORIZATION_POLICY_PATH, PERMISSION_BUNDLES_PATH, SCREEN_REGISTRY_OUTPUT, ...PERMISSION_ARTIFACT_PATHS];
         if (profileName === 'demo') {

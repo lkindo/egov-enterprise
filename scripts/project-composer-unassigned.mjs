@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadComposerModules } from './composer-modules.mjs';
+import { reducedBundleName } from './reusable-permission-projection.mjs';
 
 /*
  * 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한(설계서 B8). 권한 원장의 defaultGroups:[] 행과 정확히
@@ -14,8 +15,11 @@ const bundleHow = name => `권한 작업대에서 '${name}' 묶음을 그룹에 
 const DIRECT_HOW = '권한 작업대의 기능별 권한 표에서 필요한 그룹에 직접 줍니다.';
 const PROTECTED_HOW = " 보호 권한이라 권한 관리의 '기능·메뉴 권한 설정'과 '배정' 권한을 함께 가진 관리자만 저장할 수 있습니다.";
 
-/** 순수 판정. 원장·묶음과 안내 표가 어긋나면 실패한다. */
-export function validateUnassignedGuidance({ guidance, permissions, bundles }) {
+/**
+ * 순수 판정. 원장·묶음과 안내 표가 어긋나면 실패한다. `permissionCodes`(구성의 권한 코드)를 주면 묶음 이름을 생성물에 실릴 이름으로
+ * 말한다 — 그 구성에서 권한이 하나라도 빠지는 묶음은 생성물에서 남은 권한 표시를 붙인 이름이 된다(권한 투영과 같은 판정, DEC-OPS-330).
+ */
+export function validateUnassignedGuidance({ guidance, permissions, bundles, permissionCodes }) {
   const fail = message => { throw new Error(`project-composer unassigned permissions: ${message}`); };
   if (!guidance || typeof guidance !== 'object') fail('guidance from the feature files is required');
   const unassigned = permissions.permissions.filter(permission => Array.isArray(permission.defaultGroups) && permission.defaultGroups.length === 0);
@@ -33,17 +37,18 @@ export function validateUnassignedGuidance({ guidance, permissions, bundles }) {
     } else {
       const found = bundles.bundles.find(candidate => candidate.id === row.bundle);
       if (!found || !found.permissions.includes(permission.code)) fail(`guidance bundle does not contain the permission: ${permission.code} -> ${row.bundle}`);
-      bundle = { id: found.id, name: found.name };
+      const reduced = Array.isArray(permissionCodes) && found.permissions.some(code => !permissionCodes.includes(code));
+      bundle = { id: found.id, name: reduced ? reducedBundleName(found.name) : found.name };
     }
     const howToAssign = `${bundle ? bundleHow(bundle.name) : DIRECT_HOW}${row.protected ? PROTECTED_HOW : ''}`;
     return { code: permission.code, name: permission.name, protected: row.protected, effect: row.effect, howToAssign, bundle };
   }).sort((a, b) => a.code.localeCompare(b.code));
 }
 
-export function loadUnassignedPermissionGuidance(root) {
+export function loadUnassignedPermissionGuidance(root, { permissionCodes } = {}) {
   const read = path => JSON.parse(readFileSync(join(root, path), 'utf8'));
   const guidance = Object.fromEntries(Object.entries(loadComposerModules(root).extras.unassigned)
     .map(([code, row]) => [code, { bundle: row.bundle, protected: row.protected, effect: row.effect }]));
   return validateUnassignedGuidance({ guidance, permissions: read('config/governance/permission-catalog.json'),
-    bundles: read('config/governance/permission-bundles.json') });
+    bundles: read('config/governance/permission-bundles.json'), permissionCodes });
 }
