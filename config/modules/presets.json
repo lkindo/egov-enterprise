@@ -24,6 +24,10 @@
             "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalSavedLineConcurrencyIntegrationTest.java",
+            "reason": "나의 결재선의 1인 20개 상한과 같은 이름 중복 거부를 실제 PostgreSQL 사용자 행 잠금 경합으로 본다. 결재 기능이 없는 구성에서는 결재선 서비스와 테이블이 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
             "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다."
           },
@@ -216,6 +220,10 @@
             "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalSavedLineConcurrencyIntegrationTest.java",
+            "reason": "나의 결재선의 1인 20개 상한과 같은 이름 중복 거부를 실제 PostgreSQL 사용자 행 잠금 경합으로 본다. 결재 기능이 없는 구성에서는 결재선 서비스와 테이블이 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
             "reason": "약식 전자결재의 다단계 상태 전환·동시성·열람 범위 통합 테스트다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다."
           },
@@ -393,6 +401,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java",
             "reason": "결재와 알림이 함께 있어야 성립하는 시험이다 — 지워진 참조자 계정이 있어도 승인이 커밋되고 남은 참조자만 결과 알림 행을 받는지 실제 알림 행(사용자 FK)으로 본다. 결재 기능이 없는 구성에서는 결재 서비스와 테이블이 없다. 결재 흐름의 나머지 검사는 ApprovalWorkflowIntegrationTest 에 있다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ApprovalSavedLineConcurrencyIntegrationTest.java",
+            "reason": "나의 결재선의 1인 20개 상한과 같은 이름 중복 거부를 실제 PostgreSQL 사용자 행 잠금 경합으로 본다. 결재 기능이 없는 구성에서는 결재선 서비스와 테이블이 없다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java",
