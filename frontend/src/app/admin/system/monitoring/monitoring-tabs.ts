@@ -2,7 +2,7 @@
  * 감시 허브(/admin/system/monitoring/hub)의 탭과 `?tab=` 해석. 메뉴·별칭·알림이 `?tab=` 으로 여는 값은 탭 목적지 계약이
  * 이 해석과 대조한다(`src/__tests__/cross-stack/tab-destination-contract.test.ts`).
  *
- * 셸 고유 탭은 로그 셋·가동 상태다. 하네스 아틀라스 탭은 시연 기능의 hub-tabs 기여다(허브 분해 H3) — 이 목록에 없고, 화면이
+ * 셸 고유 탭은 로그 셋·가동 상태다. 하네스 아틀라스 탭은 시연 기능의 hub-tabs-monitoring 기여다(허브 분해 H3) — 이 목록에 없고, 화면이
  * 지금 보이는 기여 탭 값을 해석에 넘긴다. 댓글 탭은 없다 — 댓글 관리는 댓글 기능의 독립 화면(/admin/system/comments)이다(허브 분해 H6).
  * 그래서 `?tab=comments` 는 어떤 탭에도 맞지 않아 기본 탭을 연다.
  */
@@ -24,9 +24,9 @@ export function parseMonitoringTab(raw: string | null | undefined, contributed: 
 export const TAB_HUB = {
   routes: ['/admin/system/monitoring/hub'],
   parse: parseMonitoringTab,
-  /** hub-tabs 기여의 hub 값(slots.ts 의 HubTabViews 키). */
+  /** 허브(slots.ts 의 HubTabViews 키). 기여 슬롯은 hub-tabs-<slotHub> 다(GAP-SLOT-001). */
   slotHub: 'monitoring',
   contributable: {
-    HARNESS: 'frontend/src/extensions/showcase/hub-tabs.ts',
+    HARNESS: 'frontend/src/extensions/showcase/hub-tabs-monitoring.ts',
   },
 } as const;

@@ -22,8 +22,8 @@ import { canOpenPage } from '@/lib/auth/page-access';
 import { isQnaSolved } from '@/lib/board/qna-status';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
-import { isHubTab, visibleEntries, type HubTabViews } from '@/extensions/slots';
-import { hubTabs } from '@/extensions/generated-hub-tabs';
+import { visibleEntries, type HubTabViews } from '@/extensions/slots';
+import { hubTabsKnowledge } from '@/extensions/generated-hub-tabs-knowledge';
 import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -43,7 +43,7 @@ const HUB_PARAM_KEYS = ['tab'] as const;
 
 // 탭 목록과 `?tab=` 해석은 knowledge-tabs.ts 에 있다(탭 목적지 계약이 메뉴·별칭과 대조한다).
 /**
- * 탭 하나. 셸 고유 탭(위키·FAQ·Q&A)은 이 파일이 정하고, 다른 기능의 탭(커뮤니티)은 hub-tabs 기여의 뷰에서 온다(허브 분해 H2).
+ * 탭 하나. 셸 고유 탭(위키·FAQ·Q&A)은 이 파일이 정하고, 다른 기능의 탭(커뮤니티)은 hub-tabs-knowledge 기여의 뷰에서 온다(허브 분해 H2).
  * 셸이 그 게시판(bbsId)의 글 목록을 그리고, 탭이 열렸을 때 기여의 머리 동작(Actions)을 더한다.
  */
 type KnowledgeTab = { readonly id: string; readonly label: string } & HubTabViews['knowledge'];
@@ -52,7 +52,6 @@ const SHELL_TABS: readonly KnowledgeTab[] = [
   { id: 'FAQ', label: '자주 묻는 질문', description: '빠른 답변', icon: BookOpen, bbsId: HELP_FAQ_BOARD_ID },
   { id: 'QNA', label: '질의응답(Q&A)', description: '질문과 답변', icon: MessageCircleQuestion, bbsId: QNA_BOARD_ID },
 ];
-const isKnowledgeTab = isHubTab('knowledge');
 
 /** 열린 탭의 머리 동작. 기여 뷰의 컴포넌트를 그대로 그린다. */
 function ContributedActions({ view: { Actions } }: { view: HubTabViews['knowledge'] }) {
@@ -74,7 +73,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   const canReadBoardMasters = canOpenPage(user, '/admin/community/boards/master');
   // [허브 분해 H2] 셸 고유 탭 뒤에 이 구성에서 보이는 기여 탭을 order 순으로 붙인다. 커뮤니티 관리 버튼·대화상자는 커뮤니티 기여의
   //   머리 동작이 소유한다(DEC-OPS-037 의 노출 규칙 그대로 — 커뮤니티 탭에서, COMMUNITY_READ_ALL 보유자에게만).
-  const contributedTabs = useMemo(() => visibleEntries(user, hubTabs, isKnowledgeTab), [user]);
+  //   레지스트리는 지식 허브 전용이다(hub-tabs-knowledge, GAP-SLOT-001) — 다른 허브의 탭 뷰는 이 화면의 번들에 실리지 않는다.
+  const contributedTabs = useMemo(() => visibleEntries(user, hubTabsKnowledge), [user]);
   const tabs: readonly KnowledgeTab[] = useMemo(
     () => [...SHELL_TABS, ...contributedTabs.map(({ id, label, view }) => ({ id, label, ...view }))],
     [contributedTabs],

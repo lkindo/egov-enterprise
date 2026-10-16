@@ -2,7 +2,7 @@
  * 지식 허브(/admin/help·/admin/help/faq·/admin/help/qna)의 탭과 `?tab=` 해석. 메뉴·별칭·알림이 `?tab=` 으로 여는 값은
  * 탭 목적지 계약이 이 해석과 대조한다(`src/__tests__/cross-stack/tab-destination-contract.test.ts`).
  *
- * 셸은 게시판 소유이고 위키·FAQ·Q&A 는 셸 고유 탭이다(모두 게시판 데이터). 커뮤니티 탭은 커뮤니티 기능의 hub-tabs 기여다(허브 분해 H2).
+ * 셸은 게시판 소유이고 위키·FAQ·Q&A 는 셸 고유 탭이다(모두 게시판 데이터). 커뮤니티 탭은 커뮤니티 기능의 hub-tabs-knowledge 기여다(허브 분해 H2).
  * 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보낸다. 값은 대소문자를 가리지 않는다.
  */
 export const KNOWLEDGE_TABS = ['WIKI', 'FAQ', 'QNA'] as const;
@@ -21,9 +21,9 @@ export function parseKnowledgeTab(raw: string | null | undefined, contributed: r
 export const TAB_HUB = {
   routes: ['/admin/help', '/admin/help/faq', '/admin/help/qna'],
   parse: parseKnowledgeTab,
-  /** hub-tabs 기여의 hub 값(slots.ts 의 HubTabViews 키). */
+  /** 허브(slots.ts 의 HubTabViews 키). 기여 슬롯은 hub-tabs-<slotHub> 다(GAP-SLOT-001). */
   slotHub: 'knowledge',
   contributable: {
-    COMMUNITY: 'frontend/src/extensions/community/hub-tabs.ts',
+    COMMUNITY: 'frontend/src/extensions/community/hub-tabs-knowledge.ts',
   },
 } as const;

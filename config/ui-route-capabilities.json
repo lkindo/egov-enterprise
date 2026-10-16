@@ -398,7 +398,7 @@
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/page.tsx",
             "frontend/src/app/note/NoteCollaborationTab.tsx",
-            "frontend/src/extensions/note/hub-tabs.ts",
+            "frontend/src/extensions/note/hub-tabs-collaboration.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -431,7 +431,7 @@
             "frontend/src/app/admin/collaboration/scraps/ScrapFormDialog.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
-            "frontend/src/extensions/scrap/hub-tabs.ts",
+            "frontend/src/extensions/scrap/hub-tabs-collaboration.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         }
@@ -1113,7 +1113,7 @@
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapCollaborationTab.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
-            "frontend/src/extensions/scrap/hub-tabs.ts",
+            "frontend/src/extensions/scrap/hub-tabs-collaboration.ts",
             "frontend/src/queries/scrap-query-options.ts"
           ]
         },
@@ -1141,7 +1141,7 @@
             "frontend/src/app/admin/collaboration/CollaborationHubClient.tsx",
             "frontend/src/app/admin/collaboration/scraps/page.tsx",
             "frontend/src/app/note/NoteCollaborationTab.tsx",
-            "frontend/src/extensions/note/hub-tabs.ts",
+            "frontend/src/extensions/note/hub-tabs-collaboration.ts",
             "frontend/src/services/business/user/NoteService.ts",
             "frontend/src/services/business/user/__tests__/CollaborationUserServices.test.ts"
           ]
@@ -2651,7 +2651,7 @@
             "frontend/src/components/business/community/__tests__/CommunityMembersPanel.test.tsx",
             "frontend/src/components/business/community/__tests__/KnowledgeCommunityActions.test.tsx",
             "frontend/src/components/business/community/knowledge-community-tab.tsx",
-            "frontend/src/extensions/community/hub-tabs.ts",
+            "frontend/src/extensions/community/hub-tabs-knowledge.ts",
             "frontend/src/services/foundation/system/CommunityAdminService.ts"
           ]
         }
@@ -8990,7 +8990,7 @@
             "frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
             "frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx",
             "frontend/src/app/admin/system/monitoring/hub/page.tsx",
-            "frontend/src/extensions/showcase/hub-tabs.ts"
+            "frontend/src/extensions/showcase/hub-tabs-monitoring.ts"
           ]
         }
       ],

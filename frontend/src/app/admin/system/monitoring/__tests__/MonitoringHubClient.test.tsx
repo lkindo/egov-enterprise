@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
 import { inProjection } from '@/test-utils/projection';
 
-// 하네스 탭(시연 기능의 hub-tabs 기여)의 시험은 그 기여가 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
+// 하네스 탭(시연 기능의 hub-tabs-monitoring 기여)의 시험은 그 기여가 투영으로 빠진 생성물에서 등록하지 않는다(원본에서는 그대로다).
 // [허브 분해 H6] 댓글 탭의 시험(검색 없음·확인 후 영구 삭제·동기 선점·삭제 대행 권한 표시)은 댓글 기능의 독립 화면 시험으로 옮겼다
 //   (src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx). 이 허브에는 댓글 탭이 없다.
 
@@ -345,9 +345,9 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
-  // [2026-09-27 DIP B5 F11] 하네스 탭은 시연 기능 소유 파일(HarnessAtlasPanels)로 옮겼고, 허브에는 시연의 hub-tabs 기여로 붙는다
+  // [2026-09-27 DIP B5 F11] 하네스 탭은 시연 기능 소유 파일(HarnessAtlasPanels)로 옮겼고, 허브에는 시연의 hub-tabs-monitoring 기여로 붙는다
   //   (허브 분해 H3) — 목 없이 실제 레지스트리·상세를 본다. 시연이 빠진 생성물에서는 기여가 원장으로 빠진다.
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('selects both harness catalog item types', async () => {
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('selects both harness catalog item types', async () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
     let detail = screen.getByRole('region', { name: '선택 항목 상세' });
@@ -403,7 +403,7 @@ describe('MonitoringHubClient', () => {
     expect(within(detail).queryByText('샘플 데이터')).toBeNull();
   });
 
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs.ts')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('하네스 스킬 상세에는 샘플 데이터 고지를 붙인다', () => {
     renderHub('tab=harness');
     fireEvent.click(screen.getByRole('button', { name: /Deep Context Mapper 엔진 상세 보기/ }));
 

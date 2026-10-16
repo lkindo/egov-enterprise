@@ -33,10 +33,11 @@ const byCodePoint = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 
 /**
  * 슬롯 레지스트리를 import 해도 되는 모듈(저장소 기준). 표에 없는 모듈이 import 하면 경계 계약이 붉다 — 범용 플러그인 로더를 막고
- * grep 경로를 고정한다. 소비자마다 다른 항목을 그리는 슬롯은 나눔 속성(SLOT_CONSUMER_PARTITION_KEYS)의 값별로 적는다 — hub-tabs 는
- * 허브별, stats-panels 는 배치별이다. 레지스트리는 하나지만 기여 항목의 귀속(축 3·화면 목록)은 그 항목의 값이 가리키는 소비자로만
- * 잇는다(operation-consumer-census). 이 표가 정본이고 경계 계약과 census 가 함께 import 한다(시험 파일에 두면 census 가 import 할 때
- * 그 시험이 함께 등록된다).
+ * grep 경로를 고정한다. 소비자마다 다른 항목을 그리는 슬롯은 나눔 속성(SLOT_CONSUMER_PARTITION_KEYS)의 값별로 적는다 — stats-panels 는
+ * 배치별이다. 레지스트리는 하나지만 기여 항목의 귀속(축 3·화면 목록)은 그 항목의 값이 가리키는 소비자로만 잇는다
+ * (operation-consumer-census). 허브 탭은 허브마다 슬롯을 둔다(hub-tabs-<허브>, GAP-SLOT-001) — 허브 셸은 자기 허브의 레지스트리만
+ * import 하므로 다른 허브의 탭 뷰를 번들에 싣지 않고, 슬롯마다 소비자가 하나라 나눔이 필요 없다. 이 표가 정본이고 경계 계약과 census 가
+ * 함께 import 한다(시험 파일에 두면 census 가 import 할 때 그 시험이 함께 등록된다).
  */
 export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   // 전달 채널(GAP-COMPOSE-001): 결재·메모 보고 화면은 core 도우미 하나로 묻는다 — 기능 화면은 레지스트리를 직접 읽지 않는다.
@@ -44,11 +45,10 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
   'header-widgets': ['frontend/src/app/components/layout/header.tsx'],
   // 업무 홈(Phase 2 9단계): 셸이 배치마다 그리고, 서버 자식이 보이는 기여의 조회를 미리 채운다. 둘 다 '/' 화면이다.
   'home-sections': ['frontend/src/app/UnifiedDashboardClient.tsx', 'frontend/src/app/home-data-boundary.tsx'],
-  'hub-tabs': {
-    collaboration: ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
-    knowledge: ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
-    monitoring: ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
-  },
+  // 허브 탭(허브 분해 H1~H3, GAP-SLOT-001): 허브마다 슬롯 하나, 소비자는 그 허브 셸 하나다.
+  'hub-tabs-collaboration': ['frontend/src/app/admin/collaboration/CollaborationHubClient.tsx'],
+  'hub-tabs-knowledge': ['frontend/src/app/admin/help/KnowledgeHubClient.tsx'],
+  'hub-tabs-monitoring': ['frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'],
   // 머리글 알림 드로어(알림 기능 소유, 앱 틀)가 알림 카드의 바로 처리 단추를 그린다 — 결재 차례 알림의 [승인] 등.
   'notification-actions': ['frontend/src/app/components/ui/app-notification-drawer.tsx'],
   'post-actions': ['frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'],
@@ -69,7 +69,17 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
  * 소비자를 값별로 나눈 슬롯의 나눔 속성. 그 슬롯의 소비자 표는 기여 항목의 이 속성 값 → 소비자다. 표에서 소비자를 나눈 슬롯과 이 목록은
  * 같아야 한다(slotConsumerPartition 이 어긋나면 실패한다). 경계 계약이 값 집합을 슬롯 타입(slots.ts)과, 기여 항목의 값을 표와 대조한다.
  */
-export const SLOT_CONSUMER_PARTITION_KEYS = Object.freeze({ 'hub-tabs': 'hub', 'stats-panels': 'placement' });
+export const SLOT_CONSUMER_PARTITION_KEYS = Object.freeze({ 'stats-panels': 'placement' });
+
+/**
+ * 허브 탭 슬롯(GAP-SLOT-001). 허브마다 슬롯 하나다 — 이름은 `hub-tabs-<허브>` 이고 허브는 slots.ts 의 HubTabViews 키이자 그 허브 탭
+ * 해석 모듈의 TAB_HUB.slotHub 다. 항목은 hub 를 적지 않는다(슬롯이 허브다). 허브 셸은 자기 허브의 레지스트리 하나만 읽는다.
+ */
+export const HUB_TAB_SLOT_PREFIX = 'hub-tabs-';
+export const hubTabSlot = hub => `${HUB_TAB_SLOT_PREFIX}${hub}`;
+/** 허브 탭 슬롯이면 허브, 아니면 null. */
+export const hubOfTabSlot = slot => (slot.startsWith(HUB_TAB_SLOT_PREFIX) && slot.length > HUB_TAB_SLOT_PREFIX.length
+  ? slot.slice(HUB_TAB_SLOT_PREFIX.length) : null);
 
 /** 슬롯의 소비자 전체(나눈 표는 펼친다). 표에 없는 슬롯이면 빈 목록이다. */
 export function slotConsumerFiles(slot, table = SLOT_REGISTRY_CONSUMERS) {
@@ -92,12 +102,6 @@ export function slotConsumerPartition(slot, table = SLOT_REGISTRY_CONSUMERS, key
   }
   if (key === undefined) throw new Error(`${slot}: 소비자 표를 값별로 나눴는데 나눔 속성이 없다(SLOT_CONSUMER_PARTITION_KEYS)`);
   return { key, consumers: row };
-}
-
-/** hub-tabs 처럼 허브별로 적은 슬롯이면 허브 → 소비자, 아니면 null(배치별로 나눈 슬롯도 null 이다). */
-export function slotConsumersByHub(slot, table = SLOT_REGISTRY_CONSUMERS) {
-  const partition = slotConsumerPartition(slot, table);
-  return partition?.key === 'hub' ? partition.consumers : null;
 }
 
 export const slotRegistryPath = slot => `${SLOT_ROOT}/generated-${slot}.ts`;

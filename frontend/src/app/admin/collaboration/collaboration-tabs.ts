@@ -1,8 +1,8 @@
 /**
- * 협업 허브(/admin/collaboration)의 탭과 `?tab=` 해석. 허브는 core 셸이고 탭은 모두 기능의 hub-tabs 기여다(쪽지·스크랩).
+ * 협업 허브(/admin/collaboration)의 탭과 `?tab=` 해석. 허브는 core 셸이고 탭은 모두 기능의 hub-tabs-collaboration 기여다(쪽지·스크랩).
  * 메뉴·별칭·알림이 `?tab=` 으로 여는 값은 탭 목적지 계약이 이 해석과 대조한다(`src/__tests__/cross-stack/tab-destination-contract.test.ts`).
  *
- * contributable 은 이 허브에 탭을 기여할 수 있는 기여 파일의 지도다(탭 값 → 저장소 기준 경로). 경계 계약이 원본에서 실제 hub-tabs
+ * contributable 은 이 허브에 탭을 기여할 수 있는 기여 파일의 지도다(탭 값 → 저장소 기준 경로). 경계 계약이 원본에서 실제 허브 탭
  * 기여와 양방향으로 대조하고, 탭 목적지 계약은 생성물에서 그 파일이 투영으로 빠진 탭을 '빠진 기여' 로 가른다(오타와 구분한다).
  * 스크랩 화면(/admin/collaboration/scraps)은 스크랩 소유라 routes 에 넣지 않는다 — 쪽지만 고른 생성물에는 그 화면이 없다.
  */
@@ -23,10 +23,10 @@ export function parseCollaborationTab(raw: string | null | undefined, contribute
 export const TAB_HUB = {
   routes: ['/admin/collaboration'],
   parse: parseCollaborationTab,
-  /** hub-tabs 기여의 hub 값(slots.ts 의 HubTabViews 키). */
+  /** 허브(slots.ts 의 HubTabViews 키). 기여 슬롯은 hub-tabs-<slotHub> 다(GAP-SLOT-001). */
   slotHub: 'collaboration',
   contributable: {
-    MESSAGES: 'frontend/src/extensions/note/hub-tabs.ts',
-    SCRAPS: 'frontend/src/extensions/scrap/hub-tabs.ts',
+    MESSAGES: 'frontend/src/extensions/note/hub-tabs-collaboration.ts',
+    SCRAPS: 'frontend/src/extensions/scrap/hub-tabs-collaboration.ts',
   },
 } as const;

@@ -587,7 +587,7 @@ export function outermostFunctionAt(ts, sourceFile, line) {
 
 /**
  * 슬롯 기여 파일의 항목을 읽는다(Phase 2 10단계 10a — 항목 단위 판독). 항목은 노출 술어 visibleWhen 을 가진 객체 리터럴이고,
- * 항목마다 { id, hub, placement, permissions, page, always } 를 돌려준다(없는 값은 null, always 는 있으면 true).
+ * 항목마다 { id, placement, permissions, page, always } 를 돌려준다(없는 값은 null, always 는 있으면 true).
  *
  * <p>판독기는 이것 하나다 — 축 3 판정(기여의 노출 판정)·소비자 귀속(나눈 표의 값)·화면 목록 생성기(술어 귀속)·슬롯 경계 계약이 함께
  * 쓴다. 파일 단위로 합치지 않는다: 한 기여 파일이 배치가 다른 항목을 함께 둘 수 있고(게시판 → 통계: 셸 탭 둘과 요약 칸 하나), 합치면
@@ -633,7 +633,6 @@ export function readContributionEntries(ts, sourceFile) {
         }
         entries.push({
           id: literal(node, 'id'),
-          hub: literal(node, 'hub'),
           placement: literal(node, 'placement'),
           permissions: list ? list.elements.map((element) => unwrap(element).text) : null,
           page: literal(rule, 'page'),
@@ -839,11 +838,11 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
   /*
     기여 파일은 아무 화면도 직접 import 하지 않는다 — 셸은 생성 레지스트리(generated-<슬롯>.ts)를 읽는다. 그래서 기여를 그리는 것은
     그 레지스트리를 읽는 파일(reader)이다.
-    [허브 분해 H1·10단계 10a] 레지스트리는 하나인데 소비자마다 다른 항목을 그리는 슬롯(hub-tabs 는 허브별, stats-panels 는 배치별)은
-    소비자 표(slot-registry.mjs)를 값별로 나눴다. 항목의 reader 는 그 항목의 값(hub·placement)이 가리키는 소비자뿐이다 — 레지스트리를
-    읽는 모든 파일로 이으면 한 허브 탭의 쓰기(예: 스크랩 등록)가 다른 허브 화면에 귀속돼 권한 작업대가 엉뚱한 권한을 보이고, 축 3 판정이
-    다른 소비자의 언급으로 통과할 수 있다. 표에 없는 값이면 reader 가 없다 — 축 3 은 부채로 남고(조용히 가려지지 않는다), 화면 목록은
-    귀속 0 으로 실패하며, 경계 계약이 그 값을 '소비자 없는 배치' 로 막는다.
+    [10단계 10a] 레지스트리는 하나인데 소비자마다 다른 항목을 그리는 슬롯(stats-panels 는 배치별)은 소비자 표(slot-registry.mjs)를
+    값별로 나눴다. 항목의 reader 는 그 항목의 값(placement)이 가리키는 소비자뿐이다 — 레지스트리를 읽는 모든 파일로 이으면 셸 탭의 쓰기가
+    요약 화면에 귀속돼 권한 작업대가 엉뚱한 권한을 보이고, 축 3 판정이 다른 소비자의 언급으로 통과할 수 있다. 표에 없는 값이면 reader 가
+    없다 — 축 3 은 부채로 남고(조용히 가려지지 않는다), 화면 목록은 귀속 0 으로 실패하며, 경계 계약이 그 값을 '소비자 없는 배치' 로 막는다.
+    [GAP-SLOT-001] 허브 탭은 허브마다 슬롯이 따로라(hub-tabs-<허브>) 그 레지스트리를 읽는 셸이 곧 그 허브다 — 나눌 값이 없다.
   */
   const registryReaders = new Map();
   const readersOfSlot = (slot) => {
@@ -873,7 +872,7 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
     const importers = new Set(directImporters(target));
     if (contributionSlot.has(target)) {
       const entries = entriesOf(target);
-      for (const entry of entries.length > 0 ? entries : [{ hub: null, placement: null }]) {
+      for (const entry of entries.length > 0 ? entries : [{ placement: null }]) {
         for (const reader of entryReaders(target, entry)) {
           if (uiFiles.includes(reader)) importers.add(reader);
           else directImporters(reader).forEach((screen) => importers.add(screen));

@@ -12,7 +12,7 @@ import { CollaborationHubFrame } from '@/app/admin/collaboration/collaboration-h
 import { ScrapFormDialog, type ScrapFormValues } from './ScrapFormDialog';
 
 /**
- * 협업 허브의 스크랩 탭(스크랩 소유 hub-tabs 기여의 뷰, 허브 분해 H1). 내 스크랩을 조회하고, 등록·수정은 목록 위 모달로 한다.
+ * 협업 허브의 스크랩 탭(스크랩 소유 hub-tabs-collaboration 기여의 뷰, 허브 분해 H1). 내 스크랩을 조회하고, 등록·수정은 목록 위 모달로 한다.
  * 스크랩 API 는 검색 파라미터가 없어 조회 조건 칸을 두지 않는다 — 동작하지 않는 입력을 만들지 않는다.
  */
 export function ScrapCollaborationTab() {

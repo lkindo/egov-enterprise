@@ -60,7 +60,7 @@
     "events": [],
     "contributions": [
       {
-        "path": "frontend/src/extensions/note/hub-tabs.ts",
+        "path": "frontend/src/extensions/note/hub-tabs-collaboration.ts",
         "reason": "쪽지 기능이 없으면 협업 허브의 쪽지 탭만 사라지고 다른 탭은 그대로입니다."
       },
       {

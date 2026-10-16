@@ -12,7 +12,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { CollaborationHubFrame } from '@/app/admin/collaboration/collaboration-hub-frame';
 
 /**
- * 협업 허브의 쪽지 탭(쪽지 소유 hub-tabs 기여의 뷰, 허브 분해 H1). 받은 쪽지 목록을 조회하고 제목을 고르면 쪽지함으로 간다.
+ * 협업 허브의 쪽지 탭(쪽지 소유 hub-tabs-collaboration 기여의 뷰, 허브 분해 H1). 받은 쪽지 목록을 조회하고 제목을 고르면 쪽지함으로 간다.
  * 조회 조건(검색어)은 이 뷰의 상태다 — 탭을 바꾸면 뷰가 다시 마운트되어 비워진다.
  */
 export function NoteCollaborationTab() {

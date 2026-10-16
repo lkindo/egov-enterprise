@@ -31,8 +31,8 @@ public class BoardMasterApiController {
     public ResponseEntity<ApiResponse<PageResponse<BoardMasterSummaryResponse>>> getBoardMasterList(
             @Valid @ModelAttribute BaseSearchDto searchDto) {
         Pageable pageable = searchDto.toPageable();
-        Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(
-                searchDto.getSearchCondition(), searchDto.getSearchKeyword(), pageable);
+        // 검색 축은 게시판명 하나라 searchCondition 은 읽지 않는다(DEC-OPS-332).
+        Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(searchDto.getSearchKeyword(), pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 page.map(BoardMasterSummaryResponse::from))));
     }

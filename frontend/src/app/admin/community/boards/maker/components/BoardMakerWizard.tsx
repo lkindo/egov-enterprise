@@ -41,8 +41,10 @@ import {
   List,
   ImageIcon,
   ArrowUpRight,
-  Info
+  Info,
+  type LucideIcon
 } from "lucide-react";
+import { BOARD_TYPES, DEFAULT_BOARD_TYPE, type BoardTemplateId } from '@/lib/board/board-types';
 import { cn } from "@/lib/utils";
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -56,64 +58,28 @@ const STEPS = [
   { id: 4, title: '메뉴 배포', description: '사이트 메뉴에 게시판을 연결하세요', icon: Rocket },
 ];
 
-const TEMPLATES = [
-  {
-    id: 'TMPLT_HUB',
-    name: '지식 허브',
-    description: '지식 공유에 최적화된 고도화된 대시보드형 레이아웃',
-    typeCode: 'BBST01',
-    icon: BookOpen,
-    color: 'bg-primary text-primary-foreground',
-  },
-  {
-    id: 'TMPLT_LIST',
-    name: 'Enterprise List',
-    description: '빠른 검색과 가독성을 중시하는 표준 데이터 테이블',
-    typeCode: 'BBST02',
-    icon: List,
-    color: 'bg-success text-success-foreground',
-  },
-  {
-    id: 'TMPLT_GALLERY',
-    name: 'Visual Gallery',
-    description: '이미지 및 카드 중심의 시각적 커뮤니티 레이아웃',
-    typeCode: 'BBST03',
-    icon: ImageIcon,
-    color: 'bg-destructive text-destructive-foreground',
-  },
-  {
-    id: 'TMPLT_QNA',
-    name: 'Professional Q&A',
-    description: '질문과 해결 중심의 사내 기술 지원 및 상담 레이아웃',
-    typeCode: 'BBST04',
-    icon: HelpCircle,
-    color: 'bg-warning text-warning-foreground',
-  },
-  {
-    id: 'TMPLT_CALENDAR',
-    name: 'Event Calendar',
-    description: '날짜 기반의 전사 일정 및 교육 현황 관리 레이아웃',
-    typeCode: 'BBST05',
-    icon: CalendarDays,
-    color: 'bg-info text-info-foreground',
-  },
-  {
-    id: 'TMPLT_FAQ',
-    name: 'Accordion FAQ',
-    description: '질문과 답변을 한눈에 펼쳐보는 아코디언 스타일의 FAQ 레이아웃',
-    typeCode: 'BBST06',
-    icon: MessageSquare,
-    color: 'bg-primary text-primary-foreground',
-  },
-  {
-    id: 'TMPLT_WIKI',
-    name: 'Knowledge Wiki',
-    description: '방대한 정보를 체계적으로 정리하는 도큐먼트형 위키 레이아웃',
-    typeCode: 'BBST07',
-    icon: Book,
-    color: 'bg-surface-inverse text-surface-inverse-foreground',
-  },
-];
+/*
+  [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 유형 코드·템플릿·이름·설명의 정본은 게시판 유형 표(lib/board/board-types)다.
+  종전에는 이 파일이 BBST01~ 과 이름을 손으로 들고 있었고, 서버는 같은 이름을 없는 공통코드 COM004 에서 찾았다.
+  여기에는 카드의 아이콘·색만 둔다 — 표에 템플릿이 늘면 이 표가 빠진 항목을 타입 검사로 잡는다.
+*/
+const TEMPLATE_PRESENTATION = {
+  TMPLT_HUB: { icon: BookOpen, color: 'bg-primary text-primary-foreground' },
+  TMPLT_LIST: { icon: List, color: 'bg-success text-success-foreground' },
+  TMPLT_GALLERY: { icon: ImageIcon, color: 'bg-destructive text-destructive-foreground' },
+  TMPLT_QNA: { icon: HelpCircle, color: 'bg-warning text-warning-foreground' },
+  TMPLT_CALENDAR: { icon: CalendarDays, color: 'bg-info text-info-foreground' },
+  TMPLT_FAQ: { icon: MessageSquare, color: 'bg-primary text-primary-foreground' },
+  TMPLT_WIKI: { icon: Book, color: 'bg-surface-inverse text-surface-inverse-foreground' },
+} satisfies Record<BoardTemplateId, { icon: LucideIcon; color: string }>;
+
+const TEMPLATES = BOARD_TYPES.map((type) => ({
+  id: type.templateId,
+  name: type.name,
+  description: type.description,
+  typeCode: type.code,
+  ...TEMPLATE_PRESENTATION[type.templateId],
+}));
 
 import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
@@ -217,9 +183,9 @@ export function BoardMakerWizard() {
       ansYn: 'Y',
       stsfdgYn: 'Y',
       fileAtchPsbltyYn: 'Y',
-      bbsTypeCd: 'BBST01',
+      bbsTypeCd: DEFAULT_BOARD_TYPE.code,
       bbsAtrbCd: 'BBSA01',
-      tmpltId: 'TMPLT_HUB',
+      tmpltId: DEFAULT_BOARD_TYPE.templateId,
       useYn: 'Y',
       cmntySn: '',
       menuNm: '',
@@ -644,7 +610,7 @@ export function BoardMakerWizard() {
                       <h3 className="text-xs font-medium text-muted-foreground text-right">레이아웃 미리보기 · 예시 데이터</h3>
                     </div>
                     <BoardPreview
-                      tmpltId={selectedTemplate || 'TMPLT_HUB'}
+                      tmpltId={selectedTemplate || DEFAULT_BOARD_TYPE.templateId}
                       bbsTtl={bbsTtl}
                       bbsExpln={bbsExpln || ''}
                     />

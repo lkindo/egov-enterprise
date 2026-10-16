@@ -4,7 +4,7 @@ import { Zap } from 'lucide-react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * 감시 허브 셸의 기여 탭 호스트 계약(허브 분해 H3). 셸 고유 탭은 로그 셋·가동 상태이고 부가 탭은 hub-tabs 레지스트리에서 온다 —
+ * 감시 허브 셸의 기여 탭 호스트 계약(허브 분해 H3). 셸 고유 탭은 로그 셋·가동 상태이고 부가 탭은 hub-tabs-monitoring 레지스트리에서 온다 —
  * 여기서는 레지스트리를 가짜 기여로 바꿔 셸이 하는 일만 본다. 실제 하네스 탭은 허브 시험과 동등성 그물이 실제 레지스트리로 본다.
  */
 
@@ -31,13 +31,13 @@ vi.mock('@/services/foundation/system/MonitoringAdminService', () => ({
   monitoringAdminService: { getHealth: async () => ({ status: 'UP', components: {} }), getCpuUsage: async () => 1, getMemoryUsage: async () => 1 },
 }));
 vi.mock('@/services/foundation/system/AttachmentIntegrityService', () => ({ attachmentIntegrityService: { scan: vi.fn() } }));
-vi.mock('@/extensions/generated-hub-tabs', () => ({ hubTabs: [mocks.tabs] }));
+vi.mock('@/extensions/generated-hub-tabs-monitoring', () => ({ hubTabsMonitoring: [mocks.tabs] }));
 
 import MonitoringHubClient from '../MonitoringHubClient';
 
 /** 가짜 기여 탭. 항목 하나를 고르는 버튼을 그리고, 그 항목의 상세를 낸다. sample 이면 셸이 샘플 고지를 단다. */
-const tab = (id: string, order: number, label: string, itemId: string, sample?: boolean, hub = 'monitoring') => ({
-  id, hub, order, label, visibleWhen: { always: '시험' },
+const tab = (id: string, order: number, label: string, itemId: string, sample?: boolean) => ({
+  id, order, label, visibleWhen: { always: '시험' },
   view: {
     description: `${label} 설명`,
     icon: Zap,
@@ -62,9 +62,8 @@ const tabState = () => within(screen.getByRole('tablist', { name: '모니터링 
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // 다른 허브의 탭은 그리지 않는다. 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다.
-  mocks.tabs.splice(0, Infinity, tab('SAMPLE_TAB', 20, '표본 탭', 's1', true), tab('LOUNGE', 5, '라운지', 'x', true, 'collaboration'),
-    tab('REAL_TAB', 10, '실측 탭', 'r1'));
+  // 대역 모듈이 같은 배열을 들고 있어 제자리에서 바꾼다. 레지스트리는 감시 허브 전용이라(GAP-SLOT-001) 다른 허브의 탭이 섞일 수 없다.
+  mocks.tabs.splice(0, Infinity, tab('SAMPLE_TAB', 20, '표본 탭', 's1', true), tab('REAL_TAB', 10, '실측 탭', 'r1'));
 });
 
 describe('감시 허브 셸의 기여 탭', () => {

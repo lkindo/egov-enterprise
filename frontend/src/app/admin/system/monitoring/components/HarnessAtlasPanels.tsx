@@ -10,7 +10,7 @@ import { SampleDataBadge } from './MonitoringPanels';
  * 모니터링 허브의 '하네스 아틀라스' 탭(2026-09-27 DIP B5 F11 — demo pack 소유).
  *
  * 이 탭은 실측이 아니라 저장소의 스킬 목록을 옮긴 정적 카탈로그와 예시 계측 로그다(화면도 '샘플' 배지로 밝힌다).
- * 운영 제품의 모니터링 기능이 아니므로 시연 기능(showcase)이 소유한다 — 허브에는 hub-tabs 기여(src/extensions/showcase)로
+ * 운영 제품의 모니터링 기능이 아니므로 시연 기능(showcase)이 소유한다 — 허브에는 hub-tabs-monitoring 기여(src/extensions/showcase)로
  * 붙는다(허브 분해 H3). 시연이 빠진 구성에서는 이 파일과 기여가 함께 지워지고, 허브는 로그·가동 상태 탭만 남는다.
  */
 
@@ -180,7 +180,7 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
   );
 }
 
-/** 감시 허브 탭 뷰(hub-tabs 기여가 가리킨다). 정적 카탈로그·표본이라 sample 이다 — 셸이 상세에 샘플 고지를 단다. */
+/** 감시 허브 탭 뷰(hub-tabs-monitoring 기여가 가리킨다). 정적 카탈로그·표본이라 sample 이다 — 셸이 상세에 샘플 고지를 단다. */
 export const HARNESS_TAB_VIEW = {
   description: '에이전트 하네스의 스킬·검증 자산을 조회합니다.',
   icon: Zap,

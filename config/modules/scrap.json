@@ -64,7 +64,7 @@
         "reason": "스크랩 기능이 없으면 게시글 상세의 스크랩 버튼만 사라지고 게시판 기능은 그대로입니다."
       },
       {
-        "path": "frontend/src/extensions/scrap/hub-tabs.ts",
+        "path": "frontend/src/extensions/scrap/hub-tabs-collaboration.ts",
         "reason": "스크랩 기능이 없으면 협업 허브의 스크랩 탭만 사라지고 다른 탭은 그대로입니다."
       }
     ],

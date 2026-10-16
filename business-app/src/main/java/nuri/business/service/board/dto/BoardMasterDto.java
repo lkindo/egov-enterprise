@@ -24,8 +24,8 @@ public class BoardMasterDto {
     private String bbsExpln;
     @Size(max = 12)
     @NotBlank
+    /** 게시판 유형 코드. 이름은 서버가 싣지 않는다 — 정본은 frontend/src/lib/board/board-types.ts 다(DEC-OPS-332). */
     private String bbsTypeCd;
-    private String bbsTypeCdNm; // 조인 컬럼명 표준화
     @Size(max = 12)
     @NotBlank
     private String bbsAtrbCd;

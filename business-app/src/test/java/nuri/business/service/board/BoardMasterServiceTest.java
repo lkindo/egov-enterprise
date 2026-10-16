@@ -89,7 +89,7 @@ class BoardMasterServiceTest {
         
         given(boardMasterRepository.searchBoardMasters(any(), any())).willReturn(page);
 
-        Page<BoardMasterDto> result = boardMasterService.getBoardMasterList("0", "Test", pageable);
+        Page<BoardMasterDto> result = boardMasterService.getBoardMasterList("Test", pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
@@ -288,17 +288,16 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("게시판 목록 조회 - 검색 조건/키워드가 리포지토리까지 전달된다")
-    void getBoardMasterList_passesSearchConditionThrough() {
+    @DisplayName("게시판 목록 조회 - 검색어가 리포지토리까지 전달된다")
+    void getBoardMasterList_passesSearchKeywordThrough() {
         org.mockito.ArgumentCaptor<BoardMasterSearchCondition> captor =
                 org.mockito.ArgumentCaptor.forClass(BoardMasterSearchCondition.class);
         given(boardMasterRepository.searchBoardMasters(captor.capture(), any(Pageable.class)))
                 .willReturn(new PageImpl<BoardMasterSearchResult>(List.of()));
 
-        boardMasterService.getBoardMasterList("1", "공지", Pageable.ofSize(10));
+        boardMasterService.getBoardMasterList("공지", Pageable.ofSize(10));
 
-        // 조건 전달이 끊기면 검색어를 무시한 전체 목록이 조용히 반환된다.
-        assertThat(captor.getValue().getSearchCnd()).isEqualTo("1");
+        // 검색어 전달이 끊기면 검색어를 무시한 전체 목록이 조용히 반환된다.
         assertThat(captor.getValue().getSearchWrd()).isEqualTo("공지");
     }
 
@@ -308,7 +307,7 @@ class BoardMasterServiceTest {
         given(boardMasterRepository.searchBoardMasters(any(BoardMasterSearchCondition.class), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(mockSearchResult("BBS_01", "공지사항"))));
 
-        List<BoardMasterDto> result = boardMasterService.getBoardMasterList("1", "공지");
+        List<BoardMasterDto> result = boardMasterService.getBoardMasterList("공지");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getBbsTtl()).isEqualTo("공지사항");

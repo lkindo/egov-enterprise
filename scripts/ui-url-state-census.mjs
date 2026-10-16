@@ -44,7 +44,6 @@ import { buildCaseMap, resolveModuleReference } from './frontend-module-resolver
 import {
   SLOT_REGISTRY_CONSUMERS,
   slotConsumerFiles,
-  slotConsumersByHub,
   slotPathKind,
 } from './slot-registry.mjs';
 
@@ -977,8 +976,8 @@ function mergeRouteContexts(contexts) {
  * 렌더된다. 디렉터리로 귀속하면 기여가 import 하는 뷰가 자기 기능의 라우트를 주장한다 — 협업 허브의 쪽지 탭
  * (src/app/note/NoteCollaborationTab)의 이동이 '/note' 로, 스크랩 탭이 '/admin/collaboration/scraps' 로 적혔다. 그래서 기여와,
  * 기여(또는 이미 귀속한 모듈)만 import 하는 비라우트 모듈(기여 폐포)을 소비 셸의 맥락으로 귀속한다.
- * - 소비 셸: hub-tabs 는 기여가 적은 hub 의 셸만 본다. placement 를 적은 기여는 같은 배치 리터럴로 거르는 셸만 본다 — 배치를
- *   리터럴로 거르지 않는 셸(stats-panels 의 두 소비자)은 모두 본다(넓은 쪽).
+ * - 소비 셸: 그 슬롯의 소비자다 — 허브 탭은 허브마다 슬롯이 따로라(hub-tabs-<허브>, GAP-SLOT-001) 그 허브 셸 하나다. placement 를
+ *   적은 기여는 같은 배치 리터럴로 거르는 셸만 본다 — 배치를 리터럴로 거르지 않는 셸(stats-panels 의 두 소비자)은 모두 본다(넓은 쪽).
  * - 소비 셸의 맥락은 셸 자신이 받는 맥락이다(routeContextForSource, 디렉터리 기준). 공용 셸(머리글 등)처럼 라우트를 특정하지 못하는
  *   셸이 하나라도 있으면 미해소로 둔다.
  * - 다른 화면·모듈도 import 하는 모듈은 폐포에 넣지 않는다(자기 맥락을 그대로 받는다). 타입 import 는 렌더 간선이 아니다.
@@ -1031,11 +1030,7 @@ export function slotAttributedRouteContexts({ repoRoot, sources, contextOf, cons
     const kind = slotPathKind(file);
     if (kind?.kind !== 'contribution') continue;
     const tokens = tokensOf(file);
-    const hubs = literalPropertyValues(tokens, 'hub');
-    const byHub = slotConsumersByHub(kind.slot, consumerTable);
-    let consumers = byHub && hubs.length > 0
-      ? [...new Set(hubs.flatMap((hub) => byHub[hub] ?? []))]
-      : slotConsumerFiles(kind.slot, consumerTable);
+    let consumers = slotConsumerFiles(kind.slot, consumerTable);
     const placements = new Set(literalPropertyValues(tokens, 'placement'));
     if (placements.size > 0) {
       consumers = consumers.filter((consumer) => {

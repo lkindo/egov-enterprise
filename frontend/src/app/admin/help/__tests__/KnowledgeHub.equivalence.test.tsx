@@ -9,9 +9,9 @@ import { inProjection } from '@/test-utils/projection';
  *
  * 고정하는 것: 탭 이름·순서·aria-selected, `?tab=`·`?bbsId=` 진입과 각 탭이 조회하는 게시판, 모르는 탭 값의 기본 탭,
  * 탭 전환의 URL(`bbsId` 를 버린다), 커뮤니티 탭의 머리 동작('커뮤니티 목록·가입'·관리자 '커뮤니티 관리').
- * 커뮤니티 탭은 커뮤니티의 hub-tabs 기여다(허브 분해 H2) — 커뮤니티가 투영으로 빠진 생성물에서는 그 탭의 기대를 원장 판정으로 거른다.
+ * 커뮤니티 탭은 커뮤니티의 hub-tabs-knowledge 기여다(허브 분해 H2) — 커뮤니티가 투영으로 빠진 생성물에서는 그 탭의 기대를 원장 판정으로 거른다.
  */
-const communityInProjection = inProjection('frontend/src/extensions/community/hub-tabs.ts');
+const communityInProjection = inProjection('frontend/src/extensions/community/hub-tabs-knowledge.ts');
 
 const mocks = vi.hoisted(() => ({
   search: '',
