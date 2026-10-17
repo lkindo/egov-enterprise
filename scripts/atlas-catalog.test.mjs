@@ -42,6 +42,12 @@ function add(relative, content, callback) {
   try { callback(); } finally { fs.unlinkSync(target); }
 }
 
+function addAll(entries, callback) {
+  if (entries.length === 0) return callback();
+  const [[relative, content], ...rest] = entries;
+  return add(relative, content, () => addAll(rest, callback));
+}
+
 test('fixture additions reject an existing file without overwriting or removing it', () => {
   const relative = 'existing-fixture-sentinel.txt';
   add(relative, 'original sentinel', () => {
@@ -299,6 +305,48 @@ test('new documentation and a new declared module are visible without editing th
       assert.equal(changed.catalogs.modules.length, baseline.catalogs.modules.length + 1);
     });
   });
+});
+
+// [FE-CONTRACT-05] 이 수들의 계수 규칙은 생성기 한 곳에 있다. Atlas vitest 가 같은 정규식을 복사해 다시 세던 것을
+// 걷고, 규칙의 회귀는 여기서 합성 파일로 본다. 파일을 한꺼번에 더하고 catalog 는 한 번만 다시 만든다.
+test('independent count facts follow their rules for test annotations, shared PostgreSQL classes and waiver markers', () => {
+  const migrationTests = 'migration-tool/src/test/java/nuri/migration';
+  const schemaTests = 'api-server/src/test/java/nuri/api/schema';
+  const migrations = 'api-server/src/main/resources/db/migration';
+  addAll([
+    [`${migrationTests}/SyntheticAtlasCountTest.java`, [
+      'class SyntheticAtlasCountTest {',
+      '  @Test void plain() {}',
+      '  @ParameterizedTest @ValueSource(ints = 1) void parameterized(int value) {}',
+      '  @RepeatedTest(2) void repeated() {}',
+      '  @TestFactory Object factory() { return null; }',
+      '  @TestTemplate void template() {}',
+      '  // @Test void commentedOut() {}',
+      '  @TestInstance(TestInstance.Lifecycle.PER_CLASS) static class NotATestMethod {}',
+      '}',
+      '',
+    ].join('\n')],
+    [`${migrationTests}/SyntheticAtlasFixtures.java`, 'class SyntheticAtlasFixtures {}\n'],
+    [`${schemaTests}/SyntheticAtlasSharedIntegrationTest.java`,
+      'class SyntheticAtlasSharedIntegrationTest extends SharedPostgresMigrationTestSupport {}\n'],
+    [`${schemaTests}/SyntheticAtlasOtherBaseTest.java`,
+      'class SyntheticAtlasOtherBaseTest extends SharedPostgresMigrationTestSupportFactory {}\n'],
+    [`${migrations}/V9_999__synthetic_atlas_waivers.sql`, '-- linter:ignore first\nSELECT 1; -- linter:ignore second\n'],
+    [`${migrations}/V9_998__synthetic_atlas_plain.sql`, 'SELECT 1;\n'],
+  ], () => {
+    const { facts } = buildAtlasCatalog(fixture);
+    // 다섯 시험 annotation 만 세고(주석·@TestInstance 제외), 파일 수는 *Test.java 만, 공유 PostgreSQL 은 정확한
+    // 부모 이름만, waiver 는 표지 수와 표지가 있는 파일 수다. 나머지 수치는 바뀌지 않아야 한다.
+    assert.deepEqual(facts, {
+      ...baseline.facts,
+      migrationTestCount: baseline.facts.migrationTestCount + 5,
+      migrationTestFileCount: baseline.facts.migrationTestFileCount + 1,
+      sharedPostgresClassCount: baseline.facts.sharedPostgresClassCount + 1,
+      waiverCount: baseline.facts.waiverCount + 2,
+      waiverFileCount: baseline.facts.waiverFileCount + 1,
+    });
+  });
+  assert.ok(baseline.facts.sharedPostgresClassCount > 0, 'shared PostgreSQL discovery must not collapse');
 });
 
 test('new OpenAPI operations are inventoried without falsely asserting a working consumer', () => {

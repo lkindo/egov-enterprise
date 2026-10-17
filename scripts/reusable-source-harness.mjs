@@ -5,9 +5,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
+import { MANIFEST_PATH, renderHarnessBaselineManifest } from './harness-baseline-manifest-format.mjs';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
 import { ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
+import { HISTORICAL_SCHEMA_TEST_DIR } from './reusable-source-gates.mjs';
 
 /**
  * 하네스 baseline 미러 상수 — 전부 메타 게이트({@code HarnessBaselineIntegrityTest})의 동명 선언과
@@ -188,6 +190,15 @@ export function projectedWriteHandlerCounts(source) {
   return { handlers, successful };
 }
 
+/**
+ * 공용 PostgreSQL support 를 써야 하는 migration 검증 수 — 하네스의 census 와 같은 디렉터리(schema 시험 루트, 하위 포함)·
+ * 같은 술어(파일 이름이 `MigrationIntegrationTest.java` 로 끝난다)다. 투영본에서는 역사적 migration 검증을 걷은 뒤에 세므로 0 이다.
+ */
+export function projectedMigrationTestCount(output) {
+  return walk(join(output, ...HISTORICAL_SCHEMA_TEST_DIR.split('/')),
+    path => basename(path).endsWith('MigrationIntegrationTest.java')).length;
+}
+
 /** 생성물에 기록된 구성(거버넌스 투영이 쓴 스냅숏)의 권한 코드. 스냅숏을 다시 검증한다 — 임의의 코드 목록을 믿지 않는다. */
 function projectedPermissionCodes(output) {
   const selectionPath = join(output, COMPOSER_SELECTION_PATH);
@@ -266,6 +277,8 @@ export function writeReusableHarnessProfile(output, { ownership, profile, schema
     serviceGuards: authorization.serviceGuardPolicies.filter(row => activeType(row.target)).length,
     manualGuards: authorization.manualGuardPolicies.filter(row => sources.has(row.source)).length,
     productionSources: retained.length,
+    // 공용 PostgreSQL migration 검증 수 — 원본 동결값 대신 투영본이 읽는다. 역사적 migration 검증을 걷은 뒤에 센다.
+    migrationTests: projectedMigrationTestCount(output),
     // [10단계 10b] 투영본의 권한 카탈로그 수는 구성의 권한 코드 수다(원본 하한 200 대신 정확히 비교 — SecurePathsDeclarationSyncLinterTest,
     // generate-permissions). 바인딩 수는 위 operationBindings(원본 원장을 독립된 Java 제거 계획으로 거른 수)를 쓴다.
     permissionCatalog: projectedPermissionCodes(output).length,
@@ -279,18 +292,17 @@ export function writeReusableHarnessProfile(output, { ownership, profile, schema
   return snapshot;
 }
 
+// 머리 주석만 생성기의 것이고 경로·키 순서·줄 형식은 매니페스트 도구와 같은 형식 모듈이다 — 생성물에서 처음 `--write` 해도
+// 줄이 자리를 옮기지 않는다(도구는 기존 머리 주석을 그대로 둔다).
 export function writeHarnessBaseline(output, projection) {
   writeReusableHarnessProfile(output, projection);
-  const entries = computeHarnessBaselineEntries(output);
-  const lines = [
+  const header = [
     '# 자동 산출 — reusable-base source projection 기준.',
     '# 남은 게이트/동결 목록을 생성 시점에 고정한다.',
-    ...[...entries.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${key}=${value}`),
-    '',
   ];
   writeFileSync(
-    join(output, 'api-server', 'src', 'test', 'resources', 'harness', 'baseline-manifest.properties'),
-    lines.join('\n'),
+    join(output, ...MANIFEST_PATH.split('/')),
+    renderHarnessBaselineManifest(computeHarnessBaselineEntries(output), header),
     'utf8',
   );
 }

@@ -2112,7 +2112,7 @@ export function assertRepositoryIndexAppendOnly({
   const previousPath = gitOutput(root, ['ls-tree', '--name-only', revision, '--', relativePath]).trim();
   const previous = previousPath === ''
     ? null
-    : assertCanonicalJsonBytes(gitOutput(root, ['show', `${revision}:${relativePath}`], null));
+    : assertCanonicalJsonBytes(gitOutput(root, ['cat-file', 'blob', `${revision}:${relativePath}`], null));
   return assertAppendOnlyIndexTransition(previous, current);
 }
 
@@ -2122,7 +2122,7 @@ function committedBytesAt(root, revision, relativePath, label) {
   if (tracked.replaceAll('\\', '/') !== relativePath) {
     throw new Error(`${label} is not tracked at the bound revision`);
   }
-  return gitOutput(root, ['show', `${revision}:${relativePath}`], null);
+  return gitOutput(root, ['cat-file', 'blob', `${revision}:${relativePath}`], null);
 }
 
 export function assertCombinedRepositoryProvenance(root, summary) {
@@ -2205,7 +2205,7 @@ export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() }
 
     const trackedIndexPath = gitOutput(root, ['ls-files', '--error-unmatch', '--', indexRelativePath]).trim();
     if (trackedIndexPath.replaceAll('\\', '/') !== indexRelativePath) throw new Error('index is not tracked');
-    const committedIndexBytes = gitOutput(root, ['show', `HEAD:${indexRelativePath}`], null);
+    const committedIndexBytes = gitOutput(root, ['cat-file', 'blob', `HEAD:${indexRelativePath}`], null);
     if (!Buffer.isBuffer(committedIndexBytes) || !committedIndexBytes.equals(indexBytes)) {
       throw new Error('index worktree bytes differ from the committed object');
     }
@@ -2238,7 +2238,7 @@ export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() }
       if (trackedPath.replaceAll('\\', '/') !== relativePath) throw new Error('summary is not tracked');
       const objectId = gitOutput(root, ['rev-parse', `HEAD:${relativePath}`]).trim();
       if (!HEX40.test(objectId)) throw new Error('summary committed object identity is invalid');
-      const committedBytes = gitOutput(root, ['show', `HEAD:${relativePath}`], null);
+      const committedBytes = gitOutput(root, ['cat-file', 'blob', `HEAD:${relativePath}`], null);
       if (!Buffer.isBuffer(committedBytes) || !committedBytes.equals(bytes)) {
         throw new Error('summary worktree bytes differ from the committed object');
       }

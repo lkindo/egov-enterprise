@@ -58,10 +58,13 @@ test('Atlas source and generator inputs select Atlas contracts without weakening
   for (const file of ['scripts/build-atlas.mjs', 'scripts/atlas-catalog.mjs', 'scripts/atlas-generation.test.mjs']) {
     const result = classifyChangedFiles([file]);
     assert.equal(result.atlas, true, file);
-    assert.deepEqual(result.unknownFiles, [file]);
-    for (const field of ['backend', 'migration', 'frontend', 'schema', 'e2e', 'mutation', 'mutationMigrationTool', 'sast']) {
-      assert.equal(result[field], true, `${file}: ${field} must remain fail closed`);
-    }
+    assert.deepEqual(result.unknownFiles, []);
+    assert.equal(result.docsOnly, false, file);
+    assert.equal(result.backend, true, `${file}: source-scanning harnesses must still execute`);
+    assert.equal(result.sast, true, file);
+    assert.equal(result.migration, false, file);
+    assert.equal(result.mutation, false, file);
+    assert.equal(result.mutationMigrationTool, false, file);
   }
   assert.equal(classifyChangedFiles(['docs/03-guides/testing-guide.md']).atlas, false);
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');

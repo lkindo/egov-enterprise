@@ -431,7 +431,7 @@ test('committed baseline archives and clean autocrlf smoke use one production in
   git(root, ['commit', '--quiet', '-m', 'explicit CRLF checkout']);
   const buildSha = git(root, ['rev-parse', 'HEAD']).trim();
   assert.equal(git(root, ['status', '--porcelain']).trim(), '');
-  assert.notDeepEqual(readFileSync(path.join(root, preflight)), git(root, ['show', `${buildSha}:${preflight}`], { encoding: 'buffer' }));
+  assert.notDeepEqual(readFileSync(path.join(root, preflight)), git(root, ['cat-file', 'blob', `${buildSha}:${preflight}`], { encoding: 'buffer' }));
 
   const contexts = prepareCleanBuildContexts({ repositoryRoot: root, buildSha,
     outputDirectory: temporaryDirectory('egov-shared-build-identity-') });

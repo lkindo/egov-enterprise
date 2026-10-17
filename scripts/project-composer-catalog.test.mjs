@@ -24,9 +24,62 @@ const editModule = (root, name, edit) => {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
 };
 
+/*
+ * 공유 fixture. 원본 트리는 이 파일에서 한 번만 복사하고, 복사한 직후의 디렉터리 목록과 파일 바이트를 원장으로 둔다. 시험이 끝날 때마다
+ * (한 시험이 fixture 를 다시 받을 때도) 트리 전체를 원장과 대조해 되돌린다 — 쓰기를 어느 함수로 했든, 경로를 더했든 지웠든 앞 변이가
+ * 뒤 시험으로 넘어가지 않는다. 넘어가면 뒤 시험의 변이가 헛돌아도(.replace 대상 없음 등) 앞 시험이 남긴 변이가 기대 오류를 대신 만들어
+ * 거짓 green 이 된다. 빈 디렉터리도 원장에 든다(빈 슬롯 디렉터리 하나로도 카탈로그가 거부한다). 시험은 한 파일 안에서 차례로 돈다.
+ */
+const FIXTURE_BASE = resolve(tmpdir());
+let shared;
+const treeOf = root => {
+  const directories = new Set();
+  const files = new Set();
+  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
+    (entry.isDirectory() ? directories : files).add(relative(root, join(entry.parentPath, entry.name)));
+  }
+  return { directories, files };
+};
+const sorted = values => [...values].sort();
+/** 트리를 원장으로 되돌린다. 원장에 없는 파일·디렉터리는 지우고, 빠졌거나 바뀐 파일은 원본 바이트로 되살린 뒤 다시 대조한다. */
+function restoreFixture({ root, directories, files }) {
+  const now = treeOf(root);
+  for (const path of now.files) if (!files.has(path)) rmSync(join(root, path), { force: true, maxRetries: 5 });
+  for (const path of now.directories) if (!directories.has(path)) rmSync(join(root, path), { recursive: true, force: true, maxRetries: 5 });
+  for (const path of directories) if (!now.directories.has(path)) mkdirSync(join(root, path), { recursive: true });
+  const repaired = [];
+  for (const [path, bytes] of files) {
+    let current;
+    try { current = readFileSync(join(root, path)); } catch { current = undefined; }
+    if (!current?.equals(bytes)) { writeFileSync(join(root, path), bytes); repaired.push(path); }
+  }
+  const after = treeOf(root);
+  assert.deepEqual(sorted(after.files), sorted(files.keys()), 'fixture files return to the recorded set');
+  assert.deepEqual(sorted(after.directories), sorted(directories), 'fixture directories return to the recorded set');
+  for (const path of repaired) assert.ok(readFileSync(join(root, path)).equals(files.get(path)), `fixture file restored: ${path}`);
+}
+const restoreShared = () => { restoreFixture(shared); shared.dirty = false; };
+/** 원장대로인 fixture 루트를 준다. 같은 시험이 다시 받으면 앞 변이를 먼저 되돌린다(변이 → 적재 → 복원을 차례로). */
 function fixture(t) {
-  const base = resolve(tmpdir());
-  const root = mkdtempSync(join(base, 'egov-composer-catalog-'));
+  shared ??= copyFixture();
+  // 되돌리지 못한 트리는 내주지 않는다(같은 시험의 재요청이거나 앞 시험의 복원이 실패한 경우).
+  if (shared.dirty) restoreShared();
+  shared.dirty = true;
+  if (shared.lentTo !== t) {
+    shared.lentTo = t;
+    t.after(() => { shared.lentTo = undefined; if (shared.dirty) restoreShared(); });
+  }
+  return shared.root;
+}
+test.after(() => {
+  if (!shared) return;
+  const child = relative(FIXTURE_BASE, shared.root);
+  assert.ok(child.startsWith('egov-composer-catalog-') && !child.includes(sep));
+  rmSync(shared.root, { recursive: true, force: true });
+});
+
+function copyFixture() {
+  const root = mkdtempSync(join(FIXTURE_BASE, 'egov-composer-catalog-'));
   for (const path of ['config/governance/permission-catalog.json', 'config/project-composer-menus.json']) {
     mkdirSync(dirname(join(root, path)), { recursive: true }); copyFileSync(join(ROOT, path), join(root, path));
   }
@@ -50,12 +103,8 @@ function fixture(t) {
     ...[...catalog.requiredForeignKeys, ...catalog.optionalForeignKeys].map(contract => contract.evidence)])) {
     mkdirSync(dirname(join(root, file)), { recursive: true }); copyFileSync(join(ROOT, file), join(root, file));
   }
-  t.after(() => {
-    const child = relative(base, root);
-    assert.ok(child.startsWith('egov-composer-catalog-') && !child.includes(sep));
-    rmSync(root, { recursive: true, force: true });
-  });
-  return root;
+  const tree = treeOf(root);
+  return { root, directories: tree.directories, files: new Map([...tree.files].map(path => [path, readFileSync(join(root, path))])) };
 }
 
 test('declared cross-domain foreign keys are bound to their migration evidence and owning domains', t => {

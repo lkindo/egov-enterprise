@@ -222,6 +222,62 @@ jobs:
           # 증분 스캔이 base..head 범위를 보려면 두 커밋이 모두 로컬에 있어야 한다.
           fetch-depth: 0
 
+      # 현재 워킹트리와 이번 변경 범위를 모두 hard-fail로 검사해 신규 시크릿 유입을 차단한다.
+      # 과거 전체 감사와 이미 노출된 자격의 회전은 별도 운영 절차이며, 대규모 예외 baseline을 만들지 않는다.
+      - name: Run gitleaks (working tree + incremental)
+        run: |
+          set -euo pipefail
+          VERSION=8.28.0
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+
+          echo "::group::① 워킹트리 스캔"
+          ./gitleaks detect --source . --no-git --no-banner --redact --verbose \
+            --report-format json --report-path gitleaks-worktree.json --exit-code 1
+          echo "::endgroup::"
+
+          # 비교 기준: PR 이면 base, push 면 이전 HEAD. 둘 다 없으면(초회 푸시·수동 실행) 워킹트리 스캔으로 충분하다.
+          BASE=""
+          if [ -n "${{ github.event.pull_request.base.sha }}" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            BASE="${{ github.event.before }}"
+          fi
+
+          if [ -z "$BASE" ]; then
+            echo "ℹ️ 비교 기준 커밋이 없어 증분 스캔을 생략합니다(워킹트리 스캔은 이미 통과)."
+            exit 0
+          fi
+
+          echo "::group::② 증분 스캔 ($BASE..${{ github.sha }})"
+          ./gitleaks detect --source . --no-banner --redact --verbose \
+            --log-opts="$BASE..${{ github.sha }}" \
+            --report-format json --report-path gitleaks-incremental.json --exit-code 1
+          echo "::endgroup::"
+
+      # 실패 보고서를 항상 보존해 탐지 위치를 확인할 수 있게 한다.
+      - name: Upload gitleaks reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: gitleaks-reports
+          path: |
+            gitleaks-worktree.json
+            gitleaks-incremental.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # 이후 소스 투영 계약은 Git의 미추적 파일도 읽는다. 이 잡이 만든 바이너리와
+      # 리포트를 build 아래에 보존해 검사 입력이나 재사용 산출물로 복사되지 않게 한다.
+      - name: Keep scanner artifacts outside the source census
+        run: |
+          mkdir -p build/reports/gitleaks
+          for output in gitleaks gitleaks-worktree.json gitleaks-incremental.json; do
+            if [ -f "$output" ]; then
+              mv -- "$output" build/reports/gitleaks/
+            fi
+          done
+
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -306,51 +362,6 @@ jobs:
           warn-only: false
           retry-on-snapshot-warnings: true
           retry-on-snapshot-warnings-timeout: 60
-
-      # 현재 워킹트리와 이번 변경 범위를 모두 hard-fail로 검사해 신규 시크릿 유입을 차단한다.
-      # 과거 전체 감사와 이미 노출된 자격의 회전은 별도 운영 절차이며, 대규모 예외 baseline을 만들지 않는다.
-      - name: Run gitleaks (working tree + incremental)
-        run: |
-          set -euo pipefail
-          VERSION=8.28.0
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
-            | tar -xz gitleaks
-
-          echo "::group::① 워킹트리 스캔"
-          ./gitleaks detect --source . --no-git --no-banner --redact --verbose \
-            --report-format json --report-path gitleaks-worktree.json --exit-code 1
-          echo "::endgroup::"
-
-          # 비교 기준: PR 이면 base, push 면 이전 HEAD. 둘 다 없으면(초회 푸시·수동 실행) 워킹트리 스캔으로 충분하다.
-          BASE=""
-          if [ -n "${{ github.event.pull_request.base.sha }}" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-          elif [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
-            BASE="${{ github.event.before }}"
-          fi
-
-          if [ -z "$BASE" ]; then
-            echo "ℹ️ 비교 기준 커밋이 없어 증분 스캔을 생략합니다(워킹트리 스캔은 이미 통과)."
-            exit 0
-          fi
-
-          echo "::group::② 증분 스캔 ($BASE..${{ github.sha }})"
-          ./gitleaks detect --source . --no-banner --redact --verbose \
-            --log-opts="$BASE..${{ github.sha }}" \
-            --report-format json --report-path gitleaks-incremental.json --exit-code 1
-          echo "::endgroup::"
-
-      # 실패 보고서를 항상 보존해 탐지 위치를 확인할 수 있게 한다.
-      - name: Upload gitleaks reports
-        if: always()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
-        with:
-          name: gitleaks-reports
-          path: |
-            gitleaks-worktree.json
-            gitleaks-incremental.json
-          if-no-files-found: ignore
-          retention-days: 14
 
   # Conditional heavy source. The stable `backend-build` required context is
   # emitted by the fail-closed aggregate below, including docs-only changes.
@@ -718,8 +729,9 @@ jobs:
         run: pnpm run test:form-validation
         working-directory: frontend
 
-      # [계약 드리프트 게이트] 커밋된 api-docs.json(백엔드 job 이 신선함을 이미 검증) 으로부터
-      # 타입/Zod 를 재생성해 커밋본과 diff. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
+      # [계약 드리프트 게이트] index 의 api-docs.json(백엔드 job 이 신선함을 이미 검증)으로 타입/Zod 를 임시 디렉터리에 다시 만들어
+      # index 의 생성물과 비교하고, 작업 트리가 index 와 다르면 작업 트리 쌍도 같은 방법으로 비교한다(verify-generated-contracts.mjs).
+      # CI 체크아웃에서는 index 가 검사 대상 커밋이다. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
       - name: Verify generated API types are in sync with spec (contract drift gate)
         id: fe-codegen
         run: |
@@ -1456,10 +1468,14 @@ jobs:
     # 여덟 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
     timeout-minutes: 30
     strategy:
-      # 짧은 scope들을 한 슬롯에서 실행해 초기 runner를 E2E/reusable에 양보한다.
-      # run 36575378891의 합산 실측은 약 4분 12초였다(ADR-0029 L4 전). 대상·테스트·75% gate는 그대로다. L4 뒤 CI 합산은 아직
-      # 재지 않았다 — 로컬에서 verify·validate 가 종전보다 길다(아래 실측). verify 가 CI 에서 10분에 다가가면 범위를 나눈다.
-      max-parallel: 1
+      # 슬롯 2개로 실측 긴 순서(LPT)대로 입장한다. 대상·테스트·75% gate·fail-fast 는 그대로고 바뀌는 것은 입장 순서와 동시 수뿐이다.
+      # 종전 슬롯 1개는 합산 약 4분 12초(run 36575378891, ADR-0029 L4 전)를 전제로 초기 runner 를 E2E/reusable 에 양보했다. L4 뒤
+      # main run 38985970318(af79c310f)에서는 8개 job 합이 1005초라 하나씩 이어 돌아 마지막 범위가 1486초에 끝났고, 나머지 job 은
+      # 모두 1025초 안에 끝나 이 잡이 전수 CI 의 임계 경로가 됐다. 슬롯이 1개인 한 범위를 나눠도 합계는 그대로다.
+      # 순서는 같은 실행의 job 시간이다: verify 209·validate 197·standardize 176·collect 171·protect 72·runtime-state 64·
+      # registry 61·converter 55초. 이 순서로 두 슬롯에 넣으면 사슬별 job 시간 합은 505·500초다(위 job 시간으로 계산한
+      # 값으로 runner 대기는 빠졌고, 두 슬롯의 벽시계는 아직 CI 로 재지 않았다). 범위의 시간이 크게 바뀌면 다시 재고 순서를 고친다.
+      max-parallel: 2
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
@@ -1474,15 +1490,10 @@ jobs:
           # 않은 실행): 검토 지적 반영·L4-B 병합 뒤 verify 1172 mutations 93%(시험 강도 96%) 200초, validate 1496 95%(97%) 121초,
           # converter 87 95% 20초(검토 지적 반영 전 같은 날, 범위 코드는 바뀌지 않았다). 판정은 verify·validate 의 순수
           # 클래스에 두고 대상 DB 질의는 postgres 패키지 구현에 둬 범위를 새로 세우지 않았다. registry 는 바뀌지 않아 다시 재지 않았다.
-          - scope: migration-transform-registry
+          - scope: migration-verify
             gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.TransformerRegistry"
-            tests: "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
-
-          - scope: migration-transform-converter
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator"
-            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
+            classes: "nuri.migration.verify.*"
+            tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest,nuri.migration.verify.ReconciliationJudgeTest,nuri.migration.verify.ReconciliationRunTest,nuri.migration.verify.ReconciliationPlannerTest,nuri.migration.verify.ColumnClassifierTest,nuri.migration.verify.SourceAggregateQueryTest,nuri.migration.verify.ReconciliationValuesTest,nuri.migration.verify.TargetTallyTest,nuri.migration.verify.DomainConformanceTest,nuri.migration.verify.ColumnReplayTest,nuri.migration.verify.ConstraintProofTest,nuri.migration.verify.ReferenceChecksTest,nuri.migration.verify.CodeSetReconcilerTest"
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
           # [ADR-0029 L4-B] 고정 길이 문자 소스 codemap 앞 trim 판정(R3, LoadCapabilities)을 생성기와 coverage 가 함께 쓴다 —
@@ -1492,31 +1503,6 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
             tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest,nuri.migration.validate.VerifyReferenceRulesTest,nuri.migration.validate.CodeSetPrecheckTest,nuri.migration.validate.CodeSetTargetsTest"
-
-          - scope: migration-verify
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.verify.*"
-            tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest,nuri.migration.verify.ReconciliationJudgeTest,nuri.migration.verify.ReconciliationRunTest,nuri.migration.verify.ReconciliationPlannerTest,nuri.migration.verify.ColumnClassifierTest,nuri.migration.verify.SourceAggregateQueryTest,nuri.migration.verify.ReconciliationValuesTest,nuri.migration.verify.TargetTallyTest,nuri.migration.verify.DomainConformanceTest,nuri.migration.verify.ColumnReplayTest,nuri.migration.verify.ConstraintProofTest,nuri.migration.verify.ReferenceChecksTest,nuri.migration.verify.CodeSetReconcilerTest"
-
-          # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
-          # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.
-          # [ADR-0029 L3e] 암호화할 소스 값을 보관 덤프에 넣지 않는 판정도 이 범위 시험이 덮는다 — 뒤집히면 평문이 덤프에 남는다.
-          # 온라인 원본을 컴파일하는 호환 계약 시험은 뮤턴트마다 javac 를 돌리므로 넣지 않는다(일반 시험이 돌린다).
-          - scope: migration-protect
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.protect.*"
-            tests: "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
-
-          # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
-          # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
-          # [ADR-0029 L4-B] Oracle 코멘트 사전 뷰 읽기(R2)도 이 범위다 — 뒤집히면 Oracle 코멘트 근거가 사라진다. 드라이버
-          # 고유 시각 값 판정(R1, jdbc.JdbcLobReader)은 PIT 범위 밖이고 JdbcLobReaderTest·EtlSourcePagingTest·리허설 IT 가
-          # 지킨다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다. 프로파일러가 값 읽기 고정 사유를 FAILED 행의
-          # failureReason 에 남긴 뒤(L4-B 통합 검토) 1025 mutations, 92%, 108초다.
-          - scope: migration-collect
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
-            tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
 
           # [ADR-0029 L3a-1] 표준 도메인 변환기. 이 경계가 뒤집히면 자리표시·달력 오류 날짜가 표준 값으로 적재되거나
           # 추정기가 위반으로 센 값이 실행에서 통과한다(DomainParityTest). 2026-10-15 로컬 실측 116 mutations, 100%, 10초다.
@@ -1542,6 +1528,26 @@ jobs:
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"
             tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest,nuri.migration.archive.ArchiveFileWriterTest,nuri.migration.archive.ArchiveLocationGuardTest,nuri.migration.archive.ArchiveRunTest"
 
+          # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
+          # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
+          # [ADR-0029 L4-B] Oracle 코멘트 사전 뷰 읽기(R2)도 이 범위다 — 뒤집히면 Oracle 코멘트 근거가 사라진다. 드라이버
+          # 고유 시각 값 판정(R1, jdbc.JdbcLobReader)은 PIT 범위 밖이고 JdbcLobReaderTest·EtlSourcePagingTest·리허설 IT 가
+          # 지킨다. 2026-10-15 로컬 실측 1024 mutations, 91%, 146초다. 프로파일러가 값 읽기 고정 사유를 FAILED 행의
+          # failureReason 에 남긴 뒤(L4-B 통합 검토) 1025 mutations, 92%, 108초다.
+          - scope: migration-collect
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
+            tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
+
+          # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
+          # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.
+          # [ADR-0029 L3e] 암호화할 소스 값을 보관 덤프에 넣지 않는 판정도 이 범위 시험이 덮는다 — 뒤집히면 평문이 덤프에 남는다.
+          # 온라인 원본을 컴파일하는 호환 계약 시험은 뮤턴트마다 javac 를 돌리므로 넣지 않는다(일반 시험이 돌린다).
+          - scope: migration-protect
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.protect.*"
+            tests: "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
+
           # [ADR-0029 L3c, DEC-OPS-319] 매핑 키·keymap 소유 매핑 판정, 매핑 단위 실행 순서, checkpoint 의 mapping_id 범위와
           # 재개 가드. 뒤집히면 한 소스를 나눈 매핑 하나가 조용히 빠지거나, 형제 매핑을 거치는 의존이 순환으로 막히거나,
           # 매핑 id 를 바꾼 재개가 이미 적재한 행을 다시 쓴다. 2026-10-15 로컬 실측 118 mutations, 95%, 12초다.
@@ -1551,6 +1557,16 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.mapping.*,nuri.migration.state.MigrationStateStore,nuri.migration.etl.TableOrderer,nuri.migration.lookup.*"
             tests: "nuri.migration.mapping.MappingIndexTest,nuri.migration.etl.TableOrdererTest,nuri.migration.state.MigrationStateStoreTest,nuri.migration.lookup.LookupResolverTest,nuri.migration.lookup.LookupRulesTest"
+
+          - scope: migration-transform-registry
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.TransformerRegistry"
+            tests: "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
+
+          - scope: migration-transform-converter
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator"
+            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

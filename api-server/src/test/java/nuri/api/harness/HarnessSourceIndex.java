@@ -107,6 +107,14 @@ final class HarnessSourceIndex {
         }
     }
 
+    /**
+     * 일회성 프로세스 출력의 원시 바이트. 길이 머리로 나뉜 여러 객체를 한 파일로 받을 때 쓴다 —
+     * 객체마다 따로 엄격하게 디코딩해야 해서 텍스트로 한 번에 읽을 수 없다. 공유 스냅샷과 무관하다.
+     */
+    static byte[] readFreshBytes(Path path) throws IOException {
+        return Files.readAllBytes(path.toAbsolutePath().normalize());
+    }
+
     private static List<Path> scanFiles(Path root, int maxDepth) {
         try (Stream<Path> paths = Files.walk(root, maxDepth)) {
             return paths.filter(Files::isRegularFile).toList();
@@ -163,6 +171,72 @@ final class HarnessSourceIndex {
             i++;
         }
         return out.toString();
+    }
+
+    /** Java 원문의 비코드 구간 종류. */
+    enum NonCode { COMMENT, LITERAL, TEXT_BLOCK }
+
+    /** 비코드 구간 하나를 받는다. {@code end} 는 배타 위치다. */
+    @FunctionalInterface
+    interface NonCodeVisitor {
+        void visit(NonCode kind, int start, int end);
+    }
+
+    /**
+     * 주석·문자열/문자 리터럴·text block 구간을 원문 앞에서부터 차례로 알린다. text block 안의
+     * {@code \"""} 같은 탈출도 따른다. 판정이 원문 오프셋을 쓰므로 구간 경계가 곧 원문 위치다.
+     *
+     * <p>위 {@link #stripCommentsPreservingStrings(String)} 와는 일부러 따로 둔다 — 그 함수의 결과는
+     * 동결 해시의 입력이라 처리 규칙(text block 미처리 포함)을 바꾸면 모든 동결값이 함께 바뀐다.
+     */
+    static void forEachNonCode(String source, NonCodeVisitor visitor) {
+        for (int cursor = 0; cursor < source.length();) {
+            int start = cursor;
+            NonCode kind;
+            if (source.startsWith("//", cursor)) {
+                int newline = source.indexOf('\n', cursor + 2);
+                cursor = newline < 0 ? source.length() : newline;
+                kind = NonCode.COMMENT;
+            } else if (source.startsWith("/*", cursor)) {
+                int close = source.indexOf("*/", cursor + 2);
+                cursor = close < 0 ? source.length() : close + 2;
+                kind = NonCode.COMMENT;
+            } else if (source.startsWith("\"\"\"", cursor)) {
+                cursor += 3;
+                while (cursor < source.length()) {
+                    if (source.charAt(cursor) == '\\') {
+                        cursor = Math.min(cursor + 2, source.length());
+                    } else if (source.startsWith("\"\"\"", cursor)) {
+                        cursor += 3;
+                        break;
+                    } else {
+                        cursor++;
+                    }
+                }
+                kind = NonCode.TEXT_BLOCK;
+            } else if (source.charAt(cursor) == '"' || source.charAt(cursor) == '\'') {
+                cursor = skipLiteral(source, cursor, source.charAt(cursor)) + 1;
+                kind = NonCode.LITERAL;
+            } else {
+                cursor++;
+                continue;
+            }
+            visitor.visit(kind, start, cursor);
+        }
+    }
+
+    /**
+     * 비코드 구간을 같은 길이의 공백으로 가린다. 줄바꿈({@code \n}·{@code \r})은 남겨 원문의 행과
+     * 오프셋이 그대로이므로, 가린 결과에서 찾은 위치를 원문 진단에 바로 쓸 수 있다.
+     */
+    static String maskNonCode(String source) {
+        StringBuilder code = new StringBuilder(source);
+        forEachNonCode(source, (kind, start, end) -> {
+            for (int index = start; index < end; index++) {
+                if (source.charAt(index) != '\n' && source.charAt(index) != '\r') code.setCharAt(index, ' ');
+            }
+        });
+        return code.toString();
     }
 
     /** 여는 따옴표 위치를 받아 닫는 따옴표 위치를 반환 */

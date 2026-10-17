@@ -1,8 +1,10 @@
+// @vitest-environment node
 import { describe, it } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { frozenInProjection } from '@/test-utils/projection';
+import { frozenInProjection, frozenTableDiff } from '@/test-utils/projection';
+import { productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 /**
  * 🔗 하드코딩 색상 차단 게이트 — 브랜딩 토큰화(§2.B) 드리프트 방지.
@@ -11,12 +13,12 @@ import { frozenInProjection } from '@/test-utils/projection';
  * 하드코딩 Tailwind 팔레트 클래스는 globals.css 시맨틱/hub-* 토큰으로 대체해야 한다
  * (docs/03-guides/design-tokens.md). 리브랜딩=토큰 편집을 성립시키는 불변식.
  *
- * 현재 잔여(파스텔 틴트·히트맵 명암스케일 등 의도적 미치환)는 BASELINE 으로 동결(grandfather)하고,
+ * 현재 잔여(파스텔 틴트·히트맵 명암스케일 등 의도적 미치환)는 파일별 동결표(BASELINE_BY_FILE)로 동결(grandfather)하고,
  * 증가뿐 아니라 감소 후 기준선 미갱신도 차단한다. status 색(red/green/emerald/rose/amber/orange/yellow/lime/pink)은
  * 성공/경고/오류 시맨틱이라 제외한다(별도 success/warning/destructive 토큰 대상).
  *
  * 신규 코드가 팔레트 리터럴을 추가하면 이 게이트가 실패한다 → 기본 정책은 토큰으로 바꾸는 것이다.
- * 소스와 BASELINE 을 함께 올리는 변경은 자동 게이트가 과거값 없이 구별할 수 없으므로, 불가피한 예외는
+ * 소스와 동결표를 함께 올리는 변경은 자동 게이트가 과거값 없이 구별할 수 없으므로, 불가피한 예외는
  * 사유를 코드 리뷰에 명시해 승인받는다. 기준선의 일반적인 래칫 방향은 감소다.
  */
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,9 +73,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   토큰 치환이 아니라 표면 제거이며 새 리터럴은 0건이다.
 // [하향 래칫 2026-10-07] 10 -> 9. 참조처 0건인 고아 컴포넌트(admin/components/InsightBanner.tsx)를 지우며 1건이 함께
 //   사라졌다. 표면 제거이며 새 리터럴은 0건이다.
-const BASELINE = 9;
-// [2026-10-10 Phase 2 D6] 총계를 파일별로도 동결한다 — 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인).
-//   합은 BASELINE 과 같아야 한다(아래 계약). 리터럴을 줄이거나 옮기면 이 표와 BASELINE 을 함께 고친다.
+// [2026-10-10 Phase 2 D6] 총계를 파일별로 동결한다 — 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인).
+//   위의 총계 변천은 이 표 합의 이력이다(9). 총계는 표의 합에서 계산한다 — 총계와 표를 이중으로 동결하면 리터럴을 줄일
+//   때마다 코드를 보지 않는 상수 수정이 붙는다(FE-CONTRACT-07). 리터럴을 줄이거나 옮기면 이 표만 고친다.
 const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/community/boards/select-board-list/components/BoardPagination.tsx': 1,
   'src/app/admin/community/templates/TemplateAdminClient.tsx': 1,
@@ -83,20 +85,16 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/components/features/dashboard/RealTimeDashboard.tsx': 1,
 };
 
-function collectFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
-    if (e.name === 'node_modules' || e.name === '.next' || e.name === '__tests__') continue;
-    const p = join(dir, e.name);
-    if (e.isDirectory()) out.push(...collectFiles(p));
-    else if (/\.(tsx|jsx)$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p);
-  }
-  return out;
-}
+// 재사용 생성물에서는 투영으로 빠진 파일 몫만 뺀다(원장 확인). 원본에서는 동결표 그대로다. 총계는 그 합이다.
+const FROZEN = frozenInProjection(BASELINE_BY_FILE, (file) => join(SRC, '..', file));
+const BASELINE = Object.values(FROZEN).reduce((sum, count) => sum + count, 0);
+
+/** 색 리터럴을 세는 모집단 — 화면을 그리는 .tsx/.jsx 생산 소스. */
+const colorSources = () => productionSourceFiles(SRC, ['.tsx', '.jsx']);
 
 describe('하드코딩 색상 차단 게이트 (§2.B 브랜딩 토큰화 드리프트 방지)', () => {
-  it(`중립+브랜드액센트 하드코딩 occurrence 는 BASELINE(${BASELINE}) 과 정확히 같아야 한다`, () => {
-    const files = collectFiles(SRC);
+  it(`중립+브랜드액센트 하드코딩 occurrence 는 파일별 동결표(합 ${BASELINE})와 정확히 같아야 한다`, () => {
+    const files = colorSources();
 
     // 게이트 무결성(false-green 방지): 스캔이 조용히 0건이면 vacuous 통과 → 차단
     if (files.length < 50) {
@@ -108,30 +106,20 @@ describe('하드코딩 색상 차단 게이트 (§2.B 브랜딩 토큰화 드리
       const m = readFileSync(f, 'utf8').match(PATTERN);
       if (m && m.length > 0) actual[relative(join(SRC, '..'), f).split(sep).join('/')] = m.length;
     }
-    // 재사용 생성물에서는 투영으로 빠진 파일 몫만 뺀다(원장 확인). 원본에서는 동결표 그대로다.
-    const frozen = frozenInProjection(BASELINE_BY_FILE, (file) => join(SRC, '..', file));
-    const diff = [...new Set([...Object.keys(actual), ...Object.keys(frozen)])].sort()
-      .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
-      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
+    const diff = frozenTableDiff(actual, FROZEN);
     if (diff.length > 0) {
       const total = Object.values(actual).reduce((sum, count) => sum + count, 0);
-      const expected = Object.values(frozen).reduce((sum, count) => sum + count, 0);
-      const direction = total > expected
-        ? `신규 ${total - expected}건 증가`
-        : total < expected
-          ? `${expected - total}건 감소 — 개선분을 확정하려면 BASELINE_BY_FILE 과 BASELINE 을 함께 내릴 것`
+      const direction = total > BASELINE
+        ? `신규 ${total - BASELINE}건 증가`
+        : total < BASELINE
+          ? `${BASELINE - total}건 감소 — 개선분을 확정하려면 BASELINE_BY_FILE 을 실측으로 내릴 것`
           : '파일 사이에서 옮겨졌다 — 동결표를 실측에 맞출 것';
       throw new Error(
-        `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 동결 ${expected}건 — ${direction}.\n` +
+        `🔗 [COLOR GUARD] 하드코딩 팔레트 색 ${total}건 != 동결 ${BASELINE}건 — ${direction}.\n` +
         `globals.css 토큰(hub-*/시맨틱)으로 대체하세요(docs/03-guides/design-tokens.md). status 색은 제외 대상.\n` +
         diff.join('\n'),
       );
     }
-  });
-
-  it('파일별 동결의 합은 BASELINE 과 같다', () => {
-    const total = Object.values(BASELINE_BY_FILE).reduce((sum, count) => sum + count, 0);
-    if (total !== BASELINE) throw new Error(`BASELINE_BY_FILE 합 ${total} != BASELINE ${BASELINE} — 둘을 함께 고친다.`);
   });
 });
 
@@ -159,15 +147,13 @@ const MUTED_OPACITY_BASELINE: Record<string, number> = {
 describe('흐린 보조 글자는 장식에만 (저대비 동결)', () => {
   it('파일별 사용 수가 동결값과 정확히 같다 — 데이터 글자에 새로 쓰면 red', () => {
     const actual: Record<string, number> = {};
-    for (const f of collectFiles(SRC)) {
+    for (const f of colorSources()) {
       const m = readFileSync(f, 'utf8').match(MUTED_OPACITY);
       if (m && m.length > 0) actual[f.replace(SRC, 'src').split(sep).join('/')] = m.length;
     }
     // 재사용 생성물에서는 투영으로 빠진 파일의 동결값만 뺀다(원장 확인).
     const frozen = frozenInProjection(MUTED_OPACITY_BASELINE, (file) => join(SRC, '..', file));
-    const diff = [...new Set([...Object.keys(actual), ...Object.keys(frozen)])]
-      .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
-      .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
+    const diff = frozenTableDiff(actual, frozen);
     if (diff.length > 0) {
       throw new Error(
         '🔗 [CONTRAST GUARD] text-muted-foreground/10~60 사용이 동결값과 다르다.\n'

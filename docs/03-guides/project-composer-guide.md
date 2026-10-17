@@ -131,7 +131,7 @@ node scripts/verify-project-composer.mjs --layout single-module
 
 ## 메뉴 미리보기 자료 갱신
 
-[메뉴 snapshot](../../config/project-composer-menus.json)은 SQL을 실행하지 않고 계획 화면에 실제 메뉴 이름·부모·목적지를 표시하기 위한 파생 자료다. 정본은 체크인된 migration·seed·authorization Contract SQL이며, snapshot을 손으로 고쳐 메뉴를 변경하지 않는다. [검증기](../../scripts/project-composer-menu-preview.mjs)는 입력 SQL의 파일명·내용 해시를 확인하고 달라졌으면 계획을 거부한다. DB 생성 시에도 원본 migration으로 만든 실제 메뉴와 snapshot 전체를 다시 대조한다. 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장은 앱이 읽지 않아 snapshot 에 싣지 않는다(형식 2). 프런트엔드 화면 route 수와 메뉴 수는 다를 수 있다.
+[메뉴 snapshot](../../config/project-composer-menus.json)은 SQL을 실행하지 않고 계획 화면에 실제 메뉴 이름·부모·목적지를 표시하기 위한 파생 자료다. 정본은 체크인된 migration·seed·authorization Contract SQL이며, snapshot을 손으로 고쳐 메뉴를 변경하지 않는다. [검증기](../../scripts/project-composer-menu-preview.mjs)는 메뉴 inventory(메뉴 행과 그룹별 NAVIGATION 배정)에 닿을 수 있는 입력 SQL의 파일명·내용 해시를 확인하고 달라졌으면 계획을 거부한다. 반복 시드 둘과 인가 Contract는 늘 넣고, versioned migration은 의심스러우면 넣는 쪽(fail-closed)의 규칙으로 고른다(형식 v2, 규칙은 검증기 머리 주석, DEC-OPS-339) — 인덱스나 메뉴와 무관한 업무 테이블만 바꾼 migration은 갱신이 필요 없다. DB 생성 시에도 원본 migration으로 만든 실제 메뉴와 snapshot 전체를 다시 대조한다. 레거시 연결 프로그램(prgrm_file_nm)과 프로그램 원장은 앱이 읽지 않아 snapshot 에 싣지 않는다(형식 2). 프런트엔드 화면 route 수와 메뉴 수는 다를 수 있다.
 
 메뉴 행은 목적지 경로(pathname)를 소유한 기능이 남아 있으면 선택된다. 쿼리 문자열은 정확히 비교하지 않는다. `tab` 메뉴 중 다른 기능이 셸에 기여한 탭은 [카탈로그](../../scripts/project-composer-catalog.mjs)의 `menuTabs`로 선언하고, 그 기능이 빠지면 셸이 남아도 숨긴다(예: 지식 허브의 커뮤니티 탭은 커뮤니티 — 지식 허브 셸은 게시판 소유라 위키·FAQ·Q&A 메뉴는 셸 경로를 따른다). `menuTabs` 선언이 스냅숏의 활성 메뉴 행이나 실제 화면과 맞지 않으면 카탈로그 로드가 실패한다. 전체 구성은 활성 메뉴를 모두 고르고, core 화면 메뉴는 core 구성에서 고르며, 고른 목적지가 생성물에 없는 화면을 가리키지 않는다는 것을 [해석기 계약](../../scripts/project-composer-recipe.test.mjs)이 해석기가 남긴 경로로 계산해 확인한다.
 

@@ -119,7 +119,7 @@ class EntityLombokSourceLinterTest {
     }
 
     static SourceAudit auditSource(String source) {
-        String code = maskCommentsAndLiterals(source);
+        String code = HarnessSourceIndex.maskNonCode(source);
         Map<Integer, Integer> boundaryByDepth = new HashMap<>();
         boundaryByDepth.put(0, 0);
         List<Violation> violations = new ArrayList<>();
@@ -235,64 +235,6 @@ class EntityLombokSourceLinterTest {
             }
         }
         return annotations;
-    }
-
-    private static String maskCommentsAndLiterals(String source) {
-        StringBuilder masked = new StringBuilder(source.length());
-        for (int i = 0; i < source.length();) {
-            if (source.startsWith("//", i)) {
-                i = maskUntilLineEnd(source, i, masked);
-            } else if (source.startsWith("/*", i)) {
-                i = maskUntil(source, i, "*/", masked);
-            } else if (source.startsWith("\"\"\"", i)) {
-                i = maskUntil(source, i, "\"\"\"", masked, 3);
-            } else if (source.charAt(i) == '"' || source.charAt(i) == '\'') {
-                i = maskQuoted(source, i, masked, source.charAt(i));
-            } else {
-                masked.append(source.charAt(i));
-                i++;
-            }
-        }
-        return masked.toString();
-    }
-
-    private static int maskUntilLineEnd(String source, int index, StringBuilder masked) {
-        while (index < source.length() && source.charAt(index) != '\n') {
-            masked.append(' ');
-            index++;
-        }
-        return index;
-    }
-
-    private static int maskUntil(String source, int index, String terminator, StringBuilder masked) {
-        return maskUntil(source, index, terminator, masked, terminator.length());
-    }
-
-    private static int maskUntil(String source, int index, String terminator, StringBuilder masked, int searchOffset) {
-        int close = source.indexOf(terminator, index + searchOffset);
-        int end = close < 0 ? source.length() : close + terminator.length();
-        while (index < end) {
-            masked.append(source.charAt(index) == '\n' ? '\n' : ' ');
-            index++;
-        }
-        return index;
-    }
-
-    private static int maskQuoted(String source, int index, StringBuilder masked, char quote) {
-        masked.append(' ');
-        index++;
-        while (index < source.length()) {
-            char current = source.charAt(index);
-            masked.append(current == '\n' ? '\n' : ' ');
-            index++;
-            if (current == '\\' && index < source.length()) {
-                masked.append(source.charAt(index) == '\n' ? '\n' : ' ');
-                index++;
-            } else if (current == quote) {
-                break;
-            }
-        }
-        return index;
     }
 
     record SourceAudit(int entityCount, List<Violation> violations) {}

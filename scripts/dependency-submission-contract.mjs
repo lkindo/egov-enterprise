@@ -1,4 +1,9 @@
+import fs from 'node:fs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
+
+const READINESS_SCRIPT = new URL('./dependency-snapshot-readiness.mjs', import.meta.url);
+// 검증기가 런타임에 받는 대기 상한 범위다(dependency-snapshot-readiness.mjs 의 buildRetryDelays).
+const MAX_SNAPSHOT_WAIT_SECONDS = 3600;
 
 export const GRADLE_DEPENDENCY_ACTION =
   'gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6';
@@ -25,6 +30,50 @@ function rejectMatch(errors, content, pattern, message) {
   if (pattern.test(content)) errors.push(message);
 }
 
+// 단계 env 블록 안의 선언만 센다 — 다른 잡이 같은 이름을 쓰는 것은 이 단계의 대기와 무관하다.
+// 들여쓰기는 env 머리보다 깊기만 하면 되고, 주석 처리한 줄은 머리가 '#' 이라 선언으로 세지 않는다.
+function stepEnvDeclarations(step, key) {
+  const lines = step.split('\n');
+  const header = lines.findIndex(line => /^[ \t]+env:[ \t]*(?:#.*)?$/.test(line));
+  if (header < 0) return [];
+  const indent = lines[header].length - lines[header].trimStart().length;
+  const declaration = new RegExp(`^[ \\t]*${key}:[ \\t]*(.*?)[ \\t]*$`);
+  const values = [];
+  for (const line of lines.slice(header + 1)) {
+    if (/^[ \t]*#/.test(line)) continue;
+    if (line.trim() && line.length - line.trimStart().length <= indent) break;
+    const match = declaration.exec(line);
+    if (match) values.push(match[1]);
+  }
+  return values;
+}
+
+// 대기값은 정수 스칼라다. 따옴표 종류와 줄 끝 주석은 표현이라 값만 읽고, 식(${{ }})이나 소수는 거부한다.
+function integerScalar(raw) {
+  const match = /^(?:"(\d+)"|'(\d+)'|(\d+))(?:[ \t]+#.*)?$/.exec(raw);
+  return match ? Number(match[1] ?? match[2] ?? match[3]) : null;
+}
+
+function validateSnapshotWait(errors, readinessStep, readinessContent) {
+  // [FE-CONTRACT-06] 상한은 검증기 기본값과 결속한다. 여기에 리터럴 "600" 을 따로 적으면 기본값을 바꿀 때
+  // 두 곳을 함께 고쳐야 하고, 둘이 어긋나도 이 계약은 통과한다. 기본값은 Atlas 수치의 원천이기도 하다.
+  const defaults = [...readinessContent.matchAll(/env\.SNAPSHOT_WAIT_SECONDS\s*\?\?\s*['"](\d+)['"]/g)];
+  if (defaults.length !== 1) {
+    errors.push('snapshot readiness verifier must declare exactly one SNAPSHOT_WAIT_SECONDS default');
+  }
+  const declarations = stepEnvDeclarations(readinessStep, 'SNAPSHOT_WAIT_SECONDS');
+  if (declarations.length !== 1) {
+    errors.push('snapshot readiness wait must be declared exactly once in the readiness step env');
+    return;
+  }
+  const wait = integerScalar(declarations[0]);
+  if (wait === null || wait > MAX_SNAPSHOT_WAIT_SECONDS) {
+    errors.push(`snapshot readiness wait must be an integer literal between 0 and ${MAX_SNAPSHOT_WAIT_SECONDS}`);
+  } else if (defaults.length === 1 && wait !== Number(defaults[0][1])) {
+    errors.push(`snapshot readiness wait ${wait} must equal the verifier default ${defaults[0][1]}`);
+  }
+}
+
 function validateActionStep(errors, step, mode, label) {
   requireMatch(errors, step, new RegExp(`^        uses: ${GRADLE_DEPENDENCY_ACTION}(?:\\s+#.*)?$`, 'm'),
     `${label} must use the pinned Gradle dependency action`);
@@ -38,7 +87,10 @@ function validateActionStep(errors, step, mode, label) {
     `${label} cannot be bypassed by step controls`);
 }
 
-export function validateDependencySubmissionContract({ producerContent, publisherContent, ciContent }) {
+export function validateDependencySubmissionContract({
+  producerContent, publisherContent, ciContent,
+  readinessContent = fs.readFileSync(READINESS_SCRIPT, 'utf8'),
+}) {
   const errors = [];
   const producer = normalize(producerContent);
   const publisher = normalize(publisherContent);
@@ -123,8 +175,7 @@ export function validateDependencySubmissionContract({ producerContent, publishe
     'snapshot readiness step must compare the exact PR base SHA');
   requireMatch(errors, readinessStep, /^          HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \}\}$/m,
     'snapshot readiness step must compare the exact PR head SHA');
-  requireMatch(errors, readinessStep, /^          SNAPSHOT_WAIT_SECONDS: "600"$/m,
-    'snapshot readiness wait must be explicitly bounded');
+  validateSnapshotWait(errors, readinessStep, readinessContent);
   requireMatch(errors, readinessStep, /^        run: node scripts\/dependency-snapshot-readiness\.mjs$/m,
     'snapshot readiness step must run the fail-closed verifier exactly');
   rejectMatch(errors, readinessStep, /^        (?:continue-on-error|shell):/m,

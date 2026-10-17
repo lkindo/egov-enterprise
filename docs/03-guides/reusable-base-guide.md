@@ -299,10 +299,13 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 소유는 코드에서 도출되므로, 잘못 들어간 import 한 줄은 컨트롤러를 지우면서 기대치까지 함께 바꾼다(개인정보 census·컨트롤러
 하한이 지키는 일부만 따로 붉어진다). 그래서 프리셋마다 연쇄로 지울 비게이트 Java 경로를 `presets.json` 의
 `expected.javaCascade` 에 적고, 생성기·정밀 점검(plan/deep)·운영 계약
-(`scripts/pack-tagged-registry.test.mjs`)이 같은 판정으로 실제 연쇄와 exact 대조한다. 운영 계약은 2026-10-13(11단계 C4)부터
-`presets.json` 의 Java 게이트 승인(`expected.gates`)과 연쇄 목록을 읽어 시작 구성마다 생성기 계획과 대조한다 — 수가 아니라 목록이라
-게이트 하나가 사라지고 다른 하나가 살아나는 교체도 붉다.
-목록의 형식·중복도 이 대조가 본다. 사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 `java.cascadeRemoved` 에
+(`scripts/project-composer-preset-equivalence.test.mjs` — 시작 구성마다 정밀 점검 blockers==[])이 같은 판정으로 실제 연쇄와 exact 대조한다.
+저장소에서는 그 동치 계약이 `presets.json` 의 Java·프런트 게이트 승인(`expected.gates`, 사유 형식 포함)과 연쇄 목록을 시작 구성마다
+생성기 계획과 대조한다 — 수가 아니라 목록이라 게이트 하나가 사라지고 다른 하나가 살아나는 교체도 GATE_UNACKNOWLEDGED·GATE_STALE 로 붉다.
+목록의 형식·중복·누락·낡은 항목도 이 대조가 본다. 차단 코드별 red 증명은 `scripts/project-composer-deep-failure-points.test.mjs` 에 있다
+(승인 목록만 바꾼 변이는 첫 실측의 제거 집합으로 승인 대조만 한다). 투영본(생성물)에서는 `scripts/pack-tagged-registry.test.mjs` 가
+승인·연쇄 목록에 적힌 파일이 실제로 없는지만 본다. 이 소유 이동은 DEC-OPS-335 가 정했다(2026-10-17).
+사유는 기계적("<타입> 참조")이라 목록에 적지 않고 생성물 lock 의 `java.cascadeRemoved` 에
 남는다. 직접 선택 구성은 기대치가 없어 lock 기록만 남긴다.
 
 생산 저장소 CI의 `reusable-base` 시작 구성 × 2레이아웃 matrix(PR 은 `ci.pr` 레이아웃 하나, survey·approval 은 PR 에서 빼고 main·T2 에서만 — DEC-OPS-296)가 실제 DB 번들과 소스 생성·산출물 검증을 실행하고 결과를 required

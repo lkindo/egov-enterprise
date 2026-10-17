@@ -42,7 +42,7 @@ push/PR / workflow_dispatch
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
         ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
         ├─ mutation-scope (mutation=true, 상류 빌드 대기 없이 제품 PIT 배치 실행; 동시 수는 ci.yml 참조)
-        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 8개를 한 슬롯에서 실행)
+        ├─ mutation-scope-migration (mutation-migration-tool=true, 상류 빌드 대기 없이 이관 PIT 8개를 두 슬롯에서 실측 긴 순서로 실행)
         │   └─ mutation-test (두 소스를 각각 fail-closed로 집계하는 안정 required aggregate)
         └─ e2e-tests (e2e=true, 상류 빌드 대기 없이 내부 2 shard)
             ├─ 전체 API·브라우저 모집단 분배 + 실행 목록/결과 대조
@@ -51,6 +51,8 @@ push/PR / workflow_dispatch
 ```
 
 Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않도록 다음 신뢰 경계로 분리한다.
+
+`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다.
 
 ```
 dependency-submission.yml (pull_request, contents:read)
@@ -101,16 +103,21 @@ BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 �
 
 PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
-생성기·도구 전용 경로(`config/modules/**`, `config/project-composer-menus.json`, `scripts/` 의 `project-composer*`·`reusable-*`·`generate-reusable-base-*`·`verify-reusable-*`·`verify-project-composer*`·`composer-modules*`·`domain-deletion-plan*`, `tools/project-composer/**`)는 미분류 전수 대신 모든 시작 구성의 재사용 검증과 표에 적힌 축만 고른다(11단계 C11, DEC-OPS-297). 축은 그 경로를 문자열로 가리키거나 디렉터리째 읽거나 실행하는 시험·조건부 CI 진입점이 도는 축이며, [표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 `ci.yml` 에서 다시 계산해 항목마다 정확히 같은지 본다. `scripts/` 는 하네스 두 개가 디렉터리째 읽어 backend 를, 기본 관리자 시드 스키마 검증과 생성기 화면 시험이 생성기를 실행해 schema·E2E 를 끄지 못한다 — 이 경로만 바꾼 변경이 건너뛰는 것은 이관·PIT·frontend 다. 생성기 화면(`tools/project-composer/**`)만 바꾼 변경은 재사용 검증과 E2E 축만 고른다. E2E 축은 생성기 화면 시험(`tools/project-composer/ui.test.mjs`, E2E 첫 샤드에서 돈다) 때문에 켜지지만, 켜지면 Playwright 전체 샤드가 돈다 — E2E 영향 선별이 이 경로를 화면 spec 에 잇지 못해 전수로 물러난다(DEC-OPS-301). 화면 시험만 가벼운 잡에서 돌려 E2E 축을 끄는 일은 후속이다. 분류기 자신이 읽는 `scripts/composition-profiles.mjs` 와 표 밖 스크립트는 종전대로 전수다.
+생성기·도구 전용 경로(`config/modules/**`, `config/project-composer-menus.json`, `scripts/` 의 `project-composer*`·`reusable-*`·`generate-reusable-base-*`·`verify-reusable-*`·`verify-project-composer*`·`composer-modules*`·`domain-deletion-plan*`, `tools/project-composer/**`, Atlas 도구 `scripts/atlas-*`·`scripts/build-atlas.mjs` 와 operation 소비 원장 `config/governance/operation-consumer-census.json`)는 미분류 전수 대신 모든 시작 구성의 재사용 검증과 표에 적힌 축만 고른다(11단계 C11, DEC-OPS-297, Atlas 도구 3항목은 DEC-OPS-336). 축은 그 경로를 문자열로 가리키거나 디렉터리째 읽거나 실행하는 시험·조건부 CI 진입점이 도는 축이며, [표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 `ci.yml` 에서 다시 계산해 항목마다 정확히 같은지 본다. `scripts/` 는 하네스 두 개가 디렉터리째 읽어 backend 를, 기본 관리자 시드 스키마 검증과 생성기 화면 시험이 생성기를 실행해 schema·E2E 를 끄지 못한다 — 이 경로만 바꾼 변경이 건너뛰는 것은 이관·PIT·frontend 다. 생성기 화면(`tools/project-composer/**`)만 바꾼 변경은 재사용 검증과 E2E 축만 고른다. E2E 축은 생성기 화면 시험(`tools/project-composer/ui.test.mjs`, E2E 첫 샤드에서 돈다) 때문에 켜지지만, 켜지면 Playwright 전체 샤드가 돈다 — E2E 영향 선별이 이 경로를 화면 spec 에 잇지 못해 전수로 물러난다(DEC-OPS-301). 화면 시험만 가벼운 잡에서 돌려 E2E 축을 끄는 일은 후속이다. Atlas 도구 3항목만 바꾼 변경도 이관·PIT·frontend 를 건너뛰며, 남는 축은 항목마다 다르다. Atlas 도구 두 경로는 재사용 생성기의 Atlas 제거 규칙(`UPSTREAM_ATLAS`, [게이트 투영](../../scripts/reusable-source-gates.mjs))이 그 경로 이름을 적어, 생성기 화면 시험과 기본 관리자 시드 스키마 검증이 표 안 사슬로 읽으므로 E2E·schema 가 남는다. 소비 원장은 backend 만 남고 E2E·schema 는 꺼진다. Atlas 원천이 바뀌면 늘 도는 생성물 신선도 계약([Atlas 가이드](governance-atlas-guide.md))이 낡은 HTML 을 잡는다. 분류기 자신이 읽는 `scripts/composition-profiles.mjs` 와 표 밖 스크립트는 종전대로 전수다.
 
 제품 PIT는 종전 대상의 정확한 합집합을 10개 scope로 실행하고 `mutation-scope`의 `max-parallel: 4`를 사용한다. 5슬롯 실행은 backend 완료 뒤 custom composition이 최대 1분 54초 runner를 기다리게 했다. 같은 SHA의 실측 job 총시간 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 선언하면 4슬롯에서도 mutation aggregate가 10분 안쪽에 끝나는 반면 custom 두 layout용 입장 여유를 만든다. 이 LPT 순서와 동시 수는 모집단·테스트·75% 게이트를 바꾸지 않는다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
 
 동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
-E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어와
-`mutation-scope-migration`의 여덟 scope는 각각 `max-parallel: 1`로 입장을 제한해 초기 슬롯을 임계 작업에
+E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어는 `max-parallel: 1`,
+`mutation-scope-migration`의 여덟 scope는 `max-parallel: 2`로 입장을 제한해 초기 슬롯을 임계 작업에
 남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 여덟 모집단과 각 75% 판정을 모두
-같은 required 실행에서 끝낸다. 해당 실행의 실제 작업 합계가 약 7분 20초와 4분 12초였다는 근거로 선택했으며,
-각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
+같은 required 실행에서 끝낸다. CodeQL의 1슬롯은 그 실행의 실제 작업 합계 약 7분 20초를 근거로 한다. 이관 PIT도
+처음에는 합계 약 4분 12초를 근거로 1슬롯이었으나, ADR-0029 L4 뒤 [main 실행 38985970318](https://github.com/lkindo/egov-enterprise/actions/runs/38985970318)에서
+여덟 job 합이 1005초로 늘어 하나씩 이어 돈 마지막 범위가 1486초에 끝났고(나머지 job은 1025초 안), 이 잡이 전수 CI의
+임계 경로가 됐다. 그래서 2슬롯으로 늘리고 같은 실행의 job 시간이 긴 순서(verify·validate·standardize·collect·protect·
+runtime-state·registry·converter)로 선언한다([ADR-0032](../02-architecture/decisions/ADR-0032-migration-pit-two-slots.md), DEC-OPS-337). 슬롯 수와 순서는 [필수 체크 계약](../../scripts/required-checks-contract.test.mjs)이
+정확히 대조한다. 벽시계 효과는 같은 SHA 연속 green 실행의 중앙값으로 판정하고, 범위의 시간이 크게 바뀌면 다시 재고
+순서를 고친다. 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
 재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음
 [실행 36583969340](https://github.com/lkindo/egov-enterprise/actions/runs/36583969340)에서 `reusable-base`를
 다섯 개로 제한하자 migration 대기는 줄었지만 뒤로 밀린 `demo/single-module`이 7분 52초 걸려 전체가

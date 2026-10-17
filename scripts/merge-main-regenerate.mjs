@@ -11,19 +11,25 @@
  *   2. 공용 메모리 표(decisions.md·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
  *      고쳤거나 같은 새 ID 를 썼으면 합치지 않고 멈춘다(프로토콜 §6.4 — 사람이 한 행으로 합치거나 번호를 바꾼다).
  *   3. 다시 만들 생성물의 충돌은 한쪽을 고르지 않고 재생성 결과로 덮는다. URL 승인 파일은 해시 줄만 다를 때 푼다.
- *      그 밖의 충돌(api-docs.json·하네스 manifest·메뉴 snapshot·소스)은 목록을 보이고 멈춘다.
+ *      그 밖의 충돌(api-docs.json·하네스 manifest·메뉴 snapshot·소스)은 목록을 보이고 멈춘다. 하네스 manifest 는 양쪽 값이
+ *      다른 키를 보이고, 다른 충돌이 다 풀렸으면 그 키의 node 계산값(`harness-baseline-manifest.mjs --keys`)도 보인다.
  *   4. 양쪽이 입력을 바꾼 생성기만 의존 순서대로 실행한다. 줄 끝만 바뀐 파일은 되돌리고 결과를 stage 한다.
  *   5. 충돌 표기가 남아 있으면 실패한다. 커밋은 하지 않는다 — `git diff --cached` 로 결과가 두 쪽 변경의
  *      합과 같은지 확인한 뒤 직접 `git commit --no-edit` 한다(합을 넘는 래칫 변화는 H2 판단이다).
  *
- * 다루지 않는 것: api-docs.json 추출(Gradle), 하네스 manifest 의 같은 키 충돌(harnessTest), 메뉴 snapshot 의
- * sourceMigrationHash(일회용 PostgreSQL) — 모두 §6.3 의 무거운 실행이라 사람이 한 번씩 돌린다.
+ * 다루지 않는 것: api-docs.json 추출(Gradle), 메뉴 snapshot 의 sourceMigrationHash(일회용 PostgreSQL) — §6.3 의 무거운
+ * 실행이라 사람이 한 번씩 돌린다. 하네스 manifest 의 같은 키 충돌은 계산값만 보이고 풀지 않는다 — 그 키의 값만 옮기고 입력
+ * 변경이 양쪽 모두 정당한지 확인하는 일(§6.4·H2)은 사람의 몫이다. manifest 를 `outputs` 로 두면 충돌 때 재생성이 통째로 덮어
+ * 그 확인 지점이 조용히 사라진다.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+// 매니페스트는 경로·줄 형식 모듈만 읽는다(node 내장만 쓴다). 계산 도구는 재사용 투영 그래프를 끌어와, 병합 중 그 안에 충돌 표기가
+// 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
+import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -35,6 +41,8 @@ export const MEMORY_TABLES = new Map([
 
 export const URL_CENSUS = 'config/ui-url-state-census.json';
 export const URL_APPROVAL = 'config/ui-url-state-approval.json';
+export const HARNESS_MANIFEST = MANIFEST_PATH;
+export const HARNESS_MANIFEST_TOOL = 'scripts/harness-baseline-manifest.mjs';
 
 const anyPath = () => true;
 const under = (...prefixes) => file => prefixes.some(prefix => file === prefix || file.startsWith(prefix.endsWith('/') ? prefix : `${prefix}/`));
@@ -213,6 +221,75 @@ export function resolveHashOnlyConflicts(text) {
   return out.join(eol);
 }
 
+/**
+ * 하네스 manifest 충돌 구역에서 양쪽(ours·theirs) 값이 다른 키. 한쪽에만 있는 키도 넣는다. 닫히지 않은 구역은 실패한다.
+ * 키의 값을 고르지 않는다 — 계산값을 보여 줄 목록일 뿐이다.
+ */
+export function harnessManifestConflictKeys(text) {
+  const lines = text.split(/\r?\n/);
+  const keys = new Set();
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!MARK_OURS.test(lines[i])) continue;
+    const hunk = { ours: [], base: [], theirs: [] };
+    let section = 'ours';
+    for (i += 1; i < lines.length && !MARK_THEIRS.test(lines[i]); i += 1) {
+      if (MARK_BASE.test(lines[i])) section = 'base';
+      else if (MARK_SPLIT.test(lines[i])) section = 'theirs';
+      else hunk[section].push(lines[i]);
+    }
+    if (i >= lines.length) throw new Error('닫히지 않은 충돌 구역이 있다');
+    // 키 해석은 계산 도구·메타 게이트와 같은 줄 형식(형식 모듈)이다.
+    const [ours, theirs] = [parseManifest(hunk.ours.join('\n')), parseManifest(hunk.theirs.join('\n'))];
+    for (const key of new Set([...ours.keys(), ...theirs.keys()])) if (ours.get(key) !== theirs.get(key)) keys.add(key);
+  }
+  return [...keys].sort();
+}
+
+/**
+ * unmerged manifest 를 수동 목록의 한 항목으로 만든다. 예외를 던지지 않는다 — 던지면 다른 충돌의 목록과 안내가 함께 사라진다.
+ * 작업 트리에 파일이 없거나(양쪽이 다른 이름으로 옮겼거나 손으로 지웠다) 충돌 표기가 없으면(한쪽이 지우고 다른 쪽이 고쳤다)
+ * 같은 키 충돌이 아니므로 키 없이 그 사정을 안내한다.
+ */
+function harnessManifestConflict(absolute) {
+  const conflict = (keys, reason) => ({ file: HARNESS_MANIFEST, keys, reason });
+  try {
+    if (!fs.existsSync(absolute)) {
+      return conflict([], '작업 트리에 manifest 가 없다 — 양쪽이 다른 이름으로 옮긴 충돌(rename/rename)이거나 손으로 지웠다. '
+        + 'git status 로 확인하고 git add 또는 git rm 으로 정한 뒤 --continue 한다.');
+    }
+    const text = fs.readFileSync(absolute, 'utf8');
+    if (!findConflictMarkers(text).length) {
+      return conflict([], '충돌 표기가 없다 — 한쪽이 지우고 다른 쪽이 고친 충돌(modify/delete)이거나 이미 손으로 푼 파일이다. '
+        + `남길지 지울지 정하고, 남기면 \`node ${HARNESS_MANIFEST_TOOL} --check\` 로 계산값과 대조한 뒤 git add(지우면 git rm) 한다.`);
+    }
+    const keys = harnessManifestConflictKeys(text);
+    return conflict(keys, `하네스 manifest 의 같은 키 충돌 — 양쪽 값이 다른 키: ${keys.join(', ') || '없음'}. `
+      + '그 키의 값만 옮기고 입력 변경이 양쪽 모두 정당한지 확인한다(§6.4·H2, 통째로 다시 쓰지 않는다).');
+  } catch (error) {
+    return conflict([], error.message);
+  }
+}
+
+/** manifest 충돌만 남았으면 충돌 키의 node 계산값을 붙인다. 다른 충돌이 남았으면 그 입력이 아직 확정되지 않아 계산하지 않는다. */
+function attachHarnessManifestValues(cwd, manual) {
+  const conflict = manual.find(item => item.file === HARNESS_MANIFEST);
+  if (!conflict?.keys.length) return;
+  const command = `node ${HARNESS_MANIFEST_TOOL} --keys ${conflict.keys.join(' ')}`;
+  if (manual.length > 1) {
+    conflict.reason += `\n    다른 충돌을 모두 푼 뒤 \`${command}\` 로 계산값을 본다.`;
+    return;
+  }
+  if (!fs.existsSync(path.join(cwd, HARNESS_MANIFEST_TOOL))) {
+    conflict.reason += `\n    ${HARNESS_MANIFEST_TOOL} 이 이 저장소에 없다 — 하네스를 실행해 산출 파일에서 그 키의 값만 옮긴다.`;
+    return;
+  }
+  const result = run(cwd, 'node', [HARNESS_MANIFEST_TOOL, '--keys', ...conflict.keys], { allowFailure: true });
+  const output = `${result.stdout}${result.stderr}`.trimEnd();
+  conflict.reason += result.status === 0
+    ? `\n    ${command}:\n${output.split(/\r?\n/).map(line => `      ${line}`).join('\n')}`
+    : `\n    ${command} 실패(${result.status}): ${output}`;
+}
+
 export function urlCensusSha256(censusText) {
   return createHash('sha256').update(`${JSON.stringify(JSON.parse(censusText), null, 2)}\n`, 'utf8').digest('hex');
 }
@@ -325,6 +402,10 @@ export function mergeMainAndRegenerate({
   const manual = [];
   for (const file of lines(git(cwd, 'diff', '--name-only', '--diff-filter=U'))) {
     const absolute = path.join(cwd, file);
+    if (file === HARNESS_MANIFEST) {
+      manual.push(harnessManifestConflict(absolute));
+      continue;
+    }
     const memory = MEMORY_TABLES.get(file);
     try {
       if (memory) {
@@ -344,6 +425,7 @@ export function mergeMainAndRegenerate({
       manual.push({ file, reason: error.message });
     }
   }
+  attachHarnessManifestValues(cwd, manual);
   if (manual.length) {
     log('손으로 풀어야 하는 충돌이 있다. 풀고 `git add` 한 뒤 `--continue` 로 이어 간다(프로토콜 §6.4):');
     for (const { file, reason } of manual) log(`  - ${file}: ${reason}`);
@@ -373,7 +455,8 @@ export function mergeMainAndRegenerate({
   }
   log(`준비됐다. 자동으로 푼 충돌: ${resolved.length ? resolved.join(', ') : '없음'}; 재생성: ${plan.map(g => g.id).join(', ') || '없음'}`);
   log('`git diff --cached` 로 결과가 두 쪽 변경의 합과 같은지 확인한 뒤 `git commit --no-edit` 한다.');
-  log('api-docs.json 추출·하네스 manifest·메뉴 snapshot 은 해당하면 프로토콜 §6.4 대로 따로 실행한다.');
+  log('api-docs.json 추출·메뉴 snapshot 은 해당하면 프로토콜 §6.4 대로 따로 실행한다. '
+    + `하네스 manifest 는 \`node ${HARNESS_MANIFEST_TOOL} --check\` 로 계산값과 같은지 본다.`);
   return { status: 'ready', manual, plan: plan.map(g => g.id), resolved };
 }
 

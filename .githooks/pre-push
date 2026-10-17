@@ -1,6 +1,9 @@
 #!/bin/sh
 # eGov Enterprise — AGENTS.md 범위별 검증을 구현하는 로컬 pre-push 게이트
 # 우회: git push --no-verify   |   비활성화: git config --unset core.hooksPath
+# 검사 범위는 push 범위(stdin 의 remote_sha..local_sha)로 고르지만, 모든 검사는 push 하는 커밋이 아니라 현재
+# 체크아웃(index·작업 트리)에서 돈다. 다른 브랜치를 push 하거나 커밋하지 않은 변경이 있으면 로컬 결과는 그 커밋의
+# 증거가 아니다 — 그 커밋의 권위는 required CI 다.
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
 
@@ -63,12 +66,6 @@ for GIT_LOCAL_ENV_VAR in $GIT_LOCAL_ENV_VARS; do
 done
 unset GIT_LOCAL_ENV_VARS GIT_LOCAL_ENV_VAR
 
-# Node 기반 운영 계약은 하나의 catalog runner가 소유한다. 새 *.test.mjs를 추가하면
-# 별도 훅 편집 없이 자동 편입되며, 문서-only fast-pass도 이 싼 계약을 통과한 뒤 종료한다.
-echo "  → governance: npm run test:operational-contracts"
-npm run test:operational-contracts \
-  || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
-
 # CI와 동일한 fail-closed 분류기를 fast-pass 판정에도 사용한다. 확장자만
 # 보는 별도 allowlist를 두면 헌법 Markdown, 실행 가능한 docs 파일, rename의
 # 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
@@ -79,15 +76,35 @@ SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.m
 SCOPE_ATLAS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field atlas)
 echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migration=$SCOPE_MIGRATION / frontend=$SCOPE_FRONTEND"
 
-if [ -n "$CHANGED_FILES" ]; then
-  # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
-  if [ "$SCOPE_ATLAS" = "true" ]; then
-    echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
-    pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
-      || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
-  fi
+# Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 11분 — 이 훅에서 가장 비싼 검사다).
+# 문서 전용이면 연결·메모리·생성물 계약을 확인하고 끝난다. 소스 변경이면 컴파일·타입·codegen·
+# lint 같은 정적 검사가 먼저 실패를 알린 뒤에 실행한다(fail-fast). 두 경로 모두 정확히 한 번 돈다(삭제 전용 push 는 그 전에 끝난다).
+run_operational_contracts() {
+  echo "  → governance: npm run test:operational-contracts"
+  npm run test:operational-contracts \
+    || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
+}
 
+# Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
+run_atlas_contract() {
+  if [ -n "$CHANGED_FILES" ]; then
+    if [ "$SCOPE_ATLAS" = "true" ]; then
+      # frontend 불변식 및 backend cross-stack 실행은 Atlas를 이미 포함한다.
+      if [ -f frontend/package.json ] && { [ "$SCOPE_BACKEND" = "true" ] || [ "$SCOPE_FRONTEND" = "true" ]; }; then
+        echo "  → atlas: 아래 frontend/cross-stack 실행에 포함"
+      else
+        echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
+        pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
+          || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
+      fi
+    fi
+  fi
+}
+
+if [ -n "$CHANGED_FILES" ]; then
   if [ "$SCOPE_DOCS_ONLY" = "true" ]; then
+    run_operational_contracts
+    run_atlas_contract
     echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
     echo "  → 변경 파일:"
     echo "$CHANGED_FILES" | sed 's/^/     - /'
@@ -121,6 +138,19 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   ( cd frontend && npx tsc -p tsconfig.e2e.json --noEmit ) \
     || { echo "❌ E2E TypeScript 타입 검사 실패 — 루트 tsconfig 는 e2e 를 exclude 하므로 이 게이트가 유일 관문입니다."; exit 1; }
 
+  # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts/generated-operations.ts 정합.
+  # CI(ci.yml)는 커밋 체크아웃에서, 로컬 pre-push 는 빠른 드리프트 피드백을 위해 현재 index·작업 트리에서 같은 계약을
+  # 선제 검사한다 — 입력은 push 하는 커밋이 아니다(위 머리 주석).
+  # index 와 작업 트리 둘 다 본다 — index 의 api-docs.json 으로 임시 재생성해 index 생성물과 비교하고,
+  # 작업 트리가 다르면 작업 트리 쌍도 비교한다(작업 트리·index 를 쓰지 않으며 백엔드 재빌드 불요).
+  # 검증 스크립트도 미추적 생성물을 실패로 보지만, 계약 SSOT(스펙)의 추적 여부는 여기서 먼저 확인한다.
+  git ls-files --error-unmatch api-docs.json >/dev/null 2>&1 \
+    || { echo "❌ api-docs.json 이 git 에 추적되지 않습니다 — 계약 드리프트 게이트가 vacuous 통과합니다"; exit 1; }
+
+  echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
+  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) \
+    || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성하고 api-docs.json 과 함께 stage 한 뒤 커밋하세요 (계약 드리프트 방어)"; exit 1; }
+
   # ESLint error는 계약 위반으로 차단하고 warning은 package.json 래칫으로 관리한다.
   echo "  → frontend: pnpm run lint (error 만 차단 — warning 은 통과)"
   ( cd frontend && pnpm run lint ) \
@@ -129,22 +159,17 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   echo "  → frontend: pnpm run test:form-validation (폼 경계·validation 증거 census)"
   ( cd frontend && pnpm run test:form-validation ) \
     || { echo "❌ 폼 validation census 실패 — 신규/누락 경계를 분류하고 비준수 화면의 검증·오류 이동·서버 오류·pending 증거를 보완하세요."; exit 1; }
+fi
 
+# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.
+run_operational_contracts
+run_atlas_contract
+
+if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   # 빠른 저장소 불변식만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
   echo "  → frontend: vitest src/__tests__ (저장소 불변식 게이트)"
   ( cd frontend && npx vitest run src/__tests__ ) \
     || { echo "❌ 프런트 불변식 게이트 실패 — 위반을 수정하고 하향 래칫의 개선분은 정본에 반영하세요."; exit 1; }
-
-  # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합.
-  # CI(ci.yml)에도 있으며, 로컬 pre-push에서는 빠른 드리프트 피드백을 위해 같은 계약을 선제 검사한다.
-  # 커밋된 api-docs.json 기반(오프라인·결정적)이라 백엔드 재빌드 불요.
-  # 언트랙 파일은 git diff에 잡히지 않으므로 계약 SSOT의 추적 상태를 먼저 확인한다.
-  git ls-files --error-unmatch api-docs.json >/dev/null 2>&1 \
-    || { echo "❌ api-docs.json 이 git 에 추적되지 않습니다 — 계약 드리프트 게이트가 vacuous 통과합니다"; exit 1; }
-
-  echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
-  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) \
-    || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
 fi
 
 # 크로스 스택 계약(frontend/src/__tests__/cross-stack)은 백엔드 소스를 함께 감사한다.

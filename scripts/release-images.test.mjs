@@ -18,7 +18,7 @@ import { captureHistoricalRelease, validateHistoricalMigrations, compareHistoric
 
 test('historical archive pins LF blob bytes despite a native CRLF Git configuration', () => {
   const file = 'api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql';
-  const expected = smokeCommand('git', ['show', `${HISTORICAL_RELEASE.revision}:${file}`], { binary: true });
+  const expected = smokeCommand('git', ['cat-file', 'blob', `${HISTORICAL_RELEASE.revision}:${file}`], { binary: true });
   const archivedFile = options => {
     const archive = smokeCommand('git', [...options, 'archive', '--format=tar', HISTORICAL_RELEASE.revision, file], { binary: true });
     for (let offset = 0; offset + 512 <= archive.length;) {

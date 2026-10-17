@@ -15,14 +15,125 @@ const MENU_FIELDS = ['menu_sn', 'up_menu_sn', 'menu_ordr', 'menu_nm', 'menu_expl
 // 스냅숏이 원본 마이그레이션을 따라가지 못한 경우(해시·형식·실제 적용 결과와 다름)는 모두 갱신으로 풀린다.
 const fail = message => { throw new ComposerError('MENU_SNAPSHOT_STALE', {}, `Composer menu snapshot: ${message}`); };
 
-/** Include every SQL input executed to construct the empty-DB menu inventory. */
+/*
+ * [2026-10-17] 해시 입력을 메뉴 inventory(tb_menu_info 행과 그룹별 NAVIGATION 배정)에 닿을 수 있는 SQL 입력으로 좁힌다(형식 v2).
+ *   인덱스나 다른 업무 테이블만 바꾸는 마이그레이션마다 일회용 컨테이너로 해시 한 줄만 바꾸던 갱신을 없앤다.
+ *   생성기가 빈 DB 에 늘 적용하는 반복 시드 둘(R__seed_demo 는 번들에 태우지 않는다)과 인가 Contract 는 언제나 넣는다.
+ *   versioned migration 의 포함은 fail-closed 다 — 의심스러우면 넣는다. 대소문자·따옴표를 가리지 않는 원문에서
+ *   ① 메뉴·권한 계열 이름(menu·authrt·grnt·prgrm·role 을 품은 낱말 — 걷힌 옛 권한 테이블과 주석 속 언급도)을 쓰거나,
+ *   ② 이름을 원문에 남기지 않고 닿는 수단(동적 SQL·dblink·search_path·TRUNCATE·DROP … CASCADE·함수·프로시저·트리거·규칙 정의·
+ *      U& 이스케이프 식별자·ALTER DOMAIN)을 쓰거나, ③ SQL 입력이 정의한 함수·프로시저를 부르거나, ④ 감시하는 테이블로 번지는 이름을
+ *      쓰면 넣는다. 번지는 이름은 닫힘으로 모은다 — 감시 테이블의 외래 키가 행을 지우거나 바꾸는(CASCADE·SET NULL·SET DEFAULT) 부모,
+ *      감시 이름을 쓰는 트리거 함수나 규칙이 걸린 테이블, 감시 이름을 읽는 뷰(갱신 가능한 뷰로 행을 바꾼다), 감시 테이블의 새 이름
+ *      (RENAME TO)과 상속·파티션으로 이어진 테이블(자식 행은 부모 조회에 나오고, 부모에 쓰면 자식 행이 바뀐다)이다. 트리거 함수의 본문은
+ *      정의와 같은 문장의 달러 인용 본문만 센다 — 작은따옴표·BEGIN ATOMIC 본문처럼 못 찾는 정의가 하나라도 있거나 SQL 입력 밖의 함수이면
+ *      쓰는 것으로 본다. 문장 단위 판정(외래 키·뷰·상속)은 원문을 ';' 로 나눈 조각과 주석만 걷어 나눈 조각의 합집합이다 — 주석 속 ';' 가
+ *      원문 조각을 가르고, 문자열 속 '--' 는 걷은 조각을 자르므로 서로 메운다(문자열 리터럴은 건너뛰고, 달러 인용 본문은 걷지 않는다).
+ *      늘 넣는 입력이 읽는 테이블도 번지는 이름이다 — 반복 시드는 모든 versioned migration 뒤에 다시 돌아(runAuthorizationMigrationStages),
+ *      새 마이그레이션이 바꾼 그 테이블의 행으로 메뉴·배정을 쓸 수 있다. 읽는 이름은 SQL 입력이 만든 테이블·뷰만 센다(CTE·주석 낱말 제외).
+ *   SQL 입력 어디든 이벤트 트리거 정의가 있으면 그 뒤의 어떤 DDL 도 그 함수를 부르므로 모든 입력을 넣는다.
+ *   정적 해시는 이른 신호일 뿐이다. 스냅숏이 실제 적용 결과와 같은지는 DB 번들 생성의 내용 대조(assertProjectComposerMenusMatch)가
+ *   마이그레이션을 바꾸는 모든 변경의 CI 에서 본다 — 이 규칙이 놓치는 경우(문자열로 조립한 이름 등)도 병합 전에 거기서 잡힌다.
+ */
+const MENU_SOURCE_HASH_PREFIX = 'project-composer-menu-snapshot:v2\0';
+const ALWAYS_HASHED_SEEDS = ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql'];
+const CONTRACT_SQL_PATH = 'api-server/src/main/resources/db/cutover/authorization-contract.sql';
+const INVENTORY_WORDS = /menu|authrt|grnt|prgrm|role/;
+const INDIRECT_MECHANISMS = new RegExp([String.raw`\bexecute\b`, String.raw`\bformat\s*\(`, String.raw`\bdblink`, String.raw`\bsearch_path\b`,
+  String.raw`\btruncate\b`, String.raw`\bdrop\b[^;]*?\bcascade\b`, String.raw`\bu&`, String.raw`\balter\s+domain\b`,
+  String.raw`\bcreate\s+(?:or\s+replace\s+)?(?:constraint\s+)?(?:event\s+)?(?:function|procedure|trigger|rule)\b`].join('|'));
+const EVENT_TRIGGER = /\bcreate\s+event\s+trigger\b/;
+const ROUTINE_DEFINITION = /\bcreate\s+(?:or\s+replace\s+)?(?:function|procedure)\s+([a-z0-9_.]+)/g;
+// 정의 끝(lastIndex)에서 같은 문장 안의 달러 인용 본문만 잡는다 — 다른 문장·파일의 본문을 이 루틴의 본문으로 잡지 않는다.
+const ROUTINE_BODY = /[^;]*?(\$[a-z0-9_]*\$)([\s\S]*?)\1/y;
+const TRIGGER_DEFINITION = /\bcreate\s+(?:or\s+replace\s+)?(?:constraint\s+)?trigger\s+[a-z0-9_]+[\s\S]*?\bon\s+([a-z0-9_.]+)[\s\S]*?\bexecute\s+(?:function|procedure)\s+([a-z0-9_.]+)/g;
+const RULE_DEFINITION = /\bcreate\s+(?:or\s+replace\s+)?rule\s+[a-z0-9_]+\s+as\s+on\s+[a-z]+\s+to\s+([a-z0-9_.]+)/g;
+const TABLE_STATEMENT = /\b(?:create\s+(?:(?:global|local)\s+)?(?:temp(?:orary)?\s+|unlogged\s+)?table|alter\s+table)\s+(?:if\s+(?:not\s+)?exists\s+)?(?:only\s+)?([a-z0-9_.]+)/g;
+const PROPAGATING_ACTION = /\bon\s+(?:delete|update)\s+(?:cascade|set\s+(?:null|default))\b/;
+const REFERENCED_TABLE = /\breferences\s+(?:only\s+)?([a-z0-9_.]+)/g;
+const VIEW_DEFINITION = /\bcreate\s+(?:or\s+replace\s+)?(?:temp(?:orary)?\s+)?(?:recursive\s+)?view\s+([a-z0-9_.]+)([\s\S]*)/;
+const READ_RELATION = /\b(?:from|join|using)\s+(?:only\s+)?([a-z0-9_.]+)/g;
+// 감시 테이블의 행이 다른 이름으로 닿는 길. 새 이름은 옛 이름에서만 번지고, 상속·파티션의 부모와 자식은 서로 번진다.
+const CREATE_TABLE = String.raw`\bcreate\s+(?:(?:global|local)\s+)?(?:temp(?:orary)?\s+|unlogged\s+)?table`;
+const ALTER_TABLE = String.raw`\balter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?`;
+const RENAMED_TABLE = new RegExp(String.raw`${ALTER_TABLE}([a-z0-9_.]+)\s+rename\s+to\s+([a-z0-9_.]+)`, 'g');
+const INHERITANCE = [String.raw`${CREATE_TABLE}\s+(?:if\s+not\s+exists\s+)?(?<child>[a-z0-9_.]+)[^;]*?\binherits\s*\((?<parents>[^)]*)\)`,
+  String.raw`${CREATE_TABLE}\s+(?:if\s+not\s+exists\s+)?(?<child>[a-z0-9_.]+)\s+partition\s+of\s+(?<parents>[a-z0-9_.]+)`,
+  String.raw`${ALTER_TABLE}(?<child>[a-z0-9_.]+)[^;]*?(?<!\bno\s+)\binherit\s+(?<parents>[a-z0-9_.]+)`,
+  String.raw`${ALTER_TABLE}(?<parents>[a-z0-9_.]+)[^;]*?\battach\s+partition\s+(?<child>[a-z0-9_.]+)`].map(source => new RegExp(source, 'g'));
+// 문장 단위 판정(뷰·전파 외래 키·이름 바꾸기·상속)이 보는 낱말. 이 낱말이 없는 조각은 어느 판정에도 걸리지 않으므로 미리 거른다.
+const STATEMENT_WORDS = /\bview\b|\bon\s+(?:delete|update)\b|\brename\b|\binherits?\b|\bpartition\b/;
+// 주석만 걷는다 — 문자열 리터럴('' 이스케이프는 붙은 두 리터럴로 읽힌다)은 건너뛰어 그 안의 '--'·'/*'(경로 '/admin/*' 등)를 주석으로 보지 않는다.
+const withoutComments = text => text.replace(/('[^']*')|--[^\n]*|\/\*[\s\S]*?\*\//g, '$1 ');
+const unqualified = name => name.slice(name.lastIndexOf('.') + 1);
+const nameMention = name => new RegExp(String.raw`\b${name}\b`);
+
+/** 메뉴 inventory 에 닿을 수 있는 SQL 입력(이름 → 원문)의 이름. 규칙은 위 주석이다. alwaysHashed 의 이름은 규칙과 상관없이 넣는다. */
+export function menuInventorySqlInputs(sources, alwaysHashed = new Set()) {
+  const texts = new Map([...sources].map(([name, text]) => [name, text.toLowerCase().replaceAll('"', '')]));
+  const all = [...texts.values()].join('\n;\n');
+  if (EVENT_TRIGGER.test(all)) return [...texts.keys()];
+  const routines = new Set();
+  // 루틴 → 정의들의 본문. 본문을 못 찾은 정의가 하나라도 있으면 null(무엇을 쓰는지 모른다)이다.
+  const bodies = new Map();
+  for (const match of all.matchAll(ROUTINE_DEFINITION)) {
+    const routine = unqualified(match[1]);
+    routines.add(routine);
+    ROUTINE_BODY.lastIndex = match.index + match[0].length;
+    const body = ROUTINE_BODY.exec(all)?.[2];
+    bodies.set(routine, body === undefined || bodies.get(routine) === null ? null : `${bodies.get(routine) ?? ''}\n${body}`);
+  }
+  const spread = new Set();
+  const mentionsWatched = text => INVENTORY_WORDS.test(text) || [...spread].some(name => nameMention(name).test(text));
+  const watch = name => {
+    const table = unqualified(name);
+    if (INVENTORY_WORDS.test(table) || spread.has(table)) return false;
+    spread.add(table);
+    return true;
+  };
+  const statements = [...all.split(';'), ...withoutComments(all).split(';')].filter(statement => STATEMENT_WORDS.test(statement));
+  const views = statements.map(statement => statement.match(VIEW_DEFINITION)).filter(Boolean);
+  const derived = statements.flatMap(statement => [...[...statement.matchAll(RENAMED_TABLE)].map(([, from, to]) => [from, to]),
+    ...INHERITANCE.flatMap(pattern => [...statement.matchAll(pattern)].flatMap(({ groups: { child, parents } }) => parents.split(',')
+      .map(parent => parent.trim()).filter(Boolean).flatMap(parent => [[parent, child], [child, parent]])))])
+    .map(pair => pair.map(unqualified));
+  const relations = new Set([...[...all.matchAll(TABLE_STATEMENT)], ...views].map(([, name]) => unqualified(name)));
+  for (const name of alwaysHashed) {
+    for (const [, read] of (texts.get(name) ?? '').matchAll(READ_RELATION)) if (relations.has(unqualified(read))) watch(read);
+  }
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const [, view, definition] of views) if (mentionsWatched(definition)) grew = watch(view) || grew;
+    for (const statement of statements) {
+      if (!PROPAGATING_ACTION.test(statement)) continue;
+      if (![...statement.matchAll(TABLE_STATEMENT)].some(([, subject]) => mentionsWatched(unqualified(subject)))) continue;
+      for (const [, parent] of statement.matchAll(REFERENCED_TABLE)) grew = watch(parent) || grew;
+    }
+    for (const [from, to] of derived) if (mentionsWatched(from)) grew = watch(to) || grew;
+    for (const [, table, routine] of all.matchAll(TRIGGER_DEFINITION)) {
+      const body = bodies.get(unqualified(routine));
+      if (typeof body !== 'string' || mentionsWatched(body)) grew = watch(table) || grew;
+    }
+    for (const [, table] of all.matchAll(RULE_DEFINITION)) grew = watch(table) || grew;
+  }
+  return [...texts].filter(([name, text]) => alwaysHashed.has(name) || mentionsWatched(text) || INDIRECT_MECHANISMS.test(text)
+    || [...routines].some(routine => nameMention(routine).test(text))).map(([name]) => name);
+}
+
+/** 해시에 넣는 SQL 입력(저장소 경로 → 줄 끝을 LF 로 맞춘 원문)과 고른 경로(정렬). 생성기가 빈 DB 의 메뉴 inventory 를 만들 때 실행하는 입력에서 고른다. */
+export function menuSourceHashInputs(root) {
+  const sources = new Map(readdirSync(join(root, MIGRATION_ROOT))
+    .filter(name => /^V[0-9_]+__.*\.sql$/.test(name) || ALWAYS_HASHED_SEEDS.includes(name))
+    .map(name => [`${MIGRATION_ROOT}/${name}`, readFileSync(join(root, MIGRATION_ROOT, name), 'utf8').replace(/\r\n/g, '\n')]));
+  sources.set(CONTRACT_SQL_PATH, readFileSync(join(root, CONTRACT_SQL_PATH), 'utf8').replace(/\r\n/g, '\n'));
+  const always = new Set([...ALWAYS_HASHED_SEEDS.map(name => `${MIGRATION_ROOT}/${name}`), CONTRACT_SQL_PATH]);
+  return { sources, paths: menuInventorySqlInputs(sources, always).sort() };
+}
+
 export function projectMenuSourceHash(root) {
-  const files = readdirSync(join(root, MIGRATION_ROOT))
-    .filter(name => /^V[0-9_]+__.*\.sql$/.test(name) || ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql'].includes(name))
-    .map(name => `${MIGRATION_ROOT}/${name}`);
-  files.push('api-server/src/main/resources/db/cutover/authorization-contract.sql');
-  const hash = createHash('sha256').update('project-composer-menu-snapshot:v1\0');
-  for (const path of files.sort()) hash.update(path).update('\0').update(readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n')).update('\0');
+  const { sources, paths } = menuSourceHashInputs(root);
+  const hash = createHash('sha256').update(MENU_SOURCE_HASH_PREFIX);
+  for (const path of paths) hash.update(path).update('\0').update(sources.get(path)).update('\0');
   return hash.digest('hex');
 }
 

@@ -87,14 +87,29 @@ function isolatedPullRequest(t, { changedPath = 'frontend/src/app/admin/operatio
     assert.ok(path.resolve(repoRoot).startsWith(`${path.resolve(os.tmpdir())}${path.sep}e2e-impact-git-`));
     fs.rmSync(repoRoot, { recursive: true, force: true });
   });
-  git('init', '-b', 'main'); git('config', 'user.name', 'E2E Contract Fixture'); git('config', 'user.email', 'fixture@example.invalid');
-  write('frontend/tsconfig.json', JSON.stringify(tsconfig));
-  write(changedPath, 'export const value = 1;\n');
-  write(consumerPath, consumer || 'export const independent = true;\n');
-  git('add', '.'); git('commit', '-m', 'base fixture'); const base = git('rev-parse', 'HEAD');
-  git('checkout', '-b', 'feature'); write(changedPath, 'export const value = 2;\n');
-  git('add', '.'); git('commit', '-m', 'route fixture'); const head = git('rev-parse', 'HEAD');
-  git('checkout', 'main'); git('merge', '--no-ff', 'feature', '-m', 'merge fixture'); const merge = git('rev-parse', 'HEAD');
+  // 세 커밋(main 의 base, feature 의 route 변경, main 의 --no-ff merge — 부모 [base, head])을 fast-import 스트림 하나로 만들고
+  // reset --hard 한 번으로 색인과 작업 트리를 채운다. 커밋마다 git 을 띄우면 픽스처 하나에 13번이라 Windows 에서는 프로세스 생성이
+  // 이 파일 시간의 대부분이었다. 판정 코드가 보는 상태(커밋 그래프·merge 부모·작업 트리·추적 상태)는 같고, 아래 두 단언이 고정한다.
+  git('init', '-b', 'main');
+  const data = value => { const bytes = Buffer.from(value); return [`data ${bytes.length}\n`, bytes, '\n']; };
+  const commit = (ref, mark, at, message, parents, files) => [
+    `commit ${ref}\nmark :${mark}\n`,
+    `author E2E Contract Fixture <fixture@example.invalid> ${at} +0000\ncommitter E2E Contract Fixture <fixture@example.invalid> ${at} +0000\n`,
+    ...data(message), ...parents, ...Object.entries(files).flatMap(([name, value]) => [`M 100644 inline ${name}\n`, ...data(value)]),
+  ];
+  const marksPath = path.join(repoRoot, '.git', 'fixture-marks');
+  execFileSync('git', ['fast-import', '--quiet', `--export-marks=${marksPath}`], { cwd: repoRoot, stdio: ['pipe', 'pipe', 'pipe'],
+    input: Buffer.concat([
+      ...commit('refs/heads/main', 1, 1700000000, 'base fixture', [], { 'frontend/tsconfig.json': JSON.stringify(tsconfig),
+        [changedPath]: 'export const value = 1;\n', [consumerPath]: consumer || 'export const independent = true;\n' }),
+      ...commit('refs/heads/feature', 2, 1700000001, 'route fixture', ['from :1\n'], { [changedPath]: 'export const value = 2;\n' }),
+      ...commit('refs/heads/main', 3, 1700000002, 'merge fixture', ['from :1\n', 'merge :2\n'], { [changedPath]: 'export const value = 2;\n' }),
+    ].map(part => Buffer.from(part))) });
+  const marks = Object.fromEntries(fs.readFileSync(marksPath, 'utf8').trim().split('\n').map(line => line.split(' ')));
+  const [base, head, merge] = [marks[':1'], marks[':2'], marks[':3']];
+  git('reset', '--hard', '--quiet');
+  assert.deepEqual(git('rev-list', '--parents', '-n', '1', 'HEAD').split(' '), [merge, base, head], 'fixture HEAD must be the merge of [base, head]');
+  assert.equal(git('status', '--porcelain', '--untracked-files=all'), '', 'fixture worktree must match the merge commit');
   const eventPath = path.join(repoRoot, 'event.json');
   const event = { pull_request: { base: { sha: base }, head: { sha: head }, merge_commit_sha: merge } };
   fs.writeFileSync(eventPath, JSON.stringify(event));

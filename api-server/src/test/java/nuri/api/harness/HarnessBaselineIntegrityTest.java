@@ -379,9 +379,11 @@ class HarnessBaselineIntegrityTest {
             sb.append("   (AGENTS.md Evidence guardrails H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n");
             sb.append("\n💡 변경이 정당하다면:\n");
             sb.append("   1) 사유를 커밋 메시지 또는 PR 설명에 남기고\n");
-            sb.append("   2) 아래 산출 파일을 매니페스트로 복사하십시오.\n");
-            sb.append("      cp ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append(" \\\n");
-            sb.append("         ").append(resolve(MANIFEST_PATH).toAbsolutePath()).append("\n");
+            sb.append("   2) 저장소 루트에서 매니페스트를 다시 쓰고, 바뀐 키가 모두 정당한지 diff 로 확인하십시오.\n");
+            sb.append("      node scripts/harness-baseline-manifest.mjs --write\n");
+            sb.append("      (같은 계산을 node 로 하고 키 단위 차이를 보입니다. 병합에서 같은 키가 충돌했으면\n");
+            sb.append("       --keys <키…> 로 그 키의 계산값만 보고 그 값만 옮기십시오 — 통째로 다시 쓰지 않습니다, §6.4)\n");
+            sb.append("   이 실행의 계산값은 ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append(" 에도 있습니다.\n");
             fail(sb.toString());
         }
 

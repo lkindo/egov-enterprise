@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -101,7 +102,8 @@ class HarnessSourceAccessContractTest {
     private static final Map<String, List<Allowance>> ALLOWANCES = Map.of(
             "HarnessSourceIndex.java", List.of(
                     new Allowance("walk", 1, "디렉터리 인덱스의 단일 실제 I/O 경계"),
-                    new Allowance("readString", 1, "UTF-8 텍스트 캐시의 단일 실제 I/O 경계")),
+                    new Allowance("readString", 1, "UTF-8 텍스트 캐시의 단일 실제 I/O 경계"),
+                    new Allowance("readAllBytes", 1, "일회성 프로세스 출력 바이트의 단일 실제 I/O 경계")),
             "ConfigSafetyLinterTest.java", List.of(
                     new Allowance("readAllLines", 1, "YAML 행 단위 규칙 검사의 기존 경계 — 신규 유입 금지 동결")),
             "FlywaySchemaOwnershipLinterTest.java", List.of(
@@ -126,7 +128,7 @@ class HarnessSourceAccessContractTest {
 
         for (Path source : HarnessSourceIndex.javaSources(harnessRoot)) {
             String fileName = source.getFileName().toString();
-            Matcher matcher = DIRECT_ACCESS.matcher(HarnessSourceIndex.read(source));
+            Matcher matcher = directAccessMatcher(HarnessSourceIndex.read(source));
             while (matcher.find()) {
                 String operation = matcher.group(1);
                 Allowance allowance = ALLOWANCES.getOrDefault(fileName, List.of()).stream()
@@ -156,19 +158,152 @@ class HarnessSourceAccessContractTest {
     }
 
     @Test
-    @DisplayName("부정 증명: 직접 Files.walk/readString/readAllLines/list 호출은 위반으로 인식한다")
+    @DisplayName("부정 증명: 직접 파일 읽기·순회 호출은 주석을 끼워도 위반으로 인식한다")
     void detectorRejectsDirectAccess() {
-        String injected = "Files" + ".walk(root);\nvar text = Files" + ".readString(path);\n"
-                + "var lines = Files" + ".readAllLines(path);\nvar children = Files" + ".list(dir);";
-        Matcher matcher = DIRECT_ACCESS.matcher(injected);
+        String injected = "Files.walk(root);\nvar text = java.nio.file.Files /* source */ . readString(path);\n"
+                + "var lines = Files.readAllLines(path);\nvar children = Files.list(dir);\n"
+                + "var bytes = Files.readAllBytes(path);\nvar stream = Files.lines(path);";
+        Matcher matcher = directAccessMatcher(injected);
         List<String> operations = new ArrayList<>();
         while (matcher.find()) {
             operations.add(matcher.group(1));
         }
-        assertEquals(List.of("walk", "readString", "readAllLines", "list"), operations);
+        assertEquals(List.of("walk", "readString", "readAllLines", "list", "readAllBytes", "lines"), operations);
         assertTrue(ALLOWANCES.values().stream().flatMap(List::stream)
                 .allMatch(allowance -> !allowance.reason().isBlank()),
                 "모든 예외에는 검토 가능한 사유가 있어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("주석·문자열·문자·text block의 예시는 파일 접근이 아니며 뒤의 실제 호출은 그대로 탐지한다")
+    void detectorIgnoresNonCodeWithoutHidingRealCalls() {
+        String examples = "// Files.walk(root);\n/* Files.readString(path); */\n"
+                + "String sample = \"Files.readAllLines(path)\";\n"
+                + "String escaped = \"\\\" Files.readAllBytes(path);\";\n"
+                + "char quote = '\\\''; char slash = '\\\\';\n"
+                + "String block = \"\"\"\nFiles.list(dir);\n\\\"\"\" Files.lines(path);\n\"\"\";\n";
+        assertFalse(directAccessMatcher(examples).find());
+
+        String actual = examples + "Files.readString(path);";
+        Matcher matcher = directAccessMatcher(actual);
+        assertTrue(matcher.find());
+        assertEquals("readString", matcher.group(1));
+        assertEquals(examples.length(), matcher.start(), "진단 위치는 원문과 같아야 한다");
+        assertFalse(matcher.find());
+    }
+
+    /** 비코드 영역을 같은 길이의 공백으로 가려 호출만 검사하고 원문의 행·오프셋은 유지한다. */
+    private static Matcher directAccessMatcher(String source) {
+        return DIRECT_ACCESS.matcher(HarnessSourceIndex.maskNonCode(source));
+    }
+
+    /**
+     * {@code git show <rev>:<path>} 를 {@code --} 없이 부르면 git 은 그 인자가 파일 이름인지 보려고
+     * {@code <작업 디렉터리>/<rev>:<path>} 를 lstat 한다. Windows 에서 그 경로가 260자를 넘으면
+     * {@code Filename too long} 으로 죽어, 경로가 긴 worktree 에서만 하네스가 거짓 red 가 됐다(2026-10-17 실측:
+     * 작업 트리 경로 180자에서 마이그레이션 이력 검사 실패). 블롭은 {@code cat-file} 로 읽거나 {@code --} 를 붙인다.
+     *
+     * <p>리터럴 {@code "show"} 바로 뒤 같은 인자 목록에 {@code :} 를 담은 문자열 리터럴이 있고 {@code "--"}
+     * 리터럴이 없으면 위반이다. 변수에 미리 조립한 revision 은 보지 않는다(놓치는 방향 — 거짓 red 는 없다).
+     */
+    @Test
+    @DisplayName("거버넌스 하네스는 git show 에 rev:path 를 -- 없이 넘기지 않는다")
+    void gitShowRevisionPathRequiresSeparator() throws IOException {
+        Path harnessRoot = HarnessSourceIndex.repoRoot()
+                .resolve("api-server/src/test/java/nuri/api/harness");
+        List<String> violations = new ArrayList<>();
+        for (Path source : HarnessSourceIndex.javaSources(harnessRoot)) {
+            String text = HarnessSourceIndex.read(source);
+            for (int offset : showWithoutSeparator(text)) {
+                violations.add(source.getFileName() + ":" + lineOf(text, offset)
+                        + " — git show 에 rev:path 를 -- 없이 넘깁니다; cat-file 로 읽거나 -- 를 붙이십시오.");
+            }
+        }
+        if (!violations.isEmpty()) {
+            fail("긴 경로에서 깨지는 git show 호출 " + violations.size() + "건:\n  · "
+                    + String.join("\n  · ", violations));
+        }
+    }
+
+    @Test
+    @DisplayName("부정 증명: rev:path 를 받는 git show 는 -- 가 없을 때만, 주석·문자열 밖에서만 위반이다")
+    void showDetectorFlagsOnlyUnseparatedRevisionPaths() {
+        String violating = "historyGit(root, \"show\", baseline + \":\" + relative);\n"
+                + "var command = List.of(\"git\", \"show\", \"HEAD:\" + path);\n"
+                + "String[] array = { \"git\", \"show\", rev + \":\" + path };\n";
+        assertEquals(3, showWithoutSeparator(violating).size(), "세 형태를 모두 위반으로 본다");
+        assertEquals(violating.indexOf("\"show\""), showWithoutSeparator(violating).get(0),
+                "진단 위치는 원문의 show 리터럴이다");
+
+        String allowed = "git(root, \"show\", baseline + \":\" + relative, \"--\");\n"
+                + "git(root, \"show\", \"-s\", \"--format=%T\", \"HEAD\");\n"
+                + "git(root, \"show\", \"-s\", \"--pretty=format:%H\", \"HEAD\");\n"
+                + "git(root, \"cat-file\", \"blob\", rev + \":\" + path);\n"
+                + "docker(List.of(\"context\", \"show\"));\n"
+                + "git(root, \"show\", nested(\"--\"), rev + \":\" + path, \"--\");\n"
+                + "// historyGit(root, \"show\", baseline + \":\" + relative);\n"
+                + "String example = \"historyGit(root, \\\"show\\\", baseline + \\\":\\\" + relative)\";\n"
+                + "String block = \"\"\"\n  git(\"show\", rev + \":\" + path)\n  \"\"\";\n";
+        assertEquals(List.of(), showWithoutSeparator(allowed));
+
+        String nestedSeparatorOnly = "git(root, \"show\", label(\"--\"), rev + \":\" + path);\n";
+        assertEquals(1, showWithoutSeparator(nestedSeparatorOnly).size(),
+                "다른 호출 안의 \"--\" 는 이 인자 목록의 구분자가 아니다");
+    }
+
+    /** {@code "show"} 리터럴 위치 가운데, 같은 인자 목록에 rev:path 리터럴이 있고 {@code "--"} 가 없는 것. */
+    private static List<Integer> showWithoutSeparator(String source) {
+        String code = HarnessSourceIndex.maskNonCode(source);
+        List<int[]> literals = new ArrayList<>();
+        HarnessSourceIndex.forEachNonCode(source, (kind, start, end) -> {
+            if (kind == HarnessSourceIndex.NonCode.LITERAL) literals.add(new int[] {start, end});
+        });
+        List<Integer> found = new ArrayList<>();
+        for (int[] show : literals) {
+            if (!source.startsWith("\"show\"", show[0]) || show[1] != show[0] + "\"show\"".length()) continue;
+            int cursor = show[1];
+            while (cursor < code.length() && Character.isWhitespace(code.charAt(cursor))) cursor++;
+            if (cursor >= code.length() || code.charAt(cursor) != ',') continue;
+            int listEnd = enclosingListEnd(code, cursor);
+            boolean revisionPath = false;
+            boolean separator = false;
+            for (int[] literal : literals) {
+                if (literal[0] <= cursor || literal[1] > listEnd) continue;
+                if (nestingDepth(code, cursor, literal[0]) != 0) continue;
+                String body = source.substring(literal[0] + 1, Math.max(literal[0] + 1, literal[1] - 1));
+                // --pretty=format:%H 같은 옵션 값의 콜론은 revision 이 아니다.
+                revisionPath |= body.indexOf(':') >= 0 && !body.startsWith("-");
+                separator |= body.equals("--");
+            }
+            if (revisionPath && !separator) found.add(show[0]);
+        }
+        return found;
+    }
+
+    /** {@code from} 이 속한 인자 목록을 닫는 괄호의 위치(없으면 원문 끝). 가린 코드에서 센다. */
+    private static int enclosingListEnd(String code, int from) {
+        int depth = 0;
+        for (int index = from; index < code.length(); index++) {
+            char current = code.charAt(index);
+            if (current == '(' || current == '[' || current == '{') {
+                depth++;
+            } else if (current == ')' || current == ']' || current == '}') {
+                if (depth == 0) return index;
+                depth--;
+            }
+        }
+        return code.length();
+    }
+
+    /** {@code from} 부터 {@code to} 앞까지 열린 괄호 수 — 0 이면 같은 인자 목록의 바로 아래 단계다. */
+    private static int nestingDepth(String code, int from, int to) {
+        int depth = 0;
+        for (int index = from; index < to; index++) {
+            char current = code.charAt(index);
+            if (current == '(' || current == '[' || current == '{') depth++;
+            else if (current == ')' || current == ']' || current == '}') depth--;
+        }
+        return depth;
     }
 
     @Test

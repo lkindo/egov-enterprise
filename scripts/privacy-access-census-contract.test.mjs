@@ -6,7 +6,8 @@
  * 남았다" 로 red 가 되거나, 남은 표면을 빠진 것으로 보고 조용히 검사를 생략한다. 기대는 원장에 적지 않고 소유에서 계산한다(11단계 C4):
  * 항목 타입 소스의 기능 소유가 모두 구성 안일 때만 남는다. 판정은 공용 모듈 scripts/pack-tagged-registry.mjs 가 시작 구성마다
  * 생성기의 planJavaRemoval 을 그대로 불러 양방향으로 한다(시뮬레이터가 아니라 생성기 판정).
- * 게이트 파일 생존·시작 구성 Java 게이트·연쇄 exact·생성기 의존 판정의 인용 무시는 scripts/pack-tagged-registry.test.mjs 가 증명한다.
+ * 게이트 파일 생존·생성기 의존 판정의 인용 무시는 scripts/pack-tagged-registry.test.mjs 가, 시작 구성 게이트·연쇄 승인 exact 대조는
+ * scripts/project-composer-preset-equivalence.test.mjs(시작 구성마다 정밀 점검 blockers==[])가 증명한다.
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -61,12 +62,13 @@ test('원장 항목이 소유대로 생성기의 실제 제거 계획에서 남�
 });
 
 test('남는 요청 매핑 컨트롤러가 구성마다 CONTROLLER_FLOOR 이상이다', async () => {
-  const { root, projection, compositions, javaFiles } = await repositoryContext();
+  const { root, projection, compositions, javaFiles, readSource = (path) => readFileSync(path, 'utf8') } = await repositoryContext();
   const gateSource = readFileSync(join(root, GATE_FILE), 'utf8');
   const floor = Number(gateSource.match(/\bCONTROLLER_FLOOR\s*=\s*(\d+)\s*;/)?.[1]);
   assert.ok(Number.isInteger(floor) && floor > 0, 'CONTROLLER_FLOOR 를 게이트 소스에서 읽지 못했다');
+  // 저장소 문맥은 계획이 이미 읽은 원문을 함께 쓴다(contextSourceReader). 투영본 문맥에는 그 읽기가 없어 디스크에서 읽는다.
   const controllers = javaFiles.filter((path) => normalize(path).includes('/src/main/java/')
-    && isRequestMappedController(readFileSync(path, 'utf8')));
+    && isRequestMappedController(readSource(path)));
   if (projection) {
     assert.ok(controllers.length >= floor, `투영본 컨트롤러 ${controllers.length} < ${floor}`);
     return;

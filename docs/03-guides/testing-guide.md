@@ -59,6 +59,12 @@ frontend/
 
 각 검증 계층은 서로 다른 경계를 소유한다. 같은 응답을 여러 번 단언하기보다 아래 경계가 연결되는지 확인한다.
 
+로컬 검증 명령 안에서는 같은 테스트 파일을 중복 실행하지 않는다. `verify:docs`는 Atlas 단독 계약, `verify:be`는 cross-stack, `verify:fast`·`verify:push`는 `src/__tests__`, `verify:full`·`verify:fe`는 전체 coverage가 해당 모집단을 소유한다. 운영 계약 catalog는 각 명령에서 한 번 실행하며 문서 전용에서도 유지한다. 생성 계약 검증은 Git 인덱스의 스펙으로 임시 디렉터리에 다시 만들어 인덱스의 생성물과 비교하고, 작업 트리가 인덱스와 다르면 작업 트리 쌍도 비교한다. 작업 파일과 인덱스는 덮어쓰지 않는다([API 문서 가이드](api-documentation-guide.md)).
+
+CI 러너는 UTC이고 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)다. 명시한 `TZ`가 이기므로 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다. 시험 JVM은 `build.gradle`이 따로 UTC로 고정한다.
+
+Gate registry 검증은 한 호출 안에서 파일·디렉터리 관측을 재사용한다. 다음 호출에서는 디스크를 다시 읽고, 내용이 같은 소스의 분석 결과만 재사용하므로 파일 추가·삭제·수정을 놓치지 않는다. Deep-plan의 승인 목록만 바꾸는 시험은 이미 확인한 제거 집합을 재사용하며 소스·구성·파일 목록 변이는 전체 투영 경로로 확인한다. 하네스는 SMS 갱신 메서드의 실제 Spring 트랜잭션 속성을 검사하고, 결과 갱신 동작은 기존 서비스 테스트가 확인한다. Hibernate 설정 전달은 업무 앱을 띄우지 않고 Boot JPA 자동 설정과 실제 SessionFactory로 확인한다.
+
 | 계층 | 직접 실행해 확인할 계약 | 그 결과만으로 확인할 수 없는 것 |
 |---|---|---|
 | Repository 통합 테스트 | 실제 QueryDSL/JPA 쿼리에 전체 조회·페이징·검색·빈 결과 등 서로 다른 입력을 전달하고 정렬·행 수·전체 건수를 확인 | HTTP 매핑, production 인가, 브라우저 동선, H2와 운영 DB의 물리 정합 |

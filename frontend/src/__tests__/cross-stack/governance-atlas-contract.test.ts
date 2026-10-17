@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -122,16 +121,17 @@ function textOf(id: string) {
   section.querySelectorAll('[data-catalog],script,style').forEach(node => node.remove());
   return section.textContent?.replace(/\s+/g, ' ').trim() || '';
 }
-function filesUnder(directory: string, suffix: string): string[] {
-  return readdirSync(join(REPO_DIR, directory), { withFileTypes: true }).flatMap(entry => {
-    const file = `${directory}/${entry.name}`;
-    return entry.isDirectory() ? filesUnder(file, suffix) : entry.name.endsWith(suffix) ? [file] : [];
-  });
+const REQUIRED_RULE_TERMS = ['AGENTS.md', 'H1', 'H2', 'H3', 'H4', 'H5',
+  'project-context.md', 'decisions.md', 'known-gaps.md',
+  '~/.gemini/GEMINI.md', '~/.claude/CLAUDE.md', '~/.codex/AGENTS.md'];
+function missingRuleTerms(narrative: string): string[] {
+  return REQUIRED_RULE_TERMS.filter(term => !narrative.includes(term));
 }
 
+// 커밋된 HTML 이 소스에서 새로 만든 결과와 바이트까지 같은지는 운영 계약(scripts/atlas-generation.test.mjs)이 늘 본다.
+// 여기서는 그 HTML 에 실린 catalog 를 기대값으로 받아 실제 렌더·상호작용만 본다 — 신선도를 다시 계산하지 않는다.
 beforeAll(async () => {
-  const { buildAtlasCatalog } = atlasRequire('../../../../scripts/atlas-catalog.mjs') as { buildAtlasCatalog(root: string): CatalogData };
-  current = buildAtlasCatalog(REPO_DIR);
+  current = embedded(HTML);
   const opened = await openAtlas(HTML);
   browser = opened.dom;
   document = browser.window.document;
@@ -146,27 +146,15 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(catalogFailures(document, current)).toEqual([]);
     expect(document.querySelectorAll('.catalog-card').length).toBe(Object.values(current.catalogs).reduce((sum, rows) => sum + rows.length, 0));
     expect([...document.querySelectorAll<HTMLDetailsElement>('.catalog-card')].every(card => !card.open)).toBe(true);
-    const data = embedded(HTML);
-    expect(data.catalogs).toEqual(current.catalogs);
-    expect(data.sources).toEqual(current.sources);
-    for (const source of data.sources) {
-      const digest = createHash('sha256').update(read(source.path).replace(/\r\n/g, '\n')).digest('hex');
-      expect(source.digest, source.path).toBe(digest);
-    }
   });
 
-  it('binds every fact occurrence and embedded fact to current source, including independent counts and versions', () => {
-    const raw = new browser.window.DOMParser().parseFromString(HTML, 'text/html');
-    expect(embedded(HTML).facts).toEqual(current.facts);
-    expect(factFailures(raw, current.facts)).toEqual([]);
+  it('binds every rendered fact occurrence to the embedded catalog and checks independent registry counts and versions', () => {
     expect(factFailures(document, current.facts)).toEqual([]);
     const registry = JSON.parse(read('config/governance/gates.json'));
     for (const [key, setId] of [['governanceCount', 'GATESET-GOVERNANCE-HARNESS'], ['architectureCount', 'GATESET-ARCHITECTURE'], ['schemaCount', 'GATESET-SCHEMA-VALIDATION']]) {
       expect(current.facts[key]).toBe(registry.gateSets.find((set: { id: string }) => set.id === setId).rules.length);
     }
-    const javaTestSources = filesUnder('api-server/src/test/java', '.java').map(file => read(file));
-    expect(current.facts.governanceCount).toBe(javaTestSources.filter(source => /@Tag\s*\(\s*"governance-harness"\s*\)/.test(source)).length);
-    expect(current.facts.schemaCount).toBe(javaTestSources.filter(source => /@Tag\s*\(\s*"schema-validation"\s*\)/.test(source)).length);
+    // Java 태그 모집단과 registry 의 정확 대조는 governance-gates-contract 가 소유한다(태그 수를 다시 세지 않는다).
     expect(current.facts.qualityPopulationCount).toBe(registry.qualityPopulations.length);
     expect(current.facts.qualityRatchetCount).toBe(registry.qualityRatchets.length);
     expect(current.facts.runnerCount).toBe(registry.gateSets.length - 3);
@@ -183,18 +171,7 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(current.facts.pnpmVersion).toBe(frontend.packageManager.replace(/^pnpm@/, ''));
     expect(read('build.gradle')).toContain(`version '${current.facts.bootVersion}'`);
     expect(read('gradle/wrapper/gradle-wrapper.properties')).toContain(`gradle-${current.facts.gradleVersion}-bin.zip`);
-    const tests = filesUnder('migration-tool/src/test/java', '.java');
-    const count = tests.reduce((total, file) => total + [...read(file).matchAll(/^\s*@(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b/gm)].length, 0);
-    expect(current.facts.migrationTestCount).toBe(count);
-    expect(current.facts.migrationTestFileCount).toBe(tests.filter(file => file.endsWith('Test.java')).length);
-    const sharedPostgres = filesUnder('api-server/src/test/java/nuri/api/schema', '.java')
-      .filter(file => /class\s+\w+\s+extends\s+SharedPostgresMigrationTestSupport\b/.test(read(file)));
-    expect(sharedPostgres.length).toBeGreaterThan(0);
-    expect(current.facts.sharedPostgresClassCount).toBe(sharedPostgres.length);
-    const migrations = filesUnder('api-server/src/main/resources/db/migration', '.sql');
-    const markers = migrations.map(file => (read(file).match(/linter:ignore/g) || []).length);
-    expect(current.facts.waiverCount).toBe(markers.reduce((sum, count) => sum + count, 0));
-    expect(current.facts.waiverFileCount).toBe(markers.filter(Boolean).length);
+    // 이관 시험·공유 PostgreSQL·waiver 수의 계수 규칙 회귀는 scripts/atlas-catalog.test.mjs 의 합성 fixture 가 본다.
   });
 
   // [2026-10-05 통합 검증] 별칭 13개 × 접두 3개 = 39번 해시 이동마다 실제 렌더러가 패널을 다시 그리는 CPU 시험이다. 단언은 그대로이고
@@ -432,16 +409,11 @@ describe('Governance Atlas rendered source and interaction contract', () => {
 
   it('keeps governance authority, native loading, identity and read-only data boundaries explicit', () => {
     const rules = textOf('content-rules');
-    for (const term of ['AGENTS.md', 'H1', 'H2', 'H3', 'H4', 'H5',
-      'project-context.md', 'decisions.md', 'known-gaps.md',
-      '~/.gemini/GEMINI.md', '~/.claude/CLAUDE.md', '~/.codex/AGENTS.md']) {
-      expect(rules, term).toContain(term);
-    }
+    expect(missingRuleTerms(rules)).toEqual([]);
     expect(rules).toMatch(/비규범|파생 인덱스/);
     expect(rules).toMatch(/자동 상속|독립.*로드|자동.*전파/);
-    expect(read('AGENTS.md')).toContain('vendor-neutral 프로젝트 규칙 SSOT');
-    expect(read('GEMINI.md')).toContain('@./AGENTS.md');
-    expect(read('CLAUDE.md')).toContain('@AGENTS.md');
+    // Source authority and adapter imports belong to shared-memory-contract.test.mjs;
+    // policy/approval regressions belong to governance-policy-contract.test.mjs. Atlas owns the rendered guidance.
     const data = textOf('content-data');
     expect(data).toMatch(/db[- ]bridge/i);
     expect(data).toMatch(/읽기 전용|read-only/);
@@ -473,13 +445,21 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(verification).toMatch(/pre-push[\s\S]*우회/);
     expect(read('.github/workflows/dependency-submission.yml')).toContain('dependency-graph: generate-and-upload');
     expect(read('.github/workflows/dependency-submission-publish.yml')).toContain('workflow_run:');
-    expect(read('.github/workflows/ci.yml')).toContain(`SNAPSHOT_WAIT_SECONDS: "${current.facts.snapshotWaitSeconds}"`);
+    // CI 대기값과 검증기 기본값의 결속은 scripts/dependency-submission-contract.mjs 가 늘 본다.
     expect(read('scripts/frontend-audit-policy.mjs')).toContain('pnpm audit --json --audit-level low');
     expect(read('scripts/run-load-test.ps1')).toContain('-e "K6_SCENARIO=$scenario"');
     const controller = read('api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java');
     expect(controller).toContain('ApiResponse<DashboardResponse>');
-    expect(read('frontend/src/queries/board-home-query.ts')).toContain('executeGeneratedOperation(getDashboardDataOperation');
+    // board-home-query.test.ts executes the dashboard request and rejects invalid responses;
+    // generated-boundary-census.test.mjs owns the generated transport binding.
     expect(textOf('content-flows')).toContain('DashboardResponse');
+  });
+
+  it('rejects missing required governance guidance even when source policies remain intact', () => {
+    const rules = textOf('content-rules');
+    for (const term of REQUIRED_RULE_TERMS) {
+      expect(missingRuleTerms(rules.replaceAll(term, ''))).toContain(term);
+    }
   });
 
   it('keeps migration phases and partial commit/recovery limits distinct from production proof', () => {

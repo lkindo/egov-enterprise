@@ -58,7 +58,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 | API/DB/양단 계약 | 백엔드·프론트 계약 생성물과 양쪽 검증 |
 | 게이트·CI·훅 | 해당 계약 테스트 + 의도적 위반 red 증명 |
 
-로컬 훅은 빠른 피드백이며 `--no-verify`로 우회 가능하다. 병합 권위는 required CI다. 더 넓은 검증이 필요하면 `npm run verify`, 운영 ruleset은 `npm run verify:ops`를 사용한다.
+로컬 훅은 빠른 피드백이며 `--no-verify`로 우회 가능하다. 병합 권위는 required CI다. 더 넓은 검증이 필요하면 `npm run verify`, 운영 ruleset은 `npm run verify:ops`를 사용한다. `npm run verify`를 push 직전에 돌리면 운영 계약을 포함한 pre-push 묶음이 같은 커밋에서 다시 돈다([§6.2](docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)).
 
 ## 거버넌스 총량 관리
 

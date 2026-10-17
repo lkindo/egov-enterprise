@@ -1,9 +1,11 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { canPermission } from '@/lib/auth/permissions';
 import { inProjection } from '@/test-utils/projection';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -43,6 +45,30 @@ export function definesOwnAdministrativeRoleSet(source: string): boolean {
     if (found && found.length >= 2) return true;
   }
   return false;
+}
+
+/**
+ * 한 소스가 관리자 판정을 **스스로** 하는가 — role 리터럴 `===` 비교이거나 자체 역할 집합이다.
+ *
+ * 주석 속 언급은 세지 않는다. 주석 제거는 공용 판정(scripts/code-without-comments.mjs)이 한다. 종전 정규식은 줄 주석을
+ * 먼저 지우게 순서를 바꿨어도(2026-08-31) 문자열 속 주석 기호에서 블록 주석을 열어 그 뒤 코드를 통째로 지웠고, 그 구간의
+ * 판정은 넣어도 녹색이었다(FE-CONTRACT-01).
+ */
+function judgesAdministrativeRole(source: string, fileName: string): boolean {
+  const code = codeWithoutComments(source, fileName);
+  if (/\brole\s*===\s*'[A-Za-z_]+'/.test(code)) return true;
+  /*
+    [2026-08-29] 리터럴 === 비교만 보면 **자체 집합을 만든 화면을 놓친다.**
+
+    BoardDetailClient 가 정확히 그랬다 — 관리자 역할 4종을 담은 Set 을 따로 두고
+    원문으로 비교했다. 값은 같았지만 SSOT·proxy 가 흡수하는 대소문자를 흡수하지
+    않아, 서버 표기가 흔들리면 **라우트는 열어 주는데 화면에서만 기능이 사라진다**
+    (DEC-OPS-023 ② 가 기록한 조용히 죽는 결함과 같은 방향).
+
+    그래서 "관리자 역할 리터럴을 둘 이상 모아 둔 컬렉션" 자체를 금지한다. 값 하나를
+    가진 fixture(role: 'ROLE_ADMIN' 같은 목 응답)는 판정이 아니므로 대상이 아니다.
+  */
+  return definesOwnAdministrativeRoleSet(code);
 }
 
 describe('자체 역할 집합 탐지기', () => {
@@ -113,28 +139,7 @@ describe('관리자 판정 parity', () => {
         if (full.endsWith(join('src', 'proxy.ts'))) continue;
 
         scanned += 1;
-        // ⚠ [2026-08-31] 줄 주석(콜론 가드) → 블록 주석 순서로 지운다. 종전에는 블록을 먼저
-        //   지우고 `//` 를 무가드로 지워서, 줄 주석 속 블록 여는 기호가 코드를 삼키거나
-        //   URL 의 `//` 뒤를 먹는 두 결함(형제 계약들이 실측 기록)을 그대로 갖고 있었다.
-        const source = readFileSync(full, 'utf8')
-          .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
-          .replace(/\/\*[\s\S]*?\*\//g, ' ');
-        if (/\brole\s*===\s*'[A-Za-z_]+'/.test(source)) {
-          violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
-          continue;
-        }
-        /*
-          [2026-08-29] 리터럴 === 비교만 보면 **자체 집합을 만든 화면을 놓친다.**
-
-          BoardDetailClient 가 정확히 그랬다 — 관리자 역할 4종을 담은 Set 을 따로 두고
-          원문으로 비교했다. 값은 같았지만 SSOT·proxy 가 흡수하는 대소문자를 흡수하지
-          않아, 서버 표기가 흔들리면 **라우트는 열어 주는데 화면에서만 기능이 사라진다**
-          (DEC-OPS-023 ② 가 기록한 조용히 죽는 결함과 같은 방향).
-
-          그래서 "관리자 역할 리터럴을 둘 이상 모아 둔 컬렉션" 자체를 금지한다. 값 하나를
-          가진 fixture(role: 'ROLE_ADMIN' 같은 목 응답)는 판정이 아니므로 대상이 아니다.
-        */
-        if (definesOwnAdministrativeRoleSet(source)) {
+        if (judgesAdministrativeRole(readFileSync(full, 'utf8'), full)) {
           violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
         }
       }
@@ -144,5 +149,17 @@ describe('관리자 판정 parity', () => {
     // 스캔이 0건이면 게이트가 vacuous 하게 통과한다 — 그 자체를 실패로 본다.
     expect(scanned).toBeGreaterThan(100);
     expect(violations).toEqual([]);
+  });
+
+  it('문자열 속 주석 기호 뒤의 판정도 잡고 주석 속 언급은 세지 않는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 파일 업로더의 accept 값 '*/*'·'image/*' 뒤, JSX 블록 주석 앞의 코드를 종전 정규식 제거가
+    //   통째로 지웠다. 그 구간의 리터럴 비교가 잡혀야 하고, 주석에만 있는 비교는 위반이 아니다.
+    const hidden = [
+      "const accept = '*/*';",
+      "const images = ['image/*'];",
+      "export const View = ({ user }) => (user.role === 'ROLE_ADMIN' ? <div>{/* Drop Zone */}</div> : null);",
+    ].join('\n');
+    expect(judgesAdministrativeRole(hidden, 'standard-file-uploader.tsx'), '문자열 속 주석 기호 뒤의 리터럴 비교를 놓쳤다').toBe(true);
+    expect(judgesAdministrativeRole("// if (user.role === 'ROLE_ADMIN') 는 쓰지 않는다\nexport const x = 1;", 'x.ts')).toBe(false);
   });
 });

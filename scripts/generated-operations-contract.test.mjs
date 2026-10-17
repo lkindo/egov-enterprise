@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { verifyGeneratedContracts } from './verify-generated-contracts.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const apiDocsPath = join(repoRoot, 'api-docs.json');
@@ -78,6 +79,128 @@ function wrappedVoidResponse() {
 function fixtureOutput(result) {
   return `${result.stderr}${result.stdout}`;
 }
+
+function verificationFixture(t, kind) {
+  const root = mkdtempSync(join(tmpdir(), 'generated-contract-check-'));
+  t.after(() => {
+    assert.equal(dirname(resolve(root)), resolve(tmpdir()));
+    rmSync(root, { recursive: true, force: true });
+  });
+  const spec = { ...contractSpec({
+    '/api/v1/items': { get: { operationId: 'readItems', responses: wrappedVoidResponse() } },
+  }), info: { title: 'Verification fixture', version: '1.0.0' } };
+  const specPath = join(root, 'api-docs.json');
+  writeFileSync(specPath, `${JSON.stringify(spec)}\n`);
+  mkdirSync(join(root, 'frontend/src/types'), { recursive: true });
+  const files = kind === 'api'
+    ? ['frontend/src/types/generated-api.d.ts']
+    : ['frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts'];
+  if (kind === 'api') {
+    const result = spawnSync(process.execPath, [join(repoRoot, 'frontend/node_modules/openapi-typescript/bin/cli.js'),
+      specPath, '-o', join(root, files[0])], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 0, fixtureOutput(result));
+  } else {
+    const result = runFixture(spec);
+    assert.equal(result.status, 0, fixtureOutput(result));
+    writeFileSync(join(root, files[0]), result.zodSource);
+    writeFileSync(join(root, files[1]), result.operationSource);
+  }
+  const sources = files.map(file => readFileSync(join(root, file), 'utf8'));
+  // The CLI's auto-discovered apis would ignore -o and overwrite the fixture spec.
+  writeFileSync(join(root, 'frontend/redocly.yaml'),
+    'apis:\n  unsafe-output:\n    root: ../api-docs.json\n    x-openapi-ts:\n      output: ../api-docs.json\n');
+  const git = (args, env) => {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, env: env && { ...process.env, ...env } });
+    assert.equal(result.status, 0, fixtureOutput(result));
+  };
+  git(['init', '--quiet']);
+  // The index holds the spec and its valid generation, as a commit would.
+  git(['-c', 'core.autocrlf=false', 'add', '--', 'api-docs.json', ...files]);
+  const snapshot = (indexes = ['.git/index']) => ['api-docs.json', ...files, 'frontend/redocly.yaml', ...indexes]
+    .map(file => readFileSync(join(root, file)));
+  return { root, files, sources, git, snapshot, specPath, spec };
+}
+
+// The drift list names each file with the pair that failed; only those entries count (the explanation also says [index]).
+const driftEntries = message => [...message.matchAll(/(frontend\/\S+) \[(index|working tree)\]/gu)].map(match => `${match[1]} [${match[2]}]`);
+const driftOf = (file, side) => error => error.message.includes('Generated contract drift')
+  && driftEntries(error.message).includes(`${file} [${side}]`) && driftEntries(error.message).every(entry => entry.endsWith(`[${side}]`));
+
+for (const kind of ['api', 'zod']) {
+  test(`${kind} verify는 index 쌍을 읽기 전용으로 비교하고, 작업 트리가 다르면 작업 트리 쌍도 비교한다`, t => {
+    const fixture = verificationFixture(t, kind);
+    for (const newline of ['\n', '\r\n']) {
+      fixture.files.forEach((file, index) => writeFileSync(join(fixture.root, file), fixture.sources[index].replace(/\r?\n/gu, newline)));
+      const before = fixture.snapshot();
+      assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.files);
+      assert.deepEqual(fixture.snapshot(), before, 'green must preserve the spec, generated files and index bytes');
+      for (const file of fixture.files) {
+        const target = join(fixture.root, file);
+        const valid = readFileSync(target, 'utf8');
+        writeFileSync(target, `${valid}${newline}// uncommitted local change${newline}`);
+        const drift = fixture.snapshot();
+        assert.throws(() => verifyGeneratedContracts(kind, fixture.root), driftOf(file, 'working tree'));
+        assert.deepEqual(fixture.snapshot(), drift, 'red must preserve the local change and index bytes');
+        writeFileSync(target, valid);
+      }
+    }
+    // A working-tree spec that differs from the index but still matches its generation regenerates in the checkout pair.
+    // The isolated generator cwd keeps frontend/redocly.yaml from redirecting -o onto the spec.
+    writeFileSync(fixture.specPath, `${JSON.stringify(fixture.spec, null, 2)}\n`);
+    const reformatted = fixture.snapshot();
+    assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.files);
+    assert.deepEqual(fixture.snapshot(), reformatted, 'the working-tree pair must not rewrite the spec or generated files');
+    writeFileSync(fixture.specPath, '{ invalid JSON');
+    const invalid = fixture.snapshot();
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /failed/u);
+    assert.deepEqual(fixture.snapshot(), invalid, 'generator failure must also preserve the checkout');
+  });
+
+  test(`${kind} verify는 다시 만든 생성물을 stage 하지 않은 index 를 작업 트리가 맞아도 막는다`, t => {
+    const fixture = verificationFixture(t, kind);
+    // The spec is staged with a stale generation; the regenerated files exist only in the working tree.
+    fixture.files.forEach((file, index) => writeFileSync(join(fixture.root, file), `// staged prior version\n${fixture.sources[index]}`));
+    fixture.git(['-c', 'core.autocrlf=false', 'add', '--', ...fixture.files]);
+    fixture.files.forEach((file, index) => writeFileSync(join(fixture.root, file), fixture.sources[index]));
+    const before = fixture.snapshot();
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), driftOf(fixture.files[0], 'index'));
+    assert.deepEqual(fixture.snapshot(), before, 'red must preserve the working tree and index bytes');
+  });
+
+  test(`${kind} verify는 누락·미추적 생성물을 복원하지 않고 실패한다`, t => {
+    const fixture = verificationFixture(t, kind);
+    const target = join(fixture.root, fixture.files[0]);
+    unlinkSync(target);
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /ENOENT/u);
+    writeFileSync(target, fixture.sources[0]);
+    fixture.git(['rm', '--cached', '--force', '--', fixture.files[0]]);
+    const before = fixture.snapshot();
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /git failed/u);
+    assert.deepEqual(fixture.snapshot(), before, 'untracked files must remain untouched');
+  });
+}
+
+// The index is read through the shared git helper for both kinds; the cheaper generator proves it once.
+test('verify는 pre-commit 의 GIT_INDEX_FILE 이 가리키는 index 를 따른다', t => {
+  const fixture = verificationFixture(t, 'zod');
+  const alternate = join(fixture.root, '.git', 'alternate-index');
+  writeFileSync(alternate, readFileSync(join(fixture.root, '.git', 'index')));
+  const target = join(fixture.root, fixture.files[0]);
+  writeFileSync(target, `// staged prior version\n${fixture.sources[0]}`);
+  fixture.git(['-c', 'core.autocrlf=false', 'add', '--', fixture.files[0]], { GIT_INDEX_FILE: alternate });
+  writeFileSync(target, fixture.sources[0]);
+  const before = fixture.snapshot(['.git/index', '.git/alternate-index']);
+  assert.deepEqual(verifyGeneratedContracts('zod', fixture.root), fixture.files, 'the default index is consistent');
+  const previous = process.env.GIT_INDEX_FILE;
+  process.env.GIT_INDEX_FILE = alternate;
+  try {
+    assert.throws(() => verifyGeneratedContracts('zod', fixture.root), driftOf(fixture.files[0], 'index'));
+  } finally {
+    if (previous === undefined) delete process.env.GIT_INDEX_FILE;
+    else process.env.GIT_INDEX_FILE = previous;
+  }
+  assert.deepEqual(fixture.snapshot(['.git/index', '.git/alternate-index']), before, 'both indexes must stay untouched');
+});
 
 test('생성된 미사용 계약은 중첩 Zod 생성까지 포함한 순수 초기화 단위로 제거할 수 있다', () => {
   const fixture = runFixture(contractSpec({

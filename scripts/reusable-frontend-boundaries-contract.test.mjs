@@ -198,7 +198,8 @@ function readProjectionInputs() {
       return originals.get(path);
     },
     trees: new Map(),
-    // 구성 사이에는 lib·node_modules 의 SourceFile 만 나눠 쓴다(모듈 해석 캐시는 나누지 않는다).
+    // 구성 사이에는 SourceFile 을 나눠 쓴다. 모듈 해석은 프로그램마다 따로 한다 — 해석 결과는 SourceFile 이 아니라 프로그램에 담긴다.
+    //   lib·node_modules 는 경로로, 프로젝트 파일은 투영이 바꾸지 않았고 파싱한 원문과 지금 원문이 같을 때만 나눠 쓴다(아래 getSourceFile).
     sharedSourceFiles: new Map(),
   };
   return projectionInputs;
@@ -275,16 +276,34 @@ function typeCheckProjection(tree, { tsconfig, sharedSourceFiles }) {
     readFile,
     directoryExists: path => !hidden(path) && ts.sys.directoryExists(path),
     getDirectories: path => ts.sys.getDirectories(path).filter(name => !hidden(join(path, name))),
+    /*
+     * 같은 경로·같은 원문·같은 파싱 옵션의 SourceFile 은 어느 프로그램에서든 같은 구문 트리이고, 바인더는 이미 바인딩한 파일을
+     * 건너뛰며 바인딩 결과는 그 파일과 컴파일 옵션(모든 구성이 같은 tsconfig)으로만 정해진다. 해석·검사는 프로그램마다 새로 하므로
+     * 진단 집합은 나눠 쓰지 않을 때와 같다. 투영으로 지운 파일은 캐시보다 먼저 없는 것으로 보고, 투영이 바꾼 파일은 늘 새로 파싱한다.
+     * 프로젝트 파일은 대소문자까지 같은 경로로만 찾는다 — 다른 철자로 닿은 import 가 앞 구성의 파일 이름을 물려받지 않게 한다.
+     */
     getSourceFile(fileName, setting) {
+      if (hidden(fileName)) return undefined;
       const key = keyOf(fileName);
       const options = typeof setting === 'object' ? setting : { languageVersion: setting };
-      const cacheKey = key.includes('/node_modules/')
-        ? `${key}|${options.languageVersion}|${options.impliedNodeFormat}|${options.jsDocParsingMode}` : undefined;
-      if (cacheKey && sharedSourceFiles.has(cacheKey)) return sharedSourceFiles.get(cacheKey);
+      const parsing = `${options.languageVersion}|${options.impliedNodeFormat}|${options.jsDocParsingMode}`;
+      if (key.includes('/node_modules/')) {
+        const cacheKey = `${key}|${parsing}`;
+        if (!sharedSourceFiles.has(cacheKey)) {
+          const text = readFile(fileName);
+          if (text === undefined) return undefined;
+          sharedSourceFiles.set(cacheKey, { sourceFile: ts.createSourceFile(fileName, text, setting) });
+        }
+        return sharedSourceFiles.get(cacheKey).sourceFile;
+      }
       const text = readFile(fileName);
       if (text === undefined) return undefined;
+      if (tree.contents.has(key)) return ts.createSourceFile(fileName, text, setting);
+      const cacheKey = `${fileName}|${parsing}`;
+      const cached = sharedSourceFiles.get(cacheKey);
+      if (cached?.text === text) return cached.sourceFile;
       const sourceFile = ts.createSourceFile(fileName, text, setting);
-      if (cacheKey) sharedSourceFiles.set(cacheKey, sourceFile);
+      sharedSourceFiles.set(cacheKey, { text, sourceFile });
       return sourceFile;
     },
   };
@@ -351,6 +370,32 @@ test('direct selections that reach a check unit no earlier configuration checked
   // 로 무너지면 직접 선택은 하나도 검사되지 않으므로 그 붕괴를 여기서 잡는다.
   assert.ok(representatives.length > 0, 'some direct selection reaches a check unit the presets do not');
   t.diagnostic(`직접 선택 ${domains.length}개 투영, 타입 검사 ${representatives.length}개: ${representatives.join(' ')}`);
+});
+
+/*
+ * SourceFile 공유의 대조군. 앞 구성이 나눠 쓰는 바뀌지 않은 파일에 미사용 import 를 주입한 구성은 붉다(투영 내용이 캐시를 이긴다).
+ * 바로 다음 구성은 같은 파일을 원문으로 다시 검사해 푸르다(주입한 트리가 캐시를 더럽히지 않는다). 원문 구성 둘은 같은 SourceFile
+ * 을 받아야 한다 — 공유가 꺼져 대조가 헛돌지 않는지도 본다.
+ */
+test('an unused import injected into a shared unchanged file is red and the next configuration stays green', { timeout: 300_000 }, () => {
+  const inputs = readProjectionInputs();
+  const base = projectedTree({ preset: 'core' }, inputs);
+  const probe = base.roots.find(path => !base.contents.has(keyOf(path)) && /(?<!\.d)\.tsx?$/.test(path));
+  assert.ok(probe, 'core reaches an unchanged root file to probe');
+  const probeTree = contents => ({ ...base, contents, roots: [probe] });
+  const injected = new Map([...base.contents, [keyOf(probe), `import * as projectionCacheProbe from 'react';\n${inputs.original(probe)}`]]);
+  const runs = [base.contents, injected, base.contents].map(contents => {
+    const { program, missingRoots, diagnostics } = typeCheckProjection(probeTree(contents), inputs);
+    assert.deepEqual(missingRoots, [], 'the probe is in the projected program');
+    return { sourceFile: program.getSourceFile(probe), diagnostics: diagnostics.map(describeDiagnostic) };
+  });
+  assert.deepEqual(runs[0].diagnostics, [], 'the original probe file type-checks');
+  assert.ok(runs[1].diagnostics.some(line => line.startsWith(`${relOf(probe)}:1 TS6133 'projectionCacheProbe'`)),
+    `the injected unused import is reported: ${runs[1].diagnostics.join(' | ')}`);
+  assert.deepEqual(runs[2].diagnostics, [], 'the next configuration does not inherit the injected file');
+  // SourceFile 을 값으로 넘기면 실패 보고가 구문 트리 전체를 그리다 메모리가 바닥난다 — 같은 객체인지를 참거짓으로 넘긴다.
+  assert.ok(runs[2].sourceFile === runs[0].sourceFile, 'unchanged project files are shared between configurations');
+  assert.ok(runs[1].sourceFile !== runs[0].sourceFile, 'a projected change is parsed afresh');
 });
 
 /*

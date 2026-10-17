@@ -14,8 +14,9 @@ import { planFrontendRemoval, pruneFrontend } from './reusable-source-frontend.m
 import { copySourceTree, normalize, walk } from './reusable-source-tree.mjs';
 import { readPermissionSources } from './reusable-permission-projection.mjs';
 import { readSourceApiContract } from './reusable-contract-projection.mjs';
-import { root, catalog, modules, ownership, files, compose, atlasPaths, codes, quietly } from './project-composer-deep.test-helpers.mjs';
+import { root, catalog, modules, ownership, files, compose, atlasPaths, codes, quietly, memoizedRepositoryReader, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
 
+// 이 점검은 기억하는 읽기를 넘기지 않는다 — 정밀 점검의 기본 읽기(디스크) 경로도 계속 돈다.
 test('a full product composition removes nothing and still reports a summary', () => {
   const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'demo' }), files });
   assert.deepEqual(deep.blockers, []);
@@ -32,18 +33,45 @@ test('a full product composition removes nothing and still reports a summary', (
 });
 
 /*
+ * 정밀 점검 시험들이 넘기는 기억하는 읽기(readRepositorySource)는 저장소 루트 아래 파일만 한 번 읽고 기억한다. 루트 밖(임시 폴더의
+ * 준비물)은 시험이 고쳐 쓰므로 늘 다시 읽는다 — 기억하면 고친 준비물을 옛 원문으로 판정한다.
+ */
+test('the memoizing repository reader reads a repository file once and never remembers a path outside the repository', t => {
+  const counts = new Map();
+  const read = path => { counts.set(path, (counts.get(path) ?? 0) + 1); return readFileSync(path, 'utf8'); };
+  const reader = memoizedRepositoryReader(root, read);
+  const inside = join(root, 'package.json');
+  assert.equal(reader(inside), readFileSync(inside, 'utf8'));
+  assert.equal(reader(inside), readFileSync(inside, 'utf8'));
+  assert.equal(counts.get(inside), 1, 'a repository file is read once');
+  const outside = mkdtempSync(join(tmpdir(), 'deep-reader-'));
+  t.after(() => rmSync(outside, { recursive: true, force: true }));
+  const fixture = join(outside, 'Fixture.java');
+  writeFileSync(fixture, 'class One {}');
+  assert.equal(reader(fixture), 'class One {}');
+  writeFileSync(fixture, 'class Two {}');
+  assert.equal(reader(fixture), 'class Two {}', 'a fixture outside the repository is read again after it changes');
+  assert.equal(counts.get(fixture), 2);
+  // 시험들이 쓰는 공유 읽기도 같은 규칙이다.
+  writeFileSync(fixture, 'class Three {}');
+  assert.equal(readRepositorySource(fixture), 'class Three {}');
+  writeFileSync(fixture, 'class Four {}');
+  assert.equal(readRepositorySource(fixture), 'class Four {}');
+});
+
+/*
  * 권한 투영(10단계 10b)이 실패할 자리 — 남는 바인딩이 구성 밖 권한을 요구하거나 묶음 원장이 남는 권한을 나누지 못하면 생성기가 거버넌스
  * 투영에서 멈춘다. 정밀 점검은 같은 판정을 미리 해 PERMISSION_PROJECTION 으로 막는다(투입 원장만 바꿔 만든다).
  */
 test('a permission projection failure becomes a PERMISSION_PROJECTION blocker before Docker starts', () => {
   const core = compose({ preset: 'core' });
   const sources = readPermissionSources(root);
-  assert.deepEqual(codes(compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: sources })), []);
+  assert.deepEqual(codes(compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files, permissionSources: sources })), []);
   // core 에 남는 사용자 조회 바인딩 하나가 메일 발송 권한(구성 밖)을 요구하게 바꾼다.
   const tampered = structuredClone(sources);
   const binding = tampered.policies.operationBindings.find(row => row.handler.includes('.UserApiController#') && row.permission === 'USER_READ');
   binding.permission = 'MAIL_SEND';
-  let deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: tampered });
+  let deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files, permissionSources: tampered });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.PERMISSION_PROJECTION);
   assert.match(deep.blockers[0].message, new RegExp(`retained operation binding ${binding.method} ${binding.path.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')} needs MAIL_SEND outside the composition`, 'u'));
@@ -53,21 +81,21 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
   const excludedInCore = unclassified.bundles.excluded.find(row => core.permissionCodes.includes(row.code));
   assert.ok(excludedInCore, 'the core composition holds an excluded permission for this proof');
   unclassified.bundles.excluded = unclassified.bundles.excluded.filter(row => row !== excludedInCore);
-  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: unclassified });
+  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files, permissionSources: unclassified });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.match(deep.blockers[0].message, new RegExp(`does not classify composition permissions: ${excludedInCore.code}`, 'u'));
   // 생성기는 화면 목록에 없는 넘기는 page 까지 카탈로그로 판정한다(트랙 B 검토 #1). core 에 남는 넘기는 page 의 진입 권한이
   // 구성 밖 코드를 요구하면 같은 사유로 막는다.
   const redirectNeeds = structuredClone(sources);
   redirectNeeds.catalog.pagePermissions['/admin/security/role'] = [...redirectNeeds.catalog.pagePermissions['/admin/security/role'], 'MAIL_SEND'];
-  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: redirectNeeds });
+  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files, permissionSources: redirectNeeds });
   assert.deepEqual(codes(deep), ['PERMISSION_PROJECTION']);
   assert.match(deep.blockers[0].message, /retained page permissions need codes outside the composition: \/admin\/security\/role needs MAIL_SEND/);
   // 대조군: 목적지가 이 구성에서 사라지는 넘기는 page 는 생성기의 거버넌스 투영이 지우므로 판정하지 않는다(화면 생존 대조와 같은 수렴).
   // 같은 page 를 core 가 지우는 화면(메일 발송)으로 넘기게 한 라우트 원장으로 기대값을 다시 만든다.
   const rows = new Map([...readRouteRows(root)].map(([route, row]) => [route,
     route === '/admin/security/role' ? { ...row, target: '/admin/collaboration/mail-send' } : row]));
-  deep = compositionDeepPlan({ root, catalog, composition: core, files, permissionSources: redirectNeeds,
+  deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: core, files, permissionSources: redirectNeeds,
     pageSurvival: { rows, expected: expectedPageRoutes(catalog, core, rows) } });
   assert.deepEqual(codes(deep), [], 'a redirect page whose destination the composition removes is not judged');
   assert.ok(deep.permissionProjection.removedPagePermissions.includes('/admin/security/role'));
@@ -77,7 +105,7 @@ test('a permission projection failure becomes a PERMISSION_PROJECTION blocker be
 test('an api-docs operation the contract projection cannot judge blocks the deep plan', () => {
   const contract = readSourceApiContract(root);
   const dropped = contract.bindings.find(binding => !binding.handler.startsWith('EXTERNAL#'));
-  const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'core' }), files,
+  const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: compose({ preset: 'core' }), files,
     apiContract: { doc: contract.doc, bindings: contract.bindings.filter(binding => binding !== dropped) } });
   assert.deepEqual(codes(deep), ['API_CONTRACT_PROJECTION']);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.API_CONTRACT_PROJECTION);
@@ -93,7 +121,7 @@ test('a surviving file that uses a contract name the composition removes blocks 
   const rebound = contract.bindings.map(binding => (binding.handler === 'nuri.api.controller.UserApiController#unlockUser'
     ? { ...binding, handler: 'nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook' } : binding));
   assert.notDeepEqual(rebound, contract.bindings, 'the unlock operation is bound');
-  const deep = compositionDeepPlan({ root, catalog, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
+  const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: compose({ preset: 'core' }), files, apiContract: { doc: contract.doc, bindings: rebound } });
   const blocker = deep.blockers.find(entry => entry.code === 'API_CONTRACT_REFERENCE');
   assert.equal(blocker?.label, DEEP_BLOCKER_LABELS.API_CONTRACT_REFERENCE);
   assert.ok(blocker.files.includes('frontend/src/services/foundation/system/UserAdminService.ts'), JSON.stringify(blocker.files));
@@ -335,7 +363,7 @@ test('a name that differs only in case from the Git list follows the disk, as th
   const mailService = 'business-app/src/main/java/nuri/business/service/mail/MailService.java';
   const listed = files.map(file => (normalize(file) === mailService ? mailService.toLowerCase() : file));
   assert.ok(listed.includes(mailService.toLowerCase()));
-  const deep = compositionDeepPlan({ root, catalog, composition: compose({ domains: ['mail'] }), files: listed });
+  const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: compose({ domains: ['mail'] }), files: listed });
   if (existsSync(join(root, mailService.toLowerCase()))) {
     assert.deepEqual(deep.blockers, [], 'the survival check sees the disk name and must find the listed lower-case name');
   } else {

@@ -190,13 +190,15 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     if (!value.presets.some(preset => preset.id === 'core')) return undefined;
     try { return resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, value); } catch { return undefined; }
   };
-  const plan = recipe => {
+  // 계획과 그 계획이 방금 적재한 카탈로그를 함께 돌려준다. 생성은 이 카탈로그로 구성을 풀어 한 생성에서 카탈로그를 한 번만 적재한다
+  // (원본 변경은 생성이 계획 전에 잡은 지문으로 판정한다 — 다시 적재해 신선도를 얻지 않는다).
+  const planWithCatalog = recipe => {
     const sourceCommit = recipeCommit(recipe);
     const snapshot = loadProjectComposerMenus(root);
     const current = remember(loadCatalogClassified(), snapshot.menus);
     const composition = resolveRecipe(recipe, current);
     const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
-    return { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
+    return { catalog: current, plan: { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
       inclusionNotes: inclusionNotes(composition, current),
       degradationNotes: degradationNotes(composition, current),
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
@@ -209,8 +211,9 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       menus: declared(() => projectComposerMenuPreview(root, composition, snapshot, { base: coreBase(recipe, current) })),
       // 도구·작업 트리처럼 이 컴퓨터의 상태는 생성 전 점검(preflight)이 실제로 확인해 말한다.
       warnings: composition.requirements.map(requirement => `추가 설정: ${requirement}`),
-    };
+    } };
   };
+  const plan = recipe => planWithCatalog(recipe).plan;
   const diff = (recipe, domain) => {
     latest ??= { catalog: loadCatalogClassified() };
     latest.menus ??= loadProjectComposerMenus(root).menus;
@@ -241,7 +244,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
       permissionSources: loadPermissionSources?.(root) });
     return { ...result, summary: deepSummary(result) };
   };
-  const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness });
+  const generate = createGenerator({ root, outputRoot, run, fingerprint, gitRun, planWithCatalog, resolveRecipe, readiness });
   // 기동 시 정리(E6b): 이 컴퓨터에서 시작했고 프로세스가 끝난 미완료 작업의 임시 DB·소스 폴더만 정리한다. Docker 가 멈춰 있어도
   // 기동을 붙잡지 않도록 명령마다 시간 제한을 둔다.
   const recover = () => recoverAbandonedJobs({ outputRoot,

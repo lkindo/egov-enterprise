@@ -1,7 +1,9 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -13,14 +15,14 @@ function filesEndingWith(directory: string, suffix: string): string[] {
   });
 }
 
-function withoutComments(source: string): string {
-  // ⚠ [2026-08-31] 줄 주석(콜론 가드)을 **먼저** 지운다 — 블록 주석을 먼저 지우면 줄 주석 안의
-  //   블록 여는 기호가 저 아래 닫는 기호까지 이어져 실행 코드가 통째로 사라진다
-  //   (실측: work-list-adoption-census 가 기록한 WorkHubClient.tsx 1,781자 소실과 같은 순서 결함).
-  //   콜론 가드는 URL 의 `//` 오인 방지용이다(csp-policy 가 기록한 결함).
-  return source
-    .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
-    .replace(/\/\*[\s\S]*?\*\//g, '');
+// ⚠ 주석 속 언급은 세지 않는다 — 공용 판정(scripts/code-without-comments.mjs)이 문자열·정규식 리터럴은 두고 주석만 지운다.
+//   종전 정규식 제거는 줄 주석을 먼저 지우게 순서를 바꿨어도(2026-08-31) 정규식 리터럴 /\/ws\// 끝의 `//` 를 줄 주석으로 보아
+//   그 줄 뒤를 지웠고(실측 4곳), 그 자리에 둔 force 클릭은 세지 않았다(FE-CONTRACT-01).
+
+/** 한 파일의 `force: true` 줄 번호(1부터). 주석을 같은 길이 공백으로 바꾸므로 줄 번호가 원문과 같다. */
+function forceClickLines(source: string, fileName: string): number[] {
+  const code = codeWithoutComments(source, fileName);
+  return [...code.matchAll(/force\s*:\s*true/g)].map(match => code.slice(0, match.index).split('\n').length);
 }
 
 /**
@@ -48,13 +50,11 @@ const FORCE_CLICK_BASELINE = 7;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
-    const offenders = filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts').flatMap(path => {
-      const source = withoutComments(readFileSync(path, 'utf8'));
-      return [...source.matchAll(/force\s*:\s*true/g)].map(match => ({
+    const offenders = filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts').flatMap(path =>
+      forceClickLines(readFileSync(path, 'utf8'), path).map(line => ({
         file: path.replace(FRONTEND_DIR, '').replace(/\\/g, '/'),
-        line: source.slice(0, match.index).split('\n').length,
-      }));
-    });
+        line,
+      })));
 
     expect(
       offenders.length,
@@ -71,6 +71,15 @@ describe('E2E force-click 하향 래칫', () => {
       offenders.length,
       `force 클릭이 ${offenders.length}건으로 줄었습니다 — FORCE_CLICK_BASELINE 을 그 값으로 낮추십시오.`,
     ).toBe(FORCE_CLICK_BASELINE);
+  });
+
+  it('문자열·정규식 리터럴 속 주석 기호 뒤의 force 클릭도 세고 주석 속 언급은 세지 않는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 정규식 리터럴 끝의 `//` 를 종전 정규식 제거가 줄 주석으로 보아 그 줄 뒤를 지웠다.
+    const source = [
+      "await page.getByText(/\\/ws\\//).click({ force: true });",
+      '// click({ force: true }) 는 쓰지 않는다',
+    ].join('\n');
+    expect(forceClickLines(source, 'synthetic.spec.ts'), '리터럴 속 주석 기호 뒤의 force 클릭을 놓쳤다').toEqual([1]);
   });
 });
 
@@ -92,7 +101,7 @@ describe('E2E harness dead-asset contract', () => {
 
   it('E2E skip은 플랫폼 한정 visual baseline 한 건만 허용한다', () => {
     const usages = filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.spec.ts').flatMap(path => {
-      const source = withoutComments(readFileSync(path, 'utf8'));
+      const source = codeWithoutComments(readFileSync(path, 'utf8'), path);
       const forbiddenCall = new RegExp(`\\btest(?:\\.describe)?\\s*\\.\\s*(?:${['sk', 'ip'].join('')}|fixme|fail|only)\\s*\\(`, 'g');
       return [...source.matchAll(forbiddenCall)].map(match => ({
         file: path.slice(FRONTEND_DIR.length + 1).replaceAll('\\', '/'),

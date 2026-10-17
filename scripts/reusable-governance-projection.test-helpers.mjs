@@ -74,23 +74,36 @@ export function cleanupOwnedFixture(directory) {
 export const PROFILE_SHARDS = 4;
 
 /*
- * 구성 목록(compositionProfiles)에서 차례를 PROFILE_SHARDS 로 나눈 나머지가 shard - 1 인 구성의 투영 시험을 등록한다. 나눈 파일이
- * 하나라도 없으면 그 파일이 맡던 구성의 시험이 조용히 사라지므로, 남은 파일이 적재될 때 실패한다(시험 수가 줄지 않게 지킨다).
+ * 구성(compositionProfiles)을 나눈 파일에 담는다. core 는 core 전용 변이 시험이 더해져 구성 가운데 가장 길므로 첫 파일에 혼자 두고,
+ * 나머지 구성은 차례대로 둘째 파일부터 돌려 담는다 — 차례 나머지로만 나누면 core 와 다른 구성이 한 파일에 묶여 그 파일이 로컬 병렬
+ * 실행의 꼬리가 된다. 모든 구성은 정확히 한 파일에 담긴다(core 가 없어도 나머지는 둘째 파일부터 담긴다).
+ */
+export function profileShard(profiles, profileName) {
+  if (!profiles.includes(profileName)) throw new Error(`unknown composition profile: ${profileName}`);
+  if (profileName === 'core') return 1;
+  return 2 + profiles.filter(name => name !== 'core').indexOf(profileName) % (PROFILE_SHARDS - 1);
+}
+
+/*
+ * profileShard 가 shard 에 담은 구성의 투영 시험을 등록한다. 나눈 파일이 하나라도 없으면 그 파일이 맡던 구성의 시험이 조용히
+ * 사라지므로, 남은 파일이 적재될 때 실패한다(시험 수가 줄지 않게 지킨다).
  */
 export function registerProfileProjectionTests(shard) {
   if (!Number.isInteger(shard) || shard < 1 || shard > PROFILE_SHARDS) throw new Error(`profile projection shard must be 1..${PROFILE_SHARDS}: ${shard}`);
   const missing = Array.from({ length: PROFILE_SHARDS }, (_, index) => `reusable-governance-projection-profiles-${index + 1}.test.mjs`)
     .filter(name => !existsSync(join(ROOT, 'scripts', name)));
   if (missing.length) throw new Error(`profile projection shard files are missing, so their compositions would go untested: ${missing.join(', ')}`);
-  for (const profileName of compositionProfiles().filter((_, index) => index % PROFILE_SHARDS === shard - 1)) {
+  const profiles = compositionProfiles();
+  for (const profileName of profiles.filter(name => profileShard(profiles, name) === shard)) {
     test(`${profileName} source projection rebuilds actual census, retains provenance, and leaves adoption pending`, () => {
       const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
       try {
         copyInputs(output);
         const copied = walk(output, () => true).map(path => normalize(relative(output, path)));
-        // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다.
+        // 프리셋도 구성 경로로 생성한다(DEC-OPS-239) — 모든 프로필이 해석된 구성을 갖는다. 해석기는 카탈로그를 바꾸지 않으므로 모듈의
+        // 원본 카탈로그를 그대로 쓴다(시험마다 다시 적재하지 않는다).
         const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'governance-probe' }, sourceRef: 'v1.0.0',
-          selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, loadProjectComposerCatalog(ROOT));
+          selection: profileName === 'custom' ? { domains: [] } : { preset: profileName } }, catalog);
         // 생성기와 같은 프로필(composerProfile)과 같은 projector 로 투영한다 — 시작 구성과 직접 선택이 같은 기능 투영이다(11단계 C3).
         const profile = composerProfile(modules, composition);
         const projector = createFrontendProjector({ composition, files: copied.filter(file => file.startsWith('frontend/')) });
@@ -130,7 +143,18 @@ export function registerProfileProjectionTests(shard) {
           governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: canonicalJsonSha256(result) } };
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
         assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        // 변이를 되돌린 뒤에는 무결성 검사를 처음부터 다시 돌리지 않는다(한 번에 수 초다). 대신 되돌린 파일이 변이 전 바이트(없던 파일은
+        // 부재)와 같은지 본다 — 검사기는 디스크 내용의 결정적 함수라 이 대조가 같은 사실을 더 정확히 본다. 깨끗한 검사는 위의 첫 검사와
+        // 마지막 선택 변이 직전의 한 번이 맡고, 그 사이 모든 변이의 되돌리기를 덮는다.
+        const capture = paths => paths.map(path => [path, existsSync(join(output, path)) ? readFileSync(join(output, path)) : null]);
+        const assertRestored = (captured, label) => {
+          for (const [path, bytes] of captured) {
+            const now = existsSync(join(output, path)) ? readFileSync(join(output, path)) : null;
+            assert.ok(bytes === null ? now === null : now?.equals(bytes) === true, `${profileName}: ${label} 를 되돌린 뒤 ${path} 가 변이 전과 다르다`);
+          }
+        };
         // 원장은 생성기가 한 일의 기록이다 — 고치면 lock 해시가, 있는 파일을 적으면 실재 검사가 막는다.
+        const ledgerRestore = capture([PROJECTION_LEDGER_PATH, 'reusable-base-lock.json']);
         const ledgerText = readFileSync(join(output, PROJECTION_LEDGER_PATH), 'utf8');
         const ledger = JSON.parse(ledgerText);
         writeFileSync(join(output, PROJECTION_LEDGER_PATH), `${JSON.stringify({ ...ledger,
@@ -139,6 +163,7 @@ export function registerProfileProjectionTests(shard) {
         // 스크랩 등록 리다이렉트 화면을 되살리면 둘 다 구성 밖 화면이다 — 투영 뒤의 디스크는 수렴 없이 그대로 본다.
         const revived = profileName === 'core'
           ? ['frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx', 'frontend/src/app/admin/system/comments/page.tsx'] : [];
+        ledgerRestore.push(...capture(revived));
         for (const page of revived) {
           assert.equal(existsSync(join(output, page)), false, `${profileName} removes ${page}`);
           mkdirSync(dirname(join(output, page)), { recursive: true });
@@ -147,6 +172,7 @@ export function registerProfileProjectionTests(shard) {
         // 생성물의 기능 파일 집합은 구성과 같아야 한다(11단계 C3). 빠진 기능의 파일을 되살리거나(프리셋·빈 선택) 남은 기능의 파일을 걷으면(전체) 붉다.
         const absent = Object.keys(modules.declarations.features).find(domain => !composition.resolvedDomains.includes(domain));
         const moduleFile = join(output, MODULES_DIRECTORY, `${absent ?? 'board'}.json`);
+        ledgerRestore.push(...capture([`${MODULES_DIRECTORY}/${absent ?? 'board'}.json`]));
         const moduleText = absent ? undefined : readFileSync(moduleFile, 'utf8');
         if (absent) writeFileSync(moduleFile, readFileSync(join(ROOT, MODULES_DIRECTORY, `${absent}.json`)));
         else rmSync(moduleFile);
@@ -167,17 +193,18 @@ export function registerProfileProjectionTests(shard) {
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock, projectionLedger: undefined }, null, 2)}\n`);
         assert.match(inspectReusableGovernance(output).errors.join('\n'), /Source lock must bind the projection ledger/);
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
-        assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        assertRestored(ledgerRestore, 'ledger·lock·screen·module tamper');
         // 구성 스냅숏 연결을 지우고 lock 해시를 다시 맞춰도, 출처를 증명할 수 없는 투영은 어느 프로필에서도 통과하지 않는다.
         const { composition: boundComposition, ...unbound } = result;
         assert.ok(boundComposition, `${profileName}: the projection binds its composition`);
+        const unboundRestore = capture([lock.governance.path, 'reusable-base-lock.json']);
         writeFileSync(join(output, lock.governance.path), `${JSON.stringify(unbound, null, 2)}\n`);
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify({ ...lock,
           governance: { ...lock.governance, projectionSha256: canonicalJsonSha256(unbound) } }, null, 2)}\n`);
         assert.ok(inspectReusableGovernance(output).errors.includes('Generated projection requires a resolved composition snapshot'), profileName);
         writeFileSync(join(output, lock.governance.path), `${JSON.stringify(result, null, 2)}\n`);
         writeFileSync(join(output, 'reusable-base-lock.json'), `${JSON.stringify(lock, null, 2)}\n`);
-        assert.deepEqual(inspectReusableGovernance(output).errors, []);
+        assertRestored(unboundRestore, 'unbound projection');
         assert.deepEqual(analyzeRouteCapabilities(output, join(output, 'config/ui-route-capabilities.json')).result.errors, []);
         assert.deepEqual(readJson(output, 'config/ui-url-state-census.json'), buildUrlStateCensus({ repoRoot: output }));
         assert.equal(result.sourceCommit, sourceCommit);
@@ -348,29 +375,33 @@ export function registerProfileProjectionTests(shard) {
           }
         }
         if (composition) {
-          for (const permissionPath of [snapshotPathFor('config/governance/permission-catalog.json'), 'config/governance/permission-catalog.json']) {
-            const originalPermissions = readFileSync(join(output, permissionPath), 'utf8');
-            try {
-              const changedPermissions = JSON.parse(originalPermissions);
-              const permission = changedPermissions.permissions.find(row => row.defaultGroups.length > 0);
-              assert.ok(permission, 'the permission catalog must contain a default group for this mutation proof');
-              permission.defaultGroups.pop();
-              writeFileSync(join(output, permissionPath), JSON.stringify(changedPermissions));
-              const errors = inspectReusableGovernance(output).errors.join('\n');
-              if (permissionPath.includes('/upstream-review/')) {
-                assert.match(errors, /Upstream snapshot hash mismatch/);
-                assert.match(errors, /Composition catalog differs from upstream permission snapshot/);
-              } else assert.match(errors, /Active review artifact changed: config\/governance\/permission-catalog\.json/);
-            } finally { writeFileSync(join(output, permissionPath), originalPermissions); }
-            assert.deepEqual(inspectReusableGovernance(output).errors, []);
-          }
-          const originalMenuSnapshot = readFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8');
+          const permissionSnapshotPath = snapshotPathFor('config/governance/permission-catalog.json');
+          const permissionRestore = capture([permissionSnapshotPath, 'config/governance/permission-catalog.json', COMPOSER_MENU_SNAPSHOT_PATH]);
+          const restorePermissions = () => { for (const [path, bytes] of permissionRestore) writeFileSync(join(output, path), bytes); };
+          const dropDefaultGroup = permissionPath => {
+            const changedPermissions = JSON.parse(readFileSync(join(output, permissionPath), 'utf8'));
+            const permission = changedPermissions.permissions.find(row => row.defaultGroups.length > 0);
+            assert.ok(permission, 'the permission catalog must contain a default group for this mutation proof');
+            permission.defaultGroups.pop();
+            writeFileSync(join(output, permissionPath), JSON.stringify(changedPermissions));
+          };
+          // 원본 권한 스냅숏 변이와 메뉴 스냅숏 변이는 한 검사로 본다. 둘 다 구성 스냅숏 구간에서 던지지 않고 오류를 쌓으며(check), 기대
+          // 오류 셋은 각자 자기 변이 하나로만 생긴다(묶을 때 하나씩 따로 돌려 확인했다 — 메뉴 스냅숏은 원본 스냅숏이 아니다). 실행 권한
+          // 카탈로그 변이는 원본 스냅숏 변이와 같은 권한 산출물 대조를 지나므로 묶지 않고 따로 본다.
           try {
-            const changedMenuSnapshot = JSON.parse(originalMenuSnapshot);
+            dropDefaultGroup(permissionSnapshotPath);
+            const changedMenuSnapshot = JSON.parse(readFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8'));
             changedMenuSnapshot.menus[0].menu_nm = 'Unreviewed replacement';
             writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), JSON.stringify(changedMenuSnapshot));
-            assert.match(inspectReusableGovernance(output).errors.join('\n'), /Composer menu snapshot checksum mismatch/);
-          } finally { writeFileSync(join(output, COMPOSER_MENU_SNAPSHOT_PATH), originalMenuSnapshot); }
+            const errors = inspectReusableGovernance(output).errors.join('\n');
+            assert.match(errors, /Upstream snapshot hash mismatch: config\/governance\/permission-catalog\.json/);
+            assert.match(errors, /Composition catalog differs from upstream permission snapshot/);
+            assert.match(errors, /Composer menu snapshot checksum mismatch/);
+          } finally { restorePermissions(); }
+          try {
+            dropDefaultGroup('config/governance/permission-catalog.json');
+            assert.match(inspectReusableGovernance(output).errors.join('\n'), /Active review artifact changed: config\/governance\/permission-catalog\.json/);
+          } finally { restorePermissions(); }
           assert.deepEqual(inspectReusableGovernance(output).errors, []);
           const selection = readJson(output, COMPOSER_SELECTION_PATH);
           assert.equal(selection.composition.compositionHash, composition.compositionHash);

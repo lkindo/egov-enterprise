@@ -8,6 +8,101 @@ const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'ci']);
 const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
 const SEVERITY = new Map([['off', 0], ['warn', 1], ['error', 2]]);
 
+/** Reuse only analyses of identical text; each path retains at most its latest source. */
+export function createGovernanceAnalysisCache() {
+  const entries = new Map();
+  let hits = 0;
+  let misses = 0;
+  const freeze = value => {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  return Object.freeze({
+    analyze(file, source, kind, inspect) {
+      const key = path.resolve(file);
+      let entry = entries.get(key);
+      if (entry?.source !== source) {
+        entry = { source, results: new Map() };
+        entries.set(key, entry);
+      }
+      if (entry.results.has(kind)) {
+        hits++;
+        return entry.results.get(kind);
+      }
+      misses++;
+      const result = freeze(inspect(source));
+      entry.results.set(kind, result);
+      return result;
+    },
+    stats: () => ({ hits, misses }),
+  });
+}
+
+/**
+ * One synchronous validation observes each file/directory once. Never reuse this
+ * snapshot after a disk mutation: create a fresh one, optionally sharing only the
+ * content-keyed analysis cache. The CLI always starts with a new snapshot.
+ *
+ * <p>`repoRoot` 를 주면 snapshot 이 그 저장소에 묶인다. 검증 함수에 snapshot 을 직접 넘기려면 묶인 snapshot 이어야 하고,
+ * 다른 루트를 검증하려 하면 거부한다 — 디스크를 바꾸지 않는 여러 검증이 한 번 읽은 결과를 함께 쓰는 경로다.
+ */
+export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis = createGovernanceAnalysisCache(), repoRoot } = {}) {
+  const texts = new Map();
+  const types = new Map();
+  const directories = new Map();
+  const java = new Map();
+  const classes = new Map();
+  const catalogs = new Map();
+  const once = (cache, key, read) => {
+    if (!cache.has(key)) cache.set(key, read());
+    return cache.get(key);
+  };
+  const kind = file => once(types, path.resolve(file), () => {
+    try {
+      const stat = fileSystem.statSync(file);
+      return stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
+    } catch { return 'missing'; }
+  });
+  const entries = directory => once(directories, path.resolve(directory),
+    () => fileSystem.readdirSync(directory, { withFileTypes: true }));
+  const read = file => once(texts, path.resolve(file), () => fileSystem.readFileSync(file, 'utf8'));
+  const javaFiles = directory => once(java, path.resolve(directory), () => Object.freeze(
+    kind(directory) !== 'directory' ? [] : entries(directory).flatMap(entry => {
+      const target = path.join(directory, entry.name);
+      return entry.isDirectory() ? javaFiles(target) : entry.isFile() && entry.name.endsWith('.java') ? [target] : [];
+    }),
+  ));
+  const catalogFiles = (directory, recursive) => once(catalogs, `${path.resolve(directory)}\0${recursive === true}`, () => Object.freeze(
+    kind(directory) !== 'directory' ? [] : entries(directory).flatMap(entry => {
+      const target = path.join(directory, entry.name);
+      return entry.isDirectory() ? recursive ? catalogFiles(target, true) : [] : entry.isFile() ? [target] : [];
+    }),
+  ));
+  return Object.freeze({
+    repoRoot: repoRoot === undefined ? undefined : path.resolve(repoRoot),
+    read,
+    isDirectory: file => kind(file) === 'directory',
+    isFile: file => kind(file) === 'file',
+    javaFiles,
+    catalogFiles,
+    javaClassNames: directory => once(classes, path.resolve(directory), () => Object.freeze(
+      javaFiles(directory).map(source => path.relative(directory, source).replace(/\.java$/, '').split(path.sep).join('.')),
+    )),
+    analyze: (file, operation, inspect) => analysis.analyze(file, read(file), operation, inspect),
+  });
+}
+
+/** 넘겨받은 snapshot 이 검증할 저장소에 묶였는지 확인한다(다른 루트를 읽은 결과로 검증하지 않는다). */
+function assertSnapshotRoot(snapshot, repoRoot) {
+  const expected = path.resolve(repoRoot);
+  if (snapshot?.repoRoot !== expected) {
+    throw new TypeError(`governance snapshot is bound to ${snapshot?.repoRoot ?? '(no repository root)'}, not ${expected}`);
+  }
+}
+
 function posix(relativePath) {
   return relativePath.split(path.sep).join('/');
 }
@@ -17,31 +112,6 @@ function isSafeRelative(relativePath) {
     && relativePath.length > 0
     && !path.isAbsolute(relativePath)
     && !relativePath.split(/[\\/]/).includes('..');
-}
-
-function isDirectory(target) {
-  try {
-    return fs.statSync(target).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-function isFile(target) {
-  try {
-    return fs.statSync(target).isFile();
-  } catch {
-    return false;
-  }
-}
-
-function walkJavaFiles(directory) {
-  if (!isDirectory(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return walkJavaFiles(target);
-    return entry.isFile() && entry.name.endsWith('.java') ? [target] : [];
-  });
 }
 
 function stripJavaComments(source) {
@@ -244,14 +314,6 @@ export function parseMutationScopeMatrix(source, jobName = 'mutation-scope') {
   return { scopes, errors };
 }
 
-function javaClassNames(sourceRoot) {
-  if (!isDirectory(sourceRoot)) return [];
-  return walkJavaFiles(sourceRoot).map((source) => path.relative(sourceRoot, source)
-    .replace(/\.java$/, '')
-    .split(path.sep)
-    .join('.'));
-}
-
 function classGlobMatches(glob, className) {
   const pattern = glob
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
@@ -280,7 +342,7 @@ export function validateCriticalMutationTargets(scopes) {
   });
 }
 
-function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
+function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
     errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
@@ -316,7 +378,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
         errors.push(`${setLabel}: PIT scope ${entry.scope} has invalid or duplicate ${field} globs`);
         continue;
       }
-      const actualClasses = javaClassNames(path.join(moduleRoot, 'src', sourceSet, 'java'));
+      const actualClasses = snapshot.javaClassNames(path.join(moduleRoot, 'src', sourceSet, 'java'));
       for (const glob of globs) {
         if (!actualClasses.some((className) => classGlobMatches(glob, className))) {
           errors.push(`${setLabel}: PIT scope ${entry.scope} ${field} glob '${glob}' matches no Java class in ${gradleMatch[1]}/src/${sourceSet}/java`);
@@ -335,7 +397,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   if (declaredJobs.length === 0) {
     errors.push(`${setLabel}: PIT matrix entries must declare an owning job`);
   }
-  const workflowSource = isFile(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : null;
+  const workflowSource = snapshot.isFile(workflowPath) ? snapshot.read(workflowPath) : null;
   const actualByScope = new Map();
   if (workflowSource === null) {
     errors.push(`${setLabel}: CI workflow is missing`);
@@ -618,6 +680,231 @@ function validateWorkflowBindingContext({ binding, content, setLabel, errors }) 
   }
 }
 
+/**
+ * [2026-10-17 신설] 로컬 tier binding 도 실행 경로로 판정한다(위 CI job·조건 결속과 같은 원리).
+ *
+ * <p>verify.mjs binding 은 "그 줄이 파일 어딘가에 있는가" 만 봐서, 범위 분기가 부르지 않는 함수의 줄이나 `if` 안의 줄도
+ * local-full 근거로 통과했다. 실측: cross-stack 결속은 full 이 `crossStack: false` 로 끄는 줄을, frontend 불변식 결속은
+ * full 이 부르지 않는 fast 전용 함수의 줄을 가리켰다 — 실제로 full 에서 두 시험군을 돌리는 것은 test:coverage 였다.
+ *
+ * <p>이제 tier 가 뜻하는 범위 분기(`if (scope === '<범위>') {`)에서 시작한 호출 폐포로 그 줄에 닿는지 본다. 분기·함수 본문 안의
+ * 조건 블록(if·else·반복·콜백·catch)이나 조건식 안, 또는 앞선 조건부 조기 종료(return·throw·process.exit) 뒤에 있는 줄은
+ * `conditional: true` 를 선언해야 하고, 선언과 실제가 어긋나면 양방향으로 red 다. 무조건 조기 종료 뒤의 줄과 함수 참조로만
+ * 넘긴 호출은 닿지 않는 것으로 본다. 구조를 읽지 못하면(괄호 짝·분기 없음) 오류로 보고한다 — 조용한 통과 금지.
+ *
+ * <p>진입점은 모듈 최상위 문장 사슬의 범위 분기뿐이다. 함수(선언·표현식·화살표·메서드) 본문 안의 범위 분기는 그 함수를 부르는지
+ * 이 분석이 따라가지 않으므로 구조 오류로 보고한다 — 부르지 않는 클로저 안의 분기가 tier 를 주장하지 못한다. 분기 안에서 정의만
+ * 하고 부르지 않는 콜백의 줄은 설계대로 conditional 이다(선언이 registry diff 에 드러난다).
+ *
+ * <p>경계: 범위 분기 자체가 실행되는지 — 분기 앞 최상위 코드의 조기 종료·가드와 scope 값의 유도 — 는 이 정적 분석이 보지 않는다.
+ * 그 몫은 scripts/pre-push-ref-contract.test.mjs 가 verify.mjs 를 범위마다 실제로 실행해 정확한 명령 목록과 process.exit 부재로 본다.
+ */
+const VERIFY_RUNNER_SOURCE = 'scripts/verify.mjs';
+/** 로컬 tier 가 뜻하는 verify.mjs 범위 분기(DEC-OPS-027 ②: local-full = verify:full). */
+const VERIFY_TIER_SCOPES = new Map([['local-full', 'full'], ['local-e2e', 'e2e']]);
+const CONDITIONAL_PREFIX = /(?<![\w$])(?:if|else|for|while|do|switch|case|catch)(?![\w$])|&&|\|\||\?|=>/;
+const IDENTIFIER = /[A-Za-z_$][\w$]*/y;
+
+function nextCodeIndex(mask, index) {
+  let cursor = index;
+  while (cursor < mask.length && /\s/.test(mask[cursor])) cursor += 1;
+  return cursor;
+}
+
+// position 을 감싸는 블록마다 `{` 앞 문장 텍스트(머리)를 바깥부터 돌려준다. 괄호 안의 `;`·`{…}`(for 머리, 조건·인자 안의
+// 객체·콜백)는 바깥 문장의 경계가 아니다.
+function enclosingBlockHeads(mask, position) {
+  const heads = [];
+  let statementStart = 0;
+  let depth = 0;
+  for (let index = 0; index < position; index += 1) {
+    const current = mask[index];
+    if (current === '(') depth += 1;
+    else if (current === ')') depth -= 1;
+    else if (current === '{') {
+      heads.push(mask.slice(statementStart, index).trim());
+      if (depth === 0) statementStart = index + 1;
+    } else if (current === '}') {
+      heads.pop();
+      if (depth === 0) statementStart = index + 1;
+    } else if (current === ';' && depth === 0) statementStart = index + 1;
+  }
+  return heads;
+}
+
+// 함수가 아닌 제어 블록의 머리인지 본다: 맨 블록·try·finally·else·do·case·default 이거나, if·for·while·switch·catch 의 괄호가
+// 머리 끝에서 닫힌다. 그 밖(function·화살표·메서드·class·객체)은 함수 본문으로 본다.
+function isControlBlockHead(head) {
+  if (/^(?:|try|finally|else|do|default\s*:|case\s[\s\S]*:)$/.test(head)) return true;
+  const keyword = /^(?:else\s+)?(?:if|for|while|switch|catch)\s*\(/.exec(head);
+  return keyword !== null && matchingDelimiter(head, keyword[0].length - 1, '(', ')') === head.length - 1;
+}
+
+export function analyzeVerifyRunnerExecution(source) {
+  const mask = javaCodeMask(source);
+  const errors = [];
+  const functions = new Map();
+  for (const match of mask.matchAll(/(?<![\w$.])function\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const paramsClose = matchingDelimiter(mask, match.index + match[0].length - 1, '(', ')');
+    const open = paramsClose < 0 ? -1 : nextCodeIndex(mask, paramsClose + 1);
+    const close = mask[open] === '{' ? matchingDelimiter(mask, open, '{', '}') : -1;
+    if (close < 0) errors.push(`cannot read the body of function ${match[1]}`);
+    else if (functions.has(match[1])) errors.push(`duplicate function ${match[1]}`);
+    else functions.set(match[1], { open, close });
+  }
+  const branches = new Map();
+  for (const match of mask.matchAll(/(?<![\w$.])if\s*\(/g)) {
+    const conditionOpen = match.index + match[0].length - 1;
+    const conditionClose = matchingDelimiter(mask, conditionOpen, '(', ')');
+    if (conditionClose < 0) {
+      errors.push(`unbalanced condition at offset ${match.index}`);
+      continue;
+    }
+    // 문자열 리터럴은 mask 에서 지워지므로 범위 이름은 원문에서, 구조(`scope ===`)는 mask 에서 읽는다.
+    const literal = /^\s*scope\s*===\s*'([a-z][a-z0-9-]*)'\s*$/.exec(source.slice(conditionOpen + 1, conditionClose));
+    if (!literal || !/^\s*scope\s*===\s*$/.test(mask.slice(conditionOpen + 1, conditionClose))) continue;
+    const enclosing = enclosingBlockHeads(mask, match.index).findLast(head => !isControlBlockHead(head));
+    if (enclosing !== undefined) {
+      errors.push(`verify scope branch '${literal[1]}' is inside a function body (${enclosing.replace(/\s+/g, ' ').slice(0, 60)})`
+        + ' — only module-level scope branches are entry points');
+      continue;
+    }
+    const open = nextCodeIndex(mask, conditionClose + 1);
+    const close = mask[open] === '{' ? matchingDelimiter(mask, open, '{', '}') : -1;
+    if (close < 0) errors.push(`verify scope branch '${literal[1]}' has no block body`);
+    else if (branches.has(literal[1])) errors.push(`duplicate verify scope branch '${literal[1]}'`);
+    else branches.set(literal[1], { open, close });
+  }
+  if (branches.size === 0) errors.push("no verify scope branch (if (scope === '<scope>') { … }) was found");
+
+  const nestedFunctions = body => [...functions.values()].filter(fn => fn.open > body.open && fn.close < body.close);
+  const insideNested = (body, index) => nestedFunctions(body).some(fn => index > fn.open && index < fn.close);
+  // body 안의 한 위치가 그 body 가 실행될 때 늘 실행되는지 본다: 'unconditional' | 'conditional' | 'unreachable'.
+  const statusAt = (body, position) => {
+    const skipped = nestedFunctions(body);
+    const blocks = [];
+    let exited = null;
+    let statementStart = body.open + 1;
+    for (let index = body.open + 1; index < position; index += 1) {
+      const fn = skipped.find(candidate => candidate.open === index);
+      if (fn) {
+        index = fn.close;
+        statementStart = index + 1;
+        continue;
+      }
+      const current = mask[index];
+      if (current === '{') {
+        const head = mask.slice(statementStart, index).trim();
+        blocks.push(head !== 'try' && head !== 'finally');
+        statementStart = index + 1;
+      } else if (current === '}') {
+        blocks.pop();
+        statementStart = index + 1;
+      } else if (current === ';') {
+        statementStart = index + 1;
+      } else if (/[A-Za-z_$]/.test(current) && !/[\w$.]/.test(mask[index - 1] ?? '')) {
+        IDENTIFIER.lastIndex = index;
+        const word = IDENTIFIER.exec(mask)[0];
+        if (word === 'return' || word === 'throw' || (word === 'process' && /^process\s*\.\s*exit\b/.test(mask.slice(index, index + 40)))) {
+          const guarded = blocks.some(Boolean) || CONDITIONAL_PREFIX.test(mask.slice(statementStart, index));
+          if (!guarded) exited = 'unconditional';
+          else exited ??= 'conditional';
+        }
+        index += word.length - 1;
+      }
+    }
+    if (exited === 'unconditional') return 'unreachable';
+    return exited === 'conditional' || blocks.some(Boolean) || CONDITIONAL_PREFIX.test(mask.slice(statementStart, position))
+      ? 'conditional'
+      : 'unconditional';
+  };
+  const callsIn = body => [...mask.slice(body.open + 1, body.close).matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(/g)]
+    .map(match => ({ name: match[1], index: body.open + 1 + match.index }))
+    .filter(({ name, index }) => functions.has(name)
+      && !insideNested(body, index)
+      && !/(?<![\w$])function\s+$/.test(mask.slice(Math.max(0, index - 16), index)));
+  // 줄 텍스트는 binding 매칭과 같은 실행 내용(주석 제거)에서, 위치는 원문과 길이가 같은 mask 에서 읽는다.
+  const executable = executableContent(source).split('\n');
+  const lineOffsets = [];
+  let offset = 0;
+  for (const line of source.split('\n')) {
+    lineOffsets.push({ offset, length: line.length });
+    offset += line.length + 1;
+  }
+  const linesIn = body => lineOffsets.flatMap(({ offset: start, length }, line) => {
+    const lead = mask.slice(start, start + length).search(/\S/);
+    const position = start + lead;
+    const text = (executable[line] ?? '').trim();
+    return lead < 0 || text === '' || position <= body.open || position >= body.close || insideNested(body, position)
+      ? []
+      : [{ text, position }];
+  });
+
+  const scopes = Object.create(null);
+  for (const [scope, branch] of branches) {
+    const modes = new Map();
+    const visit = (body, mode) => {
+      const previous = modes.get(body);
+      if (previous === 'unconditional' || previous === mode) return;
+      modes.set(body, mode);
+      for (const call of callsIn(body)) {
+        const status = statusAt(body, call.index);
+        if (status === 'unreachable') continue;
+        visit(functions.get(call.name), mode === 'unconditional' && status === 'unconditional' ? 'unconditional' : 'conditional');
+      }
+    };
+    visit(branch, 'unconditional');
+    const reached = Object.create(null);
+    for (const [body, mode] of modes) {
+      for (const { text, position } of linesIn(body)) {
+        const status = statusAt(body, position);
+        if (status === 'unreachable') continue;
+        if (reached[text] !== 'unconditional') {
+          reached[text] = mode === 'unconditional' && status === 'unconditional' ? 'unconditional' : 'conditional';
+        }
+      }
+    }
+    scopes[scope] = reached;
+  }
+  return { errors, scopes };
+}
+
+function validateVerifyRunnerBindingContext({ binding, execution, setLabel, errors }) {
+  if (execution.errors.length > 0) {
+    errors.push(...execution.errors.map(error => `${setLabel}: cannot read the scope structure of ${VERIFY_RUNNER_SOURCE} — ${error}`));
+    return;
+  }
+  let observed = 0;
+  let conditional = false;
+  for (const tier of binding.tiers) {
+    const scope = VERIFY_TIER_SCOPES.get(tier);
+    if (scope === undefined) {
+      errors.push(`${setLabel}: ${VERIFY_RUNNER_SOURCE} binding cannot claim tier ${tier} — verify scopes back only ${[...VERIFY_TIER_SCOPES.keys()].join(', ')}`);
+      continue;
+    }
+    const reached = execution.scopes[scope];
+    if (reached === undefined) {
+      errors.push(`${setLabel}: ${VERIFY_RUNNER_SOURCE} has no '${scope}' scope branch for tier ${tier}`);
+      continue;
+    }
+    if (!Object.hasOwn(reached, binding.fragment)) {
+      errors.push(`${setLabel}: execution binding is not reached from the verify '${scope}' branch (tier ${tier}): ${binding.fragment}`);
+      continue;
+    }
+    observed += 1;
+    if (reached[binding.fragment] === 'conditional') {
+      conditional = true;
+      if (binding.conditional !== true) {
+        errors.push(`${setLabel}: execution binding runs behind a condition in the verify '${scope}' branch (tier ${tier})`
+          + ' — declare conditional: true so the tier claim stays honest');
+      }
+    }
+  }
+  if (binding.conditional === true && observed === binding.tiers.length && !conditional) {
+    errors.push(`${setLabel}: execution binding declares conditional: true but runs unconditionally in every declared verify scope: ${binding.fragment}`);
+  }
+}
+
 function validateExecutionBindings({
   bindings,
   repoRoot,
@@ -625,6 +912,7 @@ function validateExecutionBindings({
   errors,
   required = false,
   expectedTiers = [],
+  snapshot,
 }) {
   if (!Array.isArray(bindings) || (required && bindings.length === 0)) {
     errors.push(`${setLabel}: execution bindings are required`);
@@ -645,16 +933,27 @@ function validateExecutionBindings({
     }
     for (const tier of binding.tiers) boundTiers.add(tier);
     const absolute = path.join(repoRoot, binding.source);
-    const content = isFile(absolute) ? fs.readFileSync(absolute, 'utf8') : '';
-    if (!exactBindingLineMatches(content, binding.fragment, binding.source)) {
+    const content = snapshot.isFile(absolute) ? snapshot.read(absolute, 'utf8') : '';
+    if (!snapshot.isFile(absolute) || !snapshot.analyze(absolute, `binding:${JSON.stringify([binding.fragment, binding.source])}`,
+      text => exactBindingLineMatches(text, binding.fragment, binding.source))) {
       errors.push(`${setLabel}: ghost execution binding in ${binding.source}: ${binding.fragment}`);
       continue;
     }
-    // 워크플로 소비자는 라인 존재만으로 tier 를 주장할 수 없다 — job·조건까지 결속한다.
+    // 워크플로·verify 소비자는 라인 존재만으로 tier 를 주장할 수 없다 — job·범위 분기·조건까지 결속한다.
     if (/^\.github\/workflows\/.+\.ya?ml$/.test(binding.source)) {
       validateWorkflowBindingContext({ binding, content, setLabel, errors });
-    } else if (binding.job !== undefined || binding.conditional !== undefined) {
-      errors.push(`${setLabel}: job/conditional are workflow-only binding fields: ${binding.source}`);
+      continue;
+    }
+    if (binding.job !== undefined) errors.push(`${setLabel}: job is a workflow-only binding field: ${binding.source}`);
+    if (binding.source === VERIFY_RUNNER_SOURCE) {
+      validateVerifyRunnerBindingContext({
+        binding,
+        execution: snapshot.analyze(absolute, 'verify-runner-execution', analyzeVerifyRunnerExecution),
+        setLabel,
+        errors,
+      });
+    } else if (binding.conditional !== undefined) {
+      errors.push(`${setLabel}: conditional is a workflow or verify-runner binding field: ${binding.source}`);
     }
   }
   const missingTiers = expectedTiers.filter((tier) => !boundTiers.has(tier));
@@ -704,7 +1003,8 @@ export const JAVA_GATE_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 
-export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS) {
+export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS, snapshot = createGovernanceRepositorySnapshot({ repoRoot })) {
+  assertSnapshotRoot(snapshot, repoRoot);
   const errors = [];
   const selectors = (gateSets ?? [])
     .filter((set) => set?.selector?.type === 'java-class-annotation')
@@ -717,16 +1017,16 @@ export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA
   if (selectors.length === 0) return errors;
   for (const scanRoot of scanRoots) {
     const absoluteRoot = path.join(repoRoot, scanRoot);
-    if (!isDirectory(absoluteRoot)) {
+    if (!snapshot.isDirectory(absoluteRoot)) {
       errors.push(`java gate scan root does not exist: ${scanRoot} (silent scan collapse would be a false green)`);
       continue;
     }
-    for (const sourcePath of walkJavaFiles(absoluteRoot)) {
+    for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
       const relative = posix(path.relative(repoRoot, sourcePath));
-      const source = fs.readFileSync(sourcePath, 'utf8');
       for (const { id, annotation, value, roots } of selectors) {
         if (roots.some((root) => relative === root || relative.startsWith(`${root}/`))) continue;
-        if (hasClassAnnotation(source, annotation, value, path.basename(sourcePath, '.java'))) {
+        if (snapshot.analyze(sourcePath, `annotation:${annotation}:${value}:${path.basename(sourcePath, '.java')}`,
+          text => hasClassAnnotation(text, annotation, value, path.basename(sourcePath, '.java')))) {
           errors.push(`${id}: tagged gate outside declared selector roots — ${relative} carries `
             + `@${annotation}("${value}") so the runner may execute it while the census cannot see it; `
             + 'move it under a declared root or extend the selector roots');
@@ -1118,10 +1418,16 @@ function singleMatch(content, pattern) {
   return matches.length === 1 ? matches[0][1] : null;
 }
 
-function readConsumerValue(repoRoot, ratchet) {
+function readConsumerValue(repoRoot, ratchet, snapshot) {
   const absolute = path.join(repoRoot, ratchet.source);
-  if (!isFile(absolute)) return { error: `ghost quality source: ${ratchet.source}` };
-  const content = fs.readFileSync(absolute, 'utf8');
+  if (!snapshot.isFile(absolute)) return { error: `ghost quality source: ${ratchet.source}` };
+  return snapshot.analyze(absolute, `consumer:${JSON.stringify(ratchet)}`,
+    () => readObservedConsumerValue(repoRoot, ratchet, snapshot));
+}
+
+function readObservedConsumerValue(repoRoot, ratchet, snapshot) {
+  const absolute = path.join(repoRoot, ratchet.source);
+  const content = snapshot.read(absolute, 'utf8');
   const executable = executableContent(content);
   const selector = ratchet.selector ?? {};
 
@@ -1134,7 +1440,7 @@ function readConsumerValue(repoRoot, ratchet) {
       }
       const { equivalentTasks, ...singleSelector } = selector;
       const values = [selector.task, ...equivalentTasks].map(task => readConsumerValue(repoRoot,
-        { ...ratchet, selector: { ...singleSelector, task } }));
+        { ...ratchet, selector: { ...singleSelector, task } }, snapshot));
       const invalid = values.find(result => result.error);
       if (invalid) return invalid;
       if (values.some(result => result.value !== values[0].value)) {
@@ -1255,15 +1561,6 @@ export function loadGovernanceRegistry(registryPath) {
   return JSON.parse(fs.readFileSync(registryPath, 'utf8'));
 }
 
-function walkCatalogFiles(directory, recursive) {
-  if (!isDirectory(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return recursive ? walkCatalogFiles(target, true) : [];
-    return entry.isFile() ? [target] : [];
-  });
-}
-
 function validateRequiredContexts(value, knownContexts, label, errors) {
   const contexts = typeof value === 'string' ? [value] : value;
   if (!Array.isArray(contexts)
@@ -1292,7 +1589,7 @@ function validIsoDate(value) {
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value;
 }
 
-function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors }) {
+function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors, snapshot }) {
   if (!Array.isArray(selector.skipWaivers)) {
     errors.push(`${setLabel}: Playwright skipWaivers must be an array`);
     return;
@@ -1302,7 +1599,7 @@ function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, set
   for (const source of catalogSources) {
     constructsBySource.set(
       source,
-      findRunnerSkipConstructs(fs.readFileSync(path.join(repoRoot, source), 'utf8')),
+      snapshot.analyze(path.join(repoRoot, source), 'runner-constructs', findRunnerSkipConstructs),
     );
   }
 
@@ -1345,7 +1642,7 @@ function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, set
       continue;
     }
 
-    const sourceText = fs.readFileSync(path.join(repoRoot, waiver.source), 'utf8');
+    const sourceText = snapshot.read(path.join(repoRoot, waiver.source), 'utf8');
     const tokenIndexes = [];
     let index = sourceText.indexOf(waiver.stableToken);
     while (index >= 0) {
@@ -1426,7 +1723,7 @@ function validateMinimumPopulation({ currentInclude, baselineInclude, currentExc
   }
 }
 
-function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, label, errors }) {
+function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, label, errors, snapshot }) {
   if (!matrixSet || !Array.isArray(matrixSet.selector?.matrixScopes)) {
     errors.push(`${label}: matrixGateSetId does not resolve to a PIT matrix catalog`);
     return;
@@ -1435,7 +1732,7 @@ function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, lab
   for (const scope of matrixSet.selector.matrixScopes) {
     const gradleMatch = /^:([a-z0-9-]+):pitest$/.exec(scope.gradle ?? '');
     if (!gradleMatch) continue;
-    const classes = javaClassNames(path.join(repoRoot, gradleMatch[1], 'src', 'main', 'java'));
+    const classes = snapshot.javaClassNames(path.join(repoRoot, gradleMatch[1], 'src', 'main', 'java'));
     for (const targetGlob of String(scope.classes ?? '').split(',').map((value) => value.trim()).filter(Boolean)) {
       const targets = classes.filter((className) => classGlobMatches(targetGlob, className));
       if (targets.length === 0) continue;
@@ -1462,7 +1759,7 @@ function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, lab
   }
 }
 
-function validateQualityPopulations({ registry, repoRoot, errors, registryIds }) {
+function validateQualityPopulations({ registry, repoRoot, errors, registryIds, snapshot }) {
   if (!Array.isArray(registry?.qualityPopulations) || registry.qualityPopulations.length === 0) {
     errors.push('registry qualityPopulations must be a non-empty array');
     return;
@@ -1484,11 +1781,12 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
     }
 
     const absolute = path.join(repoRoot, population.source);
-    if (!isFile(absolute)) {
+    if (!snapshot.isFile(absolute)) {
       errors.push(`${label}: ghost population source: ${population.source}`);
       continue;
     }
-    const consumer = readPopulationConsumer(fs.readFileSync(absolute, 'utf8'), population.selector);
+    const consumer = snapshot.analyze(absolute, `population:${JSON.stringify(population.selector)}`,
+      text => readPopulationConsumer(text, population.selector));
     if (consumer.error) {
       errors.push(`${label}: ghost population selector: ${consumer.error}`);
       continue;
@@ -1524,7 +1822,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
     }
 
     if (population.selector?.type === 'gradle-pitest-population') {
-      errors.push(...validatePitResultCheck(fs.readFileSync(absolute, 'utf8'))
+      errors.push(...snapshot.analyze(absolute, 'pit-result', validatePitResultCheck)
         .map(error => `${label}: ${error}`));
       if (!hasValidUniqueStrings(population.excludedClasses)
         || !hasValidUniqueStrings(population.baselineExcludedClasses)) {
@@ -1557,6 +1855,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
         repoRoot,
         label,
         errors,
+        snapshot,
       });
       continue;
     }
@@ -1565,7 +1864,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
   }
 }
 
-function collectGovernanceAssets(registry, repoRoot) {
+function collectGovernanceAssets(registry, repoRoot, snapshot) {
   const assets = new Set([
     '.github/CODEOWNERS',
     'config/governance/gates.json',
@@ -1573,7 +1872,7 @@ function collectGovernanceAssets(registry, repoRoot) {
     'scripts/governance-gates-contract.test.mjs',
   ]);
   const addFile = (source) => {
-    if (isSafeRelative(source) && isFile(path.join(repoRoot, source))) assets.add(posix(source));
+    if (isSafeRelative(source) && snapshot.isFile(path.join(repoRoot, source))) assets.add(posix(source));
   };
 
   for (const set of registry?.gateSets ?? []) {
@@ -1584,7 +1883,7 @@ function collectGovernanceAssets(registry, repoRoot) {
     for (const catalog of [...(selector.catalogs ?? []), ...(selector.supportRoots ?? [])]) {
       if (!isSafeRelative(catalog?.root) || !Array.isArray(catalog?.suffixes)) continue;
       const root = path.join(repoRoot, catalog.root);
-      for (const file of walkCatalogFiles(root, catalog.recursive === true)) {
+      for (const file of snapshot.catalogFiles(root, catalog.recursive === true)) {
         if (catalog.suffixes.some((suffix) => file.endsWith(suffix))) {
           assets.add(posix(path.relative(repoRoot, file)));
         }
@@ -1627,26 +1926,30 @@ export function effectiveCodeOwners(rules, source) {
   return owners;
 }
 
-function validateGovernanceOwnership(registry, repoRoot, errors) {
+function validateGovernanceOwnership(registry, repoRoot, errors, snapshot) {
   const codeownersPath = path.join(repoRoot, '.github', 'CODEOWNERS');
-  if (!isFile(codeownersPath)) {
+  if (!snapshot.isFile(codeownersPath)) {
     errors.push('governance CODEOWNERS file is missing');
     return;
   }
-  const rules = fs.readFileSync(codeownersPath, 'utf8')
+  const rules = snapshot.read(codeownersPath, 'utf8')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
     .map((line) => line.split(/\s+/));
 
-  for (const source of collectGovernanceAssets(registry, repoRoot)) {
+  for (const source of collectGovernanceAssets(registry, repoRoot, snapshot)) {
     if (!effectiveCodeOwners(rules, source).includes('@lkindo')) {
       errors.push(`governance asset is not CODEOWNERS-protected: ${source}`);
     }
   }
 }
 
-export function validateGovernanceRegistry({ registry, repoRoot }) {
+export function validateGovernanceRegistry({ registry, repoRoot, analysis, snapshot }) {
+  // 기본(CLI 포함)은 검증마다 디스크를 새로 읽는다 — analysis 를 공유해도 파일 관찰은 공유하지 않는다.
+  // 디스크를 바꾸지 않는 여러 검증은 같은 저장소에 묶인 snapshot 하나를 넘겨 읽은 결과를 함께 쓸 수 있다.
+  if (snapshot === undefined) snapshot = createGovernanceRepositorySnapshot({ analysis, repoRoot });
+  else assertSnapshotRoot(snapshot, repoRoot);
   const errors = [];
   const registryIds = new Set();
   const registeredSources = new Set();
@@ -1655,7 +1958,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
   let requiredContexts = new Set();
 
   try {
-    const required = JSON.parse(fs.readFileSync(path.join(repoRoot, '.github', 'required-checks.json'), 'utf8'));
+    const required = JSON.parse(snapshot.read(path.join(repoRoot, '.github', 'required-checks.json'), 'utf8'));
     requiredChecks = required.requiredChecks ?? [];
     requiredContexts = new Set(requiredChecks.map(({ context }) => context));
   } catch (error) {
@@ -1688,6 +1991,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         errors,
         required: true,
         expectedTiers: profile.tier,
+        snapshot,
       });
     }
   }
@@ -1738,18 +2042,13 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       const actual = new Set();
       for (const root of roots) {
         const absoluteRoot = path.join(repoRoot, root);
-        if (!isDirectory(absoluteRoot)) {
+        if (!snapshot.isDirectory(absoluteRoot)) {
           errors.push(`${setLabel}: selector root does not exist: ${root}`);
           continue;
         }
-        for (const sourcePath of walkJavaFiles(absoluteRoot)) {
-          const source = fs.readFileSync(sourcePath, 'utf8');
-          if (hasClassAnnotation(
-            source,
-            selector.annotation,
-            selector.value,
-            path.basename(sourcePath, '.java'),
-          )) {
+        for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
+          if (snapshot.analyze(sourcePath, `annotation:${selector.annotation}:${selector.value}:${path.basename(sourcePath, '.java')}`,
+            text => hasClassAnnotation(text, selector.annotation, selector.value, path.basename(sourcePath, '.java')))) {
             actual.add(posix(path.relative(repoRoot, sourcePath)));
           }
         }
@@ -1770,18 +2069,18 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         registeredSources.add(source);
         expected.add(source);
         const absolute = path.join(repoRoot, source);
-        if (!isFile(absolute)) {
+        if (!snapshot.isFile(absolute)) {
           errors.push(`ghost gate source: ${source} does not exist`);
         } else {
-          const content = fs.readFileSync(absolute, 'utf8');
           const expectedClassName = path.basename(source, '.java');
-          if (!hasClassAnnotation(content, selector.annotation, selector.value, expectedClassName)) {
+          if (!snapshot.analyze(absolute, `annotation:${selector.annotation}:${selector.value}:${expectedClassName}`,
+            text => hasClassAnnotation(text, selector.annotation, selector.value, expectedClassName))) {
             errors.push(`ghost gate source: ${source} does not satisfy @${selector.annotation}("${selector.value}") on ${expectedClassName}`);
           }
-          if (!hasRunnableTestAnnotation(content, selector.annotation === 'ArchTag')) {
+          if (!snapshot.analyze(absolute, `runnable:${selector.annotation === 'ArchTag'}`, text => hasRunnableTestAnnotation(text, selector.annotation === 'ArchTag'))) {
             errors.push(`ghost gate source: ${source} declares no runnable test annotation`);
           }
-          if (hasGateSkipConstruct(content)) {
+          if (snapshot.analyze(absolute, 'gate-skip', hasGateSkipConstruct)) {
             errors.push(`ghost gate source: ${source} contains a disabled, conditional, or assumption-based skip`);
           }
         }
@@ -1790,7 +2089,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         if (!expected.has(source)) errors.push(`unregistered tagged gate in ${setLabel}: ${source}`);
       }
       for (const source of expected) {
-        if (!actual.has(source) && isFile(path.join(repoRoot, source))) {
+        if (!actual.has(source) && snapshot.isFile(path.join(repoRoot, source))) {
           errors.push(`ghost gate source in ${setLabel}: ${source} is outside the actual selector result`);
         }
       }
@@ -1801,6 +2100,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         errors,
         required: true,
         expectedTiers: set.tier,
+        snapshot,
       });
       continue;
     }
@@ -1823,11 +2123,11 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           continue;
         }
         const absoluteRoot = path.join(repoRoot, catalog.root);
-        if (!isDirectory(absoluteRoot)) {
+        if (!snapshot.isDirectory(absoluteRoot)) {
           errors.push(`${setLabel}: ghost runner selector root: ${catalog.root}`);
           continue;
         }
-        const matches = walkCatalogFiles(absoluteRoot, catalog.recursive === true)
+        const matches = snapshot.catalogFiles(absoluteRoot, catalog.recursive === true)
           .filter((source) => catalog.suffixes.some((suffix) => source.endsWith(suffix)));
         if (matches.length === 0) errors.push(`${setLabel}: ghost runner selector matched no tests in ${catalog.root}`);
         for (const source of matches) catalogSources.add(posix(path.relative(repoRoot, source)));
@@ -1835,8 +2135,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
 
       if (selector.forbidSkips === true) {
         for (const source of catalogSources) {
-          const content = fs.readFileSync(path.join(repoRoot, source), 'utf8');
-          if (containsRunnerSkip(content)) {
+          if (snapshot.analyze(path.join(repoRoot, source), 'runner-skip', containsRunnerSkip)) {
             errors.push(`${setLabel}: runner catalog contains a forbidden skip/only/todo: ${source}`);
           }
         }
@@ -1853,7 +2152,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           errors.push(`${setLabel}: invalid runner support root or suffix selector`);
           continue;
         }
-        const matches = walkCatalogFiles(path.join(repoRoot, support.root), support.recursive === true)
+        const matches = snapshot.catalogFiles(path.join(repoRoot, support.root), support.recursive === true)
           .filter((source) => support.suffixes.some((suffix) => source.endsWith(suffix)));
         if (matches.length === 0) errors.push(`${setLabel}: ghost runner support root matched no files in ${support.root}`);
       }
@@ -1867,7 +2166,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         } else {
           const absolute = path.join(repoRoot, packageBinding.source);
           try {
-            const parsed = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+            const parsed = JSON.parse(snapshot.read(absolute, 'utf8'));
             const actualCommand = parsed.scripts?.[packageBinding.name];
             if (actualCommand !== packageBinding.command) {
               errors.push(`${setLabel}: ghost runner selector package script ${packageBinding.name}`);
@@ -1879,9 +2178,9 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       }
 
       if (selector.runner === 'playwright') {
-        validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors });
+        validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors, snapshot });
         for (const source of catalogSources) {
-          const content = executableContent(fs.readFileSync(path.join(repoRoot, source), 'utf8'));
+          const content = snapshot.analyze(path.join(repoRoot, source), 'executable', executableContent);
           if (!/\btest\s*\(/.test(content)) {
             errors.push(`${setLabel}: Playwright spec has no runnable test(): ${source}`);
           }
@@ -1891,7 +2190,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           errors.push(`${setLabel}: invalid Playwright project contract`);
         } else {
           const absolute = path.join(repoRoot, project.source);
-          const content = isFile(absolute) ? fs.readFileSync(absolute, 'utf8') : '';
+          const content = snapshot.isFile(absolute) ? snapshot.read(absolute, 'utf8') : '';
           errors.push(...validatePlaywrightProjectContract(content, project)
             .map((error) => `${setLabel}: ${error}`));
         }
@@ -1905,6 +2204,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         setLabel,
         errors,
         expectedTiers: set.tier,
+        snapshot,
       });
       for (let index = bindingErrorStart; index < errors.length; index += 1) {
         errors[index] = errors[index]
@@ -1913,11 +2213,11 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       }
 
       for (const bindingSource of selector.catalogCoverage ?? []) {
-        if (!isSafeRelative(bindingSource) || !isFile(path.join(repoRoot, bindingSource))) {
+        if (!isSafeRelative(bindingSource) || !snapshot.isFile(path.join(repoRoot, bindingSource))) {
           errors.push(`${setLabel}: ghost catalog coverage binding: ${bindingSource}`);
           continue;
         }
-        const content = fs.readFileSync(path.join(repoRoot, bindingSource), 'utf8');
+        const content = snapshot.read(path.join(repoRoot, bindingSource), 'utf8');
         for (const source of catalogSources) {
           if (!content.includes(source)) {
             errors.push(`${setLabel}: unregistered runner catalog item in ${bindingSource}: ${source}`);
@@ -1955,7 +2255,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         }
       }
       if (selector.context === 'mutation-test') {
-        validateMutationScopeCatalog(selector, repoRoot, errors, setLabel);
+        validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot);
       }
       continue;
     }
@@ -1963,7 +2263,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     errors.push(`${setLabel}: unsupported gate selector type '${selector?.type ?? ''}'`);
   }
 
-  validateQualityPopulations({ registry, repoRoot, errors, registryIds });
+  validateQualityPopulations({ registry, repoRoot, errors, registryIds, snapshot });
 
   if (!Array.isArray(registry?.qualityRatchets) || registry.qualityRatchets.length === 0) {
     errors.push('registry qualityRatchets must be a non-empty array');
@@ -2035,7 +2335,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     }
 
     if (sourceIsSafe) {
-      const consumer = readConsumerValue(repoRoot, ratchet);
+      const consumer = readConsumerValue(repoRoot, ratchet, snapshot);
       if (consumer.error) errors.push(consumer.error);
       else if (!sameValue(consumer.value, ratchet.current)) {
         errors.push(`${id}: consumer value ${consumer.value} does not match registry current ${ratchet.current}`);
@@ -2043,8 +2343,8 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     }
   }
 
-  validateGovernanceOwnership(registry, repoRoot, errors);
-  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry.gateSets));
+  validateGovernanceOwnership(registry, repoRoot, errors, snapshot);
+  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry.gateSets, JAVA_GATE_SCAN_ROOTS, snapshot));
 
   return errors;
 }

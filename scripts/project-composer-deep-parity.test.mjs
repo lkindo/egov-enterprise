@@ -19,7 +19,7 @@ import { buildUnreviewedBaselineManifest, inspectRouteRepository } from './ui-ro
 import { COMPOSER_SELECTION_PATH } from './project-composer-recipe.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
 import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
-import { root, readJson, catalog, modules, ownership, files, compose, projectionFiles, quietly } from './project-composer-deep.test-helpers.mjs';
+import { root, readJson, catalog, modules, ownership, files, compose, projectionFiles, quietly, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
 
 /*
  * 정밀 점검(설계서 10장 plan/deep, C3)은 생성기의 투영·규칙 제거·승인 판정을 디스크를 바꾸지 않고 미리 한다. 미리 본 결과가
@@ -32,7 +32,7 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
   for (const selection of selections) {
     const composition = compose(selection);
     const label = JSON.stringify(selection);
-    const deep = compositionDeepPlan({ root, catalog, composition, files, modules });
+    const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition, files, modules });
     assert.deepEqual(deep.blockers, [], `${label}: the real checkout has no projection blocker`);
 
     const output = mkdtempSync(join(tmpdir(), 'composer-deep-'));

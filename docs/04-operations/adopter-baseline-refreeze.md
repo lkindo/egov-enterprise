@@ -25,8 +25,8 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 | # | 축 | 동결 위치 | 재동결 방법 |
 |---|---|---|---|
-| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 `BASELINE` 상수와 파일별 `BASELINE_BY_FILE` 표 | red 실측 → 표와 상수를 함께 갱신 (§3) |
-| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 `BASELINE` 상수·파일별 `BASELINE_BY_FILE` 표와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표와 상수를 함께 갱신 (§3) |
+| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계 `BASELINE` 은 표의 합에서 계산) | red 실측 → 표만 갱신 (§3) |
+| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계는 표의 합에서 계산)와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표만 갱신 (§3) |
 | 3 | URL 상태 census | [config/ui-url-state-census.json](../../config/ui-url-state-census.json) | `node scripts/ui-url-state-census.mjs --write` (§4) |
 | 4 | 거버넌스 게이트 exact census | [config/governance/gates.json](../../config/governance/gates.json) | manifest 를 실제 게이트 소스와 함께 갱신 (§5) |
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |
@@ -38,12 +38,12 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 ## 3. 색 하드코딩 baseline 재측정 — status/hardcoded color guard
 
-두 게이트는 소스 스캔 총 occurrence 가 상수와 **정확히 같아야** green 이다(감소도 red — 개선분을 baseline 하향으로 확정해야 한다).
+두 게이트는 소스 스캔 occurrence 가 파일별 동결표와 **정확히 같아야** green 이다(감소도 red — 개선분을 baseline 하향으로 확정해야 한다).
 
 - [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) — success/warning/destructive 계열 팔레트 하드코딩.
 - [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) — 중립+브랜드 액센트 하드코딩과 보조 글자 불투명도(`MUTED_OPACITY_BASELINE`, 파일별).
 
-두 게이트 모두 파일별 `BASELINE_BY_FILE` 표가 실측과 같아야 하고, 그 합이 `BASELINE` 상수와 같아야 한다. 현재 동결값은 이 문서가 아니라 테스트 파일이 정본이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로(`frozenInProjection`, DEC-OPS-259) 손대지 않는다.
+두 게이트 모두 파일별 `BASELINE_BY_FILE` 표가 실측과 같아야 한다. 총계 `BASELINE` 은 따로 적는 상수가 아니라 투영 뒤 표의 합에서 계산한다. 현재 동결값은 이 문서가 아니라 테스트 파일이 정본이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로(`frozenInProjection`, DEC-OPS-259) 손대지 않는다.
 
 절차:
 
@@ -54,7 +54,7 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
    ```
 
 2. red 실패 메시지가 실측 총계와 방향(증가/감소)을 출력한다. **이 출력값이 유일한 재동결 근거다.** 추정·수기 집계로 상수를 바꾸지 않는다.
-3. 감소(개선)면 해당 파일의 `BASELINE_BY_FILE` 값과 `BASELINE` 을 함께 실측값으로 내린다. 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
+3. 감소(개선)면 해당 파일의 `BASELINE_BY_FILE` 값만 실측값으로 내린다(총계는 표의 합이라 따라 내려간다). 증가(악화)면 먼저 토큰 치환으로 줄이는 것이 원칙이고, 불가피하게 올릴 때는 사유를 코드 리뷰에 명시한다(테스트 파일 상단 주석에 규정된 운영 규칙).
 4. 재실행해 green 을 확인하고, baseline 변경을 diff 리뷰로 승인받는다.
 
 컨트롤 고정 높이 덮어쓰기 동결도 같은 절차다. 차이는 총계 없이 **파일별 수**만 둔다는 점이다. 생성기 투영으로 사라진 파일의 항목은 시험이 투영 원장으로 빼므로 손대지 않고, 기관이 이후 지우거나 바꾼 파일의 항목만 고친다. 수가 늘면 올리지 말고 해당 컨트롤을 `--control-h` 로 되돌린다.

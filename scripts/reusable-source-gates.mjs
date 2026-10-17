@@ -363,22 +363,11 @@ export function adaptGeneratedHarness(output) {
       to: 'private static final int MIGRATION_SQL_FLOOR = 3;',
     },
     /*
-      투영본은 공용 support를 사용하는 역사적 migration 검증 49개를 제거한다(pruneHistoricalMigrationTests —
-      그 테스트들이 검증하는 V2 체인이 V1 번들로 교체되므로 남겨 두면 전부 red 다). 그래서 이
-      동결 census 의 모집단이 49 → 0 이 된다. 수치를 낮추는 것이 아니라 **사실을 따라가는** 것이며,
-      adopter 가 migration 검증을 새로 만들면 0 을 넘어 red 가 되어 다시 동결을 요구한다.
-      DisplayName 도 함께 고친다 — 0건을 세면서 "49개" 라고 말하면 화면이 사실과 다른 말을 한다.
+      공용 PostgreSQL migration 검증 수는 여기서 바꾸지 않는다. 투영본은 역사적 migration 검증을 걷고
+      (pruneHistoricalMigrationTests), 남은 수를 하네스 프로필 census(migrationTests)에 기록한다 — 하네스가
+      원본 동결값 대신 그 census 를 읽으므로 투영본의 모집단은 0 이고, adopter 가 migration 검증을 새로 만들면
+      0 을 넘어 red 가 된다. 종전의 문자 그대로 바꾸기는 원본 수가 바뀔 때마다 이 목록과 그 계약을 함께 고쳐야 했다.
     */
-    {
-      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 60;',
-      to: 'private static final int EXPECTED_MIGRATION_TEST_COUNT = 0;',
-    },
-    {
-      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'SharedPostgresMigrationHarnessContractTest.java'),
-      from: '@DisplayName("60개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
-      to: '@DisplayName("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")',
-    },
     /*
       legacy debt census 는 **역사적 V2 migration 안의 자유형 ignore marker** 인벤토리다(43파일·188건).
       투영본은 그 migration 을 V1 번들로 교체하므로 인벤토리가 사실상 0 이 되고, pruneZeroDowntimeWaivers

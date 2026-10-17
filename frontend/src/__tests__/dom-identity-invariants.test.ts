@@ -1,7 +1,9 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SRC_DIR = join(FRONTEND_DIR, 'src');
@@ -27,30 +29,15 @@ const SRC_DIR = join(FRONTEND_DIR, 'src');
  * ⚠ 이 계약은 "금지 토큰이 없어야 한다"를 검사하는데, **그 토큰을 설명하는 주석이 소스에 있다**.
  *   주석을 지우지 않으면 계약이 자기 문서를 위반으로 신고한다(2026-08-22 작성 중 실제로 red 가 났고,
  *   같은 함정을 csp-policy 계약도 겪었다). 검사는 반드시 실행 코드에 대해서만 한다.
+ *
+ * 주석 제거는 공용 판정(scripts/code-without-comments.mjs)이 한다. 종전 정규식은 지우는 순서를 바꿔도(2026-08-29) 문자열 속
+ * 주석 기호에서 블록 주석을 열어 그 뒤 실행 코드를 지웠다(FE-CONTRACT-01).
  */
-/*
- * [2026-08-29] 순서를 뒤집었다 — 줄 주석 먼저, 블록 주석 나중.
- *
- * 블록 주석을 먼저 지우면, 줄 주석 안에 블록 주석 여는 기호가 들어 있는 파일에서 그 기호가
- * 저 아래 다른 블록 주석의 닫는 기호까지 이어져 **그 사이의 실행 코드가 통째로 사라진다.**
- * 이 계약은 소스를 전수로 훑으므로 그런 파일이 하나만 생겨도 조용히 눈이 먼다
- * (실측: WorkHubClient.tsx 에서 코드 1,781자 소실 — honest-affordance 계약이 실제로 그렇게
- * 새어 나갔다). 줄 주석을 먼저 지우면 그 여는 기호도 함께 사라진다.
- *
- * 줄 주석 제거의 콜론 가드는 URL 의 이중 슬래시를 주석으로 오인하지 않기 위한 것이다
- * (csp-policy 계약에서 같은 사각을 먼저 고쳤다).
- *
- * 이 변경으로 census 결과는 바뀌지 않는다(적용 전후 모두 green 실측).
- */
-function stripComments(source: string): string {
-  return source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, '');
-}
+const codeOf = (...parts: string[]) => codeWithoutComments(readFileSync(join(SRC_DIR, ...parts), 'utf8'), parts[parts.length - 1]);
 
 describe('DOM 정체성 불변식', () => {
   it('PageTransition 은 AnimatePresence·exit 로 라우트 subtree 를 이중 마운트하지 않는다', () => {
-    const source = stripComments(
-      readFileSync(join(SRC_DIR, 'app', 'components', 'layout', 'page-transition.tsx'), 'utf8'),
-    );
+    const source = codeOf('app', 'components', 'layout', 'page-transition.tsx');
 
     // `{children}` 은 App Router 의 세그먼트 렌더러이지 렌더 시점 스냅샷이 아니다.
     // exit 로 구 key subtree 를 붙잡으면 그 안의 children 이 **현재(목적지) 라우트를 다시 렌더**해
@@ -81,9 +68,7 @@ describe('DOM 정체성 불변식', () => {
     // ⚠ 이 검사가 왜 렌더 테스트가 아니라 소스 계약인가: jsdom 은 CSS 를 적용하지 않아
     //   role 속성을 지워도 암시 role 로 통과한다(2026-08-22 red 증명에서 실측). 렌더 테스트로는
     //   이 축을 원리적으로 지킬 수 없다.
-    const source = stripComments(
-      readFileSync(join(SRC_DIR, 'app', 'components', 'ui', 'standard-data-table.tsx'), 'utf8'),
-    );
+    const source = codeOf('app', 'components', 'ui', 'standard-data-table.tsx');
 
     for (const [element, role] of [
       ['table', 'table'],

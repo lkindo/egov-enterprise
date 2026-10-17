@@ -13,6 +13,12 @@
  * 소스만 가진 항목은 이 대조가 '잘못 들어간 import 로 코어 항목이 사라지는' 경우를 따로 잡지 못하고, 그 신호(DEC-OPS-089)는 시작 구성의
  * Java 연쇄 exact 목록(presets.json 의 expected.javaCascade)이 받친다. 그 목록을 수로 바꾸지 않는다.
  *
+ * 시작 구성의 게이트 제거 승인(expected.gates)·연쇄 제거 승인(expected.javaCascade)의 **저장소 쪽 exact 대조는 여기서 하지 않는다**.
+ * 소유처는 project-composer-preset-equivalence.test.mjs 다 — 시작 구성마다 정밀 점검(compositionDeepPlan, 생성기와 같은 승인 판정)의
+ * 차단 사유가 비어야 하고, 그 판정은 Java 게이트만 보던 이 모듈의 옛 사본보다 넓다(프런트 게이트·사유 형식까지 본다). 차단 코드별
+ * red 증명은 project-composer-deep-failure-points.test.mjs 에 있다. 투영본(생성물)에서는 그 시험이 돌지 않으므로 '승인 목록에 적힌
+ * 파일이 실제로 없다' 는 확인만 이 계약(pack-tagged-registry.test.mjs)이 한다.
+ *
  * 투영본(생성물)에서는 제거가 이미 끝났다. 거기서는 계획 대신 생성기가 남긴 하네스 프로필 기록
  * (`config/governance/reusable-harness-profile.json` 의 retained·removed)과 실제 파일이 맞는지 본다. 투영본 판별은 매니페스트 v2 의
  * 생성물 표지(presets.json 의 active, composer-modules.mjs 의 detectGeneratedComposition)다 — 표지 필드 하나로 하지 않고 생성기가 쓰는
@@ -24,8 +30,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { detectGeneratedComposition } from './composer-modules.mjs';
-import { javaCascadeAcknowledgement } from './reusable-source-gates.mjs';
-import { javaCascadeRemovals, planJavaRemoval } from './reusable-source-java.mjs';
+import { planJavaRemoval } from './reusable-source-java.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -82,12 +87,12 @@ export function resolveTypeSources(root, javaFiles, label, types) {
  * 지원 파일 선언, 업무 앱 기능 디렉터리, foundation·business-core 는 core, 그 밖(api-server)은 주석·문자열을 지운 코드의 업무 패키지 참조다.
  * 기능 id 가 아닌 소유가 나오면 판정할 수 없는 것이라 실패한다(조용히 core 로 보지 않는다).
  */
-export function compositionOwnerOf(root, { ownerOf, features, stripComments }) {
+export function compositionOwnerOf(root, { ownerOf, features, stripComments, readSource = (path) => readFileSync(path, 'utf8') }) {
   const owners = new Map();
   return (absolute) => {
     if (!owners.has(absolute)) {
       const path = normalize(relative(root, absolute));
-      const owner = ownerOf(path, stripComments(readFileSync(absolute, 'utf8'), { strings: false }));
+      const owner = ownerOf(path, stripComments(readSource(absolute), { strings: false }));
       if (owner !== 'core' && !features.has(owner)) throw new Error(`${path} 의 소유가 기능이 아니다: ${owner}`);
       owners.set(absolute, owner);
     }
@@ -203,39 +208,15 @@ export function evaluateGateSurvival({ root, compositions, gateFiles, javaFiles 
 }
 
 /**
- * 시작 구성의 Java 게이트 제거 승인(presets.json 의 expected.gates)과 계획의 게이트 제거를 exact 대조한다(R4). 수 래칫이 아니라 목록이다 —
- * 게이트 하나가 사라지고 다른 하나가 살아나는 교체도 붉다. `compositions` 의 `profile` 은 composerProfile 결과다.
+ * 문맥 하나가 쓰는 원문 읽기 — 같은 Java 파일을 시작 구성마다·소유 판정마다 다시 읽지 않는다(문맥 하나에 약 2만 7천 번 읽던 것을
+ * 파일마다 한 번으로). 문맥은 한 프로세스에서 디스크를 바꾸지 않는 판정 한 번이라 기억해도 판정이 같다. 새 문맥은 새로 읽는다.
  */
-export function presetGateMismatches({ root, compositions }) {
-  const violations = [];
-  for (const { name, profile, plan } of compositions) {
-    const planned = [...plan.removed].filter((path) => plan.gateSources.has(path)).map((path) => normalize(relative(root, path))).sort();
-    const acknowledged = (Array.isArray(profile.acknowledgedRemovedGates) ? profile.acknowledgedRemovedGates : [])
-      .map((entry) => entry?.file).filter((file) => typeof file === 'string' && file.endsWith('.java')).sort();
-    const unacknowledged = planned.filter((file) => !acknowledged.includes(file));
-    const stale = acknowledged.filter((file) => !planned.includes(file));
-    if (unacknowledged.length) violations.push(`${name} 이 승인하지 않은 Java 게이트를 제거한다: ${unacknowledged.join(', ')}`);
-    if (stale.length) violations.push(`${name} 의 승인 목록에 더 이상 제거되지 않는 Java 게이트가 남아 있다: ${stale.join(', ')}`);
-  }
-  return violations;
-}
-
-/** 시작 구성의 Java 연쇄 제거(게이트 제외)와 presets.json 의 expected.javaCascade 를 생성기와 같은 판정으로 exact 대조한다(설계서 C4·R4). */
-export function presetJavaCascadeMismatches({ root, compositions }) {
-  const violations = [];
-  for (const { name, profile, plan } of compositions) {
-    const removals = javaCascadeRemovals(root, plan);
-    const { invalidEntries, duplicates, unacknowledged, stale } = javaCascadeAcknowledgement(profile, removals.map((entry) => entry.file));
-    const reasons = new Map(removals.map((entry) => [entry.file, entry.reason]));
-    if (invalidEntries.length) violations.push(`${name} 의 javaCascade 항목이 .java 경로가 아니다: ${JSON.stringify(invalidEntries)}`);
-    if (duplicates.length) violations.push(`${name} 의 javaCascade 에 중복이 있다: ${duplicates.join(', ')}`);
-    if (unacknowledged.length) {
-      violations.push(`${name} 이 승인하지 않은 Java 파일을 연쇄로 지운다 — 잘못 들어간 import 인지 먼저 본다: `
-        + unacknowledged.map((file) => `${file} <- ${reasons.get(file)}`).join(', '));
-    }
-    if (stale.length) violations.push(`${name} 의 javaCascade 에 더 이상 연쇄로 지워지지 않는 파일이 남아 있다: ${stale.join(', ')}`);
-  }
-  return violations;
+export function contextSourceReader(read = (path) => readFileSync(path, 'utf8')) {
+  const texts = new Map();
+  return (path) => {
+    if (!texts.has(path)) texts.set(path, read(path));
+    return texts.get(path);
+  };
 }
 
 const contexts = new Map();
@@ -255,23 +236,23 @@ async function buildContext(root) {
     const presets = readRepoJson(root, PRESETS_PATH).presets;
     return { root, projection: true, javaFiles, record: readRepoJson(root, HARNESS_PROFILE), active: presets[0], presets: [], compositions: [] };
   }
-  const [{ loadProjectComposerCatalog }, { resolveProjectRecipe }, { composerOwnership, loadComposerModules }, { composerProfile },
+  const [{ loadProjectComposerCatalog }, { resolveProjectRecipe }, { composerOwnership, loadComposerModules },
     { requiresClosure, sourceOwner, stripComments }] = await Promise.all([
     import('./project-composer-catalog.mjs'), import('./project-composer-recipe.mjs'), import('./composer-modules.mjs'),
-    import('./project-composer-source.mjs'), import('./project-composer-integrations.mjs')]);
+    import('./project-composer-integrations.mjs')]);
   const catalog = loadProjectComposerCatalog(root);
   const modules = loadComposerModules(root);
   const ownership = composerOwnership(modules);
+  const readSource = contextSourceReader();
   const recipe = (selection) => ({ schemaVersion: 1, project: { name: 'ledger-contract' }, sourceRef: 'main', selection,
     database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
-  const row = (name, composition, preset) => {
-    const profile = composerProfile(modules, composition);
-    return { name, preset, selected: new Set(composition.resolvedDomains), profile, plan: planJavaRemoval(root, ownership, profile, javaFiles) };
-  };
+  // 계획에는 투영 필드(해석된 기능 목록)만 넘긴다 — 승인 목록 대조는 이 문맥이 하지 않는다(위 docblock 의 소유처).
+  const row = (name, composition, preset) => ({ name, preset, selected: new Set(composition.resolvedDomains),
+    plan: planJavaRemoval(root, ownership, { resolvedDomains: composition.resolvedDomains }, javaFiles, { readSource }) });
   const presets = catalog.presets.map((preset) => row(`preset ${preset.id}`, resolveProjectRecipe(recipe({ preset: preset.id }), catalog), preset.id));
   const features = new Set(catalog.capabilities.map((capability) => capability.id));
   const supportOwners = new Map([...ownership.supportFiles].flatMap(([domain, files]) => files.map((file) => [file, domain])));
   const ownerOf = compositionOwnerOf(root, { ownerOf: sourceOwner(supportOwners, [...features], requiresClosure(catalog.capabilities)),
-    features, stripComments });
-  return { root, projection: false, javaFiles, catalog, modules, ownership, ownerOf, presets, compositions: presets };
+    features, stripComments, readSource });
+  return { root, projection: false, javaFiles, catalog, modules, ownership, ownerOf, readSource, presets, compositions: presets };
 }

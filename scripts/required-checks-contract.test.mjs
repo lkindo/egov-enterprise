@@ -13,6 +13,7 @@ import {
   validatePinnedWorkflowUses,
   validateStaticContract,
 } from './required-checks-contract.mjs';
+import { validateDependencySubmissionContract } from './dependency-submission-contract.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, '.github', 'required-checks.json'), 'utf8'));
@@ -92,18 +93,21 @@ function assertProductMutationConcurrency(content) {
     'product PIT must reserve custom admission capacity with exactly four concurrent batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
-  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify',
-    'migration-protect', 'migration-collect', 'migration-standardize', 'migration-runtime-state']) {
-    assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
-  }
 }
+
+// 행렬마다 정확한 동시 수다. 정적 분석은 짧아 한 슬롯이고, 이관 PIT 는 한 슬롯이면 전수 CI 의 임계 경로가 돼
+// 실측 LPT 순서로 두 슬롯이다(CI-PIT-MIGRATION-SERIAL-CRITICAL-PATH, main run 38985970318).
+const RUNNER_SLOTS = Object.freeze({ 'sast-scope': 1, 'mutation-scope-migration': 2 });
+const MIGRATION_PIT_LPT_ORDER = Object.freeze(['migration-verify', 'migration-validate', 'migration-standardize',
+  'migration-collect', 'migration-protect', 'migration-runtime-state', 'migration-transform-registry',
+  'migration-transform-converter']);
 
 function assertRunnerAdmissionControl(content) {
   const jobs = parseWorkflowJobs(content);
-  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
+  for (const [jobId, slots] of Object.entries(RUNNER_SLOTS)) {
     const job = jobs.get(jobId) ?? '';
-    assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 1'],
-      `${jobId} must consume exactly one runner slot at a time`);
+    assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), [`      max-parallel: ${slots}`],
+      `${jobId} must consume exactly ${slots} runner slot(s) at a time`);
   }
   const reusable = jobs.get('reusable-base') ?? '';
   assert.match(reusable, /^ {4}needs: \[change-scope, frontend-scope\]$/m,
@@ -130,6 +134,13 @@ function assertProductMutationLptOrder(content) {
     'business-core-auth',
     'business-core-code-user-common',
   ], 'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
+}
+
+function assertMigrationMutationLptOrder(content) {
+  const migration = parseWorkflowJobs(content).get('mutation-scope-migration') ?? '';
+  const scopes = [...migration.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
+  assert.deepEqual(scopes, MIGRATION_PIT_LPT_ORDER,
+    'migration PIT scopes must enter the two-runner pool in measured longest-first order');
 }
 
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
@@ -658,6 +669,36 @@ test('product PIT uses measured longest-processing-time ordering without changin
   assert.throws(() => assertProductMutationLptOrder(weakened), /measured longest PIT batches/);
 });
 
+test('migration PIT uses measured longest-processing-time ordering without changing its population', () => {
+  assertMigrationMutationLptOrder(ciContent);
+  // 범위의 집합·개수·순서는 이 deepEqual 이, 범위 내용(gradle·classes·tests)과 소유 잡은 gate registry 의
+  // matrixScopes 양방향 대조가 본다. 그래서 이름을 바꾸거나 모르는 범위를 더한 변이도 여기서 붉어야 한다.
+  const swapped = mutateWorkflowJob(ciContent, 'mutation-scope-migration', block => block
+    .replace('- scope: migration-verify', '- scope: temporary-order-placeholder')
+    .replace('- scope: migration-transform-converter', '- scope: migration-verify')
+    .replace('- scope: temporary-order-placeholder', '- scope: migration-transform-converter'));
+  assert.notEqual(swapped, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(swapped), /measured longest-first order/);
+  const removed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace(/^ {10}- scope: migration-protect\n(?: {12}.+\n)+/m, ''));
+  assert.notEqual(removed, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(removed), /measured longest-first order/);
+  const renamed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace(/^( {10}- scope: )migration-collect$/m, '$1migration-collect-renamed'));
+  assert.notEqual(renamed, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(renamed), /measured longest-first order/);
+  const added = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace(/^( {10}- scope: migration-transform-converter\n(?: {12}.+\n)+)/m, [
+      '$1          - scope: migration-unregistered',
+      '            gradle: ":migration-tool:pitest"',
+      '            classes: "nuri.migration.unregistered.*"',
+      '            tests: "nuri.migration.unregistered.UnregisteredTest"',
+      '',
+    ].join('\n')));
+  assert.notEqual(added, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(added), /measured longest-first order/);
+});
+
 test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
   assertE2eImageBuild(ciContent);
   for (const [before, after] of [
@@ -1030,14 +1071,16 @@ test('sharded PIT jobs keep the common bounded timeout', () => {
   }
 });
 
-test('short noncritical matrices reserve runner capacity without dropping validation', () => {
+test('throttled matrices keep their exact runner slots without dropping validation', () => {
   assertRunnerAdmissionControl(ciContent);
-  for (const jobId of ['sast-scope', 'mutation-scope-migration']) {
-    for (const replacement of ['', '      max-parallel: 2\n', '      # max-parallel: 1\n']) {
+  for (const [jobId, slots] of Object.entries(RUNNER_SLOTS)) {
+    const replacements = ['', `      max-parallel: ${slots + 1}\n`, `      # max-parallel: ${slots}\n`,
+      ...(slots > 1 ? [`      max-parallel: ${slots - 1}\n`] : [])];
+    for (const replacement of replacements) {
       const changed = mutateWorkflowJob(ciContent, jobId,
-        block => block.replace('      max-parallel: 1\n', replacement));
+        block => block.replace(`      max-parallel: ${slots}\n`, replacement));
       assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-      assert.throws(() => assertRunnerAdmissionControl(changed), /one runner slot/);
+      assert.throws(() => assertRunnerAdmissionControl(changed), new RegExp(`${jobId} must consume exactly ${slots} runner slot`));
     }
   }
   for (const replacement of [
@@ -1441,10 +1484,22 @@ test('security critical steps reject advisory, command, or conditional bypasses'
     '        run: node scripts/dependency-snapshot-readiness.mjs',
     '        run: echo snapshot-bypassed',
   );
+  // 따옴표·값 표현과 무관하게 선언 줄을 바꾼다. 앵커가 안 맞으면 아래 단언이 no-op 변이를 잡는다.
   const snapshotReadinessEnvDrift = ciContent.replace(
-    '          SNAPSHOT_WAIT_SECONDS: "600"',
-    '          SNAPSHOT_WAIT_SECONDS: "0"',
+    /^([ \t]*SNAPSHOT_WAIT_SECONDS:[ \t]*).*$/m,
+    '$1"0"',
   );
+  assert.notEqual(snapshotReadinessEnvDrift, ciContent, 'snapshot wait drift fixture must change the workflow');
+  // 매니페스트 env 도 형제 검사처럼 뒤 주석을 값으로 읽지 않는다(의존성 계약의 표현 내성과 같다).
+  // 같은 값에 주석만 달면 녹색이고, 주석이 붙어도 값이 바뀌면 붉다.
+  const snapshotWaitDeclaration = /^([ \t]*SNAPSHOT_WAIT_SECONDS:[ \t]*)(.*?)[ \t]*$/m;
+  const snapshotReadinessEnvComment = ciContent.replace(snapshotWaitDeclaration, '$1$2  # bounded wait');
+  const snapshotReadinessEnvCommentDrift = ciContent.replace(snapshotWaitDeclaration, '$1"0"  # bounded wait');
+  for (const fixture of [snapshotReadinessEnvComment, snapshotReadinessEnvCommentDrift]) {
+    assert.notEqual(fixture, ciContent, 'snapshot wait comment fixture must change the workflow');
+  }
+  assert.deepEqual(validateStaticContract({ manifest, ciContent: snapshotReadinessEnvComment }), [],
+    'a trailing YAML comment must not change the manifest env value');
   const frontendAuditAdvisory = ciContent.replace(
     '      - name: Frontend dependency audit policy',
     '      - name: Frontend dependency audit policy\n        continue-on-error: true',
@@ -1463,10 +1518,61 @@ test('security critical steps reject advisory, command, or conditional bypasses'
     [snapshotReadinessAdvisory, /complete dependency snapshots.*continue-on-error/i],
     [snapshotReadinessNoop, /complete dependency snapshots.*manifest command exactly/i],
     [snapshotReadinessEnvDrift, /complete dependency snapshots.*exact env/i],
+    [snapshotReadinessEnvCommentDrift, /complete dependency snapshots.*exact env/i],
     [frontendAuditAdvisory, /dependency audit policy.*continue-on-error/i],
     [frontendAuditBypass, /dependency audit policy.*manifest command exactly/i],
   ]) {
     assert.match(validateStaticContract({ manifest, ciContent: mutated }).join('\n'), expected);
+  }
+});
+
+// [FE-CONTRACT-06] 대기 상한의 값·단계 범위·검증기 기본값 결속은 의존성 계약 한 곳이 본다(Atlas vitest 의 사본은 걷었다).
+// readiness 단계 fixture 가 이 파일에 있어 부정 시험도 여기에 둔다. 위의 매니페스트 env 고정은 별도 게이트다.
+test('snapshot readiness wait binds the CI step value to the verifier default, not to YAML presentation', () => {
+  const workflow = file => fs.readFileSync(path.join(repoRoot, '.github', 'workflows', file), 'utf8').replace(/\r\n/g, '\n');
+  const current = {
+    producerContent: workflow('dependency-submission.yml'),
+    publisherContent: workflow('dependency-submission-publish.yml'),
+    ciContent: ciContent.replace(/\r\n/g, '\n'),
+    readinessContent: fs.readFileSync(path.join(repoRoot, 'scripts', 'dependency-snapshot-readiness.mjs'), 'utf8'),
+  };
+  assert.deepEqual(validateDependencySubmissionContract(current), []);
+  const defaultPattern = /(env\.SNAPSHOT_WAIT_SECONDS\s*\?\?\s*['"])(\d+)(['"])/;
+  const wait = Number(defaultPattern.exec(current.readinessContent)?.[2]);
+  const declaration = /^ {10}SNAPSHOT_WAIT_SECONDS: .*$/m;
+  assert.match(current.ciContent, declaration);
+  const line = value => `          SNAPSHOT_WAIT_SECONDS: ${value}`;
+  const withCi = replacement => ({ ...current, ciContent: current.ciContent.replace(declaration, () => replacement) });
+  const withDefault = value => ({ ...current,
+    readinessContent: current.readinessContent.replace(defaultPattern, (_, head, _old, tail) => `${head}${value}${tail}`) });
+
+  for (const equivalent of [line(String(wait)), line(`'${wait}'`), line(`"${wait}"  # bounded wait`)]) {
+    assert.deepEqual(validateDependencySubmissionContract(withCi(equivalent)), [], equivalent);
+  }
+  for (const [mutation, expected] of [
+    [withCi(line(`"${wait + 1}"`)), /must equal the verifier default/],
+    [withCi(''), /declared exactly once/],
+    [withCi(`          # SNAPSHOT_WAIT_SECONDS: "${wait}"`), /declared exactly once/],
+    [withCi(`${line(`"${wait}"`)}\n${line(`"${wait}"`)}`), /declared exactly once/],
+    [withCi(line('${{ env.UNVERIFIED_WAIT }}')), /integer literal/],
+    [withDefault(wait + 60), new RegExp(`must equal the verifier default ${wait + 60}`)],
+    [{ ...withDefault(3601), ciContent: withCi(line('"3601"')).ciContent }, /between 0 and 3600/],
+    [{ ...current, readinessContent: current.readinessContent.replace(defaultPattern, () => 'undefined') }, /exactly one SNAPSHOT_WAIT_SECONDS default/],
+  ]) {
+    assert.notDeepEqual(mutation, current, 'negative fixture must change the contract input');
+    assert.match(validateDependencySubmissionContract(mutation).join('\n'), expected);
+  }
+});
+
+test('secret scanning reports before dependency installation and operational contract execution', () => {
+  const job = ciContent.match(/^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m)?.[0] ?? '';
+  const scanner = job.indexOf(workflowStep(job, 'Run gitleaks (working tree + incremental)'));
+  assert.ok(scanner > job.indexOf('actions/checkout@'));
+  for (const name of ['Install pinned operational contract dependencies', 'Verify repository operational contracts',
+    'Require complete dependency snapshots']) {
+    const step = workflowStep(job, name);
+    assert.ok(step.length > 0, name);
+    assert.ok(scanner < job.indexOf(step), `gitleaks feedback must not wait for ${name}`);
   }
 });
 

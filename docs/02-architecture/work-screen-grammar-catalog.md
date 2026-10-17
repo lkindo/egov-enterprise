@@ -275,7 +275,7 @@
 
 ## 6. 현재 소비 census (2026-08-25 최초 실측, 2026-10-02 재측정)
 
-`frontend/src/app` 기준, `__tests__`와 `loading.tsx`를 제외한 `.tsx` 파일(화면 아래 컴포넌트 파일 포함, 공용 표 자신은 제외)에서 **import 경로**로 센 값이다(문자열 언급이 아니라 실제 소비). `sortKey`·`onPageSizeChange`·`bulkActions` 행은 그 prop 을 실제로 넘기는 파일을 센다. A1 셸·직접 조립 행은 [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts)와, A2 행은 [A2 census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)와 정의가 같고 게이트가 값을 동결한다. 나머지 행은 같은 정의로 다시 센 기록값이며 게이트가 아니다.
+`frontend/src/app` 기준, `__tests__`와 `loading.tsx`를 제외한 `.tsx` 파일(화면 아래 컴포넌트 파일 포함, 공용 표 자신은 제외)에서 **import 경로**로 센 값이다(문자열 언급이 아니라 실제 소비). `sortKey`·`onPageSizeChange`·`bulkActions` 행은 그 prop 을 실제로 넘기는 파일을 센다. A1 셸·직접 조립 행은 [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts)와, A2 행은 [A2 census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)와 정의가 같고 게이트가 값을 동결한다(A1 게이트는 화면 목록을 동결하며 수는 그 목록 길이다). 나머지 행은 같은 정의로 다시 센 기록값이며 게이트가 아니다.
 
 | 항목 | 2026-08-25 | 2026-10-02 | 의미 |
 |---|---|---|---|
@@ -324,7 +324,7 @@ A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adopt
 
 **A1 참조 구현:** `/admin/patterns`. 정적 표본 데이터만 쓰므로 세션·시드와 무관하게 결정적으로 렌더되고, 조회·정렬·페이지당 건수가 표본 위에서 실제로 동작한다(죽은 컨트롤 금지 G10이 갤러리 자신에게도 적용된다). 시각 판단은 이 화면에서만 한다.
 
-**소비 계약(W2 이후):** archetype이 존재하는 화면 유형은 `StandardDataTable`을 직접 조립하지 않고 archetype 컴포넌트를 경유한다. 직접 소비 수를 census로 동결하고 이행마다 하향해 되돌아가지 못하게 한다(H2 — baseline을 비우거나 올리지 않는다).
+**소비 계약(W2 이후):** archetype이 존재하는 화면 유형은 `StandardDataTable`을 직접 조립하지 않고 archetype 컴포넌트를 경유한다. 직접 소비 화면을 census 목록으로 동결하고 이행마다 목록에서 빼 되돌아가지 못하게 한다(H2 — baseline을 비우거나 올리지 않는다).
 
 ## 8. 하지 않을 것
 

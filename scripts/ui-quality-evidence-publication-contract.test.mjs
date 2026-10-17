@@ -1022,10 +1022,10 @@ test('repository publication is durable only after committed readback and never 
 
   let committedBytesMatch = false;
   try {
-    const committedIndex = execFileSync('git', ['show', 'HEAD:config/ui-quality-baseline-index.json'], {
+    const committedIndex = execFileSync('git', ['cat-file', 'blob', 'HEAD:config/ui-quality-baseline-index.json'], {
       cwd: repoRoot, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'],
     });
-    const committedSummary = execFileSync('git', ['show', `HEAD:${summaryRelativePath}`], {
+    const committedSummary = execFileSync('git', ['cat-file', 'blob', `HEAD:${summaryRelativePath}`], {
       cwd: repoRoot, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'],
     });
     committedBytesMatch = committedIndex.equals(indexBytes) && committedSummary.equals(summaryBytes);
@@ -1397,7 +1397,7 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
     for (const relativePath of SCENARIO_CONTRACT_SOURCES) {
       const capture = () => captureCommittedWorktreeFileHash({
         readWorktreeFile: () => readFileSync(join(root, ...relativePath.split('/'))),
-        readCommittedFile: () => runGitBuffer(root, ['show', `${buildSha}:${relativePath}`]),
+        readCommittedFile: () => runGitBuffer(root, ['cat-file', 'blob', `${buildSha}:${relativePath}`]),
       });
       assert.doesNotThrow(capture);
       const missingRule = attributes.split('\n').filter(line => !line.startsWith(`${relativePath} `)).join('\n');
@@ -1423,7 +1423,7 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
       trackedPaths: selectedBuildInputs,
       readCommittedFile: (relativePath) => runGitBuffer(
         root,
-        ['show', `${buildSha}:${relativePath}`],
+        ['cat-file', 'blob', `${buildSha}:${relativePath}`],
       ),
     });
     const manifest = JSON.parse(readFileSync(join(root, ...manifestPath.split('/')), 'utf8'));
@@ -1495,7 +1495,7 @@ test('combined v2 becomes measured only after clean committed protocol, build-in
     writeRepositoryFile(
       root,
       protocolPath,
-      runGitBuffer(root, ['show', `HEAD:${protocolPath}`]),
+      runGitBuffer(root, ['cat-file', 'blob', `HEAD:${protocolPath}`]),
     );
     assert.equal(verifyDurableEvidenceFromRepository({ repoRoot: root }).verified, true);
 

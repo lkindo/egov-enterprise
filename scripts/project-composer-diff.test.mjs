@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { resolve } from 'node:path';
+import { mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { compositionDigest, loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { compositionDiff } from './project-composer-diff.mjs';
 import { projectCompositionMenus } from './project-composer-db.mjs';
@@ -130,4 +132,31 @@ test('the engine reuses the last loaded catalog for diffs and never reloads it p
   assert.equal(loads, 3);
   assert.equal(kept(), '빼도 최신 게시판이 요구해 계속 포함됩니다.');
   assert.equal(loads, 3);
+});
+
+test('one generation loads the catalog exactly once and composes with that load', async t => {
+  // 생성도 계획처럼 카탈로그를 새로 적재하고, 계획이 적재한 그 카탈로그로 구성을 푼다. 미리보기가 둔 카탈로그를 다시 쓰거나
+  // 한 생성에서 두 번 적재하면 붉다. 적재마다 게시판 이름이 다른 카탈로그를 돌려줘 구성이 어느 적재로 풀렸는지 해시로 본다.
+  const outputRoot = realpathSync(mkdtempSync(join(tmpdir(), 'composer-diff-generate-')));
+  t.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+  const relabel = label => {
+    const { catalogHash, ...body } = structuredClone(catalog);
+    body.capabilities.find(capability => capability.id === 'board').label = label;
+    return { ...body, catalogHash: compositionDigest(body) };
+  };
+  const versions = ['첫 적재', '둘째 적재', '셋째 적재'].map(relabel);
+  let loads = 0;
+  const engine = createComposerEngine({ root, outputRoot, fingerprint: () => 'a'.repeat(64),
+    run: async command => assert.fail(`no command runs before the database stage: ${command}`),
+    loadCatalog: () => { loads += 1; return versions[Math.min(loads, versions.length) - 1]; } });
+  engine.diff(recipe({ domains: ['mail'] }), 'survey');
+  assert.equal(loads, 1);
+  // 구성을 쓴 뒤 DB 단계에 들어가기 전에 취소로 멈춘다(명령·Docker 를 돌리지 않는다).
+  const controller = new AbortController();
+  await assert.rejects(() => engine.generate(recipe({ domains: ['mail'] }), { signal: controller.signal,
+    onProgress: ({ stage }) => { if (stage === 'resolve') controller.abort(); } }), error => error.code === 'CANCELLED');
+  assert.equal(loads, 2, 'one generation loads the catalog exactly once');
+  const [job] = readdirSync(join(outputRoot, 'build/project-composer/jobs'));
+  const composition = JSON.parse(readFileSync(join(outputRoot, 'build/project-composer/jobs', job, 'composition.json'), 'utf8'));
+  assert.equal(composition.catalogHash, versions[1].catalogHash, 'the composition is resolved from the catalog this generation loaded');
 });

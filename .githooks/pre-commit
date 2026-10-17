@@ -24,11 +24,14 @@ fi
 STAGED=$(git diff --cached --name-only)
 if echo "$STAGED" | grep -qE '(api-docs\.json|Dto\.java|Controller\.java|src/types/generated-)'; then
   if command -v pnpm >/dev/null 2>&1; then
+    # codegen:verify 는 이 커밋의 index(git 이 넘기는 GIT_INDEX_FILE)에 stage 된 쌍을 다시 만든 결과와 비교하고,
+    #   작업 트리가 index 와 다르면 작업 트리 쌍도 비교한다. 읽기만 하며 작업 트리·index 를 쓰지 않는다.
+    #   어느 쪽이 어긋났는지([index]/[working tree])는 아래 명령을 직접 실행한 출력에 나온다.
     echo "[pre-commit] API 계약 드리프트 점검 (codegen:verify)…"
     pnpm -C frontend run codegen:verify >/dev/null 2>&1 \
-      || echo "⚠  generated-api.d.ts 드리프트 가능 — 'pnpm -C frontend codegen:file' 후 스테이징 (공용 project-context의 codegen 규칙). 원인이 stale api-docs.json인지 먼저 확인."
+      || echo "⚠  generated-api.d.ts 드리프트 가능 — 'pnpm -C frontend codegen:file' 후 스테이징 (공용 project-context의 codegen 규칙). 원인이 stale api-docs.json인지 먼저 확인. 자세히: pnpm -C frontend codegen:verify"
     pnpm -C frontend run codegen:verify:zod >/dev/null 2>&1 \
-      || echo "⚠  generated-zod.ts 드리프트 가능 — 'pnpm -C frontend codegen:zod' 후 스테이징."
+      || echo "⚠  generated-zod.ts·generated-operations.ts 드리프트 가능 — 'pnpm -C frontend codegen:zod' 후 스테이징. 자세히: pnpm -C frontend codegen:verify:zod"
   fi
 fi
 exit 0

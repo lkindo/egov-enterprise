@@ -27,7 +27,8 @@ const compose = selection => resolveProjectRecipe({ schemaVersion: 1, project: {
 /*
  * 재사용 생성물의 권한 투영(10단계 10b-2, DEC-OPS-287). 카탈로그·인가 원장 바인딩·묶음 원장·화면 목록을 구성으로 함께 줄인다.
  * 판정 함수 하나하나의 규칙을 작은 입력으로 고정하고, 모든 기능을 고른 구성이 원본과 바이트가 같다는 것(원본 parity)을 실제 원본으로
- * 대조한다. 생성기·정밀 점검·무결성 검사가 이 모듈을 frontend 설치 없이 적재한다는 것도 정적 import 로 고정한다.
+ * 대조한다. 생성기·정밀 점검·무결성 검사가 이 모듈을 frontend 설치 없이 적재한다는 것은 진입점의 모든 참조 종류(정적·동적 import,
+ * require, createRequire)를 따라가는 폐포 계약(frontend-reachability-census.test.mjs)이 본다 — 이 모듈들은 생성기·정밀 점검 폐포 안에 있다.
  */
 
 test('binding handlers resolve to exactly one Java source and external handlers have none', () => {
@@ -239,34 +240,4 @@ test('the deep permission plan refuses a retained binding, screen entry or redir
   // 구성에 남지 않는 page 의 카탈로그 행은 판정하지 않는다(대조군 — 생성물에서 빠지는 행이다).
   assert.doesNotThrow(() => planPermissionProjection({ sourceRoot: root, composition: core, removed,
     keptPageRoutes: new Set(['/', '/admin/system/menus']), sources: redirectTampered }));
-});
-
-/*
- * 생성기·정밀 점검·생성물 무결성 검사는 frontend 의존성 없이 이 투영을 적재한다(생성기 화면은 frontend 를 설치하지 않은 곳에서도 돈다).
- * TypeScript 를 적재 시점에 읽는 모듈(화면 목록 생성기와 그 축 3 사슬)은 정적 import 닫힘에 없어야 한다.
- */
-test('permission projection modules do not statically load the TypeScript-backed screen registry chain', () => {
-  const tsBacked = ['scripts/generate-screen-registry.mjs', 'scripts/operation-consumer-census.mjs', 'scripts/generated-boundary-census.mjs'];
-  const closure = start => {
-    const seen = new Set();
-    const visit = file => {
-      if (seen.has(file)) return;
-      seen.add(file);
-      const source = read(file).replace(/\/\*[\s\S]*?\*\//gu, '').replace(/^\s*\/\/.*$/gmu, '');
-      // `from` 이 있는 import·export 와 부수 효과만 쓰는 맨 import(`import './x.mjs'`)를 모두 따라간다.
-      for (const match of source.matchAll(/^\s*(?:(?:import|export)\b[^;]*?\bfrom\s+|import\s+)['"](\.\/[^'"]+)['"]/gmu)) {
-        visit(path.posix.join(path.posix.dirname(file), match[1]));
-      }
-    };
-    visit(start);
-    return seen;
-  };
-  for (const start of ['scripts/reusable-permission-projection.mjs', 'scripts/screen-registry-model.mjs', 'scripts/generate-permissions.mjs',
-    'scripts/reusable-governance-projection.mjs', 'scripts/reusable-governance-integrity.mjs', 'scripts/project-composer-deep.mjs']) {
-    const reached = closure(start);
-    assert.ok(reached.size > 1, `${start}: the import scan must follow local imports`);
-    for (const module of tsBacked) assert.ok(!reached.has(module), `${start} statically reaches ${module}`);
-  }
-  // 대조군: 화면 목록 생성기는 그 사슬을 정적으로 적재한다(스캐너가 실제로 사슬을 따라간다).
-  assert.ok(closure('scripts/generate-screen-registry.mjs').has('scripts/generated-boundary-census.mjs'));
 });

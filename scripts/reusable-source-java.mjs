@@ -21,11 +21,12 @@ export function isJavaGateSource(path, source) {
   const normalized = normalize(path);
   if (normalized.includes('/harness/') || GATE_FILE_PATTERN.test(normalized)) return true;
   // 태그는 문자열 리터럴이므로 **리터럴은 보존한 채 주석만** 지운다(javadoc 인용의 오탐 차단).
-  return GATE_TAGS.some((tag) => stripJavaComments(source).includes(tag));
+  // 주석 제거는 한 번만 하고 세 태그에 같이 쓴다 — 태그마다 지우면 게이트가 아닌 파일은 같은 일을 세 번 한다.
+  const code = stripJavaComments(source);
+  return GATE_TAGS.some((tag) => code.includes(tag));
 }
 
-function javaType(path) {
-  const source = readFileSync(path, 'utf8');
+function javaType(path, source) {
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
   return packageName ? `${packageName}.${basename(path, '.java')}` : undefined;
 }
@@ -100,20 +101,30 @@ export function resolveDomainRemovalDirectory(root, sourceSet, layer, domain) {
 // 원문 그대로를 넘긴다 — 생성기처럼 고쳐 쓴 소스로 판정하면 실제로 남는 원문과 판정이 어긋난다.
 // `ownership` 은 기능 소유(기능 id 전부·기능 → 지원 파일·RBAC 매트릭스 표면 소유, composerOwnership)이고 `profile.resolvedDomains` 는
 // 남길 기능이다. 제외 기능은 그 차집합이다 — pack 을 보지 않는다(11단계 C3). 시작 구성도 해석된 기능 목록으로 투영한다.
+// `readSource` 는 파일 원문을 읽는다(planFrontendRemoval 의 readSource 와 같은 자리). 한 호출 안에서는 파일마다 한 번만 부른다 —
+// 형식 판정·게이트 판정·의존 색인이 같은 원문을 쓴다. 호출이 끝나면 그 원문을 버린다(다음 호출은 다시 읽는다).
+// 여러 계획이 같은 원문을 공유하려면 내용이 바뀌지 않는 트리를 보는 호출자가 기억하는 읽기를 넘긴다(시험·정밀 점검 한 번·원장 계약 문맥 한 번).
 export function planJavaRemoval(root, ownership, profile, javaFiles = walk(root, (path) => path.endsWith('.java')),
   { walkDirectory = (directory) => walk(directory, () => true),
-    projectSource = (file, source) => projectComposerJava(file, source, profile, ownership?.rbac) } = {}) {
+    projectSource = (file, source) => projectComposerJava(file, source, profile, ownership?.rbac),
+    readSource = (path) => readFileSync(path, 'utf8') } = {}) {
   if (!Array.isArray(profile?.resolvedDomains)) fail('Java 투영에는 해석된 기능 목록(resolvedDomains)이 필요하다.');
   if (!Array.isArray(ownership?.domains) || !(ownership.supportFiles instanceof Map)) fail('Java 투영에는 기능 소유(기능 목록·지원 파일)가 필요하다.');
   const support = ownership.supportFiles;
   const excludedDomains = ownership.domains.filter((domain) => !profile.resolvedDomains.includes(domain));
   const allBefore = javaFiles;
-  const pathToType = new Map(allBefore.map((path) => [path, javaType(path)]));
+  // 파일 내용은 계획 중 바뀌지 않는다 — 원문은 파일마다 한 번만 읽는다(종전에는 형식·게이트·색인이 따로 읽어 같은 파일을 세 번 읽었다).
+  const sources = new Map();
+  const sourceOf = (path) => {
+    if (!sources.has(path)) sources.set(path, readSource(path));
+    return sources.get(path);
+  };
+  const pathToType = new Map(allBefore.map((path) => [path, javaType(path, sourceOf(path))]));
   /*
     투영이 무엇을 게이트로 지웠는지는 **지우기 전에** 판정해야 한다 — 파일이 사라진 뒤에는
     소스를 읽을 수 없어 "몇 개 지웠다" 조차 말할 수 없다(그게 종전의 조용한 손실이다).
   */
-  const gateSources = new Set(allBefore.filter((path) => isJavaGateSource(path, readFileSync(path, 'utf8'))));
+  const gateSources = new Set(allBefore.filter((path) => isJavaGateSource(path, sourceOf(path))));
   const removed = new Set();
   const removalReason = new Map();
   const directDirectories = [];
@@ -150,7 +161,7 @@ export function planJavaRemoval(root, ownership, profile, javaFiles = walk(root,
   const indexes = new Map();
   const dependencyIndex = (path) => {
     if (!indexes.has(path)) {
-      indexes.set(path, javaDependencyIndex(projectSource(normalize(relative(root, path)), readFileSync(path, 'utf8'))));
+      indexes.set(path, javaDependencyIndex(projectSource(normalize(relative(root, path)), sourceOf(path))));
     }
     return indexes.get(path);
   };
@@ -223,7 +234,8 @@ export function pruneJava(output, ownership, profile) {
         reason: '선택한 RBAC 표면의 단언을 유지하고 미선택 표면의 단언만 제외한다.',
         upstreamSha256: createHash('sha256').update(source).digest('hex'), projectedSha256: createHash('sha256').update(projected).digest('hex') });
     }
-    const dangling = referencedRemovedJavaType(path, removedTypes);
+    // 디스크의 내용은 방금 쓴 projected 와 같다(바뀌지 않았으면 원문과 같다) — 다시 읽지 않고 그것으로 판정한다.
+    const dangling = referencedRemovedJavaType(path, removedTypes, projected);
     if (dangling) fail(`Java projection dangling import: ${normalize(relative(output, path))} -> ${dangling}`);
   }
   const removedGates = [...removed]

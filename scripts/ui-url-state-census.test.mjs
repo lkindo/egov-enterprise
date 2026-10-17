@@ -31,8 +31,19 @@ function refreshHash(census) {
   })).digest('hex');
 }
 
+let repositoryCensusCache;
+/**
+ * 저장소 census 는 한 번만 만든다(한 번에 1초 안팎이다). 빌더는 저장소 소스·원장의 결정적 함수이고 현재 시각을 읽지 않으며(미래 시각
+ * 시험이 그 시각에서 한 번 더 빌드해 이 복제본과 같은지 본다), 실행 중에 저장소를 바꾸는 시험도 없다. 부를 때마다 복제본을 돌려주므로
+ * 한 시험이 받은 결과를 제자리에서 바꿔도 다른 시험에 새지 않는다 — 맨 끝 시험이 그 격리를 확인한다.
+ */
+function repositoryCensus() {
+  repositoryCensusCache ??= buildUrlStateCensus({ repoRoot });
+  return structuredClone(repositoryCensusCache);
+}
+
 test('current URL-state census exactly covers critical route and URL producer populations', () => {
-  const actual = buildUrlStateCensus({ repoRoot });
+  const actual = repositoryCensus();
   const expected = JSON.parse(readFileSync(manifestPath, 'utf8'));
 
   assert.deepEqual(validateUrlStateCensus(actual, { repoRoot }), []);
@@ -86,7 +97,7 @@ test('current URL-state census exactly covers critical route and URL producer po
 });
 
 test('a non-search census drift does not deadlock candidate generation on the existing search allowlist', () => {
-  const candidate = buildUrlStateCensus({ repoRoot });
+  const candidate = repositoryCensus();
   const nonSearch = candidate.records.find(({ stateItems }) => stateItems.every(({ riskSignals }) => (
     !riskSignals.includes('free-text-name-signal')
     && !riskSignals.includes('credential-name-signal')
@@ -108,7 +119,7 @@ test('a non-search census drift does not deadlock candidate generation on the ex
 // ADR-0018: 실시간 최신성 경계는 운영 검토 계약으로 이전한다. 여기서는 options.nowMs로
 // 과거 시각을 주입하는 대신 실제 Date API를 미래로 이동해 소스 판정의 독립성을 증명한다.
 test('identical source and approval contracts remain valid across future calendar dates', (t) => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const before = structuredClone(census);
   const dates = ['2026-12-31T23:59:59.999Z', '2027-01-01T00:00:00.000Z', '2036-09-14T00:00:00.000Z'];
   t.mock.timers.enable({ apis: ['Date'], now: Date.parse(dates[0]) });
@@ -117,10 +128,12 @@ test('identical source and approval contracts remain valid across future calenda
     assert.deepEqual(validateUrlStateCensus(census, { repoRoot }), [], date);
   }
   assert.deepEqual(census, before, '검토 일정이나 미승인 상태를 자동 갱신하면 안 된다');
+  // 저장소 census 메모의 전제 — 빌더도 시각을 읽지 않는다. 마지막(가장 먼) 시각에서 한 번만 다시 빌드한다.
+  assert.deepEqual(buildUrlStateCensus({ repoRoot }), before, '빌더 출력이 현재 시각에 따라 달라지면 안 된다');
 });
 
 test('a non-existent reviewBy date cannot silently corrupt the operational review schedule', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
 
   for (const bogus of ['2026-13-45', '2026-02-30', '2026-00-10', '2026-01-32']) {
     const tampered = structuredClone(census);
@@ -150,7 +163,7 @@ test('a non-existent reviewBy date cannot silently corrupt the operational revie
 });
 
 test('implemented login destination controls are recorded without claiming global policy approval', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const byId = Object.fromEntries(census.requiredNegativeCases.map((entry) => [entry.id, entry]));
 
   for (const id of ['query-fragment-in-login-intent', 'protocol-relative-or-backslash-target']) {
@@ -216,7 +229,7 @@ test('unknown query copy demonstrably preserves repeated and encoded forbidden-n
 
 test('credential-like URL keys, including the repository pswd spelling, remain immediate red after review dates', (t) => {
   t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2036-09-14T00:00:00.000Z') });
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
 
   for (const credentialName of ['token', 'pswd']) {
     const scanned = scanUrlStateSource(`const value = searchParams.get('${credentialName}');`, {
@@ -259,7 +272,7 @@ test('typed HTTP GET query objects are inventoried without promoting ordinary Ma
 });
 
 test('an approval claim fabricated from static syntax is a reproducible semantic red', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const mutated = structuredClone(census);
   const state = mutated.records.find(({ stateItems }) => stateItems.length > 0).stateItems[0];
   state.approvalStatus = 'accepted';
@@ -273,7 +286,7 @@ test('an approval claim fabricated from static syntax is a reproducible semantic
 });
 
 test('redirect risk or required negative-case narrowing is a reproducible semantic red', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const weakenedRedirect = structuredClone(census);
   const redirect = weakenedRedirect.records.find(({ kind }) => kind === 'config-redirect');
   redirect.riskSignals = redirect.riskSignals.filter((signal) => signal !== 'double-encoded-query');
@@ -293,7 +306,7 @@ test('redirect risk or required negative-case narrowing is a reproducible semant
 });
 
 test('population removal and generated snapshot drift cannot pass silently', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const removed = structuredClone(census);
   removed.records = removed.records.filter(({ kind }) => kind !== 'dynamic-segment');
   removed.summary.byKind['dynamic-segment'] = 0;
@@ -312,7 +325,7 @@ test('population removal and generated snapshot drift cannot pass silently', () 
 });
 
 test('empty populations and lexical parser failures are fail-closed', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const empty = structuredClone(census);
   empty.records = [];
   assert.match(validateUrlStateCensus(empty, { repoRoot }).join('\n'), /population is empty/i);
@@ -323,7 +336,7 @@ test('empty populations and lexical parser failures are fail-closed', () => {
 
 // ADR-0018: 만료 에러의 간접 관측 대신 운영 검토가 사용하는 상태 분류 경계를 직접 검증한다.
 test('분류할 상태가 없다는 판정은 다섯 조건을 모두 만족할 때만 성립한다', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const exemptable = census.records.find((r) => (r.stateItems ?? []).length === 0
     && typeof r.targetCandidate === 'string'
     && !/[?&#]/u.test(r.targetCandidate)
@@ -348,7 +361,7 @@ test('분류할 상태가 없다는 판정은 다섯 조건을 모두 만족할 
 });
 
 test('상태 없는 URL 판정과 검토 대상은 실제 모집단에 모두 존재한다', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const noStateCount = census.records.filter(hasNoClassifiableUrlState).length;
   assert.ok(noStateCount > 0, '정적 링크를 하나도 판정하지 못하면 이 규칙이 동작하지 않는 것이다');
   assert.ok(noStateCount < census.records.length, '미해소 상태가 전부 사라지면 분류가 잘못된 것이다');
@@ -417,7 +430,7 @@ test('폼 가로채기는 증명된 경우에만 판정한다', () => {
 });
 
 test('가로채기 판정이 실제 모집단에서 공허하지 않다', () => {
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const forms = census.records.filter((record) => record.kind === 'form-producer');
   const intercepted = forms.filter((record) => record.operation === 'intercepted-submit');
   const unresolved = forms.filter((record) => record.operation === 'implicit-or-computed-method');
@@ -482,8 +495,16 @@ test('슬롯 기여와 기여만 import 하는 모듈은 소비 셸의 라우트
   }, '다른 화면도 import 하는 모듈(shared)·타입 import(shape)·라우트 진입 파일은 자기 맥락을 그대로 받는다');
 
   // 실제 모집단: 쪽지 탭의 이동은 협업 허브의 record 다(종전 '/note').
-  const census = buildUrlStateCensus({ repoRoot });
+  const census = repositoryCensus();
   const noteTab = census.records.filter(({ source }) => source === 'frontend/src/app/note/NoteCollaborationTab.tsx');
   assert.ok(noteTab.length > 0, '쪽지 탭의 record 가 사라지면 이 귀속 시험이 공허하다');
   assert.deepEqual([...new Set(noteTab.map(({ routePattern }) => routePattern))], ['/admin/collaboration']);
+});
+
+// 시험들은 한 번 만든 저장소 census 의 복제본을 나눠 받는다(repositoryCensus). 앞 시험이 받은 결과를 제자리에서 바꿔도(비검색 drift
+// 시험이 record 문구와 해시를 바꾼다) 공유 결과는 커밋된 원장 그대로여야 한다 — 복제를 빼면 이 시험이 붉다.
+test('공유한 저장소 census 는 앞 시험의 제자리 변형에 오염되지 않는다', () => {
+  const shared = repositoryCensus();
+  assert.deepEqual(compareUrlStateCensus(JSON.parse(readFileSync(manifestPath, 'utf8')), shared), []);
+  assert.notEqual(repositoryCensus(), shared, '부를 때마다 새 복제본이어야 한다');
 });

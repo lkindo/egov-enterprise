@@ -1212,7 +1212,7 @@
           },
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run('pnpm -C frontend exec vitest run src/__tests__');",
+            "fragment": "run('pnpm -C frontend run test:coverage');",
             "tiers": [
               "local-full"
             ]
@@ -1274,7 +1274,7 @@
           },
           {
             "source": "scripts/verify.mjs",
-            "fragment": "run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');",
+            "fragment": "run('pnpm -C frontend run test:coverage');",
             "tiers": [
               "local-full"
             ]
