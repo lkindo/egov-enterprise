@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -5,6 +6,7 @@ import { runInNewContext } from 'node:vm';
 import * as ts from 'typescript';
 import { SCREEN_ALIASES } from '@/types/generated-screen-registry';
 import { REPO_ROOT, isRemovedByProjection, pageInProjection, projectionRemovedFiles } from '@/test-utils/projection';
+import { codeWithoutComments } from '../../../../scripts/code-without-comments.mjs';
 
 /**
  * 탭 목적지 계약 (Phase 2 — 슬롯 도입 전 census 범위 확장).
@@ -59,13 +61,6 @@ export function tabDestination(source: string, url: string): TabDestination | nu
   return { source, route: match[1].replace(/\/$/, '') || '/', tab: match[2] };
 }
 
-/** 주석을 같은 길이의 공백으로 지운다(줄 번호 보존). 문자열 안의 `//`(예: 'https://')는 건드리지 않는다. */
-function withoutComments(source: string): string {
-  const blank = (text: string) => text.replace(/[^\n]/g, ' ');
-  return source.replace(/(['"`])(?:\\.|(?!\1)[^\\])*\1|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
-    (token) => (token.startsWith('/*') || token.startsWith('//') ? blank(token) : token));
-}
-
 const lineOf = (source: string, index: number) => source.slice(0, index).split('\n').length;
 
 /**
@@ -73,7 +68,9 @@ const lineOf = (source: string, index: number) => source.slice(0, index).split('
  * (`\`/approvals?tab=PENDING&doc=${id}\``)는 괜찮고, 그 앞에 식 자리가 있으면 세지 않는다.
  */
 export function frontendDestinations(source: string, file: string): TabDestination[] {
-  const code = withoutComments(source);
+  // 주석은 같은 길이 공백으로 지운다(줄 번호 보존) — 공용 판정이 문자열·정규식·JSX 를 안다. 종전 정규식은 따옴표를 문자열
+  //   시작으로만 보아 JSX 본문의 아포스트로피·정규식 속 따옴표 뒤에서 어긋났다(FE-CONTRACT-01).
+  const code = codeWithoutComments(source, file);
   const pattern = new RegExp(String.raw`(['"\x60])(\/${ROUTE_CHARS}*\?[^'"\x60$]*?tab=${TAB_VALUE})(?=[&#'"\x60])`, 'g');
   return [...code.matchAll(pattern)]
     .map((match) => tabDestination(`${file}:${lineOf(code, match.index ?? 0)}`, match[2]))
@@ -82,7 +79,7 @@ export function frontendDestinations(source: string, file: string): TabDestinati
 
 /** 백엔드 소스의 문자열 리터럴과 같은 파일 대문자 상수 결합(`ROUTE + "?tab=값"`)에서 목적지를 찾는다. */
 export function javaDestinations(source: string, file: string): TabDestination[] {
-  const code = withoutComments(source);
+  const code = codeWithoutComments(source, file);
   const constants = new Map([...code.matchAll(/\b([A-Z][A-Z0-9_]*)\s*=\s*"(\/[^"]*)"\s*;/g)].map((match) => [match[1], match[2]]));
   const at = (index: number) => `${file}:${lineOf(code, index)}`;
   const literal = [...code.matchAll(new RegExp(String.raw`"(\/${ROUTE_CHARS}*\?[^"]*?tab=[^"]*)"`, 'g'))]
@@ -243,6 +240,12 @@ describe('탭 목적지 계약', () => {
       "/* 블록 주석 '/hub?tab=OLD2' 도 마찬가지다. */",
       "const g = 'https://example.org/a?tab=X';",
     ].join('\n'), 'f.ts').map(({ route, tab }) => `${route}:${tab}`)).toEqual(['/hub:A', '/hub:B', '/hub:C']);
+    // JSX 본문의 아포스트로피는 문자열이 아니다 — 그 뒤의 주석 속 링크를 세지 않는다(종전 정규식은 따옴표로 보아 어긋났다).
+    expect(frontendDestinations([
+      "export const View = () => <p>don't</p>;",
+      "// 주석 속 '/hub?tab=OLD3' 는 링크가 아니다.",
+      "const h = '/hub?tab=A';",
+    ].join('\n'), 'f.tsx').map(({ route, tab }) => `${route}:${tab}`)).toEqual(['/hub:A']);
     // 탭 값의 모양을 판정할 수 없으면 조용히 버리지 않고 실패한다.
     expect(() => tabDestination('s', '/hub?tab=A.B')).toThrow(/판정할 수 없다/);
     const java = [

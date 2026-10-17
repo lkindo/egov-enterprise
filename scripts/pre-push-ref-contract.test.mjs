@@ -188,22 +188,39 @@ test('the contract exposes deletion-condition regressions as reproducible red ou
 const atlasCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts';
 const crossStackCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-stack';
 
-function observeVerification(scope, { source, failCommand } = {}) {
+function observeVerification(scope, { source, failCommand, env = {} } = {}) {
   const commands = [];
   const exits = [];
+  const zones = [];
   const runner = source ?? readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
   runInNewContext(runner.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, ''), {
-    execSync: command => {
+    execSync: (command, options) => {
       commands.push(command);
+      zones.push(options?.env?.TZ);
       if (command === failCommand) throw new Error('deliberate verification failure');
     },
     platform: () => 'linux',
     randomBytes: () => ({ toString: () => 'fixture-only' }),
-    process: { argv: ['node', 'scripts/verify.mjs', scope], env: {}, exit: code => exits.push(code) },
+    process: { argv: ['node', 'scripts/verify.mjs', scope], env, exit: code => exits.push(code) },
     console: { log() {}, error() {} },
   }, { timeout: 1000 });
-  return { commands, exits };
+  return { commands, exits, zones };
 }
+
+// 로컬 기본은 KST(개발 기계와 같은 조건)이고, 명시한 TZ 가 이겨 CI 러너(UTC) 조건을 그대로 재현할 수 있다.
+test('verify defaults to KST and lets an explicit TZ reproduce the UTC CI runner', () => {
+  for (const scope of ['docs', 'fast', 'full', 'e2e']) {
+    const local = observeVerification(scope).zones;
+    assert.ok(local.length > 0 && local.every(zone => zone === 'Asia/Seoul'), scope);
+    const ci = observeVerification(scope, { env: { TZ: 'UTC' } }).zones;
+    assert.ok(ci.length > 0 && ci.every(zone => zone === 'UTC'), scope);
+  }
+  // 시간대를 다시 고정하면 명시한 UTC 가 무시된다 — 위 단언이 그것을 잡는다(red 재현).
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  const pinned = runner.replace("TZ: process.env.TZ || 'Asia/Seoul'", "TZ: 'Asia/Seoul'");
+  assert.notEqual(pinned, runner);
+  assert.ok(observeVerification('docs', { source: pinned, env: { TZ: 'UTC' } }).zones.every(zone => zone === 'Asia/Seoul'));
+});
 
 test('verification profiles execute the full required Vitest population exactly once', () => {
   const expected = {
@@ -228,6 +245,86 @@ test('verification profiles execute the full required Vitest population exactly 
   assert.notEqual(missingCoverage, runner);
   assert.deepEqual(observeVerification('full', { source: missingCoverage }).commands.filter(command => /vitest|test:coverage/.test(command)), [],
     'removing the sole coverage owner must lose the expected population');
+});
+
+// [2026-10-17] 실패가 잦고 짧은 정적 검사(컴파일·codegen·타입·lint·폼 census)가 운영 계약(로컬 약 11분)보다 먼저 돈다.
+//   명령 집합과 인자는 그대로이고 순서만 바뀐다 — 성공하면 모두 실행되고, 정적 검사가 실패하면 계약을 기다리지 않는다.
+const CONTRACTS = 'npm run test:operational-contracts';
+const VERIFY_STATIC = [
+  'pnpm -C frontend run codegen:verify',
+  'pnpm -C frontend run codegen:verify:zod',
+  'pnpm -C frontend exec tsc --noEmit',
+  'pnpm -C frontend run type-check:e2e',
+  'pnpm -C frontend run lint',
+  'pnpm -C frontend run test:form-validation',
+];
+const VERIFY_BACKEND_SUITE = './gradlew compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
+const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle:check', 'pnpm -C frontend run test:coverage'];
+const VERIFY_FAST = ['./gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+
+test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
+  const expected = {
+    docs: [CONTRACTS, atlasCommand],
+    fast: VERIFY_FAST,
+    push: [...VERIFY_FAST, './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8'],
+    be: [CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
+    fe: [...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
+    full: [...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
+    e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
+  };
+  for (const [scope, commands] of Object.entries(expected)) {
+    assert.deepEqual(observeVerification(scope).commands, commands, scope);
+  }
+  const typeCheck = 'pnpm -C frontend exec tsc --noEmit';
+  for (const scope of ['fast', 'push', 'fe', 'full']) {
+    const failed = observeVerification(scope, { failCommand: typeCheck });
+    assert.deepEqual(failed.exits, [1], scope);
+    assert.equal(failed.commands.at(-1), typeCheck, scope);
+    assert.ok(!failed.commands.includes(CONTRACTS), `${scope}: a type error must not wait for the operational contracts`);
+  }
+  // 계약을 정적 검사 앞으로 되돌리면 타입 오류에서도 계약을 먼저 기다린다 — 위 단언이 그것을 잡는다(red 재현).
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const contractsFirst = runner.replace("  } else if (scope === 'fe') {\n    runFrontendStatic();\n    runOperationalContracts();\n",
+    "  } else if (scope === 'fe') {\n    runOperationalContracts();\n    runFrontendStatic();\n");
+  assert.notEqual(contractsFirst, runner);
+  assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
+});
+
+const PRE_PUSH_SOURCE_ORDER = [
+  'gradlew compileJava compileTestJava -q',
+  'npx tsc --noEmit',
+  'npx tsc -p tsconfig.e2e.json --noEmit',
+  'pnpm run codegen:verify',
+  'pnpm run codegen:verify:zod',
+  'pnpm run lint',
+  'pnpm run test:form-validation',
+  CONTRACTS,
+  'npx vitest run src/__tests__',
+  'gradlew :api-server:harnessTest -q',
+];
+
+test('pre-push runs static checks before the operational contracts and stops on their failure', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
+  const both = runHook(input, hookSource, { files });
+  assertSuccessful(both);
+  assert.deepEqual(both.commands, PRE_PUSH_SOURCE_ORDER);
+  const backendOnly = runHook(input, hookSource, { files: [files[0]] });
+  assertSuccessful(backendOnly);
+  assert.deepEqual(backendOnly.commands,
+    ['gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
+  for (const failCommand of ['gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
+    const failed = runHook(input, hookSource, { files, failCommand });
+    assert.notEqual(failed.status, 0, failCommand);
+    assert.equal(failed.commands.at(-1), failCommand);
+    assert.ok(!failed.commands.includes(CONTRACTS), `${failCommand} failure must not wait for the operational contracts`);
+  }
+  // 계약 호출을 정적 검사 앞으로 옮긴 훅은 타입 오류에서도 계약을 먼저 부른다 — 위 단언이 그것을 잡는다(red 재현).
+  const contractsFirst = hookSource
+    .replace('echo "[pre-push] AGENTS.md change-scoped source verification"', 'run_operational_contracts\necho "[pre-push] AGENTS.md change-scoped source verification"')
+    .replace(/# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n/u, '');
+  assert.notEqual(contractsFirst, hookSource);
+  assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
 });
 
 test('pre-push selects one Atlas owner and keeps its failure blocking in every scope', () => {

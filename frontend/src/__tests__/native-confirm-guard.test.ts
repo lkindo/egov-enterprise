@@ -1,7 +1,9 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { codeWithoutComments, productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 /**
  * 🚫 네이티브 `confirm()` 재유입 차단 게이트 (DEC-OPS-038, 감사 D06-03).
@@ -12,7 +14,8 @@ import { fileURLToPath } from 'node:url';
  *
  * 판정: `window.confirm(` 또는 첫 인자가 문자열 리터럴인 `confirm(` 호출 — 네이티브 시그니처는 문자열 하나를
  * 받고, `useConfirm` 의 confirm 은 옵션 객체(`confirm({ title, message, ... })`)를 받으므로 이것으로 갈린다.
- * 주석 안의 언급은 대상이 아니다(라인 주석·블록 주석을 먼저 벗긴다).
+ * 주석 안의 언급은 대상이 아니다 — 공용 판정(scripts/code-without-comments.mjs)이 주석만 지운다. 종전의 정규식 제거는
+ * 문자열 속 주석 기호에서 블록 주석을 열어 그 뒤 코드를 통째로 지웠고, 그 구간의 호출은 넣어도 녹색이었다(FE-CONTRACT-01).
  *
  * **BASELINE 없음(0 고정)** — 네이티브 확인창은 언제나 이행 대상이라 동결할 정당한 잔여가 없다.
  */
@@ -20,34 +23,34 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const NATIVE_CONFIRM = /(?:\bwindow\.confirm\s*\(|(?<![\w$.])confirm\s*\(\s*[`'"])/;
 
-function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
-}
-
-function collectFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === '.next' || entry.name === '__tests__') continue;
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...collectFiles(path));
-    else if (/\.(tsx|ts|jsx)$/.test(entry.name) && !/\.test\./.test(entry.name)) out.push(path);
-  }
-  return out;
+/** 한 파일에서 네이티브 confirm 호출이 있는 줄 번호(1부터). 주석 속 언급은 세지 않는다. */
+function nativeConfirmLines(source: string, fileName: string): number[] {
+  return codeWithoutComments(source, fileName).split('\n')
+    .flatMap((line, index) => (NATIVE_CONFIRM.test(line) ? [index + 1] : []));
 }
 
 describe('native confirm guard', () => {
   it('src 에 네이티브 confirm() 호출이 없다 — 확인 대화는 useConfirm 모달 하나다', () => {
-    const offenders: string[] = [];
-    for (const file of collectFiles(SRC)) {
-      const source = stripComments(readFileSync(file, 'utf8'));
-      const lines = source.split('\n');
-      lines.forEach((line, index) => {
-        if (NATIVE_CONFIRM.test(line)) offenders.push(`${relative(SRC, file)}:${index + 1}`);
-      });
-    }
+    const files = productionSourceFiles(SRC, ['.ts', '.tsx', '.jsx']);
+    expect(files.length, '생산 소스를 찾지 못했다 — 가드가 공허하다').toBeGreaterThan(50);
+    const offenders = files.flatMap((file) => nativeConfirmLines(readFileSync(file, 'utf8'), file)
+      .map((line) => `${relative(SRC, file)}:${line}`));
     expect(
       offenders,
       '네이티브 confirm() 이 다시 들어왔습니다. useConfirm({ title, message, confirmText, variant }) 로 옮기세요.',
     ).toEqual([]);
+  });
+
+  it('문자열 속 주석 기호 뒤의 호출도 잡고 주석 속 언급은 세지 않는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 파일 업로더의 accept 값 '*/*'·'image/*' 뒤, JSX 블록 주석 앞에 넣은 호출을 종전 정규식 제거가
+    //   통째로 지워 놓쳤다. 셋째 줄이 잡혀야 하고 마지막 줄(주석)은 세지 않는다.
+    const source = [
+      "const accept = '*/*';",
+      "const images = ['image/*'];",
+      "const remove = () => window.confirm('injected');",
+      'export const View = () => <div>{/* Drop Zone */}</div>;',
+      "// window.confirm('주석 속 언급')",
+    ].join('\n');
+    expect(nativeConfirmLines(source, 'standard-file-uploader.tsx')).toEqual([3]);
   });
 });

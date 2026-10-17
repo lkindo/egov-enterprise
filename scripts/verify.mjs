@@ -7,6 +7,9 @@
  * Browser E2E and live repository policy checks remain explicit because they
  * require running services or external credentials. The independent migration
  * scope verifies its CLI module without online UI governance dependencies.
+ *
+ * 범위 안에서는 실패가 잦고 짧은 정적 검사(컴파일·codegen·타입·lint·폼 census)를 운영 계약(로컬 약 11분)보다
+ * 먼저 돌려 실패를 빨리 알린다. 성공하면 같은 명령이 모두 실행되므로 명령 집합과 총시간은 순서와 무관하다.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -27,15 +30,16 @@ function run(command, extraEnv = {}) {
   console.log(`\n▶ ${command}`);
   execSync(command, {
     stdio: 'inherit',
-    env: { ...process.env, TZ: 'Asia/Seoul', ...extraEnv },
+    // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
+    // `TZ=UTC npm run verify:<범위>` 로 CI 조건을 그대로 재현한다(시험 JVM 은 build.gradle 이 따로 UTC 로 고정한다).
+    env: { ...process.env, TZ: process.env.TZ || 'Asia/Seoul', ...extraEnv },
   });
 }
 
-let operationalContractsRan = false;
+// 운영 계약은 범위마다 정확히 한 번 돈다. 한 번만 돌리는 가드를 두지 않고 각 범위 분기가 직접 한 번 부른다 —
+// gate registry 가 범위 분기에서 이 줄까지의 실행 경로를 정적으로 읽는다(local tier 결속).
 function runOperationalContracts() {
-  if (operationalContractsRan) return;
   run('npm run test:operational-contracts');
-  operationalContractsRan = true;
 }
 
 function runDocumentationContracts() {
@@ -43,23 +47,19 @@ function runDocumentationContracts() {
   run('pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
 }
 
-function runRepositoryContracts() {
-  runOperationalContracts();
-}
-
 function runFrontendStatic() {
   run('pnpm -C frontend run codegen:verify');
   run('pnpm -C frontend run codegen:verify:zod');
-  run('pnpm -C frontend run lint');
-  run('pnpm -C frontend run test:form-validation');
   run('pnpm -C frontend exec tsc --noEmit');
   run('pnpm -C frontend run type-check:e2e');
+  run('pnpm -C frontend run lint');
+  run('pnpm -C frontend run test:form-validation');
 }
 
 function runFastProfile() {
-  runRepositoryContracts();
   run(`${gradlew} compileJava compileTestJava -Dfile.encoding=UTF-8`);
   runFrontendStatic();
+  runOperationalContracts();
   run('pnpm -C frontend exec vitest run src/__tests__');
 }
 
@@ -69,22 +69,14 @@ function frontendBuildEnvironment() {
     : { JWT_SECRET: randomBytes(44).toString('hex') };
 }
 
-function runBackendFull({ crossStack = true } = {}) {
-  runRepositoryContracts();
+function runBackendSuite() {
   // `:foundation:check` 는 foundation/build.gradle이 소유하는 INSTRUCTION·CLASS-LINE ratchet의
   // 유일한 로컬 실행 경로다 — jacocoTestCoverageVerification 이 check 에만 결속돼 있어,
   // 이 태스크 없이 green 이면 local-full tier 선언이 거짓이 된다(2026-08-31 실측 정합).
   run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);
-  // be 단독 실행은 횡단 계약을 직접 실행한다. full에서는 frontend coverage가
-  // Atlas를 포함한 같은 파일들을 실행하므로 그 한 번의 결과를 사용한다.
-  if (crossStack) {
-    run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');
-  }
 }
 
-function runFrontendFull() {
-  runRepositoryContracts();
-  runFrontendStatic();
+function runFrontendPackaging() {
   run('pnpm -C frontend build', frontendBuildEnvironment());
   run('pnpm -C frontend run bundle:check');
   run('pnpm -C frontend run test:coverage');
@@ -99,15 +91,23 @@ try {
     runFastProfile();
     run(`${gradlew} :api-server:harnessTest -Dfile.encoding=UTF-8`);
   } else if (scope === 'be') {
-    runBackendFull();
-  } else if (scope === 'fe') {
-    runFrontendFull();
-  } else if (scope === 'full') {
-    runBackendFull({ crossStack: false });
-    runFrontendFull();
-  } else if (scope === 'e2e') {
     runOperationalContracts();
+    runBackendSuite();
+    // be 단독 실행은 횡단 계약을 직접 실행한다. full에서는 frontend coverage가
+    // Atlas를 포함한 같은 파일들을 실행하므로 그 한 번의 결과를 사용한다.
+    run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');
+  } else if (scope === 'fe') {
+    runFrontendStatic();
+    runOperationalContracts();
+    runFrontendPackaging();
+  } else if (scope === 'full') {
+    runFrontendStatic();
+    runOperationalContracts();
+    runBackendSuite();
+    runFrontendPackaging();
+  } else if (scope === 'e2e') {
     run('pnpm -C frontend run type-check:e2e');
+    runOperationalContracts();
     run('node scripts/run-isolated-e2e.mjs');
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');

@@ -45,8 +45,11 @@ export function createGovernanceAnalysisCache() {
  * One synchronous validation observes each file/directory once. Never reuse this
  * snapshot after a disk mutation: create a fresh one, optionally sharing only the
  * content-keyed analysis cache. The CLI always starts with a new snapshot.
+ *
+ * <p>`repoRoot` 를 주면 snapshot 이 그 저장소에 묶인다. 검증 함수에 snapshot 을 직접 넘기려면 묶인 snapshot 이어야 하고,
+ * 다른 루트를 검증하려 하면 거부한다 — 디스크를 바꾸지 않는 여러 검증이 한 번 읽은 결과를 함께 쓰는 경로다.
  */
-export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis = createGovernanceAnalysisCache() } = {}) {
+export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis = createGovernanceAnalysisCache(), repoRoot } = {}) {
   const texts = new Map();
   const types = new Map();
   const directories = new Map();
@@ -79,6 +82,7 @@ export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis =
     }),
   ));
   return Object.freeze({
+    repoRoot: repoRoot === undefined ? undefined : path.resolve(repoRoot),
     read,
     isDirectory: file => kind(file) === 'directory',
     isFile: file => kind(file) === 'file',
@@ -89,6 +93,14 @@ export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis =
     )),
     analyze: (file, operation, inspect) => analysis.analyze(file, read(file), operation, inspect),
   });
+}
+
+/** 넘겨받은 snapshot 이 검증할 저장소에 묶였는지 확인한다(다른 루트를 읽은 결과로 검증하지 않는다). */
+function assertSnapshotRoot(snapshot, repoRoot) {
+  const expected = path.resolve(repoRoot);
+  if (snapshot?.repoRoot !== expected) {
+    throw new TypeError(`governance snapshot is bound to ${snapshot?.repoRoot ?? '(no repository root)'}, not ${expected}`);
+  }
 }
 
 function posix(relativePath) {
@@ -668,6 +680,189 @@ function validateWorkflowBindingContext({ binding, content, setLabel, errors }) 
   }
 }
 
+/**
+ * [2026-10-17 신설] 로컬 tier binding 도 실행 경로로 판정한다(위 CI job·조건 결속과 같은 원리).
+ *
+ * <p>verify.mjs binding 은 "그 줄이 파일 어딘가에 있는가" 만 봐서, 범위 분기가 부르지 않는 함수의 줄이나 `if` 안의 줄도
+ * local-full 근거로 통과했다. 실측: cross-stack 결속은 full 이 `crossStack: false` 로 끄는 줄을, frontend 불변식 결속은
+ * full 이 부르지 않는 fast 전용 함수의 줄을 가리켰다 — 실제로 full 에서 두 시험군을 돌리는 것은 test:coverage 였다.
+ *
+ * <p>이제 tier 가 뜻하는 범위 분기(`if (scope === '<범위>') {`)에서 시작한 호출 폐포로 그 줄에 닿는지 본다. 분기·함수 본문 안의
+ * 조건 블록(if·else·반복·콜백·catch)이나 조건식 안, 또는 앞선 조건부 조기 종료(return·throw·process.exit) 뒤에 있는 줄은
+ * `conditional: true` 를 선언해야 하고, 선언과 실제가 어긋나면 양방향으로 red 다. 무조건 조기 종료 뒤의 줄과 함수 참조로만
+ * 넘긴 호출은 닿지 않는 것으로 본다. 구조를 읽지 못하면(괄호 짝·분기 없음) 오류로 보고한다 — 조용한 통과 금지.
+ */
+const VERIFY_RUNNER_SOURCE = 'scripts/verify.mjs';
+/** 로컬 tier 가 뜻하는 verify.mjs 범위 분기(DEC-OPS-027 ②: local-full = verify:full). */
+const VERIFY_TIER_SCOPES = new Map([['local-full', 'full'], ['local-e2e', 'e2e']]);
+const CONDITIONAL_PREFIX = /(?<![\w$])(?:if|else|for|while|do|switch|case|catch)(?![\w$])|&&|\|\||\?|=>/;
+const IDENTIFIER = /[A-Za-z_$][\w$]*/y;
+
+function nextCodeIndex(mask, index) {
+  let cursor = index;
+  while (cursor < mask.length && /\s/.test(mask[cursor])) cursor += 1;
+  return cursor;
+}
+
+export function analyzeVerifyRunnerExecution(source) {
+  const mask = javaCodeMask(source);
+  const errors = [];
+  const functions = new Map();
+  for (const match of mask.matchAll(/(?<![\w$.])function\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const paramsClose = matchingDelimiter(mask, match.index + match[0].length - 1, '(', ')');
+    const open = paramsClose < 0 ? -1 : nextCodeIndex(mask, paramsClose + 1);
+    const close = mask[open] === '{' ? matchingDelimiter(mask, open, '{', '}') : -1;
+    if (close < 0) errors.push(`cannot read the body of function ${match[1]}`);
+    else if (functions.has(match[1])) errors.push(`duplicate function ${match[1]}`);
+    else functions.set(match[1], { open, close });
+  }
+  const branches = new Map();
+  for (const match of mask.matchAll(/(?<![\w$.])if\s*\(/g)) {
+    const conditionOpen = match.index + match[0].length - 1;
+    const conditionClose = matchingDelimiter(mask, conditionOpen, '(', ')');
+    if (conditionClose < 0) {
+      errors.push(`unbalanced condition at offset ${match.index}`);
+      continue;
+    }
+    // 문자열 리터럴은 mask 에서 지워지므로 범위 이름은 원문에서, 구조(`scope ===`)는 mask 에서 읽는다.
+    const literal = /^\s*scope\s*===\s*'([a-z][a-z0-9-]*)'\s*$/.exec(source.slice(conditionOpen + 1, conditionClose));
+    if (!literal || !/^\s*scope\s*===\s*$/.test(mask.slice(conditionOpen + 1, conditionClose))) continue;
+    const open = nextCodeIndex(mask, conditionClose + 1);
+    const close = mask[open] === '{' ? matchingDelimiter(mask, open, '{', '}') : -1;
+    if (close < 0) errors.push(`verify scope branch '${literal[1]}' has no block body`);
+    else if (branches.has(literal[1])) errors.push(`duplicate verify scope branch '${literal[1]}'`);
+    else branches.set(literal[1], { open, close });
+  }
+  if (branches.size === 0) errors.push("no verify scope branch (if (scope === '<scope>') { … }) was found");
+
+  const nestedFunctions = body => [...functions.values()].filter(fn => fn.open > body.open && fn.close < body.close);
+  const insideNested = (body, index) => nestedFunctions(body).some(fn => index > fn.open && index < fn.close);
+  // body 안의 한 위치가 그 body 가 실행될 때 늘 실행되는지 본다: 'unconditional' | 'conditional' | 'unreachable'.
+  const statusAt = (body, position) => {
+    const skipped = nestedFunctions(body);
+    const blocks = [];
+    let exited = null;
+    let statementStart = body.open + 1;
+    for (let index = body.open + 1; index < position; index += 1) {
+      const fn = skipped.find(candidate => candidate.open === index);
+      if (fn) {
+        index = fn.close;
+        statementStart = index + 1;
+        continue;
+      }
+      const current = mask[index];
+      if (current === '{') {
+        const head = mask.slice(statementStart, index).trim();
+        blocks.push(head !== 'try' && head !== 'finally');
+        statementStart = index + 1;
+      } else if (current === '}') {
+        blocks.pop();
+        statementStart = index + 1;
+      } else if (current === ';') {
+        statementStart = index + 1;
+      } else if (/[A-Za-z_$]/.test(current) && !/[\w$.]/.test(mask[index - 1] ?? '')) {
+        IDENTIFIER.lastIndex = index;
+        const word = IDENTIFIER.exec(mask)[0];
+        if (word === 'return' || word === 'throw' || (word === 'process' && /^process\s*\.\s*exit\b/.test(mask.slice(index, index + 40)))) {
+          const guarded = blocks.some(Boolean) || CONDITIONAL_PREFIX.test(mask.slice(statementStart, index));
+          if (!guarded) exited = 'unconditional';
+          else exited ??= 'conditional';
+        }
+        index += word.length - 1;
+      }
+    }
+    if (exited === 'unconditional') return 'unreachable';
+    return exited === 'conditional' || blocks.some(Boolean) || CONDITIONAL_PREFIX.test(mask.slice(statementStart, position))
+      ? 'conditional'
+      : 'unconditional';
+  };
+  const callsIn = body => [...mask.slice(body.open + 1, body.close).matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(/g)]
+    .map(match => ({ name: match[1], index: body.open + 1 + match.index }))
+    .filter(({ name, index }) => functions.has(name)
+      && !insideNested(body, index)
+      && !/(?<![\w$])function\s+$/.test(mask.slice(Math.max(0, index - 16), index)));
+  // 줄 텍스트는 binding 매칭과 같은 실행 내용(주석 제거)에서, 위치는 원문과 길이가 같은 mask 에서 읽는다.
+  const executable = executableContent(source).split('\n');
+  const lineOffsets = [];
+  let offset = 0;
+  for (const line of source.split('\n')) {
+    lineOffsets.push({ offset, length: line.length });
+    offset += line.length + 1;
+  }
+  const linesIn = body => lineOffsets.flatMap(({ offset: start, length }, line) => {
+    const lead = mask.slice(start, start + length).search(/\S/);
+    const position = start + lead;
+    const text = (executable[line] ?? '').trim();
+    return lead < 0 || text === '' || position <= body.open || position >= body.close || insideNested(body, position)
+      ? []
+      : [{ text, position }];
+  });
+
+  const scopes = Object.create(null);
+  for (const [scope, branch] of branches) {
+    const modes = new Map();
+    const visit = (body, mode) => {
+      const previous = modes.get(body);
+      if (previous === 'unconditional' || previous === mode) return;
+      modes.set(body, mode);
+      for (const call of callsIn(body)) {
+        const status = statusAt(body, call.index);
+        if (status === 'unreachable') continue;
+        visit(functions.get(call.name), mode === 'unconditional' && status === 'unconditional' ? 'unconditional' : 'conditional');
+      }
+    };
+    visit(branch, 'unconditional');
+    const reached = Object.create(null);
+    for (const [body, mode] of modes) {
+      for (const { text, position } of linesIn(body)) {
+        const status = statusAt(body, position);
+        if (status === 'unreachable') continue;
+        if (reached[text] !== 'unconditional') {
+          reached[text] = mode === 'unconditional' && status === 'unconditional' ? 'unconditional' : 'conditional';
+        }
+      }
+    }
+    scopes[scope] = reached;
+  }
+  return { errors, scopes };
+}
+
+function validateVerifyRunnerBindingContext({ binding, execution, setLabel, errors }) {
+  if (execution.errors.length > 0) {
+    errors.push(...execution.errors.map(error => `${setLabel}: cannot read the scope structure of ${VERIFY_RUNNER_SOURCE} — ${error}`));
+    return;
+  }
+  let observed = 0;
+  let conditional = false;
+  for (const tier of binding.tiers) {
+    const scope = VERIFY_TIER_SCOPES.get(tier);
+    if (scope === undefined) {
+      errors.push(`${setLabel}: ${VERIFY_RUNNER_SOURCE} binding cannot claim tier ${tier} — verify scopes back only ${[...VERIFY_TIER_SCOPES.keys()].join(', ')}`);
+      continue;
+    }
+    const reached = execution.scopes[scope];
+    if (reached === undefined) {
+      errors.push(`${setLabel}: ${VERIFY_RUNNER_SOURCE} has no '${scope}' scope branch for tier ${tier}`);
+      continue;
+    }
+    if (!Object.hasOwn(reached, binding.fragment)) {
+      errors.push(`${setLabel}: execution binding is not reached from the verify '${scope}' branch (tier ${tier}): ${binding.fragment}`);
+      continue;
+    }
+    observed += 1;
+    if (reached[binding.fragment] === 'conditional') {
+      conditional = true;
+      if (binding.conditional !== true) {
+        errors.push(`${setLabel}: execution binding runs behind a condition in the verify '${scope}' branch (tier ${tier})`
+          + ' — declare conditional: true so the tier claim stays honest');
+      }
+    }
+  }
+  if (binding.conditional === true && observed === binding.tiers.length && !conditional) {
+    errors.push(`${setLabel}: execution binding declares conditional: true but runs unconditionally in every declared verify scope: ${binding.fragment}`);
+  }
+}
+
 function validateExecutionBindings({
   bindings,
   repoRoot,
@@ -702,11 +897,21 @@ function validateExecutionBindings({
       errors.push(`${setLabel}: ghost execution binding in ${binding.source}: ${binding.fragment}`);
       continue;
     }
-    // 워크플로 소비자는 라인 존재만으로 tier 를 주장할 수 없다 — job·조건까지 결속한다.
+    // 워크플로·verify 소비자는 라인 존재만으로 tier 를 주장할 수 없다 — job·범위 분기·조건까지 결속한다.
     if (/^\.github\/workflows\/.+\.ya?ml$/.test(binding.source)) {
       validateWorkflowBindingContext({ binding, content, setLabel, errors });
-    } else if (binding.job !== undefined || binding.conditional !== undefined) {
-      errors.push(`${setLabel}: job/conditional are workflow-only binding fields: ${binding.source}`);
+      continue;
+    }
+    if (binding.job !== undefined) errors.push(`${setLabel}: job is a workflow-only binding field: ${binding.source}`);
+    if (binding.source === VERIFY_RUNNER_SOURCE) {
+      validateVerifyRunnerBindingContext({
+        binding,
+        execution: snapshot.analyze(absolute, 'verify-runner-execution', analyzeVerifyRunnerExecution),
+        setLabel,
+        errors,
+      });
+    } else if (binding.conditional !== undefined) {
+      errors.push(`${setLabel}: conditional is a workflow or verify-runner binding field: ${binding.source}`);
     }
   }
   const missingTiers = expectedTiers.filter((tier) => !boundTiers.has(tier));
@@ -756,7 +961,8 @@ export const JAVA_GATE_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 
-export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS, snapshot = createGovernanceRepositorySnapshot()) {
+export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS, snapshot = createGovernanceRepositorySnapshot({ repoRoot })) {
+  assertSnapshotRoot(snapshot, repoRoot);
   const errors = [];
   const selectors = (gateSets ?? [])
     .filter((set) => set?.selector?.type === 'java-class-annotation')
@@ -1697,9 +1903,11 @@ function validateGovernanceOwnership(registry, repoRoot, errors, snapshot) {
   }
 }
 
-export function validateGovernanceRegistry({ registry, repoRoot, analysis }) {
-  // Sharing analyses never shares filesystem observations across validations.
-  const snapshot = createGovernanceRepositorySnapshot({ analysis });
+export function validateGovernanceRegistry({ registry, repoRoot, analysis, snapshot }) {
+  // 기본(CLI 포함)은 검증마다 디스크를 새로 읽는다 — analysis 를 공유해도 파일 관찰은 공유하지 않는다.
+  // 디스크를 바꾸지 않는 여러 검증은 같은 저장소에 묶인 snapshot 하나를 넘겨 읽은 결과를 함께 쓸 수 있다.
+  if (snapshot === undefined) snapshot = createGovernanceRepositorySnapshot({ analysis, repoRoot });
+  else assertSnapshotRoot(snapshot, repoRoot);
   const errors = [];
   const registryIds = new Set();
   const registeredSources = new Set();

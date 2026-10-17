@@ -1,7 +1,8 @@
+// @vitest-environment node
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { inProjection, keepInProjection } from '@/test-utils/projection';
+import { inProjection } from '@/test-utils/projection';
 
 const srcPath = (...segments: string[]) => path.resolve(process.cwd(), 'src', ...segments);
 
@@ -9,23 +10,8 @@ function source(...segments: string[]): string {
   return fs.readFileSync(srcPath(...segments), 'utf8');
 }
 
-// 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
-const present = (files: string[][]) => keepInProjection(files, segments => srcPath(...segments));
-
+// mount 전용 hydration gate 금지는 P1 계약이 src 전수 0 고정으로 본다(종전 이 파일의 손 목록 4곳은 그 안에 든다).
 describe('P2 frontend consistency source contract', () => {
-  it('mount-only hydration gate로 첫 DOM의 실제 제어를 숨기지 않는다', () => {
-    const targets = present([
-      ['app', 'admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
-      ['app', 'admin', 'community', 'boards', 'select-board-list', 'components', 'BoardListFilters.tsx'],
-      ['app', 'components', 'ui', 'app-notification-drawer.tsx'],
-      ['app', 'components', 'layout', 'header.tsx'],
-    ]).map(segments => source(...segments));
-
-    for (const target of targets) {
-      expect(target).not.toMatch(/\b(?:mounted|isMounted|setMounted|setIsMounted)\b/);
-    }
-  });
-
   it('header 테마 아이콘은 JS mount 판정 대신 동일한 SSR DOM을 CSS로 전환한다', () => {
     const header = source('app', 'components', 'layout', 'header.tsx');
 

@@ -4,9 +4,10 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import {
+  analyzeVerifyRunnerExecution,
   createGovernanceAnalysisCache,
   createGovernanceRepositorySnapshot,
   exactBindingLineMatches,
@@ -71,12 +72,34 @@ function clone(value) {
   return structuredClone(value);
 }
 
-// The repository is read afresh for every assertion. Only analyses whose source
-// text is unchanged survive between registry mutations (including fixture edits).
+// 레지스트리 객체만 바꾸는 시험은 저장소를 한 번 읽은 snapshot 하나를 함께 쓴다 — 그 시험들은 디스크를 바꾸지 않는다.
+// 디스크를 바꾸는 시험(임시 루트·build 아래 fixture·snapshot 신선도 시험)은 validateFresh 나 자기 snapshot 을 쓴다.
+// 분석 결과는 원문 텍스트가 같을 때만 재사용된다. 실행 중 디스크가 바뀌면 아래 after() 대조가 붉다.
 const analysis = createGovernanceAnalysisCache();
+const sharedSnapshot = createGovernanceRepositorySnapshot({ analysis, repoRoot });
 function validate(registry) {
+  return validateGovernanceRegistry({ registry, repoRoot, analysis, snapshot: sharedSnapshot });
+}
+function validateFresh(registry) {
   return validateGovernanceRegistry({ registry, repoRoot, analysis });
 }
+
+after(() => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const shared = validate(registry);
+  assert.deepEqual(validateFresh(registry), shared, 'a fresh repository read must agree with the shared snapshot — the disk changed during the run');
+  assert.deepEqual(shared, []);
+});
+
+test('a shared repository snapshot is bound to the repository root it read', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  assert.throws(() => validateGovernanceRegistry({ registry, repoRoot: os.tmpdir(), snapshot: sharedSnapshot }),
+    /governance snapshot is bound to .* not /);
+  assert.throws(() => validateGovernanceRegistry({ registry, repoRoot, snapshot: createGovernanceRepositorySnapshot({ analysis }) }),
+    /no repository root/);
+  assert.throws(() => findTaggedGatesOutsideRoots(os.tmpdir(), registry.gateSets, undefined, sharedSnapshot),
+    /governance snapshot is bound to/);
+});
 
 test('repository snapshots deduplicate scans while fresh snapshots see edited, added and deleted files', (t) => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'governance-snapshot-'));
@@ -656,11 +679,115 @@ test('workflow bindings bind to a job and declare conditional steps honestly', (
     .selector.commandBindings.find((b) => b.source.includes('ci.yml')).conditional = true;
   assert.match(validate(staleCondition).join('\n'), /declares conditional: true but the step/);
 
-  // ④ 워크플로가 아닌 소비자에 job/conditional 을 붙이면 red — 의미 없는 선언을 남기지 않는다.
+  // ④ 워크플로가 아닌 소비자에 job 을, 워크플로·verify 가 아닌 소비자에 conditional 을 붙이면 red — 의미 없는 선언을 남기지 않는다.
   const misplaced = clone(registry);
-  misplaced.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS')
-    .selector.commandBindings.find((b) => b.source.includes('verify.mjs')).job = 'secret-scan';
-  assert.match(misplaced && validate(misplaced).join('\n'), /workflow-only binding fields/);
+  const misplacedBindings = misplaced.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS').selector.commandBindings;
+  misplacedBindings.find((b) => b.source.includes('verify.mjs')).job = 'secret-scan';
+  misplacedBindings.find((b) => b.source === '.githooks/pre-push').conditional = true;
+  const misplacedErrors = validate(misplaced).join('\n');
+  assert.match(misplacedErrors, /job is a workflow-only binding field: scripts\/verify\.mjs/);
+  assert.match(misplacedErrors, /conditional is a workflow or verify-runner binding field: \.githooks\/pre-push/);
+});
+
+// [2026-10-17 신설] verify.mjs binding 도 "그 줄이 파일에 있다" 로 tier 를 주장할 수 없다. tier 가 뜻하는 범위 분기
+//   (local-full = full, local-e2e = e2e)에서 호출을 따라가 닿는 줄이어야 하고, 조건 안이면 conditional 을 선언해야 한다.
+//   종전에는 cross-stack 결속이 full 이 끄는 `if (crossStack)` 안의 줄을, frontend 불변식 결속이 full 이 부르지 않는
+//   fast 전용 함수의 줄을 가리킨 채 green 이었다.
+test('verify runner analysis follows calls from each scope branch and marks conditional or unreachable lines', () => {
+  const synthetic = [
+    'function runA() {',
+    "  run('a');",
+    '  if (flag) {',
+    "    run('b');",
+    '  }',
+    '}',
+    'function runGuarded() {',
+    '  if (done) return;',
+    "  run('c');",
+    '}',
+    'function runExited() {',
+    '  return;',
+    "  run('d');",
+    '}',
+    'function unused() {',
+    "  run('e');",
+    '}',
+    'try {',
+    "  if (scope === 'full') {",
+    '    runA();',
+    '    runGuarded();',
+    '    runExited();',
+    "    // run('f');",
+    '    if (other) runA();',
+    "    commands.forEach(command => runExited());",
+    "  } else if (scope === 'e2e') {",
+    '    if (other) {',
+    '      runA();',
+    '    }',
+    '  }',
+    '} catch (error) {}',
+  ].join('\r\n');
+  const { errors, scopes } = analyzeVerifyRunnerExecution(synthetic);
+  assert.deepEqual(errors, []);
+  assert.equal(scopes.full["run('a');"], 'unconditional', '무조건 부른 함수의 무조건 줄');
+  assert.equal(scopes.full["run('b');"], 'conditional', '함수 안 if 블록');
+  assert.equal(scopes.full["run('c');"], 'conditional', '앞선 조건부 조기 종료 뒤');
+  assert.equal(Object.hasOwn(scopes.full, "run('d');"), false, '무조건 조기 종료 뒤는 닿지 않는다');
+  assert.equal(Object.hasOwn(scopes.full, "run('e');"), false, '부르지 않는 함수는 닿지 않는다');
+  assert.equal(Object.hasOwn(scopes.full, "run('f');"), false, '주석은 실행이 아니다');
+  assert.equal(scopes.e2e["run('a');"], 'conditional', '조건 안에서 부른 함수의 줄은 조건부다');
+  assert.equal(Object.hasOwn(scopes.e2e, "run('c');"), false);
+  assert.match(analyzeVerifyRunnerExecution("run('x');").errors.join('\n'), /no verify scope branch/);
+  assert.match(analyzeVerifyRunnerExecution("if (scope === 'full') run('x');").errors.join('\n'), /'full' has no block body/);
+});
+
+test('verify runner bindings must be reached from the scope branch their tier names', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const verifyBinding = (bindings) => bindings.find((binding) => binding.source === 'scripts/verify.mjs');
+  const gateSet = (target, id) => target.gateSets.find((set) => set.id === id).selector;
+  assert.equal(verifyBinding(gateSet(registry, 'GATESET-FRONTEND-INVARIANTS').commandBindings).fragment,
+    "run('pnpm -C frontend run test:coverage');", 'full 에서 불변식 시험군을 실제로 돌리는 줄');
+  assert.equal(verifyBinding(gateSet(registry, 'GATESET-CROSS-STACK-CONTRACTS').commandBindings).fragment,
+    "run('pnpm -C frontend run test:coverage');", 'full 에서 cross-stack 시험군을 실제로 돌리는 줄');
+
+  const mutated = clone(registry);
+  // ① fast 전용 줄과 ② be 전용 줄을 local-full 근거로 되돌리면 red(종전 두 결속).
+  verifyBinding(gateSet(mutated, 'GATESET-FRONTEND-INVARIANTS').commandBindings).fragment = "run('pnpm -C frontend exec vitest run src/__tests__');";
+  verifyBinding(gateSet(mutated, 'GATESET-CROSS-STACK-CONTRACTS').commandBindings).fragment = "run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');";
+  // ③ 무조건 실행되는 줄에 conditional 을 선언하면 red(양방향).
+  verifyBinding(mutated.executionProfiles.find(({ id }) => id === 'EXEC-FRONTEND-LINT').bindings).conditional = true;
+  // ④ verify.mjs 가 뒷받침하지 않는 tier(pre-push)를 주장하면 red.
+  verifyBinding(gateSet(mutated, 'GATESET-NODE-OPERATIONAL-CONTRACTS').commandBindings).tiers = ['pre-push', 'local-full', 'local-e2e'];
+  const errors = validate(mutated).join('\n');
+  assert.match(errors, /GATESET-FRONTEND-INVARIANTS: execution binding is not reached from the verify 'full' branch \(tier local-full\)/);
+  assert.match(errors, /GATESET-CROSS-STACK-CONTRACTS: execution binding is not reached from the verify 'full' branch \(tier local-full\)/);
+  assert.match(errors, /EXEC-FRONTEND-LINT: execution binding declares conditional: true but runs unconditionally/);
+  assert.match(errors, /GATESET-NODE-OPERATIONAL-CONTRACTS: scripts\/verify\.mjs binding cannot claim tier pre-push/);
+
+  // ⑤ full 분기가 패키징 함수를 부르지 않게 되면 test:coverage·bundle 결속이 모두 red — 줄은 파일에 남아 있어도 그렇다.
+  const verifyPath = path.join(repoRoot, 'scripts', 'verify.mjs');
+  const runner = readFileSync(verifyPath, 'utf8');
+  const detached = runner.replace(/(\} else if \(scope === 'full'\) \{[\s\S]*?)runFrontendPackaging\(\);/, '$1');
+  assert.notEqual(detached, runner);
+  const fileSystem = { ...fs, readFileSync: (file, ...rest) => (path.resolve(file) === verifyPath ? detached : fs.readFileSync(file, ...rest)) };
+  const detachedErrors = validateGovernanceRegistry({
+    registry, repoRoot, snapshot: createGovernanceRepositorySnapshot({ analysis, fileSystem, repoRoot }),
+  }).join('\n');
+  for (const id of ['EXEC-FRONTEND-COVERAGE', 'EXEC-FRONTEND-BUNDLE', 'GATESET-FRONTEND-INVARIANTS', 'GATESET-CROSS-STACK-CONTRACTS', 'GATESET-FRONTEND-VITEST']) {
+    assert.match(detachedErrors, new RegExp(`${id}: execution binding is not reached from the verify 'full' branch`), id);
+  }
+
+  // ⑥ 조건 안으로 옮기면 선언한 binding 만 통과하고 선언하지 않은 binding 은 red — 조건 선언이 실제로 받아들여진다.
+  const guarded = runner.replace(/(\} else if \(scope === 'full'\) \{[\s\S]*?)runFrontendPackaging\(\);/, '$1if (packaging) runFrontendPackaging();');
+  assert.notEqual(guarded, runner);
+  const declared = clone(registry);
+  verifyBinding(declared.executionProfiles.find(({ id }) => id === 'EXEC-FRONTEND-COVERAGE').bindings).conditional = true;
+  const guardedFileSystem = { ...fs, readFileSync: (file, ...rest) => (path.resolve(file) === verifyPath ? guarded : fs.readFileSync(file, ...rest)) };
+  const guardedErrors = validateGovernanceRegistry({
+    registry: declared, repoRoot, snapshot: createGovernanceRepositorySnapshot({ analysis, fileSystem: guardedFileSystem, repoRoot }),
+  }).join('\n');
+  assert.doesNotMatch(guardedErrors, /EXEC-FRONTEND-COVERAGE:/);
+  assert.match(guardedErrors, /EXEC-FRONTEND-BUNDLE: execution binding runs behind a condition in the verify 'full' branch/);
 });
 
 test('authoritative runner catalogs reject every supported skip/focus form without decoy false positives', () => {
@@ -941,6 +1068,7 @@ test('every gate must map to a required CI context that exists in the current ma
 });
 
 
+// 이 시험은 build 아래 fixture 를 같은 경로에 두 번 고쳐 쓴다 — 매번 디스크를 새로 읽어야 하므로 공유 snapshot 을 쓰지 않는다.
 test('independent coverage scopes retain the root ratchet and reject weaker or missing controls', (t) => {
   const fixture = mkdtempSync(path.join(repoRoot, 'build', 'scoped-coverage-contract-'));
   t.after(() => {
@@ -958,8 +1086,8 @@ test('independent coverage scopes retain the root ratchet and reject weaker or m
       ['jacocoOnlineCoverageVerification', 'jacocoMigrationCoverageVerification']);
     ratchet.source = path.relative(repoRoot, sourcePath).replaceAll('\\', '/');
     writeFileSync(sourcePath, source.slice(0, start) + source.slice(start).replace('minimum = 0.85', 'minimum = 0.50'));
-    assert.match(validate(registry).join('\n'), /coverage scopes must share the same threshold/);
+    assert.match(validateFresh(registry).join('\n'), /coverage scopes must share the same threshold/);
     writeFileSync(sourcePath, source.replace(`tasks.register('${task}'`, `tasks.register('missing${task}'`));
-    assert.match(validate(registry).join('\n'), /ghost quality selector.*Gradle task/);
+    assert.match(validateFresh(registry).join('\n'), /ghost quality selector.*Gradle task/);
   }
 });

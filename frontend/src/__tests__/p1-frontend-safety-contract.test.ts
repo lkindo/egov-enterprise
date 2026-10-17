@@ -1,14 +1,22 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+// @vitest-environment node
+import { readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as ts from 'typescript';
-import { readInProjection } from '@/test-utils/projection';
+import { codeWithoutComments, productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 const SRC = join(process.cwd(), 'src');
 const readSource = (...parts: string[]) => readFileSync(join(SRC, ...parts), 'utf8');
+/** 주석을 뺀 코드 — 공용 판정(scripts/code-without-comments.mjs)이 문자열은 두고 주석만 지운다. */
+const readCode = (...parts: string[]) => codeWithoutComments(readSource(...parts), parts[parts.length - 1]);
 
-function stripComments(source: string): string {
-  return source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, '');
+/** hydration 전용 mount gate 의 이름 — 첫 DOM 을 버리고 마운트 뒤에 다시 그리는 상태다. */
+const MOUNT_GATE = /\b(?:isMounted|mounted|setIsMounted|setMounted)\b/;
+
+/** 한 파일에서 mount gate 이름이 있는 줄 번호(1부터). 주석 속 언급은 세지 않는다. */
+function mountGateLines(source: string, fileName: string): number[] {
+  return codeWithoutComments(source, fileName).split('\n')
+    .flatMap((line, index) => (MOUNT_GATE.test(line) ? [index + 1] : []));
 }
 
 /** 데이터 조합용 map은 DOM이 아니다. JSX 렌더 표현식의 반복만 정확히 한 벌인지 검사한다. */
@@ -26,54 +34,33 @@ function requireOneRenderedMap(source: string, collection: string): void {
   if (count !== 1) throw new Error(`${collection}: rendered map count must be 1 (actual ${count})`);
 }
 
-/**
- * 업무 홈 기여(home-sections)가 가리키는 모듈 — 셸에서 옮겨 간 카드·목록·구역과 그 조회다(Phase 2 9단계). 기여 파일에서 읽으므로 새 기여도
- * 함께 덮고, 생성물에서는 기능과 함께 지워진 기여가 목록에서 빠진다.
- */
-function homeSectionModules(): [string, string][] {
-  const root = join(SRC, 'extensions');
-  const specifiers = readdirSync(root, { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
-    .map(entry => join(root, entry.name, 'home-sections.ts'))
-    .filter(file => existsSync(file))
-    .flatMap(file => [...readFileSync(file, 'utf8').matchAll(/from '@\/([^']+)'/g)].map(match => match[1]))
-    .filter(specifier => specifier !== 'extensions/slots');
-  return [...new Set(specifiers)].map(specifier => {
-    const base = join(SRC, specifier);
-    const path = [`${base}.tsx`, `${base}.ts`].find(candidate => existsSync(candidate));
-    if (!path) throw new Error(`업무 홈 기여가 가리키는 모듈을 찾지 못했다: @/${specifier}`);
-    return [specifier, path];
-  });
-}
-
 describe('P1 frontend safety source contract', () => {
-  it('서버 데이터가 있는 핵심 화면은 mount 전용 gate로 첫 DOM을 버리지 않는다', () => {
-    const dashboard = stripComments(readSource('app', 'UnifiedDashboardClient.tsx'));
-    const navItem = stripComments(readSource('app', 'components', 'layout', 'NavItem.tsx'));
-    // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
-    const boardDetailSource = readInProjection(join(SRC, 'app', 'admin', 'community', 'boards', 'detail', 'BoardDetailClient.tsx'));
-    const boardDetail = boardDetailSource === undefined ? undefined : stripComments(boardDetailSource);
+  it('서버 데이터가 있는 화면은 mount 전용 gate로 첫 DOM을 버리지 않는다 — src 전수 0 고정', () => {
+    /*
+     * 종전에는 손으로 고른 파일 두 벌(업무 홈·NavItem·게시글 상세·홈 기여 모듈 / P2 의 게시판 목록·필터·알림 드로어·헤더)만 봤다.
+     * 목록 밖 새 화면은 gate 를 자유롭게 들일 수 있었다(FE-CONTRACT-08). 생산 소스 전수에서 0 이 이미 성립하므로 전수로 고정한다.
+     */
+    const files = productionSourceFiles(SRC, ['.ts', '.tsx', '.jsx']);
+    expect(files.length, '생산 소스를 찾지 못했다 — 가드가 공허하다').toBeGreaterThan(50);
+    const offenders = files.flatMap((file) => mountGateLines(readFileSync(file, 'utf8'), file)
+      .map((line) => `${relative(SRC, file).split('\\').join('/')}:${line}`));
+    expect(offenders, 'hydration 전용 mounted state 가 다시 들어왔습니다 — 첫 DOM 을 SSR 결과 그대로 두고 CSS 로 전환하세요').toEqual([]);
+  });
 
-    // 업무 홈의 카드·목록·구역은 셸에서 기능 모듈로 옮겨 갔다(Phase 2 9단계) — 셸 하나만 보면 옮긴 조각이 검사 밖으로 나간다.
-    const home = homeSectionModules().map(([name, path]) => [name, stripComments(readFileSync(path, 'utf8'))] as const);
-    for (const [name, source] of [
-      ['UnifiedDashboardClient', dashboard],
-      ['NavItem', navItem],
-      ...(boardDetail === undefined ? [] : [['BoardDetailClient', boardDetail] as const]),
-      ...home,
-    ] as const) {
-      expect(source, `${name}: hydration 전용 mounted state가 다시 들어왔습니다`).not.toMatch(
-        /\b(?:isMounted|mounted|setIsMounted|setMounted)\b/,
-      );
-    }
-
-    expect(dashboard).not.toMatch(/if\s*\(\s*!isMounted/);
-    expect(navItem).not.toMatch(/if\s*\(\s*!isMounted\s*\)\s*return\s+null/);
-    if (boardDetail !== undefined) expect(boardDetail).not.toMatch(/if\s*\(\s*!mounted/);
+  it('mount gate 판정 — 문자열 속 주석 기호 뒤의 gate 도 잡고 주석 속 언급은 세지 않는다', () => {
+    const source = [
+      "const accept = 'image/*';",
+      'const [mounted, setMounted] = useState(false);',
+      'useEffect(() => setMounted(true), []);',
+      'if (!mounted) return null;',
+      '// keep its header challenge mounted while hiding home data.',
+      '/* isMounted 는 쓰지 않는다 */',
+    ].join('\n');
+    expect(mountGateLines(source, 'Screen.tsx')).toEqual([2, 3, 4]);
   });
 
   it('sidebar는 단일 semantic nav tree를 CSS로 반응형 전환한다', () => {
-    const sidebar = stripComments(readSource('app', 'components', 'layout', 'sidebar.tsx'));
+    const sidebar = readCode('app', 'components', 'layout', 'sidebar.tsx');
 
     expect(sidebar, 'viewport JS 분기가 재도입됐습니다').not.toContain('matchMedia(');
     expect(sidebar, '모바일 전용 메뉴 트리가 재도입됐습니다').not.toContain('MobileDomainNode');
@@ -96,7 +83,7 @@ describe('P1 frontend safety source contract', () => {
   });
 
   it('CSP report는 선언 길이를 stream reader보다 먼저 검사하고 전체 text buffering을 금지한다', () => {
-    const route = stripComments(readSource('app', 'api', 'security', 'csp', 'route.ts'));
+    const route = readCode('app', 'api', 'security', 'csp', 'route.ts');
     const post = route.slice(route.indexOf('export async function POST'));
     const declaredLengthCheck = post.indexOf("headers.get('content-length')");
     const streamReadCall = post.indexOf('readBodyWithinLimit(request)');
@@ -109,7 +96,7 @@ describe('P1 frontend safety source contract', () => {
 
   it('SecurityHub 전체교체는 전체 조회와 편집 기준선 version이 현재 응답에 일치해야 활성화된다', () => {
     for (const component of ['AuthorizationGroupEditor', 'AuthorizationMembershipEditor']) {
-      const source = stripComments(readSource('app', 'admin', 'security', 'authority', 'components', `${component}.tsx`));
+      const source = readCode('app', 'admin', 'security', 'authority', 'components', `${component}.tsx`);
       expect(source).toContain('baseline.version === snapshot.version');
       expect(source).toContain('currentBaseline && complete');
       expect(source).toContain('setBaseline(snapshot)');

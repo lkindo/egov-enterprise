@@ -11,6 +11,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const catalog = buildAtlasCatalog(repoRoot);
 const generated = renderAtlas(repoRoot, catalog);
 
+// 신선도의 유일한 소유자다. Atlas vitest 는 이 바이트 일치를 전제로 HTML 에 실린 catalog 를 기대값으로 쓴다(FE-CONTRACT-05).
 test('committed Atlas exactly matches owned source catalogs and presentation inputs', () => {
   assert.ok(fs.readFileSync(path.join(repoRoot, ATLAS_OUTPUT), 'utf8').replace(/\r\n/g, '\n') === generated,
     'Run npm run atlas:build; source or generated presentation has drifted');

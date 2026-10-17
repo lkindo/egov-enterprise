@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * 생산 코드가 **page-redirect 라우트를 가리키지 않는다**(정본으로 직접 간다).
  *
@@ -24,6 +25,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { inProjection } from '@/test-utils/projection';
+import { codeWithoutComments, productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SRC = path.resolve(__dirname, '..');
@@ -90,47 +92,20 @@ export function resolveRoute(targetPath: string): Pattern | null {
  */
 const NAV = /(?:href=|\b(?:href|url|link|moreHref)\s*:|router\.(?:push|replace)\(|redirect\()\s*[{`'"]*\s*([^`'"),}\s]+)/g;
 
-function stripComments(source: string): string {
-  let out = '';
-  let mode: 'block' | 'line' | null = null;
-  for (let i = 0; i < source.length; i += 1) {
-    const c = source[i];
-    const n = source[i + 1] ?? '';
-    if (mode === null) {
-      if (c === '/' && n === '*') { mode = 'block'; i += 1; continue; }
-      if (c === '/' && n === '/') { mode = 'line'; i += 1; continue; }
-      out += c;
-    } else if (mode === 'block') {
-      if (c === '*' && n === '/') { mode = null; i += 1; }
-    } else if (c === '\n') { mode = null; out += '\n'; }
-  }
-  return out;
-}
-
-function collectSources(dir: string, acc: string[] = []): string[] {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (entry.name !== '__tests__') collectSources(full, acc);
-      continue;
-    }
-    if (!/\.tsx?$/.test(entry.name)) continue;
-    if (/\.test\.tsx?$/.test(entry.name)) continue;
-    acc.push(full);
-  }
-  return acc;
-}
-
 /** 그 라우트의 redirect 파일 자신은 목적지를 알아야 한다. */
 function ownsRoute(relFromApp: string, route: string): boolean {
   const dir = route.split('/').filter(Boolean).filter((s) => !isDynamic(s)).join('/');
   return relFromApp === `${dir}/page.tsx` || relFromApp.startsWith(`${dir}/`);
 }
 
-/** 한 파일의 위반. `relFromSrc` 는 표시용(src 기준), `rel` 은 라우트 소유 판정용(app 기준)이다. */
+/**
+ * 한 파일의 위반. `relFromSrc` 는 표시용(src 기준), `rel` 은 라우트 소유 판정용(app 기준)이다.
+ * 주석 속 인용은 세지 않는다 — 공용 판정(scripts/code-without-comments.mjs)이 문자열은 두고 주석만 지운다. 종전의 문자 상태 기계는
+ * 문자열 속 `/*` 에서 블록 주석을 열어 그 뒤의 역참조를 놓쳤다(FE-CONTRACT-01).
+ */
 export function sourceViolations(relFromSrc: string, rel: string, rawSource: string): string[] {
   const found: string[] = [];
-  const source = stripComments(rawSource);
+  const source = codeWithoutComments(rawSource, relFromSrc);
   for (const match of source.matchAll(NAV)) {
     const raw = match[1];
     if (!raw.startsWith('/')) continue;
@@ -147,7 +122,7 @@ export function sourceViolations(relFromSrc: string, rel: string, rawSource: str
 
 export function findViolations(): string[] {
   const found: string[] = [];
-  for (const file of collectSources(SRC)) {
+  for (const file of productionSourceFiles(SRC, ['.ts', '.tsx'])) {
     // 표시는 src 기준, 라우트 소유 판정은 app 기준(app 밖 파일은 어떤 라우트도 소유하지 않는다).
     const relFromSrc = path.relative(SRC, file).replace(/\\/g, '/');
     const rel = path.relative(APP, file).replace(/\\/g, '/');
@@ -187,6 +162,19 @@ describe('page-redirect 라우트로의 역참조 차단', () => {
     }
     // 대조: 타입 주석, 라우트가 아닌 경로, 주석 속 인용은 세지 않는다.
     expect(fixture(`interface Link { href: string; url: string }\nconst api = { url: '/api/v1/x' };\n// href: '${redirect!.route}'\n`)).toEqual([]);
+  });
+
+  it('문자열 속 주석 기호 뒤의 역참조도 잡는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 게시글 상세의 목록 출처 '/cop/cmy/selectCommunityDetail/*' 뒤에 둔 router.push 를 종전 문자 상태
+    //   기계가 블록 주석으로 보고 놓쳤다(같은 줄을 파일 맨 위에 두면 잡았다). DEC-OPS-081 이 실제로 잡았던 결함 형태다.
+    const redirect = patterns.find((p) => p.kind === 'page-redirect' && !p.segs.some(isDynamic));
+    expect(redirect).toBeDefined();
+    const source = [
+      "const BOARD_LIST_ORIGINS = ['/admin/help', '/cop/cmy/selectCommunityDetail/*'] as const;",
+      `const back = () => router.push('${redirect!.route}');`,
+      '/* 블록 주석 */',
+    ].join('\n');
+    expect(sourceViolations('app/x/BoardDetailClient.tsx', 'x/BoardDetailClient.tsx', source)).toHaveLength(1);
   });
 
   it('해석기가 형제 정적 라우트를 오탐하지 않고 동적 자리의 계산값은 잡는다', () => {

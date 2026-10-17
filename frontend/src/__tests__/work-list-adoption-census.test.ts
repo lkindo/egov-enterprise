@@ -1,8 +1,10 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { keepInProjection } from '@/test-utils/projection';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
@@ -15,15 +17,15 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 이 게이트가 없으면 이행은 "했다는 주장"으로만 남는다. 화면 문법은 컴포넌트가 존재한다고
  * 지켜지는 게 아니라 **화면이 그것을 경유할 때** 지켜지기 때문에, 두 모집단을 exact 로 묶는다.
  *
- *   ADOPTERS       WorkListPage 를 경유하는 화면 수 — 줄어들면 red(이행 되돌리기 차단)
- *   DIRECT_ONLY    셸 없이 StandardDataTable 을 직접 조립하는 화면 수 — 늘어나면 red(신규 유입 차단)
+ *   ADOPTER_SCREENS       WorkListPage 를 경유하는 화면 — 빠지면 red(이행 되돌리기 차단), 목록 밖 채택도 red
+ *   DIRECT_ONLY_SCREENS   셸 없이 StandardDataTable 을 직접 조립하는 화면 — 늘어나면 red(신규 유입 차단)
  *
- * ⚠ DIRECT_ONLY 의 목표는 0 이 아니다. 마스터-디테일(A2)·매트릭스(A5)처럼 A1이 아닌
- *   archetype 은 정당하게 직접 소비한다 — 각 화면이 자기 셸로 이행할 때 함께 내려간다. 지금 0 을
+ * ⚠ DIRECT_ONLY_SCREENS 의 목표는 빈 목록이 아니다. 마스터-디테일(A2)·매트릭스(A5)처럼 A1이 아닌
+ *   archetype 은 정당하게 직접 소비한다 — 각 화면이 자기 셸로 이행할 때 함께 빠진다. 지금 0 을
  *   목표로 잡으면 A1 이 아닌 화면을 A1 셸에 우겨넣는 잘못된 압력이 된다.
  *
- * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
- * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
+ * 목록을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 목록을 갱신한다.
+ * ADOPTER_SCREENS 에 더하는 것과 DIRECT_ONLY_SCREENS 에서 빼는 것만 정상 경로다(AGENTS H2).
  */
 // [2026-09-06 DEC-OPS-040] 40 → 39: /admin/system/ism(IsmClient)이 /approvals 로 통합돼 화면이 사라졌다 — 되돌리기가 아니라
 //   같은 개인 결재함 두 화면을 하나로 모은 결과다(DEC-OPS-039 제안의 owner 승인). 정본 /approvals 는 A2 MasterDetailPage 소비자다.
@@ -60,12 +62,10 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
 //   감시 허브는 그대로 셸을 경유한다 — 이행 되돌리기가 아니라 새 화면이다.
 // [업무 허브 분해 W1] 44 -> 45: 업무 허브 클라이언트(업무 보고·일정 탭 공유)가 업무 보고·일정 두 화면으로 나뉘었다 — 둘 다 셸을
 //   경유한다. 나의 업무·업무 관리는 core 섹션(components/business/deptJob)이라 이 census 의 화면 모집단(src/app) 밖이다.
-const ADOPTERS = 45;
-// [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
-const DIRECT_ONLY = 2;
 /*
- * [2026-10-10 Phase 2 D6] 개수와 함께 화면 목록도 동결한다 — 재사용 생성물에서는 투영으로 빠진 화면만 뺀다(원장 확인).
- *   목록 길이는 위 두 수와 같아야 한다(아래 계약). 화면을 옮기거나 이행하면 수와 목록을 함께 고친다.
+ * [2026-10-10 Phase 2 D6] 화면 목록을 동결한다 — 재사용 생성물에서는 투영으로 빠진 화면만 뺀다(원장 확인).
+ *   위의 수 변천은 이 목록 길이의 이력이다. 수는 목록 길이에서 나오므로 따로 동결하지 않는다 — 수와 목록을 함께 고치게 하는
+ *   상수 비교는 코드를 보지 않는다(FE-CONTRACT-07). 화면을 옮기거나 이행하면 목록만 고친다.
  */
 const ADOPTER_SCREENS = [
   // [허브 분해 H1] 협업 허브는 core 틀(collaboration-hub-frame)이 셸을 경유하고 탭 뷰가 그 틀에 조각을 넘긴다 — 수는 같다.
@@ -115,6 +115,7 @@ const ADOPTER_SCREENS = [
   'src/app/smart-toolkit/work-report/WorkReportClient.tsx',
   'src/app/survey/SurveyClient.tsx',
 ];
+// [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY_SCREENS = [
   'src/app/components/ui/smart-notification-hub.tsx',
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx',
@@ -187,14 +188,16 @@ describe('A1 archetype 채택 census', () => {
   const { adopters, directOnly, frameUsers } = census();
   /** 셸 화면 규칙을 받는 화면 — 셸 경유 화면과 셸 틀에 조각을 넘기는 탭 뷰. */
   const shellScreens = [...adopters, ...frameUsers];
+  const expectedAdopters = inProjectionScreens(ADOPTER_SCREENS);
+  const expectedDirectOnly = inProjectionScreens(DIRECT_ONLY_SCREENS);
 
-  it(`WorkListPage 경유 화면은 ${ADOPTERS}개 이상이다(이행 되돌리기 차단)`, () => {
-    const expected = inProjectionScreens(ADOPTER_SCREENS);
-    const missing = expected.filter((screen) => !adopters.includes(screen));
-    const added = adopters.filter((screen) => !expected.includes(screen));
+  // 목록 exact 대조다 — 셸을 떠난 화면(이행 되돌리기)도, 목록에 없는 새 셸 화면도 red 다.
+  it(`WorkListPage 경유 화면은 동결한 화면 목록(${expectedAdopters.length}개)과 정확히 같다`, () => {
+    const missing = expectedAdopters.filter((screen) => !adopters.includes(screen));
+    const added = adopters.filter((screen) => !expectedAdopters.includes(screen));
     expect(
       { missing, added },
-      `셸을 떠난 화면은 되돌리고, 새로 셸을 쓴 화면은 ADOPTER_SCREENS 와 ADOPTERS 를 함께 올리세요.\n현재 채택 화면:\n${adopters.join('\n')}`,
+      `셸을 떠난 화면은 되돌리고, 새로 셸을 쓴 화면은 ADOPTER_SCREENS 에 더하세요.\n현재 채택 화면:\n${adopters.join('\n')}`,
     ).toEqual({ missing: [], added: [] });
   });
 
@@ -205,20 +208,15 @@ describe('A1 archetype 채택 census', () => {
     ]));
   });
 
-  it('동결한 화면 목록의 길이는 동결한 수와 같다', () => {
-    expect(ADOPTER_SCREENS.length).toBe(ADOPTERS);
-    expect(DIRECT_ONLY_SCREENS.length).toBe(DIRECT_ONLY);
-  });
-
-  it(`셸 없이 표를 직접 조립하는 화면은 ${DIRECT_ONLY}개를 넘지 않는다(신규 유입 차단)`, () => {
-    const expected = inProjectionScreens(DIRECT_ONLY_SCREENS);
-    const added = directOnly.filter((screen) => !expected.includes(screen));
-    const gone = expected.filter((screen) => !directOnly.includes(screen));
+  // 목록 exact 대조다 — 신규 유입도, 이행했는데 목록에서 빼지 않은 화면도 red 다.
+  it(`셸 없이 표를 직접 조립하는 화면은 동결한 목록(${expectedDirectOnly.length}개)과 정확히 같다(신규 유입 차단)`, () => {
+    const added = directOnly.filter((screen) => !expectedDirectOnly.includes(screen));
+    const gone = expectedDirectOnly.filter((screen) => !directOnly.includes(screen));
     expect(
       { added, gone },
       added.length
         ? `신규 ${added.length}건 유입 — 조회형 목록이면 WorkListPage 를 경유하세요.`
-        : `${gone.length}건 감소 — 이행분을 확정하려면 DIRECT_ONLY_SCREENS 에서 빼고 DIRECT_ONLY 를 ${DIRECT_ONLY - gone.length}로 내리세요.`,
+        : `${gone.length}건 감소 — 이행분을 확정하려면 DIRECT_ONLY_SCREENS 에서 빼세요.`,
     ).toEqual({ added: [], gone: [] });
   });
 
@@ -240,11 +238,9 @@ describe('A1 archetype 채택 census', () => {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');
       // ⚠ 주석을 먼저 지운다 — 이 규칙을 **설명하는 주석**이 대상 파일에 들어 있어서, 지우지 않으면
       //   계약이 자기 설명을 위반으로 신고한다(dom-identity-invariants 가 남긴 함정과 같은 것).
-      // ⚠ [2026-08-29] 지우는 **순서**도 중요하다. 블록 주석을 먼저 지우면 줄 주석 안의 블록
-      //   주석 여는 기호가 저 아래 닫는 기호까지 이어져 그 사이 실행 코드가 통째로 사라진다
-      //   (실측: WorkHubClient.tsx 1,781자 소실). 이 census 는 소스를 전수로 훑으므로 그런
-      //   파일이 하나만 생겨도 조용히 눈이 먼다. 콜론 가드는 URL 오인 방지용이다.
-      const code = source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, '');
+      // ⚠ 주석 제거는 공용 판정(scripts/code-without-comments.mjs)이 한다 — 종전 정규식은 지우는 순서를 바꿔도(2026-08-29)
+      //   문자열 속 주석 기호에서 블록 주석을 열어 그 사이 실행 코드를 통째로 지웠다(FE-CONTRACT-01).
+      const code = codeWithoutComments(source, relativePath);
       // 셸이 총 건수를 소유하므로 표 pagination 에 totalCount 를 다시 넘기면 위아래 이중 표기가 된다.
       // ⚠ 검사는 pagination 블록 **안**으로 한정한다 — 파일 전체를 훑으면 셸에 정상적으로 넘긴
       //   `totalCount={...}` 까지 걸려 오탐이 난다(2026-08-24 실측: 설문 응답자 화면).

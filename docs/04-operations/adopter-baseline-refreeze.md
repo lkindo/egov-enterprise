@@ -25,8 +25,8 @@ base 저장소의 게이트 다수는 "현재 실측값과 정확히 같아야 �
 
 | # | 축 | 동결 위치 | 재동결 방법 |
 |---|---|---|---|
-| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 `BASELINE` 상수와 파일별 `BASELINE_BY_FILE` 표 | red 실측 → 표와 상수를 함께 갱신 (§3) |
-| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 `BASELINE` 상수·파일별 `BASELINE_BY_FILE` 표와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표와 상수를 함께 갱신 (§3) |
+| 1 | status 색 하드코딩 | [status-color-guard.test.ts](../../frontend/src/__tests__/status-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계 `BASELINE` 은 표의 합에서 계산) | red 실측 → 표만 갱신 (§3) |
+| 2 | 중립·액센트 색 하드코딩 | [hardcoded-color-guard.test.ts](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) 의 파일별 `BASELINE_BY_FILE` 표(총계는 표의 합에서 계산)와 보조 글자 불투명도 표 `MUTED_OPACITY_BASELINE` | red 실측 → 표만 갱신 (§3) |
 | 3 | URL 상태 census | [config/ui-url-state-census.json](../../config/ui-url-state-census.json) | `node scripts/ui-url-state-census.mjs --write` (§4) |
 | 4 | 거버넌스 게이트 exact census | [config/governance/gates.json](../../config/governance/gates.json) | manifest 를 실제 게이트 소스와 함께 갱신 (§5) |
 | 5 | 브랜드 프로필 키 패리티 | [theme-token-contract.test.ts](../../frontend/src/__tests__/theme-token-contract.test.ts) | 프로필 CSS·allowlist 3방향 패리티 충족 (§6) |

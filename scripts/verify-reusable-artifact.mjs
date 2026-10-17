@@ -61,7 +61,8 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   if (!compositionProfiles().includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
   const steps = verificationSteps(scope, layout);
-  const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
+  // 기본은 KST 이고 명시한 TZ 가 이긴다 — `TZ=UTC` 로 CI 러너(UTC) 조건을 재현한다(verify.mjs 와 같은 규칙).
+  const env = { ...process.env, TZ: process.env.TZ || 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
   const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
     result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };

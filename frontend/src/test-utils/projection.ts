@@ -103,3 +103,13 @@ export const {
   missingOutsideLedger,
   pageInProjection,
 } = projectionView(REPO_ROOT);
+
+/**
+ * 파일별 동결표(frozenInProjection 결과)와 실측의 차이 — `  파일: 실측 n / 동결 m` 줄을 파일 이름 순으로 돌려준다.
+ * 빈 배열이면 같다. 늘어난 파일·줄어든 파일·옮겨 간 몫이 모두 차이다(합이 같아도 red).
+ */
+export function frozenTableDiff(actual: Readonly<Record<string, number>>, frozen: Readonly<Record<string, number>>): string[] {
+  return [...new Set([...Object.keys(actual), ...Object.keys(frozen)])].sort()
+    .filter((file) => (actual[file] ?? 0) !== (frozen[file] ?? 0))
+    .map((file) => `  ${file}: 실측 ${actual[file] ?? 0} / 동결 ${frozen[file] ?? 0}`);
+}
