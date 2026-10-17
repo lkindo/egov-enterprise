@@ -1,6 +1,7 @@
 # ADR-0024 — Spring Boot 4.1 두 단계 전환
 
 - 상태: Accepted
+- 후속 결정: 결정 3의 '본체·테스트의 Jackson 2 사용을 걷는다' 범위에서 `migration-tool`은 [DEC-OPS-124](../../archived/operational-decisions-history.md#dec-ops-124)가 제외한다. Jackson 3 이행은 온라인 앱에 한정한다. 아래 본문은 당시 승인 기록이다.
 - 결정일: 2026-09-24
 - 승인 범위: GAP-DEP-002 라인 결정 ⓐ(OSS 라인 전환)를 두 단계로 나눈 권장안 — 사용자 승인(2026-09-24 "권장안으로 진행")
 - 관련: [GAP-DEP-002](../../../.agent/memory/known-gaps.md), [Boot 4 호환 실측](../../04-operations/readiness-followups.md#spring-boot-4-호환-실측), [SAST 예외 재검토](../../04-operations/sast-findings-review.md)

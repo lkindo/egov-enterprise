@@ -1,7 +1,7 @@
 # 관측성 기본값 — 메트릭·JSON 로그·경보 예시
 
 이 템플릿이 운영 관측을 위해 **이미 갖춘 것**과 **인수처가 정해야 하는 것**을 구분한다. 수집·보존 스택(PD-OPS-001)과
-경보 수신처는 저장소가 정하지 않는다. 여기 적힌 수치는 모두 시작점이며 운영 트래픽으로 다시 정한다(GAP-OPS-001).
+경보 수신처는 저장소가 정하지 않는다. 여기 적힌 수치는 모두 시작점이며 운영 트래픽으로 다시 정한다 — 그 운영 증거는 [기관 채택 통제 `operational-assurance`](../03-guides/governance-review-lifecycle.md#3-온라인-제품의-기관-도입)가 요구한다(DEC-OPS-111).
 
 ## 1. 템플릿이 기본 제공하는 것
 
@@ -105,4 +105,4 @@ required CI의 [`secret-scan`](../../.github/workflows/ci.yml)은 Node 운영 �
 
 - 로그 수집·보존 스택과 보존 기간: [PD-OPS-001](pending-decisions.md), [로그 보존 정책](log-retention-policy.md)
 - 대시보드, Alertmanager 설정, 온콜 책임
-- 운영 규모에서 정한 임계값: [GAP-OPS-001](../../.agent/memory/known-gaps.md)
+- 운영 규모에서 정한 임계값: [기관 채택 통제 `operational-assurance`](../03-guides/governance-review-lifecycle.md#3-온라인-제품의-기관-도입)

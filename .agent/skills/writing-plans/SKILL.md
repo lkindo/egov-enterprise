@@ -15,7 +15,9 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This should be run in a dedicated worktree (created by brainstorming skill).
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
+**Where plans live (this repository):** there is no `docs/plans/`. Keep a task plan in the conversation, the PR description, or a scratch file outside the repository; promote only durable design to a kebab-case doc under `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` with the `docs/README.md` index updated (AGENTS.md "Documentation and memory"). Session plans and TODOs never go into `.agent/memory/`.
+
+**Commits (this repository):** the "Commit" steps below are checkpoints, not permission. Commit only when the user asked for it, and only your own paths with `git commit --only -- <paths>` (AGENTS.md "공유 워킹트리와 Git").
 
 ## Bite-Sized Task Granularity
 
@@ -82,8 +84,8 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
+# only when the user asked for commits
+git commit --only -m "feat: add specific feature" -- tests/path/test.py src/path/file.py
 ```
 ```
 
@@ -98,7 +100,7 @@ git commit -m "feat: add specific feature"
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+**"Plan complete (in <where the plan lives>). Two execution options:**
 
 **1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
 

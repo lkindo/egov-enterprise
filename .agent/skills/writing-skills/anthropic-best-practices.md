@@ -256,14 +256,14 @@ The complete Skill directory structure might look like this:
 
 ```
 pdf/
-?쒋?? SKILL.md              # Main instructions (loaded when triggered)
-?쒋?? FORMS.md              # Form-filling guide (loaded as needed)
-?쒋?? reference.md          # API reference (loaded as needed)
-?쒋?? examples.md           # Usage examples (loaded as needed)
-?붴?? scripts/
-    ?쒋?? analyze_form.py   # Utility script (executed, not loaded)
-    ?쒋?? fill_form.py      # Form filling script
-    ?붴?? validate.py       # Validation script
+├── SKILL.md              # Main instructions (loaded when triggered)
+├── FORMS.md              # Form-filling guide (loaded as needed)
+├── reference.md          # API reference (loaded as needed)
+├── examples.md           # Usage examples (loaded as needed)
+└── scripts/
+    ├── analyze_form.py   # Utility script (executed, not loaded)
+    ├── fill_form.py      # Form filling script
+    └── validate.py       # Validation script
 ```
 
 #### Pattern 1: High-level guide with references
@@ -300,12 +300,12 @@ For Skills with multiple domains, organize content by domain to avoid loading ir
 
 ```
 bigquery-skill/
-?쒋?? SKILL.md (overview and navigation)
-?붴?? reference/
-    ?쒋?? finance.md (revenue, billing metrics)
-    ?쒋?? sales.md (opportunities, pipeline)
-    ?쒋?? product.md (API usage, features)
-    ?붴?? marketing.md (campaigns, attribution)
+├── SKILL.md (overview and navigation)
+└── reference/
+    ├── finance.md (revenue, billing metrics)
+    ├── sales.md (opportunities, pipeline)
+    ├── product.md (API usage, features)
+    └── marketing.md (campaigns, attribution)
 ```
 
 ````markdown SKILL.md theme={null}
@@ -313,10 +313,10 @@ bigquery-skill/
 
 ## Available datasets
 
-**Finance**: Revenue, ARR, billing ??See [reference/finance.md](reference/finance.md)
-**Sales**: Opportunities, pipeline, accounts ??See [reference/sales.md](reference/sales.md)
-**Product**: API usage, features, adoption ??See [reference/product.md](reference/product.md)
-**Marketing**: Campaigns, attribution, email ??See [reference/marketing.md](reference/marketing.md)
+**Finance**: Revenue, ARR, billing → See [reference/finance.md](reference/finance.md)
+**Sales**: Opportunities, pipeline, accounts → See [reference/sales.md](reference/sales.md)
+**Product**: API usage, features, adoption → See [reference/product.md](reference/product.md)
+**Marketing**: Campaigns, attribution, email → See [reference/marketing.md](reference/marketing.md)
 
 ## Quick search
 
@@ -502,7 +502,7 @@ Clear steps prevent Claude from skipping critical validation. The checklist help
 
 ### Implement feedback loops
 
-**Common pattern**: Run validator ??fix errors ??repeat
+**Common pattern**: Run validator → fix errors → repeat
 
 This pattern greatly improves output quality.
 
@@ -699,8 +699,8 @@ Guide Claude through decision points:
 
 1. Determine the modification type:
 
-   **Creating new content?** ??Follow "Creation workflow" below
-   **Editing existing content?** ??Follow "Editing workflow" below
+   **Creating new content?** → Follow "Creation workflow" below
+   **Editing existing content?** → Follow "Editing workflow" below
 
 2. Creation workflow:
    - Use docx-js library
@@ -826,8 +826,8 @@ Iterate based on these observations rather than assumptions. The 'name' and 'des
 
 Always use forward slashes in file paths, even on Windows:
 
-* ??**Good**: `scripts/helper.py`, `reference/guide.md`
-* ??**Avoid**: `scripts\helper.py`, `reference\guide.md`
+* ✓ **Good**: `scripts/helper.py`, `reference/guide.md`
+* ✗ **Avoid**: `scripts\helper.py`, `reference\guide.md`
 
 Unix-style paths work across all platforms, while Windows-style paths cause errors on Unix systems.
 
@@ -988,7 +988,7 @@ When Claude performs complex, open-ended tasks, it can make mistakes. The "plan-
 
 **Example**: Imagine asking Claude to update 50 form fields in a PDF based on a spreadsheet. Without validation, Claude might reference non-existent fields, create conflicting values, miss required fields, or apply updates incorrectly.
 
-**Solution**: Use the workflow pattern shown above (PDF form filling), but add an intermediate `changes.json` file that gets validated before applying changes. The workflow becomes: analyze ??**create plan file** ??**validate plan** ??execute ??verify.
+**Solution**: Use the workflow pattern shown above (PDF form filling), but add an intermediate `changes.json` file that gets validated before applying changes. The workflow becomes: analyze → **create plan file** → **validate plan** → execute → verify.
 
 **Why this pattern works:**
 
@@ -1039,11 +1039,11 @@ Skills run in a code execution environment with filesystem access, bash commands
 
 ```
 bigquery-skill/
-?쒋?? SKILL.md (overview, points to reference files)
-?붴?? reference/
-    ?쒋?? finance.md (revenue metrics)
-    ?쒋?? sales.md (pipeline data)
-    ?붴?? product.md (usage analytics)
+├── SKILL.md (overview, points to reference files)
+└── reference/
+    ├── finance.md (revenue metrics)
+    ├── sales.md (pipeline data)
+    └── product.md (usage analytics)
 ```
 
 When the user asks about revenue, Claude reads SKILL.md, sees the reference to `reference/finance.md`, and invokes bash to read just that file. The sales.md and product.md files remain on the filesystem, consuming zero context tokens until needed. This filesystem-based model is what enables progressive disclosure. Claude can navigate and selectively load exactly what each task requires.

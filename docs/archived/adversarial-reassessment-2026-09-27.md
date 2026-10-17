@@ -1,6 +1,6 @@
 # eGov Enterprise 평가의 적대적 재검토 — 2026-09-27
 
-사용자가 제공한 Claude 평가를 `main 0ef8af32f`의 코드·설정과 대조한 **비규범 검토 문서**다. 실행 승인은 별개이며 이 문서가 기존 제품 결정이나 헌법을 대체하지 않는다. 후속 실행에는 [루프 프롬프트](../03-guides/evidence-first-improvement-loop-prompt.md)를 사용한다.
+사용자가 제공한 Claude 평가를 `main 0ef8af32f`의 코드·설정과 대조한 **비규범 검토 문서**다. 실행 승인은 별개이며 이 문서가 기존 제품 결정이나 헌법을 대체하지 않는다. 후속 실행에는 [루프 프롬프트](evidence-first-improvement-loop-prompt.md)를 사용한다.
 
 ## 판단과 증거 범위
 
@@ -98,7 +98,7 @@
 
 변수 검증을 verify 앞부분으로 옮기고 publish 없는 dry-run을 추가하는 제안은 수용한다. 그러나 **두 빌드 성공 뒤에도 두 번째 push는 실패할 수 있다.** 두 이미지를 불변 digest로 준비·검증한 뒤, 완전한 digest 쌍을 담은 릴리스 manifest를 최종 게시하고 배포가 그 manifest만 소비하게 하는 완료 경계가 필요하다. 정확한 구현은 현재 배포 소비자를 확인한 뒤 정한다. dry-run에서는 registry login/push, 태그 생성, Release 게시가 실제로 실행되지 않는지도 부정 검증한다.
 
-운영 overlay smoke도 수용하되 ZAP을 prod 설정으로 바로 바꾸지 않는다. 현재 ZAP은 버리는 DB의 개발 시드 인증에 결속돼 있다. prod profile·edge·관리 포트·신뢰 proxy 검증을 격리된 형상에서 실행하고 기존 인증 스캔의 의미를 보존한다. [마이그레이션 릴리스 기록](migration-release-log.md)은 태그 발행이 아니라 **어느 환경에 실제 DB 변경이 배포됐는지** 기록한다. GitHub Release 생성만으로 행을 채우지 않는다. 신규 설치와 기존 v0.1.0 데이터의 업그레이드·복구 경로도 별개로 확인해야 한다.
+운영 overlay smoke도 수용하되 ZAP을 prod 설정으로 바로 바꾸지 않는다. 현재 ZAP은 버리는 DB의 개발 시드 인증에 결속돼 있다. prod profile·edge·관리 포트·신뢰 proxy 검증을 격리된 형상에서 실행하고 기존 인증 스캔의 의미를 보존한다. [마이그레이션 릴리스 기록](../04-operations/migration-release-log.md)은 태그 발행이 아니라 **어느 환경에 실제 DB 변경이 배포됐는지** 기록한다. GitHub Release 생성만으로 행을 채우지 않는다. 신규 설치와 기존 v0.1.0 데이터의 업그레이드·복구 경로도 별개로 확인해야 한다.
 
 ### C. 보안·인가
 

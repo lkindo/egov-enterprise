@@ -1,6 +1,7 @@
 # ADR-0029 — 레거시 표준화 이관은 도구가 후보와 근거를 만들고 사람이 용어 매핑 원장으로 확정한다
 
 - 상태: Accepted
+- 후속 결정: 원장 확정·비표준 대상·허용값 미확인 조건, 쓰기 실패 처리 시점과 L3 실행 경계는 [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md)을 따른다. L2 단계 표의 '결정 5의 가드 포함'은 [DEC-OPS-313](../../archived/operational-decisions-history.md#dec-ops-313)이 외부 LLM 전송 경로를 둘 때 함께 만드는 것으로 대체했고(현재 경로 없음), 실행 단계 규칙 '각 단계는 앞 단계가 병합된 뒤 시작한다'의 L4 착수 시점은 [DEC-OPS-323](../../archived/operational-decisions-history.md#dec-ops-323)이 예외로 승인했다. 아래 본문은 당시 승인 기록이며 후속 결정의 대체 범위를 함께 읽는다.
 - 결정일: 2026-10-13
 - 승인 범위: 사용자 결정(2026-10-13 — 설계 초안을 ADR 로 채택, 결정 대기 Q1~Q4, 같은 날 17:50 의 Q5 제어 테이블 변경 승인과 Q8~Q10)과
   위임 결정(Q5 의 표현 방식·Q6·Q7, 표준 스키마 메타 불일치의 gap 등록 — Claude 권고안). 인덱스는 DEC-OPS-305 다.
@@ -47,7 +48,7 @@
    - 원장의 표준용어·도메인은 plan 시점 live 메타(`meta_standard_terms`·`meta_standard_domains`)와 다시 대조한다.
    - `CONFIRMED` 는 변환 후 적합률 100% 이거나 승인된 예외가 기록된 행만 받는다. 원장에는 원시 행 값·접속정보를 남기지 않는다.
 4. **민감 컬럼(Q1).** 이관 도구가 온라인 애플리케이션과 호환되는 암호화를 직접 구현한다.
-   - 런타임에는 `foundation`·`business-core` 에 의존하지 않는다([DEC-OPS-005](../../../.agent/memory/decisions.md) 유지). 호환 증명용
+   - 런타임에는 `foundation`·`business-core` 에 의존하지 않는다([DEC-OPS-005](../../archived/operational-decisions-history.md#dec-ops-005) 유지). 호환 증명용
      계약 시험만 온라인 converter 원본을 시험 안에서 컴파일해 쓰고, 그에 필요한 외부 라이브러리만 시험 범위에 둔다.
      Gradle 프로젝트 의존은 두지 않는다(생성 제품 검사와 이관 단독 제품의 시험 컴파일이 막는다). bootJar 런타임 클래스패스에는 들어가지 않는다.
    - 계약 시험은 도구가 만든 암호문을 온라인 `RrnoEncryptionConverter`(와 그 암호 구현)로 복호화해 같은 값임을 증명한다. 온라인 암호
@@ -56,9 +57,9 @@
    - 암호화 대상으로 표시된 컬럼에 평문이 오면 쓰기 전에 실패한다. 대상 표시는 승인 digest 에 들어간다.
    - 문자열 값만 암호화한다(숫자 표기는 앞자리 0 을 지워 다른 값을 암호화한다). 암호화할 소스 값은 정렬·식별자·참조 키로 쓰지 못한다 —
      키는 도구 제어 테이블에 평문으로 남기 때문이다. 주민번호만 키인 테이블은 [GAP-MIG-002](../../../.agent/memory/known-gaps.md)다.
-   - 키 회전과 레거시 암호문 처분은 기관 채택 통제 `crypto-lifecycle`([DEC-OPS-107](../../../.agent/memory/decisions.md))에 그대로 둔다.
+   - 키 회전과 레거시 암호문 처분은 기관 채택 통제 `crypto-lifecycle`([DEC-OPS-107](../../archived/operational-decisions-history.md#dec-ops-107))에 그대로 둔다.
    - 도구가 eGovFrame 암호 라이브러리를 직접 쓰는 것도 이 범위 안이다(사용자 확인). L1 은 의존을 늘리지 않으려고 같은 암호를
-     독자 구현했고, 그 라이브러리는 계약 시험 범위에만 있다([DEC-OPS-308](../../../.agent/memory/decisions.md)).
+     독자 구현했고, 그 라이브러리는 계약 시험 범위에만 있다([DEC-OPS-308](../../archived/operational-decisions-history.md#dec-ops-308)).
    - 주민등록번호를 이관해도 되는지의 법적 근거는 기관이 판단한다. 기관 이관 통제 `mapping-schema-driver`([검토 수명 가이드](../../03-guides/governance-review-lifecycle.md))가
      그 판단과, 이관 키가 온라인 `ALGORITHM_KEY` 와 같다는 확인을 근거 파일로 요구한다. 도구는 암호화 경로만 보장하고 키 일치는 증명하지 못한다.
 5. **외부 LLM 후보 생성(Q3).** `term-suggest` 의 외부 LLM 사용은 기본 꺼짐이다. 켜려면 아래를 모두 만족해야 한다.
@@ -79,7 +80,7 @@
 8. **도메인에 맞지 않는 행(Q6, 위임).** 기본은 fail-closed 다 — 위반 행이 하나라도 있으면 그 테이블 적재를 멈춘다. 원장이 승인한
    예외 조건에 맞는 행만 격리해 적재에서 빼고 나머지를 진행한다. 격리 건수가 승인한 상한을 넘으면 멈춘다. 격리 행은 현행 redaction
    원칙대로 원시 값 없이 식별 근거와 위반 유형으로 보고하고, 조용히 버리지 않는다.
-   - 사실(2026-10-13): L1 전에는 적재기가 변환에 실패한 행을 건너뛰고 나머지를 커밋했다. L1 PR-D([DEC-OPS-309](../../../.agent/memory/decisions.md))부터
+   - 사실(2026-10-13): L1 전에는 적재기가 변환에 실패한 행을 건너뛰고 나머지를 커밋했다. L1 PR-D([DEC-OPS-309](../../archived/operational-decisions-history.md#dec-ops-309))부터
      행 변환 실패(transform·codemap·type·fkRef·identity·보호 컬럼)는 그 행이 든 chunk 를 쓰지 않고 테이블과 run 을 멈춘다. 앞서 커밋한
      chunk 는 남고 재개는 마지막 checkpoint 다음부터다.
    - 쓰기 단계의 오류는 종류와 무관하게(길이·NOT NULL·CHECK·UNIQUE·대상 FK·일시 오류, 행 재변환 실패 `ROW_RETRY_TRANSFORM_FAILED`,
@@ -93,7 +94,7 @@
     메타에는 지금 이 정보가 없고, 저장소의 행정안전부 공통표준 CSV 에만 있다. 공유 OCI DB 적용은 그때 따로 승인받는다.
 11. **JPA 전용 시퀀스(Q9, 사용자).** `@SequenceGenerator` 로만 쓰는 시퀀스에 지금은 `OWNED BY` 를 두지 않는다. 대상 카탈로그에
     연결이 없으므로 매핑이 `identity.targetSequences` 로 선언하고(`preserve`·`remap` 정수 키), 선언이 없으면 도구가 COMMIT 적재를 시작하지 않는다
-    ([DEC-OPS-306](../../../.agent/memory/decisions.md)). plan·dry-run 은 대상 시퀀스를 읽지 않으므로 이 누락은 COMMIT 시작에서 드러난다.
+    ([DEC-OPS-306](../../archived/operational-decisions-history.md#dec-ops-306)). plan·dry-run 은 대상 시퀀스를 읽지 않으므로 이 누락은 COMMIT 시작에서 드러난다.
 12. **비 PostgreSQL 소스의 외부 드라이버(Q10, 사용자).** 번들 드라이버는 PostgreSQL 뿐이고 외부 드라이버는 격리 규칙 때문에 증거
     등급과 무관하게 COMMIT 할 수 없다. 기관 환경·라이선스가 생기면 L3 에서 외부 드라이버를 별도 프로세스로 실행하는 경로를 둔다.
     그때까지 외부 드라이버 공개 COMMIT 차단을 유지한다.

@@ -448,9 +448,41 @@ export function buildAtlasCatalog(repoRoot) {
 
   const decisionSource = '.agent/memory/decisions.md';
   const decisionText = io.read(decisionSource);
+  const decisionHistorySource = 'docs/archived/operational-decisions-history.md';
+  const historyText = io.read(decisionHistorySource);
+  const historyRows = tableRows(historyText, 'DEC-OPS-\\d{3} \\|');
+  unique(historyRows.map(row => ({ id: row.cells[0] })), 'decision history');
+  requireValue(historyRows.every(row => row.cells.length === 7), 'decision history requires seven columns');
+  const historyHeadings = [...historyText.matchAll(/^## (DEC-OPS-\d{3})\s*$/gm)];
+  for (const [index, heading] of historyHeadings.entries()) {
+    const section = historyText.slice(heading.index + heading[0].length, historyHeadings[index + 1]?.index ?? historyText.length);
+    const rows = tableRows(section, 'DEC-OPS-\\d{3} \\|');
+    requireValue(rows.length === 1 && rows[0].cells[0] === heading[1],
+      `${heading[1]} decision history section must contain its same-ID row`);
+  }
+  requireValue(historyHeadings.length === historyRows.length, 'decision history headings and rows differ');
+  const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
   const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) => {
     const id = cells[0];
     const links = localLinks(raw, decisionSource);
+    let fullCells = cells;
+    let fullRaw = raw;
+    if (id.startsWith('DEC-')) {
+      const historyLinks = links.filter(link => link.path.split('#')[0] === decisionHistorySource);
+      // Archived decisions keep their exact binding; future decisions may link a current change document.
+      if (decisionHistory.has(id) || historyLinks.length) {
+        requireValue(historyLinks.length === 1 && historyLinks[0].path === `${decisionHistorySource}#${id.toLowerCase()}`,
+          `${id} must link exactly one same-ID decision history section`);
+        const historical = requireValue(decisionHistory.get(id), `${id} decision history missing`);
+        requireValue([1, 5, 6].every(index => historical.cells[index] === cells[index]),
+          `${id} decision history status/date/supersedes differs from index`);
+        fullCells = historical.cells;
+        fullRaw = historical.raw;
+        for (const link of localLinks(fullRaw, decisionHistorySource)) {
+          if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
+        }
+      }
+    }
     // Keep the memory row's stable ID/source. Only its explicit same-ID ADR is authoritative;
     // related decisions and similarly named documents must not supply approval or search content.
     const adrPaths = [...new Set(links.map(link => link.path.split('#')[0]).filter(source =>
@@ -466,13 +498,15 @@ export function buildAtlasCatalog(repoRoot) {
       adrStatus = declaredDocumentStatus(text, adrPaths[0]);
       if (cells[1] === 'accepted' && /^Accepted\b/i.test(adrStatus)) adrText = text;
     }
+    const searchCells = fullCells === cells ? cells : [...cells, ...fullCells];
+    const referenceText = fullRaw === raw ? raw : `${raw}\n${fullRaw}`;
     return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], decisionSource, {
-      details: [detail('결정 원문', cells[2]), detail('이유', cells[3]), detail('시행일', cells[5]),
+      details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[5]),
         ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells.at(-1)),
         detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
-      supersedes: cells.at(-1), references: [...new Set([...raw.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
+      supersedes: cells.at(-1), references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
       links,
-      searchText: [...cells, adrText].join('\n'),
+      searchText: [...searchCells, adrText].join('\n'),
     });
   });
   const gapSource = '.agent/memory/known-gaps.md';

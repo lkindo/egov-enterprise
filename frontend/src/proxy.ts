@@ -280,10 +280,11 @@ const ATLAS_CSP =
  * ⚠ 경로는 위 두 CSP 의 report-uri 와 같아야 한다 — 다르면 브라우저가 서로 다른 두 곳으로
  *   리포트를 보낸다. csp-policy 계약이 세 자리의 일치를 검사한다.
  *
- * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 는 report-to 그룹 csp-endpoint 를 선언하는데 그 그룹을
- *   정의하는 Reporting-Endpoints 헤더가 저장소 어디에도 없었다. 즉 최신 Reporting API 경로는
- *   선언만 있고 배선이 없어 동작하지 않았다 — 수집기 route.ts 는 이미 reports+json 형식을
- *   파싱하고 있었으므로 빠진 것은 그룹 정의 하나였다.
+ * [2026-09-23 ZAP 주간 스캔 분류] 두 CSP 가 선언하는 report-to 그룹 csp-endpoint 의 정의를 여기
+ *   상수로 두고 문서 응답에 단다. 수집기 route.ts 는 reports+json 형식을 파싱한다.
+ * [2026-10-17] next.config.ts 도 같은 값을 리터럴로 모든 경로에 달고 있었다(상수에 묶이지 않아
+ *   수집 경로가 바뀌면 그쪽만 낡는다). CSP 가 있는 응답은 모두 이 파일을 지나므로 그 선언을 걷고
+ *   이 파일을 단일 소스로 둔다.
  */
 const CSP_REPORT_PATH = '/api/security/csp';
 const REPORTING_ENDPOINTS = `csp-endpoint="${CSP_REPORT_PATH}"`;

@@ -64,6 +64,6 @@ pnpm -C frontend run lint
 
 ## 현재 census 기준선
 
-2026-08-26 AST 기준선은 native form 47개(45 files), member form 1개, formless write 21개, secondary action 52개, 총 121개다. 정본은 census manifest와 실제 audit 출력이며 이 숫자는 detector·manifest 변경과 같은 변경 세트에서만 갱신한다.
+native form·member form·formless write·secondary action의 현재 모집단과 기대 개수는 [census manifest](../../config/governance/frontend-form-validation-census.json)의 `expected`와 실제 audit 출력을 대조한다. 문서에는 개수를 복제하지 않으며, detector·화면 변경으로 모집단이 달라지면 같은 변경 세트에서 manifest를 갱신하고 행동 계약을 검증한다.
 
 현재 noncompliant 경계는 0개다. `WorkReportClient`·`ScheduleCalendarClient`(2026-10-12 업무 허브 분해로 `WorkHubClient` 를 나눴다), `DeptJobDetailClient`, `DeptJobCreateClient` composition과 `ScheduleCalendarClient.handleDeleteSchedule`은 exact sink·pending·실패·상호 잠금 행동 증거까지 등록되어 있다. 비활성 쓰기 예외는 현재 0건이다 — 유일했던 네트워크 관리 화면은 DEC-OPS-129로 퇴역했다. 화면 관리의 이전 프로그램 폼(`ProgramForm`)과 그 composition 은 2026-10-04 프로그램 목록 퇴역으로 걷었다.

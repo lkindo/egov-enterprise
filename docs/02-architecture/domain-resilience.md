@@ -26,6 +26,11 @@ flowchart LR
 | 낙관적 잠금 | `@Version`을 명시한 엔티티 | 현재 `Board`, `InformalSanction` 등 선택 적용; 기반 클래스가 자동 제공하지 않음 |
 | 제한 재시도 | Spring Retry를 사용하는 `MailAsyncProcessor`, `SmsAsyncProcessor` | 멱등성·중복 효과를 검토한 비동기 발송 경로 |
 | 비동기 격리 | 전용 executor와 task decorator | 비동기 작업; 보안·MDC·테스트 컨텍스트 전파를 별도 검증 |
+| 내구 후속 작업 | `tb_sys_job` 작업 원장과 `DurableWorkDispatcher`(최대 8회 시도, 실패분은 `DWORK_RETRY`로 재처리) | 업무 변경과 같은 트랜잭션에 의도를 저장하는 앱 알림 전달·첨부 삭제 등 후속 처리. 외부 전달의 exactly-once 보장은 아니다 |
+| 민감 작업 감사 | `SensitiveAuditService`가 `tb_sys_adt_log`에 응답 전(준비)·완료 기록과, 변경과 같은 트랜잭션의 커밋 기록을 남긴다 | 민감 조회·다운로드·권한 변경 같은 민감 작업. 열람은 `ADT_LOG_READ` |
+| 첨부 삭제 | 메타데이터 삭제 전 저장 객체의 식별 정보를 확보하고 커밋 뒤 내구 작업으로 원래 객체만 삭제한다 | 명시적 첨부 삭제. 자동 TTL·고아 일괄 정리는 아니다 |
+
+내구 작업·감사·첨부 삭제의 상태·재개·한계는 [ADR-0025](decisions/ADR-0025-enterprise-completeness-and-durable-operations.md)와 [후속 작업 재처리](../04-operations/durable-work-recovery.md)가 정본이다.
 
 `Resilience4j` 서킷 브레이커, 분산 락, 범용 요청 멱등키는 전역 기반으로 구현되어 있지 않다. 향후 목표를 현재 강제 규칙처럼 서술하거나, 라이브러리 이름만으로 보호가 적용됐다고 판단하지 않는다.
 
@@ -52,4 +57,4 @@ flowchart LR
 - 외부 시스템이 없는 검증은 정적 범위로 보고하고 런타임 회복탄력성까지 확인한 것으로 표현하지 않는다.
 
 ---
-*Verified against current retry, audit, and optimistic-lock implementations: 2026-08-19*
+*Verified against current retry, audit, optimistic-lock, durable work and sensitive audit implementations: 2026-10-17*

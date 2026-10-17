@@ -167,7 +167,6 @@ test/load-tests/results/
 !**/.agent/mcp-servers/
 !**/.agent/memory/
 **/.gemini/*
-!**/.gemini/tasks/
 !**/.claude/settings.json
 **/.claude/settings.local.json
 

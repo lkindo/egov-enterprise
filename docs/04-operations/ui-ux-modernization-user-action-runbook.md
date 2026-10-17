@@ -42,18 +42,138 @@
 | 6 | UA-06 | G0 제품·사용자 연구·브랜드/KRDS 입력 승인 | `LOCKED` | 지정 product/UX owner 확보 |
 | 7 | UA-07 | 기관 채택 G1 재검증과 미승인 route disposition의 개별 승인 | `LOCKED` | 단계 완료는 UA-06과 기관 live evidence 필요. ADR-0007에 따른 route별 owner PR review는 이 잠금과 별개로 먼저 누적 가능 |
 | 8 | UA-08 | release build/runtime 변수와 배포 owner handoff 검증 | `LOCKED` | 배포 환경의 실제 URL 확정 |
-| 9 | UA-09 | 변경 inventory 검토, commit·PR, 현재 required CI 5종 실행 | `LOCKED` | 앞 단계 정본 변경 완료 및 commit/push 승인 |
+| 9 | UA-09 | 변경 inventory 검토, commit·PR, 현재 required CI 실행 | `LOCKED` | 앞 단계 정본 변경 완료 및 commit/push 승인 |
 | 10 | UA-10 | 최종 Genuine completion 감사와 r12/과거 Docker 자원 처분 | `LOCKED` | UA-01~09 및 새 authoritative run의 current indexed combined summary 검증 완료 |
 
-## 4. UA-01 — ignored 생성 산출물 정리
+UA-01~UA-04의 완료 기록과 당시 실행 패킷은 [완료 이력](#완료-이력)에 보존한다. 아래는 UA-05부터의 재개 절차이며, 기존 참조를 위해 절 번호를 유지한다.
 
-### 4.1 목적과 영향
+## 8. UA-05 — 수동 접근성 평가 48건
+
+> **보류 중 (`DEFERRED`, DEC-OPS-012, 2026-08-22).** 이 단계의 자동화 구현(protocol-hash capture 실행기,
+> combined summary v2 계약)은 완료돼 보존돼 있고, 남은 것은 지정 평가자와 승인된 Windows 접근성 기록
+> 환경이라는 **외부 입력**뿐이다. 그 입력이 확보되면 추가 구현 없이 아래 절차를 그대로 재개한다.
+>
+> 보류 기간에 재개된 UI 개선 작업은 **이 런북 체인 밖**이며 UA-06(G0) 이후 단계의 진척으로 계산되지
+> 않는다. UA-06~UA-10 은 계속 `LOCKED` 이고, r12 는 실행 시점 protocol hash 가 없어 ADR-0005 상
+> 영구히 `measured` 자격이 없다 — 보류가 이 판정을 바꾸지 않는다.
+
+8개 시나리오 각각에 다음 6개 검사를 수행한다.
+
+- keyboard-only
+- NVDA/Chrome
+- 200% text
+- 400% zoom / 320 CSS px reflow
+- Windows forced colors
+- reduced motion
+
+총 48건 중 현재 40건은 전문가 검토 필요, NVDA/Chrome 8건은 외부 평가자·실제 Windows 환경이 필요하다. 절차는 [baseline protocol §7](ui-ux-baseline-protocol.md#7-manual-accessibility-procedures)을 따른다. 자동 assisted observation은 수동 결과를 대체하지 않는다.
+
+모든 평가는 synthetic account/data로 수행하고, ADR-0005의 closed compact summary 범위 밖인 screenshot·trace·자유 입력은 저장소에 넣지 않는다. 각 결과는 최소한 `scenarioId`, `checkId`, 환경, `pass|fail|blocked`, issue code, redaction 상태, 검토 역할과 evidence digest를 가져야 한다.
+
+48건을 단순히 별도 파일이나 대화 기록으로 남기는 것으로 이 단계를 끝내지 않는다. 평가 완료 후 다음 durability gate를 모두 통과해야 한다.
+
+- 48건 전체의 privacy scan과 승인된 redaction review 완료
+- protocol hash를 실행 시점에 기록하는 새 authoritative baseline run 수행; 현재 protocol hash를 r12에 소급 대입하는 방식은 금지
+- 새 run은 protocol·runner/core·두 contract의 worktree raw bytes와 실행 commit Git blob raw bytes가 exact 일치하고 production input dirty fingerprint가 `null`인 clean committed snapshot에서만 시작
+- UUID-v4 execution ID를 가진 fresh staging에서 exact 282개 자동 JSON을 생성하고, 최종 source/protocol/tooling 재검증 뒤 283번째 `automated-run-seal.json`을 마지막으로 발행; 실패·staging·다른 attempt 혼합은 수동 평가 입력으로 사용하지 않음
+- 구현된 [combined summary v2 schema](../../config/ui-quality-baseline-combined-summary-v2.schema.json)와 [durability validator](../../scripts/ui-quality-evidence-durability.mjs)를 사용한다. clean checkout의 `measured` 계약은 ignored raw `artifactPath` 존재가 아니라 tracked current summary의 96 state·48 performance·48 manual bounded projection을 검증해야 한다
+- 각 수동 결과를 새 run의 exact protocol/build/execution plan/scenario manifest/source artifact provenance와 자동 summary digest에 결속
+- 새 run의 자동 증거와 수동 48건을 함께 담는 digest-derived versioned compact combined summary 발행
+- combined summary canonical SHA-256과 committed Git blob identity의 독립 readback 일치
+- tracked index의 `currentDigest`를 새 combined digest로 갱신하고 UA-04 r12 automated-only digest를 historical predecessor로 exact `supersedes` 연결
+- clean checkout에서 current index가 새 run의 같은 provenance를 가진 combined summary와 수동 결과 48/48를 해석하는지 확인
+- 수동 결과 누락·중복·다른 실행 provenance 혼합·digest mismatch·execution-captured protocol hash 부재가 `measured` 승격을 red로 차단
+
+UA-06은 이 current indexed combined summary의 committed clean-checkout readback까지 통과한 뒤에만 시작한다.
+
+## 9. UA-06 — G0 제품·연구 입력
+
+다음 실제 소유자와 입력을 확보한다.
+
+- product/UX owner와 최종 승인 역할
+- 실제 사용자군과 우선 top task
+- 현재 기본 profile이 아닌 승인된 브랜드/KRDS version·scope·mapping·예외
+- 독립 holdout card-sort/tree-test 대상, 표본, 성공 기준과 결과
+- 기관 채택 맥락에서 ADR-0007 reference-default IA를 출발 가설로 유지·축소·변경할 판정
+
+ADR-0007은 ADR-0004의 hybrid 방향을 공통 base의 **reference-default IA로 승인**했고 잠정 지위를 끝냈다. 이 승인을 미승인으로 되돌리지 않는다. 다만 사용자 연구 없는 accepted risk는 남으며, 기관 채택 시 위 입력과 실사용자·실메뉴·실권한으로 원 G1을 재수행한다. 그 결과 없이 기관 적합 IA나 KRDS 정렬·준수를 주장하지 않는다.
+
+## 10. UA-07 — 기관 채택 G1 재검증·route별 처분 승인
+
+기관 채택 시 live target의 read-only evidence로 다음을 확인한다. 참조 구현 단계에서는 같은 항목 중
+현재 코드·정적 menu로 확인 가능한 근거와 owner PR review를 사용해 route별 disposition만 개별 승인한다.
+
+- menu 구조와 active/nondeleted 상태
+- authority assignment와 역할별 effective menu exposure
+- 현행 disposition overlay exact population의 route별 keep/merge/redirect/remove 판정과 개별 승인 상태
+- route별 owner, authorization, privacy, profile, canonical URL
+- exact label/group/order/visibility와 rollback 기준
+- URL-state privacy 검토에서는 앱이 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는지 확인한다. 자유 입력값의 의미를 완전 탐지할 수 없어 사용자가 예상 밖 값을 붙여넣을 가능성은 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 이름 차단이지 DLP가 아니다.
+
+현재 [disposition overlay](../../config/ui-navigation-disposition-proposal.json)는 `state=proposed`, `acceptedDecision=null`인 비규범 route별 검토 장치다. route별 승인 여부는 `routes[].reviewState`와 승인 근거에서 확인하며 개수를 이 런북에 복제하지 않는다. 이 상태는 ADR-0007의 reference-default IA 승인을 취소하지 않지만, 미승인 route의 menu/generator 소비는 계속 막는다. live evidence와 domain/security/privacy 승인 없이 route별 값을 임의로 채우지 않는다.
+
+## 11. UA-08 — release 변수와 runtime handoff
+
+재개 시 대상 저장소의 repository variable 설정 여부를 직접 확인한다. release build와 runtime에는 다음 두 변수가 필요하다.
+
+- `BACKEND_API_URL`: server-side container가 접근하는 absolute HTTP(S) URL, 정확한 `/api/v1` base
+- `NEXT_PUBLIC_API_URL`: 브라우저가 접근하는 absolute HTTP(S) URL, 정확한 `/api/v1` base
+
+실제 환경 값을 확정하기 전 placeholder를 GitHub에 넣지 않는다. 값은 secret이 아니더라도 내부 topology일 수 있으므로 대화·로그에는 변수 이름, 설정 여부와 validation 결과만 남긴다. build args와 runtime env 양쪽의 exact binding, API/actuator/WebSocket rewrite, CORS origin과 배포 owner readback을 확인해야 한다.
+
+## 12. UA-09 — commit·PR·required CI
+
+이 단계에서는 현재 `git status`와 diff로 변경 inventory와 commit grouping을 검토하고 사용자가 commit·push를 명시 승인해야 한다. HEAD의 과거 CI green은 아직 커밋되지 않은 변경분의 증거가 아니다.
+
+PR에서 필요한 context는 [required-checks.json](../../.github/required-checks.json)의 `requiredChecks`를 정본으로 확인한다. 모든 required context가 현재 PR SHA에서 `success`이고 merge state가 green인지 확인한다. 로컬 green이나 기존 `origin/main` run을 현재 변경분의 required CI로 대체하지 않는다.
+
+## 13. UA-10 — 최종 감사와 자원 처분
+
+다음이 모두 충족돼야 Genuine completion을 선언한다.
+
+- manual accessibility 48/48가 승인되고 execution-captured protocol hash를 가진 새 authoritative 자동 증거와 같은 current indexed versioned compact combined summary에 결속됨
+- combined summary의 canonical SHA-256·committed Git blob identity와 tracked index가 clean checkout에서 검증되고 이전 r12 automated-only digest를 historical predecessor로 `supersedes`함
+- G0와 기관 채택 G1 재검증이 해당 배포 범위에서 승인되고, 소비 대상 route의 disposition이 개별 승인됨
+- release build/runtime handoff가 실제 환경에서 검증됨
+- 현재 PR SHA에서 [required-checks.json](../../.github/required-checks.json)의 required CI가 모두 green
+- unresolved 보안 자격 수명주기 조치가 닫힘
+- scenario manifest가 근거 없이가 아니라 계약을 통해 `measured`로 전환됨
+
+r12·과거 컨테이너/image/cache/DB volume의 stop·삭제는 별도 exact 목록과 복구 영향을 제시하고 승인을 받은 뒤 수행한다. 광범위 prune이나 shared volume 삭제는 금지한다.
+
+## 14. 결과 전달 형식
+
+각 단계가 끝날 때 다음 형식을 사용한다.
+
+```text
+USER ACTION RESULT
+task: UA-XX
+executor-role: <role only>
+started-at: <ISO-8601 with timezone>
+finished-at: <ISO-8601 with timezone>
+result: PASS | FAIL | BLOCKED | STOP
+checks:
+  - <bounded check>: <result>
+evidence-location: <approved channel or NONE>
+secrets-or-personal-data-pasted: false
+notes: <bounded, redacted>
+```
+
+UA-05는 2026-08-22 사용자 결정(DEC-OPS-012)으로 **보류**됐다. UA-04의 후보 생성·기계 검증·사람 redaction review·digest-derived summary/index·tracked commit·clean-checkout readback·원격 병합·required CI는 완료됐다. r12 자체는 계속 `unmeasured`이며, 새 authoritative run과 사람 수동 증거 48건을 실제로 수집하기 전에는 UA-05를 완료하거나 `measured`로 승격하지 않는다. **보류는 이 사실을 바꾸지 않는다** — 미뤘다는 것이지 충족했다는 뜻이 아니다.
+
+## 완료 이력
+
+> **역사 기록(2026-08-21~22):** UA-01~UA-04는 완료됐다. 아래 상태·경로·명령·승인값은 당시 판단과 검증 근거를 보존한 것이며, 현재 디스크나 배포 환경을 설명하거나 같은 명령의 재실행을 승인하지 않는다. 새 조치가 필요하면 현재 상태와 정확한 대상을 다시 확인하고 해당 승인 경계를 따른다.
+
+### 4. UA-01 — ignored 생성 산출물 정리
+
+#### 4.1 목적과 영향
 
 현재 남아 있는 인증 state 2개, Playwright report/result 2개와 저장소 밖 임시 감사 metadata 1개를 정확한 경로로 삭제한다. 제품 소스·r12 컨테이너·DB·권위 JSON baseline은 건드리지 않는다.
 
 인증 state와 Playwright report/result는 테스트 setup으로 다시 생성할 수 있다. 임시 감사 파일은 경로·SHA metadata만 담은 일회성 파일이다. 파일 내용은 확인하거나 출력하지 않는다.
 
-### 4.2 사전 확인
+#### 4.2 사전 확인
 
 PowerShell에서 저장소 루트 `D:\project\egov-enterprise`로 이동한 뒤 실행한다.
 
@@ -112,7 +232,7 @@ git check-ignore -v -- `
 
 기대 결과는 네 경로가 모두 ignore rule과 함께 출력되는 것이다.
 
-### 4.3 삭제
+#### 4.3 삭제
 
 사전 확인이 정확히 일치할 때만 다음 exact-path 삭제를 실행한다.
 
@@ -122,7 +242,7 @@ Remove-Item -LiteralPath $artifactTargets -Force -ErrorAction Stop
 
 `$artifactTargets`를 만든 사전 확인과 **같은 PowerShell session**에서만 실행한다. 재귀 삭제, glob, `build/`, `frontend/test-results/` 디렉터리 전체 삭제는 금지한다.
 
-### 4.4 사후 검증
+#### 4.4 사후 검증
 
 ```powershell
 $artifactTargets | ForEach-Object {
@@ -145,7 +265,7 @@ git status --short -- `
 - `git status --short` 출력 없음
 - r12 API·frontend·DB 컨테이너에는 변경 없음
 
-### 4.5 사용자가 돌려줄 결과
+#### 4.5 사용자가 돌려줄 결과
 
 파일 내용이나 인증 값을 붙이지 말고 아래 형식만 전달한다.
 
@@ -163,7 +283,7 @@ result: PASS | STOP
 
 완료 기록(2026-08-21): 사용자가 exact-path 삭제를 실행했고, 사후 read-only 검증에서 5개 잔존 0, 대상 Git status 0, r12 컨테이너 2/2 healthy를 확인했다. 파일 내용은 읽거나 출력하지 않았다.
 
-## 5. UA-02 — 과거 자격·Docker 노출 가능성 판정
+### 5. UA-02 — 과거 자격·Docker 노출 가능성 판정
 
 이 단계에서는 ignored root 개인키 파일의 내용이나 fingerprint를 출력하지 않는다. 현재 `.dockerignore`와 계약은 향후 build context 노출을 차단하지만, 보강 이전에 만든 image/cache가 해당 파일을 포함했는지는 저장소만으로 확정할 수 없다.
 
@@ -204,7 +324,7 @@ secrets-or-key-material-pasted: false
 
 Docker 전체 prune, volume 삭제, shared DB 삭제는 이 단계에서 금지한다. exact image/cache 처분은 provider 판정과 별도 승인을 받은 뒤 UA-10에서 수행한다.
 
-## 6. UA-03 — durable evidence 정책 결정
+### 6. UA-03 — durable evidence 정책 결정
 
 [ADR-0005](../02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md)와 [closed policy](../../config/ui-quality-evidence-policy.json)로 `PD-UIQ-001`의 10개 입력을 2026-08-21 승인했다. GitHub-hosted Actions가 로컬 ignored r12 원본을 직접 취득할 수 없고 공개 저장소 artifact 보존 상한이 90일이므로, 대량 JSON을 Git에 복제하지 않는 `versioned-compact-summary`를 선택했다.
 
@@ -231,7 +351,7 @@ PD-UIQ-001:
 
 [tracked index](../../config/ui-quality-baseline-index.json)는 승인된 r12 automated-only summary digest `e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4`를 첫 entry로 가리킨다. 로컬 commit `65f8b5ea34be332aaf4714e9a56774e7fa2721f4`, 별도 clean-checkout committed readback, PR #434 required CI와 merge commit `f39ba9930df973710318088ccb00a2800643d9a3`의 post-merge CI가 모두 통과해 UA-04는 `DONE`이다. 다만 r12는 수동 증거와 execution-captured protocol hash가 없어 계속 `unmeasured`다.
 
-## 7. UA-04 — r12 자동 artifact 초기 발행
+### 7. UA-04 — r12 자동 artifact 초기 발행
 
 UA-03 승인 뒤 로컬 발행·clean-checkout 검증·원격 병합·required CI readback까지 완료했다. 사용자가 원본 JSON을 source tree에 복사하지 않는다.
 
@@ -260,125 +380,3 @@ UA-03 승인 뒤 로컬 발행·clean-checkout 검증·원격 병합·required C
 - 기존 summary를 덮어쓰지 않고 `supersedes`로 연결하며 최초 entry는 `supersedes=null`
 - 사람 redaction review 승인 뒤 summary와 index를 tracked commit으로 발행하고 clean checkout과 required CI에서 index, summary, digest, provenance, redaction 상태를 해석할 수 있음
 - `manualEvidenceCount=0`인 automated-only summary나 digest/privacy mismatch가 `measured` 승격을 red로 차단
-
-## 8. UA-05 — 수동 접근성 평가 48건
-
-> **보류 중 (`DEFERRED`, DEC-OPS-012, 2026-08-22).** 이 단계의 자동화 구현(protocol-hash capture 실행기,
-> combined summary v2 계약)은 완료돼 보존돼 있고, 남은 것은 지정 평가자와 승인된 Windows 접근성 기록
-> 환경이라는 **외부 입력**뿐이다. 그 입력이 확보되면 추가 구현 없이 아래 절차를 그대로 재개한다.
->
-> 보류 기간에 재개된 UI 개선 작업은 **이 런북 체인 밖**이며 UA-06(G0) 이후 단계의 진척으로 계산되지
-> 않는다. UA-06~UA-10 은 계속 `LOCKED` 이고, r12 는 실행 시점 protocol hash 가 없어 ADR-0005 상
-> 영구히 `measured` 자격이 없다 — 보류가 이 판정을 바꾸지 않는다.
-
-8개 시나리오 각각에 다음 6개 검사를 수행한다.
-
-- keyboard-only
-- NVDA/Chrome
-- 200% text
-- 400% zoom / 320 CSS px reflow
-- Windows forced colors
-- reduced motion
-
-총 48건 중 현재 40건은 전문가 검토 필요, NVDA/Chrome 8건은 외부 평가자·실제 Windows 환경이 필요하다. 절차는 [baseline protocol §7](ui-ux-baseline-protocol.md#7-manual-accessibility-procedures)을 따른다. 자동 assisted observation은 수동 결과를 대체하지 않는다.
-
-모든 평가는 synthetic account/data로 수행하고, ADR-0005의 closed compact summary 범위 밖인 screenshot·trace·자유 입력은 저장소에 넣지 않는다. 각 결과는 최소한 `scenarioId`, `checkId`, 환경, `pass|fail|blocked`, issue code, redaction 상태, 검토 역할과 evidence digest를 가져야 한다.
-
-48건을 단순히 별도 파일이나 대화 기록으로 남기는 것으로 이 단계를 끝내지 않는다. 평가 완료 후 다음 durability gate를 모두 통과해야 한다.
-
-- 48건 전체의 privacy scan과 승인된 redaction review 완료
-- protocol hash를 실행 시점에 기록하는 새 authoritative baseline run 수행; 현재 protocol hash를 r12에 소급 대입하는 방식은 금지
-- 새 run은 protocol·runner/core·두 contract의 worktree raw bytes와 실행 commit Git blob raw bytes가 exact 일치하고 production input dirty fingerprint가 `null`인 clean committed snapshot에서만 시작
-- UUID-v4 execution ID를 가진 fresh staging에서 exact 282개 자동 JSON을 생성하고, 최종 source/protocol/tooling 재검증 뒤 283번째 `automated-run-seal.json`을 마지막으로 발행; 실패·staging·다른 attempt 혼합은 수동 평가 입력으로 사용하지 않음
-- 새 run/combined evidence용 schema·validator를 별도 version으로 구현하고, clean checkout의 `measured` 계약은 ignored raw `artifactPath` 존재가 아니라 tracked current summary의 96 state·48 performance·48 manual bounded projection을 검증하도록 전환
-- 각 수동 결과를 새 run의 exact protocol/build/execution plan/scenario manifest/source artifact provenance와 자동 summary digest에 결속
-- 새 run의 자동 증거와 수동 48건을 함께 담는 digest-derived versioned compact combined summary 발행
-- combined summary canonical SHA-256과 committed Git blob identity의 독립 readback 일치
-- tracked index의 `currentDigest`를 새 combined digest로 갱신하고 UA-04 r12 automated-only digest를 historical predecessor로 exact `supersedes` 연결
-- clean checkout에서 current index가 새 run의 같은 provenance를 가진 combined summary와 수동 결과 48/48를 해석하는지 확인
-- 수동 결과 누락·중복·다른 실행 provenance 혼합·digest mismatch·execution-captured protocol hash 부재가 `measured` 승격을 red로 차단
-
-UA-06은 이 current indexed combined summary의 committed clean-checkout readback까지 통과한 뒤에만 시작한다.
-
-## 9. UA-06 — G0 제품·연구 입력
-
-다음 실제 소유자와 입력을 확보한다.
-
-- product/UX owner와 최종 승인 역할
-- 실제 사용자군과 우선 top task
-- 현재 기본 profile이 아닌 승인된 브랜드/KRDS version·scope·mapping·예외
-- 독립 holdout card-sort/tree-test 대상, 표본, 성공 기준과 결과
-- 기관 채택 맥락에서 ADR-0007 reference-default IA를 출발 가설로 유지·축소·변경할 판정
-
-ADR-0007은 ADR-0004의 hybrid 방향을 공통 base의 **reference-default IA로 승인**했고 잠정 지위를 끝냈다. 이 승인을 미승인으로 되돌리지 않는다. 다만 사용자 연구 없는 accepted risk는 남으며, 기관 채택 시 위 입력과 실사용자·실메뉴·실권한으로 원 G1을 재수행한다. 그 결과 없이 기관 적합 IA나 KRDS 정렬·준수를 주장하지 않는다.
-
-## 10. UA-07 — 기관 채택 G1 재검증·route별 처분 승인
-
-기관 채택 시 live target의 read-only evidence로 다음을 확인한다. 참조 구현 단계에서는 같은 항목 중
-현재 코드·정적 menu로 확인 가능한 근거와 owner PR review를 사용해 route별 disposition만 개별 승인한다.
-
-- menu 구조와 active/nondeleted 상태
-- authority assignment와 역할별 effective menu exposure
-- 현행 disposition overlay exact population의 route별 keep/merge/redirect/remove 판정과 개별 승인 상태
-- route별 owner, authorization, privacy, profile, canonical URL
-- exact label/group/order/visibility와 rollback 기준
-- URL-state privacy 검토에서는 앱이 자격증명·token·고유식별정보·고위험 개인정보·응답 본문 용도의 전용 URL field/state를 설계하거나 일반 검색창에서 입력을 요구·유도하지 않는지 확인한다. 자유 입력값의 의미를 완전 탐지할 수 없어 사용자가 예상 밖 값을 붙여넣을 가능성은 accepted residual risk이며 고위험 용도 승인이 아니다. credential-name gate는 key 이름 차단이지 DLP가 아니다.
-
-현재 disposition overlay는 `state=proposed`, `acceptedDecision=null`인 비규범 route별 검토 장치이며 6개 route만 `approved`, 114개는 `proposed`다. 이 상태는 ADR-0007의 reference-default IA 승인을 취소하지 않지만, 미승인 route의 menu/generator 소비는 계속 막는다. live evidence와 domain/security/privacy 승인 없이 route별 값을 임의로 채우지 않는다.
-
-## 11. UA-08 — release 변수와 runtime handoff
-
-현재 repository variable은 0개다. release build와 runtime에는 다음 두 변수가 필요하다.
-
-- `BACKEND_API_URL`: server-side container가 접근하는 absolute HTTP(S) URL, 정확한 `/api/v1` base
-- `NEXT_PUBLIC_API_URL`: 브라우저가 접근하는 absolute HTTP(S) URL, 정확한 `/api/v1` base
-
-실제 환경 값을 확정하기 전 placeholder를 GitHub에 넣지 않는다. 값은 secret이 아니더라도 내부 topology일 수 있으므로 대화·로그에는 변수 이름, 설정 여부와 validation 결과만 남긴다. build args와 runtime env 양쪽의 exact binding, API/actuator/WebSocket rewrite, CORS origin과 배포 owner readback을 확인해야 한다.
-
-## 12. UA-09 — commit·PR·required CI
-
-현재 워킹트리는 대규모 WIP이며 HEAD의 과거 CI green은 이 변경분의 증거가 아니다. 이 단계에서는 먼저 변경 inventory와 commit grouping을 검토하고 사용자가 commit·push를 명시 승인해야 한다.
-
-PR에서 필요한 안정 context는 다음 5개다.
-
-- `backend-build`
-- `frontend-build`
-- `secret-scan`
-- `e2e-test`
-- `mutation-test`
-
-모두 현재 PR SHA에서 `success`이고 merge state가 green인지 확인한다. 로컬 green이나 기존 `origin/main` run을 현재 WIP의 required CI로 대체하지 않는다.
-
-## 13. UA-10 — 최종 감사와 자원 처분
-
-다음이 모두 충족돼야 Genuine completion을 선언한다.
-
-- manual accessibility 48/48가 승인되고 execution-captured protocol hash를 가진 새 authoritative 자동 증거와 같은 current indexed versioned compact combined summary에 결속됨
-- combined summary의 canonical SHA-256·committed Git blob identity와 tracked index가 clean checkout에서 검증되고 이전 r12 automated-only digest를 historical predecessor로 `supersedes`함
-- G0와 기관 채택 G1 재검증이 해당 배포 범위에서 승인되고, 소비 대상 route의 disposition이 개별 승인됨
-- release build/runtime handoff가 실제 환경에서 검증됨
-- 현재 PR required CI 5종이 모두 green
-- unresolved 보안 자격 수명주기 조치가 닫힘
-- scenario manifest가 근거 없이가 아니라 계약을 통해 `measured`로 전환됨
-
-r12·과거 컨테이너/image/cache/DB volume의 stop·삭제는 별도 exact 목록과 복구 영향을 제시하고 승인을 받은 뒤 수행한다. 광범위 prune이나 shared volume 삭제는 금지한다.
-
-## 14. 결과 전달 형식
-
-각 단계가 끝날 때 다음 형식을 사용한다.
-
-```text
-USER ACTION RESULT
-task: UA-XX
-executor-role: <role only>
-started-at: <ISO-8601 with timezone>
-finished-at: <ISO-8601 with timezone>
-result: PASS | FAIL | BLOCKED | STOP
-checks:
-  - <bounded check>: <result>
-evidence-location: <approved channel or NONE>
-secrets-or-personal-data-pasted: false
-notes: <bounded, redacted>
-```
-
-UA-05는 2026-08-22 사용자 결정(DEC-OPS-012)으로 **보류**됐다. UA-04의 후보 생성·기계 검증·사람 redaction review·digest-derived summary/index·tracked commit·clean-checkout readback·원격 병합·required CI는 완료됐다. r12 자체는 계속 `unmeasured`이며, 새 authoritative run과 사람 수동 증거 48건을 실제로 수집하기 전에는 UA-05를 완료하거나 `measured`로 승격하지 않는다. **보류는 이 사실을 바꾸지 않는다** — 미뤘다는 것이지 충족했다는 뜻이 아니다.

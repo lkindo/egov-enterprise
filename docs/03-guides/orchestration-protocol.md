@@ -87,13 +87,13 @@
 1. **실증적(Evidence-Based) 표준 조회**: 새로운 테이블/필드를 설계하거나 쿼리를 작성할 때, 에이전트의 지레짐작(Assumption)을 엄격히 금지한다. 반드시 로컬 DB 브리지(`node .agent/scripts/db-bridge.js`)로 표준 메타 테이블(`meta_standard_words`/`meta_standard_terms`/`meta_standard_domains` — DB 헌법 제2조의 유일 SSOT)과 `information_schema`를 실시간 조회하여 **"실제 존재하는"** 물리 스키마와 표준 명칭을 눈으로 확인한 뒤 실행한다.
 2. **인프라 상태도 가정 금지**: DB·백엔드 서버·네트워크·포트 등 **인프라의 가용성은 착수·재개 시점에 실측**한다. 과거 세션이나 직전 단계의 상태를 그대로 가정하지 않는다. 예: DB 접속이 필요한 작업은 `db-bridge` 로 실제 응답(예: `SELECT now()`)을 먼저 확인한 뒤 진행하고, "이전에 안 됐으니 지금도 안 될 것"/"이전에 됐으니 지금도 될 것" 같은 추정으로 단정하지 않는다.
 3. **헌법 위반 예측**: 요청된 작업이 헌법 조항과 충돌할 가능성이 있는지 분석한다.
-4. **대응**: 표준에 없는 용어가 필요하거나 헌법 위반이 예상되면 해당 변경 경로를 멈추고 합치 대안을 먼저 찾는다. 대안이 승인 범위·제품 의미·규범을 바꿀 때만 사용자에게 결정 근거와 선택지를 보고한다.
+4. **대응**: 표준 메타에 필요한 단어·용어가 없으면 임의로 설계하지 않고 사용자에게 상황을 보고해 새 표준 단어·용어의 등록을 요청한다(DB 헌법 제9조). 그 밖의 헌법 위반이 예상되면 해당 변경 경로를 멈추고 합치 대안을 먼저 찾으며, 대안이 승인 범위·제품 의미·규범을 바꿀 때만 사용자에게 결정 근거와 선택지를 보고한다.
 
 #### 3.2 구현 중 감시 (On-going Monitoring)
 코드를 작성하는 과정에서 실시간으로 감시하는 체크포인트:
 - **DB**: 객체별 표준 접두사(`tb_`, `vw_`, `sq_`) 및 컬럼 데이터 타입 표준 준수 여부. [DB 헌법 제1조, 제3조]
-- **Backend**: 레이어 간 격리(DTO 사용), 서비스 레이어 권한 재검증, 안전한 트랜잭션 사용 여부. [백엔드 헌법 제3조, 제8조]
-- **Frontend**: 서버 컴포넌트 우선 원칙, 디자인 토큰 사용, 반응형 브레이크포인트 준수 여부. [프론트엔드 헌법 제3조, 제5조, 제6조]
+- **Backend**: 레이어 간 격리(DTO 사용), 서비스 레이어 권한 재검증, 안전한 트랜잭션 사용 여부. [백엔드 헌법 제3조, 제8조, 제9조]
+- **Frontend**: 서버 컴포넌트 우선 원칙, 디자인 토큰 사용, 지원 폭·확대·reflow에서 정보·기능 보존 여부. [프론트엔드 헌법 제3조, 제5조, 제6조]
 
 #### 3.3 등급별 감사 수준
 - **L0/L1**: 주요 체크포인트(3.2) 기반 약식 검사.
@@ -116,7 +116,7 @@
 | 컨트롤러에서 Entity 반환 | DTO 전문 클래스 생성 및 매핑 | [백엔드 헌법 제3조] |
 | 서비스 레이어 권한 체크 생략 | `SecurityUtil`을 통한 이중 검증 | [백엔드 헌법 제8조] |
 | 디자인 토큰 대신 하드코딩 사용 | 정의된 CSS 변수 및 토큰 활용 | [프론트엔드 헌법 제6조] |
-| 화면에서 `pageIndex` 직접 계산 | 서비스의 생성 operation 계약과 query 변환 함수에서 입력 별칭을 정규화 | [프론트엔드 헌법 제4조] |
+| 화면에서 `pageIndex` 직접 계산 | 서비스의 생성 operation 계약과 query 변환 함수에서 입력 별칭을 정규화 | [프론트엔드 아키텍처 §3](../02-architecture/frontend-architecture.md#3-service-layer--data-fetching) |
 | DB 메타 테이블 미조회 임의 설계 | `meta_standard_words` 실시간 조회 | [DB 헌법 제2조] |
 
 ### [Stage 4] Verification: 증거 기반 최종 승인
@@ -153,7 +153,7 @@
 - **런타임 검증 불가 시 (정직한 보류)**: 인프라 제약(DB 다운·엔드포인트 인증 게이트·도구 부재 등)으로 런타임 증거를 확보할 수 없는 경우, **정적 증거로 확증 가능한 범위를 명시**하고 나머지는 근거와 함께 `deferred`로 보고한다. 보류 항목에는 재개 조건을 함께 기록한다.
 
 #### 4.2 검증 문서화
-- 작업별 분류·검증 근거는 대화, PR 설명, CI/테스트 로그처럼 해당 실행과 함께 추적되는 채널에 남긴다. `.gemini/tasks/`에 새 세션 저널을 만들지 않는다. 지속 가능한 사실·승인 결정·재현 가능한 gap만 정본 링크와 검증일을 갖춰 [.agent/memory](../../.agent/memory/)의 해당 파생 인덱스로 선별 승격한다.
+- 작업별 분류·검증 근거는 대화, PR 설명, CI/테스트 로그처럼 해당 실행과 함께 추적되는 채널에 남긴다. 세션 저널 금지와 공용 메모리 승격 규칙은 [AGENTS.md Documentation and memory](../../AGENTS.md#documentation-and-memory)를 따른다.
 - 모든 빌드나 테스트가 통과된 터미널 출력값이 최소 1회 이상 대화 세션에 노출되어야 한다.
 
 ---
@@ -178,7 +178,7 @@
 - **무결성 우선**: 속도보다 중요한 것은 헌법 준수와 작동 증거이다.
 - **유연한 적용**: L0 작업과 현재 요청·포괄 승인으로 이미 승인된 L1/L2 작업은 절차를 간소화(등급·SCOPE 1줄 고지)하여 사용자의 흐름을 방해하지 않는다.
 - **중단 및 보고**: 예상치 못한 오류는 §2.4와 [AGENTS.md](../../AGENTS.md#공통-작업-원칙)의 원인 가설 → 표적 증거 → 최소 수정 → 재검증 순서로 복구한다. 같은 원인으로 최초 실패 포함 3회 실패하거나 새 권한·사용자 결정이 필요할 때 중단하고 근거와 선택지를 보고한다.
-- **공유 워킹트리 규율**: 다중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다.
+- **공유 워킹트리 규율**: 커밋 범위와 다른 오퍼레이터의 WIP 보존은 [AGENTS.md 공유 워킹트리와 Git](../../AGENTS.md#공유-워킹트리와-git)을 따른다.
 - **정직한 보고**: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다.
 
 ---
@@ -212,7 +212,7 @@
 - 기다리는 동안에는 읽기·편집·다음 배치 준비 같은 가벼운 작업을 한다.
 
 ### 6.4 main 최신화 뒤 생성물 재생성
-`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·경계 census·화면 목록·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출, 하네스 manifest 의 같은 키 충돌, 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다.
+`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·슬롯 레지스트리·경계 census·화면 목록·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출, 하네스 manifest 의 같은 키 충돌, 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다.
 
 양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 
@@ -220,13 +220,14 @@
 |---|---|
 | 공용 메모리 표(`decisions.md`·`known-gaps.md`) | `decisions.md`는 양쪽 행을 모두 남기고 ID 순서로 합친다. `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
 | `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
-| 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`codegen:file` → `codegen:zod` → api-docs 정규화) |
+| 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`npm run merge:main`이 실행하는 명령). 단계 구성은 `frontend/package.json`, 계약 재생성 절차의 정본은 [API 문서 가이드](api-documentation-guide.md)다. |
+| 슬롯 레지스트리(`frontend/src/extensions/generated-*.ts`) | `npm run slots:generate`(`node scripts/slot-registry.mjs --write`, 검사: `npm run slots:check`). 기여 파일에서 만들며 레지스트리도 `frontend/src` 소스라 그것을 읽는 경계 census·화면 목록보다 먼저 만든다. |
 | `config/governance/generated-api-boundaries.json` | `node scripts/generated-boundary-census.mjs --write` |
 | 화면 목록과 권한 묶음(`frontend/src/types/generated-screen-registry.ts`) | 화면·권한 카탈로그·인가 정책(`config/governance/authorization-policies.json`)·권한 묶음 원장(`config/governance/permission-bundles.json`)·화면 용어 원장(`config/frontend-visible-terms.json`, 묶음 문구 검사)·라우트 원장·메뉴 snapshot을 합치고 경계 census를 다시 만든 뒤 `node scripts/generate-screen-registry.mjs`(검사: `--check`). 묶음이 여는 화면(진입 권한)과 관련 화면(진입 권한이 빈 화면 중 쓰기 귀속이 묶음 권한인 화면)은 원장에 적지 않고 화면 목록으로 계산하므로, 화면·카탈로그만 바뀌어도 묶음 결과가 달라진다. 새 권한을 카탈로그에 더하면 어떤 묶음에 넣거나 원장의 `excluded` 에 사유와 함께 적어야 생성이 통과한다 — 재생성으로 맞추고, 묶음이 여는 화면이 없어지는 등 원장 검증이 실패하면 원장을 고친다. 경계 census의 출력을 읽으므로 그 뒤, 이 파일을 읽는 URL census 앞에 만든다. 라벨을 메뉴 snapshot에서 읽으므로, 아래 `config/project-composer-menus.json` 행으로 snapshot을 다시 만들었으면 그 뒤에 한 번 더 실행한다. |
 | operation 수와 GAP-WIRING-001 | `node scripts/operation-consumer-census.mjs --json`의 `operationCount`로 `config/governance/operation-consumer-census.json`의 `expected.operationCount`, `scripts/generated-operations-contract.test.mjs`의 단언, `known-gaps.md` GAP-WIRING-001을 함께 맞춘다. 같은 행의 unwired·화면 고아 수도 합친 결과로 맞추며, 상한을 올려야 하면 사유를 남긴다(H2). |
 | 권한 생성물(`PermissionCodes.java`·`generated-permissions.ts`·`operation-bindings.json` 등) | 원장(`config/governance/permission-catalog.json`·`authorization-policies.json`)을 합친 뒤 `node scripts/generate-permissions.mjs` |
 | `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census 파일(LF)의 SHA-256으로 다시 결속한다. 승인 항목은 손대지 않는다. |
-| `config/project-composer-menus.json`의 `sourceMigrationHash` | migration·seed·인가 Contract SQL의 해시다. 양쪽이 migration을 더했으면 [프로젝트 생성기 가이드](project-composer-guide.md)의 일회용 PostgreSQL 컨테이너 절차로 `node scripts/generate-reusable-base-db.mjs`를 `--write-menu-snapshot`과 함께 실행한다(§6.3의 무거운 실행). |
+| `config/project-composer-menus.json`의 `sourceMigrationHash` | migration·seed·인가 Contract SQL의 해시다. 양쪽이 migration을 더했으면 `npm run project:menus:refresh`로 다시 만든다. 이 명령이 일회용 PostgreSQL 컨테이너를 만들어 쓰고 지운다([프로젝트 생성기 가이드](project-composer-guide.md)). §6.3의 무거운 실행이다. |
 | 하네스 `baseline-manifest.properties` | 서로 다른 키가 바뀌었으면 양쪽 줄을 모두 살린다. 같은 키를 양쪽이 바꿨으면 `./gradlew :api-server:harnessTest`를 한 번 실행하고(§6.3) `api-server/build/harness/baseline-manifest.actual.properties`에서 충돌한 키의 값만 옮긴다. 그 키의 입력 변경이 양쪽 모두 정당한지 확인하고(H2) 다른 키까지 통째로 복사하지 않는다. |
 | 그 밖의 해시 결속·수치(disposition overlay의 `manifestRef.sha256` ← `config/ui-route-capabilities.json`, 재사용 base `databaseSnapshot` 수 등) | 실패한 계약이 가리키는 생성 명령과 기대값을 따른다. 해시는 입력이 정당하게 바뀐 경우에만 다시 결속하고, 수치는 양쪽 변경을 합산하거나 실측으로 다시 구한다. 래칫을 올려야 하면 재생성이 아니라 H2 판단이다. |
 | `frontend/public/governance_harness_atlas.html` | 마지막에 `npm run atlas:build`를 실행한다. 문서·공용 메모리·게이트 원장을 읽으므로 다른 재생성보다 뒤에 한다. |

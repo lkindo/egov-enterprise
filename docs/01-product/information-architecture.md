@@ -167,7 +167,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 
 2026-09-25 에는 OCI의 `tb_menu_info` 77행(활성 71)을 읽기 전용으로 가져와 Flyway 메뉴 스냅샷([project-composer-menus.json](../../config/project-composer-menus.json))과 행 단위로 대조했고 두 원천이 같았다. route manifest의 라우트별 `menuExposure`는 이 구조 관측만 기록한다. 행과 모든 상위가 활성인 메뉴가 그 라우트를 가리키면(리다이렉트 추적 포함) `visible`, 비활성 메뉴만 가리키면 `hidden`, 그 밖은 `not-menued`다. 그룹별 노출은 여전히 측정하지 않았으므로 `menuSnapshot.status`는 `blocked-external`로 둔다.
 
-1. live `information_schema`로 `tb_menu_info`와 `tb_menu_crt_dtl`의 실제 컬럼·키를 먼저 확인한다.
+1. live `information_schema`로 `tb_menu_info`와 `tb_authrt_grnt_map`(NAVIGATION 배정 — 구 `tb_menu_crt_dtl` 대체, ADR-0016)의 실제 컬럼·키를 먼저 확인한다.
 2. read-only query로 활성/숨김, parent/order/label/source route와 authority-menu assignment를 최소 필드로 수집한다.
 3. DB authority code를 proxy JWT coarse role과 자동 등치하지 않는다. 현재 runtime menu repository가 사용자별 authority mapping으로 menu를 projection하므로 authority inheritance·다중 authority·scalar subquery 의미를 live schema와 service 실행으로 확인한다.
 4. 승인된 synthetic sample user별 실제 menu service 결과를 수집하되 사용자 식별자는 artifact에서 제거한다.
@@ -281,7 +281,7 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 | URL 호환성 | bookmark, external link, refresh와 rollback을 보존하는가? |
 | 참조 구현 확장성 | 기관별 label·group·profile 차이를 core 재작성 없이 수용하는가? |
 | 접근 가능한 탐색 | keyboard, screen reader, zoom, touch에서 같은 구조와 현재 위치를 제공하는가? |
-| 증거 비용 | live menu와 119 disposition을 검증 가능한 방식으로 이행할 수 있는가? |
+| 증거 비용 | live menu와 route 전체 disposition을 검증 가능한 방식으로 이행할 수 있는가? |
 
 ### 6.2 대안 A — 현 도메인 트리 정리
 
@@ -366,10 +366,10 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 ADR-0007은 이 구조를 참조-기본으로 승인했지만 기관별 exact target tree와 실행 가능한 route disposition을 채택하려면 다음을 그 기관의 증거로 다시 확인한다.
 
-1. live menu 구조 census, `tb_menu_crt_dtl` authority assignment, synthetic sample-user effective menu 검증이 성공하고 manifest join 결과가 exact release SHA에 고정된다.
+1. live menu 구조 census, `tb_authrt_grnt_map` 의 NAVIGATION 배정(그룹별 메뉴 표시 — V2_98·ADR-0016 이 `tb_menu_crt_dtl` 을 대체했다), synthetic sample-user effective menu 검증이 성공하고 manifest join 결과가 exact release SHA에 고정된다.
 2. 각 critical role의 open sort에서 공통 label/cluster 후보와 반례를 기록한다.
 3. 대안 A/B/C의 closed sort/tree test에서 대안 C가 critical task 성공·첫 선택·노출 오류 면에서 승인 threshold를 만족하고 baseline보다 악화되지 않는다.
-4. 119개 implementation route와 2개 external alias의 disposition이 승인된다.
+4. [route capability manifest](../../config/ui-route-capabilities.json)의 implementation route 전체(수는 manifest에서 읽는다 — 2026-10-17 기준 120개)와 external alias의 disposition이 승인된다.
 5. security/privacy가 role visibility와 URL allowlist를 승인한다.
 6. ADR-0007의 참조-기본 승인과 구분되는 기관별 acceptance record가 URL 안정성, nav node 분리, alias·history·rollback과 승인 evidence hash를 기록한다.
 
@@ -416,11 +416,11 @@ ADR-0007은 이 구조를 참조-기본으로 승인했지만 기관별 exact ta
 - role/profile에 따라 메뉴가 달라도 같은 역할의 항목 순서는 예측 가능해야 한다. 사용 기록에 따른 자동 재정렬은 기본 금지다.
 - screen reader와 keyboard 사용자를 tree test의 별도 사후 감사가 아니라 모집·task 수행에 포함한다.
 
-## 8. 119개 route disposition 승인 절차
+## 8. route disposition 승인 절차
 
-### 8.1 왜 119행을 이 문서에 복제하지 않는가
+### 8.1 왜 route 행을 이 문서에 복제하지 않는가
 
-119행을 Markdown 표로 복사하면 route 추가·삭제·redirect 변경 때 두 원본이 생긴다. 승인 모집단은 [route capability manifest](../../config/ui-route-capabilities.json) 하나로 유지하고, review view는 exact manifest에서 생성한다.
+route 행(2026-08-21 작성 당시 119행, 2026-10-17 기준 120행)을 Markdown 표로 복사하면 route 추가·삭제·redirect 변경 때 두 원본이 생긴다. 승인 모집단은 [route capability manifest](../../config/ui-route-capabilities.json) 하나로 유지하고, review view는 exact manifest에서 생성한다.
 
 승인 기록은 다음을 고정해야 한다.
 
@@ -431,7 +431,7 @@ ADR-0007은 이 구조를 참조-기본으로 승인했지만 기관별 exact ta
 - review view 생성기 버전/명령
 - 승인한 disposition overlay의 hash
 
-이렇게 하면 “119개를 검토했다”는 문장 대신 어떤 119개였는지를 재현할 수 있다.
+이렇게 하면 “N개를 검토했다”는 문장 대신 어떤 N개였는지를 재현할 수 있다. N은 이 문서에 고정하지 않고 manifest에서 읽는다.
 
 ### 8.2 disposition enum
 
@@ -535,7 +535,7 @@ evidence: []
 승인 수용 조건을 검증할 schema/gate를 승인 후 wave로 미루면 순환 논리가 된다. decision workshop 전에 다음 **비규범 proposed artifact**를 만든다.
 
 1. route manifest의 SHA-256만 참조하고 route metadata를 복제하지 않는 disposition overlay
-2. 119 route key와 정확히 같은 key set을 강제하는 JSON schema/contract test
+2. manifest route key와 정확히 같은 key set을 강제하는 JSON schema/contract test
 3. `externalAliases.source` 2개와 정확히 같은 별도 alias overlay/test
 4. missing, duplicate, extra, invalid disposition, unverified authorization/privacy를 재현하는 red fixture
 5. overlay state가 `proposed`일 때 menu/generator 소비를 fail-closed로 게이트하는 binding test — 2026-08-24 D5 2단계부터 무조건 차단이 아니라 ADR-0007 §Decision 4 게이트다: acceptanceEvidence 4축 전부가 측정 hash 또는 ADR-0007 deferral로 기록되고, owner PR 리뷰로 개별 `approved`된 record가 최소 1건 존재하며, 실행 소비자가 entrypoints에 등록된 경우에만 소비를 열 수 있다(미등록 실행 소비·무approved 소비·미기록 증거는 red)
@@ -547,9 +547,9 @@ evidence: []
 
 ### 8.5 승인 순서
 
-1. **모집단 동결:** route contract를 실행해 119/119 exact population, duplicate 0, dangling/cycle 0을 확인하고 manifest hash를 고정한다.
+1. **모집단 동결:** route contract를 실행해 manifest 전체(N/N) exact population, duplicate 0, dangling/cycle 0을 확인하고 manifest hash를 고정한다.
 2. **live menu 구조 재계측:** 허용된 read-only 연결에서 현재 menu census를 실행해 `tb_menu_info` 구조를 예비 측정한다. 실패하면 `blocked-external`을 유지한다. 성공해도 역할 노출은 아직 미검증이다.
-3. **authority assignment census:** 실제 schema를 확인한 뒤 `tb_menu_crt_dtl`의 authority-menu 관계를 read-only로 수집한다. current script를 실행했다는 이유로 이 단계를 skip하지 않는다.
+3. **authority assignment census:** 실제 schema를 확인한 뒤 `tb_authrt_grnt_map` 의 NAVIGATION 배정(그룹-메뉴 관계)를 read-only로 수집한다. 구 `tb_menu_crt_dtl` 은 V2_98 이 옮기고 Contract 단계에서 지웠다(ADR-0016). current script를 실행했다는 이유로 이 단계를 skip하지 않는다.
 4. **effective menu 실행:** 사용자-authority mapping과 menu service를 통해 승인된 synthetic cohort가 실제 받는 menu를 검증한다. DB authority code를 proxy role로 치환하지 않는다.
 5. **manifest join:** menu source route와 manifest source/effective target을 모두 비교한다. query를 제거한 path join과 query를 포함한 exact join을 분리해 alias·tab 의미를 잃지 않는다. route 모집단은 menu script의 자체 collector가 아니라 manifest를 사용한다.
 6. **자동 prefill:** route kind, target, shell access, capability status/evidence, profile direct observation을 복사한다. role·product label·top task·semantic ownership은 추론하지 않는다.
@@ -558,7 +558,7 @@ evidence: []
 9. **security/privacy review:** effective target 권한, label/count leakage, 전체 URL producer/consumer, analytics payload를 검토한다.
 10. **accessibility review:** tree depth, keyboard/focus, visible/accessibility label, cognitive load와 AT task를 검토한다.
 11. **연구 검증:** 승인 후보 tree를 open sort → closed sort → tree test 순으로 시험하고 반례와 segment 차이를 기록한다.
-12. **exact completeness gate:** pre-decision contract로 119개 source route와 2개 external alias가 각각 exactly once인지 검사한다. `blocked-review`는 active/user-visible route의 authorization, privacy, effective menu exposure에 허용하지 않는다. 비활성·demo 격리 route의 비보안 label/profile만 owner+reviewBy 예외가 가능하다.
+12. **exact completeness gate:** pre-decision contract로 manifest의 모든 source route와 external alias가 각각 exactly once인지 검사한다. `blocked-review`는 active/user-visible route의 authorization, privacy, effective menu exposure에 허용하지 않는다. 비활성·demo 격리 route의 비보안 label/profile만 owner+reviewBy 예외가 가능하다.
 13. **결정:** 제품 소유자가 범위·profile·연구 결과·예외를 승인하고, security/privacy owner가 ADR-0009의 검색 경계와 축소된 URL-state remainder의 각 scope를 승인한다.
 14. **정본 갱신:** ADR-0004와 구분되는 final acceptance record와 route manifest를 먼저 갱신한 뒤에만 해당 pending decision 행을 제거한다. menu/generator 구현은 그 이후 별도 변경으로 한다.
 
@@ -783,7 +783,7 @@ open sort 참가자는 원칙적으로 closed sort/tree test의 confirmatory 표
 
 ### 11.3 카드 준비
 
-- 119 route 문자열을 그대로 119장으로 주지 않는다. capability manifest의 primary task를 바탕으로 **사용자가 이해할 수 있는 결과 단위**로 카드를 만든다.
+- route 문자열을 그대로 route 수만큼의 카드로 주지 않는다. capability manifest의 primary task를 바탕으로 **사용자가 이해할 수 있는 결과 단위**로 카드를 만든다.
 - 한 카드에 action 하나와 완료 결과 하나를 둔다. 예: “사용자 권한을 변경하고 적용 결과 확인”.
 - `admin`, `system`, `uss`, class/table 이름과 기존 group을 카드 label에서 숨겨 anchoring을 줄인다.
 - demo/unavailable capability는 별도 상태 표식 없이 먼저 분류하게 하지 않는다. 실제 top task 후보와 혼동을 막기 위해 연구 질문에 따라 별도 round에서 상태 이해를 시험한다.
@@ -900,7 +900,7 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 | 대상 profile·critical role·top task 승인 | A | R | C | C | C | C | C | I |
 | `PD-UX-001` 목표 IA | C | A | R | R | C | C | C | C |
 | live menu 구조 + authority assignment + effective synthetic menu | I | C | I | R | C | C | I | A/R |
-| 119 route capability/disposition | I | A | C | R | R | C | C | C |
+| route capability/disposition | I | A | C | R | R | C | C | C |
 | card sort/tree test 설계·수행 | C | A | R | C | C | C | C | I |
 | ADR-0009 검색 URL 경계와 URL-state remainder | C | C | C | R | C | A | C | I |
 | 전역 URL producer/consumer census와 후속 decision | C | C | I | R | R | A | C | I |
@@ -926,14 +926,14 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 | IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `resolved 2026-09-05 for search-input` — ADR-0009가 로그 주소창 검색어의 로컬 상태 유지와 binary GET `searchKeyword` 허용을 함께 승인 | Product owner | 완료 | 검색어 경계 |
 | IA-OI-03B | 전역 URL/privacy remainder의 scope·owner | `partially-accepted` — class registry에서 4개 부류가 각각 승인됐고 ADR-0009는 `search-input`만 소유; `opaque`·`path-intent`·`hand-assembled-segment` 미해결 | Product owner + security/privacy | 후속 승인 전 | redirect·login·계산/조립 상태·외부 telemetry |
 | IA-OI-04 | live DB 접속과 `tb_menu_info` 구조 census artifact | `blocked-external` | DB/menu operator | T0+5 영업일 | duplicate/orphan 구조 후보 |
-| IA-OI-04B | `tb_menu_crt_dtl` authority assignment + effective synthetic-user menu와 manifest join | `blocked-input` | DB/menu operator + FE architecture | T0+10 영업일 | 역할별 menu exposure·G1 |
-| IA-OI-05 | 119 route의 capability role·owner·상태 | `open` | FE architecture + domain owners | manifest reviewBy 2026-10-31 이내, G1 전 | disposition·visibility |
+| IA-OI-04B | `tb_authrt_grnt_map` 의 NAVIGATION 배정(구 `tb_menu_crt_dtl` 대체) + effective synthetic-user menu와 manifest join | `blocked-input` | DB/menu operator + FE architecture | T0+10 영업일 | 역할별 menu exposure·G1 |
+| IA-OI-05 | manifest route의 capability role·owner·상태 | `open` | FE architecture + domain owners | manifest reviewBy 2026-10-31 이내, G1 전 | disposition·visibility |
 | IA-OI-06 | adopter/end-user 모집·동의·보상 | `blocked-input` | Product owner + UX | T0+10 영업일 | card sort/tree test |
 | IA-OI-07 | current IA baseline task/tree | `blocked-input` | UX researcher | 첫 tree test 전 | regression 판정 |
 | IA-OI-08 | [generated URL-state census](../../config/ui-url-state-census.json)의 privacy·canonical·role/object authorization 분류와 외부 telemetry 검증 | `class-governed` — 4개 부류가 각각 승인되고 `search-input`만 ADR-0009 결속, 3개 부류 미해결; 승인 검색어의 외부 URL 잔존은 accepted risk이나 배포자별 재검토 필요 | Security/privacy + FE/domain | remainder 승인 전 | `opaque`·`path-intent`·`hand-assembled-segment` |
 | IA-OI-09 | external alias 소비자·지원 기간 | `blocked-input` | Product/domain owner | disposition 승인 전 | permanent/sunset 결정 |
 | IA-OI-10 | 지원 browser/device/AT와 accommodation | `blocked-input` | Accessibility owner | 모집 전 | accessible findability gate |
-| IA-OI-11 | 비규범 119+2 disposition overlay schema와 exact/red/binding test | hybrid 잠정 방향은 hash-bound, overlay는 `proposed` — final 승인은 `blocked-input`. 웨이브 1(2026-08-23): 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)을 owner PR 리뷰로 개별 `approved` 전이, 잔여 113건 `proposed`(ADR-0007 §Decision 4 채널). 2026-09-25 재측정: route 118건 중 approved 29·proposed 89, external alias 2건 approved. 2026-10-13 `/approvals/draft` 승인 회수(DEC-OPS-302): route 120건 중 approved 28·proposed 92 | FE architecture + product/IA | decision workshop 전 | 승인 completeness evidence |
+| IA-OI-11 | 비규범 route+external alias 2 disposition overlay schema와 exact/red/binding test | hybrid 잠정 방향은 hash-bound, overlay는 `proposed` — final 승인은 `blocked-input`. 웨이브 1(2026-08-23): 저위험 8건(demo-isolated 4·unavailable-hidden 2·retain-alias-permanent 2)을 owner PR 리뷰로 개별 `approved` 전이, 잔여 113건 `proposed`(ADR-0007 §Decision 4 채널). 2026-09-25 재측정: route 118건 중 approved 29·proposed 89, external alias 2건 approved. 2026-10-13 `/approvals/draft` 승인 회수(DEC-OPS-302): route 120건 중 approved 28·proposed 92 | FE architecture + product/IA | decision workshop 전 | 승인 completeness evidence |
 
 owner나 reviewBy가 비어 있으면 완료로 닫지 않는다. 2026-10-31은 manifest의 현재 bounded review 기한이며 제품 승인 날짜가 아니다.
 
@@ -1044,10 +1044,10 @@ reviewBy: 분류 초안 완성 시
 
 ### 15.1 `PD-UX-001` acceptance
 
-- exact release SHA의 route contract가 119 implementation route를 검증한다.
-- page 101, page redirect 5, config-shadowed redirect 13과 external alias 2의 차이가 review set에 보존된다. 수치가 바뀌면 문서가 아니라 current manifest를 기준으로 다시 승인한다.
-- live `tb_menu_info` 구조, `tb_menu_crt_dtl` authority assignment, effective synthetic-user menu가 manifest와 join돼 broken/duplicate/parent-child/orphan/sub-route/hidden과 실제 노출을 구분한다.
-- pre-decision schema/gate가 119개 source route와 2개 external alias를 별도 schema로 exactly once 검증하고 red/binding fixture를 통과한다.
+- exact release SHA의 route contract가 manifest의 implementation route 전체를 검증한다.
+- page·page redirect·config redirect와 external alias의 구분이 review set에 보존된다. 수치가 바뀌면 문서가 아니라 current manifest를 기준으로 다시 승인한다.
+- live `tb_menu_info` 구조, `tb_authrt_grnt_map` 의 NAVIGATION 배정, effective synthetic-user menu가 manifest와 join돼 broken/duplicate/parent-child/orphan/sub-route/hidden과 실제 노출을 구분한다.
+- pre-decision schema/gate가 manifest의 모든 source route와 external alias를 별도 schema로 exactly once 검증하고 red/binding fixture를 통과한다.
 - active/user-visible route의 authorization, privacy, effective menu exposure, primary capability, state와 canonical target이 검증된다. owner+reviewBy 예외는 격리된 비활성/demo route의 비보안 label/profile에만 허용한다.
 - independent holdout의 critical role top task와 대안 tree가 사전 threshold를 만족하고 counter-evidence가 기록된다.
 - USER-visible admin-prefix route 25개가 capability/API/label 단위로 검토된다.
@@ -1083,7 +1083,7 @@ reviewBy: 분류 초안 완성 시
 |---|---|---|
 | reference-default architecture | `accepted` | ADR-0007이 ADR-0004의 잠정 지위를 참조-기본 범위에서 종료했다. 기관 채택 시 연구·live menu·권한·AT 재검증 의무는 유지된다. |
 | decision package 완결성 | 내부 초안 완료 | 선택지·잠정 방향·절차·privacy·research·RACI·rollback이 정의됨 |
-| `PD-UX-001` remainder | `open (범위 축소)` | 참조-기본 IA는 승인됐지만 exact label/group/order/visibility와 119+2 route disposition은 개별 승인 대상이다. |
+| `PD-UX-001` remainder | `open (범위 축소)` | 참조-기본 IA는 승인됐지만 exact label/group/order/visibility와 route·external alias 2의 disposition은 개별 승인 대상이다. |
 | URL search policy | `accepted` | ADR-0009가 3개 exact route binding·5개 census record의 `q`·`searchCnd`·`searchWrd`와 별도 binary GET `searchKeyword` 경계를 승인 |
 | URL-state class registry | `class-governed` (4/7 classes individually approved) | 비규범 컨테이너이며 `search-input`만 ADR-0009에 결속된다. |
 | 전역 URL/privacy remainder | `blocked-input` | `opaque`·`path-intent`·`hand-assembled-segment`와 배포 환경의 외부 telemetry/보존 경계 미해결 |
@@ -1132,7 +1132,7 @@ URL migration, menu data migration, visual component migration은 rollback 경�
 ### Product/IA owner
 
 - [ ] 대상 product/profile/critical role이 명시됐다.
-- [ ] live menu 구조, authority assignment, effective synthetic-user menu와 119+2 disposition을 검토했다.
+- [ ] live menu 구조, authority assignment, effective synthetic-user menu와 route·external alias disposition을 검토했다.
 - [ ] URL을 유지한 채 label/group/order/visibility를 분리하는 안을 승인했다.
 - [ ] card-sort/tree-test protocol, threshold와 결과를 승인했다.
 - [ ] alias·child·demo·unavailable의 메뉴 노출 원칙을 승인했다.

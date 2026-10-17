@@ -155,6 +155,15 @@ describe('CSP nonce 계약', () => {
     ).not.toMatch(/key:\s*['"]Content-Security-Policy['"]/);
   });
 
+  it('next.config.ts 에 Reporting-Endpoints 가 재유입되지 않는다', () => {
+    // report-to 그룹 정의는 CSP 와 같은 상수로 src/proxy.ts 가 단다. next.config 에 리터럴로 두면
+    // 수집 경로가 바뀔 때 한쪽만 낡는다. 주석 언급은 허용하고 헤더 객체만 차단한다.
+    expect(
+      nextConfig,
+      'Reporting-Endpoints 는 src/proxy.ts 가 단일 소스입니다. next.config 에 되살리면 이중 소스가 됩니다.',
+    ).not.toMatch(/key:\s*['"]Reporting-Endpoints['"]/);
+  });
+
   it('정적 프리렌더를 되살리지 않는다 — nonce CSP 는 전 페이지 동적 렌더가 전제다', () => {
     // 정적 셸(PPR)·정적 라우트의 HTML 은 빌드타임에 구워져 inline script 에 nonce 가 없다.
     // 런타임 CSP 는 요청마다 새 nonce 를 요구하므로 그 페이지는 통째로 차단된다

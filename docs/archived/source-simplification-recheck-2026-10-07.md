@@ -91,5 +91,5 @@ PR #848 병합 뒤 바뀐 동작을 다섯 묶음으로 다시 점검했다. 묶
 - 게시글 등록의 작성자 '익명' 대체는 같은 트랜잭션의 rollback-only 때문에 커밋에서 실패한다. 인증 필터와 서비스 호출 사이에 계정이 지워지는 경합에서만 닿는다.
 - `PUT /api/v1/polls/{pollSn}` 본문에 `pollArticles` 를 실으면 항목을 비우고 다시 만들어, 투표가 있으면 FK 409 가 사유 없이 나간다. 화면은 이 필드를 보내지 않는다. 투표는 사라지지 않는다.
 - 부서 트리 C2 는 서버 프리페치 실패·5분 넘는 검색·빈 검색어 재조회 5xx 가 겹치면 오류 경계로 승격될 수 있다.
-- core 투영본의 `MessageBundleContractTest` 는 이 PR 전부터 ErrorCode 하한으로 실패했고, 이 PR 의 역방향 단언으로 실패 단언이 늘었다. 생성물 검증과 CI 는 이 테스트를 돌리지 않는다. [기준선 재동결 절차](adopter-baseline-refreeze.md)의 대상이다.
+- core 투영본의 `MessageBundleContractTest` 는 이 PR 전부터 ErrorCode 하한으로 실패했고, 이 PR 의 역방향 단언으로 실패 단언이 늘었다. 생성물 검증과 CI 는 이 테스트를 돌리지 않는다. [기준선 재동결 절차](../04-operations/adopter-baseline-refreeze.md)의 대상이다.
 - 이관 카탈로그는 `flyway_schema_history` 등 시스템 표도 담아 정적 검증이 이를 타깃으로 받아들인다.

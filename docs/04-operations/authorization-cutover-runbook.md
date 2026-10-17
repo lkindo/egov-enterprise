@@ -50,7 +50,7 @@ Flyway는 모든 versioned SQL 뒤에 repeatable을 실행한다. 빈 DB의 초�
 
 ## 프로그램 목록 퇴역(V2_124)
 
-[V2_124](../../api-server/src/main/resources/db/migration/V2_124__retire_program_permission_grants.sql)는 퇴역한 기능 권한 `PROGRAM_CREATE`·`PROGRAM_READ`·`PROGRAM_UPDATE`·`PROGRAM_DELETE`의 배정을 지우고, 지운 행마다 `GROUP_GRANT`/`REMOVE` 이력을 남긴다. 프로그램 원장(`tb_prgrm_lst`)과 메뉴의 `prgrm_file_nm`·외래 키는 남는다(지우는 일은 다음 릴리스의 별도 승인). 앱과 V2_124는 함께 배포한다. 새 권한 원장으로 기동한 앱에 `PROGRAM_*` 배정이 남아 있으면 권한 스냅샷이 원장에 없는 코드를 만나 그 그룹 구성원의 인증을 fail-closed로 막는다.
+[V2_124](../../api-server/src/main/resources/db/migration/V2_124__retire_program_permission_grants.sql)는 퇴역한 기능 권한 `PROGRAM_CREATE`·`PROGRAM_READ`·`PROGRAM_UPDATE`·`PROGRAM_DELETE`의 배정을 지우고, 지운 행마다 `GROUP_GRANT`/`REMOVE` 이력을 남긴다. 프로그램 원장(`tb_prgrm_lst`)과 메뉴의 `prgrm_file_nm`·외래 키는 V2_124 시점에는 남았다(이후 [V2_127](#프로그램-원장과-빈-마이페이지-콘텐츠-테이블-폐기v2_126-v2_127)이 지웠다). 앱과 V2_124는 함께 배포한다. 새 권한 원장으로 기동한 앱에 `PROGRAM_*` 배정이 남아 있으면 권한 스냅샷이 원장에 없는 코드를 만나 그 그룹 구성원의 인증을 fail-closed로 막는다.
 
 **적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 다음 두 질의를 읽기로 실행한다. 첫 질의의 행 수만큼 이력이 남고, 둘째 질의는 0행이어야 한다.
 
@@ -100,7 +100,7 @@ COMMIT;
 - 모든 그룹의 그 메뉴 배정(`NAVIGATION`): 지운 배정마다 `GROUP_GRANT`/`REMOVE` 이력을 남긴다.
 - 그 메뉴의 즐겨찾기(`tb_bkmk_menu_mng_rslt`): 사용하지 않는 메뉴라 앱으로는 만들 수 없어 보통 없다. 이력은 남지 않는다.
 
-빈 테이블 `tb_indv_pg_conts`는 남긴다(스키마 변경은 별도 승인).
+빈 테이블 `tb_indv_pg_conts`는 V2_125 시점에는 남겼다(이후 [V2_127](#프로그램-원장과-빈-마이페이지-콘텐츠-테이블-폐기v2_126-v2_127)이 지웠다).
 
 지우는 행은 다음 세 조건을 모두 갖춘 행뿐이다. 하나라도 다르면 도입 기관이 그 행을 다시 켜거나 다른 화면으로 바꿔 쓰는 것으로 보고 행·배정·즐겨찾기를 모두 그대로 둔다. 멈추지 않고 건너뛴다.
 

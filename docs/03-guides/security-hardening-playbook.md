@@ -80,7 +80,8 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 - Spring Security의 `BCryptPasswordEncoder`를 의무 적용하여, 가입 및 비밀번호 변경 시 반드시 단방향 해싱(Hashing)된 값으로 `tb_user_info` 테이블에 적재한다.
 
 ### 4.2 개인 식별 정보(PII) 로그 마스킹
-- 주민등록번호, 연락처, 이메일 등의 PII 데이터는 `api-server`의 전역 로깅 인터셉터나 예외 핸들러에서 로깅(Logger.error)될 때 반드시 정규식을 통해 마스킹(Masking, 예: `010-****-1234`) 처리되어야 한다.
+- 현재 전역 로그 마스킹(로깅 인터셉터·예외 핸들러·logback 변환기)은 없다. 마스킹 도우미 [`PiiMaskUtil`](../../foundation/src/main/java/nuri/foundation/core/util/PiiMaskUtil.java)(`phone`·`email`)은 문자 발송 경로(`SmsAsyncProcessor`·`LoggingSmsSender`·`UnavailableSmsSender`)의 전화번호 로그에만 쓰인다.
+- 그래서 주민등록번호·연락처·이메일 같은 PII 를 로그에 남기는 새 코드는 호출하는 자리에서 직접 가린다(예: `PiiMaskUtil.phone("010-1234-5678")` → `010****5678`). 응답 본문은 이 도우미의 적용 대상이 아니다.
 
 ### 4.3 요청 상관관계(Trace) 추적
 

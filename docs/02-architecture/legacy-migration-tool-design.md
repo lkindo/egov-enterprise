@@ -11,11 +11,17 @@
 레거시 컬럼의 의미 식별과 표준용어 확정(표준화 단계), 그 결과를 적재에 결속하는 용어 매핑 원장과 단계별 보강(L1~L4)은 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)가 정한다. 이 문서의 승인 계보·redaction·INSERT-only 경계는 그대로다.
 
 ```text
-mapping.yml + source DB
+skeleton.yml + source DB
         │
         ▼
  discover ──> catalog inventory.json
-                  │  source endpoint/driver/adapter/scope + object/visibility digest
+                  │
+ profile + app-scan ──> term-suggest ──> 사람이 term-ledger.yml 확정
+                  │                         │
+ skeleton.yml + inventory.json + term-ledger.yml
+                  │
+                  ▼
+ mapping-generate ──> mapping.yml (원장 path·digest와 컬럼 매핑 포함)
                   ▼
  mapping.yml + target PostgreSQL fingerprint + optional review.yml
                   │
@@ -159,6 +165,8 @@ V2_128 은 `meta_standard_terms` 에 `synonyms`(용어 이음동의어 목록)·
 
 속성명은 `MappingSpec`의 camelCase 계약을 그대로 사용한다. `${NAME}`은 DB 연결 필드의 **전체 값**일 때만 환경 변수로 치환하며 누락 값, 부분 치환, 비어 있지 않은 평문 password, 알 수 없는 속성, 중복 YAML key는 실패한다. 최상위 `ledger` 는 [용어 매핑 원장](#용어-매핑-원장adr-0029-l2b-1), `archives` 는 [보관 덤프](#보관-덤프), 컬럼의 `nullify`·`isolate` 는 [표준 도메인 변환기와 nullify](#표준-도메인-변환기와-nullify)·[예외 행 격리](#예외-행-격리)가 정한다. 표의 `verify` 는 [대사](#대사adr-0029-l4-d2)의 참조 선언이 정한다.
 
+다음은 생성 입력인 **`skeleton.yml` 예시**다. 원장의 확정 행에서 만들 source→target 컬럼과 `ledger`는 비워 두고, `mapping-generate`가 이를 채운 `mapping.yml`을 만든다. 이 skeleton을 plan·load에 직접 넘기지 않는다. 대상 표·컬럼·키와 원장 내용은 실제 inventory·live 표준 메타에 맞춰 검토한다.
+
 ```yaml
 source:
   url: ${SOURCE_DB_URL}
@@ -189,11 +197,6 @@ tables:
       generator: USR_
       sourceKey: user_no
     columns:
-      - { source: user_id, target: user_id, transform: trim }
-      - { source: password_hash, target: pswd }
-      - { source: user_nm, target: user_nm, transform: trim }
-      - { source: reg_dt, target: crt_dt, type: timestamp }
-      - { source: stat, target: user_stts_cd, codemap: user_status }
       - { target: frst_rgtr_id, const: MIGRATION }
 
 codemaps:
@@ -205,7 +208,7 @@ codemaps:
     # nullAs: keep(기본, NULL 은 NULL) | fallback(NULL 도 fallback 값으로)
 ```
 
-이 예시는 source의 `password_hash`가 현재 `EgovPasswordEncoder`와 호환된다는 사전 검증을 전제로 한다. 해시 형식이 다르면 원문 비밀번호를 복호화·재해시하지 말고, 별도의 강제 재설정/계정 활성화 정책과 매핑을 승인한 뒤 이관해야 한다. `pswd`는 target의 NOT NULL 컬럼이므로 정책 없이 생략할 수 없다.
+사용자명·로그인 ID·등록일시·상태 코드 등의 source→target 대응과 변환은 원장의 확정 행에 기록한다. source의 `password_hash`를 `pswd`로 옮기려면 현재 `EgovPasswordEncoder`와 호환되는지 먼저 검증해야 한다. 해시 형식이 다르면 원문 비밀번호를 복호화·재해시하지 말고, 별도의 강제 재설정/계정 활성화 정책과 매핑을 승인한 뒤 이관해야 한다. `pswd`는 target의 NOT NULL 컬럼이므로 정책 없이 생략할 수 없다.
 
 온라인 앱이 값을 암호화해 저장하는 컬럼은 mapping에 같은 보호 방식을 `encrypt`로 선언해야 한다(DEC-OPS-308). 대상 DB에는 암호문 컬럼 표시가 없어 이관 도구가 [보호 목록](../../migration-tool/src/main/java/nuri/migration/protect/ProtectedTargetColumns.java)을 갖는다. 지금은 두 컬럼이다: `tb_user_info.user_enrrno`(주민등록번호, `RrnoEncryptionConverter`의 eGov ARIA-256 — `encrypt: aria-egov-v1`)와 `tb_auth_otp_cert.otp_secret_encpt_cn`(MFA 비밀, `MfaSecretCipher`의 AES-256-GCM — 이관하지 않고 사용자가 다시 등록한다). 비밀번호·복구 코드·리프레시 토큰처럼 해시로 저장하는 값은 암호화가 아니라 이 목록에 없다.
 
@@ -515,10 +518,19 @@ tables:
 
 ## 실행 예시
 
-아래 예시의 실제 YAML `endpointId` loader 경로는 회귀 테스트로 고정돼 있다. 다만 명령은 승인된 비운영 rehearsal 환경과 SELECT-only source 계정이 준비된 뒤에만 사용한다. `plan`과 `load`에는 `discover`와 같은 adapter/catalog/schema/object-kind/system-object scope를 반복해야 한다.
+아래는 위 `skeleton.yml`에서 수집을 시작해 검토한 원장으로 mapping을 생성하는 순서다. 명령은 승인된 비운영 rehearsal 환경과 SELECT-only source 계정이 준비된 뒤에만 사용한다. `profile`·`plan`·`load`에는 `discover`와 같은 adapter/catalog/schema/object-kind/system-object scope를 반복해야 한다. 예시의 파일은 같은 작업 디렉터리에 두고 접속 환경변수와 레거시 소스 경로는 대상 환경에 맞춘다.
 
 ```powershell
-./gradlew :migration-tool:bootRun --args="--command=discover --mapping=mapping.yml --inventory=inventory.json --source-adapter=postgresql-pg-catalog --schemas=legacy"
+./gradlew :migration-tool:bootRun --args="--command=discover --mapping=skeleton.yml --inventory=inventory.json --source-adapter=postgresql-pg-catalog --schemas=legacy"
+./gradlew :migration-tool:bootRun --args="--command=profile --mapping=skeleton.yml --inventory=inventory.json --profile=profile.json --source-adapter=postgresql-pg-catalog --schemas=legacy"
+./gradlew :migration-tool:bootRun --args="--command=app-scan --app-source=D:/legacy/src --app-usage=app-usage.json"
+./gradlew :migration-tool:bootRun --args="--command=term-suggest --mapping=skeleton.yml --profile=profile.json --app-usage=app-usage.json --suggestions=suggestions.json --ledger-draft=term-ledger.draft.yml"
+```
+
+다음 단계 전에 사람이 후보·사용처·표준 메타를 검토해 이관 대상 소스 표의 모든 inventory 컬럼을 [원장 계약](#용어-매핑-원장adr-0029-l2b-1)에 따라 확정·이관 제외·외부 보관 등으로 판정한다. 검토한 `term-ledger.draft.yml`은 `term-ledger.yml`로 저장하며 `PROPOSED` 초안을 그대로 승인하지 않는다. inventory의 객체 처분·가시성 검토는 `review.yml`에 기록한다. 생성기는 `ledger.path`와 원장 바이트의 SHA-256을 자동 결속하므로 해시를 수기로 채우지 않는다.
+
+```powershell
+./gradlew :migration-tool:bootRun --args="--command=mapping-generate --skeleton=skeleton.yml --ledger=term-ledger.yml --inventory=inventory.json --mapping=mapping.yml"
 ./gradlew :migration-tool:bootRun --args="--command=plan --mapping=mapping.yml --inventory=inventory.json --plan=plan.json --review=review.yml --source-adapter=postgresql-pg-catalog --schemas=legacy"
 ./gradlew :migration-tool:bootRun --args="--command=validate --plan=plan.json"
 ./gradlew :migration-tool:bootRun --args="--command=load --mapping=mapping.yml --inventory=inventory.json --plan=plan.json --source-adapter=postgresql-pg-catalog --schemas=legacy --ack-adapter=postgresql-pg-catalog --ack-source-freeze --mode=dry-run"
@@ -573,7 +585,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 보관 선�
 
 스키마 자체의 Expand-and-Contract 절차는 [zero-downtime-migration.md](zero-downtime-migration.md)의 영역이며, 데이터 cutover와 같은 것으로 간주하지 않는다.
 
-표준화 단계(레거시 컬럼의 의미 식별·표준용어 매핑)와 이 도구의 공백 진단·보강 제안은 [레거시 표준화 이관 설계(Draft)](legacy-standardization-migration-design.md)에 둔다.
+표준화 단계(레거시 컬럼의 의미 식별·표준용어 매핑)의 방법론과 2026-10-13 채택 전 공백 진단은 [레거시 표준화 이관 설계](legacy-standardization-migration-design.md)에 둔다. 이 문서의 현행 구현 계약과 [활성 이관 gap](../../.agent/memory/known-gaps.md)을 현재 상태 판단에 사용한다.
 
 ## 검증 증거와 한계
 

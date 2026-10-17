@@ -8,7 +8,7 @@
 
 **Partially supersedes:** [ADR-0003](ADR-0003-frontend-ux-modernization-principles.md) Decision §5 중 개인정보·민감 검색어의 URL 절대 금지 부분만
 
-**Related:** [`DEC-OPS-029`](../../../.agent/memory/decisions.md), [프론트엔드 헌법 제4조](../../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md), [URL-state 승인 오버레이](../url-state-approval-overlay-design.md)
+**Related:** [`DEC-OPS-029`](../../archived/operational-decisions-history.md#dec-ops-029), [프론트엔드 헌법 제4조](../../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md), [URL-state 승인 오버레이](../url-state-approval-overlay-design.md)
 
 ## Context
 

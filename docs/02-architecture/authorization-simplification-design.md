@@ -19,7 +19,7 @@
 | `tb_menu_crt_dtl` | 현재 그룹별 메뉴 노출 | 그룹 권한 매핑의 NAVIGATION 유형으로 이관 후 제거 |
 | `tb_role_hierarchy` | 현재 SYSTEM→ADMIN→USER 상속 | 실제 실행 경로별 권한을 명시적으로 펼친 후 제거 |
 | `tb_menu_info` | 메뉴 트리·노출 상태·화면 경로 | 유지 |
-| `tb_prgrm_lst` | 프로그램 관리·메뉴의 선택적 프로그램 참조 | 유지; URL 인가 기능만 분리. 2026-10-04 프로그램 목록 화면·API·권한 코드를 퇴역했다(물리 테이블·메뉴 참조 컬럼은 다음 릴리스의 별도 승인까지 남는다) |
+| `tb_prgrm_lst` | 프로그램 관리·메뉴의 선택적 프로그램 참조 | 설계 당시 유지(URL 인가 기능만 분리). 2026-10-04 프로그램 목록 화면·API·권한 코드를 퇴역했고, 2026-10-05 [V2_127](../../api-server/src/main/resources/db/migration/V2_127__drop_retired_program_ledger_and_personal_page_contents.sql)이 이 테이블과 메뉴의 참조 컬럼 `prgrm_file_nm`·외래 키를 지웠다(DEC-OPS-231·234) |
 | `tb_authrt_group_info` | 사용자 분류 그룹 | 유지; 권한그룹과 명칭·화면 설명을 구분 |
 
 **개수의 분모**: 현재 인가 관련 7개를 핵심 3개로 줄이고 감사 1개를 추가한다. 이번 조사 대상 10개 중 비인가 기능 3개까지 포함하면 **10개 → 7개**다. 사용자·조직·토큰·업무 관계·일반 로그 테이블은 별도로 존속한다. 이행 중 구·신 구조가 공존하는 기간에는 테이블 수가 일시적으로 증가한다.
@@ -337,15 +337,15 @@ HTTP GET을 전부 하나의 조회 권한으로 합치거나 POST를 전부 등
 | 업무 정책 | `SecurityUtil` 호출부, owner/participant/credential/manual/query guards | 도메인 관리 기능으로 제한하되 엄격한 자기/소유 조건 유지 |
 | 메뉴 | `MenuService`, `MenuRepository*`, `MenuAuthority*`, `MenuWithAuthDto`, 메뉴 생성권한 API | NAVIGATION 이관, 단일 서브쿼리 종료, 캐시 키/무효화 변경 |
 | 레거시 표현 | `MenuIntegrationService`, `GlobalMenuAdvice` | 프로그램 URL·메뉴 소비 경로와 실제 적용 대상 확인. main 에서 도달할 수 없어 2026-10-04 프로그램 목록 퇴역 때 걷었다 |
-| 프로그램 | `ProgramService`, `ProgramRepository` | URL 인가 cache evict·role-map 삭제 참조만 종료, 메뉴 참조는 유지. 2026-10-04 프로그램 목록 퇴역으로 서비스·엔티티를 걷었다(메뉴의 참조 컬럼은 단순 문자열로 남는다) |
+| 프로그램 | `ProgramService`, `ProgramRepository` | URL 인가 cache evict·role-map 삭제 참조만 종료, 메뉴 참조는 유지. 2026-10-04 프로그램 목록 퇴역으로 서비스·엔티티를 걷었다(메뉴의 참조 컬럼과 테이블은 2026-10-05 V2_127 이 지웠다 — DEC-OPS-231·234) |
 | 프론트 인증 | `authService.ts`, `auth-context`, `use-user.ts`, `proxy.ts`, 로그인/refresh/logout/me BFF 및 서버 액션 | 단일 role 제거, allowlist 정규화에 배열 계약 추가, 권한 갱신 |
 | 프론트 관리 | `SecurityHubClient`, `SecurityRoleClient`, `SecurityDeptAuthorityClient`, `AuthorForm`, 사용자 관리 화면·서비스 | 두 주 관리 흐름, 복수 선택, 영향 미리보기, 충돌 처리 |
 | 프론트 행동 | `administrative-role.ts` 및 게시판·지식허브·알림·업무보고·댓글·만족도·헤더·work-hub 소비자 | 실제 기능 기반 표시; owner 조건과 조합 |
-| 프론트 메뉴·프로그램 | `MenuAdminClient`, 메뉴 types/store/hook/sidebar, 프로그램 화면·서비스, 내부경로 resolver | 메뉴·프로그램 자체 기능 보존 및 새 권한 표현 |
+| 프론트 메뉴·프로그램 | `MenuAdminClient`, 메뉴 types/store/hook/sidebar, 프로그램 화면·서비스, 내부경로 resolver | 메뉴·프로그램 자체 기능 보존 및 새 권한 표현. 2026-10-04 프로그램 화면·서비스를 걷고 같은 경로를 화면 관리로 바꿨다(DEC-OPS-224) |
 | 장기 연결 | WebSocket 인증·인가 구성, 실시간 이벤트/알림 소비자 | 연결 principal의 오래된 권한 회수 |
 | 계약 생성 | `api-docs.json`, FE OpenAPI 타입·Zod 생성물, operation-consumer census, route catalog | 소스에서 재생성, 독립 수동 타입과 mock 정합 확인 |
 | DB·bootstrap | 새 Flyway, `R__seed_framework.sql`, `R__zz_seed_base_admin.sql`, dev seed, foundation test schema | 구·신 버전 공존, 기본 관리자·USER 배정, 구 테이블 재삽입 방지 |
-| 배포·재사용 | `config/reusable-base-profiles.json`, `scripts/generate-reusable-base-db.mjs`, source generator, release 확인 | 구 10테이블 core 목록과 광역 ADMIN URL anchor 검사 대체 |
+| 배포·재사용 | `config/reusable-base-profiles.json`(지금은 기능 선언 `config/modules` — DEC-OPS-294), `scripts/generate-reusable-base-db.mjs`, source generator, release 확인 | 구 10테이블 core 목록과 광역 ADMIN URL anchor 검사 대체 |
 | 회귀·정적 게이트 | 인가 matrix, `SecurityAuthAnnotationLinterTest`, DB schema/PK/FK/ZDM, 프론트·E2E 계약 | 의미가 바뀐 계약을 부정 테스트와 함께 대체; 기존 예외 확대 금지 |
 | 문서·지도 | 보안/재사용 가이드, DB 파생 사전, `menu-census`, `ui-route-capabilities`, Atlas | 구현 완료 뒤 현행 설명을 갱신; Proposed를 현재 사실로 승격하지 않음 |
 

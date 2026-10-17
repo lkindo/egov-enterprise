@@ -31,7 +31,7 @@
 | 정적 캔버스가 단일 단계 결재라는 낡은 설명을 고정 | [제품 설명](../../frontend/src/app/admin/workflow/WorkflowClient.tsx)과 [데모 검사](../../frontend/e2e/journeys/workflow-demo.spec.ts)를 다단계 승인·합의·반려·재상신과 캔버스 비연동 경계에 맞춤 |
 | API-only와 다중 역할 검사에도 자동 fixture가 기본 page를 준비 | [API fixture](../../frontend/e2e/fixtures/api-test.ts)와 [브라우저 fixture](../../frontend/e2e/fixtures/browser-test.ts) 분리 |
 
-현재 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**다. 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
+2026-09-21 이행 시점에 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**였다(현재 수는 Playwright 목록에서 센다). 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
 
 ## 3. 기능 변경 한 건의 표준 흐름
 
@@ -152,15 +152,15 @@ Windows/macOS에서는 Linux 기준선을 비교하는 `quality/visual-baselines
 
 ### 5.2 PR·통합 push: 독립 모듈을 분리하고 선택된 검증을 병렬 실행한다
 
-- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다. migration은 실측 profile이 정확히 덮는 123개 테스트 클래스를 3개 leaf로 실행하고, 후속 aggregate가 XML census와 세 JaCoCo 실행 데이터를 검증·병합해 기존 85/70 게이트를 적용한다.
+- [CI](../../.github/workflows/ci.yml)의 변경 분류가 성공하면 온라인 backend, 독립 migration, frontend, 선택된 PIT, E2E, 보안·재사용 검증을 각 조건에 따라 시작한다. E2E와 PIT는 backend 전체 성공 대기 대신 classifier 결과에 의존한다. migration은 [duration profile](../../config/migration-test-duration-profile.json)이 정확히 덮는 테스트 클래스를 3개 leaf로 실행하고, 후속 aggregate가 XML census와 세 JaCoCo 실행 데이터를 검증·병합해 기존 85/70 게이트를 적용한다.
 - 기존 6개 required context와 실패 집계를 유지한다. E2E/PIT가 먼저 끝나도 backend 테스트·스키마·JaCoCo 실패를 허용하지 않는다.
-- 온라인 PIT가 선택되면 제품 10개 배치를 모두 실행하고 `max-parallel: 5`로 동시 실행한다. [전체 실행 36550933968](https://github.com/lkindo/egov-enterprise/actions/runs/36550933968)에서 3개 제한이 뒤쪽 scope를 최대 6분 58초 대기시켰고 E2E·재사용 잡은 이미 11분대에 끝났다. 5개는 해당 실행의 대기 관측에 근거한 값이며 계정 runner 상한이나 다른 PR 부하까지 통제한다고 주장하지 않는다. 종전 `business-app`은 기존 보고서의 겹침 없는 세 클래스 집합으로 나누고 각 집합에 75%를 독립 적용한다.
+- 온라인 PIT가 선택되면 제품 배치를 모두 실행하고 각 배치에 75%를 독립 적용한다. 현재 배치 목록·동시 실행 수와 변경 근거는 [CI 가이드](../03-guides/cicd-pipeline.md)와 [workflow](../../.github/workflows/ci.yml)의 matrix·`max-parallel`을 따른다. 이행 당시 동시 실행 수와 대기 시간은 현행 설정값으로 재사용하지 않는다.
 - E2E가 필요한 PR은 아래의 검토된 화면 수정만 spec 단위로 선별한다. main과 공유·미지 입력은 API·브라우저 전수를 두 shard에 배분한다.
 - API 이미지에 Buildx GHA cache를 연결했다. 두 shard가 캐시를 읽고 첫 shard만 export한다. 캐시가 비어 있거나 export에 실패해도 이미지 빌드·부팅·필수 검증을 생략하지 않는다.
 - FE artifact를 공유해 backend/frontend 완료를 다시 기다리는 의존성은 만들지 않았다. 각 E2E 스택은 자기 API rewrite·인증 설정에 맞춘 FE를 사용한다.
 - CodeQL 양언어 전수 분석, 기존 재사용 프로필/레이아웃, 의존성 snapshot readiness, PIT strict 기준을 유지한다.
 
-[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 15개 PIT scope(제품 10·이관 5)의 75% strict 기준은 같다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 변경 파일만 골라 변이를 생략하는 선택은 도입하지 않았다.
+[변경 분류기](../../scripts/ci-change-scope.mjs)는 Gradle/toolchain, `src/testFixtures`, main/test 리소스 등 PIT 입력을 포함한다. [ADR-0022](decisions/ADR-0022-ci-independent-module-impact-and-cache.md)에 따라 온라인 4모듈은 결합된 범위를 유지하고 독립 `migration-tool`의 build/PIT만 분리한다. 공통 Gradle·ID 생성 의미 계약은 양쪽 실행, 미지·빈 비교는 전수 fallback이며 선택된 모든 PIT scope의 75% strict 기준은 같다. scope 모집단은 [CI workflow](../../.github/workflows/ci.yml)의 제품·이관 matrix를 정본으로 확인한다. 온라인·이관 커버리지는 각 LINE 85%·BRANCH 70%를 강제하고 기존 로컬 전수 커버리지도 유지한다. 개별 변경 파일만 골라 변이를 생략하는 선택은 도입하지 않았다.
 
 Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.0에서 상향, DEC-OPS-237) `cache-provider: basic`을 명시했다. upstream writer는 backend 하나이며 backend가 명시적으로 false인 이관 전용 실행에서는 migration이 맡는다. 나머지 작업은 읽기 전용이고 독립 export 제품은 자체 writer를 유지한다. 캐시 복원 성공이나 구성 변경만으로 필수 검사를 통과시키지 않으며, 실제 hit·전송 비용·전체 경과시간은 같은 검증 범위의 원격 실행으로 평가한다.
 

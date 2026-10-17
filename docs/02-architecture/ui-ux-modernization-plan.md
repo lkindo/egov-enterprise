@@ -12,7 +12,7 @@
 
 **기술 스택:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, TanStack Query 5, React Hook Form/Zod, Vitest/Testing Library, Playwright, axe-core, Spring Boot API, Flyway.
 
-**상태:** Recommended · ADR-0007 reference-default IA 승인 · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 로컬 구현 · 원안 그대로의 착수는 거부 · G0와 기관 채택 G1 미통과 및 route별 disposition 미완결로 theme·파일럿·대규모 이식 보류
+**상태(2026-10-17 현행화):** Recommended · ADR-0007 reference-default IA 승인 · 기반 계약·긴급 접근성 수리·컴포넌트 경계 2개 배치 구현 · 원안 그대로의 착수는 거부 · 업무 화면의 대규모 이행은 이 계획의 웨이브가 아니라 [업무 화면 문법 카탈로그](work-screen-grammar-catalog.md#7-이행-순서와-소비-계약) W1~W5로 진행해 완료했다(DEC-OPS-022·026) · brand profile은 `BRAND_THEME`(`premium`·`krds-aligned`, 기본 `premium`) 배포 단위 배선과 직교 밀도 축(DEC-OPS-014·015)까지 구현했고 `krds-standard`는 구현하지 않았다 · G0와 기관 채택 G1 미통과, route별 disposition 미완결 · 아래 본문은 2026-08-20 검토 기록이다
 
 **검토일:** 2026-08-20
 
@@ -988,7 +988,7 @@ priority = (task value × frequency × failure cost × accessibility risk × rea
 
 **Files:**
 
-- Modify: `config/reusable-base-profiles.json`
+- Modify: 기능 선언 `config/modules`(작성 당시 `config/reusable-base-profiles.json` — DEC-OPS-294 로 대체돼 지금은 없다)
 - Modify: reusable-base generator/verifier scripts
 - Create/Modify: route ownership and static reference contracts
 - Modify: `docs/03-guides/reusable-base-guide.md`
@@ -1160,9 +1160,11 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 
 ## 13. 헌법 개정 결정
 
-### 13.1 왜 선행 개정이 필요한가
+> **역사적 개정 근거(2026-08-20):** 이 절은 ADR-0003 채택 당시의 개정 전 문제와 처리 결정을 보존한다. 현재 구현에는 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)과 [ADR-0003](decisions/ADR-0003-frontend-ux-modernization-principles.md)을 적용하며, 아래 조항별 표를 새로운 개정 요청이나 현행 규칙으로 사용하지 않는다.
 
-현행 헌법은 시각적 놀라움, 고정 Hub Blue, 필수 micro-interaction을 최상위 미학으로 두며 다음 구현 세부를 절대 규칙으로 만든다.
+### 13.1 왜 선행 개정이 필요했는가
+
+개정 전 헌법은 시각적 놀라움, 고정 Hub Blue, 필수 micro-interaction을 최상위 미학으로 두며 다음 구현 세부를 절대 규칙으로 만들었다.
 
 - 모든 server fetch/cache를 TanStack Query로만 관리.
 - 민감 데이터를 Zustand 또는 SessionStorage에 저장.
@@ -1172,7 +1174,7 @@ required CI에 연결되지 않은 local hook은 빠른 feedback이지 병합 �
 - 모든 UI element에 4.5:1 대비 의무.
 - image `priority`, visualization `ssr:false`, 전역 `refetchQueries()` 같은 구체 API.
 
-이는 브랜드 중립 재사용 base, current dependency, 보안, WCAG 기준, 실제 데이터 소유권, 위험 기반 상호작용과 충돌한다. 원안처럼 P6에서 뒤늦게 개정하면 P1~P5가 현행 헌법을 위반한 채 진행된다. 따라서 ADR-0003과 헌법 개정은 구현보다 앞선다.
+이는 브랜드 중립 재사용 base, 당시 의존성, 보안, WCAG 기준, 실제 데이터 소유권, 위험 기반 상호작용과 충돌했다. 원안처럼 P6에서 뒤늦게 개정하면 P1~P5가 개정 전 헌법을 위반한 채 진행되므로, ADR-0003 채택과 헌법 개정을 구현보다 앞서 반영했다.
 
 ### 13.2 조항별 처리
 
@@ -1359,3 +1361,34 @@ pnpm -C frontend run bundle:check
 12. required CI가 현재 SHA에서 green이며 미실행 검증과 waiver가 명시돼 있다.
 
 이 조건 전에는 “기반 완료”, “파일럿 완료”, “N개 여정 이식 완료”처럼 증거 범위에 맞는 표현만 사용한다.
+
+## 20. ERP 업무 화면 트랙
+
+ERP·공공 업무시스템 화면에 필요한 밀도와 그리드·조회 기능은 이 절이 현행 계획으로 소유한다. 2026-08-23 [ERP 전환 마스터플랜](../archived/erp-transformation-master-plan.html)은 당시 계획 원문으로 보관하고 갱신하지 않는다. 새 업무 화면이 지킬 화면 문법·밀도 규칙은 계획이 아니라 [업무 화면 문법 카탈로그](work-screen-grammar-catalog.md)와 [프런트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)이 정하고, census·계약 시험이 집행한다.
+
+### 20.1 마스터플랜 항목의 현재 상태(2026-10-17 코드 대조)
+
+| 마스터플랜 항목 | 상태 | 근거 |
+|---|---|---|
+| 밀도·구조 토큰과 직교 `data-density` 축(D1·D2) | 완료 | [density.ts](../../frontend/src/lib/theme/density.ts), 카탈로그 §4, DEC-OPS-014·015·117~121 |
+| 표 내부의 headless TanStack 교체, 열 정렬, 페이지당 건수 선택(D3 일부) | 완료 | [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx) |
+| 서버 전체 결과 xlsx 내보내기(D4) | 완료 | DEC-OPS-016·170 |
+| 파일럿 클러스터(로그·사용자 관리·공통코드·결재·권한 매트릭스)와 A1·A2·A5 이행(W1~W5) | 완료 | 카탈로그 §6·§7, DEC-OPS-022·023·026 |
+| IA·메뉴 disposition(D5), 재사용 base·릴리스 태그·재동결 절차(Track B) | 완료 | ADR-0007, DEC-OPS-019~021·040 |
+| 공통코드 선택 팝업(CodePicker) | 1차 | [code-picker.tsx](../../frontend/src/app/components/ui/code-picker.tsx), 소비 화면은 공통코드 관리 1곳 |
+| 페이지네이션 수렴 | 부분 | 표 내장 페이지네이션과 `PagePagination` 두 가지가 남았고, 소비자 없는 `components/ui/pagination.tsx` 가 있다 |
+| 업무 단축키 확장(조회 Enter 외 신규·저장 등) | 부분 | [단축키 등록 장치](../../frontend/src/app/components/ui/global-shortcut-provider.tsx)는 있으나 전역 소비는 명령 센터(Ctrl+K)뿐이다. 화면별로 저장(Ctrl+S, 마스터·디테일)·되돌리기(Ctrl+Z, 메뉴 관리)가 있다 |
+| 표 컬럼 숨김·크기 조절·고정 | 미착수 | 표 구현에 컬럼 가시성·크기·고정 상태가 없다 |
+| 조회 조건 v2(연산자·저장 필터) | 미착수 | 저장 필터 구현이 없다. URL에 조건을 싣는 범위는 ADR-0009·PD-UX-002 경계를 따른다 |
+
+### 20.2 남은 과제의 재개 조건
+
+- **표 컬럼 제어**: 업무 화면에서 열이 많아 가로 스크롤·정보 과밀이 실제로 보고되면 착수한다. 표 facade(`StandardDataTable`) 안에서 구현해 소비 화면을 고치지 않으며, 단일 SSR DOM·CSS 전환 원칙(ADR-0006)을 지킨다. 사용자별 저장은 브라우저 저장소만 쓰고 URL에 싣지 않는다.
+- **조회 조건 v2**: 같은 조건을 반복 입력하는 업무가 확인되면 착수한다. 저장 위치(브라우저·서버)와 공유 범위는 개인정보 경계(ADR-0009) 결정이 선행이다.
+- **업무 단축키**: 화면 문법 G 규칙과 충돌하지 않는 최소 집합(신규·저장·조회)을 카탈로그에 먼저 정의한 뒤 등록 장치로 배선한다. 브라우저 기본 단축키를 가로채지 않는다.
+- **CodePicker 확대**: 공통코드 값을 고르는 입력이 있는 화면에서 자유 입력 대신 쓰게 할 때, 대상 화면 목록과 서버 검증을 함께 정한다.
+- **페이지네이션**: 소비자 없는 `components/ui/pagination.tsx` 정리와 두 방식의 역할 구분(표 내장 = 표 목록, `PagePagination` = 표가 아닌 목록)을 카탈로그에 적는 일이 남았다.
+
+### 20.3 하지 않을 것
+
+마스터플랜의 anti-goal을 유지한다: ERP 전용 병렬 컴포넌트 트리·두 번째 컴포넌트 라이브러리를 두지 않고, ADR-0006을 깨는 이중 렌더를 하지 않으며, krds-aligned 프로필에 ERP 밀도를 주입하지 않고, baseline을 올리거나 비워 붉은 검사를 숨기지 않는다.

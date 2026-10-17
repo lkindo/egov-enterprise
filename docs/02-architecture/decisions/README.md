@@ -2,35 +2,39 @@
 
 이 디렉터리는 현재 제품·아키텍처 경계를 바꾸는 결정을 기록한다. 상태가 `Accepted`인 ADR은
 코드와 운영 문서의 현행 기준이며, 변경하려면 기존 ADR을 직접 덮어쓰지 않고 후속 ADR로 대체한다.
+상태 열의 `일부 …로 대체`는 후속 ADR이나 운영 결정(DEC-OPS)이 그 ADR의 일부를 대체했다는 뜻이다. 대체 범위는
+각 ADR 머리의 `후속 결정` 줄에, 운영 결정 원문은 [보관 기록](../../archived/operational-decisions-history.md)에 있다. ADR-0004·0007은 화면 처분 원장이 파일 해시로 결속하므로(DEC-OPS-020) 머리 줄을 두지 않고 이 표의 상태 열로만 표시한다.
 
 | ADR | 결정 | 상태 |
 |---|---|---|
-| [ADR-0001](ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 | Accepted — 프로필 선택·manifest SSOT 문장은 ADR-0028로 대체 |
+| [ADR-0001](ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 | Accepted — 일부 ADR-0028로 대체 |
 | [ADR-0002](ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 | Accepted |
-| [ADR-0003](ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 | Accepted |
-| [ADR-0004](ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 | Accepted — 잠정 지위는 ADR-0007로 종료 |
+| [ADR-0003](ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 | Accepted — 일부 ADR-0009로 대체 |
+| [ADR-0004](ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 | Accepted — 일부 ADR-0007로 대체 |
 | [ADR-0005](ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 | Accepted |
 | [ADR-0006](ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 | Accepted |
-| [ADR-0007](ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 연구·live census 요건은 채택 시점 재검증으로 이전 | Accepted — reference-default scope |
-| [ADR-0008](ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB→PostgreSQL 승인형 오프라인 마이그레이션 워크플로 | Accepted |
+| [ADR-0007](ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 연구·live census 요건은 채택 시점 재검증으로 이전 | Accepted |
+| [ADR-0008](ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB→PostgreSQL 승인형 오프라인 마이그레이션 워크플로 | Accepted — 일부 DEC-OPS-110으로 대체 |
 | [ADR-0009](ADR-0009-controlled-url-search-state.md) | 화면별 계약 아래 개인정보성 검색어의 URL 사용을 허용 | Accepted |
 | [ADR-0010](ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 | Accepted |
 | [ADR-0011](ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도와 비밀번호 소유 증명을 퇴역하고 수정·삭제를 인증 owner/admin으로 제한 | Accepted |
 | [ADR-0012](ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인과 물리 스키마를 제거하고 데이터가 있는 환경의 제거는 차단 | Accepted |
-| [ADR-0013](ADR-0013-standard-text-length-alignment.md) | 설계 보류 6개를 유지하며 표준 길이 24개와 SMS 정규화를 양단 계약에 적용 | Accepted |
-| [ADR-0014](ADR-0014-deferred-standard-design-alignment.md) | 보류 6개를 프로그램 선택적 참조·HHmmss·암호화 주민번호 표준으로 정합 | Accepted |
+| [ADR-0013](ADR-0013-standard-text-length-alignment.md) | 설계 보류 6개를 유지하며 표준 길이 24개와 SMS 정규화를 양단 계약에 적용 | Accepted — 일부 ADR-0014로 대체 |
+| [ADR-0014](ADR-0014-deferred-standard-design-alignment.md) | 보류 6개를 프로그램 선택적 참조·HHmmss·암호화 주민번호 표준으로 정합 | Accepted — 일부 DEC-OPS-224·231로 대체 |
 | [ADR-0015](ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 | Accepted |
 | [ADR-0016](ADR-0016-explicit-permissions-and-multiple-groups.md) | 인가 핵심 3개와 감사 1개, 복수 그룹·명시 기능 권한 및 수동 전환 | Accepted |
 | [ADR-0017](ADR-0017-task-oriented-menu-navigation.md) | 현재 제품의 과업 중심 4개 메뉴 영역, 중복 진입점 통합과 NAV 보존 이행 | Accepted |
-| [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted |
-| [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted |
-| [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — '누적 프로필' 표현은 ADR-0028로 대체 |
-| [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted |
-| [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted |
+| [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted — 일부 ADR-0028, DEC-OPS-289·291·295로 대체 |
+| [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted — 일부 DEC-OPS-098로 대체 |
+| [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — 일부 ADR-0028, DEC-OPS-239로 대체 |
+| [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted — 일부 ADR-0022·ADR-0023으로 대체 |
+| [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted — 일부 ADR-0023·ADR-0026, DEC-OPS-237로 대체 |
 | [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR E2E 영향 선별·main 전수와 단일 캐시 writer | Accepted |
-| [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted |
+| [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted — 일부 DEC-OPS-124로 대체 |
 | [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted |
-| [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted |
-| [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 결정 2의 PR 레이아웃 일부는 DEC-OPS-296, 결정 4의 단독 폐포 계획 일부는 DEC-OPS-301로 대체 |
+| [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted — 일부 ADR-0027, DEC-OPS-289·291로 대체 |
+| [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 일부 ADR-0030, DEC-OPS-291로 대체 |
 | [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
-| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 결정 8의 쓰기 단계 fail-closed 시점(L3와 함께)은 DEC-OPS-310, 결정 3의 비표준 대상 부분(표준 용어가 없는 대상 컬럼의 확정)은 DEC-OPS-317로, 결정 3의 확정 조건(적합률 100%·승인 예외)은 DEC-OPS-316(적합률 참고값·unmeasured 확정)과 DEC-OPS-317(U3 허용값 미확인 확정)로, 실행 단계 표의 L3 PR 경계(1~2개)는 DEC-OPS-315·319(PR 5개)로 대체 |
+| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 일부 ADR-0031, DEC-OPS-313·323으로 대체 |
+| [ADR-0030](ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 | Accepted |
+| [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건과 chunk 실패 처리 | Accepted |

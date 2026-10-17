@@ -90,13 +90,13 @@ test('route uncertainty and historical decisions retain their source status', ()
 });
 
 test('decision search preserves full rationale, late evidence links and stable record identity', () => {
-  const source = '.agent/memory/decisions.md';
+  const source = 'docs/archived/operational-decisions-history.md';
   const original = baseline.catalogs.decisions.find(item => item.id === 'DEC-OPS-001');
   mutate(source, text => text.replace(/^\| DEC-OPS-001 \|.*$/m, line => {
     const cells = line.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/);
     cells[2] = `${'long decision '.repeat(45)}full-decision-tail-probe`;
     cells[3] = 'rationale-only-search-probe';
-    cells[4] += ', [fourth evidence probe](../../docs/README.md#문서-목록)';
+    cells[4] += ', [late evidence probe](../README.md#문서-인덱스-documentation-index)';
     return `| ${cells.join(' | ')} |`;
   }), () => {
     const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === original.id);
@@ -106,8 +106,71 @@ test('decision search preserves full rationale, late evidence links and stable r
     assert.match(decision.searchText, /full-decision-tail-probe/);
     assert.match(decision.searchText, /rationale-only-search-probe/);
     assert.ok(decision.details.some(item => item.label === '시행일' && item.value === '2026-08-18'));
-    assert.deepEqual(decision.links.slice(0, 3), original.links);
-    assert.deepEqual(decision.links[3], { label: 'fourth evidence probe', path: 'docs/README.md#문서-목록' });
+    assert.deepEqual(decision.links.slice(0, original.links.length), original.links);
+    assert.deepEqual(decision.links.at(-1), { label: 'late evidence probe', path: 'docs/README.md#문서-인덱스-documentation-index' });
+  });
+});
+
+test('compact decision indexes preserve every archived decision body and rationale', () => {
+  const source = 'docs/archived/operational-decisions-history.md';
+  const history = fs.readFileSync(path.join(repo, source), 'utf8');
+  const rows = [...history.matchAll(/^\| DEC-OPS-\d{3} \|.*$/gm)];
+  assert.ok(rows.length > 0);
+  for (const [row] of rows) {
+    const cells = row.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/).map(cell => cell.trim());
+    const actual = baseline.catalogs.decisions.find(item => item.id === cells[0]);
+    assert.equal(actual.source, '.agent/memory/decisions.md');
+    assert.equal(actual.status, cells[1]);
+    assert.equal(actual.supersedes, cells[6]);
+    assert.equal(actual.details.find(item => item.label === '결정 원문').value, cells[2]);
+    assert.equal(actual.details.find(item => item.label === '이유').value, cells[3]);
+    assert.ok(actual.searchText.includes(cells[2]));
+    assert.ok(actual.searchText.includes(cells[3]));
+    assert.ok(actual.links.some(link => link.path === `${source}#${cells[0].toLowerCase()}`));
+  }
+});
+
+test('decision history cannot silently substitute another ID or divergent approval metadata', () => {
+  const history = 'docs/archived/operational-decisions-history.md';
+  const memory = '.agent/memory/decisions.md';
+  mutate(memory, text => text.replace('#dec-ops-001)', '#dec-ops-002)'), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
+  });
+  mutate(memory, text => text.replace('docs/archived/operational-decisions-history.md#dec-ops-001', 'docs/README.md'), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
+  });
+  mutate(history, text => text.replace(/^\| DEC-OPS-001 \|.*\r?\n/m, ''), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision history section must contain its same-ID row/);
+  });
+  mutate(history, text => text.replace(/^\| DEC-OPS-001 \|.*$/m, row => `${row}\n${row}`), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /decision history duplicate ID/);
+  });
+  mutate(history, text => text.replace(/^## DEC-OPS-00[12]$/gm, heading =>
+    heading.endsWith('1') ? '## DEC-OPS-002' : '## DEC-OPS-001'), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /decision history section must contain its same-ID row/);
+  });
+  for (const index of [1, 5, 6]) {
+    mutate(history, text => text.replace(/^\| DEC-OPS-001 \|.*$/m, row => {
+      const cells = row.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/);
+      cells[index] = 'unapproved-metadata-probe';
+      return `| ${cells.join(' | ')} |`;
+    }), () => {
+      assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision history status\/date\/supersedes differs from index/);
+    });
+  }
+  mutate(history, text => `${text}\nUnlinked archive paragraph search probe.\n`, () => {
+    const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === 'DEC-OPS-001');
+    assert.equal(decision.searchText.includes('Unlinked archive paragraph search probe.'), false);
+  });
+});
+
+test('new operational decisions can use a current source without extending the historical archive', () => {
+  mutate('.agent/memory/decisions.md', text => `${text}\n| DEC-OPS-999 | accepted | new decision probe | current rationale probe | [source](../../docs/README.md) | 2026-10-17 | - |\n`, () => {
+    const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === 'DEC-OPS-999');
+    assert.equal(decision.source, '.agent/memory/decisions.md');
+    assert.equal(decision.status, 'accepted');
+    assert.ok(decision.searchText.includes('current rationale probe'));
+    assert.deepEqual(decision.links, [{ label: 'source', path: 'docs/README.md' }]);
   });
 });
 

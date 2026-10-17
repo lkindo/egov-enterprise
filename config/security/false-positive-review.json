@@ -32,7 +32,7 @@
         },
         {
           "file": "frontend/src/proxy.ts",
-          "sha256": "1c517b617a83a8494a4d94c630634663ba6aa5c57f10bf9fe9f18af65d04a249"
+          "sha256": "491270c44811f4ea6557def86948005d4497369520bfe4e50aaf2b05434035e6"
         },
         {
           "file": "frontend/src/app/api/auth/login/route.ts",

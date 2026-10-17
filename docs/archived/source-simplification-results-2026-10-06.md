@@ -62,7 +62,7 @@ Seroval은 Solid의 기존 `~1.5.4` 범위를 넘어가므로 실제 소비 경�
 - 삭제된 소스에만 해당하는 예외·원장 행을 정리한다. 전량 부서 조회로 대체된 미사용 `getDeptList` 래퍼를 제거해 생성 API 경계는 377→376개(생성 354·특수 22), adoption 100%다. 페이징 HTTP API `getDepts`는 유지하고 기존 `superseded-surface` 분류로 실제 소비 중인 `getDeptTree`와 연결한다. 두 API는 같은 서비스의 paged/unpaged 조회이며, 화면 미도달 상한 28과 미연결 상한 10은 유지한다.
 - 폼 census는 퇴역 검색 폼 1개만 감소한다. 일괄 상태/부서 변경은 원래 검사 경계를 유지한다.
 - URL census는 생성기로 다시 만들고 기존 승인 선택을 유지한 채 evidence 해시를 재결속한다.
-- 보안 예외 6건의 수·규칙·fingerprint·만료일은 그대로다. 두 설정의 필터·인가 본문을 대조한 후 소스 해시와 현재 행만 갱신했다. [보안 재검토](sast-findings-review.md)를 참조한다.
+- 보안 예외 6건의 수·규칙·fingerprint·만료일은 그대로다. 두 설정의 필터·인가 본문을 대조한 후 소스 해시와 현재 행만 갱신했다. [보안 재검토](../04-operations/sast-findings-review.md)를 참조한다.
 - 교차 도메인 원장은 퇴역 Schedule 메서드의 BaseSearchDto edge를 제거하고 추출한 assembler의 UserSearchDto edge를 기록한다. 기존 Service의 user 참조는 유지한다.
 - 시크릿 검사는 모든 `.agent/scripts/*.js`를 계속 탐색한다. 퇴역한 비DB 도구 수에 의존하던 하한을 실제 DB 도구 두 개의 필수 포함 검사로 바꾼다. 무관한 파일로 숫자만 채워도 DB 도구 누락을 숨길 수 없게 한다.
 - 문서·과거 결정의 퇴역 소스 링크는 기준 커밋의 실제 blob으로 연결한다. 과거 결정을 새 결정으로 덮어쓰지 않는다.

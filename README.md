@@ -67,7 +67,7 @@ egov-enterprise/
 - **Administrative Tools**: 공통코드, 메뉴 관리, 화면 관리(앱 화면 목록·진입 권한·연결 메뉴), 로그(시스템/웹/개인정보 등) 관리.
 - **Security & IAM**: 권한 관리, 롤 관리, 그룹 관리 등 정교한 RBAC 시스템.
 - **Collaboration Suite**: 공지사항, 갤러리 게시판, 동호회 관리, 주소록.
-- **Operational Support**: 부서/개인 일정 관리, 주간/월간 보고 승인 프로세스, 온라인 설문 참여 및 결과 조회.
+- **Operational Support**: 부서/개인 일정 관리, 개인 업무 보고 기록(승인·수신자 없음), 온라인 설문 참여 및 결과 조회.
 - **Analytics Dashboard**: User/Screen 방문 정보 시각화 (Recharts 기반).
 - **CI/CD & DevOps**: GitHub Actions 통합 파이프라인, Docker Compose 개발/운영 환경.
 
@@ -89,6 +89,8 @@ make bootstrap
 # 또는 (Windows PowerShell)
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
+
+부트스트랩은 루트 `.env`와 `frontend/.env.local`을 템플릿에서 만든다. 격리 E2E runner(`npm run verify:e2e`)는 환경 파일이 있는 클론에서 시작하지 않으므로, 브라우저 E2E는 `.env`가 없는 별도 격리 worktree에서 실행한다.
 
 ### 로컬 개발 통합 실행
 아래 통합 실행 명령은 루트 `.env`를 읽어 같은 환경으로 백엔드와 프론트엔드를 실행합니다. DB는 앞 단계의 부트스트랩 또는 별도 구성으로 먼저 준비합니다.
@@ -121,8 +123,8 @@ pnpm dev
 다음은 생산 저장소의 명령이다. 온라인 생성물의 명령·CI 범위는 아래 별도 설명과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
 
 - `npm run verify:docs` / `verify:fast` / `verify:push` / `verify:full`: 비용 순으로 중첩된 로컬 프로파일. 변경 범위에 맞는 최소 프로파일을 고른다. `verify:full`은 실 PostgreSQL 스키마 검증을 포함해 Docker가 필요하다.
-- `npm run verify:e2e`: 브라우저 E2E. 서비스 기동이 필요해 별도로 둔다.
-- `npm run base:verify -- --profile core`: 새 격리 PostgreSQL과 소스 산출물을 만들고 산출물의 계약·Java 하네스·실 DB 스키마·프런트 타입·lint·build를 검증한다. `collaboration`·`demo`도 같은 경로를 사용한다. [재사용 Base 가이드](./docs/03-guides/reusable-base-guide.md)를 따른다.
+- `npm run verify:e2e`: 브라우저 E2E. runner가 새 격리 DB와 자신이 소유한 앱 프로세스를 만들며, 저장소 루트나 `frontend/`에 `.env`·`.env.local`이 있으면 시작하지 않는다. `make bootstrap`을 실행한 개발 클론이 아니라 `.env`가 없는 격리 worktree에서 실행한다([E2E 운영 Runbook](./docs/03-guides/e2e-test-guide.md)).
+- `npm run base:verify -- --profile core`: 새 격리 PostgreSQL과 소스 산출물을 만들고 산출물의 계약·Java 하네스·실 DB 스키마·프런트 타입·lint·build를 검증한다. [시작 구성](./config/modules/presets.json) 다섯(`core`·`collaboration`·`demo`·`survey`·`approval`)이 같은 경로를 사용한다. [재사용 Base 가이드](./docs/03-guides/reusable-base-guide.md)를 따른다.
 - `npm run verify:migration`: 온라인 UI 없이 독립 이관 모듈의 테스트·bootJar를 검증한다.
 - `npm run migration:export`: 프런트·온라인 모듈 없이 이관 CLI의 독립 소스 제품을 새 디렉터리에 생성한다. 생성 후 해당 제품에서 기술 검증과 기관 검토를 수행한다.
 - `npm run review:status` / `review:migration`: 일반 검토 기한 경과와 미검토 상태를 별도 보고한다. 기관 배포·이관 승인은 [검토 수명 가이드](./docs/03-guides/governance-review-lifecycle.md)의 제품·환경별 원장으로 따로 확인한다.
@@ -132,9 +134,7 @@ pnpm dev
 
 변경 범위별 최소 검증과 문서-only fast path는 [AGENTS.md](./AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](./.githooks/README.md)를 따른다.
 
-생산 저장소는 기존 6개 required context와 `core`·`collaboration`·`demo` 생성 matrix를 유지한다. 온라인 생성물의 CI는 `artifact-verification` 한 job에서 자기 프로필의 기술 검증과 gitleaks working-tree·incremental 검사를 수행한다. 원본 13개 workflow와 실행 설정은 `config/governance/upstream-verification/`의 비활성 이력으로 보존하며, CodeQL·E2E·mutation·배포·예약 작업은 기관에서 다시 결속해야 한다. 기본 생성물 CI가 원본과 동등한 검증이나 기관 운영 인증을 제공한다는 뜻은 아니다.
-
-생성물의 `verify:docs`는 `contracts`, `verify:be`는 `backend`, `verify:fe`는 `frontend`다. `verify`·`verify:full`·`verify:push`·`verify:fast`는 보수적으로 `full`을 실행한다. 생성물에는 `base:*`·`verify:e2e`·`verify:ops` 별칭이 없으며, required-check 템플릿의 `remoteApplied: false`에 따라 기관이 자기 ruleset과 실행 환경을 설정해야 한다.
+생산 저장소 CI는 6개 required context와 시작 구성 생성 matrix를 유지한다. 바뀐 파일의 소유 기능을 담은 시작 구성만 고르며, PR은 그중 `ci.pr`이 있는 `core`·`collaboration`·`demo`를 한 레이아웃씩, main은 최대 다섯을 두 레이아웃씩 생성·검증한다(`survey`·`approval`은 `ci.pr`이 null이라 main에서만 돈다). 온라인 생성물의 CI 범위, 명령 별칭과 기관이 다시 결속해야 할 검증은 [시작 가이드 §6.6](./docs/03-guides/getting-started.md#66-재사용-프로필과-기관-도입)과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
 
 ---
 
@@ -177,8 +177,8 @@ make bootstrap
 ```
 
 수동 구성을 원하는 경우 다음 단계를 거칩니다:
-1. 백엔드/프론트엔드 환경 설정 파일 복사
-   - `api-server/src/main/resources/application-dev.yml` -> `application-local.yml`
+1. 환경 파일 복사(`scripts/bootstrap.ps1`·`bootstrap.sh`와 같은 동작, 이미 있으면 건너뛴다)
+   - `.env.example` -> `.env` (docker compose 변수치환과 `npm run dev`가 읽는다. 백엔드 DB 접속 기본값은 `application.yml`에 있어 없어도 기동된다)
    - `frontend/.env.example` -> `frontend/.env.local`
 2. 로컬 Docker PostgreSQL 17 구동 (`docker compose up -d db`)
 3. 의존성 패키지 설치 (`npm install` 및 `pnpm -C frontend install`)

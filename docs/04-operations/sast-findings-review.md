@@ -1,5 +1,11 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-17 Reporting-Endpoints 단일 소스화에 따른 보완 소스 재검토
+
+SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 Reporting-Endpoints 그룹 정의 위의 설명 주석만 바뀌었다. 같은 변경에서 `next.config.ts`가 모든 경로에 리터럴로 달던 같은 헤더를 걷어, CSP와 그 그룹 정의를 proxy 한 곳에서만 단다. 토큰 검증·Origin 거부·Bearer 전달과 Strict·HttpOnly 쿠키 정책은 바뀌지 않았다.
+
+해당 보완 소스 해시만 재결속한다. 예외 6건의 범위·규칙·행·fingerprint·승인일·만료일과 보안 임계값은 유지한다. 근거는 proxy diff 재검토이며 CodeQL 실행의 증거가 아니다. 현재 탐지와의 exact-match는 해당 변경의 required `secure-coding` CI에서 판정한다.
+
 ## 2026-10-16 rewrite 프록시 연결 재사용 제거에 따른 보완 소스 재검토
 
 SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 `/api/v1`·`/actuator`·`/ws` 요청에 `Connection: close` 를
@@ -59,7 +65,7 @@ SAST-FP-007의 보완 소스 두 개가 Dependabot 배치(#761·#849)로 바뀌�
 
 API·core fallback 설정에서 동일한 BCrypt 전용 생성만 `PasswordEncoders.create()`로 옮기고 core 생성자의 미사용 `Environment`를 제거했다. encoding id `bcrypt`, 기본 cost 10, legacy SHA-256을 인증 provider에서 검증 후 재해싱하는 경로는 동일하다. 두 설정의 filter chain 본문과 활성화 annotation을 기준 커밋 `e0066946cb55c2135d9df3a66baa739f6ba8211b`와 직접 비교해 변경 없음을 확인했다.
 
-SAST-FP-001·002의 현재 탐지 행은 133·50이며 두 설정의 소스·지원 해시만 재결속했다. 008은 지원하는 API 설정 해시만 갱신했다. 승인 6건·규칙·fingerprint·만료일은 그대로다. 정책·예외·실행 연결과 부정 fixture 17개가 통과했다. 새 CodeQL 전체 분석 결과를 뜻하지 않으며, 새 탐지와 fingerprint 일치는 required secure-coding CI에서 다시 판정한다. 암호·API·인증 provider 회귀 결과는 [정비 결과](source-simplification-results-2026-10-06.md)에 기록한다.
+SAST-FP-001·002의 현재 탐지 행은 133·50이며 두 설정의 소스·지원 해시만 재결속했다. 008은 지원하는 API 설정 해시만 갱신했다. 승인 6건·규칙·fingerprint·만료일은 그대로다. 정책·예외·실행 연결과 부정 fixture 17개가 통과했다. 새 CodeQL 전체 분석 결과를 뜻하지 않으며, 새 탐지와 fingerprint 일치는 required secure-coding CI에서 다시 판정한다. 암호·API·인증 provider 회귀 결과는 [정비 결과](../archived/source-simplification-results-2026-10-06.md)에 기록한다.
 
 
 ## 2026-10-06 감사 코드 미사용 import 정리에 따른 재검토

@@ -226,5 +226,5 @@ route-key binding도 다음 **2건**으로 제한한다(2026-09-25 현행화).
 
 - [승인 오버레이 설계](../02-architecture/url-state-approval-overlay-design.md)
 - [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
-- [URL-state 분류 초안](../01-product/url-state-classification-draft.md)
+- [URL-state 분류 초안](../archived/url-state-classification-draft.md)
 - [PD-UX-002](pending-decisions.md)

@@ -61,27 +61,22 @@ public record PostRequest(
 ) {}
 ```
 
-API 계약 변경 뒤에는 서버 기동에 의존하지 않는 오프라인 codegen을 기본으로 실행한다.
+API 계약을 바꾸면 `api-docs.json` 추출과 프런트 생성 타입(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) 재생성·드리프트 점검을 [API 문서화 가이드](../../../../docs/03-guides/api-documentation-guide.md)의 절차대로 실행한다. 명령은 `frontend/package.json` 스크립트(오프라인 기본, `syncContract`는 `api-docs.json` 정규화까지 포함)가 정본이며 여기에 복제하지 않는다.
 
-입력이 바뀌면 [OpenAPI 추출 절차](../../../../docs/03-guides/api-documentation-guide.md)에 따라 `api-docs.json`부터 갱신한 후 아래 명령을 실행한다. `codegen:zod`는 `generated-zod.ts`와 `generated-operations.ts`를 함께 생성한다. 날짜 입력은 [Ymd](../../../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 사용하되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
-
-```bash
-pnpm -C frontend codegen:file
-pnpm -C frontend codegen:zod
-```
+날짜 입력은 [Ymd](../../../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 사용하되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
 
 ## 4. 서비스 계층 인가
 
-컨트롤러 인가만으로 끝내지 않고 쓰기와 민감 조회에서 서비스 계층 가드를 다시 적용한다. 소유자 필드의 식별자 축과 관리자 우회 허용 여부를 먼저 결정한다.
+컨트롤러 인가만으로 끝내지 않고 쓰기와 민감 조회에서 서비스 계층 가드를 다시 적용한다. 소유자 필드의 식별자 축과 소유자 외 대행 허용 여부를 먼저 결정한다. 그룹 이름이나 관리자 역할로 권한을 추론하지 않고, 대행이 허용된 업무에서만 해당 기능 권한을 사용한다.
 
-| 의도 | 표준 헬퍼 | 식별자 축 | 관리자 우회 |
+| 의도 | 표준 헬퍼 | 식별자 축 | 소유자 외 대행 |
 |---|---|---|---|
-| 감사 컬럼 작성자 | `assertOwnerOrAdmin` | `loginId` | 허용 |
-| 도메인 소유자 | `assertOwnerOrAdminByEsntlId` | `esntlId` | 허용 |
-| 결재·신청 등 본인 행위 | `assertOwnerByEsntlId` | `esntlId` | 불가 |
-| 관리자 전용 | `assertAdmin` | 역할 | 해당 없음 |
+| 감사 컬럼 작성자 또는 대행 권한 보유자 | `assertOwnerOrPermission(ownerLoginId, permissionCode)` | `loginId` | 지정한 기능 권한이 있을 때만 |
+| 도메인 소유자 또는 대행 권한 보유자 | `assertOwnerOrPermissionByEsntlId(ownerEsntlId, permissionCode)` | `esntlId` | 지정한 기능 권한이 있을 때만 |
+| 결재·신청 등 본인 행위 | `assertOwnerByEsntlId(ownerEsntlId)` | `esntlId` | 불가 |
+| 특정 기능 권한 필수 | `assertPermission(permissionCode)` | 기능 권한 | 소유권·관계 검사는 별도 |
 
-도메인별 수기 가드를 표준 헬퍼로 기계 치환하면 의미가 약해질 수 있다. 변경 전 [식별자 모델 가이드](../../../../docs/03-guides/identity-model-guide.md)와 기존 네거티브 테스트를 확인한다.
+결재자·수신자·참여자 본인처럼 대행할 수 없는 관계 검사는 그대로 유지한다. 도메인별 수기 가드를 표준 헬퍼로 기계 치환하면 의미가 약해질 수 있다. 변경 전 [식별자 모델 가이드](../../../../docs/03-guides/identity-model-guide.md)와 기존 네거티브 테스트를 확인한다.
 
 ## 5. 오류 코드
 

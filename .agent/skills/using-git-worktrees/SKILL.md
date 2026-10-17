@@ -27,17 +27,19 @@ ls -d worktrees 2>/dev/null      # Alternative
 
 **If found:** Use that directory. If both exist, `.worktrees` wins.
 
-### 2. Check CLAUDE.md
+### 2. Check AGENTS.md
+
+In this repository the project rule SSOT is `AGENTS.md` (DEC-OPS-001); `CLAUDE.md` and `GEMINI.md` are thin adapters that do not carry their own preferences.
 
 ```bash
-grep -i "worktree.*director" CLAUDE.md 2>/dev/null
+grep -i "worktree.*director" AGENTS.md 2>/dev/null
 ```
 
 **If preference specified:** Use it without asking.
 
 ### 3. Ask User
 
-If no directory exists and no CLAUDE.md preference:
+If no directory exists and no AGENTS.md preference:
 
 ```
 No worktree directory found. Where should I create worktrees?
@@ -63,7 +65,7 @@ git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/d
 
 Per Jesse's rule "Fix broken things immediately":
 1. Add appropriate line to .gitignore
-2. Commit the change
+2. Report the change; commit it only when the user asked for commits, with `git commit --only -- .gitignore` ([AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git))
 3. Proceed with worktree creation
 
 **Why critical:** Prevents accidentally committing worktree contents to repository.
@@ -102,6 +104,8 @@ cd "$path"
 
 Auto-detect and run appropriate setup:
 
+In this repository: run `npm ci` at the root (npm lockfile) and `pnpm -C frontend install` for the frontend (pnpm lockfile) — do not run `npm install` inside `frontend`. Generic examples for other projects:
+
 ```bash
 # Node.js
 if [ -f package.json ]; then npm install; fi
@@ -119,7 +123,9 @@ if [ -f go.mod ]; then go mod download; fi
 
 ### 4. Verify Clean Baseline
 
-Run tests to ensure worktree starts clean:
+Run tests to ensure worktree starts clean.
+
+In this repository, pick the minimum check for the scope you will change from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) (cheapest first: `npm run verify:docs` < `verify:fast` < `verify:push` < `verify:full`). Root `npm test` runs the whole Gradle test suite — a heavy run; do not overlap it with other heavy runs. Generic examples for other projects:
 
 ```bash
 # Examples - use project-appropriate command

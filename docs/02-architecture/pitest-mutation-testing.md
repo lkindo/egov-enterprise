@@ -1,4 +1,4 @@
-# PITest 점진적 Mutation Testing 연동
+# PITest Mutation Testing 연동(스코프별 전체 재계산)
 
 이 문서는 [백엔드 헌법 제16조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)의 핵심 서비스 Mutation Score 75% 하한을 실행하는 경로를 설명한다. mutation score는 주입한 코드 변화에 대한 테스트의 탐지력이며 시스템 정확성 전체의 증명은 아니다.
 
