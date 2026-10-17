@@ -2,7 +2,7 @@ import type * as React from 'react';
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const mocks = vi.hoisted(() => ({
@@ -483,7 +483,7 @@ describe('SMS 발송 결과 고지', () => {
   /**
    * [2026-09-02] 배너를 **런타임 사실**에 결속한다.
    *
-   * 저장소 계약(아래 '모든 sender 가 실패를 돌려준다')은 이 저장소 안의 구현만 본다. 그런데
+   * 저장소 계약(cross-stack 의 '모든 sender 가 실패를 돌려준다')은 이 저장소 안의 구현만 본다. 그런데
    * 이 저장소는 재사용 base 라, 파생 제품이 자기 게이트웨이를 붙이면 배너가 반대로 거짓말한다
    * (연결됐는데 "연동되어 있지 않다"). 서버가 알려 주는 상태로 두 방향을 모두 고정한다.
    */
@@ -522,29 +522,8 @@ describe('SMS 발송 결과 고지', () => {
     });
   });
 
-  /**
-   * 그 고지를 **실제 구현체와 양방향으로 묶는다.**
-   *
-   * 배너만 하드코딩하면, 나중에 진짜 게이트웨이가 붙었을 때 화면이 반대로 거짓말한다.
-   * 저장소의 SmsSender 구현체를 전수로 읽어 하나라도 성공을 돌려주면 이 계약이 red 가 되게
-   * 한다 — 그때 배너를 걷어내라는 신호다.
-   */
-  it('배너는 "모든 sender 가 실패를 돌려준다"는 사실에 결속돼 있다', () => {
-    const senderDir = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..', '..',
-      'business-app', 'src', 'main', 'java', 'nuri', 'business', 'service', 'sms');
-    const senders = readdirSync(senderDir).filter((name) => /SmsSender\.java$/.test(name));
-
-    // 구현체가 사라지면 이 검사가 vacuous 하게 통과한다 — 그 자체를 실패로 본다.
-    expect(senders.length).toBeGreaterThanOrEqual(2);
-
-    for (const name of senders) {
-      if (name === 'SmsSender.java') continue; // 인터페이스
-      const body = readFileSync(path.join(senderDir, name), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, ' ')
-        .replace(/\/\/.*$/gm, ' ');
-      expect(body, `${name} 가 성공을 돌려주면 미연동 배너는 거짓이 된다`).not.toMatch(/return\s+true\s*;/);
-    }
-  });
+  // 그 고지를 실제 구현체와 양방향으로 묶는 계약('모든 sender 가 실패를 돌려준다')은 전송 구현체(Java)를 읽으므로
+  // cross-stack/sms-gateway-banner-binding.test.ts 에 있다 — 구현체만 바꾸는 백엔드-only PR 에서도 돈다.
 
   /**
    * 전달은 비동기이고 전역 캐시는 60초 fresh 다. 성공 경로에 새로고침이 없으면 토스트가

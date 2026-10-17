@@ -28,6 +28,14 @@ describe('scrap query ownership', () => {
     expect(scrapKeys.detail(17)).toEqual(['scraps', 'detail', 17]);
   });
 
+  it('목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)', () => {
+    expect(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 20 }).queryKey).toEqual([
+      'scraps', 'list', { pageIndex: 2, pageUnit: 20 },
+    ]);
+    expect(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 50 }).queryKey)
+      .not.toEqual(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 20 }).queryKey);
+  });
+
   it('목록·상세 query options가 service 호출까지 소유한다', async () => {
     service.getMyScraps.mockResolvedValueOnce({ list: [], total: 0 });
     service.getScrap.mockResolvedValueOnce({ scrapSn: 17, useYn: 'Y' });

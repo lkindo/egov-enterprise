@@ -25,6 +25,14 @@ describe('comment query ownership', () => {
     ]);
   });
 
+  it('관리자 목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)', () => {
+    expect(commentQueryOptions.adminList({ page: 1, size: 50 }).queryKey).toEqual([
+      'comments', 'admin', 'list', { page: 1, size: 50 },
+    ]);
+    expect(commentQueryOptions.adminList({ page: 1, size: 20 }).queryKey)
+      .not.toEqual(commentQueryOptions.adminList({ page: 1, size: 50 }).queryKey);
+  });
+
   it('사용자·관리자 query options가 각 서비스 호출까지 소유한다', async () => {
     publicService.getComments.mockResolvedValueOnce({ list: [] });
     adminService.getComments.mockResolvedValueOnce({ list: [] });

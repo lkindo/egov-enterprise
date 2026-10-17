@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { assertProjectComposerMenusMatch, COMPOSER_MENU_SNAPSHOT_PATH, loadProjectComposerMenus,
+import { assertProjectComposerMenusMatch, COMPOSER_MENU_SNAPSHOT_PATH, loadProjectComposerMenus, menuInventorySqlInputs,
   projectComposerMenuPreview, projectMenuSourceHash, validateProjectComposerMenus,
   writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
@@ -24,7 +24,9 @@ function fixture() {
   mkdirSync(migrations, { recursive: true });
   mkdirSync(join(root, 'api-server/src/main/resources/db/cutover'), { recursive: true });
   mkdirSync(join(root, 'config'));
-  for (const name of ['V1_0__baseline.sql', 'R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) {
+  // baseline 은 메뉴 테이블을 만든다 — 해시가 고르는 입력이어야 아래 baseline 변경·CRLF 시험이 뜻을 갖는다.
+  writeFileSync(join(migrations, 'V1_0__baseline.sql'), '-- V1_0__baseline.sql\nCREATE TABLE tb_menu_info (menu_sn bigint PRIMARY KEY);\n');
+  for (const name of ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) {
     writeFileSync(join(migrations, name), `-- ${name}\nSELECT 1;\n`);
   }
   writeFileSync(join(root, 'api-server/src/main/resources/db/cutover/authorization-contract.sql'), '-- reviewed Contract\nSELECT 1;\n');
@@ -98,10 +100,64 @@ test('stale snapshots fail for changed migrations, seeds, or Contract while CRLF
       assert.throws(() => loadProjectComposerMenus(root), /stale migration hash/);
       writeFileSync(path, source);
     }
-    writeFileSync(join(migrations, 'V1_1__new_menu.sql'), 'SELECT 3;');
+    // 메뉴와 무관한 새 마이그레이션은 해시를 바꾸지 않는다(형식 v2) — 갱신 없이 스냅숏이 그대로 맞다.
+    writeFileSync(join(migrations, 'V1_1__index_board_post.sql'), 'CREATE INDEX ix_tb_bbs_reg_dt ON tb_bbs (reg_dt);\n');
+    assert.equal(projectMenuSourceHash(root), snapshot.sourceMigrationHash, 'an unrelated index migration keeps the hash');
+    assert.doesNotThrow(() => loadProjectComposerMenus(root));
+    writeFileSync(join(migrations, 'V1_2__rename_menu.sql'), "UPDATE tb_menu_info SET menu_nm = '새 이름' WHERE menu_sn = 10;\n");
     assert.throws(() => loadProjectComposerMenus(root), /stale migration hash/);
     assert.equal(JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8')).sourceMigrationHash, snapshot.sourceMigrationHash);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+/*
+ * 해시 입력 규칙(형식 v2)은 fail-closed 다. 메뉴·권한 계열 이름을 대소문자·따옴표·스키마 접두와 상관없이 쓰거나, 이름 없이 닿는
+ * 수단을 쓰거나, SQL 입력이 정의한 함수를 부르거나, 감시 테이블로 번지는 외래 키의 부모·트리거가 걸린 테이블·감시 이름을 읽는 뷰·
+ * 반복 시드가 읽는 테이블을 쓰면 넣는다.
+ * 각 대조군은 같은 모양에서 번지는 길만 없앤 입력이다 — 빠지는 것도 규칙의 뜻이다.
+ */
+test('the menu hash keeps every migration that can reach the menu inventory and drops the rest', () => {
+  const inputs = files => menuInventorySqlInputs(new Map(Object.entries(files)));
+  const baseline = { 'V1_0.sql': 'CREATE TABLE tb_menu_info (menu_sn bigint PRIMARY KEY);' };
+  const unrelated = 'CREATE INDEX ix_tb_bbs_reg_dt ON tb_bbs (reg_dt);';
+  for (const sql of ["UPDATE public.\"TB_MENU_INFO\" SET use_yn = 'N';", "INSERT INTO tb_authrt_grnt_map VALUES ('ROLE_USER', 'NAVIGATION', '10');",
+    "DELETE FROM tb_authrt_info WHERE authrt_cd = 'ROLE_X';", "DELETE FROM tb_menu_crt_dtl;", "DO $$ BEGIN EXECUTE 'DELETE FROM ' || target; END $$;",
+    "SELECT format('%I', 'x');", 'TRUNCATE tb_user_info;', 'DROP TABLE tb_bbs CASCADE;', 'SET search_path = legacy;',
+    'CREATE FUNCTION fn_noop() RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;']) {
+    assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': sql }), ['V1_0.sql', 'V1_1.sql'], sql);
+  }
+  assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': unrelated, 'V1_2.sql': "ALTER TABLE tb_bbs ADD COLUMN memo varchar(10) DEFAULT 'N';" }),
+    ['V1_0.sql'], 'migrations that only touch other tables are not hashed');
+  // 앞선 마이그레이션이 정의한 함수를 부르는 파일도 넣는다 — 호출 원문에는 테이블 이름이 없다.
+  const routine = { 'V1_1.sql': 'CREATE FUNCTION fn_reset() RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;', 'V1_2.sql': 'SELECT fn_reset();' };
+  assert.deepEqual(inputs({ ...baseline, ...routine }), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql']);
+  // 메뉴 행을 지우는 외래 키의 부모를 지우면 메뉴가 바뀐다. 막기만 하는(NO ACTION) 외래 키의 부모는 감시하지 않는다.
+  const cascade = action => ({ 'V1_1.sql': `ALTER TABLE ONLY public.tb_menu_info ADD CONSTRAINT fk_menu_scrn FOREIGN KEY (scrn_id) REFERENCES public.tb_scrn_info (scrn_id)${action};`,
+    'V1_2.sql': "DELETE FROM tb_scrn_info WHERE scrn_id = 'x';" });
+  for (const action of [' ON DELETE CASCADE', ' ON UPDATE SET NULL']) assert.deepEqual(inputs({ ...baseline, ...cascade(action) }), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql'], action);
+  assert.deepEqual(inputs({ ...baseline, ...cascade('') }), ['V1_0.sql', 'V1_1.sql']);
+  // 메뉴에 쓰는 트리거가 걸린 테이블의 행을 바꾸면 메뉴가 바뀐다. 제 행만 고치는 트리거의 테이블은 감시하지 않는다.
+  const trigger = body => ({ 'V1_1.sql': `CREATE FUNCTION fn_mirror() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN ${body} RETURN NEW; END $fn$;\n`
+      + 'CREATE TRIGGER trg_mirror AFTER INSERT ON tb_user_info FOR EACH ROW EXECUTE FUNCTION fn_mirror();',
+    'V1_2.sql': "INSERT INTO tb_user_info (esntl_id) VALUES ('U1');" });
+  assert.deepEqual(inputs({ ...baseline, ...trigger('INSERT INTO tb_menu_info (menu_sn) VALUES (NEW.menu_sn);') }), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql']);
+  assert.deepEqual(inputs({ ...baseline, ...trigger('NEW.rrno := NEW.user_enrrno;') }), ['V1_0.sql', 'V1_1.sql']);
+  // 트리거 함수가 SQL 입력 밖에 있으면 무엇을 쓰는지 모른다 — 쓰는 것으로 본다.
+  assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': 'CREATE TRIGGER trg_x AFTER INSERT ON tb_user_info FOR EACH ROW EXECUTE FUNCTION ext_fn();',
+    'V1_2.sql': "INSERT INTO tb_user_info (esntl_id) VALUES ('U1');" }), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql']);
+  // 늘 넣는 입력(반복 시드·Contract)은 내용과 상관없다.
+  assert.deepEqual(menuInventorySqlInputs(new Map([['R__seed.sql', 'SELECT 1;'], ['V1_1.sql', unrelated]]), new Set(['R__seed.sql'])), ['R__seed.sql']);
+  // 메뉴를 읽는 뷰로 행을 지우면 메뉴가 바뀐다(갱신 가능한 뷰). 다른 테이블만 읽는 뷰는 감시하지 않는다.
+  const view = source => ({ 'V1_1.sql': `CREATE VIEW v_nav AS SELECT * FROM ${source};`, 'V1_2.sql': "DELETE FROM v_nav WHERE use_yn = 'N';" });
+  assert.deepEqual(inputs({ ...baseline, ...view('public.tb_menu_info') }), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql']);
+  assert.deepEqual(inputs({ ...baseline, ...view('tb_bbs') }), ['V1_0.sql']);
+  // 반복 시드는 모든 versioned migration 뒤에 다시 돈다 — 시드가 읽는 테이블을 바꾼 마이그레이션도 메뉴·배정을 바꾼다.
+  // 읽는 이름은 SQL 입력이 만든 테이블만 센다. 주석 낱말·CTE 이름(the·picked)을 감시하면 무관한 파일이 딸려 온다.
+  const seeded = seed => menuInventorySqlInputs(new Map([['R__seed.sql', seed], ['V1_0.sql', 'CREATE TABLE tb_scrn_info (scrn_id varchar(20));'],
+    ['V1_1.sql', "UPDATE tb_scrn_info SET scrn_id = 'the picked';"]]), new Set(['R__seed.sql']));
+  assert.deepEqual(seeded("INSERT INTO tb_authrt_grnt_map SELECT 'ROLE_USER', 'NAVIGATION', s.scrn_id FROM public.tb_scrn_info s;"),
+    ['R__seed.sql', 'V1_0.sql', 'V1_1.sql']);
+  assert.deepEqual(seeded('-- copied from the template\nWITH picked AS (SELECT 1) INSERT INTO tb_menu_info SELECT * FROM picked;'), ['R__seed.sql']);
 });
 
 test('invalid menu identities, missing parents and the retired v1 shape cannot become a trusted preview', () => {
@@ -141,7 +197,7 @@ test('every stale or unreadable snapshot is MENU_SNAPSHOT_STALE and an unreadabl
     const written = JSON.parse(readFileSync(join(root, COMPOSER_MENU_SNAPSHOT_PATH), 'utf8'));
     stale(() => validateProjectComposerMenus({ ...written, schemaVersion: 2 }, projectMenuSourceHash(root)));
     stale(() => assertProjectComposerMenusMatch(root, { menus: inventory.menus.slice(0, 2), navigation: inventory.navigation }));
-    writeFileSync(join(migrations, 'V2_0__new_menu.sql'), 'SELECT 2;\n');
+    writeFileSync(join(migrations, 'V2_0__new_menu.sql'), "UPDATE tb_menu_info SET use_yn = 'N' WHERE menu_sn = 12;\n");
     stale(() => loadProjectComposerMenus(root));
     rmSync(migrations, { recursive: true });
     assert.throws(() => loadProjectComposerMenus(root), error => !(error instanceof ComposerError) && error.code === 'ENOENT');
