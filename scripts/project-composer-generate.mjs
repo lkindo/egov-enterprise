@@ -42,7 +42,7 @@ export function composerOutputPaths(root, name, token) {
 }
 
 /** 생성 함수를 만든다. 한 엔진에서 생성 작업은 한 번에 하나다. */
-export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, plan, resolveRecipe, loadCatalogClassified, readiness }) {
+export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, planWithCatalog, resolveRecipe, readiness }) {
   let running = false;
   /**
    * `signal`(AbortSignal)로 취소한다(E6b). 진행 중인 자식 프로세스 트리를 끝내고, 그 뒤의 실패는 모두 취소의 결과로 본다.
@@ -141,10 +141,11 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     };
     try {
       progress('resolve');
-      const resolvedPlan = plan(recipe);
+      const { plan: resolvedPlan, catalog } = planWithCatalog(recipe);
       // 생성 불가 구성은 출력 폴더·DB 컨테이너를 만들기 전에 사유와 함께 거부한다.
       if (resolvedPlan.blockers.length) throw Object.assign(new Error(resolvedPlan.blockers.join(' ')), { code: 'FK_CLOSURE' });
-      composition = { ...resolveRecipe(recipe, loadCatalogClassified()), sourceCommit: resolvedPlan.sourceCommit };
+      // 계획이 새로 적재한 카탈로그로 다시 푼다(계획에 덧붙인 안내 필드를 composition.json 에 싣지 않는다).
+      composition = { ...resolveRecipe(recipe, catalog), sourceCommit: resolvedPlan.sourceCommit };
       sourceFingerprint = fingerprint(root);
       token = randomBytes(8).toString('hex');
       paths = composerOutputPaths(outputRoot, composition.project.name, token);

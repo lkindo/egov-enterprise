@@ -17,6 +17,12 @@ const root = resolve(import.meta.dirname, '..');
 // 계약 테스트의 생성 출력은 임시 루트에만 둔다. 저장소 build/ 에 engine-contract-* 잔재를 남기지 않는다.
 const outputRoot = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-contract-')));
 test.after(() => rmSync(outputRoot, { recursive: true, force: true }));
+// 작업 수명·취소·정리·실패 분류 시험은 같은 원본의 카탈로그를 한 번만 적재해 엔진마다 준다. 계획 내용·카탈로그 적재 실패 시험은 실제
+// 로더를 그대로 쓰고, 생성마다 새로 적재하는 성질은 계획 차이 시험의 적재 횟수 대조가 본다. 공유 카탈로그는 얼려서 엔진이 제자리에서
+// 바꾸면(정렬·추가) 시험 순서에 기대는 대신 바로 붉게 한다.
+let sharedCatalog;
+const deepFreeze = value => { if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); Object.values(value).forEach(deepFreeze); } return value; };
+const loadCatalogOnce = () => (sharedCatalog ??= deepFreeze(loadProjectComposerCatalog(root)));
 const recipe = () => ({ schemaVersion: 1, project: { name: 'engine-contract' }, sourceRef: 'HEAD',
   selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
 
@@ -206,7 +212,7 @@ function runner({ verificationResult = 'passed', wrongOwner = false, failStart =
 
 test('generation publishes readiness after verification, keeps absolute dependency junctions valid, and cleans only its own container', async () => {
   const mock = runner();
-  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const stages = [];
   const work = engine.generate(recipe(), { onProgress: value => stages.push(value.stage) });
   await assert.rejects(() => engine.generate(recipe()), /already running/);
@@ -233,7 +239,7 @@ test('generation reports each stage and verification step, keeps the timeline in
   const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-timeline-')));
   t.after(() => rmSync(own, { recursive: true, force: true }));
   const mock = runner();
-  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const events = [];
   const result = await engine.generate(recipe(), { onProgress: event => events.push(structuredClone(event)) });
   const running = event => event.timeline.steps.find(step => step.status === 'running')?.id;
@@ -281,7 +287,7 @@ for (const item of CANCEL_CASES) {
     const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-')));
     t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
     const mock = runner({ hang: item.hang, hangCode: item.hangCode });
-    const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), readiness: { attempts: 1000, delayMs: 1 } });
+    const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), readiness: { attempts: 1000, delayMs: 1 }, loadCatalog: loadCatalogOnce });
     const controller = new AbortController();
     const events = [];
     const work = engine.generate(recipe(), { signal: controller.signal, onProgress: event => events.push(structuredClone(event)) });
@@ -333,7 +339,7 @@ test('a cancel that arrives after verification passed does not relabel the verif
     if (command === 'docker' && args[0] === 'inspect' && String(args[2]).includes('Labels')) controller.abort();
     return mock.run(command, args, options);
   };
-  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }), error => error.code !== 'CANCELLED' && /ownership changed/.test(error.message));
   const job = readdirSync(join(own, 'build/project-composer/jobs'))[0];
   assert.equal(JSON.parse(readFileSync(join(own, 'build/project-composer/jobs', job, 'report.json'), 'utf8')).result, 'failed');
@@ -343,7 +349,7 @@ test('a report that cannot be written does not turn a cancel into a generic fail
   const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-unwritable-')));
   t.after(() => rmSync(own, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   const mock = runner({ hang: command => command === 'pnpm' });
-  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const controller = new AbortController();
   const work = engine.generate(recipe(), { signal: controller.signal });
   await mock.hanging;
@@ -359,7 +365,7 @@ test('a signal that is already cancelled stops before any output, Docker or hist
   const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-early-')));
   t.after(() => rmSync(own, { recursive: true, force: true }));
   const mock = runner();
-  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const controller = new AbortController();
   controller.abort();
   await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }),
@@ -378,7 +384,7 @@ test('a cancel that arrives after a real failure began is still a cancellation, 
     if (command === 'npm') { controller.abort(); throw Object.assign(new Error('Command failed: npm (COMMAND_FAILED 1)'), { code: 'COMMAND_FAILED', exitCode: 1 }); }
     return mock.run(command, args, options);
   };
-  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   await assert.rejects(() => engine.generate(recipe(), { signal: controller.signal }),
     error => error.code === 'CANCELLED' && error.cause?.code === 'COMMAND_FAILED' && error.failure.stage === 'install');
 });
@@ -387,7 +393,7 @@ test('a cleanup failure after cancelling is reported as a database left behind, 
   const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cancel-cleanup-')));
   t.after(() => rmSync(own, { recursive: true, force: true }));
   const mock = runner({ wrongOwner: true, hang: (command, args) => args[0] === 'scripts/generate-reusable-base-db.mjs' });
-  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const controller = new AbortController();
   const work = engine.generate(recipe(), { signal: controller.signal });
   await mock.hanging;
@@ -403,7 +409,7 @@ test('a cleanup failure after a passing verifier blames the verification stage, 
   const own = realpathSync(mkdtempSync(join(tmpdir(), 'composer-engine-cleanup-')));
   t.after(() => rmSync(own, { recursive: true, force: true }));
   const mock = runner({ wrongOwner: true });
-  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot: own, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const events = [];
   await assert.rejects(() => engine.generate(recipe(), { onProgress: event => events.push(structuredClone(event)) }), /ownership changed/);
   const last = events.at(-1).timeline;
@@ -415,7 +421,7 @@ test('a cleanup failure after a passing verifier blames the verification stage, 
 
 test('failed validation retains explicit failure evidence and never publishes a ready project', async () => {
   const mock = runner({ verificationResult: 'failed' });
-  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   await assert.rejects(() => engine.generate(recipe()), /verification report is incomplete/);
   assert.equal(existsSync(mock.staging), false);
   const final = mock.staging.replace('.pending-', '');
@@ -453,7 +459,7 @@ test('a selection that violates a required foreign key is explained in the plan 
 test('a database container that was created but never started is found by its own label and removed', async () => {
   const mock = runner({ failStart: true });
   // 엔진이 응답하는데 시작이 실패했으면(이미지·이름 충돌 등) Docker 를 쓸 수 없다고 말하지 않는다 — 분류하지 않는다.
-  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce }).generate(recipe()),
     error => error.code === 'COMMAND_FAILED' && error.failure.code === undefined && error.failure.causeCode === 'COMMAND_FAILED');
   const docker = mock.calls.filter(call => call.command === 'docker').map(call => call.args);
   assert.deepEqual(docker.slice(1).map(args => args[0]), ['version', 'ps', 'inspect', 'rm']);
@@ -462,7 +468,7 @@ test('a database container that was created but never started is found by its ow
 
 test('cleanup refuses a container whose ownership label differs and does not hide the original failure', async () => {
   const mock = runner({ wrongOwner: true, verificationResult: 'failed' });
-  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce }).generate(recipe()),
     error => /verification report is incomplete/.test(error.message) && error.failure?.stage === 'verify');
   assert.ok(!mock.calls.some(call => call.command === 'docker' && call.args[0] === 'rm'));
   const final = mock.staging.replace('.pending-', '');
@@ -472,7 +478,7 @@ test('cleanup refuses a container whose ownership label differs and does not hid
 
 test('when Docker cannot be reached the failed cleanup does not replace the original database-stage failure', async () => {
   const mock = runner({ dockerDown: true });
-  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64) }).generate(recipe()),
+  await assert.rejects(() => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce }).generate(recipe()),
     error => error.message === 'Command failed: docker run' && error.failure?.stage === 'database'
       && error.failure?.code === 'TOOL_UNAVAILABLE' && error.details?.tool === 'docker' && error.failure.causeCode === 'COMMAND_FAILED');
   assert.deepEqual(mock.calls.filter(call => call.command === 'docker').map(call => call.args[0]), ['run', 'version', 'ps']);
@@ -481,7 +487,7 @@ test('when Docker cannot be reached the failed cleanup does not replace the orig
 test('a source mutation during generation stops before install, verification or publication', async () => {
   const mock = runner();
   let reads = 0;
-  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => (++reads === 1 ? 'a' : 'b').repeat(64) });
+  const engine = createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => (++reads === 1 ? 'a' : 'b').repeat(64), loadCatalog: loadCatalogOnce });
   await assert.rejects(() => engine.generate(recipe()), error => /Source checkout changed/.test(error.message) && error.failure.code === 'SOURCE_CHANGED');
   assert.ok(!mock.calls.some(call => call.command === 'npm' || call.args[0] === 'scripts/verify-reusable-artifact.mjs'));
   assert.equal(existsSync(mock.staging.replace('.pending-', '')), false);
@@ -584,7 +590,7 @@ test('a failed command records its stage, command, exit code and stage log witho
     }
     return mock.run(command, args, options);
   };
-  const engine = createComposerEngine({ outputRoot, run, fingerprint: () => 'a'.repeat(64) });
+  const engine = createComposerEngine({ outputRoot, run, fingerprint: () => 'a'.repeat(64), loadCatalog: loadCatalogOnce });
   const failed = await engine.generate(recipe()).then(() => assert.fail('generation must fail'), error => error);
   const job = resolve(outputRoot, 'build/project-composer/jobs', mock.staging.replace('.pending-', '').split(/[\\/]/).at(-1));
   // 로그·보고서 위치는 원본 저장소 기준 '/' 경로다(이 컴퓨터의 절대 경로를 화면으로 보내지 않는다).

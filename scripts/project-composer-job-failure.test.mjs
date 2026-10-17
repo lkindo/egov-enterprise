@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { composerOutputPaths, createComposerEngine } from './project-composer.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
 import { classifyChildFailure, failedVerificationStep, jobFailure, toRepositoryPath, verificationLogTail } from './project-composer-job-failure.mjs';
 import { verificationSteps } from './verify-reusable-artifact.mjs';
@@ -66,8 +67,14 @@ function scenario({ dockerOs = 'linux', running = true, startError, notReady = f
   };
   return { run, calls, get staging() { return staging; }, docker: () => calls.filter(call => call.command === 'docker').map(call => call.args[0]) };
 }
+// 이 시험들은 작업 단계의 실패 분류를 본다. 같은 원본의 카탈로그를 한 번만 적재해 엔진마다 준다 — 카탈로그 내용과 적재 실패 분류는
+// 카탈로그 시험과 엔진 계약 시험이 실제 로더로 보고, 생성마다 새로 적재하는 성질은 계획 차이 시험의 적재 횟수 대조가 본다. 공유 카탈로그는
+// 얼려서 엔진이 제자리에서 바꾸면 바로 붉게 한다.
+let catalog;
+const deepFreeze = value => { if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); Object.values(value).forEach(deepFreeze); } return value; };
+const loadCatalog = () => (catalog ??= deepFreeze(loadProjectComposerCatalog(resolve(import.meta.dirname, '..'))));
 const generate = async (mock, options = {}) => createComposerEngine({ outputRoot, run: mock.run, fingerprint: () => 'a'.repeat(64),
-  readiness: { attempts: 1, delayMs: 0 }, ...options }).generate(recipe()).then(() => assert.fail('generation must fail'), error => error);
+  readiness: { attempts: 1, delayMs: 0 }, loadCatalog, ...options }).generate(recipe()).then(() => assert.fail('generation must fail'), error => error);
 const reportArg = args => {
   const at = args.indexOf('--failure-report');
   assert.ok(at >= 0 && args[at + 1], 'the engine passes a report path to the child');

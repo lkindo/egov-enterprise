@@ -35,6 +35,11 @@ class SharedPostgresMigrationHarnessContractTest {
      * 호출부에서만 알 수 있었다. 파생값으로 바꾸지 않는 이유는 이 수가 <b>동결</b>이기 때문이다 —
      * 자동으로 세면 신규 migration 검증이 공용 support 를 쓰지 않아도 census 가 조용히 따라 올라간다.
      * 정당한 증감은 이 상수를 함께 고쳐 diff 에 의도를 남긴다.
+     *
+     * <p>[2026-10-17] 재사용 투영본은 이 수를 투영 하네스 프로필 census({@code migrationTests})에서 읽는다. 생성기가
+     * 역사적 migration 검증을 걷은 뒤 남은 수를 세어 기록하므로 투영본에서는 0 이다. 종전에는 생성기가 이 상수와
+     * 표시 이름의 숫자를 문자 그대로 찾아 바꿔서, 검증 하나를 더할 때마다 생성기와 그 계약까지 고쳐야 했고 실제로
+     * 한 번 빠뜨려 생성이 깨졌다. 원본에서는 여전히 이 상수의 정확 동결이다.
      */
     // V2_100: 같은 공용 support에서 메뉴 노출 동등성·감사 롤백·Contract 순서 검증을 추가한다.
     // V2_101: 기존 단일 결재의 차수/참여자 백필 검증도 같은 공용 support를 사용한다.
@@ -123,17 +128,17 @@ class SharedPostgresMigrationHarnessContractTest {
     }
 
     @Test
-    @DisplayName("60개 migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
+    @DisplayName("migration 검증은 개별 container lifecycle 없이 공용 PostgreSQL support를 사용한다")
     void migrationTestsUseSharedPostgresSupport() throws IOException {
         List<Path> migrationTests = HarnessSourceIndex.javaSources(schemaSourceRoot()).stream()
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
                 .sorted()
                 .toList();
+        int expected = ReusableHarnessProfile.current().count("migrationTests", EXPECTED_MIGRATION_TEST_COUNT);
 
         assertThat(migrationTests)
-                .as("공용 서버로 이관해야 하는 migration 검증 클래스 census(동결 %d)"
-                        .formatted(EXPECTED_MIGRATION_TEST_COUNT))
-                .hasSize(EXPECTED_MIGRATION_TEST_COUNT);
+                .as("공용 서버로 이관해야 하는 migration 검증 클래스 census(동결 %d)".formatted(expected))
+                .hasSize(expected);
 
         Pattern directLifecycle = Pattern.compile(
                 "(?m)^import org\\.testcontainers|^\\s*@(?:Testcontainers|Container)\\b|new PostgreSQLContainer|\\bPOSTGRES\\.");

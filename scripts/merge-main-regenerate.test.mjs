@@ -7,8 +7,11 @@ import test from 'node:test';
 
 import {
   GENERATORS,
+  HARNESS_MANIFEST,
+  HARNESS_MANIFEST_TOOL,
   compareRowIds,
   findConflictMarkers,
+  harnessManifestConflictKeys,
   mergeMainAndRegenerate,
   planRegeneration,
   rebindApprovalText,
@@ -264,6 +267,61 @@ test('an unrelated source conflict is reported, and leftover markers fail the ru
   r.git('add', 'src/a.ts');
   assert.throws(() => mergeMainAndRegenerate({ cwd: r.dir, resume: true, generators: [fakeGenerator], log: () => {} }),
     /충돌 표기가 남아 있다: src\/a\.ts/);
+});
+
+test('harness manifest conflict keys are the keys whose two sides differ, and no generator rewrites the manifest', () => {
+  const text = ['# 머리', 'a=0', ...conflict({ ours: ['b=1', 'c=same'], base: ['b=0', 'c=same'], theirs: ['b=2', 'c=same', 'd=new'] }), 'z=9', '']
+    .join('\r\n');
+  assert.deepEqual(harnessManifestConflictKeys(text), ['b', 'd']);
+  assert.throws(() => harnessManifestConflictKeys(['<<<<<<< HEAD', 'b=1'].join('\n')), /닫히지 않은/);
+  // 출력으로 두면 충돌 때 재생성이 통째로 덮어, 충돌한 키만 옮기고 입력 변경을 확인하는 사람의 단계(§6.4·H2)가 사라진다.
+  assert.ok(GENERATORS.every(generator => ![...generator.outputs, ...(generator.touches ?? [])].includes(HARNESS_MANIFEST)));
+});
+
+function manifestConflictRepo({ otherConflict = false } = {}) {
+  const r = repo();
+  r.write(HARNESS_MANIFEST, '# 머리\nk=0\nother=1\n');
+  // 저장소의 도구 대신 받은 키마다 `키=computed` 를 찍는 가짜 도구 — 병합 도구가 무엇을 넘기는지만 본다.
+  r.write(HARNESS_MANIFEST_TOOL, "for (const key of process.argv.slice(process.argv.indexOf('--keys') + 1)) console.log(key + '=computed');\n");
+  r.write('src/a.ts', 'a\n');
+  r.git('add', '-A');
+  r.git('commit', '-qm', 'base');
+  r.git('checkout', '-qb', 'feature');
+  r.write(HARNESS_MANIFEST, '# 머리\nk=1\nother=1\n');
+  if (otherConflict) r.write('src/a.ts', 'ours\n');
+  r.git('commit', '-qam', 'ours');
+  r.git('checkout', '-q', 'main');
+  r.write(HARNESS_MANIFEST, '# 머리\nk=2\nother=1\n');
+  if (otherConflict) r.write('src/a.ts', 'theirs\n');
+  r.git('commit', '-qam', 'theirs');
+  r.git('checkout', '-q', 'feature');
+  return r;
+}
+
+test('a same-key harness manifest conflict shows the computed value and is left for a person to move', () => {
+  const r = manifestConflictRepo();
+  const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: () => {} });
+  assert.equal(result.status, 'manual');
+  assert.deepEqual(result.manual.map(item => item.file), [HARNESS_MANIFEST]);
+  assert.match(result.manual[0].reason, /양쪽 값이 다른 키: k\./);
+  assert.match(result.manual[0].reason, /--keys k:\n\s+k=computed/);
+  assert.ok(findConflictMarkers(r.read(HARNESS_MANIFEST)).length, 'the manifest is not rewritten or picked by the tool');
+});
+
+test('a harness manifest conflict is not computed while other conflicts are open, then shown on --continue', () => {
+  const r = manifestConflictRepo({ otherConflict: true });
+  const first = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: () => {} });
+  assert.deepEqual(first.manual.map(item => item.file).sort(), [HARNESS_MANIFEST, 'src/a.ts'].sort());
+  const manifest = first.manual.find(item => item.file === HARNESS_MANIFEST);
+  assert.match(manifest.reason, /다른 충돌을 모두 푼 뒤 `node scripts\/harness-baseline-manifest\.mjs --keys k`/);
+  assert.doesNotMatch(manifest.reason, /computed/, 'inputs of the computation are still conflicted');
+
+  r.write('src/a.ts', 'merged\n');
+  r.git('add', 'src/a.ts');
+  const resumed = mergeMainAndRegenerate({ cwd: r.dir, resume: true, generators: [fakeGenerator], log: () => {} });
+  assert.equal(resumed.status, 'manual');
+  assert.deepEqual(resumed.manual.map(item => item.file), [HARNESS_MANIFEST]);
+  assert.match(resumed.manual[0].reason, /k=computed/);
 });
 
 test('uncommitted work is never mixed into the merge', () => {
