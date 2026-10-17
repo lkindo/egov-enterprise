@@ -115,7 +115,7 @@ E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-sco
 처음에는 합계 약 4분 12초를 근거로 1슬롯이었으나, ADR-0029 L4 뒤 [main 실행 38985970318](https://github.com/lkindo/egov-enterprise/actions/runs/38985970318)에서
 여덟 job 합이 1005초로 늘어 하나씩 이어 돈 마지막 범위가 1486초에 끝났고(나머지 job은 1025초 안), 이 잡이 전수 CI의
 임계 경로가 됐다. 그래서 2슬롯으로 늘리고 같은 실행의 job 시간이 긴 순서(verify·validate·standardize·collect·protect·
-runtime-state·registry·converter)로 선언한다(DEC-OPS-337). 슬롯 수와 순서는 [필수 체크 계약](../../scripts/required-checks-contract.test.mjs)이
+runtime-state·registry·converter)로 선언한다([ADR-0032](../02-architecture/decisions/ADR-0032-migration-pit-two-slots.md), DEC-OPS-337). 슬롯 수와 순서는 [필수 체크 계약](../../scripts/required-checks-contract.test.mjs)이
 정확히 대조한다. 벽시계 효과는 같은 SHA 연속 green 실행의 중앙값으로 판정하고, 범위의 시간이 크게 바뀌면 다시 재고
 순서를 고친다. 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
 재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음
