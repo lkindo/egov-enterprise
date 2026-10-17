@@ -60,11 +60,11 @@ JS·계약·분류기 변경에는 영향 테스트와 프론트 타입·관련 
 
 | 검사 | 확인하는 내용 |
 |---|---|
-| [카탈로그 계약](../../scripts/atlas-catalog.test.mjs) | 원본 항목 대응·누락·중복·미확인 유지·결정성 |
-| [생성물 계약](../../scripts/atlas-generation.test.mjs) | 입력과 HTML 일치, 데이터 script 경계, 변경 시 재생성, 실행 연결 |
-| [Atlas 계약](../../frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts) | 실제 JS 표시·수치 전수 대조·검색·이전 주소·상태·회귀 |
+| [카탈로그 계약](../../scripts/atlas-catalog.test.mjs) | 원본 항목 대응·누락·중복·미확인 유지·결정성, 독립 계수 규칙(시험 annotation·공유 PostgreSQL 부모·waiver 표지)의 합성 fixture 회귀 |
+| [생성물 계약](../../scripts/atlas-generation.test.mjs) | 입력과 HTML 일치(신선도의 단독 소유), 데이터 script 경계, 변경 시 재생성, 실행 연결 |
+| [Atlas 계약](../../frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts) | HTML에 실린 catalog를 기대값으로 실제 JS 표시·수치 전수 대조·검색·이전 주소·상태·회귀(신선도는 다시 계산하지 않는다) |
 | [문서 링크 계약](../../scripts/docs-link-integrity.test.mjs) | 소유 문서·헌법 artifact·metadata의 파일·제목·HTML 앵커 |
-| [범위 분류 계약](../../scripts/ci-change-scope.test.mjs) | Atlas 원본·생성기 변경의 검사 선택과 기존 소스 검증 유지 |
+| [범위 분류 계약](../../scripts/ci-change-scope.test.mjs), [도구 경로 표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs) | Atlas 원본·생성기 변경의 검사 선택과 기존 소스 검증 유지. Atlas 도구·소비 원장의 축은 그 경로를 읽는 시험에서 다시 계산한다(DEC-OPS-336) |
 
 문서 링크 검사는 브라우저 렌더러나 HTML 보안 정제기가 아니다. script/style 예시는 줄 위치를 보존해 가리고, 제목의 HTML 표시는 더 이상 제거할 태그가 없을 때까지 처리한다. 예시를 지운 자리에 가짜 제목이 생겨 끊어진 링크를 정상으로 오인하지 않는지 부정 테스트로 확인한다. 카탈로그 테스트의 임시 파일은 배타적으로 생성해 기존 파일과 충돌하면 내용을 보존한 채 실패한다.
 

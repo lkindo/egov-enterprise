@@ -52,8 +52,8 @@ null/빈 문자열은 보존한다. 일정·행사·설문지·온라인 설문�
 삭제 후 404 응답까지 확인했다.
 
 미소비 operation은 11에서 10으로 감소했다. 미소비·화면 고아의 현재 수치는 이 문서가 아니라
-[operation census](../../config/governance/operation-consumer-census.json)의 `expected`가 정본이며, 그 값은
-공용 메모리 계약이 GAP-WIRING-001 행과 양방향으로 대조한다.
+[operation census](../../config/governance/operation-consumer-census.json)의 `expected`가 정본이다. 공용 메모리
+GAP-WIRING-001 행은 그 수를 다시 적지 않고 원장에 링크하며, 공용 메모리 계약이 수치 재진술을 막는다(DEC-OPS-340).
 이 수치는 이름 기반의 보수적 정적 분석이며 완전한 호출 그래프는 아니다. 예를 들어 다른
 서비스의 `updateTemplate` 호출만으로 설문 서비스까지 소비 중인 것으로 집계될 수 있었다.
 현재 설문 수정은 실제 화면 호출과 동작 테스트로 확인한다. 새로운 상세 메서드 이름도

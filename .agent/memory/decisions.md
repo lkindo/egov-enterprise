@@ -425,6 +425,12 @@ refresh_triggers:
 | DEC-OPS-332 | accepted | 게시판 유형 이름의 정본을 화면 상수 하나로 두고 공통코드 COM004 조인을 걷는다(GAP-BOARD-002, 2026-10-16 사용자 선택). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-332) | 2026-10-16 | DEC-OPS-262 의 COM004 게시판 소유 부분, DEC-OPS-325 의 바인딩 6행 중 `bbs_type_cd` 행 |
 | DEC-OPS-333 | accepted | rewrite 프록시는 백엔드 연결을 유휴 재사용하지 않고, 격리 E2E 의 Next 서버는 클라이언트보다 오래 유휴를 유지한다(GAP-FE-002 종료). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-333) | 2026-10-16 | - |
 | DEC-OPS-334 | accepted | 허브 탭 슬롯을 허브마다 나눈다(GAP-SLOT-001 종료). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-334) | 2026-10-16 | DEC-OPS-274·275·277·284 의 '`hub-tabs` 슬롯 하나·항목의 `hub` 값으로 허브 구분' 부분 |
+| DEC-OPS-335 | accepted | 계약·하네스의 반복 실행 비용과 중복 판정을 줄이고 검사 모집단·단언은 유지한다(코덱스 작업분과 보완). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-335) | 2026-10-17 | DEC-OPS-264 ①·DEC-OPS-290 ④ 의 시작 구성 승인 exact 대조 소유(pack-tagged-registry → 정밀 점검 동치 계약) |
+| DEC-OPS-336 | accepted | Atlas 도구와 operation 소비 원장을 생성기·도구 전용 경로 표에 넣는다(DEC-OPS-297 확장). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-336) | 2026-10-17 | 범위 분류 회귀 시험이 Atlas 도구 셋을 미분류 전수로 고정하던 부분(Atlas 도입 2026-09-10) |
+| DEC-OPS-337 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-337) | 2026-10-17 | ADR-0026 결정 10 의 `mutation-scope-migration` `max-parallel: 1` 부분 |
+| DEC-OPS-338 | accepted | 로컬 검증은 정적 검사를 운영 계약보다 먼저 돌리고 명시한 TZ 를 따르며, verify binding 은 범위 분기에서 닿는 줄이어야 한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-338) | 2026-10-17 | - |
+| DEC-OPS-339 | accepted | 메뉴 스냅숏 해시는 메뉴 inventory 에 닿을 수 있는 SQL 입력만 담는다(형식 v2). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-339) | 2026-10-17 | 메뉴 스냅숏 해시가 모든 migration·seed·인가 Contract SQL 을 입력으로 삼던 부분 |
+| DEC-OPS-340 | accepted | 공용 메모리 행은 원장이 세는 수를 다시 적지 않고 원장에 링크한다(GAP-WIRING-001·GAP-ARCH-001). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-340) | 2026-10-17 | 공용 메모리 계약의 GAP-WIRING-001·GAP-ARCH-001 수치 양방향 결속 |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

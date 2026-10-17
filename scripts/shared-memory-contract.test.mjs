@@ -198,84 +198,94 @@ function assertE2eShardContractMatches(context, requiredChecksText) {
   );
 }
 
-/** 결합 census 는 원장(config/governance/cross-domain-coupling-census.json)의 edge 를 대상 모듈별로 센다(DEC-OPS-090). */
-function assertCouplingMemoryMatches(gaps, source) {
-  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-ARCH-001 |'));
-  assert.ok(row, 'GAP-ARCH-001의 현재 결합 census가 필요합니다.');
-  const edges = JSON.parse(source).edges;
-  assert.ok(Array.isArray(edges) && edges.length > 0, '결합 census 원장의 edge를 읽을 수 없습니다.');
-  for (const [label, module] of [
-    ['app→app', 'business-app'],
-    ['app→core', 'business-core'],
-  ]) {
-    const actual = row.match(new RegExp(`${label} \\*\\*(\\d+)건\\*\\*`, 'u'));
-    assert.ok(actual, `${label}: 메모리의 census를 읽을 수 없습니다.`);
-    const expected = edges.filter((edge) => edge.module === module).length;
-    assert.equal(Number(actual[1]), expected, `${label}: 공용 메모리 census가 현재 하네스와 다릅니다.`);
-  }
-}
-
-test('active coupling memory matches the current source census', () => {
-  assertCouplingMemoryMatches(
-    readRepoFile('.agent/memory/known-gaps.md'),
-    readRepoFile('config/governance/cross-domain-coupling-census.json'),
-  );
-});
-
-test('coupling memory rejects stale and missing census claims', () => {
-  const gaps = readRepoFile('.agent/memory/known-gaps.md');
-  const source = readRepoFile('config/governance/cross-domain-coupling-census.json');
-  for (const label of ['app→app', 'app→core']) {
-    const stale = gaps.replace(new RegExp(`${label} \\*\\*\\d+건\\*\\*`, 'u'), `${label} **999건**`);
-    assert.notEqual(stale, gaps);
-    assert.throws(() => assertCouplingMemoryMatches(stale, source), /현재 하네스와 다릅니다/u);
-  }
-  const missing = gaps.replace(/^\| GAP-ARCH-001 \|[^\n]*\n/mu, '');
-  assert.notEqual(missing, gaps);
-  assert.throws(() => assertCouplingMemoryMatches(missing, source), /현재 결합 census가 필요합니다/u);
-});
-
-/**
- * 배선 census 는 원장(config/governance/operation-consumer-census.json)의 `expected` 를 정본으로 쓴다.
- * 결합 census(GAP-ARCH-001)와 같은 형태다 — 공용 메모리가 수치를 적는다면 그 수치는 원장과 결속돼야
- * 하고, 원장만 바뀌고 메모리가 남으면 red 다. 이 결속이 없던 동안 2026-09-10 의 원장 갱신
- * (371→385·32→29)이 메모리·문서에 반영되지 않은 채 남았다.
+/*
+ * [2026-10-17 DEC-OPS-340] 원장이 세는 수는 원장 하나가 정본이다. 결합 census(config/governance/cross-domain-coupling-census.json,
+ * DEC-OPS-090)와 배선 census(config/governance/operation-consumer-census.json 의 `expected`)를 공용 메모리 행에 다시 적으면
+ * 원장이 바뀔 때마다 메모리 행을 같이 고쳐야 하고, 빠뜨리면 낡은 수가 남는다(2026-09-10 원장 갱신 371→385·32→29 가 메모리에
+ * 남지 않은 것도 이 복제에서 생겼다). 그래서 수치 일치를 대조하지 않고, 행이 원장에 링크하는지와 원장 라벨의 수치 재진술
+ * (`**N개**`·`**N건**`, 굵게 표시 없이도)이 어느 공용 메모리 행에도 없는지를 본다. 정본 게이트(배선 census 의 단조 래칫,
+ * 결합 원장의 edge 정확 집합)는 그대로라 판정 신호는 줄지 않는다.
  */
-function assertWiringMemoryMatches(gaps, source) {
-  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-WIRING-001 |'));
-  assert.ok(row, 'GAP-WIRING-001의 현재 배선 census가 필요합니다.');
-  const { expected } = JSON.parse(source);
-  assert.ok(expected && typeof expected === 'object', '배선 census 원장의 expected를 읽을 수 없습니다.');
-  for (const [label, key] of [
-    ['operation', 'operationCount'],
-    ['unwired', 'unwiredMax'],
-    ['화면 고아', 'screenOrphanMax'],
-  ]) {
-    const actual = row.match(new RegExp(`${label} \\*\\*(\\d+)개\\*\\*`, 'u'));
-    assert.ok(actual, `${label}: 메모리의 census를 읽을 수 없습니다.`);
-    assert.equal(typeof expected[key], 'number', `${label}: 원장 expected.${key}가 없습니다.`);
-    assert.equal(Number(actual[1]), expected[key], `${label}: 공용 메모리 census가 현재 원장과 다릅니다.`);
+export const LEDGER_MEMORY_BINDINGS = Object.freeze([
+  Object.freeze({ id: 'GAP-ARCH-001', ledger: 'config/governance/cross-domain-coupling-census.json', labels: Object.freeze(['app→app', 'app→core']) }),
+  Object.freeze({ id: 'GAP-WIRING-001', ledger: 'config/governance/operation-consumer-census.json', labels: Object.freeze(['operation', 'unwired', '화면 고아']) }),
+]);
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+const ledgerCountRestatement = (label) => new RegExp(`${escapeRegExp(label)}\\s*\\*{0,2}\\d[\\d,]*\\s*(?:개|건)`, 'u');
+
+/** files: { 'known-gaps.md': text, ... } — 공용 메모리 파일 이름과 원문. 위반 문장 목록을 돌려준다. */
+export function ledgerMemoryViolations(files) {
+  const violations = [];
+  const gapRows = (files['known-gaps.md'] ?? '').split(/\r?\n/);
+  for (const { id, ledger } of LEDGER_MEMORY_BINDINGS) {
+    const row = gapRows.find((line) => line.startsWith(`| ${id} |`));
+    if (!row) {
+      violations.push(`${id}: 활성 gap 행이 필요합니다.`);
+    } else if (!row.includes(`](../../${ledger})`)) {
+      violations.push(`${id}: 원장 링크(${ledger})가 필요합니다 — 현재 수는 원장이 정본입니다.`);
+    }
   }
+  for (const [file, text] of Object.entries(files)) {
+    for (const line of text.split(/\r?\n/)) {
+      for (const { ledger, labels } of LEDGER_MEMORY_BINDINGS) {
+        for (const label of labels) {
+          if (ledgerCountRestatement(label).test(line)) {
+            violations.push(`${file}: '${label}' 수를 다시 적었습니다 — ${ledger} 가 정본이니 링크만 남기십시오.`);
+          }
+        }
+      }
+    }
+  }
+  return violations;
 }
 
-test('active wiring memory matches the current operation census', () => {
-  assertWiringMemoryMatches(
-    readRepoFile('.agent/memory/known-gaps.md'),
-    readRepoFile('config/governance/operation-consumer-census.json'),
-  );
+function memoryFiles() {
+  return Object.fromEntries(Object.keys(documents).map((file) => [file, fs.readFileSync(path.join(memoryDir, file), 'utf8')]));
+}
+
+test('ledger-derived counts stay in their ledgers and memory rows link to them', () => {
+  assert.deepEqual(ledgerMemoryViolations(memoryFiles()), []);
 });
 
-test('wiring memory rejects stale and missing census claims', () => {
-  const gaps = readRepoFile('.agent/memory/known-gaps.md');
-  const source = readRepoFile('config/governance/operation-consumer-census.json');
-  for (const label of ['operation', 'unwired', '화면 고아']) {
-    const stale = gaps.replace(new RegExp(`${label} \\*\\*\\d+개\\*\\*`, 'u'), `${label} **999개**`);
-    assert.notEqual(stale, gaps);
-    assert.throws(() => assertWiringMemoryMatches(stale, source), /현재 원장과 다릅니다/u);
+test('ledger memory bindings are red for restated counts, a missing link and a missing row', () => {
+  const files = memoryFiles();
+  const gaps = files['known-gaps.md'];
+  for (const { id, ledger, labels } of LEDGER_MEMORY_BINDINGS) {
+    const row = gaps.split(/\r?\n/).find((line) => line.startsWith(`| ${id} |`));
+    assert.ok(row, `${id}: 합성 변이를 넣을 행이 없습니다.`);
+    for (const [label, restated] of labels.flatMap((name) => [[name, `${name} **10개**`], [name, `${name} 39건`]])) {
+      const cells = row.split(' | ');
+      cells[4] = `${restated} ${cells[4]}`;
+      const mutated = gaps.replace(row, cells.join(' | '));
+      assert.notEqual(mutated, gaps);
+      assert.ok(
+        ledgerMemoryViolations({ ...files, 'known-gaps.md': mutated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
+        `${id}: '${restated}' 재진술이 red 가 아닙니다.`,
+      );
+    }
+    const unlinked = gaps.replace(row, row.split(`](../../${ledger})`).join('](../../config/governance/unrelated.json)'));
+    assert.notEqual(unlinked, gaps);
+    assert.ok(
+      ledgerMemoryViolations({ ...files, 'known-gaps.md': unlinked }).some((message) => message.startsWith(`${id}: 원장 링크`)),
+      `${id}: 원장 링크를 지워도 red 가 아닙니다.`,
+    );
+    const missing = gaps.replace(`${row}\n`, '').replace(`${row}\r\n`, '');
+    assert.notEqual(missing, gaps);
+    assert.ok(
+      ledgerMemoryViolations({ ...files, 'known-gaps.md': missing }).some((message) => message === `${id}: 활성 gap 행이 필요합니다.`),
+      `${id}: 행을 지워도 red 가 아닙니다.`,
+    );
   }
-  const missing = gaps.replace(/^\| GAP-WIRING-001 \|[^\n]*\n/mu, '');
-  assert.notEqual(missing, gaps);
-  assert.throws(() => assertWiringMemoryMatches(missing, source), /현재 배선 census가 필요합니다/u);
+  // 다른 메모리 파일의 행에 같은 수를 옮겨 적어도 red 다.
+  const elsewhere = `${files['project-context.md']}\n| CTX-999 | unwired **10개** · app→core **39건** | [원장](../../config/governance/operation-consumer-census.json) | 2099-01-01 |\n`;
+  assert.equal(
+    ledgerMemoryViolations({ ...files, 'project-context.md': elsewhere }).filter((message) => message.startsWith('project-context.md:')).length,
+    2,
+  );
+  // 수가 없는 라벨 언급과 방향 서술은 재진술이 아니다.
+  assert.deepEqual(ledgerMemoryViolations({ 'known-gaps.md': '', 'x.md': 'operation 수·unwired·화면 고아 상한은 원장이 정본이다. app→app 결합은 만들지 않는다.' })
+    .filter((message) => message.startsWith('x.md:')), []);
 });
 
 function assertDocumentationAdrIndexMatches(index, ids) {
