@@ -60,12 +60,22 @@ export function formatHarnessBaselineDiff(diff) {
 
 const USAGE = '사용법: node scripts/harness-baseline-manifest.mjs --check | --write | --keys <키…>';
 
+/** 파일이 없으면 undefined. 존재를 먼저 확인하고 읽지 않는다 — 확인과 사용 사이의 경합(TOCTOU)을 만들지 않는다. */
+function readOptional(file) {
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch (failure) {
+    if (failure.code === 'ENOENT') return undefined;
+    throw failure;
+  }
+}
+
 /** CLI 본체. 반환값이 종료 코드다. 시험은 `compute`·`log`·`error` 를 바꿔 넘긴다. */
 export function main(argv, { root = repoRoot, compute = computeHarnessBaselineEntries, log = console.log, error = console.error } = {}) {
   const modes = ['--check', '--write', '--keys'].filter(mode => argv.includes(mode));
   if (modes.length !== 1) { error(USAGE); return 2; }
   const manifestFile = path.join(root, ...MANIFEST_PATH.split('/'));
-  const text = fs.existsSync(manifestFile) ? fs.readFileSync(manifestFile, 'utf8') : undefined;
+  const text = readOptional(manifestFile);
   const actual = compute(root);
 
   if (modes[0] === '--keys') {
