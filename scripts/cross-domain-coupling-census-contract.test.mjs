@@ -46,7 +46,7 @@ test('원장 edge 가 소유대로 생성기의 실제 제거 계획에서 남�
   assert.deepEqual([...violations, ...ledgerViolations(context, entries)], []);
 });
 
-test('app→app·app→core edge 수는 공용 메모리 GAP-ARCH-001 이 인용할 수 있게 원장에서 파생된다', async () => {
+test('app→app·app→core edge 수는 원장에서 파생되고 원장은 비지 않는다', async () => {
   const { root } = await repositoryContext();
   const registry = readRepoJson(root, REGISTRY_PATH);
   const count = (module) => registry.edges.filter((edge) => edge.module === module).length;
@@ -57,9 +57,10 @@ test('app→app·app→core edge 수는 공용 메모리 GAP-ARCH-001 이 인용
 
     0 을 "세지 못했다" 와 구분하는 것은 이 floor 가 아니라 CrossDomainCouplingLinterTest 의 exact-set
     대조다 — 코드에 app→app 참조가 있는데 원장에 없으면 그쪽이 red 이고, 원장에만 있으면 유령 edge 로
-    red 다. 여기서 막아야 하는 것은 원장이 통째로 비어 메모리 수치가 vacuous 하게 0 이 되는 경우다.
+    red 다. 여기서 막아야 하는 것은 원장이 통째로 비어 공용 메모리가 링크하는 수가 vacuous 하게 0 이 되는
+    경우다(DEC-OPS-340 뒤 메모리는 수를 다시 적지 않고 원장에 링크한다).
   */
-  assert.ok(registry.edges.length > 0, '원장이 비면 공용 메모리의 edge 수가 vacuous 하다');
+  assert.ok(registry.edges.length > 0, '원장이 비면 공용 메모리가 링크하는 edge 수가 vacuous 하다');
   assert.ok(count('business-core') > 0, 'app→core 축이 비면 원장이 모집단을 잃은 것이다');
 });
 

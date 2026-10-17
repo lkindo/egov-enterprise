@@ -84,6 +84,7 @@ refresh_triggers:
 | ADR-0029 | accepted | 레거시 표준화 이관은 수집→식별→적합성→확정→설계→적재→대사 순서이고, 도구가 후보와 근거를 만들고 사람이 Git 검토 원장으로 확정한다. 원장 digest 는 plan 에 결속되고, 민감 컬럼은 도구의 호환 암호화로 적재하며, ADR-0008 경계는 그대로다. 구현은 L1~L4 로 나눈다. | 표준화 단계가 도구 밖의 손 작업이라 이관 비용과 오류의 대부분을 만들었고, raw JDBC 적재가 주민번호 암호화를 지나지 않았다. 2026-10-13 사용자 결정(Q1~Q4·Q8~Q10, Q5 의 제어 테이블 변경)과 위임(Q5 표현·Q6·Q7). | [ADR-0029](../../docs/02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 2026-10-13 | - |
 | ADR-0030 | accepted | ADR-0027 이후 승인된 PR 제외 선언과 시작 구성에 덮인 야간 단독 폐포 제거를 후속 ADR로 승격한다. 기존 실행·실패 경계는 유지한다. | DEC-OPS-296·301에만 남던 ADR 변경을 규범 정본에 연결한다. 승인일은 원문대로이며 2026-10-17은 문서 정리일이다. | [ADR-0030](../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 2026-10-13 | ADR-0027 결정 2·4의 해당 부분 |
 | ADR-0031 | accepted | 기존 승인에 따른 원장 확정·비표준 대상·미확인 허용값·chunk 실패 처리와 L3 경계를 후속 ADR로 승격한다. 기존 안전 경계와 기관 승인은 유지한다. | DEC-OPS-310·315·316·317·319·325의 변경과 ADR-0029를 함께 읽을 수 있게 한다. 2026-10-17은 문서 정리일이다. | [ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 2026-10-15 | ADR-0029 결정 3·8·L3 실행 경계의 해당 부분; 결정 7의 좁은 구현 명시 |
+| ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | ADR-0029 이후 범위가 여덟 개로 늘어 한 슬롯의 이관 PIT가 전수 CI의 임계 경로가 됐다(DEC-OPS-337). | [ADR-0032](../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
 
 ## 운영 결정 index
 

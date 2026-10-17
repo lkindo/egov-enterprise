@@ -402,7 +402,7 @@ test('Atlas and operation-census tooling retains its audited consumers without u
     for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED]) {
       assert.equal(result[axis], entry.axes.includes(axis), `${file}: ${axis}`);
     }
-    assert.equal(result.atlas, true, file);
+    assert.equal(result.atlas, file !== 'config/governance/operation-consumer-census.json', file);
     assert.equal(result.governance, true, file);
     assert.equal(result.sast, true, file);
     assert.equal(result.reusableCustom, true, file);
