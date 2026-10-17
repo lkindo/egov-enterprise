@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -126,7 +127,7 @@ class HarnessSourceAccessContractTest {
 
         for (Path source : HarnessSourceIndex.javaSources(harnessRoot)) {
             String fileName = source.getFileName().toString();
-            Matcher matcher = DIRECT_ACCESS.matcher(HarnessSourceIndex.read(source));
+            Matcher matcher = directAccessMatcher(HarnessSourceIndex.read(source));
             while (matcher.find()) {
                 String operation = matcher.group(1);
                 Allowance allowance = ALLOWANCES.getOrDefault(fileName, List.of()).stream()
@@ -156,19 +157,74 @@ class HarnessSourceAccessContractTest {
     }
 
     @Test
-    @DisplayName("부정 증명: 직접 Files.walk/readString/readAllLines/list 호출은 위반으로 인식한다")
+    @DisplayName("부정 증명: 직접 파일 읽기·순회 호출은 주석을 끼워도 위반으로 인식한다")
     void detectorRejectsDirectAccess() {
-        String injected = "Files" + ".walk(root);\nvar text = Files" + ".readString(path);\n"
-                + "var lines = Files" + ".readAllLines(path);\nvar children = Files" + ".list(dir);";
-        Matcher matcher = DIRECT_ACCESS.matcher(injected);
+        String injected = "Files.walk(root);\nvar text = java.nio.file.Files /* source */ . readString(path);\n"
+                + "var lines = Files.readAllLines(path);\nvar children = Files.list(dir);\n"
+                + "var bytes = Files.readAllBytes(path);\nvar stream = Files.lines(path);";
+        Matcher matcher = directAccessMatcher(injected);
         List<String> operations = new ArrayList<>();
         while (matcher.find()) {
             operations.add(matcher.group(1));
         }
-        assertEquals(List.of("walk", "readString", "readAllLines", "list"), operations);
+        assertEquals(List.of("walk", "readString", "readAllLines", "list", "readAllBytes", "lines"), operations);
         assertTrue(ALLOWANCES.values().stream().flatMap(List::stream)
                 .allMatch(allowance -> !allowance.reason().isBlank()),
                 "모든 예외에는 검토 가능한 사유가 있어야 합니다.");
+    }
+
+    @Test
+    @DisplayName("주석·문자열·문자·text block의 예시는 파일 접근이 아니며 뒤의 실제 호출은 그대로 탐지한다")
+    void detectorIgnoresNonCodeWithoutHidingRealCalls() {
+        String examples = "// Files.walk(root);\n/* Files.readString(path); */\n"
+                + "String sample = \"Files.readAllLines(path)\";\n"
+                + "String escaped = \"\\\" Files.readAllBytes(path);\";\n"
+                + "char quote = '\\\''; char slash = '\\\\';\n"
+                + "String block = \"\"\"\nFiles.list(dir);\n\\\"\"\" Files.lines(path);\n\"\"\";\n";
+        assertFalse(directAccessMatcher(examples).find());
+
+        String actual = examples + "Files.readString(path);";
+        Matcher matcher = directAccessMatcher(actual);
+        assertTrue(matcher.find());
+        assertEquals("readString", matcher.group(1));
+        assertEquals(examples.length(), matcher.start(), "진단 위치는 원문과 같아야 한다");
+        assertFalse(matcher.find());
+    }
+
+    /** 비코드 영역을 같은 길이의 공백으로 가려 호출만 검사하고 원문의 행·오프셋은 유지한다. */
+    private static Matcher directAccessMatcher(String source) {
+        StringBuilder code = new StringBuilder(source);
+        for (int cursor = 0; cursor < source.length();) {
+            int start = cursor;
+            if (source.startsWith("//", cursor)) {
+                int newline = source.indexOf('\n', cursor + 2);
+                cursor = newline < 0 ? source.length() : newline;
+            } else if (source.startsWith("/*", cursor)) {
+                int close = source.indexOf("*/", cursor + 2);
+                cursor = close < 0 ? source.length() : close + 2;
+            } else if (source.startsWith("\"\"\"", cursor)) {
+                cursor += 3;
+                while (cursor < source.length()) {
+                    if (source.charAt(cursor) == '\\') {
+                        cursor = Math.min(cursor + 2, source.length());
+                    } else if (source.startsWith("\"\"\"", cursor)) {
+                        cursor += 3;
+                        break;
+                    } else {
+                        cursor++;
+                    }
+                }
+            } else if (source.charAt(cursor) == '"' || source.charAt(cursor) == '\'') {
+                cursor = HarnessSourceIndex.skipLiteral(source, cursor, source.charAt(cursor)) + 1;
+            } else {
+                cursor++;
+                continue;
+            }
+            for (int index = start; index < cursor; index++) {
+                if (source.charAt(index) != '\n' && source.charAt(index) != '\r') code.setCharAt(index, ' ');
+            }
+        }
+        return DIRECT_ACCESS.matcher(code);
     }
 
     @Test

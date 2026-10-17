@@ -390,3 +390,23 @@ test('generator-tool paths do not open a fast path around unknown, policy or cla
     assert.deepEqual([...entry.axes], [...entry.axes].sort(), entry.path);
   }
 });
+
+test('Atlas and operation-census tooling retains its audited consumers without unrelated product lanes', () => {
+  for (const file of ['scripts/atlas-catalog.mjs', 'scripts/atlas-catalog.test.mjs',
+    'scripts/build-atlas.mjs', 'config/governance/operation-consumer-census.json']) {
+    const result = classifyChangedFiles([file]);
+    const entry = generatorToolEntry(file);
+    assert.ok(entry, file);
+    assert.deepEqual(result.unknownFiles, [], file);
+    assert.equal(result.docsOnly, false, file);
+    for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED]) {
+      assert.equal(result[axis], entry.axes.includes(axis), `${file}: ${axis}`);
+    }
+    assert.equal(result.atlas, true, file);
+    assert.equal(result.governance, true, file);
+    assert.equal(result.sast, true, file);
+    assert.equal(result.reusableCustom, true, file);
+    const unknown = classifyChangedFiles([file, 'scripts/new-unmapped-tool.mjs']);
+    for (const axis of AXES.filter(axis => axis !== 'atlas')) assert.equal(unknown[axis], true, `${file}: unknown input restores ${axis}`);
+  }
+});

@@ -122,6 +122,17 @@ function textOf(id: string) {
   section.querySelectorAll('[data-catalog],script,style').forEach(node => node.remove());
   return section.textContent?.replace(/\s+/g, ' ').trim() || '';
 }
+const REQUIRED_RULE_TERMS = ['AGENTS.md', 'H1', 'H2', 'H3', 'H4', 'H5',
+  'project-context.md', 'decisions.md', 'known-gaps.md',
+  '~/.gemini/GEMINI.md', '~/.claude/CLAUDE.md', '~/.codex/AGENTS.md'];
+function missingRuleTerms(narrative: string): string[] {
+  return REQUIRED_RULE_TERMS.filter(term => !narrative.includes(term));
+}
+function snapshotWaitValues(workflow: string): number[] {
+  // This env value is an integer scalar; YAML quoting, indentation and comments are presentation.
+  return [...workflow.matchAll(/^[ \t]*SNAPSHOT_WAIT_SECONDS:[ \t]*(?:"(\d+)"|'(\d+)'|(\d+))[ \t]*(?:#[^\r\n]*)?\r?$/gm)]
+    .map(match => Number(match[1] ?? match[2] ?? match[3]));
+}
 function filesUnder(directory: string, suffix: string): string[] {
   return readdirSync(join(REPO_DIR, directory), { withFileTypes: true }).flatMap(entry => {
     const file = `${directory}/${entry.name}`;
@@ -432,16 +443,11 @@ describe('Governance Atlas rendered source and interaction contract', () => {
 
   it('keeps governance authority, native loading, identity and read-only data boundaries explicit', () => {
     const rules = textOf('content-rules');
-    for (const term of ['AGENTS.md', 'H1', 'H2', 'H3', 'H4', 'H5',
-      'project-context.md', 'decisions.md', 'known-gaps.md',
-      '~/.gemini/GEMINI.md', '~/.claude/CLAUDE.md', '~/.codex/AGENTS.md']) {
-      expect(rules, term).toContain(term);
-    }
+    expect(missingRuleTerms(rules)).toEqual([]);
     expect(rules).toMatch(/비규범|파생 인덱스/);
     expect(rules).toMatch(/자동 상속|독립.*로드|자동.*전파/);
-    expect(read('AGENTS.md')).toContain('vendor-neutral 프로젝트 규칙 SSOT');
-    expect(read('GEMINI.md')).toContain('@./AGENTS.md');
-    expect(read('CLAUDE.md')).toContain('@AGENTS.md');
+    // Source authority and adapter imports belong to shared-memory-contract.test.mjs;
+    // policy/approval regressions belong to governance-policy-contract.test.mjs. Atlas owns the rendered guidance.
     const data = textOf('content-data');
     expect(data).toMatch(/db[- ]bridge/i);
     expect(data).toMatch(/읽기 전용|read-only/);
@@ -473,13 +479,33 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(verification).toMatch(/pre-push[\s\S]*우회/);
     expect(read('.github/workflows/dependency-submission.yml')).toContain('dependency-graph: generate-and-upload');
     expect(read('.github/workflows/dependency-submission-publish.yml')).toContain('workflow_run:');
-    expect(read('.github/workflows/ci.yml')).toContain(`SNAPSHOT_WAIT_SECONDS: "${current.facts.snapshotWaitSeconds}"`);
+    expect(snapshotWaitValues(read('.github/workflows/ci.yml'))).toEqual([current.facts.snapshotWaitSeconds]);
     expect(read('scripts/frontend-audit-policy.mjs')).toContain('pnpm audit --json --audit-level low');
     expect(read('scripts/run-load-test.ps1')).toContain('-e "K6_SCENARIO=$scenario"');
     const controller = read('api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java');
     expect(controller).toContain('ApiResponse<DashboardResponse>');
-    expect(read('frontend/src/queries/board-home-query.ts')).toContain('executeGeneratedOperation(getDashboardDataOperation');
+    // board-home-query.test.ts executes the dashboard request and rejects invalid responses;
+    // generated-boundary-census.test.mjs owns the generated transport binding.
     expect(textOf('content-flows')).toContain('DashboardResponse');
+  });
+
+  it('accepts equivalent snapshot wait scalars but rejects missing, changed or duplicate declarations', () => {
+    const wait = Number(current.facts.snapshotWaitSeconds);
+    for (const value of [String(wait), `'${wait}'`, `"${wait}"`]) {
+      expect(snapshotWaitValues(`  SNAPSHOT_WAIT_SECONDS: ${value} # bounded wait\r\n`)).toEqual([wait]);
+    }
+    for (const source of ['', `# SNAPSHOT_WAIT_SECONDS: ${wait}`, `SNAPSHOT_WAIT_SECONDS: ${wait + 1}`,
+      `SNAPSHOT_WAIT_SECONDS: \${{ env.UNVERIFIED_WAIT }}`,
+      `SNAPSHOT_WAIT_SECONDS: ${wait}\nSNAPSHOT_WAIT_SECONDS: ${wait}`]) {
+      expect(snapshotWaitValues(source)).not.toEqual([wait]);
+    }
+  });
+
+  it('rejects missing required governance guidance even when source policies remain intact', () => {
+    const rules = textOf('content-rules');
+    for (const term of REQUIRED_RULE_TERMS) {
+      expect(missingRuleTerms(rules.replaceAll(term, ''))).toContain(term);
+    }
   });
 
   it('keeps migration phases and partial commit/recovery limits distinct from production proof', () => {

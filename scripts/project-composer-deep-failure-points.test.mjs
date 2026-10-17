@@ -3,8 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { compositionDigest } from './project-composer-catalog.mjs';
-import { DEEP_BLOCKER_LABELS, compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
-import { supportFileOwners } from './project-composer-source.mjs';
+import { DEEP_BLOCKER_LABELS, compositionDeepPlan, deepSummary, projectionAcknowledgementBlockers } from './project-composer-deep.mjs';
+import { composerProfile, supportFileOwners } from './project-composer-source.mjs';
 import { readRouteRows } from './reusable-page-survival.mjs';
 import { normalize } from './reusable-source-tree.mjs';
 import { root, catalog, modules, ownership, withExpectations, files, compose, codes } from './project-composer-deep.test-helpers.mjs';
@@ -15,6 +15,7 @@ import { root, catalog, modules, ownership, withExpectations, files, compose, co
 test('every generator failure point becomes a labelled blocker before Docker starts', () => {
   const core = compose({ preset: 'core' });
   const coreGates = modules.extras.presetExpectations.core.gates;
+  const coreCascade = modules.extras.presetExpectations.core.javaCascade;
   assert.ok(coreGates.length > 1, 'the core preset acknowledges removed gates');
 
   // 승인 목록에서 실제로 지워지는 게이트 하나를 빼면 승인되지 않은 제거다. 승인은 시작 구성 선언(presets.json)에서 온다.
@@ -24,26 +25,34 @@ test('every generator failure point becomes a labelled blocker before Docker sta
   assert.deepEqual(deep.blockers[0].files, [coreGates[0].file]);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.GATE_UNACKNOWLEDGED);
 
+  // 이 실제 투영은 연쇄 승인도 exact 검증해 coreCascade가 실제 집합임을 확인했다.
+  // 승인 목록만 바꾸는 경우는 같은 관측값을 재사용한다. 소스·구성·파일목록 변이는 아래에서 전체 경로를 다시 탄다.
+  const observed = { removedGates: deep.removedGates, ruleRemovals: deep.ruleRemovals, javaCascade: coreCascade };
+  const checkApprovals = changed => ({ ...observed,
+    blockers: projectionAcknowledgementBlockers(composerProfile(changed, core), observed) });
+  assert.deepEqual(checkApprovals(modules).blockers, []);
+  assert.deepEqual(checkApprovals(unacknowledged).blockers, deep.blockers);
+
   // 지워지지 않는 게이트를 승인 목록에 두면 낡은 승인이다.
   const stale = withExpectations('core', expected => { expected.gates.push({ file: 'api-server/src/test/java/nuri/api/NotRemovedTest.java', reason: '시험용' }); });
-  deep = compositionDeepPlan({ root, catalog, modules: stale, composition: core, files });
+  deep = checkApprovals(stale);
   assert.deepEqual(codes(deep), ['GATE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['api-server/src/test/java/nuri/api/NotRemovedTest.java']);
 
   // 시작 구성이 연쇄로 지우는 Java 도 생성기처럼 커밋된 기대치와 대조한다(설계서 C4).
-  const coreCascade = modules.extras.presetExpectations.core.javaCascade;
   assert.ok(coreCascade.length > 1, 'the core preset acknowledges cascaded Java');
   const cascadeUnacknowledged = withExpectations('core', expected => { expected.javaCascade = coreCascade.slice(1); });
   deep = compositionDeepPlan({ root, catalog, modules: cascadeUnacknowledged, composition: core, files });
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_UNACKNOWLEDGED']);
   assert.deepEqual(deep.blockers[0].files, [coreCascade[0]]);
   assert.equal(deep.blockers[0].label, DEEP_BLOCKER_LABELS.JAVA_CASCADE_UNACKNOWLEDGED);
+  assert.deepEqual(checkApprovals(cascadeUnacknowledged).blockers, deep.blockers);
   const cascadeStale = withExpectations('core', expected => { expected.javaCascade.push('api-server/src/main/java/nuri/api/NotCascaded.java'); });
-  deep = compositionDeepPlan({ root, catalog, modules: cascadeStale, composition: core, files });
+  deep = checkApprovals(cascadeStale);
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_STALE']);
   assert.deepEqual(deep.blockers[0].files, ['api-server/src/main/java/nuri/api/NotCascaded.java']);
   const cascadeDeclaration = withExpectations('core', expected => { expected.javaCascade = coreCascade[0]; });
-  deep = compositionDeepPlan({ root, catalog, modules: cascadeDeclaration, composition: core, files });
+  deep = checkApprovals(cascadeDeclaration);
   assert.deepEqual(codes(deep), ['JAVA_CASCADE_DECLARATION', 'JAVA_CASCADE_UNACKNOWLEDGED']);
 
   // 승인 항목의 형식(사유 없음, 모르는 규칙)은 생성기가 대조 전에 거부한다.
@@ -51,13 +60,13 @@ test('every generator failure point becomes a labelled blocker before Docker sta
     expected.gates[0] = { file: coreGates[0].file };
     expected.gateRemovalRules.push({ rule: 'no-such-rule', reason: '시험용' });
   });
-  deep = compositionDeepPlan({ root, catalog, modules: declaration, composition: core, files });
+  deep = checkApprovals(declaration);
   assert.deepEqual(codes(deep), ['GATE_DECLARATION', 'GATE_UNACKNOWLEDGED']);
   assert.match(deep.blockers[0].message, /no-such-rule/);
 
   // 규칙 제거도 승인과 대조한다: 승인하지 않은 규칙, 더 이상 적용되지 않는 규칙.
   const rules = withExpectations('core', expected => { expected.gateRemovalRules = []; });
-  deep = compositionDeepPlan({ root, catalog, modules: rules, composition: core, files });
+  deep = checkApprovals(rules);
   assert.deepEqual(codes(deep), ['RULE_UNACKNOWLEDGED']);
   assert.deepEqual(deep.blockers[0].files, ['historical-migration-tests', 'upstream-atlas']);
   const historical = deep.ruleRemovals['historical-migration-tests'];

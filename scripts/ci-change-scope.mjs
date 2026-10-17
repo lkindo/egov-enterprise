@@ -287,9 +287,14 @@ const CROSS_STACK_CONTRACT = [
  * composition-profiles.mjs 는 넣지 않는다(분류기가 자기 입력의 변경을 좁게 분류하지 않게 한다).
  */
 export const GENERATOR_TOOL_PATHS = Object.freeze([
+  // Atlas와 소비 원장도 실행 가능한 도구 입력이다. 문서 fast-pass 대신 소비자 축을
+  // 동일한 source-reader 계약으로 확인하고, 관계없는 migration/PIT만 선택하지 않는다.
+  { path: 'scripts/atlas-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'scripts/build-atlas.mjs', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'config/governance/operation-consumer-census.json', axes: ['atlas', 'backend'] },
   // 기능 선언(매니페스트 v2). 하네스가 생성물 표지(presets.json)와 디렉터리를, 기본 관리자 시드 스키마 검증이 기능 파일을
   // 읽고, 생성기 화면 시험이 카탈로그를 실행한다.
-  { path: 'config/modules/', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'config/modules/', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   // 생성기 메뉴 스냅숏. 탭 목적지 cross-stack 계약도 읽는다.
   { path: 'config/project-composer-menus.json', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
@@ -297,7 +302,7 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/domain-deletion-plan', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
-  { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/reusable-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-project-composer', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.

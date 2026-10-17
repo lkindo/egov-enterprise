@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  createGovernanceAnalysisCache,
+  createGovernanceRepositorySnapshot,
   exactBindingLineMatches,
   codeOwnerCovers,
   containsRunnerSkip,
@@ -68,9 +71,107 @@ function clone(value) {
   return structuredClone(value);
 }
 
+// The repository is read afresh for every assertion. Only analyses whose source
+// text is unchanged survive between registry mutations (including fixture edits).
+const analysis = createGovernanceAnalysisCache();
 function validate(registry) {
-  return validateGovernanceRegistry({ registry, repoRoot });
+  return validateGovernanceRegistry({ registry, repoRoot, analysis });
 }
+
+test('repository snapshots deduplicate scans while fresh snapshots see edited, added and deleted files', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'governance-snapshot-'));
+  t.after(() => {
+    assert.equal(path.dirname(root), path.resolve(os.tmpdir()));
+    assert.ok(path.basename(root).startsWith('governance-snapshot-'));
+    rmSync(root, { recursive: true, force: true });
+  });
+  const reads = new Map();
+  const listings = new Map();
+  const counted = (counts, name) => (...args) => {
+    const key = path.resolve(args[0]);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+    return fs[name](...args);
+  };
+  const fileSystem = { ...fs, readFileSync: counted(reads, 'readFileSync'), readdirSync: counted(listings, 'readdirSync') };
+  const cache = createGovernanceAnalysisCache();
+  const fresh = () => createGovernanceRepositorySnapshot({ analysis: cache, fileSystem });
+  const file = path.join(root, 'First.java');
+  writeFileSync(file, 'class First {}');
+  const before = fresh();
+  assert.deepEqual(before.javaClassNames(root), ['First']);
+  before.javaFiles(root);
+  before.javaClassNames(root);
+  before.catalogFiles(root, true);
+  assert.equal(listings.get(root), 1, 'Java census, class names and catalog share the directory observation');
+  const inspect = source => ({ disabled: source.includes('@Disabled') });
+  const first = before.analyze(file, 'disabled', inspect);
+  assert.deepEqual(first, { disabled: false });
+  assert.throws(() => { first.disabled = true; }, TypeError, 'analysis results cannot poison later assertions');
+  assert.deepEqual(fresh().analyze(file, 'disabled', inspect), first);
+  assert.deepEqual(cache.stats(), { hits: 1, misses: 1 });
+  assert.equal(reads.get(file), 2, 'new validation still reads current text before trusting a cached analysis');
+  writeFileSync(file, '@Disabled class First {}');
+  assert.deepEqual(fresh().analyze(file, 'disabled', inspect), { disabled: true });
+  assert.deepEqual(cache.stats(), { hits: 1, misses: 2 });
+  writeFileSync(path.join(root, 'Second.java'), 'class Second {}');
+  assert.deepEqual(fresh().javaClassNames(root), ['First', 'Second']);
+  rmSync(file);
+  const after = fresh();
+  assert.deepEqual(after.javaClassNames(root), ['Second']);
+  assert.equal(after.isFile(file), false);
+  assert.throws(() => after.analyze(file, 'disabled', inspect), { code: 'ENOENT' });
+});
+
+test('shared analysis preserves full validator errors and cannot hide a new or edited skipped test', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'governance-cache-red-'));
+  t.after(() => {
+    assert.equal(path.dirname(root), path.resolve(os.tmpdir()));
+    assert.ok(path.basename(root).startsWith('governance-cache-red-'));
+    rmSync(root, { recursive: true, force: true });
+  });
+  mkdirSync(path.join(root, '.github'));
+  mkdirSync(path.join(root, 'tests'));
+  writeFileSync(path.join(root, '.github', 'required-checks.json'), JSON.stringify({ requiredChecks: [{ context: 'probe' }] }));
+  writeFileSync(path.join(root, '.github', 'CODEOWNERS'), '** @lkindo\n');
+  writeFileSync(path.join(root, 'runner.mjs'), 'run();\n');
+  writeFileSync(path.join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node --test tests/*.test.mjs' } }));
+  const fixture = {
+    schemaVersion: 1,
+    executionProfiles: [{ id: 'EXEC-PROBE', command: 'run', tier: ['local-full'],
+      bindings: [{ source: 'runner.mjs', fragment: 'run();', tiers: ['local-full'] }] }],
+    gateSets: [{ id: 'GATESET-PROBE', task: 'test', tier: ['local-full'], requiredCiContext: 'probe',
+      category: 'test', owner: 'quality', redProof: 'a skipped test fails', inputs: ['tests'], evidence: ['test output'],
+      selector: { type: 'runner-catalog', runner: 'node-test', forbidSkips: true,
+        catalogs: [{ root: 'tests', suffixes: ['.test.mjs'], recursive: true }],
+        packageScript: { source: 'package.json', name: 'test', command: 'node --test tests/*.test.mjs' },
+        commandBindings: [{ source: 'runner.mjs', fragment: 'run();', tiers: ['local-full'] }] } }],
+    qualityRatchets: [], qualityPopulations: [],
+  };
+  const cache = createGovernanceAnalysisCache();
+  const check = () => {
+    const cached = validateGovernanceRegistry({ registry: fixture, repoRoot: root, analysis: cache });
+    assert.deepEqual(cached, validateGovernanceRegistry({ registry: fixture, repoRoot: root }), 'fresh and shared analyses report identical errors');
+    return cached;
+  };
+  const source = path.join(root, 'tests', 'probe.test.mjs');
+  const additional = path.join(root, 'tests', 'added.test.mjs');
+  writeFileSync(source, "test('probe', () => {});\n");
+  const baseline = check();
+  assert.deepEqual(baseline, ['registry qualityPopulations must be a non-empty array', 'registry qualityRatchets must be a non-empty array']);
+  assert.deepEqual(check(), baseline);
+  writeFileSync(source, "test.skip('probe', () => {});\n");
+  assert.match(check().join('\n'), /forbidden skip\/only\/todo: tests\/probe\.test\.mjs/);
+  writeFileSync(source, "test('probe', () => {});\n");
+  assert.deepEqual(check(), baseline);
+  writeFileSync(additional, "test.only('added', () => {});\n");
+  assert.match(check().join('\n'), /forbidden skip\/only\/todo: tests\/added\.test\.mjs/);
+  rmSync(additional);
+  assert.deepEqual(check(), baseline);
+  rmSync(source);
+  assert.match(check().join('\n'), /ghost runner selector matched no tests/);
+  rmSync(path.join(root, 'runner.mjs'));
+  assert.match(check().join('\n'), /ghost execution binding/);
+});
 
 const REQUIRED_GATE_SETS = [
   'GATESET-ARCHITECTURE',

@@ -8,6 +8,89 @@ const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'ci']);
 const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
 const SEVERITY = new Map([['off', 0], ['warn', 1], ['error', 2]]);
 
+/** Reuse only analyses of identical text; each path retains at most its latest source. */
+export function createGovernanceAnalysisCache() {
+  const entries = new Map();
+  let hits = 0;
+  let misses = 0;
+  const freeze = value => {
+    if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+      Object.values(value).forEach(freeze);
+      Object.freeze(value);
+    }
+    return value;
+  };
+  return Object.freeze({
+    analyze(file, source, kind, inspect) {
+      const key = path.resolve(file);
+      let entry = entries.get(key);
+      if (entry?.source !== source) {
+        entry = { source, results: new Map() };
+        entries.set(key, entry);
+      }
+      if (entry.results.has(kind)) {
+        hits++;
+        return entry.results.get(kind);
+      }
+      misses++;
+      const result = freeze(inspect(source));
+      entry.results.set(kind, result);
+      return result;
+    },
+    stats: () => ({ hits, misses }),
+  });
+}
+
+/**
+ * One synchronous validation observes each file/directory once. Never reuse this
+ * snapshot after a disk mutation: create a fresh one, optionally sharing only the
+ * content-keyed analysis cache. The CLI always starts with a new snapshot.
+ */
+export function createGovernanceRepositorySnapshot({ fileSystem = fs, analysis = createGovernanceAnalysisCache() } = {}) {
+  const texts = new Map();
+  const types = new Map();
+  const directories = new Map();
+  const java = new Map();
+  const classes = new Map();
+  const catalogs = new Map();
+  const once = (cache, key, read) => {
+    if (!cache.has(key)) cache.set(key, read());
+    return cache.get(key);
+  };
+  const kind = file => once(types, path.resolve(file), () => {
+    try {
+      const stat = fileSystem.statSync(file);
+      return stat.isDirectory() ? 'directory' : stat.isFile() ? 'file' : 'other';
+    } catch { return 'missing'; }
+  });
+  const entries = directory => once(directories, path.resolve(directory),
+    () => fileSystem.readdirSync(directory, { withFileTypes: true }));
+  const read = file => once(texts, path.resolve(file), () => fileSystem.readFileSync(file, 'utf8'));
+  const javaFiles = directory => once(java, path.resolve(directory), () => Object.freeze(
+    kind(directory) !== 'directory' ? [] : entries(directory).flatMap(entry => {
+      const target = path.join(directory, entry.name);
+      return entry.isDirectory() ? javaFiles(target) : entry.isFile() && entry.name.endsWith('.java') ? [target] : [];
+    }),
+  ));
+  const catalogFiles = (directory, recursive) => once(catalogs, `${path.resolve(directory)}\0${recursive === true}`, () => Object.freeze(
+    kind(directory) !== 'directory' ? [] : entries(directory).flatMap(entry => {
+      const target = path.join(directory, entry.name);
+      return entry.isDirectory() ? recursive ? catalogFiles(target, true) : [] : entry.isFile() ? [target] : [];
+    }),
+  ));
+  return Object.freeze({
+    read,
+    isDirectory: file => kind(file) === 'directory',
+    isFile: file => kind(file) === 'file',
+    javaFiles,
+    catalogFiles,
+    javaClassNames: directory => once(classes, path.resolve(directory), () => Object.freeze(
+      javaFiles(directory).map(source => path.relative(directory, source).replace(/\.java$/, '').split(path.sep).join('.')),
+    )),
+    analyze: (file, operation, inspect) => analysis.analyze(file, read(file), operation, inspect),
+  });
+}
+
 function posix(relativePath) {
   return relativePath.split(path.sep).join('/');
 }
@@ -17,31 +100,6 @@ function isSafeRelative(relativePath) {
     && relativePath.length > 0
     && !path.isAbsolute(relativePath)
     && !relativePath.split(/[\\/]/).includes('..');
-}
-
-function isDirectory(target) {
-  try {
-    return fs.statSync(target).isDirectory();
-  } catch {
-    return false;
-  }
-}
-
-function isFile(target) {
-  try {
-    return fs.statSync(target).isFile();
-  } catch {
-    return false;
-  }
-}
-
-function walkJavaFiles(directory) {
-  if (!isDirectory(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return walkJavaFiles(target);
-    return entry.isFile() && entry.name.endsWith('.java') ? [target] : [];
-  });
 }
 
 function stripJavaComments(source) {
@@ -244,14 +302,6 @@ export function parseMutationScopeMatrix(source, jobName = 'mutation-scope') {
   return { scopes, errors };
 }
 
-function javaClassNames(sourceRoot) {
-  if (!isDirectory(sourceRoot)) return [];
-  return walkJavaFiles(sourceRoot).map((source) => path.relative(sourceRoot, source)
-    .replace(/\.java$/, '')
-    .split(path.sep)
-    .join('.'));
-}
-
 function classGlobMatches(glob, className) {
   const pattern = glob
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
@@ -280,7 +330,7 @@ export function validateCriticalMutationTargets(scopes) {
   });
 }
 
-function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
+function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
     errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
@@ -316,7 +366,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
         errors.push(`${setLabel}: PIT scope ${entry.scope} has invalid or duplicate ${field} globs`);
         continue;
       }
-      const actualClasses = javaClassNames(path.join(moduleRoot, 'src', sourceSet, 'java'));
+      const actualClasses = snapshot.javaClassNames(path.join(moduleRoot, 'src', sourceSet, 'java'));
       for (const glob of globs) {
         if (!actualClasses.some((className) => classGlobMatches(glob, className))) {
           errors.push(`${setLabel}: PIT scope ${entry.scope} ${field} glob '${glob}' matches no Java class in ${gradleMatch[1]}/src/${sourceSet}/java`);
@@ -335,7 +385,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel) {
   if (declaredJobs.length === 0) {
     errors.push(`${setLabel}: PIT matrix entries must declare an owning job`);
   }
-  const workflowSource = isFile(workflowPath) ? fs.readFileSync(workflowPath, 'utf8') : null;
+  const workflowSource = snapshot.isFile(workflowPath) ? snapshot.read(workflowPath) : null;
   const actualByScope = new Map();
   if (workflowSource === null) {
     errors.push(`${setLabel}: CI workflow is missing`);
@@ -625,6 +675,7 @@ function validateExecutionBindings({
   errors,
   required = false,
   expectedTiers = [],
+  snapshot,
 }) {
   if (!Array.isArray(bindings) || (required && bindings.length === 0)) {
     errors.push(`${setLabel}: execution bindings are required`);
@@ -645,8 +696,9 @@ function validateExecutionBindings({
     }
     for (const tier of binding.tiers) boundTiers.add(tier);
     const absolute = path.join(repoRoot, binding.source);
-    const content = isFile(absolute) ? fs.readFileSync(absolute, 'utf8') : '';
-    if (!exactBindingLineMatches(content, binding.fragment, binding.source)) {
+    const content = snapshot.isFile(absolute) ? snapshot.read(absolute, 'utf8') : '';
+    if (!snapshot.isFile(absolute) || !snapshot.analyze(absolute, `binding:${JSON.stringify([binding.fragment, binding.source])}`,
+      text => exactBindingLineMatches(text, binding.fragment, binding.source))) {
       errors.push(`${setLabel}: ghost execution binding in ${binding.source}: ${binding.fragment}`);
       continue;
     }
@@ -704,7 +756,7 @@ export const JAVA_GATE_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 
-export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS) {
+export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS, snapshot = createGovernanceRepositorySnapshot()) {
   const errors = [];
   const selectors = (gateSets ?? [])
     .filter((set) => set?.selector?.type === 'java-class-annotation')
@@ -717,16 +769,16 @@ export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA
   if (selectors.length === 0) return errors;
   for (const scanRoot of scanRoots) {
     const absoluteRoot = path.join(repoRoot, scanRoot);
-    if (!isDirectory(absoluteRoot)) {
+    if (!snapshot.isDirectory(absoluteRoot)) {
       errors.push(`java gate scan root does not exist: ${scanRoot} (silent scan collapse would be a false green)`);
       continue;
     }
-    for (const sourcePath of walkJavaFiles(absoluteRoot)) {
+    for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
       const relative = posix(path.relative(repoRoot, sourcePath));
-      const source = fs.readFileSync(sourcePath, 'utf8');
       for (const { id, annotation, value, roots } of selectors) {
         if (roots.some((root) => relative === root || relative.startsWith(`${root}/`))) continue;
-        if (hasClassAnnotation(source, annotation, value, path.basename(sourcePath, '.java'))) {
+        if (snapshot.analyze(sourcePath, `annotation:${annotation}:${value}:${path.basename(sourcePath, '.java')}`,
+          text => hasClassAnnotation(text, annotation, value, path.basename(sourcePath, '.java')))) {
           errors.push(`${id}: tagged gate outside declared selector roots — ${relative} carries `
             + `@${annotation}("${value}") so the runner may execute it while the census cannot see it; `
             + 'move it under a declared root or extend the selector roots');
@@ -1118,10 +1170,16 @@ function singleMatch(content, pattern) {
   return matches.length === 1 ? matches[0][1] : null;
 }
 
-function readConsumerValue(repoRoot, ratchet) {
+function readConsumerValue(repoRoot, ratchet, snapshot) {
   const absolute = path.join(repoRoot, ratchet.source);
-  if (!isFile(absolute)) return { error: `ghost quality source: ${ratchet.source}` };
-  const content = fs.readFileSync(absolute, 'utf8');
+  if (!snapshot.isFile(absolute)) return { error: `ghost quality source: ${ratchet.source}` };
+  return snapshot.analyze(absolute, `consumer:${JSON.stringify(ratchet)}`,
+    () => readObservedConsumerValue(repoRoot, ratchet, snapshot));
+}
+
+function readObservedConsumerValue(repoRoot, ratchet, snapshot) {
+  const absolute = path.join(repoRoot, ratchet.source);
+  const content = snapshot.read(absolute, 'utf8');
   const executable = executableContent(content);
   const selector = ratchet.selector ?? {};
 
@@ -1134,7 +1192,7 @@ function readConsumerValue(repoRoot, ratchet) {
       }
       const { equivalentTasks, ...singleSelector } = selector;
       const values = [selector.task, ...equivalentTasks].map(task => readConsumerValue(repoRoot,
-        { ...ratchet, selector: { ...singleSelector, task } }));
+        { ...ratchet, selector: { ...singleSelector, task } }, snapshot));
       const invalid = values.find(result => result.error);
       if (invalid) return invalid;
       if (values.some(result => result.value !== values[0].value)) {
@@ -1255,15 +1313,6 @@ export function loadGovernanceRegistry(registryPath) {
   return JSON.parse(fs.readFileSync(registryPath, 'utf8'));
 }
 
-function walkCatalogFiles(directory, recursive) {
-  if (!isDirectory(directory)) return [];
-  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return recursive ? walkCatalogFiles(target, true) : [];
-    return entry.isFile() ? [target] : [];
-  });
-}
-
 function validateRequiredContexts(value, knownContexts, label, errors) {
   const contexts = typeof value === 'string' ? [value] : value;
   if (!Array.isArray(contexts)
@@ -1292,7 +1341,7 @@ function validIsoDate(value) {
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === value;
 }
 
-function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors }) {
+function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors, snapshot }) {
   if (!Array.isArray(selector.skipWaivers)) {
     errors.push(`${setLabel}: Playwright skipWaivers must be an array`);
     return;
@@ -1302,7 +1351,7 @@ function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, set
   for (const source of catalogSources) {
     constructsBySource.set(
       source,
-      findRunnerSkipConstructs(fs.readFileSync(path.join(repoRoot, source), 'utf8')),
+      snapshot.analyze(path.join(repoRoot, source), 'runner-constructs', findRunnerSkipConstructs),
     );
   }
 
@@ -1345,7 +1394,7 @@ function validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, set
       continue;
     }
 
-    const sourceText = fs.readFileSync(path.join(repoRoot, waiver.source), 'utf8');
+    const sourceText = snapshot.read(path.join(repoRoot, waiver.source), 'utf8');
     const tokenIndexes = [];
     let index = sourceText.indexOf(waiver.stableToken);
     while (index >= 0) {
@@ -1426,7 +1475,7 @@ function validateMinimumPopulation({ currentInclude, baselineInclude, currentExc
   }
 }
 
-function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, label, errors }) {
+function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, label, errors, snapshot }) {
   if (!matrixSet || !Array.isArray(matrixSet.selector?.matrixScopes)) {
     errors.push(`${label}: matrixGateSetId does not resolve to a PIT matrix catalog`);
     return;
@@ -1435,7 +1484,7 @@ function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, lab
   for (const scope of matrixSet.selector.matrixScopes) {
     const gradleMatch = /^:([a-z0-9-]+):pitest$/.exec(scope.gradle ?? '');
     if (!gradleMatch) continue;
-    const classes = javaClassNames(path.join(repoRoot, gradleMatch[1], 'src', 'main', 'java'));
+    const classes = snapshot.javaClassNames(path.join(repoRoot, gradleMatch[1], 'src', 'main', 'java'));
     for (const targetGlob of String(scope.classes ?? '').split(',').map((value) => value.trim()).filter(Boolean)) {
       const targets = classes.filter((className) => classGlobMatches(targetGlob, className));
       if (targets.length === 0) continue;
@@ -1462,7 +1511,7 @@ function validatePitMatrixExclusions({ matrixSet, excludedClasses, repoRoot, lab
   }
 }
 
-function validateQualityPopulations({ registry, repoRoot, errors, registryIds }) {
+function validateQualityPopulations({ registry, repoRoot, errors, registryIds, snapshot }) {
   if (!Array.isArray(registry?.qualityPopulations) || registry.qualityPopulations.length === 0) {
     errors.push('registry qualityPopulations must be a non-empty array');
     return;
@@ -1484,11 +1533,12 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
     }
 
     const absolute = path.join(repoRoot, population.source);
-    if (!isFile(absolute)) {
+    if (!snapshot.isFile(absolute)) {
       errors.push(`${label}: ghost population source: ${population.source}`);
       continue;
     }
-    const consumer = readPopulationConsumer(fs.readFileSync(absolute, 'utf8'), population.selector);
+    const consumer = snapshot.analyze(absolute, `population:${JSON.stringify(population.selector)}`,
+      text => readPopulationConsumer(text, population.selector));
     if (consumer.error) {
       errors.push(`${label}: ghost population selector: ${consumer.error}`);
       continue;
@@ -1524,7 +1574,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
     }
 
     if (population.selector?.type === 'gradle-pitest-population') {
-      errors.push(...validatePitResultCheck(fs.readFileSync(absolute, 'utf8'))
+      errors.push(...snapshot.analyze(absolute, 'pit-result', validatePitResultCheck)
         .map(error => `${label}: ${error}`));
       if (!hasValidUniqueStrings(population.excludedClasses)
         || !hasValidUniqueStrings(population.baselineExcludedClasses)) {
@@ -1557,6 +1607,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
         repoRoot,
         label,
         errors,
+        snapshot,
       });
       continue;
     }
@@ -1565,7 +1616,7 @@ function validateQualityPopulations({ registry, repoRoot, errors, registryIds })
   }
 }
 
-function collectGovernanceAssets(registry, repoRoot) {
+function collectGovernanceAssets(registry, repoRoot, snapshot) {
   const assets = new Set([
     '.github/CODEOWNERS',
     'config/governance/gates.json',
@@ -1573,7 +1624,7 @@ function collectGovernanceAssets(registry, repoRoot) {
     'scripts/governance-gates-contract.test.mjs',
   ]);
   const addFile = (source) => {
-    if (isSafeRelative(source) && isFile(path.join(repoRoot, source))) assets.add(posix(source));
+    if (isSafeRelative(source) && snapshot.isFile(path.join(repoRoot, source))) assets.add(posix(source));
   };
 
   for (const set of registry?.gateSets ?? []) {
@@ -1584,7 +1635,7 @@ function collectGovernanceAssets(registry, repoRoot) {
     for (const catalog of [...(selector.catalogs ?? []), ...(selector.supportRoots ?? [])]) {
       if (!isSafeRelative(catalog?.root) || !Array.isArray(catalog?.suffixes)) continue;
       const root = path.join(repoRoot, catalog.root);
-      for (const file of walkCatalogFiles(root, catalog.recursive === true)) {
+      for (const file of snapshot.catalogFiles(root, catalog.recursive === true)) {
         if (catalog.suffixes.some((suffix) => file.endsWith(suffix))) {
           assets.add(posix(path.relative(repoRoot, file)));
         }
@@ -1627,26 +1678,28 @@ export function effectiveCodeOwners(rules, source) {
   return owners;
 }
 
-function validateGovernanceOwnership(registry, repoRoot, errors) {
+function validateGovernanceOwnership(registry, repoRoot, errors, snapshot) {
   const codeownersPath = path.join(repoRoot, '.github', 'CODEOWNERS');
-  if (!isFile(codeownersPath)) {
+  if (!snapshot.isFile(codeownersPath)) {
     errors.push('governance CODEOWNERS file is missing');
     return;
   }
-  const rules = fs.readFileSync(codeownersPath, 'utf8')
+  const rules = snapshot.read(codeownersPath, 'utf8')
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
     .map((line) => line.split(/\s+/));
 
-  for (const source of collectGovernanceAssets(registry, repoRoot)) {
+  for (const source of collectGovernanceAssets(registry, repoRoot, snapshot)) {
     if (!effectiveCodeOwners(rules, source).includes('@lkindo')) {
       errors.push(`governance asset is not CODEOWNERS-protected: ${source}`);
     }
   }
 }
 
-export function validateGovernanceRegistry({ registry, repoRoot }) {
+export function validateGovernanceRegistry({ registry, repoRoot, analysis }) {
+  // Sharing analyses never shares filesystem observations across validations.
+  const snapshot = createGovernanceRepositorySnapshot({ analysis });
   const errors = [];
   const registryIds = new Set();
   const registeredSources = new Set();
@@ -1655,7 +1708,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
   let requiredContexts = new Set();
 
   try {
-    const required = JSON.parse(fs.readFileSync(path.join(repoRoot, '.github', 'required-checks.json'), 'utf8'));
+    const required = JSON.parse(snapshot.read(path.join(repoRoot, '.github', 'required-checks.json'), 'utf8'));
     requiredChecks = required.requiredChecks ?? [];
     requiredContexts = new Set(requiredChecks.map(({ context }) => context));
   } catch (error) {
@@ -1688,6 +1741,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         errors,
         required: true,
         expectedTiers: profile.tier,
+        snapshot,
       });
     }
   }
@@ -1738,18 +1792,13 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       const actual = new Set();
       for (const root of roots) {
         const absoluteRoot = path.join(repoRoot, root);
-        if (!isDirectory(absoluteRoot)) {
+        if (!snapshot.isDirectory(absoluteRoot)) {
           errors.push(`${setLabel}: selector root does not exist: ${root}`);
           continue;
         }
-        for (const sourcePath of walkJavaFiles(absoluteRoot)) {
-          const source = fs.readFileSync(sourcePath, 'utf8');
-          if (hasClassAnnotation(
-            source,
-            selector.annotation,
-            selector.value,
-            path.basename(sourcePath, '.java'),
-          )) {
+        for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
+          if (snapshot.analyze(sourcePath, `annotation:${selector.annotation}:${selector.value}:${path.basename(sourcePath, '.java')}`,
+            text => hasClassAnnotation(text, selector.annotation, selector.value, path.basename(sourcePath, '.java')))) {
             actual.add(posix(path.relative(repoRoot, sourcePath)));
           }
         }
@@ -1770,18 +1819,18 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         registeredSources.add(source);
         expected.add(source);
         const absolute = path.join(repoRoot, source);
-        if (!isFile(absolute)) {
+        if (!snapshot.isFile(absolute)) {
           errors.push(`ghost gate source: ${source} does not exist`);
         } else {
-          const content = fs.readFileSync(absolute, 'utf8');
           const expectedClassName = path.basename(source, '.java');
-          if (!hasClassAnnotation(content, selector.annotation, selector.value, expectedClassName)) {
+          if (!snapshot.analyze(absolute, `annotation:${selector.annotation}:${selector.value}:${expectedClassName}`,
+            text => hasClassAnnotation(text, selector.annotation, selector.value, expectedClassName))) {
             errors.push(`ghost gate source: ${source} does not satisfy @${selector.annotation}("${selector.value}") on ${expectedClassName}`);
           }
-          if (!hasRunnableTestAnnotation(content, selector.annotation === 'ArchTag')) {
+          if (!snapshot.analyze(absolute, `runnable:${selector.annotation === 'ArchTag'}`, text => hasRunnableTestAnnotation(text, selector.annotation === 'ArchTag'))) {
             errors.push(`ghost gate source: ${source} declares no runnable test annotation`);
           }
-          if (hasGateSkipConstruct(content)) {
+          if (snapshot.analyze(absolute, 'gate-skip', hasGateSkipConstruct)) {
             errors.push(`ghost gate source: ${source} contains a disabled, conditional, or assumption-based skip`);
           }
         }
@@ -1790,7 +1839,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         if (!expected.has(source)) errors.push(`unregistered tagged gate in ${setLabel}: ${source}`);
       }
       for (const source of expected) {
-        if (!actual.has(source) && isFile(path.join(repoRoot, source))) {
+        if (!actual.has(source) && snapshot.isFile(path.join(repoRoot, source))) {
           errors.push(`ghost gate source in ${setLabel}: ${source} is outside the actual selector result`);
         }
       }
@@ -1801,6 +1850,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         errors,
         required: true,
         expectedTiers: set.tier,
+        snapshot,
       });
       continue;
     }
@@ -1823,11 +1873,11 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           continue;
         }
         const absoluteRoot = path.join(repoRoot, catalog.root);
-        if (!isDirectory(absoluteRoot)) {
+        if (!snapshot.isDirectory(absoluteRoot)) {
           errors.push(`${setLabel}: ghost runner selector root: ${catalog.root}`);
           continue;
         }
-        const matches = walkCatalogFiles(absoluteRoot, catalog.recursive === true)
+        const matches = snapshot.catalogFiles(absoluteRoot, catalog.recursive === true)
           .filter((source) => catalog.suffixes.some((suffix) => source.endsWith(suffix)));
         if (matches.length === 0) errors.push(`${setLabel}: ghost runner selector matched no tests in ${catalog.root}`);
         for (const source of matches) catalogSources.add(posix(path.relative(repoRoot, source)));
@@ -1835,8 +1885,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
 
       if (selector.forbidSkips === true) {
         for (const source of catalogSources) {
-          const content = fs.readFileSync(path.join(repoRoot, source), 'utf8');
-          if (containsRunnerSkip(content)) {
+          if (snapshot.analyze(path.join(repoRoot, source), 'runner-skip', containsRunnerSkip)) {
             errors.push(`${setLabel}: runner catalog contains a forbidden skip/only/todo: ${source}`);
           }
         }
@@ -1853,7 +1902,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           errors.push(`${setLabel}: invalid runner support root or suffix selector`);
           continue;
         }
-        const matches = walkCatalogFiles(path.join(repoRoot, support.root), support.recursive === true)
+        const matches = snapshot.catalogFiles(path.join(repoRoot, support.root), support.recursive === true)
           .filter((source) => support.suffixes.some((suffix) => source.endsWith(suffix)));
         if (matches.length === 0) errors.push(`${setLabel}: ghost runner support root matched no files in ${support.root}`);
       }
@@ -1867,7 +1916,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         } else {
           const absolute = path.join(repoRoot, packageBinding.source);
           try {
-            const parsed = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+            const parsed = JSON.parse(snapshot.read(absolute, 'utf8'));
             const actualCommand = parsed.scripts?.[packageBinding.name];
             if (actualCommand !== packageBinding.command) {
               errors.push(`${setLabel}: ghost runner selector package script ${packageBinding.name}`);
@@ -1879,9 +1928,9 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       }
 
       if (selector.runner === 'playwright') {
-        validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors });
+        validatePlaywrightSkipWaivers({ selector, catalogSources, repoRoot, setLabel, errors, snapshot });
         for (const source of catalogSources) {
-          const content = executableContent(fs.readFileSync(path.join(repoRoot, source), 'utf8'));
+          const content = snapshot.analyze(path.join(repoRoot, source), 'executable', executableContent);
           if (!/\btest\s*\(/.test(content)) {
             errors.push(`${setLabel}: Playwright spec has no runnable test(): ${source}`);
           }
@@ -1891,7 +1940,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
           errors.push(`${setLabel}: invalid Playwright project contract`);
         } else {
           const absolute = path.join(repoRoot, project.source);
-          const content = isFile(absolute) ? fs.readFileSync(absolute, 'utf8') : '';
+          const content = snapshot.isFile(absolute) ? snapshot.read(absolute, 'utf8') : '';
           errors.push(...validatePlaywrightProjectContract(content, project)
             .map((error) => `${setLabel}: ${error}`));
         }
@@ -1905,6 +1954,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         setLabel,
         errors,
         expectedTiers: set.tier,
+        snapshot,
       });
       for (let index = bindingErrorStart; index < errors.length; index += 1) {
         errors[index] = errors[index]
@@ -1913,11 +1963,11 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
       }
 
       for (const bindingSource of selector.catalogCoverage ?? []) {
-        if (!isSafeRelative(bindingSource) || !isFile(path.join(repoRoot, bindingSource))) {
+        if (!isSafeRelative(bindingSource) || !snapshot.isFile(path.join(repoRoot, bindingSource))) {
           errors.push(`${setLabel}: ghost catalog coverage binding: ${bindingSource}`);
           continue;
         }
-        const content = fs.readFileSync(path.join(repoRoot, bindingSource), 'utf8');
+        const content = snapshot.read(path.join(repoRoot, bindingSource), 'utf8');
         for (const source of catalogSources) {
           if (!content.includes(source)) {
             errors.push(`${setLabel}: unregistered runner catalog item in ${bindingSource}: ${source}`);
@@ -1955,7 +2005,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
         }
       }
       if (selector.context === 'mutation-test') {
-        validateMutationScopeCatalog(selector, repoRoot, errors, setLabel);
+        validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot);
       }
       continue;
     }
@@ -1963,7 +2013,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     errors.push(`${setLabel}: unsupported gate selector type '${selector?.type ?? ''}'`);
   }
 
-  validateQualityPopulations({ registry, repoRoot, errors, registryIds });
+  validateQualityPopulations({ registry, repoRoot, errors, registryIds, snapshot });
 
   if (!Array.isArray(registry?.qualityRatchets) || registry.qualityRatchets.length === 0) {
     errors.push('registry qualityRatchets must be a non-empty array');
@@ -2035,7 +2085,7 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     }
 
     if (sourceIsSafe) {
-      const consumer = readConsumerValue(repoRoot, ratchet);
+      const consumer = readConsumerValue(repoRoot, ratchet, snapshot);
       if (consumer.error) errors.push(consumer.error);
       else if (!sameValue(consumer.value, ratchet.current)) {
         errors.push(`${id}: consumer value ${consumer.value} does not match registry current ${ratchet.current}`);
@@ -2043,8 +2093,8 @@ export function validateGovernanceRegistry({ registry, repoRoot }) {
     }
   }
 
-  validateGovernanceOwnership(registry, repoRoot, errors);
-  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry.gateSets));
+  validateGovernanceOwnership(registry, repoRoot, errors, snapshot);
+  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry.gateSets, JAVA_GATE_SCAN_ROOTS, snapshot));
 
   return errors;
 }

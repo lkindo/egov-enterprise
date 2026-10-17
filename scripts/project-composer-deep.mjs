@@ -70,6 +70,28 @@ export const DEEP_BLOCKER_LABELS = Object.freeze({
   PERMISSION_PROJECTION: '권한 정의(카탈로그·바인딩·묶음·화면 목록)를 구성으로 줄일 수 없습니다',
 });
 
+/** Compare observed removals with acknowledgements without reading/projecting the source tree again. */
+export function projectionAcknowledgementBlockers(profile, { removedGates, ruleRemovals, javaCascade, undeterminedRules = new Set() }) {
+  const blockers = [];
+  const block = (code, detail) => blockers.push({ code, label: DEEP_BLOCKER_LABELS[code], ...detail });
+  const acknowledgement = removedGateAcknowledgement(profile, removedGates, ruleRemovals);
+  const declarations = [...acknowledgement.invalidEntries, ...acknowledgement.invalidRules];
+  if (declarations.length) block('GATE_DECLARATION', { message: declarations.map(entry => JSON.stringify(entry)).join(' · ') });
+  if (acknowledgement.unacknowledgedRules.length) block('RULE_UNACKNOWLEDGED', { files: acknowledgement.unacknowledgedRules });
+  const staleRules = acknowledgement.staleRules.filter(rule => !undeterminedRules.has(rule));
+  if (staleRules.length) block('RULE_STALE', { files: staleRules });
+  if (acknowledgement.unacknowledged.length) block('GATE_UNACKNOWLEDGED', { files: acknowledgement.unacknowledged });
+  if (acknowledgement.stale.length) block('GATE_STALE', { files: acknowledgement.stale });
+  if (javaCascade !== undefined) {
+    const cascade = javaCascadeAcknowledgement(profile, javaCascade);
+    const declarations = [...cascade.invalidEntries.map(entry => JSON.stringify(entry)), ...cascade.duplicates];
+    if (declarations.length) block('JAVA_CASCADE_DECLARATION', { message: declarations.join(' · ') });
+    if (cascade.unacknowledged.length) block('JAVA_CASCADE_UNACKNOWLEDGED', { files: cascade.unacknowledged });
+    if (cascade.stale.length) block('JAVA_CASCADE_STALE', { files: cascade.stale });
+  }
+  return blockers;
+}
+
 /**
  * `files` 는 Git 이 보는 파일(추적·무시되지 않은 새 파일, build 제외)의 저장소 기준 경로다. 생성기처럼
  * 실제로 복사할 수 있는 파일만 남겨 생성물의 파일 집합으로 쓴다.
@@ -220,25 +242,10 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     if (missing.length) block('RULE_REMOVAL', { message: missing.join(' · ') });
   } catch (error) { block('RULE_REMOVAL', { message: message(error) }); }
 
-  // 승인 대조는 지워지는 게이트를 다 알 때만 한다(투영이 실패하면 목록이 모자라 거짓 차단이 된다).
+  // 승인 대조는 두 투영이 성공해 제거 집합을 모두 알 때만 한다. 직접 선택에는 연쇄 승인 목록이 없다.
   if (java && frontend) {
-    const acknowledgement = removedGateAcknowledgement(profile, removedGates, ruleRemovals);
-    const declarations = [...acknowledgement.invalidEntries, ...acknowledgement.invalidRules];
-    if (declarations.length) block('GATE_DECLARATION', { message: declarations.map(entry => JSON.stringify(entry)).join(' · ') });
-    if (acknowledgement.unacknowledgedRules.length) block('RULE_UNACKNOWLEDGED', { files: acknowledgement.unacknowledgedRules });
-    const staleRules = acknowledgement.staleRules.filter(rule => !undeterminedRules.has(rule));
-    if (staleRules.length) block('RULE_STALE', { files: staleRules });
-    if (acknowledgement.unacknowledged.length) block('GATE_UNACKNOWLEDGED', { files: acknowledgement.unacknowledged });
-    if (acknowledgement.stale.length) block('GATE_STALE', { files: acknowledgement.stale });
-  }
-  // 시작 구성은 생성기가 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없다.
-  // 생성기는 이 대조를 프런트 투영 뒤에 하므로, 게이트 대조처럼 두 투영이 모두 될 때만 한다.
-  if (java && frontend && composition.profile !== 'custom') {
-    const cascade = javaCascadeAcknowledgement(profile, javaCascadeRemovals(root, java).map(entry => entry.file));
-    const declarations = [...cascade.invalidEntries.map(entry => JSON.stringify(entry)), ...cascade.duplicates];
-    if (declarations.length) block('JAVA_CASCADE_DECLARATION', { message: declarations.join(' · ') });
-    if (cascade.unacknowledged.length) block('JAVA_CASCADE_UNACKNOWLEDGED', { files: cascade.unacknowledged });
-    if (cascade.stale.length) block('JAVA_CASCADE_STALE', { files: cascade.stale });
+    blockers.push(...projectionAcknowledgementBlockers(profile, { removedGates, ruleRemovals, undeterminedRules,
+      javaCascade: composition.profile === 'custom' ? undefined : javaCascadeRemovals(root, java).map(entry => entry.file) }));
   }
 
   // 선택한 기능의 소스가 투영 뒤에도 남는지 본다. 생성기의 검사를 계획 결과에 그대로 건다.

@@ -63,12 +63,6 @@ for GIT_LOCAL_ENV_VAR in $GIT_LOCAL_ENV_VARS; do
 done
 unset GIT_LOCAL_ENV_VARS GIT_LOCAL_ENV_VAR
 
-# Node 기반 운영 계약은 하나의 catalog runner가 소유한다. 새 *.test.mjs를 추가하면
-# 별도 훅 편집 없이 자동 편입되며, 문서-only fast-pass도 이 싼 계약을 통과한 뒤 종료한다.
-echo "  → governance: npm run test:operational-contracts"
-npm run test:operational-contracts \
-  || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
-
 # CI와 동일한 fail-closed 분류기를 fast-pass 판정에도 사용한다. 확장자만
 # 보는 별도 allowlist를 두면 헌법 Markdown, 실행 가능한 docs 파일, rename의
 # 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
@@ -79,12 +73,23 @@ SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.m
 SCOPE_ATLAS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field atlas)
 echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migration=$SCOPE_MIGRATION / frontend=$SCOPE_FRONTEND"
 
+# Node 운영 계약 catalog는 전체 범위를 유지한다. 먼저 범위를 출력해 이후
+# 실행할 검증을 알리고, 문서 전용이어도 연결·메모리·생성물 계약을 확인한다.
+echo "  → governance: npm run test:operational-contracts"
+npm run test:operational-contracts \
+  || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
+
 if [ -n "$CHANGED_FILES" ]; then
   # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
   if [ "$SCOPE_ATLAS" = "true" ]; then
-    echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
-    pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
-      || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
+    # frontend 불변식 및 backend cross-stack 실행은 Atlas를 이미 포함한다.
+    if [ -f frontend/package.json ] && { [ "$SCOPE_BACKEND" = "true" ] || [ "$SCOPE_FRONTEND" = "true" ]; }; then
+      echo "  → atlas: 아래 frontend/cross-stack 실행에 포함"
+    else
+      echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts"
+      pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts \
+        || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
+    fi
   fi
 
   if [ "$SCOPE_DOCS_ONLY" = "true" ]; then

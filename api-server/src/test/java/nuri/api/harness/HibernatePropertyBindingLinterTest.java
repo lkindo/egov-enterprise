@@ -6,9 +6,11 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -58,21 +60,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ol>
  *
  * <p><b>[왜 운영 값을 런타임으로 단언하지 않는가 — 정직한 한계]</b>
- * {@code api-server/src/test/resources/application.yml} 이 존재해 <b>main 의 base 설정을 통째로
- * shadow</b> 한다(그 파일 자신의 주석도 그렇게 적고 있다). 따라서 테스트 컨텍스트가 들고 있는
- * 값은 <b>운영 값이 아니다</b>. 여기서 운영 값(25/true/true)을 단언하면 그것은 운영을 검증하는
- * 것처럼 보이지만 실제로는 테스트 리소스를 검증하는 <b>false-green</b> 이다. 그래서 운영 값은
- * 2번(파일 위치)으로, 전달 여부는 1번(기전)으로 나눠 판정한다.
+ * 기전 컨텍스트는 {@code application*.yml}을 읽지 않고 테스트 값을 직접 주입하므로 운영 설정의
+ * 적용 결과를 주장하지 않는다. 운영 선언 위치는 2번, 전달 여부는 1번으로 나눠 판정한다.
+ * Boot의 DataSource/JPA 자동 설정과 실제 Hibernate SessionFactory만 띄우며,
+ * 업무 엔티티·웹·보안 설정은 스캔하지 않는다.
  */
-@SpringBootTest(
-        classes = nuri.ApiServerApplication.class,
-        properties = {
-                // 전달되는 경로 — Boot 는 spring.jpa.properties.* 를 Hibernate 에 그대로 넘긴다.
-                "spring.jpa.properties.hibernate.jdbc.batch_size=42",
-                // 무시되는 경로 — HibernateProperties 는 이 키를 모른다(대조군).
-                "spring.jpa.hibernate.jdbc.batch_size=7"
-        })
-@ActiveProfiles("test")
 @Tag("governance-harness")
 class HibernatePropertyBindingLinterTest {
 
@@ -98,23 +90,43 @@ class HibernatePropertyBindingLinterTest {
     /** vacuous 통과 방지 — 스캔 대상이 이 수 미만이면 경로가 바뀐 것이므로 실패시킨다. */
     private static final int MIN_SCANNED_FILES = 5;
 
-    @Autowired
-    private EntityManagerFactory entityManagerFactory;
+    private final ApplicationContextRunner jpaContext = new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(
+                    DataSourceAutoConfiguration.class, HibernateJpaAutoConfiguration.class))
+            .withBean(PersistenceManagedTypes.class, () -> PersistenceManagedTypes.of())
+            .withPropertyValues(
+                    "spring.datasource.generate-unique-name=true",
+                    "spring.jpa.hibernate.ddl-auto=none");
 
     @Test
     @DisplayName("기전 증명: spring.jpa.properties.hibernate.* 만 Hibernate 에 도달한다 (양방향)")
     void onlyThePropertiesPrefixReachesHibernate() {
-        SessionFactoryOptions options = entityManagerFactory
-                .unwrap(SessionFactoryImplementor.class)
-                .getSessionFactoryOptions();
+        jpaContext.withPropertyValues(
+                "spring.jpa.properties.hibernate.jdbc.batch_size=42",
+                "spring.jpa.hibernate.jdbc.batch_size=7").run(context -> {
+            assertThat(context).hasNotFailed().hasSingleBean(EntityManagerFactory.class)
+                    .doesNotHaveBean(nuri.ApiServerApplication.class);
+            EntityManagerFactory factory = context.getBean(EntityManagerFactory.class);
+            assertThat(factory.getMetamodel().getEntities()).as("업무 엔티티를 스캔하지 않는다").isEmpty();
+            SessionFactoryOptions options = factory.unwrap(SessionFactoryImplementor.class)
+                    .getSessionFactoryOptions();
+            assertThat(options.getJdbcBatchSize())
+                    .as("spring.jpa.properties.hibernate.jdbc.batch_size만 실제 Hibernate에 전달되어야 한다")
+                    .isEqualTo(42);
+        });
+    }
 
-        assertThat(options.getJdbcBatchSize())
-                .as("""
-                        Hibernate 가 받은 jdbc.batch_size 가 42(=spring.jpa.properties.hibernate.* 로 주입한 값)가 아닙니다.
-                          · 7 이면   → spring.jpa.hibernate.* 가 바인딩된다는 뜻이므로 이 게이트의 전제가 무효입니다(Boot 판올림 확인).
-                          · 15 이면  → 어느 쪽도 도달하지 않고 Hibernate 기본값이 쓰인 것입니다.
-                        어느 경우든 application.yml 의 Hibernate 튜닝 키 위치 규칙을 다시 판정해야 합니다.""")
-                .isEqualTo(42);
+    @Test
+    @DisplayName("부정 대조군: 잘못된 prefix만 선언하면 Hibernate batch_size가 설정되지 않는다")
+    void incorrectPrefixAloneDoesNotConfigureHibernate() {
+        jpaContext.withPropertyValues("spring.jpa.hibernate.jdbc.batch_size=7").run(context -> {
+            assertThat(context).hasNotFailed().hasSingleBean(EntityManagerFactory.class);
+            SessionFactoryOptions options = context.getBean(EntityManagerFactory.class)
+                    .unwrap(SessionFactoryImplementor.class).getSessionFactoryOptions();
+            assertThat(options.getJdbcBatchSize())
+                    .as("잘못된 prefix가 정상 prefix와의 우선순위 때문에 가려진 것이 아니라 무시되어야 한다")
+                    .isNotEqualTo(7);
+        });
     }
 
     @Test

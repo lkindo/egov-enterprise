@@ -120,7 +120,7 @@ pnpm -C frontend codegen:zod   # generated-zod.ts 동기화
 pnpm -C frontend codegen:ts
 ```
 
-드리프트 점검(git diff --exit-code 기반): `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
+드리프트 점검: `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. Git 추적 여부를 확인한 뒤 현재 `api-docs.json`으로 임시 디렉터리에 재생성하여 작업 트리의 세 생성물과 비교합니다. LF/CRLF 줄 끝만 정규화하며 내용 불일치·누락·미추적 파일은 실패합니다. 성공·실패 모두 작업 트리와 Git 인덱스를 덮어쓰지 않으므로, 의도한 변경의 반영은 위 `syncContract`로 별도 수행합니다. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
 
 ### 2. 생성된 파일 확인
 `frontend/src/types/generated-api.d.ts`(타입 정의), `frontend/src/types/generated-zod.ts`(런타임 검증 스키마), `frontend/src/types/generated-operations.ts`(operation 계약)가 함께 갱신되었는지 확인합니다. 실제 소비 여부는 프런트 타입 검사와 계약 하네스로 확인하며, 특정 서비스 래퍼가 모든 호출 경로를 소유한다고 가정하지 않습니다.

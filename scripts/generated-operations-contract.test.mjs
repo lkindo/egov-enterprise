@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { verifyGeneratedContracts } from './verify-generated-contracts.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const apiDocsPath = join(repoRoot, 'api-docs.json');
@@ -77,6 +78,86 @@ function wrappedVoidResponse() {
 
 function fixtureOutput(result) {
   return `${result.stderr}${result.stdout}`;
+}
+
+function verificationFixture(t, kind) {
+  const root = mkdtempSync(join(tmpdir(), 'generated-contract-check-'));
+  t.after(() => {
+    assert.equal(dirname(resolve(root)), resolve(tmpdir()));
+    rmSync(root, { recursive: true, force: true });
+  });
+  const spec = { ...contractSpec({
+    '/api/v1/items': { get: { operationId: 'readItems', responses: wrappedVoidResponse() } },
+  }), info: { title: 'Verification fixture', version: '1.0.0' } };
+  const specPath = join(root, 'api-docs.json');
+  writeFileSync(specPath, `${JSON.stringify(spec)}\n`);
+  mkdirSync(join(root, 'frontend/src/types'), { recursive: true });
+  const files = kind === 'api'
+    ? ['frontend/src/types/generated-api.d.ts']
+    : ['frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts'];
+  if (kind === 'api') {
+    const result = spawnSync(process.execPath, [join(repoRoot, 'frontend/node_modules/openapi-typescript/bin/cli.js'),
+      specPath, '-o', join(root, files[0])], { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 0, fixtureOutput(result));
+  } else {
+    const result = runFixture(spec);
+    assert.equal(result.status, 0, fixtureOutput(result));
+    writeFileSync(join(root, files[0]), result.zodSource);
+    writeFileSync(join(root, files[1]), result.operationSource);
+  }
+  const sources = files.map(file => readFileSync(join(root, file), 'utf8'));
+  // The CLI's auto-discovered apis would ignore -o and overwrite the fixture spec.
+  writeFileSync(join(root, 'frontend/redocly.yaml'),
+    'apis:\n  unsafe-output:\n    root: ../api-docs.json\n    x-openapi-ts:\n      output: ../api-docs.json\n');
+  const git = args => {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 0, fixtureOutput(result));
+  };
+  git(['init', '--quiet']);
+  // The working files are valid new generation while the index still contains an older version.
+  files.forEach((file, index) => writeFileSync(join(root, file), `// staged prior version\n${sources[index]}`));
+  git(['-c', 'core.autocrlf=false', 'add', '--', 'api-docs.json', ...files]);
+  files.forEach((file, index) => writeFileSync(join(root, file), sources[index]));
+  const snapshot = () => ['api-docs.json', ...files, 'frontend/redocly.yaml', '.git/index'].map(file => readFileSync(join(root, file)));
+  return { root, files, sources, git, snapshot, specPath };
+}
+
+for (const kind of ['api', 'zod']) {
+  test(`${kind} verify는 LF/CRLF와 의도한 미커밋 생성물을 읽기 전용으로 비교하고 내용 변조를 차단한다`, t => {
+    const fixture = verificationFixture(t, kind);
+    for (const newline of ['\n', '\r\n']) {
+      fixture.files.forEach((file, index) => writeFileSync(join(fixture.root, file), fixture.sources[index].replace(/\r?\n/gu, newline)));
+      const before = fixture.snapshot();
+      assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.files);
+      assert.deepEqual(fixture.snapshot(), before, 'green must preserve the spec, generated files and index bytes');
+      for (const file of fixture.files) {
+        const target = join(fixture.root, file);
+        const valid = readFileSync(target, 'utf8');
+        writeFileSync(target, `${valid}${newline}// uncommitted local change${newline}`);
+        const drift = fixture.snapshot();
+        assert.throws(() => verifyGeneratedContracts(kind, fixture.root), error =>
+          error.message.includes('Generated contract drift') && error.message.includes(file));
+        assert.deepEqual(fixture.snapshot(), drift, 'red must preserve the local change and index bytes');
+        writeFileSync(target, valid);
+      }
+    }
+    writeFileSync(fixture.specPath, '{ invalid JSON');
+    const invalid = fixture.snapshot();
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /failed/u);
+    assert.deepEqual(fixture.snapshot(), invalid, 'generator failure must also preserve the checkout');
+  });
+
+  test(`${kind} verify는 누락·미추적 생성물을 복원하지 않고 실패한다`, t => {
+    const fixture = verificationFixture(t, kind);
+    const target = join(fixture.root, fixture.files[0]);
+    unlinkSync(target);
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /ENOENT/u);
+    writeFileSync(target, fixture.sources[0]);
+    fixture.git(['rm', '--cached', '--force', '--', fixture.files[0]]);
+    const before = fixture.snapshot();
+    assert.throws(() => verifyGeneratedContracts(kind, fixture.root), /git failed/u);
+    assert.deepEqual(fixture.snapshot(), before, 'untracked files must remain untouched');
+  });
 }
 
 test('생성된 미사용 계약은 중첩 Zod 생성까지 포함한 순수 초기화 단위로 제거할 수 있다', () => {

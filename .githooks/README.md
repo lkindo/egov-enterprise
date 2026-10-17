@@ -12,16 +12,16 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | 설치된 gitleaks로 staged 시크릿 검사 + DTO/Controller/api-docs.json/생성타입의 `codegen:verify(:zod)` 드리프트 점검 | 시크릿 탐지는 차단, gitleaks 미설치·codegen 드리프트는 경고 |
-| `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 운영 계약을 먼저 실행하고, 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 온라인 backend/독립 migration/frontend를 선택하며, 알 수 없는 파일은 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
+| `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 변경 범위를 판정·출력한 뒤 운영 계약을 실행하고, 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 온라인 backend/독립 migration/frontend를 선택하며, 알 수 없는 파일은 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
 
-현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 먼저 확인한 뒤 diff를 판정한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
+현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 확인하고, 임시 디렉터리에 생성한 결과를 현재 파일과 비교한다. 검증은 작업 파일과 index를 수정하지 않으며 줄바꿈 차이만 정규화한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
 ## 게이트 계층 (무엇이 어디서 도는가)
 
 | 계층 | 명령 | 범위 | 상대 비용 |
 |---|---|---|---|
 | pre-commit | 자동 | 설치된 gitleaks의 시크릿 탐지는 차단(미설치 시 **경고 출력**)·계약 드리프트는 경고 | 낮음 |
-| pre-push 문서-only | 자동 | 운영 계약 catalog 전체(공용 메모리·문서 링크 포함). Atlas HTML이면 전용 docs-as-code 계약 추가 | 낮음 |
+| pre-push 문서-only | 자동 | 운영 계약 catalog 전체(공용 메모리·문서 링크 포함). Atlas HTML이면 전용 docs-as-code 계약 추가 | 전체 운영 계약 비용 포함 |
 | pre-push 소스 변경 | 자동 | 운영 계약 + 영향에 따른 온라인 Java compile/`harnessTest`, 독립 이관 compile 또는 FE/E2E tsc·lint·폼 census·codegen·불변식 Vitest. backend-only에도 cross-stack Vitest 실행. 미분류 파일은 전체 실행 | 중간 |
 | **Gradle 전수 lane** | `./gradlew localGate` | 하네스 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫. pre-push의 모든 정적 검사를 포함하는 superset은 아님 | 높음 |
 | **통합 전수 진입점** | `npm run verify` | 운영/문서 계약 + backend 전수 lane + FE codegen·lint·타입·build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
@@ -58,6 +58,8 @@ pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 
 공용 [변경 분류기](../scripts/ci-change-scope.mjs)가 경로·확장자·삭제·rename 이전 경로를 함께 판정한다. 일반 문서·이미지·폰트는 fast-pass 대상이지만 `.githooks/`, 헌법, baseline manifest, Gradle 설정, wrapper, Dockerfile, 실행 스크립트처럼 게이트·규범에 영향을 주는 경로는 Markdown이라도 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 
 Atlas의 `frontend/atlas/**` 원본과 `scripts/build-atlas.mjs`·`scripts/atlas-*.mjs`도 동일한 Atlas 계약을 선택한다. 이 경로들은 소스 검사 범위를 유지하며 문서 fast-pass로 분류하지 않는다. 생성물 신선도 검사는 운영 계약 catalog에 연결한다.
+
+Atlas가 frontend 불변식 또는 backend cross-stack 실행에 포함되면 단독 Atlas 실행을 중복하지 않는다. `verify:fast`·`verify:push`는 불변식 실행이, `verify:full`은 전체 coverage가 Atlas를 포함한 횡단 계약을 한 번씩 실행한다. `verify:docs`와 `verify:be` 단독 경로도 각각 필요한 검사를 유지한다. Atlas 도구와 operation 소비 원장은 공용 분류기의 소비자 표로 검사 축을 정하며, 미분류 입력이 섞이면 전체 검증으로 돌아간다.
 
 문서 링크 계약은 루트·`docs`·훅·공용 메모리와 소유한 3대 헌법의 Markdown artifact 및 metadata 참조를 검사한다. 파일뿐 아니라 Markdown 절·HTML ID·순수 앵커도 대조한다. 코드 블록·인라인 코드의 예시는 링크로 실행하지 않으며, `table://` 메타 표준 참조는 DB 실측 증거를 대신하는 파일 경로로 취급하지 않는다.
 

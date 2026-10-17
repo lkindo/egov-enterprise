@@ -1470,6 +1470,18 @@ test('security critical steps reject advisory, command, or conditional bypasses'
   }
 });
 
+test('secret scanning reports before dependency installation and operational contract execution', () => {
+  const job = ciContent.match(/^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m)?.[0] ?? '';
+  const scanner = job.indexOf(workflowStep(job, 'Run gitleaks (working tree + incremental)'));
+  assert.ok(scanner > job.indexOf('actions/checkout@'));
+  for (const name of ['Install pinned operational contract dependencies', 'Verify repository operational contracts',
+    'Require complete dependency snapshots']) {
+    const step = workflowStep(job, name);
+    assert.ok(step.length > 0, name);
+    assert.ok(scanner < job.indexOf(step), `gitleaks feedback must not wait for ${name}`);
+  }
+});
+
 test('CI pre-pulls the exact PostgreSQL image used by the shared Java schema harness', () => {
   const javaHarness = fs.readFileSync(path.join(
     repoRoot,

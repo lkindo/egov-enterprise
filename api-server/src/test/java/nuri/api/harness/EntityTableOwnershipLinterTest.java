@@ -15,9 +15,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -255,7 +260,7 @@ class EntityTableOwnershipLinterTest {
 
     @Test
     @DisplayName("감사 상속을 복원한 3종은 BaseEntity + JpaRepository 쓰기 모델로 유지된다")
-    void correctedAuditEntitiesRemainWriteModels() throws ClassNotFoundException, IOException {
+    void correctedAuditEntitiesRemainWriteModels() throws ReflectiveOperationException, IOException {
         List<String> violations = new ArrayList<>();
         for (Map.Entry<String, String> entry : CORRECTED_AUDIT_WRITE_ENTITIES.entrySet()) {
             if (!ReusableHarnessProfile.current().retainsType(entry.getKey())) continue;
@@ -276,16 +281,52 @@ class EntityTableOwnershipLinterTest {
         if (ReusableHarnessProfile.current().retainsType("SmsService") && !evidence.smsService().contains("smsRecptnRepository.save(")) {
             violations.add("SmsRecptn 생성 save 경로 소실");
         }
-        if (ReusableHarnessProfile.current().retainsType("SmsAsyncProcessor")
-                && (!evidence.smsAsyncProcessor().contains("@Transactional(propagation = Propagation.REQUIRES_NEW)")
-                || !evidence.smsAsyncProcessor().contains(".ifPresent(r -> r.updateResult("))) {
-            violations.add("SmsRecptn 비동기 결과 갱신의 REQUIRES_NEW + managed dirty-check 경로 소실");
+        if (ReusableHarnessProfile.current().retainsType("SmsAsyncProcessor")) {
+            Method updateResult = Class.forName("nuri.business.service.sms.SmsAsyncProcessor")
+                    .getMethod("updateResult", Long.class, String.class, String.class, String.class, String.class);
+            if (!requiresNewTransaction(updateResult)) {
+                violations.add("SmsRecptn 비동기 결과 갱신 메서드의 REQUIRES_NEW 경계 소실");
+            }
+            // 실제 managed entity 갱신과 stale/terminal/deleted 무변경은 SmsAsyncProcessorTest의
+            // legacyCallbackStillFindsCanonicalAndLegacyStoredKeysUnderLock 및
+            // resultCasPreservesTerminalAndNewAttemptAndDeletedRows가 검증한다. 람다 변수명은 계약이 아니다.
         }
 
         assertThat(violations)
                 .as("물리 감사 컬럼을 매핑한 3종의 실제 쓰기 근거가 바뀌었습니다.%n%s",
                         String.join(System.lineSeparator(), violations))
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("갱신 메서드의 실제 트랜잭션 속성은 표기와 무관하며 REQUIRED·무애노테이션은 거부한다")
+    void requiresNewBoundaryUsesSpringTransactionSemantics() throws NoSuchMethodException {
+        assertThat(requiresNewTransaction(TransactionBoundaryFixture.class.getMethod("methodBoundary"))).isTrue();
+        assertThat(requiresNewTransaction(TransactionBoundaryFixture.class.getMethod("classBoundary"))).isTrue();
+        assertThat(requiresNewTransaction(TransactionBoundaryFixture.class.getMethod("weakenedBoundary"))).isFalse();
+        assertThat(requiresNewTransaction(NoTransactionBoundaryFixture.class.getMethod("update"))).isFalse();
+    }
+
+    private static boolean requiresNewTransaction(Method method) {
+        var attribute = new AnnotationTransactionAttributeSource()
+                .getTransactionAttribute(method, method.getDeclaringClass());
+        return attribute != null
+                && attribute.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    static class TransactionBoundaryFixture {
+        @Transactional(readOnly = false, propagation = Propagation.REQUIRES_NEW)
+        public void methodBoundary() { }
+
+        public void classBoundary() { }
+
+        @Transactional(propagation = Propagation.REQUIRED)
+        public void weakenedBoundary() { }
+    }
+
+    static class NoTransactionBoundaryFixture {
+        public void update() { }
     }
 
     private static List<String> duplicateOwnershipViolations(
@@ -494,8 +535,7 @@ class EntityTableOwnershipLinterTest {
         return new PathEvidence(
                 HarnessSourceIndex.read(root.resolve(
                         "business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java")),
-                readActiveSource(root, "business-app/src/main/java/nuri/business/service/sms/SmsService.java"),
-                readActiveSource(root, "business-app/src/main/java/nuri/business/service/sms/SmsAsyncProcessor.java"));
+                readActiveSource(root, "business-app/src/main/java/nuri/business/service/sms/SmsService.java"));
     }
 
     private static String readActiveSource(java.nio.file.Path root, String path) throws IOException {
@@ -553,7 +593,6 @@ class EntityTableOwnershipLinterTest {
 
     private record PathEvidence(
             String authService,
-            String smsService,
-            String smsAsyncProcessor) {
+            String smsService) {
     }
 }
