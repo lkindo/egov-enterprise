@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as ts from 'typescript';
@@ -41,9 +41,12 @@ function screenFiles(directory: string): string[] {
  * 이제 `onPageSizeChange` 를 (주석 밖에서) 넘기는 src/app 파일은 모두 다음 다섯 갈래 중 **정확히 하나**다. 어디에도 들지 않으면 red 다.
  *  (a) 리터럴 queryKey 결속 — 조회 훅을 쓰고 `queryKey: [...]` 배열을 직접 적는다. 종전 판정 그대로 표에 넘긴 값의 식별자가 그 배열에 있는지 본다.
  *  (b) factory 결속 — 조회 훅을 쓰고 리터럴 queryKey 가 없다. 표에 넘긴 크기의 식별자가 조회 훅 첫 인자인 factory 호출의 인자에 있는지
- *      구문 트리로 본다. factory 가 그 인자를 queryKey 에 넣는다는 사실은 src/queries/__tests__ 의 factory 단위 시험이 지킨다.
+ *      구문 트리로 본다. factory 가 그 인자를 queryKey 에 넣는다는 사실은 factory **함수**마다 src/queries/__tests__ 의 단위 시험 it 하나가
+ *      지키고, 아래 FACTORY_KEY_TESTS 가 그 it 를 함수 단위 exact 로 가리킨다.
  *  (c) 수동 조회, (d) 클라이언트 페이징, (e) 표 컴포넌트 자신 — React Query 조회가 아니어서 queryKey 판정 밖이다. 사유와 함께 exact 목록이다.
  *      목록에 있는데 조회 훅을 쓰기 시작하면 분류가 겹쳐 red 다 — 목록에서 빼고 (a)·(b) 판정을 받는다.
+ *      사유 문장(크기가 재조회 인자·slice 계산에 쓰인다)은 이 census 가 아니라 화면마다 크기를 바꾸는 렌더 시험이 지킨다 —
+ *      주소록(AddressBookListClient.page-size)·쪽지(NotePage.validation)·패턴 갤러리(pattern-gallery.page-size)·화면 관리(ProgramAdminClient).
  */
 const QUERY_HOOKS = new Set(['useQuery', 'useSuspenseQuery', 'useQueries']);
 
@@ -167,12 +170,19 @@ function factoryArgumentIdentifiers(factory: ts.CallExpression): Set<string> {
   return names;
 }
 
+/** 호출한 함수의 이름 경로(`scrapQueryOptions.list(...)` → `scrapQueryOptions.list`). 이름과 점으로만 된 호출이 아니면 undefined. */
+function calleePath(call: ts.CallExpression): string | undefined {
+  const names: string[] = [];
+  let root: ts.Expression = call.expression;
+  while (ts.isPropertyAccessExpression(root)) {
+    names.unshift(root.name.text);
+    root = root.expression;
+  }
+  return ts.isIdentifier(root) ? [root.text, ...names].join('.') : undefined;
+}
+
 /** factory 호출의 바깥 이름(`scrapQueryOptions.list(...)` 의 scrapQueryOptions)을 import 한 모듈. import 가 아니면 undefined. */
-function factoryModule(sourceFile: ts.SourceFile, factory: ts.CallExpression): string | undefined {
-  let root: ts.Expression = factory.expression;
-  while (ts.isPropertyAccessExpression(root)) root = root.expression;
-  if (!ts.isIdentifier(root)) return undefined;
-  const name = root.text;
+function factoryModule(sourceFile: ts.SourceFile, name: string): string | undefined {
   for (const statement of sourceFile.statements) {
     if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
     const clause = statement.importClause;
@@ -181,6 +191,83 @@ function factoryModule(sourceFile: ts.SourceFile, factory: ts.CallExpression): s
     if (clause?.name?.text === name || named) return statement.moduleSpecifier.text;
   }
   return undefined;
+}
+
+/**
+ * 크기 결속을 증명한 factory 함수의 키 — `@/queries/<모듈>#<callee>`(예: `@/queries/scrap-query-options#scrapQueryOptions.list`).
+ * 모듈만 기록하면 같은 모듈의 다른 함수(크기를 인자로 받고 키에는 넣지 않는 새 함수)도 그 모듈의 시험 파일 하나로 통과했다(R5-2).
+ * 키를 만들 수 없으면 그 사유를 돌려준다 — FACTORY_KEY_TESTS 에 없는 값이라 표 대조가 red 로 드러낸다.
+ */
+function factoryKey(sourceFile: ts.SourceFile, factory: ts.CallExpression): string {
+  const callee = calleePath(factory);
+  if (callee === undefined) return `${lineOf(sourceFile, factory)}행: factory 를 이름으로 부르지 않는다`;
+  const moduleName = factoryModule(sourceFile, callee.split('.')[0]);
+  return moduleName === undefined ? `${lineOf(sourceFile, factory)}행: factory 를 import 하지 않는다` : `${moduleName}#${callee}`;
+}
+
+/**
+ * (b) factory 결속의 키 보장 — factory 함수마다 그 사실을 단언하는 단위 시험(src/queries/__tests__/<모듈>.test.ts)의 it 제목. 그 it 는
+ * 크기만 다른 두 호출의 queryKey 가 다르다고 단언해야 한다(keyTestProblems). 모집단에서 관측한 factory 함수와 양방향 exact 다 —
+ * 표에 없는 함수(같은 모듈의 새 함수 포함)도, 관측되지 않는 낡은 행도 red 다. 투영으로 빠진 행은 원장이 증명한다.
+ */
+const FACTORY_KEY_TESTS: Readonly<Record<string, string>> = {
+  '@/queries/comment-query-options#commentQueryOptions.adminList':
+    '관리자 목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
+  '@/queries/scrap-query-options#scrapQueryOptions.list':
+    '목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
+  '@/queries/survey-query-options#surveyListOptions': '목록 queryKey 가 쪽·크기를 담아 크기를 바꾸면 다른 캐시 항목이 된다',
+};
+
+/** 표 키의 모듈 이름과 callee. 형식이 아니면 undefined. */
+function parseFactoryKey(key: string): { module: string; callee: string } | undefined {
+  const match = /^@\/queries\/([\w-]+)#([\w$]+(?:\.[\w$]+)*)$/.exec(key);
+  return match === null ? undefined : { module: match[1], callee: match[2] };
+}
+
+/** 표 행이 가리키는 factory 모듈과 그 단위 시험 파일(절대 경로). */
+const factoryKeyFiles = (moduleName: string) => [
+  join(FRONTEND_DIR, 'src', 'queries', `${moduleName}.ts`),
+  join(FRONTEND_DIR, 'src', 'queries', '__tests__', `${moduleName}.test.ts`),
+];
+
+/** 관측한 factory 키와 표의 차이 — 표에 없는 키(unknown)와 관측되지 않는 표 키(stale). */
+function factoryKeyTableDiff(observed: readonly string[], expected: readonly string[]): { unknown: string[]; stale: string[] } {
+  return {
+    unknown: [...new Set(observed)].filter((key) => !expected.includes(key)).sort(),
+    stale: expected.filter((key) => !observed.includes(key)).sort(),
+  };
+}
+
+/**
+ * 단위 시험 소스에서 제목이 `title` 인 it 가 queryKey 결속을 단언하는지. 문제 목록(비면 통과).
+ * 그 it 안에서 `callee` 를 두 번 이상 부르고, `.queryKey` 를 읽고, `.not.toEqual`(또는 toStrictEqual)로 두 키가 다르다고 단언해야 한다.
+ * 주석 속 제목·호출은 세지 않는다.
+ */
+function keyTestProblems(testSource: string, testFile: string, callee: string, title: string): string[] {
+  const sourceFile = parse(codeWithoutComments(testSource, testFile), testFile);
+  const blocks: ts.CallExpression[] = [];
+  walk(sourceFile, (node) => {
+    if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || !['it', 'test'].includes(node.expression.text)) return;
+    const name = node.arguments[0];
+    if (name !== undefined && (ts.isStringLiteral(name) || ts.isNoSubstitutionTemplateLiteral(name)) && name.text === title) blocks.push(node);
+  });
+  if (blocks.length !== 1) return [`${testFile}: it('${title}') 가 ${blocks.length}개다 — 하나여야 한다`];
+  const body = blocks[0].arguments[1];
+  let calls = 0;
+  let readsKey = false;
+  let assertsDifferent = false;
+  if (body !== undefined) {
+    walk(body, (node) => {
+      if (ts.isCallExpression(node) && calleePath(node) === callee) calls += 1;
+      if (ts.isPropertyAccessExpression(node) && node.name.text === 'queryKey') readsKey = true;
+      if (ts.isPropertyAccessExpression(node) && ['toEqual', 'toStrictEqual'].includes(node.name.text)
+        && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 'not') assertsDifferent = true;
+    });
+  }
+  const problems: string[] = [];
+  if (calls < 2) problems.push(`${testFile}: it('${title}') 가 ${callee} 를 두 번 이상 부르지 않는다(${calls}회)`);
+  if (!readsKey || !assertsDifferent) problems.push(`${testFile}: it('${title}') 가 두 호출의 queryKey 가 다르다고 단언하지 않는다`);
+  return problems;
 }
 
 /**
@@ -200,8 +287,8 @@ interface PageSizeVerdict {
   readonly kind?: PageSizeKind;
   /** 분류·결속 위반. 비어 있으면 통과다. */
   readonly problems: string[];
-  /** 크기 결속을 증명한 factory 호출의 import 모듈(`@/queries/...`) — 그 단위 시험이 queryKey 결속을 지킨다. */
-  readonly factoryModules: string[];
+  /** 크기 결속을 증명한 factory 함수(`@/queries/<모듈>#<callee>`) — FACTORY_KEY_TESTS 의 단위 시험 it 가 queryKey 결속을 지킨다. */
+  readonly factoryKeys: string[];
 }
 
 /** 한 파일의 판정. `file` 은 frontend 기준 경로(`src/app/...`), `code` 는 주석을 뺀 소스다. */
@@ -210,25 +297,25 @@ function judgePageSizeScreen(file: string, code: string): PageSizeVerdict {
   const hooks = queryHookCalls(sourceFile);
   const hasLiteralKey = code.includes('queryKey:');
   const listed = LISTED.filter(([, table]) => Object.hasOwn(table, file)).map(([kind]) => kind);
-  if (listed.length > 1) return { problems: [`목록 여러 곳에 있다: ${listed.join(', ')}`], factoryModules: [] };
+  if (listed.length > 1) return { problems: [`목록 여러 곳에 있다: ${listed.join(', ')}`], factoryKeys: [] };
   if (listed.length === 1) {
     return hooks.length > 0 || hasLiteralKey
-      ? { problems: [`${listed[0]} 로 적었는데 React Query 로 조회한다 — 목록에서 빼고 queryKey 판정을 받는다`], factoryModules: [] }
-      : { kind: listed[0], problems: [], factoryModules: [] };
+      ? { problems: [`${listed[0]} 로 적었는데 React Query 로 조회한다 — 목록에서 빼고 queryKey 판정을 받는다`], factoryKeys: [] }
+      : { kind: listed[0], problems: [], factoryKeys: [] };
   }
   if (hooks.length === 0) {
-    return { problems: ['분류 밖 — React Query 조회 훅이 없고 수동 조회·클라이언트 페이징·컴포넌트 목록에도 없다'], factoryModules: [] };
+    return { problems: ['분류 밖 — React Query 조회 훅이 없고 수동 조회·클라이언트 페이징·컴포넌트 목록에도 없다'], factoryKeys: [] };
   }
 
   const kind: PageSizeKind = hasLiteralKey ? 'literal-queryKey' : 'factory';
-  if (hasLiteralKey && literalQueryKeyBound(code)) return { kind, problems: [], factoryModules: [] };
+  if (hasLiteralKey && literalQueryKeyBound(code)) return { kind, problems: [], factoryKeys: [] };
 
   // 리터럴 queryKey 로 묶이지 않았으면(또는 리터럴 queryKey 가 없으면) 표의 pagination 객체마다 factory 인자 결속을 본다.
   const sizes = paginationPageSizes(sourceFile);
-  if (sizes.length === 0) return { kind, problems: ['onPageSizeChange 를 가진 pagination 객체를 찾지 못해 판정할 수 없다'], factoryModules: [] };
+  if (sizes.length === 0) return { kind, problems: ['onPageSizeChange 를 가진 pagination 객체를 찾지 못해 판정할 수 없다'], factoryKeys: [] };
   const factories = hooks.flatMap(factoryCalls);
   const problems: string[] = [];
-  const factoryModules: string[] = [];
+  const factoryKeys: string[] = [];
   for (const { line, identifiers } of sizes) {
     if (identifiers.size === 0) {
       problems.push(`${line}행: pageSize 를 onPageSizeChange 와 같은 객체로 넘기지 않아 판정할 수 없다`);
@@ -239,9 +326,9 @@ function judgePageSizeScreen(file: string, code: string): PageSizeVerdict {
       problems.push(`${line}행: 표에 넘긴 크기(${[...identifiers].join(', ')})가 queryKey 에도 factory 인자에도 없다`);
       continue;
     }
-    factoryModules.push(factoryModule(sourceFile, binding) ?? `${lineOf(sourceFile, binding)}행: factory 를 import 하지 않는다`);
+    factoryKeys.push(factoryKey(sourceFile, binding));
   }
-  return { kind, problems, factoryModules };
+  return { kind, problems, factoryKeys };
 }
 
 describe('페이지당 건수 채택 census', () => {
@@ -297,15 +384,32 @@ describe('페이지당 건수 채택 census', () => {
       for (const [, table] of LISTED) for (const reason of Object.values(table)) expect(reason.trim().length).toBeGreaterThan(0);
     });
 
-    it('factory 결속 화면의 factory 는 queries/__tests__ 단위 시험이 지킨다', () => {
-      // factory 인자에 크기가 있다는 것만으로는 그 인자가 queryKey 에 들어간다는 보장이 없다 — 그 사실은 factory 단위 시험이 고정한다.
-      const unguarded = population.flatMap(({ file, factoryModules }) => factoryModules
-        .filter((module) => {
-          const name = /^@\/queries\/([\w-]+)$/.exec(module)?.[1];
-          return name === undefined || !existsSync(join(FRONTEND_DIR, 'src', 'queries', '__tests__', `${name}.test.ts`));
-        })
-        .map((module) => `${file} → ${module}`));
-      expect(unguarded, 'factory 가 src/queries 의 모듈이 아니거나 그 단위 시험이 없습니다').toEqual([]);
+    // factory 인자에 크기가 있다는 것만으로는 그 인자가 queryKey 에 들어간다는 보장이 없다 — 그 사실은 factory 함수마다 단위 시험 it 가
+    //   고정하고, 그 it 를 FACTORY_KEY_TESTS 가 함수 단위 exact 로 가리킨다. 종전에는 모듈의 시험 파일이 있는지만 보았다(R5-2).
+    const keyRows = Object.entries(FACTORY_KEY_TESTS).map(([key, title]) => ({ key, title, parsed: parseFactoryKey(key) }));
+
+    it('factory 결속 화면이 부르는 factory 함수는 키 결속 단위 시험 표(FACTORY_KEY_TESTS)와 exact 다', () => {
+      expect(keyRows.filter(({ parsed }) => parsed === undefined).map(({ key }) => key), '표 키는 @/queries/<모듈>#<callee> 형식이다').toEqual([]);
+      // 투영으로 빠진 행은 원장이 증명하고(factory 모듈·단위 시험이 함께 빠진다), 남은 행은 지금도 모집단이 불러야 한다.
+      const files = keyRows.flatMap(({ parsed }) => (parsed === undefined ? [] : factoryKeyFiles(parsed.module)));
+      expect(missingOutsideLedger(files)).toEqual([]);
+      const expected = keepInProjection(keyRows, ({ parsed }) => (parsed === undefined ? [] : factoryKeyFiles(parsed.module))).map(({ key }) => key);
+      const observed = population.flatMap(({ factoryKeys }) => factoryKeys);
+      expect(
+        factoryKeyTableDiff(observed, expected),
+        'unknown: 표에 없는 factory 함수 — 크기만 다른 두 호출의 queryKey 가 다르다고 단언하는 단위 시험 it 를 두고 표에 적으세요. '
+          + 'stale: 모집단이 더는 부르지 않는 표 행 — 지우세요.',
+      ).toEqual({ unknown: [], stale: [] });
+    });
+
+    it('표의 행마다 그 단위 시험 it 가 크기만 다른 두 호출의 queryKey 가 다르다고 단언한다', () => {
+      const rows = keepInProjection(keyRows, ({ parsed }) => (parsed === undefined ? [] : factoryKeyFiles(parsed.module)));
+      const problems = rows.flatMap(({ parsed, title }) => {
+        if (parsed === undefined) return [];
+        const testFile = factoryKeyFiles(parsed.module)[1];
+        return keyTestProblems(readFileSync(testFile, 'utf8'), frontendPath(testFile), parsed.callee, title);
+      });
+      expect(problems, 'factory 키 결속 단위 시험이 표와 맞지 않습니다').toEqual([]);
     });
   });
 
@@ -323,7 +427,7 @@ describe('페이지당 건수 채택 census', () => {
     const judge = (source: string, file = 'src/app/x/X.tsx') => judgePageSizeScreen(file, codeWithoutComments(source, file));
 
     it('factory 인자에 크기를 넘기면 (b) 결속이고 그 factory 모듈을 가리킨다', () => {
-      expect(judge(SURVEY_LIKE)).toEqual({ kind: 'factory', problems: [], factoryModules: ['@/queries/survey-query-options'] });
+      expect(judge(SURVEY_LIKE)).toEqual({ kind: 'factory', problems: [], factoryKeys: ['@/queries/survey-query-options#surveyListOptions'] });
     });
 
     it('factory 인자에서 크기를 빼면 red 다(종전 판정은 queryKey: 가 없어 건너뛰었다)', () => {
@@ -342,13 +446,13 @@ describe('페이지당 건수 채택 census', () => {
       // 펼친 factory 호출의 인자는 키 계산이다.
       const spread = SURVEY_LIKE.replace('useQuery(surveyListOptions(page, pageSize))',
         'useQuery({ ...surveyListOptions(page, pageSize), enabled: true })');
-      expect(judge(spread)).toEqual({ kind: 'factory', problems: [], factoryModules: ['@/queries/survey-query-options'] });
+      expect(judge(spread)).toEqual({ kind: 'factory', problems: [], factoryKeys: ['@/queries/survey-query-options#surveyListOptions'] });
     });
 
     it('리터럴 queryKey 화면은 종전 판정 그대로다', () => {
       const literal = SURVEY_LIKE.replace('useQuery(surveyListOptions(page, pageSize))',
         "useQuery({ queryKey: ['surveys', page, pageSize], queryFn: () => load(page, pageSize) })");
-      expect(judge(literal)).toEqual({ kind: 'literal-queryKey', problems: [], factoryModules: [] });
+      expect(judge(literal)).toEqual({ kind: 'literal-queryKey', problems: [], factoryKeys: [] });
       const unbound = literal.replace("queryKey: ['surveys', page, pageSize]", "queryKey: ['surveys', page]");
       expect(judge(unbound).problems).toEqual(['6행: 표에 넘긴 크기(pageSize)가 queryKey 에도 factory 인자에도 없다']);
     });
@@ -359,8 +463,42 @@ describe('페이지당 건수 채택 census', () => {
       expect(judge(manual).problems).toEqual(['분류 밖 — React Query 조회 훅이 없고 수동 조회·클라이언트 페이징·컴포넌트 목록에도 없다']);
       // 목록에 있으면 그 갈래다. 목록에 있는데 조회 훅을 쓰면 분류가 겹친다.
       const listedFile = 'src/app/note/page.tsx';
-      expect(judge(manual, listedFile)).toEqual({ kind: 'manual-fetch', problems: [], factoryModules: [] });
+      expect(judge(manual, listedFile)).toEqual({ kind: 'manual-fetch', problems: [], factoryKeys: [] });
       expect(judge(SURVEY_LIKE, listedFile).problems).toEqual(['manual-fetch 로 적었는데 React Query 로 조회한다 — 목록에서 빼고 queryKey 판정을 받는다']);
+    });
+
+    it('시험 파일이 있는 모듈의 새 factory 함수도 표에 없으면 red 다(R5-2)', () => {
+      // 실패 시나리오: 크기를 인자로 받지만 queryKey 에는 넣지 않는 새 함수. 모듈의 시험 파일(approval-query-options.test.ts)은 이미
+      //   있어서 종전 판정은 녹색이었다. 이제 함수 단위로 기록하므로 표에 없는 키가 된다.
+      const paged = SURVEY_LIKE
+        .replace("import { surveyListOptions } from '@/queries/survey-query-options';", "import { approvalQueryOptions } from '@/queries/approval-query-options';")
+        .replace('surveyListOptions(page, pageSize)', 'approvalQueryOptions.paged(page, pageSize)');
+      const verdict = judge(paged);
+      expect(verdict).toEqual({ kind: 'factory', problems: [], factoryKeys: ['@/queries/approval-query-options#approvalQueryOptions.paged'] });
+      const tableKeys = Object.keys(FACTORY_KEY_TESTS);
+      expect(factoryKeyTableDiff([...tableKeys, ...verdict.factoryKeys], tableKeys))
+        .toEqual({ unknown: ['@/queries/approval-query-options#approvalQueryOptions.paged'], stale: [] });
+      // 표의 행을 아무도 부르지 않으면 낡은 행이다.
+      expect(factoryKeyTableDiff([], ['@/queries/x#y'])).toEqual({ unknown: [], stale: ['@/queries/x#y'] });
+    });
+
+    it('키 결속 it 는 그 제목으로 하나 있고, 크기만 다른 두 호출의 queryKey 가 다르다고 단언해야 한다', () => {
+      const UNIT = [
+        "it('목록 키가 크기를 담는다', () => {",
+        '  expect(surveyListOptions(2, 50).queryKey).not.toEqual(surveyListOptions(2, 20).queryKey);',
+        '});',
+      ].join('\n');
+      const check = (source: string) => keyTestProblems(source, 'x.test.ts', 'surveyListOptions', '목록 키가 크기를 담는다');
+      expect(check(UNIT)).toEqual([]);
+      // 제목이 지워지거나 바뀌면 red 다. 주석으로 남긴 it 도 세지 않는다.
+      const missing = ["x.test.ts: it('목록 키가 크기를 담는다') 가 0개다 — 하나여야 한다"];
+      expect(check(UNIT.replace('크기를 담는다', '쪽을 담는다'))).toEqual(missing);
+      expect(check(`/*\n${UNIT}\n*/`)).toEqual(missing);
+      // 두 키가 같다고 단언하거나, factory 를 한 번만 부르면 결속 증명이 아니다.
+      expect(check(UNIT.replace('.not.toEqual', '.toEqual')))
+        .toEqual(["x.test.ts: it('목록 키가 크기를 담는다') 가 두 호출의 queryKey 가 다르다고 단언하지 않는다"]);
+      expect(check(UNIT.replace('surveyListOptions(2, 20).queryKey', "['surveys']")))
+        .toEqual(["x.test.ts: it('목록 키가 크기를 담는다') 가 surveyListOptions 를 두 번 이상 부르지 않는다(1회)"]);
     });
   });
 });

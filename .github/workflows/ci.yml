@@ -1473,7 +1473,8 @@ jobs:
       # main run 38985970318(af79c310f)에서는 8개 job 합이 1005초라 하나씩 이어 돌아 마지막 범위가 1486초에 끝났고, 나머지 job 은
       # 모두 1025초 안에 끝나 이 잡이 전수 CI 의 임계 경로가 됐다. 슬롯이 1개인 한 범위를 나눠도 합계는 그대로다.
       # 순서는 같은 실행의 job 시간이다: verify 209·validate 197·standardize 176·collect 171·protect 72·runtime-state 64·
-      # registry 61·converter 55초. 두 사슬은 각각 약 500초다. 범위의 시간이 크게 바뀌면 다시 재고 순서를 고친다.
+      # registry 61·converter 55초. 이 순서로 두 슬롯에 넣으면 사슬별 job 시간 합은 505·500초다(위 job 시간으로 계산한
+      # 값으로 runner 대기는 빠졌고, 두 슬롯의 벽시계는 아직 CI 로 재지 않았다). 범위의 시간이 크게 바뀌면 다시 재고 순서를 고친다.
       max-parallel: 2
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false

@@ -159,7 +159,8 @@ function nestedScalarMap(parent, header, indent) {
   if (!block) return null;
   const entries = new Map();
   const entryIndent = ' '.repeat(indent + 2);
-  const pattern = new RegExp(`^${entryIndent}([A-Za-z_][A-Za-z0-9_]*):\\s*(.*?)\\s*$`);
+  // 형제 헬퍼(directScalar·stepScalar·scalarAtIndent)처럼 뒤 주석은 값이 아니다.
+  const pattern = new RegExp(`^${entryIndent}([A-Za-z_][A-Za-z0-9_]*):\\s*([^#\\r\\n]*?)(?:\\s+#.*)?$`);
   for (const line of block.split('\n')) {
     const match = pattern.exec(line);
     if (match) entries.set(match[1], unquote(match[2]));

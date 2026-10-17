@@ -1,3 +1,4 @@
+// @vitest-environment node
 /** 화면의 거부/허용 안내는 현재 기능 권한과 서버 자원 경계를 근거로 한다.
  * 소스 연결 검사는 Java HTTP/메서드 보안 통합 테스트를 대신하지 않는다.
  * 과거 인증만으로 열린 게시판을 전제로 한 검사는 현재 exact operation 정책으로 전환했다.
@@ -7,6 +8,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { canPermission } from '@/lib/auth/permissions';
 import { inProjection, keepInProjection } from '@/test-utils/projection';
+import { codeWithoutComments } from '../../../../scripts/code-without-comments.mjs';
 
 const ROOT = path.resolve(__dirname, '..', '..', '..', '..');
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), 'utf8');
@@ -58,11 +60,13 @@ function methodBody(source: string, method: string): string {
  *
  * 술어와 어휘가 **같은 삼항 분기 안**에 있을 때만 위반으로 본다 — 파일 어딘가에 두 낱말이
  * 따로 존재하는 것은 결함이 아니다.
+ *
+ * 주석 속 언급은 세지 않는다 — 공용 판정(scripts/code-without-comments.mjs)이 주석만 지운다. 종전 정규식 제거는 문자열 속
+ * 주석 기호(게시글 상세가 목록 출처로 적은 와일드카드 경로)에서 블록 주석을 열어 그 뒤 코드를 지웠고, 그 구간의 거부 안내는
+ * 넣어도 녹색이었다(FE-CONTRACT-01).
  */
-export function findUnenforcedDenial(source: string): string[] {
-  const stripped = source
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/\/\/.*$/gm, ' ');
+export function findUnenforcedDenial(source: string, fileName: string): string[] {
+  const stripped = codeWithoutComments(source, fileName);
 
   const hits: string[] = [];
   for (const match of stripped.matchAll(/\{([^{}]*?)\?([\s\S]{0,1600}?)\}/g)) {
@@ -140,7 +144,7 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
   });
 
   it('기능 권한·실제 오류로 안내하며 역할 이름만으로 게시판 읽기 거부를 만들지 않는다', () => {
-    for (const screen of BOARD_READ_SCREENS) expect(findUnenforcedDenial(read(screen)), screen).toEqual([]);
+    for (const screen of BOARD_READ_SCREENS) expect(findUnenforcedDenial(read(screen), screen), screen).toEqual([]);
   });
 
   if (boardInProjection) it('누락된 handler 가드·잘못된 permission·공개 완화는 red다', () => {
@@ -163,15 +167,27 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
   it('거짓 역할 거부는 탐지하고 실제 기능 권한의 정직한 거부는 허용한다', () => {
     expect(findUnenforcedDenial(`export function Screen() {
       return <div>{!isAdmin ? (<p>접근 권한 없음</p>) : (<Stream />)}</div>;
-    }`)).not.toEqual([]);
+    }`, 'Screen.tsx')).not.toEqual([]);
     expect(findUnenforcedDenial(`const restricted = !isAdmin && tab === 'WIKI';
       export function Screen() { return <div>{restricted ? (<p>열람 권한이 없습니다</p>) : (<Stream />)}</div>; }
-    `)).not.toEqual([]);
+    `, 'Screen.tsx')).not.toEqual([]);
     expect(findUnenforcedDenial(`export function Screen() {
       return <div>{!canPermission(user, 'BOARD_READ') ? (<p>접근 권한 없음</p>) : (<Stream />)}</div>;
-    }`)).toEqual([]);
+    }`, 'Screen.tsx')).toEqual([]);
     expect(findUnenforcedDenial(`export function Screen() {
       return <div>{!isAdmin ? null : (<button>게시판 관리</button>)}</div>;
-    }`)).toEqual([]);
+    }`, 'Screen.tsx')).toEqual([]);
+  });
+
+  it('문자열 속 주석 기호 뒤의 거짓 거부도 잡고 주석 속 예시는 세지 않는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 게시글 상세가 목록 출처로 적은 와일드카드 경로 문자열 뒤, JSX 블록 주석 앞의 코드를 종전 정규식
+    //   제거가 통째로 지웠다. 그 구간의 역할 부정 거부가 잡혀야 한다.
+    const hidden = `const ORIGINS = ['/admin/help', '/cop/cmy/selectCommunityDetail/*'] as const;
+      export function Screen() {
+        return <div>{!isAdmin ? (<p>접근 권한 없음</p>) : (<Stream />)}{/* 본문 */}</div>;
+      }`;
+    expect(findUnenforcedDenial(hidden, 'BoardDetailClient.tsx'), '문자열 속 주석 기호 뒤의 거짓 거부를 놓쳤다').toHaveLength(1);
+    expect(findUnenforcedDenial(`// {!isAdmin ? (<p>접근 권한 없음</p>) : null} 같은 분기를 두지 않는다
+      export function Screen() { return <Stream />; }`, 'Screen.tsx')).toEqual([]);
   });
 });

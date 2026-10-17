@@ -93,10 +93,6 @@ function assertProductMutationConcurrency(content) {
     'product PIT must reserve custom admission capacity with exactly four concurrent batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
-  for (const scope of ['migration-transform-registry', 'migration-transform-converter', 'migration-validate', 'migration-verify',
-    'migration-protect', 'migration-collect', 'migration-standardize', 'migration-runtime-state']) {
-    assert.match(migration, new RegExp(`^ {10}- scope: ${scope}$`, 'm'));
-  }
 }
 
 // 행렬마다 정확한 동시 수다. 정적 분석은 짧아 한 슬롯이고, 이관 PIT 는 한 슬롯이면 전수 CI 의 임계 경로가 돼
@@ -675,7 +671,8 @@ test('product PIT uses measured longest-processing-time ordering without changin
 
 test('migration PIT uses measured longest-processing-time ordering without changing its population', () => {
   assertMigrationMutationLptOrder(ciContent);
-  // 범위 내용(대상·시험)은 gate registry 의 PIT 집계 matrixScopes 가, 범위 집합은 위 동시성 시험이 본다.
+  // 범위의 집합·개수·순서는 이 deepEqual 이, 범위 내용(gradle·classes·tests)과 소유 잡은 gate registry 의
+  // matrixScopes 양방향 대조가 본다. 그래서 이름을 바꾸거나 모르는 범위를 더한 변이도 여기서 붉어야 한다.
   const swapped = mutateWorkflowJob(ciContent, 'mutation-scope-migration', block => block
     .replace('- scope: migration-verify', '- scope: temporary-order-placeholder')
     .replace('- scope: migration-transform-converter', '- scope: migration-verify')
@@ -686,6 +683,20 @@ test('migration PIT uses measured longest-processing-time ordering without chang
     block => block.replace(/^ {10}- scope: migration-protect\n(?: {12}.+\n)+/m, ''));
   assert.notEqual(removed, ciContent.replace(/\r\n/g, '\n'));
   assert.throws(() => assertMigrationMutationLptOrder(removed), /measured longest-first order/);
+  const renamed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace(/^( {10}- scope: )migration-collect$/m, '$1migration-collect-renamed'));
+  assert.notEqual(renamed, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(renamed), /measured longest-first order/);
+  const added = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+    block => block.replace(/^( {10}- scope: migration-transform-converter\n(?: {12}.+\n)+)/m, [
+      '$1          - scope: migration-unregistered',
+      '            gradle: ":migration-tool:pitest"',
+      '            classes: "nuri.migration.unregistered.*"',
+      '            tests: "nuri.migration.unregistered.UnregisteredTest"',
+      '',
+    ].join('\n')));
+  assert.notEqual(added, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertMigrationMutationLptOrder(added), /measured longest-first order/);
 });
 
 test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
@@ -1479,6 +1490,16 @@ test('security critical steps reject advisory, command, or conditional bypasses'
     '$1"0"',
   );
   assert.notEqual(snapshotReadinessEnvDrift, ciContent, 'snapshot wait drift fixture must change the workflow');
+  // 매니페스트 env 도 형제 검사처럼 뒤 주석을 값으로 읽지 않는다(의존성 계약의 표현 내성과 같다).
+  // 같은 값에 주석만 달면 녹색이고, 주석이 붙어도 값이 바뀌면 붉다.
+  const snapshotWaitDeclaration = /^([ \t]*SNAPSHOT_WAIT_SECONDS:[ \t]*)(.*?)[ \t]*$/m;
+  const snapshotReadinessEnvComment = ciContent.replace(snapshotWaitDeclaration, '$1$2  # bounded wait');
+  const snapshotReadinessEnvCommentDrift = ciContent.replace(snapshotWaitDeclaration, '$1"0"  # bounded wait');
+  for (const fixture of [snapshotReadinessEnvComment, snapshotReadinessEnvCommentDrift]) {
+    assert.notEqual(fixture, ciContent, 'snapshot wait comment fixture must change the workflow');
+  }
+  assert.deepEqual(validateStaticContract({ manifest, ciContent: snapshotReadinessEnvComment }), [],
+    'a trailing YAML comment must not change the manifest env value');
   const frontendAuditAdvisory = ciContent.replace(
     '      - name: Frontend dependency audit policy',
     '      - name: Frontend dependency audit policy\n        continue-on-error: true',
@@ -1497,6 +1518,7 @@ test('security critical steps reject advisory, command, or conditional bypasses'
     [snapshotReadinessAdvisory, /complete dependency snapshots.*continue-on-error/i],
     [snapshotReadinessNoop, /complete dependency snapshots.*manifest command exactly/i],
     [snapshotReadinessEnvDrift, /complete dependency snapshots.*exact env/i],
+    [snapshotReadinessEnvCommentDrift, /complete dependency snapshots.*exact env/i],
     [frontendAuditAdvisory, /dependency audit policy.*continue-on-error/i],
     [frontendAuditBypass, /dependency audit policy.*manifest command exactly/i],
   ]) {

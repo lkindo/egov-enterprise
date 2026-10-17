@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * 업무면 fill 셸 계약(2026-10-05, 카탈로그 §4 'fill 셸').
  *
@@ -16,11 +17,30 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';
 
 const SRC = join(process.cwd(), 'src');
 const read = (path: string) => readFileSync(join(SRC, path), 'utf8');
 const stripCssComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, '');
-const stripTsComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+/**
+ * 주석을 뺀 TS 코드 — 공용 판정(scripts/code-without-comments.mjs)이 문자열은 두고 주석만 지운다(CSS 는 위 정규식이 지운다 —
+ * 공용 판정에는 CSS 규칙이 없다). 종전 TS 정규식은 문자열 속 주석 기호에서 블록 주석을 열어 그 뒤 코드를 통째로 지웠고,
+ * 그 구간의 fill 루트는 세지 않았다(FE-CONTRACT-01).
+ */
+const readCode = (path: string) => codeWithoutComments(read(path), path);
+
+/** 한 파일의 fill 루트 사용 수(import 밖), data-work-fill 표지 수, 표지 없는 fill 루트 수. 주석 속 언급은 세지 않는다. */
+function fillRootMarkers(source: string, fileName: string): { uses: number; markers: number; unmarked: number } {
+  const code = codeWithoutComments(source, fileName);
+  const imports = [...code.matchAll(/^import\b[\s\S]*?\bfrom\s*['"][^'"]+['"];?/gm)]
+    .map((match) => [match.index!, match.index! + match[0].length] as const);
+  const uses = [...code.matchAll(/\bWORK_FILL_ROOT_CLASS\b/g)]
+    .filter((match) => !imports.some(([start, end]) => match.index! >= start && match.index! < end));
+  const markers = code.match(/\bdata-work-fill=/g) ?? [];
+  const unmarked = uses.filter((use) => !/\bdata-work-fill=/.test(code.slice(code.lastIndexOf('<', use.index!), use.index!)));
+  return { uses: uses.length, markers: markers.length, unmarked: unmarked.length };
+}
+
 /** 생산 소스(.ts·.tsx, 테스트 제외) 전수. */
 function listSourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -62,7 +82,7 @@ describe('업무면 fill 셸 계약', () => {
     // 숨기는 대상은 ApplicationFrame 의 푸터 자리 하나다 — 렌더는 가르지 않고(언마운트 금지) 같은 자리에 늘 그린다.
     expect(frame).toContain('<div data-app-footer="">{footer}</div>');
     expect(frame.match(/\{footer\}/g)).toHaveLength(1);
-    expect(stripTsComments(frame), 'ApplicationFrame 이 fill 여부·조건을 스스로 판정한다').not.toMatch(/matchMedia|work-fill|data-work-fill/);
+    expect(codeWithoutComments(frame, 'ApplicationFrame.tsx'), 'ApplicationFrame 이 fill 여부·조건을 스스로 판정한다').not.toMatch(/matchMedia|work-fill|data-work-fill/);
   });
 
   it('fill 루트 클래스를 쓰는 요소는 data-work-fill 표지를 함께 달고, 표지는 fill 루트에만 있다', () => {
@@ -72,19 +92,11 @@ describe('업무면 fill 셸 계약', () => {
     for (const file of listSourceFiles(SRC)) {
       const path = relative(SRC, file).split(sep).join('/');
       if (path === 'app/components/patterns/work-fill.ts') continue;
-      const source = stripTsComments(readFileSync(file, 'utf8'));
-      const imports = [...source.matchAll(/^import\b[\s\S]*?\bfrom\s*['"][^'"]+['"];?/gm)]
-        .map((match) => [match.index!, match.index! + match[0].length] as const);
-      const uses = [...source.matchAll(/\bWORK_FILL_ROOT_CLASS\b/g)]
-        .filter((match) => !imports.some(([start, end]) => match.index! >= start && match.index! < end));
-      const markers = source.match(/\bdata-work-fill=/g) ?? [];
-      if (uses.length === 0 && markers.length === 0) continue;
+      const { uses, markers, unmarked } = fillRootMarkers(readFileSync(file, 'utf8'), file);
+      if (uses === 0 && markers === 0) continue;
       owners.push(path);
-      expect(markers.length, `${path}: fill 루트 수(${uses.length})와 data-work-fill 표지 수(${markers.length})가 다르다`).toBe(uses.length);
-      for (const use of uses) {
-        const tag = source.slice(source.lastIndexOf('<', use.index!), use.index!);
-        expect(tag, `${path}: fill 루트 요소에 data-work-fill 표지가 없다`).toMatch(/\bdata-work-fill=/);
-      }
+      expect(markers, `${path}: fill 루트 수(${uses})와 data-work-fill 표지 수(${markers})가 다르다`).toBe(uses);
+      expect(unmarked, `${path}: fill 루트 요소에 data-work-fill 표지가 없다`).toBe(0);
     }
     // 실제 소비처 — 두 셸과 메뉴 화면의 불러오는 동안의 자리. 늘거나 줄면 표지 동반을 확인하고 여기를 고친다.
     expect(owners.sort()).toEqual([
@@ -94,8 +106,22 @@ describe('업무면 fill 셸 계약', () => {
     ]);
   });
 
+  it('문자열 속 주석 기호 뒤의 fill 루트도 세고 주석 속 언급은 세지 않는다', () => {
+    // 실측 모양(FE-CONTRACT-01): 파일 업로더의 accept 값 '*/*'·'image/*' 뒤, JSX 블록 주석 앞의 코드를 종전 TS 정규식이 통째로
+    //   지웠다. 그 구간의 표지 없는 fill 루트가 세져야 하고, 주석 속 언급은 사용이 아니다.
+    const source = [
+      "import { WORK_FILL_ROOT_CLASS } from '@/app/components/patterns/work-fill';",
+      "const accept = '*/*';",
+      "const images = ['image/*'];",
+      'export const View = () => <div className={WORK_FILL_ROOT_CLASS}>{/* Drop Zone */}</div>;',
+      '// <div className={WORK_FILL_ROOT_CLASS}> 는 data-work-fill 과 함께 쓴다',
+    ].join('\n');
+    expect(fillRootMarkers(source, 'standard-file-uploader.tsx'), '문자열 속 주석 기호 뒤의 fill 루트를 놓쳤다')
+      .toEqual({ uses: 1, markers: 0, unmarked: 1 });
+  });
+
   it('공용 클래스는 모두 work-fill 변형(또는 인쇄)으로만 동작해 조건 밖의 기본 배치를 바꾸지 않는다', () => {
-    const fillModule = stripTsComments(read('app/components/patterns/work-fill.ts'));
+    const fillModule = readCode('app/components/patterns/work-fill.ts');
     const classStrings = [...fillModule.matchAll(/export const (WORK_FILL_[A-Z_]+) = '([^']+)';/g)];
     expect(classStrings.map(([, name]) => name).sort()).toEqual([
       'WORK_FILL_CONTENT_CLASS', 'WORK_FILL_PANE_CHAIN_CLASS', 'WORK_FILL_PANE_PRINT_CLASS', 'WORK_FILL_REGION_CLASS',
@@ -105,7 +131,7 @@ describe('업무면 fill 셸 계약', () => {
     // [2026-10-05 통합] MasterDetailPage 의 fill 지역 상수는 이름 하나를 집는 대신 전부 모아 exact 로 센다 — 2차 리뷰 반영으로
     //   칸 머리·도구 줄·넓은 마스터 폭 상수가 늘었는데 이 검사가 LAYOUT 하나만 보아, 접두 없는 토큰이 들어와도 green 이었다.
     //   상수를 더하거나 걷으면 아래 목록을 같은 변경에서 고친다.
-    const masterDetail = stripTsComments(read('app/components/patterns/master-detail-page.tsx'));
+    const masterDetail = readCode('app/components/patterns/master-detail-page.tsx');
     const masterDetailStrings = [...masterDetail.matchAll(/const (WORK_FILL_[A-Z_]+_CLASS) = '([^']+)';/g)];
     expect(masterDetailStrings.map(([, name]) => name).sort()).toEqual([
       'WORK_FILL_INLINE_DESCRIPTION_CLASS', 'WORK_FILL_LAYOUT_CLASS', 'WORK_FILL_PANE_BODY_CLASS', 'WORK_FILL_PANE_HEAD_CLASS',
@@ -114,7 +140,7 @@ describe('업무면 fill 셸 계약', () => {
     ]);
     const localStrings = [
       ...masterDetailStrings.map(([, name, value]) => [`MasterDetailPage ${name}`, value] as const),
-      ['WorkListPage WORK_LIST_CONTENT_FLEX_CLASS', stripTsComments(read('app/components/patterns/work-list-page.tsx')).match(/const WORK_LIST_CONTENT_FLEX_CLASS = '([^']+)';/)?.[1]] as const,
+      ['WorkListPage WORK_LIST_CONTENT_FLEX_CLASS', readCode('app/components/patterns/work-list-page.tsx').match(/const WORK_LIST_CONTENT_FLEX_CLASS = '([^']+)';/)?.[1]] as const,
     ];
     for (const [name, value] of [...classStrings.map(([, name, value]) => [name, value] as const), ...localStrings]) {
       expect(value, `${name} 를 찾지 못했습니다`).toBeTruthy();
@@ -129,7 +155,7 @@ describe('업무면 fill 셸 계약', () => {
     클래스 성질을 고정한다. 하나라도 되돌리면 실측에서 아래 결함이 다시 난다.
   */
   it('셸 루트는 고정 높이가 아니라 최소 높이다(낮은 창에서 내용이 푸터를 덮지 않고 페이지가 스크롤한다)', () => {
-    const fillModule = stripTsComments(read('app/components/patterns/work-fill.ts'));
+    const fillModule = readCode('app/components/patterns/work-fill.ts');
     const root = fillModule.match(/export const WORK_FILL_ROOT_CLASS = '([^']+)';/)?.[1] ?? '';
     expect(root.split(/\s+/)).toContain('work-fill:min-h-[var(--work-fill-height)]');
     // 고정 height 였을 때 실측: 머리가 길면 작업 영역이 0px 로 줄고 넘친 내용이 푸터 아래로 그려졌다.
@@ -137,7 +163,7 @@ describe('업무면 fill 셸 계약', () => {
   });
 
   it('작업 영역은 기준 0px·바닥값·안전판(relative·overflow-y-auto·포커스 링 여백)을 갖는다', () => {
-    const fillModule = stripTsComments(read('app/components/patterns/work-fill.ts'));
+    const fillModule = readCode('app/components/patterns/work-fill.ts');
     const content = (fillModule.match(/export const WORK_FILL_CONTENT_CLASS = '([^']+)';/)?.[1] ?? '').split(/\s+/);
     // flex-1(0%)은 루트 높이가 확정되지 않은 세로 flex 에서 내용 크기로 취급돼 페이지가 다시 스크롤한다(실측 244px).
     expect(content).toContain('work-fill:flex-[1_1_0px]');
@@ -148,7 +174,7 @@ describe('업무면 fill 셸 계약', () => {
   });
 
   it('주 스크롤 영역은 조건 안에서도 상한(셸 높이)과 바닥값을 둔다(사슬이 끊겨도 안쪽에서 스크롤, 0px 로 줄지 않음)', () => {
-    const fillModule = stripTsComments(read('app/components/patterns/work-fill.ts'));
+    const fillModule = readCode('app/components/patterns/work-fill.ts');
     const scroll = (fillModule.match(/export const WORK_FILL_SCROLL_CLASS = '([^']+)';/)?.[1] ?? '').split(/\s+/);
     expect(scroll).toContain('work-fill:max-h-[var(--work-fill-height)]');
     expect(scroll, 'max-h-none 이면 사슬이 끊길 때 상자가 내용 높이로 커져 고정 머리글·안쪽 스크롤이 조용히 사라진다').not.toContain('work-fill:max-h-none');
@@ -163,7 +189,7 @@ describe('업무면 fill 셸 계약', () => {
       'app/components/ui/standard-data-table.tsx',
       'app/admin/security/authority/components/PermissionScrollRegion.tsx',
     ]) {
-      const source = stripTsComments(read(path));
+      const source = readCode(path);
       expect(source, `${path} 가 공용 fill 클래스를 쓰지 않습니다`).toMatch(/from ['"](?:\.\/work-fill|@\/app\/components\/patterns\/work-fill)['"]/);
       expect(source, `${path} 가 fill 조건을 직접 정의합니다`).not.toMatch(/matchMedia|\[@media|min-height:\s*600px/);
     }
