@@ -424,7 +424,7 @@ export function readCommittedFile(buildSha, relativePath, { repositoryRoot = rep
   }
   return execFileSync(
     'git',
-    ['show', `${buildSha}:${relativePath}`],
+    ['cat-file', 'blob', `${buildSha}:${relativePath}`],
     {
       cwd: repositoryRoot,
       encoding: 'buffer',

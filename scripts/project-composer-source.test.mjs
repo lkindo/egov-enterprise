@@ -35,6 +35,34 @@ const java = files.filter(file => file.endsWith('.java')).map(file => join(root,
 const frontendFiles = files.filter(file => file.startsWith('frontend/'));
 const frontendSources = new Map(frontendFiles.filter(isFrontendModuleFile)
   .map(file => [file, readFileSync(join(root, file), 'utf8')]));
+// Java 원문도 한 번만 읽는다(frontendSources 와 같다). 시험 중 저장소 파일은 바뀌지 않으므로 계획들이 같은 원문을 쓴다.
+const javaSources = new Map(java.map(path => [path, readFileSync(path, 'utf8')]));
+const readJava = path => javaSources.get(path) ?? readFileSync(path, 'utf8');
+/*
+ * 실제 저장소로 세우는 생성기 계획의 메모. 같은 입력이면 같은 계획이 나오는 결정적 함수라, 같은 구성을 여러 시험이 다시 계산하지 않는다.
+ * Java 계획은 저장소 루트·모듈의 기능 소유(ownership)·모듈의 Java 모집단(java)이 같으면 해석된 기능 목록으로만 정해진다 — 키는 정렬한
+ * resolvedDomains 다. 다른 소유(지원 파일 선언을 걷은 변형)나 합성 트리는 이 메모를 쓰지 않는다. 프런트 계획은 구성 해시가 키다 — 깨뜨린
+ * 카탈로그에서 푼 구성은 카탈로그 해시가 들어가 해시가 달라 섞이지 않는다. 계획 객체는 여러 시험이 함께 읽으므로 고치지 않는다.
+ */
+const javaPlans = new Map();
+const javaPlanFor = profile => {
+  const key = JSON.stringify([...profile.resolvedDomains].sort());
+  if (!javaPlans.has(key)) javaPlans.set(key, planJavaRemoval(root, ownership, profile, java, { readSource: readJava }));
+  return javaPlans.get(key);
+};
+const frontendPlans = new Map();
+function frontendPlanFor(composition) {
+  const build = () => {
+    const projector = createFrontendProjector({ composition, files: frontendFiles });
+    const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
+    const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
+      directPaths: projector.directPaths, readSource: path => projected.get(path) });
+    return { projector, projected, plan };
+  };
+  if (!composition.compositionHash) return build();
+  if (!frontendPlans.has(composition.compositionHash)) frontendPlans.set(composition.compositionHash, build());
+  return frontendPlans.get(composition.compositionHash);
+}
 const covers = (prefix, path) => path === prefix || path.startsWith(`${prefix}/`);
 // 소유 판정 시험도 생산 projector(createFrontendProjector)를 지난다 — 구성을 주면 기능 투영이다(시작 구성과 직접 선택이 같다).
 const projectCustom = (file, source, composition) => createFrontendProjector({ composition }).project(file, source).source;
@@ -80,18 +108,18 @@ test('SMS API support follows the optional domain in the real generator removal 
   for (const selected of [[], ['sms']]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
     const profile = composerProfile(modules, composition);
-    const plan = planJavaRemoval(root, ownership, profile, java);
+    const plan = javaPlanFor(profile);
     for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), !selected.includes('sms'), `${file}: exact SMS owner`);
   }
   for (const preset of catalog.presets) {
-    const plan = planJavaRemoval(root, ownership, composerProfile(modules, presetComposition(preset.id)), java);
+    const plan = javaPlanFor(composerProfile(modules, presetComposition(preset.id)));
     // 문자 기능이 없는 시작 구성(공통 기반·설문·결재)에서만 빠진다 — 시작 구성 이름이 아니라 해석된 기능 목록으로 판정한다.
     const excluded = !presetComposition(preset.id).resolvedDomains.includes('sms');
     for (const file of smsApiSources) assert.equal(plan.removed.has(join(root, file)), excluded, `${preset.id}: ${file}`);
   }
   const unowned = { ...ownership, supportFiles: new Map([...ownership.supportFiles].filter(([domain]) => domain !== 'sms')) };
   const excluded = composerProfile(modules, resolveProjectRecipe(recipe([]), catalog));
-  assert.equal(planJavaRemoval(root, unowned, excluded, java).removed.has(join(root, smsApiSources[1])), false,
+  assert.equal(planJavaRemoval(root, unowned, excluded, java, { readSource: readJava }).removed.has(join(root, smsApiSources[1])), false,
     'removing the exact support declaration reproduces the isolated Properties survivor');
 });
 
@@ -104,19 +132,19 @@ test('the template assignment port survives every composition and its only imple
   assert.deepEqual(modules.files['community.json'].backend.supportFiles, [], 'the community no longer declares template support');
   // 구현은 하나이고 템플릿 API 가 쓰는 @Service 다 — 템플릿만 고른 생성물에 소비자 없는 구현이 남지 않는다(도달 불가 서비스 게이트).
   //   별도 구현을 다시 만들면 템플릿 단독 생성물에서 그 구현이 소비자 없이 남는다.
-  const implementations = java.filter(file => /\bimplements\b[^{]*\bTemplateAssignmentPolicy\b/u.test(readFileSync(file, 'utf8')))
+  const implementations = java.filter(file => /\bimplements\b[^{]*\bTemplateAssignmentPolicy\b/u.test(readJava(file)))
     .map(file => relative(root, file).split(sep).join('/'));
   assert.deepEqual(implementations, [templateService]);
   assert.match(readFileSync(join(root, templateService), 'utf8'), /@Service\b/u);
   for (const [selected, kept] of [[['template'], true], [['community'], false], [['community', 'template'], true], [['promotion'], false], [[], false]]) {
     const composition = resolveProjectRecipe(recipe(selected), catalog);
     assert.equal(composition.resolvedDomains.includes('template'), kept, `${selected}: template resolution`);
-    const plan = planJavaRemoval(root, ownership, composerProfile(modules, composition), java);
+    const plan = javaPlanFor(composerProfile(modules, composition));
     assert.equal(plan.removed.has(join(root, templateService)), !kept, `${selected}: ${templateService}`);
     assert.equal(plan.removed.has(join(root, templatePort)), false, `${selected}: the port stays in foundation`);
   }
   for (const preset of catalog.presets) {
-    const plan = planJavaRemoval(root, ownership, composerProfile(modules, presetComposition(preset.id)), java);
+    const plan = javaPlanFor(composerProfile(modules, presetComposition(preset.id)));
     assert.equal(plan.removed.has(join(root, templateService)), preset.id !== 'demo', `${preset.id}: ${templateService}`);
     assert.equal(plan.removed.has(join(root, templatePort)), false, `${preset.id}: ${templatePort}`);
   }
@@ -160,7 +188,7 @@ test('new management HTTP matrices project every selected surface and reject an 
     }
     const profile = composerProfile(modules, { profile: 'custom', packs: ['core', 'demo'], resolvedDomains: selected, frontend: { removePaths: [] } });
     assert.ok(!profile.acknowledgedRemovedGates.some(row => row.file === file), `${selected}: the selected RBAC surface must retain its gate`);
-    assert.equal(planJavaRemoval(root, ownership, profile, java).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
+    assert.equal(javaPlanFor(profile).removed.has(join(root, file)), false, `${selected}: actual dependency projection must preserve the selected RBAC gate`);
   }
   assert.throws(() => projectComposerJava(file, source.replace('/api/v1/help/manuals', '/api/v1/help/new-api'), { resolvedDomains: ['help'] }, ownership.rbac), /RBAC.*(inventory|owner|contract).*drifted/i);
 });
@@ -271,7 +299,7 @@ test('a selected feature keeps the api-server controllers of its own directory e
   const controller = 'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java';
   const survives = (catalogValue, selected) => {
     const composition = resolveProjectRecipe(recipe(selected), catalogValue);
-    const plan = planJavaRemoval(root, ownership, composerProfile(modules, composition), java);
+    const plan = javaPlanFor(composerProfile(modules, composition));
     return { composition, plan, check: () => assertComposerSourceSurvives(root, root, composition, ownership,
       { present: path => !plan.removed.has(join(root, path)) }) };
   };
@@ -538,10 +566,7 @@ function assertIntegrityGateAcknowledgements(profile, selected) {
  */
 function inspectFrontendSurvival(selection, currentCatalog = catalog) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection: Array.isArray(selection) ? { domains: selection } : selection }, currentCatalog);
-  const projector = createFrontendProjector({ composition, files: frontendFiles });
-  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
-  const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
-    directPaths: projector.directPaths, readSource: path => projected.get(path) });
+  const { plan } = frontendPlanFor(composition);
   const repositoryPaths = paths => new Set([...paths].map(path => relative(root, path).split(sep).join('/')));
   const [direct, removed] = [repositoryPaths(plan.direct), repositoryPaths(plan.removed)];
   const selected = frontendFiles.filter(file => !direct.has(file)
@@ -619,7 +644,7 @@ test('each selectable domain retains its Java production sources after actual de
   for (const domain of catalog.capabilities.map(row => row.id)) {
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
     const profile = composerProfile(modules, composition);
-    const plan = planJavaRemoval(root, ownership, profile, java);
+    const plan = javaPlanFor(profile);
     for (const [path, owner] of eventOwners) {
       assert.equal(!plan.removed.has(join(root, path)), owner === 'core' || composition.resolvedDomains.includes(owner),
         `${domain}: event source ${path} is owned by ${owner} in the census but the generator ${plan.removed.has(join(root, path)) ? 'removes' : 'keeps'} it`);
@@ -651,7 +676,7 @@ test('preset integrity gate acknowledgements match the real removal plan', () =>
     const profile = composerProfile(modules, composition);
     const selected = composition.resolvedDomains;
     assertIntegrityGateAcknowledgements(profile, selected);
-    const plan = planJavaRemoval(root, ownership, profile, java);
+    const plan = javaPlanFor(profile);
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !selected.includes('memoreport'), `${name}: ${file}`);
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(selected, owner), `${name}: ${file}`);
@@ -802,10 +827,7 @@ const HOME_PIECES = [
 const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards'];
 function homeSurface(selection) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection }, catalog);
-  const projector = createFrontendProjector({ composition, files: frontendFiles });
-  const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
-  const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
-    directPaths: projector.directPaths, readSource: path => projected.get(path) });
+  const { projected, plan } = frontendPlanFor(composition);
   const reached = new Set([join(root, HOME_PAGE)].filter(path => !plan.removed.has(path)));
   for (const path of reached) for (const { to } of plan.edges.get(path) ?? []) if (!plan.removed.has(to)) reached.add(to);
   const text = [...reached].map(path => stripCode(projected.get(path) ?? '')).join('\n');
@@ -871,10 +893,12 @@ test('the unread-notes card on the work home leaves with the note domain only (H
  * 출처가 남으면 그 링크는 오류 없이 기본 탭으로 떨어진다. 탭 목적지 계약(cross-stack)은 원본에서 기여 파일이 늘 있어 이 경우를 보지
  * 못하므로, 생성기의 실제 투영·연쇄로 단독 선택마다 본다. 메뉴 행은 recipe 의 excludedMenuTabs 가 따로 숨긴다(recipe 시험).
  */
+// 저장소 기준 경로의 원문 — 모듈 맨 위에서 읽어 둔 프런트·Java 원문을 쓴다(없으면 디스크).
+const repositoryText = file => frontendSources.get(file) ?? readJava(join(root, file));
 const stripCode = source => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 function contributedHubTabs() {
   return frontendFiles.filter(file => /^frontend\/src\/app\/.*-tabs\.ts$/.test(file)).flatMap(file => {
-    const source = stripCode(readFileSync(join(root, file), 'utf8'));
+    const source = stripCode(repositoryText(file));
     const body = source.match(/contributable:\s*\{([^}]*)\}/)?.[1];
     if (!body) return [];
     const routes = [...(source.match(/routes:\s*\[([^\]]*)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)].map(match => match[1]);
@@ -884,7 +908,7 @@ function contributedHubTabs() {
 function contributedTabSources({ routes, tab }, candidates) {
   const escaped = routes.map(route => route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   const pattern = new RegExp(`(?:${escaped.join('|')})\\?tab=${tab}\\b`, 'i');
-  return candidates.filter(file => !/\/__tests__\/|\.test\.|\/generated-/.test(file) && pattern.test(stripCode(readFileSync(join(root, file), 'utf8'))));
+  return candidates.filter(file => !/\/__tests__\/|\.test\.|\/generated-/.test(file) && pattern.test(stripCode(repositoryText(file))));
 }
 
 test('every source of a contributed hub tab leaves with the contribution in each selection that keeps the hub', () => {
@@ -904,10 +928,7 @@ test('every source of a contributed hub tab leaves with the contribution in each
   for (const capability of catalog.capabilities) {
     const composition = resolveProjectRecipe(recipe([capability.id]), catalog);
     const profile = composerProfile(modules, composition);
-    const projector = createFrontendProjector({ composition, files: frontendFiles });
-    const projected = new Map([...frontendSources].map(([file, source]) => [join(root, file), projector.project(file, source).source]));
-    const plan = planFrontendRemoval({ frontendRoot: join(root, 'frontend'), files: frontendFiles.map(file => join(root, file)),
-      directPaths: projector.directPaths, readSource: path => projected.get(path) });
+    const { plan } = frontendPlanFor(composition);
     const removed = file => plan.removed.has(join(root, file));
     let javaPlan = null;
     for (const [row, { frontend, java: javaSources }] of sources) {
@@ -919,7 +940,7 @@ test('every source of a contributed hub tab leaves with the contribution in each
       checked++;
       for (const file of frontend) if (!removed(file)) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
       if (javaSources.length) {
-        javaPlan ??= planJavaRemoval(root, ownership, profile, java);
+        javaPlan ??= javaPlanFor(profile);
         for (const file of javaSources) if (!javaPlan.removed.has(join(root, file))) violations.push(`${capability.id}: ${file} -> ${row.tab}`);
       }
     }

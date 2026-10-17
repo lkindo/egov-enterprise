@@ -102,11 +102,17 @@ export function projectionAcknowledgementBlockers(profile, { removedGates, ruleR
  * API 계약(`apiContract` = { doc, bindings })은 넘기지 않으면 `root` 의 api-docs 와 인가 원장에서 읽는다.
  * 기능 소유와 시작 구성 기대치는 매니페스트 v2 에서 읽는다(`modules` — loadComposerModules 결과, 없으면 `root` 에서 적재). 생성기와 같다
  * (11단계 C3) — 시작 구성도 직접 선택과 같은 판정이고 pack 을 보지 않는다.
+ * `readSource` 는 투영이 읽는 소스 원문(Java·프런트·과거 마이그레이션 검증·계약 참조·package.json)을 읽는다. 기본은 디스크다. 한 번의 점검
+ * 안에서 내용이 바뀌지 않는 트리를 여러 번 점검하는 호출자(시험)만 기억하는 읽기를 넘긴다.
  */
 export function compositionDeepPlan({ root, composition, files, outputParent, catalog, pageSurvival, permissionSources,
-  apiContract: apiContractSource, modules = loadComposerModules(root) }) {
+  apiContract: apiContractSource, modules = loadComposerModules(root), readSource = path => readFileSync(path, 'utf8') }) {
   const started = performance.now();
   const profile = composerProfile(modules, composition);
+  // 투영 단계(Java·프런트 제거 계획)에는 구성의 투영 필드만 넘긴다 — 승인 목록(acknowledged*)은 아래 승인 대조에만 쓴다.
+  // 그래서 '제거 집합은 승인 목록과 독립' 이 주석이 아니라 코드 구조로 성립한다. 승인 목록만 바꾸는 시험이 한 번 잰 제거 집합을
+  // 다시 쓰는(projectionAcknowledgementBlockers) 근거가 이것이다. 프런트 투영은 구성(composition)만 받는다.
+  const projection = { resolvedDomains: profile.resolvedDomains, frontendRemovePaths: profile.frontendRemovePaths };
   const relativeFiles = files.map(normalize).filter(file => isCopyableSourceFile(file, root));
   const pathKey = ignoresCase(root, relativeFiles, outputParent) ? path => path.toLowerCase() : path => path;
   const present = new Set(relativeFiles.map(pathKey));
@@ -125,8 +131,8 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
       const prefix = pathKey(`${directory}${sep}`);
       return relativeFiles.map(file => join(root, file)).filter(path => pathKey(path).startsWith(prefix));
     };
-    const plan = planJavaRemoval(root, ownership, profile, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
-      { walkDirectory });
+    const plan = planJavaRemoval(root, ownership, projection, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
+      { walkDirectory, readSource });
     // 생성기는 복사한 트리에서 선언된 지원 파일을 찾는다. 디스크에만 있고 복사되지 않는 파일이면 거기서 실패한다.
     for (const supportFiles of ownership.supportFiles.values()) {
       for (const file of supportFiles) if (!present.has(pathKey(file))) throw new Error(`Missing domain support file: ${file}`);
@@ -157,7 +163,7 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   try {
     // 슬롯 레지스트리는 생성기처럼 복사할 파일 목록으로 렌더한다(PR-4).
     const projector = createFrontendProjector({ composition, files: relativeFiles.filter(file => file.startsWith('frontend/')) });
-    const project = path => projector.project(normalize(relative(frontendRoot, path)), readFileSync(path, 'utf8')).source;
+    const project = path => projector.project(normalize(relative(frontendRoot, path)), readSource(path)).source;
     projected = new Map(frontendFiles.filter(isFrontendModuleFile).map(path => [path, project(path)]));
     frontend = planFrontendRemoval({ frontendRoot, files: frontendFiles, directPaths: projector.directPaths,
       readSource: path => projected.get(path) });
@@ -169,7 +175,7 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   if (apiProjection && frontend) {
     try {
       const surviving = relativeFiles.filter(file => isContractScopeFile(file) && kept(file));
-      const references = vanishedContractReferences(surviving.map(file => ({ file, source: projected.get(join(root, file)) ?? readFileSync(join(root, file), 'utf8') })),
+      const references = vanishedContractReferences(surviving.map(file => ({ file, source: projected.get(join(root, file)) ?? readSource(join(root, file)) })),
         predictFromProjection(root, apiProjection));
       if (references.hits.length || references.issues.length) {
         block('API_CONTRACT_REFERENCE', { files: [...new Set([...references.hits, ...references.issues].map(entry => entry.file))].sort(),
@@ -227,14 +233,14 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   try {
     const schemaTests = relativeFiles.filter(file => file.startsWith(`${HISTORICAL_SCHEMA_TEST_DIR}/`) && file.endsWith('.java') && kept(file));
     ruleRemovals['historical-migration-tests'] = selectHistoricalMigrationTests(schemaTests.map(file => join(root, file)),
-      path => readFileSync(path, 'utf8')).map(rel).sort((left, right) => left.localeCompare(right));
+      readSource).map(rel).sort((left, right) => left.localeCompare(right));
   } catch (error) {
     undeterminedRules.add('historical-migration-tests');
     block('RULE_REMOVAL', { message: message(error) });
   }
   ruleRemovals['upstream-atlas'] = [...UPSTREAM_ATLAS.gates].sort((left, right) => left.localeCompare(right));
   try {
-    const scripts = present.has(pathKey('package.json')) ? JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts : {};
+    const scripts = present.has(pathKey('package.json')) ? JSON.parse(readSource(join(root, 'package.json'))).scripts : {};
     const missing = [
       ...missingUpstreamAtlasAssets(path => kept(path) || relativeFiles.some(file => file.startsWith(`${path}/`) && kept(file))),
       ...missingUpstreamAtlasAliases(scripts),

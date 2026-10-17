@@ -11,10 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -137,6 +144,10 @@ class ZeroDowntimeMigrationLinterTest {
             "(?is)\\bALTER\\s+SEQUENCE\\s+\\S+\\s+RENAME\\s+");
 
     private static final String HISTORY_MIGRATION_DIR = "api-server/src/main/resources/db/migration/";
+    /** 블롭을 읽지 못했을 때의 문구 — 블롭마다 git show 를 띄우던 때와 같은 문구를 유지한다. */
+    private static final String HISTORY_BLOB_FAILURE = "Git show 실패: 기준 object/ref와 조상 관계를 확인하십시오.";
+    /** cat-file 일괄 응답의 머리 줄: {@code <oid> <type> <size>}. */
+    private static final Pattern BATCH_HEADER = Pattern.compile("([0-9a-f]{40}|[0-9a-f]{64}) (\\S+) (\\d{1,18})");
 
     @Test
     void migrationHistoryRejectsModifiedProtectedVersion(@TempDir Path root) throws Exception {
@@ -446,10 +457,14 @@ class ZeroDowntimeMigrationLinterTest {
                 }
                 throw new IOException("검사 root 자체의 .git이 없습니다. 부모 저장소 또는 현재 HEAD로 기준을 대체하지 않습니다.");
             }
-            if (!Files.isSameFile(root, Path.of(historyGit(root, "rev-parse", "--show-toplevel").strip()))) {
+            // 두 질의를 rev-parse 한 번으로 묻는다. 출력은 인자 순서대로 한 줄씩이며 마지막 줄이 shallow 여부다.
+            String repository = historyGit(root, "rev-parse", "--show-toplevel", "--is-shallow-repository").strip();
+            int lastLine = repository.lastIndexOf('\n');
+            if (lastLine < 0) throw new IOException("Git 저장소 top-level과 shallow 여부를 읽을 수 없습니다.");
+            if (!Files.isSameFile(root, Path.of(repository.substring(0, lastLine).strip()))) {
                 throw new IOException("Git top-level이 검사 root와 다릅니다.");
             }
-            if (!"false".equals(historyGit(root, "rev-parse", "--is-shallow-repository").strip())) {
+            if (!"false".equals(repository.substring(lastLine + 1).strip())) {
                 throw new IOException("얕은 Git 이력입니다. 전체 보호 이력을 fetch한 뒤 다시 검사하십시오.");
             }
             if (projected && historyGit(root, "for-each-ref", "--format=%(refname)").isBlank()) {
@@ -475,8 +490,9 @@ class ZeroDowntimeMigrationLinterTest {
             if (branch.isBlank()) throw new IOException("required-checks의 보호 branch가 없습니다.");
             historyGit(root, "check-ref-format", "refs/heads/" + branch);
             String protectedRef = "refs/remotes/origin/" + branch;
-            String protectedCommit = historyCommit(root, protectedRef);
-            String testedCommit = historyCommit(root, "HEAD");
+            List<String> resolved = historyCommits(root, protectedRef, "HEAD");
+            String protectedCommit = resolved.get(0);
+            String testedCommit = resolved.get(1);
             Set<String> baselines = new LinkedHashSet<>();
 
             if (!"true".equals(environment.get("GITHUB_ACTIONS"))) {
@@ -497,8 +513,7 @@ class ZeroDowntimeMigrationLinterTest {
                     if (!ref.matches("refs/pull/[0-9]+/merge") || baseBranch.isBlank()) {
                         throw new IOException("PR merge ref 또는 base branch가 유효하지 않습니다.");
                     }
-                    historyCommit(root, base);
-                    historyCommit(root, head);
+                    historyCommits(root, base, head);
                     List<String> parents = List.of(historyGit(root, "rev-list", "--parents", "-n", "1", testedCommit)
                             .strip().split("\\s+"));
                     if (!parents.equals(List.of(testedCommit, base, head))) {
@@ -550,15 +565,32 @@ class ZeroDowntimeMigrationLinterTest {
                         "--", HISTORY_MIGRATION_DIR).split("\\x00")));
                 String paths = historyGit(root, "ls-tree", "-r", "--name-only", "-z", baseline,
                         "--", HISTORY_MIGRATION_DIR);
+                List<String> protectedPaths = new ArrayList<>();
+                Set<String> blobNames = new LinkedHashSet<>();
                 for (String relative : paths.split("\\x00")) {
                     if (!Path.of(relative).getFileName().toString().matches("V[^/]+__[^/]+\\.sql")) continue;
-                    String original = normalizeNewlines(historyGit(root, "show", baseline + ":" + relative));
+                    protectedPaths.add(relative);
+                    blobNames.add(baseline + ":" + relative);
+                    for (String revision : List.of(testedCommit, "")) {
+                        if ((revision.isEmpty() ? stagedChanges : committedChanges).contains(relative)) {
+                            blobNames.add(revision + ":" + relative);
+                        }
+                    }
+                }
+                // 기준·커밋·index 블롭을 cat-file 프로세스 하나로 읽는다(파일마다 git show 를 띄우지 않는다).
+                Map<String, byte[]> blobs = historyBlobs(root, blobNames);
+                for (String relative : protectedPaths) {
+                    byte[] baselineBlob = blobs.get(baseline + ":" + relative);
+                    if (baselineBlob == null) throw new IOException(HISTORY_BLOB_FAILURE);
+                    String original = normalizeNewlines(strictUtf8(baselineBlob));
                     // Local checks protect what will be committed/pushed as well as the visible worktree.
                     // Restoring only the worktree must not conceal a modified index or committed blob.
                     for (String revision : List.of(testedCommit, "")) {
                         if ((revision.isEmpty() ? stagedChanges : committedChanges).contains(relative)) {
                             try {
-                                if (!original.equals(normalizeNewlines(historyGit(root, "show", revision + ":" + relative)))) {
+                                byte[] blob = blobs.get(revision + ":" + relative);
+                                if (blob == null) throw new IOException(HISTORY_BLOB_FAILURE);
+                                if (!original.equals(normalizeNewlines(strictUtf8(blob)))) {
                                     violations.add(relative + ": 커밋 또는 index에서 보호 versioned SQL을 변경했습니다.");
                                 }
                             } catch (IOException missingBlob) {
@@ -601,7 +633,109 @@ class ZeroDowntimeMigrationLinterTest {
         historyGit(root, "merge-base", "--is-ancestor", ancestor, descendant);
     }
 
+    /**
+     * 여러 ref 를 {@code cat-file --batch-check} 한 번으로 commit 에 해석한다. {@link #historyCommit} 과 같은
+     * {@code <ref>^{commit}} 이며, 하나라도 해석되지 않으면 그 단건 해석과 같은 문구로 실패한다.
+     */
+    private static List<String> historyCommits(Path root, String... refs) throws IOException {
+        List<String> commits = new ArrayList<>();
+        Map<String, String> headers = historyBatch(root, "--batch-check",
+                List.of(refs).stream().map(ref -> ref + "^{commit}").toList(), null);
+        for (String ref : refs) {
+            Matcher header = BATCH_HEADER.matcher(headers.getOrDefault(ref + "^{commit}", ""));
+            if (!header.matches() || !"commit".equals(header.group(2))) {
+                throw new IOException("Git rev-parse 실패: 기준 object/ref와 조상 관계를 확인하십시오.");
+            }
+            commits.add(header.group(1));
+        }
+        return commits;
+    }
+
+    /**
+     * {@code <rev>:<path>} 블롭들을 {@code cat-file --batch} 한 번으로 읽는다. {@code git show} 와 같은 원시
+     * 바이트다(textconv·smudge 를 적용하지 않는다). 없거나 블롭이 아닌 object 는 결과에 넣지 않는다 —
+     * 호출자가 기준 블롭이면 검사 전체를, 커밋·index 블롭이면 그 파일을 실패로 낸다.
+     *
+     * <p>이름은 인자가 아니라 입력 파일로 넘긴다. 인자로 넘기던 {@code git show <rev>:<path>} 는 그 인자가
+     * 파일인지 보려고 작업 디렉터리 기준 경로를 lstat 해서, 경로가 긴 worktree 에서 Windows 260자 한계에 걸렸다.
+     */
+    private static Map<String, byte[]> historyBlobs(Path root, Set<String> names) throws IOException {
+        Map<String, byte[]> blobs = new LinkedHashMap<>();
+        if (names.isEmpty()) return blobs;
+        historyBatch(root, "--batch", List.copyOf(names), blobs);
+        return blobs;
+    }
+
+    /**
+     * cat-file 일괄 모드를 실행하고 요청 순서대로 응답을 나눈다. 요청 이름별 머리 줄을 돌려주며,
+     * {@code blobs} 가 있으면({@code --batch}) 블롭 본문을 거기에 담는다. 형식이 어긋난 출력은 검증 실패다.
+     */
+    private static Map<String, String> historyBatch(Path root, String mode, List<String> names,
+            Map<String, byte[]> blobs) throws IOException {
+        StringBuilder request = new StringBuilder();
+        for (String name : names) {
+            if (name.indexOf('\n') >= 0 || name.indexOf('\r') >= 0) {
+                throw new IOException("Git object 이름에 줄바꿈이 있어 일괄 조회할 수 없습니다.");
+            }
+            request.append(name).append('\n');
+        }
+        Path input = Files.createTempFile("zdm-history-git-", ".in");
+        try {
+            Files.writeString(input, request, StandardCharsets.UTF_8);
+            byte[] output = runHistoryGit(root, input, HarnessSourceIndex::readFreshBytes, "cat-file", mode);
+            Map<String, String> headers = new LinkedHashMap<>();
+            int cursor = 0;
+            for (String name : names) {
+                int newline = cursor;
+                while (newline < output.length && output[newline] != '\n') newline++;
+                if (newline >= output.length) throw new IOException("Git cat-file 출력이 요청보다 짧습니다.");
+                String header = new String(output, cursor, newline - cursor, StandardCharsets.UTF_8);
+                cursor = newline + 1;
+                headers.put(name, header);
+                if (header.equals(name + " missing")) continue;
+                Matcher matcher = BATCH_HEADER.matcher(header);
+                if (!matcher.matches()) throw new IOException("Git cat-file 출력 형식이 예상과 다릅니다.");
+                if (blobs == null) continue;
+                long size = Long.parseLong(matcher.group(3));
+                if (size > output.length - cursor - 1L || output[cursor + (int) size] != '\n') {
+                    throw new IOException("Git cat-file 출력이 object 크기와 맞지 않습니다.");
+                }
+                if ("blob".equals(matcher.group(2))) {
+                    blobs.put(name, java.util.Arrays.copyOfRange(output, cursor, cursor + (int) size));
+                }
+                cursor += (int) size + 1;
+            }
+            if (cursor != output.length) throw new IOException("Git cat-file 출력에 요청하지 않은 응답이 있습니다.");
+            return headers;
+        } finally {
+            Files.deleteIfExists(input);
+        }
+    }
+
+    /** {@link HarnessSourceIndex#readFresh} 와 같은 엄격한 UTF-8 해석 — 잘못된 바이트는 예외다. */
+    private static String strictUtf8(byte[] bytes) throws IOException {
+        return StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString();
+    }
+
     private static String historyGit(Path root, String... arguments) throws IOException {
+        return runHistoryGit(root, null, HarnessSourceIndex::readFresh, arguments);
+    }
+
+    @FunctionalInterface
+    private interface HistoryOutput<T> {
+        T read(Path output) throws IOException;
+    }
+
+    /**
+     * 격리 환경에서 git 을 한 번 실행한다. {@code input} 이 있으면 그 파일을 표준 입력으로 주고 오류 출력은
+     * 버린다(표준 출력에 섞이면 일괄 응답을 나눌 수 없다). 없으면 종전대로 오류 출력을 표준 출력에 합친다.
+     */
+    private static <T> T runHistoryGit(Path root, Path input, HistoryOutput<T> reader, String... arguments)
+            throws IOException {
         List<String> command = new ArrayList<>(List.of("git", "--no-optional-locks", "-c", "core.pager=cat"));
         command.addAll(List.of(arguments));
         // SQL blobs can exceed a pipe buffer. A bounded process writing to a temporary file cannot
@@ -610,7 +744,12 @@ class ZeroDowntimeMigrationLinterTest {
         Process process = null;
         try {
             ProcessBuilder builder = new ProcessBuilder(command).directory(root.toFile())
-                    .redirectErrorStream(true).redirectOutput(output.toFile());
+                    .redirectOutput(output.toFile());
+            if (input == null) {
+                builder.redirectErrorStream(true);
+            } else {
+                builder.redirectInput(input.toFile()).redirectError(ProcessBuilder.Redirect.DISCARD);
+            }
             for (String variable : List.of("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
                     "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES")) builder.environment().remove(variable);
             builder.environment().put("GIT_TERMINAL_PROMPT", "0");
@@ -619,7 +758,7 @@ class ZeroDowntimeMigrationLinterTest {
             if (process.exitValue() != 0) {
                 throw new IOException("Git " + arguments[0] + " 실패: 기준 object/ref와 조상 관계를 확인하십시오.");
             }
-            return HarnessSourceIndex.readFresh(output);
+            return reader.read(output);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new IOException("Git history 검사가 중단됐습니다.", interrupted);
@@ -629,23 +768,60 @@ class ZeroDowntimeMigrationLinterTest {
         }
     }
 
+    /**
+     * 보호 기준 저장소의 원본. 시험마다 git 프로세스 9개로 같은 저장소를 다시 만들지 않고, 클래스에서 한 번
+     * 만든 것을 복사한다 — 각 시험이 시작하는 커밋 트리·ref·설정은 같다. 달라지는 것은 시험마다 다르던 commit
+     * SHA 가 이제 시험끼리 같다는 점과 훅 견본 같은 template 파일이 없다는 점뿐이며, 둘에 기대는 시험은 없다.
+     * index 의 stat 정보가 복사로 달라져도 git 은 내용을 다시 해시해 판정한다.
+     */
+    @TempDir
+    static Path historyTemplateDirectory;
+    private static HistoryFixture historyTemplate;
+
     private static HistoryFixture historyFixture(Path root) throws Exception {
+        HistoryFixture template = historyTemplate();
+        copyHistoryTemplate(template.root(), root);
+        return new HistoryFixture(root, template.base());
+    }
+
+    private static synchronized HistoryFixture historyTemplate() throws Exception {
+        if (historyTemplate != null && historyTemplate.root().equals(historyTemplateDirectory)) return historyTemplate;
+        Path root = historyTemplateDirectory;
         writeUnmarkedPresets(root);
         Files.createDirectories(root.resolve(".github"));
         Files.writeString(root.resolve(".github/required-checks.json"), "{\"branch\":\"main\"}");
         writeHistorySql(root, "V1__original.sql", "SELECT 1;\n");
         writeHistorySql(root, "R__refresh.sql", "SELECT 1;\n");
         HistoryFixture fixture = new HistoryFixture(root, "");
-        fixture.git("init", "-q", "-b", "main");
-        fixture.git("config", "user.name", "Migration fixture");
-        fixture.git("config", "user.email", "migration-fixture@example.invalid");
-        fixture.git("config", "commit.gpgsign", "false");
-        fixture.git("config", "core.autocrlf", "false");
+        // 빈 template: 기계마다 다른 init.templateDir(훅 등)이 섞이지 않고 복사할 파일도 준다.
+        fixture.git("init", "-q", "--template=", "-b", "main");
+        // git config 4회 대신 저장소 설정 파일에 한 번 쓴다 — 저장소에 남는 설정 상태는 같다.
+        Files.writeString(root.resolve(".git/config"), "[user]\n\tname = Migration fixture\n"
+                + "\temail = migration-fixture@example.invalid\n[commit]\n\tgpgsign = false\n"
+                + "[core]\n\tautocrlf = false\n", StandardCharsets.UTF_8, StandardOpenOption.APPEND);
         fixture.git("add", ".");
         fixture.git("commit", "-qm", "protected baseline");
         String base = fixture.git("rev-parse", "HEAD");
         fixture.git("update-ref", "refs/remotes/origin/main", base);
-        return new HistoryFixture(root, base);
+        historyTemplate = new HistoryFixture(root, base);
+        return historyTemplate;
+    }
+
+    /** 원본 저장소를 빈 시험 디렉터리에 그대로(빈 디렉터리·속성 포함) 복사한다. 저장소 소스가 아닌 임시 fixture 다. */
+    private static void copyHistoryTemplate(Path template, Path target) throws IOException {
+        Files.walkFileTree(template, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attributes) throws IOException {
+                Files.createDirectories(target.resolve(template.relativize(directory).toString()));
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException {
+                Files.copy(file, target.resolve(template.relativize(file).toString()), StandardCopyOption.COPY_ATTRIBUTES);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     private static void writeHistorySql(Path root, String name, String sql) throws IOException {

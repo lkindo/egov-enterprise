@@ -2,9 +2,12 @@
  * 횡단 게이트 원장 공용 판정(scripts/pack-tagged-registry.mjs)과 그 판정이 기대는 생성기 Java 의존 판정의 계약.
  *
  * 세 원장 계약(개인정보 접근·교차 도메인 결합·입력 계약 미러)이 공유하는 성질만 여기서 한 번 증명한다:
- * 게이트 파일은 어떤 구성에서도 지워지지 않는다, 시작 구성의 Java 게이트 제거 승인과 Java 연쇄는 presets.json 의 목록과 exact 하다(R4),
- * 소유 파생 기대 생존은 계획과 양방향으로 대조된다, 생성기의 의존 판정은 주석·리터럴 속 인용을 무시하되 실제 코드 참조는 놓치지 않는다,
- * 투영 모드는 위장할 수 없다.
+ * 게이트 파일은 어떤 구성에서도 지워지지 않는다, 소유 파생 기대 생존은 계획과 양방향으로 대조된다, 생성기의 의존 판정은 주석·리터럴 속
+ * 인용을 무시하되 실제 코드 참조는 놓치지 않는다, 계획은 파일마다 원문을 한 번만 읽고 공유한 읽기와 같은 계획을 낸다, 투영 모드는
+ * 위장할 수 없다.
+ * 시작 구성의 Java 게이트 제거 승인과 Java 연쇄가 presets.json 의 목록과 exact 한지(R4)는 저장소에서는
+ * project-composer-preset-equivalence.test.mjs 가 정밀 점검의 차단 사유로 본다(교체·누락의 red 증명은 deep-failure-points). 여기에는
+ * 그 시험이 돌지 않는 투영본(생성물)의 확인만 남는다 — 승인 목록에 적힌 파일이 실제로 없어야 한다.
  */
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -21,10 +24,9 @@ import {
   evaluateExpectedSurvival,
   evaluateGateSurvival,
   evaluateRecordedPresence,
+  contextSourceReader,
   ledgerEntries,
   normalize,
-  presetGateMismatches,
-  presetJavaCascadeMismatches,
   readRepoJson,
   recordedSources,
   repositoryContext,
@@ -95,43 +97,19 @@ test('원장 게이트 파일은 어떤 구성에서도 제거되지 않는다',
     [`${renamed} 가 Java 모집단에 없다 — 개명·이동이면 게이트 목록을 갱신하라`], '없는 게이트 파일은 조용히 통과하지 않는다');
 });
 
-test('시작 구성의 Java 게이트 제거 승인은 계획과 exact 일치하고, 교체(swap)도 red 다', async () => {
-  const { root, projection, presets, active } = await repositoryContext();
-  if (projection) {
-    // 투영본은 제거가 끝났다 — 활성 구성의 승인 목록에 적힌 Java 게이트가 실제로 없어야 한다.
-    const lingering = (active.expected?.gates ?? []).map((entry) => entry.file)
-      .filter((file) => file.endsWith('.java') && existsSync(join(root, file)));
-    assert.deepEqual(lingering, []);
+// 시작 구성의 게이트·연쇄 제거 승인 exact 대조(R4)는 저장소에서 project-composer-preset-equivalence.test.mjs 가 본다(위 docblock).
+// 이 계약이 같은 판정을 Java 게이트에만 다시 하던 사본은 걷었다(거버넌스 총량 관리). 그 시험이 돌지 않는 투영본만 여기서 확인한다.
+test('투영본: 활성 구성의 승인 목록에 적힌 Java 게이트와 연쇄 제거 파일은 실제로 없다', async (t) => {
+  const { root, projection, active } = await repositoryContext();
+  if (!projection) {
+    t.diagnostic('저장소의 exact 대조는 project-composer-preset-equivalence.test.mjs 가 정밀 점검 차단 사유로 한다');
     return;
   }
-  assert.deepEqual(presetGateMismatches({ root, compositions: presets }), []);
-  const core = presets.find((row) => row.preset === 'core');
-  assert.ok(core.profile.acknowledgedRemovedGates.length > 0, 'core 는 실제로 게이트 제거를 승인한다 — 대조가 vacuous 하지 않다');
-  // 승인 하나를 남는 게이트로 바꿔 넣는다 — 수가 같아도 목록 대조는 붉다.
-  const [first, ...rest] = core.profile.acknowledgedRemovedGates;
-  const swapped = { ...core, profile: { ...core.profile,
-    acknowledgedRemovedGates: [{ file: 'api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java', reason: '교체' }, ...rest] } };
-  const violations = presetGateMismatches({ root, compositions: [swapped] });
-  assert.equal(violations.length, 2, violations.join('\n'));
-  assert.match(violations[0], new RegExp(`^preset core 이 승인하지 않은 Java 게이트를 제거한다: ${first.file.replaceAll('.', '\\.')}`));
-  assert.match(violations[1], /^preset core 의 승인 목록에 더 이상 제거되지 않는 Java 게이트가 남아 있다: .*PrivacyAccessCensusLinterTest\.java/);
-});
-
-test('시작 구성의 Java 연쇄 제거(게이트 제외)는 presets.json 목록과 exact 일치한다', async () => {
-  const { root, projection, presets, active } = await repositoryContext();
-  if (projection) {
-    // 투영본은 제거가 끝났다 — 활성 구성의 연쇄 목록에 적힌 파일이 실제로 없어야 한다.
-    assert.deepEqual((active.expected?.javaCascade ?? []).filter((file) => existsSync(join(root, file))), []);
-    return;
-  }
-  assert.deepEqual(presetJavaCascadeMismatches({ root, compositions: presets }), []);
-  // 대조가 비어 있지 않다 — 축소 시작 구성은 실제로 연쇄 제거를 승인한다.
-  assert.ok(presets.some((row) => (row.profile.acknowledgedJavaCascade ?? []).length > 0));
-  const core = presets.find((row) => row.preset === 'core');
-  const [first, ...rest] = core.profile.acknowledgedJavaCascade;
-  const dropped = presetJavaCascadeMismatches({ root, compositions: [{ ...core, profile: { ...core.profile, acknowledgedJavaCascade: rest } }] });
-  assert.equal(dropped.length, 1, dropped.join('\n'));
-  assert.ok(dropped[0].startsWith(`preset core 이 승인하지 않은 Java 파일을 연쇄로 지운다 — 잘못 들어간 import 인지 먼저 본다: ${first} <- `), dropped[0]);
+  // 투영본은 제거가 끝났다 — 활성 구성의 승인 목록에 적힌 Java 게이트와 연쇄 목록의 파일이 실제로 없어야 한다.
+  const lingering = (active.expected?.gates ?? []).map((entry) => entry.file)
+    .filter((file) => file.endsWith('.java') && existsSync(join(root, file)));
+  assert.deepEqual(lingering, []);
+  assert.deepEqual((active.expected?.javaCascade ?? []).filter((file) => existsSync(join(root, file))), []);
 });
 
 test('Java 연쇄 승인 대조는 승인 밖 연쇄, 낡은 승인, 중복, 형식 오류를 모두 낸다', () => {
@@ -192,6 +170,97 @@ test('리터럴 제거는 텍스트 블록 경계만 비우고 뒤따르는 코�
   assert.ok(!stripped.includes('quoted') && !stripped.includes('still inside'), stripped);
   assert.ok(stripped.includes('int after = 1;'), stripped);
   assert.ok(stripped.includes('String b = "";'), stripped);
+});
+
+/*
+ * 계획의 원문 읽기(GEN-01·F2): 한 호출 안에서 형식 판정·게이트 판정·의존 색인이 같은 원문을 쓴다. 읽기는 파일마다 한 번이고 넘긴 읽기
+ * (readSource)를 지난다 — 어느 단계든 디스크를 따로 읽으면 아래 '디스크와 다른 원문' 이 그 단계에서 어긋나 붉다.
+ */
+const READ_DTO = 'business-app/src/main/java/nuri/business/service/addressbook/dto/AddressBookDto.java';
+const READ_BOARD = 'business-app/src/main/java/nuri/business/service/board/BoardService.java';
+const READ_CONSUMER = 'api-server/src/main/java/nuri/api/support/Consumer.java';
+const READ_SECOND = 'api-server/src/main/java/nuri/api/support/SecondConsumer.java';
+const READ_BOARD_USER = 'api-server/src/main/java/nuri/api/support/BoardUser.java';
+const READ_GATE = 'api-server/src/test/java/nuri/api/schema/SampleIntegrationTest.java';
+const READ_CORE = 'business-core/src/main/java/nuri/business/service/user/CoreThing.java';
+const importOf = (type) => ['import', `${type};`].join(' ');
+const READ_OWNERSHIP = { domains: ['addressbook', 'board'], supportFiles: new Map() };
+// 계획이 봐야 하는 원문. Consumer 는 제외 기능 타입을 import 하고(연쇄), SecondConsumer 는 Consumer 를 import 하며(형식 판정이 원문의
+// 패키지를 써야 이어진다), 시험 파일은 태그로만 게이트다(게이트 판정이 원문을 써야 게이트다).
+const READ_SOURCES = {
+  [READ_DTO]: 'package nuri.business.service.addressbook.dto;\npublic class AddressBookDto {}\n',
+  [READ_BOARD]: 'package nuri.business.service.board;\npublic class BoardService {}\n',
+  [READ_CONSUMER]: `package nuri.api.support;\n${importOf('nuri.business.service.addressbook.dto.AddressBookDto')}\npublic class Consumer { AddressBookDto dto; }\n`,
+  [READ_SECOND]: `package nuri.api.support.second;\n${importOf('nuri.api.support.Consumer')}\npublic class SecondConsumer { Consumer consumer; }\n`,
+  [READ_BOARD_USER]: `package nuri.api.support;\n${importOf('nuri.business.service.board.BoardService')}\npublic class BoardUser { BoardService service; }\n`,
+  [READ_GATE]: 'package nuri.api.schema;\n@Tag("schema-validation")\nclass SampleIntegrationTest {}\n',
+  [READ_CORE]: 'package nuri.business.service.user;\npublic class CoreThing {}\n',
+};
+const planShape = (root, plan) => {
+  const rel = (path) => normalize(path.slice(root.length + 1));
+  return {
+    removed: [...plan.removed].map(rel).sort(), direct: [...plan.direct].map(rel).sort(),
+    reasons: [...plan.removalReason].map(([path, reason]) => `${rel(path)} <- ${reason}`).sort(),
+    gates: [...plan.gateSources].map(rel).sort(), types: [...plan.removedTypes].sort(),
+  };
+};
+
+test('계획은 한 호출 안에서 파일마다 원문을 한 번 읽고, 모든 판정이 넘긴 읽기의 원문을 쓴다', () => {
+  // 디스크에는 다른 원문을 둔다 — 연쇄 import 도, 원문 패키지도, 게이트 태그도 없다.
+  const root = fixture({
+    ...READ_SOURCES,
+    [READ_CONSUMER]: 'package nuri.api.elsewhere;\npublic class Consumer {}\n',
+    [READ_GATE]: 'package nuri.api.schema;\nclass SampleIntegrationTest {}\n',
+  });
+  try {
+    const javaFiles = Object.keys(READ_SOURCES).map((file) => join(root, file));
+    const counts = new Map();
+    const readSource = (path) => {
+      counts.set(path, (counts.get(path) ?? 0) + 1);
+      return READ_SOURCES[normalize(path.slice(root.length + 1))];
+    };
+    const plan = planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains: ['board'] }, javaFiles, { readSource });
+    assert.deepEqual([...counts.values()], javaFiles.map(() => 1), '파일마다 한 번만 읽는다');
+    assert.deepEqual(counts.size, javaFiles.length);
+    const shape = planShape(root, plan);
+    assert.ok(shape.reasons.includes(`${READ_CONSUMER} <- nuri.business.service.addressbook.dto.AddressBookDto 참조`), JSON.stringify(shape));
+    // 형식 판정이 디스크의 패키지(nuri.api.elsewhere)를 쓰면 SecondConsumer 는 이어지지 않는다.
+    assert.ok(shape.reasons.includes(`${READ_SECOND} <- nuri.api.support.Consumer 참조`), JSON.stringify(shape));
+    assert.ok(shape.gates.includes(READ_GATE), '게이트 판정이 넘긴 읽기의 원문(태그)을 쓴다');
+    assert.ok(!shape.removed.includes(READ_BOARD_USER), '선택한 기능의 타입을 참조하는 파일은 남는다');
+    // 대조군: 디스크 원문으로 읽으면(기본 읽기) 연쇄도 게이트도 없다 — 위 단언이 넘긴 읽기 때문에 성립했다는 증거다.
+    const fromDisk = planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains: ['board'] }, javaFiles));
+    assert.ok(!fromDisk.removed.includes(READ_CONSUMER) && !fromDisk.removed.includes(READ_SECOND) && !fromDisk.gates.includes(READ_GATE),
+      JSON.stringify(fromDisk));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('문맥 하나가 공유하는 읽기와 기본 읽기는 여러 구성에서 같은 계획을 내고, 새 문맥은 고친 원문을 다시 읽는다', () => {
+  const root = fixture(READ_SOURCES);
+  try {
+    const javaFiles = Object.keys(READ_SOURCES).map((file) => join(root, file));
+    const shared = contextSourceReader();
+    for (const resolvedDomains of [[], ['addressbook'], ['board'], ['addressbook', 'board']]) {
+      assert.deepEqual(planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains }, javaFiles, { readSource: shared })),
+        planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains }, javaFiles)), `${resolvedDomains}: 공유 읽기 = 기본 읽기`);
+    }
+    const before = planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains: ['board'] }, javaFiles));
+    assert.ok(before.removed.includes(READ_CONSUMER));
+    // 파일을 고친다(제외 기능 import 를 걷는다). 다음 호출의 기본 읽기와 새로 만든 문맥 읽기는 고친 원문을 본다 — 원문을 호출이나 문맥
+    // 밖(모듈 전역)에 기억하면 옛 원문으로 판정해 여기서 붉다.
+    writeFileSync(join(root, READ_CONSUMER), 'package nuri.api.support;\npublic class Consumer {}\n', 'utf8');
+    for (const readSource of [undefined, contextSourceReader()]) {
+      const after = planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains: ['board'] }, javaFiles, readSource ? { readSource } : {}));
+      assert.ok(!after.removed.includes(READ_CONSUMER) && !after.removed.includes(READ_SECOND), JSON.stringify(after));
+    }
+    // 같은 문맥의 읽기는 고치기 전 원문을 계속 쓴다 — 문맥은 디스크를 바꾸지 않는 판정 한 번이라는 전제의 다른 면이다.
+    assert.ok(planShape(root, planJavaRemoval(root, READ_OWNERSHIP, { resolvedDomains: ['board'] }, javaFiles, { readSource: shared }))
+      .removed.includes(READ_CONSUMER));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('소유 파생 기대 생존 대조: 구성 안 소유는 남아야 하고, 구성 밖 소유는 빠져야 한다', () => {

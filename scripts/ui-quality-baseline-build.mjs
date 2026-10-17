@@ -451,7 +451,7 @@ function gitText(repositoryRoot, args) {
 }
 
 function committedFile(repositoryRoot, buildSha, relativePath) {
-  return sanitizedGit(repositoryRoot, ['show', `${buildSha}:${relativePath}`]);
+  return sanitizedGit(repositoryRoot, ['cat-file', 'blob', `${buildSha}:${relativePath}`]);
 }
 
 function parseGitTree(buffer) {

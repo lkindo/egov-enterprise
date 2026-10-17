@@ -61,12 +61,13 @@ test('원장 항목이 소유대로 생성기의 실제 제거 계획에서 남�
 });
 
 test('남는 요청 매핑 컨트롤러가 구성마다 CONTROLLER_FLOOR 이상이다', async () => {
-  const { root, projection, compositions, javaFiles } = await repositoryContext();
+  const { root, projection, compositions, javaFiles, readSource = (path) => readFileSync(path, 'utf8') } = await repositoryContext();
   const gateSource = readFileSync(join(root, GATE_FILE), 'utf8');
   const floor = Number(gateSource.match(/\bCONTROLLER_FLOOR\s*=\s*(\d+)\s*;/)?.[1]);
   assert.ok(Number.isInteger(floor) && floor > 0, 'CONTROLLER_FLOOR 를 게이트 소스에서 읽지 못했다');
+  // 저장소 문맥은 계획이 이미 읽은 원문을 함께 쓴다(contextSourceReader). 투영본 문맥에는 그 읽기가 없어 디스크에서 읽는다.
   const controllers = javaFiles.filter((path) => normalize(path).includes('/src/main/java/')
-    && isRequestMappedController(readFileSync(path, 'utf8')));
+    && isRequestMappedController(readSource(path)));
   if (projection) {
     assert.ok(controllers.length >= floor, `투영본 컨트롤러 ${controllers.length} < ${floor}`);
     return;

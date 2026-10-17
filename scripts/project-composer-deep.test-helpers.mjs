@@ -4,7 +4,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
@@ -14,6 +14,23 @@ import { MESSAGE_BUNDLES } from './reusable-source-messages.mjs';
 
 export const root = resolve(import.meta.dirname, '..');
 export const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
+/*
+ * 정밀 점검을 실제 저장소로 여러 번 도는 시험이 넘기는 기억하는 읽기(compositionDeepPlan 의 readSource). 시험 중에는 저장소 파일이
+ * 바뀌지 않으므로 같은 원문을 다시 읽지 않는다 — 점검 결과는 같고 읽기만 준다. 저장소 루트 **아래** 경로만 기억하고, 그 밖(임시
+ * 폴더의 준비물·합성 저장소)은 늘 디스크에서 읽는다 — 준비물은 시험이 고쳐 쓰므로 기억하면 옛 원문으로 판정한다.
+ * 모든 변이는 지금처럼 정밀 점검 전체 경로를 돈다(차단 라벨·실패 뒤 null 보고까지). 기본 읽기(디스크) 경로를 계속 돌게, 정밀 점검
+ * 호출 하나는 이 읽기를 넘기지 않는다(project-composer-deep.test.mjs 의 전체 제품 구성 점검).
+ */
+export const memoizedRepositoryReader = (base = root, read = path => readFileSync(path, 'utf8')) => {
+  const remembered = new Map();
+  const underBase = path => { const child = relative(base, path); return child !== '' && !child.startsWith('..') && !isAbsolute(child); };
+  return path => {
+    if (!underBase(path)) return read(path);
+    if (!remembered.has(path)) remembered.set(path, read(path));
+    return remembered.get(path);
+  };
+};
+export const readRepositorySource = memoizedRepositoryReader();
 export const catalog = loadProjectComposerCatalog(root);
 // 생성기·정밀 점검은 매니페스트 v2 의 기능 소유·시작 구성 기대치로 투영한다(11단계 C3). 시험은 그 선언을 고쳐 차단 사유를 만든다.
 export const modules = loadComposerModules(root);

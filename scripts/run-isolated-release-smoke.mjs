@@ -53,7 +53,7 @@ export function captureReleaseSmokeSource(root = ROOT, run = smokeCommand) {
     // Clean attested archives use Git blobs; checkout CRLF conversion must not redefine their identity.
     // A dirty local build still identifies the actual worktree bytes, including untracked inputs.
     return dirty ? readFileSync(physicalTarget)
-      : run('git', ['show', `${revision}:${file}`], { cwd: root, binary: true });
+      : run('git', ['cat-file', 'blob', `${revision}:${file}`], { cwd: root, binary: true });
   };
   const sourceTreeSha256 = createProductionBuildInputTreeHash({ trackedPaths: paths, readCommittedFile: read });
   return { revision, dirty, sourceTreeSha256 };
