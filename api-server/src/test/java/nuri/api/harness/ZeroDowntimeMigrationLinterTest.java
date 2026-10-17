@@ -194,6 +194,21 @@ class ZeroDowntimeMigrationLinterTest {
     }
 
     @Test
+    void migrationHistoryRejectsProtectedVersionRemovedFromIndexOrCommitWithWorktreeCopy(@TempDir Path root)
+            throws Exception {
+        // index·커밋에서만 지우고 작업 트리 사본(같은 내용의 일반 파일)을 남긴 경우다. 작업 트리 판정은 통과하므로
+        // cat-file 의 `<name> missing` 응답을 파일별 위반으로 내는 분기만 이것을 잡는다(전체 검사 실패가 아니다).
+        HistoryFixture fixture = historyFixture(root);
+        String unreadable = "V1__original.sql: 커밋 또는 index의 보호 versioned SQL을 읽을 수 없습니다.";
+        fixture.git("rm", "--cached", "-q", HISTORY_MIGRATION_DIR + "V1__original.sql");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.endsWith(unreadable))
+                .noneMatch(v -> v.startsWith("Versioned migration Git history 검증 실패"));
+        fixture.git("commit", "-qm", "drop protected migration from history only");
+        assertThat(migrationHistoryViolations(root, Map.of())).anyMatch(v -> v.endsWith(unreadable))
+                .noneMatch(v -> v.startsWith("Versioned migration Git history 검증 실패"));
+    }
+
+    @Test
     void migrationHistoryAllowsNewVersionRepeatableAndCheckoutNewlines(@TempDir Path root) throws Exception {
         historyFixture(root);
         writeHistorySql(root, "V2__new.sql", "SELECT 2;\n");

@@ -15,59 +15,23 @@
  * 양쪽 모두 정당한지 사람이 확인하게 한다(H2). 그래서 충돌 표기가 남은 매니페스트에는 `--write` 를 거부한다 — 통째로 다시
  * 쓰면 그 확인 지점이 조용히 사라진다.
  *
- * 쓰기 형식은 JVM 산출 파일과 같다. 머리 주석은 기존 파일의 것을 그대로 두고(없으면 JVM 산출 파일의 2줄), 키는 Java TreeMap 과
- * 같은 UTF-16 코드 단위 순서다(localeCompare 는 `_`·대소문자 순서가 달라 파일 전체가 뒤섞인다). 줄 끝은 LF 이고 마지막 줄 뒤에도
- * LF 를 둔다.
+ * 경로와 쓰기 형식(머리 주석·Java TreeMap 과 같은 코드 단위 순서·LF)은 형식 모듈(harness-baseline-manifest-format.mjs)이 정한다.
+ * 이 도구는 기존 파일의 머리 주석을 그대로 두고(없으면 JVM 산출 파일의 2줄) 그 모듈의 렌더 함수로 쓴다. 재사용 투영 생성기도 같은
+ * 렌더 함수를 써서 생성물에서 처음 `--write` 해도 줄 순서가 바뀌지 않는다.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import {
+  DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest,
+} from './harness-baseline-manifest-format.mjs';
 import { computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
+
+export { DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest };
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export const MANIFEST_PATH = 'api-server/src/test/resources/harness/baseline-manifest.properties';
 export const CLASSES_KEY = '__harness.classes';
-export const DEFAULT_HEADER = Object.freeze([
-  '# 자동 산출 — HarnessBaselineIntegrityTest 실행 결과(실제 소스 기준).',
-  '# 정당한 변경일 때만 baseline-manifest.properties 로 복사하고 사유를 기록할 것.',
-]);
-
-const CONFLICT_MARKER = /^(?:<{7}|\|{7}|={7}|>{7})(?: |$)/m;
-
-/** 메타 게이트가 읽는 것과 같은 `키=값` 맵. 주석·빈 줄·`=` 없는 줄은 건너뛴다. */
-export function parseManifest(text) {
-  const entries = new Map();
-  for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith('#') || line.startsWith('!')) continue;
-    const separator = line.indexOf('=');
-    if (separator < 0) continue;
-    entries.set(line.slice(0, separator), line.slice(separator + 1));
-  }
-  return entries;
-}
-
-/** 파일 맨 앞의 연속된 주석 줄(머리 주석). 없으면 JVM 산출 파일의 머리 주석이다. */
-export function manifestHeader(text) {
-  const header = [];
-  for (const line of (text ?? '').split(/\r?\n/)) {
-    if (!line.startsWith('#') && !line.startsWith('!')) break;
-    header.push(line);
-  }
-  return header.length ? header : [...DEFAULT_HEADER];
-}
-
-export function hasConflictMarkers(text) {
-  return CONFLICT_MARKER.test(text);
-}
-
-const byCodeUnit = ([left], [right]) => (left < right ? -1 : left > right ? 1 : 0);
-
-export function renderHarnessBaselineManifest(entries, header = DEFAULT_HEADER) {
-  const body = [...entries.entries()].sort(byCodeUnit).map(([key, value]) => `${key}=${value}`);
-  return `${[...header, ...body].join('\n')}\n`;
-}
 
 /** 키 단위 차이. `__harness.classes` 는 값이 클래스 목록이라 클래스 단위로 나눈다. */
 export function diffHarnessBaseline(expected, actual) {

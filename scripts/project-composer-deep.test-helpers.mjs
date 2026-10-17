@@ -18,8 +18,13 @@ export const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
  * 정밀 점검을 실제 저장소로 여러 번 도는 시험이 넘기는 기억하는 읽기(compositionDeepPlan 의 readSource). 시험 중에는 저장소 파일이
  * 바뀌지 않으므로 같은 원문을 다시 읽지 않는다 — 점검 결과는 같고 읽기만 준다. 저장소 루트 **아래** 경로만 기억하고, 그 밖(임시
  * 폴더의 준비물·합성 저장소)은 늘 디스크에서 읽는다 — 준비물은 시험이 고쳐 쓰므로 기억하면 옛 원문으로 판정한다.
- * 모든 변이는 지금처럼 정밀 점검 전체 경로를 돈다(차단 라벨·실패 뒤 null 보고까지). 기본 읽기(디스크) 경로를 계속 돌게, 정밀 점검
- * 호출 하나는 이 읽기를 넘기지 않는다(project-composer-deep.test.mjs 의 전체 제품 구성 점검).
+ * 이 읽기는 읽기 횟수만 줄이고 판정 경로를 바꾸지 않는다 — 이 읽기를 넘기는 정밀 점검 호출은 전체 경로를 돈다(차단 라벨·실패 뒤
+ * null 보고까지). 다만 failure-points 에서 승인 목록만 바꾸는 변이 다섯(GATE_STALE·JAVA_CASCADE_STALE·JAVA_CASCADE_DECLARATION·
+ * GATE_DECLARATION·RULE_UNACKNOWLEDGED)은 정밀 점검을 부르지 않고 첫 실측의 관측값으로 승인 대조만 한다. 재사용의 근거(투영 단계에는
+ * 승인 필드 없는 구성 투영만 넘긴다 — project-composer-deep.mjs 의 projection)는 그 시험의 주석과 테스트 가이드에 있다. 전체 경로와 같은
+ * 차단 결과는 게이트 목록·연쇄 목록 변이 둘에서만, 제거 집합이 같은지는 연쇄 목록 변이에서만 단언한다 — 다섯 코드 각각의 전체 경로
+ * red 는 따로 없다. 기본 읽기(디스크) 경로를 계속 돌게, 정밀 점검 호출 하나는 이 읽기를 넘기지 않는다(project-composer-deep.test.mjs 의
+ * 전체 제품 구성 점검).
  */
 export const memoizedRepositoryReader = (base = root, read = path => readFileSync(path, 'utf8')) => {
   const remembered = new Map();

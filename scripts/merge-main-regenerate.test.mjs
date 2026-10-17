@@ -324,6 +324,46 @@ test('a harness manifest conflict is not computed while other conflicts are open
   assert.match(resumed.manual[0].reason, /k=computed/);
 });
 
+function manifestDivergedRepo(ours, theirs) {
+  const r = repo();
+  r.write(HARNESS_MANIFEST, '# 머리\nk=0\nother=1\n');
+  r.write('src/a.ts', 'a\n');
+  r.git('add', '-A');
+  r.git('commit', '-qm', 'base');
+  r.git('checkout', '-qb', 'feature');
+  ours(r);
+  r.git('commit', '-qam', 'ours');
+  r.git('checkout', '-q', 'main');
+  theirs(r);
+  r.git('commit', '-qam', 'theirs');
+  r.git('checkout', '-q', 'feature');
+  return r;
+}
+
+test('a harness manifest that is missing from the work tree is listed with the other conflicts instead of throwing', () => {
+  // 양쪽이 다른 이름으로 옮기면(rename/rename) 원래 경로는 unmerged 로 남지만 작업 트리에는 파일이 없다.
+  const [oursName, theirsName] = ['ours', 'theirs'].map(side => HARNESS_MANIFEST.replace('baseline-manifest', `${side}-manifest`));
+  const r = manifestDivergedRepo(repoState => repoState.git('mv', HARNESS_MANIFEST, oursName),
+    repoState => repoState.git('mv', HARNESS_MANIFEST, theirsName));
+  const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: () => {} });
+  assert.equal(result.status, 'manual');
+  assert.deepEqual(result.manual.map(item => item.file).sort(), [HARNESS_MANIFEST, oursName, theirsName].sort());
+  const manifest = result.manual.find(item => item.file === HARNESS_MANIFEST);
+  assert.match(manifest.reason, /작업 트리에 manifest 가 없다/);
+  assert.deepEqual(manifest.keys, []);
+});
+
+test('a harness manifest kept by a modify/delete conflict is not reported as a same-key conflict', () => {
+  // 한쪽이 지우고 다른 쪽이 고치면 git 은 고친 쪽 파일을 충돌 표기 없이 남긴다 — 양쪽 값이 다른 키가 있는 것이 아니다.
+  const r = manifestDivergedRepo(repoState => repoState.git('rm', '-q', HARNESS_MANIFEST),
+    repoState => repoState.write(HARNESS_MANIFEST, '# 머리\nk=2\nother=1\n'));
+  const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: () => {} });
+  assert.equal(result.status, 'manual');
+  assert.deepEqual(result.manual.map(item => item.file), [HARNESS_MANIFEST]);
+  assert.doesNotMatch(result.manual[0].reason, /같은 키 충돌/);
+  assert.match(result.manual[0].reason, /충돌 표기가 없다/);
+});
+
 test('uncommitted work is never mixed into the merge', () => {
   const r = divergedRepo({ decisionsOurs: row('DEC-OPS-3'), decisionsTheirs: row('DEC-OPS-2') });
   r.write('src/a.ts', 'wip\n');

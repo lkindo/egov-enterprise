@@ -188,22 +188,36 @@ test('the contract exposes deletion-condition regressions as reproducible red ou
 const atlasCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts';
 const crossStackCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-stack';
 
+// process.exit 는 실제처럼 실행을 멈춘다 — 기록만 하고 계속 돌면 분기 앞 조기 종료 뒤에도 명령 목록이 그대로라 놓친다.
+const EXIT_SIGNAL = Symbol('process.exit');
+
 function observeVerification(scope, { source, failCommand, env = {} } = {}) {
   const commands = [];
   const exits = [];
   const zones = [];
   const runner = source ?? readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
-  runInNewContext(runner.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, ''), {
-    execSync: (command, options) => {
-      commands.push(command);
-      zones.push(options?.env?.TZ);
-      if (command === failCommand) throw new Error('deliberate verification failure');
-    },
-    platform: () => 'linux',
-    randomBytes: () => ({ toString: () => 'fixture-only' }),
-    process: { argv: ['node', 'scripts/verify.mjs', scope], env, exit: code => exits.push(code) },
-    console: { log() {}, error() {} },
-  }, { timeout: 1000 });
+  try {
+    runInNewContext(runner.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, ''), {
+      execSync: (command, options) => {
+        commands.push(command);
+        zones.push(options?.env?.TZ);
+        if (command === failCommand) throw new Error('deliberate verification failure');
+      },
+      platform: () => 'linux',
+      randomBytes: () => ({ toString: () => 'fixture-only' }),
+      process: {
+        argv: ['node', 'scripts/verify.mjs', scope],
+        env,
+        exit: (code) => {
+          exits.push(code);
+          throw EXIT_SIGNAL;
+        },
+      },
+      console: { log() {}, error() {} },
+    }, { timeout: 1000 });
+  } catch (error) {
+    if (error !== EXIT_SIGNAL) throw error;
+  }
   return { commands, exits, zones };
 }
 
@@ -247,7 +261,9 @@ test('verification profiles execute the full required Vitest population exactly 
     'removing the sole coverage owner must lose the expected population');
 });
 
-// [2026-10-17] 실패가 잦고 짧은 정적 검사(컴파일·codegen·타입·lint·폼 census)가 운영 계약(로컬 약 11분)보다 먼저 돈다.
+// [2026-10-17] 실패가 잦고 짧은 정적 검사(codegen·타입·lint·폼 census, fast·push·pre-push 는 Java 컴파일 포함)가
+//   운영 계약(로컬 약 11분)보다 먼저 돈다. full·be 의 Java 컴파일은 backend 전수 lane(gradle 한 줄) 안에서 계약 뒤에 돌고,
+//   be·docs 는 계약이 먼저다. 운영 계약은 그것을 부르는 범위에서 한 번 돌고 ops·migration 은 부르지 않는다.
 //   명령 집합과 인자는 그대로이고 순서만 바뀐다 — 성공하면 모두 실행되고, 정적 검사가 실패하면 계약을 기다리지 않는다.
 const CONTRACTS = 'npm run test:operational-contracts';
 const VERIFY_STATIC = [
@@ -273,7 +289,24 @@ test('verify profiles run static checks before the operational contracts and sto
     e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
   };
   for (const [scope, commands] of Object.entries(expected)) {
-    assert.deepEqual(observeVerification(scope).commands, commands, scope);
+    const observed = observeVerification(scope);
+    assert.deepEqual(observed.commands, commands, scope);
+    assert.deepEqual(observed.exits, [], `${scope}: the success path must not exit early`);
+  }
+  // ops·migration 은 운영 계약을 부르지 않고 자기 검사만 돈다(README·verify.mjs 의 '운영 계약을 부르는 범위').
+  for (const scope of ['ops', 'migration']) {
+    const observed = observeVerification(scope);
+    assert.deepEqual(observed.exits, [], `${scope}: the success path must not exit early`);
+    assert.ok(observed.commands.length > 0 && !observed.commands.includes(CONTRACTS), `${scope} runs its own checks without the operational contracts`);
+  }
+  // 범위 분기 자체가 실행되는지(분기 앞 최상위 코드)는 gate registry 의 정적 분석이 보지 않고 이 관찰이 소유한다.
+  // try 앞 무조건 종료와 e2e 만 거르는 종료는 정적 분석에서 green 이다 — 위 명령 목록·exits 단언이 둘 다 잡는다(red 재현).
+  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  for (const [early, scope] of [['process.exit(0);', 'full'], ["if (scope.startsWith('e2')) process.exit(0);", 'e2e']]) {
+    const exited = source.replace(/\r?\ntry \{\r?\n/u, match => `\n${early}${match}`);
+    assert.notEqual(exited, source, early);
+    const observed = observeVerification(scope, { source: exited });
+    assert.deepEqual([observed.commands, observed.exits], [[], [0]], early);
   }
   const typeCheck = 'pnpm -C frontend exec tsc --noEmit';
   for (const scope of ['fast', 'push', 'fe', 'full']) {
@@ -327,6 +360,25 @@ test('pre-push runs static checks before the operational contracts and stops on 
   assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
 });
 
+test('pre-push blocks the push when the operational contracts fail on the documentation and source paths', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const sourceFiles = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
+  const cases = [
+    { files: ['docs/README.md'], commands: [CONTRACTS] },
+    { files: ['frontend/public/governance_harness_atlas.html'], commands: [CONTRACTS] },
+    { files: sourceFiles, commands: PRE_PUSH_SOURCE_ORDER.slice(0, PRE_PUSH_SOURCE_ORDER.indexOf(CONTRACTS) + 1) },
+  ];
+  const blocks = (source) => cases.map(({ files }) => {
+    const failed = runHook(input, source, { files, failCommand: CONTRACTS });
+    return { status: failed.status === 0 ? 0 : 'blocked', commands: failed.commands };
+  });
+  assert.deepEqual(blocks(hookSource), cases.map(({ commands }) => ({ status: 'blocked', commands })));
+  // 실패 처리에서 exit 1 을 걷으면 문서 경로는 fast-pass 로, 소스 경로는 다음 단계로 넘어간다 — 위 단언이 그것을 잡는다(red 재현).
+  const swallowed = hookSource.replace('실행 경로가 불일치합니다"; exit 1; }', '실행 경로가 불일치합니다"; }');
+  assert.notEqual(swallowed, hookSource);
+  assert.ok(blocks(swallowed).every(({ status }) => status === 0));
+});
+
 test('pre-push selects one Atlas owner and keeps its failure blocking in every scope', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const atlas = 'frontend/public/governance_harness_atlas.html';
@@ -335,6 +387,8 @@ test('pre-push selects one Atlas owner and keeps its failure blocking in every s
     { files: [atlas, 'api-server/src/test/java/ExampleTest.java'], command: 'npx vitest run src/__tests__/cross-stack' },
     { files: [atlas, 'frontend/src/example.ts'], command: 'npx vitest run src/__tests__' },
     { files: [atlas, 'unclassified/new-tool.mjs'], command: 'npx vitest run src/__tests__' },
+    // 독립 이관만 함께 바뀌면 frontend·cross-stack 실행이 없어 소스 경로의 단독 Atlas 실행이 유일한 owner 다.
+    { files: [atlas, 'migration-tool/src/main/java/X.java'], command: atlasCommand },
   ];
   for (const { files, command } of cases) {
     const result = runHook(input, hookSource, { files });
@@ -343,5 +397,13 @@ test('pre-push selects one Atlas owner and keeps its failure blocking in every s
     assert.equal(result.commands.filter(value => value === 'npm run test:operational-contracts').length, 1);
     assert.notEqual(runHook(input, hookSource, { files, failCommand: command }).status, 0,
       `${command} failure must block the push`);
+  }
+  // 이관 범위에서도 Atlas 를 생략하거나 소스 경로의 단독 실행을 걷으면 이관+Atlas push 에서 Atlas 가 돌지 않는다 — 위 단언이 잡는다(red 재현).
+  const migrationAtlas = [atlas, 'migration-tool/src/main/java/X.java'];
+  const skippedForMigration = hookSource.replace('[ "$SCOPE_FRONTEND" = "true" ]; }; then', '[ "$SCOPE_FRONTEND" = "true" ] || [ "$SCOPE_MIGRATION" = "true" ]; }; then');
+  const sourcePathOwnerRemoved = hookSource.replace(/(# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n)run_atlas_contract\r?\n/u, '$1');
+  for (const mutant of [skippedForMigration, sourcePathOwnerRemoved]) {
+    assert.notEqual(mutant, hookSource);
+    assert.deepEqual(runHook(input, mutant, { files: migrationAtlas }).commands.filter(value => value.includes('vitest')), []);
   }
 });

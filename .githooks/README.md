@@ -16,7 +16,9 @@ git config core.hooksPath .githooks
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 확인한다. 그 뒤 index 와 작업 트리 둘 다 본다 — index 의 스펙으로 임시 디렉터리에 다시 만든 결과를 index 생성물과 비교하고, 작업 트리가 index 와 다르면 작업 트리 쌍도 비교한다. 검증은 작업 파일과 index를 수정하지 않으며 줄바꿈 차이만 정규화한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
-pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 계약(로컬 약 11분)보다 먼저 돌린다. 정적 검사가 실패하면 운영 계약을 기다리지 않는다. 성공하면 같은 명령이 모두 실행되므로 명령 집합·인자·총시간은 순서와 무관하며, 운영 계약은 어느 범위에서든 정확히 한 번 돈다(`scripts/pre-push-ref-contract.test.mjs`가 순서와 실패 전파를 고정한다).
+pre-push는 검사할 범위를 push 범위(stdin의 `remote_sha..local_sha`)로 고르지만, 컴파일·타입·codegen·lint·운영 계약·Vitest·하네스는 모두 push하는 커밋이 아니라 현재 체크아웃(index·작업 트리)에서 돈다. 다른 브랜치를 push하거나 커밋하지 않은 변경이 있으면 로컬 결과는 push하는 커밋의 증거가 아니며, 그 커밋의 권위는 required CI다.
+
+pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 계약(로컬 약 11분)보다 먼저 돌린다. 정적 검사가 실패하면 운영 계약을 기다리지 않는다. 성공하면 같은 명령이 모두 실행되므로 명령 집합·인자·총시간은 순서와 무관하며, 운영 계약을 포함하는 범위에서는 정확히 한 번 돈다(`verify:ops`·`verify:migration`과 삭제 전용 push는 돌지 않는다). Java 컴파일을 계약 앞에서 보는 것은 pre-push 소스 경로와 `verify:fast`·`verify:push`뿐이다 — `verify:full`·`verify:be`의 Java 컴파일은 backend 전수 lane(gradle 한 줄) 안에서 운영 계약 뒤에 돌고, `verify:be`·`verify:docs`는 계약이 먼저다. `scripts/pre-push-ref-contract.test.mjs`가 순서와 실패 전파를 고정한다.
 
 ## 게이트 계층 (무엇이 어디서 도는가)
 
@@ -29,7 +31,7 @@ pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 
 | **통합 전수 진입점** | `npm run verify` | FE codegen·타입·lint·폼 census → 운영 계약 → backend 전수 lane → FE build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
 | CI | `.github/workflows/ci.yml` | 변경 scope에 따른 빌드·실PG 스키마·번들·E2E·뮤테이션과 **secret-scan**·**secure-coding(CodeQL)**. 안정 required context 6개로 결과 집계 | 가장 높음 |
 
-`npm run verify`의 하위 명령은 기본 `TZ=Asia/Seoul`로 돌고, 명시한 `TZ`가 이긴다. CI 러너는 UTC이므로 날짜 경계에 닿는 변경은 `TZ=UTC npm run verify:<범위>`로 CI 조건을 한 번 더 재현한다. pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다). 시험 JVM은 `build.gradle`이 따로 UTC로 고정한다.
+`npm run verify`의 하위 명령은 기본 `TZ=Asia/Seoul`로 돌고, 명시한 `TZ`가 이긴다. CI 러너는 UTC이므로 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 CI 조건을 한 번 더 재현한다(bash·PowerShell·cmd에서 같은 형태로 동작하고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다). 시험 JVM은 `build.gradle`이 따로 UTC로 고정한다.
 
 [governance gates manifest](../config/governance/gates.json)가 governance JUnit tag·ArchUnit tag·schema-validation tag와 Node/Frontend/E2E/mutation runner catalog를 중앙 등록한다. 계약 테스트는 실제 source census, 실행 task, CI/훅 소비자와 quality ratchet을 대조하고 `baseline-manifest.properties`는 보호 파일의 tamper hash를 추가로 고정한다. CI binding은 선언한 job과 step 조건까지, `scripts/verify.mjs` binding은 tier가 뜻하는 범위 분기(local-full = `full`, local-e2e = `e2e`)에서 호출을 따라가 닿는 줄인지와 조건 여부까지 대조한다. pre-push 하나를 전체 하네스 실행 증거로 간주하지 말고 변경 범위에 맞는 registry consumer 결과를 확인한다.
 

@@ -691,6 +691,13 @@ function validateWorkflowBindingContext({ binding, content, setLabel, errors }) 
  * 조건 블록(if·else·반복·콜백·catch)이나 조건식 안, 또는 앞선 조건부 조기 종료(return·throw·process.exit) 뒤에 있는 줄은
  * `conditional: true` 를 선언해야 하고, 선언과 실제가 어긋나면 양방향으로 red 다. 무조건 조기 종료 뒤의 줄과 함수 참조로만
  * 넘긴 호출은 닿지 않는 것으로 본다. 구조를 읽지 못하면(괄호 짝·분기 없음) 오류로 보고한다 — 조용한 통과 금지.
+ *
+ * <p>진입점은 모듈 최상위 문장 사슬의 범위 분기뿐이다. 함수(선언·표현식·화살표·메서드) 본문 안의 범위 분기는 그 함수를 부르는지
+ * 이 분석이 따라가지 않으므로 구조 오류로 보고한다 — 부르지 않는 클로저 안의 분기가 tier 를 주장하지 못한다. 분기 안에서 정의만
+ * 하고 부르지 않는 콜백의 줄은 설계대로 conditional 이다(선언이 registry diff 에 드러난다).
+ *
+ * <p>경계: 범위 분기 자체가 실행되는지 — 분기 앞 최상위 코드의 조기 종료·가드와 scope 값의 유도 — 는 이 정적 분석이 보지 않는다.
+ * 그 몫은 scripts/pre-push-ref-contract.test.mjs 가 verify.mjs 를 범위마다 실제로 실행해 정확한 명령 목록과 process.exit 부재로 본다.
  */
 const VERIFY_RUNNER_SOURCE = 'scripts/verify.mjs';
 /** 로컬 tier 가 뜻하는 verify.mjs 범위 분기(DEC-OPS-027 ②: local-full = verify:full). */
@@ -702,6 +709,35 @@ function nextCodeIndex(mask, index) {
   let cursor = index;
   while (cursor < mask.length && /\s/.test(mask[cursor])) cursor += 1;
   return cursor;
+}
+
+// position 을 감싸는 블록마다 `{` 앞 문장 텍스트(머리)를 바깥부터 돌려준다. 괄호 안의 `;`·`{…}`(for 머리, 조건·인자 안의
+// 객체·콜백)는 바깥 문장의 경계가 아니다.
+function enclosingBlockHeads(mask, position) {
+  const heads = [];
+  let statementStart = 0;
+  let depth = 0;
+  for (let index = 0; index < position; index += 1) {
+    const current = mask[index];
+    if (current === '(') depth += 1;
+    else if (current === ')') depth -= 1;
+    else if (current === '{') {
+      heads.push(mask.slice(statementStart, index).trim());
+      if (depth === 0) statementStart = index + 1;
+    } else if (current === '}') {
+      heads.pop();
+      if (depth === 0) statementStart = index + 1;
+    } else if (current === ';' && depth === 0) statementStart = index + 1;
+  }
+  return heads;
+}
+
+// 함수가 아닌 제어 블록의 머리인지 본다: 맨 블록·try·finally·else·do·case·default 이거나, if·for·while·switch·catch 의 괄호가
+// 머리 끝에서 닫힌다. 그 밖(function·화살표·메서드·class·객체)은 함수 본문으로 본다.
+function isControlBlockHead(head) {
+  if (/^(?:|try|finally|else|do|default\s*:|case\s[\s\S]*:)$/.test(head)) return true;
+  const keyword = /^(?:else\s+)?(?:if|for|while|switch|catch)\s*\(/.exec(head);
+  return keyword !== null && matchingDelimiter(head, keyword[0].length - 1, '(', ')') === head.length - 1;
 }
 
 export function analyzeVerifyRunnerExecution(source) {
@@ -727,6 +763,12 @@ export function analyzeVerifyRunnerExecution(source) {
     // 문자열 리터럴은 mask 에서 지워지므로 범위 이름은 원문에서, 구조(`scope ===`)는 mask 에서 읽는다.
     const literal = /^\s*scope\s*===\s*'([a-z][a-z0-9-]*)'\s*$/.exec(source.slice(conditionOpen + 1, conditionClose));
     if (!literal || !/^\s*scope\s*===\s*$/.test(mask.slice(conditionOpen + 1, conditionClose))) continue;
+    const enclosing = enclosingBlockHeads(mask, match.index).findLast(head => !isControlBlockHead(head));
+    if (enclosing !== undefined) {
+      errors.push(`verify scope branch '${literal[1]}' is inside a function body (${enclosing.replace(/\s+/g, ' ').slice(0, 60)})`
+        + ' — only module-level scope branches are entry points');
+      continue;
+    }
     const open = nextCodeIndex(mask, conditionClose + 1);
     const close = mask[open] === '{' ? matchingDelimiter(mask, open, '{', '}') : -1;
     if (close < 0) errors.push(`verify scope branch '${literal[1]}' has no block body`);

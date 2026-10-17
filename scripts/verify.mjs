@@ -8,8 +8,10 @@
  * require running services or external credentials. The independent migration
  * scope verifies its CLI module without online UI governance dependencies.
  *
- * 범위 안에서는 실패가 잦고 짧은 정적 검사(컴파일·codegen·타입·lint·폼 census)를 운영 계약(로컬 약 11분)보다
- * 먼저 돌려 실패를 빨리 알린다. 성공하면 같은 명령이 모두 실행되므로 명령 집합과 총시간은 순서와 무관하다.
+ * fast·push·fe·full·e2e 는 실패가 잦고 짧은 정적 검사(codegen·타입·lint·폼 census — fast·push 는 Java 컴파일 포함,
+ * e2e 는 E2E 타입 검사만)를 운영 계약(로컬 약 11분)보다 먼저 돌려 실패를 빨리 알린다. full·be 의 Java 컴파일은
+ * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 계약이 먼저다. 성공하면 같은 명령이 모두
+ * 실행되므로 명령 집합과 총시간은 순서와 무관하다.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -31,12 +33,15 @@ function run(command, extraEnv = {}) {
   execSync(command, {
     stdio: 'inherit',
     // 로컬 기본 시간대는 KST 다(개발 기계와 같은 조건). CI 러너는 UTC 로 돈다 — 명시한 TZ 가 이기므로
-    // `TZ=UTC npm run verify:<범위>` 로 CI 조건을 그대로 재현한다(시험 JVM 은 build.gradle 이 따로 UTC 로 고정한다).
+    // `npx cross-env TZ=UTC npm run verify:<범위>`(셸 중립, 세션에 TZ 를 남기지 않음)로 CI 조건을 그대로 재현한다
+    // (시험 JVM 은 build.gradle 이 따로 UTC 로 고정한다). 생성물 검증(verify-reusable-artifact)·T2(reusable-nightly)는
+    // CI 에서도 실행기가 자식 환경을 만들어 KST 로 고정하므로 이 손잡이를 두지 않는다.
     env: { ...process.env, TZ: process.env.TZ || 'Asia/Seoul', ...extraEnv },
   });
 }
 
-// 운영 계약은 범위마다 정확히 한 번 돈다. 한 번만 돌리는 가드를 두지 않고 각 범위 분기가 직접 한 번 부른다 —
+// 운영 계약은 그것을 부르는 범위(docs·fast·push·be·fe·full·e2e)에서 정확히 한 번 돌고, ops·migration 은 부르지 않는다.
+// 한 번만 돌리는 가드를 두지 않고 각 범위 분기가 직접 한 번 부른다 —
 // gate registry 가 범위 분기에서 이 줄까지의 실행 경로를 정적으로 읽는다(local tier 결속).
 function runOperationalContracts() {
   run('npm run test:operational-contracts');

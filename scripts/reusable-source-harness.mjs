@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
+import { MANIFEST_PATH, renderHarnessBaselineManifest } from './harness-baseline-manifest-format.mjs';
 import { findJavaStatementEnd, isJavaGateSource, planJavaRemoval, stripJavaComments } from './reusable-source-java.mjs';
 import { ROOT, fail, git, normalize, readTextIfPresent, trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
@@ -291,18 +292,17 @@ export function writeReusableHarnessProfile(output, { ownership, profile, schema
   return snapshot;
 }
 
+// 머리 주석만 생성기의 것이고 경로·키 순서·줄 형식은 매니페스트 도구와 같은 형식 모듈이다 — 생성물에서 처음 `--write` 해도
+// 줄이 자리를 옮기지 않는다(도구는 기존 머리 주석을 그대로 둔다).
 export function writeHarnessBaseline(output, projection) {
   writeReusableHarnessProfile(output, projection);
-  const entries = computeHarnessBaselineEntries(output);
-  const lines = [
+  const header = [
     '# 자동 산출 — reusable-base source projection 기준.',
     '# 남은 게이트/동결 목록을 생성 시점에 고정한다.',
-    ...[...entries.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([key, value]) => `${key}=${value}`),
-    '',
   ];
   writeFileSync(
-    join(output, 'api-server', 'src', 'test', 'resources', 'harness', 'baseline-manifest.properties'),
-    lines.join('\n'),
+    join(output, ...MANIFEST_PATH.split('/')),
+    renderHarnessBaselineManifest(computeHarnessBaselineEntries(output), header),
     'utf8',
   );
 }

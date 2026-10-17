@@ -27,6 +27,9 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+// 매니페스트는 경로·줄 형식 모듈만 읽는다(node 내장만 쓴다). 계산 도구는 재사용 투영 그래프를 끌어와, 병합 중 그 안에 충돌 표기가
+// 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
+import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -38,7 +41,7 @@ export const MEMORY_TABLES = new Map([
 
 export const URL_CENSUS = 'config/ui-url-state-census.json';
 export const URL_APPROVAL = 'config/ui-url-state-approval.json';
-export const HARNESS_MANIFEST = 'api-server/src/test/resources/harness/baseline-manifest.properties';
+export const HARNESS_MANIFEST = MANIFEST_PATH;
 export const HARNESS_MANIFEST_TOOL = 'scripts/harness-baseline-manifest.mjs';
 
 const anyPath = () => true;
@@ -224,9 +227,6 @@ export function resolveHashOnlyConflicts(text) {
  */
 export function harnessManifestConflictKeys(text) {
   const lines = text.split(/\r?\n/);
-  const entries = section => new Map(section.map(line => line.trim())
-    .filter(line => line && !line.startsWith('#') && !line.startsWith('!') && line.includes('='))
-    .map(line => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]));
   const keys = new Set();
   for (let i = 0; i < lines.length; i += 1) {
     if (!MARK_OURS.test(lines[i])) continue;
@@ -238,19 +238,35 @@ export function harnessManifestConflictKeys(text) {
       else hunk[section].push(lines[i]);
     }
     if (i >= lines.length) throw new Error('닫히지 않은 충돌 구역이 있다');
-    const [ours, theirs] = [entries(hunk.ours), entries(hunk.theirs)];
+    // 키 해석은 계산 도구·메타 게이트와 같은 줄 형식(형식 모듈)이다.
+    const [ours, theirs] = [parseManifest(hunk.ours.join('\n')), parseManifest(hunk.theirs.join('\n'))];
     for (const key of new Set([...ours.keys(), ...theirs.keys()])) if (ours.get(key) !== theirs.get(key)) keys.add(key);
   }
   return [...keys].sort();
 }
 
-function harnessManifestConflict(text) {
+/**
+ * unmerged manifest 를 수동 목록의 한 항목으로 만든다. 예외를 던지지 않는다 — 던지면 다른 충돌의 목록과 안내가 함께 사라진다.
+ * 작업 트리에 파일이 없거나(양쪽이 다른 이름으로 옮겼거나 손으로 지웠다) 충돌 표기가 없으면(한쪽이 지우고 다른 쪽이 고쳤다)
+ * 같은 키 충돌이 아니므로 키 없이 그 사정을 안내한다.
+ */
+function harnessManifestConflict(absolute) {
+  const conflict = (keys, reason) => ({ file: HARNESS_MANIFEST, keys, reason });
   try {
+    if (!fs.existsSync(absolute)) {
+      return conflict([], '작업 트리에 manifest 가 없다 — 양쪽이 다른 이름으로 옮긴 충돌(rename/rename)이거나 손으로 지웠다. '
+        + 'git status 로 확인하고 git add 또는 git rm 으로 정한 뒤 --continue 한다.');
+    }
+    const text = fs.readFileSync(absolute, 'utf8');
+    if (!findConflictMarkers(text).length) {
+      return conflict([], '충돌 표기가 없다 — 한쪽이 지우고 다른 쪽이 고친 충돌(modify/delete)이거나 이미 손으로 푼 파일이다. '
+        + `남길지 지울지 정하고, 남기면 \`node ${HARNESS_MANIFEST_TOOL} --check\` 로 계산값과 대조한 뒤 git add(지우면 git rm) 한다.`);
+    }
     const keys = harnessManifestConflictKeys(text);
-    return { file: HARNESS_MANIFEST, keys, reason: `하네스 manifest 의 같은 키 충돌 — 양쪽 값이 다른 키: ${keys.join(', ') || '없음'}. `
-      + '그 키의 값만 옮기고 입력 변경이 양쪽 모두 정당한지 확인한다(§6.4·H2, 통째로 다시 쓰지 않는다).' };
+    return conflict(keys, `하네스 manifest 의 같은 키 충돌 — 양쪽 값이 다른 키: ${keys.join(', ') || '없음'}. `
+      + '그 키의 값만 옮기고 입력 변경이 양쪽 모두 정당한지 확인한다(§6.4·H2, 통째로 다시 쓰지 않는다).');
   } catch (error) {
-    return { file: HARNESS_MANIFEST, keys: [], reason: error.message };
+    return conflict([], error.message);
   }
 }
 
@@ -387,7 +403,7 @@ export function mergeMainAndRegenerate({
   for (const file of lines(git(cwd, 'diff', '--name-only', '--diff-filter=U'))) {
     const absolute = path.join(cwd, file);
     if (file === HARNESS_MANIFEST) {
-      manual.push(harnessManifestConflict(fs.readFileSync(absolute, 'utf8')));
+      manual.push(harnessManifestConflict(absolute));
       continue;
     }
     const memory = MEMORY_TABLES.get(file);

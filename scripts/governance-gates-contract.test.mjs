@@ -739,6 +739,33 @@ test('verify runner analysis follows calls from each scope branch and marks cond
   assert.equal(Object.hasOwn(scopes.e2e, "run('c');"), false);
   assert.match(analyzeVerifyRunnerExecution("run('x');").errors.join('\n'), /no verify scope branch/);
   assert.match(analyzeVerifyRunnerExecution("if (scope === 'full') run('x');").errors.join('\n'), /'full' has no block body/);
+
+  // 함수 본문 안의 범위 분기는 진입점이 아니다 — 그 함수를 부르는지 보지 않으므로 구조 오류다(부르지 않는 클로저의 tier 주장 차단).
+  const branch = "\n  if (scope === 'full') {\n    run('x');\n  }\n";
+  for (const [open, close] of [
+    ['function later() {', '}'],
+    ['const later = () => {', '};'],
+    ['const later = function () {', '};'],
+    ['const handlers = { later() {', '} };'],
+    ['for (const item of items) item.forEach(function () {', '});'],
+    ['register(function ({ strict }) {', '});'],
+  ]) {
+    const { errors: enclosed, scopes: none } = analyzeVerifyRunnerExecution(`${open}${branch}${close}`);
+    assert.match(enclosed.join('\n'), /verify scope branch 'full' is inside a function body/, open);
+    assert.equal(none.full, undefined, open);
+  }
+  // 제어 블록(try·for·if)은 함수 본문이 아니다 — 분기 자체가 실행되는지는 pre-push 계약의 실행 관찰이 소유한다.
+  for (const [open, close] of [['for (let i = 0; i < 1; i += 1) {', '}'], ['if (ready({ strict: true })) {', '}']]) {
+    const controlled = analyzeVerifyRunnerExecution(`try {\n  ${open}${branch}  ${close}\n} finally {}`);
+    assert.deepEqual(controlled.errors, [], open);
+    assert.equal(controlled.scopes.full["run('x');"], 'unconditional', open);
+  }
+  // 실제 verify.mjs 에서 full 분기를 부르지 않는 함수 안으로 옮기면 종전에는 test:coverage 가 unconditional 로 남았다 — 이제 구조 오류다.
+  const runner = readFileSync(path.join(repoRoot, 'scripts', 'verify.mjs'), 'utf8');
+  const detached = runner.replace("} else if (scope === 'full') {", "} else if (scope === 'full-detached') {")
+    .replace(/\r?\ntry \{\r?\n/u, match => `\nfunction later() {\n  if (scope === 'full') {\n    runFrontendPackaging();\n  }\n}${match}`);
+  assert.notEqual(detached, runner);
+  assert.match(analyzeVerifyRunnerExecution(detached).errors.join('\n'), /verify scope branch 'full' is inside a function body \(function later\(\)\)/);
 });
 
 test('verify runner bindings must be reached from the scope branch their tier names', () => {

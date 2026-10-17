@@ -191,7 +191,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     try { return resolveProjectRecipe({ ...recipe, selection: { preset: 'core' } }, value); } catch { return undefined; }
   };
   // 계획과 그 계획이 방금 적재한 카탈로그를 함께 돌려준다. 생성은 이 카탈로그로 구성을 풀어 한 생성에서 카탈로그를 한 번만 적재한다
-  // (두 적재 사이에 기다림이 없어 다시 적재해도 더 새로운 원본을 보지 않는다).
+  // (원본 변경은 생성이 계획 전에 잡은 지문으로 판정한다 — 다시 적재해 신선도를 얻지 않는다).
   const planWithCatalog = recipe => {
     const sourceCommit = recipeCommit(recipe);
     const snapshot = loadProjectComposerMenus(root);

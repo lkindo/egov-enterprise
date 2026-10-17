@@ -123,7 +123,8 @@ test('the menu hash keeps every migration that can reach the menu inventory and 
   for (const sql of ["UPDATE public.\"TB_MENU_INFO\" SET use_yn = 'N';", "INSERT INTO tb_authrt_grnt_map VALUES ('ROLE_USER', 'NAVIGATION', '10');",
     "DELETE FROM tb_authrt_info WHERE authrt_cd = 'ROLE_X';", "DELETE FROM tb_menu_crt_dtl;", "DO $$ BEGIN EXECUTE 'DELETE FROM ' || target; END $$;",
     "SELECT format('%I', 'x');", 'TRUNCATE tb_user_info;', 'DROP TABLE tb_bbs CASCADE;', 'SET search_path = legacy;',
-    'CREATE FUNCTION fn_noop() RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;']) {
+    'CREATE FUNCTION fn_noop() RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;', 'UPDATE U&"tb_m\\0065nu_info" SET use_yn = \'N\';',
+    "ALTER DOMAIN yn SET DEFAULT 'N';"]) {
     assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': sql }), ['V1_0.sql', 'V1_1.sql'], sql);
   }
   assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': unrelated, 'V1_2.sql': "ALTER TABLE tb_bbs ADD COLUMN memo varchar(10) DEFAULT 'N';" }),
@@ -158,6 +159,59 @@ test('the menu hash keeps every migration that can reach the menu inventory and 
   assert.deepEqual(seeded("INSERT INTO tb_authrt_grnt_map SELECT 'ROLE_USER', 'NAVIGATION', s.scrn_id FROM public.tb_scrn_info s;"),
     ['R__seed.sql', 'V1_0.sql', 'V1_1.sql']);
   assert.deepEqual(seeded('-- copied from the template\nWITH picked AS (SELECT 1) INSERT INTO tb_menu_info SELECT * FROM picked;'), ['R__seed.sql']);
+});
+
+/*
+ * [2026-10-17] 이름을 원문에 남기지 않고 번지는 모양도 fail-closed 다 — 본문을 같은 문장에서 못 찾는 트리거 함수(다른 문장·파일의
+ * `$$` 블록을 본문으로 잡지 않는다), 주석 속 ';' 로 갈린 외래 키, 번진 테이블의 새 이름, 상속·파티션으로 이어진 테이블, 이벤트 트리거.
+ * 대조군은 같은 모양에서 감시 테이블만 뺀 입력이다.
+ */
+test('the menu hash keeps migrations that reach the menu through opaque bodies, split statements, renames, inheritance or event triggers', () => {
+  const inputs = files => menuInventorySqlInputs(new Map(Object.entries(files)));
+  const baseline = { 'V1_0.sql': 'CREATE TABLE tb_menu_info (menu_sn bigint PRIMARY KEY, use_yn char(1));' };
+  const trigger = definition => ({ 'V1_1.sql': `CREATE TABLE tb_scrn (id text);\n${definition}\n`
+      + 'CREATE TRIGGER trg AFTER INSERT ON tb_scrn FOR EACH ROW EXECUTE FUNCTION fn_sync();',
+    'V1_3.sql': "INSERT INTO tb_scrn VALUES ('x');" });
+  const laterBlock = 'DO $$ BEGIN PERFORM 1; END $$;';
+  for (const [label, definition] of [
+    ['single-quoted body', "CREATE FUNCTION fn_sync() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN INSERT INTO tb_menu_info VALUES (1); RETURN NEW; END';"],
+    ['BEGIN ATOMIC body', 'CREATE FUNCTION fn_sync() RETURNS trigger LANGUAGE sql BEGIN ATOMIC INSERT INTO tb_menu_info VALUES (1); END;']]) {
+    assert.ok(inputs({ ...baseline, ...trigger(definition), 'V1_2.sql': laterBlock }).includes('V1_3.sql'), `${label}, later $$ block in another file`);
+    const sameFile = trigger(`${definition}\n${laterBlock}`);
+    assert.ok(inputs({ ...baseline, ...sameFile }).includes('V1_3.sql'), `${label}, later $$ block in the same file`);
+  }
+  // 본문을 못 찾는 정의가 하나라도 있으면 다른 정의의 본문이 메뉴를 쓰지 않아도 쓰는 것으로 본다(나중 정의가 앞 정의를 바꾼다).
+  const redefined = { ...trigger('CREATE FUNCTION fn_sync() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN RETURN NEW; END $f$;'),
+    'V1_2.sql': "CREATE OR REPLACE FUNCTION fn_sync() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN INSERT INTO tb_menu_info VALUES (1); RETURN NEW; END';" };
+  assert.ok(inputs({ ...baseline, ...redefined }).includes('V1_3.sql'), 'an opaque redefinition keeps the trigger table watched');
+  // 이벤트 트리거는 뒤의 어떤 DDL 에도 돈다 — 메뉴와 무관한 인덱스 마이그레이션도 넣는다.
+  assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': "CREATE FUNCTION fn_evt() RETURNS event_trigger LANGUAGE plpgsql AS $$ BEGIN UPDATE tb_menu_info SET use_yn = 'N'; END $$;\n"
+    + 'CREATE EVENT TRIGGER evt ON ddl_command_end EXECUTE FUNCTION fn_evt();', 'V1_2.sql': 'CREATE INDEX ix_tb_bbs_reg_dt ON tb_bbs (reg_dt);' }),
+  ['V1_0.sql', 'V1_1.sql', 'V1_2.sql'], 'an event trigger keeps every input');
+  // 번진 테이블의 새 이름에 쓰면 메뉴가 바뀐다. 감시하지 않는 테이블의 새 이름은 감시하지 않는다.
+  const renamed = table => inputs({ ...baseline, ...trigger('CREATE FUNCTION fn_sync() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN INSERT INTO tb_menu_info VALUES (1); RETURN NEW; END $f$;'),
+    'V1_2.sql': `ALTER TABLE ${table} RENAME TO tb_screen_src;`, 'V1_3.sql': "INSERT INTO tb_screen_src VALUES ('x');" }).sort();
+  assert.deepEqual(renamed('tb_scrn'), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql', 'V1_3.sql'], 'a renamed spread table');
+  assert.deepEqual(renamed('tb_bbs'), ['V1_0.sql', 'V1_1.sql']);
+  // 주석 속 ';' 가 원문 조각을 갈라도 외래 키의 부모를 감시한다. 문자열 속 '--' 는 걷은 조각만 자르므로 원문 조각이 본다.
+  const foreignKey = column => inputs({ ...baseline, 'V1_1.sql': 'CREATE TABLE tb_scrn_info (scrn_id text PRIMARY KEY);\n'
+      + `ALTER TABLE tb_menu_info ADD COLUMN scrn_id text ${column}\n REFERENCES tb_scrn_info (scrn_id) ON DELETE CASCADE;`,
+    'V1_2.sql': "DELETE FROM tb_scrn_info WHERE scrn_id = 'x';" });
+  for (const column of ['-- legacy; keep', "DEFAULT '--'"]) assert.deepEqual(foreignKey(column), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql'], column);
+  // 주석을 걷을 때 문자열 속 '/*' 를 주석 시작으로 보지 않는다 — 그러면 두 문장이 합쳐져 메뉴와 무관한 외래 키의 부모까지 감시한다.
+  assert.deepEqual(inputs({ ...baseline, 'V1_1.sql': "ALTER TABLE tb_menu_info ADD COLUMN route text DEFAULT '/admin/*'; -- */\n"
+    + 'ALTER TABLE tb_bbs ADD CONSTRAINT fk_bbs_code FOREIGN KEY (cd) REFERENCES tb_code (cd) ON DELETE CASCADE;', 'V1_2.sql': 'DELETE FROM tb_code;' }),
+  ['V1_0.sql', 'V1_1.sql'], 'a string is not a comment');
+  // 상속·파티션 자식의 행은 부모 조회에 나오고 부모에 쓰면 자식 행이 바뀐다 — 양쪽으로 번진다(메뉴 열 이름 없이 써도).
+  const family = (definition, write) => inputs({ ...baseline, 'V1_1.sql': definition, 'V1_2.sql': write });
+  for (const [definition, write] of [['CREATE TABLE tb_nav_extra () INHERITS (tb_menu_info);', "INSERT INTO tb_nav_extra VALUES (99, 'Y');"],
+    ['CREATE TABLE tb_nav_p1 PARTITION OF tb_menu_info FOR VALUES FROM (0) TO (1000);', "INSERT INTO tb_nav_p1 VALUES (99, 'Y');"],
+    ['ALTER TABLE tb_nav_extra INHERIT tb_menu_info;', "INSERT INTO tb_nav_extra VALUES (99, 'Y');"],
+    ['ALTER TABLE tb_menu_info ATTACH PARTITION tb_nav_p1 FOR VALUES FROM (0) TO (1000);', "INSERT INTO tb_nav_p1 VALUES (99, 'Y');"],
+    ['ALTER TABLE tb_menu_info INHERIT tb_nav_base;', "DELETE FROM tb_nav_base WHERE use_yn = 'N';"]]) {
+    assert.deepEqual(family(definition, write), ['V1_0.sql', 'V1_1.sql', 'V1_2.sql'], definition);
+    assert.deepEqual(family(definition.replace('tb_menu_info', 'tb_bbs'), write), ['V1_0.sql'], `${definition} without the menu table`);
+  }
 });
 
 test('invalid menu identities, missing parents and the retired v1 shape cannot become a trusted preview', () => {

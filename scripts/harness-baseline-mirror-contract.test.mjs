@@ -7,11 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 import { computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
 import {
-  MANIFEST_PATH, main as manifestTool, manifestHeader, parseManifest, renderHarnessBaselineManifest,
+  DEFAULT_HEADER, MANIFEST_PATH, main as manifestTool, manifestHeader, parseManifest, renderHarnessBaselineManifest,
 } from './harness-baseline-manifest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = join(ROOT, MANIFEST_PATH);
+const META_GATE_SOURCE = 'api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java';
 
 /**
  * 재사용 base 투영본은 게이트가 일부 제거되므로 커밋된 harness baseline 매니페스트를 그대로 쓸 수 없고,
@@ -29,9 +30,11 @@ const MANIFEST = join(ROOT, MANIFEST_PATH);
  * 생성기의 계산이 커밋된 매니페스트와 정확히 같아야 한다. 메타 게이트가 바뀌면 커밋된 매니페스트가
  * 바뀌고, 생성기를 함께 고치지 않으면 여기서 즉시 red 다.
  *
- * 같은 계산으로 매니페스트를 다시 쓰는 개발 도구(`scripts/harness-baseline-manifest.mjs`)가 있다. 그 도구의 출력이
- * 커밋본과 바이트까지 같은지도 여기서 본다 — 정렬(Java TreeMap 의 코드 단위 순서)·머리 주석·줄 끝이 어긋나면
- * 도구로 쓴 매니페스트가 JVM 산출 파일과 달라진다. 권위는 계속 JVM 메타 게이트다.
+ * 같은 계산으로 매니페스트를 다시 쓰는 개발 도구(`scripts/harness-baseline-manifest.mjs`)와 생성기는 같은 렌더 함수
+ * (`scripts/harness-baseline-manifest-format.mjs`)로 쓴다. 바이트 시험은 그 함수가 커밋본과 같은 키 순서(Java TreeMap 의
+ * 코드 단위 순서)와 `키=값` 줄을 내는지 본다. 머리 주석은 커밋본에서 가져오고 줄 끝은 LF 로 맞춘 뒤 비교하므로 그 둘은
+ * 바이트 비교의 대상이 아니다 — 머리 주석 보존과 LF 출력은 도구 fixture 시험이 보고, 기본 머리 주석(매니페스트가 없을 때
+ * 쓴다)이 JVM 산출 파일의 2줄과 같은지는 바이트 시험의 별도 단언이 본다. 권위는 계속 JVM 메타 게이트다.
  *
  * 해소 방법은 둘 중 하나이며, 둘 다 diff 에 의도를 남긴다.
  *   ① 메타 게이트를 바꿨다면 생성기의 미러(HARNESS_SCAN_ROOTS·ARCH_RULE_FILE_PATTERN·GATE_REGISTRIES·
@@ -84,6 +87,12 @@ test('generator harness baseline mirrors the meta gate exactly for this reposito
 });
 
 test('the manifest tool writes exactly the committed bytes for this repository', () => {
+  // 기본 머리 주석은 메타 게이트가 산출 파일에 쓰는 두 줄(`w.write("# …")`)과 같다.
+  const jvmHeader = [...readFileSync(join(ROOT, META_GATE_SOURCE), 'utf8').matchAll(/\bw\.write\("(#[^"]*)"\)/g)]
+    .map(match => match[1]);
+  assert.deepEqual(jvmHeader, [...DEFAULT_HEADER],
+    `기본 머리 주석이 ${META_GATE_SOURCE} 의 산출 파일 머리 주석과 다르다 — 형식 모듈의 DEFAULT_HEADER 를 함께 고친다.`);
+
   // 로컬 체크아웃은 core.autocrlf 로 CRLF 일 수 있다. 커밋되는 내용(LF)과 같은지를 본다 — CI 체크아웃은 그대로 LF 다.
   const committed = readFileSync(MANIFEST, 'utf8').replaceAll('\r\n', '\n');
   const rendered = renderHarnessBaselineManifest(computedEntries(), manifestHeader(committed));

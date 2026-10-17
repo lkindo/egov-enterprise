@@ -1,6 +1,9 @@
 #!/bin/sh
 # eGov Enterprise — AGENTS.md 범위별 검증을 구현하는 로컬 pre-push 게이트
 # 우회: git push --no-verify   |   비활성화: git config --unset core.hooksPath
+# 검사 범위는 push 범위(stdin 의 remote_sha..local_sha)로 고르지만, 모든 검사는 push 하는 커밋이 아니라 현재
+# 체크아웃(index·작업 트리)에서 돈다. 다른 브랜치를 push 하거나 커밋하지 않은 변경이 있으면 로컬 결과는 그 커밋의
+# 증거가 아니다 — 그 커밋의 권위는 required CI 다.
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
 
@@ -75,7 +78,7 @@ echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migratio
 
 # Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 11분 — 이 훅에서 가장 비싼 검사다).
 # 문서 전용이면 연결·메모리·생성물 계약을 확인하고 끝난다. 소스 변경이면 컴파일·타입·codegen·
-# lint 같은 정적 검사가 먼저 실패를 알린 뒤에 실행한다(fail-fast). 어느 경로든 정확히 한 번 돈다.
+# lint 같은 정적 검사가 먼저 실패를 알린 뒤에 실행한다(fail-fast). 두 경로 모두 정확히 한 번 돈다(삭제 전용 push 는 그 전에 끝난다).
 run_operational_contracts() {
   echo "  → governance: npm run test:operational-contracts"
   npm run test:operational-contracts \
@@ -136,7 +139,8 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
     || { echo "❌ E2E TypeScript 타입 검사 실패 — 루트 tsconfig 는 e2e 를 exclude 하므로 이 게이트가 유일 관문입니다."; exit 1; }
 
   # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts/generated-operations.ts 정합.
-  # CI(ci.yml)에도 있으며, 로컬 pre-push에서는 빠른 드리프트 피드백을 위해 같은 계약을 선제 검사한다.
+  # CI(ci.yml)는 커밋 체크아웃에서, 로컬 pre-push 는 빠른 드리프트 피드백을 위해 현재 index·작업 트리에서 같은 계약을
+  # 선제 검사한다 — 입력은 push 하는 커밋이 아니다(위 머리 주석).
   # index 와 작업 트리 둘 다 본다 — index 의 api-docs.json 으로 임시 재생성해 index 생성물과 비교하고,
   # 작업 트리가 다르면 작업 트리 쌍도 비교한다(작업 트리·index 를 쓰지 않으며 백엔드 재빌드 불요).
   # 검증 스크립트도 미추적 생성물을 실패로 보지만, 계약 SSOT(스펙)의 추적 여부는 여기서 먼저 확인한다.

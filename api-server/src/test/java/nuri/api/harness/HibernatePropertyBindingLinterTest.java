@@ -60,17 +60,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li><b>운영 설정 파일의 위치</b>: 모든 {@code application*.yml} 의 {@code spring.jpa.hibernate:}
  *       블록에 Boot 가 바인딩하지 않는 키가 있는지 본다. 같은 실수의 <b>부류</b>를 막는다.</li>
  *   <li><b>앱이 같은 경로를 쓴다는 전제</b>: 운영 소스(foundation·business-core·business-app·api-server 의 main)에
- *       JPA 부트스트랩을 직접 다루는 타입(EMF 직접 정의·Hibernate 속성 커스터마이저)이 없는지 정적으로 본다.
- *       EMF 를 직접 정의하면 자동 설정이 물러나 1번의 경로가 이 앱의 경로가 아니게 되고, 커스터마이저는
- *       yml 의 값을 덮을 수 있다. 선언이 생기면 red 가 되어 이 게이트의 전제를 다시 판정하게 한다.</li>
+ *       다음 선언이 없는지 정적으로 본다 — ① 목록에 적은 JPA 부트스트랩 타입(EMF 를 만드는 팩토리·빌더·공급자,
+ *       Hibernate SessionFactory 빌더, Hibernate 속성·빌더 커스터마이저)의 이름, ② 반환형이 {@code EntityManagerFactory}·
+ *       {@code SessionFactory} 인 {@code @Bean} 메서드와 그 둘을 만드는 {@code FactoryBean} 구현. EMF 를 직접 정의하면
+ *       자동 설정이 물러나 1번의 경로가 이 앱의 경로가 아니게 되고, 커스터마이저는 yml 의 값을 덮을 수 있다.
+ *       선언이 생기면 red 가 되어 이 게이트의 전제를 다시 판정하게 한다. 이름과 선언 모양으로 찾으므로 그 밖의 형태
+ *       (반환형을 다른 타입으로 적은 빈, persistence.xml 등)는 보지 않는다. EMF 를 주입받기만 하는 코드(필드·생성자·
+ *       빈 메서드 인자, {@code unwrap})는 정의가 아니라 대상이 아니다. 자동 설정 제외({@code exclude}·
+ *       {@code spring.autoconfigure.exclude})는 따로 찾지 않는다 — 자기 EMF 없이 제외하면 저장소 설정의
+ *       {@code @EnableJpaRepositories} 가 EMF 빈을 찾지 못해 앱이 기동하지 않고(앱 전체를 띄우는 하네스가 red),
+ *       자기 EMF 와 함께 제외하면 위 탐지가 그 EMF 정의를 잡는다.</li>
  * </ol>
  *
  * <p><b>[왜 운영 값을 런타임으로 단언하지 않는가 — 정직한 한계]</b>
  * 기전 컨텍스트는 {@code application*.yml}을 읽지 않고 테스트 값을 직접 주입하므로 운영 설정의
  * 적용 결과를 주장하지 않는다. 운영 선언 위치는 2번, 전달 여부는 1번, 앱이 1번과 같은 경로를 쓴다는
  * 전제는 3번으로 나눠 판정한다. Boot의 DataSource/JPA 자동 설정과 실제 Hibernate SessionFactory만 띄우며,
- * 업무 엔티티·웹·보안 설정은 스캔하지 않는다. 3번은 실행이 아니라 선언 부재의 정적 확인이다 — 앱 전체를
- * 띄워 같은 사실을 간접적으로 보던 종전 방식 대신, 전제가 깨지는 지점을 직접 막는다.
+ * 업무 엔티티·웹·보안 설정은 스캔하지 않는다. 3번은 실행이 아니라 선언 부재의 정적 확인이라 3번에 적은 형태만
+ * 막는다 — 앱 전체를 띄워 실제 EMF 를 보던 종전 방식은 어떤 형태로 EMF 를 바꿔도 red 였지만, 이 확인은 그 밖의
+ * 형태를 보지 않는다.
  */
 @Tag("governance-harness")
 class HibernatePropertyBindingLinterTest {
@@ -98,17 +106,39 @@ class HibernatePropertyBindingLinterTest {
     private static final int MIN_SCANNED_FILES = 5;
 
     /**
-     * 앱이 JPA 부트스트랩을 직접 다루는 타입. 운영 소스에 하나라도 나오면 기전 증명(Boot 자동 설정 경로)이
-     * 이 앱의 전달 경로를 대표한다는 전제가 깨질 수 있다. 시험 전용 쿼리 계수 설정(testFixtures)은 대상이 아니다.
+     * 앱이 JPA 부트스트랩을 직접 다루는 타입 — Hibernate 속성·빌더 커스터마이저와, EMF 를 만드는 팩토리·빌더·공급자·
+     * Hibernate SessionFactory 빌더다. 운영 소스에 하나라도 나오면 기전 증명(Boot 자동 설정 경로)이 이 앱의 전달 경로를
+     * 대표한다는 전제가 깨질 수 있다. 지금 운영 소스에는 하나도 없다. 시험 전용 쿼리 계수 설정(testFixtures)은 대상이 아니다.
      */
     private static final List<String> JPA_BOOTSTRAP_OVERRIDE_TYPES = List.of(
             "HibernatePropertiesCustomizer",
             "LocalContainerEntityManagerFactoryBean",
-            "EntityManagerFactoryBuilderCustomizer"
+            "EntityManagerFactoryBuilderCustomizer",
+            "LocalEntityManagerFactoryBean",
+            "AbstractEntityManagerFactoryBean",
+            "EntityManagerFactoryBuilder",
+            "HibernatePersistenceProvider",
+            "LocalSessionFactoryBean",
+            "LocalSessionFactoryBuilder"
     );
 
     private static final Pattern JPA_BOOTSTRAP_OVERRIDE = Pattern.compile(
             "(?<![\\w$])(?:" + String.join("|", JPA_BOOTSTRAP_OVERRIDE_TYPES) + ")(?![\\w$])");
+
+    /**
+     * 타입 이름 밖에서 EMF 를 정의하는 선언 ① — 반환형이 {@code EntityManagerFactory}·{@code SessionFactory}(패키지 이름 허용)인
+     * {@code @Bean} 메서드. 사이에 다른 애너테이션·수식어·형 매개변수가 와도 된다. 같은 타입을 인자로 받는 빈 메서드는 잡지 않는다.
+     */
+    private static final Pattern EMF_BEAN_METHOD = Pattern.compile(
+            "@(?:[\\w$]+\\s*\\.\\s*)*Bean(?![\\w$])(?:\\s*\\((?:[^()]|\\([^()]*\\))*\\))?"
+                    + "(?:\\s*(?:@(?:[\\w$]+\\s*\\.\\s*)*[\\w$]+(?:\\s*\\((?:[^()]|\\([^()]*\\))*\\))?"
+                    + "|(?<![\\w$])(?:public|protected|private|static|final|synchronized)(?![\\w$])))*"
+                    + "\\s*(?:<[^<>]*(?:<[^<>]*>[^<>]*)*>\\s*)?"
+                    + "(?:[\\w$]+\\s*\\.\\s*)*(EntityManagerFactory|SessionFactory)\\s+[\\w$]+\\s*\\(");
+
+    /** 타입 이름 밖에서 EMF 를 정의하는 선언 ② — {@code EntityManagerFactory}·{@code SessionFactory} 를 만드는 {@code FactoryBean}. */
+    private static final Pattern EMF_FACTORY_BEAN = Pattern.compile(
+            "(?<![\\w$])[\\w$]*FactoryBean\\s*<\\s*(?:[\\w$]+\\s*\\.\\s*)*(EntityManagerFactory|SessionFactory)\\s*>");
 
     /** 운영 소스 모듈. 판정은 각 모듈의 src/main/java 만 본다. */
     private static final List<String> PRODUCTION_MODULES = List.of(
@@ -180,7 +210,7 @@ class HibernatePropertyBindingLinterTest {
     }
 
     @Test
-    @DisplayName("운영 소스가 JPA 부트스트랩을 직접 바꾸지 않는다 — 기전 증명이 이 앱의 경로라는 전제")
+    @DisplayName("운영 소스에 목록의 JPA 부트스트랩 타입과 EMF·SessionFactory 정의 빈이 없다 — 기전 증명이 이 앱의 경로라는 전제")
     void productionSourcesDoNotOverrideTheJpaBootstrap() throws IOException {
         Path repoRoot = HarnessSourceIndex.repoRoot();
         List<Path> sources = HarnessSourceIndex.productionJavaSources(PRODUCTION_MODULES.toArray(String[]::new));
@@ -204,7 +234,7 @@ class HibernatePropertyBindingLinterTest {
     }
 
     @Test
-    @DisplayName("부정 대조군: 커스터마이저·EMF 직접 정의는 잡고, 주석·문자열·다른 이름의 일부는 잡지 않는다")
+    @DisplayName("부정 대조군: 목록의 타입과 EMF·SessionFactory 정의 빈은 잡고, 주입·주석·문자열·다른 이름의 일부는 잡지 않는다")
     void jpaBootstrapOverrideScanCatchesDeclarationsOnly() {
         assertThat(jpaBootstrapOverrides("Fixture.java",
                 "import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;\n"
@@ -227,20 +257,67 @@ class HibernatePropertyBindingLinterTest {
                         + "}\n"))
                 .as("주석·문자열 언급과 다른 식별자의 일부는 선언이 아니다")
                 .isEmpty();
+        // EMF·SessionFactory 를 정의하는 다른 타입과, 타입 이름 밖의 정의(반환형이 그 둘인 빈·FactoryBean)
+        assertThat(jpaBootstrapOverrides("Fixture.java",
+                "class Fixture {\n"
+                        + "  @Bean LocalEntityManagerFactoryBean local() { return null; }\n"
+                        + "  class Custom extends AbstractEntityManagerFactoryBean { }\n"
+                        + "  @Bean EntityManagerFactoryBuilder builder() { return null; }\n"
+                        + "  @Bean Object provider() { return new HibernatePersistenceProvider(); }\n"
+                        + "  @Bean LocalSessionFactoryBean sessionFactoryBean() { return null; }\n"
+                        + "  Object built(DataSource ds) { return new LocalSessionFactoryBuilder(ds); }\n"
+                        + "  @Bean(name = \"emf\") @Primary\n"
+                        + "  public static jakarta.persistence.EntityManagerFactory direct() {\n"
+                        + "    return Persistence.createEntityManagerFactory(\"unit\"); }\n"
+                        + "  @org.springframework.context.annotation.Bean SessionFactory nativeFactory() { return null; }\n"
+                        + "  class EmfFactory implements FactoryBean<jakarta.persistence.EntityManagerFactory> { }\n"
+                        + "}\n"))
+                .containsExactly("Fixture.java:2 → LocalEntityManagerFactoryBean",
+                        "Fixture.java:3 → AbstractEntityManagerFactoryBean",
+                        "Fixture.java:4 → EntityManagerFactoryBuilder",
+                        "Fixture.java:5 → HibernatePersistenceProvider",
+                        "Fixture.java:6 → LocalSessionFactoryBean",
+                        "Fixture.java:7 → LocalSessionFactoryBuilder",
+                        "Fixture.java:9 → @Bean EntityManagerFactory",
+                        "Fixture.java:11 → @Bean SessionFactory",
+                        "Fixture.java:12 → FactoryBean<EntityManagerFactory>");
+        // 운영 소스의 실제 형태(EMF 를 주입받아 통계만 켠다)는 정의가 아니다
+        assertThat(jpaBootstrapOverrides("Fixture.java",
+                "@Configuration @RequiredArgsConstructor class Fixture {\n"
+                        + "  private final EntityManagerFactory entityManagerFactory;\n"
+                        + "  Fixture(jakarta.persistence.EntityManagerFactory emf, SessionFactory sessionFactory) { }\n"
+                        + "  @PostConstruct void init() { SessionFactory s = entityManagerFactory.unwrap(SessionFactory.class); }\n"
+                        + "  @Bean Statistics statistics(EntityManagerFactory emf) { return emf.unwrap(SessionFactory.class).getStatistics(); }\n"
+                        + "  @MockitoBean SessionFactory mocked;\n"
+                        + "  // @Bean EntityManagerFactory emf() 는 두지 않는다\n"
+                        + "  String note = \"@Bean SessionFactory nativeFactory()\";\n"
+                        + "}\n"))
+                .as("주입·unwrap·EMF 를 인자로 받는 빈·주석·문자열은 EMF 정의가 아니다")
+                .isEmpty();
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    /** 주석·리터럴을 가린 코드에서 부트스트랩 타입 이름을 식별자 단위로 찾는다. 결과는 {@code 파일:행 → 타입}. */
+    /**
+     * 주석·리터럴을 가린 코드에서 부트스트랩 타입 이름(식별자 단위)과 EMF·SessionFactory 정의 선언을 찾는다.
+     * 결과는 소스 순서의 {@code 파일:행 → 이름} 이다. 정의 빈의 행은 반환형이 있는 행이다.
+     */
     static List<String> jpaBootstrapOverrides(String label, String source) {
         String code = HarnessSourceIndex.maskNonCode(source);
-        List<String> found = new ArrayList<>();
-        Matcher matcher = JPA_BOOTSTRAP_OVERRIDE.matcher(code);
-        while (matcher.find()) {
-            long line = code.substring(0, matcher.start()).chars().filter(c -> c == '\n').count() + 1;
-            found.add(label + ":" + line + " → " + matcher.group());
+        List<java.util.Map.Entry<Integer, String>> found = new ArrayList<>();
+        Matcher type = JPA_BOOTSTRAP_OVERRIDE.matcher(code);
+        while (type.find()) found.add(java.util.Map.entry(type.start(), type.group()));
+        Matcher bean = EMF_BEAN_METHOD.matcher(code);
+        while (bean.find()) found.add(java.util.Map.entry(bean.start(1), "@Bean " + bean.group(1)));
+        Matcher factory = EMF_FACTORY_BEAN.matcher(code);
+        while (factory.find()) found.add(java.util.Map.entry(factory.start(), "FactoryBean<" + factory.group(1) + ">"));
+        found.sort(java.util.Map.Entry.comparingByKey());
+        List<String> result = new ArrayList<>();
+        for (java.util.Map.Entry<Integer, String> match : found) {
+            long line = code.substring(0, match.getKey()).chars().filter(c -> c == '\n').count() + 1;
+            result.add(label + ":" + line + " → " + match.getValue());
         }
-        return found;
+        return result;
     }
 
     /**

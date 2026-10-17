@@ -33,9 +33,9 @@ function refreshHash(census) {
 
 let repositoryCensusCache;
 /**
- * 저장소 census 는 한 번만 만든다(한 번에 1초 안팎이다). 빌더는 저장소 소스·원장의 결정적 함수이고 현재 시각을 읽지 않으며, 실행 중에
- * 저장소를 바꾸는 시험도 없다. 부를 때마다 복제본을 돌려주므로 한 시험이 받은 결과를 제자리에서 바꿔도 다른 시험에 새지 않는다 —
- * 맨 끝 시험이 그 격리를 확인한다.
+ * 저장소 census 는 한 번만 만든다(한 번에 1초 안팎이다). 빌더는 저장소 소스·원장의 결정적 함수이고 현재 시각을 읽지 않으며(미래 시각
+ * 시험이 그 시각에서 한 번 더 빌드해 이 복제본과 같은지 본다), 실행 중에 저장소를 바꾸는 시험도 없다. 부를 때마다 복제본을 돌려주므로
+ * 한 시험이 받은 결과를 제자리에서 바꿔도 다른 시험에 새지 않는다 — 맨 끝 시험이 그 격리를 확인한다.
  */
 function repositoryCensus() {
   repositoryCensusCache ??= buildUrlStateCensus({ repoRoot });
@@ -128,6 +128,8 @@ test('identical source and approval contracts remain valid across future calenda
     assert.deepEqual(validateUrlStateCensus(census, { repoRoot }), [], date);
   }
   assert.deepEqual(census, before, '검토 일정이나 미승인 상태를 자동 갱신하면 안 된다');
+  // 저장소 census 메모의 전제 — 빌더도 시각을 읽지 않는다. 마지막(가장 먼) 시각에서 한 번만 다시 빌드한다.
+  assert.deepEqual(buildUrlStateCensus({ repoRoot }), before, '빌더 출력이 현재 시각에 따라 달라지면 안 된다');
 });
 
 test('a non-existent reviewBy date cannot silently corrupt the operational review schedule', () => {
