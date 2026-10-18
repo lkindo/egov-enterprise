@@ -85,7 +85,7 @@ public class PopupService {
         Popup popup = popupRepository.findById(Objects.requireNonNull(popupSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
-        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), popup.getVersion());
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), popup.getVersion());
         LocalDate[] period = noticePeriod(dto);
 
         Long requestedAtchFileSn = parseRequestedAttachmentId(dto.getFileUrl());

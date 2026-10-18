@@ -1,4 +1,4 @@
-package nuri.foundation.domain.common;
+package nuri.foundation.core.util;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;

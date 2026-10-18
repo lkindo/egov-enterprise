@@ -71,7 +71,7 @@ public class RewardManageService {
         SecurityUtil.assertPermission("REWARD_UPDATE");
         RewardManage reward = findRequired(rwrdSn);
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
-        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), reward.getVersion());
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), reward.getVersion());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(reward.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);

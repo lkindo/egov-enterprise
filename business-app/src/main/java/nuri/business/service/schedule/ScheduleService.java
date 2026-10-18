@@ -163,7 +163,7 @@ public class ScheduleService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
-        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         requireStartDate(dto);
 
         Long atchFileSn = dto.getAtchFileSn();

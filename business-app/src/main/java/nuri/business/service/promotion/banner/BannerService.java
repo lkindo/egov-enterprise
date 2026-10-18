@@ -65,7 +65,7 @@ public class BannerService {
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
-        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);

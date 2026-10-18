@@ -9,7 +9,7 @@ import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.domain.common.EntityVersions;
+import nuri.foundation.core.util.EntityVersions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

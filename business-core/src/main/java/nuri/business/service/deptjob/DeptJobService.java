@@ -292,7 +292,7 @@ public class DeptJobService extends BaseAbstractService {
         assertPicOrAdmin(deptJob, "DEPT_JOB_UPDATE_ALL");
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
         //   담당자 재지정(reassignDeptJob)도 버전을 올리므로, 재지정 뒤 옛 화면의 저장은 409 가 된다.
-        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
 
         if (dto.getAtchFileSn() != null
                 && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {

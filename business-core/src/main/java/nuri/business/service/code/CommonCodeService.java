@@ -29,7 +29,7 @@ import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.business.domain.common.BaseSearchDto;
-import nuri.foundation.domain.common.EntityVersions;
+import nuri.foundation.core.util.EntityVersions;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
