@@ -104,6 +104,7 @@
 | [ADR-0031](02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건·chunk 실패 처리와 단계 경계 |
 | [ADR-0032](02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 |
 | [ADR-0033](02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 수신주소의 암호화 보관과 완료 후 정리 |
+| [ADR-0034](02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 |
 
 ## 03-guides — 개발 지침
 
@@ -159,6 +160,7 @@
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 날짜 입력·화면 연결·첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, Spring Boot 4 실측, ZAP 경고 분류, 도메인 정합성, 프록시 연결 경합 |
 | [standard-length-alignment-runbook.md](04-operations/standard-length-alignment-runbook.md) | 표준 길이의 단계별 스키마·애플리케이션 전환과 실패·복구 검증 |
+| [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
 

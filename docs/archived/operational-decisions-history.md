@@ -2082,6 +2082,30 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-346 | accepted | **대형 화면·서비스·이관 도구 클래스를 동작을 바꾸지 않고 나누며, 단일 파일을 읽던 계약은 나뉜 파일 전체로 넓힌다.** ① 화면: 노트, 사용자·조직, 공통코드, 결재 기안의 표시·순수 함수 조각만 옮기고 쓰기 호출과 권한 판정은 화면 파일에 둔다. ② 서비스: 결재·게시판·인가 관리의 읽기 조립·정책 헬퍼를 같은 패키지의 정적 협력 클래스로 옮기고, 트랜잭션·권한 집행·조회는 서비스에 둔다. ③ 이관 도구: 매핑·원장 검증기와 ETL 실행기의 보조 책임을 나누고 실행 계약 핵심 클래스에 결속한다. 실행 계약 digest 가 바뀌므로 기존에 승인한 이관 plan 은 다시 승인한다. ④ 옮긴 코드를 읽던 원장·계약(폼 검증·라우트 기능·URL 상태·정직성·접근성·민감 콘솔·게시판 통계)은 새 파일까지 읽는다. ⑤ A1 채택 census 는 같은 폴더의 셸 화면이 `./조각` 으로 불러 쓰는 파일을 그 화면의 일부로 센다 — 화면을 나눠도 직접 조립 판정이 바뀌지 않는다. ⑥ 쓰기 권한 표시 census 는 판정을 마친 importer 의 결과를 기억한다 — 권한을 보는 화면이 직접과 중간 조각을 거쳐 두 길로 여는 조각(결재 기안 → 저장 결재선 패널 → 결재자 선택기)을 두 번째 길에서 순환으로 보고 부채로 세지 않는다. 판정 중인 파일로 되돌아오는 순환만 거짓이다. | 한 파일에 1천 줄 넘게 모인 화면·서비스·실행기를 기능 변경과 섞지 않고 분해한다(제미나이 계획의 사용자 검토 판정). 파일을 옮기면 단일 파일 계약이 빈 검사가 될 수 있다(H2). 제미나이 작업분(Track A-4·B·C), 통합 검토가 좁아진 계약 2건(접근성 미선택 안내·게시판 통계), 분리로 셸 화면의 조각을 직접 조립 화면으로 센 census 오탐 2건(공통코드 상세 표·사용자·조직 조각), 마름모 import 를 순환으로 본 쓰기 권한 표시 census 의 결함, 지워진 설계 근거 주석을 바로잡았다. red 증명: 확장한 계약마다 의도적 위반(제미나이 기록), 접근성·게시판 통계 계약은 통합 검토 변이로 재확인, census 는 조각을 부르는 화면이 셸을 떠나면 조각과 화면이 함께 직접 조립으로 붉어짐을 확인, 마름모 회귀 시험은 고치기 전 판정에서 붉고 중간 조각을 권한 없는 화면도 열면 여전히 부채로 센다. | [노트 화면](../../frontend/src/app/note/NoteHubClient.tsx), [게시판 정책 조각](../../business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java), [이관 실행 계약](../../migration-tool/src/main/java/nuri/migration/artifact/MigrationExecutionContract.java), [복구 런북](../04-operations/migration-recovery-runbook.md) | 2026-10-18 | - |
 
+## DEC-OPS-347
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-347 | accepted | **410만 돌려주던 구 롤·롤 권한·권한 쓰기 API 12개 operation 을 경로째 걷는다(ADR-0034).** ① `RoleApiController`(6)·`AuthorRoleApiController`(2)와 권한 API 의 등록·수정·삭제·일괄 삭제(4)를 걷는다. 화면이 쓰는 권한 목록·단건·메뉴 조회는 남긴다. ② 정책 원장·operation 원장·API 계약에서 함께 빼고, 걷은 서비스·DTO·시험과 던지는 곳이 없어진 오류 코드 C015(`AUTHORIZATION_ENDPOINT_RETIRED`)·메시지 키도 지운다. ③ `AuthorManageDto` 는 조회 응답으로 남아 입력 계약 원장과 하한은 그대로다. ④ 걷은 경로는 원장에 없는 연산이라 디스패치 전에 거부된다 — 관리자도 403, 미인증 401 을 RBAC 시험이 고정하고, 권한 상승 시험은 남은 관리자 전용 쓰기 경로(권한 그룹 삭제)로 옮긴다. ⑤ 전환 런북의 '구 관리 API 410' smoke 항목을 이 응답으로 고친다. | 410 은 호출자를 새 API 로 옮기라는 신호였고 저장소의 프런트·E2E 에는 호출자가 없다. 실제 동작 없는 표면이 API 계약·정책 원장에 계속 집계됐다. red 증명: 걷은 경로 자리에 살아 있는 경로를 넣으면 RBAC 시험이 200 을 잡아 실패한다. 2026-10-18 사용자 선택("둘 다 정리"). | [ADR-0034](../02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md), [전환 런북](../04-operations/authorization-cutover-runbook.md), [입력 계약 게이트](../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java) | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분(ADR-0034) |
+
+## DEC-OPS-348
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-348 | accepted | **결재 API 로 대체된 비공식결재(ISM) API 를 걷고 INFORMAL_* 권한 10개를 퇴역한다(ADR-0034).** ① `InformalSanctionApiController` 의 두 기본 경로(`/api/v1/informal-sanctions`·`/api/v1/admin/system/ism`) 6개 operation 과, 그 API 만 쓰던 서비스 메서드(제자리 수정·받은 목록)를 걷는다. 화면 별칭 `/admin/system/ism` → `/approvals` 는 그대로다. ② INFORMAL_* 10개를 권한 카탈로그·정책·묶음·기본 시드에서 뺀다. APPROVAL_* 를 묵시로 주지 않는다(H3). ③ V2_130 이 기존 배정을 지우고 같은 트랜잭션에 REMOVE 이력을 남긴다(V2_124 선례). ④ 결재 기능은 RBAC demo 매트릭스의 소유 기능에서 빠진다 — 그 몫이던 ISM 승인 단언이 API 와 함께 사라졌고, 결재 시작 구성의 기대 게이트에 그 시험 제외를 사유와 함께 둔다. | 결재 API 가 같은 서비스로 목록·상세·등록·승인·삭제를 덮고, 프런트·E2E 의 ISM API 호출은 0건이었다. 원장에 없는 권한 배정이 남으면 권한 스냅샷이 fail-closed 로 실패해 그 그룹 구성원의 인증이 막힌다. 2026-10-18 OCI 읽기: 25행(ROLE_ADMIN 10, ROLE_SYSTEM 10, ROLE_USER 5). 공유 OCI 적용은 병합 뒤 별도 승인이다. red 증명: V2_130 의 삭제를 무력화하면 마이그레이션 시험이 남은 25행을 잡는다. 2026-10-18 사용자 선택("둘 다 정리"). | [ADR-0034](../02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md), [V2_130](../../api-server/src/main/resources/db/migration/V2_130__retire_unenforced_permission_grants.sql), [권한 원장](../../config/governance/permission-catalog.json) | 2026-10-18 | DEC-OPS-053 의 ISM API superseded-surface 등재(표면 제거로 종료) |
+
+## DEC-OPS-349
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-349 | accepted | **집행 지점이 없던 기관코드 쓰기 권한 INST_CODE_CREATE·UPDATE·DELETE 를 퇴역한다.** ① 권한 카탈로그·정책·묶음·기본 시드에서 빼고 V2_130 이 기존 배정을 지우며 REMOVE 이력을 남긴다. ② 조회(INST_CODE_READ)와 수신 반영(INST_CODE_IMPORT)은 그대로다. ③ 로그인 정책의 `dpcn_prm_yn` 컬럼은 유지한다(GAP-LOGIN-001 그대로). | 2026-10-07 기관코드 원장 쓰기 경로를 걷은 뒤 어느 연산도 이 권한을 요구하지 않았다(GAP-CODE-001). 2026-10-18 OCI 읽기: 6행(ROLE_ADMIN·ROLE_SYSTEM × 3). 컬럼 제거는 Expand-Contract 와 관측 기간이 필요한 스키마 변경이라 이번에 하지 않는다. 2026-10-18 사용자 선택("INST_CODE 권한만 퇴역"). | [V2_130](../../api-server/src/main/resources/db/migration/V2_130__retire_unenforced_permission_grants.sql), [GAP-CODE-001](../../.agent/memory/known-gaps.md) | 2026-10-18 | GAP-CODE-001 의 '쓰기 권한 퇴역은 별도 결정' 부분 |
+
+## DEC-OPS-350
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-350 | accepted | **next.config 리다이렉트 뒤에서 실행될 수 없던 `/admin/observability`·`/admin/system/audit` 를 redirect 스텁으로 바꾸고 그 화면 전용 코드를 지운다.** ① 두 `page.tsx` 는 next.config 와 같은 목적지(감시 허브의 관측·시스템 탭)로 보내는 `redirect()` 스텁이다. 라우트 원장 행은 남기고 스텁 목적지를 기록한다. ② 전용 코드(`ServiceTopology`·`AuditTimelineClient`·`TimelineItem`·관측성 대시보드 지표 조회)와 그 시험을 지운다. 감시·통계 허브가 쓰는 차트와 대시보드의 감사 타임라인은 남긴다. ③ 그 코드를 읽던 가드(상태 색·진입 애니메이션·단일 머리글·고정 높이·셸 접근성)는 표면 제거만큼 맞추고, P2 일관성 단언은 같은 불변식을 지닌 감시 허브 관측 탭으로 옮긴다. | next.config 의 무조건 리다이렉트가 먼저 적용돼 두 화면은 실행될 수 없었는데, 코드·가드·원장은 살아 있는 화면처럼 셌다. 라우트를 지우지 않는 것은 문자열 URL 참조의 오삭제 선례(V2_30) 때문이다. red 증명: 남은 화면에 상태 색 리터럴을 넣으면 상태 색 가드가, 스텁 목적지를 바꾸면 라우트 원장 계약이 실패한다. 2026-10-18 사용자 선택("redirect 스텁 + 전용 코드 제거"). | [관측성 스텁](../../frontend/src/app/admin/observability/page.tsx), [감사 스텁](../../frontend/src/app/admin/system/audit/page.tsx), [라우트 원장](../../config/ui-route-capabilities.json) | 2026-10-18 | V2_48 주석의 /admin/system/audit 실기능 판정과 "추측으로 지우지 않는다"(실행 불가 실측으로 종료) |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
