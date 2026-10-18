@@ -336,7 +336,8 @@ test('registry keeps the ten authoritative gate sets and seven runner catalogs',
   assert.equal(byId.get('GATESET-FRONTEND-INVARIANTS').selector.forbidSkips, true);
   assert.equal(byId.get('GATESET-FRONTEND-FORM-VALIDATION').selector.forbidSkips, true);
   assert.equal(byId.get('GATESET-CROSS-STACK-CONTRACTS').selector.forbidSkips, true);
-  assert.equal(byId.get('GATESET-CROSS-STACK-CONTRACTS').requiredCiContext, 'secret-scan');
+  // [2026-10-18 DEC-OPS-344 ①] frontend 축이 켜지면 커버리지 전체 스위트(frontend-build 집계)가, 꺼지면 secret-scan 이 돈다.
+  assert.deepEqual(byId.get('GATESET-CROSS-STACK-CONTRACTS').requiredCiContext, ['secret-scan', 'frontend-build']);
   // [2026-08-31] 최대 카탈로그(FRONTEND-VITEST)에도 skip 금지를 동결한다 — 종전에는 이 카탈로그만
   //   it.skip/describe.only 가 자유였다(당시 위반 0건이라 무비용으로 켰다). Playwright .spec.ts 의
   //   플랫폼 waiver 는 suffix 가 달라(이 카탈로그는 .test.ts 만) 충돌하지 않는다.

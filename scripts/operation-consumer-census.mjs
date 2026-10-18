@@ -913,18 +913,24 @@ export function analyzeWritePermissionNeeds({ boundaries, policies, repoRoot = D
  */
 export function analyzeWriteAffordance({ boundaries, policies, catalog, repoRoot = DEFAULT_REPO_ROOT, ts }) {
   const { writeMethods, needs, routeOf, importersOf, mentions } = analyzeWritePermissionNeeds({ boundaries, policies, repoRoot, ts });
-  const gated = (file, permission, seen = new Set()) => {
-    if (seen.has(file)) return false;
-    seen.add(file);
-    if (mentions(file, permission)) return true;
-    if (routeGuarantees(routeOf(file), permission, catalog)) return true;
+  // 판정이 끝난 파일은 결과를 기억한다 — 두 길로 닿는 importer(마름모)를 두 번째에 '순환' 으로 보고 거짓을 내면 이미 권한을
+  // 본 화면 아래의 조각이 부채로 잡힌다. 판정 중인 파일로 되돌아오는 순환만 거짓이다(보지 못한 길을 본 것처럼 세지 않는다).
+  const gated = (file, permission, decided, visiting = new Set()) => {
+    if (decided.has(file)) return decided.get(file);
+    if (visiting.has(file)) return false;
+    visiting.add(file);
     const importers = importersOf(file);
-    return importers.length > 0 && importers.every((importer) => gated(importer, permission, seen));
+    const result = mentions(file, permission)
+      || routeGuarantees(routeOf(file), permission, catalog)
+      || (importers.length > 0 && importers.every((importer) => gated(importer, permission, decided, visiting)));
+    visiting.delete(file);
+    decided.set(file, result);
+    return result;
   };
 
   const ungated = [];
   for (const { file, permission, via } of needs) {
-    if (!gated(file, permission)) ungated.push({ file, permission, via });
+    if (!gated(file, permission, new Map())) ungated.push({ file, permission, via });
   }
   ungated.sort((a, b) => a.file.localeCompare(b.file) || a.permission.localeCompare(b.permission));
   return { ungated, writeMethods: writeMethods.length };

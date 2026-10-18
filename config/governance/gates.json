@@ -243,6 +243,7 @@
       "exclude": [
         "**/*.test.{ts,tsx}",
         "src/types/**",
+        "src/extensions/generated-*.ts",
         "**/*.d.ts",
         "src/mocks/**",
         "src/**/__tests__/**"
@@ -262,6 +263,7 @@
       "baselineExclude": [
         "**/*.test.{ts,tsx}",
         "src/types/**",
+        "src/extensions/generated-*.ts",
         "**/*.d.ts",
         "src/mocks/**",
         "src/**/__tests__/**"

@@ -801,6 +801,44 @@ test('축 3 — 대화상자는 그것을 여는 화면이 모두 권한을 볼 
   ]);
 });
 
+test('축 3 — 권한을 보는 화면이 직접과 중간 조각을 거쳐 두 길로 여는 대화상자는 통과한다(2026-10-18 결재 기안 분리)', (t) => {
+  // 결재 기안 대화상자 → 저장 결재선 패널 → 결재자 선택기, 그리고 대화상자 → 결재자 선택기. 두 번째 길에서 이미 판정한
+  // 대화상자를 순환으로 보면 선택기가 부채로 잡힌다.
+  const dialog = [
+    SERVICE_IMPORT,
+    'export const ThingDeleteDialog = () => <button onClick={() => thingService.deleteThing(1)}>삭제</button>;',
+  ];
+  const panel = [
+    "import { ThingDeleteDialog } from './ThingDeleteDialog';",
+    'export const Panel = () => <ThingDeleteDialog />;',
+  ];
+  const opener = [
+    "import { ThingDeleteDialog } from './ThingDeleteDialog';",
+    "import { Panel } from './Panel';",
+    "export const Opener = ({ user }) => canPermission(user, 'THING_DELETE') ? <><ThingDeleteDialog /><Panel /></> : null;",
+  ];
+  const diamond = affordanceFixture(t, {
+    'frontend/src/components/things/ThingDeleteDialog.tsx': dialog,
+    'frontend/src/components/things/Panel.tsx': panel,
+    'frontend/src/components/things/Opener.tsx': opener,
+  });
+  assert.deepEqual(diamond.analyze().ungated, []);
+
+  // 중간 조각을 권한을 보지 않는 화면도 열면 그 길로는 버튼이 보인다 — 기억한 결과가 이 길을 가리지 않는다.
+  const leaked = affordanceFixture(t, {
+    'frontend/src/components/things/ThingDeleteDialog.tsx': dialog,
+    'frontend/src/components/things/Panel.tsx': panel,
+    'frontend/src/components/things/Opener.tsx': opener,
+    'frontend/src/components/things/OtherOpener.tsx': [
+      "import { Panel } from './Panel';",
+      'export const OtherOpener = () => <Panel />;',
+    ],
+  });
+  assert.deepEqual(leaked.analyze().ungated.map((entry) => entry.file), [
+    'frontend/src/components/things/ThingDeleteDialog.tsx',
+  ]);
+});
+
 /*
   [스크랩 슬롯] 슬롯 기여는 셸이 그리는 버튼의 쓰기 함수를 가리킨다. 기여 파일을 모집단에서 빼면 그 쓰기가 어느 화면에도 귀속되지
   않아 부채가 사라진 것처럼 보인다(H2). 기여를 여는 화면은 그 슬롯 레지스트리를 import 하는 화면이고, 레지스트리를 도우미(.ts)가
