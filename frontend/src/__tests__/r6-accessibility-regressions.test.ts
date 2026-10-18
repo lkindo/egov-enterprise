@@ -40,7 +40,8 @@ describe('r6 accessibility regressions', () => {
     //       그래서 소스 문자열이 아니라 렌더 결과를 고정하는 계약이 따로 있다
     //       (app/admin/user/__tests__/detail-scroll-area.test.tsx). 여기서는 배선 형태만 본다.
     const parts = source('app/admin/user/UserOrgHubParts.tsx');
-    expect(userHub).toContain('<DetailScrollArea>');
+    expect(userHub).toContain('<UserOrgDetailPanel');
+    expect(parts).toContain('<DetailScrollArea>');
     expect(parts).toContain("useOverflowRegion<HTMLDivElement>('상세 정보 스크롤 영역')");
 
     /*
@@ -60,7 +61,10 @@ describe('r6 accessibility regressions', () => {
   });
 
   it('does not dim repeated user identifiers or the empty-selection notice below the muted token', () => {
-    const userHub = source('app/admin/user/UserOrgHubClient.tsx');
+    const userHub = [
+      source('app/admin/user/UserOrgHubClient.tsx'),
+      source('app/admin/user/UserOrgHubParts.tsx'),
+    ].join('\n');
 
     expect(userHub).not.toContain('text-[10px] font-bold tracking-tight opacity-60');
 

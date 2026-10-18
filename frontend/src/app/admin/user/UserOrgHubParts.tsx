@@ -24,7 +24,11 @@ import { Button } from '@/components/ui/button';
 import { useOverflowRegion } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
+import type { Department } from '@/services/foundation/system/DeptAdminService';
+import type { Column } from '@/app/components/ui/standard-data-table';
+import { toDisplayYmd } from '@/lib/format-date';
 import type { FlattenedDept } from './departments/treeUtils';
+import { DeptPlacementControls } from './DeptPlacementControls';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 
@@ -464,3 +468,319 @@ export function DetailField({
     </div>
   );
 }
+
+/** 소속 부서 표시 — 이름이 있으면 이름(ID), 목록에 없으면 ID 원문, 없으면 '미지정'. */
+export function departmentLabel(
+  ognzId: string | null | undefined,
+  departments: ReadonlyArray<{ ognzId?: string | null; ognzNm?: string | null }> | null | undefined,
+): string {
+  if (!ognzId) return '미지정';
+  const name = departments?.find((dept) => dept?.ognzId === ognzId)?.ognzNm;
+  return name ? `${name} (${ognzId})` : ognzId;
+}
+
+/** [2026-09-26 DIP B5 F4] 사용자 목록 조건 — 빈 문자열은 조건 없음. 어휘 밖 값은 서버가 400 으로 거부한다. */
+export type UserListFilters = { userSttsCd: string; ognzId: string; lckYn: string };
+export const EMPTY_USER_FILTERS: UserListFilters = { userSttsCd: '', ognzId: '', lckYn: '' };
+/** 부서 상세의 소속 인원 목록에 이름을 보이는 최대 인원. 나머지는 '외 N명' 으로 말한다. */
+export const DEPT_MEMBER_PREVIEW = 20;
+const USER_LOCK_FILTER_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'Y', label: '잠김' },
+  { value: 'N', label: '잠기지 않음' },
+] as const;
+const FILTER_SELECT_CLASS = 'h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-[length:var(--font-size-body)]';
+
+export function formatDeptMembersLabel(deptMembersQuery: {
+  isError: boolean;
+  data: { total: number; list?: UserManage[] | null } | undefined;
+}): string {
+  if (deptMembersQuery.isError) return '불러오지 못했습니다';
+  if (deptMembersQuery.data === undefined) return '불러오는 중';
+  if (deptMembersQuery.data.total === 0) return '없음';
+  return (
+    `${deptMembersQuery.data.total.toLocaleString()}명 — ${(deptMembersQuery.data.list ?? []).map((member) => member.userNm).join(', ')}`
+    + (deptMembersQuery.data.total > DEPT_MEMBER_PREVIEW ? ` 외 ${(deptMembersQuery.data.total - DEPT_MEMBER_PREVIEW).toLocaleString()}명` : '')
+  );
+}
+
+export const COMMON_USER_COLUMNS: Column<UserManage>[] = [
+  {
+    header: '이름',
+    sortKey: 'userNm',
+    className: 'w-36',
+    accessor: (user) => <span className="font-semibold text-foreground">{user.userNm}</span>,
+  },
+  {
+    header: '사용자 ID',
+    sortKey: 'userId',
+    className: 'w-36',
+    accessor: (user) => <span className="tabular-nums text-muted-foreground">{user.userId}</span>,
+  },
+];
+
+export function buildStandardUserColumns(
+  departments: ReadonlyArray<{ ognzId?: string | null; ognzNm?: string | null }> | null | undefined,
+): Column<UserManage>[] {
+  return [
+    {
+      header: '상태',
+      className: 'w-24',
+      accessor: (user: UserManage) => <UserStatusBadge code={user.userSttsCd} />,
+    },
+    {
+      header: '부서',
+      className: 'w-32',
+      accessor: (user: UserManage) => (user.ognzId
+        ? departmentLabel(user.ognzId, departments)
+        : <span className="text-muted-foreground">미지정</span>),
+    },
+    {
+      header: '잠금',
+      className: 'w-24',
+      accessor: (user: UserManage) => (user.lckYn === 'Y'
+        ? <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive-emphasis">로그인 잠김</span>
+        : <span className="text-muted-foreground">-</span>),
+    },
+    {
+      header: '직함',
+      className: 'w-32',
+      accessor: (user: UserManage) => user.ofcpsNm || <span className="text-muted-foreground">-</span>,
+    },
+    {
+      header: '이메일',
+      accessor: (user: UserManage) => (
+        user.emlAddr
+          ? <span className="break-all text-muted-foreground">{user.emlAddr}</span>
+          : <span className="text-muted-foreground">-</span>
+      ),
+    },
+    {
+      header: '연락처',
+      className: 'w-32',
+      accessor: (user: UserManage) => (
+        <span className="tabular-nums text-muted-foreground">{user.mblTelno || '-'}</span>
+      ),
+    },
+    {
+      header: '등록일',
+      sortKey: 'crtDt',
+      className: 'w-28',
+      // crtDt 는 Jackson 이 직렬화한 LocalDateTime(타임존 없음)이다. `new Date()` 로 해석하면
+      // 로컬 타임존만큼 날짜가 밀 수 있으므로 문자열 앞 10자리를 그대로 표기한다.
+      accessor: (user: UserManage) => (
+        <span className="tabular-nums text-muted-foreground">{toDisplayYmd(user.crtDt?.slice(0, 10))}</span>
+      ),
+    },
+  ];
+}
+
+export function UserListFilterFields({
+  userFilterId,
+  userFilters,
+  departments,
+  onChangeFilter,
+}: {
+  userFilterId: string;
+  userFilters: UserListFilters;
+  departments: ReadonlyArray<Department> | undefined;
+  onChangeFilter: (patch: Partial<UserListFilters>) => void;
+}) {
+  return (
+    <>
+      <div className="space-y-1">
+        <label htmlFor={`${userFilterId}-status`} className="text-[length:var(--font-size-body)] font-medium">계정 상태</label>
+        <select
+          id={`${userFilterId}-status`}
+          value={userFilters.userSttsCd}
+          onChange={(event) => onChangeFilter({ userSttsCd: event.target.value })}
+          className={FILTER_SELECT_CLASS}
+        >
+          <option value="">전체</option>
+          {Object.entries(USER_STATUS_LABELS).map(([code, status]) => (
+            <option key={code} value={code}>{status.label}</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1">
+        <label htmlFor={`${userFilterId}-dept`} className="text-[length:var(--font-size-body)] font-medium">소속 부서</label>
+        <select
+          id={`${userFilterId}-dept`}
+          value={userFilters.ognzId}
+          onChange={(event) => onChangeFilter({ ognzId: event.target.value })}
+          className={cn(FILTER_SELECT_CLASS, 'max-w-[14rem]')}
+        >
+          <option value="">전체</option>
+          {(departments || []).filter((dept) => dept?.ognzId).map((dept) => (
+            <option key={dept.ognzId} value={dept.ognzId}>{dept.ognzNm || dept.ognzId}</option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1">
+        <label htmlFor={`${userFilterId}-lock`} className="text-[length:var(--font-size-body)] font-medium">로그인 잠금</label>
+        <select
+          id={`${userFilterId}-lock`}
+          value={userFilters.lckYn}
+          onChange={(event) => onChangeFilter({ lckYn: event.target.value })}
+          className={FILTER_SELECT_CLASS}
+        >
+          {USER_LOCK_FILTER_OPTIONS.map((option) => (
+            <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+}
+
+export function UserOrgDetailPanel({
+  isDeptTab,
+  selectedItem,
+  displayedUser,
+  detailActions,
+  selectedDeptParentId,
+  departments,
+  deptMembersLabel,
+  canUpdateDept,
+  selectedFlatDept,
+  flattenedDepts,
+  isSaving,
+  isDeptModalOpen,
+  onMoveDeptToParent,
+  onShiftDept,
+  accessControlLinks,
+}: {
+  isDeptTab: boolean;
+  selectedItem: Department | UserManage | null;
+  displayedUser: UserManage | undefined;
+  detailActions: React.ReactNode;
+  selectedDeptParentId: string | null;
+  departments: ReadonlyArray<Department> | undefined;
+  deptMembersLabel: string;
+  canUpdateDept: boolean;
+  selectedFlatDept: FlattenedDept | undefined;
+  flattenedDepts: FlattenedDept[];
+  isSaving: boolean;
+  isDeptModalOpen: boolean;
+  onMoveDeptToParent: (ognzId: string, parentId: string | null) => boolean;
+  onShiftDept: (ognzId: string, direction: 'up' | 'down') => boolean;
+  accessControlLinks?: {
+    onOpen?: () => void;
+    onOpenHistory?: () => void;
+    onOpenLoginLog?: () => void;
+    onRecoverMfa?: () => void;
+  } | null;
+}) {
+  if (!selectedItem) {
+    if (!isDeptTab) return null;
+    /* 미선택 안내. 종전에는 `p-20` + 점선 4px 테두리 + 96px 아이콘 상자 + 장식 아이콘
+       3개로 세로 400px 이상을 썼다 — 아무 정보도 없는 영역이다. 한 줄로 줄인다.
+       ⚠ role="status" 와 이 문구는 단위 테스트에 고정돼 있다.
+       USERS·ABSENCES 는 이 자리를 아예 비운다 — 안 고른 상태에서 화면 3분의 1을
+       빈 상자에 내주는 대신 목록이 전폭을 쓴다. */
+    return (
+      <p
+        role="status"
+        className="rounded-md border border-dashed border-border bg-muted/30 px-[var(--filter-pad)] py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground"
+      >
+        왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.
+      </p>
+    );
+  }
+
+  return (
+    <section className="flex h-full min-h-0 flex-col rounded-md border border-border bg-card">
+      <header className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-[var(--filter-pad)] py-2">
+        <div className="min-w-0">
+          {/* ⚠ 제목에는 이름만 둔다 — 단위 테스트가 `heading level 2` 의 접근 이름을
+              이름 문자열과 정확히 대조한다. 식별자·배지는 아래 줄이 갖는다. */}
+          <h2 className="break-words text-[length:var(--font-size-body)] font-semibold text-foreground">
+            {isDeptTab ? (selectedItem as Department)?.ognzNm : displayedUser?.userNm}
+          </h2>
+          <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="tabular-nums">
+              {isDeptTab ? (selectedItem as Department)?.ognzId : displayedUser?.userId}
+            </span>
+            {/* 종전에는 상태와 무관하게 '인증됨' 이 항상, ABSENCES 탭에서는 전원 '자리비움' 이
+                표시됐다. 실제 계정 상태 코드(userSttsCd)에서만 배지를 만든다(감사 P1-5).
+                목록 projection 에는 userSttsCd 가 없다 — 상세 API 데이터로만 그린다. */}
+            {!isDeptTab && displayedUser?.userSttsCd && (
+              <UserStatusBadge code={displayedUser.userSttsCd} />
+            )}
+            {/* [DIP B4 P7] 연속 로그인 실패 잠금은 계정 상태와 따로 보인다 — 사용 중인 계정도 잠길 수 있다. */}
+            {!isDeptTab && displayedUser?.lckYn === 'Y' && (
+              <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-semibold text-destructive-emphasis">
+                로그인 잠김
+              </span>
+            )}
+            {/* [결정 18] 관리자가 초기화한 임시 비밀번호 — 본인이 바꾸기 전까지 다른 기능을 쓸 수 없다. */}
+            {!isDeptTab && displayedUser?.passwordChangeRequired && (
+              <span className="rounded bg-warning/15 px-1.5 py-0.5 text-xs font-semibold text-warning-emphasis">
+                비밀번호 변경 필요
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          {detailActions}
+        </div>
+      </header>
+
+      <DetailScrollArea>
+        {/* '근무지: 본사' 는 어떤 데이터로도 뒷받침되지 않는 고정 문구여서 제거했다(감사 P1-5). */}
+        {isDeptTab ? (
+          /* 부서 코드·사용자 ID 는 패널 제목 아래 부제가 이미 말한다 — 같은 값을
+             항목으로 한 번 더 두면 여덟 칸 중 한 칸이 중복에 쓰인다. */
+          <DetailFieldList>
+            {/* [2026-10-01] ID 대신 이름을 보이고, 저장 전 옮긴 자리도 그대로 보인다. */}
+            <DetailField label="상위 부서" value={selectedDeptParentId ? departmentLabel(selectedDeptParentId, departments) : '최상위'} />
+            <DetailField
+              label="부서 설명"
+              span
+              value={(selectedItem as Department)?.ognzExpln || '미등록'}
+            />
+            <DetailField label="소속 인원" span value={deptMembersLabel} />
+          </DetailFieldList>
+        ) : null}
+        {isDeptTab && canUpdateDept && selectedFlatDept ? (
+          <DeptPlacementControls
+            key={selectedFlatDept.ognzId}
+            dept={selectedFlatDept}
+            depts={flattenedDepts}
+            disabled={isSaving || isDeptModalOpen}
+            onMoveToParent={onMoveDeptToParent}
+            onShift={onShiftDept}
+          />
+        ) : null}
+        {isDeptTab ? null : (
+          <DetailFieldList>
+            <DetailField label="사번" value={displayedUser?.emplNo || '미지정'} />
+            <DetailField label="직함" value={displayedUser?.ofcpsNm || '미지정'} />
+            {/* 소속은 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다.
+                [2026-09-26 DIP V9] 부서 ID 대신 이름을 보인다. 목록에 없는 ID 는 원문으로 남겨 잘못된 소속을 찾게 한다. */}
+            <DetailField label="소속 부서" value={departmentLabel(displayedUser?.ognzId, departments)} />
+            <DetailField label="권한 그룹" value={displayedUser?.groups?.length ? displayedUser.groups.join(', ') : '없음'} />
+            <DetailField label="이메일 주소" value={displayedUser?.emlAddr || '미지정'} />
+            <DetailField label="휴대전화" value={displayedUser?.mblTelno || '미등록'} />
+            <DetailField label="사무실 전화" value={displayedUser?.officeTelno || '미등록'} />
+            <DetailField label="등록일" value={toDisplayYmd(displayedUser?.crtDt?.slice(0, 10))} />
+            {/* [결정 18] 상세 API 만 싣는다 — 값이 없으면(목록 projection) 칸을 두지 않는다. */}
+            {displayedUser?.mfaEnabled !== undefined && displayedUser?.mfaEnabled !== null && (
+              <DetailField label="추가 인증" value={displayedUser.mfaEnabled ? '인증앱 사용 중' : '미등록'} />
+            )}
+          </DetailFieldList>
+        )}
+
+        {!isDeptTab && accessControlLinks && (
+          <AccessControlLink
+            onOpen={accessControlLinks.onOpen}
+            onOpenHistory={accessControlLinks.onOpenHistory}
+            onOpenLoginLog={accessControlLinks.onOpenLoginLog}
+            onRecoverMfa={accessControlLinks.onRecoverMfa}
+          />
+        )}
+      </DetailScrollArea>
+    </section>
+  );
+}
+

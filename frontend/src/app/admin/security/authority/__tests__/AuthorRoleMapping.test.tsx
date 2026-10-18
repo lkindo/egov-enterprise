@@ -12,7 +12,10 @@ describe('technical role assignment retirement', () => {
     for (const retired of ['rolePatrn', 'getAuthorRoles', 'saveAuthorRoles', 'saveUserAuthorities', 'tempRoleMappings']) expect(hub).not.toContain(retired);
   });
   it('사용자 관리에 ADMIN 라디오 선택이나 단일 role 전체 교체 요청이 남지 않는다', () => {
-    const userHub = source('app/admin/user/UserOrgHubClient.tsx');
+    const userHub = [
+      source('app/admin/user/UserOrgHubClient.tsx'),
+      source('app/admin/user/UserOrgHubParts.tsx'),
+    ].join('\n');
     expect(userHub).not.toContain('bulkUpdateUserRoleAction');
     expect(userHub).not.toContain('bulk-role-label');
     expect(source('app/actions/userActions.ts')).not.toContain('bulkUpdateUserRoleAction');
