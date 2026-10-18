@@ -115,18 +115,13 @@ class AdministCodeServiceTest {
                 .admdstCd("1100000000")
                 .admdstZoneNm("서울특별시")
                 .build();
-        AdministCode entity = AdministCode.builder()
-                .admdstCd("1100000000")
-                .admdstZoneNm("서울특별시")
-                .build();
-        given(administCodeRepository.save(any(AdministCode.class))).willReturn(entity);
  
         // when
         String result = administCodeService.createAdministCode(dto, "webmaster");
  
         // then
         assertThat(result).isEqualTo("1100000000");
-        verify(administCodeRepository).save(any(AdministCode.class));
+        verify(administCodeRepository).insert(any(AdministCode.class));
     }
 
     @Test
@@ -253,9 +248,8 @@ class AdministCodeServiceTest {
         assertThat(cycle.getErrorCode()).isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
 
         // (라) 대조군 — 빈 값은 최상위다. 시·도 등록을 막으면 안 된다(DEC-OPS-061 이 푼 제약).
-        given(administCodeRepository.save(any())).willAnswer(call -> call.getArgument(0));
         administCodeService.createAdministCode(dto("1111000000", ""), "admin");
-        verify(administCodeRepository).save(any());
+        verify(administCodeRepository).insert(any());
     }
 
     @Test
@@ -270,7 +264,7 @@ class AdministCodeServiceTest {
 
         assertThat(duplicate.getErrorCode())
                 .isEqualTo(nuri.business.domain.code.exception.CodeErrorCode.DUPLICATE_CODE);
-        verify(administCodeRepository, never()).save(any());
+        verify(administCodeRepository, never()).insert(any());
     }
 
     @Test
@@ -278,13 +272,11 @@ class AdministCodeServiceTest {
     void storesTopLevelParentAsNullButKeepsBlankOnTheWire() {
         // 화면은 최상위를 빈 문자열로 보낸다. 빈 문자열은 NULL 이 아니라서 V2_102 의
         // fk_tb_admdst_cd_up_admdst_cd 가 그것을 거부한다 — 정규화하지 않으면 시·도를 등록할 수 없다.
-        given(administCodeRepository.save(any())).willAnswer(call -> call.getArgument(0));
-
         administCodeService.createAdministCode(dto("1100000000", ""), "admin");
 
         org.mockito.ArgumentCaptor<AdministCode> saved =
                 org.mockito.ArgumentCaptor.forClass(AdministCode.class);
-        verify(administCodeRepository).save(saved.capture());
+        verify(administCodeRepository).insert(saved.capture());
         assertThat(saved.getValue().getUpAdmdstCd()).isNull();
 
         // 반대 방향 — 프런트 목록 파서가 문자열을 요구하므로 응답에서는 null 이 나가면 안 된다.

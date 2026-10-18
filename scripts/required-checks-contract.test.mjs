@@ -1378,19 +1378,27 @@ test('change classification is fail-closed and its contract runs in the required
 // [2026-08-31 개정] Atlas 계약을 포함한 크로스 스택 계약(frontend/src/__tests__/cross-stack)은
 //   백엔드 소스를 함께 감사한다. frontend 축에만 결속하면 백엔드-only PR 에서 frontend-scope 가
 //   skip 되어 계약이 어디서도 돌지 않으므로(집계는 skip 을 성공으로 매핑), atlas ∪ backend
-//   축으로 required governance job(secret-scan)에 결속하고 그 조건을 여기서 동결한다.
-test('Atlas and backend changes run the cross-stack contracts inside the required governance job', () => {
+//   축으로 required governance job(secret-scan)에 결속한다. frontend=true이면 required coverage 전체 스위트가
+//   모집단을 소유하므로 governance 단계는 중복 실행하지 않는다. 양쪽 실행 경로를 함께 확인한다.
+test('Atlas and backend cross-stack contracts run once, owned by full frontend coverage when selected', () => {
+  const condition = "(needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true') && needs.change-scope.outputs.frontend != 'true'";
   function crossStackBindingErrors(content) {
     const errors = [];
     const secretScanJob = content.match(
       /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
     )?.[0] ?? '';
     const crossStack = workflowStep(secretScanJob, 'Verify cross-stack contracts (frontend↔backend truth binding)');
-    if (!crossStack.includes("if: needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'")) {
+    if (!crossStack.includes(`if: ${condition}`)) {
       errors.push('cross-stack contract step is detached from the atlas/backend scope');
     }
     if (!secretScanJob.includes('pnpm exec vitest run src/__tests__/cross-stack')) {
       errors.push('cross-stack Vitest command is missing');
+    }
+    const coverage = parseWorkflowJobs(content).get('frontend-coverage-scope') ?? '';
+    const suite = workflowStep(coverage, 'Frontend unit and coverage suite');
+    if (!/^    if: needs\.change-scope\.outputs\.frontend == 'true'\r?$/m.test(coverage)
+      || /^        if:/m.test(suite) || !/^          pnpm run test:coverage 2>&1 \| tee \/tmp\/fe-test\.log\r?$/m.test(suite)) {
+      errors.push('selected frontend coverage must run the unconditional full suite that owns cross-stack contracts');
     }
 
     // frontend 설치는 운영 계약 카탈로그의 전제다(generated-boundary-census 가 frontend 의
@@ -1413,10 +1421,26 @@ test('Atlas and backend changes run the cross-stack contracts inside the require
   assert.deepEqual(crossStackBindingErrors(ciContent), []);
 
   const detached = ciContent.replace(
-    /name: Verify cross-stack contracts \(frontend↔backend truth binding\)\r?\n        if: needs\.change-scope\.outputs\.atlas == 'true' \|\| needs\.change-scope\.outputs\.backend == 'true'/,
-    'name: Verify cross-stack contracts (frontend↔backend truth binding)\n        if: false',
+    `if: ${condition}`,
+    'if: false',
   );
   assert.match(crossStackBindingErrors(detached).join('\n'), /cross-stack contract step is detached/i);
+  for (const replacement of [
+    "needs.change-scope.outputs.atlas == 'true' && needs.change-scope.outputs.frontend != 'true'",
+    "needs.change-scope.outputs.backend == 'true' && needs.change-scope.outputs.frontend != 'true'",
+    "needs.change-scope.outputs.atlas == 'true' || needs.change-scope.outputs.backend == 'true'",
+  ]) {
+    assert.match(crossStackBindingErrors(ciContent.replace(condition, replacement)).join('\n'), /cross-stack contract step is detached/i,
+      'dropping backend-only, dropping Atlas-only, or reintroducing duplicate execution is rejected');
+  }
+  for (const mutate of [
+    job => job.replace("if: needs.change-scope.outputs.frontend == 'true'", 'if: false'),
+    job => job.replace('id: fe-coverage', 'id: fe-coverage\n        if: false'),
+    job => job.replace('pnpm run test:coverage 2>&1', 'pnpm exec vitest run src/app 2>&1'),
+  ]) {
+    assert.match(crossStackBindingErrors(mutateWorkflowJob(ciContent, 'frontend-coverage-scope', mutate)).join('\n'),
+      /frontend coverage must run the unconditional full suite/i);
+  }
 
   // CRLF 체크아웃에서도 성립하도록 개행을 정규식으로 흡수한다.
   const conditionalInstall = ciContent.replace(

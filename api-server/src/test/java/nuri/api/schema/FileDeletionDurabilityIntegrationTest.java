@@ -87,6 +87,86 @@ class FileDeletionDurabilityIntegrationTest {
     }
 
     @Test
+    void concurrentGeneralAndBoardAppendsWaitOnTheSameMasterBeforeAllocatingSequences() throws Exception {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var applied = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        var firstPid = new java.util.concurrent.atomic.AtomicInteger();
+        String application = "file-append-contender-" + master;
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                try {
+                    new TransactionTemplate(manager).executeWithoutResult(status -> {
+                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        appendText("first.txt", "first append", false);
+                        details.flush();
+                        applied.countDown();
+                        try {
+                            assertThat(release.await(20, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(interrupted);
+                        }
+                    });
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
+            });
+            java.util.concurrent.Future<?> second;
+            try {
+                boolean ready = applied.await(15, java.util.concurrent.TimeUnit.SECONDS);
+                if (!ready && first.isDone()) first.get();
+                assertThat(ready).as("first append is flushed while its transaction still holds the parent lock").isTrue();
+                second = executor.submit(() -> {
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    try {
+                        new TransactionTemplate(manager).executeWithoutResult(status -> {
+                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            appendText("second.txt", "second append", true);
+                        });
+                    } finally {
+                        SecurityContextHolder.clearContext();
+                    }
+                });
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+                boolean waiting;
+                do {
+                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
+                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
+                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
+                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')
+                            """, Boolean.class, application, firstPid.get()));
+                    if (!waiting && second.isDone()) second.get();
+                    if (!waiting) Thread.sleep(20);
+                } while (!waiting && System.nanoTime() < deadline);
+                assertThat(waiting).as("second append waits on the master, before reading the previous maximum").isTrue();
+            } finally {
+                release.countDown();
+            }
+            first.get(15, java.util.concurrent.TimeUnit.SECONDS);
+            second.get(15, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        assertThat(jdbc.queryForList("SELECT atch_file_seq FROM tb_file_detail WHERE atch_file_sn=? ORDER BY atch_file_seq",
+                Integer.class, master)).containsExactly(1, 2, 3);
+        for (int sequence = 2; sequence <= 3; sequence++) {
+            FileDetail stored = details.findByFileMasterAtchFileSnAndAtchFileSeq(master, sequence).orElseThrow();
+            assertThat(storageRoot.resolve(stored.getFileStrgPath()).resolve(stored.getStrgFileNm()))
+                    .hasContent(sequence == 2 ? "first append" : "second append");
+        }
+    }
+
+    private void appendText(String name, String content, boolean board) {
+        try {
+            var batch = List.of(new MockMultipartFile("files", name, "text/plain", content.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            if (board) files.updateBoardFiles(master, new java.util.ArrayList<>(batch));
+            else files.updateFiles(master, new java.util.ArrayList<>(batch));
+        } catch (java.io.IOException failure) {
+            throw new java.io.UncheckedIOException(failure);
+        }
+    }
+
+    @Test
     void rollbackPreservesMetadataAndFileAndDiscardsIntentPreparation() {
         Path rolledBackAnchor = new TransactionTemplate(manager).execute(status -> {
             deleteFixture();

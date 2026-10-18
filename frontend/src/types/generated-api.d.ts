@@ -5893,7 +5893,7 @@ export interface components {
         OnlinePollArticleDto: {
             /**
              * Format: int64
-             * @description 설문 항목 일련번호
+             * @description 설문 항목 일련번호. 수정 요청에서는 기존 항목을 이 값으로 식별하고, 요청에 없는 기존 항목은 삭제한다. 응답이 모인 항목의 삭제·이름 변경은 거절한다.
              */
             pollArtclSn?: number;
             /**
@@ -10420,6 +10420,7 @@ export interface components {
             availableAt?: string;
             /** Format: date-time */
             completedAt?: string;
+            retryable?: boolean;
         };
         ApiResponsePageResponseDeptAuthorProjection: {
             success?: boolean;

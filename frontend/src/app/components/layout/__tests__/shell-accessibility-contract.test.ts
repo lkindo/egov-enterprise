@@ -221,7 +221,10 @@ describe('app shell accessibility source contract', () => {
   it('A2 전체 셸과 점진 레이아웃 소비자는 최종 h1을 하나만 소유한다', () => {
     const shell = readAppSource('components', 'patterns', 'master-detail-page.tsx');
     const menus = readAppSource('admin', 'system', 'menus', 'MenuAdminClient.tsx');
-    const userOrg = readAppSource('admin', 'user', 'UserOrgHubClient.tsx');
+    const userOrg = [
+      readAppSource('admin', 'user', 'UserOrgHubClient.tsx'),
+      readAppSource('admin', 'user', 'UserOrgHubParts.tsx'),
+    ].join('\n');
     const mailHistory = readAppSourceInProjection(
       'admin', 'collaboration', 'mail-history', 'MailHistoryHubClient.tsx',
     );

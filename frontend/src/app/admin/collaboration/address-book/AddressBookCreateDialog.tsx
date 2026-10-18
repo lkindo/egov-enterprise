@@ -10,6 +10,8 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import type { NameCard } from '@/types/business/addressbook';
 import {
@@ -43,6 +45,8 @@ export function AddressBookCreateDialog({
   onCreated: () => void;
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canCreateAddressBook = canPermission(user, 'ADBK_CREATE');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
 
@@ -68,7 +72,7 @@ export function AddressBookCreateDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitPendingRef.current) return;
+    if (!canCreateAddressBook || submitPendingRef.current) return;
     const validated = validation.validate({
       ...form,
       rlsScopeCd: DEFAULT_RLS_SCOPE_CD,
@@ -120,6 +124,7 @@ export function AddressBookCreateDialog({
       closeDisabled={isSubmitting}
     >
       <form id="address-book-create-form" onSubmit={handleSubmit} noValidate className="space-y-6">
+        {!canCreateAddressBook && <p role="status">주소록 등록 권한이 없습니다. 입력한 내용은 유지됩니다.</p>}
         <FormErrorSummary
           errors={validation.errors}
           labels={addressBookCreateValidationLabels}
@@ -226,7 +231,7 @@ export function AddressBookCreateDialog({
           <Button
             type="submit"
             data-testid="commit-identity-button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canCreateAddressBook}
             aria-busy={isSubmitting}
           >
             {isSubmitting ? '등록 중…' : '주소록 등록'}

@@ -152,7 +152,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .clsfCdExpln(dto.getClsfCdExpln())
                                 .useYn(dto.getUseYn())
                                 .build();
-                commonCodeCategoryRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                commonCodeCategoryRepository.insert(required(entity, "entity 는 null 일 수 없습니다"));
                 recordChange("CLSF", "ADD", entity.getClsfCd(), null, null, "분류 등록", null,
                                 codeSummary(entity.getClsfCdNm(), entity.getClsfCdExpln(), entity.getUseYn()));
         }
@@ -246,7 +246,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .clsfCd(required(dto.getClsfCd(), "dto.getClsfCd() 는 null 일 수 없습니다"))
                                 .useYn(dto.getUseYn())
                                 .build();
-                commonCodeGroupRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                commonCodeGroupRepository.insert(required(entity, "entity 는 null 일 수 없습니다"));
                 recordChange("CODE", "ADD", entity.getClsfCd(), entity.getCdId(), null, "그룹 등록", null,
                                 codeSummary(entity.getCdIdNm(), entity.getCdIdExpln(), entity.getUseYn()));
         }
@@ -416,7 +416,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .dtlCdExpln(dto.getDtlCdExpln())
                                 .useYn(dto.getUseYn())
                                 .build();
-                commonCodeRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
+                commonCodeRepository.insert(required(entity, "entity 는 null 일 수 없습니다"));
                 recordChange("DTL", "ADD", null, entity.getCdId(), entity.getDtlCd(), "상세 코드 등록", null,
                                 codeSummary(entity.getDtlCdNm(), entity.getDtlCdExpln(), entity.getUseYn()));
         }

@@ -14,7 +14,6 @@ import nuri.business.service.informalsanction.event.SanctionStatusChangedEvent;
 import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.core.validation.Ymd;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,12 +21,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static nuri.business.service.informalsanction.InformalSanctionReadAssembler.*;
 
 @Service
 @RequiredArgsConstructor
@@ -45,9 +43,9 @@ public class InformalSanctionService {
     private final EntityManager entityManager;
 
     static final String TASK_TYPE_CODE_GROUP = "COM075";
-    private static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
-    private static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
-    private static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
+    static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
+    static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
+    static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
     /** 참조자가 문서를 읽는 권한(2026-10-04 D4) — 지정할 때 이 권한이 없으면 지정해도 읽을 수 없으므로 거부한다. */
     private static final String READ_PERMISSION = "APPROVAL_READ";
     /**
@@ -136,7 +134,7 @@ public class InformalSanctionService {
         List<InformalSanctionHistory> history = historyRepository.findForDocuments(List.of(id));
         List<InformalSanctionProcess> processes = processRepository.findForDocuments(List.of(id));
         List<InformalSanctionReference> references = referenceRepository.findForDocuments(List.of(id));
-        return toParticipantDto(sanction, participantId, lines, history, processes, references,
+        return toParticipantDto(informalSanctionMapper, sanction, participantId, lines, history, processes, references,
                 userNames(List.of(sanction), lines, processes), absentUsers(lines), taskTypeNames(),
                 referenceProfiles(references), true);
     }
@@ -334,7 +332,7 @@ public class InformalSanctionService {
         InformalSanction sanction = lock(id);
         SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
         assertInProgress(sanction, "재알림");
-        if (cycleProcesses(sanction).stream().anyMatch(InformalSanctionService::remindedToday)) {
+        if (cycleProcesses(sanction).stream().anyMatch(InformalSanctionReadAssembler::remindedToday)) {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE,
                     "오늘은 이미 재알림을 보냈습니다. 내일 다시 보낼 수 있습니다.");
         }
@@ -532,39 +530,6 @@ public class InformalSanctionService {
         return designated.users().size();
     }
 
-    /** 기안자가 지금 차수에 참조자를 지정했는가 — 지정했으면 결재자는 더할 수 없다. */
-    /**
-     * 이 차수에 참조자를 더 지정할 자리가 있는가 — 쓰기 검사(validateReferences)와 같은 판정이다. 20명은 서로 다른 사람 수라,
-     * 다 찼어도 이전 차수에만 지정된 사람은 이 차수에 다시 지정할 수 있다(자리를 더 차지하지 않는다). 다만 이 차수 결재선에 든
-     * 사람과 기안자는 참조자가 될 수 없다.
-     */
-    private static boolean referenceRoomLeft(InformalSanction sanction, List<InformalSanctionReference> references,
-                                             List<InformalSanctionDetail> currentLines) {
-        if (references.stream().map(r -> r.getId().getUserId()).distinct().count() < MAX_REFERENCES) return true;
-        Set<String> inCycle = references.stream().filter(r -> r.designatedIn(sanction.getAtrzCycl()))
-                .map(r -> r.getId().getUserId()).collect(Collectors.toSet());
-        Set<String> lineUsers = currentLines.stream().map(d -> d.getId().getUserId()).collect(Collectors.toSet());
-        return references.stream().map(r -> r.getId().getUserId())
-                .anyMatch(user -> !inCycle.contains(user) && !lineUsers.contains(user) && !user.equals(sanction.getAplcntId()));
-    }
-
-    private static boolean drafterDesignated(InformalSanction sanction, List<InformalSanctionReference> references) {
-        return references.stream().anyMatch(r -> r.designatedIn(sanction.getAtrzCycl())
-                && r.designatedBy(sanction.getAplcntId()));
-    }
-
-    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
-
-    /**
-     * 재알림의 '하루' 는 한국 날짜다. 기록 시각은 다른 이력과 같이 JVM 시계로 남으므로 그 순간을 한국 날짜로 옮겨 비교한다 —
-     * 서버가 UTC 면 JVM 날짜는 한국 오전 9시에 바뀌어, 같은 날 두 번 보내거나 다음 날 보내지 못한다.
-     */
-    private static boolean remindedToday(InformalSanctionProcess process) {
-        return process.getPrcsTypeCd() == ApprovalProcessType.REMIND
-                && process.getCrtDt().atZone(ZoneId.systemDefault()).withZoneSameInstant(BUSINESS_ZONE).toLocalDate()
-                        .equals(LocalDate.now(BUSINESS_ZONE));
-    }
-
     private List<InformalSanctionProcess> cycleProcesses(InformalSanction sanction) {
         return processRepository.findForDocuments(List.of(sanction.getIfmlAtrzSn())).stream()
                 .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
@@ -602,56 +567,9 @@ public class InformalSanctionService {
         }
     }
 
-    private static String requiredText(String value, String message) {
-        String text = value == null ? "" : value.trim();
-        if (text.isEmpty() || text.length() > 4000) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, message);
-        return text;
-    }
-
     private InformalSanction lock(Long id) {
         return informalSanctionRepository.findByIdForUpdate(Objects.requireNonNull(id))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-    }
-
-    /** 진행 중(A)이 아닌 문서를 처리·회수하려는 것은 먼저 일어난 처리와의 충돌이다 — 무슨 일이 있었는지 말한다. */
-    private static void assertInProgress(InformalSanction sanction, String action) {
-        String status = sanction.getAprvYn();
-        if ("A".equals(status)) return;
-        String reason = switch (status == null ? "" : status) {
-            case "C" -> "이미 승인이 끝난 결재입니다.";
-            case "R" -> "이미 반려된 결재입니다.";
-            case "W" -> "신청자가 회수한 결재입니다.";
-            default -> "진행 중인 결재가 아닙니다.";
-        };
-        throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
-                reason + " " + action + "할 수 없습니다. 최신 상태를 확인해 주세요.");
-    }
-
-    /**
-     * [2026-10-03 D1] 결재 알림은 문서로 바로 간다 — 결재함이 탭과 문서 번호만 읽는다(구조 키, 자유 입력 아님).
-     * 처리할 필요가 없는 알림(회수·병렬 반려·결재선에서 빠짐)은 종전대로 결재함으로만 간다.
-     */
-    static String pendingLink(Long id) { return "/approvals?tab=PENDING&doc=" + id; }
-
-    static String submittedLink(Long id) { return "/approvals?tab=SUBMITTED&doc=" + id; }
-
-    static String processedLink(Long id) { return "/approvals?tab=PROCESSED&doc=" + id; }
-
-    /** [2026-10-04 D4] 참조자에게 가는 알림(지정·최종 결과)은 '참조된 결재' 의 그 문서로 간다. */
-    static String referencedLink(Long id) { return "/approvals?tab=REFERENCED&doc=" + id; }
-
-    /** 알림 본문에서 문서를 가리키는 말. 제목이 있으면 제목으로, 번호는 결재함 목록에서 찾는 열쇠로 함께 싣는다. */
-    static String documentLabel(InformalSanction sanction) {
-        String title = sanction.getDocTtl();
-        String number = "결재(번호 " + sanction.getIfmlAtrzSn() + ")";
-        return title == null || title.isBlank() ? number : "「" + title.trim() + "」 " + number;
-    }
-
-    private static void assertVersion(InformalSanction sanction, Integer expectedVersion) {
-        if (expectedVersion != null && (expectedVersion < 0 || !expectedVersion.equals(sanction.getVersion()))) {
-            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
-                    "다른 사용자가 문서를 변경했습니다. 최신 상태를 확인해 주세요.");
-        }
     }
 
     private InformalSanctionHistory currentHistory(InformalSanction sanction) {
@@ -725,14 +643,6 @@ public class InformalSanctionService {
     }
 
     /**
-     * 참조자 지정 계획 — {@code cycle} 차수에 새로 넣을 사람(요청 순서)과 그중 이 문서에 처음 참조되는 사람(지정 알림을 받는다).
-     * 이전 차수 참조자를 다시 지정하면 그 차수의 행은 생기지만 알림은 다시 보내지 않는다(개정 1).
-     */
-    private record ReferencePlan(List<String> users, List<String> firstTime) {
-        static final ReferencePlan NONE = new ReferencePlan(List.of(), List.of());
-    }
-
-    /**
      * [2026-10-04 D4 개정 1] 참조자 검사. 지정은 차수 단위다 — 돌려주는 것은 {@code cycle} 차수에 <b>새로</b> 지정할 사람이며,
      * 그 차수에 이미 있는 사람은 무시한다(참조는 추가만 한다). 이전 차수에만 있던 사람은 이 차수의 지정이 된다. 기안자 지정과
      * 결재자 추가가 같은 검사를 쓴다: 형식·중복, 기안자 본인 금지, 이 차수 결재선과 겹침 금지(겸직 금지는 이 차수 기준이다 —
@@ -748,37 +658,9 @@ public class InformalSanctionService {
      */
     private ReferencePlan validateReferences(String applicant, BigDecimal cycle, Set<String> lineUsers,
                                              List<String> requested, List<InformalSanctionReference> existing) {
-        if (requested == null || requested.isEmpty()) return ReferencePlan.NONE;
-        if (requested.size() > MAX_REFERENCES) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "참조자는 한 번에 " + MAX_REFERENCES + "명까지 지정할 수 있습니다.");
-        }
-        Set<String> unique = new LinkedHashSet<>();
-        for (String user : requested) {
-            if (user == null || user.isBlank() || user.length() > 20 || !user.equals(user.trim())) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "참조자를 지정해 주세요.");
-            }
-            if (!unique.add(user)) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "같은 참조자를 중복 지정할 수 없습니다.");
-            }
-        }
-        if (unique.contains(applicant)) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "기안자 본인은 참조자로 지정할 수 없습니다.");
-        }
-        if (unique.stream().anyMatch(lineUsers::contains)) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                    "결재선에 있는 사람은 참조자로 지정할 수 없습니다.");
-        }
-        Set<String> inCycle = existing.stream().filter(r -> r.designatedIn(cycle)).map(r -> r.getId().getUserId())
-                .collect(Collectors.toSet());
-        List<String> fresh = unique.stream().filter(user -> !inCycle.contains(user)).toList();
-        if (fresh.isEmpty()) return ReferencePlan.NONE;
-        Set<String> already = existing.stream().map(r -> r.getId().getUserId()).collect(Collectors.toSet());
-        List<String> firstTime = fresh.stream().filter(user -> !already.contains(user)).sorted().toList();
-        if (already.size() + firstTime.size() > MAX_REFERENCES) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "참조자는 한 문서에 " + MAX_REFERENCES
-                    + "명까지 지정할 수 있습니다. 지금 " + already.size() + "명이 지정돼 있습니다.");
-        }
+        ReferencePlan plan = parseReferenceStructure(applicant, cycle, lineUsers, requested, existing);
+        if (plan.users().isEmpty()) return ReferencePlan.NONE;
+        List<String> fresh = plan.users();
         List<User> found = userRepository.findAllById(fresh);
         List<String> inactiveNames = found.stream()
                 .filter(u -> !"P".equals(u.getUserSttsCd()))
@@ -805,7 +687,7 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "결재 조회 권한이 없는 사용자는 참조자로 지정할 수 없습니다: " + String.join(", ", unreadableNames));
         }
-        return new ReferencePlan(fresh, firstTime);
+        return plan;
     }
 
     /**
@@ -829,39 +711,9 @@ public class InformalSanctionService {
                 referencedLink(sanction.getIfmlAtrzSn()))));
     }
 
-    private static Set<String> lineUsers(List<ApprovalStageRequest> stages) {
-        return stages.stream().flatMap(stage -> stage.approverIds().stream()).collect(Collectors.toSet());
-    }
-
     private List<ApprovalStageRequest> validateStages(String applicant, List<ApprovalStageRequest> requests) {
-        if (requests == null || requests.isEmpty() || requests.size() > 10) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재 단계는 1개 이상 10개 이하로 지정해 주세요.");
-        }
         Set<String> participants = new LinkedHashSet<>();
-        List<ApprovalStageRequest> stages = new ArrayList<>();
-        for (ApprovalStageRequest request : requests) {
-            if (request == null || request.kind() == null || request.approverIds() == null
-                    || request.approverIds().isEmpty() || request.approverIds().size() > 10) {
-                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "각 단계의 결재자는 1명 이상 10명 이하로 지정해 주세요.");
-            }
-            List<String> users = new ArrayList<>();
-            for (String user : request.approverIds()) {
-                if (user == null || user.isBlank() || user.length() > 20 || !user.equals(user.trim())) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "결재자를 지정해 주세요.");
-                }
-                if (user.equals(applicant)) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "본인에게 결재를 요청할 수 없습니다.");
-                }
-                if (!participants.add(user)) {
-                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "같은 결재자를 한 문서에 중복 지정할 수 없습니다.");
-                }
-                users.add(user);
-            }
-            users.sort(String::compareTo);
-            stages.add(new ApprovalStageRequest(request.kind(), List.copyOf(users)));
-        }
-        if (participants.size() > 50) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                "전체 결재자는 50명 이하로 지정해 주세요.");
+        List<ApprovalStageRequest> stages = parseStageStructure(applicant, requests, participants);
         List<User> found = userRepository.findAllById(participants);
         // [2026-09-26 DIP B4 P4] 거부 사유에 대상자 이름을 싣는다 — 여러 결재자 중 누가 문제인지 화면이 말할 수 있어야 한다.
         //   존재하지 않는 식별자는 이름이 없으므로 종전 문구를 쓴다(식별자를 되돌려 주지 않는다).
@@ -892,14 +744,7 @@ public class InformalSanctionService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "결재 권한이 없는 사용자는 결재자로 지정할 수 없습니다: " + String.join(", ", unauthorizedNames));
         }
-        return List.copyOf(stages);
-    }
-
-    private static List<ApprovalStageRequest> legacyStages(InformalSanctionDto dto) {
-        String approver = dto.getAprvrId();
-        if (approver == null || approver.isBlank()) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
-                "결재자를 지정해 주세요.");
-        return List.of(new ApprovalStageRequest(ApprovalStageKind.APPROVAL, List.of(approver)));
+        return stages;
     }
 
     private void validateDocument(InformalSanctionDto dto) {
@@ -911,15 +756,6 @@ public class InformalSanctionService {
         }
         boolean known = getTaskTypes().stream().anyMatch(c -> Objects.equals(c.dtlCd(), dto.getTaskSeCd()));
         if (!known) throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "등록되지 않은 업무 구분 코드입니다.");
-    }
-
-    private static String requestDate(String requestDate) {
-        if (requestDate == null || requestDate.isBlank()) return LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        try {
-            return Ymd.compact(requestDate);
-        } catch (BusinessException e) {
-            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효한 신청 일자를 지정해 주세요.");
-        }
     }
 
     private static void assertCurrentParticipant(String participant) {
@@ -945,7 +781,8 @@ public class InformalSanctionService {
         Map<Long, List<InformalSanctionProcess>> processByDocument = processes.stream().collect(Collectors.groupingBy(InformalSanctionProcess::getIfmlAtrzSn));
         Map<Long, List<InformalSanctionReference>> referencesByDocument = references.stream()
                 .collect(Collectors.groupingBy(r -> r.getId().getIfmlAtrzSn()));
-        return page.map(s -> toParticipantDto(s, actor, byDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
+        return page.map(s -> toParticipantDto(informalSanctionMapper, s, actor,
+                byDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
                 revisions.getOrDefault(s.getIfmlAtrzSn(), List.of()), processByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()),
                 referencesByDocument.getOrDefault(s.getIfmlAtrzSn(), List.of()), users, absent, tasks, Map.of(), false));
     }
@@ -988,116 +825,4 @@ public class InformalSanctionService {
                 .collect(Collectors.toMap(CommonCodeDto::dtlCd, c -> c.dtlCdNm() == null ? "" : c.dtlCdNm(),
                         (first, second) -> first));
     }
-
-    private InformalSanctionDto toParticipantDto(InformalSanction sanction, String actor,
-            List<InformalSanctionDetail> lines, List<InformalSanctionHistory> revisions,
-            List<InformalSanctionProcess> processes, List<InformalSanctionReference> references,
-            Map<String, String> users, Set<String> absent, Map<String, String> tasks,
-            Map<String, nuri.business.service.user.dto.UserSearchDto> referenceProfiles, boolean includeHistory) {
-        boolean owner = actor.equals(sanction.getAplcntId());
-        // [2026-10-04 D4] 참조자는 기안자처럼 모든 차수를 읽는다 — 이 문서에 지금 사용자의 참조 행이 있는가로만 가린다
-        //   (참조자 목록이 비었는지로 가리지 않는다). 쓰기 힌트 계산은 바꾸지 않는다 — 결재선 라인이나 신청자를 요구하므로
-        //   참조자에게는 하나도 켜지지 않는다.
-        boolean referenceViewer = references.stream().anyMatch(r -> actor.equals(r.getId().getUserId()));
-        Set<BigDecimal> allowed = lines.stream().filter(d -> actor.equals(d.getId().getUserId()))
-                .map(d -> d.getId().getAtrzCycl()).collect(Collectors.toSet());
-        if (owner || referenceViewer) revisions.forEach(h -> allowed.add(h.getId().getAtrzCycl()));
-        boolean current = owner || referenceViewer || allowed.contains(sanction.getAtrzCycl());
-        BigDecimal visibleCycle = current ? sanction.getAtrzCycl() : allowed.stream().max(BigDecimal::compareTo)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        InformalSanctionDto dto = informalSanctionMapper.toDto(sanction);
-        if (!current) {
-            InformalSanctionHistory visible = revisions.stream()
-                    .filter(h -> h.getId().getAtrzCycl().compareTo(visibleCycle) == 0).findFirst()
-                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-            dto.setDocTtl(visible.getDocTtl()); dto.setDocCn(visible.getDocCn());
-            dto.setTaskSeCd(visible.getTaskSeCd()); dto.setReqYmd(visible.getReqYmd());
-            dto.setAprvYn(visible.getAprvYn()); dto.setAtrzDt(visible.getAtrzDt());
-            dto.setRjctRsnCn(visible.getRjctRsnCn()); dto.setVersion(null);
-            dto.setAprvrId(lines.stream().filter(d -> d.getId().getAtrzCycl().compareTo(visibleCycle) == 0)
-                    .sorted(Comparator.comparing((InformalSanctionDetail d) -> d.getId().getAtrzSeq())
-                            .thenComparing(d -> d.getId().getUserId())).map(d -> d.getId().getUserId()).findFirst().orElse(null));
-        }
-        dto.setAtrzCycl(visibleCycle.intValueExact());
-        dto.setTaskSeNm(tasks.getOrDefault(dto.getTaskSeCd(), ""));
-        dto.setAplcntNm(users.getOrDefault(sanction.getAplcntId(), ""));
-        dto.setAprvrNm(users.getOrDefault(dto.getAprvrId(), ""));
-        List<InformalSanctionDetail> visibleLines = lines.stream()
-                .filter(d -> d.getId().getAtrzCycl().compareTo(visibleCycle) == 0).toList();
-        dto.setStages(InformalSanctionReadAssembler.stages(visibleLines, users, absent));
-        // 힌트는 서버가 그 요청을 실제로 받아 줄 때만 참이다 — 참여 조건뿐 아니라 그 동작의 기능 권한도 본다.
-        // 권한을 회수한 그룹에게 버튼이 남으면 누른 뒤에야 403 을 만난다.
-        dto.setCanApprove(current && "A".equals(sanction.getAprvYn()) && SecurityUtil.hasPermission(APPROVE_PERMISSION)
-                && visibleLines.stream()
-                .anyMatch(d -> actor.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE));
-        dto.setCanWithdraw(current && owner && "A".equals(sanction.getAprvYn())
-                && SecurityUtil.hasPermission(WITHDRAW_PERMISSION));
-        dto.setCanResubmit(current && owner && List.of("R", "W").contains(sanction.getAprvYn())
-                && SecurityUtil.hasPermission(DRAFT_PERMISSION));
-        dto.setHistory(includeHistory
-                ? InformalSanctionReadAssembler.revisions(revisions, allowed, lines, users, absent) : List.of());
-        // [2026-10-03 결재 동선 개선] 진행 중인 현재 차수에만 붙는 힌트 — 지금 단계 시작 시각, 열린 보완 요청, 기안자의
-        //   재알림·결재자 바꾸기·보완 답변, 결재자의 보완 요청. 서버가 받아 줄 때만 참이다(아래 쓰기 메서드와 같은 판정).
-        boolean inProgress = current && "A".equals(sanction.getAprvYn());
-        List<InformalSanctionProcess> cycleProcesses = processes.stream()
-                .filter(p -> p.getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0).toList();
-        InformalSanctionProcess openAsk = inProgress ? openSupplement(visibleLines, cycleProcesses) : null;
-        dto.setOpenSupplement(openAsk == null ? null : new ApprovalSupplementDto(openAsk.getChgUserIdntfr(),
-                users.getOrDefault(openAsk.getChgUserIdntfr(), ""), openAsk.getPrcsCn(), openAsk.getCrtDt()));
-        dto.setCurrentStageSince(inProgress ? stageSince(visibleLines, revisions, sanction) : null);
-        boolean drafter = inProgress && owner && SecurityUtil.hasPermission(DRAFT_PERMISSION);
-        boolean remindedToday = cycleProcesses.stream().anyMatch(InformalSanctionService::remindedToday);
-        dto.setRemindedToday(inProgress && owner && remindedToday);
-        dto.setCanRemind(drafter && !remindedToday);
-        dto.setCanReplaceApprover(drafter && visibleLines.stream()
-                .anyMatch(d -> d.status() == ApprovalStatus.WAITING || d.status() == ApprovalStatus.ACTIVE));
-        dto.setCanAnswerSupplement(drafter && openAsk != null);
-        dto.setCanRequestSupplement(dto.isCanApprove() && openAsk == null);
-        // [2026-10-04 D4 개정 1] 참조자. 숨은 참조가 아니다 — 보는 사람이 볼 수 있는 가장 높은 차수까지 지정된 사람을 사람마다
-        //   한 줄로 싣는다. 이전 차수에만 참여한 결재자는 그 뒤에 처음 지정된 참조자를 보지 않는다(차수 공개 원칙). 결재자 추가
-        //   힌트는 쓰기 메서드와 같은 판정이다(20명은 서로 다른 사람 수다).
-        dto.setReferenceViewer(referenceViewer);
-        dto.setReferences(includeHistory
-                ? InformalSanctionReadAssembler.references(references, allowed, sanction, referenceProfiles) : List.of());
-        dto.setCanAddReference(dto.isCanApprove() && !drafterDesignated(sanction, references)
-                && referenceRoomLeft(sanction, references, visibleLines));
-        dto.setProcessHistory(includeHistory
-                ? InformalSanctionReadAssembler.processes(processes, allowed, users) : List.of());
-        return dto;
-    }
-
-    /**
-     * 보완 요청이 열려 있는가 — 같은 차수의 마지막 ASK 뒤에 ANSWER 가 없고, 요청한 결재자가 아직 차례일 때다.
-     * 요청한 사람이 승인·반려했거나 결재선에서 빠지면 요청은 닫힌다. 결재선에서 빠지면(REPLACE 의 변경 전 사람) 그
-     * 요청은 영영 닫힌다 — 기안자가 같은 사람을 다시 넣어도 앞 자리의 요청이 되살아나지 않는다.
-     */
-    private static InformalSanctionProcess openSupplement(List<InformalSanctionDetail> currentLines,
-                                                          List<InformalSanctionProcess> cycleProcesses) {
-        InformalSanctionProcess lastAsk = null;
-        for (InformalSanctionProcess process : cycleProcesses) {
-            if (process.getPrcsTypeCd() == ApprovalProcessType.ASK) lastAsk = process;
-            else if (process.getPrcsTypeCd() == ApprovalProcessType.ANSWER) lastAsk = null;
-            else if (process.getPrcsTypeCd() == ApprovalProcessType.REPLACE && lastAsk != null
-                    && lastAsk.getChgUserIdntfr().equals(process.getBfrUserId())) lastAsk = null;
-        }
-        if (lastAsk == null) return null;
-        String asker = lastAsk.getChgUserIdntfr();
-        return currentLines.stream().anyMatch(d -> asker.equals(d.getId().getUserId()) && d.status() == ApprovalStatus.ACTIVE)
-                ? lastAsk : null;
-    }
-
-    /** 지금 단계가 시작된 시각 — 앞 단계의 마지막 결정 시각, 첫 단계면 이 차수를 올린 시각. */
-    private static LocalDateTime stageSince(List<InformalSanctionDetail> lines, List<InformalSanctionHistory> revisions,
-                                            InformalSanction sanction) {
-        Optional<BigDecimal> activeStage = lines.stream().filter(d -> d.status() == ApprovalStatus.ACTIVE)
-                .map(d -> d.getId().getAtrzSeq()).min(BigDecimal::compareTo);
-        if (activeStage.isEmpty()) return null;
-        Optional<LocalDateTime> previous = lines.stream()
-                .filter(d -> d.getId().getAtrzSeq().compareTo(activeStage.get()) < 0)
-                .map(InformalSanctionDetail::getAtrzDt).filter(Objects::nonNull).max(Comparator.naturalOrder());
-        if (previous.isPresent()) return previous.get();
-        return revisions.stream().filter(h -> h.getId().getAtrzCycl().compareTo(sanction.getAtrzCycl()) == 0)
-                .map(InformalSanctionHistory::getCrtDt).filter(Objects::nonNull).findFirst().orElse(null);
-    }
-
 }

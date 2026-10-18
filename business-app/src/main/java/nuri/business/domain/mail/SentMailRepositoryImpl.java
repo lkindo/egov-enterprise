@@ -45,7 +45,7 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
     }
 
     private BooleanExpression resultEq(String resultCode) {
-        return StringUtils.hasText(resultCode) ? sentMail.dsptchRsltCd.eq(resultCode) : null;
+        return StringUtils.hasText(resultCode) ? ("P".equals(resultCode) ? sentMail.dsptchRsltCd.in("P", "Q") : sentMail.dsptchRsltCd.eq(resultCode)) : null;
     }
 
     private BooleanExpression searchExpression(String searchCondition, String searchKeyword) {

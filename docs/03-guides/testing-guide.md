@@ -59,7 +59,7 @@ frontend/
 
 각 검증 계층은 서로 다른 경계를 소유한다. 같은 응답을 여러 번 단언하기보다 아래 경계가 연결되는지 확인한다.
 
-로컬 검증 명령 안에서는 같은 테스트 파일을 중복 실행하지 않는다. `verify:docs`는 Atlas 단독 계약, `verify:be`는 cross-stack, `verify:fast`·`verify:push`는 `src/__tests__`, `verify:full`·`verify:fe`는 전체 coverage가 해당 모집단을 소유한다. 운영 계약 catalog는 각 명령에서 한 번 실행하며 문서 전용에서도 유지한다. 생성 계약 검증은 Git 인덱스의 스펙으로 임시 디렉터리에 다시 만들어 인덱스의 생성물과 비교하고, 작업 트리가 인덱스와 다르면 작업 트리 쌍도 비교한다. 작업 파일과 인덱스는 덮어쓰지 않는다([API 문서 가이드](api-documentation-guide.md)).
+로컬 검증 명령 안에서는 같은 테스트 파일을 중복 실행하지 않는다. `verify:docs`는 Atlas 단독 계약, `verify:be`는 cross-stack, `verify:fast`·`verify:push`는 `src/__tests__`, `verify:full`·`verify:fe`는 전체 coverage가 해당 모집단을 소유한다. CI도 frontend 축이 켜지면 required `frontend-build`에 집계되는 `frontend-coverage-scope`의 전체 스위트가 cross-stack을 소유하고, frontend 축이 꺼진 backend·Atlas 변경에서는 required `secret-scan`이 cross-stack을 실행한다. 운영 계약 catalog는 각 명령에서 한 번 실행하며 문서 전용에서도 유지한다. 생성 계약 검증은 Git 인덱스의 스펙으로 임시 디렉터리에 다시 만들어 인덱스의 생성물과 비교하고, 작업 트리가 인덱스와 다르면 작업 트리 쌍도 비교한다. 작업 파일과 인덱스는 덮어쓰지 않는다([API 문서 가이드](api-documentation-guide.md)).
 
 CI 러너는 UTC이고 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)다. 명시한 `TZ`가 이기므로 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다. 시험 JVM은 `build.gradle`이 따로 UTC로 고정한다.
 

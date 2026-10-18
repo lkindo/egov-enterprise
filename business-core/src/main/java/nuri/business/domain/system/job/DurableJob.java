@@ -34,7 +34,7 @@ public class DurableJob extends BaseEntity {
     private String jobMngNo;
     @Column(name = "job_se_nm", length = 100, nullable = false, updatable = false)
     private String jobSeNm;
-    @Column(name = "job_cn", length = 4000, nullable = false, updatable = false)
+    @Column(name = "job_cn", length = 4000, nullable = false)
     private String jobCn;
     @Column(name = "prcs_stts_nm", length = 300, nullable = false)
     private String prcsSttsNm;
@@ -93,12 +93,25 @@ public class DurableJob extends BaseEntity {
         jobNo = null;
     }
 
+    /** Exhausted jobs resume only while their payload survives; erased snapshots need a new acceptance. */
+    public boolean retryable() {
+        return "FAILED".equals(prcsSttsNm) && !jobCn.isEmpty();
+    }
+
     public void retry(LocalDateTime now) {
-        if (!"FAILED".equals(prcsSttsNm)) {
+        if (!retryable()) {
             throw new IllegalStateException("Only exhausted jobs can be retried");
         }
         prcsSttsNm = "PENDING";
         rtryNmtm = BigInteger.ZERO;
         jobPrnmntDt = now;
+    }
+
+    /** Only terminal delivery can erase an approved sensitive snapshot. */
+    public void discardPayload() {
+        if (!"SUCCEEDED".equals(prcsSttsNm) && !"FAILED".equals(prcsSttsNm)) {
+            throw new IllegalStateException("Only terminal payloads can be discarded");
+        }
+        jobCn = "";
     }
 }

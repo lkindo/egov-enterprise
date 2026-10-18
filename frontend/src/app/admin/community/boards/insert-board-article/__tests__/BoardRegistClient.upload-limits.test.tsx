@@ -8,7 +8,7 @@ import { BoardRegistClient } from '../BoardRegistClient';
 /**
  * 📎 작성 화면의 업로더가 게시판 첨부 설정을 그대로 보이는가(2026-09-27 DIP B5 F9).
  *
- * 서버(BoardService.assertNewFilesAllowed)는 게시판의 허용 여부·파일 수·파일당 크기로 저장 전에 거부한다. 화면이 더 많이
+ * 서버(BoardPolicySupport.assertNewFilesAllowed)는 게시판의 허용 여부·파일 수·파일당 크기로 저장 전에 거부한다. 화면이 더 많이
  * 받아 두면 사용자는 저장할 때에야 실패를 안다. 업로더 스텁은 받은 제한을 data 속성으로 드러낸다.
  *
  * (아래 설명은 첨부 배선 계약에서 가져온 공용 준비물이다.)

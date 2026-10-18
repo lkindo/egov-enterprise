@@ -3,19 +3,27 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { ChevronDown, ChevronUp, ListChecks, RefreshCcw, Save } from 'lucide-react';
+import { ChevronDown, ChevronUp, History, ListChecks, RefreshCcw, Save } from 'lucide-react';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { ApprovalSavedLineRequestSchema } from '@/types/generated-zod';
+import { INELIGIBLE_REASONS } from './ApproverInlinePicker';
+import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 import type {
+  ApprovalReferee,
   ApprovalSavedLine,
   ApprovalSavedLineSummary,
   ApprovalStageRequest,
+  ApprovalTemporaryDraftSummary,
+  ApproverProfile,
+  InformalSanctionDto,
 } from '@/services/business/user/approval/ApprovalUserService';
+import type { components } from '@/types/generated-api';
 import { approvalKeys, approvalMutationOptions, approvalQueryOptions } from '@/queries/approval-query-options';
 
 /** 한 사람이 둘 수 있는 결재선 수 — 서버(ApprovalSavedLineService.MAX_LINES)와 같은 값이다. */
@@ -25,8 +33,11 @@ const nameSchema = ApprovalSavedLineRequestSchema.pick({ aplnNm: true }).extend(
   aplnNm: z.string().trim().min(1, '결재선 이름을 입력해 주세요.').max(200, '결재선 이름은 200자 이내로 입력해 주세요.'),
 });
 
-/** 서버 오류 응답의 상태와 오류 코드. 409 는 상한(C014)·같은 이름(C008)이 같은 상태를 쓰므로 코드로 가른다. */
-function responseError(error: unknown): { status?: number; code?: string } {
+/**
+ * 서버 오류 응답의 상태와 오류 코드. 409 는 버전 충돌(C013)·상한(C014)·같은 이름(C008)이 같은 상태를 쓰므로 코드로 가른다 —
+ * 상태만 보면 상한에 걸린 새 기안이 '다른 곳에서 바뀌었다' 는 안내에 갇힌다.
+ */
+export function responseError(error: unknown): { status?: number; code?: string } {
   if (typeof error !== 'object' || error === null || !('response' in error)) return {};
   const response = (error as { response?: { status?: unknown; data?: { code?: unknown } } }).response;
   return {
@@ -243,3 +254,198 @@ export function ApprovalSavedLinesPanel({ stages, disabled, onApply, onNotice, o
     </section>
   );
 }
+
+export const DRAFT_LABELS = { taskSeCd: '업무 구분', docTtl: '제목', docCn: '본문', reqYmd: '신청일', stages: '결재선', references: '참조자' };
+/** 결재선 단계(step 1)의 칸 — 결재선과 참조자. 서버 필드 오류가 이 칸이면 내용 작성 단계로 보내지 않는다. */
+export function isLineField(key: string): boolean {
+  return key === 'stages' || key.startsWith('stages.') || key.startsWith('stages[') || key === 'references' || key.startsWith('references');
+}
+/** 결재자가 없는 단계의 오류 — 상신과 나의 결재선 저장이 같은 자리(그 단계의 결재자 칸)에 같은 문구로 둔다. */
+export const EMPTY_STAGE_MESSAGE = '이 단계의 결재자를 선택해 주세요.';
+
+// 화면 편집 상태만 소유한다. API 요청과 응답은 생성 계약을 참조한다.
+export type StageEditor = { key: number; kind: ApprovalStageRequest['kind']; users: UserSearchResult[] };
+export type LineSuggestion = components['schemas']['ApprovalLineSuggestionDto'];
+
+/** 한 사람이 둘 수 있는 기안 임시저장 수 — 서버(ApprovalTemporaryDraftService.MAX_DRAFTS)와 같은 값이다. */
+export const TEMPORARY_DRAFT_LIMIT = 20;
+/** 한 문서의 참조자 상한 — 서버(InformalSanctionService.MAX_REFERENCES)와 같은 값이다. 문서에 누적된 서로 다른 사람 수다. */
+export const REFERENCE_LIMIT = 20;
+/** 이름을 받지 못한 결재자. 식별자를 이름 자리에 보이지 않는다(DEC-OPS-141·193). */
+export const UNKNOWN_USER = '알 수 없는 사용자';
+
+/** 마지막으로 고른 업무 구분 — 이 브라우저에만 사용자별로 둔다. 쓸 수 없으면 기억하지 않을 뿐이다. */
+const lastTaskKey = (esntlId?: string) => `approval.lastTaskType.${esntlId ?? 'anonymous'}`;
+export function readLastTask(esntlId?: string): string {
+  try { return window.localStorage.getItem(lastTaskKey(esntlId)) ?? ''; } catch { return ''; }
+}
+export function rememberTask(esntlId: string | undefined, taskSeCd: string) {
+  try { window.localStorage.setItem(lastTaskKey(esntlId), taskSeCd); } catch { /* 저장소를 못 써도 상신은 이미 끝났다. */ }
+}
+
+export function stagesFrom(document?: InformalSanctionDto): StageEditor[] {
+  if (!document?.stages?.length) return [{ key: 0, kind: 'APPROVAL', users: [] }];
+  return document.stages.map((stage, index) => {
+    const kind = stage.kind;
+    if (kind !== 'APPROVAL' && kind !== 'AGREEMENT') throw new Error('결재 단계 유형을 확인할 수 없습니다. 문서 상세를 다시 불러와 주세요.');
+    return { key: index, kind, users: (stage.approvers ?? []).map(person => ({ esntlId: person.userId, userNm: person.userNm })) };
+  });
+}
+
+/**
+ * 재상신·복제로 가져오는 참조자(D4) — 결재선처럼 원 문서의 <b>그 차수</b>에 지정된 참조자를 가져오고, 상신 때 서버가 다시 검사한다.
+ * 참조는 차수마다 기록되므로 다시 보내면 새 차수의 지정이 된다(그 차수의 최종 결과 알림을 받는다). 더 이전 차수에만 지정된
+ * 사람은 앞 차수에서 이미 다시 지정하지 않은 것이라 가져오지 않는다 — 그래도 문서는 계속 읽는다.
+ * 원 문서 결재선에 든 사람과 본인은 뺀다(한 사람이 같은 차수에 결재자이면서 참조자일 수 없다).
+ */
+export function refereesFrom(document: InformalSanctionDto | undefined, selfId: string | undefined): UserSearchResult[] {
+  const lineIds = new Set((document?.stages ?? []).flatMap(stage => (stage.approvers ?? []).map(person => person.userId)));
+  const cycle = document?.atrzCycl ?? 1;
+  const seen = new Set<string>();
+  return (document?.references ?? []).filter((person): person is ApprovalReferee & { userId: string } => {
+    const id = person.userId;
+    if (!id || id === selfId || lineIds.has(id) || seen.has(id) || (person.atrzCycl ?? cycle) !== cycle) return false;
+    seen.add(id);
+    return true;
+  }).map(person => ({ esntlId: person.userId, userNm: person.userNm || UNKNOWN_USER, deptNm: person.deptNm ?? undefined }));
+}
+
+export function describeLine(line: Pick<LineSuggestion, 'stages'>): string {
+  return (line.stages ?? []).map((stage, index) => `${index + 1}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'} ${(stage.approvers ?? []).map(person => person.userNm || person.esntlId).join(', ')}`).join(' → ');
+}
+
+/** 서버 일시(시간대 없는 서버 시각)를 yyyy-MM-dd HH:mm 으로 읽는다. 브라우저 시간대로 바꾸지 않는다. */
+export function savedAtLabel(value?: string | null): string {
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(value ?? '');
+  return match ? `${match[1]} ${match[2]}` : '';
+}
+
+export function temporaryDraftLabel(draft: { docTtl?: string | null }): string {
+  return draft.docTtl?.trim() || '제목 없는 기안';
+}
+
+/**
+ * 목록 행을 부를 이름. 제목이 같은 임시저장('제목 없는 기안' 여러 건 등)이 있으면 저장 시각을 붙여 가른다 — 버튼 이름과
+ * 삭제 확인이 같으면 보조기술 사용자가 어느 임시저장을 지우는지 알 수 없다.
+ */
+export function temporaryDraftNames(drafts: readonly ApprovalTemporaryDraftSummary[]): Map<number, string> {
+  const counts = new Map<string, number>();
+  for (const draft of drafts) counts.set(temporaryDraftLabel(draft), (counts.get(temporaryDraftLabel(draft)) ?? 0) + 1);
+  const names = new Map<number, string>();
+  for (const draft of drafts) {
+    if (typeof draft.temporaryDraftSn !== 'number') continue;
+    const label = temporaryDraftLabel(draft);
+    names.set(draft.temporaryDraftSn, (counts.get(label) ?? 0) > 1
+      ? `${label} · ${savedAtLabel(draft.mdfcnDt) || '저장 시각 미확인'}`
+      : label);
+  }
+  return names;
+}
+
+export function ApprovalLatestDocumentDetails({ latestDocument }: { latestDocument: InformalSanctionDto }) {
+  return (
+    <details className="rounded-md border border-border p-3 text-sm">
+      <summary>서버의 최신 문서 · {latestDocument.atrzCycl}차 · {latestDocument.docTtl}</summary>
+      <p className="mt-2 whitespace-pre-wrap break-words">{latestDocument.docCn || '작성한 본문이 없습니다.'}</p>
+      <p className="mt-2">결재선: {(latestDocument.stages ?? []).map(stage => `${stage.order}단계 ${stage.kind === 'AGREEMENT' ? '합의' : '결재'}: ${(stage.approvers ?? []).map(person => person.userNm || person.userId).join(', ')}`).join(' → ')}</p>
+      {(latestDocument.references?.length ?? 0) > 0 && <p className="mt-2">참조자: {(latestDocument.references ?? []).map(person => person.userNm || UNKNOWN_USER).join(', ')}</p>}
+    </details>
+  );
+}
+
+export function ApprovalLineSuggestionsSection({
+  lines,
+  recentApprovers,
+  onApplyLine,
+  onAddRecent,
+}: {
+  lines: readonly LineSuggestion[];
+  recentApprovers: readonly ApproverProfile[];
+  onApplyLine: (line: LineSuggestion) => void;
+  onAddRecent: (person: ApproverProfile) => void;
+}) {
+  if (lines.length === 0 && recentApprovers.length === 0) return null;
+  return (
+    <section aria-label="결재선 제안" className="space-y-3 rounded-md border border-border p-3">
+      {lines.length > 0 && <div className="space-y-2">
+        <h3 className="flex items-center gap-2 text-sm font-semibold"><History size={14} aria-hidden="true" /> 내가 썼던 결재선</h3>
+        <ul className="space-y-1">
+          {lines.map((line, index) => <li key={`${line.taskSeCd}-${index}`} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="min-w-0 break-words">{line.taskSeNm || line.taskSeCd} · {line.useCount}회 · {describeLine(line)}</span>
+            <Button type="button" size="sm" variant="outline" aria-label={`${line.taskSeNm || line.taskSeCd} 결재선 가져오기: ${describeLine(line)}`} onClick={() => onApplyLine(line)}>가져오기</Button>
+          </li>)}
+        </ul>
+      </div>}
+      {recentApprovers.length > 0 && <div className="space-y-2">
+        <h3 className="text-sm font-semibold">최근 결재자 · 누르면 마지막 단계에 더합니다</h3>
+        <ul className="flex flex-wrap gap-2">
+          {/* [2026-10-03] 지정할 수 없는 사람은 누를 수 없는 버튼 대신 사유를 보이는 글로 둔다. 사유가 aria-label 에만
+              있어 화면에는 보이지 않았고, aria-label 이 '부재 중' 표시까지 덮었다. */}
+          {recentApprovers.map(person => <li key={person.esntlId}>
+            {person.eligible ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => onAddRecent(person)}>
+                {person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}
+                {person.absent ? <>{' '}<AbsenceBadge absent /></> : null}
+                {' '}<span className="sr-only">결재자로 더하기</span>
+              </Button>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-md border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground">
+                {person.userNm || person.esntlId}{person.deptNm ? ` · ${person.deptNm}` : ''}
+                {person.absent ? <>{' '}<AbsenceBadge absent /></> : null}
+                <span>· 지정할 수 없음({INELIGIBLE_REASONS[person.ineligibleReason ?? ''] ?? '확인 필요'})</span>
+              </span>
+            )}
+          </li>)}
+        </ul>
+      </div>}
+    </section>
+  );
+}
+
+export function ApprovalFinalReviewStep({
+  blockedMessage,
+  refereeBlockedMessage,
+  docTtl,
+  taskLabel,
+  docCn,
+  reqYmd,
+  stages,
+  absentById,
+  refereeTotal,
+  referees,
+  earlierReferees,
+  notifies,
+}: {
+  blockedMessage: string;
+  refereeBlockedMessage: string;
+  docTtl: string;
+  taskLabel: string;
+  docCn: string;
+  reqYmd: string;
+  stages: readonly StageEditor[];
+  absentById: ReadonlyMap<string | undefined, boolean>;
+  refereeTotal: number;
+  referees: readonly UserSearchResult[];
+  earlierReferees: readonly ApprovalReferee[];
+  notifies: boolean;
+}) {
+  return (
+    <>
+      {blockedMessage && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis">{blockedMessage}</p>}
+      {refereeBlockedMessage && <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-emphasis">{refereeBlockedMessage}</p>}
+      <dl className="space-y-3 rounded-md border border-border p-4"><div><dt className="text-sm text-muted-foreground">제목</dt><dd className="break-words font-semibold">{docTtl}</dd></div><div><dt className="text-sm text-muted-foreground">업무 구분</dt><dd>{taskLabel}</dd></div><div><dt className="text-sm text-muted-foreground">본문</dt><dd className="whitespace-pre-wrap break-words text-sm">{docCn || '작성한 본문이 없습니다.'}</dd></div><div><dt className="text-sm text-muted-foreground">신청일</dt><dd>{reqYmd.length === 8 ? `${reqYmd.slice(0, 4)}-${reqYmd.slice(4, 6)}-${reqYmd.slice(6, 8)}` : '신청일 미확인'}</dd></div></dl>
+      <ol aria-label="상신 결재선 미리보기" className="space-y-2">{stages.map((stage, index) => <li key={stage.key} className="rounded-md border border-border p-3 text-sm"><p className="font-semibold">{index + 1}단계 · {stage.kind === 'AGREEMENT' ? '합의' : '결재'} · 전원 {stage.kind === 'AGREEMENT' ? '동의' : '승인'} ({stage.users.length}명)</p><p className="mt-1 flex flex-wrap items-center gap-1 break-words">{stage.users.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || person.esntlId}<AbsenceBadge absent={absentById.get(person.esntlId)} /></span>)}</p></li>)}</ol>
+      {[...absentById.values()].some(Boolean) && <p className="text-sm text-muted-foreground">부재 중인 결재자가 있습니다. 처리가 늦어질 수 있으며, 상신한 뒤에도 그 사람을 다른 결재자로 바꿀 수 있습니다.</p>}
+      {refereeTotal > 0 && <section aria-label="상신 참조자 미리보기" className="space-y-1 rounded-md border border-border p-3 text-sm">
+        <p className="font-semibold">참조자 · 읽기만 함 ({refereeTotal}명)</p>
+        {referees.length > 0 && <p className="flex flex-wrap items-center gap-1 break-words">이번 차수 지정: {referees.map(person => <span key={person.esntlId} className="inline-flex items-center gap-1">{person.userNm || UNKNOWN_USER}<AbsenceBadge absent={person.absent} /></span>)}</p>}
+        {earlierReferees.length > 0 && <p className="break-words text-muted-foreground">계속 읽는 이전 참조자: {earlierReferees.map(person => person.userNm || UNKNOWN_USER).join(', ')}</p>}
+      </section>}
+      {referees.length > 0 && <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">{notifies
+        ? '이번 차수에 지정한 참조자는 이 차수가 최종 승인·반려되면 알림을 받고, 이 문서에 처음 지정되는 사람은 상신할 때도 알림을 받습니다. 지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'
+        : '지정은 되돌릴 수 없으며, 참조자는 문서가 반려·회수되어도, 다음 차수에도 결재 의견과 처리 이력을 포함한 이 문서의 모든 내용을 계속 읽습니다.'}</p>}
+      <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">각 단계의 전원이 승인해야 다음 단계가 시작됩니다. 누구든 한 명이 반려하면 문서 전체가 반려되어 남은 결재는 종료됩니다.</p>
+    </>
+  );
+}
+

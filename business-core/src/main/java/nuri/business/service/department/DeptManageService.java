@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -73,7 +75,7 @@ public class DeptManageService {
 
     @Transactional
     public void updateDeptManage(DeptManageDto dto) {
-        DeptManage entity = deptManageRepository.findById(Objects.requireNonNull(dto.getOgnzId()))
+        DeptManage entity = deptManageRepository.findByIdForUpdate(Objects.requireNonNull(dto.getOgnzId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getOgnzNm(), dto.getOgnzExpln());
     }
@@ -87,12 +89,44 @@ public class DeptManageService {
         if (items == null || items.isEmpty()) {
             return;
         }
+        Map<String, String> parents = new LinkedHashMap<>();
+        deptManageRepository.findParentLinksForUpdate().forEach(link ->
+                parents.put(link.getOgnzId(), blankToNull(link.getUpOgnzId())));
+        Map<String, DeptManageDto> changes = new LinkedHashMap<>();
         for (DeptManageDto item : items) {
             String ognzId = Objects.requireNonNull(item.getOgnzId(), "ognzId 는 필수다");
-            DeptManage entity = deptManageRepository.findById(ognzId)
+            if (!parents.containsKey(ognzId)) {
+                throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+            }
+            if (changes.putIfAbsent(ognzId, item) != null) {
+                throw new BusinessException("같은 부서는 한 번만 지정할 수 있습니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            String parent = blankToNull(item.getUpOgnzId());
+            if (parent != null && !parents.containsKey(parent)) {
+                throw new BusinessException("상위 부서가 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND);
+            }
+            parents.put(ognzId, parent);
+        }
+        // 중간 이동 순서가 아니라 최종 그래프를 검증하며, 검증 전에는 어떤 엔티티도 바꾸지 않는다.
+        changes.keySet().forEach(ognzId -> validateParentPath(ognzId, parents));
+        for (DeptManageDto item : changes.values()) {
+            DeptManage entity = deptManageRepository.findById(item.getOgnzId())
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-            validateParent(ognzId, item.getUpOgnzId());
             entity.updateHierarchy(blankToNull(item.getUpOgnzId()), item.getSortOrdr() != null ? item.getSortOrdr() : 0);
+        }
+    }
+
+    private void validateParentPath(String ognzId, Map<String, String> parents) {
+        String cursor = parents.get(ognzId);
+        java.util.Set<String> visited = new java.util.HashSet<>();
+        for (int depth = 0; cursor != null && depth < MAX_HIERARCHY_DEPTH; depth++) {
+            if (cursor.equals(ognzId) || !visited.add(cursor)) {
+                throw new BusinessException("순환 참조가 발생하는 상위 부서입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            cursor = parents.get(cursor);
+        }
+        if (cursor != null) {
+            throw new BusinessException("허용된 부서 계층 깊이를 초과합니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
     }
 

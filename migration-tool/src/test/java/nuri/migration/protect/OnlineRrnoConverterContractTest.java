@@ -81,9 +81,15 @@ class OnlineRrnoConverterContractTest {
     /**
      * 온라인 암호를 직접 부르는 원본(정의 파일 제외). 새 사용처는 보호 컬럼이 늘었다는 뜻일 수 있다 — 그 컬럼을
      * {@link #SERVICE_ENCRYPTED}·보호 목록에 더하거나 이 표에 사유와 함께 더한다.
+     *
+     * <p>MailDeliveryWorkHandler(ADR-0033)는 메일 접수 당시 수신주소를 암호화해 발송 작업 payload(tb_sys_job.job_cn
+     * JSON 의 한 필드)에 넣고, 작업이 끝나면 payload 를 지운다. 컬럼 전체가 암호문인 것이 아니고 운영 대기열이라
+     * 이관 대상이 아니므로 보호 목록에 넣지 않는다.
      */
     private static final Map<String, Set<String>> ENCRYPTION_USERS = Map.of(
-            "CryptoUtil.encrypt", Set.of("business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java"),
+            "CryptoUtil.encrypt", Set.of(
+                    "business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java",
+                    "business-app/src/main/java/nuri/business/service/mail/MailDeliveryWorkHandler.java"),
             "MfaSecretCipher", Set.of("business-core/src/main/java/nuri/business/service/auth/mfa/MfaSettings.java"));
     private static final Map<String, String> ENCRYPTION_DEFINITIONS = Map.of(
             "CryptoUtil.encrypt", "foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java",

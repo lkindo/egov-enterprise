@@ -141,11 +141,12 @@ class DeptManageServiceTest {
                 .build();
         
         DeptManage entity = mock(DeptManage.class);
-        given(deptManageRepository.findById("DEPT1")).willReturn(Optional.of(entity));
+        given(deptManageRepository.findByIdForUpdate("DEPT1")).willReturn(Optional.of(entity));
 
         deptManageService.updateDeptManage(dto);
 
         verify(entity).update(eq("수정부서"), any());
+        verify(deptManageRepository, never()).findById(anyString());
     }
 
     @Test
@@ -176,6 +177,7 @@ class DeptManageServiceTest {
     @org.junit.jupiter.params.provider.NullAndEmptySource
     void rootHierarchyPreservesNameAndDefaultsOrder(String parent) {
         var entity = DeptManage.builder().ognzId("D").ognzNm("keep").build();
+        givenHierarchy(List.of(entity));
         given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
         deptManageService.updateDeptHierarchy(List.of(DeptManageDto.builder().ognzId("D").upOgnzId(parent).ognzNm("forged").build()));
         assertEquals("keep", entity.getOgnzNm());
@@ -185,7 +187,7 @@ class DeptManageServiceTest {
     @Test
     void missingAndSelfParentAreRejectedBeforeMutation() {
         var entity = DeptManage.builder().ognzId("D").build();
-        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
+        givenHierarchy(List.of(entity));
         for (String parent : List.of("D", "missing")) {
             assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(
                     List.of(DeptManageDto.builder().ognzId("D").upOgnzId(parent).build())));
@@ -197,9 +199,7 @@ class DeptManageServiceTest {
     @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
     void rejectsCycleThroughSelfOrExistingAncestor(boolean throughSelf) {
         var entity = DeptManage.builder().ognzId("D").build();
-        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
-        given(deptManageRepository.existsById("A")).willReturn(true);
-        given(deptManageRepository.findById("A")).willReturn(Optional.of(DeptManage.builder().ognzId("A").upOgnzId(throughSelf ? "D" : "A").build()));
+        givenHierarchy(List.of(entity, DeptManage.builder().ognzId("A").upOgnzId(throughSelf ? "D" : "A").build()));
         assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(
                 List.of(DeptManageDto.builder().ognzId("D").upOgnzId("A").build())));
         assertNull(entity.getUpOgnzId());
@@ -209,14 +209,16 @@ class DeptManageServiceTest {
     @org.junit.jupiter.params.provider.ValueSource(ints = {50, 51})
     void hierarchyDepthBoundary(int depth) {
         var entity = DeptManage.builder().ognzId("D").build();
-        given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
-        given(deptManageRepository.existsById("A0")).willReturn(true);
-        for (int i = 0; i < Math.min(depth, 50); i++) {
-            given(deptManageRepository.findById("A" + i)).willReturn(Optional.of(
-                    DeptManage.builder().ognzId("A" + i).upOgnzId(i + 1 < depth ? "A" + (i + 1) : null).build()));
+        var hierarchy = new java.util.ArrayList<DeptManage>();
+        hierarchy.add(entity);
+        for (int i = 0; i < depth; i++) {
+            hierarchy.add(DeptManage.builder().ognzId("A" + i)
+                    .upOgnzId(i + 1 < depth ? "A" + (i + 1) : null).build());
         }
+        givenHierarchy(hierarchy);
         var items = List.of(DeptManageDto.builder().ognzId("D").upOgnzId("A0").sortOrdr(3).build());
         if (depth == 50) {
+            given(deptManageRepository.findById("D")).willReturn(Optional.of(entity));
             deptManageService.updateDeptHierarchy(items);
             assertEquals("A0", entity.getUpOgnzId());
             assertEquals(3, entity.getSortOrdr());
@@ -224,5 +226,58 @@ class DeptManageServiceTest {
             assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(items));
             assertNull(entity.getUpOgnzId());
         }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {true, false})
+    void validFinalHierarchyIsIndependentOfBatchOrder(boolean reverse) {
+        var parent = DeptManage.builder().ognzId("P").ognzNm("parent").build();
+        var child = DeptManage.builder().ognzId("C").upOgnzId("P").ognzNm("child").build();
+        givenHierarchy(List.of(parent, child));
+        given(deptManageRepository.findById("P")).willReturn(Optional.of(parent));
+        given(deptManageRepository.findById("C")).willReturn(Optional.of(child));
+        var parentMove = DeptManageDto.builder().ognzId("P").upOgnzId("C").sortOrdr(2).build();
+        var childMove = DeptManageDto.builder().ognzId("C").upOgnzId(null).sortOrdr(1).build();
+
+        deptManageService.updateDeptHierarchy(reverse ? List.of(childMove, parentMove) : List.of(parentMove, childMove));
+
+        assertEquals("C", parent.getUpOgnzId());
+        assertNull(child.getUpOgnzId());
+        assertEquals("parent", parent.getOgnzNm());
+        assertEquals("child", child.getOgnzNm());
+    }
+
+    @Test
+    void rejectsFinalCycleBeforeChangingAnyEntity() {
+        var first = DeptManage.builder().ognzId("A").build();
+        var second = DeptManage.builder().ognzId("B").build();
+        givenHierarchy(List.of(first, second));
+
+        assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(List.of(
+                DeptManageDto.builder().ognzId("A").upOgnzId("B").build(),
+                DeptManageDto.builder().ognzId("B").upOgnzId("A").build())));
+
+        assertNull(first.getUpOgnzId());
+        assertNull(second.getUpOgnzId());
+        verify(deptManageRepository, never()).findById(anyString());
+    }
+
+    @Test
+    void missingOrDuplicateDepartmentDoesNotChangeTheHierarchy() {
+        givenHierarchy(List.of(DeptManage.builder().ognzId("D").build()));
+        var existing = DeptManageDto.builder().ognzId("D").build();
+        assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(
+                List.of(DeptManageDto.builder().ognzId("missing").build())));
+        assertThrows(BusinessException.class, () -> deptManageService.updateDeptHierarchy(List.of(existing, existing)));
+        verify(deptManageRepository, never()).findById(anyString());
+    }
+
+    private void givenHierarchy(List<DeptManage> departments) {
+        List<DeptManageRepository.ParentLink> links = departments.stream()
+                .map(department -> (DeptManageRepository.ParentLink) new DeptManageRepository.ParentLink() {
+                    public String getOgnzId() { return department.getOgnzId(); }
+                    public String getUpOgnzId() { return department.getUpOgnzId(); }
+                }).toList();
+        given(deptManageRepository.findParentLinksForUpdate()).willReturn(links);
     }
 }

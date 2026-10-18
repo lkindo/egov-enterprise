@@ -45,7 +45,7 @@ class SmsServiceTest {
     private SmsRecptnRepository smsRecptnRepository;
 
     @Mock
-    private SmsAsyncProcessor smsAsyncProcessor;
+    private nuri.foundation.core.job.DurableWorkPort durableWork;
 
     @Mock
     private SmsSender smsSender;
@@ -61,7 +61,7 @@ class SmsServiceTest {
 
     @BeforeEach
     void setUp() {
-        smsService = new SmsService(smsRepository, smsRecptnRepository, smsAsyncProcessor,
+        smsService = new SmsService(smsRepository, smsRecptnRepository, durableWork,
                 smsMapper, smsRecptnMapper, smsSender, userContactService);
         lenient().when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> {
             Sms saved = invocation.getArgument(0);
@@ -85,7 +85,8 @@ class SmsServiceTest {
         smsService.sendSms("user01", dto);
 
         verify(smsRecptnRepository).save(argThat(r -> "01012345678".equals(r.getRcptnTelno())));
-        verify(smsAsyncProcessor).processSending(eq(101L), anyString(), anyString(), any());
+        verify(durableWork).enqueue(argThat(work -> work.type().equals(SmsDeliveryWorkHandler.TYPE)
+                && work.payload().contains("101") && !work.payload().contains("01012345678")));
     }
 
     @Test
@@ -98,7 +99,7 @@ class SmsServiceTest {
         }
         verify(smsRepository, never()).save(any());
         verify(smsRecptnRepository, never()).save(any());
-        verifyNoInteractions(smsAsyncProcessor);
+        verifyNoInteractions(durableWork);
     }
 
     @Test
@@ -190,23 +191,23 @@ class SmsServiceTest {
         assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository).save(any(SmsRecptn.class));
-        verify(smsAsyncProcessor).processSending(eq(smsTrsmSn), eq("01011112222"), eq("Test Message"), any());
+        verify(durableWork).enqueue(argThat(work -> work.type().equals(SmsDeliveryWorkHandler.TYPE)
+                && work.payload().contains(smsTrsmSn.toString()) && !work.payload().contains("Test Message")));
     }
 
     @Test
-    @DisplayName("SMS 비동기 큐 포화는 수신자 대기 건을 명시적 실패로 전환")
-    void sendSms_executorRejected_marksBatchFailure() {
+    @DisplayName("영속 발송 의도 저장 실패는 성공 접수로 반환하지 않는다")
+    void sendSms_durableEnqueueFailurePropagatesForRollback() {
         SmsDto dto = SmsDto.builder()
                 .sndngTelno("01011112222")
                 .sndngCn("Test Message")
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
-        doThrow(new java.util.concurrent.RejectedExecutionException("full"))
-                .when(smsAsyncProcessor).processSending(anyLong(), anyString(), anyString(), any());
+        doThrow(new org.springframework.dao.DataAccessResourceFailureException("unavailable"))
+                .when(durableWork).enqueue(any());
 
-        Long smsTrsmSn = smsService.sendSms("user01", dto);
-
-        verify(smsAsyncProcessor).markBatchRejected(smsTrsmSn);
+        assertThatThrownBy(() -> smsService.sendSms("user01", dto))
+                .isInstanceOf(org.springframework.dao.DataAccessResourceFailureException.class);
     }
 
     /*
@@ -231,7 +232,8 @@ class SmsServiceTest {
         verify(smsRecptnRepository, times(2)).save(saved.capture());
         assertThat(saved.getAllValues()).extracting(SmsRecptn::getRcptnTelno)
                 .containsExactly("01033334444", "01099998888");
-        verify(smsAsyncProcessor).processSending(eq(101L), eq("01011112222"), eq("Hello"), any());
+        verify(durableWork).enqueue(argThat(work -> work.type().equals(SmsDeliveryWorkHandler.TYPE)
+                && !work.payload().contains("01033334444") && !work.payload().contains("Hello")));
     }
 
     @Test
@@ -316,7 +318,7 @@ class SmsServiceTest {
         assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository, never()).save(any());
-        verify(smsAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), any());
+        verifyNoInteractions(durableWork);
     }
 
     @Test

@@ -105,7 +105,7 @@ class CommonCodeServiceTest {
 
         commonCodeService.insertCmmnClCode(dto);
 
-        verify(commonCodeCategoryRepository).save(any());
+        verify(commonCodeCategoryRepository).insert(any());
     }
 
     @Test
@@ -309,6 +309,16 @@ class CommonCodeServiceTest {
     }
 
     @Test
+    void insertCmmnCodeUsesCreationOnlyWrite() {
+        commonCodeService.insertCmmnCode(CmmnCodeDto.builder()
+                .cdId("GRP1").cdIdNm("그룹").clsfCd("CL1").useYn("Y").build());
+
+        verify(commonCodeGroupRepository).insert(any(CommonCodeGroup.class));
+        verify(commonCodeGroupRepository, never()).save(any());
+        assertEquals("ADD", savedChange().getChgTypeCd());
+    }
+
+    @Test
     @DisplayName("공통코드 상세 조회")
     void selectCmmnCodeDetailTest() {
         CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").build();
@@ -402,7 +412,7 @@ class CommonCodeServiceTest {
         given(commonCodeRepository.existsById(id)).willReturn(false);
 
         commonCodeService.insertCmmnDetailCode(dto);
-        verify(commonCodeRepository).save(any(CommonCode.class));
+        verify(commonCodeRepository).insert(any(CommonCode.class));
     }
 
     @Test

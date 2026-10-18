@@ -40,20 +40,30 @@ public class SmsAsyncProcessor {
 
     void setClock(Clock clock) { this.clock = java.util.Objects.requireNonNull(clock); }
 
+    /**
+     * The only dispatch entry: SmsDeliveryWorkHandler acknowledges its durable job after this future ends.
+     * The former fire-and-forget processSending entry was removed (2026-10-18) so no caller can bypass the
+     * committed SMS_DELIVERY intent.
+     */
     @Async("taskExecutor")
-    public void processSending(Long smsTrsmSn, String senderTel, String content) {
-        processSending(smsTrsmSn, senderTel, content, null);
+    public CompletableFuture<Void> dispatchCommitted(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
+        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId);
+        return CompletableFuture.completedFuture(null);
     }
 
-    @Async("taskExecutor")
-    public void processSending(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
+    private void dispatchRecipients(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
         List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
         int failed = 0;
+        RuntimeException deferred = null;
         for (SmsRecptn recipient : recipients) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new java.util.concurrent.CancellationException("SMS batch interrupted before the next recipient");
+            }
             try {
                 if (self.sendToRecipient(smsTrsmSn, recipient.getRcptnTelno(), senderTel, content)
                         == SmsGatewayResult.State.REJECTED) failed++;
             } catch (RuntimeException failure) {
+                deferred = failure;
                 // A DB/worker failure does not prove the provider rejected a possibly accepted POST.
                 log.error("SMS dispatch remains unconfirmed: transmission={}, recipient={}, errorType={}",
                         smsTrsmSn, nuri.foundation.core.util.PiiMaskUtil.phone(recipient.getRcptnTelno()),
@@ -67,6 +77,9 @@ public class SmsAsyncProcessor {
                         smsTrsmSn, failure.getClass().getSimpleName());
             }
         }
+        // A retry may finish never-claimed recipients. Already claimed recipients remain protected
+        // by claimSending, including a POST whose outcome or result commit was not confirmed.
+        if (deferred != null) throw deferred;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

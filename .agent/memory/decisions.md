@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-17
-verified_against: 55a4539569494036788db468296f7ca1eea38d45
+verified_at: 2026-10-18
+verified_against: 5f093963656cda38cd3c118fdb0c6cad314969eb
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md
   - ../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
   - ../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md
@@ -86,6 +87,7 @@ refresh_triggers:
 | ADR-0030 | accepted | ADR-0027 이후 승인된 PR 제외 선언과 시작 구성에 덮인 야간 단독 폐포 제거를 후속 ADR로 승격한다. 기존 실행·실패 경계는 유지한다. | DEC-OPS-296·301에만 남던 ADR 변경을 규범 정본에 연결한다. 승인일은 원문대로이며 2026-10-17은 문서 정리일이다. | [ADR-0030](../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 2026-10-13 | ADR-0027 결정 2·4의 해당 부분 |
 | ADR-0031 | accepted | 기존 승인에 따른 원장 확정·비표준 대상·미확인 허용값·chunk 실패 처리와 L3 경계를 후속 ADR로 승격한다. 기존 안전 경계와 기관 승인은 유지한다. | DEC-OPS-310·315·316·317·319·325의 변경과 ADR-0029를 함께 읽을 수 있게 한다. 2026-10-17은 문서 정리일이다. | [ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 2026-10-15 | ADR-0029 결정 3·8·L3 실행 경계의 해당 부분; 결정 7의 좁은 구현 명시 |
 | ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | ADR-0029 이후 범위가 여덟 개로 늘어 한 슬롯의 이관 PIT가 전수 CI의 임계 경로가 됐다(DEC-OPS-337). | [ADR-0032](../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
+| ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 사용자 선택. 이력의 표시명·변경된 현재 주소로 자동 복구하지 않는다. | [ADR-0033](../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 2026-10-18 | - |
 
 ## 운영 결정 index
 
@@ -433,6 +435,12 @@ refresh_triggers:
 | DEC-OPS-338 | accepted | 로컬 검증은 정적 검사를 운영 계약보다 먼저 돌리고 명시한 TZ 를 따르며, verify binding 은 범위 분기에서 닿는 줄이어야 한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-338) | 2026-10-17 | - |
 | DEC-OPS-339 | accepted | 메뉴 스냅숏 해시는 메뉴 inventory 에 닿을 수 있는 SQL 입력만 담는다(형식 v2). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-339) | 2026-10-17 | 메뉴 스냅숏 해시가 모든 migration·seed·인가 Contract SQL 을 입력으로 삼던 부분 |
 | DEC-OPS-340 | accepted | 공용 메모리 행은 원장이 세는 수를 다시 적지 않고 원장에 링크한다(GAP-WIRING-001·GAP-ARCH-001). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-340) | 2026-10-17 | DEC-OPS-090 ⑥ 의 공용 메모리 결합 수 대조, GAP-WIRING-001 수치 결속(2026-09-15 커밋 2c55b9924, DEC 없음) |
+| DEC-OPS-341 | accepted | 메일·문자 발송을 접수 트랜잭션의 영속 작업으로 처리하고, 영속 작업 실행기를 전용 스케줄러·작업 스레드·유형별 상한·임대 갱신으로 운영한다(ADR-0033 이행). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-341) | 2026-10-18 | 메일·SMS 의 커밋 후 `runAfterCommit` 비동기 제출(DEC 없음) |
+| DEC-OPS-342 | accepted | 부서 계층·지정 ID 등록·첨부 묶음·메모 삭제·투표 항목 수정의 경합 경계를 잠금과 식별자로 닫는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-342) | 2026-10-18 | 온라인 투표 항목 수정의 위치 기준 매칭(DEC 없음) |
+| DEC-OPS-343 | accepted | 주소록 쓰기 단추를 동작별 권한으로 보이고, 저장한 레이아웃 테마를 전역에서 복원하되 다크 모드와 기본색은 덮지 않는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-343) | 2026-10-18 | - |
+| DEC-OPS-344 | accepted | CI 의 cross-stack 계약은 frontend 축이 켜지면 커버리지 전체 스위트가 소유하고, 커버리지 분모에 queries·extensions 를 넣으며, 화면 목록 생성기는 레이아웃 셸 제거를 원장 근거로만 받는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-344) | 2026-10-18 | ci.yml 주석의 "몇십 초 중복이 증거를 잃는 것보다 싸다" 판단 |
+| DEC-OPS-345 | accepted | 차트 범주 색을 브랜드 프로필의 --chart-1..5 토큰으로 두고 코드의 하드코딩 Hex 를 동결한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-345) | 2026-10-18 | - |
+| DEC-OPS-346 | accepted | 대형 화면·서비스·이관 도구 클래스를 동작을 바꾸지 않고 나누며, 단일 파일을 읽던 계약은 나뉜 파일 전체로 넓힌다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-346) | 2026-10-18 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

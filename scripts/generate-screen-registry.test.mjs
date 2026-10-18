@@ -931,6 +931,39 @@ const writeLedger = (dir, removedFiles) => fs.writeFileSync(path.join(dir, 'reus
   schemaVersion: 1, authority: 'generated-reusable-projection-ledger', removedFiles: [...removedFiles].sort(),
 }, null, 2)}\n`);
 
+test('an approval contribution whose notification layout shell was projected away needs exact removal evidence', t => {
+  const { dir, write } = predicateFixture(t);
+  const shell = 'frontend/src/app/components/ui/app-notification-drawer.tsx';
+  const contribution = 'frontend/src/extensions/informalsanction/notification-actions.ts';
+  write('frontend/src/extensions/generated-notification-actions.ts',
+    "import informalsanction from './informalsanction/notification-actions';\nexport const notificationActions = [informalsanction];\n");
+  write(contribution, "export default [{ id: 'approval-approve', visibleWhen: { permissions: ['THING_EXPORT'] } }];\n");
+  const consumer = "import { notificationActions } from '@/extensions/generated-notification-actions';\n"
+    + 'export const NotificationDrawer = () => <>{notificationActions.length}</>;\n';
+  write(shell, consumer);
+  const predicate = () => buildScreenRegistry(dir).predicates.find(row => row.id === 'approval-approve');
+  assert.equal(predicate().layout, true, 'the retained notification drawer is a layout consumer');
+
+  // approval 시작 구성과 informalsanction+reward 직접 선택은 결재 기여를 남기고 알림 소유 드로어를 지운다.
+  fs.rmSync(path.join(dir, shell));
+  writeLedger(dir, [shell]);
+  assert.deepEqual(predicate(), {
+    file: contribution, id: 'approval-approve', permissions: ['THING_EXPORT'], routes: [], removedByProjection: true,
+    removedShells: [shell], orphanedShells: [],
+  });
+
+  writeLedger(dir, []);
+  assert.throws(predicate, /셸이 없는데 투영 원장에 없다: .*app-notification-drawer\.tsx/u);
+  writeLedger(dir, [shell]);
+  write(shell, 'export const NotificationDrawer = () => null;\n');
+  assert.throws(predicate, /남은 셸이 그 기여의 레지스트리를 읽지 않는다\(연결이 끊겼다\): .*app-notification-drawer\.tsx/u,
+    'a ledger entry cannot excuse an existing layout consumer whose registry import is broken');
+  fs.rmSync(path.join(dir, shell));
+  fs.rmSync(path.join(dir, 'reusable-projection-ledger.json'));
+  assert.throws(predicate, /기여 항목의 노출 술어가 어느 화면에도 귀속되지 않는다/u,
+    'the source tree still rejects a missing layout consumer');
+});
+
 test('a predicate that reaches no screen fails in the source and is recorded in a projection whose ledger removed the screens', t => {
   const { dir } = predicateFixture(t);
   // 수신자 피커 도우미는 남는데(core) 그것을 그리는 화면이 빠진 생성물({addressbook} 단독)과 같은 모양이다.

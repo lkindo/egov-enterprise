@@ -74,22 +74,23 @@ class MailResilienceIntegrationTest {
 
         // Given: 2. 테스트용 메일 영속 데이터 준비 (초기 상태는 대기 'W')
         SentMail sentMail = SentMail.builder()
-                .dsptchRsltCd("W") // Waiting / Ready
+                .dsptchRsltCd("Q") // Not yet claimed
                 .emlTtl("보안 경고 메일")
                 .emlCn("서버 온도가 80도를 초과했습니다.")
                 .sndptyNm("admin@egov.com")
                 .rcvrNm("ops@egov.com")
                 .build();
+        sentMail.queueAt(java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         sentMailRepository.saveAndFlush(sentMail);
         testEmlDsptchSn = sentMail.getEmlDsptchSn();
 
         // When: 비동기 발송 프로세스 호출 (AOP 프록시를 통해 비동기로 처리됨)
-        mailAsyncProcessor.processSending(
-                testEmlDsptchSn,
+        mailAsyncProcessor.dispatchCommitted(
+                testEmlDsptchSn, sentMail.getDsptchDt(),
                 sentMail.getEmlTtl(), 
                 sentMail.getEmlCn(), 
                 sentMail.getSndptyNm(), 
-                sentMail.getRcvrNm()
+                sentMail.getRcvrNm(), null
         );
 
         // Then: 1. Awaitility를 사용하여 최대 10초 대기하며 @Recover에 의해 상태가 최종 실패('F')로 갱신될 때까지 폴링 검증

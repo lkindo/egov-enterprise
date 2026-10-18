@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-/** Actual PostgreSQL row locks/proxies/commit callbacks; the gateway is an explicitly synthetic port. */
+/** Actual PostgreSQL row locks/proxies/durable intents; the gateway is an explicitly synthetic port. */
 @Tag("schema-validation")
 @SpringBootTest(properties = {"nuri.sms.provider=none", "nuri.durable-work.enabled=false"})
 @Import({AuthorizationSchemaRehearsalTestConfiguration.class, SmsDeliveryStateIntegrationTest.SmsExecutorTestConfiguration.class})
@@ -47,6 +47,8 @@ import static org.mockito.Mockito.*;
 class SmsDeliveryStateIntegrationTest {
     @Autowired private SmsAsyncProcessor processor;
     @Autowired private SmsService service;
+    @Autowired private nuri.business.domain.sms.SmsRepository messages;
+    @Autowired private nuri.business.domain.system.job.DurableJobRepository jobs;
     @Autowired private SmsRecptnRepository recipients;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager manager;
@@ -81,6 +83,7 @@ class SmsDeliveryStateIntegrationTest {
 
     @AfterEach void removeOnlyOwnedFixtures() {
         ownedTransmissions.forEach(id -> {
+            jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", deliveryKey(id));
             jdbc.update("DELETE FROM tb_sms_rcptn WHERE sms_trsm_sn=?", id);
             jdbc.update("DELETE FROM tb_sms_info WHERE sms_trsm_sn=?", id);
         });
@@ -228,7 +231,7 @@ class SmsDeliveryStateIntegrationTest {
         verifyNoInteractions(sender);
     }
 
-    @Test void rollbackCreatesNoRecipientsAndNeverStartsAnAsyncPostButCommitDoes() throws Exception {
+    @Test void rollbackRemovesTheIntentAndAFreshHandlerRecoversOnlyTheCommittedBatch() throws Exception {
         AtomicInteger calls = new AtomicInteger();
         AtomicBoolean outsideTransaction = new AtomicBoolean();
         CountDownLatch delivered = new CountDownLatch(1);
@@ -246,9 +249,16 @@ class SmsDeliveryStateIntegrationTest {
             return id;
         });
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sms_info WHERE sms_trsm_sn=?", Long.class, rolledBack)).isZero();
+        assertThat(jobs.findByJobMngNo(deliveryKey(rolledBack))).isEmpty();
         assertThat(calls.get()).isZero();
         Long committed = new TransactionTemplate(manager).execute(status -> service.sendSms("owned-test", dto));
         ownedTransmissions.add(committed);
+        assertThat(calls.get()).isZero(); // No process-local afterCommit callback is needed.
+        var persisted = jobs.findByJobMngNo(deliveryKey(committed)).orElseThrow();
+        var handler = new nuri.business.service.sms.SmsDeliveryWorkHandler(messages, processor);
+        // Replay the persisted intent using a fresh handler, without consuming unrelated fixtures.
+        handler.execute(persisted.work());
+        handler.execute(persisted.work());
         assertThat(delivered.await(10, TimeUnit.SECONDS)).isTrue();
         org.awaitility.Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(SmsReceiptState.parse(jdbc.queryForObject(
@@ -355,6 +365,10 @@ class SmsDeliveryStateIntegrationTest {
     private String code() {
         return jdbc.queryForObject("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=?", String.class,
                 transmission, PHONE);
+    }
+
+    private static String deliveryKey(long id) {
+        return UUID.nameUUIDFromBytes(("SMS_DELIVERY:" + id).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
     }
 
     private SmsReceiptState stored() {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import NoteHubClient from '../NoteHubClient';
 import NotePage from '../page';
 
 const mocks = vi.hoisted(() => ({
@@ -128,7 +129,7 @@ describe('NotePage validation contract', () => {
   });
 
   function openComposer() {
-    render(<NotePage />);
+    render(<NoteHubClient />);
     fireEvent.click(screen.getByRole('button', { name: '새 쪽지 쓰기' }));
   }
 

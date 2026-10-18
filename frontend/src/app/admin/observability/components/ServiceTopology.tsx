@@ -79,7 +79,7 @@ const ConnectionLine = ({ start, end, duration = 3 }: { start: [number, number],
       {/* Animated Flow Dot */}
       <motion.circle
         r="0.5"
-        fill="#34d399"
+        fill="hsl(var(--chart-2))"
         initial={{ offsetDistance: "0%" }}
         animate={{ offsetDistance: "100%" }}
         transition={{ duration, repeat: Infinity, ease: "linear" }}
@@ -104,7 +104,7 @@ const ConnectionLine = ({ start, end, duration = 3 }: { start: [number, number],
       <defs>
         <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="transparent" />
-          <stop offset="50%" stopColor="#34d399" />
+          <stop offset="50%" stopColor="hsl(var(--chart-2))" />
           <stop offset="100%" stopColor="transparent" />
         </linearGradient>
       </defs>

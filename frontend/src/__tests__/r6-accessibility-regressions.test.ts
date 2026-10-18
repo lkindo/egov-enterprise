@@ -40,7 +40,8 @@ describe('r6 accessibility regressions', () => {
     //       그래서 소스 문자열이 아니라 렌더 결과를 고정하는 계약이 따로 있다
     //       (app/admin/user/__tests__/detail-scroll-area.test.tsx). 여기서는 배선 형태만 본다.
     const parts = source('app/admin/user/UserOrgHubParts.tsx');
-    expect(userHub).toContain('<DetailScrollArea>');
+    expect(userHub).toContain('<UserOrgDetailPanel');
+    expect(parts).toContain('<DetailScrollArea>');
     expect(parts).toContain("useOverflowRegion<HTMLDivElement>('상세 정보 스크롤 영역')");
 
     /*
@@ -60,7 +61,10 @@ describe('r6 accessibility regressions', () => {
   });
 
   it('does not dim repeated user identifiers or the empty-selection notice below the muted token', () => {
-    const userHub = source('app/admin/user/UserOrgHubClient.tsx');
+    const userHub = [
+      source('app/admin/user/UserOrgHubClient.tsx'),
+      source('app/admin/user/UserOrgHubParts.tsx'),
+    ].join('\n');
 
     expect(userHub).not.toContain('text-[10px] font-bold tracking-tight opacity-60');
 
@@ -72,7 +76,11 @@ describe('r6 accessibility regressions', () => {
     */
     expect(userHub).not.toMatch(/text-muted-foreground\/[0-9]/);
     expect(userHub).not.toMatch(/text-foreground\/[0-9]/);
-    expect(userHub).toMatch(/role="status"[\s\S]{0,400}text-muted-foreground(?![/\w-])/);
+    // 미선택 안내 자체에 고정한다 — 합친 소스에는 정책 링크의 다른 role="status"(UserOrgHubParts)가 먼저 있어,
+    // 앞의 느슨한 정규식은 안내가 사라지거나 흐려져도 green 이었다.
+    expect(userHub).toMatch(
+      /<p\s+role="status"\s+className="(?:[^"]*\s)?text-muted-foreground(?=[\s"])[^"]*"\s*>\s*왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요\./,
+    );
   });
 
   // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).

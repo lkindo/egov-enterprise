@@ -18,16 +18,20 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
-import { flattenCodeTree, FlattenedCodeNode } from './treeUtils';
+import {
+  buildInitialCodeClusters,
+  findGroupInClusters,
+  flattenCodeTree,
+  FlattenedCodeNode,
+  moveGroupNodeToCluster,
+} from './treeUtils';
 import {
   Search,
   SearchSlash,
   Plus,
   Settings,
   Trash2,
-  Fingerprint,
   Save,
-  History,
   Loader2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -39,8 +43,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 import { Form, FormErrorSummary } from '@/components/ui/form';
-import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
+import { Column } from '@/app/components/ui/standard-data-table';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { CodePicker, CodePickerSelection } from '@/app/components/ui/code-picker';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
@@ -57,7 +60,7 @@ import {
   CmmnCode,
   CmmnDetailCode
 } from '@/types/foundation/system';
-import { DomainCluster, GroupCode } from '@/types/foundation/code';
+import { GroupCode } from '@/types/foundation/code';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
@@ -71,11 +74,14 @@ import {
   CODE_GROUP_FIELD_LABELS,
 } from './common-code-form-schemas';
 import {
+  buildCodeDndAnnouncements,
   CODE_DND_SCREEN_READER_INSTRUCTIONS,
   CodeNodeOverlay,
+  COMMON_DETAIL_COLUMNS,
+  CommonCodeDetailActions,
+  CommonCodeDetailPanel,
   dropAnimation,
   filterCodeNodes,
-  formatClassificationLabel,
   SortableCodeNode,
 } from './CodeTreeNode';
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
@@ -196,31 +202,10 @@ export default function CommonCodeClient({
     }
   }, [editingDetail, isModalOpen, resetForm]);
 
-  const initialClusters = useMemo(() => {
-    const compareId = (left: string | undefined, right: string | undefined) => {
-      const safeLeft = left ?? '';
-      const safeRight = right ?? '';
-      return safeLeft < safeRight ? -1 : safeLeft > safeRight ? 1 : 0;
-    };
-    const safeClCodes = Array.isArray(clCodes)
-      ? [...clCodes.filter(Boolean)].sort((left, right) => compareId(left.clsfCd, right.clsfCd))
-      : [];
-    const safeGroups = Array.isArray(groups)
-      ? [...groups.filter(Boolean)].sort((left, right) => compareId(left.cdId, right.cdId))
-      : [];
-
-    return safeClCodes.map(cl => ({
-      ...cl,
-      id: cl.clsfCd || '',
-      name: cl.clsfCdNm || '',
-      groups: safeGroups
-        .filter(g => g.clsfCd === cl.clsfCd)
-        .map(g => ({
-          ...g,
-          details: []
-        })) as GroupCode[]
-    })) as DomainCluster[];
-  }, [clCodes, groups]);
+  const initialClusters = useMemo(
+    () => buildInitialCodeClusters(clCodes, groups),
+    [clCodes, groups],
+  );
 
   const hierarchySignature = useMemo(
     () => JSON.stringify(initialClusters),
@@ -306,52 +291,10 @@ export default function CommonCodeClient({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const dndAnnouncements = useMemo<Announcements>(() => {
-    const findNode = (id: string | number) => flattenedNodes.find((node) => node.id === String(id));
-    const clusterName = (clusterId: string | null) => (
-      flattenedNodes.find((node) => node.type === 'cluster' && node.id === clusterId)?.name ?? '알 수 없는'
-    );
-    const clusterLabel = (clusterId: string | null) => {
-      const name = clusterName(clusterId);
-      return formatClassificationLabel(name);
-    };
-    const targetParentId = (overId: string | number | undefined) => {
-      if (overId == null) return null;
-      const overNode = findNode(overId);
-      return overNode?.type === 'cluster' ? overNode.id : overNode?.parentId ?? null;
-    };
-
-    return {
-      onDragStart: ({ active }) => {
-        const activeNode = findNode(active.id);
-        if (!activeNode || activeNode.type !== 'group') return '코드 그룹 이동을 시작했습니다.';
-        return `${activeNode.name} 그룹 이동을 시작했습니다. 현재 소속은 ${clusterLabel(activeNode.parentId)}입니다.`;
-      },
-      onDragOver: ({ active, over }) => {
-        const activeNode = findNode(active.id);
-        if (!activeNode || activeNode.type !== 'group') return undefined;
-        const nextParentId = targetParentId(over?.id);
-        if (!nextParentId) return `${activeNode.name} 그룹을 이동할 분류를 찾고 있습니다.`;
-        if (nextParentId === activeNode.parentId) {
-          return `${activeNode.name} 그룹은 현재 ${clusterLabel(nextParentId)} 위에 있습니다. 같은 분류 안의 순서는 저장되지 않습니다.`;
-        }
-        return `${activeNode.name} 그룹을 ${clusterLabel(nextParentId)}로 이동할 위치입니다.`;
-      },
-      onDragEnd: ({ active, over }) => {
-        const activeNode = findNode(active.id);
-        if (!activeNode || activeNode.type !== 'group') return '코드 그룹 이동이 끝났습니다.';
-        const nextParentId = targetParentId(over?.id);
-        if (!nextParentId || nextParentId === activeNode.parentId) {
-          return `${activeNode.name} 그룹의 소속 분류는 변경되지 않았습니다.`;
-        }
-        return `${activeNode.name} 그룹을 ${clusterLabel(nextParentId)}로 이동했습니다. 변경 내용을 저장해야 반영됩니다.`;
-      },
-      onDragCancel: ({ active }) => {
-        const activeNode = findNode(active.id);
-        return `${activeNode?.name ?? '코드'} 그룹 이동을 취소했습니다.`;
-      },
-    };
-  }, [flattenedNodes]);
+  const dndAnnouncements = useMemo<Announcements>(
+    () => buildCodeDndAnnouncements(flattenedNodes),
+    [flattenedNodes],
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
     if (searchQuery || isSaving) return;
@@ -368,49 +311,22 @@ export default function CommonCodeClient({
       return;
     }
     const { active, over } = event;
-    const activeItem = flattenedNodes.find((node) => node.id === active.id);
-    const overId = over?.id;
-    const overItem = overId == null ? null : flattenedNodes.find((node) => node.id === overId);
-    if (!activeItem || activeItem.type !== 'group' || !overItem || active.id === overId) {
-      setActiveId(null);
-      return;
-    }
-
-    const targetParentId = overItem.type === 'cluster' ? overItem.id : overItem.parentId;
-    if (!targetParentId || targetParentId === activeItem.parentId) {
+    const outcome = moveGroupNodeToCluster(flattenedNodes, active.id, over?.id);
+    if (outcome.kind === 'same-cluster') {
       toast('같은 분류 안의 순서는 저장되지 않습니다. 다른 분류로 이동해 주세요.', 'info');
       setActiveId(null);
       return;
     }
-
-    const remainingNodes = flattenedNodes.filter((node) => node.id !== activeItem.id);
-    const targetClusterIndex = remainingNodes.findIndex(
-      (node) => node.type === 'cluster' && node.id === targetParentId,
-    );
-    if (targetClusterIndex < 0) {
+    if (outcome.kind !== 'moved') {
       setActiveId(null);
       return;
     }
 
-    let insertionIndex = targetClusterIndex + 1;
-    while (
-      insertionIndex < remainingNodes.length
-      && remainingNodes[insertionIndex].type === 'group'
-      && remainingNodes[insertionIndex].parentId === targetParentId
-    ) {
-      insertionIndex += 1;
-    }
-    const movedItem: FlattenedCodeNode = { ...activeItem, parentId: targetParentId };
-    setFlattenedNodes([
-      ...remainingNodes.slice(0, insertionIndex),
-      movedItem,
-      ...remainingNodes.slice(insertionIndex),
-    ]);
-    setSelectedClusterId(targetParentId);
+    setFlattenedNodes(outcome.nextNodes);
+    setSelectedClusterId(outcome.targetParentId);
     hierarchyRevisionRef.current += 1;
     setHasExplorerChanges(true);
     toast('코드 그룹의 소속 분류가 변경되었습니다.', 'info');
-
     setActiveId(null);
   };
 
@@ -580,15 +496,14 @@ export default function CommonCodeClient({
    * (상세 목록은 기존 useQuery 경로가 이어받는다. 신규 조회 경로를 만들지 않는다.)
    */
   const handlePickCode = ({ group, code }: CodePickerSelection) => {
-    const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.cdId === group.cdId));
-    const treeGroup = cluster ? (cluster.groups || []).find(g => g?.cdId === group.cdId) : null;
-    if (!cluster || !treeGroup) {
+    const found = findGroupInClusters(initialClusters, group.cdId);
+    if (!found) {
       toast('선택한 코드 그룹을 현재 탐색기에서 찾을 수 없습니다. 데이터를 새로고침한 뒤 다시 시도해 주세요.', 'error');
       return;
     }
     setSearchQuery('');
-    setSelectedClusterId(cluster.id);
-    setSelectedGroup(treeGroup);
+    setSelectedClusterId(found.cluster.id);
+    setSelectedGroup(found.group);
     toast(`‘${code.dtlCdNm}’(${code.dtlCd}) — ${group.cdIdNm} 그룹이 선택되었습니다.`, 'success');
   };
 
@@ -602,11 +517,7 @@ export default function CommonCodeClient({
     previousSelectedGroupIdRef.current = nextSelectedGroupId;
     selectedGroupSeedHierarchyRef.current = hierarchySignature;
 
-    const findGroup = (groupId: string) => {
-      const cluster = initialClusters.find((item) => item.groups.some((group) => group.cdId === groupId));
-      const group = cluster?.groups.find((item) => item.cdId === groupId);
-      return cluster && group ? { cluster, group } : null;
-    };
+    const findGroup = (groupId: string) => findGroupInClusters(initialClusters, groupId);
     const revealSelectionIfHidden = (nodeId: string) => {
       if (!searchQuery) return;
       const nextVisibleNodes = filterCodeNodes(flattenCodeTree(initialClusters), searchQuery);
@@ -811,27 +722,8 @@ export default function CommonCodeClient({
     });
   };
 
-  /* 셀 py-4 오버라이드를 제거해 표 밀도를 --cell-py(밀도 축) 단일 소스로 되돌린다. */
   const columns: Column<CmmnDetailCode>[] = [
-    {
-      header: '코드',
-      accessor: (item: CmmnDetailCode) => <span className="font-black text-foreground tracking-tight text-xs">{item.dtlCd}</span>,
-      className: 'w-24'
-    },
-    {
-      header: '코드 명칭',
-      accessor: (item: CmmnDetailCode) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="font-black text-foreground tracking-tighter text-sm">{item.dtlCdNm}</span>
-          <span className="line-clamp-1 text-xs text-muted-foreground">{item.dtlCdExpln || '등록된 설명 없음'}</span>
-        </div>
-      )
-    },
-    {
-      header: '상태',
-      accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} variant={item.useYn === 'Y' ? 'success' : 'secondary'} />,
-      className: 'w-32'
-    },
+    ...COMMON_DETAIL_COLUMNS,
     // 수정·삭제 권한이 하나도 없으면 관리 열을 두지 않는다.
     ...(canUpdateCode || canDeleteCode ? [{
       header: '관리',
@@ -877,7 +769,6 @@ export default function CommonCodeClient({
 
   const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
   const saveDisabled = !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen;
-  const DetailSubheading = embedded ? 'h4' : 'h3';
 
   return (
     <div>
@@ -1007,90 +898,37 @@ export default function CommonCodeClient({
           : selectedNode?.type === 'cluster'
             ? `분류 코드 ${selectedNode.id}`
             : undefined}
-        detailActions={selectedGroup ? (
-          /* 주 과업(상세 코드 등록)이 먼저다 — 목록에서 Tab 을 누르면 상세 액션의 첫 버튼으로 이동한다(A2 계약). */
-          <div className="flex flex-wrap items-center gap-2">
-            {canCreateCode && (
-              <Button type="button" onClick={handleCreateDetail} disabled={isDetailWritePending || isModalOpen} className="gap-2">
-                <Plus size={16} aria-hidden="true" /> 신규 상세 코드 등록
-              </Button>
-            )}
-            {canUpdateCode && (
-              <Button type="button" variant="outline" onClick={openEditGroup} disabled={isStructureFormPending} className="gap-2">
-                <Settings size={16} aria-hidden="true" /> 그룹 수정
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setHistoryTarget({ kind: 'group', id: selectedGroup.cdId, name: selectedGroup.cdIdNm || selectedGroup.cdId })}
-              className="gap-2"
-            >
-              <History size={16} aria-hidden="true" /> 변경 이력
-            </Button>
-          </div>
-        ) : selectedNode?.type === 'cluster' ? (
-          <div className="flex flex-wrap items-center gap-2">
-            {canUpdateCode && (
-              <Button type="button" variant="outline" onClick={openEditCluster} disabled={isStructureFormPending} className="gap-2">
-                <Settings size={16} aria-hidden="true" /> 분류 수정
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setHistoryTarget({ kind: 'cluster', id: selectedNode.id, name: selectedNode.name || selectedNode.id })}
-              className="gap-2"
-            >
-              <History size={16} aria-hidden="true" /> 변경 이력
-            </Button>
-          </div>
-        ) : undefined}
-        detail={selectedNode?.type === 'group' ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted p-3">
-              <div className="flex items-center gap-3">
-                <Fingerprint size={18} className="text-primary" aria-hidden="true" />
-                <div>
-                  <DetailSubheading className="text-sm font-semibold text-foreground">상세 코드</DetailSubheading>
-                  <p className="text-xs text-muted-foreground">{detailsLoading ? '불러오는 중…' : `총 ${detailList.length}건`}</p>
-                </div>
-              </div>
-              <div className="text-right text-xs text-muted-foreground">
-                <span>사용 / 미사용</span>
-                <strong className="ml-2 tabular-nums text-foreground">
-                  {detailList.filter((detail) => detail.useYn === 'Y').length} / {detailList.filter((detail) => detail.useYn !== 'Y').length}
-                </strong>
-              </div>
-            </div>
-            <StandardDataTable<CmmnDetailCode>
-              columns={columns}
-              data={detailList}
-              loading={detailsLoading && detailList.length === 0}
-              error={detailsError}
-              onRetry={() => refetchDetails()}
-              keyField="dtlCd"
-              emptyMessage="데이터가 존재하지 않습니다."
-              className="border-none shadow-none bg-transparent"
+        detailActions={
+          selectedGroup || selectedNode?.type === 'cluster' ? (
+            <CommonCodeDetailActions
+              selectedGroup={selectedGroup}
+              selectedNode={selectedNode}
+              canCreateCode={canCreateCode}
+              canUpdateCode={canUpdateCode}
+              isDetailWritePending={isDetailWritePending}
+              isModalOpen={isModalOpen}
+              isStructureFormPending={isStructureFormPending}
+              onCreateDetail={handleCreateDetail}
+              onEditGroup={openEditGroup}
+              onEditCluster={openEditCluster}
+              onOpenHistory={setHistoryTarget}
             />
-          </div>
-        ) : selectedNode?.type === 'cluster' ? (
-          <section className="space-y-3" aria-labelledby="selected-code-classification-heading">
-            <DetailSubheading id="selected-code-classification-heading" className="text-sm font-semibold text-foreground">코드 분류 정보</DetailSubheading>
-            <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-xs text-muted-foreground">분류 코드</dt>
-                <dd className="mt-1 font-mono text-sm font-semibold text-foreground">{selectedNode.id}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">포함 그룹</dt>
-                <dd className="mt-1 text-sm font-semibold text-foreground">
-                  {groupCountOf(selectedNode.id)}개
-                </dd>
-              </div>
-            </dl>
-          </section>
-        ) : undefined}
+          ) : undefined
+        }
+        detail={
+          selectedNode?.type === 'group' || selectedNode?.type === 'cluster' ? (
+            <CommonCodeDetailPanel
+              selectedNode={selectedNode}
+              embedded={embedded}
+              detailsLoading={detailsLoading}
+              detailList={detailList}
+              detailsError={detailsError as Error | null}
+              columns={columns}
+              groupCount={selectedNode.type === 'cluster' ? groupCountOf(selectedNode.id) : 0}
+              onRetryDetails={() => { void refetchDetails(); }}
+            />
+          ) : undefined
+        }
         emptyDetailTitle="선택된 코드 없음"
         emptyDetailDescription="왼쪽 목록에서 코드 분류 또는 그룹을 선택하세요."
         onSaveShortcut={canUpdateCode ? handleSaveExplorerChanges : undefined}

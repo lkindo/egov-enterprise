@@ -46,8 +46,13 @@ public class TmplatInfoService extends BaseAbstractService implements TemplateAs
         this.referenceContributors = referenceContributors == null ? List.of() : List.copyOf(referenceContributors);
     }
 
+    private static final Comparator<Template> TEMPLATE_ORDER = Comparator
+            .comparing((Template template) -> Objects.requireNonNullElse(template.getTmpltNm(), ""))
+            .thenComparing(Template::getTmpltId, Comparator.nullsLast(Comparator.naturalOrder()));
+
     public List<TemplateDto> selectTmplatInfoList() {
         return templateRepository.findAll().stream()
+                .sorted(TEMPLATE_ORDER)
                 .map(templateMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -70,8 +75,7 @@ public class TmplatInfoService extends BaseAbstractService implements TemplateAs
         SecurityUtil.assertPermission("TEMPLATE_READ");
         return templateRepository.findAll().stream()
                 .filter(template -> template.getTmpltId() != null && "Y".equals(template.getUseYn()))
-                .sorted(Comparator.comparing((Template template) -> Objects.requireNonNullElse(template.getTmpltNm(), ""))
-                        .thenComparing(Template::getTmpltId))
+                .sorted(TEMPLATE_ORDER)
                 .map(template -> new AssignableTemplate(template.getTmpltId(), template.getTmpltNm()))
                 .toList();
     }

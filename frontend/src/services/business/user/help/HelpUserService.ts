@@ -83,7 +83,7 @@ class HelpUserService extends ApiService {
         size: response.size ?? 0,
       };
     }
-    return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<FAQ>;
+    return { list: [], total: 0, totalPage: 0, page: 0, size: 0 };
   }
 
   /** FAQ 공개 상세 조회. 목록 projection에 없는 답변 본문을 펼침 시에만 가져온다. */

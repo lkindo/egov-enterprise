@@ -98,7 +98,7 @@ class SentMailRepositoryTest {
         assertThat(sentMailRepository.claimForResend(others, "owner", now, stuckBefore)).isZero();
 
         SentMail claimed = sentMailRepository.findById(failed).orElseThrow();
-        assertThat(claimed.getDsptchRsltCd()).isEqualTo("P");
+        assertThat(claimed.getDsptchRsltCd()).isEqualTo("Q");
         assertThat(claimed.getDsptchDt()).isEqualTo(now);
         // 같은 요청을 두 번 보내면 두 번째는 진다 — 방금 대기로 바뀐 행은 멈춘 대기가 아니다.
         assertThat(sentMailRepository.claimForResend(failed, "owner", now, stuckBefore)).isZero();
@@ -234,7 +234,7 @@ class SentMailRepositoryTest {
     }
 
     private MailService searchService() {
-        return new MailService(sentMailRepository, mock(MailAsyncProcessor.class), mock(UserContactService.class),
+        return new MailService(sentMailRepository, mock(nuri.foundation.core.job.DurableWorkPort.class), mock(UserContactService.class),
                 mock(EmailSender.class));
     }
 

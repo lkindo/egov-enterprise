@@ -465,10 +465,10 @@ class MemoReportServiceTest {
     @Test
     @DisplayName("메모보고 삭제")
     void deleteMemoReport() {
-        // given — 소유권 가드용 findById(삭제 시 findById→delete 로 변경됨)
+        // 지시 변경과 같은 행 잠금을 얻은 뒤 소유권과 삭제 가능 상태를 검사한다.
         Long memoRptSn = 1L;
         nuri.business.domain.memoreport.MemoReport entity = org.mockito.Mockito.mock(nuri.business.domain.memoreport.MemoReport.class);
-        org.mockito.Mockito.when(memoReportRepository.findById(memoRptSn)).thenReturn(java.util.Optional.of(entity));
+        org.mockito.Mockito.when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(java.util.Optional.of(entity));
 
         // when
         memoReportService.deleteMemoReport(memoRptSn);
@@ -601,7 +601,7 @@ class MemoReportServiceTest {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
         entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_DELETE_ALL")).thenReturn(false);
 
         BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,

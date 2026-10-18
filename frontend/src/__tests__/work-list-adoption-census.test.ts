@@ -110,7 +110,7 @@ const ADOPTER_SCREENS = [
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx',
   'src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx',
   'src/app/help/HelpClient.tsx',
-  'src/app/note/page.tsx',
+  'src/app/note/NoteHubClient.tsx',
   'src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx',
   'src/app/smart-toolkit/work-report/WorkReportClient.tsx',
   'src/app/survey/SurveyClient.tsx',
@@ -163,13 +163,27 @@ function paginationBlocks(code: string): string[] {
   return blocks;
 }
 
+/**
+ * 같은 폴더의 화면이 `./조각` 으로 불러 쓰는 파일. 셸 화면의 표시 조각은 그 화면의 일부라, 화면을 여러 파일로 나눠도
+ * 판정이 바뀌지 않아야 한다(2026-10-18 트랙 B — 공통코드 상세 표가 A2 화면의 CodeTreeNode 로, 사용자·조직 허브의 조각이
+ * UserOrgHubParts 로 옮겨졌다). 같은 폴더의 직접 import 만 본다 — 공용 컴포넌트는 어느 셸 화면이 불러도 자기 판정을 받는다.
+ */
+function siblingImports(path: string, source: string): string[] {
+  return [...codeWithoutComments(source, path).matchAll(/from\s+['"]\.\/([^'"/]+)['"]/g)]
+    .map(([, name]) => join(dirname(path), /\.tsx?$/.test(name) ? name : `${name}.tsx`));
+}
+
 function census() {
   const adopters: string[] = [];
   const directOnly: string[] = [];
   const frameUsers: string[] = [];
 
-  for (const path of screenFiles(APP_DIR)) {
-    const source = readFileSync(path, 'utf8');
+  const screens = screenFiles(APP_DIR).map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+  const shellFragments = new Set(screens
+    .filter(({ source }) => [SHELL_IMPORT, ...OTHER_SHELL_IMPORTS, ...A1_FRAME_IMPORTS].some((shell) => source.includes(shell)))
+    .flatMap(({ path, source }) => siblingImports(path, source)));
+
+  for (const { path, source } of screens) {
     const usesShell = source.includes(SHELL_IMPORT);
     const usesOtherShell = OTHER_SHELL_IMPORTS.some((shell) => source.includes(shell));
     const usesFrame = A1_FRAME_IMPORTS.some((frame) => source.includes(frame));
@@ -178,7 +192,7 @@ function census() {
 
     if (usesShell) adopters.push(relativePath);
     else if (usesFrame) frameUsers.push(relativePath);
-    else if (usesTable && !usesOtherShell) directOnly.push(relativePath);
+    else if (usesTable && !usesOtherShell && !shellFragments.has(path)) directOnly.push(relativePath);
   }
 
   return { adopters: adopters.sort(), directOnly: directOnly.sort(), frameUsers: frameUsers.sort() };

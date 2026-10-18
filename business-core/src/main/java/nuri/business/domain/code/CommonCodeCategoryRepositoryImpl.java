@@ -2,6 +2,7 @@ package nuri.business.domain.code;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,6 +16,13 @@ import static nuri.business.domain.code.QCommonCodeCategory.commonCodeCategory;
 public class CommonCodeCategoryRepositoryImpl implements CommonCodeCategoryRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+    private final EntityManager entityManager;
+
+    @Override
+    public void insert(CommonCodeCategory code) {
+        entityManager.persist(code);
+        entityManager.flush();
+    }
 
     @Override
     public Page<CommonCodeCategory> searchCommonCodeCategories(String searchCondition, String searchKeyword,

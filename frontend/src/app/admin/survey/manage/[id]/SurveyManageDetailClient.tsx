@@ -203,9 +203,9 @@ export default function SurveyManageDetailClient() {
                               화면이 존재를 몰랐다 — 관리자는 자기가 만든 설문의 선택지를 어디에서도 볼 수
                               없었다. 등록 화면이 4개를 고정하므로 실제로 무엇이 저장됐는지는 더욱 중요하다.
 
-                              여기서 고칠 수는 없다: updatePoll 은 항목을 clear-and-recreate 하는데
-                              tb_onln_poll_rslt.poll_artcl_sn → tb_onln_poll_artcl 외래키가 NO ACTION 이라
-                              (V2_67) 투표가 한 건이라도 있으면 저장이 실패한다. 항목 단건 수정 경로도 없다
+                              여기서 고칠 수는 없다: updatePoll 은 항목을 pollArtclSn 으로 맞추고 응답이 모인
+                              항목을 지우거나 이름을 바꾸는 요청을 409 로 거절한다(2026-10-18). 응답 선택지의
+                              뜻은 응답이 모인 뒤 바꾸지 않는다(DEC-OPS-342). 항목 단건 수정 경로도 없다
                               (어느 컨트롤러도 노출하지 않던 OnlinePollService.updatePollItem 은 2026-10-07 걷었다).
                               그래서 편집 컨트롤을 두지 않고, 못 고친다는 사실을 그대로 적는다.
                             */}

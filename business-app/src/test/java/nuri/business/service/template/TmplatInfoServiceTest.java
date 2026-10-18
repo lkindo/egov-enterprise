@@ -65,16 +65,20 @@ class TmplatInfoServiceTest {
     }
 
     @Test
-    @DisplayName("템플릿 목록 조회")
+    @DisplayName("템플릿 목록 조회는 이름·ID 순으로 정렬해 반환한다")
     void selectTmplatInfoList() {
         // given
-        when(templateRepository.findAll()).thenReturn(Collections.emptyList());
+        when(templateRepository.findAll()).thenReturn(List.of(
+                Template.builder().tmpltId("TMPLT_002").tmpltNm("나 템플릿").useYn("Y").build(),
+                Template.builder().tmpltId("TMPLT_003").tmpltNm("가 템플릿").useYn("N").build(),
+                Template.builder().tmpltId("TMPLT_001").tmpltNm("가 템플릿").useYn("Y").build()));
 
         // when
         List<TemplateDto> result = tmplatInfoService.selectTmplatInfoList();
 
         // then
-        assertThat(result).isEmpty();
+        assertThat(result).extracting(TemplateDto::getTmpltId)
+                .containsExactly("TMPLT_001", "TMPLT_003", "TMPLT_002");
         verify(templateRepository, times(1)).findAll();
     }
 

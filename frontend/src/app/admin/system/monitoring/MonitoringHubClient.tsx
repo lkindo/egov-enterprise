@@ -54,6 +54,7 @@ import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monitoring-tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChartColors } from '@/lib/hooks/useChartColors';
 import { visibleEntries } from '@/extensions/slots';
 import { hubTabsMonitoring } from '@/extensions/generated-hub-tabs-monitoring';
 
@@ -135,6 +136,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   //   이제 ?tab=policy 는 어떤 탭에도 맞지 않아 기본 탭으로 내려간다 — 없는 탭을 있는 척하지 않는다.
   // 부가 탭은 이 구성에서 보이는 기여 탭이다. 해석은 셸 고유 탭과 그 기여 탭 값만 받는다(모르는 값은 기본 탭).
   const { user } = useAuth();
+  const chartColors = useChartColors();
   const contributedTabs = useMemo(() => visibleEntries(user, hubTabsMonitoring), [user]);
   const activeTab = parseMonitoringTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id))
     ?? (MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY');
@@ -500,8 +502,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
       {/* 실측(액추에이터) 기반 지표 */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
-        <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
+        <GaugeChart value={cpuUsage === null ? null : Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color={chartColors.series[1]} />
+        <GaugeChart value={memUsage === null ? null : Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color={chartColors.series[0]} />
       </div>
 
       {/*
@@ -519,12 +521,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
            <RealtimeSparkline
               label="NETWORK_TRAFFIC (PPS)"
               data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]}
-              color="#F59E0B"
+              color={chartColors.series[2]}
            />
            <RealtimeSparkline
               label="DB_LATENCY (MS)"
               data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]}
-              color="#8B5CF6"
+              color={chartColors.series[3]}
            />
         </div>
 

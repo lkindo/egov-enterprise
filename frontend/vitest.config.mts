@@ -38,6 +38,10 @@ export default defineConfig({
         'src/services/**',
         'src/constants/**',
         'src/config/**',
+        // [2026-10-18] queries·extensions 도 화면이 실제로 실행하는 코드라 분모에 넣었다. 그 실행에서
+        //   676개 파일·lines 87.80 / branches 79.74 / statements 85.54 / functions 82.58 이고 하한은 그대로다.
+        'src/queries/**',
+        'src/extensions/**',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',
@@ -45,6 +49,8 @@ export default defineConfig({
         //   generated-api.d.ts 17,196줄 · generated-zod.ts 3,904줄.
         //   이 둘의 정합은 커버리지가 아니라 codegen:verify 게이트가 지킨다.
         'src/types/**',
+        // 슬롯 등록 생성물(scripts/slot-registry.mjs) — 같은 이유로 분모에서 뺀다.
+        'src/extensions/generated-*.ts',
         // 타입 선언만 있는 파일은 런타임 코드가 없다.
         '**/*.d.ts',
         // 테스트 하네스 자신.

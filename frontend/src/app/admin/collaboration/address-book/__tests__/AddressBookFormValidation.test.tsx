@@ -12,6 +12,8 @@ import { AddressBookMemberDialog } from '../AddressBookMemberDialog';
 import SelectAddressBookDetailClient from '../select-address-book-detail/[id]/SelectAddressBookDetailClient';
 
 const mocks = vi.hoisted(() => ({
+  permissions: ['ADBK_CREATE', 'ADBK_UPDATE', 'ADBK_DELETE'] as string[],
+  authorizationVersion: 'v1',
   back: vi.fn(),
   createAddressBook: vi.fn(),
   confirm: vi.fn(),
@@ -22,6 +24,11 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
   updateAddressBook: vi.fn(),
 }));
+
+beforeEach(() => {
+  mocks.permissions = ['ADBK_CREATE', 'ADBK_UPDATE', 'ADBK_DELETE'];
+  mocks.authorizationVersion = 'v1';
+});
 
 const EDIT_TOKEN = 'a'.repeat(64);
 const LATEST_EDIT_TOKEN = 'b'.repeat(64);
@@ -38,7 +45,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'user-1', name: '테스트 사용자' }, loading: false }),
+  useAuth: () => ({ user: { id: 'user-1', name: '테스트 사용자', permissions: mocks.permissions, authorizationVersion: mocks.authorizationVersion }, loading: false }),
 }));
 
 vi.mock('@/services/business/user/addressbook/AddressbookUserService', () => ({
@@ -75,8 +82,83 @@ function renderDetail() {
       <SelectAddressBookDetailClient />
     </QueryClientProvider>,
   );
-  return { ...view, queryClient };
+  return { ...view, queryClient, rerenderDetail: () => view.rerender(
+    <QueryClientProvider client={queryClient}><SelectAddressBookDetailClient /></QueryClientProvider>,
+  ) };
 }
+
+describe('주소록 행위 권한', () => {
+  const member = { adbkMbrSn: 41, nm: '구성원 갑', emlAddr: '' };
+  const book = { adbkSn: 7, adbkNm: '읽을 주소록', rlsScopeCd: 'G', editToken: EDIT_TOKEN, wrterId: 'user-1', crtDt: '', adbkMan: [member] };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getAddressBook.mockResolvedValue(book);
+    mocks.updateAddressBook.mockResolvedValue(undefined);
+    mocks.deleteAddressBook.mockResolvedValue(undefined);
+    mocks.invalidateQueries.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
+  });
+
+  it.each([
+    { permissions: ['ADBK_READ'], update: false, remove: false },
+    { permissions: ['ADBK_UPDATE'], update: true, remove: false },
+    { permissions: ['ADBK_DELETE'], update: false, remove: true },
+  ])('상세는 각 행위 권한만 연다: $permissions', async ({ permissions, update, remove }) => {
+    mocks.permissions = permissions;
+    renderDetail();
+    const name = await screen.findByRole('textbox', { name: /주소록 명칭/ });
+    expect(name.hasAttribute('readonly')).toBe(!update);
+    expect(screen.queryByRole('button', { name: '구성원 추가' }) !== null).toBe(update);
+    expect(screen.queryByRole('button', { name: '구성원 갑 수정' }) !== null).toBe(update);
+    expect(screen.queryByRole('button', { name: '구성원 갑 삭제' }) !== null).toBe(update);
+    expect(screen.queryByRole('button', { name: /저장$/ }) !== null).toBe(update);
+    expect(screen.queryByRole('button', { name: '읽을 주소록 주소록 삭제' }) !== null).toBe(remove);
+    if (!update) fireEvent.submit(name.closest('form')!);
+    expect(mocks.updateAddressBook).not.toHaveBeenCalled();
+    expect(mocks.deleteAddressBook).not.toHaveBeenCalled();
+  });
+
+  it('권한 스냅샷 없이 등록 폼을 직접 제출해도 쓰지 않는다', async () => {
+    mocks.authorizationVersion = '';
+    render(<AddressBookCreateDialog isOpen onClose={() => {}} onCreated={() => {}} />);
+    const name = screen.getByRole('textbox', { name: /주소록 명칭/ });
+    fireEvent.change(name, { target: { value: '등록 시도' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /구성원 성명/ }), { target: { value: '갑' } });
+    await act(async () => { fireEvent.submit(name.closest('form')!); });
+    expect(mocks.createAddressBook).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '주소록 등록' })).toBeDisabled();
+  });
+
+  it('구성원 편집 중 수정 권한을 잃어도 입력을 보존하고 제출은 막는다', () => {
+    const props = { book, member, onClose: vi.fn(), onSaved: vi.fn() };
+    const view = render(<AddressBookMemberDialog {...props} />);
+    const name = screen.getByRole('textbox', { name: /성명/ });
+    fireEvent.change(name, { target: { value: '편집한 이름' } });
+    mocks.permissions = ['ADBK_READ'];
+    view.rerender(<AddressBookMemberDialog {...props} />);
+    expect(name).toHaveValue('편집한 이름');
+    expect(screen.getByRole('button', { name: '구성원 저장' })).toBeDisabled();
+    fireEvent.submit(name.closest('form')!);
+    expect(mocks.updateAddressBook).not.toHaveBeenCalled();
+    expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { button: '읽을 주소록 주소록 삭제', permission: 'ADBK_DELETE' },
+    { button: '구성원 갑 삭제', permission: 'ADBK_UPDATE' },
+  ])('확인창에서 $permission 권한을 잃으면 확인 뒤에도 전송하지 않는다', async ({ button }) => {
+    let confirm!: (value: boolean) => void;
+    mocks.confirm.mockReturnValue(new Promise<boolean>((resolve) => { confirm = resolve; }));
+    const view = renderDetail();
+    fireEvent.click(await screen.findByRole('button', { name: button }));
+    mocks.permissions = ['ADBK_READ'];
+    view.rerenderDetail();
+    await act(async () => { confirm(true); });
+    expect(mocks.deleteAddressBook).not.toHaveBeenCalled();
+    expect(mocks.updateAddressBook).not.toHaveBeenCalled();
+  });
+});
 
 describe('address-book form validation contract', () => {
   beforeEach(() => {

@@ -296,6 +296,7 @@ describe('A2 master-detail adoption census', () => {
     const consumers = [
       ...menuModules,
       source('src/app/admin/user/UserOrgHubClient.tsx'),
+      source('src/app/admin/user/UserOrgHubParts.tsx'),
       readInProjection(inFrontend('src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx')) ?? '',
       // 조직 권한 일괄 관리도 선택 식별자(ognzId)를 가진 A2 소비자다 — 같은 금지 계약을 받는다.
       source('src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx'),

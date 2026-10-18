@@ -585,9 +585,9 @@ test('every computed Java port connection is an integration or a registration-on
     'board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
     'core>board (AttachmentSourceContributor)', 'core>board (DashboardItemProvider)', 'core>board (DataUsageStatisticsContributor)',
     'core>board (PostStatisticsContributor)', 'core>community (CommunityBoardAccessPort)', 'core>informalsanction (DashboardItemProvider)',
-    'core>mail (AttachmentSourceContributor)', 'core>memoreport (AttachmentSourceContributor)', 'core>note (AttachmentSourceContributor)',
+    'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>memoreport (AttachmentSourceContributor)', 'core>note (AttachmentSourceContributor)',
     'core>notification (DurableWorkHandler)', 'core>promotion (AttachmentSourceContributor)', 'core>report (AttachmentSourceContributor)',
-    'core>reward (AttachmentSourceContributor)', 'core>schedule (AttachmentSourceContributor)', 'dashboard>board (PostStatisticsContributor)',
+    'core>reward (AttachmentSourceContributor)', 'core>schedule (AttachmentSourceContributor)', 'core>sms (DurableWorkHandler)', 'dashboard>board (PostStatisticsContributor)',
     'dashboard>notification (PendingAlertCountContributor)', 'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
   ]);
   // 예외 객체가 필드로 쓰는 ErrorCode 는 빈의 주입이 아니라 연결이 아니다.
@@ -614,6 +614,11 @@ test('an unclassified, doubly classified, stale or never-degrading port connecti
   assert.equal(resolveIntegrations({ ...base, registrationOnlyPorts: registrationOnlyPorts }).length, catalog.integrates.length);
   const without = registrationOnlyPorts.filter(row => portKey(row) !== 'core>board (AttachmentSourceContributor)');
   assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: without }), /unclassified port connection: core>board \(AttachmentSourceContributor\)/);
+  for (const domain of ['mail', 'sms']) {
+    const missingHandler = registrationOnlyPorts.filter(row => !(row.from === 'core' && row.to === domain && row.port === 'DurableWorkHandler'));
+    assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: missingHandler }),
+      error => error.message.includes(`unclassified port connection: core>${domain} (DurableWorkHandler)`));
+  }
   const twice = [...registrationOnlyPorts, { from: 'board', to: 'community', port: 'CommunityBoardAccessPort', reason: '정리합니다.' }];
   assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: twice }), /port connection classified twice: board>community \(CommunityBoardAccessPort\)/);
   const never = [...registrationOnlyPorts, { from: 'dashboard', to: 'notification', port: 'PendingAlertCountContributor', reason: '정리합니다.' }];

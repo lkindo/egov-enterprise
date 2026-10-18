@@ -120,17 +120,23 @@ describe('AppNotificationDrawer notification-actions host', () => {
     const approve = screen.getByRole('button', { name: '결재 바로 승인: 결재 요청' });
     fireEvent.click(approve);
     await screen.findByRole('button', { name: '되돌리기: 결재 요청' });
-    const queuedLeave = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(queuedLeave);
-    expect(queuedLeave.defaultPrevented).toBe(true);
+    // 이탈 경고는 대기 상태를 그린 뒤 effect 가 건다 — 단추가 보인 순간에는 아직 걸리기 전일 수 있다(CI 부하에서 실패, 2026-10-18).
+    //   한 번 걸리고 한 번 풀리는 것을 기다려 본다. 기다림이 끝나도 상태가 틀리면 그대로 실패한다.
+    await waitFor(() => {
+      const queuedLeave = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(queuedLeave);
+      expect(queuedLeave.defaultPrevented).toBe(true);
+    });
 
     await act(async () => { settled.resolve({ kind: 'undone' }); await settled.promise; });
 
     expect(await screen.findByText('승인 처리를 되돌렸습니다.', { selector: 'p:not([aria-live])' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '되돌리기: 결재 요청' })).not.toBeInTheDocument();
-    const leave = new Event('beforeunload', { cancelable: true });
-    window.dispatchEvent(leave);
-    expect(leave.defaultPrevented).toBe(false);
+    await waitFor(() => {
+      const leave = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(leave);
+      expect(leave.defaultPrevented).toBe(false);
+    });
     expect(undo).not.toHaveBeenCalled();
     expect(mocks.toast).not.toHaveBeenCalled();
     // 대기 중에는 [승인] 자리에 되돌리기가 있었다 — 되돌림으로 옮기면 [승인] 이 다시 그려지고 누를 수 있다.

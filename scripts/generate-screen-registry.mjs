@@ -235,7 +235,8 @@ export function buildScreenRegistry(root = repoRoot) {
     [10단계 검토] 투영본의 귀속 0 은 그 항목을 그리던 셸·화면이 투영으로 지워졌다는 증거가 있을 때만 받는다. 원장이 있다는 것만으로는 받지
     않는다 — 원장과 무관하게 셸이 레지스트리를 읽지 않게 되거나 셸 import 가 끊긴 생성물(잘못 이은 슬롯 소비자)이 조용히 통과한다. 다음을
     모두 본다(원본 실행은 귀속 0 을 늘 거부한다).
-      · 소비자 표가 그 항목의 값에 적은 셸(레이아웃 셸 제외)이 하나 이상이다.
+      · 소비자 표가 그 항목의 값에 적은 셸이 하나 이상이다. 레이아웃 셸도 제거 증거를 확인한다 — 알림 없는 결재 구성처럼 기여 소유
+        기능은 남고 그 기여를 그리는 레이아웃 셸의 소유 기능만 빠질 수 있다. 남은 레이아웃 셸의 정상 연결은 아래 layout 분기가 판정한다.
       · 없는 셸은 원장에 있다 — 원장 밖 부재는 투영 결과가 아니다.
       · 남은 셸은 그 기여의 레지스트리를 읽는다 — 읽지 않으면 화면이 빠진 것이 아니라 연결이 끊긴 것이다.
       · 남은 셸을 import 하는 파일이 남지 않았다(셸이 고아다) — 남은 import 가 화면에 닿지 않으면 연결 결함이다. 그리고 원장이 화면(page)
@@ -250,8 +251,7 @@ export function buildScreenRegistry(root = repoRoot) {
     const slot = slotPathKind(file).slot;
     const partition = slotConsumerPartition(slot);
     const value = partition ? entry[partition.key] : null;
-    const declared = (partition ? (Object.hasOwn(partition.consumers, value) ? partition.consumers[value] : []) : slotConsumerFiles(slot))
-      .filter(shell => !LAYOUT_SHELL_FILES.includes(shell));
+    const declared = partition ? (Object.hasOwn(partition.consumers, value) ? partition.consumers[value] : []) : slotConsumerFiles(slot);
     if (declared.length === 0) throw fail('그 항목을 그리는 셸이 소비자 표에 없다');
     const removedShells = [];
     const orphanedShells = [];

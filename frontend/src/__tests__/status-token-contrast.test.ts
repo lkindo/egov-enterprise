@@ -124,4 +124,21 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
         '(배지 전경 토큰 -foreground 를 이 자리에 쓰면 안 된다는 것이 2026-08-22 실결함이었다.)',
     ).toBeGreaterThanOrEqual(AA_TEXT);
   });
+
+  it.each(['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'] as const)(
+    '차트 다계열 마크: --%s 가 페이지 배경·카드 위에서 라이트·다크 모두 비텍스트 대비(3:1) 이상이다',
+    (chartToken) => {
+      for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+        const value = get(tokens, `--${chartToken}`);
+        for (const adjacent of ['--background', '--card'] as const) {
+          const ratio = contrast(value, get(tokens, adjacent));
+          expect(
+            ratio,
+            `[${mode}] --${chartToken}(${value}) on ${adjacent} = ${ratio.toFixed(2)}:1 — ` +
+              '차트 데이터 마크는 WCAG 1.4.11 비텍스트 대비(3:1) 이상이어야 합니다.',
+          ).toBeGreaterThanOrEqual(3.0);
+        }
+      }
+    },
+  );
 });

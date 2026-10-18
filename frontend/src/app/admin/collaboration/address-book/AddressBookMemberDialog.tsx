@@ -10,6 +10,8 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { addressbookUserService, type AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import type { NameCard } from '@/types/business/addressbook';
 import { AddressBookConflictNotice, isAddressBookConflict } from './AddressBookConflictNotice';
@@ -48,6 +50,8 @@ export function AddressBookMemberDialog({
   onSaved: () => void;
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const canUpdateAddressBook = canPermission(user, 'ADBK_UPDATE');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [snapshot, setSnapshot] = useState(book);
@@ -100,7 +104,7 @@ export function AddressBookMemberDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (submitPendingRef.current || hasConflict) return;
+    if (!canUpdateAddressBook || submitPendingRef.current || hasConflict) return;
     const validated = validation.validate(form);
     if (!validated) return;
     if (!snapshot.editToken) {
@@ -155,6 +159,7 @@ export function AddressBookMemberDialog({
       closeDisabled={isSubmitting}
     >
       <form id="address-book-member-form" onSubmit={handleSubmit} noValidate className="space-y-6">
+        {!canUpdateAddressBook && <p role="status">주소록 수정 권한이 없습니다. 입력한 내용은 유지됩니다.</p>}
         <FormErrorSummary
           errors={validation.errors}
           labels={addressBookMemberValidationLabels}
@@ -252,7 +257,7 @@ export function AddressBookMemberDialog({
           <Button type="button" variant="outline" onClick={requestClose} disabled={isSubmitting}>
             취소
           </Button>
-          <Button type="submit" disabled={isSubmitting || hasConflict} aria-busy={isSubmitting || undefined}>
+          <Button type="submit" disabled={!canUpdateAddressBook || isSubmitting || hasConflict} aria-busy={isSubmitting || undefined}>
             {isSubmitting ? '저장 중…' : isEdit ? '구성원 저장' : '구성원 추가'}
           </Button>
         </div>

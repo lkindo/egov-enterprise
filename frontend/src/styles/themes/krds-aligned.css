@@ -28,6 +28,11 @@
     --hub-emerald: 133.1 59.8% 33.1%; /* #228738 success-50 */
     --hub-rose: 354.9 65.1% 53.9%; /* #D63D4A point-50 */
     --hub-amber: 40.2 100% 19%; /* #614100 warning-70(텍스트 겸용 진한 앰버) */
+    --chart-1: 218.8 90.4% 55.1%; /* #256EF4 primary-50 */
+    --chart-2: 133.1 59.8% 33.1%; /* #228738 success-50 */
+    --chart-3: 40.2 100% 19%; /* #614100 warning-70 */
+    --chart-4: 262.1 83.3% 57.8%; /* #7C3AED DEVIATION: 공식 purple 계열 없음 — premium 값 유지 */
+    --chart-5: 354.9 65.1% 53.9%; /* #D63D4A point-50 */
     --primary: 218.8 90.4% 55.1%; /* #256EF4 primary-50 */
     --primary-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
     --secondary: 213.3 36% 95.1%; /* #EEF2F7 secondary-5 */
@@ -111,6 +116,11 @@
     --hub-rose: 354.9 65.1% 68%;
     --hub-amber: 40.2 100% 55%;
     --hub-orange: 17.5 88.3% 60%;
+    --chart-1: 219.2 90.4% 63.1%; /* #4C87F6 primary-40 */
+    --chart-2: 133.1 59.8% 58%;
+    --chart-3: 40.2 100% 55%;
+    --chart-4: 262.1 83.3% 68%;
+    --chart-5: 354.9 65.1% 68%;
     --border: 222 8.9% 22%; /* #33363D gray-80 */
     --input: 222 8.9% 22%; /* #33363D gray-80 */
     --ring: 219.2 90.4% 63.1%; /* #4C87F6 primary-40 */

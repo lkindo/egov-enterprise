@@ -16,6 +16,29 @@ class DurableWorkTest {
     private static final UUID KEY = UUID.fromString("83f52cc1-a496-4a15-a88b-fc3c0bfa45d9");
 
     @Test
+    @DisplayName("기존 handler는 종료 알림으로 재전달되거나 참조 payload와 동시성 정책이 바뀌지 않는다")
+    void legacyHandlerDefaultsPreserveDeliveryAndReferencePayloadPolicy() {
+        var deliveries = new java.util.ArrayList<DurableWork>();
+        DurableWorkHandler handler = new DurableWorkHandler() {
+            @Override public String type() { return "FILE_DELETE"; }
+            @Override public void execute(DurableWork work) { deliveries.add(work); }
+        };
+        DurableWork work = new DurableWork(KEY, handler.type(), "immutable-storage-reference");
+
+        handler.execute(work);
+        assertThat(deliveries).containsExactly(work);
+        handler.onTerminal(work, true);
+        assertThat(deliveries).containsExactly(work);
+        handler.onTerminal(work, false);
+        assertThat(deliveries).containsExactly(work);
+
+        // 기존 파일 삭제·알림 handler의 참조와 처리량을 유지한다. 민감 payload 삭제와
+        // 유형별 실행 상한은 이를 필요로 하는 새 handler가 명시적으로 선택해야 한다.
+        assertThat(handler.discardPayloadOnCompletion()).isFalse();
+        assertThat(handler.maximumConcurrentExecutions()).isEqualTo(Integer.MAX_VALUE);
+    }
+
+    @Test
     @DisplayName("재시도 식별자와 참조 payload를 정규화하거나 다시 생성하지 않는다")
     void preservesReplayKeyAndReferencePayload() {
         String payload = "{\"notificationId\":17,\"receiver\":\"SUBJECT_2\"}";

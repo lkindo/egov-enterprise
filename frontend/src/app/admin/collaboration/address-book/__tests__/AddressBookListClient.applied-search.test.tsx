@@ -7,6 +7,8 @@ import AddressBookListClient from '../select-address-book-list/AddressBookListCl
 
 const mocks = vi.hoisted(() => ({ getAddressBooks: vi.fn() }));
 
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['ADBK_READ'], authorizationVersion: 'v1' } }) }));
+
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
 }));

@@ -4470,6 +4470,7 @@ export const StatusSchema = /*#__PURE__*/ (() => z.object({
   attempts: z.number().int().optional(),
   availableAt: z.iso.datetime({ offset: true, local: true }).optional(),
   completedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  retryable: z.boolean().optional(),
 }))();
 export type Status = z.infer<typeof StatusSchema>;
 
@@ -11936,6 +11937,7 @@ export const StatusRequestSchema = /*#__PURE__*/ (() => z.object({
   attempts: z.number().int().optional(),
   availableAt: z.iso.datetime({ offset: true, local: true }).optional(),
   completedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  retryable: z.boolean().optional(),
 }))();
 
 export const StatusResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -11945,6 +11947,7 @@ export const StatusResponseSchema = /*#__PURE__*/ (() => z.object({
   attempts: z.number().int().optional().nullable(),
   availableAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   completedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  retryable: z.boolean().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseDeptAuthorProjectionRequestSchema = /*#__PURE__*/ (() => z.object({

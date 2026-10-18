@@ -310,8 +310,8 @@ export function SurveyFormDialog({
 
         {/*
           등록 시점에 선택지가 무엇으로 굳는지 **미리** 말한다. 나중에 바꿀 수 없기 때문이다 —
-          updatePoll 은 항목을 clear-and-recreate 하는데 tb_onln_poll_rslt → tb_onln_poll_artcl 외래키가
-          NO ACTION(V2_67) 이라 투표가 한 건이라도 있으면 저장이 실패한다.
+          updatePoll 은 항목을 pollArtclSn 으로 맞추고, 응답이 모인 항목을 지우거나 이름을 바꾸는 요청은
+          409 로 거절한다(2026-10-18, 그 전에는 위치로 맞춰 다른 항목의 결과가 옮겨 갈 수 있었다).
         */}
         {isEdit ? null : (
           <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">

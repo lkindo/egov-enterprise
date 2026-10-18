@@ -70,8 +70,9 @@ interface GaugeChartProps {
  className?: string;
 }
 
-export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', className }: GaugeChartProps) {
+export function GaugeChart({ value, title, unit = '%', color, className }: GaugeChartProps) {
   const c = useChartColors();
+  const activeColor = color ?? c.accent;
   // [2026-09-15 DEC-OPS-100] 조회 실패·미측정을 0% 로 그리지 않는다(formatRules.number.unknownAsZero).
   const measured = typeof value === 'number' && Number.isFinite(value) ? value : null;
 
@@ -100,7 +101,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
               dataKey="value"
               stroke="none"
             >
-              <Cell key="gauge-active" fill={color} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+              <Cell key="gauge-active" fill={activeColor} className="drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
               <Cell key="gauge-muted" fill={c.muted} />
             </Pie>
           </PieChart>
@@ -131,7 +132,9 @@ interface SparklineProps {
  label: string;
 }
 
-export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineProps) {
+export function RealtimeSparkline({ data, color, label }: SparklineProps) {
+  const c = useChartColors();
+  const activeColor = color ?? c.accent;
   return (
     <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-lg">
       <div className="flex justify-between items-center">
@@ -146,7 +149,7 @@ export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineP
             <Line
               type="monotone"
               dataKey="value"
-              stroke={color}
+              stroke={activeColor}
               strokeWidth={3}
               dot={false}
               isAnimationActive={false}
@@ -182,8 +185,8 @@ export function SystemStatusRadar({ data, title }: RadarProps) {
             <Radar
               name="Security Score"
               dataKey="A"
-              stroke="#3B82F6"
-              fill="#3B82F6"
+              stroke={c.accent}
+              fill={c.accent}
               fillOpacity={0.5}
             />
           </RadarChart>
@@ -217,14 +220,15 @@ interface ActivityAreaChartProps {
   height?: number;
 }
 
-export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300 }: ActivityAreaChartProps) {
+export function ActivityAreaChart({ data, title, color, height = 300 }: ActivityAreaChartProps) {
   const c = useChartColors();
+  const activeColor = color ?? c.accent;
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between mb-2 px-2">
         <h3 className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">{title}</h3>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: activeColor }} />
           <span className="text-xs font-bold text-muted-foreground">통계 프로파일</span>
         </div>
       </div>
@@ -233,8 +237,8 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
           <AreaChart data={data || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
-                <stop offset="95%" stopColor={color} stopOpacity={0}/>
+                <stop offset="5%" stopColor={activeColor} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={activeColor} stopOpacity={0}/>
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={c.grid} opacity={0.3} />
@@ -261,12 +265,12 @@ export function ActivityAreaChart({ data, title, color = '#3B82F6', height = 300
                 padding: '12px',
                 color: c.tooltipText
               }}
-              cursor={{ stroke: color, strokeWidth: 2, strokeDasharray: '5 5' }}
+              cursor={{ stroke: activeColor, strokeWidth: 2, strokeDasharray: '5 5' }}
             />
             <Area 
               type="monotone" 
               dataKey="value" 
-              stroke={color} 
+              stroke={activeColor} 
               strokeWidth={4} 
               fillOpacity={1} 
               fill="url(#colorValue)" 
@@ -291,13 +295,12 @@ interface DistributionData {
 interface DistributionPieChartProps {
   data: DistributionData[];
   title: string;
-  colors?: string[];
+  colors?: readonly string[];
 }
 
-const DEFAULT_COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-
-export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: DistributionPieChartProps) {
+export function DistributionPieChart({ data, title, colors }: DistributionPieChartProps) {
   const c = useChartColors();
+  const palette = colors ?? c.series;
   return (
     <div className="flex flex-col items-center h-full">
       <h3 className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase mb-6">{title}</h3>
@@ -317,7 +320,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
               stroke="none"
             >
               {(data || []).map((_, index) => (
-                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />
               ))}
             </Pie>
             <Tooltip 
@@ -336,7 +339,7 @@ export function DistributionPieChart({ data, title, colors = DEFAULT_COLORS }: D
       <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4 w-full px-4">
         {(data || []).map((item, index) => (
           <div key={`legend-${index}`} className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: colors[index % colors.length] }} />
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: palette[index % palette.length] }} />
             <span className="text-xs font-bold text-foreground/60 truncate uppercase">{item?.name || 'Unknown'}</span>
             <span className="text-xs font-bold text-foreground ml-auto">{item?.value || 0}%</span>
           </div>

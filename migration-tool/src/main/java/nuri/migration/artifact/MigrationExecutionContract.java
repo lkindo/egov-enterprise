@@ -7,7 +7,9 @@ import nuri.migration.archive.ArchiveFileWriter;
 import nuri.migration.archive.ArchiveRun;
 import nuri.migration.domain.DomainValues;
 import nuri.migration.domain.TargetValueGuard;
+import nuri.migration.etl.EtlContractSupport;
 import nuri.migration.etl.EtlExecutor;
+import nuri.migration.etl.EtlSourceQuerySupport;
 import nuri.migration.isolate.IsolationTally;
 import nuri.migration.isolate.RowIsolationPolicy;
 import nuri.migration.lookup.LookupResolver;
@@ -21,6 +23,7 @@ import nuri.migration.transform.TransformerRegistry;
 import nuri.migration.transform.TypeConverter;
 import nuri.migration.validate.CodeSetPrecheck;
 import nuri.migration.validate.CodeSetTargets;
+import nuri.migration.validate.MappingLiveMetadataValidator;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ProductCodeBindings;
 import nuri.migration.validate.VerifyReferenceRules;
@@ -73,8 +76,11 @@ public record MigrationExecutionContract(
     public static final int CURRENT_SCHEMA_VERSION = 1;
     private static final List<Class<?>> CORE_CLASSES = List.of(
             EtlExecutor.class,
+            EtlContractSupport.class,
+            EtlSourceQuerySupport.class,
             TypeConverter.class,
             MappingValidator.class,
+            MappingLiveMetadataValidator.class,
             MigrationVerifier.class,
             SourceLoadSurfaceGate.class,
             // 보호 컬럼 암호화(DEC-OPS-308). 승인 뒤 암호 구현이 바뀌면 같은 승인으로 적재하지 않는다.

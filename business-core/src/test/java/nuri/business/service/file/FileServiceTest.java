@@ -410,7 +410,7 @@ class FileServiceTest {
         FileDetail existingDetail = FileDetail.builder().atchFileSeq(1).build();
         MockMultipartFile newFile = validJpeg("new.jpg");
 
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(existingDetail));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("new_stored.jpg");
 
@@ -428,7 +428,7 @@ class FileServiceTest {
     void updateFiles_deniedAssignmentHasNoDetailOrStorageSideEffect(boolean board) {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(accessPolicy).assertAttachable(master);
 
@@ -446,7 +446,7 @@ class FileServiceTest {
     void updateFiles_rejectsAllWhenAnyExtensionForbidden() {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.emptyList());
 
         // 첫 파일은 정상, 두 번째가 실행파일. 선(先)검증 패스가 없으면 첫 파일이 이미 저장된 뒤
@@ -467,7 +467,7 @@ class FileServiceTest {
     void updateFiles_continuesSequenceFromExistingMax() throws IOException {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master))
                 .willReturn(List.of(FileDetail.builder().atchFileSeq(3).build()));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.jpg");
@@ -482,6 +482,23 @@ class FileServiceTest {
         org.mockito.ArgumentCaptor<FileDetail> captor = org.mockito.ArgumentCaptor.forClass(FileDetail.class);
         verify(fileDetailRepository, times(2)).save(captor.capture());
         assertThat(captor.getAllValues()).extracting(FileDetail::getAtchFileSeq).containsExactly(4, 5);
+        var order = inOrder(fileMasterRepository, accessPolicy, fileDetailRepository, storageService);
+        order.verify(fileMasterRepository).findByIdForUpdate(atchFileSn);
+        order.verify(accessPolicy).assertAttachable(master);
+        order.verify(fileDetailRepository).findByFileMaster(master);
+        order.verify(storageService).store(files.get(0), "general/123");
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void appendLockFailureCannotAllocateASequenceOrStoreAFile(boolean board) {
+        given(fileMasterRepository.findByIdForUpdate(123L))
+                .willThrow(new org.springframework.dao.CannotAcquireLockException("injected lock failure"));
+
+        assertThatThrownBy(() -> updateWithProfile(123L, List.of(validJpeg("new.jpg")), board))
+                .isInstanceOf(org.springframework.dao.CannotAcquireLockException.class);
+
+        verifyNoInteractions(accessPolicy, fileDetailRepository, storageService);
     }
 
     @Test
@@ -561,7 +578,7 @@ class FileServiceTest {
         FileMaster master = new FileMaster(atchFileSn);
         MockMultipartFile file = validJpeg("new.jpg");
 
-        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         given(storageService.store(any(), anyString())).willReturn("stored.jpg");
 
@@ -616,7 +633,7 @@ class FileServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
 
         FileMaster master = new FileMaster(123L);
-        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         assertThatThrownBy(() -> fileService.updateFiles(123L, List.of(file)))
                 .isInstanceOf(BusinessException.class)
@@ -645,7 +662,7 @@ class FileServiceTest {
     @DisplayName("게시판 영상 추가도 원 업로더 확인 뒤 기존 묶음의 다음 순번에 저장한다")
     void updateBoardFiles_appendsVideoAfterAuthorization() throws IOException {
         FileMaster master = new FileMaster(123L);
-        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master))
                 .willReturn(List.of(FileDetail.builder().atchFileSeq(4).build()));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.mp4");
@@ -665,7 +682,7 @@ class FileServiceTest {
     @DisplayName("게시판 영상 추가도 배치 중 하나가 위장이면 새 파일을 하나도 저장하지 않는다")
     void updateBoardFiles_rejectsMixedInvalidBatchBeforeStorage() {
         FileMaster master = new FileMaster(123L);
-        given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         MockMultipartFile disguised = new MockMultipartFile("files", "media.mp4", "video/mp4", mp4Header("avif"));
 
