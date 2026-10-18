@@ -2148,6 +2148,36 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-357 | accepted | **감사 원장 세 표(`tb_sys_adt_log`·`tb_authrt_chg_hstry`·`tb_privacy_log`)의 수정과 임의 삭제를 DB 트리거로 막는다.** ① UPDATE 는 언제나 거부하고, DELETE 는 같은 트랜잭션이 `SET LOCAL app.audit_retention = 'on'` 으로 보존 정리를 선언했을 때만 허용한다. ② 보존 정리(LogRetentionScheduler 의 개인정보 접근 기록·민감 작업 감사)가 삭제 트랜잭션 안에서 선언한다. 권한 변경 이력에는 보존 정리 경로가 없어 선언 없이는 지울 수 없다. ③ 세 표의 앱 쓰기 경로가 INSERT 뿐임을 전수 확인했다. | 고칠 수 있는 감사 기록은 증거가 되지 못한다 — 앱 버그·잘못 쓴 관리 SQL·주입이 행을 바꾸거나 지워도 DB 가 막지 않았다(2026-10-19 품질 평가 과제 13, 사용자 선택 "전부 진행"). 한계: 표 소유자·DB 관리자의 트리거 해제와 문장 단위 비우기(TRUNCATE)는 막지 않는다 — 운영 계정 분리 몫이다. TRUNCATE 트리거는 무중단 린터가 `TRUNCATE` 문자열을 파괴적 DDL 로 읽어 두지 않았다. | [V2_132](../../api-server/src/main/resources/db/migration/V2_132__protect_audit_ledgers_from_modification.sql), [보존 정책](../04-operations/log-retention-policy.md) | 2026-10-19 | - |
 
+## DEC-OPS-358
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-358 | accepted | **기록이 로그인 ID 로 소유를 판정하는 표에 남은 ID 는 새 계정에 다시 주지 않는다.** ① foundation 포트 `LoginIdReferenceContributor` 를 core(첨부 원장·부서 업무)와 기능마다(`loginid/` 12개) 구현해, 소유·작성 판정에 쓰는 컬럼 19개를 등록한다. business-core 는 business-app 을 import 하지 않는다. ② 사용자 등록은 `LoginIdReuseGuard` 로 그 컬럼들에 같은 ID 가 남아 있으면 일반 중복과 같은 `DUPLICATE_USER_ID` 로 거부해 더 알리지 않는다. 조회가 실패하면 등록을 막는다(fail-closed). ③ 대상은 업무보고·일정(등록자·담당자·일지)·메모 보고·부서 업무 대체 판정·업로더 첨부와 첨부 원천 10개, 주소록·댓글·스크랩·만족도·투표 참여다. 응답 취소가 계정 생성 시각으로 이미 거르는 설문 응답, 기능 권한으로만 판정하는 표의 감사용 등록자, esntlId 로 판정하는 표는 대상이 아니다. | 사용자는 행이 실제로 지워지는데 ID 중복 검사는 현재 사용자만 봐서, 지운 ID 로 새 계정을 만들면 옛 기록의 소유권이 넘어갔다(2026-10-19 품질 평가 과제 1, 사용자 선택 "남은 기록의 ID 는 재사용 금지"). 스키마는 바꾸지 않는다. 남은 경계: 새 기능이 로그인 ID 로 소유를 판정하는 표를 더하면 기여를 함께 등록해야 한다 — 기능 선언의 포트 연결과 카탈로그 시험이 빈 기여를 잡지만 컬럼 누락은 리뷰 몫이다. | [판정기](../../business-core/src/main/java/nuri/business/service/user/LoginIdReuseGuard.java), [포트](../../foundation/src/main/java/nuri/foundation/core/user/LoginIdReferenceContributor.java), [통합 시험](../../api-server/src/test/java/nuri/api/schema/LoginIdReuseIntegrationTest.java) | 2026-10-19 | - |
+
+## DEC-OPS-359
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-359 | accepted | **동시 수정을 버전으로 막고 잠금 대기에 상한을 둔다.** ① V2_133 이 업무보고·일정·부서 업무·포상·배너·팝업·설문(머리)·공통코드 분류·코드·상세 10개 표에 `version integer NOT NULL DEFAULT 0`(음수 CHECK)을 더하고 엔티티는 `@Version` 을 쓴다(게시판·결재의 선례). ② 읽기 응답이 version 을 싣고, 수정 요청에 version 이 없으면 400, 다르면 409 `CONCURRENT_MODIFICATION` 이다. 대조는 인가 판정 뒤에 한다. 같은 DTO 가 응답에도 쓰여 필수 판정은 DTO 가 아니라 서비스가 한다. 부서 업무의 일괄 담당자 해제도 버전을 올린다. ③ 화면 9곳이 읽은 버전을 보내고 409 면 서버 사유를 보이며 다시 읽는다. ④ `jakarta.persistence.lock.timeout` 5000ms 를 운영·시험 설정 양쪽에 두고, 넘으면 기존 잠금 실패(409)로 끝낸다. | 버전 검사가 소수 엔티티에만 있어 나머지 화면은 나중 저장이 조용히 이겼고, 비관적 잠금은 대기 상한이 없었다(2026-10-19 품질 평가 과제 8, 사용자 선택 "버전 검사 도입 + 잠금 대기 상한"). `version` 은 표준 단어가 없는 기술 컬럼이라 처분안의 C(예외 후보)에 든다 — GAP-STD-001 의 용어 없는 컬럼 수가 10 늘어난다. 공유 OCI 적용은 병합 뒤 별도 승인이다. | [V2_133](../../api-server/src/main/resources/db/migration/V2_133__add_optimistic_version_columns.sql), [버전 대조](../../foundation/src/main/java/nuri/foundation/domain/common/EntityVersions.java), [잠금 대기 시험](../../api-server/src/test/java/nuri/api/schema/LockWaitTimeoutIntegrationTest.java) | 2026-10-19 | - |
+
+## DEC-OPS-360
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-360 | accepted | **화면에서만 하던 검사를 서버가 맡는다.** ① 팝업 게시 종료일이 시작일보다 앞서면 400 이다. ② 포상은 수상자·포상 코드가 비면 400, 포상 일자는 기존 날짜(Ymd) 형식 검증을 쓴다. ③ 없는 공통코드(분류·코드·상세)의 수정·삭제와 없는 배너의 삭제는 200 대신 404 다. ④ 일정은 서버가 시작일을 요구하고(월 조회가 시작일로 걸러 없는 일정이 사라졌다) 두 입력 화면도 필수로 받으며, 조회 월은 yyyyMM 이 아니면 400 이다. ⑤ 입력 계약 원장의 필수·날짜 하한을 실측대로 올린다. | 화면을 거치지 않은 요청이 순서가 뒤집힌 기간·형식이 틀린 날짜를 저장했고, 없는 코드를 고쳐도 성공으로 답했다(2026-10-19 품질 평가 과제 10). 배너 표에는 게시 기간 컬럼이 없어 기간 검사는 해당하지 않는다. 기존 행 가운데 새 규칙에 맞지 않는 것은 OCI 적용 전 읽기 집계로 확인한다. | [입력 계약 원장](../../config/governance/input-contract-mirror-census.json), [입력 계약 게이트](../../api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java) | 2026-10-19 | - |
+
+## DEC-OPS-361
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-361 | accepted | **탭·초점·대형 화면·시각 표시를 정리한다.** ① `StandardTabs` 를 의존성 없이 다시 써 tablist·tab·tabpanel·aria-selected·aria-controls 와 roving tabindex·방향키·Home/End(끝에서 돌기, 꺼진 탭 건너뛰기, 자동·수동 활성화)를 갖춘다. 손으로 만든 탭 15곳을 옮기고, 손으로 쓴 `role="tablist"`·`tab`·`tabpanel` 은 기존 lint 규칙(`no-restricted-syntax`)이 막는다 — 새 게이트를 두지 않았다. 이미 Radix Tabs 인 화면과 라우트 링크·토글은 탭이 아니라 남긴다. ② 초점 윤곽을 지우던 단추·입력을 고치고 base 레이어에 우선순위 0 의 `:focus-visible` 기본 윤곽을 둔다. ③ 결재 허브·사용자/조직 허브·메뉴 관리·설문 문항 패널의 가장 큰 함수를 389~407줄로 나눈다. 파일 단위 census 가 읽는 쓰기 처리기·권한 리터럴·페이지 크기·URL 읽기는 허브 파일에 남기고, 나뉜 파일까지 계약을 넓힌다. ④ 후속 작업 화면은 UTC 로 저장한 시각을 한국 시각으로 보인다. | 화면마다 만든 탭 대부분에 방향키 이동·탭 패널 연결이 없었고, 천 줄이 넘는 화면 함수가 여럿이었으며, 후속 작업 시각이 한국 시간과 어긋났다(2026-10-19 품질 평가 과제 12·14). 분해 중 권한 훅을 다른 파일로 옮기자 쓰기 권한 census 의 판정 없음이 늘어 되돌렸다 — census 가 파일 단위라 분해 위치가 신호를 바꾼다. Radix 로 바꾸지 않은 것은 선택 이벤트·id 생성·패널 구조가 기존 E2E 와 단일 패널을 깨기 때문이다. | [탭 원천](../../frontend/src/app/components/ui/standard-tabs.tsx), [탭 시험](../../frontend/src/app/components/ui/__tests__/standard-tabs.test.tsx), [lint 가드](../../frontend/eslint.config.mjs) | 2026-10-19 | - |
+
+## DEC-OPS-362
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-362 | accepted | **쓰지 않는 백엔드 의존성 7종을 걷는다.** Spring Batch(infrastructure·starter)·egovframe-rte-bat-core·starter-quartz·commons-net·jdom2·commons-dbcp2·scribejava(apis·core)는 소스 import·설정·자동 구성 제외 목록 어디에도 쓰는 곳이 없었다. 배치·예약 작업은 `@Scheduled` 와 `tb_sys_job` 내구 원장(ADR-0025)이, 커넥션 풀은 HikariCP 가 맡는다. 되살릴 때는 쓰는 코드와 함께 넣는다. | 선언만 있는 의존성은 공급망 노출과 운영 jar 크기만 늘렸다(2026-10-19 품질 평가 과제 7). api-server runtimeClasspath 비교에서 빠진 것은 이들과 이들만 끌어오던 전이 의존성 18개(운영 jar 에 섞여 있던 spring-batch-test 포함)이고, 남은 라이브러리의 버전 변화는 0건이다. 전체 컨텍스트 시험이 그대로 뜬다. spring-retry 는 백엔드 모듈들이 직접 선언해 남으므로 유지 판단(DEC-OPS-125)은 바뀌지 않는다. SAST-FP-007 은 빌드 파일 변경을 재검토해 다시 결속했다. | [api-server 빌드](../../api-server/build.gradle), [버전 카탈로그](../../gradle/libs.versions.toml), [spring-retry 판단](../04-operations/readiness-followups.md#후속-정리-2026-09-24) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
