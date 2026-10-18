@@ -97,4 +97,41 @@ class UserRepositoryTest extends PersistenceTestSupport {
                 PageRequest.of(0, 50)).getContent()).extracting(nuri.business.service.user.dto.UserDto::userId)
                 .containsExactly("pendingOne");
     }
+
+    @Test
+    @DisplayName("[2026-10-18] 관리자 목록은 휴대전화·이메일을 가리고 사무실 전화는 그대로 싣는다 — 원문은 상세 조회만 낸다")
+    void getPagedUserList_masksMobileAndEmail() {
+        userRepository.save(User.builder().userId("contactOne").esntlId("CONTACT_001").userNm("연락처사람").pswd("pw")
+                .role(Role.USER).mblTelno("01012345678").emlAddr("hong.gildong@example.com").officeTelno("02-1234-5678")
+                .build());
+        userRepository.save(User.builder().userId("noContact").esntlId("CONTACT_002").userNm("연락처없음").pswd("pw")
+                .role(Role.USER).build());
+        em.flush();
+        em.clear();
+
+        var rows = userRepository.getPagedUserList("Contact", UserListFilter.NONE, PageRequest.of(0, 50)).getContent();
+        var masked = rows.stream().filter(u -> "contactOne".equals(u.userId())).findFirst().orElseThrow();
+        assertThat(masked.mblTelno()).isEqualTo("010****5678");
+        assertThat(masked.emlAddr()).isEqualTo("ho***@example.com");
+        assertThat(masked.officeTelno()).as("업무 연락처는 가리지 않는다").isEqualTo("02-1234-5678");
+        var empty = rows.stream().filter(u -> "noContact".equals(u.userId())).findFirst().orElseThrow();
+        assertThat(empty.mblTelno()).as("없는 값은 가린 값으로 만들지 않는다").isNull();
+        assertThat(empty.emlAddr()).isNull();
+
+        assertThat(userRepository.findByUserId("contactOne").orElseThrow().getMblTelno())
+                .as("저장값은 원문 그대로다").isEqualTo("01012345678");
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] refreshForUpdate 는 메모리 변경을 버리고 DB 의 현재 값을 다시 읽는다")
+    void refreshForUpdateRereadsTheCurrentRow() {
+        em.flush();
+        User loaded = userRepository.findByUserId("testUser").orElseThrow();
+        em.createNativeQuery("UPDATE tb_user_info SET lck_cnt = 4 WHERE esntl_id = 'USR_000000000001'").executeUpdate();
+        loaded.incrementLockCount();
+
+        userRepository.refreshForUpdate(loaded);
+
+        assertThat(loaded.getLckCnt()).as("다른 트랜잭션이 커밋한 실패 횟수를 읽어야 한다").isEqualTo(4);
+    }
 }

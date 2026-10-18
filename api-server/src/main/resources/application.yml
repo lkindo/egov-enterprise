@@ -199,13 +199,21 @@ nuri:
     trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
 
     # [2026-09-14 ADR-0019] 클라이언트 IP 당 분당 요청 한도(RateLimitFilter). 종전에는 JVM 시스템 프로퍼티로만 바뀌어
-    #   운영에서 조정할 수 없었다. 기본값은 종전 동작 그대로다(전체 10,000 · 로그인 2,000 = 5토큰 소비의 환산).
-    #   ⚠ 위 순서 지뢰를 따른다: ① 신뢰 앞단 프록시로 IP 가 사용자별로 들어오는지 확인(docker-compose.prod.yml edge)
-    #     ② 로그의 [RATE-LIMIT] bucket=login|all 거절을 관측 ③ 그다음 낮춘다. ①보다 먼저 낮추면 한 IP 로 모인
-    #     전사 로그인이 한꺼번에 막힌다. 1 미만은 기동을 거부한다.
+    #   운영에서 조정할 수 없었다. 1 미만은 기동을 거부한다.
+    # [2026-10-18] 로그인 한도 기본값을 IP 당 분당 2,000 → 30 으로 낮췄다(ADR-0019 결정 6 의 '기본값은 종전 동작' 대체 —
+    #   결정 기록은 통합 시 남긴다). 2,000 이면 한 IP 가 하루 288만 번 비밀번호를 대입(password spraying)할 수 있었다.
+    #   계정 잠금(max-failures)은 계정마다 세므로 여러 계정에 같은 비밀번호를 뿌리는 공격을 막지 못한다 — 그것은 이 IP 한도의 몫이다.
+    #   로그인 버킷은 /auth/login 과 /api/v1/auth/mfa/* 를 함께 센다(추가 인증 로그인 1회 = 2 요청). 30 은 한 IP 에서
+    #   분당 로그인 15~30 회다 — 사용자별 IP 가 들어오는 운영 형상(docker-compose.prod.yml edge)에서 한 사람에게는 넉넉하다.
+    #   전체 한도(10,000)는 그대로 둔다. 비밀번호 대입과 무관하고, 앞단 없는 형상에서는 화면 서버(SSR) 요청이 Next 주소 하나로 모인다.
+    #   ⚠ 아래는 실제로 한 IP 를 여럿이 쓰는 형상이다. 거절 로그([RATE-LIMIT] bucket=login)를 보고 환경변수로 올린다.
+    #     ① 많은 사용자가 NAT·사내 프록시 한 주소로 나오는 기관 ② 앞단 없이 Next 가 백엔드를 부르는 개발 스택(docker-compose.yml)
+    #       — 이때 백엔드가 보는 IP 는 Next 하나라 30 이 배포 전체의 분당 로그인 상한이 된다
+    #     ③ Docker userland-proxy 가 켜져 접속 주소가 브리지 게이트웨이 하나로 바뀐 호스트(ADR-0019 영향과 한계).
+    #   E2E·격리 실행(application-e2e.yml)과 주간 ZAP 은 모든 요청이 한 루프백 IP 에서 오므로 그쪽에서 따로 올린다.
     rate-limit:
       requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:10000}
-      login-requests-per-minute: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:2000}
+      login-requests-per-minute: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:30}
 
   # 데모 게시판 인스턴스 ID — business-core(BoardIdProperties)가 하드코딩 대신 읽는 설정.
   #   값은 데모 시드(R__seed_demo.sql)의 인스턴스 ID와 동일하며, 미설정 시에도 같은 기본값으로

@@ -25,11 +25,6 @@
     },
     {
       "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
-      "method": "searchUsers",
-      "note": "[2026-09-08 PD-SRVY-001] 설문 응답자 2건이 여기서 빠졌다 — 그 관리 표면(API 5본·화면)을 걷었기 때문이다. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로도 없어 화면이 항상 빈 목록이었다. 테이블·엔티티는 남으므로 표면이 되살아나면 이 census 도 함께 복구한다."
-    },
-    {
-      "controller": "nuri.api.controller.business.addressbook.AddressBookApiController",
       "method": "searchUserSelections",
       "note": "D03: 최소 사용자 선택도 이름·부서·내부 식별자를 조합하므로 민감 조회 감사 유지"
     },

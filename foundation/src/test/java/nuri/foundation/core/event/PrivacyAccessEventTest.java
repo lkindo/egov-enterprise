@@ -45,6 +45,17 @@ class PrivacyAccessEventTest {
     }
 
     @Test
+    @DisplayName("[2026-10-18] 한 사람을 대상으로 한 조회는 정보주체의 내부 키를 싣고, 목록 조회는 비운다")
+    void carriesTheDataSubjectOnlyForSinglePersonReads() {
+        PrivacyAccessEvent detail = new PrivacyAccessEvent(
+                "사용자 상세", "UserApiController", "admin", "10.0.0.9", ACCESSED_AT, "USRCNFRM_00000000002");
+        PrivacyAccessEvent list = new PrivacyAccessEvent("사용자 목록", "UserApiController", "admin", "10.0.0.9", ACCESSED_AT);
+
+        assertThat(detail.subjectId()).isEqualTo("USRCNFRM_00000000002");
+        assertThat(list.subjectId()).isNull();
+    }
+
+    @Test
     @DisplayName("같은 접근 사실은 값으로 같다")
     void isValueEqual() {
         assertThat(new PrivacyAccessEvent("항목", "Svc", "admin", "10.0.0.9", ACCESSED_AT))

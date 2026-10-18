@@ -76,7 +76,7 @@ class DurableWorkIntegrationTest {
         jdbc.execute("DROP FUNCTION IF EXISTS test_durable_retry_audit_failure()");
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", work.key().toString());
-        jdbc.update("DELETE FROM tb_sys_adt_log WHERE job_nm='DURABLE_WORK_RETRY' AND frst_rgtr_id=?", actor);
+        AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE job_nm='DURABLE_WORK_RETRY' AND frst_rgtr_id=?", actor);
     }
 
     @Test

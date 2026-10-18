@@ -305,21 +305,22 @@ class AddressBookServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 검색 성공")
-    void searchUsers_Success() {
+    @DisplayName("사용자 선택 성공")
+    void searchUserSelections_Success() {
         // Given
         nuri.business.domain.addressbook.AddressBookUserSearchResult view = mock(nuri.business.domain.addressbook.AddressBookUserSearchResult.class);
-        given(view.getUserId()).willReturn("EMP_1");
+        given(view.getEsntlId()).willReturn("EMP_1");
         given(view.getUserNm()).willReturn("Name");
         Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> page = new PageImpl<>(List.of(view));
-        given(addressBookRepository.searchAddressBookUsers(any(), any(Pageable.class))).willReturn(page);
+        given(addressBookRepository.searchAddressBookUserSelections(any(), any(Pageable.class))).willReturn(page);
 
         // When
-        Page<nuri.business.service.addressbook.dto.AddressBookUserDto> result = 
-            addressBookService.searchUsers("keyword", org.springframework.data.domain.PageRequest.of(0, 10));
+        Page<nuri.business.service.addressbook.dto.AddressBookUserSelectionDto> result =
+            addressBookService.searchUserSelections("keyword", org.springframework.data.domain.PageRequest.of(0, 10));
 
         // Then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getNm()).isEqualTo("Name");
+        assertThat(result.getContent().get(0).esntlId()).isEqualTo("EMP_1");
+        assertThat(result.getContent().get(0).userNm()).isEqualTo("Name");
     }
 }

@@ -124,8 +124,9 @@ public class UserApiController {
 
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다. "
             + "계정 상태(userSttsCd: P 정상·A 승인 대기·D 비활성)·소속 부서(ognzId, 직속만)·로그인 잠금(lckYn: Y·N)으로 좁힐 수 있고, "
-            + "어휘 밖 값은 400 입니다.")
-    @PrivacyAccess("사용자 목록(생년월일·휴대전화·이메일·주소)")
+            + "어휘 밖 값은 400 입니다. 휴대전화(mblTelno)·이메일(emlAddr)은 가린 값이며 원문은 사용자 상세 조회에서만 나옵니다.")
+    // [2026-10-18] 목록 projection 은 생년월일·주소를 싣지 않고 휴대전화·이메일을 가린다(UserDto#withMaskedContacts).
+    @PrivacyAccess("사용자 목록(가린 휴대전화·이메일, 사무실 전화)")
     @GetMapping("/admin/system/users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#getUsers')")
     public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
@@ -163,7 +164,11 @@ public class UserApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#getUser')")
     public ResponseEntity<ApiResponse<UserDto>> getUser(
             @Parameter(description = "사용자 ID") @PathVariable String userId) {
-        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userId)));
+        UserDto user = userService.getUserById(userId);
+        // [2026-10-18] 한 사람의 원문 연락처·주소·생년월일을 돌려주는 조회다 — 개인정보 접근 기록에 그 사람(정보주체)을 남긴다.
+        //   경로 값은 로그인 ID 일 수도 있어 해석한 내부 키(esntlId)를 쓴다.
+        nuri.foundation.core.audit.PrivacySubject.identify(user.esntlId());
+        return ResponseEntity.ok(ApiResponse.success(user));
     }
 
     // [2026-08-11] 등록만 비밀번호 제약(OnCreate)을 함께 요구한다.

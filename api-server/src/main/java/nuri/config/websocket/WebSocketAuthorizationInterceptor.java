@@ -86,10 +86,14 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
                 if (!Objects.equals(handshake.getCredentialsChangedAt(), current.getCredentialsChangedAt())) {
                     throw new AccessDeniedException("WebSocket credentials changed; authenticate again");
                 }
+                // [2026-10-18] 로그아웃 뒤의 연결은 받지 않는다 — 핸드셰이크와 지금 사이에 로그아웃했으면 그 토큰은 끝났다.
+                if (!Objects.equals(handshake.getLastLogoutAt(), current.getLastLogoutAt())) {
+                    throw new AccessDeniedException("WebSocket session ended by logout; authenticate again");
+                }
                 MfaSessionEvidence evidence = authentication.getDetails() instanceof MfaSessionEvidence signed ? signed : null;
                 JwtTokenProvider.assertMfaSession(current, evidence);
                 var connected = new SessionAuthorization(current.getUsername(), current.getAuthorizationVersion(),
-                        current.getCredentialsChangedAt(), evidence, new ConcurrentHashMap<>());
+                        current.getCredentialsChangedAt(), current.getLastLogoutAt(), evidence, new ConcurrentHashMap<>());
                 if (sessions.putIfAbsent(sessionId, connected) != null) {
                     throw new AccessDeniedException("WebSocket session is already connected");
                 }
@@ -174,6 +178,10 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
             if (!Objects.equals(connected.credentialsChangedAt(), current.getCredentialsChangedAt())) {
                 throw new AccessDeniedException("WebSocket credentials changed; authenticate again");
             }
+            // [2026-10-18] 연결 뒤 로그아웃했으면 다음 프레임에서 연결을 끊는다(access token 무효화와 같은 기준).
+            if (!Objects.equals(connected.lastLogoutAt(), current.getLastLogoutAt())) {
+                throw new AccessDeniedException("WebSocket session ended by logout; authenticate again");
+            }
             JwtTokenProvider.assertMfaSession(current, connected.mfaEvidence());
             return new CurrentSession(connected, current);
         } catch (RuntimeException denied) {
@@ -212,7 +220,8 @@ public class WebSocketAuthorizationInterceptor implements ChannelInterceptor {
         }
     }
 
-    private record SessionAuthorization(String subject, String version, Instant credentialsChangedAt, MfaSessionEvidence mfaEvidence,
+    private record SessionAuthorization(String subject, String version, Instant credentialsChangedAt, Instant lastLogoutAt,
+            MfaSessionEvidence mfaEvidence,
             Map<String, Subscription> subscriptions) {}
     private record CurrentSession(SessionAuthorization connected, CustomUserDetails principal) {}
     private record Subscription(String destination, String permission) {}

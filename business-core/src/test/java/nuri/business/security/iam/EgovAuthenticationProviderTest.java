@@ -533,4 +533,66 @@ class EgovAuthenticationProviderTest {
         assertThat(testUser.getLckCnt()).isEqualTo(MAX_FAILURES + 3);
         assertThat(testUser.isLocked()).isFalse();
     }
+
+    @Test
+    @DisplayName("[2026-10-18] 실패 횟수는 잠근 뒤 다시 읽은 값에서 올린다 — 동시 실패가 먼저 올린 횟수를 잃지 않는다")
+    void failureCountsFromTheLockedCurrentRow() {
+        // 처음 읽을 때는 0회였지만, 잠금을 얻는 사이 동시 요청 넷이 실패를 커밋했다(DB 의 현재 값 4).
+        testUser.unlockAccount();
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
+        doAnswer(invocation -> {
+            ReflectionTestUtils.setField((Object) invocation.getArgument(0), "lckCnt", MAX_FAILURES - 1);
+            return null;
+        }).when(userRepository).refreshForUpdate(testUser);
+
+        attemptWithWrongPassword("testuser");
+
+        var order = inOrder(userRepository);
+        order.verify(userRepository).refreshForUpdate(testUser);
+        order.verify(userRepository).save(testUser);
+        assertThat(testUser.getLckCnt()).as("메모리의 낡은 0 에서 올리면 1 이 된다").isEqualTo(MAX_FAILURES);
+        assertThat(testUser.isLocked()).as("현재 값으로 임계에 닿았으므로 잠겨야 한다").isTrue();
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 잠금을 얻는 사이 다른 요청이 계정을 잠갔으면 횟수를 더 올리지 않고 잠김으로 거부한다")
+    void concurrentLockWinsBeforeThisFailureCounts() {
+        testUser.unlockAccount();
+        lenient().when(userRepository.findByUserId("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
+        doAnswer(invocation -> {
+            User current = invocation.getArgument(0);
+            ReflectionTestUtils.setField(current, "lckCnt", MAX_FAILURES);
+            current.lockAccount();
+            return null;
+        }).when(userRepository).refreshForUpdate(testUser);
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("testuser", "wrongpassword")))
+                .isInstanceOf(AccountStatusException.class)
+                .hasMessageContaining("locked");
+        assertThat(testUser.getLckCnt()).isEqualTo(MAX_FAILURES);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 해시 검증과 잠금 사이에 비밀번호가 바뀌면 바뀐 해시로 다시 대조한다")
+    void passwordChangedWhileWaitingForTheLockIsReverified() {
+        User standardUser = User.builder().userId("std").esntlId("USR_0000000000010")
+                .pswd("{bcrypt}old").userNm("Std").lckYn("N").lckCnt(0).build();
+        lenient().when(userRepository.findByUserId("std")).thenReturn(Optional.of(standardUser));
+        when(passwordEncoder.matches("secret", "{bcrypt}old")).thenReturn(true);
+        when(passwordEncoder.matches("secret", "{bcrypt}new")).thenReturn(false);
+        doAnswer(invocation -> {
+            ReflectionTestUtils.setField((Object) invocation.getArgument(0), "pswd", "{bcrypt}new");
+            return null;
+        }).when(userRepository).refreshForUpdate(standardUser);
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("std", "secret")))
+                .as("옛 비밀번호와 맞았다는 결과로 바뀐 계정에 로그인시키면 안 된다")
+                .isInstanceOf(BadCredentialsException.class);
+        assertThat(standardUser.getLckCnt()).isEqualTo(1);
+    }
 }

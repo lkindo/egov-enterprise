@@ -70,7 +70,8 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
             statement.executeUpdate("UPDATE tb_login_log SET lgn_ip_addr='%s' WHERE user_id='ipv6-legacy-login'"
                     .formatted(FULL_IPV6));
             updatePolicy(connection, POLICY_USER_ID, FULL_IPV6);
-            statement.executeUpdate("UPDATE tb_privacy_log SET dmnd_user_ip_addr='%s' WHERE dmnd_id='IPV6_LEGACY_PRIVACY'"
+            // [2026-10-18 V2_132] 개인정보 접근 기록은 고칠 수 없는 원장이다 — 45자 IPv6 수용은 새 행을 남겨 확인한다.
+            statement.executeUpdate("INSERT INTO tb_privacy_log (dmnd_id, dmnd_user_ip_addr) VALUES ('IPV6_FULL_PRIVACY', '%s')"
                     .formatted(FULL_IPV6));
             statement.executeUpdate("UPDATE tb_sys_log SET dmnd_user_ip_addr='%s' WHERE dmnd_id='IPV6_LEGACY_SYSTEM'"
                     .formatted(FULL_IPV6));
@@ -207,8 +208,11 @@ class IpAddressIpv6MigrationIntegrationTest extends SharedPostgresMigrationTestS
                 "SELECT ip_addr FROM tb_login_policy WHERE user_id='" + POLICY_USER_ID + "'"))
                 .isEqualTo(FULL_IPV6);
         assertThat(singleString(statement,
-                "SELECT dmnd_user_ip_addr FROM tb_privacy_log WHERE dmnd_id='IPV6_LEGACY_PRIVACY'"))
+                "SELECT dmnd_user_ip_addr FROM tb_privacy_log WHERE dmnd_id='IPV6_FULL_PRIVACY'"))
                 .isEqualTo(FULL_IPV6);
+        assertThat(singleString(statement,
+                "SELECT dmnd_user_ip_addr FROM tb_privacy_log WHERE dmnd_id='IPV6_LEGACY_PRIVACY'"))
+                .as("기존 접근 기록은 고치지 않고 보존한다").isEqualTo(LEGACY_VALUE);
         assertThat(singleString(statement,
                 "SELECT dmnd_user_ip_addr FROM tb_sys_log WHERE dmnd_id='IPV6_LEGACY_SYSTEM'"))
                 .isEqualTo(FULL_IPV6);

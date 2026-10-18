@@ -3,8 +3,15 @@ import { expect, request as playwrightRequest, type APIRequestContext } from '@p
 import { getAdminBearerToken } from '../utils/admin-token';
 import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 
-/** VRT가 다른 테스트의 결재·댓글 알림을 받지 않도록 실제 사용자와 세션을 분리한다. */
-export async function createVisualAdmin(request: APIRequestContext, baseURL: string) {
+/**
+ * VRT가 다른 테스트의 결재·댓글 알림을 받지 않도록 실제 사용자와 세션을 분리한다.
+ *
+ * <p>[2026-10-18] 로그아웃은 그 사용자의 모든 access token 을 끊는다. 로그아웃을 실행하는 테스트도 공유 storageState
+ * 대신 이 일회용 주체를 쓴다 — `group: 'ROLE_USER'` 이면 관리자 배정 없이 일반 사용자로 둔다.
+ */
+export async function createVisualAdmin(request: APIRequestContext, baseURL: string,
+    options: { group?: 'ROLE_ADMIN' | 'ROLE_USER' } = {}) {
+    const group = options.group ?? 'ROLE_ADMIN';
     const target = await assertIsolatedTarget();
     if (new URL(baseURL).origin !== new URL(target.webUrl).origin) {
         throw new Error('Visual admin fixture target does not match the owned E2E stack.');
@@ -42,14 +49,16 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
         expect(snapshot.complete).toBe(true);
         expect(snapshot.version).toMatch(/^[a-f0-9]{64}$/);
         expect(snapshot.groups).toEqual(['ROLE_USER']);
-        const assigned = await request.put(membershipUrl, {
-            headers: adminHeaders,
-            data: { groups: ['ROLE_ADMIN'], version: snapshot.version, complete: true },
-        });
-        expect(assigned.status(), '시각 검증 전용 사용자에게 관리자 그룹 명시 배정').toBe(200);
-        const confirmed = await request.get(membershipUrl, { headers: adminHeaders });
-        expect(confirmed.status(), '시각 검증 전용 관리자 배정 재조회').toBe(200);
-        expect((await confirmed.json()).data.groups).toEqual(['ROLE_ADMIN']);
+        if (group === 'ROLE_ADMIN') {
+            const assigned = await request.put(membershipUrl, {
+                headers: adminHeaders,
+                data: { groups: ['ROLE_ADMIN'], version: snapshot.version, complete: true },
+            });
+            expect(assigned.status(), '시각 검증 전용 사용자에게 관리자 그룹 명시 배정').toBe(200);
+            const confirmed = await request.get(membershipUrl, { headers: adminHeaders });
+            expect(confirmed.status(), '시각 검증 전용 관리자 배정 재조회').toBe(200);
+            expect((await confirmed.json()).data.groups).toEqual(['ROLE_ADMIN']);
+        }
 
         // BFF cookies must not replace the administrator session used by fixture cleanup.
         const loginRequest = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });

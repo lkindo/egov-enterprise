@@ -89,7 +89,13 @@ public class SmsApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#getSmsRecipients')")
     public ResponseEntity<ApiResponse<List<SmsRecptnDto>>> getSmsRecipients(
             @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
-        return ResponseEntity.ok(ApiResponse.success(smsService.getSmsRecipients(smsTrsmSn)));
+        List<SmsRecptnDto> recipients = smsService.getSmsRecipients(smsTrsmSn);
+        // [2026-10-18] 수신자가 사용자 한 명이면 그 사람(정보주체)을 개인정보 접근 기록에 남긴다. 여러 명이거나 사용자로
+        //   해석되지 않는 직접 입력 번호가 섞이면 한 칸에 한 사람을 남길 수 없으므로 목록 조회와 같이 비운다.
+        if (recipients.size() == 1) {
+            nuri.foundation.core.audit.PrivacySubject.identify(recipients.get(0).getEsntlId());
+        }
+        return ResponseEntity.ok(ApiResponse.success(recipients));
     }
 
     @Operation(summary = "SMS 발송", description = "새로운 SMS를 발송합니다.")

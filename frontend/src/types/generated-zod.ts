@@ -409,7 +409,7 @@ export const UserProfileUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
   daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
+  mblTelno: z.string().min(0).max(11).regex(new RegExp("^[^*]*$")).optional(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
   groupId: z.string().min(0).max(20).optional(),
@@ -5595,32 +5595,6 @@ export const PageResponseAddressBookUserSelectionDtoSchema = /*#__PURE__*/ (() =
 }))();
 export type PageResponseAddressBookUserSelectionDto = z.infer<typeof PageResponseAddressBookUserSelectionDtoSchema>;
 
-// ==========================================================================
-// ApiResponsePageResponseAddressBookUserDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseAddressBookUserDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAddressBookUserDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePageResponseAddressBookUserDto = z.infer<typeof ApiResponsePageResponseAddressBookUserDtoSchema>;
-
-// ==========================================================================
-// PageResponseAddressBookUserDto Schema
-// ==========================================================================
-export const PageResponseAddressBookUserDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-export type PageResponseAddressBookUserDto = z.infer<typeof PageResponseAddressBookUserDtoSchema>;
-
 export const WorkReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   rptTtl: z.string().min(0).max(100),
   rptCn: z.string().min(0).max(4000).optional(),
@@ -6155,7 +6129,7 @@ export const UserProfileUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.obje
   daddr: z.string().min(0).max(200).optional(),
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
-  mblTelno: z.string().min(0).max(11).optional(),
+  mblTelno: z.string().min(0).max(11).regex(new RegExp("^[^*]*$")).optional(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
   groupId: z.string().min(0).max(20).optional(),
@@ -6174,7 +6148,7 @@ export const UserProfileUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.obj
   daddr: z.string().min(0).max(200).optional().nullable(),
   zip: z.string().min(0).max(5).optional().nullable(),
   officeTelno: z.string().min(0).max(20).optional().nullable(),
-  mblTelno: z.string().min(0).max(11).optional().nullable(),
+  mblTelno: z.string().min(0).max(11).regex(new RegExp("^[^*]*$")).optional().nullable(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional().nullable(),
   ofcpsNm: z.string().min(0).max(300).optional().nullable(),
   groupId: z.string().min(0).max(20).optional().nullable(),
@@ -13434,42 +13408,6 @@ export const PageResponseAddressBookUserSelectionDtoRequestSchema = /*#__PURE__*
 
 export const PageResponseAddressBookUserSelectionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   list: z.array(z.lazy(() => AddressBookUserSelectionDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
-}))();
-
-export const ApiResponsePageResponseAddressBookUserDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAddressBookUserDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponsePageResponseAddressBookUserDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseAddressBookUserDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const PageResponseAddressBookUserDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-
-export const PageResponseAddressBookUserDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserDtoResponseSchema)).optional().nullable(),
   total: z.number().int().optional().nullable(),
   page: z.number().int().optional().nullable(),
   size: z.number().int().optional().nullable(),

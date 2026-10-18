@@ -97,7 +97,6 @@ import {
   ApiResponseOnlineManualDtoResponseSchema,
   ApiResponseOnlinePollManageDtoResponseSchema,
   ApiResponsePageResponseAddressBookDtoResponseSchema,
-  ApiResponsePageResponseAddressBookUserDtoResponseSchema,
   ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,
   ApiResponsePageResponseAdministCodeDtoResponseSchema,
   ApiResponsePageResponseAuditJournalEntryResponseSchema,
@@ -299,7 +298,6 @@ import {
   OnlinePollManageDtoResponseSchema,
   OnlinePollManageRequestRequestSchema,
   PageResponseAddressBookDtoResponseSchema,
-  PageResponseAddressBookUserDtoResponseSchema,
   PageResponseAddressBookUserSelectionDtoResponseSchema,
   PageResponseAdministCodeDtoResponseSchema,
   PageResponseAuditJournalEntryResponseSchema,
@@ -8220,25 +8218,6 @@ export const searchUserSelectionsOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAddressBookUserSelectionDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const searchUsersOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "searchUsers",
-  method: "get",
-  path: "/api/v1/address-books/search-users",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "searchWrd": z.string(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseAddressBookUserDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseAddressBookUserDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

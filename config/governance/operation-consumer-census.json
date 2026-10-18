@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 412,
+    "operationCount": 411,
     "unwiredMax": 7,
     "screenOrphanMax": 25,
     "ungatedWriteMax": 39
@@ -283,14 +283,6 @@
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
       "supersededBy": [
         "authzReplaceMemberships"
-      ]
-    },
-    {
-      "operationId": "searchUsers",
-      "category": "superseded-surface",
-      "note": "ADR-0025 D03 moves internal user selection to the active-user minimal esntlId contract. The legacy loginId/contact response remains until external consumers are confirmed; retaining compatibility does not approve contact disclosure for new consumers.",
-      "supersededBy": [
-        "searchUserSelections"
       ]
     },
     {

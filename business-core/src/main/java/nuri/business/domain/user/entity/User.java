@@ -64,6 +64,16 @@ public class User extends BaseEntity implements Serializable {
 
     private LocalDateTime lckLastPnttm;
 
+    /**
+     * 최종로그아웃일시(2026-10-18, V2_131). 이 시각 전에 발급된 access token 은 거부된다(JwtTokenProvider).
+     *
+     * <p>읽기 전용 매핑이다 — 쓰기는 {@code UserRepository#recordLogout} 의 원자적 UPDATE 만 한다. 엔티티 저장은 모든 컬럼을
+     * 다시 쓰므로(동적 UPDATE 아님), 쓰기 가능하게 두면 로그아웃과 겹친 다른 저장(로그인 실패 횟수·관리자 수정)이 읽어 둔 옛
+     * 값으로 로그아웃 시각을 덮어 무효화가 사라진다.
+     */
+    @Column(name = "last_lgt_dt", insertable = false, updatable = false)
+    private LocalDateTime lastLgtDt;
+
     @Column(length = 32)
     private String otpSecret;
 

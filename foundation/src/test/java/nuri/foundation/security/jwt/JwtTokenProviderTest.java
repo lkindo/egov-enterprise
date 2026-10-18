@@ -310,6 +310,76 @@ class JwtTokenProviderTest {
         }
     }
 
+    /**
+     * [2026-10-18] 로그아웃하면 그 전에 발급된 access token 은 만료 전이라도 거부한다. 비밀번호 변경과 같은 비교다 —
+     * 로그아웃 시각을 초로 내리므로 로그아웃한 그 초 안에 다시 로그인해 받은 토큰은 통과한다.
+     */
+    @Nested
+    @DisplayName("로그아웃 전 발급 토큰 거부")
+    class Logout {
+        private final java.time.Instant loggedOutAt = java.time.Instant.parse("2026-10-18T01:00:00.700Z");
+
+        private String accessTokenIssuedAt(java.time.Instant issuedAt) {
+            var builder = Jwts.builder().subject("subject").claim("typ", "access")
+                    .expiration(new Date(System.currentTimeMillis() + 3_600_000L))
+                    .signWith(Keys.hmacShaKeyFor(secretKey.getBytes()));
+            if (issuedAt != null) builder.issuedAt(Date.from(issuedAt));
+            return builder.compact();
+        }
+
+        private void currentAccount(java.time.Instant lastLogoutAt, java.time.Instant credentialsChangedAt) {
+            when(userDetailsService.loadUserByUsername("subject")).thenReturn(
+                    nuri.foundation.security.service.CustomUserDetails.builder()
+                            .esntlId("subject").enabled(true).lockAt("N")
+                            .credentialsChangedAt(credentialsChangedAt).lastLogoutAt(lastLogoutAt).build());
+        }
+
+        @Test
+        @DisplayName("로그아웃 전 초에 발급된 토큰은 거부한다")
+        void rejectsTokenIssuedBeforeLogout() {
+            currentAccount(loggedOutAt, null);
+
+            var rejected = assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-10-18T00:59:59Z"))));
+            assertThat(rejected.getMessage()).contains("logout");
+        }
+
+        @Test
+        @DisplayName("로그아웃한 초·이후에 발급된 토큰은 통과한다 — 로그아웃 직후 다시 로그인한 토큰을 끊지 않는다")
+        void acceptsTokenIssuedInTheSameSecondOrLater() {
+            currentAccount(loggedOutAt, null);
+
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-10-18T01:00:00Z")))).isNotNull();
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-10-18T01:00:01Z")))).isNotNull();
+        }
+
+        @Test
+        @DisplayName("로그아웃한 적이 없으면 이 기준으로 거부하지 않는다")
+        void acceptsWhenNeverLoggedOut() {
+            currentAccount(null, null);
+
+            assertThat(jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2020-01-01T00:00:00Z")))).isNotNull();
+        }
+
+        @Test
+        @DisplayName("로그아웃 시각이 있는데 발급 시각이 없는 토큰은 판정할 수 없으므로 거부한다")
+        void rejectsTokenWithoutIssuedAtWhenLoggedOut() {
+            currentAccount(loggedOutAt, null);
+
+            assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(accessTokenIssuedAt(null)));
+        }
+
+        @Test
+        @DisplayName("비밀번호 변경보다 나중의 로그아웃이 기준이다 — 두 기준 중 늦은 쪽 전에 발급된 토큰은 거부한다")
+        void laterOfLogoutAndCredentialChangeWins() {
+            currentAccount(loggedOutAt, java.time.Instant.parse("2026-10-17T00:00:00Z"));
+
+            assertThrows(org.springframework.security.authentication.CredentialsExpiredException.class,
+                    () -> jwtTokenProvider.getAuthentication(accessTokenIssuedAt(java.time.Instant.parse("2026-10-18T00:30:00Z"))));
+        }
+    }
+
     @Test
     @DisplayName("잘못된 형식 토큰 검증 실패 (Malformed)")
     void validateToken_Malformed_fail() {

@@ -48,6 +48,8 @@ public class PrivacyAccessLogListener {
                     .inqInfo(truncate(event.inqInfo(), INQ_INFO_MAX))
                     .dmndUserId(event.userId())
                     .dmndUserIpAddr(event.clientIp())
+                    // [2026-10-18] 누구의 정보였는가 — 한 사람을 대상으로 한 조회만 싣는다(목록은 null).
+                    .trprId(event.subjectId())
                     .build();
             privacyLogRepository.saveAndFlush(entity);
         } catch (Exception e) {

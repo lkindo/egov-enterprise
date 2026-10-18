@@ -583,6 +583,27 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(screen.getByText('ROLE_USER, ROLE_REPORTER')).toBeInTheDocument();
   });
 
+  it('[2026-10-18] 상세가 오기 전에는 수정을 열지 않는다 — 목록 행의 가린 연락처로 폼을 채우지 않는다', async () => {
+    const detail = deferred<typeof detailRecord>();
+    vi.mocked(userAdminService.getUserList).mockResolvedValue({
+      ...listPage, list: [{ ...listRow, mblTelno: '010****2222', emlAddr: 'u1***@test.com' }],
+    } as any);
+    vi.mocked(userAdminService.getUser).mockReturnValueOnce(detail.promise as any);
+    await selectFirstRow();
+
+    const edit = await screen.findByRole('button', { name: '정보 수정' });
+    expect(edit, '목록 행만 있을 때 수정이 열리면 가린 값이 저장된다').toBeDisabled();
+
+    await act(async () => detail.resolve(detailRecord));
+    await screen.findByText('기획부 (D-100)');
+    expect(screen.getByRole('button', { name: '정보 수정' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '정보 수정' }));
+    await screen.findByText('사용자 정보 수정');
+    const seed = screen.getByTestId('user-form-initial').textContent ?? '';
+    expect(seed).toContain('"mblTelno":"01011112222"');
+    expect(seed).not.toContain('*');
+  });
+
   it('수정 폼은 상세 API 전체 레코드를 시드로 받아 소속 부서를 보존한 채 updateUser 를 호출한다', async () => {
     vi.mocked(userAdminService.updateUser).mockResolvedValue(undefined as any);
     await selectFirstRow();

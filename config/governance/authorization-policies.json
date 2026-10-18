@@ -3573,7 +3573,7 @@
       ]
     },
     {
-      "target": "AddressBookService#searchUserProjection",
+      "target": "AddressBookService#searchUserSelections",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
         {
@@ -4594,13 +4594,6 @@
       "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook",
       "access": "PERMISSION",
       "permission": "ADBK_CREATE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/address-books/search-users",
-      "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#searchUsers",
-      "access": "PERMISSION",
-      "permission": "ADBK_READ"
     },
     {
       "method": "DELETE",

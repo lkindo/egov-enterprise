@@ -58,3 +58,12 @@ management:
   health:
     mail:
       enabled: false
+
+# [2026-10-18] E2E 는 모든 요청(브라우저·인증 setup·API 계약 시험·서버 렌더링)이 한 루프백 IP 에서 온다.
+#   운영 기본 로그인 한도(application.yml, IP 당 분당 30)는 사용자별 IP 를 전제한 값이라 여기서는 전체 실행의 상한이 된다.
+#   종전 기본값(전체 10,000 · 로그인 2,000)을 이 일회용 격리 실행에만 유지한다. 호스트가 값을 주면 그 값을 따른다.
+nuri:
+  security:
+    rate-limit:
+      requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:10000}
+      login-requests-per-minute: ${RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE:2000}

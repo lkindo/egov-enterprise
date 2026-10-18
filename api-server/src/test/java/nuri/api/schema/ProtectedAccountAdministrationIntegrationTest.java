@@ -112,7 +112,7 @@ class ProtectedAccountAdministrationIntegrationTest {
         jdbc.update("DELETE FROM tb_auth_rfsh_tk WHERE user_id IN (?,?,?)", actor, target, ordinary);
         // tb_login_policy.user_id 는 로그인 ID 로 tb_user_info 를 참조한다(V2_14 FK) — 사용자보다 먼저 지운다.
         jdbc.update("DELETE FROM tb_login_policy WHERE user_id IN (?,?,?)", login(actor), login(target), login(ordinary));
-        jdbc.update("DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr IN (?,?,?) OR authrt_cd IN (?,?,?)", actor, target, ordinary, actorGroup, extraGroup, targetGroup);
+        AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr IN (?,?,?) OR authrt_cd IN (?,?,?)", actor, target, ordinary, actorGroup, extraGroup, targetGroup);
         jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id IN (?,?,?)", actor, target, ordinary);
         jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd IN (?,?,?)", actorGroup, extraGroup, targetGroup);
         jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd IN (?,?,?)", actorGroup, extraGroup, targetGroup);

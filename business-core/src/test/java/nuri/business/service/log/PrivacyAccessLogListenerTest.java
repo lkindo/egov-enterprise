@@ -62,6 +62,23 @@ class PrivacyAccessLogListenerTest {
     }
 
     @Test
+    @DisplayName("[2026-10-18] 한 사람을 대상으로 한 조회는 정보주체(esntlId)를 남기고, 목록 조회는 비운다")
+    void persistsTheDataSubjectOnlyWhenKnown() {
+        PrivacyLogRepository repository = mock(PrivacyLogRepository.class);
+        PrivacyAccessLogListener listener = listener(repository, new SimpleMeterRegistry());
+
+        listener.onPrivacyAccess(new PrivacyAccessEvent(
+                "사용자 상세", "UserApiController", "admin", "10.0.0.9", ACCESSED_AT, "USRCNFRM_00000000002"));
+        listener.onPrivacyAccess(EVENT);
+
+        ArgumentCaptor<PrivacyLog> captor = ArgumentCaptor.forClass(PrivacyLog.class);
+        verify(repository, org.mockito.Mockito.times(2)).saveAndFlush(captor.capture());
+        assertThat(captor.getAllValues().get(0).getTrprId()).isEqualTo("USRCNFRM_00000000002");
+        assertThat(captor.getAllValues().get(0).getDmndUserId()).as("조회자 축은 그대로 loginId").isEqualTo("admin");
+        assertThat(captor.getAllValues().get(1).getTrprId()).isNull();
+    }
+
+    @Test
     @DisplayName("조회 항목 서술이 컬럼 폭(255)을 넘으면 잘라 적재한다")
     void truncatesOverlongInquiryInfo() {
         PrivacyLogRepository repository = mock(PrivacyLogRepository.class);

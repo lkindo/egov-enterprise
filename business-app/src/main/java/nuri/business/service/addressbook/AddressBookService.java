@@ -190,20 +190,13 @@ public class AddressBookService {
         entity.update(entity.getAdbkNm(), entity.getRlsScopeCd(), "N");
     }
 
-    /** 외부 소비자 확인 전까지 구 연락처 응답을 유지한다. 신규 소비자는 최소 선택 계약을 쓴다. */
-    public Page<AddressBookUserDto> searchUsers(String searchWrd, @NonNull Pageable pageable) {
-        return searchUserProjection(searchWrd, pageable, true)
-                .map(res -> AddressBookUserDto.builder().userId(res.getUserId()).nm(res.getUserNm())
-                        .emlAddr(res.getEmlAddr()).mblTelno(res.getMblTelno()).ofcTelno(res.getOfficeTelno()).homeTelno(res.getHomeTelno()).build());
-    }
-
+    /**
+     * 주소록에 담을 활성 사용자 선택 — 내부 키·성명·부서만 돌려준다(ADR-0025 D03).
+     *
+     * <p>[2026-10-18] 로그인 ID·이메일·휴대전화를 돌려주던 구 검색(searchUsers)을 걷었다. ADBK_READ 는 일반 사용자 그룹도
+     * 가지므로 그 검색은 전 직원 연락처 열람 창구였고, 화면·E2E 소비자가 없었다.
+     */
     public Page<AddressBookUserSelectionDto> searchUserSelections(String searchWrd, @NonNull Pageable pageable) {
-        return searchUserProjection(searchWrd, pageable, false)
-                .map(res -> new AddressBookUserSelectionDto(res.getEsntlId(), res.getUserNm(), res.getOgnzNm()));
-    }
-
-    private Page<nuri.business.domain.addressbook.AddressBookUserSearchResult> searchUserProjection(
-            String searchWrd, @NonNull Pageable pageable, boolean legacyContacts) {
         nuri.business.security.util.SecurityUtil.assertPermission("ADBK_READ");
         Pageable requestedPageable = Objects.requireNonNull(pageable);
         Pageable cappedPageable = PageRequest.of(
@@ -215,8 +208,8 @@ public class AddressBookService {
             return Page.empty(cappedPageable);
         }
 
-        return legacyContacts ? addressBookRepository.searchAddressBookUsers(normalizedSearchWrd, cappedPageable)
-                : addressBookRepository.searchAddressBookUserSelections(normalizedSearchWrd, cappedPageable);
+        return addressBookRepository.searchAddressBookUserSelections(normalizedSearchWrd, cappedPageable)
+                .map(res -> new AddressBookUserSelectionDto(res.getEsntlId(), res.getUserNm(), res.getOgnzNm()));
     }
 
     public AddressBookUserDto getAdbkUser(Long id) {

@@ -25,9 +25,9 @@ class AddressBookRepositoryImplTest {
 
     @Test
     @DisplayName("직접 호출도 빈 검색어로 전체 사용자를 조회하지 않음")
-    void searchAddressBookUsers_RejectsBlankKeyword() {
+    void searchAddressBookUserSelections_RejectsBlankKeyword() {
         Page<AddressBookUserSearchResult> result =
-                repository.searchAddressBookUsers(" \t ", PageRequest.of(0, 20));
+                repository.searchAddressBookUserSelections(" \t ", PageRequest.of(0, 20));
 
         assertThat(result).isEmpty();
         verifyNoInteractions(queryFactory);
