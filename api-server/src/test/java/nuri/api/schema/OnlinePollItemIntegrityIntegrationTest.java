@@ -132,6 +132,44 @@ class OnlinePollItemIntegrityIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT poll_artcl_sn FROM tb_onln_poll_rslt WHERE poll_sn=?", Long.class, poll)).isEqualTo(first);
     }
 
+    @Test
+    void concurrentVotersShareThePollLockAndDoNotWaitForEachOther() throws Exception {
+        var voted = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            // 투표자 키(frst_rgtr_id)는 감사 컬럼이 인증 사용자로 채운다 — 같은 사용자로 인증하면 두 번째 INSERT 가
+            // 유일 제약에서 첫 트랜잭션을 기다려, 부모 잠금과 무관하게 막힌다. 투표자마다 따로 인증한다.
+            var holding = executor.submit(() -> transaction("poll-voter-a-" + poll, () -> {
+                authenticate("poll-voter-a");
+                service.vote(poll, first, "poll-voter-a");
+                voted.countDown();
+                try {
+                    assertThat(release.await(20, TimeUnit.SECONDS)).isTrue();
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(interrupted);
+                }
+                return "a";
+            }));
+            try {
+                boolean ready = voted.await(15, TimeUnit.SECONDS);
+                if (!ready && holding.isDone()) holding.get();
+                assertThat(ready).isTrue();
+                // The first vote's transaction is still open; an exclusive parent lock would block here.
+                var other = executor.submit(() -> transaction("poll-voter-b-" + poll, () -> {
+                    authenticate("poll-voter-b");
+                    service.vote(poll, second, "poll-voter-b");
+                    return "b";
+                }));
+                assertThat(other.get(10, TimeUnit.SECONDS)).isEqualTo("b");
+            } finally {
+                release.countDown();
+            }
+            assertThat(holding.get(15, TimeUnit.SECONDS)).isEqualTo("a");
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_onln_poll_rslt WHERE poll_sn=?", Long.class, poll)).isEqualTo(2L);
+    }
+
     private String act(boolean vote) {
         if (vote) {
             service.vote(poll, first, "poll-voter");
@@ -219,7 +257,11 @@ class OnlinePollItemIntegrityIntegrationTest {
     }
 
     private void authenticate() {
-        var principal = CustomUserDetails.builder().userId("poll-editor").esntlId("poll-editor-id")
+        authenticate("poll-editor");
+    }
+
+    private void authenticate(String userId) {
+        var principal = CustomUserDetails.builder().userId(userId).esntlId(userId + "-id")
                 .enabled(true).lockAt("N").groups(List.of()).permissions(List.of("POLL_READ", "POLL_READ_ALL", "POLL_UPDATE", "POLL_DELETE"))
                 .authorizationVersion("poll-integrity").build();
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));

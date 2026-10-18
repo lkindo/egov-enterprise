@@ -284,7 +284,7 @@ class SmsAsyncProcessorTest {
         when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(accepted, rejected));
         when(sender.send(eq(PHONE), any(), any())).thenReturn(SmsGatewayResult.accepted("request-1"));
         when(sender.send(eq("01000000002"), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
-        processor.processSending(1L, "0212345678", "private body", "SENDER-1");
+        processor.dispatchCommitted(1L, "0212345678", "private body", "SENDER-1");
         var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
         verify(events).publishEvent(captor.capture());
         assertThat(captor.getValue().content()).contains("2건 중 1건").doesNotContain(PHONE, "01000000002", "private body");
@@ -313,13 +313,13 @@ class SmsAsyncProcessorTest {
         SmsRecptn row = row(1L, PHONE, "P", null);
         when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(row));
         when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.accepted("request-1"));
-        processor.processSending(1L, "0212345678", "body", "SENDER-1");
+        processor.dispatchCommitted(1L, "0212345678", "body", "SENDER-1");
         row.updateResult("P", null);
         when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.unknown(SmsGatewayResult.Reason.UNCONFIRMED));
-        processor.processSending(1L, "0212345678", "body", "SENDER-1");
+        processor.dispatchCommitted(1L, "0212345678", "body", "SENDER-1");
         row.updateResult("P", null);
         when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
-        processor.processSending(1L, "0212345678", "body");
+        processor.dispatchCommitted(1L, "0212345678", "body", null);
         verifyNoInteractions(events);
     }
 }

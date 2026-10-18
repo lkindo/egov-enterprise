@@ -361,7 +361,7 @@ public class OnlinePollService {
 
     @Transactional
     public void vote(Long pollSn, Long pollArtclSn, String userId) {
-        OnlinePollManage poll = pollManageRepository.findByIdForUpdate(pollSn)
+        OnlinePollManage poll = pollManageRepository.findByIdForShare(pollSn)
                 .orElseThrow(() -> new BusinessException("투표를 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [2026-09-26 DIP V7] 참여 화면은 '투표' 인데 오류만 '설문' 이라 말해 문항형 설문조사와 헷갈렸다.

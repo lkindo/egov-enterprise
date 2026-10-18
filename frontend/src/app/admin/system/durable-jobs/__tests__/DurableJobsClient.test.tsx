@@ -26,8 +26,8 @@ vi.mock('@/services/foundation/system/OperationsRecordAdminService', () => ({
 
 const JOBS = {
   list: [
-    { id: '11', type: 'NOTIFICATION_DELIVERY', status: 'FAILED', attempts: 8, availableAt: '2026-10-01T01:00:00', completedAt: null },
-    { id: '12', type: 'FILE_DELETE', status: 'SUCCEEDED', attempts: 1, availableAt: '2026-10-01T01:00:00', completedAt: '2026-10-01T01:00:05' },
+    { id: '11', type: 'NOTIFICATION_DELIVERY', status: 'FAILED', attempts: 8, availableAt: '2026-10-01T01:00:00', completedAt: null, retryable: true },
+    { id: '12', type: 'FILE_DELETE', status: 'SUCCEEDED', attempts: 1, availableAt: '2026-10-01T01:00:00', completedAt: '2026-10-01T01:00:05', retryable: false },
   ],
   total: 2,
   totalPages: 1,
@@ -50,6 +50,24 @@ describe('DurableJobsClient', () => {
     expect(await screen.findByText('알림 전달')).toBeInTheDocument();
     expect(screen.getByText('첨부 파일 삭제')).toBeInTheDocument();
     expect(screen.getByText('실패')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /다시 처리/ })).toBeNull();
+  });
+
+  it('주소를 지운 메일 실패처럼 서버가 재처리 불가로 판정한 작업에는 단추 대신 새로 보내라고 말한다', async () => {
+    mocks.permissions = ['DWORK_READ', 'DWORK_RETRY'];
+    mocks.getDurableJobs.mockResolvedValue({
+      list: [
+        { id: '21', type: 'MAIL_DELIVERY', status: 'FAILED', attempts: 8, availableAt: '2026-10-01T01:00:00', completedAt: null, retryable: false },
+        { id: '22', type: 'SMS_DELIVERY', status: 'RETRY', attempts: 2, availableAt: '2026-10-01T01:00:00', completedAt: null, retryable: false },
+      ],
+      total: 2,
+      totalPages: 1,
+    });
+    renderClient();
+    expect(await screen.findByText('메일 발송')).toBeInTheDocument();
+    expect(screen.getByText('문자 발송')).toBeInTheDocument();
+    expect(screen.getByText('재시도 대기')).toBeInTheDocument();
+    expect(screen.getByText('새로 보내야 함')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /다시 처리/ })).toBeNull();
   });
 

@@ -93,8 +93,13 @@ public class DurableJob extends BaseEntity {
         jobNo = null;
     }
 
+    /** Exhausted jobs resume only while their payload survives; erased snapshots need a new acceptance. */
+    public boolean retryable() {
+        return "FAILED".equals(prcsSttsNm) && !jobCn.isEmpty();
+    }
+
     public void retry(LocalDateTime now) {
-        if (!"FAILED".equals(prcsSttsNm) || jobCn.isEmpty()) {
+        if (!retryable()) {
             throw new IllegalStateException("Only exhausted jobs can be retried");
         }
         prcsSttsNm = "PENDING";

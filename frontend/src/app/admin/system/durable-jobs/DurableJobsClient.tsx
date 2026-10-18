@@ -18,10 +18,13 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const TYPE_LABELS: Record<string, string> = {
   NOTIFICATION_DELIVERY: '알림 전달',
   FILE_DELETE: '첨부 파일 삭제',
+  MAIL_DELIVERY: '메일 발송',
+  SMS_DELIVERY: '문자 발송',
 };
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: '대기',
+  RETRY: '재시도 대기',
   RUNNING: '실행 중',
   SUCCEEDED: '완료',
   FAILED: '실패',
@@ -35,6 +38,9 @@ const formatDateTime = (value?: string | null) => (value ? value.replace('T', ' 
  * 알림 전달·첨부 파일 삭제처럼 업무 처리 뒤에 이어지는 작업은 최대 8회까지 다시 시도하고, 그래도 실패하면
  * '실패' 로 멈춘다. 종전에는 그 실패를 볼 화면도 다시 처리할 방법도 없었다. 재처리는 실패한 작업만, 권한
  * DWORK_RETRY 가 있을 때만 할 수 있고 원장에 남는다. 작업 내용(본문·수신자)은 보이지 않는다.
+ *
+ * 재처리 단추는 서버의 `retryable` 판정으로만 보인다(2026-10-18). 메일 발송은 끝나면 암호화한 수신 주소를
+ * 지우므로(ADR-0033) 실패해도 다시 처리할 수 없다 — 상태가 '실패' 라는 것만으로 단추를 두면 누를 때마다 거절된다.
  */
 export default function DurableJobsClient() {
   const { user } = useAuth();
@@ -89,7 +95,7 @@ export default function DurableJobsClient() {
     { header: '완료', accessor: (row) => <span className="font-mono text-xs tabular-nums">{formatDateTime(row.completedAt)}</span>, className: 'w-44' },
     ...(canRetry ? [{
       header: '처리',
-      accessor: (row: DurableJobStatus) => (row.status === 'FAILED' ? (
+      accessor: (row: DurableJobStatus) => (row.retryable === true ? (
         <Button
           type="button"
           size="sm"
@@ -101,7 +107,9 @@ export default function DurableJobsClient() {
         >
           <RotateCcw size={14} aria-hidden="true" /> 다시 처리
         </Button>
-      ) : null),
+      ) : (row.status === 'FAILED'
+        ? <span className="text-xs text-muted-foreground">새로 보내야 함</span>
+        : null)),
       className: 'w-28',
     }] : []),
   ];
@@ -109,7 +117,7 @@ export default function DurableJobsClient() {
   return (
     <WorkListPage
       title="후속 작업 상태"
-      description="알림 전달·첨부 파일 삭제처럼 업무 처리 뒤에 이어지는 작업의 상태를 최신순으로 표시합니다. 여러 번 시도해도 실패한 작업은 다시 처리할 수 있습니다."
+      description="알림 전달·첨부 파일 삭제처럼 업무 처리 뒤에 이어지는 작업의 상태를 최신순으로 표시합니다. 여러 번 시도해도 실패한 작업은 다시 처리할 수 있습니다. 수신 주소를 지운 메일 발송은 다시 처리할 수 없어 메일 이력에서 새로 보내야 합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '후속 작업 상태' }]}
       totalCount={error ? undefined : total}
     >

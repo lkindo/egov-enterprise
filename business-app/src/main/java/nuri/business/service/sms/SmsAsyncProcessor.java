@@ -40,25 +40,18 @@ public class SmsAsyncProcessor {
 
     void setClock(Clock clock) { this.clock = java.util.Objects.requireNonNull(clock); }
 
-    @Async("taskExecutor")
-    public void processSending(Long smsTrsmSn, String senderTel, String content) {
-        processSending(smsTrsmSn, senderTel, content, null);
-    }
-
-    @Async("taskExecutor")
-    public void processSending(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
-        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId, false);
-    }
-
-    /** The durable worker acknowledges only after the bounded outbound executor finishes. */
+    /**
+     * The only dispatch entry: SmsDeliveryWorkHandler acknowledges its durable job after this future ends.
+     * The former fire-and-forget processSending entry was removed (2026-10-18) so no caller can bypass the
+     * committed SMS_DELIVERY intent.
+     */
     @Async("taskExecutor")
     public CompletableFuture<Void> dispatchCommitted(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
-        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId, true);
+        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId);
         return CompletableFuture.completedFuture(null);
     }
 
-    private void dispatchRecipients(Long smsTrsmSn, String senderTel, String content, String senderEsntlId,
-            boolean retryUnclaimed) {
+    private void dispatchRecipients(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
         List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
         int failed = 0;
         RuntimeException deferred = null;
@@ -86,7 +79,7 @@ public class SmsAsyncProcessor {
         }
         // A retry may finish never-claimed recipients. Already claimed recipients remain protected
         // by claimSending, including a POST whose outcome or result commit was not confirmed.
-        if (retryUnclaimed && deferred != null) throw deferred;
+        if (deferred != null) throw deferred;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

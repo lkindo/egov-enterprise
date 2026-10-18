@@ -347,6 +347,7 @@ class DurableWorkIntegrationTest {
         assertThat(dispatcher().dispatchOne()).isFalse();
         assertThatThrownBy(() -> administration.retry(job().getJobSn())).isInstanceOf(BusinessException.class);
         assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
+        assertThat(listedStatus().retryable()).isTrue();
         authenticate(List.of("DWORK_RETRY"));
         administration.retry(job().getJobSn());
         assertThat(job().getPrcsSttsNm()).isEqualTo("PENDING");
@@ -447,6 +448,8 @@ class DurableWorkIntegrationTest {
         assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
         assertThat(job().getJobCn()).isEmpty();
         assertThat(delivery.terminalCalls.get()).isEqualTo(1);
+        // The list states the same judgement as retry(): an erased snapshot is FAILED but not retryable.
+        assertThat(listedStatus().retryable()).isFalse();
         authenticate(List.of("DWORK_RETRY"));
         assertThatThrownBy(() -> administration.retry(job().getJobSn()))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
@@ -495,6 +498,19 @@ class DurableWorkIntegrationTest {
 
     private DurableJob job() {
         return repository.findByJobMngNo(work.key().toString()).orElseThrow();
+    }
+
+    /** The newest job is on the first page (jobSn DESC); read it through the operator listing. */
+    private DurableJobAdministrationService.Status listedStatus() {
+        String id = job().getJobSn().toString();
+        var previous = SecurityContextHolder.getContext().getAuthentication();
+        try {
+            authenticate(List.of("DWORK_READ"));
+            return administration.getJobs(0, 100).stream().filter(status -> id.equals(status.id()))
+                    .findFirst().orElseThrow();
+        } finally {
+            SecurityContextHolder.getContext().setAuthentication(previous);
+        }
     }
 
     private void makeDue() {

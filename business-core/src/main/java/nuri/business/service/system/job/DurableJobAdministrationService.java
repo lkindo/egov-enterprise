@@ -35,18 +35,17 @@ public class DurableJobAdministrationService {
         SecurityUtil.assertPermission("DWORK_RETRY");
         DurableJob job = repository.findLocked(jobSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        if (!"FAILED".equals(job.getPrcsSttsNm()) || job.getJobCn().isEmpty()) {
-            throw new BusinessException(CommonErrorCode.INVALID_STATE);
-        }
+        if (!job.retryable()) throw new BusinessException(CommonErrorCode.INVALID_STATE);
         job.retry(LocalDateTime.now(ZoneOffset.UTC));
         audit.recordMutation("DURABLE_WORK_RETRY", jobSn.toString());
     }
 
+    /** {@code retryable} is the same server judgement as {@link #retry}; the screen never infers it from status. */
     public record Status(String id, String type, String status, int attempts, LocalDateTime availableAt,
-                         LocalDateTime completedAt) {
+                         LocalDateTime completedAt, boolean retryable) {
         static Status from(DurableJob job) {
             return new Status(job.getJobSn().toString(), job.getJobSeNm(), job.getPrcsSttsNm(),
-                    job.getRtryNmtm().intValueExact(), job.getJobPrnmntDt(), job.getJobCmptnDt());
+                    job.getRtryNmtm().intValueExact(), job.getJobPrnmntDt(), job.getJobCmptnDt(), job.retryable());
         }
     }
 }

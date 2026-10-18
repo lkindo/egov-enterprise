@@ -20,7 +20,7 @@ public class OnlinePollArticleDto {
     // 기존 항목 수정은 조회 응답의 pollArtclSn으로 항목을 식별한다.
     // pollSn은 부모 DTO에서 결정하며, 항목에 전달된 경우 같은 설문인지 서비스에서 검증한다.
     // 생성과 수정을 함께 사용하는 DTO이므로 두 ID에 @NotNull을 선언하지 않는다.
-    @Schema(description = "설문 항목 일련번호")
+    @Schema(description = "설문 항목 일련번호. 수정 요청에서는 기존 항목을 이 값으로 식별하고, 요청에 없는 기존 항목은 삭제한다. 응답이 모인 항목의 삭제·이름 변경은 거절한다.")
     private Long pollArtclSn;
 
     @Schema(description = "설문 일련번호")
