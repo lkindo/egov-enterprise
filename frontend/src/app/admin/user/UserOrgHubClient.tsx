@@ -916,6 +916,7 @@ export default function UserOrgHubClient({
       canUnlock={displayedUser?.lckYn === 'Y' && canChangeUserStatus}
       canDeleteUser={canDeleteUser}
       locked={isSaving}
+      detailLoaded={Boolean(selectedUserDetail)}
       unlockBusy={activeWriteOperation === 'unlock-user'}
       deleteBusy={activeWriteOperation === 'delete-user'}
       onOpenEdit={dialogs.handleOpenUserEdit}
@@ -1083,11 +1084,11 @@ export default function UserOrgHubClient({
       >
         <UserManageForm
           // 수정 시드는 반드시 상세 레코드여야 한다. 목록 행에는 ognzId 가 없어 '' 로 왕복되고,
-          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. 상세가 뒤늦게 도착하면
-          // key 로 폼을 다시 시드한다(defaultValues 는 최초 마운트에만 반영되기 때문).
-          key={formMode === 'edit' ? `edit-${displayedUser?.userId ?? ''}-${selectedUserDetail ? 'detail' : 'list'}` : 'create'}
+          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. [2026-10-18] 목록 행의 휴대전화·이메일은 가린 값이라
+          // 목록 행으로는 시드하지 않는다 — 수정 버튼도 상세가 온 뒤에만 열린다.
+          key={formMode === 'edit' ? `edit-${selectedUserDetail?.userId ?? ''}-detail` : 'create'}
           mode={formMode}
-          initialData={formMode === 'edit' ? displayedUser : undefined}
+          initialData={formMode === 'edit' ? (selectedUserDetail as UserManage | undefined) : undefined}
           departments={departments}
           onSubmit={onUserSubmit}
           onCancel={dialogs.handleCloseUserModal}

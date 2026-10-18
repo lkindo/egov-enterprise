@@ -29,6 +29,8 @@
 
 ## R4-1 — 주소록 사용자 검색 응답
 
+> 후속(2026-10-18): 연락처를 돌려주던 `GET /address-books/search-users` 와 그 서비스·연락처 projection 을 걷었다. 프런트·E2E 소비자는 없었고 사용자 선택은 연락처 없는 `/address-books/user-selections` 가 맡는다. 아래 표는 당시 실측 기록이다.
+
 현재 근거: [AddressBookApiController](../../api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java), [AddressBookService](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java), [검색 projection](../../business-app/src/main/java/nuri/business/domain/addressbook/AddressBookRepositoryImpl.java), [AddressBookUserDto](../../business-app/src/main/java/nuri/business/service/addressbook/dto/AddressBookUserDto.java).
 
 | 주체 | 대상 × 동작 | 현재 결과 |

@@ -56,12 +56,18 @@ public class CustomUserDetails implements UserDetails {
      * 거부한다(PasswordChangeRequiredGuard).
      */
     private final boolean passwordChangeRequired;
+    /**
+     * 마지막으로 로그아웃한 시각(2026-10-18). 이보다 먼저 발급된 access token 은 거부된다(JwtTokenProvider) — 로그아웃 뒤
+     * 남은 access token 이 만료까지 쓰이지 않게 한다. 알 수 없으면(로그아웃한 적 없음) null 이며, 그때는 이 기준으로 거부하지 않는다.
+     */
+    private final java.time.Instant lastLogoutAt;
 
     private CustomUserDetails(String userId, String esntlId, String userNm, String password,
                               String roleName, String lockAt, String authorCode,
                               List<String> authorityCodes, List<String> groups, List<String> permissions,
                               String authorizationVersion, boolean enabled, java.time.Instant credentialsChangedAt,
-                              String mfaCredentialVersion, boolean mfaRequired, boolean passwordChangeRequired) {
+                              String mfaCredentialVersion, boolean mfaRequired, boolean passwordChangeRequired,
+                              java.time.Instant lastLogoutAt) {
         this.userId = userId;
         this.esntlId = esntlId;
         this.userNm = userNm;
@@ -78,13 +84,14 @@ public class CustomUserDetails implements UserDetails {
         this.mfaCredentialVersion = mfaCredentialVersion;
         this.mfaRequired = mfaRequired;
         this.passwordChangeRequired = passwordChangeRequired;
+        this.lastLogoutAt = lastLogoutAt;
     }
 
     /** 하위 호환성을 위한 7개 인자 생성자 (기존 테스트 및 호출부 지원) */
     public CustomUserDetails(String userId, String esntlId, String userNm, String password,
                              String roleName, String lockAt, String authorCode) {
         this(userId, esntlId, userNm, password, roleName, lockAt, authorCode,
-                null, List.of(), List.of(), null, false, null, null, false, false);
+                null, List.of(), List.of(), null, false, null, null, false, false, null);
     }
 
     @JsonIgnore

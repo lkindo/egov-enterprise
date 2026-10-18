@@ -3056,6 +3056,10 @@
     "column_name": "prvc_log_sn"
   },
   {
+    "table_name": "tb_privacy_log",
+    "column_name": "trpr_id"
+  },
+  {
     "table_name": "tb_rpt_info",
     "column_name": "rpt_se_cd"
   },
@@ -4030,6 +4034,10 @@
   {
     "table_name": "tb_user_info",
     "column_name": "tmpr_pswd_yn"
+  },
+  {
+    "table_name": "tb_user_info",
+    "column_name": "last_lgt_dt"
   },
   {
     "table_name": "tb_user_log",

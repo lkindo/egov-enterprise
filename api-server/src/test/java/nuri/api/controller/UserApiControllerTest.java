@@ -283,6 +283,21 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("[2026-10-18] 목록이 가린 휴대전화('010****5678')를 그대로 되돌려 보내면 저장하지 않고 400 이다")
+    void updateUser_rejectsMaskedMobileNumber() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userNm\":\"홍길동\",\"mblTelno\":\"010****5678\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userNm\":\"홍길동\",\"emlAddr\":\"ho***@example.com\"}"))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, org.mockito.Mockito.never()).updateUser(anyString(), any(UserDto.class));
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // [2026-08-11 회귀 방어] 비밀번호 제약의 그룹 한정 (UserValidationGroups.OnCreate)
     //

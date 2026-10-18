@@ -72,13 +72,13 @@ class MenuHierarchyIntegrityIntegrationTest {
     void removeOnlyOwnFixtures() {
         SecurityContextHolder.clearContext();
         for (String group : ownGroups) {
-            jdbc.update("DELETE FROM tb_authrt_chg_hstry WHERE authrt_cd=?", group);
+            AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE authrt_cd=?", group);
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE authrt_cd=?", group);
             jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd=?", group);
             jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd=?", group);
         }
         for (String user : ownUsers) {
-            jdbc.update("DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr=? OR scrty_dcsn_trgt_id=?", user, user);
+            AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr=? OR scrty_dcsn_trgt_id=?", user, user);
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=?", user);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", user);
         }

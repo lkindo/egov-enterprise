@@ -3,6 +3,8 @@ package nuri.business.domain.addressbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("AddressBookUserSearchResult 단위 테스트")
@@ -13,23 +15,17 @@ class AddressBookUserSearchResultTest {
     void builderTest() {
         // Given & When
         AddressBookUserSearchResult result = AddressBookUserSearchResult.builder()
+                .esntlId("USRCNFRM_00000000001")
                 .userId("USER_001")
                 .userNm("홍길동")
-                .emlAddr("gildong@example.com")
-                .homeTelno("02-123-4567")
-                .mblTelno("010-1234-5678")
-                .officeTelno("02-987-6543")
-                .faxNo("02-555-4444")
+                .ognzNm("개발부")
                 .build();
 
         // Then
+        assertThat(result.getEsntlId()).isEqualTo("USRCNFRM_00000000001");
         assertThat(result.getUserId()).isEqualTo("USER_001");
         assertThat(result.getUserNm()).isEqualTo("홍길동");
-        assertThat(result.getEmlAddr()).isEqualTo("gildong@example.com");
-        assertThat(result.getHomeTelno()).isEqualTo("02-123-4567");
-        assertThat(result.getMblTelno()).isEqualTo("010-1234-5678");
-        assertThat(result.getOfficeTelno()).isEqualTo("02-987-6543");
-        assertThat(result.getFaxNo()).isEqualTo("02-555-4444");
+        assertThat(result.getOgnzNm()).isEqualTo("개발부");
     }
 
     @Test
@@ -39,21 +35,24 @@ class AddressBookUserSearchResultTest {
         AddressBookUserSearchResult result = new AddressBookUserSearchResult();
 
         // When
+        result.setEsntlId("USRCNFRM_00000000002");
         result.setUserId("USER_002");
         result.setUserNm("이순신");
-        result.setEmlAddr("sunsin@example.com");
-        result.setHomeTelno("031-111-2222");
-        result.setMblTelno("010-9999-8888");
-        result.setOfficeTelno("031-333-4444");
-        result.setFaxNo("031-555-6666");
+        result.setOgnzNm("총무부");
 
         // Then
+        assertThat(result.getEsntlId()).isEqualTo("USRCNFRM_00000000002");
         assertThat(result.getUserId()).isEqualTo("USER_002");
         assertThat(result.getUserNm()).isEqualTo("이순신");
-        assertThat(result.getEmlAddr()).isEqualTo("sunsin@example.com");
-        assertThat(result.getHomeTelno()).isEqualTo("031-111-2222");
-        assertThat(result.getMblTelno()).isEqualTo("010-9999-8888");
-        assertThat(result.getOfficeTelno()).isEqualTo("031-333-4444");
-        assertThat(result.getFaxNo()).isEqualTo("031-555-6666");
+        assertThat(result.getOgnzNm()).isEqualTo("총무부");
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 선택 조회 행은 연락처를 담을 칸이 없다 — 퇴역한 구 검색의 연락처 응답이 되살아나지 않는다")
+    void carriesNoContactFields() {
+        assertThat(Arrays.stream(AddressBookUserSearchResult.class.getDeclaredFields())
+                .filter(field -> !field.isSynthetic())
+                .map(java.lang.reflect.Field::getName))
+                .containsExactlyInAnyOrder("esntlId", "userId", "userNm", "ognzNm");
     }
 }

@@ -60,4 +60,14 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
     @Query("UPDATE User u SET u.groupId = null WHERE u.groupId IN :groupIds")
     int clearGroupIdByGroupIdIn(@Param("groupIds") List<String> groupIds);
+
+    /**
+     * 로그아웃 시각을 원자적으로 기록한다(2026-10-18, V2_131). 이 시각 전에 발급된 access token 은 거부된다.
+     *
+     * <p>엔티티의 {@code lastLgtDt} 는 읽기 전용이라 이 UPDATE 만 쓴다. 감사 컬럼(수정자·수정일시)은 바꾸지 않는다 —
+     * 로그아웃은 사용자 정보의 수정이 아니다. 시각은 호출자가 애플리케이션 시계로 넘긴다(JWT 발급 시각과 같은 시계).
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query(value = "UPDATE tb_user_info SET last_lgt_dt = :loggedOutAt WHERE esntl_id = :esntlId", nativeQuery = true)
+    int recordLogout(@Param("esntlId") String esntlId, @Param("loggedOutAt") java.time.LocalDateTime loggedOutAt);
 }

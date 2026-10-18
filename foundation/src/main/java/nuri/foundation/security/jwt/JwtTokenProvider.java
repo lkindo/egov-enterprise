@@ -237,6 +237,7 @@ public class JwtTokenProvider {
                 Objects.requireNonNull(claims.getSubject(), "Subject in JWT token cannot be null"));
         new org.springframework.security.authentication.AccountStatusUserDetailsChecker().check(userDetails);
         rejectIfIssuedBeforeCredentialChange(claims.getIssuedAt(), userDetails);
+        rejectIfIssuedBeforeLogout(claims.getIssuedAt(), userDetails);
         var evidence = mfaEvidence(claims);
         assertMfaSession(userDetails, evidence);
         var authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
@@ -279,14 +280,38 @@ public class JwtTokenProvider {
      * 시각이 없는 토큰은 판정할 수 없으므로 거부한다.
      */
     private static void rejectIfIssuedBeforeCredentialChange(Date issuedAt, UserDetails userDetails) {
-        if (!(userDetails instanceof nuri.foundation.security.service.CustomUserDetails details)
-                || details.getCredentialsChangedAt() == null) {
+        if (userDetails instanceof nuri.foundation.security.service.CustomUserDetails details) {
+            rejectIfIssuedBefore(issuedAt, details.getCredentialsChangedAt(),
+                    "Access token was issued before the last credential change");
+        }
+    }
+
+    /**
+     * 로그아웃 전에 발급된 access token 을 거부한다. [2026-10-18]
+     *
+     * <p>로그아웃은 refresh token 행을 지우지만 access token 은 서명 기반이라 자기 만료(기본 1시간)까지 계속 통과했다 —
+     * 로그아웃한 브라우저나 그 토큰을 가로챈 사람이 남은 시간 동안 API 를 계속 썼다. 비밀번호 변경 검사와 같은 비교를 쓴다:
+     * 로그아웃 시각을 초로 내려 발급 시각(초 내림)과 비교하므로, 로그아웃한 그 초 안에 다시 로그인해 받은 토큰은 통과한다
+     * (같은 초에 로그아웃 직전 발급된 토큰도 통과한다 — 1초 미만의 창을 남기는 쪽을 택한 경계다).
+     *
+     * <p>로그아웃 시각은 DB 시계(CURRENT_TIMESTAMP)가 아니라 토큰을 서명하는 애플리케이션 시계로 기록한다
+     * ({@code AuthServiceImpl.logout}) — DB 와 앱의 시계 차이 때문에 로그아웃 직후 재로그인 토큰이 거부되지 않게 한다.
+     * 여러 앱 노드가 있으면 노드 시계 동기화(NTP)를 전제한다. 시계가 늦은 노드가 발급한 재로그인 토큰은 그 차이만큼
+     * 거부될 수 있으며(안전한 쪽 실패), 차이가 지나면 재발급으로 회복된다.
+     */
+    private static void rejectIfIssuedBeforeLogout(Date issuedAt, UserDetails userDetails) {
+        if (userDetails instanceof nuri.foundation.security.service.CustomUserDetails details) {
+            rejectIfIssuedBefore(issuedAt, details.getLastLogoutAt(), "Access token was issued before the last logout");
+        }
+    }
+
+    private static void rejectIfIssuedBefore(Date issuedAt, java.time.Instant cutoff, String reason) {
+        if (cutoff == null) {
             return;
         }
-        java.time.Instant changedAt = details.getCredentialsChangedAt().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
-        if (issuedAt == null || issuedAt.toInstant().isBefore(changedAt)) {
-            throw new org.springframework.security.authentication.CredentialsExpiredException(
-                    "Access token was issued before the last credential change");
+        java.time.Instant flooredCutoff = cutoff.truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
+        if (issuedAt == null || issuedAt.toInstant().isBefore(flooredCutoff)) {
+            throw new org.springframework.security.authentication.CredentialsExpiredException(reason);
         }
     }
 

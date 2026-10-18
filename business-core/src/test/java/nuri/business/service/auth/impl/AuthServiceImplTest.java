@@ -127,7 +127,7 @@ class AuthServiceImplTest {
         org.springframework.test.util.ReflectionTestUtils.invokeMethod(realProvider, "init");
         AuthServiceImpl service = new AuthServiceImpl(authenticationManager, realProvider,
                 userDetailsService, refreshTokenRepository, loginPolicyManageService, loginPolicyRepository,
-                logService, mfaService);
+                logService, mfaService, userRepository);
         if (relogin) {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-digest")
@@ -620,6 +620,43 @@ class AuthServiceImplTest {
 
             verify(refreshTokenRepository, never()).findByRfshTkn(any());
             verify(refreshTokenRepository, never()).delete(any());
+            verify(userRepository, never()).recordLogout(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("[2026-10-18] 인증된 로그아웃은 로그아웃 시각을 앱 시계로 남긴다 — 그 전에 발급된 access token 이 끊긴다")
+        void authenticatedLogoutRecordsTheCutoff() {
+            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(storedToken()));
+            java.time.LocalDateTime before = java.time.LocalDateTime.now();
+
+            authService.logout(ESNTL_ID, null);
+
+            ArgumentCaptor<java.time.LocalDateTime> at = ArgumentCaptor.forClass(java.time.LocalDateTime.class);
+            verify(userRepository).recordLogout(eq(ESNTL_ID), at.capture());
+            assertThat(at.getValue()).isBetween(before, java.time.LocalDateTime.now());
+        }
+
+        @Test
+        @DisplayName("[2026-10-18] 저장된 세션이 없어도 인증된 주체면 로그아웃 시각을 남긴다 — 이미 받은 access token 을 끊는다")
+        void authenticatedLogoutRecordsEvenWithoutStoredSession() {
+            given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
+
+            authService.logout(ESNTL_ID, null);
+
+            verify(userRepository).recordLogout(eq(ESNTL_ID), any());
+        }
+
+        @Test
+        @DisplayName("[2026-10-18] 쿠키만 있으면 그 재발급 토큰이 저장값일 때만 그 주인의 로그아웃 시각을 남긴다")
+        void cookieLogoutRecordsOnlyForTheMatchedOwner() {
+            var stored = RefreshToken.builder().userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))
+                    .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
+            given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))).willReturn(Optional.of(stored));
+
+            authService.logout(null, "cookie-token");
+            authService.logout(null, "stale-or-forged-token");
+
+            verify(userRepository, times(1)).recordLogout(eq(ESNTL_ID), any());
         }
     }
 

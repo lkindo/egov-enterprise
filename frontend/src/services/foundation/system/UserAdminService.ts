@@ -26,6 +26,8 @@ type UserResponse = Omit<
   components['schemas']['UserDto'],
   'pswd' | 'pswdHint' | 'pswdCrans'
 >;
+/** 관리자 사용자 목록의 한 행(2026-10-19) — 휴대전화·이메일은 가린 값이며 원문은 상세(UserDto)에서만 온다. */
+type UserListItemResponse = components['schemas']['UserListItemDto'];
 
 function toUserListQuery(params?: UserSearchParams | SearchParams): UserListQuery {
   if (!params) return {};
@@ -138,7 +140,7 @@ class UserAdminService extends ApiService {
       query: toUserListQuery(params),
       config,
     });
-    return copyPageResponse<UserResponse, UserManage>(response, '사용자', toUserManage);
+    return copyPageResponse<UserListItemResponse, UserManage>(response, '사용자', toUserManage);
   }
 
   /**

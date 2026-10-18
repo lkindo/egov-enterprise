@@ -1,79 +1,130 @@
 import { readFileSync } from 'node:fs';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { request as playwrightRequest } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+
+/** JWT 의 발급 시각(초)이 지날 때까지 기다린다 — 같은 초의 로그아웃은 그 토큰을 남기는 경계다(JwtTokenProvider). */
+async function waitPastIssuedSecond(authorization: string) {
+    const payload = authorization.replace(/^Bearer /, '').split('.')[1] ?? '';
+    const issuedAt = Number(JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')).iat);
+    if (!Number.isFinite(issuedAt)) throw new Error('The access token has no issued-at claim.');
+    while (Date.now() < (issuedAt + 1) * 1000) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+}
+
+/**
+ * 로그아웃 전에 받은 access token 으로 보호 API 를 부르면 서버가 거부해야 한다(최종로그아웃일시 기준).
+ * 쿠키 없는 새 요청 문맥을 쓴다 — 화면 서버 프록시는 accessToken 쿠키가 있으면 Authorization 을 그 값으로 바꾼다.
+ */
+async function expectAccessTokenRevoked(baseURL: string, authorization: { Authorization: string }) {
+    const isolated = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+    try {
+        const response = await isolated.get('/api/v1/auth/me', { headers: authorization });
+        expect(response.status(), '로그아웃한 사용자의 이전 access token 이 아직 서버에서 통과한다').toBe(401);
+    } finally {
+        await isolated.dispose();
+    }
+}
 test.describe('공통 셸과 인증', () => {
     test.describe('Core Base (Auth & Dashboard)', () => {
+        // [2026-10-18] 로그아웃은 그 사용자의 모든 access token 을 서버에서 끊는다(최종로그아웃일시, V2_131).
+        //   공유 storageState(admin.json·user.json)로 로그아웃하면 같은 계정을 쓰는 다른 테스트·worker 의 세션이 함께 죽으므로
+        //   두 로그아웃 테스트는 이 테스트만의 일회용 주체로 로그인한다. 테스트 제목과 단계는 그대로다.
         test.describe('Dashboard Integrity (Session Preserved)', () => {
-            test.use({ storageState: 'playwright/.auth/admin.json' });
-            test.beforeEach(async ({ page }) => {
-                await page.goto('/admin');
-            });
-            // [2026-08-10 강화] 제목이 'Session Cleanup' 인데 **정리를 검증하지 않았다** — 리다이렉트만 봤다.
-            //   그런데 로그아웃의 보안적 핵심은 "화면이 바뀌는가"가 아니라 **세션이 실제로 죽는가**다.
-            //   /api/auth/logout 라우트는 accessToken·session_exp 를 만료시키고 백엔드 Set-Cookie 를
-            //   포워딩하는데(logout/route.ts), 그 만료가 누락돼도 종전 단언은 전부 그린이었다:
-            //   리다이렉트는 클라이언트가 수행하므로 쿠키가 남아 있어도 /login 으로 간다.
-            //   → 쿠키 소멸과 '보호 경로 재진입 차단'까지 확인해 제목이 약속한 것을 실제로 검증한다.
-            test('Logout Redirection and Session Cleanup', async ({ page, context, consoleGuard }) => {
-                consoleGuard.expectErrors([{
-                        id: 'E2E-CORE-LOGOUT-ME-401',
-                        specScope: 'authentication.spec.ts :: Logout Redirection and Session Cleanup',
-                        channel: 'response',
-                        urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
-                        messagePattern: null,
-                        method: 'GET',
-                        status: 401,
-                        minOccurrences: 0,
-                        maxOccurrences: 2,
-                        reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
-                        expiresAt: '2026-12-31',
-                    }]);
-                console.log('>>> Step 1: Triggering User Menu');
-                const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
-                await expect(profileTrigger).toBeVisible({ timeout: 15000 });
-                await profileTrigger.click();
-                console.log('>>> Step 2: Logout Action');
-                const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
-                await expect(logoutButton).toBeVisible();
-                await logoutButton.click();
-                console.log('>>> Step 3: Redirection Check');
-                await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
-                console.log('>>> Step 4: 세션 쿠키가 실제로 소멸했는지');
-                // 쿠키는 응답 처리 순서상 리다이렉트 직후 잠깐 남아 있을 수 있으므로 수렴을 기다린다.
-                await expect
-                    .poll(async () => {
-                    const cookies = await context.cookies();
-                    return cookies.find((c) => c.name === 'accessToken')?.value ?? '';
-                }, { timeout: 10000, message: '로그아웃 후에도 accessToken 쿠키가 살아 있다' })
-                    .toBe('');
-                console.log('>>> Step 5: 보호 경로 재진입이 차단되는지 (뒤로가기·URL 직접입력 재사용 방어)');
-                // 쿠키가 지워졌다면 미들웨어가 유효 토큰을 찾지 못해 /login 으로 되돌려야 한다.
-                await page.goto('/admin/work-hub');
-                await expect(page, '로그아웃 뒤에도 보호 경로에 진입할 수 있다 — 세션이 살아 있다')
-                    .toHaveURL(/\/login/, { timeout: 15000 });
+            test('Logout Redirection and Session Cleanup', async ({ actorPage, request, baseURL }) => {
+                if (!baseURL) throw new Error('The verified browser base URL is required.');
+                const fixture = await createVisualAdmin(request, baseURL);
+                try {
+                    const { page, context, guard } = await actorPage({ storageState: fixture.storageState });
+                    guard.expectErrors([{
+                            id: 'E2E-CORE-LOGOUT-ME-401',
+                            specScope: 'authentication.spec.ts :: Logout Redirection and Session Cleanup',
+                            channel: 'response',
+                            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                            messagePattern: null,
+                            method: 'GET',
+                            status: 401,
+                            minOccurrences: 0,
+                            maxOccurrences: 2,
+                            reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
+                            expiresAt: '2026-12-31',
+                        }]);
+                    await page.goto('/admin');
+                    // 로그아웃 시각은 초로 내려 발급 시각과 비교한다 — 같은 초에 발급된 토큰은 남는다(재로그인 보호 경계).
+                    //   서버 무효화를 결정적으로 보려고 이 토큰의 발급 초가 지난 뒤에 로그아웃한다.
+                    await waitPastIssuedSecond(fixture.authorization.Authorization);
+                    console.log('>>> Step 1: Triggering User Menu');
+                    const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+                    await expect(profileTrigger).toBeVisible({ timeout: 15000 });
+                    await profileTrigger.click();
+                    console.log('>>> Step 2: Logout Action');
+                    const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
+                    await expect(logoutButton).toBeVisible();
+                    await logoutButton.click();
+                    console.log('>>> Step 3: Redirection Check');
+                    await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+                    console.log('>>> Step 4: 세션 쿠키가 실제로 소멸했는지');
+                    // 쿠키는 응답 처리 순서상 리다이렉트 직후 잠깐 남아 있을 수 있으므로 수렴을 기다린다.
+                    await expect
+                        .poll(async () => {
+                        const cookies = await context.cookies();
+                        return cookies.find((c) => c.name === 'accessToken')?.value ?? '';
+                    }, { timeout: 10000, message: '로그아웃 후에도 accessToken 쿠키가 살아 있다' })
+                        .toBe('');
+                    console.log('>>> Step 5: 보호 경로 재진입이 차단되는지 (뒤로가기·URL 직접입력 재사용 방어)');
+                    // 쿠키가 지워졌다면 미들웨어가 유효 토큰을 찾지 못해 /login 으로 되돌려야 한다.
+                    await page.goto('/admin/work-hub');
+                    await expect(page, '로그아웃 뒤에도 보호 경로에 진입할 수 있다 — 세션이 살아 있다')
+                        .toHaveURL(/\/login/, { timeout: 15000 });
+                    console.log('>>> Step 6: 로그아웃 전에 받은 access token 이 서버에서도 끊겼는지');
+                    // 브라우저 쿠키가 지워져도 토큰 원문을 가진 다른 곳(복사된 토큰·다른 탭)은 만료까지 쓸 수 있었다.
+                    await expectAccessTokenRevoked(baseURL, fixture.authorization);
+                } finally {
+                    await fixture.dispose();
+                }
             });
         });
         test.describe('User Portal Integrity (Session Preserved)', () => {
-            test.use({ storageState: 'playwright/.auth/user.json' });
-            test.beforeEach(async ({ page }) => {
-                console.log('>>> Navigating to User Portal Home');
-                await page.goto('/');
-            });
-            test('User Profile and Logout', async ({ page }) => {
-                // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
-                // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
-                console.log('>>> Step 1: Opening User Account Menu');
-                // 공유 헤더(header.tsx)의 계정 버튼 aria-label — 관리자 로그아웃 테스트와 동일 셀렉터로 정합.
-                const profileButton = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
-                await expect(profileButton).toBeVisible({ timeout: 15000 });
-                await profileButton.click();
-                console.log('>>> Step 2: Logout Action');
-                const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i }).first();
-                await expect(logoutButton).toBeVisible({ timeout: 10000 });
-                await logoutButton.click();
-                console.log('>>> Step 3: Redirect to Login');
-                await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+            test('User Profile and Logout', async ({ actorPage, request, baseURL }) => {
+                if (!baseURL) throw new Error('The verified browser base URL is required.');
+                const fixture = await createVisualAdmin(request, baseURL, { group: 'ROLE_USER' });
+                try {
+                    const { page, guard } = await actorPage({ storageState: fixture.storageState });
+                    guard.expectErrors([{
+                            id: 'E2E-PORTAL-LOGOUT-ME-401',
+                            specScope: 'authentication.spec.ts :: User Profile and Logout',
+                            channel: 'response',
+                            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                            messagePattern: null,
+                            method: 'GET',
+                            status: 401,
+                            minOccurrences: 0,
+                            maxOccurrences: 2,
+                            reason: '로그아웃 뒤 도착한 로그인 화면이 세션 유무를 확인하는 요청이다.',
+                            expiresAt: '2026-12-31',
+                        }]);
+                    console.log('>>> Navigating to User Portal Home');
+                    await page.goto('/');
+                    await waitPastIssuedSecond(fixture.authorization.Authorization);
+                    // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
+                    // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
+                    console.log('>>> Step 1: Opening User Account Menu');
+                    // 공유 헤더(header.tsx)의 계정 버튼 aria-label — 관리자 로그아웃 테스트와 동일 셀렉터로 정합.
+                    const profileButton = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+                    await expect(profileButton).toBeVisible({ timeout: 15000 });
+                    await profileButton.click();
+                    console.log('>>> Step 2: Logout Action');
+                    const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i }).first();
+                    await expect(logoutButton).toBeVisible({ timeout: 10000 });
+                    await logoutButton.click();
+                    console.log('>>> Step 3: Redirect to Login');
+                    await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+                    await expectAccessTokenRevoked(baseURL, fixture.authorization);
+                } finally {
+                    await fixture.dispose();
+                }
             });
         });
     });

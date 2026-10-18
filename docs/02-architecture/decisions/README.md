@@ -25,7 +25,7 @@
 | [ADR-0016](ADR-0016-explicit-permissions-and-multiple-groups.md) | 인가 핵심 3개와 감사 1개, 복수 그룹·명시 기능 권한 및 수동 전환 | Accepted — 일부 ADR-0034로 대체 |
 | [ADR-0017](ADR-0017-task-oriented-menu-navigation.md) | 현재 제품의 과업 중심 4개 메뉴 영역, 중복 진입점 통합과 NAV 보존 이행 | Accepted |
 | [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관별 온라인/이관 도입 승인 분리 | Accepted — 일부 ADR-0028, DEC-OPS-289·291·295로 대체 |
-| [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted — 일부 DEC-OPS-098로 대체 |
+| [ADR-0019](ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립, 요청 제한 한도 설정화 | Accepted — 일부 DEC-OPS-098·ADR-0035로 대체 |
 | [ADR-0020](ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 | Accepted — 일부 ADR-0028, DEC-OPS-239로 대체 |
 | [ADR-0021](ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow | Accepted — 일부 ADR-0022·ADR-0023으로 대체 |
 | [ADR-0022](ADR-0022-ci-independent-module-impact-and-cache.md) | 온라인·이관 독립 영향 분류, 커버리지·required 보존과 Gradle 캐시 | Accepted — 일부 ADR-0023·ADR-0026, DEC-OPS-237로 대체 |
@@ -41,3 +41,4 @@
 | [ADR-0032](ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 | Accepted |
 | [ADR-0033](ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 접수 당시 수신주소의 암호화 보관과 완료 후 정리 | Accepted |
 | [ADR-0034](ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 | Accepted |
+| [ADR-0035](ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하(IP당 분당 30) | Accepted |

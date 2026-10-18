@@ -61,6 +61,7 @@ export function UserDetailActions({
   canUnlock,
   canDeleteUser,
   locked,
+  detailLoaded,
   unlockBusy,
   deleteBusy,
   onOpenEdit,
@@ -75,6 +76,8 @@ export function UserDetailActions({
   canDeleteUser: boolean;
   /** 진행 중인 쓰기가 있다(허브의 쓰기 잠금). */
   locked: boolean;
+  /** 상세 레코드가 왔다. 목록 행은 휴대전화·이메일을 가려서 싣으므로, 상세가 오기 전에는 수정을 열지 않는다(2026-10-18). */
+  detailLoaded: boolean;
   /** 진행 중인 쓰기가 계정 잠금 해제다. */
   unlockBusy: boolean;
   /** 진행 중인 쓰기가 사용자 삭제다. */
@@ -88,13 +91,15 @@ export function UserDetailActions({
     <>
       {/* 종전에는 같은 `handleOpenUserEdit` 를 부르는 버튼이 패널 우상단(아이콘)과 하단(CTA)에
           두 벌 있었다 — 같은 명령을 두 곳에 두면 어느 쪽이 무엇을 하는지 판정 비용만 는다(G10). */}
+      {/* [2026-10-18] 상세 레코드가 오기 전에는 수정할 수 없다 — 목록 행은 휴대전화·이메일을 가려서 싣는다. 목록 값으로
+          폼을 채우면 가린 값('010****5678')이 그대로 저장돼 원문을 덮는다. */}
       {canUpdateUser && (
       <Button
         type="button"
         variant="outline"
         size="sm"
         aria-label="정보 수정"
-        disabled={locked}
+        disabled={locked || !detailLoaded}
         onClick={onOpenEdit}
         className="gap-1.5"
       >

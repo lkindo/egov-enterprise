@@ -11,12 +11,12 @@
       "fingerprint": "dec982be271ed34f:1",
       "sourceSha256": "28ff03fa4633d1d09ad939e390985da2e8a4c1f28256d00821a9df2465ed1dcc",
       "expiresOn": "2026-12-08",
-      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged. Re-reviewed 2026-10-14: proxy changes only add media-src self/blob to the app CSP for authenticated board video playback; token validation, Origin rejection, Strict HttpOnly cookie policy and Bearer forwarding are unchanged.",
+      "reason": "Stateless Bearer API; Strict HttpOnly session cookies and Origin checks; cookie-authenticated SockJS transports separately require exact trusted Origin; legacy CSRF remains enabled. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-09-28: encoded token endpoint aliases now terminate with HTTP 400; existing Origin checks and Bearer forwarding are unchanged. Re-reviewed 2026-10-01: the proxy login redirect now carries only allowlisted structural query keys (bbsId, pstSn, tab, page) validated by pattern; Origin, Strict cookie and Bearer forwarding defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged. Re-reviewed 2026-10-14: proxy changes only add media-src self/blob to the app CSP for authenticated board video playback; token validation, Origin rejection, Strict HttpOnly cookie policy and Bearer forwarding are unchanged. Re-reviewed 2026-10-19: access tokens issued before the user's recorded logout are now rejected with the same second-floored comparison as the credential-change check (DEC-OPS-356); signature, account-status, token-type, Origin and Bearer forwarding defenses are unchanged.",
       "id": "SAST-FP-001",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
+          "sha256": "f62e2639b459a6eb003d122688aeb6fba07090d87717fcfe02f5c662f8944fe4"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -73,12 +73,12 @@
       "fingerprint": "a46799a1753058c0:1",
       "sourceSha256": "43b0d84bb652978d54b0d6daf3df7f26d1186877615ed5532ee6f99aac436c34",
       "expiresOn": "2026-12-08",
-      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
+      "reason": "Fallback core chain uses stateless Bearer authentication and Origin validation. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged. Re-reviewed 2026-10-19: access tokens issued before the user's recorded logout are now rejected with the same second-floored comparison as the credential-change check (DEC-OPS-356); signature, account-status, token-type, Origin and Bearer forwarding defenses are unchanged.",
       "id": "SAST-FP-002",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
+          "sha256": "f62e2639b459a6eb003d122688aeb6fba07090d87717fcfe02f5c662f8944fe4"
         },
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtAuthenticationFilter.java",
@@ -181,16 +181,16 @@
       "fingerprint": "3bdaa522982a3650:1",
       "sourceSha256": "884972eb7ed63f7e0cb1eec832a0ec3a1aea7686d8d3b5b5412460a438ef7698",
       "expiresOn": "2026-12-08",
-      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-01: the user adapter only adds a passwordChangeRequired flag to the principal, which narrows access (PasswordChangeRequiredGuard); the SockJS Origin denial and token checks are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged.",
+      "reason": "Missing or invalid credentials clear the security context, return HTTP 401 and terminate before the transport chain. Only signature-validated JWTs with fresh enabled account details and a nonblank current authorization version reach the chain; conditional authentication-state inspection does not bypass access control. Re-reviewed 2026-09-27: refresh cookie Max-Age is capped by signed expiry; signature, account-status, token-type and Origin defenses are unchanged. Re-reviewed 2026-10-01: the user adapter only adds a passwordChangeRequired flag to the principal, which narrows access (PasswordChangeRequiredGuard); the SockJS Origin denial and token checks are unchanged. Re-reviewed 2026-10-06: extracted the identical BCrypt-only password factory and removed unused Environment constructor injection; fallback activation, filter chains, CSRF, Origin and Bearer defenses are unchanged. Re-reviewed 2026-10-19: access tokens issued before the user's recorded logout are now rejected with the same second-floored comparison as the credential-change check (DEC-OPS-356); signature, account-status, token-type, Origin and Bearer forwarding defenses are unchanged. JpaUserAuthAdapter only adds the read-only last logout time to the loaded account details; the enabled-account and credential checks are unchanged.",
       "id": "SAST-FP-008",
       "supportingSources": [
         {
           "file": "foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java",
-          "sha256": "a882133ab456e37b6a7915f27c72b9f1d995f354a6e2de4620d900339e3454c8"
+          "sha256": "f62e2639b459a6eb003d122688aeb6fba07090d87717fcfe02f5c662f8944fe4"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/iam/JpaUserAuthAdapter.java",
-          "sha256": "9b19fbaac045065581f2166abfbb499711a226704bda1427f858d5eebb77fd67"
+          "sha256": "42ba04bcebf6d06457c6ebcbb8d7f1648c79e7add5592cf0acf3872fa70c7c58"
         },
         {
           "file": "business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java",

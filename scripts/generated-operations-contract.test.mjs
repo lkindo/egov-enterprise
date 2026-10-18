@@ -289,7 +289,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // 2026-10-16 나의 결재선: 431 -> 436. 저장한 결재선 목록·열기·저장·고치기·지우기(/approvals/saved-lines)를 더했다.
   // 2026-10-18 ADR-0034: 436 -> 412. 410 만 돌려주던 구 롤·롤 권한·권한 그룹 쓰기 12개와 비공식결재 API 12개(핸들러 6 × 경로 2,
   //   /informal-sanctions·/admin/system/ism)를 걷었다. 결재 화면은 /approvals 의 결재 API 를 그대로 쓴다.
-  assert.equal(operations.length, 412);
+  // 2026-10-19 DEC-OPS-355: 412 -> 411. 연락처를 돌려주던 구 주소록 사용자 검색(GET /address-books/search-users)을 걷었다.
+  assert.equal(operations.length, 411);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

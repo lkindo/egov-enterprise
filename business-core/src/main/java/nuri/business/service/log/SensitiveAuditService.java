@@ -38,8 +38,9 @@ public class SensitiveAuditService implements SensitiveAuditPort {
     public void prepared(Context context) {
         persist(context, Outcome.PREPARED, null);
         // The legacy privacy screen is a projection of an authorized response preparation, not proof of client receipt.
+        // [2026-10-18] 한 사람을 대상으로 한 응답은 감사 경계가 대상 좌표(targetId)에 정보주체의 esntlId 를 싣는다(PrivacySubject).
         events.publishEvent(new PrivacyAccessEvent("[PREPARED] " + context.description(), context.operation(),
-                context.actorLoginId(), context.clientIp(), LocalDateTime.now()));
+                context.actorLoginId(), context.clientIp(), LocalDateTime.now(), context.targetId()));
     }
 
     @Override
