@@ -9257,19 +9257,19 @@ export interface components {
             otherLines?: components["schemas"]["ApprovalLineSuggestionDto"][];
             recentApprovers?: components["schemas"]["ApproverProfileDto"][];
         };
-        ApiResponsePageResponseUserDto: {
+        ApiResponsePageResponseUserListItemDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageResponseUserDto"];
+            data?: components["schemas"]["PageResponseUserListItemDto"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        PageResponseUserDto: {
-            list?: components["schemas"]["UserDto"][];
+        PageResponseUserListItemDto: {
+            list?: components["schemas"]["UserListItemDto"][];
             /** Format: int64 */
             total?: number;
             /** Format: int32 */
@@ -9278,6 +9278,27 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
+        };
+        UserListItemDto: {
+            userId: string;
+            userNm: string;
+            esntlId?: string;
+            role?: string;
+            emplNo?: string;
+            officeTelno?: string;
+            /** @description 가린 휴대전화(예: 010****5678). 원문은 상세 조회에서만 나간다. */
+            mblTelno?: string;
+            /** @description 가린 이메일(예: ho***@example.com). 원문은 상세 조회에서만 나간다. */
+            emlAddr?: string;
+            ofcpsNm?: string;
+            ognzId?: string;
+            userSttsCd?: string;
+            lckYn?: string;
+            /** Format: date-time */
+            crtDt?: string;
+            readonly groups: string[];
+            readonly permissions: string[];
+            readonly authorizationVersion: string;
         };
         ApiResponseDepartmentRecipientsDto: {
             success?: boolean;
@@ -24749,7 +24770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseUserDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseUserListItemDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

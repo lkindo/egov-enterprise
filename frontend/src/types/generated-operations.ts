@@ -147,7 +147,7 @@ import {
   ApiResponsePageResponseSurveyTemplateDtoResponseSchema,
   ApiResponsePageResponseSysLogDtoResponseSchema,
   ApiResponsePageResponseUserChoiceResponseSchema,
-  ApiResponsePageResponseUserDtoResponseSchema,
+  ApiResponsePageResponseUserListItemDtoResponseSchema,
   ApiResponsePageResponseUserLogDtoResponseSchema,
   ApiResponsePageResponseWebLogDtoResponseSchema,
   ApiResponsePageResponseWorkReportDtoResponseSchema,
@@ -348,7 +348,7 @@ import {
   PageResponseSurveyTemplateDtoResponseSchema,
   PageResponseSysLogDtoResponseSchema,
   PageResponseUserChoiceResponseSchema,
-  PageResponseUserDtoResponseSchema,
+  PageResponseUserListItemDtoResponseSchema,
   PageResponseUserLogDtoResponseSchema,
   PageResponseWebLogDtoResponseSchema,
   PageResponseWorkReportDtoResponseSchema,
@@ -4416,10 +4416,10 @@ export const getUsersOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: z.object({ "searchKeyword": z.string().optional(), "userSttsCd": z.string().optional(), "ognzId": z.string().optional(), "lckYn": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseUserDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseUserDtoResponseSchema,
+  responseSchema: z.lazy(() => PageResponseUserListItemDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseUserListItemDtoResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [["list","*","pswd"],["list","*","pswdHint"],["list","*","pswdCrans"]],
+  responseForbiddenPaths: [],
   });
 })();
 

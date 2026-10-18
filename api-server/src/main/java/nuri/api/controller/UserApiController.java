@@ -129,7 +129,7 @@ public class UserApiController {
     @PrivacyAccess("사용자 목록(가린 휴대전화·이메일, 사무실 전화)")
     @GetMapping("/admin/system/users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#getUsers')")
-    public ResponseEntity<ApiResponse<PageResponse<UserDto>>> getUsers(
+    public ResponseEntity<ApiResponse<PageResponse<nuri.business.service.user.dto.UserListItemDto>>> getUsers(
             @RequestParam(required = false) String searchKeyword,
             @RequestParam(required = false) String userSttsCd,
             @RequestParam(required = false) String ognzId,
@@ -137,7 +137,8 @@ public class UserApiController {
             @PageableDefault(size = 10) Pageable pageable) {
         Page<UserDto> result = userService.getPagedUserList(searchKeyword,
                 UserListFilter.of(userSttsCd, ognzId, lckYn), pageable);
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+        // 입력 규칙이 없는 목록 전용 응답으로 옮긴다 — 가린 이메일이 UserDto 의 이메일 형식 규칙에 걸리지 않게(UserListItemDto).
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result.map(nuri.business.service.user.dto.UserListItemDto::from))));
     }
 
     /**

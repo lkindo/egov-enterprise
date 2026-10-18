@@ -17563,7 +17563,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseUserDto"
+                  "$ref": "#/components/schemas/ApiResponsePageResponseUserListItemDto"
                 }
               }
             }
@@ -46938,7 +46938,7 @@
           }
         }
       },
-      "ApiResponsePageResponseUserDto": {
+      "ApiResponsePageResponseUserListItemDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -46955,7 +46955,7 @@
             "type": "string"
           },
           "data": {
-            "$ref": "#/components/schemas/PageResponseUserDto"
+            "$ref": "#/components/schemas/PageResponseUserListItemDto"
           },
           "timestamp": {
             "type": "string",
@@ -46969,13 +46969,13 @@
           }
         }
       },
-      "PageResponseUserDto": {
+      "PageResponseUserListItemDto": {
         "type": "object",
         "properties": {
           "list": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UserDto"
+              "$ref": "#/components/schemas/UserListItemDto"
             }
           },
           "total": {
@@ -46995,6 +46995,78 @@
             "format": "int32"
           }
         }
+      },
+      "UserListItemDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "esntlId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "emplNo": {
+            "type": "string"
+          },
+          "officeTelno": {
+            "type": "string"
+          },
+          "mblTelno": {
+            "type": "string",
+            "description": "가린 휴대전화(예: 010****5678). 원문은 상세 조회에서만 나간다."
+          },
+          "emlAddr": {
+            "type": "string",
+            "description": "가린 이메일(예: ho***@example.com). 원문은 상세 조회에서만 나간다."
+          },
+          "ofcpsNm": {
+            "type": "string"
+          },
+          "ognzId": {
+            "type": "string"
+          },
+          "userSttsCd": {
+            "type": "string"
+          },
+          "lckYn": {
+            "type": "string"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
+          },
+          "authorizationVersion": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "authorizationVersion",
+          "groups",
+          "permissions",
+          "userId",
+          "userNm"
+        ]
       },
       "ApiResponseDepartmentRecipientsDto": {
         "type": "object",
