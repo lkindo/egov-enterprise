@@ -1076,6 +1076,9 @@ main과 비교했을 때 빠진 것은 쓰지 않는 test 모듈(cache·data-cas
 재검토 조건: Framework 7 minor에서 spring-retry 호환이 깨지거나, Spring Batch·egovframe-rte-bat-core 의존을 걷어
 spring-retry가 bootJar에서도 빠질 때. 그때는 위 세 가지 의미 차이를 테스트로 먼저 고정한 뒤 옮긴다.
 
+2026-10-19 Spring Batch·egovframe-rte-bat-core 를 사용처 0건으로 걷었다(품질 평가 과제 7). spring-retry 는 foundation·business-core·business-app 이
+직접 선언하므로 bootJar 에 그대로 남는다 — 재검토 조건의 둘째(bootJar 에서도 빠질 때)는 성립하지 않고, 유지 판단은 그대로다.
+
 ## ZAP 주간 스캔 경고 분류
 
 주간 실행 `35489408892`(2026-09-20, 리포트 아티팩트 `zap_baseline_frontend`·`zap_fullscan_api`)의
