@@ -69,6 +69,7 @@ import {
   type BoardDropResult,
   type BoardDropTarget,
 } from './menuBoardModel';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const BADGE_LABEL: Record<MenuBadgeKind, string> = {
   new: '새 메뉴',
@@ -427,7 +428,7 @@ function areaCountText(count: MenuBoardAreaCount): { shown: string; suffix: stri
   return { shown: count.total.toLocaleString(), suffix: '개 하위 메뉴' };
 }
 
-function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onActivate, onKeyDown }: {
+function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onActivate }: {
   area: FlattenedItem;
   items: readonly FlattenedItem[];
   selected: boolean;
@@ -436,7 +437,6 @@ function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onAc
   panelId: string;
   tabId: string;
   onActivate: () => void;
-  onKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
 }) {
   const board = useBoard();
   const dropId = `area-tab:${area.menuNo}`;
@@ -445,17 +445,13 @@ function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onAc
   const counted = areaCountText(menuCount);
   const searchHit = menuCount.matched !== null && menuCount.matched > 0;
   return (
-    <button
+    <Tab
       ref={setNodeRef}
-      type="button"
-      role="tab"
       id={tabId}
       data-area-tab={area.menuNo}
-      aria-selected={selected}
+      selected={selected}
       aria-controls={panelId}
-      tabIndex={selected ? 0 : -1}
       onClick={onActivate}
-      onKeyDown={onKeyDown}
       className={cn(
         'relative -mb-px shrink-0 whitespace-nowrap rounded-t-md border border-b-0 px-2.5 py-1 text-sm font-medium',
         selected ? 'border-border bg-card text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -487,7 +483,7 @@ function AreaTab({ area, items, selected, count, menuCount, panelId, tabId, onAc
           <span className="sr-only">{`${count.toLocaleString()}건 변경`}</span>
         </span>
       )}
-    </button>
+    </Tab>
   );
 }
 
@@ -560,17 +556,7 @@ export function MenuBoard(props: MenuBoardProps) {
     onDrop(active.menuNo, located.target);
   };
 
-  const activateBy = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    let next = -1;
-    if (event.key === 'ArrowRight') next = (index + 1) % areas.length;
-    else if (event.key === 'ArrowLeft') next = (index - 1 + areas.length) % areas.length;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = areas.length - 1;
-    if (next < 0) return;
-    event.preventDefault();
-    onActivateArea(areas[next].menuNo);
-    document.getElementById(`${baseId}-tab-${areas[next].menuNo}`)?.focus();
-  };
+  // 영역 탭의 ←·→·Home·End 는 탭 원천(TabList)이 다룬다 — 옮긴 탭에 포커스를 두고 그 탭의 클릭(onActivateArea)을 부른다.
 
   const entryProps = (item: FlattenedItem) => ({
     item,
@@ -606,8 +592,8 @@ export function MenuBoard(props: MenuBoardProps) {
       >
         <div data-menu-board="" className={cn('space-y-2', WORK_FILL_REGION_CLASS)}>
           <div className="flex items-end border-b border-border">
-            <div role="tablist" aria-label="메뉴 영역" className="flex min-w-0 flex-wrap gap-1">
-              {areas.map((candidate, index) => (
+            <TabList aria-label="메뉴 영역" className="flex min-w-0 flex-wrap gap-1">
+              {areas.map((candidate) => (
                 <AreaTab
                   key={candidate.menuNo}
                   area={candidate}
@@ -618,10 +604,9 @@ export function MenuBoard(props: MenuBoardProps) {
                   panelId={panelId}
                   tabId={`${baseId}-tab-${candidate.menuNo}`}
                   onActivate={() => onActivateArea(candidate.menuNo)}
-                  onKeyDown={(event) => activateBy(event, index)}
                 />
               ))}
-            </div>
+            </TabList>
           </div>
 
           {area ? (
@@ -629,8 +614,7 @@ export function MenuBoard(props: MenuBoardProps) {
               fill 조건에서 보드만 스크롤한다(탭 줄·상태 줄은 이 상자 밖에 고정). 스크롤 상자이므로 안쪽 sr-only 를 가두는
               relative 를 두고(scroll-region-containment), 놓을 곳 표시(ring-2)가 상자 가장자리에서 잘리지 않게 안쪽 여백을 둔다.
             */
-            <div
-              role="tabpanel"
+            <TabPanel
               id={panelId}
               aria-labelledby={`${baseId}-tab-${area.menuNo}`}
               data-menu-board-scroll=""
@@ -743,7 +727,7 @@ export function MenuBoard(props: MenuBoardProps) {
                   className="flex h-6 break-inside-avoid items-center justify-center"
                 />
               </div>
-            </div>
+            </TabPanel>
           ) : (
             <div className={cn('space-y-3 py-10 text-center', BOARD_SCROLL_CLASS)}>
               <p className="text-sm text-muted-foreground">등록된 메뉴가 없습니다.</p>

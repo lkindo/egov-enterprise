@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Tab, TabList } from '@/app/components/ui/standard-tabs';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { useOptionalAuth } from '@/contexts/AuthContext';
 import { visibleEntries, type HubTabViews, type ShellLink } from '@/extensions/slots';
@@ -67,14 +68,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
   }, [pathname, router, searchParams]);
 
   const tabList = tabs.length > 0 ? (
-    <div role="tablist" aria-label="협업 데이터 구분" className="flex rounded-md border border-border p-0.5">
+    <TabList aria-label="협업 데이터 구분" className="flex rounded-md border border-border p-0.5">
       {tabs.map((tab) => (
-        <button
+        <Tab
           key={tab.id}
-          type="button"
-          role="tab"
           id={`collab-tab-${tab.id}`}
-          aria-selected={activeId === tab.id}
+          selected={activeId === tab.id}
           aria-controls="collab-tabpanel"
           onClick={() => handleTabChange(tab.id)}
           className={cn(
@@ -83,9 +82,9 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
           )}
         >
           {tab.label}
-        </button>
+        </Tab>
       ))}
-    </div>
+    </TabList>
   ) : null;
 
   const hubLinks = links.map(({ id, href, label, icon: Icon }) => (

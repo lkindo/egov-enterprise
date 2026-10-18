@@ -87,7 +87,7 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
               aria-pressed={selectedItemId === skill.id}
               onClick={() => onSelect(skill.id)}
               className={cn(
-                "flex flex-col justify-between rounded-md border bg-muted px-3 py-2 text-left outline-none transition-colors",
+                "flex flex-col justify-between rounded-md border bg-muted px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 selectedItemId === skill.id
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary"
@@ -135,7 +135,7 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
               aria-pressed={selectedItemId === log.id}
               onClick={() => onSelect(log.id)}
               className={cn(
-                "flex w-full items-center justify-between rounded-md border px-3 py-2 text-left outline-none transition-colors",
+                "flex w-full items-center justify-between rounded-md border px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
                 selectedItemId === log.id
                   ? "border-primary bg-primary/5"
                   : "border-border bg-muted hover:border-primary"

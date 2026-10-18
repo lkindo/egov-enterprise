@@ -581,6 +581,8 @@ describe('SurveyQuestionsPanel 설문지 등록·삭제', () => {
   it('제목과 템플릿을 채우면 설문지를 등록한다 — 종전에는 만들 경로가 없었다', async () => {
     renderPanel();
 
+    // 템플릿 옵션은 비동기로 그려진다 — 보이지 않는 옵션은 고를 수 없다(아래 기간 시험과 같은 순서).
+    await screen.findByRole('option', { name: '기본 템플릿' });
     fireEvent.change(await screen.findByLabelText('설문지 제목'), { target: { value: '2026 만족도' } });
     fireEvent.change(screen.getByLabelText('템플릿'), { target: { value: '11' } });
     fireEvent.click(screen.getByRole('button', { name: '설문지 등록' }));

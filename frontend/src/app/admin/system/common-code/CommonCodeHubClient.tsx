@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { AlertTriangle,
@@ -14,6 +14,7 @@ import CommonCodeClient from './CommonCodeClient';
 import AdministCodeClient from '../codes/administ/AdministCodeClient';
 import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 실어 보낸다.
@@ -78,30 +79,10 @@ export default function CommonCodeHubClient({
     document.getElementById(`code-hub-tab-${activeTab.toLowerCase()}`)?.focus();
   }, [activeTab]);
 
-  const handleTabListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-
-    const currentTab = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]');
-    if (!currentTab) return;
-    const currentIndex = TABS.findIndex((tab) => currentTab.id === `code-hub-tab-${tab.toLowerCase()}`);
-    if (currentIndex < 0) return;
-
-    const nextIndex = event.key === 'Home'
-      ? 0
-      : event.key === 'End'
-        ? TABS.length - 1
-        : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length;
-
-    event.preventDefault();
-    setActiveTab(TABS[nextIndex]);
-  };
-
+  // 방향키·Home·End 는 탭 원천(TabList)이 다룬다 — 옮긴 탭의 클릭이 setActiveTab 을 부르고, 주소가 바뀐 뒤 위 effect 가 포커스를 되돌린다.
   const tabNavigation = (
-    <div
-      role="tablist"
+    <TabList
       aria-label="코드 유형 전환"
-      onKeyDown={handleTabListKeyDown}
       className="flex flex-wrap gap-2 rounded-md border border-border bg-muted p-2"
     >
       <HubTabButton
@@ -128,7 +109,7 @@ export default function CommonCodeHubClient({
         active={activeTab === 'INSTITUTION'}
         onClick={() => setActiveTab('INSTITUTION')}
       />
-    </div>
+    </TabList>
   );
 
   const fetchNotice = fetchError ? (
@@ -153,8 +134,7 @@ export default function CommonCodeHubClient({
         breadcrumbs={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '통합 코드 허브' }]}
       />
       {tabNavigation}
-      <div
-        role="tabpanel"
+      <TabPanel
         id="code-hub-panel"
         aria-labelledby={activeTabId}
       >
@@ -173,7 +153,7 @@ export default function CommonCodeHubClient({
         ) : (
           <InstitutionCodeClient initialData={{ list: [], total: 0 }} embedded />
         )}
-      </div>
+      </TabPanel>
     </div>
   );
 }
@@ -182,13 +162,10 @@ export default function CommonCodeHubClient({
 
 function HubTabButton({ id, panelId, icon: Icon, label, active, onClick }: { id: string, panelId: string, icon: LucideIcon, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button
-      type="button"
-      role="tab"
+    <Tab
       id={id}
-      aria-selected={active}
+      selected={active}
       aria-controls={panelId}
-      tabIndex={active ? 0 : -1}
       onClick={(e) => {
         e.preventDefault();
         onClick();
@@ -207,6 +184,6 @@ function HubTabButton({ id, panelId, icon: Icon, label, active, onClick }: { id:
       {active && (
         <span aria-hidden="true" className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-primary" />
       )}
-    </button>
+    </Tab>
   );
 }

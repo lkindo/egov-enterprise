@@ -305,7 +305,7 @@ export function UserManageForm({
             onClick={() => {
               if (!areActionsDisabled) onCancel();
             }}
-            className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+            className="flex-1 h-[var(--control-h)] rounded-lg font-bold text-xs border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer flex items-center justify-center"
           >
             취소
           </button>

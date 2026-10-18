@@ -12,7 +12,11 @@ function source(relativePath: string): string {
 
 describe('r6 accessibility regressions', () => {
   it('makes the bounded scrollers of the user/org hub keyboard reachable and named', () => {
-    const userHub = source('app/admin/user/UserOrgHubClient.tsx');
+    // [2026-10-18 허브 분해] 부서 조직도(이 화면이 직접 만드는 유계 스크롤러)는 UserOrgDeptMaster.tsx 로 옮겼다 — 허브와 함께 읽는다.
+    const userHub = [
+      source('app/admin/user/UserOrgHubClient.tsx'),
+      source('app/admin/user/UserOrgDeptMaster.tsx'),
+    ].join('\n');
     const dataTable = source('app/components/ui/standard-data-table.tsx');
 
     /*
@@ -61,9 +65,14 @@ describe('r6 accessibility regressions', () => {
   });
 
   it('does not dim repeated user identifiers or the empty-selection notice below the muted token', () => {
+    // [2026-10-18 허브 분해] 허브에서 옮긴 화면 조각(부서 마스터·상세 동작·일괄 대화상자·툴바)도 같은 금지를 받는다.
     const userHub = [
       source('app/admin/user/UserOrgHubClient.tsx'),
       source('app/admin/user/UserOrgHubParts.tsx'),
+      source('app/admin/user/UserOrgDeptMaster.tsx'),
+      source('app/admin/user/UserOrgDetailActions.tsx'),
+      source('app/admin/user/UserOrgBulkDialogs.tsx'),
+      source('app/admin/user/UserOrgToolbarActions.tsx'),
     ].join('\n');
 
     expect(userHub).not.toContain('text-[10px] font-bold tracking-tight opacity-60');
@@ -113,6 +122,43 @@ describe('r6 accessibility regressions', () => {
     // 지우고 보므로 사유를 코드 옆에 적을 수 있다. 이 파일의 source() 는 원문을 그대로 읽어
     // 설명 주석까지 위반으로 신고하므로, 여기서는 r6 의 본래 축(하드코딩 대비 회귀)만 남긴다.
     expect(timeline).not.toContain('text-emerald-700 tracking-tight');
+  });
+
+  /**
+   * [2026-10-18] 초점 표시. 아래 단추들은 `outline-none`(또는 `focus:outline-none`)으로 브라우저 기본 윤곽선을 지우고 대신할
+   * 표시를 두지 않아 키보드 초점이 보이지 않았다(WCAG 2.4.7). 단추마다 초점 윤곽선을 둔다. 전역 기본값(globals.css)은
+   * utilities 층에 지므로 이런 단추를 대신 고치지 못한다 — 그래서 단추 자신을 본다.
+   */
+  it('초점을 지웠던 단추들이 focus-visible 윤곽선을 보인다', () => {
+    // [파일, 그 단추 class 만 갖는 토큰들] — 토큰이 모두 든 class 문자열은 파일마다 정확히 하나다.
+    const buttons: Array<[file: string, marker: string[]]> = [
+      ['app/note/NoteHubClient.tsx', ['ml-1', 'hover:text-destructive']],
+      ['components/admin/user/UserManageForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
+      ['components/admin/user/DepartmentForm.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
+      ['app/admin/security/group/SecurityGroupClient.tsx', ['flex-1', 'hover:bg-surface-inverse', 'cursor-pointer']],
+      ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['flex-col', 'justify-between', 'bg-muted', 'px-3']],
+      ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['w-full', 'justify-between', 'px-3', 'text-left']],
+    ];
+    for (const [file, marker] of buttons) {
+      const classes = source(file).split(/["'`]/)
+        .map((segment) => segment.split(/\s+/))
+        .filter((tokens) => marker.every((token) => tokens.includes(token)));
+      expect(classes, `${file}: '${marker.join(' ')}' 단추의 class 가 하나가 아니다 — 시험이 공허하거나 모호하다`).toHaveLength(1);
+      const [tokens] = classes;
+      expect(tokens, `${file}: 초점을 지우는 outline-none 이 되살아났다`).not.toContain('outline-none');
+      expect(tokens, `${file}: 초점을 지우는 focus:outline-none 이 되살아났다`).not.toContain('focus:outline-none');
+      expect(tokens, `${file}: '${marker.join(' ')}' 단추에 focus-visible 윤곽선이 없다`).toContain('focus-visible:outline-ring');
+    }
+  });
+
+  it('globals.css 의 초점 기본값은 특이성 0 의 base 층 규칙이라 컴포넌트의 초점 모양과 다투지 않는다', () => {
+    const globals = source('app/globals.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const base = globals.match(/@layer base \{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(base, 'globals.css 의 @layer base 블록을 찾지 못했다').not.toBe('');
+    expect(base).toMatch(/:where\(:focus-visible\)\s*\{[^}]*outline:\s*2px solid hsl\(var\(--ring\)\)/);
+    // 층 밖(무레이어)에 두면 utilities 의 outline-none·focus-visible:* 를 이겨 컴포넌트가 정한 초점 모양을 덮는다.
+    const outsideBase = globals.replace(/@layer base \{[\s\S]*?\n\}/, '');
+    expect(outsideBase).not.toMatch(/:focus-visible/);
   });
 
   it('keeps A2 aria-current selection visible in Windows forced-colors mode', () => {

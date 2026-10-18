@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
@@ -8,48 +8,51 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/business/survey';
-
-/*
-  전체 치환(PUT) payload 타입. 서버가 이 필드들을 그대로 엔티티에 덮어쓰므로 하나라도 빠지면
-  그 값이 null 이 된다 — 목록 행의 기존 값을 함께 실어 보내기 위한 명시적 계약이다.
-
-  ⚠ **되돌려 싣는 필드는 optional 이다.** 목록 행의 값이 null 이면 `omitNulls` 가 그 키를
-  떨어뜨리기 때문이다(요청 스키마가 null 을 거부한다 — omit-nulls.ts 의 docblock 참조).
-  수제 `Survey`·`SurveyQuestion` 타입은 이 필드들을 non-null 로 선언하지만 **그 선언이 사실과
-  다르다** — 그래서 TypeScript 는 이 결함을 한 번도 잡지 못했다.
-*/
-type SurveyInfoUpdate = Pick<Survey, 'srvyTtl' | 'srvyTmpltSn'>
-  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'rlsYn'>>;
-type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnCn'>
-  & Partial<Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'maxChcCnt'>>;
-type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };
 import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Check, Copy, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, Trash2, X, ListChecks, MessageSquareText } from 'lucide-react';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { SurveyCopyDialog } from './SurveyCopyDialog';
+import { SurveySelectionBar } from './SurveySelectionBar';
+import { useSurveyEditing, type SurveyEditing } from './use-survey-editing';
 import { omitNulls } from '@/lib/api/omit-nulls';
 import { fromDateInputValue, toDateInputValue } from '@/lib/format-date';
 import {
   surveyInfoCreateSchema,
   surveyInfoValidationLabels,
   surveyItemCreateSchema,
-  surveyItemEditSchema,
   surveyItemValidationLabels,
   surveyQuestionCreateSchema,
-  surveyQuestionEditSchema,
   surveyQuestionValidationLabels,
-  surveyTitleEditSchema,
 } from './survey-panel-form-validation';
+import {
+  EMPTY_PERIOD,
+  MULTIPLE_CHOICE,
+  PERIOD_FIELDS,
+  SURVEYS_FOR_QUESTIONS_KEY,
+  type SurveyInfoUpdate,
+  type SurveyItemUpdate,
+  type SurveyQuestionUpdate,
+} from './survey-questions-model';
 
-/** '1' = 객관식. 그 외는 주관식으로 취급한다(백엔드 통계 DTO 와 같은 규약). */
-const MULTIPLE_CHOICE = '1';
-const PERIOD_FIELDS = ['srvyBgngYmd', 'srvyEndYmd'] as const;
-const EMPTY_PERIOD = { srvyBgngYmd: '', srvyEndYmd: '' };
+/*
+ * [2026-10-18] 패널 분해 — 한 함수(약 1,000줄)에 모여 있던 것을 동작 변경 없이 나눴다.
+ *   · 타입·상수 → survey-questions-model.ts
+ *   · '한 번에 하나만 고치기' 상태와 세 수정 요청 → use-survey-editing.ts
+ *   · 설문지 선택기와 설문지 단위 동작 줄 → SurveySelectionBar.tsx
+ *   · 이 파일 안의 하위 컴포넌트 → 설문지 등록(SurveyCreateForm), 설문지 제목·기간 수정(SurveyEditForm),
+ *     문항 추가(SurveyQuestionCreateForm), 문항 하나와 그 항목(SurveyQuestionCard)
+ * 폼은 이 파일에 둔다 — URL 상태 census 와 폼 검증 census 가 폼을 파일 단위로 세고, 검증·서버 오류·동기 잠금 계약을 그
+ * 파일에서 읽는다. 쓰기(mutation)는 패널이 소유하고 하위 컴포넌트에는 같은 이름으로 넘긴다.
+ */
+
+type Mutation<TVariables> = { mutate: (variables: TVariables) => void; isPending: boolean };
+type QuestionCreateValidation = ReturnType<typeof useManualFormValidation<typeof surveyQuestionCreateSchema>>;
+type ItemCreateValidation = ReturnType<typeof useManualFormValidation<typeof surveyItemCreateSchema>>;
 
 /**
  * 문항·항목 관리 패널 — 허브의 `questions` 탭에서 렌더한다.
@@ -88,52 +91,21 @@ export default function SurveyQuestionsPanel() {
   const questionValidation = useManualFormValidation(surveyQuestionCreateSchema, {
     labels: surveyQuestionValidationLabels,
   });
-  /*
-   * [2026-08-28] 설문지 등록 배선.
-   * createSurvey/updateSurvey/deleteSurvey 는 서버·프런트 서비스에 모두 있는데 **소비자가
-   * 0건**이었다(전 저장소 grep). 설문지를 만들 방법이 없으니 아래 선택기가 영영 비고,
-   * 문항·응답자·통계 탭이 전부 죽는다 — 이 화면에서 가장 먼저 막히는 지점이 여기다.
-   */
-  const [newSurveyTitle, setNewSurveyTitle] = useState('');
-  const [newSurveyTemplate, setNewSurveyTemplate] = useState('');
-  const [newSurveyPeriod, setNewSurveyPeriod] = useState(EMPTY_PERIOD);
-  const surveyPendingRef = useRef(false);
   const surveyDeletePendingRef = useRef(false);
-  const surveyValidation = useManualFormValidation(surveyInfoCreateSchema, {
-    labels: surveyInfoValidationLabels,
-  });
   const itemValidation = useManualFormValidation(surveyItemCreateSchema, {
     labels: surveyItemValidationLabels,
   });
 
   const { data: surveys } = useQuery<PageResponse<Survey>>({
-    queryKey: ['admin-surveys-for-questions'],
+    queryKey: SURVEYS_FOR_QUESTIONS_KEY,
     queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, size: 100 }),
   });
 
-  const surveysKey = ['admin-surveys-for-questions'];
+  const surveysKey = SURVEYS_FOR_QUESTIONS_KEY;
   /** 템플릿은 설문지 등록의 필수 입력이다(SurveyInfoDto.srvyTmpltSn @NotNull). */
   const { data: templates } = useQuery({
     queryKey: ['admin-survey-templates-for-select'],
     queryFn: () => surveyAdminService.getTemplateList({ pageIndex: 1, size: 100 }),
-  });
-
-  const addSurvey = useMutation({
-    mutationFn: (payload: SurveyInfoUpdate) =>
-      surveyAdminService.createSurvey(payload),
-    onSuccess: () => {
-      setNewSurveyTitle('');
-      setNewSurveyPeriod(EMPTY_PERIOD);
-      setError(null);
-      surveyValidation.setFormErrors({}, false);
-      void queryClient.invalidateQueries({ queryKey: surveysKey });
-    },
-    onError: (mutationError: unknown) => {
-      const fieldErrors = extractFieldErrors(mutationError);
-      if (fieldErrors) surveyValidation.setFormErrors(fieldErrors);
-      else setError(extractErrorMessage(mutationError, '설문지 등록에 실패했습니다.'));
-    },
-    onSettled: () => { surveyPendingRef.current = false; },
   });
 
   const removeSurvey = useMutation({
@@ -149,83 +121,33 @@ export default function SurveyQuestionsPanel() {
     onSettled: () => { surveyDeletePendingRef.current = false; },
   });
 
-  /*
-    [2026-09-07] 수정 배선. 2026-08-28 에 등록·삭제만 배선하고 update 3본은 남겨 뒀는데,
-    그래서 오타 하나를 고치려면 지우고 다시 만들어야 했다(축 2 실측: 소비자 0).
-
-    ⚠ 서버의 update 는 전부 **전체 치환**이다 —
-      · updateSurvey  → srvyTtl·srvyPrps·srvyWrtGdCn·srvyBgngYmd·srvyEndYmd·srvyTrgt·srvyTmpltSn 7필드
-      · updateQuestion→ qstnSn·qstnTypeCd·qstnCn·maxChcCnt 4필드
-      · updateItem    → artclSn·artclCn·etcAnsYn 3필드
-    바꾸는 필드만 보내면 나머지가 null 로 지워진다. 그래서 목록 행이 가진 나머지 값을 그대로
-    함께 실어 보낸다(round-trip). 목록 projection 이 SurveyInfoDto·SurveyQuestionDto·
-    SurveyArticleDto 전체를 주므로 별도 상세 조회 없이 가능하다.
-  */
-  const [editingTarget, setEditingTarget] = useState<string | null>(null);
-  const [editingText, setEditingText] = useState('');
-  const [originalEditingText, setOriginalEditingText] = useState('');
-  const [editingPeriod, setEditingPeriod] = useState(EMPTY_PERIOD);
-  const [originalEditingPeriod, setOriginalEditingPeriod] = useState(EMPTY_PERIOD);
-  const editPendingRef = useRef(false);
+  const questionsKey = ['admin-survey-questions', srvySn];
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
+  // 수정(제목·기간·문항·항목) 상태와 요청 — 한 번에 하나만 고친다(use-survey-editing.ts).
+  const editing = useSurveyEditing({ setError, srvySn, invalidateQuestions: () => { void invalidate(); } });
+  const {
+    editSurvey,
+    editQuestion,
+    editItem,
+    editingTarget,
+    setEditingTarget,
+    editingText,
+    setEditingText,
+    originalEditingText,
+    editingPeriod,
+    setEditingPeriod,
+    originalEditingPeriod,
+    setOriginalEditingPeriod,
+    editPendingRef,
+    titleEditValidation,
+    beginEdit,
+  } = editing;
+  // 설문지 등록 폼의 입력·처리 중 상태는 SurveyCreateForm 이 따로 등록한다(같은 미저장 확인에 모인다).
   const navigate = useUnsavedChanges(() => ({
-    dirty: Boolean(newSurveyTitle || newSurveyPeriod.srvyBgngYmd || newSurveyPeriod.srvyEndYmd
-      || newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)
+    dirty: Boolean(newQuestion || newItemText || (editingTarget && editingText !== originalEditingText)
       || (editingTarget === 'survey' && PERIOD_FIELDS.some((name) => editingPeriod[name] !== originalEditingPeriod[name]))),
-    pending: surveyPendingRef.current || surveyDeletePendingRef.current || questionPendingRef.current || itemPendingRef.current || deletePendingRef.current || editPendingRef.current,
+    pending: surveyDeletePendingRef.current || questionPendingRef.current || itemPendingRef.current || deletePendingRef.current || editPendingRef.current,
   }));
-
-  /*
-    편집 검증도 등록과 같은 규격을 쓴다 — 오류 요약·첫 오류 포커스·서버 필드 오류 매핑·
-    동기 잠금이 폼 검증 census 의 native-form 계약이다(임시 trim 검사로는 그 계약을 못 지킨다).
-  */
-  const titleEditValidation = useManualFormValidation(surveyTitleEditSchema, {
-    labels: surveyInfoValidationLabels,
-  });
-  const questionEditValidation = useManualFormValidation(surveyQuestionEditSchema, {
-    labels: { qstnCn: '문항 내용' },
-  });
-  const itemEditValidation = useManualFormValidation(surveyItemEditSchema, {
-    labels: { artclCn: '항목 내용' },
-  });
-
-  const clearEditErrors = () => {
-    titleEditValidation.setFormErrors({}, false);
-    questionEditValidation.setFormErrors({}, false);
-    itemEditValidation.setFormErrors({}, false);
-  };
-
-  const beginEdit = (target: string, current: string) => {
-    if (editPendingRef.current) return;
-    setEditingTarget(target);
-    setEditingText(current);
-    setOriginalEditingText(current);
-    setError(null);
-    clearEditErrors();
-  };
-  const cancelEdit = () => {
-    if (editPendingRef.current) return;
-    setEditingTarget(null);
-    setEditingText('');
-    clearEditErrors();
-  };
-  const finishEdit = () => {
-    editPendingRef.current = false;
-    setEditingTarget(null);
-    setEditingText('');
-    clearEditErrors();
-  };
-
-  const editSurvey = useMutation({
-    mutationFn: (payload: { srvySn: number; body: SurveyInfoUpdate }) =>
-      surveyAdminService.updateSurvey(payload.srvySn, payload.body),
-    onSuccess: () => { setError(null); finishEdit(); void queryClient.invalidateQueries({ queryKey: surveysKey }); },
-    onError: (mutationError: unknown) => {
-      editPendingRef.current = false;
-      const fieldErrors = extractFieldErrors(mutationError);
-      if (fieldErrors) titleEditValidation.setFormErrors(fieldErrors);
-      else setError(extractErrorMessage(mutationError, '설문지 수정에 실패했습니다.'));
-    },
-  });
 
   /*
     [2026-10-01 결정 21] 공개 전환. 새 설문은 작성 중으로 시작해 응답자 목록에 보이지 않는다 — 문항을 다 넣기 전의
@@ -268,56 +190,13 @@ export default function SurveyQuestionsPanel() {
     });
   };
 
-  const questionsKey = ['admin-survey-questions', srvySn];
   const { data: questions = [], isLoading } = useQuery<SurveyQuestion[]>({
     queryKey: questionsKey,
     queryFn: () => surveyAdminService.getQuestions(srvySn!),
     enabled: srvySn !== null,
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
   const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
-
-  const editQuestion = useMutation({
-    mutationFn: (payload: { srvyQstnSn: number; body: SurveyQuestionUpdate }) =>
-      surveyAdminService.updateQuestion(srvySn!, payload.srvyQstnSn, payload.body),
-    onSuccess: () => { setError(null); finishEdit(); invalidate(); },
-    onError: (mutationError: unknown) => {
-      editPendingRef.current = false;
-      const fieldErrors = extractFieldErrors(mutationError);
-      if (fieldErrors) questionEditValidation.setFormErrors(fieldErrors);
-      else setError(extractErrorMessage(mutationError, '문항 수정에 실패했습니다.'));
-    },
-  });
-
-  const editItem = useMutation({
-    mutationFn: (payload: { srvyArtclSn: number; body: SurveyItemUpdate }) =>
-      surveyAdminService.updateItem(payload.srvyArtclSn, payload.body),
-    onSuccess: () => { setError(null); finishEdit(); invalidate(); },
-    onError: (mutationError: unknown) => {
-      editPendingRef.current = false;
-      const fieldErrors = extractFieldErrors(mutationError);
-      if (fieldErrors) itemEditValidation.setFormErrors(fieldErrors);
-      else setError(extractErrorMessage(mutationError, '선택 항목 수정에 실패했습니다.'));
-    },
-  });
-
-  /**
-   * 빈 값은 서버에 보내지 않는다 — 전체 치환이라 빈 문자열이 그대로 저장된다.
-   * 검증은 각 편집 폼의 스키마가 하고, 통과한 값만 sink 로 넘긴다.
-   */
-  const submitEdit = <TInput, TOutput>(
-    validation: { validate: (values: TInput) => TOutput | null },
-    input: TInput,
-    run: (validated: TOutput) => void,
-  ) => {
-    if (editPendingRef.current) return;
-    const validated = validation.validate(input);
-    if (!validated) return;
-    editPendingRef.current = true;
-    setError(null);
-    run(validated);
-  };
 
   const addQuestion = useMutation({
     mutationFn: (payload: { srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number; maxChcCnt: number }) =>
@@ -411,6 +290,214 @@ export default function SurveyQuestionsPanel() {
     removeSurvey.mutate(srvySn);
   };
 
+  const templateOptions = templates?.list ?? [];
+  const surveyOptions = surveys?.list ?? [];
+  const selectedSurvey = surveyOptions.find((s) => s.srvySn === srvySn) ?? null;
+
+  return (
+    <div className="space-y-6">
+      {/*
+        [2026-08-28] 설문지 등록 폼.
+        종전에는 아래 '설문 선택'만 있고 설문지를 만드는 경로가 제품 어디에도 없었다 —
+        선택기가 비면 문항·응답자·통계 탭이 전부 죽는데, 사용자는 그 이유를 알 수 없었다.
+        createSurvey 는 서버·프런트 서비스에 이미 있었고 아무도 부르지 않았을 뿐이다.
+      */}
+      {canCreateSurvey && <SurveyCreateForm templateOptions={templateOptions} setError={setError} />}
+
+      <SurveySelectionBar
+        surveyOptions={surveyOptions}
+        srvySn={srvySn}
+        selectedSurvey={selectedSurvey}
+        onSelect={(next) => {
+          void navigate(() => {
+          setSrvySn(next);
+          setNewQuestion(''); setNewItemFor(null); setNewItemText('');
+          setEditingTarget(null); setEditingText('');
+          setError(null);
+          questionValidation.setFormErrors({}, false);
+          itemValidation.setFormErrors({}, false);
+          });
+        }}
+        canCreateSurvey={canCreateSurvey}
+        canUpdateSurvey={canUpdateSurvey}
+        editing={editingTarget !== null}
+        deletePending={removeSurvey.isPending}
+        onBeginSurveyEdit={(survey) => {
+          const period = { srvyBgngYmd: survey.srvyBgngYmd ?? '', srvyEndYmd: survey.srvyEndYmd ?? '' };
+          setEditingPeriod(period);
+          setOriginalEditingPeriod(period);
+          beginEdit('survey', survey.srvyTtl ?? '');
+        }}
+        onCopy={setCopySource}
+        releaseAction={canUpdateSurvey && selectedSurvey && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={removeSurvey.isPending || releaseSurvey.isPending || editingTarget !== null}
+          aria-busy={releaseSurvey.isPending || undefined}
+          onClick={() => { void handleToggleRelease(selectedSurvey); }}
+          className="shrink-0"
+        >
+          {selectedSurvey.rlsYn === 'N' ? '응답자에게 공개' : '공개 중단'}
+        </Button>
+        )}
+        deleteAction={canDeleteSurvey && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
+          aria-busy={removeSurvey.isPending || undefined}
+          onClick={() => { void handleDeleteSurvey(); }}
+          className="shrink-0 border-destructive/30 text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <Trash2 size={14} aria-hidden="true" /> {removeSurvey.isPending ? '삭제 중…' : '설문지 삭제'}
+        </Button>
+        )}
+      />
+
+      {editingTarget === 'survey' && selectedSurvey ? (
+        <SurveyEditForm selectedSurvey={selectedSurvey} editing={editing} editSurvey={editSurvey} />
+      ) : null}
+      {editingTarget === 'survey' && titleEditValidation.errors.srvyTtl ? (
+        <p {...titleEditValidation.messageProps('srvyTtl')} className="text-xs font-bold text-destructive-emphasis" />
+      ) : null}
+
+      {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
+
+      {srvySn === null ? (
+        <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
+          <ListChecks size={36} className="mx-auto text-muted-foreground/30 mb-3" aria-hidden="true" />
+          <p className="text-muted-foreground">설문을 선택하면 문항과 선택 항목을 관리할 수 있습니다.</p>
+        </div>
+      ) : isLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      ) : (
+        <>
+          {canCreateSurvey && (
+          <SurveyQuestionCreateForm
+            srvySn={srvySn}
+            questions={questions}
+            newQuestion={newQuestion}
+            setNewQuestion={setNewQuestion}
+            newQuestionMultiple={newQuestionMultiple}
+            setNewQuestionMultiple={setNewQuestionMultiple}
+            newQuestionMaxChoice={newQuestionMaxChoice}
+            setNewQuestionMaxChoice={setNewQuestionMaxChoice}
+            questionValidation={questionValidation}
+            questionPendingRef={questionPendingRef}
+            itemPendingRef={itemPendingRef}
+            deletePendingRef={deletePendingRef}
+            addQuestion={addQuestion}
+            addItem={addItem}
+            deletingTarget={deletingTarget}
+            setError={setError}
+          />
+          )}
+
+          {questions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">등록된 문항이 없습니다.</p>
+          ) : (
+            <ul className="space-y-4">
+              {questions.map((q, idx) => (
+                <SurveyQuestionCard
+                  key={q.srvyQstnSn}
+                  q={q}
+                  idx={idx}
+                  srvySn={srvySn}
+                  canCreateSurvey={canCreateSurvey}
+                  canUpdateSurvey={canUpdateSurvey}
+                  canDeleteSurvey={canDeleteSurvey}
+                  editing={editing}
+                  editQuestion={editQuestion}
+                  editItem={editItem}
+                  addQuestion={addQuestion}
+                  addItem={addItem}
+                  removeQuestion={removeQuestion}
+                  removeItem={removeItem}
+                  deletingTarget={deletingTarget}
+                  beginDelete={beginDelete}
+                  newItemFor={newItemFor}
+                  setNewItemFor={setNewItemFor}
+                  newItemText={newItemText}
+                  setNewItemText={setNewItemText}
+                  itemValidation={itemValidation}
+                  itemPendingRef={itemPendingRef}
+                  questionPendingRef={questionPendingRef}
+                  deletePendingRef={deletePendingRef}
+                  setError={setError}
+                  navigate={navigate}
+                />
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {copySource ? (
+        <SurveyCopyDialog
+          source={copySource}
+          onClose={() => setCopySource(null)}
+          onCopied={(copySn) => {
+            // 사본을 목록에 다시 읽고 곧바로 고른다 — 관리자는 이어서 문항을 손본다.
+            void queryClient.invalidateQueries({ queryKey: surveysKey });
+            setSrvySn(copySn);
+            setNewQuestion(''); setNewItemFor(null); setNewItemText('');
+            setEditingTarget(null); setEditingText('');
+            setError(null);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/*
+ * [2026-08-28] 설문지 등록 배선.
+ * createSurvey/updateSurvey/deleteSurvey 는 서버·프런트 서비스에 모두 있는데 **소비자가
+ * 0건**이었다(전 저장소 grep). 설문지를 만들 방법이 없으니 아래 선택기가 영영 비고,
+ * 문항·응답자·통계 탭이 전부 죽는다 — 이 화면에서 가장 먼저 막히는 지점이 여기다.
+ *
+ * 등록 입력·검증·요청·동기 잠금은 이 폼이 소유한다(패널의 다른 입력과 섞이지 않는다). 미저장 입력과 처리 중 상태는 같은
+ * 미저장 확인에 따로 등록한다 — 패널을 떠나거나 다른 설문지를 고를 때 함께 확인된다.
+ */
+function SurveyCreateForm({ templateOptions, setError }: {
+  templateOptions: NonNullable<Awaited<ReturnType<typeof surveyAdminService.getTemplateList>>['list']>;
+  setError: (message: string | null) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [newSurveyTitle, setNewSurveyTitle] = useState('');
+  const [newSurveyTemplate, setNewSurveyTemplate] = useState('');
+  const [newSurveyPeriod, setNewSurveyPeriod] = useState(EMPTY_PERIOD);
+  const surveyPendingRef = useRef(false);
+  const surveyValidation = useManualFormValidation(surveyInfoCreateSchema, {
+    labels: surveyInfoValidationLabels,
+  });
+  useUnsavedChanges(() => ({
+    dirty: Boolean(newSurveyTitle || newSurveyPeriod.srvyBgngYmd || newSurveyPeriod.srvyEndYmd),
+    pending: surveyPendingRef.current,
+  }));
+
+  const addSurvey = useMutation({
+    mutationFn: (payload: SurveyInfoUpdate) =>
+      surveyAdminService.createSurvey(payload),
+    onSuccess: () => {
+      setNewSurveyTitle('');
+      setNewSurveyPeriod(EMPTY_PERIOD);
+      setError(null);
+      surveyValidation.setFormErrors({}, false);
+      void queryClient.invalidateQueries({ queryKey: SURVEYS_FOR_QUESTIONS_KEY });
+    },
+    onError: (mutationError: unknown) => {
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) surveyValidation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '설문지 등록에 실패했습니다.'));
+    },
+    onSettled: () => { surveyPendingRef.current = false; },
+  });
+
   const submitSurvey = (event: React.FormEvent) => {
     event.preventDefault();
     if (surveyPendingRef.current) return;
@@ -433,19 +520,7 @@ export default function SurveyQuestionsPanel() {
     });
   };
 
-  const templateOptions = templates?.list ?? [];
-  const surveyOptions = surveys?.list ?? [];
-  const selectedSurvey = surveyOptions.find((s) => s.srvySn === srvySn) ?? null;
-
   return (
-    <div className="space-y-6">
-      {/*
-        [2026-08-28] 설문지 등록 폼.
-        종전에는 아래 '설문 선택'만 있고 설문지를 만드는 경로가 제품 어디에도 없었다 —
-        선택기가 비면 문항·응답자·통계 탭이 전부 죽는데, 사용자는 그 이유를 알 수 없었다.
-        createSurvey 는 서버·프런트 서비스에 이미 있었고 아무도 부르지 않았을 뿐이다.
-      */}
-      {canCreateSurvey && (
       <form onSubmit={submitSurvey} noValidate className="space-y-3 rounded-lg border border-border p-4">
         <h3 className="text-sm font-bold text-foreground">설문지 등록</h3>
         <FormErrorSummary
@@ -525,100 +600,26 @@ export default function SurveyQuestionsPanel() {
           </p>
         ) : null}
       </form>
-      )}
+  );
+}
 
-      <div className="flex items-center gap-3">
-        <label htmlFor="questions-srvy" className="text-sm font-bold shrink-0">
-          설문 선택
-        </label>
-        <select
-          id="questions-srvy"
-          value={srvySn ?? ''}
-          onChange={(e) => {
-            const next = e.target.value ? Number(e.target.value) : null;
-            void navigate(() => {
-            setSrvySn(next);
-            setNewQuestion(''); setNewItemFor(null); setNewItemText('');
-            setEditingTarget(null); setEditingText('');
-            setError(null);
-            questionValidation.setFormErrors({}, false);
-            itemValidation.setFormErrors({}, false);
-            });
-          }}
-          className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
-        >
-          <option value="">— 설문을 선택하세요 —</option>
-          {surveyOptions.map((s) => (
-            <option key={s.srvySn} value={s.srvySn}>
-              {s.srvyTtl}{s.rlsYn === 'N' ? ' (작성 중)' : ''}
-            </option>
-          ))}
-        </select>
-        {/*
-          [2026-08-28] 설문지 삭제. deleteSurvey 도 소비자가 0건이었다 — 잘못 만든 설문지를
-          지울 방법이 없어 선택기에 영원히 쌓였다. 문항·응답이 함께 사라지므로 확인에서 말한다.
-        */}
-        {canUpdateSurvey && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
-          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 제목·기간 수정` : '설문지 제목·기간 수정'}
-          onClick={() => {
-            if (!selectedSurvey) return;
-            const period = { srvyBgngYmd: selectedSurvey.srvyBgngYmd ?? '', srvyEndYmd: selectedSurvey.srvyEndYmd ?? '' };
-            setEditingPeriod(period);
-            setOriginalEditingPeriod(period);
-            beginEdit('survey', selectedSurvey.srvyTtl ?? '');
-          }}
-          className="shrink-0"
-        >
-          <Pencil size={14} aria-hidden="true" /> 제목·기간 수정
-        </Button>
-        )}
-        {canUpdateSurvey && selectedSurvey && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={removeSurvey.isPending || releaseSurvey.isPending || editingTarget !== null}
-          aria-busy={releaseSurvey.isPending || undefined}
-          onClick={() => { void handleToggleRelease(selectedSurvey); }}
-          className="shrink-0"
-        >
-          {selectedSurvey.rlsYn === 'N' ? '응답자에게 공개' : '공개 중단'}
-        </Button>
-        )}
-        {canCreateSurvey && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
-          aria-label={selectedSurvey ? `${selectedSurvey.srvyTtl} 복제` : '설문지 복제'}
-          onClick={() => { if (selectedSurvey?.srvySn != null) setCopySource({ srvySn: selectedSurvey.srvySn, srvyTtl: selectedSurvey.srvyTtl }); }}
-          className="shrink-0"
-        >
-          <Copy size={14} aria-hidden="true" /> 복제
-        </Button>
-        )}
-        {canDeleteSurvey && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={srvySn === null || removeSurvey.isPending || editingTarget !== null}
-          aria-busy={removeSurvey.isPending || undefined}
-          onClick={() => { void handleDeleteSurvey(); }}
-          className="shrink-0 border-destructive/30 text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
-        >
-          <Trash2 size={14} aria-hidden="true" /> {removeSurvey.isPending ? '삭제 중…' : '설문지 삭제'}
-        </Button>
-        )}
-      </div>
-
-      {editingTarget === 'survey' && selectedSurvey ? (
+/** 설문지 제목·기간 수정 폼(편집 대상이 'survey' 일 때). 상태는 useSurveyEditing, 요청은 패널의 editSurvey 다. */
+function SurveyEditForm({ selectedSurvey, editing, editSurvey }: {
+  selectedSurvey: Survey;
+  editing: SurveyEditing;
+  editSurvey: Mutation<{ srvySn: number; body: SurveyInfoUpdate }>;
+}) {
+  const {
+    editingText,
+    setEditingText,
+    editingPeriod,
+    setEditingPeriod,
+    originalEditingPeriod,
+    titleEditValidation,
+    submitEdit,
+    cancelEdit,
+  } = editing;
+  return (
         <form
           className="space-y-3 rounded-lg border border-border p-4"
           noValidate
@@ -693,25 +694,46 @@ export default function SurveyQuestionsPanel() {
             </Button>
           </div>
         </form>
-      ) : null}
-      {editingTarget === 'survey' && titleEditValidation.errors.srvyTtl ? (
-        <p {...titleEditValidation.messageProps('srvyTtl')} className="text-xs font-bold text-destructive-emphasis" />
-      ) : null}
+  );
+}
 
-      {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
-
-      {srvySn === null ? (
-        <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
-          <ListChecks size={36} className="mx-auto text-muted-foreground/30 mb-3" aria-hidden="true" />
-          <p className="text-muted-foreground">설문을 선택하면 문항과 선택 항목을 관리할 수 있습니다.</p>
-        </div>
-      ) : isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      ) : (
-        <>
-          {canCreateSurvey && (
+/** 새 문항 추가 폼. 입력 상태와 요청(addQuestion)은 패널이 소유한다 — 설문지를 바꾸면 패널이 입력을 비운다. */
+function SurveyQuestionCreateForm({
+  srvySn,
+  questions,
+  newQuestion,
+  setNewQuestion,
+  newQuestionMultiple,
+  setNewQuestionMultiple,
+  newQuestionMaxChoice,
+  setNewQuestionMaxChoice,
+  questionValidation,
+  questionPendingRef,
+  itemPendingRef,
+  deletePendingRef,
+  addQuestion,
+  addItem,
+  deletingTarget,
+  setError,
+}: {
+  srvySn: number;
+  questions: SurveyQuestion[];
+  newQuestion: string;
+  setNewQuestion: (value: string) => void;
+  newQuestionMultiple: boolean;
+  setNewQuestionMultiple: (value: boolean) => void;
+  newQuestionMaxChoice: string;
+  setNewQuestionMaxChoice: (value: string) => void;
+  questionValidation: QuestionCreateValidation;
+  questionPendingRef: RefObject<boolean>;
+  itemPendingRef: RefObject<boolean>;
+  deletePendingRef: RefObject<boolean>;
+  addQuestion: Mutation<{ srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number; maxChcCnt: number }>;
+  addItem: Mutation<{ srvyQstnSn: number; srvySn: number; artclCn: string }>;
+  deletingTarget: string | null;
+  setError: (message: string | null) => void;
+}) {
+  return (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -803,14 +825,78 @@ export default function SurveyQuestionsPanel() {
               <p {...questionValidation.messageProps('maxChcCnt')} className="text-xs font-bold text-destructive-emphasis" />
             ) : null}
           </form>
-          )}
+  );
+}
 
-          {questions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-12">등록된 문항이 없습니다.</p>
-          ) : (
-            <ul className="space-y-4">
-              {questions.map((q, idx) => (
-                <li key={q.srvyQstnSn} className="border rounded-lg bg-card overflow-hidden">
+/**
+ * 문항 하나 — 머리(순번·내용·유형·수정·삭제), 선택 항목 목록(수정·삭제), 항목 추가. 상태와 요청은 패널이 소유하고 같은
+ * 이름으로 넘긴다(폼 검증 census 가 핸들러 이름으로 쓰기를 따라간다).
+ */
+function SurveyQuestionCard({
+  q,
+  idx,
+  srvySn,
+  canCreateSurvey,
+  canUpdateSurvey,
+  canDeleteSurvey,
+  editing,
+  editQuestion,
+  editItem,
+  addQuestion,
+  addItem,
+  removeQuestion,
+  removeItem,
+  deletingTarget,
+  beginDelete,
+  newItemFor,
+  setNewItemFor,
+  newItemText,
+  setNewItemText,
+  itemValidation,
+  itemPendingRef,
+  questionPendingRef,
+  deletePendingRef,
+  setError,
+  navigate,
+}: {
+  q: SurveyQuestion;
+  idx: number;
+  srvySn: number;
+  canCreateSurvey: boolean;
+  canUpdateSurvey: boolean;
+  canDeleteSurvey: boolean;
+  editing: SurveyEditing;
+  editQuestion: Mutation<{ srvyQstnSn: number; body: SurveyQuestionUpdate }>;
+  editItem: Mutation<{ srvyArtclSn: number; body: SurveyItemUpdate }>;
+  addQuestion: Mutation<{ srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number; maxChcCnt: number }>;
+  addItem: Mutation<{ srvyQstnSn: number; srvySn: number; artclCn: string }>;
+  removeQuestion: Mutation<number>;
+  removeItem: Mutation<number>;
+  deletingTarget: string | null;
+  beginDelete: (target: string, remove: () => void) => void;
+  newItemFor: number | null;
+  setNewItemFor: (value: number | null) => void;
+  newItemText: string;
+  setNewItemText: (value: string) => void;
+  itemValidation: ItemCreateValidation;
+  itemPendingRef: RefObject<boolean>;
+  questionPendingRef: RefObject<boolean>;
+  deletePendingRef: RefObject<boolean>;
+  setError: (message: string | null) => void;
+  navigate: (action: () => void) => Promise<boolean>;
+}) {
+  const {
+    editingTarget,
+    editingText,
+    setEditingText,
+    questionEditValidation,
+    itemEditValidation,
+    beginEdit,
+    cancelEdit,
+    submitEdit,
+  } = editing;
+  return (
+                <li className="border rounded-lg bg-card overflow-hidden">
                   <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
                     <span className="bg-primary text-primary-foreground w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0">
                       {idx + 1}
@@ -1076,25 +1162,5 @@ export default function SurveyQuestionsPanel() {
                     ) : null}
                   </div>
                 </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-      {copySource ? (
-        <SurveyCopyDialog
-          source={copySource}
-          onClose={() => setCopySource(null)}
-          onCopied={(copySn) => {
-            // 사본을 목록에 다시 읽고 곧바로 고른다 — 관리자는 이어서 문항을 손본다.
-            void queryClient.invalidateQueries({ queryKey: surveysKey });
-            setSrvySn(copySn);
-            setNewQuestion(''); setNewItemFor(null); setNewItemText('');
-            setEditingTarget(null); setEditingText('');
-            setError(null);
-          }}
-        />
-      ) : null}
-    </div>
   );
 }

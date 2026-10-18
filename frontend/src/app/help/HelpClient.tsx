@@ -27,6 +27,7 @@ import {
   FormMessage,
   FormErrorSummary,
 } from '@/components/ui/form';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
@@ -225,20 +226,22 @@ export default function HelpClient() {
       breadcrumbItems={[{ label: '지원서비스' }, { label: '도움말센터' }]}
       filterStateKey="help-center"
       actions={
-        <div role="tablist" aria-label="도움말 구분" className="flex rounded-md border border-border p-0.5">
+        <TabList aria-label="도움말 구분" className="flex rounded-md border border-border p-0.5">
           <TabButton
+            id={helpTabId('faq')}
             active={tab === 'faq'}
             onClick={() => changeTab('faq')}
             icon={<HelpCircle size={16} aria-hidden="true" />}
             label="FAQ 자주 묻는 질문"
           />
           <TabButton
+            id={helpTabId('qna')}
             active={tab === 'qna'}
             onClick={() => changeTab('qna')}
             icon={<MessageCircle size={16} aria-hidden="true" />}
             label="1:1 Q&A 문의"
           />
-        </div>
+        </TabList>
       }
       filter={
         <div className="min-w-60 max-w-xl space-y-1">
@@ -261,7 +264,7 @@ export default function HelpClient() {
         </div>
       }
     >
-      <div className="space-y-6">
+      <TabPanel id={HELP_TABPANEL_ID} aria-labelledby={helpTabId(tab)} className="space-y-6">
         <AnimatePresence mode="wait">
           {tab === 'faq' ? (
             <motion.div
@@ -426,7 +429,7 @@ export default function HelpClient() {
             }}
           />
         )}
-      </div>
+      </TabPanel>
     </WorkListPage>
   );
 }
@@ -454,19 +457,24 @@ function FaqAnswer({ state, onRetry }: { state: FaqDetailState; onRetry: () => v
   );
 }
 
+/** 두 탭이 고르는 패널(하나)과 탭 id. */
+const HELP_TABPANEL_ID = 'help-tabpanel';
+const helpTabId = (value: string) => `help-tab-${value}`;
+
 interface TabButtonProps {
+  id: string;
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
   label: string;
 }
 
-function TabButton({ active, onClick, icon, label }: TabButtonProps) {
+function TabButton({ id, active, onClick, icon, label }: TabButtonProps) {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
+    <Tab
+      id={id}
+      selected={active}
+      aria-controls={HELP_TABPANEL_ID}
       onClick={onClick}
       className={cn(
         "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
@@ -475,6 +483,6 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
     >
       {icon}
       {label}
-    </button>
+    </Tab>
   );
 }

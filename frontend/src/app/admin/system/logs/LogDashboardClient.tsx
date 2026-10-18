@@ -32,6 +32,7 @@ import { usePageParam, useTabParam } from './use-log-url-state';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const logCategories = [
   { id: 'SYS', label: '시스템로그', icon: <Terminal size={20} />, description: '서비스 및 메소드 수행 이력' },
@@ -272,19 +273,16 @@ export default function LogDashboardClient({
       totalCount={error || isLoading ? undefined : totalCount}
       actions={
         <>
-          <div
-            role="tablist"
+          <TabList
             aria-label="로그 카테고리"
             id="log-categories"
             className="flex flex-wrap rounded-md border border-border p-0.5"
           >
             {logCategories.map((cat) => (
-              <button
+              <Tab
                 key={cat.id}
-                type="button"
-                role="tab"
                 id={`log-tab-${cat.id}`}
-                aria-selected={activeCategory === cat.id}
+                selected={activeCategory === cat.id}
                 aria-controls="log-tabpanel"
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
@@ -293,9 +291,9 @@ export default function LogDashboardClient({
                 )}
               >
                 {cat.label}
-              </button>
+              </Tab>
             ))}
-          </div>
+          </TabList>
           {/*
             기존 '상세 검색' 버튼은 onClick 이 없는 死버튼이었다(고급 검색 화면 부재).
             삭제하고, 실제로 동작하는 재조회 버튼만 남긴다.
@@ -342,7 +340,7 @@ export default function LogDashboardClient({
         </KeywordFilter>
       }
     >
-      <div role="tabpanel" id="log-tabpanel" aria-labelledby={`log-tab-${activeCategory}`}>
+      <TabPanel id="log-tabpanel" aria-labelledby={`log-tab-${activeCategory}`}>
         {/*
           조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 를 전달해
           실패는 오류 상태 + 다시 시도 버튼으로 노출한다.
@@ -365,7 +363,7 @@ export default function LogDashboardClient({
           onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
           }}
         />
-      </div>
+      </TabPanel>
 
       {/* 로그 상세 인스펙터 */}
       <StandardModal

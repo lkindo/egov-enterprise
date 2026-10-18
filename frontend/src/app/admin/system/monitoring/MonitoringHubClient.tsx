@@ -57,6 +57,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChartColors } from '@/lib/hooks/useChartColors';
 import { visibleEntries } from '@/extensions/slots';
 import { hubTabsMonitoring } from '@/extensions/generated-hub-tabs-monitoring';
+import { TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `updateQuery` 호출부가 쓰는 키는 `tab`·`page` 둘뿐이다.
@@ -699,8 +700,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex flex-wrap items-center gap-2">
           {/* 종전에는 좌측 3열을 통째로 쓰던 세로 내비게이션이었다. 영역 전환은 조회 조건이 아니라
               조회 대상 전환이라 헤더에 두고, 본문 폭을 데이터에 돌려준다. */}
-          <div
-            role="tablist"
+          <TabList
             aria-label="모니터링 허브 영역 선택"
             className="flex flex-wrap rounded-md border border-border p-0.5"
           >
@@ -714,7 +714,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 onClick={() => setActiveTab(item.tab)}
               />
             ))}
-          </div>
+          </TabList>
           <Button variant="outline" size="sm" onClick={() => setIsReportModalOpen(true)}>
             <Download size={16} aria-hidden="true" /> 리포트 스냅샷
           </Button>
@@ -759,8 +759,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </Button>
       }
     >
-      <div
-        role="tabpanel"
+      <TabPanel
         id="monitoring-panel"
         aria-labelledby={`monitoring-tab-${activeTab}`}
         className="space-y-4"
@@ -864,7 +863,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             </div>
           </section>
         )}
-      </div>
+      </TabPanel>
     </WorkListPage>
 
       <StandardModal 

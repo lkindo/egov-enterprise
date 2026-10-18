@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { MEMO_REPORT_TABS as TABS, parseMemoReportTab, type MemoReportTab as ReportTab } from './memo-report-tabs';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭과 페이지를 함께 읽는다.
@@ -490,13 +491,11 @@ export default function MemoReportManagementClient() {
         {/* [2026-08-28] 보고 작성 경로. 종전에는 목록만 있어 '내 보고' 가 영원히 비어 있었다. */}
         <Button size="sm" onClick={openCompose} className="gap-2">보고 작성</Button>
         {/* 탭은 조회 조건이 아니라 조회 범위 전환이라 헤더에 둔다(수신함·발신함·전체). */}
-        <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label="메모 보고 구분">
+        <TabList className="flex rounded-md border border-border p-0.5" aria-label="메모 보고 구분">
           {TABS.filter((tab) => tab !== 'ALL' || isAdmin).map((tab) => (
+            <Tab key={tab} asChild selected={activeTab === tab}>
             <Button
-              key={tab}
-              role="tab"
               id={`memo-report-tab-${tab}`}
-              aria-selected={activeTab === tab}
               aria-controls="memo-report-tabpanel"
               variant="ghost"
               size="sm"
@@ -505,8 +504,9 @@ export default function MemoReportManagementClient() {
             >
               {TAB_LABELS[tab]}
             </Button>
+            </Tab>
           ))}
-        </div>
+        </TabList>
         </>
       }
       filter={
@@ -531,7 +531,7 @@ export default function MemoReportManagementClient() {
         </span>
       }
     >
-      <div role="tabpanel" id="memo-report-tabpanel" aria-labelledby={`memo-report-tab-${activeTab}`}>
+      <TabPanel id="memo-report-tabpanel" aria-labelledby={`memo-report-tab-${activeTab}`}>
         <StandardDataTable
           accessibleLabel="메모 보고 목록"
           columns={columns}
@@ -554,7 +554,7 @@ export default function MemoReportManagementClient() {
             pageSizeOptions: PAGE_SIZE_OPTIONS,
           }}
         />
-      </div>
+      </TabPanel>
 
       {detailTarget !== null && (
         <StandardModal

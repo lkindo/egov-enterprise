@@ -30,6 +30,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, type Column } from '@/app/components/ui/standard-data-table';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 import { parseKnowledgeTab, type KnowledgeShellTab } from './knowledge-tabs';
 
 /**
@@ -262,12 +263,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           </>
         }
         navigation={
-          <div role="tablist" aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+          <TabList aria-label="지식 카테고리" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
             {/* 건수는 집계 API 가 없어 표기하지 않는다(종전 142/28/567/12 는 하드코딩이었다). */}
             {tabs.map((tab) => (
-              <CategoryTab key={tab.id} title={tab.label} desc={tab.description} icon={tab.icon} active={activeCategory === tab.id} onClick={() => selectCategory(tab.id)} />
+              <CategoryTab key={tab.id} id={knowledgeTabId(tab.id)} title={tab.label} desc={tab.description} icon={tab.icon} active={activeCategory === tab.id} onClick={() => selectCategory(tab.id)} />
             ))}
-          </div>
+          </TabList>
         }
         filter={
           <KeywordFilter label="지식 검색어" placeholder="제목 검색..." value={searchQuery} onSearch={setSearchQuery}>
@@ -290,7 +291,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
           </div>
         }
       >
-        <div id="knowledge-stream-panel" className="space-y-3">
+        <TabPanel id={KNOWLEDGE_PANEL_ID} aria-labelledby={knowledgeTabId(activeTab.id)} className="space-y-3">
           {isArticlesError ? (
             // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
             <div role="alert" className="flex flex-col items-center justify-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-8">
@@ -317,7 +318,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
               <PagePagination total={articlesData?.total ?? 0} page={page} size={PAGE_SIZE} onPageChange={(next) => setPagination({ context: pageContext, page: next })} />
             </>
           )}
-        </div>
+        </TabPanel>
 
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           <AsideSection title="인기 문서" description="조회수가 높은 문서" icon={TrendingUp}>
@@ -479,7 +480,12 @@ function StatusBadge({ status, type }: { status?: string, type: string }) {
   );
 }
 
-function CategoryTab({ title, desc, icon: Icon, active, onClick }: {
+/** 탭이 고르는 목록 패널(하나)과 탭 id. */
+const KNOWLEDGE_PANEL_ID = 'knowledge-stream-panel';
+const knowledgeTabId = (tabId: string) => `knowledge-tab-${tabId}`;
+
+function CategoryTab({ id, title, desc, icon: Icon, active, onClick }: {
+  id: string;
   title: string;
   desc: string;
   icon: React.ElementType;
@@ -487,11 +493,10 @@ function CategoryTab({ title, desc, icon: Icon, active, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      aria-controls="knowledge-stream-panel"
+    <Tab
+      id={id}
+      selected={active}
+      aria-controls={KNOWLEDGE_PANEL_ID}
       onClick={onClick}
       className={cn(
         "flex min-w-0 items-center gap-2 rounded-md border px-3 py-2 text-left transition-colors",
@@ -506,7 +511,7 @@ function CategoryTab({ title, desc, icon: Icon, active, onClick }: {
         <span className="block truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{title}</span>
         <span className="block truncate text-xs text-muted-foreground">{desc}</span>
       </span>
-    </button>
+    </Tab>
   );
 }
 

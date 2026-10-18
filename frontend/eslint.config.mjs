@@ -113,11 +113,20 @@ const eslintConfig = [
       "react/no-unescaped-entities": "warn",
       "@typescript-eslint/no-unused-expressions": "warn",
       // 프론트엔드 Zod SSOT 일원화(§4.1/방안1): 인라인 z.object(...) 금지 — 백엔드 생성 스키마를 .extend() 로 확장
+      //
+      // [2026-10-18] 손으로 쓴 탭 목록 금지 — role="tablist"·"tab"·"tabpanel" 은 standard-tabs.tsx 의 TabList·Tab·TabPanel 로만
+      // 만든다(roving tabindex·방향키·Home/End·aria-controls 를 한 곳에서 갖는다). 손으로 만든 탭 목록 15곳 중 방향키가 되는
+      // 곳은 둘이었다. 옮길 수 없는 자리는 그 줄에 `eslint-disable-next-line no-restricted-syntax -- <사유>` 를 단다 — 위반이
+      // 사라진 예외 주석은 쓰이지 않은 지시어 경고가 되어 --max-warnings 상한에 걸린다(예외 목록이 정확하게 유지된다).
       "no-restricted-syntax": [
         "error",
         {
           "selector": "CallExpression[callee.object.name='z'][callee.property.name='object']",
           "message": "인라인 z.object(...) 금지 — 백엔드 SSOT 스키마(@/types/generated-zod)를 import 하여 .extend() 로 확장하세요 (project-audit-report §4.1/방안1)."
+        },
+        {
+          "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
+          "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."
         }
       ],
       // eslint-config-next 16(+eslint-plugin-react-hooks 6)이 React Compiler 계열 신규 규칙을 error 로 켜지만,
