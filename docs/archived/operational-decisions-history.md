@@ -2184,6 +2184,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-363 | accepted | **V2_131·V2_132 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 승인, PR #936 병합 뒤).** 병합본(bffa8be8d)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.130, 두 컬럼·트리거·`fn_adt_log_chg_prhb` 없음, 용어 TRPR_ID 없음·LAST_LGT_DT 있음, 감사 세 표 130·834·6행) → info(대기 2.131·2.132 뿐, 반복 시드는 다시 돌지 않음) → pg_dump 백업(목차에 영향 표 확인) → Flyway 12.4.0 migrate → validate(156개) 순서로 했다. dev 시드 위치는 넣지 않았다. 읽기 확인: 두 컬럼 nullable(`timestamp`·`varchar(20)`), 트리거 3개 활성, 용어 TRPR_ID(대상자아이디·명V20) 1행, 감사 세 표 행 수 불변, 로그아웃 시각이 있는 사용자 0. | DEC-OPS-355·356·357 의 스키마다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 트리거가 걸린 뒤로 세 감사 표의 UPDATE 와 보존 정리 밖의 DELETE 는 OCI 에서도 거부된다 — 표 소유자의 트리거 해제·TRUNCATE 는 막지 않는다(DEC-OPS-357). 원본은 적용 직전 백업이다. | [V2_131](../../api-server/src/main/resources/db/migration/V2_131__add_logout_cutoff_and_privacy_log_subject.sql), [V2_132](../../api-server/src/main/resources/db/migration/V2_132__protect_audit_ledgers_from_modification.sql), [보존 정책](../04-operations/log-retention-policy.md) | 2026-10-19 | - |
 
+## DEC-OPS-364
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-364 | accepted | **운영 계약 비용을 실측하고, 문서 전용 푸시의 계약 범위를 줄이지 않는다.** ① 계약 125개의 최상위 시험 시간 합은 68.3분, 로컬 벽시계는 8.2분, 가장 긴 시험은 core 시작 구성 투영(295초)이다. CI 에서는 secret-scan 잡 안의 약 6분으로 임계 경로가 아니다. ② 문서 전용 푸시도 전체 계약을 그대로 돈다 — 무거운 투영·생성기 시험이 `docs` 트리를 통째로 입력으로 복사해 생성물의 문서·메모리 투영을 대조하므로, 정적 참조나 읽기 추적으로 건너뛸 수 있는 무거운 시험이 없다. ③ 투영 시험은 이미 시작 구성마다 나뉘어 가장 긴 단위가 시험 하나라 파일을 더 나누지 않는다. ④ 재개 조건과 후보(변경하지 않는 투영 시험의 준비물·투영 공유)는 실측 기록에 둔다. | 2026-10-19 품질 평가 과제 9 가 문서 하나에도 운영 계약 전체가 돈다는 비용을 지적했다. 범위를 고르는 선택기를 새로 두면 그 자체가 거버넌스 코드를 늘리고(AGENTS 거버넌스 총량 관리), 문서 트리를 입력으로 쓰는 투영 시험을 건너뛰면 생성물 문서 투영의 회귀를 로컬에서 놓친다. 실측으로 줄일 구조적 여지가 없음을 확인하고 신호를 유지한다. | [실측 기록](../04-operations/readiness-followups.md#운영-계약-비용-실측-2026-10-19), [투영 시험 준비물](../../scripts/reusable-governance-projection.test-helpers.mjs), [pre-push 훅](../../.githooks/pre-push) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
