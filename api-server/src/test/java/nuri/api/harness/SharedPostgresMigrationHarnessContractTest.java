@@ -54,7 +54,8 @@ class SharedPostgresMigrationHarnessContractTest {
     // V2_120: ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 배정만 지우는 검증을 추가한다.
     // V2_124: 퇴역한 프로그램 목록 권한 배정의 삭제·이력과 갈 곳 잃는 말단 메뉴 가드 검증을 추가한다.
     // V2_125: 꺼진 마이페이지 관리 메뉴 행·배정·즐겨찾기 삭제와 이력, 도입 기관이 쓰는 행을 남기는 가드 검증을 추가한다.
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 60;
+    // V2_130: 집행 지점 없는 권한(INFORMAL_*·INST_CODE 쓰기) 배정의 삭제와 변경 이력 검증을 추가한다(ADR-0034).
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 61;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")

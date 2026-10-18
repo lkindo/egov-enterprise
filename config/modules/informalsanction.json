@@ -43,7 +43,6 @@
     "exactRoutes": [],
     "menuTabs": [],
     "permissionDomains": [
-      "INFORMAL",
       "APPROVAL"
     ],
     "gates": [
@@ -62,9 +61,7 @@
         "alsoRequires": []
       }
     ],
-    "rbacMatrix": {
-      "surfaces": []
-    },
+    "rbacMatrix": null,
     "markerBlocks": [],
     "commonCodeGroups": [
       "COM075"

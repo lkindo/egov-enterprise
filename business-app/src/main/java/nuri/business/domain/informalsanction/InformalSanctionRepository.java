@@ -30,10 +30,6 @@ public interface InformalSanctionRepository extends JpaRepository<InformalSancti
             @Param("keyword") String keyword, @Param("fromYmd") String fromYmd, @Param("toYmd") String toYmd,
             @Param("status") String status, Pageable pageable);
 
-    @Query("select s from InformalSanction s where exists (select d.id from InformalSanctionDetail d "
-            + "where d.id.ifmlAtrzSn = s.ifmlAtrzSn and d.id.userId = :aprvrId)")
-    Page<InformalSanction> findByAprvrId(@Param("aprvrId") String aprvrId, Pageable pageable);
-
     @Query("select s from InformalSanction s where s.aprvYn = 'A' and exists "
             + "(select d.id from InformalSanctionDetail d where d.id.ifmlAtrzSn = s.ifmlAtrzSn "
             + "and d.id.atrzCycl = s.atrzCycl and d.id.userId = :aprvrId and d.aprvYn = 'A')" + LIST_FILTER)

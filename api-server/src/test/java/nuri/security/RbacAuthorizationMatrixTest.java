@@ -113,6 +113,22 @@ class RbacAuthorizationMatrixTest {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/unregistered-operation").with(user(admin))).andExpect(status().isForbidden());
     }
+    /**
+     * [2026-10-18 ADR-0034] 걷은 구 인가 API(410 만 돌려주던 롤·롤 권한·권한 그룹 쓰기)와 비공식결재 API 는 경로째 없다.
+     * 정책 원장에 연산이 없으므로 디스패치 전에 HTTP 계층이 거부한다 — 관리자도 403, 인증 없으면 401 이다(404·410 이 아니다).
+     * 같은 경로에 컨트롤러나 바인딩이 되살아나면 이 단언이 red 가 된다. 남긴 조회(권한 그룹 목록)는 대조군이다.
+     */
+    @Test void retiredLegacyOperationsAreNotRoutedEvenForAdministrators() throws Exception {
+        var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
+        mockMvc.perform(get("/api/v1/admin/system/authorities").with(user(admin))).andExpect(status().isOk());
+        var retired = List.of(get("/api/v1/admin/system/roles"), delete("/api/v1/admin/system/roles/ROLE_USER"),
+                get("/api/v1/admin/system/authorities/ROLE_USER/roles"), post("/api/v1/admin/system/authorities"),
+                put("/api/v1/admin/system/authorities/ROLE_USER"), delete("/api/v1/admin/system/authorities"),
+                get("/api/v1/informal-sanctions"), put("/api/v1/informal-sanctions/1"),
+                get("/api/v1/admin/system/ism"), patch("/api/v1/admin/system/ism/1/confirm"));
+        for (var request : retired) mockMvc.perform(request.with(user(admin))).andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/v1/admin/system/roles/ROLE_USER")).andExpect(status().isUnauthorized());
+    }
 
     @ParameterizedTest(name = "login policy {0} rejects {1}")
     @MethodSource("loginPolicyWritesWithoutExactPermission")

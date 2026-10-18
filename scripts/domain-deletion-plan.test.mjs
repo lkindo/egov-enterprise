@@ -182,7 +182,7 @@ const API_MAIN = 'api-server/src/main/java/nuri/api/controller/business/';
 const API_MAIN_DELETIONS = {
   event: ['operation/EventApiController.java', 'operation/ExternalHrApiController.java'],
   reward: ['operation/RewardManageApiController.java'],
-  informalsanction: ['approval/ApprovalApiController.java', 'approval/InformalSanctionApiController.java',
+  informalsanction: ['approval/ApprovalApiController.java',
     'approval/dto/ApprovalConfirmRequest.java', 'approval/dto/ApprovalDraftRequest.java',
     'approval/dto/ApprovalResubmissionRequest.java', 'operation/RewardManageApiController.java'],
 };

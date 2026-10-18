@@ -170,9 +170,11 @@ test('new management HTTP matrices project every selected surface and reject an 
   assert.deepEqual(paths(source), [...owners.keys()], 'the management surface inventory is exact');
   // 표면 소유의 원천은 기능 파일의 owns.rbacMatrix 다(11단계 C7 — 생성기 상수를 걷었다). 이 시험의 기대 표와 정확히 같다.
   assert.deepEqual(ownership.rbac.surfaces, Object.fromEntries(owners));
-  assert.deepEqual([...ownership.rbac.domains].sort(), ['event', 'help', 'informalsanction', 'promotion', 'reward', 'survey', 'template']);
+  // [2026-10-18 ADR-0034] 약식결재는 이 매트릭스의 표면이 아니다 — 유일한 단언(관리 경로 결재 처리)이 그 API 와 함께 걷혔다.
+  assert.deepEqual([...ownership.rbac.domains].sort(), ['event', 'help', 'promotion', 'reward', 'survey', 'template']);
+  assert.equal(projectComposerJava(file, source, { resolvedDomains: ['informalsanction'] }, ownership.rbac), source, 'declared removal');
   assert.throws(() => projectComposerJava(file, source, { resolvedDomains: ['help'] }), /RBAC projection needs the feature RBAC ownership/);
-  for (const selected of [['event'], ['reward'], ['help'], ['promotion'], ['template'], ['survey'], ['informalsanction'], ['event', 'reward', 'help', 'promotion', 'template']]) {
+  for (const selected of [['event'], ['reward'], ['help'], ['promotion'], ['template'], ['survey'], ['event', 'reward', 'help', 'promotion', 'template']]) {
     const projected = projectComposerJava(file, source, { resolvedDomains: selected }, ownership.rbac);
     assert.deepEqual(paths(projected), [...owners].filter(([, owner]) => selected.includes(owner)).map(([path]) => path), `${selected}: absent management APIs must not execute`);
     if (selected.some(domain => [...owners.values()].includes(domain))) {
@@ -1059,6 +1061,11 @@ test('custom RBAC projection preserves selected assertions and removes only abse
   assert.throws(() => projectComposerJava(file, source.replace('explicitSurveyReadGrantWorksWithoutAnAdministrativeGroup', 'renamed'), { resolvedDomains: ['promotion'] }, ownership.rbac), /contract drifted/);
   assert.throws(() => projectComposerJava(file, source.replace('Class<?> SURVEY_PACK_BOUNDARY', 'Class<?> RENAMED_BOUNDARY'), { resolvedDomains: ['promotion'] }, ownership.rbac), /survey boundary marker drifted/);
   assert.throws(() => projectComposerJava(file, source.replace('ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints', 'renamed'), { resolvedDomains: ['promotion'] }, ownership.rbac), /Mixed RBAC projection contract drifted/);
+  // 배너·팝업 단언 밖의 요청이 이 시험에 섞이면 소유를 판정할 수 없다 — 섞인 채로 promotion 몫으로 남기지 않는다.
+  const mixed = source.replace(/(    @Test void ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints\(\) throws Exception \{\r?\n)/,
+    '$1        mockMvc.perform(patch("/api/v1/admin/system/ism/1/confirm").with(user(ordinary))).andExpect(status().isForbidden());\n');
+  assert.notEqual(mixed, source);
+  assert.throws(() => projectComposerJava(file, mixed, { resolvedDomains: ['promotion'] }, ownership.rbac), /Mixed RBAC assertion inventory drifted/);
 });
 
 test('selected-source survival rejects collateral deletion and allows explicitly excluded child features', t => {

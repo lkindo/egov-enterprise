@@ -103,7 +103,6 @@ import {
   ApiResponsePageResponseAuditJournalEntryResponseSchema,
   ApiResponsePageResponseAuthorGroupProjectionResponseSchema,
   ApiResponsePageResponseAuthorManageDtoResponseSchema,
-  ApiResponsePageResponseAuthorRoleProjectionResponseSchema,
   ApiResponsePageResponseBannerDtoResponseSchema,
   ApiResponsePageResponseBoardDtoResponseSchema,
   ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema,
@@ -140,7 +139,6 @@ import {
   ApiResponsePageResponsePrivacyLogDtoResponseSchema,
   ApiResponsePageResponsePublicFaqListItemResponseResponseSchema,
   ApiResponsePageResponseRewardManageDtoResponseSchema,
-  ApiResponsePageResponseRoleManageDtoResponseSchema,
   ApiResponsePageResponseScheduleDtoResponseSchema,
   ApiResponsePageResponseScrapDtoResponseSchema,
   ApiResponsePageResponseSentMailDtoResponseSchema,
@@ -160,7 +158,6 @@ import {
   ApiResponsePopupPublicResponseResponseSchema,
   ApiResponsePublicFaqDetailResponseResponseSchema,
   ApiResponseRewardManageDtoResponseSchema,
-  ApiResponseRoleManageDtoResponseSchema,
   ApiResponseSatisfactionAverageResponseResponseSchema,
   ApiResponseScheduleDtoResponseSchema,
   ApiResponseScrapDtoResponseSchema,
@@ -197,7 +194,6 @@ import {
   ApproverProfileDtoResponseSchema,
   ApproverReplaceRequestRequestSchema,
   AttachmentIntegrityReportResponseSchema,
-  AuthorManageDtoRequestSchema,
   AuthorManageDtoResponseSchema,
   BannerDtoRequestSchema,
   BannerDtoResponseSchema,
@@ -261,7 +257,6 @@ import {
   HealthStatusResponseResponseSchema,
   HpcmDtoRequestSchema,
   HpcmDtoResponseSchema,
-  InformalSanctionDtoRequestSchema,
   InformalSanctionDtoResponseSchema,
   InstitutionCodeDtoResponseSchema,
   InstitutionCodeRecptnDtoRequestSchema,
@@ -310,7 +305,6 @@ import {
   PageResponseAuditJournalEntryResponseSchema,
   PageResponseAuthorGroupProjectionResponseSchema,
   PageResponseAuthorManageDtoResponseSchema,
-  PageResponseAuthorRoleProjectionResponseSchema,
   PageResponseBannerDtoResponseSchema,
   PageResponseBoardDtoResponseSchema,
   PageResponseBoardMasterSummaryResponseResponseSchema,
@@ -347,7 +341,6 @@ import {
   PageResponsePrivacyLogDtoResponseSchema,
   PageResponsePublicFaqListItemResponseResponseSchema,
   PageResponseRewardManageDtoResponseSchema,
-  PageResponseRoleManageDtoResponseSchema,
   PageResponseScheduleDtoResponseSchema,
   PageResponseScrapDtoResponseSchema,
   PageResponseSentMailDtoResponseSchema,
@@ -373,8 +366,6 @@ import {
   ReplaceGroupsRequestSchema,
   RewardManageDtoRequestSchema,
   RewardManageDtoResponseSchema,
-  RoleManageDtoRequestSchema,
-  RoleManageDtoResponseSchema,
   SatisfactionAverageResponseResponseSchema,
   SatisfactionDtoRequestSchema,
   SatisfactionDtoResponseSchema,
@@ -896,120 +887,6 @@ export const deleteMemoReportOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "memoRptSn": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getInformalSanctionOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getInformalSanction",
-  method: "get",
-  path: "/api/v1/informal-sanctions/{informalSanctionId}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => InformalSanctionDtoResponseSchema),
-  envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const updateInformalSanctionOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "updateInformalSanction",
-  method: "put",
-  path: "/api/v1/informal-sanctions/{informalSanctionId}",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: InformalSanctionDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteInformalSanctionOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteInformalSanction",
-  method: "delete",
-  path: "/api/v1/informal-sanctions/{informalSanctionId}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getInformalSanction_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getInformalSanction_1",
-  method: "get",
-  path: "/api/v1/admin/system/ism/{informalSanctionId}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => InformalSanctionDtoResponseSchema),
-  envelopeSchema: ApiResponseInformalSanctionDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const updateInformalSanction_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "updateInformalSanction_1",
-  method: "put",
-  path: "/api/v1/admin/system/ism/{informalSanctionId}",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: null,
-  requestSchema: InformalSanctionDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteInformalSanction_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteInformalSanction_1",
-  method: "delete",
-  path: "/api/v1/admin/system/ism/{informalSanctionId}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: null,
   responseSchema: null,
@@ -2086,63 +1963,6 @@ export const deleteItem_1Operation = /*#__PURE__*/ (() => {
   });
 })();
 
-export const getRoleOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getRole",
-  method: "get",
-  path: "/api/v1/admin/system/roles/{roleCode}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "roleCode": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => RoleManageDtoResponseSchema),
-  envelopeSchema: ApiResponseRoleManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const updateRoleOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "updateRole",
-  method: "put",
-  path: "/api/v1/admin/system/roles/{roleCode}",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "roleCode": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: RoleManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteRoleOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteRole",
-  method: "delete",
-  path: "/api/v1/admin/system/roles/{roleCode}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "roleCode": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
 export const getPopupOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "getPopup",
@@ -2998,63 +2818,6 @@ export const deleteBannerOperation = /*#__PURE__*/ (() => {
   });
 })();
 
-export const getAuthorOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getAuthor",
-  method: "get",
-  path: "/api/v1/admin/system/authorities/{authrtCd}",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: z.lazy(() => AuthorManageDtoResponseSchema),
-  envelopeSchema: ApiResponseAuthorManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const updateAuthorOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "updateAuthor",
-  method: "put",
-  path: "/api/v1/admin/system/authorities/{authrtCd}",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: AuthorManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteAuthorOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteAuthor",
-  method: "delete",
-  path: "/api/v1/admin/system/authorities/{authrtCd}",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
 export const updateRewardOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "updateReward",
@@ -3849,82 +3612,6 @@ export const resendMailOperation = /*#__PURE__*/ (() => {
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getInformalSanctionListOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getInformalSanctionList",
-  method: "get",
-  path: "/api/v1/informal-sanctions",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "type": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const registerInformalSanctionOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "registerInformalSanction",
-  method: "post",
-  path: "/api/v1/informal-sanctions",
-  requestKind: "json",
-  responseKind: "json",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: InformalSanctionDtoRequestSchema.strict(),
-  responseSchema: z.number().int(),
-  envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getInformalSanctionList_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getInformalSanctionList_1",
-  method: "get",
-  path: "/api/v1/admin/system/ism",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "type": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseInformalSanctionDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const registerInformalSanction_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "registerInformalSanction_1",
-  method: "post",
-  path: "/api/v1/admin/system/ism",
-  requestKind: "json",
-  responseKind: "json",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: InformalSanctionDtoRequestSchema.strict(),
-  responseSchema: z.number().int(),
-  envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["references"],["referenceViewer"],["canAddReference"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -5175,63 +4862,6 @@ export const insertSurvey_1Operation = /*#__PURE__*/ (() => {
   });
 })();
 
-export const getRolesOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getRoles",
-  method: "get",
-  path: "/api/v1/admin/system/roles",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseRoleManageDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseRoleManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const createRoleOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "createRole",
-  method: "post",
-  path: "/api/v1/admin/system/roles",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: RoleManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteRolesOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteRoles",
-  method: "delete",
-  path: "/api/v1/admin/system/roles",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: z.array(z.string()),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
 export const getPopupsOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "getPopups",
@@ -5802,101 +5432,6 @@ export const insertBannerOperation = /*#__PURE__*/ (() => {
   });
 })();
 
-export const getAuthorsOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getAuthors",
-  method: "get",
-  path: "/api/v1/admin/system/authorities",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseAuthorManageDtoResponseSchema),
-  envelopeSchema: ApiResponsePageResponseAuthorManageDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const createAuthorOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "createAuthor",
-  method: "post",
-  path: "/api/v1/admin/system/authorities",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: AuthorManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const deleteAuthorsOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "deleteAuthors",
-  method: "delete",
-  path: "/api/v1/admin/system/authorities",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: null,
-  requestSchema: z.array(z.string()),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getAuthorRolesOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getAuthorRoles",
-  method: "get",
-  path: "/api/v1/admin/system/authorities/{authrtCd}/roles",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.lazy(() => PageResponseAuthorRoleProjectionResponseSchema),
-  envelopeSchema: ApiResponsePageResponseAuthorRoleProjectionResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const saveAuthorRolesOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "saveAuthorRoles",
-  method: "post",
-  path: "/api/v1/admin/system/authorities/{authrtCd}/roles",
-  requestKind: "json",
-  responseKind: "void",
-  requestRequired: true,
-  multipartParts: null,
-  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
-  querySchema: null,
-  requestSchema: z.array(z.string()),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
 export const getSmsListOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "getSmsList",
@@ -6213,44 +5748,6 @@ export const updateDrctMatterOperation = /*#__PURE__*/ (() => {
   pathSchema: z.object({ "memoRptSn": z.number().int() }).strict(),
   querySchema: null,
   requestSchema: MemoInstructionRequestRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const confirmInformalSanctionOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "confirmInformalSanction",
-  method: "patch",
-  path: "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: z.object({ "confmAt": z.string(), "returnResn": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const confirmInformalSanction_1Operation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "confirmInformalSanction_1",
-  method: "patch",
-  path: "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
-  requestKind: "none",
-  responseKind: "void",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: z.object({ "informalSanctionId": z.number().int() }).strict(),
-  querySchema: z.object({ "confmAt": z.string(), "returnResn": z.string().optional() }).strict(),
-  requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -8400,6 +7897,44 @@ export const getReflectedBanners_1Operation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => BannerDtoResponseSchema)),
   envelopeSchema: ApiResponseListBannerDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getAuthorsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getAuthors",
+  method: "get",
+  path: "/api/v1/admin/system/authorities",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseAuthorManageDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseAuthorManageDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getAuthorOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getAuthor",
+  method: "get",
+  path: "/api/v1/admin/system/authorities/{authrtCd}",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "authrtCd": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => AuthorManageDtoResponseSchema),
+  envelopeSchema: ApiResponseAuthorManageDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

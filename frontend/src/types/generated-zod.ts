@@ -173,123 +173,6 @@ export const MemoReportDtoSchema = /*#__PURE__*/ (() => z.object({
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
 // ==========================================================================
-// ApprovalApproverDto Schema
-// ==========================================================================
-export const ApprovalApproverDtoSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
-  opinion: z.string().optional(),
-  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-  absent: z.boolean().optional(),
-}))();
-export type ApprovalApproverDto = z.infer<typeof ApprovalApproverDtoSchema>;
-
-// ==========================================================================
-// ApprovalProcessDto Schema
-// ==========================================================================
-export const ApprovalProcessDtoSchema = /*#__PURE__*/ (() => z.object({
-  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
-  atrzCycl: z.number().int().optional(),
-  actorNm: z.string().optional(),
-  targetNm: z.string().optional(),
-  beforeNm: z.string().optional(),
-  content: z.string().optional(),
-  at: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-export type ApprovalProcessDto = z.infer<typeof ApprovalProcessDtoSchema>;
-
-// ==========================================================================
-// ApprovalReferenceDto Schema
-// ==========================================================================
-export const ApprovalReferenceDtoSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
-  deptNm: z.string().optional(),
-  atrzCycl: z.number().int().optional(),
-  designator: z.enum(["DRAFTER","APPROVER"]).optional(),
-  designatedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-export type ApprovalReferenceDto = z.infer<typeof ApprovalReferenceDtoSchema>;
-
-// ==========================================================================
-// ApprovalRevisionDto Schema
-// ==========================================================================
-export const ApprovalRevisionDtoSchema = /*#__PURE__*/ (() => z.object({
-  atrzCycl: z.number().int().optional(),
-  docTtl: z.string().optional(),
-  docCn: z.string().optional(),
-  aprvYn: z.string().optional(),
-  reqYmd: z.string().optional(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
-}))();
-export type ApprovalRevisionDto = z.infer<typeof ApprovalRevisionDtoSchema>;
-
-// ==========================================================================
-// ApprovalStageDto Schema
-// ==========================================================================
-export const ApprovalStageDtoSchema = /*#__PURE__*/ (() => z.object({
-  order: z.number().int().optional(),
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
-  approvers: z.array(z.lazy(() => ApprovalApproverDtoSchema)).optional(),
-}))();
-export type ApprovalStageDto = z.infer<typeof ApprovalStageDtoSchema>;
-
-// ==========================================================================
-// ApprovalSupplementDto Schema
-// ==========================================================================
-export const ApprovalSupplementDtoSchema = /*#__PURE__*/ (() => z.object({
-  askedBy: z.string().optional(),
-  askedByNm: z.string().optional(),
-  question: z.string().optional(),
-  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-export type ApprovalSupplementDto = z.infer<typeof ApprovalSupplementDtoSchema>;
-
-// ==========================================================================
-// InformalSanctionDto Schema
-// ==========================================================================
-export const InformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
-  ifmlAtrzSn: z.number().int().optional(),
-  taskSeCd: z.string().min(0).max(12),
-  taskSeNm: z.string().optional(),
-  aplcntId: z.string().min(0).max(20),
-  aplcntNm: z.string().optional(),
-  reqYmd: z.string().min(0).max(8).optional(),
-  aprvrId: z.string().min(0).max(20).optional(),
-  aprvrNm: z.string().optional(),
-  aprvrOrgnztNm: z.string().optional(),
-  aprvYn: z.string().min(0).max(1).optional(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rjctRsnCn: z.string().min(0).max(4000).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  docTtl: z.string().min(0).max(256).optional(),
-  docCn: z.string().min(0).max(4000).optional(),
-  version: z.number().int().min(0).optional(),
-  atrzCycl: z.number().int().optional(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
-  history: z.array(z.lazy(() => ApprovalRevisionDtoSchema)).optional(),
-  canApprove: z.boolean().optional(),
-  canWithdraw: z.boolean().optional(),
-  canResubmit: z.boolean().optional(),
-  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
-  openSupplement: z.lazy(() => ApprovalSupplementDtoSchema).optional(),
-  processHistory: z.array(z.lazy(() => ApprovalProcessDtoSchema)).optional(),
-  canRemind: z.boolean().optional(),
-  remindedToday: z.boolean().optional(),
-  canReplaceApprover: z.boolean().optional(),
-  canRequestSupplement: z.boolean().optional(),
-  canAnswerSupplement: z.boolean().optional(),
-  references: z.array(z.lazy(() => ApprovalReferenceDtoSchema)).optional(),
-  referenceViewer: z.boolean().optional(),
-  canAddReference: z.boolean().optional(),
-}))();
-export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
-
-// ==========================================================================
 // OnlineManualDto Schema
 // ==========================================================================
 export const OnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -638,20 +521,6 @@ export const SurveyTemplateDtoSchema = /*#__PURE__*/ (() => z.object({
 export type SurveyTemplateDto = z.infer<typeof SurveyTemplateDtoSchema>;
 
 // ==========================================================================
-// RoleManageDto Schema
-// ==========================================================================
-export const RoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().min(0).max(20).optional(),
-  roleNm: z.string().min(0).max(300),
-  rolePatrn: z.string().min(0).max(300).optional(),
-  roleExpln: z.string().min(0).max(4000).optional(),
-  roleTypeCd: z.string().min(0).max(12).optional(),
-  roleSort: z.string().optional(),
-  crtDt: z.string().optional(),
-}))();
-export type RoleManageDto = z.infer<typeof RoleManageDtoSchema>;
-
-// ==========================================================================
 // PopupDto Schema
 // ==========================================================================
 export const PopupDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -977,17 +846,6 @@ export const BannerDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
 }))();
 export type BannerDto = z.infer<typeof BannerDtoSchema>;
-
-// ==========================================================================
-// AuthorManageDto Schema
-// ==========================================================================
-export const AuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  authrtCd: z.string().min(0).max(20),
-  authrtNm: z.string().min(0).max(60),
-  authrtExpln: z.string().min(0).max(200).optional(),
-  authrtCrtYmd: z.string().optional(),
-}))();
-export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 
 // ==========================================================================
 // RewardManageDto Schema
@@ -2589,46 +2447,6 @@ export const MailDeliveryStatusDtoSchema = /*#__PURE__*/ (() => z.object({
 export type MailDeliveryStatusDto = z.infer<typeof MailDeliveryStatusDtoSchema>;
 
 // ==========================================================================
-// ApiResponseInformalSanctionDto Schema
-// ==========================================================================
-export const ApiResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => InformalSanctionDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponseInformalSanctionDto = z.infer<typeof ApiResponseInformalSanctionDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseInformalSanctionDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInformalSanctionDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePageResponseInformalSanctionDto = z.infer<typeof ApiResponsePageResponseInformalSanctionDtoSchema>;
-
-// ==========================================================================
-// PageResponseInformalSanctionDto Schema
-// ==========================================================================
-export const PageResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-export type PageResponseInformalSanctionDto = z.infer<typeof PageResponseInformalSanctionDtoSchema>;
-
-// ==========================================================================
 // ApiResponsePageResponseOnlineManualDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -3317,6 +3135,137 @@ export const CurrentUserResponseSchema = /*#__PURE__*/ (() => z.object({
 export type CurrentUserResponse = z.infer<typeof CurrentUserResponseSchema>;
 
 // ==========================================================================
+// ApiResponseInformalSanctionDto Schema
+// ==========================================================================
+export const ApiResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => InformalSanctionDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseInformalSanctionDto = z.infer<typeof ApiResponseInformalSanctionDtoSchema>;
+
+// ==========================================================================
+// ApprovalApproverDto Schema
+// ==========================================================================
+export const ApprovalApproverDtoSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  opinion: z.string().optional(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  absent: z.boolean().optional(),
+}))();
+export type ApprovalApproverDto = z.infer<typeof ApprovalApproverDtoSchema>;
+
+// ==========================================================================
+// ApprovalProcessDto Schema
+// ==========================================================================
+export const ApprovalProcessDtoSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
+  atrzCycl: z.number().int().optional(),
+  actorNm: z.string().optional(),
+  targetNm: z.string().optional(),
+  beforeNm: z.string().optional(),
+  content: z.string().optional(),
+  at: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalProcessDto = z.infer<typeof ApprovalProcessDtoSchema>;
+
+// ==========================================================================
+// ApprovalReferenceDto Schema
+// ==========================================================================
+export const ApprovalReferenceDtoSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  deptNm: z.string().optional(),
+  atrzCycl: z.number().int().optional(),
+  designator: z.enum(["DRAFTER","APPROVER"]).optional(),
+  designatedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalReferenceDto = z.infer<typeof ApprovalReferenceDtoSchema>;
+
+// ==========================================================================
+// ApprovalRevisionDto Schema
+// ==========================================================================
+export const ApprovalRevisionDtoSchema = /*#__PURE__*/ (() => z.object({
+  atrzCycl: z.number().int().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  aprvYn: z.string().optional(),
+  reqYmd: z.string().optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
+}))();
+export type ApprovalRevisionDto = z.infer<typeof ApprovalRevisionDtoSchema>;
+
+// ==========================================================================
+// ApprovalStageDto Schema
+// ==========================================================================
+export const ApprovalStageDtoSchema = /*#__PURE__*/ (() => z.object({
+  order: z.number().int().optional(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoSchema)).optional(),
+}))();
+export type ApprovalStageDto = z.infer<typeof ApprovalStageDtoSchema>;
+
+// ==========================================================================
+// ApprovalSupplementDto Schema
+// ==========================================================================
+export const ApprovalSupplementDtoSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional(),
+  askedByNm: z.string().optional(),
+  question: z.string().optional(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type ApprovalSupplementDto = z.infer<typeof ApprovalSupplementDtoSchema>;
+
+// ==========================================================================
+// InformalSanctionDto Schema
+// ==========================================================================
+export const InformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
+  ifmlAtrzSn: z.number().int().optional(),
+  taskSeCd: z.string().min(0).max(12),
+  taskSeNm: z.string().optional(),
+  aplcntId: z.string().min(0).max(20),
+  aplcntNm: z.string().optional(),
+  reqYmd: z.string().min(0).max(8).optional(),
+  aprvrId: z.string().min(0).max(20).optional(),
+  aprvrNm: z.string().optional(),
+  aprvrOrgnztNm: z.string().optional(),
+  aprvYn: z.string().min(0).max(1).optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  rjctRsnCn: z.string().min(0).max(4000).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
+  atrzCycl: z.number().int().optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoSchema)).optional(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoSchema)).optional(),
+  canApprove: z.boolean().optional(),
+  canWithdraw: z.boolean().optional(),
+  canResubmit: z.boolean().optional(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoSchema).optional(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoSchema)).optional(),
+  canRemind: z.boolean().optional(),
+  remindedToday: z.boolean().optional(),
+  canReplaceApprover: z.boolean().optional(),
+  canRequestSupplement: z.boolean().optional(),
+  canAnswerSupplement: z.boolean().optional(),
+  references: z.array(z.lazy(() => ApprovalReferenceDtoSchema)).optional(),
+  referenceViewer: z.boolean().optional(),
+  canAddReference: z.boolean().optional(),
+}))();
+export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
+
+// ==========================================================================
 // ApiResponseListApprovalTemporaryDraftSummaryDto Schema
 // ==========================================================================
 export const ApiResponseListApprovalTemporaryDraftSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -3435,6 +3384,32 @@ export const ApprovalSavedLineDtoSchema = /*#__PURE__*/ (() => z.object({
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
 }))();
 export type ApprovalSavedLineDto = z.infer<typeof ApprovalSavedLineDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseInformalSanctionDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseInformalSanctionDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponseInformalSanctionDto = z.infer<typeof ApiResponsePageResponseInformalSanctionDtoSchema>;
+
+// ==========================================================================
+// PageResponseInformalSanctionDto Schema
+// ==========================================================================
+export const PageResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => InformalSanctionDtoSchema)).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+}))();
+export type PageResponseInformalSanctionDto = z.infer<typeof PageResponseInformalSanctionDtoSchema>;
 
 // ==========================================================================
 // ApiResponseApprovalSuggestionsDto Schema
@@ -3778,46 +3753,6 @@ export const SummaryStatsDtoSchema = /*#__PURE__*/ (() => z.object({
   todayConnects: z.number().int().optional(),
 }))();
 export type SummaryStatsDto = z.infer<typeof SummaryStatsDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseRoleManageDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseRoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseRoleManageDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePageResponseRoleManageDto = z.infer<typeof ApiResponsePageResponseRoleManageDtoSchema>;
-
-// ==========================================================================
-// PageResponseRoleManageDto Schema
-// ==========================================================================
-export const PageResponseRoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RoleManageDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-export type PageResponseRoleManageDto = z.infer<typeof PageResponseRoleManageDtoSchema>;
-
-// ==========================================================================
-// ApiResponseRoleManageDto Schema
-// ==========================================================================
-export const ApiResponseRoleManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RoleManageDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponseRoleManageDto = z.infer<typeof ApiResponseRoleManageDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponsePopupDto Schema
@@ -5019,6 +4954,17 @@ export const ApiResponsePageResponseAuthorManageDtoSchema = /*#__PURE__*/ (() =>
 export type ApiResponsePageResponseAuthorManageDto = z.infer<typeof ApiResponsePageResponseAuthorManageDtoSchema>;
 
 // ==========================================================================
+// AuthorManageDto Schema
+// ==========================================================================
+export const AuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
+  authrtCd: z.string().min(0).max(20),
+  authrtNm: z.string().min(0).max(60),
+  authrtExpln: z.string().min(0).max(200).optional(),
+  authrtCrtYmd: z.string().optional(),
+}))();
+export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
+
+// ==========================================================================
 // PageResponseAuthorManageDto Schema
 // ==========================================================================
 export const PageResponseAuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
@@ -5043,48 +4989,6 @@ export const ApiResponseAuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
 export type ApiResponseAuthorManageDto = z.infer<typeof ApiResponseAuthorManageDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseAuthorRoleProjection Schema
-// ==========================================================================
-export const ApiResponsePageResponseAuthorRoleProjectionSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAuthorRoleProjectionSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePageResponseAuthorRoleProjection = z.infer<typeof ApiResponsePageResponseAuthorRoleProjectionSchema>;
-
-// ==========================================================================
-// AuthorRoleProjection Schema
-// ==========================================================================
-export const AuthorRoleProjectionSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().optional(),
-  roleNm: z.string().optional(),
-  rolePatrn: z.string().optional(),
-  roleExpln: z.string().optional(),
-  roleTypeCd: z.string().optional(),
-  roleSort: z.string().optional(),
-  authrtCd: z.string().optional(),
-  regYn: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-export type AuthorRoleProjection = z.infer<typeof AuthorRoleProjectionSchema>;
-
-// ==========================================================================
-// PageResponseAuthorRoleProjection Schema
-// ==========================================================================
-export const PageResponseAuthorRoleProjectionSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorRoleProjectionSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-export type PageResponseAuthorRoleProjection = z.infer<typeof PageResponseAuthorRoleProjectionSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseSmsDto Schema
@@ -5945,181 +5849,6 @@ export const MemoReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   instructable: z.boolean().optional().nullable(),
 }))();
 
-export const ApprovalApproverDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
-  opinion: z.string().optional(),
-  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-  absent: z.boolean().optional(),
-}))();
-
-export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional().nullable(),
-  userNm: z.string().optional().nullable(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
-  opinion: z.string().optional().nullable(),
-  decidedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  absent: z.boolean().optional().nullable(),
-}))();
-
-export const ApprovalProcessDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
-  atrzCycl: z.number().int().optional(),
-  actorNm: z.string().optional(),
-  targetNm: z.string().optional(),
-  beforeNm: z.string().optional(),
-  content: z.string().optional(),
-  at: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-
-export const ApprovalProcessDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional().nullable(),
-  atrzCycl: z.number().int().optional().nullable(),
-  actorNm: z.string().optional().nullable(),
-  targetNm: z.string().optional().nullable(),
-  beforeNm: z.string().optional().nullable(),
-  content: z.string().optional().nullable(),
-  at: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-}))();
-
-export const ApprovalReferenceDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional(),
-  userNm: z.string().optional(),
-  deptNm: z.string().optional(),
-  atrzCycl: z.number().int().optional(),
-  designator: z.enum(["DRAFTER","APPROVER"]).optional(),
-  designatedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-
-export const ApprovalReferenceDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  userId: z.string().optional().nullable(),
-  userNm: z.string().optional().nullable(),
-  deptNm: z.string().optional().nullable(),
-  atrzCycl: z.number().int().optional().nullable(),
-  designator: z.enum(["DRAFTER","APPROVER"]).optional().nullable(),
-  designatedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-}))();
-
-export const ApprovalRevisionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  atrzCycl: z.number().int().optional(),
-  docTtl: z.string().optional(),
-  docCn: z.string().optional(),
-  aprvYn: z.string().optional(),
-  reqYmd: z.string().optional(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
-}))();
-
-export const ApprovalRevisionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  atrzCycl: z.number().int().optional().nullable(),
-  docTtl: z.string().optional().nullable(),
-  docCn: z.string().optional().nullable(),
-  aprvYn: z.string().optional().nullable(),
-  reqYmd: z.string().optional().nullable(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
-}))();
-
-export const ApprovalStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  order: z.number().int().optional(),
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
-  approvers: z.array(z.lazy(() => ApprovalApproverDtoRequestSchema.strict())).optional(),
-}))();
-
-export const ApprovalStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  order: z.number().int().optional().nullable(),
-  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
-  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
-  approvers: z.array(z.lazy(() => ApprovalApproverDtoResponseSchema)).optional().nullable(),
-}))();
-
-export const ApprovalSupplementDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  askedBy: z.string().optional(),
-  askedByNm: z.string().optional(),
-  question: z.string().optional(),
-  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-
-export const ApprovalSupplementDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  askedBy: z.string().optional().nullable(),
-  askedByNm: z.string().optional().nullable(),
-  question: z.string().optional().nullable(),
-  askedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-}))();
-
-export const InformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  ifmlAtrzSn: z.number().int().optional(),
-  taskSeCd: z.string().min(0).max(12),
-  taskSeNm: z.string().optional(),
-  aplcntId: z.string().min(0).max(20),
-  aplcntNm: z.string().optional(),
-  reqYmd: z.string().min(0).max(8).optional(),
-  aprvrId: z.string().min(0).max(20).optional(),
-  aprvrNm: z.string().optional(),
-  aprvrOrgnztNm: z.string().optional(),
-  aprvYn: z.string().min(0).max(1).optional(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  rjctRsnCn: z.string().min(0).max(4000).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  docTtl: z.string().min(0).max(256).optional(),
-  docCn: z.string().min(0).max(4000).optional(),
-  version: z.number().int().min(0).optional(),
-  atrzCycl: z.number().int().optional(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
-  history: z.array(z.lazy(() => ApprovalRevisionDtoRequestSchema.strict())).optional(),
-  canApprove: z.boolean().optional(),
-  canWithdraw: z.boolean().optional(),
-  canResubmit: z.boolean().optional(),
-  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
-  openSupplement: z.lazy(() => ApprovalSupplementDtoRequestSchema.strict()).optional(),
-  processHistory: z.array(z.lazy(() => ApprovalProcessDtoRequestSchema.strict())).optional(),
-  canRemind: z.boolean().optional(),
-  remindedToday: z.boolean().optional(),
-  canReplaceApprover: z.boolean().optional(),
-  canRequestSupplement: z.boolean().optional(),
-  canAnswerSupplement: z.boolean().optional(),
-}))();
-
-export const InformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  ifmlAtrzSn: z.number().int().optional().nullable(),
-  taskSeCd: z.string().min(0).max(12),
-  taskSeNm: z.string().optional().nullable(),
-  aplcntId: z.string().min(0).max(20),
-  aplcntNm: z.string().optional().nullable(),
-  reqYmd: z.string().min(0).max(8).optional().nullable(),
-  aprvrId: z.string().min(0).max(20).optional().nullable(),
-  aprvrNm: z.string().optional().nullable(),
-  aprvrOrgnztNm: z.string().optional().nullable(),
-  aprvYn: z.string().min(0).max(1).optional().nullable(),
-  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  rjctRsnCn: z.string().min(0).max(4000).optional().nullable(),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  docTtl: z.string().min(0).max(256).optional().nullable(),
-  docCn: z.string().min(0).max(4000).optional().nullable(),
-  version: z.number().int().min(0).optional().nullable(),
-  atrzCycl: z.number().int().optional().nullable(),
-  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
-  history: z.array(z.lazy(() => ApprovalRevisionDtoResponseSchema)).optional().nullable(),
-  canApprove: z.boolean().optional().nullable(),
-  canWithdraw: z.boolean().optional().nullable(),
-  canResubmit: z.boolean().optional().nullable(),
-  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  openSupplement: z.lazy(() => ApprovalSupplementDtoResponseSchema).optional().nullable(),
-  processHistory: z.array(z.lazy(() => ApprovalProcessDtoResponseSchema)).optional().nullable(),
-  canRemind: z.boolean().optional().nullable(),
-  remindedToday: z.boolean().optional().nullable(),
-  canReplaceApprover: z.boolean().optional().nullable(),
-  canRequestSupplement: z.boolean().optional().nullable(),
-  canAnswerSupplement: z.boolean().optional().nullable(),
-  references: z.array(z.lazy(() => ApprovalReferenceDtoResponseSchema)).optional().nullable(),
-  referenceViewer: z.boolean().optional().nullable(),
-  canAddReference: z.boolean().optional().nullable(),
-}))();
-
 export const OnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   onlnMnlSn: z.number().int().optional(),
   onlnMnlNm: z.string().min(0).max(100),
@@ -6600,26 +6329,6 @@ export const SurveyTemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
-export const RoleManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().min(0).max(20).optional(),
-  roleNm: z.string().min(0).max(300),
-  rolePatrn: z.string().min(0).max(300).optional(),
-  roleExpln: z.string().min(0).max(4000).optional(),
-  roleTypeCd: z.string().min(0).max(12).optional(),
-  roleSort: z.string().optional(),
-  crtDt: z.string().optional(),
-}))();
-
-export const RoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().min(0).max(20).optional().nullable(),
-  roleNm: z.string().min(0).max(300),
-  rolePatrn: z.string().min(0).max(300).optional().nullable(),
-  roleExpln: z.string().min(0).max(4000).optional().nullable(),
-  roleTypeCd: z.string().min(0).max(12).optional().nullable(),
-  roleSort: z.string().optional().nullable(),
-  crtDt: z.string().optional().nullable(),
-}))();
-
 export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   popupSn: z.number().int().optional(),
   popupTtlNm: z.string().min(0).max(100),
@@ -7085,20 +6794,6 @@ export const BannerDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-}))();
-
-export const AuthorManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  authrtCd: z.string().min(0).max(20),
-  authrtNm: z.string().min(0).max(60),
-  authrtExpln: z.string().min(0).max(200).optional(),
-  authrtCrtYmd: z.string().optional(),
-}))();
-
-export const AuthorManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  authrtCd: z.string().min(0).max(20),
-  authrtNm: z.string().min(0).max(60),
-  authrtExpln: z.string().min(0).max(200).optional().nullable(),
-  authrtCrtYmd: z.string().optional().nullable(),
 }))();
 
 export const RewardManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -9292,62 +8987,6 @@ export const MailDeliveryStatusDtoResponseSchema = /*#__PURE__*/ (() => z.object
   senderImplementation: z.string(),
 }))();
 
-export const ApiResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => InformalSanctionDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => InformalSanctionDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const ApiResponsePageResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseInformalSanctionDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponsePageResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const PageResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-
-export const PageResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
-}))();
-
 export const ApiResponsePageResponseOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -10322,6 +9961,201 @@ export const CurrentUserResponseResponseSchema = /*#__PURE__*/ (() => z.object({
   passwordChangeRequired: z.boolean().optional().nullable(),
 }))();
 
+export const ApiResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => InformalSanctionDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => InformalSanctionDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalApproverDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  opinion: z.string().optional(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+  absent: z.boolean().optional(),
+}))();
+
+export const ApprovalApproverDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
+  opinion: z.string().optional().nullable(),
+  decidedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  absent: z.boolean().optional().nullable(),
+}))();
+
+export const ApprovalProcessDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional(),
+  atrzCycl: z.number().int().optional(),
+  actorNm: z.string().optional(),
+  targetNm: z.string().optional(),
+  beforeNm: z.string().optional(),
+  content: z.string().optional(),
+  at: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalProcessDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  type: z.enum(["REPLACE","ASK","ANSWER","REVISE","REMIND"]).optional().nullable(),
+  atrzCycl: z.number().int().optional().nullable(),
+  actorNm: z.string().optional().nullable(),
+  targetNm: z.string().optional().nullable(),
+  beforeNm: z.string().optional().nullable(),
+  content: z.string().optional().nullable(),
+  at: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const ApprovalReferenceDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  deptNm: z.string().optional(),
+  atrzCycl: z.number().int().optional(),
+  designator: z.enum(["DRAFTER","APPROVER"]).optional(),
+  designatedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalReferenceDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  userId: z.string().optional().nullable(),
+  userNm: z.string().optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  atrzCycl: z.number().int().optional().nullable(),
+  designator: z.enum(["DRAFTER","APPROVER"]).optional().nullable(),
+  designatedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const ApprovalRevisionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  atrzCycl: z.number().int().optional(),
+  docTtl: z.string().optional(),
+  docCn: z.string().optional(),
+  aprvYn: z.string().optional(),
+  reqYmd: z.string().optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalRevisionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  atrzCycl: z.number().int().optional().nullable(),
+  docTtl: z.string().optional().nullable(),
+  docCn: z.string().optional().nullable(),
+  aprvYn: z.string().optional().nullable(),
+  reqYmd: z.string().optional().nullable(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalStageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  order: z.number().int().optional(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoRequestSchema.strict())).optional(),
+}))();
+
+export const ApprovalStageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  order: z.number().int().optional().nullable(),
+  kind: z.enum(["APPROVAL","AGREEMENT"]).optional().nullable(),
+  status: z.enum(["WAITING","ACTIVE","APPROVED","REJECTED","CANCELLED"]).optional().nullable(),
+  approvers: z.array(z.lazy(() => ApprovalApproverDtoResponseSchema)).optional().nullable(),
+}))();
+
+export const ApprovalSupplementDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional(),
+  askedByNm: z.string().optional(),
+  question: z.string().optional(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const ApprovalSupplementDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  askedBy: z.string().optional().nullable(),
+  askedByNm: z.string().optional().nullable(),
+  question: z.string().optional().nullable(),
+  askedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const InformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  ifmlAtrzSn: z.number().int().optional(),
+  taskSeCd: z.string().min(0).max(12),
+  taskSeNm: z.string().optional(),
+  aplcntId: z.string().min(0).max(20),
+  aplcntNm: z.string().optional(),
+  reqYmd: z.string().min(0).max(8).optional(),
+  aprvrId: z.string().min(0).max(20).optional(),
+  aprvrNm: z.string().optional(),
+  aprvrOrgnztNm: z.string().optional(),
+  aprvYn: z.string().min(0).max(1).optional(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  rjctRsnCn: z.string().min(0).max(4000).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  docTtl: z.string().min(0).max(256).optional(),
+  docCn: z.string().min(0).max(4000).optional(),
+  version: z.number().int().min(0).optional(),
+  atrzCycl: z.number().int().optional(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoRequestSchema.strict())).optional(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoRequestSchema.strict())).optional(),
+  canApprove: z.boolean().optional(),
+  canWithdraw: z.boolean().optional(),
+  canResubmit: z.boolean().optional(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoRequestSchema.strict()).optional(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoRequestSchema.strict())).optional(),
+  canRemind: z.boolean().optional(),
+  remindedToday: z.boolean().optional(),
+  canReplaceApprover: z.boolean().optional(),
+  canRequestSupplement: z.boolean().optional(),
+  canAnswerSupplement: z.boolean().optional(),
+}))();
+
+export const InformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  ifmlAtrzSn: z.number().int().optional().nullable(),
+  taskSeCd: z.string().min(0).max(12),
+  taskSeNm: z.string().optional().nullable(),
+  aplcntId: z.string().min(0).max(20),
+  aplcntNm: z.string().optional().nullable(),
+  reqYmd: z.string().min(0).max(8).optional().nullable(),
+  aprvrId: z.string().min(0).max(20).optional().nullable(),
+  aprvrNm: z.string().optional().nullable(),
+  aprvrOrgnztNm: z.string().optional().nullable(),
+  aprvYn: z.string().min(0).max(1).optional().nullable(),
+  atrzDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  rjctRsnCn: z.string().min(0).max(4000).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  docTtl: z.string().min(0).max(256).optional().nullable(),
+  docCn: z.string().min(0).max(4000).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
+  atrzCycl: z.number().int().optional().nullable(),
+  stages: z.array(z.lazy(() => ApprovalStageDtoResponseSchema)).optional().nullable(),
+  history: z.array(z.lazy(() => ApprovalRevisionDtoResponseSchema)).optional().nullable(),
+  canApprove: z.boolean().optional().nullable(),
+  canWithdraw: z.boolean().optional().nullable(),
+  canResubmit: z.boolean().optional().nullable(),
+  currentStageSince: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  openSupplement: z.lazy(() => ApprovalSupplementDtoResponseSchema).optional().nullable(),
+  processHistory: z.array(z.lazy(() => ApprovalProcessDtoResponseSchema)).optional().nullable(),
+  canRemind: z.boolean().optional().nullable(),
+  remindedToday: z.boolean().optional().nullable(),
+  canReplaceApprover: z.boolean().optional().nullable(),
+  canRequestSupplement: z.boolean().optional().nullable(),
+  canAnswerSupplement: z.boolean().optional().nullable(),
+  references: z.array(z.lazy(() => ApprovalReferenceDtoResponseSchema)).optional().nullable(),
+  referenceViewer: z.boolean().optional().nullable(),
+  canAddReference: z.boolean().optional().nullable(),
+}))();
+
 export const ApiResponseListApprovalTemporaryDraftSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -10488,6 +10322,42 @@ export const ApprovalSavedLineDtoResponseSchema = /*#__PURE__*/ (() => z.object(
   droppedApproverCount: z.number().int().optional().nullable(),
   droppedStageCount: z.number().int().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const ApiResponsePageResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseInformalSanctionDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseInformalSanctionDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const PageResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => InformalSanctionDtoRequestSchema.strict())).optional(),
+  total: z.number().int().optional(),
+  page: z.number().int().optional(),
+  size: z.number().int().optional(),
+  totalPage: z.number().int().optional(),
+}))();
+
+export const PageResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)).optional().nullable(),
+  total: z.number().int().optional().nullable(),
+  page: z.number().int().optional().nullable(),
+  size: z.number().int().optional().nullable(),
+  totalPage: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponseApprovalSuggestionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -10966,62 +10836,6 @@ export const SummaryStatsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   totalUsers: z.number().int().optional().nullable(),
   totalPosts: z.number().int().optional().nullable(),
   todayConnects: z.number().int().optional().nullable(),
-}))();
-
-export const ApiResponsePageResponseRoleManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseRoleManageDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponsePageResponseRoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseRoleManageDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const PageResponseRoleManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RoleManageDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-
-export const PageResponseRoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RoleManageDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
-}))();
-
-export const ApiResponseRoleManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => RoleManageDtoRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponseRoleManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => RoleManageDtoResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponsePopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -12734,6 +12548,20 @@ export const ApiResponsePageResponseAuthorManageDtoResponseSchema = /*#__PURE__*
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
+export const AuthorManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  authrtCd: z.string().min(0).max(20),
+  authrtNm: z.string().min(0).max(60),
+  authrtExpln: z.string().min(0).max(200).optional(),
+  authrtCrtYmd: z.string().optional(),
+}))();
+
+export const AuthorManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  authrtCd: z.string().min(0).max(20),
+  authrtNm: z.string().min(0).max(60),
+  authrtExpln: z.string().min(0).max(200).optional().nullable(),
+  authrtCrtYmd: z.string().optional().nullable(),
+}))();
+
 export const PageResponseAuthorManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   list: z.array(z.lazy(() => AuthorManageDtoRequestSchema.strict())).optional(),
   total: z.number().int().optional(),
@@ -12768,66 +12596,6 @@ export const ApiResponseAuthorManageDtoResponseSchema = /*#__PURE__*/ (() => z.o
   data: z.lazy(() => AuthorManageDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const ApiResponsePageResponseAuthorRoleProjectionRequestSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseAuthorRoleProjectionRequestSchema.strict()).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
-}))();
-
-export const ApiResponsePageResponseAuthorRoleProjectionResponseSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional().nullable(),
-  status: z.number().int().optional().nullable(),
-  code: z.string().optional().nullable(),
-  message: z.string().optional().nullable(),
-  data: z.lazy(() => PageResponseAuthorRoleProjectionResponseSchema).optional().nullable(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const AuthorRoleProjectionRequestSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().optional(),
-  roleNm: z.string().optional(),
-  rolePatrn: z.string().optional(),
-  roleExpln: z.string().optional(),
-  roleTypeCd: z.string().optional(),
-  roleSort: z.string().optional(),
-  authrtCd: z.string().optional(),
-  regYn: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-
-export const AuthorRoleProjectionResponseSchema = /*#__PURE__*/ (() => z.object({
-  roleId: z.string().optional().nullable(),
-  roleNm: z.string().optional().nullable(),
-  rolePatrn: z.string().optional().nullable(),
-  roleExpln: z.string().optional().nullable(),
-  roleTypeCd: z.string().optional().nullable(),
-  roleSort: z.string().optional().nullable(),
-  authrtCd: z.string().optional().nullable(),
-  regYn: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-}))();
-
-export const PageResponseAuthorRoleProjectionRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorRoleProjectionRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
-}))();
-
-export const PageResponseAuthorRoleProjectionResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorRoleProjectionResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({

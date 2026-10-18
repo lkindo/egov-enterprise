@@ -94,9 +94,6 @@ class DashboardApiControllerTest extends ControllerTestSupport {
         
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
         verify(approvalService).getPendingApprovalCount(anyString());
-        // 대기 건수는 상태 조건 없는 수신 전체 질의(getReceivedInformalSanctionList)로 세지 않는다 —
-        // 그 경로는 처리 완료 건까지 세어 결재자가 승인해도 대시보드 숫자가 줄지 않았다(2026-09-02 수정).
-        verify(approvalService, never()).getReceivedInformalSanctionList(anyString(), any());
     }
 
     @Test

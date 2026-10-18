@@ -52,25 +52,6 @@ public class AuthorApiController {
         return ResponseEntity.ok(ApiResponse.success(authorManageService.selectAuthor(authrtCd)));
     }
 
-    @Operation(summary = "권한 그룹 등록", description = "새로운 시스템 권한 그룹을 등록합니다.")
-    @PostMapping
-    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor')")
-    public ResponseEntity<ApiResponse<Void>> createAuthor(@Valid @RequestBody AuthorManageDto dto) {
-        authorManageService.insertAuthor(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Operation(summary = "권한 그룹 수정", description = "기존 시스템 권한 그룹 정보를 수정합니다.")
-    @PutMapping("/{authrtCd}")
-    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor')")
-    public ResponseEntity<ApiResponse<Void>> updateAuthor(
-            @PathVariable String authrtCd,
-            @Valid @RequestBody AuthorManageDto dto) {
-        dto.setAuthrtCd(authrtCd);
-        authorManageService.updateAuthor(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
     @Operation(summary = "권한별 메뉴 목록 조회", description = "특정 권한 그룹의 접근 가능한 메뉴 목록을 조회합니다.")
     @GetMapping("/{authrtCd}/menus")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthorMenus')")
@@ -84,21 +65,5 @@ public class AuthorApiController {
         List<MenuCreateDto> list = menuService.selectMenuCreatList(vo);
 
         return ResponseEntity.ok(ApiResponse.success(list));
-    }
-
-    @Operation(summary = "권한 그룹 삭제", description = "시스템 권한 그룹 정보를 삭제합니다.")
-    @DeleteMapping("/{authrtCd}")
-    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor')")
-    public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authrtCd) {
-        authorManageService.deleteAuthor(authrtCd);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
-
-    @Operation(summary = "권한 그룹 다중 삭제", description = "여러 권한 그룹 정보를 한꺼번에 삭제합니다.")
-    @DeleteMapping
-    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors')")
-    public ResponseEntity<ApiResponse<Void>> deleteAuthors(@RequestBody List<String> authorCodes) {
-        authorManageService.deleteAuthors(authorCodes.toArray(new String[0]));
-        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

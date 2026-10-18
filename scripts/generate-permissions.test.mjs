@@ -62,8 +62,9 @@ test('LF and CRLF checkouts produce identical versions and artifacts', t => {
 test('administrative statistics and workflow pages preserve their distinct access boundaries', () => {
   const catalog = JSON.parse(fs.readFileSync(path.join(root, catalogPath), 'utf8'));
   const policy = JSON.parse(fs.readFileSync(path.join(root, policyPath), 'utf8'));
+  // [2026-10-18 ADR-0034] INFORMAL_APPR_ADMIN 은 비공식결재 API 와 함께 원장에서 걷혔다.
   for (const code of ['STATS_ADMIN_READ', 'WORKFLOW_READ', 'BANNER_ADMIN_READ', 'POPUP_ADMIN_READ',
-    'INFORMAL_APPR_ADMIN', 'DASHBOARD_ADMIN_READ', 'POLL_CREATE', 'POLL_UPDATE', 'POLL_DELETE']) {
+    'DASHBOARD_ADMIN_READ', 'POLL_CREATE', 'POLL_UPDATE', 'POLL_DELETE']) {
     assert.deepEqual(catalog.permissions.find(row => row.code === code)?.defaultGroups, ['ROLE_ADMIN', 'ROLE_SYSTEM']);
   }
   for (const code of ['STATS_READ', 'APPROVAL_READ', 'POLL_READ', 'POLL_VOTE']) {

@@ -393,7 +393,7 @@ class InformalSanctionWorkflowServiceTest {
     void hintsRequireOperationPermission() {
         var pageable = PageRequest.of(0, 10);
         InformalSanction inProgress = header("A");
-        given(informalSanctionRepository.findByAprvrId("first", pageable))
+        given(informalSanctionRepository.findPending("first", null, null, null, null, pageable))
                 .willReturn(new PageImpl<>(List.of(inProgress), pageable, 1));
         given(detailRepository.findVisibleForDocuments(List.of(7L), "first")).willReturn(List.of(line(1, 1, "first", true)));
         given(historyRepository.findVisibleForDocuments(List.of(7L), "first"))
@@ -403,9 +403,9 @@ class InformalSanctionWorkflowServiceTest {
         actor("first");
 
         permissions("APPROVAL_CANCEL", "APPROVAL_CREATE");
-        assertThat(service.getReceivedInformalSanctionList("first", pageable).getContent().get(0).isCanApprove()).isFalse();
+        assertThat(service.getPendingApprovalList("first", pageable).getContent().get(0).isCanApprove()).isFalse();
         permissions("APPROVAL_APPROVE");
-        assertThat(service.getReceivedInformalSanctionList("first", pageable).getContent().get(0).isCanApprove()).isTrue();
+        assertThat(service.getPendingApprovalList("first", pageable).getContent().get(0).isCanApprove()).isTrue();
 
         given(informalSanctionRepository.findSubmitted("owner", null, null, null, null, pageable))
                 .willReturn(new PageImpl<>(List.of(inProgress), pageable, 1));
@@ -818,9 +818,14 @@ class InformalSanctionWorkflowServiceTest {
         verifyNoInteractions(detailRepository, historyRepository, commonCodeService, userRepository, eventPublisher);
     }
 
+    /*
+     * [2026-10-18 ADR-0034] 종전에는 수신 목록(getReceivedInformalSanctionList — 걷은 레거시 API 의 type=received)으로 봤다.
+     * 그 목록이 걷혀, 같은 조립 경로(toDtoPage)를 지나는 처리함으로 같은 단언을 한다. 문서 조합은 저장소 대역이 정하므로
+     * 단언은 질의 의미가 아니라 페이지 조립의 배치·차수 판정이다.
+     */
     @Test
-    @DisplayName("수신 목록은 페이지 문서들의 최근 열람 가능 차수만 배치 조회한다")
-    void receivedPageBatchesOnlyVisibleRevisionsAndUserNames() {
+    @DisplayName("처리함은 페이지 문서들의 최근 열람 가능 차수만 배치 조회한다")
+    void processedPageBatchesOnlyVisibleRevisionsAndUserNames() {
         InformalSanction current = header("A");
         InformalSanction other = InformalSanction.builder().ifmlAtrzSn(9L).aplcntId("owner")
                 .aprvrId("first").taskSeCd("TASK").reqYmd("20260916")
@@ -831,7 +836,7 @@ class InformalSanctionWorkflowServiceTest {
                 9L, BigDecimal.ONE, BigDecimal.ONE, "first"), ApprovalStageKind.APPROVAL, true);
         previousLine.decide(false, "이전 사유", LocalDateTime.of(2026, 9, 16, 10, 0));
         var pageable = PageRequest.of(0, 10);
-        given(informalSanctionRepository.findByAprvrId("first", pageable))
+        given(informalSanctionRepository.findProcessed("first", List.of("C", "R"), null, null, null, null, pageable))
                 .willReturn(new PageImpl<>(List.of(current, other), pageable, 2));
         given(detailRepository.findVisibleForDocuments(List.of(7L, 9L), "first"))
                 .willReturn(List.of(line(1, 1, "first", true), previousLine));
@@ -841,7 +846,7 @@ class InformalSanctionWorkflowServiceTest {
         activeUsers("owner", "first");
         actor("first");
 
-        var result = service.getReceivedInformalSanctionList("first", pageable);
+        var result = service.getProcessedApprovalList("first", pageable);
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).isCanApprove()).isTrue();
@@ -852,7 +857,7 @@ class InformalSanctionWorkflowServiceTest {
         verify(historyRepository).findVisibleForDocuments(List.of(7L, 9L), "first");
         verify(detailRepository, never()).findForDocuments(any());
         verify(historyRepository, never()).findForDocuments(any());
-        verify(informalSanctionRepository).findByAprvrId("first", pageable);
+        verify(informalSanctionRepository).findProcessed("first", List.of("C", "R"), null, null, null, null, pageable);
         verify(processRepository).findForDocuments(List.of(7L, 9L));
         verify(referenceRepository).findForDocuments(List.of(7L, 9L));
         verify(userRepository).findAllById(java.util.Set.of("owner", "first"));

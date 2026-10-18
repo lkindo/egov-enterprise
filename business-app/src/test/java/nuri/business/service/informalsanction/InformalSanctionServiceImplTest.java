@@ -136,19 +136,6 @@ class InformalSanctionServiceImplTest {
         verify(informalSanctionRepository, never()).findAll(any(PageRequest.class));
     }
 
-    @Test
-    @DisplayName("getReceivedInformalSanctionList 테스트")
-    void getReceivedInformalSanctionList() {
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzSn(1L)
-                .aplcntId("applicant").aprvrId("user1").aprvYn("A").build()));
-        receivedLine();
-        given(informalSanctionRepository.findByAprvrId(eq("user1"), any())).willReturn(page);
-
-        Page<InformalSanctionDto> result = informalSanctionService.getReceivedInformalSanctionList("user1", PageRequest.of(0, 10));
-
-        assertThat(result.getContent()).hasSize(1);
-    }
-
     /*
      * [2026-09-02] 대기함은 대기 건만 담는다.
      *
@@ -169,23 +156,6 @@ class InformalSanctionServiceImplTest {
                 informalSanctionService.getPendingApprovalList("user1", PageRequest.of(0, 10));
 
         assertThat(result.getContent()).hasSize(1);
-        // 무필터 질의로 되돌아가면 이 단언이 잡는다.
-        verify(informalSanctionRepository, never()).findByAprvrId(anyString(), any());
-    }
-
-    /**
-     * 세 번째 소비자({@code /informal-sanctions?type=received})는 계약상 "결재자 기준 목록"
-     * 전체를 뜻한다. 그것까지 대기 전용으로 좁히면 처리 이력을 볼 창구가 사라진다(H3).
-     */
-    @Test
-    @DisplayName("수신 전체 목록은 여전히 상태로 거르지 않는다 — 처리 이력 창구를 지운다")
-    void getReceivedInformalSanctionList_staysUnfiltered() {
-        given(informalSanctionRepository.findByAprvrId(eq("user1"), any()))
-                .willReturn(new PageImpl<>(List.of()));
-
-        informalSanctionService.getReceivedInformalSanctionList("user1", PageRequest.of(0, 10));
-
-        verify(informalSanctionRepository, never()).findPending(anyString(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -241,59 +211,6 @@ class InformalSanctionServiceImplTest {
         informalSanctionService.registerInformalSanction(dto);
 
         verify(informalSanctionRepository, times(1)).save(any(InformalSanction.class));
-    }
-
-    @Test
-    @DisplayName("진행 중 문서의 내용·결재선 변경은 회수 후 재상신해야 한다")
-    void updateInformalSanction_requestedDocumentCannotBeEdited() {
-        InformalSanctionDto dto = new InformalSanctionDto();
-        dto.setIfmlAtrzSn(1L);
-        dto.setTaskSeCd("CD1");
-        dto.setReqYmd("20260909");
-        dto.setAprvrId("APPROVER_02");
-        
-        InformalSanction entity = InformalSanction.builder()
-                .ifmlAtrzSn(1L)
-                .aplcntId("APPLICANT_01")
-                .taskSeCd("ORIGINAL")
-                .reqYmd("20260908")
-                .aprvrId("APPROVER_01")
-                .aprvYn("A") // 신청 상태
-                .build();
-                
-        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
-
-        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
-                .isInstanceOf(BusinessException.class).extracting("errorCode")
-                .isEqualTo(CommonErrorCode.INVALID_STATE);
-
-        verify(informalSanctionRepository, times(1)).findByIdForUpdate(1L);
-        assertThat(entity.getTaskSeCd()).isEqualTo("ORIGINAL");
-        assertThat(entity.getReqYmd()).isEqualTo("20260908");
-        assertThat(entity.getAprvrId()).isEqualTo("APPROVER_01");
-        verifyNoInteractions(commonCodeService, detailRepository, historyRepository);
-    }
-
-    @Test
-    @DisplayName("updateInformalSanction 테스트 - 상태 에러")
-    void updateInformalSanction_InvalidState() {
-        InformalSanctionDto dto = new InformalSanctionDto();
-        dto.setIfmlAtrzSn(1L);
-        
-        InformalSanction entity = InformalSanction.builder()
-                .ifmlAtrzSn(1L)
-                .aplcntId("APPLICANT_01")
-                .aprvYn("C") // 승인 상태
-                .build();
-                
-        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
-        securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("APPLICANT_01"));
-
-        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(dto))
-                .isInstanceOf(BusinessException.class)
-                .extracting("errorCode")
-                .isEqualTo(CommonErrorCode.INVALID_STATE);
     }
 
     @Test

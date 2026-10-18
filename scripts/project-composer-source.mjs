@@ -183,13 +183,10 @@ export function projectComposerJava(file, source, profile, rbac) {
   if (!method) throw new Error('Mixed RBAC projection contract drifted');
   const blocks = method[0];
   const promotion = blocks.match(/        for \(String path : List\.of\("\/api\/v1\/admin\/system\/banners"[\s\S]*?\n        \}/)?.[0];
-  const sanction = blocks.match(/        mockMvc\.perform\(patch\("\/api\/v1\/admin\/system\/ism\/1\/confirm"\)[\s\S]*?\.andExpect\(status\(\)\.isForbidden\(\)\);/)?.[0];
-  if (!promotion || !sanction) throw new Error('Mixed RBAC assertion inventory drifted');
-  let next = blocks;
-  if (!selected.has('promotion')) next = next.replace(promotion, '');
-  if (!selected.has('informalsanction')) next = next.replace(sanction, '');
-  source = source.replace(blocks, next);
-  if (!['promotion', 'informalsanction'].some(domain => selected.has(domain))) source = removeTest(source, 'ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints');
+  // [2026-10-18 ADR-0034] 약식결재 관리 경로(PATCH /admin/system/ism/{id}/confirm) 단언은 그 API 와 함께 걷혔다. 남은 단언은
+  //   배너·팝업(promotion) 하나라 그 기능이 없으면 시험을 통째로 뺀다. 다른 단언이 다시 섞이면 아래 대조가 red 다.
+  if (!promotion || blocks.split('mockMvc.perform(').length !== 2) throw new Error('Mixed RBAC assertion inventory drifted');
+  if (!selected.has('promotion')) source = removeTest(source, 'ordinaryUserCannotEnterDemoOwnedAdministrativeEndpoints');
   return source;
 }
 
