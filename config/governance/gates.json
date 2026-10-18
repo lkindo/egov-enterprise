@@ -749,6 +749,14 @@
           "source": "api-server/src/test/java/nuri/api/schema/AttachmentReferenceIntegrityPostgresTest.java"
         },
         {
+          "id": "DB-MIG-AUDIT-LEDGER-IMMUTABILITY",
+          "source": "api-server/src/test/java/nuri/api/schema/AuditLedgerImmutabilityMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-AUDIT-LEDGER-RETENTION",
+          "source": "api-server/src/test/java/nuri/api/schema/AuditLedgerRetentionIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-AUTHORITY-REFERENCE-FK",
           "source": "api-server/src/test/java/nuri/api/schema/AuthorityReferenceFkIntegrationTest.java"
         },
@@ -759,6 +767,14 @@
         {
           "id": "DB-ASSIGNMENT-RECIPIENT-INTEGRITY",
           "source": "api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-LOGIN-FAILURE-COUNTER-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/LoginFailureCounterConcurrencyIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-LOGOUT-CUTOFF-PRIVACY-SUBJECT",
+          "source": "api-server/src/test/java/nuri/api/schema/LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MEMO-REPORT-RECIPIENT-INTEGRITY",
