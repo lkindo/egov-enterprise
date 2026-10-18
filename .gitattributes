@@ -53,3 +53,18 @@ gradlew text eol=lf
 # 반대로 Windows 배치 파일은 CRLF 를 유지해야 cmd.exe 가 정상 해석한다.
 gradlew.bat text eol=crlf
 *.bat text eol=crlf
+
+# [2026-10-19] 생성기가 LF 로 쓰는 생성물은 Windows 에서도 LF 로 체크아웃한다.
+#   core.autocrlf=true 에서 CRLF 로 꺼내면, 생성물 첫 줄을 '\n' 으로 단언하는 계약
+#   (generate-screen-registry.test.mjs 등)이 이 PC 에서만 red 가 된다. 반대로 생성기로 다시 쓰면
+#   내용이 같은데도 git status 에 '수정됨'으로 남는다. LF 로 고정하면 두 문제가 함께 없어진다.
+#   목록은 scripts/merge-main-regenerate.mjs 의 GENERATORS 출력(줄 끝이 실제로 갈리던 것)이다.
+api-docs.json text working-tree-encoding=UTF-8 eol=lf
+api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql text eol=lf
+business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java text working-tree-encoding=UTF-8 eol=lf
+business-core/src/main/resources/authorization/operation-bindings.json text working-tree-encoding=UTF-8 eol=lf
+business-core/src/main/resources/authorization/permission-catalog.json text working-tree-encoding=UTF-8 eol=lf
+config/governance/generated-api-boundaries.json text working-tree-encoding=UTF-8 eol=lf
+config/ui-url-state-census.json text working-tree-encoding=UTF-8 eol=lf
+frontend/public/governance_harness_atlas.html text eol=lf
+frontend/src/types/generated-*.ts text working-tree-encoding=UTF-8 eol=lf
