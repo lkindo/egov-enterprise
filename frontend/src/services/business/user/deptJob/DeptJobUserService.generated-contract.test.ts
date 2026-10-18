@@ -171,8 +171,9 @@ describe('DeptJobUserService generated contract', () => {
     expect(Object.keys(DeptJobBoxDtoRequestSchema.shape)).toStrictEqual([
       'deptTaskBoxNm', 'deptId', 'sortOrdr',
     ]);
+    // [2026-10-18 V2_133] version 은 요청·응답 양방향이다 — 수정 요청이 읽은 버전을 그대로 돌려보낸다.
     expect(Object.keys(DeptJobDtoRequestSchema.shape)).toStrictEqual([
-      'deptTaskBoxSn', 'deptTaskNm', 'deptTaskCn', 'picId', 'prrtyRnk', 'atchFileSn',
+      'deptTaskBoxSn', 'deptTaskNm', 'deptTaskCn', 'picId', 'prrtyRnk', 'atchFileSn', 'version',
     ]);
     expect(Object.keys(DeptJobBoxDtoResponseSchema.shape)).toStrictEqual([
       'deptTaskBoxSn', 'deptTaskBoxNm', 'deptId', 'deptNm', 'sortOrdr',
@@ -181,7 +182,7 @@ describe('DeptJobUserService generated contract', () => {
     expect(Object.keys(DeptJobDtoResponseSchema.shape)).toStrictEqual([
       'deptTaskSn', 'deptTaskBoxSn', 'deptTaskBoxNm', 'deptId', 'deptNm',
       'deptTaskNm', 'deptTaskCn', 'picId', 'picNm', 'prrtyRnk', 'atchFileSn',
-      'frstRgtrId', 'crtDt', 'lastMdfrId', 'mdfcnDt', 'editable', 'deletable', 'reassignable',
+      'frstRgtrId', 'crtDt', 'lastMdfrId', 'mdfcnDt', 'editable', 'deletable', 'reassignable', 'version',
     ]);
 
     for (const field of boxReadOnlyFields) {

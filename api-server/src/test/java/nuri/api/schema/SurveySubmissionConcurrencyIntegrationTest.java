@@ -244,8 +244,10 @@ class SurveySubmissionConcurrencyIntegrationTest {
                     .qstnCn("새 문항").maxChcCnt(1).build());
             case ARTICLE_ADD -> editor.insertItem(SurveyArticleDto.builder().srvyQstnSn(firstQuestion)
                     .artclSn(3L).artclCn("새 선택").etcAnsYn("N").build());
+            // [2026-10-18 V2_133] 설문 머리 수정은 화면이 읽은 버전을 함께 보낸다 — 편집자가 지금 읽은 버전을 쓴다.
             case UNPUBLISH -> editor.updateSurvey(SurveyInfoDto.builder().srvySn(survey).srvyTmpltSn(template)
-                    .srvyTtl("동시 제출 검증").srvyBgngYmd("20000101").srvyEndYmd("29991231").rlsYn("N").build());
+                    .srvyTtl("동시 제출 검증").srvyBgngYmd("20000101").srvyEndYmd("29991231").rlsYn("N")
+                    .version(jdbc.queryForObject("SELECT version FROM tb_srvy_info WHERE srvy_sn=?", Integer.class, survey)).build());
             // 전체 설문 삭제는 응답을 함께 정리하는 기존 명시적 정책을 보존한다.
             case SURVEY_DELETE -> editor.deleteSurvey(survey);
         }

@@ -1610,7 +1610,18 @@
     },
     {
       "dto": "nuri.business.service.reward.dto.RewardManageDto",
-      "fields": []
+      "fields": [
+        {
+          "field": "rwardwnrId",
+          "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "rwardCode",
+          "constraint": "NotBlank",
+          "groups": []
+        }
+      ]
     },
     {
       "dto": "nuri.business.service.event.dto.EventInfoRequest",
@@ -1809,6 +1820,12 @@
       "dto": "nuri.business.service.event.dto.ExternalHrDto",
       "fields": [
         "brdtYmd"
+      ]
+    },
+    {
+      "dto": "nuri.business.service.reward.dto.RewardManageDto",
+      "fields": [
+        "rwardDe"
       ]
     }
   ]

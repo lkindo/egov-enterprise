@@ -27,8 +27,11 @@ public interface DeptJobRepository extends JpaRepository<DeptJob, Long>, Queryds
      * 하에서 담당자 행을 지우려면 자식의 참조를 먼저 끊어야 한다. 업무 자체는 <b>부서 자산</b>이므로
      * 삭제하지 않고 담당자만 비운다 — 담당자 공석은 이미 정상 상태이며, 그 경우 인가는
      * 등록자(frstRgtrId) 기준으로 판정된다({@code DeptJobService.assertPicOrAdmin}).</p>
+     *
+     * <p>[2026-10-18 V2_133] 벌크 UPDATE 는 {@code @Version} 을 올리지 않으므로 직접 올린다 — 담당자가 바뀐 업무를
+     * 그 전에 열어 둔 화면이 저장하면 409 로 다시 불러오게 한다(백엔드 헌법 제15조 1항의 벌크 연산 대안 검증).</p>
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE DeptJob d SET d.picId = null WHERE d.picId IN :esntlIds")
+    @Query("UPDATE DeptJob d SET d.picId = null, d.version = d.version + 1 WHERE d.picId IN :esntlIds")
     int releasePicByPicIdIn(@Param("esntlIds") List<String> esntlIds);
 }

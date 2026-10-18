@@ -219,9 +219,10 @@ class RewardManageServiceTest {
         RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01")
                 .rwrdYmd("20260101").rwrdNm("Old").cntrbCn("old").atchFileSn(100L).build();
         entity.setFrstRgtrId("foreign-writer");
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
         RewardManageDto dto = RewardManageDto.builder().rwrdSn(999L).rwardwnrId("U2").rwardCode("R02")
-                .rwardDe("20260202").rwardNm("New").pblenCn("new").atchFileSn(202L).build();
+                .rwardDe("20260202").rwardNm("New").pblenCn("new").atchFileSn(202L).version(0).build();
 
         RewardManageDto result = rewardManageService.updateReward(7L, dto);
 
@@ -234,6 +235,29 @@ class RewardManageServiceTest {
         assertThat(result.getAtchFileSn()).isEqualTo(202L);
         assertThat(result.getFrstRgtrId()).isEqualTo("foreign-writer");
         verify(attachmentAssignmentPolicy).assertAssignable(202L);
+        // 응답이 올라간 버전을 싣도록 먼저 내보낸다(@Version 은 flush 때 오른다).
+        verify(rewardManageRepository).flush();
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 포상 수정 — 읽은 버전이 다르면 409, 버전이 없으면 400 이고 기록을 바꾸지 않는다")
+    void updateReward_rejectsStaleOrMissingVersion() {
+        authorize("REWARD_UPDATE");
+        RewardManage entity = RewardManage.builder().rwrdSn(7L).rwrdUserId("U1").rwrdCd("R01").rwrdNm("Current").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 6);
+        given(rewardManageRepository.findById(7L)).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> rewardManageService.updateReward(7L, RewardManageDto.builder()
+                .rwardwnrId("U2").rwardCode("R02").rwardNm("Stale").version(5).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> rewardManageService.updateReward(7L, RewardManageDto.builder()
+                .rwardwnrId("U2").rwardCode("R02").rwardNm("No version").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(entity.getRwrdNm()).isEqualTo("Current");
+        org.mockito.Mockito.verify(rewardManageRepository, org.mockito.Mockito.never()).flush();
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
     }
 
     @Test

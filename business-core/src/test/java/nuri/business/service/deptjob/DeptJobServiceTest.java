@@ -95,6 +95,8 @@ class DeptJobServiceTest {
                 .prrtyRnk("1")
                 .atchFileSn(101L)
                 .build();
+        // [2026-10-18 V2_133] 수정은 화면이 읽은 버전을 대조한다. 저장된 행처럼 버전 0 으로 둔다.
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 0);
     }
 
     @AfterEach
@@ -517,6 +519,7 @@ class DeptJobServiceTest {
         dto.setDeptTaskNm("바뀌면 안 되는 제목");
         dto.setDeptTaskCn("바뀌면 안 되는 내용");
         dto.setPicId("NEW_ASSIGNEE");
+        dto.setVersion(0);
 
         BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
 
@@ -540,6 +543,7 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("정정된 제목");
         dto.setPicId(requestedPicId);
+        dto.setVersion(0);
 
         assertDoesNotThrow(() -> deptJobService.updateDeptJob(1L, dto));
 
@@ -580,17 +584,20 @@ class DeptJobServiceTest {
         givenActiveAssignee("USR_B");
         authenticateAsAdmin();
         DeptJob job = DeptJob.builder().deptTaskSn(7L).deptTaskNm("점검").picId("USR_A").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(job, "version", 0);
         when(deptJobRepository.findById(7L)).thenReturn(java.util.Optional.of(job));
 
         DeptJobDto same = new DeptJobDto();
         same.setDeptTaskNm("점검");
         same.setPicId("USR_A");
+        same.setVersion(0);
         deptJobService.updateDeptJob(7L, same);
         verify(eventPublisher, never()).publishEvent(any(Object.class));
 
         DeptJobDto moved = new DeptJobDto();
         moved.setDeptTaskNm("점검");
         moved.setPicId("USR_B");
+        moved.setVersion(0);
         deptJobService.updateDeptJob(7L, moved);
         ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
         verify(eventPublisher, times(1)).publishEvent(events.capture());
@@ -704,6 +711,7 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("바뀌면 안 되는 제목");
         dto.setAtchFileSn(202L);
+        dto.setVersion(0);
 
         assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
 
@@ -718,6 +726,7 @@ class DeptJobServiceTest {
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("기존 첨부 유지");
+        dto.setVersion(0);
         dto.setAtchFileSn(101L);
 
         deptJobService.updateDeptJob(1L, dto);
@@ -733,6 +742,7 @@ class DeptJobServiceTest {
         
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("Updated Job");
+        dto.setVersion(0);
 
         // 소유권 가드는 담당자(pic_id=esntlId) 기준이다. SecurityContext 가 없는 단위 테스트에서는
         // getCurrentEsntlId() 를 담당자 본인으로 세워 통과 경로를 재현한다.
@@ -752,6 +762,7 @@ class DeptJobServiceTest {
 
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("남의 업무 수정 시도");
+        dto.setVersion(0);
 
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
@@ -773,11 +784,13 @@ class DeptJobServiceTest {
                 .deptTaskNm("담당자 없는 업무")
                 .build();
         noPic.setFrstRgtrId("creator-login");
+        org.springframework.test.util.ReflectionTestUtils.setField(noPic, "version", 0);
         when(deptJobRepository.findById(2L)).thenReturn(Optional.of(noPic));
         authenticateAs("creator-login", "CREATOR_ESNTL");
 
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("등록자가 수정");
+        dto.setVersion(0);
 
         assertDoesNotThrow(() -> deptJobService.updateDeptJob(2L, dto));
 
@@ -795,12 +808,14 @@ class DeptJobServiceTest {
                 .deptTaskNm("원래 업무").deptTaskCn("원래 내용").picId(vacantPicId)
                 .prrtyRnk("1").atchFileSn(101L).build();
         noPic.setFrstRgtrId("creator-login");
+        org.springframework.test.util.ReflectionTestUtils.setField(noPic, "version", 0);
         when(deptJobRepository.findById(2L)).thenReturn(Optional.of(noPic));
         // 등록자 감사값과 같은 esntlId도 타인의 loginId를 등록자로 만들지 않는다.
         authenticateAs("another-login", "creator-login");
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("변경 시도");
         dto.setDeptTaskCn("변경 내용");
+        dto.setVersion(0);
         dto.setAtchFileSn(202L);
 
         BusinessException error = assertThrows(BusinessException.class,
@@ -828,6 +843,7 @@ class DeptJobServiceTest {
 
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("담당자 미전송 수정");
+        dto.setVersion(0);
 
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
@@ -836,6 +852,52 @@ class DeptJobServiceTest {
         }
 
         assertEquals("USER1", deptJob.getPicId(), "담당자를 보내지 않았다고 소유권이 지워지면 안 된다");
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 읽은 뒤 다른 사람이 고친 업무(버전이 다름)를 저장하면 409 이고 아무것도 바꾸지 않는다")
+    void updateDeptJob_rejectsStaleVersionWithoutMutatingJob() {
+        authenticateAsAdmin();
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 4);
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        DeptJobDto stale = new DeptJobDto();
+        stale.setDeptTaskNm("옛 화면의 제목");
+        stale.setVersion(3);
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, stale));
+
+        assertEquals(CommonErrorCode.CONCURRENT_MODIFICATION, error.getErrorCode());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        verifyNoInteractions(attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 버전 없이 보낸 업무 수정은 400 이다 — 덮어쓸지 판정할 근거가 없다")
+    void updateDeptJob_requiresVersion() {
+        authenticateAsAdmin();
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("버전 없음");
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, dto));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 버전 대조는 인가 판정 뒤다 — 남의 업무에는 버전이 맞든 틀리든 403 이다(버전을 엿볼 수 없다)")
+    void updateDeptJob_checksAuthorizationBeforeVersion() {
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob)); // picId = USER1
+        DeptJobDto stale = new DeptJobDto();
+        stale.setDeptTaskNm("남의 업무");
+        stale.setVersion(99);
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("USER_INTRUDER"));
+            BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, stale));
+            assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        }
     }
 
     @Test

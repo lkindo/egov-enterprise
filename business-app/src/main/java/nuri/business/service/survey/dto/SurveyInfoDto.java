@@ -72,4 +72,9 @@ public class SurveyInfoDto {
     @Schema(description = "공개 여부(Y 공개 · N 작성 중)", nullable = true, types = {"string", "null"})
     @jakarta.validation.constraints.Pattern(regexp = "^(?:Y|N)$")
     private String rlsYn;
+
+    @Schema(description = "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. "
+            + "등록에서는 무시한다. 문항·선택 항목을 고쳐도 설문 머리의 버전은 바뀌지 않는다.")
+    @Min(0)
+    private Integer version;
 }

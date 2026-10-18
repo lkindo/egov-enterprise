@@ -64,6 +64,8 @@ public class BannerService {
         SecurityUtil.assertPermission("BANNER_UPDATE");
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
+        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -72,10 +74,16 @@ public class BannerService {
                 dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), atchFileSn);
     }
 
+    /**
+     * 배너 삭제. [2026-10-18] 없는 배너는 404 다 — 종전의 {@code deleteById} 는 없는 ID 를 조용히 넘겨(Spring Data 3+)
+     * 200 으로 성공처럼 보였다. 팝업 삭제({@code PopupService#deletePopup})와 같은 규칙이다.
+     */
     @Transactional
     public void deleteBanner(Long bnrSn) {
         SecurityUtil.assertPermission("BANNER_DELETE");
-        bannerRepository.deleteById(Objects.requireNonNull(bnrSn));
+        Banner entity = bannerRepository.findById(Objects.requireNonNull(bnrSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        bannerRepository.delete(entity);
     }
 
     public List<BannerDto> getReflectedBanners() {

@@ -204,6 +204,8 @@ class AssignmentRecipientIntegrityIntegrationTest {
         dto.setDeptTaskNm(fixtureId);
         dto.setDeptTaskCn("corrected");
         dto.setPicId(assignee);
+        // [2026-10-18 V2_133] 수정은 읽은 버전을 대조한다. 시험이 넣은 행은 기본값 0 이다(등록에서는 무시한다).
+        dto.setVersion(0);
         return dto;
     }
 

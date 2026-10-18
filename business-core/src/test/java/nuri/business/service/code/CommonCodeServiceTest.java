@@ -204,9 +204,10 @@ class CommonCodeServiceTest {
     @DisplayName("[DIP B5 F11] 분류 수정은 바뀐 항목과 전후 값을 변경자와 함께 남기고, 바뀐 값이 없으면 남기지 않는다")
     void classificationUpdateRecordsChangedItemsOnly() {
         CommonCodeCategory entity = CommonCodeCategory.builder().clsfCd("CL1").clsfCdNm("업무").clsfCdExpln("설명").useYn("Y").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
 
-        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").build());
+        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").version(0).build());
 
         CommonCodeChange change = savedChange();
         assertEquals("CLSF", change.getChgTrgtTypeCd());
@@ -219,7 +220,7 @@ class CommonCodeServiceTest {
         assertEquals("ESNTL_admin", change.getChgUserIdntfr());
 
         org.mockito.Mockito.clearInvocations(changeRepository);
-        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").build());
+        commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("업무 분류").clsfCdExpln("설명").useYn("Y").version(0).build());
         verify(changeRepository, never()).save(any());
     }
 
@@ -280,7 +281,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("공통분류코드 수정")
     void updateCmmnClCodeTest() {
-        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("Update").build();
+        CmmnClCodeDto dto = CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("Update").version(0).build();
         CommonCodeCategory entity = mock(CommonCodeCategory.class);
         given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(entity));
 
@@ -346,7 +347,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("공통코드 수정")
     void updateCmmnCodeTest() {
-        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").cdIdNm("Update").build();
+        CmmnCodeDto dto = CmmnCodeDto.builder().cdId("GRP1").cdIdNm("Update").version(0).build();
         CommonCodeGroup entity = mock(CommonCodeGroup.class);
         given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(entity));
 
@@ -418,7 +419,7 @@ class CommonCodeServiceTest {
     @Test
     @DisplayName("공통상세코드 수정")
     void updateCmmnDetailCodeTest() {
-        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("Update").build();
+        CmmnDetailCodeDto dto = CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("Update").version(0).build();
         CommonCode entity = mock(CommonCode.class);
         CommonCodeId id = new CommonCodeId("GRP1", "CD1");
         given(commonCodeRepository.findById(id)).willReturn(Optional.of(entity));
@@ -627,5 +628,86 @@ class CommonCodeServiceTest {
                 .willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 1), 137));
         // `replaced int return with 0` 뮤턴트는 여기서 죽는다.
         assertEquals(137, commonCodeService.selectCmmnCodeListTotCnt(new BaseSearchDto()));
+    }
+
+    // ── [2026-10-18] 낙관적 잠금 버전과 없는 대상 ──
+    //   종전에는 수정·삭제가 ifPresent 라 없는 코드를 고치거나 지워도 200 이었고, 읽은 뒤 다른 사람이 고친 행을
+    //   옛 내용으로 조용히 덮었다.
+
+    @Test
+    @DisplayName("[2026-10-18] 분류·그룹·상세 코드 수정은 읽은 버전이 다르면 409 이고 아무것도 바꾸지 않는다")
+    void staleVersionIsRejectedWithoutChanges() {
+        CommonCodeCategory category = mock(CommonCodeCategory.class);
+        given(category.getVersion()).willReturn(3);
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.of(category));
+        CommonCodeGroup group = mock(CommonCodeGroup.class);
+        given(group.getVersion()).willReturn(3);
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(group));
+        CommonCode detail = mock(CommonCode.class);
+        given(detail.getVersion()).willReturn(3);
+        given(commonCodeRepository.findById(new CommonCodeId("GRP1", "CD1"))).willReturn(Optional.of(detail));
+
+        BusinessException categoryError = assertThrows(BusinessException.class, () -> commonCodeService.updateCmmnClCode(
+                CmmnClCodeDto.builder().clsfCd("CL1").clsfCdNm("옛 화면").version(2).build()));
+        BusinessException groupError = assertThrows(BusinessException.class, () -> commonCodeService.updateCmmnCode(
+                CmmnCodeDto.builder().cdId("GRP1").cdIdNm("옛 화면").version(2).build()));
+        BusinessException detailError = assertThrows(BusinessException.class, () -> commonCodeService.updateCmmnDetailCode(
+                CmmnDetailCodeDto.builder().cdId("GRP1").dtlCd("CD1").dtlCdNm("옛 화면").version(2).build()));
+
+        for (BusinessException error : List.of(categoryError, groupError, detailError)) {
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION, error.getErrorCode());
+        }
+        verify(category, never()).update(any(), any(), any(), any());
+        verify(group, never()).update(any(), any(), any(), any());
+        verify(detail, never()).update(any(), any(), any(), any());
+        verify(changeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 버전 없이 보낸 코드 수정은 400 이다 — 대조할 근거가 없다")
+    void missingVersionIsRejected() {
+        CommonCodeGroup group = mock(CommonCodeGroup.class);
+        given(commonCodeGroupRepository.findById("GRP1")).willReturn(Optional.of(group));
+
+        BusinessException error = assertThrows(BusinessException.class, () -> commonCodeService.updateCmmnCode(
+                CmmnCodeDto.builder().cdId("GRP1").cdIdNm("버전 없음").build()));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verify(group, never()).update(any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 없는 분류·그룹·상세 코드를 고치거나 지우면 404(CODE_NOT_FOUND)다 — 200 으로 성공처럼 보이지 않는다")
+    void missingCodesAreNotFound() {
+        given(commonCodeCategoryRepository.findById("NO_CL")).willReturn(Optional.empty());
+        given(commonCodeGroupRepository.findById("NO_GRP")).willReturn(Optional.empty());
+        given(commonCodeRepository.findById(new CommonCodeId("NO_GRP", "NO_CD"))).willReturn(Optional.empty());
+
+        List<org.junit.jupiter.api.function.Executable> calls = List.of(
+                () -> commonCodeService.updateCmmnClCode(CmmnClCodeDto.builder().clsfCd("NO_CL").clsfCdNm("x").version(0).build()),
+                () -> commonCodeService.deleteCmmnClCode(CmmnClCodeDto.builder().clsfCd("NO_CL").build()),
+                () -> commonCodeService.updateCmmnCode(CmmnCodeDto.builder().cdId("NO_GRP").cdIdNm("x").version(0).build()),
+                () -> commonCodeService.deleteCmmnCode(CmmnCodeDto.builder().cdId("NO_GRP").build()),
+                () -> commonCodeService.updateCmmnDetailCode(
+                        CmmnDetailCodeDto.builder().cdId("NO_GRP").dtlCd("NO_CD").dtlCdNm("x").version(0).build()),
+                () -> commonCodeService.deleteCmmnDetailCode(CmmnDetailCodeDto.builder().cdId("NO_GRP").dtlCd("NO_CD").build()));
+        for (org.junit.jupiter.api.function.Executable call : calls) {
+            BusinessException error = assertThrows(BusinessException.class, call);
+            assertEquals(CodeErrorCode.CODE_NOT_FOUND, error.getErrorCode());
+            assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, error.getErrorCode().getStatus());
+        }
+        verify(changeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 목록·상세 응답은 수정 화면이 돌려보낼 버전을 싣는다")
+    void readModelsCarryVersion() {
+        given(commonCodeGroupRepository.searchCommonCodeGroups(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(new CommonCodeGroupProjection("GRP1", "그룹", null, "CL1", "분류", "Y", 7))));
+        given(commonCodeRepository.searchCommonCodeDetails(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(new CommonCodeDetailProjection("GRP1", "그룹", "CD1", "코드", null, "Y", 4))));
+
+        assertEquals(7, commonCodeService.selectCmmnCodeList(new BaseSearchDto()).getFirst().getVersion());
+        assertEquals(4, commonCodeService.selectCmmnDetailCodeList(new BaseSearchDto()).getFirst().getVersion());
     }
 }

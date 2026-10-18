@@ -5,6 +5,8 @@ import nuri.business.domain.schedule.ScheduleRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -126,6 +129,7 @@ class ScheduleServiceTest {
                 .schdlDeptId("OTHER_DEPT")
                 .schdlNm("New Schedule")
                 .schdlSeCd("1")
+                .schdlBgngYmd("20261020")
                 .atchFileSn(101L)
                 .build();
         given(userRepository.findByUserId(loginId)).willReturn(Optional.empty()); // 조직 미배정 → 기본조직 폴백
@@ -156,6 +160,7 @@ class ScheduleServiceTest {
     void createSchedule_deniedAttachmentDoesNotSave() {
         ScheduleDto dto = ScheduleDto.builder()
                 .schdlNm("New Schedule")
+                .schdlBgngYmd("20261020")
                 .atchFileSn(101L)
                 .build();
         org.mockito.Mockito.doThrow(new nuri.foundation.core.exception.BusinessException(
@@ -177,10 +182,13 @@ class ScheduleServiceTest {
         Long schdlSn = 1L;
         String userId = "user1";
         Schedule existingEntity = Schedule.builder().schdlSn(schdlSn).schdlNm("Old Title").atchFileSn(100L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingEntity, "version", 0);
         ScheduleDto updateDto = ScheduleDto.builder()
                 .schdlSn(schdlSn)
                 .schdlNm("New Title")
+                .schdlBgngYmd("20261020")
                 .atchFileSn(202L)
+                .version(0)
                 .build();
 
         given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(existingEntity));
@@ -192,6 +200,62 @@ class ScheduleServiceTest {
         assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
         assertThat(existingEntity.getAtchFileSn()).isEqualTo(202L);
         verify(attachmentAssignmentPolicy).assertAssignable(202L);
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 일정 수정 — 읽은 버전이 다르면 409, 버전이 없으면 400 이고 일정을 바꾸지 않는다")
+    void updateSchedule_rejectsStaleOrMissingVersion() {
+        Schedule existing = Schedule.builder().schdlSn(1L).schdlNm("최신 일정").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 8);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        // 소유권 가드(SecurityUtil)는 이 클래스의 @BeforeEach 정적 목이 통과시킨다 — 버전 대조만 본다.
+        assertThatThrownBy(() -> scheduleService.updateSchedule(1L, "user1",
+                ScheduleDto.builder().schdlNm("옛 화면").schdlBgngYmd("20261001").version(7).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> scheduleService.updateSchedule(1L, "user1",
+                ScheduleDto.builder().schdlNm("버전 없음").schdlBgngYmd("20261001").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThat(existing.getSchdlNm()).isEqualTo("최신 일정");
+        org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"  "})
+    @DisplayName("[2026-10-18] 일정 등록·수정 — 시작일이 없으면 400 이고 저장·변경하지 않는다(시작일 없는 일정은 달력에 나타나지 않았다)")
+    void createAndUpdateRequireStartDate(String startDate) {
+        assertThatThrownBy(() -> scheduleService.createSchedule("user1",
+                ScheduleDto.builder().schdlNm("시작일 없음").schdlBgngYmd(startDate).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("시작일")
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        org.mockito.Mockito.verify(scheduleRepository, org.mockito.Mockito.never()).save(any());
+
+        Schedule existing = Schedule.builder().schdlSn(1L).schdlNm("원래").schdlBgngYmd("20261001").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(existing));
+        assertThatThrownBy(() -> scheduleService.updateSchedule(1L, "user1",
+                ScheduleDto.builder().schdlNm("시작일 지움").schdlBgngYmd(startDate).version(0).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(existing.getSchdlBgngYmd()).isEqualTo("20261001");
+        assertThat(existing.getSchdlNm()).isEqualTo("원래");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"", "2026-10", "202613", "202600", "2026101", "000010", "20261"})
+    @DisplayName("[2026-10-18] 월별 조회는 yyyyMM 이 아니면 400 이고 질의하지 않는다 — 종전에는 빈 목록이나 다른 달을 돌려줬다")
+    void monthlyScheduleRejectsMalformedYearMonth(String yearMonth) {
+        assertThatThrownBy(() -> scheduleService.getMonthlySchedule("user1", yearMonth))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> scheduleService.getMonthlySchedule("user1", null))
+                .isInstanceOf(BusinessException.class);
+        org.mockito.Mockito.verifyNoInteractions(scheduleRepository);
     }
 
     @Test

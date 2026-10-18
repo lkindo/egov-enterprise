@@ -582,13 +582,22 @@ test('every computed Java port connection is an integration or a registration-on
   const owner = ownerOfSource();
   const ports = derivePortConnections(ROOT, owner);
   const keys = ports.connections.map(portKey);
+  // [2026-10-18] LoginIdReferenceContributor 12개 — 사용자 등록(core)이 기능마다 로그인 ID 를 주인으로 담은 기록 컬럼을 모은다.
   assert.deepEqual(keys, [
     'board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
+    'core>addressbook (LoginIdReferenceContributor)',
     'core>board (AttachmentSourceContributor)', 'core>board (DashboardItemProvider)', 'core>board (DataUsageStatisticsContributor)',
-    'core>board (PostStatisticsContributor)', 'core>community (CommunityBoardAccessPort)', 'core>informalsanction (DashboardItemProvider)',
-    'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>memoreport (AttachmentSourceContributor)', 'core>note (AttachmentSourceContributor)',
-    'core>notification (DurableWorkHandler)', 'core>promotion (AttachmentSourceContributor)', 'core>report (AttachmentSourceContributor)',
-    'core>reward (AttachmentSourceContributor)', 'core>schedule (AttachmentSourceContributor)', 'core>sms (DurableWorkHandler)', 'dashboard>board (PostStatisticsContributor)',
+    'core>board (LoginIdReferenceContributor)',
+    'core>board (PostStatisticsContributor)', 'core>comment (LoginIdReferenceContributor)',
+    'core>community (CommunityBoardAccessPort)', 'core>informalsanction (DashboardItemProvider)',
+    'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>mail (LoginIdReferenceContributor)',
+    'core>memoreport (AttachmentSourceContributor)', 'core>memoreport (LoginIdReferenceContributor)',
+    'core>note (AttachmentSourceContributor)', 'core>note (LoginIdReferenceContributor)',
+    'core>notification (DurableWorkHandler)', 'core>promotion (AttachmentSourceContributor)', 'core>promotion (LoginIdReferenceContributor)',
+    'core>report (AttachmentSourceContributor)', 'core>report (LoginIdReferenceContributor)',
+    'core>reward (AttachmentSourceContributor)', 'core>reward (LoginIdReferenceContributor)',
+    'core>schedule (AttachmentSourceContributor)', 'core>schedule (LoginIdReferenceContributor)', 'core>scrap (LoginIdReferenceContributor)',
+    'core>sms (DurableWorkHandler)', 'core>survey (LoginIdReferenceContributor)', 'dashboard>board (PostStatisticsContributor)',
     'dashboard>notification (PendingAlertCountContributor)', 'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
   ]);
   // 예외 객체가 필드로 쓰는 ErrorCode 는 빈의 주입이 아니라 연결이 아니다.

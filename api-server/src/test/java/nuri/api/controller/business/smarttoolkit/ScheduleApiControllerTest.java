@@ -119,7 +119,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     void createSchedule_Success() throws Exception {
         // Given
         setMockUser("USER_01");
-        ScheduleDto dto = ScheduleDto.builder().schdlNm("New Schedule").build();
+        ScheduleDto dto = ScheduleDto.builder().schdlNm("New Schedule").schdlBgngYmd("20261020").build();
         given(egovScheduleService.createSchedule(eq("USER_01"), any(ScheduleDto.class))).willReturn(4L);
 
         // When & Then
@@ -143,7 +143,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     void updateSchedule_Success() throws Exception {
         // Given
         setMockUser("USER_01");
-        ScheduleDto dto = ScheduleDto.builder().schdlNm("Update Title").build();
+        ScheduleDto dto = ScheduleDto.builder().schdlNm("Update Title").schdlBgngYmd("20261020").version(0).build();
 
         // When & Then
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/schedules/1")

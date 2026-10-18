@@ -136,6 +136,26 @@ describe('DeptJobDetailClient server validation ownership', () => {
     expect(screen.getByRole('button', { name: '수정 저장' })).toBeEnabled();
   });
 
+  it('[2026-10-18] 수정은 시작할 때 읽은 버전을 보내고, 409 면 서버 사유를 보이며 입력을 남기고 상세를 다시 읽는다', async () => {
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.jobResponse = { deptTaskSn: 7, deptTaskNm: '함께 고치는 업무', version: 6 };
+    mocks.updateDeptJob.mockRejectedValueOnce({ response: { status: 409, data: { message: conflict } } });
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+    fireEvent.click(screen.getByRole('button', { name: /수정/ }));
+    const taskName = screen.getByRole('textbox', { name: /업무명/ });
+    fireEvent.change(taskName, { target: { value: '내가 고친 업무' } });
+
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateDeptJob).toHaveBeenCalledWith(7, expect.objectContaining({
+      deptTaskNm: '내가 고친 업무',
+      version: 6,
+    })));
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith(conflict));
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['dept-job', 7] });
+    expect(taskName).toHaveValue('내가 고친 업무');
+  });
+
   it('nullable 응답을 빈 폼 값으로 정규화하고 서버 소유 필드 없이 수정한다', async () => {
     mocks.jobResponse = {
       deptTaskSn: 7,

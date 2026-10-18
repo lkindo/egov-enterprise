@@ -397,6 +397,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         data.atchFileSn = (editingItem as Banner).atchFileSn;
         data.bnrImgNm = (editingItem as Banner).bnrImgNm;
       }
+      // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+      if (editingItem) data.version = (editingItem as Banner).version;
 
       const res = await saveBannerAction(null, {
         mode: editingItem ? 'edit' : 'create',
@@ -408,8 +410,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         toast(res.message, 'success');
         setIsOpen(false);
         refetchBanners();
-      } else if (!bannerForm.applyServerErrors(res)) {
-        toast(res.message, 'error');
+      } else {
+        // 다른 사람이 먼저 고쳤다(409) — 서버 사유를 보이고 목록을 다시 읽는다. 입력한 내용은 창에 남긴다.
+        if (res.conflict) refetchBanners();
+        if (!bannerForm.applyServerErrors(res)) toast(res.message, 'error');
       }
     } catch (error) {
       if (!bannerForm.applyServerErrors(error)) {
@@ -450,6 +454,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
       } else if (editingItem) {
         data.fileUrl = (editingItem as Popup).fileUrl;
       }
+      // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+      if (editingItem) data.version = (editingItem as Popup).version;
 
       const res = await savePopupAction(null, {
         mode: editingItem ? 'edit' : 'create',
@@ -461,8 +467,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
         toast(res.message, 'success');
         setIsOpen(false);
         refetchPopups();
-      } else if (!popupForm.applyServerErrors(res)) {
-        toast(res.message, 'error');
+      } else {
+        // 다른 사람이 먼저 고쳤다(409) — 서버 사유를 보이고 목록을 다시 읽는다. 입력한 내용은 창에 남긴다.
+        if (res.conflict) refetchPopups();
+        if (!popupForm.applyServerErrors(res)) toast(res.message, 'error');
       }
     } catch (error) {
       if (!popupForm.applyServerErrors(error)) {

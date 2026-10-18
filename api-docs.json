@@ -37078,6 +37078,12 @@
               "null"
             ],
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -37380,6 +37386,12 @@
             "type": "boolean",
             "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -37830,6 +37842,12 @@
             "type": "boolean",
             "description": "현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정)",
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         }
       },
@@ -38723,6 +38741,12 @@
             ],
             "description": "공개 여부(Y 공개 · N 작성 중)",
             "pattern": "^(?:Y|N)$"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다. 문항·선택 항목을 고쳐도 설문 머리의 버전은 바뀌지 않는다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -38852,6 +38876,12 @@
             "type": "string",
             "format": "date-time",
             "description": "생성 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39560,6 +39590,12 @@
           "lastMdfrId": {
             "type": "string",
             "description": "최종수정자 ID"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39618,6 +39654,12 @@
           "lastMdfrId": {
             "type": "string",
             "description": "최종수정자 ID"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39686,6 +39728,12 @@
           "lastMdfrId": {
             "type": "string",
             "description": "최종수정자 ID"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39950,6 +39998,12 @@
             "type": "string",
             "format": "date-time",
             "description": "생성 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         },
         "required": [
@@ -39976,7 +40030,8 @@
           "rwardDe": {
             "type": "string",
             "maxLength": 8,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "rwardNm": {
             "type": "string",
@@ -40037,8 +40092,18 @@
             "type": "string",
             "format": "date-time",
             "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
-        }
+        },
+        "required": [
+          "rwardCode",
+          "rwardwnrId"
+        ]
       },
       "ApiResponseRewardManageDto": {
         "type": "object",

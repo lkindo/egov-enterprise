@@ -20,6 +20,10 @@ public class CommonCodeCategory extends BaseEntity {
     @Column(length = 12)
     private String clsfCd;
 
+    /** 낙관적 잠금 버전(V2_133). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
+
     @Column(length = 100)
     private String clsfCdNm;
 

@@ -949,6 +949,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/OnlinePollFamilyBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-OPTIMISTIC-VERSION-COLUMNS",
+          "source": "api-server/src/test/java/nuri/api/schema/OptimisticVersionColumnsMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-POPUP-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/PopupBigintMigrationIntegrationTest.java"
         },
@@ -1107,6 +1111,14 @@
         {
           "id": "DB-FILE-DELETION-DURABILITY",
           "source": "api-server/src/test/java/nuri/api/schema/FileDeletionDurabilityIntegrationTest.java"
+        },
+        {
+          "id": "DB-LOCK-WAIT-TIMEOUT",
+          "source": "api-server/src/test/java/nuri/api/schema/LockWaitTimeoutIntegrationTest.java"
+        },
+        {
+          "id": "DB-LOGIN-ID-REUSE",
+          "source": "api-server/src/test/java/nuri/api/schema/LoginIdReuseIntegrationTest.java"
         },
         {
           "id": "DB-MENU-BOOKMARK-CONCURRENCY",

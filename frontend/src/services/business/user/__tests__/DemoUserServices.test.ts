@@ -117,8 +117,9 @@ describe('Demo user services', () => {
     const forbiddenPaths = serverOwnedFields.map((field) => [field]);
     expect(createWorkReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
     expect(updateWorkReportOperation.requestForbiddenPaths).toStrictEqual(forbiddenPaths);
+    // [2026-10-18 V2_133] version 은 요청·응답 양방향이다 — 수정 요청이 읽은 버전을 그대로 돌려보낸다.
     expect(Object.keys(WorkReportDtoRequestSchema.shape).sort()).toStrictEqual(
-      ['rptTtl', 'rptCn', 'rptSeCd', 'atchFileSn', 'rptYmd'].sort(),
+      ['rptTtl', 'rptCn', 'rptSeCd', 'atchFileSn', 'rptYmd', 'version'].sort(),
     );
     expect(Object.keys(WorkReportDtoSchema.shape)).toEqual(expect.arrayContaining([...serverOwnedFields]));
     expect(Object.keys(WorkReportDtoResponseSchema.shape).sort()).toStrictEqual(

@@ -65,9 +65,24 @@ public class ScheduleService {
 
     /** 캘린더용 월별 조회 — 내 일정과 우리 부서 일정을 합쳐서 돌려준다. */
     public List<ScheduleDto> getMonthlySchedule(String userId, String yearMonth) {
-        return scheduleRepository.findMonthlySchedules(userId, resolveDeptId(userId), yearMonth).stream()
+        String month = requireYearMonth(yearMonth);
+        return scheduleRepository.findMonthlySchedules(userId, resolveDeptId(userId), month).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    /** 월별 조회 키 — 6자리 yyyyMM. 질의가 이 값에 '01'·'31' 을 붙여 문자열로 비교하므로 형식이 다르면 엉뚱한 범위가 된다. */
+    private static final java.util.regex.Pattern YEAR_MONTH = java.util.regex.Pattern.compile("[0-9]{4}(?:0[1-9]|1[0-2])");
+
+    /**
+     * [2026-10-18] 월 형식을 확인한다. 종전에는 검사 없이 질의에 붙여, {@code 2026-10}·{@code 202613}·빈 값이 오류 없이
+     * 빈 목록이나 다른 달의 일정을 돌려줬다. 형식이 아니면 400 이다.
+     */
+    private static String requireYearMonth(String yearMonth) {
+        if (yearMonth == null || !YEAR_MONTH.matcher(yearMonth).matches() || yearMonth.startsWith("0000")) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "조회할 달은 yyyyMM 형식(예: 202610)이어야 합니다.");
+        }
+        return yearMonth;
     }
 
     public List<ScheduleDto> getScheduleListByDateRange(String userId, String startDate, String endDate) {
@@ -97,8 +112,20 @@ public class ScheduleService {
         return convertToDto(entity);
     }
 
+    /**
+     * [2026-10-18] 등록·수정의 시작일은 필수다. 월별 달력({@code findMonthlySchedules})과 기간 조회가 시작일로 거르므로
+     * 시작일 없이 저장된 일정은 어느 달력에도 나타나지 않았다. 화면은 이 칸을 필수로 받아 왔고, API 를 직접 부르는 경로만
+     * 비어 들어왔다. 응답 계약은 그대로 둔다 — 시작일 없이 저장된 기존 일정도 목록에서 계속 읽혀야 한다({@code ScheduleDto}).
+     */
+    private static void requireStartDate(ScheduleDto dto) {
+        if (dto.getSchdlBgngYmd() == null || dto.getSchdlBgngYmd().isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "일정 시작일을 입력하세요.");
+        }
+    }
+
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
+        requireStartDate(dto);
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -135,6 +162,9 @@ public class ScheduleService {
         Schedule entity = scheduleRepository.findById(Objects.requireNonNull(schdlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "SCHEDULE_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
+        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        requireStartDate(dto);
 
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
