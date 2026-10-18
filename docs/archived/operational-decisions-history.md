@@ -2124,6 +2124,30 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-353 | accepted | **슬롯 기여의 연동 분류를 소스로 대조한다(GAP-COMPOSE-001).** ① 소비자 표의 파일마다 종류를 적는다(`SLOT_CONSUMER_KINDS`) — 항목을 그리는 셸(shell)과, 값을 다른 화면에 넘기는 값 소비자(value: 넘기는 export 이름과 읽는 기여 선택자)다. 레지스트리를 import 하는 파일이 선언에 없거나 선언된 소비자가 import 하지 않으면 카탈로그가 로드되지 않는다. ② 값 소비자의 export 를 쓰는 importer 에서 core 파일(확장자 무관, 타입 전용 참조 제외)을 지나 다른 기능 소유 화면을 reader 로 찾고, 선택자가 고른 기여에만 붙인다. importer 없는 core 진입점은 reader 'core' 다. 판정할 수 없는 슬롯은 그 기여만 건너뛴다. ③ reader G 가 기여 F 없이 구성될 수 있으면 그 기여는 registrationOnly 일 수 없고, G→F 연동이 anchor 나 `contributions`(종류 무관)로 덮어야 한다. 덮는 연동의 from 은 reader 여야 한다. ④ 실제 결과는 셋이다: 주소록→메일·문자(기존 anchor), 알림 전달 채널→결재·메모 보고(두 알림 연동의 `contributions`), 메모 보고 링크→업무 보고(새 연동 report→memoreport). | DEC-OPS-327 에서 알림 채널 기여를 registrationOnly 로 적은 실수를 사람의 리뷰가 잡았다. ④ 의 셋째는 확장자로 셸을 가리던 첫 구현이 놓쳤다(`.tsx` 안의 값 훅). 값 소비자 선언은 손으로 적지만 importer 집합·선택자를 원본과 대조한다. 기능 선언 해시가 바뀌어 로컬 DB 번들을 다시 만든다. red 증명 13종. 2026-10-16 브랜치(feat/composer-slot-degradation)에 DEC-OPS-335 로 적었으나 병합 전에 그 번호가 main 의 다른 결정에 쓰여, 2026-10-18 main 위로 옮기며 번호를 새로 받았다(사용자 "필요하면 바로 진행"). | [소비자 종류](../../scripts/slot-registry.mjs), [reader 계산](../../scripts/project-composer-slot-readers.mjs), [분류 대조](../../scripts/project-composer-integrations.mjs) | 2026-10-18 | DEC-OPS-327 의 알림 전달 채널 기여 registrationOnly 분류 |
 
+## DEC-OPS-354
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-354 | accepted | **로그인 실패 횟수를 행 잠금 안에서 올리고, 로그인 요청 제한 기본값을 낮춘다(ADR-0035).** ① 비밀번호 대조(bcrypt)는 잠금 밖에서 하고, 실패하면 사용자 행을 `PESSIMISTIC_WRITE` 로 다시 읽어 상태를 다시 판정한 뒤 횟수를 올리고 잠금을 정한다. 그 사이 비밀번호가 바뀌었으면 새 해시로 다시 대조한다. `noRollbackFor`·잠금 분·없는 계정의 시간 균등화·단일 401 은 그대로다. ② 로그인 버킷 기본값을 IP당 분당 2,000 에서 30 으로 낮추고 전체 10,000 은 둔다. E2E 프로파일만 종전 값으로 덮어쓴다. | 동시 실패 요청이 서로의 증가분을 덮어 잠금 임계값보다 많이 대입할 수 있었고, 기본값 2,000 은 계정을 돌아가며 대입하는 공격을 막지 못했다(2026-10-19 품질 평가 과제 2·4, 사용자 지시 "모두 완료할 때까지"). red 증명: 잠금 재조회를 걷으면 동시 실패 4건이 1로 기록되는 PostgreSQL 시험이 실패한다. 남은 위험: 관리자 사용자 수정처럼 다른 경로의 전체 행 저장이 동시에 일어나면 횟수를 옛 값으로 덮을 수 있다(종전부터). | [ADR-0035](../02-architecture/decisions/ADR-0035-login-rate-limit-default.md), [인증 처리](../../business-core/src/main/java/nuri/business/security/iam/EgovAuthenticationProvider.java), [요청 제한](../../business-core/src/main/java/nuri/business/security/filter/RateLimitFilter.java) | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값과 관측 뒤 인하 순서(ADR-0035) |
+
+## DEC-OPS-355
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-355 | accepted | **주소록 구 사용자 검색을 걷고, 사용자 목록의 연락처를 가리며, 개인정보 조회 기록에 정보주체를 남긴다.** ① `GET /api/v1/address-books/search-users`(연락처를 돌려주던 구 계약)를 걷는다. 연락처 없는 `/user-selections` 는 그대로다. ② 관리 사용자 목록 응답은 휴대전화·이메일을 가리고, 상세는 원문을 보이며 조회 기록을 남긴다. 사용자 수정 폼은 상세가 온 뒤에만 열고, 가린 값(`*` 포함)의 저장은 400 으로 거부한다. ③ V2_131 이 `tb_privacy_log.trpr_id`(용어 TRPR_ID 대상자아이디)를 더하고, 한 사람을 대상으로 한 조회(사용자 상세, 수신자가 한 명인 문자 수신자 조회)는 그 내부 키를 기록한다. 목록 조회는 비운다. | 일반 사용자 기본 권한만으로 두 글자 검색이 활성 사용자의 이메일·휴대전화를 돌려줬고, 사용자 목록은 연락처를 원문으로 실었으며, 조회 기록에는 누구의 정보를 봤는지가 없었다(2026-10-19 품질 평가 과제 3·5, 사용자 선택 "전부 진행"). 남긴 것: 외부인사 목록은 상세 API 가 없고 수정 폼이 목록 항목으로 채워져 이번에 가리지 않았다. 사무실 전화는 가리지 않는다. | [V2_131](../../api-server/src/main/resources/db/migration/V2_131__add_logout_cutoff_and_privacy_log_subject.sql), [감사 aspect](../../api-server/src/main/java/nuri/api/interceptor/SensitiveResponseAuditAspect.java), [사용자 목록](../../business-core/src/main/java/nuri/business/domain/user/repository/UserRepositoryImpl.java) | 2026-10-19 | 구 search-users 계약을 외부 소비자 확인 전까지 유지하던 판단(evidence-first-policy-decisions-2026-09-27.md) |
+
+## DEC-OPS-356
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-356 | accepted | **로그아웃하면 그 사용자의 액세스 토큰을 끊는다.** ① V2_131 이 `tb_user_info.last_lgt_dt`(용어 LAST_LGT_DT)를 더하고, 로그아웃이 인증 주체나 저장값과 일치하는 리프레시 토큰의 주인에 대해 애플리케이션 시계로 기록한다. 쓰기는 원자 UPDATE 한 곳이고 엔티티는 읽기 전용으로 매핑해 전체 행 저장이 옛 값으로 덮지 못한다. ② 토큰 검증은 비밀번호 변경과 같은 초 단위 비교로 그 시각 이전에 발급된 액세스 토큰을 거부하고, WebSocket 은 연결 시점과 열린 연결 모두 끊는다. ③ 사용자당 세션 하나인 모델(DEC-OPS-158)이라 모든 토큰을 끊는다. E2E 의 로그아웃 시험은 공유 인증 상태 대신 일회용 주체를 쓴다. | 로그아웃 뒤에도 액세스 토큰이 만료(최대 1시간)까지 유효했다(2026-10-19 품질 평가 과제 13, 사용자 선택 "전부 진행"). 여러 노드에서는 시계 동기화를 전제하며, 늦은 노드가 발급한 토큰은 그 차이만큼 거부될 수 있다(안전한 쪽 실패). | [토큰 검증](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java), [로그아웃](../../business-core/src/main/java/nuri/business/service/auth/impl/AuthServiceImpl.java), [V2_131](../../api-server/src/main/resources/db/migration/V2_131__add_logout_cutoff_and_privacy_log_subject.sql) | 2026-10-19 | - |
+
+## DEC-OPS-357
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-357 | accepted | **감사 원장 세 표(`tb_sys_adt_log`·`tb_authrt_chg_hstry`·`tb_privacy_log`)의 수정과 임의 삭제를 DB 트리거로 막는다.** ① UPDATE 는 언제나 거부하고, DELETE 는 같은 트랜잭션이 `SET LOCAL app.audit_retention = 'on'` 으로 보존 정리를 선언했을 때만 허용한다. ② 보존 정리(LogRetentionScheduler 의 개인정보 접근 기록·민감 작업 감사)가 삭제 트랜잭션 안에서 선언한다. 권한 변경 이력에는 보존 정리 경로가 없어 선언 없이는 지울 수 없다. ③ 세 표의 앱 쓰기 경로가 INSERT 뿐임을 전수 확인했다. | 고칠 수 있는 감사 기록은 증거가 되지 못한다 — 앱 버그·잘못 쓴 관리 SQL·주입이 행을 바꾸거나 지워도 DB 가 막지 않았다(2026-10-19 품질 평가 과제 13, 사용자 선택 "전부 진행"). 한계: 표 소유자·DB 관리자의 트리거 해제와 문장 단위 비우기(TRUNCATE)는 막지 않는다 — 운영 계정 분리 몫이다. TRUNCATE 트리거는 무중단 린터가 `TRUNCATE` 문자열을 파괴적 DDL 로 읽어 두지 않았다. | [V2_132](../../api-server/src/main/resources/db/migration/V2_132__protect_audit_ledgers_from_modification.sql), [보존 정책](../04-operations/log-retention-policy.md) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

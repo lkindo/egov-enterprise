@@ -89,6 +89,7 @@ refresh_triggers:
 | ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | ADR-0029 이후 범위가 여덟 개로 늘어 한 슬롯의 이관 PIT가 전수 CI의 임계 경로가 됐다(DEC-OPS-337). | [ADR-0032](../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
 | ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 사용자 선택. 이력의 표시명·변경된 현재 주소로 자동 복구하지 않는다. | [ADR-0033](../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 2026-10-18 | - |
 | ADR-0034 | accepted | 410만 돌려주던 구 인가 쓰기 API 와 결재 API 로 대체된 비공식결재 API 의 경로를 걷고, 집행 지점이 없어진 INFORMAL_*·INST_CODE 쓰기 권한과 그 배정을 퇴역한다. | 2026-10-18 사용자 선택. 호출자 없는 표면이 계약·원장에 계속 집계됐고, 원장에 없는 배정은 권한 스냅샷을 fail-closed 로 막는다. | [ADR-0034](../../docs/02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분 |
+| ADR-0035 | accepted | 로그인 요청 제한의 템플릿 기본값을 IP당 분당 30으로 낮추고 E2E 만 종전 값으로 둔다. 한도는 계속 설정으로 조정한다. | 2026-10-19 품질 평가 과제의 사용자 지시. 종전 2,000은 계정을 돌아가며 대입하는 공격을 막지 못했다. | [ADR-0035](../../docs/02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값·관측 뒤 인하 순서 |
 
 ## 운영 결정 index
 
@@ -449,6 +450,10 @@ refresh_triggers:
 | DEC-OPS-351 | accepted | V2_130 을 공유 OCI DB 에 적용한다(2026-10-18 사용자 승인 — 집행 지점 없는 권한 배정 정리, PR #932 병합 뒤). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-351) | 2026-10-18 | - |
 | DEC-OPS-352 | accepted | operation census 의 화면 고아·미배선을 다시 분류하고 늘 거부되거나 대체된 메뉴 서비스 경로 셋을 걷는다(GAP-WIRING-001). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-352) | 2026-10-18 | operation census 원장의 가입·사용자 접속 통계·권한별 메뉴 목록 미배선 사유(DEC 없음) |
 | DEC-OPS-353 | accepted | 슬롯 기여의 연동 분류를 소비자 종류 선언과 import 그래프로 대조하고, 잘못 적은 registrationOnly 기여를 연동으로 옮긴다(GAP-COMPOSE-001). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-353) | 2026-10-18 | DEC-OPS-327 의 알림 전달 채널 기여 registrationOnly 분류 |
+| DEC-OPS-354 | accepted | 로그인 실패 횟수를 행 잠금 안에서 올리고, 로그인 요청 제한 기본값을 IP당 분당 30으로 낮춘다(ADR-0035). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-354) | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값과 관측 뒤 인하 순서(ADR-0035) |
+| DEC-OPS-355 | accepted | 주소록 구 사용자 검색을 걷고, 사용자 목록의 휴대전화·이메일을 가리며, 개인정보 조회 기록에 정보주체를 남긴다(V2_131). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-355) | 2026-10-19 | 구 search-users 계약을 외부 소비자 확인 전까지 유지하던 판단(evidence-first-policy-decisions-2026-09-27.md) |
+| DEC-OPS-356 | accepted | 로그아웃하면 그 사용자의 액세스 토큰을 끊는다(V2_131 last_lgt_dt). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-356) | 2026-10-19 | - |
+| DEC-OPS-357 | accepted | 감사 원장 세 표의 수정과 임의 삭제를 DB 트리거로 막는다(V2_132). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-357) | 2026-10-19 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

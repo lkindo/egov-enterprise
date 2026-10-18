@@ -105,6 +105,7 @@
 | [ADR-0032](02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 |
 | [ADR-0033](02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 수신주소의 암호화 보관과 완료 후 정리 |
 | [ADR-0034](02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 |
+| [ADR-0035](02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하 |
 
 ## 03-guides — 개발 지침
 
