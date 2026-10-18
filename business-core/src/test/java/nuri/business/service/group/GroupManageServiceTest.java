@@ -77,7 +77,7 @@ class GroupManageServiceTest {
 
         // Then
         assertThat(groupId).startsWith("GROUP_");
-        verify(groupManageRepository).save(any(GroupManage.class));
+        verify(groupManageRepository).insert(any(GroupManage.class));
     }
 
     @Test
@@ -169,7 +169,7 @@ class GroupManageServiceTest {
                 nuri.foundation.core.exception.BusinessException.class, () -> groupManageService.insertGroup(dto));
 
         assertThat(ex.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE);
-        org.mockito.Mockito.verify(groupManageRepository, org.mockito.Mockito.never()).save(any(GroupManage.class));
+        org.mockito.Mockito.verify(groupManageRepository, org.mockito.Mockito.never()).insert(any(GroupManage.class));
     }
 
     @Test
@@ -183,7 +183,7 @@ class GroupManageServiceTest {
 
         // Then
         assertThat(groupId).isEqualTo("CUSTOM_ID");
-        verify(groupManageRepository).save(any(GroupManage.class));
+        verify(groupManageRepository).insert(any(GroupManage.class));
     }
 
     @Test

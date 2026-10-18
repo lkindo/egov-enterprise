@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
-    /** 최초 열람과 본문·지시 변경을 같은 보고 행에서 직렬화한다. */
+    /** 최초 열람과 본문·지시 변경·삭제를 같은 보고 행에서 직렬화한다. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select m from MemoReport m where m.memoRptSn = :memoRptSn")
     Optional<MemoReport> findByIdForUpdate(@Param("memoRptSn") Long memoRptSn);

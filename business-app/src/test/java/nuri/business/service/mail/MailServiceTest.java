@@ -1,6 +1,9 @@
 package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
+import nuri.foundation.core.job.DurableWork;
+import nuri.foundation.core.job.DurableWorkPort;
+import nuri.foundation.core.util.CryptoUtil;
 import nuri.business.domain.mail.SentMailRepository;
 import nuri.business.service.mail.dto.MailRecipientDto;
 import nuri.business.service.mail.dto.SentMailDto;
@@ -48,7 +51,7 @@ class MailServiceTest {
     private SentMailRepository sentMailRepository;
 
     @Mock
-    private MailAsyncProcessor mailAsyncProcessor;
+    private DurableWorkPort durableWork;
 
     @Mock
     private UserContactService userContactService;
@@ -58,12 +61,15 @@ class MailServiceTest {
      * 기본은 <b>관리자</b>로 두고, 스코프 자체를 검증하는 테스트에서만 일반 사용자로 바꾼다.
      */
     private MockedStatic<SecurityUtil> securityUtil;
+    private MockedStatic<CryptoUtil> crypto;
 
     /** 운영에서 설정으로 주입되는 발신 주소({@code nuri.mail.from}). @Value 는 Mockito 가 채우지 않는다. */
     private static final String SYSTEM_SENDER = "no-reply@egov.local";
 
     @BeforeEach
     void openSecurityUtilMock() {
+        crypto = Mockito.mockStatic(CryptoUtil.class);
+        crypto.when(() -> CryptoUtil.encrypt(anyString())).thenAnswer(call -> encrypted(call.getArgument(0)));
         securityUtil = Mockito.mockStatic(SecurityUtil.class);
         asAdmin();
         org.springframework.test.util.ReflectionTestUtils.setField(
@@ -72,6 +78,7 @@ class MailServiceTest {
 
     @AfterEach
     void closeSecurityUtilMock() {
+        crypto.close();
         if (securityUtil != null) {
             securityUtil.close();
         }
@@ -140,7 +147,7 @@ class MailServiceTest {
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
         assertThat(saved.getValue().getAtchFileSn()).isNull();
-        verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+        assertEnqueued(1L, "receiver@test.com");
     }
 
     @Test
@@ -160,7 +167,7 @@ class MailServiceTest {
                         .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE))
                 .hasMessageContaining("첨부");
 
-        verifyNoInteractions(sentMailRepository, mailAsyncProcessor, userContactService);
+        verifyNoInteractions(sentMailRepository, durableWork, userContactService);
     }
 
     @Test
@@ -176,7 +183,7 @@ class MailServiceTest {
         org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
         verify(sentMailRepository).save(saved.capture());
         assertThat(saved.getValue().getRcvrNm()).isEqualTo("홍길동");
-        verify(mailAsyncProcessor).processSending(eq(5L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("hong@egov.com"), any());
+        assertEnqueued(5L, "hong@egov.com");
 
         // 이름을 모르면 주소를 대신 적지 않는다.
         mailService.sendToResolvedAddress("SANCTIONER_001",
@@ -298,10 +305,9 @@ class MailServiceTest {
 
         mailService.sendMail("user1", dto);
 
-        org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
-        verify(mailAsyncProcessor).processSending(
-                anyLong(), anyString(), anyString(), from.capture(), anyString(), any());
-        assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
+        var captor = org.mockito.ArgumentCaptor.forClass(DurableWork.class);
+        verify(durableWork).enqueue(captor.capture());
+        assertThat(MailDeliveryWorkHandler.intent(captor.getValue()).from()).isEqualTo(SYSTEM_SENDER);
     }
 
     @Test
@@ -317,10 +323,9 @@ class MailServiceTest {
 
         mailService.sendMail("user1", dto);
 
-        org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
-        verify(mailAsyncProcessor).processSending(
-                anyLong(), anyString(), anyString(), from.capture(), anyString(), any());
-        assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
+        var captor = org.mockito.ArgumentCaptor.forClass(DurableWork.class);
+        verify(durableWork).enqueue(captor.capture());
+        assertThat(MailDeliveryWorkHandler.intent(captor.getValue()).from()).isEqualTo(SYSTEM_SENDER);
     }
 
     @Test
@@ -379,21 +384,19 @@ class MailServiceTest {
     }
 
     @Test
-    @DisplayName("메일 비동기 큐 포화는 커밋된 대기 건을 명시적 실패로 전환")
-    void sendMail_executorRejected_marksFailure() {
+    @DisplayName("durable intent 저장 실패는 접수 트랜잭션으로 전파한다")
+    void sendMail_durableEnqueueFailurePropagates() {
         SentMailDto dto = SentMailDto.builder()
                 .sj("Subject").emailCn("Content")
                 .dsptchPerson("sender@test.com").recptnPerson("receiver@test.com")
                 .build();
         doThrow(new java.util.concurrent.RejectedExecutionException("full"))
-                .when(mailAsyncProcessor)
-                .processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+                .when(durableWork).enqueue(any());
         given(sentMailRepository.save(any(SentMail.class)))
                 .willReturn(SentMail.builder().emlDsptchSn(2L).build());
 
-        Long emlDsptchSn = mailService.sendMail("user1", dto);
-
-        verify(mailAsyncProcessor).markResult(emlDsptchSn, "F");
+        assertThatThrownBy(() -> mailService.sendMail("user1", dto))
+                .isInstanceOf(java.util.concurrent.RejectedExecutionException.class);
     }
 
     /*
@@ -430,9 +433,9 @@ class MailServiceTest {
         // [DIP B5 F7] 재발송이 현재 주소를 다시 찾도록 사용자 수신자는 식별자를 남긴다. 직접 입력한 주소는 없다.
         assertThat(saved.getAllValues()).extracting(SentMail::getRcvrId)
                 .containsExactly("USR_A", null, "USR_B");
-        verify(mailAsyncProcessor).processSending(eq(11L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("gap@example.com"), any());
-        verify(mailAsyncProcessor).processSending(eq(12L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("direct@example.com"), any());
-        verify(mailAsyncProcessor).processSending(eq(13L), eq("Subject"), eq("Content"), eq(SYSTEM_SENDER), eq("eul@example.com"), any());
+        assertEnqueued(11L, "gap@example.com");
+        assertEnqueued(12L, "direct@example.com");
+        assertEnqueued(13L, "eul@example.com");
     }
 
     @Test
@@ -452,7 +455,7 @@ class MailServiceTest {
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .hasMessageContaining("병");
         verify(sentMailRepository, never()).save(any(SentMail.class));
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+        verify(durableWork, never()).enqueue(any());
     }
 
     @Test
@@ -636,4 +639,17 @@ class MailServiceTest {
         assertThatThrownBy(() -> mailService.deleteMail(999L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
+    private static String encrypted(String address) {
+        return java.util.Base64.getEncoder().encodeToString(address.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private void assertEnqueued(long id, String address) {
+        verify(durableWork).enqueue(org.mockito.ArgumentMatchers.argThat(work -> {
+            var intent = MailDeliveryWorkHandler.intent(work);
+            return intent.dispatchId() == id && intent.encryptedRecipient().equals(encrypted(address))
+                    && intent.from().equals(SYSTEM_SENDER) && !work.payload().contains(address);
+        }));
+        crypto.verify(() -> CryptoUtil.encrypt(address));
+    }
+
 }

@@ -291,6 +291,24 @@ class SmsAsyncProcessorTest {
         assertThat(captor.getValue().linkUrl()).isEqualTo(SmsAsyncProcessor.SMS_ADMIN_PATH);
     }
 
+    @Test void durableRetryCompletesUnclaimedRecipientsWithoutRepeatingAcceptedPosts() {
+        SmsRecptn accepted = row(1L, PHONE, "P", null);
+        SmsRecptn deferred = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000002").rsltCd("P").build();
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(accepted, deferred));
+        when(recipients.findByIdForUpdate(new SmsRecptnId(1L, "01000000002")))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("unavailable"))
+                .thenReturn(Optional.of(deferred));
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.accepted("request-1"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                processor.dispatchCommitted(1L, "0212345678", "body", null))
+                .isInstanceOf(org.springframework.dao.DataAccessResourceFailureException.class);
+        processor.dispatchCommitted(1L, "0212345678", "body", null).join();
+
+        verify(sender, times(1)).send(PHONE, "body", "0212345678");
+        verify(sender, times(1)).send("01000000002", "body", "0212345678");
+    }
+
     @Test void pendingUnknownAndUnknownSenderDoNotProduceFalseFailureNotices() {
         SmsRecptn row = row(1L, PHONE, "P", null);
         when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(row));

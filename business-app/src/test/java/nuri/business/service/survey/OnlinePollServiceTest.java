@@ -410,6 +410,77 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    void updatePollMatchesRetainedItemsByIdWhenTheRequestOrderChanges() {
+        OnlinePollManage poll = editablePoll();
+        OnlinePollArticle first = poll.getPollArticles().get(0);
+        OnlinePollArticle second = poll.getPollArticles().get(1);
+
+        onlinePollService.updatePoll(pollUpdate(List.of(
+                pollItem(12L, "둘째"), pollItem(11L, "첫째"), pollItem(null, "추가"))));
+
+        assertThat(first.getPollArtclNm()).isEqualTo("첫째");
+        assertThat(second.getPollArtclNm()).isEqualTo("둘째");
+        assertThat(poll.getPollArticles()).containsExactly(first, second, poll.getPollArticles().get(2));
+        assertThat(poll.getPollArticles().get(2).getPollArtclSn()).isNull();
+        assertThat(poll.getPollArticles().get(2).getPollManage()).isSameAs(poll);
+        org.mockito.Mockito.verifyNoInteractions(pollResultRepository);
+    }
+
+    @Test
+    void updatePollRejectsDeletingOrRenamingTheVotedItemRegardlessOfItsPosition() {
+        OnlinePollManage poll = editablePoll();
+        given(pollResultRepository.countByPollArtclSnIn(List.of(11L)))
+                .willReturn(List.<Object[]>of(new Object[]{11L, 2L}));
+
+        for (List<OnlinePollArticleDto> incoming : List.of(
+                List.of(pollItem(12L, "둘째")),
+                List.of(pollItem(12L, "둘째"), pollItem(11L, "다른 의미")))) {
+            assertThatThrownBy(() -> onlinePollService.updatePoll(pollUpdate(incoming)))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+            assertThat(poll.getPollArticles()).extracting(OnlinePollArticle::getPollArtclSn).containsExactly(11L, 12L);
+            assertThat(poll.getPollArticles()).extracting(OnlinePollArticle::getPollArtclNm).containsExactly("첫째", "둘째");
+        }
+    }
+
+    @Test
+    void updatePollRejectsDuplicateForeignAndMissingExistingItemIdentities() {
+        OnlinePollManage poll = editablePoll();
+        OnlinePollArticleDto foreignParent = pollItem(11L, "첫째");
+        foreignParent.setPollSn(99L);
+        for (List<OnlinePollArticleDto> incoming : List.of(
+                List.of(pollItem(11L, "첫째"), pollItem(11L, "중복")),
+                List.of(pollItem(99L, "다른 투표")),
+                List.of(foreignParent), List.of(pollItem(null, "순서만 전달")))) {
+            assertThatThrownBy(() -> onlinePollService.updatePoll(pollUpdate(incoming)))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+            assertThat(poll.getPollArticles()).extracting(OnlinePollArticle::getPollArtclNm).containsExactly("첫째", "둘째");
+        }
+        org.mockito.Mockito.verifyNoInteractions(pollResultRepository);
+    }
+
+    private OnlinePollManage editablePoll() {
+        authenticatePermissions(List.of("POLL_READ", "POLL_READ_ALL", "POLL_UPDATE"));
+        OnlinePollManage poll = OnlinePollManage.builder().pollSn(1L).pollNm("투표")
+                .pollArticles(new ArrayList<>(List.of(
+                        OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("첫째").build(),
+                        OnlinePollArticle.builder().pollArtclSn(12L).pollArtclNm("둘째").build())))
+                .build();
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(poll));
+        return poll;
+    }
+
+    private static OnlinePollArticleDto pollItem(Long id, String name) {
+        return OnlinePollArticleDto.builder().pollArtclSn(id).pollArtclNm(name).build();
+    }
+
+    private static OnlinePollManageDto pollUpdate(List<OnlinePollArticleDto> items) {
+        return OnlinePollManageDto.builder().pollSn(1L).pollNm("투표 수정")
+                .pollBgngYmd("20000101").pollEndYmd("29991231").pollArticles(items).build();
+    }
+
+    @Test
     @DisplayName("설문 수정 - 성공 (모든 조건 및 길이 초과)")
     void updatePoll_Success() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
@@ -423,7 +494,7 @@ class OnlinePollServiceTest {
                     .pollNm("Old")
                     .pollArticles(new ArrayList<>())
                     .build();
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollSn(1L)
@@ -457,7 +528,7 @@ class OnlinePollServiceTest {
                     .pollNm("투표")
                     .pollArticles(new ArrayList<>(List.of(first, second)))
                     .build();
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             // 1) 같은 개수로 수정 시 기존 엔티티(PK 11, 12)가 유지된 채 이름만 갱신된다
             OnlinePollManageDto inPlaceDto = OnlinePollManageDto.builder()
@@ -466,8 +537,8 @@ class OnlinePollServiceTest {
                     .pollBgngYmd("20260101")
                     .pollEndYmd("20261231")
                     .pollArticles(List.of(
-                            OnlinePollArticleDto.builder().pollArtclNm("변경 1").build(),
-                            OnlinePollArticleDto.builder().pollArtclNm("변경 2").build()))
+                            OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("변경 1").build(),
+                            OnlinePollArticleDto.builder().pollArtclSn(12L).pollArtclNm("변경 2").build()))
                     .build();
             onlinePollService.updatePoll(inPlaceDto);
             assertThat(entity.getPollArticles()).hasSize(2);
@@ -484,7 +555,7 @@ class OnlinePollServiceTest {
                     .pollNm("투표 수정")
                     .pollBgngYmd("20260101")
                     .pollEndYmd("20261231")
-                    .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclNm("변경 1").build()))
+                    .pollArticles(List.of(OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("변경 1").build()))
                     .build();
             assertThatThrownBy(() -> onlinePollService.updatePoll(shrinkDto))
                     .isInstanceOf(BusinessException.class)
@@ -516,7 +587,7 @@ class OnlinePollServiceTest {
                     .pollAtmcDsuseYn("Y")
                     .pollArticles(new ArrayList<>())
                     .build();
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             // 화면이 보내는 실제 모양 — 제목만 고치고 자동폐기 여부는 싣지 않는다.
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
@@ -548,7 +619,7 @@ class OnlinePollServiceTest {
                     .pollAtmcDsuseYn("Y")
                     .pollArticles(new ArrayList<>())
                     .build();
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollSn(1L)
@@ -573,7 +644,7 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
 
             OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Old").build();
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollSn(1L)
@@ -594,7 +665,7 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_UPDATE")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
-            given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
+            given(pollManageRepository.findByIdForUpdate(99L)).willReturn(Optional.empty());
             OnlinePollManageDto dto = OnlinePollManageDto.builder().pollSn(99L).build();
             assertThat(assertThrows(BusinessException.class, () -> onlinePollService.updatePoll(dto))
                     .getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -620,9 +691,26 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_DELETE")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("POLL_READ_ALL")).thenReturn(true);
+            given(pollManageRepository.findByIdForUpdate(1L))
+                    .willReturn(Optional.of(OnlinePollManage.builder().pollSn(1L).build()));
             onlinePollService.deletePoll(1L);
-            verify(pollManageRepository, times(1)).deleteById(1L);
+            var order = org.mockito.Mockito.inOrder(pollManageRepository, pollResultRepository);
+            order.verify(pollManageRepository).findByIdForUpdate(1L);
+            order.verify(pollResultRepository).deleteByPollSn(1L);
+            order.verify(pollManageRepository).deleteById(1L);
         }
+    }
+
+    @Test
+    void deletingAnAbsentPollRemainsAnIdempotentNoOp() {
+        authenticatePermissions(List.of("POLL_DELETE", "POLL_READ", "POLL_READ_ALL"));
+        given(pollManageRepository.findByIdForUpdate(99L)).willReturn(Optional.empty());
+
+        onlinePollService.deletePoll(99L);
+
+        verify(pollManageRepository).findByIdForUpdate(99L);
+        org.mockito.Mockito.verifyNoMoreInteractions(pollManageRepository);
+        org.mockito.Mockito.verifyNoInteractions(pollResultRepository);
     }
     
     @Test
@@ -646,7 +734,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
         onlinePollService.vote(1L, 11L, "user1");
@@ -668,7 +756,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollItemRepository.existsByPollArtclSnAndPollManagePollSn(22L, 1L)).willReturn(false);
 
         assertThatThrownBy(() -> onlinePollService.vote(1L, 22L, "user1"))
@@ -687,7 +775,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "VeryLongUserIdExceeding20Chars")).willReturn(0L);
 
         onlinePollService.vote(1L, 11L, "VeryLongUserIdExceeding20Chars");
@@ -703,7 +791,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 투표 - 실패 (중지됨)")
     void vote_Fail_Disabled() {
         OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollDsuseYn("Y").build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         // [DIP V7] 참여 화면의 오류는 '투표' 로 말한다 — '설문' 은 문항형 설문조사의 이름이다.
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
@@ -720,7 +808,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(tomorrow)
                 .pollEndYmd(tomorrow)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("투표 시작 전입니다.");
@@ -736,7 +824,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(yesterday)
                 .pollEndYmd(yesterday)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("이미 종료된 투표입니다.");
@@ -752,7 +840,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(1L);
 
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
@@ -772,7 +860,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
         given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint \"uk_tb_onln_poll_rslt_poll_voter\""));
@@ -794,7 +882,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
         given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
                 .willThrow(new DataIntegrityViolationException("ERROR: value too long for type character varying(20)"));
@@ -852,7 +940,7 @@ class OnlinePollServiceTest {
                     .pollArticles(existingArticles)
                     .build();
                     
-            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+            given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
             // I1은 유지, I2는 삭제(전달안됨), I3은 신규
             OnlinePollArticleDto keepItem = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("Updated1").build();
@@ -888,7 +976,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         
         // user 파라미터가 null일 때 NullPointerException 이 발생하는 분기 (saveAndFlush 이전에 터짐)
         assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, null))
@@ -953,7 +1041,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
         onlinePollService.vote(1L, 11L, "user1");
@@ -969,7 +1057,7 @@ class OnlinePollServiceTest {
                 .pollBgngYmd(null)
                 .pollEndYmd(null)
                 .build();
-        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollManageRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
         onlinePollService.vote(1L, 11L, "user1");

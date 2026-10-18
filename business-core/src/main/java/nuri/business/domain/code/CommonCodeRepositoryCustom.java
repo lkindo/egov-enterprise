@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.jspecify.annotations.NonNull;
 
 public interface CommonCodeRepositoryCustom {
+    void insert(CommonCode code);
+
     Page<CommonCodeDetailProjection> searchCommonCodeDetails(String searchCondition, String searchKeyword,
             @NonNull Pageable pageable);
 }

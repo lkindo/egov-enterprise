@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -390,6 +391,104 @@ class DurableWorkIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='DURABLE_WORK_RETRY' AND frst_rgtr_id=?", Long.class, actor)).isEqualTo(1L);
     }
 
+    @Test
+    void leaseRenewalRequiresTheCurrentRunningAttemptAndDoesNotSpendRetryBudget() {
+        enqueue();
+        var id = job().getJobSn();
+        String firstAttempt = transaction.execute(status -> repository.findLocked(id).orElseThrow()
+                .claim(LocalDateTime.now(ZoneOffset.UTC), 8, 120));
+        LocalDateTime renewedUntil = LocalDateTime.now(ZoneOffset.UTC)
+                .truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusMinutes(4);
+
+        Integer renewed = transaction.execute(status -> repository.renewLease(id, firstAttempt, renewedUntil));
+        assertThat(renewed).isEqualTo(1);
+        assertThat(job().getJobPrnmntDt()).isEqualTo(renewedUntil);
+        assertThat(job().getRtryNmtm().intValueExact()).isEqualTo(1);
+        assertThat(job().getJobNo()).isEqualTo(firstAttempt);
+
+        makeDue();
+        String currentAttempt = transaction.execute(status -> repository.findLocked(id).orElseThrow()
+                .claim(LocalDateTime.now(ZoneOffset.UTC), 8, 120));
+        var currentDeadline = job().getJobPrnmntDt();
+        Integer staleRenewal = transaction.execute(status -> repository.renewLease(id, firstAttempt, renewedUntil));
+        assertThat(staleRenewal).isZero();
+        assertThat(job().getJobPrnmntDt()).isEqualTo(currentDeadline);
+        Integer currentRenewal = transaction.execute(status -> repository.renewLease(id, currentAttempt, renewedUntil));
+        assertThat(currentRenewal).isEqualTo(1);
+        assertThat(job().getRtryNmtm().intValueExact()).isEqualTo(2);
+
+        // PostgreSQL rejects terminal rows that retain a claim token; valid terminal rows cannot renew.
+        for (String terminal : List.of("SUCCEEDED", "FAILED")) {
+            assertThatThrownBy(() -> jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=? WHERE job_sn=?",
+                    terminal, currentAttempt, id))
+                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .hasMessageContaining("ck_tb_sys_job_job_no");
+            jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=NULL WHERE job_sn=?", terminal, id);
+            Integer terminalRenewal = transaction.execute(status ->
+                    repository.renewLease(id, currentAttempt, renewedUntil.plusMinutes(1)));
+            assertThat(terminalRenewal).isZero();
+            assertThat(job().getJobNo()).isNull();
+            assertThat(job().getJobPrnmntDt()).isEqualTo(renewedUntil);
+            assertThat(job().getRtryNmtm().intValueExact()).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void sensitivePayloadIsRetainedForRetryAndErasedOnlyAtTerminalState() {
+        delivery.discard = true;
+        enqueue();
+        delivery.fail = true;
+        dispatcher().dispatchOne();
+        assertThat(job().getJobCn()).isEqualTo(work.payload());
+        for (int attempt = 1; attempt < 8; attempt++) {
+            makeDue();
+            dispatcher().dispatchOne();
+        }
+        assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
+        assertThat(job().getJobCn()).isEmpty();
+        assertThat(delivery.terminalCalls.get()).isEqualTo(1);
+        authenticate(List.of("DWORK_RETRY"));
+        assertThatThrownBy(() -> administration.retry(job().getJobSn()))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+    }
+
+    @Test
+    void successAndExpiredFinalClaimEraseSensitivePayloadWithoutAnotherExecution() {
+        delivery.discard = true;
+        enqueue();
+        dispatcher().dispatchOne();
+        assertThat(job().getPrcsSttsNm()).isEqualTo("SUCCEEDED");
+        assertThat(job().getJobCn()).isEmpty();
+        assertThat(delivery.terminalCalls.get()).isEqualTo(1);
+        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_cn=? WHERE job_mng_no=?",
+                work.payload(), work.key().toString());
+        makeDue();
+        dispatcher().dispatchOne();
+        assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
+        assertThat(job().getJobCn()).isEmpty();
+        assertThat(delivery.calls.get()).isEqualTo(1);
+        assertThat(delivery.terminalCalls.get()).isEqualTo(2);
+    }
+
+    @Test
+    void staleAcknowledgementCannotEraseTheCurrentAttemptsPayload() throws Exception {
+        delivery.discard = true;
+        delivery.entered = new CountDownLatch(1);
+        delivery.release = new CountDownLatch(1);
+        enqueue();
+        try (var workers = Executors.newSingleThreadExecutor()) {
+            var oldWorker = workers.submit(() -> dispatcher().dispatchOne());
+            try {
+                assertThat(delivery.entered.await(10, TimeUnit.SECONDS)).isTrue();
+                jdbc.update("UPDATE tb_sys_job SET job_no='replacement',job_cn='replacement snapshot' WHERE job_mng_no=?", work.key().toString());
+            } finally { delivery.release.countDown(); }
+            assertThat(oldWorker.get(10, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(job().getPrcsSttsNm()).isEqualTo("RUNNING");
+        assertThat(job().getJobCn()).isEqualTo("replacement snapshot");
+        assertThat(delivery.terminalCalls.get()).isZero();
+    }
+
     private void enqueue() {
         transaction.executeWithoutResult(status -> port.enqueue(work));
     }
@@ -415,6 +514,10 @@ class DurableWorkIntegrationTest {
     private static final class ControlledDelivery implements DurableWorkHandler {
         private final AtomicInteger calls = new AtomicInteger();
         private volatile boolean fail;
+        private boolean discard;
+        private final AtomicInteger terminalCalls = new AtomicInteger();
+        @Override public boolean discardPayloadOnCompletion() { return discard; }
+        @Override public void onTerminal(DurableWork work, boolean succeeded) { terminalCalls.incrementAndGet(); }
         private volatile DurableWork last;
         private CountDownLatch entered;
         private CountDownLatch release;

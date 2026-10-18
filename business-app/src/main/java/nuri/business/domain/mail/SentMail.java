@@ -82,4 +82,9 @@ public class SentMail extends BaseEntity {
     public void updateResult(String sndngResultCode) {
         this.dsptchRsltCd = sndngResultCode;
     }
+
+    public void queueAt(java.time.LocalDateTime queuedAt) {
+        this.dsptchRsltCd = "Q";
+        this.dsptchDt = java.util.Objects.requireNonNull(queuedAt);
+    }
 }

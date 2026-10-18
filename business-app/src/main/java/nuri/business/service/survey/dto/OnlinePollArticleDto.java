@@ -16,13 +16,10 @@ import java.time.LocalDateTime;
 @Schema(description = "온라인 설문 항목 DTO (표준화)")
 public class OnlinePollArticleDto {
 
-    // DB 생성 PK — create/update 시 클라이언트가 알 수 없다(INSERT 시 BIGINT IDENTITY 채번).
-    // 부모 OnlinePollManageDto.pollSn 과 동일한 사유로 @NotNull 을 걸지 않는다.
-    // 부모에 @Valid 캐스케이드가 추가되면서 이 두 필드의 @NotBlank 가 표면화돼 설문 등록이 **항상**
-    // 400(must not be blank ×2×항목수)으로 실패했다 — 관리 UI(SurveyManageCreateClient)도 동일하게
-    // { pollArtclNm } 만 보내므로 어떤 클라이언트도 만족시킬 수 없는 계약이었다.
-    // 이 DTO 를 inbound 로 받는 경로는 create/update 의 중첩 원소뿐이고(항목 목록 조회는 outbound),
-    // 클라이언트가 이 ID 들을 전송하는 엔드포인트는 존재하지 않는다.
+    // 신규 항목은 INSERT 시 BIGINT IDENTITY로 채번하므로 ID를 생략한다.
+    // 기존 항목 수정은 조회 응답의 pollArtclSn으로 항목을 식별한다.
+    // pollSn은 부모 DTO에서 결정하며, 항목에 전달된 경우 같은 설문인지 서비스에서 검증한다.
+    // 생성과 수정을 함께 사용하는 DTO이므로 두 ID에 @NotNull을 선언하지 않는다.
     @Schema(description = "설문 항목 일련번호")
     private Long pollArtclSn;
 

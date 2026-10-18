@@ -80,7 +80,7 @@ class DeptManageServiceImplTest {
     @DisplayName("부서 수정 - 성공")
     void updateDeptManage_Success() {
         DeptManage entity = DeptManage.builder().ognzId("OR_01").ognzNm("Old").build();
-        given(deptManageRepository.findById("OR_01")).willReturn(Optional.of(entity));
+        given(deptManageRepository.findByIdForUpdate("OR_01")).willReturn(Optional.of(entity));
 
         DeptManageDto dto = DeptManageDto.builder().ognzId("OR_01").ognzNm("New").build();
         deptManageService.updateDeptManage(dto);

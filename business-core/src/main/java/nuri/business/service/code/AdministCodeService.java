@@ -64,7 +64,8 @@ public class AdministCodeService {
                 .useYn(dto.getUseYn())
                 .crtYmd(dto.getCrtYmd())
                 .build();
-        return administCodeRepository.save(entity).getAdmdstCd();
+        administCodeRepository.insert(entity);
+        return entity.getAdmdstCd();
     }
 
     @Transactional

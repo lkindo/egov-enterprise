@@ -47,13 +47,30 @@ public class SmsAsyncProcessor {
 
     @Async("taskExecutor")
     public void processSending(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
+        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId, false);
+    }
+
+    /** The durable worker acknowledges only after the bounded outbound executor finishes. */
+    @Async("taskExecutor")
+    public CompletableFuture<Void> dispatchCommitted(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
+        dispatchRecipients(smsTrsmSn, senderTel, content, senderEsntlId, true);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private void dispatchRecipients(Long smsTrsmSn, String senderTel, String content, String senderEsntlId,
+            boolean retryUnclaimed) {
         List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
         int failed = 0;
+        RuntimeException deferred = null;
         for (SmsRecptn recipient : recipients) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new java.util.concurrent.CancellationException("SMS batch interrupted before the next recipient");
+            }
             try {
                 if (self.sendToRecipient(smsTrsmSn, recipient.getRcptnTelno(), senderTel, content)
                         == SmsGatewayResult.State.REJECTED) failed++;
             } catch (RuntimeException failure) {
+                deferred = failure;
                 // A DB/worker failure does not prove the provider rejected a possibly accepted POST.
                 log.error("SMS dispatch remains unconfirmed: transmission={}, recipient={}, errorType={}",
                         smsTrsmSn, nuri.foundation.core.util.PiiMaskUtil.phone(recipient.getRcptnTelno()),
@@ -67,6 +84,9 @@ public class SmsAsyncProcessor {
                         smsTrsmSn, failure.getClass().getSimpleName());
             }
         }
+        // A retry may finish never-claimed recipients. Already claimed recipients remain protected
+        // by claimSending, including a POST whose outcome or result commit was not confirmed.
+        if (retryUnclaimed && deferred != null) throw deferred;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

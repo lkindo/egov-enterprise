@@ -52,6 +52,10 @@
       {
         "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
         "alsoRequires": []
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/OnlinePollItemIntegrityIntegrationTest.java",
+        "alsoRequires": []
       }
     ],
     "rbacMatrix": {

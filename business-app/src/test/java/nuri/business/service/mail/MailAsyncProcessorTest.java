@@ -35,9 +35,13 @@ class MailAsyncProcessorTest {
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    private static final java.time.LocalDateTime QUEUED = java.time.LocalDateTime.of(2026, 10, 18, 0, 0);
+
     @BeforeEach
     void setUp() {
         mailAsyncProcessor.setSelf(mailAsyncProcessor);
+        lenient().when(sentMailRepository.claimQueued(1L, QUEUED)).thenReturn(1);
+        lenient().when(sentMailRepository.recordResult(eq(1L), eq(QUEUED), anyString())).thenReturn(1);
         lenient().when(meterRegistry.counter(anyString(), any(String[].class)))
             .thenReturn(mock(io.micrometer.core.instrument.Counter.class));
     }
@@ -46,12 +50,12 @@ class MailAsyncProcessorTest {
     @DisplayName("비동기 메일 발송 - 성공")
     void processSending_Success() throws Exception {
         SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+        lenient().when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
 
-        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to");
+        mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
         verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
-        assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
+        verify(sentMailRepository).recordResult(1L, QUEUED, "S");
     }
 
     @Test
@@ -61,13 +65,13 @@ class MailAsyncProcessorTest {
 
         // Exception is expected to bubble up in unit test
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
-            mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to")
+            mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null)
         ).isInstanceOf(RuntimeException.class);
 
         // 발송 복구는 실패 결과만 반환한다. F 기록은 실제 프록시 통합 테스트에서 검증한다.
         org.assertj.core.api.Assertions.assertThat(mailAsyncProcessor.recoverSending(
                 new RuntimeException("Send error"), 1L, "Sub", "Cn", "from", "to")).isFalse();
-        verifyNoInteractions(sentMailRepository);
+        verify(sentMailRepository, never()).recordResult(anyLong(), any(), anyString());
     }
 
     @Test
@@ -77,16 +81,16 @@ class MailAsyncProcessorTest {
         var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository, registry, eventPublisher);
         processor.setSelf(processor);
         SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+        lenient().when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
 
-        processor.processSending(1L, "Sub", "Cn", "from", "to");
+        processor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
-        assertThat(mail.getDsptchRsltCd()).isEqualTo("F");
+        verify(sentMailRepository).recordResult(1L, QUEUED, "F");
         org.assertj.core.api.Assertions.assertThat(registry.counter("mail.dispatch.total", "result", "failure").count())
                 .isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(registry.find("mail.dispatch.total").tag("result", "success").counter())
                 .isNull();
-        verify(sentMailRepository, times(1)).findById(1L);
+        verify(sentMailRepository, never()).findById(1L);
     }
 
     @Test
@@ -96,9 +100,9 @@ class MailAsyncProcessorTest {
                 new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
         processor.setSelf(processor);
         SentMail mail = SentMail.create(1L, "주간 보고", "비밀 본문", "sender", "홍길동", "U1", "P", null);
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
+        lenient().when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
 
-        processor.processSending(1L, "주간 보고", "비밀 본문", "from", "hong@example.com", "SENDER-1");
+        processor.dispatchCommitted(1L, QUEUED, "주간 보고", "비밀 본문", "from", "hong@example.com", "SENDER-1");
 
         var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
         verify(eventPublisher, times(1)).publishEvent(captor.capture());
@@ -115,13 +119,13 @@ class MailAsyncProcessorTest {
     @DisplayName("성공한 발송과 발신자를 모르는 발송은 알리지 않는다")
     void successOrUnknownSenderDoesNotNotify() throws Exception {
         SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
-        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
-        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to", "SENDER-1");
+        lenient().when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
+        mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", "SENDER-1");
 
         var failing = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository,
                 new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
         failing.setSelf(failing);
-        failing.processSending(1L, "Sub", "Cn", "from", "to");
+        failing.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null);
 
         verifyNoInteractions(eventPublisher);
     }
@@ -129,12 +133,22 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 엔티티 없음")
     void processSending_NoEntity() throws Exception {
-        given(sentMailRepository.findById(1L)).willReturn(Optional.empty());
+        given(sentMailRepository.claimQueued(1L, QUEUED)).willReturn(0);
 
-        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to");
+        mailAsyncProcessor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", null).join();
 
-        verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
+        verifyNoInteractions(emailSender);
         // No exception should occur
+    }
+
+    @Test
+    void staleFailureResultDoesNotNotifyTheNewAttempt() {
+        given(sentMailRepository.recordResult(1L, QUEUED, "F")).willReturn(0);
+        var processor = new MailAsyncProcessor(new LoggingEmailSender(), sentMailRepository,
+                new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), eventPublisher);
+        processor.setSelf(processor);
+        processor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", "SENDER-1").join();
+        verifyNoInteractions(eventPublisher);
     }
 
     private org.assertj.core.api.AbstractAssert<?, ?> assertThat(Object actual) {

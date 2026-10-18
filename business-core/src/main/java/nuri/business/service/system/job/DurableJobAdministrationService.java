@@ -35,7 +35,9 @@ public class DurableJobAdministrationService {
         SecurityUtil.assertPermission("DWORK_RETRY");
         DurableJob job = repository.findLocked(jobSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        if (!"FAILED".equals(job.getPrcsSttsNm())) throw new BusinessException(CommonErrorCode.INVALID_STATE);
+        if (!"FAILED".equals(job.getPrcsSttsNm()) || job.getJobCn().isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE);
+        }
         job.retry(LocalDateTime.now(ZoneOffset.UTC));
         audit.recordMutation("DURABLE_WORK_RETRY", jobSn.toString());
     }

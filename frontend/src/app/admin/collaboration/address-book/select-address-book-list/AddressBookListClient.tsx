@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useRef, useState } from 'react';
+import React, { use, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AddressBookCreateDialog } from '../AddressBookCreateDialog';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
@@ -15,6 +15,8 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import type { AddressBookInitialData } from './AddressBookListServer';
 import { logErrorSafely } from '@/lib/safe-error-log';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 
 const DEFAULT_PAGE_UNIT = 10;
 
@@ -38,6 +40,11 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
   const initialData = use(dataPromise);
   const { toast } = useToast();
   const confirm = useConfirm();
+  const { user } = useAuth();
+  const canCreateAddressBook = canPermission(user, 'ADBK_CREATE');
+  const canDeleteAddressBook = canPermission(user, 'ADBK_DELETE');
+  const deletePermissionRef = useRef(canDeleteAddressBook);
+  useLayoutEffect(() => { deletePermissionRef.current = canDeleteAddressBook; }, [canDeleteAddressBook]);
 
   const [list, setList] = useState<AddressBook[]>(initialData.list);
   const [totalCount, setTotalCount] = useState(initialData.total);
@@ -101,7 +108,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
 
   /** [P1-9] native confirm → useConfirm. 본문에 대상 주소록 명칭을 노출한다. */
   const handleDelete = async (item: AddressBook) => {
-    if (deletePendingRef.current) return;
+    if (!canDeleteAddressBook || deletePendingRef.current) return;
     deletePendingRef.current = true;
     setDeletingAddressBookSn(item.adbkSn);
 
@@ -112,7 +119,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
         confirmText: '삭제',
         variant: 'destructive',
       });
-      if (!ok) return;
+      if (!ok || !deletePermissionRef.current) return;
 
       await addressbookUserService.deleteAddressBook(item.adbkSn);
       toast('주소록이 삭제되었습니다.', 'success');
@@ -181,6 +188,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
         const isDeleting = deletingAddressBookSn === item.adbkSn;
         return (
           <div className="flex items-center justify-end pr-4">
+            {canDeleteAddressBook && (
             <Button
               variant="ghost"
               size="icon"
@@ -194,6 +202,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Trash2 size={16} aria-hidden="true" />}
             </Button>
+            )}
           </div>
         );
       },
@@ -224,9 +233,9 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
           {/* [2026-09-12 §A3-1] 종전에는 전용 등록 페이지로 보내는 링크였다. 그 이동에서 목록의
  pageNo·searchWrd·pageUnit(전부 useState, URL 미탑재)이 전손돼 1페이지·빈 검색어로
  돌아왔다. 모달은 맥락을 잃지 않으므로 버튼이 옳은 역할이다. */}
-          <Button size="sm" className="gap-2" onClick={() => setCreateOpen(true)}>
+          {canCreateAddressBook && <Button size="sm" className="gap-2" onClick={() => setCreateOpen(true)}>
             <Plus size={16} aria-hidden="true" /> 주소록 등록
-          </Button>
+          </Button>}
         </>
       }
       filter={

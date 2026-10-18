@@ -194,6 +194,56 @@ class MemoReportRecipientIntegrityIntegrationTest {
         }
     }
 
+    @Test
+    void deletionWaitsForInstructionAndPreservesTheCommittedReport() throws Exception {
+        long id = memoReportService.createMemoReport(sender, memo(active));
+        var instructionReady = new java.util.concurrent.CountDownLatch(1);
+        var releaseInstruction = new java.util.concurrent.CountDownLatch(1);
+        var senderAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        String application = fixtureId + "delete";
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var instruction = executor.submit(() -> {
+                var principal = CustomUserDetails.builder().userId(active).esntlId(active).enabled(true).build();
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        memoReportService.updateDrctMatter(id, "committed instruction");
+                        entityManager.flush();
+                        instructionReady.countDown();
+                        try {
+                            assertThat(releaseInstruction.await(25, TimeUnit.SECONDS)).isTrue();
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(interrupted);
+                        }
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                assertThat(instructionReady.await(15, TimeUnit.SECONDS)).isTrue();
+                var deletion = executor.submit(() -> {
+                    SecurityContextHolder.getContext().setAuthentication(senderAuthentication);
+                    try {
+                        new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            memoReportService.deleteMemoReport(id);
+                        });
+                        return null;
+                    } catch (BusinessException rejected) {
+                        return rejected.getErrorCode();
+                    } finally { SecurityContextHolder.clearContext(); }
+                });
+                try { waitForDatabaseLock(application, 1); }
+                finally { releaseInstruction.countDown(); }
+                instruction.get(20, TimeUnit.SECONDS);
+                assertThat(deletion.get(20, TimeUnit.SECONDS)).isEqualTo(CommonErrorCode.RESOURCE_IN_USE);
+                assertThat(jdbc.queryForObject("SELECT drctn_mttr FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", String.class, id))
+                        .isEqualTo("committed instruction");
+            } finally { releaseInstruction.countDown(); }
+        }
+    }
+
     private MemoReportDto memo(String receiver) {
         return MemoReportDto.builder().rptTtl(fixtureId).rptCn("original").rptrId(receiver).build();
     }

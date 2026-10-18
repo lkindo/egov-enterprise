@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { addressbookUserService, type AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
@@ -17,6 +17,8 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import type { NameCard } from '@/types/business/addressbook';
 import { AddressBookMemberDialog } from '../../AddressBookMemberDialog';
 import { AddressBookConflictNotice, isAddressBookConflict } from '../../AddressBookConflictNotice';
@@ -49,6 +51,13 @@ const SelectAddressBookDetailClient = () => {
     const hasValidAdbkSn = Number.isSafeInteger(adbkSn) && adbkSn > 0;
     const { toast } = useToast();
     const confirm = useConfirm();
+    const { user } = useAuth();
+    const canUpdateAddressBook = canPermission(user, 'ADBK_UPDATE');
+    const canDeleteAddressBook = canPermission(user, 'ADBK_DELETE');
+    const permissionRef = useRef({ update: canUpdateAddressBook, delete: canDeleteAddressBook });
+    useLayoutEffect(() => {
+        permissionRef.current = { update: canUpdateAddressBook, delete: canDeleteAddressBook };
+    }, [canUpdateAddressBook, canDeleteAddressBook]);
     const queryClient = useQueryClient();
     const updatePendingRef = useRef(false);
     const deletePendingRef = useRef(false);
@@ -119,7 +128,7 @@ const SelectAddressBookDetailClient = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (updatePendingRef.current || deletePendingRef.current || memberRemovePendingRef.current || conflict) return;
+        if (!canUpdateAddressBook || updatePendingRef.current || deletePendingRef.current || memberRemovePendingRef.current || conflict) return;
         const validated = validation.validate({
             adbkNm,
             rlsScopeCd: editBase?.rlsScopeCd ?? '',
@@ -134,7 +143,7 @@ const SelectAddressBookDetailClient = () => {
     };
 
     const handleDelete = async () => {
-        if (deletePendingRef.current || updatePendingRef.current || memberRemovePendingRef.current || conflict) return;
+        if (!canDeleteAddressBook || deletePendingRef.current || updatePendingRef.current || memberRemovePendingRef.current || conflict) return;
         deletePendingRef.current = true;
         setIsDeletePending(true);
         try {
@@ -144,7 +153,7 @@ const SelectAddressBookDetailClient = () => {
                 confirmText: '삭제',
                 variant: 'destructive',
             });
-            if (!ok) return;
+            if (!ok || !permissionRef.current.delete) return;
             await deleteMutation.mutateAsync();
         } catch {
             toast('삭제에 실패했습니다.', 'error');
@@ -166,7 +175,7 @@ const SelectAddressBookDetailClient = () => {
     const refreshDetail = () => queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
     const handleRemoveMember = async (member: NameCard, reapplyBase?: AddressBook) => {
         const snapshot = reapplyBase ?? data;
-        if (!snapshot || memberRemovePendingRef.current || updatePendingRef.current || deletePendingRef.current || (conflict && !reapplyBase)) return;
+        if (!canUpdateAddressBook || !snapshot || memberRemovePendingRef.current || updatePendingRef.current || deletePendingRef.current || (conflict && !reapplyBase)) return;
         if (!snapshot.editToken) {
             toast('주소록의 최신 내용을 다시 불러온 뒤 저장해 주세요.', 'error');
             return;
@@ -180,7 +189,7 @@ const SelectAddressBookDetailClient = () => {
                 confirmText: '삭제',
                 variant: 'destructive',
             });
-            if (!ok) return;
+            if (!ok || !permissionRef.current.update) return;
             await addressbookUserService.updateAddressBook(adbkSn, {
                 adbkNm: snapshot.adbkNm,
                 rlsScopeCd: snapshot.rlsScopeCd,
@@ -285,9 +294,9 @@ const SelectAddressBookDetailClient = () => {
                                     </div>
                                     주소록 상세
                                 </CardTitle>
-                                <p className="text-muted-foreground font-medium mt-2">주소록 명칭을 수정하거나 주소록을 삭제할 수 있습니다.</p>
+                                <p className="text-muted-foreground font-medium mt-2">주소록 명칭과 구성원 정보를 확인합니다.</p>
                             </div>
-                            <Button
+                            {canDeleteAddressBook && <Button
                                 type="button"
                                 variant="destructive"
                                 aria-label={isDeletePending
@@ -302,12 +311,13 @@ const SelectAddressBookDetailClient = () => {
                                     ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                                     : <Trash2 size={16} aria-hidden="true" />}
                                 {isDeletePending ? '삭제 중...' : '삭제'}
-                            </Button>
+                            </Button>}
                         </div>
                     </CardHeader>
 
                     <form onSubmit={handleSubmit} noValidate>
                         <CardContent className="pt-12 px-12 space-y-10">
+                            {!canUpdateAddressBook && <p role="status">주소록 수정 권한이 없습니다.</p>}
                             <FormErrorSummary
                                 errors={validation.errors}
                                 labels={addressBookEditValidationLabels}
@@ -350,6 +360,7 @@ const SelectAddressBookDetailClient = () => {
                                         placeholder="주소록 명칭을 입력하세요"
                                         className="text-base border-2 border-border focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={adbkNm}
+                                        readOnly={!canUpdateAddressBook}
                                         onChange={(e) => {
                                             validation.clearError('adbkNm');
                                             setAdbkNm(e.target.value);
@@ -382,7 +393,7 @@ const SelectAddressBookDetailClient = () => {
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between gap-3">
                                     <h2 className="text-sm font-bold text-muted-foreground">구성원 ({members.length}명)</h2>
-                                    <Button
+                                    {canUpdateAddressBook && <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
@@ -390,7 +401,7 @@ const SelectAddressBookDetailClient = () => {
                                         onClick={() => setMemberDialog({ member: null })}
                                     >
                                         구성원 추가
-                                    </Button>
+                                    </Button>}
                                 </div>
                                 {members.length === 0 ? (
                                     <p className="text-sm text-muted-foreground bg-muted/50 border border-border rounded-lg p-6">
@@ -409,7 +420,7 @@ const SelectAddressBookDetailClient = () => {
                                                         query producer 는 URL-state census 의 승인 경계 밖이다. 메일 작성 화면의
                                                         '수신자 찾기 → 주소록' 탭이 같은 선택을 URL 없이 수행한다. */}
                                                     <th scope="col" className="text-center font-bold px-6 py-3 w-24">전화</th>
-                                                    <th scope="col" className="text-center font-bold px-6 py-3 w-40">관리</th>
+                                                    {canUpdateAddressBook && <th scope="col" className="text-center font-bold px-6 py-3 w-40">관리</th>}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border">
@@ -431,7 +442,7 @@ const SelectAddressBookDetailClient = () => {
                                                                 ) : null}
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-3 text-center">
+                                                        {canUpdateAddressBook && <td className="px-6 py-3 text-center">
                                                             <div className="flex items-center justify-center gap-2">
                                                                 <Button
                                                                     type="button"
@@ -455,7 +466,7 @@ const SelectAddressBookDetailClient = () => {
                                                                     삭제
                                                                 </Button>
                                                             </div>
-                                                        </td>
+                                                        </td>}
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -471,7 +482,7 @@ const SelectAddressBookDetailClient = () => {
                                   다만 그 편집을 여는 화면은 아직 없으므로, 없는 것은 없다고만 말한다.
                                 */}
                                 <p className="text-xs text-muted-foreground">
-                                    구성원 추가·수정·삭제는 바로 저장됩니다. 주소록 명칭은 아래 저장 버튼으로 저장합니다.
+                                    {canUpdateAddressBook ? '구성원 추가·수정·삭제는 바로 저장됩니다. 주소록 명칭은 아래 저장 버튼으로 저장합니다.' : '주소록과 구성원 정보를 조회하고 있습니다.'}
                                 </p>
                             </div>
                         </CardContent>
@@ -483,7 +494,7 @@ const SelectAddressBookDetailClient = () => {
                                 fallback={LIST_PATH}
                                 origins={LIST_ORIGINS}
                             />
-                            <Button
+                            {canUpdateAddressBook && <Button
                                 type="submit"
                                 className="px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"
                                 disabled={updateMutation.isPending || isDeletePending || removePendingMemberSn !== null || !!conflict}
@@ -496,7 +507,7 @@ const SelectAddressBookDetailClient = () => {
                                         <Save className="w-5 h-5" /> 저장
                                     </>
                                 )}
-                            </Button>
+                            </Button>}
                         </CardFooter>
                     </form>
                 </Card>

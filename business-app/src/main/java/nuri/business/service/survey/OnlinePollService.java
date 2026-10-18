@@ -191,7 +191,7 @@ public class OnlinePollService {
         String endDe = normalizeDate(dto.getPollEndYmd());
         validatePollDates(beginDe, endDe);
 
-        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollSn()))
+        OnlinePollManage entity = pollManageRepository.findByIdForUpdate(Objects.requireNonNull(dto.getPollSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         
         /*
@@ -222,38 +222,51 @@ public class OnlinePollService {
         entity.setLastMdfrId(currentUserId);
 
         if (dto.getPollArticles() != null) {
-            List<OnlinePollArticle> existing = entity.getPollArticles();
-            List<OnlinePollArticleDto> incoming = dto.getPollArticles();
-            if (existing.size() > incoming.size()) {
-                List<Long> removedIds = existing.subList(incoming.size(), existing.size()).stream()
-                        .map(OnlinePollArticle::getPollArtclSn)
-                        .filter(Objects::nonNull)
-                        .toList();
-                if (!removedIds.isEmpty() && !pollResultRepository.countByPollArtclSnIn(removedIds).isEmpty()) {
-                    throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
-                            "이미 투표 결과가 존재하는 항목은 삭제할 수 없습니다.");
-                }
-                existing.subList(incoming.size(), existing.size()).clear();
+            updatePollArticles(entity, dto.getPollArticles(), currentUserId);
+        }
+    }
+
+    private void updatePollArticles(OnlinePollManage poll, List<OnlinePollArticleDto> incoming, String currentUserId) {
+        List<OnlinePollArticle> existing = poll.getPollArticles();
+        Map<Long, OnlinePollArticle> byId = existing.stream()
+                .collect(Collectors.toMap(OnlinePollArticle::getPollArtclSn, item -> item));
+        if (!existing.isEmpty() && !incoming.isEmpty() && incoming.stream().allMatch(item -> item.getPollArtclSn() == null)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "기존 투표 항목을 수정할 때는 항목 일련번호가 필요합니다.");
+        }
+        Set<Long> retained = new HashSet<>();
+        Map<Long, String> names = new HashMap<>();
+        for (OnlinePollArticleDto item : incoming) {
+            Long id = item.getPollArtclSn();
+            if ((item.getPollSn() != null && !Objects.equals(item.getPollSn(), poll.getPollSn()))
+                    || (id != null && (!byId.containsKey(id) || !retained.add(id)))) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "투표 항목의 일련번호가 중복되거나 해당 투표에 속하지 않습니다.");
             }
-            for (int i = 0; i < incoming.size(); i++) {
-                OnlinePollArticleDto itemDto = incoming.get(i);
-                String name = itemDto.getPollArtclNm().length() > 100
-                        ? itemDto.getPollArtclNm().substring(0, 100)
-                        : itemDto.getPollArtclNm();
-                if (i < existing.size()) {
-                    OnlinePollArticle item = existing.get(i);
-                    item.update(name);
-                    item.setLastMdfrId(currentUserId);
-                } else {
-                    OnlinePollArticle item = OnlinePollArticle.builder()
-                            .pollManage(entity)
-                            .pollArtclNm(name)
-                            .build();
-                    item.setFrstRgtrId(currentUserId);
-                    existing.add(item);
-                }
+            if (id != null) names.put(id, pollArticleName(item));
+        }
+        List<Long> changedIds = existing.stream()
+                .filter(item -> !retained.contains(item.getPollArtclSn())
+                        || !Objects.equals(item.getPollArtclNm(), names.get(item.getPollArtclSn())))
+                .map(OnlinePollArticle::getPollArtclSn).toList();
+        if (!changedIds.isEmpty() && !pollResultRepository.countByPollArtclSnIn(changedIds).isEmpty()) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "이미 투표 결과가 존재하는 항목은 삭제하거나 내용을 변경할 수 없습니다.");
+        }
+        existing.removeIf(item -> !retained.contains(item.getPollArtclSn()));
+        for (OnlinePollArticleDto item : incoming) {
+            if (item.getPollArtclSn() != null) {
+                OnlinePollArticle retainedItem = byId.get(item.getPollArtclSn());
+                retainedItem.update(names.get(item.getPollArtclSn()));
+                retainedItem.setLastMdfrId(currentUserId);
+            } else {
+                OnlinePollArticle added = OnlinePollArticle.builder().pollManage(poll).pollArtclNm(pollArticleName(item)).build();
+                added.setFrstRgtrId(currentUserId);
+                existing.add(added);
             }
         }
+    }
+
+    private static String pollArticleName(OnlinePollArticleDto item) {
+        String name = item.getPollArtclNm();
+        return name.length() > 100 ? name.substring(0, 100) : name;
     }
 
     @Transactional
@@ -261,6 +274,8 @@ public class OnlinePollService {
         nuri.business.security.util.SecurityUtil.assertPermission("POLL_DELETE");
         assertManagementReadPermissions();
 
+        // 수정/투표와 같은 부모→자식 순서로 잠근다. 없는 ID 삭제는 기존처럼 no-op이다.
+        if (pollManageRepository.findByIdForUpdate(Objects.requireNonNull(pollSn)).isEmpty()) return;
         // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
         // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)
         pollResultRepository.deleteByPollSn(pollSn);
@@ -346,7 +361,7 @@ public class OnlinePollService {
 
     @Transactional
     public void vote(Long pollSn, Long pollArtclSn, String userId) {
-        OnlinePollManage poll = pollManageRepository.findById(pollSn)
+        OnlinePollManage poll = pollManageRepository.findByIdForUpdate(pollSn)
                 .orElseThrow(() -> new BusinessException("투표를 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [2026-09-26 DIP V7] 참여 화면은 '투표' 인데 오류만 '설문' 이라 말해 문항형 설문조사와 헷갈렸다.

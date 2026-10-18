@@ -1,6 +1,9 @@
 package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
+import nuri.foundation.core.job.DurableWork;
+import nuri.foundation.core.job.DurableWorkPort;
+import nuri.foundation.core.util.CryptoUtil;
 import nuri.business.domain.mail.SentMailRepository;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.user.UserContactService;
@@ -52,7 +55,7 @@ class MailResendServiceTest {
     private SentMailRepository sentMailRepository;
 
     @Mock
-    private MailAsyncProcessor mailAsyncProcessor;
+    private DurableWorkPort durableWork;
 
     @Mock
     private UserContactService userContactService;
@@ -61,9 +64,12 @@ class MailResendServiceTest {
     private EmailSender emailSender;
 
     private MockedStatic<SecurityUtil> securityUtil;
+    private MockedStatic<CryptoUtil> crypto;
 
     @BeforeEach
     void setUp() {
+        crypto = Mockito.mockStatic(CryptoUtil.class);
+        crypto.when(() -> CryptoUtil.encrypt(anyString())).thenAnswer(call -> encrypted(call.getArgument(0)));
         securityUtil = Mockito.mockStatic(SecurityUtil.class);
         securityUtil.when(SecurityUtil::getCurrentLoginId).thenReturn(Optional.of("owner"));
         securityUtil.when(() -> SecurityUtil.hasPermission(anyString())).thenReturn(false);
@@ -73,6 +79,7 @@ class MailResendServiceTest {
 
     @AfterEach
     void tearDown() {
+        crypto.close();
         securityUtil.close();
     }
 
@@ -94,7 +101,7 @@ class MailResendServiceTest {
 
         mailService.resendMail(7L);
 
-        verify(mailAsyncProcessor).processSending(eq(7L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("new@example.com"), any());
+        assertEnqueued(7L, "new@example.com");
     }
 
     @Test
@@ -105,7 +112,7 @@ class MailResendServiceTest {
 
         mailService.resendMail(8L);
 
-        verify(mailAsyncProcessor).processSending(eq(8L), eq("제목"), eq("본문"), eq(SYSTEM_SENDER), eq("direct@example.com"), any());
+        assertEnqueued(8L, "direct@example.com");
     }
 
     @Test
@@ -132,7 +139,7 @@ class MailResendServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(CommonErrorCode.ACCESS_DENIED);
         verify(sentMailRepository, never()).claimForResend(anyLong(), anyString(), any(), any());
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+        verify(durableWork, never()).enqueue(any());
     }
 
     @Test
@@ -144,6 +151,25 @@ class MailResendServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("새로 작성해 주세요");
         verify(sentMailRepository, never()).claimForResend(anyLong(), anyString(), any(), any());
+    }
+
+    @Test
+    void addressShapedTruncatedDisplayCannotBeUsedForManualResend() {
+        String truncated = "a".repeat(84) + "@example.co.ukxx";
+        assertThat(truncated).hasSize(100);
+        given(sentMailRepository.findById(10L)).willReturn(Optional.of(
+                mail(10L, "owner", "F", LocalDateTime.now(), truncated, null)));
+        assertThat(mailService.getSentMail(10L).getResendable()).isFalse();
+        assertThatThrownBy(() -> mailService.resendMail(10L)).isInstanceOf(BusinessException.class);
+        verify(durableWork, never()).enqueue(any());
+    }
+
+    @Test
+    void queuedStateIsPubliclyPendingButNotManuallyResendable() {
+        given(sentMailRepository.findById(10L)).willReturn(Optional.of(
+                mail(10L, "owner", "Q", LocalDateTime.now().minusMinutes(11), "direct@example.com", null)));
+        assertThat(mailService.getSentMail(10L).getSndngResultCode()).isEqualTo("P");
+        assertThat(mailService.getSentMail(10L).getResendable()).isFalse();
     }
 
     @Test
@@ -172,7 +198,7 @@ class MailResendServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode").isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
 
-        verify(mailAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString(), anyString(), anyString(), any());
+        verify(durableWork, never()).enqueue(any());
     }
 
     @Test
@@ -211,4 +237,17 @@ class MailResendServiceTest {
     void loggingSenderIsNotConfigured() {
         assertThat(new LoggingEmailSender().isDeliveryConfigured()).isFalse();
     }
+    private static String encrypted(String address) {
+        return java.util.Base64.getEncoder().encodeToString(address.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private void assertEnqueued(long id, String address) {
+        verify(durableWork).enqueue(org.mockito.ArgumentMatchers.argThat(work -> {
+            var intent = MailDeliveryWorkHandler.intent(work);
+            return intent.dispatchId() == id && intent.encryptedRecipient().equals(encrypted(address))
+                    && intent.from().equals(SYSTEM_SENDER) && !work.payload().contains(address);
+        }));
+        crypto.verify(() -> CryptoUtil.encrypt(address));
+    }
+
 }

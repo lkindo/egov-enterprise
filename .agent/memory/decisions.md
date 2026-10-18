@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-17
-verified_against: 55a4539569494036788db468296f7ca1eea38d45
+verified_at: 2026-10-18
+verified_against: 5f093963656cda38cd3c118fdb0c6cad314969eb
 canonical_sources:
+  - ../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md
   - ../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
   - ../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md
@@ -86,6 +87,7 @@ refresh_triggers:
 | ADR-0030 | accepted | ADR-0027 이후 승인된 PR 제외 선언과 시작 구성에 덮인 야간 단독 폐포 제거를 후속 ADR로 승격한다. 기존 실행·실패 경계는 유지한다. | DEC-OPS-296·301에만 남던 ADR 변경을 규범 정본에 연결한다. 승인일은 원문대로이며 2026-10-17은 문서 정리일이다. | [ADR-0030](../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 2026-10-13 | ADR-0027 결정 2·4의 해당 부분 |
 | ADR-0031 | accepted | 기존 승인에 따른 원장 확정·비표준 대상·미확인 허용값·chunk 실패 처리와 L3 경계를 후속 ADR로 승격한다. 기존 안전 경계와 기관 승인은 유지한다. | DEC-OPS-310·315·316·317·319·325의 변경과 ADR-0029를 함께 읽을 수 있게 한다. 2026-10-17은 문서 정리일이다. | [ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 2026-10-15 | ADR-0029 결정 3·8·L3 실행 경계의 해당 부분; 결정 7의 좁은 구현 명시 |
 | ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | ADR-0029 이후 범위가 여덟 개로 늘어 한 슬롯의 이관 PIT가 전수 CI의 임계 경로가 됐다(DEC-OPS-337). | [ADR-0032](../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
+| ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 사용자 선택. 이력의 표시명·변경된 현재 주소로 자동 복구하지 않는다. | [ADR-0033](../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 2026-10-18 | - |
 
 ## 운영 결정 index
 

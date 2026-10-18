@@ -213,7 +213,8 @@ public class FileService extends BaseAbstractService {
     }
 
     private void appendToFileGroup(Long atchFileSn, List<MultipartFile> files, UploadProfile profile) throws IOException {
-        FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
+        // 상세가 아직 없는 묶음도 같은 부모 행을 잠가 max+1 계산의 경쟁을 막는다.
+        FileMaster master = fileMasterRepository.findByIdForUpdate(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 기존 업무 참조를 읽을 수 있다는 사실만으로 파일 그룹 자체를 변경할 수는 없다.

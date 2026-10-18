@@ -6,11 +6,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AddressBookListClient from '../select-address-book-list/AddressBookListClient';
 
 const mocks = vi.hoisted(() => ({
+  permissions: ['ADBK_CREATE', 'ADBK_DELETE'] as string[],
   confirm: vi.fn(),
   deleteAddressBook: vi.fn(),
   getAddressBooks: vi.fn(),
   toast: vi.fn(),
 }));
+
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }) }));
 
 vi.mock('next/link', () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -82,9 +85,22 @@ function renderClient() {
 describe('AddressBookListClient delete guard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.permissions = ['ADBK_CREATE', 'ADBK_DELETE'];
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteAddressBook.mockResolvedValue(undefined);
     mocks.getAddressBooks.mockResolvedValue({ list: [addressBook], total: 1, totalPage: 1 });
+  });
+
+  it.each([
+    { permissions: ['ADBK_READ'], create: false, remove: false },
+    { permissions: ['ADBK_CREATE'], create: true, remove: false },
+    { permissions: ['ADBK_DELETE'], create: false, remove: true },
+  ])('목록은 각 행위 권한으로 등록·삭제를 표시한다: $permissions', ({ permissions, create, remove }) => {
+    mocks.permissions = permissions;
+    renderClient();
+    expect(screen.queryByRole('button', { name: '주소록 등록' }) !== null).toBe(create);
+    expect(screen.queryByRole('button', { name: '보존할 주소록 주소록 삭제' }) !== null).toBe(remove);
+    expect(mocks.deleteAddressBook).not.toHaveBeenCalled();
   });
 
   it('같은 tick의 삭제 재요청을 막고 실패 후 행과 제어를 복구한다', async () => {

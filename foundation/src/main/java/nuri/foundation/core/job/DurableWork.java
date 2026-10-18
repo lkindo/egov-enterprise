@@ -3,7 +3,7 @@ package nuri.foundation.core.job;
 import java.util.Objects;
 import java.util.UUID;
 
-/** Immutable intent. The payload is a bounded reference, never a copy of a secret or file. */
+/** Immutable intent. Payloads are bounded references or approved encrypted snapshots, never plaintext secrets or files. */
 public record DurableWork(UUID key, String type, String payload) {
     public DurableWork {
         Objects.requireNonNull(key, "key");

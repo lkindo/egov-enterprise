@@ -33,7 +33,12 @@
     "permissionDomains": [
       "MAIL"
     ],
-    "gates": [],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/MailDeliveryStateIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
     "rbacMatrix": null,
     "markerBlocks": [],
     "commonCodeGroups": []

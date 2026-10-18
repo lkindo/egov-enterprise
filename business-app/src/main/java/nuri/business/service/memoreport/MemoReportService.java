@@ -274,7 +274,7 @@ public class MemoReportService {
 
     @Transactional
     public void deleteMemoReport(@NonNull Long memoRptSn) {
-        MemoReport entity = memoReportRepository.findById(memoRptSn)
+        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "MEMO_RPT_DELETE_ALL"); // [IDOR] 작성자/관리자만 삭제
         // [2026-10-01] 지시가 달린 보고는 작성자가 지우지 못한다 — 수정 차단(P9)을 삭제로 우회하면 지시와 함께 받은 사람의

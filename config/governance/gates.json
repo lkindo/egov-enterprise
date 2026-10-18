@@ -236,7 +236,9 @@
         "src/lib/**",
         "src/services/**",
         "src/constants/**",
-        "src/config/**"
+        "src/config/**",
+        "src/queries/**",
+        "src/extensions/**"
       ],
       "exclude": [
         "**/*.test.{ts,tsx}",
@@ -253,7 +255,9 @@
         "src/lib/**",
         "src/services/**",
         "src/constants/**",
-        "src/config/**"
+        "src/config/**",
+        "src/queries/**",
+        "src/extensions/**"
       ],
       "baselineExclude": [
         "**/*.test.{ts,tsx}",
@@ -767,6 +771,18 @@
           "source": "api-server/src/test/java/nuri/api/schema/MenuHierarchyIntegrityIntegrationTest.java"
         },
         {
+          "id": "DB-DEPARTMENT-HIERARCHY-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/DepartmentHierarchyIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-ASSIGNED-IDENTIFIER-CREATION-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/AssignedIdentifierCreationIntegrityIntegrationTest.java"
+        },
+        {
+          "id": "DB-ONLINE-POLL-ITEM-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/schema/OnlinePollItemIntegrityIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTHORIZATION-CONTRACT",
           "source": "api-server/src/test/java/nuri/api/schema/AuthorizationContractIntegrationTest.java"
         },
@@ -1005,6 +1021,10 @@
         {
           "id": "DB-MIG-SCRAP-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/ScrapBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MAIL-DELIVERY-STATE",
+          "source": "api-server/src/test/java/nuri/api/schema/MailDeliveryStateIntegrationTest.java"
         },
         {
           "id": "DB-MIG-SENT-MAIL-BIGINT",

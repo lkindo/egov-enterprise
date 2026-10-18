@@ -103,6 +103,7 @@
 | [ADR-0030](02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 |
 | [ADR-0031](02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건·chunk 실패 처리와 단계 경계 |
 | [ADR-0032](02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 |
+| [ADR-0033](02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 수신주소의 암호화 보관과 완료 후 정리 |
 
 ## 03-guides — 개발 지침
 

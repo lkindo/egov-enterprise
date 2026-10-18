@@ -35,30 +35,19 @@ public class MailAsyncProcessor {
         this.self = self;
     }
 
-    /**
-     * 메일을 비동기로 발송하고 결과를 업데이트한다.
-     * 외부 SMTP 연동 실패를 대비해 최대 3회 재시도한다. 발송 자체는 트랜잭션을 열지 않는다.
-     */
+    /** The durable worker awaits this bounded executor task before acknowledging its job. */
     @Async("taskExecutor")
-    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
-        processSending(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson, null);
-    }
-
-    /**
-     * 발송하고 결과를 기록한다. 재시도까지 끝나 실패로 확정되면 발신자에게 한 번 알린다(2026-10-01).
-     *
-     * <p>종전에는 실패가 이력의 'F' 와 메트릭에만 남아, 발신자는 이력 화면을 찾아 들어가기 전까지 몰랐다.
-     * 알림에는 제목과 받는 사람의 이력 표시값만 싣는다 — 본문·주소는 싣지 않는다(DIP D8).
-     *
-     * @param senderEsntlId 알릴 발신자. 없으면(시스템 발송·호환 호출) 알리지 않는다.
-     */
-    @Async("taskExecutor")
-    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson,
+    public java.util.concurrent.CompletableFuture<Void> dispatchCommitted(Long emlDsptchSn,
+            java.time.LocalDateTime queuedAt, String sj, String emailCn, String dsptchPerson, String recptnPerson,
             String senderEsntlId) {
+        if (Thread.currentThread().isInterrupted()) throw new IllegalStateException("Mail delivery interrupted");
+        if (!self.claimQueued(emlDsptchSn, queuedAt)) {
+            return java.util.concurrent.CompletableFuture.completedFuture(null);
+        }
         boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
         meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
-        self.recordResult(emlDsptchSn, delivered ? "S" : "F");
-        if (!delivered && senderEsntlId != null && !senderEsntlId.isBlank()) {
+        boolean recorded = self.recordResult(emlDsptchSn, queuedAt, delivered ? "S" : "F");
+        if (recorded && !delivered && senderEsntlId != null && !senderEsntlId.isBlank()) {
             try {
                 self.notifyDeliveryFailure(emlDsptchSn, senderEsntlId);
             } catch (RuntimeException e) {
@@ -67,6 +56,12 @@ public class MailAsyncProcessor {
                         emlDsptchSn, e.getClass().getSimpleName());
             }
         }
+        return java.util.concurrent.CompletableFuture.completedFuture(null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean claimQueued(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
+        return sentMailRepository.claimQueued(emlDsptchSn, queuedAt) == 1;
     }
 
     /** 실패로 확정된 발송을 발신자에게 알린다 — 알림은 업무 트랜잭션 안에서 저장된다(NotificationRequestListener). */
@@ -124,22 +119,23 @@ public class MailAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public void recordResult(Long emlDsptchSn, String resultCode) {
-        self.markResult(emlDsptchSn, resultCode);
+    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
+        return self.markResult(emlDsptchSn, queuedAt, resultCode);
     }
 
     @org.springframework.retry.annotation.Recover
-    public void recoverRecording(Exception e, Long emlDsptchSn, String resultCode) {
+    public boolean recoverRecording(Exception e, Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
         log.error("Mail result recording exhausted for dispatch serial number: {}, intendedResult: {}, errorType: {}",
                 emlDsptchSn, resultCode, e.getClass().getSimpleName());
         meterRegistry.counter("mail.dispatch.recording.failures").increment();
+        return false;
     }
 
     /**
      * 발송 결과 기록 — 짧은 트랜잭션으로 즉시 커밋(외부 IO 와 분리).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markResult(Long emlDsptchSn, String resultCode) {
-        sentMailRepository.findById(emlDsptchSn).ifPresent(m -> m.updateResult(resultCode));
+    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
+        return sentMailRepository.recordResult(emlDsptchSn, queuedAt, resultCode) == 1;
     }
 }

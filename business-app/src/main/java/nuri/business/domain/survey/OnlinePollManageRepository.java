@@ -9,6 +9,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, Long> {
+    /** 항목 수정과 투표가 같은 부모 잠금을 써 응답 확인 뒤 새 투표가 끼어들지 못하게 한다. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM OnlinePollManage p WHERE p.pollSn = :pollSn")
+    java.util.Optional<OnlinePollManage> findByIdForUpdate(@Param("pollSn") Long pollSn);
+
     @Query("SELECT p FROM OnlinePollManage p WHERE LOWER(p.pollNm) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<OnlinePollManage> findByPollNmContaining(@Param("keyword") String keyword, Pageable pageable);
     

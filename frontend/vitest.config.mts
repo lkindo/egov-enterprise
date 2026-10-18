@@ -38,6 +38,8 @@ export default defineConfig({
         'src/services/**',
         'src/constants/**',
         'src/config/**',
+        'src/queries/**',
+        'src/extensions/**',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',

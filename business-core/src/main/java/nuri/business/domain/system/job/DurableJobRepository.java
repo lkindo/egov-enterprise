@@ -25,6 +25,14 @@ public interface DurableJobRepository extends JpaRepository<DurableJob, BigInteg
     @Query("SELECT j FROM DurableJob j WHERE j.jobSn = :id")
     Optional<DurableJob> findLocked(@Param("id") BigInteger id);
 
+    /** Same ownership predicate as DurableJob.ownsAttempt; renewal never consumes an attempt. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE DurableJob j SET j.jobPrnmntDt = :leaseUntil "
+            + "WHERE j.jobSn = :id AND j.prcsSttsNm = 'RUNNING' AND j.jobNo = :attempt")
+    @QueryHints(@QueryHint(name = "jakarta.persistence.query.timeout", value = "2000"))
+    int renewLease(@Param("id") BigInteger id, @Param("attempt") String attempt,
+            @Param("leaseUntil") LocalDateTime leaseUntil);
+
     /** Read-only finite-state aggregation; payloads, identifiers and handler names never leave this query. */
     @Query(value = "SELECT prcs_stts_nm AS status, count(*) AS \"jobCount\", "
             + "min(CASE WHEN prcs_stts_nm IN ('PENDING','RETRY','RUNNING') AND job_prnmnt_dt <= :now "

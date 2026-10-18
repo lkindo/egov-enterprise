@@ -18,9 +18,28 @@ public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentM
      * @return 차지한 행 수(0 또는 1)
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.dsptchDt = :now, m.mdfcnDt = :now, m.lastMdfrId = :loginId "
+    @Query("update SentMail m set m.dsptchRsltCd = 'Q', m.dsptchDt = :now, m.mdfcnDt = :now, m.lastMdfrId = :loginId "
             + "where m.emlDsptchSn = :emlDsptchSn and m.frstRgtrId = :loginId "
             + "and (m.dsptchRsltCd = 'F' or (m.dsptchRsltCd = 'P' and (m.dsptchDt is null or m.dsptchDt < :stuckBefore)))")
     int claimForResend(@Param("emlDsptchSn") Long emlDsptchSn, @Param("loginId") String loginId,
             @Param("now") java.time.LocalDateTime now, @Param("stuckBefore") java.time.LocalDateTime stuckBefore);
+
+    /** Commit the claim before SMTP; another worker cannot send an uncertain P attempt again. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update SentMail m set m.dsptchRsltCd = 'P', m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
+            + "and m.dsptchRsltCd = 'Q' and m.dsptchDt = :queuedAt")
+    int claimQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt);
+
+    /** A previous attempt's late result cannot replace the next manually accepted attempt. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update SentMail m set m.dsptchRsltCd = :result, m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
+            + "and m.dsptchRsltCd = 'P' and m.dsptchDt = :queuedAt")
+    int recordResult(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt,
+            @Param("result") String result);
+
+    // Terminal callbacks share the managed DurableJob: clearing this context would detach its payload cleanup.
+    @Modifying(flushAutomatically = true)
+    @Query("update SentMail m set m.dsptchRsltCd = 'F', m.mdfcnDt = CURRENT_TIMESTAMP where m.emlDsptchSn = :id "
+            + "and m.dsptchRsltCd = 'Q' and m.dsptchDt = :queuedAt")
+    int failQueued(@Param("id") Long id, @Param("queuedAt") java.time.LocalDateTime queuedAt);
 }

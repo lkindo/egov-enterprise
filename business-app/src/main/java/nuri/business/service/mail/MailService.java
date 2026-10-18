@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MailService {
 
     private final SentMailRepository sentMailRepository;
-    private final MailAsyncProcessor mailAsyncProcessor;
+    private final nuri.foundation.core.job.DurableWorkPort durableWork;
     /** esntlId → 이메일 해석(코어). 결과는 발송에만 쓰고 응답으로 내보내지 않는다. */
     private final UserContactService userContactService;
     /** 현재 배포의 발송 구현. 발송 가능 상태를 알리는 데만 쓴다 — 발송은 {@link MailAsyncProcessor} 가 한다. */
@@ -149,7 +149,7 @@ public class MailService {
     /** 수신자를 다시 찾을 수 있는가 — 사용자 식별자가 남아 있거나, 수신자 칸이 직접 입력한 주소일 때. */
     private static boolean canResolveRecipient(SentMail sentMail) {
         return hasText(sentMail.getRcvrId())
-                || (sentMail.getRcvrNm() != null && ADDRESS.matcher(sentMail.getRcvrNm().trim()).matches());
+                || isRecordedDirectAddress(sentMail.getRcvrNm());
     }
 
     /**
@@ -166,7 +166,7 @@ public class MailService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         String loginId = assertSender(sentMail);
         String address = resolveResendAddress(sentMail);
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime now = acceptanceTime();
         int claimed = sentMailRepository.claimForResend(emlDsptchSn, loginId, now, now.minus(RESEND_STUCK_AFTER));
         if (claimed == 0) {
             if ("S".equals(sentMail.getDsptchRsltCd())) {
@@ -175,20 +175,8 @@ public class MailService {
             throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION,
                     "발송을 처리하고 있습니다. 잠시 뒤 결과를 확인한 다음 다시 시도해 주세요.");
         }
-        final String subject = sentMail.getEmlTtl();
-        final String emailCn = sentMail.getEmlCn();
-        final String dsptchPerson = systemSenderAddress;
-        // 실패로 확정되면 이 사람에게 알린다(재발송한 사람 = 발신자 본인).
-        final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
-            try {
-                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, address, senderEsntlId);
-            } catch (RuntimeException rejected) {
-                log.error("Mail resend queue rejected dispatch serial number: {}, errorType: {}",
-                        emlDsptchSn, rejected.getClass().getSimpleName());
-                mailAsyncProcessor.markResult(emlDsptchSn, "F");
-            }
-        });
+        String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+        durableWork.enqueue(MailDeliveryWorkHandler.work(emlDsptchSn, now, address, systemSenderAddress, senderEsntlId));
     }
 
     /**
@@ -219,7 +207,7 @@ public class MailService {
             return contact.emlAddr().trim();
         }
         String recorded = sentMail.getRcvrNm() == null ? "" : sentMail.getRcvrNm().trim();
-        if (ADDRESS.matcher(recorded).matches()) {
+        if (isRecordedDirectAddress(sentMail.getRcvrNm())) {
             return recorded;
         }
         throw new BusinessException(CommonErrorCode.INVALID_STATE,
@@ -385,6 +373,15 @@ public class MailService {
         return new ArrayList<>(byAddress.values());
     }
 
+    private static java.time.LocalDateTime acceptanceTime() {
+        return java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    }
+
+    private static boolean isRecordedDirectAddress(String recorded) {
+        // A 100-character display value may be a truncated longer address, even if it still matches ADDRESS.
+        return recorded != null && recorded.length() < 100 && ADDRESS.matcher(recorded.trim()).matches();
+    }
+
     private static String displayNameOf(String userNm) {
         return hasText(userNm) ? userNm.trim() : UNNAMED_RECIPIENT;
     }
@@ -404,7 +401,7 @@ public class MailService {
 
     /**
      * 수신 주소 1건 = 발송 이력 1건. 수신자 칸({@code tb_eml_dsptch.rcvr_nm}, 100자)에 표시값을 남기고
-     * 커밋 후 비동기 발송을 기동한다. SMTP 수신 주소는 이력이 아니라 비동기 발송에만 넘긴다.
+     * 동일 트랜잭션에 durable intent를 저장한다. 접수 주소는 작업에 암호화하여 보관하고 종료 때 지운다.
      */
     private Long dispatchOne(String userId, SentMailDto dto, ResolvedRecipient recipient) {
         final String recptnPerson = recipient.address();
@@ -418,32 +415,18 @@ public class MailService {
                 .sndptyNm(resolveSenderName(userId, dto))
                 .rcvrNm(displayName.length() > 100 ? displayName.substring(0, 100) : displayName)
                 .rcvrId(recipient.rcvrId())
-                .dsptchRsltCd("P") // Pending
+                .dsptchRsltCd("Q") // Committed queue, not yet claimed for SMTP
                 .build());
 
+        java.time.LocalDateTime queuedAt = acceptanceTime();
+        sentMail.queueAt(queuedAt);
         SentMail savedMail = sentMailRepository.save(Objects.requireNonNull(sentMail));
         Long emlDsptchSn = Objects.requireNonNull(savedMail.getEmlDsptchSn(),
                 "Generated email dispatch serial number must not be null");
 
-        // 부모 트랜잭션 커밋 후 비동기 발송을 기동한다. 커밋 전 기동하면 processSending 의 REQUIRES_NEW
-        // 새 트랜잭션이 미커밋 SentMail 을 못 봐(READ_COMMITTED) 상태 갱신이 스킵되어 'P' 로 영구 고착되던 문제 방지.
-        final String subject = dto.getSj();
-        final String emailCn = dto.getEmailCn();
-        // SMTP From 은 설정된 시스템 주소다. 요청 본문에서 오지 않으므로 null 이 될 수 없다.
-        final String dsptchPerson = systemSenderAddress;
-        // 실패로 확정되면 보낸 사람에게 알린다(DIP B5 — 종전에는 이력의 'F' 에만 남았다).
-        final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
-            try {
-                mailAsyncProcessor.processSending(emlDsptchSn, subject, emailCn, dsptchPerson, recptnPerson, senderEsntlId);
-            } catch (RuntimeException rejected) {
-                // @Async 본문 예외는 호출자에게 나오지 않는다. 여기서 보이는 예외는 제출 거부다.
-                // 커밋된 P 행을 방치하지 않고 명시적 실패로 바꿔 운영자가 재처리할 수 있게 한다.
-                log.error("Mail dispatch queue rejected dispatch serial number: {}, errorType: {}",
-                        emlDsptchSn, rejected.getClass().getSimpleName());
-                mailAsyncProcessor.markResult(emlDsptchSn, "F");
-            }
-        });
+        String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+        durableWork.enqueue(MailDeliveryWorkHandler.work(emlDsptchSn, queuedAt, recptnPerson,
+                systemSenderAddress, senderEsntlId));
         return emlDsptchSn;
     }
 

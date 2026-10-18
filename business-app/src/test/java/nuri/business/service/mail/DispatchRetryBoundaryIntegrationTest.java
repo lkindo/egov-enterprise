@@ -32,6 +32,7 @@ import static org.mockito.Mockito.*;
 
 /** 재시도·트랜잭션 프록시는 실물이며 외부 전송과 커밋 실패만 주입한다. */
 class DispatchRetryBoundaryIntegrationTest {
+    private static final java.time.LocalDateTime QUEUED = java.time.LocalDateTime.of(2026, 10, 18, 0, 0);
     private final SentMailRepository mails = mock(SentMailRepository.class);
     private final SmsRecptnRepository recipients = mock(SmsRecptnRepository.class);
     private final EmailSender emailSender = mock(EmailSender.class);
@@ -39,7 +40,8 @@ class DispatchRetryBoundaryIntegrationTest {
 
     @BeforeEach
     void prepare() throws Exception {
-        when(mails.findById(anyLong())).thenReturn(Optional.of(SentMail.builder().emlDsptchSn(1L).build()));
+        when(mails.claimQueued(1L, QUEUED)).thenReturn(1);
+        when(mails.recordResult(eq(1L), eq(QUEUED), anyString())).thenReturn(1);
         SmsRecptn recipient = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("0101").rsltCd("P").build();
         lenient().when(recipients.findById(any())).thenReturn(Optional.of(recipient));
         when(recipients.findByIdForUpdate(any())).thenReturn(Optional.of(recipient));
@@ -68,10 +70,10 @@ class DispatchRetryBoundaryIntegrationTest {
     void mailCommitRetryDoesNotRepeatSuccessfulDelivery() throws Exception {
         try (var context = context()) {
             var transactions = context.getBean(FailingCommitManager.class);
-            transactions.failuresRemaining.set(2);
-            context.getBean(MailAsyncProcessor.class).processSending(1L, "title", "body", "from", "to");
+            failMailRecordingAfterTheCommittedClaim(transactions, 2);
+            context.getBean(MailAsyncProcessor.class).dispatchCommitted(1L, QUEUED, "title", "body", "from", "to", null).join();
             verify(emailSender, times(1)).send(anyString(), anyString(), anyString(), anyString());
-            assertThat(transactions.commits.get()).isEqualTo(3);
+            assertThat(transactions.commits.get()).isEqualTo(4);
         }
     }
 
@@ -91,8 +93,8 @@ class DispatchRetryBoundaryIntegrationTest {
     void exhaustedRecordingIsObservableWithoutFalseDeliveryFailureOrResend() throws Exception {
         try (var context = context()) {
             var transactions = context.getBean(FailingCommitManager.class);
-            transactions.failuresRemaining.set(3);
-            context.getBean(MailAsyncProcessor.class).processSending(1L, "title", "body", "from", "to");
+            failMailRecordingAfterTheCommittedClaim(transactions, 3);
+            context.getBean(MailAsyncProcessor.class).dispatchCommitted(1L, QUEUED, "title", "body", "from", "to", null).join();
             failSmsRecordingAfterTheCommittedClaim(transactions, 3);
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(emailSender, times(1)).send(anyString(), anyString(), anyString(), anyString());
@@ -103,7 +105,7 @@ class DispatchRetryBoundaryIntegrationTest {
                 assertThat(meters.get(kind + ".dispatch.total").tag("result", kind.equals("sms") ? "pending" : "success").counter().count()).isEqualTo(1);
                 assertThat(meters.find(kind + ".dispatch.total").tag("result", "failure").counter()).isNull();
             }
-            assertThat(transactions.commits.get()).isEqualTo(7);
+            assertThat(transactions.commits.get()).isEqualTo(8);
         }
     }
 
@@ -113,15 +115,15 @@ class DispatchRetryBoundaryIntegrationTest {
                 .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
         when(smsSender.send(anyString(), anyString(), anyString())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.PROVIDER_REJECTED));
         try (var context = context()) {
-            context.getBean(MailAsyncProcessor.class).processSending(1L, "title", "body", "from", "to");
+            context.getBean(MailAsyncProcessor.class).dispatchCommitted(1L, QUEUED, "title", "body", "from", "to", null).join();
             context.getBean(SmsAsyncProcessor.class).sendToRecipient(1L, "0101", "0102", "body");
             verify(emailSender, times(3)).send(anyString(), anyString(), anyString(), anyString());
             verify(smsSender, times(1)).send("0101", "body", "0102");
-            assertThat(mails.findById(1L).orElseThrow().getDsptchRsltCd()).isEqualTo("F");
+            verify(mails).recordResult(1L, QUEUED, "F");
             assertThat(recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltCd()).isEqualTo("F");
             assertThat(nuri.business.service.sms.SmsReceiptState.display("F", recipients.findById(new SmsRecptnId(1L, "0101")).orElseThrow().getRsltMsg()))
                     .contains("거절");
-            assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(3);
+            assertThat(context.getBean(FailingCommitManager.class).commits.get()).isEqualTo(4);
         }
     }
 
@@ -147,6 +149,26 @@ class DispatchRetryBoundaryIntegrationTest {
                     .sendToRecipient(1L, "0101", "0102", "body"))
                     .isInstanceOf(TransientDataAccessResourceException.class);
             verify(smsSender, never()).send(anyString(), anyString(), anyString());
+        }
+    }
+
+    private void failMailRecordingAfterTheCommittedClaim(FailingCommitManager transactions, int failures) throws Exception {
+        doAnswer(call -> {
+            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            assertThat(transactions.commits.get()).isPositive();
+            transactions.failuresRemaining.set(failures);
+            return null;
+        }).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void failedMailClaimCommitPreventsSmtp() throws Exception {
+        try (var context = context()) {
+            context.getBean(FailingCommitManager.class).failuresRemaining.set(1);
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> context.getBean(MailAsyncProcessor.class)
+                    .dispatchCommitted(1L, QUEUED, "title", "body", "from", "to", null).join())
+                    .isInstanceOf(TransientDataAccessResourceException.class);
+            verifyNoInteractions(emailSender);
         }
     }
 

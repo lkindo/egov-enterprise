@@ -41,7 +41,7 @@ public class SmsService {
 
     private final SmsRepository smsRepository;
     private final SmsRecptnRepository smsRecptnRepository;
-    private final SmsAsyncProcessor smsAsyncProcessor;
+    private final nuri.foundation.core.job.DurableWorkPort durableWork;
     private final SmsMapper smsMapper;
     private final SmsRecptnMapper smsRecptnMapper;
     private final SmsSender smsSender;
@@ -138,21 +138,10 @@ public class SmsService {
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
             }
             
-            // 부모 트랜잭션 커밋 후 비동기 발송을 기동한다. 커밋 전 기동하면 processSending 의 REQUIRES_NEW
-            // 새 트랜잭션이 미커밋 수신자(READ_COMMITTED)를 못 봐 발송 루프가 no-op → SMS 영구 미발송되던 문제 방지.
-            final String senderTel = dto.getSndngTelno();
-            final String content = dto.getSndngCn();
-            // 실패한 수신자가 있으면 보낸 사람에게 알린다(DIP B5).
-            final String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
-            nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
-                try {
-                    smsAsyncProcessor.processSending(smsTrsmSn, senderTel, content, senderEsntlId);
-                } catch (RuntimeException rejected) {
-                    log.error("SMS dispatch queue rejected transmission serial number: {}, errorType: {}",
-                            smsTrsmSn, rejected.getClass().getSimpleName());
-                    smsAsyncProcessor.markBatchRejected(smsTrsmSn);
-                }
-            });
+            // Header, recipients and the bounded delivery reference commit together. A restarted
+            // worker can recover a batch even when the process died before any async submission.
+            String senderEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
+            durableWork.enqueue(SmsDeliveryWorkHandler.work(smsTrsmSn, senderEsntlId));
         }
 
         log.info("SMS request registered successfully for transmission serial number: {}", smsTrsmSn);
