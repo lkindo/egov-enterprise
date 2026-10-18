@@ -65,8 +65,11 @@ class MigrationExecutionContractTest {
         assertThat(first.moduleImplementationDigest()).matches("[0-9a-f]{64}");
         assertThat(first.coreClassDigests()).containsKeys(
                 "nuri.migration.etl.EtlExecutor",
+                "nuri.migration.etl.EtlContractSupport",
+                "nuri.migration.etl.EtlSourceQuerySupport",
                 "nuri.migration.transform.TypeConverter",
                 "nuri.migration.validate.MappingValidator",
+                "nuri.migration.validate.MappingLiveMetadataValidator",
                 "nuri.migration.verify.MigrationVerifier",
                 "nuri.migration.workflow.SourceLoadSurfaceGate",
                 // 표준 도메인 변환기의 받기·거부 규칙(ADR-0029 L3a-1)도 승인에 결속한다.
