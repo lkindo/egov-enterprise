@@ -10,6 +10,14 @@ spring:
       detect-parameter-names: true
     serialization:
       fail-on-empty-beans: false
+  jpa:
+    properties:
+      # [2026-10-18] main application.yml 과 같은 비관적 잠금 대기 상한(ms). 이 파일이 main 을 가리므로 같은 값을 둔다 —
+      #   빠지면 테스트만 상한 없이 기다린다. LockWaitTimeoutIntegrationTest 가 두 값의 일치와 실제 시간 초과를 본다.
+      jakarta:
+        persistence:
+          lock:
+            timeout: 5000
 
 file:
   upload:

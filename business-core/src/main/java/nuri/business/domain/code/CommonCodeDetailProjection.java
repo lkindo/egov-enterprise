@@ -12,4 +12,6 @@ public class CommonCodeDetailProjection {
     private String dtlCdNm;
     private String dtlCdExpln;
     private String useYn;
+    /** 목록에서 바로 수정 창을 여는 화면이 그대로 돌려보내는 낙관적 잠금 버전(V2_133). */
+    private Integer version;
 }

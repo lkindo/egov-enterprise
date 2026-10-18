@@ -19,6 +19,7 @@ export const WorkReportDtoSchema = /*#__PURE__*/ (() => z.object({
   rptSttsCd: z.string().min(0).max(12).optional().nullable(),
   rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rptTypeCd: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type WorkReportDto = z.infer<typeof WorkReportDtoSchema>;
 
@@ -115,6 +116,7 @@ export const ScheduleDtoSchema = /*#__PURE__*/ (() => z.object({
   schdlImprtCd: z.string().min(0).max(12).optional(),
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type ScheduleDto = z.infer<typeof ScheduleDtoSchema>;
 
@@ -221,6 +223,7 @@ export const DeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
   reassignable: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
@@ -504,6 +507,7 @@ export const SurveyInfoDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   responded: z.boolean().optional().nullable(),
   rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 
@@ -537,6 +541,7 @@ export const PopupDtoSchema = /*#__PURE__*/ (() => z.object({
   ntceYn: z.enum(["Y","N"]).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type PopupDto = z.infer<typeof PopupDtoSchema>;
 
@@ -744,6 +749,7 @@ export const CmmnDetailCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type CmmnDetailCodeDto = z.infer<typeof CmmnDetailCodeDtoSchema>;
 
@@ -759,6 +765,7 @@ export const CmmnCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type CmmnCodeDto = z.infer<typeof CmmnCodeDtoSchema>;
 
@@ -781,6 +788,7 @@ export const CmmnClCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type CmmnClCodeDto = z.infer<typeof CmmnClCodeDtoSchema>;
 
@@ -844,6 +852,7 @@ export const BannerDtoSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type BannerDto = z.infer<typeof BannerDtoSchema>;
 
@@ -852,9 +861,9 @@ export type BannerDto = z.infer<typeof BannerDtoSchema>;
 // ==========================================================================
 export const RewardManageDtoSchema = /*#__PURE__*/ (() => z.object({
   rwrdSn: z.number().int().optional(),
-  rwardwnrId: z.string().min(0).max(20).optional(),
-  rwardCode: z.string().min(0).max(12).optional(),
-  rwardDe: z.string().min(0).max(8).optional(),
+  rwardwnrId: z.string().min(0).max(20),
+  rwardCode: z.string().min(0).max(12),
+  rwardDe: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   sanctnerId: z.string().min(0).max(20).optional(),
@@ -867,6 +876,7 @@ export const RewardManageDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type RewardManageDto = z.infer<typeof RewardManageDtoSchema>;
 
@@ -5624,6 +5634,7 @@ export const WorkReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   rptSeCd: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
   rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const WorkReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5637,6 +5648,7 @@ export const WorkReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   rptSttsCd: z.string().min(0).max(12).optional().nullable(),
   rptYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   rptTypeCd: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseVoidRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -5748,6 +5760,7 @@ export const ScheduleDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   schdlKndCd: z.string().min(0).max(12).optional(),
   schdlPlcNm: z.string().min(0).max(100).optional(),
   schdlImprtCd: z.string().min(0).max(12).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const ScheduleDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5771,6 +5784,7 @@ export const ScheduleDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   schdlImprtCd: z.string().min(0).max(12).optional().nullable(),
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const OnlinePollArticleDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -5891,6 +5905,7 @@ export const DeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   picId: z.string().min(0).max(20).optional(),
   prrtyRnk: z.string().min(0).max(12).optional(),
   atchFileSn: z.number().int().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const DeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -5912,6 +5927,7 @@ export const DeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
   reassignable: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const DeptJobBoxDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6291,6 +6307,7 @@ export const SurveyInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const SurveyInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6306,6 +6323,7 @@ export const SurveyInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   responded: z.boolean().optional().nullable(),
   rlsYn: z.string().regex(new RegExp("^(?:Y|N)$")).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const SurveyTemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6340,6 +6358,7 @@ export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   ntceYn: z.enum(["Y","N"]).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const PopupDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6356,6 +6375,7 @@ export const PopupDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   ntceYn: z.enum(["Y","N"]).optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const PolicyUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6628,6 +6648,7 @@ export const CmmnDetailCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const CmmnDetailCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6639,6 +6660,7 @@ export const CmmnDetailCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const CmmnCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6650,6 +6672,7 @@ export const CmmnCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const CmmnCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6661,6 +6684,7 @@ export const CmmnCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const CmmnCodeHierarchyDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6680,6 +6704,7 @@ export const CmmnClCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const CmmnClCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6689,6 +6714,7 @@ export const CmmnClCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const AdministCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -6778,6 +6804,7 @@ export const BannerDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const BannerDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -6791,23 +6818,25 @@ export const BannerDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional().nullable(),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const RewardManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   rwrdSn: z.number().int().optional(),
-  rwardwnrId: z.string().min(0).max(20).optional(),
-  rwardCode: z.string().min(0).max(12).optional(),
-  rwardDe: z.string().min(0).max(8).optional(),
+  rwardwnrId: z.string().min(0).max(20),
+  rwardCode: z.string().min(0).max(12),
+  rwardDe: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   rwardNm: z.string().min(0).max(300).optional(),
   pblenCn: z.string().min(0).max(4000).optional(),
   atchFileSn: z.number().int().optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const RewardManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   rwrdSn: z.number().int().optional().nullable(),
-  rwardwnrId: z.string().min(0).max(20).optional().nullable(),
-  rwardCode: z.string().min(0).max(12).optional().nullable(),
-  rwardDe: z.string().min(0).max(8).optional().nullable(),
+  rwardwnrId: z.string().min(0).max(20),
+  rwardCode: z.string().min(0).max(12),
+  rwardDe: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   rwardNm: z.string().min(0).max(300).optional().nullable(),
   pblenCn: z.string().min(0).max(4000).optional().nullable(),
   sanctnerId: z.string().min(0).max(20).optional().nullable(),
@@ -6820,6 +6849,7 @@ export const RewardManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponseRewardManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

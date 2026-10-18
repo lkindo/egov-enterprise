@@ -186,6 +186,7 @@ export default function SurveyQuestionsPanel() {
           srvyTrgt: survey.srvyTrgt,
         }),
         rlsYn: releasing ? 'Y' : 'N',
+        version: survey.version ?? undefined,
       },
     });
   };
@@ -652,6 +653,7 @@ function SurveyEditForm({ selectedSurvey, editing, editSurvey }: {
                     srvyEndYmd: editingPeriod.srvyEndYmd === originalEditingPeriod.srvyEndYmd ? selectedSurvey.srvyEndYmd : validated.srvyEndYmd,
                     srvyTrgt: selectedSurvey.srvyTrgt,
                   }),
+                  version: selectedSurvey.version ?? undefined,
                 },
               }));
           }}

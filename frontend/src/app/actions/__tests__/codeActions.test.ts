@@ -21,7 +21,9 @@ vi.mock('next/config', () => ({
 }));
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { saveCodeDetail, deleteCodeDetail, saveCmmnCodeHierarchyAction } from '../codeActions';
+import {
+  saveCodeDetail, deleteCodeDetail, saveCmmnCodeHierarchyAction, saveClCodeAction, saveCmmnCodeAction,
+} from '../codeActions';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
@@ -35,6 +37,8 @@ vi.mock('@/services/foundation/system/CodeAdminService', () => ({
     updateDetailCode: vi.fn(),
     deleteDetailCode: vi.fn(),
     updateCmmnCodeHierarchy: vi.fn(),
+    updateClCode: vi.fn(),
+    updateCmmnCode: vi.fn(),
   },
 }));
 
@@ -226,6 +230,41 @@ describe('codeActions', () => {
       ] as never);
 
       expect(result).toEqual({ success: false, message: '계층 구조 저장 중 오류 발생' });
+    });
+  });
+  // [2026-10-18] 낙관적 잠금(V2_133) — 분류·그룹·상세 코드 수정은 화면이 읽은 버전을 그대로 보내고, 다른 사람이
+  //   먼저 고쳤으면(409) 화면이 목록을 다시 읽도록 conflict 를 알린다. 409 가 아닌 실패에는 붙이지 않는다.
+  describe('동시 수정(409)', () => {
+    const conflict = { response: { status: 409, data: { message: '다른 사용자가 먼저 수정했습니다.' } } };
+
+    it('분류 수정은 버전을 실어 보내고, 409 면 conflict 와 서버 사유를 돌려주며 재검증하지 않는다', async () => {
+      vi.mocked(codeAdminService.updateClCode).mockRejectedValueOnce(conflict);
+
+      const result = await saveClCodeAction(null, { clsfCd: 'CLS1', clsfCdNm: '분류', useYn: 'Y', isNew: false, version: 5 });
+
+      expect(codeAdminService.updateClCode).toHaveBeenCalledWith('CLS1', expect.objectContaining({ version: 5 }), expect.anything());
+      expect(result).toEqual({ success: false, message: '다른 사용자가 먼저 수정했습니다.', conflict: true });
+      expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('그룹 수정도 버전을 실어 보내고 409 를 conflict 로 알린다', async () => {
+      vi.mocked(codeAdminService.updateCmmnCode).mockRejectedValueOnce(conflict);
+
+      const result = await saveCmmnCodeAction(null, { cdId: 'G1', cdIdNm: '그룹', clsfCd: 'CLS1', useYn: 'Y', isNew: false, version: 2 });
+
+      expect(codeAdminService.updateCmmnCode).toHaveBeenCalledWith('G1', expect.objectContaining({ version: 2 }), expect.anything());
+      expect(result).toMatchObject({ success: false, conflict: true });
+    });
+
+    it('상세 코드 수정의 409 는 conflict 이고, 다른 실패에는 conflict 가 없다', async () => {
+      vi.mocked(codeAdminService.updateDetailCode).mockRejectedValueOnce(conflict);
+      const stale = await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1', dtlCdNm: '이름', isNew: false, version: 1 });
+      expect(codeAdminService.updateDetailCode).toHaveBeenCalledWith('G1', 'D1', expect.objectContaining({ version: 1 }), expect.anything());
+      expect(stale).toMatchObject({ success: false, conflict: true });
+
+      vi.mocked(codeAdminService.updateDetailCode).mockRejectedValueOnce({ response: { status: 404, data: { message: '없는 코드' } } });
+      const missing = await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1', dtlCdNm: '이름', isNew: false, version: 1 });
+      expect(missing).not.toHaveProperty('conflict');
     });
   });
 });

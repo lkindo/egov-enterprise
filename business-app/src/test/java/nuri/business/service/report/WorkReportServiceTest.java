@@ -146,6 +146,7 @@ class WorkReportServiceTest {
                 .rptTtl("수정보고")
                 .rptYmd("20260906")
                 .userId("user01")
+                .version(0)
                 .build();
 
         WorkReport report = WorkReport.builder()
@@ -154,6 +155,7 @@ class WorkReportServiceTest {
                 .rptYmd("20260901")
                 .userId("user01")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
 
         when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
 
@@ -175,11 +177,13 @@ class WorkReportServiceTest {
                 .rptCn("기존 내용")
                 .atchFileSn(100L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
         WorkReportDto request = WorkReportDto.builder()
                 .rptpSn(1L)
                 .rptTtl("변경 보고")
                 .rptCn("변경 내용")
                 .atchFileSn(101L)
+                .version(0)
                 .build();
         when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
         doThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
@@ -198,17 +202,38 @@ class WorkReportServiceTest {
     @DisplayName("업무보고 수정 - 동일 첨부 유지와 null 분리는 재할당 검증을 하지 않는다")
     void updateWorkReport_sameOrDetachedAttachmentSkipsAssignmentCheck() {
         WorkReport report = WorkReport.builder().rptpSn(1L).rptTtl("기존").atchFileSn(100L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 0);
         when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
 
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             workReportService.updateWorkReport(WorkReportDto.builder()
-                    .rptpSn(1L).rptTtl("동일").atchFileSn(100L).build());
+                    .rptpSn(1L).rptTtl("동일").atchFileSn(100L).version(0).build());
             workReportService.updateWorkReport(WorkReportDto.builder()
-                    .rptpSn(1L).rptTtl("분리").atchFileSn(null).build());
+                    .rptpSn(1L).rptTtl("분리").atchFileSn(null).version(0).build());
         }
 
         verifyNoInteractions(attachmentAssignmentPolicy);
         assertNull(report.getAtchFileSn());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 업무보고 수정 - 읽은 버전이 다르면 409, 버전이 없으면 400 이고 보고를 바꾸지 않는다")
+    void updateWorkReport_rejectsStaleOrMissingVersion() {
+        WorkReport report = WorkReport.builder().rptpSn(1L).rptTtl("최신").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(report, "version", 3);
+        when(workReportRepository.findById(1L)).thenReturn(Optional.of(report));
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            BusinessException stale = assertThrows(BusinessException.class, () -> workReportService.updateWorkReport(
+                    WorkReportDto.builder().rptpSn(1L).rptTtl("옛 화면").version(2).build()));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION, stale.getErrorCode());
+            BusinessException missing = assertThrows(BusinessException.class, () -> workReportService.updateWorkReport(
+                    WorkReportDto.builder().rptpSn(1L).rptTtl("버전 없음").build()));
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, missing.getErrorCode());
+        }
+
+        assertEquals("최신", report.getRptTtl());
+        verifyNoInteractions(attachmentAssignmentPolicy);
     }
 
     @Test

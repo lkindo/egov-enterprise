@@ -6,6 +6,7 @@ import { bannerAdminService } from '@/services/foundation/system/BannerAdminServ
 import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
 import { Banner, Popup } from '@/types/foundation/banner';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 
 /*
   [2026-09-07] 생성 실행기 직접 호출 → 서비스 위임.
@@ -25,6 +26,8 @@ interface ActionResponse {
     success: boolean;
     message: string;
     fieldErrors?: Record<string, string>;
+    /** [2026-10-18] 다른 사람이 먼저 고쳐 서버가 409 로 거부했다 — 화면은 사유를 보이고 목록을 다시 읽는다. */
+    conflict?: boolean;
 }
 
 interface SaveActionParams<T> {
@@ -53,7 +56,8 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
         const fieldErrors = extractFieldErrors(error);
-        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}) };
+        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}),
+            ...(isConflictError(error) ? { conflict: true } : {}) };
     }
 }
 
@@ -96,7 +100,8 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
         const fieldErrors = extractFieldErrors(error);
-        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}) };
+        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}),
+            ...(isConflictError(error) ? { conflict: true } : {}) };
     }
 }
 

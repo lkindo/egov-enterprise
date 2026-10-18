@@ -14,7 +14,9 @@ import type { Survey, SurveyQuestion } from '@/types/business/survey';
   다르다** — 그래서 TypeScript 는 이 결함을 한 번도 잡지 못했다.
 */
 export type SurveyInfoUpdate = Pick<Survey, 'srvyTtl' | 'srvyTmpltSn'>
-  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'rlsYn'>>;
+  & Partial<Pick<Survey, 'srvyPrps' | 'srvyWrtGdCn' | 'srvyBgngYmd' | 'srvyEndYmd' | 'srvyTrgt' | 'rlsYn'>>
+  // [2026-10-18] 목록 행에서 읽은 낙관적 잠금 버전 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부한다.
+  & { version?: number };
 export type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnCn'>
   & Partial<Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'maxChcCnt'>>;
 export type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };

@@ -5546,6 +5546,11 @@ export interface components {
             readonly rptSttsCd?: string | null;
             rptYmd?: string;
             readonly rptTypeCd?: string | null;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ApiResponseVoid: {
             success?: boolean;
@@ -5627,6 +5632,11 @@ export interface components {
             readonly editable?: boolean;
             /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
             readonly deletable?: boolean;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
@@ -5809,6 +5819,11 @@ export interface components {
             readonly deletable?: boolean;
             /** @description 현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정) */
             readonly reassignable?: boolean;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         DeptJobBoxDto: {
             /** Format: int64 */
@@ -6147,6 +6162,11 @@ export interface components {
             readonly responded?: boolean | null;
             /** @description 공개 여부(Y 공개 · N 작성 중) */
             rlsYn?: string | null;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다. 문항·선택 항목을 고쳐도 설문 머리의 버전은 바뀌지 않는다.
+             */
+            version?: number;
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
@@ -6210,6 +6230,11 @@ export interface components {
              * @description 생성 일시
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 시스템 정책 수정 요청 DTO */
         PolicyUpdateRequest: {
@@ -6438,6 +6463,11 @@ export interface components {
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
             lastMdfrId?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 공통 코드 DTO */
         CmmnCodeDto: {
@@ -6460,6 +6490,11 @@ export interface components {
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
             lastMdfrId?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 공통코드 계층 일괄 저장 항목 */
         CmmnCodeHierarchyDto: {
@@ -6485,6 +6520,11 @@ export interface components {
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
             lastMdfrId?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         /** @description 행정코드 정보 DTO */
         AdministCodeDto: {
@@ -6587,12 +6627,17 @@ export interface components {
              * @description 생성 일시
              */
             crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         RewardManageDto: {
             /** Format: int64 */
             rwrdSn?: number;
-            rwardwnrId?: string;
-            rwardCode?: string;
+            rwardwnrId: string;
+            rwardCode: string;
             rwardDe?: string;
             rwardNm?: string;
             pblenCn?: string;
@@ -6611,6 +6656,11 @@ export interface components {
             readonly lastMdfrId?: string;
             /** Format: date-time */
             readonly mdfcnDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ApiResponseRewardManageDto: {
             success?: boolean;

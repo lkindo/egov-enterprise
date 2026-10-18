@@ -112,4 +112,30 @@ class RewardManageApiControllerTest extends ControllerTestSupport {
 
         verify(rewardManageService, never()).updateReward(anyLong(), any(RewardManageDto.class));
     }
+
+    /**
+     * [2026-10-18] 수상자·포상 코드는 물리 컬럼이 NOT NULL 이고 포상 일자는 yyyyMMdd 달력 날짜다. 종전에는 길이만 검사해
+     * 빈 값이나 없는 날짜(2월 30일)가 저장 단계까지 갔다. 등록·수정 모두 서비스에 닿기 전에 400 이다.
+     */
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("수상자·포상 코드가 비었거나 포상 일자가 달력 날짜가 아니면 서비스에 닿기 전에 400 이다")
+    void createAndUpdateReward_rejectBlankRequiredFieldsAndInvalidDate() throws Exception {
+        java.util.Map<String, String> bodies = java.util.Map.of(
+                "rwardwnrId", "{\"rwardNm\":\"x\",\"rwardwnrId\":\" \",\"rwardCode\":\"R01\"}",
+                "rwardCode", "{\"rwardNm\":\"x\",\"rwardwnrId\":\"U1\"}",
+                "rwardDe", "{\"rwardNm\":\"x\",\"rwardwnrId\":\"U1\",\"rwardCode\":\"R01\",\"rwardDe\":\"20260230\"}");
+        for (var body : bodies.entrySet()) {
+            mockMvc.perform(post("/api/v1/admin/operation/rewards")
+                            .contentType(MediaType.APPLICATION_JSON).content(body.getValue()).accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value(body.getKey()));
+            mockMvc.perform(put("/api/v1/admin/operation/rewards/7")
+                            .contentType(MediaType.APPLICATION_JSON).content(body.getValue()).accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+
+        verify(rewardManageService, never()).createReward(any(RewardManageDto.class));
+        verify(rewardManageService, never()).updateReward(anyLong(), any(RewardManageDto.class));
+    }
 }

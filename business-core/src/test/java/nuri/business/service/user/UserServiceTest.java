@@ -62,6 +62,7 @@ class UserServiceTest {
     @Mock private nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
     @Mock private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
     @Mock private nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
+    @Mock private nuri.business.service.user.LoginIdReuseGuard loginIdReuseGuard;
 
     @InjectMocks
     private UserService userService;
@@ -255,6 +256,45 @@ class UserServiceTest {
             assertEquals(nuri.business.domain.user.exception.UserErrorCode.DUPLICATE_USER_ID, error.getErrorCode());
             verify(userRepository, never()).saveAndFlush(any());
         }
+    }
+
+    /**
+     * [2026-10-18] 사용자는 물리 삭제되지만 업무 보고·일정·부서 업무 등은 주인을 로그인 ID 로 판정한다. 지워진 계정의
+     * 기록이 아직 그 로그인 ID 를 들고 있으면 새 계정이 그 기록을 물려받으므로, 일반 중복과 같은 오류로 거부한다.
+     */
+    @Test
+    @DisplayName("사용자 등록 - 지워진 계정의 기록이 남은 로그인 ID 는 일반 중복과 같은 오류로 거부한다")
+    void registerUserRejectsLoginIdStillCarriedByRecords() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                    nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+            given(userRepository.findByUserId("reused")).willReturn(Optional.empty());
+            given(userRepository.existsById("reused")).willReturn(false);
+            given(loginIdReuseGuard.isStillReferenced("reused")).willReturn(true);
+
+            var error = assertThrows(BusinessException.class, () -> userService.registerUser(
+                    UserDto.builder().userId("reused").pswd("password").userNm("홍길동").role("USER").build()));
+
+            assertEquals(nuri.business.domain.user.exception.UserErrorCode.DUPLICATE_USER_ID, error.getErrorCode());
+            assertEquals(nuri.business.domain.user.exception.UserErrorCode.DUPLICATE_USER_ID.getMessage(), error.getMessage(),
+                    "어느 기록이 남았는지 응답 문구로 드러내지 않는다");
+            verify(userRepository, never()).saveAndFlush(any());
+            verify(authorizationAdministration, never()).assignNewUser(any());
+        }
+    }
+
+    @Test
+    @DisplayName("가입 - 지워진 계정의 기록이 남은 로그인 ID 는 일반 중복과 같은 오류로 거부한다")
+    void signupRejectsLoginIdStillCarriedByRecords() {
+        given(userRepository.findByUserId("reused")).willReturn(Optional.empty());
+        given(userRepository.existsById("reused")).willReturn(false);
+        given(loginIdReuseGuard.isStillReferenced("reused")).willReturn(true);
+
+        var error = assertThrows(BusinessException.class, () -> userService.signup(
+                UserSignupRequest.builder().userId("reused").pswd("password").userNm("신규유저").build()));
+
+        assertEquals(nuri.business.domain.user.exception.UserErrorCode.DUPLICATE_USER_ID, error.getErrorCode());
+        verify(userRepository, never()).saveAndFlush(any());
     }
 
     @Test

@@ -25,6 +25,10 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
     @NonNull
     private String cdId;
 
+    /** 낙관적 잠금 버전(V2_133). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다). */
+    @Version
+    private Integer version;
+
     @OneToMany(mappedBy = "commonCodeGroup", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<CommonCode> commonCodes = new java.util.ArrayList<>();
 

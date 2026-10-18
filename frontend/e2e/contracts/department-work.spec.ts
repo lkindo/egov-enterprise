@@ -47,11 +47,18 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             // 4) 수정 — 업무함·담당자를 보내지 않으면 update 가 null 로 덮어쓴다는 점은
             //    폼이 값을 왕복시켜 방어한다. 여기서는 계약(수정이 반영되는가)만 본다.
             const editedName = `${name}_edited`;
+            // [2026-10-18 V2_133] 수정은 상세에서 읽은 버전을 함께 보낸다.
             const updRes = await request.put(`${JOB_API}/${deptTaskSn}`, {
                 headers: auth,
-                data: { deptTaskNm: editedName, deptTaskCn: '수정됨', prrtyRnk: '1', picId: detail.picId },
+                data: { deptTaskNm: editedName, deptTaskCn: '수정됨', prrtyRnk: '1', picId: detail.picId, version: detail.version },
             });
             expect(updRes.ok(), '부서 업무 수정이 성공해야 한다').toBeTruthy();
+            // 같은 옛 버전으로 다시 저장하면 앞 저장을 덮지 않고 409 다(마지막 저장이 조용히 이기지 않는다).
+            const staleRes = await request.put(`${JOB_API}/${deptTaskSn}`, {
+                headers: auth,
+                data: { deptTaskNm: `${name}_stale`, deptTaskCn: '옛 화면', prrtyRnk: '3', picId: detail.picId, version: detail.version },
+            });
+            expect(staleRes.status(), '옛 버전으로 보낸 수정은 409 여야 한다').toBe(409);
             const afterRes = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             const after = (await afterRes.json()).data;
             expect(after.deptTaskNm).toBe(editedName);

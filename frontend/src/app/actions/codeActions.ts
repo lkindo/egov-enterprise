@@ -6,6 +6,7 @@ import { codeAdminService, type CmmnCodeHierarchyItem } from '@/services/foundat
 import { CmmnDetailCode } from '@/types/foundation/system';
 import type { FlattenedCodeNode } from '@/app/admin/system/common-code/treeUtils';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 
 export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetailCode> & { isNew?: boolean }) {
   try {
@@ -33,6 +34,8 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
       success: false,
       message,
       ...(fieldErrors ? { fieldErrors } : {}),
+      // [2026-10-18] 다른 사람이 먼저 고쳐 409 로 거부됐다 — 화면은 사유를 보이고 목록을 다시 읽는다.
+      ...(isConflictError(error) ? { conflict: true } : {}),
     };
   }
 }
@@ -105,7 +108,7 @@ export async function saveCmmnCodeHierarchyAction(flattenedNodes: FlattenedCodeN
  */
 export async function saveClCodeAction(
   prevState: unknown,
-  data: { clsfCd: string; clsfCdNm: string; clsfCdExpln?: string; useYn: 'Y' | 'N'; isNew: boolean },
+  data: { clsfCd: string; clsfCdNm: string; clsfCdExpln?: string; useYn: 'Y' | 'N'; isNew: boolean; version?: number },
 ) {
   try {
     const cookieStore = await cookies();
@@ -124,7 +127,7 @@ export async function saveClCodeAction(
   } catch (error) {
     const message = extractErrorMessage(error, '코드 분류 저장 중 오류 발생');
     const fieldErrors = extractFieldErrors(error);
-    return { success: false, message, ...(fieldErrors ? { fieldErrors } : {}) };
+    return { success: false, message, ...(fieldErrors ? { fieldErrors } : {}), ...(isConflictError(error) ? { conflict: true } : {}) };
   }
 }
 
@@ -138,7 +141,7 @@ export async function saveClCodeAction(
  */
 export async function saveCmmnCodeAction(
   prevState: unknown,
-  data: { cdId: string; cdIdNm: string; cdIdExpln?: string; clsfCd: string; useYn: 'Y' | 'N'; isNew: boolean },
+  data: { cdId: string; cdIdNm: string; cdIdExpln?: string; clsfCd: string; useYn: 'Y' | 'N'; isNew: boolean; version?: number },
 ) {
   try {
     const cookieStore = await cookies();
@@ -159,6 +162,6 @@ export async function saveCmmnCodeAction(
   } catch (error) {
     const message = extractErrorMessage(error, '코드 그룹 저장 중 오류 발생');
     const fieldErrors = extractFieldErrors(error);
-    return { success: false, message, ...(fieldErrors ? { fieldErrors } : {}) };
+    return { success: false, message, ...(fieldErrors ? { fieldErrors } : {}), ...(isConflictError(error) ? { conflict: true } : {}) };
   }
 }

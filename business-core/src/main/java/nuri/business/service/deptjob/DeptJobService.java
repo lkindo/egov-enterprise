@@ -290,6 +290,9 @@ public class DeptJobService extends BaseAbstractService {
         // 소유권 검증(IDOR 방어): 담당자 본인 또는 관리자만 수정 가능.
         // URL 의 id 만으로 남의 업무를 고칠 수 없게 한다.
         assertPicOrAdmin(deptJob, "DEPT_JOB_UPDATE_ALL");
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
+        //   담당자 재지정(reassignDeptJob)도 버전을 올리므로, 재지정 뒤 옛 화면의 저장은 409 가 된다.
+        nuri.foundation.domain.common.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
 
         if (dto.getAtchFileSn() != null
                 && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {

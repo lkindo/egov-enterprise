@@ -34,6 +34,12 @@ public class ScheduleDto {
     @Size(max = 12)
     private String reptSeCd;
 
+    /**
+     * 시작일. [2026-10-18] 등록·수정에서는 필수다 — 월별·기간 조회가 시작일로 거르므로(ScheduleRepository) 시작일 없는
+     * 일정은 어느 달력에도 나타나지 않았다. 필수 판정은 {@code ScheduleService} 가 한다: 이 DTO 는 응답에도 쓰이고 물리
+     * 컬럼은 nullable 이라, 여기 {@code @NotBlank} 를 두면 생성 응답 계약이 시작일을 필수로 바꿔 시작일 없이 저장된
+     * 기존 일정의 목록·달력 응답이 화면의 계약 검증에서 통째로 실패한다.
+     */
     @Size(max = 8)
     @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String schdlBgngYmd;
@@ -88,6 +94,10 @@ public class ScheduleDto {
     @io.swagger.v3.oas.annotations.media.Schema(description = "현재 사용자가 삭제할 수 있는지(서버 판정)",
             accessMode = io.swagger.v3.oas.annotations.media.Schema.AccessMode.READ_ONLY)
     private Boolean deletable;
+
+    @io.swagger.v3.oas.annotations.media.Schema(description = "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.")
+    @Min(0)
+    private Integer version;
 
     // 엔티티→DTO 변환은 프레임워크 표준 MapStruct 매퍼 {@link ScheduleMapper} 로 이관되었다.
 }

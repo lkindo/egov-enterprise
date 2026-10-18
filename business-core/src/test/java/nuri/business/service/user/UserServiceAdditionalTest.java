@@ -63,7 +63,8 @@ class UserServiceAdditionalTest {
                 loginPolicyRepository, userAbsenceRepository,
                 userLogRepository, deptJobRepository, deptManageRepository, passwordEncoder, eventPublisher,
                 authorizationSnapshots, authorizationAdministration, sensitiveAudit,
-                org.mockito.Mockito.mock(nuri.business.domain.auth.mfa.MfaCredentialRepository.class));
+                org.mockito.Mockito.mock(nuri.business.domain.auth.mfa.MfaCredentialRepository.class),
+                org.mockito.Mockito.mock(LoginIdReuseGuard.class));
     }
 
     private User.UserBuilder createBaseUser(String userId) {

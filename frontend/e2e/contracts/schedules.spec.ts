@@ -37,6 +37,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
             schdlSn: number;
             schdlPicId?: string;
             schdlNm?: string;
+            version?: number;
         }
         const list = (await monthRes.json()).data as ScheduleItem[];
         const mine = list.find((s) => s.schdlSn === schdlSn);
@@ -51,6 +52,8 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 schdlEndYmd: ymd,
                 schdlSeCd: '2',
                 schdlPicId: 'attacker',
+                // [2026-10-18 V2_133] 수정은 목록에서 읽은 버전을 함께 보낸다.
+                version: mine?.version,
             },
         });
         expect(updRes.ok(), '일정 수정이 성공해야 한다').toBeTruthy();

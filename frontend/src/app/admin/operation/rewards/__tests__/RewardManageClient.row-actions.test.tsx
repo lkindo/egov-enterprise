@@ -214,3 +214,42 @@ describe('포상 쓰기 권한 표시', () => {
     expect(screen.queryByRole('button', { name: '모범 사원상 삭제' })).not.toBeInTheDocument();
   });
 });
+
+/*
+  [2026-10-18 V2_133] 동시 수정 — 창을 열 때 읽은 버전을 그대로 보내고, 서버가 409 로 거부하면 그 사유를 보이며
+  덮어쓰지 않는다. 입력한 내용은 창에 남기고 목록을 다시 읽는다.
+*/
+describe('RewardManageClient 동시 수정', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getRewardList.mockResolvedValue(pageOf({ ...REWARD, version: 3 }));
+    mocks.confirm.mockResolvedValue(true);
+  });
+
+  it('수정 저장은 창을 열 때 읽은 버전을 함께 보낸다', async () => {
+    mocks.updateReward.mockResolvedValue(REWARD);
+    renderWithClient(<RewardManageClient initialPage={pageOf({ ...REWARD, version: 3 })} />);
+    fireEvent.click(await screen.findByRole('button', { name: '모범 사원상 수정' }));
+    const scope = within(await screen.findByRole('region', { name: '포상 기록 수정' }));
+    fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateReward).toHaveBeenCalledTimes(1));
+    expect(mocks.updateReward).toHaveBeenCalledWith(7, expect.objectContaining({ version: 3 }));
+  });
+
+  it('서버가 409 로 거부하면 서버 사유를 보이고 창을 닫지 않으며 목록을 다시 읽는다', async () => {
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.updateReward.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: conflict } } });
+    renderWithClient(<RewardManageClient initialPage={pageOf({ ...REWARD, version: 3 })} />);
+    fireEvent.click(await screen.findByRole('button', { name: '모범 사원상 수정' }));
+    const modal = await screen.findByRole('region', { name: '포상 기록 수정' });
+    fireEvent.change(within(modal).getByRole('textbox', { name: /^포상 명칭/ }), { target: { value: '내가 고친 이름' } });
+    const listCallsBefore = mocks.getRewardList.mock.calls.length;
+    fireEvent.click(within(modal).getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+    expect(screen.getByRole('region', { name: '포상 기록 수정' })).toBeInTheDocument();
+    expect(within(modal).getByRole('textbox', { name: /^포상 명칭/ })).toHaveValue('내가 고친 이름');
+    await waitFor(() => expect(mocks.getRewardList.mock.calls.length).toBeGreaterThan(listCallsBefore));
+  });
+});

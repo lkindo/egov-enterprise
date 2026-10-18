@@ -46,8 +46,9 @@ class ScheduleAccessTest {
         }
         var schedule = Schedule.builder().schdlSn(1L).schdlNm("original").schdlPicId("owner").build();
         schedule.setFrstRgtrId("owner");
+        org.springframework.test.util.ReflectionTestUtils.setField(schedule, "version", 0);
         when(repository.findById(1L)).thenReturn(Optional.of(schedule));
-        var update = ScheduleDto.builder().schdlNm("updated").schdlPicId("forged").build();
+        var update = ScheduleDto.builder().schdlNm("updated").schdlPicId("forged").schdlBgngYmd("20261020").version(0).build();
         if (allowed) {
             when(mapper.toDto(schedule)).thenReturn(ScheduleDto.builder().schdlSn(1L).build());
             assertThat(service.getSchedule(1L).getSchdlSn()).isEqualTo(1L);

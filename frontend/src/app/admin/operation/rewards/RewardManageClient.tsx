@@ -32,11 +32,14 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { RewardManageDtoSchema } from '@/types/generated-zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { isConflictError } from '@/lib/query/list-query-defaults';
+import { failureMessage } from '@/lib/safe-error-log';
 
 export const rewardSchema = RewardManageDtoSchema.extend({
   rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1),
-  rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.unwrap().min(1).max(20),
-  rwardCode: RewardManageDtoSchema.shape.rwardCode.unwrap().min(1).max(12),
+  // [2026-10-18] 수상자·포상 코드는 서버 계약에서도 필수다(물리 컬럼 NOT NULL) — 생성 스키마가 optional 이 아니다.
+  rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.min(1).max(20),
+  rwardCode: RewardManageDtoSchema.shape.rwardCode.min(1).max(12),
   rwardDe: RewardManageDtoSchema.shape.rwardDe.unwrap()
     .length(8, '포상일자 8자리를 입력하세요(예: 20260515).'),
   pblenCn: RewardManageDtoSchema.shape.pblenCn.unwrap().min(1).max(4000),
@@ -165,7 +168,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
        */
       if (editing && editing.rwrdSn !== undefined) {
         // 수정은 화면이 편집하는 다섯 필드만 보낸다 — 승인 상태(confmAt)는 여기서 건드리지 않는다.
-        await rewardAdminService.updateReward(editing.rwrdSn, { ...values });
+        // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+        await rewardAdminService.updateReward(editing.rwrdSn, { ...values, version: editing.version });
         toast('포상 기록을 수정했습니다.', 'success');
       } else {
         await rewardAdminService.createReward({ ...values });
@@ -178,7 +182,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       form.reset(EMPTY_FORM);
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
     } catch (error) {
-      if (!form.applyServerErrors(error)) {
+      if (isConflictError(error)) {
+        // 다른 사람이 먼저 고쳤다 — 서버 사유를 그대로 보이고 목록을 다시 읽는다. 입력한 내용은 창에 그대로 둔다.
+        toast(failureMessage(error, '다른 사용자가 먼저 수정했습니다. 최신 내용을 다시 불러온 뒤 고쳐 주세요.'), 'error');
+        void queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
+      } else if (!form.applyServerErrors(error)) {
         toast(editing ? '포상 기록 수정 중 오류가 발생했습니다.' : '포상 기록 등록 중 오류가 발생했습니다.', 'error');
       }
     } finally {

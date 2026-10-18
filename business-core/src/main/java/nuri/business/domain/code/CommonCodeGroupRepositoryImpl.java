@@ -37,7 +37,8 @@ public class CommonCodeGroupRepositoryImpl implements CommonCodeGroupRepositoryC
                         commonCodeGroup.cdIdExpln,
                         commonCodeGroup.clsfCd,
                         commonCodeCategory.clsfCdNm,
-                        commonCodeGroup.useYn))
+                        commonCodeGroup.useYn,
+                        commonCodeGroup.version))
                 .from(commonCodeGroup)
                 .join(commonCodeCategory).on(commonCodeGroup.clsfCd.eq(commonCodeCategory.clsfCd))
                 .where(

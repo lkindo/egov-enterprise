@@ -252,14 +252,16 @@ class SurveyServiceTest {
     @DisplayName("🚨 공개 여부는 값이 올 때만 바뀐다 — 제목만 고치는 저장은 공개 상태를 되돌리지 않는다 (2026-10-01 결정 21)")
     void updateSurvey_changesReleaseOnlyWhenGiven() {
         SurveyInfo entity = SurveyInfo.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
         given(tmplatRepository.existsById(101L)).willReturn(true);
         given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(entity));
 
-        SurveyInfoDto publish = SurveyInfoDto.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).rlsYn("Y").build();
+        SurveyInfoDto publish = SurveyInfoDto.builder().srvySn(201L).srvyTtl("제목").srvyTmpltSn(101L).rlsYn("Y").version(0).build();
         surveyService.updateSurvey(publish);
         assertThat(entity.isReleased()).isTrue();
 
-        SurveyInfoDto titleOnly = SurveyInfoDto.builder().srvySn(201L).srvyTtl("새 제목").srvyTmpltSn(101L).build();
+        // 단위 시험은 flush 가 없어 버전이 오르지 않는다 — 같은 버전으로 다시 저장한다(실제 화면은 다시 읽은 버전을 보낸다).
+        SurveyInfoDto titleOnly = SurveyInfoDto.builder().srvySn(201L).srvyTtl("새 제목").srvyTmpltSn(101L).version(0).build();
         surveyService.updateSurvey(titleOnly);
         assertThat(entity.isReleased()).isTrue();
     }
@@ -372,6 +374,7 @@ class SurveyServiceTest {
                 .srvySn(201L)
                 .srvyTtl("OLD")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(info, "version", 0);
         given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(info));
         given(tmplatRepository.existsById(101L)).willReturn(true);
 
@@ -381,11 +384,32 @@ class SurveyServiceTest {
                 .srvyTtl("NEW")
                 .srvyBgngYmd("2026-01-01")
                 .srvyEndYmd("2026-01-10")
+                .version(0)
                 .build();
 
         surveyService.updateSurvey(dto);
 
         assertThat(info.getSrvyTtl()).isEqualTo("NEW");
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 설문 정보 수정 - 읽은 버전이 다르면 409(공개 전환도 같다), 버전이 없으면 400 이고 바꾸지 않는다")
+    void updateSurvey_rejectsStaleOrMissingVersion() {
+        SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("CURRENT").srvyTmpltSn(101L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(info, "version", 2);
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(info));
+        given(tmplatRepository.existsById(101L)).willReturn(true);
+
+        assertThatThrownBy(() -> surveyService.updateSurvey(SurveyInfoDto.builder()
+                .srvySn(201L).srvyTmpltSn(101L).srvyTtl("STALE").rlsYn("Y").version(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> surveyService.updateSurvey(SurveyInfoDto.builder()
+                .srvySn(201L).srvyTmpltSn(101L).srvyTtl("NO VERSION").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(info.getSrvyTtl()).isEqualTo("CURRENT");
+        assertThat(info.isReleased()).isFalse();
     }
 
     @Test
@@ -408,6 +432,7 @@ class SurveyServiceTest {
                 .srvyTmpltSn(101L)
                 .srvyTtl("OLD")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(info, "version", 0);
         given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(info));
         given(tmplatRepository.existsById(102L)).willReturn(true);
         given(qesitmRepository.existsBySrvySn(201L)).willReturn(true);
@@ -416,6 +441,7 @@ class SurveyServiceTest {
                 .srvySn(201L)
                 .srvyTmpltSn(102L)
                 .srvyTtl("NEW")
+                .version(0)
                 .build();
 
         assertThatThrownBy(() -> surveyService.updateSurvey(dto))

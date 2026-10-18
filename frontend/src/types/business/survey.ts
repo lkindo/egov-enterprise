@@ -13,6 +13,8 @@ export interface Survey {
   responded?: boolean | null;
   /** 응답자에게 공개했는가('Y' 공개·'N' 작성 중). 새 설문은 작성 중으로 시작한다(2026-10-01 결정 21). */
   rlsYn?: string | null;
+  /** 낙관적 잠금 버전(V2_133, 설문 머리). 수정·공개 전환 때 읽은 값을 그대로 돌려보낸다 — 다르면 서버가 409 로 거부한다. */
+  version?: number | null;
 }
 
 export interface SurveyQuestion {

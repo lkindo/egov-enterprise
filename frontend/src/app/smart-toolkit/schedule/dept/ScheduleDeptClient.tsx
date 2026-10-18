@@ -33,6 +33,8 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { isConflictError } from '@/lib/query/list-query-defaults';
+import { failureMessage } from '@/lib/safe-error-log';
 import { deptScheduleFormSchema } from './schedule-form-validation';
 import { PagePagination } from '@/components/common/PagePagination';
 
@@ -228,7 +230,8 @@ export default function ScheduleDeptClient() {
         setIsSaving(true);
         try {
             if (editingSchedule && editingSchedule.schdlSn) {
-                await updateDeptSchedule(editingSchedule.schdlSn, validated);
+                // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+                await updateDeptSchedule(editingSchedule.schdlSn, { ...validated, version: editingSchedule.version });
             } else {
                 await createDeptSchedule(validated);
             }
@@ -238,7 +241,11 @@ export default function ScheduleDeptClient() {
         } catch (error) {
             const fieldErrors = extractFieldErrors(error);
             if (fieldErrors) validation.setFormErrors(fieldErrors);
-            else toast.error('저장 중 오류가 발생했습니다.');
+            else if (isConflictError(error)) {
+                // 다른 사람이 먼저 고쳤다(409) — 서버 사유를 보이고 목록을 다시 읽는다. 입력한 내용은 창에 남긴다.
+                toast.error(failureMessage(error, '다른 사용자가 먼저 수정했습니다. 최신 내용을 다시 불러온 뒤 고쳐 주세요.'));
+                void fetchList();
+            } else toast.error('저장 중 오류가 발생했습니다.');
         } finally {
             savingRef.current = false;
             setIsSaving(false);

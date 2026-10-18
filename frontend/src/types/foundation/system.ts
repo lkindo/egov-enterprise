@@ -56,6 +56,8 @@ export interface CmmnClCode {
   useYn: 'Y' | 'N';
   frstRgtrId?: string;
   lastMdfrId?: string;
+  /** 낙관적 잠금 버전(V2_133). 수정할 때 읽은 값을 그대로 돌려보낸다 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부한다. */
+  version?: number;
 }
 
 export interface CmmnCode {
@@ -65,6 +67,8 @@ export interface CmmnCode {
   useYn: 'Y' | 'N';
   clsfCd: string;
   clsfCdNm?: string;
+  /** 낙관적 잠금 버전(V2_133). */
+  version?: number;
 }
 
 export interface CmmnDetailCode {
@@ -74,6 +78,8 @@ export interface CmmnDetailCode {
   dtlCdExpln: string;
   useYn: 'Y' | 'N';
   cdIdNm?: string;
+  /** 낙관적 잠금 버전(V2_133). */
+  version?: number;
 }
 
 // Menu

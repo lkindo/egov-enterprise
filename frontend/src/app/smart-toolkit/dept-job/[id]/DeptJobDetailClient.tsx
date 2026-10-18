@@ -18,6 +18,8 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
+import { isConflictError } from '@/lib/query/list-query-defaults';
+import { failureMessage } from '@/lib/safe-error-log';
 
 /**
  * 부서 업무 상세·수정 화면.
@@ -42,6 +44,12 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const [isEditing, setEditing] = React.useState(false);
+    /*
+      [2026-10-18] 수정을 시작할 때 읽은 버전. 저장은 이 값을 보내 서버가 그 사이 다른 사람의 수정(담당자 재지정 포함)을
+      409 로 알린다. 조회 쿼리가 다시 읽혀도 바꾸지 않는다 — 바꾸면 편집 중인 옛 내용이 새 내용을 덮는다.
+      최신 내용으로 고치려면 수정을 닫고 다시 연다.
+    */
+    const [editVersion, setEditVersion] = React.useState<number | undefined>(undefined);
     const actionPendingRef = React.useRef(false);
     const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | 'reassign' | null>(null);
     const [isReassignOpen, setReassignOpen] = React.useState(false);
@@ -85,7 +93,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     });
 
     const updateMutation = useMutation({
-        mutationFn: (values: DeptJobFormValues) => deptJobUserService.updateDeptJob(deptTaskSn, values),
+        mutationFn: (values: DeptJobFormValues & { version?: number }) => deptJobUserService.updateDeptJob(deptTaskSn, values),
         onSuccess: () => {
             toast.success('업무가 수정되었습니다.');
             // 저장했으므로 확인 없이 편집을 끄고 dirty 를 함께 내린다.
@@ -95,7 +103,11 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
         },
         onError: (error) => {
-            if (!extractFieldErrors(error)) {
+            if (isConflictError(error)) {
+                // 다른 사람이 먼저 고쳤다(409). 입력은 그대로 두고 서버 사유를 보인다 — 상세는 다시 읽어 닫은 뒤 최신을 보인다.
+                toast.error(failureMessage(error, '다른 사용자가 먼저 수정했습니다. 수정을 닫고 최신 내용을 확인한 뒤 다시 고쳐 주세요.'));
+                void queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
+            } else if (!extractFieldErrors(error)) {
                 toast.error('수정에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.');
             }
         },
@@ -163,7 +175,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
         actionPendingRef.current = true;
         setActiveAction('update');
         try {
-            await updateMutation.mutateAsync(values);
+            await updateMutation.mutateAsync({ ...values, version: editVersion });
         } catch (error) {
             // 필드 오류만 공용 폼이 귀속·focus하도록 되돌린다.
             // 일반 오류는 mutation onError가 이미 안내했으므로 submit을 예외로 끝내지 않는다.
@@ -249,7 +261,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                             </Button>
                             )}
                             {job.editable && (
-                            <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={activeAction !== null} className="font-bold gap-1">
+                            <Button variant="outline" size="sm" onClick={() => { setEditVersion(job.version ?? undefined); setEditing(true); }} disabled={activeAction !== null} className="font-bold gap-1">
                                 <Pencil size={14} />
                                 수정
                             </Button>

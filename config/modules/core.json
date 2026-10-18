@@ -210,6 +210,66 @@
         "to": "sms",
         "port": "DurableWorkHandler",
         "reason": "문자 기능이 없으면 문자 발송 후속 작업도 생기지 않아, 후속 작업을 처리할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "addressbook",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "board",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "comment",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "mail",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "memoreport",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "note",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "promotion",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "report",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "reward",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "schedule",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "scrap",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "survey",
+        "port": "LoginIdReferenceContributor",
+        "reason": "이 기능이 없으면 그 기능의 기록도 없어, 새 계정이 지워진 계정의 기록을 같은 로그인 아이디로 물려받는지 볼 때 빠지는 것이 없습니다."
       }
     ]
   },
