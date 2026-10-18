@@ -31,9 +31,27 @@ public class SensitiveResponseAuditAspect {
             throw new BusinessException(CommonErrorCode.SERVER_OVERLOAD, "민감 응답 감사 준비를 확인할 수 없습니다.");
         }
         if (attributes.getRequest().getAttribute(SensitiveAuditInterceptor.PREPARED) == null) {
+            context = withDataSubject(attributes, context);
             audit.prepared(context);
             attributes.getRequest().setAttribute(SensitiveAuditInterceptor.PREPARED, Boolean.TRUE);
         }
         return response;
+    }
+
+    /**
+     * [2026-10-18] 핸들러가 한 사람의 개인정보를 돌려준다고 표시했으면(PrivacySubject) 그 사람의 esntlId 를 대상 좌표에 싣는다.
+     * 준비(PREPARED)·완료 원장과 개인정보 접근 기록이 같은 대상을 남기도록 요청의 감사 문맥도 바꾼다. 이미 대상이 있으면 그대로다.
+     */
+    private static SensitiveAuditPort.Context withDataSubject(ServletRequestAttributes attributes,
+            SensitiveAuditPort.Context context) {
+        if (context.targetId() != null
+                || !(attributes.getRequest().getAttribute(nuri.foundation.core.audit.PrivacySubject.REQUEST_ATTRIBUTE)
+                instanceof String subject)) {
+            return context;
+        }
+        SensitiveAuditPort.Context identified = new SensitiveAuditPort.Context(context.requestId(), context.operation(),
+                context.actorLoginId(), context.actorEsntlId(), context.clientIp(), context.description(), subject);
+        attributes.getRequest().setAttribute(SensitiveAuditPort.REQUEST_ATTRIBUTE, identified);
+        return identified;
     }
 }

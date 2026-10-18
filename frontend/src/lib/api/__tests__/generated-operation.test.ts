@@ -8,6 +8,7 @@ import {
   getDeptJobOperation,
   changePasswordOperation,
   createDeptJobOperation,
+  getUserOperation,
   getUsersOperation,
   type GeneratedOperationResponse,
 } from '@/types/generated-operations';
@@ -80,20 +81,29 @@ describe('generated operation contract', () => {
       wrterId: 'forged-writer',
     } as never)).toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
 
-    let thrown: unknown;
-    try {
-      parseGeneratedOperationResponse(getUsersOperation, {
-        success: true,
-        code: 'S000',
-        message: '성공',
-        data: { list: [{ pswd: 'response-secret-marker' }] },
-      });
-    } catch (error) {
-      thrown = error;
-    }
-    expect(thrown).toBeInstanceOf(Error);
-    expect((thrown as Error).message).toBe('생성 API 응답에 허용되지 않은 필드가 있습니다.');
-    expect((thrown as Error).message).not.toContain('response-secret-marker');
+    // 생성 서술자가 싣는 writeOnly 경로 — 사용자 상세(UserDto)의 비밀번호는 응답에 나오면 유출이다.
+    expect(getUserOperation.responseForbiddenPaths).toContainEqual(['pswd']);
+    const leak = (descriptor: typeof getUserOperation | typeof getUsersOperation, data: unknown): Error => {
+      try {
+        parseGeneratedOperationResponse(descriptor, { success: true, code: 'S000', message: '성공', data });
+      } catch (error) {
+        return error as Error;
+      }
+      throw new Error('응답 유출을 거부하지 않았다');
+    };
+    const direct = leak(getUserOperation, { userId: 'u1', userNm: '사용자', pswd: 'response-secret-marker' });
+    expect(direct.message).toBe('생성 API 응답에 허용되지 않은 필드가 있습니다.');
+    expect(direct.message).not.toContain('response-secret-marker');
+
+    // 중첩 경로(목록의 각 행) — [2026-10-19] 사용자 목록은 쓰기 전용 필드가 없는 목록 전용 응답(UserListItemDto)이 되어
+    //   core 서술자 가운데 중첩 writeOnly 경로를 생성으로 갖는 것이 없다(게시판·댓글·메일·대시보드는 선택 기능이라 쓰지 않는다).
+    //   실행기의 '*' 경로 판정은 목록 서술자에 같은 형식의 경로를 얹어 확인한다.
+    const nested = leak(
+      { ...getUsersOperation, responseForbiddenPaths: [['list', '*', 'pswd']] } as typeof getUsersOperation,
+      { list: [{ userId: 'u1', userNm: '사용자', groups: [], permissions: [], authorizationVersion: 'v', pswd: 'response-secret-marker' }] },
+    );
+    expect(nested.message).toBe('생성 API 응답에 허용되지 않은 필드가 있습니다.');
+    expect(nested.message).not.toContain('response-secret-marker');
   });
 
   it('공통 envelope와 generated data Zod를 함께 검증한다', () => {

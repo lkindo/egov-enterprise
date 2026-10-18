@@ -38,6 +38,8 @@ public class AuthServiceImpl implements AuthService {
     /** [W1-E2] 로그인 감사 기록. 이 배선 전까지 tb_login_log 는 영구히 비어 있었다. */
     private final nuri.business.service.log.LogService logService;
     private final nuri.business.service.auth.mfa.MfaService mfaService;
+    /** [2026-10-18] 로그아웃 시각 기록(access token 무효화 기준). */
+    private final nuri.business.domain.user.repository.UserRepository userRepository;
 
     /**
      * <b>[트랜잭션 경계] {@code noRollbackFor} 는 여기에도 있어야 한다 — 없으면 계정 잠금이 발동하지 않는다.</b>
@@ -286,13 +288,17 @@ public class AuthServiceImpl implements AuthService {
             if (userId != null) {
                 log.info(">>> [Logout] Deleting refresh token for user: {}", userId);
                 refreshTokenRepository.findById(userId).ifPresent(this::deleteNow);
+                recordLogout(userId);
                 return;
             }
             // [2026-09-25 DIP D7] 액세스 토큰이 만료돼 신원이 없어도, 쿠키로 제시된 리프레시 토큰의 행은 지운다.
             //   종전에는 인증된 요청만 받아서, 만료 뒤 누른 로그아웃은 브라우저 쿠키만 지우고 서버 세션은 남겼다 —
             //   그 토큰을 가진 다른 사람은 최대 7일 동안 계속 재발급할 수 있었다. 원문을 가진 것이 곧 증명이다.
             if (refreshToken != null && !refreshToken.isBlank()) {
-                refreshTokenRepository.findByRfshTkn(RefreshTokenDigest.of(refreshToken)).ifPresent(this::deleteNow);
+                refreshTokenRepository.findByRfshTkn(RefreshTokenDigest.of(refreshToken)).ifPresent(token -> {
+                    deleteNow(token);
+                    recordLogout(token.getUserId());
+                });
             }
         } catch (Exception e) {
             log.warn(">>> [Logout] RefreshToken already deleted or error occurred. Type: {}", e.getClass().getSimpleName());
@@ -302,5 +308,19 @@ public class AuthServiceImpl implements AuthService {
     private void deleteNow(nuri.business.domain.auth.RefreshToken token) {
         refreshTokenRepository.delete(token);
         refreshTokenRepository.flush();
+    }
+
+    /**
+     * [2026-10-18] 로그아웃 시각을 남겨 그 전에 발급된 access token 을 끊는다(JwtTokenProvider).
+     *
+     * <p>종전에는 refresh token 행만 지워, 이미 받은 access token 은 로그아웃 뒤에도 만료(기본 1시간)까지 통과했다.
+     * 한 사용자는 세션이 하나(재발급 토큰 행이 사용자당 하나, DEC-OPS-158)이므로 그 사용자의 모든 access token 을 끊는다.
+     * 시각은 토큰을 서명하는 이 애플리케이션의 시계로 남긴다 — DB 시계로 남기면 두 시계의 차이만큼 로그아웃 직후
+     * 다시 받은 토큰까지 거부될 수 있다. 신원(쿠키의 재발급 토큰 또는 인증 주체)이 확인된 사용자에게만 기록한다.
+     */
+    private void recordLogout(String esntlId) {
+        if (esntlId != null && !esntlId.isBlank()) {
+            userRepository.recordLogout(esntlId, java.time.LocalDateTime.now());
+        }
     }
 }

@@ -22,6 +22,20 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
+    private final jakarta.persistence.EntityManager entityManager;
+
+    /**
+     * [2026-10-18] 이미 읽어 둔 사용자 행을 쓰기 잠금으로 다시 읽어 메모리 상태를 DB 의 현재 값으로 덮는다.
+     *
+     * <p>잠금 조회({@code findByUserIdForUpdate})는 같은 영속성 컨텍스트에 이미 있는 엔티티를 그대로 돌려줘 상태를
+     * 새로 읽지 않는다 — 잠금만 걸리고 낡은 실패 횟수로 계산하게 된다. {@code refresh} 는 잠금과 재조회를 한 문장으로 한다.
+     * 메모리에서 바꾼 값은 버려지므로 호출자는 잠근 뒤에 상태를 바꾼다.
+     */
+    @Override
+    public void refreshForUpdate(User target) {
+        entityManager.refresh(java.util.Objects.requireNonNull(target), jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+    }
+
     @Override
     public Page<UserDto> getPagedUserList(String searchKeyword, UserListFilter filter,
             Pageable pageable) {
@@ -59,7 +73,9 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(user.userId.asc())
-                .fetch();
+                .fetch()
+                // [2026-10-18] 목록은 휴대전화·이메일을 가린다. 원문은 정보주체를 기록하는 상세 조회에서만 나간다(UserDto#withMaskedContacts).
+                .stream().map(UserDto::withMaskedContacts).toList();
 
         long total = queryFactory
                 .select(user.count())

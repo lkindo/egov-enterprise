@@ -13,12 +13,20 @@ import java.time.LocalDateTime;
  * @param userId      조회자 loginId
  * @param clientIp    조회자 IP
  * @param occurredAt  조회 시각
+ * @param subjectId   조회한 개인정보의 주인(정보주체)의 내부 키 esntlId(2026-10-18). 한 사람을 대상으로 한 조회일 때만 있고,
+ *                    목록 조회는 {@code null} 이다.
  */
 public record PrivacyAccessEvent(
         String inqInfo,
         String serviceName,
         String userId,
         String clientIp,
-        LocalDateTime occurredAt
+        LocalDateTime occurredAt,
+        String subjectId
 ) implements DomainEvent {
+
+    /** 정보주체를 특정하지 않는 조회(목록 등). */
+    public PrivacyAccessEvent(String inqInfo, String serviceName, String userId, String clientIp, LocalDateTime occurredAt) {
+        this(inqInfo, serviceName, userId, clientIp, occurredAt, null);
+    }
 }

@@ -41,6 +41,9 @@ public class JpaUserAuthAdapter implements UserAuthPort {
                 // 저장 시각은 LocalDateTime.now()(JVM 기본 시간대)이므로 같은 기준으로 되돌린다.
                 .credentialsChangedAt(user.getChgPswdLastDt() == null ? null
                         : user.getChgPswdLastDt().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                // [2026-10-18] 로그아웃 시각도 같은 기준(JVM 기본 시간대의 LocalDateTime.now())으로 되돌린다.
+                .lastLogoutAt(user.getLastLgtDt() == null ? null
+                        : user.getLastLgtDt().atZone(java.time.ZoneId.systemDefault()).toInstant())
                 .build();
     }
 }

@@ -34,10 +34,15 @@ public class RateLimitFilter implements Filter {
      *
      * <p>종전에는 {@code Integer.getInteger("ratelimit.capacity", 10000)} — JVM 시스템 프로퍼티만 읽어 운영에서
      * 바꿀 방법이 없었고(설정하는 곳이 테스트뿐), 로그인은 같은 버킷에서 5토큰을 써 IP 당 분당 약 2,000회였다.
-     * 기본값은 그 동작을 그대로 옮긴다(전체 10,000 · 로그인 2,000). 낮추는 것은 신뢰 앞단 프록시로 IP 가
-     * 사용자별로 들어오는 것을 확인하고 429 로그를 관측한 뒤다(application.yml 순서 주석). 먼저 낮추면 한 IP 로
-     * 모인 전사 로그인이 한꺼번에 막힌다.
+     *
+     * <p>[2026-10-18] 로그인 기본값을 {@value #DEFAULT_LOGIN_REQUESTS_PER_MINUTE} 로 낮췄다. 2,000 이면 한 IP 가 여러 계정에 같은
+     * 비밀번호를 뿌리는 대입(password spraying)을 막지 못한다 — 계정 잠금은 계정마다 세기 때문이다. 한 IP 를 여럿이 쓰는
+     * 형상(NAT·앞단 없는 개발 스택·userland-proxy)에서는 거절 로그를 보고 환경변수로 올린다(application.yml 주석).
+     * 전체 기본값({@value #DEFAULT_REQUESTS_PER_MINUTE})은 그대로다.
      */
+    public static final int DEFAULT_REQUESTS_PER_MINUTE = 10000;
+    public static final int DEFAULT_LOGIN_REQUESTS_PER_MINUTE = 30;
+
     private final int requestsPerMinute;
     private final int loginRequestsPerMinute;
 
@@ -59,8 +64,10 @@ public class RateLimitFilter implements Filter {
     private final org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider;
 
     public RateLimitFilter(nuri.foundation.security.net.ClientIpResolver clientIpResolver,
-            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.requests-per-minute:10000}") int requestsPerMinute,
-            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.login-requests-per-minute:2000}") int loginRequestsPerMinute,
+            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.requests-per-minute:"
+                    + DEFAULT_REQUESTS_PER_MINUTE + "}") int requestsPerMinute,
+            @org.springframework.beans.factory.annotation.Value("${nuri.security.rate-limit.login-requests-per-minute:"
+                    + DEFAULT_LOGIN_REQUESTS_PER_MINUTE + "}") int loginRequestsPerMinute,
             org.springframework.beans.factory.ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meterRegistryProvider) {
         if (requestsPerMinute < 1 || loginRequestsPerMinute < 1) {
             // 0 이하는 "제한 없음" 이 아니라 모든 요청 거부가 된다 — 조용히 전체 장애로 뜨지 않게 기동에서 막는다.

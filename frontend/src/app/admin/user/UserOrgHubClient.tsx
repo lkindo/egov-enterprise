@@ -904,13 +904,15 @@ export default function UserOrgHubClient({
     <>
       {/* 종전에는 같은 `handleOpenUserEdit` 를 부르는 버튼이 패널 우상단(아이콘)과 하단(CTA)에
           두 벌 있었다 — 같은 명령을 두 곳에 두면 어느 쪽이 무엇을 하는지 판정 비용만 는다(G10). */}
+      {/* [2026-10-18] 상세 레코드가 오기 전에는 수정할 수 없다 — 목록 행은 휴대전화·이메일을 가려서 싣는다. 목록 값으로
+          폼을 채우면 가린 값('010****5678')이 그대로 저장돼 원문을 덮는다. */}
       {canUpdateUser && (
       <Button
         type="button"
         variant="outline"
         size="sm"
         aria-label="정보 수정"
-        disabled={isSaving}
+        disabled={isSaving || !selectedUserDetail}
         onClick={handleOpenUserEdit}
         className="gap-1.5"
       >
@@ -1288,11 +1290,11 @@ export default function UserOrgHubClient({
       >
         <UserManageForm
           // 수정 시드는 반드시 상세 레코드여야 한다. 목록 행에는 ognzId 가 없어 '' 로 왕복되고,
-          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. 상세가 뒤늦게 도착하면
-          // key 로 폼을 다시 시드한다(defaultValues 는 최초 마운트에만 반영되기 때문).
-          key={formMode === 'edit' ? `edit-${displayedUser?.userId ?? ''}-${selectedUserDetail ? 'detail' : 'list'}` : 'create'}
+          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. [2026-10-18] 목록 행의 휴대전화·이메일은 가린 값이라
+          // 목록 행으로는 시드하지 않는다 — 수정 버튼도 상세가 온 뒤에만 열린다.
+          key={formMode === 'edit' ? `edit-${selectedUserDetail?.userId ?? ''}-detail` : 'create'}
           mode={formMode}
-          initialData={formMode === 'edit' ? displayedUser : undefined}
+          initialData={formMode === 'edit' ? (selectedUserDetail as UserManage | undefined) : undefined}
           departments={departments}
           onSubmit={onUserSubmit}
           onCancel={handleCloseUserModal}

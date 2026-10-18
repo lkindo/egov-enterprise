@@ -121,42 +121,41 @@ class AddressBookServiceImplTest {
     }
 
     @Test
-    @DisplayName("사용자 검색")
-    void searchUsers() {
+    @DisplayName("사용자 선택")
+    void searchUserSelections() {
         Pageable pageable = PageRequest.of(0, 10);
-        // Repository returns a Projection usually, but here we can return mock or implementation
         AddressBookUserSearchResult proj = mock(AddressBookUserSearchResult.class);
-        given(proj.getUserId()).willReturn("E1");
+        given(proj.getEsntlId()).willReturn("E1");
         given(proj.getUserNm()).willReturn("User1");
-        
-        given(addressBookRepository.searchAddressBookUsers(anyString(), eq(pageable)))
+
+        given(addressBookRepository.searchAddressBookUserSelections(anyString(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(proj)));
 
-        Page<AddressBookUserDto> result = addressBookService.searchUsers("keyword", pageable);
+        var result = addressBookService.searchUserSelections("keyword", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getUserId()).isEqualTo("E1");
+        assertThat(result.getContent().get(0).esntlId()).isEqualTo("E1");
     }
 
     @Test
-    @DisplayName("사용자 검색어를 trim하고 페이지 크기를 20으로 제한")
-    void searchUsers_NormalizesKeywordAndCapsPageSize() {
+    @DisplayName("사용자 선택 검색어를 trim하고 페이지 크기를 20으로 제한")
+    void searchUserSelections_NormalizesKeywordAndCapsPageSize() {
         Pageable requested = PageRequest.of(2, 100);
-        given(addressBookRepository.searchAddressBookUsers(eq("홍길"), any(Pageable.class)))
+        given(addressBookRepository.searchAddressBookUserSelections(eq("홍길"), any(Pageable.class)))
                 .willReturn(Page.empty());
 
-        addressBookService.searchUsers("  홍길  ", requested);
+        addressBookService.searchUserSelections("  홍길  ", requested);
 
         org.mockito.ArgumentCaptor<Pageable> pageableCaptor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(addressBookRepository).searchAddressBookUsers(eq("홍길"), pageableCaptor.capture());
+        verify(addressBookRepository).searchAddressBookUserSelections(eq("홍길"), pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(2);
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
     }
 
     @Test
     @DisplayName("trim한 검색어가 2자 미만이면 저장소를 조회하지 않음")
-    void searchUsers_RejectsShortKeywordBeforeRepository() {
-        Page<AddressBookUserDto> result = addressBookService.searchUsers(" a ", PageRequest.of(0, 100));
+    void searchUserSelections_RejectsShortKeywordBeforeRepository() {
+        var result = addressBookService.searchUserSelections(" a ", PageRequest.of(0, 100));
 
         assertThat(result).isEmpty();
         assertThat(result.getSize()).isEqualTo(20);
@@ -164,44 +163,31 @@ class AddressBookServiceImplTest {
     }
 
     @Test
-    @DisplayName("신규 선택 계약은 login ID와 다른 내부 키를 반환하고 구 계약 의미는 보존한다")
-    void selectionsPreserveIdentityAxesAndDropContacts() {
+    @DisplayName("선택 계약은 login ID와 다른 내부 키·성명·부서만 반환한다")
+    void selectionsReturnInternalKeyWithoutContacts() {
         AddressBookUserSearchResult projection = new AddressBookUserSearchResult();
         projection.setEsntlId("internal-key");
         projection.setUserId("login-id");
         projection.setUserNm("동명이인");
         projection.setOgnzNm("개발부");
-        projection.setEmlAddr("legacy@example.test");
-        projection.setMblTelno("01000000000");
-        given(addressBookRepository.searchAddressBookUsers(eq("동명"), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(projection)));
-
         given(addressBookRepository.searchAddressBookUserSelections(eq("동명"), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(projection)));
 
         var selection = addressBookService.searchUserSelections(" 동명 ", PageRequest.of(0, 100)).getContent().get(0);
-        var legacy = addressBookService.searchUsers("동명", PageRequest.of(0, 20)).getContent().get(0);
 
         assertThat(selection.esntlId()).isEqualTo("internal-key");
         assertThat(selection.userNm()).isEqualTo("동명이인");
         assertThat(selection.ognzNm()).isEqualTo("개발부");
-        assertThat(legacy.getUserId()).isEqualTo("login-id");
-        assertThat(legacy.getEmlAddr()).isEqualTo("legacy@example.test");
-        assertThat(legacy.getMblTelno()).isEqualTo("01000000000");
-        verify(addressBookRepository).searchAddressBookUsers("동명", PageRequest.of(0, 20));
         verify(addressBookRepository).searchAddressBookUserSelections("동명", PageRequest.of(0, 20));
     }
 
     @Test
-    @DisplayName("주소록 읽기 권한 없이는 신구 선택 경로 모두 저장소에 접근하지 않는다")
+    @DisplayName("주소록 읽기 권한 없이는 선택 경로가 저장소에 접근하지 않는다")
     void selectionsRequireReadPermission() {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.assertPermission("ADBK_READ"))
                 .thenThrow(new org.springframework.security.access.AccessDeniedException("denied"));
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                 addressBookService.searchUserSelections("검색", PageRequest.of(0, 20)))
-                .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                addressBookService.searchUsers("검색", PageRequest.of(0, 20)))
                 .isInstanceOf(org.springframework.security.access.AccessDeniedException.class);
         verifyNoInteractions(addressBookRepository);
     }

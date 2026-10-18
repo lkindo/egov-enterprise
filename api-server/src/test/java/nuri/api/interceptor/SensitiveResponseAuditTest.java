@@ -153,6 +153,26 @@ class SensitiveResponseAuditTest {
         verify(audit, never()).prepared(any());
     }
 
+    @Test
+    void singlePersonResponseRecordsTheDataSubjectOnPreparationAndCompletion() throws Exception {
+        mvc.perform(get("/api/audit-test/person")).andExpect(status().isOk());
+        var prepared = org.mockito.ArgumentCaptor.forClass(SensitiveAuditPort.Context.class);
+        var completed = org.mockito.ArgumentCaptor.forClass(SensitiveAuditPort.Context.class);
+        verify(audit).prepared(prepared.capture());
+        verify(audit).completed(completed.capture(), eq(SensitiveAuditPort.Outcome.SUCCEEDED), eq(200));
+        // [2026-10-18] 한 사람의 정보를 돌려준 응답은 그 사람(정보주체)을 준비·완료 원장과 개인정보 접근 기록에 남긴다.
+        assertThat(prepared.getValue().targetId()).isEqualTo("SUBJECT_7");
+        assertThat(completed.getValue().targetId()).isEqualTo("SUBJECT_7");
+    }
+
+    @Test
+    void listResponseRecordsNoDataSubject() throws Exception {
+        mvc.perform(get("/api/audit-test/json")).andExpect(status().isOk());
+        var prepared = org.mockito.ArgumentCaptor.forClass(SensitiveAuditPort.Context.class);
+        verify(audit).prepared(prepared.capture());
+        assertThat(prepared.getValue().targetId()).isNull();
+    }
+
     private BusinessException unavailable() { return new BusinessException(CommonErrorCode.SERVER_OVERLOAD, "audit unavailable"); }
 
     @org.springframework.context.annotation.Profile("sensitive-audit-standalone-fixture")
@@ -164,6 +184,11 @@ class SensitiveResponseAuditTest {
         @PrivacyAccess("민감 JSON") @GetMapping("/api/audit-test/json")
         public ResponseEntity<Map<String, String>> json() {
             handlerInvoked.set(true);
+            return ResponseEntity.ok(Map.of("value", "SENSITIVE_SENTINEL"));
+        }
+        @PrivacyAccess("한 사람") @GetMapping("/api/audit-test/person")
+        public ResponseEntity<Map<String, String>> person() {
+            nuri.foundation.core.audit.PrivacySubject.identify("SUBJECT_7");
             return ResponseEntity.ok(Map.of("value", "SENSITIVE_SENTINEL"));
         }
         @PrivacyAccess("파일") @GetMapping("/api/audit-test/file")

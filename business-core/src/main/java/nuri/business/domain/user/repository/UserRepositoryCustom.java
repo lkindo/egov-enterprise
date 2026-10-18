@@ -5,8 +5,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface UserRepositoryCustom {
+    /**
+     * 관리자 사용자 목록. 휴대전화·이메일은 가려서 싣는다(2026-10-18) — 원문은 개인정보 접근 기록과 함께 상세 조회에서만 나간다.
+     */
     Page<nuri.business.service.user.dto.UserDto> getPagedUserList(String searchKeyword,
             UserListFilter filter, Pageable pageable);
+
+    /**
+     * 이미 읽은 사용자 행에 쓰기 잠금을 걸고 상태를 DB 의 현재 값으로 다시 읽는다(로그인 실패 횟수의 원자적 갱신).
+     * 메모리에서 바꾼 값은 버려진다.
+     */
+    void refreshForUpdate(User user);
 
     /**
      * 담당자 지정용 사용자 검색. 성명(user_nm) 부분일치만 본다.

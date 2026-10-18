@@ -161,6 +161,20 @@ public record UserDto(
                 .role(snapshot.groups().stream().findFirst().orElse(null)).build();
     }
 
+    /**
+     * [2026-10-18] 관리자 사용자 목록용 — 휴대전화(010****5678)·이메일(ho***@example.com)을 가린다.
+     *
+     * <p>목록 한 번에 한 쪽 분량 사람들의 연락처 원문이 나가고, 개인정보 접근 기록은 그 목록 전체에 정보주체를 남길 수 없다.
+     * 원문은 사람마다 상세 조회에서만 나간다(그 조회는 정보주체를 기록한다). 값이 없으면 비운 채 둔다 — 화면의 '미등록' 표시를
+     * 지킨다. 가린 값은 '*' 를 담아, 목록 값을 그대로 다시 저장하려 하면 수정 요청 검증이 거부한다(UserProfileUpdateRequest).
+     */
+    public UserDto withMaskedContacts() {
+        return toBuilder()
+                .mblTelno(mblTelno == null || mblTelno.isBlank() ? mblTelno : nuri.foundation.core.util.PiiMaskUtil.phone(mblTelno))
+                .emlAddr(emlAddr == null || emlAddr.isBlank() ? emlAddr : nuri.foundation.core.util.PiiMaskUtil.email(emlAddr))
+                .build();
+    }
+
     public UserDto(
         String userId,
         String userNm,

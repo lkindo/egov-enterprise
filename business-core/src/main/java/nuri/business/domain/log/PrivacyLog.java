@@ -43,8 +43,15 @@ public class PrivacyLog extends BaseEntity {
     @Column(length = 45)
     private String dmndUserIpAddr;
 
+    /**
+     * 대상자아이디(2026-10-18, V2_131) — 조회한 개인정보의 주인(정보주체)의 내부 키 esntlId. 한 사람을 대상으로 한 조회만
+     * 채우고 목록 조회는 비운다. 조회자는 {@link #dmndUserId}(loginId)다 — 두 칸의 정체성 축이 다르다.
+     */
+    @Column(name = "trpr_id", length = 20)
+    private String trprId;
+
     private PrivacyLog(Long prvcLogSn, String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
-            String dmndUserId, String dmndUserIpAddr) {
+            String dmndUserId, String dmndUserIpAddr, String trprId) {
         this.prvcLogSn = prvcLogSn;
         this.dmndId = dmndId;
         this.inqDt = inqDt;
@@ -52,11 +59,12 @@ public class PrivacyLog extends BaseEntity {
         this.inqInfo = inqInfo;
         this.dmndUserId = dmndUserId;
         this.dmndUserIpAddr = dmndUserIpAddr;
+        this.trprId = trprId;
     }
 
     @Builder
     public static PrivacyLog create(Long prvcLogSn, String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
-            String dmndUserId, String dmndUserIpAddr) {
-        return new PrivacyLog(prvcLogSn, dmndId, inqDt, srvcNm, inqInfo, dmndUserId, dmndUserIpAddr);
+            String dmndUserId, String dmndUserIpAddr, String trprId) {
+        return new PrivacyLog(prvcLogSn, dmndId, inqDt, srvcNm, inqInfo, dmndUserId, dmndUserIpAddr, trprId);
     }
 }

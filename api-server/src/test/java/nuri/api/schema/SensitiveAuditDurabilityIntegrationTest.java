@@ -44,8 +44,8 @@ class SensitiveAuditDurabilityIntegrationTest {
     @AfterEach
     void cleanupOnlyThisTest() {
         if (context == null) return;
-        jdbc.update("DELETE FROM tb_privacy_log WHERE dmnd_user_id=?", context.actorLoginId());
-        jdbc.update("DELETE FROM tb_sys_adt_log WHERE dmnd_idntfr=?", context.requestId());
+        AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_privacy_log WHERE dmnd_user_id=?", context.actorLoginId());
+        AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE dmnd_idntfr=?", context.requestId());
     }
 
     @Test

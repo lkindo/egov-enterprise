@@ -25,7 +25,11 @@ public record UserProfileUpdateRequest(
         @Size(max = 200) String daddr,
         @Size(max = 5) String zip,
         @Size(max = 20) String officeTelno,
-        @Size(max = 11) String mblTelno,
+        // [2026-10-18] 관리자 목록은 휴대전화를 '010****5678' 로 가린다(길이 11). 그 값이 수정 폼으로 되돌아와 저장되면
+        //   원문이 가린 값으로 덮인다 — '*' 를 받지 않는다. 이메일은 위 형식 규칙이 이미 '*' 를 거부한다.
+        @Size(max = 11)
+        @Pattern(regexp = "^[^*]*$", message = "가려진 휴대전화 번호는 저장할 수 없습니다")
+        String mblTelno,
         @Size(max = 50)
         @Pattern(regexp = "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
         String emlAddr,

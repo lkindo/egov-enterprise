@@ -58,16 +58,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
     }
 
     @Override
-    public Page<AddressBookUserSearchResult> searchAddressBookUsers(String searchWrd, Pageable pageable) {
-        return searchUserRows(searchWrd, pageable, true);
-    }
-
-    @Override
     public Page<AddressBookUserSearchResult> searchAddressBookUserSelections(String searchWrd, Pageable pageable) {
-        return searchUserRows(searchWrd, pageable, false);
-    }
-
-    private Page<AddressBookUserSearchResult> searchUserRows(String searchWrd, Pageable pageable, boolean legacyContacts) {
         Objects.requireNonNull(pageable);
         Pageable requestedPageable = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 20));
         String normalizedSearchWrd = searchWrd == null ? "" : searchWrd.trim();
@@ -78,9 +69,9 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                 .or(user.userId.contains(normalizedSearchWrd))
                 .and(user.userSttsCd.eq("P"));
 
-        var projection = legacyContacts
-                ? Projections.fields(AddressBookUserSearchResult.class, user.userId, user.userNm, user.emlAddr, user.mblTelno)
-                : Projections.fields(AddressBookUserSearchResult.class, user.esntlId, user.userId, user.userNm, organizationManage.ognzNm);
+        // [2026-10-18] 연락처(이메일·휴대전화)를 싣던 구 검색 분기를 걷었다 — 이 조회는 연락처를 읽지 않는다.
+        var projection = Projections.fields(AddressBookUserSearchResult.class,
+                user.esntlId, user.userId, user.userNm, organizationManage.ognzNm);
         List<AddressBookUserSearchResult> results = queryFactory
                 .select(projection)
                 .from(user)

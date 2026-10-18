@@ -92,41 +92,38 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                         return new BadCredentialsException("Invalid User ID or Password");
                     });
             
+            // 잠금 없이 먼저 거른다 — 정지·잠김 계정은 비밀번호 검증(비싼 해시)과 행 잠금 전에 돌려보낸다.
             validateAccountStatus(userEntity);
-            
-            String encodedPassword = userEntity.getPswd();
-            
+
             // [보안 A09] 비밀번호 해시(저장/유도)는 어떤 레벨로도 로깅하지 않는다. 추적은 userId 만.
             log.debug(">>> [EgovAuthenticationProvider] User found: {}", userEntity.getUserId());
-            
-            boolean legacyPassword = isLegacyPassword(encodedPassword);
-            boolean isMatched;
-            if (legacyPassword) {
-                String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
 
-                // Try 1: userId salt. EgovPasswordEncoder.matches 는 상수시간 비교를 사용한다.
-                log.debug(">>> [EgovAuthenticationProvider] Verifying credential (userId salt)");
-                isMatched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getUserId());
+            String encodedPassword = userEntity.getPswd();
+            boolean isMatched = verifyPassword(userEntity, password, encodedPassword);
 
-                // Try 2: Using esntlId as salt if Try 1 failed (Legacy Egov behavior)
-                if (!isMatched && userEntity.getEsntlId() != null) {
-                    log.debug(">>> [EgovAuthenticationProvider] Verifying credential (esntlId salt)");
-                    isMatched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getEsntlId());
-                }
+            // [2026-10-18] 실패 횟수의 증가와 잠금 판정은 행 잠금 아래에서 현재 값으로 한다.
+            //   종전에는 잠금 없이 읽은 엔티티의 횟수를 메모리에서 올려 저장했다. 같은 계정에 동시에 틀린 비밀번호를 보내면
+            //   모두 같은 횟수를 읽고 같은 값을 써서 증가가 사라졌고(lost update), 임계값에 닿아도 잠기지 않거나 허용 횟수보다
+            //   더 많이 시도할 수 있었다. 해시 검증은 잠금 밖에서 한다 — 잠금을 쥔 채 해시를 계산하면 같은 계정의 요청이 해시
+            //   시간만큼 줄을 선다. 잠근 뒤 상태를 다시 판정하므로, 그 사이 다른 요청이 잠갔으면 이 요청은 잠김으로 끝나고
+            //   횟수를 더 올리지 않는다(고정창 유지). 회귀 방어: LoginFailureCounterConcurrencyIntegrationTest.
+            userRepository.refreshForUpdate(userEntity);
+            validateAccountStatus(userEntity);
+            if (!java.util.Objects.equals(encodedPassword, userEntity.getPswd())) {
+                // 해시 검증과 잠금 사이에 비밀번호가 바뀌었다 — 옛 해시와 맞은 결과로 판정하지 않는다.
+                encodedPassword = userEntity.getPswd();
+                isMatched = verifyPassword(userEntity, password, encodedPassword);
+            }
 
-                if (isMatched) {
+            if (isMatched) {
+                // 재해시는 잠금·재조회 뒤에 한다 — refresh 가 메모리 변경을 버리기 때문이다.
+                if (isLegacyPassword(encodedPassword)) {
                     rehashPassword(userEntity, password, "legacy eGov");
-                }
-            } else {
-                log.info(">>> [EgovAuthenticationProvider] Trying standard PasswordEncoder.");
-                // 저장 해시 파손/인코더 구성 오류는 비밀번호 불일치가 아니라 서비스 장애다.
-                // 여기서 삼키면 정상 계정의 잠금 카운터를 올리고 401로 위장하므로 바깥 장애 분류로 보낸다.
-                isMatched = passwordEncoder.matches(password, encodedPassword);
-                if (isMatched) {
+                } else {
                     upgradeStandardPasswordIfNeeded(userEntity, password, encodedPassword);
                 }
             }
-            
+
             if (!isMatched) {
                 log.warn(">>> Password mismatch for user: {}", userId);
                 userEntity.incrementLockCount();
@@ -163,6 +160,29 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             log.error(">>> Authentication service failure: {}", e.getClass().getSimpleName(), e);
             throw new AuthenticationServiceException("Authentication service unavailable", e);
         }
+    }
+
+    /**
+     * 입력 비밀번호를 저장 해시와 대조한다. 상태를 바꾸지 않는다(재해시는 호출자가 행을 잠근 뒤에 한다).
+     *
+     * <p>저장 해시 파손·인코더 구성 오류는 비밀번호 불일치가 아니라 서비스 장애다. 여기서 삼키면 정상 계정의 잠금 카운터를
+     * 올리고 401로 위장하므로 예외를 그대로 바깥 장애 분류로 보낸다.
+     */
+    private boolean verifyPassword(User userEntity, String password, String encodedPassword) {
+        if (!isLegacyPassword(encodedPassword)) {
+            log.info(">>> [EgovAuthenticationProvider] Trying standard PasswordEncoder.");
+            return passwordEncoder.matches(password, encodedPassword);
+        }
+        String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
+        // Try 1: userId salt. EgovPasswordEncoder.matches 는 상수시간 비교를 사용한다.
+        log.debug(">>> [EgovAuthenticationProvider] Verifying credential (userId salt)");
+        boolean matched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getUserId());
+        // Try 2: Using esntlId as salt if Try 1 failed (Legacy Egov behavior)
+        if (!matched && userEntity.getEsntlId() != null) {
+            log.debug(">>> [EgovAuthenticationProvider] Verifying credential (esntlId salt)");
+            matched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getEsntlId());
+        }
+        return matched;
     }
 
     /** {@code {egov}} 표식 또는 표식 없는 기존 SHA-256 해시는 레거시 검증 경로로만 처리한다. */

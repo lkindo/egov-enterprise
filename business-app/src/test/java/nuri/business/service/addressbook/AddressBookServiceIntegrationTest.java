@@ -93,16 +93,16 @@ class AddressBookServiceIntegrationTest extends BusinessIntegrationTestSupport {
 
     @Test
     @nuri.business.security.annotation.WithMockCustomUser
-    @DisplayName("주소록 사용자 검색 통합 테스트")
-    void searchAddressBookUsersTest() {
+    @DisplayName("주소록 사용자 선택 통합 테스트")
+    void searchAddressBookUserSelectionsTest() {
         // 1. searchWrd 있음
-        Page<nuri.business.service.addressbook.dto.AddressBookUserDto> res1 = 
-            addressBookService.searchUsers("test", PageRequest.of(0, 10));
-            
+        Page<nuri.business.service.addressbook.dto.AddressBookUserSelectionDto> res1 =
+            addressBookService.searchUserSelections("test", PageRequest.of(0, 10));
+
         // 2. searchWrd 없음
-        Page<nuri.business.service.addressbook.dto.AddressBookUserDto> res2 = 
-            addressBookService.searchUsers("", PageRequest.of(0, 10));
-            
+        Page<nuri.business.service.addressbook.dto.AddressBookUserSelectionDto> res2 =
+            addressBookService.searchUserSelections("", PageRequest.of(0, 10));
+
         assertThat(res1).isNotNull();
         assertThat(res2).isNotNull();
     }

@@ -18,14 +18,19 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
 
         private final JPAQueryFactory queryFactory;
 
+        private final jakarta.persistence.EntityManager entityManager;
+
         /**
          * 형제 저장소({@code WebLogRepositoryImpl} 등)는 {@code yyyyMMdd} 문자열 컬럼을 비교하지만
          * 이 테이블의 조회 시각({@code inq_dt})은 timestamp 다. 문자열 절단 없이 시각으로 비교한다.
+         *
+         * <p>[2026-10-18 V2_132] 이 표는 DB 트리거가 수정·삭제를 막는다. 보존 정리만 같은 트랜잭션에서 삭제를 선언하고 지운다.
          */
         @Override
         @Transactional
         public void deleteOldLogs(int months) {
                 LocalDateTime cutoff = LocalDateTime.now().minusMonths(months);
+                AuditLedgerRetention.permitDeletionInCurrentTransaction(entityManager);
                 queryFactory.delete(QPrivacyLog.privacyLog)
                                 .where(QPrivacyLog.privacyLog.inqDt.lt(cutoff))
                                 .execute();

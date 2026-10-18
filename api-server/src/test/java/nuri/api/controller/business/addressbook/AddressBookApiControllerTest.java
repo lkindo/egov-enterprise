@@ -2,7 +2,6 @@ package nuri.api.controller.business.addressbook;
 
 import nuri.business.service.addressbook.AddressBookService;
 import nuri.business.service.addressbook.dto.AddressBookDto;
-import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.business.service.addressbook.dto.AddressBookUserSelectionDto;
 import nuri.business.support.ControllerTestSupport;
 import nuri.foundation.core.annotation.PrivacyAccess;
@@ -35,21 +34,28 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
     private AddressBookService addressBookService;
 
     @Test
-    @DisplayName("개인정보를 반환하는 상세·사용자 검색에 접근 증적을 선언")
+    @DisplayName("개인정보를 반환하는 상세·사용자 선택에 접근 증적을 선언")
     void sensitiveReadsDeclarePrivacyAccess() throws NoSuchMethodException {
         PrivacyAccess detail = AddressBookApiController.class
                 .getDeclaredMethod("getAddressBook", Long.class)
                 .getAnnotation(PrivacyAccess.class);
-        PrivacyAccess userSearch = AddressBookApiController.class
-                .getDeclaredMethod("searchUsers", String.class, Pageable.class)
-                .getAnnotation(PrivacyAccess.class);
 
         assertThat(detail).isNotNull();
         assertThat(detail.value()).isNotBlank();
-        assertThat(userSearch).isNotNull();
-        assertThat(userSearch.value()).isNotBlank();
         assertThat(AddressBookApiController.class.getDeclaredMethod("searchUserSelections", String.class, Pageable.class)
                 .getAnnotation(PrivacyAccess.class)).isNotNull();
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 연락처를 돌려주던 구 사용자 검색(/search-users)은 퇴역했다 — 핸들러가 없다")
+    void legacyContactSearchIsRetired() throws Exception {
+        assertThat(java.util.Arrays.stream(AddressBookApiController.class.getDeclaredMethods())
+                .map(java.lang.reflect.Method::getName))
+                .doesNotContain("searchUsers");
+        mockMvc.perform(get("/api/v1/address-books/search-users").param("searchWrd", "test"))
+                .andExpect(result -> assertThat(result.getResponse().getStatus())
+                        .as("구 경로는 어떤 핸들러에도 닿지 않아야 한다").isNotEqualTo(200));
+        verifyNoInteractions(addressBookService);
     }
 
     @Test
@@ -184,26 +190,6 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(addressBookService);
-    }
-
-    @Test
-    @DisplayName("사용자 검색 성공")
-    void searchUsers_Success() throws Exception {
-        // Given
-        Page<AddressBookUserDto> page = new PageImpl<>(List.of(AddressBookUserDto.builder()
-                .userId("login-id").nm("동명이인").emlAddr("private@example.test").mblTelno("01000000000").build()));
-        given(addressBookService.searchUsers(anyString(), any(Pageable.class))).willReturn(page);
-
-        // When & Then
-        mockMvc.perform(get("/api/v1/address-books/search-users")
-                .param("searchWrd", "test")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].userId").value("login-id"))
-                .andExpect(jsonPath("$.data.list[0].nm").value("동명이인"))
-                .andExpect(jsonPath("$.data.list[0].emlAddr").value("private@example.test"))
-                .andExpect(jsonPath("$.data.list[0].mblTelno").value("01000000000"))
-                .andExpect(jsonPath("$.data.list[0].esntlId").doesNotExist());
     }
 
     @Test

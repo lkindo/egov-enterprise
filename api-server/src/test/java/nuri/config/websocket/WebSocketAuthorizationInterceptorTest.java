@@ -378,6 +378,43 @@ class WebSocketAuthorizationInterceptorTest {
                 .isInstanceOf(AccessDeniedException.class);
     }
 
+    @Test
+    void logoutBetweenHttpHandshakeAndConnectIsDenied() {
+        var before = principal(List.of("NOTI_READ"), null, false, null);
+        when(userDetailsService.loadUserByUsername("USR_001"))
+                .thenReturn(loggedOut(principal(List.of("NOTI_READ"), null, false, null)));
+        assertThatThrownBy(() -> interceptor.preSend(connectMessage(before, null), channel))
+                .isInstanceOf(AccessDeniedException.class).hasMessageContaining("logout");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void logoutRevokesAnOpenConnectionOnItsNextFrame(boolean outbound) throws Exception {
+        // [2026-10-18] 로그아웃은 그 사용자의 access token 을 끊는다 — 이미 열린 실시간 연결도 다음 프레임에서 끊는다.
+        var before = principal(List.of("NOTI_READ"), null, false, null);
+        connect(before);
+        subscribeNotifications();
+        assertThat(interceptor.outboundInterceptor().preSend(outbound(), channel)).isNotNull();
+        var transport = trackTransport();
+        when(userDetailsService.loadUserByUsername("USR_001"))
+                .thenReturn(loggedOut(principal(List.of("NOTI_READ"), null, false, null)));
+        if (outbound) {
+            assertThat(interceptor.outboundInterceptor().preSend(outbound(), channel)).isNull();
+        } else {
+            assertThatThrownBy(() -> interceptor.preSend(message(StompCommand.ACK, null, true), channel))
+                    .isInstanceOf(AccessDeniedException.class);
+        }
+        verify(transport).close(CloseStatus.POLICY_VIOLATION);
+    }
+
+    private static CustomUserDetails loggedOut(CustomUserDetails current) {
+        return CustomUserDetails.builder().esntlId(current.getEsntlId()).enabled(true).lockAt("N").groups(List.of())
+                .permissions(current.getPermissions()).authorizationVersion(current.getAuthorizationVersion())
+                .credentialsChangedAt(current.getCredentialsChangedAt())
+                .mfaCredentialVersion(current.getMfaCredentialVersion()).mfaRequired(current.isMfaRequired())
+                .lastLogoutAt(Instant.parse("2026-10-18T01:00:00Z")).build();
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void passwordChangeRevokesMfaConnectionEvenWithSameAuthorizationAndMfaVersion(boolean outbound) throws Exception {
