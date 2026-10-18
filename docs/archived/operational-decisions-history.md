@@ -2178,6 +2178,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-362 | accepted | **쓰지 않는 백엔드 의존성 7종을 걷는다.** Spring Batch(infrastructure·starter)·egovframe-rte-bat-core·starter-quartz·commons-net·jdom2·commons-dbcp2·scribejava(apis·core)는 소스 import·설정·자동 구성 제외 목록 어디에도 쓰는 곳이 없었다. 배치·예약 작업은 `@Scheduled` 와 `tb_sys_job` 내구 원장(ADR-0025)이, 커넥션 풀은 HikariCP 가 맡는다. 되살릴 때는 쓰는 코드와 함께 넣는다. | 선언만 있는 의존성은 공급망 노출과 운영 jar 크기만 늘렸다(2026-10-19 품질 평가 과제 7). api-server runtimeClasspath 비교에서 빠진 것은 이들과 이들만 끌어오던 전이 의존성 18개(운영 jar 에 섞여 있던 spring-batch-test 포함)이고, 남은 라이브러리의 버전 변화는 0건이다. 전체 컨텍스트 시험이 그대로 뜬다. spring-retry 는 백엔드 모듈들이 직접 선언해 남으므로 유지 판단(DEC-OPS-125)은 바뀌지 않는다. SAST-FP-007 은 빌드 파일 변경을 재검토해 다시 결속했다. | [api-server 빌드](../../api-server/build.gradle), [버전 카탈로그](../../gradle/libs.versions.toml), [spring-retry 판단](../04-operations/readiness-followups.md#후속-정리-2026-09-24) | 2026-10-19 | - |
 
+## DEC-OPS-363
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-363 | accepted | **V2_131·V2_132 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 승인, PR #936 병합 뒤).** 병합본(bffa8be8d)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.130, 두 컬럼·트리거·`fn_adt_log_chg_prhb` 없음, 용어 TRPR_ID 없음·LAST_LGT_DT 있음, 감사 세 표 130·834·6행) → info(대기 2.131·2.132 뿐, 반복 시드는 다시 돌지 않음) → pg_dump 백업(목차에 영향 표 확인) → Flyway 12.4.0 migrate → validate(156개) 순서로 했다. dev 시드 위치는 넣지 않았다. 읽기 확인: 두 컬럼 nullable(`timestamp`·`varchar(20)`), 트리거 3개 활성, 용어 TRPR_ID(대상자아이디·명V20) 1행, 감사 세 표 행 수 불변, 로그아웃 시각이 있는 사용자 0. | DEC-OPS-355·356·357 의 스키마다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 트리거가 걸린 뒤로 세 감사 표의 UPDATE 와 보존 정리 밖의 DELETE 는 OCI 에서도 거부된다 — 표 소유자의 트리거 해제·TRUNCATE 는 막지 않는다(DEC-OPS-357). 원본은 적용 직전 백업이다. | [V2_131](../../api-server/src/main/resources/db/migration/V2_131__add_logout_cutoff_and_privacy_log_subject.sql), [V2_132](../../api-server/src/main/resources/db/migration/V2_132__protect_audit_ledgers_from_modification.sql), [보존 정책](../04-operations/log-retention-policy.md) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

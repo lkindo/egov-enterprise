@@ -459,6 +459,7 @@ refresh_triggers:
 | DEC-OPS-360 | accepted | 화면에서만 하던 입력 검사와 조용한 성공을 서버가 맡는다(팝업 기간·포상·공통코드·배너·일정). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-360) | 2026-10-19 | - |
 | DEC-OPS-361 | accepted | 탭은 접근 가능한 공용 원천 하나로 그리고, 초점 표시를 지키며, 대형 화면 넷을 동작 변경 없이 나누고, 후속 작업 시각을 한국 시각으로 보인다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-361) | 2026-10-19 | - |
 | DEC-OPS-362 | accepted | 쓰지 않는 백엔드 의존성 7종(Spring Batch·eGov batch·Quartz·commons-net·jdom2·commons-dbcp2·scribejava)을 걷는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-362) | 2026-10-19 | - |
+| DEC-OPS-363 | accepted | V2_131·V2_132 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 승인 — 로그아웃 시각·정보주체 컬럼과 감사 원장 트리거, PR #936 병합 뒤). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-363) | 2026-10-19 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 
