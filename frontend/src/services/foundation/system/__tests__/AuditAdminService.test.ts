@@ -122,7 +122,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
     });
 
     it('화면 2페이지(page 1)는 pageIndex 2 로 변환된다 — +1 이 빠지면 목록이 한 페이지씩 밀린다', async () => {
-      // 호출부(AuditTimelineClient·MonitoringHubClient)는 1-based 화면 페이지에서 1을 빼서 넘긴다.
+      // 호출부(MonitoringHubClient)는 1-based 화면 페이지에서 1을 빼서 넘긴다.
       await auditAdminService.getAuditLogs({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 2 } });

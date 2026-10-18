@@ -3106,7 +3106,9 @@
         "target": "/admin/system/monitoring/hub?tab=observability",
         "permanent": false
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/system/monitoring/hub?tab=observability"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -6594,7 +6596,9 @@
         "target": "/admin/system/monitoring/hub?tab=system",
         "permanent": false
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/system/monitoring/hub?tab=system"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {

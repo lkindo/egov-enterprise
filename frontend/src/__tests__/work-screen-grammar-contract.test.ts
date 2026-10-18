@@ -126,11 +126,12 @@ const FIXED_HEIGHT = /^h-(\d+(\.\d+)?|px|\[[\d.]+(px|rem)\])$/;
  * 2026-09-23 동결. 남은 11건은 옮기지 않기로 판단한 것이다 — 도달할 수 없는 화면 4(DEC-OPS-023 ①),
  * 테마 CSS 없이 뜨는 전역 오류 화면 1(토큰이 정의되지 않는다), 목록 안 소형 아이콘 버튼·수신자 칩 삭제·
  * 배너 점 같은 의도적 소형 6. 새 항목은 넣지 않는다. 파일의 수가 줄면 여기서도 내리고, 0 이 되면 지운다.
+ * [2026-10-18] 11 -> 10. 도달할 수 없는 화면 4 가운데 admin/system/audit/AuditTimelineClient.tsx(1)를 그 화면 코드와 함께
+ * 지웠다(라우트는 page-redirect 스텁) — 도달할 수 없는 화면 몫은 SmsHubClient 의 3 이 남는다. 옮긴 것이 아니라 표면 제거다.
  */
 const CONTROL_HEIGHT_OVERRIDES: Readonly<Record<string, number>> = {
   'app/admin/collaboration/mail-send/MailSendHubClient.tsx': 1,
   'app/admin/survey/components/SurveyQuestionsPanel.tsx': 3,
-  'app/admin/system/audit/AuditTimelineClient.tsx': 1,
   'app/admin/uss/ion/sms/SmsAdminClient.tsx': 1,
   'app/components/dashboard/BannerSlider.tsx': 1,
   'app/cop/sms/selectSmsList/SmsHubClient.tsx': 3,
