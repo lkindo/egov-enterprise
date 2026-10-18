@@ -76,7 +76,11 @@ describe('r6 accessibility regressions', () => {
     */
     expect(userHub).not.toMatch(/text-muted-foreground\/[0-9]/);
     expect(userHub).not.toMatch(/text-foreground\/[0-9]/);
-    expect(userHub).toMatch(/role="status"[\s\S]{0,400}text-muted-foreground(?![/\w-])/);
+    // 미선택 안내 자체에 고정한다 — 합친 소스에는 정책 링크의 다른 role="status"(UserOrgHubParts)가 먼저 있어,
+    // 앞의 느슨한 정규식은 안내가 사라지거나 흐려져도 green 이었다.
+    expect(userHub).toMatch(
+      /<p\s+role="status"\s+className="(?:[^"]*\s)?text-muted-foreground(?=[\s"])[^"]*"\s*>\s*왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요\./,
+    );
   });
 
   // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).

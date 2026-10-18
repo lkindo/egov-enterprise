@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../theme-provider';
 import { applyThemeTokens, readSavedThemeConfig, resetThemeTokens, writeSavedThemeConfig } from '@/lib/theme/layout-theme';
 
-vi.mock('next-themes', () => ({ ThemeProvider: ({ children }: { children: ReactNode }) => children }));
+const mode = vi.hoisted(() => ({ resolvedTheme: 'light' as string | undefined }));
+vi.mock('next-themes', () => ({
+  ThemeProvider: ({ children }: { children: ReactNode }) => children,
+  useTheme: () => ({ resolvedTheme: mode.resolvedTheme }),
+}));
 
 const savedTheme = { primaryColor: '#f00', borderRadius: '1', layoutMode: 'MODERN' as const, sidebarWidth: 260 };
 
@@ -13,6 +17,7 @@ describe('브라우저 테마 저장과 전역 복원', () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.removeAttribute('style');
+    mode.resolvedTheme = 'light';
   });
   afterEach(() => {
     vi.restoreAllMocks();
@@ -52,9 +57,39 @@ describe('브라우저 테마 저장과 전역 복원', () => {
   it('저장값의 임의 CSS는 주입하지 않고 색상과 반경을 정규화한다', () => {
     localStorage.setItem('hub-theme-config', JSON.stringify({ primaryColor: 'url(https://invalid.example)', borderRadius: '999' }));
     render(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
-    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('221.2 100% 50%');
+    // 잘못된 색은 기본색으로 정규화되고, 기본색은 고른 색이 아니므로 브랜드 프로필 색을 덮지 않는다.
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('');
     expect(document.documentElement.style.getPropertyValue('--radius-hub-section')).toBe('3rem');
     expect(document.documentElement.style.cssText).not.toContain('url(');
+  });
+
+  it('다크 화면에서는 저장한 라이트 색으로 다크 블록의 색을 덮지 않고 반경만 복원한다', () => {
+    writeSavedThemeConfig(savedTheme);
+    mode.resolvedTheme = 'dark';
+    const view = render(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--color-ring')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--radius-hub-section')).toBe('2rem');
+    mode.resolvedTheme = 'light';
+    view.rerender(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('0 100% 50%');
+    mode.resolvedTheme = 'dark';
+    view.rerender(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('');
+  });
+
+  it('모드가 정해지기 전에는 아무 토큰도 덮지 않는다', () => {
+    writeSavedThemeConfig(savedTheme);
+    mode.resolvedTheme = undefined;
+    render(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
+    expect(document.documentElement.style.cssText).toBe('');
+  });
+
+  it('기본색 그대로 저장한 값은 브랜드 프로필 색을 따르고 반경만 복원한다', () => {
+    writeSavedThemeConfig({ ...savedTheme, primaryColor: '#0050FF' });
+    render(<ThemeProvider><main>업무 화면</main></ThemeProvider>);
+    expect(document.documentElement.style.getPropertyValue('--primary')).toBe('');
+    expect(document.documentElement.style.getPropertyValue('--radius-hub-section')).toBe('2rem');
   });
 
   it('초기화는 저장값과 적용 토큰을 지우고 다음 로드에서 되살리지 않는다', () => {

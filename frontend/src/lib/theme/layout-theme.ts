@@ -175,6 +175,26 @@ export function applyThemeTokens(config: ThemeConfig) {
   });
 }
 
+const COLOR_TOKEN_KEYS = new Set([
+  '--primary', '--primary-foreground', '--ring', '--color-primary', '--color-primary-foreground', '--color-ring',
+]);
+
+/**
+ * 새 로드 복원. 저장한 색은 라이트 화면에서 고른 값이라 다크 블록의 색을 덮으면 대비가 무너진다
+ * (#0050ff 는 다크 배경에서 약 3:1). 기본색 그대로 저장한 값은 고른 색이 아니므로 브랜드 프로필 색을 따른다.
+ * 반경 토큰은 모드와 무관하게 복원한다.
+ */
+export function restoreThemeTokens(config: ThemeConfig, dark: boolean) {
+  const customColor = config.primaryColor.toLowerCase() !== DEFAULT_THEME_CONFIG.primaryColor;
+  Object.entries(buildTokenVars(config)).forEach(([key, value]) => {
+    if (COLOR_TOKEN_KEYS.has(key) && (dark || !customColor)) {
+      document.documentElement.style.removeProperty(key);
+    } else {
+      document.documentElement.style.setProperty(key, value);
+    }
+  });
+}
+
 export function resetThemeTokens() {
   TOKEN_KEYS.forEach((key) => document.documentElement.style.removeProperty(key));
   clearSavedThemeConfig();

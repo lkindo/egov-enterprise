@@ -356,7 +356,9 @@ export function GlobalCommandCenter() {
       <div
         aria-hidden="true"
         data-testid="global-command-backdrop"
-        className="fixed inset-0 bg-surface-inverse animate-in fade-in duration-300"
+        // 다크 모드의 surface-inverse 는 대화상자의 --card 와 같은 값이라 배경과 창이 한 덩어리로 보였다(1.00:1).
+        // 다크에서는 card 보다 어두운 background 로 깐다.
+        className="fixed inset-0 bg-surface-inverse dark:bg-background animate-in fade-in duration-300"
         onClick={closeCommandCenter}
       />
 
