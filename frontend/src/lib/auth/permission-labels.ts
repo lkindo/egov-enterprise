@@ -5,7 +5,7 @@ const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   CLASS_GRP: '사용자 분류 그룹', CODE: '공통 코드', COMMENT: '댓글', COMMUNITY: '커뮤니티',
   DASHBOARD: '대시보드', DEPT: '조직·부서', DEPT_BOX: '부서 업무함', DEPT_JOB: '부서 업무', DWORK: '후속 작업',
   EVENT: '행사', EXT_HR: '외부 인사 연계', FAQ: 'FAQ', FILE: '파일', HELP: '도움말',
-  INFORMAL: '약식 결재', INST_CODE: '기관 코드', LOGIN_LOG: '로그인 이력', LOGIN_POL: '로그인 정책',
+  INST_CODE: '기관 코드', LOGIN_LOG: '로그인 이력', LOGIN_POL: '로그인 정책',
   MAIL: '메일', MEMO_RPT: '메모 보고', MENU: '메뉴', MFA: '추가 인증',
   NOTE: '쪽지', NOTI: '알림', NOTICE: '공지사항', OPS: '시스템 운영', POLICY: '이용 정책',
   POLL: '투표', POPUP: '팝업', PRIVACY: '개인정보 조회 이력',
@@ -15,7 +15,7 @@ const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   USER_LOG: '사용자 활동 이력', WEB_LOG: '웹 요청 이력', WORK_RPT: '업무 보고', WORKFLOW: '워크플로우',
 };
 const ACTION_LABELS: Readonly<Record<string, string>> = {
-  ACK: '확인', ADMIN_READ: '관리 조회', APPR_ADMIN: '관리 경로 본인 결재',
+  ACK: '확인', ADMIN_READ: '관리 조회',
   APPROVE: '승인', ASSIGN: '배정', AUDIT: '감사 이력 조회', CANCEL: '취소',
   CREATE: '등록', CREATE_ALL: '관리자 등록', DELETE: '삭제', DELETE_ALL: '타인 자료 삭제',
   DEPT: '부서 변경', DISPATCH: '알림 발송', DOWNLOAD: '다운로드', DOWNLOAD_ALL: '타인 자료 다운로드',
@@ -39,7 +39,7 @@ export interface PermissionDomainCategory {
   readonly domains: readonly string[];
 }
 export const PERMISSION_DOMAIN_CATEGORIES: readonly PermissionDomainCategory[] = [
-  { key: 'MY_WORK', label: '내 업무·결재', domains: ['DASHBOARD', 'APPROVAL', 'INFORMAL', 'WORKFLOW', 'DEPT_JOB', 'DEPT_BOX', 'SCHEDULE', 'WORK_RPT', 'MEMO_RPT', 'ABSENCE'] },
+  { key: 'MY_WORK', label: '내 업무·결재', domains: ['DASHBOARD', 'APPROVAL', 'WORKFLOW', 'DEPT_JOB', 'DEPT_BOX', 'SCHEDULE', 'WORK_RPT', 'MEMO_RPT', 'ABSENCE'] },
   { key: 'COMMUNICATION', label: '소통·연락', domains: ['NOTE', 'MAIL', 'SMS', 'NOTI', 'ADBK', 'SCRAP'] },
   { key: 'CONTENT', label: '게시·지식·커뮤니티', domains: ['BOARD', 'BBS_MST', 'NOTICE', 'FAQ', 'COMMENT', 'SATISFY', 'TEMPLATE', 'HELP', 'COMMUNITY', 'FILE'] },
   { key: 'SURVEY_EVENT', label: '설문·행사', domains: ['SURVEY', 'SURVEY_RSP', 'POLL', 'EVENT', 'EXT_HR', 'REWARD'] },

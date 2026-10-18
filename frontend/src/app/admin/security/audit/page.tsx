@@ -8,8 +8,9 @@ import { redirect } from 'next/navigation';
  * <p>라우트를 지우지 않고 보내는 이유는 형제 `/admin/survey/*` 스텁들과 같다 —
  * 문자열 URL 참조는 정적 분석으로 잡히지 않아 물리 삭제에 오삭제 전례가 있다(V2_30).
  *
- * <p>⚠ 이름이 비슷한 `/admin/system/audit` 는 <b>다른 화면</b>이다(`AuditTimelineClient` 405줄 —
- * 보안 감사 타임라인). 그쪽은 실기능인데 메뉴가 없어 V2_48 로 메뉴를 부여했다. 혼동하지 말 것.
+ * <p>이름이 비슷한 `/admin/system/audit` 도 이제 같은 형태의 스텁이다(목적지는 `?tab=system`). 종전 이 자리의
+ * 경고는 그쪽을 메뉴가 있는 실기능(`AuditTimelineClient`, V2_48 메뉴 부여)으로 적었지만, next.config 리다이렉트가 그
+ * 화면을 처음부터 가리고 있었고 메뉴는 V2_100(ADR-0017)이 걷었다. 2026-10-18 그 화면 코드를 지웠다.
  */
 export default function SecurityAuditRedirectPage() {
   redirect('/admin/system/monitoring/hub?tab=security');

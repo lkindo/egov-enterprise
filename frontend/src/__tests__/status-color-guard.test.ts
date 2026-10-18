@@ -221,13 +221,15 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [2026-10-10 Phase 2 D6] 총계를 파일별로 동결한다 — 재사용 생성물에서는 투영으로 빠진 파일의 몫만 뺀다(원장 확인).
 //   위의 총계 변천은 이 표 합의 이력이다(131). 총계는 표의 합에서 계산한다 — 총계와 표를 이중으로 동결하면 리터럴을 줄일
 //   때마다 코드를 보지 않는 상수 수정이 붙는다(FE-CONTRACT-07). 리터럴을 줄이거나 옮기면 이 표만 고친다.
+// [하향 래칫 2026-10-18] 131 -> 118. next.config 리다이렉트로 한 번도 렌더되지 않던 두 화면의 코드를 지우며 세 파일의
+//   행이 함께 사라졌다 — /admin/observability 의 ServiceTopology(4), /admin/system/audit 의 AuditTimelineClient(1)·
+//   TimelineItem(8). 두 라우트는 page-redirect 스텁으로 남는다. 토큰 치환이 아니라 표면 제거이며 새 리터럴은 0건이다.
 const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/AdminDashboardClient.tsx': 7,
   'src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx': 1,
   'src/app/admin/collaboration/mail-send/MailSendHubClient.tsx': 2,
   'src/app/admin/community/templates/TemplateAdminClient.tsx': 3,
   'src/app/admin/error.tsx': 6,
-  'src/app/admin/observability/components/ServiceTopology.tsx': 4,
   'src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx': 3,
   'src/app/admin/stats/IntelligenceHubClient.tsx': 1,
   'src/app/admin/stats/StatsHubParts.tsx': 2,
@@ -236,8 +238,6 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/survey/manage/SurveyManageClient.tsx': 6,
   'src/app/admin/survey/polls/manage/page.tsx': 2,
   'src/app/admin/survey/stats/SurveyStatsClient.tsx': 7,
-  'src/app/admin/system/audit/AuditTimelineClient.tsx': 1,
-  'src/app/admin/system/audit/TimelineItem.tsx': 8,
   'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 3,
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx': 3,
   'src/app/components/layout/header-notifications.tsx': 1,

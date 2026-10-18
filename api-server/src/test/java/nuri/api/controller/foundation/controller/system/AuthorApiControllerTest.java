@@ -4,16 +4,14 @@ import nuri.business.test.BaseControllerTest;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.MediaType;
 import nuri.business.service.auth.AuthorManageService;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import nuri.business.service.menu.MenuService;
 
-import java.util.List;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -22,7 +20,6 @@ class AuthorApiControllerTest extends BaseControllerTest {
 
     private AuthorManageService authorManageService;
     private MenuService menuService;
-    private tools.jackson.databind.ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build();
 
     @Override
     protected Object getController() {
@@ -68,61 +65,9 @@ class AuthorApiControllerTest extends BaseControllerTest {
     }
 
     @Test
-    @DisplayName("권한 그룹 등록 성공")
-    void testCreateAuthor() throws Exception {
-        // Given
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authrtCd("ROLE_NEW")
-                .authrtNm("신규 권한")
-                .build();
-
-        // When & Then
-        mockMvc.perform(post("/api/v1/admin/system/authorities")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
-
-        verify(authorManageService, times(1)).insertAuthor(any(AuthorManageDto.class));
-    }
-
-    @Test
-    @DisplayName("권한 그룹 삭제 성공")
-    void testDeleteAuthor() throws Exception {
-        // When & Then
-        mockMvc.perform(delete("/api/v1/admin/system/authorities/ROLE_ADMIN"))
-                .andExpect(status().isOk());
-
-        verify(authorManageService, times(1)).deleteAuthor("ROLE_ADMIN");
-    }
-
-    @Test
-    @DisplayName("권한 그룹 수정 성공")
-    void testUpdateAuthor() throws Exception {
-        AuthorManageDto dto = AuthorManageDto.builder()
-                .authrtCd("ROLE_USER")
-                .authrtNm("Modified Name")
-                .build();
-        mockMvc.perform(put("/api/v1/admin/system/authorities/ROLE_USER")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
-        verify(authorManageService).updateAuthor(any());
-    }
-
-    @Test
     @DisplayName("권한별 메뉴 목록 조회")
     void testGetAuthorMenus() throws Exception {
         mockMvc.perform(get("/api/v1/admin/system/authorities/ROLE_USER/menus"))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("권한 그룹 다중 삭제")
-    void testDeleteAuthors() throws Exception {
-        mockMvc.perform(delete("/api/v1/admin/system/authorities")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(List.of("ROLE_1", "ROLE_2"))))
-                .andExpect(status().isOk());
-        verify(authorManageService).deleteAuthors(any());
     }
 }

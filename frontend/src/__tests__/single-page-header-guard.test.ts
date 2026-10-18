@@ -26,8 +26,8 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  */
 const ALLOWED_DUPLICATES: Record<string, string> = {
   // next.config 리다이렉트로 도달 불가한 화면이라 사용자에게 보이는 변화가 없다(DEC-OPS-023).
-  'src/app/admin/system/audit/AuditTimelineClient.tsx':
-    '도달 불가(리다이렉트) 화면 — 이행 대상이 아니다',
+  // [2026-10-18] 같은 사유로 두던 admin/system/audit/AuditTimelineClient.tsx 를 걷었다 — 그 화면 코드를 지우고
+  //   라우트를 page-redirect 스텁으로 남겼다. 예외가 풀린 것이 아니라 대상이 사라졌다.
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx':
     '도달 불가(리다이렉트) alias — 이행 대상이 아니다',
 };

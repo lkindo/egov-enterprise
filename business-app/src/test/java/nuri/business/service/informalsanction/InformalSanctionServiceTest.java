@@ -266,23 +266,6 @@ class InformalSanctionServiceTest {
     }
 
     @Test
-    @DisplayName("수정 인가 실패 시 코드 사전 조회와 내용 변경에 도달하지 않는다")
-    void updateChecksOwnerBeforeTaskType() {
-        InformalSanction entity = InformalSanction.builder().ifmlAtrzSn(1L)
-                .aplcntId("owner").taskSeCd("C1").aprvYn("A").build();
-        given(informalSanctionRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
-        securityUtilMock.when(() -> SecurityUtil.assertOwnerByEsntlId("owner"))
-                .thenThrow(new BusinessException(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED));
-
-        assertThatThrownBy(() -> informalSanctionService.updateInformalSanction(
-                InformalSanctionDto.builder().ifmlAtrzSn(1L).taskSeCd("ZZ").build()))
-                .isInstanceOf(BusinessException.class).extracting("errorCode")
-                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
-        verifyNoInteractions(commonCodeService);
-        assertThat(entity.getTaskSeCd()).isEqualTo("C1");
-    }
-
-    @Test
     @DisplayName("결재 승인 처리 테스트")
     void confirmInformalSanctionTest() {
         // Given
@@ -370,7 +353,6 @@ class InformalSanctionServiceTest {
         assertThat(result.getContent().get(0).getStages().get(0).approvers().get(0).status())
                 .isEqualTo(nuri.business.domain.informalsanction.ApprovalStatus.APPROVED);
         verify(informalSanctionRepository).findProcessed(eq("admin"), eq(List.of("C", "R")), isNull(), isNull(), isNull(), isNull(), eq(pageable));
-        verify(informalSanctionRepository, never()).findByAprvrId(any(), any());
         verify(informalSanctionRepository, never()).findSubmitted(any(), any(), any(), any(), any(), any());
     }
 

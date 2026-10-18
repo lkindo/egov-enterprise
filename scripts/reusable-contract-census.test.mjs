@@ -39,7 +39,9 @@ test('the full composition reproduces the boundary census and the consumer ledge
 });
 
 test('a reduced composition drops removed operations, records consumers the projection removed and remeasures the ratchets', { timeout: 300_000 }, t => {
-  const controller = 'api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java';
+  // 원장 항목만 있고 화면 소비자가 없는 컨트롤러를 지운다. 종전 표본(비공식결재 API)은 2026-10-18 ADR-0034 로 걷혀
+  // 같은 성질(모든 연산이 superseded-surface)의 구 사용자 권한 배정 API 로 옮겼다.
+  const controller = 'api-server/src/main/java/nuri/api/controller/foundation/controller/system/UserAuthorityApiController.java';
   const consumer = 'frontend/src/services/business/user/help/HelpUserService.ts';
   const projection = projectSourceApiDocs(root, file => file === controller);
   assert.ok(projection.removedOperations.length > 0, 'the controller documents operations');

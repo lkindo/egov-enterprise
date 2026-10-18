@@ -49,7 +49,7 @@
           },
           {
             "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
-            "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
+            "reason": "demo 소유 표면(배너/팝업·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
@@ -107,7 +107,6 @@
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalConfirmRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalDraftRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalResubmissionRequest.java",
-          "api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/board/dto/BoardSearchItemResponse.java",
           "api-server/src/main/java/nuri/api/controller/business/board/dto/PublicFaqDetailResponse.java",
@@ -152,7 +151,6 @@
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupUserApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
-          "api-server/src/test/java/nuri/api/controller/business/approval/InformalSanctionApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/BoardMultipartWriteApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/SatisfactionApiControllerTest.java",
@@ -253,7 +251,7 @@
           },
           {
             "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
-            "reason": "demo 소유 표면(배너/팝업·약식결재·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
+            "reason": "demo 소유 표면(배너/팝업·설문·투표)의 RBAC 매트릭스라 그 표면이 없는 프로필에서는 검사 대상이 없다(설문 표지 참조로 함께 제거된다). core 표면(사용자·로그인 정책·통계·익명·미등록 라우트·그룹 의미)의 RbacAuthorizationMatrixTest 는 모든 프로필에 남는다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java",
@@ -295,7 +293,6 @@
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalConfirmRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalDraftRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalResubmissionRequest.java",
-          "api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/memoreport/MemoReportApiController.java",
@@ -319,7 +316,6 @@
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupUserApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
-          "api-server/src/test/java/nuri/api/controller/business/approval/InformalSanctionApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
@@ -490,7 +486,6 @@
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalConfirmRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalDraftRequest.java",
           "api-server/src/main/java/nuri/api/controller/business/approval/dto/ApprovalResubmissionRequest.java",
-          "api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
           "api-server/src/main/java/nuri/api/controller/business/board/dto/BoardSearchItemResponse.java",
           "api-server/src/main/java/nuri/api/controller/business/board/dto/PublicFaqDetailResponse.java",
@@ -531,7 +526,6 @@
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/admin/content/popup/PopupUserApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
-          "api-server/src/test/java/nuri/api/controller/business/approval/InformalSanctionApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/BoardMultipartWriteApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/board/SatisfactionApiControllerTest.java",
@@ -620,6 +614,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
             "reason": "알림 행과 내구 작업의 동시 저장·재시도·중복 전달 검증이다. 알림 기능이 없는 구성에서는 대상이 없고, 공통 작업 엔진 검증은 DurableWorkIntegrationTest에 남는다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java",
+            "reason": "배너·팝업·설문·투표 표면의 RBAC 매트릭스라 그 기능이 없는 이 구성에서는 검사 대상이 없다. 약식결재가 이 매트릭스에 두던 관리 경로(PATCH /api/v1/admin/system/ism/{id}/confirm) 단언은 2026-10-18 그 API 와 함께 걷혔다(ADR-0034). 걷은 경로가 라우팅되지 않음은 모든 구성에 남는 RbacAuthorizationMatrixTest 가 본다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",

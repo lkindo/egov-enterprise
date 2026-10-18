@@ -27,14 +27,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "3eb43d1a9eed74289edb22986ee68a72147080ef5e365497102a26fa9354e177"
+    "inventoryHash": "b6ad1fa414793e3ea870dec7cad95e8696b2a5d2f26972e69ece1b8f37e754bf"
   },
   "summary": {
-    "sourceFileCount": 702,
-    "records": 397,
-    "syntaxOccurrences": 473,
-    "ambiguousRecords": 349,
-    "unverifiedRecords": 397,
+    "sourceFileCount": 699,
+    "records": 399,
+    "syntaxOccurrences": 475,
+    "ambiguousRecords": 351,
+    "unverifiedRecords": 399,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -45,7 +45,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 52,
-      "navigation-producer": 179,
+      "navigation-producer": 181,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -54,7 +54,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 387,
+      "navigation": 389,
       "request-telemetry": 10
     }
   },
@@ -5504,6 +5504,53 @@
       }
     },
     {
+      "id": "URL-15DB0874938E16",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/observability/page.tsx",
+      "producerFile": "frontend/src/app/admin/observability/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/observability",
+      "targetCandidate": "/admin/system/monitoring/hub?tab=observability",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/observability/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-7ED1C57535938A",
       "surface": "navigation",
       "kind": "form-producer",
@@ -8266,6 +8313,53 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/survey/templates/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-ED6BC041E603BD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/audit/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/audit/page.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/audit",
+      "targetCandidate": "/admin/system/monitoring/hub?tab=system",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/monitoring/hub",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/audit/page.tsx",
         "detector": "server-redirect-call",
         "occurrenceCount": 1
       }

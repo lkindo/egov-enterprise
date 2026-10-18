@@ -276,6 +276,9 @@ test.describe('설문 응답 생명주기', () => {
                 await expect(userPage.getByRole('button', { name: '제출 완료', exact: true })).toBeDisabled();
             });
         } finally {
+            // 사용자 화면을 먼저 떠난다 — 설문 상세(/survey/{id})가 열린 채로 설문을 지우면 그 화면의 재조회가 404 를 받아
+            // 브라우저 오류 감시가 실패로 잡는다(2026-10-18 CI 재시도 통과 1건). 사용자 삭제도 이 뒤라 순서는 같다.
+            await userPage.goto('about:blank');
             // API가 소유 설문의 자식부터 정리한다. ID와 합성 표식을 다시 대조하며 전체 목록 삭제는 하지 않는다.
             if (surveyId !== undefined) {
                 const owned = await readData<Survey>(adminRequest, `${SURVEYS}/${surveyId}`);
@@ -293,7 +296,6 @@ test.describe('설문 응답 생명주기', () => {
                 const owned = await readData<{ userId: string; userNm: string }>(adminRequest, `${users}/${userId}`);
                 expect(owned.userId).toBe(userId);
                 expect(owned.userNm).toBe(userName);
-                await userPage.goto('about:blank');
                 let removed = await adminRequest.delete(`${users}/${userId}`);
                 if (removed.status() === 409) {
                     // 활동 로그의 주기 flush가 이 합성 사용자의 마지막 요청을 삽입하는 순간과 겹치면

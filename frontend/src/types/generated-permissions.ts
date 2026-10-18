@@ -108,21 +108,8 @@ export const PERMISSION_CODES = [
   "HELP_READ",
   "HELP_UPDATE",
   "HELP_UPDATE_ALL",
-  "INFORMAL_APPROVE",
-  "INFORMAL_APPR_ADMIN",
-  "INFORMAL_CREATE",
-  "INFORMAL_CREATE_ALL",
-  "INFORMAL_DELETE",
-  "INFORMAL_DELETE_ALL",
-  "INFORMAL_READ",
-  "INFORMAL_READ_ALL",
-  "INFORMAL_UPDATE",
-  "INFORMAL_UPDATE_ALL",
-  "INST_CODE_CREATE",
-  "INST_CODE_DELETE",
   "INST_CODE_IMPORT",
   "INST_CODE_READ",
-  "INST_CODE_UPDATE",
   "LOGIN_LOG_EXPORT",
   "LOGIN_LOG_READ",
   "LOGIN_POL_CREATE",
@@ -248,7 +235,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "b1d69b3fe3e38cbff031b3fd8baa59ed1c4e7b7fdd1a45ba3422e1b3a9b8b1b7";
+export const PERMISSION_CATALOG_VERSION = "844153f6fe17e8912bc3c08f40ce272ef89730d03380be04b0cd4f8254f868aa";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [

@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 436,
-    "generatedDescriptorCount": 436
+    "openApiOperationCount": 412,
+    "generatedDescriptorCount": 412
   },
   "target": {
     "generatedPercent": 100,

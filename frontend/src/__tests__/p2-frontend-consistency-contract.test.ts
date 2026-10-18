@@ -33,10 +33,17 @@ describe('P2 frontend consistency source contract', () => {
   });
 
   it('observability 화면은 fetch와 actuator query key를 직접 소유하지 않는다', () => {
-    const page = source('app', 'admin', 'observability', 'page.tsx');
+    // [2026-10-18] 대상을 옮겼다. 종전 대상 app/admin/observability/page.tsx 는 next.config 리다이렉트에 가려 실행된 적 없는
+    //   화면이었고, 그 코드를 지워 이제 감시 허브로 보내는 page-redirect 스텁이다 — 스텁을 계속 읽으면 이 단언은 공허하게 통과한다.
+    //   액추에이터 지표를 실제로 그리는 화면은 그 리다이렉트의 목적지인 감시 허브의 가동 상태(OBSERVABILITY) 탭이므로 같은
+    //   불변식(직접 fetch·옛 query key 금지)을 그 탭의 소유 파일에 건다. 공허 통과를 막으려 쿼리 팩터리 사용도 함께 본다.
+    const monitoring = source('app', 'admin', 'system', 'monitoring', 'MonitoringHubClient.tsx');
 
-    expect(page).not.toMatch(/\bfetch\s*\(/);
-    expect(page).not.toContain("queryKey: ['observability-actuator-metrics']");
+    expect(monitoring).not.toMatch(/\bfetch\s*\(/);
+    expect(monitoring).not.toContain("queryKey: ['observability-actuator-metrics']");
+    for (const factory of ['health', 'cpu', 'memory']) {
+      expect(monitoring).toContain(`...monitoringQueryOptions.${factory}()`);
+    }
   });
 
   it('comment 경계와 실제 소비 화면은 legacy any/key를 직접 소유하지 않는다', () => {

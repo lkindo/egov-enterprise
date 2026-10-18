@@ -88,6 +88,7 @@ refresh_triggers:
 | ADR-0031 | accepted | 기존 승인에 따른 원장 확정·비표준 대상·미확인 허용값·chunk 실패 처리와 L3 경계를 후속 ADR로 승격한다. 기존 안전 경계와 기관 승인은 유지한다. | DEC-OPS-310·315·316·317·319·325의 변경과 ADR-0029를 함께 읽을 수 있게 한다. 2026-10-17은 문서 정리일이다. | [ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 2026-10-15 | ADR-0029 결정 3·8·L3 실행 경계의 해당 부분; 결정 7의 좁은 구현 명시 |
 | ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | ADR-0029 이후 범위가 여덟 개로 늘어 한 슬롯의 이관 PIT가 전수 CI의 임계 경로가 됐다(DEC-OPS-337). | [ADR-0032](../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
 | ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 사용자 선택. 이력의 표시명·변경된 현재 주소로 자동 복구하지 않는다. | [ADR-0033](../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 2026-10-18 | - |
+| ADR-0034 | accepted | 410만 돌려주던 구 인가 쓰기 API 와 결재 API 로 대체된 비공식결재 API 의 경로를 걷고, 집행 지점이 없어진 INFORMAL_*·INST_CODE 쓰기 권한과 그 배정을 퇴역한다. | 2026-10-18 사용자 선택. 호출자 없는 표면이 계약·원장에 계속 집계됐고, 원장에 없는 배정은 권한 스냅샷을 fail-closed 로 막는다. | [ADR-0034](../../docs/02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분 |
 
 ## 운영 결정 index
 
@@ -441,6 +442,10 @@ refresh_triggers:
 | DEC-OPS-344 | accepted | CI 의 cross-stack 계약은 frontend 축이 켜지면 커버리지 전체 스위트가 소유하고, 커버리지 분모에 queries·extensions 를 넣으며, 화면 목록 생성기는 레이아웃 셸 제거를 원장 근거로만 받는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-344) | 2026-10-18 | ci.yml 주석의 "몇십 초 중복이 증거를 잃는 것보다 싸다" 판단 |
 | DEC-OPS-345 | accepted | 차트 범주 색을 브랜드 프로필의 --chart-1..5 토큰으로 두고 코드의 하드코딩 Hex 를 동결한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-345) | 2026-10-18 | - |
 | DEC-OPS-346 | accepted | 대형 화면·서비스·이관 도구 클래스를 동작을 바꾸지 않고 나누며, 단일 파일을 읽던 계약은 나뉜 파일 전체로 넓힌다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-346) | 2026-10-18 | - |
+| DEC-OPS-347 | accepted | 410만 돌려주던 구 롤·롤 권한·권한 쓰기 API 12개를 경로째 걷는다(ADR-0034). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-347) | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분(ADR-0034) |
+| DEC-OPS-348 | accepted | 결재 API 로 대체된 비공식결재(ISM) API 를 걷고, 그 API 에만 묶인 INFORMAL_* 권한 10개와 배정을 퇴역한다(V2_130). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-348) | 2026-10-18 | DEC-OPS-053 의 ISM API superseded-surface 등재(표면 제거로 종료) |
+| DEC-OPS-349 | accepted | 집행 지점이 없던 기관코드 쓰기 권한 INST_CODE_CREATE·UPDATE·DELETE 와 그 배정을 퇴역하고, 로그인 정책의 dpcn_prm_yn 컬럼은 유지한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-349) | 2026-10-18 | GAP-CODE-001 의 '쓰기 권한 퇴역은 별도 결정' 부분 |
+| DEC-OPS-350 | accepted | 실행될 수 없던 /admin/observability·/admin/system/audit 를 redirect 스텁으로 바꾸고 그 화면 전용 코드를 지운다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-350) | 2026-10-18 | V2_48 주석의 /admin/system/audit 실기능 판정과 "추측으로 지우지 않는다"(실행 불가 실측으로 종료) |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 436,
+    "operationCount": 412,
     "unwiredMax": 10,
     "screenOrphanMax": 28,
     "ungatedWriteMax": 39
@@ -33,55 +33,10 @@
       "evidence": []
     },
     {
-      "operationId": "confirmInformalSanction",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
-      ]
-    },
-    {
-      "operationId": "createAuthor",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzCreateGroup"
-      ]
-    },
-    {
       "operationId": "createNotification",
       "category": "unwired",
       "note": "Self-notification creation for the authenticated principal. Admin dispatch to other users goes through the separate /admin/notifications/dispatch operation (DEC-OPS-042), which is wired.",
       "evidence": []
-    },
-    {
-      "operationId": "createRole",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzReplaceGrants"
-      ]
-    },
-    {
-      "operationId": "deleteAuthor",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzDeleteGroup"
-      ]
-    },
-    {
-      "operationId": "deleteAuthors",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzDeleteGroup"
-      ]
     },
     {
       "operationId": "deleteClCode",
@@ -97,19 +52,6 @@
       "note": "Common code group delete. Same shape as deleteClCode — CommonCodeGroup.delete() sets useYn='N' and the group edit form reaches the same state through updateCmmnCode, which additionally records lastMdfrId. The dead frontend delegate was retired in DEC-OPS-068 after checking both entity methods; the HTTP surface stays.",
       "supersededBy": [
         "updateCmmnCode"
-      ]
-    },
-    {
-      "operationId": "deleteInformalSanction",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
       ]
     },
     {
@@ -129,22 +71,6 @@
       ]
     },
     {
-      "operationId": "deleteRole",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzReplaceGrants"
-      ]
-    },
-    {
-      "operationId": "deleteRoles",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzReplaceGrants"
-      ]
-    },
-    {
       "operationId": "deleteUserAuthorities",
       "category": "superseded-surface",
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
@@ -157,15 +83,6 @@
       "category": "superseded-surface",
       "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
       "supersededBy": [
-        "authzGroup"
-      ]
-    },
-    {
-      "operationId": "getAuthorRoles",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzCatalog",
         "authzGroup"
       ]
     },
@@ -193,32 +110,6 @@
       ]
     },
     {
-      "operationId": "getInformalSanction",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001. Since approval references (D4, V2_123) the shared read gate (InformalSanctionRepository#findByIdAndParticipant) also admits a document's references, so this legacy detail path opens to them too — the same service decision, not a widened permission (INFORMAL_READ still gates the route).",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
-      ]
-    },
-    {
-      "operationId": "getInformalSanctionList",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
-      ]
-    },
-    {
       "operationId": "getInstitutionCodeDetail",
       "category": "unwired",
       "note": "Institution code detail. PD-CODE-001 decided (2026-09-08) to keep the receive log read-only: the ledger write path stays unbuilt because chg_se_cd has no authoritative value domain (the screen reads 1/2/3, this module's tests use \"I\", and there is no seed, enum or contract). Interpreting it without a spec would overwrite or delete core data. Reopening requires the standard/供給처 specification — see GAP-CODE-001.",
@@ -235,22 +126,6 @@
       "category": "unwired",
       "note": "Notification detail — the notification centre renders from the list response and never fetches a single item.",
       "evidence": []
-    },
-    {
-      "operationId": "getRole",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzCatalog"
-      ]
-    },
-    {
-      "operationId": "getRoles",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzCatalog"
-      ]
     },
     {
       "operationId": "getScheduleList",
@@ -356,32 +231,11 @@
       ]
     },
     {
-      "operationId": "registerInformalSanction",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
-      ]
-    },
-    {
       "operationId": "reissue",
       "category": "bff-route-handler",
       "note": "Token reissue runs server-side in the route handler; the refresh token is never exposed to the client bundle.",
       "evidence": [
         "frontend/src/app/api/auth/reissue/route.ts"
-      ]
-    },
-    {
-      "operationId": "saveAuthorRoles",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzReplaceGrants"
       ]
     },
     {
@@ -421,27 +275,6 @@
       "evidence": []
     },
     {
-      "operationId": "updateAuthor",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification routes this workflow to the canonical versioned authorization API. Users may belong to multiple groups; department changes apply ADD/REMOVE deltas and group deletion is an explicit single-group operation. Legacy unversioned/bulk replacement is no longer exposed by the frontend. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzUpdateGroup"
-      ]
-    },
-    {
-      "operationId": "updateInformalSanction",
-      "category": "superseded-surface",
-      "note": "InformalSanctionApiController serves this domain at /api/v1/informal-sanctions (aliased at /api/v1/admin/system/ism). DEC-OPS-040 consolidated the ISM screen into /approvals, which calls ApprovalApiController instead; DEC-OPS-053 then removed the dead IsmAdminService. Both controllers wrap the same InformalSanctionService, so this is a superseded surface, not a missing feature. Neither controller is a subset of the other (approvals adds processed/task-types, ISM keeps detail/update), so retiring it is a backend design decision — see GAP-WIRING-001.",
-      "supersededBy": [
-        "getPending",
-        "getMyHistory",
-        "getProcessed",
-        "createApproval",
-        "confirm",
-        "cancelApproval"
-      ]
-    },
-    {
       "operationId": "updateMenu",
       "category": "superseded-surface",
       "note": "DEC-OPS-208/209: the menu screen saves structure, properties, deletions and group visibility as one versioned draft through saveMenuStructure (PUT /admin/system/menus/structure). The per-menu update, batch reorder and delete endpoints remain for API clients but no screen calls them; the dead frontend service methods were removed so this is a superseded surface, not a missing feature.",
@@ -455,14 +288,6 @@
       "note": "DEC-OPS-208/209: the menu screen saves structure, properties, deletions and group visibility as one versioned draft through saveMenuStructure (PUT /admin/system/menus/structure). The per-menu update, batch reorder and delete endpoints remain for API clients but no screen calls them; the dead frontend service methods were removed so this is a superseded surface, not a missing feature.",
       "supersededBy": [
         "saveMenuStructure"
-      ]
-    },
-    {
-      "operationId": "updateRole",
-      "category": "superseded-surface",
-      "note": "Authorized authorization simplification retires operator-defined URL-role metadata and its assignment UI. The source-owned OPERATION catalog and versioned group grants replace that workflow; this does not claim that technical-role metadata CRUD remains a product feature. The compatibility endpoint is retained server-side while no production frontend consumer uses it. See docs/02-architecture/authorization-simplification-design.md.",
-      "supersededBy": [
-        "authzReplaceGrants"
       ]
     },
     {

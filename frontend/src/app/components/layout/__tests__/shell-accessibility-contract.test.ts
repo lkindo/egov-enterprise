@@ -457,7 +457,8 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'operation', 'rewards', 'page.tsx'],
       ['admin', 'security', 'authority', 'page.tsx'],
       ['admin', 'stats', 'page.tsx'],
-      ['admin', 'system', 'audit', 'page.tsx'],
+      // [2026-10-18] admin/system/audit/page.tsx 는 /admin/system/monitoring/hub?tab=system 으로의 page-redirect 스텁이 되어
+      //   route-local fallback 이 없다(감사 타임라인 화면 코드를 지웠다 — next.config 리다이렉트가 처음부터 그 화면을 가리고 있었다).
       ['admin', 'system', 'banner', 'page.tsx'],
       ['admin', 'system', 'common-code', 'page.tsx'],
       // [2026-09-06 DEC-OPS-040] admin/system/ism/page.tsx 는 /approvals 로의 page-redirect 가 되어 route-local fallback 이 없다.

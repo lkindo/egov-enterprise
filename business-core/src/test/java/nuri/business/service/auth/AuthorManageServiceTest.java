@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import nuri.foundation.core.exception.BusinessException;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -161,16 +160,5 @@ class AuthorManageServiceTest {
         org.springframework.test.util.ReflectionTestUtils.setField(entity, "authrtCrtYmd", createdDate);
         given(authorityRepository.findById("ROLE_X")).willReturn(Optional.of(entity));
         return authorManageService.selectAuthor("ROLE_X");
-    }
-
-    @Test
-    void legacyUnversionedWritesAreRetiredWithoutRepositoryMutation() {
-        var dto=AuthorManageDto.builder().authrtCd("CUSTOM").authrtNm("그룹").build();
-        java.util.List<Runnable> calls=java.util.List.of(() -> authorManageService.insertAuthor(dto),
-            () -> authorManageService.updateAuthor(dto),()->authorManageService.deleteAuthor("CUSTOM"),
-            () -> authorManageService.deleteAuthors(new String[]{"CUSTOM"}));
-        for(var call:calls) assertThatThrownBy(call::run).isInstanceOfSatisfying(BusinessException.class,
-            error -> assertEquals(nuri.foundation.core.exception.CommonErrorCode.AUTHORIZATION_ENDPOINT_RETIRED,error.getErrorCode()));
-        verifyNoInteractions(authorityRepository);
     }
 }

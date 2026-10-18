@@ -242,50 +242,6 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/authorities",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "AuthorManageService#deleteAuthors"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/authorities",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "AuthorManageService#insertAuthor"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "AuthorManageService#deleteAuthor"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "AuthorManageService#updateAuthor"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
       "method": "POST",
       "path": "/api/v1/admin/system/banners",
       "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner",
@@ -598,41 +554,6 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
-      "method": "POST",
-      "path": "/api/v1/admin/system/ism",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#deleteInformalSanction"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#updateInformalSanction"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#confirmInformalSanction"
-    },
-    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/login-policies/{userId}",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
@@ -747,38 +668,6 @@
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup')",
       "routeGate": "OPERATION_PERMISSION",
       "guardRef": "PopupService#updatePopup"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#createRole",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.RoleApiController#createRole')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/roles/{roleCode}",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRole",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.RoleApiController#deleteRole')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/roles/{roleCode}",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#updateRole",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.RoleApiController#updateRole')",
-      "routeGate": "OPERATION_PERMISSION"
     },
     {
       "method": "DELETE",
@@ -1330,41 +1219,6 @@
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#updateManual')",
       "routeGate": "OPERATION_PERMISSION",
       "guardRef": "HelpService#updateOnlineManual"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/informal-sanctions",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
-      "policy": "AUTHENTICATED",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#deleteInformalSanction"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#updateInformalSanction"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
-      "policy": "STRICT_OWNER",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction')",
-      "routeGate": "OPERATION_PERMISSION",
-      "guardRef": "InformalSanctionService#confirmInformalSanction"
     },
     {
       "method": "POST",
@@ -2153,54 +2007,6 @@
       ]
     },
     {
-      "target": "AuthorManageService#deleteAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "AUTHRT_DELETE"
-        }
-      ]
-    },
-    {
-      "target": "AuthorManageService#deleteAuthors",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "AUTHRT_DELETE"
-        }
-      ]
-    },
-    {
-      "target": "AuthorManageService#insertAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "AUTHRT_CREATE"
-        }
-      ]
-    },
-    {
-      "target": "AuthorManageService#updateAuthor",
-      "policy": "ADMIN_OR_SYSTEM",
-      "mechanisms": [
-        {
-          "helper": "assertPermission",
-          "count": 1,
-          "identityAxis": "PERMISSION",
-          "permission": "AUTHRT_UPDATE"
-        }
-      ]
-    },
-    {
       "target": "BannerService#deleteBanner",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -2696,17 +2502,6 @@
     },
     {
       "target": "InformalSanctionService#deleteInformalSanction",
-      "policy": "STRICT_OWNER",
-      "mechanisms": [
-        {
-          "helper": "assertOwnerByEsntlId",
-          "count": 1,
-          "identityAxis": "ESNTL_ID"
-        }
-      ]
-    },
-    {
-      "target": "InformalSanctionService#updateInformalSanction",
       "policy": "STRICT_OWNER",
       "mechanisms": [
         {
@@ -5116,32 +4911,11 @@
       "permission": "SMS_READ"
     },
     {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/authorities",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_DELETE"
-    },
-    {
       "method": "GET",
       "path": "/api/v1/admin/system/authorities",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthors",
       "access": "PERMISSION",
       "permission": "AUTHRT_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/authorities",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_DELETE"
     },
     {
       "method": "GET",
@@ -5151,32 +4925,11 @@
       "permission": "AUTHRT_READ"
     },
     {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_UPDATE"
-    },
-    {
       "method": "GET",
       "path": "/api/v1/admin/system/authorities/{authrtCd}/menus",
       "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#getAuthorMenus",
       "access": "PERMISSION",
       "permission": "AUTHRT_READ"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#getAuthorRoles",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_GRANT"
     },
     {
       "method": "GET",
@@ -5635,48 +5388,6 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/admin/system/ism",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanctionList",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_READ_ALL"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/ism",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_CREATE_ALL"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_DELETE_ALL"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_READ_ALL"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_UPDATE_ALL"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_APPR_ADMIN"
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/admin/system/login-policies",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicyList",
       "access": "PERMISSION",
@@ -5939,48 +5650,6 @@
       "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup",
       "access": "PERMISSION",
       "permission": "POPUP_UPDATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_DELETE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#getRoles",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/roles",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#createRole",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/roles/{roleCode}",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRole",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_DELETE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/roles/{roleCode}",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#getRole",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_READ"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/roles/{roleCode}",
-      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#updateRole",
-      "access": "PERMISSION",
-      "permission": "AUTHRT_UPDATE"
     },
     {
       "method": "GET",
@@ -6814,48 +6483,6 @@
       "handler": "nuri.api.controller.business.help.HelpApiController#updateManual",
       "access": "PERMISSION",
       "permission": "HELP_UPDATE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/informal-sanctions",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanctionList",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/informal-sanctions",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_DELETE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#getInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_READ"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_UPDATE"
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
-      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
-      "access": "PERMISSION",
-      "permission": "INFORMAL_APPROVE"
     },
     {
       "method": "GET",

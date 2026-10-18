@@ -22,7 +22,6 @@ class StandardTextInputValidationTest {
                 Arguments.of(nuri.business.service.event.dto.EventInfoDto.class,"picNm",100),
                 Arguments.of(nuri.business.service.event.dto.ExternalHrDto.class,"ogdpInstNm",200),
                 Arguments.of(nuri.business.service.department.dto.DeptManageDto.class,"ognzNm",200),
-                Arguments.of(nuri.business.service.auth.dto.RoleManageDto.class,"roleNm",300),
                 Arguments.of(nuri.business.service.reward.dto.RewardManageDto.class,"rwardNm",300),
                 Arguments.of(nuri.business.service.schedule.dto.ScheduleDto.class,"schdlNm",300),
                 Arguments.of(nuri.business.service.survey.dto.SurveyInfoDto.class,"srvyTtl",256),

@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * RBAC 매트릭스 — **demo 프로필에만 존재하는 표면**의 인가 판정 계약.
  *
  * ── 왜 분리했는가 ──────────────────────────────────────────────────────────
- * 설문·투표·배너/팝업·약식결재는 재사용 base 의 core/collaboration 프로필에 없다.
+ * 설문·투표·배너/팝업은 재사용 base 의 core/collaboration 프로필에 없다(약식결재 관리 경로 단언은 2026-10-18 그 API 와 함께 걷었다, ADR-0034).
  * 종전에는 이 단언들이 {@link RbacAuthorizationMatrixTest} 안에 함께 있었고, 통계 단언이 필요로 하는
  * {@code ReportStatsService} {@code @MockitoBean} 한 줄 때문에 **매트릭스 전체가 축소 프로필에서
  * 연쇄 제거**됐다 — core 에 RBAC 게이트가 하나도 남지 않았다(GAP-PACK-001 ④).
@@ -90,8 +90,6 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
                 "/api/v1/admin/system/banners/1", "/api/v1/admin/system/popups", "/api/v1/admin/system/popups/1")) {
             mockMvc.perform(get(path).with(user(ordinary))).andExpect(status().isForbidden());
         }
-        mockMvc.perform(patch("/api/v1/admin/system/ism/1/confirm").with(user(ordinary)))
-                .andExpect(status().isForbidden());
     }
     @Test void ordinaryPollParticipantCannotCreateUpdateOrDeletePolls() throws Exception {
         var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");

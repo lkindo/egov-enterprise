@@ -18,7 +18,6 @@
         "DEPT_BOX_READ",
         "DEPT_JOB_CREATE", "DEPT_JOB_DELETE", "DEPT_JOB_READ", "DEPT_JOB_UPDATE",
         "FILE_DELETE", "FILE_DOWNLOAD", "FILE_READ", "FILE_UPLOAD",
-        "INFORMAL_APPROVE", "INFORMAL_CREATE", "INFORMAL_DELETE", "INFORMAL_READ", "INFORMAL_UPDATE",
         "MAIL_DELETE", "MAIL_READ", "MAIL_SEND",
         "MEMO_RPT_CREATE", "MEMO_RPT_DELETE", "MEMO_RPT_INSTRUCT", "MEMO_RPT_READ", "MEMO_RPT_UPDATE",
         "NOTE_DELETE", "NOTE_READ", "NOTE_SEND",
@@ -93,7 +92,7 @@
       "permissions": [
         "ADMCODE_CREATE", "ADMCODE_DELETE", "ADMCODE_READ", "ADMCODE_UPDATE",
         "CODE_CREATE", "CODE_DELETE", "CODE_READ", "CODE_UPDATE",
-        "INST_CODE_CREATE", "INST_CODE_DELETE", "INST_CODE_IMPORT", "INST_CODE_READ", "INST_CODE_UPDATE",
+        "INST_CODE_IMPORT", "INST_CODE_READ",
         "MENU_CREATE", "MENU_DELETE", "MENU_READ", "MENU_UPDATE",
         "POLICY_READ", "POLICY_UPDATE",
         "SERVICE_CREATE", "SERVICE_DELETE", "SERVICE_READ", "SERVICE_UPDATE"
@@ -191,26 +190,6 @@
     {
       "code": "FILE_READ_ALL",
       "reason": "첨부파일 관리자 열람 권한이다. FileAccessPolicy.assertReadable 은 이 권한이 있으면 개인 귀속(PERSONAL) 참조가 없는 모든 첨부 — 비밀글·회원 전용 커뮤니티 게시판·논리 삭제된 글의 첨부와 아직 어디에도 붙지 않은 남의 업로드 — 를 열어 준다. 반대로 메모 보고·업무 보고·보낸 메일·쪽지·포상 같은 개인 귀속 첨부는 이 권한으로도 열리지 않는다. 그래서 '다른 사람 업무 자료 대행'에 넣으면 대행할 자료의 첨부는 열지 못하면서 게시판 비밀글 첨부를 여는, 묶음 설명과 반대인 권한이 된다. 필요한 그룹에 기능별 권한 표에서 따로 준다."
-    },
-    {
-      "code": "INFORMAL_APPR_ADMIN",
-      "reason": "관리 경로(PATCH /api/v1/admin/system/ism/{id}/confirm)의 진입 권한일 뿐이다. 같은 컨트롤러(InformalSanctionApiController)가 같은 서비스를 부르고, InformalSanctionService 는 결재자 본인만 처리하게 해(assertOwnerByEsntlId) 이 권한으로도 남의 결재를 대신 처리하지 못한다. 이 경로를 부르는 화면도 없다(DEC-OPS-040·053 — 결재 화면은 /approvals). 묶음에 넣으면 할 수 없는 일을 맡긴다고 말하게 된다."
-    },
-    {
-      "code": "INFORMAL_CREATE_ALL",
-      "reason": "관리 경로(POST /api/v1/admin/system/ism)의 진입 권한일 뿐이다. 컨트롤러가 신청자를 인증 주체로 덮어써 남의 이름으로 상신하지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053 — 결재 화면은 /approvals). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
-    },
-    {
-      "code": "INFORMAL_DELETE_ALL",
-      "reason": "관리 경로(DELETE /api/v1/admin/system/ism/{id})의 진입 권한일 뿐이다. InformalSanctionService 가 신청자 본인만 지우게 해(assertOwnerByEsntlId) 남의 결재를 대신 지우지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
-    },
-    {
-      "code": "INFORMAL_READ_ALL",
-      "reason": "관리 경로(GET /api/v1/admin/system/ism)의 진입 권한일 뿐이다. 목록·상세 모두 인증 주체가 신청자·결재자인 결재만 돌려줘 남의 결재를 대신 조회하지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
-    },
-    {
-      "code": "INFORMAL_UPDATE_ALL",
-      "reason": "관리 경로(PUT /api/v1/admin/system/ism/{id})의 진입 권한일 뿐이다. InformalSanctionService 가 신청자 본인만 고치게 해(assertOwnerByEsntlId) 남의 결재를 대신 고치지 못하고, 이 경로를 부르는 화면도 없다(DEC-OPS-040·053). 묶음에 넣으면 할 수 없는 대행을 맡긴다고 말하게 된다."
     },
     {
       "code": "WORKFLOW_READ",

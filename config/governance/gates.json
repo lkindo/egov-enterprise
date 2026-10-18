@@ -993,6 +993,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/RetiredProgramLedgerDropMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-UNENFORCED-PERMISSION-GRANT-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/UnenforcedPermissionGrantRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-AUTH-REFRESH-TOKEN-ROTATION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/RefreshTokenRotationConcurrencyIntegrationTest.java"
         },

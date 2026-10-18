@@ -310,12 +310,13 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   const ledger = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.bundles), 'utf8'));
   const catalog = JSON.parse(fs.readFileSync(path.join(root, SCREEN_REGISTRY_INPUTS.catalog), 'utf8'));
   const excluded = new Set(ledger.excluded.map(entry => entry.code));
-  // ① 진입 권한일 뿐인 코드 — 약식 결재의 관리 경로 권한(INFORMAL_*_ALL·INFORMAL_APPR_ADMIN)과 첨부 관리 경로의 내려받기
-  //    권한(FILE_DOWNLOAD_ALL). 어떤 서버 판정도 이 코드를 보지 않아 경로에 들어가는 문만 연다 — 그래서 묶음에서 뺐다.
-  //    컨트롤러(api-server)·서비스·인가 소스가 이 코드로 판정하기 시작하면(진짜 대행이 생기면) 다시 분류해야 한다.
+  // ① 진입 권한일 뿐인 코드 — 첨부 관리 경로의 내려받기 권한(FILE_DOWNLOAD_ALL). 어떤 서버 판정도 이 코드를 보지 않아 경로에
+  //    들어가는 문만 연다 — 그래서 묶음에서 뺐다. 컨트롤러(api-server)·서비스·인가 소스가 이 코드로 판정하기 시작하면(진짜 대행이
+  //    생기면) 다시 분류해야 한다. 같은 사유로 빼 두었던 약식 결재 관리 경로 권한(INFORMAL_*_ALL·INFORMAL_APPR_ADMIN)은
+  //    2026-10-18 그 경로와 함께 원장에서 걷혔다(ADR-0034) — 이름이 다시 생기면 이 목록이 red 로 알린다.
   const entryOnly = [...excluded].filter(code => code.startsWith('INFORMAL_') || code === 'FILE_DOWNLOAD_ALL').sort();
-  assert.deepEqual(entryOnly,
-    ['FILE_DOWNLOAD_ALL', 'INFORMAL_APPR_ADMIN', 'INFORMAL_CREATE_ALL', 'INFORMAL_DELETE_ALL', 'INFORMAL_READ_ALL', 'INFORMAL_UPDATE_ALL']);
+  assert.deepEqual(entryOnly, ['FILE_DOWNLOAD_ALL']);
+  assert.equal(catalog.permissions.some(row => row.code.startsWith('INFORMAL_')), false, 'INFORMAL_* stays retired');
   const javaRoots = ['api-server/src/main/java', 'business-app/src/main/java', 'business-core/src/main/java', 'foundation/src/main/java'];
   const javaFiles = javaRoots.flatMap(dir => {
     const found = [];
@@ -331,23 +332,12 @@ test('excluded permissions stay excluded only while the facts their reasons cite
     return found;
   });
   assert.ok(javaFiles.length > 100, 'the service sources were found');
-  // 사유가 인용한 컨트롤러(신청자 덮어쓰기·목록 거르기)도 판정 대상이다 — 컨트롤러 분기로 남의 결재를 돌려주는 경로를 놓치지 않는다.
-  assert.ok(javaFiles.some(file => file.endsWith(`${path.sep}InformalSanctionApiController.java`)), 'the approval controller is scanned');
+  assert.ok(javaFiles.some(file => file.endsWith(`${path.sep}FileApiController.java`)), 'the attachment controllers are scanned');
   for (const file of javaFiles) {
     const literals = codeWithoutComments(fs.readFileSync(file, 'utf8')).strings;
     const hits = entryOnly.filter(code => literals.some(literal => new RegExp(`(?<![A-Z0-9_])${code}(?![A-Z0-9_])`, 'u').test(literal)));
     assert.deepEqual(hits, [], `${path.relative(root, file)} now judges ${hits.join(', ')} — re-classify the excluded entry-only permissions`);
   }
-  // 약식 결재 — 서비스는 신청자 본인만 고치고·지우고·다시 올리게 하고 결재자 본인만 처리하게 한다. 컨트롤러는 신청자를
-  // 인증 주체로 덮어쓰고, 목록·상세를 인증 주체 기준으로 거른다. 사유가 인용한 이 사실들이 하나라도 바뀌면 다시 분류한다.
-  const sanctionService = javaCode('business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionService.java');
-  assert.match(sanctionService, /SecurityUtil\.assertOwnerByEsntlId\(sanction\.getAplcntId\(\)\)/u, 'update/delete/resubmit stay applicant-only');
-  assert.match(sanctionService, /SecurityUtil\.assertOwnerByEsntlId\(ownLine\.getId\(\)\.getUserId\(\)\)/u, 'confirmation stays approver-only');
-  const sanctionController = javaCode('api-server/src/main/java/nuri/api/controller/business/approval/InformalSanctionApiController.java');
-  assert.match(sanctionController, /dto\.setAplcntId\(userDetails\.getEsntlId\(\)\);/u, 'registration overwrites the applicant with the principal');
-  assert.match(sanctionController, /\.getInformalSanctionList\(userDetails\.getEsntlId\(\), pageable\)/u, 'the list is filtered by the principal');
-  assert.match(sanctionController, /\.getReceivedInformalSanctionList\(userDetails\.getEsntlId\(\), pageable\)/u, 'the received list is filtered by the principal');
-  assert.match(sanctionController, /\.getInformalSanction\(ifmlAtrzSn, userDetails\.getEsntlId\(\)\)/u, 'the detail is filtered by the principal');
   // ② 첨부 관리자 권한(FILE_READ_ALL·FILE_DELETE_ALL) — 관리자 판정은 개인 귀속 참조만 보고 공유 술어(비밀글·회원 전용·논리
   //    삭제)를 보지 않으며, 메모 보고·업무 보고 첨부는 개인 귀속이라 열리지 않는다. 그래서 '다른 사람 업무 자료 대행'에 넣으면
   //    대행할 자료의 첨부는 못 열고 게시판 비밀글 첨부를 연다. 판정이 업무 자료에 맞게 좁아지면 다시 분류한다.

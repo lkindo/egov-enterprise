@@ -72,7 +72,6 @@ class ApprovalWorkflowIntegrationTest {
     @Autowired private InformalSanctionService service;
     @Autowired private nuri.business.service.informalsanction.ApprovalTemporaryDraftService drafts;
     @Autowired private nuri.business.service.informalsanction.ApprovalSavedLineService savedLines;
-    @Autowired private nuri.api.controller.business.approval.InformalSanctionApiController legacyController;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private ApplicationContext applicationContext;
     @Autowired private DataSource dataSource;
@@ -183,16 +182,13 @@ class ApprovalWorkflowIntegrationTest {
         assertThat(oldParticipant.getHistory()).hasSize(1);
         assertThat(oldParticipant.getVersion()).isNull();
         assertThat(oldParticipant.isCanApprove()).isFalse();
-        var received = service.getReceivedInformalSanctionList(FIRST, PageRequest.of(0, 10));
         var processed = service.getProcessedApprovalList(FIRST, PageRequest.of(0, 10));
-        for (var page : List.of(received, processed)) {
-            assertThat(page.getContent()).anySatisfy(document -> {
-                assertThat(document.getIfmlAtrzSn()).isEqualTo(id);
-                assertThat(document.getDocCn()).isEqualTo("최초 문서 내용");
-                assertThat(document.getAtrzCycl()).isEqualTo(1);
-                assertThat(document.getVersion()).isNull();
-            });
-        }
+        assertThat(processed.getContent()).anySatisfy(document -> {
+            assertThat(document.getIfmlAtrzSn()).isEqualTo(id);
+            assertThat(document.getDocCn()).isEqualTo("최초 문서 내용");
+            assertThat(document.getAtrzCycl()).isEqualTo(1);
+            assertThat(document.getVersion()).isNull();
+        });
         authenticate(SECOND);
         assertThat(service.getInformalSanction(id, SECOND).getHistory()).hasSize(1);
         assertThatThrownBy(() -> service.deleteInformalSanction(id)).isInstanceOf(BusinessException.class);
@@ -479,7 +475,6 @@ class ApprovalWorkflowIntegrationTest {
     /**
      * [2026-10-04 D4] 참조자는 결재 문서를 늘 읽는다 — 반려·재상신·승인 뒤에도, 재상신에서 빠진 뒤에도. 실제 PostgreSQL 질의로
      * 열람 관문·목록의 차수 선택이 참조자를 받는지, 대기 건수·대기함·처리함에 섞이지 않는지, 외부인은 여전히 404 인지를 본다.
-     * 레거시 경로(/informal-sanctions/{id})도 같은 관문이라 참조자가 읽는다.
      */
     @Test
     void referenceKeepsReadingAcrossRejectionResubmissionAndApprovalOnPostgres() {
@@ -539,13 +534,6 @@ class ApprovalWorkflowIntegrationTest {
             assertThat(service.getProcessedApprovalList(reader, PageRequest.of(0, 50)).getContent())
                     .extracting(InformalSanctionDto::getIfmlAtrzSn).as("처리함에 섞이지 않는다").doesNotContain(id);
         }
-
-        // 레거시 경로의 라우트 권한(INFORMAL_READ)을 가진 참조자 — 문서 열람은 같은 서비스 관문이 판정한다.
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal(REFERENCE),
-                null, List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("INFORMAL_READ"))));
-        var legacy = legacyController.getInformalSanction(principal(REFERENCE), id).getBody();
-        assertThat(legacy).isNotNull();
-        assertThat(legacy.data().getIfmlAtrzSn()).as("레거시 상세 경로도 같은 관문이다").isEqualTo(id);
 
         authenticate("WF_OUTSIDER");
         assertThatThrownBy(() -> service.getInformalSanction(id, "WF_OUTSIDER")).isInstanceOf(BusinessException.class)

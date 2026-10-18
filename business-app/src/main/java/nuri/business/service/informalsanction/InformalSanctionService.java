@@ -67,13 +67,6 @@ public class InformalSanctionService {
                 f.status(), Objects.requireNonNull(pageable)), aplcntId);
     }
 
-    /** 현재 또는 이전 차수의 결재선에 참여한 문서. */
-    public Page<InformalSanctionDto> getReceivedInformalSanctionList(String aprvrId, Pageable pageable) {
-        assertCurrentParticipant(aprvrId);
-        return toDtoPage(informalSanctionRepository.findByAprvrId(aprvrId,
-                Objects.requireNonNull(pageable)), aprvrId);
-    }
-
     /** 현재 차수에서 활성화된 본인의 미처리 라인만 대기함에 포함한다. */
     public Page<InformalSanctionDto> getPendingApprovalList(String aprvrId, Pageable pageable) {
         return getPendingApprovalList(aprvrId, ApprovalListFilter.NONE, pageable);
@@ -122,8 +115,7 @@ public class InformalSanctionService {
 
     /**
      * 상세. 신청자·결재선에 든 사람·참조자만 연다(그 밖의 사람에게는 404). 결재자는 참여한 차수만, 신청자와 참조자는 모든
-     * 차수를 본다. 레거시 경로(/informal-sanctions/{id}·/admin/system/ism/{id})도 이 관문을 지나므로 참조자가 같은 문서를 읽는다
-     * — 같은 서비스 판정이라 권한이 넓어지지 않는다.
+     * 차수를 본다.
      */
     public InformalSanctionDto getInformalSanction(Long id, String participantId) {
         assertCurrentParticipant(participantId);
@@ -169,14 +161,6 @@ public class InformalSanctionService {
         createRevision(saved, stages);
         designateReferences(saved, designated, dto.getAplcntId());
         return saved.getIfmlAtrzSn();
-    }
-
-    /** 진행 중인 결재 내용/결재선을 직접 변경하지 않는다. 회수 후 새 차수로 상신한다. */
-    @Transactional
-    public void updateInformalSanction(InformalSanctionDto dto) {
-        InformalSanction sanction = lock(dto.getIfmlAtrzSn());
-        SecurityUtil.assertOwnerByEsntlId(sanction.getAplcntId());
-        throw new BusinessException(CommonErrorCode.INVALID_STATE, "결재 문서를 변경하려면 회수 후 재상신해 주세요.");
     }
 
     @Transactional

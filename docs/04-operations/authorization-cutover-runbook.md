@@ -25,7 +25,7 @@
    SQL은 단일 원자적 문장이다. V2_98·V2_99 성공, 신규 운영 변경 없음, 배정의 양방향 일치, 원본 스냅샷, OPERATION 감사 일치를 검사한다. 필요한 테이블 잠금을 즉시 얻지 못하거나 외부 FK가 남아 있으면 전체 실패한다. `CASCADE`는 사용하지 않는다. 재실행은 이미 제거된 테이블에서 실패하므로 성공 여부를 먼저 확인한다.
 4. 구 테이블 6개 부재, 신규 FK 3개 유효, Contract 감사 1건과 카탈로그 버전을 확인한다. 현재 조사 대상 10개에서 구 6개를 제거하고 새 3개를 추가하므로 **대상 집합은 7개**, 권한 운영 핵심·감사는 **4개**가 된다. 메뉴·프로그램·분류 테이블과 사용자 등 지원 테이블은 각각 유지한다.
 5. [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)이 승인된 전체 제품에서는 Contract 완료 후 Flyway target을 해제하고 V2_100 이후를 적용한다. 메뉴 입력·NAV 동등성 guard가 실패하면 원인을 검토하고 재실행한다. V2_98·V2_99의 기존 스냅샷을 수정하거나 이력을 repair해 통과시키지 않는다.
-6. 새 앱을 기동한다. 앱의 Flyway 후·JPA 초기화 전 배리어가 Contract 미완료를 거절해야 한다. 로그인·복수 그룹 합집합·ADMIN 메뉴 회수·403·구 관리 API 410·메뉴와 사용자 삭제·감사 이력을 smoke 검증한 뒤 트래픽을 재개한다.
+6. 새 앱을 기동한다. 앱의 Flyway 후·JPA 초기화 전 배리어가 Contract 미완료를 거절해야 한다. 로그인·복수 그룹 합집합·ADMIN 메뉴 회수·403·구 관리 API 미등록·메뉴와 사용자 삭제·감사 이력을 smoke 검증한 뒤 트래픽을 재개한다. 410 을 돌려주던 구 관리 API(롤·롤 권한·권한 그룹 쓰기)는 2026-10-18 경로째 걷었다([ADR-0034](../02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md)). 정책 원장에 없는 연산이라 HTTP 계층이 디스패치 전에 거부하므로 인증된 요청은 관리자도 403, 인증 없는 요청은 401 이다(404·410 이 아니다 — `RbacAuthorizationMatrixTest#retiredLegacyOperationsAreNotRoutedEvenForAdministrators`).
 
 ## 실패와 복구
 
@@ -187,6 +187,26 @@ SELECT to_regclass('public.tb_prgrm_lst') AS programs, to_regclass('public.tb_in
 **되돌릴 때.** 지운 구조와 행의 원본은 적용 직전 백업이다. V2_126 이 채운 경로만 되돌리려면 적용 전 출력의 `menu_sn` 에 대해 `modern_route` 를 NULL 로 되돌린다. 구 버전 앱은 지운 컬럼을 매핑하므로 V2_127 뒤에는 그 앱으로 롤백할 수 없다. 백업 복원이 함께 필요하다.
 
 **남긴 것.** 이관 대상 카탈로그 `db_columns.json` 은 당시 이미 지운 다른 테이블도 담고 있어 이번에 고치지 않았다. 2026-10-07 부터는 `SchemaValidationIntegrationTest` 가 Flyway 적용 스키마와 대조하고, `-DdbColumns.write=true` 로 실행할 때만 같은 질의로 다시 쓴다.
+
+## 집행 지점 없는 권한 퇴역(V2_130)
+
+[V2_130](../../api-server/src/main/resources/db/migration/V2_130__retire_unenforced_permission_grants.sql)은 비공식결재 API 와 함께 퇴역한 `INFORMAL_*` 10개와 기관코드 쓰기 권한 `INST_CODE_CREATE`·`INST_CODE_UPDATE`·`INST_CODE_DELETE`의 배정을 지우고, 지운 행마다 `GROUP_GRANT`/`REMOVE` 이력(`dmnd_idntfr = 'migration:2.130'`)을 같은 트랜잭션에 남긴다([ADR-0034](../02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md)). 가드는 없다 — 남은 결재·기관코드 기능은 `APPROVAL_*`·`INST_CODE_READ`·`INST_CODE_IMPORT`로 집행되고 이 배정에 기대지 않는다.
+
+**적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 다음 질의의 행 수만큼 이력이 남는다(2026-10-18 OCI 읽기: `INFORMAL_*` 25행, `INST_CODE_*` 쓰기 6행).
+
+```sql
+SELECT authrt_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
+ WHERE authrt_type_cd = 'OPERATION'
+   AND (authrt_grnt_cd LIKE 'INFORMAL\_%'
+        OR authrt_grnt_cd IN ('INST_CODE_CREATE', 'INST_CODE_UPDATE', 'INST_CODE_DELETE'))
+ ORDER BY authrt_grnt_cd, authrt_cd;
+```
+
+**적용 뒤 확인.** 같은 질의가 0행이고, `SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr = 'migration:2.130'` 이 적용 전 행 수와 같다.
+
+**롤백 뒤 다시 배포할 때.** 구 버전 앱의 원장에는 이 권한이 있어 권한 관리 화면에서 다시 배정될 수 있다. V2_130 은 다시 돌지 않으므로 재배포 전에 적용 전 질의로 확인하고, 행이 있으면 V2_124 절의 재삭제 SQL 에서 권한 코드 조건과 `dmnd_idntfr`·`chg_rsn`만 바꿔 실행한다.
+
+**배정을 되살릴 때.** 지운 배정은 이력의 `authrt_cd`·`authrt_grnt_cd`로 복원할 수 있다. 다만 새 앱의 원장에는 이 코드가 없어 권한 스냅샷이 fail-closed 로 실패하므로, 구 버전 앱으로 함께 되돌릴 때만 복원한다.
 
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
