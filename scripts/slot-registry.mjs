@@ -72,6 +72,47 @@ export const SLOT_REGISTRY_CONSUMERS = Object.freeze({
 export const SLOT_CONSUMER_PARTITION_KEYS = Object.freeze({ 'stats-panels': 'placement' });
 
 /**
+ * 슬롯 소비자의 종류(GAP-COMPOSE-001, DEC-OPS-353). 소비자 표(SLOT_REGISTRY_CONSUMERS)의 파일마다 정확히 하나를 적는다 — 표와 이 목록이
+ * 어긋나면 카탈로그가 로드되지 않는다(project-composer-slot-readers.mjs 의 slotConsumerKindProblems).
+ * - shell: 항목을 스스로 그린다. 그 파일을 import 하는 화면은 셸을 배치할 뿐 항목을 읽지 않으므로, 빠진 기여는 그 기능 자신의 진입점만
+ *   잃는다(registrationOnly).
+ * - value: 항목을 값으로 돌려주거나 판정에 쓴다. 다른 기능의 화면이 그 값으로 문구·단추·탭을 바꾸므로, 빠진 기여는 그 화면의 동작을
+ *   줄인다(연동). `exports` 는 값을 내보내는 이름이고, 그 이름을 쓰는 importer 만 reader 로 센다(같은 파일의 다른 export 를 쓰는
+ *   importer 는 읽지 않는다). `reads` 는 그 값이 되는 기여다 — `feature`(기여 기능)·`placement`·`id`(항목 값) 를 함께 적으면 모두
+ *   맞아야 하고, `all: true` 는 그 슬롯의 기여 전부다. 여기 적지 않은 기여는 같은 파일 안에서도 셸이 그리는 것으로 본다.
+ * 값을 쓰는 화면을 새로 만들거나 셸이 값을 내보내기 시작하면 이 표를 함께 고친다. 선택자가 원본의 어떤 기여와도 맞지 않으면 운영 계약
+ * (project-composer-slot-readers.test.mjs)이 붉다.
+ */
+const SHELL = Object.freeze({ kind: 'shell' });
+export const SLOT_CONSUMER_KINDS = Object.freeze({
+  'delivery-channels': {
+    // 결재·메모 보고 화면이 hasDeliveryChannel('notification') 으로 알림 채널 유무를 묻는다.
+    'frontend/src/lib/delivery-channels.ts': { kind: 'value', exports: ['hasDeliveryChannel'], reads: [{ id: 'notification' }] },
+  },
+  'header-widgets': { 'frontend/src/app/components/layout/header.tsx': SHELL },
+  'home-sections': { 'frontend/src/app/UnifiedDashboardClient.tsx': SHELL, 'frontend/src/app/home-data-boundary.tsx': SHELL },
+  'hub-tabs-collaboration': { 'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx': SHELL },
+  'hub-tabs-knowledge': { 'frontend/src/app/admin/help/KnowledgeHubClient.tsx': SHELL },
+  'hub-tabs-monitoring': { 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx': SHELL },
+  'notification-actions': { 'frontend/src/app/components/ui/app-notification-drawer.tsx': SHELL },
+  'post-actions': { 'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx': SHELL },
+  'recipient-picker-sources': {
+    // 메일·문자 화면이 채널에 맞는 출처를 값으로 받는다. 채널 판정은 실행 때라 기여 전부를 읽는다.
+    'frontend/src/app/components/ui/recipient-picker-sources.ts': { kind: 'value', exports: ['useRecipientAddressBook'], reads: [{ all: true }] },
+  },
+  'shell-links': {
+    'frontend/src/app/components/layout/footer.tsx': SHELL,
+    'frontend/src/app/components/layout/header.tsx': SHELL,
+    'frontend/src/app/error.tsx': SHELL,
+    'frontend/src/app/components/ui/global-command-center.tsx': SHELL,
+    'frontend/src/app/admin/collaboration/CollaborationHubClient.tsx': SHELL,
+    // 나의 업무 탭 줄(work-hub)은 이 파일이 그리고, 업무 보고 머리 링크(work-report)는 값으로 업무 보고 화면에 넘긴다.
+    'frontend/src/components/business/work-hub/work-hub-tabs.tsx': { kind: 'value', exports: ['useWorkReportLinks'], reads: [{ placement: 'work-report' }] },
+  },
+  'stats-panels': { 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx': SHELL, 'frontend/src/app/admin/stats/AdminStatsClient.tsx': SHELL },
+});
+
+/**
  * 허브 탭 슬롯(GAP-SLOT-001). 허브마다 슬롯 하나다 — 이름은 `hub-tabs-<허브>` 이고 허브는 slots.ts 의 HubTabViews 키이자 그 허브 탭
  * 해석 모듈의 TAB_HUB.slotHub 다. 항목은 hub 를 적지 않는다(슬롯이 허브다). 허브 셸은 자기 허브의 레지스트리 하나만 읽는다.
  */

@@ -340,6 +340,7 @@ test('selective integrations are declared exactly and every evidence line points
     'mail -> notification via event:NotificationRequestedEvent',
     'memoreport -> notification via event:NotificationRequestedEvent',
     'note -> notification via event:NotificationRequestedEvent',
+    'report -> memoreport via port:WorkReportLinks',
     'sms -> addressbook via port:RecipientAddressBookSource',
     'sms -> notification via event:NotificationRequestedEvent',
   ]);
@@ -608,7 +609,9 @@ test('an unclassified, doubly classified, stale or never-degrading port connecti
   const owner = ownerOfSource();
   const ports = derivePortConnections(ROOT, owner);
   // 등록만 하는 이벤트 분류도 기능 파일에서 온다(11단계 C7 — 종전에는 생성기 상수가 기본값이었다).
-  const base = { root: ROOT, declared: declaredIntegrations, registrationOnly: modules.declarations.registrationOnlyEvents, triples: deriveEventTriples(ROOT, owner), canDegrade: degradationPredicate(catalog.capabilities, catalog.presets),
+  // 이 시험은 포트 분류만 본다 — 기여 분류(contributions)는 아래 기여 시험들이 맡으므로 연동의 contributions 는 뗀다.
+  const portDeclared = declaredIntegrations.map(({ contributions, ...edge }) => edge);
+  const base = { root: ROOT, declared: portDeclared, registrationOnly: modules.declarations.registrationOnlyEvents, triples: deriveEventTriples(ROOT, owner), canDegrade: degradationPredicate(catalog.capabilities, catalog.presets),
     domains: catalog.capabilities.map(capability => capability.id), optionalForeignKeys: catalog.optionalForeignKeys, contributions: [],
     registrationOnlyContributions: [], ports };
   assert.equal(resolveIntegrations({ ...base, registrationOnlyPorts: registrationOnlyPorts }).length, catalog.integrates.length);
@@ -627,10 +630,10 @@ test('an unclassified, doubly classified, stale or never-degrading port connecti
   const stale = [...registrationOnlyPorts, { from: 'core', to: 'survey', port: 'AttachmentSourceContributor', reason: '정리합니다.' }];
   assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: stale }),
     /registration-only port connection has no implementation and injection: core>survey \(AttachmentSourceContributor\)/);
-  const renamed = declaredIntegrations.map(edge => (edge.from === 'board' && edge.to === 'community' ? { ...edge, ports: ['CommunityAccessPort'] } : edge));
+  const renamed = portDeclared.map(edge => (edge.from === 'board' && edge.to === 'community' ? { ...edge, ports: ['CommunityAccessPort'] } : edge));
   assert.throws(() => resolveIntegrations({ ...base, declared: renamed, registrationOnlyPorts: registrationOnlyPorts }),
     /integration names an unknown Java port: board>community \(CommunityAccessPort\)/);
-  const misdirected = declaredIntegrations.map(edge => (edge.from === 'community' && edge.to === 'template' ? { ...edge, via: 'port:TemplateReferenceContributor' } : edge));
+  const misdirected = portDeclared.map(edge => (edge.from === 'community' && edge.to === 'template' ? { ...edge, via: 'port:TemplateReferenceContributor' } : edge));
   assert.throws(() => resolveIntegrations({ ...base, declared: misdirected, registrationOnlyPorts: registrationOnlyPorts }),
     /declared port integration has no implementation and injection: community>template \(TemplateReferenceContributor\)/);
 });
@@ -677,6 +680,111 @@ test('every slot contribution is classified exactly once: an integration it evid
     /registration-only contribution needs a user sentence/);
   assert.throws(() => resolveIntegrations({ ...base, declared: [edge], contributions, registrationOnlyContributions: [{ path: 'frontend/src/x.ts', reason: '없는 기여입니다.' }] }),
     /registration-only contribution is not a slot contribution file: frontend\/src\/x\.ts/);
+});
+
+/*
+ * 기여 분류의 소스 대조(GAP-COMPOSE-001, DEC-OPS-353). 기여를 값으로 읽는 다른 기능의 화면이 있으면 그 기여는 registrationOnly 일 수 없고,
+ * 읽는 기능 → 기여 기능의 연동이 그 기여를 anchor 나 contributions 로 덮어야 한다. 반대로 기여를 덮는 연동의 from 기능은 reader 여야 한다.
+ */
+test('a contribution that another feature screen reads as a value is an integration, never a registration-only entry', () => {
+  const path = 'frontend/src/extensions/notification/delivery-channels.ts';
+  const contributions = [{ path, owner: 'notification', slot: 'delivery-channels' }];
+  const base = { root: ROOT, registrationOnly: [], domains: ['informalsanction', 'memoreport', 'notification'], optionalForeignKeys: [], canDegrade: () => true,
+    triples: [], contributions };
+  const edge = { from: 'informalsanction', to: 'notification', via: 'port:ChannelQuery', reason: '알림이 없으면 결재 안내가 줄어듭니다.',
+    anchors: [{ path: 'frontend/src/lib/delivery-channels.ts', anchor: 'export function hasDeliveryChannel' }], contributions: [path] };
+  const consumer = 'frontend/src/lib/delivery-channels.ts';
+  const readers = new Map([[path, [{ feature: 'informalsanction', consumers: [consumer], files: ['src/app/approvals/ApprovalHubClient.tsx'] }]]]);
+  const registered = [{ path, reason: '이 채널 표시만 빠집니다.' }];
+  const { contributions: _covered, ...uncovered } = edge;
+  // 올바른 선언: 읽는 기능의 연동이 기여를 덮는다.
+  assert.equal(resolveIntegrations({ ...base, declared: [edge], registrationOnlyContributions: [], slotReaders: readers }).length, 1);
+  // 틀린 선언 ①: 읽는 화면이 있는데 registrationOnly 로 적었다(DEC-OPS-327 이 사람의 검토로 잡았던 실수).
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: registered, slotReaders: readers }),
+    /slot contribution is read by another feature but classified registration-only: frontend\/src\/extensions\/notification\/delivery-channels\.ts \(read by informalsanction through frontend\/src\/lib\/delivery-channels\.ts: src\/app\/approvals\/ApprovalHubClient\.tsx\)/);
+  // 틀린 선언 ②: 연동은 있지만 그 기여를 덮지 않는다.
+  assert.throws(() => resolveIntegrations({ ...base, declared: [uncovered], registrationOnlyContributions: registered, slotReaders: readers }),
+    /read by another feature but classified registration-only/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [uncovered], registrationOnlyContributions: [], slotReaders: readers }),
+    /read by a feature whose integration does not cover it/);
+  // 읽는 화면을 계산하지 않은 입력에서도 분류 자체는 요구한다.
+  assert.throws(() => resolveIntegrations({ ...base, declared: [uncovered], registrationOnlyContributions: [], slotReaders: null }),
+    /unclassified slot contribution: frontend\/src\/extensions\/notification\/delivery-channels\.ts/);
+  // 틀린 선언 ③: 다른 기능의 연동이 덮고 있다 — 읽는 기능마다 자기 연동이 필요하다.
+  const bothReaders = new Map([[path, [...readers.get(path), { feature: 'memoreport', consumers: [consumer], files: ['src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx'] }]]]);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], registrationOnlyContributions: [], slotReaders: bothReaders }),
+    /slot contribution is read by a feature whose integration does not cover it: .* \(memoreport -> notification, read through frontend\/src\/lib\/delivery-channels\.ts: src\/app\/admin\/operation\/memo-reports\/MemoReportManagementClient\.tsx\)/);
+  assert.equal(resolveIntegrations({ ...base, declared: [edge, { ...edge, from: 'memoreport', reason: '알림이 없으면 메모 보고 안내가 줄어듭니다.' }],
+    registrationOnlyContributions: [], slotReaders: bothReaders }).length, 2);
+  // 틀린 선언 ④: 덮는 연동의 from 기능이 그 기여를 읽지 않는다.
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, from: 'memoreport' }], registrationOnlyContributions: [], slotReaders: readers }),
+    /integration covers a slot contribution its feature does not read: .* \(memoreport -> notification\)/);
+  // 항상 함께 포함되는 reader 는 잃는 것이 없다 — 기여는 registrationOnly 로 둘 수 있다.
+  assert.equal(resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: registered, slotReaders: readers,
+    canDegrade: from => from !== 'informalsanction' }).length, 0);
+  // reader 가 아무도 없으면 종전처럼 registrationOnly 하나로 충분하다. reader 계산이 없는 입력(합성·레지스트리 없는 트리)은 대조를 건너뛴다.
+  assert.equal(resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: registered, slotReaders: new Map([[path, []]]) }).length, 0);
+  assert.equal(resolveIntegrations({ ...base, declared: [edge], registrationOnlyContributions: [], slotReaders: null }).length, 1);
+  // 그 슬롯만 판정할 수 없으면(null) 그 기여의 reader 대조만 건너뛰고, 분류는 여전히 요구한다.
+  const unknown = new Map([[path, null]]);
+  assert.equal(resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: registered, slotReaders: unknown }).length, 0);
+  assert.equal(resolveIntegrations({ ...base, declared: [{ ...edge, from: 'memoreport' }], registrationOnlyContributions: [], slotReaders: unknown }).length, 1);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: [], slotReaders: unknown }),
+    /unclassified slot contribution: frontend\/src\/extensions\/notification\/delivery-channels\.ts/);
+  // core 화면이 값을 읽으면 reader 는 'core' 이고, core 의 연동이 그 기여를 덮는다.
+  const coreReaders = new Map([[path, [{ feature: 'core', consumers: [consumer], files: ['src/lib/delivery-channels.ts'] }]]]);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [], registrationOnlyContributions: registered, slotReaders: coreReaders }),
+    /read by core through frontend\/src\/lib\/delivery-channels\.ts: src\/lib\/delivery-channels\.ts/);
+  assert.equal(resolveIntegrations({ ...base, declared: [{ ...edge, from: 'core', reason: '알림이 없으면 공통 화면 안내가 줄어듭니다.' }],
+    registrationOnlyContributions: [], slotReaders: coreReaders }).length, 1);
+  // contributions 의 형식·실재·중복.
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, contributions: ['frontend/src/extensions/notification/none.ts'] }],
+    registrationOnlyContributions: [], slotReaders: readers }), /integration names a path that is not a slot contribution file: frontend\/src\/extensions\/notification\/none\.ts/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, contributions: [path, path] }], registrationOnlyContributions: [], slotReaders: readers }),
+    /integration contributions must be a non-empty list without duplicates/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [{ ...edge, to: 'memoreport' }], registrationOnlyContributions: [], slotReaders: readers }),
+    /slot contribution evidences another feature's integration/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], registrationOnlyContributions: registered, slotReaders: readers }), /classified registration-only/);
+  assert.throws(() => resolveIntegrations({ ...base, declared: [edge], registrationOnlyContributions: [], slotReaders: new Map() }), /slot contribution has no reader computation/);
+});
+
+test('the real repository covers the value-read contributions with integrations and the catalog refuses the old classification', t => {
+  // 실제 선언: 알림 채널 기여는 결재·메모 보고의 알림 연동이 덮고, 주소록 기여는 메일·문자 연동이 anchor 로 덮는다.
+  const delivery = 'frontend/src/extensions/notification/delivery-channels.ts';
+  const covering = declaredIntegrations.filter(edge => (edge.contributions ?? []).includes(delivery));
+  assert.deepEqual(covering.map(edge => `${edge.from}>${edge.to}`).sort(), ['informalsanction>notification', 'memoreport>notification']);
+  assert.ok(!modules.declarations.registrationOnlyContributions.some(row => row.path === delivery));
+  // 소스를 모두 가진 트리에서 선언을 되돌리면 카탈로그가 만들어지지 않는다.
+  const root = fixture(t);
+  cpSync(join(ROOT, 'frontend/src'), join(root, 'frontend/src'), { recursive: true,
+    filter: source => !source.split(sep).some(part => part === '__tests__' || part === 'node_modules') });
+  assert.equal(loadProjectComposerCatalog(root).catalogHash, catalog.catalogHash);
+  editModule(root, 'notification', value => {
+    value.registrationOnly.contributions.push({ path: delivery, reason: '알림 기능이 없으면 이 채널 표시만 빠집니다.' });
+  });
+  assert.throws(() => loadProjectComposerCatalog(root),
+    /slot contribution is read by another feature but classified registration-only: frontend\/src\/extensions\/notification\/delivery-channels\.ts \(read by informalsanction through frontend\/src\/lib\/delivery-channels\.ts: /);
+  editModule(root, 'notification', value => { value.registrationOnly.contributions = value.registrationOnly.contributions.filter(row => row.path !== delivery); });
+  editModule(root, 'memoreport', value => { for (const edge of value.integrates) delete edge.contributions; });
+  assert.throws(() => loadProjectComposerCatalog(root),
+    /slot contribution is read by a feature whose integration does not cover it: .* \(memoreport -> notification, read through frontend\/src\/lib\/delivery-channels\.ts: src\/app\/admin\/operation\/memo-reports\/MemoReportManagementClient\.tsx\)/);
+});
+
+test('the work report screen reads the memo report link as a value: report must declare the integration that covers it', t => {
+  // 업무 보고 화면은 나의 업무 탭 줄 파일의 useWorkReportLinks() 로 memoreport 의 work-report 링크를 값으로 받는다(.tsx 소비자도 값일 수 있다).
+  const memo = 'frontend/src/extensions/memoreport/shell-links.ts';
+  const covering = declaredIntegrations.filter(edge => edge.to === 'memoreport' && edge.from === 'report');
+  assert.deepEqual(covering.map(edge => edge.via), ['port:WorkReportLinks']);
+  assert.ok(!modules.declarations.registrationOnlyContributions.some(row => row.path === memo));
+  const root = fixture(t);
+  cpSync(join(ROOT, 'frontend/src'), join(root, 'frontend/src'), { recursive: true,
+    filter: source => !source.split(sep).some(part => part === '__tests__' || part === 'node_modules') });
+  editModule(root, 'report', value => { value.integrates = []; });
+  assert.throws(() => loadProjectComposerCatalog(root),
+    /slot contribution is read by a feature whose integration does not cover it: frontend\/src\/extensions\/memoreport\/shell-links\.ts \(report -> memoreport, read through frontend\/src\/components\/business\/work-hub\/work-hub-tabs\.tsx: src\/app\/smart-toolkit\/work-report\/WorkReportClient\.tsx\)/);
+  editModule(root, 'memoreport', value => { value.registrationOnly.contributions.push({ path: memo, reason: '메모 보고 기능이 없으면 그 링크만 빠집니다.' }); });
+  assert.throws(() => loadProjectComposerCatalog(root),
+    /slot contribution is read by another feature but classified registration-only: frontend\/src\/extensions\/memoreport\/shell-links\.ts \(read by report through frontend\/src\/components\/business\/work-hub\/work-hub-tabs\.tsx: src\/app\/smart-toolkit\/work-report\/WorkReportClient\.tsx\)/);
 });
 
 /*

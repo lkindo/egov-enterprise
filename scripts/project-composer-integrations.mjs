@@ -18,6 +18,12 @@ import { join, relative, sep } from 'node:path';
  *   내보내면 잃는 것이 없다(registrationOnly).
  * - 슬롯 기여 파일(frontend/src/extensions/<기능>/<슬롯>.ts)은 integrates 의 근거(anchor)가 가리키거나(그 기여가 빠지면 다른 기능의
  *   동작이 준다) registrationOnly.contributions 에 사유와 함께 있다(그 기능 자신의 진입점만 사라진다) — 정확히 한쪽이다.
+ *   anchor 를 둘 수 없는 연동(이벤트 — 근거가 계산된다)이 기여를 함께 덮을 때는 integrates 의 contributions 에 그 기여 경로를 적는다
+ *   (ports 와 같은 방식 — 이 연동이 기여를 값으로 읽는 화면의 저하를 함께 말한다).
+ *   그 분류는 사람의 주장이라 소스로 대조한다(GAP-COMPOSE-001, DEC-OPS-353): 기여를 값으로 읽는 다른 기능의 화면(slotReaders —
+ *   project-composer-slot-readers.mjs 가 import 그래프로 계산한다)이 있고 그 기능이 기여 기능 없이 구성될 수 있으면 그 기여는
+ *   registrationOnly 일 수 없고, 읽는 기능 → 기여 기능의 연동이 그 기여를 anchor 나 contributions 로 덮어야 한다. 반대로 기여를
+ *   덮는 연동의 from 기능은 그 기여의 reader 여야 한다.
  * - 포트·선택 FK 연동은 주석을 뺀 코드에서 정확히 한 번 나오는 문자열(anchor)로 근거를 단다.
  * 문장은 평서문으로 쓰고 내부 클래스·경로를 담지 않는다 — 계획 화면에 그대로 나간다.
  */
@@ -378,7 +384,7 @@ function anchorEvidence(root, { path, anchor }) {
 // 선언 인자는 기능 파일에서 온다(카탈로그가 loadComposerModules 의 declarations 를 넘긴다, 11단계 C7). 빠진 인자는 빈 선언이라
 // 계산된 연결이 '분류되지 않은 연결' 로 실패한다 — 조용히 넘어가지 않는다.
 export function resolveIntegrations({ root, declared = [], registrationOnly = [], triples, canDegrade, domains, optionalForeignKeys,
-  contributions = [], registrationOnlyContributions = [], ports = null, registrationOnlyPorts = [] }) {
+  contributions = [], registrationOnlyContributions = [], ports = null, registrationOnlyPorts = [], slotReaders = null }) {
   const fail = message => { throw new Error(`project-composer catalog: ${message}`); };
   const known = new Set(domains);
   const keys = new Set();
@@ -429,7 +435,7 @@ export function resolveIntegrations({ root, declared = [], registrationOnly = []
     if (!canDegrade(triple.from, triple.to)) continue;
     if (!declaredHere && !registered) fail(`undeclared integration: ${triple.from} -> ${triple.to} via event:${triple.event}`);
   }
-  classifyContributions({ declared, contributions, registrationOnlyContributions, fail });
+  classifyContributions({ declared, contributions, registrationOnlyContributions, slotReaders, canDegrade, fail });
   // 포트 분류는 계산된 연결(derivePortConnections)을 받을 때만 한다. 합성 입력의 시험은 연결을 넘기지 않으면 이 단계를 건너뛴다.
   if (ports) classifyPorts({ declared, ports, registrationOnlyPorts, canDegrade, fail });
   return rows.sort((a, b) => byCodeUnits(`${a.from}\u0000${a.to}\u0000${a.via}`, `${b.from}\u0000${b.to}\u0000${b.via}`));
@@ -477,18 +483,58 @@ function classifyPorts({ declared, ports: { interfaces, connections }, registrat
   }
 }
 
-/** 기여 분류 완전성(위 설명의 기여 항목 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다. */
-function classifyContributions({ declared, contributions, registrationOnlyContributions, fail }) {
+/**
+ * 기여 분류 완전성(위 설명의 기여 항목 참조). `contributions` 는 카탈로그가 슬롯 디렉터리에서 찾은 기여 파일이다.
+ * `slotReaders` 는 기여 경로 → 그것을 값으로 읽는 다른 기능 목록([{ feature, files }])이다. null 이면(합성 입력·슬롯 레지스트리가 없는 트리)
+ * reader 대조를 건너뛰고 분류만 본다. 있으면 기여마다 항목이 있어야 한다.
+ */
+function classifyContributions({ declared, contributions, registrationOnlyContributions, slotReaders, canDegrade, fail }) {
   const owners = new Map();
   for (const row of contributions) {
     if (owners.has(row.path)) fail(`duplicate slot contribution: ${row.path}`);
     owners.set(row.path, row.owner);
   }
-  const anchored = new Set();
-  for (const edge of declared) for (const anchor of edge.anchors ?? []) {
-    if (!owners.has(anchor.path)) continue;
-    if (owners.get(anchor.path) !== edge.to) fail(`slot contribution evidences another feature's integration: ${anchor.path} (${edge.from} -> ${edge.to})`);
-    anchored.add(anchor.path);
+  // null 은 판정할 수 없다는 뜻이다(그 슬롯의 레지스트리·소비자가 없는 트리). 그 기여만 reader 대조를 건너뛴다.
+  const readersOf = path => {
+    if (!slotReaders) return null;
+    const known = slotReaders instanceof Map ? slotReaders.has(path) : Object.hasOwn(slotReaders, path);
+    if (!known) fail(`slot contribution has no reader computation: ${path}`);
+    return slotReaders instanceof Map ? slotReaders.get(path) : slotReaders[path];
+  };
+  const through = reader => `${reader.feature} through ${(reader.consumers ?? []).join(', ') || 'a value consumer'}: ${reader.files.join(', ')}`;
+  // 연동이 덮는 기여: anchor 가 가리키는 기여 + contributions 에 적은 기여. 기여 경로 → 그것을 덮는 연동 목록.
+  const coverage = new Map();
+  const cover = (path, edge, kind) => {
+    if (owners.get(path) !== edge.to) fail(`slot contribution evidences another feature's integration: ${path} (${edge.from} -> ${edge.to})`);
+    const readers = readersOf(path);
+    if (readers && !readers.some(reader => reader.feature === edge.from)) {
+      fail(`integration covers a slot contribution its feature does not read: ${path} (${edge.from} -> ${edge.to})`);
+    }
+    if (!coverage.has(path)) coverage.set(path, []);
+    if (coverage.get(path).some(row => row.edge === edge)) fail(`slot contribution covered twice by one integration: ${path} (${edge.from} -> ${edge.to})`);
+    coverage.get(path).push({ edge, kind });
+  };
+  for (const edge of declared) {
+    if (edge.contributions !== undefined) {
+      if (!Array.isArray(edge.contributions) || !edge.contributions.length || new Set(edge.contributions).size !== edge.contributions.length) {
+        fail(`integration contributions must be a non-empty list without duplicates: ${edge.from} -> ${edge.to}`);
+      }
+      for (const path of edge.contributions) {
+        if (!owners.has(path)) fail(`integration names a path that is not a slot contribution file: ${path} (${edge.from} -> ${edge.to})`);
+        cover(path, edge, 'contributions');
+      }
+    }
+    for (const anchor of edge.anchors ?? []) {
+      if (!owners.has(anchor.path)) continue;
+      // 같은 연동의 anchor 여러 개가 한 기여를 가리킬 수 있다(근거가 여럿). 덮음은 한 번만 센다.
+      if (coverage.get(anchor.path)?.some(row => row.edge === edge)) {
+        if (coverage.get(anchor.path).some(row => row.edge === edge && row.kind === 'contributions')) {
+          fail(`slot contribution covered twice by one integration: ${anchor.path} (${edge.from} -> ${edge.to})`);
+        }
+        continue;
+      }
+      cover(anchor.path, edge, 'anchors');
+    }
   }
   const registered = new Set();
   for (const row of registrationOnlyContributions) {
@@ -499,8 +545,19 @@ function classifyContributions({ declared, contributions, registrationOnlyContri
       fail(`registration-only contribution needs a user sentence: ${row.path}`);
     }
   }
+  // 값으로 읽는 다른 기능: 기여 기능 없이 구성될 수 있는 reader 만 연동이다(항상 함께 포함되면 잃는 것이 없다).
+  for (const [path, owner] of owners) {
+    for (const reader of (readersOf(path) ?? []).filter(row => canDegrade(row.feature, owner))) {
+      if (registered.has(path)) {
+        fail(`slot contribution is read by another feature but classified registration-only: ${path} (read by ${through(reader)})`);
+      }
+      if (!(coverage.get(path) ?? []).some(row => row.edge.from === reader.feature)) {
+        fail(`slot contribution is read by a feature whose integration does not cover it: ${path} (${reader.feature} -> ${owner}, read through ${(reader.consumers ?? []).join(', ') || 'a value consumer'}: ${reader.files.join(', ')})`);
+      }
+    }
+  }
   for (const path of owners.keys()) {
-    if (anchored.has(path) && registered.has(path)) fail(`slot contribution classified twice: ${path}`);
-    if (!anchored.has(path) && !registered.has(path)) fail(`unclassified slot contribution: ${path}`);
+    if (coverage.has(path) && registered.has(path)) fail(`slot contribution classified twice: ${path}`);
+    if (!coverage.has(path) && !registered.has(path)) fail(`unclassified slot contribution: ${path}`);
   }
 }

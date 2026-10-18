@@ -2112,6 +2112,18 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-351 | accepted | **V2_130 을 공유 OCI DB 에 적용한다(2026-10-18 사용자 승인 — 집행 지점 없는 권한 배정 정리, PR #932 병합 뒤).** 병합본(347e616ac)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.129, 퇴역 배정 31행: INFORMAL_* 25·INST_CODE 쓰기 6) → info(대기 2.130 과 반복 시드 하나) → pg_dump 백업(목차 확인) → Flyway 12.4.0 migrate → validate(154개) 순서로 했다. dev 시드 위치(`db/seed-dev`)는 OCI 에 적용한 적이 없어 넣지 않았다. 읽기 확인: 남은 퇴역 배정 0, `migration:2.130` 이력 31행(DEC-OPS-348 25·349 6, 권한 원장 버전 1개), INST_CODE_READ·IMPORT 배정 4행 유지. | DEC-OPS-348·349 의 배정 정리다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 반복 시드는 권한 배정이 빈 새 DB 에서만 배정을 넣어 OCI 데이터를 바꾸지 않았다. 원본은 적용 직전 백업이다. | [V2_130](../../api-server/src/main/resources/db/migration/V2_130__retire_unenforced_permission_grants.sql), [전환 런북](../04-operations/authorization-cutover-runbook.md), [DEC-OPS-348](../../.agent/memory/decisions.md) | 2026-10-18 | - |
 
+## DEC-OPS-352
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-352 | accepted | **operation census 의 화면 고아·미배선을 다시 분류한다(GAP-WIRING-001).** ① 메뉴 서비스의 죽은 경로 3개를 걷는다 — 권한별 메뉴 할당 저장(서버가 늘 400 으로 통합 권한 화면을 안내한다), 권한별 메뉴 생성 관리 목록(권한 화면이 getAuthors·getAuthorMenus 로 읽는다), 페이지 검색 메뉴 목록(모든 메뉴 화면이 전체 트리로 그린다). 세 연산은 원장에 대체된 표면으로 적는다. ② 근거가 낡은 미배선 셋을 대체된 표면으로 옮긴다 — 권한별 메뉴 목록(getAuthorMenus 와 같은 값), 가입(DEC-OPS-135 로 USER_CREATE 에 묶여 관리자 등록 insertUser 와 같은 일), 사용자 접속 통계(홈 차트가 없고 통계 화면은 관리자 연산을 쓴다). 아이디 중복 확인·기관코드 상세·개인 일정 목록은 사유만 고친다. ③ 남은 화면 고아 25개(단건 조회 21, 결정 선행 4 — 발신 메일 상세·주소록 사용자 검색·커뮤니티 포틀릿·기간별 일정)는 두고 래칫을 실측값(미배선 7, 화면 고아 25)으로 내린다. 백엔드 엔드포인트는 걷지 않는다. | 원장 사유가 코드와 어긋나 래칫이 부채를 과장했고, 서버가 늘 거부하는 저장 경로가 살아 있는 것처럼 남아 있었다. 단건 조회는 래칫을 내리려고 배선하지 않는다(DEC-OPS-062). 2026-10-16 브랜치(chore/wiring-orphan-cleanup)에 DEC-OPS-336 으로 적었으나 병합 전에 그 번호가 main 의 다른 결정에 쓰여, 2026-10-18 main 위로 옮기며 번호를 새로 받았다(사용자 "필요하면 바로 진행"). red 증명: 걷은 메서드를 되살리면 화면 고아 28/25 와 해소된 원장 항목 3건으로 census 가 붉다. | [census 원장](../../config/governance/operation-consumer-census.json), [메뉴 서비스](../../frontend/src/services/foundation/system/MenuAdminService.ts), [GAP-WIRING-001](../../.agent/memory/known-gaps.md) | 2026-10-18 | operation census 원장의 가입·사용자 접속 통계·권한별 메뉴 목록 미배선 사유(DEC 없음) |
+
+## DEC-OPS-353
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-353 | accepted | **슬롯 기여의 연동 분류를 소스로 대조한다(GAP-COMPOSE-001).** ① 소비자 표의 파일마다 종류를 적는다(`SLOT_CONSUMER_KINDS`) — 항목을 그리는 셸(shell)과, 값을 다른 화면에 넘기는 값 소비자(value: 넘기는 export 이름과 읽는 기여 선택자)다. 레지스트리를 import 하는 파일이 선언에 없거나 선언된 소비자가 import 하지 않으면 카탈로그가 로드되지 않는다. ② 값 소비자의 export 를 쓰는 importer 에서 core 파일(확장자 무관, 타입 전용 참조 제외)을 지나 다른 기능 소유 화면을 reader 로 찾고, 선택자가 고른 기여에만 붙인다. importer 없는 core 진입점은 reader 'core' 다. 판정할 수 없는 슬롯은 그 기여만 건너뛴다. ③ reader G 가 기여 F 없이 구성될 수 있으면 그 기여는 registrationOnly 일 수 없고, G→F 연동이 anchor 나 `contributions`(종류 무관)로 덮어야 한다. 덮는 연동의 from 은 reader 여야 한다. ④ 실제 결과는 셋이다: 주소록→메일·문자(기존 anchor), 알림 전달 채널→결재·메모 보고(두 알림 연동의 `contributions`), 메모 보고 링크→업무 보고(새 연동 report→memoreport). | DEC-OPS-327 에서 알림 채널 기여를 registrationOnly 로 적은 실수를 사람의 리뷰가 잡았다. ④ 의 셋째는 확장자로 셸을 가리던 첫 구현이 놓쳤다(`.tsx` 안의 값 훅). 값 소비자 선언은 손으로 적지만 importer 집합·선택자를 원본과 대조한다. 기능 선언 해시가 바뀌어 로컬 DB 번들을 다시 만든다. red 증명 13종. 2026-10-16 브랜치(feat/composer-slot-degradation)에 DEC-OPS-335 로 적었으나 병합 전에 그 번호가 main 의 다른 결정에 쓰여, 2026-10-18 main 위로 옮기며 번호를 새로 받았다(사용자 "필요하면 바로 진행"). | [소비자 종류](../../scripts/slot-registry.mjs), [reader 계산](../../scripts/project-composer-slot-readers.mjs), [분류 대조](../../scripts/project-composer-integrations.mjs) | 2026-10-18 | DEC-OPS-327 의 알림 전달 채널 기여 registrationOnly 분류 |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

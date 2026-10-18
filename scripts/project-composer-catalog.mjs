@@ -10,6 +10,7 @@ import { menuRouteKey } from './project-composer-db.mjs';
 import { attachUserReasons } from './project-composer-reasons.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { SLOT_ROOT, slotPathKind } from './slot-registry.mjs';
+import { deriveSlotContributionReaders } from './project-composer-slot-readers.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PERMISSIONS = 'config/governance/permission-catalog.json';
@@ -324,6 +325,7 @@ export function buildProjectComposerCatalog(root, declarations) {
   const javaFiles = javaSourceFiles(root);
   const integrates = resolveIntegrations({ root, declared: declarations.integrates, registrationOnly: declarations.registrationOnlyEvents,
     registrationOnlyContributions: declarations.registrationOnlyContributions,
+    slotReaders: deriveSlotContributionReaders({ root, rules, contributions }),
     triples: deriveEventTriples(root, ownerOf, deriveEventSources(root, ownerOf, javaFiles)),
     ports: derivePortConnections(root, ownerOf, javaFiles), registrationOnlyPorts: declarations.registrationOnlyPorts,
     canDegrade: degradationPredicate(capabilities, presets), domains, optionalForeignKeys: declarations.optionalForeignKeys, contributions });
