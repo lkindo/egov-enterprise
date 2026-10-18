@@ -1,10 +1,10 @@
 // @vitest-environment node
-import { describe, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { frozenInProjection, frozenTableDiff } from '@/test-utils/projection';
-import { productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
+import { codeWithoutComments, productionSourceFiles } from '../../../scripts/code-without-comments.mjs';
 
 /**
  * 🔗 하드코딩 색상 차단 게이트 — 브랜딩 토큰화(§2.B) 드리프트 방지.
@@ -160,6 +160,54 @@ describe('흐린 보조 글자는 장식에만 (저대비 동결)', () => {
         + '데이터 글자면 불투명도를 걷고(text-muted-foreground), 장식이면 aria-hidden 과 함께 동결표를 갱신하라.\n'
         + diff.join('\n'),
       );
+    }
+  });
+});
+
+/**
+ * [2026-10-18] HEX 색상 리터럴(`#RGB`~`#RRGGBBAA`) 하드코딩 차단.
+ *
+ * 차트·배경·SVG 마크에 `#3B82F6` 류 HEX 리터럴을 쓰면 브랜드 프로필(`krds-aligned`)과 다크 모드를 무시한다.
+ * SVG presentation attribute 는 `useChartColors()` 훅(`c.accent`·`c.series`)으로, 일반 스타일은
+ * `hsl(var(--primary))`·`hsl(var(--chart-1..5))` 또는 시맨틱 유틸리티로 참조한다.
+ * 유일한 허용 예외는 HTML `<input type="color">` 명세상 `#rrggbb` 문자열이 필요한 레이아웃 테마 피커
+ * 프리셋 데이터(`LayoutManagerClient.tsx` / `layout-theme.ts`)뿐이다.
+ */
+const HEX_COLOR_PATTERN = /#[0-9a-fA-F]{3,8}\b/g;
+const HEX_PICKER_ALLOWLIST = new Set([
+  'src/app/admin/system/layout/LayoutManagerClient.tsx',
+  'src/lib/theme/layout-theme.ts',
+]);
+
+describe('HEX 색상 리터럴 하드코딩 차단 게이트', () => {
+  it('테마 피커 프리셋 데이터 밖의 생산 소스(.tsx/.jsx/.ts)에는 HEX 색상 리터럴이 0건이어야 한다', () => {
+    const files = productionSourceFiles(SRC, ['.tsx', '.jsx', '.ts']);
+    const violations: string[] = [];
+    let pickerCount = 0;
+
+    for (const f of files) {
+      const rel = relative(join(SRC, '..'), f).split(sep).join('/');
+      const code = codeWithoutComments(readFileSync(f, 'utf8'), f);
+      const matches = code.match(HEX_COLOR_PATTERN);
+      if (!matches || matches.length === 0) continue;
+
+      if (HEX_PICKER_ALLOWLIST.has(rel)) {
+        pickerCount += matches.length;
+      } else {
+        violations.push(`${rel}: ${matches.length}건 (${matches.join(', ')})`);
+      }
+    }
+
+    expect(
+      violations,
+      `🔗 [HEX COLOR GUARD] 테마 피커 밖에서 하드코딩 HEX 색상 리터럴이 발견됐습니다.\n` +
+        `차트는 useChartColors()(c.accent / c.series), 일반 스타일은 시맨틱 토큰을 사용하세요.\n` +
+        violations.join('\n'),
+    ).toEqual([]);
+
+    const layoutExists = existsSync(join(SRC, 'app', 'admin', 'system', 'layout', 'LayoutManagerClient.tsx'));
+    if (layoutExists) {
+      expect(pickerCount, '테마 피커 프리셋 HEX 리터럴 총계(기본값 1 + 스와치 4 = 5)').toBe(5);
     }
   });
 });

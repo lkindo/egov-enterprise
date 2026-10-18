@@ -49,6 +49,8 @@ export interface ChartColors {
     tooltipBorder: string;
     /** 툴팁 글자(`--popover-foreground`) */
     tooltipText: string;
+    /** 다계열(categorical) 시리즈 팔레트(`--chart-1..5`) — 라이트/다크 모두 표면 대비 3:1 이상 */
+    series: readonly [string, string, string, string, string];
 }
 
 /** 축선/기준선이 라이트·다크 양쪽에서 3:1 을 넘도록 실측으로 고정한 알파값. */
@@ -75,6 +77,7 @@ const FALLBACK_COLORS: ChartColors = {
     tooltipBg: FALLBACK_COLOR,
     tooltipBorder: FALLBACK_COLOR,
     tooltipText: FALLBACK_COLOR,
+    series: [FALLBACK_COLOR, FALLBACK_COLOR, FALLBACK_COLOR, FALLBACK_COLOR, FALLBACK_COLOR],
 };
 
 /**
@@ -104,6 +107,13 @@ function readChartColors(): ChartColors {
         tooltipBg: resolveToken(styles, '--popover'),
         tooltipBorder: resolveToken(styles, '--border'),
         tooltipText: resolveToken(styles, '--popover-foreground'),
+        series: [
+            resolveToken(styles, '--chart-1'),
+            resolveToken(styles, '--chart-2'),
+            resolveToken(styles, '--chart-3'),
+            resolveToken(styles, '--chart-4'),
+            resolveToken(styles, '--chart-5'),
+        ],
     };
 }
 

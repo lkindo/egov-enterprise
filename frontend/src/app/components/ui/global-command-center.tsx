@@ -356,7 +356,7 @@ export function GlobalCommandCenter() {
       <div
         aria-hidden="true"
         data-testid="global-command-backdrop"
-        className="fixed inset-0 bg-[#020617] animate-in fade-in duration-300"
+        className="fixed inset-0 bg-surface-inverse animate-in fade-in duration-300"
         onClick={closeCommandCenter}
       />
 

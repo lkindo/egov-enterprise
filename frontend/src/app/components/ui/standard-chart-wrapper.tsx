@@ -9,15 +9,6 @@ import { cn } from '@/lib/utils';
 import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
 import { useChartColors } from '@/lib/hooks/useChartColors';
 
-/**
- * 다계열(categorical) 팔레트.
- * TODO(P2): 라이트/다크 각각에서 3:1 을 만족하는 `--chart-1..n` 토큰을 globals.css 에 신설한 뒤
- * `useChartColors()` 로 흡수해야 한다. 현행 파랑 램프는 밝은 단계(#93C5FD/#BFDBFE)가
- * 라이트 표면에서 3:1 미만이며, 순차(sequential) 램프를 범주형으로 쓰는 안티패턴이다.
- * globals.css 는 본 배치의 타 소유 파일이라 여기서는 축·그리드·강조색만 토큰화한다.
- */
-const CHART_COLORS = ['#0055FB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'];
-
 interface StandardChartWrapperProps {
     title: string;
     type: 'bar' | 'line' | 'area' | 'pie';
@@ -140,7 +131,7 @@ export function StandardChartWrapper({
                                     {(data || []).map((entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
-                                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                                            fill={c.series[index % c.series.length]}
                                             /* 인접 조각 사이 2px 표면 간극 — 저대비 단계도 경계가 보이게 한다 */
                                             stroke={c.surface}
                                             strokeWidth={2}
@@ -166,7 +157,7 @@ export function StandardChartWrapper({
                                         key={key}
                                         type="monotone"
                                         dataKey={key}
-                                        stroke={CHART_COLORS[idx % CHART_COLORS.length]}
+                                        stroke={c.series[idx % c.series.length]}
                                         strokeWidth={3}
                                         dot={{ r: 4, fill: c.surface, strokeWidth: 2 }}
                                         activeDot={{ r: 6, strokeWidth: 0 }}

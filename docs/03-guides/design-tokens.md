@@ -30,6 +30,7 @@
 | 다크 서피스(프리미엄 다크 카드/히어로) 색조 | `--surface-inverse` (+ `-foreground`/`-muted`/`-border`) |
 | 중립 바탕/보조 | `--background`·`--card`·`--muted`·`--border`·`--muted-foreground` |
 | 강조 카테고리(대시보드 위젯) | `--hub-blue`·`--hub-orange`·`--hub-purple`·… (다크 전경 재정의 포함) |
+| 다계열 차트 마크 | `--chart-1`~`--chart-5` (라이트/다크 모두 표면 대비 3:1 이상, `useChartColors().series`) |
 | 상태색 | `--success`·`--warning`·`--info`·`--destructive` (+ `-foreground`/`-emphasis`) |
 
 ---
@@ -46,6 +47,7 @@
 | 입력 | `bg-input` · `border-input` | flip |
 | 주 브랜드 | `bg-primary` / `text-primary` / `border-primary` / `ring-primary` | flip |
 | 상태 | `bg-success`·`bg-warning`·`bg-info`·`bg-destructive` (+ `-foreground`) | flip |
+| **다계열 차트** | `useChartColors().series` (`--chart-1`~`--chart-5`) | flip (양 모드 3:1 이상) |
 | **카테고리 액센트** | `bg-hub-blue`·`bg-hub-indigo`·`bg-hub-purple`·`bg-hub-emerald`·`bg-hub-rose`·`bg-hub-amber`·`bg-hub-orange` | 고정색(다중 색조 변이) |
 | **의도적 다크 서피스** | **`bg-surface-inverse` / `text-surface-inverse-foreground` / `text-surface-inverse-muted` / `border-surface-inverse-border`** | **항상 어두움(고정)** |
 
