@@ -446,6 +446,7 @@ refresh_triggers:
 | DEC-OPS-348 | accepted | 결재 API 로 대체된 비공식결재(ISM) API 를 걷고, 그 API 에만 묶인 INFORMAL_* 권한 10개와 배정을 퇴역한다(V2_130). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-348) | 2026-10-18 | DEC-OPS-053 의 ISM API superseded-surface 등재(표면 제거로 종료) |
 | DEC-OPS-349 | accepted | 집행 지점이 없던 기관코드 쓰기 권한 INST_CODE_CREATE·UPDATE·DELETE 와 그 배정을 퇴역하고, 로그인 정책의 dpcn_prm_yn 컬럼은 유지한다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-349) | 2026-10-18 | GAP-CODE-001 의 '쓰기 권한 퇴역은 별도 결정' 부분 |
 | DEC-OPS-350 | accepted | 실행될 수 없던 /admin/observability·/admin/system/audit 를 redirect 스텁으로 바꾸고 그 화면 전용 코드를 지운다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-350) | 2026-10-18 | V2_48 주석의 /admin/system/audit 실기능 판정과 "추측으로 지우지 않는다"(실행 불가 실측으로 종료) |
+| DEC-OPS-351 | accepted | V2_130 을 공유 OCI DB 에 적용한다(2026-10-18 사용자 승인 — 집행 지점 없는 권한 배정 정리, PR #932 병합 뒤). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-351) | 2026-10-18 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

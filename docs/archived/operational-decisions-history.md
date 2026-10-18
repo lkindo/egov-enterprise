@@ -2106,6 +2106,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-350 | accepted | **next.config 리다이렉트 뒤에서 실행될 수 없던 `/admin/observability`·`/admin/system/audit` 를 redirect 스텁으로 바꾸고 그 화면 전용 코드를 지운다.** ① 두 `page.tsx` 는 next.config 와 같은 목적지(감시 허브의 관측·시스템 탭)로 보내는 `redirect()` 스텁이다. 라우트 원장 행은 남기고 스텁 목적지를 기록한다. ② 전용 코드(`ServiceTopology`·`AuditTimelineClient`·`TimelineItem`·관측성 대시보드 지표 조회)와 그 시험을 지운다. 감시·통계 허브가 쓰는 차트와 대시보드의 감사 타임라인은 남긴다. ③ 그 코드를 읽던 가드(상태 색·진입 애니메이션·단일 머리글·고정 높이·셸 접근성)는 표면 제거만큼 맞추고, P2 일관성 단언은 같은 불변식을 지닌 감시 허브 관측 탭으로 옮긴다. | next.config 의 무조건 리다이렉트가 먼저 적용돼 두 화면은 실행될 수 없었는데, 코드·가드·원장은 살아 있는 화면처럼 셌다. 라우트를 지우지 않는 것은 문자열 URL 참조의 오삭제 선례(V2_30) 때문이다. red 증명: 남은 화면에 상태 색 리터럴을 넣으면 상태 색 가드가, 스텁 목적지를 바꾸면 라우트 원장 계약이 실패한다. 2026-10-18 사용자 선택("redirect 스텁 + 전용 코드 제거"). | [관측성 스텁](../../frontend/src/app/admin/observability/page.tsx), [감사 스텁](../../frontend/src/app/admin/system/audit/page.tsx), [라우트 원장](../../config/ui-route-capabilities.json) | 2026-10-18 | V2_48 주석의 /admin/system/audit 실기능 판정과 "추측으로 지우지 않는다"(실행 불가 실측으로 종료) |
 
+## DEC-OPS-351
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-351 | accepted | **V2_130 을 공유 OCI DB 에 적용한다(2026-10-18 사용자 승인 — 집행 지점 없는 권한 배정 정리, PR #932 병합 뒤).** 병합본(347e616ac)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.129, 퇴역 배정 31행: INFORMAL_* 25·INST_CODE 쓰기 6) → info(대기 2.130 과 반복 시드 하나) → pg_dump 백업(목차 확인) → Flyway 12.4.0 migrate → validate(154개) 순서로 했다. dev 시드 위치(`db/seed-dev`)는 OCI 에 적용한 적이 없어 넣지 않았다. 읽기 확인: 남은 퇴역 배정 0, `migration:2.130` 이력 31행(DEC-OPS-348 25·349 6, 권한 원장 버전 1개), INST_CODE_READ·IMPORT 배정 4행 유지. | DEC-OPS-348·349 의 배정 정리다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 반복 시드는 권한 배정이 빈 새 DB 에서만 배정을 넣어 OCI 데이터를 바꾸지 않았다. 원본은 적용 직전 백업이다. | [V2_130](../../api-server/src/main/resources/db/migration/V2_130__retire_unenforced_permission_grants.sql), [전환 런북](../04-operations/authorization-cutover-runbook.md), [DEC-OPS-348](../../.agent/memory/decisions.md) | 2026-10-18 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
