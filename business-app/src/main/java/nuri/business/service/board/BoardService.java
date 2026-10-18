@@ -161,6 +161,24 @@ public class BoardService extends BaseAbstractService {
 
         /**
          * 활성 게시판 전체에서 <b>게시글 제목</b>을 검색한다(통합 검색 전용).
+         *
+         * <p><b>왜 신설했나.</b> {@code /search} 화면에는 게시글 탭이 있었지만 전역 검색
+         * 엔드포인트가 없어 결과가 <b>항상 빈 배열</b>이었다. 화면은 그 사실을 라벨('미지원')로
+         * 정직하게 드러내고 있었을 뿐, 기능 자체가 비어 있었다.
+         *
+         * <p><b>왜 제목만인가.</b> 본문({@code pst_cn})은 에디터가 만든 HTML 원문이라
+         * {@code contains} 로 훑으면 태그·속성이 그대로 매칭된다("div", "style" 같은 검색어가
+         * 무관한 글을 무더기로 물어 온다). 전문 검색 인덱스가 없는 상태에서 본문 검색을 켜면
+         * 결과 품질이 사용자를 오도하므로, 지금 정직하게 지킬 수 있는 범위인 제목으로 한정한다.
+         * 화면 문구도 같은 범위를 말한다.
+         *
+         * <p><b>인가.</b> 새 노출 경로를 만들지 않는다 — 기존 게시판 목록 조회와 <b>같은 술어</b>
+         * ({@code BoardPredicate.searchBoard} + 활성 게시판 조인)를 그대로 쓰고, 비밀글은
+         * 작성자 본인과 관리자에게만 보인다({@link BoardPolicySupport#bindCurrentViewerVisibility}). 즉 이 API 로
+         * 볼 수 있는 글은 모두 해당 게시판 목록에서 이미 볼 수 있는 글이다.
+         *
+         * <p>검색어가 {@value #GLOBAL_SEARCH_MIN_KEYWORD_LENGTH}자 미만이면 빈 결과를 준다 —
+         * 한 글자 검색은 사실상 전량 열람이라 통합 검색을 인명부·게시글 수집 창구로 만든다.
          */
         @Transactional(readOnly = true)
         public Page<BoardDto> searchAcrossBoards(String keyword, @NonNull Pageable pageable) {

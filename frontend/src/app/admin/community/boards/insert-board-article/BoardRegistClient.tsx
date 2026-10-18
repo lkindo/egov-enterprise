@@ -74,7 +74,7 @@ type AttachmentItem = Awaited<ReturnType<typeof fileService.getFileList>>[number
 
 /**
  * 서버가 돌려주는 날짜 문자열을 `<input type="date">` 값(yyyy-MM-dd)으로 맞춘다.
- * 게시 기간은 `yyyyMMdd` 로 저장되고(BoardService.normalizeYmd), 행사 일자는 LocalDateTime 문자열이라
+ * 게시 기간은 `yyyyMMdd` 로 저장되고(BoardPolicySupport.normalizeYmd), 행사 일자는 LocalDateTime 문자열이라
  * 앞 10자만 쓴다. 해석할 수 없으면 비워 둔다 — 비운 값은 서버 액션이 undefined 로 정규화해
  * 기존 값을 유지한다(BoardService.updatePost 의 부분 갱신 계약).
  */
@@ -192,7 +192,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
   /*
    * [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 업로더에 그대로 보인다. 서버
-   * (BoardService.assertNewFilesAllowed)가 같은 규칙으로 저장 전에 거부하므로, 화면이 더 많이 받아 두면 저장할 때에야 실패한다.
+   * (BoardPolicySupport.assertNewFilesAllowed)가 같은 규칙으로 저장 전에 거부하므로, 화면이 더 많이 받아 두면 저장할 때에야 실패한다.
    * 설정을 아직 모르면 서버 상한으로 보이고 판정은 서버가 한다.
    */
   const { data: boardMeta, isError: isBoardMetaError, refetch: refetchBoardMeta } = useQuery(boardMasterQueryOptions.meta(bbsId ?? ''));

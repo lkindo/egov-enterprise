@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * 게시판 조회 조건 정규화·게시 기간 판정·첨부 정책 검사 등 순수 게시판 도메인 보조.
- * 파일·사용자 등 타 도메인 서비스에 결합하지 않는다.
+ * {@link BoardService} 의 정적 보조: 조회 조건 조립(현재 사용자의 비밀글·게시 기간 열람 범위 포함),
+ * 게시 종료 글 열람 판정, 첨부 설정 검사, 날짜 입력 해석, 응답 변환.
+ * 현재 사용자 판정은 {@code SecurityUtil} 로 읽는다. 조회·저장·트랜잭션과 회원 가드는 {@link BoardService} 에 남고,
+ * 이 클래스는 저장소나 파일·사용자 등 다른 도메인 서비스에 결합하지 않는다.
  */
 final class BoardPolicySupport {
 
@@ -45,6 +47,18 @@ final class BoardPolicySupport {
         condition.setQnaCatCd(qnaCategory);
         condition.setEventDateBasis(parseDateBasis(dateBasis));
         bindCurrentViewerVisibility(condition);
+
+        /*
+         * [2026-08-28] 파싱 실패를 **삼키지 않는다.**
+         *
+         * 종전에는 log.warn 한 줄만 남기고 condition 에 아무것도 넣지 않았다. 그래서
+         * 형식이 어긋난 기간 조건은 화면에 아무 신호 없이 사라졌고 — 실제로 화면이
+         * ISO 문자열(`toISOString()`)을 보내고 있었으므로 **기간 필터가 늘 무동작이었다** —
+         * 사용자는 기간을 골라도 목록이 그대로인 것을 보며 "해당 기간에 글이 이만큼
+         * 있구나" 로 잘못 읽었다.
+         *
+         * 조건을 못 읽으면 조용히 넓은 결과를 주는 것보다 거절하는 편이 안전하다.
+         */
         condition.setStartDate(parseFilterDate(startDate, "startDate", LocalDate::atStartOfDay));
         condition.setEndDate(parseFilterDate(endDate, "endDate", date -> date.atTime(LocalTime.MAX)));
         condition.validateDates();
@@ -53,9 +67,16 @@ final class BoardPolicySupport {
 
     static BoardSearchCondition buildGlobalSearchCondition(String trimmed) {
         BoardSearchCondition condition = new BoardSearchCondition();
+        // bbsId 를 비워 두면 게시판 한정 술어가 빠진다 — 활성 게시판(useYn='Y') 조인은
+        //   searchArticles 쪽에 이미 있어 폐쇄된 게시판은 여전히 제외된다.
         condition.setUseYn("Y");
+        // [2026-09-08 PD-CMTY-001] 통합 검색은 커뮤니티 귀속 게시판을 아예 제외한다.
+        //   회원인지 여부를 검색 술어에 실어 나르는 대신(가입한 커뮤니티 집합을 매 검색마다
+        //   조회해야 한다) 이 경로에서는 통째로 빼고, 회원은 커뮤니티 상세의 게시판 목록으로
+        //   들어간다. 관리자도 제외한다 — 여기서만 열어 두면 같은 검색어가 사람마다 다른
+        //   결과를 내는데 그 사실을 화면이 말하지 않는다.
         condition.setExcludeCommunityBoards(true);
-        condition.setSearchCnd("0");
+        condition.setSearchCnd("0"); // 0 = 제목
         condition.setSearchWrd(trimmed);
         bindCurrentViewerVisibility(condition);
         return condition;
@@ -71,6 +92,11 @@ final class BoardPolicySupport {
         return BoardStatsResponse.builder()
                 .totalArticles(stats.totalArticles())
                 .totalViews(stats.totalViews())
+                // [2026-08-29] 기여자가 없을 때 "System" 을 지어내지 않는다.
+                //   글이 한 건도 없거나 작성자를 확정할 수 없는 게시판에서도 화면은
+                //   '최다 기여자: System' 을 보여 줬다 — 실재하지 않는 계정을 사람처럼
+                //   내세운 것이라, 관리자는 그런 사용자가 있다고 믿는다.
+                //   null 을 그대로 내리면 화면이 '-' 로 렌더한다(없음과 있음을 구분).
                 .topContributor(stats.topContributor())
                 .build();
     }
@@ -121,7 +147,8 @@ final class BoardPolicySupport {
     }
 
     /**
-     * 새로 올릴 파일이 게시판 첨부 설정을 지키는가(2026-09-27 DIP B5 F9).
+     * 새로 올릴 파일이 게시판 첨부 설정을 지키는가(2026-09-27 DIP B5 F9). 종전에는 설정이 저장될 뿐 집행자가 없어,
+     * 첨부를 3개·5MB 로 정한 게시판에도 요청당 20개·10MB 까지 붙었다.
      *
      * @param existing 이미 글에 붙은 파일 수
      */
@@ -205,6 +232,8 @@ final class BoardPolicySupport {
             }
             return LocalDateTime.parse(dateStr);
         } catch (DateTimeParseException e) {
+            // null·빈 값은 위에서 걸렀으므로 parse 가 던지는 것은 이 예외뿐이다. 형식이 어긋난 행사 일자는
+            // 종전대로 없는 값으로 둔다(형식 오류를 400 으로 거절할지는 별도 결정 — 목록 필터의 parseFilterDate 와 다르다).
             return null;
         }
     }

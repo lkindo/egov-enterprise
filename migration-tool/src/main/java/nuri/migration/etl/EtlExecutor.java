@@ -678,7 +678,7 @@ public class EtlExecutor {
     }
 
     /** 결과에 싣는 매핑 id. 기본 매핑은 null 이다(실행 증거에 싣지 않는다). */
-    private static String resultMappingId(TableMapping table) {
+    static String resultMappingId(TableMapping table) {
         return table.id();
     }
 

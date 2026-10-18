@@ -43,9 +43,9 @@ public class InformalSanctionService {
     private final EntityManager entityManager;
 
     static final String TASK_TYPE_CODE_GROUP = "COM075";
-    private static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
-    private static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
-    private static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
+    static final String APPROVE_PERMISSION = "APPROVAL_APPROVE";
+    static final String WITHDRAW_PERMISSION = "APPROVAL_CANCEL";
+    static final String DRAFT_PERMISSION = "APPROVAL_CREATE";
     /** 참조자가 문서를 읽는 권한(2026-10-04 D4) — 지정할 때 이 권한이 없으면 지정해도 읽을 수 없으므로 거부한다. */
     private static final String READ_PERMISSION = "APPROVAL_READ";
     /**
@@ -644,7 +644,17 @@ public class InformalSanctionService {
 
     /**
      * [2026-10-04 D4 개정 1] 참조자 검사. 지정은 차수 단위다 — 돌려주는 것은 {@code cycle} 차수에 <b>새로</b> 지정할 사람이며,
-     * 그 차수에 이미 있는 사람은 무시한다(참조는 추가만 한다). 이전 차수에만 있던 사람은 이 차수의 지정이 된다.
+     * 그 차수에 이미 있는 사람은 무시한다(참조는 추가만 한다). 이전 차수에만 있던 사람은 이 차수의 지정이 된다. 기안자 지정과
+     * 결재자 추가가 같은 검사를 쓴다: 형식·중복, 기안자 본인 금지, 이 차수 결재선과 겹침 금지(겸직 금지는 이 차수 기준이다 —
+     * 이전 차수 참조자는 다음 차수 결재자가 될 수 있다), 문서 누적 서로 다른 20명, 사용 중(P)인 계정, 결재 조회 권한
+     * (APPROVAL_READ — 없으면 지정해도 읽을 수 없다). 사용·권한 검사는 이 차수에 새로 지정할 사람 모두가 받는다 — 이전 차수
+     * 참조자라도 다시 지정하면 지금 자격을 본다. 사용 중이 아니거나 권한이 없는 사람은 이름을 밝히고, 없는 식별자는 식별자를
+     * 되돌려 주지 않는 일반 문구로 거부한다(결재자 검사와 같은 공개 수준). 오류는 모두 입력 오류(400)다 — 거부 사유가
+     * 권한(403)이 아니라 고른 사람이다.
+     *
+     * @param cycle     지정할 차수(상신은 1, 재상신은 새 차수, 결재자 추가는 지금 차수)
+     * @param lineUsers 같은 차수의 결재선 사람(상신·재상신은 요청의 결재선, 결재자 추가는 지금 차수의 결재선)
+     * @param existing  이 문서의 참조 행 전부(모든 차수, 새 문서는 빈 목록)
      */
     private ReferencePlan validateReferences(String applicant, BigDecimal cycle, Set<String> lineUsers,
                                              List<String> requested, List<InformalSanctionReference> existing) {
@@ -682,6 +692,10 @@ public class InformalSanctionService {
 
     /**
      * 참조 행을 지금 차수로 넣고, 이 문서에 처음 참조되는 사람에게만 알린다(이전 차수 참조자를 다시 지정하면 행만 생긴다).
+     * 행은 결재 차수 이력 뒤에 넣는다(지정 차수가 그 이력에 FK 로 묶인다). 지정 알림의 받는 사람은 {@link #validateReferences}
+     * 가 같은 트랜잭션에서 실제로 있고 사용 중인 계정임을 확인한 사람뿐이다 — 없는 사용자에게 보내 알림 FK 로 업무가 되돌아가는
+     * 경로가 없다. 지정 알림은 결재 순서 알림과 다른 eventId 를 쓴다 — 이전 차수의 참조자가 새 결재선에 들 수 있어 같은 사람이
+     * 두 알림을 받을 수 있고, 멱등 키가 (eventId, 받는 사람)이라 같은 eventId 면 업무 트랜잭션이 되돌아간다.
      */
     private void designateReferences(InformalSanction sanction, ReferencePlan plan, String designatorId) {
         if (plan.users().isEmpty()) return;

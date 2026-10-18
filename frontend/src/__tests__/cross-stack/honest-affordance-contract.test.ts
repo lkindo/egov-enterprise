@@ -890,9 +890,14 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
       expect(client).not.toContain('intelligenceScore');
     }
 
-    const service = readRepoInProjection('business-app/src/main/java/nuri/business/service/board/BoardService.java');
-    if (service === undefined) return;
-    expect(service, '게시판 통계 서비스를 찾지 못했다 — 계약이 vacuous 하다').toContain('getBoardStats');
+    const boardService = readRepoInProjection('business-app/src/main/java/nuri/business/service/board/BoardService.java');
+    if (boardService === undefined) return;
+    expect(boardService, '게시판 통계 서비스를 찾지 못했다 — 계약이 vacuous 하다').toContain('getBoardStats');
+    // 통계 응답 조립은 BoardPolicySupport 로 옮겨졌다(2026-10-18 분해). 두 파일을 함께 읽어야 폴백·점수가
+    // 옮긴 쪽에 되살아나도 붉다 — 서비스만 읽으면 조립부가 계약 밖으로 빠진다.
+    const policy = readRepoInProjection('business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java');
+    expect(policy, '통계 응답 조립부를 찾지 못했다 — 계약이 vacuous 하다').toContain('toStatsResponse');
+    const service = `${boardService}\n${policy}`;
     expect(
       service,
       '기여자가 없을 때 이름을 지어내는 폴백이 되살아났다 — 화면이 없는 사용자를 최다 기여자로 보여 준다.',

@@ -6,7 +6,7 @@ import {
   SERVER_UPLOAD_ACCEPT,
 } from '../server-upload-limits';
 
-/** 게시판 첨부 제한 — 서버 BoardService.assertNewFilesAllowed 와 같은 규칙(2026-09-27 DIP B5 F9). */
+/** 게시판 첨부 제한 — 서버 BoardPolicySupport.assertNewFilesAllowed 와 같은 규칙(2026-09-27 DIP B5 F9). */
 describe('boardUploadLimits', () => {
   it('파일 수는 이미 붙은 파일을 빼고 남은 만큼, 크기는 게시판과 서버 중 작은 값이다', () => {
     expect(boardUploadLimits({ fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, atchPsbltyFileSz: 5 * 1024 * 1024 }, 1))

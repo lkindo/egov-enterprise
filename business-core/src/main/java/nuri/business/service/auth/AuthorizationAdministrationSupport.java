@@ -37,13 +37,18 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
- * 권한 관리 서비스의 버전 해시·메뉴 트리 정합성·권한 카탈로그 파싱·이력 조건 조립 등 순수 보조.
+ * {@link AuthorizationAdministrationService} 의 정적 보조: 버전 해시·스냅숏 조립, 권한·메뉴 계층 입력 검사와 표시 충돌 계산,
+ * 권한 카탈로그(classpath) 읽기, 이력 조회 조건·행 변환, 감사용 로그인 ID. DB 조회·잠금·인가 단언과 쓰기 트랜잭션은
+ * 서비스에 남는다.
  */
 final class AuthorizationAdministrationSupport {
 
     private AuthorizationAdministrationSupport() { }
 
-    /** 단건(readGroup)과 일괄(readGroups)이 같은 state·버전을 만든다 — 저장 때 두 경로의 버전을 서로 비교한다. */
+    /**
+     * 단건({@link AuthorizationAdministrationService#readGroup})과 일괄({@link AuthorizationAdministrationService#readGroups})이
+     * 같은 state·버전을 만든다 — 저장 때 두 경로의 버전을 서로 비교한다.
+     */
     static GroupSnapshot groupSnapshot(String code, String name, String description, List<Grant> grants, Long last) {
         String state = Objects.toString(name, "") + "\n" + Objects.toString(description, "") + "\n" + grants;
         return new GroupSnapshot(code, name, description, grants, versionDigest(code, state, last), true);
@@ -61,7 +66,10 @@ final class AuthorizationAdministrationSupport {
         return new DepartmentSnapshot(departmentId, members, digest, true);
     }
 
-    /** 사용자의 그룹 배정 버전. 단건(readMemberships)과 부서 일괄(readDepartment)이 같은 값을 만든다. */
+    /**
+     * 사용자의 그룹 배정 버전. 단건({@link AuthorizationAdministrationService#readMemberships})과
+     * 부서 일괄({@link AuthorizationAdministrationService#readDepartment})이 같은 값을 만든다.
+     */
     static String membershipVersion(String userId, List<String> groups, Long last) {
         return versionDigest(userId, groups.toString(), last);
     }

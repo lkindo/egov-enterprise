@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static nuri.migration.etl.EtlExecutor.ORDER_KEY_NULL;
+import static nuri.migration.etl.EtlExecutor.resultMappingId;
 
 /**
  * {@link EtlExecutor}의 원천 읽기 SQL 생성·정렬 키/조회 키 유일성 사전 검증·원천 집계 측정·chunk 조회 조인 해결을 담당한다.
@@ -86,7 +87,7 @@ public final class EtlSourceQuerySupport {
                 return new TableResult(
                         table.source(), table.target(), 0, 0, 0,
                         List.of("이관 실패(" + label(table) + "): " + reason),
-                        List.of(), Map.of(), table.id());
+                        List.of(), Map.of(), resultMappingId(table));
             }
         }
         if (!commit) {
@@ -101,7 +102,7 @@ public final class EtlSourceQuerySupport {
                             table.source(), table.target(), 0, 0, 0,
                             List.of("이관 실패(" + label(table) + "): LOOKUP_KEY_UNIQUENESS_UNPROVEN(" + lookup.alias()
                                     + ") — 조회 표의 키가 유일하지 않거나 확인하지 못했습니다"),
-                            List.of(), Map.of(), table.id());
+                            List.of(), Map.of(), resultMappingId(table));
                 }
             }
         }
@@ -134,7 +135,7 @@ public final class EtlSourceQuerySupport {
                 return new TableResult(table == null ? group.source() : table.source(),
                         table == null ? group.source() : table.target(), 0, 0, 0,
                         List.of("이관 실패(" + label + "): SOURCE_AGGREGATE_FAILED(SQLSTATE=" + read.sqlState() + ")"),
-                        List.of(), Map.of(), table == null ? null : table.id());
+                        List.of(), Map.of(), table == null ? null : resultMappingId(table));
             }
             reconciliation.recordSource(group.key(), aggregates);
         }

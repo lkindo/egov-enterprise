@@ -41,7 +41,7 @@ export interface BoardUploadLimits {
 }
 
 /**
- * 게시판 설정과 이미 붙은 파일 수로 업로더 제한을 정한다. 서버(BoardService.assertNewFilesAllowed)와 같은 규칙이다 —
+ * 게시판 설정과 이미 붙은 파일 수로 업로더 제한을 정한다. 서버(BoardPolicySupport.assertNewFilesAllowed)와 같은 규칙이다 —
  * 파일 수·크기가 0 이하이거나 비어 있으면 게시판 상한이 없고 서버 상한만 적용된다. 설정을 아직 모르면(조회 전·실패·
  * 값 누락) 서버 상한으로 보이고 판정은 서버가 한다.
  */
