@@ -26,23 +26,18 @@ dependencies {
     implementation libs.postgresql
 
     implementation libs.commons.email
-    implementation 'org.springframework.batch:spring-batch-infrastructure'
-    implementation 'org.springframework.boot:spring-boot-starter-batch'
 
-    implementation libs.egovframe.rte.bat.core
+    // [2026-10-19 제거] Spring Batch(spring-batch-infrastructure·starter-batch)·egovframe-rte-bat-core·starter-quartz·
+    //   commons-net·jdom2·commons-dbcp2·scribejava(apis·core). 소스 import·설정·자동 구성 제외 목록 어디에도 쓰는 곳이 없었다
+    //   (2026-10-19 품질 평가 과제 7). 배치·예약 작업은 @Scheduled 와 tb_sys_job 내구 원장(ADR-0025)이 맡고, 커넥션 풀은
+    //   HikariCP, 외부 로그인(OAuth)·FTP·XML 트리 처리는 없다. 되살릴 때는 쓰는 코드와 함께 넣는다.
     implementation libs.egovframe.rte.fdl.excel
     implementation libs.egovframe.rte.fdl.security
-    implementation 'org.springframework.boot:spring-boot-starter-quartz'
     // [2026-08-07 제거] spring-ai-pgvector-store — VectorStore 사용처 0건이었고,
     //   test/e2e 프로파일은 PgVectorStoreAutoConfiguration 을 명시적으로 배제하고 있었다.
 
-    implementation libs.commons.net
     implementation libs.xmlbeans
-    implementation libs.jdom2
-    implementation libs.commons.dbcp2
 
-    implementation libs.scribejava.apis
-    implementation libs.scribejava.core
 
     // 이 모듈의 테스트가 직접 쓰는 기술별 test starter(@WebMvcTest·보안 slice·전체 컨텍스트).
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
