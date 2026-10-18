@@ -110,7 +110,7 @@ const ADOPTER_SCREENS = [
   'src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx',
   'src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx',
   'src/app/help/HelpClient.tsx',
-  'src/app/note/page.tsx',
+  'src/app/note/NoteHubClient.tsx',
   'src/app/smart-toolkit/schedule/ScheduleCalendarClient.tsx',
   'src/app/smart-toolkit/work-report/WorkReportClient.tsx',
   'src/app/survey/SurveyClient.tsx',

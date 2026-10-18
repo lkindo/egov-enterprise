@@ -8,7 +8,6 @@ import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
-import type { AuthorMenuAssignment } from '@/services/foundation/system/AuthorAdminService';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -108,12 +107,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
     refetch: refetchMenus,
   } = useQuery({
     queryKey: ['admin-menu-tree', selectedAuthority],
-    queryFn: async () => {
-      const data = await authorAdminService.getAuthorMenus(selectedAuthority);
-      if (Array.isArray(data)) return data;
-      const envelope = data as unknown as { list?: AuthorMenuAssignment[]; resultList?: AuthorMenuAssignment[] };
-      return envelope?.list ?? envelope?.resultList ?? [];
-    },
+    queryFn: () => authorAdminService.getAuthorMenus(selectedAuthority),
     enabled: !!selectedAuthority,
   });
 

@@ -77,13 +77,11 @@ class AddressbookUserService extends ApiService {
   /**
    * 주소록 등록
    */
-  async createAddressBook(data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<AddressBook> {
-    const response = await this.executeGenerated(createAddressBookOperation, {
+  async createAddressBook(data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
+    return this.executeGenerated(createAddressBookOperation, {
       body: data as GeneratedOperationRequest<'createAddressBook'>,
       config,
     });
-    // 이 API는 실제로 void를 반환해 왔지만 공개 시그니처는 호환을 위해 유지한다.
-    return response as unknown as AddressBook;
   }
 
   /**

@@ -431,10 +431,10 @@
       ]
     },
     {
-      "key": "formless-write:frontend/src/app/note/page.tsx#NotePage",
+      "key": "formless-write:frontend/src/app/note/NoteHubClient.tsx#NoteHubClient",
       "kind": "formless-write",
-      "file": "frontend/src/app/note/page.tsx",
-      "owner": "NotePage",
+      "file": "frontend/src/app/note/NoteHubClient.tsx",
+      "owner": "NoteHubClient",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",
@@ -3040,10 +3040,10 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/note/page.tsx#NotePage.handleDelete[1]",
+      "key": "secondary-action:frontend/src/app/note/NoteHubClient.tsx#NoteHubClient.handleDelete[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/note/page.tsx",
-      "owner": "NotePage",
+      "file": "frontend/src/app/note/NoteHubClient.tsx",
+      "owner": "NoteHubClient",
       "handler": "handleDelete",
       "writeSinks": [
         "noteService.deleteNote"

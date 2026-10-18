@@ -10893,6 +10893,7 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
+            "frontend/src/app/note/NoteHubClient.tsx",
             "frontend/src/app/note/__tests__/NotePage.validation.test.tsx",
             "frontend/src/app/note/page.tsx",
             "frontend/src/services/business/user/NoteService.ts",
@@ -10919,6 +10920,7 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
+            "frontend/src/app/note/NoteHubClient.tsx",
             "frontend/src/app/note/__tests__/NotePage.validation.test.tsx",
             "frontend/src/app/note/page.tsx",
             "frontend/src/services/business/user/NoteService.ts"
@@ -10943,6 +10945,7 @@
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/note/NoteApiControllerTest.java",
+            "frontend/src/app/note/NoteHubClient.tsx",
             "frontend/src/app/note/__tests__/NotePage.validation.test.tsx",
             "frontend/src/app/note/page.tsx",
             "frontend/src/services/business/user/NoteService.ts"

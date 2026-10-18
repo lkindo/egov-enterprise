@@ -54,7 +54,7 @@ const QUERY_HOOKS = new Set(['useQuery', 'useSuspenseQuery', 'useQueries']);
 const MANUAL_FETCH: Readonly<Record<string, string>> = {
   'src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx':
     '수동 조회 — 크기를 바꾸면 fetchList(1, 검색어, size) 로 1쪽부터 다시 부른다',
-  'src/app/note/page.tsx': '수동 조회 — 조회 콜백이 page·pageSize 에 의존해 크기를 바꾸면 effect 가 다시 부른다',
+  'src/app/note/NoteHubClient.tsx': '수동 조회 — 조회 콜백이 page·pageSize 에 의존해 크기를 바꾸면 effect 가 다시 부른다',
 };
 
 /** (d) 이미 가진 행을 화면에서 잘라 보이는 화면 — 크기는 slice 계산에 쓰인다. */
@@ -462,7 +462,7 @@ describe('페이지당 건수 채택 census', () => {
         .replace('const { data } = useQuery(surveyListOptions(page, pageSize));', 'useEffect(() => { void load(page, pageSize); }, [page, pageSize]);');
       expect(judge(manual).problems).toEqual(['분류 밖 — React Query 조회 훅이 없고 수동 조회·클라이언트 페이징·컴포넌트 목록에도 없다']);
       // 목록에 있으면 그 갈래다. 목록에 있는데 조회 훅을 쓰면 분류가 겹친다.
-      const listedFile = 'src/app/note/page.tsx';
+      const listedFile = 'src/app/note/NoteHubClient.tsx';
       expect(judge(manual, listedFile)).toEqual({ kind: 'manual-fetch', problems: [], factoryKeys: [] });
       expect(judge(SURVEY_LIKE, listedFile).problems).toEqual(['manual-fetch 로 적었는데 React Query 로 조회한다 — 목록에서 빼고 queryKey 판정을 받는다']);
     });

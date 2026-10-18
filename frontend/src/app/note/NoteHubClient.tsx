@@ -1,0 +1,744 @@
+'use client';
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { StandardDataTable } from '@/app/components/ui/standard-data-table';
+import dynamic from 'next/dynamic';
+const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
+import { FormField } from '@/app/components/ui/standard-form';
+import { RecipientPicker, type RecipientSelection } from '@/app/components/ui/recipient-picker';
+import { useRecipientDepartmentSource } from '@/app/components/ui/recipient-department-source';
+import { StatusBadge } from '@/components/ui/status-badge';
+import { Badge } from '@/components/ui/badge';
+import { noteService, Note } from '@/services/business/user/NoteService';
+import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, User, Loader2, X, Forward } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { failureMessage } from '@/lib/safe-error-log';
+import { noteComposeSchema } from './note-form-validation';
+
+const NOTE_FORM_LABELS = {
+  rcverId: '받는 사람',
+  noteSj: '제목',
+  noteCn: '내용',
+};
+
+/** 이름을 찾지 못한 사용자(탈퇴 등). 내부 식별자를 이름 자리에 두지 않는다(DIP V3). */
+const UNKNOWN_USER = '알 수 없는 사용자';
+
+/** 보낸 쪽지의 수신자 요약 — 첫 사람 이름과 나머지 인원수. */
+function recipientSummary(recipients: Note['recipients']): string {
+  if (!recipients?.length) return '-';
+  const first = recipients[0].rcverNm || UNKNOWN_USER;
+  return recipients.length === 1 ? first : `${first} 외 ${recipients.length - 1}명`;
+}
+
+type NoteTab = 'received' | 'sent';
+
+/**
+ * 전달 제목·본문(2026-09-26 DIP B5 F4). 원 쪽지를 본문 아래에 인용하고 받는 사람은 새로 고른다.
+ * 받은 쪽지는 보낸 사람을, 보낸 쪽지는 받은 사람을 싣는다 — 이름을 모르면 식별자 대신 그 사실을 말한다.
+ * 인용 때문에 4000자를 넘으면 잘라 내지 않고 발송 검증이 알린다(말없이 자르면 원문이 바뀐다).
+ */
+function forwardedSubject(note: Note): string {
+  const subject = note.noteSj ?? '';
+  return subject.startsWith('Fwd: ') ? subject : `Fwd: ${subject}`;
+}
+
+function forwardedBody(note: Note, tab: NoteTab): string {
+  const lines = ['', '', '---------- 전달한 쪽지 ----------'];
+  if (tab === 'received') {
+    lines.push(`보낸 사람: ${note.trnsmiterNm || UNKNOWN_USER}`);
+  } else {
+    const names = (note.recipients ?? []).map((recipient) => recipient.rcverNm || UNKNOWN_USER);
+    lines.push(`받는 사람: ${names.length ? names.join(', ') : '-'}`);
+  }
+  if (note.crtDt) lines.push(`날짜: ${note.crtDt}`);
+  lines.push(`제목: ${note.noteSj ?? ''}`, '', note.noteCn ?? '');
+  return lines.join('\n');
+}
+
+interface NoteDetailTarget {
+  note: Note;
+  type: NoteTab;
+  relationSn: number;
+}
+
+export default function NoteHubClient() {
+  const { toast } = useToast();
+  const confirm = useConfirm();
+
+  const [tab, setTab] = useState<NoteTab>('received');
+  const tabRef = useRef<NoteTab>('received');
+  const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [listError, setListError] = useState<Error | null>(null);
+  const listRequestRef = useRef(0);
+  /*
+   * [2026-09-05] 종전에는 `{ page: 0, size: 20 }` 한 페이지만 받고 페이저가 없어 21번째 쪽지부터
+   * 영구히 도달 불가였다. 서버(NoteApiController)는 처음부터 Pageable 을 받는다.
+   * 페이지 상태는 URL 에 싣지 않는다 — 쪽지 페이지는 승인된 URL-state 부류가 아니다(헌법 제4조 2항).
+   */
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  // [2026-09-06 감사 D09-01 후속] 서버는 제목·내용 부분일치(searchWrd)를 받는데 페이징만 붙어 있었다. 로컬 상태다(URL 미승인).
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [total, setTotal] = useState(0);
+  // [2026-09-26 DIP V3] 받은 쪽지함의 미읽음 수. null 은 조회 실패이며 0 으로 말하지 않는다.
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      setUnreadCount(await noteService.getUnreadReceivedCount());
+    } catch {
+      setUnreadCount(null);
+    }
+  }, []);
+
+  const [isWriteModalOpen, setWriteOpen] = useState(false);
+  const [isPickerOpen, setPickerOpen] = useState(false);
+  // 부서 탭은 조직·사용자 조회 권한이 있을 때만 보인다(메일·문자와 같은 출처, DEC-OPS-172).
+  const departmentSource = useRecipientDepartmentSource();
+  const [isDetailModalOpen, setDetailOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [detailTarget, setDetailTarget] = useState<NoteDetailTarget | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<Error | null>(null);
+  const detailRequestRef = useRef(0);
+  const [formData, setFormData] = useState({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+  const [recipients, setRecipients] = useState<{ esntlId: string; name: string }[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const sendingRef = useRef(false);
+  const [deletingRelationSn, setDeletingRelationSn] = useState<number | null>(null);
+  const deletePendingRef = useRef(false);
+  const validation = useManualFormValidation(noteComposeSchema, {
+    labels: NOTE_FORM_LABELS,
+    focusTargets: {
+      rcverId: () => document.getElementById('note-recipient-picker-button'),
+    },
+  });
+
+  const loadNotes = useCallback(async (requestedTab: NoteTab = tabRef.current) => {
+    if (requestedTab !== tabRef.current) return;
+    const requestId = ++listRequestRef.current;
+    setLoading(true);
+    setListError(null);
+    setNotes([]);
+    try {
+      const query = searchKeyword
+        ? { page: page - 1, size: pageSize, searchWrd: searchKeyword }
+        : { page: page - 1, size: pageSize };
+      const res = await (requestedTab === 'received'
+        ? noteService.getReceivedNotes(query)
+        : noteService.getSentNotes(query));
+
+      if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
+      if (requestedTab === 'received') void refreshUnreadCount();
+      setNotes(res.list || []);
+      setTotal(typeof res.total === 'number' ? res.total : (res.list?.length ?? 0));
+    } catch {
+      if (requestId !== listRequestRef.current || requestedTab !== tabRef.current) return;
+      setListError(new Error('쪽지 목록을 불러오지 못했습니다.'));
+      setNotes([]);
+      toast('쪽지 목록을 불러오지 못했습니다.', 'error');
+    } finally {
+      if (requestId === listRequestRef.current && requestedTab === tabRef.current) setLoading(false);
+    }
+  }, [toast, page, pageSize, searchKeyword, refreshUnreadCount]);
+
+  useEffect(() => {
+    void loadNotes(tab);
+    return () => {
+      listRequestRef.current += 1;
+    };
+  }, [loadNotes, tab]);
+
+  const closeDetailModal = () => {
+    detailRequestRef.current += 1;
+    setDetailOpen(false);
+    setSelectedNote(null);
+    setDetailTarget(null);
+    setDetailLoading(false);
+    setDetailError(null);
+  };
+
+  const handleTabChange = (nextTab: NoteTab) => {
+    if (nextTab === tab) return;
+    tabRef.current = nextTab;
+    listRequestRef.current += 1;
+    setNotes([]);
+    setTotal(0);
+    setPage(1);
+    setListError(null);
+    setLoading(true);
+    closeDetailModal();
+    setTab(nextTab);
+  };
+
+  const handleSearch = (keyword: string) => {
+    const applied = keyword.trim();
+    if (applied === searchKeyword) {
+      void loadNotes();
+      return;
+    }
+    // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
+    if (page !== 1) setPage(1);
+    setSearchKeyword(applied);
+  };
+
+  const handleSend = async () => {
+    if (sendingRef.current) return;
+    const validated = validation.validate({
+      rcverId: formData.rcverId,
+      noteSj: formData.noteSj,
+      noteCn: formData.noteCn,
+    });
+    if (!validated) return;
+
+    sendingRef.current = true;
+    setIsSending(true);
+    try {
+      await noteService.sendNote(validated);
+      toast('쪽지가 성공적으로 전송되었습니다.', 'success');
+      setWriteOpen(false);
+      setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+      setRecipients([]);
+      validation.setFormErrors({}, false);
+      if (tab === 'sent' && tabRef.current === 'sent') void loadNotes('sent');
+    } catch (error) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      // [2026-10-01] 서버가 밝힌 사유(사용 중이 아닌 수신자 이름 등)를 그대로 보인다 — 무엇을 고칠지 알 수 있게.
+      else toast(failureMessage(error, '쪽지를 보내지 못했습니다.'), 'error');
+    } finally {
+      sendingRef.current = false;
+      setIsSending(false);
+    }
+  };
+
+  /**
+   * 선택된 수신자 목록을 폼 제출 값으로 옮긴다.
+   *
+   * ⚠ setState 업데이터 안에서 다른 setState 를 부르지 않는다. 업데이터는 순수해야 하며
+   *   StrictMode 는 이를 두 번 실행한다 — 그 안에서 다른 상태를 밀면 갱신이 중복·유실될 수 있다.
+   */
+  const applyRecipients = (next: { esntlId: string; name: string }[]) => {
+    setRecipients(next);
+    setFormData((current) => ({
+      ...current,
+      rcverId: next.map((r) => r.esntlId).join(','),
+      rcverNm: next.map((r) => r.name).join(', '),
+    }));
+  };
+
+  const handleConfirmRecipients = (selectedList: RecipientSelection[]) => {
+    const userRecipients = selectedList
+      .filter((r): r is Extract<RecipientSelection, { kind: 'user' }> => r.kind === 'user')
+      .map((r) => ({ esntlId: r.esntlId, name: r.name }));
+
+    const existingIds = new Set(recipients.map((r) => r.esntlId));
+    applyRecipients([...recipients, ...userRecipients.filter((r) => !existingIds.has(r.esntlId))]);
+    validation.clearError('rcverId');
+    setPickerOpen(false);
+  };
+
+  const removeRecipient = (esntlId: string) => {
+    applyRecipients(recipients.filter((r) => r.esntlId !== esntlId));
+  };
+
+  const closeWriteModal = () => {
+    if (sendingRef.current) return;
+    setWriteOpen(false);
+    // 칩(recipients)과 제출 값(formData.rcverId)은 같은 사실의 두 표현이다. 한쪽만 비우면
+    // 다시 열었을 때 "수신자 없음" 으로 보이는데 숨은 rcverId 로 이전 수신자에게 발송된다.
+    setRecipients([]);
+    setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+    validation.setFormErrors({}, false);
+  };
+
+  const loadNoteDetail = useCallback(async (target: NoteDetailTarget) => {
+    const requestId = ++detailRequestRef.current;
+    setSelectedNote(null);
+    setDetailError(null);
+    setDetailLoading(true);
+
+    try {
+      const detail = await noteService.getNote(target.note.noteSn, {
+        type: target.type,
+        relationSn: target.relationSn,
+      });
+      if (requestId !== detailRequestRef.current) return;
+
+      const resolvedDetail: Note = {
+        ...target.note,
+        ...detail,
+        ...(target.type === 'received' ? { openYn: 'Y' } : {}),
+      };
+      setSelectedNote(resolvedDetail);
+
+      if (target.type === 'received') {
+        void refreshUnreadCount();
+        setNotes((current) => current.map((item) => (
+          item.noteRcptnSn === target.relationSn
+            ? { ...item, ...detail, noteRcptnSn: target.relationSn, openYn: 'Y' }
+            : item
+        )));
+      }
+    } catch {
+      if (requestId !== detailRequestRef.current) return;
+      setDetailError(new Error('쪽지 상세 정보를 불러오지 못했습니다.'));
+    } finally {
+      if (requestId === detailRequestRef.current) setDetailLoading(false);
+    }
+  }, [refreshUnreadCount]);
+
+  const handleDetail = (note: Note) => {
+    const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
+    if (relationSn == null) {
+      toast('상세 조회 대상 식별자를 찾을 수 없습니다.', 'error');
+      return;
+    }
+
+    const target = { note, type: tab, relationSn };
+    setDetailTarget(target);
+    setDetailOpen(true);
+    void loadNoteDetail(target);
+  };
+
+  const handleDelete = async (note: Note) => {
+    const deleteTab = tab;
+    // 관계 일련번호 소스는 탭별로 다르다 — 수신함=noteRcptnSn, 발신함=noteSndngSn
+    const relationSn = deleteTab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
+    if (!relationSn) {
+      toast('삭제 대상 식별자를 찾을 수 없습니다.', 'error');
+      return;
+    }
+    if (deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingRelationSn(relationSn);
+    try {
+      const ok = await confirm({
+        title: '쪽지 삭제',
+        message: deleteTab === 'received'
+          ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
+          : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+      await noteService.deleteNote(relationSn, { type: deleteTab });
+      toast('삭제되었습니다.', 'success');
+      if (tabRef.current === deleteTab) await loadNotes(deleteTab);
+    } catch {
+      toast('삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingRelationSn(null);
+    }
+  };
+
+  const columns = [
+    /*
+      [2026-08-29] '상태'(읽음/안읽음) 열은 **받은 쪽지함에만** 둔다.
+
+      보낸 쪽지함의 DTO 는 openYn 을 담지 않는다 — NoteService.convertToDto(NoteTrnsmit) 이
+      그 필드를 설정하지 않는다(수신 목록용 convertToDto(NoteRecptn) 만 채운다). 그래서
+      `item.openYn === 'Y'` 가 언제나 거짓이 되어 **보낸 쪽지 전부가 맥동하는 '안 읽음'
+      아이콘**으로 보였다. 발신자는 그것을 "수신자가 아직 안 읽었다" 로 읽는다 — 남의 행동에
+      대한 거짓 상태다.
+      게다가 한 쪽지에 수신자가 여럿일 수 있어(NoteRecptn 다건) 발신함에서는 읽음 여부를
+      플래그 하나로 표현하는 것 자체가 성립하지 않는다. 집계해서 보여 주려면 서버가
+      findByNoteDsptchNoteSndngSn 으로 모아 내려야 하고, 목록에서는 N+1 이라 별도 설계가 필요하다.
+    */
+    ...(tab === 'received' ? [{
+      header: '상태',
+      accessor: (item: Note) => (
+        <span className="inline-flex items-center">
+          {item.openYn === 'Y'
+            ? <MailOpen size={16} className="text-muted-foreground" aria-hidden="true" />
+            : <Mail size={16} className="text-primary" aria-hidden="true" />}
+          <span className="sr-only">{item.openYn === 'Y' ? '읽음' : '읽지 않음'}</span>
+        </span>
+      ),
+      className: 'w-16'
+    }] : []),
+    {
+      header: '제목',
+      accessor: (item: Note) => <span className="text-[length:var(--font-size-body)] font-medium text-foreground">{item.noteSj}</span>,
+    },
+    {
+      header: tab === 'received' ? '발신자' : '수신자',
+      accessor: (item: Note) => (
+        <div className="flex items-center gap-2">
+            {/*
+              [2026-08-29] 보낸 쪽지함의 '수신자' 열이 비어 있던 것을 채운다.
+              발신 DTO 변환이 rcverId 를 설정하지 않아 모든 행이 빈 칸이었다 — 발신자가
+              누구에게 보냈는지 목록에서 알 수 없었다. 한 쪽지에 수신자가 여럿일 수 있으므로
+              (NoteRecptn 다건) 이름 하나가 아니라 인원수로 말한다. 서버는 페이지 단위 배치
+              조회로 recipients 를 채운다(행마다 조회하면 N+1).
+            */}
+            <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+              {/* [2026-09-26 DIP V3] 서버가 이름을 싣는다. 이름을 찾지 못한 사용자(탈퇴 등)는 내부 식별자 대신 그 사실을 말한다. */}
+              {tab === 'received'
+                ? (item.trnsmiterNm || UNKNOWN_USER)
+                : recipientSummary(item.recipients)}
+            </span>
+        </div>
+      )
+    },
+    {
+      header: '일시',
+      accessor: (item: Note) => <span className="text-[length:var(--font-size-body)] tabular-nums text-muted-foreground">{item.crtDt}</span>,
+    },
+    {
+      header: '관리',
+      accessor: (item: Note) => {
+        const relationSn = tab === 'received' ? item.noteRcptnSn : item.noteSndngSn;
+        const isDeleting = deletingRelationSn === relationSn;
+        return (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); void handleDelete(item); }}
+          disabled={deletingRelationSn !== null}
+          aria-busy={isDeleting}
+          aria-label={isDeleting ? `${item.noteSj || '쪽지'} 삭제 중` : `${item.noteSj || '쪽지'} 삭제`}
+          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive-emphasis disabled:opacity-50"
+        >
+          {isDeleting
+            ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            : <Trash2 size={16} aria-hidden="true" />}
+        </button>
+        );
+      }
+    }
+  ];
+
+  return (
+    <WorkListPage
+      title="쪽지함"
+      description="받은 쪽지와 보낸 쪽지를 조회하고 새 쪽지를 보냅니다."
+      breadcrumbItems={[{ label: '협업지원' }, { label: '쪽지관리' }]}
+      totalCount={total}
+      filter={
+        <KeywordFilter
+          label="제목·내용"
+          placeholder="제목 또는 내용으로 검색"
+          value={searchKeyword}
+          onSearch={handleSearch}
+        />
+      }
+      actions={
+        <>
+          {/* 종전 좌측의 '쪽지 커뮤니케이션 아키텍처' 장식 카드(120px 배경 아이콘)는 제거했다 —
+              어떤 데이터도 담지 않으면서 표 폭의 1/3을 차지했다. */}
+          <div role="tablist" aria-label="쪽지함 구분" className="flex rounded-md border border-border p-0.5">
+            <TabButton
+              active={tab === 'received'}
+              onClick={() => handleTabChange('received')}
+              icon={<Inbox size={16} aria-hidden="true" />}
+              label="받은 쪽지함"
+              count={tab === 'received' ? total : undefined}
+            />
+            <TabButton
+              active={tab === 'sent'}
+              onClick={() => handleTabChange('sent')}
+              icon={<Send size={16} aria-hidden="true" />}
+              label="보낸 쪽지함"
+              count={tab === 'sent' ? total : undefined}
+            />
+          </div>
+          {/* [2026-09-26 DIP V3] 받은 쪽지 미읽음 수. tablist 에는 탭만 두므로 바깥에 둔다. 조회 실패(null)는 0 으로 말하지 않는다. */}
+          {unreadCount !== null && unreadCount > 0 && (
+            <span className="self-center text-xs font-semibold text-primary" aria-live="polite">
+              읽지 않음 {unreadCount}건
+            </span>
+          )}
+          <Button
+            size="sm"
+            onClick={() => {
+              validation.setFormErrors({}, false);
+              setWriteOpen(true);
+            }}
+            className="gap-2"
+          >
+            <SendHorizonal size={16} aria-hidden="true" /> 새 쪽지 쓰기
+          </Button>
+        </>
+      }
+    >
+      <StandardDataTable
+        accessibleLabel={tab === 'received' ? '받은 쪽지 목록' : '보낸 쪽지 목록'}
+        columns={columns}
+        data={notes}
+        loading={loading}
+        error={listError}
+        onRetry={() => { void loadNotes(); }}
+        onRowClick={handleDetail}
+        rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
+        emptyMessage={emptyResultMessage(searchKeyword, tab === 'received' ? '받은 쪽지가 없습니다.' : '보낸 쪽지가 없습니다.')}
+        pagination={{
+          currentPage: page,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+          onPageChange: setPage,
+          // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+        }}
+      />
+
+      <StandardModal
+        isOpen={isWriteModalOpen}
+        onClose={closeWriteModal}
+        title="쪽지 쓰기"
+        footer={
+          <>
+            <Button variant="ghost" disabled={isSending} onClick={closeWriteModal}>취소</Button>
+            <Button disabled={isSending} aria-busy={isSending} onClick={handleSend}>
+              {isSending ? '보내는 중…' : '보내기'}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-[var(--form-gap)]">
+          <FormErrorSummary
+            data-testid="note-form-error-summary"
+            errors={validation.errors}
+            labels={NOTE_FORM_LABELS}
+            onNavigate={validation.focusError}
+          />
+          {/* [2026-10-01] 받는 사람은 이름 칩으로만 보인다. 종전에는 읽기 전용 칸에 내부 사용자 식별자(esntlId)를
+              '이름 (식별자)' 로 늘어놓았고, 버튼은 '타겟 검색', 라벨은 '대상자 식별' 이었다. */}
+          <FormField htmlFor="note-recipient-picker-button" label="받는 사람" required error={validation.errors.rcverId}>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  id="note-recipient-picker-button"
+                  type="button"
+                  // label for 가 버튼 이름을 '받는 사람' 으로 덮지 않게 보이는 문구를 그대로 이름으로 둔다.
+                  aria-label="받는 사람 고르기"
+                  onClick={() => setPickerOpen(true)}
+                  aria-invalid={validation.errors.rcverId ? 'true' : undefined}
+                  aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
+                  variant="outline"
+                >
+                  <UserPlus size={14} aria-hidden="true" /> 받는 사람 고르기
+                </Button>
+                {recipients.length === 0 && (
+                  <span className="text-xs text-muted-foreground">사람 또는 부서에서 여러 명을 고를 수 있습니다.</span>
+                )}
+              </div>
+
+              {recipients.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 p-2">
+                  {recipients.map((rec) => (
+                    <Badge
+                      key={rec.esntlId}
+                      variant="secondary"
+                      className="flex items-center gap-1.5 border border-border bg-card px-2 py-0.5 text-xs font-normal text-foreground"
+                    >
+                      <User size={12} className="text-muted-foreground" />
+                      <span>{rec.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeRecipient(rec.esntlId)}
+                        className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none"
+                        aria-label={`${rec.name} 수신자 제거`}
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-2">
+                    총 {recipients.length}명 선택됨
+                  </span>
+                </div>
+              )}
+            </div>
+          </FormField>
+          <FormField htmlFor="noteSj" label="제목" required error={validation.errors.noteSj}>
+            <input
+              id="noteSj"
+              type="text"
+              aria-required="true"
+              maxLength={256}
+              {...validation.fieldProps('noteSj')}
+              value={formData.noteSj}
+              onChange={(e) => {
+                setFormData((current) => ({ ...current, noteSj: e.target.value }));
+                validation.clearError('noteSj');
+              }}
+              placeholder="쪽지 제목을 입력하세요."
+              className="h-[var(--control-h)] w-full rounded-md border border-border bg-background px-3 text-[length:var(--font-size-body)] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </FormField>
+          <FormField htmlFor="noteCn" label="내용" error={validation.errors.noteCn}>
+            <textarea
+              id="noteCn"
+              maxLength={4000}
+              {...validation.fieldProps('noteCn')}
+              value={formData.noteCn}
+              onChange={(e) => {
+                setFormData((current) => ({ ...current, noteCn: e.target.value }));
+                validation.clearError('noteCn');
+              }}
+              className="min-h-[140px] w-full resize-y rounded-md border border-border bg-background p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="전할 내용을 입력하세요."
+            />
+          </FormField>
+        </div>
+      </StandardModal>
+
+      {isPickerOpen && (
+        <RecipientPicker
+          isOpen={isPickerOpen}
+          onClose={() => setPickerOpen(false)}
+          channel="notification"
+          department={departmentSource}
+          onConfirm={handleConfirmRecipients}
+          title="쪽지 받는 사람 선택"
+        />
+      )}
+
+      <StandardModal
+        isOpen={isDetailModalOpen}
+        onClose={closeDetailModal}
+        title="쪽지 데이터 상세 정보"
+        maxWidth="md"
+      >
+        {detailLoading ? (
+          <div role="status" className="flex min-h-[120px] items-center justify-center gap-2 text-[length:var(--font-size-body)] text-muted-foreground">
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            쪽지 상세 정보를 불러오는 중입니다.
+          </div>
+        ) : detailError ? (
+          <div role="alert" className="flex min-h-[120px] flex-col items-center justify-center gap-2 text-center">
+            <p className="text-[length:var(--font-size-body)] font-medium text-destructive-emphasis">쪽지 상세 정보를 불러오지 못했습니다.</p>
+            <p className="text-[length:var(--font-size-body)] text-muted-foreground">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="쪽지 상세 다시 시도"
+              onClick={() => { if (detailTarget) void loadNoteDetail(detailTarget); }}
+            >
+              다시 시도
+            </Button>
+          </div>
+        ) : selectedNote ? (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+              <div className="space-y-1.5">
+                    <h3 className="text-base font-semibold leading-snug text-foreground">{selectedNote.noteSj}</h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                         <div className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+                             {tab === 'received'
+                               ? `발신: ${selectedNote.trnsmiterNm || UNKNOWN_USER}`
+                               : `수신: ${recipientSummary(selectedNote.recipients)}`}
+                         </div>
+                         <div className="text-xs tabular-nums text-muted-foreground">{selectedNote.crtDt}</div>
+                    </div>
+              </div>
+              {tab === 'received' && (
+                <StatusBadge
+                  status={selectedNote.openYn === 'Y' ? 'C' : 'R'}
+                  labels={{ C: '읽음', R: '읽지 않음' }}
+                />
+              )}
+            </div>
+            <div className="min-h-[160px] whitespace-pre-wrap rounded-md border border-border bg-muted/40 p-3 text-[length:var(--font-size-body)] leading-relaxed text-foreground">
+              {selectedNote.noteCn}
+            </div>
+            {/* [2026-09-26 DIP V3] 보낸 쪽지는 수신자별 읽음을 보여 준다 — 한 쪽지에 수신자가 여럿일 수 있다. */}
+            {tab === 'sent' && (selectedNote.recipients?.length ?? 0) > 0 && (
+              <section aria-label="수신자별 읽음" className="space-y-1">
+                <h4 className="text-xs font-semibold text-muted-foreground">수신자</h4>
+                <ul className="divide-y divide-border rounded-md border border-border">
+                  {selectedNote.recipients!.map((recipient) => (
+                    <li key={recipient.noteRcptnSn} className="flex items-center justify-between px-3 py-1.5 text-[length:var(--font-size-body)]">
+                      <span className="text-foreground">{recipient.rcverNm || UNKNOWN_USER}</span>
+                      <span className="text-xs text-muted-foreground">{recipient.openYn === 'Y' ? '읽음' : '읽지 않음'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" onClick={closeDetailModal}>닫기</Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const subject = forwardedSubject(selectedNote);
+                  const body = forwardedBody(selectedNote, tab);
+                  closeDetailModal();
+                  applyRecipients([]);
+                  setFormData((current) => ({ ...current, noteSj: subject, noteCn: body }));
+                  validation.setFormErrors({}, false);
+                  setWriteOpen(true);
+                }}
+              >
+                <Forward size={14} aria-hidden="true" /> 전달
+              </Button>
+              {tab === 'received' && (
+                <Button
+                  onClick={() => {
+                    const recipientId = selectedNote.dsptchUserId?.trim() ?? '';
+                    const recipientName = selectedNote.trnsmiterNm?.trim() || UNKNOWN_USER;
+                    const subject = `Re: ${selectedNote.noteSj ?? ''}`;
+                    closeDetailModal();
+                    // [2026-09-26 DIP V3] 원 발신자를 수신자 칩으로 넣는다. 종전에는 제출 값(formData)에만 넣어
+                    //   칩이 비어 보였고, 수신자를 추가하면 칩 목록으로 다시 계산돼 원 발신자가 빠졌다.
+                    applyRecipients(recipientId ? [{ esntlId: recipientId, name: recipientName }] : []);
+                    setFormData((current) => ({ ...current, noteSj: subject, noteCn: '' }));
+                    validation.setFormErrors({}, false);
+                    setWriteOpen(true);
+                  }}
+                >
+                  <SendHorizonal size={14} aria-hidden="true" /> 답장
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </StandardModal>
+    </WorkListPage>
+  );
+}
+
+interface NoteTabButtonProps {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+}
+
+function TabButton({ active, onClick, icon, label, count }: NoteTabButtonProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={cn(
+        "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
+        active ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
+      )}
+    >
+      {icon}
+      {label}
+      {count !== undefined && (
+        <span className={cn(
+          "ml-1 rounded px-1.5 py-0.5 text-xs tabular-nums",
+          active ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-muted text-muted-foreground"
+        )}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+}

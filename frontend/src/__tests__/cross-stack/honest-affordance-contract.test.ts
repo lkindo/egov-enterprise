@@ -800,12 +800,15 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    */
   if (repoPresent(
     'frontend/src/app/note/page.tsx',
+    'frontend/src/app/note/NoteHubClient.tsx',
     'business-app/src/main/java/nuri/business/service/note/NoteService.java',
   )) it('보낸 쪽지함이 읽음 상태를 표시하지 않는다', () => {
-    const page = codeOfSrc('app/note/page.tsx');
-    expect(page, '쪽지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('openYn');
+    const entry = codeOfSrc('app/note/page.tsx');
+    const hub = codeOfSrc('app/note/NoteHubClient.tsx');
+    expect(entry, '라우트 엔트리에 읽음 상태 표시가 새어 나가면 안 된다').not.toContain('openYn');
+    expect(hub, '쪽지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('openYn');
     expect(
-      page,
+      hub,
       "상태 열이 두 탭에 공유되면 보낸 쪽지가 전부 '안 읽음' 으로 보인다",
     ).toContain("tab === 'received' ? [{");
 
