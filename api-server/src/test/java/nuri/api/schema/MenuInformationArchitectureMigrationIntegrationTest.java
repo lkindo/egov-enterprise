@@ -88,8 +88,10 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
         try (Connection connection=openConnection(); Statement statement=connection.createStatement()) {
             assertThat(number(statement,"SELECT count(*) FROM flyway_schema_history WHERE version='2.100' AND success")).isEqualTo(1);
             // 최신까지 올리면 V2_125 가 V2_88 이 끈 마이페이지 관리 메뉴(2030100) 한 행을 지운다(DEC-OPS-229). 활성 수는 그대로다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(77-1);
-            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(71);
+            // [2026-10-19 DEC-OPS-368] V2_134 가 사용 중인 보고서 통계 메뉴(9040105)를 지워 전체·활성이 하나씩 준다.
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(77-2);
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(70);
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9040105")).isZero();
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL")).isEqualTo(4);
             assertThat(number(statement,"WITH RECURSIVE tree AS (SELECT menu_sn,1 AS depth FROM tb_menu_info WHERE up_menu_sn IS NULL "
                     + "UNION ALL SELECT m.menu_sn,p.depth+1 FROM tb_menu_info m JOIN tree p ON m.up_menu_sn=p.menu_sn) "
@@ -108,7 +110,8 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                     + "AND modern_route='/admin/help?tab=COMMUNITY'")).isEqualTo(1);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9020130 "
                     + "AND modern_route='/admin/system/policies'")).isEqualTo(1);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'")).isEqualTo(77-1);
+            // V2_134 가 ROLE_ADMIN 의 보고서 통계 메뉴 배정 한 건을 지운다.
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'")).isEqualTo(77-2);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_USER'")).isEqualTo(25-6);
             // 최신까지 올리면 V2_104 가 퇴역한 NETWORK_* 기능 권한 8행을 지우고 REMOVE 이력 8행을 남긴다(DEC-OPS-129).
             //   V2_120 이 ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 5행과 비게 된 관리 센터 1행을 지우고 REMOVE 이력 6행을 남긴다.
