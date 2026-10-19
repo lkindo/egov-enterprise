@@ -179,7 +179,7 @@ class RbacAuthorizationMatrixTest {
                         {"userId":"body_other","ipAddr":"192.0.2.1","dpcnPrmYn":"Y",
                          "lmtYn":"N","bgngTm":"09:00","endTm":"18:00","otpUseYn":"N"}
                         """))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.success").value(true));
         mockMvc.perform(get(path).with(user(explicit(List.of("POLICY_READERS"), List.of("LOGIN_POL_READ")))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.userId").value(loginId))
                 .andExpect(jsonPath("$.data.regYn").value("Y"))

@@ -87,6 +87,7 @@ public class SatisfactionApiController {
 
     @Operation(summary = "만족도 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#create')")
     public ResponseEntity<ApiResponse<Long>> create(
             @PathVariable String bbsId, @PathVariable Long pstSn,
@@ -98,7 +99,7 @@ public class SatisfactionApiController {
         boardService.assertCommentAccess(bbsId, pstSn);
         // [2026-09-27 DIP B5 F9] 만족도 조사를 쓰지 않는 게시판에는 새 평가를 받지 않는다.
         boardService.assertSatisfactionEnabled(bbsId);
-        return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(satisfactionService.createSatisfaction(dto)));
     }
 
     @Operation(summary = "만족도 수정", description = "인증된 작성자 또는 관리자만 수정할 수 있다.")

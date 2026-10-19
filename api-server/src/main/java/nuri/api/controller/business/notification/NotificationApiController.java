@@ -76,11 +76,12 @@ public class NotificationApiController {
 
     @Operation(summary = "개인 알림 등록", description = "로그인한 사용자 본인의 알림을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.notification.NotificationApiController#createNotification')")
     public ResponseEntity<ApiResponse<Long>> createNotification(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody NotificationDto request) {
-        return ResponseEntity.ok(ApiResponse.success(notificationService.createNotification(userDetails.getUsername(), request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(notificationService.createNotification(userDetails.getUsername(), request)));
     }
 
     @Operation(summary = "알림 삭제", description = "특정 알림을 삭제합니다.")

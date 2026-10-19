@@ -131,7 +131,7 @@ class CommentApiControllerTest {
                 .content("{\"pstSn\":\"1\", \"bbsId\":\"BBS_001\", \"ansCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
 
@@ -171,7 +171,7 @@ class CommentApiControllerTest {
                         + "\"frstRgtrId\":\"SPOOFED_LOGIN\",\"editable\":true,\"deletable\":true,"
                         + "\"crtDt\":\"2099-01-01T00:00:00\"}")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // DTO 의 두 필드는 READ_ONLY 라 요청 값이 바인딩되지 않는다(400 이 아니라 무시다).
         org.mockito.ArgumentCaptor<CommentDto> body = org.mockito.ArgumentCaptor.forClass(CommentDto.class);

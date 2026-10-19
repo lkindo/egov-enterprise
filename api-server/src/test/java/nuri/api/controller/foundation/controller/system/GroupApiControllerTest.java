@@ -70,7 +70,7 @@ class GroupApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/groups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         verify(groupManageService, times(1)).insertGroup(any(GroupManageDto.class));
     }

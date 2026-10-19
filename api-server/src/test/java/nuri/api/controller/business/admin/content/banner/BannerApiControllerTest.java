@@ -53,7 +53,7 @@ class BannerApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(post("/api/v1/admin/system/banners")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(put("/api/v1/admin/system/banners/1")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))

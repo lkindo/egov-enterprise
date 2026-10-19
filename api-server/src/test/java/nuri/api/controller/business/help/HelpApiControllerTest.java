@@ -101,7 +101,7 @@ class HelpApiControllerTest {
         mockMvc.perform(post("/api/v1/help/hpcm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
     }
@@ -162,7 +162,7 @@ class HelpApiControllerTest {
         mockMvc.perform(post("/api/v1/help/manuals")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
     }

@@ -69,7 +69,7 @@ class ScrapApiControllerTest extends ControllerTestSupport {
                         .content("""
                                 {"scrapNm":"Scrap","scrapUrl":"https://example.com","useYn":"Y"}
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(2));
     }
 }

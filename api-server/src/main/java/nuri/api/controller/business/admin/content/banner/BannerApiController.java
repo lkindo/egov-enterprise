@@ -47,9 +47,10 @@ public class BannerApiController {
 
     @Operation(summary = "배너 등록", description = "새로운 배너 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner')")
     public ResponseEntity<ApiResponse<Long>> insertBanner(@Valid @RequestBody BannerDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(bannerService.insertBanner(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(bannerService.insertBanner(dto)));
     }
 
     @Operation(summary = "배너 정보 수정", description = "기존 배너 정보를 수정합니다.")

@@ -62,13 +62,15 @@ public class LoginPolicyApiController {
 
     @Operation(summary = "로그인 정책 등록")
     @PostMapping("/{userId}")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy')")
-    public ResponseEntity<ApiResponse<Void>> insertLoginPolicy(
+    public ResponseEntity<ApiResponse<String>> insertLoginPolicy(
             @PathVariable("userId") String userId,
             @Valid @RequestBody LoginPolicyDto loginPolicy) throws Exception {
         loginPolicy.setUserId(userId);
         loginPolicyManageService.insertLoginPolicy(loginPolicy);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 로그인 정책은 사용자 ID 로 식별한다(PUT·DELETE /{userId}).
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(userId));
     }
 
     @Operation(summary = "로그인 정책 수정")

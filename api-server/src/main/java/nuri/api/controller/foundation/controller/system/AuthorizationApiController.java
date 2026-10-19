@@ -50,11 +50,12 @@ public class AuthorizationApiController {
     }
 
     @PostMapping("/groups/{code}/copies")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 복제")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCopyGroup", summary="권한 그룹 복제")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup')")
     public ApiResponse<GroupSnapshot> copyGroup(@PathVariable String code,@Valid @RequestBody CopyGroup request) {
-        return ApiResponse.success(service.copyGroup(code,request));
+        return ApiResponse.created(service.copyGroup(code,request));
     }
 
     @GetMapping("/grants")
@@ -63,10 +64,11 @@ public class AuthorizationApiController {
     public ApiResponse<GrantMatrix> grantMatrix() { return ApiResponse.success(service.grantMatrix()); }
 
     @PostMapping("/groups")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 생성")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCreateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#createGroup')")
-    public ApiResponse<GroupSnapshot> createGroup(@Valid @RequestBody CreateGroup request) { return ApiResponse.success(service.createGroup(request)); }
+    public ApiResponse<GroupSnapshot> createGroup(@Valid @RequestBody CreateGroup request) { return ApiResponse.created(service.createGroup(request)); }
 
     @PutMapping("/groups/{code}")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 변경")

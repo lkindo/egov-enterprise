@@ -41,13 +41,14 @@ public class CommentApiController {
      * {@code wrter_id} 는 esntlId 축이며, {@link CustomUserDetails} 가 그 혼동을 경고한다.
      */
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.comment.CommentApiController#createComment')")
     public ResponseEntity<ApiResponse<Long>> createComment(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CommentDto commentDto) {
         boardService.assertCommentAccess(commentDto.getBbsId(), commentDto.getPstSn());
         boardService.assertCommentsEnabled(commentDto.getBbsId());
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(
                 commentService.createComment(userDetails.getEsntlId(), userDetails.getUserNm(), commentDto)));
     }
 

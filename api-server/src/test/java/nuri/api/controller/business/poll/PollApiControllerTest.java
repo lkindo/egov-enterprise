@@ -80,14 +80,14 @@ class PollApiControllerTest extends ControllerTestSupport {
     @DisplayName("설문 등록 성공")
     void createPoll_Success() throws Exception {
         // Given
-        willDoNothing().given(pollService).insertPoll(any(OnlinePollManageDto.class));
+        given(pollService.insertPoll(any(OnlinePollManageDto.class))).willReturn(7L);
  
         // When & Then
         mockMvc.perform(post("/api/v1/polls")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"pollNm\":\"신규 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }
  

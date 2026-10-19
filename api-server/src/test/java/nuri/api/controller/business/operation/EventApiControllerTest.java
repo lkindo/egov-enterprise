@@ -85,7 +85,7 @@ class EventApiControllerTest {
 
         eventMockMvc.perform(post("/api/v1/admin/operation/events")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(1));
 
         eventMockMvc.perform(put("/api/v1/admin/operation/events/1")

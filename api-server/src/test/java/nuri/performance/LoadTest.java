@@ -133,7 +133,7 @@ class LoadTest {
           mockMvc.perform(post("/api/v1/users/signup")
               .contentType(MediaType.APPLICATION_JSON)
               .content(requestBody))
-              .andExpect(status().isOk())
+              .andExpect(status().isCreated())
               .andExpect(jsonPath("$.success").value(true));
           return true;
         } catch (Exception e) {

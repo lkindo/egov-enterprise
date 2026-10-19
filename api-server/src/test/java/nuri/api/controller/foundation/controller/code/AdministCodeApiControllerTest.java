@@ -103,7 +103,7 @@ class AdministCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -121,7 +121,7 @@ class AdministCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test

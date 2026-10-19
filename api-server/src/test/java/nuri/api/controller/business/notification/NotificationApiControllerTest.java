@@ -117,7 +117,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/notifications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(2));
     }
 
@@ -144,7 +144,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
                          "readYn":"Y","notiIvlVal":"forged",
                          "notiDt":"2000-01-01T00:00:00","crtDt":"2000-01-01T00:00:00"}
                         """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         verify(notificationService).createNotification(eq("testUser"), argThat(dto ->
                 dto.getNotiSn() == null && dto.getRcvrId() == null && dto.getReadYn() == null
                         && dto.getNotiIvlVal() == null && dto.getNotiDt() == null && dto.getCrtDt() == null

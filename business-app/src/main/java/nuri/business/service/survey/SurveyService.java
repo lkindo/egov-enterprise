@@ -52,12 +52,14 @@ public class SurveyService {
     }
 
     @Transactional
-    public void insertTmplat(SurveyTemplateDto dto) {
-        tmplatRepository.save(Objects.requireNonNull(SurveyTemplate.builder()
+    public Long insertTmplat(SurveyTemplateDto dto) {
+        SurveyTemplate template = Objects.requireNonNull(SurveyTemplate.builder()
                 .srvyTmpltTypeCd(dto.getSrvyTmpltTypeCd())
                 .srvyTmpltPathNm(dto.getSrvyTmpltPathNm())
                 .srvyTmpltExpln(dto.getSrvyTmpltExpln())
-                .build()));
+                .build());
+        tmplatRepository.save(template);
+        return template.getSrvyTmpltSn();
     }
 
     @Transactional
@@ -139,12 +141,12 @@ public class SurveyService {
     }
 
     @Transactional
-    public void insertSurvey(SurveyInfoDto dto) {
+    public Long insertSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
         if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
+        SurveyInfo survey = Objects.requireNonNull(SurveyInfo.builder()
                 .srvyTtl(dto.getSrvyTtl())
                 .srvyPrps(dto.getSrvyPrps())
                 .srvyWrtGdCn(dto.getSrvyWrtGdCn())
@@ -152,7 +154,9 @@ public class SurveyService {
                 .srvyEndYmd(dto.getSrvyEndYmd())
                 .srvyTrgt(dto.getSrvyTrgt())
                 .srvyTmpltSn(dto.getSrvyTmpltSn())
-                .build()));
+                .build());
+        infoRepository.save(survey);
+        return survey.getSrvySn();
     }
 
     @Transactional
@@ -273,7 +277,7 @@ public class SurveyService {
     }
 
     @Transactional
-    public void insertQuestion(SurveyQuestionDto dto) {
+    public Long insertQuestion(SurveyQuestionDto dto) {
         SurveyInfo survey = lockSurvey(dto.getSrvySn());
         assertNoResponses(survey.getSrvySn());
         // [2026-09-26 DIP B4 P6] 순번은 서버가 매긴다 — 화면이 '문항 수 + 1' 을 보내, 중간 문항을 지운 뒤 추가하면 마지막
@@ -284,14 +288,16 @@ public class SurveyService {
                 .mapToLong(Long::longValue)
                 .max()
                 .orElse(0L) + 1;
-        qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
+        SurveyQuestion question = Objects.requireNonNull(SurveyQuestion.builder()
                 .srvySn(survey.getSrvySn())
                 .qstnSn(nextQstnSn)
                 .qstnTypeCd(dto.getQstnTypeCd())
                 .qstnCn(dto.getQstnCn())
                 .maxChcCnt(dto.getMaxChcCnt())
                 .srvyTmpltSn(survey.getSrvyTmpltSn())
-                .build()));
+                .build());
+        qesitmRepository.save(question);
+        return question.getSrvyQstnSn();
     }
 
     @Transactional
@@ -342,17 +348,19 @@ public class SurveyService {
     }
 
     @Transactional
-    public void insertItem(SurveyArticleDto dto) {
+    public Long insertItem(SurveyArticleDto dto) {
         SurveyQuestion question = questionAfterSurveyLock(dto.getSrvyQstnSn());
         assertNoResponses(question.getSrvySn());
-        iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
+        SurveyArticle item = Objects.requireNonNull(SurveyArticle.builder()
                 .srvyQstnSn(question.getSrvyQstnSn())
                 .srvySn(question.getSrvySn())
                 .artclSn(dto.getArtclSn())
                 .artclCn(dto.getArtclCn())
                 .etcAnsYn(dto.getEtcAnsYn())
                 .srvyTmpltSn(question.getSrvyTmpltSn())
-                .build()));
+                .build());
+        iemRepository.save(item);
+        return item.getSrvyArtclSn();
     }
 
     @Transactional

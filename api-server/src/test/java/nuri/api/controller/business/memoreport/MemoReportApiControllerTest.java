@@ -130,7 +130,7 @@ class MemoReportApiControllerTest {
                           "crtDt": "2026-09-06T03:00:00"
                         }
                         """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(2));
 
         ArgumentCaptor<MemoReportDto> dto = ArgumentCaptor.forClass(MemoReportDto.class);

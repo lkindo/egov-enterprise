@@ -46,7 +46,7 @@ class PolicyApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/policies/INTERNAL")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"plcyTtl\":\"기관 정책\",\"plcyCn\":\"등록된 본문\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         org.mockito.Mockito.verify(policyService).createPolicy("INTERNAL", "기관 정책", "등록된 본문");
         org.mockito.Mockito.verify(policyService, org.mockito.Mockito.never())
                 .updatePolicy(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());

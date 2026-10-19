@@ -146,7 +146,7 @@ public class OnlinePollService {
     }
 
     @Transactional
-    public void insertPoll(OnlinePollManageDto dto) {
+    public Long insertPoll(OnlinePollManageDto dto) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLL_CREATE");
         assertManagementReadPermissions();
         
@@ -180,6 +180,7 @@ public class OnlinePollService {
         }
 
         pollManageRepository.save(pollManage);
+        return pollManage.getPollSn();
     }
 
     @Transactional

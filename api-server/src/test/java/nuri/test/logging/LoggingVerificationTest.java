@@ -83,7 +83,7 @@ public class LoggingVerificationTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // 서비스가 정상 호출되었음을 검증
         verify(userService, times(1)).signup(any(UserSignupRequest.class));

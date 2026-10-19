@@ -51,12 +51,13 @@ public class AddressBookApiController {
 
     @Operation(summary = "주소록 등록", description = "새로운 주소록을 생성합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook')")
-    public ResponseEntity<ApiResponse<Void>> createAddressBook(
+    public ResponseEntity<ApiResponse<Long>> createAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody AddressBookDto addressBookDto) {
-        addressBookService.createAddressBook(userDetails.getUsername(), addressBookDto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long adbkSn = addressBookService.createAddressBook(userDetails.getUsername(), addressBookDto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(adbkSn));
     }
 
     @Operation(summary = "주소록 정보 수정", description = "상세 조회에서 받은 editToken으로 현재 상태를 확인한 뒤 수정합니다. 구성원 목록을 생략하면 기존 구성원을 보존합니다.")

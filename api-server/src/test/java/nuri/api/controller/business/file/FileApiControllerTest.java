@@ -53,7 +53,7 @@ class FileApiControllerTest extends ControllerTestSupport {
                 .file(file1)
                 .file(file2)
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(101));
     }

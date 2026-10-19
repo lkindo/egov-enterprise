@@ -47,9 +47,10 @@ public class ExternalHrApiController {
                             schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
     })
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr')")
     public ResponseEntity<ApiResponse<ExternalHrDto>> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(externalHrService.createExternalHr(dto)));
     }
 
     /*

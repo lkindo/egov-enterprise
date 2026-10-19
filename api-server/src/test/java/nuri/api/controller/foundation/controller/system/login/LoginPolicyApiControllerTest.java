@@ -85,7 +85,7 @@ class LoginPolicyApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/login-policies/user01")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         verify(loginPolicyManageService, times(1)).insertLoginPolicy(any());
     }

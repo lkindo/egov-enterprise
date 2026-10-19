@@ -33,7 +33,7 @@ public class WorkReportService extends BaseAbstractService {
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @Transactional
-    public void createWorkReport(WorkReportDto dto) {
+    public Long createWorkReport(WorkReportDto dto) {
         String actorLoginId = currentLoginId();
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
@@ -50,6 +50,7 @@ public class WorkReportService extends BaseAbstractService {
                 .atchFileSn(atchFileSn)
                 .build();
         workReportRepository.save(entity);
+        return entity.getRptpSn();
     }
 
     @Transactional

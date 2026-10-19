@@ -100,7 +100,7 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
                         .contentType("application/json")
                         .content("{\"bbsId\":\"BBS_OTHER\",\"pstSn\":999,\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         ArgumentCaptor<SatisfactionDto> captor = ArgumentCaptor.forClass(SatisfactionDto.class);
         verify(satisfactionService).createSatisfaction(captor.capture());
@@ -266,7 +266,7 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
                         .contentType("application/json")
                         .content("{\"dgstfnScr\":5,\"useYn\":\"Y\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // 세 경로 전부 가드를 지났음을 호출 횟수로 고정한다 — 하나라도 빠지면 그 경로가 다시 열린 것이다.
         verify(boardService, org.mockito.Mockito.times(3)).assertCommentAccess("BBS_01", 1L);

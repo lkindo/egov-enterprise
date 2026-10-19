@@ -46,11 +46,12 @@ public class EventApiController {
 
     @Operation(summary = "행사 정보 등록", description = "새로운 행사 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.EventApiController#createEvent')")
     public ResponseEntity<ApiResponse<Long>> createEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody EventInfoRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(eventInfoService.createEvent(userDetails.getUsername(), request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(eventInfoService.createEvent(userDetails.getUsername(), request)));
     }
 
     @Operation(summary = "행사 정보 수정", description = "행사 정보를 수정합니다.")

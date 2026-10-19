@@ -68,7 +68,7 @@ class RewardManageApiControllerTest extends ControllerTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"rwardNm\":\"모범 사원상\",\"rwardwnrId\":\"U1\",\"rwardCode\":\"R01\"}")
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }
 

@@ -66,10 +66,12 @@ public class CommonCodeApiController {
 
     @Operation(summary = "분류코드 등록")
     @PostMapping("/cl")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.CommonCodeApiController#createClCode')")
-    public ResponseEntity<ApiResponse<Void>> createClCode(@Valid @RequestBody CmmnClCodeDto vo) throws Exception {
+    public ResponseEntity<ApiResponse<String>> createClCode(@Valid @RequestBody CmmnClCodeDto vo) throws Exception {
         commonCodeService.insertCmmnClCode(vo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 분류코드는 요청이 정하고 서비스가 중복을 거부한다 — 그 값이 새 분류의 식별자다.
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(vo.getClsfCd()));
     }
 
     @Operation(summary = "분류코드 수정")
@@ -113,10 +115,11 @@ public class CommonCodeApiController {
 
     @Operation(summary = "공통코드 등록")
     @PostMapping("/cmmn")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.CommonCodeApiController#createCmmnCode')")
-    public ResponseEntity<ApiResponse<Void>> createCmmnCode(@Valid @RequestBody CmmnCodeDto vo) throws Exception {
+    public ResponseEntity<ApiResponse<String>> createCmmnCode(@Valid @RequestBody CmmnCodeDto vo) throws Exception {
         commonCodeService.insertCmmnCode(vo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(vo.getCdId()));
     }
 
     @Operation(summary = "공통코드 계층 일괄 저장",
@@ -171,10 +174,12 @@ public class CommonCodeApiController {
 
     @Operation(summary = "상세코드 등록")
     @PostMapping("/detail")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.CommonCodeApiController#createDetailCode')")
-    public ResponseEntity<ApiResponse<Void>> createDetailCode(@Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
+    public ResponseEntity<ApiResponse<DetailCodeKey>> createDetailCode(@Valid @RequestBody CmmnDetailCodeDto vo) throws Exception {
         commonCodeService.insertCmmnDetailCode(vo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 상세코드는 (코드 ID, 상세코드) 두 값으로 식별한다(PUT·DELETE /detail/{codeId}/{code}).
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(new DetailCodeKey(vo.getCdId(), vo.getDtlCd())));
     }
 
     @Operation(summary = "상세코드 수정")
@@ -196,5 +201,14 @@ public class CommonCodeApiController {
         vo.setDtlCd(code);
         commonCodeService.deleteCmmnDetailCode(vo);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    /** [ADR-0036] 상세코드 생성(201) 응답의 식별자 — 상세코드는 (코드 ID, 상세코드) 두 값으로 식별한다. */
+    @io.swagger.v3.oas.annotations.media.Schema(description = "상세코드 식별자")
+    public record DetailCodeKey(
+            @io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                    description = "코드 ID") String cdId,
+            @io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED,
+                    description = "상세코드") String dtlCd) {
     }
 }

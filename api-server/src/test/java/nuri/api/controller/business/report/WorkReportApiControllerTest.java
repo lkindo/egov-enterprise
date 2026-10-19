@@ -87,7 +87,7 @@ class WorkReportApiControllerTest {
     @Test
     @DisplayName("업무보고 등록")
     void registerWorkReport() throws Exception {
-        doNothing().when(workReportService).createWorkReport(any(WorkReportDto.class));
+        when(workReportService.createWorkReport(any(WorkReportDto.class))).thenReturn(5L);
 
         mockMvc.perform(post("/api/v1/work-reports")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +97,7 @@ class WorkReportApiControllerTest {
                                 "userId", "forged-owner",
                                 "userNm", "forged-name",
                                 "rptTypeCd", "forged-type"))))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         ArgumentCaptor<WorkReportDto> dto = ArgumentCaptor.forClass(WorkReportDto.class);

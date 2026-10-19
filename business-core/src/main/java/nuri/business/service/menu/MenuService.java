@@ -245,7 +245,7 @@ public class MenuService {
 
     @Transactional
     @CacheEvict(value = { "allMenus", "menuParentMap", "allMenuDtos" }, allEntries = true)
-    public void insertMenuManage(@NonNull MenuDto vo) {
+    public Long insertMenuManage(@NonNull MenuDto vo) {
         SecurityUtil.assertPermission("MENU_CREATE");
         Map<Long, Long> parents = lockParentGraph();
         Long parentId = normalizeUpMenuSn(vo.getUpMenuSn());
@@ -266,6 +266,7 @@ public class MenuService {
         menu.setLastMdfrId("webmaster");
         Menu saved = menuRepository.save(Objects.requireNonNull(menu));
         authorizationAdministrationService.grantNewMenuToCompatibilityAdmin(saved.getMenuSn());
+        return saved.getMenuSn();
     }
 
 

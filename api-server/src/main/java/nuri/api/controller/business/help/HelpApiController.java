@@ -50,10 +50,11 @@ public class HelpApiController {
 
     @Operation(summary = "도움말 등록", description = "새로운 도움말을 등록합니다.")
     @PostMapping("/hpcm")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#insertHpcm')")
     public ResponseEntity<ApiResponse<Long>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
         Long hlpSn = helpService.createHpcm("ADMIN", dto);
-        return ResponseEntity.ok(ApiResponse.success(hlpSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(hlpSn));
     }
 
     @Operation(summary = "도움말 수정", description = "도움말 정보를 수정합니다.")
@@ -96,13 +97,14 @@ public class HelpApiController {
 
     @Operation(summary = "온라인 매뉴얼 등록", description = "새로운 온라인 매뉴얼을 등록합니다.")
     @PostMapping("/manuals")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#createManual')")
     public ResponseEntity<ApiResponse<Long>> createManual(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OnlineManualDto dto) {
         String username = (userDetails != null) ? userDetails.getUsername() : "anonymous";
         Long onlnMnlSn = helpService.createOnlineManual(username, dto);
-        return ResponseEntity.ok(ApiResponse.success(onlnMnlSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(onlnMnlSn));
     }
 
     @Operation(summary = "온라인 매뉴얼 수정", description = "온라인 매뉴얼 정보를 수정합니다.")

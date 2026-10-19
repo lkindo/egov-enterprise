@@ -40,6 +40,23 @@ public record ApiResponse<T>(
                 .build();
     }
 
+    /**
+     * [ADR-0036] 자원을 만든 POST 의 성공 응답 — 본문 {@code status} 는 201 이고 {@code data} 는 새 자원의 식별자
+     * (식별자를 담은 DTO 포함)다. 핸들러는 {@code @ResponseStatus(HttpStatus.CREATED)} 를 함께 달고, {@code ResponseEntity}
+     * 를 돌려주면 {@code ResponseEntity.status(HttpStatus.CREATED)} 로 HTTP 상태를 같게 둔다(가이드 §2 "HTTP 상태와 본문
+     * status 는 같다"). 어느 핸들러가 201 인지는 {@code ResponseContractLinterTest} 의 생성 census 가 정한다.
+     */
+    public static <T> ApiResponse<T> created(T data) {
+        return ApiResponse.<T>builder()
+                .success(true)
+                .status(201)
+                .code("COMMON_001")
+                .message("Created")
+                .data(data)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     public static <T> ApiResponse<T> error(ErrorCode errorCode) {
         return ApiResponse.<T>builder()
                 .success(false)

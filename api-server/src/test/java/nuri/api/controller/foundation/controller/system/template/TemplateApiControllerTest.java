@@ -79,7 +79,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"tmpltId\":\"T1\", \"tmpltNm\":\"Test Template\","
                                 + " \"tmpltSeCd\":\"TMPT01\", \"tmpltPath\":\"/t.html\", \"useYn\":\"Y\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -95,7 +95,7 @@ class TemplateApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(post("/api/v1/admin/system/templates").with(authentication(auth)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         willThrow(new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE))
                 .given(tmplatInfoService).insertTmplatInfo(any());

@@ -79,7 +79,7 @@ class MenuApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/menus")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         verify(menuService, times(1)).insertMenuManage(any(MenuDto.class));
     }

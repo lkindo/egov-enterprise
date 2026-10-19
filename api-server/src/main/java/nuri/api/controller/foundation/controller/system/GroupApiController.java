@@ -49,10 +49,11 @@ public class GroupApiController {
 
     @Operation(summary = "그룹 등록", description = "새로운 시스템 사용자 그룹을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.GroupApiController#createGroup')")
-    public ResponseEntity<ApiResponse<Void>> createGroup(@Valid @RequestBody GroupManageDto dto) {
-        groupManageService.insertGroup(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> createGroup(@Valid @RequestBody GroupManageDto dto) {
+        String groupId = groupManageService.insertGroup(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(groupId));
     }
 
     @Operation(summary = "그룹 수정", description = "기존 시스템 사용자 그룹 정보를 수정합니다.")

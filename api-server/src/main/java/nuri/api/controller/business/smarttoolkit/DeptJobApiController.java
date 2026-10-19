@@ -63,13 +63,14 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무함 등록", description = "새로운 부서 업무함을 등록합니다.")
     @PostMapping("/boxes")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJobBox')")
     public ResponseEntity<ApiResponse<Long>> createDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody DeptJobBoxDto dto) {
         String userId = userDetails.getEsntlId();
         Long newSn = egovDeptJobBoxService.createDeptJobBox(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(newSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(newSn));
     }
 
     @Operation(summary = "부서 업무함 수정", description = "기존 부서 업무함 정보를 수정합니다.")
@@ -155,10 +156,11 @@ public class DeptJobApiController {
 
     @Operation(summary = "부서 업무 등록", description = "새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob')")
     public ResponseEntity<ApiResponse<Long>> createDeptJob(@Valid @RequestBody DeptJobDto dto) {
         Long newSn = deptJobService.createDeptJob(dto);
-        return ResponseEntity.ok(ApiResponse.success(newSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(newSn));
     }
 
     @Operation(summary = "부서 업무 수정", description = "부서 업무를 수정합니다. 담당자 본인 또는 관리자만 가능합니다.")

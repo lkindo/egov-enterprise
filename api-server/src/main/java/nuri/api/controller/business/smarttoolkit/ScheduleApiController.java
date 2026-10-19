@@ -85,12 +85,13 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#createSchedule')")
     public ResponseEntity<ApiResponse<Long>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
         String userId = currentLoginId();
         Long schdlSn = egovScheduleService.createSchedule(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(schdlSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(schdlSn));
     }
 
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")

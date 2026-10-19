@@ -47,11 +47,12 @@ public class ScrapApiController {
 
     @Operation(summary = "스크랩 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScrapApiController#createScrap')")
     public ResponseEntity<ApiResponse<Long>> createScrap(@Valid @RequestBody ScrapDto dto) {
         String userId = currentLoginId();
         Long scrapSn = egovScrapService.createScrap(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(scrapSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(scrapSn));
     }
 
     @Operation(summary = "스크랩 수정")

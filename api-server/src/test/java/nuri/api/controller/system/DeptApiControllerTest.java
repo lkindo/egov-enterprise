@@ -107,7 +107,7 @@ public class DeptApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/departments")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("ORGNZT_GENERATED"));
 

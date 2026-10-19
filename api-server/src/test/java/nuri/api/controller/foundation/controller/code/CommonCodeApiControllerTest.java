@@ -105,7 +105,7 @@ class CommonCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/cl")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -221,7 +221,7 @@ class CommonCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/cmmn")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -289,7 +289,7 @@ class CommonCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/detail")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test

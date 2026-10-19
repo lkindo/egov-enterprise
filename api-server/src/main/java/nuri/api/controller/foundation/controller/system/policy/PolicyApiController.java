@@ -77,10 +77,12 @@ public class PolicyApiController {
 
     @Operation(summary = "시스템 정책 신규 등록", description = "기존 정책 쓰기 권한으로 새 유형을 등록한다. 기존 유형은 덮어쓰지 않으며 공개 범위는 변경하지 않는다.")
     @PostMapping("/{type}")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy')")
-    public ResponseEntity<ApiResponse<Void>> createPolicy(
+    public ResponseEntity<ApiResponse<String>> createPolicy(
             @PathVariable String type, @Valid @RequestBody PolicyUpdateRequest request) {
         policyService.createPolicy(type, request.plcyTtl(), request.plcyCn());
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 정책은 유형 코드로 식별한다(경로의 {type}).
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(type));
     }
 }

@@ -109,7 +109,7 @@ class CommunityApiControllerTest {
                         .with(SecurityMockMvcRequestPostProcessors.user(nuri.business.support.AuthorizationTestPrincipal.principal("user", "user", "ADMIN")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.cmntySn").value(101));
     }

@@ -28,11 +28,12 @@ public class FileApiController {
 
     @Operation(summary = "파일 업로드", description = "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.file.FileApiController#uploadFiles')")
     public ResponseEntity<ApiResponse<Long>> uploadFiles(
             @RequestPart("files") List<MultipartFile> files) throws IOException {
         Long atchFileSn = fileService.uploadFiles(files);
-        return ResponseEntity.ok(ApiResponse.success(atchFileSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(atchFileSn));
     }
 
     @Operation(summary = "파일 목록 조회", description = "첨부파일 일련번호에 속한 파일 목록을 조회합니다.")

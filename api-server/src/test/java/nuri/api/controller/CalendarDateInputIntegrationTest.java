@@ -30,11 +30,11 @@ class CalendarDateInputIntegrationTest {
     void validEventAndPollReachTheirServices() throws Exception {
         mvc.perform(post("/api/v1/admin/operation/events").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"evntNm\":\"행사\",\"evntBgngYmd\":\"20240229\",\"evntEndYmd\":\"20240301\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         verify(events).createEvent(anyString(), any());
         mvc.perform(post("/api/v1/polls").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"pollNm\":\"설문\",\"pollBgngYmd\":\"20240229\",\"pollEndYmd\":\"20240301\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         verify(polls).insertPoll(any());
     }
 

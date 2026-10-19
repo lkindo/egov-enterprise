@@ -155,7 +155,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -268,7 +268,7 @@ public class UserApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toUserRequestJson(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value("newUser"));
     }
 
