@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
-  canonicalTextSha256,
+  adrDecisionSha256,
   createUnreviewedProposal,
+  dispositionManifestSha256,
   findDispositionSourceReferences,
   validateDispositionContract,
   validateOperationalBinding,
@@ -33,10 +35,9 @@ function clone(value) {
 function validate(candidate, options = {}) {
   return validateDispositionContract({
     manifest: options.manifest ?? manifest,
-    manifestRaw: options.manifestRaw ?? manifestRaw,
     overlay: candidate,
     schema: options.schema ?? schema,
-    repoRoot,
+    repoRoot: options.repoRoot ?? repoRoot,
     sourceReferences: options.sourceReferences ?? [],
   });
 }
@@ -221,18 +222,19 @@ test('the recommended hybrid is selected only as a bounded provisional direction
 });
 
 test('the proposed overlay drafts dispositions over the discovered pages and external aliases', () => {
-  const initial = createUnreviewedProposal(manifest, manifestRaw);
+  const initial = createUnreviewedProposal(manifest);
   const manifestLf = manifestRaw.toString('utf8').replace(/\r\n?/gu, '\n');
   assert.equal(initial.provisionalDirection, null);
   assert.equal(overlay.state, 'proposed');
   assert.equal(overlay.authority, 'non-normative-pre-decision-evidence');
   assert.deepEqual(overlay.manifestRef, {
     path: 'config/ui-route-capabilities.json',
-    sha256: canonicalTextSha256(manifestRaw),
+    sha256: dispositionManifestSha256(manifest),
   });
+  assert.equal(initial.manifestRef.sha256, overlay.manifestRef.sha256);
   assert.equal(
-    canonicalTextSha256(manifestRaw),
-    canonicalTextSha256(manifestLf.replaceAll('\n', '\r\n')),
+    dispositionManifestSha256(JSON.parse(manifestLf.replaceAll('\n', '\r\n'))),
+    dispositionManifestSha256(manifest),
     'manifest identity must not drift between Windows CRLF and CI LF checkouts',
   );
   assert.deepEqual(overlay.routes.map(({ route }) => route), initial.routes.map(({ route }) => route));
@@ -351,7 +353,7 @@ test('acceptance evidence deferral must bind the reference-default ADR exactly',
     assert.equal(record.acceptedRisk, 'approved-without-user-research');
     assert.equal(
       record.adrSha256,
-      canonicalTextSha256(readFileSync(path.join(repoRoot, record.adrPath), 'utf8')),
+      adrDecisionSha256(record.adrPath, readFileSync(path.join(repoRoot, record.adrPath), 'utf8')),
     );
   }
 
@@ -665,4 +667,73 @@ test('package and governance bindings fail red when the operational catalog is n
       new RegExp(`governance UI/UX foundation binding is missing ${asset.replaceAll('/', '\\/').replaceAll('.', '\\.')}`, 'i'),
     );
   }
+});
+
+// 처분 제안은 라우트 원장 파일 전체가 아니라 처분이 의존하는 범위(경로·별칭 모집단과 shell·role·menu·target·상태·구역·profile 소유)에만 결속한다.
+test('the manifest binding follows route population and disposition metadata, not capability detail', () => {
+  assert.deepEqual(validate(overlay).errors, []);
+  const drifted = (changed) => validate(overlay, { manifest: changed }).errors.join('\n');
+
+  const added = clone(manifest);
+  added.routes.push({ ...clone(manifest.routes[0]), route: '/__unreviewed-route', source: 'frontend/src/app/__unreviewed-route/page.tsx' });
+  const removed = clone(manifest);
+  removed.routes.pop();
+  const retargeted = clone(manifest);
+  const redirect = retargeted.routes.find((row) => row.routing?.kind === 'page-redirect');
+  redirect.routing = { ...redirect.routing, target: `${redirect.routing.target}-moved` };
+  const menuChanged = clone(manifest);
+  menuChanged.routes[0].menuExposure = menuChanged.routes[0].menuExposure === 'visible' ? 'hidden' : 'visible';
+  for (const [reason, changed] of [['route added', added], ['route removed', removed],
+    ['redirect target changed', retargeted], ['menu exposure changed', menuChanged]]) {
+    assert.match(drifted(changed), /manifestRef\.sha256 drifted from the current manifest/i, reason);
+  }
+  assert.match(drifted(added), /overlay\.routes .*missing.*\/__unreviewed-route|\/__unreviewed-route/i, 'the population check still names the new route');
+
+  const detail = clone(manifest);
+  detail.routes[0].visibleLabel = `${detail.routes[0].visibleLabel} (renamed)`;
+  detail.routes[0].supportedActions = [...detail.routes[0].supportedActions, 'synthetic-action'];
+  detail.routes[0].capabilities[0].evidence = [...detail.routes[0].capabilities[0].evidence, 'docs/synthetic-evidence.md'];
+  detail.routes[0].capabilities[0].lastVerifiedAt = '2099-01-01';
+  detail.routes[0].observedPageRedirectCalls = [...detail.routes[0].observedPageRedirectCalls, 'synthetic'];
+  detail.notes = [...detail.notes, 'synthetic note'];
+  assert.equal(dispositionManifestSha256(detail), overlay.manifestRef.sha256);
+  assert.deepEqual(validate(overlay, { manifest: detail }).errors, [], 'capability detail edits must not require rebinding the proposal');
+});
+
+test('ADR bindings cover the decision sections, not header metadata or link sections', (t) => {
+  const temp = mkdtempSync(path.join(os.tmpdir(), 'egov-disposition-adr-'));
+  t.after(() => {
+    assert.ok(path.basename(temp).startsWith('egov-disposition-adr-'));
+    rmSync(temp, { recursive: true, force: true });
+  });
+  const adr4 = 'docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md';
+  const adr7 = 'docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md';
+  const original = Object.fromEntries([adr4, adr7].map((file) => [file, readFileSync(path.join(repoRoot, file), 'utf8')]));
+  const write = (contents) => {
+    for (const [file, text] of Object.entries(contents)) {
+      mkdirSync(path.dirname(path.join(temp, file)), { recursive: true });
+      writeFileSync(path.join(temp, file), text);
+    }
+  };
+  const errorsWith = (contents) => {
+    write(contents);
+    return validate(overlay, { repoRoot: temp }).errors.join('\n');
+  };
+
+  assert.equal(errorsWith(original), '');
+  const headerEdited = {
+    [adr4]: original[adr4].replace('- **Date:** 2026-08-21', '- **후속 결정:** 머리 줄 수정은 결속을 깨지 않는다.\n- **Date:** 2026-08-21'),
+    [adr7]: `${original[adr7].trimEnd()}\n- [synthetic link](README.md) — 정본 연결 수정\n`,
+  };
+  assert.notEqual(headerEdited[adr4], original[adr4]);
+  assert.equal(errorsWith(headerEdited), '', 'header and link edits outside the decision sections stay green');
+
+  const decision4 = { ...original, [adr4]: original[adr4].replace('대안 3인', '대안 2인') };
+  assert.notEqual(decision4[adr4], original[adr4]);
+  assert.match(errorsWith(decision4), /provisionalDirection\.adrSha256 drifted from the bounded ADR/i);
+  const risk7 = { ...original, [adr7]: original[adr7].replace('이 승인은 **사용자 연구 없이**', '이 승인은 **사용자 연구와 함께**') };
+  assert.notEqual(risk7[adr7], original[adr7]);
+  assert.match(errorsWith(risk7), /acceptanceEvidence\.researchArtifactSha256\.adrSha256 drifted from the reference-default ADR/i);
+  const missing = { ...original, [adr4]: original[adr4].replace('## Decision', '## Decision (renamed)') };
+  assert.match(errorsWith(missing), /provisionalDirection\.adrPath must contain each bound section exactly once: Decision/i);
 });
