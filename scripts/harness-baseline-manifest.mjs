@@ -25,26 +25,31 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest,
 } from './harness-baseline-manifest-format.mjs';
-import { computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
+import { REGISTERED_ABSENT_PREFIX, UNREGISTERED_CLASS_PREFIX, computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
 
 export { DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest };
+export { REGISTERED_ABSENT_PREFIX, UNREGISTERED_CLASS_PREFIX };
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export const CLASSES_KEY = '__harness.classes';
-
-/** 키 단위 차이. `__harness.classes` 는 값이 클래스 목록이라 클래스 단위로 나눈다. */
+/**
+ * 키 단위 차이. 게이트 클래스 키(registry 밖의 미등록 클래스·registry 에 있는데 census 에 없는 등록 클래스)는 한 줄에 클래스 하나라
+ * 다른 키와 같은 방식으로 나누고, 보일 때만 클래스 이름으로 바꿔 말한다(메타 게이트의 누락·소멸 감지와 같은 뜻).
+ */
 export function diffHarnessBaseline(expected, actual) {
-  const classesOf = map => new Set((map.get(CLASSES_KEY) ?? '').split(',').map(name => name.trim()).filter(Boolean));
-  const [before, after] = [classesOf(expected), classesOf(actual)];
-  const keys = map => [...map.keys()].filter(key => key !== CLASSES_KEY);
+  const isClassKey = key => key.startsWith(UNREGISTERED_CLASS_PREFIX) || key.startsWith(REGISTERED_ABSENT_PREFIX);
+  const keys = map => [...map.keys()].filter(key => !isClassKey(key));
+  const classKeys = map => [...map.keys()].filter(isClassKey);
+  const name = key => key.slice((key.startsWith(UNREGISTERED_CLASS_PREFIX) ? UNREGISTERED_CLASS_PREFIX : REGISTERED_ABSENT_PREFIX).length);
   return {
-    changed: keys(expected).filter(key => actual.has(key) && actual.get(key) !== expected.get(key)).sort()
+    changed: [...keys(expected), ...classKeys(expected)].filter(key => actual.has(key) && actual.get(key) !== expected.get(key)).sort()
       .map(key => ({ key, from: expected.get(key), to: actual.get(key) })),
     added: keys(actual).filter(key => !expected.has(key)).sort().map(key => ({ key, to: actual.get(key) })),
     removed: keys(expected).filter(key => !actual.has(key)).sort().map(key => ({ key, from: expected.get(key) })),
-    classesAdded: [...after].filter(name => !before.has(name)).sort(),
-    classesRemoved: [...before].filter(name => !after.has(name)).sort(),
+    classesAdded: classKeys(actual).filter(key => !expected.has(key) && key.startsWith(UNREGISTERED_CLASS_PREFIX)).map(name).sort(),
+    classesRemoved: classKeys(expected).filter(key => !actual.has(key) && key.startsWith(UNREGISTERED_CLASS_PREFIX)).map(name).sort(),
+    registeredAbsent: classKeys(actual).filter(key => !expected.has(key) && key.startsWith(REGISTERED_ABSENT_PREFIX)).map(name).sort(),
+    registeredPresent: classKeys(expected).filter(key => !actual.has(key) && key.startsWith(REGISTERED_ABSENT_PREFIX)).map(name).sort(),
   };
 }
 
@@ -53,8 +58,10 @@ export function formatHarnessBaselineDiff(diff) {
   for (const { key, from, to } of diff.changed) lines.push(`  변경 ${key}: ${from} → ${to}`);
   for (const { key, to } of diff.added) lines.push(`  신설 ${key}=${to}`);
   for (const { key, from } of diff.removed) lines.push(`  소멸 ${key} (매니페스트 값 ${from})`);
-  for (const name of diff.classesAdded) lines.push(`  클래스 신설 ${name}`);
-  for (const name of diff.classesRemoved) lines.push(`  클래스 소멸 ${name}`);
+  for (const name of diff.classesAdded) lines.push(`  클래스 신설 ${name} (gates.json registry 밖)`);
+  for (const name of diff.classesRemoved) lines.push(`  클래스 소멸 ${name} (registry 로 옮겼거나 지웠다)`);
+  for (const name of diff.registeredAbsent) lines.push(`  등록 게이트 소멸 ${name} (gates.json 에 있으나 census 에 없다)`);
+  for (const name of diff.registeredPresent) lines.push(`  등록 게이트 복귀 ${name} (매니페스트가 부재로 적었다)`);
   return lines.join('\n');
 }
 

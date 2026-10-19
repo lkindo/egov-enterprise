@@ -6,6 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,7 +19,6 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li><b>변경</b> — 목록 항목의 추가·삭제·교체(내용 해시 불일치)</li>
  *   <li><b>신설</b> — 매니페스트에 없는 새 예외/화이트리스트 목록의 등장(②의 형태)</li>
  *   <li><b>소멸</b> — 매니페스트에 있는 목록·게이트 클래스의 삭제·개명(게이트 자체 제거)</li>
- *   <li><b>누락</b> — 디스크에 존재하는 게이트 클래스가 매니페스트에 <b>등재되지 않은 것</b>
+ *   <li><b>누락</b> — 디스크에 존재하는 게이트 클래스가 registry({@code gates.json})에도 매니페스트에도 <b>등재되지 않은 것</b>
  *       <i>(2026-08-08 신설. 종전에는 INFO 로그였다 — 아래 참조)</i></li>
  * </ul>
  *
@@ -128,8 +131,26 @@ class HarnessBaselineIntegrityTest {
     private static final String MANIFEST_PATH = "api-server/src/test/resources/harness/baseline-manifest.properties";
     private static final String ACTUAL_OUT = "build/harness/baseline-manifest.actual.properties";
 
-    /** 게이트 클래스 소멸(삭제·개명) 감지용 키 */
-    private static final String CLASSES_KEY = "__harness.classes";
+    /**
+     * 게이트 클래스 census 의 두 키 종류. 한 줄에 클래스 하나다.
+     * <p>[2026-10-19] 종전에는 모든 게이트 클래스를 {@code __harness.classes} 한 줄(172개, 8천 자)에 적었다. 그 가운데 159개는
+     * registry({@link #GATE_REGISTRY} 의 {@code gateSets[].rules[].source})가 이미 exact 로 등재해 두 census 가 같은 목록을 두 번
+     * 적었고, 그 한 줄이 병합 충돌 지점이었다. 이제 매니페스트는 registry 밖의 게이트 소스(지원·규칙 정의 파일과 이름 패턴만으로
+     * 편입된 시험)만 적는다 — 값은 그 파일의 스캔 루트다. 등록된 게이트의 삭제·개명은 registry 를 함께 고치면
+     * {@code __registry.config/governance/gates.json} 해시가, registry 를 그대로 두면 {@link #REGISTERED_ABSENT_PREFIX} 키가 잡는다.
+     * 어느 쪽이든 diff 두 곳에 남는다(삭제 검출은 그대로다).
+     */
+    private static final String UNREGISTERED_CLASS_PREFIX = "__harness.unregistered.";
+
+    /**
+     * registry 에 등록됐는데 이 census 에 없는 게이트(파일 삭제·개명·스캔 루트 밖 이동·게이트 술어 이탈) — 값은 {@code MISSING}.
+     * 원본 저장소의 매니페스트에는 이 키가 없다. 재사용 투영본은 원본 registry 를 그대로 두고 게이트를 지우므로, 생성기가 지운 등록
+     * 게이트를 이 키로 매니페스트에 적는다.
+     */
+    private static final String REGISTERED_ABSENT_PREFIX = "__harness.registered.";
+
+    /** 게이트 등록 registry — 등록 판정만 읽는다. 내용 해시는 {@link #GATE_REGISTRIES} 가 따로 동결한다. */
+    private static final String GATE_REGISTRY = "config/governance/gates.json";
 
     /**
      * 훅 파일 자체의 무결성 축.
@@ -212,6 +233,7 @@ class HarnessBaselineIntegrityTest {
         Path manifestPath = resolve(MANIFEST_PATH);
 
         Map<String, Path> gateSources = new TreeMap<>();
+        Map<String, String> gateRoots = new TreeMap<>();
         for (String root : SCAN_ROOTS) {
             Path dir = resolve(root);
             if (!Files.isDirectory(dir)) {
@@ -222,8 +244,11 @@ class HarnessBaselineIntegrityTest {
             HarnessSourceIndex.filesUnder(dir).stream()
                         .filter(p -> p.toString().endsWith(".java"))
                         .filter(p -> isGateSource(p))
-                        .forEach(p -> gateSources.put(
-                                module + "/" + p.getFileName().toString().replace(".java", ""), p));
+                        .forEach(p -> {
+                            String className = module + "/" + p.getFileName().toString().replace(".java", "");
+                            gateSources.put(className, p);
+                            gateRoots.put(className, root);
+                        });
         }
 
         // 게이트 무결성(false-green 방지): 스캔이 조용히 붕괴하면 vacuous 통과가 되므로 차단
@@ -248,7 +273,18 @@ class HarnessBaselineIntegrityTest {
                 actual.put(className + SOURCE_HASH_SUFFIX, sha256Short(code.replace("\r\n", "\n")));
             }
         }
-        actual.put(CLASSES_KEY, String.join(",", actualClasses));
+        // registry 밖의 게이트 소스만 한 줄에 하나씩 적고, registry 에 등록됐는데 census 에 없는 게이트는 부재로 적는다(위 키 javadoc).
+        Set<String> registeredClasses = registeredGateClasses();
+        for (String className : actualClasses) {
+            if (!registeredClasses.contains(className)) {
+                actual.put(UNREGISTERED_CLASS_PREFIX + className, gateRoots.get(className));
+            }
+        }
+        for (String className : registeredClasses) {
+            if (!actualClasses.contains(className)) {
+                actual.put(REGISTERED_ABSENT_PREFIX + className, "MISSING");
+            }
+        }
 
         // [W0-P1-7 보완] 훅 파일 자체를 동결한다. GATE_HOOKS javadoc 참조.
         //   줄바꿈만 정규화하고(CRLF↔LF) 내용은 그대로 해시한다 — 주석 한 줄이 바뀌어도 드러나는 것이 목적이다.
@@ -293,13 +329,32 @@ class HarnessBaselineIntegrityTest {
 
         // ① 변경 / ② 신설
         for (Map.Entry<String, String> e : actual.entrySet()) {
-            if (CLASSES_KEY.equals(e.getKey())) {
-                continue;
-            }
             String exp = expected.getProperty(e.getKey());
             boolean isHook = e.getKey().startsWith(HOOKS_KEY_PREFIX);
             boolean isRegistry = e.getKey().startsWith(REGISTRY_KEY_PREFIX);
-            if (exp == null) {
+            if (exp == null && e.getKey().startsWith(UNREGISTERED_CLASS_PREFIX)) {
+                // ④ 누락 (게이트 클래스) — [2026-08-08] INFO 에서 **위반**으로 승격한다.
+                //
+                //   종전에는 "추가는 허용, 갱신 권장" 이라는 로그 한 줄이었다. 그 결과 census 는
+                //   **'삭제' 만 막고 '누락' 은 막지 못했다** — 게이트를 새로 만들고 매니페스트에
+                //   올리지 않으면 census 에 없는 상태로 남고, 그러면 **나중에 그 게이트를 지워도
+                //   ③ 소멸 감지에 걸리지 않는다.** 즉 게이트를 조용히 없앨 수 있는 경로였다.
+                //
+                //   ⚠ 이것은 가설이 아니라 실측이다. `UnreachableServiceLinterTest`(2026-08-06 신설)가
+                //   두 달 가까이 그 상태로 있었고, 무관한 작업(2026-08-07 querydsl 린터 추가) 중에
+                //   **우연히** 드러났다. 우연히 드러나는 구멍은 다음에는 안 드러난다.
+                //
+                //   메타 게이트가 자기 보호 범위에 구멍을 갖고 있으면 그 아래 게이트 전부가 그만큼
+                //   약해진다. 신설은 **같은 커밋에서 등재**해야 통과한다 — registry(gates.json)에 등록하거나
+                //   registry 밖의 지원 파일이면 매니페스트에 줄을 더한다.
+                violations.add("누락 감지 — 하네스 게이트 클래스가 매니페스트에 등재되지 않았습니다: "
+                        + e.getKey().substring(UNREGISTERED_CLASS_PREFIX.length())
+                        + " (gates.json registry 에도 없습니다. 등재하지 않으면 이 게이트는 '소멸 감지'의 보호를 받지 못합니다)");
+            } else if (exp == null && e.getKey().startsWith(REGISTERED_ABSENT_PREFIX)) {
+                violations.add("소멸 감지 — gates.json 에 등록된 하네스 게이트 클래스가 census 에 없습니다: "
+                        + e.getKey().substring(REGISTERED_ABSENT_PREFIX.length())
+                        + " (파일 삭제·개명·스캔 루트 밖 이동·게이트 술어 이탈. registry 를 함께 고쳐도 그 해시가 남습니다)");
+            } else if (exp == null) {
                 violations.add(isHook
                         ? "신설 감지 — 매니페스트에 없는 훅: " + e.getKey() + " (" + e.getValue() + ")"
                         : isRegistry
@@ -327,42 +382,23 @@ class HarnessBaselineIntegrityTest {
             }
         }
 
-        // ③ 소멸 (목록)
+        // ③ 소멸 (목록·게이트 클래스)
         for (String key : expected.stringPropertyNames()) {
-            if (CLASSES_KEY.equals(key) || actual.containsKey(key)) {
+            if (actual.containsKey(key)) {
                 continue;
             }
-            violations.add("소멸 감지 — 매니페스트에 등재된 목록이 사라졌습니다: " + key
-                    + " (린터 상수 삭제·개명 = 게이트 완화 가능성)");
-        }
-
-        // ③ 소멸 (게이트 클래스)
-        String expectedClasses = expected.getProperty(CLASSES_KEY);
-        if (expectedClasses != null) {
-            for (String cls : expectedClasses.split(",")) {
-                String name = cls.trim();
-                if (!name.isEmpty() && !actualClasses.contains(name)) {
-                    violations.add("소멸 감지 — 하네스 게이트 클래스가 사라졌습니다: " + name);
-                }
-            }
-            // ④ 누락 (게이트 클래스) — [2026-08-08] INFO 에서 **위반**으로 승격한다.
-            //
-            //   종전에는 "추가는 허용, 갱신 권장" 이라는 로그 한 줄이었다. 그 결과 census 는
-            //   **'삭제' 만 막고 '누락' 은 막지 못했다** — 게이트를 새로 만들고 매니페스트에
-            //   올리지 않으면 census 에 없는 상태로 남고, 그러면 **나중에 그 게이트를 지워도
-            //   위 ③ 소멸 감지에 걸리지 않는다.** 즉 게이트를 조용히 없앨 수 있는 경로였다.
-            //
-            //   ⚠ 이것은 가설이 아니라 실측이다. `UnreachableServiceLinterTest`(2026-08-06 신설)가
-            //   두 달 가까이 그 상태로 있었고, 무관한 작업(2026-08-07 querydsl 린터 추가) 중에
-            //   **우연히** 드러났다. 우연히 드러나는 구멍은 다음에는 안 드러난다.
-            //
-            //   메타 게이트가 자기 보호 범위에 구멍을 갖고 있으면 그 아래 게이트 전부가 그만큼
-            //   약해진다. 신설은 **같은 커밋에서 등재**해야 통과한다.
-            Set<String> missing = new TreeSet<>(actualClasses);
-            Arrays.stream(expectedClasses.split(",")).map(s -> s.trim()).forEach(missing::remove);
-            for (String name : missing) {
-                violations.add("누락 감지 — 하네스 게이트 클래스가 매니페스트에 등재되지 않았습니다: " + name
-                        + " (등재하지 않으면 이 게이트는 '소멸 감지'의 보호를 받지 못합니다)");
+            if (key.startsWith(UNREGISTERED_CLASS_PREFIX)) {
+                String name = key.substring(UNREGISTERED_CLASS_PREFIX.length());
+                violations.add(actualClasses.contains(name)
+                        ? "변경 감지 — 미등록 게이트 클래스가 gates.json registry 로 옮겨졌습니다: " + name
+                                + " (매니페스트의 그 줄을 지웁니다)"
+                        : "소멸 감지 — 하네스 게이트 클래스가 사라졌습니다: " + name);
+            } else if (key.startsWith(REGISTERED_ABSENT_PREFIX)) {
+                violations.add("변경 감지 — 매니페스트가 부재로 적은 등록 게이트가 census 에 다시 있습니다: "
+                        + key.substring(REGISTERED_ABSENT_PREFIX.length()));
+            } else {
+                violations.add("소멸 감지 — 매니페스트에 등재된 목록이 사라졌습니다: " + key
+                        + " (린터 상수 삭제·개명 = 게이트 완화 가능성)");
             }
         }
 
@@ -387,8 +423,48 @@ class HarnessBaselineIntegrityTest {
             fail(sb.toString());
         }
 
-        log.info("✅ 하네스 동결/예외 목록 무결성 OK — 클래스 {}개, 동결 목록 {}건.",
-                actualClasses.size(), actual.size() - 1);
+        log.info("✅ 하네스 동결/예외 목록 무결성 OK — 클래스 {}개(registry 등록 {}개), 매니페스트 키 {}건.",
+                actualClasses.size(), registeredClasses.size(), actual.size());
+    }
+
+    /**
+     * registry({@link #GATE_REGISTRY})에 등록된 게이트 클래스 — census 와 같은 {@code <모듈>/<단순명>} 키다(source 의 첫 경로 조각과 파일 이름).
+     * <p>registry 부재는 여기서 통과시키지 않는다 — 등록이 0 이 되어 모든 게이트가 미등록 키로 나오고,
+     * {@code __registry.config/governance/gates.json=MISSING} 이 함께 red 다. JSON 을 읽지 못하면 대조하지 않고 실패한다.
+     */
+    private static Set<String> registeredGateClasses() throws IOException {
+        Path registryPath = resolve(GATE_REGISTRY);
+        Set<String> classes = new TreeSet<>();
+        if (!Files.isRegularFile(registryPath)) {
+            return classes;
+        }
+        JsonNode registry;
+        try {
+            registry = JsonMapper.builder().build().readTree(HarnessSourceIndex.read(registryPath));
+        } catch (JacksonException ex) {
+            throw new AssertionError(GATE_REGISTRY + " 를 JSON 으로 읽지 못했습니다 — 등록 판정 없이는 census 를 대조하지 않습니다.", ex);
+        }
+        JsonNode gateSets = registry.path("gateSets");
+        if (!gateSets.isArray()) {
+            return classes;
+        }
+        for (JsonNode gateSet : gateSets) {
+            JsonNode rules = gateSet.path("rules");
+            if (!rules.isArray()) {
+                continue;
+            }
+            for (JsonNode rule : rules) {
+                JsonNode source = rule.get("source");
+                if (source == null || !source.isString()) {
+                    continue;
+                }
+                String path = source.asString();
+                String fileName = path.substring(path.lastIndexOf('/') + 1);
+                classes.add(path.split("/")[0] + "/"
+                        + (fileName.endsWith(".java") ? fileName.substring(0, fileName.length() - ".java".length()) : fileName));
+            }
+        }
+        return classes;
     }
 
     /**

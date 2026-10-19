@@ -16,7 +16,7 @@ import { HISTORICAL_SCHEMA_TEST_DIR } from './reusable-source-gates.mjs';
  * **같은 값이어야 한다**. 어긋나면 투영본 매니페스트가 메타 게이트의 actual 과 달라져 산출물이
  * 통째로 red 가 된다(2026-09-12 실측: 신설 136 · 누락 54 · 소멸 54).
  */
-const HARNESS_SCAN_ROOTS = [
+export const HARNESS_SCAN_ROOTS = [
   'api-server/src/test/java',
   'business-app/src/test/java',
   'business-core/src/test/java',
@@ -44,6 +44,37 @@ const GATE_REGISTRIES = [
   'config/security/false-positive-review.json',
 ];
 const GATE_HOOKS = ['.githooks/pre-push', '.githooks/pre-commit'];
+
+/*
+  게이트 클래스 census 의 두 키 종류(메타 게이트의 UNREGISTERED_CLASS_PREFIX·REGISTERED_ABSENT_PREFIX·GATE_REGISTRY 와 같은 값). 한 줄에
+  클래스 하나다. registry(gates.json 의 gateSets[].rules[].source)에 등록된 게이트는 매니페스트에 다시 적지 않고, registry 밖의 게이트 소스만
+  스캔 루트를 값으로 적는다. registry 에 등록됐는데 census 에 없는 게이트는 MISSING 으로 적는다 — 투영본은 원본 registry 를 그대로 두고
+  게이트를 지우므로 이 키가 지운 등록 게이트를 기록한다.
+*/
+export const UNREGISTERED_CLASS_PREFIX = '__harness.unregistered.';
+export const REGISTERED_ABSENT_PREFIX = '__harness.registered.';
+const GATE_REGISTRY = 'config/governance/gates.json';
+
+/** registry 에 등록된 게이트 클래스(`<모듈>/<단순명>`). registry 가 없으면 빈 집합이다 — `__registry.` 키가 MISSING 으로 함께 red 다. */
+export function registeredGateClasses(root) {
+  const text = readTextIfPresent(join(root, ...GATE_REGISTRY.split('/')));
+  const classes = new Set();
+  if (text === undefined) return classes;
+  let registry;
+  try {
+    registry = JSON.parse(text);
+  } catch (error) {
+    fail(`${GATE_REGISTRY} 를 JSON 으로 읽지 못했다 — 등록 판정 없이는 census 를 대조하지 않는다: ${error.message}`);
+  }
+  for (const gateSet of Array.isArray(registry?.gateSets) ? registry.gateSets : []) {
+    for (const rule of Array.isArray(gateSet?.rules) ? gateSet.rules : []) {
+      if (typeof rule?.source !== 'string') continue;
+      const fileName = rule.source.slice(rule.source.lastIndexOf('/') + 1);
+      classes.add(`${rule.source.split('/')[0]}/${fileName.endsWith('.java') ? fileName.slice(0, -'.java'.length) : fileName}`);
+    }
+  }
+  return classes;
+}
 
 
 function shortHash(value) {
@@ -105,7 +136,7 @@ export function computeHarnessBaselineEntries(root) {
             + ` 와 ${normalize(relative(root, path))} 가 같은 동결 키를 갖는다(한쪽의 동결이 사라진다).`,
         );
       }
-      gateSources.set(className, { path, source });
+      gateSources.set(className, { path, source, root: rel });
     }
   }
 
@@ -122,7 +153,13 @@ export function computeHarnessBaselineEntries(root) {
       entries.set(`${className}.__sourceHash`, shortHash(code.replaceAll('\r\n', '\n')));
     }
   }
-  entries.set('__harness.classes', [...classes].sort().join(','));
+  const registered = registeredGateClasses(root);
+  for (const className of classes) {
+    if (!registered.has(className)) entries.set(`${UNREGISTERED_CLASS_PREFIX}${className}`, gateSources.get(className).root);
+  }
+  for (const className of registered) {
+    if (!gateSources.has(className)) entries.set(`${REGISTERED_ABSENT_PREFIX}${className}`, 'MISSING');
+  }
 
   for (const hook of GATE_HOOKS) {
     const hookText = readTextIfPresent(join(root, ...hook.split('/')));

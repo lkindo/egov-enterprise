@@ -5,9 +5,10 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
+import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './reusable-source-harness.mjs';
 import {
-  DEFAULT_HEADER, MANIFEST_PATH, main as manifestTool, manifestHeader, parseManifest, renderHarnessBaselineManifest,
+  DEFAULT_HEADER, MANIFEST_PATH, REGISTERED_ABSENT_PREFIX, UNREGISTERED_CLASS_PREFIX, diffHarnessBaseline, formatHarnessBaselineDiff,
+  main as manifestTool, manifestHeader, parseManifest, renderHarnessBaselineManifest,
 } from './harness-baseline-manifest.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -130,12 +131,15 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   });
   const file = join(root, MANIFEST_PATH);
   mkdirSync(dirname(file), { recursive: true });
-  const committed = ['# 머리 1', '# 머리 2', '__harness.classes=api-server/A,api-server/B',
+  const scanRoot = 'api-server/src/test/java';
+  const committed = ['# 머리 1', '# 머리 2', `${UNREGISTERED_CLASS_PREFIX}api-server/A=${scanRoot}`, `${UNREGISTERED_CLASS_PREFIX}api-server/B=${scanRoot}`,
     '__registry.config/governance/gates.json=111111111111', 'api-server/A.X=1:aaaaaaaaaaaa', ''].join('\n');
   writeFileSync(file, committed);
   // 원장 하나를 고치고 매니페스트를 다시 쓰지 않은 상태 — 계산값만 바뀐다.
   const actual = new Map([
-    ['__harness.classes', 'api-server/A,api-server/C'],
+    [`${REGISTERED_ABSENT_PREFIX}api-server/R`, 'MISSING'],
+    [`${UNREGISTERED_CLASS_PREFIX}api-server/A`, scanRoot],
+    [`${UNREGISTERED_CLASS_PREFIX}api-server/C`, scanRoot],
     ['__registry.config/governance/gates.json', '222222222222'],
     ['api-server/A.X', '1:aaaaaaaaaaaa'],
     ['api-server/C.aB', '0:cccccccccccc'],
@@ -150,7 +154,7 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   const check = run('--check');
   assert.equal(check.code, 1, 'a registry edit without rewriting the manifest is red');
   for (const line of ['변경 __registry.config/governance/gates.json: 111111111111 → 222222222222', '신설 api-server/C.Y_Z',
-    '클래스 신설 api-server/C', '클래스 소멸 api-server/B']) {
+    '클래스 신설 api-server/C', '클래스 소멸 api-server/B', '등록 게이트 소멸 api-server/R']) {
     assert.ok(check.out.includes(line), `${line}\n${check.out}`);
   }
   assert.equal(readFileSync(file, 'utf8'), committed, '--check never writes');
@@ -175,7 +179,9 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   writeFileSync(file, committed);
   assert.equal(run('--write').code, 0);
   // 머리 주석은 그대로, 키는 Java TreeMap 과 같은 코드 단위 순서('C.Y_Z' < 'C.aB'), 줄 끝은 LF.
-  assert.equal(readFileSync(file, 'utf8'), ['# 머리 1', '# 머리 2', '__harness.classes=api-server/A,api-server/C',
+  // 게이트 클래스는 한 줄에 하나다 — 병합에서 서로 다른 클래스를 더해도 같은 줄을 고치지 않는다.
+  assert.equal(readFileSync(file, 'utf8'), ['# 머리 1', '# 머리 2', `${REGISTERED_ABSENT_PREFIX}api-server/R=MISSING`,
+    `${UNREGISTERED_CLASS_PREFIX}api-server/A=${scanRoot}`, `${UNREGISTERED_CLASS_PREFIX}api-server/C=${scanRoot}`,
     '__registry.config/governance/gates.json=222222222222', 'api-server/A.X=1:aaaaaaaaaaaa',
     'api-server/C.Y_Z=0:dddddddddddd', 'api-server/C.aB=0:cccccccccccc', ''].join('\n'));
   assert.equal(run('--check').code, 0);
@@ -186,4 +192,67 @@ test('the manifest tool checks drift, shows conflicted keys without writing, and
   assert.equal(readFileSync(file, 'utf8'), checkedOut, 'a manifest that differs only in line endings is left alone');
 
   for (const argv of [[], ['--check', '--write'], ['--keys']]) assert.equal(run(...argv).code, 2, JSON.stringify(argv));
+});
+
+/*
+ * 게이트 클래스 census 는 registry(gates.json 의 gateSets[].rules[].source) 밖의 게이트 소스만 매니페스트에 한 줄씩 적는다(2026-10-19).
+ * 걷은 것은 registry 가 이미 exact 로 등재한 같은 목록의 두 번째 사본(한 줄 172개)이지 검출이 아니다 — 등록 게이트 삭제, 미등록
+ * 지원 파일 삭제, 미등록 게이트 신설이 모두 계산값 차이로 드러나야 한다. 메타 게이트(JVM)는 같은 키로 같은 차이를 위반으로 낸다.
+ */
+test('the class census lists only gate sources outside the registry and still notices deletion and addition', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'harness-baseline-classes-'));
+  t.after(() => {
+    const owned = resolve(root);
+    assert.equal(dirname(owned), resolve(tmpdir()));
+    assert.ok(basename(owned).startsWith('harness-baseline-classes-'));
+    rmSync(owned, { recursive: true, force: true });
+  });
+  for (const scanRoot of HARNESS_SCAN_ROOTS) mkdirSync(join(root, scanRoot), { recursive: true });
+  const harness = 'api-server/src/test/java/nuri/api/harness';
+  const registered = `${harness}/RegisteredLinterTest.java`;
+  const support = `${harness}/SupportIndex.java`;
+  const put = (file, text) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), text); };
+  const registry = sources => `${JSON.stringify({ gateSets: [{ id: 'GATESET-X', rules: sources.map((source, index) => ({ id: `GH-X-${index}`, source })) }] }, null, 2)}\n`;
+  put(registered, 'package nuri.api.harness;\n@Tag("governance-harness")\nclass RegisteredLinterTest {\n  void check() {}\n}\n');
+  put(support, 'package nuri.api.harness;\nfinal class SupportIndex {}\n');
+  put('config/governance/gates.json', registry([registered]));
+
+  const baseline = computeHarnessBaselineEntries(root);
+  const classKeys = map => [...map.keys()].filter(key => key.startsWith(UNREGISTERED_CLASS_PREFIX) || key.startsWith(REGISTERED_ABSENT_PREFIX));
+  assert.deepEqual(classKeys(baseline), [`${UNREGISTERED_CLASS_PREFIX}api-server/SupportIndex`],
+    'registry 에 등록된 게이트는 다시 적지 않고, registry 밖의 게이트 소스만 한 줄씩 적는다');
+  assert.equal(baseline.get(`${UNREGISTERED_CLASS_PREFIX}api-server/SupportIndex`), 'api-server/src/test/java');
+  const drift = () => formatHarnessBaselineDiff(diffHarnessBaseline(baseline, computeHarnessBaselineEntries(root)));
+  assert.equal(drift(), '');
+
+  // (a) 등록 게이트 파일을 지우면 registry 를 그대로 둔 채로도 부재 키가 생긴다.
+  rmSync(join(root, registered));
+  assert.match(drift(), /등록 게이트 소멸 api-server\/RegisteredLinterTest/);
+  // registry 에서도 함께 지우면 그 해시가 바뀐다 — 매니페스트를 다시 쓰지 않고는 조용할 수 없다.
+  put('config/governance/gates.json', registry([]));
+  assert.match(drift(), /변경 __registry\.config\/governance\/gates\.json/);
+  put('config/governance/gates.json', registry([registered]));
+  put(registered, 'package nuri.api.harness;\n@Tag("governance-harness")\nclass RegisteredLinterTest {\n  void check() {}\n}\n');
+  assert.equal(drift(), '');
+
+  // (b) registry 밖에 남긴 지원 파일을 지우면 그 줄이 소멸한다.
+  rmSync(join(root, support));
+  assert.match(drift(), /클래스 소멸 api-server\/SupportIndex/);
+  put(support, 'package nuri.api.harness;\nfinal class SupportIndex {}\n');
+
+  // (c) registry 에도 매니페스트에도 없는 게이트를 더하면 줄이 신설된다(메타 게이트의 '누락 감지').
+  put(`${harness}/NewProbeLinterTest.java`, 'package nuri.api.harness;\nclass NewProbeLinterTest {}\n');
+  assert.match(drift(), /클래스 신설 api-server\/NewProbeLinterTest/);
+  rmSync(join(root, `${harness}/NewProbeLinterTest.java`));
+  assert.equal(drift(), '');
+
+  // 투영본은 원본 registry 를 그대로 두고 게이트를 지운다 — 부재를 기록한 매니페스트는 그 상태에서 계산값과 같다.
+  rmSync(join(root, registered));
+  const projected = computeHarnessBaselineEntries(root);
+  assert.equal(projected.get(`${REGISTERED_ABSENT_PREFIX}api-server/RegisteredLinterTest`), 'MISSING');
+  assert.equal(formatHarnessBaselineDiff(diffHarnessBaseline(projected, computeHarnessBaselineEntries(root))), '');
+
+  // 등록 판정을 못 하면 대조하지 않는다.
+  put('config/governance/gates.json', '{ not json');
+  assert.throws(() => computeHarnessBaselineEntries(root), /gates\.json 를 JSON 으로 읽지 못했다/);
 });
