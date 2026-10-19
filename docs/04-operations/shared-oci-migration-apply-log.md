@@ -18,7 +18,7 @@
 
 ## 이전 기록
 
-이 로그 전의 적용은 운영 결정으로 기록했다. 원문은 소급 편집하지 않고 링크로만 색인한다. 그보다 앞선 적용 가운데 V2_94~96, V2_97, V2_100(메뉴 재편)의 결과는 [표준 길이 런북](standard-length-alignment-runbook.md), [로그 보존 정책](log-retention-policy.md), [인가 전환 런북](authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과)에 있다.
+이 로그 전의 적용은 운영 결정으로 기록했다. 원문은 소급 편집하지 않고 링크로만 색인한다. 그보다 앞선 적용 가운데 V2_94~96, V2_97, V2_100(메뉴 재편)의 결과는 [표준 길이 런북](../archived/standard-length-alignment-runbook.md), [로그 보존 정책](log-retention-policy.md), [인가 전환 런북](authorization-cutover-runbook.md#2026-09-11-oci-메뉴-재편-적용-결과)에 있다.
 
 - V2_112·114·115: [DEC-OPS-181](../archived/operational-decisions-history.md#dec-ops-181) ①
 - V2_116~118: [DEC-OPS-207](../archived/operational-decisions-history.md#dec-ops-207)
