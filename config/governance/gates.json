@@ -2014,8 +2014,8 @@
         "key": "statements"
       },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
-      "current": 71,
-      "baseline": 71,
+      "current": 85,
+      "baseline": 85,
       "direction": "minimum",
       "tier": [
         "local-full",
@@ -2042,8 +2042,8 @@
         "key": "branches"
       },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
-      "current": 63,
-      "baseline": 63,
+      "current": 79,
+      "baseline": 79,
       "direction": "minimum",
       "tier": [
         "local-full",
@@ -2070,8 +2070,8 @@
         "key": "functions"
       },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
-      "current": 64,
-      "baseline": 64,
+      "current": 82,
+      "baseline": 82,
       "direction": "minimum",
       "tier": [
         "local-full",
@@ -2098,8 +2098,8 @@
         "key": "lines"
       },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
-      "current": 73,
-      "baseline": 73,
+      "current": 87,
+      "baseline": 87,
       "direction": "minimum",
       "tier": [
         "local-full",

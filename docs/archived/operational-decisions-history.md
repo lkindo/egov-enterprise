@@ -2214,6 +2214,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-368 | accepted | **보고서 통계 화면을 퇴역한다(2026-10-19 사용자 승인 "메뉴와 탭을 걷기", 마이그레이션 저장소 반영도 같은 날 승인).** ① 통계 허브의 운영 보고서 탭·`/admin/stats/report` 페이지·`GET /api/v1/admin/system/statistics/report`·`ReportStatsService` 의 조회·등록 경로·`ReprtStats` 엔티티를 걷는다. 메뉴가 사라지고 가리키는 곳이 없어 redirect 를 남기지 않는다(마이페이지 퇴역 선례). ② V2_134(데이터만, Contract DML)가 메뉴 9040105 「보고서통계」 한 행과 그 메뉴를 가리키는 NAVIGATION 배정·즐겨찾기를 지우고, 지운 배정마다 REMOVE 이력을 남긴다. 경로가 다르거나 하위가 있거나 다른 행이 같은 경로를 가리키면 아무것도 지우지 않고 실패한다. 이미 지운 환경에서는 아무것도 하지 않는다. ③ 물리 표 `tb_rptp_stats` 는 남긴다(스키마 변경은 별도 승인). `STATS_ADMIN_READ` 는 다른 통계 탭이 계속 쓴다. | 원장 `tb_rptp_stats` 에 쓰는 제품 경로가 없어(등록 메서드는 자기 단위 시험만 불렀다) 탭이 어떤 기간에도 비어 있었다(2026-10-19 품질 평가 과제 11). 탭만 걷으면 활성 메뉴가 없는 화면을 가리키므로 메뉴 행도 걷는다. operation 수 411→410, 권한 원장 버전이 바뀐다. 실행 순서·되돌리기는 인가 전환 런북의 V2_134 절을 따른다. red 증명: 즐겨찾기 삭제 조건을 빗나가게 하면 "형제 메뉴의 즐겨찾기만 남는다" 단언이 실패한다. 공유 OCI 적용은 병합 뒤다. | [V2_134](../../api-server/src/main/resources/db/migration/V2_134__retire_report_stats_menu.sql), [전환 런북](../04-operations/authorization-cutover-runbook.md), [마이그레이션 시험](../../api-server/src/test/java/nuri/api/schema/ReportStatsMenuRetirementMigrationIntegrationTest.java) | 2026-10-19 | - |
 
+## DEC-OPS-369
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-369 | accepted | **프런트 커버리지 하한을 실측 가까이 올린다.** statements·branches·functions·lines 하한을 71/63/64/73 에서 85/79/82/87 로 올린다. 값은 PR #940 CI 커버리지 잡의 실측(86.01·80.18·83.15·88.31)을 정수 내림한 뒤 1포인트를 뺀 것이다. `frontend/vitest.config.mts` 의 thresholds 와 게이트 원장 `QUALITY-FRONTEND-*-COVERAGE` 의 current·baseline 을 같은 변경에서 맞춘다(registry 계약이 둘을 대조한다). | 하한이 실측보다 14~17포인트 낮아 그만큼 떨어져도 필수 CI 가 통과했다(2026-10-19 품질 평가 과제 6). 실측과 같은 하한은 덜 시험된 코드 몇 줄에도 CI 를 막아 1포인트 여유를 둔다. 로컬 coverage 실행은 이 PC 의 계측 부하로 시험 11건이 시간 초과해 집계를 남기지 못했다 — 같은 소스 트리의 CI 실측을 정본으로 썼다(그 뒤 커밋은 E2E spec·Java 시험뿐). 하한을 내리는 것은 이 결정의 대체 DEC 가 필요하다. | [vitest 설정](../../frontend/vitest.config.mts), [게이트 원장](../../config/governance/gates.json) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
