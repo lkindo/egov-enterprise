@@ -62,7 +62,8 @@ class LoginIdReuseIntegrationTest {
         for (String code : codeCategories) jdbc.update("DELETE FROM tb_com_clsf_cd WHERE clsf_cd = ?", code);
         List<String> created = jdbc.queryForList("SELECT esntl_id FROM tb_user_info WHERE user_id = ?", String.class, loginId);
         for (String esntlId : created) {
-            jdbc.update("DELETE FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id = ? OR chg_user_idntfr = ?", esntlId, esntlId);
+            // 권한 변경 이력은 V2_132 트리거가 선언 없는 삭제를 막는다 — 시험 준비물 정리는 보존 정리 선언과 함께 지운다.
+            AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE scrty_dcsn_trgt_id = ? OR chg_user_idntfr = ?", esntlId, esntlId);
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id = ?", esntlId);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = ?", esntlId);
         }
