@@ -728,20 +728,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/system/isg",
-    "label": "인터넷 서비스 안내 관리",
-    "labelSource": "route-ledger",
-    "shellAccess": "admin-system",
-    "dynamic": false,
-    "entry": {"permissions":["SERVICE_READ"],"mode":"ANY"},
-    "permissions": [
-      {"code":"SERVICE_CREATE","action":"CREATE","source":"write"},
-      {"code":"SERVICE_DELETE","action":"DELETE","source":"write"},
-      {"code":"SERVICE_READ","action":"READ","source":"entry"},
-      {"code":"SERVICE_UPDATE","action":"UPDATE","source":"write"}
-    ]
-  },
-  {
     "route": "/admin/system/layout",
     "label": "화면 구성 예제",
     "labelSource": "menu",
@@ -1583,7 +1569,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
   {
     "id": "menu-code-settings",
     "name": "메뉴·코드 설정",
-    "description": "시스템 담당자에게 메뉴와 화면 연결, 공통·행정·기관 코드, 인터넷 서비스 안내, 개인정보처리방침·이용약관 관리를 맡깁니다.",
+    "description": "시스템 담당자에게 메뉴와 화면 연결, 공통·행정·기관 코드, 개인정보처리방침·이용약관 관리를 맡깁니다.",
     "protected": false,
     "permissions": [
       "ADMCODE_CREATE",
@@ -1601,18 +1587,13 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "MENU_READ",
       "MENU_UPDATE",
       "POLICY_READ",
-      "POLICY_UPDATE",
-      "SERVICE_CREATE",
-      "SERVICE_DELETE",
-      "SERVICE_READ",
-      "SERVICE_UPDATE"
+      "POLICY_UPDATE"
     ],
     "screens": [
       "/admin/system/codes/administ",
       "/admin/system/codes/institution",
       "/admin/system/common-code",
       "/admin/system/common-code/codes",
-      "/admin/system/isg",
       "/admin/system/layout",
       "/admin/system/menus",
       "/admin/system/policies",

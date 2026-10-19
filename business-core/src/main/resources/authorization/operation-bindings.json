@@ -764,41 +764,6 @@
   },
   {
     "method": "GET",
-    "path": "/api/v1/admin/system/isg",
-    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsgList",
-    "access": "PERMISSION",
-    "permission": "SERVICE_READ"
-  },
-  {
-    "method": "POST",
-    "path": "/api/v1/admin/system/isg",
-    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg",
-    "access": "PERMISSION",
-    "permission": "SERVICE_CREATE"
-  },
-  {
-    "method": "DELETE",
-    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg",
-    "access": "PERMISSION",
-    "permission": "SERVICE_DELETE"
-  },
-  {
-    "method": "GET",
-    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsg",
-    "access": "PERMISSION",
-    "permission": "SERVICE_READ"
-  },
-  {
-    "method": "PUT",
-    "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-    "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg",
-    "access": "PERMISSION",
-    "permission": "SERVICE_UPDATE"
-  },
-  {
-    "method": "GET",
     "path": "/api/v1/admin/system/login-policies",
     "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#getLoginPolicyList",
     "access": "PERMISSION",
@@ -1887,6 +1852,20 @@
     "handler": "nuri.api.controller.business.help.HelpApiController#updateManual",
     "access": "PERMISSION",
     "permission": "HELP_UPDATE"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/public-hpcm",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getPublicHpcmList",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/help/public-manuals",
+    "handler": "nuri.api.controller.business.help.HelpApiController#getPublicManuals",
+    "access": "AUTHENTICATED",
+    "permission": null
   },
   {
     "method": "GET",
