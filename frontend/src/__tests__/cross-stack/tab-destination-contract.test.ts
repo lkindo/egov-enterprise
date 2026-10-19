@@ -175,7 +175,9 @@ function repositoryDestinations(): TabDestination[] {
     .filter((menu) => menu.use_yn === 'Y' && menu.del_yn === 'N' && menu.modern_route)
     .map((menu) => tabDestination(`menu ${menu.menu_sn}`, menu.modern_route!));
   const fromAliases = SCREEN_ALIASES.map((alias) => (alias.target ? tabDestination(`alias ${alias.route}`, alias.target) : null));
+  // 생성물은 보지 않는다 — 생성 계약의 태그 묶음 모듈(types/generated-zod/·generated-operations/ 폴더)도 생성물이다.
   const fromFrontend = walk(join(REPO_ROOT, 'frontend', 'src'), (name) => /\.tsx?$/.test(name) && !/\.test\.|generated-/.test(name))
+    .filter((path) => !/(^|\/)generated-[^/]+\//.test(repoPath(path)))
     .flatMap((path) => frontendDestinations(readFileSync(path, 'utf8'), repoPath(path)));
   const fromJava = JAVA_MODULES.flatMap((module) => walk(join(REPO_ROOT, module, 'src', 'main', 'java'), (name) => name.endsWith('.java')))
     .flatMap((path) => javaDestinations(readFileSync(path, 'utf8'), repoPath(path)));
