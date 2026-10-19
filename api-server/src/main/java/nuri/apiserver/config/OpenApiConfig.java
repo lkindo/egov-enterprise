@@ -78,6 +78,46 @@ public class OpenApiConfig {
         };
     }
 
+    /**
+     * [ADR-0036] 목록의 {@code page}·{@code size} 를 1 기반 규약대로 서술한다.
+     *
+     * <p>springdoc 은 {@code one-indexed-parameters} 를 읽어 {@code page} 의 설명·기본값만 바꾸고 최솟값은 0, {@code size}
+     * 상한은 없는 채로 둔다. 그대로면 생성 계약이 {@code page: min(0)} 이라 프런트가 {@code page=0} 을 보낼 수 있다.
+     * 그래서 이름이 {@code page}·{@code size} 인 query 파라미터를 HTTP 경계({@code PaginationRequestFilter})와 같은 범위로
+     * 맞춘다. 스펙의 {@code page}·{@code size} 는 목록 연산에만 있다(PageableConstructionLinterTest 가 스펙으로 확인).
+     *
+     * <p>{@link nuri.api.support.UnsortedPageable} 이 붙은 {@code Pageable} 은 서버가 정렬을 받지 않으므로 {@code sort} 를 뺀다 —
+     * 받지 않는 파라미터를 광고하지 않는다.
+     */
+    @Bean
+    public org.springdoc.core.customizers.OperationCustomizer paginationParameterCustomizer() {
+        return (operation, handlerMethod) -> {
+            if (operation.getParameters() == null) {
+                return operation;
+            }
+            boolean unsorted = java.util.Arrays.stream(handlerMethod.getMethodParameters())
+                    .anyMatch(parameter -> org.springframework.data.domain.Pageable.class.isAssignableFrom(parameter.getParameterType())
+                            && parameter.hasParameterAnnotation(nuri.api.support.UnsortedPageable.class));
+            operation.getParameters().removeIf(parameter -> unsorted
+                    && "query".equals(parameter.getIn()) && "sort".equals(parameter.getName()));
+            operation.getParameters().forEach(parameter -> {
+                if (!"query".equals(parameter.getIn()) || parameter.getSchema() == null) {
+                    return;
+                }
+                if (nuri.api.support.PaginationRequestFilter.PAGE.equals(parameter.getName())) {
+                    parameter.setDescription("1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정).");
+                    parameter.getSchema().setMinimum(java.math.BigDecimal.ONE);
+                } else if (nuri.api.support.PaginationRequestFilter.SIZE.equals(parameter.getName())) {
+                    parameter.setDescription("페이지당 건수(1~" + nuri.api.support.PaginationRequestFilter.MAX_SIZE
+                            + "). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정).");
+                    parameter.getSchema().setMinimum(java.math.BigDecimal.ONE);
+                    parameter.getSchema().setMaximum(java.math.BigDecimal.valueOf(nuri.api.support.PaginationRequestFilter.MAX_SIZE));
+                }
+            });
+            return operation;
+        };
+    }
+
     private static final String APPLICATION_JSON = "application/json";
 
     /** 표준 응답 봉투 스키마 참조 접두사 ({@code ApiResponseVoid}, {@code ApiResponseBoardDto} …). */

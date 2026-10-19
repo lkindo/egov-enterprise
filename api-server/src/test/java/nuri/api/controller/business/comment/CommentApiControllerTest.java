@@ -65,7 +65,7 @@ class CommentApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(commentApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
-                        new org.springframework.data.web.PageableHandlerMethodArgumentResolver(),
+                        nuri.business.support.PageableTestResolvers.standard(),
                         // ⚠ 이 리졸버가 없으면 @AuthenticationPrincipal 파라미터가 **null 로 조용히 주입**돼
                         //   "작성자를 인증 주체에서 채운다" 는 계약이 검증되지 않은 채 green 이 된다.
                         new org.springframework.security.web.method.annotation

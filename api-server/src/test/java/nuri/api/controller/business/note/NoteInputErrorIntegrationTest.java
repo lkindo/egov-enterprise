@@ -36,11 +36,11 @@ class NoteInputErrorIntegrationTest {
     @DisplayName("없는 필드나 정렬 식이 아닌 값으로 정렬하면 400 이고, 올바른 정렬은 그대로 통과한다")
     void invalidSortIsBadRequestAndValidSortStillWorks() throws Exception {
         for (String sort : new String[] {"nope", "[noteRcptnSn,DESC]"}) {
-            mvc.perform(get(RECEIVED).param("page", "0").param("size", "10").param("sort", sort))
+            mvc.perform(get(RECEIVED).param("page", "1").param("size", "10").param("sort", sort))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("C001"));
         }
-        mvc.perform(get(RECEIVED).param("page", "0").param("size", "10").param("sort", "noteRcptnSn,DESC"))
+        mvc.perform(get(RECEIVED).param("page", "1").param("size", "10").param("sort", "noteRcptnSn,DESC"))
                 .andExpect(status().isOk());
     }
 }

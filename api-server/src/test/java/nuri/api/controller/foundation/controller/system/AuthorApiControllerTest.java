@@ -42,7 +42,7 @@ class AuthorApiControllerTest extends BaseControllerTest {
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/authorities")
-                .param("pageIndex", "1"))
+                .param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.total").value(42));

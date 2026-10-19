@@ -34,7 +34,7 @@ class ExceptionResponseTest {
     void setUp() {
         userService = mock(UserService.class);
         mockMvc = MockMvcBuilders.standaloneSetup(new UserApiController(userService))
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

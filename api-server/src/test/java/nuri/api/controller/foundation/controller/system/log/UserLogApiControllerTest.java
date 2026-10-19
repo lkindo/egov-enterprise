@@ -70,7 +70,7 @@ class UserLogApiControllerTest {
         when(userLogManageService.selectUserLogList(any()))
                 .thenReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
-        mockMvc.perform(get("/api/v1/admin/system/logs/user").param("pageIndex", "1"))
+        mockMvc.perform(get("/api/v1/admin/system/logs/user").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].ocrnYmd").value("20260805"))
@@ -87,7 +87,7 @@ class UserLogApiControllerTest {
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         mockMvc.perform(get("/api/v1/admin/system/logs/user")
-                        .param("pageIndex", "1")
+                        .param("page", "1")
                         .param("searchKeyword", "홍길동"))
                 .andExpect(status().isOk());
 

@@ -57,8 +57,8 @@ class InstitutionCodeApiControllerTest {
         when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(42));
@@ -87,7 +87,7 @@ class InstitutionCodeApiControllerTest {
         when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/receptions")
-                .param("pageIndex", "1")
+                .param("page", "1")
                 .param("processSe", "1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

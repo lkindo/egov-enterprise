@@ -100,8 +100,8 @@ class LoginLogExportSecurityIntegrationTest {
         // 화면 페이징 값(pageIndex=3, pageUnit=1)이 적용된다면 1행만 나와야 한다 — export 는 전량이어야 한다.
         MvcResult asyncStarted = mockMvc.perform(get(EXPORT_URL)
                         .with(user(admin))
-                        .param("pageIndex", "3")
-                        .param("pageUnit", "1"))
+                        .param("page", "3")
+                        .param("size", "1"))
                 .andExpect(request().asyncStarted())
                 .andReturn();
 

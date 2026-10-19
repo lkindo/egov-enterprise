@@ -58,7 +58,7 @@ class WebLogApiControllerTest {
         when(webLogManageService.selectWebLogList(any()))
                 .thenReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
-        mockMvc.perform(get("/api/v1/admin/system/logs/web").param("pageIndex", "1"))
+        mockMvc.perform(get("/api/v1/admin/system/logs/web").param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].webLogSn").value(101))
@@ -78,7 +78,7 @@ class WebLogApiControllerTest {
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         mockMvc.perform(get("/api/v1/admin/system/logs/web")
-                        .param("pageIndex", "1")
+                        .param("page", "1")
                         .param("searchKeyword", "/api/v1/boards"))
                 .andExpect(status().isOk());
 

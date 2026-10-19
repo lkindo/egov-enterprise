@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -64,7 +63,7 @@ class HelpApiControllerTest {
         };
 
         mockMvc = MockMvcBuilders.standaloneSetup(helpApiController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver(), principalResolver)
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard(), principalResolver)
                 .build();
     }
 
@@ -76,7 +75,7 @@ class HelpApiControllerTest {
 
         mockMvc.perform(get("/api/v1/help/hpcm")
                         .param("keyword", "test")
-                        .param("page", "0")
+                        .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -137,7 +136,7 @@ class HelpApiControllerTest {
         when(helpService.getOnlineManualList(any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/help/manuals")
-                        .param("page", "0")
+                        .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

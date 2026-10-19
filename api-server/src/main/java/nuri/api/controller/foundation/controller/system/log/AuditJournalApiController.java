@@ -38,9 +38,9 @@ public class AuditJournalApiController {
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @org.springframework.data.web.PageableDefault(size = 20) @nuri.api.support.UnsortedPageable
+            org.springframework.data.domain.Pageable page) {
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
-                service.search(actorId, operation, fromDate, toDate, page, size))));
+                service.search(actorId, operation, fromDate, toDate, page.getPageNumber(), page.getPageSize()))));
     }
 }

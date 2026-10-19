@@ -107,8 +107,8 @@ class LogExportEndpointsTest {
 
     private byte[] download(MockMvc mockMvc, String url, String fileName) throws Exception {
         MvcResult started = mockMvc.perform(get(url)
-                        .param("pageIndex", "7")
-                        .param("pageUnit", "2")
+                        .param("page", "7")
+                        .param("size", "2")
                         .param("searchKeyword", "조회어")
                         .param("searchKeywordFrom", "20260801")
                         .param("searchKeywordTo", "20260831"))

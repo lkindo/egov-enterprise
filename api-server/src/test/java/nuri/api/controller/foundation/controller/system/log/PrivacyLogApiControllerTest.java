@@ -60,7 +60,7 @@ class PrivacyLogApiControllerTest {
                 .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 10), 0));
 
         mockMvc.perform(get("/api/v1/admin/system/logs/privacy")
-                        .param("pageIndex", "1")
+                        .param("page", "1")
                         .param("searchKeyword", "주민등록번호"))
                 .andExpect(status().isOk());
 

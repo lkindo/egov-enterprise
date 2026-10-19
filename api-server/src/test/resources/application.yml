@@ -18,6 +18,13 @@ spring:
         persistence:
           lock:
             timeout: 5000
+  # [ADR-0036] main application.yml 과 같은 페이징 규약(1 기반 page, 상한 100). 이 파일이 main 을 가리므로 같은 값을 둔다 —
+  #   빠지면 시험만 0 기반 page 로 검증하며 green 이 된다. PageableConstructionLinterTest 가 두 값의 일치를 본다.
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
+        max-page-size: 100
 
 file:
   upload:

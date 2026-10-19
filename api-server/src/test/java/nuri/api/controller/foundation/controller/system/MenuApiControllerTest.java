@@ -8,7 +8,6 @@ import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.menu.dto.MenuStructureDto;
 import org.springframework.http.MediaType;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 
 import java.util.Collections;
@@ -35,7 +34,7 @@ class MenuApiControllerTest extends BaseControllerTest {
 
     @Override
     protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
-        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
+        return new HandlerMethodArgumentResolver[] { nuri.business.support.PageableTestResolvers.standard() };
     }
 
     @Test

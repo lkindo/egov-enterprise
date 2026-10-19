@@ -14,7 +14,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -50,7 +49,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
             }
         };
 
-        return new HandlerMethodArgumentResolver[] { userDetailsResolver, new PageableHandlerMethodArgumentResolver() };
+        return new HandlerMethodArgumentResolver[] { userDetailsResolver, nuri.business.support.PageableTestResolvers.standard() };
     }
 
     @Test

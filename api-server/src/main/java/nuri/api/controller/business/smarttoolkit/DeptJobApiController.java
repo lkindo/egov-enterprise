@@ -38,10 +38,10 @@ public class DeptJobApiController {
     public ResponseEntity<ApiResponse<PageResponse<DeptJobBoxDto>>> getDeptJobBoxList(
             @RequestParam(defaultValue = "") String searchWrd,
             @RequestParam(defaultValue = "") String deptId,
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @org.springframework.data.web.PageableDefault(size = 10) @nuri.api.support.UnsortedPageable
+            org.springframework.data.domain.Pageable requestedPage) {
 
-        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
+        PageRequest pageable = PageRequests.unsorted(requestedPage);
         Page<DeptJobBoxDto> pageResult;
 
         if (deptId != null && !deptId.isEmpty()) {
@@ -127,8 +127,8 @@ public class DeptJobApiController {
             //   기본값을 mine 으로 두는 것이 이 파라미터의 핵심이다. 미지정 시 전체가 나오면
             //   토글을 달아도 실제 기본 노출은 전체라 스코프가 이름만 남는다.
             @RequestParam(defaultValue = "mine") String scope,
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
+            @org.springframework.data.web.PageableDefault(size = 10) @nuri.api.support.UnsortedPageable
+            org.springframework.data.domain.Pageable requestedPage) {
 
         // DeptJobService 는 searchCondition 이 "0"(업무명)/"1"(내용)/"2"(담당자) 중 하나일 때만
         // 검색 조건을 붙인다. null 이면 키워드를 받고도 아무 조건 없이 전체를 돌려준다 —
@@ -139,7 +139,7 @@ public class DeptJobApiController {
         //   반대로("mine 일 때만 좁힌다") 쓰면 오타 한 글자가 조용히 전체 공개로 떨어진다.
         boolean mineOnly = !"dept".equalsIgnoreCase(scope);
 
-        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
+        PageRequest pageable = PageRequests.unsorted(requestedPage);
         Page<DeptJobDto> pageResult = deptJobService.getDeptJobList(
                 deptId, deptTaskBoxSn, condition, searchWrd, mineOnly, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));

@@ -58,7 +58,7 @@ class EventApiControllerTest {
 
         eventMockMvc = MockMvcBuilders.standaloneSetup(new EventApiController(eventService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver(), userDetailsResolver)
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard(), userDetailsResolver)
                 .build();
     }
 

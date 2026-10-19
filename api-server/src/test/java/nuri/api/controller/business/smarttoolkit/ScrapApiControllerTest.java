@@ -37,8 +37,8 @@ class ScrapApiControllerTest extends ControllerTestSupport {
 
         // When & Then
         mockMvc.perform(get("/api/v1/scraps")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))

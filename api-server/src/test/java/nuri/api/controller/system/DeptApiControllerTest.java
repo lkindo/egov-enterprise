@@ -63,7 +63,7 @@ public class DeptApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/departments")
                 .param("keyword", "테스트")
-                .param("page", "0")
+                .param("page", "1")
                 .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

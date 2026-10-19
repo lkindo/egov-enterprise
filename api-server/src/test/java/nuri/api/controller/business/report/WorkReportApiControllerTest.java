@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -55,7 +54,7 @@ class WorkReportApiControllerTest {
         objectMapper = JsonMapper.builder().configureForJackson2().build();
         mockMvc = MockMvcBuilders.standaloneSetup(workReportApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .build();
     }
 
@@ -67,8 +66,8 @@ class WorkReportApiControllerTest {
 
         mockMvc.perform(get("/api/v1/work-reports")
                         .param("searchKeyword", "test")
-                        .param("pageIndex", "1")
-                        .param("pageUnit", "10"))
+                        .param("page", "1")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

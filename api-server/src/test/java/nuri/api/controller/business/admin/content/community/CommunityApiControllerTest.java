@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,7 +62,7 @@ class CommunityApiControllerTest {
         };
 
         mockMvc = MockMvcBuilders.standaloneSetup(communityApiController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver(), principalResolver)
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard(), principalResolver)
                 .build();
     }
 
@@ -76,7 +75,7 @@ class CommunityApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/content/community")
                         .param("searchCnd", "1")
                         .param("searchWrd", "test")
-                        .param("page", "0")
+                        .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

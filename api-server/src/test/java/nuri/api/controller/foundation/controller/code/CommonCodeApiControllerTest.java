@@ -28,7 +28,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.MapperFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
@@ -63,7 +62,7 @@ class CommonCodeApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(commonCodeApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(converter)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .build();
     }
 
@@ -76,7 +75,7 @@ class CommonCodeApiControllerTest {
         when(commonCodeService.selectCmmnClCodeListTotCnt(any(BaseSearchDto.class))).thenReturn(1);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/cl")
-                .param("pageIndex", "1")
+                .param("page", "1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -142,7 +141,7 @@ class CommonCodeApiControllerTest {
         when(commonCodeService.selectCmmnCodeListTotCnt(any(BaseSearchDto.class))).thenReturn(1);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/cmmn")
-                .param("pageIndex", "1")
+                .param("page", "1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -158,7 +157,7 @@ class CommonCodeApiControllerTest {
                         java.time.LocalDateTime.of(2026, 9, 27, 10, 0))), page, 6));
 
         mockMvc.perform(get("/api/v1/admin/system/codes/change-history")
-                .param("cdId", "GRP1").param("page", "1").param("size", "5")
+                .param("cdId", "GRP1").param("page", "2").param("size", "5")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].chgArtclNm").value("명칭"))
@@ -258,7 +257,7 @@ class CommonCodeApiControllerTest {
         when(commonCodeService.selectCmmnDetailCodeListTotCnt(any(BaseSearchDto.class))).thenReturn(1);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/detail")
-                .param("pageIndex", "1")
+                .param("page", "1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

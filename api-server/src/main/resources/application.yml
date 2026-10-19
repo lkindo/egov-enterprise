@@ -101,6 +101,16 @@ spring:
           lock:
             timeout: 5000
 
+  # [ADR-0036] 목록 페이지 번호는 요청·응답·URL·화면 모두 1부터다. 리졸버가 1 기반 `page` 를 0 기반 Pageable 로 바꾸고,
+  #   한 번에 받는 건수 상한은 BaseSearchDto 와 같은 100 이다. 리졸버는 범위 밖 값을 조용히 깎으므로 400 은
+  #   PaginationRequestFilter 가 먼저 낸다. 테스트 application.yml 이 이 파일을 가리므로 같은 값을 그쪽에도 두고
+  #   PageableConstructionLinterTest 가 두 파일과 시험용 리졸버(PageableTestResolvers)의 값이 같은지 본다.
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
+        max-page-size: 100
+
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -329,9 +339,9 @@ cors:
 #     OpenApiDocumentationTest 의 @TestPropertySource 에 함께 선언한다 — 두 곳이 갈라지면
 #     "문서와 런타임이 다르다"가 되므로 한쪽만 고치지 말 것.
 springdoc:
-  # 검색/페이징 DTO 가 단일 객체 $ref 로 뭉쳐 있었다. 실제 요청은 `?searchWrd=&pageIndex=` 인데
+  # 검색/페이징 DTO 가 단일 객체 $ref 로 뭉쳐 있었다. 실제 요청은 `?searchWrd=&page=` 인데
   # 스펙은 `searchDto` 라는 객체 하나를 요구해, 스펙이 실제 API 를 서술하지 못했다.
-  # 영향 범위는 실측으로 한정된다 — 객체 query 파라미터는 Pageable(38)·BaseSearchDto(21) 둘뿐이다.
+  # 영향 범위는 실측으로 한정된다 — 객체 query 파라미터는 Pageable·BaseSearchDto 둘뿐이다(수는 api-docs.json 이 정본).
   default-flat-param-object: true
 
 # [W1-J1] 신뢰 프록시 경계 — X-Forwarded-For 를 어디까지 믿을 것인가.
