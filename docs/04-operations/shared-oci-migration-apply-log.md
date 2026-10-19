@@ -14,7 +14,7 @@
 
 | 적용일(KST) | 마이그레이션 | 사용자 승인 요지 | 병합 PR | 사전 읽기·백업·validate | 확인 쿼리 요지 | 롤백 원본 |
 |---|---|---|---|---|---|---|
-| 기록 없음 | - | - | - | - | - | 이 로그를 둔 2026-10-19 뒤의 첫 적용부터 적는다. |
+| 2026-10-20 | V2_135(인터넷서비스안내 권한 배정 정리)·V2_136(스크랩 등록자·주소 유일 제약), 반복 시드 R__zz_seed_base_admin(SERVICE_* 8행 제외) | 2026-10-20 사용자 승인 "둘 다 지금 적용"(DEC-OPS-372 의 데이터 적용) | #943 (병합 c0ded166d) | 사전 읽기: 스키마 2.134, tb_intrn_svc 0행·/admin/system/isg 메뉴 0·SERVICE_* 배정 8(모두 ROLE_ADMIN·ROLE_SYSTEM 의 OPERATION, 예상 밖 0), 스크랩 1행·(등록자, 주소) 중복 0. 적용 직전 pg_dump 백업(표 데이터 127, 영향 표 4개 목차 확인). Flyway 12.4.0 migrate 3건 → validate 161 | SERVICE_* 배정 0·REMOVE 이력(migration:2.135) 8, 제약 uk_tb_bbs_scrap_frst_rgtr_id_scrap_url 1, 스크랩 1행 유지, tb_intrn_svc 0행 유지, 메뉴 75·활성 70 그대로 | 배정은 REMOVE 이력으로 되살린다([인가 전환 런북 V2_135](authorization-cutover-runbook.md)). 제약은 DROP CONSTRAINT 로 되돌린다. 전체는 적용 직전 백업 |
 
 ## 이전 기록
 
