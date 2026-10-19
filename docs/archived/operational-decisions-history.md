@@ -2202,6 +2202,18 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-366 | accepted | **PIT 범위를 제품 10개에서 13개로 넓힌다.** ① `business-app-survey`(설문 전체, 배송·운영 범위의 `SurveyResultService` 를 옮겨 겹치지 않게), `business-app-participation`(커뮤니티·메모 보고·일정), `business-core-user-org`(사용자·그룹·부서·정책·부재)를 둔다. 각 범위는 같은 테스트 glob 과 75% 하한을 독립 적용한다. ② 영속 작업(`system.job`)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT 가 변이를 잡을 수 없으므로 넣지 않는다. ③ 핵심 대상에 `UserService`·`LoginIdReuseGuard` 를 더하고 `SurveyResultService` 는 설문 범위로 옮긴다. ④ 사용자 관리의 살아남은 변이가 드러낸 단언 공백 — 권한 잠금 재확인·보호 계정 가드·재발급 토큰 폐기·자격 변경 이벤트·민감 작업 감사·마지막 관리자 보호 — 을 시험 6건으로 닫는다. ⑤ 새 범위는 실측 긴 순서로 기존 긴 범위 여섯 뒤, foundation 범위 앞에 둔다. | PIT 대상이 일부 도메인뿐이라 설문·사용자 관리 같은 큰 서비스의 시험 탐지력이 보이지 않았다(2026-10-19 품질 평가 과제 13). 로컬 strict 실측: 설문 84%(380 변이)·참여 85%(282)·사용자/조직 84%(237, 보강 전 영속 작업 포함 66%)·배송·운영 86%(482, 설문 결과를 뺀 뒤). 네 슬롯 동시 실행에 범위가 셋 늘어 mutation-test 의 벽시계가 길어질 수 있다 — main 실측으로 다시 본다. red 증명: 계약은 새 핵심 대상을 빼면 실패하는 부정 시험을 두고, 보강 시험은 보강 전 살아남던 변이가 죽는 것으로 확인했다. | [CI 매트릭스](../../.github/workflows/ci.yml), [게이트 원장](../../config/governance/gates.json), [PIT 문서](../02-architecture/pitest-mutation-testing.md), [보강 시험](../../business-core/src/test/java/nuri/business/service/user/UserServiceAdministrativeSideEffectsTest.java) | 2026-10-19 | - |
 
+## DEC-OPS-367
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-367 | accepted | **처리 흐름 없는 상태 표면 넷을 걷는다(물리 컬럼은 남긴다).** ① 업무보고 상태(`rptSttsCd`) — 어디서도 쓰지 않고 응답에서 늘 null 이었다. ② 포상 승인 필드 다섯(`sanctnerId`·`confmAt`·`sanctnDt`·`returnResn`·`ifmlAtrzSn`)과 등록의 대기(`N`) 기록 — 승인 상태를 바꾸는 경로가 없었다. 새 포상의 `confm_yn` 은 NULL 로 들어간다(CHECK 는 NULL 을 통과시킨다). ③ 행사 승인 여부·일자와 승인 값 변경을 400 으로 막던 가드 — 등록의 `N` 말고 쓰는 곳이 없었다. ④ 인터넷 서비스 안내 반영 여부(`rfltYn`) — 저장만 되고 읽는 공개 화면·처리가 없었다. DTO·요청·서비스·화면의 열·폼·안내문에서 걷고, 엔티티는 그 컬럼을 `insertable=false, updatable=false` 로 매핑해 다시 저장해도 DB 값을 덮지 않는다. 엔드포인트는 걷지 않아 operation·권한 원장은 그대로다. | 상태 필드만 있고 처리 흐름이 비어, 화면이 없는 업무 흐름을 암시했다(2026-10-19 품질 평가 과제 11, 사용자 선택 "쓰지 않는 표면을 걷기"·물리 컬럼 유지). 입력 계약 원장의 길이 251→246·읽기 전용 68→62·날짜 13→12 를 실측대로 내렸다. 걷지 않은 것: 늘 null 인 `WorkReportDto.rptTypeCd`·저장소의 쓰이지 않는 검색 인자는 범위 밖이다. | [입력 계약 원장](../../config/governance/input-contract-mirror-census.json), [포상 서비스](../../business-app/src/main/java/nuri/business/service/reward/RewardManageService.java), [행사 서비스](../../business-app/src/main/java/nuri/business/service/event/EventInfoService.java) | 2026-10-19 | - |
+
+## DEC-OPS-368
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-368 | accepted | **보고서 통계 화면을 퇴역한다(2026-10-19 사용자 승인 "메뉴와 탭을 걷기", 마이그레이션 저장소 반영도 같은 날 승인).** ① 통계 허브의 운영 보고서 탭·`/admin/stats/report` 페이지·`GET /api/v1/admin/system/statistics/report`·`ReportStatsService` 의 조회·등록 경로·`ReprtStats` 엔티티를 걷는다. 메뉴가 사라지고 가리키는 곳이 없어 redirect 를 남기지 않는다(마이페이지 퇴역 선례). ② V2_134(데이터만, Contract DML)가 메뉴 9040105 「보고서통계」 한 행과 그 메뉴를 가리키는 NAVIGATION 배정·즐겨찾기를 지우고, 지운 배정마다 REMOVE 이력을 남긴다. 경로가 다르거나 하위가 있거나 다른 행이 같은 경로를 가리키면 아무것도 지우지 않고 실패한다. 이미 지운 환경에서는 아무것도 하지 않는다. ③ 물리 표 `tb_rptp_stats` 는 남긴다(스키마 변경은 별도 승인). `STATS_ADMIN_READ` 는 다른 통계 탭이 계속 쓴다. | 원장 `tb_rptp_stats` 에 쓰는 제품 경로가 없어(등록 메서드는 자기 단위 시험만 불렀다) 탭이 어떤 기간에도 비어 있었다(2026-10-19 품질 평가 과제 11). 탭만 걷으면 활성 메뉴가 없는 화면을 가리키므로 메뉴 행도 걷는다. operation 수 411→410, 권한 원장 버전이 바뀐다. 실행 순서·되돌리기는 인가 전환 런북의 V2_134 절을 따른다. red 증명: 즐겨찾기 삭제 조건을 빗나가게 하면 "형제 메뉴의 즐겨찾기만 남는다" 단언이 실패한다. 공유 OCI 적용은 병합 뒤다. | [V2_134](../../api-server/src/main/resources/db/migration/V2_134__retire_report_stats_menu.sql), [전환 런북](../04-operations/authorization-cutover-runbook.md), [마이그레이션 시험](../../api-server/src/test/java/nuri/api/schema/ReportStatsMenuRetirementMigrationIntegrationTest.java) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
