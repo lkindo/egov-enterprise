@@ -139,12 +139,16 @@ test('compact decision indexes preserve every archived decision body and rationa
 test('decision history cannot silently substitute another ID or divergent approval metadata', () => {
   const history = 'docs/archived/operational-decisions-history.md';
   const memory = '.agent/memory/decisions.md';
-  mutate(memory, text => text.replace('#dec-ops-001)', '#dec-ops-002)'), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
-  });
-  mutate(memory, text => text.replace('docs/archived/operational-decisions-history.md#dec-ops-001', 'docs/README.md'), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
-  });
+  // The ID is the archive anchor: an index row cannot point itself at another (or any) archive section.
+  for (const anchor of ['#dec-ops-002', '#dec-ops-001']) {
+    mutate(memory, text => {
+      const mutated = text.replace(/^(\| DEC-OPS-001 \| accepted \| )/m, `$1[원문](../../docs/archived/operational-decisions-history.md${anchor}) `);
+      assert.notEqual(mutated, text);
+      return mutated;
+    }, () => {
+      assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must not link a decision history section; its ID is the archive anchor/);
+    });
+  }
   mutate(history, text => text.replace(/^\| DEC-OPS-001 \|.*\r?\n/m, ''), () => {
     assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision history section must contain its same-ID row/);
   });
@@ -170,13 +174,36 @@ test('decision history cannot silently substitute another ID or divergent approv
   });
 });
 
-test('new operational decisions can use a current source without extending the historical archive', () => {
-  mutate('.agent/memory/decisions.md', text => `${text}\n| DEC-OPS-999 | accepted | new decision probe | current rationale probe | [source](../../docs/README.md) | 2026-10-17 | - |\n`, () => {
-    const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === 'DEC-OPS-999');
-    assert.equal(decision.source, '.agent/memory/decisions.md');
-    assert.equal(decision.status, 'accepted');
-    assert.ok(decision.searchText.includes('current rationale probe'));
-    assert.deepEqual(decision.links, [{ label: 'source', path: 'docs/README.md' }]);
+test('operational decision rows take their archive anchor from the ID and keep five columns', () => {
+  const history = 'docs/archived/operational-decisions-history.md';
+  const memory = '.agent/memory/decisions.md';
+  for (const decision of baseline.catalogs.decisions.filter(item => item.id.startsWith('DEC-'))) {
+    assert.deepEqual(decision.links[0], { label: '원문', path: `${history}#${decision.id.toLowerCase()}` });
+  }
+  // A new decision without its archive section has no anchor to resolve.
+  mutate(memory, text => `${text}\n| DEC-OPS-999 | accepted | new decision probe | 2026-10-17 | - |\n`, () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-999 decision history section missing; its ID is the archive anchor/);
+  });
+  // The repeated reason/source columns do not come back, and a row cannot lose a column either.
+  const rowPattern = /^\| DEC-OPS-001 \| accepted \| (.+?) \| (2026-08-18) \| - \|/m;
+  for (const [label, replacement] of [
+    ['seven columns', '| DEC-OPS-001 | accepted | $1 | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-001) | $2 | - |'],
+    ['four columns', '| DEC-OPS-001 | accepted | $1 | $2 |'],
+  ]) {
+    mutate(memory, text => {
+      const mutated = text.replace(rowPattern, replacement);
+      assert.notEqual(mutated, text, label);
+      return mutated;
+    }, () => {
+      assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision index row requires five columns/, label);
+    });
+  }
+  mutate(memory, text => {
+    const mutated = text.replace(/^(\| ADR-0001 \| accepted \| [^|]+ \| )[^|]+ \| /m, '$1');
+    assert.notEqual(mutated, text);
+    return mutated;
+  }, () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 decision index row requires seven columns/);
   });
 });
 

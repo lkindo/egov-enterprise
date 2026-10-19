@@ -71,7 +71,7 @@
    - **실시간 OLTP 동기 연동**: 최대 3초 이내 타임아웃 및 빠른 실패(Fail-Fast) 지향.
    - **외부 결제/인증 트랜잭션 (PG 등)**: 최대 10초 이내 타임아웃 적용.
    - **비동기/배치/대용량 파일 연동**: 전용 스레드 풀 및 MQ 등으로 작업 공간을 격리하고, 비즈니스 요건에 맞춰 타임아웃 상향 조정.
-3. **커밋-후 부수효과의 안전성**: 외부 발송·별도 트랜잭션(REQUIRES_NEW) 등 부수효과는 반드시 발행 트랜잭션의 **커밋 이후**에만 기동한다. 부모 커밋 전에 별도 스레드/트랜잭션으로 후속 작업을 기동하면 그 작업이 부모의 미커밋 행을 `READ_COMMITTED` 로 보지 못해 유실·no-op 되는 결함(SMS 미발송, 메일 상태 고착 등)이 발생하므로, 커밋-후 부수효과는 `TransactionUtils.runAfterCommit(...)`(`foundation`)을 표준 수단으로 감싼다. 특히 커밋-전-async 파손을 유발하는 `@Async` + `@TransactionalEventListener` 동시 선언은 `AsyncTransactionalListenerArchTest`(api-server 하네스)로 기계 차단된다.
+3. **커밋-후 부수효과의 안전성**: 외부 발송·별도 트랜잭션(REQUIRES_NEW) 등 부수효과는 반드시 발행 트랜잭션의 **커밋 이후**에만 기동한다. 부모 커밋 전에 별도 스레드/트랜잭션으로 후속 작업을 기동하면 그 작업이 부모의 미커밋 행을 `READ_COMMITTED` 로 보지 못해 유실·no-op 되는 결함(SMS 미발송, 메일 상태 고착 등)이 발생한다. 외부 발송(메일·문자)은 [ADR-0033](../../../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md)·[DEC-OPS-341](../../../memory/decisions.md)에 따라 발송 이력과 발송 의도를 업무 트랜잭션 안에서 영속 작업(`tb_sys_job`, `DurableWorkPort.enqueue`)으로 함께 저장하는 것이 표준이다. 실행기(`DurableWorkDispatcher`)는 커밋된 의도만 집어 유형별 처리기(`MailDeliveryWorkHandler`·`SmsDeliveryWorkHandler`)로 넘기므로, 롤백된 업무는 발송되지 않고 프로세스가 중단돼도 의도가 남는다([재처리 운영](../../../../docs/04-operations/durable-work-recovery.md)). 그 밖의 커밋-후 부수효과(업무 이벤트 발행 등)는 `TransactionUtils.runAfterCommit(...)`(`foundation`)으로 감싼다. 특히 커밋-전-async 파손을 유발하는 `@Async` + `@TransactionalEventListener` 동시 선언은 `AsyncTransactionalListenerArchTest`(api-server 하네스)로 기계 차단된다.
 
 
 ### 제11조 (인증 정보 보호 및 OWASP 준수)

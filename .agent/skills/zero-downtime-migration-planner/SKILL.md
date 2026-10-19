@@ -36,7 +36,7 @@ version: 2.0.0
 - 새 애플리케이션이 배포되고 구 구조 사용이 0임을 증명한 뒤 후속 release에서 제거한다.
 - Expand와 Contract를 같은 Flyway 파일에 넣지 않는다.
 - 2026-09-16 이후 승인하는 Contract의 파괴적 DDL은 [waiver 원장](../../../config/governance/zdm-waivers.json)에 등재해야 하며, `expandMigration`이 가리키는 선행 Expand의 배포를 `expandRelease`로 [마이그레이션 릴리스 기록](../../../docs/04-operations/migration-release-log.md)에 남기고 배포 후 7일 관측 기간을 지나야 한다(DEC-OPS-101). ZDM 린터가 이를 대조한다.
-- 이 검사의 예외는 2026-09-16 이전 승인 동결분 13건(소급 승인 아님)과, 같은 릴리스에 실은 사용자 승인 1건(DEC-OPS-233, V2_127, waiver 3건)뿐이다. 이를 선례로 삼지 않는다.
+- 이 검사의 예외는 2026-09-16 이전 승인 동결분(소급 승인 아님)과, 같은 릴리스에 실은 사용자 승인 한 건(DEC-OPS-233, V2_127)뿐이다. 항목과 수는 [ZDM 린터](../../../api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java)의 두 예외 상수와 [waiver 원장](../../../config/governance/zdm-waivers.json)이 정본이다([GAP-ZDM-001](../../memory/known-gaps.md)). 이를 선례로 삼지 않는다.
 - rollback 또는 roll-forward 조건과 관측 기간을 기록한다.
 
 ## 검증 경계

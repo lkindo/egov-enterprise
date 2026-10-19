@@ -1,6 +1,8 @@
 ---
 name: dispatching-parallel-agents
 description: Use when facing 2+ independent tasks that can be worked on without shared state or sequential dependencies
+source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
+license: MIT — Complete terms in LICENSE.txt
 ---
 
 # Dispatching Parallel Agents

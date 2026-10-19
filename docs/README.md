@@ -152,6 +152,7 @@
 | [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
 | [migration-release-log.md](04-operations/migration-release-log.md) | 마이그레이션이 어느 릴리스로 언제 배포됐는지의 기록 — Contract waiver의 선행 Expand 관측 기간 근거 |
+| [shared-oci-migration-apply-log.md](04-operations/shared-oci-migration-apply-log.md) | 공유 OCI DB에 마이그레이션을 적용한 기록 — 승인 요지·병합 PR·사전 읽기·백업·validate·확인·롤백 원본, 이전 DEC 기록 색인 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [observability-baseline.md](04-operations/observability-baseline.md) | 요청·첨부 점검·영속 작업 상태 지표, 9개 경보와 실제 promtool 시간 흐름 검증 |

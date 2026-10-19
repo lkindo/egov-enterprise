@@ -135,6 +135,29 @@ function decisionMemoryAdrIds(decisions) {
   return ids;
 }
 
+/*
+ * 운영 결정 표는 이유·정본 열을 두지 않는다 — 모든 행이 같은 값('승인·근거는 보관 원문', ID 로 만드는 보관 링크)이었다.
+ * ID 가 보관 원문의 앵커이고, 그 앵커가 실제 절로 풀리는지와 상태·시행일·supersedes 일치는 Atlas 카탈로그가 본다.
+ */
+export const DECISION_ARCHIVE = '../../docs/archived/operational-decisions-history.md';
+export const OPERATIONAL_DECISION_HEADER = Object.freeze(['ID', '상태', '결정', '시행일', 'supersedes']);
+
+export function decisionMemoryOperationalIds(decisions) {
+  const section = markdownSection(decisions, '운영 결정 index', '기록 템플릿');
+  assert.ok(
+    section.split(/\r?\n/).some((line) => line.startsWith('ID가 보관 원문의 앵커다') && line.includes(`](${DECISION_ARCHIVE})`)),
+    '운영 결정 index 에는 ID 가 보관 원문의 앵커라는 규칙 줄과 보관 기록 링크가 있어야 합니다.',
+  );
+  const ids = markdownTableRows(section, OPERATIONAL_DECISION_HEADER).map((cells) => {
+    assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `운영 결정 index에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
+    assert.match(cells[1] ?? '', /^(?:accepted|superseded|rejected)$/u, `${cells[0]}: 허용되지 않은 결정 상태입니다.`);
+    assert.match(cells[3] ?? '', /^\d{4}-\d{2}-\d{2}$/u, `${cells[0]}: 시행일 열은 날짜여야 합니다.`);
+    return cells[0];
+  });
+  assert.equal(ids.length, new Set(ids).size, '운영 결정 index에 중복 DEC ID가 있습니다.');
+  return ids;
+}
+
 function assertExactAdrSet(registryIds, memoryIds) {
   const registrySet = new Set(registryIds);
   const memorySet = new Set(memoryIds);
@@ -500,6 +523,30 @@ test('decision memory exactly indexes every plain and qualified Accepted ADR', (
   const accepted = acceptedAdrIds(registry);
   assert.ok(accepted.length > 0, 'Accepted ADR census가 0건입니다.');
   assertExactAdrSet(accepted, decisionMemoryAdrIds(decisions));
+});
+
+test('operational decision index keeps the five-column schema and its archive anchor rule', () => {
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  const ids = decisionMemoryOperationalIds(decisions);
+  assert.ok(ids.length > 0, '운영 결정 index 가 비었습니다.');
+
+  // 걷은 이유·정본 열을 되돌리면 머리글이 다시 7열이 되어 붉다.
+  const sevenColumns = decisions
+    .replace('| ID | 상태 | 결정 | 시행일 | supersedes |\r\n|---|---|---|---|---|', '| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |\r\n|---|---|---|---|---|---|---|')
+    .replace('| ID | 상태 | 결정 | 시행일 | supersedes |\n|---|---|---|---|---|', '| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |\n|---|---|---|---|---|---|---|');
+  assert.notEqual(sevenColumns, decisions, '합성 7열 머리글 mutation 이 적용되지 않았습니다.');
+  assert.throws(() => decisionMemoryOperationalIds(sevenColumns), /markdown table header가 정확히 한 번 있어야 합니다: ID \| 상태 \| 결정 \| 시행일 \| supersedes/u);
+
+  // 한 행만 옛 형식(이유·정본 열)으로 쓰면 열 수가 달라 붉다.
+  const row = decisions.split(/\r?\n/).find((line) => line.startsWith(`| ${ids[0]} |`));
+  const cells = markdownTableCells(row);
+  const legacyRow = `| ${[...cells.slice(0, 3), '승인·근거는 보관 원문', `[원문](${DECISION_ARCHIVE}#${ids[0].toLowerCase()})`, ...cells.slice(3)].join(' | ')} |`;
+  assert.throws(() => decisionMemoryOperationalIds(decisions.replace(row, legacyRow)), /markdown table data 열 수가 header와 다릅니다/u);
+
+  // 앵커 규칙 줄이 없으면 ID 로 원문을 찾는 근거가 사라진다.
+  const ruleLine = decisions.split(/\r?\n/).find((line) => line.startsWith('ID가 보관 원문의 앵커다'));
+  assert.ok(ruleLine);
+  assert.throws(() => decisionMemoryOperationalIds(decisions.replace(ruleLine, '')), /ID 가 보관 원문의 앵커라는 규칙 줄/u);
 });
 
 test('memory truth bindings fail closed for synthetic shard and ADR drift', () => {

@@ -464,23 +464,26 @@ export function buildAtlasCatalog(repoRoot) {
   const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
   const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) => {
     const id = cells[0];
-    const links = localLinks(raw, decisionSource);
+    let links = localLinks(raw, decisionSource);
     let fullCells = cells;
     let fullRaw = raw;
-    if (id.startsWith('DEC-')) {
-      const historyLinks = links.filter(link => link.path.split('#')[0] === decisionHistorySource);
-      // Archived decisions keep their exact binding; future decisions may link a current change document.
-      if (decisionHistory.has(id) || historyLinks.length) {
-        requireValue(historyLinks.length === 1 && historyLinks[0].path === `${decisionHistorySource}#${id.toLowerCase()}`,
-          `${id} must link exactly one same-ID decision history section`);
-        const historical = requireValue(decisionHistory.get(id), `${id} decision history missing`);
-        requireValue([1, 5, 6].every(index => historical.cells[index] === cells[index]),
-          `${id} decision history status/date/supersedes differs from index`);
-        fullCells = historical.cells;
-        fullRaw = historical.raw;
-        for (const link of localLinks(fullRaw, decisionHistorySource)) {
-          if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
-        }
+    // ADR rows: ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes. DEC rows drop the repeated reason/source
+    // columns — ID | 상태 | 결정 | 시행일 | supersedes — because the ID is the archive anchor.
+    const isDecision = id.startsWith('DEC-');
+    requireValue(cells.length === (isDecision ? 5 : 7),
+      `${id} decision index row requires ${isDecision ? 'five' : 'seven'} columns`);
+    const dateIndex = isDecision ? 3 : 5;
+    if (isDecision) {
+      requireValue(links.every(link => link.path.split('#')[0] !== decisionHistorySource),
+        `${id} must not link a decision history section; its ID is the archive anchor`);
+      const historical = requireValue(decisionHistory.get(id), `${id} decision history section missing; its ID is the archive anchor`);
+      requireValue([[1, 1], [5, 3], [6, 4]].every(([history, index]) => historical.cells[history] === cells[index]),
+        `${id} decision history status/date/supersedes differs from index`);
+      links = [{ label: '원문', path: `${decisionHistorySource}#${id.toLowerCase()}` }, ...links];
+      fullCells = historical.cells;
+      fullRaw = historical.raw;
+      for (const link of localLinks(fullRaw, decisionHistorySource)) {
+        if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
       }
     }
     // Keep the memory row's stable ID/source. Only its explicit same-ID ADR is authoritative;
@@ -501,7 +504,7 @@ export function buildAtlasCatalog(repoRoot) {
     const searchCells = fullCells === cells ? cells : [...cells, ...fullCells];
     const referenceText = fullRaw === raw ? raw : `${raw}\n${fullRaw}`;
     return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], decisionSource, {
-      details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[5]),
+      details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[dateIndex]),
         ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells.at(-1)),
         detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
       supersedes: cells.at(-1), references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],

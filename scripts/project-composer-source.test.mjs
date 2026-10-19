@@ -19,7 +19,7 @@ import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parseMa
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
-import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+import { SKILL_DISTRIBUTION, copySourceTree, isReusableSkillPath, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const catalog = loadProjectComposerCatalog(root);
@@ -516,7 +516,7 @@ test('a shared table goes to the first selected consumer in declared order, not 
   assert.deepEqual([...sharedTableTransfers(files, [])], [], 'a table without any selected consumer is not part of the composition');
 });
 
-test('source copying excludes restricted skill trees while preserving ordinary source and the producer', t => {
+test('source copying keeps only project skills while preserving ordinary source and the producer', t => {
   const base = realpathSync(tmpdir());
   const fixture = mkdtempSync(join(base, 'composer-copy-'));
   t.after(() => {
@@ -526,16 +526,18 @@ test('source copying excludes restricted skill trees while preserving ordinary s
   });
   const sourceRoot = join(fixture, 'source');
   const output = join(fixture, 'output');
-  const excluded = ['docx', 'pdf', 'pptx', 'xlsx'].flatMap(skill => [
-    `.agent/skills/${skill}/SKILL.md`,
-    `.agent/skills/${skill}/scripts/nested/tool.js`,
-    `.agent/skills/${skill}/LICENSE.txt`,
-  ]);
+  // 재배포 제한(docx…)·외부 범용(skill-creator…)·저장소 전용 범용(explain-diff)·분류표에 없는 스킬은 복사하지 않는다.
+  const excluded = ['docx', 'pdf', 'pptx', 'xlsx', 'skill-creator', 'test-driven-development', 'explain-diff', 'pdf-extra', 'unlisted-generic']
+    .flatMap(skill => [
+      `.agent/skills/${skill}/SKILL.md`,
+      `.agent/skills/${skill}/scripts/nested/tool.js`,
+      `.agent/skills/${skill}/LICENSE.txt`,
+    ]).concat(['.agent/skills/README.md']);
   const retained = [
     'frontend/src/new-local-file.ts',
     '.agent/skills/db-governance/SKILL.md',
-    '.agent/skills/pdf-extra/SKILL.md',
-    '.agent/skills/docx-helper/SKILL.md',
+    '.agent/skills/zero-downtime-migration-planner/nested/notes.md',
+    '.agent/skillsets/generic/SKILL.md',
     'docs/pdf/guide.md',
     'gradlew',
   ];
@@ -593,6 +595,71 @@ ${tracked.stdout}`);
   for (const allowed of ['.agent/skills/db-governance/SKILL.md', '.agent/skills/skill-creator/SKILL.md', '.agent/skills/pdf-extra/SKILL.md']) {
     assert.equal(spawnSync('git', ['check-ignore', '-q', allowed], { cwd: root }).status, 1, `${allowed} must not be ignored`);
   }
+});
+
+/**
+ * 저장소에 있는 스킬은 모두 SKILL_DISTRIBUTION(reusable-source-tree.mjs)에 분류돼야 한다. 외부에서 들여온 스킬(external)은
+ * SKILL.md 머리에 source·license 를 적고 LICENSE 파일을 두며, 이 저장소 스킬(project·repository-only)은 source 를 적지 않는다.
+ * 생성물은 project 스킬만 가지므로 project 가 아닌 분류는 없어도 된다.
+ */
+function skillDistributionViolations(skillFiles, read, distribution = SKILL_DISTRIBUTION) {
+  const violations = [];
+  const inSkill = skill => file => file.startsWith(`.agent/skills/${skill}/`);
+  const skills = new Set(skillFiles.filter(file => file.startsWith('.agent/skills/')).map(file => file.split('/')[2]));
+  for (const skill of [...skills].sort()) {
+    if (!Object.hasOwn(distribution, skill)) {
+      violations.push(`${skill}: 분류되지 않은 스킬입니다 — SKILL_DISTRIBUTION 에 project·repository-only·external 중 하나로 적으십시오.`);
+      continue;
+    }
+    const skillFile = `.agent/skills/${skill}/SKILL.md`;
+    if (!skillFiles.includes(skillFile)) {
+      violations.push(`${skill}: SKILL.md 가 없습니다.`);
+      continue;
+    }
+    const head = (read(skillFile).replace(/^﻿/u, '').match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? '').split(/\r?\n/u);
+    const declares = key => head.some(line => line.startsWith(`${key}:`));
+    if (distribution[skill] === 'external') {
+      if (!declares('source') || !declares('license')) violations.push(`${skill}: 외부 스킬은 SKILL.md 머리에 source·license 를 적어야 합니다.`);
+      if (!skillFiles.filter(inSkill(skill)).some(file => /\/LICENSE(?:\.txt|\.md)?$/u.test(file))) {
+        violations.push(`${skill}: 외부 스킬은 LICENSE 파일을 함께 둬야 합니다.`);
+      }
+    } else if (declares('source')) {
+      violations.push(`${skill}: source 를 적은 스킬은 external 로 분류해야 합니다.`);
+    }
+  }
+  for (const [skill, kind] of Object.entries(distribution)) {
+    if (kind === 'project' && !skills.has(skill)) violations.push(`${skill}: 생성물로 복사할 project 스킬이 없습니다.`);
+  }
+  return violations;
+}
+
+test('every repository skill is classified and only project skills reach generated outputs', () => {
+  const read = file => readFileSync(join(root, file), 'utf8');
+  assert.deepEqual(skillDistributionViolations(files, read), []);
+  for (const [skill, kind] of Object.entries(SKILL_DISTRIBUTION)) {
+    assert.equal(isReusableSkillPath(`.agent/skills/${skill}/SKILL.md`), kind === 'project', `${skill} (${kind})`);
+  }
+  assert.equal(isReusableSkillPath('.agent/skills/unlisted-generic/SKILL.md'), false);
+  assert.equal(isReusableSkillPath('docs/README.md'), true);
+
+  // red: 분류하지 않은 새 스킬, 라이선스 표기·파일이 없는 외부 스킬, source 를 적은 저장소 스킬, 사라진 project 스킬.
+  const synthetic = {
+    '.agent/skills/kept/SKILL.md': '---\nname: kept\n---\n',
+    '.agent/skills/outside/SKILL.md': '---\nname: outside\n---\n',
+    '.agent/skills/claimed/SKILL.md': '﻿---\nname: claimed\nsource: someone/else\n---\n',
+    '.agent/skills/stray/SKILL.md': '---\nname: stray\n---\n',
+  };
+  const distribution = { kept: 'project', outside: 'external', claimed: 'repository-only', missing: 'project' };
+  assert.deepEqual(skillDistributionViolations(Object.keys(synthetic), file => synthetic[file], distribution), [
+    'claimed: source 를 적은 스킬은 external 로 분류해야 합니다.',
+    'outside: 외부 스킬은 SKILL.md 머리에 source·license 를 적어야 합니다.',
+    'outside: 외부 스킬은 LICENSE 파일을 함께 둬야 합니다.',
+    'stray: 분류되지 않은 스킬입니다 — SKILL_DISTRIBUTION 에 project·repository-only·external 중 하나로 적으십시오.',
+    'missing: 생성물로 복사할 project 스킬이 없습니다.',
+  ]);
+  // 표기와 LICENSE 를 갖추면 같은 외부 스킬이 통과한다.
+  const licensed = { ...synthetic, '.agent/skills/outside/SKILL.md': '---\nname: outside\nsource: a/b\nlicense: MIT\n---\n', '.agent/skills/outside/LICENSE.txt': 'MIT' };
+  assert.deepEqual(skillDistributionViolations(Object.keys(licensed), file => licensed[file], distribution).filter(message => message.startsWith('outside:')), []);
 });
 
 /*
