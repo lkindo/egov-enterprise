@@ -104,7 +104,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
 | [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
-| [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차와 복원 검증 4단계 (주기·RTO/RPO 는 미결정) |
+| [backup-and-restore-runbook.md](04-operations/backup-and-restore-runbook.md) | DB·첨부 실물·암호화 키를 한 세트로 백업/복원하는 절차, 복원 확인, 주기·보존·RTO/RPO 의 템플릿 권장 시작값, 복원 훈련 도구와 기록 양식(실제 값·증거는 기관 몫) |
 | [durable-work-recovery.md](04-operations/durable-work-recovery.md) | 후속 작업 상태·시도 한도·감사와 결속한 재처리, 교체 파일 보호와 중단 후 재개 |
 | [sms-provider-operations.md](04-operations/sms-provider-operations.md) | SENS 설정, 접수·최종 전달 구분과 불확실한 발송의 재전송 방지 |
 | [mfa-operations.md](04-operations/mfa-operations.md) | TOTP 등록·로그인·분실 복구, 키 설정·백업, 세션 폐기·감사와 보호계정 단계 적용 경계 |

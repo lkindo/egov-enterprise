@@ -1,8 +1,8 @@
 # 백업·복원 런북
 
-> 이 문서는 **절차**다. 실제 백업이 존재하는지, 복원이 성공하는지는 저장소가 증명할 수 없다
-> (GAP-OPS-002 `blocked-external`). 아래 절차를 승인된 격리 환경에서 실행하고 그 결과를
-> 안전한 채널에 남긴 뒤에야 "백업이 있다"고 말할 수 있다.
+> 이 문서는 **절차와 템플릿 권장 시작값**이다. 실제 백업이 존재하는지, 복원이 성공하는지는 저장소가 증명할 수 없다 —
+> 그 증거는 기관 승인 통제 `backup-recovery`의 몫이다([DEC-OPS-107](../archived/operational-decisions-history.md#dec-ops-107)로
+> GAP-OPS-002에서 이전). 아래 절차를 승인된 격리 환경에서 실행하고 §5.3 양식으로 기록한 뒤에야 "백업이 있다"고 말할 수 있다.
 
 > **지원 경계:** 현재 공식 Compose·`scripts/deploy.sh`·이 런북은 `db` 서비스로 함께 기동하는
 > **번들 PostgreSQL 전용**이다. RDS 등 관리형 DB는 DB 단계만 임의로 건너뛰지 않는다. 그러면
@@ -251,13 +251,26 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
   -v "${ATTACHMENT_VOLUME}:/data:ro" "$API_IMAGE_REF" \
   -c 'tar czf - -C /data .' > "$BACKUP_TMP/files.tar.gz"
 
-# 4) 스키마 버전과 비밀값이 아닌 키 식별자를 함께 기록한다.
+# 4) 스키마 버전, 비밀값이 아닌 키 식별자, 표마다의 행 수를 함께 기록한다.
 #    ALGORITHM_KEY_ID는 KMS/비밀관리자의 key-id 또는 version이며 실제 ALGORITHM_KEY가 아니다.
+#    반복 마이그레이션(R__)의 이력 행은 version이 NULL이라 버전 질의에서 뺀다 — 마지막 배포가 R__를 다시
+#    적용했으면 빼지 않은 질의는 빈 줄을 기록한다.
+#    행 수는 복원(§3)과 복원 훈련(§5.1)이 복원의 완전성을 대조하는 기준이다. 앱을 멈춘 뒤라 덤프와 같은 상태다.
 : "${ALGORITHM_KEY_ID:?현재 ALGORITHM_KEY의 비밀이 아닌 key-id/version을 설정하십시오}"
 "${COMPOSE[@]}" exec -T db sh -c \
   'exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc \
-  "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"' \
+  "SELECT version FROM flyway_schema_history WHERE success AND version IS NOT NULL ORDER BY installed_rank DESC LIMIT 1"' \
   > "$BACKUP_TMP/schema-version.txt"
+test -s "$BACKUP_TMP/schema-version.txt"
+"${COMPOSE[@]}" exec -T db sh -c \
+  'exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' \
+  > "$BACKUP_TMP/table-counts.tsv" <<'TABLE_COUNTS_SQL'
+SELECT table_name || E'\t' || (xpath('/row/c/text()', query_to_xml(
+         format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text
+  FROM information_schema.tables
+ WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ ORDER BY table_name;
+TABLE_COUNTS_SQL
 
 # 5) 같은 백업 세트임을 증명할 manifest와 checksum을 만든다. 키 원문은 어느 파일에도 쓰지 않는다.
 {
@@ -271,7 +284,7 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
 } > "$BACKUP_TMP/manifest.txt"
 (
   cd "$BACKUP_TMP"
-  sha256sum db.dump files.tar.gz schema-version.txt manifest.txt > sha256.txt
+  sha256sum db.dump files.tar.gz schema-version.txt manifest.txt table-counts.tsv > sha256.txt
   sha256sum -c sha256.txt
 )
 
@@ -310,7 +323,7 @@ esac
 BACKUP_DIR="backup-${STAMP}"
 
 # 1) 기존 상태를 지우기 전에 백업 세트의 존재·checksum·형식을 모두 검증한다.
-for file in db.dump files.tar.gz schema-version.txt manifest.txt sha256.txt; do
+for file in db.dump files.tar.gz schema-version.txt manifest.txt table-counts.tsv sha256.txt; do
   file="$BACKUP_DIR/$file"
   test -s "$file"
 done
@@ -379,12 +392,26 @@ docker run --rm --network none -i --entrypoint sh "$API_IMAGE_REF" \
 
 # 3) 백업 이후 생긴 객체가 남지 않도록 대상 DB를 새로 만든 뒤 복원한다.
 #    이 단계는 대상 DB 전체를 교체하므로 승인된 점검 창과 직전 백업이 필수다.
+#    --exit-on-error 는 첫 오류에서 멈춘다. 없으면 나머지를 계속 복원한 뒤에야 실패를 알린다.
 "${COMPOSE[@]}" up -d --wait db
 "${COMPOSE[@]}" exec -T db sh -c \
   'dropdb -U "$POSTGRES_USER" --maintenance-db=postgres --if-exists --force "$POSTGRES_DB" && \
    createdb -U "$POSTGRES_USER" --maintenance-db=postgres --owner="$POSTGRES_USER" --template=template0 "$POSTGRES_DB" && \
-   exec pg_restore --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+   exec pg_restore --exit-on-error --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
   < "$BACKUP_DIR/db.dump"
+
+# 3-1) 앱을 띄우기 전에 표마다의 행 수가 백업 시점 기록과 같은지 본다. 앱이 뜨면 로그인·정기 작업이 행을 바꾼다.
+#      다르면 diff 가 다른 줄을 보이고 여기서 멈춘다(앱은 아직 내려가 있다).
+RESTORED_COUNTS=$("${COMPOSE[@]}" exec -T db sh -c \
+  'exec psql -X -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At' <<'TABLE_COUNTS_SQL'
+SELECT table_name || E'\t' || (xpath('/row/c/text()', query_to_xml(
+         format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text
+  FROM information_schema.tables
+ WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ ORDER BY table_name;
+TABLE_COUNTS_SQL
+)
+diff "$BACKUP_DIR/table-counts.tsv" <(printf '%s\n' "$RESTORED_COUNTS")
 
 # 4) 첨부 파일 복원. 확정한 단일 볼륨의 기존 내용(숨김 파일 포함)을 지운 뒤 푼다.
 docker run --rm --network none --user 0:0 --entrypoint sh \
@@ -415,8 +442,10 @@ docker run --rm --network none --user 0:0 --entrypoint sh \
 `./gradlew :api-server:schemaValidationTest --tests '*BackupRestoreDrillIntegrationTest'`는
 운영 접속정보를 읽지 않고 독립 PostgreSQL 17 컨테이너 두 개를 만든다. 전체 Flyway 적용 DB의
 `pg_dump` → `pg_restore`, 첨부 archive 복원, 동일 ARIA 키 복호화·다른 키 거부를 검사한다.
-테이블별 행수·첨부 참조·실물 내용·미검증 제약도 대조한다. 실행 시간과 범위는
+테이블별 행수·첨부 참조·실물 내용·미검증 제약도 대조한다. 복원본에 감사 원장 수정 금지 트리거(V2_132) 3개가
+활성으로 남고 권한 변경 이력의 수정이 거부되는지도 본다. 실행 시간과 범위는
 `api-server/build/reports/restore-drill/result.json`에 남고 원시 dump는 임시 경로에서 정리한다.
+이 시험은 CI가 합성 데이터로 만든 덤프의 왕복을 본다. 실제 백업 세트를 복원해 보는 것은 §5.1의 훈련 도구다.
 
 2026-09-09 Flyway 2.96 시점 재실행은 82개 테이블(이력 테이블 포함)·17,188행을 대조했고, 백업 0.498초,
 복원·검증 1.266초, 백업 시점 대비 누락 0행이었다. 이는 합성 데이터의 구성 요소 복구 검증이다.
@@ -482,31 +511,140 @@ dump·키·쿠키·사용자 값은 공개 결과에 넣지 않는다. 측정 �
 이후 화면 변경의 검증이나 운영 복구 승인으로 확대하지 않는다. 원본 bounded 결과는
 `.agent/temp/egov-release-smoke-7DH3Tt/result.json`, 로컬 검토용 사본은 `build/goal-evidence/green/historical-upgrade-rollback.json`이다.
 
-## 4. 주기·보존·RTO/RPO — **미결정**
+## 4. 주기·보존·RTO/RPO — 템플릿 권장 시작값
 
-이 문서는 절차만 정한다. 아래 값은 이 저장소가 정할 수 없다.
+이 절의 값은 **기관이 바꿔 쓰는 시작값**이다. 합의된 목표가 아니다. 기관이 자기 데이터 규모·업무 중요도·인프라로
+값을 정하고 결정 주체와 함께 `backup-recovery` 근거 파일(§5.3)에 기록해야 목표가 된다. 그래서 값마다 근거와
+바꿀 때 보는 기준을 함께 적는다 — 근거 없이 숫자만 옮기면 그 숫자가 합의된 목표처럼 읽히고, 실제 사고 때
+아무도 그 값을 지키기로 한 적이 없다는 사실이 드러난다.
 
-| 항목 | 상태 | 결정 주체 |
+### 4.1 저장소가 주는 것과 비어 있는 것
+
+| 영역 | 저장소가 주는 것 | 비어 있는 것(기관 몫) |
 |---|---|---|
-| 백업 주기 | 미결정 | 운영 관리자 |
-| 보존 기간·세대 수 | 미결정 | 운영 관리자 |
-| RTO(복구 목표 시간) | 미결정 | 사용자/운영 관리자 |
-| RPO(허용 데이터 손실) | 미결정 | 사용자/운영 관리자 |
-| 백업 보관 위치·암호화 | 미결정 | 보안 담당 |
+| DB·첨부 백업 | §2 절차 — 앱을 멈춘 한 시점에 `pg_dump -Fc`·첨부 볼륨 tar·manifest·스키마 버전·행 수·SHA-256 을 한 세트로 받는다 | 실행 일정(cron 등)·성공 감시·보관 위치·백업 파일 암호화 |
+| 암호화 키 | manifest 에 비밀이 아닌 key-id 만 결속한다 | 키 자체의 보관·복구(비밀 관리 체계) |
+| 복원 | §3 절차(번들 PostgreSQL 전용, 외부 `DB_URL` 은 거부) | 관리형 DB·스토리지 스냅숏 절차 |
+| 복구 검증 | §3 의 행 수 대조와 확인 4가지, §5.1 훈련 도구, CI 의 합성 복구 시험과 릴리스 복구 smoke(위 "격리 복원 자동 검증") | 운영 규모 훈련 기록과 실측 시간 |
+| 마이그레이션·이관 전 백업 | [이관 런북](migration-recovery-runbook.md)·[인가 전환 런북](authorization-cutover-runbook.md)이 직전 백업 세트를 전제로 한다 | 그 백업의 실행·기록 |
+| PITR(WAL 보관) | 없다 — compose 의 PostgreSQL 에 `archive_mode` 설정이 없고 §3 은 덤프 복원만 다룬다 | 필요하면 보관소·복원 런북과 함께 설계·승인 |
+| 주기·보존·RTO/RPO | 아래 4.2 시작값 | 실제 값의 결정·승인 |
 
-**값을 지어내지 않는다.** 근거 없이 "일 1회, 30일 보존" 을 적으면 그 숫자가 합의된 목표처럼
-읽히고, 실제 사고 때 아무도 그 값을 지키기로 한 적이 없다는 사실이 드러난다.
-결정되면 [pending-decisions.md](pending-decisions.md) 를 거쳐 이 표를 채운다.
+### 4.2 권장 시작값
+
+전제: 번들 PostgreSQL 한 대와 첨부 볼륨이 한 호스트에 있고, 덤프가 수십 GB 이하이며, 업무시간에 운영하고
+야간에 몇 분 멈춰도 되는 내부 업무 시스템이다. 전제가 다르면 값보다 수단(아래 PITR·대기 복제본)을 먼저 다시 고른다.
+
+| 항목 | 권장 시작값 | 근거 | 바꿀 때의 판단 기준 |
+|---|---|---|---|
+| 전체 백업 주기 | 매일 1회, 02:00 Asia/Seoul 에 §2 실행 | §2 는 DB 와 첨부를 한 시점으로 묶으려고 앱을 멈춘다. 02:00 은 앱 정기 작업(첨부 점검 03:15, 로그 파기 04:00, 알림 파기 04:30 — 모두 Asia/Seoul)과 겹치지 않는다. 앱이 멈춘 동안 시각이 지난 정기 작업은 그날 건너뛴다 | §2 실행 시간(앱 중지 시간)이 업무가 허용하는 중지 시간을 넘거나 하루치 손실(아래 RPO)을 감당할 수 없으면 PITR 로 넘어간다 |
+| 성공 감시 | 매일 업무 시작 전에 새 `backup-*` 가 생겼고 `sha256sum -c` 가 통과했는지 보고, 아니면 경보 | 감시가 없으면 실패한 백업을 복원할 때 처음 안다 — RPO 가 조용히 늘어난다 | 경보 경로는 기관 관측 체계([관측성 기본값](observability-baseline.md))에 맞춘다 |
+| 보존 | 일일 14세대 + 매주 일요일분 8세대(약 2개월) | 잘못된 관리 작업·결함 배포 같은 논리 손상은 장애처럼 바로 드러나지 않는다 — 발견까지보다 오래 보존해야 손상 전 시점이 남는다. 일일 14세대는 아래 주 1회 도구 훈련이 백업 고장을 늦어도 7일 안에 찾을 때 그 앞의 성공 백업이 아직 남게 하는 길이다(7 < 14). 주간 8세대는 월 단위 업무(월말 마감) 뒤에 드러나는 손상을 덮는다. 보관량은 백업 세트 크기의 22배를 넘지 않는다(최근 일요일분은 일일 세대와 겹친다) | 늘리는 쪽은 법정 보존 의무와 늦게 발견되는 손상이다. 줄이는 쪽은 개인정보 파기다 — 앱에서 지운 행도 백업에는 보존 기간만큼 남으므로 백업 보존 기간을 내부관리계획에 적고, 로그 보존 기본값(24개월, [로그 보존 정책](log-retention-policy.md))보다 길게 두지 않는다 |
+| 보관 위치 | 운영 호스트 밖 1곳(다른 서버·스토리지) + 바꾸거나 지울 수 없는 사본 1곳(오프라인 매체나 객체 잠금) | 같은 호스트의 백업은 호스트 장애·랜섬웨어와 함께 사라진다(3-2-1 원칙) | 기관 보안 정책과 망 분리 규정 |
+| 백업 파일 암호화 | 저장할 때 암호화하고, 그 키는 `ALGORITHM_KEY` 와 다른 곳에 둔다 | 덤프에는 이름·연락처 같은 평문 개인정보와 접근 기록이 있다(주민등록번호만 `ALGORITHM_KEY` 로 암호화돼 있다). 두 키를 한곳에 두면 한 번의 유출로 둘 다 풀린다 | 법적 판단은 기관 개인정보 보호책임자가 한다 |
+| RPO | 일일 백업만이면 최대 24시간(실패한 백업을 다음 날 알면 48시간) | 복구 지점은 마지막으로 성공한 백업이다 | 하루치 입력을 다시 받을 수 없으면 PITR |
+| PITR(WAL 보관) | 기본은 쓰지 않는다. 쓸 때 시작값은 `archive_mode=on`, `archive_timeout=300`, 기준 백업(`pg_basebackup`) 주 1회이고, WAL 은 보존 중인 가장 오래된 기준 백업 이후 전부를 둔다(기준 백업 2세대, 약 14일) | 템플릿은 WAL 보관소를 줄 수 없다. 보관소 없이 켜서 `archive_command` 가 실패하면 PostgreSQL 이 WAL 을 지우지 못해 디스크가 차고 DB 가 멈춘다. `archive_timeout=300` 이면 쓰기가 있는 동안 5분마다 16MB 세그먼트를 닫아 RPO 가 약 5분과 전송 지연이 된다(하루 최대 288개, 압축 전 약 4.6GB) | RPO 목표, 보관소 비용·전송 대역. §3 은 PITR 복원을 다루지 않으므로 켜기 전에 별도 복원 런북을 승인한다 |
+| PITR 의 첨부 | 첨부는 삭제를 전파하지 않는 누적 사본(예: 1시간마다)으로 두고, 복구 시점 T 보다 늦게 끝난 사본으로 복원한다 | 저장 파일명은 업로드마다 새 UUID 이고 같은 이름을 덮어쓰지 않는다(`CREATE_NEW`). 그래서 T 의 DB 가 가리키는 파일은 모두 T 전에 쓰였고, T 뒤에 끝난 누적 사본에는 T 뒤에 지운 파일까지 남아 있다. T 뒤에 올라온 파일은 고아 후보로 남는데 첨부 점검은 보고만 하고 지우지 않는다 | 객체 저장소의 버전 관리를 쓰면 그 시점 복원으로 대신한다 |
+| RTO | 시작 목표 4시간(업무시간 장애, 덤프 10GB 안팎). 목표는 "훈련 실측 × 2 + 인지·결정 시간" 이상이어야 한다 | 복구 시간 = 인지·복원 결정 + 호스트·이미지 준비 + 백업 세트 전송·검증 + `pg_restore` + 첨부 풀기 + 기동·확인이다. 저장소가 잴 수 있는 것은 복원·검증 구간(§5.1 도구 실측)뿐이고 나머지는 §5.2 전체 훈련이 잰다. × 2 는 실제 장애의 경합·긴장·처음 하는 운영자를 위한 여유다 | 실측 × 2 가 목표를 넘으면 목표를 늘리거나 수단(대기 복제본·스토리지 스냅숏)을 바꾼다. 야간·휴일 대응 체계가 없으면 인지 시간을 다음 업무 시작까지로 잡는다 |
+| 훈련 주기 | 도구 훈련(§5.1)은 주 1회 최신 백업, 전체 훈련(§5.2)은 분기 1회와 큰 스키마 변경·업그레이드 직전 | 주 1회면 백업 고장을 늦어도 7일 안에 찾는다(보존 14세대 안). 전체 훈련은 이미지·키·네트워크까지 보므로 비용이 커 분기로 둔다 | 백업 형식·스키마가 자주 바뀌면 전체 훈련을 그 변경마다 한다 |
+| 복구 판정 기준 | §5.1 확인이 모두 PASS(행 수 같음, 첨부 실물 부재·크기 차이 0, 감사 원장 트리거 활성, Flyway validate 통과) + §3 확인 4가지 + 전체 소요가 RTO 안 | 하나라도 빠지면 "복원했다"가 아니라 "일부를 되살렸다"다. 고아 후보는 실패가 아니지만 건수를 기록한다 | 기관이 확인 항목을 더할 수는 있어도, 뺄 때는 사유를 기록한다 |
+
+### 4.3 기관이 정하고 기록할 것
+
+| 항목 | 결정 주체 | 기록 위치 |
+|---|---|---|
+| 백업 주기·시각 | 운영 관리자 | `backup-recovery` 근거 파일(§5.3) |
+| 보존 기간·세대 수 | 운영 관리자·개인정보 보호책임자 | 같은 곳과 내부관리계획 |
+| RTO·RPO | 사용자(업무 소유자)·운영 관리자 | 같은 곳 |
+| 보관 위치·암호화 | 보안 담당 | 같은 곳(위치는 식별자만, 경로·자격은 적지 않는다) |
+| PITR 여부 | 운영 관리자 | 같은 곳, 쓰면 별도 복원 런북 |
+
+결정은 원본 저장소의 결정 대기 레지스트리가 아니라 기관 승인 원장(`config/governance/adoption-review.json`)과 그
+근거 파일로 남는다([검토 수명 가이드](../03-guides/governance-review-lifecycle.md#3-온라인-제품의-기관-도입)).
 
 ## 5. 정기 복원 훈련
 
-백업은 **복원해 본 적이 있을 때만** 백업이다. 다음을 만족하는 훈련 기록이 없으면
-GAP-OPS-002 는 계속 열려 있다.
+백업은 **복원해 본 적이 있을 때만** 백업이다. 훈련은 두 단계이고, 그 기록(§5.3)이 없으면 기관 `backup-recovery`
+통제를 승인할 수 없다.
 
-- 운영과 격리된 환경에서 위 3장을 처음부터 끝까지 실행했다.
-- 4장의 확인 4가지를 모두 통과했다.
-- 소요 시간을 측정했고, 그 값이 합의된 RTO 안이다.
-- 실행자·일시·백업 태그·결과를 안전한 채널에 남겼다(저장소에는 남기지 않는다).
+### 5.1 도구 훈련 — DB·첨부 구성 요소
+
+운영과 떨어진 훈련 호스트(Docker 필요)에서 백업 세트 하나를 지정해 실행한다. 마이그레이션 폴더는 백업 manifest 의
+`release_revision` 을 체크아웃한 것을 쓴다.
+
+```bash
+node scripts/restore-drill.mjs --backup-dir /secure/restore-drill/backup-YYYYMMDDThhmmssZ \
+  --migrations <release_revision 체크아웃>/api-server/src/main/resources/db/migration
+```
+
+[훈련 도구](../../scripts/restore-drill.mjs)는 운영 DB·볼륨·`.env` 를 읽지 않는다. compose 의 `db` 와 같은 PostgreSQL
+digest 로 일회용 컨테이너를 내부 전용 네트워크·전용 볼륨에 만들고, 호스트 포트를 열지 않으며, 끝나면 실행 라벨로
+찾아 지운다. 비밀번호는 실행마다 새로 만든다. 결과는 `.agent/temp/restore-drill-<실행 id>/result.json`(또는
+`--output`)에 남고 건수·해시·시간·확인 결과만 담는다 — 덤프 값·키·도구의 원문 출력은 담지 않는다(`--verbose` 는
+콘솔에만 쓴다). 하나라도 실패하면 종료 코드 1 이다. 앱 이미지를 띄우지 않으므로 PII 복호화·로그인·화면의 첨부
+점검은 §5.2 몫이다. 첨부 저장소 접두가 기본(`uploads` — 볼륨 `/app/storage` 아래 `file.upload.path`)과 다르면
+`--storage-prefix` 로 준다.
+
+#### 훈련 도구의 확인 항목
+
+| 확인 | 하는 일 | 실패 기준 |
+|---|---|---|
+| `backup-set` | 다섯 파일을 `sha256.txt` 와 대조하고 manifest·스키마 버전·행 수 기록의 형식을 본다 | 파일 누락·빈 파일·SHA-256 불일치·형식 오류. `table-counts.tsv` 가 없는 이전 절차의 백업도 여기서 멈춘다 — 행 수 기준이 없으면 복원이 완전한지 판정할 수 없다 |
+| `db-restore` | `pg_restore --list` 로 목록을 읽고 §3 과 같은 `--exit-on-error --no-owner --no-acl` 로 일회용 DB 에 복원한다 | 목록을 읽지 못하거나 복원 중 첫 오류 |
+| `flyway-validate` | 앱과 같은 Flyway 12.4.0 으로 복원본의 이력을 마이그레이션 폴더와 대조한다 | 체크섬 불일치·적용 안 된 마이그레이션·실패 이력 |
+| `schema-version` | 복원본의 최신 적용 버전(§2 의 질의)이 `schema-version.txt` 와 같은지 본다 | 다른 버전 |
+| `table-counts` | `public` 의 모든 기본 표 행 수를 §2 와 같은 질의로 세어 `table-counts.tsv` 와 대조한다 | 표가 없거나 늘었거나 행 수가 하나라도 다름 |
+| `core-tables` | 시드가 채우는 핵심 표(이력·사용자·권한·메뉴·공통코드)가 비어 있지 않은지 본다 | 비어 있음 — 다른 DB 를 백업했거나 복원이 비었다 |
+| `audit-ledger` | 마이그레이션이 `fn_adt_log_chg_prhb` 로 거는 감사 원장 트리거(V2_132)가 복원본에 활성 상태로 있는지 보고, 행이 있는 원장마다 수정·삭제가 거부되는지 되돌리는 트랜잭션 안에서 시험한다 | 트리거 없음·비활성·종류 다름, 또는 수정·삭제가 통과 |
+| `attachments` | 첨부 tar 를 풀어 `tb_file_detail` 의 메타가 가리키는 실물(`<접두>/<file_strg_path>/<strg_file_nm>`)과 크기(`file_sz`)를 대조하고, `general/` 아래 메타 없는 실물을 고아 후보로 센다 | 실물 부재·크기 차이. 고아 후보는 실패가 아니라 보고다(커밋 전 업로드와 구별할 수 없다) |
+| `cleanup` | 이 실행이 만든 컨테이너·볼륨·네트워크를 실행 라벨로 찾아 지우고 남은 수를 센다 | 남은 자원이 있거나 목록을 읽지 못함(0 으로 단정하지 않는다) |
+
+[계약](../../scripts/restore-drill.test.mjs)이 이 표의 확인 목록, §2·§3 의 행 수·스키마 버전 질의, 백업 세트
+파일 목록과 복원 선택지를 도구와 대조한다. 한쪽만 바꾸면 운영 계약이 붉어진다.
+
+도구 자체는 합성 백업 세트로 점검한다. `node scripts/restore-drill.mjs --synthetic-backup <새 디렉터리>` 가 현재
+마이그레이션(인가 Contract 포함)으로 만든 DB 에 합성 첨부 2건·감사 원장 행 2건·고아 후보 1건을 넣어 §2 와 같은 다섯 파일과
+`sha256.txt` 를 만든다. manifest 의 `fixture=synthetic` 이 결과의 `backup.synthetic: true` 로 남아 운영 백업으로
+오인되지 않는다.
+
+2026-10-19 로컬 실행(스키마 2.134, 표 93개·18,490행)에서 합성 세트는 9개 확인을 모두 통과했다(세 번 실행, `pg_restore`
+약 4초, 전체 약 18~24초, 남은 자원 0). 의도적 위반 여섯 가지는 각각 의도한 확인에서 실패했다 — 덤프 1바이트
+변조(`backup-set`), `table-counts.tsv` 없는 이전 형식(`backup-set`), 행 수 기록 변조(`table-counts`), 첨부 실물
+1건 제거(`attachments`), 감사 원장 트리거 1개 제거(`audit-ledger`, 그 원장의 수정·삭제도 통과), 마이그레이션 파일
+한 줄 추가(`flyway-validate`, 체크섬 불일치). 작은 합성 데이터의 로컬 관측이며 운영 규모 복원 시간이나 RTO 의
+증거가 아니다.
+
+### 5.2 전체 훈련 — 앱까지
+
+- 운영과 격리된 환경에서 §3 을 처음부터 끝까지 실행한다(이미지 pull 부터 앱 기동까지).
+- §3 의 행 수 대조(3-1)와 "복원 직후 반드시 확인할 것" 4가지를 모두 통과한다.
+- 장애 인지부터 확인 완료까지의 시간을 재고 합의 RTO 안인지 본다.
+
+### 5.3 결과 기록 양식
+
+기관 `backup-recovery` 통제의 근거 파일로 쓴다(승인 원장의 `evidence` 가 이 파일의 경로·SHA-256 을 가리킨다).
+비밀값·접속 정보·개인정보·백업 파일 경로는 적지 않는다. 도구의 `result.json` 과 원문 로그는 기관의 안전한 보관
+경로에 두고, 이 기록에는 그 SHA-256 만 남긴다.
+
+```markdown
+# 복원 훈련 기록 — <environmentId> <YYYY-MM-DD>
+
+- 훈련 종류: 도구 훈련(§5.1) | 전체 훈련(§5.2)
+- 실행자(역할)·검토자(역할):
+- 시작·끝(UTC):
+- 백업 세트: stamp, release_revision, db.dump·files.tar.gz SHA-256, 백업 시각(UTC)
+- 백업 보관 위치: 식별자만(경로·자격 금지)
+- 훈련 환경: 호스트 식별자, PostgreSQL 이미지 digest, 마이그레이션 폴더의 커밋
+- 도구 결과: result.json SHA-256, status, 확인별 결과(backup-set … cleanup)
+- 행 수: 표·행 수, 차이 0 여부
+- 첨부: 메타 건수, 실물 부재·크기 차이 건수, 고아 후보 건수와 판단
+- 감사 원장: 트리거 활성, 수정·삭제 거부(빈 원장은 카탈로그만)
+- 전체 훈련만: 앱 기동, PII 복호화, 첨부 정합 점검, 로그인 결과
+- 소요 시간: 복원·검증 / 전체 / 합의 RTO → 안 | 밖
+- 데이터 손실 관점: 백업 시각과 가정한 장애 시각의 간격(합의 RPO 대비)
+- 적용한 시작값과 바꾼 값·그 사유(§4.2):
+- 후속 조치와 담당:
+```
 
 ## 관련 문서
 

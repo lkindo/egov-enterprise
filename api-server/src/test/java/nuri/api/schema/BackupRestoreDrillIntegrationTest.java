@@ -66,6 +66,10 @@ class BackupRestoreDrillIntegrationTest {
                 update.setString(1, encrypted);
                 assertThat(update.executeUpdate()).isEqualTo(1);
             }
+            assertThat(statement.executeUpdate("""
+                    INSERT INTO tb_sys_adt_log (dmnd_idntfr, prcs_stts_nm, job_nm, adt_cn, adt_dt, frst_rgtr_id, crt_dt)
+                    VALUES ('restore-drill-probe', 'ATTEMPTED', 'RESTORE_DRILL', 'synthetic restore probe', now(), 'SYSTEM', now())
+                    """)).isEqualTo(1);
             before = tableCounts(source);
         }
         SOURCE.execInContainer("mkdir", "-p", "/tmp/drill-attachments");
@@ -105,6 +109,21 @@ class BackupRestoreDrillIntegrationTest {
                     assertThat(rows.next()).isTrue();
                     assertThat(rows.getLong(1)).isZero();
                 }
+                // V2_132 의 감사 원장 보호는 덤프의 post-data 절로 복원된다. 빠지면 복원본의 감사 행을 고칠 수 있다.
+                // tgtype 27 = BEFORE | ROW | DELETE | UPDATE, tgenabled 'O' = 일반 세션에서 발화.
+                try (var rows = statement.executeQuery("""
+                        SELECT count(*) FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid
+                        WHERE NOT t.tgisinternal AND p.proname = 'fn_adt_log_chg_prhb' AND t.tgenabled = 'O' AND t.tgtype = 27
+                          AND t.tgrelid IN ('tb_sys_adt_log'::regclass, 'tb_authrt_chg_hstry'::regclass, 'tb_privacy_log'::regclass)
+                        """)) {
+                    assertThat(rows.next()).isTrue();
+                    assertThat(rows.getLong(1)).as("감사 원장 수정 금지 트리거가 복원 뒤에도 활성이어야 한다").isEqualTo(3);
+                }
+                assertThatThrownBy(() -> statement.executeUpdate(
+                        "UPDATE tb_sys_adt_log SET adt_cn = adt_cn WHERE dmnd_idntfr = 'restore-drill-probe'"))
+                        .as("복원본의 감사 원장 행도 수정을 거부해야 한다")
+                        .isInstanceOfSatisfying(java.sql.SQLException.class,
+                                rejected -> assertThat(rejected.getSQLState()).isEqualTo("23001"));
             }
             byte[] restoredFile = RESTORED.copyFileFromContainer("/tmp/drill-attachments/restore-probe.txt", input -> input.readAllBytes());
             assertThat(restoredFile).isEqualTo(attachment);
