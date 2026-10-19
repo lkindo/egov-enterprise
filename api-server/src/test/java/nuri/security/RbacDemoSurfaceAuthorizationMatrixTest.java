@@ -132,13 +132,24 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
             org.assertj.core.api.Assertions.assertThat(id).matches("[1-9][0-9]*");
         }
         String path = surface.path() + "/" + id;
-        var stored = assertStoredName(surface, path, "RBAC initial");
+        assertStoredName(surface, path, "RBAC initial");
 
         // [2026-10-19 DEC-OPS-359] 버전을 둔 표면은 읽은 버전을 수정 요청에 함께 보낸다 — 없으면 400, 다르면 409 다.
+        //   생성기 투영(project-composer-source.mjs)이 관리 표면 전용 메서드를 이름으로 걷으므로 새 메서드를 두지 않고 여기서 읽는다.
+        var versionReader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
+        var stored = objectMapper.readTree(mockMvc.perform(surface.prefix().equals("REWARD")
+                        ? get(surface.path()).param("name", "RBAC initial").with(user(versionReader))
+                        : get(path).with(user(versionReader)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString())
+                .at(surface.prefix().equals("REWARD") ? "/data/list/0" : "/data");
+        var updateBody = (tools.jackson.databind.node.ObjectNode) objectMapper.readTree(surface.body("RBAC updated"));
+        if (stored.hasNonNull("version")) {
+            updateBody.put("version", stored.get("version").asInt());
+        }
         mockMvc.perform(put(path)
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_editor", List.of("CONTENT_OPERATORS"),
                                 List.of(surface.prefix() + "_UPDATE"))))
-                        .contentType(MediaType.APPLICATION_JSON).content(updateBody(surface, stored)))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(updateBody)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         assertStoredName(surface, path, "RBAC updated");
 
@@ -156,27 +167,16 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
         }
     }
 
-    /** 저장된 이름을 확인하고 그 행(JSON)을 돌려준다 — 수정 요청이 그 행의 버전을 싣는다. */
-    private tools.jackson.databind.JsonNode assertStoredName(ManagedSurface surface, String path, String name)
-            throws Exception {
+    private void assertStoredName(ManagedSurface surface, String path, String name) throws Exception {
         var reader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
         if (surface.prefix().equals("REWARD")) {
-            var result = mockMvc.perform(get(surface.path()).param("name", name).with(user(reader)))
+            mockMvc.perform(get(surface.path()).param("name", name).with(user(reader)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1))
-                    .andExpect(jsonPath("$.data.list[0]." + surface.nameField()).value(name)).andReturn();
-            return objectMapper.readTree(result.getResponse().getContentAsString()).at("/data/list/0");
+                    .andExpect(jsonPath("$.data.list[0]." + surface.nameField()).value(name));
+        } else {
+            mockMvc.perform(get(path).with(user(reader)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.data." + surface.nameField()).value(name));
         }
-        var result = mockMvc.perform(get(path).with(user(reader)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data." + surface.nameField()).value(name)).andReturn();
-        return objectMapper.readTree(result.getResponse().getContentAsString()).at("/data");
-    }
-
-    private String updateBody(ManagedSurface surface, tools.jackson.databind.JsonNode stored) throws Exception {
-        var body = (tools.jackson.databind.node.ObjectNode) objectMapper.readTree(surface.body("RBAC updated"));
-        if (stored.hasNonNull("version")) {
-            body.put("version", stored.get("version").asInt());
-        }
-        return objectMapper.writeValueAsString(body);
     }
 
     static Stream<ManagedSurface> managementSurfaces() {
