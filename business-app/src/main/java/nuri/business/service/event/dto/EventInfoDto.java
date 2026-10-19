@@ -65,14 +65,7 @@ public class EventInfoDto {
     @Size(max = 12)
     private String evntTypeCd;
 
-    @Schema(description = "승인 여부. 신규는 N이며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.", example = "Y")
-    @Size(max = 1)
-    private String evntAprvYn;
-
-    @Schema(description = "승인 일자. 신규는 없으며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.", example = "20260525")
-    @Size(max = 8)
-    @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
-    private String evntAprvYmd;
+    // [2026-10-19] 승인 여부·승인일(evntAprvYn·evntAprvYmd)을 걷었다 — 행사 승인 처리 흐름이 제품에 없어 늘 대기·빈값이었다.
 
     @Schema(description = "최초 등록자 ID", example = "webmaster")
     private String frstRgtrId;

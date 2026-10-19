@@ -74,8 +74,11 @@ class EntityTableOwnershipLinterTest {
     //   테이블 처분은 다음 릴리스의 별도 승인 경계다(tb_indv_pg_conts 선례). 매핑 없는 테이블이 하나 더 생긴 상태다.
     // V2_129(결재 동선 개선 D2): 나의 결재선 ApprovalSavedLine → tb_ifml_atrz_indv_apln, 결재선 행
     //   ApprovalSavedLineApprover → tb_ifml_atrz_indv_apln_dtl. 둘 다 수정되므로(덮어쓰기) 감사 4종(BaseEntity)이다. 87 → 89 / 86 → 88.
-    private static final int EXPECTED_ENTITY_COUNT = 89;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 88;
+    // [2026-10-19 보고서 통계 퇴역] ReprtStats 엔티티(tb_rptp_stats)를 걷었다. 89 → 88 / 88 → 87. 등록 경로가 자기 단위 시험뿐이라
+    //   조회 탭은 늘 비어 있었고, 탭·조회 API·메뉴(V2_134)와 함께 엔티티를 쓰는 코드가 남지 않았다. ⚠ **물리 테이블 tb_rptp_stats
+    //   는 남는다**(tb_prgrm_lst 선례) — 매핑 없는 테이블이 하나 더 생긴 상태다. 처분은 별도 승인 경계다.
+    private static final int EXPECTED_ENTITY_COUNT = 88;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 87;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");

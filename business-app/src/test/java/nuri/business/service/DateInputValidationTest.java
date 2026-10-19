@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DateInputValidationTest {
     private static final Map<Class<?>, List<String>> DATES = Map.of(
             ScheduleDto.class, List.of("schdlBgngYmd", "schdlEndYmd"),
-            EventInfoDto.class, List.of("evntBgngYmd", "evntEndYmd", "evntAprvYmd"),
+            EventInfoDto.class, List.of("evntBgngYmd", "evntEndYmd"),
             SurveyInfoDto.class, List.of("srvyBgngYmd", "srvyEndYmd"),
             OnlinePollManageRequest.class, List.of("pollBgngYmd", "pollEndYmd"),
             WorkReportDto.class, List.of("rptYmd"),

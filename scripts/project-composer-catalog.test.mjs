@@ -166,10 +166,11 @@ test('all producer domains and tables have one verified ownership or an explicit
   // Phase 2 기능 분할(DEC-OPS-273): 행사·포상을 나누고(19 -> 20) 커뮤니티·배너와 팝업·시연 화면을 나눴다(20 -> 22).
   assert.equal(catalog.capabilities.length, 22);
   assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
+  // [2026-10-19] 보고서 통계 메뉴·화면은 걷었지만(V2_134) 물리 테이블은 남아 core 가 소유한다.
   assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
   assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));
   assert.deepEqual(catalog.core.menuRoutes.filter(route => route.startsWith('/admin/stats')),
-    ['/admin/stats', '/admin/stats/report', '/admin/stats/screen', '/admin/stats/user']);
+    ['/admin/stats', '/admin/stats/screen', '/admin/stats/user']);
   const board = catalog.capabilities.find(capability => capability.id === 'board');
   assert.deepEqual(board.menuRoutes.filter(route => route.startsWith('/admin/stats')), ['/admin/stats/board', '/admin/stats/data-usage']);
   assert.ok(board.database.tables.includes('tb_dta_use_stats'));

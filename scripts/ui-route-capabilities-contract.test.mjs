@@ -195,14 +195,17 @@ test('proxy shell access is measured separately from unresolved capability roles
   //   **항상 빈 목록**, 쓰기는 501 이었고 메뉴·링크 어디에도 없었다. 라우트·API 4본·권한 코드 4개를 함께 제거했다.
   // [2026-10-01 결정 19] 67 -> 69. /admin/system/logs/audit(민감 작업 감사 원장)·/admin/system/durable-jobs(후속 작업 상태)를
   //   신설했다 — 서버에는 원장·작업이 쌓이는데 볼 화면이 없어 DB 를 직접 열어야 했다. 둘 다 기본 그룹에 없는 권한으로만 열린다.
-  assert.equal(sourceShellCounts['admin-system']?.length, 69);
+  // [2026-10-19] 69 -> 68. /admin/stats/report 를 걷었다 — 그 탭이 읽던 tb_rptp_stats 에 쓰는 제품 경로가 없어 **어떤 기간에도
+  //   비어 있었다**. 탭·조회 API 1본·메뉴(V2_134)를 함께 걷고 물리 테이블은 남겼다.
+  assert.equal(sourceShellCounts['admin-system']?.length, 68);
   assert.equal(effectiveShellCounts.public?.length, 1);
   // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
   //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
   assert.equal(effectiveShellCounts.authenticated?.length, 49);
   // [2026-09-25 DEC-OPS-129] 69 -> 68. 걷은 /admin/system/network 는 실효 접근도 admin-system 이었다.
   // [2026-10-01 결정 19] 68 -> 70. 위 두 화면은 실효 접근도 admin-system 이다.
-  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
+  // [2026-10-19] 70 -> 69. 걷은 /admin/stats/report 는 실효 접근도 admin-system 이었다.
+  assert.equal(effectiveShellCounts['admin-system']?.length, 69);
   // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
   //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
   //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.

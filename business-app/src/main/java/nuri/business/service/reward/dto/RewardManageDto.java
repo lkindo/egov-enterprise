@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class RewardManageDto {
     private Long rwrdSn;
-    // 물리 컬럼 폭과 정합(rwrd_user_id 20·rwrd_cd 12·rwrd_ymd 8·rwrd_nm 300·cntrb_cn 4000·atrzr_id 20·confm_yn 1·rtn_rsn_cn 4000).
+    // 물리 컬럼 폭과 정합(rwrd_user_id 20·rwrd_cd 12·rwrd_ymd 8·rwrd_nm 300·cntrb_cn 4000).
     //   DTO 필드명이 레거시(rwardwnrId 등)라 InputContractMirrorLinter 의 이름 기반 바인딩은 붙이지 못한다.
     // [2026-10-18] 수상자·포상 코드는 물리 컬럼이 NOT NULL 이다(rwrd_user_id·rwrd_cd). 종전에는 길이만 검사해 빈 값이
     //   그대로 들어가거나(빈 문자열) DB NOT NULL 로 거부됐다. 화면은 처음부터 필수로 받았다.
@@ -35,26 +35,9 @@ public class RewardManageDto {
     private String rwardNm;
     @Size(max = 4000)
     private String pblenCn;
-    // 승인·감사 필드는 응답 전용이다 — 서버가 소유한다(2026-09-25 DIP I6 ③). 요청에 실어도 저장되지 않는다.
-    @Size(max = 20)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String sanctnerId;
-    @Size(max = 1)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String confmAt;
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private LocalDateTime sanctnDt;
-    @Size(max = 4000)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String returnResn;
+    // [2026-10-19] 승인 필드(승인자·승인 여부·승인 일시·반려 사유·연결 결재)를 걷었다 — 승인 절차가 제품에 없어 늘
+    //   대기·빈값이었다. 물리 컬럼은 남지만 앱은 쓰지도 내보내지도 않는다. 감사 필드는 응답 전용이다 — 서버가 소유한다.
     private Long atchFileSn;
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Long ifmlAtrzSn;
     @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String frstRgtrId;

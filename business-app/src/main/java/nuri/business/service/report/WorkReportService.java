@@ -175,7 +175,6 @@ public class WorkReportService extends BaseAbstractService {
                 .rptTtl(entity.getRptTtl())
                 .rptCn(entity.getRptCn())
                 .rptSeCd(entity.getRptSeCd())
-                .rptSttsCd(entity.getRptSttsCd())
                 .rptYmd(entity.getRptYmd())
                 .userId(entity.getUserId())
                 .userNm(authorName)

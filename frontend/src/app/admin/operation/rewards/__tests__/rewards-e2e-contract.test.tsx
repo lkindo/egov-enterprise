@@ -35,8 +35,6 @@ const INITIAL_PAGE = {
       rwardCode: 'RW-001',
       rwardwnrId: 'user-1',
       rwardDe: '20260515',
-      confmAt: 'Y',
-      sanctnDt: '2026-05-16',
     },
   ],
   total: 1,

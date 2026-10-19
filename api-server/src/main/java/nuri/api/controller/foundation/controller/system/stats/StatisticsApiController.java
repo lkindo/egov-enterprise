@@ -14,6 +14,9 @@ import java.util.List;
 
 /**
  * 통계 관리를 위한 관리자용 컨트롤러
+ *
+ * <p>[2026-10-19] 보고서 통계 조회(GET /report)를 걷었다. 그 원장(tb_rptp_stats)에 쓰는 제품 경로가 없어 어떤 기간에도
+ * 값이 없었다. 화면 탭·라우트와 메뉴(V2_134)도 함께 걷었고 물리 테이블은 남긴다.
  */
 @Tag(name = "Statistics", description = "통계 관리 API (Admin)")
 @RestController("systemStatisticsApiController")
@@ -22,18 +25,6 @@ import java.util.List;
 public class StatisticsApiController {
 
     private final ReportStatsService reportStatsService;
-
-    @Operation(summary = "보고서 통계 조회")
-    @GetMapping("/report")
-    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getReportStats')")
-    public ResponseEntity<ApiResponse<List<StatsDto>>> getReportStats(
-            @RequestParam(required = false) String fromDate,
-            @RequestParam(required = false) String toDate) throws Exception {
-
-        String[] dates = setDefaultDates(fromDate, toDate);
-        List<Object[]> stats = reportStatsService.getReprtStatsByDate(dates[0], dates[1]);
-        return ResponseEntity.ok(ApiResponse.success(convertToStatsDto(stats)));
-    }
 
     @Operation(summary = "자료이용현황 통계 조회")
     @GetMapping("/data-usage")

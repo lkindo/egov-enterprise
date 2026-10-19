@@ -87,7 +87,7 @@ describe('generated system boundary wave 3', () => {
     );
     expect(client.requestRaw).not.toHaveBeenCalled();
   });
-  it('StatsAdminService의 6개 조회 경계를 operation descriptor로 실행한다', async () => {
+  it('StatsAdminService의 5개 조회 경계를 operation descriptor로 실행한다', async () => {
     client.getRaw
       .mockResolvedValueOnce(envelope({ totalUsers: 1, totalPosts: 2, todayConnects: 3 }))
       .mockResolvedValue(envelope([]));
@@ -96,7 +96,6 @@ describe('generated system boundary wave 3', () => {
     await statsAdminService.getConnectStats({ fromDate: '20260101', statsKind: 'DAY' });
     await statsAdminService.getBbsStats({ fromDate: '20260101' });
     await statsAdminService.getUserStats({ toDate: '20260131' });
-    await statsAdminService.getReportStats();
     await statsAdminService.getDataUsageStats();
 
     expect(client.getRaw.mock.calls.map(([url]) => url)).toEqual([
@@ -104,7 +103,6 @@ describe('generated system boundary wave 3', () => {
       'admin/system/statistics/connect',
       'admin/system/statistics/bbs',
       'admin/system/statistics/user',
-      'admin/system/statistics/report',
       'admin/system/statistics/data-usage',
     ]);
   });

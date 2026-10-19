@@ -181,7 +181,7 @@ export interface StatsPanelQuery {
 
 interface StatsHubTabBase extends SlotEntry {
   readonly placement: 'hub-tab';
-  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40 · 운영 보고서 70. */
+  /** 통계 내비게이션의 자리(작은 값 먼저). 셸 탭: 통계 개요 10 · 사용자 통계 20 · 시스템 활성 40 (운영 보고서 70 은 2026-10-19 걷었다). */
   readonly order: number;
   /** 내비게이션 단추 글자. */
   readonly label: string;

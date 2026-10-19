@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
-import { z } from 'zod';
+import type { z } from 'zod';
 import dynamic from 'next/dynamic';
 
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -42,7 +42,7 @@ const StandardModal = dynamic(
 /**
  * 등록·수정 공통 스키마. 생성 Request 스키마를 확장해 서버 `@NotBlank` 를 화면에서 먼저 잡는다
  * (생성 zod 는 `min(0)` 이라 빈 문자열을 통과시킨다 — 서버 400 을 기다리지 않는다).
- * 반영여부는 물리 컬럼이 varchar(1) 이고 화면이 Y/N 두 값만 제공하므로 그 어휘로 좁힌다.
+ * [2026-10-19] 반영 여부(rfltYn)는 저장만 되고 읽는 화면·처리가 없어 계약과 화면에서 걷었다.
  */
 export const internetSvcGuidanceSchema = InternetSvcGuidanceDtoRequestSchema.extend({
   itntSvcNm: InternetSvcGuidanceDtoRequestSchema.shape.itntSvcNm
@@ -51,7 +51,6 @@ export const internetSvcGuidanceSchema = InternetSvcGuidanceDtoRequestSchema.ext
   itntSvcExpln: InternetSvcGuidanceDtoRequestSchema.shape.itntSvcExpln
     .min(1, '인터넷 서비스 설명을 입력하세요.')
     .max(4000),
-  rfltYn: z.enum(['Y', 'N']),
 });
 
 type GuidanceFormValues = z.infer<typeof internetSvcGuidanceSchema>;
@@ -59,7 +58,6 @@ type GuidanceFormValues = z.infer<typeof internetSvcGuidanceSchema>;
 const EMPTY_FORM: GuidanceFormValues = {
   itntSvcNm: '',
   itntSvcExpln: '',
-  rfltYn: 'Y',
 };
 
 const QUERY_KEY = 'admin-internet-svc-guidance';
@@ -108,8 +106,6 @@ export default function InternetSvcGuidanceClient({
     form.reset({
       itntSvcNm: item.itntSvcNm ?? '',
       itntSvcExpln: item.itntSvcExpln ?? '',
-      // 저장된 값이 Y/N 어휘 밖이면 지어내지 않고 'N'(미반영)으로 보수적으로 연다.
-      rfltYn: item.rfltYn === 'Y' ? 'Y' : 'N',
     });
     setIsModalOpen(true);
   };
@@ -212,20 +208,6 @@ export default function InternetSvcGuidanceClient({
       ),
     },
     {
-      header: '반영 여부',
-      className: 'w-28',
-      accessor: (item) => {
-        // 어휘 밖 값은 'Y/N' 중 하나로 뭉개지 않고 원문을 드러낸다 — 지어내지 않는다.
-        if (item.rfltYn === 'Y') return <span className="text-xs font-bold text-success-emphasis">반영</span>;
-        if (item.rfltYn === 'N') return <span className="text-xs font-bold text-muted-foreground">미반영</span>;
-        return (
-          <span className="text-xs font-bold text-warning-emphasis">
-            {item.rfltYn ? `알 수 없음 (${item.rfltYn})` : '미지정'}
-          </span>
-        );
-      },
-    },
-    {
       header: '최종 수정',
       className: 'w-44',
       accessor: (item) => (
@@ -283,7 +265,7 @@ export default function InternetSvcGuidanceClient({
   return (
     <WorkListPage
       title="인터넷 서비스 안내 관리"
-      description="기관이 제공하는 인터넷 서비스의 안내 문구를 조회·등록·수정합니다. 반영 여부는 저장만 되고 아직 이 값을 읽는 화면이 없습니다."
+      description="기관이 제공하는 인터넷 서비스의 안내 문구를 조회·등록·수정합니다."
       breadcrumbItems={[{ label: '시스템 관리' }, { label: '서비스 안내' }, { label: '인터넷 서비스 안내' }]}
       filterStateKey="system-internet-svc-guidance"
       totalCount={isError ? undefined : totalItems}
@@ -372,7 +354,6 @@ export default function InternetSvcGuidanceClient({
               labels={{
                 itntSvcNm: '서비스 명칭',
                 itntSvcExpln: '서비스 설명',
-                rfltYn: '반영 여부',
               }}
               onNavigate={form.focusError}
             />
@@ -405,28 +386,6 @@ export default function InternetSvcGuidanceClient({
                       className="w-full min-h-[140px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <ShadcnFormField
-              control={form.control}
-              name="rfltYn"
-              required
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">반영 여부</FormLabel>
-                  <FormControl>
-                    <select
-                      {...field}
-                      className="w-full h-[var(--control-h)] px-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                    >
-                      <option value="Y">반영</option>
-                      <option value="N">미반영</option>
-                    </select>
-                  </FormControl>
-                  {/* [2026-09-26 DIP D10] 이 값을 읽어 안내를 걸러 보이는 화면·기능이 아직 없다 — 기록만 된다는 사실을 말한다. */}
-                  <p className="text-xs text-muted-foreground">반영 여부는 저장만 됩니다. 아직 이 값에 따라 안내를 보이거나 숨기는 화면이 없습니다.</p>
                   <FormMessage />
                 </FormItem>
               )}

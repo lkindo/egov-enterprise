@@ -76,7 +76,6 @@ class InternetSvcGuidanceServiceTest {
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
                 .itntSvcNm("New ISG")
                 .itntSvcExpln("Description")
-                .rfltYn("Y")
                 .build();
         given(internetSvcGuidanceRepository.save(any(InternetSvcGuidance.class)))
                 .willReturn(InternetSvcGuidance.builder().itntSrvcSn(1L).build());
@@ -105,7 +104,6 @@ class InternetSvcGuidanceServiceTest {
                 .itntSrvcSn(id)
                 .itntSvcNm("Updated ISG")
                 .itntSvcExpln("Updated Desc")
-                .rfltYn("N")
                 .build();
 
         // when
@@ -114,7 +112,7 @@ class InternetSvcGuidanceServiceTest {
         // then
         assertThat(existingEntity.getItntSvcNm()).isEqualTo("Updated ISG");
         assertThat(existingEntity.getItntSvcExpln()).isEqualTo("Updated Desc");
-        assertThat(existingEntity.getRfltYn()).isEqualTo("N");
+        assertThat(existingEntity.getRfltYn()).isNull();
     }
 
     @Test
@@ -142,7 +140,7 @@ class InternetSvcGuidanceServiceTest {
     void updateIntnetSvcGuidance_NotFound() {
         given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .itntSrvcSn(99L).itntSvcNm("X").itntSvcExpln("Y").rfltYn("N").build();
+                .itntSrvcSn(99L).itntSvcNm("X").itntSvcExpln("Y").build();
 
         org.assertj.core.api.Assertions.assertThatThrownBy(
                         () -> internetSvcGuidanceService.updateIntnetSvcGuidance(dto))
@@ -198,5 +196,18 @@ class InternetSvcGuidanceServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getItntSvcNm()).isEqualTo("Test ISG");
+    }
+
+    /** [2026-10-19] 반영 여부는 읽는 화면·처리가 없어 API 에서 걷었다. 남은 물리 컬럼은 앱이 쓰지 않는다. */
+    @Test
+    @DisplayName("반영 여부는 API 계약에 없고 남은 물리 컬럼의 매핑은 읽기 전용이다 — 없는 노출 처리를 약속하지 않는다")
+    void reflectionFlagIsRetiredAndRetainedColumnIsReadOnly() throws Exception {
+        assertThat(java.util.Arrays.stream(InternetSvcGuidanceDto.class.getDeclaredFields()).map(java.lang.reflect.Field::getName))
+                .doesNotContain("rfltYn");
+        jakarta.persistence.Column mapping =
+                InternetSvcGuidance.class.getDeclaredField("rfltYn").getAnnotation(jakarta.persistence.Column.class);
+        assertThat(mapping).as("rfltYn 매핑").isNotNull();
+        assertThat(mapping.insertable()).as("rfltYn 은 앱이 쓰지 않는다(insertable)").isFalse();
+        assertThat(mapping.updatable()).as("rfltYn 은 앱이 쓰지 않는다(updatable)").isFalse();
     }
 }

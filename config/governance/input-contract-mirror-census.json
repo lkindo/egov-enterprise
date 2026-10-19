@@ -290,8 +290,7 @@
       "dto": "nuri.business.service.isg.dto.InternetSvcGuidanceDto",
       "fields": [
         "itntSvcNm",
-        "itntSvcExpln",
-        "rfltYn"
+        "itntSvcExpln"
       ]
     },
     {
@@ -622,20 +621,14 @@
         "rwardCode",
         "rwardDe",
         "rwardNm",
-        "pblenCn",
-        "sanctnerId",
-        "confmAt",
-        "returnResn"
+        "pblenCn"
       ],
       "entityFields": {
         "rwardwnrId": "rwrdUserId",
         "rwardCode": "rwrdCd",
         "rwardDe": "rwrdYmd",
         "rwardNm": "rwrdNm",
-        "pblenCn": "cntrbCn",
-        "sanctnerId": "atrzrId",
-        "confmAt": "confmYn",
-        "returnResn": "rtnRsnCn"
+        "pblenCn": "cntrbCn"
       }
     },
     {
@@ -647,8 +640,7 @@
         "evntCn",
         "picNm",
         "prepMttr",
-        "evntTypeCd",
-        "evntAprvYn"
+        "evntTypeCd"
       ]
     }
   ],
@@ -1674,7 +1666,6 @@
         "rptpSn",
         "userId",
         "userNm",
-        "rptSttsCd",
         "rptTypeCd"
       ]
     },
@@ -1742,11 +1733,6 @@
     {
       "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
-        "sanctnerId",
-        "confmAt",
-        "sanctnDt",
-        "returnResn",
-        "ifmlAtrzSn",
         "frstRgtrId",
         "crtDt",
         "lastMdfrId",
@@ -1786,8 +1772,7 @@
       "dto": "nuri.business.service.event.dto.EventInfoRequest",
       "fields": [
         "evntBgngYmd",
-        "evntEndYmd",
-        "evntAprvYmd"
+        "evntEndYmd"
       ]
     },
     {

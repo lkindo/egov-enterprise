@@ -68,7 +68,6 @@ const URL = {
   bbs: `${BASE}/bbs`,
   connect: `${BASE}/connect`,
   dataUsage: `${BASE}/data-usage`,
-  report: `${BASE}/report`,
   surveys: 'admin/system/surveys',
 } as const;
 
@@ -238,14 +237,14 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
       await screen.findByText(PERIOD_EMPTY);
       const labels = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
       expect(labels.filter((label) => label !== '설문조사 분석'))
-        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '운영 보고서']);
+        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황']);
     });
 
     if (inProjection(SURVEY_CONTRIBUTION)) it('게시판·설문 기여가 모두 있으면 내비게이션은 종전 순서 그대로다', async () => {
       renderRoute(BoardStatsPage, '/admin/stats/board');
       await screen.findByText(PERIOD_EMPTY);
       expect(within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel))
-        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석', '운영 보고서']);
+        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석']);
     });
 
     it('통계 조회 권한이 없는 주체에게는 게시판 탭이 보이지 않는다', async () => {
@@ -282,7 +281,6 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
       ['사용자 통계', '/admin/stats/user'],
       ['시스템 활성', '/admin/stats/screen'],
       ['자료이용현황', '/admin/stats/data-usage'],
-      ['운영 보고서', '/admin/stats/report'],
     ])('게시물 화면에서 %s 은 %s 로 이동한다', async (label, route) => {
       renderRoute(BoardStatsPage, '/admin/stats/board');
       await screen.findByText(PERIOD_EMPTY);

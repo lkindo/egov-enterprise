@@ -162,16 +162,11 @@ class RewardManageServiceTest {
     }
 
     @Test
-    @DisplayName("🚨 승인·감사 필드는 요청 값을 저장하지 않는다 — 새 포상은 언제나 승인 대기로 시작한다 (DIP I6 ③)")
-    void createReward_ignoresClientApprovalFields() {
+    @DisplayName("🚨 감사 필드는 요청 값을 저장하지 않고, 승인 컬럼에는 아무것도 쓰지 않는다 — 승인 절차가 제품에 없다")
+    void createReward_ignoresClientAuditFieldsAndWritesNoApproval() {
         authorize("REWARD_CREATE");
         RewardManageDto dto = RewardManageDto.builder()
                 .rwardNm("포상")
-                .sanctnerId("forged-approver")
-                .confmAt("Y")
-                .sanctnDt(java.time.LocalDateTime.of(2026, 9, 1, 9, 0))
-                .returnResn("forged")
-                .ifmlAtrzSn(9L)
                 .frstRgtrId("forged-writer")
                 .lastMdfrId("forged-writer")
                 .build();
@@ -182,7 +177,8 @@ class RewardManageServiceTest {
         org.mockito.ArgumentCaptor<RewardManage> saved = org.mockito.ArgumentCaptor.forClass(RewardManage.class);
         org.mockito.Mockito.verify(rewardManageRepository).save(saved.capture());
         RewardManage entity = saved.getValue();
-        assertThat(entity.getConfmYn()).isEqualTo("N");
+        // [2026-10-19] 종전에는 새 포상을 언제나 대기('N')로 적었다 — 아무도 승인할 수 없는 대기였다.
+        assertThat(entity.getConfmYn()).isNull();
         assertThat(entity.getAtrzrId()).isNull();
         assertThat(entity.getAprvDt()).isNull();
         assertThat(entity.getRtnRsnCn()).isNull();
@@ -190,6 +186,20 @@ class RewardManageServiceTest {
         assertThat(entity.getFrstRgtrId()).isNull();
         assertThat(entity.getLastMdfrId()).isNull();
         assertThat(entity.getRwrdNm()).isEqualTo("포상");
+    }
+
+    @Test
+    @DisplayName("승인 필드는 API 계약에 없고 남은 물리 컬럼의 매핑은 읽기 전용이다 — 없는 승인 절차를 약속하지 않는다")
+    void approvalSurfaceIsRetiredAndRetainedColumnsAreReadOnly() throws Exception {
+        assertThat(java.util.Arrays.stream(RewardManageDto.class.getDeclaredFields()).map(java.lang.reflect.Field::getName))
+                .doesNotContain("sanctnerId", "confmAt", "sanctnDt", "returnResn", "ifmlAtrzSn");
+        for (String column : List.of("atrzrId", "confmYn", "aprvDt", "rtnRsnCn", "ifmlAtrzSn")) {
+            jakarta.persistence.Column mapping =
+                    RewardManage.class.getDeclaredField(column).getAnnotation(jakarta.persistence.Column.class);
+            assertThat(mapping).as(column + " 매핑").isNotNull();
+            assertThat(mapping.insertable()).as(column + " 은 앱이 쓰지 않는다(insertable)").isFalse();
+            assertThat(mapping.updatable()).as(column + " 은 앱이 쓰지 않는다(updatable)").isFalse();
+        }
     }
 
     @Test

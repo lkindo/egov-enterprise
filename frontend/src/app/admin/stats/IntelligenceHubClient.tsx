@@ -11,7 +11,6 @@ import {
   Users,
   Monitor,
   Database,
-  FileText,
   RefreshCcw,
   Zap,
   LayoutDashboard,
@@ -61,7 +60,7 @@ const HUB_PARAM_KEYS = ['tab'] as const;
  * 전용 라우트가 없는 기능 탭(body)은 현재 경로의 `?tab=<id>` 쿼리로 연다(없는 라우트를 만들어 메뉴 SSOT 를 흔들지 않기 위함 —
  * 감사 §6 D-6).
  */
-type CoreStatsTab = 'DASHBOARD' | 'USER_STATS' | 'SYSTEM_STATS' | 'REPORTS';
+type CoreStatsTab = 'DASHBOARD' | 'USER_STATS' | 'SYSTEM_STATS';
 
 const CORE_TABS: readonly {
   readonly id: CoreStatsTab;
@@ -74,18 +73,18 @@ const CORE_TABS: readonly {
   { id: 'DASHBOARD', order: 10, label: '통계 개요', title: '통계 개요', icon: LayoutDashboard, route: '/admin/stats' },
   { id: 'USER_STATS', order: 20, label: '사용자 통계', title: '사용자 통계 분석', icon: Users, route: '/admin/stats/user' },
   { id: 'SYSTEM_STATS', order: 40, label: '시스템 활성', title: '시스템 활성 지표', icon: Database, route: '/admin/stats/screen' },
-  { id: 'REPORTS', order: 70, label: '운영 보고서', title: '운영 보고서 아카이브', icon: FileText, route: '/admin/stats/report' },
 ];
 
 /** 셸이 기능 탭만 고르는 술어. 모듈 값이라 렌더마다 같다(useSlotEntries 결과가 안정된다). */
 const isHubPanel = isStatsHubTab;
 
-/**
- * 집계를 **쓰는 쪽이 없는** 셸 탭. 기능 탭의 미수집 여부는 그 기여가 밝힌다(uninstrumented) — 판정은 이 목록 ∪ 기여다.
+/*
+ * 미수집 판정. 셸 탭은 모두 값을 쓰는 쪽이 있다 — 미수집 여부는 기능 탭의 기여가 밝힌다(uninstrumented).
  *
- * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고 Flyway 시드에도 INSERT 가 없다.
- *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
+ * 저장소 실측(2026-08-28): 이 축이 읽는 저장소에 save 호출이 저장소 전체에 0건이고 Flyway 시드에도 INSERT 가 없다.
  *   - 자료 이용(게시판 기여) → 게시판의 자료 이용 포트 → dtaUseStatsRepository.countByDate (writer 0)
+ *   - [2026-10-19] 셸의 '운영 보고서'(REPORTS) 탭은 reprtStatsRepository.countByDate(writer 0)를 읽었다. 쓰는 쪽이 없어
+ *     어떤 기간에도 비어 있었으므로 탭·라우트·조회 API·메뉴(V2_134)를 걷었다. 그래서 셸의 미수집 목록도 없어졌다.
  *
  * 값이 있는 탭은 셋이다.
  *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
@@ -103,7 +102,6 @@ const isHubPanel = isStatsHubTab;
  * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
  * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
  */
-const CORE_UNINSTRUMENTED_TABS: readonly string[] = ['REPORTS'];
 
 /**
  * X축 눈금 라벨: 'yyyyMMdd' → 'MM-DD' (표기 변환은 lib/format-date SSOT 경유).
@@ -165,7 +163,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
   // --- Data Fetching ---
   // ⚠ 여기서 호출하는 경로는 StatisticsApiController 에 실제로 매핑된 것만 사용한다.
-  //    (/report, /data-usage, /bbs, /user, /connect, /summary — 2026-07-22 감사 P0-22)
+  //    (/data-usage, /bbs, /user, /connect, /summary — 2026-07-22 감사 P0-22, /report 는 2026-10-19 걷었다)
   // 사용자/접속 2종은 모든 탭에서 노출되는 상단 요약 카드의 소스이므로 탭과 무관하게 조회한다.
   // (탭 조건부로 두면 비활성 탭에서 값이 undefined 가 되어 "0" 이라는 거짓 지표가 표시된다.)
   const userQuery = useQuery({
@@ -178,13 +176,6 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const connectQuery = useQuery({
     queryKey: ['admin-stats-connect', appliedRange],
     queryFn: () => statsAdminService.getConnectStats(appliedRange)
-  });
-
-  // REPORTS 탭 전용 쿼리 (없어서 다른 탭의 잔여 차트가 그려지던 문제 — 감사 P0-23)
-  const reportQuery = useQuery({
-    queryKey: ['admin-stats-report', appliedRange],
-    queryFn: () => statsAdminService.getReportStats(appliedRange),
-    enabled: activeTab === 'REPORTS'
   });
 
   /*
@@ -208,11 +199,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거). 목록에 없는 탭은 성공 로그인이다.
   const chartQuery: StatsPanelQuery = activePanel?.kind === 'series' && activePanelQuery
     ? activePanelQuery
-    : activeTab === 'USER_STATS' ? userQuery : activeTab === 'REPORTS' ? reportQuery : connectQuery;
+    : activeTab === 'USER_STATS' ? userQuery : connectQuery;
   const chartData = (chartQuery.data as readonly StatsSeriesPoint[] | undefined) ?? [];
 
-  const isUninstrumentedTab = CORE_UNINSTRUMENTED_TABS.includes(activeTab)
-    || (activePanel?.kind === 'series' && activePanel.uninstrumented);
+  const isUninstrumentedTab = activePanel?.kind === 'series' && activePanel.uninstrumented;
   const emptyChartMessage = isUninstrumentedTab
     ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
     : '선택한 기간에 집계된 통계가 없습니다.';
@@ -237,7 +227,6 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     void Promise.all([
       userQuery.refetch(),
       connectQuery.refetch(),
-      reportQuery.refetch(),
       ...panelResults.map((result) => result.refetch()),
     ]);
   };
@@ -343,7 +332,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
 
                 [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
 
-                같은 화면의 차트는 미수집 축을 이미 '미수집' 으로 고지하는데(CORE_UNINSTRUMENTED_TABS ∪ 기여의 uninstrumented),
+                같은 화면의 차트는 미수집 축을 이미 '미수집' 으로 고지하는데(기여의 uninstrumented),
                 요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
                 읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
                 계측 원천(writer)이 생기면 그때 그 기여의 uninstrumented 를 거두고 값을 되살린다.

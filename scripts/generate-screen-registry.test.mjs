@@ -1043,7 +1043,7 @@ test('the source slot predicates are attributed item by item to the screens that
     'promotion/home-sections.ts banner BANNER_READ → /',
     `scrap/hub-tabs-collaboration.ts SCRAPS SCRAP_READ → ${collaboration}`,
     'scrap/post-actions.ts scrap SCRAP_CREATE → /admin/community/boards/detail',
-    'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, /admin/stats/report, '
+    'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, '
       + '/admin/stats/screen, /admin/stats/user',
   ]);
 });

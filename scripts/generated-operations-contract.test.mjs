@@ -290,7 +290,8 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   // 2026-10-18 ADR-0034: 436 -> 412. 410 만 돌려주던 구 롤·롤 권한·권한 그룹 쓰기 12개와 비공식결재 API 12개(핸들러 6 × 경로 2,
   //   /informal-sanctions·/admin/system/ism)를 걷었다. 결재 화면은 /approvals 의 결재 API 를 그대로 쓴다.
   // 2026-10-19 DEC-OPS-355: 412 -> 411. 연락처를 돌려주던 구 주소록 사용자 검색(GET /address-books/search-users)을 걷었다.
-  assert.equal(operations.length, 411);
+  // 2026-10-19: 411 -> 410. 쓰는 쪽 없는 원장만 읽던 보고서 통계 조회(GET /admin/system/statistics/report)를 탭·메뉴(V2_134)와 함께 걷었다.
+  assert.equal(operations.length, 410);
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

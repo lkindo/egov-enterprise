@@ -50,10 +50,14 @@ public class EventInfo extends BaseEntity {
     @Column(length = 12)
     private String evntTypeCd;
 
-    @Column(length = 1)
+    /*
+     * [2026-10-19] 행사 승인 여부·승인일은 승인 처리 흐름이 제품에 없어 API·화면에서 걷었다. 물리 컬럼은 남기므로
+     *   매핑만 읽기 전용으로 둔다 — 앱은 쓰지 않는다. 수정의 재빌드-merge 도 이 두 컬럼을 덮지 않는다(updatable=false).
+     */
+    @Column(length = 1, insertable = false, updatable = false)
     private String evntAprvYn;
 
-    @Column(length = 8)
+    @Column(length = 8, insertable = false, updatable = false)
     private String evntAprvYmd;
 
     /**
@@ -62,7 +66,7 @@ public class EventInfo extends BaseEntity {
      */
     private EventInfo(Long evntSn, String bizYr, String evntNm, String evntCn,
                       String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
-                      String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
+                      String prepMttr, String evntTypeCd) {
         this.evntSn = evntSn;
         this.bizYr = bizYr;
         this.evntNm = evntNm;
@@ -73,15 +77,13 @@ public class EventInfo extends BaseEntity {
         this.picNm = picNm;
         this.prepMttr = prepMttr;
         this.evntTypeCd = evntTypeCd;
-        this.evntAprvYn = evntAprvYn;
-        this.evntAprvYmd = evntAprvYmd;
     }
 
     @Builder
     public static EventInfo create(Long evntSn, String bizYr, String evntNm, String evntCn,
                                    String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
-                                   String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
+                                   String prepMttr, String evntTypeCd) {
         return new EventInfo(evntSn, bizYr, evntNm, evntCn, evntBgngYmd, evntEndYmd, evntUseCnt,
-                picNm, prepMttr, evntTypeCd, evntAprvYn, evntAprvYmd);
+                picNm, prepMttr, evntTypeCd);
     }
 }

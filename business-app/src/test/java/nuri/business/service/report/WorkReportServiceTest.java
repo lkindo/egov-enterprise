@@ -407,4 +407,17 @@ class WorkReportServiceTest {
 
         verify(userRepository, never()).findByUserIdIn(any());
     }
+
+    /** [2026-10-19] 보고 상태는 정하거나 바꾸는 처리 흐름이 없어 API 에서 걷었다. 남은 물리 컬럼은 앱이 쓰지 않는다. */
+    @Test
+    @DisplayName("보고 상태는 API 계약에 없고 남은 물리 컬럼의 매핑은 읽기 전용이다 — 없는 처리 흐름을 약속하지 않는다")
+    void reportStatusIsRetiredAndRetainedColumnIsReadOnly() throws Exception {
+        org.assertj.core.api.Assertions.assertThat(java.util.Arrays.stream(WorkReportDto.class.getDeclaredFields()).map(java.lang.reflect.Field::getName))
+                .doesNotContain("rptSttsCd");
+        jakarta.persistence.Column mapping =
+                WorkReport.class.getDeclaredField("rptSttsCd").getAnnotation(jakarta.persistence.Column.class);
+        org.assertj.core.api.Assertions.assertThat(mapping).as("rptSttsCd 매핑").isNotNull();
+        org.assertj.core.api.Assertions.assertThat(mapping.insertable()).as("rptSttsCd 는 앱이 쓰지 않는다(insertable)").isFalse();
+        org.assertj.core.api.Assertions.assertThat(mapping.updatable()).as("rptSttsCd 는 앱이 쓰지 않는다(updatable)").isFalse();
+    }
 }

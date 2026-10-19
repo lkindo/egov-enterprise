@@ -146,7 +146,7 @@ describe('RewardManageClient useAppForm 소비', () => {
     expect(mocks.toast).not.toHaveBeenCalledWith('포상 기록 등록 중 오류가 발생했습니다.', 'error');
   });
 
-  it('Reward: 등록 본문에 승인 필드를 싣지 않는다 — 승인 상태는 서버가 소유한다 (DIP I6 ③)', async () => {
+  it('Reward: 등록 본문에 승인 필드를 싣지 않는다 — 승인 절차가 없어 계약에서 걷었다 (DIP I6 ③, 2026-10-19)', async () => {
     mocks.createReward.mockResolvedValueOnce({});
     renderWithClient(<RewardManageClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /포상 기록 등록/ }));

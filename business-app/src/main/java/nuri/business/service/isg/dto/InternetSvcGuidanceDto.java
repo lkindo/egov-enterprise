@@ -42,8 +42,7 @@ public class InternetSvcGuidanceDto {
     @Size(max = 4000, message = "인터넷 서비스 설명은 4000자 이내여야 합니다.")
     private String itntSvcExpln;
 
-    @Size(max = 1, message = "반영 여부는 1자여야 합니다.")
-    private String rfltYn;
+    // [2026-10-19] 반영 여부(rfltYn)를 걷었다 — 저장만 되고 이 값으로 안내를 보이거나 숨기는 화면·처리가 없었다.
 
     @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

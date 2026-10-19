@@ -17,7 +17,7 @@ test.describe('Operational Extension & Uncovered Modules', () => {
         const renamed = `E2E 포상 정정 ${stamp}`;
         const created = await request.post(`${API_BASE}/admin/operation/rewards`, {
             headers,
-            data: { rwardNm: originalName, rwardwnrId: 'E2E_USER', rwardCode: 'E2E', rwardDe: '20260905', pblenCn: 'e2e 정정 경로 검증', confmAt: 'N' },
+            data: { rwardNm: originalName, rwardwnrId: 'E2E_USER', rwardCode: 'E2E', rwardDe: '20260905', pblenCn: 'e2e 정정 경로 검증' },
         });
         expect(created.ok(), `포상 등록 실패: ${created.status()}`).toBeTruthy();
         await operationalPage.gotoRewards();

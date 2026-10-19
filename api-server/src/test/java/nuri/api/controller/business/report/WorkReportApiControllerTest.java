@@ -97,7 +97,6 @@ class WorkReportApiControllerTest {
                                 "rptpSn", 999,
                                 "userId", "forged-owner",
                                 "userNm", "forged-name",
-                                "rptSttsCd", "forged-status",
                                 "rptTypeCd", "forged-type"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -107,7 +106,6 @@ class WorkReportApiControllerTest {
         assertNull(dto.getValue().getRptpSn());
         assertNull(dto.getValue().getUserId());
         assertNull(dto.getValue().getUserNm());
-        assertNull(dto.getValue().getRptSttsCd());
         assertNull(dto.getValue().getRptTypeCd());
     }
 
@@ -144,7 +142,6 @@ class WorkReportApiControllerTest {
                                 "rptYmd", "20260906",
                                 "userId", "forged-owner",
                                 "userNm", "forged-name",
-                                "rptSttsCd", "forged-status",
                                 "rptTypeCd", "forged-type"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -155,7 +152,6 @@ class WorkReportApiControllerTest {
         assertEquals("20260906", dto.getValue().getRptYmd());
         assertNull(dto.getValue().getUserId());
         assertNull(dto.getValue().getUserNm());
-        assertNull(dto.getValue().getRptSttsCd());
         assertNull(dto.getValue().getRptTypeCd());
     }
 

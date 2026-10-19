@@ -4532,23 +4532,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/statistics/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 보고서 통계 조회 */
-        get: operations["getReportStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/statistics/data-usage": {
         parameters: {
             query?: never;
@@ -5543,7 +5526,6 @@ export interface components {
             readonly userNm?: string | null;
             /** Format: int64 */
             atchFileSn?: number;
-            readonly rptSttsCd?: string | null;
             rptYmd?: string;
             readonly rptTypeCd?: string | null;
             /**
@@ -6402,7 +6384,6 @@ export interface components {
             readonly itntSrvcSn?: number | null;
             itntSvcNm: string;
             itntSvcExpln: string;
-            rfltYn?: string;
             readonly lastMdfrId?: string | null;
             /** Format: date-time */
             readonly mdfcnDt?: string | null;
@@ -6641,15 +6622,8 @@ export interface components {
             rwardDe?: string;
             rwardNm?: string;
             pblenCn?: string;
-            readonly sanctnerId?: string;
-            readonly confmAt?: string;
-            /** Format: date-time */
-            readonly sanctnDt?: string;
-            readonly returnResn?: string;
             /** Format: int64 */
             atchFileSn?: number;
-            /** Format: int64 */
-            readonly ifmlAtrzSn?: number;
             readonly frstRgtrId?: string;
             /** Format: date-time */
             readonly crtDt?: string;
@@ -6758,16 +6732,6 @@ export interface components {
              * @example EVT01
              */
             evntTypeCd?: string;
-            /**
-             * @description 승인 여부. 신규는 N이며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.
-             * @example Y
-             */
-            evntAprvYn?: string;
-            /**
-             * @description 승인 일자. 신규는 없으며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.
-             * @example 20260525
-             */
-            evntAprvYmd?: string;
             /**
              * @description 최초 등록자 ID
              * @example webmaster
@@ -10857,16 +10821,6 @@ export interface components {
              * @example EVT01
              */
             evntTypeCd?: string;
-            /**
-             * @description 승인 여부. 신규는 N이며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.
-             * @example Y
-             */
-            evntAprvYn?: string;
-            /**
-             * @description 승인 일자. 신규는 없으며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.
-             * @example 20260525
-             */
-            evntAprvYmd?: string;
             /**
              * @description 최초 등록자 ID
              * @example webmaster
@@ -34612,65 +34566,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseSummaryStatsDto"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getReportStats: {
-        parameters: {
-            query?: {
-                fromDate?: string;
-                toDate?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

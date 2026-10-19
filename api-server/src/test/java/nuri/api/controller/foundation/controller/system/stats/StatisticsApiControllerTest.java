@@ -38,39 +38,6 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void getReportStats_ShouldReturnStats() throws Exception {
-        List<Object[]> mockStats = new ArrayList<>();
-        mockStats.add(new Object[]{"20260501", 10});
-        mockStats.add(new Object[]{"20260502", 15});
-
-        when(reportStatsService.getReprtStatsByDate(anyString(), anyString())).thenReturn(mockStats);
-
-        mockMvc.perform(get("/api/v1/admin/system/statistics/report")
-                .param("fromDate", "20260501")
-                .param("toDate", "20260502")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].statsDate").value("20260501"))
-                .andExpect(jsonPath("$.data[0].statsCo").value(10))
-                .andExpect(jsonPath("$.data[1].statsDate").value("20260502"))
-                .andExpect(jsonPath("$.data[1].statsCo").value(15));
-    }
-
-    @Test
-    public void getReportStats_WithDefaultDates_ShouldReturnStats() throws Exception {
-        List<Object[]> mockStats = new ArrayList<>();
-        mockStats.add(new Object[]{"20260520", 5});
-
-        when(reportStatsService.getReprtStatsByDate(anyString(), anyString())).thenReturn(mockStats);
-
-        mockMvc.perform(get("/api/v1/admin/system/statistics/report")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
     public void getDataUsageStats_ShouldReturnStats() throws Exception {
         List<Object[]> mockStats = new ArrayList<>();
         mockStats.add(new Object[]{"20260501", 20});
@@ -167,7 +134,7 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {"report", "data-usage", "bbs", "user", "connect"})
+    @ValueSource(strings = {"data-usage", "bbs", "user", "connect"})
     @DisplayName("기간을 비우면 오늘(yyyyMMdd)까지 한 달 전부터를 서비스에 넘긴다")
     void omittedPeriod_DefaultsToOneMonthEndingToday(String endpoint) throws Exception {
         LocalDate before = LocalDate.now();
@@ -183,7 +150,7 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {"report", "data-usage", "bbs", "user", "connect"})
+    @ValueSource(strings = {"data-usage", "bbs", "user", "connect"})
     @DisplayName("빈 문자열 기간도 생략과 같다")
     void blankPeriod_IsTreatedAsOmitted(String endpoint) throws Exception {
         LocalDate before = LocalDate.now();
@@ -199,7 +166,7 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
 
     /** 시작일 기본값은 받은 종료일이 아니라 오늘에서 센다 — 현행 그대로 고정한다. */
     @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {"report", "data-usage", "bbs", "user", "connect"})
+    @ValueSource(strings = {"data-usage", "bbs", "user", "connect"})
     @DisplayName("한쪽만 주면 빈 쪽만 오늘 기준 기본값으로 채운다")
     void partialPeriod_FillsOnlyTheMissingSideFromToday(String endpoint) throws Exception {
         LocalDate before = LocalDate.now();
@@ -217,7 +184,7 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {"report", "data-usage", "bbs", "user", "connect"})
+    @ValueSource(strings = {"data-usage", "bbs", "user", "connect"})
     @DisplayName("받은 기간은 형식을 바꾸지 않고 그대로 넘긴다")
     void explicitPeriod_IsPassedVerbatim(String endpoint) throws Exception {
         MockHttpServletRequestBuilder request = get(BASE + endpoint)
@@ -233,7 +200,7 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @ValueSource(strings = {"report", "data-usage", "bbs", "user", "connect"})
+    @ValueSource(strings = {"data-usage", "bbs", "user", "connect"})
     @DisplayName("행 순서를 그대로 두고 건수는 숫자 타입과 무관하게 정수로 싣는다")
     void rows_KeepServiceOrderAndNarrowAnyNumber(String endpoint) throws Exception {
         List<Object[]> rows = List.of(
@@ -257,7 +224,6 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
 
     private void stub(String endpoint, List<Object[]> rows) {
         switch (endpoint) {
-            case "report" -> when(reportStatsService.getReprtStatsByDate(anyString(), anyString())).thenReturn(rows);
             case "data-usage" -> when(reportStatsService.getDtaUseStatsByDate(anyString(), anyString())).thenReturn(rows);
             case "bbs" -> when(reportStatsService.getBbsStatsByDate(anyString(), anyString())).thenReturn(rows);
             case "user" -> when(reportStatsService.getUserStatsByDate(anyString(), anyString())).thenReturn(rows);
@@ -275,7 +241,6 @@ public class StatisticsApiControllerTest extends BaseControllerTest {
         ArgumentCaptor<String> from = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> to = ArgumentCaptor.forClass(String.class);
         switch (endpoint) {
-            case "report" -> verify(reportStatsService, times(calls)).getReprtStatsByDate(from.capture(), to.capture());
             case "data-usage" -> verify(reportStatsService, times(calls)).getDtaUseStatsByDate(from.capture(), to.capture());
             case "bbs" -> verify(reportStatsService, times(calls)).getBbsStatsByDate(from.capture(), to.capture());
             case "user" -> verify(reportStatsService, times(calls)).getUserStatsByDate(from.capture(), to.capture());

@@ -34,28 +34,31 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(length = 20)
     private String userId;
 
-    @Column(length = 12)
+    /**
+     * 보고 상태 코드. [2026-10-19] 이 상태를 정하거나 바꾸는 처리 흐름이 제품에 없어 API·화면에서 걷었다.
+     * 물리 컬럼(tb_rpt_info.rpt_stts_cd)은 남기므로 매핑만 읽기 전용으로 둔다 — 앱은 이 컬럼에 쓰지 않는다.
+     */
+    @Column(length = 12, insertable = false, updatable = false)
     private String rptSttsCd;
 
     @Column(length = 8)
     private String rptYmd;
 
     private WorkReport(Long rptpSn, String rptTtl, String rptCn, Long atchFileSn,
-                       String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
+                       String rptSeCd, String userId, String rptYmd) {
         this.rptpSn = rptpSn;
         this.rptTtl = rptTtl;
         this.rptCn = rptCn;
         this.atchFileSn = atchFileSn;
         this.rptSeCd = rptSeCd;
         this.userId = userId;
-        this.rptSttsCd = rptSttsCd;
         this.rptYmd = rptYmd;
     }
 
     @Builder
     public static WorkReport create(Long rptpSn, String rptTtl, String rptCn, Long atchFileSn,
-                                    String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
-        return new WorkReport(rptpSn, rptTtl, rptCn, atchFileSn, rptSeCd, userId, rptSttsCd, rptYmd);
+                                    String rptSeCd, String userId, String rptYmd) {
+        return new WorkReport(rptpSn, rptTtl, rptCn, atchFileSn, rptSeCd, userId, rptYmd);
     }
 
     public void update(String rptTtl, String rptCn, Long atchFileSn, String rptSeCd, String rptYmd) {

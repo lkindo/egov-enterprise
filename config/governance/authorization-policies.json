@@ -5667,13 +5667,6 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/admin/system/statistics/report",
-      "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getReportStats",
-      "access": "PERMISSION",
-      "permission": "STATS_ADMIN_READ"
-    },
-    {
-      "method": "GET",
       "path": "/api/v1/admin/system/statistics/summary",
       "handler": "nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getSummary",
       "access": "PERMISSION",
