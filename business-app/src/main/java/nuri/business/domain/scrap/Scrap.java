@@ -7,9 +7,13 @@ import lombok.*;
 /**
  * 스크랩 정보 Entity (v5 standardized)
  * 매핑 테이블: TB_BBS_SCRAP
+ *
+ * <p>한 사용자(frst_rgtr_id, loginId)는 같은 주소(scrap_url)를 하나만 보관한다 — V2_135 의 DB 유일 제약을 미러한다.
+ * 사용 안 함 행도 세므로, 같은 주소를 다시 보관하면 서비스가 그 행을 되살린다(ScrapService#createScrap).
  */
 @Entity
-@Table(name = "tb_bbs_scrap")
+@Table(name = "tb_bbs_scrap", uniqueConstraints = @UniqueConstraint(
+        name = "uk_tb_bbs_scrap_frst_rgtr_id_scrap_url", columnNames = {"frst_rgtr_id", "scrap_url"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Scrap extends BaseEntity {

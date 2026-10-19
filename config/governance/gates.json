@@ -1055,6 +1055,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/ScrapBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-SCRAP-OWNER-URL-UNIQUE",
+          "source": "api-server/src/test/java/nuri/api/schema/ScrapOwnerUrlUniqueMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MAIL-DELIVERY-STATE",
           "source": "api-server/src/test/java/nuri/api/schema/MailDeliveryStateIntegrationTest.java"
         },
