@@ -51,8 +51,7 @@ test('required cross-domain foreign keys are reported without auto-inclusion whe
 test('selecting only survey generates survey alone without the board or a foreign key violation (Phase 0c)', () => {
   const plan = resolveProjectRecipe(recipe({ domains: ['survey'] }), catalog);
   assert.deepEqual(plan.resolvedDomains, ['survey']);
-  // 구성은 pack 을 담지 않는다(11단계 C5) — 생성물 manifest·lock·검토 범위가 기능 소유로 옮겨 갔다.
-  assert.ok(!Object.hasOwn(plan, 'packs'));
+  // 구성에 pack 어휘가 돌아오지 않는지는 retired-pack-vocabulary.test.mjs 의 표가 같은 선택으로 본다(11단계 C5).
   assert.deepEqual(plan.foreignKeyViolations, []);
   assert.deepEqual(plan.autoIncluded, []);
   for (const table of ['tb_bbs_item', 'tb_bbs_master', 'tb_dta_use_stats']) assert.ok(!plan.tables.includes(table), table);

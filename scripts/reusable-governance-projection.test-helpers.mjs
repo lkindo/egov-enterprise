@@ -123,7 +123,7 @@ export function registerProfileProjectionTests(shard) {
         assert.deepEqual({ strippedBlocks: markerBlocks.strippedBlocks, changedFiles: markerBlocks.changedFiles },
           { strippedBlocks: excluded.reduce((sum, count) => sum + count, 0), changedFiles: excluded.filter(Boolean).length },
           `${profileName}: lock.frontend.markerBlocks`);
-        assert.equal(Object.hasOwn(markerBlocks, 'excludedPacks'), false, `${profileName}: the projection does not report packs`);
+        // 이 집계에 pack 어휘가 돌아오지 않는지는 retired-pack-vocabulary.test.mjs 의 표가 같은 함수(applyFrontendProjection)로 본다.
         pruneFrontend(output, projector.directPaths);
         // 표지는 매니페스트 v2 의 활성 구성이다(11단계 C5). v1 manifest 는 C7 에서 원본에서도 걷었다.
         writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));

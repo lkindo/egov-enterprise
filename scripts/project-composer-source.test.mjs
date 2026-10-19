@@ -408,25 +408,10 @@ test('projected modules keep exactly the composition features, its active entry 
 });
 
 /*
- * [11단계 C3] 생성기·정밀 점검·DB 생성기는 매니페스트 v2 의 기능 소유로 투영한다. pack 목록과 순위로 판정하는 코드가 이 파일들에
- * 돌아오면 시작 구성이 다시 직접 선택과 다른 경로를 탄다. pack 을 읽는 옛 소비자(투영 manifest 쓰기·도달성 census)는 대상이 아니다.
+ * [11단계 C3] 생성기·정밀 점검·DB 생성기는 매니페스트 v2 의 기능 소유로 투영한다. 생성기·관찰자 소스가 pack 목록과 순위를 다시 읽지
+ * 않는지는 retired-pack-vocabulary.test.mjs 의 표가 본다(이 자리의 grep 단언을 그 표로 옮겼다).
  */
-test('the generators and the deep plan project by feature ownership, never by pack or rank', () => {
-  const code = file => readFileSync(join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\r\n]*/g, '$1');
-  for (const file of ['scripts/reusable-source-java.mjs', 'scripts/project-composer-deep.mjs', 'scripts/generate-reusable-base-db.mjs']) {
-    assert.doesNotMatch(code(file), /manifest\.packs|profile\.packs|allowedPacks|\.rank\b/, file);
-  }
-  assert.doesNotMatch(code('scripts/generate-reusable-base-source.mjs'), /\.rank\b/, 'shared tables move by declared consumer order, not pack rank');
-  // 관찰자(원장·census·CI 범위·생성물 판정·Atlas·수동 삭제)도 v1 manifest 의 pack·순위를 읽지 않는다(11단계 C5). 생성기 본체와 생성물 무결성
-  // 검사는 v1 manifest 이름을 '생성물에 남기지 않는다·원본 스냅숏' 으로만 쓰므로 pack·순위 읽기만 막는다.
-  for (const file of ['scripts/ui-route-capabilities-contract.mjs', 'scripts/frontend-reachability-census.mjs', 'scripts/reusable-review-scopes.mjs',
-    'scripts/reusable-governance-projection.mjs', 'scripts/generate-permissions.mjs', 'scripts/pack-tagged-registry.mjs',
-    'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs', 'scripts/atlas-catalog.mjs',
-    'scripts/domain-deletion-plan.mjs', 'scripts/reusable-source-frontend.mjs', 'scripts/project-composer-recipe.mjs',
-    'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs', 'scripts/generate-reusable-base-source.mjs',
-    'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-base-census.mjs', 'scripts/project-composer-catalog.mjs']) {
-    assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks|reusable-base-profiles/, file);
-  }
+test('the DB generator takes its ownership inventory from the feature files', () => {
   // DB 생성기가 원본 스키마와 대조하는 소유 목록은 기능 파일에서 온다 — 카탈로그의 core·기능 테이블·독립 시퀀스와 같다.
   const inventory = moduleDatabaseInventory(modules.files);
   const sortedUnique = values => [...new Set(values)].sort();

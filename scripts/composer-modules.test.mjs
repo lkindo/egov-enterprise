@@ -67,8 +67,9 @@ test('config/modules matches its schema and the catalog reads it alone', () => {
   assert.deepEqual(Object.keys(modules.declarations.features).sort(), loadedCatalog.capabilities.map(row => row.id));
   // 카탈로그의 출처는 기능 파일과 권한 원장·소스뿐이다(v1 manifest 출처를 C7 에서 걷었다).
   assert.deepEqual(Object.keys(loadedCatalog.provenance).sort(), ['modules', 'modulesHash', 'permissions', 'permissionsHash', 'sourceInventoryHash']);
-  assert.ok(loadedCatalog.capabilities.every(row => !Object.hasOwn(row, 'pack')));
-  assert.ok(loadedCatalog.presets.every(row => !Object.hasOwn(row, 'packs') && !Object.hasOwn(row, 'frontendRemovePaths')));
+  // 시작 구성의 프런트 제거 경로는 카탈로그에 없다 — 해석기가 직접 선택과 같은 규칙으로 계산한다(11단계 C2). 카탈로그에 pack 어휘가
+  // 돌아오지 않는지는 retired-pack-vocabulary.test.mjs 의 표가 본다.
+  assert.ok(loadedCatalog.presets.every(row => !Object.hasOwn(row, 'frontendRemovePaths')));
   // 같은 기능 파일만 있는 트리에서도 같은 카탈로그가 나온다 — 저장소의 다른 선언 파일에 기대지 않는다.
   const root = modulesFixture();
   assert.equal(buildProjectComposerCatalog(root, loadComposerModules(root).declarations).catalogHash, loadedCatalog.catalogHash);
