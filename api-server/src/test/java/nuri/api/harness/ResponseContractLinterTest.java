@@ -355,8 +355,6 @@ class ResponseContractLinterTest {
     static final Map<String, String> CREATION_NAMED_KEEP_200 = Map.of(
             CONTROLLER_PREFIX + "foundation/controller/system/MenuApiController.java#createMenuCreation",
             "권한별 메뉴 할당의 전체 교체 저장 — 새 자원이 생기지 않는다",
-            CONTROLLER_PREFIX + "foundation/controller/system/service/isg/InternetSvcGuidanceApiController.java#registerIsg",
-            "인터넷서비스안내 API 는 별도 작업에서 퇴역한다 — 걷힐 때 이 행도 걷는다",
             CONTROLLER_PREFIX + "foundation/controller/system/service/survey/SurveySubmissionApiController.java#submit",
             "설문 응답 제출은 참여 기록(투표와 같은 행위형)이다 — 새 식별자가 없고 응답은 설문·본인으로 식별한다");
 
