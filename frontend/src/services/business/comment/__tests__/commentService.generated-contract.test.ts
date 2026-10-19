@@ -83,15 +83,17 @@ describe('commentService generated response contract', () => {
     expect(response.list[0]).not.toHaveProperty(field);
   });
 
-  it('writeOnly 비밀번호가 응답에 섞이면 서비스 경계에서 거부한다', async () => {
+  it('폐기된 익명 비밀번호(pswd)는 계약에 없다 — 응답에 섞여 와도 화면 소비자에게 전달하지 않는다', async () => {
+    // 서버는 이 필드를 받지도 저장하지도 않는다(CommentDto 에서 제거). 계약 밖 필드는 작성자 식별자처럼 걸러진다.
     client.getRaw.mockResolvedValueOnce(successEnvelope({
       list: [{ ...comment, pswd: 'response-must-not-retain-this' }],
       total: 1,
     }));
 
-    await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).rejects.toThrow(
-      '생성 API 응답에 허용되지 않은 필드가 있습니다.',
-    );
+    const response = await commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' });
+
+    expect(response.list).toEqual([comment]);
+    expect(response.list[0]).not.toHaveProperty('pswd');
     expect(client.getRaw).toHaveBeenCalledWith('comments', {
       params: { pstSn: 7, bbsId: 'BBSMSTR_A' },
     });

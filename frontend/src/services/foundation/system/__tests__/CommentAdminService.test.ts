@@ -8,6 +8,7 @@ const client = vi.hoisted(() => ({
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
 import { commentAdminService } from '../CommentAdminService';
+import { CommentDtoSchema } from '@/types/generated-zod';
 
 const success = <T,>(data: T) => ({
   success: true as const,
@@ -113,15 +114,10 @@ describe('CommentAdminService generated contract', () => {
     );
   });
 
-  it('응답에 write-only pswd가 섞이면 generated forbidden-path 경계가 거부한다', async () => {
-    client.getRaw.mockResolvedValueOnce(success({
-      ...emptyPage,
-      list: [{ ansSn: 1, pswd: 'should-not-leak' }],
-    }));
-
-    await expect(commentAdminService.getComments({})).rejects.toThrow(
-      '생성 API 응답에 허용되지 않은 필드가 있습니다.',
-    );
+  it('댓글 계약에는 폐기된 익명 비밀번호(pswd) 필드가 없다 — 요청·응답 어느 쪽으로도 오가지 않는다', () => {
+    // 서버가 받지도 저장하지도 않는다(CommentDto 에서 제거). 생성 계약이 다시 이 필드를 들고 오면 여기서 드러난다.
+    expect(Object.keys(CommentDtoSchema.shape)).not.toContain('pswd');
+    expect(Object.keys(CommentDtoSchema.shape)).toContain('ansCn');
   });
 
   it('목록 transport 오류를 삼키지 않는다', async () => {

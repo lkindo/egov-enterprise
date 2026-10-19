@@ -55,9 +55,8 @@ public class CommentDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private boolean deletable;
 
-    // [보안] 익명 댓글 비밀번호는 요청(write)으로만 수용, 응답(read)에 직렬화 금지.
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String pswd;
+    // [2026-10-19] 익명 댓글 비밀번호(pswd)는 받지 않는다. 쓰는 경로가 없는 폐기 필드인데 요청 값을 평문으로
+    //   저장하고 있었다(만족도는 ADR-0011 로 같은 경로를 걷었다). 요청에 실려 와도 읽지 않고 버린다.
     // [2026-09-22 GAP-CONTRACT-001] 물리 컬럼 4000 을 입력에서 보호한다(만족도 본문과 같은 규칙).
     @Size(max = 4000)
     private String ansCn;

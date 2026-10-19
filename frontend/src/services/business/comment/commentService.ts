@@ -15,7 +15,7 @@ const CommentViewSchema = CommentDtoSchema.extend({
   pstSn: CommentDtoSchema.shape.pstSn.unwrap(),
   bbsId: CommentDtoSchema.shape.bbsId.unwrap(),
   ansCn: CommentDtoSchema.shape.ansCn.unwrap(),
-}).transform(({ pswd: _writeOnlyPassword, ...comment }) => ({
+}).transform((comment) => ({
   ...comment,
   wrterNm: comment.wrterNm ?? '작성자 정보 없음',
   editable: comment.editable ?? false,

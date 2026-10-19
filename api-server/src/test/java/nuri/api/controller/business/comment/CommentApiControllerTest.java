@@ -92,7 +92,6 @@ class CommentApiControllerTest {
                         .pstSn(1L)
                         .bbsId("BBS_001")
                         .ansCn("Comment")
-                        .pswd("response-must-not-expose-this")
                         .wrterId("internal-writer-key")
                         .frstRgtrId("owner-login")
                         .editable(true)
@@ -186,6 +185,30 @@ class CommentApiControllerTest {
         assertThat(body.getValue().getFrstRgtrId()).isNull();
         assertThat(body.getValue().isEditable()).isFalse();
         assertThat(body.getValue().isDeletable()).isFalse();
+    }
+
+    @Test
+    @DisplayName("🔒 익명 댓글 비밀번호(pswd)를 실은 등록 요청은 400 이다 — 폐기 필드를 받지 않아 저장 경로가 없다")
+    void createComment_rejectsRetiredPasswordField() throws Exception {
+        // 운영 매퍼와 같은 엄격 규칙(알 수 없는 필드 거부, application.yml fail-on-unknown-properties)으로 본다.
+        tools.jackson.databind.json.JsonMapper strict = tools.jackson.databind.json.JsonMapper.builder()
+                .configureForJackson2()
+                .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+        MockMvc strictMvc = MockMvcBuilders.standaloneSetup(commentApiController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setMessageConverters(new org.springframework.http.converter.json.JacksonJsonHttpMessageConverter(strict))
+                .setCustomArgumentResolvers(new org.springframework.security.web.method.annotation
+                        .AuthenticationPrincipalArgumentResolver())
+                .build();
+
+        strictMvc.perform(post("/api/v1/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"pstSn\":\"1\",\"bbsId\":\"BBS_001\",\"ansCn\":\"Content\",\"pswd\":\"plain-secret\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(commentService, never()).createComment(anyString(), anyString(), any(CommentDto.class));
     }
 
     @Test
