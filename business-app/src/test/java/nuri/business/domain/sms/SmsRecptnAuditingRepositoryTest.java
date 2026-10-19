@@ -62,6 +62,54 @@ class SmsRecptnAuditingRepositoryTest {
     }
 
     @Test
+    @DisplayName("🔒 다수 수신자 발송 건이 있어도 목록은 발송 건 단위로 쪽을 나눈다 — 겹치거나 밀려 빠지는 건이 없다")
+    void pagesByDispatchEvenWithManyRecipients() {
+        Sms oldest = dispatch("oldest", "01000000001");
+        Sms middle = dispatch("middle", "01000000002");
+        // 가장 최근 건이 수신자 셋이다 — 조인 뒤 자르면 첫 쪽을 이 건 하나가 다 차지한다.
+        Sms newest = dispatch("newest", "01000000003", "01000000004", "01000000005");
+
+        var firstPage = smsRepository.searchSms(null, null, org.springframework.data.domain.PageRequest.of(0, 2));
+        var secondPage = smsRepository.searchSms(null, null, org.springframework.data.domain.PageRequest.of(1, 2));
+
+        assertThat(firstPage.getContent()).extracting(Sms::getSmsTrsmSn)
+                .as("첫 쪽은 최신 발송 건 둘이어야 한다")
+                .containsExactly(newest.getSmsTrsmSn(), middle.getSmsTrsmSn());
+        assertThat(secondPage.getContent()).extracting(Sms::getSmsTrsmSn)
+                .as("둘째 쪽은 남은 한 건이어야 한다")
+                .containsExactly(oldest.getSmsTrsmSn());
+        assertThat(firstPage.getTotalElements()).isEqualTo(3);
+        assertThat(firstPage.getTotalPages()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("🔒 수신번호 검색이 한 발송 건의 여러 수신자와 맞아도 쪽은 발송 건 단위다 — 그 건이 쪽을 다 차지하지 않는다")
+    void recipientSearchPagesByDispatch() {
+        Sms earlier = dispatch("earlier", "01055550009");
+        Sms other = dispatch("other", "01099990001");
+        // 가장 최근 건의 수신자 셋이 모두 검색어와 맞는다 — 조인 뒤 자르면 첫 쪽을 이 건 하나가 다 차지한다.
+        Sms team = dispatch("team", "01055550001", "01055550002", "01055550003");
+
+        var page = smsRepository.searchSms("0", "5555", org.springframework.data.domain.PageRequest.of(0, 2));
+
+        assertThat(page.getContent()).extracting(Sms::getSmsTrsmSn)
+                .as("검색에 맞은 발송 건 둘이 첫 쪽에 실려야 한다")
+                .containsExactly(team.getSmsTrsmSn(), earlier.getSmsTrsmSn());
+        assertThat(page.getTotalElements()).isEqualTo(2);
+        assertThat(smsRepository.searchSms("0", "9999", org.springframework.data.domain.PageRequest.of(0, 2))
+                .getContent()).extracting(Sms::getSmsTrsmSn).containsExactly(other.getSmsTrsmSn());
+    }
+
+    private Sms dispatch(String content, String... recipients) {
+        Sms sms = smsRepository.saveAndFlush(Sms.builder().sndngTelno("0212345678").sndngCn(content).build());
+        for (String recipient : recipients) {
+            repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(sms.getSmsTrsmSn())
+                    .rcptnTelno(recipient).rsltCd("S").build());
+        }
+        return sms;
+    }
+
+    @Test
     @DisplayName("발송 건마다 결과 코드별 수신자 수를 한 번에 센다")
     void countsRecipientsByResultPerDispatch() {
         repository.saveAndFlush(SmsRecptn.builder().smsTrsmSn(801L).rcptnTelno("01000000001").rsltCd("S").build());
