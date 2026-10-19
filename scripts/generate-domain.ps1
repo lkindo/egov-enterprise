@@ -230,8 +230,9 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -255,9 +256,8 @@ public class ${domainCap}ApiController {
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#getList')")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<${domainCap}Dto>>> getList(
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit) {
-        Pageable pageable = PageRequest.of(pageIndex - 1, pageUnit);
+            @PageableDefault(size = 10) Pageable pageable) {
+        // ADR-0036: page 는 1 기반이고 리졸버가 0 기반 Pageable 로 바꾼다. 범위 검증은 PaginationRequestFilter 몫이다.
         Page<${domainCap}Dto> page = service.getList(pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
@@ -272,8 +272,10 @@ public class ${domainCap}ApiController {
     @Operation(summary = "$domainCap 등록")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#create')")
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ApiResponse<Long>> create(@Valid @RequestBody ${domainCap}Dto dto) {
-        return ResponseEntity.ok(ApiResponse.success(service.create(dto)));
+        // ADR-0036: 자원을 만드는 POST 는 201 과 새 식별자다. ResponseContractLinterTest 의 생성 census 에 등재해야 green 이다.
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(service.create(dto)));
     }
 
     @Operation(summary = "$domainCap 수정")
