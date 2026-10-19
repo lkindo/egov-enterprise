@@ -48,8 +48,24 @@ public class PopupService {
                 .collect(Collectors.toList());
     }
 
+    /** 관리 화면의 단건 조회 — 게시 여부·기간과 관계없이 돌려준다. 사용자 화면은 {@link #getPublishedPopup} 을 쓴다. */
     public PopupDto getPopup(Long popupSn) {
         return popupRepository.findById(Objects.requireNonNull(popupSn))
+                .map(PopupDto::from)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    /**
+     * 사용자 화면의 단건 조회 — 오늘 게시 중인 팝업만 돌려준다. 게시하지 않았거나 기간 밖이면 없는 것과 같은 404 다.
+     *
+     * <p>[2026-10-19] 종전에는 사용자 API 가 관리용 {@link #getPopup} 을 그대로 불러, 번호만 알면 게시를 끈 팝업이나
+     * 아직 시작하지 않은·끝난 팝업도 읽혔다(활성 목록은 게시 중인 것만 보이는데 단건만 새던 것). 판정은 활성 목록과 같은
+     * {@link Popup#isPublishedOn} 이다.
+     */
+    public PopupDto getPublishedPopup(Long popupSn) {
+        LocalDate today = LocalDate.now();
+        return popupRepository.findById(Objects.requireNonNull(popupSn))
+                .filter(popup -> popup.isPublishedOn(today))
                 .map(PopupDto::from)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }

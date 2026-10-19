@@ -14,6 +14,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -52,16 +55,33 @@ class PopupUserApiControllerTest {
     }
 
     @Test
-    @DisplayName("팝업 상세 조회")
+    @DisplayName("팝업 상세 조회 — 사용자 경로는 게시 중인 팝업만 묻는다(관리용 단건 조회를 쓰지 않는다)")
     void getPopup() throws Exception {
         PopupDto dto = new PopupDto();
         dto.setPopupSn(1L);
         dto.setFrstRgtrId("private-admin-login");
-        when(popupService.getPopup(1L)).thenReturn(dto);
+        org.mockito.Mockito.lenient().when(popupService.getPublishedPopup(1L)).thenReturn(dto);
+        // 관리용 단건 조회도 같은 값을 주게 둔다 — 사용자 경로가 그쪽을 부르면 응답은 같아도 아래 verify 가 잡는다.
+        org.mockito.Mockito.lenient().when(popupService.getPopup(1L)).thenReturn(dto);
 
         mockMvc.perform(get("/api/v1/popups/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.popupSn").value(1))
                 .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist());
+        verify(popupService, never()).getPopup(anyLong());
+    }
+
+    @Test
+    @DisplayName("🔒 게시하지 않았거나 기간 밖인 팝업은 사용자 단건 조회에서 404 다")
+    void getPopup_unpublishedIsNotFound() throws Exception {
+        MockMvc withHandler = MockMvcBuilders.standaloneSetup(popupUserApiController)
+                .setControllerAdvice(new nuri.foundation.core.exception.GlobalExceptionHandler())
+                .build();
+        when(popupService.getPublishedPopup(2L)).thenThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
+
+        withHandler.perform(get("/api/v1/popups/2"))
+                .andExpect(status().isNotFound());
+        verify(popupService, never()).getPopup(anyLong());
     }
 }
