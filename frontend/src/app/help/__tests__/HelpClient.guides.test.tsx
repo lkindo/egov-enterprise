@@ -30,7 +30,7 @@ vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb:
 
 import HelpClient from '../HelpClient';
 
-const page = <T,>(list: T[]) => ({ list, total: list.length, size: 10, page: 0, totalPage: list.length ? 1 : 0 });
+const page = <T,>(list: T[]) => ({ list, total: list.length, size: 10, page: 1, totalPage: list.length ? 1 : 0 });
 
 /**
  * [2026-10-19] 도움말(HPCM)·온라인 매뉴얼은 관리 화면에서 등록만 되고 일반 사용자가 읽는 화면이 없었다. 도움말 센터의 두 탭이
@@ -56,7 +56,7 @@ describe('HelpClient 도움말·온라인 매뉴얼 열람', () => {
     const item = within(list).getByRole('article', { name: '비밀번호 변경' });
     expect(item).toHaveTextContent('내 정보에서 바꿉니다.');
     expect(item).toHaveTextContent('임시 비밀번호는 먼저 바꿔야 합니다.');
-    expect(harness.getHelpGuides).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, size: 10, keyword: '' }));
+    expect(harness.getHelpGuides).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, size: 10, keyword: '' }));
     expect(harness.getOnlineManuals).not.toHaveBeenCalled();
     expect(screen.getByRole('tab', { name: /^도움말$/ })).toHaveAttribute('aria-selected', 'true');
   });
@@ -90,7 +90,7 @@ describe('HelpClient 도움말·온라인 매뉴얼 열람', () => {
     expect(await screen.findByText(empty)).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('textbox', { name: '도움말 키워드 검색' }), { target: { value: '결재' } });
-    await waitFor(() => expect(load).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, keyword: '결재' })));
+    await waitFor(() => expect(load).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, keyword: '결재' })));
     expect(await screen.findByText('"결재"에 대한 검색 결과가 없습니다.')).toBeInTheDocument();
     expect(screen.queryByText(empty)).toBeNull();
   });
