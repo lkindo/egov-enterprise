@@ -180,10 +180,10 @@ test('승인 해시는 개수뿐인 summary 만 빼고 record·부정 사례·�
   const approvedClasses = overlay.classes.filter((row) => row.reviewState === 'approved').length;
   assert.deepEqual(validateUrlStateApproval(overlay, census, schema), []);
 
-  // 스캔한 파일·화면 수만 바뀌면 승인을 다시 묶지 않는다.
+  // 스캔한 화면 수 같은 개수만 바뀌면 승인을 다시 묶지 않는다.
   const counters = structuredClone(census);
-  counters.summary.sourceFileCount += 1;
   counters.summary.exactPopulations.filesystemRoutes += 1;
+  counters.summary.syntaxOccurrences += 1;
   assert.deepEqual(validateUrlStateApproval(overlay, counters, schema), [], '개수만 바뀐 census 는 같은 승인으로 열려야 한다');
   assert.equal(approvedStateItemSelectors(overlay, counters).length, approvedClasses);
 

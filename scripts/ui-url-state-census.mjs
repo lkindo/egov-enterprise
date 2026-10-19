@@ -1147,7 +1147,11 @@ function criticalLoginFlow(records) {
   };
 }
 
-function summaryFor(records, sourceFileCount, exactPopulations) {
+/*
+ * 훑은 소스 파일 수(sourceFileCount)는 싣지 않는다. 읽는 소비자가 없고 계약도 대조하지 않는데, URL 상태가 없는 파일이
+ * 하나 생기거나 없어질 때마다 census 를 다시 만들게 했다. 모집단 붕괴는 빈 records 와 exactPopulations 검사가 잡는다.
+ */
+function summaryFor(records, exactPopulations) {
   const byKind = {};
   const bySurface = {};
   for (const record of records) {
@@ -1155,7 +1159,6 @@ function summaryFor(records, sourceFileCount, exactPopulations) {
     bySurface[record.surface] = (bySurface[record.surface] ?? 0) + 1;
   }
   return {
-    sourceFileCount,
     records: records.length,
     syntaxOccurrences: records.reduce((total, record) => total + record.evidence.occurrenceCount, 0),
     ambiguousRecords: records.filter(({ resolutionStatus }) => resolutionStatus === 'ambiguous').length,
@@ -1294,7 +1297,7 @@ export function buildUrlStateCensus(options = {}) {
       generator: 'scripts/ui-url-state-census.mjs --check',
       inventoryHash,
     },
-    summary: summaryFor(records, sourcePaths.length, exactPopulations),
+    summary: summaryFor(records, exactPopulations),
     requiredNegativeCases: negatives,
     criticalFlows,
     records,
@@ -1310,7 +1313,7 @@ export function buildUrlStateCensus(options = {}) {
 }
 
 function expectedSummary(records, summary) {
-  return summaryFor(records, summary.sourceFileCount, summary.exactPopulations);
+  return summaryFor(records, summary.exactPopulations);
 }
 
 /**

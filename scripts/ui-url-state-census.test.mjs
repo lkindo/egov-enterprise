@@ -71,6 +71,8 @@ test('current URL-state census exactly covers critical route and URL producer po
     pageRedirects: 17,
   });
   assert.equal(actual.summary.records, actual.records.length);
+  // 훑은 파일 수는 싣지 않는다 — 소비자가 없는데 URL 상태가 없는 파일 하나에도 census 재생성을 요구했다.
+  assert.equal(Object.hasOwn(actual.summary, 'sourceFileCount'), false);
   assert.equal(actual.summary.unverifiedRecords, actual.records.length);
   assert.ok(actual.summary.ambiguousRecords > 0);
   assert.ok(actual.summary.byKind['query-consumer'] > 0);
