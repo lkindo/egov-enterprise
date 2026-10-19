@@ -122,16 +122,16 @@ pnpm -C frontend syncContract
 
 # 단계별로 돌릴 때(이 경우 api-docs.json 정규화는 따로 하지 않는다)
 pnpm -C frontend codegen:file
-pnpm -C frontend codegen:zod   # generated-zod.ts 동기화
+pnpm -C frontend codegen:zod   # generated-zod.ts·generated-operations.ts 와 태그 묶음 모듈 동기화
 
 # 서버(:8080) 기동 시에는:
 pnpm -C frontend codegen:ts
 ```
 
-드리프트 점검: `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. Git 추적 여부를 확인한 뒤 Git 인덱스의 `api-docs.json`으로 임시 디렉터리에 재생성하여 인덱스의 생성물과 비교합니다. 커밋에 실릴 쌍이므로, `api-docs.json`만 스테이징하고 다시 만든 생성물을 빠뜨린 커밋이 실패합니다. 각 명령이 맡은 스펙·생성물(api: `api-docs.json`·`generated-api.d.ts`, zod: `api-docs.json`·`generated-zod.ts`·`generated-operations.ts`) 가운데 하나라도 작업 트리가 인덱스와 다르면 작업 트리 쌍도 같은 방법으로 비교하므로, 명세만 고치고 다시 만들지 않은 작업본도 실패합니다. 오류는 어긋난 생성물마다 `[index]`·`[working tree]` 중 어느 쪽인지 밝힙니다. pre-commit 에서는 git 이 넘기는 인덱스(`GIT_INDEX_FILE`)를 그대로 읽습니다. LF/CRLF 줄 끝만 정규화하며 내용 불일치·누락·미추적 파일은 실패합니다. 성공·실패 모두 작업 트리와 Git 인덱스를 덮어쓰지 않으므로, 의도한 변경의 반영은 위 `syncContract`로 별도 수행하고 다시 만든 생성물을 `api-docs.json`과 함께 스테이징합니다. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
+드리프트 점검: `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. Git 추적 여부를 확인한 뒤 Git 인덱스의 `api-docs.json`으로 임시 디렉터리에 재생성하여 인덱스의 생성물과 비교합니다. 커밋에 실릴 쌍이므로, `api-docs.json`만 스테이징하고 다시 만든 생성물을 빠뜨린 커밋이 실패합니다. 각 명령이 맡은 스펙·생성물(api: `api-docs.json`·`generated-api.d.ts`, zod: `api-docs.json`·`generated-zod.ts`·`generated-operations.ts`와 그 묶음 모듈) 가운데 하나라도 작업 트리가 인덱스와 다르면 작업 트리 쌍도 같은 방법으로 비교하므로, 명세만 고치고 다시 만들지 않은 작업본도 실패합니다. 오류는 어긋난 생성물마다 `[index]`·`[working tree]` 중 어느 쪽인지 밝힙니다. pre-commit 에서는 git 이 넘기는 인덱스(`GIT_INDEX_FILE`)를 그대로 읽습니다. LF/CRLF 줄 끝만 정규화하며 내용 불일치·누락·미추적 파일, 다시 만든 결과에 없는 낡은 묶음 모듈은 실패합니다. 성공·실패 모두 작업 트리와 Git 인덱스를 덮어쓰지 않으므로, 의도한 변경의 반영은 위 `syncContract`로 별도 수행하고 다시 만든 생성물을 `api-docs.json`과 함께 스테이징합니다. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
 
 ### 2. 생성된 파일 확인
-`frontend/src/types/generated-api.d.ts`(타입 정의), `frontend/src/types/generated-zod.ts`(런타임 검증 스키마), `frontend/src/types/generated-operations.ts`(operation 계약)가 함께 갱신되었는지 확인합니다. 실제 소비 여부는 프런트 타입 검사와 계약 하네스로 확인하며, 특정 서비스 래퍼가 모든 호출 경로를 소유한다고 가정하지 않습니다.
+`frontend/src/types/generated-api.d.ts`(타입 정의), `frontend/src/types/generated-zod.ts`(런타임 검증 스키마), `frontend/src/types/generated-operations.ts`(operation 계약)가 함께 갱신되었는지 확인합니다. zod·operations 의 두 파일은 진입 파일이고 본문은 옆의 같은 이름 폴더(`generated-zod/`·`generated-operations/`)에 API 태그(컨트롤러)별 묶음 모듈로 나뉩니다 — 번들러가 화면마다 쓰는 태그의 묶음만 싣게 하려는 것입니다(2026-10-19). 소비 코드는 계속 진입 파일(`@/types/generated-zod`·`@/types/generated-operations`)을 import 하고, 묶음 모듈을 손으로 고치거나 직접 import 하지 않습니다. 실제 소비 여부는 프런트 타입 검사와 계약 하네스로 확인하며, 특정 서비스 래퍼가 모든 호출 경로를 소유한다고 가정하지 않습니다.
 
 ---
 

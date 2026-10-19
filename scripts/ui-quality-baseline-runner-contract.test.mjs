@@ -17,6 +17,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import * as baselineCore from '../frontend/scripts/ui-quality-baseline-core.mjs';
+import { generatedContractText } from './verify-generated-contracts.mjs';
 
 import {
   assertArtifactSafe,
@@ -1291,7 +1292,7 @@ test('FAQ navigation completion remains bound to the actual detail redirect, hea
   const actions = readFileSync(join(repoRoot, 'frontend/src/app/actions/boardActions.ts'), 'utf8');
   const detail = readFileSync(join(repoRoot, 'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx'), 'utf8');
   const satisfaction = readFileSync(join(repoRoot, 'frontend/src/components/features/satisfaction/SatisfactionSection.tsx'), 'utf8');
-  const operations = readFileSync(join(repoRoot, 'frontend/src/types/generated-operations.ts'), 'utf8');
+  const operations = generatedContractText(repoRoot, 'operations');
   assert.match(actions, /redirect: `\/admin\/community\/boards\/detail\?bbsId=\$\{bbsId\}&pstSn=\$\{targetId\}`/);
   assert.match(detail, /<h1[^>]*>\s*\{article\.pstTtl\}\s*<\/h1>/);
   assert.match(satisfaction, /queryFn: \(\) => satisfactionService\.list\(bbsId, pstSn\)/);

@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { ComposerError } from './project-composer-errors.mjs';
 import { FRONTEND_TOOLCHAIN, GENERATED_CONTRACT_TYPES, apiDocsText, assertFrontendToolchain, handlerSourceFile, missingFrontendToolchain, projectApiDocs,
   projectSourceApiDocs, regenerateContractTypes } from './reusable-contract-projection.mjs';
+import { generatedContractFiles, generatedContractText } from './verify-generated-contracts.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const sourceText = readFileSync(join(root, 'api-docs.json'), 'utf8').replace(/\r\n/g, '\n');
@@ -158,8 +159,13 @@ const contractOutput = (t, docText) => {
 test('regenerating the three generated contract types from the full api-docs reproduces the committed files', { timeout: 120_000 }, t => {
   const output = contractOutput(t, apiDocsText(projectSourceApiDocs(root, () => false).doc));
   assert.deepEqual(regenerateContractTypes({ sourceRoot: root, output }), Object.values(GENERATED_CONTRACT_TYPES));
-  for (const file of Object.values(GENERATED_CONTRACT_TYPES)) {
-    assert.equal(generatedText(output, file), generatedText(root, file), `${file} must match the committed generator output`);
+  // zod·operations 는 진입 파일과 태그 묶음 모듈이다 — 모듈 목록과 본문이 모두 커밋본과 같아야 한다.
+  for (const key of Object.keys(GENERATED_CONTRACT_TYPES)) {
+    const files = generatedContractFiles(root, key);
+    assert.deepEqual(generatedContractFiles(output, key), files, `${key} must produce the committed module set`);
+    for (const file of files) {
+      assert.equal(generatedText(output, file), generatedText(root, file), `${file} must match the committed generator output`);
+    }
   }
 });
 
@@ -168,7 +174,7 @@ test('a reduced api-docs yields operation descriptors for exactly the operations
   const projection = projectSourceApiDocs(root, file => file === controller);
   const output = contractOutput(t, apiDocsText(projection.doc));
   regenerateContractTypes({ sourceRoot: root, output });
-  const descriptors = [...generatedText(output, GENERATED_CONTRACT_TYPES.operations).matchAll(/export const (\w+)Operation\b/gu)].map(match => match[1]).sort();
+  const descriptors = [...generatedContractText(output, 'operations').matchAll(/export const (\w+)Operation\b/gu)].map(match => match[1]).sort();
   assert.deepEqual(descriptors, operationsOf(projection.doc).map(operation => operation.operationId).sort());
   for (const { operationId } of projection.removedOperations) {
     assert.doesNotMatch(generatedText(output, GENERATED_CONTRACT_TYPES.api), new RegExp(`\\b${operationId}:`), `${operationId} left generated-api.d.ts`);

@@ -6,13 +6,15 @@
  * 넘기는 GIT_INDEX_FILE(커밋 -a·경로 지정 커밋의 임시 index)을 그대로 따른다. 그 종류(api·zod)가 맡은 스펙·생성물 가운데 하나라도
  * 작업 트리가 index 와 다르면(줄 끝 정규화 후) 작업 트리 쌍도 같은 방법으로 비교한다 — 스펙만 고치고 다시 만들지 않은 작업본을 잡는다.
  * 스펙이 같으면 생성을 다시 하지 않는다. 성공·실패 모두 작업 트리와 index 를 쓰지 않는다. 생성물의 누락·미추적은 실패이며 복원하지 않는다.
+ * zod·operations 는 진입 파일과 그 옆 같은 이름 폴더의 묶음 모듈로 나뉜다(2026-10-19, codegen-zod.js 머리말). 묶음 모듈도 같은 쌍으로
+ * 비교하며, 다시 만든 결과에 없는 모듈·있는데 빠진 모듈도 드리프트다.
  *
  * 생성기 실행(runContractGenerator)과 그 상수는 생성기 투영(reusable-contract-projection.mjs)도 쓰는 하나의 정의다. 그 모듈이 아니라
  * 여기 두는 이유: frontend 잡이 실행하는 이 검증이 생성기·도구 경로 표(ci-change-scope.mjs)의 모듈을 import 하면, 그 표 항목들에
  * frontend 축을 켜야 한다(도구 경로 표 계약이 그렇게 계산한다). 이 파일은 표 밖이라 바뀌면 전수 검증이 돈다.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +32,41 @@ export const CONTRACT_GENERATORS = Object.freeze({
   api: Object.freeze(['api']),
   zod: Object.freeze(['zod', 'operations']),
 });
+/** 진입 파일 옆 같은 이름 폴더에 묶음 모듈을 두는 생성 타입(codegen-zod.js 가 만든다). */
+export const MODULAR_CONTRACT_TYPES = Object.freeze(['zod', 'operations']);
+/** 묶음 모듈 폴더(저장소 기준 경로 또는 절대 경로 모두). `x/generated-zod.ts` → `x/generated-zod`. */
+export const contractModuleDirectory = entry => entry.replace(/\.ts$/u, '');
+
+/** 진입 파일(절대 경로) 옆 묶음 모듈의 파일 이름(정렬). 폴더가 없으면 실패한다 — 생성물 누락을 빈 목록으로 보지 않는다. */
+export function contractModuleNames(entryPath) {
+  return readdirSync(contractModuleDirectory(entryPath), { withFileTypes: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.ts')).map(entry => entry.name).sort();
+}
+
+/**
+ * 생성 타입 하나의 본문 — 진입 파일 뒤에 묶음 모듈을 이름 순으로 잇는다. 서술자·이름을 정규식으로 읽는 도구(경계 census, 계약 시험)가
+ * 종전처럼 한 덩어리로 읽는다. api(d.ts)는 진입 파일 하나다.
+ */
+export function generatedContractTextAt(entryPath, { modular = true } = {}) {
+  const parts = [readFileSync(entryPath, 'utf8')];
+  if (modular) {
+    for (const name of contractModuleNames(entryPath)) parts.push(readFileSync(join(contractModuleDirectory(entryPath), name), 'utf8'));
+  }
+  return parts.join('\n');
+}
+
+/** 트리 root 에서 생성 타입 key(zod·operations·api)의 본문. */
+export function generatedContractText(root, key) {
+  return generatedContractTextAt(join(root, GENERATED_CONTRACT_TYPES[key]), { modular: MODULAR_CONTRACT_TYPES.includes(key) });
+}
+
+/** 생성 타입 key 의 파일 전부(저장소 기준 경로: 진입 파일, 그다음 묶음 모듈 이름 순). 트리 root 의 작업 트리에서 센다. */
+export function generatedContractFiles(root, key) {
+  const entry = GENERATED_CONTRACT_TYPES[key];
+  if (!MODULAR_CONTRACT_TYPES.includes(key)) return [entry];
+  return [entry, ...contractModuleNames(join(root, entry)).map(name => `${contractModuleDirectory(entry)}/${name}`)];
+}
+
 /** generated-api.d.ts 를 만드는 openapi-typescript CLI(원본 frontend 의존성, 저장소 기준 경로). */
 export const OPENAPI_TYPESCRIPT_CLI = 'frontend/node_modules/openapi-typescript/bin/cli.js';
 const CODEGEN_ZOD = '.agent/scripts/codegen-zod.js';
@@ -93,29 +130,51 @@ export function verifyGeneratedContracts(kind, root = repoRoot) {
   if (!Object.hasOwn(CONTRACT_GENERATORS, kind)) throw new Error('Expected contract kind: api or zod');
   const keys = CONTRACT_GENERATORS[kind];
   const files = keys.map(key => GENERATED_CONTRACT_TYPES[key]);
-  const tracked = [API_DOCS_PATH, ...files];
-  git(root, ['ls-files', '--error-unmatch', '--', ...tracked]);
-  const staged = tracked.map(file => git(root, ['cat-file', 'blob', `:${file}`], 'buffer'));
-  const working = tracked.map(file => readFileSync(join(root, file)));
+  const moduleDirectories = keys.filter(key => MODULAR_CONTRACT_TYPES.includes(key))
+    .map(key => contractModuleDirectory(GENERATED_CONTRACT_TYPES[key]));
+  git(root, ['ls-files', '--error-unmatch', '--', API_DOCS_PATH, ...files]);
+  // 묶음 모듈은 폴더 바로 아래 .ts 만 생성물이다. index 쪽은 추적 목록, 작업 트리 쪽은 실제 폴더에서 센다(폴더가 없으면 ENOENT 로 실패).
+  const directChild = (directory, file) => file.startsWith(`${directory}/`) && !file.slice(directory.length + 1).includes('/')
+    && file.endsWith('.ts');
+  const indexModules = moduleDirectories.flatMap(directory => git(root, ['ls-files', '-z', '--', `${directory}/`])
+    .split('\0').filter(file => directChild(directory, file)));
+  const workingModules = moduleDirectories.flatMap(directory => contractModuleNames(join(root, `${directory}.ts`))
+    .map(name => `${directory}/${name}`));
   const text = buffer => normalizeLineEndings(buffer.toString('utf8'));
+  const read = (paths, load) => new Map(paths.map(file => [file, text(load(file))]));
+  const staged = read([API_DOCS_PATH, ...files, ...indexModules], file => git(root, ['cat-file', 'blob', `:${file}`], 'buffer'));
+  const working = read([API_DOCS_PATH, ...files, ...workingModules], file => readFileSync(join(root, file)));
   const temporary = mkdtempSync(join(tmpdir(), VERIFY_PREFIX));
   try {
+    /** 다시 만든 생성물(저장소 기준 경로 → 본문). 진입 파일과 묶음 모듈을 모두 담는다. */
     const regenerate = (side, specPath) => {
       const directory = join(temporary, side);
       mkdirSync(directory);
       const outputPaths = Object.fromEntries(keys.map(key => [key, join(directory, basename(GENERATED_CONTRACT_TYPES[key]))]));
       runContractGenerator({ kind, specPath, outputPaths });
-      return keys.map(key => normalizeLineEndings(readFileSync(outputPaths[key], 'utf8')));
+      const generated = new Map();
+      for (const key of keys) {
+        const entry = GENERATED_CONTRACT_TYPES[key];
+        generated.set(entry, normalizeLineEndings(readFileSync(outputPaths[key], 'utf8')));
+        if (!MODULAR_CONTRACT_TYPES.includes(key)) continue;
+        for (const name of contractModuleNames(outputPaths[key])) {
+          generated.set(`${contractModuleDirectory(entry)}/${name}`,
+            normalizeLineEndings(readFileSync(join(contractModuleDirectory(outputPaths[key]), name), 'utf8')));
+        }
+      }
+      return generated;
     };
+    /** 생성물 쪽(actual)이 다시 만든 결과(expected)와 다른 파일 — 본문이 다르거나, 한쪽에만 있다. */
+    const differing = (expected, actual) => [...new Set([...expected.keys(), ...actual.keys()])]
+      .filter(file => file !== API_DOCS_PATH && expected.get(file) !== actual.get(file)).sort();
     const stagedSpec = join(temporary, API_DOCS_PATH);
-    writeFileSync(stagedSpec, staged[0]);
+    writeFileSync(stagedSpec, staged.get(API_DOCS_PATH));
     const fromIndex = regenerate('index', stagedSpec);
-    const drift = files.filter((file, index) => text(staged[index + 1]) !== fromIndex[index]).map(file => `${file} [index]`);
-    if (tracked.some((file, index) => text(working[index]) !== text(staged[index]))) {
-      const fromWorktree = text(working[0]) === text(staged[0]) ? fromIndex : regenerate('worktree', join(root, API_DOCS_PATH));
-      files.forEach((file, index) => {
-        if (text(working[index + 1]) !== fromWorktree[index]) drift.push(`${file} [working tree]`);
-      });
+    const drift = differing(fromIndex, staged).map(file => `${file} [index]`);
+    if (differing(working, staged).length || working.get(API_DOCS_PATH) !== staged.get(API_DOCS_PATH)) {
+      const fromWorktree = working.get(API_DOCS_PATH) === staged.get(API_DOCS_PATH)
+        ? fromIndex : regenerate('worktree', join(root, API_DOCS_PATH));
+      drift.push(...differing(fromWorktree, working).map(file => `${file} [working tree]`));
     }
     if (drift.length) {
       throw new Error(`Generated contract drift: ${drift.join(', ')}. [index] compares the staged files with a regeneration from`

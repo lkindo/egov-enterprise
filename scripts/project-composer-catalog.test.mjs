@@ -9,6 +9,7 @@ import { attachUserReasons, userReasonProblem } from './project-composer-reasons
 import { degradationPredicate, deriveEventTriples, derivePortConnections, eventConstructionsIn, eventListenersIn, requiresClosure,
   resolveIntegrations, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 import { MODULES_DIRECTORY, loadComposerModules, moduleDatabaseInventory } from './composer-modules.mjs';
+import { generatedContractText } from './verify-generated-contracts.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = loadProjectComposerCatalog(ROOT);
@@ -858,7 +859,7 @@ test('a new dependency without a sentence, a sentence without its dependency and
 function apiDependencyViolations(capabilities) {
   const domains = new Set(capabilities.map(capability => capability.id));
   const operations = new Map();
-  const operationsSource = readFileSync(join(ROOT, 'frontend/src/types/generated-operations.ts'), 'utf8');
+  const operationsSource = generatedContractText(ROOT, 'operations');
   for (const match of operationsSource.matchAll(/export const (\w+Operation) = [\s\S]*?method: "(\w+)",\s*path: "([^"]+)"/g)) {
     operations.set(match[1], `${match[2].toUpperCase()} ${match[3]}`);
   }

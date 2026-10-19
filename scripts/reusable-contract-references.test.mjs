@@ -22,7 +22,8 @@ test('the scope is the frontend typecheck scope, tests included, without the gen
     assert.ok(isContractScopeFile(file), file);
   }
   for (const file of ['frontend/e2e/x.spec.ts', 'frontend/scripts/x.ts', 'frontend/node_modules/x/index.ts', 'frontend/vitest.config.mts', 'frontend/vitest.setup.ts',
-    'frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts', 'frontend/src/types/generated-api.d.ts', 'frontend/src/x.js', 'scripts/x.ts']) {
+    'frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts', 'frontend/src/types/generated-api.d.ts', 'frontend/src/x.js', 'scripts/x.ts',
+    'frontend/src/types/generated-zod/approval.ts', 'frontend/src/types/generated-operations/_define.ts']) {
     assert.ok(!isContractScopeFile(file), file);
   }
 });
@@ -34,6 +35,10 @@ test('import specifiers resolve to the three generated contract modules only', (
   assert.equal(contractModuleOf('@/types/generated-api.d', 'frontend/src/x.ts'), 'api');
   assert.equal(contractModuleOf('@/lib/api/generated-api-client', 'frontend/src/x.ts'), undefined);
   assert.equal(contractModuleOf('zod', 'frontend/src/x.ts'), undefined);
+  // 태그 묶음 모듈로 곧장 가는 import 도 그 계약 모듈의 이름 참조다 — 진입 파일을 건너뛴 참조가 판정에서 빠지지 않는다.
+  assert.equal(contractModuleOf('@/types/generated-zod/approval', 'frontend/src/lib/x.ts'), 'zod');
+  assert.equal(contractModuleOf('../../types/generated-operations/menu', 'frontend/src/lib/api/x.ts'), 'operations');
+  assert.equal(contractModuleOf('@/types/generated-zod-extra', 'frontend/src/lib/x.ts'), undefined);
 });
 
 test('named imports, re-exports, namespaces and literal api indexes are read; comments and strings are not', () => {
@@ -98,6 +103,11 @@ test('generated contract exports are read completely and an unread export form f
   assert.equal(zod.size, count(GENERATED_CONTRACT_TYPES.zod));
   assert.equal(operations.size, count(GENERATED_CONTRACT_TYPES.operations));
   assert.throws(() => exportedNames('export const A = 1;\nexport { B } from "./b";\n', 'x'), /exports in a form the contract name check does not read: export \{ B \}/);
+  // 진입 파일은 태그 묶음 모듈의 이름 하나씩을 다시 내보낸다. 그 모양만 읽고, 이름을 바꾸거나 여럿을 묶은 다시 내보내기는 판정하지 않는다.
+  assert.deepEqual(exportedNames("export { ASchema } from './generated-zod/approval';\nexport type { A } from './generated-zod/approval';\n", 'x'),
+    new Set(['ASchema', 'A']));
+  assert.throws(() => exportedNames("export { ASchema as B } from './generated-zod/approval';\n", 'x'), /does not read: export \{ ASchema as B \}/);
+  assert.throws(() => exportedNames("export { ASchema, CSchema } from './generated-zod/approval';\n", 'x'), /does not read: export \{ ASchema, CSchema \}/);
 });
 
 /*

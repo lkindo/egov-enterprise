@@ -26,6 +26,9 @@ export const CONTRACT_MODULES = Object.freeze({
   api: 'frontend/src/types/generated-api',
 });
 const CONTRACT_FILES = new Set(['frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts', 'frontend/src/types/generated-api.d.ts']);
+// zod·operations 의 태그 묶음 모듈(진입 파일 옆 같은 이름 폴더, codegen-zod.js). 생성 계약 자신이라 범위에서 빼고, 거기로 가는 import 도
+// 그 계약 모듈의 이름 참조로 읽는다.
+const CONTRACT_MODULE_DIRECTORIES = Object.freeze({ zod: `${CONTRACT_MODULES.zod}/`, operations: `${CONTRACT_MODULES.operations}/` });
 // frontend/tsconfig.json 의 include(**/*.ts·**/*.tsx·**/*.mts)와 exclude(node_modules·scripts·vitest.config.mts·vitest.setup.ts·e2e).
 const SCOPE_EXTENSIONS = Object.freeze(['.ts', '.tsx', '.mts']);
 const SCOPE_EXCLUDED_DIRECTORIES = Object.freeze(['frontend/node_modules/', 'frontend/scripts/', 'frontend/e2e/', 'frontend/.next/']);
@@ -36,7 +39,8 @@ const API_MEMBERS = Object.freeze(['components', 'operations', 'paths']);
 export function isContractScopeFile(file) {
   const path = file.replaceAll('\\', '/');
   return path.startsWith('frontend/') && SCOPE_EXTENSIONS.some(extension => path.endsWith(extension))
-    && !SCOPE_EXCLUDED_DIRECTORIES.some(directory => path.startsWith(directory)) && !SCOPE_EXCLUDED_FILES.has(path) && !CONTRACT_FILES.has(path);
+    && !SCOPE_EXCLUDED_DIRECTORIES.some(directory => path.startsWith(directory)) && !SCOPE_EXCLUDED_FILES.has(path) && !CONTRACT_FILES.has(path)
+    && !Object.values(CONTRACT_MODULE_DIRECTORIES).some(directory => path.startsWith(directory));
 }
 
 /** import 지정자가 가리키는 생성 계약 모듈의 키(zod·operations·api). 다른 모듈이면 undefined. */
@@ -46,7 +50,8 @@ export function contractModuleOf(specifier, file) {
   else if (specifier.startsWith('./') || specifier.startsWith('../')) target = posix.normalize(posix.join(posix.dirname(file.replaceAll('\\', '/')), specifier));
   else return undefined;
   target = target.replace(/\.(?:d\.ts|ts|tsx|js|mjs)$/u, '').replace(/\.d$/u, '');
-  return Object.keys(CONTRACT_MODULES).find(key => CONTRACT_MODULES[key] === target);
+  return Object.keys(CONTRACT_MODULES).find(key => CONTRACT_MODULES[key] === target)
+    ?? Object.keys(CONTRACT_MODULE_DIRECTORIES).find(key => target.startsWith(CONTRACT_MODULE_DIRECTORIES[key]));
 }
 
 const literal = token => (token?.type === 'string' || (token?.type === 'template' && !token.interpolated) ? token.value : undefined);
@@ -192,13 +197,19 @@ export function parseContractReferences(source, file) {
 }
 
 const EXPORT_DECLARATION = /^export\s+(?:declare\s+)?(?:async\s+)?(?:const|let|var|function\*?|class|abstract\s+class|type|interface|enum)\s+([A-Za-z_$][\w$]*)/gmu;
+// 진입 파일이 태그 묶음 모듈의 이름 하나를 다시 내보내는 줄(codegen-zod.js 가 줄마다 하나씩 쓴다). 이름을 바꾸는 `as` 는 읽지 않는다.
+const SINGLE_REEXPORT = /^export\s+(?:type\s+)?\{\s*([A-Za-z_$][\w$]*)\s*\}\s+from\s+'\.\/[\w-]+\/[\w$-]+';$/gmu;
 
-/** 생성 계약 파일(zod·operations)이 내보내는 이름. 판정하지 못하는 export 모양이 있으면 실패한다. */
+/**
+ * 생성 계약 진입 파일(zod·operations)이 내보내는 이름. 선언과, 묶음 모듈 이름 하나씩의 다시 내보내기를 읽는다.
+ * 그 밖의 export 모양(여러 이름·`as`·`export *`)이 있으면 판정하지 못하므로 실패한다.
+ */
 export function exportedNames(text, label) {
   const lf = text.replace(/\r\n/g, '\n');
-  const unread = lf.split('\n').filter(line => /^export\b/u.test(line) && !new RegExp(EXPORT_DECLARATION.source, 'u').test(line));
+  const readable = line => new RegExp(EXPORT_DECLARATION.source, 'u').test(line) || new RegExp(SINGLE_REEXPORT.source, 'u').test(line);
+  const unread = lf.split('\n').filter(line => /^export\b/u.test(line) && !readable(line));
   if (unread.length) throw new Error(`${label} exports in a form the contract name check does not read: ${unread[0].slice(0, 120)}`);
-  return new Set([...lf.matchAll(EXPORT_DECLARATION)].map(match => match[1]));
+  return new Set([...lf.matchAll(EXPORT_DECLARATION), ...lf.matchAll(SINGLE_REEXPORT)].map(match => match[1]));
 }
 
 /**
