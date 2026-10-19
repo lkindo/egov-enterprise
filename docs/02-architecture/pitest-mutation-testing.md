@@ -10,14 +10,14 @@
 |---|---|
 | 엔진·플러그인 | PIT 엔진 `1.25.9` 명시 고정, 루트 Gradle 플러그인 `1.19.0`, JUnit 5 플러그인 `1.2.1`; 하위 Java 모듈에 공통 적용 |
 | 대상 | `PIT_TARGET_CLASSES`·`PIT_TARGET_TESTS`의 쉼표 구분 클래스명 glob. 미설정 시 각각 `nuri.*` |
-| CI | 제품 10개 스코프(`mutation-scope`)와 이관 도구 8개 스코프(`mutation-scope-migration`, DEC-OPS-104·180·308·311, ADR-0029 L3a-1·L3a-2·L3b·L3c·L3d·L3e)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
+| CI | 제품 13개 스코프(`mutation-scope`, DEC-OPS-366 으로 설문·참여·사용자/조직 셋 추가)와 이관 도구 8개 스코프(`mutation-scope-migration`, DEC-OPS-104·180·308·311, ADR-0029 L3a-1·L3a-2·L3b·L3c·L3d·L3e)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계 |
 | 하한 | `STRICT_MUTATION=true`일 때 75%, 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음 |
 | 빈 모집단 | `failWhenNoMutations = true`이므로 대상 오타·과도한 제외로 mutation이 0건이면 로컬도 실패 |
 | 결과 | 모듈별 `build/reports/pitest`의 HTML/XML; 정확한 하위 경로는 해당 실행 출력 확인 |
 | 실행 오류 | 기존 `pitest` 후처리가 해당 태스크 `reportDir/mutations.xml`을 검사한다. `RUN_ERROR` 또는 누락·손상·빈 XML이면 로컬 리포트 모드도 실패한다. `TIMED_OUT`의 기존 PIT 판정과 75% 하한은 유지한다. |
 | 변이 재계산 | `enableDefaultIncrementalAnalysis = false`, history 입출력·CI 전용 캐시 없음. PIT가 실행되는 선택 스코프의 변이를 이전 판정 재사용 없이 재계산 |
 
-기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 종전 `business-app` 대상은 board, workflow, delivery/operation의 겹침 없는 세 scope로 나뉜다. 마지막 scope는 `SurveyResultService`를 포함해 제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계를 검사한다. 세 scope 모두 같은 테스트 glob과 75% 하한을 독립 적용한다. registry/workflow 계약은 14개 scope의 정확한 일치와 핵심 대상을 검사하며 양쪽에서 함께 제거해도 실패한다.
+기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 종전 `business-app` 대상은 board, workflow, delivery/operation의 겹침 없는 세 scope로 나뉜다. 2026-10-19(DEC-OPS-366) 세 scope를 더했다. `business-app-survey`는 설문 전체이며 배송·운영 scope에 있던 `SurveyResultService`(제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계)를 옮겨 겹치지 않게 했다. `business-app-participation`은 커뮤니티·메모 보고·일정, `business-core-user-org`는 사용자·그룹·부서·정책·부재 서비스다. 영속 작업(`system.job`)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT가 변이를 잡을 수 없어 넣지 않았다. 로컬 실측(non-strict)은 설문 84%(380 변이)·참여 85%(282)·사용자/조직 84%(237, 관리자 변경의 보안 부작용 시험 6건 보강 뒤 — 영속 작업을 넣었을 때는 66%)·배송·운영 86%(482, 설문 결과를 뺀 뒤)다. 모든 scope가 같은 테스트 glob과 75% 하한을 독립 적용한다. registry/workflow 계약은 21개 scope(제품 13·이관 8)의 정확한 일치와 핵심 대상(`SurveyResultService`, `UserService`, `LoginIdReuseGuard` 포함)을 검사하며 양쪽에서 함께 제거해도 실패한다.
 
 이 클래스들의 PIT 결과가 실제 PostgreSQL 행 잠금·native SQL·트랜잭션 원자성을 대신하지는 않는다. 특히 메뉴 순환의 무한 반복 mutant는 timeout으로 탐지될 수 있으므로 결과의 `KILLED`와 `TIMED_OUT`을 구분하고 관련 DB 통합 테스트 증거를 함께 남긴다. 대상 편입은 실행 성공이나 점수 확보의 증거가 아니며 해당 변경 SHA의 리포트와 소요시간으로 판정한다.
 

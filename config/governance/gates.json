@@ -1692,7 +1692,7 @@
             "scope": "business-app-delivery-operation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*,nuri.business.service.survey.SurveyResultService",
+            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*",
             "tests": "nuri.business.*"
           },
           {
@@ -1700,6 +1700,27 @@
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-survey",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.survey.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-participation",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-core-user-org",
+            "job": "mutation-scope",
+            "gradle": ":business-core:pitest",
+            "classes": "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*",
             "tests": "nuri.business.*"
           },
           {

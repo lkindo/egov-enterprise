@@ -949,7 +949,7 @@ test('PIT remains bound to the strict source matrix and stable aggregate context
   assert.match(validate(registry).join('\n'), /ghost required-check aggregate selector.*mutation-test/i);
 });
 
-test('PIT registry and CI keep the same exact eighteen-scope matrix catalog', () => {
+test('PIT registry and CI keep the same exact twenty-one-scope matrix catalog', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
   // 스코프는 두 잡에 나뉘어 산다(DEC-OPS-104) — union 이 원장과 정확히 같아야 한다.
@@ -959,7 +959,7 @@ test('PIT registry and CI keep the same exact eighteen-scope matrix catalog', ()
 
   assert.deepEqual(product.errors, []);
   assert.deepEqual(migration.errors, []);
-  assert.equal(pit.selector.matrixScopes.length, 18);
+  assert.equal(pit.selector.matrixScopes.length, 21);
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
@@ -986,9 +986,12 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
   const added = ['nuri.business.service.menu.MenuService', 'nuri.business.service.menu.MenuStructurePlan',
     'nuri.business.security.iam.EgovAuthenticationProvider', 'nuri.business.security.filter.RateLimitFilter'];
   const survey = 'nuri.business.service.survey.SurveyResultService';
+  // [2026-10-19 DEC-OPS-366] 설문 결과는 설문 범위가, 사용자 관리의 보안 부작용은 사용자·조직 범위가 지킨다.
+  const userOrg = ['nuri.business.service.user.UserService', 'nuri.business.service.user.LoginIdReuseGuard'];
   const scope = classes => [
     { scope: 'business-core-auth', classes: classes.join(',') },
-    { scope: 'business-app-delivery-operation', classes: survey },
+    { scope: 'business-app-survey', classes: survey },
+    { scope: 'business-core-user-org', classes: userOrg.join(',') },
   ];
   assert.deepEqual(validateCriticalMutationTargets(scope([...retained, ...added])), []);
   for (const missing of added) {
@@ -1000,16 +1003,25 @@ test('PIT critical security targets cannot disappear by narrowing both matching 
   const missingSurvey = scope([...retained, ...added]);
   missingSurvey[1].classes = 'nuri.business.service.mail.*';
   assert.deepEqual(validateCriticalMutationTargets(missingSurvey), [
-    `PIT business-app-delivery-operation is missing critical target '${survey}'`,
+    `PIT business-app-survey is missing critical target '${survey}'`,
   ]);
-  assert.equal(validateCriticalMutationTargets([]).length, added.length + 1);
+  for (const missing of userOrg) {
+    const fixture = scope([...retained, ...added]);
+    fixture[2].classes = userOrg.filter(target => target !== missing).join(',');
+    assert.deepEqual(validateCriticalMutationTargets(fixture), [
+      `PIT business-core-user-org is missing critical target '${missing}'`,
+    ]);
+  }
+  assert.equal(validateCriticalMutationTargets([]).length, added.length + 1 + userOrg.length);
 
   // Exercise the real registry validator too, so a detached helper cannot satisfy this contract.
   const registry = clone(loadGovernanceRegistry(registryPath));
   const declared = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE').selector.matrixScopes;
-  const protectedTargets = [...added, survey];
+  const protectedTargets = [...added, survey, ...userOrg];
+  // 실제 범위는 패키지 글롭(survey.*·user.*)으로 대상을 덮으므로, 대상을 덮는 글롭까지 걷어야 두 원장을 함께 좁힌 상태가 된다.
+  const covers = (glob, target) => new RegExp('^' + glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*') + '$').test(target);
   for (const entry of declared) {
-    entry.classes = entry.classes.split(',').filter(target => !protectedTargets.includes(target)).join(',');
+    entry.classes = entry.classes.split(',').filter(glob => !protectedTargets.some(target => covers(glob, target))).join(',');
   }
   const errors = validate(registry).join('\n');
   for (const target of protectedTargets) assert.ok(errors.includes(`missing critical target '${target}'`));
@@ -1031,7 +1043,7 @@ test('deleting a PIT scope is rejected in both the fixed catalog size and CI com
   const [removed] = pit.selector.matrixScopes.splice(3, 1);
   const errors = validate(registry).join('\n');
 
-  assert.match(errors, /PIT matrix catalog must contain exactly 18 scopes/i);
+  assert.match(errors, /PIT matrix catalog must contain exactly 21 scopes/i);
   assert.match(errors, new RegExp(`unregistered CI mutation matrix scope '${removed.scope}'`, 'i'));
 });
 
