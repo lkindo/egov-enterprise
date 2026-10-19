@@ -2220,6 +2220,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-369 | accepted | **프런트 커버리지 하한을 실측 가까이 올린다.** statements·branches·functions·lines 하한을 71/63/64/73 에서 85/79/82/87 로 올린다. 값은 PR #940 CI 커버리지 잡의 실측(86.01·80.18·83.15·88.31)을 정수 내림한 뒤 1포인트를 뺀 것이다. `frontend/vitest.config.mts` 의 thresholds 와 게이트 원장 `QUALITY-FRONTEND-*-COVERAGE` 의 current·baseline 을 같은 변경에서 맞춘다(registry 계약이 둘을 대조한다). | 하한이 실측보다 14~17포인트 낮아 그만큼 떨어져도 필수 CI 가 통과했다(2026-10-19 품질 평가 과제 6). 실측과 같은 하한은 덜 시험된 코드 몇 줄에도 CI 를 막아 1포인트 여유를 둔다. 로컬 coverage 실행은 이 PC 의 계측 부하로 시험 11건이 시간 초과해 집계를 남기지 못했다 — 같은 소스 트리의 CI 실측을 정본으로 썼다(그 뒤 커밋은 E2E spec·Java 시험뿐). 하한을 내리는 것은 이 결정의 대체 DEC 가 필요하다. | [vitest 설정](../../frontend/vitest.config.mts), [게이트 원장](../../config/governance/gates.json) | 2026-10-19 | - |
 
+## DEC-OPS-370
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-370 | accepted | **V2_134 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 사전 승인, PR #940 병합 뒤).** 병합본(f5a0c63f3)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.133, 메뉴 9040105 「보고서통계」 한 행 — 경로 /admin/stats/report·사용 중·하위 0, 같은 경로의 다른 행 0, NAVIGATION 배정 ROLE_ADMIN 1건, 즐겨찾기 0, 전체 메뉴 76) → info(대기 2.134 뿐) → pg_dump 백업(목차에 메뉴·배정·이력 표 확인) → Flyway 12.4.0 migrate → validate(158개) 순서로 했다. 읽기 확인: 메뉴 9040105 없음, 그 배정 0·REMOVE 이력 1건(migration:2.134), 전체 메뉴 75·활성 70, `tb_rptp_stats` 그대로. | DEC-OPS-368 의 데이터 정리다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 메뉴 행과 즐겨찾기에는 감사 표가 없어 되돌리는 원본은 적용 직전 백업이고, 배정은 REMOVE 이력으로 되살린다(인가 전환 런북 V2_134 절). | [V2_134](../../api-server/src/main/resources/db/migration/V2_134__retire_report_stats_menu.sql), [전환 런북](../04-operations/authorization-cutover-runbook.md) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
