@@ -108,7 +108,7 @@ function copyFixture() {
 }
 
 test('declared cross-domain foreign keys are bound to their migration evidence and owning domains', t => {
-  // Phase 0c: 자료 이용 기록이 게시판 소유가 되어 그 외래 키는 기능 안으로 들어갔다(5 → 4).
+  // Phase 0c: 자료 이용 기록이 게시판 소유가 되어 그 외래 키는 기능 안으로 들어갔다.
   assert.equal(catalog.requiredForeignKeys.length, 4);
   assert.ok(!catalog.requiredForeignKeys.some(contract => contract.childTable === 'tb_dta_use_stats'));
   for (const contract of catalog.requiredForeignKeys) {
@@ -162,8 +162,7 @@ test('a declared tab menu must match an active menu row of an existing screen', 
 test('all producer domains and tables have one verified ownership or an explicit shared contract', () => {
   const expectedDomains = Object.keys(modules.declarations.features).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
-  // Phase 0c: 통계는 고를 수 있는 기능이 아니라 core 다(20 -> 19). 게시물·자료 이용 화면은 게시판이 소유한다.
-  // Phase 2 기능 분할(DEC-OPS-273): 행사·포상을 나누고(19 -> 20) 커뮤니티·배너와 팝업·시연 화면을 나눴다(20 -> 22).
+  // 통계는 고를 수 있는 기능이 아니라 core 다(Phase 0c). 게시물·자료 이용 화면은 게시판이 소유한다. 기능 분할은 DEC-OPS-273 이다.
   assert.equal(catalog.capabilities.length, 22);
   assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
   // [2026-10-19] 보고서 통계 메뉴·화면은 걷었지만(V2_134) 물리 테이블은 남아 core 가 소유한다.

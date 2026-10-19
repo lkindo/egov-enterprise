@@ -57,7 +57,7 @@ class SurveyResponseAuthorizationTest {
     @Test
     @DisplayName("핸들러 개수 고정 — 신규 엔드포인트 추가 시 인가 검토를 강제한다")
     void handlerCountIsPinned() {
-        // [2026-09-26 DIP B5 F6] 2 → 3: 결과 xlsx 반출(exportStats, SURVEY_READ). 인가는 위 submissionAndStatsUseParticipationPermissions 가 고정한다.
+        // 핸들러별 인가는 위 submissionAndStatsUseParticipationPermissions 가 고정한다.
         assertThat(mappedHandlers(SurveySubmissionApiController.class)).hasSize(3);
         assertThat(mappedHandlers(SurveyResponseAdminApiController.class)).hasSize(4);
     }

@@ -1047,12 +1047,8 @@ test('every route literal in a marker block survives in every composition that k
       }
     }
   }
-  // 2026-10-12 실측 7건. 종전 10건 중 1건은 업무 홈 블록의 주석 속 경로였다 — 주석을 세지 않게 바뀌며 하한을 실측에 맞췄다.
-  //   허브 분해 H4 에서 통계 셸의 탭 경로 2건(게시물·자료 이용)이 마커 블록을 떠나 게시판 기여의 href 가 됐다(9 → 7). 그 목적지는
-  //   이제 경계 계약의 stats-panels 규칙(href = page 술어)과 관리 링크 census 가 본다.
-  //   Phase 2 9단계에서 업무 홈 블록 24개가 걷혀 그 안의 경로 6건(새 게시글 작성·전체 보기·상세·결재함)이 각 기능의 업무 홈 조각
-  //   파일로 옮겨 갔다(7 → 1). 그 목적지는 같은 기능이 소유한 화면이라 조각 파일과 함께 남고 빠진다 — 관리 링크 census·리다이렉트
-  //   가드가 그 파일을 본다. 남은 1건은 통합 검색 블록이다.
+  // 마커 블록 안의 경로 literal 은 주석을 세지 않는다. 지금 남은 것은 통합 검색 블록이다 — 통계 셸 탭 경로와 업무 홈 링크는 기여 파일의
+  //   href 로 옮겨, 경계 계약의 stats-panels 규칙(href = page 술어)·관리 링크 census·리다이렉트 가드가 본다. 이력은 git 에 있다.
   assert.ok(checked >= 1, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
   // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,

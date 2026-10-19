@@ -49,25 +49,12 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.deepEqual(validateUrlStateCensus(actual, { repoRoot }), []);
   assert.deepEqual(validateUrlStateCensus(expected, { repoRoot }), []);
   assert.deepEqual(compareUrlStateCensus(expected, actual), []);
-  // [2026-08-27] configRedirects 15 → 14. /admin/security/login-policy 의 리다이렉트를 제거해
-  //   그 화면(로그인 보안 정책, 424줄 + API 5개)을 정본 경로로 되살렸다. 리다이렉트가 **줄어드는**
-  //   방향이라 URL 상태 표면이 넓어지지 않는다 — filesystemRoutes 120 은 불변이다.
+  // 리다이렉트 수가 바뀌면 URL 상태 표면이 넓어지는지 좁아지는지를 변경 설명에 남긴다. 증감의 이력은 git 과 결정 기록에 있다.
   assert.ok(FILESYSTEM_ROUTE_COUNT >= 100, `route discovery collapsed: ${FILESYSTEM_ROUTE_COUNT} < 100`);
   assert.deepEqual(actual.summary.exactPopulations, {
     filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
     dynamicRoutePatterns: 11,
-    // [2026-09-08 PD-SRVY-001] 14 → 13. /admin/survey/respondents 의 리다이렉트를 제거했다 —
-    //   목적지였던 허브 응답자 탭도 함께 걷었으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
-    //   URL 상태 표면이 **줄어드는** 방향이다.
     configRedirects: 13,
-    // [2026-09-05 DEC-OPS-034] 5 → 7: boards/write · boards/[id] 가 insert-board-article 로의 page-redirect 가 됐다.
-    // [2026-09-06 DEC-OPS-040] 7 → 11: /admin/system/ism → /approvals, /admin/community · /admin/community/boards →
-    //   /admin/help?tab=COMMUNITY, /admin/system/monitoring → /admin/system/monitoring/hub 가 page-redirect 가 됐다.
-    // [2026-09-12 §A3-1 · DEC-OPS-079] 12 → 16. 주소록 등록·스크랩 등록/수정·설문 등록 4개가 각 정본 목록으로의
-    //   page-redirect 가 됐다 — 입력 폼을 목록 위 모달로 옮겼다. URL 상태는 **늘지 않는다**:
-    //   모달은 주소에 아무것도 싣지 않고, 오히려 목록의 navigation-producer 한 건이 사라졌다.
-    // [2026-09-25 DEC-OPS-130] 16 → 17. /admin/community/[id] 가 id 를 보존해 정본 커뮤니티 상세로 보내는
-    //   page-redirect 가 됐다. 그 화면이 검색어를 URL 에 싣던 유일한 곳이었으므로 URL 상태 표면은 **줄어든다**.
     pageRedirects: 17,
   });
   assert.equal(actual.summary.records, actual.records.length);

@@ -27,45 +27,11 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 목록을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 목록을 갱신한다.
  * ADOPTER_SCREENS 에 더하는 것과 DIRECT_ONLY_SCREENS 에서 빼는 것만 정상 경로다(AGENTS H2).
  */
-// [2026-09-06 DEC-OPS-040] 40 → 39: /admin/system/ism(IsmClient)이 /approvals 로 통합돼 화면이 사라졌다 — 되돌리기가 아니라
-//   같은 개인 결재함 두 화면을 하나로 모은 결과다(DEC-OPS-039 제안의 owner 승인). 정본 /approvals 는 A2 MasterDetailPage 소비자다.
-// [2026-09-07] 39 -> 40: /admin/system/isg 신설. 백엔드 5본이 완비인데 프런트 호출부가 0 이라
-//   등록 경로조차 없던 고아 도메인을 배선했다 — 되돌리기가 아니라 새 A1 소비자다.
-// [2026-09-08 PD-SRVY-001] 40 -> 39: /admin/survey/respondents 를 걷었다. tb_srvy_rspdnt 는 성명·
-//   생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어 그 A1 화면은
-//   **항상 빈 목록**이었다. 되돌리기가 아니라 표면 제거이며, 사용자 결정(PD-SRVY-001)에 따른다.
-// [2026-09-08 PD-MYPG-001] 39 -> 38: /admin/workspace/my-page 를 걷었다. tb_indv_pg_conts 는 시드도
-//   생성 경로도 없고 **그 값을 읽는 화면조차 없어**(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) 켜고
-//   꺼도 어디에도 나타나지 않았다. 되돌리기가 아니라 표면 제거이며 사용자 결정(PD-MYPG-001)에 따른다.
-// The unified authority hub adopts WorkListPage and retires one direct table.
-// [상향 2026-09-20] 39 -> 40: 관리센터 > 사용자조직 허브(UserOrgHubClient — manage·departments·
-//   absences·indvdl-info-policy 네 라우트가 공유)가 A1 셸을 경유한다. 종전에는 PageHeader +
-//   HubSectionCard(96px 아이콘 박스·400px 블러) + 수제 grid 로 골격을 직접 조립해 결과 툴바도
-//   조회조건 영역도 없었다(카탈로그 §6 이 "USERS 의 직접 표" 로 인지하던 화면이다).
-//   ⚠ DIRECT_ONLY 는 불변이다 — 이 파일은 A2 셸도 import 하므로 종전에도 직접조립으로 세지 않았다.
-// [상향 2026-09-20(2)] 40 -> 42: 권한보안의 그룹별 메뉴 현황(/admin/system/menus/by-authority)과
-//   로그인 정책 관리(/admin/security/login-policy)가 A1 셸을 경유한다. 둘 다 종전에는 PageHeader/
-//   HubHeader + HubMetricGrid + HubSectionCard 로 골격을 직접 조립해 결과 툴바도 조회조건 영역도 없었다.
-// [상향 2026-09-20(3)] 42 -> 43: 지식 허브(/admin/help·faq·qna 와 /admin/community 별칭)가
-//   A1 셸을 경유한다. 종전에는 카드 한 장이 한 문서인 목록이라 행이 약 100px 였고 조회수를
-//   한 행에 두 번 찍었다(64px 타일 + 눈 아이콘). 카테고리 탭은 navigation 슬롯, 검색·정렬은
-//   조회조건, 총계는 결과 툴바가 소유한다.
-//   ⚠ DIRECT_ONLY 는 불변이다 — 이 화면은 종전에 표를 쓰지 않아 직접 조립으로 세지 않았다.
-// [2026-09-25 DEC-OPS-129] 43 -> 42: /admin/system/network 를 걷었다. 저장 테이블·계측 소스가 없어 조회는
-//   **항상 빈 목록**, 쓰기는 501 이었고 메뉴·링크 어디에도 없었다. 되돌리기가 아니라 표면 제거이며 사용자 결정에 따른다.
-// [2026-09-25 DEC-OPS-130] 42 -> 41: /admin/community/[id] 를 정본 커뮤니티 상세로의 page-redirect 로 통합했다.
-//   그 화면은 이름과 달리 경로의 id 를 읽지 않고 선택한 게시판 글 목록을 보여 줬다(메뉴·인바운드 링크 0).
-//   게시판 글 목록은 게시판 목록 화면이 계속 제공하므로 이행 되돌리기가 아니라 중복 표면 제거다.
-// [2026-10-01 결정 19] 41 -> 43: 민감 작업 감사 원장(/admin/system/logs/audit)과 후속 작업 상태(/admin/system/durable-jobs)를
-//   셸로 신설했다. 서버에 원장·작업이 쌓이는데 볼 화면이 없었다 — 이행 되돌리기가 아니라 새 화면이다.
-// [허브 분해 H6] 43 -> 44: 댓글 및 평가 관리(/admin/system/comments)가 감시 허브 위임을 떠나 댓글 기능의 독립 A1 화면이 됐다.
-//   감시 허브는 그대로 셸을 경유한다 — 이행 되돌리기가 아니라 새 화면이다.
-// [업무 허브 분해 W1] 44 -> 45: 업무 허브 클라이언트(업무 보고·일정 탭 공유)가 업무 보고·일정 두 화면으로 나뉘었다 — 둘 다 셸을
-//   경유한다. 나의 업무·업무 관리는 core 섹션(components/business/deptJob)이라 이 census 의 화면 모집단(src/app) 밖이다.
 /*
- * [2026-10-10 Phase 2 D6] 화면 목록을 동결한다 — 재사용 생성물에서는 투영으로 빠진 화면만 뺀다(원장 확인).
- *   위의 수 변천은 이 목록 길이의 이력이다. 수는 목록 길이에서 나오므로 따로 동결하지 않는다 — 수와 목록을 함께 고치게 하는
- *   상수 비교는 코드를 보지 않는다(FE-CONTRACT-07). 화면을 옮기거나 이행하면 목록만 고친다.
+ * 화면 목록을 동결한다 — 재사용 생성물에서는 투영으로 빠진 화면만 뺀다(원장 확인). 수는 목록 길이에서 나오므로 따로 동결하지
+ *   않는다 — 수와 목록을 함께 고치게 하는 상수 비교는 코드를 보지 않는다(FE-CONTRACT-07). 화면을 옮기거나 이행하면 목록만 고친다.
+ *   화면이 빠질 때는 이행 되돌리기인지 표면 제거·통합인지를 변경 설명에 남긴다. 목록 변천의 이력은 git 과 결정 기록에 있다.
+ * ⚠ 화면이 A2 셸도 import 하거나 표를 쓰지 않으면 직접 조립으로 세지 않는다 — 그런 화면이 A1 셸로 옮겨도 DIRECT_ONLY 는 그대로다.
  */
 const ADOPTER_SCREENS = [
   // [허브 분해 H1] 협업 허브는 core 틀(collaboration-hub-frame)이 셸을 경유하고 탭 뷰가 그 틀에 조각을 넘긴다 — 수는 같다.
@@ -115,7 +81,6 @@ const ADOPTER_SCREENS = [
   'src/app/smart-toolkit/work-report/WorkReportClient.tsx',
   'src/app/survey/SurveyClient.tsx',
 ];
-// [하향 2026-09-20] 3 -> 2: 로그인 정책 관리가 StandardDataTable 직접 조립에서 A1 셸 경유로 옮겨갔다.
 const DIRECT_ONLY_SCREENS = [
   'src/app/components/ui/smart-notification-hub.tsx',
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx',

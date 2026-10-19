@@ -325,20 +325,8 @@ class FileAccessPolicyTest {
         }
 
         /**
-         * [2026-08-05] 14 → 12. <b>커버리지 축소가 아니라 대상 소멸이다.</b> 두 번에 걸쳐 줄었다.
-         *
-         * <ul>
-         *   <li><b>14 → 13</b> ({@code V2_40}): {@code AttachmentSource.FAQ}({@code tb_faq_info}).
-         *       FAQ 는 게시판({@code tb_bbs_item}, {@code bbs_id='BBSMSTR_AAAAAAAAAAAA'})으로 통합돼
-         *       운영 중이고 전용 도메인은 死자산이었다 — {@code tb_faq_info} <b>0행</b>, 게시판 FAQ 281행,
-         *       FE 의 {@code /api/v1/faqs} 호출 0건.</li>
-         *   <li><b>13 → 12</b> ({@code V2_41}): {@code AttachmentSource.CONSULT}({@code tb_dscsn_list}).
-         *       상담 도메인 전체가 미사용이었다 — 데이터 0행 · 메뉴 등록 0 · FE 호출 0 · 인가 애노테이션 0.</li>
-         * </ul>
-         *
-         * <p><b>두 테이블 모두 첨부 참조가 0건이었으므로 도달성 판정이 바뀌는 첨부는 없다.</b>
-         * 참조원이 줄어든 것이지 판정이 느슨해진 것이 아니다 —
-         * 등록되지 않은 참조원은 근거를 만들지 못하는(fail-closed) 구조이기 때문이다.
+         * 참조원 목록이 줄 때는 커버리지 축소인지 대상 소멸인지를 근거와 함께 남긴다. 참조원이 줄어도 판정은 느슨해지지 않는다 —
+         * 등록되지 않은 참조원은 근거를 만들지 못하는(fail-closed) 구조이기 때문이다. 목록 변천의 이력은 git 과 결정 기록에 있다.
          */
         @Test
         @DisplayName("등록된 참조원 테이블은 중복 없이 12종이다 — 물리 스키마 실측(2026-08-05)과 일치")

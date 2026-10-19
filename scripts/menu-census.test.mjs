@@ -26,7 +26,6 @@ test('module import cannot invoke db-bridge; operational runner discovers this r
 
 test('actual source aliases resolve terminal targets while monitoring query tabs stay distinct', () => {
   const routes = inspectMenuRoutes(root);
-  // 2026-09-25 DEC-OPS-129: 119 -> 118. /admin/system/network 를 걷었다(표면 제거, 붕괴가 아니다).
   assert.ok(routes.pages.length >= 118, 'existing page census cannot collapse');
   const result = analyzeMenuCensus([
     menu(1, '/admin/security/role'), menu(2, '/admin/security/authority'),
