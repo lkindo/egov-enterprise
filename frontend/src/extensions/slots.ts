@@ -104,7 +104,7 @@ export interface PostAction extends SlotEntry {
   readonly successMessage: string;
   /** 서버 사유가 없을 때 쓰는 실패 문구. */
   readonly failureMessage: string;
-  /** 서버에 유일성 제약이 없어 이번 방문에서 한 번만 누르게 잠근다(새로고침하면 풀린다). */
+  /** 성공하면 이번 방문에서 다시 누르지 못하게 잠근다(새로고침하면 풀린다). 서버가 거부할 두 번째 요청을 보내지 않으려는 것이다. */
   readonly oncePerVisit: boolean;
   readonly submit: (context: PostActionContext) => Promise<void>;
 }
