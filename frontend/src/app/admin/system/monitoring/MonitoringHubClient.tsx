@@ -194,7 +194,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const { data: auditData, isLoading: isAuditLoading, error: auditError, refetch: refetchAudit } = useQuery({
     queryKey: ['admin-audit-logs', searchKeyword, page, pageSize, periodToParams(period)],
     queryFn: () => auditAdminService.getAuditLogs({
-      page: page - 1,
+      page,
       size: pageSize,
       // 서버는 BaseSearchDto.searchKeyword 로 바인딩한다 — `keyword` 는 무시됐다.
       searchKeyword,
@@ -207,7 +207,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const { data: systemLogData, isLoading: isSystemLoading, error: systemLogError, refetch: refetchSystemLogs } = useQuery({
     queryKey: ['admin-system-logs', searchKeyword, page, pageSize, periodToParams(period)],
     queryFn: () => systemLogAdminService.getSystemLogs({
-      page: page - 1,
+      page,
       size: pageSize,
       searchWrd: searchKeyword,
       ...periodToParams(period),
@@ -219,7 +219,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const { data: loginLogData, isLoading: isLoginLoading, error: loginLogError, refetch: refetchLoginLogs } = useQuery({
     queryKey: ['admin-login-logs', searchKeyword, page, pageSize, periodToParams(period)],
     queryFn: () => systemLogAdminService.getLoginLogs({
-      page: page - 1,
+      page,
       size: pageSize,
       searchWrd: searchKeyword,
       ...periodToParams(period),

@@ -39,7 +39,7 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
         const created = await adminRequest.post('/api/v1/admin/system/users', {
             data: { userId, pswd: password, userNm: 'E2E 인증 사용자', role: 'USER' },
         });
-        expect(created.status(), '격리된 MFA 사용자 생성').toBe(200);
+        expect(created.status(), '격리된 MFA 사용자 생성').toBe(201);
         const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
         const { page, context, guard } = actor;
         guard.expectErrors([{

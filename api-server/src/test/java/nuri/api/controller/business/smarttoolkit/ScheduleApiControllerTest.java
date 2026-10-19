@@ -37,8 +37,8 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -70,8 +70,8 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules/dept")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -127,7 +127,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto))
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(4));
 

@@ -65,7 +65,7 @@ class CommentApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(commentApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
-                        new org.springframework.data.web.PageableHandlerMethodArgumentResolver(),
+                        nuri.business.support.PageableTestResolvers.standard(),
                         // ⚠ 이 리졸버가 없으면 @AuthenticationPrincipal 파라미터가 **null 로 조용히 주입**돼
                         //   "작성자를 인증 주체에서 채운다" 는 계약이 검증되지 않은 채 green 이 된다.
                         new org.springframework.security.web.method.annotation
@@ -92,7 +92,6 @@ class CommentApiControllerTest {
                         .pstSn(1L)
                         .bbsId("BBS_001")
                         .ansCn("Comment")
-                        .pswd("response-must-not-expose-this")
                         .wrterId("internal-writer-key")
                         .frstRgtrId("owner-login")
                         .editable(true)
@@ -132,7 +131,7 @@ class CommentApiControllerTest {
                 .content("{\"pstSn\":\"1\", \"bbsId\":\"BBS_001\", \"ansCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
 
@@ -172,7 +171,7 @@ class CommentApiControllerTest {
                         + "\"frstRgtrId\":\"SPOOFED_LOGIN\",\"editable\":true,\"deletable\":true,"
                         + "\"crtDt\":\"2099-01-01T00:00:00\"}")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // DTO 의 두 필드는 READ_ONLY 라 요청 값이 바인딩되지 않는다(400 이 아니라 무시다).
         org.mockito.ArgumentCaptor<CommentDto> body = org.mockito.ArgumentCaptor.forClass(CommentDto.class);
@@ -186,6 +185,30 @@ class CommentApiControllerTest {
         assertThat(body.getValue().getFrstRgtrId()).isNull();
         assertThat(body.getValue().isEditable()).isFalse();
         assertThat(body.getValue().isDeletable()).isFalse();
+    }
+
+    @Test
+    @DisplayName("🔒 익명 댓글 비밀번호(pswd)를 실은 등록 요청은 400 이다 — 폐기 필드를 받지 않아 저장 경로가 없다")
+    void createComment_rejectsRetiredPasswordField() throws Exception {
+        // 운영 매퍼와 같은 엄격 규칙(알 수 없는 필드 거부, application.yml fail-on-unknown-properties)으로 본다.
+        tools.jackson.databind.json.JsonMapper strict = tools.jackson.databind.json.JsonMapper.builder()
+                .configureForJackson2()
+                .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+        MockMvc strictMvc = MockMvcBuilders.standaloneSetup(commentApiController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setMessageConverters(new org.springframework.http.converter.json.JacksonJsonHttpMessageConverter(strict))
+                .setCustomArgumentResolvers(new org.springframework.security.web.method.annotation
+                        .AuthenticationPrincipalArgumentResolver())
+                .build();
+
+        strictMvc.perform(post("/api/v1/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"pstSn\":\"1\",\"bbsId\":\"BBS_001\",\"ansCn\":\"Content\",\"pswd\":\"plain-secret\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(commentService, never()).createComment(anyString(), anyString(), any(CommentDto.class));
     }
 
     @Test

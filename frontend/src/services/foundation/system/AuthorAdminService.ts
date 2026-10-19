@@ -23,16 +23,13 @@ const AUTHOR_QUERY_KEYS = [
   'searchCondition',
   'searchKeyword',
   'searchUseYn',
-  'pageIndex',
-  'pageUnit',
-  'pageSize',
-  'firstIndex',
-  'lastIndex',
-  'recordCountPerPage',
+  'page',
+  'size',
   'searchKeywordFrom',
   'searchKeywordTo',
 ] as const satisfies readonly (keyof AuthorListQuery)[];
 
+/** 목록 인자를 생성 query 로 옮긴다 — `page`(1부터)·`size` 는 서버 이름·기준 그대로다(ADR-0036). */
 function toAuthorListQuery(params?: SearchParams): AuthorListQuery {
   const query: AuthorListQuery = {};
   if (!params) return query;
@@ -41,16 +38,6 @@ function toAuthorListQuery(params?: SearchParams): AuthorListQuery {
   for (const key of AUTHOR_QUERY_KEYS) {
     const value = generatedParams[key];
     if (value !== undefined) Object.assign(query, { [key]: value });
-  }
-
-  if (params.page !== undefined) query.pageIndex = params.page + 1;
-  if (params.pageNo !== undefined) query.pageIndex = params.pageNo;
-  if (params.pageUnit === undefined && params.size !== undefined) query.pageUnit = params.size;
-  if (params.recordCountPerPage === undefined && params.size !== undefined) {
-    query.recordCountPerPage = params.size;
-  }
-  if (params.pageUnit === undefined && params.size === undefined && generatedParams.pageSize !== undefined) {
-    query.pageUnit = generatedParams.pageSize;
   }
   return query;
 }

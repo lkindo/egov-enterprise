@@ -49,10 +49,11 @@ public class PollApiController {
 
     @Operation(summary = "설문 등록", description = "새로운 설문을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.poll.PollApiController#createPoll')")
-    public ResponseEntity<ApiResponse<Void>> createPoll(@Valid @RequestBody OnlinePollManageRequest dto) {
-        pollService.insertPoll(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> createPoll(@Valid @RequestBody OnlinePollManageRequest dto) {
+        Long pollSn = pollService.insertPoll(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(pollSn));
     }
 
     @Operation(summary = "설문 수정", description = "기존 설문 정보를 수정합니다.")

@@ -58,7 +58,7 @@ class BoardMultipartWriteApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(multipart("/api/v1/boards/BBSMSTR_1/posts/with-files")
                 .file(boardPart())
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1"));
     }
@@ -74,7 +74,7 @@ class BoardMultipartWriteApiControllerTest extends ControllerTestSupport {
                 .file(boardPart())
                 .file(filePart)
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1"));
     }
@@ -114,7 +114,7 @@ class BoardMultipartWriteApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(multipart("/api/v1/boards/BBSMSTR_1/posts/with-files")
                 .file(boardPart())
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         verify(boardService).createPost(eq("user01"), any(BoardSaveRequest.class));
     }

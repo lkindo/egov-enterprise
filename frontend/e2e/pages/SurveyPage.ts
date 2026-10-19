@@ -111,7 +111,7 @@ export class SurveyPage {
 
         // 제목으로 목록을 조회해 DB가 생성한 pollSn을 찾는다.
         const pollSn = await this.page.evaluate(async ({ title: t }: { title: string }) => {
-            const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=0`);
+            const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=1`);
             const json = await res.json();
             const list = json.data?.list || json.data?.content || [];
             const found = list.find((p: { pollNm?: string; pollSn?: number }) => p.pollNm === t);

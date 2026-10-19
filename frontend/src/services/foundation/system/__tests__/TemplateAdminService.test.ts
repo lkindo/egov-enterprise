@@ -65,7 +65,8 @@ vi.mock('@/lib/api/client', async () => {
         const { url, method: _method, data, ...config } = requestConfig;
         const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
         const result = await apiClientTestDouble.post(url, data, forwardedConfig);
-        return success(result ?? null);
+        // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 템플릿 등록은 새 템플릿 ID 다.
+        return success(result ?? 'TMPLT_NEW');
       },
     },
   };

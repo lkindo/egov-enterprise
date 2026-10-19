@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -286,5 +287,41 @@ class HelpServiceTest {
                 .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
         verify(onlineManualRepository, org.mockito.Mockito.never()).delete(any());
         verify(onlineManualRepository, org.mockito.Mockito.never()).deleteById(any());
+    }
+
+    /**
+     * [2026-10-19] 도움말 센터가 읽는 열람 목록. 화면이 보낸 정렬을 쓰지 않고 서버가 제목 가나다순(같으면 일련번호)으로 정하며,
+     * 응답은 등록자 ID 가 없는 공개용 DTO 다. 열람은 인증만 요구하므로 서비스는 권한을 단언하지 않는다(관리 쓰기와 다르다).
+     */
+    @Test
+    @DisplayName("도움말 열람 목록은 서버가 정한 순서로 공개용 필드만 돌려준다")
+    void publicHelpListUsesServerOrderAndReaderProjection() {
+        Hpcm entity = Hpcm.builder().hlpSn(3L).hlpSeCd("GNR").hlpDfn("결재 도움말").hlpExpln("설명").build();
+        var pageable = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        when(hpcmRepository.findByHlpDfnContaining(eq(""), pageable.capture())).thenReturn(new PageImpl<>(List.of(entity)));
+
+        var result = helpService.getPublicHpcmList(null, PageRequest.of(2, 5, org.springframework.data.domain.Sort.by("hlpExpln").descending()));
+
+        assertThat(pageable.getValue().getPageNumber()).isEqualTo(2);
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(5);
+        assertThat(pageable.getValue().getSort()).containsExactly(
+                org.springframework.data.domain.Sort.Order.asc("hlpDfn"), org.springframework.data.domain.Sort.Order.asc("hlpSn"));
+        assertThat(result.getContent()).containsExactly(new nuri.business.service.help.dto.PublicHpcmDto(3L, "결재 도움말", "설명"));
+    }
+
+    @Test
+    @DisplayName("온라인 매뉴얼 열람 목록은 서버가 정한 순서로 공개용 필드만 돌려준다")
+    void publicManualListUsesServerOrderAndReaderProjection() {
+        OnlineManual entity = OnlineManual.builder().onlnMnlSn(7L).onlnMnlNm("결재 매뉴얼").onlnMnlSeCd("GNR")
+                .onlnMnlDfn("/docs/approval").onlnMnlExpln("설명").build();
+        var pageable = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        when(onlineManualRepository.findByOnlnMnlNmContaining(eq("결재"), pageable.capture())).thenReturn(new PageImpl<>(List.of(entity)));
+
+        var result = helpService.getPublicOnlineManualList("결재", PageRequest.of(0, 10));
+
+        assertThat(pageable.getValue().getSort()).containsExactly(
+                org.springframework.data.domain.Sort.Order.asc("onlnMnlNm"), org.springframework.data.domain.Sort.Order.asc("onlnMnlSn"));
+        assertThat(result.getContent()).containsExactly(
+                new nuri.business.service.help.dto.PublicOnlineManualDto(7L, "결재 매뉴얼", "/docs/approval", "설명"));
     }
 }

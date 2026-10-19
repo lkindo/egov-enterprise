@@ -56,8 +56,9 @@ describe('ApprovalUserService generated contract', () => {
   it('페이지 필수 metadata가 빠지면 fail-closed한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
 
-    await expect(approvalUserService.getPending({ page: 0 })).rejects.toThrow(
-      '결재 페이지 응답이 필수 계약과 일치하지 않습니다.',
+    // [ADR-0036] 페이지 응답 다섯 필드가 스펙 필수가 돼, 서비스 검사보다 앞선 생성 경계가 먼저 거부한다.
+    await expect(approvalUserService.getPending({ page: 1 })).rejects.toThrow(
+      '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
 
@@ -160,13 +161,14 @@ describe('ApprovalUserService generated contract', () => {
    * 버전을 함께 보내고, 실패는 상세의 참조자 영역이 화면 안에서 알리므로 전역 오류 토스트를 끈다(DEC-OPS-184).
    */
   it('참조된 결재는 자기 경로로 조건을 보내고 페이지 계약이 깨지면 받지 않는다 (D4)', async () => {
-    const page = { list: [{ ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'drafter', referenceViewer: true }], total: 1, page: 0, size: 20, totalPage: 1 };
+    const page = { list: [{ ifmlAtrzSn: 5, taskSeCd: '01', aplcntId: 'drafter', referenceViewer: true }], total: 1, page: 1, size: 20, totalPage: 1 };
     client.getRaw.mockResolvedValueOnce(success(page));
-    await expect(approvalUserService.getReferenced({ page: 0, size: 20, keyword: '출장', status: 'R' })).resolves.toMatchObject({ total: 1 });
-    expect(client.getRaw).toHaveBeenLastCalledWith('approvals/referenced', { params: { page: 0, size: 20, keyword: '출장', status: 'R' } });
+    await expect(approvalUserService.getReferenced({ page: 1, size: 20, keyword: '출장', status: 'R' })).resolves.toMatchObject({ total: 1 });
+    expect(client.getRaw).toHaveBeenLastCalledWith('approvals/referenced', { params: { page: 1, size: 20, keyword: '출장', status: 'R' } });
 
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
-    await expect(approvalUserService.getReferenced({ page: 0 })).rejects.toThrow('결재 페이지 응답이 필수 계약과 일치하지 않습니다.');
+    // [ADR-0036] 페이지 응답 다섯 필드가 스펙 필수가 돼, 서비스 검사보다 앞선 생성 경계가 먼저 거부한다.
+    await expect(approvalUserService.getReferenced({ page: 1 })).rejects.toThrow('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.');
   });
 
   it('상신·재상신·임시저장 본문의 참조자는 생성 스키마를 지나도 지워지지 않는다 (D4)', async () => {

@@ -8,9 +8,13 @@ import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.HpcmMapper;
 import nuri.business.service.help.dto.OnlineManualDto;
 import nuri.business.service.help.dto.OnlineManualMapper;
+import nuri.business.service.help.dto.PublicHpcmDto;
+import nuri.business.service.help.dto.PublicOnlineManualDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
@@ -28,6 +32,10 @@ public class HelpService {
     private final HpcmMapper hpcmMapper;
     private final OnlineManualMapper onlineManualMapper;
 
+    /** 일반 사용자 목록의 순서. 제목이 같아도 페이지 사이에 행이 오가지 않게 일련번호를 둘째 키로 둔다. */
+    private static final Sort PUBLIC_HPCM_ORDER = Sort.by(Sort.Order.asc("hlpDfn"), Sort.Order.asc("hlpSn"));
+    private static final Sort PUBLIC_MANUAL_ORDER = Sort.by(Sort.Order.asc("onlnMnlNm"), Sort.Order.asc("onlnMnlSn"));
+
     // HPCM (Help)
     public Page<HpcmDto> getHpcmList(String keyword, Pageable pageable) {
         return hpcmRepository
@@ -39,6 +47,17 @@ public class HelpService {
         return hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .map(hpcmMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    /**
+     * 일반 사용자의 도움말 목록(2026-10-19). 관리 목록과 같은 표를 읽되 응답은 {@link PublicHpcmDto} 로 좁히고 순서는 서버가
+     * 정한다 — 제목(정의) 가나다순, 같으면 등록 순. 화면이 보낸 정렬은 쓰지 않는다(DEC-OPS-148).
+     */
+    public Page<PublicHpcmDto> getPublicHpcmList(String keyword, Pageable pageable) {
+        Pageable ordered = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), PUBLIC_HPCM_ORDER);
+        return hpcmRepository
+                .findByHlpDfnContaining(Objects.requireNonNullElse(keyword, ""), ordered)
+                .map(PublicHpcmDto::from);
     }
 
     @Transactional
@@ -79,6 +98,17 @@ public class HelpService {
         return onlineManualRepository
                 .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), Objects.requireNonNull(pageable))
                 .map(onlineManualMapper::toDto);
+    }
+
+    /**
+     * 일반 사용자의 온라인 매뉴얼 목록(2026-10-19). {@link #getPublicHpcmList} 와 같은 이유로 응답을 좁히고 순서를 서버가 정한다 —
+     * 매뉴얼 명 가나다순, 같으면 등록 순.
+     */
+    public Page<PublicOnlineManualDto> getPublicOnlineManualList(String keyword, Pageable pageable) {
+        Pageable ordered = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), PUBLIC_MANUAL_ORDER);
+        return onlineManualRepository
+                .findByOnlnMnlNmContaining(Objects.requireNonNullElse(keyword, ""), ordered)
+                .map(PublicOnlineManualDto::from);
     }
 
     public OnlineManualDto getOnlineManual(Long onlnMnlSn) {

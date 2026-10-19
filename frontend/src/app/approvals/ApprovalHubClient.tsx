@@ -174,11 +174,11 @@ function useApprovalQueue({
   };
   const hasListFilter = Object.keys(listFilters).length > 0;
   const { data: approvalData, dataUpdatedAt, isLoading, isFetching, error: approvalsError, refetch: refetchApprovals } = useQuery(
-    approvalQueryOptions.list(activeTab, { page: page - 1, size: PAGE_SIZE, ...listFilters }),
+    approvalQueryOptions.list(activeTab, { page, size: PAGE_SIZE, ...listFilters }),
   );
   // 대기 탭의 건수 배지 — 조건과 무관한 전체 대기 건수다. 처리하면 목록 무효화와 함께 다시 읽힌다.
   const { data: pendingTotal } = useQuery({
-    ...approvalQueryOptions.list('PENDING', { page: 0, size: 1 }),
+    ...approvalQueryOptions.list('PENDING', { page: 1, size: 1 }),
     select: (response) => response.total ?? 0,
   });
 

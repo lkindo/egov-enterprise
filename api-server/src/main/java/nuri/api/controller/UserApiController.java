@@ -78,10 +78,11 @@ public class UserApiController {
     @Operation(summary = "일반 사용자 계정 생성(관리자)", description = "일반 사용자(USER) 계정을 생성합니다. "
             + "공개 가입은 제공하지 않으며 사용자 등록 권한(USER_CREATE)이 필요합니다.")
     @PostMapping("/users/signup")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#signup')")
     public ResponseEntity<ApiResponse<UserResponse>> signup(@RequestBody @Valid UserSignupRequest request) {
         log.info("User signup request: {}", request.getUserId());
-        return ResponseEntity.ok(ApiResponse.success(userService.signup(request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(userService.signup(request)));
     }
 
     // [2026-09-25 DIP D1] 미인증 요청이 로그인 ID 의 존재를 확인할 수 있는 계정 열거 경로였다.
@@ -177,13 +178,14 @@ public class UserApiController {
     //     통째로 꺼진다.** Default 를 반드시 함께 명시할 것.
     @Operation(summary = "사용자 등록", description = "새로운 시스템 사용자를 등록합니다. (관리자 권한)")
     @PostMapping("/admin/system/users")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#insertUser')")
     public ResponseEntity<ApiResponse<String>> insertUser(
             @RequestBody @Validated({ Default.class, UserValidationGroups.OnCreate.class }) UserDto dto) {
         // [2026-08-11] DTO 를 통째로 넘긴다. 종전에는 6개 필드만 뽑아 넘겨서 폼이 보낸
         //   이메일·연락처·소속 부서가 서비스에 **도달조차 하지 못했다**(UserService.registerUser 주석 참조).
         String resultId = userService.registerUser(dto);
-        return ResponseEntity.ok(ApiResponse.success(resultId));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(resultId));
     }
 
 

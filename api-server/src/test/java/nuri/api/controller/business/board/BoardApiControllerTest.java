@@ -279,7 +279,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1"));
     }

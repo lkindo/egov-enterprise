@@ -20,7 +20,7 @@ export type ExternalHrRequestInput = z.input<typeof ExternalHrDtoRequestSchema>;
 /** 등록 입력 — 수정과 같은 요청 계약이다({@link ExternalHrRequestInput}). */
 export type ExternalHrCreateInput = ExternalHrRequestInput;
 
-/** Spring Pageable의 0-based page를 그대로 받는 exact query. */
+/** 생성 query 그대로(exact) — `page` 는 1부터다(ADR-0036). */
 export type ExternalHrSearchParams = NonNullable<operations['getAllExternalHr']['parameters']['query']>;
 
 /**

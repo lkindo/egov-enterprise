@@ -44,8 +44,7 @@ export interface UserManage {
 }
 
 export interface UserSearchParams {
-  pageNo?: number;
-  pageIndex?: number;
+  /** 페이지 번호(1부터, ADR-0036). */
   page?: number;
   searchCondition?: string;
   searchKeyword?: string;

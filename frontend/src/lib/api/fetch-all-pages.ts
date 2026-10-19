@@ -1,7 +1,7 @@
 /**
  * 페이지를 끝까지 따라가 **전량**을 모은다.
  *
- * <p>[왜 필요한가 — 2026-08-30] 서버가 `pageUnit` 에 `@Max(100)` 을 걸면서(BaseSearchDto),
+ * <p>[왜 필요한가 — 2026-08-30] 서버가 페이지 크기(지금 HTTP 이름은 `size`)에 `@Max(100)` 을 걸면서(BaseSearchDto),
  * "한 페이지에 전부 받기" 로 전량을 얻던 화면들이 400 을 받게 됐다. 그 값을 그냥 100 으로
  * 낮추면 **조용히 잘린 목록**이 되는데, 그중 일부는 그 목록을 그대로 되돌려 저장하는
  * 전체 교체 경로다 — 보지 못한 페이지가 저장 시 삭제된다(권한-롤 매핑이 정확히 그렇다).
@@ -31,20 +31,20 @@ export const MAX_PAGE_UNIT = 100;
 const MAX_TOTAL_ITEMS = 5_000;
 
 /**
- * `fetchPage(pageIndex, pageUnit)` 를 1페이지부터 끝까지 호출해 항목을 이어 붙인다.
+ * `fetchPage(page, size)` 를 1페이지부터 끝까지 호출해 항목을 이어 붙인다.
  *
- * @param fetchPage 1-base `pageIndex` 와 `pageUnit` 을 받아 페이지를 돌려주는 함수
+ * @param fetchPage 1부터 세는 `page` 와 페이지당 건수 `size` 를 받아 페이지를 돌려주는 함수 — 목록 API query 의 이름·기준과 같다(ADR-0036)
  * @returns 모든 페이지의 항목을 순서대로 이어 붙인 배열
  * @throws Error 총 건수가 안전 상한을 넘으면 — 잘린 결과를 돌려주지 않는다
  */
 export async function fetchAllPages<T>(
-  fetchPage: (pageIndex: number, pageUnit: number) => Promise<PagedResult<T>>,
+  fetchPage: (page: number, size: number) => Promise<PagedResult<T>>,
 ): Promise<T[]> {
   const collected: T[] = [];
   let expectedTotal: number | null = null;
 
-  for (let pageIndex = 1; ; pageIndex += 1) {
-    const page = await fetchPage(pageIndex, MAX_PAGE_UNIT);
+  for (let pageNumber = 1; ; pageNumber += 1) {
+    const page = await fetchPage(pageNumber, MAX_PAGE_UNIT);
     if (
       !page
       || !Array.isArray(page.list)
@@ -78,7 +78,7 @@ export async function fetchAllPages<T>(
     }
 
     const expectedPages = Math.ceil(expectedTotal / MAX_PAGE_UNIT);
-    if (items.length === 0 || items.length < MAX_PAGE_UNIT || pageIndex >= expectedPages) {
+    if (items.length === 0 || items.length < MAX_PAGE_UNIT || pageNumber >= expectedPages) {
       throw new Error(
         '전체 건수와 페이지 응답이 일치하지 않습니다. 전량 조회를 완료할 수 없습니다.',
       );

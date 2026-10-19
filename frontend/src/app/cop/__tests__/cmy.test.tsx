@@ -135,14 +135,14 @@ describe('CommunityHubClient', () => {
 
     /*
      * [2026-08-25 실측 수정] 종전 단언은 `{ pageIndex, searchKeyword }` 였다. 그러나
-     * CommunityApiController 는 Spring `Pageable`(page 0-based / size)과 `searchCnd`·`searchWrd`
+     * CommunityApiController 는 page(1부터, ADR-0036)·size 와 `searchCnd`·`searchWrd`
      * 를 읽는다 — 두 값 모두 서버에 닿지 않았고, 이 테스트는 **동작하지 않는 계약을 green 으로
      * 고정하고 있었다**(클라이언트가 자기 관례를 스스로 확인한 셈이다).
      * 서버는 이름 검색을 `searchCnd === '0'` 분기로만 지원한다.
      */
     await waitFor(() => {
       expect(getCommunityListMock).toHaveBeenCalledWith({
-        page: 0,
+        page: 1,
         size: 10,
         searchCnd: '0',
         searchWrd: '보안',

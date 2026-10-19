@@ -35,9 +35,10 @@ public class RewardManageApiController {
 
     @Operation(summary = "포상 등록", description = "포상 정보를 등록한다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.RewardManageApiController#createReward')")
     public ResponseEntity<ApiResponse<RewardManageDto>> createReward(@Valid @RequestBody RewardManageDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(rewardManageService.createReward(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(rewardManageService.createReward(dto)));
     }
 
     /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 GET·POST 뿐이었다(감사 D11-01). */

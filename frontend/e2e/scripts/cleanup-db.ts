@@ -214,7 +214,7 @@ export async function cleanup() {
     activeContext = { stage: 'users', method: 'GET', pathCategory: 'admin-users-collection' };
     const usersRes = await client.get<ApiEnvelope<PagePayload<CleanupUser>>>(`${API_BASE}/admin/system/users`, {
       headers,
-      params: { searchCondition: '0', searchKeyword: 'user_', page: 0, size: 100 } 
+      params: { searchCondition: '0', searchKeyword: 'user_', page: 1, size: 100 } 
     });
     
     const users = extractPage(usersRes);

@@ -86,19 +86,19 @@ describe('SmartNotificationHub', () => {
     const user = userEvent.setup();
     renderHub();
     await screen.findByText('결재 요청');
-    expect(calls('getNotifications')[0]?.[1]).toEqual({ query: { page: 0, size: 20 } });
+    expect(calls('getNotifications')[0]?.[1]).toEqual({ query: { page: 1, size: 20 } });
 
     await user.click(screen.getByRole('button', { name: /읽지 않은 알림/ }));
-    await waitFor(() => expect(calls('getNotifications').at(-1)?.[1]).toEqual({ query: { readYn: 'N', page: 0, size: 20 } }));
+    await waitFor(() => expect(calls('getNotifications').at(-1)?.[1]).toEqual({ query: { readYn: 'N', page: 1, size: 20 } }));
     expect(screen.getByRole('button', { name: /읽지 않은 알림/ })).toHaveAttribute('aria-pressed', 'true');
 
     // 검색어는 입력만으로 조회하지 않고 조회(Enter)로 적용한다(G2).
     const input = screen.getByRole('textbox', { name: '알림 검색어' });
     await user.type(input, '결재');
-    expect(calls('getNotifications').at(-1)?.[1]).toEqual({ query: { readYn: 'N', page: 0, size: 20 } });
+    expect(calls('getNotifications').at(-1)?.[1]).toEqual({ query: { readYn: 'N', page: 1, size: 20 } });
     await user.type(input, '{Enter}');
     await waitFor(() => expect(calls('getNotifications').at(-1)?.[1])
-      .toEqual({ query: { searchWrd: '결재', readYn: 'N', page: 0, size: 20 } }));
+      .toEqual({ query: { searchWrd: '결재', readYn: 'N', page: 1, size: 20 } }));
   });
 
   it('읽지 않은 알림 수를 서버 수치로 말한다', async () => {

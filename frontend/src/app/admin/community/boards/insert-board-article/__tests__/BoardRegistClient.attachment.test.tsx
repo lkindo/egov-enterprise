@@ -168,11 +168,11 @@ describe('BoardRegistClient attachment contract', () => {
     const user = userEvent.setup();
     mocks.getFileList
       .mockResolvedValueOnce([
-        { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10, fileStreCours: '', streFileNm: '' },
-        { atchFileSn: 101, fileSn: 2, orignlFileNm: 'photo.png', fileExtsn: 'png', fileMg: 20, fileStreCours: '', streFileNm: '' },
+        { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10 },
+        { atchFileSn: 101, fileSn: 2, orignlFileNm: 'photo.png', fileExtsn: 'png', fileMg: 20 },
       ])
       .mockResolvedValueOnce([
-        { atchFileSn: 101, fileSn: 2, orignlFileNm: 'photo.png', fileExtsn: 'png', fileMg: 20, fileStreCours: '', streFileNm: '' },
+        { atchFileSn: 101, fileSn: 2, orignlFileNm: 'photo.png', fileExtsn: 'png', fileMg: 20 },
       ]);
     renderSubject({ pstSn: 7, initialData: { pstSn: 7, pstTtl: '기존 글', pstCn: '<p>본문</p>', atchFileSn: 101 } });
 
@@ -194,7 +194,7 @@ describe('BoardRegistClient attachment contract', () => {
     const user = userEvent.setup();
     mocks.confirm.mockResolvedValueOnce(false);
     mocks.getFileList.mockResolvedValue([
-      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10, fileStreCours: '', streFileNm: '' },
+      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10 },
     ]);
     renderSubject({ pstSn: 7, initialData: { pstSn: 7, pstTtl: '기존 글', pstCn: '<p>본문</p>', atchFileSn: 101 } });
 
@@ -212,7 +212,7 @@ describe('BoardRegistClient attachment contract', () => {
     });
     mocks.deleteFile.mockReturnValue(pendingDelete);
     mocks.getFileList.mockResolvedValue([
-      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10, fileStreCours: '', streFileNm: '' },
+      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10 },
     ]);
     renderSubject({ pstSn: 7, initialData: { pstSn: 7, pstTtl: '기존 글', pstCn: '<p>본문</p>', atchFileSn: 101 } });
     const remove = await screen.findByRole('button', { name: 'report.pdf 삭제' });
@@ -238,7 +238,7 @@ describe('BoardRegistClient attachment contract', () => {
   it('서버가 삭제를 거부하면(403) 목록을 유지하고 사유를 토스트로 드러낸다', async () => {
     const user = userEvent.setup();
     mocks.getFileList.mockResolvedValue([
-      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10, fileStreCours: '', streFileNm: '' },
+      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10 },
     ]);
     mocks.deleteFile.mockRejectedValueOnce(new Error('삭제 권한이 없습니다.'));
     renderSubject({ pstSn: 7, initialData: { pstSn: 7, pstTtl: '기존 글', pstCn: '<p>본문</p>', atchFileSn: 101 } });
@@ -253,7 +253,7 @@ describe('BoardRegistClient attachment contract', () => {
   it('기존 첨부 목록 조회 실패를 "첨부 없음" 으로 위장하지 않고 재시도할 수 있다', async () => {
     const user = userEvent.setup();
     mocks.getFileList.mockRejectedValueOnce(new Error('목록 서버 오류')).mockResolvedValueOnce([
-      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10, fileStreCours: '', streFileNm: '' },
+      { atchFileSn: 101, fileSn: 1, orignlFileNm: 'report.pdf', fileExtsn: 'pdf', fileMg: 10 },
     ]);
     renderSubject({ pstSn: 7, initialData: { pstSn: 7, pstTtl: '기존 글', pstCn: '<p>본문</p>', atchFileSn: 101 } });
 

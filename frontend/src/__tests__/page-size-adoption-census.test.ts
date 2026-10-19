@@ -273,7 +273,7 @@ function keyTestProblems(testSource: string, testFile: string, callee: string, t
 /**
  * (a) 리터럴 queryKey 결속(종전 판정). 화면마다 상태 이름이 다르다(`pageSize`·`pageUnit`·`size`). 이름을 열거하는 대신 **표에 실제로 넘긴 값**의
  * 식별자를 뽑아 그 식별자가 queryKey 배열에 있는지 본다(2026-08-25 실측: 이름을 열거했더니 `size` 를 쓰는 포상 화면이 오탐으로 걸렸다).
- * 값이 단일 식별자가 아닐 수 있다(`pagination?.recordCountPerPage ?? pageSize` 같은 대체식) — 식별자를 모두 모아 **하나라도** queryKey 에
+ * 값이 단일 식별자가 아닐 수 있다(`data?.size ?? pageSize` 같은 대체식) — 식별자를 모두 모아 **하나라도** queryKey 에
  * 있으면 결속된 것으로 본다. 결속되면 true. 값을 찾지 못하면 종전에는 건너뛰었지만, 지금은 false 를 돌려 구문 트리 판정으로 넘긴다.
  */
 function literalQueryKeyBound(code: string): boolean {

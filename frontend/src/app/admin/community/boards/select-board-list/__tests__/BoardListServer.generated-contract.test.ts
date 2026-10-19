@@ -40,7 +40,7 @@ describe('BoardListServer generated 경계', () => {
     cookieState.accessToken = 'token';
   });
 
-  it('게시판 기본값은 pageUnit=100으로 끝까지 조회한 generated service 결과에서 고른다', async () => {
+  it('게시판 기본값은 size=100으로 끝까지 조회한 generated service 결과에서 고른다', async () => {
     const firstPage = Array.from({ length: 100 }, (_, index) => ({
       bbsId: `DISABLED_${index}`,
       useYn: 'N',
@@ -58,12 +58,12 @@ describe('BoardListServer generated 경계', () => {
     await expect(resolveDefaultBoardId()).resolves.toBe('BBS_ACTIVE');
     expect(boardAdminService.getBoardMasterList).toHaveBeenNthCalledWith(
       1,
-      { pageIndex: 1, pageUnit: 100 },
+      { page: 1, size: 100 },
       { headers: { Authorization: 'Bearer token' } },
     );
     expect(boardAdminService.getBoardMasterList).toHaveBeenNthCalledWith(
       2,
-      { pageIndex: 2, pageUnit: 100 },
+      { page: 2, size: 100 },
       { headers: { Authorization: 'Bearer token' } },
     );
   });
@@ -91,7 +91,7 @@ describe('BoardListServer generated 경계', () => {
     expect(client.getRaw).toHaveBeenCalledWith('boards/BBS_1', {
       headers: { Authorization: 'Bearer token' },
       params: {
-        page: 1,
+        page: 2,
         size: 10,
         searchWrd: '검색',
         searchCnd: '0',

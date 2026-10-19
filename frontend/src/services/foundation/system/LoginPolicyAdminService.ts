@@ -29,22 +29,15 @@ export interface LoginPolicy {
 class LoginPolicyAdminService extends ApiService {
   /** 로그인 정책 목록 조회 */
   async getLoginPolicyList(params?: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginPolicy>> {
-    const pageIndex = params?.pageIndex
-      ?? params?.pageNo
-      ?? (params?.page !== undefined ? params.page + 1 : 1);
-    const recordCountPerPage = typeof params?.recordCountPerPage === 'number'
-      ? params.recordCountPerPage
-      : undefined;
-    const pageUnit = params?.pageUnit
-      ?? recordCountPerPage
-      ?? params?.size
-      ?? (typeof params?.pageSize === 'number' ? params.pageSize : undefined);
+    // page(1부터)·size 는 서버 이름·기준 그대로 넘긴다(ADR-0036).
+    const page = params?.page ?? 1;
+    const size = params?.size;
     const generatedConfig = config ? { ...config } : undefined;
     if (generatedConfig) delete generatedConfig.params;
     return this.executeGenerated(getLoginPolicyListOperation, {
       query: {
-        pageIndex,
-        ...(pageUnit !== undefined ? { pageUnit } : {}),
+        page,
+        ...(size !== undefined ? { size } : {}),
         ...(params?.searchCondition !== undefined ? { searchCondition: params.searchCondition } : {}),
         searchKeyword: params?.searchKeyword || params?.searchWrd || '',
       },
@@ -69,7 +62,7 @@ class LoginPolicyAdminService extends ApiService {
    * <b>404</b> 를 냈다 — 새 사용자에게 IP 제한·허용 시간대·OTP 를 걸 방법이 없었다.
    */
   async createLoginPolicy(userId: string, data: Partial<LoginPolicy>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(insertLoginPolicyOperation, {
+    await this.executeGenerated(insertLoginPolicyOperation, {
       path: { userId },
       body: { ...data, userId } as GeneratedOperationRequest<'insertLoginPolicy'>,
       config,

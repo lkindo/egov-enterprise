@@ -27,11 +27,17 @@ async function deletePromotionByTitle(request: APIRequestContext, kind: 'popups'
         if (!token)
             return;
         const headers = { Authorization: `Bearer ${token}` };
-        const listRes = await request.get(`${API_BASE}/admin/system/${kind}?pageIndex=1&pageUnit=100`, { headers });
-        if (!listRes.ok())
-            return;
-        const body = await listRes.json();
-        const rows: Array<Record<string, unknown>> = body?.data?.list ?? body?.data ?? [];
+        // [ADR-0036] 종전에는 Pageable 목록에 pageIndex·pageUnit 을 보내 무시돼 첫 10건만 훑었다(그 뒤의 E2E 잔존분이 쌓였다).
+        //   1 기반 page·size(상한 100)로 마지막 페이지까지 모은 뒤 지운다 — 지우면서 넘기면 다음 페이지가 당겨져 건너뛴다.
+        const rows: Array<Record<string, unknown>> = [];
+        for (let page = 1, totalPage = 1; page <= totalPage; page++) {
+            const listRes = await request.get(`${API_BASE}/admin/system/${kind}`, { headers, params: { page, size: 100 } });
+            if (!listRes.ok())
+                return;
+            const body = await listRes.json();
+            rows.push(...(body?.data?.list ?? []));
+            totalPage = Number(body?.data?.totalPage ?? 1);
+        }
         for (const row of rows) {
             const rowTitle = String(row?.popupNm ?? row?.bnrNm ?? row?.title ?? '');
             if (!rowTitle.includes(title))

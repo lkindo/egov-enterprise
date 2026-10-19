@@ -61,7 +61,6 @@ const SINGLE_DELETIONS = {
   help: ['help'],
   // 포상은 결재를 요구하지만(포상의 결재 참조) 결재는 포상을 요구하지 않는다(DEC-OPS-272). 행사는 결재와 무관하다(DEC-OPS-273).
   informalsanction: ['informalsanction', 'reward'],
-  isg: ['isg'],
   mail: ['mail'],
   memoreport: ['memoreport'],
   note: ['note'],

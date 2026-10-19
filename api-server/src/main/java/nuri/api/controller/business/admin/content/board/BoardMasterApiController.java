@@ -47,11 +47,12 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#createBoardMaster')")
     public ResponseEntity<ApiResponse<String>> createBoardMaster(@Valid @RequestBody BoardMasterDto dto) {
         String userId = currentLoginId();
         String bbsId = boardMasterService.createBoardMaster(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(bbsId));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(bbsId));
     }
 
     @Operation(summary = "게시판 마스터 수정")

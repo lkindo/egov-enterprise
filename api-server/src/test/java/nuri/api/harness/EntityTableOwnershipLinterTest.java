@@ -50,11 +50,11 @@ class EntityTableOwnershipLinterTest {
     private static final Logger log = LoggerFactory.getLogger(EntityTableOwnershipLinterTest.class);
     private static final String ENTITY_SCAN_BASE = "nuri";
     // Entity census 는 물리 표 수와 다르다 — 엔티티를 쓰는 코드를 걷어도 물리 표 처분은 파괴적 DB 변경이라 별도 승인 경계이므로
-    //   매핑 없는 표(tb_indv_pg_conts·tb_prgrm_lst·tb_rptp_stats 등)가 남는다. 그 표를 JDBC 로 보는 migration 검증은 그대로 산다.
+    //   매핑 없는 표(tb_indv_pg_conts·tb_prgrm_lst·tb_rptp_stats·tb_intrn_svc 등)가 남는다. 그 표를 JDBC 로 보는 migration 검증은 그대로 산다.
     // 쓰기 엔티티를 더하거나 걷으면 아래 두 수를 함께 고친다. 수정되는 표는 감사 4종(BaseEntity), 추가만 하는 이력은 insert 감사
     //   2종이다(INSERT_ONLY_AUDIT_ENTITIES). 수의 증감 이력은 git 과 결정 기록에 있다.
-    private static final int EXPECTED_ENTITY_COUNT = 88;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 87;
+    private static final int EXPECTED_ENTITY_COUNT = 87;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 86;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");

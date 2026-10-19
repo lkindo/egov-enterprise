@@ -33,7 +33,7 @@ export function GroupChangeHistory({ code, fill = false }: { code: string; fill?
   const filters = { groupCode: code };
   const history = useQuery({
     queryKey: [...scope, 'history', page, filters],
-    queryFn: () => authorizationAdminService.getHistory(page - 1, PAGE_SIZE, filters),
+    queryFn: () => authorizationAdminService.getHistory(page, PAGE_SIZE, filters),
     enabled: canAudit, retry: false,
   });
   if (!canAudit) return null;

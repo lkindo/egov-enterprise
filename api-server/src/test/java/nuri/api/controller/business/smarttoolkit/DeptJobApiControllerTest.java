@@ -51,8 +51,8 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
 
         // When & Then
         mockMvc.perform(get("/api/v1/dept-jobs/boxes")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -86,7 +86,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                                 .deptTaskBoxNm("Test Box")
                                 .deptId("D1")
                                 .build())))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
@@ -153,7 +153,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"deptTaskNm\":\"신규 업무\",\"deptTaskCn\":\"내용\",\"prrtyRnk\":\"2\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(2));
     }
 
@@ -282,7 +282,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                                   "mdfcnDt": "2026-09-06T00:00:00"
                                 }
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         ArgumentCaptor<DeptJobBoxDto> captor = ArgumentCaptor.forClass(DeptJobBoxDto.class);
         verify(egovDeptJobBoxService).createDeptJobBox(eq("USR_001"), captor.capture());
@@ -318,7 +318,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
                                   "mdfcnDt": "2026-09-06T00:00:00"
                                 }
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         ArgumentCaptor<DeptJobDto> captor = ArgumentCaptor.forClass(DeptJobDto.class);
         verify(deptJobService).createDeptJob(captor.capture());

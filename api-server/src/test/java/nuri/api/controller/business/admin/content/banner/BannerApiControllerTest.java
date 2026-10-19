@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
@@ -30,7 +29,7 @@ class BannerApiControllerTest extends BaseControllerTest {
 
     @Override
     protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
-        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
+        return new HandlerMethodArgumentResolver[] { nuri.business.support.PageableTestResolvers.standard() };
     }
 
     @Test
@@ -54,7 +53,7 @@ class BannerApiControllerTest extends BaseControllerTest {
 
         mockMvc.perform(post("/api/v1/admin/system/banners")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(put("/api/v1/admin/system/banners/1")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))

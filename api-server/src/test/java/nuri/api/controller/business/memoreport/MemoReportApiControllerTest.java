@@ -57,7 +57,7 @@ class MemoReportApiControllerTest {
 
         mockMvc = MockMvcBuilders.standaloneSetup(new MemoReportApiController(memoReportService))
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver(), userDetailsResolver)
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard(), userDetailsResolver)
                 .build();
     }
 
@@ -130,7 +130,7 @@ class MemoReportApiControllerTest {
                           "crtDt": "2026-09-06T03:00:00"
                         }
                         """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(2));
 
         ArgumentCaptor<MemoReportDto> dto = ArgumentCaptor.forClass(MemoReportDto.class);

@@ -68,7 +68,7 @@ export class OpsDetailPage {
         ]);
         
         console.log(`>>> [OpsDetail] Create API responded (status: ${response.status()})`);
-        if (response.status() !== 200) {
+        if (!response.ok()) {
             console.log(`>>> [OpsDetail] Create API Error Body: ${await response.text()}`);
         }
         

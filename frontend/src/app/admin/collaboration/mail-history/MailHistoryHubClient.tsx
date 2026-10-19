@@ -102,7 +102,7 @@ export default function MailHistoryHubClient() {
   } = useQuery({
     queryKey: ['mail-history', searchField, debouncedKeyword, resultFilter, page],
     queryFn: () => mailService.getSentMails({
-      page: page - 1,
+      page,
       size: PAGE_SIZE,
       searchKeyword: debouncedKeyword,
       // 백엔드 SentMailRepositoryImpl 계약상 '1'은 제목, '3'은 발신자 검색이다.

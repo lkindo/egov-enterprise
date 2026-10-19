@@ -118,7 +118,7 @@ export default function SecurityHubClient() {
     enabled: canRead && tab === 'groups' && !!selectedGroup && !creating, retry: false,
     placeholderData: (previous, previousQuery) => (previous?.code === selectedGroup && previousQuery?.queryKey[1] === user?.id ? previous : undefined),
   });
-  const users = useQuery({ queryKey: [...scope, 'users', userSearch, userPage], queryFn: () => authorizationAdminService.getUsers(userSearch, userPage - 1, PAGE_SIZE), enabled: canRead && tab === 'users', retry: false });
+  const users = useQuery({ queryKey: [...scope, 'users', userSearch, userPage], queryFn: () => authorizationAdminService.getUsers(userSearch, userPage, PAGE_SIZE), enabled: canRead && tab === 'users', retry: false });
   const membership = useQuery({ queryKey: [...scope, 'membership', selectedUser?.id], queryFn: () => authorizationAdminService.getMemberships(selectedUser!.id), enabled: canRead && tab === 'users' && !!selectedUser, retry: false });
 
   /*

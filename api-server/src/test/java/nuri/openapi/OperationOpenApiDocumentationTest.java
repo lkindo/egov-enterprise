@@ -33,7 +33,7 @@ class OperationOpenApiDocumentationTest {
         .path("paths").path("/api/v1/admin/operation/external-hr").path("post")
         .path("responses");
     String responseSchemaName = "ApiResponse" + ExternalHrDto.class.getSimpleName();
-    tools.jackson.databind.JsonNode success = responses.path("200");
+    tools.jackson.databind.JsonNode success = responses.path("201");
     tools.jackson.databind.JsonNode conflict = responses.path("409");
 
     assertThat(success.path("content").path("application/json")

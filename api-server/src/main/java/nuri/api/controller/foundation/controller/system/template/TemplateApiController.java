@@ -42,10 +42,12 @@ public class TemplateApiController {
 
     @Operation(summary = "템플릿 등록", description = "새로운 게시판 템플릿 정보를 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo')")
-    public ResponseEntity<ApiResponse<Void>> insertTmplatInfo(@Valid @RequestBody TemplateDto tmplatInfo) {
+    public ResponseEntity<ApiResponse<String>> insertTmplatInfo(@Valid @RequestBody TemplateDto tmplatInfo) {
         tmplatInfoService.insertTmplatInfo(tmplatInfo);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        // 템플릿 ID 는 요청이 정하고 서비스가 중복을 거부한다 — 그 값이 새 템플릿의 식별자다.
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(tmplatInfo.getTmpltId()));
     }
 
     /* [2026-09-05 DEC-OPS-036] 수정·삭제 신설 — 종전에는 등록·조회만 가능했다(감사 D11-02). */

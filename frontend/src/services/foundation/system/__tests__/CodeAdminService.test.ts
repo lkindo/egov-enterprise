@@ -50,15 +50,16 @@ describe('CodeAdminService', () => {
       if (method === 'post') await transport.post(url, data, requestConfig);
       else if (method === 'put') await transport.put(url, data, requestConfig);
       else if (method === 'delete') await transport.remove(url, requestConfig);
-      return success(null);
+      // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 분류코드 등록은 분류코드 문자열이다.
+      return success(method === 'post' && url === 'admin/system/codes/cl' ? 'CL01' : null);
     });
   });
 
   describe('Classification Code', () => {
     it('getClCodeList should call correct API', async () => {
-      await codeAdminService.getClCodeList({ page: 1 });
+      await codeAdminService.getClCodeList({ page: 2 });
       expect(transport.get).toHaveBeenCalledWith('admin/system/codes/cl', expect.objectContaining({
-        params: expect.objectContaining({ pageIndex: 2 })
+        params: expect.objectContaining({ page: 2 })
       }));
     });
 
@@ -89,9 +90,9 @@ describe('CodeAdminService', () => {
 
   describe('Common Code', () => {
     it('getCmmnCodeList should call correct API', async () => {
-      await codeAdminService.getCmmnCodeList({ page: 1 });
+      await codeAdminService.getCmmnCodeList({ page: 2 });
       expect(transport.get).toHaveBeenCalledWith('admin/system/codes/cmmn', expect.objectContaining({
-        params: expect.objectContaining({ pageIndex: 2 })
+        params: expect.objectContaining({ page: 2 })
       }));
     });
 
@@ -104,9 +105,9 @@ describe('CodeAdminService', () => {
 
   describe('Detail Code', () => {
     it('getDetailCodeList should call correct API', async () => {
-      await codeAdminService.getDetailCodeList({ page: 1 });
+      await codeAdminService.getDetailCodeList({ page: 2 });
       expect(transport.get).toHaveBeenCalledWith('admin/system/codes/detail', expect.objectContaining({
-        params: expect.objectContaining({ pageIndex: 2 })
+        params: expect.objectContaining({ page: 2 })
       }));
     });
 

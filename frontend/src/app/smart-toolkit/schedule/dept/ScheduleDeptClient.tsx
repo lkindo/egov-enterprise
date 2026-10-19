@@ -76,10 +76,10 @@ export default function ScheduleDeptClient() {
     const [fetchError, setFetchError] = useState<Error | null>(null);
     const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
     const fetchSequence = useRef(0);
-    // 서버는 pageIndex/pageUnit 을 받는다. 종전의 pageNo 는 ApiService 매핑 대상이 아니라
-    // 그대로 전달돼 서버에서 무시됐고, 그래서 '조회' 버튼이 사실상 무동작이었다.
+    // 서버는 page(1부터)·size 를 받는다(ADR-0036). 종전에 서버가 읽지 않는 이름을 보냈을 때는
+    // 그대로 무시돼 '조회' 버튼이 사실상 무동작이었다.
     const [params, setParams] = useState<ScheduleSearchParams>({
-        pageIndex: 1,
+        page: 1,
         size: 10,
         schdlNm: '',
     });
@@ -115,8 +115,8 @@ export default function ScheduleDeptClient() {
             const size = response?.size > 0 ? response.size : (params.size ?? 10);
             const total = response?.total ?? 0;
             const lastPage = Math.max(1, Math.ceil(total / size));
-            if ((params.pageIndex ?? 1) > lastPage) {
-                setParams((current) => ({ ...current, pageIndex: lastPage, size }));
+            if ((params.page ?? 1) > lastPage) {
+                setParams((current) => ({ ...current, page: lastPage, size }));
                 return;
             }
             setPageInfo({ total, size });
@@ -138,7 +138,7 @@ export default function ScheduleDeptClient() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        setParams(prev => ({ ...prev, pageIndex: 1 }));
+        setParams(prev => ({ ...prev, page: 1 }));
     };
 
     const handleCreate = () => {
@@ -277,7 +277,7 @@ export default function ScheduleDeptClient() {
                     placeholder="일정명으로 검색하세요"
                     className="max-w-sm rounded-lg"
                     value={params.schdlNm}
-                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value, pageIndex: 1 }))}
+                    onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value, page: 1 }))}
                 />
                 <Button onClick={handleSearch} className="rounded-lg px-8 font-bold">조회</Button>
             </div>
@@ -331,7 +331,7 @@ export default function ScheduleDeptClient() {
                                 const isDeleting = deletingScheduleSn === schedule.schdlSn;
                                 return (
                                 <TableRow key={schedule.schdlSn} className="hover:bg-muted/50 transition-colors">
-                                    <TableCell className="text-center font-mono text-muted-foreground">{((params.pageIndex ?? 1) - 1) * pageInfo.size + index + 1}</TableCell>
+                                    <TableCell className="text-center font-mono text-muted-foreground">{((params.page ?? 1) - 1) * pageInfo.size + index + 1}</TableCell>
                                     <TableCell className="font-bold text-foreground">{schedule.schdlNm}</TableCell>
                                     <TableCell className="text-sm font-medium">
                                         {formatYmd(schedule.schdlBgngYmd)} ~ {formatYmd(schedule.schdlEndYmd)}
@@ -379,9 +379,9 @@ export default function ScheduleDeptClient() {
             {!loading && !fetchError && (
                 <PagePagination
                     total={pageInfo.total}
-                    page={params.pageIndex ?? 1}
+                    page={params.page ?? 1}
                     size={pageInfo.size}
-                    onPageChange={(pageIndex) => setParams((current) => ({ ...current, pageIndex, size: pageInfo.size }))}
+                    onPageChange={(page) => setParams((current) => ({ ...current, page, size: pageInfo.size }))}
                 />
             )}
 

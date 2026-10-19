@@ -60,24 +60,24 @@ describe('foundation system generated operation 경계', () => {
     const page = { list: [], total: 0, page: 1, size: 20, totalPage: 0 };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(auditAdminService.getAuditLogs({ page: 0, size: 20, searchKeyword: 'login' }))
+    await expect(auditAdminService.getAuditLogs({ page: 1, size: 20, searchKeyword: 'login' }))
       .resolves.toBe(page);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/logs/system', {
-      params: { pageIndex: 1, pageUnit: 20, recordCountPerPage: 20, searchKeyword: 'login' },
+      params: { page: 1, size: 20, searchKeyword: 'login' },
     });
   });
   it('사용자 로그 목록은 generated operation과 정규화된 query를 사용한다', async () => {
     const page = { list: [], total: 0, page: 3, size: 25, totalPage: 0 };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(systemLogAdminService.getUserLogs({ page: 2, size: 25, searchWrd: 'alice' }))
+    await expect(systemLogAdminService.getUserLogs({ page: 3, size: 25, searchWrd: 'alice' }))
       .resolves.toBe(page);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/logs/user', {
-      params: { pageIndex: 3, pageUnit: 25, searchKeyword: 'alice' },
+      params: { page: 3, size: 25, searchKeyword: 'alice' },
     });
   });
 
-  it('템플릿 등록은 generated request/void envelope 계약을 사용한다', async () => {
+  it('템플릿 등록은 generated request와 새 ID envelope 계약을 사용한다(ADR-0036)', async () => {
     const template: TmplatInfo = {
       tmpltId: 'TMPLT_BASIC',
       tmpltNm: '기본',
@@ -86,7 +86,9 @@ describe('foundation system generated operation 경계', () => {
       useYn: 'Y',
     };
 
-    await expect(templateAdminService.createTemplate(template)).resolves.toBeUndefined();
+    // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 템플릿 등록은 새 템플릿 ID 를 돌려준다(종전 void).
+    client.requestRaw.mockResolvedValueOnce(success('TMPLT_NEW'));
+    await expect(templateAdminService.createTemplate(template)).resolves.toBe('TMPLT_NEW');
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'admin/system/templates',
       method: 'post',

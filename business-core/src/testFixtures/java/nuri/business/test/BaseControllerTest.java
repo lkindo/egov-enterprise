@@ -32,7 +32,7 @@ public abstract class BaseControllerTest {
         JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter(objectMapper);
         
         java.util.List<org.springframework.web.method.support.HandlerMethodArgumentResolver> resolvers = new java.util.ArrayList<>();
-        resolvers.add(new org.springframework.data.web.PageableHandlerMethodArgumentResolver());
+        resolvers.add(nuri.business.support.PageableTestResolvers.standard());
         java.util.Collections.addAll(resolvers, getCustomArgumentResolvers());
         
         mockMvc = MockMvcBuilders.standaloneSetup(getController())

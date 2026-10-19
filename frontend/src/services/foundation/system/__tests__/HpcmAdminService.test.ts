@@ -18,12 +18,10 @@
  *    선행 슬래시가 되살아나면(`/help/hpcm`) axios baseURL 의 경로 세그먼트('/api/v1')가 통째로
  *    날아가 절대 경로로 해석된다.
  *
- * 2) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 를 **덧붙인다**(원본 키는 지우지 않는다). 이 엔드포인트는
- *    BaseSearchDto 가 아니라 **Spring Data `Pageable`**(`@PageableDefault(size = 10)`)로 바인딩되므로
- *    서버가 실제로 읽는 키는 원본 `page`/`size` 다. 즉 "정규화"라는 이름으로 원본 키를 지우는 변경이
- *    들어오면 목록이 통째로 서버 기본값(0페이지·10건)으로 되돌아가고, 반대로 +1 이 원본 `page` 에까지
- *    적용되면 한 페이지씩 밀린다. 두 경우 모두 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 파라미터 — [ADR-0036] 이 엔드포인트는 **Spring Data `Pageable`**(`@PageableDefault(size = 10)`)로
+ *    바인딩되고 서버가 읽는 키는 `page`(1부터)/`size` 다. 서비스는 두 값을 변환 없이 넘긴다. "정규화"라는 이름으로
+ *    키를 지우는 변경이 들어오면 목록이 통째로 서버 기본값(1페이지·10건)으로 되돌아가고, ±1 이 끼어들면 한 페이지씩
+ *    밀린다. 두 경우 모두 tsc 로는 절대 잡히지 않는다.
  *
  * 3) 경로 변수 치환 — `getHpcm`/`updateHpcm`/`deleteHpcm` 은 **인자 `hlpSn`** 이 경로를 결정한다.
  *    본문(`data.hlpSn`)을 따라가도록 바뀌면 화면에서 고른 도움말이 아닌 **엉뚱한 도움말을 고치거나
@@ -92,7 +90,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client.get.mockImplementation((url: string) => Promise.resolve(
-      url === BASE ? { list: [] } : validHpcm,
+      url === BASE ? { list: [], total: 0, page: 1, size: 10, totalPage: 0 } : validHpcm,
     ));
     client.post.mockResolvedValue(1);
   });
@@ -113,12 +111,13 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       expect(client.get).not.toHaveBeenCalledWith(ADMIN_PREFIXED, { params: {} });
     });
 
-    it('첫 페이지는 Pageable 계약의 0-based page 0으로 전달한다', async () => {
-      await hpcmAdminService.getHpcmList({ page: 0 });
+    it('첫 페이지는 1부터 세는 page 1로 그대로 전달한다', async () => {
+      await hpcmAdminService.getHpcmList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0 },
+        params: { page: 1 },
       });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
     it('page 2·size 20은 generated Pageable query 그대로 전달한다', async () => {
@@ -129,7 +128,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
       });
     });
 
-    it('page 4를 0-based 그대로 전달한다', async () => {
+    it('page 4를 변환 없이 그대로 전달한다', async () => {
       await hpcmAdminService.getHpcmList({ page: 4 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 4 } });
@@ -180,12 +179,12 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await hpcmAdminService.getHpcmList({ page: 0 }, { timeout: 3000, signal });
+      await hpcmAdminService.getHpcmList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0 },
+        params: { page: 1 },
       });
     });
 
@@ -428,7 +427,7 @@ describe('HpcmAdminService — 도움말(HPCM) 관리 API 계약', () => {
 
     it('5개 메서드의 경로는 모두 help/hpcm 접두를 벗어나지 않고 선행 슬래시도 갖지 않는다', async () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로 해석).
-      await hpcmAdminService.getHpcmList({ page: 0 });
+      await hpcmAdminService.getHpcmList({ page: 1 });
       await hpcmAdminService.getHpcm(7);
       await hpcmAdminService.createHpcm({ ...validHpcm, hlpSn: undefined, hlpDfn: '신규' });
       await hpcmAdminService.updateHpcm(7, { ...validHpcm, hlpDfn: '수정' });

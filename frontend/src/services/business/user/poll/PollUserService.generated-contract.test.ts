@@ -31,17 +31,18 @@ describe('PollUserService generated contract', () => {
 
   it('7개 경계를 generated operation으로 실행하고 검색어·update guard를 보존한다', async () => {
     client.getRaw
-      .mockResolvedValueOnce(successEnvelope({ list: [poll], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [poll], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope(poll))
       .mockResolvedValueOnce(successEnvelope([item]));
     client.requestRaw
-      .mockResolvedValueOnce(successEnvelope(null))
+      // [ADR-0036] 등록(POST)은 새 식별자를 data 로 돌려준다(서비스 반환형은 그대로 void).
+      .mockResolvedValueOnce(successEnvelope(4))
       .mockResolvedValueOnce(successEnvelope(null))
       .mockResolvedValueOnce(successEnvelope(null))
       .mockResolvedValueOnce(successEnvelope(null));
 
     await expect(pollUserService.getPollList({
-      page: 0,
+      page: 1,
       size: 20,
       searchCondition: '0',
       searchKeyword: '만족도',
@@ -57,7 +58,7 @@ describe('PollUserService generated contract', () => {
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'polls', {
       // [결정 21] 종류 조건이 그대로 실린다 — 여론조사·투표 관리 화면이 서로의 항목을 보지 않는다.
-      params: { page: 0, size: 20, keyword: '만족도', kind: 'SATISFACTION' },
+      params: { page: 1, size: 20, keyword: '만족도', kind: 'SATISFACTION' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'polls/4', undefined);
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'polls/4/items', undefined);

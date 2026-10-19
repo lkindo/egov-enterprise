@@ -154,7 +154,7 @@ describe('GroupMemberAddDialog — 구성원 추가', () => {
     mocks.getUsers.mockResolvedValue(page([]));
     fireEvent.change(dialog.getByRole('textbox', { name: '추가할 사용자 이름·로그인 ID' }), { target: { value: '없는 사람' } });
     await userEvent.click(dialog.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.getUsers).toHaveBeenLastCalledWith('없는 사람', 0, 20));
+    await waitFor(() => expect(mocks.getUsers).toHaveBeenLastCalledWith('없는 사람', 1, 20));
     expect(await dialog.findByText('"없는 사람"에 대한 검색 결과가 없습니다.')).toHaveAttribute('role', 'status');
   });
 });

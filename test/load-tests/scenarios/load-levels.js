@@ -200,6 +200,7 @@ function runDashboardTest(token) {
  */
 function runUsersListTest(token) {
   const url = `${Config.BASE_URL}${Config.API_PREFIX}/admin/system/users`;
+  // [ADR-0036] page 는 1 기반이다. 종전 0 기반 서버에서는 1..5 가 둘째~여섯째 페이지라 첫 페이지를 한 번도 재지 않았다.
   const page = Math.floor(Math.random() * 5) + 1;
 
   const response = http.get(`${url}?page=${page}&size=10`, {
@@ -239,7 +240,8 @@ function runPostCreateTest(token) {
   });
 
   check(response, {
-    'create post status is 200': (r) => r.status === 200,
+    // [ADR-0036] 자원을 만드는 POST 는 201 이다.
+    'create post status is 201': (r) => r.status === 201,
   });
 
   sleep(3);

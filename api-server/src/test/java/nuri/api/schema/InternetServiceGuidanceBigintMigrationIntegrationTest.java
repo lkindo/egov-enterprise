@@ -29,7 +29,9 @@ class InternetServiceGuidanceBigintMigrationIntegrationTest extends SharedPostgr
                     """);
         }
 
-        migrateThroughAuthorizationCutover();
+        // V2_51 의 전환만 본다. 안내 행이 남은 채 최신까지 올리면 V2_135(인터넷서비스안내 퇴역)가 의도대로
+        // fail-closed 로 멈추므로, 블로그 퇴역(V2_90) 시험처럼 퇴역 앞 버전까지만 올린다.
+        flyway(MigrationVersion.fromVersion("2.51")).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {

@@ -145,6 +145,7 @@ public class ApprovalApiController {
                     + "참조자(references)를 함께 지정할 수 있습니다 — 사용 중이고 결재 조회 권한이 있는 사람만, 결재선과 겹치지 않게 20명까지이며 "
                     + "지정된 사람은 알림을 받고 그 문서를 계속 읽습니다(되돌릴 수 없습니다).")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApproval')")
     public ResponseEntity<ApiResponse<Long>> createApproval(
             @LoginUser CustomUserDetails userDetails,
@@ -161,7 +162,7 @@ public class ApprovalApiController {
                 ? approvalService.registerInformalSanction(draft, request.getStages(), request.getReferences())
                 : temporaryDraftService.submitWithTemporaryDraft(draft, request.getStages(), request.getReferences(),
                         temporaryDraftSn, temporaryDraftVersion);
-        return ResponseEntity.ok(ApiResponse.success(id));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(id));
     }
 
     @Operation(summary = "Resubmit Approval", description = "기안자 본인이 반려·회수된 문서를 수정하여 다시 상신합니다. 이전 차수의 내용과 처리는 보존됩니다. "
@@ -270,11 +271,12 @@ public class ApprovalApiController {
             description = "작성 중인 기안을 임시저장합니다. 업무 구분·제목·본문·결재선 중 하나는 있어야 하고, 결재자가 없는 단계는 받지 않습니다. "
                     + "결재자 자격은 저장할 때 보지 않습니다. 한 사람이 20건까지 둘 수 있으며 넘으면 409(C014) 입니다. 알림은 나가지 않습니다.")
     @PostMapping("/temporary-drafts")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalTemporaryDraft')")
     public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftSummaryDto>> createApprovalTemporaryDraft(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(
                 temporaryDraftService.createTemporaryDraft(userDetails.getEsntlId(), request)));
     }
 
@@ -329,11 +331,12 @@ public class ApprovalApiController {
             description = "지금 결재선을 이름을 붙여 저장합니다. 결재자가 모두 지금 결재자로 지정할 수 있는 사람(본인 아님·사용 중·결재 권한)이어야 하며, "
                     + "아니면 400 입니다. 한 사람이 20개까지 둘 수 있으며 넘으면 409(C014), 같은 이름이 있으면 409(C008) 입니다.")
     @PostMapping("/saved-lines")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.approval.ApprovalApiController#createApprovalSavedLine')")
     public ResponseEntity<ApiResponse<nuri.business.service.informalsanction.dto.ApprovalSavedLineSummaryDto>> createApprovalSavedLine(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody nuri.business.service.informalsanction.dto.ApprovalSavedLineRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(savedLineService.createSavedLine(userDetails.getEsntlId(), request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(savedLineService.createSavedLine(userDetails.getEsntlId(), request)));
     }
 
     @Operation(summary = "Update Approval Saved Line",

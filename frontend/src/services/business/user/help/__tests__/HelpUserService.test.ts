@@ -41,16 +41,16 @@ describe('HelpUserService FAQ detail', () => {
       }],
       total: 1,
       totalPage: 1,
-      page: 0,
+      page: 1,
       size: 10,
     }));
 
-    const result = await helpUserService.getFaqs({ keyword: '목록', page: 0, size: 10 });
+    const result = await helpUserService.getFaqs({ keyword: '목록', page: 1, size: 10 });
 
     expect(client.getRaw).toHaveBeenCalledWith(
       'boards/public-faqs',
       expect.objectContaining({
-        params: expect.objectContaining({ keyword: '목록', page: 0, size: 10 }),
+        params: expect.objectContaining({ keyword: '목록', page: 1, size: 10 }),
       }),
     );
     const listParams = vi.mocked(client.getRaw).mock.calls[0]?.[1]?.params;
@@ -152,15 +152,15 @@ describe('HelpUserService QNA generated contract', () => {
         crtDt: '2026-08-30T00:00:00Z',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    const result = await helpUserService.getQnas({ page: 0, size: 10, keyword: '문의' });
+    const result = await helpUserService.getQnas({ page: 1, size: 10, keyword: '문의' });
 
     expect(client.getRaw).toHaveBeenCalledWith(`boards/${QNA_BOARD_ID}`, {
-      params: { page: 0, size: 10, searchWrd: '문의' },
+      params: { page: 1, size: 10, searchWrd: '문의' },
     });
     expect(result.list[0]).toMatchObject({
       qaId: '42',
@@ -173,9 +173,13 @@ describe('HelpUserService QNA generated contract', () => {
   it('생성 계약의 필수 userId/useYn이 빠진 응답을 화면에 통과시키지 않는다', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
       list: [{ pstSn: 42, pstTtl: '불완전 문의', pstCn: '본문' }],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
     }));
 
-    await expect(helpUserService.getQnas({ page: 0, size: 10 })).rejects.toThrow(
+    await expect(helpUserService.getQnas({ page: 1, size: 10 })).rejects.toThrow(
       'Q&A 목록 정보를 표시할 수 없습니다.',
     );
   });
@@ -191,12 +195,12 @@ describe('HelpUserService QNA generated contract', () => {
         useYn: 'Y',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    await expect(helpUserService.getQnas({ page: 0, size: 10 })).rejects.toThrow(
+    await expect(helpUserService.getQnas({ page: 1, size: 10 })).rejects.toThrow(
       'Q&A 목록 정보를 표시할 수 없습니다.',
     );
   });
@@ -214,12 +218,12 @@ describe('HelpUserService QNA generated contract', () => {
         scrtYn: null,
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    const result = await helpUserService.getQnas({ page: 0, size: 10 });
+    const result = await helpUserService.getQnas({ page: 1, size: 10 });
 
     expect(result.list[0]).toMatchObject({ wrterNm: 'writer-1' });
     expect(result.list[0]).not.toHaveProperty('qnaSttsCd');
@@ -254,5 +258,60 @@ describe('HelpUserService QNA generated contract', () => {
       'Q&A 제목과 본문은 필수입니다.',
     );
     expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * [2026-10-19] 도움말 센터의 도움말·온라인 매뉴얼 탭은 관리 목록(HELP_READ)이 아니라 로그인 사용자용 열람 연산을 부른다.
+ * 응답에는 등록자 ID 가 없고, 화면 모델도 그것을 갖지 않는다. 빈 검색어는 보내지 않는다.
+ */
+describe('HelpUserService 도움말·온라인 매뉴얼 열람', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('도움말은 열람 연산(help/public-hpcm)을 부르고 제목·설명만 화면 모델로 옮긴다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [{ hlpSn: 3, hlpDfn: '비밀번호 변경', hlpExpln: '내 정보에서 바꿉니다.' }, { hlpSn: 4, hlpDfn: '설명 없음', hlpExpln: null }],
+      total: 2, totalPage: 1, page: 1, size: 10,
+    }));
+
+    const result = await helpUserService.getHelpGuides({ keyword: '', page: 1, size: 10 });
+
+    expect(client.getRaw).toHaveBeenCalledWith('help/public-hpcm', expect.objectContaining({ params: { page: 1, size: 10 } }));
+    expect(result).toEqual({
+      list: [
+        { id: '3', title: '비밀번호 변경', description: '내 정보에서 바꿉니다.' },
+        { id: '4', title: '설명 없음', description: '' },
+      ],
+      total: 2, totalPage: 1, page: 1, size: 10,
+    });
+  });
+
+  it('온라인 매뉴얼은 열람 연산(help/public-manuals)을 부르고 리소스 경로는 값이 있을 때만 싣는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [
+        { onlnMnlSn: 7, onlnMnlNm: '전자결재 사용법', onlnMnlDfn: '/docs/approval', onlnMnlExpln: '상신과 승인' },
+        { onlnMnlSn: 8, onlnMnlNm: '쪽지 사용법', onlnMnlDfn: null, onlnMnlExpln: null },
+      ],
+      total: 2, totalPage: 1, page: 1, size: 10,
+    }));
+
+    const result = await helpUserService.getOnlineManuals({ keyword: '사용법', page: 1, size: 10 });
+
+    expect(client.getRaw).toHaveBeenCalledWith('help/public-manuals',
+      expect.objectContaining({ params: { keyword: '사용법', page: 1, size: 10 } }));
+    expect(result.list).toEqual([
+      { id: '7', title: '전자결재 사용법', description: '상신과 승인', resourcePath: '/docs/approval' },
+      { id: '8', title: '쪽지 사용법', description: '' },
+    ]);
+  });
+
+  it('필수 제목이 빠진 열람 응답은 화면에 통과시키지 않는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [{ hlpSn: 3, hlpExpln: '제목이 없다' }], total: 1, totalPage: 1, page: 1, size: 10,
+    }));
+
+    await expect(helpUserService.getHelpGuides({ page: 1, size: 10 })).rejects.toThrow();
   });
 });

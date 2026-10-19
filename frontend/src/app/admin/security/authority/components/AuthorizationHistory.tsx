@@ -78,7 +78,7 @@ export function AuthorizationHistory({ initialUserId = '', fill = false }: { ini
   const [historyInput, setHistoryInput] = useState({ groupCode: '', userId: initialUserId, actorId: '', fromDate: '', toDate: '' });
   const [historyFilters, setHistoryFilters] = useState<AuthorizationHistoryFilters>(initialUserId ? { userId: initialUserId } : {});
   const [historyFilterError, setHistoryFilterError] = useState('');
-  const history = useQuery({ queryKey: [...scope, 'history', historyPage, historyFilters], queryFn: () => authorizationAdminService.getHistory(historyPage - 1, PAGE_SIZE, historyFilters), enabled: canAudit, retry: false });
+  const history = useQuery({ queryKey: [...scope, 'history', historyPage, historyFilters], queryFn: () => authorizationAdminService.getHistory(historyPage, PAGE_SIZE, historyFilters), enabled: canAudit, retry: false });
   if (!canAudit) return null;
   const rows = history.data?.list ?? [];
   return (

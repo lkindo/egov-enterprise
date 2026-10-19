@@ -73,12 +73,13 @@ public class NoteApiController {
 
     @Operation(summary = "쪽지 발송", description = "새로운 쪽지를 작성하여 발송합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.note.NoteApiController#sendNote')")
-    public ResponseEntity<ApiResponse<Void>> sendNote(
+    public ResponseEntity<ApiResponse<Long>> sendNote(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody NoteDto noteDto) {
-        noteService.sendNote(userDetails.getUsername(), noteDto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long noteSn = noteService.sendNote(userDetails.getUsername(), noteDto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(noteSn));
     }
 
     @Operation(summary = "쪽지 삭제", description = "수신 또는 발신 목록에서 쪽지를 삭제합니다.")

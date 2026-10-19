@@ -29,7 +29,7 @@ describe('SystemLogAdminService pagination contract', () => {
     clientGet.mockResolvedValue(EMPTY_PAGE);
   });
 
-  it('maps the zero-based USR page 2 to API pageIndex 3', async () => {
+  it('passes the one-based USR page 2 through as page 2 (ADR-0036)', async () => {
     await systemLogAdminService.getUserLogs({
       page: 2,
       size: 25,
@@ -40,15 +40,15 @@ describe('SystemLogAdminService pagination contract', () => {
       'admin/system/logs/user',
       expect.objectContaining({
         params: expect.objectContaining({
-          pageIndex: 3,
-          pageUnit: 25,
+          page: 2,
+          size: 25,
           searchKeyword: 'alice',
         }),
       }),
     );
   });
 
-  it('maps the zero-based WEB page 2 to API pageIndex 3', async () => {
+  it('passes the one-based WEB page 2 through as page 2 (ADR-0036)', async () => {
     await systemLogAdminService.getWebLogs({
       page: 2,
       size: 25,
@@ -59,23 +59,26 @@ describe('SystemLogAdminService pagination contract', () => {
       'admin/system/logs/web',
       expect.objectContaining({
         params: expect.objectContaining({
-          pageIndex: 3,
-          pageUnit: 25,
+          page: 2,
+          size: 25,
           searchKeyword: 'orders',
         }),
       }),
     );
   });
 
-  it('does not overwrite explicitly supplied API pagination', async () => {
+  it('does not translate or forward legacy pageIndex/pageUnit aliases', async () => {
     await systemLogAdminService.getWebLogs({ page: 2, pageIndex: 9, pageUnit: 40, size: 25 });
 
     expect(clientGet).toHaveBeenCalledWith(
       'admin/system/logs/web',
       expect.objectContaining({
-        params: expect.objectContaining({ pageIndex: 9, pageUnit: 40 }),
+        params: expect.objectContaining({ page: 2, size: 25 }),
       }),
     );
+    const [, config] = clientGet.mock.calls[0] as [string, { params: Record<string, unknown> }];
+    expect(config.params).not.toHaveProperty('pageIndex');
+    expect(config.params).not.toHaveProperty('pageUnit');
   });
 
   it.each([
@@ -89,8 +92,8 @@ describe('SystemLogAdminService pagination contract', () => {
       `admin/system/logs/${path}`,
       expect.objectContaining({
         params: expect.objectContaining({
-          pageIndex: 3,
-          pageUnit: 25,
+          page: 2,
+          size: 25,
           searchKeyword: 'audit',
         }),
       }),

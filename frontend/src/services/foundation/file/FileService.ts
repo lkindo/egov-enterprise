@@ -8,16 +8,14 @@ import {
 } from '@/types/generated-operations';
 
 /**
- * 파일 정보 인터페이스
+ * 파일 정보 인터페이스. 서버 저장 경로·저장 파일명은 응답에 없다 — 내려받기는 (atchFileSn, fileSn) 으로만 한다.
  */
 interface FileVO {
   atchFileSn: number;
   fileSn: number;
   fileExtsn: string;
   fileMg: number;
-  fileStreCours: string;
   orignlFileNm: string;
-  streFileNm: string;
 }
 
 /**

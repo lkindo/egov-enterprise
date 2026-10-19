@@ -32,7 +32,7 @@ describe('AuditJournalClient', () => {
     expect(screen.getByText('반영')).toBeInTheDocument();
     expect(screen.getByText('USR_1')).toBeInTheDocument();
     expect(screen.getByText('10.0.0.1')).toBeInTheDocument();
-    expect(mocks.getAuditJournal).toHaveBeenCalledWith({ actorId: '', page: 0, size: 20 });
+    expect(mocks.getAuditJournal).toHaveBeenCalledWith({ actorId: '', page: 1, size: 20 });
   });
 
   it('행위자 로그인 ID 는 조회할 때 적용하고 첫 페이지로 돌아간다', async () => {
@@ -40,6 +40,6 @@ describe('AuditJournalClient', () => {
     await screen.findByText('ADMIN_PASSWORD_RESET');
     fireEvent.change(screen.getByLabelText('행위자 로그인 ID'), { target: { value: ' admin ' } });
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.getAuditJournal).toHaveBeenLastCalledWith({ actorId: 'admin', page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getAuditJournal).toHaveBeenLastCalledWith({ actorId: 'admin', page: 1, size: 20 }));
   });
 });

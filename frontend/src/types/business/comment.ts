@@ -19,7 +19,6 @@ export interface CommentSaveRequest {
   pstSn: number;
   bbsId: string;
   ansCn: string;
-  pswd?: string;
 }
 
 export type CommentSearchParams = operations['getComments']['parameters']['query'];

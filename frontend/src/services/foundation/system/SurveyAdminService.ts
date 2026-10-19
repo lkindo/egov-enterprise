@@ -45,23 +45,13 @@ type SurveyPageQuery = {
   sort?: string[];
 };
 
-/** 공용 SearchParams의 레거시 어휘를 Spring Pageable OpenAPI query로 한 번만 정규화한다. */
+/**
+ * 공용 SearchParams 를 Spring Pageable OpenAPI query 로 옮긴다. `page` 는 1부터이고 서버가 받는 번호 그대로다(ADR-0036) —
+ * 종전의 0 기반 `page`·1 기반 `pageIndex`·`pageNo` 별칭 정규화는 걷었다. 검색어 별칭(keyword·searchKeyword·searchWrd)만 하나로 모은다.
+ */
 function toSurveyPageQuery(params?: SearchParams): SurveyPageQuery {
-  const page = typeof params?.page === 'number'
-    ? params.page
-    : typeof params?.pageIndex === 'number'
-      ? params.pageIndex - 1
-      : typeof params?.pageNo === 'number'
-        ? params.pageNo - 1
-        : undefined;
-  const recordCountPerPage = params?.recordCountPerPage;
-  const size = typeof params?.size === 'number'
-    ? params.size
-    : typeof params?.pageUnit === 'number'
-      ? params.pageUnit
-      : typeof recordCountPerPage === 'number'
-        ? recordCountPerPage
-        : undefined;
+  const page = typeof params?.page === 'number' ? params.page : undefined;
+  const size = typeof params?.size === 'number' ? params.size : undefined;
   const sort = params?.sort;
 
   return {
@@ -95,7 +85,7 @@ class SurveyAdminService extends ApiService {
 
   /** 설문 등록 */
   async createSurvey(data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(insertSurveyOperation, {
+    await this.executeGenerated(insertSurveyOperation, {
       body: data as components['schemas']['SurveyInfoDto'],
       config,
     });
@@ -157,7 +147,7 @@ class SurveyAdminService extends ApiService {
   }
 
   async createTemplate(data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(insertTemplateOperation, { body: data, config });
+    await this.executeGenerated(insertTemplateOperation, { body: data, config });
   }
 
   async updateTemplate(srvyTmpltSn: number, data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
@@ -189,7 +179,7 @@ class SurveyAdminService extends ApiService {
   }
 
   async createQuestion(srvySn: number, data: Partial<SurveyQuestion>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(insertQuestionOperation, {
+    await this.executeGenerated(insertQuestionOperation, {
       path: { srvySn },
       body: data,
       config,
@@ -218,7 +208,7 @@ class SurveyAdminService extends ApiService {
 
   /** 항목은 문항 하위 자원이다 — 경로가 소속 문항을 강제한다. */
   async createItem(srvyQstnSn: number, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(insertItemOperation, {
+    await this.executeGenerated(insertItemOperation, {
       path: { srvyQstnSn },
       body: data,
       config,

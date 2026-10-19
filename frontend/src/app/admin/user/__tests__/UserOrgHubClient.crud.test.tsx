@@ -2,7 +2,7 @@
  * /admin/user/manage 허브(UserOrgHubClient)의 CRUD 배선 계약 테스트 (m-2).
  *
  * 백엔드 census(UserApiController · authorization-policies.json)와 정확히 짝을 이룬다:
- *   - GET  /admin/system/users        — searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
+ *   - GET  /admin/system/users        — searchKeyword + page(1부터)/size 만 읽는다(ADR-0036).
  *   - GET  /admin/system/users/{id}   — 전체 UserDto(ognzId·userSttsCd 포함). 목록 projection 에는 둘 다 없다.
  *   - POST/PUT/DELETE, PATCH /status  — 전부 ADMIN_OR_SYSTEM 경로 게이트.
  *
@@ -421,14 +421,14 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(screen.getByRole('heading', { level: 2, name: '개발부' })).toBeVisible();
   });
 
-  it('목록 조회를 서버가 실제로 읽는 Spring Pageable 계약(page/size, 0-based)으로 호출한다', async () => {
+  it('목록 조회를 서버가 실제로 읽는 계약(page 1부터/size)으로 호출한다', async () => {
     renderHub();
     await screen.findByText('row-user1');
-    expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '' });
+    expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' });
 
     fireEvent.click(screen.getByText('go-page-2'));
     await waitFor(() => {
-      expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' });
+      expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 2, size: 10, searchKeyword: '' });
     });
   });
 
@@ -443,7 +443,7 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
 
     // 이 파일의 Button 대역은 type="button" 이라 조회 버튼 대신 Enter 와 같은 폼 제출로 적용한다.
     fireEvent.submit(screen.getByRole('textbox', { name: '사용자 검색' }).closest('form')!);
-    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenLastCalledWith({ page: 0, size: 10, searchKeyword: '홍길동' }));
+    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenLastCalledWith({ page: 1, size: 10, searchKeyword: '홍길동' }));
   });
 
   it('사용자 등록 버튼 → 폼 제출이 createUser 에 배선된다', async () => {

@@ -19,7 +19,7 @@ export default async function HpcmPage() {
     let fetchError: string | null = null;
 
     try {
-        const res = await hpcmAdminService.getHpcmList({ page: 0, size: 10, sort: 'hlpSn,DESC' });
+        const res = await hpcmAdminService.getHpcmList({ page: 1, size: 10, sort: 'hlpSn,DESC' });
         list = res.list || [];
         total = res.total;
         totalPage = res.totalPage;

@@ -30,7 +30,7 @@ describe('Admin System Services Part 2', () => {
     clientMocks.get.mockResolvedValue({
       list: [],
       total: 0,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 0,
     });
@@ -44,10 +44,10 @@ describe('Admin System Services Part 2', () => {
   });
 
   it('CommunityAdminService should call correct endpoints', async () => {
-    await communityAdminService.getCommunityList({ page: 0 });
+    await communityAdminService.getCommunityList({ page: 1 });
     expect(clientMocks.get).toHaveBeenCalledWith('admin/content/community', expect.objectContaining({
       params: expect.objectContaining({ 
-        page: 0, 
+        page: 1, 
         searchCnd: '',
         searchWrd: ''
       })

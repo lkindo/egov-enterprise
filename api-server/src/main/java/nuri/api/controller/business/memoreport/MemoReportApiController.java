@@ -71,12 +71,13 @@ public class MemoReportApiController {
 
     @Operation(summary = "메모보고 등록", description = "새로운 메모보고를 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#createMemoReport')")
     public ResponseEntity<ApiResponse<Long>> createMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody MemoReportDto dto) {
         Long memoRptSn = memoReportService.createMemoReport(userDetails.getUsername(), dto);
-        return ResponseEntity.ok(ApiResponse.success(memoRptSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(memoRptSn));
     }
 
     @Operation(summary = "메모보고 수정", description = "기존 메모보고를 수정합니다.")

@@ -27,7 +27,7 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 headers: auth,
                 data: { ognzNm: departmentName },
             });
-            expect(departmentCreate.status(), '업무함 테스트용 부서 생성이 성공해야 한다').toBe(200);
+            expect(departmentCreate.status(), '업무함 테스트용 부서 생성이 성공해야 한다').toBe(201);
             departmentId = (await departmentCreate.json()).data as string;
             expect(departmentId).toMatch(/^ORGNZT_/);
             const deptJobPage = new DeptJobPage(page);
@@ -58,7 +58,7 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                     && response.request().method() === 'POST'),
                 dialog.getByRole('button', { name: '업무함 등록', exact: true }).click(),
             ]);
-            expect(createdResponse.status(), '화면에서 업무함 등록이 성공해야 한다').toBe(200);
+            expect(createdResponse.status(), '화면에서 업무함 등록이 성공해야 한다').toBe(201);
             boxSn = (await createdResponse.json()).data as number;
             expect(boxSn).toBeGreaterThan(0);
             const list = dialog.getByRole('list', { name: '업무함 목록', exact: true });

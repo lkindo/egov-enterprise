@@ -98,14 +98,14 @@ export default function SurveyQuestionsPanel() {
 
   const { data: surveys } = useQuery<PageResponse<Survey>>({
     queryKey: SURVEYS_FOR_QUESTIONS_KEY,
-    queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, size: 100 }),
+    queryFn: () => surveyAdminService.getSurveyList({ page: 1, size: 100 }),
   });
 
   const surveysKey = SURVEYS_FOR_QUESTIONS_KEY;
   /** 템플릿은 설문지 등록의 필수 입력이다(SurveyInfoDto.srvyTmpltSn @NotNull). */
   const { data: templates } = useQuery({
     queryKey: ['admin-survey-templates-for-select'],
-    queryFn: () => surveyAdminService.getTemplateList({ pageIndex: 1, size: 100 }),
+    queryFn: () => surveyAdminService.getTemplateList({ page: 1, size: 100 }),
   });
 
   const removeSurvey = useMutation({

@@ -43,7 +43,7 @@ class NoteService extends ApiService {
  * 쪽지 보내기
  */
  async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<void> {
- return this.executeGenerated(sendNoteOperation, { body: data });
+ await this.executeGenerated(sendNoteOperation, { body: data });
  }
 
  /**

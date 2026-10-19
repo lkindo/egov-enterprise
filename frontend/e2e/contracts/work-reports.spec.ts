@@ -34,19 +34,19 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 await purgeByTag(request, tag);
             }
         });
-        test('pageUnit 이 존중된다 (종전엔 서버 기본 10건 고정)', async ({ request }) => {
+        test('size 가 존중되고 page 는 1 기반이다 (종전엔 서버 기본 10건 고정)', async ({ request }) => {
             const { seedReports, purgeByTag, tagFor } = workReportData(auth);
             const tag = tagFor('Page');
             await seedReports(request, tag, 3);
             try {
-                const res = await request.get(`${REPORT_API}?searchKeyword=${tag}&pageIndex=1&pageUnit=2`, { headers: auth });
+                const res = await request.get(`${REPORT_API}?searchKeyword=${tag}&page=1&size=2`, { headers: auth });
                 expect(res.ok()).toBeTruthy();
                 const body = (await res.json()).data;
-                expect(body.list.length, 'pageUnit=2 면 2건만 와야 한다 (페이지 크기 무시 회귀)').toBe(2);
+                expect(body.list.length, 'size=2 면 2건만 와야 한다 (페이지 크기 무시 회귀)').toBe(2);
                 expect(body.total, '전체 건수는 페이지 크기와 무관해야 한다').toBe(3);
                 expect(body.totalPage, '3건을 2건씩 나누면 2페이지가 되어야 한다').toBe(2);
                 // 2페이지는 1페이지와 겹치지 않아야 한다(페이지 이동이 실제로 작동하는가).
-                const p2Res = await request.get(`${REPORT_API}?searchKeyword=${tag}&pageIndex=2&pageUnit=2`, { headers: auth });
+                const p2Res = await request.get(`${REPORT_API}?searchKeyword=${tag}&page=2&size=2`, { headers: auth });
                 const p2 = (await p2Res.json()).data.list as Array<{ rptpSn: number }>;
                 const p1Ids = (body.list as Array<{ rptpSn: number }>).map((r) => r.rptpSn);
                 expect(p2.length, '2페이지에는 나머지 1건이 있어야 한다').toBe(1);

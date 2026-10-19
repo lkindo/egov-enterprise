@@ -34,7 +34,7 @@ test.describe('게시판과 커뮤니티', () => {
         const created = await userRequest.post('/api/v1/boards/posts', {
             data: { bbsId: generalBoardId, pstTtl: title, pstCn: '<p>Ordinary board author permission remains valid.</p>' },
         });
-        expect(created.status()).toBe(200);
+        expect(created.status()).toBe(201);
         const pstSn = (await created.json()).data as number;
         expect(Number.isSafeInteger(pstSn)).toBe(true);
         try {

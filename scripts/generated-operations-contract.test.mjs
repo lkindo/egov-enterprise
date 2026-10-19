@@ -5,7 +5,9 @@ import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { verifyGeneratedContracts } from './verify-generated-contracts.mjs';
+import {
+  GENERATED_CONTRACT_TYPES, contractModuleDirectory, contractModuleNames, generatedContractTextAt, verifyGeneratedContracts,
+} from './verify-generated-contracts.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const apiDocsPath = join(repoRoot, 'api-docs.json');
@@ -48,10 +50,20 @@ function runFixture(spec) {
       CODEGEN_OPERATIONS_OUTPUT_PATH: operationOutput,
     },
   });
-  const zodSource = result.status === 0 ? readFileSync(zodOutput, 'utf8') : null;
-  const operationSource = result.status === 0 ? readFileSync(operationOutput, 'utf8') : null;
+  // 본문은 진입 파일과 묶음 모듈을 이은 것이다. generated 는 저장소 기준 경로 → 본문(검증 fixture 가 그대로 쓴다).
+  const zodSource = result.status === 0 ? generatedContractTextAt(zodOutput) : null;
+  const operationSource = result.status === 0 ? generatedContractTextAt(operationOutput) : null;
+  const generated = new Map();
+  if (result.status === 0) {
+    for (const [output, entry] of [[zodOutput, GENERATED_CONTRACT_TYPES.zod], [operationOutput, GENERATED_CONTRACT_TYPES.operations]]) {
+      generated.set(entry, readFileSync(output, 'utf8'));
+      for (const name of contractModuleNames(output)) {
+        generated.set(`${contractModuleDirectory(entry)}/${name}`, readFileSync(join(contractModuleDirectory(output), name), 'utf8'));
+      }
+    }
+  }
   rmSync(fixtureDir, { recursive: true, force: true });
-  return { ...result, zodSource, operationSource };
+  return { ...result, zodSource, operationSource, generated };
 }
 
 function contractSpec(paths, schemas = {}) {
@@ -94,9 +106,11 @@ function verificationFixture(t, kind) {
   const specPath = join(root, 'api-docs.json');
   writeFileSync(specPath, `${JSON.stringify(spec)}\n`);
   mkdirSync(join(root, 'frontend/src/types'), { recursive: true });
-  const files = kind === 'api'
+  // entries 는 verify 가 돌려주는 진입 파일, files 는 진입 파일과 묶음 모듈 전부(zod)다.
+  const entries = kind === 'api'
     ? ['frontend/src/types/generated-api.d.ts']
     : ['frontend/src/types/generated-zod.ts', 'frontend/src/types/generated-operations.ts'];
+  let files = entries;
   if (kind === 'api') {
     const result = spawnSync(process.execPath, [join(repoRoot, 'frontend/node_modules/openapi-typescript/bin/cli.js'),
       specPath, '-o', join(root, files[0])], { cwd: root, encoding: 'utf8', windowsHide: true });
@@ -104,8 +118,12 @@ function verificationFixture(t, kind) {
   } else {
     const result = runFixture(spec);
     assert.equal(result.status, 0, fixtureOutput(result));
-    writeFileSync(join(root, files[0]), result.zodSource);
-    writeFileSync(join(root, files[1]), result.operationSource);
+    files = [...result.generated.keys()];
+    for (const [file, source] of result.generated) {
+      mkdirSync(dirname(join(root, file)), { recursive: true });
+      writeFileSync(join(root, file), source);
+    }
+    assert.ok(files.length > entries.length, 'zod 생성물은 진입 파일 옆에 묶음 모듈을 둔다');
   }
   const sources = files.map(file => readFileSync(join(root, file), 'utf8'));
   // The CLI's auto-discovered apis would ignore -o and overwrite the fixture spec.
@@ -120,7 +138,7 @@ function verificationFixture(t, kind) {
   git(['-c', 'core.autocrlf=false', 'add', '--', 'api-docs.json', ...files]);
   const snapshot = (indexes = ['.git/index']) => ['api-docs.json', ...files, 'frontend/redocly.yaml', ...indexes]
     .map(file => readFileSync(join(root, file)));
-  return { root, files, sources, git, snapshot, specPath, spec };
+  return { root, entries, files, sources, git, snapshot, specPath, spec };
 }
 
 // The drift list names each file with the pair that failed; only those entries count (the explanation also says [index]).
@@ -134,7 +152,7 @@ for (const kind of ['api', 'zod']) {
     for (const newline of ['\n', '\r\n']) {
       fixture.files.forEach((file, index) => writeFileSync(join(fixture.root, file), fixture.sources[index].replace(/\r?\n/gu, newline)));
       const before = fixture.snapshot();
-      assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.files);
+      assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.entries);
       assert.deepEqual(fixture.snapshot(), before, 'green must preserve the spec, generated files and index bytes');
       for (const file of fixture.files) {
         const target = join(fixture.root, file);
@@ -150,7 +168,7 @@ for (const kind of ['api', 'zod']) {
     // The isolated generator cwd keeps frontend/redocly.yaml from redirecting -o onto the spec.
     writeFileSync(fixture.specPath, `${JSON.stringify(fixture.spec, null, 2)}\n`);
     const reformatted = fixture.snapshot();
-    assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.files);
+    assert.deepEqual(verifyGeneratedContracts(kind, fixture.root), fixture.entries);
     assert.deepEqual(fixture.snapshot(), reformatted, 'the working-tree pair must not rewrite the spec or generated files');
     writeFileSync(fixture.specPath, '{ invalid JSON');
     const invalid = fixture.snapshot();
@@ -182,6 +200,27 @@ for (const kind of ['api', 'zod']) {
   });
 }
 
+// 묶음 모듈은 진입 파일과 같은 쌍으로 비교한다 — 빠진 모듈, 다시 만든 결과에 없는 낡은 모듈, 폴더 자체의 누락을 모두 막는다.
+test('zod verify는 묶음 모듈의 누락·낡은 모듈·폴더 누락을 막는다', t => {
+  const fixture = verificationFixture(t, 'zod');
+  const module = fixture.files.find(file => file.startsWith(`${contractModuleDirectory(GENERATED_CONTRACT_TYPES.operations)}/`)
+    && !file.endsWith('/_define.ts'));
+  assert.ok(module, 'fixture must contain an operation module');
+  const target = join(fixture.root, module);
+  const valid = readFileSync(target);
+  unlinkSync(target);
+  assert.throws(() => verifyGeneratedContracts('zod', fixture.root), driftOf(module, 'working tree'));
+  writeFileSync(target, valid);
+  const stale = `${contractModuleDirectory(GENERATED_CONTRACT_TYPES.zod)}/stale.ts`;
+  writeFileSync(join(fixture.root, stale), 'export const StaleSchema = 1;\n');
+  assert.throws(() => verifyGeneratedContracts('zod', fixture.root), driftOf(stale, 'working tree'));
+  unlinkSync(join(fixture.root, stale));
+  assert.deepEqual(verifyGeneratedContracts('zod', fixture.root), fixture.entries);
+  const directory = join(fixture.root, contractModuleDirectory(GENERATED_CONTRACT_TYPES.zod));
+  rmSync(directory, { recursive: true, force: true });
+  assert.throws(() => verifyGeneratedContracts('zod', fixture.root), /ENOENT/u);
+});
+
 // The index is read through the shared git helper for both kinds; the cheaper generator proves it once.
 test('verify는 pre-commit 의 GIT_INDEX_FILE 이 가리키는 index 를 따른다', t => {
   const fixture = verificationFixture(t, 'zod');
@@ -192,7 +231,7 @@ test('verify는 pre-commit 의 GIT_INDEX_FILE 이 가리키는 index 를 따른�
   fixture.git(['-c', 'core.autocrlf=false', 'add', '--', fixture.files[0]], { GIT_INDEX_FILE: alternate });
   writeFileSync(target, fixture.sources[0]);
   const before = fixture.snapshot(['.git/index', '.git/alternate-index']);
-  assert.deepEqual(verifyGeneratedContracts('zod', fixture.root), fixture.files, 'the default index is consistent');
+  assert.deepEqual(verifyGeneratedContracts('zod', fixture.root), fixture.entries, 'the default index is consistent');
   const previous = process.env.GIT_INDEX_FILE;
   process.env.GIT_INDEX_FILE = alternate;
   try {
@@ -243,7 +282,7 @@ test('사용되지 않는 component의 잘못된 정규식도 생성 단계에�
 test('generated operation descriptor가 OpenAPI의 모든 operationId·method·path를 정확히 결속한다', () => {
   const spec = JSON.parse(readFileSync(apiDocsPath, 'utf8'));
   const operations = specOperations(spec);
-  const generated = readFileSync(generatedOperationsPath, 'utf8');
+  const generated = generatedContractTextAt(generatedOperationsPath);
   const generatedIds = [...generated.matchAll(/^export const ([A-Za-z_$][\w$]*)Operation =/gm)]
     .map((match) => match[1]);
 

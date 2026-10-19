@@ -60,8 +60,8 @@ class AdministCodeApiControllerTest {
         when(administCodeService.getAdministCodeList(anyString(), any(PageRequest.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/administ")
-                .param("pageIndex", "1")
-                .param("pageUnit", "10")
+                .param("page", "1")
+                .param("size", "10")
                 .param("searchKeyword", "test")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -72,8 +72,8 @@ class AdministCodeApiControllerTest {
     @DisplayName("행정코드 목록 조회 - pageUnit 안전 상한 초과는 서비스 호출 전 400")
     void getAdministCodeListRejectsOversizedPageUnit() throws Exception {
         mockMvc.perform(get("/api/v1/admin/system/codes/administ")
-                        .param("pageIndex", "1")
-                        .param("pageUnit", "101")
+                        .param("page", "1")
+                        .param("size", "101")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
 
@@ -103,7 +103,7 @@ class AdministCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -121,7 +121,7 @@ class AdministCodeApiControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/codes/administ")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test

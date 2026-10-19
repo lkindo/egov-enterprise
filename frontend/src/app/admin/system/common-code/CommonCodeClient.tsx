@@ -268,12 +268,12 @@ export default function CommonCodeClient({
     queryKey: ['cmmn-detail-codes', selectedCdId],
     enabled: !!selectedCdId,
     queryFn: async () => {
-      const rows = await fetchAllPages((pageIndex, pageUnit) =>
+      const rows = await fetchAllPages((page, size) =>
         codeAdminService.getDetailCodeList({
           searchKeyword: selectedCdId as string,
           searchCondition: '1',
-          pageIndex,
-          pageUnit,
+          page,
+          size,
         }));
       // 페일세이프: contains 검색 결과를 선택한 그룹과 정확히 일치하도록 한 번 더 거른다.
       return rows.filter(item => item && item.cdId === selectedCdId);

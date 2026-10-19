@@ -40,7 +40,7 @@ flowchart LR
 
 ### 3. Service Layer & Data Fetching
 - **생성 operation 경계**: HTTP method·경로·query·응답 검증은 생성 operation descriptor(`types/generated-operations`)가 소유한다. 통신은 `lib/api/generated-api-client.ts` 의 `executeGeneratedOperation` 을 거치며, 서비스 클래스는 `ApiService.executeGenerated`(multipart 는 `executeGeneratedMultipart`)로 이를 위임한다.
-    - **페이지 별칭**: 0-based `page` 와 `pageIndex`·`pageUnit` 등 입력 별칭은 공통 자동 변환 없이 각 서비스의 query 변환 함수(예: `services/core/admin-page-query.ts` 의 `toAdminPageQuery`)가 명시적으로 정규화한다.
+    - **페이지 번호**: 화면·URL·서비스·API 가 모두 1 기반 `page`·`size` 하나다([ADR-0036](decisions/ADR-0036-api-paging-and-created-status-conventions.md)). 서비스는 받은 `page`·`size` 를 그대로 생성 operation 에 넘기고 ±1 변환이나 옛 이름(`pageIndex`·`pageUnit`·`pageNo` 등) 별칭을 두지 않는다. 한 번에 100건을 넘겨 받아야 하는 화면은 `lib/api/fetch-all-pages.ts` 로 끝까지 따라간다.
 - **Server-owned read**: 클라이언트 캐시가 불필요한 표시 데이터는 server-only service/RSC가 소유할 수 있다.
 - **Interactive server state**: mutation, background refresh, client cache가 필요한 데이터는 도메인 가까이에 typed TanStack `queryOptions`와 key hierarchy를 둔다. 중앙 거대 query-key registry를 만들지 않는다.
 - **Initial critical data**: prefetch/hydration과 client fetch는 TTFB, 최초 데이터 표시, loading 노출, 중복 요청, route JS와 cache recovery를 representative route에서 비교한 뒤 선택한다. 임의 개수 quota는 없다.

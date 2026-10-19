@@ -39,7 +39,7 @@ public class ExternalHrApiController {
 
     @Operation(summary = "외부인사 등록", description = "외부인사 정보를 등록한다.")
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201",
                     description = "등록 성공", useReturnTypeSchema = true),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409",
                     description = "동일 복합키 중복 또는 유효하지 않은 행사 참조로 데이터 제약과 충돌 (code: C008)",
@@ -47,9 +47,10 @@ public class ExternalHrApiController {
                             schema = @Schema(ref = "#/components/schemas/ApiResponseVoid")))
     })
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr')")
     public ResponseEntity<ApiResponse<ExternalHrDto>> createExternalHr(@Valid @RequestBody ExternalHrDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(externalHrService.createExternalHr(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(externalHrService.createExternalHr(dto)));
     }
 
     /*

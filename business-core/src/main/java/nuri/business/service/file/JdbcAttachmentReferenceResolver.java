@@ -68,6 +68,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean owner = false;
         boolean personal = false;
         boolean personalOwner = false;
+        boolean personalReader = false;
         boolean resolutionFailed = false;
 
         for (AttachmentSource source : sources) {
@@ -82,13 +83,14 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 boolean personalSource = source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
                 personal |= hit.referenced() && personalSource;
                 personalOwner |= hit.owner() && personalSource;
+                personalReader |= hit.reader() && personalSource;
             } catch (DataAccessException ex) {
                 log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileSn={}",
                         source, source.table(), atchFileSn, ex);
                 resolutionFailed = true;
             }
         }
-        return new Grants(shared, owner, personal, personalOwner, resolutionFailed);
+        return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader);
     }
 
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
@@ -118,6 +120,15 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             ownerExpr.append("1 = 0");
         }
 
+        // 열람 전용 당사자(메모보고 수신자 등). SELECT 절 순서대로 소유 술어 뒤에 바인딩한다.
+        String readerExpr = "1 = 0";
+        if (source.readerByEsntlIdPredicate() != null && esntlId != null) {
+            readerExpr = "(" + source.readerByEsntlIdPredicate() + ")";
+            for (int i = 0; i < countPlaceholders(source.readerByEsntlIdPredicate()); i++) {
+                params.add(esntlId);
+            }
+        }
+
         // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileSn 는 마지막에 바인딩한다.
         // 연결 술어는 참조원마다 다르고(POPUP 은 URL 비교라 자리표시자가 2개다) 개수만큼 반복 바인딩한다.
         for (int i = 0; i < countPlaceholders(source.linkagePredicate()); i++) {
@@ -126,14 +137,16 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
 
         String sql = "SELECT COUNT(*) AS ref_cnt,"
                 + " SUM(CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END) AS shared_cnt,"
-                + " SUM(CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END) AS owner_cnt"
+                + " SUM(CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END) AS owner_cnt,"
+                + " SUM(CASE WHEN " + readerExpr + " THEN 1 ELSE 0 END) AS reader_cnt"
                 + " FROM " + source.table()
                 + " WHERE " + source.linkagePredicate();
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new SourceHit(
                 rs.getLong("ref_cnt") > 0,
                 rs.getLong("shared_cnt") > 0,
-                rs.getLong("owner_cnt") > 0), params.toArray());
+                rs.getLong("owner_cnt") > 0,
+                rs.getLong("reader_cnt") > 0), params.toArray());
     }
 
     /**
@@ -164,7 +177,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 owner |= (loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId()));
             }
         }
-        return new SourceHit(!references.isEmpty(),shared,owner);
+        return new SourceHit(!references.isEmpty(),shared,owner,false);
     }
 
     private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
@@ -195,6 +208,6 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         return count;
     }
 
-    private record SourceHit(boolean referenced, boolean shared, boolean owner) {
+    private record SourceHit(boolean referenced, boolean shared, boolean owner, boolean reader) {
     }
 }

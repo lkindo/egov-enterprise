@@ -45,7 +45,7 @@ describe('사용자·조직 서버 프리페치', () => {
 
     expect(await prefetch.usersPromise).toEqual(USERS);
     expect(await prefetch.deptsPromise).toEqual(DEPTS);
-    expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '' }, {});
+    expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' }, {});
     expect(deptAdminService.getDeptTree).toHaveBeenCalledWith(undefined, {});
   });
 

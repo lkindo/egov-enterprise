@@ -35,6 +35,7 @@
       "tb_file_master",
       "tb_inst_cd",
       "tb_inst_cd_rcptn_log",
+      "tb_intrn_svc",
       "tb_login_log",
       "tb_login_policy",
       "tb_menu_info",

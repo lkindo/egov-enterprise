@@ -923,6 +923,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-INTERNET-SERVICE-GUIDANCE-GRANT-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceGrantRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-IP-ADDRESS-IPV6",
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
         },
@@ -1053,6 +1057,10 @@
         {
           "id": "DB-MIG-SCRAP-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/ScrapBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SCRAP-OWNER-URL-UNIQUE",
+          "source": "api-server/src/test/java/nuri/api/schema/ScrapOwnerUrlUniqueMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MAIL-DELIVERY-STATE",
@@ -1694,7 +1702,7 @@
             "scope": "business-app-delivery-operation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*",
+            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*",
             "tests": "nuri.business.*"
           },
           {
@@ -2129,8 +2137,8 @@
         "flag": "--max-warnings"
       },
       "executionProfile": "EXEC-FRONTEND-LINT",
-      "current": 20,
-      "baseline": 20,
+      "current": 19,
+      "baseline": 19,
       "direction": "maximum",
       "tier": [
         "pre-push",
@@ -2240,6 +2248,37 @@
         "bundle budget process exit status"
       ],
       "redProof": "Raise the single JavaScript chunk budget or registry current above baseline; the contract must fail."
+    },
+    {
+      "id": "QUALITY-FRONTEND-JS-SHARED-BUNDLE",
+      "source": "frontend/scripts/check-bundle-budget.mjs",
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "js",
+        "key": "shared"
+      },
+      "executionProfile": "EXEC-FRONTEND-BUNDLE",
+      "current": 384000,
+      "baseline": 384000,
+      "direction": "maximum",
+      "tier": [
+        "local-full",
+        "ci"
+      ],
+      "command": "pnpm -C frontend run bundle:check",
+      "category": "frontend-performance",
+      "owner": "frontend-platform",
+      "requiredCiContext": "frontend-build",
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/server/app",
+        "frontend/.next/static/chunks"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
+      "redProof": "Raise the shared first-load JavaScript budget or registry current above baseline; the contract must fail. Running the check on a build whose root layout pulls framer-motion and the monolithic generated contracts (main 682d203f3, 414,239B) must fail."
     },
     {
       "id": "QUALITY-FRONTEND-CSS-TOTAL-BUNDLE",

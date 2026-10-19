@@ -153,7 +153,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     queryFn: () => knowledgeService.getArticles({
       bbsId: currentBbsId,
       category: activeCategory,
-      page: page - 1,
+      page,
       size: PAGE_SIZE,
       orderBy: sortBy === 'views' ? 'views' : 'date',
       searchCnd: searchQuery ? '0' : undefined,
@@ -179,7 +179,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     queryFn: () => knowledgeService.getArticles({
       bbsId: currentBbsId,
       category: activeCategory,
-      page: 0,
+      page: 1,
       size: PAGE_SIZE,
       orderBy: 'date',
       searchCnd: undefined,

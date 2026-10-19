@@ -77,7 +77,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
         try {
             for (const label of ['Same', 'Other']) {
                 const response = await adminRequest.post('/api/v1/admin/system/departments', { data: { ognzNm: `E2E Schedule ${label} ${suffix}` } });
-                expect(response.status()).toBe(200); const id = (await response.json()).data as string;
+                expect(response.status()).toBe(201); const id = (await response.json()).data as string;
                 expect(id).toBeTruthy(); departments.push(id);
             }
             const authorizations: Record<string, string>[] = [];
@@ -88,7 +88,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 const response = await adminRequest.post('/api/v1/admin/system/users', {
                     data: { userId, userNm: `E2E Schedule ${label}`, pswd: password, role: 'USER', ognzId: department },
                 });
-                expect(response.status()).toBe(200); users.push(userId);
+                expect(response.status()).toBe(201); users.push(userId);
                 const details = await adminRequest.get(`/api/v1/admin/system/users/${userId}`); expect(details.status()).toBe(200);
                 const saved = (await details.json()).data as { esntlId: string; ognzId: string };
                 expect(saved.ognzId).toBe(department);
@@ -109,7 +109,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
             const create = async (sharing: string) => {
                 const response = await actors.post(SCHEDULE_API, { headers: owner,
                     data: { schdlNm: `${PREFIX}${sharing}_${suffix}`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: sharing } });
-                expect(response.status()).toBe(200); const id = (await response.json()).data as number;
+                expect(response.status()).toBe(201); const id = (await response.json()).data as number;
                 expect(Number.isSafeInteger(id)).toBe(true); expect(id).toBeGreaterThan(0); schedules.push(id); return id;
             };
             const shared = await create('1'); const privateSchedule = await create('2');

@@ -59,7 +59,6 @@ const ADOPTER_SCREENS = [
   'src/app/admin/system/comments/CommentModerationClient.tsx',
   'src/app/admin/system/durable-jobs/DurableJobsClient.tsx',
   'src/app/admin/system/hpcm/HpcmClient.tsx',
-  'src/app/admin/system/isg/InternetSvcGuidanceClient.tsx',
   'src/app/admin/system/logs/LogDashboardClient.tsx',
   'src/app/admin/system/logs/audit/AuditJournalClient.tsx',
   'src/app/admin/system/logs/login/SystemLogsLoginClient.tsx',

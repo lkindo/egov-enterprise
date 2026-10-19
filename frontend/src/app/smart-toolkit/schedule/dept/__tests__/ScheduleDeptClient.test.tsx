@@ -46,8 +46,8 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     harness.getDeptScheduleList.mockImplementation(async (params) => {
       const filtered = allSchedules.filter((schedule) => schedule.schdlNm.includes(params.schdlNm));
       return {
-        list: filtered.slice((params.pageIndex - 1) * pageSize, params.pageIndex * pageSize),
-        total: filtered.length, page: params.pageIndex - 1, size: pageSize, totalPage: Math.ceil(filtered.length / pageSize),
+        list: filtered.slice((params.page - 1) * pageSize, params.page * pageSize),
+        total: filtered.length, page: params.page, size: pageSize, totalPage: Math.ceil(filtered.length / pageSize),
       };
     });
     const user = userEvent.setup();
@@ -57,14 +57,14 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     for (let page = 2; page <= Math.ceil(11 / pageSize); page++) {
       await user.click(screen.getByRole('link', { name: '다음 페이지로 이동' }));
       await screen.findByText(`부서 일정 ${(page - 1) * pageSize + 1}`);
-      expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ pageIndex: page, size: pageSize }));
+      expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ page, size: pageSize }));
     }
     const lastRow = screen.getByText('부서 일정 11').closest('tr')!;
     expect(within(lastRow).getByRole('cell', { name: /^11$/ })).toBeVisible();
     expect(screen.getByRole('link', { name: '다음 페이지로 이동' })).toHaveAttribute('aria-disabled', 'true');
 
     fireEvent.change(screen.getByPlaceholderText('일정명으로 검색하세요'), { target: { value: '일정 11' } });
-    await waitFor(() => expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ pageIndex: 1, schdlNm: '일정 11' })));
+    await waitFor(() => expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, schdlNm: '일정 11' })));
     expect(await screen.findByText('부서 일정 11')).toBeVisible();
     expect(screen.queryByRole('link', { name: '다음 페이지로 이동' })).toBeNull();
   });
@@ -73,7 +73,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     let resolveOld: (value: unknown) => void = () => undefined;
     harness.getDeptScheduleList.mockImplementation(async (params) => {
       if (params.schdlNm) return { list: [{ schdlSn: 50, schdlNm: '새 검색 결과' }], total: 1, size: 10 };
-      if (params.pageIndex === 2) return new Promise((resolve) => { resolveOld = resolve; });
+      if (params.page === 2) return new Promise((resolve) => { resolveOld = resolve; });
       return { list: [{ schdlSn: 1, schdlNm: '첫 페이지' }], total: 11, size: 10 };
     });
     const user = userEvent.setup();
@@ -98,7 +98,7 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('후속 페이지 장애');
     await user.click(screen.getByRole('button', { name: '다시 시도' }));
     expect(await screen.findByText('열한 번째 일정')).toBeVisible();
-    expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ pageIndex: 2 }));
+    expect(harness.getDeptScheduleList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
   });
 
   it('조회 실패를 "등록된 일정 없음"으로 위장하지 않고 사유와 재시도 수단을 노출한다', async () => {

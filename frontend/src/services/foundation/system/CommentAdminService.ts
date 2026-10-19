@@ -33,7 +33,7 @@ class CommentAdminService extends ApiService {
   /**
    * 전체 댓글 목록 조회.
    * 공개 API의 searchWrd 별칭은 OpenAPI가 정의한 searchKeyword 쿼리로 정규화한다.
-   * page/size는 Spring Pageable의 0-based 축을 그대로 유지한다.
+   * page(1부터)·size 는 서버가 받는 그대로 넘긴다(ADR-0036).
    */
   async getComments(params: { pstSn?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
     const response = await this.executeGenerated(getComments_1Operation, {

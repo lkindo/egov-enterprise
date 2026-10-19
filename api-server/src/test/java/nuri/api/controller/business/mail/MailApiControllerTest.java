@@ -66,7 +66,7 @@ class MailApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(123));
     }
 

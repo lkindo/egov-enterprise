@@ -22,7 +22,7 @@ class CommentOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
 
   @Test
-  @DisplayName("댓글 DTO는 내부 신원을 숨기고 표시명·편집 판정과 요청 비밀번호 방향을 문서화한다")
+  @DisplayName("댓글 DTO는 내부 신원을 숨기고 표시명·편집 판정을 문서화하며 폐기된 비밀번호를 계약에 두지 않는다")
   void commentDtoNullabilityAndAccessContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")
         .contentType(MediaType.APPLICATION_JSON))
@@ -49,9 +49,8 @@ class CommentOpenApiDocumentationTest {
         .containsExactlyInAnyOrder("wrterNm", "editable", "deletable", "crtDt");
     assertThat(properties.has("wrterId")).isFalse();
     assertThat(properties.has("frstRgtrId")).isFalse();
-    assertThat(properties.path("pswd").path("writeOnly").asBoolean(false)).isTrue();
-    assertThat(properties.path("pswd").path("readOnly").asBoolean(false)).isFalse();
-    assertThat(isNullableSchema(properties.path("pswd"))).isFalse();
+    // [2026-10-19] 익명 댓글 비밀번호는 요청으로도 받지 않는다 — 평문 저장 경로였다(ADR-0011 의 만족도와 같은 정리).
+    assertThat(properties.has("pswd")).as("댓글 계약에 폐기된 비밀번호 필드가 남아 있다").isFalse();
   }
 
 }

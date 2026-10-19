@@ -26,16 +26,25 @@ public interface AttachmentReferenceResolver {
      * @param personalReference  개인 귀속(PERSONAL) 참조원이 하나라도 있는가 — <b>관리자 우회를 차단</b>한다
      * @param personalOwnerGrant 현재 사용자가 개인 귀속 참조 행의 소유자·당사자인가
      * @param resolutionFailed   참조원 하나라도 조회에 실패했는가 — 다른 근거보다 우선해 <b>전부 거부</b>한다
+     * @param personalReaderGrant 현재 사용자가 개인 귀속 참조 행을 <b>열람만</b> 할 수 있는 당사자인가(메모보고 수신자 등).
+     *                            열람 근거일 뿐 삭제 근거가 아니다
      */
     record Grants(
             boolean sharedGrant,
             boolean ownerGrant,
             boolean personalReference,
             boolean personalOwnerGrant,
-            boolean resolutionFailed) {
+            boolean resolutionFailed,
+            boolean personalReaderGrant) {
+
+        /** 열람 전용 당사자 근거가 없는 판정. 기존 다섯 근거만 쓰는 판정 표가 그대로 읽힌다. */
+        public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,
+                boolean personalOwnerGrant, boolean resolutionFailed) {
+            this(sharedGrant, ownerGrant, personalReference, personalOwnerGrant, resolutionFailed, false);
+        }
 
         public static Grants none() {
-            return new Grants(false, false, false, false, false);
+            return new Grants(false, false, false, false, false, false);
         }
     }
 }

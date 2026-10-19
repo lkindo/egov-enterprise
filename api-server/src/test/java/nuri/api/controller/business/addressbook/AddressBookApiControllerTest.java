@@ -95,7 +95,7 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"adbkNm\":\"My Address Book\", \"rlsScopeCd\":\"PUBLIC\"}")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -163,7 +163,7 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
                         }
                         """)
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         org.mockito.ArgumentCaptor<nuri.business.service.addressbook.dto.AddressBookDto> captor =
                 org.mockito.ArgumentCaptor.forClass(nuri.business.service.addressbook.dto.AddressBookDto.class);

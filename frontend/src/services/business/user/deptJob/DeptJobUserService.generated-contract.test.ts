@@ -72,9 +72,9 @@ describe('DeptJobUserService generated contract', () => {
 
   it('10개 경계를 generated operation으로 실행하고 두 페이징 의미를 보존한다', async () => {
     client.getRaw
-      .mockResolvedValueOnce(successEnvelope({ list: [boxResponse], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [boxResponse], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope(boxResponse))
-      .mockResolvedValueOnce(successEnvelope({ list: [jobResponse], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [jobResponse], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope(jobResponse));
     client.requestRaw
       .mockResolvedValueOnce(successEnvelope(2))
@@ -84,7 +84,7 @@ describe('DeptJobUserService generated contract', () => {
       .mockResolvedValueOnce(successEnvelope(null))
       .mockResolvedValueOnce(successEnvelope(null));
 
-    await expect(deptJobUserService.getDeptJobBoxes({ page: 1, size: 25, deptId: 'DEPT01' }))
+    await expect(deptJobUserService.getDeptJobBoxes({ page: 2, size: 25, deptId: 'DEPT01' }))
       .resolves.toMatchObject({ list: [boxResponse], total: 1 });
     await expect(deptJobUserService.getDeptJobBox(2)).resolves.toEqual(boxResponse);
     await expect(deptJobUserService.createDeptJobBox(boxRequest)).resolves.toBe(2);
@@ -100,12 +100,12 @@ describe('DeptJobUserService generated contract', () => {
     await expect(deptJobUserService.deleteDeptJob(5)).resolves.toBeUndefined();
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'dept-jobs/boxes', {
-      params: { pageIndex: 2, pageUnit: 25, deptId: 'DEPT01' },
+      params: { page: 2, size: 25, deptId: 'DEPT01' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'dept-jobs', {
       params: {
-        pageIndex: 1,
-        pageUnit: 10,
+        page: 1,
+        size: 10,
         scope: 'mine',
         searchWrd: '계획',
         searchCondition: '0',

@@ -27,12 +27,21 @@ public class MockMvcTestConfig implements WebMvcConfigurer {
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(new PageableHandlerMethodArgumentResolver());
+        resolvers.add(nuri.business.support.PageableTestResolvers.standard());
     }
 
     @Bean
     public PageableHandlerMethodArgumentResolver pageableHandlerMethodArgumentResolver() {
-        return new PageableHandlerMethodArgumentResolver();
+        return nuri.business.support.PageableTestResolvers.standard();
+    }
+
+    /**
+     * [ADR-0036] {@code @EnableSpringDataWebSupport} 가 만드는 리졸버도 운영과 같은 1 기반·상한으로 맞춘다 — 이 설정이 있으면
+     * Boot 의 DataWebAutoConfiguration 이 물러나 {@code spring.data.web.pageable.*} 가 적용되지 않는다.
+     */
+    @Bean
+    public org.springframework.data.web.config.PageableHandlerMethodArgumentResolverCustomizer pageableTestResolverCustomizer() {
+        return nuri.business.support.PageableTestResolvers::apply;
     }
 
     /**

@@ -39,7 +39,7 @@ describe('generated admin boundary wave 4', () => {
       if (url.includes('login-policies/')) {
         return Promise.resolve(successEnvelope({ userId: 'USER01' }));
       }
-      return Promise.resolve(successEnvelope({ list: [] }));
+      return Promise.resolve(successEnvelope({ list: [], total: 0, page: 1, size: 10, totalPage: 0 }));
     });
     client.requestRaw.mockImplementation(({ url, method }: { url: string; method: string }) => {
       if (url === 'admin/system/board-masters' && method === 'post') {
@@ -56,19 +56,19 @@ describe('generated admin boundary wave 4', () => {
   });
 
   it('OpenAPI 충돌 3개를 제외한 21개 경계를 generated transport로 실행한다', async () => {
-    await popupAdminService.getPopupList({ page: 0, size: 10, searchWrd: '점검' });
+    await popupAdminService.getPopupList({ page: 1, size: 10, searchWrd: '점검' });
     await popupAdminService.getPopup(2);
     await popupAdminService.createPopup(popup);
     await popupAdminService.updatePopup(2, popup);
     await popupAdminService.deletePopup(2);
 
-    await hpcmAdminService.getHpcmList({ page: 0, size: 10, searchWrd: '정의' });
+    await hpcmAdminService.getHpcmList({ page: 1, size: 10, searchWrd: '정의' });
     await hpcmAdminService.getHpcm(3);
     await hpcmAdminService.createHpcm(hpcm);
     await hpcmAdminService.updateHpcm(3, hpcm);
     await hpcmAdminService.deleteHpcm(3);
 
-    await loginPolicyAdminService.getLoginPolicyList({ page: 0, size: 20, searchWrd: '홍길동' });
+    await loginPolicyAdminService.getLoginPolicyList({ page: 1, size: 20, searchWrd: '홍길동' });
     await loginPolicyAdminService.getLoginPolicy('USER01');
     await loginPolicyAdminService.saveLoginPolicy('USER01', { lmtYn: 'Y' });
     await loginPolicyAdminService.deleteLoginPolicy('USER01');
@@ -85,7 +85,7 @@ describe('generated admin boundary wave 4', () => {
     expect(client.getRaw).toHaveBeenCalledTimes(7);
     expect(client.requestRaw).toHaveBeenCalledTimes(14);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/login-policies', {
-      params: { pageIndex: 1, pageUnit: 20, searchKeyword: '홍길동' },
+      params: { page: 1, size: 20, searchKeyword: '홍길동' },
     });
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'admin/system/login-policies/USER01',

@@ -200,12 +200,12 @@ test('the schema, cross-file checks and source checks refuse a broken feature fi
   assert.throws(() => loadComposerModules(root), /preset core expected gates differ from gate ownership \(missing: [^;]+; stale: -\)/);
   restore('presets.json');
   // 파일 이름은 기능 id 다.
-  editModule(root, 'isg.json', value => { value.id = 'guide'; });
-  assert.throws(() => loadComposerModules(root), /file name differs from its feature id: isg\.json \(guide\)/);
+  editModule(root, 'showcase.json', value => { value.id = 'guide'; });
+  assert.throws(() => loadComposerModules(root), /file name differs from its feature id: showcase\.json \(guide\)/);
   // 깨진 JSON 도 선언 오류다(런타임 결함 SyntaxError 로 새지 않는다).
-  writeFileSync(join(root, MODULES_DIRECTORY, 'isg.json'), '{');
-  assert.throws(() => loadComposerModules(root), error => error.constructor === Error && /isg\.json is not valid JSON/.test(error.message));
-  restore('isg.json');
+  writeFileSync(join(root, MODULES_DIRECTORY, 'showcase.json'), '{');
+  assert.throws(() => loadComposerModules(root), error => error.constructor === Error && /showcase\.json is not valid JSON/.test(error.message));
+  restore('showcase.json');
   assert.equal(buildProjectComposerCatalog(root, loadComposerModules(root).declarations).capabilities.length, loadedCatalog.capabilities.length);
 });
 

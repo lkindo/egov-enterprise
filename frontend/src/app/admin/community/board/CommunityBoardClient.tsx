@@ -33,7 +33,7 @@ function CommunityBoardContent() {
   // 선택지는 게시판 마스터에서 채운다. 하드코딩 목록에는 시드에 없는 게시판이 섞여 있었고
   // 라벨도 실제 게시판명과 어긋나 있었다(같은 ID 를 '갤러리 게시판'/'업무게시판' 으로 각각 표기).
   const { options: boardOptions } = useBoardOptions();
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1); // 1부터 (서버 page 와 같은 번호, ADR-0036)
 
   // 조회 시점은 `조회` 또는 Enter 다(카탈로그 G2, Phase 2 커뮤니티 후속 C1b). 종전에는 입력을 300ms 디바운스해
   // 타이핑 도중에도 조회했다. searchWrd 는 적용된 검색어이고, 입력 중인 값은 KeywordFilter 가 갖는다.
@@ -92,7 +92,7 @@ function CommunityBoardContent() {
             onSearch={(keyword) => {
               setSearchWrd(keyword);
               // 감사 P1-8: 3페이지에서 검색하면 빈 화면이 되던 결함 — 조회하면 첫 페이지로 되돌린다.
-              setPage(0);
+              setPage(1);
             }}
           >
             <div className="flex items-end gap-3">
@@ -100,7 +100,7 @@ function CommunityBoardContent() {
                 value={bbsId}
                 onChange={(e) => {
                   setBbsId(e.target.value);
-                  setPage(0);
+                  setPage(1);
                 }}
                 className="h-[var(--control-h)] px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
                 aria-label="게시판 선택"
@@ -195,7 +195,7 @@ function CommunityBoardContent() {
  계약에 없는 값을 화면 표시의 근거로 삼지 않도록 분기를 제거하고 번호만 표기한다.
  */}
                     <span className="text-xs font-bold text-muted-foreground leading-none mb-1">번호</span>
-                    <span className="text-xl font-bold text-foreground font-mono">{idx + 1 + page * PAGE_SIZE}</span>
+                    <span className="text-xl font-bold text-foreground font-mono">{idx + 1 + (page - 1) * PAGE_SIZE}</span>
                   </div>
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-3">
@@ -236,15 +236,15 @@ function CommunityBoardContent() {
               <button
                 key={i}
                 type="button"
-                onClick={() => setPage(i)}
+                onClick={() => setPage(i + 1)}
                 className={cn(
                   "rounded-lg font-bold text-xs font-mono transition-all size-[var(--control-h)]",
-                  page === i
+                  page === i + 1
                     ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg scale-110"
                     : "bg-card text-muted-foreground border border-border hover:border-primary/20 hover:text-primary"
                 )}
                 aria-label={`${i + 1} 페이지로 이동`}
-                aria-current={page === i ? 'page' : undefined}
+                aria-current={page === i + 1 ? 'page' : undefined}
               >
                 {String(i + 1).padStart(2, '0')}
               </button>

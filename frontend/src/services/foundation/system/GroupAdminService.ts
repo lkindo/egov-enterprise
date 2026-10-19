@@ -17,16 +17,17 @@ import {
 type GroupInfo = GroupManage;
 type GroupListQuery = NonNullable<operations['getGroups']['parameters']['query']>;
 
+/**
+ * 그룹 목록 query. `page`(1부터)·`size` 는 서버 이름·기준 그대로 넘긴다(ADR-0036).
+ *
+ * <p>[ADR-0036] 종전에는 `size` 를 버리고 서버도 건수를 10 으로 고정해, 그룹 화면의 페이지당 건수 선택이 서버에 닿지
+ * 않았다(늘 10건). 서버가 BaseSearchDto 로 `size` 를 받게 됐으므로 여기서도 넘긴다.
+ */
 function toGroupListQuery(params?: SearchParams): GroupListQuery {
   if (!params) return {};
   return {
-    ...(params.pageIndex !== undefined
-      ? { pageIndex: params.pageIndex }
-      : params.page !== undefined
-        ? { pageIndex: params.page + 1 }
-        : params.pageNo !== undefined
-          ? { pageIndex: params.pageNo }
-          : {}),
+    ...(params.page !== undefined ? { page: params.page } : {}),
+    ...(params.size !== undefined ? { size: params.size } : {}),
     searchKeyword: params.searchKeyword || params.searchWrd || '',
   };
 }
@@ -51,7 +52,7 @@ class GroupAdminService extends ApiService {
 
   /** 그룹 등록 */
   async createGroup(data: Partial<GroupInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createGroupOperation, {
+    await this.executeGenerated(createGroupOperation, {
       body: data as GeneratedOperationRequest<'createGroup'>,
       config,
     });

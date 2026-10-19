@@ -9,7 +9,11 @@ import org.hibernate.annotations.Filter;
 
 /**
  * 게시물 댓글 엔티티 (v5 standardized)
- * - DB Schema Sync: TB_BBS_COMMENT (ans_sn, pst_sn, bbs_id, wrter_id, wrter_nm, pswd, ans_cn, use_yn)
+ * - DB Schema Sync: TB_BBS_COMMENT (ans_sn, pst_sn, bbs_id, wrter_id, wrter_nm, ans_cn, use_yn)
+ *
+ * <p>[2026-10-19] 물리 컬럼 {@code pswd} 는 매핑하지 않는다. 익명 댓글 비밀번호는 쓰는 경로가 없는 폐기 필드인데도
+ * 요청 본문의 값을 평문 그대로 저장하고 있었다(만족도는 ADR-0011 로 같은 경로를 걷었다). 새 행은 이 컬럼을 쓰지 않는다.
+ * 컬럼 삭제와 기존 값 파기는 별도 DB 결정·승인 대상이라 그대로 둔다.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -40,9 +44,6 @@ public class Comment extends BaseEntity implements Serializable {
     @Column(length = 100)
     private String wrterNm;
 
-    @Column(length = 256)
-    private String pswd;
-
     @Column(length = 4000)
     private String ansCn;
 
@@ -57,13 +58,12 @@ public class Comment extends BaseEntity implements Serializable {
      * @Builder.Default 재현: useYn 널병합 처리(널이면 기본값 "Y").
      */
     private Comment(Long ansSn, Long pstSn, String bbsId, String wrterId, String wrterNm,
-                    String pswd, String ansCn, String useYn) {
+                    String ansCn, String useYn) {
         this.ansSn = ansSn;
         this.pstSn = pstSn;
         this.bbsId = bbsId;
         this.wrterId = wrterId;
         this.wrterNm = wrterNm;
-        this.pswd = pswd;
         this.ansCn = ansCn;
         this.useYn = useYn != null ? useYn : "Y";
     }
@@ -74,8 +74,8 @@ public class Comment extends BaseEntity implements Serializable {
      */
     @Builder
     public static Comment create(Long ansSn, Long pstSn, String bbsId, String wrterId, String wrterNm,
-                                 String pswd, String ansCn, String useYn) {
-        return new Comment(ansSn, pstSn, bbsId, wrterId, wrterNm, pswd, ansCn, useYn);
+                                 String ansCn, String useYn) {
+        return new Comment(ansSn, pstSn, bbsId, wrterId, wrterNm, ansCn, useYn);
     }
 
     public void update(String ansCn) {

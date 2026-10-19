@@ -8,6 +8,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { externalHrAdminService, type ExternalHr } from '@/services/foundation/operation/ExternalHrAdminService';
 import { eventService } from '@/services/foundation/operation/eventService';
+import { fetchAllPages } from '@/lib/api/fetch-all-pages';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Loader2, Pencil, Plus, RefreshCcw, ShieldCheck, Trash2 } from 'lucide-react';
@@ -131,13 +132,17 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   /**
    * 소속 행사 선택지. 행사 목록 API 를 그대로 소비한다(신규 API 없음).
    * 이 화면과 행사 API 는 둘 다 관리자 전용이라 403 함정이 없다.
+   *
+   * [ADR-0036] 선택지와 아래 행사명 사전은 행사 **전량**이 있어야 맞다 — 잘리면 101번째 행사부터 등록·수정에서 고를 수
+   * 없고 목록의 '소속 행사' 열은 번호로만 보인다. 종전 `size: 200` 한 페이지는 서버 상한(100)을 넘어 이제 400 이고,
+   * 100 으로 낮추면 조용히 잘린다. 그래서 상한 크기로 끝까지 따라간다(fetchAllPages — 건수가 맞지 않으면 던진다).
    */
-  const { data: eventPage } = useQuery({
+  const { data: events } = useQuery({
     queryKey: ['external-hr-event-options'],
     staleTime: 5 * 60 * 1000,
-    queryFn: () => eventService.getEvents({ page: 0, size: 200 }),
+    queryFn: () => fetchAllPages((page, size) => eventService.getEvents({ page, size })),
   });
-  const eventOptions = useMemo(() => eventPage?.list ?? [], [eventPage?.list]);
+  const eventOptions = useMemo(() => events ?? [], [events]);
 
   /**
    * 행사 번호 → 행사명 사전.
@@ -248,14 +253,14 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
   /**
    * 목록 조회. 서버 응답은 PageResponse(list/total/page/size/totalPage) 이며,
-   * Spring Data Pageable 은 0-based 이므로 page(1-based) - 1 을 전송한다.
+   * 화면의 페이지 번호(1부터)를 그대로 전송한다(ADR-0036).
    * 조회 실패는 삼키지 않고 StandardDataTable 의 error/onRetry 로 화면에 드러낸다.
    */
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin-external-hr', searchKeyword, page, pageSize],
     queryFn: () => externalHrAdminService.getExternalHrList({
       name: searchKeyword,
-      page: page - 1,
+      page,
       size: pageSize,
     }),
     // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 쓴다.

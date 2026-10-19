@@ -141,10 +141,10 @@ export default function HpcmClient({
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['admin-hpcm', keyword, page, pageSize],
-    // 서버는 Spring Pageable(0-base)을 읽는다.
+    // 서버는 1부터 세는 page 를 읽는다(ADR-0036).
     queryFn: () => hpcmAdminService.getHpcmList({
       keyword: keyword || undefined,
-      page: page - 1,
+      page,
       size: pageSize,
       sort: LIST_SORT,
     }),
@@ -331,7 +331,7 @@ export default function HpcmClient({
   return (
     <WorkListPage
       title="도움말 콘텐츠 관리(HPCM)"
-      description="시스템 가이드와 도움말 콘텐츠를 등록·관리합니다."
+      description="시스템 가이드와 도움말 콘텐츠를 등록·관리합니다. 등록한 도움말은 로그인한 사용자 누구나 도움말 센터의 도움말 탭에서 읽습니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: 'HPCM' }]}
       filterStateKey="system-hpcm"
       // 종전에는 현재 페이지의 행 수(항상 10)를 총건수로 내놨다. 서버가 주는 전체 건수를 쓴다.

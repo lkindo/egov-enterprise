@@ -854,25 +854,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/isg/{itntSrvcSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 서비스 안내 상세 조회 */
-        get: operations["getIsg"];
-        /** 서비스 안내 수정 */
-        put: operations["updateIsg"];
-        post?: never;
-        /** 서비스 안내 삭제 */
-        delete: operations["deleteIsg"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/groups/{groupId}": {
         parameters: {
             query?: never;
@@ -2564,24 +2545,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/isg": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 서비스 안내 목록 조회 */
-        get: operations["getIsgList"];
-        put?: never;
-        /** 서비스 안내 등록 */
-        post: operations["registerIsg"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/groups": {
         parameters: {
             query?: never;
@@ -3465,7 +3428,7 @@ export interface paths {
         };
         /**
          * 팝업 상세 조회
-         * @description 특정 팝업의 상세 정보를 조회합니다.
+         * @description 오늘 게시 중인 팝업의 상세 정보를 조회합니다. 게시하지 않았거나 게시 기간 밖인 팝업은 404 입니다.
          */
         get: operations["getPopup_1"];
         put?: never;
@@ -3771,6 +3734,46 @@ export interface paths {
          *     `deliveryConfigured=false` 면 발송 접수는 되지만 모든 메일이 실패로 기록됩니다 (발송 파이프라인의 장애가 아니라 배포 형상입니다).
          */
         get: operations["getMailDeliveryStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/help/public-manuals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 온라인 매뉴얼 열람 목록
+         * @description 로그인한 사용자가 읽는 온라인 매뉴얼 목록입니다. 매뉴얼 명 가나다순으로 페이징합니다.
+         */
+        get: operations["getPublicManuals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/help/public-hpcm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 도움말 열람 목록
+         * @description 로그인한 사용자가 읽는 도움말 목록입니다. 제목 가나다순으로 페이징합니다.
+         */
+        get: operations["getPublicHpcmList"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5831,7 +5834,6 @@ export interface components {
             readonly wrterNm?: string | null;
             readonly editable?: boolean;
             readonly deletable?: boolean;
-            pswd?: string;
             ansCn?: string;
             readonly crtDt?: string | null;
         };
@@ -6378,15 +6380,6 @@ export interface components {
             regYn?: string;
             frstRgtrId?: string;
             lastMdfrId?: string;
-        };
-        InternetSvcGuidanceDto: {
-            /** Format: int64 */
-            readonly itntSrvcSn?: number | null;
-            itntSvcNm: string;
-            itntSvcExpln: string;
-            readonly lastMdfrId?: string | null;
-            /** Format: date-time */
-            readonly mdfcnDt?: string | null;
         };
         GroupManageDto: {
             groupId?: string;
@@ -6945,6 +6938,18 @@ export interface components {
              */
             faxNo?: string;
         };
+        ApiResponseLong: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            /** Format: int64 */
+            data?: number;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
         /** @description 회원가입 요청 DTO */
         UserSignupRequest: {
             /**
@@ -7021,18 +7026,6 @@ export interface components {
             code?: string;
             message?: string;
             /** Format: int32 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        ApiResponseLong: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int64 */
             data?: number;
             /** Format: date-time */
             timestamp?: string;
@@ -7559,6 +7552,24 @@ export interface components {
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
         };
+        ApiResponseDetailCodeKey: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["DetailCodeKey"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 상세코드 식별자 */
+        DetailCodeKey: {
+            /** @description 코드 ID */
+            cdId: string;
+            /** @description 상세코드 */
+            dtlCd: string;
+        };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
             /** @description 대상 게시판 ID 목록 */
@@ -7744,15 +7755,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseWorkReportDto: {
-            list?: components["schemas"]["WorkReportDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["WorkReportDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseWorkReportDto: {
             success?: boolean;
@@ -7890,15 +7914,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseScrapDto: {
-            list?: components["schemas"]["ScrapDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["ScrapDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseScrapDto: {
             success?: boolean;
@@ -7923,15 +7960,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseScheduleDto: {
-            list?: components["schemas"]["ScheduleDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["ScheduleDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseScheduleDto: {
             success?: boolean;
@@ -8034,15 +8084,28 @@ export interface components {
             hasVoted?: boolean;
         };
         PageResponseOnlinePollManageDto: {
-            list?: components["schemas"]["OnlinePollManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["OnlinePollManageDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseOnlinePollManageDto: {
             success?: boolean;
@@ -8078,15 +8141,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseNotificationDto: {
-            list?: components["schemas"]["NotificationDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["NotificationDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseNotificationDto: {
             success?: boolean;
@@ -8122,15 +8198,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseNoteDto: {
-            list?: components["schemas"]["NoteDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["NoteDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseMenuListResponse: {
             success?: boolean;
@@ -8180,15 +8269,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMemoReportDto: {
-            list?: components["schemas"]["MemoReportDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["MemoReportDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseMemoReportDto: {
             success?: boolean;
@@ -8213,15 +8315,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSentMailDto: {
-            list?: components["schemas"]["SentMailDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SentMailDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseSentMailDto: {
             success?: boolean;
@@ -8252,6 +8367,104 @@ export interface components {
             /** @description 현재 발송 구현체의 단순 클래스명. 운영 문의 시 어느 형상인지 식별한다. */
             senderImplementation: string;
         };
+        ApiResponsePageResponsePublicOnlineManualDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponsePublicOnlineManualDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponsePublicOnlineManualDto: {
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["PublicOnlineManualDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
+        };
+        /** @description 일반 사용자용 온라인 매뉴얼 */
+        PublicOnlineManualDto: {
+            /**
+             * Format: int64
+             * @description 온라인 매뉴얼 일련번호
+             * @example 1
+             */
+            onlnMnlSn: number;
+            /** @description 온라인 매뉴얼 명 */
+            onlnMnlNm: string;
+            /** @description 온라인 매뉴얼 정의(관리 화면의 리소스 경로) */
+            onlnMnlDfn?: string | null;
+            /** @description 온라인 매뉴얼 설명 */
+            onlnMnlExpln?: string | null;
+        };
+        ApiResponsePageResponsePublicHpcmDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponsePublicHpcmDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponsePublicHpcmDto: {
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["PublicHpcmDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
+        };
+        /** @description 일반 사용자용 도움말 */
+        PublicHpcmDto: {
+            /**
+             * Format: int64
+             * @description 도움말 일련번호
+             * @example 1
+             */
+            hlpSn: number;
+            /** @description 도움말 정의(제목) */
+            hlpDfn: string;
+            /** @description 도움말 설명 */
+            hlpExpln?: string | null;
+        };
         ApiResponsePageResponseOnlineManualDto: {
             success?: boolean;
             /** Format: int32 */
@@ -8264,15 +8477,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseOnlineManualDto: {
-            list?: components["schemas"]["OnlineManualDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["OnlineManualDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseOnlineManualDto: {
             success?: boolean;
@@ -8297,15 +8523,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseHpcmDto: {
-            list?: components["schemas"]["HpcmDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["HpcmDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseHpcmDto: {
             success?: boolean;
@@ -8362,8 +8601,6 @@ export interface components {
             atchFileSn?: number;
             /** Format: int32 */
             fileSn?: number;
-            fileStreCours?: string;
-            streFileNm?: string;
             orignlFileNm?: string;
             fileExtsn?: string;
             /** Format: int64 */
@@ -8384,15 +8621,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptJobDto: {
-            list?: components["schemas"]["DeptJobDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["DeptJobDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseDeptJobDto: {
             success?: boolean;
@@ -8417,15 +8667,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptJobBoxDto: {
-            list?: components["schemas"]["DeptJobBoxDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["DeptJobBoxDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseDeptJobBoxDto: {
             success?: boolean;
@@ -8561,15 +8824,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCommunityDto: {
-            list?: components["schemas"]["CommunityDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CommunityDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCommunityMembershipDto: {
             success?: boolean;
@@ -8631,15 +8907,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCommentDto: {
-            list?: components["schemas"]["CommentDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CommentDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseBoardDto: {
             success?: boolean;
@@ -8653,15 +8942,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseBoardDto: {
-            list?: components["schemas"]["BoardDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["BoardDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseBoardStatsResponse: {
             success?: boolean;
@@ -8832,15 +9134,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponsePublicFaqListItemResponse: {
-            list?: components["schemas"]["PublicFaqListItemResponse"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["PublicFaqListItemResponse"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         PublicFaqListItemResponse: {
             /**
@@ -9237,15 +9552,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseInformalSanctionDto: {
-            list?: components["schemas"]["InformalSanctionDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["InformalSanctionDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseApprovalSuggestionsDto: {
             success?: boolean;
@@ -9283,15 +9611,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseUserListItemDto: {
-            list?: components["schemas"]["UserListItemDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["UserListItemDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         UserListItemDto: {
             userId: string;
@@ -9351,15 +9692,28 @@ export interface components {
             scrtyDcsnTrgtId?: string;
         };
         PageResponseAuthorGroupProjection: {
-            list?: components["schemas"]["AuthorGroupProjection"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AuthorGroupProjection"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseListUserAbsenceDto: {
             success?: boolean;
@@ -9439,15 +9793,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSurveyTemplateDto: {
-            list?: components["schemas"]["SurveyTemplateDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SurveyTemplateDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseSurveyInfoDto: {
             success?: boolean;
@@ -9461,15 +9828,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSurveyInfoDto: {
-            list?: components["schemas"]["SurveyInfoDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SurveyInfoDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseSurveyResultDto: {
             success?: boolean;
@@ -9483,15 +9863,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSurveyResultDto: {
-            list?: components["schemas"]["SurveyResultDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SurveyResultDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         SurveyResultDto: {
             /** Format: int64 */
@@ -9563,15 +9956,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponsePopupDto: {
-            list?: components["schemas"]["PopupDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["PopupDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePopupDto: {
             success?: boolean;
@@ -9623,15 +10029,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMenuDto: {
-            list?: components["schemas"]["MenuDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["MenuDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseMenuDto: {
             success?: boolean;
@@ -9692,15 +10111,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMenuCreateDto: {
-            list?: components["schemas"]["MenuCreateDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["MenuCreateDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseListMenuDto: {
             success?: boolean;
@@ -9725,15 +10157,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseWebLogDto: {
-            list?: components["schemas"]["WebLogDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["WebLogDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         WebLogDto: {
             /** Format: int64 */
@@ -9757,15 +10202,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseUserLogDto: {
-            list?: components["schemas"]["UserLogDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["UserLogDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         UserLogDto: {
             ocrnYmd?: string;
@@ -9798,15 +10256,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSysLogDto: {
-            list?: components["schemas"]["SysLogDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SysLogDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         SysLogDto: {
             /** Format: int64 */
@@ -9846,15 +10317,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponsePrivacyLogDto: {
-            list?: components["schemas"]["PrivacyLogDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["PrivacyLogDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         PrivacyLogDto: {
             /** Format: int64 */
@@ -9889,15 +10373,28 @@ export interface components {
             creatDt?: string;
         };
         PageResponseLoginLogDto: {
-            list?: components["schemas"]["LoginLogDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["LoginLogDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseLoginLogDto: {
             success?: boolean;
@@ -9936,15 +10433,28 @@ export interface components {
             httpStatus?: number;
         };
         PageResponseAuditJournalEntry: {
-            list?: components["schemas"]["AuditJournalEntry"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AuditJournalEntry"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseLoginPolicyDto: {
             success?: boolean;
@@ -9958,15 +10468,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseLoginPolicyDto: {
-            list?: components["schemas"]["LoginPolicyDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["LoginPolicyDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseLoginPolicyDto: {
             success?: boolean;
@@ -9975,39 +10498,6 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["LoginPolicyDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        ApiResponsePageResponseInternetSvcGuidanceDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseInternetSvcGuidanceDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        PageResponseInternetSvcGuidanceDto: {
-            list?: components["schemas"]["InternetSvcGuidanceDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseInternetSvcGuidanceDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["InternetSvcGuidanceDto"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -10024,15 +10514,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseGroupManageDto: {
-            list?: components["schemas"]["GroupManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["GroupManageDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseGroupManageDto: {
             success?: boolean;
@@ -10045,50 +10548,40 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponsePageStatus: {
+        ApiResponsePageResponseStatus: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["PageStatus"];
+            data?: components["schemas"]["PageResponseStatus"];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        PageStatus: {
-            /** Format: int32 */
-            totalPages?: number;
-            /** Format: int64 */
-            totalElements?: number;
-            /** Format: int32 */
-            size?: number;
-            content?: components["schemas"]["Status"][];
-            /** Format: int32 */
-            number?: number;
-            sort?: components["schemas"]["SortObject"];
-            pageable?: components["schemas"]["PageableObject"];
-            /** Format: int32 */
-            numberOfElements?: number;
-            first?: boolean;
-            last?: boolean;
-            empty?: boolean;
-        };
-        PageableObject: {
-            /** Format: int64 */
-            offset?: number;
-            paged?: boolean;
-            /** Format: int32 */
-            pageNumber?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            sort?: components["schemas"]["SortObject"];
-            unpaged?: boolean;
-        };
-        SortObject: {
-            empty?: boolean;
-            sorted?: boolean;
-            unsorted?: boolean;
+        PageResponseStatus: {
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["Status"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         Status: {
             id?: string;
@@ -10123,15 +10616,28 @@ export interface components {
             regYn?: string;
         };
         PageResponseDeptAuthorProjection: {
-            list?: components["schemas"]["DeptAuthorProjection"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["DeptAuthorProjection"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseDeptManageDto: {
             success?: boolean;
@@ -10145,15 +10651,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptManageDto: {
-            list?: components["schemas"]["DeptManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["DeptManageDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseDeptManageDto: {
             success?: boolean;
@@ -10242,15 +10761,28 @@ export interface components {
             sortOrdr?: number;
         };
         PageResponseInstitutionCodeDto: {
-            list?: components["schemas"]["InstitutionCodeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["InstitutionCodeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseInstitutionCodeDto: {
             success?: boolean;
@@ -10275,15 +10807,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseInstitutionCodeRecptnDto: {
-            list?: components["schemas"]["InstitutionCodeRecptnDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["InstitutionCodeRecptnDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseCmmnDetailCodeDto: {
             success?: boolean;
@@ -10297,15 +10842,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnDetailCodeDto: {
-            list?: components["schemas"]["CmmnDetailCodeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CmmnDetailCodeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCmmnDetailCodeDto: {
             success?: boolean;
@@ -10330,15 +10888,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnCodeDto: {
-            list?: components["schemas"]["CmmnCodeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CmmnCodeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCmmnCodeDto: {
             success?: boolean;
@@ -10363,15 +10934,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnClCodeDto: {
-            list?: components["schemas"]["CmmnClCodeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CmmnClCodeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCmmnClCodeDto: {
             success?: boolean;
@@ -10433,15 +11017,28 @@ export interface components {
             crtDt?: string;
         };
         PageResponseCommonCodeChangeDto: {
-            list?: components["schemas"]["CommonCodeChangeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CommonCodeChangeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseAdministCodeDto: {
             success?: boolean;
@@ -10455,15 +11052,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAdministCodeDto: {
-            list?: components["schemas"]["AdministCodeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AdministCodeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseAdministCodeDto: {
             success?: boolean;
@@ -10499,15 +11109,28 @@ export interface components {
             crtDt?: string;
         };
         PageResponseBoardMasterSummaryResponse: {
-            list?: components["schemas"]["BoardMasterSummaryResponse"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["BoardMasterSummaryResponse"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseBoardMasterDetailResponse: {
             success?: boolean;
@@ -10560,15 +11183,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseBannerDto: {
-            list?: components["schemas"]["BannerDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["BannerDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseBannerDto: {
             success?: boolean;
@@ -10627,15 +11263,28 @@ export interface components {
             authrtCrtYmd?: string;
         };
         PageResponseAuthorManageDto: {
-            list?: components["schemas"]["AuthorManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AuthorManageDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseAuthorManageDto: {
             success?: boolean;
@@ -10660,15 +11309,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSmsDto: {
-            list?: components["schemas"]["SmsDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["SmsDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseSmsDto: {
             success?: boolean;
@@ -10724,15 +11386,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseRewardManageDto: {
-            list?: components["schemas"]["RewardManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["RewardManageDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseExternalHrDto: {
             success?: boolean;
@@ -10746,15 +11421,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseExternalHrDto: {
-            list?: components["schemas"]["ExternalHrDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["ExternalHrDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseEventInfoDto: {
             success?: boolean;
@@ -10843,15 +11531,28 @@ export interface components {
             mdfcnDt?: string;
         };
         PageResponseEventInfoDto: {
-            list?: components["schemas"]["EventInfoDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["EventInfoDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseEventInfoDto: {
             success?: boolean;
@@ -10928,15 +11629,28 @@ export interface components {
             useYn?: string;
         };
         PageResponseCommunityMemberDto: {
-            list?: components["schemas"]["CommunityMemberDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CommunityMemberDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCommunityTemplateOptionsDto: {
             success?: boolean;
@@ -10986,15 +11700,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseUserChoice: {
-            list?: components["schemas"]["UserChoice"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["UserChoice"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseMembershipSnapshot: {
             success?: boolean;
@@ -11049,15 +11776,28 @@ export interface components {
             reason: string | null;
         };
         PageResponseChange: {
-            list?: components["schemas"]["Change"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["Change"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseListGroupSummary: {
             success?: boolean;
@@ -11148,15 +11888,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAddressBookDto: {
-            list?: components["schemas"]["AddressBookDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AddressBookDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseAddressBookDto: {
             success?: boolean;
@@ -11187,15 +11940,28 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAddressBookUserSelectionDto: {
-            list?: components["schemas"]["AddressBookUserSelectionDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["AddressBookUserSelectionDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
     };
     responses: never;
@@ -16814,13 +17580,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -17404,13 +18170,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -17466,211 +18232,6 @@ export interface operations {
             header?: never;
             path: {
                 userId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getIsg: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                itntSrvcSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseInternetSvcGuidanceDto"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    updateIsg: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                itntSrvcSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InternetSvcGuidanceDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteIsg: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -20970,12 +21531,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -21045,13 +21604,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -21105,8 +21664,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21226,8 +21785,10 @@ export interface operations {
     getMyScrapList: {
         parameters: {
             query?: {
-                pageIndex?: number;
-                pageUnit?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -21295,8 +21856,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21345,8 +21906,10 @@ export interface operations {
     getScheduleList: {
         parameters: {
             query?: {
-                pageIndex?: number;
-                pageUnit?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 schdlNm?: string;
             };
             header?: never;
@@ -21415,8 +21978,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21468,9 +22031,9 @@ export interface operations {
                 keyword?: string;
                 /** @description 종류(SATISFACTION 만족도 조사 · POLL 온라인 투표, 비우면 전부) */
                 kind?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -21541,13 +22104,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -21663,9 +22226,9 @@ export interface operations {
                 searchWrd?: string;
                 /** @description 읽음 조건(비우면 전체, N 읽지 않음, Y 읽음) */
                 readYn?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -21736,8 +22299,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -21919,13 +22482,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -21970,9 +22533,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -22043,8 +22606,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22097,9 +22660,9 @@ export interface operations {
                 searchKeyword?: string;
                 /** @description 발송 결과(P 대기·S 성공·F 실패). 비우면 전체 */
                 resultCode?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -22170,8 +22733,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22289,9 +22852,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -22362,8 +22925,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22413,9 +22976,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -22486,8 +23049,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22548,8 +23111,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22610,8 +23173,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22672,8 +23235,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22734,8 +23297,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22789,8 +23352,10 @@ export interface operations {
                 searchCondition?: string;
                 searchWrd?: string;
                 scope?: string;
-                pageIndex?: number;
-                pageUnit?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -22858,8 +23423,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22910,8 +23475,10 @@ export interface operations {
             query?: {
                 searchWrd?: string;
                 deptId?: string;
-                pageIndex?: number;
-                pageUnit?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -22979,8 +23546,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23098,9 +23665,9 @@ export interface operations {
             query: {
                 pstSn: number;
                 bbsId: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -23171,8 +23738,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23302,8 +23869,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23380,8 +23947,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23449,8 +24016,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24058,8 +24625,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24525,8 +25092,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24641,8 +25208,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24755,9 +25322,9 @@ export interface operations {
                 userSttsCd?: string;
                 ognzId?: string;
                 lckYn?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -24828,8 +25395,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24942,12 +25509,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -25193,13 +25758,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25322,13 +25887,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25460,13 +26025,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25531,8 +26096,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25602,8 +26167,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25662,9 +26227,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -25735,13 +26300,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25786,9 +26351,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -25859,13 +26424,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25921,13 +26486,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -25992,13 +26557,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -26052,9 +26617,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -26125,13 +26690,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -26176,9 +26741,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -26249,13 +26814,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -26300,9 +26865,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -26373,8 +26938,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -26426,12 +26991,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -26501,13 +27064,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -26686,135 +27249,18 @@ export interface operations {
             };
         };
     };
-    getIsgList: {
-        parameters: {
-            query?: {
-                keyword?: string;
-                /** @description Zero-based page index (0..N) */
-                page?: number;
-                /** @description The size of the page to be returned */
-                size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseInternetSvcGuidanceDto"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    registerIsg: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InternetSvcGuidanceDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseLong"];
-                };
-            };
-            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-            /** @description 서버 내부 오류 (code: C004/S001) */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
     getGroups: {
         parameters: {
             query?: {
-                pageIndex?: number;
+                searchCondition?: string;
                 searchKeyword?: string;
+                searchUseYn?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -26882,13 +27328,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -27120,9 +27566,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -27193,8 +27639,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -27306,12 +27752,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -27381,13 +27825,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseDetailCodeKey"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -27434,12 +27878,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -27509,13 +27951,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -27562,12 +28004,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -27637,13 +28077,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -27690,12 +28130,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -27765,13 +28203,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -27818,12 +28256,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -27893,8 +28329,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28064,9 +28500,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28137,8 +28573,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28189,9 +28625,9 @@ export interface operations {
             query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28262,8 +28698,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28313,9 +28749,9 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28386,8 +28822,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28437,9 +28873,9 @@ export interface operations {
         parameters: {
             query?: {
                 name?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28511,7 +28947,7 @@ export interface operations {
         };
         responses: {
             /** @description 등록 성공 */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28570,9 +29006,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28643,8 +29079,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28764,9 +29200,9 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -28837,8 +29273,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -28953,8 +29389,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29015,8 +29451,8 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29077,9 +29513,9 @@ export interface operations {
                 trgetOgnzId?: string;
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -29150,13 +29586,13 @@ export interface operations {
             };
         };
         responses: {
-            /** @description OK */
-            200: {
+            /** @description Created */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -29952,7 +30388,9 @@ export interface operations {
     authzGroupMembers: {
         parameters: {
             query?: {
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
             };
             header?: never;
@@ -30520,8 +30958,10 @@ export interface operations {
     getDeptScheduleList: {
         parameters: {
             query?: {
-                pageIndex?: number;
-                pageUnit?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 schdlNm?: string;
             };
             header?: never;
@@ -31073,9 +31513,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -31137,9 +31577,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -31427,9 +31867,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -31491,9 +31931,9 @@ export interface operations {
         parameters: {
             query?: {
                 searchKeyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -31702,6 +32142,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseMailDeliveryStatusDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getPublicManuals: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponsePublicOnlineManualDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getPublicHpcmList: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponsePublicHpcmDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -32653,9 +33221,9 @@ export interface operations {
             query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -32999,9 +33567,9 @@ export interface operations {
                  * @example EVENT
                  */
                 dateBasis?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -33289,9 +33857,9 @@ export interface operations {
             query?: {
                 /** @description 제목 검색어(2자 이상) */
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -33353,9 +33921,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -33851,9 +34419,9 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -33918,9 +34486,9 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -33984,9 +34552,9 @@ export interface operations {
                 keyword?: string;
                 fromYmd?: string;
                 toYmd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -34051,9 +34619,9 @@ export interface operations {
                 fromYmd?: string;
                 toYmd?: string;
                 status?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -34297,9 +34865,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -34846,12 +35414,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -34970,12 +35536,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35038,12 +35602,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35106,12 +35668,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35174,12 +35734,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35242,12 +35800,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35377,12 +35933,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35445,12 +35999,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35513,12 +36065,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35581,12 +36131,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35716,12 +36264,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35785,7 +36331,9 @@ export interface operations {
                 operation?: string;
                 fromDate?: string;
                 toDate?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
             };
             header?: never;
@@ -35847,12 +36395,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -35912,7 +36458,9 @@ export interface operations {
     durableJobList: {
         parameters: {
             query?: {
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
             };
             header?: never;
@@ -35927,7 +36475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponsePageStatus"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseStatus"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -35974,12 +36522,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -36111,12 +36657,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -36246,12 +36790,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -36313,9 +36855,9 @@ export interface operations {
             query?: {
                 cdId?: string;
                 clsfCd?: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -36502,12 +37044,10 @@ export interface operations {
                 searchCondition?: string;
                 searchKeyword?: string;
                 searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
                 searchKeywordFrom?: string;
                 searchKeywordTo?: string;
             };
@@ -36951,9 +37491,9 @@ export interface operations {
             query?: {
                 /** @description 멤버십 상태 필터(REQUESTED·APPROVED·WITHDRAWN). 생략하면 전체 */
                 status?: "REQUESTED" | "APPROVED" | "WITHDRAWN";
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -37141,9 +37681,9 @@ export interface operations {
                 searchKeyword?: string;
                 bbsId?: string;
                 pstSn?: number;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];
@@ -37205,7 +37745,9 @@ export interface operations {
         parameters: {
             query?: {
                 keyword?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
             };
             header?: never;
@@ -37264,7 +37806,9 @@ export interface operations {
     authzHistory: {
         parameters: {
             query?: {
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 groupCode?: string;
                 userId?: string;
@@ -37497,9 +38041,9 @@ export interface operations {
         parameters: {
             query: {
                 searchWrd: string;
-                /** @description Zero-based page index (0..N) */
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
-                /** @description The size of the page to be returned */
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 size?: number;
                 /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
                 sort?: string[];

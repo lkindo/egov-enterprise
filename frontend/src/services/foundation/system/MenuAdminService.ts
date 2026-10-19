@@ -119,7 +119,7 @@ class MenuAdminService extends ApiService {
 
   /** 메뉴 등록 */
   async createMenu(data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createMenuOperation, {
+    await this.executeGenerated(createMenuOperation, {
       body: toMenuRequest(data) as GeneratedOperationRequest<'createMenu'>,
       config,
     });

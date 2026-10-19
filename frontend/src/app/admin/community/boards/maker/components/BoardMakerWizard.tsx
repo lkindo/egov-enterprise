@@ -209,7 +209,7 @@ export function BoardMakerWizard() {
   /* reusable-base:community:start */
   const { data: communities } = useQuery({
     queryKey: ['board-maker-communities'],
-    queryFn: () => communityUserService.getCommunityList({ pageIndex: 1, pageUnit: 100 }),
+    queryFn: () => communityUserService.getCommunityList({ page: 1, size: 100 }),
   });
   const communityOptions = (communities?.list ?? []).filter((community) => community.useYn === 'Y');
   /* reusable-base:community:end */

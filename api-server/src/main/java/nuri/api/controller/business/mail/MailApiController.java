@@ -52,12 +52,13 @@ public class MailApiController {
     @Operation(summary = "메일 발송", description = "새로운 메일을 작성하여 평문으로 발송합니다. "
             + "첨부 발송은 지원하지 않으며 atchFileSn 을 지정하면 400 으로 거부합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.mail.MailApiController#sendMail')")
     public ResponseEntity<ApiResponse<Long>> sendMail(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody SentMailDto sentMailDto) {
         Long emlDsptchSn = mailService.sendMail(userDetails.getUsername(), sentMailDto);
-        return ResponseEntity.ok(ApiResponse.success(emlDsptchSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(emlDsptchSn));
     }
 
     @Operation(summary = "메일 발송 가능 상태 조회", description = """

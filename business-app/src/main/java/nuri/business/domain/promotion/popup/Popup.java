@@ -96,4 +96,14 @@ public class Popup extends BaseEntity {
         this.stopvewSetupYn = stopvewSetupYn;
         this.ntceYn = ntceYn;
     }
+
+    /**
+     * 이 날 사용자에게 게시 중인가 — 게시 여부가 {@code Y} 이고 그날이 게시 시작일·종료일 사이(양끝 포함)다.
+     * 활성 목록 조회({@code PopupDomainRepository.findActivePopups})와 같은 규칙이다. 기간이 비어 있으면 게시 중이 아니다
+     * (그 쿼리의 {@code BETWEEN} 도 NULL 을 고르지 않는다).
+     */
+    public boolean isPublishedOn(LocalDate day) {
+        return "Y".equals(ntceYn) && ntceBgnde != null && ntceEndde != null
+                && !day.isBefore(ntceBgnde) && !day.isAfter(ntceEndde);
+    }
 }

@@ -186,10 +186,6 @@ export const PERMISSION_CODES = [
   "SCRAP_READ_ALL",
   "SCRAP_UPDATE",
   "SCRAP_UPDATE_ALL",
-  "SERVICE_CREATE",
-  "SERVICE_DELETE",
-  "SERVICE_READ",
-  "SERVICE_UPDATE",
   "SMS_READ",
   "SMS_SEND",
   "STATS_ADMIN_READ",
@@ -235,7 +231,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "a61052901cd6ad46ef41f3620792f1fc8e605a72102cf1061e09c40e855b56c2";
+export const PERMISSION_CATALOG_VERSION = "df0b0b15c8a02001d8b874379264b7cda47b6443d336361d755fe27d4ba35adc";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -416,9 +412,6 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   ],
   "/admin/system/hpcm": [
     "HELP_READ"
-  ],
-  "/admin/system/isg": [
-    "SERVICE_READ"
   ],
   "/admin/system/ism": [],
   "/admin/system/layout": [

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -89,6 +89,8 @@ test('MFA BFF 원장은 실제 검증된 동작만 인정하고 응답 검증 �
       mkdirSync(dirname(join(root, file)), { recursive: true });
       writeFileSync(join(root, file), readFileSync(resolve(file), 'utf8'));
     }
+    // 서술자는 진입 파일 옆 태그 묶음 모듈에 있다(codegen-zod.js) — 진입 파일과 함께 옮긴다.
+    cpSync(resolve('frontend/src/types/generated-operations'), join(root, 'frontend/src/types/generated-operations'), { recursive: true });
     const entries = Object.values(apiDoc.paths).flatMap(path => Object.values(path))
       .filter(operation => operation.operationId)
       .map(operation => ({ operationId: operation.operationId, category: 'bff-route-handler',

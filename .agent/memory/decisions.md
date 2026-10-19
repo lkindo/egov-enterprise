@@ -90,6 +90,7 @@ refresh_triggers:
 | ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 사용자 선택. 이력의 표시명·변경된 현재 주소로 자동 복구하지 않는다. | [ADR-0033](../../docs/02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 2026-10-18 | - |
 | ADR-0034 | accepted | 410만 돌려주던 구 인가 쓰기 API 와 결재 API 로 대체된 비공식결재 API 의 경로를 걷고, 집행 지점이 없어진 INFORMAL_*·INST_CODE 쓰기 권한과 그 배정을 퇴역한다. | 2026-10-18 사용자 선택. 호출자 없는 표면이 계약·원장에 계속 집계됐고, 원장에 없는 배정은 권한 스냅샷을 fail-closed 로 막는다. | [ADR-0034](../../docs/02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분 |
 | ADR-0035 | accepted | 로그인 요청 제한의 템플릿 기본값을 IP당 분당 30으로 낮추고 E2E 만 종전 값으로 둔다. 한도는 계속 설정으로 조정한다. | 2026-10-19 품질 평가 과제의 사용자 지시. 종전 2,000은 계정을 돌아가며 대입하는 공격을 막지 못했다. | [ADR-0035](../../docs/02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값·관측 뒤 인하 순서 |
+| ADR-0036 | accepted | 목록은 요청·응답·URL·화면 모두 1 기반 page·size(1~100) 하나이고 잘못된 입력·옛 이름은 400, pageIndex·pageUnit 은 한 릴리스 별칭이다. 자원을 만드는 POST 는 201 과 새 식별자 본문이다. | 2026-10-19 사용자가 API 규약 초안의 권고안을 모두 승인했다(저장소 밖 소비자 없음 확인). 기준이 섞여 조용히 다른 페이지를 받는 결함이 반복됐다. | [ADR-0036](../../docs/02-architecture/decisions/ADR-0036-api-paging-and-created-status-conventions.md) | 2026-10-19 | API 가이드 §2 의 201 비강제·§3 의 v2 규칙(이 변경 한정), 프런트 아키텍처 §3 의 0-based page 별칭 정규화 |
 
 ## 운영 결정 index
 
@@ -386,6 +387,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-366 | accepted | PIT 범위를 제품 13개로 넓힌다 — 설문·참여(커뮤니티·메모 보고·일정)·사용자/조직을 더하고 설문 결과를 설문 범위로 옮긴다. | 2026-10-19 | - |
 | DEC-OPS-369 | accepted | 프런트 커버리지 하한을 CI 실측의 정수 내림에서 1포인트 여유를 둔 85/79/82/87로 올린다(종전 71/63/64/73). | 2026-10-19 | - |
 | DEC-OPS-371 | accepted | 규칙·기록·계약의 중복과 반복 재생성을 걷는다 — 결정 인덱스 반복 열·역사 행 분리, DEC 기록 기준, 공유 OCI 적용 로그, 고정값의 원장 계산, npm run regen, Atlas·URL 승인·IA 처분 결속 축소, 헌법 정정, 범용 스킬 정리, 하네스 기준선 단일 구현(2026-10-19 사용자 승인). | 2026-10-19 | DEC-OPS-335 의 Atlas 소스 다이제스트 결속, 구현 기록·공유 OCI 적용을 DEC 로 쓰던 관행, 백엔드 헌법 §10.3 의 외부 발송 runAfterCommit 표준, 하네스 기준선의 Java·node 이중 구현과 거울 대조 |
+| DEC-OPS-372 | accepted | 완성도 개선 배치: 작은 도메인 결함 6건, 인터넷서비스안내 퇴역(V2_135), 도움말 열람, 스크랩 1인 1주소(V2_136), 공용 JS 예산, 백업·복구 시작값(2026-10-19 사용자 승인). | 2026-10-19 | DEC-OPS-048 의 인터넷서비스안내 배선, 백업·복구 런북의 시작값 미기재 방침, 메모 첨부 판정의 보고자 축 미채택 |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

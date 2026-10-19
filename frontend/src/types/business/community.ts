@@ -16,10 +16,9 @@ export interface CommunityVO {
 }
 
 export interface CommunitySearchParams {
+  /** 페이지 번호(1부터, ADR-0036). */
   page?: number;
-  pageIndex?: number;
-  pageNo?: number;
-  pageUnit?: number;
+  size?: number;
   searchCondition?: string;
   searchKeyword?: string;
   [key: string]: unknown;

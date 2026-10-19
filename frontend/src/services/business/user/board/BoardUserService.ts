@@ -46,7 +46,7 @@ class BoardUserService extends ApiService {
 
   /**
    * 게시글 목록 조회.
-   * `page` 는 Spring Pageable 규약대로 0-based 다(호출부에서 1-based UI 값을 변환해 전달할 것).
+   * `page` 는 1부터 센다 — 화면의 페이지 번호를 그대로 넘긴다(ADR-0036).
    * orderBy/startDate/endDate/qnaStatus/qnaCategory 는 BoardApiController#getPosts 가 지원하는 필터다.
    */
   async getPosts(bbsId: string, params: {

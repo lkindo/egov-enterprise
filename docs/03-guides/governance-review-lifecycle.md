@@ -56,7 +56,7 @@ npm run review:migration
 | `authorization` | 실제 그룹·기능·메뉴·객체 접근과 허용/거부 결과. 배포 시점의 앱 버전과 구 권한 writer의 종료, 그 뒤의 로그인·복수 그룹·권한 회수·메뉴 동작을 함께 확인한다 — DB 적용만으로는 증명되지 않는다. `NOTICE_EDIT`·`FAQ_EDIT`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`는 기본 그룹이 없어 자동 배정되지 않는다(ADR-0025). 특히 공지·FAQ 게시판 쓰기는 배정 전까지 관리자도 거부되므로, 새 앱 배포 뒤 담당 그룹을 정해 배정하고 같은 트랜잭션에 변경 이력을 남긴다(먼저 넣으면 구 앱이 모르는 권한 코드로 그룹 저장을 거부할 수 있다). 재사용 생성물은 권한 카탈로그를 구성 코드로 투영한다(DEC-OPS-287). 이미 운영 중인 DB 에 다시 생성한 소스를 배포할 때는 구성 밖 OPERATION 배정이 남았는지 먼저 확인하고, 남았으면 배포 전에 정리하고 변경 이력을 남긴다 — 남겨 두면 그 그룹 사용자의 권한 스냅숏이 모르는 코드로 인증을 막는다(업그레이드 키트 선행 조건) |
 | `request-logging` | 프록시·WAF·앱·분석 도구의 수집 필드, 검색어 복제·보존·접근 정책 |
 | `accessibility` | 기관 화면·사용자·지원 환경의 접근성 및 필요한 수동 평가 |
-| `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과 |
+| `backup-recovery` | 실제 백업 세트의 존재와 접속 토폴로지, 목표 RTO/RPO, 운영 규모 restore drill과 복원 후 앱 smoke 결과. 템플릿 권장 시작값·훈련 도구·기록 양식은 [백업·복원 런북 §4·§5](../04-operations/backup-and-restore-runbook.md#4-주기보존rtorpo--템플릿-권장-시작값)에 있다 — 시작값은 승인 값이 아니다 |
 | `crypto-lifecycle` | 이 환경의 암호 자재 상태 — 노출 가능했던 자격의 회전·폐기 완료, 그리고 레거시 password hash·이전 키 암호문의 read-only census와 호환 adapter 처분 판단 |
 | `attachment-operations` | 이 환경의 첨부 운영 증거 — 도메인 참조 생성 actor 와 파일 마스터 원 업로더를 대조하는 read-only aggregate provenance census(원시 값·식별자 비노출) 결과, 정기 첨부 점검(03:15 Asia/Seoul)의 실제 실행·영속 볼륨·INCOMPLETE/FAILED 경보·파기 전후 결속, 그리고 삭제(`useYn='N'`)된 게시글과 그 첨부의 보존·파기 정책(복구 창·감사 보존 의무·용량 — 원본은 파기하지 않는다, DEC-OPS-128) |
 | `operational-assurance` | 운영 규모 부하 시험 결과, NVD 전량 의존성 검사의 triage·SLA 운영 증거, 인증된 admin 컨텍스트의 ZAP 결과와 판정 |

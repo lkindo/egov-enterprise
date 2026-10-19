@@ -179,8 +179,8 @@ describe('BoardDetailClient action pending contract', () => {
   });
 
   /**
-   * oncePerVisit 동작(스크랩)은 서버·스키마에 유일성 제약이 없어 누를 때마다 행이 하나씩 는다.
-   * 성공하면 이 화면에서 다시 누르지 못하게 잠근다(새로고침하면 풀린다).
+   * oncePerVisit 동작(스크랩)은 성공하면 이 화면에서 다시 누르지 못하게 잠근다(새로고침하면 풀린다).
+   * 같은 주소의 두 번째 스크랩은 서버가 409 로 거부한다 — 잠금은 그 요청을 보내지 않으려는 것이다.
    */
   it('oncePerVisit 동작에 성공하면 완료 표시로 잠기고 다시 눌러도 보내지 않는다', async () => {
     await renderDetail();

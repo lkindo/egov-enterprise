@@ -30,18 +30,14 @@ public class GroupApiController {
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.GroupApiController#getGroups')")
     public ResponseEntity<ApiResponse<PageResponse<GroupManageDto>>> getGroups(
-            @RequestParam(value = "pageIndex", defaultValue = "1") int pageIndex,
-            @RequestParam(value = "searchKeyword", defaultValue = "") String searchKeyword) {
-
-        BaseSearchDto searchVO = new BaseSearchDto();
-        searchVO.setPageIndex(pageIndex);
-        searchVO.setSearchKeyword(searchKeyword);
-        searchVO.setPageUnit(10);
-
+            @Valid @ModelAttribute BaseSearchDto searchVO) {
+        // [ADR-0036] 다른 목록과 같은 BaseSearchDto 바인딩이다. 종전에는 pageIndex 만 받고 건수를 10 으로 고정해,
+        //   그룹 화면의 페이지당 건수 선택이 서버에 닿지 않았다(서비스가 size 를 버리고 여기서 10 으로 덮었다).
         List<GroupManageDto> list = groupManageService.selectGroupList(searchVO);
         int total = groupManageService.selectGroupListTotCnt(searchVO);
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, pageIndex, 10, total)));
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponse.of(list, searchVO.getPage(), searchVO.getSize(), total)));
     }
 
     @Operation(summary = "그룹 상세 조회", description = "특정 사용자 그룹의 상세 정보를 조회합니다.")
@@ -53,10 +49,11 @@ public class GroupApiController {
 
     @Operation(summary = "그룹 등록", description = "새로운 시스템 사용자 그룹을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.GroupApiController#createGroup')")
-    public ResponseEntity<ApiResponse<Void>> createGroup(@Valid @RequestBody GroupManageDto dto) {
-        groupManageService.insertGroup(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> createGroup(@Valid @RequestBody GroupManageDto dto) {
+        String groupId = groupManageService.insertGroup(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(groupId));
     }
 
     @Operation(summary = "그룹 수정", description = "기존 시스템 사용자 그룹 정보를 수정합니다.")

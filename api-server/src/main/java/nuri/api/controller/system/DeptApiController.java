@@ -72,9 +72,10 @@ public class DeptApiController {
     @Operation(summary = "부서 등록",
             description = "새로운 시스템 부서를 등록하고 생성된 부서 ID 를 반환합니다. ognzId 는 서버가 채번하므로 보내지 않습니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.system.DeptApiController#insertDept')")
     public ResponseEntity<ApiResponse<String>> insertDept(@Valid @RequestBody DeptManageDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(deptManageService.insertDeptManage(dto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(deptManageService.insertDeptManage(dto)));
     }
 
     @Operation(summary = "조직 계층 일괄 저장",

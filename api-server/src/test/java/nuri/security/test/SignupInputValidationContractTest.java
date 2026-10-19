@@ -133,7 +133,7 @@ class SignupInputValidationContractTest extends BaseSecurityTest {
                         .with(asUserAdministrator())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(signupBody(VALID_USER_ID, VALID_PSWD, VALID_USER_NM, VALID_HINT)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.userId").value(VALID_USER_ID));
 

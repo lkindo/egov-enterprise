@@ -66,7 +66,7 @@ class PopupApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(post("/api/v1/admin/system/popups")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test

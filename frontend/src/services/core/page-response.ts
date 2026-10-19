@@ -1,6 +1,9 @@
 import type { PageResponse } from '@/types/foundation/system';
 
-/** 생성 페이지 응답 DTO(`PageResponse*Dto`)의 공통 모양. 서버는 다섯 필드를 모두 보내지만 생성 타입에서는 선택이다. */
+/**
+ * 생성 페이지 응답 DTO(`PageResponse*Dto`)의 공통 모양. [ADR-0036] 다섯 필드는 스펙에서 필수가 됐다 — 여기서 선택으로 두는 것은
+ * 수제 페이지 타입·옛 응답 모양(예: Spring `Page` 원형)도 받아 아래 실행 시점 검사로 거부하기 위해서다.
+ */
 export interface GeneratedPage<T> {
   list?: T[];
   total?: number;

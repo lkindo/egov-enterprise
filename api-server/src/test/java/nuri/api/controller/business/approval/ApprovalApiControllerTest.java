@@ -162,7 +162,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .content("""
                                 {"taskSeCd":"01","aprvrId":"BOSS_ESNTL"}
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
                         .jsonPath("$.data").value(42));
 
@@ -232,7 +232,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                              "stages":[{"kind":"AGREEMENT","approverIds":["REVIEWER_A","REVIEWER_B"]},
                                        {"kind":"APPROVAL","approverIds":["MANAGER"]}]}
                             """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         var dto = org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
         @SuppressWarnings("unchecked")
         var stages = (org.mockito.ArgumentCaptor<java.util.List<nuri.business.service.informalsanction.dto.ApprovalStageRequest>>)
@@ -376,7 +376,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .content("""
                                 {"docTtl":"쓰다 만 기안","stages":[{"kind":"AGREEMENT","approverIds":["A","B"]}]}
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         mockMvc.perform(put("/api/v1/approvals/temporary-drafts/5").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"taskSeCd":"01","docCn":"이어서 쓴 본문","version":2}
@@ -441,7 +441,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .content("""
                                 {"aplnNm":"팀장 결재","stages":[{"kind":"AGREEMENT","approverIds":["A","B"]}]}
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         mockMvc.perform(put("/api/v1/approvals/saved-lines/3").with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"aplnNm":"팀장 결재","stages":[{"kind":"APPROVAL","approverIds":["C"]}]}
@@ -503,13 +503,13 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "3")
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS_ESNTL\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.data").value(42));
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
                         .queryParam("temporaryDraftSn", "8")
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"taskSeCd\":\"01\",\"aprvrId\":\"BOSS_ESNTL\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         var dto = org.mockito.ArgumentCaptor.forClass(nuri.business.service.informalsanction.dto.InformalSanctionDto.class);
         verify(temporaryDraftService).submitWithTemporaryDraft(dto.capture(), org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.isNull(),
@@ -593,13 +593,13 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                             {"taskSeCd":"01","stages":[{"kind":"APPROVAL","approverIds":["BOSS"]}],"references":["CC1","CC2"]}
                             """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals")
                         .queryParam("temporaryDraftSn", "7").queryParam("temporaryDraftVersion", "3")
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                             {"taskSeCd":"01","aprvrId":"BOSS","references":["CC3"]}
                             """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/approvals/9/resubmissions")
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON).content("""
                             {"taskSeCd":"01","aprvrId":"BOSS","version":2,"references":["CC4"]}
@@ -696,7 +696,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .content("""
                                 {"docTtl":"쓰다 만 기안","references":["CC1"]}
                                 """))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         var created = org.mockito.ArgumentCaptor.forClass(
                 nuri.business.service.informalsanction.dto.ApprovalTemporaryDraftRequest.class);

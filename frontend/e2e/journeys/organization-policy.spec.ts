@@ -30,7 +30,7 @@ test.describe('Ops Governance', () => {
         const created = adminPage.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/admin/system/policies/${code}`
             && response.request().method() === 'POST');
         await dialog.getByRole('button', { name: '정책 등록하기', exact: true }).click();
-        expect((await created).status()).toBe(200);
+        expect((await created).status()).toBe(201);
         await expect(dialog).toBeHidden();
         const persisted = await adminRequest.get(`/api/v1/admin/system/policies/${code}`);
         expect(persisted.status()).toBe(200);

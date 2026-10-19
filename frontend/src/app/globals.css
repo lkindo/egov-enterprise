@@ -91,6 +91,14 @@
     25% { transform: translateX(-4px); }
     75% { transform: translateX(4px); }
   }
+
+  /* [2026-10-19] 라우트 진행 막대(route-progress.tsx)를 애니메이션 라이브러리 없이 그린다 — 종전 framer 의 circIn 0.6초와 같다. */
+  --ease-circ-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --animate-route-progress: route-progress-grow 0.6s var(--ease-circ-in) forwards;
+  @keyframes route-progress-grow {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
 }
 
 :root {

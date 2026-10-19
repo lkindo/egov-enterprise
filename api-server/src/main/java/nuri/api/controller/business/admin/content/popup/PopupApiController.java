@@ -45,11 +45,12 @@ public class PopupApiController {
 
     @Operation(summary = "팝업 등록", description = "새로운 팝업을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup')")
     public ResponseEntity<ApiResponse<Long>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PopupDto popupDto) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.createPopup(userDetails.getUsername(), popupDto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(popupService.createPopup(userDetails.getUsername(), popupDto)));
     }
 
     @Operation(summary = "팝업 정보 수정", description = "기존 팝업의 정보를 수정합니다.")

@@ -51,7 +51,7 @@ export function CommonCodeChangeHistoryDialog({
   const scope = target.kind === 'group' ? { cdId: target.id } : { clsfCd: target.id };
   const history = useQuery({
     queryKey: ['common-code-change-history', target.kind, target.id, page],
-    queryFn: () => codeAdminService.getCodeChangeHistory(scope, page - 1, PAGE_SIZE),
+    queryFn: () => codeAdminService.getCodeChangeHistory(scope, page, PAGE_SIZE),
     // 수정한 직후 다시 열어도 방금 남은 이력이 보이도록 열 때마다 다시 읽는다.
     staleTime: 0,
   });

@@ -38,22 +38,22 @@ class BaseSearchDtoPageableTest {
     class ValidationConstraints {
 
         @Test
-        @DisplayName("pageIndex 는 1-based 양수만 허용한다")
+        @DisplayName("page(HTTP 이름) 는 1-based 양수만 허용한다")
         void rejectsNonPositivePageIndex() {
             assertThat(validator.validate(dto(0, 10)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageIndex");
+                    .contains("page");
         }
 
         @Test
-        @DisplayName("pageUnit 은 1 이상 안전 상한 이하여야 한다")
+        @DisplayName("size(HTTP 이름) 는 1 이상 안전 상한 이하여야 한다")
         void rejectsPageUnitOutsideSafeRange() {
             assertThat(validator.validate(dto(1, 0)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageUnit");
+                    .contains("size");
             assertThat(validator.validate(dto(1, BaseSearchDto.MAX_PAGE_UNIT + 1)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageUnit");
+                    .contains("size");
         }
 
         @Test
@@ -144,15 +144,23 @@ class BaseSearchDtoPageableTest {
         }
 
         @Test
-        @DisplayName("pageSize 필드가 아니라 pageUnit 이 기준이다")
-        void usesPageUnitNotPageSizeField() {
-            // ⚠ 이 DTO 의 pageSize 는 **페이지 네비게이션 사이즈**(하단 페이지 번호 개수)이지
-            //   페이지당 레코드 수가 아니다. 이름만 보고 바꾸면 페이징이 조용히 어긋난다.
-            BaseSearchDto vo = dto(1, 25);
-            vo.setPageSize(3);
+        @DisplayName("HTTP 이름 page·size 와 내부 이름 pageIndex·pageUnit 은 같은 값이다(ADR-0036)")
+        void httpNamesAndInternalNamesShareOneValue() {
+            // 종전에는 pageSize(페이지 네비 크기)라는 다른 뜻의 필드가 있어 이름만 보고 바꾸면 페이징이 어긋났다.
+            //   그 필드를 걷고 HTTP 이름을 page·size 로 모았다 — 내부 호출부가 쓰는 종전 이름은 같은 두 값을 가리킨다.
+            BaseSearchDto vo = new BaseSearchDto();
+            vo.setPage(3);
+            vo.setSize(25);
 
-            assertThat(vo.toPageable().getPageSize())
-                    .as("pageUnit(25)을 써야 한다 — pageSize(3)가 아니다").isEqualTo(25);
+            assertThat(vo.getPageIndex()).isEqualTo(3);
+            assertThat(vo.getPageUnit()).isEqualTo(25);
+            assertThat(vo.toPageable().getPageNumber()).isEqualTo(2);
+            assertThat(vo.toPageable().getPageSize()).isEqualTo(25);
+
+            vo.setPageIndex(4);
+            vo.setPageUnit(7);
+            assertThat(vo.getPage()).isEqualTo(4);
+            assertThat(vo.getSize()).isEqualTo(7);
         }
     }
 

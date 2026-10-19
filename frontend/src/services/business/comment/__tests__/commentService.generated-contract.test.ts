@@ -20,6 +20,9 @@ const comment = {
   crtDt: '2026-08-30T12:00:00',
 };
 
+// 목록 응답의 PageResponse 다섯 필드는 계약상 필수다(ADR-0036).
+const pageOf = (list: unknown[]) => ({ list, total: list.length, page: 1, size: 10, totalPage: 1 });
+
 const successEnvelope = (data: unknown) => ({
   success: true,
   code: 'S000',
@@ -30,8 +33,8 @@ const successEnvelope = (data: unknown) => ({
 describe('commentService generated response contract', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('generated PageResponseCommentDto를 검증하고 UI용 페이지 기본값을 보정한다', async () => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [comment], total: 1 }));
+  it('generated PageResponseCommentDto를 검증해 화면 페이지 모델로 넘긴다', async () => {
+    client.getRaw.mockResolvedValueOnce(successEnvelope(pageOf([comment])));
 
     await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).resolves.toEqual({
       list: [comment],
@@ -46,23 +49,17 @@ describe('commentService generated response contract', () => {
   });
 
   it('화면 식별에 필요한 generated Comment 필드가 빠진 행은 경계에서 거부한다', async () => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({
-      list: [{ ...comment, ansSn: undefined }],
-      total: 1,
-    }));
+    client.getRaw.mockResolvedValueOnce(successEnvelope(pageOf([{ ...comment, ansSn: undefined }])));
 
     await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).rejects.toThrow();
   });
 
   it('계약상 nullable 작성자·등록일을 UI 표시값으로 안전하게 정규화한다', async () => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({
-      list: [{
-        ...comment,
-        wrterNm: null,
-        crtDt: null,
-      }],
-      total: 1,
-    }));
+    client.getRaw.mockResolvedValueOnce(successEnvelope(pageOf([{
+      ...comment,
+      wrterNm: null,
+      crtDt: null,
+    }])));
 
     const page = await commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' });
 
@@ -77,39 +74,32 @@ describe('commentService generated response contract', () => {
   });
 
   it.each(['frstRgtrId', 'wrterId'])('작성자 식별자 %s가 재유입해도 화면 소비자에게 전달하지 않는다', async (field) => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [{ ...comment, [field]: 'private-login' }], total: 1 }));
+    client.getRaw.mockResolvedValueOnce(successEnvelope(pageOf([{ ...comment, [field]: 'private-login' }])));
     const response = await commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' });
     expect(response.list).toEqual([comment]);
     expect(response.list[0]).not.toHaveProperty(field);
   });
 
-  it('writeOnly 비밀번호가 응답에 섞이면 서비스 경계에서 거부한다', async () => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({
-      list: [{ ...comment, pswd: 'response-must-not-retain-this' }],
-      total: 1,
-    }));
+  it('폐기된 익명 비밀번호(pswd)는 계약에 없다 — 응답에 섞여 와도 화면 소비자에게 전달하지 않는다', async () => {
+    // 서버는 이 필드를 받지도 저장하지도 않는다(CommentDto 에서 제거). 계약 밖 필드는 작성자 식별자처럼 걸러진다.
+    client.getRaw.mockResolvedValueOnce(successEnvelope(pageOf([{ ...comment, pswd: 'response-must-not-retain-this' }])));
 
-    await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).rejects.toThrow(
-      '생성 API 응답에 허용되지 않은 필드가 있습니다.',
-    );
+    const response = await commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' });
+
+    expect(response.list).toEqual([comment]);
+    expect(response.list[0]).not.toHaveProperty('pswd');
     expect(client.getRaw).toHaveBeenCalledWith('comments', {
       params: { pstSn: 7, bbsId: 'BBSMSTR_A' },
     });
   });
 
-  it('현재 계약에 없는 legacy resultList/paginationInfo를 목록으로 오인하지 않는다', async () => {
+  it('현재 계약에 없는 legacy resultList/paginationInfo 응답은 페이지 필드가 없어 경계에서 거부한다', async () => {
     client.getRaw.mockResolvedValueOnce(successEnvelope({
       resultList: [comment],
       paginationInfo: { totalRecordCount: 1 },
     }));
 
-    await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).resolves.toEqual({
-      list: [],
-      total: 0,
-      page: 1,
-      size: 10,
-      totalPage: 1,
-    });
+    await expect(commentService.getComments({ pstSn: 7, bbsId: 'BBSMSTR_A' })).rejects.toThrow('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.');
   });
 
   it('등록·수정·삭제를 generated operation으로 실행한다', async () => {

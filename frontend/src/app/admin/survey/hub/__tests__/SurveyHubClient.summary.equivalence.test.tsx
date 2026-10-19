@@ -106,7 +106,7 @@ describe('설문 관리 허브 요약 — 동등성', () => {
     renderHub();
     await settled();
 
-    expect(countCalls()).toEqual([[SURVEYS_URL, { params: { keyword: '', page: 0, size: 1 } }]]);
+    expect(countCalls()).toEqual([[SURVEYS_URL, { params: { keyword: '', page: 1, size: 1 } }]]);
     expect(callsTo(SUMMARY_URL)).toEqual([[SUMMARY_URL, undefined]]);
   });
 

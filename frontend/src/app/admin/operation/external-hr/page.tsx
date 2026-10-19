@@ -18,8 +18,8 @@ export default async function ExternalHrPage() {
     // 실패 시 null 을 넘겨 클라이언트가 직접 재조회하고, 실패하면 error/onRetry 로 화면에 드러내게 한다.
     let initialPage: PageResponse<ExternalHr> | null = null;
     try {
-        // 서버는 0-based Pageable 을 받는다 (page=0 → 1페이지)
-        initialPage = await externalHrAdminService.getExternalHrList({ page: 0, size: PAGE_SIZE });
+        // 서버는 1부터 세는 page 를 받는다(ADR-0036)
+        initialPage = await externalHrAdminService.getExternalHrList({ page: 1, size: PAGE_SIZE });
     } catch {
         // null 시드는 클라이언트 재조회와 기존 오류 상태를 유지한다.
     }

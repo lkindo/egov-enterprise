@@ -49,11 +49,12 @@ public class WorkReportApiController {
 
     @Operation(summary = "작업보고 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.report.WorkReportApiController#createWorkReport')")
-    public ResponseEntity<ApiResponse<Void>> createWorkReport(@Valid @RequestBody WorkReportDto dto) {
+    public ResponseEntity<ApiResponse<Long>> createWorkReport(@Valid @RequestBody WorkReportDto dto) {
         // 작성자는 서비스가 인증 주체(loginId)로 fail-closed 고정한다 — 요청 값은 신뢰하지 않는다.
-        workReportService.createWorkReport(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long rptpSn = workReportService.createWorkReport(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(rptpSn));
     }
 
     @Operation(summary = "작업보고 수정")

@@ -92,8 +92,8 @@ class LoginLogApiControllerTest {
 
         // 화면 페이징 값(pageIndex=7, pageUnit=2)이 그대로면 2행만 나와야 하지만, export 는 전량이어야 한다.
         MvcResult asyncStarted = mockMvc.perform(get(EXPORT_URL)
-                        .param("pageIndex", "7")
-                        .param("pageUnit", "2")
+                        .param("page", "7")
+                        .param("size", "2")
                         .param("searchKeyword", "PWD")
                         .param("searchKeywordFrom", "2026-08-01")
                         .param("searchKeywordTo", "2026-08-31"))

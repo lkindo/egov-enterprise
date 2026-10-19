@@ -92,7 +92,7 @@ export function CommunityManageDialog({ isOpen, onClose }: CommunityManageDialog
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-communities', 'manage', page],
-    queryFn: () => communityAdminService.getCommunityList({ page: page - 1, size: PAGE_SIZE }),
+    queryFn: () => communityAdminService.getCommunityList({ page, size: PAGE_SIZE }),
     enabled: isOpen,
   });
   // 템플릿은 커뮤니티의 선택 연동이다(DEC-OPS-280). 후보는 커뮤니티 API 로 받는다 — 템플릿 관리 API 를 직접 부르면 템플릿이

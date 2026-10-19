@@ -14,7 +14,7 @@ vi.mock('@/services/business/knowledge/knowledgeService', async (importOriginal)
 describe('knowledge list server pagination', () => {
   beforeEach(() => {
     mocks.getArticles.mockReset().mockImplementation(async ({ page, orderBy }) => ({
-      list: [{ pstSn: page * 20 + 1, bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstTtl: `${orderBy}-페이지-${page + 1}`, inqCnt: 1 }], total: 41,
+      list: [{ pstSn: (page - 1) * 20 + 1, bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstTtl: `${orderBy}-페이지-${page}`, inqCnt: 1 }], total: 41,
     }));
   });
   it('can reach later records and resets to page one for server-wide sorting and search', async () => {
@@ -26,16 +26,16 @@ describe('knowledge list server pagination', () => {
     expect(mocks.getArticles).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('link', { name: '2' }));
     await screen.findByText('date-페이지-2');
-    expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, size: 20, orderBy: 'date' }));
+    expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, size: 20, orderBy: 'date' }));
     fireEvent.click(screen.getByRole('button', { name: '조회순' }));
     await screen.findByText('views-페이지-1');
-    expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, orderBy: 'views' }));
+    expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, orderBy: 'views' }));
     fireEvent.click(screen.getByRole('link', { name: '3' }));
     await screen.findByText('views-페이지-3');
     fireEvent.change(screen.getByRole('textbox', { name: '지식 검색어' }), { target: { value: '검색어' } });
     // [DIP C9] 검색어는 조회 버튼이나 Enter 로 적용한다.
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, searchWrd: '검색어', orderBy: 'views' })));
+    await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, searchWrd: '검색어', orderBy: 'views' })));
   });
 
   it('🚨 검색 안내가 실제 범위(제목)를 말한다 — 서버는 제목만 찾는다 (DIP V9)', async () => {

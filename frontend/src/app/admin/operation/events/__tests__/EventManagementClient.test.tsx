@@ -280,7 +280,7 @@ describe('EventManagementClient create validation', () => {
     expect(mocks.getEvents).toHaveBeenCalledTimes(calls);
 
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.getEvents).toHaveBeenLastCalledWith(expect.objectContaining({ searchWrd: '워크숍', page: 0 })));
+    await waitFor(() => expect(mocks.getEvents).toHaveBeenLastCalledWith(expect.objectContaining({ searchWrd: '워크숍', page: 1 })));
   });
 
   it('외부인사가 남은 행사의 삭제 거부는 서버가 준 사유와 건수를 그대로 보인다', async () => {

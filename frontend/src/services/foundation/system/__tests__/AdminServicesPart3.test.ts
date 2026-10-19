@@ -29,7 +29,7 @@ describe('Admin System Services Part 3 (Specialized)', () => {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+      data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
     });
     vi.mocked(client.requestRaw).mockResolvedValue({
       success: true,
@@ -40,9 +40,9 @@ describe('Admin System Services Part 3 (Specialized)', () => {
   });
 
   it('AuditAdminService calls correct endpoints', async () => {
-    await auditAdminService.getAuditLogs({ page: 0 });
+    await auditAdminService.getAuditLogs({ page: 1 });
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/logs/system', {
-      params: { pageIndex: 1 },
+      params: { page: 1 },
     });
   });
 

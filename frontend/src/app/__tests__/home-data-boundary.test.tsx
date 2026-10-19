@@ -84,7 +84,7 @@ describe('업무 홈 서버 자식', () => {
     // 게시판 기여 네 조각은 같은 조회다 — 한 번만 부른다.
     expect([...server.calls].sort()).toEqual(['approvals/pending', 'dashboard']);
     expect(element.props.state?.queries.map(query => query.queryKey)).toEqual(
-      expect.arrayContaining([['home', 'board'], ['approvals', 'list', 'PENDING', { page: 0, size: 1 }]]),
+      expect.arrayContaining([['home', 'board'], ['approvals', 'list', 'PENDING', { page: 1, size: 1 }]]),
     );
 
     server.calls = [];

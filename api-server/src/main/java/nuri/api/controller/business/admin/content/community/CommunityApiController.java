@@ -50,12 +50,13 @@ public class CommunityApiController {
 
     @Operation(summary = "커뮤니티 개설 신청/등록", description = "새로운 커뮤니티 개설을 신청하거나 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.community.CommunityApiController#createCommunity')")
     public ResponseEntity<ApiResponse<CommunityDto>> createCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CommunityDto communityDto) {
-        return ResponseEntity
-                .ok(ApiResponse.success(communityService.createCommunity(userDetails.getUsername(), communityDto)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.created(communityService.createCommunity(userDetails.getUsername(), communityDto)));
     }
 
     @Operation(summary = "커뮤니티 정보 수정", description = "커뮤니티 명칭, 소개 등 기본 정보를 수정합니다.")

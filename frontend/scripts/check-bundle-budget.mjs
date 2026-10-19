@@ -10,10 +10,11 @@
  *
  * ## 실측 기준(갱신 시 날짜와 함께 남길 것)
  *
- * | 측정일 | JS 합계 | JS 최대 | CSS 합계 | CSS 최대 |
- * |---|---|---|---|---|
- * | 2026-08-12 | 2,048,260B | 133,566B | 35,223B | 34,200B |
- * | 2026-09-03 | 2,201,553B | 133,489B | 35,048B | 34,025B |
+ * | 측정일 | JS 합계 | JS 최대 | CSS 합계 | CSS 최대 | JS 공용 |
+ * |---|---|---|---|---|---|
+ * | 2026-08-12 | 2,048,260B | 133,566B | 35,223B | 34,200B | - |
+ * | 2026-09-03 | 2,201,553B | 133,489B | 35,048B | 34,025B | - |
+ * | 2026-10-19 | 1,881,283B | 148,518B | 29,409B | 28,424B | 345,355B |
  *
  * [2026-09-03] **JS 합계가 3주 만에 +153,293B(+7.5%) 늘어 설계 여유 10% 중 78%를 먹었다**
  * (남은 여유 2.2%). 종전에는 이 사실이 어디에도 드러나지 않았다 — 스크립트가 여유 50% 일 때와
@@ -33,6 +34,15 @@
  * 글꼴은 `display: swap` 으로 받으므로 미리 불러오지 않아도 본문은 대체 글꼴로 먼저 보인다. next/font 매니페스트
  * (`.next/server/next-font-manifest.json`)에서 라우트마다 preload 되는 글꼴 바이트를 더해 가장 큰 라우트를 본다.
  * 매니페스트가 없으면 측정할 수 없으므로 통과시키지 않는다.
+ *
+ * [2026-10-19] **모든 라우트가 첫 로드에 받는 JS(공용 JS)를 센다.** 합계·단일 청크 예산은 어느 화면이 무엇을 받는지 말하지
+ * 않는다 — 루트 레이아웃이 끌어온 모듈은 121개 라우트 모두의 첫 로드에 실리는데도 두 예산 안이었다. 실측(main 682d203f3)에서
+ * 공용 JS 는 414,239B 로 업무 홈 첫 로드(419,361B)의 99% 였고, 그 안에 루트의 화면 전환·사이드바가 부른 framer-motion(약 40KB)과
+ * 루트의 인증·메뉴 연산 몇 개가 끌어온 생성 스키마·연산 전체(약 37KB, 한 파일이라 번들러가 나누지 못했다)가 있었다.
+ * 앞의 것은 CSS 로, 뒤의 것은 생성기가 API 태그 묶음 모듈로 나눠 345,355B 로 줄였다(라우트 첫 로드 평균 447,718B → 415,471B).
+ * 공용 JS 는 루트 레이아웃 아래 모든 페이지의 첫 로드 JS 의 교집합이다. 페이지마다 첫 로드 JS 는 build-manifest 의 rootMainFiles 와
+ * 그 페이지 client reference 매니페스트(`.next/server/app/**\/page_client-reference-manifest.js`)의 entryJSFiles 전부의 합집합이다.
+ * 루트 레이아웃 entry 가 없는 페이지(`_global-error`)는 루트 레이아웃 밖이라 뺀다. 매니페스트를 읽지 못하면 통과시키지 않는다.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -40,7 +50,8 @@ import { gzipSync } from 'node:zlib';
 
 const CHUNK_ROOT = path.resolve('.next/static/chunks');
 const BUDGETS = {
-  js: { total: 2_250_000, single: 150_000 },
+  // shared: 공용 JS(위 2026-10-19). 실측 345,355B 를 정책 하한(여유 10%) 안에 두는 가장 작은 천 단위 값이다.
+  js: { total: 2_250_000, single: 150_000, shared: 384_000 },
   css: { total: 40_000, single: 38_000 },
 };
 
@@ -71,6 +82,58 @@ async function measurePreloadedFonts() {
     if (bytes > largest.bytes) largest = { route, bytes, files };
   }
   return largest;
+}
+
+const BUILD_MANIFEST = path.resolve('.next/build-manifest.json');
+const APP_SERVER_ROOT = path.resolve('.next/server/app');
+const CLIENT_REFERENCE_MANIFEST = 'page_client-reference-manifest.js';
+/** entryJSFiles 의 루트 레이아웃 키(`[project]/frontend/src/app/layout` — turbopack root 에 따라 앞부분이 달라진다). */
+const ROOT_LAYOUT_ENTRY = /(?:^|\/)src\/app\/layout$/u;
+/** 매니페스트 한 줄: `globalThis.__RSC_MANIFEST["/login/page"] = {...};` — 실행하지 않고 JSON 으로 읽는다. */
+const MANIFEST_ASSIGNMENT = /^globalThis\.__RSC_MANIFEST\[("(?:[^"\\]|\\.)*")\]\s*=\s*(\{.*\});?\s*$/u;
+
+/** client reference 매니페스트 파일 하나의 페이지들. 형식을 모르면 측정할 수 없으므로 실패한다. */
+function parseClientReferenceManifest(source, file) {
+  const pages = [];
+  for (const line of source.split(/\r?\n/u)) {
+    if (!line.startsWith('globalThis.__RSC_MANIFEST[')) continue;
+    const match = MANIFEST_ASSIGNMENT.exec(line);
+    if (!match) throw new Error(`client reference 매니페스트 형식을 읽지 못했습니다: ${file}`);
+    pages.push({ page: JSON.parse(match[1]), manifest: JSON.parse(match[2]) });
+  }
+  if (pages.length === 0) throw new Error(`client reference 매니페스트에 페이지가 없습니다: ${file}`);
+  return pages;
+}
+
+/**
+ * 공용 JS — 루트 레이아웃 아래 모든 페이지가 첫 로드에 받는 JS 파일의 교집합과 그 gzip 크기.
+ * 페이지의 첫 로드 JS = build-manifest 의 rootMainFiles ∪ 그 페이지 매니페스트의 entryJSFiles 전부(레이아웃·경계·페이지).
+ */
+async function measureSharedJs() {
+  const { rootMainFiles } = JSON.parse(await readFile(BUILD_MANIFEST, 'utf8'));
+  if (!Array.isArray(rootMainFiles) || rootMainFiles.length === 0) {
+    throw new Error('build-manifest.json 에 rootMainFiles 가 없습니다');
+  }
+  const manifests = (await walk(APP_SERVER_ROOT)).filter((file) => path.basename(file) === CLIENT_REFERENCE_MANIFEST);
+  let shared = null;
+  let pages = 0;
+  for (const file of manifests) {
+    for (const { manifest } of parseClientReferenceManifest(await readFile(file, 'utf8'), file)) {
+      const entries = manifest.entryJSFiles ?? {};
+      if (!Object.keys(entries).some((entry) => ROOT_LAYOUT_ENTRY.test(entry))) continue;
+      const firstLoad = new Set(rootMainFiles);
+      for (const files of Object.values(entries)) for (const chunk of files) firstLoad.add(chunk);
+      shared = shared === null ? firstLoad : new Set([...shared].filter((chunk) => firstLoad.has(chunk)));
+      pages += 1;
+    }
+  }
+  if (pages === 0) throw new Error('루트 레이아웃 아래 페이지의 client reference 매니페스트를 찾지 못했습니다 — next build 선행 여부를 확인하십시오');
+  const rows = await Promise.all([...shared].map(async (chunk) => ({
+    file: chunk,
+    gzip: gzipSync(await readFile(path.resolve('.next', chunk)), { level: 9 }).byteLength,
+  })));
+  rows.sort((left, right) => right.gzip - left.gzip);
+  return { pages, rows, total: rows.reduce((sum, row) => sum + row.gzip, 0) };
 }
 
 function headroomOf(actual, budget) {
@@ -153,6 +216,26 @@ try {
         + `가 단일 예산 ${formatBytes(budget.single)} 초과`,
       );
     }
+  }
+
+  const shared = await measureSharedJs();
+  const sharedHeadroom = headroomOf(shared.total, BUDGETS.js.shared);
+  const largestShared = shared.rows.slice(0, 3).map((row) => `${row.file} ${formatBytes(row.gzip)}`).join(', ');
+  console.log(
+    `JS 공용(루트 레이아웃 아래 ${shared.pages}개 페이지가 모두 받는 첫 로드): ${shared.rows.length}개 · gzip `
+    + `${formatBytes(shared.total)}/${formatBytes(BUDGETS.js.shared)} (여유 ${formatHeadroom(sharedHeadroom)}) · 큰 청크 ${largestShared}`,
+  );
+  if (sharedHeadroom.ratio < HEADROOM_FLOOR && sharedHeadroom.remaining >= 0) {
+    console.warn(
+      `⚠ JS 공용 여유 ${formatHeadroom(sharedHeadroom)} — 정책 하한 ${(HEADROOM_FLOOR * 100).toFixed(0)}% 미만입니다(차단하지 않음).\n`
+      + '   루트 레이아웃(src/app/layout.tsx)·providers 에서 새로 닿은 모듈부터 점검하십시오.',
+    );
+  }
+  if (shared.total > BUDGETS.js.shared) {
+    violations.push(
+      `모든 라우트가 첫 로드에 받는 JS gzip ${formatBytes(shared.total)}가 공용 예산 ${formatBytes(BUDGETS.js.shared)} 초과`
+      + ` — 루트 레이아웃(src/app/layout.tsx)에서 닿는 모듈을 점검하십시오(큰 청크: ${largestShared}).`,
+    );
   }
 
   const fonts = await measurePreloadedFonts();

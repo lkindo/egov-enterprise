@@ -105,7 +105,7 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
                         // evntSn(@NotNull)·otsdHrId(@NotBlank)가 필수다 — 둘을 빼면 400 이다.
                         .content("{\"evntSn\":1,\"otsdHrId\":\"HR001\",\"otsdHrNm\":\"홍길동\"}")
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
@@ -128,7 +128,7 @@ class ExternalHrApiControllerTest extends ControllerTestSupport {
                                 }
                                 """)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         ArgumentCaptor<ExternalHrDto> captor = ArgumentCaptor.forClass(ExternalHrDto.class);
         org.mockito.Mockito.verify(externalHrService).createExternalHr(captor.capture());

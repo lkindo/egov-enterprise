@@ -42,7 +42,7 @@ describe('CommonCodeChangeHistoryDialog', () => {
     renderDialog({ kind: 'group', id: 'GRP1', name: '사용자 상태' });
 
     const dialog = await screen.findByRole('dialog', { name: '사용자 상태 변경 이력' });
-    expect(mocks.getHistory).toHaveBeenCalledWith({ cdId: 'GRP1' }, 0, 10);
+    expect(mocks.getHistory).toHaveBeenCalledWith({ cdId: 'GRP1' }, 1, 10);
     expect(await within(dialog).findByText('상세 코드 ACTIVE')).toBeInTheDocument();
     expect(within(dialog).getByText('2026-09-27 10:15:30')).toBeInTheDocument();
     expect(within(dialog).getAllByText('수정').length).toBeGreaterThan(0);
@@ -61,18 +61,18 @@ describe('CommonCodeChangeHistoryDialog', () => {
     renderDialog({ kind: 'cluster', id: 'DOMAIN', name: '업무 도메인' });
 
     const dialog = await screen.findByRole('dialog', { name: '업무 도메인 변경 이력' });
-    expect(mocks.getHistory).toHaveBeenCalledWith({ clsfCd: 'DOMAIN' }, 0, 10);
+    expect(mocks.getHistory).toHaveBeenCalledWith({ clsfCd: 'DOMAIN' }, 1, 10);
     expect(await within(dialog).findByText('남은 변경 이력이 없습니다.')).toBeInTheDocument();
     expect(within(dialog).getByText(/소속 그룹의 이력은 그룹에서 확인하세요/)).toBeInTheDocument();
   });
 
-  it('다음 페이지는 0부터 센 페이지 번호로 다시 읽는다', async () => {
+  it('다음 페이지는 1부터 센 페이지 번호로 다시 읽는다(ADR-0036)', async () => {
     renderDialog({ kind: 'group', id: 'GRP1', name: '사용자 상태' });
     const dialog = await screen.findByRole('dialog', { name: '사용자 상태 변경 이력' });
     await within(dialog).findByText('상세 코드 ACTIVE');
 
     fireEvent.click(within(dialog).getByRole('link', { name: '다음 페이지로 이동' }));
-    await waitFor(() => expect(mocks.getHistory).toHaveBeenLastCalledWith({ cdId: 'GRP1' }, 1, 10));
+    await waitFor(() => expect(mocks.getHistory).toHaveBeenLastCalledWith({ cdId: 'GRP1' }, 2, 10));
   });
 
   it('조회에 실패하면 빈 이력이라 말하지 않고 실패를 알리며 다시 시도할 수 있다', async () => {

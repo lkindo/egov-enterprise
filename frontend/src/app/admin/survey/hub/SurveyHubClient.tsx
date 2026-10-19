@@ -92,7 +92,7 @@ export function SurveyHubClient() {
     refetch: refetchSurveys,
   } = useQuery({
     queryKey: ['admin-surveys-all'],
-    queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, recordCountPerPage: 1 }),
+    queryFn: () => surveyAdminService.getSurveyList({ page: 1, size: 1 }),
   });
 
   const {

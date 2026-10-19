@@ -4,7 +4,6 @@ import { use, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Database, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { menuService } from '@/services/business/user/MenuService';
@@ -119,20 +118,17 @@ export function Sidebar({
 
   return (
     <>
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.button
-            type="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="주 메뉴 닫기"
-            tabIndex={-1}
-          />
-        )}
-      </AnimatePresence>
+      {/* [2026-10-19] 좁은 화면 서랍의 배경막. 애니메이션 라이브러리 없이 CSS 로 나타나고 사라진다 — 닫히면 hidden 이라
+          접근성 트리·클릭에서 빠지고, 나타날 때는 @starting-style(starting:), 사라질 때는 display 의 discrete 전환으로 0.3초 흐려진다.
+          동작 줄이기를 고르면 globals.css 의 reduced-motion 규칙이 전환을 즉시 끝낸다. */}
+      <button
+        type="button"
+        hidden={!isSidebarOpen}
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm opacity-100 transition-[opacity,display] transition-discrete duration-300 starting:opacity-0 [&[hidden]]:opacity-0 lg:hidden"
+        onClick={() => setSidebarOpen(false)}
+        aria-label="주 메뉴 닫기"
+        tabIndex={-1}
+      />
 
       {/* [2026-10-05 DEC-OPS-228] data-app-sidebar — 넓은 화면에서 경계선 단추로 접으면 globals.css 가 이 상자를 좁은 띠
           (--app-sidebar-rail-width)로 줄이고 안쪽 내용 컨테이너(data-app-sidebar-content)만 display:none 으로 숨긴다 — 메뉴는

@@ -56,10 +56,11 @@ public class MenuApiController {
 
     @Operation(summary = "메뉴 등록", description = "새로운 시스템 메뉴를 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.MenuApiController#createMenu')")
-    public ResponseEntity<ApiResponse<Void>> createMenu(@Valid @RequestBody MenuDto dto) throws Exception {
-        menuService.insertMenuManage(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> createMenu(@Valid @RequestBody MenuDto dto) throws Exception {
+        Long menuNo = menuService.insertMenuManage(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(menuNo));
     }
 
     @Operation(summary = "메뉴 정보 수정", description = "기존 시스템 메뉴 정보를 수정합니다.")

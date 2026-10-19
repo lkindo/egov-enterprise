@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
-import { helpUserService, isQnaSolved, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
+import { helpUserService, isQnaSolved, FAQ, QNA, type HelpGuide } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
-import { HelpCircle, MessageCircle, ChevronDown, PlusCircle } from 'lucide-react';
+import { HelpCircle, MessageCircle, ChevronDown, PlusCircle, BookOpen, FileText } from 'lucide-react';
+import { HelpGuideList, GUIDE_TAB_COPY, type GuideTab } from './HelpGuideList';
 import { cn } from '@/lib/utils';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -65,13 +66,20 @@ type AskFormValues = z.infer<typeof askSchema>;
 
 const ASK_FORM_LABELS = { pstTtl: '제목', pstCn: '내용' };
 
+/**
+ * 도움말 센터의 탭. 도움말·온라인 매뉴얼은 관리 화면(/admin/system/hpcm·/admin/uss/olh/online-manual)이 등록한 것을
+ * 읽기만 한다(2026-10-19). 종전에는 등록만 되고 일반 사용자가 읽는 화면이 없었다.
+ */
+type HelpTab = 'faq' | 'qna' | GuideTab;
+
 export default function HelpClient() {
   const { toast } = useToast();
-  const [tab, setTab] = useState<'faq' | 'qna'>('faq');
+  const [tab, setTab] = useState<HelpTab>('faq');
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [qnas, setQnas] = useState<QNA[]>([]);
+  const [guides, setGuides] = useState<HelpGuide[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<{ tab: 'faq' | 'qna'; message: string } | null>(null);
+  const [loadError, setLoadError] = useState<{ tab: HelpTab; message: string } | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
@@ -93,14 +101,22 @@ export default function HelpClient() {
         setLoading(true);
         setLoadError(null);
         if (tab === 'faq') {
-          const res = await helpUserService.getFaqs({ page: page - 1, size: requestSize, keyword: searchKeyword });
+          const res = await helpUserService.getFaqs({ page, size: requestSize, keyword: searchKeyword });
           if (cancelled) return;
           setFaqs(res.list || []);
           setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
-        } else {
-          const res = await helpUserService.getQnas({ page: page - 1, size: requestSize, keyword: searchKeyword });
+        } else if (tab === 'qna') {
+          const res = await helpUserService.getQnas({ page, size: requestSize, keyword: searchKeyword });
           if (cancelled) return;
           setQnas(res.list || []);
+          setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
+        } else {
+          const query = { page, size: requestSize, keyword: searchKeyword };
+          const res = tab === 'guide'
+            ? await helpUserService.getHelpGuides(query)
+            : await helpUserService.getOnlineManuals(query);
+          if (cancelled) return;
+          setGuides(res.list || []);
           setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
         }
       } catch {
@@ -111,9 +127,12 @@ export default function HelpClient() {
         if (tab === 'faq') {
           setFaqs([]);
           setLoadError({ tab: 'faq', message: '자주 묻는 질문을 불러오지 못했습니다.' });
-        } else {
+        } else if (tab === 'qna') {
           setQnas([]);
           setLoadError({ tab: 'qna', message: 'Q&A 문의 내역을 불러오지 못했습니다.' });
+        } else {
+          setGuides([]);
+          setLoadError({ tab, message: GUIDE_TAB_COPY[tab].loadError });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -122,7 +141,7 @@ export default function HelpClient() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [tab, searchKeyword, reloadToken, page, requestSize]);
 
-  const changeTab = (nextTab: 'faq' | 'qna') => {
+  const changeTab = (nextTab: HelpTab) => {
     if (nextTab === tab) return;
     setTab(nextTab);
     setPage(1);
@@ -222,7 +241,7 @@ export default function HelpClient() {
   return (
     <WorkListPage
       title="도움말 센터"
-      description="자주 묻는 질문을 확인하거나 1:1 문의 내역을 조회합니다."
+      description="자주 묻는 질문·도움말·온라인 매뉴얼을 읽거나 1:1 문의 내역을 조회합니다."
       breadcrumbItems={[{ label: '지원서비스' }, { label: '도움말센터' }]}
       filterStateKey="help-center"
       actions={
@@ -240,6 +259,20 @@ export default function HelpClient() {
             onClick={() => changeTab('qna')}
             icon={<MessageCircle size={16} aria-hidden="true" />}
             label="1:1 Q&A 문의"
+          />
+          <TabButton
+            id={helpTabId('guide')}
+            active={tab === 'guide'}
+            onClick={() => changeTab('guide')}
+            icon={<BookOpen size={16} aria-hidden="true" />}
+            label={GUIDE_TAB_COPY.guide.label}
+          />
+          <TabButton
+            id={helpTabId('manual')}
+            active={tab === 'manual'}
+            onClick={() => changeTab('manual')}
+            icon={<FileText size={16} aria-hidden="true" />}
+            label={GUIDE_TAB_COPY.manual.label}
           />
         </TabList>
       }
@@ -266,7 +299,24 @@ export default function HelpClient() {
     >
       <TabPanel id={HELP_TABPANEL_ID} aria-labelledby={helpTabId(tab)} className="space-y-6">
         <AnimatePresence mode="wait">
-          {tab === 'faq' ? (
+          {tab === 'guide' || tab === 'manual' ? (
+            <motion.div
+              key={`${tab}-content`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <HelpGuideList
+                tab={tab}
+                guides={guides}
+                loading={loading}
+                error={currentLoadError}
+                onRetry={retryLoad}
+                searchKeyword={searchKeyword}
+              />
+            </motion.div>
+          ) : tab === 'faq' ? (
             <motion.div
               key="faq-content"
               initial={{ opacity: 0, y: 20 }}

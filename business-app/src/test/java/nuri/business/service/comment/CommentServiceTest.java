@@ -168,7 +168,6 @@ class CommentServiceTest {
                 .bbsId("BBS_01")
                 .wrterId("user1")
                 .wrterNm("Tester")
-                .pswd("1234")
                 .ansCn("New Comment")
                 .build();
         Comment savedComment = Comment.builder()
@@ -210,6 +209,35 @@ class CommentServiceTest {
         verify(commentRepository).save(saved.capture());
         assertThat(saved.getValue().getWrterId()).isEqualTo("USRCNFRM_00000000001");
         assertThat(saved.getValue().getWrterNm()).isEqualTo("홍길동");
+    }
+
+    @Test
+    @DisplayName("🔒 요청이 익명 비밀번호(pswd)를 실어 와도 저장하지 않는다 — 폐기 필드를 평문으로 남기지 않는다")
+    void createComment_neverStoresRequestPassword() throws Exception {
+        // HTTP 경계는 모르는 필드를 400 으로 거부한다(CommentApiControllerTest). 여기서는 그 경계가 느슨하더라도
+        //   서비스·엔티티 생성 경로가 비밀번호를 받아 적지 않는지를 본다 — 그래서 모르는 필드를 버리는 매퍼로 읽는다.
+        String body = "{\"pstSn\":1,\"bbsId\":\"BBS_01\",\"ansCn\":\"본문\",\"pswd\":\"plain-secret-1234\"}";
+        CommentDto request = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2()
+                .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()
+                .readValue(body, CommentDto.class);
+        given(commentRepository.save(any(Comment.class)))
+                .willReturn(Comment.builder().ansSn(9L).build());
+
+        commentService.createComment("USRCNFRM_00000000001", "홍길동", request);
+
+        org.mockito.ArgumentCaptor<Comment> saved = org.mockito.ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(saved.capture());
+        // 저장 엔티티의 어떤 영속 필드에도 요청 비밀번호 값이 남지 않는다(필드 이름이 아니라 값으로 판정한다).
+        java.util.List<String> leaked = new java.util.ArrayList<>();
+        for (Class<?> type = Comment.class; type != null && type != Object.class; type = type.getSuperclass()) {
+            for (java.lang.reflect.Field field : type.getDeclaredFields()) {
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) continue;
+                field.setAccessible(true);
+                if ("plain-secret-1234".equals(field.get(saved.getValue()))) leaked.add(field.getName());
+            }
+        }
+        assertThat(leaked).as("댓글 저장 엔티티에 요청 비밀번호가 평문으로 남았다").isEmpty();
+        assertThat(saved.getValue().getAnsCn()).isEqualTo("본문");
     }
 
     @Test

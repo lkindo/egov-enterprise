@@ -47,7 +47,7 @@ class FileApiControllerTest {
         // When & Then
         mockMvc.perform(multipart("/api/v1/files")
                 .file(file1))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(101));
     }

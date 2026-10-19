@@ -20,9 +20,13 @@ import { toDisplayYmd } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-status';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 
 export default function OnlinePollParticipateClient() {
   const toast = useToast();
+  const confirm = useConfirm();
+  /** 확인 대화상자가 열리기 전의 연속 클릭이 두 번째 확인·제출을 만들지 않게 하는 동기 잠금. */
+  const voteLockRef = useRef(false);
   const [polls, setPolls] = useState<OnlinePollManageDetailVO[]>([]);
   /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -50,7 +54,7 @@ export default function OnlinePollParticipateClient() {
     //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
     setLoadError(null);
     try {
-      const res = await pollUserService.getPollList({ page: 0, size: 100 });
+      const res = await pollUserService.getPollList({ page: 1, size: 100 });
       if (requestId !== listRequestRef.current) return;
       // Support both Spring Data JPA Page (content) and legacy list format
       setPolls(res.list || []);
@@ -110,8 +114,28 @@ export default function OnlinePollParticipateClient() {
     setSelectedPoll((current) => (current && current.pollSn === pollSn ? { ...current, hasVoted: true } : current));
   };
 
+  /**
+   * [2026-10-19] 투표는 한 사람당 한 번이고 바꾸거나 취소하는 경로가 없다(서버가 두 번째 참여를 거부한다). 그래서 제출 전에
+   * 고른 항목을 밝혀 확인을 받는다 — 종전에는 버튼 한 번에 바로 제출돼, 잘못 고른 항목을 되돌릴 길이 없었다.
+   */
   const handleVote = async () => {
-    if (!selectedPoll || !selectedItemSn) return;
+    if (!selectedPoll || !selectedItemSn || voteLockRef.current) return;
+    voteLockRef.current = true;
+    try {
+      const itemName = pollItems.find((item) => item.pollArtclSn === selectedItemSn)?.pollArtclNm;
+      const ok = await confirm({
+        title: '투표 제출',
+        message: `'${itemName ?? '선택한 항목'}'에 투표합니다. 제출한 투표는 바꾸거나 취소할 수 없습니다. 제출하시겠습니까?`,
+        confirmText: '투표 제출',
+      });
+      if (!ok) return;
+      await submitVote(selectedPoll, selectedItemSn);
+    } finally {
+      voteLockRef.current = false;
+    }
+  };
+
+  const submitVote = async (selectedPoll: OnlinePollManageDetailVO, selectedItemSn: number) => {
     const selectionRequestId = selectionRequestRef.current;
     const lifecycle = lifecycleRef.current;
 

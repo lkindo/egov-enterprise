@@ -15,12 +15,10 @@
  *    중복처럼 보인다고 한쪽을 지우면 전 화면이 404 가 되고, 선행 슬래시가 붙으면 axios baseURL
  *    (`/api/v1`)의 경로 세그먼트가 통째로 날아간다.
  *
- * 2) 페이징 파라미터 변환 — generated operation 경계에서 `page`(0-based) →
- *    `pageIndex`(1-based, +1), `size` → `pageUnit`/`recordCountPerPage` 로 변환한다. 이 서비스의
- *    호출부는 **화면의 1-based 페이지에서 1을 빼서**(`page: page - 1`) 넘기므로, +1 이 사라지거나
- *    두 번 적용되면 목록이 한 페이지씩 밀리거나 첫 페이지가 통째로 빈다. 특히 `page: 0` 은
- *    falsy 라서, 변환 조건을 `!== undefined` 가 아닌 truthy 검사로 바꾸면 **첫 페이지만** 깨진다.
- *    타입은 그대로이므로 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 파라미터 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page` 와 `size` 하나를 쓴다.
+ *    이 서비스는 받은 `page`·`size` 를 **변환 없이** 그대로 넘긴다. 예전처럼 ±1 변환이나 옛 이름
+ *    (`pageIndex`·`pageUnit`·`recordCountPerPage`)이 되살아나면 목록이 한 페이지씩 밀리거나 서버가
+ *    400 으로 거부한다. 타입은 그대로이므로 tsc 로는 절대 잡히지 않는다.
  *
  * 3) 검색어 전달 규약 — 이 서비스는 같은 디렉터리의 `SurveyAdminService` 와 달리
  *    `searchKeyword || searchWrd || ''` 승격을 **하지 않는다**. `keyword` 를 받은 그대로 보내며,
@@ -104,85 +102,82 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
     it('반복 호출해도 경로가 누적되지 않는다 — 싱글턴 인스턴스의 basePath 는 불변이다', async () => {
       // auditAdminService 는 모듈 스코프 싱글턴이라, basePath 를 건드리는 변경이 생기면
       // 두 번째 호출부터 경로가 어긋나 앱 수명 내내 복구되지 않는다.
-      await auditAdminService.getAuditLogs({ page: 0 });
       await auditAdminService.getAuditLogs({ page: 1 });
+      await auditAdminService.getAuditLogs({ page: 2 });
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual([BASE, BASE]);
     });
   });
 
-  describe('페이징 파라미터 변환', () => {
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — truthy 검사로 바뀌면 첫 페이지만 빈다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0 });
+  describe('페이징 파라미터 전달(ADR-0036)', () => {
+    it('첫 페이지(page 1)는 page 1 그대로 나간다 — 옛 이름·0 기반 변환이 되살아나면 red', async () => {
+      await auditAdminService.getAuditLogs({ page: 1 });
 
-      // page 는 지우지 않는다(Spring Data Pageable 병행 지원).
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
-      // 0 을 falsy 로 취급해 변환을 건너뛰면 pageIndex 없이 나간다 — 그 형태를 명시적으로 배제한다.
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 1 } });
+      // 종전의 1 기반 변환 결과(pageIndex)와 0 기반 변환 결과(page 0)를 명시적으로 배제한다.
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
       expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
-    it('화면 2페이지(page 1)는 pageIndex 2 로 변환된다 — +1 이 빠지면 목록이 한 페이지씩 밀린다', async () => {
-      // 호출부(MonitoringHubClient)는 1-based 화면 페이지에서 1을 빼서 넘긴다.
-      await auditAdminService.getAuditLogs({ page: 1 });
+    it('화면 2페이지(page 2)는 page 2 그대로 나간다 — ±1 이 끼어들면 목록이 한 페이지씩 밀린다', async () => {
+      // 호출부(MonitoringHubClient)는 1부터 세는 화면 페이지를 그대로 넘긴다.
+      await auditAdminService.getAuditLogs({ page: 2 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 2 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 1, pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 2 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 1 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 3 } });
     });
 
-    it('page 4·size 10 은 pageIndex 5·recordCountPerPage 10 이 되고 원본 키도 함께 남는다', async () => {
-      await auditAdminService.getAuditLogs({ page: 4, size: 10 });
+    it('page 5·size 10 은 page 5·size 10 으로 나가고 옛 크기 이름(pageUnit·recordCountPerPage)은 나가지 않는다', async () => {
+      await auditAdminService.getAuditLogs({ page: 5, size: 10 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 5, pageUnit: 10, recordCountPerPage: 10 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 5, size: 10 } });
+      const [, config] = client.get.mock.calls[0] as GetCall;
+      expect(Object.keys(config.params).sort()).toEqual(['page', 'size']);
     });
 
-    it('size 만 주면 recordCountPerPage 로만 확장되고 pageIndex 는 만들어지지 않는다', async () => {
+    it('size 만 주면 size 만 나가고 page 는 만들어지지 않는다', async () => {
       await auditAdminService.getAuditLogs({ size: 5 });
 
-      // page 가 없으면 pageIndex 를 임의로 1 로 채우지 않는다 — 백엔드 기본값 판단에 맡긴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageUnit: 5, recordCountPerPage: 5 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageUnit: 5, recordCountPerPage: 5, pageIndex: 1 },
-      });
+      // page 가 없으면 임의로 1 로 채우지 않는다 — 백엔드 기본값 판단에 맡긴다.
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 5 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { size: 5, page: 1 } });
     });
 
-    it('대시보드 실호출 형태(page 0·size 5)는 4개 키로 확장되어 나간다', async () => {
+    it('대시보드 실호출 형태(page 1·size 5)는 두 키 그대로 나간다', async () => {
       // AdminDashboardClient / app/admin/page.tsx 가 실제로 쓰는 인자다(최근 5건 미리보기).
-      await auditAdminService.getAuditLogs({ page: 0, size: 5 });
+      await auditAdminService.getAuditLogs({ page: 1, size: 5 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, pageUnit: 5, recordCountPerPage: 5 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 1, size: 5 } });
     });
   });
 
   describe('검색어(searchKeyword) 전달 규약', () => {
     it('searchKeyword 는 승격·가공 없이 받은 그대로 전달된다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0, searchKeyword: '로그인' });
+      await auditAdminService.getAuditLogs({ page: 1, searchKeyword: '로그인' });
 
       // SurveyAdminService 처럼 searchKeyword/searchWrd 로 복제하지 않는다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '로그인' },
+        params: { page: 1, searchKeyword: '로그인' },
       });
     });
 
     it('searchKeyword 를 주지 않으면 키 자체가 나가지 않는다 — 빈 문자열 기본값을 채우지 않는다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0 });
+      await auditAdminService.getAuditLogs({ page: 1 });
 
       const [, config] = client.get.mock.calls[0] as GetCall;
 
       // 이 서비스에는 `searchKeyword: ''` 폴백이 없다(SurveyAdminService 와의 결정적 차이).
       // 빈 문자열을 임의로 채우면 백엔드가 "빈 검색어로 필터" 로 해석할 여지가 생긴다.
-      expect(Object.keys(config.params).sort()).toEqual(['pageIndex']);
+      expect(Object.keys(config.params).sort()).toEqual(['page']);
     });
 
     it('검색어를 지운 상태(빈 문자열)는 빈 문자열 그대로 전송된다', async () => {
       // 타임라인 화면은 입력을 지우면 debouncedKeyword 가 '' 가 된 채 그대로 호출한다.
-      await auditAdminService.getAuditLogs({ page: 0, size: 20, searchKeyword: '' });
+      await auditAdminService.getAuditLogs({ page: 1, size: 20, searchKeyword: '' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, pageUnit: 20, recordCountPerPage: 20, searchKeyword: '' },
+        params: { page: 1, size: 20, searchKeyword: '' },
       });
     });
   });
@@ -191,12 +186,12 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
     it('호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await auditAdminService.getAuditLogs({ page: 0, size: 5 }, { timeout: 3000, signal });
+      await auditAdminService.getAuditLogs({ page: 1, size: 5 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { pageIndex: 1, pageUnit: 5, recordCountPerPage: 5 },
+        params: { page: 1, size: 5 },
       });
     });
 
@@ -210,7 +205,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
     it('config 가 operation query를 덮어쓰려 하면 요청 전에 차단한다', async () => {
       await expect(
-        auditAdminService.getAuditLogs({ page: 0 }, { timeout: 1000, params: { page: 9 } }),
+        auditAdminService.getAuditLogs({ page: 1 }, { timeout: 1000, params: { page: 9 } }),
       ).rejects.toThrow('생성 API 요청 설정이 operation 계약을 덮어쓸 수 없습니다.');
       expect(client.get).not.toHaveBeenCalled();
     });
@@ -242,13 +237,13 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       };
       client.getRaw.mockResolvedValueOnce(success(page));
 
-      await expect(auditAdminService.getAuditLogs({ page: 0, size: 5 })).resolves.toBe(page);
+      await expect(auditAdminService.getAuditLogs({ page: 1, size: 5 })).resolves.toBe(page);
     });
 
     it('조회 실패는 삼키지 않고 그대로 전파한다 — 빈 목록 폴백은 "사건이 없었다"는 거짓이 된다', async () => {
       client.getRaw.mockRejectedValueOnce(new Error('감사 로그 조회 권한이 없습니다.'));
 
-      await expect(auditAdminService.getAuditLogs({ page: 0 })).rejects.toThrow(
+      await expect(auditAdminService.getAuditLogs({ page: 1 })).rejects.toThrow(
         '감사 로그 조회 권한이 없습니다.'
       );
     });
@@ -256,7 +251,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
   describe('읽기 전용 보장', () => {
     it('감사 로그는 GET 한 번만 발생하고 쓰기 메서드는 전혀 사용하지 않는다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0, size: 5, searchKeyword: '로그인' });
+      await auditAdminService.getAuditLogs({ page: 1, size: 5, searchKeyword: '로그인' });
 
       // 감사 추적(audit trail)은 관리자 UI 에서 변경·삭제할 수 없어야 한다.
       expect(client.get).toHaveBeenCalledTimes(1);

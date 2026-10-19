@@ -35,6 +35,21 @@ import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+/** 계약 생성기(sync-contract)의 출력 진입 파일. zod·operations 는 확장자를 뗀 같은 이름 폴더에 묶음 모듈이 있다. */
+const CONTRACT_ENTRIES = ['frontend/src/types/generated-api.d.ts', 'frontend/src/types/generated-zod.ts',
+  'frontend/src/types/generated-operations.ts'];
+const CONTRACT_MODULE_DIRECTORIES = ['frontend/src/types/generated-zod', 'frontend/src/types/generated-operations'];
+
+/** 진입 파일, 묶음 모듈 폴더, 그 폴더의 지금 .ts 파일(병합된 디스크에서 읽는다 — 양쪽이 새 묶음을 더해도 그 파일이 출력이다). */
+export function syncContractOutputs(root) {
+  const modules = CONTRACT_MODULE_DIRECTORIES.flatMap(directory => {
+    const absolute = path.join(root, directory);
+    if (!fs.existsSync(absolute)) return [];
+    return fs.readdirSync(absolute).filter(name => name.endsWith('.ts')).sort().map(name => `${directory}/${name}`);
+  });
+  return [...CONTRACT_ENTRIES, ...CONTRACT_MODULE_DIRECTORIES, ...modules];
+}
+
 export const MEMORY_TABLES = new Map([
   ['.agent/memory/decisions.md', { order: 'id' }],
   // 지금의 작업을 제약하지 않게 된 결정 행은 decisions.md 에서 이 색인으로 옮긴다 — 같은 ID 순서 병합을 쓴다.
@@ -61,8 +76,9 @@ export const GENERATORS = [
   {
     id: 'sync-contract',
     inputs: under('api-docs.json'),
-    outputs: ['frontend/src/types/generated-api.d.ts', 'frontend/src/types/generated-zod.ts',
-      'frontend/src/types/generated-operations.ts'],
+    // zod·operations 는 진입 파일 옆 같은 이름 폴더에 태그 묶음 모듈을 둔다(codegen-zod.js). 폴더 안의 지금 파일은 충돌을 재생성으로
+    // 풀게 하고, 폴더 자체는 재생성이 지운 낡은 모듈까지 stage 하게 한다.
+    get outputs() { return syncContractOutputs(repoRoot); },
     touches: ['api-docs.json'],
     command: ['pnpm', ['-C', 'frontend', 'run', 'syncContract']],
     // codegen:verify·codegen:verify:zod 와 같은 스크립트를 저장소 루트에서 바로 부른다(작업 트리·index 를 쓰지 않는다).

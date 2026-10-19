@@ -40,7 +40,7 @@ class GroupManageServiceTest {
         // Given
         BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setPageIndex(1);
-        searchVO.setPageSize(10);
+        searchVO.setPageUnit(10);
         GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
         given(groupManageRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(entity)));
 

@@ -52,7 +52,7 @@ class UserAuthorityApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(get("/api/v1/admin/system/user-authorities")
                         .param("authorCode", "ROLE_ADMIN")
-                        .param("pageIndex", "1"))
+                        .param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list").isArray())
                 .andExpect(jsonPath("$.data.list[0].authrtId").value(nullValue()));

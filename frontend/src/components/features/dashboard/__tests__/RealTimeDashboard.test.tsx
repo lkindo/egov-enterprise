@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RealTimeDashboard } from '../RealTimeDashboard';
 
@@ -81,6 +81,23 @@ describe('RealTimeDashboard', () => {
     }
     expect(screen.getByText('마지막 초기화 이후 연결 횟수이며, 활성 세션 수나 고유 사용자 수가 아닙니다.')).toBeInTheDocument();
     expect(screen.queryByText(/재기동 이후/)).not.toBeInTheDocument();
+  });
+
+  // [2026-10-19] 연결 수는 각 서버 인스턴스의 메모리 값이고 단순 브로커가 이 화면이 연결된 서버의 값만 보낸다. 서버를 여러 대
+  //   두면 전체 접속자 수가 아니므로 카드가 그 범위를 말한다(공유 저장소를 들이지 않는다).
+  it('연결 세션 수가 이 화면이 연결된 서버의 값이며 전체 접속자·고유 사용자 수가 아님을 말한다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
+
+    const title = screen.getByText('실시간 연결 세션(이 서버)');
+    expect(title.previousElementSibling).toHaveTextContent('7');
+    expect(title.nextElementSibling).toHaveTextContent(
+      '이 화면이 연결된 서버의 연결 수입니다. 서버를 여러 대 두면 전체 접속자 수가 아니며, 고유 사용자 수도 아닙니다.');
+    // 배지도 시점('현재')이 아니라 범위를 말한다 — '현재' 는 전 서버의 지금 접속자로 읽혔다.
+    expect(within(title.closest('div.p-6') as HTMLElement).getByText('이 서버', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText('현재', { exact: true })).toBeNull();
+    expect(screen.queryByText(/접속자 수$/)).toBeNull();
   });
 
   it('실시간 알림의 누락·손상 날짜는 현재 시각 대신 미상으로 표시한다', () => {

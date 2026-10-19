@@ -27,7 +27,7 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
         headers: adminHeaders,
         data: { userId, pswd: password, userNm: '최고관리자', role: 'USER' },
     });
-    expect(created.status(), '시각 검증 전용 관리자 생성').toBe(200);
+    expect(created.status(), '시각 검증 전용 관리자 생성').toBe(201);
 
     const dispose = async () => {
         const response = await request.delete(`/api/v1/admin/system/users/${userId}`, {

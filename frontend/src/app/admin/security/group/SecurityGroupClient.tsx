@@ -67,11 +67,13 @@ export default function SecurityGroupClient() {
    * 그 전에는 한 글자마다 요청이 나갔다.
    */
   const [searchKeyword, setSearchKeyword] = useState('');
-  // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
-  // pageNo는 변환 대상이 아니어서 서버의 pageIndex 요청 파라미터로 전달되지 않는다.
-  /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
+  /**
+   * 페이지당 건수(A1 필수). URL 에는 싣지 않는다.
+   * [ADR-0036] 표의 번호(1부터)와 건수를 그대로 서버에 보낸다 — 종전에는 서비스가 size 를 버리고 서버도 10 으로 고정해
+   * 이 선택이 서버에 닿지 않았다.
+   */
   const [pageSize, setPageSize] = useState(10);
-  const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
+  const params: SearchParams = { page, size: pageSize, searchKeyword };
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
@@ -90,12 +92,6 @@ export default function SecurityGroupClient() {
   });
 
   const groups: GroupManage[] = data?.list || [];
-  const pagination = data ? {
-    currentPageNo: data.page,
-    recordCountPerPage: data.size,
-    totalRecordCount: data.total,
-    totalPageCount: data.totalPage
-  } : null;
 
   const createMutation = useMutation({
     mutationFn: (data: GroupManage) => groupAdminService.createGroup(data),
@@ -309,7 +305,7 @@ export default function SecurityGroupClient() {
       description="사용자를 분류하는 그룹을 조회·등록·수정·삭제합니다. 권한 그룹과 달리 기능권한이나 메뉴 접근을 부여하지 않습니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '사용자 분류 그룹' }]}
       filterStateKey="security-group"
-      totalCount={error ? undefined : pagination?.totalRecordCount}
+      totalCount={error ? undefined : data?.total}
       actions={
         <>
           <Button
@@ -359,9 +355,9 @@ export default function SecurityGroupClient() {
         emptyMessage={emptyResultMessage(searchKeyword, '등록된 사용자 분류 그룹이 없습니다.')}
         pagination={{
           currentPage: page,
-          totalPages: pagination?.totalPageCount ?? 1,
+          totalPages: data?.totalPage ?? 1,
           onPageChange: (p) => setPage(p),
-          pageSize: pagination?.recordCountPerPage ?? pageSize,
+          pageSize: data?.size ?? pageSize,
           onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
         }}
       />

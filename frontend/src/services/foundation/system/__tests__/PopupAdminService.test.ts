@@ -16,12 +16,11 @@
  *    슬래시가 되살아나면 axios `baseURL`('/api/v1') 의 경로 세그먼트가 통째로 날아간다
  *    (절대 경로로 해석). 이 서비스는 접두를 스스로 쓰지 않고 전적으로 생성자 인자에 의존한다.
  *
- * 2) 페이징 파라미터 변환 — 화면은 `getPopupList({ page: popupPage - 1, size: PAGE_SIZE })`
- *    처럼 **0-based page** 로 호출하고(BannerAdminClient), SSR 진입점(page.tsx)도
- *    `{ page: 0, size: 20 }` 으로 부른다. `ApiService.get` 이 `page` → `pageIndex`(+1, 1-based),
- *    `size` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 에 맞춘다. 이 +1 이
- *    사라지거나 두 번 적용되면 목록이 한 페이지씩 밀리거나 첫 페이지가 통째로 빈다. 값이
- *    숫자인 것은 변함이 없으므로 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 파라미터 — [ADR-0036] 화면은 `getPopupList({ page: popupPage, size: PAGE_SIZE })`
+ *    처럼 **1부터 세는 page** 로 호출하고(BannerAdminClient), SSR 진입점(page.tsx)도
+ *    `{ page: 1, size: 20 }` 으로 부른다. 서비스는 그 값을 변환 없이 생성 query 로 넘긴다. ±1 이
+ *    끼어들면 목록이 한 페이지씩 밀리거나 첫 페이지가 400 이 된다. 값이 숫자인 것은 변함이 없으므로
+ *    tsc 로는 절대 잡히지 않는다.
  *
  * 3) 검색어 축 — 이 서비스는 **형제인 `BannerAdminService` 와 달리** `searchKeyword`/`searchWrd`
  *    를 `keyword` 로 승격하지 **않고**, 받은 params 를 그대로 흘린다. 같은 화면(배너/팝업 탭)에
@@ -103,7 +102,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client.get.mockImplementation((url: string) => Promise.resolve(
-      url === BASE ? { list: [] } : popupFixture(1, '기본 팝업'),
+      url === BASE ? { list: [], total: 0, page: 1, size: 10, totalPage: 0 } : popupFixture(1, '기본 팝업'),
     ));
     client.post.mockResolvedValue(1);
   });
@@ -123,12 +122,13 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('첫 페이지는 Pageable 계약의 0-based page 0으로 전달한다', async () => {
-      await popupAdminService.getPopupList({ page: 0 });
+    it('첫 페이지는 1부터 세는 page 1로 그대로 전달한다', async () => {
+      await popupAdminService.getPopupList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0 },
+        params: { page: 1 },
       });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
     it('page 3·size 20은 generated Pageable query 그대로 전달한다', async () => {
@@ -140,7 +140,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
     });
 
     it('OpenAPI에 없는 pageIndex는 보내지 않고 Pageable page만 유지한다', async () => {
-      // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
+      // 옛 이름 pageIndex 는 page 를 덮어쓰지도, 서버로 새지도 않는다.
       await popupAdminService.getPopupList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
@@ -154,31 +154,30 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('SSR 진입점의 { page: 0, size: 20 } + Authorization 헤더가 온전히 전달된다', async () => {
+    it('SSR 진입점의 { page: 1, size: 20 } + Authorization 헤더가 온전히 전달된다', async () => {
       // page.tsx 가 쿠키의 accessToken 을 Bearer 로 실어 보내는 형태 그대로다.
       // 헤더가 유실되면 SSR 초기 데이터만 401 이 되어 첫 페인트가 비고, 브라우저 재조회로
       // 화면은 결국 채워지므로 아무도 원인을 눈치채지 못한다.
       const headers = { Authorization: 'Bearer test-token' };
 
-      await popupAdminService.getPopupList({ page: 0, size: 20 }, { headers });
+      await popupAdminService.getPopupList({ page: 1, size: 20 }, { headers });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         headers,
-        params: { page: 0, size: 20 },
+        params: { page: 1, size: 20 },
       });
     });
 
-    it('화면 2페이지(popupPage 2 → page 1)는 0-based page 1로 나간다', async () => {
-      // BannerAdminClient 는 1-based UI 페이지를 `page: popupPage - 1` 로 0-based 변환해 넘기고,
-      // 서비스단이 다시 +1 해 1-based pageIndex 를 만든다. 즉 UI 2페이지 → page 1 → pageIndex 2.
-      await popupAdminService.getPopupList({ page: 1, size: 20 });
+    it('화면 2페이지(popupPage 2)는 page 2 그대로 나간다', async () => {
+      // [ADR-0036] BannerAdminClient 는 1부터 세는 UI 페이지를 그대로 넘기고 서비스도 바꾸지 않는다.
+      await popupAdminService.getPopupList({ page: 2, size: 20 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20 },
+        params: { page: 2, size: 20 },
       });
-      // +1 이 사라지면 pageIndex 1(=첫 페이지)이 되어 2페이지에서도 1페이지가 보인다.
+      // 종전처럼 -1 이 끼어들면 2페이지에서도 1페이지가 보인다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20, pageIndex: 1, recordCountPerPage: 20 },
+        params: { page: 1, size: 20 },
       });
     });
 
@@ -200,23 +199,23 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await popupAdminService.getPopupList({ page: 0 }, { timeout: 3000, signal });
+      await popupAdminService.getPopupList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0 },
+        params: { page: 1 },
       });
     });
 
     it('params 인자가 config.params 를 덮는다 — spread 순서가 뒤집히면 낡은 페이지가 조회된다', async () => {
       // `{ ...config, params }` 라서 나중에 오는 params 인자가 항상 이긴다.
       // config 쪽 값(ntceYn)은 살아남지 못하고, config 의 다른 키(timeout)는 그대로 유지된다.
-      await popupAdminService.getPopupList({ page: 0 }, { params: { ntceYn: 'N' }, timeout: 1000 });
+      await popupAdminService.getPopupList({ page: 1 }, { params: { ntceYn: 'N' }, timeout: 1000 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 1000,
-        params: { page: 0 },
+        params: { page: 1 },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
         timeout: 1000,
@@ -243,7 +242,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       const failure = new Error('Network Error');
       client.get.mockRejectedValueOnce(failure);
 
-      await expect(popupAdminService.getPopupList({ page: 0 })).rejects.toBe(failure);
+      await expect(popupAdminService.getPopupList({ page: 1 })).rejects.toBe(failure);
     });
   });
 
@@ -361,7 +360,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
 
   describe('경로 격리', () => {
     it('조회 2종의 경로는 서로 겹치지 않는다 — 상세가 목록 경로로 흡수되면 전량 조회가 된다', async () => {
-      await popupAdminService.getPopupList({ page: 0 });
+      await popupAdminService.getPopupList({ page: 1 });
       await popupAdminService.getPopup(7);
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual([
@@ -382,7 +381,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
 
     it('모든 요청 경로는 admin/system/popups 접두를 벗어나지 않고 선행 슬래시도 갖지 않는다', async () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로 해석).
-      await popupAdminService.getPopupList({ page: 0, size: 20 });
+      await popupAdminService.getPopupList({ page: 1, size: 20 });
       await popupAdminService.getPopup(7);
       await popupAdminService.createPopup({ popupTtlNm: '신규 팝업' });
       await popupAdminService.updatePopup(7, { popupTtlNm: '제목만 수정' });

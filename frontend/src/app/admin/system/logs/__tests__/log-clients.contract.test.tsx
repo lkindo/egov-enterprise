@@ -415,7 +415,7 @@ describe('logs cluster modernization (m-1): page-size opt-in and current-page so
       expect(currentTableProps().pagination?.pageSize).toBe(50);
 
       // 최신 렌더의 queryFn 이 바뀐 size 를 서비스에 전달한다
-      // (size→pageUnit 변환은 SystemLogAdminService.test.ts 가 별도 검증).
+      // (size 를 그대로 넘기는지는 SystemLogAdminService.test.ts 가 별도 검증).
       const spy = vi
         .spyOn(systemLogAdminService, method)
         .mockResolvedValue(pageOf(row) as never);

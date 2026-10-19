@@ -67,7 +67,7 @@ class ApiSpecificationComplianceTest {
     mockMvc.perform(post("/api/v1/users/signup")
         .contentType(MediaType.APPLICATION_JSON)
         .content(validUserSignupRequest))
-        .andExpect(status().isOk())
+        .andExpect(status().isCreated())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data").exists())

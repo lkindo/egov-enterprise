@@ -199,6 +199,18 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
       await waitFor(() => expect(exported.props?.data).toEqual([{ statsDate: '2026-10-02', statsCo: 12 }]));
       expect(screen.queryByText(PERIOD_EMPTY)).not.toBeInTheDocument();
     });
+
+    // [2026-10-19] 게시물 집계는 서버가 최신순으로 준다(BoardRepository.countPostsByDate). 셸이 시간 순서로 맞추므로 차트와
+    //   그 내보내기는 과거에서 최근 순서다 — 그대로 그리면 '콘텐츠 지표' 탭의 시간축이 거꾸로 흘렀다.
+    it('게시물 탭은 최신순으로 온 집계를 과거에서 최근 순서로 그리고 내보낸다', async () => {
+      responses.set(URL.bbs, [{ statsDate: '2026-10-03', statsCo: 3 }, { statsDate: '2026-10-01', statsCo: 1 }]);
+      renderRoute(BoardStatsPage, '/admin/stats/board');
+
+      await waitFor(() => expect(exported.props?.data).toEqual([
+        { statsDate: '2026-10-01', statsCo: 1 },
+        { statsDate: '2026-10-03', statsCo: 3 },
+      ]));
+    });
   });
 
   describe('조회 실패', () => {

@@ -134,11 +134,12 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.")
     @PostMapping("/posts")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPost')")
     public ResponseEntity<ApiResponse<Long>> createPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody BoardSaveRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(boardService.createPost(userDetails.getUsername(), request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(boardService.createPost(userDetails.getUsername(), request)));
     }
 
     /**
@@ -152,6 +153,7 @@ public class BoardApiController {
      */
     @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다.")
     @PostMapping(value = "/{bbsId}/posts/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPostWithFiles')")
     public ResponseEntity<ApiResponse<Long>> createPostWithFiles(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -162,7 +164,7 @@ public class BoardApiController {
         Long pstSn = (files != null && !files.isEmpty())
                 ? boardService.createPostWithFiles(userId, request, files)
                 : boardService.createPost(userId, request);
-        return ResponseEntity.ok(ApiResponse.success(pstSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(pstSn));
     }
 
     @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다.")

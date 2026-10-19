@@ -15,7 +15,7 @@ export default async function SmsAdminPage() {
   // 초기 발송 내역 조회 (첫 페이지)
   // 실패를 빈 목록으로 바꾸면 화면이 '0건'이라고 거짓말한다(감사 P1-1).
   // null 은 '시드 없음' 표식이며, 클라이언트 쿼리가 재조회해 실패를 화면에 그대로 드러낸다.
-  const initialSmsList = await smsAdminService.getSmsList({ page: 0, size: 10 }, axiosConfig).catch(() => {
+  const initialSmsList = await smsAdminService.getSmsList({ page: 1, size: 10 }, axiosConfig).catch(() => {
     return null;
   });
 

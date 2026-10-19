@@ -63,7 +63,7 @@ public class AddressBookService {
     }
 
     @Transactional
-    public void createAddressBook(String userId, AddressBookDto dto) {
+    public Long createAddressBook(String userId, AddressBookDto dto) {
         try {
             AddressBook entity = AddressBook.builder()
                     .adbkNm(dto.getAdbkNm())
@@ -90,6 +90,8 @@ public class AddressBookService {
                     addressBookUserRepository.save(userEntity);
                 }
             }
+            // [ADR-0036] 생성 응답(201)의 본문은 새 주소록의 일련번호다.
+            return entity.getAdbkSn();
         } catch (BusinessException be) {
             throw be;
         } catch (Exception e) {

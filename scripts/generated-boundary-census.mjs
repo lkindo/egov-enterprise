@@ -156,7 +156,13 @@ function loadOpenApiOperations(repoRoot) {
 function loadGeneratedDescriptors(repoRoot) {
   const generatedPath = join(repoRoot, 'frontend', 'src', 'types', 'generated-operations.ts');
   if (!existsSync(generatedPath)) return new Map();
-  const source = readFileSync(generatedPath, 'utf8');
+  // 서술자는 진입 파일 옆 같은 이름 폴더의 태그 묶음 모듈에 있다(codegen-zod.js, 2026-10-19). 진입 파일 뒤에 모듈을 이름 순으로 잇는다.
+  const moduleDirectory = generatedPath.replace(/\.ts$/u, '');
+  const modules = existsSync(moduleDirectory)
+    ? readdirSync(moduleDirectory).filter(name => name.endsWith('.ts')).sort()
+      .map(name => readFileSync(join(moduleDirectory, name), 'utf8'))
+    : [];
+  const source = [readFileSync(generatedPath, 'utf8'), ...modules].join('\n');
   const descriptors = new Map();
   const pattern = /export const\s+(\w+Operation)\s*=\s*[^;]*?defineGeneratedOperation\s*\(\s*\{([\s\S]*?)\n\s*\}\s*\);/g;
   for (const match of source.matchAll(pattern)) {

@@ -606,7 +606,7 @@ class MenuServiceTest {
         nuri.business.domain.common.BaseSearchDto search = new nuri.business.domain.common.BaseSearchDto();
         search.setSearchKeyword("ROLE");
         search.setPageIndex(1);
-        search.setRecordCountPerPage(10);
+        search.setPageUnit(10);
         
         nuri.business.domain.auth.MenuCreatManageProjection proj = mock(nuri.business.domain.auth.MenuCreatManageProjection.class);
         when(proj.getAuthrtCd()).thenReturn("ROLE_USER");
@@ -820,7 +820,7 @@ class MenuServiceTest {
         nuri.business.domain.common.BaseSearchDto search = new nuri.business.domain.common.BaseSearchDto();
         search.setSearchKeyword(null);
         search.setPageIndex(1);
-        search.setRecordCountPerPage(10);
+        search.setPageUnit(10);
         
         org.springframework.data.domain.Page<nuri.business.domain.auth.MenuCreatManageProjection> page = 
             new org.springframework.data.domain.PageImpl<>(Collections.emptyList());

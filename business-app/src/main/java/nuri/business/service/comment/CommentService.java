@@ -71,7 +71,6 @@ public class CommentService {
                 .bbsId(commentDto.getBbsId())
                 .wrterId(wrterEsntlId)
                 .wrterNm(wrterNm)
-                .pswd(commentDto.getPswd())
                 .ansCn(commentDto.getAnsCn())
                 .useYn("Y")
                 .build();
@@ -168,7 +167,6 @@ public class CommentService {
                         && (owner || nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_UPDATE_ALL")))
                 .deletable(nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE")
                         && (owner || nuri.business.security.util.SecurityUtil.hasPermission("COMMENT_DELETE_ALL")))
-                .pswd(entity.getPswd())
                 .ansCn(entity.getAnsCn())
                 .crtDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
                 .build();

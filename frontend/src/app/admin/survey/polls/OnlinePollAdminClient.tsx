@@ -77,12 +77,14 @@ export default function OnlinePollAdminClient() {
 
   // 페이지는 URL 파생값이다 — 공유·새로고침·뒤로가기에서 위치가 복원된다(P1-7).
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
-  const pageParam = Number(searchParams.get('page') ?? '0');
-  const page = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 0;
+  // [ADR-0036] `?page=` 는 1부터다 — 다른 목록 화면처럼 `?page=1`(또는 생략)이 첫 페이지이고 서버 page 와 같은 번호다.
+  //   종전에는 이 화면만 0부터라 `?page=1` 이 둘째 페이지였다.
+  const pageParam = Number(searchParams.get('page') ?? '1');
+  const page = Number.isFinite(pageParam) && pageParam >= 1 ? Math.floor(pageParam) : 1;
 
   const setPage = (next: number) => {
     const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
-    if (next <= 0) params.delete('page');
+    if (next <= 1) params.delete('page');
     else params.set('page', String(next));
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
@@ -111,7 +113,7 @@ export default function OnlinePollAdminClient() {
   /** 검색어 변경 시 항상 1페이지로 되돌린다(P1-8) */
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
-    if (page !== 0) setPage(0);
+    if (page !== 1) setPage(1);
   };
 
   // 날짜는 varchar(8) / @Size(max = 8) 라 'yyyyMMdd' 8자로 저장한다(10자 전송은 400).
@@ -304,12 +306,12 @@ export default function OnlinePollAdminClient() {
         emptyMessage={emptyResultMessage(keyword, '등록된 온라인 투표가 없습니다.')}
         className="border-none bg-transparent"
         pagination={{
-          currentPage: page + 1,
+          currentPage: page,
           totalPages: Math.ceil(totalCount / pageSize),
-          onPageChange: (p) => setPage(p - 1),
+          onPageChange: (p) => setPage(p),
           // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
           pageSize,
-          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
         }}
       />
 

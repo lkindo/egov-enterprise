@@ -49,10 +49,11 @@ public class AdministCodeApiController {
 
     @Operation(summary = "행정코드 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.code.AdministCodeApiController#createAdministCode')")
-    public ResponseEntity<ApiResponse<Void>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
-        administCodeService.createAdministCode(dto, currentLoginId());
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<String>> createAdministCode(@Valid @RequestBody AdministCodeDto dto) {
+        String code = administCodeService.createAdministCode(dto, currentLoginId());
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(code));
     }
 
     @Operation(summary = "행정코드 수정")

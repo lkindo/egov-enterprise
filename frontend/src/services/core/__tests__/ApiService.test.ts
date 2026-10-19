@@ -33,7 +33,7 @@ class TestService extends ApiService {
  public async testGeneratedGet(deptTaskSn: number) {
   return this.executeGenerated(getDeptJobOperation, { path: { deptTaskSn } });
  }
- public async testGeneratedList(query: { pageIndex?: number; pageUnit?: number }) {
+ public async testGeneratedList(query: { page?: number; size?: number }) {
   return this.executeGenerated(getDeptJobListOperation, { query });
  }
  public async testGeneratedWrite(oldPassword: string, newPassword: string) {
@@ -85,10 +85,10 @@ describe('ApiService', () => {
    data: { list: [], total: 0, page: 1, size: 20, totalPage: 0 },
   });
 
-  await service.testGeneratedList({ pageIndex: 1, pageUnit: 20 });
-  expect(client.getRaw).toHaveBeenCalledWith('dept-jobs', { params: { pageIndex: 1, pageUnit: 20 } });
+  await service.testGeneratedList({ page: 1, size: 20 });
+  expect(client.getRaw).toHaveBeenCalledWith('dept-jobs', { params: { page: 1, size: 20 } });
 
-  await expect(service.testGeneratedList({ pageIndex: 1.5 })).rejects.toThrow(
+  await expect(service.testGeneratedList({ page: 1.5 })).rejects.toThrow(
    '생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.',
   );
  });

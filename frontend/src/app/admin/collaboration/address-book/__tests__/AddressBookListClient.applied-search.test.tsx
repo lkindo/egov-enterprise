@@ -49,11 +49,11 @@ describe('AddressBookListClient 적용된 검색어', () => {
 
     fireEvent.change(await screen.findByRole('textbox', { name: '주소록 검색' }), { target: { value: '회계' } });
     fireEvent.click(screen.getByRole('button', { name: '2 페이지로' }));
-    await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, searchWrd: '' })));
+    await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, searchWrd: '' })));
 
     fireEvent.click(screen.getByRole('button', { name: '검색' }));
-    await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, searchWrd: '회계' })));
-    fireEvent.click(screen.getByRole('button', { name: '2 페이지로' }));
     await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, searchWrd: '회계' })));
+    fireEvent.click(screen.getByRole('button', { name: '2 페이지로' }));
+    await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, searchWrd: '회계' })));
   });
 });

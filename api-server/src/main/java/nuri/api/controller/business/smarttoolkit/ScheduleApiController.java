@@ -30,11 +30,11 @@ public class ScheduleApiController {
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getScheduleList')")
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getScheduleList(
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit,
+            @org.springframework.data.web.PageableDefault(size = 10) @nuri.api.support.UnsortedPageable
+            org.springframework.data.domain.Pageable requestedPage,
             @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
-        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
+        PageRequest pageable = PageRequests.unsorted(requestedPage);
         Page<ScheduleDto> pageResult = egovScheduleService.getScheduleList(userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
@@ -44,11 +44,11 @@ public class ScheduleApiController {
     @GetMapping("/dept")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#getDeptScheduleList')")
     public ResponseEntity<ApiResponse<PageResponse<ScheduleDto>>> getDeptScheduleList(
-            @RequestParam(defaultValue = "1") int pageIndex,
-            @RequestParam(defaultValue = "10") int pageUnit,
+            @org.springframework.data.web.PageableDefault(size = 10) @nuri.api.support.UnsortedPageable
+            org.springframework.data.domain.Pageable requestedPage,
             @RequestParam(required = false) String schdlNm) {
         String userId = currentLoginId();
-        PageRequest pageable = PageRequests.of(pageIndex, pageUnit);
+        PageRequest pageable = PageRequests.unsorted(requestedPage);
         // schdlSeCd = "1" is Dept in eGov. 필터축은 담당자가 아니라 부서(schdlDeptId)다.
         Page<ScheduleDto> pageResult = egovScheduleService.getDeptScheduleList("1", userId, schdlNm, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
@@ -85,12 +85,13 @@ public class ScheduleApiController {
 
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.ScheduleApiController#createSchedule')")
     public ResponseEntity<ApiResponse<Long>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
         String userId = currentLoginId();
         Long schdlSn = egovScheduleService.createSchedule(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(schdlSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(schdlSn));
     }
 
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")

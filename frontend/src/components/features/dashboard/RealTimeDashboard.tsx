@@ -248,12 +248,15 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
         {/*
           서버(RealTimeDashboardService)는 이 인스턴스의 활성 연결을 세고, visitsPerMinute 는 새 연결마다
           증가한 뒤 스케줄러가 1분마다 0으로 초기화한다. 최근 60초 이동 구간이나 고유 사용자 수는 아니다.
+          [2026-10-19] 숫자는 각 인스턴스의 메모리 값이고 방송은 단순 브로커라 이 화면이 연결된 서버의 값만 온다. 서버를 여러 대
+          두면 전체 접속자 수가 아니다 — 공유 저장소를 들이지 않고 그 사실을 카드가 말한다(전 서버 합산·고유 사용자로 읽히지 않게).
         */}
         <RealTimeStatCard
           title="실시간 연결 세션(이 서버)"
+          description="이 화면이 연결된 서버의 연결 수입니다. 서버를 여러 대 두면 전체 접속자 수가 아니며, 고유 사용자 수도 아닙니다."
           value={stats?.activeUsers ?? null}
           icon={<Users size={20} />}
-          trend="현재"
+          trend="이 서버"
           color="blue"
         />
         <RealTimeStatCard

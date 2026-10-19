@@ -57,7 +57,7 @@ export const administCodeSchema = AdministCodeDtoSchema.extend({
 
 type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 
-/** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
+/** 서버 페이지 크기(백엔드 기본 size). PagePagination 계산과 동일해야 한다. */
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -123,13 +123,13 @@ export default function AdministCodeClient({
  refetch,
  } = useQuery({
  queryKey: ['administ-codes', appliedSearch, pageNumber, pageSize],
- // 서버(AdministCodeApiController)는 BaseSearchDto 의 searchKeyword·pageIndex·pageUnit 만 읽는다.
- // 종전의 searchWrd·pageNo 는 ApiService.get 의 매핑 대상도 아니라 **셋 다 통째로 무시**됐다 —
+ // 서버(AdministCodeApiController)는 BaseSearchDto 의 searchKeyword·page(1부터)·size 만 읽는다(ADR-0036).
+ // 종전에는 서버가 읽지 않는 검색어·페이지 이름을 보내 **셋 다 통째로 무시**됐다 —
  // 검색어를 넣어도 목록이 그대로였고 2페이지를 눌러도 늘 1페이지 10건만 나왔다.
  queryFn: () => codeAdminService.getAdministCodeList({
  searchKeyword: appliedSearch,
- pageIndex: pageNumber,
- pageUnit: pageSize,
+ page: pageNumber,
+ size: pageSize,
  }),
  placeholderData: (prev) => prev ?? (
  pageNumber === 1 && appliedSearch === '' && seedList.length > 0

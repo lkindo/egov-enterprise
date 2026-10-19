@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.HandlerInterceptor;
 import nuri.api.controller.UserApiController;
@@ -57,7 +56,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
 
     @Override
     protected HandlerMethodArgumentResolver[] getCustomArgumentResolvers() {
-        return new HandlerMethodArgumentResolver[] { new PageableHandlerMethodArgumentResolver() };
+        return new HandlerMethodArgumentResolver[] { nuri.business.support.PageableTestResolvers.standard() };
     }
 
     @BeforeEach
@@ -91,7 +90,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validRequest))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").exists())
@@ -183,7 +182,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
         Page<UserDto> page = new PageImpl<>(List.of(testUserDto), pageRequest, 1);
         when(userService.getPagedUserList(any(), any(), any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/admin/system/users?page=0&size=10")
+        mockMvc.perform(get("/api/v1/admin/system/users?page=1&size=10")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))

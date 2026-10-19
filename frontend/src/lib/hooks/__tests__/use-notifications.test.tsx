@@ -57,7 +57,7 @@ function listResponse(list: unknown[]) {
     success: true,
     code: 'S000',
     message: 'success',
-    data: { list, total: list.length, page: 0, size: 10, totalPage: list.length ? 1 : 0 },
+    data: { list, total: list.length, page: 1, size: 10, totalPage: list.length ? 1 : 0 },
   } as never;
 }
 
@@ -70,7 +70,7 @@ function mockFetch(list: unknown, count: unknown) {
   vi.mocked(client.getRaw).mockImplementation((url: string) => {
     const value = url.includes('unread-count') ? count : list;
     const data = !url.includes('unread-count') && Array.isArray(value)
-      ? { list: value, total: value.length, page: 0, size: 10, totalPage: value.length ? 1 : 0 }
+      ? { list: value, total: value.length, page: 1, size: 10, totalPage: value.length ? 1 : 0 }
       : value;
     return value instanceof Error
       ? Promise.reject(value)
@@ -279,7 +279,8 @@ describe('useNotifications', () => {
 
   describe('응답 정규화', () => {
     it('배열과 { list } 두 형태를 모두 받는다', async () => {
-      mockFetch({ list: [NOTIF, { ...NOTIF, notiSn: 2 }] }, 0);
+      // [ADR-0036] 페이지 응답의 다섯 필드는 필수다 — 객체 형태도 온전한 PageResponse 로 준다.
+      mockFetch({ list: [NOTIF, { ...NOTIF, notiSn: 2 }], total: 2, page: 1, size: 10, totalPage: 1 }, 0);
 
       const { result } = renderHook(() => useNotifications());
 

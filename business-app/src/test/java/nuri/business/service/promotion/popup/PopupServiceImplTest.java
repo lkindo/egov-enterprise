@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
@@ -146,6 +147,44 @@ class PopupServiceImplTest {
         assertThatThrownBy(() -> popupService.getPopup(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Resource Not Found");
+    }
+
+    @Test
+    @DisplayName("사용자 단건 조회 - 오늘 게시 중인 팝업은 돌려준다")
+    void getPublishedPopup_returnsPopupInNoticePeriod() {
+        LocalDate today = LocalDate.now();
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("운영 안내").ntceYn("Y")
+                .ntceBgnde(today.minusDays(1)).ntceEndde(today.plusDays(1)).build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+
+        assertThat(popupService.getPublishedPopup(1L).getPopupTtlNm()).isEqualTo("운영 안내");
+    }
+
+    static Stream<Arguments> unpublishedPopups() {
+        // 자정 경계에서 테스트와 서비스의 '오늘' 이 갈려도 판정이 같도록 이틀 여유를 둔다.
+        LocalDate today = LocalDate.now();
+        return Stream.of(
+                Arguments.of("게시 안 함", "N", today.minusDays(2), today.plusDays(2)),
+                Arguments.of("게시 여부 없음", null, today.minusDays(2), today.plusDays(2)),
+                Arguments.of("시작 전", "Y", today.plusDays(2), today.plusDays(5)),
+                Arguments.of("종료 뒤", "Y", today.minusDays(5), today.minusDays(2)),
+                Arguments.of("기간 없음", "Y", null, null));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("unpublishedPopups")
+    @DisplayName("🔒 사용자 단건 조회 - 게시하지 않았거나 기간 밖인 팝업은 없는 것과 같은 404 다")
+    void getPublishedPopup_hidesUnpublishedPopup(String label, String ntceYn, LocalDate begin, LocalDate end) {
+        Popup popup = Popup.builder().popupSn(7L).popupTtlNm("숨은 팝업").ntceYn(ntceYn)
+                .ntceBgnde(begin).ntceEndde(end).build();
+        given(popupRepository.findById(7L)).willReturn(Optional.of(popup));
+
+        assertThatExceptionOfType(BusinessException.class)
+                .as("%s 팝업이 사용자 단건 조회로 읽혔다", label)
+                .isThrownBy(() -> popupService.getPublishedPopup(7L))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        // 관리용 단건 조회는 같은 팝업을 그대로 돌려준다 — 관리자는 게시 전·후 팝업을 고쳐야 한다.
+        assertThat(popupService.getPopup(7L).getPopupTtlNm()).isEqualTo("숨은 팝업");
     }
 
     // ==========================================

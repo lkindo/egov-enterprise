@@ -1,18 +1,6 @@
 
 import type { components } from '@/types/generated-api';
 
-export interface PaginationInfo {
-  currentPageNo?: number;
-  recordCountPerPage?: number;
-  pageSize?: number;
-  totalRecordCount?: number;
-  totalPageCount?: number;
-  firstPageNoOnPageList?: number;
-  lastPageNoOnPageList?: number;
-  firstRecordNo?: number;
-  lastRecordNo?: number;
-}
-
 /**
  * 백엔드 신규 페이지 응답 모델 (PageResponse)
  * - list/content: 현재 페이지 데이터
@@ -34,16 +22,19 @@ export interface PageResponse<T = unknown> {
 export interface SearchParams {
   /** 서버가 @RequestParam("keyword") 로 받는 검색어 (부서 목록 등). searchKeyword 와 별개 축이다. */
   keyword?: string;
-  pageNo?: number;
-  pageIndex?: number;
+  /**
+   * 페이지 번호(1부터). 모든 목록 API 가 같은 이름·같은 기준으로 받는다(ADR-0036).
+   * 종전 별칭(0 기반 `page` 와 1 기반 `pageIndex`·`pageNo`, 크기 `pageUnit`·`recordCountPerPage`)은 걷었다 —
+   * 서버가 400 으로 거부하거나 한 릴리스만 받는 이름이라 프런트는 보내지 않는다.
+   */
   page?: number;
+  /** 페이지당 건수(1~100). */
   size?: number;
   searchCondition?: string;
   searchKeyword?: string;
   searchWrd?: string;
   ntwrkId?: string;
   codeId?: string;
-  pageUnit?: number;
   sbscrbSttus?: string;
   [key: string]: unknown;
 }

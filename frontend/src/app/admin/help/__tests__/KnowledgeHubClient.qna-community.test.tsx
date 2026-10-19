@@ -37,7 +37,7 @@ describe('지식 허브 Q&A·커뮤니티', () => {
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(toggle);
-    await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ qnaStatus: 'OPEN', page: 0 })));
+    await waitFor(() => expect(mocks.getArticles).toHaveBeenLastCalledWith(expect.objectContaining({ qnaStatus: 'OPEN', page: 1 })));
     expect(toggle).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(toggle);

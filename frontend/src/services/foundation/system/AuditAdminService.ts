@@ -18,17 +18,13 @@ type AuditLogQuery = NonNullable<operations['getSysLogList']['parameters']['quer
 function toAuditLogQuery(params: {
   page?: number;
   size?: number;
-  pageUnit?: number;
   searchKeyword?: string;
   searchKeywordFrom?: string;
   searchKeywordTo?: string;
 }): AuditLogQuery {
   const query: AuditLogQuery = {};
-  if (params.page !== undefined) query.pageIndex = params.page + 1;
-  if (params.pageUnit !== undefined || params.size !== undefined) {
-    query.pageUnit = params.pageUnit ?? params.size;
-  }
-  if (params.size !== undefined) query.recordCountPerPage = params.size;
+  if (params.page !== undefined) query.page = params.page;
+  if (params.size !== undefined) query.size = params.size;
   if (params.searchKeyword !== undefined) query.searchKeyword = params.searchKeyword;
   if (params.searchKeywordFrom !== undefined) query.searchKeywordFrom = params.searchKeywordFrom;
   if (params.searchKeywordTo !== undefined) query.searchKeywordTo = params.searchKeywordTo;
@@ -53,17 +49,16 @@ class AuditAdminService extends ApiService {
    */
   async getAuditLogs(
     params: {
+      /** 1부터 세는 페이지 번호(ADR-0036). */
       page?: number;
       size?: number;
-      pageUnit?: number;
       searchKeyword?: string;
       searchKeywordFrom?: string;
       searchKeywordTo?: string;
     },
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<AuditLog>> {
-    // 화면의 0-base page/size를 BaseSearchDto의 생성 query 계약으로 변환한다.
-    // 생성 스키마에 없는 legacy 키(page/size)는 transport에 넘기지 않는다.
+    // 화면의 page(1부터)·size 를 BaseSearchDto 의 생성 query 로 그대로 옮긴다(ADR-0036).
     const response = await this.executeGenerated(getSysLogListOperation, {
       query: toAuditLogQuery(params),
       config,

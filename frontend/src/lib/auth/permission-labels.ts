@@ -10,7 +10,7 @@ const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   NOTE: '쪽지', NOTI: '알림', NOTICE: '공지사항', OPS: '시스템 운영', POLICY: '이용 정책',
   POLL: '투표', POPUP: '팝업', PRIVACY: '개인정보 조회 이력',
   REWARD: '포상', SATISFY: '만족도', SCHEDULE: '일정', SCRAP: '스크랩',
-  SERVICE: '서비스 관리', SMS: '문자', STATS: '통계', SURVEY: '설문',
+  SMS: '문자', STATS: '통계', SURVEY: '설문',
   SURVEY_RSP: '설문 응답', SYS_LOG: '시스템 이력', TEMPLATE: '서식', USER: '사용자',
   USER_LOG: '사용자 활동 이력', WEB_LOG: '웹 요청 이력', WORK_RPT: '업무 보고', WORKFLOW: '워크플로우',
 };
@@ -44,7 +44,7 @@ export const PERMISSION_DOMAIN_CATEGORIES: readonly PermissionDomainCategory[] =
   { key: 'CONTENT', label: '게시·지식·커뮤니티', domains: ['BOARD', 'BBS_MST', 'NOTICE', 'FAQ', 'COMMENT', 'SATISFY', 'TEMPLATE', 'HELP', 'COMMUNITY', 'FILE'] },
   { key: 'SURVEY_EVENT', label: '설문·행사', domains: ['SURVEY', 'SURVEY_RSP', 'POLL', 'EVENT', 'EXT_HR', 'REWARD'] },
   { key: 'IDENTITY', label: '사용자·조직·권한', domains: ['USER', 'DEPT', 'CLASS_GRP', 'AUTHRT', 'LOGIN_POL', 'MFA', 'POLICY'] },
-  { key: 'SYSTEM', label: '시스템 설정', domains: ['MENU', 'CODE', 'ADMCODE', 'INST_CODE', 'BANNER', 'POPUP', 'SERVICE', 'OPS', 'DWORK'] },
+  { key: 'SYSTEM', label: '시스템 설정', domains: ['MENU', 'CODE', 'ADMCODE', 'INST_CODE', 'BANNER', 'POPUP', 'OPS', 'DWORK'] },
   { key: 'AUDIT', label: '로그·감사·통계', domains: ['LOGIN_LOG', 'SYS_LOG', 'WEB_LOG', 'USER_LOG', 'PRIVACY', 'ADT_LOG', 'STATS'] },
 ];
 export const OTHER_PERMISSION_CATEGORY: PermissionDomainCategory = { key: 'OTHER', label: '기타', domains: [] };

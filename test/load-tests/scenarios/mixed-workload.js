@@ -53,7 +53,8 @@ export default function (data) {
     const created = http.post(`${api}/schedules`, JSON.stringify(body), { headers });
     const id = envelope(created)?.data;
     const validId = Number.isSafeInteger(id) && id > 0;
-    check(created, { 'schedule created': r => r.status === 200 && envelope(r)?.success === true && validId });
+    // [ADR-0036] 자원을 만드는 POST 는 201 이고 본문 data 가 새 식별자다.
+    check(created, { 'schedule created': r => r.status === 201 && envelope(r)?.success === true && validId });
     if (validId) {
       const url = `${api}/schedules/${id}`;
       const params = { headers, tags: { name: '/api/v1/schedules/:id' } };

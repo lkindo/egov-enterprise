@@ -137,10 +137,10 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   */
   const { data, isLoading, isError, error: listError, refetch } = useQuery({
     queryKey: ['admin-rewards', searchKeyword, page, size],
-    // 서버 계약: name(포상명 부분일치) + Spring Data Pageable(page 는 0-based)
+    // 서버 계약: name(포상명 부분일치) + page(1부터)·size(ADR-0036)
     queryFn: () => rewardAdminService.getRewardList({
       name: searchKeyword,
-      page: page - 1,
+      page,
       size
     }),
     // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 사용한다

@@ -124,7 +124,7 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_creator", List.of("CONTENT_OPERATORS"),
                                 List.of(surface.prefix() + "_CREATE"))))
                         .contentType(MediaType.APPLICATION_JSON).content(surface.body("RBAC initial")))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true)).andReturn();
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.success").value(true)).andReturn();
         String id = surface.fixedId();
         if (id.isEmpty()) {
             id = Long.toString(objectMapper.readTree(creation.getResponse().getContentAsString())

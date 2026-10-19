@@ -30,11 +30,11 @@ public class PopupUserApiController {
                 .map(PopupPublicResponse::from).toList()));
     }
 
-    @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
+    @Operation(summary = "팝업 상세 조회", description = "오늘 게시 중인 팝업의 상세 정보를 조회합니다. 게시하지 않았거나 게시 기간 밖인 팝업은 404 입니다.")
     @GetMapping("/{popupSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupUserApiController#getPopup')")
     public ResponseEntity<ApiResponse<PopupPublicResponse>> getPopup(
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
-        return ResponseEntity.ok(ApiResponse.success(PopupPublicResponse.from(popupService.getPopup(popupSn))));
+        return ResponseEntity.ok(ApiResponse.success(PopupPublicResponse.from(popupService.getPublishedPopup(popupSn))));
     }
 }

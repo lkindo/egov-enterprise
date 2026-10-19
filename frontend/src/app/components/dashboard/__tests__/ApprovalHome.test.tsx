@@ -34,7 +34,7 @@ describe('업무 홈 결재 조각', () => {
     await renderCard();
 
     await waitFor(() => expect(screen.getByText('결재 대기').closest('li')).toHaveTextContent('3건'));
-    expect(harness.getPending).toHaveBeenCalledWith({ page: 0, size: 1, keyword: undefined, fromYmd: undefined, toYmd: undefined });
+    expect(harness.getPending).toHaveBeenCalledWith({ page: 1, size: 1, keyword: undefined, fromYmd: undefined, toYmd: undefined });
     expect(screen.getByRole('link', { name: /결재 대기/ })).toHaveAttribute('href', '/approvals');
     expect(screen.getByRole('link', { name: '결재함 열기' })).toHaveAttribute('href', '/approvals');
   });

@@ -20,7 +20,7 @@ export default async function LogDashboardPage() {
   // initialData 가 채워져 클라이언트 재조회조차 일어나지 않는다.
   // 성공/실패를 구분해 넘기고, 실패 시 클라이언트가 다시 조회해 실제 오류를 노출하게 한다.
   const systemLogsPromise: Promise<InitialSystemLogs> = systemLogAdminService
-    .getSystemLogs({ page: 0, size: 10, searchWrd: '' }, axiosConfig)
+    .getSystemLogs({ page: 1, size: 10, searchWrd: '' }, axiosConfig)
     .then((data) => ({ ok: true as const, data }))
     .catch((error: unknown) => ({
       ok: false as const,

@@ -69,10 +69,11 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 템플릿 등록")
     @PostMapping("/templates")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate')")
-    public ResponseEntity<ApiResponse<Void>> insertTemplate(@Valid @RequestBody SurveyTemplateDto dto) {
-        surveyService.insertTmplat(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> insertTemplate(@Valid @RequestBody SurveyTemplateDto dto) {
+        Long srvyTmpltSn = surveyService.insertTmplat(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(srvyTmpltSn));
     }
 
     // --- Survey Info ---
@@ -96,20 +97,22 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 정보 등록")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey')")
-    public ResponseEntity<ApiResponse<Void>> insertSurvey(@Valid @RequestBody SurveyInfoDto dto) {
-        surveyService.insertSurvey(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> insertSurvey(@Valid @RequestBody SurveyInfoDto dto) {
+        Long srvySn = surveyService.insertSurvey(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(srvySn));
     }
 
     @Operation(summary = "설문 복제", description = """
             설문을 문항·선택 항목까지 복제해 새 설문을 만들고 그 일련번호를 돌려줍니다. 응답은 복제하지 않습니다.
             사본의 제목과 기간은 요청으로 받습니다 — 원본 기간을 복사하면 같은 설문이 둘 열리고, 비우면 무기한 열립니다.""")
     @PostMapping("/{srvySn}/copy")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#copySurvey')")
     public ResponseEntity<ApiResponse<Long>> copySurvey(@PathVariable Long srvySn,
             @Valid @RequestBody nuri.business.service.survey.dto.SurveyCopyRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(surveyService.copySurvey(srvySn, request)));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(surveyService.copySurvey(srvySn, request)));
     }
 
     @Operation(summary = "설문 정보 수정")
@@ -177,12 +180,13 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 문항 등록")
     @PostMapping("/{srvySn}/questions")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion')")
-    public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable Long srvySn,
+    public ResponseEntity<ApiResponse<Long>> insertQuestion(@PathVariable Long srvySn,
             @Valid @RequestBody SurveyQuestionDto dto) {
         dto.setSrvySn(srvySn);
-        surveyService.insertQuestion(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long srvyQstnSn = surveyService.insertQuestion(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(srvyQstnSn));
     }
 
     @Operation(summary = "설문 항목 수정")
@@ -204,10 +208,11 @@ public class SurveyApiController {
 
     @Operation(summary = "설문 항목 등록")
     @PostMapping("/questions/{srvyQstnSn}/items")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem')")
-    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyArticleDto dto) {
+    public ResponseEntity<ApiResponse<Long>> insertItem(@PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyArticleDto dto) {
         dto.setSrvyQstnSn(srvyQstnSn);
-        surveyService.insertItem(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        Long srvyArtclSn = surveyService.insertItem(dto);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(srvyArtclSn));
     }
 }

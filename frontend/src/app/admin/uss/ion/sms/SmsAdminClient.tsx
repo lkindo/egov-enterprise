@@ -176,7 +176,7 @@ export default function SmsAdminClient({
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['admin-sms', searchCondition, searchKeyword, page, pageSize],
-    // 서버는 Spring Pageable(0-base)을 읽는다.
+    // 서버는 1부터 세는 page 를 읽는다(ADR-0036).
     queryFn: () => smsAdminService.getSmsList({
       // [2026-08-29] searchCondition 을 함께 보낸다.
       //   종전에는 키워드만 보냈는데, 서버의 SmsRepositoryImpl.searchExpression 은 조건이
@@ -185,7 +185,7 @@ export default function SmsAdminClient({
       //   관리자는 "그 번호로 보낸 이력이 이만큼" 이라고 잘못 읽는다.
       searchCondition: searchKeyword ? searchCondition : undefined,
       searchKeyword: searchKeyword || undefined,
-      page: page - 1,
+      page,
       size: pageSize,
     }),
     initialData: (page === 1 && !searchKeyword) ? (initialSmsList ?? undefined) : undefined,

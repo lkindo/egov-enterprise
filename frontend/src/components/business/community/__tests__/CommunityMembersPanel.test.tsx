@@ -88,14 +88,14 @@ describe('CommunityMembersPanel', () => {
     const user = userEvent.setup();
     renderPanel();
     const list = await screen.findByRole('list', { name: '회원 목록' });
-    expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'REQUESTED', page: 0, size: 20 });
+    expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'REQUESTED', page: 1, size: 20 });
     expect(within(list).getByText('홍길동')).toBeInTheDocument();
     expect(within(list).getByText('esntl-gone')).toBeInTheDocument();
     expect(within(list).getByRole('button', { name: '홍길동 가입 승인' })).toBeInTheDocument();
     expect(within(list).getByRole('button', { name: 'esntl-gone 가입 반려' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '회원' }));
-    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'APPROVED', page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'APPROVED', page: 1, size: 20 }));
     const memberList = await screen.findByRole('list', { name: '회원 목록' });
     await within(memberList).findByText('김회원');
     expect(within(memberList).queryByRole('button', { name: /가입 승인/ })).not.toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('CommunityMembersPanel', () => {
     expect(within(memberList).queryByRole('button', { name: /탈퇴 처리/ })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '전체' }));
-    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { page: 1, size: 20 }));
   });
 
   it('승인은 확인 없이 한 번만 부르고 pending 동안 disabled·aria-busy 이며(다른 행도 disabled), 실패는 토스트로 드러내고 행을 남긴다', async () => {
@@ -236,7 +236,7 @@ describe('CommunityMembersPanel', () => {
     renderPanel();
     await screen.findByRole('list', { name: '회원 목록' });
     await user.click(screen.getByRole('button', { name: '탈퇴' }));
-    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'WITHDRAWN', page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'WITHDRAWN', page: 1, size: 20 }));
     const list = await screen.findByRole('list', { name: '회원 목록' });
     await within(list).findByText('이탈퇴');
     expect(within(list).getByText('탈퇴')).toBeInTheDocument();

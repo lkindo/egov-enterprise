@@ -35,20 +35,20 @@ export default async function CommonCodePage({
   let fetchError = false;
 
   try {
-    // [2026-08-30] 서버 pageUnit 상한(@Max 100) 때문에 999 는 400 이 된다. 100 으로 낮추면
+    // [2026-08-30] 서버 페이지 크기 상한(@Max 100) 때문에 999 는 400 이 된다. 100 으로 낮추면
     //   목록이 조용히 잘리므로, 끝까지 따라가 전량을 모은다.
     const [loadedClCodes, loadedGroups, loadedDetails] = await Promise.all([
-      fetchAllPages((pageIndex, pageUnit) =>
-        codeAdminService.getClCodeList({ pageIndex, pageUnit }, axiosConfig)),
-      fetchAllPages((pageIndex, pageUnit) =>
-        codeAdminService.getCmmnCodeList({ pageIndex, pageUnit }, axiosConfig)),
+      fetchAllPages((page, size) =>
+        codeAdminService.getClCodeList({ page, size }, axiosConfig)),
+      fetchAllPages((page, size) =>
+        codeAdminService.getCmmnCodeList({ page, size }, axiosConfig)),
       groupId
-        ? fetchAllPages((pageIndex, pageUnit) =>
+        ? fetchAllPages((page, size) =>
             codeAdminService.getDetailCodeList({
               searchCondition: '1',
               searchKeyword: groupId,
-              pageIndex,
-              pageUnit,
+              page,
+              size,
             }, axiosConfig))
         : Promise.resolve([] as CmmnDetailCode[]),
     ]);

@@ -68,3 +68,5 @@ config/governance/generated-api-boundaries.json text working-tree-encoding=UTF-8
 config/ui-url-state-census.json text working-tree-encoding=UTF-8 eol=lf
 frontend/public/governance_harness_atlas.html text eol=lf
 frontend/src/types/generated-*.ts text working-tree-encoding=UTF-8 eol=lf
+# zod·operations 의 태그 묶음 모듈(진입 파일 옆 같은 이름 폴더, codegen-zod.js)도 같은 생성물이다.
+frontend/src/types/generated-*/*.ts text working-tree-encoding=UTF-8 eol=lf

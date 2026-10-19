@@ -36,8 +36,9 @@ public class AuthorizationApiController {
     @GetMapping("/groups/{code}/members")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzGroupMembers", summary="그룹에 배정된 사용자")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#groupMembers')")
-    public ApiResponse<PageResponse<UserChoice>> groupMembers(@PathVariable String code,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
-        return ApiResponse.success(PageResponse.of(service.groupMembers(code,page,size)));
+    public ApiResponse<PageResponse<UserChoice>> groupMembers(@PathVariable String code,
+            @org.springframework.data.web.PageableDefault(size=20) @nuri.api.support.UnsortedPageable org.springframework.data.domain.Pageable page) {
+        return ApiResponse.success(PageResponse.of(service.groupMembers(code,page.getPageNumber(),page.getPageSize())));
     }
 
     @PatchMapping("/groups/{code}/members")
@@ -49,11 +50,12 @@ public class AuthorizationApiController {
     }
 
     @PostMapping("/groups/{code}/copies")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 복제")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCopyGroup", summary="권한 그룹 복제")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#copyGroup')")
     public ApiResponse<GroupSnapshot> copyGroup(@PathVariable String code,@Valid @RequestBody CopyGroup request) {
-        return ApiResponse.success(service.copyGroup(code,request));
+        return ApiResponse.created(service.copyGroup(code,request));
     }
 
     @GetMapping("/grants")
@@ -62,10 +64,11 @@ public class AuthorizationApiController {
     public ApiResponse<GrantMatrix> grantMatrix() { return ApiResponse.success(service.grantMatrix()); }
 
     @PostMapping("/groups")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 생성")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzCreateGroup")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#createGroup')")
-    public ApiResponse<GroupSnapshot> createGroup(@Valid @RequestBody CreateGroup request) { return ApiResponse.success(service.createGroup(request)); }
+    public ApiResponse<GroupSnapshot> createGroup(@Valid @RequestBody CreateGroup request) { return ApiResponse.created(service.createGroup(request)); }
 
     @PutMapping("/groups/{code}")
     @nuri.foundation.core.annotation.SensitiveOperation("권한 그룹 변경")
@@ -99,18 +102,19 @@ public class AuthorizationApiController {
     @GetMapping("/users")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzUsers")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#users')")
-    public ApiResponse<PageResponse<UserChoice>> users(@RequestParam(defaultValue="") String keyword,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
-        return ApiResponse.success(PageResponse.of(service.users(keyword,page,size)));
+    public ApiResponse<PageResponse<UserChoice>> users(@RequestParam(defaultValue="") String keyword,
+            @org.springframework.data.web.PageableDefault(size=20) @nuri.api.support.UnsortedPageable org.springframework.data.domain.Pageable page) {
+        return ApiResponse.success(PageResponse.of(service.users(keyword,page.getPageNumber(),page.getPageSize())));
     }
 
     @GetMapping("/history")
     @io.swagger.v3.oas.annotations.Operation(operationId="authzHistory")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.AuthorizationApiController#history')")
-    public ApiResponse<PageResponse<Change>> history(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size,
+    public ApiResponse<PageResponse<Change>> history(@org.springframework.data.web.PageableDefault(size=20) @nuri.api.support.UnsortedPageable org.springframework.data.domain.Pageable page,
             @RequestParam(required=false) String groupCode, @RequestParam(required=false) String userId, @RequestParam(required=false) String actorId,
             @RequestParam(required=false) @org.springframework.format.annotation.DateTimeFormat(iso=org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
             @RequestParam(required=false) @org.springframework.format.annotation.DateTimeFormat(iso=org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate) {
-        return ApiResponse.success(PageResponse.of(service.history(page,size,groupCode,userId,actorId,fromDate,toDate)));
+        return ApiResponse.success(PageResponse.of(service.history(page.getPageNumber(),page.getPageSize(),groupCode,userId,actorId,fromDate,toDate)));
     }
 
     @GetMapping("/departments")

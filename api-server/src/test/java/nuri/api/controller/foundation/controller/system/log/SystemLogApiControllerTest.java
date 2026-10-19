@@ -47,7 +47,7 @@ class SystemLogApiControllerTest {
         when(logManageService.selectSysLogListTotCnt(any())).thenReturn(0);
 
         mockMvc.perform(get("/api/v1/admin/system/logs/system")
-                .param("pageIndex", "1"))
+                .param("page", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

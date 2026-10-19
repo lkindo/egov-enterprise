@@ -7,26 +7,29 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import { PaginationInfo } from '@/types/foundation/system';
 import { cn } from '@/lib/utils';
 
 interface PagePaginationProps {
-  pagination?: PaginationInfo;
+  /** 전체 건수 */
   total?: number;
+  /** 현재 페이지 번호(1부터, ADR-0036) */
   page?: number;
+  /** 페이지당 건수 */
   size?: number;
   onPageChange: (page: number) => void;
 }
 
-export function PagePagination({ pagination, total, page, size, onPageChange }: PagePaginationProps) {
-  const totalRecordCount = total ?? pagination?.totalRecordCount ?? 0;
-  const recordCountPerPage = size ?? pagination?.recordCountPerPage ?? 10;
-  const currentPageNo = page ?? pagination?.currentPageNo ?? 1;
-  const totalPageCount = total !== undefined && size !== undefined 
-    ? Math.ceil(total / size) 
-    : (pagination?.totalPageCount || 0);
+// [ADR-0036] eGov PaginationInfo(currentPageNo·recordCountPerPage·totalPageCount…)를 받던 `pagination` prop 은 걷었다 —
+//   모든 호출부가 total·page·size 를 넘기고, 서버 응답(PageResponse)에도 그 모양이 없다.
+export function PagePagination({ total, page, size, onPageChange }: PagePaginationProps) {
+  const totalRecordCount = total ?? 0;
+  const perPage = size ?? 10;
+  const currentPageNo = page ?? 1;
+  const totalPageCount = total !== undefined && size !== undefined
+    ? Math.ceil(total / size)
+    : 0;
 
-  if (totalPageCount <= 1 && totalRecordCount <= recordCountPerPage) return null;
+  if (totalPageCount <= 1 && totalRecordCount <= perPage) return null;
 
   const isFirstPage = currentPageNo <= 1;
   const isLastPage = currentPageNo >= totalPageCount;

@@ -39,8 +39,8 @@ describe('foundation ordinary generated boundary wave4', () => {
     const survey = { srvySn: 7, srvyTtl: '제목만 작성한 설문', srvyTmpltSn: 1 };
     const response = { ...survey, srvyPrps: empty, srvyWrtGdCn: empty, srvyTrgt: empty,
       srvyBgngYmd: empty, srvyEndYmd: empty, frstRgtrId: empty, crtDt: empty };
-    client.getRaw.mockResolvedValueOnce(success({ list: [response], total: 1, page: 0, size: 10, totalPage: 1 }));
-    const page = await surveyParticipationService.getSurveys({ page: 0, size: 10 });
+    client.getRaw.mockResolvedValueOnce(success({ list: [response], total: 1, page: 1, size: 10, totalPage: 1 }));
+    const page = await surveyParticipationService.getSurveys({ page: 1, size: 10 });
     expect(page).toMatchObject({
       list: [{ ...survey, srvyPrps: '', srvyWrtGdCn: '', srvyTrgt: '', srvyBgngYmd: '', srvyEndYmd: '', crtDt: '' }],
       total: 1,
@@ -53,19 +53,19 @@ describe('foundation ordinary generated boundary wave4', () => {
       { srvyTtl: 'missing id', srvyTmpltSn: 1 },
       { srvySn: 7, srvyTtl: 'bad text', srvyTmpltSn: 1, srvyPrps: 123 },
     ]) {
-      client.getRaw.mockResolvedValueOnce(success({ list: [survey], total: 1, page: 0, size: 10, totalPage: 1 }));
-      await expect(surveyParticipationService.getSurveys({ page: 0, size: 10 })).rejects.toThrow();
+      client.getRaw.mockResolvedValueOnce(success({ list: [survey], total: 1, page: 1, size: 10, totalPage: 1 }));
+      await expect(surveyParticipationService.getSurveys({ page: 1, size: 10 })).rejects.toThrow();
     }
   });
 
   it('operation external HR list uses its exact generated query', async () => {
-    const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    const page = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(externalHrAdminService.getExternalHrList({ name: 'Kim', page: 0, size: 10 }))
+    await expect(externalHrAdminService.getExternalHrList({ name: 'Kim', page: 1, size: 10 }))
       .resolves.toStrictEqual(page);
     expect(client.getRaw).toHaveBeenCalledWith('admin/operation/external-hr', {
-      params: { name: 'Kim', page: 0, size: 10 },
+      params: { name: 'Kim', page: 1, size: 10 },
     });
   });
 
@@ -73,14 +73,14 @@ describe('foundation ordinary generated boundary wave4', () => {
     const externalHr = { evntSn: 1, otsdHrId: 'OUTSIDE_1', otsdHrNm: 'Kim' };
     // [2026-10-18] 수상자·포상 코드는 요청·응답 계약 모두 필수다(물리 컬럼 NOT NULL).
     const reward = { rwrdSn: 2, rwardNm: 'Award', rwardwnrId: 'U1', rwardCode: 'R01' };
-    const page = { list: [reward], total: 1, page: 0, size: 10, totalPage: 1 };
+    const page = { list: [reward], total: 1, page: 1, size: 10, totalPage: 1 };
     client.requestRaw
       .mockResolvedValueOnce(success(externalHr))
       .mockResolvedValueOnce(success(reward));
     client.getRaw.mockResolvedValueOnce(success(page));
 
     await expect(externalHrAdminService.createExternalHr(externalHr)).resolves.toStrictEqual(externalHr);
-    await expect(rewardAdminService.getRewardList({ name: 'Award', page: 0, size: 10 }))
+    await expect(rewardAdminService.getRewardList({ name: 'Award', page: 1, size: 10 }))
       .resolves.toStrictEqual(page);
     await expect(rewardAdminService.createReward(reward)).resolves.toStrictEqual(reward);
 
@@ -90,7 +90,7 @@ describe('foundation ordinary generated boundary wave4', () => {
       data: externalHr,
     });
     expect(client.getRaw).toHaveBeenCalledWith('admin/operation/rewards', {
-      params: { name: 'Award', page: 0, size: 10 },
+      params: { name: 'Award', page: 1, size: 10 },
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(2, {
       url: 'admin/operation/rewards',
@@ -226,19 +226,19 @@ describe('foundation ordinary generated boundary wave4', () => {
       }],
     };
     // 결과 통계(surveys/{srvySn}/stats)는 lib/api/survey 의 getSurveyStats 가 소유하고 그 계약 테스트가 본다.
-    const page = { list: [survey], total: 1, page: 0, size: 10, totalPage: 1 };
+    const page = { list: [survey], total: 1, page: 1, size: 10, totalPage: 1 };
     client.getRaw
       .mockResolvedValueOnce(success(page))
       .mockResolvedValueOnce(success(survey))
       .mockResolvedValueOnce(success([question]));
 
-    await expect(surveyParticipationService.getSurveys({ page: 0, size: 10, keyword: 'service' }))
+    await expect(surveyParticipationService.getSurveys({ page: 1, size: 10, keyword: 'service' }))
       .resolves.toStrictEqual(page);
     await expect(surveyParticipationService.getSurvey(7)).resolves.toStrictEqual(survey);
     await expect(surveyParticipationService.getQuestions(7)).resolves.toStrictEqual([question]);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'surveys', {
-      params: { page: 0, size: 10, keyword: 'service' },
+      params: { page: 1, size: 10, keyword: 'service' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'surveys/7', undefined);
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'surveys/7/questions', undefined);

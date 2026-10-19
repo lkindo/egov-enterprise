@@ -14,7 +14,7 @@ import { Calendar, ArrowRight } from 'lucide-react';
 
 export default function SurveyClient() {
   const router = useRouter();
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1); // 1부터 (표·서버 page 와 같은 번호, ADR-0036)
   const [pageSize, setPageSize] = useState(10);
   const { data, isFetching, isError, error, refetch } = useQuery(surveyListOptions(page, pageSize));
   // 목록은 클라이언트에서 불러오므로 기준일이 SSR 마크업에 실리지 않는다.
@@ -113,11 +113,11 @@ export default function SurveyClient() {
         )}
         emptyMessage="등록된 설문 조사가 없습니다."
         pagination={{
-          currentPage: page + 1,
+          currentPage: page,
           totalPages: data?.totalPage ?? 0,
           pageSize,
-          onPageChange: (next) => setPage(next - 1),
-          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
+          onPageChange: (next) => setPage(next),
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
         }}
       />
     </WorkListPage>

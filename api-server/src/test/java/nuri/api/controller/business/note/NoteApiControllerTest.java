@@ -100,7 +100,7 @@ class NoteApiControllerTest extends ControllerTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         // 서비스는 수신자가 없는 요청을 거부한다 — 컨트롤러 테스트도 유효한 발송 요청을 쓴다.
                         .content("{\"noteSj\":\"Test Subject\", \"noteCn\":\"Test Content\", \"rcverId\":\"user2\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test

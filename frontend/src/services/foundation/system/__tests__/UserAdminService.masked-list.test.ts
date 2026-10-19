@@ -23,7 +23,7 @@ describe('관리자 사용자 목록의 가린 연락처', () => {
   };
 
   it('getUsers 응답 스키마가 가린 휴대전화·이메일 행을 받는다', () => {
-    const page = { list: [maskedRow], total: 1, page: 0, size: 10, totalPage: 1 };
+    const page = { list: [maskedRow], total: 1, page: 1, size: 10, totalPage: 1 };
 
     expect(getUsersOperation.responseSchema?.safeParse(page).success).toBe(true);
   });

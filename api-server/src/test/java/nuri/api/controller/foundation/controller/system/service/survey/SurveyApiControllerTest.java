@@ -76,12 +76,12 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .srvyTmpltExpln("신규 만족도 템플릿")
                 .build();
 
-        doNothing().when(surveyService).insertTmplat(any(SurveyTemplateDto.class));
+        when(surveyService.insertTmplat(any(SurveyTemplateDto.class))).thenReturn(11L);
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/templates")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         verify(surveyService, times(1)).insertTmplat(any(SurveyTemplateDto.class));
@@ -159,12 +159,12 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .srvyTtl("신규 설문조사")
                 .build();
 
-        doNothing().when(surveyService).insertSurvey(any(SurveyInfoDto.class));
+        when(surveyService.insertSurvey(any(SurveyInfoDto.class))).thenReturn(201L);
 
         mockMvc.perform(post("/api/v1/admin/system/surveys")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         verify(surveyService, times(1)).insertSurvey(any(SurveyInfoDto.class));
@@ -179,7 +179,7 @@ public class SurveyApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/admin/system/surveys/201/copy")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"srvyTtl\":\"2차 조사\",\"srvyBgngYmd\":\"20261001\",\"srvyEndYmd\":\"20261031\"}"))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(305));
 
         org.mockito.ArgumentCaptor<nuri.business.service.survey.dto.SurveyCopyRequest> captor =
@@ -254,12 +254,12 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .qstnCn("직무 만족도 질문")
                 .build();
 
-        doNothing().when(surveyService).insertQuestion(any(SurveyQuestionDto.class));
+        when(surveyService.insertQuestion(any(SurveyQuestionDto.class))).thenReturn(301L);
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/201/questions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         verify(surveyService, times(1)).insertQuestion(argThat(q -> Long.valueOf(201L).equals(q.getSrvySn())));
@@ -306,12 +306,12 @@ public class SurveyApiControllerTest extends BaseControllerTest {
                 .artclCn("매우 만족")
                 .build();
 
-        doNothing().when(surveyService).insertItem(any(SurveyArticleDto.class));
+        when(surveyService.insertItem(any(SurveyArticleDto.class))).thenReturn(401L);
 
         mockMvc.perform(post("/api/v1/admin/system/surveys/questions/301/items")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
 
         verify(surveyService, times(1)).insertItem(argThat(i -> Long.valueOf(301L).equals(i.getSrvyQstnSn())));

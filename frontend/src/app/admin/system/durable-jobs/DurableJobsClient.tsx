@@ -59,7 +59,7 @@ export default function DurableJobsClient() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-durable-jobs', page, pageSize],
-    queryFn: () => operationsRecordAdminService.getDurableJobs(page - 1, pageSize),
+    queryFn: () => operationsRecordAdminService.getDurableJobs(page, pageSize),
   });
   const total = data?.total ?? 0;
 

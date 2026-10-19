@@ -5,7 +5,7 @@ import { getAdminBearerToken } from '../utils/admin-token';
 const REPORT_API = '/api/v1/work-reports';
 /** 이 스펙이 만든 자원만 지우기 위한 접두사. 다른 tier·cleanup 정책과 겹치지 않는 고유값을 쓴다. */
 const PREFIX = 'E2E25_';
-/** 업무 보고 목록의 페이지 크기(WorkReportClient 의 pageUnit 기본값). 페이저를 띄우려면 이보다 많아야 한다. */
+/** 업무 보고 목록의 페이지 크기(WorkReportClient 의 size 기본값). 페이저를 띄우려면 이보다 많아야 한다. */
 const UI_PAGE_UNIT = 10;
 test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
     // UI 검증은 저장된 관리자 세션을 재사용한다. 이 선언이 없으면 미인증 상태로 로그인 화면이 뜬다.
@@ -54,7 +54,7 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
                 data: { rptTtl: title, rptCn: '행 조작 검증', rptYmd: '20260720', rptSeCd: '1' },
             });
             expect(createRes.ok()).toBeTruthy();
-            const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&pageIndex=1&pageUnit=10`, { headers: auth });
+            const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&page=1&size=10`, { headers: auth });
             const rptpSn = ((await listRes.json()).data.list as Array<{ rptpSn?: number }>)[0]?.rptpSn;
             expect(rptpSn, '등록한 보고를 검색으로 되찾을 수 있어야 한다').toBeTruthy();
             let deleted = false;

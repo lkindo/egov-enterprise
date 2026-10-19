@@ -158,7 +158,7 @@ public class NoteService {
     }
 
     @Transactional
-    public void sendNote(String dsptchUserId, NoteDto dto) {
+    public Long sendNote(String dsptchUserId, NoteDto dto) {
         // [2026-09-14 DEC-OPS-092] 수신자 필드가 아예 없으면 아래 파싱 블록을 건너뛰어 수신자 없는 쪽지가
         // 200 으로 저장됐다. 공백 수신자는 이미 거부하므로(V2_21) 같은 입력 오류로 저장 전에 거부한다.
         if (dto.getRcverId() == null || dto.getRcverId().isBlank()) {
@@ -225,6 +225,8 @@ public class NoteService {
                 noteRecptnRepository.save(recptn);
             }
             publishReceivedNotifications(receiverIds, dto.getNoteSj());
+            // [ADR-0036] 생성 응답(201)의 본문은 새 쪽지의 일련번호다(GET /notes/{noteSn}).
+            return note.getNoteSn();
         } catch (BusinessException e) {
             throw e; // 입력 검증 등 의도된 비즈니스 예외는 그대로 전파
         } catch (Exception e) {

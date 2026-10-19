@@ -36,7 +36,7 @@ test.describe('Operational Extension & Uncovered Modules', () => {
             rptTtl: title, rptCn: 'Recipient fixed and first read preserved', rptrId: recipient,
             memoRptYmd: new Date().toISOString().slice(0, 10).replaceAll('-', ''),
         } });
-        expect(created.status()).toBe(200);
+        expect(created.status()).toBe(201);
         const memoId = (await created.json()).data as number;
         let primaryFailure: unknown;
         const openReport = async (page: Page, tab: '발신함' | '수신함', reportTitle: string) => {

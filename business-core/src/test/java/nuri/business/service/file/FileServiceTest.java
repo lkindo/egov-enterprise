@@ -284,6 +284,31 @@ class FileServiceTest {
     }
 
     @Test
+    @DisplayName("🔒 목록 응답은 서버 저장 경로·저장 파일명을 싣지 않는다 — 내려받기는 식별자로만 한다")
+    void getFileList_doesNotExposeStorageLocation() {
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
+                .atchFileSeq(1)
+                .orgnlFileNm("보고서.pdf")
+                .fileStrgPath("general/123")
+                .strgFileNm("9f1c2e7a-stored-object.pdf")
+                .build();
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(detail));
+
+        // 컨트롤러가 그대로 직렬화하는 DTO 를 같은 방식(JSON)으로 본다 — 필드 이름이 아니라 값이 새는지를 판정한다.
+        String json = objectMapper.writeValueAsString(fileService.getFileList(atchFileSn));
+
+        assertThat(json)
+                .as("첨부 목록 응답에 서버 저장 위치가 실리면 안 된다")
+                .contains("보고서.pdf")
+                .doesNotContain("general/123")
+                .doesNotContain("9f1c2e7a-stored-object.pdf");
+    }
+
+    @Test
     @DisplayName("파일 리소스 조회")
     void getFileResource() throws IOException {
         // given

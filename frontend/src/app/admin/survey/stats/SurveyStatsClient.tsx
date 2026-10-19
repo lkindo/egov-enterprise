@@ -21,7 +21,7 @@ function totalResponses(poll: OnlinePollDto): number {
 }
 
 export default function SurveyStatsClient({ embedded = false }: { embedded?: boolean }) {
-  const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
+  const [page, setPage] = useState(1); // 1부터 (표·서버 page 와 같은 번호, ADR-0036)
   const [keyword, setKeyword] = useState('');
   const debouncedKeyword = useDebouncedValue(keyword, 300);
 
@@ -43,7 +43,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
   /** 검색 시 항상 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(P1-8). */
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
-    setPage(0);
+    setPage(1);
   };
 
   const columns: Column<OnlinePollDto>[] = [
@@ -51,7 +51,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
       header: '번호',
       accessor: (_, index) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {(index !== undefined ? index + 1 + page * PAGE_SIZE : 0)}
+          {(index !== undefined ? index + 1 + (page - 1) * PAGE_SIZE : 0)}
         </span>
       ),
       className: 'w-20 text-center',
@@ -147,9 +147,9 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
         keyField="pollSn"
         emptyMessage={emptyResultMessage(keyword, '집계할 여론조사가 없습니다.')}
         pagination={{
-          currentPage: page + 1,
+          currentPage: page,
           totalPages: Math.ceil(totalCount / PAGE_SIZE),
-          onPageChange: (p) => setPage(p - 1),
+          onPageChange: (p) => setPage(p),
           pageSize: PAGE_SIZE,
         }}
       />

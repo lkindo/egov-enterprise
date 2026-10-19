@@ -24,7 +24,7 @@ function StatsContent() {
   const page = selectionPage.search === search ? selectionPage.page : 1;
   const surveys = useQuery({
     queryKey: ['survey-stats-selection', search, page],
-    queryFn: ({ signal }) => surveyParticipationService.getSurveys({ keyword: search, page: page - 1, size: 10 }, { signal }),
+    queryFn: ({ signal }) => surveyParticipationService.getSurveys({ keyword: search, page, size: 10 }, { signal }),
     throwOnError: false,
   });
   const hasSelection = Number.isSafeInteger(initialSrvySn) && initialSrvySn > 0;

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -60,7 +59,7 @@ class UserApiControllerTest extends BaseControllerTest {
             }
         };
 
-        return new HandlerMethodArgumentResolver[] { loginUserResolver, new PageableHandlerMethodArgumentResolver() };
+        return new HandlerMethodArgumentResolver[] { loginUserResolver, nuri.business.support.PageableTestResolvers.standard() };
     }
 
     private UserDto createMockUser() {
@@ -114,7 +113,7 @@ class UserApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true));
     }
 
@@ -126,7 +125,7 @@ class UserApiControllerTest extends BaseControllerTest {
         when(userService.getPagedUserList(any(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/admin/system/users")
-                .param("page", "0")
+                .param("page", "1")
                 .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

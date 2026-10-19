@@ -27,7 +27,7 @@ const makeManual = (overrides: Partial<ManualDto> = {}): ManualDto => ({
 const emptyPage = {
   list: [],
   total: 0,
-  page: 0,
+  page: 1,
   size: 10,
   totalPage: 0,
 };
@@ -42,7 +42,7 @@ describe('ManualAdminService generated operation 계약', () => {
   it('목록 조회는 OpenAPI의 keyword/page/size/sort 이름을 그대로 사용한다', async () => {
     await manualAdminService.getManualList({
       keyword: '결재',
-      page: 0,
+      page: 1,
       size: 20,
       sort: ['onlnMnlSn,desc'],
     });
@@ -50,7 +50,7 @@ describe('ManualAdminService generated operation 계약', () => {
     expect(client.getRaw).toHaveBeenCalledWith('help/manuals', {
       params: {
         keyword: '결재',
-        page: 0,
+        page: 1,
         size: 20,
         sort: ['onlnMnlSn,desc'],
       },
@@ -121,20 +121,20 @@ describe('ManualAdminService generated operation 계약', () => {
     const page = {
       list: [makeManual({ onlnMnlSn: 1 })],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(manualAdminService.getManualList({ page: 0 })).resolves.toStrictEqual(page);
+    await expect(manualAdminService.getManualList({ page: 1 })).resolves.toStrictEqual(page);
   });
 
   it('OpenAPI에서 optional이지만 공개 반환에 필수인 필드가 없으면 fail-closed 한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({
       list: [{ onlnMnlSn: 1, onlnMnlNm: '불완전', onlnMnlSeCd: 'GNR' }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));

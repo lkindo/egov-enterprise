@@ -13,7 +13,7 @@ import {
 /** 포상정보: OpenAPI RewardManageDto를 단일 원본으로 사용한다. */
 export type Reward = components['schemas']['RewardManageDto'];
 
-/** Spring Pageable의 0-based page를 그대로 받는 exact query. */
+/** 생성 query 그대로(exact) — `page` 는 1부터다(ADR-0036). */
 export type RewardSearchParams = NonNullable<operations['getAllRewards']['parameters']['query']>;
 
 /** 포상 관리자 서비스. 외부인사 서비스(ExternalHrAdminService)와 따로 둔다 — 행사·포상은 따로 고르는 기능이다. */

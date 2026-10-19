@@ -100,11 +100,12 @@ public class SmsApiController {
 
     @Operation(summary = "SMS 발송", description = "새로운 SMS를 발송합니다.")
     @PostMapping
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.sms.SmsApiController#sendSms')")
     public ResponseEntity<ApiResponse<Long>> sendSms(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody SmsDto smsDto) {
         Long smsTrsmSn = smsService.sendSms(userDetails.getEsntlId(), smsDto);
-        return ResponseEntity.ok(ApiResponse.success(smsTrsmSn));
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(smsTrsmSn));
     }
 }

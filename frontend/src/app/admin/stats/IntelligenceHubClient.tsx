@@ -116,6 +116,24 @@ function formatAxisDate(value: unknown): string {
   return display ? display.slice(5) : raw;
 }
 
+/**
+ * 시간축 차트가 그릴 순서 — 날짜 오름차순(왼쪽이 과거, 오른쪽이 최근).
+ *
+ * <p>[2026-10-19] 차트는 받은 배열 순서대로 X축을 놓는다. 성공 로그인·사용자 활동 집계는 서버가 날짜 오름차순으로 주지만,
+ * 게시물·자료 이용 집계(게시판 기여)는 최신순으로 줘서 '콘텐츠 지표' 탭의 시간이 오른쪽에서 왼쪽으로 흘렀다. 축의 방향은
+ * 차트가 소유하므로 그리기 전에 한 곳에서 맞춘다 — 기여가 늘어도 서버 정렬에 기대지 않는다. 같은 계열의 날짜는 한 형식
+ * ('yyyy-MM-dd' 또는 'yyyyMMdd')이라 문자열 비교가 곧 날짜 비교다. 날짜가 없는 행은 뒤에 둔다(원래 순서 유지).
+ */
+function inTimeOrder(rows: readonly StatsSeriesPoint[]): StatsSeriesPoint[] {
+  const dateOf = (row: StatsSeriesPoint) => (typeof row.statsDate === 'string' ? row.statsDate : '');
+  return [...rows].sort((left, right) => {
+    const a = dateOf(left);
+    const b = dateOf(right);
+    if (!a || !b) return Number(!a) - Number(!b);
+    return a < b ? -1 : a > b ? 1 : 0;
+  });
+}
+
 export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { defaultTab?: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -200,7 +218,8 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const chartQuery: StatsPanelQuery = activePanel?.kind === 'series' && activePanelQuery
     ? activePanelQuery
     : activeTab === 'USER_STATS' ? userQuery : connectQuery;
-  const chartData = (chartQuery.data as readonly StatsSeriesPoint[] | undefined) ?? [];
+  // 시간이 왼쪽에서 오른쪽으로 흐르게 그린다 — 계열마다 서버 정렬이 다르다(inTimeOrder). 내보내기도 같은 순서다.
+  const chartData = inTimeOrder((chartQuery.data as readonly StatsSeriesPoint[] | undefined) ?? []);
 
   const isUninstrumentedTab = activePanel?.kind === 'series' && activePanel.uninstrumented;
   const emptyChartMessage = isUninstrumentedTab
