@@ -19,7 +19,7 @@ import { menuAdminService } from '../MenuAdminService';
 import { statsAdminService } from '../StatsAdminService';
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
-const page = (list: unknown[] = []) => ({ list, total: list.length, page: 0, size: 10, totalPage: 1 });
+const page = (list: unknown[] = []) => ({ list, total: list.length, page: 1, size: 10, totalPage: 1 });
 
 describe('generated system boundary wave 3', () => {
   beforeEach(() => {
@@ -32,6 +32,9 @@ describe('generated system boundary wave 3', () => {
     client.getRaw
       .mockResolvedValueOnce(envelope([menu]))
       .mockResolvedValueOnce(envelope(menu));
+
+    // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다.
+    client.requestRaw.mockResolvedValueOnce(envelope(8));
 
     await menuAdminService.getAllMenus();
     await menuAdminService.getMenu(7);
@@ -113,7 +116,10 @@ describe('generated system boundary wave 3', () => {
       .mockResolvedValueOnce(envelope(page([group])))
       .mockResolvedValueOnce(envelope(group));
 
-    await groupAdminService.getGroupList({ page: 0, size: 20, searchKeyword: '그룹' });
+    // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다.
+    client.requestRaw.mockResolvedValueOnce(envelope('GROUP_NEW'));
+
+    await groupAdminService.getGroupList({ page: 1, size: 20, searchKeyword: '그룹' });
     await groupAdminService.getGroup('GROUP_A');
     await groupAdminService.createGroup({ groupNm: '그룹' });
     await groupAdminService.updateGroup('GROUP_A', { groupNm: '수정' });
@@ -142,7 +148,7 @@ describe('generated system boundary wave 3', () => {
       .mockResolvedValueOnce(envelope(wireCommunity))
       .mockResolvedValue(envelope(undefined));
 
-    await communityAdminService.getCommunityList({ page: 0, size: 20, searchWrd: '커뮤니티' });
+    await communityAdminService.getCommunityList({ page: 1, size: 20, searchWrd: '커뮤니티' });
     await communityAdminService.getCommunity(7);
     await communityAdminService.createCommunity({ cmntyNm: '커뮤니티', cmntyIntrcn: '소개', useYn: 'Y' });
     await communityAdminService.updateCommunity(7, { cmntyNm: '수정', cmntyIntrcn: '소개', useYn: 'Y' });
@@ -171,7 +177,7 @@ describe('generated system boundary wave 3', () => {
       .mockResolvedValueOnce(envelope(8))
       .mockResolvedValue(envelope(undefined));
 
-    await bannerAdminService.getBannerList({ page: 0, size: 20, searchWrd: '배너' });
+    await bannerAdminService.getBannerList({ page: 1, size: 20, searchWrd: '배너' });
     await bannerAdminService.getReflectedBanners();
     await bannerAdminService.getBanner(7);
     await bannerAdminService.createBanner({ bnrNm: '배너' });

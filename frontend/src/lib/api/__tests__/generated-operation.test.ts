@@ -49,10 +49,12 @@ describe('generated operation contract', () => {
   });
 
   it('query parameter의 이름과 정수 계약을 런타임에도 검증한다', () => {
-    expect(parseGeneratedOperationQuery(getDeptJobListOperation, { pageIndex: 1, pageUnit: 20 }))
-      .toEqual({ pageIndex: 1, pageUnit: 20 });
-    expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { pageIndex: 1.5 })).toThrow();
+    expect(parseGeneratedOperationQuery(getDeptJobListOperation, { page: 1, size: 20 }))
+      .toEqual({ page: 1, size: 20 });
+    expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { page: 1.5 })).toThrow();
+    // [ADR-0036] page 는 1부터다 — 0 기반 호출과 옛 이름(pageIndex)은 요청 전에 막힌다.
     expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { page: 0 })).toThrow();
+    expect(() => parseGeneratedOperationQuery(getDeptJobListOperation, { pageIndex: 1 })).toThrow();
   });
 
   it('generated request Zod로 쓰기 요청을 fail-closed 검증한다', () => {

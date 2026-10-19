@@ -17,8 +17,9 @@ export type ScrapPage = Omit<components['schemas']['PageResponseScrapDto'], 'lis
 type GeneratedScrapListParams = NonNullable<
   operations['getMyScrapList']['parameters']['query']
 >;
+/** 1부터 세는 `page` 와 `size`(ADR-0036). */
 export type ScrapListParams = Required<
-  Pick<GeneratedScrapListParams, 'pageIndex' | 'pageUnit'>
+  Pick<GeneratedScrapListParams, 'page' | 'size'>
 >;
 
 class ScrapService extends ApiService {

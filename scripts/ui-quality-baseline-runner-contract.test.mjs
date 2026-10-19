@@ -929,10 +929,12 @@ test('filtered-zero fixture satisfies the actual log page parser and requested p
   const numericFields = [...parser.matchAll(/typeof response\.(\w+) !== 'number'/g)].map((match) => match[1]);
   assert.equal(arrayFields.length, 1);
   assert.equal(numericFields.length, 4);
-  assert.match(service, /query\.pageIndex = params\.pageIndex \?\? \(params\.page \?\? 0\) \+ 1/);
-  assert.match(service, /query\.pageUnit = params\.pageUnit \?\? params\.size/);
+  // [ADR-0036] 화면·서비스·서버가 같은 1 기반 page·size 를 쓴다 — 서비스는 변환 없이 넘기고 기본 페이지만 1 로 채운다.
+  assert.match(service, /query\.page = params\.page \?\? 1;/);
+  assert.match(service, /LOG_QUERY_KEYS = \[[\s\S]*?'page',\s*'size',[\s\S]*?\]/);
+  assert.doesNotMatch(service, /\bpageIndex\b|\bpageUnit\b/);
   for (const [page, size] of [[1, 10], [3, 50]]) {
-    const requestUrl = new URL(`http://127.0.0.1/api/v1/admin/system/logs/user?pageIndex=${page}&pageUnit=${size}&searchKeyword=synthetic`);
+    const requestUrl = new URL(`http://127.0.0.1/api/v1/admin/system/logs/user?page=${page}&size=${size}&searchKeyword=synthetic`);
     const result = createEmptyUserLogPage(requestUrl);
     for (const field of arrayFields) assert.ok(Array.isArray(result[field]), `missing log array field: ${field}`);
     for (const field of numericFields) assert.equal(typeof result[field], 'number', `missing log number field: ${field}`);
@@ -941,15 +943,15 @@ test('filtered-zero fixture satisfies the actual log page parser and requested p
   const preparation = runnerSource.match(/async function installStatePreparation\(page, stateCase\) \{([\s\S]*?)\n  if \(stateCase\.stepId === 'server-error'\)/)?.[1];
   assert.ok(preparation);
   assert.match(preparation, /data: createEmptyUserLogPage\(url\)/);
-  assert.doesNotMatch(preparation, /pageIndex:\s*1/);
+  assert.doesNotMatch(preparation, /\bpage:\s*1/);
   const pageResponse = readFileSync(
     join(repoRoot, 'foundation/src/main/java/nuri/foundation/core/response/PageResponse.java'), 'utf8',
   );
   assert.match(pageResponse, /\.page\(page\.getNumber\(\) \+ 1\)/);
   assert.match(pageResponse, /\.size\(page\.getSize\(\)\)/);
   assert.match(pageResponse, /\.totalPage\(page\.getTotalPages\(\)\)/);
-  for (const query of ['', 'pageIndex=1', 'pageIndex=0&pageUnit=10', 'pageIndex=1&pageUnit=-1',
-    'pageIndex=1.5&pageUnit=10', 'pageIndex=1&pageUnit=10&pageUnit=50', 'pageIndex=9007199254740992&pageUnit=10']) {
+  for (const query of ['', 'page=1', 'page=0&size=10', 'page=1&size=-1',
+    'page=1.5&size=10', 'page=1&size=10&size=50', 'page=9007199254740992&size=10', 'pageIndex=1&pageUnit=10']) {
     assert.throws(() => createEmptyUserLogPage(new URL(`http://127.0.0.1/?${query}`)), /pagination request is invalid/);
   }
 });
@@ -1327,9 +1329,10 @@ test('synthetic board readback and cleanup use the actual title search and pagin
   assert.match(controller, /getBoardMasterList\(searchDto\.getSearchKeyword\(\), pageable\)/);
   assert.doesNotMatch(controller, /getSearchCondition/);
   assert.match(controller, /Pageable pageable = searchDto\.toPageable\(\)/);
-  assert.match(dto, /private int pageUnit = 10/);
+  assert.match(dto, /private int size = DEFAULT_PAGE_UNIT/);
+  assert.match(dto, /public static final int DEFAULT_PAGE_UNIT = 10/);
   assert.match(dto, /PageRequest\.of\(zeroBasedPageIndex\(\), effectivePageUnit\(\)\)/);
-  assert.match(dto, /return pageUnit > 0 \? pageUnit : DEFAULT_PAGE_UNIT/);
+  assert.match(dto, /return size > 0 \? size : DEFAULT_PAGE_UNIT/);
   assert.match(service, /cond\.setSearchWrd\(searchKeyword\)/);
   assert.doesNotMatch(service, /setSearchCnd/);
   // 검색어는 조건 분기 없이 게시판명(bbsTtl)에 걸린다 — 분기가 돌아오면 검색어가 다시 조용히 무시될 수 있다.
@@ -1341,7 +1344,7 @@ test('synthetic board readback and cleanup use the actual title search and pagin
   assert.ok(query, 'the fixture query must remain inspectable');
   const entries = Object.fromEntries(query.split(', ').map((entry) => entry.split(': ')));
   assert.deepEqual(entries, {
-    searchKeyword: 'fixture.boardTitle', pageIndex: '1', pageUnit: '100',
+    searchKeyword: 'fixture.boardTitle', page: '1', size: '100',
   }, 'readback must search the unique title with the page-size field the endpoint actually binds');
   for (const helper of ['waitForSyntheticBoardDeploy', 'cleanupSyntheticBoardDeploy', 'syntheticBoardResidueCount']) {
     const caller = runnerSource.match(new RegExp(String.raw`async function ${helper}\(api, fixture\) \{([\s\S]*?)\n\}`))?.[1];

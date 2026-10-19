@@ -55,7 +55,7 @@ export default function AdminDashboardClient() {
     refetch: refetchAudit,
   } = useQuery({
     queryKey: ['admin-dashboard-recent-audits'],
-    queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }, QUIET),
+    queryFn: () => auditAdminService.getAuditLogs({ page: 1, size: 5 }, QUIET),
     refetchInterval: 60000,
     retry: 1,
     retryDelay: 5000,
@@ -67,7 +67,7 @@ export default function AdminDashboardClient() {
     refetch: refetchUsers,
   } = useQuery({
     queryKey: ['admin-dashboard-users'],
-    queryFn: () => userAdminService.getUserList({ pageNo: 1, size: 1 }, QUIET),
+    queryFn: () => userAdminService.getUserList({ page: 1, size: 1 }, QUIET),
     retry: 1,
     retryDelay: 5000,
   });
@@ -78,7 +78,7 @@ export default function AdminDashboardClient() {
     refetch: refetchAuthors,
   } = useQuery({
     queryKey: ['admin-dashboard-authors'],
-    queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, size: 1 }, QUIET),
+    queryFn: () => authorAdminService.getAuthorList({ page: 1, size: 1 }, QUIET),
     retry: 1,
     retryDelay: 5000,
   });

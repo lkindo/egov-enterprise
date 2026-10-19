@@ -4,10 +4,10 @@
  * ── 왜 필요한가 ──────────────────────────────────────────────────────────────
  * 이 두 화면은 **타입이 전부 통과하는 채로 조회 조건이 통째로 버려지고 있었다.**
  *
- * 서버(`BaseSearchDto`)가 읽는 키는 `searchKeyword`·`pageIndex`(1-base)·`pageUnit` 뿐이다.
- * 화면은 `searchWrd`·`pageNo` 를 보내고 있었는데, 이 둘은
+ * 서버(`BaseSearchDto`)가 읽는 키는 `searchKeyword`·`page`(1부터)·`size` 뿐이다(ADR-0036 — 당시 이름은
+ * `pageIndex`·`pageUnit`). 화면은 `searchWrd`·`pageNo` 를 보내고 있었는데, 이 둘은
  *   - 서버 DTO 에 **필드가 없고**
- *   - `ApiService.get` 의 자동 매핑 대상(`page`→`pageIndex`, `size`/`pageSize`→`recordCountPerPage`)에도 **없다**
+ *   - 서비스의 변환 대상에도 **없었다**
  * 즉 쿼리스트링에 실려 나가서 조용히 무시됐다. 결과적으로 검색어를 넣어도 목록이 그대로였고,
  * 2·3페이지를 눌러도 늘 1페이지 10건만 나왔다. 총건수만 전체 수로 정확히 표시되므로
  * 사용자는 "있다는데 안 보인다" 상태가 된다.
@@ -44,8 +44,8 @@ const BASE = 'admin/system/codes';
 const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
 const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 
-/** 서버 `BaseSearchDto` 에 필드가 존재하지 않아 어디에도 바인딩되지 않는 키들. */
-const UNBOUND_KEYS = ['searchWrd', 'pageNo'] as const;
+/** 서버 `BaseSearchDto` 가 받지 않는(무시하거나 400 으로 거부하는) 키들 — 옛 페이지 이름 포함(ADR-0036). */
+const UNBOUND_KEYS = ['searchWrd', 'pageNo', 'pageIndex', 'pageUnit', 'recordCountPerPage'] as const;
 
 function paramsOf(call: unknown[]): Record<string, unknown> {
   const config = call[1] as { params?: Record<string, unknown> } | undefined;
@@ -73,8 +73,8 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
     it('검색어·페이지·페이지당 건수가 서버가 읽는 키로 나간다', async () => {
       await codeAdminService.getAdministCodeList({
         searchKeyword: '종로',
-        pageIndex: 3,
-        pageUnit: 50,
+        page: 3,
+        size: 50,
       });
 
       expect(client.get).toHaveBeenCalledTimes(1);
@@ -82,16 +82,16 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
       expect(url).toBe(`${BASE}/administ`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '종로',
-        pageIndex: 3,
-        pageUnit: 50,
+        page: 3,
+        size: 50,
       });
     });
 
-    it('서버가 읽지 않는 searchWrd·pageNo 로는 나가지 않는다', async () => {
+    it('서버가 읽지 않는 searchWrd·옛 페이지 이름으로는 나가지 않는다', async () => {
       await codeAdminService.getAdministCodeList({
         searchKeyword: '종로',
-        pageIndex: 2,
-        pageUnit: 10,
+        page: 2,
+        size: 10,
       });
 
       const params = paramsOf(client.get.mock.calls[0]);
@@ -105,16 +105,16 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
     it('검색어·페이지·페이지당 건수가 서버가 읽는 키로 나간다', async () => {
       await codeAdminService.getInstitutionCodeList({
         searchKeyword: '교육청',
-        pageIndex: 2,
-        pageUnit: 20,
+        page: 2,
+        size: 20,
       });
 
       const [url, config] = client.get.mock.calls[0];
       expect(url).toBe(`${BASE}/institution`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '교육청',
-        pageIndex: 2,
-        pageUnit: 20,
+        page: 2,
+        size: 20,
       });
     });
   });
@@ -123,16 +123,16 @@ describe('CodeAdminService — 조회 조건이 서버에 실제로 닿는다', 
     it('수신 이력도 같은 키를 쓴다 — 서버가 페이징하므로 페이저가 거짓 번호를 그리지 않는다', async () => {
       await codeAdminService.getInstitutionCodeRecptnList({
         searchKeyword: '교육청',
-        pageIndex: 4,
-        pageUnit: 10,
+        page: 4,
+        size: 10,
       });
 
       const [url, config] = client.get.mock.calls[0];
       expect(url).toBe(`${BASE}/institution/receptions`);
       expect((config as { params: Record<string, unknown> }).params).toMatchObject({
         searchKeyword: '교육청',
-        pageIndex: 4,
-        pageUnit: 10,
+        page: 4,
+        size: 10,
       });
     });
   });

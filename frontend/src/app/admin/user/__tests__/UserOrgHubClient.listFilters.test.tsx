@@ -208,11 +208,11 @@ describe('UserOrgHubClient — 사용자 목록 조건·열·부서 소속 인�
     await waitFor(() => expect(screen.getByRole('option', { name: '기획팀' })).toBeInTheDocument());
 
     await user.selectOptions(screen.getByLabelText('계정 상태'), 'A');
-    await waitFor(() => expect(lastListQuery()).toMatchObject({ page: 0, userSttsCd: 'A' }));
+    await waitFor(() => expect(lastListQuery()).toMatchObject({ page: 1, userSttsCd: 'A' }));
 
     await user.selectOptions(screen.getByLabelText('소속 부서'), 'ORG_B');
     await user.selectOptions(screen.getByLabelText('로그인 잠금'), 'Y');
-    await waitFor(() => expect(lastListQuery()).toMatchObject({ page: 0, userSttsCd: 'A', ognzId: 'ORG_B', lckYn: 'Y' }));
+    await waitFor(() => expect(lastListQuery()).toMatchObject({ page: 1, userSttsCd: 'A', ognzId: 'ORG_B', lckYn: 'Y' }));
 
     await user.click(screen.getByRole('button', { name: '초기화' }));
     await waitFor(() => {
@@ -257,7 +257,7 @@ describe('UserOrgHubClient — 사용자 목록 조건·열·부서 소속 인�
     const deptButton = (await screen.findByText('기획팀')).closest('button') as HTMLElement;
     await user.click(deptButton);
 
-    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 0, size: 20, ognzId: 'ORG_B' }));
+    await waitFor(() => expect(userAdminService.getUserList).toHaveBeenCalledWith({ page: 1, size: 20, ognzId: 'ORG_B' }));
     expect(await screen.findByText(/^22명 — 구성원1, .*구성원20 외 2명$/)).toBeInTheDocument();
   });
 

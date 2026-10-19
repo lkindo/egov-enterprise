@@ -24,8 +24,8 @@ export const boardMasterQueryOptions = {
   }),
   completeList: () => queryOptions({
     queryKey: boardMasterKeys.completeList(),
-    queryFn: () => fetchAllPages((pageIndex, pageUnit) =>
-      boardAdminService.getBoardMasterList({ pageIndex, pageUnit })),
+    queryFn: () => fetchAllPages((page, size) =>
+      boardAdminService.getBoardMasterList({ page, size })),
   }),
   detail: (bbsId: string) => queryOptions({
     queryKey: boardMasterKeys.detail(bbsId),

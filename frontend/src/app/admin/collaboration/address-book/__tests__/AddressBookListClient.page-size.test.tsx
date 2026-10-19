@@ -54,6 +54,6 @@ describe('AddressBookListClient 페이지당 건수', () => {
     fireEvent.click(screen.getByRole('button', { name: '50개씩' }));
 
     await waitFor(() => expect(mocks.getAddressBooks).toHaveBeenCalledTimes(1));
-    expect(mocks.getAddressBooks).toHaveBeenLastCalledWith({ page: 0, size: 50, searchWrd: '회계' });
+    expect(mocks.getAddressBooks).toHaveBeenLastCalledWith({ page: 1, size: 50, searchWrd: '회계' });
   });
 });

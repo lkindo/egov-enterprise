@@ -80,7 +80,7 @@ export default function CommentModerationClient() {
   };
 
   // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조) — 검색 입력을 두지 않는다.
-  const { data: commentData, isLoading, error, refetch } = useQuery(commentQueryOptions.adminList({ page: page - 1, size: pageSize }));
+  const { data: commentData, isLoading, error, refetch } = useQuery(commentQueryOptions.adminList({ page, size: pageSize }));
   const comments = useMemo(() => commentData?.list || [], [commentData]);
   const selectedItem = useMemo(
     () => (selectedItemId === null ? null : comments.find((comment) => comment.ansSn === selectedItemId) ?? null),

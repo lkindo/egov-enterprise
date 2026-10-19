@@ -70,7 +70,7 @@ export function CodePicker({
       const byName = await codeAdminService.getCmmnCodeList({
         searchCondition: '2',
         searchKeyword: keyword,
-        pageUnit: 100,
+        size: 100,
       });
       let list = byName.list || [];
       // 코드명 무결과 + ID 형태 검색어 → ID 축 폴백 1회 (예: "COM017")
@@ -78,7 +78,7 @@ export function CodePicker({
         const byId = await codeAdminService.getCmmnCodeList({
           searchCondition: '1',
           searchKeyword: keyword,
-          pageUnit: 100,
+          size: 100,
         });
         list = byId.list || [];
       }
@@ -101,12 +101,12 @@ export function CodePicker({
       setCodesLoading(true);
       setCodesError(false);
       // CommonCodeClient 와 동일한 검증된 호출 계약(그룹 ID 검색 + 정확 일치 필터).
-      const rows = await fetchAllPages((pageIndex, pageUnit) =>
+      const rows = await fetchAllPages((page, size) =>
         codeAdminService.getDetailCodeList({
           searchKeyword: group.cdId,
           searchCondition: '1',
-          pageIndex,
-          pageUnit,
+          page,
+          size,
         }));
       setCodes(rows.filter(item => item && item.cdId === group.cdId));
     } catch (error) {

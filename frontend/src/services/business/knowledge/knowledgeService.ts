@@ -102,7 +102,7 @@ class KnowledgeService extends ApiService {
     const boardParams = {
       searchWrd: params.searchWrd,
       searchCnd: params.searchCnd || '0',
-      page: params.page || 0,
+      page: params.page || 1,
       size: params.size || 20,
       orderBy: params.orderBy,
       ...(params.qnaStatus ? { qnaStatus: params.qnaStatus } : {}),

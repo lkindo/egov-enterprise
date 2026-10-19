@@ -215,7 +215,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
       expect(screen.getByText(label).className).not.toMatch(/bg-(?:success|warning|destructive)\//);
     }
     expect(mocks.getSentMails).toHaveBeenCalledWith({
-      page: 0,
+      page: 1,
       size: 20,
       searchKeyword: '',
       searchCondition: '1',
@@ -250,7 +250,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
       .toHaveTextContent('왼쪽 목록에서 확인할 발신 이력을 선택하세요.');
   });
 
-  it('페이지와 검색 조건 변경 시 숨은 상세 선택을 지우고 0-base 조회를 유지한다', async () => {
+  it('페이지와 검색 조건 변경 시 숨은 상세 선택을 지우고 1부터 세는 조회를 유지한다', async () => {
     mocks.getSentMails.mockResolvedValue({
       list: sentMails,
       total: 21,
@@ -264,7 +264,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     fireEvent.click(firstMail);
     fireEvent.click(screen.getByRole('link', { name: '다음 페이지로 이동' }));
     await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
-      page: 1,
+      page: 2,
       size: 20,
       searchKeyword: '',
       searchCondition: '1',
@@ -279,7 +279,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
       .toHaveTextContent('왼쪽 목록에서 확인할 발신 이력을 선택하세요.');
     expect(screen.queryByRole('heading', { level: 3, name: '월간 운영 보고' })).toBeNull();
     await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
-      page: 0,
+      page: 1,
       size: 20,
       searchKeyword: '장애',
       searchCondition: '1',
@@ -295,7 +295,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     fireEvent.change(screen.getByRole('combobox', { name: '발송 결과' }), { target: { value: 'F' } });
 
     await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
-      page: 0,
+      page: 1,
       size: 20,
       searchKeyword: '',
       searchCondition: '1',
@@ -357,7 +357,7 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     fireEvent.change(screen.getByRole('combobox', { name: '검색 대상' }), { target: { value: '3' } });
     fireEvent.change(screen.getByRole('textbox', { name: '메일 검색' }), { target: { value: '홍' } });
     await waitFor(() => expect(mocks.getSentMails).toHaveBeenLastCalledWith({
-      page: 0,
+      page: 1,
       size: 20,
       searchKeyword: '홍',
       searchCondition: '3',

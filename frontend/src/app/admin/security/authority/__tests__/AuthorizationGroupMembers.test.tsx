@@ -133,8 +133,8 @@ describe('권한 그룹 구성원 탭', () => {
 
   it('마지막 페이지의 구성원을 모두 회수하면 남은 마지막 페이지로 돌아가고, 그룹이 비었다고 말하지 않는다', async () => {
     let current = Array.from({ length: 21 }, (_, index) => ({ id: `E${index + 1}`, userId: `login-${index + 1}`, userNm: `사용자 ${index + 1}`, departmentId: null }));
-    mocks.getGroupMembers.mockImplementation((_code: string, pageIndex: number, size: number) =>
-      Promise.resolve(page(current.slice(pageIndex * size, pageIndex * size + size), current.length)));
+    mocks.getGroupMembers.mockImplementation((_code: string, pageNumber: number, size: number) =>
+      Promise.resolve(page(current.slice((pageNumber - 1) * size, pageNumber * size), current.length)));
     updateGroupMembers.mockImplementation((_code: string, body: { remove: string[] }) => {
       const removed = current.filter((member) => body.remove.includes(member.id));
       current = current.filter((member) => !body.remove.includes(member.id));
@@ -147,7 +147,7 @@ describe('권한 그룹 구성원 탭', () => {
     await userEvent.click(screen.getByRole('button', { name: '선택한 1명 회수' }));
     // 2페이지는 이제 비었다 — 앞 페이지(남은 마지막 페이지)로 돌아가 남은 20명을 보인다.
     expect(await screen.findByRole('checkbox', { name: '사용자 1 (login-1) 선택' })).toBeInTheDocument();
-    expect(mocks.getGroupMembers).toHaveBeenLastCalledWith('CONTENT', 0, 20);
+    expect(mocks.getGroupMembers).toHaveBeenLastCalledWith('CONTENT', 1, 20);
     expect(screen.getByRole('heading', { name: '배정된 사용자 (20명)' })).toBeInTheDocument();
     expect(screen.queryByText('이 그룹에 배정된 사용자가 없습니다.')).not.toBeInTheDocument();
   });

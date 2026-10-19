@@ -292,7 +292,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
     expect(await screen.findByTestId('total-count')).toHaveTextContent('42');
   });
 
-  it('페이저가 있고 페이지를 넘기면 서버에 0-base 로 요청한다', async () => {
+  it('페이저가 있고 페이지를 넘기면 서버에 같은 번호(1부터)로 요청한다', async () => {
     renderClient({ initialData: { list: [ROW], total: 42 } });
 
     expect(await screen.findByTestId('pager')).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
 
     await waitFor(() => expect(mocks.list).toHaveBeenCalled());
     const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1][0];
-    expect(last).toMatchObject({ page: 1, size: 10 });
+    expect(last).toMatchObject({ page: 2, size: 10 });
   });
 
   it('조회는 결정적 정렬을 명시한다 — 없으면 페이지마다 순서가 흔들린다', async () => {
@@ -323,7 +323,7 @@ describe('도움말 콘텐츠 — 목록 조회', () => {
 
     await waitFor(() => {
       const last = mocks.list.mock.calls[mocks.list.mock.calls.length - 1][0];
-      expect(last).toMatchObject({ keyword: '게시판', page: 0 });
+      expect(last).toMatchObject({ keyword: '게시판', page: 1 });
     });
   });
 });

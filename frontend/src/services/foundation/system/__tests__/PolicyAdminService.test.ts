@@ -36,7 +36,8 @@ describe('PolicyAdminService', () => {
       if (method === 'post') {
         await transport.post(url, data, Object.keys(config).length > 0 ? config : undefined);
       }
-      return { success: true, code: 'S000', message: 'success', data: null };
+      // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 정책 등록은 정책 유형 문자열이다.
+      return { success: true, code: 'S000', message: 'success', data: method === 'post' ? 'INTERNAL' : null };
     });
   });
 

@@ -10,7 +10,7 @@ vi.mock('../components/SurveyStatsPanel', () => ({ SurveyStatsPanel: ({ srvySn }
 function setup() {return render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}><SurveyStatsClient /></QueryClientProvider>);}
 
 describe('survey statistics selection', () => {
-  beforeEach(() => { vi.clearAllMocks(); mocks.search = ''; mocks.getSurveys.mockImplementation(async ({ page }) => ({ list: [{ srvySn: page ? 22 : 11, srvyTtl: page ? '두 번째 설문' : '첫 설문' }], total: 12 })); });
+  beforeEach(() => { vi.clearAllMocks(); mocks.search = ''; mocks.getSurveys.mockImplementation(async ({ page }) => ({ list: [{ srvySn: page > 1 ? 22 : 11, srvyTtl: page > 1 ? '두 번째 설문' : '첫 설문' }], total: 12 })); });
   it('selects by name across pages and resets the query page when searching', async () => {
     setup(); await screen.findByRole('button', { name: '첫 설문' });
     expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
@@ -18,7 +18,7 @@ describe('survey statistics selection', () => {
     fireEvent.click(await screen.findByRole('button', { name: '두 번째 설문' }));
     expect(mocks.push).toHaveBeenCalledWith('/survey/stats?srvySn=22');
     fireEvent.change(screen.getByRole('textbox', { name: '설문 제목' }), { target: { value: '검색' } });
-    await waitFor(() => expect(mocks.getSurveys).toHaveBeenLastCalledWith({ page: 0, size: 10, keyword: '검색' }, expect.objectContaining({ signal: expect.any(AbortSignal) })));
+    await waitFor(() => expect(mocks.getSurveys).toHaveBeenLastCalledWith({ page: 1, size: 10, keyword: '검색' }, expect.objectContaining({ signal: expect.any(AbortSignal) })));
   });
   it('renders a bookmarked result even when the optional selection list fails', async () => {
     mocks.search = 'srvySn=22'; mocks.getSurveys.mockRejectedValue(new Error('synthetic failure'));

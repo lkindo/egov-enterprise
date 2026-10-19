@@ -35,17 +35,18 @@ describe('AddressbookUserService generated contract', () => {
 
   it('6개 경계를 generated operation으로 실행하고 검색 기본축을 보존한다', async () => {
     client.getRaw
-      .mockResolvedValueOnce(successEnvelope({ list: [addressBook], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [addressBook], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope(addressBook))
-      .mockResolvedValueOnce(successEnvelope({ list: [selection], total: 1 }));
+      .mockResolvedValueOnce(successEnvelope({ list: [selection], total: 1, page: 1, size: 10, totalPage: 1 }));
     client.requestRaw
-      .mockResolvedValueOnce(successEnvelope(null))
+      // [ADR-0036] 등록(POST)은 새 식별자를 data 로 돌려준다. 수정·삭제는 data 가 없다.
+      .mockResolvedValueOnce(successEnvelope(3))
       .mockResolvedValueOnce(successEnvelope(null))
       .mockResolvedValueOnce(successEnvelope(null));
     const config = { headers: { 'X-Trace-Test': 'address-book' } };
 
     await expect(addressbookUserService.getAddressBooks(
-      { page: 0, size: 20, searchWrd: '영업' },
+      { page: 1, size: 20, searchWrd: '영업' },
       config,
     )).resolves.toMatchObject({ list: [addressBook], total: 1 });
     await expect(addressbookUserService.getAddressBook(3)).resolves.toEqual(addressBook);
@@ -67,7 +68,7 @@ describe('AddressbookUserService generated contract', () => {
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'address-books', {
       ...config,
-      params: { page: 0, size: 20, searchWrd: '영업', searchCnd: '0' },
+      params: { page: 1, size: 20, searchWrd: '영업', searchCnd: '0' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'address-books/3', undefined);
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'address-books/user-selections', {
@@ -90,7 +91,7 @@ describe('AddressbookUserService generated contract', () => {
   });
 
   it.each(['emlAddr', 'mblTelno', 'userId'])('선택 응답에 %s가 재유입해도 소비자에게 전달하지 않는다', async (field) => {
-    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [{ ...selection, [field]: 'private-value' }], total: 1 }));
+    client.getRaw.mockResolvedValueOnce(successEnvelope({ list: [{ ...selection, [field]: 'private-value' }], total: 1, page: 1, size: 10, totalPage: 1 }));
     const response = await addressbookUserService.searchUserSelections('홍길동');
     expect(response.list).toEqual([selection]);
     expect(response.list[0]).not.toHaveProperty(field);

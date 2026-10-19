@@ -54,7 +54,7 @@ export default function OnlinePollParticipateClient() {
     //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
     setLoadError(null);
     try {
-      const res = await pollUserService.getPollList({ page: 0, size: 100 });
+      const res = await pollUserService.getPollList({ page: 1, size: 100 });
       if (requestId !== listRequestRef.current) return;
       // Support both Spring Data JPA Page (content) and legacy list format
       setPolls(res.list || []);

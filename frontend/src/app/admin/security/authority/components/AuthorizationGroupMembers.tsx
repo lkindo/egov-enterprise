@@ -56,7 +56,7 @@ export function AuthorizationGroupMembers({ code, name, anonymous, protectedGran
   const revokeRequestRef = useRef(false);
   const members = useQuery({
     queryKey: [...scope, 'group-members', code, page],
-    queryFn: () => authorizationAdminService.getGroupMembers(code, page - 1, PAGE_SIZE),
+    queryFn: () => authorizationAdminService.getGroupMembers(code, page, PAGE_SIZE),
     retry: false,
   });
   const departments = useQuery({ queryKey: [...scope, 'departments'], queryFn: () => authorizationAdminService.getDepartments(), retry: false });

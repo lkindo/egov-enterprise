@@ -1,4 +1,5 @@
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
+import { requirePageResponse } from '@/services/core/page-response';
 import {
   auditJournalListOperation,
   durableJobListOperation,
@@ -20,7 +21,7 @@ export interface AuditJournalQuery {
   actorId?: string;
   fromDate?: string;
   toDate?: string;
-  /** 0-base */
+  /** 1부터 세는 페이지 번호(ADR-0036). */
   page: number;
   size: number;
 }
@@ -38,12 +39,21 @@ export const operationsRecordAdminService = {
     return { list: result.list ?? [], total: Number(result.total ?? 0) };
   },
 
+  /**
+   * 후속 작업 목록. `page` 는 1부터다(ADR-0036).
+   *
+   * <p>[ADR-0036] 서버가 Spring `Page` 원형(content·totalElements·totalPages, 0 기반 number) 대신 다른 목록과 같은
+   * `PageResponse`(list·total·page·size·totalPage)를 돌려준다. 화면이 쓰는 모양(list·total·totalPages)은 그대로 둔다.
+   */
   async getDurableJobs(page: number, size: number) {
-    const result = await executeGeneratedOperation(durableJobListOperation, { query: { page, size } });
+    const result = requirePageResponse<DurableJobStatus>(
+      await executeGeneratedOperation(durableJobListOperation, { query: { page, size } }),
+      '후속 작업',
+    );
     return {
-      list: result.content ?? [],
-      total: Number(result.totalElements ?? 0),
-      totalPages: Number(result.totalPages ?? 0),
+      list: result.list,
+      total: result.total,
+      totalPages: result.totalPage,
     };
   },
 

@@ -241,7 +241,7 @@ describe('integrated log dashboard contracts', () => {
     ['LGN', 'getLoginLogs', LOGIN_ROW],
     ['USR', 'getUserLogs', USER_ROW],
     ['WEB', 'getWebLogs', WEB_ROW],
-  ] as const)('routes %s page 3 to %s with zero-based page 2', async (category, serviceName, row) => {
+  ] as const)('routes %s page 3 to %s with the same one-based page 3', async (category, serviceName, row) => {
     dashboardHarness.activeCategory = category;
     dashboardHarness.page = 3;
     dashboardHarness.queryData = pageOf(row);
@@ -251,7 +251,7 @@ describe('integrated log dashboard contracts', () => {
     await currentQueryOptions().queryFn();
 
     expect(dashboardHarness[serviceName]).toHaveBeenCalledWith(expect.objectContaining({
-      page: 2,
+      page: 3,
       searchKeyword: '',
       searchWrd: '',
       size: 10,

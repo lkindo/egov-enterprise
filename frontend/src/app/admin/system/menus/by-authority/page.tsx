@@ -17,7 +17,7 @@ export default async function MenuByAuthorityPage() {
   // [P1: Waterfall Elimination] Initiate authors promise on server
   // 실패를 빈 목록으로 삼키면 "등록된 역할이 없음"으로 위장되므로 사유를 봉투에 담아 전달한다.
   const authorsPromise: Promise<FetchResult<AuthorInfo[]>> = authorAdminService
-    .getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' }, axiosConfig)
+    .getAuthorList({ page: 1, searchCondition: '1', searchKeyword: '' }, axiosConfig)
     .then((res) => ({ data: res?.list ?? [], error: null }))
     .catch((error: unknown) => {
       return {

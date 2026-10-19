@@ -5,19 +5,14 @@ import { requirePageResponse } from '@/services/core/page-response';
 
 type CommunityListQuery = NonNullable<operations['getCommunities_1']['parameters']['query']>;
 
-/** 사용자 커뮤니티 목록은 page를 1-based 별칭보다 우선한다. */
+/**
+ * 사용자 커뮤니티 목록 query. `page`(1부터)·`size` 는 서버 이름·기준 그대로 넘긴다(ADR-0036) — 종전의 1 기반 별칭
+ * (`pageIndex`·`pageNo`·`pageUnit`·`pageSize`)을 0 기반 `page` 로 바꾸던 정규화는 걷었다.
+ */
 export function toCommunityListQuery(params: CommunitySearchParams): CommunityListQuery {
   const raw = params as Record<string, unknown>;
-  const page = params.page
-    ?? (params.pageIndex === undefined ? undefined : Math.max(0, params.pageIndex - 1))
-    ?? (params.pageNo === undefined ? undefined : Math.max(0, params.pageNo - 1));
-  const size = typeof params.size === 'number'
-    ? params.size
-    : typeof params.pageUnit === 'number'
-      ? params.pageUnit
-      : typeof raw.pageSize === 'number'
-        ? raw.pageSize
-        : undefined;
+  const page = params.page;
+  const size = typeof params.size === 'number' ? params.size : undefined;
   const searchCnd = typeof raw.searchCnd === 'string' ? raw.searchCnd : params.searchCondition;
   const searchWrd = typeof raw.searchWrd === 'string' ? raw.searchWrd : params.searchKeyword;
   const sort = Array.isArray(raw.sort) && raw.sort.every((item) => typeof item === 'string')

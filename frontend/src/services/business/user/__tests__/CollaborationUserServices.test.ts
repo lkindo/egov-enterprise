@@ -28,7 +28,7 @@ vi.mock('@/lib/api/client', () => {
       getRaw: vi.fn(async (url: string, config?: unknown) => {
         const result = await get(url, config);
         const fallback = url.endsWith('/received') || url.endsWith('/sent') || url === 'scraps'
-          ? { list: [], total: 0, page: 0, size: 10, totalPage: 0 }
+          ? { list: [], total: 0, page: 1, size: 10, totalPage: 0 }
           : {};
         return { success: true, code: 'S000', message: '성공', data: result ?? fallback };
       }),
@@ -39,7 +39,8 @@ vi.mock('@/lib/api/client', () => {
         if (method === 'post') result = await post(url, data, config);
         if (method === 'put') result = await put(url, data, config);
         if (method === 'delete') result = await remove(url, config);
-        return { success: true, code: 'S000', message: '성공', data: result };
+        // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 시험이 값을 정하지 않으면 1 을 싣는다.
+        return { success: true, code: 'S000', message: '성공', data: result ?? (method === 'post' ? 1 : undefined) };
       }),
     }
   };
@@ -55,23 +56,24 @@ describe('Collaboration user services', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('noteService validates every JSON/void operation through the generated raw boundary', async () => {
-    const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    const page = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
     vi.mocked(client.getRaw)
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { noteSn: 31 } });
     vi.mocked(client.requestRaw)
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
+      // [ADR-0036] 쪽지 보내기(POST)는 새 일련번호를 data 로 돌려준다. 삭제는 data 가 없다.
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 41 })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
 
-    await noteService.getReceivedNotes({ page: 0, size: 10 });
+    await noteService.getReceivedNotes({ page: 1, size: 10 });
     await noteService.getSentNotes({ page: 1, searchWrd: '회의' });
     await noteService.sendNote({ rcverId: 'user01', noteSj: '제목', noteCn: '내용' });
     await noteService.getNote(31, { type: 'received', relationSn: 41 });
     await noteService.deleteNote(41, { type: 'received' });
 
     expect(vi.mocked(client.getRaw).mock.calls).toEqual([
-      ['notes/received', { params: { page: 0, size: 10 } }],
+      ['notes/received', { params: { page: 1, size: 10 } }],
       ['notes/sent', { params: { searchWrd: '회의', page: 1 } }],
       ['notes/31', { params: { type: 'received', relationSn: 41 } }],
     ]);
@@ -86,7 +88,7 @@ describe('Collaboration user services', () => {
   });
 
   it('mailService validates list/detail/send/delete with generated operation descriptors', async () => {
-    const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    const page = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
     vi.mocked(client.getRaw)
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { emlDsptchSn: 17 } });
@@ -94,13 +96,13 @@ describe('Collaboration user services', () => {
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 71 })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
 
-    await mailService.getSentMails({ page: 0, size: 10, searchKeyword: '공지' });
+    await mailService.getSentMails({ page: 1, size: 10, searchKeyword: '공지' });
     await mailService.getSentMail(17);
     await expect(mailService.sendMail({ sj: '제목', recptnPerson: 'user@example.com' })).resolves.toBe(71);
     await mailService.deleteMail(17);
 
     expect(vi.mocked(client.getRaw).mock.calls).toEqual([
-      ['mails', { params: { searchKeyword: '공지', page: 0, size: 10 } }],
+      ['mails', { params: { searchKeyword: '공지', page: 1, size: 10 } }],
       ['mails/17', undefined],
     ]);
     expect(vi.mocked(client.requestRaw).mock.calls).toEqual([
@@ -114,7 +116,7 @@ describe('Collaboration user services', () => {
   });
 
   it('noteService calls correct endpoints', async () => {
-    await noteService.getReceivedNotes({ page: 0 });
+    await noteService.getReceivedNotes({ page: 1 });
     expect(transport.get).toHaveBeenCalledWith('notes/received', expect.any(Object));
     await noteService.getNote(31, { type: 'received', relationSn: 41 });
     expect(transport.get).toHaveBeenCalledWith('notes/31', { params: { type: 'received', relationSn: 41 } });
@@ -123,8 +125,8 @@ describe('Collaboration user services', () => {
   });
 
   it('scrapService calls correct endpoints', async () => {
-    transport.get.mockResolvedValueOnce({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
-    await scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 });
+    transport.get.mockResolvedValueOnce({ list: [], total: 0, page: 1, size: 10, totalPage: 0 });
+    await scrapService.getMyScraps({ page: 1, size: 10 });
     expect(transport.get).toHaveBeenCalledWith('scraps', expect.any(Object));
     await scrapService.deleteScrap(7);
     expect(transport.remove).toHaveBeenCalledWith('scraps/7', undefined);
@@ -142,11 +144,11 @@ describe('Collaboration user services', () => {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+      data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
     });
-    await boardUserService.getPosts('BBS01', { page: 0 });
+    await boardUserService.getPosts('BBS01', { page: 1 });
     expect(client.getRaw).toHaveBeenCalledWith('boards/BBS01', {
-      params: { page: 0 },
+      params: { page: 1 },
     });
   });
 });

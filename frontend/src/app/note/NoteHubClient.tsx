@@ -133,8 +133,8 @@ export default function NoteHubClient() {
     setNotes([]);
     try {
       const query = searchKeyword
-        ? { page: page - 1, size: pageSize, searchWrd: searchKeyword }
-        : { page: page - 1, size: pageSize };
+        ? { page, size: pageSize, searchWrd: searchKeyword }
+        : { page, size: pageSize };
       const res = await (requestedTab === 'received'
         ? noteService.getReceivedNotes(query)
         : noteService.getSentNotes(query));

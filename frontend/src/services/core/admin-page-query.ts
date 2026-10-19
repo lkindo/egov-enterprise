@@ -12,29 +12,20 @@ export function toSortList(sort: unknown): string[] | undefined {
       : undefined;
 }
 
-/** 배너·관리자 커뮤니티의 기존 페이지 별칭 우선순위를 유지한다. */
+/**
+ * 목록 인자에서 페이지 query(`page`·`size`·`sort`)만 골라 낸다. `page` 는 1부터이고 서버가 받는 그대로 넘긴다(ADR-0036).
+ *
+ * <p>종전에는 0 기반 `page` 와 1 기반 `pageIndex`·`pageNo`, 크기 별칭 `pageUnit`·`pageSize`·`recordCountPerPage` 를
+ * 우선순위대로 골라 ±1 변환했다. 요청·응답·화면이 모두 1 기반으로 같아져 변환할 것이 없다.
+ */
 export function toAdminPageQuery(params: SearchParams): {
   page?: number;
   size?: number;
   sort?: string[];
 } {
   return {
-    ...(params.pageIndex !== undefined
-      ? { page: Math.max(0, params.pageIndex - 1) }
-      : params.page !== undefined
-        ? { page: params.page }
-        : params.pageNo !== undefined
-          ? { page: Math.max(0, params.pageNo - 1) }
-          : {}),
-    ...(params.size !== undefined
-      ? { size: params.size }
-      : params.pageUnit !== undefined
-        ? { size: params.pageUnit }
-        : params.pageSize !== undefined
-          ? { size: params.pageSize as number }
-          : params.recordCountPerPage !== undefined
-            ? { size: params.recordCountPerPage as number }
-            : {}),
+    ...(params.page === undefined ? {} : { page: params.page }),
+    ...(params.size === undefined ? {} : { size: params.size }),
     ...(params.sort === undefined ? {} : { sort: params.sort as string[] }),
   };
 }

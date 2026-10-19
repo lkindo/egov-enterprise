@@ -101,17 +101,17 @@ export default function HelpClient() {
         setLoading(true);
         setLoadError(null);
         if (tab === 'faq') {
-          const res = await helpUserService.getFaqs({ page: page - 1, size: requestSize, keyword: searchKeyword });
+          const res = await helpUserService.getFaqs({ page, size: requestSize, keyword: searchKeyword });
           if (cancelled) return;
           setFaqs(res.list || []);
           setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
         } else if (tab === 'qna') {
-          const res = await helpUserService.getQnas({ page: page - 1, size: requestSize, keyword: searchKeyword });
+          const res = await helpUserService.getQnas({ page, size: requestSize, keyword: searchKeyword });
           if (cancelled) return;
           setQnas(res.list || []);
           setPageInfo({ total: res.total ?? 0, size: res.size > 0 ? res.size : requestSize });
         } else {
-          const query = { page: page - 1, size: requestSize, keyword: searchKeyword };
+          const query = { page, size: requestSize, keyword: searchKeyword };
           const res = tab === 'guide'
             ? await helpUserService.getHelpGuides(query)
             : await helpUserService.getOnlineManuals(query);

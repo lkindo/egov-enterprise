@@ -89,7 +89,7 @@ export function DeptJobBoxManageDialog({ isOpen, onClose }: DeptJobBoxManageDial
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['dept-job-boxes', 'manage', page],
-    queryFn: () => deptJobUserService.getDeptJobBoxes({ page: page - 1, size: PAGE_SIZE }),
+    queryFn: () => deptJobUserService.getDeptJobBoxes({ page, size: PAGE_SIZE }),
     enabled: isOpen,
   });
   const {

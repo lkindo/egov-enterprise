@@ -185,7 +185,7 @@ describe('MonitoringHubClient', () => {
     expect(screen.getByText('SYSTEM')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '시스템 로그(감사 보기)' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('시스템 로그 탭과 같은 전체 데이터이며 보안 전용 분류를 제공하지 않습니다.')).toBeInTheDocument();
-    expect(mocks.audit).toHaveBeenCalledWith({ page: 0, size: 50, searchKeyword: '' });
+    expect(mocks.audit).toHaveBeenCalledWith({ page: 1, size: 50, searchKeyword: '' });
     expect(mocks.system).not.toHaveBeenCalled();
   });
 

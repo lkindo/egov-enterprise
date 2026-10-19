@@ -30,7 +30,7 @@ describe('deptScheduleService generated contract', () => {
 
   it('7개 경계를 generated operation으로 실행하고 공개 반환을 보존한다', async () => {
     client.getRaw
-      .mockResolvedValueOnce(successEnvelope({ list: [schedule], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [schedule], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope([schedule]))
       .mockResolvedValueOnce(successEnvelope([schedule]))
       .mockResolvedValueOnce(successEnvelope(schedule));
@@ -40,7 +40,7 @@ describe('deptScheduleService generated contract', () => {
       .mockResolvedValueOnce(successEnvelope(null));
 
     await expect(deptScheduleService.getDeptScheduleList({
-      pageIndex: 2,
+      page: 2,
       size: 25,
       schdlNm: '회의',
     })).resolves.toMatchObject({ list: [schedule], total: 1 });
@@ -54,7 +54,7 @@ describe('deptScheduleService generated contract', () => {
     await expect(deptScheduleService.deleteDeptSchedule(7)).resolves.toBeUndefined();
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'schedules/dept', {
-      params: { pageIndex: 2, pageUnit: 25, schdlNm: '회의' },
+      params: { page: 2, size: 25, schdlNm: '회의' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'schedules/monthly', {
       params: { yearMonth: '202608' },

@@ -76,7 +76,7 @@ export function CommunityMembersPanel({ community, onBack }: CommunityMembersPan
     queryKey: ['admin-communities', 'members', community.cmntySn, filter, page],
     queryFn: () => communityAdminService.getMembers(community.cmntySn, {
       status: filter === 'ALL' ? undefined : filter,
-      page: page - 1,
+      page,
       size: PAGE_SIZE,
     }),
   });

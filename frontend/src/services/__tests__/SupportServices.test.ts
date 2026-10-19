@@ -22,7 +22,7 @@ vi.mock('@/lib/api/client', () => ({
         const result = await get(url, config);
         const fallback = url.startsWith('files/')
           ? []
-          : { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+          : { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
         return { success: true, code: 'S000', message: '성공', data: result ?? fallback };
       }),
       requestRaw: vi.fn(async () => ({
@@ -44,7 +44,7 @@ describe('Common Support Services', () => {
   });
 
   it('commentService calls correct endpoints', async () => {
-    transport.get.mockResolvedValue({ list: [], total: 0, page: 0, size: 10, totalPage: 0 });
+    transport.get.mockResolvedValue({ list: [], total: 0, page: 1, size: 10, totalPage: 0 });
   await commentService.getComments({ pstSn: 1, bbsId: 'BBSMSTR_A' });
   expect(transport.get).toHaveBeenCalledWith('comments', expect.any(Object));
   });

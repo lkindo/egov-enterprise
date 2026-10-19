@@ -47,7 +47,7 @@ describe('게시글 모아보기 동등성', () => {
   it('주소 없이 들어오면 공지사항 1페이지를 조회한다', async () => {
     renderScreen();
     expect(await screen.findByText('첫 공지')).toBeInTheDocument();
-    expect(mocks.getPosts).toHaveBeenCalledWith('BBSMSTR_AAAAAAAAAAAA', expect.objectContaining({ page: 0, size: 10 }));
+    expect(mocks.getPosts).toHaveBeenCalledWith('BBSMSTR_AAAAAAAAAAAA', expect.objectContaining({ page: 1, size: 10 }));
   });
 
   it('?bbsId= 로 들어오면 그 게시판으로 시작한다', async () => {
@@ -62,9 +62,9 @@ describe('게시글 모아보기 동등성', () => {
     renderScreen();
     await screen.findByText('첫 공지');
     fireEvent.click(screen.getByRole('button', { name: '2 페이지로 이동' }));
-    await waitFor(() => expect(lastQuery()?.[1]).toEqual(expect.objectContaining({ page: 1 })));
+    await waitFor(() => expect(lastQuery()?.[1]).toEqual(expect.objectContaining({ page: 2 })));
     fireEvent.change(screen.getByLabelText('게시판 선택'), { target: { value: 'BBSMSTR_CCCCCCCCCCCC' } });
-    await waitFor(() => expect(lastQuery()).toEqual(['BBSMSTR_CCCCCCCCCCCC', expect.objectContaining({ page: 0 })]));
+    await waitFor(() => expect(lastQuery()).toEqual(['BBSMSTR_CCCCCCCCCCCC', expect.objectContaining({ page: 1 })]));
   });
 
   it('행을 누르면 그 게시글 상세로 간다', async () => {
@@ -98,10 +98,10 @@ describe('게시글 모아보기 동등성', () => {
     renderScreen();
     await screen.findByText('첫 공지');
     fireEvent.click(screen.getByRole('button', { name: '2 페이지로 이동' }));
-    await waitFor(() => expect(lastQuery()?.[1]).toEqual(expect.objectContaining({ page: 1 })));
+    await waitFor(() => expect(lastQuery()?.[1]).toEqual(expect.objectContaining({ page: 2 })));
     fireEvent.change(screen.getByLabelText('제목'), { target: { value: '예산' } });
     fireEvent.submit(screen.getByRole('search'));
-    await waitFor(() => expect(lastQuery()).toEqual(['BBSMSTR_AAAAAAAAAAAA', expect.objectContaining({ page: 0, searchWrd: '예산' })]));
+    await waitFor(() => expect(lastQuery()).toEqual(['BBSMSTR_AAAAAAAAAAAA', expect.objectContaining({ page: 1, searchWrd: '예산' })]));
   });
 
   it('입력만으로는 조회하지 않는다', async () => {

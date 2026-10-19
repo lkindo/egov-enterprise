@@ -13,9 +13,9 @@
  *    이 파일의 서비스들은 접두를 스스로 쓰지 않으므로, 접두 규칙이나 생성자 인자가 한 글자만
  *    어긋나도 전 메서드가 동시에 404 가 된다.
  *
- * 2) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 에 맞춘다. 이 +1 이
- *    사라지거나 두 번 적용되면 목록이 한 페이지씩 밀리거나 첫 페이지가 빈다. 타입은 그대로라
+ * 2) 페이징 파라미터 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page`·`size` 를 쓴다. 서비스는
+ *    받은 값을 변환 없이 넘기고 옛 별칭(`pageIndex`·`pageNo`·`pageUnit`·`recordCountPerPage`)은 번역하지
+ *    않는다. ±1 이 끼어들면 목록이 한 페이지씩 밀리거나 첫 페이지가 400 이 된다. 타입은 그대로라
  *    tsc 로는 절대 잡히지 않는다.
  *
  * 3) 검색어 승격 — 목록 3종(설문/템플릿/응답자)은 `searchKeyword || searchWrd || ''` 를
@@ -49,7 +49,7 @@ const client = vi.hoisted(() => {
   const fallbackData = (url: string) => {
     if (url.endsWith('/questions')) return [];
     if (url === 'admin/system/surveys' || url.endsWith('/templates') || url.endsWith('/respondents')) {
-      return { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+      return { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
     }
     return { srvyTtl: '설문', srvyTmpltSn: 1 };
   };
@@ -78,7 +78,8 @@ const client = vi.hoisted(() => {
       if (method === 'put') result = await put(url, data, config);
       if (method === 'delete') result = await remove(url, config);
 
-      return { success: true, code: 'S000', message: '성공', data: result };
+      // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 시험이 값을 정하지 않으면 1 을 싣는다.
+      return { success: true, code: 'S000', message: '성공', data: result ?? (method === 'post' ? 1 : undefined) };
     }),
   };
 });
@@ -101,18 +102,18 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { list: [], total: 0, page: 0, size: 20, totalPage: 0 },
+      data: { list: [], total: 0, page: 2, size: 20, totalPage: 0 },
     });
 
-    await surveyAdminService.getSurveyList({ pageIndex: 2, size: 20, searchWrd: '만족도' });
+    await surveyAdminService.getSurveyList({ page: 2, size: 20, searchWrd: '만족도' });
 
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/surveys', {
-      params: { keyword: '만족도', page: 1, size: 20 },
+      params: { keyword: '만족도', page: 2, size: 20 },
     });
   });
 
   it('일치하는 설문 하위 자원 호출은 모두 생성 operation 경계를 통과한다', async () => {
-    const page = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+    const page = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
     const responses = [
       page,
       { srvySn: 7, srvyTtl: '설문', srvyTmpltSn: 3 },
@@ -122,12 +123,13 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     for (const data of responses) {
       client.getRaw.mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data });
     }
-    for (let index = 0; index < 10; index += 1) {
+    // 수정·삭제는 data 가 없고, 생성(POST)은 새 식별자를 싣는다(ADR-0036 S-A).
+    for (const data of [undefined, undefined, 3, undefined, undefined, 55, undefined, 900, undefined, undefined]) {
       client.requestRaw.mockResolvedValueOnce({
         success: true,
         code: 'S000',
         message: '성공',
-        data: undefined,
+        data,
       });
     }
 
@@ -177,10 +179,13 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '' } });
     });
 
-    it('첫 페이지(page 0)는 OpenAPI의 0-based page 그대로 전송된다', async () => {
-      await surveyAdminService.getSurveyList({ page: 0 });
+    it('첫 페이지(page 1)는 1부터 세는 page 그대로 전송된다', async () => {
+      await surveyAdminService.getSurveyList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { keyword: '', page: 1 },
+      });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, {
         params: { keyword: '', page: 0 },
       });
     });
@@ -193,11 +198,19 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
       });
     });
 
-    it('page와 pageIndex가 함께 오면 OpenAPI 고유 키인 page가 우선한다', async () => {
+    it('page와 옛 별칭 pageIndex가 함께 오면 page만 나가고 별칭은 번역하지 않는다', async () => {
       await surveyAdminService.getSurveyList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: { keyword: '', page: 9 },
+      });
+    });
+
+    it('옛 별칭만 오면(pageIndex·recordCountPerPage) page·size 로 번역하지 않는다(ADR-0036)', async () => {
+      await surveyAdminService.getSurveyList({ pageIndex: 2, recordCountPerPage: 5 });
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { keyword: '' },
       });
     });
 
@@ -228,18 +241,17 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await surveyAdminService.getSurveyList({ page: 0 }, { timeout: 3000, signal });
+      await surveyAdminService.getSurveyList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { keyword: '', page: 0 },
+        params: { keyword: '', page: 1 },
       });
     });
 
-    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 pageIndex 가 누적 오염되면 안 된다', async () => {
-      // ApiService.get 은 넘겨받은 params 객체에 직접 pageIndex 를 써넣는다(파괴적).
-      // 서비스가 스프레드로 사본을 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
+    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 페이지 값이 누적 오염되면 안 된다', async () => {
+      // 서비스가 새 query 객체를 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
       const callerParams: SearchParams = { page: 1, size: 10 };
 
       await surveyAdminService.getSurveyList(callerParams);
@@ -325,10 +337,10 @@ describe('SurveyAdminService — 설문 관리자 API 계약', () => {
 
   describe('템플릿(templates)', () => {
     it('템플릿 목록은 surveys/templates 하위로 나가며 목록과 동일한 keyword·페이징 변환을 받는다', async () => {
-      await surveyAdminService.getTemplateList({ page: 0, size: 50 });
+      await surveyAdminService.getTemplateList({ page: 1, size: 50 });
 
       expect(client.get).toHaveBeenCalledWith(`${BASE}/templates`, {
-        params: { keyword: '', page: 0, size: 50 },
+        params: { keyword: '', page: 1, size: 50 },
       });
     });
 

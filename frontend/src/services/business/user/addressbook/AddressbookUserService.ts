@@ -54,9 +54,7 @@ class AddressbookUserService extends ApiService {
      * 무시됐다는 사실이 화면에 드러나지 않는다. 두 호출부(CSR fetchList · SSR AddressBookListServer)가
      * 모두 searchCnd 를 보내지 않으므로 여기 한 곳에서 기본 축(주소록명)으로 정규화한다.
      *
-     * ⚠ page/size 는 손대지 않는다 — 이 엔드포인트는 BaseSearchDto 가 아니라
-     *   @PageableDefault Pageable 을 쓰므로 이미 정상이다. 다른 화면의 pageUnit 보정을
-     *   여기에 복사하면 안 된다(같은 문법이 같은 의미가 아니다).
+     * page(1부터)·size 는 손대지 않고 그대로 넘긴다 — 모든 목록 API 가 같은 이름·기준으로 받는다(ADR-0036).
      */
     return this.executeGenerated(getAddressBooksOperation, {
       query: { ...params, searchCnd: params.searchCnd ?? '0' },
@@ -78,7 +76,7 @@ class AddressbookUserService extends ApiService {
    * 주소록 등록
    */
   async createAddressBook(data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createAddressBookOperation, {
+    await this.executeGenerated(createAddressBookOperation, {
       body: data as GeneratedOperationRequest<'createAddressBook'>,
       config,
     });

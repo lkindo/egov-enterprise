@@ -69,7 +69,7 @@ describe('CodePicker', () => {
     expect(mocks.getGroups).toHaveBeenCalledWith({
       searchCondition: '2',
       searchKeyword: '상태',
-      pageUnit: 100,
+      size: 100,
     });
   });
 
@@ -86,7 +86,7 @@ describe('CodePicker', () => {
     expect(mocks.getGroups).toHaveBeenLastCalledWith({
       searchCondition: '1',
       searchKeyword: 'GRP1',
-      pageUnit: 100,
+      size: 100,
     });
   });
 
@@ -103,8 +103,8 @@ describe('CodePicker', () => {
     expect(mocks.getDetails).toHaveBeenCalledWith({
       searchKeyword: 'GRP1',
       searchCondition: '1',
-      pageIndex: 1,
-      pageUnit: 100,
+      page: 1,
+      size: 100,
     });
 
     fireEvent.click(screen.getByRole('button', { name: '코드 선택: 활성' }));

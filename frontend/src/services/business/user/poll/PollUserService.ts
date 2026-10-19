@@ -41,7 +41,7 @@ export class PollUserService extends ApiService {
 
   /** 설문 등록 */
   async createPoll(poll: Partial<OnlinePollManageVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createPollOperation, {
+    await this.executeGenerated(createPollOperation, {
       body: poll as GeneratedOperationRequest<'createPoll'>,
       config,
     });

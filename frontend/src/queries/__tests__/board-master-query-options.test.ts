@@ -24,13 +24,13 @@ describe('board master query ownership', () => {
   it('query options가 generated 파라미터와 서비스 호출을 함께 소유한다', async () => {
     service.getBoardMasterList.mockResolvedValueOnce({ list: [] });
     service.getBoardMaster.mockResolvedValueOnce({ bbsId: 'BBSMSTR_A' });
-    const list = boardMasterQueryOptions.list({ pageIndex: 1, pageUnit: 20 });
+    const list = boardMasterQueryOptions.list({ page: 1, size: 20 });
     const detail = boardMasterQueryOptions.detail('BBSMSTR_A');
 
     await list.queryFn?.({ queryKey: list.queryKey } as never);
     await detail.queryFn?.({ queryKey: detail.queryKey } as never);
 
-    expect(service.getBoardMasterList).toHaveBeenCalledWith({ pageIndex: 1, pageUnit: 20 });
+    expect(service.getBoardMasterList).toHaveBeenCalledWith({ page: 1, size: 20 });
     expect(service.getBoardMaster).toHaveBeenCalledWith('BBSMSTR_A');
   });
 
@@ -46,8 +46,8 @@ describe('board master query ownership', () => {
 
     expect(completeList.queryKey).toEqual(['board-masters', 'list', 'complete']);
     expect(service.getBoardMasterList.mock.calls).toEqual([
-      [{ pageIndex: 1, pageUnit: 100 }],
-      [{ pageIndex: 2, pageUnit: 100 }],
+      [{ page: 1, size: 100 }],
+      [{ page: 2, size: 100 }],
     ]);
   });
 });

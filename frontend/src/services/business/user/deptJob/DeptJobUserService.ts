@@ -31,6 +31,7 @@ class DeptJobUserService extends ApiService {
    */
   async getDeptJobBoxes(
     params: { 
+      /** 1부터 세는 페이지 번호(ADR-0036). */
       page?: number; 
       size?: number; 
       searchWrd?: string;
@@ -40,8 +41,8 @@ class DeptJobUserService extends ApiService {
   ): Promise<PageResponse<DeptJobBxVO>> {
     return this.executeGenerated(getDeptJobBoxListOperation, {
       query: {
-        ...(params.page !== undefined ? { pageIndex: params.page + 1 } : {}),
-        ...(params.size !== undefined ? { pageUnit: params.size } : {}),
+        ...(params.page !== undefined ? { page: params.page } : {}),
+        ...(params.size !== undefined ? { size: params.size } : {}),
         ...(params.searchWrd !== undefined ? { searchWrd: params.searchWrd } : {}),
         ...(params.deptId !== undefined ? { deptId: params.deptId } : {}),
       },
@@ -95,10 +96,10 @@ class DeptJobUserService extends ApiService {
    */
   async getDeptJobList(
     params: {
-      /** 1-based 페이지 번호 */
-      pageIndex?: number;
+      /** 1부터 세는 페이지 번호(ADR-0036) */
+      page?: number;
       /** 페이지당 건수 */
-      pageUnit?: number;
+      size?: number;
       searchWrd?: string;
       /**
        * '0' 업무명 · '1' 업무내용 · '2' 담당자ID.
@@ -121,13 +122,11 @@ class DeptJobUserService extends ApiService {
     },
     config?: AxiosRequestConfig
   ): Promise<PageResponse<DeptJobVO>> {
-    // ⚠ page/size 로 보내지 않는다. ApiService 의 자동 매핑은 size → recordCountPerPage 인데
-    //   이 엔드포인트(및 형제 /boxes)는 pageUnit 을 읽으므로, 자동 매핑에 기대면 페이지 크기가
-    //   조용히 무시되고 서버 기본값 10건에 고정된다. 서버가 실제로 읽는 이름으로 직접 보낸다.
+    // [ADR-0036] 서버가 다른 목록과 같은 page(1부터)·size 를 받는다 — 종전 pageIndex·pageUnit 이름을 걷었다.
     return this.executeGenerated(getDeptJobListOperation, {
       query: {
-        pageIndex: params.pageIndex ?? 1,
-        pageUnit: params.pageUnit ?? 10,
+        page: params.page ?? 1,
+        size: params.size ?? 10,
         scope: params.scope ?? 'mine',
         ...(params.searchWrd ? { searchWrd: params.searchWrd } : {}),
         ...(params.searchCondition ? { searchCondition: params.searchCondition } : {}),

@@ -76,15 +76,15 @@ describe('survey API generated boundary', () => {
 
   it('목록·상세·전체 제출 취소·통계 4건을 exact generated operation으로 실행한다', async () => {
     executeGeneratedOperationMock
-      .mockResolvedValueOnce({ list: [response], total: 1, page: 0, size: 10, totalPage: 1 })
+      .mockResolvedValueOnce({ list: [response], total: 1, page: 1, size: 10, totalPage: 1 })
       .mockResolvedValueOnce(response)
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce([stats]);
 
-    await expect(getQustnrRespondInfoList({ keyword: '홍', page: 0, size: 10 })).resolves.toEqual({
+    await expect(getQustnrRespondInfoList({ keyword: '홍', page: 1, size: 10 })).resolves.toEqual({
       list: [response],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     });
@@ -93,7 +93,7 @@ describe('survey API generated boundary', () => {
     await expect(getSurveyStats({ srvySn: 2 })).resolves.toEqual([stats]);
 
     expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(1, getResponsesOperation, {
-      query: { keyword: '홍', page: 0, size: 10 },
+      query: { keyword: '홍', page: 1, size: 10 },
     });
     expect(executeGeneratedOperationMock).toHaveBeenNthCalledWith(2, getResponseOperation, {
       path: { srvyRspnsSn: 11 },
@@ -110,7 +110,7 @@ describe('survey API generated boundary', () => {
     executeGeneratedOperationMock.mockResolvedValue({
       list: [{ ...response, srvyRspnsSn: undefined }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     });

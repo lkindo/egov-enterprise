@@ -1405,7 +1405,7 @@ async function listExactFaqPosts(api, fixture) {
   const boardId = process.env.UI_BASELINE_SYNTHETIC_FAQ_BOARD_ID || DEFAULT_SYNTHETIC_FAQ_BOARD_ID;
   const data = await safeApiData(api, 'GET', withSafeQuery(
     `/api/v1/boards/${encodeURIComponent(boardId)}`,
-    { searchCnd: '0', searchWrd: fixture.faqTitle, page: 0, size: 100 },
+    { searchCnd: '0', searchWrd: fixture.faqTitle, page: 1, size: 100 },
   ), { reasonCode: 'synthetic-faq-list-readback-failed' });
   const list = Array.isArray(data?.list) ? data.list : [];
   return list.filter((item) => item?.pstTtl === fixture.faqTitle && item?.useYn !== 'N');

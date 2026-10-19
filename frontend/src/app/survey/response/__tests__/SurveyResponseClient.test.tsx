@@ -60,19 +60,19 @@ describe('SurveyResponseClient destructive boundary', () => {
   });
 
   /**
-   * [2026-08-29] 첫 화면이 1페이지를 요청한다.
+   * [2026-08-29] 첫 화면이 1페이지를 요청한다. [ADR-0036] 서버 page 도 1부터라 첫 화면은 `page: 1` 이다.
    *
-   * 종전에는 1-base 인 `pageNo` 를 그대로 실어 `page: 1`(= Spring 기준 두 번째 페이지)을
+   * 서버가 0부터 세던 때는 1-base 인 `pageNo` 를 그대로 실어 `page: 1`(= 그 기준 두 번째 페이지)을
    * 보냈다. 응답이 한 페이지뿐이면 표는 '검색 결과가 없습니다.' 인데 머리말은 '총 1건의
    * 응답이 조회되었습니다.' 라고 말하고, 페이저는 '1 / 1' 로 양쪽이 비활성이라 사용자는
    * 있는 데이터에 닿을 방법이 없었다.
    */
-  it('첫 페이지를 0-base 로 요청한다 — 화면의 1페이지가 서버의 1페이지다', async () => {
+  it('첫 페이지를 page 1 로 요청한다 — 화면의 1페이지가 서버의 1페이지다', async () => {
     renderSubject();
     await screen.findByRole('button', { name: '홍길동 전체 제출 취소' });
 
     expect(mocks.getResponses).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 0, size: 10 }),
+      expect.objectContaining({ page: 1, size: 10 }),
     );
   });
 

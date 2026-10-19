@@ -68,7 +68,7 @@ export function SmartNotificationHub() {
         query: {
           ...(keyword ? { searchWrd: keyword } : {}),
           ...(readFilter === 'unread' ? { readYn: 'N' } : {}),
-          page: page - 1,
+          page,
           size: pageSize,
         },
       });

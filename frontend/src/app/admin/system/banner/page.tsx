@@ -21,8 +21,8 @@ export default async function BannerAdminPage() {
 
   try {
     const [bannersRes, popupsRes] = await Promise.all([
-      bannerAdminService.getBannerList({ page: 0, size: 20 }, axiosConfig),
-      popupAdminService.getPopupList({ page: 0, size: 20 }, axiosConfig)
+      bannerAdminService.getBannerList({ page: 1, size: 20 }, axiosConfig),
+      popupAdminService.getPopupList({ page: 1, size: 20 }, axiosConfig)
     ]);
 
     /*

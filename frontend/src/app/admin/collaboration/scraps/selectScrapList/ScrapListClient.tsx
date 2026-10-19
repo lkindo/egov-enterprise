@@ -88,9 +88,9 @@ const ScrapListClient = () => {
     const [editTarget, setEditTarget] = React.useState<{ scrapSn: number; values: ScrapFormValues } | null>(null);
     const [deletingScrapSn, setDeletingScrapSn] = React.useState<number | null>(null);
 
-    // 백엔드(ScrapApiController)는 pageIndex(1-base)/pageUnit 파라미터를 직접 읽는다.
+    // 백엔드(ScrapApiController)는 page(1부터)·size 를 읽는다(ADR-0036).
     const { data, isLoading, isError, error, refetch } = useQuery(
-        scrapQueryOptions.list({ pageIndex: pageNo, pageUnit }),
+        scrapQueryOptions.list({ page: pageNo, size: pageUnit }),
     );
 
     const list: Scrap[] = data?.list ?? [];

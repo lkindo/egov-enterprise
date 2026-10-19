@@ -246,7 +246,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   ? {
     bbsId,
     page: 1,
-    pageUnit: CALENDAR_MONTH_LIMIT,
+    size: CALENDAR_MONTH_LIMIT,
     searchWrd: querySearchWrd,
     searchCnd: querySearchCnd,
     orderBy: queryOrderBy,
@@ -257,7 +257,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   : {
     bbsId,
     page: queryPage,
-    pageUnit: 10,
+    size: 10,
     searchWrd: querySearchWrd,
     searchCnd: querySearchCnd,
     orderBy: queryOrderBy,

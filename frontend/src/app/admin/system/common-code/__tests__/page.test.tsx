@@ -63,15 +63,15 @@ describe('CommonCodePage pagination boundary', () => {
     expect(client.props.groups).toHaveLength(101);
     expect(client.props.details.map((detail) => detail.cdId)).toEqual(['TARGET']);
     expect(mocks.getCmmnCodeList.mock.calls.map(([params]) => params)).toEqual([
-      { pageIndex: 1, pageUnit: 100 },
-      { pageIndex: 2, pageUnit: 100 },
+      { page: 1, size: 100 },
+      { page: 2, size: 100 },
     ]);
     expect(mocks.getDetailCodeList).toHaveBeenCalledWith(
       {
         searchCondition: '1',
         searchKeyword: 'TARGET',
-        pageIndex: 1,
-        pageUnit: 100,
+        page: 1,
+        size: 100,
       },
       { headers: { Authorization: 'Bearer access-token' } },
     );

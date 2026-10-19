@@ -96,7 +96,7 @@ describe('DeptJobBoxManageDialog', () => {
     expect(within(list).getByText('기획')).toBeInTheDocument();
     expect(within(list).getByText('기획부 · 순서 1')).toBeInTheDocument();
     expect(within(list).getByText('부서 미지정')).toBeInTheDocument();
-    expect(mocks.getDeptJobBoxes).toHaveBeenCalledWith({ page: 0, size: 10 });
+    expect(mocks.getDeptJobBoxes).toHaveBeenCalledWith({ page: 1, size: 10 });
   });
 
   it('조회 권한만 있으면 등록·수정·삭제를 표시하지 않는다', async () => {

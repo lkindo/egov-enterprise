@@ -27,7 +27,7 @@ describe('generated OpenAPI form/explode query transport', () => {
         success: true,
         code: 'S000',
         message: '성공',
-        data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+        data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
       }));
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -44,13 +44,13 @@ describe('generated OpenAPI form/explode query transport', () => {
 
       await expect(hpcmAdminService.getHpcmList({
         keyword: '한 글 &/?=',
-        page: 0,
+        page: 1,
         size: undefined,
         sort: ['hlpSn,DESC', 'hlpDfn ASC'],
-      })).resolves.toMatchObject({ list: [], page: 0 });
+      })).resolves.toMatchObject({ list: [], page: 1 });
 
       expect(await receivedUrl).toBe(
-        '/api/v1/help/hpcm?keyword=%ED%95%9C+%EA%B8%80+%26%2F%3F%3D&page=0'
+        '/api/v1/help/hpcm?keyword=%ED%95%9C+%EA%B8%80+%26%2F%3F%3D&page=1'
         + '&sort=hlpSn%2CDESC&sort=hlpDfn+ASC',
       );
     } finally {

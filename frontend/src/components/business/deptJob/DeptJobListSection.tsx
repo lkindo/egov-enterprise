@@ -138,7 +138,7 @@ export function DeptJobListSection({
     //   '0'(부서업무명)·'1'(내용)·'2'(담당자ID) 일 때만 술어를 붙이고, 그 밖에는 **아무것도
     //   거르지 않는다**. 종전에는 조건 없이 키워드만 보내 무엇을 입력해도 전체 목록이 그대로
     //   나왔고, 화면은 그것을 검색 결과처럼 보여 줬다.
-    queryFn: () => deptJobUserService.getDeptJobList({ searchCondition: '0', searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
+    queryFn: () => deptJobUserService.getDeptJobList({ searchCondition: '0', searchWrd: searchKeyword, page: jobPage, size: pageUnit, scope: jobScope }),
   });
   const jobs = jobData?.list || [];
   const jobTotalPages = jobData?.totalPage ?? 1;

@@ -183,11 +183,11 @@ function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, ini
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters],
-    // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
-    // 종전의 {pageNo}는 ApiService 매핑 대상도 Pageable 파라미터도 아니라 그대로 무시됐고,
+    // 서버(GET /admin/system/users)는 searchKeyword + page(1부터)·size 를 읽는다(ADR-0036).
+    // 종전의 옛 페이지 이름은 서버가 읽지 않아 그대로 무시됐고,
     // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
     queryFn: () => userAdminService.getUserList({
-      page: userPage - 1, size: userPageSize, searchKeyword: searchKeyword,
+      page: userPage, size: userPageSize, searchKeyword: searchKeyword,
       ...(appliedUserFilters.userSttsCd ? { userSttsCd: appliedUserFilters.userSttsCd } : {}),
       ...(appliedUserFilters.ognzId ? { ognzId: appliedUserFilters.ognzId } : {}),
       ...(appliedUserFilters.lckYn ? { lckYn: appliedUserFilters.lckYn } : {}),

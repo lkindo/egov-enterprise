@@ -8,4 +8,4 @@ import { approvalQueryOptions } from '@/queries/approval-query-options';
  * 그 응답은 게시판 타입에 묶여 결재만 고른 구성에서 함께 사라진다 — 결재 카드는 결재 API(APPROVAL_READ)로 센다.
  * 'use client' 가 없는 모듈이라 서버 자식도 같은 객체로 미리 채운다.
  */
-export const pendingApprovalCountQuery = approvalQueryOptions.list('PENDING', { page: 0, size: 1 });
+export const pendingApprovalCountQuery = approvalQueryOptions.list('PENDING', { page: 1, size: 1 });

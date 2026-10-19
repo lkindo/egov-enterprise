@@ -33,10 +33,10 @@
  *    로 경로를 만든다는 점이다. 두 구현이 같은 엔드포인트를 두고 공존하므로 "형제 코드에 맞춘다"는
  *    이유로 본문 기반 치환이 이식되면 화면에서 고른 그룹이 아닌 엉뚱한 그룹이 수정된다.
  *
- * 5) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 규약에 맞춘다. 백엔드
- *    `getGroups` 가 읽는 페이지 축은 `pageIndex` 하나뿐이므로, 이 +1 이 사라지거나 두 번 적용되면
- *    목록이 한 페이지씩 밀린다. 타입은 그대로라 tsc 로는 절대 잡히지 않는다.
+ * 5) 페이징 파라미터 — [ADR-0036] 백엔드 `getGroups` 는 다른 목록과 같은 `BaseSearchDto` 로 `page`(1부터)·`size` 를
+ *    받는다. 서비스는 두 값을 변환 없이 넘긴다. ±1 이 끼어들면 목록이 한 페이지씩 밀리고, `size` 를 버리면
+ *    화면의 페이지당 건수 선택이 서버에 닿지 않는다(종전 결함 — 서버도 10 으로 고정했다). 타입은 그대로라
+ *    tsc 로는 절대 잡히지 않는다.
  *
  * 6) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·AbortSignal·Authorization 헤더)가
  *    유실되면 화면 이탈 시 요청 취소가 안 되고, SSR 경로의 Bearer 토큰이 빠져 401 이 된다.
@@ -72,7 +72,7 @@ import { groupAdminService } from '../GroupAdminService';
 const BASE = 'admin/system/groups';
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 const fallbackGroup: GroupManage = { groupId: 'GROUP_A', groupNm: '그룹', groupDc: '설명' };
 
 describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
@@ -86,7 +86,8 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       const { url, method, data, ...config } = request;
       const forwardedConfig = Object.keys(config).length === 0 ? undefined : config;
       let result: unknown;
-      if (method === 'post') result = await client.post(url, data, forwardedConfig);
+      // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 그룹 등록은 새 그룹 ID 다.
+      if (method === 'post') result = (await client.post(url, data, forwardedConfig)) ?? 'GRP_NEW';
       else if (method === 'put') result = await client.put(url, data, forwardedConfig);
       else if (method === 'delete') {
         result = await client.delete(url, data === undefined ? forwardedConfig : { ...config, data });
@@ -112,31 +113,34 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
-      await groupAdminService.getGroupList({ page: 0 });
+    it('첫 페이지(page 1)는 page 1 그대로 나간다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
+      await groupAdminService.getGroupList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
-    it('page 2는 pageIndex 3으로 바꾸고 명세에 없는 size는 전송하지 않는다', async () => {
-      await groupAdminService.getGroupList({ page: 2, size: 20 });
+    it('page 3·size 20 은 그대로 나간다 — size 를 버리면 화면의 페이지당 건수 선택이 서버에 닿지 않는다', async () => {
+      // [ADR-0036] 종전에는 이 서비스가 size 를 버리고 서버도 10 으로 고정해, 20 을 골라도 늘 10건이었다.
+      await groupAdminService.getGroupList({ page: 3, size: 20 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 3, searchKeyword: '' },
+        params: { page: 3, size: 20, searchKeyword: '' },
+      });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, {
+        params: { page: 3, searchKeyword: '' },
       });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      // page 9 였다면 변환 결과는 pageIndex 10 이겠지만, 명시값 1 이 그대로 유지돼야 한다.
+    it('옛 별칭 pageIndex 는 page 를 덮어쓰지도 서버로 새지도 않는다', async () => {
       await groupAdminService.getGroupList({ page: 9, pageIndex: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 9, searchKeyword: '' },
       });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 10, searchKeyword: '' },
+        params: { pageIndex: 1, searchKeyword: '' },
       });
     });
 
@@ -183,12 +187,12 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await groupAdminService.getGroupList({ page: 0 }, { timeout: 3000, signal });
+      await groupAdminService.getGroupList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
@@ -403,7 +407,7 @@ describe('GroupAdminService — 보안 그룹 관리자 API 계약', () => {
 
     it('모든 요청 경로는 admin/system/groups 접두를 벗어나지 않고 선행 슬래시도 갖지 않는다', async () => {
       // 선행 슬래시가 붙으면 axios baseURL('/api/v1')의 경로 세그먼트가 통째로 날아간다(절대 경로 해석).
-      await groupAdminService.getGroupList({ page: 0 });
+      await groupAdminService.getGroupList({ page: 1 });
       await groupAdminService.getGroup('GRP_0001');
       await groupAdminService.createGroup({ groupNm: '신규그룹' });
       await groupAdminService.updateGroup('GRP_0001', { groupNm: '수정' });

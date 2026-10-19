@@ -11,10 +11,10 @@
  *    ApiService 에서 `admin/system/users` 가 된다(선행 슬래시 제거 + `admin/{category}/` 접두).
  *    접두 한 글자, 슬래시 한 개만 어긋나도 결과는 404 이고 화면에는 "조회 실패"만 뜬다.
  *
- * 2) 페이징 파라미터 변환 — ApiService.get 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size`/`pageSize` → `recordCountPerPage` 로 변환해 백엔드 BaseSearchDto 에 맞춘다.
- *    이 +1 이 사라지거나 두 번 적용되면 목록이 **한 페이지씩 밀리거나 첫 페이지가 빈다**.
- *    타입은 변하지 않으므로 정적 검사로는 절대 잡히지 않는다.
+ * 2) 페이징 파라미터 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page`·`size` 를 쓴다. 서비스는
+ *    두 값을 변환 없이 넘기고, 옛 별칭(`pageIndex`·`pageNo`·`pageSize`·`recordCountPerPage`)은 번역하지 않는다 —
+ *    섞여 오면 생성 query 경계가 요청 전에 거부한다. ±1 이 끼어들면 목록이 **한 페이지씩 밀리거나 첫 페이지가
+ *    400 이 된다**. 타입은 변하지 않으므로 정적 검사로는 절대 잡히지 않는다.
  *
  * 3) 경로 변수 치환 — `updateUser`/`deleteUser`/`updatePassword` 는 userId 를 URL 에 박는다.
  *    여기서 다른 값이 들어가면 **엉뚱한 계정을 수정하거나 삭제한다** — 되돌릴 수 없는 사고다.
@@ -54,7 +54,7 @@ import { userAdminService } from '../UserAdminService';
 /** 이 서비스가 조합해야 하는 실제 최종 경로 — AdminService('/users') + category 기본값 'system' */
 const BASE = 'admin/system/users';
 const success = <T,>(data: T) => ({ success: true as const, code: 'S000', message: 'success', data });
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 const safeUser = {
   groups: [], permissions: [], authorizationVersion: 'fixture-v1',
   userId: 'USR001',
@@ -92,24 +92,25 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('OpenAPI Pageable의 page·size 이름과 0-based 의미를 그대로 보존한다', async () => {
-      await userAdminService.getUserList({ page: 1, size: 20 });
+    it('OpenAPI의 page·size 이름과 1부터 세는 의미를 그대로 보존한다', async () => {
+      await userAdminService.getUserList({ page: 2, size: 20 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 1, size: 20 },
+        params: { page: 2, size: 20 },
       });
     });
 
-    it('첫 페이지(page 0)는 0-based 값을 그대로 보낸다', async () => {
-      await userAdminService.getUserList({ page: 0 });
+    it('첫 페이지(page 1)는 1 그대로 보낸다 — 0 기반 변환이 되살아나면 red', async () => {
+      await userAdminService.getUserList({ page: 1 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 0 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 1 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 0 } });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
-      await userAdminService.getUserList({ page: 5, pageIndex: 3 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 5 } });
+    it('옛 별칭 pageIndex 를 섞어 보내면 번역하지 않고 요청 전에 거부한다(ADR-0036)', async () => {
+      await expect(userAdminService.getUserList({ page: 5, pageIndex: 3 }))
+        .rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('size 만 준 경우 OpenAPI size로만 전달한다', async () => {
@@ -118,14 +119,12 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 10 } });
     });
 
-    it('기존 pageSize alias는 OpenAPI size로 변환한다', async () => {
+    it('옛 크기 별칭 pageSize 는 size 로 번역하지 않고 요청 전에 거부한다', async () => {
       const params: SearchParams = { pageSize: 50 };
 
-      await userAdminService.getUserList(params);
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { size: 50 },
-      });
+      await expect(userAdminService.getUserList(params))
+        .rejects.toThrow('생성 API 쿼리 파라미터가 OpenAPI 계약과 일치하지 않습니다.');
+      expect(client.get).not.toHaveBeenCalled();
     });
 
     it('OpenAPI에 정확히 존재하는 searchKeyword만 전달한다', async () => {

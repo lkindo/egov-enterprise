@@ -27,17 +27,16 @@ const LOG_QUERY_KEYS = [
   'searchCondition',
   'searchKeyword',
   'searchUseYn',
-  'pageIndex',
-  'pageUnit',
-  'pageSize',
-  'firstIndex',
-  'lastIndex',
-  'recordCountPerPage',
+  'page',
+  'size',
   'searchKeywordFrom',
   'searchKeywordTo',
 ] as const satisfies readonly (keyof LogSearchQuery)[];
 
-/** 목록 화면의 0-base `page`를 API의 1-base `pageIndex` 계약으로 정규화한다. */
+/**
+ * 목록 화면의 조회 조건을 BaseSearchDto 의 생성 query 로 옮긴다. `page` 는 1부터이고 화면·서버가 같은 번호를 쓴다(ADR-0036) —
+ * 변환하지 않는다. 검색어는 화면 어휘 `searchWrd` 를 서버 이름 `searchKeyword` 로 옮겨 담는다.
+ */
 function normalizeLogSearchParams(params: SearchParams): LogSearchQuery {
   const query: LogSearchQuery = {};
   const generatedParams = params as Partial<LogSearchQuery>;
@@ -45,10 +44,7 @@ function normalizeLogSearchParams(params: SearchParams): LogSearchQuery {
     const value = generatedParams[key];
     if (value !== undefined) Object.assign(query, { [key]: value });
   }
-  query.pageIndex = params.pageIndex ?? (params.page ?? 0) + 1;
-  if (params.pageUnit !== undefined || params.size !== undefined) {
-    query.pageUnit = params.pageUnit ?? params.size;
-  }
+  query.page = params.page ?? 1;
   query.searchKeyword = params.searchKeyword ?? params.searchWrd ?? '';
   return query;
 }

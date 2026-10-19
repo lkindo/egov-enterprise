@@ -38,8 +38,8 @@ export interface ScheduleSearchParams {
   schdlBgngYmd?: string;
   schdlEndYmd?: string;
   schdlNm?: string;
-  pageNo?: number;
-  pageIndex?: number;
+  /** 페이지 번호(1부터, ADR-0036). */
+  page?: number;
   size?: number;
 }
 

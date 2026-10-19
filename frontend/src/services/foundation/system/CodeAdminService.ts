@@ -87,21 +87,12 @@ export type CmmnCodeHierarchyItem = components['schemas']['CmmnCodeHierarchyDto'
 
 type CodeSearchQuery = NonNullable<operations['getClCodeList']['parameters']['query']>;
 
+/** 목록 인자를 BaseSearchDto 의 생성 query 로 옮긴다. `page`(1부터)·`size` 는 서버 이름·기준 그대로다(ADR-0036). */
 function toCodeSearchQuery(params?: SearchParams): CodeSearchQuery {
     if (!params) return {};
-    const { page, pageNo, size, searchWrd, ...query } = params;
+    const { searchWrd, ...query } = params;
     const generatedQuery = query as CodeSearchQuery;
 
-    if (generatedQuery.pageIndex === undefined) {
-        if (pageNo !== undefined) generatedQuery.pageIndex = pageNo;
-        else if (page !== undefined) generatedQuery.pageIndex = page + 1;
-    }
-    if (generatedQuery.pageUnit === undefined) {
-        generatedQuery.pageUnit = size ?? generatedQuery.pageSize;
-    }
-    if (generatedQuery.recordCountPerPage === undefined) {
-        generatedQuery.recordCountPerPage = size ?? generatedQuery.pageSize;
-    }
     if (generatedQuery.searchKeyword === undefined && searchWrd !== undefined) {
         generatedQuery.searchKeyword = searchWrd;
     }
@@ -259,7 +250,7 @@ class CodeAdminService extends ApiService {
     }
 
     async createClCode(data: Partial<CmmnClCode>, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(createClCodeOperation, {
+        await this.executeGenerated(createClCodeOperation, {
             body: data as components['schemas']['CmmnClCodeDto'],
             config,
         });
@@ -283,7 +274,7 @@ class CodeAdminService extends ApiService {
         return { ...page, list: page.list.map(requireCmmnCode) };
     }
 
-    /** 공통코드 변경 이력(최신순). page 는 0부터 센다. */
+    /** 공통코드 변경 이력(최신순). page 는 1부터 센다(ADR-0036). */
     async getCodeChangeHistory(
         scope: CommonCodeChangeScope,
         page: number,
@@ -303,7 +294,7 @@ class CodeAdminService extends ApiService {
     }
 
     async createCmmnCode(data: Partial<CmmnCode>, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(createCmmnCodeOperation, {
+        await this.executeGenerated(createCmmnCodeOperation, {
             body: data as components['schemas']['CmmnCodeDto'],
             config,
         });
@@ -348,7 +339,7 @@ class CodeAdminService extends ApiService {
     }
 
     async createDetailCode(data: Partial<CmmnDetailCode>, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(createDetailCodeOperation, {
+        await this.executeGenerated(createDetailCodeOperation, {
             body: data as components['schemas']['CmmnDetailCodeDto'],
             config,
         });
@@ -388,7 +379,7 @@ class CodeAdminService extends ApiService {
     }
 
     async createAdministCode(data: AdministCode, config?: AxiosRequestConfig): Promise<void> {
-        return this.executeGenerated(createAdministCodeOperation, {
+        await this.executeGenerated(createAdministCodeOperation, {
             body: data as components['schemas']['AdministCodeDto'],
             config,
         });

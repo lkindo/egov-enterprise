@@ -41,7 +41,7 @@ export default function AuditJournalClient() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-audit-journal', page, pageSize, actorId, appliedPeriod.fromDate ?? '', appliedPeriod.toDate ?? ''],
-    queryFn: () => operationsRecordAdminService.getAuditJournal({ actorId, ...appliedPeriod, page: page - 1, size: pageSize }),
+    queryFn: () => operationsRecordAdminService.getAuditJournal({ actorId, ...appliedPeriod, page, size: pageSize }),
   });
   const total = data?.total ?? 0;
 

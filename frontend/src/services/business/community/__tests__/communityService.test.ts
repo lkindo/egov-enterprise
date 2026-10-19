@@ -16,7 +16,7 @@ const success = <T,>(data: T) => ({
   data,
 });
 
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 
 describe('communityUserService 목록·상세 generated contract', () => {
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe('communityUserService 목록·상세 generated contract', () => {
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'communities/7', undefined);
   });
 
-  it('0-based page와 size는 OpenAPI Pageable 축으로 그대로 전달한다', async () => {
+  it('1부터 세는 page와 size는 OpenAPI 축으로 그대로 전달한다(ADR-0036)', async () => {
     await communityUserService.getCommunityList({ page: 2, size: 15 });
 
     expect(client.getRaw).toHaveBeenCalledWith('communities', {
@@ -65,15 +65,15 @@ describe('communityUserService 목록·상세 generated contract', () => {
     expect(params).toStrictEqual(before);
   });
 
-  it('1-based legacy pageIndex/pageNo와 pageUnit/pageSize를 명시적으로 변환한다', async () => {
+  it('옛 별칭 pageIndex/pageNo와 pageUnit/pageSize는 page·size로 번역하지 않는다(ADR-0036)', async () => {
     await communityUserService.getCommunityList({ pageIndex: 3, pageUnit: 20 });
     await communityUserService.getCommunityList({ pageNo: 4, pageSize: 30 });
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', {
-      params: { page: 2, size: 20 },
+      params: {},
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'communities', {
-      params: { page: 3, size: 30 },
+      params: {},
     });
   });
 
@@ -90,16 +90,17 @@ describe('communityUserService 목록·상세 generated contract', () => {
   });
 
   it('OpenAPI에 없는 useYn은 요청 경계에 흘리지 않는다', async () => {
-    await communityUserService.getCommunityList({ page: 0, useYn: 'Y' });
+    await communityUserService.getCommunityList({ page: 1, useYn: 'Y' });
 
-    expect(client.getRaw).toHaveBeenCalledWith('communities', { params: { page: 0 } });
+    expect(client.getRaw).toHaveBeenCalledWith('communities', { params: { page: 1 } });
   });
 
   it('페이지 필수 필드가 빠진 응답은 fail-closed한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
 
+    // [ADR-0036] 페이지 응답 다섯 필드가 스펙 필수가 돼, 서비스 검사보다 앞선 생성 경계가 먼저 거부한다.
     await expect(communityUserService.getCommunityList()).rejects.toThrow(
-      '커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.',
+      '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
 
@@ -110,8 +111,9 @@ describe('communityUserService 목록·상세 generated contract', () => {
       delete incomplete[field];
       client.getRaw.mockResolvedValueOnce(success(incomplete));
 
+      // [ADR-0036] 페이지 응답 다섯 필드가 스펙 필수가 돼, 서비스 검사보다 앞선 생성 경계가 먼저 거부한다.
       await expect(communityUserService.getCommunityList({})).rejects.toThrow(
-        '커뮤니티 페이지 응답이 필수 계약과 일치하지 않습니다.',
+        '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
       );
     },
   );

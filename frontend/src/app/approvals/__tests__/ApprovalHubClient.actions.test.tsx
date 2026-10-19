@@ -205,7 +205,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.change(screen.getByLabelText('제목·번호'), { target: { value: '휴가' } });
     expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ keyword: '휴가' }));
     fireEvent.submit(screen.getByLabelText('제목·번호').closest('form')!);
-    await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 20, keyword: '휴가' })));
+    await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({ page: 1, size: 20, keyword: '휴가' })));
 
     fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
     await waitFor(() => expect(mocks.getPending).toHaveBeenCalledWith(expect.objectContaining({
@@ -233,7 +233,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     const pendingTab = await screen.findByRole('tab', { name: '대기 중인 결재' });
     await waitFor(() => expect(pendingTab).toHaveAccessibleDescription('대기 중인 결재 3건'));
-    expect(mocks.getPending).toHaveBeenCalledWith({ page: 0, size: 1 });
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 1, size: 1 });
   });
 
   it('세 탭이 각각 이름이 약속하는 목록을 부르고 기안 버튼은 다이얼로그를 연다', async () => {
@@ -251,13 +251,13 @@ describe('ApprovalHubClient handleAction pending contract', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '내가 올린 결재' }));
     await screen.findByText('내가 올린 건');
-    expect(mocks.getMyHistory).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(mocks.getMyHistory).toHaveBeenCalledWith({ page: 1, size: 20 });
     // 신청자 탭에서는 승인·반려 버튼이 없다 — 결재자만 확정한다.
     expect(screen.queryByRole('button', { name: '결재 승인' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: '내가 처리한 결재' }));
     await screen.findByText('내가 처리한 건');
-    expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(mocks.getProcessed).toHaveBeenCalledWith({ page: 1, size: 20 });
     // 상태 조건의 선택지에도 같은 말이 있어 목록 안에서 찾는다(DIP B5 F4).
     expect(within(screen.getByRole('list', { name: '내가 처리한 결재 목록' })).getByText('승인 완료')).toBeInTheDocument();
 
@@ -268,26 +268,26 @@ describe('ApprovalHubClient handleAction pending contract', () => {
   });
 
   /**
-   * [2026-09-05] 종전에는 `{ page: 0, size: 50 }` 한 페이지만 받고 페이저가 없어 51번째 문서부터
+   * [2026-09-05] 종전에는 첫 페이지 50건 한 번만 받고 페이저가 없어 51번째 문서부터
    * 도달 불가였다. 페이지를 넘기면 서버 페이지가 바뀌고 이전 페이지의 선택은 해제된다.
    */
   it('목록이 한 페이지를 넘으면 페이저로 다음 페이지를 조회하고 stale 선택을 해제한다', async () => {
     const secondPageItem = { ...pendingApproval, ifmlAtrzSn: 99, taskSeNm: '두 번째 페이지 건' };
     mocks.getPending.mockImplementation(async ({ page }: { page: number }) => (
-      page === 0
+      page === 1
         ? { list: [pendingApproval], total: 45 }
         : { list: [secondPageItem], total: 45 }
     ));
     renderClient();
 
     await screen.findByText('휴가 신청');
-    expect(mocks.getPending).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 1, size: 20 });
     expect(await screen.findByRole('button', { name: '결재 승인' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('link', { name: '2' }));
 
     await screen.findByText('두 번째 페이지 건');
-    expect(mocks.getPending).toHaveBeenCalledWith({ page: 1, size: 20 });
+    expect(mocks.getPending).toHaveBeenCalledWith({ page: 2, size: 20 });
     expect(screen.queryByText('휴가 신청')).not.toBeInTheDocument();
     // 페이지가 바뀌면 이전 선택(#73)은 stale 이므로 상세는 새 페이지 첫 항목으로 간다.
     expect(screen.getByRole('button', { name: /두 번째 페이지 건 #99 상세 열기/ })).toHaveAttribute('aria-current', 'true');
@@ -297,8 +297,8 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     const lastPageItem = { ...pendingApproval, ifmlAtrzSn: 98, taskSeNm: '세 번째 페이지 건' };
     let total = 45;
     mocks.getPending.mockImplementation(async ({ page }: { page: number }) => {
-      if (page === 2) return { list: total > 40 ? [lastPageItem] : [], total };
-      return { list: [{ ...pendingApproval, ifmlAtrzSn: 70 + page, taskSeNm: `${page + 1}페이지 건` }], total };
+      if (page === 3) return { list: total > 40 ? [lastPageItem] : [], total };
+      return { list: [{ ...pendingApproval, ifmlAtrzSn: 69 + page, taskSeNm: `${page}페이지 건` }], total };
     });
     renderClient();
     await screen.findByText('1페이지 건');
@@ -310,7 +310,7 @@ describe('ApprovalHubClient handleAction pending contract', () => {
     fireEvent.click(screen.getByRole('button', { name: '결재함 목록 새로고침' }));
 
     expect(await screen.findByText('2페이지 건')).toBeInTheDocument();
-    expect(mocks.getPending).toHaveBeenLastCalledWith({ page: 1, size: 20 });
+    expect(mocks.getPending).toHaveBeenLastCalledWith({ page: 2, size: 20 });
   });
 
   it('공백 반려 사유는 요약과 inline 오류로 연결하고 첫 오류 입력에 초점을 둔다', async () => {
@@ -947,7 +947,7 @@ describe('ApprovalHubClient 결재 동선 검토 수정', () => {
 
   it('처리 예정 행의 버튼은 문서마다 이름이 다르고, 목록 페이지를 옮겨도 문서 이름을 보이며, ‘지금 처리’ 뒤 포커스가 남는다 (F19·F25)', async () => {
     mocks.getPending.mockImplementation(async ({ page }: { page: number }) => (
-      page === 0 ? { list: [doc(71, '첫 문서'), doc(72, '둘째 문서')], total: 25 } : { list: [doc(99, '다음 쪽 문서')], total: 25 }
+      page === 1 ? { list: [doc(71, '첫 문서'), doc(72, '둘째 문서')], total: 25 } : { list: [doc(99, '다음 쪽 문서')], total: 25 }
     ));
     renderClient();
     await waitFor(() => expect(screen.getByRole('button', { name: '결재 승인' })).toBeEnabled());
@@ -1184,12 +1184,12 @@ describe('ApprovalHubClient 참조된 결재 (D4)', () => {
     await screen.findByText('휴가 신청');
     fireEvent.click(screen.getByRole('tab', { name: '참조된 결재' }));
     const list = await screen.findByRole('list', { name: '참조된 결재 목록' });
-    expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 0, size: 20 });
+    expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 1, size: 20 });
     expect(within(list).getByText('참조')).toBeInTheDocument();
     expect(within(list).getByText('반려됨')).toBeInTheDocument();
     // 상태 조건은 문서의 지금 상태다 — 대기함처럼 떼지 않는다.
     fireEvent.change(screen.getByLabelText('문서 상태'), { target: { value: 'C' } });
-    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith(expect.objectContaining({ page: 0, size: 20, status: 'C' })));
+    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith(expect.objectContaining({ page: 1, size: 20, status: 'C' })));
     // 참조는 결재 대기가 아니다 — 대기 건수와 대기함 목록에는 섞이지 않는다.
     expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'C' }));
   });
@@ -1206,7 +1206,7 @@ describe('ApprovalHubClient 참조된 결재 (D4)', () => {
     openLink('tab=REFERENCED&doc=55');
     renderClient();
     await waitFor(() => expect(screen.getByRole('tab', { name: '참조된 결재' })).toHaveAttribute('aria-selected', 'true'));
-    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getReferenced).toHaveBeenCalledWith({ page: 1, size: 20 }));
     expect(mocks.getPending).not.toHaveBeenCalledWith(expect.objectContaining({ size: 20 }));
     await waitFor(() => expect(mocks.getDetail).toHaveBeenCalledWith(55));
     expect(await screen.findByRole('heading', { name: '참조로 받은 출장 결재 · 2차' })).toBeInTheDocument();

@@ -157,7 +157,7 @@ describe('CommunityManageDialog', () => {
     await user.click(within(list).getByRole('button', { name: '독서 모임 회원 관리' }));
 
     expect(await screen.findByRole('heading', { name: '독서 모임 회원 관리' })).toBeInTheDocument();
-    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'REQUESTED', page: 0, size: 20 }));
+    await waitFor(() => expect(mocks.getMembers).toHaveBeenCalledWith(11, { status: 'REQUESTED', page: 1, size: 20 }));
     expect(screen.queryByRole('list', { name: '커뮤니티 목록' })).not.toBeInTheDocument();
     expect(screen.queryByRole('form', { name: '커뮤니티 등록' })).not.toBeInTheDocument();
 
@@ -173,7 +173,7 @@ describe('CommunityManageDialog', () => {
     expect(within(list).getByText('사용 안 함')).toBeInTheDocument();
     expect(within(list).getByRole('button', { name: '폐쇄된 모임 폐쇄' })).toBeDisabled();
     expect(within(list).getByRole('button', { name: '독서 모임 폐쇄' })).not.toBeDisabled();
-    expect(mocks.getCommunityList).toHaveBeenCalledWith({ page: 0, size: 10 });
+    expect(mocks.getCommunityList).toHaveBeenCalledWith({ page: 1, size: 10 });
   });
 
   it('등록은 useYn=Y 를 싣고 빈 소개는 빈 문자열로 보낸다', async () => {

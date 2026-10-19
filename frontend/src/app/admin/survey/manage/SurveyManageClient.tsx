@@ -43,7 +43,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
 
   // 검색어는 입력 컨트롤에 그대로 바인딩하고, 서버 요청에는 디바운스 값만 쓴다(P1-8).
   // 종전에는 params 객체에 검색어가 직접 들어 있어 **타이핑 한 글자마다 서버 요청**이 나갔다.
-  const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
+  const [page, setPage] = useState(1); // 1부터 (표·서버 page 와 같은 번호, ADR-0036)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   // [2026-09-26 DIP C9] 검색어는 KeywordFilter 의 `조회`/Enter 로 이미 확정된다. 그 뒤에 디바운스를 한 번 더 두어
   //   조회가 300ms 늦었다(카탈로그 G2).
@@ -61,7 +61,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   /** 검색어 변경 시 페이지를 항상 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(P1-8). */
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
-    setPage(0);
+    setPage(1);
   };
 
   const columns: Column<OnlinePollManageVO>[] = [
@@ -69,7 +69,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       header: '번호',
       accessor: (_, index) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {(index !== undefined ? index + 1 + page * pageSize : 0).toString().padStart(2, '0')}
+          {(index !== undefined ? index + 1 + (page - 1) * pageSize : 0).toString().padStart(2, '0')}
         </span>
       ),
       className: 'w-20 text-center'
@@ -193,11 +193,11 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         {...rowNavigation}
         emptyMessage={emptyResultMessage(keyword, '등록된 여론조사가 없습니다.')}
         pagination={{
-          currentPage: page + 1,
+          currentPage: page,
           totalPages: Math.ceil(total / pageSize),
-          onPageChange: (p) => setPage(p - 1),
+          onPageChange: (p) => setPage(p),
           pageSize,
-          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
         }}
       />
       {createOpen ? (

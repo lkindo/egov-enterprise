@@ -3,11 +3,11 @@ import { fetchAllPages, MAX_PAGE_UNIT } from '../fetch-all-pages';
 
 describe('fetchAllPages', () => {
   it('서버 상한 이내의 크기로 마지막 페이지까지 순서대로 수집한다', async () => {
-    const fetchPage = vi.fn(async (pageIndex: number, pageUnit: number) => {
-      const start = (pageIndex - 1) * pageUnit;
+    const fetchPage = vi.fn(async (page: number, size: number) => {
+      const start = (page - 1) * size;
       const all = Array.from({ length: 201 }, (_, index) => index + 1);
       return {
-        list: all.slice(start, start + pageUnit),
+        list: all.slice(start, start + size),
         total: all.length,
       };
     });
@@ -30,8 +30,8 @@ describe('fetchAllPages', () => {
   });
 
   it('total이 남았는데 빈 페이지가 오면 잘린 결과를 성공으로 위장하지 않는다', async () => {
-    const fetchPage = vi.fn(async (pageIndex: number) => ({
-      list: pageIndex === 1
+    const fetchPage = vi.fn(async (page: number) => ({
+      list: page === 1
         ? Array.from({ length: MAX_PAGE_UNIT }, (_, index) => index)
         : [],
       total: MAX_PAGE_UNIT + 1,
@@ -51,7 +51,7 @@ describe('fetchAllPages', () => {
     expect(fetchPage).toHaveBeenCalledTimes(1);
   });
 
-  it('서버가 요청한 pageUnit보다 많은 행을 반환하면 계약 불일치로 거부한다', async () => {
+  it('서버가 요청한 size보다 많은 행을 반환하면 계약 불일치로 거부한다', async () => {
     const fetchPage = vi.fn(async () => ({
       list: Array.from({ length: MAX_PAGE_UNIT + 1 }, (_, index) => index),
       total: MAX_PAGE_UNIT + 1,

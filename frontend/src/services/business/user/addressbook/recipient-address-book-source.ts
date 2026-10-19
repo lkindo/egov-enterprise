@@ -20,7 +20,8 @@ const MAX_BOOK_PAGES = 100;
 export const recipientAddressBookSource: RecipientAddressBookSource = {
   async listBooks() {
     const books: RecipientAddressBook[] = [];
-    for (let page = 0; ; page += 1) {
+    // page 는 1부터다(ADR-0036). MAX_BOOK_PAGES 쪽까지 읽는다.
+    for (let page = 1; ; page += 1) {
       const result = await addressbookUserService.getAddressBooks({ page, size: BOOK_PAGE_SIZE });
       const list = result.list ?? [];
       books.push(...list.map((book) => ({ id: book.adbkSn, name: book.adbkNm })));
@@ -29,7 +30,7 @@ export const recipientAddressBookSource: RecipientAddressBookSource = {
       const total = typeof result.total === 'number' ? result.total : undefined;
       if (list.length === 0) break;
       if (total !== undefined ? books.length >= total : list.length < BOOK_PAGE_SIZE) break;
-      if (page + 1 >= MAX_BOOK_PAGES) break;
+      if (page >= MAX_BOOK_PAGES) break;
     }
     return books;
   },

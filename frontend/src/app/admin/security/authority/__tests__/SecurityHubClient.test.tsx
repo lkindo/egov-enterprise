@@ -631,7 +631,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     fireEvent.change(screen.getByRole('textbox', { name: '사용자 이름·로그인 ID' }), { target: { value: '다른 사용자' } });
     // [DIP C9] 검색어는 조회 버튼으로 적용한다 — 입력만으로는 목록이 바뀌지 않는다.
     await userEvent.click(screen.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.getUsers).toHaveBeenLastCalledWith('다른 사용자', 0, expect.any(Number)));
+    await waitFor(() => expect(mocks.getUsers).toHaveBeenLastCalledWith('다른 사용자', 1, expect.any(Number)));
     await userEvent.click(screen.getByRole('checkbox', { name: /설문 담당/ }));
     await userEvent.click(screen.getByRole('button', { name: '사용자 그룹 저장' }));
     expect(saveUserGroups).toHaveBeenCalledWith('ESNTL_A', expect.objectContaining({ groups: ['CONTENT', 'SURVEY'] }));
@@ -692,7 +692,7 @@ describe('SecurityHub: AuthorizationGroupEditor and AuthorizationMembershipEdito
     fireEvent.change(screen.getByLabelText('시작일'), { target: { value: '2026-09-01' } });
     fireEvent.change(screen.getByLabelText('종료일'), { target: { value: '2026-09-10' } });
     await userEvent.click(screen.getByRole('button', { name: '이력 조회' }));
-    await waitFor(() => expect(mocks.getHistory).toHaveBeenLastCalledWith(0, 20, { groupCode: 'CONTENT', fromDate: '2026-09-01', toDate: '2026-09-10' }));
+    await waitFor(() => expect(mocks.getHistory).toHaveBeenLastCalledWith(1, 20, { groupCode: 'CONTENT', fromDate: '2026-09-01', toDate: '2026-09-10' }));
     const count = mocks.getHistory.mock.calls.length;
     fireEvent.change(screen.getByLabelText('시작일'), { target: { value: '2026-09-11' } });
     await userEvent.click(screen.getByRole('button', { name: '이력 조회' }));
@@ -1086,7 +1086,7 @@ describe('SecurityHub: 그룹 구성원과 대상 인계', () => {
     await openTab('구성원');
 
     expect(await screen.findByRole('heading', { name: '배정된 사용자 (21명)' })).toBeInTheDocument();
-    expect(mocks.getGroupMembers).toHaveBeenCalledWith('CONTENT', 0, 20);
+    expect(mocks.getGroupMembers).toHaveBeenCalledWith('CONTENT', 1, 20);
     await userEvent.click(screen.getByRole('button', { name: '사용자 가 배정 편집' }));
 
     expect(await screen.findByRole('region', { name: '사용자 권한 그룹 배정' })).toBeInTheDocument();
@@ -1142,7 +1142,7 @@ describe('SecurityHub: 그룹 구성원과 대상 인계', () => {
     handOffTarget('authority-history-user', { id: 'ESNTL_A', loginId: 'login-a', name: '사용자 가' });
     setup();
 
-    await waitFor(() => expect(mocks.getHistory).toHaveBeenCalledWith(0, 20, { userId: 'login-a' }));
+    await waitFor(() => expect(mocks.getHistory).toHaveBeenCalledWith(1, 20, { userId: 'login-a' }));
     expect(screen.getByRole('textbox', { name: '대상 사용자 로그인 ID' })).toHaveValue('login-a');
   });
 
@@ -1267,7 +1267,7 @@ describe('SecurityHub: 그룹 복제·변경 이력·메뉴 미리보기', () =>
     expect(await table.findByText('그룹 추가: 그룹 이름')).toBeInTheDocument();
     expect(table.getByText('운영자 (E0)')).toBeInTheDocument();
     expect(table.getByText('복제 원본: SURVEY')).toBeInTheDocument();
-    expect(mocks.getHistory).toHaveBeenCalledWith(0, 20, { groupCode: 'CONTENT' });
+    expect(mocks.getHistory).toHaveBeenCalledWith(1, 20, { groupCode: 'CONTENT' });
   });
 
   it('감사 권한이 없으면 변경 이력 탭을 두지 않는다', async () => {

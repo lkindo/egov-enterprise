@@ -63,72 +63,70 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
     });
   });
 
-  describe('목록 조회 — 2단 페이징 파라미터 변환', () => {
-    it('첫 페이지(page 0)는 pageIndex 1 로 변환된다 — 오프바이원이 생기면 첫 페이지가 빈다', async () => {
-      await authorAdminService.getAuthorList({ page: 0 });
+  describe('목록 조회 — 페이징 파라미터 전달(ADR-0036)', () => {
+    it('첫 페이지(page 1)는 page 1 그대로 나간다 — 종전의 pageIndex 변환이 되살아나면 red', async () => {
+      await authorAdminService.getAuthorList({ page: 1 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 1 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { pageIndex: 1 } });
     });
 
-    it('page 1 은 pageIndex 2 로, size 20 은 recordCountPerPage 20 으로 변환되고 원본 키도 함께 남는다', async () => {
-      await authorAdminService.getAuthorList({ page: 1, size: 20 });
+    it('page 2·size 20 은 두 키 그대로 나가고 옛 크기 이름(pageUnit·recordCountPerPage)은 만들지 않는다', async () => {
+      await authorAdminService.getAuthorList({ page: 2, size: 20 });
 
-      // page/size 를 지우지 않는 이유는 Spring Data Pageable 병행 지원 때문이다.
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 2, pageUnit: 20, recordCountPerPage: 20 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 2, size: 20 } });
+      const [, config] = client.get.mock.calls[0] as [string, { params: Record<string, unknown> }];
+      expect(Object.keys(config.params).sort()).toEqual(['page', 'size']);
     });
 
-    it('page 의 +1 은 서비스에서 한 번만 적용되고 ApiService 가 다시 더하지 않는다 (이중 가산 금지)', async () => {
-      await authorAdminService.getAuthorList({ page: 4 });
+    it('page 는 어디서도 ±1 되지 않는다 (서비스·transport 이중 가산·감산 금지)', async () => {
+      await authorAdminService.getAuthorList({ page: 5 });
 
-      // 서비스가 pageIndex 를 먼저 채우므로 ApiService 의 page→pageIndex 분기는 건너뛴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 5 } });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 4, pageIndex: 6 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { page: 5 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 4 } });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, { params: { page: 6 } });
     });
 
-    it('pageNo 는 이미 1-based 이므로 +1 없이 그대로 pageIndex 가 된다', async () => {
+    it('옛 별칭 pageNo 는 page 로 번역하지도 서버로 보내지도 않는다', async () => {
       await authorAdminService.getAuthorList({ pageNo: 3 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { pageIndex: 3 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('page 와 pageNo 가 함께 오면 pageNo 가 최종 pageIndex 를 결정한다 (나중 대입이 이긴다)', async () => {
+    it('page 와 옛 별칭 pageNo 가 함께 오면 page 만 나간다', async () => {
       await authorAdminService.getAuthorList({ page: 6, pageNo: 2 });
 
-      // 두 if 문의 순서가 뒤바뀌면 pageNo 를 쓰는 화면(MenuByAuthorityClient)이 조용히 밀린다.
+      // MenuByAuthorityClient 등 호출부는 이제 page 를 쓴다 — 옛 이름이 번호를 덮어쓰면 조용히 밀린다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 2 },
+        params: { page: 6 },
       });
     });
 
-    it('pageIndex 를 직접 넘기면 그대로 유지되고 size 만 recordCountPerPage 로 확장된다', async () => {
-      // 실사용: /admin 대시보드가 총건수만 필요해 { pageIndex: 1, size: 1 } 로 호출한다.
-      await authorAdminService.getAuthorList({ pageIndex: 1, size: 1 });
+    it('대시보드 실호출 형태(page 1·size 1)는 그대로 나간다', async () => {
+      // 실사용: /admin 대시보드가 총건수만 필요해 { page: 1, size: 1 } 로 호출한다.
+      await authorAdminService.getAuthorList({ page: 1, size: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, pageUnit: 1, recordCountPerPage: 1 },
+        params: { page: 1, size: 1 },
       });
     });
 
-    it('pageSize 는 recordCountPerPage 와 size 양쪽으로 확장되지만 pageIndex 는 만들지 않는다', async () => {
-      await authorAdminService.getAuthorList({ pageSize: 50 });
+    it('옛 크기 이름(pageSize·pageUnit·recordCountPerPage)은 size 로 번역하지도 보내지도 않는다', async () => {
+      await authorAdminService.getAuthorList({ pageSize: 50, pageUnit: 50, recordCountPerPage: 50 });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageSize: 50, pageUnit: 50 },
-      });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: {} });
     });
 
-    it('검색 조건과 pageUnit 은 변형 없이 그대로 전달되며 page 변환과 공존한다', async () => {
+    it('검색 조건과 size 는 변형 없이 그대로 전달되며 page 와 공존한다', async () => {
       await authorAdminService.getAuthorList({
-        page: 0,
-        pageUnit: 5,
+        page: 1,
+        size: 5,
         searchCondition: '1',
         searchKeyword: '',
       });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, pageUnit: 5, searchCondition: '1', searchKeyword: '' },
+        params: { page: 1, size: 5, searchCondition: '1', searchKeyword: '' },
       });
     });
 
@@ -137,21 +135,21 @@ describe('AuthorAdminService — 권한 그룹 관리자 API 계약', () => {
 
       await authorAdminService.getAuthorList(callerParams);
 
-      // ApiService.get 은 넘겨받은 params 를 제자리에서 변형하므로, 사본 전달이 계약이다.
+      // 서비스는 새 query 객체를 만든다 — 호출부 객체를 그대로 transport 에 넘기지 않는다.
       expect(callerParams).toEqual({ page: 1, size: 10 });
-      expect(callerParams.pageIndex).toBeUndefined();
-      expect(callerParams.recordCountPerPage).toBeUndefined();
+      const [, config] = client.get.mock.calls[0] as [string, { params: Record<string, unknown> }];
+      expect(config.params).not.toBe(callerParams);
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await authorAdminService.getAuthorList({ page: 1 }, { timeout: 3000, signal });
+      await authorAdminService.getAuthorList({ page: 2 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { pageIndex: 2 },
+        params: { page: 2 },
       });
     });
 

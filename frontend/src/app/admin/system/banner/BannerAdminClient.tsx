@@ -296,18 +296,18 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   const popupPage = activeTab === 'popup' ? page : 1;
 
   /*
-   * 배너/팝업 컨트롤러는 모두 Spring Pageable(page/size, 0-based)만 읽는다.
+   * 배너/팝업 컨트롤러는 모두 page(1부터)·size 만 읽는다(ADR-0036).
    * 종전의 pageUnit:999 는 바인딩 대상이 아니라 그대로 무시됐고, 실제로는 서버 기본값(size=10)만
    * 내려와 11번째 자산부터는 수정·게시중단이 UI 상 불가능했다. 정상 페이징 + 페이저 연결로 정정한다.
    */
   const { data: bannerPageData, isLoading: isBannersLoading, error: bannerError, refetch: refetchBanners } = useQuery({
     queryKey: ['admin-banners', bannerPage, pageSize],
-    queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: pageSize })
+    queryFn: () => bannerAdminService.getBannerList({ page: bannerPage, size: pageSize })
   });
 
   const { data: popupPageData, isLoading: isPopupsLoading, error: popupError, refetch: refetchPopups } = useQuery({
     queryKey: ['admin-popups', popupPage, pageSize],
-    queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: pageSize })
+    queryFn: () => popupAdminService.getPopupList({ page: popupPage, size: pageSize })
   });
 
   /*

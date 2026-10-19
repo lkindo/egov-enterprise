@@ -30,16 +30,16 @@ describe('BoardUserService generated contract', () => {
 
   it('6개 경계를 generated operation으로 실행하고 등록 ID 반환을 보존한다', async () => {
     client.getRaw
-      .mockResolvedValueOnce(successEnvelope({ list: [post], total: 1 }))
+      .mockResolvedValueOnce(successEnvelope({ list: [post], total: 1, page: 1, size: 10, totalPage: 1 }))
       .mockResolvedValueOnce(successEnvelope(post));
     client.requestRaw.mockResolvedValueOnce(successEnvelope(4));
 
-    await expect(boardUserService.getPosts('BBS01', { page: 0, size: 20 }))
+    await expect(boardUserService.getPosts('BBS01', { page: 1, size: 20 }))
       .resolves.toMatchObject({ list: [post], total: 1 });
     await expect(boardUserService.likePost('BBS01', 9)).resolves.toBe(4);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'boards/BBS01', {
-      params: { page: 0, size: 20 },
+      params: { page: 1, size: 20 },
     });
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
       url: 'boards/BBS01/posts/9/like',

@@ -47,8 +47,8 @@ export default async function AddressBookListPage() {
       같은 파일이 이미 `searchWrd` 를 승인이 아니라 **삭제**로 처리한 선례가 있다. 같은 처리를 한다.
 
     ⚠ 되살리려면 producer 를 함께 만들어야 한다. 그때는 이름도 다시 정해야 한다 —
-      `page` 는 이 화면에서 이미 다른 의미로 점유돼 있다(아래 Spring Pageable 0-base).
-      URL 키만 `page` 로 바꾸면 한 화면에서 두 기준이 공존한다.
+      `page` 는 이 화면의 API 요청 이름이기도 하다(아래, 1부터 — ADR-0036). URL 키를 되살리면
+      두 값을 같은 번호로 묶어야 한다.
   */
   const pageNo = 1;
 
@@ -64,8 +64,8 @@ export default async function AddressBookListPage() {
   */
 
   // [P1: Waterfall Elimination] Initiate data promise on server
-  // 백엔드는 Spring Pageable(0-base page) 을 받는다.
-  const dataPromise = getInitialAddressBookData({ page: pageNo - 1, size: PAGE_UNIT, searchWrd: '' });
+  // 백엔드는 1부터 세는 page 를 받는다(ADR-0036).
+  const dataPromise = getInitialAddressBookData({ page: pageNo, size: PAGE_UNIT, searchWrd: '' });
 
   return (
     <Suspense fallback={<AddressBookListSkeleton />}>

@@ -31,7 +31,7 @@ export function useUserOrgSelection({ activeTab, selectedItemId, users, departme
   // [2026-09-26 DIP B5 F4] 부서 상세의 소속 인원 — 직속 소속만, 이름은 앞 DEPT_MEMBER_PREVIEW 명까지 보인다.
   const deptMembersQuery = useQuery({
     queryKey: ['admin-dept-members', activeTab === 'DEPTS' ? selectedItemId : null],
-    queryFn: () => userAdminService.getUserList({ page: 0, size: DEPT_MEMBER_PREVIEW, ognzId: String(selectedItemId) }),
+    queryFn: () => userAdminService.getUserList({ page: 1, size: DEPT_MEMBER_PREVIEW, ognzId: String(selectedItemId) }),
     enabled: activeTab === 'DEPTS' && Boolean(selectedItemId),
   });
   const deptMembersLabel = formatDeptMembersLabel(deptMembersQuery);

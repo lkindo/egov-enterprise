@@ -22,30 +22,30 @@ describe('scrap query ownership', () => {
 
   it('목록과 상세가 충돌하지 않는 계층형 key를 소유한다', () => {
     expect(scrapKeys.all).toEqual(['scraps']);
-    expect(scrapKeys.list({ pageIndex: 2, pageUnit: 20 })).toEqual([
-      'scraps', 'list', { pageIndex: 2, pageUnit: 20 },
+    expect(scrapKeys.list({ page: 2, size: 20 })).toEqual([
+      'scraps', 'list', { page: 2, size: 20 },
     ]);
     expect(scrapKeys.detail(17)).toEqual(['scraps', 'detail', 17]);
   });
 
   it('목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)', () => {
-    expect(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 20 }).queryKey).toEqual([
-      'scraps', 'list', { pageIndex: 2, pageUnit: 20 },
+    expect(scrapQueryOptions.list({ page: 2, size: 20 }).queryKey).toEqual([
+      'scraps', 'list', { page: 2, size: 20 },
     ]);
-    expect(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 50 }).queryKey)
-      .not.toEqual(scrapQueryOptions.list({ pageIndex: 2, pageUnit: 20 }).queryKey);
+    expect(scrapQueryOptions.list({ page: 2, size: 50 }).queryKey)
+      .not.toEqual(scrapQueryOptions.list({ page: 2, size: 20 }).queryKey);
   });
 
   it('목록·상세 query options가 service 호출까지 소유한다', async () => {
     service.getMyScraps.mockResolvedValueOnce({ list: [], total: 0 });
     service.getScrap.mockResolvedValueOnce({ scrapSn: 17, useYn: 'Y' });
 
-    const list = scrapQueryOptions.list({ pageIndex: 2, pageUnit: 20 });
+    const list = scrapQueryOptions.list({ page: 2, size: 20 });
     const detail = scrapQueryOptions.detail(17);
     await list.queryFn?.({ queryKey: list.queryKey } as never);
     await detail.queryFn?.({ queryKey: detail.queryKey } as never);
 
-    expect(service.getMyScraps).toHaveBeenCalledWith({ pageIndex: 2, pageUnit: 20 });
+    expect(service.getMyScraps).toHaveBeenCalledWith({ page: 2, size: 20 });
     expect(service.getScrap).toHaveBeenCalledWith(17);
   });
 

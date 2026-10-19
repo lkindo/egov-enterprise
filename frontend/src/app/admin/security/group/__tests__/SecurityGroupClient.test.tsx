@@ -84,6 +84,8 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
       <button type="button" onClick={onRetry}>그룹 목록 재시도</button>
       {/* [2026-08-24 A1 이행] 별도 PagePagination 이 표 내장 페이저로 수렴했다. */}
       <button type="button" onClick={() => pagination?.onPageChange(2)}>그룹 다음 페이지</button>
+      <button type="button" onClick={() => pagination?.onPageSizeChange?.(20)}>그룹 20개씩</button>
+      <span data-testid="group-page-size">{pagination?.pageSize}</span>
     </div>
   ),
 }));
@@ -143,15 +145,26 @@ describe('SecurityGroupClient', () => {
     expect(screen.getByText('N/A')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '그룹 다음 페이지' }));
-    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' }));
+    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 2, size: 10, searchKeyword: '' }));
     fireEvent.change(screen.getByRole('textbox', { name: '그룹ID · 그룹명' }), {
       target: { value: '관리자' },
     });
     // [DIP C9] 검색어는 조회 버튼으로 적용한다.
     fireEvent.click(screen.getByRole('button', { name: '조회' }));
-    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '관리자' }));
+    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '관리자' }));
     fireEvent.click(screen.getByRole('button', { name: '사용자 분류 그룹 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록 재시도' }));
+  });
+
+  it('페이지당 건수를 바꾸면 서버에 그 size 로 1페이지부터 다시 묻고, 서버가 돌려준 size 를 표에 보인다(ADR-0036)', async () => {
+    renderClient();
+    await screen.findByText('관리자 그룹');
+    mocks.list.mockResolvedValue({ list: [group], page: 1, size: 20, total: 12, totalPage: 1 });
+
+    fireEvent.click(screen.getByRole('button', { name: '그룹 20개씩' }));
+
+    await waitFor(() => expect(mocks.list).toHaveBeenLastCalledWith({ page: 1, size: 20, searchKeyword: '' }));
+    await waitFor(() => expect(screen.getByTestId('group-page-size')).toHaveTextContent('20'));
   });
 
   it('creates a group from controlled form fields', async () => {

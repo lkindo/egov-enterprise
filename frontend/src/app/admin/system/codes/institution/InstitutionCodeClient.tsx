@@ -30,7 +30,7 @@ import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 type InstitutionTab = 'list' | 'reception';
 
-/** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
+/** 서버 페이지 크기(백엔드 기본 size). PagePagination 계산과 동일해야 한다. */
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -58,12 +58,12 @@ export default function InstitutionCodeClient({
 
   const listQuery = useQuery({
     queryKey: ['institution-codes', keyword, page, pageSize],
-    // 서버(BaseSearchDto)가 읽는 키는 searchKeyword·pageIndex·pageUnit 이다.
-    // searchWrd·pageNo 는 ApiService.get 의 매핑 대상도 아니라 셋 다 통째로 무시됐다.
+    // 서버(BaseSearchDto)가 읽는 키는 searchKeyword·page(1부터)·size 다(ADR-0036).
+    // 종전에는 서버가 읽지 않는 검색어·페이지 이름을 보내 셋 다 통째로 무시됐다.
     queryFn: () => codeAdminService.getInstitutionCodeList({
       searchKeyword: keyword,
-      pageIndex: page,
-      pageUnit: pageSize,
+      page,
+      size: pageSize,
     }),
     enabled: activeTab === 'list',
     placeholderData: (prev) => prev ?? (
@@ -77,8 +77,8 @@ export default function InstitutionCodeClient({
     queryKey: ['institution-code-receptions', keyword, page, pageSize],
     queryFn: () => codeAdminService.getInstitutionCodeRecptnList({
       searchKeyword: keyword,
-      pageIndex: page,
-      pageUnit: pageSize,
+      page,
+      size: pageSize,
     }),
     enabled: activeTab === 'reception',
     placeholderData: (prev) => prev,

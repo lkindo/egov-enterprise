@@ -392,7 +392,7 @@ export default function MemoReportManagementClient() {
   const { data: reportsData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['memo-reports', activeTab, searchKeyword, page, pageSize],
     queryFn: () => {
-      const params = { searchKeyword, page: page - 1, size: pageSize };
+      const params = { searchKeyword, page, size: pageSize };
       if (activeTab === 'MY') return memoReportService.getMyReports(params);
       if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports(params);
       return memoReportService.getMemoReports(params);

@@ -87,7 +87,7 @@ describe('캘린더 템플릿 조회 조건 (DIP V6)', () => {
     const [params, initialData] = mocks.useBoardList.mock.calls.at(-1)!;
     expect(params).toMatchObject({
       page: 1,
-      pageUnit: 100,
+      size: 100,
       startDate: '2026-09-01',
       endDate: '2026-09-30',
       dateBasis: 'EVENT',
@@ -109,7 +109,7 @@ describe('캘린더 템플릿 조회 조건 (DIP V6)', () => {
     await renderList('TMPLT_LIST');
 
     const [params] = mocks.useBoardList.mock.calls.at(-1)!;
-    expect(params).toMatchObject({ pageUnit: 10, startDate: '2026-09-01' });
+    expect(params).toMatchObject({ size: 10, startDate: '2026-09-01' });
     expect(params).not.toHaveProperty('dateBasis');
     expect(params.endDate).toBeUndefined();
   });

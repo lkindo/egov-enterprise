@@ -81,7 +81,7 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
     refetch: refetchReports,
   } = useQuery({
     queryKey: ['work-reports', searchKeyword, reportPage, pageUnit],
-    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit, searchWrd: searchKeyword }),
+    queryFn: () => reportService.getReports({ page: reportPage, size: pageUnit, searchWrd: searchKeyword }),
   });
   const reports = reportData?.list || [];
   const reportTotalPages = reportData?.totalPage ?? 1;

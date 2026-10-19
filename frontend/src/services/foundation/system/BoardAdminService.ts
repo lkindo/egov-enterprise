@@ -50,7 +50,7 @@ class BoardAdminService extends ApiService {
             list: response.list ?? [],
             total: response.total ?? 0,
             page: response.page ?? 1,
-            size: response.size ?? params.pageUnit ?? params.pageSize ?? 10,
+            size: response.size ?? params.size ?? 10,
             totalPage: response.totalPage ?? 1,
         };
     }

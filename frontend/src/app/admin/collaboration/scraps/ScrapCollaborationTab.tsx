@@ -16,7 +16,7 @@ import { ScrapFormDialog, type ScrapFormValues } from './ScrapFormDialog';
  * 스크랩 API 는 검색 파라미터가 없어 조회 조건 칸을 두지 않는다 — 동작하지 않는 입력을 만들지 않는다.
  */
 export function ScrapCollaborationTab() {
-  const scrapsQuery = useQuery(scrapQueryOptions.list({ pageIndex: 1, pageUnit: 50 }));
+  const scrapsQuery = useQuery(scrapQueryOptions.list({ page: 1, size: 50 }));
   const scraps: Scrap[] = scrapsQuery.data?.list ?? [];
 
   /*

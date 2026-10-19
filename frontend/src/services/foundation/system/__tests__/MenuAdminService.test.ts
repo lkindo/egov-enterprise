@@ -27,9 +27,10 @@ describe('MenuAdminService', () => {
       success: true,
       code: 'S000',
       message: '성공',
-      data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+      data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
     });
-    vi.mocked(client.requestRaw).mockResolvedValue({ success: true, code: 'S000', message: '성공' });
+    // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 메뉴 등록은 새 메뉴 번호다.
+    vi.mocked(client.requestRaw).mockResolvedValue({ success: true, code: 'S000', message: '성공', data: 8 });
   });
 
   it('createMenu should call post', async () => {

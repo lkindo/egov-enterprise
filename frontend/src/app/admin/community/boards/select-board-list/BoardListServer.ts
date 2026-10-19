@@ -34,8 +34,8 @@ export const resolveDefaultBoardId = async (): Promise<string> => {
   if (!accessToken) return NOTICE_BOARD_ID;
 
   try {
-    const boards = await fetchAllPages((pageIndex, pageUnit) =>
-      boardAdminService.getBoardMasterList({ pageIndex, pageUnit }, {
+    const boards = await fetchAllPages((page, size) =>
+      boardAdminService.getBoardMasterList({ page, size }, {
         headers: { Authorization: `Bearer ${accessToken}` },
       }));
     const first = boards.find((board) => board.useYn !== 'N' && !!board.bbsId);
@@ -72,7 +72,7 @@ export const getInitialBoardData = async (params: {
     // 백엔드 BoardController 매핑에 맞춰 경로 변경 /api/v1/boards/{bbsId}
     const { bbsId, page, ...restParams } = params;
     const queryParams = {
-      page: page - 1, // Spring Data Pageable은 0부터 시작
+      page, // 1부터 센다 — 화면 번호 그대로(ADR-0036)
       size: 10,
       ...restParams
     };

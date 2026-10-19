@@ -141,10 +141,10 @@ export default function HpcmClient({
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['admin-hpcm', keyword, page, pageSize],
-    // 서버는 Spring Pageable(0-base)을 읽는다.
+    // 서버는 1부터 세는 page 를 읽는다(ADR-0036).
     queryFn: () => hpcmAdminService.getHpcmList({
       keyword: keyword || undefined,
-      page: page - 1,
+      page,
       size: pageSize,
       sort: LIST_SORT,
     }),

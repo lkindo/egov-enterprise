@@ -35,14 +35,14 @@ describe('설문 목록 탐색과 복구', () => {
 
   it('첫 10건 뒤의 설문으로 이동하고 상세를 열 수 있다', async () => {
     mocks.getSurveys.mockImplementation(async ({ page, size }) => ({
-      list: page === 0 ? Array.from({ length: 10 }, (_, index) => survey(index + 1)) : [survey(11)],
+      list: page === 1 ? Array.from({ length: 10 }, (_, index) => survey(index + 1)) : [survey(11)],
       total: 11, totalPage: 2, page, size,
     }));
     renderPage();
     expect(await screen.findByText('1번째 설문')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(await screen.findByText('11번째 설문')).toBeInTheDocument();
-    expect(mocks.getSurveys).toHaveBeenLastCalledWith({ page: 1, size: 10 }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(mocks.getSurveys).toHaveBeenLastCalledWith({ page: 2, size: 10 }, expect.objectContaining({ signal: expect.any(AbortSignal) }));
     expect(screen.getByRole('button', { name: '다음 페이지' })).toHaveAttribute('aria-disabled', 'true');
     fireEvent.click(screen.getByRole('button', { name: '11번째 설문 설문 응답 열기' }));
     expect(mocks.push).toHaveBeenCalledWith('/survey/11');

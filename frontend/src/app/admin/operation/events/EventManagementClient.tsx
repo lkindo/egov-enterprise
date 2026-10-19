@@ -195,7 +195,7 @@ export default function EventManagementClient() {
   // --- Data Fetching ---
   const { data: eventsData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['events-list', searchWrd, page, pageSize],
-    queryFn: () => eventService.getEvents({ searchWrd, page: page - 1, size: pageSize }),
+    queryFn: () => eventService.getEvents({ searchWrd, page, size: pageSize }),
   });
 
   const displayItems: EventInfo[] = eventsData?.list ?? [];

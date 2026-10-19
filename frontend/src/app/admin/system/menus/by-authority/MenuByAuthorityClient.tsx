@@ -85,7 +85,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
   } = useQuery({
     queryKey: ['admin-authorities-all'],
     queryFn: async () => {
-      const res = await authorAdminService.getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' });
+      const res = await authorAdminService.getAuthorList({ page: 1, searchCondition: '1', searchKeyword: '' });
       return res?.list ?? [];
     },
     initialData: initialAuthors.data,

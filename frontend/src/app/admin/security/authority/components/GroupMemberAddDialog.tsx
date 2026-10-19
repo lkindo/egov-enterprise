@@ -48,7 +48,7 @@ export function GroupMemberAddDialog({ code, name, onClose }: { code: string; na
   const addRequestRef = useRef(false);
   const requestClose = useDirtyCloseGuard(selected.size > 0, onClose);
 
-  const users = useQuery({ queryKey: [...scope, 'users', keyword, page], queryFn: () => authorizationAdminService.getUsers(keyword, page - 1, PAGE_SIZE), retry: false });
+  const users = useQuery({ queryKey: [...scope, 'users', keyword, page], queryFn: () => authorizationAdminService.getUsers(keyword, page, PAGE_SIZE), retry: false });
   // 검색 결과에는 구성원 여부가 없다 — 보이는 사람마다 전체 배정을 읽는다(사용자 배정 화면과 같은 조회·캐시).
   const memberships = useQueries({
     queries: (users.data?.list ?? []).map((entry) => ({

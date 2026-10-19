@@ -26,7 +26,7 @@ class PolicyAdminService extends ApiService {
   }
 
   async createPolicy(type: string, data: PolicyUpdateRequest, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createPolicyOperation, { path: { type }, body: data, config });
+    await this.executeGenerated(createPolicyOperation, { path: { type }, body: data, config });
   }
 }
 

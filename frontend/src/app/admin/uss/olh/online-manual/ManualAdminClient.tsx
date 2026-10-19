@@ -113,10 +113,10 @@ export default function ManualAdminClient({
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['admin-manuals', searchKeyword, page, pageSize],
-    // 서버는 Spring Pageable(0-base)을 읽는다.
+    // 서버는 1부터 세는 page 를 읽는다(ADR-0036).
     queryFn: () => manualAdminService.getManualList({
       keyword: searchKeyword || undefined,
-      page: page - 1,
+      page,
       size: pageSize,
     }),
     initialData: (page === 1 && !searchKeyword) ? (initialManuals ?? undefined) : undefined,

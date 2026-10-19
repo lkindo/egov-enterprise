@@ -118,13 +118,13 @@ describe('foundation generated operation wave2 경계', () => {
         emlAddr: 'list@example.com',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     };
     client.getRaw.mockResolvedValueOnce(success({ ...page, list: page.list.map((user) => ({ ...user, ...authorizationSnapshot })) }));
 
-    await expect(userAdminService.getUserList({ page: 0, size: 10 })).resolves.toStrictEqual(page);
+    await expect(userAdminService.getUserList({ page: 1, size: 10 })).resolves.toStrictEqual(page);
   });
 
   it('수정 폼의 식별자와 비밀번호는 전송하지 않고 관리자 프로필 허용 필드만 투영한다', async () => {

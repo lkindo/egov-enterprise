@@ -14,12 +14,10 @@
  *    가 아니라 `ApiService` 를 직접 상속해 접두가 다른 서비스가 섞여 있으므로, 접두를 눈으로
  *    가정하지 않고 이 파일에서 고정한다. 한 글자만 어긋나도 4개 메서드가 동시에 404 다.
  *
- * 2) 페이징이 **두 축으로 동시에** 변환된다 — 이 서비스 고유의 위험이다.
- *    - 서비스 자신: `pageNo = pageNo || (page ? page + 1 : 1)`
- *    - 상위 `ApiService.get`: `page`(0-based) → `pageIndex`(1-based, +1), `size` → `recordCountPerPage`
- *    즉 한 번의 목록 조회에 **pageNo 와 pageIndex 라는 1-based 키가 둘 다 실려 나간다.** 둘 중
- *    하나만 +1 을 잃으면 백엔드가 어느 키를 읽느냐에 따라 목록이 한 페이지씩 밀린다. 타입은
- *    그대로라 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page`·`size` 하나를 쓴다. 서비스는
+ *    `page` 를 변환 없이 넘기고(없으면 1), 종전 별칭(`pageNo`·`pageIndex`·`pageUnit`·`recordCountPerPage`)은
+ *    번역하지도 보내지도 않는다. ±1 이 끼어들면 목록이 한 페이지씩 밀리고, 옛 이름이 새어 나가면 서버가
+ *    400 으로 거부한다. 타입은 그대로라 tsc 로는 절대 잡히지 않는다.
  *
  * 3) 검색어 폴백 — `searchKeyword || searchWrd || ''` 순서로 승격한다(승격 대상 키 이름도
  *    `searchKeyword` 그대로다 — 설문 서비스처럼 `keyword` 로 이름을 바꾸지 않는다). 이 순서가
@@ -78,7 +76,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
   beforeEach(() => {
     vi.clearAllMocks();
     client.get.mockImplementation((url: string) => Promise.resolve(
-      url === BASE ? { list: [] } : { userId: USER_ID },
+      url === BASE ? { list: [], total: 0, page: 1, size: 10, totalPage: 0 } : { userId: USER_ID },
     ));
   });
 
@@ -86,59 +84,61 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
     it('인자 없이 호출해도 admin/system/login-policies 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {
       await loginPolicyAdminService.getLoginPolicyList();
 
-      // params 를 안 넘겨도 BaseSearchDto의 pageIndex 1·searchKeyword ''는 항상 채워져 나간다.
+      // params 를 안 넘겨도 BaseSearchDto의 page 1·searchKeyword ''는 항상 채워져 나간다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
-    it('첫 페이지(page 0)는 BaseSearchDto pageIndex 1로 나간다', async () => {
-      await loginPolicyAdminService.getLoginPolicyList({ page: 0 });
-
-      expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
-      });
-    });
-
-    it('page 1은 BaseSearchDto pageIndex 2로 변환된다', async () => {
+    it('첫 페이지(page 1)는 BaseSearchDto page 1로 나간다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 2, searchKeyword: '' },
-      });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
-    it('page 3·size 20을 BaseSearchDto pageIndex 4·pageUnit 20으로 변환한다', async () => {
-      await loginPolicyAdminService.getLoginPolicyList({ page: 3, size: 20 });
+    it('page 2는 변환 없이 page 2로 나간다 — ±1 이 끼어들면 한 페이지씩 밀린다', async () => {
+      await loginPolicyAdminService.getLoginPolicyList({ page: 2 });
+
+      expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { page: 2, searchKeyword: '' },
+      });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, {
+        params: { page: 1, searchKeyword: '' },
+      });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, {
+        params: { page: 3, searchKeyword: '' },
+      });
+    });
+
+    it('page 4·size 20을 BaseSearchDto page 4·size 20으로 그대로 보낸다', async () => {
+      await loginPolicyAdminService.getLoginPolicyList({ page: 4, size: 20 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: {
-          pageIndex: 4,
-          pageUnit: 20,
+          page: 4,
+          size: 20,
           searchKeyword: '',
         },
       });
     });
 
-    it('legacy pageNo를 직접 지정하면 generated pageIndex로 옮겨 보존한다', async () => {
-      await loginPolicyAdminService.getLoginPolicyList({ pageNo: 5 });
+    it('옛 페이지 이름(pageNo·pageIndex·pageUnit)은 번역하지도 서버로 보내지도 않는다(ADR-0036)', async () => {
+      await loginPolicyAdminService.getLoginPolicyList({ pageNo: 5, pageIndex: 6, pageUnit: 30 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 5, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
-      expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '' },
-      });
+      const [, config] = client.get.mock.calls[0] as [string, { params: Record<string, unknown> }];
+      expect(Object.keys(config.params).sort()).toEqual(['page', 'searchKeyword']);
     });
 
-    it('size만 지정하면 pageUnit으로 옮겨 페이지 번호는 기본값 1을 유지한다', async () => {
+    it('size만 지정하면 size로 보내고 페이지 번호는 기본값 1을 유지한다', async () => {
       await loginPolicyAdminService.getLoginPolicyList({ size: 50 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, pageUnit: 50, searchKeyword: '' },
+        params: { page: 1, size: 50, searchKeyword: '' },
       });
     });
 
@@ -146,7 +146,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: '관리자' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '관리자' },
+        params: { page: 1, searchKeyword: '관리자' },
       });
     });
 
@@ -154,7 +154,7 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchWrd: '레거시검색' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '레거시검색' },
+        params: { page: 1, searchKeyword: '레거시검색' },
       });
     });
 
@@ -162,11 +162,11 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: '우선', searchWrd: '후순위' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '우선' },
+        params: { page: 1, searchKeyword: '우선' },
       });
       // 폴백 순서가 뒤집힌 형태(후순위가 이기는 형태)로는 나가지 않는다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchKeyword: '후순위' },
+        params: { page: 1, searchKeyword: '후순위' },
       });
     });
 
@@ -174,19 +174,19 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
       await loginPolicyAdminService.getLoginPolicyList({ searchCondition: 'userNm', searchKeyword: '홍길동' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { pageIndex: 1, searchCondition: 'userNm', searchKeyword: '홍길동' },
+        params: { page: 1, searchCondition: 'userNm', searchKeyword: '홍길동' },
       });
     });
 
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await loginPolicyAdminService.getLoginPolicyList({ page: 0 }, { timeout: 3000, signal });
+      await loginPolicyAdminService.getLoginPolicyList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
@@ -197,13 +197,12 @@ describe('LoginPolicyAdminService — 로그인 정책 관리자 API 계약', ()
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         signal,
-        params: { pageIndex: 1, searchKeyword: '' },
+        params: { page: 1, searchKeyword: '' },
       });
     });
 
-    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 pageIndex 가 누적 오염되면 안 된다', async () => {
-      // ApiService.get 은 넘겨받은 params 객체에 직접 pageIndex 를 써넣는다(파괴적).
-      // 서비스가 스프레드로 사본을 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
+    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 페이지 값이 누적 오염되면 안 된다', async () => {
+      // 서비스가 새 query 객체를 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
       const callerParams: SearchParams = { page: 1, size: 10 };
 
       await loginPolicyAdminService.getLoginPolicyList(callerParams);

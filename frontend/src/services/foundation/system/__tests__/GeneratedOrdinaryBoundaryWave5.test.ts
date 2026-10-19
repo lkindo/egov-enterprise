@@ -29,7 +29,7 @@ const success = <T,>(data: T) => ({
   data,
 });
 
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 
 describe('ordinary generated boundary wave5', () => {
   beforeEach(() => {
@@ -96,19 +96,19 @@ describe('ordinary generated boundary wave5', () => {
       .mockResolvedValueOnce(success(emptyPage));
 
     await communityUserService.getCommunityList({
-      pageIndex: 2,
-      pageUnit: 25,
+      page: 2,
+      size: 25,
       searchCondition: '0',
       searchKeyword: '개발',
       useYn: 'Y',
     });
-    await communityUserService.getCommunityList({ page: 0, size: 10, searchCnd: '0', searchWrd: '운영' });
+    await communityUserService.getCommunityList({ page: 1, size: 10, searchCnd: '0', searchWrd: '운영' });
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'communities', {
-      params: { page: 1, size: 25, searchCnd: '0', searchWrd: '개발' },
+      params: { page: 2, size: 25, searchCnd: '0', searchWrd: '개발' },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'communities', {
-      params: { page: 0, size: 10, searchCnd: '0', searchWrd: '운영' },
+      params: { page: 1, size: 10, searchCnd: '0', searchWrd: '운영' },
     });
   });
 
@@ -132,16 +132,16 @@ describe('ordinary generated boundary wave5', () => {
       .mockResolvedValueOnce(success(emptyPage))
       .mockResolvedValueOnce(success(emptyPage));
 
-    await expect(approvalUserService.getPending({ page: 0, size: 10 })).resolves.toStrictEqual(emptyPage);
+    await expect(approvalUserService.getPending({ page: 1, size: 10 })).resolves.toStrictEqual(emptyPage);
     await expect(approvalUserService.getMyHistory({ page: 1, size: 20 })).resolves.toStrictEqual({
       ...emptyPage,
-      page: 0,
+      page: 1,
       size: 10,
     });
     await approvalUserService.confirm(9, SANCTION_STATUS.REJECTED, '자료 보완');
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'approvals/pending', {
-      params: { page: 0, size: 10 },
+      params: { page: 1, size: 10 },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'approvals/my', {
       params: { page: 1, size: 20 },
@@ -159,14 +159,14 @@ describe('ordinary generated boundary wave5', () => {
     await expect(commentAdminService.getComments({
       pstSn: 5,
       bbsId: 'BBS_1',
-      page: 0,
+      page: 1,
       size: 10,
       searchWrd: '스팸',
     })).resolves.toStrictEqual(emptyPage);
     await commentAdminService.deleteComment(8);
 
     expect(client.getRaw).toHaveBeenCalledWith('admin/comments', {
-      params: { pstSn: 5, bbsId: 'BBS_1', page: 0, size: 10, searchKeyword: '스팸' },
+      params: { pstSn: 5, bbsId: 'BBS_1', page: 1, size: 10, searchKeyword: '스팸' },
     });
     expect(client.requestRaw).toHaveBeenCalledWith({ url: 'admin/comments/8', method: 'delete' });
   });

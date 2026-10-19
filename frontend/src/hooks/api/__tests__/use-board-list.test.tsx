@@ -23,8 +23,8 @@ const createWrapper = () => {
 describe('useBoardList Hook', () => {
   const defaultParams = {
     bbsId: 'BBSMSTR_000000000001',
-    page: 0,
-    pageUnit: 10,
+    page: 1,
+    size: 10,
     searchWrd: '',
     searchCnd: '0',
     orderBy: '',

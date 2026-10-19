@@ -13,8 +13,8 @@
  *  2. 게시판 ID 매핑 — 카테고리(FAQ/QNA/WIKI/COMMUNITY)별 BBSMSTR_* 상수는 하드코딩 문자열이다.
  *     한 글자만 틀려도(A/B/C/D/E 반복 문자열이라 오타가 눈에 띄지 않는다) **다른 게시판의 글이
  *     아무 오류 없이 정상 조회**된다. 가장 발견이 늦는 종류의 사고다.
- *  3. 페이징 계약 — 생성된 getPosts operation은 Spring Pageable의 0-based `page`와 `size`만
- *     허용한다. BaseSearchDto용 별칭이 섞이면 서로 다른 페이징 규약이 조용히 결합된다.
+ *  3. 페이징 계약 — 생성된 getPosts operation은 1부터 세는 `page`와 `size`만
+ *     허용한다(ADR-0036). BaseSearchDto용 별칭이 섞이면 서로 다른 페이징 규약이 조용히 결합된다.
  *  4. 경로 변수 치환 — 상세(`/{bbsId}/posts/{pstSn}`)·통계(`/{bbsId}/stats`)는 식별자가 잘못
  *     끼워지면 **다른 자원을 읽거나 건드린다**.
  *  5. 응답 매핑 — getHotArticles/getActivities 는 서버 BoardDto 가 싣는 필드(`pstSn`·`pstTtl`·`userNm`·`crtDt`)만
@@ -63,7 +63,7 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     client.getRaw.mockImplementation((url: string) => Promise.resolve(successEnvelope(
-      url.includes('/posts/') ? validBoard : url.endsWith('/stats') ? {} : { list: [] },
+      url.includes('/posts/') ? validBoard : url.endsWith('/stats') ? {} : { list: [], total: 0, page: 1, size: 20, totalPage: 0 },
     )));
   });
 
@@ -112,20 +112,20 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       expect(client.getRaw).toHaveBeenCalledWith('boards/BBSMSTR_CUSTOM000001', expect.any(Object));
     });
 
-    it('기본 페이징은 generated getPosts의 0-based page 0 · size 20으로 보낸다', async () => {
+    it('기본 페이징은 generated getPosts의 첫 페이지 page 1 · size 20으로 보낸다', async () => {
       await knowledgeService.getArticles();
 
       expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
         params: {
           searchWrd: undefined,
           searchCnd: '0',
-          page: 0,
+          page: 1,
           size: 20,
         },
       });
     });
 
-    it('0-based page 2와 size 50을 generated query 그대로 유지한다', async () => {
+    it('page 2와 size 50을 generated query 그대로 유지한다', async () => {
       await knowledgeService.getArticles({ page: 2, size: 50 });
 
       expect(client.getRaw).toHaveBeenCalledWith(`boards/${BBS.NOTICE}`, {
@@ -272,6 +272,10 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
         list: [
           { pstSn: 22, pstTtl: '신규 제목', inqCnt: 300, userNm: '홍길동', crtDt: '2026-08-15T10:20:30', useYn: 'Y', userId: 'writer02' },
         ],
+        total: 1,
+        page: 1,
+        size: 5,
+        totalPage: 1,
       }));
 
       const result = await knowledgeService.getHotArticles();
@@ -281,10 +285,10 @@ describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
       });
     });
 
-    it('응답에 list 가 없으면 예외 대신 빈 배열을 돌려준다', async () => {
+    it('응답에 list 가 없으면 빈 배열로 위장하지 않고 생성 경계에서 거부한다(ADR-0036 — 페이지 응답 다섯 필드는 필수)', async () => {
       client.getRaw.mockResolvedValueOnce(successEnvelope({}));
 
-      await expect(knowledgeService.getHotArticles()).resolves.toEqual({ list: [] });
+      await expect(knowledgeService.getHotArticles()).rejects.toThrow('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.');
     });
   });
 

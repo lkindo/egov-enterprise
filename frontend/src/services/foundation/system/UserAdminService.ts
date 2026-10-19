@@ -29,27 +29,13 @@ type UserResponse = Omit<
 /** 관리자 사용자 목록의 한 행(2026-10-19) — 휴대전화·이메일은 가린 값이며 원문은 상세(UserDto)에서만 온다. */
 type UserListItemResponse = components['schemas']['UserListItemDto'];
 
+/** 목록 인자를 생성 query 로 옮긴다. `page`(1부터)·`size` 는 서버 이름·기준 그대로다(ADR-0036). */
 function toUserListQuery(params?: UserSearchParams | SearchParams): UserListQuery {
   if (!params) return {};
   const normalizedParams = params as UserSearchParams & SearchParams;
-  const {
-    pageIndex,
-    pageNo,
-    pageSize,
-    recordCountPerPage,
-    searchWrd,
-    ...query
-  } = normalizedParams;
+  const { searchWrd, ...query } = normalizedParams;
   const generatedQuery = query as UserListQuery;
 
-  if (generatedQuery.page === undefined) {
-    if (pageIndex !== undefined) generatedQuery.page = pageIndex - 1;
-    else if (pageNo !== undefined) generatedQuery.page = pageNo - 1;
-  }
-  if (generatedQuery.size === undefined) {
-    if (typeof pageSize === 'number') generatedQuery.size = pageSize;
-    else if (typeof recordCountPerPage === 'number') generatedQuery.size = recordCountPerPage;
-  }
   if (generatedQuery.searchKeyword === undefined && typeof searchWrd === 'string') {
     generatedQuery.searchKeyword = searchWrd;
   }

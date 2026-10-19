@@ -23,11 +23,11 @@ class DeptScheduleService extends ApiService {
    * @returns 일정 페이지 결과
    */
   public async getDeptScheduleList(params: ScheduleSearchParams = {}): Promise<PageResponse<DeptSchedule>> {
-    const pageIndex = params.pageIndex ?? params.pageNo;
+    // [ADR-0036] 서버가 page(1부터)·size 를 받는다 — 종전 pageIndex·pageUnit 으로 옮겨 담던 변환을 걷었다.
     return this.executeGenerated(getDeptScheduleListOperation, {
       query: {
-        ...(pageIndex !== undefined ? { pageIndex } : {}),
-        ...(params.size !== undefined ? { pageUnit: params.size } : {}),
+        ...(params.page !== undefined ? { page: params.page } : {}),
+        ...(params.size !== undefined ? { size: params.size } : {}),
         ...(params.schdlNm !== undefined ? { schdlNm: params.schdlNm } : {}),
       },
     }) as Promise<PageResponse<DeptSchedule>>;

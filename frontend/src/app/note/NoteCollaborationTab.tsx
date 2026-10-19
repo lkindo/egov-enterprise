@@ -22,7 +22,7 @@ export function NoteCollaborationTab() {
 
   const notesQuery = useQuery({
     queryKey: ['collab-notes', searchKeyword],
-    queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50, searchWrd: searchKeyword }),
+    queryFn: () => noteService.getReceivedNotes({ page: 1, size: 50, searchWrd: searchKeyword }),
   });
   const notes: Note[] = notesQuery.data?.list ?? [];
   /** 조회 실패를 "데이터 없음"으로 위장하지 않기 위해 테이블에 그대로 전달한다(P1-1). */

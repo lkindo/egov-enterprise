@@ -26,7 +26,7 @@ function getHttpStatus(error: unknown): number {
 
 /**
  * 주소록 목록 초기 데이터.
- * 백엔드(`/api/v1/address-books`)는 Spring `Pageable` 을 받으므로 page(0-base)/size 로 전달한다.
+ * 백엔드(`/api/v1/address-books`)는 page(1부터)·size 를 받는다(ADR-0036).
  * (과거 `pageNo`/`pageUnit` 은 서버가 읽지 않아 항상 1페이지·10건만 반환됐다.)
  */
 export async function getInitialAddressBookData(params: {

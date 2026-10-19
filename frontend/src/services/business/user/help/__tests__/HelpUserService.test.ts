@@ -41,16 +41,16 @@ describe('HelpUserService FAQ detail', () => {
       }],
       total: 1,
       totalPage: 1,
-      page: 0,
+      page: 1,
       size: 10,
     }));
 
-    const result = await helpUserService.getFaqs({ keyword: '목록', page: 0, size: 10 });
+    const result = await helpUserService.getFaqs({ keyword: '목록', page: 1, size: 10 });
 
     expect(client.getRaw).toHaveBeenCalledWith(
       'boards/public-faqs',
       expect.objectContaining({
-        params: expect.objectContaining({ keyword: '목록', page: 0, size: 10 }),
+        params: expect.objectContaining({ keyword: '목록', page: 1, size: 10 }),
       }),
     );
     const listParams = vi.mocked(client.getRaw).mock.calls[0]?.[1]?.params;
@@ -152,15 +152,15 @@ describe('HelpUserService QNA generated contract', () => {
         crtDt: '2026-08-30T00:00:00Z',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    const result = await helpUserService.getQnas({ page: 0, size: 10, keyword: '문의' });
+    const result = await helpUserService.getQnas({ page: 1, size: 10, keyword: '문의' });
 
     expect(client.getRaw).toHaveBeenCalledWith(`boards/${QNA_BOARD_ID}`, {
-      params: { page: 0, size: 10, searchWrd: '문의' },
+      params: { page: 1, size: 10, searchWrd: '문의' },
     });
     expect(result.list[0]).toMatchObject({
       qaId: '42',
@@ -173,9 +173,13 @@ describe('HelpUserService QNA generated contract', () => {
   it('생성 계약의 필수 userId/useYn이 빠진 응답을 화면에 통과시키지 않는다', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
       list: [{ pstSn: 42, pstTtl: '불완전 문의', pstCn: '본문' }],
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPage: 1,
     }));
 
-    await expect(helpUserService.getQnas({ page: 0, size: 10 })).rejects.toThrow(
+    await expect(helpUserService.getQnas({ page: 1, size: 10 })).rejects.toThrow(
       'Q&A 목록 정보를 표시할 수 없습니다.',
     );
   });
@@ -191,12 +195,12 @@ describe('HelpUserService QNA generated contract', () => {
         useYn: 'Y',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    await expect(helpUserService.getQnas({ page: 0, size: 10 })).rejects.toThrow(
+    await expect(helpUserService.getQnas({ page: 1, size: 10 })).rejects.toThrow(
       'Q&A 목록 정보를 표시할 수 없습니다.',
     );
   });
@@ -214,12 +218,12 @@ describe('HelpUserService QNA generated contract', () => {
         scrtYn: null,
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    const result = await helpUserService.getQnas({ page: 0, size: 10 });
+    const result = await helpUserService.getQnas({ page: 1, size: 10 });
 
     expect(result.list[0]).toMatchObject({ wrterNm: 'writer-1' });
     expect(result.list[0]).not.toHaveProperty('qnaSttsCd');

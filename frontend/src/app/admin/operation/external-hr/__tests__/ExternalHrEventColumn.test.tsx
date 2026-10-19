@@ -112,12 +112,33 @@ describe('외부인사 목록 — 소속 행사 열', () => {
     renderClient();
 
     expect(await screen.findByText('가을 워크숍')).toBeVisible();
+    // [ADR-0036] 선택지·사전은 서버 상한(100) 크기로 1페이지부터 읽는다 — 종전 size 200 은 이제 400 이다.
+    expect(mocks.getEvents).toHaveBeenCalledWith({ page: 1, size: 100 });
+    expect(mocks.getEvents).not.toHaveBeenCalledWith(expect.objectContaining({ size: 200 }));
+  });
+
+  it('행사가 100건을 넘으면 다음 페이지까지 읽어 101번째 행사 이름도 보여 준다(ADR-0036)', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({ evntSn: 1000 + index, evntNm: `행사 ${index + 1}` }));
+    mocks.getExternalHrList.mockResolvedValue(page([{ ...PERSON, evntSn: 9101 }]));
+    mocks.getEvents
+      .mockResolvedValueOnce({ list: firstPage, total: 101, totalPage: 2 })
+      .mockResolvedValueOnce({ list: [{ evntSn: 9101, evntNm: '백한 번째 행사' }], total: 101, totalPage: 2 });
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <ExternalHrClient initialPage={page([{ ...PERSON, evntSn: 9101 }]) as never} />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText('백한 번째 행사')).toBeVisible();
+    expect(mocks.getEvents).toHaveBeenNthCalledWith(1, { page: 1, size: 100 });
+    expect(mocks.getEvents).toHaveBeenNthCalledWith(2, { page: 2, size: 100 });
+    expect(screen.queryByText('행사 #9101')).not.toBeInTheDocument();
   });
 
   it('이름을 모르면 번호를 그대로 보여 준다 — "미지정" 으로 지어내지 않는다', async () => {
     /*
-     * 선택지 조회는 200건 한 페이지다. 그 밖의 행사는 사전에 없다 — 그래도 FK 가 실재를
-     * 보장하므로 '미지정' 은 거짓이다. 번호를 보여 주면 행사 관리 화면에서 대조할 수 있다.
+     * 선택지 조회는 전량을 따라가지만(ADR-0036) 그 사이 새로 생긴 행사는 사전에 없을 수 있다 — 그래도 FK 가
+     * 실재를 보장하므로 '미지정' 은 거짓이다. 번호를 보여 주면 행사 관리 화면에서 대조할 수 있다.
      */
     mocks.getEvents.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
     renderClient();

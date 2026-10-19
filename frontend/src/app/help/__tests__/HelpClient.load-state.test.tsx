@@ -43,8 +43,8 @@ describe('HelpClient 조회 상태', () => {
     const qnas = faqs.map((faq) => ({ qaId: faq.faqId, qstnTtl: faq.qstnTtl, wrterNm: '테스트 작성자', writngDe: '2026-09-27' }));
     const respond = (items: typeof faqs | typeof qnas, params: { page?: number; keyword?: string }) => {
       const filtered = items.filter((item) => item.qstnTtl.includes(params.keyword || ''));
-      const page = params.page ?? 0;
-      return { list: filtered.slice(page * pageSize, (page + 1) * pageSize), total: filtered.length, size: pageSize, page, totalPage: Math.ceil(filtered.length / pageSize) };
+      const page = params.page ?? 1;
+      return { list: filtered.slice((page - 1) * pageSize, page * pageSize), total: filtered.length, size: pageSize, page, totalPage: Math.ceil(filtered.length / pageSize) };
     };
     harness.getFaqs.mockImplementation(async (params) => respond(faqs, params));
     harness.getQnas.mockImplementation(async (params) => respond(qnas, params));
@@ -62,19 +62,19 @@ describe('HelpClient 조회 상태', () => {
       await user.click(screen.getByRole('link', { name: '다음 페이지로 이동' }));
       if (tab === 'faq') await screen.findByRole('button', { name: new RegExp(`도움말 항목 ${page * pageSize + 1}(?!\\d)`) });
       else await screen.findByText(`도움말 항목 ${page * pageSize + 1}`);
-      expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({ page, size: pageSize }));
+      expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({ page: page + 1, size: pageSize }));
     }
     expect(screen.getByText('도움말 항목 11', { exact: false })).toBeVisible();
     expect(screen.getByRole('link', { name: '다음 페이지로 이동' })).toHaveAttribute('aria-disabled', 'true');
 
     fireEvent.change(screen.getByRole('textbox', { name: '도움말 키워드 검색' }), { target: { value: '항목 11' } });
-    await waitFor(() => expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, keyword: '항목 11' })));
+    await waitFor(() => expect(getList).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, keyword: '항목 11' })));
     expect(await screen.findByText('도움말 항목 11', { exact: false })).toBeVisible();
     expect(screen.queryByRole('link', { name: '다음 페이지로 이동' })).toBeNull();
 
     await user.click(screen.getByRole('tab', { name: tab === 'faq' ? /1:1 Q&A 문의/ : /FAQ 자주 묻는 질문/ }));
     const other = tab === 'faq' ? harness.getQnas : harness.getFaqs;
-    await waitFor(() => expect(other).toHaveBeenLastCalledWith(expect.objectContaining({ page: 0, keyword: '항목 11' })));
+    await waitFor(() => expect(other).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, keyword: '항목 11' })));
   });
 
   it('페이지 탐색: 늦은 이전 FAQ 응답을 무시하고 다음 페이지 실패를 재시도한다', async () => {

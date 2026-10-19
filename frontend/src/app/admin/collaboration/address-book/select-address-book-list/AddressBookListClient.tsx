@@ -67,9 +67,9 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
   const fetchList = async (targetPageNo: number, targetSearchWrd: string, targetPageUnit = pageUnit) => {
     setLoading(true);
     try {
-      // 백엔드는 Spring Pageable(0-base page)을 받는다. pageNo/pageUnit 은 서버가 읽지 않는다.
+      // 백엔드는 1부터 세는 page·size 를 받는다(ADR-0036). 화면 번호를 그대로 보낸다.
       const response = await addressbookUserService.getAddressBooks({
-        page: targetPageNo - 1,
+        page: targetPageNo,
         size: targetPageUnit,
         searchWrd: targetSearchWrd
       });

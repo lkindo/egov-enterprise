@@ -19,10 +19,10 @@ describe('설문 목록 매핑 — 응답 여부 보존', () => {
   it('true·false 는 그대로, null·누락은 싣지 않는다', async () => {
     client.getRaw.mockResolvedValueOnce({
       success: true, code: 'S000', message: '성공',
-      data: { list: [row(1, true), row(2, false), row(3, null), row(4)], total: 4, page: 0, size: 10, totalPage: 1 },
+      data: { list: [row(1, true), row(2, false), row(3, null), row(4)], total: 4, page: 1, size: 10, totalPage: 1 },
     });
 
-    const page = await surveyParticipationService.getSurveys({ page: 0, size: 10 });
+    const page = await surveyParticipationService.getSurveys({ page: 1, size: 10 });
 
     expect(page.list.map((s) => s.responded)).toEqual([true, false, undefined, undefined]);
   });

@@ -35,9 +35,9 @@ const SystemLogsUserClient = () => {
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<UserLog>>({
         queryKey: ['admin-logs-user', page, pageSize, searchKeyword, periodToParams(period)],
-        // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
+        // 화면 번호(1부터)를 그대로 보낸다(ADR-0036). 종전의 옛 이름 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getUserLogs({
-            pageIndex: page,
+            page,
             size: pageSize,
             searchKeyword,
             ...periodToParams(period),

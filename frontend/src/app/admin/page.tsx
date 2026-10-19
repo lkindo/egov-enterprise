@@ -24,15 +24,15 @@ export default async function AdminDashboardPage() {
   await Promise.allSettled([
     queryClient.prefetchQuery({
       queryKey: ['admin-dashboard-recent-audits'],
-      queryFn: () => auditAdminService.getAuditLogs({ page: 0, size: 5 }),
+      queryFn: () => auditAdminService.getAuditLogs({ page: 1, size: 5 }),
     }),
     queryClient.prefetchQuery({
       queryKey: ['admin-dashboard-users'],
-      queryFn: () => userAdminService.getUserList({ pageNo: 1, size: 1 }),
+      queryFn: () => userAdminService.getUserList({ page: 1, size: 1 }),
     }),
     queryClient.prefetchQuery({
       queryKey: ['admin-dashboard-authors'],
-      queryFn: () => authorAdminService.getAuthorList({ pageIndex: 1, size: 1 }),
+      queryFn: () => authorAdminService.getAuthorList({ page: 1, size: 1 }),
     }),
   ]);
 

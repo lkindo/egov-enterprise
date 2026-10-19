@@ -25,8 +25,8 @@ export default async function InstitutionCodePage() {
    */
   let initialData: Partial<PageResponse<InstitutionCode>> = { list: [], total: 0 };
   try {
-    // 변수명 pageNo로 정규화
-    initialData = await codeAdminService.getInstitutionCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
+    // 서버가 읽는 키는 page(1부터)·size 다(ADR-0036).
+    initialData = await codeAdminService.getInstitutionCodeList({ page: 1, size: 10 }, axiosConfig);
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 401) {

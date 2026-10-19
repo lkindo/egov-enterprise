@@ -16,7 +16,7 @@ export async function loadUserOrgPrefetch(tab: UserOrgTab): Promise<UserOrgPrefe
   // 요청은 기다리지 않고 함께 시작한다. 실패한 seed는 클라이언트가 재조회하도록 null로 둔다.
   const usersPromise = tab === 'DEPTS'
     ? Promise.resolve(null)
-    : userAdminService.getUserList({ page: 0, size: 10, searchKeyword: '' }, config).catch(() => null);
+    : userAdminService.getUserList({ page: 1, size: 10, searchKeyword: '' }, config).catch(() => null);
   // 부재 탭도 사용자 상세의 부서명을 표시하므로 전량 부서 seed가 필요하다.
   const deptsPromise = deptAdminService.getDeptTree(undefined, config).catch(() => null);
 

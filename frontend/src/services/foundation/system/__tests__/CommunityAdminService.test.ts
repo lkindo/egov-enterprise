@@ -14,10 +14,9 @@
  *    쓰는 기본값 'system'(→ `admin/system/...`)과 **다르다**. 이 한 글자가 바뀌면 전 메서드가
  *    동시에 404 가 되고, 반대로 category 인자가 실수로 빠져도 타입은 통과한다(기본값이 있다).
  *
- * 2) 페이징 파라미터 변환 — `ApiService.get` 이 `page`(0-based) → `pageIndex`(1-based, +1),
- *    `size`/`pageSize` → `recordCountPerPage` 로 변환해 백엔드 `BaseSearchDto` 에 맞춘다.
- *    이 +1 이 사라지거나 두 번 적용되면 목록이 한 페이지씩 밀리거나 첫 페이지가 빈다.
- *    타입은 그대로 number 라 tsc 로는 절대 잡히지 않는다.
+ * 2) 페이징 파라미터 — [ADR-0036] 화면·서비스·서버가 모두 1부터 세는 `page`·`size` 를 쓴다. 서비스는
+ *    두 값을 변환 없이 넘기고 옛 별칭(`pageIndex`·`pageSize` 등)은 번역하지 않는다. ±1 이 끼어들면
+ *    목록이 한 페이지씩 밀리거나 첫 페이지가 400 이 된다. 타입은 그대로 number 라 tsc 로는 절대 잡히지 않는다.
  *
  * 3) 검색 파라미터 이름 변환 — 이 서비스는 검색 조건·검색어를 **백엔드 레거시 키**로 갈아끼운다.
  *    `searchCondition` → `searchCnd`, `searchKeyword || searchWrd` → `searchWrd`.
@@ -64,7 +63,7 @@ const BASE = 'admin/content/community';
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
 const fallbackCommunity = { cmntySn: 1, cmntyNm: '커뮤니티', cmntyIntroCn: '소개', useYn: 'Y' };
-const emptyPage = { list: [], total: 0, page: 0, size: 10, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 10, totalPage: 0 };
 
 // Community 인터페이스는 export 되지 않는다. 서비스 시그니처에서 역으로 끌어와 `any` 없이 타입을 얻는다.
 type CommunityPayload = Parameters<typeof communityAdminService.createCommunity>[0];
@@ -128,11 +127,14 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
     });
   });
 
-  describe('목록 조회 — 페이징 변환', () => {
-    it('첫 페이지(page 0)는 생성 Pageable 계약의 page 0으로 유지된다', async () => {
-      await communityAdminService.getCommunityList({ page: 0 });
+  describe('목록 조회 — 페이징 전달(ADR-0036)', () => {
+    it('첫 페이지(page 1)는 page 1 그대로 나간다', async () => {
+      await communityAdminService.getCommunityList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
+        params: { page: 1, searchCnd: '', searchWrd: '' },
+      });
+      expect(client.get).not.toHaveBeenCalledWith(BASE, {
         params: { page: 0, searchCnd: '', searchWrd: '' },
       });
     });
@@ -150,30 +152,27 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
       });
     });
 
-    it('호출부가 pageIndex 를 직접 지정하면 page 기반 변환이 이를 덮어쓰지 않는다', async () => {
+    it('옛 별칭 pageIndex 는 page 를 덮어쓰지도 page 로 번역되지도 않는다', async () => {
       await communityAdminService.getCommunityList({ page: 9, pageIndex: 1 });
 
-      // page 9 였다면 +1 규칙상 10 이지만, 명시된 pageIndex 가 우선한다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, searchCnd: '', searchWrd: '' },
+        params: { page: 9, searchCnd: '', searchWrd: '' },
       });
     });
 
-    it('pageSize 는 생성 Pageable 계약의 size로 변환된다', async () => {
+    it('옛 크기 별칭 pageSize 는 size 로 번역하지 않는다', async () => {
       await communityAdminService.getCommunityList({ pageSize: 15 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         params: {
-          size: 15,
           searchCnd: '',
           searchWrd: '',
         },
       });
     });
 
-    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 pageIndex 가 누적 오염되면 안 된다', async () => {
-      // ApiService.get 은 넘겨받은 params 객체에 직접 pageIndex 를 써넣는다(파괴적).
-      // 서비스가 스프레드로 사본을 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
+    it('호출부가 넘긴 params 객체는 변형되지 않는다 — 재사용 시 페이지 값이 누적 오염되면 안 된다', async () => {
+      // 서비스가 새 query 객체를 만들기 때문에 호출부(React Query key 등)의 객체는 무사하다.
       const callerParams: SearchParams = { page: 1, size: 10 };
 
       await communityAdminService.getCommunityList(callerParams);
@@ -252,12 +251,12 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
     it('목록 조회 시 호출부의 timeout·signal 이 params 와 함께 보존된다', async () => {
       const { signal } = new AbortController();
 
-      await communityAdminService.getCommunityList({ page: 0 }, { timeout: 3000, signal });
+      await communityAdminService.getCommunityList({ page: 1 }, { timeout: 3000, signal });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, searchCnd: '', searchWrd: '' },
+        params: { page: 1, searchCnd: '', searchWrd: '' },
       });
     });
 
@@ -427,7 +426,7 @@ describe('CommunityAdminService — 커뮤니티 관리자 API 계약', () => {
     });
 
     it('목록 조회는 HTTP 동사를 넘나들지 않는다 — GET 1회만 발생한다', async () => {
-      await communityAdminService.getCommunityList({ page: 0 });
+      await communityAdminService.getCommunityList({ page: 1 });
 
       expect(client.get).toHaveBeenCalledTimes(1);
       expect(client.post).not.toHaveBeenCalled();

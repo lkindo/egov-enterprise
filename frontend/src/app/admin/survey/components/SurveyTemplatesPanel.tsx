@@ -53,7 +53,7 @@ export default function SurveyTemplatesPanel() {
   const key = ['admin-survey-templates'];
   const { data, isLoading } = useQuery<PageResponse<SurveyTemplate>>({
     queryKey: key,
-    queryFn: () => surveyAdminService.getTemplateList({ pageIndex: 1, size: 50 }),
+    queryFn: () => surveyAdminService.getTemplateList({ page: 1, size: 50 }),
   });
 
   const templates = data?.list ?? [];

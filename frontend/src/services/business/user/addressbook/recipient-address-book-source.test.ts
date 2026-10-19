@@ -25,7 +25,7 @@ describe('recipientAddressBookSource', () => {
 
     await expect(recipientAddressBookSource.listBooks()).resolves.toEqual([{ id: 7, name: '협력사' }]);
     expect(mocks.getAddressBooks).toHaveBeenCalledTimes(1);
-    expect(mocks.getAddressBooks).toHaveBeenCalledWith({ page: 0, size: 100 });
+    expect(mocks.getAddressBooks).toHaveBeenCalledWith({ page: 1, size: 100 });
   });
 
   it('[DIP B5 F4] 서버 총 건수까지 페이지를 넘겨 모두 읽는다 — 종전에는 첫 50건 뒤를 조용히 버렸다', async () => {
@@ -39,8 +39,8 @@ describe('recipientAddressBookSource', () => {
 
     expect(books).toHaveLength(150);
     expect(books[149]).toEqual({ id: 150, name: '주소록150' });
-    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(1, { page: 0, size: 100 });
-    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(2, { page: 1, size: 100 });
+    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(1, { page: 1, size: 100 });
+    expect(mocks.getAddressBooks).toHaveBeenNthCalledWith(2, { page: 2, size: 100 });
     expect(mocks.getAddressBooks).toHaveBeenCalledTimes(2);
   });
 

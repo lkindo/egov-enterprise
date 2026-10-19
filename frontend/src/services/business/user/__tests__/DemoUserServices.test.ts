@@ -52,7 +52,7 @@ const PAGE = {
   success: true,
   code: 'S000',
   message: '성공',
-  data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+  data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
 };
 
 /*
@@ -78,7 +78,7 @@ describe('Demo user services', () => {
    */
   it('addressbookUserService 는 검색어가 서버에 닿도록 searchCnd 를 실어 보낸다', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
-    await addressbookUserService.getAddressBooks({ page: 0, size: 10, searchWrd: '영업팀' });
+    await addressbookUserService.getAddressBooks({ page: 1, size: 10, searchWrd: '영업팀' });
 
     const [, config] = vi.mocked(client.getRaw).mock.calls.at(-1)!;
     expect(config?.params).toMatchObject({ searchWrd: '영업팀', searchCnd: '0' });
@@ -86,7 +86,7 @@ describe('Demo user services', () => {
 
   it('addressbookUserService 는 호출부가 고른 검색 축을 덮어쓰지 않는다', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
-    await addressbookUserService.getAddressBooks({ page: 0, searchWrd: 'kim', searchCnd: '1' });
+    await addressbookUserService.getAddressBooks({ page: 1, searchWrd: 'kim', searchCnd: '1' });
 
     const [, config] = vi.mocked(client.getRaw).mock.calls.at(-1)!;
     expect(config?.params.searchCnd).toBe('1');
@@ -94,8 +94,8 @@ describe('Demo user services', () => {
 
   it('ApprovalUserService should call correct endpoints', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
-    await approvalUserService.getPending({ page: 0 });
-    expect(client.getRaw).toHaveBeenCalledWith('approvals/pending', { params: { page: 0 } });
+    await approvalUserService.getPending({ page: 1 });
+    expect(client.getRaw).toHaveBeenCalledWith('approvals/pending', { params: { page: 1 } });
   });
 
   /*
@@ -136,18 +136,19 @@ describe('Demo user services', () => {
     expect(vi.mocked(client.requestRaw)).not.toHaveBeenCalled();
   });
 
-  it('reportService preserves its pagination aliases and config at the generated boundary', async () => {
+  it('reportService passes page/size and config through the generated boundary (ADR-0036)', async () => {
     const page = { list: [], total: 0, page: 1, size: 20, totalPage: 0 };
     vi.mocked(client.getRaw)
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: page })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { rptpSn: 23, rptTtl: '기존 보고' } });
     vi.mocked(client.requestRaw)
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
+      // [ADR-0036] 등록(POST)은 새 일련번호를 data 로 돌려준다. 수정·삭제는 data 가 없다.
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 24 })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: undefined });
 
     await reportService.getReports(
-      { pageIndex: 2, pageUnit: 20, searchWrd: '주간' },
+      { page: 2, size: 20, searchWrd: '주간' },
       { timeout: 1500 },
     );
     await reportService.getReport(23);
@@ -158,7 +159,7 @@ describe('Demo user services', () => {
     expect(vi.mocked(client.getRaw).mock.calls).toEqual([
       ['work-reports', {
         timeout: 1500,
-        params: { pageIndex: 2, pageUnit: 20, searchKeyword: '주간' },
+        params: { page: 2, size: 20, searchKeyword: '주간' },
       }],
       ['work-reports/23', undefined],
     ]);

@@ -70,7 +70,7 @@ describe('댓글 및 평가 관리', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: '댓글 및 평가 관리' })).toBeInTheDocument();
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    expect(mocks.comments).toHaveBeenCalledWith({ page: 1, size: 50 });
+    expect(mocks.comments).toHaveBeenCalledWith({ page: 2, size: 50 });
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.getByText(/만족도 평가는 각 게시글 화면에서 관리합니다/)).toBeInTheDocument();
   });

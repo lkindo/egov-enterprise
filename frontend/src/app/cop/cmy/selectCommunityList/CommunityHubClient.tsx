@@ -37,13 +37,13 @@ export default function CommunityHubClient({
     queryKey: ['communities', authorizationScope, searchKeyword, page, pageSize],
     /*
      * [2026-08-25 실측 수정] 종전에는 `pageIndex`·`searchKeyword` 를 보냈는데
-     * CommunityApiController 는 **Spring `Pageable`(page 0-based / size)** 과
+     * CommunityApiController 는 **page(1부터, ADR-0036) / size** 와
      * `searchCnd`·`searchWrd` 를 읽는다. ApiService 의 매핑도 `page → pageIndex` 한 방향뿐이라
      * 두 값 모두 서버에 닿지 않았다 — 페이지를 넘겨도 같은 목록이 오고, 검색어는 무시됐다.
      * 서버가 이름 검색을 `searchCnd === '0'` 분기로만 지원하므로 그 값을 함께 보낸다.
      */
     queryFn: () => communityUserService.getCommunityList({
-      page: page - 1,
+      page,
       size: pageSize,
       searchCnd: '0',
       searchWrd: searchKeyword,

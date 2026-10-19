@@ -119,7 +119,7 @@ export default function LogDashboardClient({
     queryFn: async () => {
       // 시스템/로그인 로그 서비스는 `searchWrd`, 나머지는 `searchKeyword` 를 읽는다.
       // 둘 다 실어 보내야 카테고리 전환 후에도 검색어가 유실되지 않는다.
-      const apiParams = { page: page - 1, size: pageSize, searchWrd: searchKeyword, searchKeyword, ...periodToParams(period) };
+      const apiParams = { page, size: pageSize, searchWrd: searchKeyword, searchKeyword, ...periodToParams(period) };
       switch (activeCategory) {
         case 'LGN':
           return systemLogAdminService.getLoginLogs(apiParams);

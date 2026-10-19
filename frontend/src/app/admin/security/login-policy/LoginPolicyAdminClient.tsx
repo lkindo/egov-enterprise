@@ -84,7 +84,7 @@ const LOGIN_POLICY_FORM_LABELS = {
 
 type LoginPolicyFormValues = z.infer<typeof loginPolicySchema>;
 
-/** 서버(BaseSearchDto.pageUnit) 기본 페이지 크기와 동일하게 맞춘다. */
+/** 서버(BaseSearchDto.size) 기본 페이지 크기와 동일하게 맞춘다. */
 const PAGE_SIZE = 10;
 
 /** A1 필수 — 페이지당 건수 선택지(카탈로그 §5 A1 '필수'). */
@@ -153,14 +153,14 @@ export default function LoginPolicyAdminClient() {
   });
 
   /**
-   * 목록 조회. 서버는 @ModelAttribute BaseSearchDto(pageIndex 1-based / pageUnit / searchKeyword)로 받는다.
-   * pageIndex 는 직접 계산하지 않고 LoginPolicyAdminService·ApiService 의 page(0-based) 자동 매핑에 위임한다.
+   * 목록 조회. 서버는 @ModelAttribute BaseSearchDto(page 1부터 / size / searchKeyword)로 받는다(ADR-0036).
+   * 표의 번호를 그대로 보낸다.
    */
   const { data: pageData, isLoading, error, refetch } = useQuery({
     queryKey: [...LOGIN_POLICIES_QUERY_KEY, page, searchKeyword, pageSize],
     queryFn: () => loginPolicyAdminService.getLoginPolicyList({
-      page: page - 1,
-      pageUnit: pageSize,
+      page,
+      size: pageSize,
       searchKeyword,
     }),
   });

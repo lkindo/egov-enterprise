@@ -23,12 +23,12 @@ describe('ScrapService generated contract', () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
       list: [{ scrapSn: 17, scrapNm: '문서', useYn: 'Y' }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 10,
       totalPage: 1,
     }));
 
-    await expect(scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 })).resolves.toMatchObject({
+    await expect(scrapService.getMyScraps({ page: 1, size: 10 })).resolves.toMatchObject({
       list: [{ scrapSn: 17, useYn: 'Y' }],
       total: 1,
     });
@@ -39,7 +39,7 @@ describe('ScrapService generated contract', () => {
       list: [{ scrapSn: 17, scrapNm: '문서', useYn: 'UNKNOWN' }],
     }));
 
-    await expect(scrapService.getMyScraps({ pageIndex: 1, pageUnit: 10 })).rejects.toThrow();
+    await expect(scrapService.getMyScraps({ page: 1, size: 10 })).rejects.toThrow();
   });
 
   it('상세·생성·수정은 생성 DTO를 공유하고 생성 식별자를 보존한다', async () => {

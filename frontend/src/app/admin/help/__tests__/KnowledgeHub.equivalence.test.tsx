@@ -52,7 +52,7 @@ const tabState = () => within(screen.getByRole('tablist', { name: '지식 카테
 const LABELS = ['위키', '자주 묻는 질문', '질의응답(Q&A)', ...(communityInProjection ? ['커뮤니티'] : [])];
 const selected = (name: string) => LABELS.map(label => [label, String(label === name)]);
 const queriedBoard = async (bbsId: string) =>
-  waitFor(() => expect(mocks.getArticles).toHaveBeenCalledWith(expect.objectContaining({ bbsId, page: 0 })));
+  waitFor(() => expect(mocks.getArticles).toHaveBeenCalledWith(expect.objectContaining({ bbsId, page: 1 })));
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -25,7 +25,7 @@ const PAGE = {
   success: true,
   code: 'S000',
   message: '성공',
-  data: { list: [], total: 0, page: 0, size: 10, totalPage: 0 },
+  data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
 };
 
 /*
@@ -46,9 +46,9 @@ describe('Core user services', () => {
 
   it('deptJobUserService calls correct endpoints', async () => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(PAGE);
-    await deptJobUserService.getDeptJobBoxes({ page: 0 });
+    await deptJobUserService.getDeptJobBoxes({ page: 1 });
     expect(client.getRaw).toHaveBeenCalledWith('dept-jobs/boxes', {
-      params: { pageIndex: 1 },
+      params: { page: 1 },
     });
   });
 

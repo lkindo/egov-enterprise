@@ -17,7 +17,7 @@ const success = <T,>(data: T) => ({
   data,
 });
 
-const emptyPage = { list: [], total: 0, page: 0, size: 50, totalPage: 0 };
+const emptyPage = { list: [], total: 0, page: 1, size: 50, totalPage: 0 };
 
 describe('CommentAdminService generated contract', () => {
   beforeEach(() => {
@@ -32,7 +32,7 @@ describe('CommentAdminService generated contract', () => {
     expect(client.getRaw).toHaveBeenCalledWith('admin/comments', { params: {} });
   });
 
-  it('Spring Pageable의 0-based page와 size를 중복 legacy 축 없이 전달한다', async () => {
+  it('1부터 세는 page와 size를 중복 legacy 축 없이 그대로 전달한다(ADR-0036)', async () => {
     await commentAdminService.getComments({ page: 2, size: 50 });
 
     expect(client.getRaw).toHaveBeenCalledWith('admin/comments', {
@@ -61,7 +61,7 @@ describe('CommentAdminService generated contract', () => {
     const headers = { Authorization: 'Bearer test-token' };
 
     await commentAdminService.getComments(
-      { page: 0, size: 20 },
+      { page: 1, size: 20 },
       { timeout: 3000, signal, headers },
     );
 
@@ -69,7 +69,7 @@ describe('CommentAdminService generated contract', () => {
       timeout: 3000,
       signal,
       headers,
-      params: { page: 0, size: 20 },
+      params: { page: 1, size: 20 },
     });
   });
 
@@ -97,20 +97,21 @@ describe('CommentAdminService generated contract', () => {
         crtDt: '2026-08-14T10:00:00',
       }],
       total: 1,
-      page: 0,
+      page: 1,
       size: 50,
       totalPage: 1,
     };
     client.getRaw.mockResolvedValueOnce(success(page));
 
-    await expect(commentAdminService.getComments({ page: 0, size: 50 })).resolves.toBe(page);
+    await expect(commentAdminService.getComments({ page: 1, size: 50 })).resolves.toBe(page);
   });
 
   it('페이지 필수 metadata가 빠지면 fail-closed한다', async () => {
     client.getRaw.mockResolvedValueOnce(success({ list: [] }));
 
+    // [ADR-0036] 페이지 응답 다섯 필드가 스펙 필수가 돼, 서비스 검사보다 앞선 생성 경계가 먼저 거부한다.
     await expect(commentAdminService.getComments({})).rejects.toThrow(
-      '댓글 페이지 응답이 필수 계약과 일치하지 않습니다.',
+      '생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.',
     );
   });
 

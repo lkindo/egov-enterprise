@@ -46,31 +46,31 @@ describe('memoReportService generated instruction contract', () => {
     const responseReport = { memoRptSn: 17, rptTtl: '보고', rptrId: 'USER', rptCn: '내용' };
     const requestReport = { rptTtl: '보고', rptrId: 'USER', rptCn: '내용' };
     client.getRaw
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0 } })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 } })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 } })
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 } })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: responseReport });
     client.requestRaw
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: 18 })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: null })
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: null });
 
-    await memoReportService.getMemoReports({ searchKeyword: '보고', page: 0, size: 10 });
-    await memoReportService.getMyReports({ page: 0, size: 10 });
-    await memoReportService.getReceivedReports({ page: 0, size: 10 });
+    await memoReportService.getMemoReports({ searchKeyword: '보고', page: 1, size: 10 });
+    await memoReportService.getMyReports({ page: 1, size: 10 });
+    await memoReportService.getReceivedReports({ page: 1, size: 10 });
     await memoReportService.getMemoReport(17);
     await memoReportService.createMemoReport(requestReport);
     await memoReportService.updateMemoReport(17, requestReport);
     await memoReportService.deleteMemoReport(17);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'memo-reports', {
-      params: { searchKeyword: '보고', page: 0, size: 10 },
+      params: { searchKeyword: '보고', page: 1, size: 10 },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(2, 'memo-reports/my', {
-      params: { page: 0, size: 10 },
+      params: { page: 1, size: 10 },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(3, 'memo-reports/received', {
-      params: { page: 0, size: 10 },
+      params: { page: 1, size: 10 },
     });
     expect(client.getRaw).toHaveBeenNthCalledWith(4, 'memo-reports/17', undefined);
     expect(client.requestRaw).toHaveBeenNthCalledWith(1, {
@@ -137,7 +137,7 @@ describe('memoReportService generated instruction contract', () => {
     expect(MemoReportDtoResponseSchema.parse(report)).toMatchObject(capabilities);
     client.getRaw
       .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: report })
-      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [report], total: 1 } });
+      .mockResolvedValueOnce({ success: true, code: 'S000', message: '성공', data: { list: [report], total: 1, page: 1, size: 10, totalPage: 1 } });
 
     expect(await memoReportService.getMemoReport(17)).toMatchObject(capabilities);
     const received = await memoReportService.getReceivedReports();

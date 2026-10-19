@@ -15,7 +15,7 @@ export default async function ManualAdminPage() {
   // 첫 페이지만 프리페치한다. 페이지 이동·검색은 클라이언트 쿼리가 담당하며,
   // 실패를 빈 목록으로 바꾸면 화면이 '0건'이라고 거짓말하므로 null(시드 없음)을 넘긴다(감사 P1-1).
   const initialManuals = await manualAdminService.getManualList({
-    page: 0,
+    page: 1,
     size: 10
   }, axiosConfig).catch(() => {
     return null;

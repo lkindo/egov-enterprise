@@ -25,18 +25,16 @@ class ReportService extends ApiService {
    * 보고 목록 조회
    */
   async getReports(
-    params: { pageIndex?: number; pageUnit?: number; searchWrd?: string },
+    params: { page?: number; size?: number; searchWrd?: string },
     config?: AxiosRequestConfig
   ): Promise<PageResponse<WorkReport>> {
-    // ⚠ 서버는 @ModelAttribute BaseSearchDto 로 받아 searchKeyword/pageIndex/pageUnit 을 읽는다.
-    //   종전에는 searchWrd/page/size 를 보냈다 — searchWrd 는 어떤 필드에도 바인딩되지 않아
-    //   검색이 서버에 아예 도달하지 못했고(무음 실패), size 는 ApiService 가
-    //   recordCountPerPage 로 바꿔 보내지만 컨트롤러가 pageUnit 을 읽어 무시됐다(10건 고정).
+    // ⚠ 서버는 @ModelAttribute BaseSearchDto 로 받아 searchKeyword 와 page(1부터)·size 를 읽는다(ADR-0036).
+    //   검색어는 searchWrd 로 보내면 어떤 필드에도 바인딩되지 않아 검색이 서버에 도달하지 못한다(무음 실패).
     //   호출부의 어휘(searchWrd)는 유지하되 여기서 서버 이름으로 옮겨 담는다.
     const response = await this.executeGenerated(getWorkReportListOperation, {
       query: {
-        pageIndex: params.pageIndex ?? 1,
-        pageUnit: params.pageUnit ?? 10,
+        page: params.page ?? 1,
+        size: params.size ?? 10,
         ...(params.searchWrd ? { searchKeyword: params.searchWrd } : {}),
       },
       config,
@@ -58,7 +56,7 @@ class ReportService extends ApiService {
    * 보고 등록
    */
   async createReport(data: WorkReportInput, config?: AxiosRequestConfig): Promise<void> {
-    return this.executeGenerated(createWorkReportOperation, { body: data, config });
+    await this.executeGenerated(createWorkReportOperation, { body: data, config });
   }
 
   /**
