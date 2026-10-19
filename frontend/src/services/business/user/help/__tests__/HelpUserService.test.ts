@@ -256,3 +256,58 @@ describe('HelpUserService QNA generated contract', () => {
     expect(client.requestRaw).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * [2026-10-19] 도움말 센터의 도움말·온라인 매뉴얼 탭은 관리 목록(HELP_READ)이 아니라 로그인 사용자용 열람 연산을 부른다.
+ * 응답에는 등록자 ID 가 없고, 화면 모델도 그것을 갖지 않는다. 빈 검색어는 보내지 않는다.
+ */
+describe('HelpUserService 도움말·온라인 매뉴얼 열람', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('도움말은 열람 연산(help/public-hpcm)을 부르고 제목·설명만 화면 모델로 옮긴다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [{ hlpSn: 3, hlpDfn: '비밀번호 변경', hlpExpln: '내 정보에서 바꿉니다.' }, { hlpSn: 4, hlpDfn: '설명 없음', hlpExpln: null }],
+      total: 2, totalPage: 1, page: 0, size: 10,
+    }));
+
+    const result = await helpUserService.getHelpGuides({ keyword: '', page: 0, size: 10 });
+
+    expect(client.getRaw).toHaveBeenCalledWith('help/public-hpcm', expect.objectContaining({ params: { page: 0, size: 10 } }));
+    expect(result).toEqual({
+      list: [
+        { id: '3', title: '비밀번호 변경', description: '내 정보에서 바꿉니다.' },
+        { id: '4', title: '설명 없음', description: '' },
+      ],
+      total: 2, totalPage: 1, page: 0, size: 10,
+    });
+  });
+
+  it('온라인 매뉴얼은 열람 연산(help/public-manuals)을 부르고 리소스 경로는 값이 있을 때만 싣는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [
+        { onlnMnlSn: 7, onlnMnlNm: '전자결재 사용법', onlnMnlDfn: '/docs/approval', onlnMnlExpln: '상신과 승인' },
+        { onlnMnlSn: 8, onlnMnlNm: '쪽지 사용법', onlnMnlDfn: null, onlnMnlExpln: null },
+      ],
+      total: 2, totalPage: 1, page: 0, size: 10,
+    }));
+
+    const result = await helpUserService.getOnlineManuals({ keyword: '사용법', page: 0, size: 10 });
+
+    expect(client.getRaw).toHaveBeenCalledWith('help/public-manuals',
+      expect.objectContaining({ params: { keyword: '사용법', page: 0, size: 10 } }));
+    expect(result.list).toEqual([
+      { id: '7', title: '전자결재 사용법', description: '상신과 승인', resourcePath: '/docs/approval' },
+      { id: '8', title: '쪽지 사용법', description: '' },
+    ]);
+  });
+
+  it('필수 제목이 빠진 열람 응답은 화면에 통과시키지 않는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
+      list: [{ hlpSn: 3, hlpExpln: '제목이 없다' }], total: 1, totalPage: 1, page: 0, size: 10,
+    }));
+
+    await expect(helpUserService.getHelpGuides({ page: 0, size: 10 })).rejects.toThrow();
+  });
+});

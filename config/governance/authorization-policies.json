@@ -6414,6 +6414,20 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/help/public-hpcm",
+      "handler": "nuri.api.controller.business.help.HelpApiController#getPublicHpcmList",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/help/public-manuals",
+      "handler": "nuri.api.controller.business.help.HelpApiController#getPublicManuals",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/mails",
       "handler": "nuri.api.controller.business.mail.MailApiController#getSentMails",
       "access": "PERMISSION",

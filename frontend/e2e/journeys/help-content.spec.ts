@@ -59,6 +59,48 @@ test.describe('공개 포털', () => {
                 await expect(userPage.getByText(faqQuestion).first()).toBeVisible({ timeout: 10000 });
             });
         });
+        // [2026-10-19] 도움말(HPCM)·온라인 매뉴얼은 관리 화면에서 등록만 되고 일반 사용자가 읽는 화면이 없었다.
+        //   도움말 센터의 두 탭이 로그인한 사용자 누구나 읽는 열람 목록을 보인다.
+        test("도움말·온라인 매뉴얼 등록 → 일반 사용자 도움말 센터에서 읽는다", async ({ adminPage, userPage }) => {
+            const stamp = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const guideTitle = `E2E 도움말 ${stamp}`;
+            const manualTitle = `E2E Manual ${stamp}`;
+            await test.step('Admin: 도움말을 등록한다(API)', async () => {
+                await adminPage.goto('/admin/system/hpcm');
+                await adminPage.waitForLoadState('domcontentloaded');
+                // 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly 쿠키에서 Bearer 를 주입한다(SurveyPage 와 같다).
+                const result = await adminPage.evaluate(async ({ title }) => {
+                    const res = await fetch('/api/v1/help/hpcm', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hlpSeCd: 'GNR', hlpDfn: title, hlpExpln: 'E2E 도움말 설명' }),
+                    });
+                    return { ok: res.ok, status: res.status, body: await res.text() };
+                }, { title: guideTitle });
+                expect(result.ok, `도움말 등록 API 실패: ${result.status} ${result.body}`).toBeTruthy();
+            });
+            await test.step('Admin: 온라인 매뉴얼을 화면에서 등록한다', async () => {
+                const support = new SupportPage(adminPage);
+                await support.gotoManuals();
+                await support.createManual(manualTitle, 'E2E 매뉴얼 설명');
+            });
+            await test.step('User: 도움말 탭에서 읽는다', async () => {
+                await userPage.goto('/help');
+                await userPage.getByRole('tab', { name: '도움말', exact: true }).click();
+                await userPage.getByRole('textbox', { name: '도움말 키워드 검색' }).fill(guideTitle);
+                const article = userPage.getByRole('article', { name: guideTitle });
+                await expect(article).toBeVisible({ timeout: 15000 });
+                await expect(article).toContainText('E2E 도움말 설명');
+            });
+            await test.step('User: 온라인 매뉴얼 탭에서 읽는다', async () => {
+                await userPage.getByRole('tab', { name: '온라인 매뉴얼' }).click();
+                await userPage.getByRole('textbox', { name: '도움말 키워드 검색' }).fill(manualTitle);
+                const article = userPage.getByRole('article', { name: manualTitle });
+                await expect(article).toBeVisible({ timeout: 15000 });
+                await expect(article).toContainText('E2E 매뉴얼 설명');
+                await expect(article).toContainText('리소스 경로: /e2e/test/path');
+            });
+        });
     });
 });
 test.describe('도움말 관리', () => {

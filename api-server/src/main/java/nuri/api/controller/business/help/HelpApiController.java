@@ -6,6 +6,8 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.help.HelpService;
 import nuri.business.service.help.dto.HpcmDto;
 import nuri.business.service.help.dto.OnlineManualDto;
+import nuri.business.service.help.dto.PublicHpcmDto;
+import nuri.business.service.help.dto.PublicOnlineManualDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -119,5 +121,26 @@ public class HelpApiController {
     public ResponseEntity<ApiResponse<Void>> deleteManual(@PathVariable Long onlnMnlSn) {
         helpService.deleteOnlineManual(onlnMnlSn);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // 일반 사용자 열람(2026-10-19). 관리 화면이 등록한 도움말·매뉴얼을 도움말 센터가 읽는다. 로그인한 사용자 누구나 읽는 안내라
+    //   인가는 AUTHENTICATED 이고(관리 목록은 HELP_READ 그대로), 응답은 등록자 ID 를 뺀 공개용 DTO 이며 순서는 서버가 정한다.
+
+    @Operation(summary = "도움말 열람 목록", description = "로그인한 사용자가 읽는 도움말 목록입니다. 제목 가나다순으로 페이징합니다.")
+    @GetMapping("/public-hpcm")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getPublicHpcmList')")
+    public ResponseEntity<ApiResponse<PageResponse<PublicHpcmDto>>> getPublicHpcmList(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(helpService.getPublicHpcmList(keyword, pageable))));
+    }
+
+    @Operation(summary = "온라인 매뉴얼 열람 목록", description = "로그인한 사용자가 읽는 온라인 매뉴얼 목록입니다. 매뉴얼 명 가나다순으로 페이징합니다.")
+    @GetMapping("/public-manuals")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#getPublicManuals')")
+    public ResponseEntity<ApiResponse<PageResponse<PublicOnlineManualDto>>> getPublicManuals(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(helpService.getPublicOnlineManualList(keyword, pageable))));
     }
 }

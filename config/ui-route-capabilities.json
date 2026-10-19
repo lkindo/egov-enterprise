@@ -10409,6 +10409,62 @@
             "frontend/src/app/help/page.tsx",
             "frontend/src/services/business/user/help/HelpUserService.ts"
           ]
+        },
+        {
+          "id": "help.guide-read",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "help-public-hpcm-api",
+          "actions": [
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "도움말",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-19",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
+            "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+            "frontend/src/app/help/HelpClient.tsx",
+            "frontend/src/app/help/HelpGuideList.tsx",
+            "frontend/src/app/help/__tests__/HelpClient.guides.test.tsx",
+            "frontend/src/app/help/page.tsx",
+            "frontend/src/services/business/user/help/HelpUserService.ts",
+            "frontend/src/services/business/user/help/__tests__/HelpUserService.test.ts"
+          ]
+        },
+        {
+          "id": "help.manual-read",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "help-public-manuals-api",
+          "actions": [
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "온라인 매뉴얼",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-19",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
+            "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+            "frontend/src/app/help/HelpClient.tsx",
+            "frontend/src/app/help/HelpGuideList.tsx",
+            "frontend/src/app/help/__tests__/HelpClient.guides.test.tsx",
+            "frontend/src/app/help/page.tsx",
+            "frontend/src/services/business/user/help/HelpUserService.ts",
+            "frontend/src/services/business/user/help/__tests__/HelpUserService.test.ts"
+          ]
         }
       ],
       "evidence": [

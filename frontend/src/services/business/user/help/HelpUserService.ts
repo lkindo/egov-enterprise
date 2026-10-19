@@ -7,6 +7,8 @@ import {
   getPostsOperation,
   getPublicFaqDetailOperation,
   getPublicFaqsOperation,
+  getPublicHpcmListOperation,
+  getPublicManualsOperation,
 } from '@/types/generated-operations';
 import { AxiosRequestConfig } from 'axios';
 import { HELP_FAQ_BOARD_ID, QNA_BOARD_ID } from '@/config/board-ids';
@@ -48,6 +50,20 @@ export interface QNA {
   /** 비밀글 여부. 'Y' 면 작성자와 관리자만 열람한다(BoardPredicate). */
   scrtYn?: string;
 }
+
+/**
+ * 도움말 센터의 읽기 전용 안내 한 건(2026-10-19). 관리 화면이 등록한 도움말(HPCM)과 온라인 매뉴얼을 같은 모양으로 보인다.
+ * 서버의 공개용 응답은 등록자 ID 를 싣지 않는다 — 화면도 묻지 않는다.
+ */
+export interface HelpGuide {
+  id: string;
+  title: string;
+  description: string;
+  /** 온라인 매뉴얼의 리소스 경로(관리 화면이 적는 값). 도움말에는 없다. */
+  resourcePath?: string;
+}
+
+type GuideQuery = { keyword?: string; page?: number; size?: number };
 
 // 해결 상태 판정은 지식 허브(게시판 셸)와 함께 쓰므로 core 모듈에 둔다(허브 분해 H2). 도움말 화면은 이 이름으로 계속 쓴다.
 export { isQnaSolved } from '@/lib/board/qna-status';
@@ -117,6 +133,29 @@ class HelpUserService extends ApiService {
     };
   }
 
+  /**
+   * 도움말(HPCM) 열람 목록. 로그인한 사용자 누구나 읽는다 — 관리 목록(HELP_READ)과 다른 연산이다. 순서는 서버가 정한다(제목 가나다순).
+   */
+  async getHelpGuides(params: GuideQuery, config?: AxiosRequestConfig): Promise<PageResponse<HelpGuide>> {
+    const response = await this.executeGenerated(getPublicHpcmListOperation, { query: guideQuery(params), config });
+    return guidePage(response, (response.list ?? []).map((item) => ({
+      id: String(item.hlpSn),
+      title: item.hlpDfn,
+      description: item.hlpExpln ?? '',
+    })));
+  }
+
+  /** 온라인 매뉴얼 열람 목록. 도움말 목록과 같은 인가·순서 규칙이다(매뉴얼 명 가나다순). */
+  async getOnlineManuals(params: GuideQuery, config?: AxiosRequestConfig): Promise<PageResponse<HelpGuide>> {
+    const response = await this.executeGenerated(getPublicManualsOperation, { query: guideQuery(params), config });
+    return guidePage(response, (response.list ?? []).map((item) => ({
+      id: String(item.onlnMnlSn),
+      title: item.onlnMnlNm,
+      description: item.onlnMnlExpln ?? '',
+      ...(item.onlnMnlDfn ? { resourcePath: item.onlnMnlDfn } : {}),
+    })));
+  }
+
   /** Q&A 목록 조회 (페이지) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
     const { keyword, ...pageQuery } = params;
@@ -178,6 +217,28 @@ class HelpUserService extends ApiService {
     };
     await this.executeGenerated(createPostOperation, { body: boardData, config });
   }
+}
+
+/** 비어 있는 검색어는 보내지 않는다 — 서버는 없는 검색어를 전체로 본다. */
+function guideQuery({ keyword, page, size }: GuideQuery): GuideQuery {
+  return {
+    ...(keyword ? { keyword } : {}),
+    ...(page === undefined ? {} : { page }),
+    ...(size === undefined ? {} : { size }),
+  };
+}
+
+function guidePage(
+  response: { total?: number; totalPage?: number; page?: number; size?: number },
+  list: HelpGuide[],
+): PageResponse<HelpGuide> {
+  return {
+    list,
+    total: response.total ?? 0,
+    totalPage: response.totalPage ?? 0,
+    page: response.page ?? 0,
+    size: response.size ?? 0,
+  };
 }
 
 function canonicalPositiveInteger(value: unknown): string | null {

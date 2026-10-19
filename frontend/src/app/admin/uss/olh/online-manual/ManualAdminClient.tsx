@@ -300,7 +300,7 @@ export default function ManualAdminClient({
   return (
     <WorkListPage
       title="온라인 매뉴얼 관리"
-      description="온라인 매뉴얼 항목을 등록·관리합니다. 등록한 매뉴얼을 사용자에게 보여 주는 화면은 아직 없습니다."
+      description="온라인 매뉴얼 항목을 등록·관리합니다. 등록한 매뉴얼은 로그인한 사용자 누구나 도움말 센터의 온라인 매뉴얼 탭에서 읽습니다."
       breadcrumbItems={[{ label: '부가서비스' }, { label: '온라인 매뉴얼' }]}
       filterStateKey="uss-online-manual"
       totalCount={isError ? undefined : data?.total}
