@@ -30,7 +30,7 @@ test('every displayed fact is generated from the catalog and dangerous data cann
   assert.equal(JSON.parse(embedded).catalogs.documents[0].summary, hostile.catalogs.documents[0].summary);
 });
 
-test('source digest and rendered artifact change on meaningful source or template changes', t => {
+test('rendered artifact changes on catalog, population, style or template changes and not on output-neutral generator edits', t => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'egov-atlas-generation-'));
   t.after(() => {
     const absolute = path.resolve(temp);
@@ -44,12 +44,23 @@ test('source digest and rendered artifact change on meaningful source or templat
     fs.copyFileSync(path.join(repoRoot, file), output);
   }
   assert.equal(renderAtlas(temp, catalog), generated);
+  // 생성기 코드는 본문에 실리지 않는다 — 출력을 바꾸지 않는 수정은 재생성을 요구하지 않는다.
+  fs.appendFileSync(path.join(temp, 'scripts/atlas-catalog.mjs'), '\n// Comment-only generator change.\n');
+  assert.equal(renderAtlas(temp, catalog), generated, 'a generator edit that changes no output must not require regeneration');
   const style = path.join(temp, 'frontend/atlas/atlas.css');
   fs.appendFileSync(style, '\n/* Source change requires regeneration. */\n');
   assert.notEqual(renderAtlas(temp, catalog), generated);
   const changed = structuredClone(catalog);
-  changed.sources[0].digest = '0'.repeat(64);
-  assert.notEqual(renderAtlas(repoRoot, changed), generated);
+  changed.facts.nodeVersion = `${changed.facts.nodeVersion}-changed`;
+  assert.notEqual(renderAtlas(repoRoot, changed), generated, 'a changed catalog fact must change the artifact');
+  const added = structuredClone(catalog);
+  added.sources.push({ path: 'docs/synthetic-new-input.md' });
+  assert.notEqual(renderAtlas(repoRoot, added), generated, 'a changed input population must change the artifact');
+  const embedded = JSON.parse(generated.match(/<script id="atlas-catalog-data" type="application\/json">([\s\S]*?)<\/script>/)[1]);
+  assert.equal('sourceDigest' in embedded, false, 'the artifact must not embed a bundle content hash');
+  for (const source of [...embedded.sources, ...embedded.presentationSources]) {
+    assert.deepEqual(Object.keys(source), ['path'], 'the artifact must not embed per-file content hashes');
+  }
   const template = path.join(temp, 'frontend/atlas/atlas.template.html');
   fs.writeFileSync(template, fs.readFileSync(template, 'utf8').replace('<!-- ATLAS_RUNTIME -->', ''));
   assert.throws(() => renderAtlas(temp, catalog), /marker must occur once/);

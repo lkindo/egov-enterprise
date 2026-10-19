@@ -1,12 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { BACKEND_LAYOUTS } from './reusable-layout.mjs';
 
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const normalize = text => text.replace(/\r\n?/g, '\n');
-const digest = text => createHash('sha256').update(normalize(text)).digest('hex');
 const asText = value => typeof value === 'string' ? value : JSON.stringify(value);
 const detail = (label, value) => ({ label, value: asText(value ?? '미확인') });
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
@@ -32,7 +30,11 @@ function record(id, title, summary, status, source, extra = {}) {
   return { id, title, summary, status, source, ...extra };
 }
 
-/** Only repository-owned, explicitly requested files are read; no environment or Git state. */
+/**
+ * Only repository-owned, explicitly requested files are read; no environment or Git state.
+ * 읽은 원본은 경로만 기록한다. 파일별 내용 해시를 싣지 않으므로, catalog 에 실리는 사실을 바꾸지 않는 소스 수정은
+ * Atlas 재생성을 요구하지 않는다. 신선도는 생성물 계약(atlas-generation.test.mjs)이 다시 만든 HTML 과 바이트로 대조해 소유한다.
+ */
 function repositoryReader(repoRoot) {
   const root = path.resolve(repoRoot);
   const sources = new Map();
@@ -49,7 +51,7 @@ function repositoryReader(repoRoot) {
     if (cache.has(canonical)) return cache.get(canonical);
     const text = normalize(fs.readFileSync(resolve(canonical), 'utf8'));
     cache.set(canonical, text);
-    sources.set(canonical, { path: canonical, digest: digest(text) });
+    sources.set(canonical, { path: canonical });
     return text;
   }
   function files(relative, predicate = () => true) {

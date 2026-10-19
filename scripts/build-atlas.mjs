@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { buildAtlasCatalog } from './atlas-catalog.mjs';
 
@@ -14,7 +13,6 @@ export const ATLAS_INPUTS = [
 ];
 const defaultRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const normalize = value => value.replace(/\r\n/g, '\n');
-const digest = value => createHash('sha256').update(value).digest('hex');
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[char]);
@@ -24,18 +22,17 @@ function replaceMarker(template, marker, content) {
   return template.replace(marker, () => content);
 }
 
-/** Portable, deterministic HTML. No network, timestamp, or generated-output self hash. */
+/**
+ * Portable, deterministic HTML. No network, timestamp, content hash, or generated-output self hash.
+ * 입력은 경로만 싣는다 — 템플릿·스타일·런타임은 본문에 그대로 들어가 그 변경이 출력으로 드러나고,
+ * 생성기 코드의 변경은 출력이 바뀔 때만 재생성을 요구한다.
+ */
 export function renderAtlas(repoRoot = defaultRoot, suppliedCatalog) {
   const inputs = Object.fromEntries(ATLAS_INPUTS.map(file => [
     file, normalize(fs.readFileSync(path.join(repoRoot, file), 'utf8')),
   ]));
   const catalog = suppliedCatalog ?? buildAtlasCatalog(repoRoot);
-  const presentationSources = ATLAS_INPUTS.map(file => ({ path: file, digest: digest(inputs[file]) }));
-  const data = {
-    ...catalog,
-    presentationSources,
-    sourceDigest: digest(JSON.stringify([catalog.sources, presentationSources])),
-  };
+  const data = { ...catalog, presentationSources: ATLAS_INPUTS.map(file => ({ path: file })) };
   let html = inputs[ATLAS_INPUTS[0]];
   html = replaceMarker(html, '<!-- ATLAS_STYLE -->', '<style id="atlas-style">\n' + inputs[ATLAS_INPUTS[1]] + '\n</style>');
   const json = JSON.stringify(data).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');

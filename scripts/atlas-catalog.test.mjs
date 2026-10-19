@@ -350,18 +350,24 @@ test('domain links use module-qualified declaration references and expose unconf
   });
 });
 
-test('source digest ignores line endings, not source content, and avoids output self-cycles', () => {
+// 읽은 원본은 경로만 싣는다. 파일별 내용 해시를 다시 실으면 catalog 사실과 무관한 소스 한 줄 수정마다 Atlas 를 다시 만들어야 한다.
+test('catalog lists input paths without content hashes: only catalog-visible source changes alter it', () => {
   mutate('.nvmrc', text => text.replace(/\r?\n/g, '\r\n'), () => {
     assert.deepEqual(buildAtlasCatalog(fixture), baseline);
+  });
+  const route = baseline.catalogs.routes[0].source;
+  assert.ok(baseline.sources.some(source => source.path === route), 'the route source must be a read input');
+  mutate(route, text => `${text}\n// catalog-invisible edit\n`, () => {
+    assert.deepEqual(buildAtlasCatalog(fixture), baseline, 'a source edit that changes no catalog fact must not change the catalog');
   });
   mutate('.nvmrc', () => '24\n', () => {
     const changed = buildAtlasCatalog(fixture);
     assert.equal(changed.facts.nodeVersion, '24');
-    assert.notEqual(changed.sources.find(source => source.path === '.nvmrc').digest,
-      baseline.sources.find(source => source.path === '.nvmrc').digest);
     assert.notDeepEqual(changed, baseline);
   });
-  assert.ok(baseline.sources.every(source => /^[a-f0-9]{64}$/.test(source.digest)));
+  assert.ok(baseline.sources.length > 0);
+  assert.ok(baseline.sources.every(source => Object.keys(source).join(',') === 'path'),
+    'sources must carry only the path — per-file content hashes force regeneration on catalog-invisible edits');
   assert.ok(baseline.sources.every(source => !/\.env(?:\.|$)|governance_harness_atlas\.html|frontend\/atlas\//.test(source.path)));
   assert.equal('generatedAt' in baseline, false);
   assert.equal('head' in baseline, false);

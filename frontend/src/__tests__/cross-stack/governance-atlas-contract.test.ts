@@ -17,7 +17,7 @@ interface RecordData {
 interface CatalogData {
   schemaVersion: number; authority: string;
   facts: Record<string, string | number>;
-  sources: Array<{ path: string; digest: string }>;
+  sources: Array<{ path: string }>;
   catalogs: Record<string, RecordData[]>;
 }
 interface Browser {
@@ -146,6 +146,26 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(catalogFailures(document, current)).toEqual([]);
     expect(document.querySelectorAll('.catalog-card').length).toBe(Object.values(current.catalogs).reduce((sum, rows) => sum + rows.length, 0));
     expect([...document.querySelectorAll<HTMLDetailsElement>('.catalog-card')].every(card => !card.open)).toBe(true);
+  });
+
+  // 읽은 원본은 경로로만 보인다 — 파일별 내용 해시는 싣지 않는다(신선도는 scripts/atlas-generation.test.mjs 가 소유한다).
+  it('shows read inputs by path and the input count without content hashes', () => {
+    const readPaths = new Set(current.sources.map(source => source.path));
+    const failures: string[] = [];
+    for (const [kind, records] of Object.entries(current.catalogs)) {
+      for (const record of records) {
+        const path = record.source.split('#')[0];
+        const shown = document.getElementById(cardId(kind, record.id))?.querySelector('.source-path')?.textContent;
+        const expected = readPaths.has(path) ? `생성 입력으로 읽은 원본 · ${path}` : undefined;
+        if (shown !== expected) failures.push(`${kind}/${record.id}: read-input line differs`);
+      }
+    }
+    expect(failures).toEqual([]);
+    expect(document.querySelectorAll('.source-path').length).toBeGreaterThan(0);
+    const fingerprint = document.getElementById('source-fingerprint')?.textContent ?? '';
+    expect(fingerprint).toContain(`생성 입력 원본 ${current.sources.length}개`);
+    expect(fingerprint).not.toMatch(/[a-f0-9]{64}/);
+    expect(document.querySelector('.source-digest')).toBeNull();
   });
 
   it('binds every rendered fact occurrence to the embedded catalog and checks independent registry counts and versions', () => {
