@@ -197,8 +197,6 @@ describe('ordinary generated boundary wave5', () => {
     const files = [{
       atchFileSn: 11,
       fileSn: 2,
-      fileStreCours: '/store',
-      streFileNm: 'stored.txt',
       orignlFileNm: 'report.txt',
       fileExtsn: 'txt',
       fileMg: 14,

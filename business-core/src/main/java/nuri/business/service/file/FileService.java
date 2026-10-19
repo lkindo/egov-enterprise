@@ -250,8 +250,6 @@ public class FileService extends BaseAbstractService {
         return FileDto.builder()
                 .atchFileSn(d.getFileMaster().getAtchFileSn())
                 .fileSn(d.getAtchFileSeq())
-                .fileStreCours(d.getFileStrgPath())
-                .streFileNm(d.getStrgFileNm())
                 .orignlFileNm(d.getOrgnlFileNm())
                 .fileExtsn(d.getFileEstn())
                 .fileMg(d.getFileSz())
