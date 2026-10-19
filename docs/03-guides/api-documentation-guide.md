@@ -57,19 +57,19 @@ springdoc:
 
 ### 2. HTTP Method와 응답 계약
 
-조회는 `GET`, 생성은 `POST`, 전체/부분 갱신은 `PUT`/`PATCH`, 삭제는 `DELETE`를 사용하고 `GET`은 데이터를 변경하지 않는다. 성공 상태 코드는 현재 컨트롤러 계약과 생성된 OpenAPI에 맞추며, 프로젝트 공통 응답은 [백엔드 헌법 제6조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md#제6조-응답-포맷의-통일)에 따라 `ApiResponse<T>`(목록은 필요 시 `PageResponse<T>`)로 감싼다. 생성·삭제라는 이유만으로 문서 예시의 `201`·`204`를 실제 구현에 강제하지 않는다. 물리/논리 삭제는 도메인 수명주기와 DB 헌법 제8조에 따라 결정한다.
+조회는 `GET`, 생성은 `POST`, 전체/부분 갱신은 `PUT`/`PATCH`, 삭제는 `DELETE`를 사용하고 `GET`은 데이터를 변경하지 않는다. 프로젝트 공통 응답은 [백엔드 헌법 제6조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md#제6조-응답-포맷의-통일)에 따라 `ApiResponse<T>`(목록은 `PageResponse<T>`)로 감싼다. 성공 상태 코드는 헌법 제6조 5항([ADR-0036](../02-architecture/decisions/ADR-0036-api-paging-and-created-status-conventions.md))을 따른다 — 자원을 만드는 POST 는 `201` 과 `ApiResponse.created(새 식별자)`, 그 밖의 성공은 `200` 이다. 생성 여부는 이름이 아니라 새로 주소를 갖는 자원이 생기는지로 판정하고, 어느 핸들러가 201 인지는 `ResponseContractLinterTest` 의 생성 census 가 정한다. 삭제는 본문 envelope 이 있으므로 `204` 를 쓰지 않는다. 물리/논리 삭제는 도메인 수명주기와 DB 헌법 제8조에 따라 결정한다.
 
 필드와 메서드 계약의 정본은 아래 Java 소스다. 이 절의 설명과 어긋나면 현재 소스와 테스트를 따르고 이 절을 함께 고친다.
 
 - **공통 응답**: [`ApiResponse`](../../foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java)의 envelope 필드는 `success`·`status`·`code`·`message`·`data`·`timestamp`이고, 검증 실패에만 `errors`가 붙는다. HTTP 상태와 body의 `status`는 같아야 한다. 기본 `ErrorCode` 상태와 다른 HTTP 상태가 필요하면 상태를 받는 `ApiResponse.error(HttpStatus, ErrorCode, String)` 팩토리를 쓴다. 바이너리 다운로드·스트림 예외의 조건은 헌법 제6조 3항과 [ResponseContractLinterTest](../../api-server/src/test/java/nuri/api/harness/ResponseContractLinterTest.java)의 census가 정한다.
-- **페이징**: [`PageResponse`](../../foundation/src/main/java/nuri/foundation/core/response/PageResponse.java)의 필드는 `list`·`total`·`page`·`size`·`totalPage`다. `PageResponse.of(Page<T>)`는 Spring Data의 0-based 페이지 번호를 외부 응답에서 1-based로 바꾸고, 목록·숫자를 직접 받는 overload는 받은 `page`를 그대로 쓰므로 호출자가 외부 1-based 계약을 지킨다.
+- **페이징**: 헌법 제6조 4항(ADR-0036)에 따라 요청·응답 모두 1 기반 `page`(1 이상)·`size`(1~100) 하나다. 컨트롤러는 `Pageable` 또는 `@Valid BaseSearchDto` 로 받고, 범위 밖 값·옛 이름은 `PaginationRequestFilter` 가 400 으로 거부한다(옛 `pageIndex`·`pageUnit` 은 한 릴리스 동안 별칭). [`PageResponse`](../../foundation/src/main/java/nuri/foundation/core/response/PageResponse.java)의 필드는 `list`·`total`·`page`·`size`·`totalPage`(모두 필수)다. `PageResponse.of(Page<T>)`는 Spring Data의 0-based 페이지 번호를 외부 1-based로 바꾸고, 목록·숫자를 직접 받는 overload는 받은 `page`를 그대로 쓰므로 호출자가 요청의 1-based `page` 를 넘긴다.
 - **날짜 입력**: [Ymd](../../foundation/src/main/java/nuri/foundation/core/validation/Ymd.java)의 달력 형식과 [YmdRange](../../foundation/src/main/java/nuri/foundation/core/validation/YmdRange.java)의 기간 순서를 쓰되, 필수 여부와 기존 읽기 데이터의 처리 범위는 도메인 계약을 따른다.
 - **오류 코드**: `CommonErrorCode` 등 기존 `ErrorCode` 구현을 재사용하고 문서에 별도 코드 목록을 복제하지 않는다. 새 코드는 HTTP 상태·기계 판독 코드·사용자 메시지를 함께 정의하고 [GlobalExceptionHandler](../../foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java)와 API 계약 테스트로 실제 응답을 검증한다.
 - **서비스 계층 인가**: 소유권·대행 권한 가드는 [정체성 모델 가이드 §3](identity-model-guide.md#3-securityutil-메서드-매핑-표)의 표준 헬퍼를 쓴다.
 
 ### 3. API 버전 관리
 - 모든 API 경로는 `/api/v1/` 로 시작하는 버전 정보를 포함합니다.
-- 하위 호환성을 깨뜨리는 중대한 변경 발생 시 버전을 올립니다 (`v2`).
+- 하위 호환성을 깨뜨리는 중대한 변경 발생 시 버전을 올립니다 (`v2`). 예외: 2026-10-19 ADR-0036 은 저장소 밖 소비자가 없음을 확인하고 v1 안에서 목록 `page` 를 1 기반으로 바꿨다(사용자 승인).
 - 이전 버전의 API 를 중단할 때는 `@Deprecated` 어노테이션과 함께 Swagger 에 만료 예정일을 기재합니다.
 
 ---
