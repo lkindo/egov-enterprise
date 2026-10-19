@@ -18,11 +18,11 @@ export const ApiResponsePageResponsePrivacyLogDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponsePrivacyLogDto = z.infer<typeof ApiResponsePageResponsePrivacyLogDtoSchema>;
 
 export const PageResponsePrivacyLogDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PrivacyLogDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PrivacyLogDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponsePrivacyLogDto = z.infer<typeof PageResponsePrivacyLogDtoSchema>;
 
@@ -58,19 +58,19 @@ export const ApiResponsePageResponsePrivacyLogDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponsePrivacyLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PrivacyLogDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PrivacyLogDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponsePrivacyLogDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PrivacyLogDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => PrivacyLogDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PrivacyLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({

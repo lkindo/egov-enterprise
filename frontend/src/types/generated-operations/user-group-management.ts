@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { ApiResponseGroupManageDtoResponseSchema, ApiResponsePageResponseGroupManageDtoResponseSchema, GroupManageDtoRequestSchema, GroupManageDtoResponseSchema, PageResponseGroupManageDtoResponseSchema } from '../generated-zod/user-group-management';
 
 export const getGroupOperation = /*#__PURE__*/ (() => {
@@ -75,7 +75,7 @@ export const getGroupsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "pageIndex": z.number().int().optional(), "searchKeyword": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseGroupManageDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseGroupManageDtoResponseSchema,
@@ -90,14 +90,14 @@ export const createGroupOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/groups",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: GroupManageDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.string(),
+  envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

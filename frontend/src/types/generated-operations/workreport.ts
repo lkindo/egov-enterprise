@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { ApiResponsePageResponseWorkReportDtoResponseSchema, ApiResponseWorkReportDtoResponseSchema, PageResponseWorkReportDtoResponseSchema, WorkReportDtoRequestSchema, WorkReportDtoResponseSchema } from '../generated-zod/workreport';
 
 export const getWorkReportOperation = /*#__PURE__*/ (() => {
@@ -75,7 +75,7 @@ export const getWorkReportListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseWorkReportDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseWorkReportDtoResponseSchema,
@@ -90,14 +90,14 @@ export const createWorkReportOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/work-reports",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: WorkReportDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"]],
   responseForbiddenPaths: [],
   });

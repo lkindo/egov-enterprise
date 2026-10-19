@@ -180,11 +180,11 @@ export const ApiResponsePageResponseUserListItemDtoSchema = /*#__PURE__*/ (() =>
 export type ApiResponsePageResponseUserListItemDto = z.infer<typeof ApiResponsePageResponseUserListItemDtoSchema>;
 
 export const PageResponseUserListItemDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserListItemDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserListItemDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseUserListItemDto = z.infer<typeof PageResponseUserListItemDtoSchema>;
 
@@ -534,19 +534,19 @@ export const ApiResponsePageResponseUserListItemDtoResponseSchema = /*#__PURE__*
 }))();
 
 export const PageResponseUserListItemDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserListItemDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserListItemDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseUserListItemDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserListItemDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => UserListItemDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const UserListItemDtoRequestSchema = /*#__PURE__*/ (() => z.object({

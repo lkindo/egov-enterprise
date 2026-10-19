@@ -33,11 +33,11 @@ export const ApiResponsePageResponseBannerDtoSchema = /*#__PURE__*/ (() => z.obj
 export type ApiResponsePageResponseBannerDto = z.infer<typeof ApiResponsePageResponseBannerDtoSchema>;
 
 export const PageResponseBannerDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BannerDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BannerDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseBannerDto = z.infer<typeof PageResponseBannerDtoSchema>;
 
@@ -112,19 +112,19 @@ export const ApiResponsePageResponseBannerDtoResponseSchema = /*#__PURE__*/ (() 
 }))();
 
 export const PageResponseBannerDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BannerDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BannerDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseBannerDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BannerDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => BannerDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseBannerDtoRequestSchema = /*#__PURE__*/ (() => z.object({

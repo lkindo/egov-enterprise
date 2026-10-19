@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { ApiResponseListTemplateDtoResponseSchema, ApiResponseTemplateDtoResponseSchema, TemplateDtoRequestSchema, TemplateDtoResponseSchema } from '../generated-zod/template';
 
 export const selectTmplatInfoDetailOperation = /*#__PURE__*/ (() => {
@@ -90,14 +90,14 @@ export const insertTmplatInfoOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/templates",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: TemplateDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.string(),
+  envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

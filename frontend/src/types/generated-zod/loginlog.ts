@@ -29,11 +29,11 @@ export const LoginLogDtoSchema = /*#__PURE__*/ (() => z.object({
 export type LoginLogDto = z.infer<typeof LoginLogDtoSchema>;
 
 export const PageResponseLoginLogDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginLogDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginLogDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseLoginLogDto = z.infer<typeof PageResponseLoginLogDtoSchema>;
 
@@ -89,19 +89,19 @@ export const LoginLogDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseLoginLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginLogDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginLogDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseLoginLogDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginLogDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => LoginLogDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseLoginLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({

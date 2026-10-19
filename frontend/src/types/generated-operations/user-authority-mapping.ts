@@ -18,7 +18,7 @@ export const getUserAuthoritiesOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "authorCode": z.string().optional(), "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "authorCode": z.string().optional(), "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAuthorGroupProjectionResponseSchema),
   envelopeSchema: ApiResponsePageResponseAuthorGroupProjectionResponseSchema,

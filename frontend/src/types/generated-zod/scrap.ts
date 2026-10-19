@@ -32,11 +32,11 @@ export const ApiResponsePageResponseScrapDtoSchema = /*#__PURE__*/ (() => z.obje
 export type ApiResponsePageResponseScrapDto = z.infer<typeof ApiResponsePageResponseScrapDtoSchema>;
 
 export const PageResponseScrapDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ScrapDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ScrapDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseScrapDto = z.infer<typeof PageResponseScrapDtoSchema>;
 
@@ -98,19 +98,19 @@ export const ApiResponsePageResponseScrapDtoResponseSchema = /*#__PURE__*/ (() =
 }))();
 
 export const PageResponseScrapDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ScrapDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ScrapDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseScrapDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ScrapDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => ScrapDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseScrapDtoRequestSchema = /*#__PURE__*/ (() => z.object({

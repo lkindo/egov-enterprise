@@ -367,11 +367,11 @@ export const ApiResponsePageResponseInformalSanctionDtoSchema = /*#__PURE__*/ ((
 export type ApiResponsePageResponseInformalSanctionDto = z.infer<typeof ApiResponsePageResponseInformalSanctionDtoSchema>;
 
 export const PageResponseInformalSanctionDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InformalSanctionDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseInformalSanctionDto = z.infer<typeof PageResponseInformalSanctionDtoSchema>;
 
@@ -1050,19 +1050,19 @@ export const ApiResponsePageResponseInformalSanctionDtoResponseSchema = /*#__PUR
 }))();
 
 export const PageResponseInformalSanctionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InformalSanctionDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseInformalSanctionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => InformalSanctionDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseApprovalSuggestionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({

@@ -49,6 +49,23 @@ export const CmmnClCodeDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type CmmnClCodeDto = z.infer<typeof CmmnClCodeDtoSchema>;
 
+export const ApiResponseDetailCodeKeySchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DetailCodeKeySchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseDetailCodeKey = z.infer<typeof ApiResponseDetailCodeKeySchema>;
+
+export const DetailCodeKeySchema = /*#__PURE__*/ (() => z.object({
+  cdId: z.string(),
+  dtlCd: z.string(),
+}))();
+export type DetailCodeKey = z.infer<typeof DetailCodeKeySchema>;
+
 export const ApiResponsePageResponseCmmnDetailCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -61,11 +78,11 @@ export const ApiResponsePageResponseCmmnDetailCodeDtoSchema = /*#__PURE__*/ (() 
 export type ApiResponsePageResponseCmmnDetailCodeDto = z.infer<typeof ApiResponsePageResponseCmmnDetailCodeDtoSchema>;
 
 export const PageResponseCmmnDetailCodeDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnDetailCodeDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnDetailCodeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseCmmnDetailCodeDto = z.infer<typeof PageResponseCmmnDetailCodeDtoSchema>;
 
@@ -92,11 +109,11 @@ export const ApiResponsePageResponseCmmnCodeDtoSchema = /*#__PURE__*/ (() => z.o
 export type ApiResponsePageResponseCmmnCodeDto = z.infer<typeof ApiResponsePageResponseCmmnCodeDtoSchema>;
 
 export const PageResponseCmmnCodeDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnCodeDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnCodeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseCmmnCodeDto = z.infer<typeof PageResponseCmmnCodeDtoSchema>;
 
@@ -123,11 +140,11 @@ export const ApiResponsePageResponseCmmnClCodeDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseCmmnClCodeDto = z.infer<typeof ApiResponsePageResponseCmmnClCodeDtoSchema>;
 
 export const PageResponseCmmnClCodeDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnClCodeDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnClCodeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseCmmnClCodeDto = z.infer<typeof PageResponseCmmnClCodeDtoSchema>;
 
@@ -169,11 +186,11 @@ export const CommonCodeChangeDtoSchema = /*#__PURE__*/ (() => z.object({
 export type CommonCodeChangeDto = z.infer<typeof CommonCodeChangeDtoSchema>;
 
 export const PageResponseCommonCodeChangeDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommonCodeChangeDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommonCodeChangeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseCommonCodeChangeDto = z.infer<typeof PageResponseCommonCodeChangeDtoSchema>;
 
@@ -255,6 +272,36 @@ export const CmmnClCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int().min(0).optional().nullable(),
 }))();
 
+export const ApiResponseDetailCodeKeyRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => DetailCodeKeyRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseDetailCodeKeyResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => DetailCodeKeyResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const DetailCodeKeyRequestSchema = /*#__PURE__*/ (() => z.object({
+  cdId: z.string(),
+  dtlCd: z.string(),
+}))();
+
+export const DetailCodeKeyResponseSchema = /*#__PURE__*/ (() => z.object({
+  cdId: z.string(),
+  dtlCd: z.string(),
+}))();
+
 export const ApiResponsePageResponseCmmnDetailCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -276,19 +323,19 @@ export const ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema = /*#__PURE_
 }))();
 
 export const PageResponseCmmnDetailCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnDetailCodeDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnDetailCodeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseCmmnDetailCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnDetailCodeDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => CmmnDetailCodeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseCmmnDetailCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -332,19 +379,19 @@ export const ApiResponsePageResponseCmmnCodeDtoResponseSchema = /*#__PURE__*/ ((
 }))();
 
 export const PageResponseCmmnCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnCodeDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnCodeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseCmmnCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnCodeDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => CmmnCodeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseCmmnCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -388,19 +435,19 @@ export const ApiResponsePageResponseCmmnClCodeDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseCmmnClCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnClCodeDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CmmnClCodeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseCmmnClCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CmmnClCodeDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => CmmnClCodeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseCmmnClCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -472,17 +519,17 @@ export const CommonCodeChangeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseCommonCodeChangeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommonCodeChangeDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommonCodeChangeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseCommonCodeChangeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommonCodeChangeDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => CommonCodeChangeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

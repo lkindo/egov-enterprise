@@ -17,7 +17,7 @@ export const auditJournalListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "actorId": z.string().optional(), "operation": z.string().optional(), "fromDate": z.string().optional(), "toDate": z.string().optional(), "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  querySchema: z.object({ "actorId": z.string().optional(), "operation": z.string().optional(), "fromDate": z.string().optional(), "toDate": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAuditJournalEntryResponseSchema),
   envelopeSchema: ApiResponsePageResponseAuditJournalEntryResponseSchema,

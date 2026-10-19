@@ -59,11 +59,11 @@ export const ApiResponsePageResponseDeptJobDtoSchema = /*#__PURE__*/ (() => z.ob
 export type ApiResponsePageResponseDeptJobDto = z.infer<typeof ApiResponsePageResponseDeptJobDtoSchema>;
 
 export const PageResponseDeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseDeptJobDto = z.infer<typeof PageResponseDeptJobDtoSchema>;
 
@@ -90,11 +90,11 @@ export const ApiResponsePageResponseDeptJobBoxDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseDeptJobBoxDto = z.infer<typeof ApiResponsePageResponseDeptJobBoxDtoSchema>;
 
 export const PageResponseDeptJobBoxDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobBoxDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobBoxDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseDeptJobBoxDto = z.infer<typeof PageResponseDeptJobBoxDtoSchema>;
 
@@ -188,19 +188,19 @@ export const ApiResponsePageResponseDeptJobDtoResponseSchema = /*#__PURE__*/ (()
 }))();
 
 export const PageResponseDeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseDeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => DeptJobDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseDeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -244,19 +244,19 @@ export const ApiResponsePageResponseDeptJobBoxDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseDeptJobBoxDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobBoxDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptJobBoxDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseDeptJobBoxDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptJobBoxDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => DeptJobBoxDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseDeptJobBoxDtoRequestSchema = /*#__PURE__*/ (() => z.object({

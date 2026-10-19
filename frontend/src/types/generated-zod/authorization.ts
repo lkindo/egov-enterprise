@@ -153,11 +153,11 @@ export const ApiResponsePageResponseUserChoiceSchema = /*#__PURE__*/ (() => z.ob
 export type ApiResponsePageResponseUserChoice = z.infer<typeof ApiResponsePageResponseUserChoiceSchema>;
 
 export const PageResponseUserChoiceSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserChoiceSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserChoiceSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseUserChoice = z.infer<typeof PageResponseUserChoiceSchema>;
 
@@ -213,11 +213,11 @@ export const ChangeSchema = /*#__PURE__*/ (() => z.object({
 export type Change = z.infer<typeof ChangeSchema>;
 
 export const PageResponseChangeSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ChangeSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ChangeSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseChange = z.infer<typeof PageResponseChangeSchema>;
 
@@ -568,19 +568,19 @@ export const ApiResponsePageResponseUserChoiceResponseSchema = /*#__PURE__*/ (()
 }))();
 
 export const PageResponseUserChoiceRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserChoiceRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => UserChoiceRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseUserChoiceResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => UserChoiceResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => UserChoiceResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseMembershipSnapshotRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -678,19 +678,19 @@ export const ChangeResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseChangeRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ChangeRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ChangeRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseChangeResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ChangeResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => ChangeResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseListGroupSummaryRequestSchema = /*#__PURE__*/ (() => z.object({

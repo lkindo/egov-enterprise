@@ -27,6 +27,61 @@ export const HpcmDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 
+export const ApiResponsePageResponsePublicOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponsePublicOnlineManualDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponsePublicOnlineManualDto = z.infer<typeof ApiResponsePageResponsePublicOnlineManualDtoSchema>;
+
+export const PageResponsePublicOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicOnlineManualDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+export type PageResponsePublicOnlineManualDto = z.infer<typeof PageResponsePublicOnlineManualDtoSchema>;
+
+export const PublicOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
+  onlnMnlSn: z.number().int(),
+  onlnMnlNm: z.string(),
+  onlnMnlDfn: z.string().optional().nullable(),
+  onlnMnlExpln: z.string().optional().nullable(),
+}))();
+export type PublicOnlineManualDto = z.infer<typeof PublicOnlineManualDtoSchema>;
+
+export const ApiResponsePageResponsePublicHpcmDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponsePublicHpcmDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponsePublicHpcmDto = z.infer<typeof ApiResponsePageResponsePublicHpcmDtoSchema>;
+
+export const PageResponsePublicHpcmDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicHpcmDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+export type PageResponsePublicHpcmDto = z.infer<typeof PageResponsePublicHpcmDtoSchema>;
+
+export const PublicHpcmDtoSchema = /*#__PURE__*/ (() => z.object({
+  hlpSn: z.number().int(),
+  hlpDfn: z.string(),
+  hlpExpln: z.string().optional().nullable(),
+}))();
+export type PublicHpcmDto = z.infer<typeof PublicHpcmDtoSchema>;
+
 export const ApiResponsePageResponseOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -39,11 +94,11 @@ export const ApiResponsePageResponseOnlineManualDtoSchema = /*#__PURE__*/ (() =>
 export type ApiResponsePageResponseOnlineManualDto = z.infer<typeof ApiResponsePageResponseOnlineManualDtoSchema>;
 
 export const PageResponseOnlineManualDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlineManualDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlineManualDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseOnlineManualDto = z.infer<typeof PageResponseOnlineManualDtoSchema>;
 
@@ -70,11 +125,11 @@ export const ApiResponsePageResponseHpcmDtoSchema = /*#__PURE__*/ (() => z.objec
 export type ApiResponsePageResponseHpcmDto = z.infer<typeof ApiResponsePageResponseHpcmDtoSchema>;
 
 export const PageResponseHpcmDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => HpcmDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => HpcmDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseHpcmDto = z.infer<typeof PageResponseHpcmDtoSchema>;
 
@@ -127,6 +182,104 @@ export const HpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
+export const ApiResponsePageResponsePublicOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponsePublicOnlineManualDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponsePublicOnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponsePublicOnlineManualDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const PageResponsePublicOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicOnlineManualDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PageResponsePublicOnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicOnlineManualDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PublicOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  onlnMnlSn: z.number().int(),
+  onlnMnlNm: z.string(),
+  onlnMnlDfn: z.string().optional().nullable(),
+  onlnMnlExpln: z.string().optional().nullable(),
+}))();
+
+export const PublicOnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  onlnMnlSn: z.number().int(),
+  onlnMnlNm: z.string(),
+  onlnMnlDfn: z.string().optional().nullable(),
+  onlnMnlExpln: z.string().optional().nullable(),
+}))();
+
+export const ApiResponsePageResponsePublicHpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponsePublicHpcmDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponsePublicHpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponsePublicHpcmDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const PageResponsePublicHpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicHpcmDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PageResponsePublicHpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => PublicHpcmDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PublicHpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  hlpSn: z.number().int(),
+  hlpDfn: z.string(),
+  hlpExpln: z.string().optional().nullable(),
+}))();
+
+export const PublicHpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  hlpSn: z.number().int(),
+  hlpDfn: z.string(),
+  hlpExpln: z.string().optional().nullable(),
+}))();
+
 export const ApiResponsePageResponseOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -148,19 +301,19 @@ export const ApiResponsePageResponseOnlineManualDtoResponseSchema = /*#__PURE__*
 }))();
 
 export const PageResponseOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlineManualDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlineManualDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseOnlineManualDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlineManualDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => OnlineManualDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseOnlineManualDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -204,19 +357,19 @@ export const ApiResponsePageResponseHpcmDtoResponseSchema = /*#__PURE__*/ (() =>
 }))();
 
 export const PageResponseHpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => HpcmDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => HpcmDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseHpcmDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => HpcmDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => HpcmDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseHpcmDtoRequestSchema = /*#__PURE__*/ (() => z.object({

@@ -77,11 +77,11 @@ export const InstitutionCodeDtoSchema = /*#__PURE__*/ (() => z.object({
 export type InstitutionCodeDto = z.infer<typeof InstitutionCodeDtoSchema>;
 
 export const PageResponseInstitutionCodeDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseInstitutionCodeDto = z.infer<typeof PageResponseInstitutionCodeDtoSchema>;
 
@@ -108,11 +108,11 @@ export const ApiResponsePageResponseInstitutionCodeRecptnDtoSchema = /*#__PURE__
 export type ApiResponsePageResponseInstitutionCodeRecptnDto = z.infer<typeof ApiResponsePageResponseInstitutionCodeRecptnDtoSchema>;
 
 export const PageResponseInstitutionCodeRecptnDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseInstitutionCodeRecptnDto = z.infer<typeof PageResponseInstitutionCodeRecptnDtoSchema>;
 
@@ -251,19 +251,19 @@ export const InstitutionCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseInstitutionCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseInstitutionCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => InstitutionCodeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseInstitutionCodeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -307,17 +307,17 @@ export const ApiResponsePageResponseInstitutionCodeRecptnDtoResponseSchema = /*#
 }))();
 
 export const PageResponseInstitutionCodeRecptnDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseInstitutionCodeRecptnDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => InstitutionCodeRecptnDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

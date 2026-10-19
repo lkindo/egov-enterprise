@@ -90,11 +90,11 @@ export const ApiResponsePageResponseMenuDtoSchema = /*#__PURE__*/ (() => z.objec
 export type ApiResponsePageResponseMenuDto = z.infer<typeof ApiResponsePageResponseMenuDtoSchema>;
 
 export const PageResponseMenuDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseMenuDto = z.infer<typeof PageResponseMenuDtoSchema>;
 
@@ -121,11 +121,11 @@ export const ApiResponsePageResponseMenuCreateDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseMenuCreateDto = z.infer<typeof ApiResponsePageResponseMenuCreateDtoSchema>;
 
 export const PageResponseMenuCreateDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuCreateDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuCreateDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseMenuCreateDto = z.infer<typeof PageResponseMenuCreateDtoSchema>;
 
@@ -289,19 +289,19 @@ export const ApiResponsePageResponseMenuDtoResponseSchema = /*#__PURE__*/ (() =>
 }))();
 
 export const PageResponseMenuDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseMenuDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => MenuDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseMenuDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -345,19 +345,19 @@ export const ApiResponsePageResponseMenuCreateDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseMenuCreateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuCreateDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => MenuCreateDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseMenuCreateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => MenuCreateDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => MenuCreateDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseListMenuDtoRequestSchema = /*#__PURE__*/ (() => z.object({

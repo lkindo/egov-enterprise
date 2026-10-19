@@ -48,11 +48,11 @@ export const ApiResponsePageResponseExternalHrDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseExternalHrDto = z.infer<typeof ApiResponsePageResponseExternalHrDtoSchema>;
 
 export const PageResponseExternalHrDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ExternalHrDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseExternalHrDto = z.infer<typeof PageResponseExternalHrDtoSchema>;
 
@@ -129,17 +129,17 @@ export const ApiResponsePageResponseExternalHrDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseExternalHrDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => ExternalHrDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseExternalHrDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => ExternalHrDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => ExternalHrDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

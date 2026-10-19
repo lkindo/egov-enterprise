@@ -37,11 +37,11 @@ export const DeptAuthorProjectionSchema = /*#__PURE__*/ (() => z.object({
 export type DeptAuthorProjection = z.infer<typeof DeptAuthorProjectionSchema>;
 
 export const PageResponseDeptAuthorProjectionSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptAuthorProjectionSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptAuthorProjectionSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseDeptAuthorProjection = z.infer<typeof PageResponseDeptAuthorProjectionSchema>;
 
@@ -100,17 +100,17 @@ export const DeptAuthorProjectionResponseSchema = /*#__PURE__*/ (() => z.object(
 }))();
 
 export const PageResponseDeptAuthorProjectionRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptAuthorProjectionRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptAuthorProjectionRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseDeptAuthorProjectionResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptAuthorProjectionResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => DeptAuthorProjectionResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

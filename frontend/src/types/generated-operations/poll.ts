@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { ApiResponseListOnlinePollArticleDtoResponseSchema, ApiResponseOnlinePollManageDtoResponseSchema, ApiResponsePageResponseOnlinePollManageDtoResponseSchema, OnlinePollArticleDtoResponseSchema, OnlinePollManageDtoResponseSchema, OnlinePollManageRequestRequestSchema, PageResponseOnlinePollManageDtoResponseSchema } from '../generated-zod/poll';
 
 export const getPollOperation = /*#__PURE__*/ (() => {
@@ -75,7 +75,7 @@ export const getPollsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "kind": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "keyword": z.string().optional(), "kind": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseOnlinePollManageDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseOnlinePollManageDtoResponseSchema,
@@ -90,14 +90,14 @@ export const createPollOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/polls",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: OnlinePollManageRequestRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

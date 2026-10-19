@@ -43,11 +43,11 @@ export const ApiResponsePageResponseSmsDtoSchema = /*#__PURE__*/ (() => z.object
 export type ApiResponsePageResponseSmsDto = z.infer<typeof ApiResponsePageResponseSmsDtoSchema>;
 
 export const PageResponseSmsDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SmsDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseSmsDto = z.infer<typeof PageResponseSmsDtoSchema>;
 
@@ -154,19 +154,19 @@ export const ApiResponsePageResponseSmsDtoResponseSchema = /*#__PURE__*/ (() => 
 }))();
 
 export const PageResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SmsDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseSmsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SmsDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => SmsDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseSmsDtoRequestSchema = /*#__PURE__*/ (() => z.object({

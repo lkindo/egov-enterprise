@@ -5,8 +5,8 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseCmmnClCodeDtoResponseSchema, ApiResponseCmmnCodeDtoResponseSchema, ApiResponseCmmnDetailCodeDtoResponseSchema, ApiResponsePageResponseCmmnClCodeDtoResponseSchema, ApiResponsePageResponseCmmnCodeDtoResponseSchema, ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema, ApiResponsePageResponseCommonCodeChangeDtoResponseSchema, CmmnClCodeDtoRequestSchema, CmmnClCodeDtoResponseSchema, CmmnCodeDtoRequestSchema, CmmnCodeDtoResponseSchema, CmmnCodeHierarchyDtoRequestSchema, CmmnDetailCodeDtoRequestSchema, CmmnDetailCodeDtoResponseSchema, PageResponseCmmnClCodeDtoResponseSchema, PageResponseCmmnCodeDtoResponseSchema, PageResponseCmmnDetailCodeDtoResponseSchema, PageResponseCommonCodeChangeDtoResponseSchema } from '../generated-zod/common-code';
+import { ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseCmmnClCodeDtoResponseSchema, ApiResponseCmmnCodeDtoResponseSchema, ApiResponseCmmnDetailCodeDtoResponseSchema, ApiResponseDetailCodeKeyResponseSchema, ApiResponsePageResponseCmmnClCodeDtoResponseSchema, ApiResponsePageResponseCmmnCodeDtoResponseSchema, ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema, ApiResponsePageResponseCommonCodeChangeDtoResponseSchema, CmmnClCodeDtoRequestSchema, CmmnClCodeDtoResponseSchema, CmmnCodeDtoRequestSchema, CmmnCodeDtoResponseSchema, CmmnCodeHierarchyDtoRequestSchema, CmmnDetailCodeDtoRequestSchema, CmmnDetailCodeDtoResponseSchema, DetailCodeKeyResponseSchema, PageResponseCmmnClCodeDtoResponseSchema, PageResponseCmmnCodeDtoResponseSchema, PageResponseCmmnDetailCodeDtoResponseSchema, PageResponseCommonCodeChangeDtoResponseSchema } from '../generated-zod/common-code';
 
 export const getDetailCodeOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -208,7 +208,7 @@ export const getDetailCodeListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCmmnDetailCodeDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCmmnDetailCodeDtoResponseSchema,
@@ -223,14 +223,14 @@ export const createDetailCodeOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/codes/detail",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: CmmnDetailCodeDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.lazy(() => DetailCodeKeyResponseSchema),
+  envelopeSchema: ApiResponseDetailCodeKeyResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -246,7 +246,7 @@ export const getCmmnCodeListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCmmnCodeDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCmmnCodeDtoResponseSchema,
@@ -261,14 +261,14 @@ export const createCmmnCodeOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/codes/cmmn",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: CmmnCodeDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.string(),
+  envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -284,7 +284,7 @@ export const getClCodeListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCmmnClCodeDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCmmnClCodeDtoResponseSchema,
@@ -299,14 +299,14 @@ export const createClCodeOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/codes/cl",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: CmmnClCodeDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.string(),
+  envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -322,7 +322,7 @@ export const getChangeHistoryOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "cdId": z.string().optional(), "clsfCd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "cdId": z.string().optional(), "clsfCd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommonCodeChangeDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommonCodeChangeDtoResponseSchema,

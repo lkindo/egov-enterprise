@@ -18,11 +18,11 @@ export const ApiResponsePageResponseSurveyResultDtoSchema = /*#__PURE__*/ (() =>
 export type ApiResponsePageResponseSurveyResultDto = z.infer<typeof ApiResponsePageResponseSurveyResultDtoSchema>;
 
 export const PageResponseSurveyResultDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyResultDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyResultDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseSurveyResultDto = z.infer<typeof PageResponseSurveyResultDtoSchema>;
 
@@ -72,19 +72,19 @@ export const ApiResponsePageResponseSurveyResultDtoResponseSchema = /*#__PURE__*
 }))();
 
 export const PageResponseSurveyResultDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyResultDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyResultDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseSurveyResultDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyResultDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => SurveyResultDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const SurveyResultDtoRequestSchema = /*#__PURE__*/ (() => z.object({

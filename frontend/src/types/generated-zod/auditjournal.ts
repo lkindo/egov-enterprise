@@ -32,11 +32,11 @@ export const AuditJournalEntrySchema = /*#__PURE__*/ (() => z.object({
 export type AuditJournalEntry = z.infer<typeof AuditJournalEntrySchema>;
 
 export const PageResponseAuditJournalEntrySchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuditJournalEntrySchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuditJournalEntrySchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseAuditJournalEntry = z.infer<typeof PageResponseAuditJournalEntrySchema>;
 
@@ -87,17 +87,17 @@ export const AuditJournalEntryResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseAuditJournalEntryRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuditJournalEntryRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuditJournalEntryRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseAuditJournalEntryResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuditJournalEntryResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => AuditJournalEntryResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

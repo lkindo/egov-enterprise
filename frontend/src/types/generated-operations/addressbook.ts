@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { AddressBookDtoRequestSchema, AddressBookDtoResponseSchema, ApiResponseAddressBookDtoResponseSchema, ApiResponsePageResponseAddressBookDtoResponseSchema, ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema, PageResponseAddressBookDtoResponseSchema, PageResponseAddressBookUserSelectionDtoResponseSchema } from '../generated-zod/addressbook';
 
 export const getAddressBookOperation = /*#__PURE__*/ (() => {
@@ -75,7 +75,7 @@ export const getAddressBooksOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "trgetOgnzId": z.string().optional(), "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "trgetOgnzId": z.string().optional(), "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAddressBookDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseAddressBookDtoResponseSchema,
@@ -90,14 +90,14 @@ export const createAddressBookOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/address-books",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: AddressBookDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [["adbkMan","*","userId"]],
   responseForbiddenPaths: [],
   });
@@ -113,7 +113,7 @@ export const searchUserSelectionsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchWrd": z.string(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchWrd": z.string(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAddressBookUserSelectionDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema,

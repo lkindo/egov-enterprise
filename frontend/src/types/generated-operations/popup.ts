@@ -75,7 +75,7 @@ export const getPopupsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchWrd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchWrd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponsePopupDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponsePopupDtoResponseSchema,

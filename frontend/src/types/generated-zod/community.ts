@@ -30,11 +30,11 @@ export const CommunityMemberDtoSchema = /*#__PURE__*/ (() => z.object({
 export type CommunityMemberDto = z.infer<typeof CommunityMemberDtoSchema>;
 
 export const PageResponseCommunityMemberDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommunityMemberDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommunityMemberDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseCommunityMemberDto = z.infer<typeof PageResponseCommunityMemberDtoSchema>;
 
@@ -115,19 +115,19 @@ export const CommunityMemberDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseCommunityMemberDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommunityMemberDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => CommunityMemberDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseCommunityMemberDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => CommunityMemberDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => CommunityMemberDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseCommunityTemplateOptionsDtoRequestSchema = /*#__PURE__*/ (() => z.object({

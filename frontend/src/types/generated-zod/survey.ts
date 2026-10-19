@@ -112,11 +112,11 @@ export const ApiResponsePageResponseSurveyTemplateDtoSchema = /*#__PURE__*/ (() 
 export type ApiResponsePageResponseSurveyTemplateDto = z.infer<typeof ApiResponsePageResponseSurveyTemplateDtoSchema>;
 
 export const PageResponseSurveyTemplateDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyTemplateDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyTemplateDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseSurveyTemplateDto = z.infer<typeof PageResponseSurveyTemplateDtoSchema>;
 
@@ -132,11 +132,11 @@ export const ApiResponsePageResponseSurveyInfoDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseSurveyInfoDto = z.infer<typeof ApiResponsePageResponseSurveyInfoDtoSchema>;
 
 export const PageResponseSurveyInfoDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyInfoDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyInfoDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseSurveyInfoDto = z.infer<typeof PageResponseSurveyInfoDtoSchema>;
 
@@ -332,19 +332,19 @@ export const ApiResponsePageResponseSurveyTemplateDtoResponseSchema = /*#__PURE_
 }))();
 
 export const PageResponseSurveyTemplateDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyTemplateDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyTemplateDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseSurveyTemplateDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyTemplateDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => SurveyTemplateDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponsePageResponseSurveyInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -368,17 +368,17 @@ export const ApiResponsePageResponseSurveyInfoDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseSurveyInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyInfoDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SurveyInfoDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseSurveyInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SurveyInfoDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => SurveyInfoDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

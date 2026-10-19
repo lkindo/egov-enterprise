@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
 import { ApiResponseListPolicyResponseSchema, ApiResponsePolicyResponseSchema, PolicyResponseSchema, PolicyUpdateRequestRequestSchema } from '../generated-zod/policy-management';
 
 export const getPolicyOperation = /*#__PURE__*/ (() => {
@@ -33,14 +33,14 @@ export const createPolicyOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/policies/{type}",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: z.object({ "type": z.string() }).strict(),
   querySchema: null,
   requestSchema: PolicyUpdateRequestRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.string(),
+  envelopeSchema: ApiResponseStringResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

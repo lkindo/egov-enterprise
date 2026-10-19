@@ -54,11 +54,11 @@ export const EventInfoDtoSchema = /*#__PURE__*/ (() => z.object({
 export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 
 export const PageResponseEventInfoDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => EventInfoDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => EventInfoDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseEventInfoDto = z.infer<typeof PageResponseEventInfoDtoSchema>;
 
@@ -162,19 +162,19 @@ export const EventInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseEventInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => EventInfoDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => EventInfoDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseEventInfoDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => EventInfoDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => EventInfoDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseEventInfoDtoRequestSchema = /*#__PURE__*/ (() => z.object({

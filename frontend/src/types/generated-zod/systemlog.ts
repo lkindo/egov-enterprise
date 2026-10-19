@@ -18,11 +18,11 @@ export const ApiResponsePageResponseSysLogDtoSchema = /*#__PURE__*/ (() => z.obj
 export type ApiResponsePageResponseSysLogDto = z.infer<typeof ApiResponsePageResponseSysLogDtoSchema>;
 
 export const PageResponseSysLogDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SysLogDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SysLogDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseSysLogDto = z.infer<typeof PageResponseSysLogDtoSchema>;
 
@@ -74,19 +74,19 @@ export const ApiResponsePageResponseSysLogDtoResponseSchema = /*#__PURE__*/ (() 
 }))();
 
 export const PageResponseSysLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SysLogDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => SysLogDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseSysLogDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => SysLogDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => SysLogDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const SysLogDtoRequestSchema = /*#__PURE__*/ (() => z.object({

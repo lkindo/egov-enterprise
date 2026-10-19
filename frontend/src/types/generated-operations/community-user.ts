@@ -37,7 +37,7 @@ export const getCommunities_1Operation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommunityDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommunityDtoResponseSchema,

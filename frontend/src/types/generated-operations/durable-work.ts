@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponsePageStatusResponseSchema, PageStatusResponseSchema } from '../generated-zod/durable-work';
+import { ApiResponsePageResponseStatusResponseSchema, PageResponseStatusResponseSchema } from '../generated-zod/durable-work';
 
 export const durableJobRetryOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -37,10 +37,10 @@ export const durableJobListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "page": z.number().int().optional(), "size": z.number().int().optional() }).strict(),
+  querySchema: z.object({ "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
   requestSchema: null,
-  responseSchema: z.lazy(() => PageStatusResponseSchema),
-  envelopeSchema: ApiResponsePageStatusResponseSchema,
+  responseSchema: z.lazy(() => PageResponseStatusResponseSchema),
+  envelopeSchema: ApiResponsePageResponseStatusResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

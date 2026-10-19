@@ -58,11 +58,11 @@ export const OnlinePollManageDtoSchema = /*#__PURE__*/ (() => z.object({
 export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 
 export const PageResponseOnlinePollManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlinePollManageDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlinePollManageDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseOnlinePollManageDto = z.infer<typeof PageResponseOnlinePollManageDtoSchema>;
 
@@ -183,19 +183,19 @@ export const OnlinePollManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseOnlinePollManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlinePollManageDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => OnlinePollManageDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseOnlinePollManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => OnlinePollManageDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => OnlinePollManageDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseOnlinePollManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

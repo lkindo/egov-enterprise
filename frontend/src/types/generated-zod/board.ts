@@ -34,11 +34,11 @@ export const ApiResponsePageResponseBoardDtoSchema = /*#__PURE__*/ (() => z.obje
 export type ApiResponsePageResponseBoardDto = z.infer<typeof ApiResponsePageResponseBoardDtoSchema>;
 
 export const PageResponseBoardDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseBoardDto = z.infer<typeof PageResponseBoardDtoSchema>;
 
@@ -131,11 +131,11 @@ export const ApiResponsePageResponsePublicFaqListItemResponseSchema = /*#__PURE_
 export type ApiResponsePageResponsePublicFaqListItemResponse = z.infer<typeof ApiResponsePageResponsePublicFaqListItemResponseSchema>;
 
 export const PageResponsePublicFaqListItemResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PublicFaqListItemResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PublicFaqListItemResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponsePublicFaqListItemResponse = z.infer<typeof PageResponsePublicFaqListItemResponseSchema>;
 
@@ -224,19 +224,19 @@ export const ApiResponsePageResponseBoardDtoResponseSchema = /*#__PURE__*/ (() =
 }))();
 
 export const PageResponseBoardDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseBoardDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => BoardDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseBoardStatsResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -400,19 +400,19 @@ export const ApiResponsePageResponsePublicFaqListItemResponseResponseSchema = /*
 }))();
 
 export const PageResponsePublicFaqListItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PublicFaqListItemResponseRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PublicFaqListItemResponseRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponsePublicFaqListItemResponseResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PublicFaqListItemResponseResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => PublicFaqListItemResponseResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PublicFaqListItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({

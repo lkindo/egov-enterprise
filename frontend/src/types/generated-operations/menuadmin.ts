@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseListMenuCreateDtoResponseSchema, ApiResponseVoidResponseSchema, MenuCreateDtoResponseSchema, MenuDtoRequestSchema, MenuDtoResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseListMenuCreateDtoResponseSchema, ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema, MenuCreateDtoResponseSchema, MenuDtoRequestSchema, MenuDtoResponseSchema } from '../generated-zod/_shared';
 import { ApiResponseListMenuDtoResponseSchema, ApiResponseMenuDtoResponseSchema, ApiResponseMenuStructureResponseSchema, ApiResponsePageResponseMenuCreateDtoResponseSchema, ApiResponsePageResponseMenuDtoResponseSchema, MenuStructureResponseSchema, MenuStructureSaveRequestSchema, PageResponseMenuCreateDtoResponseSchema, PageResponseMenuDtoResponseSchema } from '../generated-zod/menuadmin';
 
 export const getMenuOperation = /*#__PURE__*/ (() => {
@@ -132,7 +132,7 @@ export const getMenuListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseMenuDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseMenuDtoResponseSchema,
@@ -147,14 +147,14 @@ export const createMenuOperation = /*#__PURE__*/ (() => {
   method: "post",
   path: "/api/v1/admin/system/menus",
   requestKind: "json",
-  responseKind: "void",
+  responseKind: "json",
   requestRequired: true,
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
   requestSchema: MenuDtoRequestSchema.strict(),
-  responseSchema: null,
-  envelopeSchema: ApiResponseVoidResponseSchema,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -208,7 +208,7 @@ export const getMenuCreationManageListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "pageIndex": z.number().int().min(1).optional(), "pageUnit": z.number().int().min(1).max(100).optional(), "pageSize": z.number().int().optional(), "firstIndex": z.number().int().optional(), "lastIndex": z.number().int().optional(), "recordCountPerPage": z.number().int().optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
+  querySchema: z.object({ "searchCondition": z.string().min(0).max(255).optional(), "searchKeyword": z.string().min(0).max(255).optional(), "searchUseYn": z.string().min(0).max(1).optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "searchKeywordFrom": z.string().optional(), "searchKeywordTo": z.string().optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseMenuCreateDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseMenuCreateDtoResponseSchema,

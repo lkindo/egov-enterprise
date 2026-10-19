@@ -36,11 +36,11 @@ export const ApiResponsePageResponsePopupDtoSchema = /*#__PURE__*/ (() => z.obje
 export type ApiResponsePageResponsePopupDto = z.infer<typeof ApiResponsePageResponsePopupDtoSchema>;
 
 export const PageResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PopupDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PopupDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponsePopupDto = z.infer<typeof PageResponsePopupDtoSchema>;
 
@@ -110,19 +110,19 @@ export const ApiResponsePageResponsePopupDtoResponseSchema = /*#__PURE__*/ (() =
 }))();
 
 export const PageResponsePopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PopupDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => PopupDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponsePopupDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => PopupDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => PopupDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponsePopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({

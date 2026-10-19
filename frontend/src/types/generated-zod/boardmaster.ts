@@ -66,11 +66,11 @@ export const BoardMasterSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
 export type BoardMasterSummaryResponse = z.infer<typeof BoardMasterSummaryResponseSchema>;
 
 export const PageResponseBoardMasterSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardMasterSummaryResponseSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardMasterSummaryResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseBoardMasterSummaryResponse = z.infer<typeof PageResponseBoardMasterSummaryResponseSchema>;
 
@@ -219,19 +219,19 @@ export const BoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.o
 }))();
 
 export const PageResponseBoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardMasterSummaryResponseRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => BoardMasterSummaryResponseRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseBoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => BoardMasterSummaryResponseResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => BoardMasterSummaryResponseResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseBoardMasterDetailResponseRequestSchema = /*#__PURE__*/ (() => z.object({

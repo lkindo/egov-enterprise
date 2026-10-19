@@ -36,11 +36,11 @@ export const ApiResponsePageResponseDeptManageDtoSchema = /*#__PURE__*/ (() => z
 export type ApiResponsePageResponseDeptManageDto = z.infer<typeof ApiResponsePageResponseDeptManageDtoSchema>;
 
 export const PageResponseDeptManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptManageDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptManageDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseDeptManageDto = z.infer<typeof PageResponseDeptManageDtoSchema>;
 
@@ -119,19 +119,19 @@ export const ApiResponsePageResponseDeptManageDtoResponseSchema = /*#__PURE__*/ 
 }))();
 
 export const PageResponseDeptManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptManageDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => DeptManageDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseDeptManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => DeptManageDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => DeptManageDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseDeptManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

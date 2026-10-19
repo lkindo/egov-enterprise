@@ -47,11 +47,11 @@ export const ApiResponsePageResponseAddressBookDtoSchema = /*#__PURE__*/ (() => 
 export type ApiResponsePageResponseAddressBookDto = z.infer<typeof ApiResponsePageResponseAddressBookDtoSchema>;
 
 export const PageResponseAddressBookDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseAddressBookDto = z.infer<typeof PageResponseAddressBookDtoSchema>;
 
@@ -85,11 +85,11 @@ export const ApiResponsePageResponseAddressBookUserSelectionDtoSchema = /*#__PUR
 export type ApiResponsePageResponseAddressBookUserSelectionDto = z.infer<typeof ApiResponsePageResponseAddressBookUserSelectionDtoSchema>;
 
 export const PageResponseAddressBookUserSelectionDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserSelectionDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookUserSelectionDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseAddressBookUserSelectionDto = z.infer<typeof PageResponseAddressBookUserSelectionDtoSchema>;
 
@@ -167,19 +167,19 @@ export const ApiResponsePageResponseAddressBookDtoResponseSchema = /*#__PURE__*/
 }))();
 
 export const PageResponseAddressBookDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseAddressBookDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => AddressBookDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseAddressBookDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -235,17 +235,17 @@ export const ApiResponsePageResponseAddressBookUserSelectionDtoResponseSchema = 
 }))();
 
 export const PageResponseAddressBookUserSelectionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserSelectionDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AddressBookUserSelectionDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseAddressBookUserSelectionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AddressBookUserSelectionDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => AddressBookUserSelectionDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

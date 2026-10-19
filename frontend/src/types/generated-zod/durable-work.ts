@@ -6,48 +6,25 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
-export const ApiResponsePageStatusSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseStatusSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageStatusSchema).optional(),
+  data: z.lazy(() => PageResponseStatusSchema).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponsePageStatus = z.infer<typeof ApiResponsePageStatusSchema>;
+export type ApiResponsePageResponseStatus = z.infer<typeof ApiResponsePageResponseStatusSchema>;
 
-export const PageStatusSchema = /*#__PURE__*/ (() => z.object({
-  totalPages: z.number().int().optional(),
-  totalElements: z.number().int().optional(),
-  size: z.number().int().optional(),
-  content: z.array(z.lazy(() => StatusSchema)).optional(),
-  number: z.number().int().optional(),
-  sort: z.lazy(() => SortObjectSchema).optional(),
-  pageable: z.lazy(() => PageableObjectSchema).optional(),
-  numberOfElements: z.number().int().optional(),
-  first: z.boolean().optional(),
-  last: z.boolean().optional(),
-  empty: z.boolean().optional(),
+export const PageResponseStatusSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => StatusSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
-export type PageStatus = z.infer<typeof PageStatusSchema>;
-
-export const PageableObjectSchema = /*#__PURE__*/ (() => z.object({
-  offset: z.number().int().optional(),
-  paged: z.boolean().optional(),
-  pageNumber: z.number().int().optional(),
-  pageSize: z.number().int().optional(),
-  sort: z.lazy(() => SortObjectSchema).optional(),
-  unpaged: z.boolean().optional(),
-}))();
-export type PageableObject = z.infer<typeof PageableObjectSchema>;
-
-export const SortObjectSchema = /*#__PURE__*/ (() => z.object({
-  empty: z.boolean().optional(),
-  sorted: z.boolean().optional(),
-  unsorted: z.boolean().optional(),
-}))();
-export type SortObject = z.infer<typeof SortObjectSchema>;
+export type PageResponseStatus = z.infer<typeof PageResponseStatusSchema>;
 
 export const StatusSchema = /*#__PURE__*/ (() => z.object({
   id: z.string().optional(),
@@ -60,82 +37,40 @@ export const StatusSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type Status = z.infer<typeof StatusSchema>;
 
-export const ApiResponsePageStatusRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseStatusRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.lazy(() => PageStatusRequestSchema.strict()).optional(),
+  data: z.lazy(() => PageResponseStatusRequestSchema.strict()).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponsePageStatusResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponsePageResponseStatusResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.lazy(() => PageStatusResponseSchema).optional().nullable(),
+  data: z.lazy(() => PageResponseStatusResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const PageStatusRequestSchema = /*#__PURE__*/ (() => z.object({
-  totalPages: z.number().int().optional(),
-  totalElements: z.number().int().optional(),
-  size: z.number().int().optional(),
-  content: z.array(z.lazy(() => StatusRequestSchema.strict())).optional(),
-  number: z.number().int().optional(),
-  sort: z.lazy(() => SortObjectRequestSchema.strict()).optional(),
-  pageable: z.lazy(() => PageableObjectRequestSchema.strict()).optional(),
-  numberOfElements: z.number().int().optional(),
-  first: z.boolean().optional(),
-  last: z.boolean().optional(),
-  empty: z.boolean().optional(),
+export const PageResponseStatusRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => StatusRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
-export const PageStatusResponseSchema = /*#__PURE__*/ (() => z.object({
-  totalPages: z.number().int().optional().nullable(),
-  totalElements: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  content: z.array(z.lazy(() => StatusResponseSchema)).optional().nullable(),
-  number: z.number().int().optional().nullable(),
-  sort: z.lazy(() => SortObjectResponseSchema).optional().nullable(),
-  pageable: z.lazy(() => PageableObjectResponseSchema).optional().nullable(),
-  numberOfElements: z.number().int().optional().nullable(),
-  first: z.boolean().optional().nullable(),
-  last: z.boolean().optional().nullable(),
-  empty: z.boolean().optional().nullable(),
-}))();
-
-export const PageableObjectRequestSchema = /*#__PURE__*/ (() => z.object({
-  offset: z.number().int().optional(),
-  paged: z.boolean().optional(),
-  pageNumber: z.number().int().optional(),
-  pageSize: z.number().int().optional(),
-  sort: z.lazy(() => SortObjectRequestSchema.strict()).optional(),
-  unpaged: z.boolean().optional(),
-}))();
-
-export const PageableObjectResponseSchema = /*#__PURE__*/ (() => z.object({
-  offset: z.number().int().optional().nullable(),
-  paged: z.boolean().optional().nullable(),
-  pageNumber: z.number().int().optional().nullable(),
-  pageSize: z.number().int().optional().nullable(),
-  sort: z.lazy(() => SortObjectResponseSchema).optional().nullable(),
-  unpaged: z.boolean().optional().nullable(),
-}))();
-
-export const SortObjectRequestSchema = /*#__PURE__*/ (() => z.object({
-  empty: z.boolean().optional(),
-  sorted: z.boolean().optional(),
-  unsorted: z.boolean().optional(),
-}))();
-
-export const SortObjectResponseSchema = /*#__PURE__*/ (() => z.object({
-  empty: z.boolean().optional().nullable(),
-  sorted: z.boolean().optional().nullable(),
-  unsorted: z.boolean().optional().nullable(),
+export const PageResponseStatusResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => StatusResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const StatusRequestSchema = /*#__PURE__*/ (() => z.object({

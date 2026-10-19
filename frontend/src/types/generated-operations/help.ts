@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseHpcmDtoResponseSchema, ApiResponseOnlineManualDtoResponseSchema, ApiResponsePageResponseHpcmDtoResponseSchema, ApiResponsePageResponseOnlineManualDtoResponseSchema, HpcmDtoRequestSchema, HpcmDtoResponseSchema, OnlineManualDtoRequestSchema, OnlineManualDtoResponseSchema, PageResponseHpcmDtoResponseSchema, PageResponseOnlineManualDtoResponseSchema } from '../generated-zod/help';
+import { ApiResponseHpcmDtoResponseSchema, ApiResponseOnlineManualDtoResponseSchema, ApiResponsePageResponseHpcmDtoResponseSchema, ApiResponsePageResponseOnlineManualDtoResponseSchema, ApiResponsePageResponsePublicHpcmDtoResponseSchema, ApiResponsePageResponsePublicOnlineManualDtoResponseSchema, HpcmDtoRequestSchema, HpcmDtoResponseSchema, OnlineManualDtoRequestSchema, OnlineManualDtoResponseSchema, PageResponseHpcmDtoResponseSchema, PageResponseOnlineManualDtoResponseSchema, PageResponsePublicHpcmDtoResponseSchema, PageResponsePublicOnlineManualDtoResponseSchema } from '../generated-zod/help';
 
 export const getManualOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -132,7 +132,7 @@ export const getManualsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseOnlineManualDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseOnlineManualDtoResponseSchema,
@@ -170,7 +170,7 @@ export const getHpcmListOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(0).optional(), "size": z.number().int().min(1).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseHpcmDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseHpcmDtoResponseSchema,
@@ -193,6 +193,44 @@ export const insertHpcmOperation = /*#__PURE__*/ (() => {
   requestSchema: HpcmDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getPublicManualsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getPublicManuals",
+  method: "get",
+  path: "/api/v1/help/public-manuals",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponsePublicOnlineManualDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponsePublicOnlineManualDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getPublicHpcmListOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getPublicHpcmList",
+  method: "get",
+  path: "/api/v1/help/public-hpcm",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponsePublicHpcmDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponsePublicHpcmDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

@@ -33,11 +33,11 @@ export const ApiResponsePageResponseLoginPolicyDtoSchema = /*#__PURE__*/ (() => 
 export type ApiResponsePageResponseLoginPolicyDto = z.infer<typeof ApiResponsePageResponseLoginPolicyDtoSchema>;
 
 export const PageResponseLoginPolicyDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginPolicyDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginPolicyDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseLoginPolicyDto = z.infer<typeof PageResponseLoginPolicyDtoSchema>;
 
@@ -101,19 +101,19 @@ export const ApiResponsePageResponseLoginPolicyDtoResponseSchema = /*#__PURE__*/
 }))();
 
 export const PageResponseLoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginPolicyDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => LoginPolicyDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseLoginPolicyDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => LoginPolicyDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => LoginPolicyDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseLoginPolicyDtoRequestSchema = /*#__PURE__*/ (() => z.object({

@@ -26,11 +26,11 @@ export const AuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
 export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 
 export const PageResponseAuthorManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorManageDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuthorManageDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseAuthorManageDto = z.infer<typeof PageResponseAuthorManageDtoSchema>;
 
@@ -80,19 +80,19 @@ export const AuthorManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const PageResponseAuthorManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorManageDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => AuthorManageDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseAuthorManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => AuthorManageDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => AuthorManageDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const ApiResponseAuthorManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({

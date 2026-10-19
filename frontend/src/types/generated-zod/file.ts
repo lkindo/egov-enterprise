@@ -20,8 +20,6 @@ export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema
 export const FileDtoSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional(),
   fileSn: z.number().int().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
   orignlFileNm: z.string().optional(),
   fileExtsn: z.string().optional(),
   fileMg: z.number().int().optional(),
@@ -53,8 +51,6 @@ export const ApiResponseListFileDtoResponseSchema = /*#__PURE__*/ (() => z.objec
 export const FileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional(),
   fileSn: z.number().int().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
   orignlFileNm: z.string().optional(),
   fileExtsn: z.string().optional(),
   fileMg: z.number().int().optional(),
@@ -65,8 +61,6 @@ export const FileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
 export const FileDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   atchFileSn: z.number().int().optional().nullable(),
   fileSn: z.number().int().optional().nullable(),
-  fileStreCours: z.string().optional().nullable(),
-  streFileNm: z.string().optional().nullable(),
   orignlFileNm: z.string().optional().nullable(),
   fileExtsn: z.string().optional().nullable(),
   fileMg: z.number().int().optional().nullable(),

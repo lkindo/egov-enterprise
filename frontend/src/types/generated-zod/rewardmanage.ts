@@ -45,11 +45,11 @@ export const ApiResponsePageResponseRewardManageDtoSchema = /*#__PURE__*/ (() =>
 export type ApiResponsePageResponseRewardManageDto = z.infer<typeof ApiResponsePageResponseRewardManageDtoSchema>;
 
 export const PageResponseRewardManageDtoSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RewardManageDtoSchema)).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => RewardManageDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 export type PageResponseRewardManageDto = z.infer<typeof PageResponseRewardManageDtoSchema>;
 
@@ -120,17 +120,17 @@ export const ApiResponsePageResponseRewardManageDtoResponseSchema = /*#__PURE__*
 }))();
 
 export const PageResponseRewardManageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RewardManageDtoRequestSchema.strict())).optional(),
-  total: z.number().int().optional(),
-  page: z.number().int().optional(),
-  size: z.number().int().optional(),
-  totalPage: z.number().int().optional(),
+  list: z.array(z.lazy(() => RewardManageDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
 
 export const PageResponseRewardManageDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  list: z.array(z.lazy(() => RewardManageDtoResponseSchema)).optional().nullable(),
-  total: z.number().int().optional().nullable(),
-  page: z.number().int().optional().nullable(),
-  size: z.number().int().optional().nullable(),
-  totalPage: z.number().int().optional().nullable(),
+  list: z.array(z.lazy(() => RewardManageDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();
