@@ -39,8 +39,12 @@ class JdbcAttachmentReferenceResolverTest {
     private static final String LOGIN_ID = "webmaster";
     private static final String ESNTL_ID = "USR_0000000000000001";
 
-    private record SourceCounts(long refCnt, long sharedCnt, long ownerCnt) {
+    private record SourceCounts(long refCnt, long sharedCnt, long ownerCnt, long readerCnt) {
         private static final SourceCounts NONE = new SourceCounts(0, 0, 0);
+
+        SourceCounts(long refCnt, long sharedCnt, long ownerCnt) {
+            this(refCnt, sharedCnt, ownerCnt, 0);
+        }
     }
 
     /** 조립된 SQL 과 파라미터를 포착하면서, 지정한 카운트를 돌려주는 목 JdbcTemplate. */
@@ -85,6 +89,7 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getLong("ref_cnt")).thenReturn(counts.refCnt());
                         when(rs.getLong("shared_cnt")).thenReturn(counts.sharedCnt());
                         when(rs.getLong("owner_cnt")).thenReturn(counts.ownerCnt());
+                        when(rs.getLong("reader_cnt")).thenReturn(counts.readerCnt());
                         return mapper.mapRow(rs, 1);
                     });
         }
@@ -249,6 +254,50 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(grants.ownerGrant()).isTrue();
         assertThat(grants.personalReference()).isTrue();
         assertThat(grants.personalOwnerGrant()).isTrue();
+    }
+
+    @Test
+    @DisplayName("🔒 메모보고 수신자 술어는 esntlId 로 소유 술어 뒤·atchFileSn 앞에 바인딩되고, 열람 전용 근거로만 집계된다")
+    void memoReportRecipientIsReadOnlyParty() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> source == AttachmentSource.MEMO_REPORT
+                ? new SourceCounts(1, 0, 0, 1)
+                : SourceCounts.NONE);
+
+        AttachmentReferenceResolver.Grants grants =
+                jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(jdbc.sqlFor(AttachmentSource.MEMO_REPORT))
+                .contains("SUM(CASE WHEN (rptr_id = ?) THEN 1 ELSE 0 END) AS reader_cnt");
+        assertThat(jdbc.paramsFor(AttachmentSource.MEMO_REPORT))
+                .as("수신자 판정이 loginId 나 atchFileSn 으로 바인딩되면 남의 메모 첨부가 열리거나 수신자가 잠긴다")
+                .containsExactly(LOGIN_ID, ESNTL_ID, ATCH_FILE_SN);
+        assertThat(grants.personalReference()).isTrue();
+        assertThat(grants.personalReaderGrant()).as("메모 수신자에게 열람 근거가 서지 않았다").isTrue();
+        assertThat(grants.personalOwnerGrant()).as("수신자가 소유자(삭제 근거)로 승격됐다").isFalse();
+        assertThat(grants.ownerGrant()).isFalse();
+    }
+
+    @Test
+    @DisplayName("열람 전용 당사자 술어는 메모보고에만 있다 — 다른 참조원의 SELECT 절은 항상 거짓이고 바인딩을 늘리지 않는다")
+    void readerPredicateIsOnlyOnMemoReport() {
+        assertThat(java.util.Arrays.stream(AttachmentSource.values())
+                .filter(source -> source.readerByEsntlIdPredicate() != null))
+                .containsExactly(AttachmentSource.MEMO_REPORT);
+        CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+        assertThat(jdbc.sqlFor(AttachmentSource.WORK_REPORT))
+                .contains("SUM(CASE WHEN 1 = 0 THEN 1 ELSE 0 END) AS reader_cnt");
+        assertThat(jdbc.paramsFor(AttachmentSource.WORK_REPORT)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
+    }
+
+    @Test
+    @DisplayName("esntlId 가 없는 주체에는 수신자 술어를 조립하지 않는다 — 바인딩 개수 불일치를 만들지 않는다")
+    void memoRecipientPredicateNeedsEsntlId() {
+        CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, null);
+        assertThat(jdbc.sqlFor(AttachmentSource.MEMO_REPORT))
+                .contains("SUM(CASE WHEN 1 = 0 THEN 1 ELSE 0 END) AS reader_cnt");
+        assertThat(jdbc.paramsFor(AttachmentSource.MEMO_REPORT)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
     }
 
     @Test

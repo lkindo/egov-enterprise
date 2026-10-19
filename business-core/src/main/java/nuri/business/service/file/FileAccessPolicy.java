@@ -21,7 +21,8 @@ import org.springframework.stereotype.Component;
  *       이게 없으면 "파일 올리고 → 미리보기 → 글 저장" 흐름이 자기 파일에 대해 403 이 된다.</li>
  *   <li><b>참조원 조회 실패</b> — 하나라도 판정할 수 없으면 다른 소유·공유 근거와 무관하게 불허.</li>
  *   <li><b>개인 소유 근거</b> — 개인 귀속(PERSONAL) 참조가 있으면 그 참조의 소유자·당사자만 허용.
- *       같은 파일을 가리키는 공유 참조의 소유자는 개인 첨부를 열 수 없다.</li>
+ *       같은 파일을 가리키는 공유 참조의 소유자는 개인 첨부를 열 수 없다. 열람 전용 당사자(메모보고 수신자)도 열람은
+ *       하지만 삭제 근거는 아니다({@link #assertDeletable}).</li>
  *   <li><b>비개인 소유·공유 근거</b> — 개인 참조가 없을 때 참조 행 소유자 또는 공유 콘텐츠 독자 허용.</li>
  *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용. <b>단 개인 귀속(PERSONAL) 참조원이 하나라도 있으면 불허</b> —
  *       쪽지·상벌·업무보고 첨부를 관리자가 열람하는 것은 표준화가 아니라 프라이버시 회귀다(AGENTS.md Evidence guardrails H3).</li>
@@ -29,9 +30,11 @@ import org.springframework.stereotype.Component;
  * </ol>
  *
  * <p>[의도적으로 보수적인 지점] 개인 귀속 도메인의 소유 축은 전 컬럼 실측이 끝난
- * {@code frst_rgtr_id}(loginId) 와 쪽지의 발신/수신(esntlId)만 채택했다. {@code user_id}·{@code rptr_id}·
+ * {@code frst_rgtr_id}(loginId) 와 쪽지의 발신/수신(esntlId)만 채택했다. {@code user_id}·
  * {@code rwrd_user_id} 등 축이 미확정인 컬럼은 <b>근거로 쓰지 않는다</b> — 축을 잘못 고르면 뚫리거나
  * 잠기는데, 잠김은 눈에 보이고 뚫림은 보이지 않는다. 잔여는 운영 문서에 이월한다.
+ * [2026-10-19] 메모보고 수신자 {@code rptr_id} 는 축이 정해졌다 — 등록 경로가 활성 사용자의 esntlId 로만 받고
+ * ({@code MemoReportService.createMemoReport}), 메모 열람 판정도 같은 축으로 비교한다. 그래서 열람 전용 당사자로 채택했다.
  */
 @Slf4j
 @Component
@@ -74,8 +77,9 @@ public class FileAccessPolicy {
 
         // 3·4. 개인 참조가 있으면 그 개인 참조의 당사자만 허용한다.
         // 공유 참조의 소유 근거(ownerGrant)가 섞여도 개인 파일을 공개하는 근거가 될 수 없다.
+        // 열람 전용 당사자(메모보고 수신자)도 여기서 연다 — 삭제 판정(assertDeletable)은 이 근거를 보지 않는다.
         if (grants.personalReference()) {
-            if (grants.personalOwnerGrant()) {
+            if (grants.personalOwnerGrant() || grants.personalReaderGrant()) {
                 return;
             }
         } else if (grants.ownerGrant() || (grants.sharedGrant() && !grants.personalReference())) {

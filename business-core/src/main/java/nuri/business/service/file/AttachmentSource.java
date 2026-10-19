@@ -79,8 +79,16 @@ public enum AttachmentSource {
     /** 업무보고. 개인 귀속. */
     WORK_REPORT("tb_rpt_info", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),
 
-    /** 메모보고. 개인 귀속. */
-    MEMO_REPORT("tb_memo_rpt_info", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),
+    /**
+     * 메모보고. 개인 귀속 — 작성자(소유자)와 보고를 받은 수신자만 연다.
+     *
+     * <p>[2026-10-19] 수신자({@code rptr_id}, esntlId 축 — {@code MemoReportService.createMemoReport} 가 활성 사용자의
+     * esntlId 로 검증해 저장한다)는 메모 본문을 읽을 수 있는데 그 첨부는 403 이었다. 수신자를 <b>열람 전용 당사자</b>로 둔다 —
+     * 메모를 고치거나 지울 수 없는 수신자에게 첨부 삭제 근거를 주지 않는다(H3). 관리자 우회 차단(PERSONAL)은 그대로다.
+     * 연결 술어는 기본값과 같은 문자열이다(enum 상수 인자에서는 아래 상수를 아직 쓸 수 없다).
+     */
+    MEMO_REPORT("tb_memo_rpt_info", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null,
+            "atch_file_sn = ?", "rptr_id = ?"),
 
     /** 상벌 관리. 인사 민감 정보. */
     REWARD("tb_rward_manage", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),
@@ -126,21 +134,34 @@ public enum AttachmentSource {
     private final String ownerByLoginIdPredicate;
     private final String ownerByEsntlIdPredicate;
     private final String linkagePredicate;
+    private final String readerByEsntlIdPredicate;
 
     AttachmentSource(String table, Sensitivity sensitivity, String sharedPredicate,
             String ownerByLoginIdPredicate, String ownerByEsntlIdPredicate) {
         this(table, sensitivity, sharedPredicate, ownerByLoginIdPredicate, ownerByEsntlIdPredicate,
-                DEFAULT_LINKAGE);
+                DEFAULT_LINKAGE, null);
     }
 
     AttachmentSource(String table, Sensitivity sensitivity, String sharedPredicate,
             String ownerByLoginIdPredicate, String ownerByEsntlIdPredicate, String linkagePredicate) {
+        this(table, sensitivity, sharedPredicate, ownerByLoginIdPredicate, ownerByEsntlIdPredicate,
+                linkagePredicate, null);
+    }
+
+    AttachmentSource(String table, Sensitivity sensitivity, String sharedPredicate,
+            String ownerByLoginIdPredicate, String ownerByEsntlIdPredicate, String linkagePredicate,
+            String readerByEsntlIdPredicate) {
+        if (readerByEsntlIdPredicate != null && sensitivity != Sensitivity.PERSONAL) {
+            // 공유 참조원은 sharedPredicate 가 열람을 맡는다. 열람 전용 당사자는 개인 귀속에서만 뜻이 있다.
+            throw new IllegalArgumentException("열람 전용 당사자 술어는 PERSONAL 참조원에만 둔다: " + table);
+        }
         this.table = table;
         this.sensitivity = sensitivity;
         this.sharedPredicate = sharedPredicate;
         this.ownerByLoginIdPredicate = ownerByLoginIdPredicate;
         this.ownerByEsntlIdPredicate = ownerByEsntlIdPredicate;
         this.linkagePredicate = linkagePredicate;
+        this.readerByEsntlIdPredicate = readerByEsntlIdPredicate;
     }
 
     /** 이 참조원이 첨부와 이어지는 방식(WHERE 절). {@code ?} 자리마다 atchFileSn 가 바인딩된다. */
@@ -171,6 +192,14 @@ public enum AttachmentSource {
 
     public String ownerByEsntlIdPredicate() {
         return ownerByEsntlIdPredicate;
+    }
+
+    /**
+     * 개인 귀속 참조 행을 <b>열람만</b> 할 수 있는 당사자(esntlId 축) — 메모보고 수신자 등. 없으면 {@code null}.
+     * 소유 술어와 달리 삭제 근거가 아니다({@code FileAccessPolicy#assertDeletable} 는 보지 않는다).
+     */
+    public String readerByEsntlIdPredicate() {
+        return readerByEsntlIdPredicate;
     }
 
     /** 이 저장소가 첨부 참조원으로 인정하는 물리 테이블 전체. 린터의 대조 기준이다. */

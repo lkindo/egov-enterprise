@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -66,6 +67,40 @@ class FileAccessPolicyTest {
         assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, true, true, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("🔒 개인 귀속 참조의 열람 전용 당사자(메모보고 수신자)는 열람하지만 삭제하지 못한다")
+    void personalReaderCanReadButNotDelete() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+        AttachmentReferenceResolver.Grants recipient =
+                new AttachmentReferenceResolver.Grants(false, false, true, false, false, true);
+
+        assertThatCode(() -> policy(recipient).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .as("메모보고 수신자가 받은 보고의 첨부를 열지 못한다")
+                .doesNotThrowAnyException();
+        assertThatExceptionOfType(BusinessException.class)
+                .as("열람 전용 당사자가 남의 메모 첨부를 지웠다")
+                .isThrownBy(() -> policy(recipient).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("🔒 수신자도 작성자도 아닌 사람은 메모보고 첨부를 열지 못한다 — 관리자 우회도 없다(PERSONAL)")
+    void neitherRecipientNorAuthorIsDenied() {
+        AttachmentReferenceResolver.Grants stranger =
+                new AttachmentReferenceResolver.Grants(false, false, true, false, false, false);
+
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+        assertThatExceptionOfType(BusinessException.class)
+                .as("수신자도 작성자도 아닌 사람이 메모 첨부를 열었다")
+                .isThrownBy(() -> policy(stranger).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        authenticate("admin", "USR_ADMIN_0000000001", "ROLE_ADMIN");
+        assertThatExceptionOfType(BusinessException.class)
+                .as("관리자가 개인 귀속 메모 첨부를 우회해 열었다")
+                .isThrownBy(() -> policy(stranger).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
 
     @Test

@@ -3905,7 +3905,7 @@
         "SecurityUtil.getCurrentEsntlId()",
         "if (grants.resolutionFailed())",
         "if (grants.personalReference())",
-        "if (grants.personalOwnerGrant())",
+        "if (grants.personalOwnerGrant() || grants.personalReaderGrant())",
         "grants.ownerGrant() || (grants.sharedGrant() && !grants.personalReference())",
         "admin && !grants.personalReference()",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
@@ -3932,7 +3932,8 @@
       ],
       "forbiddenTokens": [
         "grants.sharedGrant()",
-        "if (grants.ownerGrant())"
+        "if (grants.ownerGrant())",
+        "grants.personalReaderGrant()"
       ]
     },
     {
