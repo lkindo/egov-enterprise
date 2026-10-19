@@ -85,14 +85,21 @@ function assertE2eImageBuild(content) {
     'Compose must consume the image that Buildx loaded rather than rebuild it');
 }
 
+// 제품 PIT 범위 수는 원장(gates.json matrixScopes 의 mutation-scope 소유 항목)에서 센다. 범위 수를 못 박는 곳은
+// governance-gates-contract.test.mjs 한 곳이고, 원장과 ci.yml 의 양방향 대조는 governance-gates-contract.mjs 가 한다.
+const PRODUCT_PIT_SCOPE_COUNT = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'governance', 'gates.json'), 'utf8'))
+  .gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE')
+  .selector.matrixScopes.filter(({ job }) => job === 'mutation-scope').length;
+
 function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
   assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
     'product PIT must reserve custom admission capacity with exactly four concurrent batches');
-  // [2026-10-19 DEC-OPS-366] 설문·참여·사용자/조직 범위 셋을 더해 13개다.
-  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 13, 'all thirteen product PIT batches must remain');
+  assert.ok(PRODUCT_PIT_SCOPE_COUNT > 0, 'the registry declares product PIT batches');
+  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, PRODUCT_PIT_SCOPE_COUNT,
+    'every product PIT batch declared in the registry must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
 }
 
@@ -124,21 +131,25 @@ function assertRunnerAdmissionControl(content) {
     'reusable-custom must enter the idle runners right after classification');
 }
 
+// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 네 runner 에 들어가야 한다.
+const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
+  'business-app-board',
+  'business-core-file',
+  'business-app-workflow',
+  'business-app-delivery-operation',
+  'business-core-auth',
+  'business-core-code-user-common',
+  // [2026-10-19 DEC-OPS-366] 새 범위 셋 — 로컬 실측(설문 380·참여 282·사용자/조직 237 변이)으로 foundation 범위 앞에 둔다.
+  'business-app-survey',
+  'business-app-participation',
+  'business-core-user-org',
+]);
+
 function assertProductMutationLptOrder(content) {
   const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
   const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
-  assert.deepEqual(scopes.slice(0, 9), [
-    'business-app-board',
-    'business-core-file',
-    'business-app-workflow',
-    'business-app-delivery-operation',
-    'business-core-auth',
-    'business-core-code-user-common',
-    // [2026-10-19 DEC-OPS-366] 새 범위 셋 — 로컬 실측(설문 380·참여 282·사용자/조직 237 변이)으로 foundation 범위 앞에 둔다.
-    'business-app-survey',
-    'business-app-participation',
-    'business-core-user-org',
-  ], 'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
+  assert.deepEqual(scopes.slice(0, PRODUCT_PIT_LONGEST_FIRST.length), PRODUCT_PIT_LONGEST_FIRST,
+    'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
 }
 
 function assertMigrationMutationLptOrder(content) {
@@ -555,7 +566,7 @@ test('E2E and PIT sources start after classification without waiting for indepen
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
-  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all thirteen product PIT batches/);
+  assert.throws(() => assertProductMutationConcurrency(removedBatch), /every product PIT batch declared in the registry/);
   const serializedMigration = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
     block => block.replace('    needs: [change-scope]', '    needs: [change-scope, mutation-scope]'));
   assert.throws(() => assertProductMutationConcurrency(serializedMigration));

@@ -949,7 +949,7 @@ test('PIT remains bound to the strict source matrix and stable aggregate context
   assert.match(validate(registry).join('\n'), /ghost required-check aggregate selector.*mutation-test/i);
 });
 
-test('PIT registry and CI keep the same exact twenty-one-scope matrix catalog', () => {
+test('PIT registry and CI keep the same exact matrix catalog, and its size is pinned only here', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
   // 스코프는 두 잡에 나뉘어 산다(DEC-OPS-104) — union 이 원장과 정확히 같아야 한다.
@@ -959,7 +959,8 @@ test('PIT registry and CI keep the same exact twenty-one-scope matrix catalog', 
 
   assert.deepEqual(product.errors, []);
   assert.deepEqual(migration.errors, []);
-  assert.equal(pit.selector.matrixScopes.length, 21);
+  // PIT 범위 수의 유일한 확인 지점이다. 범위를 더하거나 걷는 변경은 이 수와 원장·ci.yml 을 함께 고친다.
+  assert.equal(pit.selector.matrixScopes.length, 21, 'PIT matrix scope count changed — update this pin with the registry and ci.yml');
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
@@ -1037,14 +1038,14 @@ test('a PIT scope declared under the wrong job is rejected', () => {
   assert.match(validate(registry).join('\n'), /is declared under .mutation-scope. but runs in/i);
 });
 
-test('deleting a PIT scope is rejected in both the fixed catalog size and CI comparison', () => {
+test('deleting a PIT scope is rejected by the CI comparison, and an empty catalog is rejected outright', () => {
   const registry = clone(loadGovernanceRegistry(registryPath));
   const pit = registry.gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE');
   const [removed] = pit.selector.matrixScopes.splice(3, 1);
-  const errors = validate(registry).join('\n');
 
-  assert.match(errors, /PIT matrix catalog must contain exactly 21 scopes/i);
-  assert.match(errors, new RegExp(`unregistered CI mutation matrix scope '${removed.scope}'`, 'i'));
+  assert.match(validate(registry).join('\n'), new RegExp(`unregistered CI mutation matrix scope '${removed.scope}'`, 'i'));
+  pit.selector.matrixScopes = [];
+  assert.match(validate(registry).join('\n'), /PIT matrix catalog must be a non-empty scope list/i);
 });
 
 test('duplicating a PIT scope is rejected instead of silently overwriting it', () => {

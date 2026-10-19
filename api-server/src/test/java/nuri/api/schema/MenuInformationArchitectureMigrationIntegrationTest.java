@@ -1,6 +1,9 @@
 package nuri.api.schema;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -12,9 +15,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 /** Exact PostgreSQL menu/NAV migration, including deliberate failures after persistent writes begin. */
 @Tag("schema-validation")
@@ -87,10 +93,11 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
         flyway(null).migrate();
         try (Connection connection=openConnection(); Statement statement=connection.createStatement()) {
             assertThat(number(statement,"SELECT count(*) FROM flyway_schema_history WHERE version='2.100' AND success")).isEqualTo(1);
-            // 최신까지 올리면 V2_125 가 V2_88 이 끈 마이페이지 관리 메뉴(2030100) 한 행을 지운다(DEC-OPS-229). 활성 수는 그대로다.
-            // [2026-10-19 DEC-OPS-368] V2_134 가 사용 중인 보고서 통계 메뉴(9040105)를 지워 전체·활성이 하나씩 준다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(77-2);
-            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(70);
+            // 메뉴·메뉴 배정 수의 확인 지점은 원본 마이그레이션 적용 결과를 담은 메뉴 스냅숏(config/project-composer-menus.json)이다.
+            //   이 시험은 V2_99 → Contract → 최신 경로의 결과가 그 스냅숏과 같은지 본다. 퇴역한 행은 아래 식별자별 단언이 본다.
+            MenuSnapshot menus=MenuSnapshot.read();
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info")).isEqualTo(menus.total());
+            assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(menus.active());
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9040105")).isZero();
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE up_menu_sn IS NULL")).isEqualTo(4);
             assertThat(number(statement,"WITH RECURSIVE tree AS (SELECT menu_sn,1 AS depth FROM tb_menu_info WHERE up_menu_sn IS NULL "
@@ -110,9 +117,12 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                     + "AND modern_route='/admin/help?tab=COMMUNITY'")).isEqualTo(1);
             assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE menu_sn=9020130 "
                     + "AND modern_route='/admin/system/policies'")).isEqualTo(1);
-            // V2_134 가 ROLE_ADMIN 의 보고서 통계 메뉴 배정 한 건을 지운다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'")).isEqualTo(77-2);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_USER'")).isEqualTo(25-6);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_ADMIN'"))
+                    .isEqualTo(menus.navigation("ROLE_ADMIN"));
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_cd='ROLE_USER'"))
+                    .isEqualTo(menus.navigation("ROLE_USER"));
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION'"))
+                    .isEqualTo(menus.navigation(null));
             // 최신까지 올리면 V2_104 가 퇴역한 NETWORK_* 기능 권한 8행을 지우고 REMOVE 이력 8행을 남긴다(DEC-OPS-129).
             //   V2_120 이 ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 5행과 비게 된 관리 센터 1행을 지우고 REMOVE 이력 6행을 남긴다.
             //   V2_124 가 퇴역한 PROGRAM_* 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을 지우고 REMOVE 이력 8행을 남긴다.
@@ -167,5 +177,39 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
 
     private static long number(Statement statement,String sql) throws SQLException {
         try (var result=statement.executeQuery(sql)) { result.next(); return result.getLong(1); }
+    }
+
+    /** 메뉴 스냅숏(scripts/project-composer-menus-refresh.mjs 가 원본 마이그레이션 적용 결과로 쓴다)의 수. */
+    private record MenuSnapshot(JsonNode root) {
+        private static final String PATH="config/project-composer-menus.json";
+
+        static MenuSnapshot read() throws Exception {
+            Path current=Paths.get("").toAbsolutePath();
+            for (int depth=0; depth<6 && current!=null; depth++) {
+                Path candidate=current.resolve(PATH);
+                if (Files.isRegularFile(candidate)) {
+                    MenuSnapshot snapshot=new MenuSnapshot(JsonMapper.builder().build().readTree(candidate.toFile()));
+                    assertThat(snapshot.total()).as(PATH+" 의 메뉴가 비었습니다").isPositive();
+                    return snapshot;
+                }
+                current=current.getParent();
+            }
+            return fail(PATH+" 를 찾을 수 없습니다(workingDir="+Paths.get("").toAbsolutePath()+") — 조용한 skip 은 false-green 입니다.");
+        }
+
+        long total() { return root.path("menus").size(); }
+
+        long active() {
+            long count=0;
+            for (JsonNode menu:root.path("menus")) if ("Y".equals(menu.path("use_yn").asString())) count++;
+            return count;
+        }
+
+        /** group 이 null 이면 모든 그룹의 메뉴 배정 수다. */
+        long navigation(String group) {
+            long count=0;
+            for (JsonNode row:root.path("navigation")) if (group==null || group.equals(row.path("authrt_cd").asString())) count++;
+            return count;
+        }
     }
 }

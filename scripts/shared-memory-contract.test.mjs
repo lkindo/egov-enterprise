@@ -238,10 +238,14 @@ function assertE2eShardContractMatches(context, requiredChecksText) {
  * 'N개 라벨' 어순이다. 굵게 표시를 수의 안팎 어디에 달아도, 라벨을 띄어 쓰거나 붙여 써도, '→' 를 '->' 로 써도, 대소문자가 달라도 같다.
  * 라벨 앞뒤가 영문·경로 문자면 다른 낱말이다(docs/04-operations, operation-consumer-census). 라벨에서 떨어진 문장 속 서술
  * ('… 역전해 0이 됐다')은 보지 않는다 — 그 몫은 행이 수를 쓰지 않는다는 규약이 지킨다.
+ * 입력 계약 원장(GAP-CONTRACT-001)의 라벨은 '길이'·'날짜' 처럼 다른 행에서도 원장과 무관한 수(컬럼 길이, 인덱스 수, ADR 의 표준 길이 수)
+ * 곁에 쓰이는 일반 낱말이라 rowOnly 로 그 gap 행 안에서만 본다. 원장 이름이 고유한 라벨(app→core·unwired 등)은 모든 메모리 행에서 본다.
  */
 export const LEDGER_MEMORY_BINDINGS = Object.freeze([
   Object.freeze({ id: 'GAP-ARCH-001', ledger: 'config/governance/cross-domain-coupling-census.json', labels: Object.freeze(['app→app', 'app→core']) }),
   Object.freeze({ id: 'GAP-WIRING-001', ledger: 'config/governance/operation-consumer-census.json', labels: Object.freeze(['operation', 'unwired', '화면 고아']) }),
+  Object.freeze({ id: 'GAP-CONTRACT-001', ledger: 'config/governance/input-contract-mirror-census.json', rowOnly: true,
+    labels: Object.freeze(['길이', '필수', '읽기 전용', 'enum', '중첩 검증', '날짜']) }),
 ]);
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
@@ -273,7 +277,8 @@ export function ledgerMemoryViolations(files) {
   }
   for (const [file, text] of Object.entries(files)) {
     for (const line of text.split(/\r?\n/)) {
-      for (const { ledger, labels } of LEDGER_MEMORY_BINDINGS) {
+      for (const { id, ledger, labels, rowOnly } of LEDGER_MEMORY_BINDINGS) {
+        if (rowOnly && !(file === 'known-gaps.md' && line.startsWith(`| ${id} |`))) continue;
         for (const label of labels) {
           if (ledgerCountRestatement(label).test(line)) {
             violations.push(`${file}: '${label}' 수를 다시 적었습니다 — ${ledger} 가 정본이니 링크만 남기십시오.`);
@@ -384,6 +389,27 @@ test('the documentation index points to the ADR registry instead of copying it',
   const section = readRepoFile('docs/README.md').split('### 02-architecture/decisions — ADR')[1]?.split('## 03-guides')[0] ?? '';
   assert.match(section, /\]\(02-architecture\/decisions\/README\.md\)/u, 'docs/README.md: ADR 색인 링크가 없습니다.');
   assert.doesNotMatch(section, /^\| \[ADR-\d{4}\]\(/mu, 'docs/README.md: ADR 목록을 다시 복제하지 말고 ADR 색인에 링크하십시오.');
+});
+
+test('the input contract row is red for the ledger counts it used to restate, and its generic labels stay row-scoped', () => {
+  const files = memoryFiles();
+  const gaps = files['known-gaps.md'];
+  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-CONTRACT-001 |'));
+  assert.ok(row, 'GAP-CONTRACT-001: 합성 변이를 넣을 행이 없습니다.');
+  // 이 행이 2026-10-19 까지 적던 형태 그대로다.
+  const cells = row.split(' | ');
+  cells[4] = `원장 기준 길이 246·필수 95·읽기 전용 62필드, enum 18·중첩 검증 13개, 날짜 12필드의 달력 형식을 검사한다. ${cells[4]}`;
+  const messages = ledgerMemoryViolations({ ...files, 'known-gaps.md': gaps.replace(row, cells.join(' | ')) });
+  for (const label of ['길이', '필수', '읽기 전용', 'enum', '중첩 검증', '날짜']) {
+    assert.ok(messages.some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
+      `GAP-CONTRACT-001 의 '${label}' 재진술이 red 가 아닙니다.`);
+  }
+  // 같은 낱말이 다른 행·파일에서 원장과 무관한 수 곁에 쓰이는 것은 재진술이 아니다(컬럼 길이·인덱스 수·ADR 의 표준 길이 수).
+  const unrelated = '엔티티의 길이 12는 baseline과 같고 날짜 인덱스 4개를 둔다. 표준 길이 24개를 맞추고 필수 3개를 둔다.';
+  const otherRow = `${gaps}\n| GAP-XYZ-001 | P3 | open | x | ${unrelated} | x | x | x | 2099-01-01 |\n`;
+  assert.deepEqual(ledgerMemoryViolations({ ...files, 'known-gaps.md': otherRow }), [], '다른 gap 행의 일반 낱말이 붉다');
+  assert.deepEqual(ledgerMemoryViolations({ ...files, 'decisions.md': `${files['decisions.md']}\n| ADR-9999 | ${unrelated} |\n` }), [],
+    '다른 메모리 파일의 일반 낱말이 붉다');
 });
 
 test('shared memory files have a stable schema and valid canonical sources', () => {

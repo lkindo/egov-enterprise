@@ -96,18 +96,33 @@ class RbacAuthorizationMatrixTest {
     @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint() throws Exception {
         var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
         mockMvc.perform(get("/api/v1/statistics/connect").with(user(ordinary))).andExpect(status().isOk());
-        for (String suffix : List.of("bbs", "connect", "data-usage", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(ordinary)))
-                    .andExpect(status().isForbidden());
+        for (String path : administrativeStatisticsPaths()) {
+            mockMvc.perform(get(path).with(user(ordinary))).andExpect(status().isForbidden());
         }
     }
     @Test void delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup() throws Exception {
         var delegated = explicit(List.of("REPORT_AUDIT"), List.of("STATS_ADMIN_READ"));
-        for (String suffix : List.of("bbs", "connect", "data-usage", "summary", "user")) {
-            mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(delegated)))
-                    .andExpect(status().isOk());
+        for (String path : administrativeStatisticsPaths()) {
+            mockMvc.perform(get(path).with(user(delegated))).andExpect(status().isOk());
         }
         mockMvc.perform(get("/api/v1/statistics/connect").with(user(delegated))).andExpect(status().isForbidden());
+    }
+    /**
+     * 관리자 통계 조회 API 목록 — 실행 시 인가가 읽는 권한 원장(authorization/operation-bindings.json)의 그 경로 바인딩이다.
+     * 이 시험은 원장이 선언한 경로마다 실제 인가 판정을 본다. 목록의 정확 집합(퇴역한 경로가 되살아나지 않음)은
+     * scripts/generate-permissions.test.mjs 한 곳이 고정한다.
+     */
+    private static List<String> administrativeStatisticsPaths() throws java.io.IOException {
+        List<String> paths = new java.util.ArrayList<>();
+        try (var input = new org.springframework.core.io.ClassPathResource("authorization/operation-bindings.json").getInputStream()) {
+            for (var binding : tools.jackson.databind.json.JsonMapper.builder().build().readTree(input)) {
+                String path = binding.path("path").asString();
+                if ("GET".equals(binding.path("method").asString()) && path.startsWith("/api/v1/admin/system/statistics/")) paths.add(path);
+            }
+        }
+        org.assertj.core.api.Assertions.assertThat(paths).as("권한 원장에 관리자 통계 조회 경로가 없습니다").isNotEmpty()
+                .as("경로 변수가 있으면 요청을 고쳐야 한다").noneMatch(path -> path.contains("{"));
+        return paths;
     }
     @Test void unknownRouteDoesNotFallBackToAdministrativeGroup() throws Exception {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");

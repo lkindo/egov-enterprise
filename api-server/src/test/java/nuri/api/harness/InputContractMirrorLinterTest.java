@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 이진 이름을 적는다(소유는 적지 않는다 — 11단계 C4 에서 pack 태그를 걷었다). 저장소에서는 원장 전체를, 생성물에서는 참조 타입이
  * 모두 생성기의 투영 계획({@link ReusableHarnessProfile#retainsType})에서 남은 항목만 검사한다. 지운 항목은
  * <b>참조 타입 중 하나가 {@code ClassNotFoundException} 일 때만</b> 부재로 인정한다 — 전부 로드되면 투영 기록과 트리가 어긋난 것이고,
- * 링크 오류는 판정할 수 없는 것이라 둘 다 red 다. 표적 하한({@code MIN_*})은 프로필과 무관하게 원장 <b>전체</b>에 적용한다.
+ * 링크 오류는 판정할 수 없는 것이라 둘 다 red 다. 표적 하한(원장의 {@code expected})은 프로필과 무관하게 원장 <b>전체</b>에 적용한다.
  * 항목이 기능 소유대로 생성기의 실제 제거 계획에서 남고 빠지는지는 {@code scripts/input-contract-mirror-census-contract.test.mjs} 가
  * 시작 구성마다 대조한다.
  *
@@ -109,53 +109,10 @@ class InputContractMirrorLinterTest {
     private static final String API_DOCS_FILE = "api-docs.json";
     private static final String CENSUS_REGISTRY = "config/governance/input-contract-mirror-census.json";
 
-    // [2026-09-07] +3 (ISG itntSvcNm/itntSvcExpln/rfltYn).
-    // [2026-09-08 PD-MYPG-001] 116 -> 111. MyPageContentDto 5필드가 빠졌다 — 그 DTO 를 걷었기
-    //   때문이다(마이페이지 콘텐츠 관리 표면 제거). 검증 약화가 아니라 검증 대상 자체의 소멸이며,
-    //   엔티티·테이블은 남으므로 표면이 되살아나면 이 바인딩도 함께 복구한다.
-    // ADR-0012: BoardMasterDto.blogYn 제거로 길이/enum 표적을 각각 1개 줄인다.
-    // [2026-09-14 DEC-OPS-090] 표적이 원장으로 옮겨졌다. 하한은 원장 전체에 적용한다 — 축소 프로필에서
-    //   검사하는 부분집합은 작아지지만, 원장을 비워 게이트를 줄이는 경로는 여전히 red 다.
-    // [2026-09-22 GAP-CONTRACT-001] +49 — 저장 경로가 확인된 DTO 12쌍 편입(만족도·댓글·로그인 정책·쪽지·부재·행정구역·
-    //   메뉴·설문 문항/항목/템플릿·도움말·온라인 매뉴얼). 편입 즉시 만족도·댓글 본문 4000, 부재 여부 1 의 @Size 부재가
-    //   red 로 드러나 함께 닫았다.
-    // [2026-09-24 GAP-CONTRACT-001] +66 — 컨트롤러 요청 DTO 13개 편입(알림 발송·결재·메모 지시·게시글·정책·
-    //   사용자 프로필 둘·가입·설문 응답과 답변·메일·포상·행사). 가입 힌트·정답 300, 메일 본문 4000 의 @Size 부재를 함께 닫았다.
-    //   enum +1(일괄 상태 코드 P·A·D), 중첩 +3(알림 수신자·설문 답변·메일 수신자 — null 항목이 500 이던 두 곳 포함).
-    // [2026-09-26 DIP B5 F8] -1 — AddressBookUserDto.userId 는 서버 소유 읽기 전용이 됐다(작성자 ID 를 구성원 키로 강제하던
-    //   필수·길이 계약을 걷음). 보호는 줄지 않는다: 같은 필드가 읽기 전용 표적으로 옮겨 가 요청에서 받지 않음을 검사한다.
-    // [2026-10-02 관리 콘솔 UX 2단계] +12 — 그룹 복제(CopyGroup 3), 메뉴 구조 저장의 새 메뉴·속성(MenuCreation·MenuProperties
-    //   각 4: 이름·라우트·설명·사용 여부), 그룹 권한 변경의 그룹 코드(MenuGroupGrantChange 1). enum +2(두 DTO 의 사용 여부 Y·N),
-    //   중첩 +4(MenuStructureSave 의 새 메뉴·위치·속성·그룹 권한 목록).
-    // [2026-10-03 결재 동선 개선 D3] +3 — 결재 기안 임시저장 요청(ApprovalTemporaryDraftRequest)의 업무 구분·제목·본문을
-    //   임시저장 표(V2_122)와 대조한다. 중첩 +1(그 요청의 결재 단계 목록). 미완성 기안이라 필수 제약은 없다.
-    // [2026-10-04 프로그램 목록 퇴역] 256 -> 251. ProgramDto 길이 5필드(파일명·저장 경로·한글명·URL·설명)가 빠졌다 — 그 DTO 와
-    //   프로그램 API 를 걷었기 때문이다. 검증 약화가 아니라 검증 대상의 소멸이다(H2 아님). 테이블은 남지만 쓰는 경로가 없다.
-    // [2026-10-05 프로그램 원장 참조 퇴역] 251 -> 250. MenuDto.prgrmFileNm 이 빠졌다 — 앱이 그 컬럼을 더 이상 매핑하지 않아
-    //   요청·응답에서 필드를 걷었다(GAP-PROGRAM-001). 같은 이유로 검증 대상의 소멸이다.
-    // [2026-10-16 결재 동선 개선 D2] 250 -> 251. 나의 결재선 요청(ApprovalSavedLineRequest)의 결재선명을 표(V2_129 apln_nm 200)와
-    //   대조한다. 중첩 +1(그 요청의 결재 단계 목록).
-    // [2026-10-19 쓰지 않는 상태 표면 퇴역] 251 -> 246(원장 실측). 처리 흐름 없는 상태 필드를 API 에서 걷었다 — 포상 승인
-    //   3(sanctnerId·confmAt·returnResn), 행사 승인 여부 1(evntAprvYn), 인터넷 서비스 안내 반영 여부 1(rfltYn). 물리 컬럼은
-    //   남고 엔티티 매핑은 읽기 전용이다. 같은 이유로 검증 대상의 소멸이다.
-    private static final int MIN_LENGTH_FIELDS = 246;
-    private static final int MIN_ENUM_FIELDS = 18;
-    private static final int MIN_NESTED_VALIDATION_FIELDS = 13;
-    // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
-    // [2026-09-07] +2 (ISG itntSvcNm/itntSvcExpln).
-    // [2026-09-22 GAP-CONTRACT-001] +16 (위 12쌍 중 필수 제약을 가진 7개 DTO 의 NotBlank/NotNull 전체).
-    // [2026-09-24 GAP-CONTRACT-001] +19 (위 요청 DTO 13개 중 필수 제약을 가진 10개의 NotBlank/NotNull/NotEmpty 전체).
-    // [2026-10-02 관리 콘솔 UX 2단계] 78 → 92(원장 실측과 같게) — CopyGroup 3, MenuGroupGrantChange 5, MenuCreation 3, MenuProperties 3.
-    // [2026-10-04 프로그램 목록 퇴역] 92 → 91. 걷은 ProgramDto 의 등록 그룹 파일명 필수 1건이 대상과 함께 사라졌다.
-    // [2026-10-16 결재 동선 개선 D2] 91 → 93. 나의 결재선 요청의 이름(NotBlank)·결재 단계 목록(NotNull).
-    // [2026-10-18 서버 검증 공백] 93 → 95(원장 실측). 포상 수상자·포상 코드(NotBlank — 물리 컬럼 NOT NULL). 일정 시작일의
-    //   필수 판정은 DTO 가 아니라 ScheduleService 가 한다 — ScheduleDto 는 응답에도 쓰여 NotBlank 가 응답 계약을 바꾼다.
-    private static final int MIN_REQUIRED_FIELDS = 95;
-    // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
-    private static final int MIN_READ_ONLY_FIELDS = 45;
-    // [2026-10-18 서버 검증 공백] 12 → 13(원장 실측). 포상 일자(rwardDe)가 길이만 보던 것을 yyyyMMdd 달력 계약으로 맞췄다.
-    // [2026-10-19 쓰지 않는 상태 표면 퇴역] 13 → 12(원장 실측). 행사 승인일(evntAprvYmd)을 승인 흐름이 없어 API 에서 걷었다.
-    private static final int MIN_CALENDAR_DATE_FIELDS = 12;
+    // 표적 하한은 원장의 expected 다(Registry.Floors). 하한은 원장 전체에 적용한다 — 축소 프로필에서 검사하는 부분집합은
+    //   작아지지만, 원장을 비워 게이트를 줄이는 경로는 여전히 red 다. 표면을 걷어 검증 대상 자체가 사라지면(약화가 아니다)
+    //   같은 변경에서 expected 를 내린다. 원장은 하네스 기준선의 __registry 해시로도 묶여 있다. 수의 증감 이력은 git·결정 기록에 있다.
+    // 일정 시작일의 필수 판정은 DTO 가 아니라 ScheduleService 가 한다 — ScheduleDto 는 응답에도 쓰여 NotBlank 가 응답 계약을 바꾼다.
 
     private static final java.util.regex.Pattern TYPE_NAME = java.util.regex.Pattern.compile(
             "[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*\\.[A-Z][A-Za-z0-9_]*(?:\\$[A-Z][A-Za-z0-9_]*)*");
@@ -488,7 +445,7 @@ class InputContractMirrorLinterTest {
     @Test
     @DisplayName("부정 증명: 투영 필터는 참조 타입 중 하나의 '클래스 없음' 만 부재로 인정하고 기록 불일치·링크 오류·낡은 원장을 red 로 만든다")
     void projectionFilterAcceptsOnlyMissingClassesAsAbsence() {
-        Registry registry = Registry.parse(json("{'schemaVersion':1,"
+        Registry registry = Registry.parse(json("{'schemaVersion':1,'expected':" + fixtureFloors() + ","
                 + "'lengthBindings':["
                 + "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name']},"
                 + "{'entity':'example.kept.KeptEntity','dto':'example.gone.GoneDto','fields':['name']}],"
@@ -550,7 +507,7 @@ class InputContractMirrorLinterTest {
                 + "'readOnlyBindings':[],'calendarDateBindings':[]}";
         String length = "{'entity':'example.kept.KeptEntity','dto':'example.kept.KeptDto','fields':['name']}";
         String required = "{'dto':'example.kept.KeptDto','fields':[{'field':'name','constraint':'NotBlank','groups':[]}]}";
-        String head = "{'schemaVersion':1,";
+        String head = "{'schemaVersion':1,'expected':" + fixtureFloors() + ",";
 
         assertThatThrownBy(() -> Registry.parse(json(head + "'enumBindings':[],'lengthBindings':[],'requiredBindings':[]," + tail)))
                 .as("중복 키").isInstanceOf(AssertionError.class);
@@ -589,24 +546,40 @@ class InputContractMirrorLinterTest {
                 .as("대조군: 짝이 맞으면 받는다").hasSize(1);
 
         Registry small = Registry.parse(json(head + "'lengthBindings':[" + length + "],'requiredBindings':[" + required + "]," + tail));
-        assertThat(floorViolations(small)).as("하한은 원장 전체 기준으로 계산한다").isNotEmpty();
+        assertThat(floorViolations(small)).as("하한은 원장 전체 기준으로 계산한다").contains("length=1 < 2");
+
+        // 하한은 원장의 expected 하나가 정한다 — 빠지거나, 모르는 항목·빠진 항목이 있거나, 양의 정수가 아니면 거부한다.
+        String body = "'lengthBindings':[" + length + "],'requiredBindings':[" + required + "]," + tail;
+        assertThatThrownBy(() -> Registry.parse(json("{'schemaVersion':1," + body)))
+                .as("expected 없음").isInstanceOf(AssertionError.class).hasMessageContaining("expected");
+        assertThatThrownBy(() -> Registry.parse(json(head.replace("'calendarDateFields':1", "'calendarDateFields':1,'blogFields':1") + body)))
+                .as("모르는 하한").isInstanceOf(AssertionError.class).hasMessageContaining("blogFields");
+        assertThatThrownBy(() -> Registry.parse(json(head.replace(",'calendarDateFields':1", "") + body)))
+                .as("빠진 하한").isInstanceOf(AssertionError.class).hasMessageContaining("calendarDateFields");
+        for (String invalid : List.of("0", "-1", "1.5", "'1'")) {
+            assertThatThrownBy(() -> Registry.parse(json(head.replace("'enumFields':1", "'enumFields':" + invalid) + body)))
+                    .as("하한 " + invalid).isInstanceOf(AssertionError.class).hasMessageContaining("enumFields");
+        }
     }
 
-    /** 원장 전체(프로필 무관) 표적 하한. 축소 프로필의 부분집합이 아니라 원장 자체의 축소를 막는다. */
+    /** 원장 전체(프로필 무관) 표적 하한. 축소 프로필의 부분집합이 아니라 원장 자체의 축소를 막는다. 하한 값은 원장의 expected 다. */
     static List<String> floorViolations(Registry registry) {
+        Floors floors = registry.floors();
         List<String> violations = new ArrayList<>();
         int length = registry.lengthBindings().stream().mapToInt(spec -> spec.fields().size()).sum();
         int required = registry.requiredBindings().stream().mapToInt(spec -> spec.fields().size()).sum();
         int readOnly = registry.readOnlyBindings().stream().mapToInt(spec -> spec.fields().size()).sum();
         int calendar = registry.calendarDateBindings().stream().mapToInt(spec -> spec.fields().size()).sum();
-        if (length < MIN_LENGTH_FIELDS) violations.add("length=" + length + " < " + MIN_LENGTH_FIELDS);
-        if (registry.enumBindings().size() < MIN_ENUM_FIELDS) violations.add("enum=" + registry.enumBindings().size() + " < " + MIN_ENUM_FIELDS);
-        if (registry.nestedValidationBindings().size() < MIN_NESTED_VALIDATION_FIELDS) {
-            violations.add("nested=" + registry.nestedValidationBindings().size() + " < " + MIN_NESTED_VALIDATION_FIELDS);
+        if (length < floors.lengthFields()) violations.add("length=" + length + " < " + floors.lengthFields());
+        if (registry.enumBindings().size() < floors.enumFields()) {
+            violations.add("enum=" + registry.enumBindings().size() + " < " + floors.enumFields());
         }
-        if (required < MIN_REQUIRED_FIELDS) violations.add("required=" + required + " < " + MIN_REQUIRED_FIELDS);
-        if (readOnly < MIN_READ_ONLY_FIELDS) violations.add("readOnly=" + readOnly + " < " + MIN_READ_ONLY_FIELDS);
-        if (calendar < MIN_CALENDAR_DATE_FIELDS) violations.add("calendar=" + calendar + " < " + MIN_CALENDAR_DATE_FIELDS);
+        if (registry.nestedValidationBindings().size() < floors.nestedValidationFields()) {
+            violations.add("nested=" + registry.nestedValidationBindings().size() + " < " + floors.nestedValidationFields());
+        }
+        if (required < floors.requiredFields()) violations.add("required=" + required + " < " + floors.requiredFields());
+        if (readOnly < floors.readOnlyFields()) violations.add("readOnly=" + readOnly + " < " + floors.readOnlyFields());
+        if (calendar < floors.calendarDateFields()) violations.add("calendar=" + calendar + " < " + floors.calendarDateFields());
         return violations;
     }
 
@@ -1155,6 +1128,11 @@ class InputContractMirrorLinterTest {
         return singleQuoted.replace('\'', '"');
     }
 
+    /** 부정 증명 픽스처의 expected — 길이 하한만 2 라 길이 표적 하나짜리 원장은 하한 아래다. */
+    private static String fixtureFloors() {
+        return "{'lengthFields':2,'enumFields':1,'nestedValidationFields':1,'requiredFields':1,'readOnlyFields':1,'calendarDateFields':1}";
+    }
+
     private static void failIfAny(String heading, List<String> violations) {
         if (violations.isEmpty()) {
             return;
@@ -1242,10 +1220,34 @@ class InputContractMirrorLinterTest {
         public List<String> types() { return List.of(dto); }
     }
 
+    /** 원장 expected — 원장 전체에 적용하는 표적 하한. 길이·필수·읽기 전용·달력 날짜는 필드 수 합, enum·중첩 검증은 바인딩 수다. */
+    record Floors(int lengthFields, int enumFields, int nestedValidationFields, int requiredFields,
+                  int readOnlyFields, int calendarDateFields) {
+
+        static Floors parse(JsonNode root) {
+            JsonNode node = root.get("expected");
+            Set<String> keys = Set.of("lengthFields", "enumFields", "nestedValidationFields", "requiredFields",
+                    "readOnlyFields", "calendarDateFields");
+            Registry.requireFields(node, CENSUS_REGISTRY + " expected", keys, keys);
+            return new Floors(positive(node, "lengthFields"), positive(node, "enumFields"),
+                    positive(node, "nestedValidationFields"), positive(node, "requiredFields"),
+                    positive(node, "readOnlyFields"), positive(node, "calendarDateFields"));
+        }
+
+        private static int positive(JsonNode node, String field) {
+            JsonNode value = node.get(field);
+            // 0 이하는 하한을 끄는 것과 같다 — 게이트를 비우는 경로가 되므로 받지 않는다.
+            if (value == null || !value.isInt() || value.intValue() <= 0) {
+                throw new AssertionError(CENSUS_REGISTRY + " expected." + field + " 는 양의 정수여야 합니다: " + value);
+            }
+            return value.intValue();
+        }
+    }
+
     record Registry(List<LengthSpec> lengthBindings, List<EnumSpec> enumBindings,
                     List<NestedSpec> nestedValidationBindings, List<RequiredSpec> requiredBindings,
                     List<FieldsSpec> requiredResponseFields, List<FieldsSpec> readOnlyBindings,
-                    List<FieldsSpec> calendarDateBindings) {
+                    List<FieldsSpec> calendarDateBindings, Floors floors) {
 
         List<Spec> allSpecs() {
             List<Spec> all = new ArrayList<>();
@@ -1264,9 +1266,9 @@ class InputContractMirrorLinterTest {
             Set<String> sections = Set.of("lengthBindings", "enumBindings", "nestedValidationBindings", "requiredBindings",
                     "requiredResponseFields", "readOnlyBindings", "calendarDateBindings");
             Set<String> topAllowed = new TreeSet<>(sections);
-            topAllowed.addAll(Set.of("schemaVersion", "description"));
+            topAllowed.addAll(Set.of("schemaVersion", "description", "expected"));
             Set<String> topRequired = new TreeSet<>(sections);
-            topRequired.add("schemaVersion");
+            topRequired.addAll(Set.of("schemaVersion", "expected"));
             requireFields(root, CENSUS_REGISTRY, topAllowed, topRequired);
             if (root.get("schemaVersion").asInt(-1) != 1) {
                 throw new AssertionError(CENSUS_REGISTRY + " schemaVersion 은 1 이어야 합니다.");
@@ -1367,7 +1369,7 @@ class InputContractMirrorLinterTest {
 
             return new Registry(List.copyOf(lengths), List.copyOf(enums), List.copyOf(nested),
                     List.copyOf(required), responseFields,
-                    fieldsSpecs(root, "readOnlyBindings"), fieldsSpecs(root, "calendarDateBindings"));
+                    fieldsSpecs(root, "readOnlyBindings"), fieldsSpecs(root, "calendarDateBindings"), Floors.parse(root));
         }
 
         private static List<FieldsSpec> fieldsSpecs(JsonNode root, String section) {

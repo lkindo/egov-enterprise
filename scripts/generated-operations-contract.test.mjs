@@ -17,6 +17,8 @@ const generatedOperationsPath = join(
   'types',
   'generated-operations.ts',
 );
+// operation 수의 확인 지점은 배선 census 원장의 expected.operationCount 하나다. 표면을 더하거나 걷는 변경은 그 값을 고친다.
+const operationCensusPath = join(repoRoot, 'config', 'governance', 'operation-consumer-census.json');
 const methods = ['get', 'post', 'put', 'patch', 'delete'];
 
 function specOperations(spec) {
@@ -245,53 +247,10 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   const generatedIds = [...generated.matchAll(/^export const ([A-Za-z_$][\w$]*)Operation =/gm)]
     .map((match) => match[1]);
 
-  // [2026-09-05 결재 도메인 완결] createApproval·getProcessed·getTaskTypes 3개 신설 — 367 -> 370.
-  // [2026-09-05 첨부 삭제 경로] deleteFile 4개(기본 + admin 별칭 3) 신설 — 370 -> 374.
-  // [2026-09-05 운영 정정 경로] 외부인사·포상·템플릿 PUT/DELETE 6개 신설 — 374 -> 380.
-  // [2026-09-06 DEC-OPS-041 투표 컨트롤러 통합] OnlinePollApiController(/api/v1/admin/system/polls) 4개 제거
-  //   (getPolls_1·getPoll_1·insertPoll·vote_1) — 같은 OnlinePollService 를 감싸는 /api/v1/polls 의 부분집합이었다. 380 -> 376.
-  // [2026-09-06 DEC-OPS-042 관리자 알림 발송] POST /api/v1/admin/notifications/dispatch 1개 신설 — 376 -> 377.
-  // [2026-09-06 커뮤니티 멤버십(DEC-OPS-043)] getMembers·approveMember·rejectMember·getMyMembership 4개 신설 — 377 -> 381.
-  // [2026-09-06 DEC-OPS-044 게시글 API 표면 정리] BbsApiController(/api/v1/bbs) 제거 — 381 -> 378.
-  //   목록·상세·삭제 3본(getBbsList·getBbsDetail·deleteBbsPost)은 /api/v1/boards 와 같은 BoardService
-  //   메서드를 부르는 순수 복제였고 프런트 소비자가 0건이라 지웠다(순 -3). 첨부를 붙일 수 있는 유일한
-  //   쓰기 경로였던 multipart 2본은 이름만 바꿔 같은 네임스페이스로 옮겼다
-  //   (createBbsPost -> createPostWithFiles, updateBbsPost -> updatePostWithFiles) — 표면 수는 불변.
-  // [2026-09-07 DEC-OPS-046 결재 기안 취소] DELETE /api/v1/approvals/{id}(cancelApproval) 1개 신설 — 378 -> 379.
-  //   같은 InformalSanctionService#deleteInformalSanction 을 부르는 /informal-sanctions 계열과 공존하지만,
-  //   /approvals 가 결재 도메인의 정본 네임스페이스이고(DEC-OPS-030·039·040) 인가 의미는 그 서비스 가드가
-  //   집행한다(assertOwnerByEsntlId + "A" 상태 — 관리자도 우회 못 한다).
-  // [2026-09-08 PD-SRVY-001 설문 응답자 표면 제거] 5본 제거 — 379 -> 374.
-  //   목록·상세·등록·수정·삭제. tb_srvy_rspdnt 는 성명·성별·생년월일·전화번호를 담는데 응답 결과와
-  //   ID 로 연결되지 않고 행을 만드는 코드 경로가 없어 화면이 항상 빈 목록이었다. 사용자 결정으로
-  //   API·화면·서비스·DTO 를 함께 걷었고, 엔티티·리포지토리·테이블은 남는다(템플릿 변경 가드가 사용).
-  // [2026-09-08 PD-MYPG-001 마이페이지 콘텐츠 표면 제거] 4본 제거 — 374 -> 370.
-  //   목록·등록·수정·삭제. tb_indv_pg_conts 는 시드도 생성 경로도 없고 무엇보다 그 값을 읽는
-  //   화면이 없다(대시보드 위젯 SPI 구현 2개가 쓰지 않는다) — 켜고 꺼도 어디에도 나타나지 않아
-  //   소비처를 먼저 정하기로 했다(사용자 결정). 엔티티·테이블은 남는다.
-  // Canonical authorization administration adds 14 operations; all descriptors must remain bound to OpenAPI.
-  //   GET /api/v1/communities/{cmntySn}/boards. findByCmntySnAndUseYn 의 첫 소비자이며
-  //   승인된 회원·관리자만 목록을 받는다(BoardMasterService#assertCommunityMember).
-  // Approval detail and revision submission add two operations to the documented surface.
-  // 2026-09-25 DEC-OPS-129: 387 -> 383. 네트워크 모니터링 API 4개(조회 1·501 쓰기 3)를 걷었다.
-  // 2026-09-25 DEC-OPS-131: 383 -> 385. 커뮤니티 본인 탈퇴·강제 탈퇴 2개를 더했다.
-  // 2026-09-25 DIP I3: 385 -> 386. Q&A 질문 해결 표시(PATCH …/solved)를 더했다.
-  // 2026-09-26 DIP V3: 386 -> 387. 받은 쪽지 미읽음 수(GET /notes/received/unread-count)를 더했다.
-  // 2026-09-26 DIP V5: 387 -> 388. 인증 사용자용 게시판 메타(GET /boards/{bbsId}/meta)를 더했다.
-  // 2026-09-26 DIP B4 P2: 388 -> 389. 받은 알림 모두 읽음(POST /notifications/read-all)을 더했다.
-  // 2026-09-26 DIP B4 P7: 389 -> 390. 관리자 계정 잠금 해제(PATCH /admin/system/users/{userId}/unlock)를 더했다.
-  // 2026-10-03 결재 동선 개선: 422 -> 428. 결재선 제안·결재자 사전 확인·재알림·결재자 바꾸기·보완 요청·보완 답변을 더했다.
-  // 2026-10-03 결재 동선 개선 D3: 428 -> 433. 결재 기안 임시저장 목록·열기·저장·고치기·지우기를 더했다.
-  // 2026-10-04 결재 동선 개선 D4: 433 -> 435. 참조된 결재 목록(GET /approvals/referenced)과 결재자의 참조자 추가
-  //   (POST /approvals/{id}/references)를 더했다.
-  // 2026-10-04 프로그램 목록 퇴역: 435 -> 430. 프로그램 API 5개(목록·상세·등록·수정·삭제)를 걷었다.
-  // 2026-10-12 커뮤니티 후속 C2: 430 -> 431. 커뮤니티 관리 창의 템플릿 후보(GET /admin/content/community/template-options)를 더했다.
-  // 2026-10-16 나의 결재선: 431 -> 436. 저장한 결재선 목록·열기·저장·고치기·지우기(/approvals/saved-lines)를 더했다.
-  // 2026-10-18 ADR-0034: 436 -> 412. 410 만 돌려주던 구 롤·롤 권한·권한 그룹 쓰기 12개와 비공식결재 API 12개(핸들러 6 × 경로 2,
-  //   /informal-sanctions·/admin/system/ism)를 걷었다. 결재 화면은 /approvals 의 결재 API 를 그대로 쓴다.
-  // 2026-10-19 DEC-OPS-355: 412 -> 411. 연락처를 돌려주던 구 주소록 사용자 검색(GET /address-books/search-users)을 걷었다.
-  // 2026-10-19: 411 -> 410. 쓰는 쪽 없는 원장만 읽던 보고서 통계 조회(GET /admin/system/statistics/report)를 탭·메뉴(V2_134)와 함께 걷었다.
-  assert.equal(operations.length, 410);
+  // 수는 배선 census 원장 하나가 정한다 — 표면 증감의 이력은 git 과 결정 기록에 있다.
+  const { expected } = JSON.parse(readFileSync(operationCensusPath, 'utf8'));
+  assert.equal(operations.length, expected.operationCount,
+    'OpenAPI operation 수가 operation-consumer-census.json 의 expected.operationCount 와 다르다');
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 

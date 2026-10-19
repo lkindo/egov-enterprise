@@ -1,5 +1,25 @@
+import fs from 'fs';
+import path from 'path';
 import { expect,test } from '../fixtures/api-test';
 import { getAdminBearerToken } from '../utils/admin-token';
+
+// 메뉴 수의 확인 지점은 사람이 검토하는 메뉴 스냅숏(원본 마이그레이션 적용 결과, MENU_SNAPSHOT_STALE 이 신선도를 본다)이다.
+// 관리자 트리는 서버(MenuService.buildMenuTree)와 같은 정의로 센다 — 관리자 계정 그룹(ROLE_ADMIN, R__seed_framework)의
+// 메뉴 배정이 있고 사용 중이며, 위 메뉴가 모두 같은 조건으로 트리에 붙는 메뉴다.
+interface SnapshotMenu { menu_sn: number; up_menu_sn: number | null; use_yn: string }
+interface MenuSnapshot { menus: SnapshotMenu[]; navigation: { authrt_cd: string; menu_sn: number }[] }
+const ADMIN_GROUPS = new Set(['ROLE_ADMIN']);
+function adminVisibleMenuCount(snapshot: MenuSnapshot): number {
+    const granted = new Set(snapshot.navigation.filter(row => ADMIN_GROUPS.has(row.authrt_cd)).map(row => row.menu_sn));
+    const shown = new Map(snapshot.menus.filter(menu => menu.use_yn === 'Y' && granted.has(menu.menu_sn))
+        .map(menu => [menu.menu_sn, menu]));
+    const attached = (menu: SnapshotMenu): boolean => menu.up_menu_sn === null || menu.up_menu_sn === 0
+        || (shown.has(menu.up_menu_sn) && attached(shown.get(menu.up_menu_sn)!));
+    return [...shown.values()].filter(attached).length;
+}
+const MENU_SNAPSHOT: MenuSnapshot = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, '../../../config/project-composer-menus.json'), 'utf8'));
+
 test.describe('Modernization: Hierarchical Interface Verification', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
     test('Menu useYn State Filtering', async ({ request }) => {
@@ -45,8 +65,9 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             }
         };
         collect(rootNodes, 1);
-        // [2026-10-19 DEC-OPS-368] V2_134 가 보고서 통계 메뉴(9040105)를 퇴역해 활성 메뉴는 70개다.
-        expect(visible).toHaveLength(70);
+        const expectedVisible = adminVisibleMenuCount(MENU_SNAPSHOT);
+        expect(expectedVisible, '메뉴 스냅숏에서 관리자 트리를 세지 못했다').toBeGreaterThan(0);
+        expect(visible, '관리자 트리 수가 config/project-composer-menus.json 과 다르다').toHaveLength(expectedVisible);
         expect(visible.filter(node => node.modernRoute === '/admin/security/authority')).toHaveLength(1);
         expect(visible.some(node => node.menuNm === '화면 구성 예제')).toBe(false);
         console.log('>>> useYn Filtering verified via API (menus/head): PASS');

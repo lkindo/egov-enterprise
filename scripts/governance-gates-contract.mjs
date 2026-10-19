@@ -346,12 +346,10 @@ export function validateCriticalMutationTargets(scopes) {
 
 function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot) {
   const expected = selector.matrixScopes;
-  if (!Array.isArray(expected)) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 21 scopes`);
+  // 범위 목록은 원장이 정하고 아래에서 ci.yml 과 양방향으로 대조한다. 범위 수를 못 박는 곳은 계약 시험 한 곳이다.
+  if (!Array.isArray(expected) || expected.length === 0) {
+    errors.push(`${setLabel}: PIT matrix catalog must be a non-empty scope list`);
     return;
-  }
-  if (expected.length !== 21) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 21 scopes`);
   }
   errors.push(...validateCriticalMutationTargets(expected).map(error => `${setLabel}: ${error}`));
 
