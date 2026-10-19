@@ -46,6 +46,7 @@
     "atlas:build": "node scripts/build-atlas.mjs",
     "atlas:check": "node scripts/build-atlas.mjs --check",
     "merge:main": "node scripts/merge-main-regenerate.mjs",
+    "regen": "node scripts/regenerate.mjs",
     "harness:baseline": "node scripts/harness-baseline-manifest.mjs",
     "screens:generate": "node scripts/generate-screen-registry.mjs",
     "slots:generate": "node scripts/slot-registry.mjs --write",

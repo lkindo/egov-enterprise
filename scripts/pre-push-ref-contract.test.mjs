@@ -142,7 +142,7 @@ test('mixed deletion and update verifies only the object-bearing update range', 
   ].join('\n') + '\n');
 
   assertSuccessful(result);
-  assert.deepEqual(result.npmCalls, ['run test:operational-contracts']);
+  assert.deepEqual(result.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
   const diffCalls = result.gitCalls.filter((call) => call.startsWith('diff '));
   assert.equal(diffCalls.length, 1);
   assert.match(diffCalls[0], new RegExp(`${REMOTE_OID}\\.\\.${LOCAL_OID}$`, 'u'));
@@ -152,14 +152,14 @@ test('mixed deletion and update verifies only the object-bearing update range', 
 test('empty stdin and a new ref retain their fail-closed verification paths', () => {
   const emptyInput = runHook('');
   assertSuccessful(emptyInput);
-  assert.deepEqual(emptyInput.npmCalls, ['run test:operational-contracts']);
+  assert.deepEqual(emptyInput.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
   assert.ok(emptyInput.gitCalls.some((call) => call.includes('origin/main..HEAD')));
 
   const newRef = runHook(
     `${pushLine('refs/heads/new-branch', LOCAL_OID, 'refs/heads/new-branch', ZERO_OID)}\n`,
   );
   assertSuccessful(newRef);
-  assert.deepEqual(newRef.npmCalls, ['run test:operational-contracts']);
+  assert.deepEqual(newRef.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
   assert.ok(newRef.gitCalls.some((call) => call.includes(`origin/main..${LOCAL_OID}`)));
 });
 
@@ -323,7 +323,10 @@ test('verify profiles run static checks before the operational contracts and sto
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
 });
 
+// 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.
+const REGEN_CHECK = 'npm run regen -- --check';
 const PRE_PUSH_SOURCE_ORDER = [
+  REGEN_CHECK,
   'gradlew compileJava compileTestJava -q',
   'npx tsc --noEmit',
   'npx tsc -p tsconfig.e2e.json --noEmit',
@@ -345,7 +348,7 @@ test('pre-push runs static checks before the operational contracts and stops on 
   const backendOnly = runHook(input, hookSource, { files: [files[0]] });
   assertSuccessful(backendOnly);
   assert.deepEqual(backendOnly.commands,
-    ['gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
+    [REGEN_CHECK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
   for (const failCommand of ['gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
     const failed = runHook(input, hookSource, { files, failCommand });
     assert.notEqual(failed.status, 0, failCommand);
@@ -360,12 +363,34 @@ test('pre-push runs static checks before the operational contracts and stops on 
   assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
 });
 
+test('pre-push checks generated freshness first and stops before compilation and the operational contracts', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const paths = [['docs/README.md'], ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts']];
+  const stops = source => paths.map(files => {
+    const failed = runHook(input, source, { files, failCommand: REGEN_CHECK });
+    return { status: failed.status === 0 ? 0 : 'blocked', commands: failed.commands };
+  });
+  assert.deepEqual(stops(hookSource), paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })),
+    '낡은 생성물은 컴파일·운영 계약을 기다리지 않고 바로 막는다');
+  // 실패 처리에서 exit 1 을 걷으면 낡은 생성물로도 다음 단계로 넘어가고, 검사를 정적 검사 뒤로 옮기면 컴파일을 먼저 기다린다 — 위 단언이 둘 다 잡는다(red 재현).
+  const swallowed = hookSource.replace("함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; exit 1; }", "함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; }");
+  const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\n\n/u;
+  const block = hookSource.replace(/\r\n/g, '\n').match(regenBlock)?.[0];
+  assert.ok(block, 'pre-push 의 생성물 신선도 블록을 찾지 못했다');
+  const moved = hookSource.replace(/\r\n/g, '\n').replace(block, '')
+    .replace('# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.\n', `${block}# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.\n`);
+  for (const mutant of [swallowed, moved]) {
+    assert.notEqual(mutant, hookSource);
+    assert.notDeepEqual(stops(mutant), paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })));
+  }
+});
+
 test('pre-push blocks the push when the operational contracts fail on the documentation and source paths', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const sourceFiles = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
   const cases = [
-    { files: ['docs/README.md'], commands: [CONTRACTS] },
-    { files: ['frontend/public/governance_harness_atlas.html'], commands: [CONTRACTS] },
+    { files: ['docs/README.md'], commands: [REGEN_CHECK, CONTRACTS] },
+    { files: ['frontend/public/governance_harness_atlas.html'], commands: [REGEN_CHECK, CONTRACTS] },
     { files: sourceFiles, commands: PRE_PUSH_SOURCE_ORDER.slice(0, PRE_PUSH_SOURCE_ORDER.indexOf(CONTRACTS) + 1) },
   ];
   const blocks = (source) => cases.map(({ files }) => {

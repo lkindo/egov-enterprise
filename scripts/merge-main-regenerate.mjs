@@ -54,6 +54,8 @@ const under = (...prefixes) => file => prefixes.some(prefix => file === prefix |
  * 의존 순서대로 둔다 — 앞 단계의 출력이 뒤 단계의 입력이면 뒤 단계도 실행한다.
  * `outputs` 는 생성기가 통째로 다시 쓰는 파일이라 충돌하면 어느 쪽을 골라도 재생성이 덮는다.
  * `touches` 는 생성기가 다시 쓰기는 하지만 입력이기도 한 파일이라 충돌을 자동으로 풀지 않는다.
+ * `check` 는 쓰지 않고 낡았는지만 보는 명령이다(`npm run regen -- --check`, scripts/regenerate.mjs). 생성기 자신의 검사 모드를 쓴다 —
+ * 새 판정을 더하지 않는다. 운영 계약·codegen 게이트가 같은 생성물을 다시 보므로 이 목록은 실패를 앞당길 뿐이다.
  */
 export const GENERATORS = [
   {
@@ -63,6 +65,8 @@ export const GENERATORS = [
       'frontend/src/types/generated-operations.ts'],
     touches: ['api-docs.json'],
     command: ['pnpm', ['-C', 'frontend', 'run', 'syncContract']],
+    // codegen:verify·codegen:verify:zod 와 같은 스크립트를 저장소 루트에서 바로 부른다(작업 트리·index 를 쓰지 않는다).
+    check: [['node', ['scripts/verify-generated-contracts.mjs', 'api']], ['node', ['scripts/verify-generated-contracts.mjs', 'zod']]],
   },
   {
     id: 'permissions',
@@ -75,6 +79,7 @@ export const GENERATORS = [
       'frontend/src/types/generated-permissions.ts'],
     touches: ['api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'],
     command: ['node', ['scripts/generate-permissions.mjs']],
+    check: [['node', ['scripts/generate-permissions.mjs', '--check']]],
   },
   {
     // 슬롯 레지스트리(슬롯 단계 PR-4)는 기여 파일 이름에서 만든다. 레지스트리도 frontend/src 의 소스라 그것을 읽는 census 들보다 앞이다.
@@ -83,12 +88,15 @@ export const GENERATORS = [
     inputs: under('frontend/src/extensions'),
     get outputs() { return slotRegistryOutputs(repoRoot); },
     command: ['node', ['scripts/slot-registry.mjs', '--write']],
+    check: [['node', ['scripts/slot-registry.mjs', '--check']]],
   },
   {
     id: 'boundary-census',
     inputs: under('frontend/src/', 'api-docs.json'),
     outputs: ['config/governance/generated-api-boundaries.json'],
     command: ['node', ['scripts/generated-boundary-census.mjs', '--write']],
+    // 스냅숏 대조만 한다. 응답 모양 검사(V10)는 생성물 신선도가 아니라 소스 계약이고 그 시험이 운영 계약에서 돈다(약 1분).
+    check: [['node', ['scripts/generated-boundary-census.mjs', '--check', '--snapshot-only']]],
   },
   {
     // 경계 census 의 출력(generated-api-boundaries.json)을 읽으므로 그 뒤다. 경계 census 는 이 산출물을 읽지 않는다
@@ -102,6 +110,7 @@ export const GENERATORS = [
       'config/frontend-visible-terms.json'),
     outputs: ['frontend/src/types/generated-screen-registry.ts'],
     command: ['node', ['scripts/generate-screen-registry.mjs']],
+    check: [['node', ['scripts/generate-screen-registry.mjs', '--check']]],
   },
   {
     id: 'url-state-census',
@@ -109,6 +118,7 @@ export const GENERATORS = [
     outputs: [URL_CENSUS],
     touches: [URL_APPROVAL],
     command: ['node', ['scripts/ui-url-state-census.mjs', '--write']],
+    check: [['node', ['scripts/ui-url-state-census.mjs', '--check']]],
     rebindUrlApproval: true,
   },
   {
@@ -118,6 +128,7 @@ export const GENERATORS = [
     inputs: anyPath,
     outputs: ['frontend/public/governance_harness_atlas.html'],
     command: ['npm', ['run', 'atlas:build']],
+    check: [['node', ['scripts/build-atlas.mjs', '--check']]],
   },
 ];
 
