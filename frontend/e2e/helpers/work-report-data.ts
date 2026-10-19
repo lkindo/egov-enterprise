@@ -8,7 +8,7 @@ export type WorkReportRecord = { rptpSn: number; rptTtl?: string };
 export function workReportData(auth: Record<string, string>) {
     async function findByTag(request: APIRequestContext, tag: string): Promise<WorkReportRecord[]> {
         const response = await request.get(
-            `${WORK_REPORT_API}?searchKeyword=${encodeURIComponent(tag)}&pageIndex=1&pageUnit=100`,
+            `${WORK_REPORT_API}?searchKeyword=${encodeURIComponent(tag)}&page=1&size=100`,
             { headers: auth },
         );
         expect(response.ok(), '업무 보고 목록 조회가 성공해야 한다').toBeTruthy();

@@ -28,7 +28,7 @@ test.describe('Quality & Resilience', () => {
                 headers: sharedHeaders,
                 data: { notiTtlNm: 'E2E VRT shared notification', notiCn: 'Session isolation probe' },
             });
-            expect(created.status()).toBe(200);
+            expect(created.status()).toBe(201);
             const notificationId = (await created.json()).data;
             try {
                 const token = (await context.cookies()).find(cookie => cookie.name === 'accessToken')?.value;

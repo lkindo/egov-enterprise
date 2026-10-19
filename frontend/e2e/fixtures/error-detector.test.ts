@@ -30,7 +30,7 @@ describe('ExpectedErrorLedger', () => {
 
     expect(ledger.consume({
       channel: 'response',
-      url: 'http://localhost:3001/api/v1/admin/system/users?page=0',
+      url: 'http://localhost:3001/api/v1/admin/system/users?page=1',
       message: null,
       method: 'GET',
       status: 500,

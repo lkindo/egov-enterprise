@@ -83,7 +83,7 @@ export default function (data) {
     'Authorization': `Bearer ${data.token}`,
   };
   
-  // 페이지 번호 랜덤화 (1-5 페이지)
+  // 페이지 번호 랜덤화 (1-5 페이지). [ADR-0036] page 는 1 기반 — 종전 0 기반 서버에서는 첫 페이지를 재지 않았다.
   const page = Math.floor(Math.random() * 5) + 1;
   const size = 10;
   

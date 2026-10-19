@@ -22,7 +22,7 @@ export class SecurityAdminPage {
             this.page.waitForResponse((entry) => entry.request().method() === 'POST' && entry.url().endsWith('/api/v1/admin/authorization/groups')),
             form.getByRole('button', { name: '그룹 등록', exact: true }).click(),
         ]);
-        expect(response.status()).toBe(200);
+        expect(response.status()).toBe(201);
         await expect(this.page.getByRole('region', { name: authNm + ' 권한 설정' })).toBeVisible();
     }
 

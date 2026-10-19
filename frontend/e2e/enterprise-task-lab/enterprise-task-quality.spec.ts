@@ -30,7 +30,7 @@ async function read<T>(api: APIRequestContext, route: string): Promise<T> {
   return (await response.json() as { data: T }).data;
 }
 async function created<T>(api: APIRequestContext, route: string, data: object): Promise<T> {
-  const response = await api.post(route, { data }); expect(response.status(), 'Owned task fixture create status').toBe(200);
+  const response = await api.post(route, { data }); expect(response.status(), 'Owned task fixture create status').toBe(201);
   return (await response.json() as { data: T }).data;
 }
 async function poll(verify: () => Promise<boolean>) {
@@ -138,7 +138,7 @@ async function departmentWorkflow(context: Context): Promise<Workflow> {
   const { page, api, suffix, observation, defer } = context; const prefix = `LabDept${suffix}`;
   const ids: string[] = [];
   for (const name of [`${prefix} A`, `${prefix} B`]) ids.push(await created<string>(api, DEPARTMENTS, { ognzNm: name }));
-  const rows = (await read<{ list: { ognzId: string; ognzNm: string }[] }>(api, `${DEPARTMENTS}?keyword=${prefix}&page=0&size=10`)).list;
+  const rows = (await read<{ list: { ognzId: string; ognzNm: string }[] }>(api, `${DEPARTMENTS}?keyword=${prefix}&page=1&size=10`)).list;
   expect(rows).toHaveLength(2); const child = rows[0]; const parent = rows[1]; let childExists = true;
   defer(async () => { if (childExists) await safeDelete(api, `${DEPARTMENTS}/${child.ognzId}`); await safeDelete(api, `${DEPARTMENTS}/${parent.ognzId}`); });
   return { route: '/admin/user/departments', ready: () => expect(page.getByRole('heading', { name: '부서 및 조직 관리', exact: true })).toBeVisible(),
@@ -175,7 +175,7 @@ async function boardWorkflow(context: Context): Promise<Workflow> {
   const title = `Lab Article ${suffix}`; const updated = `${title} Updated`; let post: number | null = null;
   defer(async () => { if (post !== null) await safeDelete(api, `/api/v1/boards/${board}/posts/${post}`); });
   const locate = async (name: string) => {
-    const rows = (await read<{ list: { pstSn: number; pstTtl: string }[] }>(api, `/api/v1/boards/${board}?searchCnd=0&searchWrd=${encodeURIComponent(name)}&page=0&size=20`)).list;
+    const rows = (await read<{ list: { pstSn: number; pstTtl: string }[] }>(api, `/api/v1/boards/${board}?searchCnd=0&searchWrd=${encodeURIComponent(name)}&page=1&size=20`)).list;
     const found = rows.filter(row => row.pstTtl === name); if (found.length === 1) post = found[0].pstSn; return found.length === 1;
   };
   const openSavedArticle = async (name: string, toast: string) => {
@@ -206,7 +206,7 @@ async function boardWorkflow(context: Context): Promise<Workflow> {
       const confirm = await confirmDelete(context, page.getByRole('button', { name: '게시글 삭제', exact: true })); await observation.tabTo(confirm);
       await observation.action('delete', () => observation.enter(confirm), () => poll(async () => {
         const deleted = await read<{ pstSn: number; useYn: string }>(api, `/api/v1/boards/${board}/posts/${post}?countView=false`);
-        const active = await read<{ list: { pstSn: number }[] }>(api, `/api/v1/boards/${board}?searchCnd=0&searchWrd=${encodeURIComponent(updated)}&page=0&size=20`);
+        const active = await read<{ list: { pstSn: number }[] }>(api, `/api/v1/boards/${board}?searchCnd=0&searchWrd=${encodeURIComponent(updated)}&page=1&size=20`);
         return deleted.pstSn === post && deleted.useYn === 'N' && active.list.every(row => row.pstSn !== post);
       }));
       post = null;
@@ -242,7 +242,7 @@ async function approvalWorkflow(context: Context): Promise<Workflow> {
       const submit = dialog.getByRole('button', { name: '결재 상신', exact: true }); await observation.tabTo(submit);
       let approval = 0;
       await observation.action('submit', () => observation.enter(submit), () => poll(async () => {
-        const rows = await read<{ list: { ifmlAtrzSn: number; docTtl: string }[] }>(api, `/api/v1/approvals/my?keyword=${encodeURIComponent(title)}&page=0&size=100`);
+        const rows = await read<{ list: { ifmlAtrzSn: number; docTtl: string }[] }>(api, `/api/v1/approvals/my?keyword=${encodeURIComponent(title)}&page=1&size=100`);
         const owned = rows.list.filter(row => row.docTtl === title); if (owned.length === 1) approval = owned[0].ifmlAtrzSn;
         return approval > 0;
       }));
@@ -315,7 +315,7 @@ async function reportWorkflow(context: Context): Promise<Workflow> {
       await observation.fill(dialog.locator('textarea[name="rptCn"]'), '합성 업무 보고');
       const submit = dialog.getByRole('button', { name: '보고 등록', exact: true }); await observation.tabTo(submit);
       await observation.action('create', () => observation.enter(submit), () => poll(async () => {
-        const rows = (await read<{ list: { rptpSn: number; rptTtl: string }[] }>(api, `/api/v1/work-reports?searchKeyword=${encodeURIComponent(title)}&pageIndex=1&pageUnit=10`)).list;
+        const rows = (await read<{ list: { rptpSn: number; rptTtl: string }[] }>(api, `/api/v1/work-reports?searchKeyword=${encodeURIComponent(title)}&page=1&size=10`)).list;
         const owned = rows.filter(row => row.rptTtl === title); if (owned.length === 1) id = owned[0].rptpSn; return id !== null;
       }));
       await expect(dialog).toBeHidden(); await observation.fill(model.searchInput, title); await observation.enter(model.searchInput);
@@ -395,12 +395,12 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
   expect(Object.hasOwn((await login.json()).data ?? {}, 'accessToken')).toBe(false);
   const templateCode = `LAB${suffix.slice(0, 9).toUpperCase()}`;
   await created(api, `${SURVEYS}/templates`, { srvyTmpltTypeCd: templateCode, srvyTmpltExpln: '격리 설문 과업' });
-  const templates = await read<{ list: { srvyTmpltSn: number; srvyTmpltTypeCd: string }[] }>(api, `${SURVEYS}/templates?keyword=${templateCode}&page=0&size=10`);
+  const templates = await read<{ list: { srvyTmpltSn: number; srvyTmpltTypeCd: string }[] }>(api, `${SURVEYS}/templates?keyword=${templateCode}&page=1&size=10`);
   const template = templates.list.find(row => row.srvyTmpltTypeCd === templateCode)!; expect(template).toBeTruthy();
   defer(async () => { await safeDelete(api, `${SURVEYS}/templates/${template.srvyTmpltSn}`); });
   const title = `Lab Survey ${suffix}`; const year = new Date().getUTCFullYear();
   await created(api, SURVEYS, { srvyTtl: title, srvyTmpltSn: template.srvyTmpltSn, srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231` });
-  const surveys = await read<{ list: { srvySn: number; srvyTtl: string; version: number }[] }>(api, `${SURVEYS}?keyword=${encodeURIComponent(title)}&page=0&size=10`);
+  const surveys = await read<{ list: { srvySn: number; srvyTtl: string; version: number }[] }>(api, `${SURVEYS}?keyword=${encodeURIComponent(title)}&page=1&size=10`);
   const survey = surveys.list.find(row => row.srvyTtl === title)!; expect(survey).toBeTruthy();
   defer(async () => { await safeDelete(api, `${SURVEYS}/${survey.srvySn}`); });
   const choices: { question: number; item: number; label: string }[] = [];
@@ -418,7 +418,7 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
   const released = await api.put(`${SURVEYS}/${survey.srvySn}`, { data: { srvyTtl: title, srvyTmpltSn: template.srvyTmpltSn,
     srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231`, rlsYn: 'Y', version: survey.version } }); expect(released.status()).toBe(200);
   const ownedResponses = async () => {
-    const rows = (await read<{ list: { srvyRspnsSn: number; srvySn: number; srvyQstnSn: number; srvyArtclSn: number; rspdntAnsCn: string }[] }>(api, `${RESPONSES}?page=0&size=100`)).list;
+    const rows = (await read<{ list: { srvyRspnsSn: number; srvySn: number; srvyQstnSn: number; srvyArtclSn: number; rspdntAnsCn: string }[] }>(api, `${RESPONSES}?page=1&size=100`)).list;
     return rows.filter(row => row.srvySn === survey.srvySn);
   };
   return { route: '/survey', ready: () => expect(page.getByRole('heading', { name: '온라인 설문 조사', exact: true })).toBeVisible(),

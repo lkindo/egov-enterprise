@@ -82,9 +82,9 @@ test.describe('권한 변경과 충돌 제어', () => {
         id: number;
         children: MenuNode[];
     };
-    async function data<T>(response: APIResponse, label: string): Promise<T> {
+    async function data<T>(response: APIResponse, label: string, expectedStatus = 200): Promise<T> {
         // Assert status only: response headers, credentials and login bodies are never diagnostic output.
-        expect(response.status(), label).toBe(200);
+        expect(response.status(), label).toBe(expectedStatus);
         const envelope = await response.json() as {
             data: T;
         };
@@ -165,12 +165,12 @@ test.describe('권한 변경과 충돌 제어', () => {
             let primaryFailure: unknown;
             try {
                 const department = await request.post(DEPT_API, { headers: auth, data: { ognzNm: departmentName } });
-                departmentId = await data<string>(department, '전용 부서 생성');
+                departmentId = await data<string>(department, '전용 부서 생성', 201);
                 const createdGroup = await request.post(`${AUTHORIZATION}/groups`, {
                     headers: auth, data: { code: groupCode, name: `E2E26 그룹 ${suffix}`, description: '부서 선택 배정 검증 전용' },
                 });
                 groupCreated = createdGroup.ok();
-                expect(createdGroup.status(), '전용 그룹 생성').toBe(200);
+                expect(createdGroup.status(), '전용 그룹 생성').toBe(201);
                 for (const [userId, userNm] of [[userA, '부서선택사용자'], [userB, '부서보존사용자']]) {
                     const created = await request.post(USERS, {
                         headers: auth,
@@ -178,7 +178,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                     });
                     if (created.ok())
                         createdUsers.push(userId);
-                    expect(created.status(), '전용 부서 사용자 생성').toBe(200);
+                    expect(created.status(), '전용 부서 사용자 생성').toBe(201);
                 }
                 const before = await departmentSnapshot(request, auth, departmentId);
                 expect(before.users.map(member => member.loginId).sort()).toEqual([userA, userB]);
@@ -322,13 +322,13 @@ test.describe('권한 변경과 충돌 제어', () => {
                     });
                     if (response.ok())
                         createdGroups.push(code);
-                    expect(response.status(), '전용 그룹 생성').toBe(200);
+                    expect(response.status(), '전용 그룹 생성').toBe(201);
                 }
                 const created = await request.post(USERS, {
                     headers: administrator, data: { userId, pswd: password, userNm: 'E2E 권한 사용자', role: 'USER' },
                 });
                 userCreated = created.ok();
-                expect(created.status(), '전용 사용자 생성').toBe(200);
+                expect(created.status(), '전용 사용자 생성').toBe(201);
                 // Keep the BFF's login cookie out of the context that alternates explicit bearer subjects.
                 const loginRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
                 let token: string | undefined;
@@ -656,18 +656,18 @@ test.describe('권한 변경과 충돌 제어', () => {
             let userCreated = false;
             let primaryFailure: unknown;
             const members = async (code: string) => data<{ list: UserChoice[]; total: number }>(
-                await request.get(`${AUTHORIZATION}/groups/${code}/members`, { headers: auth, params: { page: 0, size: 100 } }), '그룹 구성원 조회');
+                await request.get(`${AUTHORIZATION}/groups/${code}/members`, { headers: auth, params: { page: 1, size: 100 } }), '그룹 구성원 조회');
             try {
                 const createdGroup = await request.post(`${AUTHORIZATION}/groups`, { headers: auth, data: { code: groupCode, name: groupName, description: '구성원 일괄 변경 검증 전용' } });
                 if (createdGroup.ok())
                     createdGroups.push(groupCode);
-                expect(createdGroup.status(), '전용 그룹 생성').toBe(200);
+                expect(createdGroup.status(), '전용 그룹 생성').toBe(201);
                 const initial = await replaceGrants(request, auth, groupCode, [{ type: 'OPERATION', code: 'MENU_READ' }]);
                 const createdUser = await request.post(USERS, {
                     headers: auth, data: { userId: loginId, userNm: userName, pswd: `Member1!${randomBytes(16).toString('hex')}`, role: 'USER' },
                 });
                 userCreated = createdUser.ok();
-                expect(createdUser.status(), '전용 사용자 생성').toBe(200);
+                expect(createdUser.status(), '전용 사용자 생성').toBe(201);
 
                 await page.goto('/admin/security/authority');
                 await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupCode);
@@ -724,12 +724,12 @@ test.describe('권한 변경과 충돌 제어', () => {
                 const copyResponse = await copied;
                 if (copyResponse.ok())
                     createdGroups.push(copyCode);
-                expect(copyResponse.status(), '그룹 복제 UI 저장').toBe(200);
+                expect(copyResponse.status(), '그룹 복제 UI 저장').toBe(201);
                 await expect(page.getByRole('region', { name: `${copyName} 권한 설정`, exact: true })).toBeVisible();
                 const copy = await group(request, auth, copyCode);
                 expect([...copy.grants].sort((a, b) => a.code.localeCompare(b.code))).toEqual([...source.grants].sort((a, b) => a.code.localeCompare(b.code)));
                 expect((await members(copyCode)).list, '구성원은 복사하지 않는다').toEqual([]);
-                const history = await data<{ list: Change[] }>(await request.get(`${AUTHORIZATION}/history`, { headers: auth, params: { groupCode: copyCode, page: 0, size: 20 } }), '복제 그룹 이력 조회');
+                const history = await data<{ list: Change[] }>(await request.get(`${AUTHORIZATION}/history`, { headers: auth, params: { groupCode: copyCode, page: 1, size: 20 } }), '복제 그룹 이력 조회');
                 expect(history.list.some(change => change.reason?.includes(groupCode)), '이력 사유에 복제 원본이 남는다').toBe(true);
                 await page.goto('/');
             }
@@ -807,7 +807,7 @@ test.describe('권한 변경과 충돌 제어', () => {
             try {
                 const createdGroup = await request.post(`${AUTHORIZATION}/groups`, { headers: auth, data: { code: groupCode, name: groupName, description: '권한 묶음 적용 검증 전용' } });
                 created = createdGroup.ok();
-                expect(createdGroup.status(), '전용 그룹 생성').toBe(200);
+                expect(createdGroup.status(), '전용 그룹 생성').toBe(201);
 
                 await page.goto('/admin/security/authority');
                 await page.getByRole('textbox', { name: '그룹 검색', exact: true }).fill(groupCode);

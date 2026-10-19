@@ -65,7 +65,7 @@ test.describe('설문 응답 생명주기', () => {
                     data: { userId, userNm: userName, pswd: password, role: 'USER' },
                 });
                 userCreated = created.ok();
-                expect(created.status()).toBe(200);
+                expect(created.status()).toBe(201);
                 const owned = await readData<{ userId: string; userNm: string; crtDt?: string }>(adminRequest, `${users}/${userId}`);
                 expect(owned.userId).toBe(userId);
                 expect(owned.userNm).toBe(userName);
@@ -87,9 +87,9 @@ test.describe('설문 응답 생명주기', () => {
                 const created = await adminRequest.post(`${SURVEYS}/templates`, {
                     data: { srvyTmpltTypeCd: templateCode, srvyTmpltExpln: templateDescription },
                 });
-                expect(created.status()).toBe(200);
+                expect(created.status()).toBe(201);
                 const templates = await readData<{ list: Template[] }>(adminRequest,
-                    `${SURVEYS}/templates?keyword=${encodeURIComponent(templateCode)}&page=0&size=10`);
+                    `${SURVEYS}/templates?keyword=${encodeURIComponent(templateCode)}&page=1&size=10`);
                 const owned = templates.list.filter(template => template.srvyTmpltTypeCd === templateCode
                     && template.srvyTmpltExpln === templateDescription);
                 expect(owned).toHaveLength(1);
@@ -104,9 +104,9 @@ test.describe('설문 응답 생명주기', () => {
                 const registered = adminPage.waitForResponse(response => new URL(response.url()).pathname === SURVEYS
                     && response.request().method() === 'POST');
                 await main.getByRole('button', { name: '설문지 등록', exact: true }).click();
-                expect((await registered).status()).toBe(200);
+                expect((await registered).status()).toBe(201);
                 const surveys = await readData<{ list: Survey[] }>(adminRequest,
-                    `${SURVEYS}?keyword=${encodeURIComponent(surveyTitle)}&page=0&size=10`);
+                    `${SURVEYS}?keyword=${encodeURIComponent(surveyTitle)}&page=1&size=10`);
                 const ownedSurveys = surveys.list.filter(survey => survey.srvyTtl === surveyTitle
                     && survey.srvyTmpltSn === templateId);
                 expect(ownedSurveys).toHaveLength(1);
@@ -145,7 +145,7 @@ test.describe('설문 응답 생명주기', () => {
                     const created = await adminRequest.post(`${SURVEYS}/${surveyId}/questions`, {
                         data: { qstnTypeCd: '1', qstnCn: questionText, maxChcCnt: 1 },
                     });
-                    expect(created.status()).toBe(200);
+                    expect(created.status()).toBe(201);
                     const questions = await readData<Question[]>(adminRequest, `${SURVEYS}/${surveyId}/questions`);
                     const owned = questions.filter(question => question.srvySn === surveyId && question.qstnCn === questionText);
                     expect(owned).toHaveLength(1);
@@ -154,7 +154,7 @@ test.describe('설문 응답 생명주기', () => {
                         const item = await adminRequest.post(`${SURVEYS}/questions/${questionId}/items`, {
                             data: { artclSn: index + 1, artclCn: label, etcAnsYn: 'N' },
                         });
-                        expect(item.status()).toBe(200);
+                        expect(item.status()).toBe(201);
                     }
                     const populated = await readData<Question[]>(adminRequest, `${SURVEYS}/${surveyId}/questions`);
                     const selected = populated.find(question => question.srvyQstnSn === questionId)?.items
@@ -168,7 +168,7 @@ test.describe('설문 응답 생명주기', () => {
                 // [2026-10-01 결정 21] 새 설문은 작성 중이라 응답자 목록에 없다 — 공개한 뒤에만 보인다.
                 // APIRequestContext 는 loopback 에서 Secure 인증 쿠키를 싣지 않으므로 브라우저 안에서 조회한다.
                 const listedTitles = () => userPage.evaluate(async (title) => {
-                    const response = await fetch(`/api/v1/surveys?keyword=${encodeURIComponent(title)}&page=0&size=10`);
+                    const response = await fetch(`/api/v1/surveys?keyword=${encodeURIComponent(title)}&page=1&size=10`);
                     const body = await response.json() as { data?: { list?: { srvyTtl: string }[] } };
                     return { status: response.status, titles: (body.data?.list ?? []).map(survey => survey.srvyTtl) };
                 }, surveyTitle);
@@ -207,7 +207,7 @@ test.describe('설문 응답 생명주기', () => {
             const responseIds = new Map<number, number>();
             await test.step('관리자가 두 문항의 응답 목록과 각각의 상세에서 선택한 레이블을 확인한다', async () => {
                 let pageCount = 1;
-                for (let page = 0; page < pageCount && responseIds.size < selectedAnswers.length; page++) {
+                for (let page = 1; page <= pageCount && responseIds.size < selectedAnswers.length; page++) {
                     const responses = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=${page}&size=10`);
                     pageCount = responses.totalPage;
                     for (const { srvyQstnSn, srvyArtclSn, choiceLabel } of selectedAnswers) {
@@ -248,7 +248,7 @@ test.describe('설문 응답 생명주기', () => {
                 await adminPage.goto('/survey/response');
                 const main = adminPage.locator('main#main-content');
                 const selector = `a[href="/survey/response/${anchor}"]`;
-                const { totalPage } = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=0&size=10`);
+                const { totalPage } = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=1&size=10`);
                 await expect(main.getByText(`1 / ${totalPage} 페이지`, { exact: true })).toBeVisible();
                 for (let page = 1; page < totalPage && await main.locator(selector).count() === 0; page++) {
                     await main.getByRole('button', { name: '다음', exact: true }).click();

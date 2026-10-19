@@ -35,7 +35,7 @@ test.describe('Board & Community (Business Flow)', () => {
         try {
             const createdUser = await adminRequest.post(users, { data: { userId, userNm: userName, pswd: password, role: 'USER' } });
             userCreated = createdUser.ok();
-            expect(createdUser.status()).toBe(200);
+            expect(createdUser.status()).toBe(201);
             const ownedUser = (await (await adminRequest.get(`${users}/${userId}`)).json()).data;
             expect(ownedUser).toMatchObject({ userId, userNm: userName });
             const login = await adminRequest.post('/api/v1/auth/login', { data: { userId, password } });
@@ -51,14 +51,14 @@ test.describe('Board & Community (Business Flow)', () => {
             const createdCommunity = await adminRequest.post(communities, {
                 data: { cmntyNm: communityName, cmntyIntroCn: 'Owned membership browser journey', useYn: 'Y' },
             });
-            expect(createdCommunity.status()).toBe(200);
+            expect(createdCommunity.status()).toBe(201);
             communityId = (await createdCommunity.json()).data.cmntySn;
             expect(typeof communityId).toBe('number');
             const createdBoard = await adminRequest.post(masters, { data: {
                 bbsTtl: boardName, bbsExpln: 'Owned member-only board', bbsTypeCd: 'BBST01', bbsAtrbCd: 'BBSA01',
                 atchPsbltyFileSz: 0, useYn: 'Y', cmntySn: communityId, tmpltId: 'TMPLT_LIST',
             } });
-            expect(createdBoard.status()).toBe(200);
+            expect(createdBoard.status()).toBe(201);
             boardId = (await createdBoard.json()).data;
             expect(typeof boardId).toBe('string');
             const memberApi = `/api/v1/communities/${communityId}`;
@@ -165,7 +165,7 @@ test.describe('Board & Community (Business Flow)', () => {
         const createdTemplates: typeof active[] = [];
         try {
             for (const template of [active, inactive]) {
-                expect((await adminRequest.post(templates, { data: template })).status()).toBe(200);
+                expect((await adminRequest.post(templates, { data: template })).status()).toBe(201);
                 createdTemplates.push(template);
             }
             await adminPage.goto('/admin/help?tab=COMMUNITY');
@@ -181,7 +181,7 @@ test.describe('Board & Community (Business Flow)', () => {
                 && response.request().method() === 'POST');
             await dialog.getByRole('button', { name: '커뮤니티 등록', exact: true }).click();
             const response = await created;
-            expect(response.status()).toBe(200);
+            expect(response.status()).toBe(201);
             const community = (await response.json()).data;
             communityId = community.cmntySn;
             expect(community.tmpltId).toBe(active.tmpltId);

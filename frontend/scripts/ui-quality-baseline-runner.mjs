@@ -1099,8 +1099,8 @@ export function createEmptyUserLogPage(requestUrl) {
   };
   return {
     list: [], total: 0, totalPage: 0,
-    page: readPositiveInteger('pageIndex'),
-    size: readPositiveInteger('pageUnit'),
+    page: readPositiveInteger('page'),
+    size: readPositiveInteger('size'),
   };
 }
 
@@ -1585,7 +1585,7 @@ async function exactSyntheticMenus(api, fixture) {
 async function exactSyntheticBoards(api, fixture) {
   const data = await safeApiData(api, 'GET', withSafeQuery(
     '/api/v1/admin/system/board-masters',
-    { searchKeyword: fixture.boardTitle, pageIndex: 1, pageUnit: 100 },
+    { searchKeyword: fixture.boardTitle, page: 1, size: 100 },
   ), { reasonCode: 'synthetic-board-readback-failed' });
   const list = Array.isArray(data?.list) ? data.list : [];
   return list.filter((board) => board?.bbsTtl === fixture.boardTitle);
