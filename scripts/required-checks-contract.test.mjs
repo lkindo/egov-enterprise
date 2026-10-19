@@ -91,7 +91,8 @@ function assertProductMutationConcurrency(content) {
   const migration = jobs.get('mutation-scope-migration') ?? '';
   assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
     'product PIT must reserve custom admission capacity with exactly four concurrent batches');
-  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 10, 'all ten product PIT batches must remain');
+  // [2026-10-19 DEC-OPS-366] 설문·참여·사용자/조직 범위 셋을 더해 13개다.
+  assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, 13, 'all thirteen product PIT batches must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
 }
 
@@ -126,13 +127,17 @@ function assertRunnerAdmissionControl(content) {
 function assertProductMutationLptOrder(content) {
   const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
   const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
-  assert.deepEqual(scopes.slice(0, 6), [
+  assert.deepEqual(scopes.slice(0, 9), [
     'business-app-board',
     'business-core-file',
     'business-app-workflow',
     'business-app-delivery-operation',
     'business-core-auth',
     'business-core-code-user-common',
+    // [2026-10-19 DEC-OPS-366] 새 범위 셋 — 로컬 실측(설문 380·참여 282·사용자/조직 237 변이)으로 foundation 범위 앞에 둔다.
+    'business-app-survey',
+    'business-app-participation',
+    'business-core-user-org',
   ], 'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
 }
 
@@ -550,7 +555,7 @@ test('E2E and PIT sources start after classification without waiting for indepen
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
-  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all ten product PIT batches/);
+  assert.throws(() => assertProductMutationConcurrency(removedBatch), /all thirteen product PIT batches/);
   const serializedMigration = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
     block => block.replace('    needs: [change-scope]', '    needs: [change-scope, mutation-scope]'));
   assert.throws(() => assertProductMutationConcurrency(serializedMigration));

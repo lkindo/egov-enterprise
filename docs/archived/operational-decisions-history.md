@@ -2190,6 +2190,18 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-364 | accepted | **운영 계약 비용을 실측하고, 문서 전용 푸시의 계약 범위를 줄이지 않는다.** ① 계약 125개의 최상위 시험 시간 합은 68.3분, 로컬 벽시계는 8.2분, 가장 긴 시험은 core 시작 구성 투영(295초)이다. CI 에서는 secret-scan 잡 안의 약 6분으로 임계 경로가 아니다. ② 문서 전용 푸시도 전체 계약을 그대로 돈다 — 무거운 투영·생성기 시험이 `docs` 트리를 통째로 입력으로 복사해 생성물의 문서·메모리 투영을 대조하므로, 정적 참조나 읽기 추적으로 건너뛸 수 있는 무거운 시험이 없다. ③ 투영 시험은 이미 시작 구성마다 나뉘어 가장 긴 단위가 시험 하나라 파일을 더 나누지 않는다. ④ 재개 조건과 후보(변경하지 않는 투영 시험의 준비물·투영 공유)는 실측 기록에 둔다. | 2026-10-19 품질 평가 과제 9 가 문서 하나에도 운영 계약 전체가 돈다는 비용을 지적했다. 범위를 고르는 선택기를 새로 두면 그 자체가 거버넌스 코드를 늘리고(AGENTS 거버넌스 총량 관리), 문서 트리를 입력으로 쓰는 투영 시험을 건너뛰면 생성물 문서 투영의 회귀를 로컬에서 놓친다. 실측으로 줄일 구조적 여지가 없음을 확인하고 신호를 유지한다. | [실측 기록](../04-operations/readiness-followups.md#운영-계약-비용-실측-2026-10-19), [투영 시험 준비물](../../scripts/reusable-governance-projection.test-helpers.mjs), [pre-push 훅](../../.githooks/pre-push) | 2026-10-19 | - |
 
+## DEC-OPS-365
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-365 | accepted | **V2_133 을 공유 OCI DB 에 적용한다(2026-10-19 사용자 사전 승인, PR #937 병합 뒤).** 병합본(1c0becb74)에서 꺼낸 마이그레이션 폴더로 사전 읽기(스키마 2.132, 대상 10개 표에 `version` 없음 — 기존 3개 표만 있음, 새 검증에 걸리는 기존 행 0: 팝업 기간 역전 0·일정 시작일 공백 0) → info(대기 2.133 뿐) → pg_dump 백업(목차에 10개 표 확인) → Flyway 12.4.0 migrate → validate(157개) 순서로 했다. 읽기 확인: 10개 표 모두 `version integer NOT NULL DEFAULT 0`, CHECK 10개 추가(기존 1개와 합쳐 11), 행 수 불변(공통코드 76·상세 415 등), 모든 행 버전 0. | DEC-OPS-359 의 스키마다. dev 스택이 OCI 를 보므로 적용해 두지 않으면 다음 기동이 백업 없이 적용한다. 같은 날 표준 메타 집계를 다시 셌다 — 컬럼 1,023개 중 용어 없는 컬럼 286개(늘어난 10개는 모두 `version`), 폐기 용어 0, V2_131 의 두 컬럼은 용어·도메인과 맞는다. 원본은 적용 직전 백업이다. | [V2_133](../../api-server/src/main/resources/db/migration/V2_133__add_optimistic_version_columns.sql), [처분안](../04-operations/standard-metadata-disposition.md) | 2026-10-19 | - |
+
+## DEC-OPS-366
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-366 | accepted | **PIT 범위를 제품 10개에서 13개로 넓힌다.** ① `business-app-survey`(설문 전체, 배송·운영 범위의 `SurveyResultService` 를 옮겨 겹치지 않게), `business-app-participation`(커뮤니티·메모 보고·일정), `business-core-user-org`(사용자·그룹·부서·정책·부재)를 둔다. 각 범위는 같은 테스트 glob 과 75% 하한을 독립 적용한다. ② 영속 작업(`system.job`)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT 가 변이를 잡을 수 없으므로 넣지 않는다. ③ 핵심 대상에 `UserService`·`LoginIdReuseGuard` 를 더하고 `SurveyResultService` 는 설문 범위로 옮긴다. ④ 사용자 관리의 살아남은 변이가 드러낸 단언 공백 — 권한 잠금 재확인·보호 계정 가드·재발급 토큰 폐기·자격 변경 이벤트·민감 작업 감사·마지막 관리자 보호 — 을 시험 6건으로 닫는다. ⑤ 새 범위는 실측 긴 순서로 기존 긴 범위 여섯 뒤, foundation 범위 앞에 둔다. | PIT 대상이 일부 도메인뿐이라 설문·사용자 관리 같은 큰 서비스의 시험 탐지력이 보이지 않았다(2026-10-19 품질 평가 과제 13). 로컬 strict 실측: 설문 84%(380 변이)·참여 85%(282)·사용자/조직 84%(237, 보강 전 영속 작업 포함 66%)·배송·운영 86%(482, 설문 결과를 뺀 뒤). 네 슬롯 동시 실행에 범위가 셋 늘어 mutation-test 의 벽시계가 길어질 수 있다 — main 실측으로 다시 본다. red 증명: 계약은 새 핵심 대상을 빼면 실패하는 부정 시험을 두고, 보강 시험은 보강 전 살아남던 변이가 죽는 것으로 확인했다. | [CI 매트릭스](../../.github/workflows/ci.yml), [게이트 원장](../../config/governance/gates.json), [PIT 문서](../02-architecture/pitest-mutation-testing.md), [보강 시험](../../business-core/src/test/java/nuri/business/service/user/UserServiceAdministrativeSideEffectsTest.java) | 2026-10-19 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

@@ -1365,7 +1365,7 @@ jobs:
 
           - scope: business-app-delivery-operation
             gradle: ":business-app:pitest"
-            classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*,nuri.business.service.survey.SurveyResultService"
+            classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*"
             tests: "nuri.business.*"
 
           # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
@@ -1379,6 +1379,25 @@ jobs:
           - scope: business-core-code-user-common
             gradle: ":business-core:pitest"
             classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
+            tests: "nuri.business.*"
+
+          # [2026-10-19 DEC-OPS-366] 설문 전체 — 제출자·중복·기간·문항/항목 소속과 응답 표시(SurveyResultService 를 배송·운영에서 옮겼다).
+          - scope: business-app-survey
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.survey.*"
+            tests: "nuri.business.*"
+
+          # [2026-10-19 DEC-OPS-366] 커뮤니티 가입·회원·메모 보고 지시·일정의 소유·상태 판정.
+          - scope: business-app-participation
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
+            tests: "nuri.business.*"
+
+          # [2026-10-19 DEC-OPS-366] 사용자·그룹·부서·정책·부재 — 관리자 변경의 권한 재확인·보호 계정·토큰 폐기·감사.
+          #   영속 작업(system.job)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT 가 변이를 잡을 수 없어 넣지 않는다.
+          - scope: business-core-user-org
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
             tests: "nuri.business.*"
 
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
