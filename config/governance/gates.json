@@ -2242,6 +2242,37 @@
       "redProof": "Raise the single JavaScript chunk budget or registry current above baseline; the contract must fail."
     },
     {
+      "id": "QUALITY-FRONTEND-JS-SHARED-BUNDLE",
+      "source": "frontend/scripts/check-bundle-budget.mjs",
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "js",
+        "key": "shared"
+      },
+      "executionProfile": "EXEC-FRONTEND-BUNDLE",
+      "current": 384000,
+      "baseline": 384000,
+      "direction": "maximum",
+      "tier": [
+        "local-full",
+        "ci"
+      ],
+      "command": "pnpm -C frontend run bundle:check",
+      "category": "frontend-performance",
+      "owner": "frontend-platform",
+      "requiredCiContext": "frontend-build",
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/server/app",
+        "frontend/.next/static/chunks"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
+      "redProof": "Raise the shared first-load JavaScript budget or registry current above baseline; the contract must fail. Running the check on a build whose root layout pulls framer-motion and the monolithic generated contracts (main 682d203f3, 414,239B) must fail."
+    },
+    {
       "id": "QUALITY-FRONTEND-CSS-TOTAL-BUNDLE",
       "source": "frontend/scripts/check-bundle-budget.mjs",
       "selector": {
