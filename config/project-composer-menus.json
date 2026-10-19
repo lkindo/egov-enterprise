@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "sourceMigrationHash": "ac8ce613e87ff26f1359c13175f886018a16ccd667ee9908e812438a35be8780",
+  "sourceMigrationHash": "c85f61052fd801656ee8a3d24b9dca4873a1168b48ebcf8f6cfe744d1ae4eaf8",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -633,16 +633,6 @@
       "del_yn": "N"
     },
     {
-      "menu_sn": 9040105,
-      "up_menu_sn": 9040402,
-      "menu_ordr": 4,
-      "menu_nm": "보고서통계",
-      "menu_expln": "",
-      "modern_route": "/admin/stats/report",
-      "use_yn": "Y",
-      "del_yn": "N"
-    },
-    {
       "menu_sn": 9040106,
       "up_menu_sn": 9040402,
       "menu_ordr": 5,
@@ -1015,10 +1005,6 @@
     {
       "authrt_cd": "ROLE_ADMIN",
       "menu_sn": 9040104
-    },
-    {
-      "authrt_cd": "ROLE_ADMIN",
-      "menu_sn": 9040105
     },
     {
       "authrt_cd": "ROLE_ADMIN",
