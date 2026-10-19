@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * V2_135 가 스크랩에 (등록자, 주소) 유일 제약을 거는지 본다.
+ * V2_136 가 스크랩에 (등록자, 주소) 유일 제약을 거는지 본다.
  *
  * <p>[왜 필요한가] 서비스가 등록 전에 겹침을 막아도, 같은 사람의 두 요청이 동시에 들어오면 둘 다 '없음' 을 보고 저장한다.
  * DB 제약만이 그 경합을 닫는다. 반대로 범위가 넓으면 다른 사용자끼리, 또는 주소·등록자가 없는 레거시 행끼리 막힌다.
@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  * {@code *MigrationIntegrationTest} 를 제거한다.
  */
 @Tag("schema-validation")
-@DisplayName("V2_135 스크랩 (등록자, 주소) 유일 제약")
+@DisplayName("V2_136 스크랩 (등록자, 주소) 유일 제약")
 class ScrapOwnerUrlUniqueMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
-    private static final String RESOURCE = "db/migration/V2_135__add_scrap_owner_url_unique.sql";
+    private static final String RESOURCE = "db/migration/V2_136__add_scrap_owner_url_unique.sql";
 
     @Test
     @DisplayName("중복이 있으면 멈추고, 적용 뒤에는 같은 사용자의 같은 주소만 거부한다(사용 안 함 행 포함, NULL·다른 사용자는 허용)")
@@ -44,13 +44,13 @@ class ScrapOwnerUrlUniqueMigrationIntegrationTest extends SharedPostgresMigratio
                 assertThatExceptionOfType(SQLException.class)
                         .as("중복 행이 있는데 제약이 걸렸다")
                         .isThrownBy(() -> statement.execute(sql))
-                        .withMessageContaining("V2_135: 같은 사용자가 같은 주소로 남긴 스크랩이 둘 이상 있습니다");
+                        .withMessageContaining("V2_136: 같은 사용자가 같은 주소로 남긴 스크랩이 둘 이상 있습니다");
             } finally {
                 connection.rollback();
             }
         }
 
-        flyway(MigrationVersion.fromVersion("2.135")).migrate();
+        flyway(MigrationVersion.fromVersion("2.136")).migrate();
 
         try (var connection = openConnection(); var statement = connection.createStatement()) {
             statement.execute(insert("owner-a", "https://same.example.com", "Y"));
@@ -78,7 +78,7 @@ class ScrapOwnerUrlUniqueMigrationIntegrationTest extends SharedPostgresMigratio
     }
 
     private static String insert(String owner, String url, String useYn) {
-        return "INSERT INTO tb_bbs_scrap (scrap_nm, scrap_url, use_yn, frst_rgtr_id) VALUES ('V2_135', "
+        return "INSERT INTO tb_bbs_scrap (scrap_nm, scrap_url, use_yn, frst_rgtr_id) VALUES ('V2_136', "
                 + literal(url) + ", '" + useYn + "', " + literal(owner) + ")";
     }
 

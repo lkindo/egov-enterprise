@@ -179,7 +179,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   };
 
   // 이번 방문에서 완료한 부가 동작. oncePerVisit 동작(스크랩)은 저장에 성공하면 같은 화면에서 다시 누르지 못하게 잠근다 —
-  // 같은 주소의 두 번째 스크랩은 서버가 409 로 거부하므로(1인 1주소, V2_135) 그 요청을 보내지 않으려는 것이다. 새로고침하면
+  // 같은 주소의 두 번째 스크랩은 서버가 409 로 거부하므로(1인 1주소, V2_136) 그 요청을 보내지 않으려는 것이다. 새로고침하면
   // 잠금이 풀리고, 다시 누르면 서버 사유가 토스트로 보인다.
   const [completedActions, setCompletedActions] = useState<ReadonlySet<string>>(() => new Set());
 

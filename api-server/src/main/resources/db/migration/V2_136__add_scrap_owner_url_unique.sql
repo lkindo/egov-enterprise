@@ -21,7 +21,7 @@ BEGIN
         GROUP BY frst_rgtr_id, scrap_url
         HAVING count(*) > 1
     ) THEN
-        RAISE EXCEPTION 'V2_135: 같은 사용자가 같은 주소로 남긴 스크랩이 둘 이상 있습니다. 남길 행을 업무 소유자가 정한 뒤 다시 적용하십시오.';
+        RAISE EXCEPTION 'V2_136: 같은 사용자가 같은 주소로 남긴 스크랩이 둘 이상 있습니다. 남길 행을 업무 소유자가 정한 뒤 다시 적용하십시오.';
     END IF;
 END $$;
 
