@@ -389,7 +389,9 @@
         "config/governance/cross-domain-coupling-census.json",
         "config/governance/input-contract-mirror-census.json",
         "config/governance/privacy-access-census.json",
-        "config/governance/zdm-waivers.json"
+        "config/governance/zdm-waivers.json",
+        "scripts/harness-baseline-manifest-format.mjs",
+        "scripts/harness-baseline-manifest.mjs"
       ],
       "evidence": [
         "api-server/build/test-results/harnessTest"

@@ -345,7 +345,7 @@ PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 A
   지금 원장에서 그런 소스 파일은 셋이다(행사 외부인사 컨트롤러, 결재 기안·승인 요청 DTO — 항목 6개). 다른 api-server 파일을 거쳐 닿는 간접 참조는
   소유 규칙이 core 로 보므로 이 대조가 붉다.
 - 표적 하한(anti-vacuity)은 프로필과 무관하게 원장 **전체**에 적용한다.
-- 원장 해시는 메타 게이트의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE` 의 `__sourceHash` 가 동결한다(생성기 미러 포함).
+- 원장 해시는 하네스 기준선 도구(`scripts/harness-baseline-manifest.mjs`)의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE_PATTERN` 의 `__sourceHash` 가 동결한다. 생성기와 메타 게이트가 같은 도구를 쓴다.
 - 게이트 판정은 각 게이트 파일 안에 둔다. 공용 Java 헬퍼로 빼면 그 파일이 `__sourceHash` 밖으로 나가고, 다른 게이트
   클래스의 메서드를 부르면 한 게이트의 제거가 나머지를 끌고 나간다.
 - 게이트 소스에는 빠질 수 있는 도메인 타입을 참조하지 않는다. 생성기의 Java 의존 판정은 **코드에서만** 한다 — import 선언·

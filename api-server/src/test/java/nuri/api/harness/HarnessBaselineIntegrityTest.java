@@ -6,568 +6,103 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
-
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * 🧊 하네스 동결 목록 무결성 메타 린터 — "게이트를 조용히 무력화하는 행위" 자체를 차단한다.
+ * 🧊 하네스 동결 목록 무결성 메타 게이트 — "게이트를 조용히 무력화하는 행위" 자체를 차단한다.
  *
  * <p>[근거] 2026-07-26 Phase 2 인수 감사에서 <b>같은 은폐 패턴이 두 번</b> 관측됐다.
  * ① {@code PkGenerationStandardLinterTest.GRANDFATHERED} 를 {@code Collections.emptySet()} 으로 비워
  * 69개 엔티티의 PK 전략 일괄 변경을 통과시킴, ② {@code ApiDocsPathCoverageLinterTest} 에 {@code EXCLUDED_PATHS}
  * 7건을 <b>신설</b>해 진짜 계약 드리프트 신호를 소거함. 두 경우 모두 <b>게이트는 그린이었다.</b>
+ * 개별 린터에 수량 하한을 다는 대응은 항목 교체로 우회되고 정당한 부채 상환까지 막으며 그 린터 하나만 지킨다. 그래서 이 메타 게이트는
+ * <b>하네스 전체</b>의 동결·예외 목록과 판정 본문, 게이트 판정 원장·훅의 해시를 매니페스트({@code baseline-manifest.properties})와 대조해
+ * 변경·신설·소멸·누락(registry 에도 매니페스트에도 없는 게이트 — 그대로 두면 나중에 지워도 소멸로 잡히지 않는다)을 드러낸다.
  *
- * <p>개별 린터에 "수량 하한" 가드를 다는 대응은 (a) 항목 교체(swap)로 우회되고, (b) 정당한 부채 상환까지
- * 막으며, (c) 잡힌 그 린터 하나만 지킨다. 그래서 이 메타 린터는 <b>하네스 전체</b>의 동결/예외 목록을
- * 원본 소스에서 추출해 매니페스트(해시)와 대조한다. 탐지 대상은 4가지다.
- * <ul>
- *   <li><b>변경</b> — 목록 항목의 추가·삭제·교체(내용 해시 불일치)</li>
- *   <li><b>신설</b> — 매니페스트에 없는 새 예외/화이트리스트 목록의 등장(②의 형태)</li>
- *   <li><b>소멸</b> — 매니페스트에 있는 목록·게이트 클래스의 삭제·개명(게이트 자체 제거)</li>
- *   <li><b>누락</b> — 디스크에 존재하는 게이트 클래스가 registry({@code gates.json})에도 매니페스트에도 <b>등재되지 않은 것</b>
- *       <i>(2026-08-08 신설. 종전에는 INFO 로그였다 — 아래 참조)</i></li>
- * </ul>
+ * <p><b>이 게이트는 "고칠 수 없게" 만드는 장치가 아니다.</b> 목적은 은폐를 불가능하게가 아니라 <b>조용할 수 없게</b> 만드는 것이다 —
+ * 목록을 손대면 서로 다른 디렉터리의 두 파일(게이트 소스나 원장 + 매니페스트)이 함께 바뀌고 diff 에 의도가 드러난다. 매니페스트를 다시 쓸
+ * 때는 사유를 커밋 메시지 또는 PR 설명에 남긴다.
  *
- * <p><b>[2026-08-08] '누락' 을 추가한 이유 — 이 메타 게이트에 구멍이 있었다.</b>
- * 종전에는 신규 게이트 클래스를 <i>"추가는 허용, 매니페스트 갱신 권장"</i> 이라는 로그 한 줄로만
- * 알렸다. 그 결과 census 는 <b>'삭제' 만 막고 '누락' 은 막지 못했다</b> —
- * 게이트를 새로 만들고 등재하지 않으면 census 밖에 남고,
- * <b>그러면 나중에 그 게이트를 지워도 '소멸 감지'에 걸리지 않는다.</b>
- * 즉 <b>게이트를 조용히 없앨 수 있는 경로</b>였고, 이는 이 린터가 표방하는
- * "조용할 수 없게 만든다" 는 목적 자체를 무너뜨린다.
+ * <p><b>[2026-10-19] 계산은 {@code scripts/harness-baseline-manifest.mjs} 하나다.</b> 종전에는 같은 계산을 이 클래스(Java)와 재사용 투영 생성기(node)가 따로
+ * 구현하고 거울 계약이 둘을 맞췄다 — census 를 넓힐 때마다 두 언어를 함께 고쳐야 했고, 생성기가 따라가지 않아 생성물이 통째로 red 가 된
+ * 적이 있다(2026-09-12 실측: 신설 136 · 누락 54 · 소멸 54). 이제 이 게이트는 그 도구의 {@code --check} 를 실행해 종료 코드와 완료 문장으로
+ * 판정한다. 도구와 형식 모듈의 내용 해시가 매니페스트에 실리고({@code __registry.scripts/harness-baseline-manifest*.mjs}) 이 클래스의 본문도
+ * {@code __sourceHash} 로 동결되므로, census 정의나 이 실행기를 약하게 고치면 매니페스트가 함께 바뀐다. 원본 CI·pre-push·재사용 생성물의
+ * 하네스가 모두 이 경로이고, 늘 도는 운영 계약({@code scripts/harness-baseline-mirror-contract.test.mjs})이 같은 계산을 커밋본과 다시 대조한다.
  *
- * <p>가설이 아니라 실측이다. {@code UnreachableServiceLinterTest}(2026-08-06 신설)가 두 달 가까이
- * 그 상태로 있었고, <b>무관한 작업</b>(2026-08-07 querydsl 린터 추가) 중에 <b>우연히</b> 드러났다.
- * 우연히 드러나는 구멍은 다음에는 드러나지 않는다.
- *
- * <p><b>이 린터는 "고칠 수 없게" 만드는 장치가 아니다.</b> 저장소를 편집할 수 있는 주체는 매니페스트도
- * 편집할 수 있다. 목적은 <b>은폐를 불가능하게가 아니라 조용할 수 없게</b> 만드는 것이다 — 목록을 손대면
- * 서로 다른 디렉터리의 두 파일(린터 소스 + 매니페스트)이 함께 바뀌고, diff 에 의도가 드러난다.
- * 매니페스트 갱신 시에는 사유를 커밋 메시지 또는 PR 설명에 반드시 남긴다.
- *
- * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(소스 텍스트 파싱).
+ * <p>Node 는 하네스의 필수 도구다({@code WorkflowManifestLinterTest} 도 생성물 CI 계약을 Node 로 실행한다). Node 부재·시간 초과·완료 문장
+ * 부재는 fail-closed 다. Spring 컨텍스트를 띄우지 않는다.
  */
 @Tag("governance-harness")
 class HarnessBaselineIntegrityTest {
 
     private static final Logger log = LoggerFactory.getLogger(HarnessBaselineIntegrityTest.class);
 
-    /**
-     * 스캔 루트 — 게이트는 {@code nuri.api.harness} 밖에도 있다(모듈별 ArchUnit·RBAC 매트릭스·쿼리수 가드레일).
-     * 한 디렉터리만 지키면 "매니페스트 밖으로 게이트를 옮기는" 우회가 성립하므로 5개 모듈 테스트 소스와,
-     * ArchUnit 규칙 정의가 사는 {@code business-core} testFixtures 를 모두 본다.
-     * <p>[2026-08-31] {@code testFixtures}·{@code migration-tool} 을 추가했다 — 종전에는 규칙 본문
-     * ({@code LayeredArchitectureRules} 등)이 스캔 밖이라 규칙 완화가 census 에 전혀 남지 않았다.
-     */
-    private static final List<String> SCAN_ROOTS = List.of(
-            "api-server/src/test/java",
-            "business-app/src/test/java",
-            "business-core/src/test/java",
-            "business-core/src/testFixtures/java",
-            "foundation/src/test/java",
-            "migration-tool/src/test/java");
+    /** 매니페스트 계산·검사 도구(저장소 루트 상대). 재사용 생성물에도 같은 경로로 복사된다. */
+    private static final String MANIFEST_TOOL = "scripts/harness-baseline-manifest.mjs";
 
-    /**
-     * 게이트 성격의 테스트 파일 — {@code harness} 디렉터리 소속이거나 이름이 게이트 패턴인 것.
-     * <p>[2026-08-31] ArchUnit 계층({@code *ArchitectureTest}·{@code *IsolationTest}·규칙 정의
-     * {@code *ArchitectureRules}·{@code *ConventionRules})을 편입했다 — 종전 패턴은 이들을 하나도
-     * 매칭하지 않아, "게이트 조용한 삭제" 차단이 ArchUnit 계층 전체에 비어 있었다.
-     */
-    private static final Pattern GATE_FILE = Pattern.compile(
-            "(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\\w*"
-                    + "|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules)\\.java$");
+    /** 도구가 대조를 끝까지 마쳤을 때만 내는 문장 — 종료 코드 0 하나로 통과를 판정하지 않는다(빈 실행의 false-green 차단). */
+    private static final String CHECKED = "는 계산값과 같다(";
 
-    /**
-     * 게이트 태그 — census 술어를 registry({@code gates.json})와 단일화하는 축.
-     * <p>[2026-08-31 신설] 종전에는 "무엇이 게이트인가" 의 술어가 둘이었다 — registry 는 태그 기반,
-     * 이 메타 게이트는 디렉터리+이름 기반. 태그가 있는데 이름이 패턴 밖이면(예: schema-validation
-     * 의 migration IT 들) 이 census 의 보호를 받지 못했다. 태그를 편입 술어에 더해 두 census 가
-     * 같은 모집단을 보게 한다.
-     */
-    private static final List<String> GATE_TAGS = List.of(
-            "@Tag(\"governance-harness\")",
-            "@Tag(\"schema-validation\")",
-            "@ArchTag(\"architecture-gate\")");
-
-    /**
-     * 소스 전체 해시 대상 — ArchUnit 계열과 판정 본문 자체가 계약인 표적 게이트.
-     * <p>[2026-08-31 신설] ArchUnit 의 규칙과 allowlist({@code DomainIsolationTest.ignoreDependency(...)},
-     * {@code JpaArchitectureRules} 의 LAZY 규칙 등)는 {@code static final} 상수가 아니라 메서드 체인에
-     * 산다 — 상수 해시만으로는 allowlist 를 한 줄 늘려도 매니페스트에 아무것도 남지 않는다. 이 계열은
-     * 주석 제거·개행 정규화 후 소스 전체를 해시해, 규칙 본문의 어떤 완화도 diff 두 곳에 드러나게 한다.
-     * {@code InputContractMirrorLinterTest}도 required·nested 판정이 메서드 본문에 있으므로 같은 경계를 쓴다.
-     * {@code AttachmentSourceRegistryLinterTest}의 writer 소스 발견·가드 순서 판정도 본문이
-     * 실질 계약이므로 전체 해시로 보호한다.
-     */
-    private static final Pattern ARCH_RULE_FILE = Pattern.compile(
-            "(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules"
-                    + "|Archunit\\w*)\\.java$");
-
-    /** 소스 전체 해시 키 접미 — {@code <module>/<Class>.__sourceHash} */
-    private static final String SOURCE_HASH_SUFFIX = ".__sourceHash";
-
-    private static final String MANIFEST_PATH = "api-server/src/test/resources/harness/baseline-manifest.properties";
-    private static final String ACTUAL_OUT = "build/harness/baseline-manifest.actual.properties";
-
-    /**
-     * 게이트 클래스 census 의 두 키 종류. 한 줄에 클래스 하나다.
-     * <p>[2026-10-19] 종전에는 모든 게이트 클래스를 {@code __harness.classes} 한 줄(172개, 8천 자)에 적었다. 그 가운데 159개는
-     * registry({@link #GATE_REGISTRY} 의 {@code gateSets[].rules[].source})가 이미 exact 로 등재해 두 census 가 같은 목록을 두 번
-     * 적었고, 그 한 줄이 병합 충돌 지점이었다. 이제 매니페스트는 registry 밖의 게이트 소스(지원·규칙 정의 파일과 이름 패턴만으로
-     * 편입된 시험)만 적는다 — 값은 그 파일의 스캔 루트다. 등록된 게이트의 삭제·개명은 registry 를 함께 고치면
-     * {@code __registry.config/governance/gates.json} 해시가, registry 를 그대로 두면 {@link #REGISTERED_ABSENT_PREFIX} 키가 잡는다.
-     * 어느 쪽이든 diff 두 곳에 남는다(삭제 검출은 그대로다).
-     */
-    private static final String UNREGISTERED_CLASS_PREFIX = "__harness.unregistered.";
-
-    /**
-     * registry 에 등록됐는데 이 census 에 없는 게이트(파일 삭제·개명·스캔 루트 밖 이동·게이트 술어 이탈) — 값은 {@code MISSING}.
-     * 원본 저장소의 매니페스트에는 이 키가 없다. 재사용 투영본은 원본 registry 를 그대로 두고 게이트를 지우므로, 생성기가 지운 등록
-     * 게이트를 이 키로 매니페스트에 적는다.
-     */
-    private static final String REGISTERED_ABSENT_PREFIX = "__harness.registered.";
-
-    /** 게이트 등록 registry — 등록 판정만 읽는다. 내용 해시는 {@link #GATE_REGISTRIES} 가 따로 동결한다. */
-    private static final String GATE_REGISTRY = "config/governance/gates.json";
-
-    /**
-     * 훅 파일 자체의 무결성 축.
-     *
-     * <p>git 은 워킹트리의 훅 파일을 그대로 실행하므로, 훅을 약화하는 편집은 그 편집된 훅의 로컬 판정을
-     * 우회할 수 있다. 병합 권위는 required CI지만, 훅 해시를 매니페스트에 동결하면 로컬 피드백 경로의
-     * 조용한 약화도 JVM 하네스에서 드러난다. 정당한 훅 변경은 매니페스트를 함께 갱신해야 하므로 diff에
-     * 의도가 남는다.
-     */
-    private static final List<String> GATE_HOOKS = List.of(".githooks/pre-push", ".githooks/pre-commit");
-
-    /** 훅 해시 키 접두 — {@code __hooks.<파일명>} */
-    private static final String HOOKS_KEY_PREFIX = "__hooks.";
-
-    /**
-     * 게이트 판정의 근거 데이터를 담은 registry.
-     *
-     * <p>[왜 필요한가] 이 메타 린터는 원래 <b>Java 상수</b>만 해시했다. 그런데 동결 census 가
-     * 상수에서 JSON registry 로 이관되면서(인가 가드 census 42건 → {@code authorization-policies.json},
-     * ZDM 예외 → {@code zdm-waivers.json}, 게이트 목록·품질 하한 → {@code gates.json}) 그 목록의 편집이
-     * 매니페스트 diff 에 <b>전혀 남지 않게</b> 됐다. 즉 "목록을 손대면 서로 다른 두 파일이 함께 바뀌어
-     * diff 에 의도가 드러난다" 는 이 린터의 설계 목적이 이관된 만큼 무력화돼 있었다.
-     *
-     * <p>훅과 같은 방식으로 내용 해시를 동결한다. 목적은 편집을 <b>막는 것이 아니라 조용할 수 없게</b>
-     * 만드는 것이다 — registry 를 고치면 매니페스트도 함께 고쳐야 하고, 그 두 줄이 diff 에 남는다.
-     * 파일이 사라진 것도 위반이다: registry 부재는 그것을 읽는 게이트를 통째로 무력화한다.
-     */
-    private static final List<String> GATE_REGISTRIES = List.of(
-            "scripts/reusable-layout.mjs",
-            "scripts/reusable-layout-runtime.mjs",
-            "scripts/reusable-single-module.mjs",
-            // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
-            "scripts/reusable-artifact-entrypoints-contract.mjs",
-            "scripts/reusable-artifact-entrypoints-contract.test.mjs",
-            "scripts/verify-reusable-artifact.mjs",
-            // 위 생성물 정책이 받는 구성 이름(시작 구성 id·custom)은 이 모듈이 정한다(11단계 C8) — 정책과 같은 경계에 묶는다.
-            "scripts/composition-profiles.mjs",
-            "config/governance/reusable-harness-profile.json",
-            "config/governance/authorization-policies.json",
-            "config/governance/cross-domain-coupling-census.json",
-            "config/governance/gates.json",
-            "config/governance/input-contract-mirror-census.json",
-            "config/governance/privacy-access-census.json",
-            "config/governance/zdm-waivers.json",
-            "config/security/false-positive-review.json");
-
-    /** registry 해시 키 접두 — {@code __registry.<저장소 상대경로>} */
-    private static final String REGISTRY_KEY_PREFIX = "__registry.";
-
-    /**
-     * 스캔 대상: 게이트 판정에 관여하는 {@code static final} 상수 선언.
-     * <p>목록(Set/List/Collection/Map)뿐 아니라 <b>경로·스캔 베이스 문자열과 정규식(Pattern)</b>도 포함한다 —
-     * 스캔 루트를 빈 경로로 바꾸거나 탐지 정규식을 무력하게 고치는 것도 동일한 은폐이기 때문이다.
-     * <p>타입은 패키지 수식(예: {@code java.util.Set<String>})을 허용한다. 종전 축약형만 매칭하던 정규식은
-     * 완전수식 선언으로 우회됐다(2026-07-26 자체 침투 검증에서 발견).
-     *
-     * <p><b>[2026-09-01] 숫자·boolean 을 추가한 이유 — 이 메타 게이트에 또 하나의 구멍이 있었다.</b>
-     * 종전 목록은 참조형만 봤다. 그런데 이 하네스의 방어 상당수는 <b>숫자</b>다 —
-     * anti-vacuity 플로어({@code HANDLER_FLOOR}·{@code MIN_*}), 결합 census
-     * ({@code APP_TO_APP_COUPLING}), 부채 동결({@code LEGACY_DEBT_*}), 비정형 payload 동결
-     * ({@code UNTYPED_PAYLOAD_COUNT}), 엔티티·테이블 census. 실측 36개가 전부 매니페스트 밖이었다.
-     *
-     * <p>가설이 아니라 실증이다: {@code HANDLER_FLOOR} 을 250 → 1 로 낮춰도 이 게이트가 <b>통과했다</b>.
-     * 플로어는 "스캔이 조용히 붕괴하면 통과가 아니라 실패" 를 보장하는 장치인데, 그 장치 자체를
-     * 조용히 낮출 수 있으면 census 를 비워도 red 가 나지 않는다. 목록을 지우는 것과 같은 은폐가
-     * 숫자 한 글자로 가능했던 셈이다.
-     */
-    private static final Pattern CONST_DECL = Pattern.compile(
-            "static\\s+final\\s+(?:[A-Za-z_$][\\w$]*\\s*\\.\\s*)*"
-                    + "(?:String|Set|List|Collection|Map|Pattern"
-                    + "|int|long|short|byte|double|float|boolean|char)"
-                    + "\\s*(?:<[^=;]*>)?\\s*(?:\\[\\s*\\])?"
-                    + "\\s+([A-Za-z_$][\\w$]*)\\s*=");
-
-    private static final Pattern STRING_LITERAL = Pattern.compile("\"(?:\\\\.|[^\"\\\\])*\"");
+    private static final long TIMEOUT_SECONDS = 120;
 
     @Test
     @DisplayName("🧊 하네스 동결/예외 목록 무결성 — 게이트 무단 완화·신설 예외·게이트 삭제 차단")
     void auditHarnessBaselineIntegrity() throws IOException {
-        Path manifestPath = resolve(MANIFEST_PATH);
-
-        Map<String, Path> gateSources = new TreeMap<>();
-        Map<String, String> gateRoots = new TreeMap<>();
-        for (String root : SCAN_ROOTS) {
-            Path dir = resolve(root);
-            if (!Files.isDirectory(dir)) {
-                fail("게이트 무결성 파손: 스캔 루트를 찾을 수 없습니다 — " + root
-                        + " (workingDir=" + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");
-            }
-            String module = root.split("/")[0];
-            HarnessSourceIndex.filesUnder(dir).stream()
-                        .filter(p -> p.toString().endsWith(".java"))
-                        .filter(p -> isGateSource(p))
-                        .forEach(p -> {
-                            String className = module + "/" + p.getFileName().toString().replace(".java", "");
-                            gateSources.put(className, p);
-                            gateRoots.put(className, root);
-                        });
+        Path root = HarnessSourceIndex.repoRoot();
+        if (!Files.isRegularFile(root.resolve(MANIFEST_TOOL))) {
+            fail("게이트 무결성 파손: 매니페스트 도구가 없습니다 — " + MANIFEST_TOOL + " (root=" + root
+                    + "). 조용한 skip 은 false-green 입니다.");
         }
-
-        // 게이트 무결성(false-green 방지): 스캔이 조용히 붕괴하면 vacuous 통과가 되므로 차단
-        // [2026-08-31] 태그 술어·ArchUnit 계층 편입으로 모집단이 커져 하한을 12 → 40 으로 올렸다.
-        if (gateSources.size() < 40) {
-            fail("게이트 무결성 파손: 게이트 소스 스캔 건수(" + gateSources.size() + ")가 예상 하한(40) 미만 — "
-                    + "경로/클래스 삭제 의심 (workingDir=" + Paths.get("").toAbsolutePath() + ").");
-        }
-
-        Map<String, String> actual = new TreeMap<>();
-        Set<String> actualClasses = new TreeSet<>();
-        for (Map.Entry<String, Path> entry : gateSources.entrySet()) {
-            String className = entry.getKey();
-            Path src = entry.getValue();
-            actualClasses.add(className);
-            String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(src));
-            for (Map.Entry<String, String> e : extractConstants(code).entrySet()) {
-                actual.put(className + "." + e.getKey(), e.getValue());
-            }
-            // ArchUnit·표적 의미 게이트는 규칙이 상수 밖(메서드 본문)에 살므로 소스 전체를 동결한다.
-            if (ARCH_RULE_FILE.matcher(src.getFileName().toString()).find()) {
-                actual.put(className + SOURCE_HASH_SUFFIX, sha256Short(code.replace("\r\n", "\n")));
-            }
-        }
-        // registry 밖의 게이트 소스만 한 줄에 하나씩 적고, registry 에 등록됐는데 census 에 없는 게이트는 부재로 적는다(위 키 javadoc).
-        Set<String> registeredClasses = registeredGateClasses();
-        for (String className : actualClasses) {
-            if (!registeredClasses.contains(className)) {
-                actual.put(UNREGISTERED_CLASS_PREFIX + className, gateRoots.get(className));
-            }
-        }
-        for (String className : registeredClasses) {
-            if (!actualClasses.contains(className)) {
-                actual.put(REGISTERED_ABSENT_PREFIX + className, "MISSING");
-            }
-        }
-
-        // [W0-P1-7 보완] 훅 파일 자체를 동결한다. GATE_HOOKS javadoc 참조.
-        //   줄바꿈만 정규화하고(CRLF↔LF) 내용은 그대로 해시한다 — 주석 한 줄이 바뀌어도 드러나는 것이 목적이다.
-        //   훅이 사라진 것도 위반이다: 파일을 지우면 git 이 조용히 훅 없이 동작하므로, 부재를 통과로 넘기면
-        //   '삭제' 가 가장 값싼 우회가 된다.
-        for (String hook : GATE_HOOKS) {
-            Path hookPath = resolve(hook);
-            String hookKey = HOOKS_KEY_PREFIX + hookPath.getFileName();
-            if (!Files.isRegularFile(hookPath)) {
-                actual.put(hookKey, "MISSING");
-                continue;
-            }
-            String content = HarnessSourceIndex.read(hookPath).replace("\r\n", "\n");
-            actual.put(hookKey, sha256Short(content));
-        }
-
-        // 게이트 판정 근거 registry 도 같은 방식으로 동결한다. GATE_REGISTRIES javadoc 참조.
-        for (String registry : GATE_REGISTRIES) {
-            Path registryPath = resolve(registry);
-            String registryKey = REGISTRY_KEY_PREFIX + registry;
-            if (!Files.isRegularFile(registryPath)) {
-                actual.put(registryKey, "MISSING");
-                continue;
-            }
-            String content = HarnessSourceIndex.read(registryPath).replace("\r\n", "\n");
-            actual.put(registryKey, sha256Short(content));
-        }
-
-        Properties expected = new Properties();
-        if (Files.exists(manifestPath)) {
-            try (var reader = Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8)) {
-                expected.load(reader);
-            }
-        }
-        writeActual(actual); // 정당한 갱신 시 그대로 복사할 수 있도록 항상 산출
-
-        List<String> violations = new ArrayList<>();
-
-        if (expected.isEmpty()) {
-            violations.add("매니페스트가 없거나 비어 있습니다: " + manifestPath.toAbsolutePath());
-        }
-
-        // ① 변경 / ② 신설
-        for (Map.Entry<String, String> e : actual.entrySet()) {
-            String exp = expected.getProperty(e.getKey());
-            boolean isHook = e.getKey().startsWith(HOOKS_KEY_PREFIX);
-            boolean isRegistry = e.getKey().startsWith(REGISTRY_KEY_PREFIX);
-            if (exp == null && e.getKey().startsWith(UNREGISTERED_CLASS_PREFIX)) {
-                // ④ 누락 (게이트 클래스) — [2026-08-08] INFO 에서 **위반**으로 승격한다.
-                //
-                //   종전에는 "추가는 허용, 갱신 권장" 이라는 로그 한 줄이었다. 그 결과 census 는
-                //   **'삭제' 만 막고 '누락' 은 막지 못했다** — 게이트를 새로 만들고 매니페스트에
-                //   올리지 않으면 census 에 없는 상태로 남고, 그러면 **나중에 그 게이트를 지워도
-                //   ③ 소멸 감지에 걸리지 않는다.** 즉 게이트를 조용히 없앨 수 있는 경로였다.
-                //
-                //   ⚠ 이것은 가설이 아니라 실측이다. `UnreachableServiceLinterTest`(2026-08-06 신설)가
-                //   두 달 가까이 그 상태로 있었고, 무관한 작업(2026-08-07 querydsl 린터 추가) 중에
-                //   **우연히** 드러났다. 우연히 드러나는 구멍은 다음에는 안 드러난다.
-                //
-                //   메타 게이트가 자기 보호 범위에 구멍을 갖고 있으면 그 아래 게이트 전부가 그만큼
-                //   약해진다. 신설은 **같은 커밋에서 등재**해야 통과한다 — registry(gates.json)에 등록하거나
-                //   registry 밖의 지원 파일이면 매니페스트에 줄을 더한다.
-                violations.add("누락 감지 — 하네스 게이트 클래스가 매니페스트에 등재되지 않았습니다: "
-                        + e.getKey().substring(UNREGISTERED_CLASS_PREFIX.length())
-                        + " (gates.json registry 에도 없습니다. 등재하지 않으면 이 게이트는 '소멸 감지'의 보호를 받지 못합니다)");
-            } else if (exp == null && e.getKey().startsWith(REGISTERED_ABSENT_PREFIX)) {
-                violations.add("소멸 감지 — gates.json 에 등록된 하네스 게이트 클래스가 census 에 없습니다: "
-                        + e.getKey().substring(REGISTERED_ABSENT_PREFIX.length())
-                        + " (파일 삭제·개명·스캔 루트 밖 이동·게이트 술어 이탈. registry 를 함께 고쳐도 그 해시가 남습니다)");
-            } else if (exp == null) {
-                violations.add(isHook
-                        ? "신설 감지 — 매니페스트에 없는 훅: " + e.getKey() + " (" + e.getValue() + ")"
-                        : isRegistry
-                        ? "신설 감지 — 매니페스트에 없는 게이트 registry: " + e.getKey() + " (" + e.getValue() + ")"
-                        : "신설 감지 — 매니페스트에 없는 동결/예외 목록: " + e.getKey()
-                                + " (" + e.getValue() + "). 예외 목록의 '신설' 은 신호 은폐의 대표 수법입니다.");
-            } else if (!exp.trim().equals(e.getValue())) {
-                if (isRegistry) {
-                    violations.add("registry 변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim()
-                            + " ↔ 실제=" + e.getValue()
-                            + ("MISSING".equals(e.getValue())
-                                    ? " (registry 가 사라졌습니다 — 이를 읽는 게이트가 통째로 무력화됩니다)"
-                                    : " (게이트 판정의 근거 데이터입니다. 동결 census·예외 목록을 이 파일에서 고치면"
-                                            + " 매니페스트도 함께 갱신해야 하며, 그 두 줄이 diff 에 의도를 남깁니다.)"));
-                } else if (isHook) {
-                    violations.add("훅 변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim()
-                            + " ↔ 실제=" + e.getValue()
-                            + ("MISSING".equals(e.getValue())
-                                    ? " (훅 파일이 사라졌습니다 — git 은 훅 없이 조용히 동작하므로 '삭제' 는 가장 값싼 우회입니다)"
-                                    : " (git 은 워킹트리의 훅을 그대로 실행하므로, 훅을 무력화하는 편집은 그 편집된 훅이"
-                                            + " 자기 자신의 푸시를 승인합니다. 정당한 변경이면 매니페스트를 함께 갱신하십시오.)"));
-                } else {
-                    violations.add("변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim() + " ↔ 실제=" + e.getValue());
-                }
-            }
-        }
-
-        // ③ 소멸 (목록·게이트 클래스)
-        for (String key : expected.stringPropertyNames()) {
-            if (actual.containsKey(key)) {
-                continue;
-            }
-            if (key.startsWith(UNREGISTERED_CLASS_PREFIX)) {
-                String name = key.substring(UNREGISTERED_CLASS_PREFIX.length());
-                violations.add(actualClasses.contains(name)
-                        ? "변경 감지 — 미등록 게이트 클래스가 gates.json registry 로 옮겨졌습니다: " + name
-                                + " (매니페스트의 그 줄을 지웁니다)"
-                        : "소멸 감지 — 하네스 게이트 클래스가 사라졌습니다: " + name);
-            } else if (key.startsWith(REGISTERED_ABSENT_PREFIX)) {
-                violations.add("변경 감지 — 매니페스트가 부재로 적은 등록 게이트가 census 에 다시 있습니다: "
-                        + key.substring(REGISTERED_ABSENT_PREFIX.length()));
-            } else {
-                violations.add("소멸 감지 — 매니페스트에 등재된 목록이 사라졌습니다: " + key
-                        + " (린터 상수 삭제·개명 = 게이트 완화 가능성)");
-            }
-        }
-
-        if (!violations.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n========================================================================\n");
-            sb.append("🧊 [HARNESS BASELINE INTEGRITY] 동결/예외 목록 무결성 위반이 차단되었습니다!\n");
-            sb.append("========================================================================\n");
-            for (String v : violations) {
-                sb.append("❌ ").append(v).append("\n");
-            }
-            sb.append("\n💡 먼저 자문하십시오: 지금 목록을 손대는 이유가 '위반을 고치는 것' 입니까,\n");
-            sb.append("   아니면 '빨간 신호를 없애는 것' 입니까? 후자라면 그것은 수정이 아니라 은폐입니다.\n");
-            sb.append("   (AGENTS.md Evidence guardrails H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n");
-            sb.append("\n💡 변경이 정당하다면:\n");
-            sb.append("   1) 사유를 커밋 메시지 또는 PR 설명에 남기고\n");
-            sb.append("   2) 저장소 루트에서 매니페스트를 다시 쓰고, 바뀐 키가 모두 정당한지 diff 로 확인하십시오.\n");
-            sb.append("      node scripts/harness-baseline-manifest.mjs --write\n");
-            sb.append("      (같은 계산을 node 로 하고 키 단위 차이를 보입니다. 병합에서 같은 키가 충돌했으면\n");
-            sb.append("       --keys <키…> 로 그 키의 계산값만 보고 그 값만 옮기십시오 — 통째로 다시 쓰지 않습니다, §6.4)\n");
-            sb.append("   이 실행의 계산값은 ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append(" 에도 있습니다.\n");
-            fail(sb.toString());
-        }
-
-        log.info("✅ 하네스 동결/예외 목록 무결성 OK — 클래스 {}개(registry 등록 {}개), 매니페스트 키 {}건.",
-                actualClasses.size(), registeredClasses.size(), actual.size());
-    }
-
-    /**
-     * registry({@link #GATE_REGISTRY})에 등록된 게이트 클래스 — census 와 같은 {@code <모듈>/<단순명>} 키다(source 의 첫 경로 조각과 파일 이름).
-     * <p>registry 부재는 여기서 통과시키지 않는다 — 등록이 0 이 되어 모든 게이트가 미등록 키로 나오고,
-     * {@code __registry.config/governance/gates.json=MISSING} 이 함께 red 다. JSON 을 읽지 못하면 대조하지 않고 실패한다.
-     */
-    private static Set<String> registeredGateClasses() throws IOException {
-        Path registryPath = resolve(GATE_REGISTRY);
-        Set<String> classes = new TreeSet<>();
-        if (!Files.isRegularFile(registryPath)) {
-            return classes;
-        }
-        JsonNode registry;
+        Path output = Files.createTempFile("harness-baseline-", ".log");
+        Process process = null;
         try {
-            registry = JsonMapper.builder().build().readTree(HarnessSourceIndex.read(registryPath));
-        } catch (JacksonException ex) {
-            throw new AssertionError(GATE_REGISTRY + " 를 JSON 으로 읽지 못했습니다 — 등록 판정 없이는 census 를 대조하지 않습니다.", ex);
-        }
-        JsonNode gateSets = registry.path("gateSets");
-        if (!gateSets.isArray()) {
-            return classes;
-        }
-        for (JsonNode gateSet : gateSets) {
-            JsonNode rules = gateSet.path("rules");
-            if (!rules.isArray()) {
-                continue;
+            try {
+                process = new ProcessBuilder("node", MANIFEST_TOOL, "--check").directory(root.toFile())
+                        .redirectErrorStream(true).redirectOutput(output.toFile()).start();
+            } catch (IOException e) {
+                fail("게이트 무결성 파손: node 로 " + MANIFEST_TOOL + " 를 실행하지 못했습니다 — " + e.getMessage(), e);
             }
-            for (JsonNode rule : rules) {
-                JsonNode source = rule.get("source");
-                if (source == null || !source.isString()) {
-                    continue;
-                }
-                String path = source.asString();
-                String fileName = path.substring(path.lastIndexOf('/') + 1);
-                classes.add(path.split("/")[0] + "/"
-                        + (fileName.endsWith(".java") ? fileName.substring(0, fileName.length() - ".java".length()) : fileName));
+            if (!process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                fail("게이트 무결성 파손: " + MANIFEST_TOOL + " --check 가 " + TIMEOUT_SECONDS + "초 안에 끝나지 않았습니다.");
             }
-        }
-        return classes;
-    }
-
-    /**
-     * {@code harness} 디렉터리 소속이거나, 이름이 게이트 패턴이거나, 게이트 태그를 단 테스트 소스.
-     * <p>태그 판정은 주석 제거 후 수행한다 — javadoc 에 태그 문자열을 인용한 지원 클래스가
-     * 오탐 편입되는 것을 막는다(오탐 = 무관 파일의 상수 동결 = 소음).
-     */
-    private static boolean isGateSource(Path p) {
-        String normalized = p.toString().replace('\\', '/');
-        if (normalized.contains("/harness/") || GATE_FILE.matcher(normalized).find()) {
-            return true;
-        }
-        try {
-            String code = HarnessSourceIndex.stripCommentsPreservingStrings(HarnessSourceIndex.read(p));
-            return GATE_TAGS.stream().anyMatch(code::contains);
-        } catch (IOException e) {
-            // 읽기 실패를 '게이트 아님' 으로 넘기면 조용한 census 탈락이 된다 — fail-closed.
-            throw new java.io.UncheckedIOException("게이트 술어 판정용 소스 읽기 실패: " + p, e);
+            String report = HarnessSourceIndex.readFresh(output).strip();
+            if (process.exitValue() != 0) {
+                fail(violationMessage(report));
+            }
+            if (!report.contains(CHECKED)) {
+                fail("게이트 무결성 파손: " + MANIFEST_TOOL + " --check 가 0 으로 끝났지만 대조 완료 문장이 없습니다 — 빈 실행을 통과로 보지 않습니다.\n"
+                        + report);
+            }
+            log.info("✅ 하네스 동결/예외 목록 무결성 OK — {}", report);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            fail("게이트 무결성 파손: " + MANIFEST_TOOL + " --check 실행이 중단됐습니다.", e);
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+            Files.deleteIfExists(output);
         }
     }
 
-    /** {@code CONST -> "<문자열리터럴 수>:<정규화 RHS 의 sha256 앞 12자리>"} */
-    private static Map<String, String> extractConstants(String code) {
-        Map<String, String> result = new LinkedHashMap<>();
-        Matcher m = CONST_DECL.matcher(code);
-        while (m.find()) {
-            int end = findStatementEnd(code, m.end());
-            if (end < 0) {
-                continue;
-            }
-            String rhs = code.substring(m.end(), end);
-            String normalized = rhs.replaceAll("\\s+", " ").trim();
-            long literals = STRING_LITERAL.matcher(rhs).results().count();
-            result.put(m.group(1), literals + ":" + sha256Short(normalized));
-        }
-        return result;
-    }
-
-    /** 문자열 리터럴 밖·괄호 depth 0 인 첫 {@code ';'} 위치 (없으면 -1) */
-    private static int findStatementEnd(String code, int from) {
-        int depth = 0;
-        for (int i = from; i < code.length(); i++) {
-            char c = code.charAt(i);
-            if (c == '"') {
-                i = HarnessSourceIndex.skipLiteral(code, i, '"');
-                continue;
-            }
-            if (c == '\'') {
-                i = HarnessSourceIndex.skipLiteral(code, i, '\'');
-                continue;
-            }
-            if (c == '(' || c == '{' || c == '[') {
-                depth++;
-            } else if (c == ')' || c == '}' || c == ']') {
-                depth--;
-            } else if (c == ';' && depth <= 0) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-
-    private static String sha256Short(String text) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(text.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder();
-            for (int i = 0; i < 6; i++) {
-                hex.append(String.format("%02x", digest[i]));
-            }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 unavailable", e);
-        }
-    }
-
-    private static void writeActual(Map<String, String> actual) {
-        try {
-            Path out = Paths.get(ACTUAL_OUT);
-            Files.createDirectories(out.getParent());
-            try (BufferedWriter w = Files.newBufferedWriter(out, StandardCharsets.UTF_8)) {
-                w.write("# 자동 산출 — HarnessBaselineIntegrityTest 실행 결과(실제 소스 기준).");
-                w.newLine();
-                w.write("# 정당한 변경일 때만 baseline-manifest.properties 로 복사하고 사유를 기록할 것.");
-                w.newLine();
-                for (Map.Entry<String, String> e : actual.entrySet()) {
-                    w.write(e.getKey() + "=" + e.getValue());
-                    w.newLine();
-                }
-            }
-        } catch (IOException e) {
-            log.warn("[BaselineIntegrity] 실제값 산출 파일 기록 실패: {}", e.getMessage());
-        }
-    }
-
-    /** 저장소 루트 실행/모듈 디렉터리 실행 양쪽 지원 (존재 여부 판정은 호출부 책임 — 조용한 skip 금지) */
-    private static Path resolve(String repoRelative) {
-        Path fromRoot = Paths.get(repoRelative);
-        if (Files.exists(fromRoot)) {
-            return fromRoot;
-        }
-        Path fromModule = Paths.get("..", repoRelative);
-        return Files.exists(fromModule) ? fromModule : fromRoot;
+    private static String violationMessage(String report) {
+        return "\n========================================================================\n"
+                + "🧊 [HARNESS BASELINE INTEGRITY] 동결/예외 목록 무결성 위반이 차단되었습니다!\n"
+                + "========================================================================\n"
+                + report + "\n"
+                + "\n💡 먼저 자문하십시오: 지금 목록을 손대는 이유가 '위반을 고치는 것' 입니까,\n"
+                + "   아니면 '빨간 신호를 없애는 것' 입니까? 후자라면 그것은 수정이 아니라 은폐입니다.\n"
+                + "   (AGENTS.md Evidence guardrails H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n"
+                + "\n💡 변경이 정당하다면:\n"
+                + "   1) 사유를 커밋 메시지 또는 PR 설명에 남기고\n"
+                + "   2) 저장소 루트에서 매니페스트를 다시 쓰고, 바뀐 키가 모두 정당한지 diff 로 확인하십시오.\n"
+                + "      node " + MANIFEST_TOOL + " --write   (또는 npm run regen)\n"
+                + "      (병합에서 같은 키가 충돌했으면 --keys <키…> 로 그 키의 계산값만 보고 그 값만 옮기십시오 — 통째로 다시 쓰지 않습니다, §6.4)\n";
     }
 }

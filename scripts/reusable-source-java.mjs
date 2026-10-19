@@ -1,30 +1,18 @@
 /**
  * 소스 투영의 Java 단계 — 주석·리터럴을 걷어 낸 코드 기준 의존 판정, 제외 도메인 제거 계획과 투영.
- * 하네스 기준선 거울도 같은 주석 제거(stripJavaComments)를 써야 메타 게이트와 해시가 맞는다.
+ * 게이트 술어(isJavaGateSource)·주석 제거(stripJavaComments)·문장 끝(findJavaStatementEnd)은 하네스 기준선 census 의 정의라 그
+ * 도구(harness-baseline-manifest.mjs)에 둔다 — 투영이 지운 게이트를 세는 모집단이 기준선의 게이트 모집단과 같은 함수다. 여기가 좁으면
+ * 투영이 게이트를 지우고도 "제거 0건" 이라고 보고한다(= 조용한 손실). 기존 import 경로를 위해 여기서 다시 내보낸다.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
+import { findJavaStatementEnd, isJavaGateSource, skipJavaLiteral, stripJavaComments } from './harness-baseline-manifest.mjs';
 import { projectComposerJava } from './project-composer-source.mjs';
 import { beanValidationRefsIn, isErrorCodeSource, isScannedSource, lowerMessageContractFloors, ownedMessageKeys, pruneOwnedMessageKeys } from './reusable-source-messages.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
 
-/**
- * 게이트 술어 — 메타 게이트({@code HarnessBaselineIntegrityTest#isGateSource})와 **같은 모집단**을 본다.
- * 여기가 좁으면 투영이 게이트를 지우고도 "제거 0건" 이라고 보고한다(= 조용한 손실).
- */
-const GATE_FILE_PATTERN =
-  /(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\w*|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules)\.java$/;
-const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@ArchTag("architecture-gate")'];
-
-export function isJavaGateSource(path, source) {
-  const normalized = normalize(path);
-  if (normalized.includes('/harness/') || GATE_FILE_PATTERN.test(normalized)) return true;
-  // 태그는 문자열 리터럴이므로 **리터럴은 보존한 채 주석만** 지운다(javadoc 인용의 오탐 차단).
-  // 주석 제거는 한 번만 하고 세 태그에 같이 쓴다 — 태그마다 지우면 게이트가 아닌 파일은 같은 일을 세 번 한다.
-  const code = stripJavaComments(source);
-  return GATE_TAGS.some((tag) => code.includes(tag));
-}
+export { findJavaStatementEnd, isJavaGateSource, stripJavaComments };
 
 function javaType(path, source) {
   const packageName = source.match(/\bpackage\s+([\w.]+)\s*;/)?.[1];
@@ -254,14 +242,6 @@ export function pruneJava(output, ownership, profile) {
     ...(Object.keys(messageContractFloors).length ? { messageContractFloors } : {}) };
 }
 
-function skipJavaLiteral(source, open, quote) {
-  for (let index = open + 1; index < source.length; index += 1) {
-    if (source[index] === '\\') index += 1;
-    else if (source[index] === quote) return index;
-  }
-  return source.length - 1;
-}
-
 /** 텍스트 블록 `"""…"""` 의 마지막 따옴표 위치. 이스케이프된 따옴표(`\"`)는 닫는 구분자가 아니다. */
 function skipJavaTextBlock(source, open) {
   for (let index = open + 3; index < source.length; index += 1) {
@@ -286,9 +266,9 @@ function skipJavaTextBlock(source, open) {
  *
  * 리터럴은 빈 껍데기로 바꿔 자리만 남긴다 — 완전히 지우면 토큰이 붙어 새 식별자가 생긴다.
  *
- * 텍스트 블록(`"""`)은 여기서만 따로 인식한다. 공용 {@link skipJavaLiteral} 은 메타 게이트의 해시용
- * 주석 제거와 **동일해야** 하므로 바꾸지 않는다 — 그 함수로는 텍스트 블록 안의 `"` 가 리터럴 경계로 읽혀
- * 따옴표 사이 조각이 코드로 남는다(JSON 픽스처 등).
+ * 텍스트 블록(`"""`)은 여기서만 따로 인식한다. 공용 {@link skipJavaLiteral} 은 하네스 기준선 해시용
+ * 주석 제거의 경계라 바꾸지 않는다(바꾸면 기준선의 모든 상수 해시가 바뀐다) — 그 함수로는 텍스트 블록 안의 `"` 가
+ * 리터럴 경계로 읽혀 따옴표 사이 조각이 코드로 남는다(JSON 픽스처 등).
  */
 export function stripJavaCommentsAndStringLiterals(source) {
   let output = '';
@@ -313,46 +293,5 @@ export function stripJavaCommentsAndStringLiterals(source) {
     }
   }
   return output;
-}
-
-/**
- * 주석만 제거하고 문자열 리터럴은 보존한다 — 메타 게이트의
- * {@code HarnessBaselineIntegrityTest#stripCommentsPreservingStrings} 와 **동일해야 한다**.
- * 블록 주석을 공백 한 칸으로 바꾸는 것도 그 동등성의 일부다(지워 버리면 앞뒤 토큰이 붙어
- * 없던 식별자가 생기고, 상수 해시·__sourceHash 가 메타 게이트와 달라진다).
- */
-export function stripJavaComments(source) {
-  let output = '';
-  for (let index = 0; index < source.length;) {
-    const char = source[index];
-    if (char === '"' || char === "'") {
-      const close = skipJavaLiteral(source, index, char);
-      output += source.slice(index, close + 1);
-      index = close + 1;
-    } else if (char === '/' && source[index + 1] === '/') {
-      const newline = source.indexOf('\n', index + 2);
-      index = newline < 0 ? source.length : newline;
-    } else if (char === '/' && source[index + 1] === '*') {
-      const close = source.indexOf('*/', index + 2);
-      index = close < 0 ? source.length : close + 2;
-      output += ' ';
-    } else {
-      output += char;
-      index += 1;
-    }
-  }
-  return output;
-}
-
-export function findJavaStatementEnd(source, from) {
-  let depth = 0;
-  for (let index = from; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === '"' || char === "'") index = skipJavaLiteral(source, index, char);
-    else if ('({['.includes(char)) depth += 1;
-    else if (')}]'.includes(char)) depth -= 1;
-    else if (char === ';' && depth <= 0) return index;
-  }
-  return -1;
 }
 

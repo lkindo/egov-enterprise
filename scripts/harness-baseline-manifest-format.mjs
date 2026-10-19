@@ -5,14 +5,15 @@
  * node 내장 밖의 import 를 두지 않는다. main 병합 도구는 병합 중인 작업 트리에서 이 모듈만 읽는다 — 재사용 투영 모듈을 정적으로
  * 끌어오면 그 그래프의 어느 파일에 충돌 표기가 남았을 때 모듈 적재 단계에서 죽어 충돌 목록과 안내를 보이지 못한다.
  *
- * 쓰기 형식은 JVM 메타 게이트가 쓰는 산출 파일과 같다. 머리 주석은 호출자가 넘기고(기본은 JVM 산출 파일의 2줄), 키는 Java TreeMap 과
- * 같은 UTF-16 코드 단위 순서다(localeCompare 는 `_`·대소문자 순서가 달라 줄이 뒤섞인다). 줄 끝은 LF 이고 마지막 줄 뒤에도 LF 를 둔다.
+ * 머리 주석은 호출자가 넘기고(기본은 아래 2줄), 키는 UTF-16 코드 단위 순서다(Java TreeMap 과 같은 순서 — 이 형식이 처음 JVM 산출
+ * 파일이었고 커밋본의 줄 순서가 그것이다. localeCompare 는 `_`·대소문자 순서가 달라 줄이 뒤섞인다). 줄 끝은 LF 이고 마지막 줄 뒤에도
+ * LF 를 둔다. 이 파일의 내용 해시도 매니페스트에 실린다(harness-baseline-manifest.mjs 의 GATE_REGISTRIES) — 줄 해석을 고치면 함께 다시 쓴다.
  */
 
 export const MANIFEST_PATH = 'api-server/src/test/resources/harness/baseline-manifest.properties';
 export const DEFAULT_HEADER = Object.freeze([
-  '# 자동 산출 — HarnessBaselineIntegrityTest 실행 결과(실제 소스 기준).',
-  '# 정당한 변경일 때만 baseline-manifest.properties 로 복사하고 사유를 기록할 것.',
+  '# 자동 산출 — scripts/harness-baseline-manifest.mjs 계산값(실제 소스 기준). 하네스 메타 게이트가 --check 로 대조한다.',
+  '# 정당한 변경일 때만 --write(또는 npm run regen)로 다시 쓰고 사유를 커밋에 남길 것.',
 ]);
 
 const CONFLICT_MARKER = /^(?:<{7}|\|{7}|={7}|>{7})(?: |$)/m;
@@ -30,7 +31,7 @@ export function parseManifest(text) {
   return entries;
 }
 
-/** 파일 맨 앞의 연속된 주석 줄(머리 주석). 없으면 JVM 산출 파일의 머리 주석이다. */
+/** 파일 맨 앞의 연속된 주석 줄(머리 주석). 없으면 기본 머리 주석이다. */
 export function manifestHeader(text) {
   const header = [];
   for (const line of (text ?? '').split(/\r?\n/)) {
