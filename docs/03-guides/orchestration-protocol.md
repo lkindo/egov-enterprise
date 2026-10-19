@@ -220,7 +220,7 @@
 
 | 생성물 | 다시 만드는 방법 |
 |---|---|
-| 공용 메모리 표(`decisions.md`·`known-gaps.md`) | `decisions.md`는 양쪽 행을 모두 남기고 ID 순서로 합친다. `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
+| 공용 메모리 표(`decisions.md`·결정 역사 색인·`known-gaps.md`) | `decisions.md`와 [결정 역사 색인](../archived/operational-decisions-index-historical.md)은 양쪽 행을 모두 남기고 ID 순서로 합친다(한 결정이 두 색인에 함께 남으면 Atlas 생성기가 red다). `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
 | `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
 | 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`npm run merge:main`이 실행하는 명령). 단계 구성은 `frontend/package.json`, 계약 재생성 절차의 정본은 [API 문서 가이드](api-documentation-guide.md)다. |
 | 슬롯 레지스트리(`frontend/src/extensions/generated-*.ts`) | `npm run slots:generate`(`node scripts/slot-registry.mjs --write`, 검사: `npm run slots:check`). 기여 파일에서 만들며 레지스트리도 `frontend/src` 소스라 그것을 읽는 경계 census·화면 목록보다 먼저 만든다. |

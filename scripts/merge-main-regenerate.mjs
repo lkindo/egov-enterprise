@@ -8,7 +8,7 @@
  *
  * 하는 일:
  *   1. 작업 트리가 깨끗한지 확인하고 `--no-ff --no-commit` 으로 base 를 합친다(diff3 충돌 표기).
- *   2. 공용 메모리 표(decisions.md·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
+ *   2. 공용 메모리 표(decisions.md·결정 역사 색인·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
  *      고쳤거나 같은 새 ID 를 썼으면 합치지 않고 멈춘다(프로토콜 §6.4 — 사람이 한 행으로 합치거나 번호를 바꾼다).
  *   3. 다시 만들 생성물의 충돌은 한쪽을 고르지 않고 재생성 결과로 덮는다. URL 승인 파일은 해시 줄만 다를 때 푼다.
  *      그 밖의 충돌(api-docs.json·하네스 manifest·메뉴 snapshot·소스)은 목록을 보이고 멈춘다. 하네스 manifest 는 양쪽 값이
@@ -36,6 +36,8 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 
 export const MEMORY_TABLES = new Map([
   ['.agent/memory/decisions.md', { order: 'id' }],
+  // 지금의 작업을 제약하지 않게 된 결정 행은 decisions.md 에서 이 색인으로 옮긴다 — 같은 ID 순서 병합을 쓴다.
+  ['docs/archived/operational-decisions-index-historical.md', { order: 'id' }],
   ['.agent/memory/known-gaps.md', { order: 'keep' }],
 ]);
 

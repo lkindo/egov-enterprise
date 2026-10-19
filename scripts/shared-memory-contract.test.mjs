@@ -140,6 +140,8 @@ function decisionMemoryAdrIds(decisions) {
  * ID 가 보관 원문의 앵커이고, 그 앵커가 실제 절로 풀리는지와 상태·시행일·supersedes 일치는 Atlas 카탈로그가 본다.
  */
 export const DECISION_ARCHIVE = '../../docs/archived/operational-decisions-history.md';
+// 지금의 작업을 제약하지 않는 결정은 자동 로드되지 않는 역사 색인에 있다. 두 색인의 누락·중복·원문 일치는 Atlas 카탈로그가 본다.
+export const DECISION_HISTORICAL_INDEX = '../../docs/archived/operational-decisions-index-historical.md';
 export const OPERATIONAL_DECISION_HEADER = Object.freeze(['ID', '상태', '결정', '시행일', 'supersedes']);
 
 export function decisionMemoryOperationalIds(decisions) {
@@ -147,6 +149,10 @@ export function decisionMemoryOperationalIds(decisions) {
   assert.ok(
     section.split(/\r?\n/).some((line) => line.startsWith('ID가 보관 원문의 앵커다') && line.includes(`](${DECISION_ARCHIVE})`)),
     '운영 결정 index 에는 ID 가 보관 원문의 앵커라는 규칙 줄과 보관 기록 링크가 있어야 합니다.',
+  );
+  assert.ok(
+    section.includes(`](${DECISION_HISTORICAL_INDEX})`),
+    '운영 결정 index 에는 역사 색인 링크가 있어야 합니다 — 옮긴 결정을 찾는 길은 그 링크뿐입니다.',
   );
   const ids = markdownTableRows(section, OPERATIONAL_DECISION_HEADER).map((cells) => {
     assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `운영 결정 index에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
@@ -547,6 +553,10 @@ test('operational decision index keeps the five-column schema and its archive an
   const ruleLine = decisions.split(/\r?\n/).find((line) => line.startsWith('ID가 보관 원문의 앵커다'));
   assert.ok(ruleLine);
   assert.throws(() => decisionMemoryOperationalIds(decisions.replace(ruleLine, '')), /ID 가 보관 원문의 앵커라는 규칙 줄/u);
+  // 역사 색인 링크가 없으면 옮긴 결정을 찾을 길이 없다.
+  const historicalLink = `](${DECISION_HISTORICAL_INDEX})`;
+  assert.ok(decisions.includes(historicalLink));
+  assert.throws(() => decisionMemoryOperationalIds(decisions.split(historicalLink).join('](../../docs/README.md)')), /역사 색인 링크가 있어야 합니다/u);
 });
 
 test('memory truth bindings fail closed for synthetic shard and ADR drift', () => {

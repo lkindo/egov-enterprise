@@ -462,17 +462,39 @@ export function buildAtlasCatalog(repoRoot) {
   }
   requireValue(historyHeadings.length === historyRows.length, 'decision history headings and rows differ');
   const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
-  const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) => {
+  // Operational decisions are split between the auto-loaded current index and a historical index (retired, fully
+  // superseded, one-off runs, implementation records). Together they index every archived decision exactly once.
+  const historicalIndexSource = 'docs/archived/operational-decisions-index-historical.md';
+  const HISTORICAL_KINDS = new Set(['퇴역', '대체됨', '일회성 실행', '구현 기록']);
+  const indexRowPrefix = '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|';
+  const decisionIndexRows = [
+    ...tableRows(decisionText, indexRowPrefix).map(row => ({ ...row, source: decisionSource, historical: false })),
+    ...tableRows(io.read(historicalIndexSource), indexRowPrefix).map(row => ({ ...row, source: historicalIndexSource, historical: true })),
+  ];
+  const indexedDecisionIds = decisionIndexRows.map(row => row.cells[0]).filter(id => id.startsWith('DEC-'));
+  for (const id of new Set(indexedDecisionIds)) {
+    requireValue(indexedDecisionIds.filter(other => other === id).length === 1,
+      `${id} is indexed more than once across the current and historical decision indexes`);
+  }
+  for (const id of decisionHistory.keys()) {
+    requireValue(indexedDecisionIds.includes(id), `${id} archived decision is missing from both decision indexes`);
+  }
+  const decisionRecords = decisionIndexRows.map(({ raw, cells, source, historical }) => {
     const id = cells[0];
-    let links = localLinks(raw, decisionSource);
+    let links = localLinks(raw, source);
     let fullCells = cells;
     let fullRaw = raw;
     // ADR rows: ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes. DEC rows drop the repeated reason/source
-    // columns — ID | 상태 | 결정 | 시행일 | supersedes — because the ID is the archive anchor.
+    // columns — ID | 상태 | 결정 | 시행일 | supersedes — because the ID is the archive anchor. Historical rows add
+    // 분류 | 근거 after them.
     const isDecision = id.startsWith('DEC-');
-    requireValue(cells.length === (isDecision ? 5 : 7),
-      `${id} decision index row requires ${isDecision ? 'five' : 'seven'} columns`);
+    if (historical) requireValue(isDecision, `${id} historical decision index accepts only operational decisions`);
+    const columns = historical ? 7 : isDecision ? 5 : 7;
+    requireValue(cells.length === columns,
+      `${id} ${historical ? 'historical ' : ''}decision index row requires ${columns === 5 ? 'five' : 'seven'} columns`);
+    if (historical) requireValue(HISTORICAL_KINDS.has(cells[5]), `${id} historical decision kind must be one of ${[...HISTORICAL_KINDS].join(', ')}`);
     const dateIndex = isDecision ? 3 : 5;
+    const supersedesIndex = isDecision ? 4 : 6;
     if (isDecision) {
       requireValue(links.every(link => link.path.split('#')[0] !== decisionHistorySource),
         `${id} must not link a decision history section; its ID is the archive anchor`);
@@ -503,11 +525,12 @@ export function buildAtlasCatalog(repoRoot) {
     }
     const searchCells = fullCells === cells ? cells : [...cells, ...fullCells];
     const referenceText = fullRaw === raw ? raw : `${raw}\n${fullRaw}`;
-    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], decisionSource, {
+    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], source, {
       details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[dateIndex]),
-        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells.at(-1)),
+        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells[supersedesIndex]),
+        ...(historical ? [detail('역사 분류', cells[5]), detail('역사 분류 근거', cells[6])] : []),
         detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
-      supersedes: cells.at(-1), references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
+      supersedes: cells[supersedesIndex], references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
       links,
       searchText: [...searchCells, adrText].join('\n'),
     });

@@ -189,6 +189,8 @@
 
 [operational-decisions-history.md](archived/operational-decisions-history.md)는 짧은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
 
+[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 지금의 작업을 제약하지 않는 운영 결정(퇴역·전부 대체·일회성 실행·구현 기록)의 짧은 역사 색인이다. 공용 결정 인덱스와 함께 보관 원문의 모든 DEC를 한 번씩 색인하며, 에이전트 진입점은 자동으로 읽지 않는다.
+
 ---
 
 ## 📌 docs 밖 주요 문서

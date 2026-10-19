@@ -97,6 +97,8 @@ refresh_triggers:
 
 ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [보관 기록](../../docs/archived/operational-decisions-history.md)의 `#<ID 소문자>` 절(예: `#dec-ops-001`)에 있다.
 
+이 표는 지금의 작업을 제약하는 결정만 둔다. 퇴역·전부 대체·일회성 실행·구현 기록으로 분류한 결정은 [역사 색인](../../docs/archived/operational-decisions-index-historical.md)에 있고 전문은 같은 보관 원문 앵커다. 행이 퇴역·전부 대체·일회성 실행이 되면 그 행을 역사 색인으로 옮긴다(지우지 않는다).
+
 | ID | 상태 | 결정 | 시행일 | supersedes |
 |---|---|---|---|---|
 | DEC-OPS-001 | accepted | 프로젝트 공통 규칙은 `AGENTS.md` 한 곳에 두고 저장소 `GEMINI.md`·`CLAUDE.md`는 자동 탐색용 얇은 어댑터로 유지한다. | 2026-08-18 | - |
@@ -105,25 +107,19 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-004 | accepted | 로컬 훅은 범위별 빠른 피드백, required CI는 병합 권위로 구분한다. | 2026-08-18 | - |
 | DEC-OPS-005 | accepted | `migration-tool`은 온라인 런타임에 포함하지 않는 독립·선택형 offline ETL이다. | 2026-08-18 | - |
 | DEC-OPS-006 | accepted | 하네스의 논리 규칙 ID는 유지하되 발견·실행·품질 하한은 중앙 `gates.json`과 소수 runner/task로 통합한다. | 2026-08-19 | - |
-| DEC-OPS-007 | superseded | main 목표 review policy는 approval 1, code-owner review, last-push approval, thread resolution을 요구하고 stale review 자동 dismiss는 끈다. | 2026-08-19 | - |
 | DEC-OPS-008 | accepted | 조건부 heavy job은 내부 `*-scope`로 두고 브랜치 보호에는 항상 완료되는 안정 aggregate context만 노출한다. | 2026-08-19 | - |
 | DEC-OPS-009 | accepted | 단독 운영 기간의 main review policy는 approval 0·code-owner/last-push/thread-resolution 전부 비활성으로 확정하고, 명세·계약을 이 값에 양방향 동결한다. | 2026-08-20 | DEC-OPS-007 |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. | 2026-08-20 | - |
 | DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. | 2026-08-20 | - |
 | DEC-OPS-012 | accepted | UI quality baseline 의 새 authoritative run(r13)과 수동 접근성 48건 수집을 보류하고, r12 를 현재 자동 증거로 유지한 채 UI 개선 작업을 재개한다. | 2026-08-22 | - |
 | DEC-OPS-013 | accepted | 단독 운영 기간 IA 프로그램의 세 owner 역할(Product·IA·Security/Privacy)을 저장소 소유자 lkindo 로 지명하고 승인 채널을 저장소 PR 리뷰로 기록한다. | 2026-08-23 | - |
-| DEC-OPS-014 | accepted | 밀도·구조 토큰 어휘 12종(`--control-h`·`--control-h-sm`·`--cell-px`·`--cell-py`·`--font-size-body`·`--form-gap`·`--page-max-w`·`--page-pad`·`--page-pad-md`·`--page-pad-lg`·`--radius-control`·`--filter-pad`)을 두 브랜드 프로필의 라이트·다크 4개 블록에 신설한다(Phase 1, ERP 전환 마스터플랜 D2 — 마스터플랜 정본 문서는 아직 저장소 미반영이라 링크하지 않는다). | 2026-08-23 | - |
 | DEC-OPS-015 | accepted | 직교 data-density 축(comfortable·compact)을 신설한다 — 서버 env `UI_DENSITY`를 allowlist 검증해 `<html data-density>` 전역 1곳에 배선하고, ERP 밀도는 globals.css 의 compact 무레이어 오버라이드 블록 한 곳으로 전달한다. | 2026-08-23 | - |
 | DEC-OPS-016 | accepted | 백엔드 응답 계약에 세 조건을 모두 충족하는 binary/stream 예외 하나를 도입한다. | 2026-08-23 | - |
 | DEC-OPS-017 | accepted | 파일럿 시각 회귀 기준선을 대시보드·로그인 로그·공통코드·로그인 네 화면으로 확대하고 비결정적 결재함은 제외한다. | 2026-08-23 | - |
-| DEC-OPS-018 | accepted | 설문·투표를 재사용 선택 기능으로 분리하고 투영과 검증을 연결한다. | 2026-08-24 | - |
 | DEC-OPS-019 | accepted | 파생 제품의 여섯 검증 축 기준선 재동결 절차와 diff 검토를 정한다. | 2026-08-24 | - |
 | DEC-OPS-020 | accepted | IA acceptanceEvidence를 기관 재검증 의무로 연결하고 개별 승인과 등록된 소비자 아래에서만 사용한다. | 2026-08-24 | - |
-| DEC-OPS-021 | accepted | main 지정 커밋에 첫 릴리스 v0.1.0을 부여하고 세 프로필 산출물을 생성한다. 외부 발행은 별도 승인이다. | 2026-08-24 | - |
 | DEC-OPS-022 | accepted | 포털형→업무형 UI 전환의 판단 기준을 **업무 화면 문법 카탈로그**(공통 규칙 G1~G15 · archetype 8종 · 밀도 계약)로 명문화하고, A1 조회형 목록을 `WorkListPage` archetype 셸로 1급화한다. | 2026-08-24 | - |
 | DEC-OPS-023 | accepted | W3(A1 이행 웨이브) 종료와 함께 두 가지 규칙을 확정한다. | 2026-08-25 | - |
-| DEC-OPS-024 | accepted | `/admin/security/login-policy` 의 config redirect 를 제거해 로그인 정책 화면을 정본 경로로 복원한다. | 2026-08-27 | DEC-OPS-023 ① 의 login-policy 예외만 무효화(규칙 자체는 유지) |
-| DEC-OPS-025 | accepted | ADR-0007의 2026-08-23 G1 워크숍과 참조-기본 IA 승인으로 DEC-OPS-013의 **G1 날짜 보류·T0 미성립·SLA 미개시 부분만** 종료한다. | 2026-08-31 | DEC-OPS-013의 G1 날짜·T0 보류 부분만 종료(owner·PR 채널은 유지) |
 | DEC-OPS-026 | accepted | DEC-OPS-022에 포함된 A2 소비자 수·status-color baseline·`W5 진행 중` 같은 **이행 시점 스냅샷을 현재 상태 판단에서 종료**한다. | 2026-08-31 | DEC-OPS-022의 진행 스냅샷만 종료(카탈로그·archetype 결정은 유지) |
 | DEC-OPS-027 | accepted | 하네스 실행 경로 강화 다섯 축을 도입한다. | 2026-09-01 | - |
 | DEC-OPS-028 | accepted | 생성 Zod 계약에서 **응답(response) 방향의 non-required 필드는 `null` 을 허용**한다(`.optional().nullable()`). 요청(request) 방향과 required 필드는 그대로 엄격하게 둔다. | 2026-09-01 | - |
@@ -131,59 +127,33 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-030 | accepted | 결재 도메인의 프로세스·UX 감사 조치를 반영한다. | 2026-09-05 | - |
 | DEC-OPS-031 | accepted | 설문 열람 상태와 응답 제출의 기간 경계를 서버·화면에서 일치시킨다. | 2026-09-05 | - |
 | DEC-OPS-032 | accepted | 사용자 관리 상세에서 관리자 비밀번호 초기화를 제공하고 안전한 별도 전달을 안내한다. | 2026-09-05 | - |
-| DEC-OPS-033 | accepted | 쪽지함과 결재함에 서버 페이징을 연결하고 페이지 이동 시 선택·오류를 초기화한다. | 2026-09-05 | - |
 | DEC-OPS-034 | accepted | 게시글 작성 경로 세 곳을 하나로 통합하고 첨부 삭제 경로를 연결한다. | 2026-09-05 | - |
 | DEC-OPS-035 | accepted | 메일·문자 발송의 수신자 피커를 공용화하고 주소록을 연결한다. | 2026-09-05 | - |
-| DEC-OPS-036 | accepted | 외부인사·포상·템플릿의 수정·삭제 API와 화면을 연결한다. | 2026-09-05 | - |
-| DEC-OPS-037 | accepted | 업무함과 커뮤니티에 관리 화면을 연결한다. | 2026-09-06 | - |
 | DEC-OPS-038 | accepted | 도메인 감사의 미연결·데모·표시 경계 네 축을 정리한다. | 2026-09-06 | - |
-| DEC-OPS-039 | accepted | ISM을 결재함에 통합하는 제안과 업무 어휘를 정리한다. | 2026-09-06 | - |
-| DEC-OPS-040 | accepted | 도메인 감사에서 남긴 disposition 제안 11건을 사용자 위임에 따른 개별 승인으로 확정한다. | 2026-09-06 | DEC-OPS-039 의 overlay 제안(proposed)을 승인으로 종료 |
-| DEC-OPS-041 | accepted | 중복 온라인 투표 API를 제거하고 기존 Poll API로 소비자를 통합한다. | 2026-09-06 | - |
 | DEC-OPS-042 | accepted | 관리자 알림 발송에 수신자 검증과 실제 저장·전달 경로를 연결한다. | 2026-09-06 | - |
 | DEC-OPS-043 | accepted | 커뮤니티 가입 승인·반려 전이를 연결한다. | 2026-09-06 | - |
 | DEC-OPS-044 | accepted | 게시글 쓰기 API를 /api/v1/boards 네임스페이스로 통합한다. | 2026-09-06 | - |
-| DEC-OPS-045 | accepted | 감사 잔여 소규모 정정 두 건을 사용자 승인으로 반영한다. | 2026-09-06 | - |
 | DEC-OPS-046 | accepted | 도메인 UX 최적화의 투표 결과 노출·검증·병합 경계를 바로잡는다. | 2026-09-07 | - |
 | DEC-OPS-047 | accepted | 템플릿 삭제 참조 차단 | 2026-09-06 | DEC-OPS-036 의 "템플릿 삭제 참조 차단을 두지 않는다" 부분만 종료 |
 | DEC-OPS-048 | accepted | 고아 도메인 ISG(인터넷 서비스 안내)를 배선하고, 같은 사각을 닫는 게이트를 신설한다. | 2026-09-07 | - |
 | DEC-OPS-049 | accepted | 부재(자리비움) 관리를 배선한다 | 2026-09-07 | - |
 | DEC-OPS-050 | accepted | `operation-consumer-census` 가 증명하는 범위를 정확히 한정한다. | 2026-09-07 | DEC-OPS-048 의 census 보증 범위 서술만 한정(게이트 자체는 유지) |
 | DEC-OPS-051 | accepted | `operation-consumer-census` 에 축 2(서비스 메서드 → 화면 도달성)를 신설한다. | 2026-09-07 | DEC-OPS-050 의 "축 2 는 별도 게이트가 필요하다" 를 종료 |
-| DEC-OPS-052 | accepted | server action 의 생성 실행기 직접 호출을 서비스 위임으로 통일한다 | 2026-09-07 | - |
 | DEC-OPS-053 | accepted | 죽은 `IsmAdminService` 를 걷고, 그로 인해 드러난 표면을 `superseded-surface` 카테고리로 기록한다 | 2026-09-07 | - |
-| DEC-OPS-054 | accepted | 축 2 의 화면 소비 판정에 직접 호출 형태를 편입한다. | 2026-09-07 | DEC-OPS-051·053 이 보고한 화면 고아 수치를 정정(게이트 설계는 유지) |
-| DEC-OPS-055 | accepted | `BoardUserService` 의 대체된 4메서드(`getPost`·`createPost`·`updatePost`·`deletePost`)를 걷는다 | 2026-09-07 | - |
-| DEC-OPS-056 | accepted | 중복 구현 파일 `services/foundation/security/SecurityAdminService.ts` 를 통째로 걷는다 | 2026-09-07 | - |
-| DEC-OPS-057 | accepted | `UserAuthorityAdminService.saveUserAuthority`(단수) 편의 래퍼를 걷는다 | 2026-09-07 | - |
 | DEC-OPS-058 | accepted | 설문 수정 3본(`updateSurvey`·`updateQuestion`·`updateItem`)을 배선한다 | 2026-09-07 | - |
-| DEC-OPS-059 | accepted | 본인 비밀번호 변경을 배선한다 | 2026-09-08 | DEC-OPS-032 가 열지 않은 본인 변경 경로를 보완(관리자 초기화 결정은 유지) |
 | DEC-OPS-060 | accepted | 내 프로필 수정을 배선한다 | 2026-09-08 | - |
 | DEC-OPS-061 | accepted | 행정 구역 코드에 정정 경로를 연다 | 2026-09-08 | - |
 | DEC-OPS-062 | accepted | 축 2(화면 도달성) 래칫의 운영 방침을 확정한다 — 0 을 목표로 하지 않는다. | 2026-09-08 | DEC-OPS-051 의 래칫 목적을 재확인하고 잔여 소진 목표를 명시적으로 배제 |
-| DEC-OPS-063 | accepted | 만족도 수정을 배선한다 | 2026-09-08 | - |
-| DEC-OPS-064 | accepted | 만족도 관리자 대리 삭제를 배선한다 | 2026-09-08 | - |
 | DEC-OPS-065 | accepted | 알림 단건 삭제를 배선한다 | 2026-09-08 | - |
-| DEC-OPS-066 | accepted | 로그인 정책 신규 등록 경로를 연다 | 2026-09-08 | - |
-| DEC-OPS-067 | accepted | 보안 3화면(권한·롤·그룹)에 일괄 삭제 UI 를 신설한다 | 2026-09-08 | DEC-OPS-062 의 C형(일괄 삭제 UI 부재) 3건을 해소 |
-| DEC-OPS-068 | accepted | 로그인 정책 해제(삭제)를 배선하고, DEC-OPS-062 가 `deleteLoginPolicy` 를 "대체된 표면" 으로 본 판정을 정정한다 | 2026-09-08 | DEC-OPS-062 의 B형 판정 중 `deleteLoginPolicy` 1건만 정정(나머지 2건은 유지) |
 | DEC-OPS-069 | accepted | 사용자 결정 4건을 "현 상태 유지" 로 확정한다 | 2026-09-08 | PD-AUTH-003·PD-ADBK-001·PD-CODE-001·PD-OPS-003 종료 |
-| DEC-OPS-070 | accepted | 설문 응답자·마이페이지 콘텐츠 두 표면을 걷는다 | 2026-09-08 | PD-SRVY-001·PD-MYPG-001 종료 |
 | DEC-OPS-071 | accepted | 메모보고 수정·삭제를 화면에 열고, 응답에 서버 판정 `editable` 을 싣는다 | 2026-09-08 | - |
 | DEC-OPS-072 | accepted | 커뮤니티 회원 자격이 회원 전용 게시판을 연다 | 2026-09-08 | - |
-| DEC-OPS-073 | accepted | 블로그 도메인의 전체 제거를 ADR-0012로 확정한다. | 2026-09-08 | DEC-OPS-072의 ⑥ 및 DEC-OPS-047의 블로그 기여자 부분만 종료 |
-| DEC-OPS-074 | accepted | 사용자 요청에 따라 CI/CD에 CodeQL SAST를 추가하고 `secure-coding`을 여섯 번째 required context로 정의한다. | 2026-09-09 | — |
 | DEC-OPS-075 | accepted | CodeQL 오탐 7건을 소스·방어 해시, 정확한 탐지 위치, 만료일에 묶어 한정 예외로 등록한다. | 2026-09-09 | — |
 | DEC-OPS-076 | accepted | 재사용 base 투영에서 거버넌스 게이트가 조용히 사라지는 경로를 닫는다 | 2026-09-12 | - |
 | DEC-OPS-077 | accepted | 재사용 base 산출물의 하네스 검증을 실측 기준으로 세운다. | 2026-09-12 | - |
 | DEC-OPS-078 | accepted | 업무 화면 문법 §A3-1(폼 그릇 규칙)에 집행 게이트를 신설한다. | 2026-09-12 | - |
-| DEC-OPS-079 | accepted | §A3-1 부채 이행 웨이브 — 전용 입력 페이지를 목록 위 모달로 옮긴다. | 2026-09-12 | - |
-| DEC-OPS-080 | accepted | §A3-1 마지막 부채를 이행하고 래칫을 0 으로 내린다. | 2026-09-12 | - |
 | DEC-OPS-081 | accepted | "생산 코드는 page-redirect 라우트를 가리키지 않는다" 를 route census 파생 일반 게이트로 승격한다. | 2026-09-12 | DEC-OPS-079 의 4라우트 전용 가드를 대체 |
 | DEC-OPS-082 | accepted | 온라인 투표 수정에서 자동폐기 여부(`pollAtmcDsuseYn`)는 요청에 없으면 기존 값을 유지한다. | 2026-09-12 | GAP-POLL-001 이 적었던 선택지 ⓐ 서술을 정정 |
-| DEC-OPS-083 | accepted | 축소 프로필(core·collaboration)에서 404 가 되는 링크 4축을 닫는다 | 2026-09-12 | - |
-| DEC-OPS-084 | accepted | 쿼리 수 계측 가드레일을 core 도메인 표적으로 돌려 축소 프로필에 살린다 | 2026-09-13 | - |
-| DEC-OPS-085 | accepted | RBAC 매트릭스를 pack 경계로 두 클래스로 가른다 | 2026-09-13 | - |
 | DEC-OPS-086 | accepted | 런타임 의존성 두 축의 동작을 계약으로 고정하고, 그 계약으로 dependabot major 2건을 판정한다. | 2026-09-13 | - |
 | DEC-OPS-087 | accepted | 조용히 실패하던 세 경로를 계약으로 닫는다 | 2026-09-13 | - |
 | DEC-OPS-088 | accepted | 모든 프로필에 남는 화면이 빠진 pack 을 부르거나 가리키지 않게 한다 | 2026-09-13 | - |
@@ -207,31 +177,19 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-106 | accepted | 참조 4축에 물리 FK를 두고 "부모 없음" 의 저장 표현을 NULL 하나로 모은다. | 2026-09-17 | V2_26 의 "up_ognz_id 에 FK 를 걸지 않는다" 방침 |
 | DEC-OPS-107 | accepted | 원본에서 만들 수 없는 증거 의무를 기관 채택 수명으로 이전한다. | 2026-09-21 | GAP-OPS-002·GAP-SEC-001·GAP-DATA-001·GAP-AUTH-003 의 활성 gap 지위 |
 | DEC-OPS-108 | accepted | 브랜치 보호 명세에 `requireExtraApprovalForUnattributedChanges` 를 넣고, 명세가 모르는 pull request 파라미터를 red 로 잡는다. | 2026-09-21 | - |
-| DEC-OPS-109 | accepted | PD-RBAC-001(DB 인가 전환의 사후 shadow 증명 여부)을 전제 소멸로 종료한다. | 2026-09-22 | PD-RBAC-001 종료 |
 | DEC-OPS-110 | accepted | ADR-0008의 소스 adapter 열거(6종)를 CUBRID를 포함한 7종으로 보완한다. | 2026-09-22 | ADR-0008 §1·§6의 6종 열거 부분 |
 | DEC-OPS-111 | accepted | 운영 환경 없이 만들 수 없는 증거 3건을 기관 채택 수명으로 이전한다. | 2026-09-23 | GAP-SEC-003·GAP-STORAGE-001·GAP-OPS-001 의 활성 gap 지위 |
-| DEC-OPS-112 | accepted | 게시판 통계 응답에서 `intelligenceScore` 를 걷는다. | 2026-09-23 | - |
 | DEC-OPS-113 | accepted | ZAP 주간 스캔 경고 11건을 전수 분류하고 수리 3건을 적용한다. | 2026-09-23 | - |
 | DEC-OPS-114 | accepted | URL 쿼리 copy-all 캐리어 15곳을 라우트 소유 allowlist 재조립으로 바꾸고, census 탐지기가 그 형태를 이름으로 읽게 한다. | 2026-09-23 | - |
 | DEC-OPS-115 | accepted | route capability 동결과 커밋된 원장을 양방향으로 대조하고, 그 대조가 드러낸 낡은 판정 2건을 고친다. | 2026-09-23 | - |
-| DEC-OPS-116 | accepted | CI 실패 annotation 의 JUnit 메시지 추출을 ci.yml 셸에서 테스트 가능한 모듈로 옮긴다. | 2026-09-23 | - |
 | DEC-OPS-117 | accepted | 밀도 대상 컨트롤의 고정 높이 덮어쓰기를 걷고 파일별로 동결한다. | 2026-09-23 | - |
-| DEC-OPS-118 | accepted | 컨트롤 높이 2차 — 화면별 판단이 필요하던 17곳을 뜻에 맞게 옮긴다. | 2026-09-23 | - |
-| DEC-OPS-119 | accepted | 컨트롤 높이 3차 — VRT 기준선 화면과 공통 레이아웃의 `h-11` 16곳을 걷고 기준선을 다시 만든다. | 2026-09-23 | - |
-| DEC-OPS-120 | accepted | 기본 밀도에서 값이 같은 고정 높이 35곳을 토큰으로 옮긴다. | 2026-09-23 | - |
-| DEC-OPS-121 | accepted | 컨트롤 높이 5차 — 같은 값의 토큰이 없는 `h-10`·`h-12` 56곳을 36px 로 옮기고 남은 11건을 비대상으로 확정한다. | 2026-09-23 | GAP-UIDENSITY-001 의 활성 gap 지위 |
 | DEC-OPS-122 | accepted | 컨트롤러 요청 DTO 13개를 입력 계약 원장에 편입하고, 편입이 드러낸 결함 5건을 닫는다. | 2026-09-24 | - |
-| DEC-OPS-123 | accepted | Spring Boot 4.1 1단계를 적용한다(ADR-0024). | 2026-09-24 | - |
 | DEC-OPS-124 | accepted | ADR-0024 2단계를 적용하고 범위를 온라인 앱으로 한정한다. | 2026-09-24 | ADR-0024 결정 3의 "본체·테스트의 Jackson 2 사용을 걷는다" 범위(migration-tool 제외) |
 | DEC-OPS-125 | accepted | Boot 4 전환 후속을 정리한다. | 2026-09-24 | GAP-DEP-002 종료 |
 | DEC-OPS-126 | accepted | 주간 ZAP 이 OpenAPI 로 API 전체를 로그인한 상태로 스캔한다. | 2026-09-24 | - |
 | DEC-OPS-127 | accepted | ZAP API 스캔이 드러낸 입력 오류 500 을 400·413 으로 고친다. | 2026-09-25 | - |
 | DEC-OPS-128 | accepted | 결정 대기 3건을 닫는다. | 2026-09-24 | PD-AUTH-001·PD-NOTE-003·PD-STORAGE-001 종료 |
-| DEC-OPS-129 | accepted | 네트워크 모니터링을 퇴역한다. | 2026-09-25 | PD-OPS-002 |
-| DEC-OPS-130 | accepted | 라우트 기능 원장 검토가 드러낸 결함 4건을 고친다. | 2026-09-25 | - |
 | DEC-OPS-131 | accepted | 에이전트 브랜치 통합 검토가 드러낸 결함을 근본에서 고친다. | 2026-09-25 | DEC-OPS-071 의 단일 `editable` 힌트 부분, DEC-OPS-043 ①의 탈퇴·강제 탈퇴 부재 부분 |
-| DEC-OPS-132 | accepted | 게시글 작성일에 인덱스를 둔다(V2_105). | 2026-09-25 | - |
-| DEC-OPS-133 | accepted | 헌법 3종·공용 메모리·문서를 현재 코드와 결정에 맞춘다. | 2026-09-25 | DEC-OPS-038 의 보존 개월 인수처 이관 부분(DEC-OPS-128 ②) |
 | DEC-OPS-134 | accepted | 메일·반출·첨부·댓글의 노출 경계를 좁힌다(DIP B1a). | 2026-09-25 | GAP-DOMAIN-001 ①② |
 | DEC-OPS-135 | accepted | 로그인·세션 경계를 좁힌다(DIP B1a). | 2026-09-25 | GAP-SEC-005 ①②③⑤ |
 | DEC-OPS-136 | accepted | 리프레시 토큰을 해시로 저장하고 비밀번호 규칙을 하나로 맞춘다(DIP B1a). | 2026-09-25 | GAP-SEC-005 ④ |
@@ -242,7 +200,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-141 | accepted | 쪽지와 메일 이력이 사람을 이름으로 보인다(DIP B2). | 2026-09-26 | - |
 | DEC-OPS-142 | accepted | 게시판 화면이 일반 사용자에게 제목·템플릿·본문·행사 일정을 보인다(DIP B2). | 2026-09-26 | - |
 | DEC-OPS-143 | accepted | 투표·설문 화면이 참여 여부와 실제 응답을 보인다(DIP B2). | 2026-09-26 | - |
-| DEC-OPS-144 | accepted | 화면 문구·상태를 서버 판정과 같게 말한다(DIP B2, 화면 10건). | 2026-09-26 | - |
 | DEC-OPS-145 | accepted | 서버가 판정하거나 기록한 값을 화면이 그대로 말한다(DIP V9 서버 항목). | 2026-09-26 | - |
 | DEC-OPS-146 | accepted | 생성 응답을 손으로 쓴 타입으로 다룰 때 서버가 보내지 않는 필드를 선언하지 못하게 한다(DIP V10). | 2026-09-26 | - |
 | DEC-OPS-147 | accepted | 목록 화면의 공통 상태를 서버 응답과 맞춘다(DIP B3 C1~C4). | 2026-09-26 | - |
@@ -259,7 +216,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-158 | accepted | 계정 잠금을 관리자가 보고 풀 수 있게 하고, 재발급 실패를 사실대로 말한다(DIP B4 P7, D5). | 2026-09-26 | - |
 | DEC-OPS-159 | accepted | 로그인 정책의 접속 허용 시간을 짝으로만 받고, 소비처 없는 값과 분류 그룹의 성격을 화면이 사실대로 말한다(DIP B4 P8, D10). | 2026-09-26 | - |
 | DEC-OPS-160 | accepted | 업무 사건을 당사자에게 알린다(DIP B5 F1). | 2026-09-26 | - |
-| DEC-OPS-161 | accepted | 반복 조회를 줄인다(DIP B5 F10). | 2026-09-26 | - |
 | DEC-OPS-162 | accepted | 로그아웃한 뒤 다음 로그인까지는 인증 경로 밖의 API 요청을 보내지 않는다(DIP B4 회귀 수정). | 2026-09-26 | - |
 | DEC-OPS-163 | accepted | 메뉴 즐겨찾기와 최근 방문을 둔다(DIP B5 F2). | 2026-09-26 | - |
 | DEC-OPS-164 | accepted | 로그 화면이 마지막으로 고른 기간 프리셋과 페이지당 건수를 기억한다(DIP B5 F3). | 2026-09-26 | - |
@@ -278,8 +234,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-177 | accepted | 연속 배치 작업의 반복 비용을 규칙으로 줄인다. | 2026-09-27 | - |
 | DEC-OPS-178 | accepted | 승인된 후속 3건을 적용한다(2026-09-27 사용자 승인). | 2026-09-27 | GAP-BOARD-001·GAP-CI-001 종료 |
 | DEC-OPS-179 | accepted | 로그인 입력은 로그인 ID 로만 해석한다. | 2026-09-27 | - |
-| DEC-OPS-180 | accepted | CI 검증 강도를 유지하며 임계 경로를 병렬화한다. | 2026-09-29 | - |
-| DEC-OPS-181 | accepted | ADR-0025가 승인 밖으로 둔 운영 적용 중 둘을 공유 OCI DB에 집행한다(2026-09-29 사용자 승인). | 2026-09-29 | - |
 | DEC-OPS-182 | accepted | 재배포가 제한된 Anthropic 스킬 4개(`docx`·`pdf`·`pptx`·`xlsx`, 186파일)를 원본 저장소에서 걷는다(2026-09-30 사용자 승인). | 2026-09-30 | - |
 | DEC-OPS-183 | accepted | main push 의 변경 범위는 직전 main SHA 가 자기 main CI 실행을 가졌을 때만 diff 로 좁힌다. | 2026-09-30 | - |
 | DEC-OPS-184 | accepted | 실패 한 번에 알림은 하나다. | 2026-10-01 | - |
@@ -305,41 +259,24 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-204 | accepted | 설문은 작성 중으로 시작하고, 여론조사와 투표 목록을 나누며, 응답이 모이면 문항을 더하지 않는다(결정 21). | 2026-10-01 | - |
 | DEC-OPS-205 | accepted | 부서 업무 등록자는 맡긴 업무를 보고 담당자만 바꾼다(결정 22). | 2026-10-01 | DEC-OPS-138 ②의 상세 열람 범위(등록자 추가) |
 | DEC-OPS-206 | accepted | 게시 종료일을 집행한다(결정 23). | 2026-10-01 | DEC-OPS-034 ①의 게시 기간 비집행 서술 |
-| DEC-OPS-207 | accepted | 결정 17~23의 마이그레이션 V2_116~118 을 공유 OCI DB 에 적용한다(2026-10-01 사용자 승인). | 2026-10-01 | - |
 | DEC-OPS-208 | accepted | 권한 그룹 버전에서 구성원 변경을 빼고, 메뉴 구조와 그 메뉴의 그룹 표시를 한 초안으로 저장한다(D1·D2·D6). | 2026-10-02 | - |
 | DEC-OPS-209 | accepted | 메뉴·화면·권한 관리 화면을 과업 단위로 다시 짠다(D1·D3·D4·D6). | 2026-10-02 | - |
 | DEC-OPS-210 | accepted | 권한 묶음 11개를 원장에 두고 권한 작업대에서 그룹 초안에 더하며, 두 그룹을 읽기 전용으로 비교한다(D5). | 2026-10-02 | - |
-| DEC-OPS-211 | accepted | V2_119 가 메뉴 이름 '프로그램 관리'를 '화면 관리'로 바꾸고 메뉴가 참조하지 않는 레거시 프로그램 행을 지운다(사용자 사전 승인 2026-10-02). | 2026-10-02 | - |
-| DEC-OPS-212 | accepted | V2_119 를 공유 OCI DB 에 적용한다(2026-10-02 사용자 사전 승인, PR #824 병합 뒤). | 2026-10-03 | - |
 | DEC-OPS-213 | accepted | 로그인 정책 쓰기에 보호 계정 가드와 마지막 관리자 보호를 둔다(GAP-SEC-006 종료). | 2026-10-03 | DEC-OPS-210 ③(로그인 정책 쓰기 묶음 제외) |
 | DEC-OPS-214 | accepted | 권한 묶음은 카탈로그 전부를 분류하고, 누구나 들어가는 관련 화면의 메뉴도 더한다(DEC-OPS-210 보완). | 2026-10-03 | - |
-| DEC-OPS-215 | accepted | V2_120 이 ROLE_USER 의 들어갈 수 없는 설문 관리 메뉴 표시를 회수한다. | 2026-10-03 | - |
 | DEC-OPS-216 | accepted | 프런트 의존성 감사는 운영 여부를 `pnpm audit --prod` 보고서로 판정한다. | 2026-10-03 | - |
-| DEC-OPS-217 | accepted | V2_120 을 공유 OCI DB 에 적용한다(2026-10-03, PR #830 병합 뒤). | 2026-10-03 | - |
 | DEC-OPS-218 | accepted | 결재 동선을 A·B안 혼합으로 고친다(2026-10-03 사용자 선택). | 2026-10-03 | - |
 | DEC-OPS-219 | accepted | 결재 기안을 서버에 임시저장한다(D3, 2026-10-03 사용자 "권장대로 진행"). | 2026-10-04 | DEC-OPS-218 의 서버 임시저장 보류 부분 |
-| DEC-OPS-220 | accepted | V2_121 을 공유 OCI DB 에 적용한다(2026-10-03 사용자 사전 승인 — 이 결재 작업의 V2_121·V2_122 에 한정). | 2026-10-03 | - |
-| DEC-OPS-221 | accepted | V2_122 를 공유 OCI DB 에 적용한다(2026-10-03 사용자 사전 승인 — 이 결재 작업의 V2_121·V2_122 에 한정, PR #833 병합 뒤). | 2026-10-04 | - |
 | DEC-OPS-222 | accepted | 결재 참조자를 둔다(D4, 2026-10-04 사용자 결정). | 2026-10-04 | DEC-OPS-218 의 참조자 보류 부분 |
-| DEC-OPS-223 | accepted | V2_123 을 공유 OCI DB 에 적용한다(2026-10-04 사용자 사전 승인 — V2_123 에 한정, PR #835 병합 뒤). | 2026-10-04 | - |
-| DEC-OPS-224 | accepted | 프로그램 목록을 퇴역한다(2026-10-04 사용자 승인). | 2026-10-04 | DEC-OPS-209 ②의 이전 프로그램 둘째 탭과 ①의 읽기 전용 연결, DEC-OPS-210·214 묶음의 PROGRAM_* 포함 부분, ADR-0014 결정 2·3의 프로그램 연결·연결 프로그램 삭제 409 |
 | DEC-OPS-225 | accepted | 메뉴·화면·권한 관리를 한 화면 업무면으로 압축하고 시안 기능을 되살린다(사용자 승인). | 2026-10-04 | DEC-OPS-209 ③의 묶음 칸 동작 중 영역·섹션 줄 메뉴 표시(아래 메뉴 전체 일괄로), 권한 설계 §4.5 부모 선택 규칙의 그 칸 |
-| DEC-OPS-226 | accepted | V2_124 를 공유 OCI DB 에 적용한다(2026-10-04 사용자 승인 — 프로그램 목록 퇴역의 배정 정리, PR #837 병합 뒤). | 2026-10-05 | - |
-| DEC-OPS-227 | accepted | 넓은 화면의 사이드바 접기를 찾기 쉽게 한다. | 2026-10-05 | DEC-OPS-225 ⑤가 시행한 접힘 표현 중 사이드바 전체 숨김·본문 여백 0(카탈로그 §4 종전 서술) |
 | DEC-OPS-228 | accepted | 넓은 화면의 사이드바 접기 단추를 경계선의 원형 아이콘 하나로 줄인다. | 2026-10-05 | DEC-OPS-227 ①의 글자 단추, ②의 3rem 접힘 막대(펼치기 단추·막대 폭 여백), ③의 포커스 넘기기와 머리글 단추 유지, DEC-OPS-225 ⑤가 둔 머리글 접기 아이콘 |
-| DEC-OPS-229 | accepted | 꺼진 '마이페이지관리' 메뉴 행과 남은 메뉴 배정을 정리한다(2026-10-05 사용자 결정). | 2026-10-05 | - |
-| DEC-OPS-230 | accepted | V2_125 를 공유 OCI DB 에 적용한다(2026-10-05 사용자 승인 — 꺼진 마이페이지관리 메뉴 행 정리, PR #841 병합 뒤). | 2026-10-05 | - |
-| DEC-OPS-231 | accepted | 레거시 연결 프로그램과 빈 마이페이지 콘텐츠 테이블을 앱과 DB 에서 걷는다(GAP-PROGRAM-001 종료, 2026-10-05 사용자 승인). | 2026-10-05 | DEC-OPS-224 ②의 연결 프로그램 400 거부·수정 시 레거시 연결 해제 |
 | DEC-OPS-232 | accepted | 화면 기능 동결 목록을 원장 쪽으로도 대조하고, 걷은 마이페이지 화면의 낡은 항목을 지운다. | 2026-10-05 | DEC-OPS-115 의 대조 범위 서술 |
 | DEC-OPS-233 | accepted | V2_127 한 건만 무중단 관측 기간 없이 선행 Expand 와 같은 릴리스에 싣는다(2026-10-05 사용자 승인 — "이번만 내 승인하에 규칙을 무시하고 내가 명령한 작업을 진행해"). | 2026-10-05 | DEC-OPS-101 의 관측 기간 요구 중 이 한 건 |
-| DEC-OPS-234 | accepted | V2_126·V2_127 을 공유 OCI DB 에 적용한다(2026-10-05 사용자 승인 — 프로그램 원장과 빈 마이페이지 콘텐츠 테이블 폐기, PR #843 병합 뒤). | 2026-10-05 | - |
 | DEC-OPS-235 | accepted | 소스 간결화 재점검(PR #846 뒤)이 걷은 표면과 바뀐 동작을 기록한다. | 2026-10-07 | DEC-OPS-095 ②의 투표 항목 삭제 409(죽은 경로) |
-| DEC-OPS-236 | accepted | 소스 간결화 재점검(PR #848) 병합 뒤 점검이 찾은 결함을 고치고 기록을 바로잡는다. | 2026-10-07 | DEC-OPS-235 ④의 대상 서술 |
 | DEC-OPS-237 | accepted | 2026-10-07 Dependabot 배치를 한 PR 로 적용한다. | 2026-10-07 | ADR-0022 결정 7의 v6.3.0 commit 지정 부분, dependabot.yml 의 붉은 wrapper PR 유지 방침 |
 | DEC-OPS-238 | accepted | 프로젝트 생성기의 모듈 선택 결함을 닫는다(Phase 0). | 2026-10-07 | - |
 | DEC-OPS-239 | accepted | 재사용 base 생성의 진입 경로를 하나로 합친다(Phase 0b). | 2026-10-08 | ADR-0020 결정 5의 "레이아웃만 다르면 같은 DB 번들 재사용" 절차 부분 |
 | DEC-OPS-240 | accepted | 통계를 Core로 옮기고 프로젝트 생성기의 선택 기능에서 뺀다(Phase 0c). | 2026-10-08 | DEC-OPS-085 의 통계 표면 demo 귀속과 `ReportStatsService` 대역 경계 부분(pack 분리 원칙은 유지) |
-| DEC-OPS-241 | accepted | 생성기를 단계 모듈로 나누고, 골든 비교가 드러낸 기존 결함 넷을 고친다(Phase 1-1). | 2026-10-08 | - |
 | DEC-OPS-242 | accepted | 선택 연동 선언과 기능 저하·미배정 권한 안내를 계획에 싣는다(Phase 1-2, B4·B8). | 2026-10-08 | - |
 | DEC-OPS-243 | accepted | 자동 포함 사유를 사용자 말과 경로로 보인다(Phase 1-3, E2). | 2026-10-08 | - |
 | DEC-OPS-244 | accepted | 생성기 기능 카드를 업무 영역으로 묶어 찾게 하고, 화면 문구를 카탈로그 해시 밖으로 옮긴다(Phase 1-4, E3·E9). | 2026-10-09 | - |
@@ -353,12 +290,10 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-252 | accepted | 자동 포함 카드를 키보드로 닿게 하고 바뀐 자동 포함을 한 번 알린다(Phase 1 E7, 설계서 14.1). | 2026-10-10 | - |
 | DEC-OPS-253 | accepted | 계획의 메뉴를 원본 계층의 트리로 보이고 공통 기반 대비 추가를 표시한다(Phase 1 E8, 설계서 시안 S2). | 2026-10-10 | - |
 | DEC-OPS-254 | accepted | 저장한 구성을 불러오고, 넓은 화면에서 요약과 버튼을 고정한다(Phase 1 E9, 설계서 시안 S1·21장). | 2026-10-10 | - |
-| DEC-OPS-255 | accepted | Phase 1 종료 조건을 대조하고 시안과 어긋난 표시 둘을 맞춘다(설계서 16장 Phase 1 종료). | 2026-10-10 | - |
 | DEC-OPS-256 | accepted | 모듈 선택 고도화 Phase 2 의 결정 여섯 가지를 권고안대로 정한다(설계서 16.1). | 2026-10-10 | - |
 | DEC-OPS-257 | accepted | 생성물에서 처음부터 붉은 백엔드 검사를 기능 소유로 나누고, 모집단 하한은 core 에서도 성립하는 값으로 둔다(Phase 2 D6 1차). | 2026-10-10 | - |
 | DEC-OPS-258 | accepted | 생성기가 투영으로 지운 파일을 원장에 남기고, 프런트 계약은 그 원장으로 기능 파일을 거른다(Phase 2 D6 2차). | 2026-10-10 | - |
 | DEC-OPS-259 | accepted | 생성물의 프런트 총계·허용 목록·예시를 투영 원장으로 거른다(Phase 2 D6 3·4차). | 2026-10-10 | - |
-| DEC-OPS-260 | accepted | 명령 센터(Ctrl+K)의 방향키가 고르는 순서를 화면에 그린 순서와 맞춘다. | 2026-10-10 | - |
 | DEC-OPS-261 | accepted | 메뉴·별칭·화면 코드·백엔드 문자열이 `?tab=` 으로 여는 값을 그 허브의 탭 해석과 대조한다(Phase 2, 슬롯 도입 전 census 범위 확장). | 2026-10-10 | - |
 | DEC-OPS-262 | accepted | 생성물 DB 번들에 선택한 기능 몫의 참조 데이터를 싣는다(Phase 2, 설계서 B5). | 2026-10-10 | - |
 | DEC-OPS-263 | accepted | 생성물의 이관 카탈로그를 구성 스키마로 다시 쓴다(Phase 2 B12). | 2026-10-10 | - |
@@ -370,7 +305,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-269 | accepted | 게시글 상세의 스크랩 버튼을 스크랩 기능의 `post-actions` 슬롯 기여로 옮기고, 쓰기 권한 census 가 슬롯 기여의 쓰기를 그 기여를 여는 화면에 귀속하게 넓힌다(Phase 2 스크랩 슬롯 S2). | 2026-10-12 | - |
 | DEC-OPS-270 | accepted | 게시글 상세의 스크랩 버튼을 스크랩 등록 권한(SCRAP_CREATE)이 있는 사람에게만 보인다(Phase 2 스크랩 슬롯 S3, H3). | 2026-10-12 | - |
 | DEC-OPS-271 | accepted | 수동 도메인 삭제의 동반 삭제를 카탈로그 간선의 역방향 폐포로 정한다(Phase 2 간선 제거 E1). | 2026-10-12 | delete-domain.ps1 의 manifest clusters 동반 삭제 규칙 |
-| DEC-OPS-272 | accepted | 근거 없는 묶음 간선 4개를 걷는다(Phase 2 간선 제거 E2). | 2026-10-12 | manifest clusters 의 게시판 묶음 스크랩 포함과 결재 묶음 |
 | DEC-OPS-273 | accepted | 시스템·운영 묶음을 기능 다섯으로 나눈다(DEC-OPS-256 ① 이행). | 2026-10-12 | DEC-OPS-244 ①의 업무 영역 4개 |
 | DEC-OPS-274 | accepted | 협업 허브를 core 셸과 쪽지·스크랩 탭 기여로 나눈다(Phase 2 허브 분해 H1·H3). | 2026-10-12 | DEC-OPS-272 의 명령 센터 바로가기 소유 부분, DEC-OPS-088 ③의 협업 허브 주소록 마커 부분 |
 | DEC-OPS-275 | accepted | 지식 허브를 게시판 셸과 커뮤니티 탭 기여로 나눈다(Phase 2 허브 분해 H2). | 2026-10-12 | - |
@@ -397,12 +331,9 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-296 | accepted | 새 인증 시작 구성은 PR CI 에서 빼고 main 두 레이아웃과 T2 에서만 돈다(U15, Phase 2 CI 2차-a). | 2026-10-13 | ADR-0027 결정 2 의 'PR 은 시작 구성마다 한 레이아웃' 중 `ci.pr` 이 null 인 시작 구성 |
 | DEC-OPS-297 | accepted | 생성기·도구 전용 경로만 바꾼 변경은 이관·PIT·frontend 를 돌리지 않고, 남길 축은 그 경로를 읽는 시험에서 계산한다(Phase 2 CI 2차-b, C11). | 2026-10-13 | - |
 | DEC-OPS-298 | accepted | T2 야간 검증을 매일 06:17 KST 에 예약 실행하고 계약 재생성 대조를 기본으로 켠다(Phase 2 B8, U20). | 2026-10-13 | - |
-| DEC-OPS-299 | accepted | Phase 2(모듈 선택 고도화)의 종료 조건을 기능 22개 기준으로 다시 정하고 실측으로 닫는다(U11). | 2026-10-13 | 설계서 16.2 의 KPI 목표값(저장소 밖 문서라 이 행이 대체를 기록한다) |
 | DEC-OPS-300 | accepted | 워크플로우 예시 화면(정적 목업)은 시연 기능이 소유하고, 라우트 원장의 확인된 소유는 투영과 대조한다(Phase 2 마무리 검토). | 2026-10-13 | DEC-OPS-273 의 '프런트 전용 기능은 권한 도메인을 갖지 않는다', 11단계 C5 의 워크플로우 예시 화면 결재 소유 |
 | DEC-OPS-301 | accepted | T2 계획은 시작 구성과 기능 목록이 같은 단독 폐포를 돌지 않는다(Phase 2 마무리 검토). | 2026-10-13 | ADR-0027 결정 4·DEC-OPS-283 ① 의 '서로 다른 단독 폐포' 가운데 시작 구성과 같은 목록, DEC-OPS-295 의 '31잡', DEC-OPS-297 의 '생성기 화면만 바꾸면 재사용·E2E 만 돈다' |
 | DEC-OPS-302 | accepted | 결재 기안 화면(`/approvals/draft`)과 결재 허브(`/approvals`)의 원장·처분을 실제 동작에 맞춘다. | 2026-10-13 | DEC-OPS-030 ④ 뒤 문장의 '/approvals/draft 목업(demo-isolated approved)은 그대로 둔다' 부분, 그 화면의 2026-08-23 웨이브 1 처분 승인 |
-| DEC-OPS-303 | accepted | 결재 통합 시험에서 알림 행을 보는 시험 하나를 떼어 '공통 기반 + 결재' 생성물에서도 나머지 13건이 돌게 한다(GAP-BASE-003). | 2026-10-13 | DEC-OPS-295 ④의 '결재 통합 시험이 통째로 빠진다' |
-| DEC-OPS-304 | accepted | 2026-10-13 Dependabot 배치를 한 PR 로 적용한다. | 2026-10-13 | - |
 | DEC-OPS-305 | accepted | 레거시 표준화 이관 설계를 ADR-0029 로 채택하고 결정 대기 Q1~Q10 을 닫는다. | 2026-10-13 | - |
 | DEC-OPS-306 | accepted | 이관 도구의 표준 ID 를 온라인 형식과 맞추고, 원본 키를 쓴 시퀀스를 적재 계약 안에서 맞춘다(레거시 표준화 L1 D5). | 2026-10-13 | - |
 | DEC-OPS-307 | accepted | 이관 도구가 live 대상 계약과 표준 사전으로 매핑을 검증한다(ADR-0029 L1, D1). | 2026-10-13 | - |
@@ -412,7 +343,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-311 | accepted | 수집 명령 `profile`·`app-scan` 을 둔다(ADR-0029 L2a). | 2026-10-14 | - |
 | DEC-OPS-312 | accepted | 용어 매핑 원장과 표준 메타 확장을 둔다(ADR-0029 L2b-1). | 2026-10-14 | ADR-0029 결정 3 의 "아니면 validate 가 실패한다" 의 시행 시점(L3 전에는 원장을 선언한 mapping 에만) |
 | DEC-OPS-313 | accepted | 규칙 기반 용어 후보 `term-suggest` 를 둔다(ADR-0029 L2b-2). | 2026-10-14 | DEC-OPS-305 ① 의 Q3 가드 시행 시점(L2 → LLM 경로를 두는 단계) |
-| DEC-OPS-314 | accepted | V2_128 을 공유 OCI DB 에 적용한다(2026-10-14 사용자 사전 승인 — L3 착수 때 승인 필요 항목을 한꺼번에 승인, PR #897 병합 뒤). | 2026-10-14 | - |
 | DEC-OPS-315 | accepted | 표준 도메인 변환기와 규칙 정제 `nullify` 를 둔다(ADR-0029 L3a-1). | 2026-10-15 | DEC-OPS-307 의 DATE→TIMESTAMP 허용과 timestamptz→timestamp·timetz→time 그대로 옮기기 허용 |
 | DEC-OPS-316 | accepted | 용어 매핑 원장을 형식 2로 올리고 원장에서 mapping 을 만든다(ADR-0029 L3a-2). | 2026-10-15 | DEC-OPS-313 의 `custom:*` 힌트 어휘, DEC-OPS-312 ③ 의 "확정은 적합률 100 또는 승인 예외", ADR-0029 결정 3 의 같은 확정 조건(적합률은 참고값, unmeasured 와 사유로 확정) |
 | DEC-OPS-317 | accepted | plan·load 는 원장을 선언한 mapping 만 받는다(ADR-0029 L3a-2). | 2026-10-15 | DEC-OPS-312 의 원장 없는 mapping 의 plan·load(필수화 유보)와 ③ 의 "대상 컬럼 = 표준 영문약어" 가운데 비표준 대상, ADR-0029 결정 3 의 비표준 대상 부분과 U3 의 허용값 미확인 확정, DEC-OPS-315 ④ 의 프로젝트 변환기 경로, DEC-OPS-307 의 "줄이는 변환은 내장이 아닌 변환기로 선언" |
@@ -427,7 +357,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-326 | accepted | 원천 사용자 이름이 원천 schema 이름과 같으면 credential 검사에서 사용자 이름으로 보지 않는다(GAP-MIG-001 의 결정 필요 항목). | 2026-10-16 | - |
 | DEC-OPS-327 | accepted | 알림 기능 없이 만든 생성물의 결재·메모 보고 화면은 알린다고 말하지 않는다(GAP-COMPOSE-001). | 2026-10-16 | GAP-COMPOSE-001 의 결재·메모 보고 알림 문구 부분 |
 | DEC-OPS-328 | accepted | 나의 결재선과 알림 카드 바로 승인을 둔다(2026-10-16 사용자 승인 "4번의 db 새테이블 추가 승인"). | 2026-10-16 | - |
-| DEC-OPS-329 | accepted | V2_129 를 공유 OCI DB 에 적용한다(2026-10-16 사용자 승인 — 나의 결재선 새 테이블, PR #912 병합 뒤). | 2026-10-16 | - |
 | DEC-OPS-330 | accepted | 권한이 빠진 투영 묶음은 원본 이름·설명을 들고 가지 않는다(GAP-COMPOSE-001). | 2026-10-16 | GAP-COMPOSE-001 의 투영 묶음 이름·설명 부분 |
 | DEC-OPS-331 | accepted | 메모 보고 지시는 보고를 받은 사람만 남긴다(GAP-MEMO-001 종료, 2026-10-16 사용자 선택). | 2026-10-16 | DEC-OPS-138 ⑤·DEC-OPS-196 ④의 지시 판정 중 전체 수정 권한 부분, DEC-OPS-214 의 MEMO_RPT_UPDATE_ALL 제외 사유 |
 | DEC-OPS-332 | accepted | 게시판 유형 이름의 정본을 화면 상수 하나로 두고 공통코드 COM004 조인을 걷는다(GAP-BOARD-002, 2026-10-16 사용자 선택). | 2026-10-16 | DEC-OPS-262 의 COM004 게시판 소유 부분, DEC-OPS-325 의 바인딩 6행 중 `bbs_type_cd` 행 |
@@ -444,13 +373,6 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-343 | accepted | 주소록 쓰기 단추를 동작별 권한으로 보이고, 저장한 레이아웃 테마를 전역에서 복원하되 다크 모드와 기본색은 덮지 않는다. | 2026-10-18 | - |
 | DEC-OPS-344 | accepted | CI 의 cross-stack 계약은 frontend 축이 켜지면 커버리지 전체 스위트가 소유하고, 커버리지 분모에 queries·extensions 를 넣으며, 화면 목록 생성기는 레이아웃 셸 제거를 원장 근거로만 받는다. | 2026-10-18 | ci.yml 주석의 "몇십 초 중복이 증거를 잃는 것보다 싸다" 판단 |
 | DEC-OPS-345 | accepted | 차트 범주 색을 브랜드 프로필의 --chart-1..5 토큰으로 두고 코드의 하드코딩 Hex 를 동결한다. | 2026-10-18 | - |
-| DEC-OPS-346 | accepted | 대형 화면·서비스·이관 도구 클래스를 동작을 바꾸지 않고 나누며, 단일 파일을 읽던 계약은 나뉜 파일 전체로 넓힌다. | 2026-10-18 | - |
-| DEC-OPS-347 | accepted | 410만 돌려주던 구 롤·롤 권한·권한 쓰기 API 12개를 경로째 걷는다(ADR-0034). | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분(ADR-0034) |
-| DEC-OPS-348 | accepted | 결재 API 로 대체된 비공식결재(ISM) API 를 걷고, 그 API 에만 묶인 INFORMAL_* 권한 10개와 배정을 퇴역한다(V2_130). | 2026-10-18 | DEC-OPS-053 의 ISM API superseded-surface 등재(표면 제거로 종료) |
-| DEC-OPS-349 | accepted | 집행 지점이 없던 기관코드 쓰기 권한 INST_CODE_CREATE·UPDATE·DELETE 와 그 배정을 퇴역하고, 로그인 정책의 dpcn_prm_yn 컬럼은 유지한다. | 2026-10-18 | GAP-CODE-001 의 '쓰기 권한 퇴역은 별도 결정' 부분 |
-| DEC-OPS-350 | accepted | 실행될 수 없던 /admin/observability·/admin/system/audit 를 redirect 스텁으로 바꾸고 그 화면 전용 코드를 지운다. | 2026-10-18 | V2_48 주석의 /admin/system/audit 실기능 판정과 "추측으로 지우지 않는다"(실행 불가 실측으로 종료) |
-| DEC-OPS-351 | accepted | V2_130 을 공유 OCI DB 에 적용한다(2026-10-18 사용자 승인 — 집행 지점 없는 권한 배정 정리, PR #932 병합 뒤). | 2026-10-18 | - |
-| DEC-OPS-352 | accepted | operation census 의 화면 고아·미배선을 다시 분류하고 늘 거부되거나 대체된 메뉴 서비스 경로 셋을 걷는다(GAP-WIRING-001). | 2026-10-18 | operation census 원장의 가입·사용자 접속 통계·권한별 메뉴 목록 미배선 사유(DEC 없음) |
 | DEC-OPS-353 | accepted | 슬롯 기여의 연동 분류를 소비자 종류 선언과 import 그래프로 대조하고, 잘못 적은 registrationOnly 기여를 연동으로 옮긴다(GAP-COMPOSE-001). | 2026-10-18 | DEC-OPS-327 의 알림 전달 채널 기여 registrationOnly 분류 |
 | DEC-OPS-354 | accepted | 로그인 실패 횟수를 행 잠금 안에서 올리고, 로그인 요청 제한 기본값을 IP당 분당 30으로 낮춘다(ADR-0035). | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값과 관측 뒤 인하 순서(ADR-0035) |
 | DEC-OPS-355 | accepted | 주소록 구 사용자 검색을 걷고, 사용자 목록의 휴대전화·이메일을 가리며, 개인정보 조회 기록에 정보주체를 남긴다(V2_131). | 2026-10-19 | 구 search-users 계약을 외부 소비자 확인 전까지 유지하던 판단(evidence-first-policy-decisions-2026-09-27.md) |
@@ -460,15 +382,9 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-359 | accepted | 업무보고·일정·부서 업무·포상·배너·팝업·설문·공통코드 3종의 동시 수정을 버전으로 막고, 비관적 잠금 대기를 5초로 제한한다(V2_133). | 2026-10-19 | - |
 | DEC-OPS-360 | accepted | 화면에서만 하던 입력 검사와 조용한 성공을 서버가 맡는다(팝업 기간·포상·공통코드·배너·일정). | 2026-10-19 | - |
 | DEC-OPS-361 | accepted | 탭은 접근 가능한 공용 원천 하나로 그리고, 초점 표시를 지키며, 대형 화면 넷을 동작 변경 없이 나누고, 후속 작업 시각을 한국 시각으로 보인다. | 2026-10-19 | - |
-| DEC-OPS-362 | accepted | 쓰지 않는 백엔드 의존성 7종(Spring Batch·eGov batch·Quartz·commons-net·jdom2·commons-dbcp2·scribejava)을 걷는다. | 2026-10-19 | - |
-| DEC-OPS-363 | accepted | V2_131·V2_132 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 승인 — 로그아웃 시각·정보주체 컬럼과 감사 원장 트리거, PR #936 병합 뒤). | 2026-10-19 | - |
 | DEC-OPS-364 | accepted | 운영 계약 비용을 실측하고, 문서 전용 푸시의 계약 범위를 줄이지 않는다(투영 시험이 문서 트리를 입력으로 쓴다). | 2026-10-19 | - |
-| DEC-OPS-365 | accepted | V2_133 을 공유 OCI DB 에 적용한다(2026-10-19 사용자 사전 승인 — 10개 표 낙관적 잠금 버전 컬럼, PR #937 병합 뒤). | 2026-10-19 | - |
 | DEC-OPS-366 | accepted | PIT 범위를 제품 13개로 넓힌다 — 설문·참여(커뮤니티·메모 보고·일정)·사용자/조직을 더하고 설문 결과를 설문 범위로 옮긴다. | 2026-10-19 | - |
-| DEC-OPS-367 | accepted | 처리 흐름 없는 상태 표면 넷(업무보고 상태·포상 승인·행사 승인·인터넷서비스안내 반영 여부)을 걷고 물리 컬럼은 읽기 전용으로 남긴다. | 2026-10-19 | - |
-| DEC-OPS-368 | accepted | 아무도 쓰지 않는 보고서 통계 원장을 읽던 탭·라우트·조회 API 를 걷고, V2_134 가 메뉴 9040105 와 그 배정·즐겨찾기를 지운다(표는 남김). | 2026-10-19 | - |
 | DEC-OPS-369 | accepted | 프런트 커버리지 하한을 CI 실측의 정수 내림에서 1포인트 여유를 둔 85/79/82/87로 올린다(종전 71/63/64/73). | 2026-10-19 | - |
-| DEC-OPS-370 | accepted | V2_134 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 사전 승인 — 보고서 통계 메뉴 퇴역, PR #940 병합 뒤). | 2026-10-19 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 
