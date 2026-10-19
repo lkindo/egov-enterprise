@@ -332,7 +332,9 @@ export function validateCriticalMutationTargets(scopes) {
       'nuri.business.security.iam.EgovAuthenticationProvider',
       'nuri.business.security.filter.RateLimitFilter',
     ],
-    'business-app-delivery-operation': ['nuri.business.service.survey.SurveyResultService'],
+    // [2026-10-19 DEC-OPS-366] 설문 결과는 설문 범위로 옮겼다. 사용자 관리의 보안 부작용은 사용자·조직 범위가 지킨다.
+    'business-app-survey': ['nuri.business.service.survey.SurveyResultService'],
+    'business-core-user-org': ['nuri.business.service.user.UserService', 'nuri.business.service.user.LoginIdReuseGuard'],
   };
   return Object.entries(required).flatMap(([scope, targets]) => {
     const entry = scopes.find(candidate => candidate?.scope === scope);
@@ -345,11 +347,11 @@ export function validateCriticalMutationTargets(scopes) {
 function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snapshot) {
   const expected = selector.matrixScopes;
   if (!Array.isArray(expected)) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 21 scopes`);
     return;
   }
-  if (expected.length !== 18) {
-    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 18 scopes`);
+  if (expected.length !== 21) {
+    errors.push(`${setLabel}: PIT matrix catalog must contain exactly 21 scopes`);
   }
   errors.push(...validateCriticalMutationTargets(expected).map(error => `${setLabel}: ${error}`));
 
