@@ -6,12 +6,13 @@ import { dirname, join } from 'node:path';
 import { assertSeparateProjectionRoot, isExcludedRedirectTarget, projectUrlApproval, removeRedirectDeclarations } from './reusable-governance-projection.mjs';
 import { planJavaRemoval, resolveDomainRemovalDirectory } from './reusable-source-java.mjs';
 import { approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
+import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import { parseConfigRedirectsSource } from './ui-route-capabilities-contract.mjs';
 import { projectedCodeScope } from './reusable-governance-integrity.mjs';
 import { deriveProjectedReviewManifests, validateReviewScopeContract } from './reusable-review-scopes.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { resolveProjectRecipe } from './project-composer-recipe.mjs';
-import { ROOT, readJson, census, approval, catalog, presetComposition, reviewContract, upstreamReviews, ownership, hash, cleanupOwnedFixture } from './reusable-governance-projection.test-helpers.mjs';
+import { ROOT, readJson, census, approval, catalog, presetComposition, reviewContract, upstreamReviews, ownership, cleanupOwnedFixture } from './reusable-governance-projection.test-helpers.mjs';
 
 test('projection restricts upstream broad names to existing records and preserves actual review evidence', () => {
   const selectors = approvedStateItemSelectors(approval, census);
@@ -29,7 +30,7 @@ test('projection restricts upstream broad names to existing records and preserve
   assert.deepEqual(inherited.selector.recordIds, [existing.id]);
   assert.deepEqual(inherited.approvals, original.approvals);
   assert.equal(inherited.reviewBy, original.reviewBy, 'generation must not renew a human review');
-  assert.equal(projected.manifestRef.sha256, hash(target));
+  assert.equal(projected.manifestRef.sha256, approvalCensusSha256(target));
   assert.ok(!projected.classes.some(row => row.selector.recordIds?.includes(added.id)), 'same key in a new record is not inherited');
 });
 

@@ -15,7 +15,7 @@
     "authority": { "const": "non-normative-url-state-class-registry" },
     "schemaRef": { "const": "config/ui-url-state-approval.schema.json" },
     "manifestRef": {
-      "description": "어느 census 의 어느 버전에 대한 판단인지 결속한다. census 가 재생성되면 해시가 어긋나 red 가 되고, 승인이 낡은 생성물을 가리키지 못한다.",
+      "description": "어느 census 의 어느 버전에 대한 판단인지 결속한다. record·부정 사례·흐름·범위가 바뀌면 해시가 어긋나 red 가 되고, 승인이 낡은 생성물을 가리키지 못한다. 개수뿐인 summary 는 결속하지 않는다(scripts/ui-url-state-approval-binding.mjs).",
       "type": "object",
       "additionalProperties": false,
       "required": ["path", "sha256"],

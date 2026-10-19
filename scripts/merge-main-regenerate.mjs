@@ -23,7 +23,6 @@
  * 그 확인 지점이 조용히 사라진다.
  */
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -31,6 +30,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
 import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
+// 승인 결속 범위는 생성기·승인 계약과 같은 함수 하나가 정한다(node 내장만 쓴다).
+import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -293,7 +294,7 @@ function attachHarnessManifestValues(cwd, manual) {
 }
 
 export function urlCensusSha256(censusText) {
-  return createHash('sha256').update(`${JSON.stringify(JSON.parse(censusText), null, 2)}\n`, 'utf8').digest('hex');
+  return approvalCensusSha256(JSON.parse(censusText));
 }
 
 export function rebindApprovalText(approvalText, censusText) {

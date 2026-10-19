@@ -4,7 +4,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,7 +42,6 @@ export const sourceCommit = 'a'.repeat(40);
 // 생성기는 매니페스트 v2 의 기능 소유와 구성으로 투영한다(11단계 C3).
 export const modules = loadComposerModules(ROOT);
 export const ownership = composerOwnership(modules);
-export const hash = value => createHash('sha256').update(`${JSON.stringify(value, null, 2)}\n`).digest('hex');
 
 export function copyInputs(output) {
   for (const path of [

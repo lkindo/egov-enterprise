@@ -26,7 +26,7 @@
 | top-level `decisionRef` | 없음 — 컨테이너 전체를 단일 결정에 결속하지 않음 |
 | `search-input.decisionRef` | `docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md` |
 | `schemaRef` | `config/ui-url-state-approval.schema.json` |
-| `manifestRef` | census 경로와 내용 SHA-256 |
+| `manifestRef` | census 경로와 승인 결속 범위의 SHA-256 — 개수뿐인 `summary`를 뺀 본문([결속 함수](../../scripts/ui-url-state-approval-binding.mjs)) |
 
 `manifestRef.sha256`이 현재 census와 다르면 승인 selector가 열리지 않고 별도 승인 계약이 실패한다.
 승인된 부류도 owner, 실제 검토 일정, 두 승인 축의 reviewer·날짜·비어 있지 않은 evidence가 완결되고
