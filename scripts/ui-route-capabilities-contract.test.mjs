@@ -9,6 +9,8 @@ import {
   analyzeRouteCapabilities,
   directProjectionProfiles,
   discoverPageRoutes,
+  expectedEffectiveShellAccess,
+  expectedRouting,
   expectedShellAccess,
   inspectRouteRepository,
   parsePageAuthorizationSources,
@@ -170,64 +172,28 @@ test('missing registry pages, unknown permissions and generated-page drift are r
 
 test('proxy shell access is measured separately from unresolved capability roles', () => {
   const analysis = currentAnalysis();
-  const sourceShellCounts = Object.groupBy(
-    analysis.manifest.routes,
-    ({ sourceShellAccess }) => sourceShellAccess,
-  );
-  const effectiveShellCounts = Object.groupBy(
-    analysis.manifest.routes,
-    ({ shellAccess }) => shellAccess,
-  );
+  // 셸 접근 분포의 확인 지점은 원장(config/ui-route-capabilities.json)이다. 기대값은 원장이 아니라 파일시스템 화면과
+  //   proxy·redirect 근거에서 따로 계산한다 — 원장에서 뽑아 원장과 비교하면 동어반복이다. 행마다의 대조는
+  //   validateRouteCapabilities 가 하고, 여기서는 분포 전체가 근거와 같고 세 셸이 모두 측정되는지를 본다.
+  const { proxy } = analysis.repository;
+  const evidence = discoverPageRoutes(ROOT).map(({ route, source }) => {
+    const routing = expectedRouting(analysis.repository, route, source);
+    return { source: expectedShellAccess(route, proxy), effective: expectedEffectiveShellAccess(route, routing, proxy),
+      alias: routing.kind !== 'page' };
+  });
+  const countBy = (rows, key) => Object.fromEntries(Object.entries(Object.groupBy(rows, (row) => row[key]))
+    .map(([access, members]) => [access, members.length]).sort(([left], [right]) => left.localeCompare(right)));
+  const ledgerSource = countBy(analysis.manifest.routes, 'sourceShellAccess');
+  const ledgerEffective = countBy(analysis.manifest.routes, 'shellAccess');
 
-  assert.equal(sourceShellCounts.public?.length, 1);
-  // 2026-09-11: the exact permission registry already admits the /admin/system/ism
-  // alias as authenticated; retire the old prefix-derived source classification.
-  assert.equal(sourceShellCounts.authenticated?.length, 50);
-  // [2026-09-07] 70 -> 71. /admin/system/isg 신설 — 백엔드 5본이 완비인데 프런트 호출부가 0 이라
-  //   등록 경로조차 없던 도메인을 배선했다(고아 도메인 종결).
-  // [2026-09-08 PD-SRVY-001] 71 -> 70. /admin/survey/respondents 를 걷었다 — tb_srvy_rspdnt 는
-  //   성명·생년월일·전화번호를 담는데 응답 결과와 ID 로 연결되지 않고 행을 만드는 경로가 없어
-  //   **항상 빈 목록을 보여주는 개인정보 화면**이었다. 라우트·허브 탭·config redirect·API 5본을 함께 제거했다.
-  // [2026-09-08 PD-MYPG-001] 70 -> 69. /admin/workspace/my-page 를 걷었다 — tb_indv_pg_conts 는 시드도
-  //   생성 경로도 없고 무엇보다 **그 값을 읽는 화면이 없다**(대시보드 위젯 SPI 구현 2개가 이 값을
-  //   쓰지 않는다). 켜고 꺼도 어디에도 나타나지 않아 소비처를 먼저 정하기로 했다(사용자 결정).
-  // [2026-09-25 DEC-OPS-129] 68 -> 67. /admin/system/network 를 걷었다 — 저장 테이블·계측 소스가 없어 조회는
-  //   **항상 빈 목록**, 쓰기는 501 이었고 메뉴·링크 어디에도 없었다. 라우트·API 4본·권한 코드 4개를 함께 제거했다.
-  // [2026-10-01 결정 19] 67 -> 69. /admin/system/logs/audit(민감 작업 감사 원장)·/admin/system/durable-jobs(후속 작업 상태)를
-  //   신설했다 — 서버에는 원장·작업이 쌓이는데 볼 화면이 없어 DB 를 직접 열어야 했다. 둘 다 기본 그룹에 없는 권한으로만 열린다.
-  // [2026-10-19] 69 -> 68. /admin/stats/report 를 걷었다 — 그 탭이 읽던 tb_rptp_stats 에 쓰는 제품 경로가 없어 **어떤 기간에도
-  //   비어 있었다**. 탭·조회 API 1본·메뉴(V2_134)를 함께 걷고 물리 테이블은 남겼다.
-  assert.equal(sourceShellCounts['admin-system']?.length, 68);
-  assert.equal(effectiveShellCounts.public?.length, 1);
-  // [2026-09-06 DEC-OPS-040] 48/71 → 49/70. /admin/system/ism 이 /approvals(인증 사용자 영역)로의 page-redirect 별칭이 되면서
-  //   실효 접근이 admin-system 에서 authenticated 로 옮겨 갔다(source 는 그대로 admin-system). 인가 완화가 아니라 정본의 게이트를 따른 결과다.
-  assert.equal(effectiveShellCounts.authenticated?.length, 49);
-  // [2026-09-25 DEC-OPS-129] 69 -> 68. 걷은 /admin/system/network 는 실효 접근도 admin-system 이었다.
-  // [2026-10-01 결정 19] 68 -> 70. 위 두 화면은 실효 접근도 admin-system 이다.
-  // [2026-10-19] 70 -> 69. 걷은 /admin/stats/report 는 실효 접근도 admin-system 이었다.
-  assert.equal(effectiveShellCounts['admin-system']?.length, 69);
-  // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
-  //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
-  //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
-  // [2026-09-05 DEC-OPS-034] 17 → 19. 게시글 작성 화면 3종을 insert-board-article 하나로 수렴하면서
-  //   /admin/community/boards/write 와 /admin/community/boards/[id] 가 page-redirect 별칭이 됐다.
-  //   별칭이 **늘어나는** 방향이지만 은폐가 아니다 — 같은 일을 하는 화면을 하나로 모은 결과이며,
-  //   두 라우트의 disposition 은 overlay 에서 consolidate-to-canonical 로 함께 제안됐다.
-  // [2026-09-06 DEC-OPS-040] 19 → 23. 감사 잔여 overlay 제안을 owner 승인으로 확정하며 /admin/system/ism · /admin/community ·
-  //   /admin/community/boards · /admin/system/monitoring 이 정본으로의 page-redirect 별칭이 됐다.
-  // [2026-09-08 PD-SRVY-001] 23 → 22. /admin/survey/respondents 의 config redirect 를 함께 걷었다 —
-  //   목적지였던 허브 응답자 탭도 제거했으므로 남겨 두면 존재하지 않는 탭으로 보낸다.
-  // Technical role editing now redirects to canonical authorization groups.
-  // [2026-09-12 §A3-1 · DEC-OPS-079] 23 → 27. /admin/collaboration/address-book/insert-address-book 이
-  //   주소록 등록·스크랩 등록/수정·설문 등록 4개 라우트가 각 정본 목록으로의 page-redirect 별칭이 됐다. 등록 폼을 목록 위 모달로 옮긴 결과이며(전용 입력
-  //   페이지가 §A3-1 의 정당화 조건을 하나도 충족하지 않았다), 별칭이 **늘어나는** 방향이지만 은폐가
-  //   아니다 — 같은 입력을 맥락 손실 없이 받는 그릇으로 옮긴 결과이고 disposition 은 overlay 에서
-  //   consolidate-to-canonical 로 승인 기록됐다.
-  // [2026-09-25 DEC-OPS-130] 27 → 28. /admin/community/[id] 가 id 를 보존해 정본 커뮤니티 상세
-  //   (/cop/cmy/selectCommunityDetail/[id])로 보내는 page-redirect 별칭이 됐다. 종전 화면은 id 를 읽지 않고
-  //   선택한 게시판 글 목록을 보여 줘 어떤 커뮤니티를 열어도 같았다. disposition 은 웨이브 5 로 승인 기록됐다.
-  assert.equal(analysis.result.summary.effectiveAliases, 28);
-  assert.equal(analysis.result.summary.externalAliases, 2);
+  assert.deepEqual(ledgerSource, countBy(evidence, 'source'), 'ledger source shell access differs from proxy evidence');
+  assert.deepEqual(ledgerEffective, countBy(evidence, 'effective'), 'ledger effective shell access differs from redirect/proxy evidence');
+  for (const counts of [ledgerSource, ledgerEffective]) {
+    assert.deepEqual(Object.keys(counts), ['admin-system', 'authenticated', 'public'], 'every shell class is measured');
+  }
+  assert.equal(analysis.result.summary.effectiveAliases, evidence.filter(({ alias }) => alias).length);
+  assert.equal(analysis.manifest.externalAliases.length, analysis.result.summary.externalAliases);
+  assert.ok(analysis.result.summary.externalAliases > 0, 'config redirects to external aliases are measured');
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(
     { sourceShellAccess: legacySms.sourceShellAccess, shellAccess: legacySms.shellAccess },

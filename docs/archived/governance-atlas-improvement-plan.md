@@ -317,7 +317,7 @@ flowchart LR
 
 이는 영향 분석의 개요다. 모든 변경을 동일한 배포 순서로 실행한다는 의미는 아니다. 확장/축소, 기존 값 정규화, 암호화, 날짜·시각·타임존은 각각 계약과 되돌림 조건을 설명한다. 현재 물리값·최대 길이·오염 행 수는 live 확인 없이 확정하지 않는다.
 
-우선 상세 사례는 [길이 정합 런북](../04-operations/standard-length-alignment-runbook.md)과 [ADR-0014](../02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)를 사용한다. 운영 판단이 필요한 항목을 단순 프론트 `maxLength` 변경으로 끝내지 않는다.
+우선 상세 사례는 [길이 정합 런북](standard-length-alignment-runbook.md)과 [ADR-0014](../02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)를 사용한다. 운영 판단이 필요한 항목을 단순 프론트 `maxLength` 변경으로 끝내지 않는다.
 
 ### 7.2 검증 선택표
 

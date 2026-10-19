@@ -1,6 +1,8 @@
 ﻿---
 name: test-driven-development
 description: Use when implementing any feature or bugfix, before writing implementation code
+source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
+license: MIT — Complete terms in LICENSE.txt
 ---
 
 # Test-Driven Development (TDD)

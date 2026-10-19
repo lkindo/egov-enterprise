@@ -1,6 +1,8 @@
 ---
 name: requesting-code-review
 description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
+license: MIT — Complete terms in LICENSE.txt
 ---
 
 # Requesting Code Review

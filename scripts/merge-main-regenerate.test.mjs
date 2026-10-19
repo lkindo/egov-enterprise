@@ -21,6 +21,7 @@ import {
 } from './merge-main-regenerate.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
+import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -96,6 +97,10 @@ test('the approval hash is rebound to the canonical census serialization only', 
   assert.equal(JSON.parse(rebound).manifestRef.sha256, urlCensusSha256(census));
   assert.equal(rebound.replace(urlCensusSha256(census), '0'.repeat(64)), approval, 'nothing but the hash changes');
   assert.throws(() => rebindApprovalText(approval.replace('ui-url-state-census', 'other'), census), /manifestRef/);
+  // 승인 계약과 같은 결속 범위다 — 개수뿐인 summary 만 바뀐 census 는 같은 해시다.
+  assert.equal(urlCensusSha256(census), approvalCensusSha256(JSON.parse(census)));
+  assert.equal(urlCensusSha256('{\n  "summary": {\n    "sourceFileCount": 2\n  },\n  "records": [1]\n}\n'), urlCensusSha256(census));
+  assert.notEqual(urlCensusSha256('{\n  "records": [2]\n}\n'), urlCensusSha256(census));
 });
 
 test('only generators whose inputs or outputs changed on both sides run, downstream steps follow', () => {

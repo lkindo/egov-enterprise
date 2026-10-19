@@ -68,7 +68,9 @@ test('catalog is deterministic and covers source-owned modules, articles, gates 
   assert.equal(baseline.catalogs.modules.filter(module => module.id !== 'frontend').length,
     [...fs.readFileSync(path.join(repo, 'settings.gradle'), 'utf8').matchAll(/^include\s+/gm)].length);
   assert.equal(baseline.catalogs.decisions.length,
-    [...fs.readFileSync(path.join(repo, '.agent/memory/decisions.md'), 'utf8').matchAll(/^\| (?:ADR-\d{4}|DEC-OPS-\d{3}) \|/gm)].length);
+    ['.agent/memory/decisions.md', 'docs/archived/operational-decisions-index-historical.md']
+      .map(file => [...fs.readFileSync(path.join(repo, file), 'utf8').matchAll(/^\| (?:ADR-\d{4}|DEC-OPS-\d{3}) \|/gm)].length)
+      .reduce((sum, count) => sum + count, 0));
   assert.ok(baseline.catalogs.constitutions.every(article => article.details.some(item => item.label === '조문 원문' && item.value.length > 0)));
   assert.ok(baseline.catalogs.gaps.every(gap => /^GAP-[A-Z]+-\d{3}$/.test(gap.id)));
   assert.ok(baseline.catalogs.documents.some(doc => doc.id === 'docs/archived/PRD.MD'));
@@ -122,10 +124,13 @@ test('compact decision indexes preserve every archived decision body and rationa
   const history = fs.readFileSync(path.join(repo, source), 'utf8');
   const rows = [...history.matchAll(/^\| DEC-OPS-\d{3} \|.*$/gm)];
   assert.ok(rows.length > 0);
+  const historicalIds = new Set([...fs.readFileSync(path.join(repo, 'docs/archived/operational-decisions-index-historical.md'), 'utf8')
+    .matchAll(/^\| (DEC-OPS-\d{3}) \|/gm)].map(match => match[1]));
+  assert.ok(historicalIds.size > 0, 'the historical index must hold the moved decisions');
   for (const [row] of rows) {
     const cells = row.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/).map(cell => cell.trim());
     const actual = baseline.catalogs.decisions.find(item => item.id === cells[0]);
-    assert.equal(actual.source, '.agent/memory/decisions.md');
+    assert.equal(actual.source, historicalIds.has(cells[0]) ? 'docs/archived/operational-decisions-index-historical.md' : '.agent/memory/decisions.md');
     assert.equal(actual.status, cells[1]);
     assert.equal(actual.supersedes, cells[6]);
     assert.equal(actual.details.find(item => item.label === '결정 원문').value, cells[2]);
@@ -139,12 +144,16 @@ test('compact decision indexes preserve every archived decision body and rationa
 test('decision history cannot silently substitute another ID or divergent approval metadata', () => {
   const history = 'docs/archived/operational-decisions-history.md';
   const memory = '.agent/memory/decisions.md';
-  mutate(memory, text => text.replace('#dec-ops-001)', '#dec-ops-002)'), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
-  });
-  mutate(memory, text => text.replace('docs/archived/operational-decisions-history.md#dec-ops-001', 'docs/README.md'), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must link exactly one same-ID decision history section/);
-  });
+  // The ID is the archive anchor: an index row cannot point itself at another (or any) archive section.
+  for (const anchor of ['#dec-ops-002', '#dec-ops-001']) {
+    mutate(memory, text => {
+      const mutated = text.replace(/^(\| DEC-OPS-001 \| accepted \| )/m, `$1[원문](../../docs/archived/operational-decisions-history.md${anchor}) `);
+      assert.notEqual(mutated, text);
+      return mutated;
+    }, () => {
+      assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 must not link a decision history section; its ID is the archive anchor/);
+    });
+  }
   mutate(history, text => text.replace(/^\| DEC-OPS-001 \|.*\r?\n/m, ''), () => {
     assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision history section must contain its same-ID row/);
   });
@@ -170,13 +179,79 @@ test('decision history cannot silently substitute another ID or divergent approv
   });
 });
 
-test('new operational decisions can use a current source without extending the historical archive', () => {
-  mutate('.agent/memory/decisions.md', text => `${text}\n| DEC-OPS-999 | accepted | new decision probe | current rationale probe | [source](../../docs/README.md) | 2026-10-17 | - |\n`, () => {
-    const decision = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === 'DEC-OPS-999');
-    assert.equal(decision.source, '.agent/memory/decisions.md');
-    assert.equal(decision.status, 'accepted');
-    assert.ok(decision.searchText.includes('current rationale probe'));
-    assert.deepEqual(decision.links, [{ label: 'source', path: 'docs/README.md' }]);
+test('operational decision rows take their archive anchor from the ID and keep five columns', () => {
+  const history = 'docs/archived/operational-decisions-history.md';
+  const memory = '.agent/memory/decisions.md';
+  for (const decision of baseline.catalogs.decisions.filter(item => item.id.startsWith('DEC-'))) {
+    assert.deepEqual(decision.links[0], { label: '원문', path: `${history}#${decision.id.toLowerCase()}` });
+  }
+  // A new decision without its archive section has no anchor to resolve.
+  mutate(memory, text => `${text}\n| DEC-OPS-999 | accepted | new decision probe | 2026-10-17 | - |\n`, () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-999 decision history section missing; its ID is the archive anchor/);
+  });
+  // The repeated reason/source columns do not come back, and a row cannot lose a column either.
+  const rowPattern = /^\| DEC-OPS-001 \| accepted \| (.+?) \| (2026-08-18) \| - \|/m;
+  for (const [label, replacement] of [
+    ['seven columns', '| DEC-OPS-001 | accepted | $1 | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-001) | $2 | - |'],
+    ['four columns', '| DEC-OPS-001 | accepted | $1 | $2 |'],
+  ]) {
+    mutate(memory, text => {
+      const mutated = text.replace(rowPattern, replacement);
+      assert.notEqual(mutated, text, label);
+      return mutated;
+    }, () => {
+      assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision index row requires five columns/, label);
+    });
+  }
+  mutate(memory, text => {
+    const mutated = text.replace(/^(\| ADR-0001 \| accepted \| [^|]+ \| )[^|]+ \| /m, '$1');
+    assert.notEqual(mutated, text);
+    return mutated;
+  }, () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 decision index row requires seven columns/);
+  });
+});
+
+test('current and historical decision indexes partition every archived decision exactly once', () => {
+  const memory = '.agent/memory/decisions.md';
+  const historical = 'docs/archived/operational-decisions-index-historical.md';
+  const historicalText = fs.readFileSync(path.join(repo, historical), 'utf8');
+  const row = historicalText.split(/\r?\n/).find(line => /^\| DEC-OPS-\d{3} \|/.test(line));
+  assert.ok(row, 'the historical index must hold at least one decision');
+  const id = row.match(/^\| (DEC-OPS-\d{3}) \|/)[1];
+  const cells = row.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/);
+  const record = baseline.catalogs.decisions.find(item => item.id === id);
+  assert.equal(record.source, historical);
+  assert.ok(record.details.some(item => item.label === '역사 분류' && item.value === cells[5]));
+  assert.equal(record.supersedes, cells[4]);
+  const withRow = (file, transform) => text => {
+    const mutated = transform(text);
+    assert.notEqual(mutated, text, `${file} mutation did not apply`);
+    return mutated;
+  };
+  // 누락: 역사 색인에서 행 하나를 빼면 어느 색인에도 없다.
+  mutate(historical, withRow(historical, text => text.replace(new RegExp(`^\\| ${id} \\|.*\\r?\\n`, 'm'), '')), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} archived decision is missing from both decision indexes`));
+  });
+  // 중복: 같은 결정을 현재 색인에도 두면 두 번 색인된다.
+  mutate(memory, withRow(memory, text => text.replace(/^(\| DEC-OPS-001 \|.*)$/m, `$1\n| ${cells.slice(0, 5).join(' | ')} |`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} is indexed more than once across the current and historical decision indexes`));
+  });
+  // 상태 불일치: 역사 색인 행도 보관 원문과 상태·시행일·supersedes 가 같아야 한다.
+  for (const index of [1, 3, 4]) {
+    mutate(historical, withRow(historical, text => text.replace(row, `| ${cells.map((cell, at) => at === index ? 'drifted-probe' : cell).join(' | ')} |`)), () => {
+      assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} decision history status/date/supersedes differs from index`));
+    });
+  }
+  // 형식: 분류 어휘·열 수·DEC 전용.
+  mutate(historical, withRow(historical, text => text.replace(row, `| ${cells.map((cell, at) => at === 5 ? '보관' : cell).join(' | ')} |`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} historical decision kind must be one of 퇴역, 대체됨, 일회성 실행, 구현 기록`));
+  });
+  mutate(historical, withRow(historical, text => text.replace(row, `| ${cells.slice(0, 5).join(' | ')} |`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} historical decision index row requires seven columns`));
+  });
+  mutate(historical, withRow(historical, text => `${text}| ADR-0001 | accepted | probe | 2026-08-15 | - | 대체됨 | probe |\n`), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 historical decision index accepts only operational decisions/);
   });
 });
 
@@ -275,18 +350,24 @@ test('domain links use module-qualified declaration references and expose unconf
   });
 });
 
-test('source digest ignores line endings, not source content, and avoids output self-cycles', () => {
+// 읽은 원본은 경로만 싣는다. 파일별 내용 해시를 다시 실으면 catalog 사실과 무관한 소스 한 줄 수정마다 Atlas 를 다시 만들어야 한다.
+test('catalog lists input paths without content hashes: only catalog-visible source changes alter it', () => {
   mutate('.nvmrc', text => text.replace(/\r?\n/g, '\r\n'), () => {
     assert.deepEqual(buildAtlasCatalog(fixture), baseline);
+  });
+  const route = baseline.catalogs.routes[0].source;
+  assert.ok(baseline.sources.some(source => source.path === route), 'the route source must be a read input');
+  mutate(route, text => `${text}\n// catalog-invisible edit\n`, () => {
+    assert.deepEqual(buildAtlasCatalog(fixture), baseline, 'a source edit that changes no catalog fact must not change the catalog');
   });
   mutate('.nvmrc', () => '24\n', () => {
     const changed = buildAtlasCatalog(fixture);
     assert.equal(changed.facts.nodeVersion, '24');
-    assert.notEqual(changed.sources.find(source => source.path === '.nvmrc').digest,
-      baseline.sources.find(source => source.path === '.nvmrc').digest);
     assert.notDeepEqual(changed, baseline);
   });
-  assert.ok(baseline.sources.every(source => /^[a-f0-9]{64}$/.test(source.digest)));
+  assert.ok(baseline.sources.length > 0);
+  assert.ok(baseline.sources.every(source => Object.keys(source).join(',') === 'path'),
+    'sources must carry only the path — per-file content hashes force regeneration on catalog-invisible edits');
   assert.ok(baseline.sources.every(source => !/\.env(?:\.|$)|governance_harness_atlas\.html|frontend\/atlas\//.test(source.path)));
   assert.equal('generatedAt' in baseline, false);
   assert.equal('head' in baseline, false);

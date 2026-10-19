@@ -124,7 +124,7 @@ const BACKEND = [
   /^(?:build|settings)\.gradle$/,
   /^gradle\//,
   /^gradle\.properties$/,
-  /^config\/(?:db|checkstyle|dependency-check)\//,
+  /^config\/(?:db|dependency-check)\//,
   /^api-docs\.json$/,
 ];
 

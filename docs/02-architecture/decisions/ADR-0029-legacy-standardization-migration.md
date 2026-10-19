@@ -6,7 +6,7 @@
 - 승인 범위: 사용자 결정(2026-10-13 — 설계 초안을 ADR 로 채택, 결정 대기 Q1~Q4, 같은 날 17:50 의 Q5 제어 테이블 변경 승인과 Q8~Q10)과
   위임 결정(Q5 의 표현 방식·Q6·Q7, 표준 스키마 메타 불일치의 gap 등록 — Claude 권고안). 인덱스는 DEC-OPS-305 다.
 - 대체: 없음. [ADR-0008](ADR-0008-multi-source-approved-migration-workflow.md)의 경계 위에 표준화 단계를 더한다.
-- 관련: [레거시 표준화 이관 설계](../legacy-standardization-migration-design.md)(진단·방법론 정본), [레거시 이관 도구 설계](../legacy-migration-tool-design.md),
+- 관련: [레거시 표준화 이관 설계](../../archived/legacy-standardization-migration-design.md)(진단·방법론 정본), [레거시 이관 도구 설계](../legacy-migration-tool-design.md),
   [DB 헌법](../../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md), [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md),
   [ADR-0014](ADR-0014-deferred-standard-design-alignment.md)
 

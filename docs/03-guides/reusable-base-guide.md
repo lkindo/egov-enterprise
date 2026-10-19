@@ -233,11 +233,13 @@ springdoc 별칭(`_N`) 가운데 기본 연산이 다른 기능과 함께 빠지
 생성물에서 springdoc 으로 다시 추출하면 충돌이 없어 접미사 없이 나오므로, T2 의 springdoc 재추출 대조는 이 목록의 접미사 차이를
 정규화해야 하고, 생성물 유지자가 springdoc 으로 api-docs 를 다시 만들면 그 연산의 서술자 이름(`getStats_1Operation`)이 바뀐다.
 
-공식·개발용 산출물 모두 재배포 제한이 확인된 `.agent/skills/docx`, `pdf`, `pptx`, `xlsx` 디렉터리의
-파일을 복사하지 않는다. 2026-09-30부터는 원본 저장소도 이 네 디렉터리를 추적하지 않는다(DEC-OPS-182,
-`.gitignore`). 다시 추적되면 `project-composer-source` 계약이 red 다. 생성기의 제외는 로컬에 남은 사본이
-산출물로 새지 않도록 유지한다. Git 이력은 재작성하지 않았고, 이 제외가 나머지 자산의 배포 권리를
-보증하지는 않는다. 기존 산출물에는 소급 적용되지 않으므로 재사용·게시 전에 다시 생성해야 한다.
+공식·개발용 산출물은 `.agent/skills/` 가운데 이 저장소 전용 스킬만 복사한다. 스킬마다 생성물 복사 여부는
+[`reusable-source-tree.mjs`](../../scripts/reusable-source-tree.mjs)의 `SKILL_DISTRIBUTION`이 정하며, 외부에서 들여온
+범용 스킬(SKILL.md 머리에 출처·라이선스를 적고 LICENSE 파일을 둔다)과 이 저장소에서 쓴 범용 스킬, 분류표에 없는 스킬은
+복사하지 않는다. 분류되지 않은 스킬이 생기면 `project-composer-source` 계약이 red 다. 재배포 제한이 확인된
+`docx`, `pdf`, `pptx`, `xlsx`는 2026-09-30부터 원본 저장소도 추적하지 않으며(DEC-OPS-182, `.gitignore`), 다시 추적되면
+같은 계약이 red 다. 로컬에 남은 사본은 분류표에 없으므로 산출물로 새지 않는다. Git 이력은 재작성하지 않았고, 이 분류가
+나머지 자산의 배포 권리를 보증하지는 않는다. 기존 산출물에는 소급 적용되지 않으므로 재사용·게시 전에 다시 생성해야 한다.
 개발용 `--allow-dirty` 생성은 그 밖의 추적 파일과 gitignore에 걸리지 않는 새 로컬 파일을 계속 포함한다.
 공식 산출물은 기존의 clean working tree·릴리스 태그 요건을 그대로 따른다.
 
@@ -343,7 +345,7 @@ PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 A
   지금 원장에서 그런 소스 파일은 셋이다(행사 외부인사 컨트롤러, 결재 기안·승인 요청 DTO — 항목 6개). 다른 api-server 파일을 거쳐 닿는 간접 참조는
   소유 규칙이 core 로 보므로 이 대조가 붉다.
 - 표적 하한(anti-vacuity)은 프로필과 무관하게 원장 **전체**에 적용한다.
-- 원장 해시는 메타 게이트의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE` 의 `__sourceHash` 가 동결한다(생성기 미러 포함).
+- 원장 해시는 하네스 기준선 도구(`scripts/harness-baseline-manifest.mjs`)의 `GATE_REGISTRIES`, 판정 본문은 `ARCH_RULE_FILE_PATTERN` 의 `__sourceHash` 가 동결한다. 생성기와 메타 게이트가 같은 도구를 쓴다.
 - 게이트 판정은 각 게이트 파일 안에 둔다. 공용 Java 헬퍼로 빼면 그 파일이 `__sourceHash` 밖으로 나가고, 다른 게이트
   클래스의 메서드를 부르면 한 게이트의 제거가 나머지를 끌고 나간다.
 - 게이트 소스에는 빠질 수 있는 도메인 타입을 참조하지 않는다. 생성기의 Java 의존 판정은 **코드에서만** 한다 — import 선언·

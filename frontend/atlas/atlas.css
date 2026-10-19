@@ -196,7 +196,7 @@ dd { margin: .25rem 0 .8rem; color: var(--muted); }
 .catalog-detail { min-width: 0; }
 .catalog-detail dd { white-space: pre-wrap; font-size: .8rem; }
 .catalog-links { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
-.source-digest { overflow-wrap: anywhere; }
+.source-path { overflow-wrap: anywhere; }
 .catalog-meta, .catalog-facts { display: flex; flex-wrap: wrap; gap: .3rem .6rem; }
 .catalog-list { display: grid; gap: .8rem; list-style: none; padding: 0; }
 .catalog-entry { padding: .8rem 0; border-bottom: 1px solid var(--line); }

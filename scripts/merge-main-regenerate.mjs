@@ -8,7 +8,7 @@
  *
  * 하는 일:
  *   1. 작업 트리가 깨끗한지 확인하고 `--no-ff --no-commit` 으로 base 를 합친다(diff3 충돌 표기).
- *   2. 공용 메모리 표(decisions.md·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
+ *   2. 공용 메모리 표(decisions.md·결정 역사 색인·known-gaps.md)의 충돌은 행 단위로 합친다. 같은 ID 를 양쪽이 다르게
  *      고쳤거나 같은 새 ID 를 썼으면 합치지 않고 멈춘다(프로토콜 §6.4 — 사람이 한 행으로 합치거나 번호를 바꾼다).
  *   3. 다시 만들 생성물의 충돌은 한쪽을 고르지 않고 재생성 결과로 덮는다. URL 승인 파일은 해시 줄만 다를 때 푼다.
  *      그 밖의 충돌(api-docs.json·하네스 manifest·메뉴 snapshot·소스)은 목록을 보이고 멈춘다. 하네스 manifest 는 양쪽 값이
@@ -23,7 +23,6 @@
  * 그 확인 지점이 조용히 사라진다.
  */
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -31,11 +30,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
 import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
+// 승인 결속 범위는 생성기·승인 계약과 같은 함수 하나가 정한다(node 내장만 쓴다).
+import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export const MEMORY_TABLES = new Map([
   ['.agent/memory/decisions.md', { order: 'id' }],
+  // 지금의 작업을 제약하지 않게 된 결정 행은 decisions.md 에서 이 색인으로 옮긴다 — 같은 ID 순서 병합을 쓴다.
+  ['docs/archived/operational-decisions-index-historical.md', { order: 'id' }],
   ['.agent/memory/known-gaps.md', { order: 'keep' }],
 ]);
 
@@ -51,6 +54,8 @@ const under = (...prefixes) => file => prefixes.some(prefix => file === prefix |
  * 의존 순서대로 둔다 — 앞 단계의 출력이 뒤 단계의 입력이면 뒤 단계도 실행한다.
  * `outputs` 는 생성기가 통째로 다시 쓰는 파일이라 충돌하면 어느 쪽을 골라도 재생성이 덮는다.
  * `touches` 는 생성기가 다시 쓰기는 하지만 입력이기도 한 파일이라 충돌을 자동으로 풀지 않는다.
+ * `check` 는 쓰지 않고 낡았는지만 보는 명령이다(`npm run regen -- --check`, scripts/regenerate.mjs). 생성기 자신의 검사 모드를 쓴다 —
+ * 새 판정을 더하지 않는다. 운영 계약·codegen 게이트가 같은 생성물을 다시 보므로 이 목록은 실패를 앞당길 뿐이다.
  */
 export const GENERATORS = [
   {
@@ -60,6 +65,8 @@ export const GENERATORS = [
       'frontend/src/types/generated-operations.ts'],
     touches: ['api-docs.json'],
     command: ['pnpm', ['-C', 'frontend', 'run', 'syncContract']],
+    // codegen:verify·codegen:verify:zod 와 같은 스크립트를 저장소 루트에서 바로 부른다(작업 트리·index 를 쓰지 않는다).
+    check: [['node', ['scripts/verify-generated-contracts.mjs', 'api']], ['node', ['scripts/verify-generated-contracts.mjs', 'zod']]],
   },
   {
     id: 'permissions',
@@ -72,6 +79,7 @@ export const GENERATORS = [
       'frontend/src/types/generated-permissions.ts'],
     touches: ['api-server/src/main/resources/db/migration/R__zz_seed_base_admin.sql'],
     command: ['node', ['scripts/generate-permissions.mjs']],
+    check: [['node', ['scripts/generate-permissions.mjs', '--check']]],
   },
   {
     // 슬롯 레지스트리(슬롯 단계 PR-4)는 기여 파일 이름에서 만든다. 레지스트리도 frontend/src 의 소스라 그것을 읽는 census 들보다 앞이다.
@@ -80,12 +88,15 @@ export const GENERATORS = [
     inputs: under('frontend/src/extensions'),
     get outputs() { return slotRegistryOutputs(repoRoot); },
     command: ['node', ['scripts/slot-registry.mjs', '--write']],
+    check: [['node', ['scripts/slot-registry.mjs', '--check']]],
   },
   {
     id: 'boundary-census',
     inputs: under('frontend/src/', 'api-docs.json'),
     outputs: ['config/governance/generated-api-boundaries.json'],
     command: ['node', ['scripts/generated-boundary-census.mjs', '--write']],
+    // 스냅숏 대조만 한다. 응답 모양 검사(V10)는 생성물 신선도가 아니라 소스 계약이고 그 시험이 운영 계약에서 돈다(약 1분).
+    check: [['node', ['scripts/generated-boundary-census.mjs', '--check', '--snapshot-only']]],
   },
   {
     // 경계 census 의 출력(generated-api-boundaries.json)을 읽으므로 그 뒤다. 경계 census 는 이 산출물을 읽지 않는다
@@ -99,6 +110,7 @@ export const GENERATORS = [
       'config/frontend-visible-terms.json'),
     outputs: ['frontend/src/types/generated-screen-registry.ts'],
     command: ['node', ['scripts/generate-screen-registry.mjs']],
+    check: [['node', ['scripts/generate-screen-registry.mjs', '--check']]],
   },
   {
     id: 'url-state-census',
@@ -106,6 +118,7 @@ export const GENERATORS = [
     outputs: [URL_CENSUS],
     touches: [URL_APPROVAL],
     command: ['node', ['scripts/ui-url-state-census.mjs', '--write']],
+    check: [['node', ['scripts/ui-url-state-census.mjs', '--check']]],
     rebindUrlApproval: true,
   },
   {
@@ -115,6 +128,7 @@ export const GENERATORS = [
     inputs: anyPath,
     outputs: ['frontend/public/governance_harness_atlas.html'],
     command: ['npm', ['run', 'atlas:build']],
+    check: [['node', ['scripts/build-atlas.mjs', '--check']]],
   },
 ];
 
@@ -291,7 +305,7 @@ function attachHarnessManifestValues(cwd, manual) {
 }
 
 export function urlCensusSha256(censusText) {
-  return createHash('sha256').update(`${JSON.stringify(JSON.parse(censusText), null, 2)}\n`, 'utf8').digest('hex');
+  return approvalCensusSha256(JSON.parse(censusText));
 }
 
 export function rebindApprovalText(approvalText, censusText) {

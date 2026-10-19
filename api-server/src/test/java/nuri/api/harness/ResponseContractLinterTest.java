@@ -70,13 +70,8 @@ class ResponseContractLinterTest {
      * 유지하면서 외부 응답을 {@code DashboardResponse}로 투영해 마지막 비정형 payload를
      * 상환했다. 새 Map/Object 응답이 생기면 이 exact census가 즉시 red가 된다.
      *
-     * <p><b>[2026-08-29] 5 → 1</b>. 저위험 4건을 전용 DTO 로 상환했다 —
-     * {@code HealthCheckApiController#checkHealth}({@code HealthStatusResponse}),
-     * {@code MenuUserApiController#getHeadMenu}·{@code #getLeftMenu}({@code MenuListResponse}),
-     * {@code SatisfactionApiController#getAverage}({@code SatisfactionAverageResponse}).
-     * 만족도 이행은 표현 변경이 아니라 <b>결함 수정</b>이었다 — {@code Map.of} 가 null 값을 담지
-     * 못해 "평가 없음"(서비스의 {@code null})을 0.0 으로 뭉개고 있었고, 같은 핸들러의
-     * {@code @Operation} 설명은 정반대("0 과 구분해야 한다")를 약속하고 있었다.
+     * <p>Map 응답은 값의 형태를 숨겨 결함도 숨긴다 — {@code Map.of} 가 null 값을 담지 못해 "평가 없음"(서비스의 {@code null})을
+     * 0.0 으로 뭉갠 만족도 평균이 실제 사례다. 전용 DTO 로 상환한 이력은 git 과 결정 기록에 있다.
      *
      * <p>피해는 실측된다 — {@code frontend/src/types/generated-api.d.ts} 의
      * {@code ApiResponseMapStringObject.data} 는 {@code Record<string, never>} 로 생성돼

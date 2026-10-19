@@ -19,7 +19,7 @@ import { FRONTEND_LAYOUT, createFrontendProjector, isFrontendModuleFile, parseMa
 import { pageSurvivalExpectation, pageSurvivalViolations } from './reusable-page-survival.mjs';
 import { planJavaRemoval } from './reusable-source-java.mjs';
 import { deriveEventSources, requiresClosure, sourceOwner } from './project-composer-integrations.mjs';
-import { copySourceTree, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
+import { SKILL_DISTRIBUTION, copySourceTree, isReusableSkillPath, trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const catalog = loadProjectComposerCatalog(root);
@@ -408,25 +408,10 @@ test('projected modules keep exactly the composition features, its active entry 
 });
 
 /*
- * [11단계 C3] 생성기·정밀 점검·DB 생성기는 매니페스트 v2 의 기능 소유로 투영한다. pack 목록과 순위로 판정하는 코드가 이 파일들에
- * 돌아오면 시작 구성이 다시 직접 선택과 다른 경로를 탄다. pack 을 읽는 옛 소비자(투영 manifest 쓰기·도달성 census)는 대상이 아니다.
+ * [11단계 C3] 생성기·정밀 점검·DB 생성기는 매니페스트 v2 의 기능 소유로 투영한다. 생성기·관찰자 소스가 pack 목록과 순위를 다시 읽지
+ * 않는지는 retired-pack-vocabulary.test.mjs 의 표가 본다(이 자리의 grep 단언을 그 표로 옮겼다).
  */
-test('the generators and the deep plan project by feature ownership, never by pack or rank', () => {
-  const code = file => readFileSync(join(root, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/[^\r\n]*/g, '$1');
-  for (const file of ['scripts/reusable-source-java.mjs', 'scripts/project-composer-deep.mjs', 'scripts/generate-reusable-base-db.mjs']) {
-    assert.doesNotMatch(code(file), /manifest\.packs|profile\.packs|allowedPacks|\.rank\b/, file);
-  }
-  assert.doesNotMatch(code('scripts/generate-reusable-base-source.mjs'), /\.rank\b/, 'shared tables move by declared consumer order, not pack rank');
-  // 관찰자(원장·census·CI 범위·생성물 판정·Atlas·수동 삭제)도 v1 manifest 의 pack·순위를 읽지 않는다(11단계 C5). 생성기 본체와 생성물 무결성
-  // 검사는 v1 manifest 이름을 '생성물에 남기지 않는다·원본 스냅숏' 으로만 쓰므로 pack·순위 읽기만 막는다.
-  for (const file of ['scripts/ui-route-capabilities-contract.mjs', 'scripts/frontend-reachability-census.mjs', 'scripts/reusable-review-scopes.mjs',
-    'scripts/reusable-governance-projection.mjs', 'scripts/generate-permissions.mjs', 'scripts/pack-tagged-registry.mjs',
-    'scripts/reusable-source-harness.mjs', 'scripts/ci-change-scope.mjs', 'scripts/adoption-review.mjs', 'scripts/atlas-catalog.mjs',
-    'scripts/domain-deletion-plan.mjs', 'scripts/reusable-source-frontend.mjs', 'scripts/project-composer-recipe.mjs',
-    'scripts/reusable-source-tree.mjs', 'scripts/reusable-db-postgres.mjs', 'scripts/generate-reusable-base-source.mjs',
-    'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-base-census.mjs', 'scripts/project-composer-catalog.mjs']) {
-    assert.doesNotMatch(code(file), /\.packs\b|\.rank\b|allowedPacks|excludedPacks|reusable-base-profiles/, file);
-  }
+test('the DB generator takes its ownership inventory from the feature files', () => {
   // DB 생성기가 원본 스키마와 대조하는 소유 목록은 기능 파일에서 온다 — 카탈로그의 core·기능 테이블·독립 시퀀스와 같다.
   const inventory = moduleDatabaseInventory(modules.files);
   const sortedUnique = values => [...new Set(values)].sort();
@@ -516,7 +501,7 @@ test('a shared table goes to the first selected consumer in declared order, not 
   assert.deepEqual([...sharedTableTransfers(files, [])], [], 'a table without any selected consumer is not part of the composition');
 });
 
-test('source copying excludes restricted skill trees while preserving ordinary source and the producer', t => {
+test('source copying keeps only project skills while preserving ordinary source and the producer', t => {
   const base = realpathSync(tmpdir());
   const fixture = mkdtempSync(join(base, 'composer-copy-'));
   t.after(() => {
@@ -526,16 +511,18 @@ test('source copying excludes restricted skill trees while preserving ordinary s
   });
   const sourceRoot = join(fixture, 'source');
   const output = join(fixture, 'output');
-  const excluded = ['docx', 'pdf', 'pptx', 'xlsx'].flatMap(skill => [
-    `.agent/skills/${skill}/SKILL.md`,
-    `.agent/skills/${skill}/scripts/nested/tool.js`,
-    `.agent/skills/${skill}/LICENSE.txt`,
-  ]);
+  // 재배포 제한(docx…)·외부 범용(skill-creator…)·저장소 전용 범용(explain-diff)·분류표에 없는 스킬은 복사하지 않는다.
+  const excluded = ['docx', 'pdf', 'pptx', 'xlsx', 'skill-creator', 'test-driven-development', 'explain-diff', 'pdf-extra', 'unlisted-generic']
+    .flatMap(skill => [
+      `.agent/skills/${skill}/SKILL.md`,
+      `.agent/skills/${skill}/scripts/nested/tool.js`,
+      `.agent/skills/${skill}/LICENSE.txt`,
+    ]).concat(['.agent/skills/README.md']);
   const retained = [
     'frontend/src/new-local-file.ts',
     '.agent/skills/db-governance/SKILL.md',
-    '.agent/skills/pdf-extra/SKILL.md',
-    '.agent/skills/docx-helper/SKILL.md',
+    '.agent/skills/zero-downtime-migration-planner/nested/notes.md',
+    '.agent/skillsets/generic/SKILL.md',
     'docs/pdf/guide.md',
     'gradlew',
   ];
@@ -593,6 +580,71 @@ ${tracked.stdout}`);
   for (const allowed of ['.agent/skills/db-governance/SKILL.md', '.agent/skills/skill-creator/SKILL.md', '.agent/skills/pdf-extra/SKILL.md']) {
     assert.equal(spawnSync('git', ['check-ignore', '-q', allowed], { cwd: root }).status, 1, `${allowed} must not be ignored`);
   }
+});
+
+/**
+ * 저장소에 있는 스킬은 모두 SKILL_DISTRIBUTION(reusable-source-tree.mjs)에 분류돼야 한다. 외부에서 들여온 스킬(external)은
+ * SKILL.md 머리에 source·license 를 적고 LICENSE 파일을 두며, 이 저장소 스킬(project·repository-only)은 source 를 적지 않는다.
+ * 생성물은 project 스킬만 가지므로 project 가 아닌 분류는 없어도 된다.
+ */
+function skillDistributionViolations(skillFiles, read, distribution = SKILL_DISTRIBUTION) {
+  const violations = [];
+  const inSkill = skill => file => file.startsWith(`.agent/skills/${skill}/`);
+  const skills = new Set(skillFiles.filter(file => file.startsWith('.agent/skills/')).map(file => file.split('/')[2]));
+  for (const skill of [...skills].sort()) {
+    if (!Object.hasOwn(distribution, skill)) {
+      violations.push(`${skill}: 분류되지 않은 스킬입니다 — SKILL_DISTRIBUTION 에 project·repository-only·external 중 하나로 적으십시오.`);
+      continue;
+    }
+    const skillFile = `.agent/skills/${skill}/SKILL.md`;
+    if (!skillFiles.includes(skillFile)) {
+      violations.push(`${skill}: SKILL.md 가 없습니다.`);
+      continue;
+    }
+    const head = (read(skillFile).replace(/^﻿/u, '').match(/^---\r?\n([\s\S]*?)\r?\n---/u)?.[1] ?? '').split(/\r?\n/u);
+    const declares = key => head.some(line => line.startsWith(`${key}:`));
+    if (distribution[skill] === 'external') {
+      if (!declares('source') || !declares('license')) violations.push(`${skill}: 외부 스킬은 SKILL.md 머리에 source·license 를 적어야 합니다.`);
+      if (!skillFiles.filter(inSkill(skill)).some(file => /\/LICENSE(?:\.txt|\.md)?$/u.test(file))) {
+        violations.push(`${skill}: 외부 스킬은 LICENSE 파일을 함께 둬야 합니다.`);
+      }
+    } else if (declares('source')) {
+      violations.push(`${skill}: source 를 적은 스킬은 external 로 분류해야 합니다.`);
+    }
+  }
+  for (const [skill, kind] of Object.entries(distribution)) {
+    if (kind === 'project' && !skills.has(skill)) violations.push(`${skill}: 생성물로 복사할 project 스킬이 없습니다.`);
+  }
+  return violations;
+}
+
+test('every repository skill is classified and only project skills reach generated outputs', () => {
+  const read = file => readFileSync(join(root, file), 'utf8');
+  assert.deepEqual(skillDistributionViolations(files, read), []);
+  for (const [skill, kind] of Object.entries(SKILL_DISTRIBUTION)) {
+    assert.equal(isReusableSkillPath(`.agent/skills/${skill}/SKILL.md`), kind === 'project', `${skill} (${kind})`);
+  }
+  assert.equal(isReusableSkillPath('.agent/skills/unlisted-generic/SKILL.md'), false);
+  assert.equal(isReusableSkillPath('docs/README.md'), true);
+
+  // red: 분류하지 않은 새 스킬, 라이선스 표기·파일이 없는 외부 스킬, source 를 적은 저장소 스킬, 사라진 project 스킬.
+  const synthetic = {
+    '.agent/skills/kept/SKILL.md': '---\nname: kept\n---\n',
+    '.agent/skills/outside/SKILL.md': '---\nname: outside\n---\n',
+    '.agent/skills/claimed/SKILL.md': '﻿---\nname: claimed\nsource: someone/else\n---\n',
+    '.agent/skills/stray/SKILL.md': '---\nname: stray\n---\n',
+  };
+  const distribution = { kept: 'project', outside: 'external', claimed: 'repository-only', missing: 'project' };
+  assert.deepEqual(skillDistributionViolations(Object.keys(synthetic), file => synthetic[file], distribution), [
+    'claimed: source 를 적은 스킬은 external 로 분류해야 합니다.',
+    'outside: 외부 스킬은 SKILL.md 머리에 source·license 를 적어야 합니다.',
+    'outside: 외부 스킬은 LICENSE 파일을 함께 둬야 합니다.',
+    'stray: 분류되지 않은 스킬입니다 — SKILL_DISTRIBUTION 에 project·repository-only·external 중 하나로 적으십시오.',
+    'missing: 생성물로 복사할 project 스킬이 없습니다.',
+  ]);
+  // 표기와 LICENSE 를 갖추면 같은 외부 스킬이 통과한다.
+  const licensed = { ...synthetic, '.agent/skills/outside/SKILL.md': '---\nname: outside\nsource: a/b\nlicense: MIT\n---\n', '.agent/skills/outside/LICENSE.txt': 'MIT' };
+  assert.deepEqual(skillDistributionViolations(Object.keys(licensed), file => licensed[file], distribution).filter(message => message.startsWith('outside:')), []);
 });
 
 /*
@@ -980,12 +1032,8 @@ test('every route literal in a marker block survives in every composition that k
       }
     }
   }
-  // 2026-10-12 실측 7건. 종전 10건 중 1건은 업무 홈 블록의 주석 속 경로였다 — 주석을 세지 않게 바뀌며 하한을 실측에 맞췄다.
-  //   허브 분해 H4 에서 통계 셸의 탭 경로 2건(게시물·자료 이용)이 마커 블록을 떠나 게시판 기여의 href 가 됐다(9 → 7). 그 목적지는
-  //   이제 경계 계약의 stats-panels 규칙(href = page 술어)과 관리 링크 census 가 본다.
-  //   Phase 2 9단계에서 업무 홈 블록 24개가 걷혀 그 안의 경로 6건(새 게시글 작성·전체 보기·상세·결재함)이 각 기능의 업무 홈 조각
-  //   파일로 옮겨 갔다(7 → 1). 그 목적지는 같은 기능이 소유한 화면이라 조각 파일과 함께 남고 빠진다 — 관리 링크 census·리다이렉트
-  //   가드가 그 파일을 본다. 남은 1건은 통합 검색 블록이다.
+  // 마커 블록 안의 경로 literal 은 주석을 세지 않는다. 지금 남은 것은 통합 검색 블록이다 — 통계 셸 탭 경로와 업무 홈 링크는 기여 파일의
+  //   href 로 옮겨, 경계 계약의 stats-panels 규칙(href = page 술어)·관리 링크 census·리다이렉트 가드가 본다. 이력은 git 에 있다.
   assert.ok(checked >= 1, `route literals checked: ${checked}`);
   assert.deepEqual(violations, []);
   // 명령 센터의 협업 허브 바로가기는 쪽지의 shell-links 기여다(허브 분해 H1). 명령 센터 원본에는 마커도 협업 허브 경로도 없고,

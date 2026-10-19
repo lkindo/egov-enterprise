@@ -43,14 +43,7 @@ export function isRequestMappedController(source) {
   return /@RequestMapping\b/.test(code.slice(0, classAt));
 }
 
-test('원장에는 pack 어휘가 없다 — 남고 빠지는 기대는 소유에서 계산한다', async () => {
-  const { root } = await repositoryContext();
-  const registry = readRepoJson(root, REGISTRY_PATH);
-  assert.equal(Object.hasOwn(registry, 'packs'), false, '최상위 packs 어휘가 남아 있다');
-  const tagged = [...registry.declaredHandlers, ...registry.sensitiveGetExemptions, ...registry.knownSensitiveResponseTypes]
-    .filter((entry) => Object.hasOwn(entry, 'pack'));
-  assert.deepEqual(tagged, [], '항목에 pack 태그가 남아 있다');
-});
+// 원장에 pack 어휘가 돌아오지 않는지는 retired-pack-vocabulary.test.mjs 의 표가 본다(원장 셋을 한 행으로).
 
 test('원장 항목이 소유대로 생성기의 실제 제거 계획에서 남고 빠진다', async () => {
   const context = await repositoryContext();

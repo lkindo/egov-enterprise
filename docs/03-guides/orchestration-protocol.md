@@ -194,7 +194,7 @@
   2. **push 전에** 끝 PR의 base를 `main`으로 바꾼다(`gh pr edit <N> --base main`). CI는 PR base 기준으로 변경 범위와 E2E 선별을 계산하고 base 변경만으로는 다시 돌지 않으므로, 앞 브랜치를 base로 둔 채 받은 green은 스택 전체의 검증이 아니다.
   3. required CI가 green이면 병합하고, PR 본문에 포함된 PR과 결정 ID를 적는다.
   4. 앞 PR이 자동으로 MERGED가 됐는지 확인한다. 남은 PR은 포함된 병합 커밋을 댓글로 남기고 닫는다. 스택이 남아 있는 동안 base 브랜치를 지우지 않는다(지우면 그 위의 열린 PR이 닫힌다).
-- 묶더라도 결정 기록(ADR·DEC)과 red 증명은 변경 단위로 남긴다. 묶는 대상은 병합 비용이지 추적 단위가 아니다. 병합과 PR 닫기는 사용자가 요청한 범위에서만 한다.
+- 묶더라도 red 증명은 변경 단위로 남긴다. 결정 기록(ADR·DEC)을 쓸지와 몇 건으로 쓸지는 [AGENTS.md의 기록 기준](../../AGENTS.md#documentation-and-memory)을 따른다. 묶는 대상은 병합 비용이지 추적 단위가 아니다. 병합과 PR 닫기는 사용자가 요청한 범위에서만 한다.
 
 ### 6.2 검증은 한 커밋에 한 번
 - 작업 중에는 영향 테스트만 실행한다.
@@ -216,11 +216,13 @@
 ### 6.4 main 최신화 뒤 생성물 재생성
 `npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·슬롯 레지스트리·경계 census·화면 목록·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출과 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다. 하네스 manifest 의 같은 키 충돌은 양쪽 값이 다른 키를 보이고, 다른 충돌이 모두 풀렸으면 그 키의 계산값을 함께 보인 뒤 멈춘다 — 값은 사람이 옮긴다.
 
+병합이 아니어도 생성물을 아래 순서로 한 번에 다시 만들거나(`npm run regen`) 쓰지 않고 낡은 것만 보는 명령(`npm run regen -- --check`, pre-push 맨 앞)은 [CI 가이드의 생성물 재생성](cicd-pipeline.md#생성물-재생성-npm-run-regen)을 따른다.
+
 양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 
 | 생성물 | 다시 만드는 방법 |
 |---|---|
-| 공용 메모리 표(`decisions.md`·`known-gaps.md`) | `decisions.md`는 양쪽 행을 모두 남기고 ID 순서로 합친다. `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
+| 공용 메모리 표(`decisions.md`·결정 역사 색인·`known-gaps.md`) | `decisions.md`와 [결정 역사 색인](../archived/operational-decisions-index-historical.md)은 양쪽 행을 모두 남기고 ID 순서로 합친다(한 결정이 두 색인에 함께 남으면 Atlas 생성기가 red다). `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
 | `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
 | 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`npm run merge:main`이 실행하는 명령). 단계 구성은 `frontend/package.json`, 계약 재생성 절차의 정본은 [API 문서 가이드](api-documentation-guide.md)다. |
 | 슬롯 레지스트리(`frontend/src/extensions/generated-*.ts`) | `npm run slots:generate`(`node scripts/slot-registry.mjs --write`, 검사: `npm run slots:check`). 기여 파일에서 만들며 레지스트리도 `frontend/src` 소스라 그것을 읽는 경계 census·화면 목록보다 먼저 만든다. |
@@ -228,9 +230,9 @@
 | 화면 목록과 권한 묶음(`frontend/src/types/generated-screen-registry.ts`) | 화면·권한 카탈로그·인가 정책(`config/governance/authorization-policies.json`)·권한 묶음 원장(`config/governance/permission-bundles.json`)·화면 용어 원장(`config/frontend-visible-terms.json`, 묶음 문구 검사)·라우트 원장·메뉴 snapshot을 합치고 경계 census를 다시 만든 뒤 `node scripts/generate-screen-registry.mjs`(검사: `--check`). 묶음이 여는 화면(진입 권한)과 관련 화면(진입 권한이 빈 화면 중 쓰기 귀속이 묶음 권한인 화면)은 원장에 적지 않고 화면 목록으로 계산하므로, 화면·카탈로그만 바뀌어도 묶음 결과가 달라진다. 새 권한을 카탈로그에 더하면 어떤 묶음에 넣거나 원장의 `excluded` 에 사유와 함께 적어야 생성이 통과한다 — 재생성으로 맞추고, 묶음이 여는 화면이 없어지는 등 원장 검증이 실패하면 원장을 고친다. 경계 census의 출력을 읽으므로 그 뒤, 이 파일을 읽는 URL census 앞에 만든다. 라벨을 메뉴 snapshot에서 읽으므로, 아래 `config/project-composer-menus.json` 행으로 snapshot을 다시 만들었으면 그 뒤에 한 번 더 실행한다. |
 | operation 수 | `node scripts/operation-consumer-census.mjs --json`의 `operationCount`로 `config/governance/operation-consumer-census.json`의 `expected.operationCount`와 `scripts/generated-operations-contract.test.mjs`의 단언을 함께 맞춘다. 원장의 unwired·화면 고아 상한도 합친 결과로 맞추며, 상한을 올려야 하면 사유를 남긴다(H2). `known-gaps.md` GAP-WIRING-001은 수치를 적지 않고 원장에 링크하므로 고치지 않는다(DEC-OPS-340). |
 | 권한 생성물(`PermissionCodes.java`·`generated-permissions.ts`·`operation-bindings.json` 등) | 원장(`config/governance/permission-catalog.json`·`authorization-policies.json`)을 합친 뒤 `node scripts/generate-permissions.mjs` |
-| `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census 파일(LF)의 SHA-256으로 다시 결속한다. 승인 항목은 손대지 않는다. |
+| `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census의 승인 결속 범위(개수뿐인 `summary`를 뺀 본문, [결속 함수](../../scripts/ui-url-state-approval-binding.mjs))의 SHA-256으로 다시 결속한다. 개수만 바뀌었으면 해시는 그대로다. 승인 항목은 손대지 않는다. |
 | `config/project-composer-menus.json`의 `sourceMigrationHash` | 메뉴 inventory(메뉴 행과 그룹별 NAVIGATION 배정)에 닿을 수 있는 SQL 입력의 해시다(형식 v2) — 반복 시드 둘과 인가 Contract는 늘, versioned migration은 [검증기](../../scripts/project-composer-menu-preview.mjs) 머리 주석의 규칙이 고른 것만 넣는다(DEC-OPS-339). 인덱스나 메뉴와 무관한 업무 테이블만 바꾼 migration은 갱신이 필요 없다. 운영 계약의 메뉴 미리보기 시험이 해시가 낡았다고 붉을 때만 `npm run project:menus:refresh`로 다시 만든다. 이 명령이 일회용 PostgreSQL 컨테이너를 만들어 쓰고 지운다([프로젝트 생성기 가이드](project-composer-guide.md)). §6.3의 무거운 실행이다. 스냅숏 내용이 실제 적용 결과와 같은지는 DB 번들 생성의 내용 대조가 본다. |
-| 하네스 `baseline-manifest.properties` | 서로 다른 키가 바뀌었으면 양쪽 줄을 모두 살린다. 같은 키를 양쪽이 바꿨으면 다른 충돌을 모두 푼 뒤 `node scripts/harness-baseline-manifest.mjs --keys <충돌한 키…>`로 계산값을 보고(`npm run merge:main`이 그 키와 계산값을 보인다) 그 키의 값만 옮긴다. 그 키의 입력 변경이 양쪽 모두 정당한지 확인하고(H2) 다른 키까지 통째로 다시 쓰지 않는다 — 충돌 표기가 남아 있으면 `--write`는 거부한다. 병합 뒤 `--check`로 계산값과 같은지 본다. 권위는 CI의 JVM 메타 게이트다. manifest 가 작업 트리에 없거나(양쪽이 다른 이름으로 옮겼거나 손으로 지웠다) 충돌 표기 없이 남으면(한쪽이 지우고 다른 쪽이 고쳤거나 이미 손으로 풀었다) `npm run merge:main` 은 키 없이 그 사정을 안내한다 — 남길지 지울지 정하고, 남기면 `--check` 로 대조한다. |
+| 하네스 `baseline-manifest.properties` | 서로 다른 키가 바뀌었으면 양쪽 줄을 모두 살린다. 같은 키를 양쪽이 바꿨으면 다른 충돌을 모두 푼 뒤 `node scripts/harness-baseline-manifest.mjs --keys <충돌한 키…>`로 계산값을 보고(`npm run merge:main`이 그 키와 계산값을 보인다) 그 키의 값만 옮긴다. 그 키의 입력 변경이 양쪽 모두 정당한지 확인하고(H2) 다른 키까지 통째로 다시 쓰지 않는다 — 충돌 표기가 남아 있으면 `--write`는 거부한다. 병합 뒤 `--check`로 계산값과 같은지 본다. 계산은 이 도구 하나이고, CI 에서는 운영 계약(`secret-scan`)과 하네스 메타 게이트(`backend-build`, 같은 도구의 `--check` 실행)가 대조한다. manifest 가 작업 트리에 없거나(양쪽이 다른 이름으로 옮겼거나 손으로 지웠다) 충돌 표기 없이 남으면(한쪽이 지우고 다른 쪽이 고쳤거나 이미 손으로 풀었다) `npm run merge:main` 은 키 없이 그 사정을 안내한다 — 남길지 지울지 정하고, 남기면 `--check` 로 대조한다. |
 | 그 밖의 해시 결속·수치(disposition overlay의 `manifestRef.sha256` ← `config/ui-route-capabilities.json`, 재사용 base `databaseSnapshot` 수 등) | 실패한 계약이 가리키는 생성 명령과 기대값을 따른다. 해시는 입력이 정당하게 바뀐 경우에만 다시 결속하고, 수치는 양쪽 변경을 합산하거나 실측으로 다시 구한다. 래칫을 올려야 하면 재생성이 아니라 H2 판단이다. |
 | `frontend/public/governance_harness_atlas.html` | 마지막에 `npm run atlas:build`를 실행한다. 문서·공용 메모리·게이트 원장을 읽으므로 다른 재생성보다 뒤에 한다. |
 

@@ -41,6 +41,7 @@ import {
 } from './ui-route-capabilities-contract.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
 import { buildCaseMap, resolveModuleReference } from './frontend-module-resolver.mjs';
+import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
 import {
   SLOT_REGISTRY_CONSUMERS,
   slotConsumerFiles,
@@ -1146,7 +1147,11 @@ function criticalLoginFlow(records) {
   };
 }
 
-function summaryFor(records, sourceFileCount, exactPopulations) {
+/*
+ * 훑은 소스 파일 수(sourceFileCount)는 싣지 않는다. 읽는 소비자가 없고 계약도 대조하지 않는데, URL 상태가 없는 파일이
+ * 하나 생기거나 없어질 때마다 census 를 다시 만들게 했다. 모집단 붕괴는 빈 records 와 exactPopulations 검사가 잡는다.
+ */
+function summaryFor(records, exactPopulations) {
   const byKind = {};
   const bySurface = {};
   for (const record of records) {
@@ -1154,7 +1159,6 @@ function summaryFor(records, sourceFileCount, exactPopulations) {
     bySurface[record.surface] = (bySurface[record.surface] ?? 0) + 1;
   }
   return {
-    sourceFileCount,
     records: records.length,
     syntaxOccurrences: records.reduce((total, record) => total + record.evidence.occurrenceCount, 0),
     ambiguousRecords: records.filter(({ resolutionStatus }) => resolutionStatus === 'ambiguous').length,
@@ -1293,7 +1297,7 @@ export function buildUrlStateCensus(options = {}) {
       generator: 'scripts/ui-url-state-census.mjs --check',
       inventoryHash,
     },
-    summary: summaryFor(records, sourcePaths.length, exactPopulations),
+    summary: summaryFor(records, exactPopulations),
     requiredNegativeCases: negatives,
     criticalFlows,
     records,
@@ -1309,7 +1313,7 @@ export function buildUrlStateCensus(options = {}) {
 }
 
 function expectedSummary(records, summary) {
-  return summaryFor(records, summary.sourceFileCount, summary.exactPopulations);
+  return summaryFor(records, summary.exactPopulations);
 }
 
 /**
@@ -1324,17 +1328,12 @@ function expectedSummary(records, summary) {
  *   2. 파싱 실패·형식 이상도 빈 집합(깨진 오버레이가 승인을 만들면 안 된다)
  *   3. `manifestRef.sha256` 이 지금 census 와 다르면 빈 목록 — **승인은 자기가 본 census 에만
  *      유효하다.** census 가 재생성됐는데 오버레이가 그대로면 그 승인은 다른 문서에 대한 것이다.
+ *      결속 범위는 ui-url-state-approval-binding.mjs 가 정한다(개수뿐인 `summary` 는 결속하지 않는다).
  *   4. 오버레이·승인축·검토 일정·selector가 불완전하면 빈 목록. 자유 입력은 exact recordIds 없이
  *      이름만으로 승인할 수 없다. ADR-0018에 따라 reviewBy 경과만으로 승인을 폐기하지 않는다.
  *
  * 계약은 scripts/ui-url-state-approval-contract.test.mjs 가 별도로 검사한다.
  */
-function approvalCensusSha256(census) {
-  return createHash('sha256')
-    .update(`${JSON.stringify(census, null, 2)}\n`.replace(/\r\n?/gu, '\n'), 'utf8')
-    .digest('hex');
-}
-
 export function approvedStateItemSelectors(overlay, census) {
   const empty = [];
   if (!Array.isArray(overlay?.classes)) return empty;
@@ -1347,7 +1346,7 @@ export function approvedStateItemSelectors(overlay, census) {
     || overlay?.schemaRef !== 'config/ui-url-state-approval.schema.json'
     || overlay?.manifestRef?.path !== 'config/ui-url-state-census.json') return empty;
 
-  // census 본문 해시로 결속한다. 인자로 받은 census 객체를 정규화해 비교하므로,
+  // census 의 승인 결속 범위 해시로 결속한다. 인자로 받은 census 객체를 정규화해 비교하므로,
   // 디스크의 파일이 아니라 **지금 검증 중인 문서**에 대한 승인인지 확인한다.
   const expected = approvalCensusSha256(census);
   if (overlay?.manifestRef?.sha256 !== expected) return empty;

@@ -38,4 +38,4 @@ Contract 이후 구 애플리케이션만 재배포하는 롤백은 허용하지
 - StandardTextInputValidationTest: API 프로그램 300자 경계 및 HHmmss 범위.
 - 백업·복원, 사용자 JPA 매핑, 메뉴 생성/수정/삭제와 게시판 마법사, OpenAPI/TypeScript/Zod 생성 계약을 함께 검증한다.
 
-실행 결과와 OCI 적용 상태는 [표준 길이 정합 런북](../../04-operations/standard-length-alignment-runbook.md)에 기록한다.
+실행 결과와 OCI 적용 상태는 [표준 길이 정합 런북](../../archived/standard-length-alignment-runbook.md)에 기록한다.

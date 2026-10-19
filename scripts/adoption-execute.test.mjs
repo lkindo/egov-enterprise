@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
-import { ADOPTION_CONTROLS, adoptionScope, createPendingAdoptionReview, sha256 } from './adoption-review.mjs';
+import { ADOPTION_CONTROLS, adoptionScope, containedFile, containedFileResolver, createPendingAdoptionReview, sha256 } from './adoption-review.mjs';
 import { executeAdoption, executionPlan } from './adoption-execute.mjs';
 
 function fixture(t, layout) {
@@ -316,4 +316,27 @@ test('online manifest changes during technical verification block final deploy',
       write(manifestPath, JSON.stringify({ ...manifest, revision: 'b'.repeat(40) }));
     } }), /manifest hash mismatch/u);
   assert.equal(commands, 1);
+});
+
+// 생성물 무결성 검사가 소스 범위 수천 파일을 가둘 때 쓰는 resolver 는 containedFile 과 같은 판정을 한다(다른 것은 비용뿐이다).
+test('the contained file resolver reads and refuses exactly what containedFile reads and refuses', (t) => {
+  const base = resolve(tmpdir());
+  const root = mkdtempSync(join(base, 'egov-contained-resolver-'));
+  const outside = mkdtempSync(join(base, 'egov-contained-outside-'));
+  t.after(() => { rmSync(root, { recursive: true, force: true }); rmSync(outside, { recursive: true, force: true }); });
+  mkdirSync(join(root, 'src', 'nested'), { recursive: true });
+  writeFileSync(join(root, 'src', 'nested', 'A.java'), 'class A {}');
+  writeFileSync(join(outside, 'secret.txt'), 'outside the repository');
+  // 디렉터리 링크로 루트 밖 파일을 루트 안 경로처럼 보이게 한다(Windows 는 권한 없이 만들 수 있는 junction).
+  symlinkSync(outside, join(root, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+  const contained = containedFileResolver(root);
+  assert.equal(readFileSync(contained('src/nested/A.java'), 'utf8'), readFileSync(containedFile(root, 'src/nested/A.java'), 'utf8'));
+  for (const file of ['', '/src/nested/A.java', 'C:/src/nested/A.java', 'src\\nested\\A.java', 'src/../src/nested/A.java', './src/nested/A.java', 'src//nested/A.java']) {
+    assert.throws(() => containedFile(root, file), /expected a repository-relative file/, `containedFile: ${file}`);
+    assert.throws(() => contained(file), /expected a repository-relative file/, `resolver: ${file}`);
+  }
+  for (const file of ['escape/secret.txt', 'src/nested']) {
+    assert.throws(() => containedFile(root, file), /file escapes repository or is not a file/, `containedFile: ${file}`);
+    assert.throws(() => contained(file), /file escapes repository or is not a file/, `resolver: ${file}`);
+  }
 });

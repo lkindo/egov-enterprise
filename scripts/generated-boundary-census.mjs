@@ -12,9 +12,11 @@
  *   node scripts/generated-boundary-census.mjs --write
  *   node scripts/generated-boundary-census.mjs --check
  *   node scripts/generated-boundary-census.mjs --check --require-complete
+ *   node scripts/generated-boundary-census.mjs --check --snapshot-only
  *
  * --check 는 응답 모양 검사(V10)도 함께 한다 — 생성 응답을 손으로 쓴 타입으로 다룰 때 그 타입이 서버가
- * 보내지 않는 필드를 선언하면 위반이다(아래 buildResponseShapeCensus).
+ * 보내지 않는 필드를 선언하면 위반이다(아래 buildResponseShapeCensus). --snapshot-only 는 스냅숏 대조만 한다 —
+ * 생성물 신선도 검사(`npm run regen -- --check`)의 빠른 경로이고, V10 은 운영 계약의 이 모듈 시험이 저장소에 대해 돈다.
  */
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
@@ -1644,9 +1646,11 @@ function runCli() {
   }
   const expected = JSON.parse(readFileSync(DEFAULT_MANIFEST_PATH, 'utf8'));
   const errors = compareBoundaryCensus(expected, census);
-  const responseShape = buildResponseShapeCensus();
-  errors.push(...evaluateResponseShape(responseShape));
-  console.log(`response-shape: calls=${responseShape.calls} typed=${responseShape.typedCalls} findings=${responseShape.findings.length}`);
+  if (!process.argv.includes('--snapshot-only')) {
+    const responseShape = buildResponseShapeCensus();
+    errors.push(...evaluateResponseShape(responseShape));
+    console.log(`response-shape: calls=${responseShape.calls} typed=${responseShape.typedCalls} findings=${responseShape.findings.length}`);
+  }
   if (process.argv.includes('--require-complete')) {
     errors.push(...evaluateBoundaryCompletion(census).errors);
   }

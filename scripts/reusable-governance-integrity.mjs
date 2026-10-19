@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { containedFile } from './adoption-review.mjs';
+import { containedFile, containedFileResolver } from './adoption-review.mjs';
 import { compositionProfiles } from './composition-profiles.mjs';
 import { buildUrlStateCensus, approvedStateItemSelectors, isUrlStateItemApproved } from './ui-url-state-census.mjs';
 import { discoverPageRoutes } from './ui-route-capabilities-contract.mjs';
@@ -66,6 +66,9 @@ const TEXT = new Set(['.java', '.kt', '.kts', '.json', '.yaml', '.yml', '.xml', 
 /** Release certification binds source content, not elapsed time or an institution approval date. */
 export function projectedCodeScope(root) {
   const files = new Map();
+  // 수천 파일을 containedFile 과 같은 판정으로 가둔다 — 루트 실경로는 한 번만 푼다(containedFileResolver). 루트가 없으면 아래 순회가
+  // 아무 파일도 찾지 않으므로 처음 파일을 만날 때 만든다.
+  let contained;
   function walk(file) {
     const path = join(root, file);
     if (!existsSync(path)) return;
@@ -75,7 +78,8 @@ export function projectedCodeScope(root) {
       for (const name of readdirSync(path).sort()) walk(`${file}/${name}`);
     } else if (stat.isFile()) {
       if (file.startsWith('scripts/') && /\.test\.[cm]?[jt]s$/u.test(file)) return;
-      const bytes = readFileSync(containedFile(root, file));
+      contained ??= containedFileResolver(root);
+      const bytes = readFileSync(contained(file));
       const text = TEXT.has(extname(file)) || file.endsWith('/pre-push');
       files.set(file, sha256(text ? bytes.toString('utf8').replace(/\r\n?/gu, '\n') : bytes));
     }

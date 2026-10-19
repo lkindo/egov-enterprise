@@ -476,13 +476,26 @@ E2E runner는 외부 DB·공유 개발 서버를 대상으로 받지 않는다. 
 open build/reports/jacoco/aggregated/index.html
 ```
 
-임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [커버리지 워크플로](../../.agent/workflows/coverage.md)를 따른다.
+임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [테스트 가이드의 JaCoCo 절](testing-guide.md#jacoco-커버리지)을 따른다.
 
 ### Playwright 실행 결과
 
 테스트는 `npm run test:e2e:isolated`로 실행한다. 직접 `playwright test`를 호출하면 소유한 격리 환경의 manifest가 없어 setup에서 거부된다. 상세 실행·진단 절차는 [E2E 런북](e2e-test-guide.md)을 따른다.
 
 격리 runner는 로컬에서 `build/isolated-e2e/<run-id>/results.json`을 남기고, CI에서는 blob·line·JSON reporter를 사용한다. `--reporter`를 전달해도 runner가 정해진 reporter로 바꾸므로 HTML 생성 옵션으로 안내하지 않는다. 별도로 생성·다운로드한 HTML 보고서가 있을 때만 `pnpm -C frontend exec playwright show-report <보고서 디렉터리>`로 연다.
+
+### 생성물 재생성 (`npm run regen`)
+
+생성물과 해시 결속은 정해진 순서로 다시 만든다 — 생성기 사슬(생성 계약·권한·슬롯·경계 census·화면 목록·URL census와 승인 해시) → SAST 예외 해시 확인 → 하네스 기준선 → Atlas. 순서와 근거의 정본은 [스크립트](../../scripts/regenerate.mjs) 머리 주석과 [오케스트레이션 프로토콜 §6.4](orchestration-protocol.md#64-main-최신화-뒤-생성물-재생성)다.
+
+```bash
+npm run regen              # 다시 쓰고 바뀐 파일을 보인다 — diff 를 확인한 뒤 함께 커밋한다
+npm run regen -- --check   # 쓰지 않고 낡은 것만 본다(pre-push 맨 앞, 로컬 약 20초)
+# SAST 예외 해시가 낡았으면 regen 이 하네스 기준선 앞에서 멈춘다. 방어 경계를 재검토한 뒤 그 항목만 다시 결속한다:
+npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바뀐 것과 그대로인 방어>"
+```
+
+새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
 
 ### 로컬 사전 게이트 (git hooks)
 
@@ -493,7 +506,7 @@ CI가 실행되기 전, 저장소에 포함된 공유 pre-push 게이트가 잘�
 git config core.hooksPath .githooks
 ```
 
-- **pre-push (차단)**: 변경 범위를 판정해 문서 계약 또는 소스 컴파일·타입·codegen·하네스 검증을 실행한다. 실제 명령 집합은 훅과 `.githooks/README.md`를 따른다.
+- **pre-push (차단)**: 맨 앞에서 생성물 신선도(`npm run regen -- --check`)를 본 뒤 변경 범위를 판정해 문서 계약 또는 소스 컴파일·타입·codegen·하네스 검증을 실행한다. 실제 명령 집합은 훅과 `.githooks/README.md`를 따른다.
 - **pre-commit**: DTO/Controller/api-docs.json/생성 타입의 codegen 드리프트는 경고한다. 별도로 gitleaks가 설치되어 있으면 staged 시크릿 탐지는 커밋을 차단하고, 미설치면 스캔 생략 경고를 출력한다.
 - **우회**: `git push --no-verify` 또는 `SKIP_HOOKS=1 git push`.
 

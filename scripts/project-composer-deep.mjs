@@ -126,10 +126,13 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   try {
     // 지원 파일 선언은 여기서 검사하며 푼다 — 잘못된 선언은 생성기와 같은 자리(Java 투영)에서 실패한다.
     ownership = composerOwnership(modules);
-    // 제외 도메인 폴더는 디스크가 아니라 복사할 파일 목록에서 훑는다(생성기는 복사한 트리를 훑는다).
+    // 제외 도메인 폴더는 디스크가 아니라 복사할 파일 목록에서 훑는다(생성기는 복사한 트리를 훑는다). 폴더는 제외 기능마다 넷이라
+    // 파일 목록의 절대 경로·비교 키는 처음 훑을 때 한 번만 만든다(종전에는 폴더마다 전체 목록을 다시 이었다). 순서는 목록 그대로다.
+    let keyedFiles;
     const walkDirectory = directory => {
       const prefix = pathKey(`${directory}${sep}`);
-      return relativeFiles.map(file => join(root, file)).filter(path => pathKey(path).startsWith(prefix));
+      keyedFiles ??= relativeFiles.map(file => { const path = join(root, file); return [path, pathKey(path)]; });
+      return keyedFiles.filter(([, key]) => key.startsWith(prefix)).map(([path]) => path);
     };
     const plan = planJavaRemoval(root, ownership, projection, relativeFiles.filter(file => file.endsWith('.java')).map(file => join(root, file)),
       { walkDirectory, readSource });

@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONTRACT_PATH = path.join(ROOT, 'config/frontend-visible-terms.json');
+// 운영 결정은 현재 색인(decisions.md)과 역사 색인이 나눠 가진다 — 결정 참조는 두 색인 어느 쪽에 있어도 실재다.
+const readDecisionIndexes = () => ['.agent/memory/decisions.md', 'docs/archived/operational-decisions-index-historical.md']
+  .map((file) => fs.readFileSync(path.join(ROOT, file), 'utf8')).join('\n');
 
 import { validateVisibleTerms as validateContract } from './frontend-visible-terms-contract.mjs';
 import { discoverPageRoutes, expectedRouting, inspectRouteRepository } from './ui-route-capabilities-contract.mjs';
@@ -183,8 +186,8 @@ test('contract-level norms keep their approved reading, floors, format bans and 
   const contract = JSON.parse(fs.readFileSync(CONTRACT_PATH, 'utf8'));
   assert.deepEqual(validateContract(contract), []);
   // 재사용 산출물은 이 테스트를 실행하지 않는다 — 결정 원장 대조는 생산 저장소 몫이다.
-  const decisionIndex = fs.readFileSync(path.join(ROOT, '.agent/memory/decisions.md'), 'utf8');
-  assert.ok(decisionIndex.includes(`| ${contract.normPolicy.decisionRef} |`), `${contract.normPolicy.decisionRef} is not recorded in decisions.md`);
+  const decisionIndex = readDecisionIndexes();
+  assert.ok(decisionIndex.includes(`| ${contract.normPolicy.decisionRef} |`), `${contract.normPolicy.decisionRef} is not recorded in the decision indexes`);
 
   const state = (fixture, id) => fixture.stateVocabulary.find((row) => row.id === id);
   const cases = [
@@ -416,9 +419,9 @@ test('owner decisions close findings only with a real decision reference and the
   assert.ok(decided.length > 0, 'recorded owner decisions must stay in the population this test proves');
 
   // 재사용 산출물은 이 테스트를 실행하지 않는다(verify-reusable-artifact contracts scope) — 원장 대조는 생산 저장소 몫이다.
-  const decisionIndex = fs.readFileSync(path.join(ROOT, '.agent/memory/decisions.md'), 'utf8');
+  const decisionIndex = readDecisionIndexes();
   for (const { pilotId, kind, decisionRef } of decided) {
-    assert.ok(decisionIndex.includes(`| ${decisionRef} |`), `${pilotId}/${kind}: ${decisionRef} is not recorded in decisions.md`);
+    assert.ok(decisionIndex.includes(`| ${decisionRef} |`), `${pilotId}/${kind}: ${decisionRef} is not recorded in the decision indexes`);
   }
 
   const locate = (fixture) => {

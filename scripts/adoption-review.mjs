@@ -51,18 +51,40 @@ export function createPendingAdoptionReview({ product = 'online', profile = 'dem
   };
 }
 
-export function containedFile(repoRoot, file) {
+function assertRepositoryRelative(file) {
   if (!nonempty(file) || isAbsolute(file) || /^[A-Za-z]:/.test(file) || file.includes('\\')
     || file.split('/').some((part) => !part || part === '.' || part === '..')) {
     throw new Error(`expected a repository-relative file: ${file}`);
   }
-  const root = realpathSync(repoRoot);
-  const path = realpathSync(resolve(root, file));
+}
+
+// 포함 판정 하나 — 루트와 파일을 같은 realpath 구현으로 풀고, 파일의 실경로가 루트 안의 일반 파일이어야 한다.
+function containedUnder(root, file, realpath) {
+  const path = realpath(resolve(root, file));
   const back = relative(root, path);
   if (!back || back === '..' || back.startsWith(`..${sep}`) || isAbsolute(back) || !lstatSync(path).isFile()) {
     throw new Error(`file escapes repository or is not a file: ${file}`);
   }
   return path;
+}
+
+export function containedFile(repoRoot, file) {
+  assertRepositoryRelative(file);
+  return containedUnder(realpathSync(repoRoot), file, realpathSync);
+}
+
+/*
+ * 한 저장소의 파일 여럿을 containedFile 과 같은 판정으로 가둔다(생성물 무결성 검사가 소스 범위 수천 파일을 해시하는 자리). 판정 함수는
+ * containedUnder 하나다. 다른 점은 비용뿐이다: 루트 실경로는 resolver 를 만들 때 한 번 풀고, 실경로는 OS 구현(realpathSync.native)으로
+ * 푼다 — JS 구현은 경로 조각마다 lstat 해서 Windows 에서 파일 하나에 수 ms 가 들었다(2026-10-19 실측: survey 투영 시험 단독 178초 중
+ * 56초가 이 lstat). 루트와 파일을 같은 구현으로 풀므로 포함 판정은 같다. 돌려주는 경로는 읽기에만 쓴다 — 대소문자 표기는 디스크의 것이다.
+ */
+export function containedFileResolver(repoRoot) {
+  const root = realpathSync.native(repoRoot);
+  return (file) => {
+    assertRepositoryRelative(file);
+    return containedUnder(root, file, realpathSync.native);
+  };
 }
 
 // Conservative content binding. Evidence documents and the approval itself are excluded
@@ -96,7 +118,8 @@ export function adoptionScope(repoRoot, { product, profile }) {
     'config/frontend-visible-terms.json', 'config/krds-profile-mapping.json',
     'config/governance/permission-catalog.json', 'config/modules',
     'config/governance/reusable-governance-projection.json',
-    'scripts/ui-url-state-census.mjs', 'scripts/ui-route-capabilities-contract.mjs', 'scripts/e2e-shard-plan.mjs'];
+    'scripts/ui-url-state-census.mjs', 'scripts/ui-url-state-approval-binding.mjs', 'scripts/ui-route-capabilities-contract.mjs',
+    'scripts/e2e-shard-plan.mjs'];
   const files = new Map();
   function walk(file) {
     const path = resolve(repoRoot, file);

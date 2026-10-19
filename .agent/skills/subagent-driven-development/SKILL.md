@@ -1,6 +1,8 @@
 ---
 name: subagent-driven-development
 description: Use when executing implementation plans with independent tasks in the current session
+source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
+license: MIT — Complete terms in LICENSE.txt
 ---
 
 # Subagent-Driven Development

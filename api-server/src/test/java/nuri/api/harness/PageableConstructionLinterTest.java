@@ -102,10 +102,7 @@ class PageableConstructionLinterTest {
             "@Valid\\s+@ModelAttribute(?:\\s*\\([^)]*\\))?\\s+"
                     + "(?:nuri\\.business\\.domain\\.common\\.)?BaseSearchDto\\b");
 
-    // 2026-09-25 DEC-OPS-129: 28 -> 27. 퇴역한 네트워크 모니터링 조회(getStatus)가 쓰던 바인딩이 함께 사라졌다.
-    // 2026-10-04 프로그램 목록 퇴역: 27 -> 26. 걷은 프로그램 목록 조회(ProgramApiController#getProgramList)의 바인딩이다.
-    // 2026-10-18 ADR-0034: 26 -> 24. 410 만 돌려주다 걷은 구 롤 목록(RoleApiController#getRoles)과 롤 권한 목록
-    //   (AuthorRoleApiController#getAuthorRoles)의 바인딩이다.
+    // 수의 증감 이력은 git 과 결정 기록에 있다. 바인딩을 걷거나 더하면 이 수를 함께 고친다.
     private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 24;
 
     @Test

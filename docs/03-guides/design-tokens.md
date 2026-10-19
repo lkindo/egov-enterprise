@@ -4,6 +4,7 @@
 > 프론트엔드 헌법 제6조(디자인 토큰) 실무 지침. 색은 팔레트 리터럴(`slate-500`)이 아니라 **시맨틱 토큰**으로 참조한다.
 > **정의 위치**: 값의 소유자는 [frontend/src/styles/themes/](../../frontend/src/styles/themes/)의 **프로필 CSS**(`premium.css`·`krds-aligned.css`)다. [globals.css](../../frontend/src/app/globals.css)는 `@theme` 간접 참조(`--color-x: hsl(var(--x))`)만 소유하며 `:root` 시맨틱 블록을 되돌리면 계약이 red다(theme-token-contract).
 > **구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)의 브랜드 프로필 × 색상 모드 2축이 **구현 완료**됐다 — `<html data-brand-theme>`가 서버 env(`BRAND_THEME`)에서 전역 배선되며(레이아웃 1곳, 라우트별 배정은 ADR-0004 금지), 프로필 선택은 배포 단위 설정이다.
+> **프로필 주장 경계**: 지원 프로필은 [brand-theme.ts](../../frontend/src/lib/theme/brand-theme.ts)의 allowlist가, `krds-standard`의 미구현 범위와 KRDS 준수 주장 경계는 [프로필 추적 매트릭스](../02-architecture/krds-profile-mapping.md)가 정한다. 프로필 구현을 접근성·KRDS 준수 완료로 표현하지 않는다.
 
 폰트 호환 경계: `globals.css`의 `@theme`는 `--default-font-family`에 시스템 fallback을 명시해 Tailwind 업데이트 전의 글자 폭을 보존한다. [layout.tsx](../../frontend/src/app/layout.tsx)의 `next/font` 변수는 2026-09-16부터 `<html>`(:root)에 선언한다 — `--font-sans` 별칭이 같은 :root에서 계산되므로 `body`에만 두면 별칭이 무효가 되어 시스템 글꼴로 떨어졌다(GAP-UIF-001). 실사용 판정은 선언이 아니라 계산된 글꼴이며, e2e가 로그인 화면에서 `getComputedStyle(document.body).fontFamily`를 확인하고 단위 가드가 스코프 회귀를 막는다. 글자 폭이 실제로 달라지므로 시각 회귀 기준선은 CI에서 다시 생성한다.
 
@@ -64,6 +65,11 @@
 → 이런 표면은 **`bg-surface-inverse`** 를 쓴다. 그 위의 밝은 텍스트/경계는 `text-surface-inverse-foreground`/
 `-muted`/`border-surface-inverse-border`. 이 토큰군은 `:root` 에만 정의되어 `.dark` 에서도 동일하게 어둡다(고정).
 리브랜딩 시 이 토큰 색조만 바꾸면 모든 다크 서피스가 함께 바뀐다.
+
+### 2.3 색 밖의 토큰과 축의 독립
+
+- 간격·반경·z-index·motion은 기존 컴포넌트와 §5 밀도 토큰이 정한 값을 재사용한다. 임의 수치를 새 전역 규약처럼 문서화하지 않는다.
+- 브랜드 프로필과 light/dark/high-contrast 전략은 서로 독립된 축이다. 지원하는 모든 조합이 같은 시맨틱 토큰 이름과 접근성 하한을 제공해야 한다.
 
 ---
 
@@ -139,7 +145,7 @@ pnpm -C frontend exec vitest run \
 
 래칫 실패는 기본적으로 리터럴을 시맨틱 토큰으로 치환해 해결한다. 감소했다면 같은 변경에서 baseline을 현재 실측값으로 낮추고, 신규 예외로 baseline을 올려야 한다면 토큰으로 표현할 수 없는 이유와 라이트·다크 시각 증거를 리뷰에 남긴다.
 
-> **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조).
+> **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조). 변경 화면은 지원 브랜드 프로필×색상 모드와 forced-colors/high-contrast·reduced-motion 조건에서 브라우저로 확인하며, 시각 결과를 확인하지 않은 작업을 “검증 완료”라고 기록하지 않는다.
 
 ---
 

@@ -1,12 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash } from 'node:crypto';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { BACKEND_LAYOUTS } from './reusable-layout.mjs';
 
 const compare = (left, right) => left < right ? -1 : left > right ? 1 : 0;
 const normalize = text => text.replace(/\r\n?/g, '\n');
-const digest = text => createHash('sha256').update(normalize(text)).digest('hex');
 const asText = value => typeof value === 'string' ? value : JSON.stringify(value);
 const detail = (label, value) => ({ label, value: asText(value ?? '미확인') });
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
@@ -32,7 +30,11 @@ function record(id, title, summary, status, source, extra = {}) {
   return { id, title, summary, status, source, ...extra };
 }
 
-/** Only repository-owned, explicitly requested files are read; no environment or Git state. */
+/**
+ * Only repository-owned, explicitly requested files are read; no environment or Git state.
+ * 읽은 원본은 경로만 기록한다. 파일별 내용 해시를 싣지 않으므로, catalog 에 실리는 사실을 바꾸지 않는 소스 수정은
+ * Atlas 재생성을 요구하지 않는다. 신선도는 생성물 계약(atlas-generation.test.mjs)이 다시 만든 HTML 과 바이트로 대조해 소유한다.
+ */
 function repositoryReader(repoRoot) {
   const root = path.resolve(repoRoot);
   const sources = new Map();
@@ -49,7 +51,7 @@ function repositoryReader(repoRoot) {
     if (cache.has(canonical)) return cache.get(canonical);
     const text = normalize(fs.readFileSync(resolve(canonical), 'utf8'));
     cache.set(canonical, text);
-    sources.set(canonical, { path: canonical, digest: digest(text) });
+    sources.set(canonical, { path: canonical });
     return text;
   }
   function files(relative, predicate = () => true) {
@@ -462,25 +464,50 @@ export function buildAtlasCatalog(repoRoot) {
   }
   requireValue(historyHeadings.length === historyRows.length, 'decision history headings and rows differ');
   const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
-  const decisionRecords = tableRows(decisionText, '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|').map(({ raw, cells }) => {
+  // Operational decisions are split between the auto-loaded current index and a historical index (retired, fully
+  // superseded, one-off runs, implementation records). Together they index every archived decision exactly once.
+  const historicalIndexSource = 'docs/archived/operational-decisions-index-historical.md';
+  const HISTORICAL_KINDS = new Set(['퇴역', '대체됨', '일회성 실행', '구현 기록']);
+  const indexRowPrefix = '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|';
+  const decisionIndexRows = [
+    ...tableRows(decisionText, indexRowPrefix).map(row => ({ ...row, source: decisionSource, historical: false })),
+    ...tableRows(io.read(historicalIndexSource), indexRowPrefix).map(row => ({ ...row, source: historicalIndexSource, historical: true })),
+  ];
+  const indexedDecisionIds = decisionIndexRows.map(row => row.cells[0]).filter(id => id.startsWith('DEC-'));
+  for (const id of new Set(indexedDecisionIds)) {
+    requireValue(indexedDecisionIds.filter(other => other === id).length === 1,
+      `${id} is indexed more than once across the current and historical decision indexes`);
+  }
+  for (const id of decisionHistory.keys()) {
+    requireValue(indexedDecisionIds.includes(id), `${id} archived decision is missing from both decision indexes`);
+  }
+  const decisionRecords = decisionIndexRows.map(({ raw, cells, source, historical }) => {
     const id = cells[0];
-    const links = localLinks(raw, decisionSource);
+    let links = localLinks(raw, source);
     let fullCells = cells;
     let fullRaw = raw;
-    if (id.startsWith('DEC-')) {
-      const historyLinks = links.filter(link => link.path.split('#')[0] === decisionHistorySource);
-      // Archived decisions keep their exact binding; future decisions may link a current change document.
-      if (decisionHistory.has(id) || historyLinks.length) {
-        requireValue(historyLinks.length === 1 && historyLinks[0].path === `${decisionHistorySource}#${id.toLowerCase()}`,
-          `${id} must link exactly one same-ID decision history section`);
-        const historical = requireValue(decisionHistory.get(id), `${id} decision history missing`);
-        requireValue([1, 5, 6].every(index => historical.cells[index] === cells[index]),
-          `${id} decision history status/date/supersedes differs from index`);
-        fullCells = historical.cells;
-        fullRaw = historical.raw;
-        for (const link of localLinks(fullRaw, decisionHistorySource)) {
-          if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
-        }
+    // ADR rows: ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes. DEC rows drop the repeated reason/source
+    // columns — ID | 상태 | 결정 | 시행일 | supersedes — because the ID is the archive anchor. Historical rows add
+    // 분류 | 근거 after them.
+    const isDecision = id.startsWith('DEC-');
+    if (historical) requireValue(isDecision, `${id} historical decision index accepts only operational decisions`);
+    const columns = historical ? 7 : isDecision ? 5 : 7;
+    requireValue(cells.length === columns,
+      `${id} ${historical ? 'historical ' : ''}decision index row requires ${columns === 5 ? 'five' : 'seven'} columns`);
+    if (historical) requireValue(HISTORICAL_KINDS.has(cells[5]), `${id} historical decision kind must be one of ${[...HISTORICAL_KINDS].join(', ')}`);
+    const dateIndex = isDecision ? 3 : 5;
+    const supersedesIndex = isDecision ? 4 : 6;
+    if (isDecision) {
+      requireValue(links.every(link => link.path.split('#')[0] !== decisionHistorySource),
+        `${id} must not link a decision history section; its ID is the archive anchor`);
+      const historical = requireValue(decisionHistory.get(id), `${id} decision history section missing; its ID is the archive anchor`);
+      requireValue([[1, 1], [5, 3], [6, 4]].every(([history, index]) => historical.cells[history] === cells[index]),
+        `${id} decision history status/date/supersedes differs from index`);
+      links = [{ label: '원문', path: `${decisionHistorySource}#${id.toLowerCase()}` }, ...links];
+      fullCells = historical.cells;
+      fullRaw = historical.raw;
+      for (const link of localLinks(fullRaw, decisionHistorySource)) {
+        if (!links.some(existing => existing.label === link.label && existing.path === link.path)) links.push(link);
       }
     }
     // Keep the memory row's stable ID/source. Only its explicit same-ID ADR is authoritative;
@@ -500,11 +527,12 @@ export function buildAtlasCatalog(repoRoot) {
     }
     const searchCells = fullCells === cells ? cells : [...cells, ...fullCells];
     const referenceText = fullRaw === raw ? raw : `${raw}\n${fullRaw}`;
-    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], decisionSource, {
-      details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[5]),
-        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells.at(-1)),
+    return record(id, adrTitle || id, excerpt(cells[2] ?? ''), cells[1], source, {
+      details: [detail('결정 원문', fullCells[2]), detail('이유', fullCells[3]), detail('시행일', cells[dateIndex]),
+        ...(adrTitle ? [detail('ADR 선언 상태', adrStatus)] : []), detail('대체 범위 원문', cells[supersedesIndex]),
+        ...(historical ? [detail('역사 분류', cells[5]), detail('역사 분류 근거', cells[6])] : []),
         detail('효력 주의', '요약이며 원문이 우선합니다. 시행일·당시 수치는 역사 기록이고 accepted라도 일부 범위가 후속 결정으로 대체될 수 있습니다.')],
-      supersedes: cells.at(-1), references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
+      supersedes: cells[supersedesIndex], references: [...new Set([...referenceText.matchAll(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g)].map(match => match[0]).filter(id => id !== cells[0]))],
       links,
       searchText: [...searchCells, adrText].join('\n'),
     });

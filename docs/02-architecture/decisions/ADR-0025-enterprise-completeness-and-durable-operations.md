@@ -4,7 +4,7 @@
 - 결정일: 2026-09-28
 - 승인: 사용자가 개선 결정안 D01~D15의 A를 모두 선택하고 구현·검증·적대적 재검토·수정, 커밋·푸시·required CI 통과 후 main 병합을 요청했다.
 - 기준 소스: `15e28caabeb772236213f187ce13fae586a20dd6`
-- 대체 범위: [이전 정책 제안](../../04-operations/evidence-first-policy-decisions-2026-09-27.md)의 선택 대기 항목 중 아래 결정과 겹치는 부분. 기존 Accepted ADR의 소유권·명시 권한·제품 경계는 유지한다.
+- 대체 범위: [이전 정책 제안](../../archived/evidence-first-policy-decisions-2026-09-27.md)의 선택 대기 항목 중 아래 결정과 겹치는 부분. 기존 Accepted ADR의 소유권·명시 권한·제품 경계는 유지한다.
 
 ## 배경과 범위
 

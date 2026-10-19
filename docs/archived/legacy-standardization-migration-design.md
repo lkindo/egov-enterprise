@@ -1,10 +1,12 @@
 # 레거시 시스템 표준화 이관 설계
 
-> **상태: 채택 전 진단 기록 — 결정은 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)(2026-10-13 채택)와 그 후속 [ADR-0031](decisions/ADR-0031-migration-ledger-confirmation-followup.md)(원장 확정 조건·chunk 실패 처리), 현행 동작은 [이관 도구 설계](legacy-migration-tool-design.md)가 정본이다.** 이 문서는 채택 전 진단과 표준용어 식별 방법론의 설계 근거를 보존한다. §1~2의 공백, §6~8의 보강안·우선순위·검증 계획은 아래 진단 시점의 기록이며, §9의 결정 질문은 ADR-0029가 닫았다. 일부 행에 붙인 후속 정정은 전체 구현 상태표가 아니다. 현행 CLI·원장·적재 계약은 [이관 도구 설계](legacy-migration-tool-design.md), 재현 가능한 미해결 항목은 [활성 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
+> **보관(2026-10-19):** ADR-0029·0031이 채택을 마쳐 `docs/02-architecture/`에서 옮긴 채택 전 진단이다. 현행 결정·동작은 그 ADR과 이관 도구 설계를 따른다.
+
+> **상태: 채택 전 진단 기록 — 결정은 [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)(2026-10-13 채택)와 그 후속 [ADR-0031](../02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md)(원장 확정 조건·chunk 실패 처리), 현행 동작은 [이관 도구 설계](../02-architecture/legacy-migration-tool-design.md)가 정본이다.** 이 문서는 채택 전 진단과 표준용어 식별 방법론의 설계 근거를 보존한다. §1~2의 공백, §6~8의 보강안·우선순위·검증 계획은 아래 진단 시점의 기록이며, §9의 결정 질문은 ADR-0029가 닫았다. 일부 행에 붙인 후속 정정은 전체 구현 상태표가 아니다. 현행 CLI·원장·적재 계약은 [이관 도구 설계](../02-architecture/legacy-migration-tool-design.md), 재현 가능한 미해결 항목은 [활성 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
 - 진단 기준: `main` `0fab2c798`(2026-10-13)의 소스·문서 정적 조사. 테스트·DB 실측은 하지 않았다.
 - **전제**: 이관 시 레거시 DB와 함께 **레거시 애플리케이션 소스**(SQL 매퍼·VO·화면·설정)를 입력으로 제공한다. 표준화는 이 소스의 사용처 근거를 포함해 진행한다.
-- 관련 정본: [레거시 이관 도구 설계](legacy-migration-tool-design.md), [DB 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md), [DB 표준화 매뉴얼](../03-guides/db-standardization-manual.md)
+- 관련 정본: [레거시 이관 도구 설계](../02-architecture/legacy-migration-tool-design.md), [DB 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md), [DB 표준화 매뉴얼](../03-guides/db-standardization-manual.md)
 
 ## 1. 목적과 문제 정의
 
@@ -26,17 +28,17 @@
 | D3 | 매핑은 테이블 1:1·컬럼 1:1이다. 한 소스 테이블은 한 번만 선언할 수 있어 1:N 분할이 불가능하고, 조인(N:1)·컬럼 결합·분할도 없다. 정규화 이관의 핵심 패턴이 표현되지 않는다. | [MappingSpec](../../migration-tool/src/main/java/nuri/migration/model/MappingSpec.java), MappingValidator의 중복 소스 금지 |
 | D4 | 내장 변환은 `trim`·`upper`·`lower`·`date`·`timestamp`뿐이다. 표준 일자 `VARCHAR(8)`(YYYYMMDD)·시각 HHmmss 문자열을 만드는 변환이 없고 `date`는 `LocalDate`를 반환한다. custom 변환은 코드 수정과 version·digest 등록이 필요하다. | [TransformerRegistry](../../migration-tool/src/main/java/nuri/migration/transform/TransformerRegistry.java), [TypeConverter](../../migration-tool/src/main/java/nuri/migration/transform/TypeConverter.java) |
 | D5 | 이관 도구의 표준 ID는 주석상 foundation과 "동일한 형태"지만 실제로는 소문자 hex이고, [IdGenerationUtil](../../foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java)은 대문자로 만든다. `PRESERVE` 적재 뒤 대상 시퀀스를 재설정(`setval`)하는 단계가 없어, 시퀀스 기반 PK라면 온라인 앱의 첫 INSERT가 충돌할 수 있다. (정정 2026-10-13: `PRESERVE` 만이 아니다 — `remap` 과 직접 컬럼 매핑도 대상 키 값을 넣으므로 같은 충돌이 난다. L1 은 셋 모두를 재설정한다, [DEC-OPS-306](../../.agent/memory/decisions.md).) | [StandardIdGenerator](../../migration-tool/src/main/java/nuri/migration/keymap/StandardIdGenerator.java) |
-| D6 | 도구는 Flyway가 이미 만든 대상 테이블에만 적재한다. 표준 모델에 없는 레거시 업무 테이블을 위한 표준 설계 보조(용어 후보·미등록 용어 보고·DDL 초안)가 없다. | [ADR-0008 §4](decisions/ADR-0008-multi-source-approved-migration-workflow.md) |
+| D6 | 도구는 Flyway가 이미 만든 대상 테이블에만 적재한다. 표준 모델에 없는 레거시 업무 테이블을 위한 표준 설계 보조(용어 후보·미등록 용어 보고·DDL 초안)가 없다. | [ADR-0008 §4](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) |
 | D7 | `codemaps`는 YAML 안의 독립 사전이며 대상 공통코드 원장과 대조하지 않는다. (2026-10-15: L4 가 제품 공통코드 바인딩 카탈로그, 쓰기 검증 컬럼의 쓰기 전 게이트, 적재 뒤 공통코드·메타 허용값 대사를 구현했다. 대조할 원천이 없는 코드 컬럼은 `UNRECONCILED` 로 남겨 컷오버 전에 사람이 서명한다, [DEC-OPS-325](../../.agent/memory/decisions.md).) | MappingSpec |
 
 ### 2.2 애플리케이션 이관 관점
 
 | ID | 공백 | 근거 |
 |---|---|---|
-| A1 | raw JDBC 적재라 JPA 계층의 불변식을 우회한다. 주민등록번호는 [RrnoEncryptionConverter](../../business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java)가 암호화하지만 이관 도구에는 암호화 경로가 없어 **평문 적재 위험**이 있다. 비밀번호 해시 호환은 문서 전제로만 남아 있다. | [이관 도구 설계 §mapping.yml](legacy-migration-tool-design.md) |
+| A1 | raw JDBC 적재라 JPA 계층의 불변식을 우회한다. 주민등록번호는 [RrnoEncryptionConverter](../../business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java)가 암호화하지만 이관 도구에는 암호화 경로가 없어 **평문 적재 위험**이 있다. 비밀번호 해시 호환은 문서 전제로만 남아 있다. | [이관 도구 설계 §mapping.yml](../02-architecture/legacy-migration-tool-design.md) |
 | A2 | view·routine·trigger는 disposition으로 분류만 한다. `RECREATE_VIA_FLYWAY`·`REIMPLEMENT_IN_APP` 분류가 실제 변경 작업과 연결되지 않는다. | 이관 도구 설계 §production cutover 전 필수 보강 9 |
-| A3 | 레거시 애플리케이션 자산 조사 도구가 없다. SQL 매퍼·화면 라벨·URL, 권한의 [ADR-0016](decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) 모델(그룹·OPERATION·NAVIGATION) 매핑, 첨부 실물 파일 이관, 기존 URL 리다이렉트가 범위 밖이다. | `migration-tool`·`scripts/` 조사 |
-| A4 | Oracle·Tibero·MySQL·MariaDB·SQL Server·CUBRID adapter는 코드상 `UNVERIFIED`라 commit이 금지된다. 실제 적재 가능한 소스는 `EXPERIMENTAL` PostgreSQL뿐이다. | [OracleSourceAdapter](../../migration-tool/src/main/java/nuri/migration/adapter/OracleSourceAdapter.java), [ADR-0008 §6](decisions/ADR-0008-multi-source-approved-migration-workflow.md) |
+| A3 | 레거시 애플리케이션 자산 조사 도구가 없다. SQL 매퍼·화면 라벨·URL, 권한의 [ADR-0016](../02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) 모델(그룹·OPERATION·NAVIGATION) 매핑, 첨부 실물 파일 이관, 기존 URL 리다이렉트가 범위 밖이다. | `migration-tool`·`scripts/` 조사 |
+| A4 | Oracle·Tibero·MySQL·MariaDB·SQL Server·CUBRID adapter는 코드상 `UNVERIFIED`라 commit이 금지된다. 실제 적재 가능한 소스는 `EXPERIMENTAL` PostgreSQL뿐이다. | [OracleSourceAdapter](../../migration-tool/src/main/java/nuri/migration/adapter/OracleSourceAdapter.java), [ADR-0008 §6](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) |
 | A5 | 단일 source read transaction, 500행 직렬 적재, INSERT-only라 대용량 장시간 스냅샷·재이관·증분 동기화·cutover/rollback이 증명되지 않았다. | 이관 도구 설계 §적재, transaction과 재시작 의미 |
 
 ### 2.3 의미 식별을 위한 입력의 부재
@@ -235,7 +237,7 @@ LLM은 후보 생성에 쓸 수 있지만 결과는 제안이다. 컬럼명·코
 
 ## 9. 채택 전 결정 질문 (ADR-0029로 결정됨)
 
-> [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)가 Q1~Q7 을 닫았다. L1 준비 중 사용자에게 따로 물은 Q8~Q10(표준 메타 확장·JPA 전용 시퀀스·외부 드라이버 실행)은 이 표에 없고 ADR 결정 10~12 에 있다. 아래 표는 채택 전 질문 그대로다.
+> [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)가 Q1~Q7 을 닫았다. L1 준비 중 사용자에게 따로 물은 Q8~Q10(표준 메타 확장·JPA 전용 시퀀스·외부 드라이버 실행)은 이 표에 없고 ADR 결정 10~12 에 있다. 아래 표는 채택 전 질문 그대로다.
 
 | ID | 질문 | 선택지 |
 |---|---|---|
@@ -254,4 +256,4 @@ LLM은 후보 생성에 쓸 수 있지만 결과는 제안이다. 컬럼명·코
 - 레거시 애플리케이션 코드의 자동 변환
 
 ---
-*작성 2026-10-13, DRAFT. 같은 날 코멘트 우선 후보 추정, 도메인 적합성 판정, 레거시 소스 필수 입력 전제와 충돌 판정 원칙(§4.1·§4.3)을 반영했다. 같은 날 [ADR-0029](decisions/ADR-0029-legacy-standardization-migration.md)로 채택했고, [이관 도구 설계](legacy-migration-tool-design.md)와 공용 gap 인덱스는 L1 변경이 갱신했다. 2026-10-15 L4-B 가 §6 벤더 증거 행을 실측 범위로 정리했다(등급 상향은 하지 않았다).*
+*작성 2026-10-13, DRAFT. 같은 날 코멘트 우선 후보 추정, 도메인 적합성 판정, 레거시 소스 필수 입력 전제와 충돌 판정 원칙(§4.1·§4.3)을 반영했다. 같은 날 [ADR-0029](../02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택했고, [이관 도구 설계](../02-architecture/legacy-migration-tool-design.md)와 공용 gap 인덱스는 L1 변경이 갱신했다. 2026-10-15 L4-B 가 §6 벤더 증거 행을 실측 범위로 정리했다(등급 상향은 하지 않았다).*

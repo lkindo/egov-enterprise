@@ -1,6 +1,8 @@
 ﻿---
 name: finishing-a-development-branch
 description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
+source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
+license: MIT — Complete terms in LICENSE.txt
 ---
 
 # Finishing a Development Branch

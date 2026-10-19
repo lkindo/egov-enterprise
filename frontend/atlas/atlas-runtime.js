@@ -68,7 +68,7 @@
   }
 
   function renderCatalogs() {
-    const sourceDigests = new Map(data.sources.map(source => [source.path, source.digest]));
+    const readSources = new Set(data.sources.map(source => source.path));
     for (const [kind, records] of Object.entries(data.catalogs)) {
       const slot = document.querySelector('[data-catalog="' + kind + '"]');
       if (!slot) throw new Error('Missing catalog slot: ' + kind);
@@ -110,8 +110,8 @@
         links.append(sourceLink('원본 · ' + record.source, record.source));
         for (const link of record.links || []) links.append(sourceLink(link.label, link.path));
         content.append(links);
-        const fingerprint = sourceDigests.get(record.source?.split('#')[0]);
-        if (fingerprint) content.append(element('p', '확인한 소스 SHA-256 ' + fingerprint, 'source-digest meta'));
+        const sourcePath = record.source?.split('#')[0];
+        if (readSources.has(sourcePath)) content.append(element('p', '생성 입력으로 읽은 원본 · ' + sourcePath, 'source-path meta'));
         card.append(summary, content);
         grid.append(card);
         const searchText = [record.id, record.title, record.summary, record.status, record.source, record.searchText || '',
@@ -390,7 +390,10 @@
       window.addEventListener('afterprint', finishPrint);
       initTheme(); renderAdvice(); renderSearch(); followHash();
       const evidence = document.getElementById('source-fingerprint');
-      if (evidence) evidence.textContent = '소스 묶음 SHA-256: ' + data.sourceDigest;
+      if (evidence) {
+        evidence.textContent = '생성 입력 원본 ' + data.sources.length + '개(경로는 내장 카탈로그의 sources). '
+          + '파일별 내용 해시는 싣지 않으며, 신선도는 생성물 계약이 다시 만든 HTML과 바이트로 대조합니다.';
+      }
       document.body.dataset.atlasReady = 'true';
       document.dispatchEvent(new CustomEvent('atlas:ready'));
     } catch (error) {

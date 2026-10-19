@@ -27,6 +27,6 @@
 - 입력 허용 범위 축소와 SMS 저장 표현 변경은 구버전 애플리케이션의 쓰기와 호환되지 않을 수 있다. 백업 복구 증거·발송 작업 소진·단계별 애플리케이션 전환을 확인한 뒤 운영에 적용한다.
 - 확장 후 새 길이 데이터가 쓰이면 이전 폭으로 축소하는 rollback은 안전하지 않다. 기본 복구는 forward-fix이며, 백업 복원은 쓰기 중단 후 DB·대응 앱 버전을 함께 되돌리는 별도 절차다.
 - [PostgreSQL 검증](../../../api-server/src/test/java/nuri/api/schema/StandardLengthMigrationIntegrationTest.java)은 값·heap 보존, 잠금 경합 실패, 메타 drift 거절, 초과 데이터·SMS 중복 거절, 신형 입력과 보류 6개의 길이 보존을 확인한다.
-- 전체 절차와 환경별 적용 증거는 [표준 길이 전환 런북](../../04-operations/standard-length-alignment-runbook.md)에 둔다. 헌법·게이트의 일반 정책과 레거시 예외 동결 목록은 변경하지 않는다.
+- 전체 절차와 환경별 적용 증거는 [표준 길이 전환 런북](../../archived/standard-length-alignment-runbook.md)에 둔다. 헌법·게이트의 일반 정책과 레거시 예외 동결 목록은 변경하지 않는다.
 
 검증 게이트 변경: 공용 PostgreSQL migration 검증 1개 추가로 동결 census를 38 → 39로 올리고, 대상 24개 마커 예외와 새 게이트의 baseline fingerprint를 함께 갱신한다. 기존 동결 항목의 삭제·일괄 제외는 하지 않는다.

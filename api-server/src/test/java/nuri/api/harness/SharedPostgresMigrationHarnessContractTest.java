@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -28,38 +30,37 @@ import static org.mockito.Mockito.withSettings;
 @Tag("governance-harness")
 class SharedPostgresMigrationHarnessContractTest {
 
+    /** schema-validation 게이트 원장. migration 검증 수의 확인 지점이다. */
+    private static final String GATE_REGISTRY = "config/governance/gates.json";
+    private static final String SCHEMA_GATE_SET = "GATESET-SCHEMA-VALIDATION";
+
     /**
-     * 공용 PostgreSQL support 로 이관해야 하는 migration 검증 클래스 수(동결).
+     * 공용 PostgreSQL support 로 이관해야 하는 migration 검증 클래스 수의 기대값 — 게이트 원장에 등록된 수다.
      *
-     * <p>[2026-09-01] 종전에는 이름 없는 매직 리터럴({@code hasSize(35)})이라 무엇을 세는 수인지
-     * 호출부에서만 알 수 있었다. 파생값으로 바꾸지 않는 이유는 이 수가 <b>동결</b>이기 때문이다 —
-     * 자동으로 세면 신규 migration 검증이 공용 support 를 쓰지 않아도 census 가 조용히 따라 올라간다.
-     * 정당한 증감은 이 상수를 함께 고쳐 diff 에 의도를 남긴다.
+     * <p>디스크의 파일을 세어 기대값으로 쓰지 않는다 — 그러면 새 migration 검증이 무엇이든 census 가 조용히 따라 올라간다.
+     * 기대값은 사람이 검토하는 원장(gates.json schema-validation 의 rules)에서 센다. 태그가 붙은 검증의 미등록과 등록만 남은
+     * 유령은 레지스트리 계약(scripts/governance-gates-contract.mjs)이 막고, 태그 없이 들어온 검증은 아래 파일 수와 이 수가
+     * 달라져 red 가 된다.
      *
-     * <p>[2026-10-17] 재사용 투영본은 이 수를 투영 하네스 프로필 census({@code migrationTests})에서 읽는다. 생성기가
-     * 역사적 migration 검증을 걷은 뒤 남은 수를 세어 기록하므로 투영본에서는 0 이다. 종전에는 생성기가 이 상수와
-     * 표시 이름의 숫자를 문자 그대로 찾아 바꿔서, 검증 하나를 더할 때마다 생성기와 그 계약까지 고쳐야 했고 실제로
-     * 한 번 빠뜨려 생성이 깨졌다. 원본에서는 여전히 이 상수의 정확 동결이다.
+     * <p>재사용 투영본은 이 수를 투영 하네스 프로필 census({@code migrationTests})에서 읽는다. 생성기가 역사적 migration
+     * 검증을 걷은 뒤 남은 수를 세어 기록하므로 투영본에서는 0 이다.
      */
-    // V2_100: 같은 공용 support에서 메뉴 노출 동등성·감사 롤백·Contract 순서 검증을 추가한다.
-    // V2_101: 기존 단일 결재의 차수/참여자 백필 검증도 같은 공용 support를 사용한다.
-    // V2_102: 빈 문자열 부모를 NULL 로 정규화한 뒤 참조 FK 를 검증하는 이력 검증을 추가한다.
-    // V2_104: 퇴역한 네트워크 권한 배정의 삭제와 변경 이력 검증을 추가한다.
-    // V2_105: 게시글 작성일 인덱스의 잠금 경합 롤백과 기간 질의 실행 계획 검증을 추가한다.
-    // V2_106: 원문 리프레시 토큰 폐기와 해시 저장값 수용 검증을 추가한다.
-    // V2_107: 추천 이력 PK·만족도 1인 1건과 중복이 있을 때 멈추는 검증을 추가한다.
-    // V2_109: 기존 게시판의 댓글·만족도 설정을 실제 동작대로 켜는 검증을 추가한다.
-    // V2_111: 폐기된 게시글 비밀번호 값만 비우는 검증을 추가한다.
-    // V2_119: 화면 관리 메뉴 개명과 시드 유래 미참조 이전 프로그램만 지우는 검증을 추가한다.
-    // V2_120: ROLE_USER 의 들어갈 수 없는 설문·투표 관리 메뉴 배정만 지우는 검증을 추가한다.
-    // V2_124: 퇴역한 프로그램 목록 권한 배정의 삭제·이력과 갈 곳 잃는 말단 메뉴 가드 검증을 추가한다.
-    // V2_125: 꺼진 마이페이지 관리 메뉴 행·배정·즐겨찾기 삭제와 이력, 도입 기관이 쓰는 행을 남기는 가드 검증을 추가한다.
-    // V2_130: 집행 지점 없는 권한(INFORMAL_*·INST_CODE 쓰기) 배정의 삭제와 변경 이력 검증을 추가한다(ADR-0034).
-    // V2_131: 로그아웃 시각·개인정보 접근 기록 정보주체 컬럼과 새 표준 용어 검증을 추가한다.
-    // V2_132: 감사 원장 세 표의 수정·선언 없는 삭제 거부와 보존 정리 삭제 허용 검증을 추가한다.
-    // V2_133: 10개 표의 낙관적 잠금 버전 컬럼(기존 행 0·생략 INSERT 0·음수 거부) 검증을 추가한다(2026-10-18).
-    // V2_134: 보고서 통계 메뉴 행·배정·즐겨찾기 삭제와 이력, 예상과 다른 행·같은 경로의 다른 행이면 멈추는 가드 검증을 추가한다(2026-10-19).
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 65;
+    static int registeredMigrationTestCount() throws IOException {
+        Path repoRoot = HarnessSourceIndex.repoRoot();
+        JsonNode root = JsonMapper.builder().build().readTree(HarnessSourceIndex.read(repoRoot.resolve(GATE_REGISTRY)));
+        int count = 0;
+        boolean found = false;
+        for (JsonNode set : root.path("gateSets")) {
+            if (!SCHEMA_GATE_SET.equals(set.path("id").asString())) continue;
+            found = true;
+            for (JsonNode rule : set.path("rules")) {
+                Path source = repoRoot.resolve(rule.path("source").asString()).normalize();
+                if (source.startsWith(schemaSourceRoot()) && isMigrationTest(source)) count++;
+            }
+        }
+        assertThat(found).as(GATE_REGISTRY + " 에 " + SCHEMA_GATE_SET + " 가 없습니다").isTrue();
+        return count;
+    }
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")
@@ -139,10 +140,10 @@ class SharedPostgresMigrationHarnessContractTest {
                 .filter(SharedPostgresMigrationHarnessContractTest::isMigrationTest)
                 .sorted()
                 .toList();
-        int expected = ReusableHarnessProfile.current().count("migrationTests", EXPECTED_MIGRATION_TEST_COUNT);
+        int expected = ReusableHarnessProfile.current().count("migrationTests", registeredMigrationTestCount());
 
         assertThat(migrationTests)
-                .as("공용 서버로 이관해야 하는 migration 검증 클래스 census(동결 %d)".formatted(expected))
+                .as("migration 검증 클래스 census %d — 원본은 %s 등록 수, 투영본은 하네스 프로필 census".formatted(expected, GATE_REGISTRY))
                 .hasSize(expected);
 
         Pattern directLifecycle = Pattern.compile(
@@ -160,7 +161,7 @@ class SharedPostgresMigrationHarnessContractTest {
         }
 
         assertThat(violations)
-                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 49회 부팅으로 회귀한다")
+                .as("migration 클래스마다 PostgreSQLContainer를 다시 띄우면 클래스 수만큼 부팅으로 회귀한다")
                 .isEmpty();
     }
 

@@ -86,8 +86,8 @@ class PrivacyAccessCensusLinterTest {
      * "부착 0건 == 선언 0건" 으로 vacuous 통과할 수 있다. 가장 작은 프로필(core)에서도 이 하한을 넘는지는
      * 계약 테스트가 생성기의 제거 계획으로 확인한다.
      */
-    // 2026-09-25 DEC-OPS-129: 30 -> 29. core 에서 네트워크 모니터링 컨트롤러를 걷어 core 의 남는 컨트롤러가 29 가 됐다.
-    //   스캔 파손이 아니라 표면 제거다(DEC-OPS-089 가 하한 판단을 강제하려고 core 수와 같게 둔 값).
+    // 하한은 core 의 남는 컨트롤러 수와 같게 둔다(DEC-OPS-089 — 하한 판단을 강제한다). core 에서 컨트롤러를 걷어 내리면 스캔 파손이 아니라
+    //   표면 제거임을 변경 설명에 남긴다.
     private static final int CONTROLLER_FLOOR = 29;
 
     private static final Set<String> SENSITIVE_FIELD_NAMES = Set.of(

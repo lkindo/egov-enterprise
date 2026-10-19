@@ -18,7 +18,7 @@
 #    (plan.frontendPaths). 생성기 투영의 화면 제외 규칙과 같다.
 #  - 삭제 후 남는 tb_menu_info 시드 라우트(versioned migration)는 경고로 출력한다.
 #
-# 이 스크립트는 경로 삭제만 담당한다. 전이 참조 정리·pack marker 블록 제거까지 필요한
+# 이 스크립트는 경로 삭제만 담당한다. 전이 참조 정리·기능 마커(reusable-base:<기능 id>) 블록 제거까지 필요한
 # 경우는 재사용 base projection(npm run base:generate-source)을 사용한다.
 
 param (

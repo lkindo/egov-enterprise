@@ -18,7 +18,7 @@
 
 > **규범의 SSOT 는 `docs/` 가 아니다.** 프로젝트 공통 규칙은 [AGENTS.md](../AGENTS.md), 코드 규범은 3대 헌법([백엔드](../.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 18조 · [프론트엔드](../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 17조 · [DB](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 10조)이 우선하며, `docs/` 는 이를 실무에 적용하는 가이드다.
 
-> **에이전트 규칙 로드 경계**: 저장소의 `GEMINI.md`·`CLAUDE.md`는 `AGENTS.md`와 공용 메모리를 연결하는 얇은 어댑터이고 Codex 등 AGENTS 지원 도구는 `AGENTS.md`를 직접 읽는다. 사용자 글로벌 규칙은 저장소 밖의 도구별 네이티브 진입점에서 독립적으로 로드된다. 한 환경에서 내용이 같더라도 도구 간 런타임 import/자동 상속을 뜻하지 않으며, 다른 PC나 사용자는 각 진입점을 별도로 프로비저닝·검증해야 한다.
+> **에이전트 규칙 로드 경계**: 도구별 진입점과 글로벌 규칙의 로드 경계는 [AGENTS.md](../AGENTS.md#도구별-진입점)가 정본이다.
 
 ---
 
@@ -45,8 +45,6 @@
 | [work-screen-grammar-catalog.md](02-architecture/work-screen-grammar-catalog.md) | 포털형→업무형 전환의 화면 문법 SSOT — 공통 규칙 G1~G15·archetype 8종·밀도 계약(globals.css 결속) |
 | [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | 비규범 `class-governed` URL-state 부류 컨테이너의 설계·운영 계약 — 4개 부류의 독립 승인 기록을 관리하며 `search-input`만 ADR-0009에 결속 |
 | [authorization-simplification-design.md](02-architecture/authorization-simplification-design.md) | 인가 핵심 3개·감사 1개, 복수 그룹·명시 기능·API·전환 전 소스 및 OCI 조사 범위 |
-| [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
-| [authorization-db-evidence.json](02-architecture/authorization-db-evidence.json) | 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [testing-process-redesign.md](02-architecture/testing-process-redesign.md) | 테스트 책임·격리 설계와 이행 근거; 현재 명령·CI 설정은 테스트·E2E·CI 가이드 참조 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
@@ -54,7 +52,6 @@
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
 | [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
-| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13), 표준용어 식별 방법론·용어 매핑 원장·도구 보강안([ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택, 진단·방법론 정본) |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest Mutation Testing 연동 설계(스코프별 전체 재계산) |
 
 ### 02-architecture 참조 보존 tombstone
@@ -68,44 +65,7 @@
 
 ### 02-architecture/decisions — ADR
 
-| 문서 | 내용 |
-|---|---|
-| [decisions/README.md](02-architecture/decisions/README.md) | ADR 목록·작성 규약 |
-| [ADR-0001](02-architecture/decisions/ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 |
-| [ADR-0002](02-architecture/decisions/ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 |
-| [ADR-0003](02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 |
-| [ADR-0004](02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 |
-| [ADR-0005](02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 |
-| [ADR-0006](02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 |
-| [ADR-0007](02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 증거 요건은 채택 시점 재검증으로 이전 |
-| [ADR-0008](02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB를 PostgreSQL 표준 스키마로 옮기는 승인형 오프라인 마이그레이션 워크플로 |
-| [ADR-0009](02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 화면별 exact 계약 아래 일반 개인정보가 포함될 수 있는 업무 검색어의 URL 사용을 허용 |
-| [ADR-0010](02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 |
-| [ADR-0011](02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도·비밀번호 소유 증명을 퇴역하고 자격증명 query를 제거 |
-| [ADR-0012](02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인·게시판 귀속 계약·물리 스키마를 제거하고 과거 Flyway 이력은 보존 |
-| [ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) | 표준 길이 24개와 SMS 수신번호 정규화를 단계별 배포·데이터 보존 검증에 연결 |
-| [ADR-0014](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 보류 6개의 프로그램 키·메뉴 FK·HHmmss·암호화 표준 정합 결정 |
-| [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
-| [ADR-0016](02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 복수 그룹·명시 기능 권한 및 수동 Contract 전환 |
-| [ADR-0017](02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 과업 중심 메뉴 재편·중복 통합·권한 보존 |
-| [ADR-0018](02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관 승인 분리와 프로필별 근거 투영·산출물 검증 |
-| [ADR-0019](02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립과 요청 제한 한도 설정화 |
-| [ADR-0020](02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 |
-| [ADR-0021](02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow |
-| [ADR-0022](02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | PR·통합 push의 독립 모듈 영향 분류, 커버리지·required 보존과 Gradle 캐시 |
-| [ADR-0023](02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR의 검증된 E2E spec 선별, main 전수와 Gradle 단일 캐시 writer |
-| [ADR-0024](02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환과 조용히 바뀌는 동작의 고정 |
-| [ADR-0025](02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 승인된 D01~D15 A·F01~F08의 제품 계약, 내구성 및 운영 적용 경계 |
-| [ADR-0026](02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 |
-| [ADR-0027](02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) |
-| [ADR-0028](02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 |
-| [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 흐름, 용어 매핑 원장·민감 컬럼 호환 암호화·외부 LLM 가드와 L1~L4 단계 |
-| [ADR-0030](02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 |
-| [ADR-0031](02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건·chunk 실패 처리와 단계 경계 |
-| [ADR-0032](02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 |
-| [ADR-0033](02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 수신주소의 암호화 보관과 완료 후 정리 |
-| [ADR-0034](02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 |
-| [ADR-0035](02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하 |
+ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 같은 집합으로 색인하며 계약이 둘을 대조한다.
 
 ## 03-guides — 개발 지침
 
@@ -139,7 +99,6 @@
 | 문서 | 내용 |
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
-| [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존(비정본, ADR-0025 본문이 링크하므로 경로 유지) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
@@ -152,6 +111,7 @@
 | [authorization-cutover-runbook.md](04-operations/authorization-cutover-runbook.md) | 구 writer 중지·백업·V2_98/99·검증·수동 Contract·새 앱 기동 및 복구 경계 |
 | [migration-recovery-runbook.md](04-operations/migration-recovery-runbook.md) | 대상 DB 환경 결속·스키마 허용 목록·실행 증거·부분 적재 재개·백업을 통한 전체 롤백 |
 | [migration-release-log.md](04-operations/migration-release-log.md) | 마이그레이션이 어느 릴리스로 언제 배포됐는지의 기록 — Contract waiver의 선행 Expand 관측 기간 근거 |
+| [shared-oci-migration-apply-log.md](04-operations/shared-oci-migration-apply-log.md) | 공유 OCI DB에 마이그레이션을 적용한 기록 — 승인 요지·병합 PR·사전 읽기·백업·validate·확인·롤백 원본, 이전 DEC 기록 색인 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [observability-baseline.md](04-operations/observability-baseline.md) | 요청·첨부 점검·영속 작업 상태 지표, 9개 경보와 실제 promtool 시간 흐름 검증 |
@@ -160,7 +120,6 @@
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 날짜 입력·화면 연결·첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, Spring Boot 4 실측, ZAP 경고 분류, 도메인 정합성, 프록시 연결 경합 |
-| [standard-length-alignment-runbook.md](04-operations/standard-length-alignment-runbook.md) | 표준 길이의 단계별 스키마·애플리케이션 전환과 실패·복구 검증 |
 | [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
@@ -183,10 +142,17 @@
 | [dual-operator-coordination.md](archived/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 | [evidence-first-improvement-loop-prompt.md](archived/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
 | [adversarial-reassessment-2026-09-27.md](archived/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
+| [evidence-first-policy-decisions-2026-09-27.md](archived/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정한 **결정 입력물** |
+| [authorization-source-inventory.json](archived/authorization-source-inventory.json) | 인가 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개(2026-09-10); 현재 파일 목록이 아님 |
+| [authorization-db-evidence.json](archived/authorization-db-evidence.json) | 인가 전환 설계의 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
+| [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
+| [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
 
 ### 운영 결정 원문 보존
 
 [operational-decisions-history.md](archived/operational-decisions-history.md)는 짧은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
+
+[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 지금의 작업을 제약하지 않는 운영 결정(퇴역·전부 대체·일회성 실행·구현 기록)의 짧은 역사 색인이다. 공용 결정 인덱스와 함께 보관 원문의 모든 DEC를 한 번씩 색인하며, 에이전트 진입점은 자동으로 읽지 않는다.
 
 ---
 

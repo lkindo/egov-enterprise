@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "b0626591c065d0df899aceae498b157d55c512aa955697d89ac63b2587154ef3"
+    "sha256": "71fed893df916430ab97c737d06d9c889cfab66742ccd0dbbab8a0dd758d3718"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -28,7 +28,7 @@
       "user-research-thresholds-and-g1-approval"
     ],
     "reviewBy": "2026-10-31",
-    "adrSha256": "b68f0228f6329cabd73a64a72529825e22a70247e76d0cb0dc1c76d87eadfd55"
+    "adrSha256": "cf6be5c8031e3079a35815ee691b8e316d5f1b014ef0a861108206f83b4717dc"
   },
   "acceptedDecision": null,
   "acceptanceEvidence": {
@@ -36,28 +36,28 @@
       "status": "deferred-to-institution-adoption",
       "adrId": "ADR-0007",
       "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
-      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "adrSha256": "eea7064cc9b81daca450bc9d2c699d4ffe790e543b710800be4be8000ac2ac0c",
       "acceptedRisk": "approved-without-user-research"
     },
     "liveMenuArtifactSha256": {
       "status": "deferred-to-institution-adoption",
       "adrId": "ADR-0007",
       "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
-      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "adrSha256": "eea7064cc9b81daca450bc9d2c699d4ffe790e543b710800be4be8000ac2ac0c",
       "acceptedRisk": "approved-without-user-research"
     },
     "authorityAssignmentArtifactSha256": {
       "status": "deferred-to-institution-adoption",
       "adrId": "ADR-0007",
       "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
-      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "adrSha256": "eea7064cc9b81daca450bc9d2c699d4ffe790e543b710800be4be8000ac2ac0c",
       "acceptedRisk": "approved-without-user-research"
     },
     "effectiveMenuArtifactSha256": {
       "status": "deferred-to-institution-adoption",
       "adrId": "ADR-0007",
       "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
-      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "adrSha256": "eea7064cc9b81daca450bc9d2c699d4ffe790e543b710800be4be8000ac2ac0c",
       "acceptedRisk": "approved-without-user-research"
     }
   },

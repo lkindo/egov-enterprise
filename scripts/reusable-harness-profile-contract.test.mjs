@@ -30,10 +30,12 @@ test('the shared migration census is read from the projected harness profile wit
   // 생성물 표지(config/modules/presets.json 의 active, 11단계 C5). 원본이면 projection 이 없다.
   const generated = detectGeneratedComposition(REPOSITORY).projection;
   const code = stripJavaComments(readFileSync(join(REPOSITORY, HARNESS_DIRECTORY, MIGRATION_HARNESS), 'utf8'));
-  const frozen = Number(code.match(/private static final int EXPECTED_MIGRATION_TEST_COUNT = (\d+);/)?.[1]);
-  assert.ok(Number.isInteger(frozen) && frozen > 0, 'the source keeps an exact frozen count');
-  assert.match(code, /ReusableHarnessProfile\.current\(\)\.count\("migrationTests", EXPECTED_MIGRATION_TEST_COUNT\)/,
-    'the harness reads the projected census and falls back to the frozen count only in the source repository');
+  // 원본의 기대값은 하네스가 게이트 원장(gates.json schema-validation 의 rules)에서 센 등록 수다 — 숫자 상수로 다시 적지 않는다.
+  assert.doesNotMatch(code, /static final int EXPECTED_MIGRATION_TEST_COUNT\b/, 'the harness does not restate the registered count');
+  assert.match(code, /ReusableHarnessProfile\.current\(\)\.count\("migrationTests", registeredMigrationTestCount\(\)\)/,
+    'the harness reads the projected census and falls back to the registry count only in the source repository');
+  assert.match(code, /"config\/governance\/gates\.json"/);
+  assert.match(code, /"GATESET-SCHEMA-VALIDATION"/);
   assert.doesNotMatch(code, /@DisplayName\("\d+개 migration/, 'the display name does not repeat a count the projection changes');
   // 생성기 census 는 하네스와 같은 루트·술어로 센다. 둘 중 하나만 바뀌면 투영본의 census 가 다른 모집단을 센다.
   assert.match(code, /resolve\("api-server\/src\/test\/java\/nuri\/api\/schema"\)/);
@@ -46,7 +48,12 @@ test('the shared migration census is read from the projected harness profile wit
     assert.equal(census.migrationTests, counted, 'the recorded census is the population left in this artifact');
     assert.equal(counted, 0, 'historical migration checks are projected out');
   } else {
-    assert.equal(counted, frozen, 'the generator census counts the same population the harness freezes');
+    const schemaGates = JSON.parse(readFileSync(join(REPOSITORY, 'config/governance/gates.json'), 'utf8'))
+      .gateSets.find(({ id }) => id === 'GATESET-SCHEMA-VALIDATION');
+    const registered = schemaGates.rules.filter(({ source }) => source.startsWith(`${HISTORICAL_SCHEMA_TEST_DIR}/`)
+      && source.endsWith('MigrationIntegrationTest.java')).length;
+    assert.ok(registered > 0, 'the registry declares migration checks');
+    assert.equal(counted, registered, 'the generator census counts the same population the harness registry declares');
   }
 });
 

@@ -49,34 +49,10 @@ class EntityTableOwnershipLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(EntityTableOwnershipLinterTest.class);
     private static final String ENTITY_SCAN_BASE = "nuri";
-    // [2026-09-08 PD-MYPG-001] 79 -> 78. MyPageContent 엔티티를 걷었다 — 마이페이지 콘텐츠 관리
-    //   표면(API 4본·화면·서비스·DTO)을 제거하면서 리포지토리가 도달 불가가 됐고(UnreachableServiceLinter
-    //   실측) 엔티티를 쓰는 코드도 남지 않았다. ⚠ **물리 테이블 tb_indv_pg_conts 는 남는다** —
-    //   테이블 처분은 파괴적 DB 변경이라 별도 승인 경계이며, V2_54 의 PK BIGINT IDENTITY 전환을
-    //   검증하는 MyPageContentBigintMigrationIntegrationTest 도 JDBC 로 스키마만 보므로 그대로 산다.
-    //   따라서 이 census 는 78 Entity → 78 물리 테이블이 아니라, 매핑 없는 테이블 1개가 생긴 상태다.
-    // [2026-09-08 ADR-0012] 블로그 퇴역으로 Blog/BlogUser와 tb_blog_info/tb_blog_user_map을 제거했다.
-    //   Entity 78 → 76, distinct @Table 77 → 75. 조직의 의도된 공유 매핑과 나머지 모집단은 그대로다.
-    // 승인된 권한 단순화: 구 AuthorityRole/RoleInfo/RoleProgramMap/MenuAuthority 4종 제거,
-    // AuthorityGrant/AuthorizationChange 2종 추가. 74 Entity / distinct table 73종.
-    // 운영 전체 물리 표 78종과 Entity census는 다르다. V2_98 + 별도 Contract/ADR 근거.
-    // V2_101: 결재 차수 이력과 참여자별 결정 2종. 기존 공유 매핑은 그대로다.
-    // V2_107(DIP I6 ④): 게시글 추천 이력 BoardRecommendation → tb_bbs_rcmdtn_hstry. 76 → 77 / 75 → 76.
-    // V2_110(DIP B5 F11): 공통코드 변경 이력 CommonCodeChange → tb_com_cd_chg_hstry. 77 → 78 / 76 → 77.
-    // ADR-0025: MFA 3종, 후속 작업 1종, 불변 민감 감사 1종을 각각 독립 테이블로 추가한다.
-    // V2_121(결재 동선 개선): 결재 처리 이력 InformalSanctionProcess → tb_ifml_atrz_prcs_hstry. 83 → 84 / 82 → 83.
-    // V2_122(결재 동선 개선 D3): 기안 임시저장 ApprovalTemporaryDraft → tb_ifml_atrz_tmpr_strg, 임시저장 결재선
-    //   ApprovalTemporaryDraftLine → tb_ifml_atrz_tmpr_strg_dtl. 둘 다 수정되므로 감사 4종(BaseEntity)이다. 84 → 86 / 83 → 85.
-    // V2_123(결재 동선 개선 D4): 결재 참조자 InformalSanctionReference → tb_ifml_atrz_rfpr(추가만 하는 insert 감사 2종),
-    //   임시저장 참조자 ApprovalTemporaryDraftReference → tb_ifml_atrz_tmpr_strg_rfpr(지운 뒤 다시 넣는 감사 4종). 86 → 88 / 85 → 87.
-    // [2026-10-04 프로그램 목록 퇴역] Program 엔티티(tb_prgrm_lst)를 걷었다. 88 → 87 / 87 → 86. 화면·API·서비스를 걷으며
-    //   엔티티를 쓰는 코드가 남지 않았다. ⚠ **물리 테이블 tb_prgrm_lst 와 tb_menu_info.prgrm_file_nm·외래 키는 남는다** —
-    //   테이블 처분은 다음 릴리스의 별도 승인 경계다(tb_indv_pg_conts 선례). 매핑 없는 테이블이 하나 더 생긴 상태다.
-    // V2_129(결재 동선 개선 D2): 나의 결재선 ApprovalSavedLine → tb_ifml_atrz_indv_apln, 결재선 행
-    //   ApprovalSavedLineApprover → tb_ifml_atrz_indv_apln_dtl. 둘 다 수정되므로(덮어쓰기) 감사 4종(BaseEntity)이다. 87 → 89 / 86 → 88.
-    // [2026-10-19 보고서 통계 퇴역] ReprtStats 엔티티(tb_rptp_stats)를 걷었다. 89 → 88 / 88 → 87. 등록 경로가 자기 단위 시험뿐이라
-    //   조회 탭은 늘 비어 있었고, 탭·조회 API·메뉴(V2_134)와 함께 엔티티를 쓰는 코드가 남지 않았다. ⚠ **물리 테이블 tb_rptp_stats
-    //   는 남는다**(tb_prgrm_lst 선례) — 매핑 없는 테이블이 하나 더 생긴 상태다. 처분은 별도 승인 경계다.
+    // Entity census 는 물리 표 수와 다르다 — 엔티티를 쓰는 코드를 걷어도 물리 표 처분은 파괴적 DB 변경이라 별도 승인 경계이므로
+    //   매핑 없는 표(tb_indv_pg_conts·tb_prgrm_lst·tb_rptp_stats 등)가 남는다. 그 표를 JDBC 로 보는 migration 검증은 그대로 산다.
+    // 쓰기 엔티티를 더하거나 걷으면 아래 두 수를 함께 고친다. 수정되는 표는 감사 4종(BaseEntity), 추가만 하는 이력은 insert 감사
+    //   2종이다(INSERT_ONLY_AUDIT_ENTITIES). 수의 증감 이력은 git 과 결정 기록에 있다.
     private static final int EXPECTED_ENTITY_COUNT = 88;
     private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 87;
 

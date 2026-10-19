@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       이 프로파일에서는 <b>로드조차 되지 않는다</b>.</li>
  * </ul>
  *
- * <p><b>현행 위반의 성격</b> — 활성 위험은
- * {@code .agent/memory/known-gaps.md}의 {@code GAP-TEST-001}에서 관리한다.
+ * <p><b>현행 위반의 성격</b> — 남은 우회 지점은 이 린터의 동결 census 가 관리한다. 종전 {@code GAP-TEST-001} 은
+ * 2026-08-20 HTTP 계열을 운영 체인({@code ApiHttpIntegrationTest})으로 옮기며 닫았다(커밋 706113e08).
  * <ul>
  *   <li>{@code business-core}/{@code business-app} 의 {@code TestSecurityConfig} 는
  *       {@code anyRequest().permitAll()} 이며 {@code IntegrationTest} 가 그것을 물린다.
@@ -149,7 +149,7 @@ class TestSecurityChainOverrideLinterTest {
     //
     // [2026-08-05 중복 정리] TestSecurityConfig#chainBean / #mockProfile / IntegrationTest#mockProfile 을 2 → 1.
     //   ⚠ **위반이 해소된 것이 아니다.** `anyRequest().permitAll()` 은 business-core 사본에 그대로 살아 있다
-    //   (known-gaps.md GAP-TEST-001). 줄어든 것은 **중복** 이다 —
+    //   (당시 GAP-TEST-001 — 2026-08-20 커밋 706113e08 에서 닫았다). 줄어든 것은 **중복** 이다 —
     //   business-app/src/testFixtures 가 business-core 와 FQN 까지 동일한 18파일 복제였고,
     //   api-server 가 양쪽 testFixtures 를 동시에 의존해 같은 이름의 클래스가 클래스패스 순서로
     //   서로를 가리고 있었다. 사본을 지우고 business-app 이 business-core 것을 재노출하도록 바꿨다.

@@ -1,6 +1,8 @@
 ---
 name: frontend-design
 description: 기존 eGov 디자인 시스템과 접근성 계약을 보존하며 목적에 맞는 프런트엔드 화면과 컴포넌트를 설계한다.
+source: anthropics/skills (https://github.com/anthropics/skills, eGov 디자인 시스템에 맞게 개작)
+license: Apache-2.0 — Complete terms in LICENSE.txt
 ---
 
 # Frontend Design

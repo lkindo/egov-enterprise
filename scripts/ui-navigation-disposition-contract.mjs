@@ -51,9 +51,26 @@ const EVIDENCE_KEYS = [
   'effectiveMenuArtifactSha256',
 ];
 // ADR-0007 (reference-default IA): 연구·live census 계열 증거는 기관 채택 시점의
-// 재검증 의무로 이전할 수 있다. 이전은 아래 exact 레코드로만 기록되고, 그 ADR 본문
-// 내용(hash)·이전 조항·accepted-risk 기록에 결속된다.
+// 재검증 의무로 이전할 수 있다. 이전은 아래 exact 레코드로만 기록되고, 그 ADR 의
+// 결정 절(hash)·이전 조항·accepted-risk 기록에 결속된다.
 const REFERENCE_DEFAULT_ADR_PATH = 'docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md';
+/*
+ * ADR 해시는 파일 전체가 아니라 결정 절만 묶는다. 머리 메타(후속 결정 줄 등)·맥락·정본 연결 링크를 고쳐도 승인 근거가
+ * 바뀌지 않는데, 파일 해시는 그런 수정까지 막아 ADR 머리 줄을 되돌리게 했다(2026-10-17 커밋 32f879344). 결정 절이 바뀌면
+ * 여전히 붉다. 상태·이전 조항·accepted risk 문구 검사는 그대로 파일 전체에서 본다.
+ * ADR-0007 은 deferral 레코드가 acceptedRisk 를 함께 실으므로 'Accepted risk' 절도 묶는다.
+ */
+const PROVISIONAL_DIRECTION_ADR_SECTIONS = ['Decision'];
+const REFERENCE_DEFAULT_ADR_SECTIONS = ['Decision', 'Accepted risk (영구 기록)'];
+/*
+ * 처분 제안이 결속하는 라우트 원장 범위. overlay 는 route/alias 키만 싣고 review view 가 shell·role·menu·target 메타를
+ * 해시가 고정된 원장과 join 한다(IA §8.4) — 그 메타와 처분 판단에 쓰는 가용 상태·화면 구역·profile 소유만 묶는다.
+ * capability 세부·근거 파일·표시 이름·동작 목록·시작 구성 투영(directProjectionProfiles)은 처분 제안이 의존하지 않아 뺀다.
+ * directProjectionProfiles 는 demo-isolated 판정이 매 실행 현재 원장에서 직접 읽는다. 경로·별칭이 생기거나 없어지면
+ * 해시와 모집단 대조가 모두 붉다.
+ */
+const DISPOSITION_BOUND_ROUTE_FIELDS = ['route', 'routing', 'shellAccess', 'roles', 'surface', 'status', 'menuExposure', 'profileOwners'];
+const DISPOSITION_BINDING_FORMAT = 'ui-navigation-disposition-binding-v1';
 const ADOPTION_DEFERRED_EVIDENCE_KEYS = ['status', 'adrId', 'adrPath', 'adrSha256', 'acceptedRisk'];
 const ADOPTION_DEFERRED_STATUS = 'deferred-to-institution-adoption';
 const ADOPTION_DEFERRED_ACCEPTED_RISK = 'approved-without-user-research';
@@ -138,7 +155,10 @@ function validateAcceptanceEvidenceValue(value, label, repoRoot, errors) {
     return;
   }
   const content = readFileSync(absolute, 'utf8');
-  if (value.adrSha256 !== canonicalTextSha256(content)) {
+  const decisionHash = adrSectionsSha256(content, REFERENCE_DEFAULT_ADR_SECTIONS);
+  if (decisionHash === null) {
+    errors.push(`${label}.adrPath must contain each bound section exactly once: ${REFERENCE_DEFAULT_ADR_SECTIONS.join(', ')}`);
+  } else if (value.adrSha256 !== decisionHash) {
     errors.push(`${label}.adrSha256 drifted from the reference-default ADR`);
   }
   if (!/(?:status|상태)[^\n]*accepted/iu.test(content)) {
@@ -330,7 +350,10 @@ function validateProvisionalDirection(value, repoRoot, errors) {
     return;
   }
   const content = readFileSync(absolute, 'utf8');
-  if (value.adrSha256 !== canonicalTextSha256(content)) {
+  const decisionHash = adrSectionsSha256(content, PROVISIONAL_DIRECTION_ADR_SECTIONS);
+  if (decisionHash === null) {
+    errors.push(`${label}.adrPath must contain each bound section exactly once: ${PROVISIONAL_DIRECTION_ADR_SECTIONS.join(', ')}`);
+  } else if (value.adrSha256 !== decisionHash) {
     errors.push(`${label}.adrSha256 drifted from the bounded ADR`);
   }
   if (!/(?:status|상태)[^\n]*accepted[^\n]*provisional/iu.test(content)) {
@@ -455,7 +478,38 @@ export function canonicalTextSha256(content) {
   return crypto.createHash('sha256').update(text.replace(/\r\n?/g, '\n'), 'utf8').digest('hex');
 }
 
-export function createUnreviewedProposal(manifest, manifestRaw) {
+/** 이름 붙은 `## ` 절(제목 줄부터 다음 `## ` 앞까지)만 이어 해시한다. 절이 없거나 두 번 나오면 null — 결속을 추정하지 않는다. */
+export function adrSectionsSha256(content, headings) {
+  const lines = (Buffer.isBuffer(content) ? content.toString('utf8') : String(content)).replace(/\r\n?/g, '\n').split('\n');
+  const sections = [];
+  for (const heading of headings) {
+    const starts = lines.flatMap((line, index) => (line === `## ${heading}` ? [index] : []));
+    if (starts.length !== 1) return null;
+    const next = lines.findIndex((line, index) => index > starts[0] && line.startsWith('## '));
+    sections.push(lines.slice(starts[0], next < 0 ? lines.length : next).join('\n').trimEnd());
+  }
+  return canonicalTextSha256(`${sections.join('\n\n')}\n`);
+}
+
+export function adrDecisionSha256(adrPath, content) {
+  const headings = adrPath === PROVISIONAL_DIRECTION_ADR_PATH ? PROVISIONAL_DIRECTION_ADR_SECTIONS
+    : adrPath === REFERENCE_DEFAULT_ADR_PATH ? REFERENCE_DEFAULT_ADR_SECTIONS : null;
+  if (headings === null) throw new Error(`no bound decision sections for ${adrPath}`);
+  return adrSectionsSha256(content, headings);
+}
+
+/** 처분 제안의 manifestRef.sha256 — 파일 전체가 아니라 DISPOSITION_BOUND_ROUTE_FIELDS 와 별칭 레코드만 해시한다. */
+export function dispositionManifestSha256(manifest) {
+  const bound = {
+    format: DISPOSITION_BINDING_FORMAT,
+    routes: (Array.isArray(manifest?.routes) ? manifest.routes : []).map((row) => Object.fromEntries(
+      DISPOSITION_BOUND_ROUTE_FIELDS.filter((key) => Object.hasOwn(row ?? {}, key)).map((key) => [key, row[key]]))),
+    externalAliases: Array.isArray(manifest?.externalAliases) ? manifest.externalAliases : [],
+  };
+  return canonicalTextSha256(`${JSON.stringify(bound, null, 2)}\n`);
+}
+
+export function createUnreviewedProposal(manifest) {
   const emptyApprovals = () => Object.fromEntries(APPROVAL_KEYS.map((key) => [key, null]));
   return {
     schemaVersion: 1,
@@ -464,7 +518,7 @@ export function createUnreviewedProposal(manifest, manifestRaw) {
     schemaRef: SCHEMA_RELATIVE_PATH,
     manifestRef: {
       path: MANIFEST_RELATIVE_PATH,
-      sha256: canonicalTextSha256(manifestRaw),
+      sha256: dispositionManifestSha256(manifest),
     },
     provisionalDirection: null,
     acceptedDecision: null,
@@ -701,7 +755,6 @@ export function findDispositionSourceReferences(repoRoot = REPO_ROOT) {
 
 export function validateDispositionContract({
   manifest,
-  manifestRaw,
   overlay,
   schema,
   repoRoot = REPO_ROOT,
@@ -732,7 +785,7 @@ export function validateDispositionContract({
 
   if (exactKeys(overlay.manifestRef, ['path', 'sha256'], 'manifestRef', errors)) {
     if (overlay.manifestRef.path !== MANIFEST_RELATIVE_PATH) errors.push('manifestRef.path is invalid');
-    const actualHash = canonicalTextSha256(manifestRaw);
+    const actualHash = dispositionManifestSha256(manifest);
     if (overlay.manifestRef.sha256 !== actualHash) {
       errors.push(`manifestRef.sha256 drifted from the current manifest: expected ${actualHash}`);
     }
@@ -892,7 +945,7 @@ function runCli() {
   const proposalAbsolute = path.join(REPO_ROOT, PROPOSAL_RELATIVE_PATH);
 
   if (process.argv.includes('--init-proposal')) {
-    const proposal = createUnreviewedProposal(manifest, manifestRaw);
+    const proposal = createUnreviewedProposal(manifest);
     writeFileSync(proposalAbsolute, `${JSON.stringify(proposal, null, 2)}\n`, { flag: 'wx' });
     console.log(`Created ${PROPOSAL_RELATIVE_PATH} with ${proposal.routes.length} routes and ${proposal.externalAliases.length} aliases.`);
     return;
@@ -900,7 +953,7 @@ function runCli() {
 
   const overlay = loadJson(PROPOSAL_RELATIVE_PATH);
   const schema = loadJson(SCHEMA_RELATIVE_PATH);
-  const result = validateDispositionContract({ manifest, manifestRaw, overlay, schema });
+  const result = validateDispositionContract({ manifest, overlay, schema });
   console.log(JSON.stringify({
     state: overlay.state,
     provisionalDirection: overlay.provisionalDirection?.status ?? 'blocked-input',
