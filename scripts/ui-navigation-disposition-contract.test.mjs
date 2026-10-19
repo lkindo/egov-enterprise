@@ -715,9 +715,10 @@ test('ADR bindings cover the decision sections, not header metadata or link sect
       writeFileSync(path.join(temp, file), text);
     }
   };
+  // ADR 결속 오류만 본다 — 라우트 원장 결속은 앞 시험이 따로 본다.
   const errorsWith = (contents) => {
     write(contents);
-    return validate(overlay, { repoRoot: temp }).errors.join('\n');
+    return validate(overlay, { repoRoot: temp }).errors.filter((error) => /\.adr(?:Sha256|Path)\b/.test(error)).join('\n');
   };
 
   assert.equal(errorsWith(original), '');
