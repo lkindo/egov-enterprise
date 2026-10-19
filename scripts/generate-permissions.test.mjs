@@ -71,7 +71,7 @@ test('administrative statistics and workflow pages preserve their distinct acces
     assert.ok(catalog.permissions.find(row => row.code === code)?.defaultGroups.includes('ROLE_USER'));
   }
   const adminStats = policy.operationBindings.filter(row => row.path.startsWith('/api/v1/admin/system/statistics/'));
-  assert.deepEqual(adminStats.map(row => row.path.split('/').at(-1)).sort(), ['bbs', 'connect', 'data-usage', 'report', 'summary', 'user']);
+  assert.deepEqual(adminStats.map(row => row.path.split('/').at(-1)).sort(), ['bbs', 'connect', 'data-usage', 'summary', 'user']);
   assert.ok(adminStats.every(row => row.method === 'GET' && row.permission === 'STATS_ADMIN_READ'));
   assert.equal(policy.operationBindings.find(row => row.path === '/api/v1/statistics/connect')?.permission, 'STATS_READ');
   for (const [route, codes] of Object.entries(catalog.pagePermissions)) {

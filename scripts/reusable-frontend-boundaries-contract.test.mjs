@@ -1293,7 +1293,7 @@ test('stats panels: route tabs carry their page predicate, body tabs and overvie
   const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
   const panels = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'stats-panels');
   assert.ok(panels.length > 0, 'the source has stats-panels contributions');
-  assert.deepEqual(statsCoreTabIds().sort(), ['DASHBOARD', 'REPORTS', 'SYSTEM_STATS', 'USER_STATS'], 'the shell tab table is read');
+  assert.deepEqual(statsCoreTabIds().sort(), ['DASHBOARD', 'SYSTEM_STATS', 'USER_STATS'], 'the shell tab table is read');
   const check = (source, panel = panels[0]) => contributionViolations({ file: panel.file, source, owner: panel.owner, slot: 'stats-panels',
     ownPaths: paths.get(panel.owner), foreignPaths: [] }).join('\n');
   for (const panel of panels) assert.equal(check(inputs.original(join(frontendRoot, panel.file)), panel), '', panel.file);
@@ -1309,7 +1309,7 @@ test('stats panels: route tabs carry their page predicate, body tabs and overvie
   assert.match(check(fixture(series({ page: '/admin/stats' }))), /POSTS 의 visibleWhen 은 \{ page: 자기 href \} 여야 한다/);
   assert.match(check(fixture(series({ href: 'admin/stats/board' }))), /POSTS 의 href 는 '\/' 로 시작하는 앱 안 경로 리터럴이다/);
   assert.match(check(fixture(series({ uninstrumented: 'flag' }))), /POSTS 의 uninstrumented 는 참거짓 리터럴이다/);
-  assert.match(check(fixture(series({ id: 'REPORTS' }))), /REPORTS — 통계 셸 탭과 겹친다/);
+  assert.match(check(fixture(series({ id: 'DASHBOARD' }))), /DASHBOARD — 통계 셸 탭과 겹친다/);
   assert.match(check(fixture(series({ id: 'posts' }))), /posts 의 id 는 대문자 식별자 리터럴이다/);
   assert.match(check(fixture(body("    href: '/admin/stats/board',\n"))), /BODY — 라우트가 없는 항목\(body 탭·요약 칸\)은 href 를 두지 않는다/);
   assert.match(check(fixture(card("    href: '/admin/stats',\n"))), /CARD — 라우트가 없는 항목/);
