@@ -394,7 +394,7 @@ test('reusable-base matrix only retains presets in which a changed feature file 
   assert.deepEqual(collaborationAndDemo.reusableProfiles, ['collaboration', 'demo']);
 
   const frontendDemoOnly = classifyChangedFiles([
-    'frontend/src/app/admin/system/isg/page.tsx',
+    'frontend/src/app/admin/system/hpcm/page.tsx',
   ]);
   assert.deepEqual(frontendDemoOnly.reusableProfiles, ['demo']);
 

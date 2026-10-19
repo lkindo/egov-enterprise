@@ -260,6 +260,37 @@ SELECT count(*) AS menus, count(*) FILTER (WHERE use_yn = 'Y') AS active_menus F
 
 V2_134는 이미 적용되었으므로 되살린 행은 다시 지워지지 않는다.
 
+## 인터넷 서비스 안내 퇴역(V2_135)
+
+[V2_135](../../api-server/src/main/resources/db/migration/V2_135__retire_internet_service_guidance_grants.sql)는 인터넷 서비스 안내(ISG) 관리 화면 `/admin/system/isg`와 API `/api/v1/admin/system/isg`(연산 5개)를 걷으며, 그 연산에만 묶여 있던 기능 권한 `SERVICE_CREATE`·`SERVICE_DELETE`·`SERVICE_READ`·`SERVICE_UPDATE`의 배정을 지운다(2026-10-19 사용자 승인). 지운 배정마다 `GROUP_GRANT`/`REMOVE` 이력(`dmnd_idntfr = 'migration:2.135'`)을 같은 트랜잭션에 남긴다. 물리 테이블 `tb_intrn_svc`와 그 표준 사전은 남긴다(표 삭제는 별도 스키마 승인). 배정을 남기면 권한 스냅샷이 원장에 없는 코드를 만나 실패해 그 그룹 구성원의 인증이 막힌다(V2_130과 같은 이유).
+
+V2_130과 달리 퇴역의 전제가 깨진 환경이면 건너뛰지 않고 **실패**한다. 다음 중 하나면 아무것도 지우지 않고 Flyway가 실패한다. 그 상태를 정리하거나 퇴역을 다시 판단한 뒤 다시 적용한다.
+
+- `tb_intrn_svc`가 없다 — '쓰임이 없다'는 전제를 확인할 대상이 없다.
+- `tb_intrn_svc`에 행이 있다 — 안내를 등록해 쓰고 있다. 화면을 걷으면 그 행을 볼 길이 사라진다.
+- 메뉴 행이 `/admin/system/isg`(그 아래 경로·쿼리 포함)를 가리킨다 — 같은 릴리스의 앱에는 그 라우트가 없다.
+- `SERVICE_*`가 `ROLE_ADMIN`·`ROLE_SYSTEM`의 기능 권한(`OPERATION`) 밖에 배정돼 있다 — 기관이 따로 내린 배정이라 이 변경이 판정하지 않는다.
+
+배정이 이미 없으면 아무것도 하지 않는다. 앱과 같은 릴리스로 적용한다. 앱이 떠 있는 동안 적용하면 배정이 지워진 그룹의 버전이 바뀌어, 열려 있던 그 그룹의 권한 편집은 저장 때 409로 거부될 수 있다(DEC-OPS-208).
+
+**적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 첫 질의가 `0`, 둘째 질의가 0행이어야 적용된다(아니면 위 실패). 셋째 질의는 모든 행이 `OPERATION`이고 그룹이 `ROLE_ADMIN`·`ROLE_SYSTEM`이어야 하며(2026-10-19 OCI 읽기: 8행), 그 행 수만큼 이력이 남는다.
+
+```sql
+SELECT count(*) FROM tb_intrn_svc;
+
+SELECT menu_sn, menu_nm, modern_route FROM tb_menu_info WHERE modern_route LIKE '/admin/system/isg%';
+
+SELECT authrt_cd, authrt_type_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
+ WHERE authrt_grnt_cd IN ('SERVICE_CREATE', 'SERVICE_DELETE', 'SERVICE_READ', 'SERVICE_UPDATE')
+ ORDER BY authrt_cd, authrt_grnt_cd;
+```
+
+**적용 뒤 확인.** 셋째 질의가 0행이고, `SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr = 'migration:2.135' AND chg_type_cd = 'REMOVE'`가 적용 전 셋째 질의의 행 수와 같다. 첫 질의는 그대로 `0`이다(표는 남는다).
+
+**롤백 뒤 다시 배포할 때.** 구 버전 앱의 원장에는 이 권한이 있어 권한 관리 화면에서 다시 배정될 수 있다. V2_135는 다시 돌지 않으므로 재배포 전에 적용 전 셋째 질의로 확인하고, 행이 있으면 V2_124 절의 재삭제 SQL에서 권한 코드 조건과 `dmnd_idntfr`·`chg_rsn`만 바꿔 실행한다.
+
+**배정을 되살릴 때.** 지운 배정은 `migration:2.135` 이력의 `authrt_cd`·`authrt_grnt_cd`로 복원할 수 있다. 다만 새 앱의 원장에는 이 코드가 없어 권한 스냅샷이 fail-closed로 실패하므로, 구 버전 앱으로 함께 되돌릴 때만 복원한다.
+
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
 사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.

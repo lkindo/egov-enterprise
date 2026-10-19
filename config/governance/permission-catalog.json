@@ -1921,46 +1921,6 @@
       ]
     },
     {
-      "code": "SERVICE_CREATE",
-      "domain": "SERVICE",
-      "action": "CREATE",
-      "name": "서비스 관리 · 등록",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "SERVICE_DELETE",
-      "domain": "SERVICE",
-      "action": "DELETE",
-      "name": "서비스 관리 · 삭제",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "SERVICE_READ",
-      "domain": "SERVICE",
-      "action": "READ",
-      "name": "서비스 관리 · 조회",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
-      "code": "SERVICE_UPDATE",
-      "domain": "SERVICE",
-      "action": "UPDATE",
-      "name": "서비스 관리 · 수정",
-      "defaultGroups": [
-        "ROLE_ADMIN",
-        "ROLE_SYSTEM"
-      ]
-    },
-    {
       "code": "SMS_READ",
       "domain": "SMS",
       "action": "READ",
@@ -2564,9 +2524,6 @@
     ],
     "/admin/system/hpcm": [
       "HELP_READ"
-    ],
-    "/admin/system/isg": [
-      "SERVICE_READ"
     ],
     "/admin/system/ism": [],
     "/admin/system/layout": [

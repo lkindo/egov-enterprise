@@ -164,8 +164,11 @@ test('all producer domains and tables have one verified ownership or an explicit
   const expectedDomains = Object.keys(modules.declarations.features).sort();
   assert.deepEqual(catalog.capabilities.map(capability => capability.id), expectedDomains);
   // 통계는 고를 수 있는 기능이 아니라 core 다(Phase 0c). 게시물·자료 이용 화면은 게시판이 소유한다. 기능 분할은 DEC-OPS-273 이다.
-  assert.equal(catalog.capabilities.length, 22);
+  // [2026-10-19] 22 -> 21. 쓰임이 없던 인터넷 서비스 안내(isg)를 퇴역했다 — 남는 물리 테이블 tb_intrn_svc 는 core 가 소유한다.
+  assert.equal(catalog.capabilities.length, 21);
   assert.ok(!catalog.capabilities.some(capability => capability.id === 'stats'));
+  assert.ok(!catalog.capabilities.some(capability => capability.id === 'isg'));
+  assert.ok(catalog.core.tables.includes('tb_intrn_svc'));
   // [2026-10-19] 보고서 통계 메뉴·화면은 걷었지만(V2_134) 물리 테이블은 남아 core 가 소유한다.
   assert.ok(catalog.core.tables.includes('tb_rptp_stats'));
   assert.ok(['STATS_ADMIN_READ', 'STATS_READ'].every(code => catalog.core.permissionCodes.includes(code)));

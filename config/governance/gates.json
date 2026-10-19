@@ -923,6 +923,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-INTERNET-SERVICE-GUIDANCE-GRANT-RETIREMENT",
+          "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceGrantRetirementMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-IP-ADDRESS-IPV6",
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
         },
@@ -1698,7 +1702,7 @@
             "scope": "business-app-delivery-operation",
             "job": "mutation-scope",
             "gradle": ":business-app:pitest",
-            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.isg.*,nuri.business.service.event.*,nuri.business.service.reward.*",
+            "classes": "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*",
             "tests": "nuri.business.*"
           },
           {

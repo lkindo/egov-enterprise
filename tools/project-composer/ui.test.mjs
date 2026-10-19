@@ -488,7 +488,8 @@ test('unchecking a feature that another choice still needs says it stayed, not t
   await expect(page.locator('#capability-comment')).not.toHaveAttribute('aria-disabled', 'true');
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);
   // 자동 포함 변화가 없어도 카드를 눌러 시작 구성 선택이 '직접 선택'으로 바뀐 사실은 말한다(다른 컨트롤의 값이 바뀌었다).
-  await page.locator('#capability-isg').check();
+  //   요구도 피요구도 없는 기능이어야 한다 — 행사(event). 종전 예시였던 인터넷 서비스 안내는 2026-10-19 퇴역했다.
+  await page.locator('#capability-event').check();
   await expect(page.locator('#plan-status')).toHaveText('시작 구성이 ‘직접 선택’으로 바뀌었습니다. ' + PLAN_READY);
   await page.locator('#preset').selectOption('collaboration');
   await expect(page.locator('#plan-status')).toHaveText(PLAN_READY);

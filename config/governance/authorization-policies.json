@@ -530,30 +530,6 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
-      "method": "POST",
-      "path": "/api/v1/admin/system/isg",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg",
-      "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg')",
-      "routeGate": "OPERATION_PERMISSION"
-    },
-    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/login-policies/{userId}",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
@@ -5344,41 +5320,6 @@
       "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#updateGroup",
       "access": "PERMISSION",
       "permission": "CLASS_GRP_UPDATE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/isg",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsgList",
-      "access": "PERMISSION",
-      "permission": "SERVICE_READ"
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/admin/system/isg",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg",
-      "access": "PERMISSION",
-      "permission": "SERVICE_CREATE"
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg",
-      "access": "PERMISSION",
-      "permission": "SERVICE_DELETE"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#getIsg",
-      "access": "PERMISSION",
-      "permission": "SERVICE_READ"
-    },
-    {
-      "method": "PUT",
-      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
-      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg",
-      "access": "PERMISSION",
-      "permission": "SERVICE_UPDATE"
     },
     {
       "method": "GET",
