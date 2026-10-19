@@ -185,6 +185,30 @@ describe('WorkReportClient composed write contract', () => {
     })));
   });
 
+  it('[2026-10-18] 수정은 창을 열 때 읽은 버전을 보내고, 409 면 서버 사유를 보이며 창·입력을 남기고 목록을 다시 읽는다', async () => {
+    const conflict = '다른 사용자가 먼저 수정했습니다. 저장하지 않았으니 최신 내용을 다시 불러온 뒤 고쳐 주세요.';
+    mocks.reportRows = [{ rptpSn: 31, rptTtl: '함께 고치는 보고', rptYmd: '20260901', userId: 'writer', version: 4 }];
+    mocks.updateReport.mockRejectedValueOnce({ isAxiosError: true, response: { status: 409, data: { message: conflict } } });
+    const user = userEvent.setup();
+
+    render(<WorkReportClient initialYmd="20260906" />);
+    await user.click(screen.getByRole('button', { name: '함께 고치는 보고 보고 수정' }));
+    const dialog = screen.getByRole('dialog', { name: '업무 보고 수정' });
+    const reportTitle = within(dialog).getByRole('textbox', { name: /보고 제목/ });
+    await user.clear(reportTitle);
+    await user.type(reportTitle, '내가 고친 제목');
+    await user.click(within(dialog).getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateReport).toHaveBeenCalledWith(31, expect.objectContaining({
+      rptTtl: '내가 고친 제목',
+      version: 4,
+    })));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(conflict, 'error'));
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['work-reports'] });
+    expect(dialog).toBeVisible();
+    expect(reportTitle).toHaveValue('내가 고친 제목');
+  });
+
   it('보고 등록의 일반 오류는 폼에 안내하고 편집 중인 모달과 값을 유지한다', async () => {
     mocks.createReport.mockRejectedValueOnce(new Error('보고 저장 서버 오류'));
     const user = userEvent.setup();

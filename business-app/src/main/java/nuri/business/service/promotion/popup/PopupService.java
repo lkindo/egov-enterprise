@@ -58,6 +58,7 @@ public class PopupService {
     public Long createPopup(String userId, PopupDto dto) {
         SecurityUtil.assertPermission("POPUP_CREATE");
         Long atchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
+        LocalDate[] period = noticePeriod(dto);
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
@@ -68,8 +69,8 @@ public class PopupService {
                 .popupVrtcPstn(dto.getPopupVrtcPstn())
                 .popupVrtcSz(dto.getPopupVrtcSz())
                 .popupWdthSz(dto.getPopupWdthSz())
-                .ntceBgnde(noticeDate(dto.getNtceBgnde()))
-                .ntceEndde(noticeDate(dto.getNtceEndde()))
+                .ntceBgnde(period[0])
+                .ntceEndde(period[1])
                 .stopvewSetupYn(dto.getStopvewSetupYn())
                 .ntceYn(dto.getNtceYn())
                 .build();
@@ -83,6 +84,9 @@ public class PopupService {
         SecurityUtil.assertPermission("POPUP_UPDATE");
         Popup popup = popupRepository.findById(Objects.requireNonNull(popupSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), popup.getVersion());
+        LocalDate[] period = noticePeriod(dto);
 
         Long requestedAtchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
         Long currentAtchFileSn = parsePersistedAttachmentId(popup.getFileUrl());
@@ -93,8 +97,8 @@ public class PopupService {
         popup.update(dto.getPopupTtlNm(), dto.getFileUrl(), dto.getPopupWdthPstn(),
                 dto.getPopupVrtcPstn(),
                 dto.getPopupVrtcSz(), dto.getPopupWdthSz(),
-                noticeDate(dto.getNtceBgnde()),
-                noticeDate(dto.getNtceEndde()),
+                period[0],
+                period[1],
                 dto.getStopvewSetupYn(), dto.getNtceYn());
         popup.setLastMdfrId(userId);
     }
@@ -106,6 +110,22 @@ public class PopupService {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
         popupRepository.deleteById(Objects.requireNonNull(popupSn));
+    }
+
+    /**
+     * 게시 기간 — 시작일·종료일을 읽고 순서를 확인한다. [2026-10-18] 종전에는 순서를 화면(배너·팝업 관리 화면의 폼
+     * 스키마)만 확인해, API 를 직접 부르면 종료일이 시작일보다 앞선 팝업이 저장됐고 그 팝업은 어느 날에도 뜨지 않았다
+     * ({@code findActivePopups} 는 오늘이 두 날짜 사이인 행만 고른다). 둘 중 하나가 비면 순서를 볼 수 없어 그대로 둔다.
+     *
+     * @return {@code [시작일, 종료일]} — 비어 있으면 null
+     */
+    private static LocalDate[] noticePeriod(PopupDto dto) {
+        LocalDate begin = noticeDate(dto.getNtceBgnde());
+        LocalDate end = noticeDate(dto.getNtceEndde());
+        if (begin != null && end != null && end.isBefore(begin)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "게시 종료일은 시작일보다 빠를 수 없습니다.");
+        }
+        return new LocalDate[] {begin, end};
     }
 
     /**

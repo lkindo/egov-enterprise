@@ -72,14 +72,19 @@ describe('A2 master-detail adoption census', () => {
     const client = source('src/app/admin/user/UserOrgHubClient.tsx');
     // [2026-09-14] 부서 노드는 UserOrgHubParts.tsx 로 분리했다. 선택 시맨틱은 그 파일에, 사용은 허브에 있어야 한다.
     const parts = source('src/app/admin/user/UserOrgHubParts.tsx');
+    // [2026-10-18 허브 분해] 부서 마스터(조직 구조 트리·스크롤 영역)는 UserOrgDeptMaster.tsx 로 옮겼다. 허브가 그것을 그리고,
+    //   노드 사용과 스크롤 영역 이름은 그 파일에 있어야 한다 — 허브가 부서 마스터를 그리지 않으면 아래 단언이 함께 red 다.
+    const deptMaster = source('src/app/admin/user/UserOrgDeptMaster.tsx');
 
     expect(route).toMatch(/import UserOrgHubPage from '\.\.\/UserOrgHubPage'/);
     expect(route).toMatch(/<UserOrgHubPage\b[^>]*tab="DEPTS"/);
     expect(page).toMatch(/import UserOrgHubClient from '\.\/UserOrgHubClient'/);
     expect(page).toMatch(/<UserOrgHubClient\b[^>]*defaultTab=\{tab\}/);
     expect(client).toMatch(/<MasterDetailLayout[\s\S]*active=\{activeTab === 'DEPTS'\}/);
-    expect(client).toMatch(/import \{[^}]*\bSortableDeptNode\b[^}]*\} from '\.\/UserOrgHubParts'/);
-    expect(client).toMatch(/<SortableDeptNode\b/);
+    expect(client).toMatch(/import \{[^}]*\bUserOrgDeptMaster\b[^}]*\} from '\.\/UserOrgDeptMaster'/);
+    expect(client).toMatch(/<UserOrgDeptMaster\b/);
+    expect(deptMaster).toMatch(/import \{[^}]*\bSortableDeptNode\b[^}]*\} from '\.\/UserOrgHubParts'/);
+    expect(deptMaster).toMatch(/<SortableDeptNode\b/);
     expect(parts).toContain("data-a2-master-item={isOverlay ? undefined : ''}");
     expect(parts).toContain("aria-current={isSelected ? 'true' : undefined}");
     // [2026-09-20] 종전 단언은 탭 분기 삼항(`activeTab === 'DEPTS' ? '부서 조직 구조' : …`)을 문자열로
@@ -87,7 +92,7 @@ describe('A2 master-detail adoption census', () => {
     //   DEPTS 전용이 됐고, 삼항의 else 가지는 도달할 수 없는 코드가 됐다. 불변식(부서 마스터
     //   스크롤 영역이 이 접근 이름을 갖는다)은 그대로이고 표현만 좁힌다 — 라벨을 지우거나 바꾸면
     //   여전히 red 다.
-    expect(client).toContain('aria-label="부서 조직 구조"');
+    expect(deptMaster).toContain('aria-label="부서 조직 구조"');
     expect(client).toContain("data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}");
   });
 
@@ -105,10 +110,16 @@ describe('A2 master-detail adoption census', () => {
   const approvalsInProjection = inProjection(inFrontend('src/app/approvals/ApprovalHubClient.tsx'));
   if (approvalsInProjection) it('/approvals가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
     const client = source('src/app/approvals/ApprovalHubClient.tsx');
+    // [2026-10-18 허브 분해] 마스터 목록(문서 행의 선택 단추)은 ApprovalQueueList.tsx 로 옮겼다. 선택 시맨틱은 그 파일이 갖고,
+    //   화면이 실제로 그 목록을 그리는지 함께 본다(메뉴 보드·부서 마스터와 같은 방식).
+    const queueList = source('src/app/approvals/ApprovalQueueList.tsx');
 
     expect(client).toMatch(/<MasterDetailPage\b/);
-    expect(client).toContain('data-a2-master-item');
-    expect(client).toContain("aria-current={isSelected ? 'true' : undefined}");
+    expect(client).toMatch(/import \{[^}]*\bApprovalQueueList\b[^}]*\} from '\.\/ApprovalQueueList'/);
+    expect(client).toMatch(/<ApprovalQueueList\b/);
+    // 선택 단추는 하나뿐이다 — 다른 곳에 두 번째 선택 표시가 생기면 의미가 갈린다.
+    expect(queueList.match(/data-a2-master-item\b/g)).toHaveLength(1);
+    expect(queueList).toContain("aria-current={isSelected ? 'true' : undefined}");
     // e2e(11-enterprise-workflow)가 붙잡는 두 접근 이름 — 셸 이행 뒤에도 같은 이름으로 남는다.
     expect(client).toContain('title="결재 허브"');
     expect(client).toContain('새 결재 기안');
@@ -131,6 +142,7 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toMatch(/isDraftOpen \? \(\s*<ApprovalDraftDialog\b/);
     // 표가 아니라 compact 마스터 목록이다 — 6열 표를 좁은 마스터 폭에 두지 않는다.
     expect(client).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
+    expect(queueList).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
   });
 
   if (approvalsInProjection) it('결재함 탭은 실제 질의 축을 이름으로 말하고 죽은 보관함 컨트롤을 두지 않는다', () => {

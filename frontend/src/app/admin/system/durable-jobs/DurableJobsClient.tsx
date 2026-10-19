@@ -11,6 +11,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { utcToSeoulDisplayDateTime } from '@/lib/format-date';
 import { operationsRecordAdminService, type DurableJobStatus } from '@/services/foundation/system/OperationsRecordAdminService';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -30,7 +31,11 @@ const STATUS_LABELS: Record<string, string> = {
   FAILED: '실패',
 };
 
-const formatDateTime = (value?: string | null) => (value ? value.replace('T', ' ').slice(0, 19) : '-');
+/**
+ * 원장 시각은 UTC 로 기록된다(DurableWorkDispatcher 의 `LocalDateTime.now(ZoneOffset.UTC)`). 시간대 표기 없이 오는 값을 그대로
+ * 자르면 한국 시각보다 9시간 이른 시각을 보이므로 한국 시각으로 바꿔 보인다.
+ */
+const formatDateTime = (value?: string | null) => utcToSeoulDisplayDateTime(value);
 
 /**
  * 후속 작업 상태(2026-10-01 결정 19).

@@ -235,6 +235,16 @@
     font-family: inherit;
   }
 
+  /* [2026-10-18] 초점 표시 기본값 — 컴포넌트가 초점 모양을 정하지 않은 요소(종전에는 브라우저 기본 윤곽선)에 토큰 색
+     윤곽선을 준다. @layer base 안의 :where() 라 특이성이 0 이고 utilities 층이 늘 이긴다 — outline-none·focus-visible:outline-*·
+     ring 으로 초점 모양을 정한 컴포넌트와 다투지 않는다. 그래서 outline-none 으로 초점을 지운 요소는 이 규칙으로 되살아나지
+     않는다(그런 요소는 컴포넌트에서 focus-visible 표시를 줘야 한다). 윤곽선이라 배치를 바꾸지 않고, forced-colors 에서는
+     시스템 색으로 바뀐다. */
+  :where(:focus-visible) {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
   /* 
    * [Refactored] Redundant apply-based utility dark overrides removed. 
    * Leveraged Tailwind 4.0 CSS Variable Theme Autoclass mapping instead to avoid priority collision.

@@ -92,6 +92,14 @@ spring:
           batch_versioned_data: true
           scrollable_result_set_enabled: false
           time_zone_in_legacy_mapping: false
+      # [2026-10-18] 비관적 잠금(@Lock PESSIMISTIC_*)의 대기 상한(ms). 종전에는 상한이 없어 다른 트랜잭션이 행을 오래 잡으면
+      #   요청 스레드와 DB 연결이 끝없이 기다렸다. Hibernate 7 은 PostgreSQL 에서 잠금 질의 앞뒤로 `set local lock_timeout`
+      #   을 건다. 넘기면 55P03 → PessimisticLockingFailureException → GlobalExceptionHandler 의 409(CONCURRENT_MODIFICATION)다.
+      #   테스트 application.yml 이 이 파일을 가리므로 같은 값을 그쪽에도 두고 LockWaitTimeoutIntegrationTest 가 두 값과 실제 동작을 대조한다.
+      jakarta:
+        persistence:
+          lock:
+            timeout: 5000
 
   flyway:
     enabled: true

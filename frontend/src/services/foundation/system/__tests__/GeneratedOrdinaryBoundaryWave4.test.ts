@@ -71,7 +71,8 @@ describe('foundation ordinary generated boundary wave4', () => {
 
   it('operation mutations and reward list use their exact generated descriptors', async () => {
     const externalHr = { evntSn: 1, otsdHrId: 'OUTSIDE_1', otsdHrNm: 'Kim' };
-    const reward = { rwrdSn: 2, rwardNm: 'Award' };
+    // [2026-10-18] 수상자·포상 코드는 요청·응답 계약 모두 필수다(물리 컬럼 NOT NULL).
+    const reward = { rwrdSn: 2, rwardNm: 'Award', rwardwnrId: 'U1', rwardCode: 'R01' };
     const page = { list: [reward], total: 1, page: 0, size: 10, totalPage: 1 };
     client.requestRaw
       .mockResolvedValueOnce(success(externalHr))

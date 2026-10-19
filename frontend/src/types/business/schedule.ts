@@ -22,6 +22,8 @@ interface Schedule {
   /** 현재 사용자가 수정·삭제할 수 있는가(서버 판정, DIP B4 P5). 버튼 노출에만 쓴다 — 인가는 서버가 집행한다. */
   editable?: boolean;
   deletable?: boolean;
+  /** 낙관적 잠금 버전(V2_133). 수정할 때 읽은 값을 그대로 돌려보낸다 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부한다. */
+  version?: number;
 }
 
 

@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { AlertCircle, type LucideIcon } from 'lucide-react';
+import { Tab } from '@/app/components/ui/standard-tabs';
 
 /**
  * 모니터링 허브의 표시 전용 패널 모음.
@@ -28,11 +29,9 @@ export function SampleDataBadge({ className }: { className?: string }) {
 
 export function NavButton({ tab, icon, label, active, onClick }: { tab: string, icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button
-      type="button"
-      role="tab"
+    <Tab
       id={`monitoring-tab-${tab}`}
-      aria-selected={active}
+      selected={active}
       /*
        * 패널 DOM 은 활성 탭 하나뿐이므로 aria-controls 대상 id 도 하나로 고정한다.
        * 종전에는 탭마다 `monitoring-panel-${tab}` 을 가리켜 비활성 6개가 **존재하지 않는 id** 를
@@ -47,7 +46,7 @@ export function NavButton({ tab, icon, label, active, onClick }: { tab: string, 
     >
       <span aria-hidden="true" className="shrink-0">{icon}</span>
       <span className="text-left leading-tight">{label}</span>
-    </button>
+    </Tab>
   );
 }
 

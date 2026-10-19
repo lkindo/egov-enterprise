@@ -23,6 +23,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { noteComposeSchema } from './note-form-validation';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 const NOTE_FORM_LABELS = {
   rcverId: '받는 사람',
@@ -437,8 +438,9 @@ export default function NoteHubClient() {
         <>
           {/* 종전 좌측의 '쪽지 커뮤니케이션 아키텍처' 장식 카드(120px 배경 아이콘)는 제거했다 —
               어떤 데이터도 담지 않으면서 표 폭의 1/3을 차지했다. */}
-          <div role="tablist" aria-label="쪽지함 구분" className="flex rounded-md border border-border p-0.5">
+          <TabList aria-label="쪽지함 구분" className="flex rounded-md border border-border p-0.5">
             <TabButton
+              id={noteTabId('received')}
               active={tab === 'received'}
               onClick={() => handleTabChange('received')}
               icon={<Inbox size={16} aria-hidden="true" />}
@@ -446,13 +448,14 @@ export default function NoteHubClient() {
               count={tab === 'received' ? total : undefined}
             />
             <TabButton
+              id={noteTabId('sent')}
               active={tab === 'sent'}
               onClick={() => handleTabChange('sent')}
               icon={<Send size={16} aria-hidden="true" />}
               label="보낸 쪽지함"
               count={tab === 'sent' ? total : undefined}
             />
-          </div>
+          </TabList>
           {/* [2026-09-26 DIP V3] 받은 쪽지 미읽음 수. tablist 에는 탭만 두므로 바깥에 둔다. 조회 실패(null)는 0 으로 말하지 않는다. */}
           {unreadCount !== null && unreadCount > 0 && (
             <span className="self-center text-xs font-semibold text-primary" aria-live="polite">
@@ -472,6 +475,7 @@ export default function NoteHubClient() {
         </>
       }
     >
+      <TabPanel id={NOTE_TABPANEL_ID} aria-labelledby={noteTabId(tab)}>
       <StandardDataTable
         accessibleLabel={tab === 'received' ? '받은 쪽지 목록' : '보낸 쪽지 목록'}
         columns={columns}
@@ -491,6 +495,7 @@ export default function NoteHubClient() {
           onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
         }}
       />
+      </TabPanel>
 
       <StandardModal
         isOpen={isWriteModalOpen}
@@ -547,7 +552,7 @@ export default function NoteHubClient() {
                       <button
                         type="button"
                         onClick={() => removeRecipient(rec.esntlId)}
-                        className="ml-1 text-muted-foreground hover:text-destructive focus:outline-none"
+                        className="ml-1 rounded-sm text-muted-foreground hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring"
                         aria-label={`${rec.name} 수신자 제거`}
                       >
                         <X size={12} />
@@ -709,7 +714,12 @@ export default function NoteHubClient() {
   );
 }
 
+/** 두 쪽지함 탭이 고르는 목록 패널(하나)과 탭 id. */
+const NOTE_TABPANEL_ID = 'note-tabpanel';
+const noteTabId = (value: string) => `note-tab-${value}`;
+
 interface NoteTabButtonProps {
+  id: string;
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
@@ -717,12 +727,12 @@ interface NoteTabButtonProps {
   count?: number;
 }
 
-function TabButton({ active, onClick, icon, label, count }: NoteTabButtonProps) {
+function TabButton({ id, active, onClick, icon, label, count }: NoteTabButtonProps) {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
+    <Tab
+      id={id}
+      selected={active}
+      aria-controls={NOTE_TABPANEL_ID}
       onClick={onClick}
       className={cn(
         "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
@@ -739,6 +749,6 @@ function TabButton({ active, onClick, icon, label, count }: NoteTabButtonProps) 
           {count}
         </span>
       )}
-    </button>
+    </Tab>
   );
 }

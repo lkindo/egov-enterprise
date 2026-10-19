@@ -20,6 +20,7 @@ import { useDirtyCloseGuard } from '@/hooks/useDirtyCloseGuard';
 import { toDisplayYmd } from '@/lib/format-date';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 
 /**
  * 업무 보고 화면(/smart-toolkit/work-report, 업무 허브 분해 W1).
@@ -93,7 +94,8 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
     setReportAction({ type: 'save', id: editingReport?.rptpSn });
     try {
       if (editingReport?.rptpSn) {
-        await reportService.updateReport(editingReport.rptpSn, values);
+        // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+        await reportService.updateReport(editingReport.rptpSn, { ...values, version: editingReport.version ?? undefined });
         toast('업무 보고가 수정되었습니다.', 'success');
       } else {
         await reportService.createReport(values);
@@ -105,6 +107,8 @@ export default function WorkReportClient({ initialYmd }: WorkReportClientProps) 
     } catch (error) {
       if (extractFieldErrors(error)) throw error;
       toast(failureMessage(error, '업무 보고 저장 중 오류가 발생했습니다.'), 'error');
+      // 다른 사람이 먼저 고쳤다(409) — 목록을 다시 읽어 다음 수정이 최신 버전으로 열리게 한다. 입력한 내용은 창에 남긴다.
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } finally {
       reportActionPendingRef.current = false;
       setReportAction(null);

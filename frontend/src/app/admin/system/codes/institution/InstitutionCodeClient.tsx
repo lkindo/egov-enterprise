@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 type InstitutionTab = 'list' | 'reception';
 
@@ -285,12 +286,10 @@ export default function InstitutionCodeClient({
       totalCount={total}
       actions={
         /* 탭은 조회 조건이 아니라 조회 대상 전환이라 헤더에 둔다. */
-        <div role="tablist" aria-label="기관코드 화면 전환" className="flex rounded-md border border-border p-0.5">
-          <button
-            type="button"
-            role="tab"
+        <TabList aria-label="기관코드 화면 전환" className="flex rounded-md border border-border p-0.5">
+          <Tab
             id="institution-tab-list"
-            aria-selected={activeTab === 'list'}
+            selected={activeTab === 'list'}
             aria-controls={panelId}
             onClick={() => handleTabChange('list')}
             className={cn(
@@ -298,12 +297,10 @@ export default function InstitutionCodeClient({
               activeTab === 'list' ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
             )}>
             <Server size={14} aria-hidden="true" /> 기관 목록
-          </button>
-          <button
-            type="button"
-            role="tab"
+          </Tab>
+          <Tab
             id="institution-tab-reception"
-            aria-selected={activeTab === 'reception'}
+            selected={activeTab === 'reception'}
             aria-controls={panelId}
             onClick={() => handleTabChange('reception')}
             className={cn(
@@ -311,8 +308,8 @@ export default function InstitutionCodeClient({
               activeTab === 'reception' ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
             )}>
             <History size={14} aria-hidden="true" /> 수신 이력
-          </button>
-        </div>
+          </Tab>
+        </TabList>
       }
       filter={
         <KeywordFilter
@@ -358,8 +355,7 @@ export default function InstitutionCodeClient({
         )
       }
     >
-      <div
-        role="tabpanel"
+      <TabPanel
         id={panelId}
         aria-labelledby={activeTab === 'list' ? 'institution-tab-list' : 'institution-tab-reception'}
       >
@@ -400,7 +396,7 @@ export default function InstitutionCodeClient({
             }}
           />
         )}
-      </div>
+      </TabPanel>
     </WorkListPage>
   );
 }

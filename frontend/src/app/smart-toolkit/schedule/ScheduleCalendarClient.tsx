@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { scheduleSpanDates } from '@/lib/date/schedule-span';
 import { ko } from 'date-fns/locale';
 import { failureMessage } from '@/lib/safe-error-log';
+import { isConflictError } from '@/lib/query/list-query-defaults';
 
 /**
  * 일정 화면(/smart-toolkit/schedule, 업무 허브 분해 W1).
@@ -130,7 +131,9 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
     setScheduleAction({ type: 'save', id: editingSchedule?.schdlSn });
     try {
       if (editingSchedule?.schdlSn) {
-        await updateDeptSchedule(editingSchedule.schdlSn, values as Parameters<typeof updateDeptSchedule>[1]);
+        // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+        await updateDeptSchedule(editingSchedule.schdlSn,
+          { ...values, version: editingSchedule.version } as Parameters<typeof updateDeptSchedule>[1]);
         toast('일정이 수정되었습니다.', 'success');
       } else {
         await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
@@ -141,6 +144,10 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
       // 저장 오류는 ScheduleCreateForm이 필드 귀속/일반 안내를 단독 처리한다.
       // 성공한 경우에만 현재 보고 있는 달의 일정을 다시 불러온다.
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
+    } catch (error) {
+      // 다른 사람이 먼저 고쳤다(409) — 달력을 다시 읽어 다음 수정이 최신 버전으로 열리게 한다. 안내는 폼이 서버 사유로 보인다.
+      if (isConflictError(error)) void queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
+      throw error;
     } finally {
       scheduleActionPendingRef.current = false;
       setScheduleAction(null);

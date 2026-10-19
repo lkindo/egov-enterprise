@@ -16,7 +16,7 @@ import { Search,
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { StandardTabs } from '@/app/components/ui/standard-tabs';
+import { StandardTabs, TabPanel, standardTabId } from '@/app/components/ui/standard-tabs';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 /* reusable-base:board:start */
@@ -87,6 +87,7 @@ const hasArticleSearch = articleSearchProviders.length > 0;
  * [2026-09-26 DIP V9] 종전 화면은 1글자도 그대로 보내 빈 목록을 '결과 없음' 으로 보였다.
  */
 const MIN_REMOTE_QUERY_LENGTH = 2;
+const SEARCH_RESULTS_PANEL_ID = 'search-results-panel';
 
 export const SearchResultsContent = ({
     initialResults = EMPTY_RESULTS,
@@ -335,8 +336,14 @@ export const SearchResultsContent = ({
                         items={tabs}
                         activeTab={activeTab}
                         onChange={setTab}
+                        label="검색 결과 구분"
+                        idPrefix="search"
+                        panelId={SEARCH_RESULTS_PANEL_ID}
                         className="rounded-md bg-muted/30 p-1"
                     />
+
+                    {/* 탭이 거르는 것은 아래 안내·오류·결과 전체다 — 셋을 한 탭 패널로 묶는다(간격은 바깥과 같은 space-y-4). */}
+                    <TabPanel id={SEARCH_RESULTS_PANEL_ID} aria-labelledby={standardTabId('search', activeTab)} className="space-y-4">
 
                     {/* [2026-09-02] '미지원' 안내를 **검색 범위** 안내로 바꾼다.
                         종전에는 전역 게시글 검색 API 가 없어 이 탭이 '결과 0건' 이 아니라 '기능 부재'
@@ -423,6 +430,7 @@ export const SearchResultsContent = ({
                             </div>
                         )}
                     </div>
+                    </TabPanel>
                 </div>
             </div>
         </div>

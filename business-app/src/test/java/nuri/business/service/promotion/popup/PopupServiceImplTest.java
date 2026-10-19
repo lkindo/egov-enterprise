@@ -251,6 +251,7 @@ class PopupServiceImplTest {
     @DisplayName("팝업 등록·수정 - 게시 일자가 YYYY-MM-DD 날짜가 아니면 400 이고 저장·변경하지 않는다")
     void noticeDateMustBeCalendarDate() {
         Popup popup = Popup.builder().popupSn(1L).popupTtlNm("OLD").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
         given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         // 2026-09-24 ZAP API 스캔: 날짜가 아닌 값이 LocalDate.parse 예외로 500 이 됐다.
@@ -259,6 +260,7 @@ class PopupServiceImplTest {
                 PopupDto dto = PopupDto.builder().popupTtlNm("NEW")
                         .ntceBgnde(start ? date : "2026-02-01")
                         .ntceEndde(start ? "2026-02-28" : date)
+                        .version(0)
                         .build();
                 authenticate("POPUP_CREATE");
                 assertThatThrownBy(() -> popupService.createPopup("admin", dto))
@@ -277,6 +279,50 @@ class PopupServiceImplTest {
 
         verify(popupRepository, never()).save(any());
         assertThat(popup.getPopupTtlNm()).isEqualTo("OLD");
+        assertThat(popup.getLastMdfrId()).isNull();
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 팝업 등록·수정 - 종료일이 시작일보다 앞서면 400 이고 저장·변경하지 않는다(화면만 보던 검사를 서버도 한다)")
+    void noticePeriodMustNotEndBeforeItBegins() {
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("OLD").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+        PopupDto reversed = PopupDto.builder().popupTtlNm("NEW").ntceBgnde("2026-03-10").ntceEndde("2026-03-09").version(0).build();
+
+        authenticate("POPUP_CREATE");
+        assertThatThrownBy(() -> popupService.createPopup("admin", reversed))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("종료일")
+                .extracting(error -> ((BusinessException) error).getErrorCode())
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        authenticate("POPUP_UPDATE");
+        assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", reversed))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("종료일")
+                .extracting(error -> ((BusinessException) error).getErrorCode())
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(popupRepository, never()).save(any());
+        assertThat(popup.getPopupTtlNm()).isEqualTo("OLD");
+
+        // 같은 날 시작해 같은 날 끝나는 하루 게시는 허용한다.
+        popupService.updatePopup(1L, "updater", PopupDto.builder().popupTtlNm("ONE DAY")
+                .ntceBgnde("2026-03-10").ntceEndde("2026-03-10").version(0).build());
+        assertThat(popup.getNtceEndde()).isEqualTo(LocalDate.of(2026, 3, 10));
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 팝업 수정 - 읽은 버전이 다르면 409 이고 덮어쓰지 않는다")
+    void updatePopup_rejectsStaleVersion() {
+        authenticate("POPUP_UPDATE");
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("CURRENT").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 2);
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
+
+        assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", PopupDto.builder().popupTtlNm("STALE").version(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(popup.getPopupTtlNm()).isEqualTo("CURRENT");
         assertThat(popup.getLastMdfrId()).isNull();
     }
 
@@ -306,6 +352,7 @@ class PopupServiceImplTest {
                 .popupSn(1L)
                 .popupTtlNm("OLD")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
         given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         PopupDto dto = PopupDto.builder()
@@ -314,6 +361,7 @@ class PopupServiceImplTest {
                 .ntceEndde("2026-02-28")
                 .stopvewSetupYn("N")
                 .ntceYn("N")
+                .version(0)
                 .build();
 
         // when
@@ -335,15 +383,18 @@ class PopupServiceImplTest {
                 .popupTtlNm("OLD")
                 .fileUrl("/api/v1/files/101")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
         given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         popupService.updatePopup(1L, "updater", PopupDto.builder()
                 .popupTtlNm("NEW")
                 .fileUrl("/api/v1/files/download?fileId=101")
+                .version(0)
                 .build());
         popupService.updatePopup(1L, "updater", PopupDto.builder()
                 .popupTtlNm("DETACHED")
                 .fileUrl(null)
+                .version(0)
                 .build());
 
         verifyNoInteractions(attachmentAssignmentPolicy);
@@ -359,6 +410,7 @@ class PopupServiceImplTest {
                 .popupTtlNm("OLD")
                 .fileUrl("/api/v1/files/100")
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(popup, "version", 0);
         given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
@@ -366,6 +418,7 @@ class PopupServiceImplTest {
         assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", PopupDto.builder()
                         .popupTtlNm("NEW")
                         .fileUrl("/api/v1/files/101")
+                        .version(0)
                         .build()))
                 .isInstanceOf(BusinessException.class);
 
@@ -438,7 +491,8 @@ class PopupServiceImplTest {
     void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
         Popup existing = Popup.builder().popupSn(1L).popupTtlNm("Original").build();
         existing.setFrstRgtrId("foreign-creator");
-        PopupDto request = PopupDto.builder().popupTtlNm("Changed").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        PopupDto request = PopupDto.builder().popupTtlNm("Changed").version(0).build();
 
         authenticate();
         assertDenied(() -> popupService.updatePopup(1L, "operator", request));

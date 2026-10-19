@@ -147,8 +147,12 @@ export default function CommonCodeClient({
    * 없었다 — 서버와 프런트 서비스에는 CRUD 6종이 전부 살아 있는데 배선만 없었다. 그래서 새 코드
    * 체계를 도입하려면 DB 를 직접 건드려야 했다.
    */
+  /*
+    [2026-10-18] version 은 수정 창을 열 때 읽은 낙관적 잠금 버전이다. 저장은 이 값을 보내고, 그 사이 다른 사람이 고쳤으면
+    서버가 409 로 거부해 덮어쓰지 않는다. 창이 열린 동안 목록이 다시 읽혀도 바꾸지 않는다 — 최신으로 고치려면 다시 연다.
+  */
   const [structureModal, setStructureModal] = useState<
-    { kind: 'cluster' | 'group'; mode: 'create' | 'edit' } | null
+    { kind: 'cluster' | 'group'; mode: 'create' | 'edit'; version?: number } | null
   >(null);
   const [isStructureSaving, setIsStructureSaving] = useState(false);
   const structureSubmitAttemptRef = useRef(false);
@@ -348,7 +352,7 @@ export default function CommonCodeClient({
       clsfCdExpln: source?.clsfCdExpln ?? '',
       useYn: (source?.useYn as 'Y' | 'N') ?? 'Y',
     });
-    setStructureModal({ kind: 'cluster', mode: 'edit' });
+    setStructureModal({ kind: 'cluster', mode: 'edit', version: source?.version });
   };
 
   /** 새 그룹은 반드시 분류에 속한다 — 서버가 clsfCd 를 필수로 요구한다. */
@@ -372,7 +376,7 @@ export default function CommonCodeClient({
       clsfCd: selectedNode.parentId ?? source?.clsfCd ?? '',
       useYn: (source?.useYn as 'Y' | 'N') ?? 'Y',
     });
-    setStructureModal({ kind: 'group', mode: 'edit' });
+    setStructureModal({ kind: 'group', mode: 'edit', version: source?.version });
   };
 
   const closeStructureModal = () => {
@@ -405,13 +409,15 @@ export default function CommonCodeClient({
     structureSavePendingRef.current = true;
     setIsStructureSaving(true);
     try {
-      const res = await saveClCodeAction(null, { ...values, isNew });
+      const res = await saveClCodeAction(null, { ...values, isNew, version: isNew ? undefined : structureModal?.version });
       if (res.success) {
         toast(res.message, 'success');
         setStructureModal(null);
         router.refresh();
-      } else if (!clusterForm.applyServerErrors(res)) {
-        toast(res.message, 'error');
+      } else {
+        // 다른 사람이 먼저 고쳤다(409) — 서버 사유를 보이고 목록을 다시 읽는다. 입력한 내용은 창에 남긴다.
+        if (res.conflict) router.refresh();
+        if (!clusterForm.applyServerErrors(res)) toast(res.message, 'error');
       }
     } catch (error) {
       if (!clusterForm.applyServerErrors(error)) {
@@ -430,13 +436,15 @@ export default function CommonCodeClient({
     structureSavePendingRef.current = true;
     setIsStructureSaving(true);
     try {
-      const res = await saveCmmnCodeAction(null, { ...values, isNew });
+      const res = await saveCmmnCodeAction(null, { ...values, isNew, version: isNew ? undefined : structureModal?.version });
       if (res.success) {
         toast(res.message, 'success');
         setStructureModal(null);
         router.refresh();
-      } else if (!groupForm.applyServerErrors(res)) {
-        toast(res.message, 'error');
+      } else {
+        // 다른 사람이 먼저 고쳤다(409) — 서버 사유를 보이고 목록을 다시 읽는다. 입력한 내용은 창에 남긴다.
+        if (res.conflict) router.refresh();
+        if (!groupForm.applyServerErrors(res)) toast(res.message, 'error');
       }
     } catch (error) {
       if (!groupForm.applyServerErrors(error)) {
@@ -683,7 +691,9 @@ export default function CommonCodeClient({
         ...values,
         useYn: values.useYn as 'Y' | 'N',
         cdId: targetGroupId,
-        isNew: !editingDetail
+        isNew: !editingDetail,
+        // [2026-10-18] 수정 창을 열 때 읽은 버전 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
+        version: editingDetail?.version,
       });
 
       if (res.success) {
@@ -691,6 +701,7 @@ export default function CommonCodeClient({
         await queryClient.invalidateQueries({ queryKey: ['cmmn-detail-codes', targetGroupId] });
         forceCloseDetailModal();
       } else {
+        if (res.conflict) void queryClient.invalidateQueries({ queryKey: ['cmmn-detail-codes', targetGroupId] });
         if (!form.applyServerErrors(res)) {
           toast(res.message, 'error');
         }

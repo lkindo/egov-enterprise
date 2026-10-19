@@ -1072,6 +1072,10 @@
     "column_name": "atch_file_sn"
   },
   {
+    "table_name": "tb_bnr_info",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_cmnty_info",
     "column_name": "use_yn"
   },
@@ -1192,6 +1196,10 @@
     "column_name": "cd_id_expln"
   },
   {
+    "table_name": "tb_com_cd",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_com_cd_chg_hstry",
     "column_name": "com_cd_chg_hstry_sn"
   },
@@ -1272,6 +1280,10 @@
     "column_name": "clsf_cd_expln"
   },
   {
+    "table_name": "tb_com_clsf_cd",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_com_dtl_cd",
     "column_name": "use_yn"
   },
@@ -1306,6 +1318,10 @@
   {
     "table_name": "tb_com_dtl_cd",
     "column_name": "dtl_cd_expln"
+  },
+  {
+    "table_name": "tb_com_dtl_cd",
+    "column_name": "version"
   },
   {
     "table_name": "tb_dept_job_bx",
@@ -1382,6 +1398,10 @@
   {
     "table_name": "tb_dept_task_info",
     "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_dept_task_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_dgstfn_info",
@@ -3012,6 +3032,10 @@
     "column_name": "popup_sn"
   },
   {
+    "table_name": "tb_popup_info",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_privacy_log",
     "column_name": "crt_dt"
   },
@@ -3106,6 +3130,10 @@
   {
     "table_name": "tb_rpt_info",
     "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_rpt_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_rptp_stats",
@@ -3204,6 +3232,10 @@
     "column_name": "ifml_atrz_sn"
   },
   {
+    "table_name": "tb_rward_manage",
+    "column_name": "version"
+  },
+  {
     "table_name": "tb_schdl_info",
     "column_name": "rept_se_cd"
   },
@@ -3270,6 +3302,10 @@
   {
     "table_name": "tb_schdl_info",
     "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_schdl_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_sms_info",
@@ -3426,6 +3462,10 @@
   {
     "table_name": "tb_srvy_info",
     "column_name": "rls_yn"
+  },
+  {
+    "table_name": "tb_srvy_info",
+    "column_name": "version"
   },
   {
     "table_name": "tb_srvy_qstn",

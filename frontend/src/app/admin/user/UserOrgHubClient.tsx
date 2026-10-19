@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, use, useRef, useTransition, useCallback, useId } from 'react';
+import { useState, use, useRef, useTransition, useCallback, useId, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,16 +8,10 @@ import {
   Network,
   UserMinus,
   ShieldCheck,
-  Pencil,
   UserPlus,
-  RefreshCcw,
   LayoutGrid,
-  Save,
-  KeyRound,
-  LockOpen,
   Loader2,
   UserCheck,
-  Trash2,
   Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,7 +29,6 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
-import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
@@ -44,7 +37,6 @@ import {
   bulkMoveUserDeptAction,
   bulkDeleteUsersAction
 } from '@/app/actions/userActions';
-import type { UserStatusCode } from '@/services/foundation/system/UserAdminService';
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
 
@@ -53,43 +45,43 @@ import { AdminPasswordResetForm } from '@/components/admin/user/AdminPasswordRes
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import {
-    DndContext,
-    closestCenter,
-    DragOverlay,
-    MeasuringStrategy,
-} from '@dnd-kit/core';
-import {
-    SortableContext,
-    verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { createPortal } from 'react-dom';
-import {
   AbsenceStatusNotice,
   buildStandardUserColumns,
   COMMON_USER_COLUMNS,
-  DEPT_MEMBER_PREVIEW,
-  dropAnimation,
   EMPTY_USER_FILTERS,
-  formatDeptMembersLabel,
   NavButton,
   OrgPolicyPanel,
-  SortableDeptNode,
   UserListFilterFields,
   type UserListFilters,
   UserOrgDetailPanel,
-  UserOrgMasterSection,
 } from './UserOrgHubParts';
 import { useDeptTree } from './useDeptTree';
-import { BulkUserStatusDialog, BulkUserDepartmentDialog } from './UserBulkActionDialogs';
 import type { UserOrgPrefetch, UserOrgTab } from './user-org-prefetch';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
-import { useAuth } from '@/contexts/AuthContext';
-import { canOpenPage } from '@/lib/auth/page-access';
-import { canPermission } from '@/lib/auth/permissions';
 import { handOffTarget } from '@/lib/navigation/target-handoff';
 import { requestAccountMfa } from '@/lib/navigation/command-center-bridge';
 import { failureMessage } from '@/lib/safe-error-log';
-import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-accessibility';
+import { useAuth } from '@/contexts/AuthContext';
+import { canOpenPage } from '@/lib/auth/page-access';
+import { canPermission } from '@/lib/auth/permissions';
+import { USER_DELETE_CONSEQUENCE, USER_PAGE_SIZE_OPTIONS, userOrgToolbarCounts, type UserOrgWriteOperation } from './user-org-hub-model';
+import { useUserOrgAbsences } from './useUserOrgAbsences';
+import { useUserOrgDialogs } from './useUserOrgDialogs';
+import { useUserOrgSelection } from './useUserOrgSelection';
+import { DeptDetailActions, UserDetailActions } from './UserOrgDetailActions';
+import { UserOrgToolbarActions } from './UserOrgToolbarActions';
+import { UserOrgDeptMaster } from './UserOrgDeptMaster';
+import { UserOrgBulkMoveDialog, UserOrgBulkStatusDialog } from './UserOrgBulkDialogs';
+
+/*
+ * [2026-10-18 허브 분해] 한 함수(약 1,240줄)를 동작 변경 없이 나눴다 — 값(user-org-hub-model)·
+ * 고른 항목(useUserOrgSelection)·부재 조회(useUserOrgAbsences)·대화상자 상태(useUserOrgDialogs)·
+ * 상세 동작 단추(UserOrgDetailActions)·부서 마스터(UserOrgDeptMaster)·일괄 대화상자(UserOrgBulkDialogs)·툴바 보조 동작
+ * (UserOrgToolbarActions). 이 파일 안에서는 표시 판정(useUserOrgPermissions)·사용자 목록(useUserOrgUsers)·쓰기 잠금(useUserOrgWriteLock)·상세·일괄 쓰기 동작(useUserOrgWriteActions)·부재 탭의
+ * 열(absenceColumns)을 뗐다. 쓰기 처리기는 이 파일에 둔다 —
+ * 폼 검증 census 가 단추의 처리기를 이 파일의 선언 이름으로 따라가 쓰기·동기 잠금·처리 중 표시를 함께 본다. 폼 제출 처리기
+ * (onUserSubmit·onDeptSubmit·onPasswordResetSubmit)와 그 폼, URL 을 바꾸는 코드(탭 이동·페이지)는 허브 함수에 그대로 있다.
+ */
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 페이지 하나만 읽는다.
@@ -99,21 +91,6 @@ import { treeDndAnnouncements, treeDndInstructions } from '@/lib/dnd/tree-dnd-ac
  * 빠뜨리면 이동 시 조용히 사라진다.
  */
 const LIST_PARAM_KEYS = ['page'] as const;
-
-type UserOrgWriteOperation =
-  | 'user-form'
-  | 'dept-form'
-  | 'password-reset'
-  | 'unlock-user'
-  | 'delete-user'
-  | 'delete-dept'
-  | 'bulk-delete'
-  | 'bulk-status'
-  | 'bulk-move'
-  | 'dept-hierarchy';
-
-
-
 
 /**
  * 이 허브의 탭은 곧 라우트다(감사 P1-7). 탭 전환을 로컬 state 로만 처리하면
@@ -152,211 +129,58 @@ const TAB_META: Record<UserOrgTab, { title: string; description: string }> = {
   },
 };
 
-/** 사용자 삭제 확인에서 밝히는 결과 — UserService.cleanupDependentsAndDelete 가 실제로 하는 일과 같아야 한다. */
-const USER_DELETE_CONSEQUENCE = '작성한 게시글·댓글·주소록은 시스템 관리자 계정으로 옮겨지고, 알림·커뮤니티 가입 정보·로그인 정책은 함께 삭제됩니다. 되돌릴 수 없습니다. 로그인만 막으려면 삭제하지 말고 계정 상태를 비활성으로 바꾸세요.';
-
-const USER_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
-
-export default function UserOrgHubClient({
-  defaultTab = 'USERS',
-  usersPromise,
-  deptsPromise
-}: UserOrgPrefetch & {
-  defaultTab?: UserOrgTab;
-}) {
-  const initialUsers = use(usersPromise);
-  const initialDepts = use(deptsPromise);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  const confirm = useConfirm();
-  const [isPending, startTransition] = useTransition();
-  const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
-  const router = useRouter();
+/**
+ * 사용자·조직 허브의 표시 판정(2026-10-18 허브 분해 때 허브 함수에서 뗐다 — 동작 변경 없음).
+ *
+ * <p>[2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
+ * 종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
+ * 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+ *
+ * <p>이 파일에 둔다 — operation 소비 census 의 쓰기 권한 표시 축(축 3)은 쓰기를 부르는 화면 파일이 그 권한 코드를
+ * 직접 언급하는지 본다. 다른 모듈로 옮기면 판정은 그대로여도 이 허브의 쓰기 10건이 표시 판정 없음으로 세인다.
+ */
+function useUserOrgPermissions() {
   // 권한 그룹 화면은 이 허브와 권한이 다르다 — 라우트 게이트와 같은 판정으로만 길을 보인다(DIP B4 P1).
   const { user: currentUser } = useAuth();
   const canOpenAuthority = canOpenPage(currentUser, '/admin/security/authority');
-  // [2026-10-01] 사용자 상세에서 이 사람을 대상으로 권한 배정·권한 변경 이력·로그인 이력을 연다(탭 세션 인계).
-  const canOpenLoginLog = canOpenPage(currentUser, '/admin/system/logs/login');
-  const canAssignAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_READ');
-  const canAuditAuthority = canOpenAuthority && canPermission(currentUser, 'AUTHRT_AUDIT');
-  // [결정 18] 인증앱을 잃은 사용자의 복구 승인. 승인 자체는 계정 메뉴의 추가 인증 관리가 재인증과 함께 집행한다.
-  const canRecoverMfa = canPermission(currentUser, 'MFA_RECOVER');
-  // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다. 이 화면은 조회 권한(USER_READ)만으로 들어올 수 있어,
-  //   종전에는 헬프데스크 담당자에게도 등록·수정·초기화·삭제·일괄 작업이 모두 보였고 폼을 다 채운 뒤에야 403 을 만났다.
-  //   표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
-  const canCreateUser = canPermission(currentUser, 'USER_CREATE');
-  const canUpdateUser = canPermission(currentUser, 'USER_UPDATE');
-  const canResetPassword = canPermission(currentUser, 'USER_PASSWORD');
-  const canChangeUserStatus = canPermission(currentUser, 'USER_STATUS');
-  const canMoveUserDept = canPermission(currentUser, 'USER_DEPT');
-  const canDeleteUser = canPermission(currentUser, 'USER_DELETE');
-  const canCreateDept = canPermission(currentUser, 'DEPT_CREATE');
-  const canUpdateDept = canPermission(currentUser, 'DEPT_UPDATE');
-  const canDeleteDept = canPermission(currentUser, 'DEPT_DELETE');
-  const canUpdateAbsence = canPermission(currentUser, 'ABSENCE_UPDATE');
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
-  const actionRequestRef = useRef<UserOrgWriteOperation | null>(null);
-  const isSaving = activeWriteOperation !== null;
-  /**
-   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 300ms 디바운스해 조회했고,
-   * 그래서 `조회` 버튼이 죽은 컨트롤이 될까 봐 두지 않았다(G10). 이제 조회 버튼이 조건을 적용하는 유일한 경로다.
-   * 부서 탭에서는 입력 중 재조회가 사라져, 저장하지 않은 드래그 중에 트리가 바뀌는 경로도 줄어든다.
-   */
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
-
-  /** 페이지 번호는 URL 에 반영한다 — 새로고침·공유·뒤로가기가 복원된다(감사 P1-7). */
-  const [userPage, setUserPage] = useState(() => {
-    const raw = Number(searchParams.get('page'));
-    return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
-  });
-  /**
-   * 페이지당 건수(A1 필수). URL 에는 싣지 않는다 — PD-UX-002 의 census 승인 경계 밖에서
-   * 새 URL producer 를 만들지 않는다는 기존 결정(DEC-OPS-033)을 그대로 따른다.
-   */
-  const [userPageSize, setUserPageSize] = useState(10);
-
-
-  /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
-  const [prevDefaultTab, setPrevDefaultTab] = useState(defaultTab);
-  if (defaultTab !== prevDefaultTab) {
-    setPrevDefaultTab(defaultTab);
-    setActiveTab(defaultTab);
-  }
-
-  const goToPage = useCallback((page: number) => {
-    setUserPage(page);
-    const next = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
-    if (page <= 1) next.delete('page');
-    else next.set('page', String(page));
-    const query = next.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams]);
-
-  /** 탭 = 라우트. 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
-  const handleTabChange = useCallback((tab: UserOrgTab) => {
-    startTransition(() => {
-      setActiveTab(tab);
-      setSelectedItemId(null);
-    });
-    if (tab !== defaultTab) {
-      router.push(TAB_ROUTE_MAP[tab]);
-    }
-  }, [defaultTab, router, startTransition]);
-
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
-
-  // Bulk Actions State
-  const [selectedBulkItems, setSelectedBulkItems] = useState<UserManage[]>([]);
-  const [isBulkStatusModalOpen, setIsBulkStatusModalOpen] = useState(false);
-  const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState(false);
-  const [targetStatus, setTargetStatus] = useState<UserStatusCode>('P');
-  const [targetDeptId, setTargetDeptId] = useState('');
-
-
-  const beginNonFormAction = (operation: UserOrgWriteOperation) => {
-    if (actionRequestRef.current) return false;
-    actionRequestRef.current = operation;
-    setActiveWriteOperation(operation);
-    return true;
+  return {
+    // [2026-10-01] 사용자 상세에서 이 사람을 대상으로 권한 배정·권한 변경 이력·로그인 이력을 연다(탭 세션 인계).
+    canOpenLoginLog: canOpenPage(currentUser, '/admin/system/logs/login'),
+    canAssignAuthority: canOpenAuthority && canPermission(currentUser, 'AUTHRT_READ'),
+    canAuditAuthority: canOpenAuthority && canPermission(currentUser, 'AUTHRT_AUDIT'),
+    // [결정 18] 인증앱을 잃은 사용자의 복구 승인. 승인 자체는 계정 메뉴의 추가 인증 관리가 재인증과 함께 집행한다.
+    canRecoverMfa: canPermission(currentUser, 'MFA_RECOVER'),
+    canCreateUser: canPermission(currentUser, 'USER_CREATE'),
+    canUpdateUser: canPermission(currentUser, 'USER_UPDATE'),
+    canResetPassword: canPermission(currentUser, 'USER_PASSWORD'),
+    canChangeUserStatus: canPermission(currentUser, 'USER_STATUS'),
+    canMoveUserDept: canPermission(currentUser, 'USER_DEPT'),
+    canDeleteUser: canPermission(currentUser, 'USER_DELETE'),
+    canCreateDept: canPermission(currentUser, 'DEPT_CREATE'),
+    canUpdateDept: canPermission(currentUser, 'DEPT_UPDATE'),
+    canDeleteDept: canPermission(currentUser, 'DEPT_DELETE'),
+    canUpdateAbsence: canPermission(currentUser, 'ABSENCE_UPDATE'),
   };
+}
 
-  const finishNonFormAction = (operation: UserOrgWriteOperation) => {
-    if (actionRequestRef.current !== operation) return;
-    actionRequestRef.current = null;
-    setActiveWriteOperation(null);
-  };
-
-  const handleOpenUserCreate = () => {
-    if (actionRequestRef.current) return;
-    setFormMode('create');
-    setIsUserModalOpen(true);
-  };
-
-  const handleOpenDeptCreate = () => {
-    if (actionRequestRef.current) return;
-    setFormMode('create');
-    setIsDeptModalOpen(true);
-  };
-
-  const handleOpenUserEdit = () => {
-    if (actionRequestRef.current) return;
-    setFormMode('edit');
-    setIsUserModalOpen(true);
-  };
-
-  const handleOpenDeptEdit = () => {
-    if (actionRequestRef.current) return;
-    setFormMode('edit');
-    setIsDeptModalOpen(true);
-  };
-
-  /**
-   * [2026-09-05] 관리자 비밀번호 초기화. API(`PATCH /admin/system/users/{userId}/password`)와
-   * `userAdminService.updatePassword` 는 있었지만 호출부가 0건이라, 비밀번호를 잊은 사용자를
-   * UI 안에서 구제할 경로가 없었다(로그인 화면에는 비밀번호 찾기가 없다).
-   */
-  const handleOpenPasswordReset = () => {
-    if (actionRequestRef.current || !selectedItemId) return;
-    setIsPasswordModalOpen(true);
-  };
-
-  const handleClosePasswordModal = () => {
-    if (actionRequestRef.current) return;
-    setIsPasswordModalOpen(false);
-  };
-
-  /** 서버 호출 실패는 그대로 throw 한다 — 폼이 필드 오류 매핑·입력 보존·안내를 소유한다. */
-  const onPasswordResetSubmit = async (newPassword: string) => {
-    const operation = 'password-reset' as const;
-    if (!selectedItemId || !beginNonFormAction(operation)) return;
-    try {
-      await userAdminService.updatePassword(selectedItemId as string, { newPassword });
-      const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
-      toast(`'${targetName}' 사용자의 비밀번호를 초기화했습니다. 새 비밀번호를 사용자에게 직접 전달해 주세요.`, 'success');
-      setIsPasswordModalOpen(false);
-    } finally {
-      finishNonFormAction(operation);
-    }
-  };
-
-  const handleCloseUserModal = () => {
-    if (actionRequestRef.current) return;
-    setIsUserModalOpen(false);
-  };
-
-  const handleCloseDeptModal = () => {
-    if (actionRequestRef.current) return;
-    setIsDeptModalOpen(false);
-  };
-
-  const handleCloseBulkStatusModal = () => {
-    if (actionRequestRef.current) return;
-    setIsBulkStatusModalOpen(false);
-  };
-
-  const handleCloseBulkMoveModal = () => {
-    if (actionRequestRef.current) return;
-    setIsBulkMoveModalOpen(false);
-  };
-
-
-
+/**
+ * 사용자·조직 허브의 사용자 목록 조회(2026-10-18 허브 분해 때 허브 함수에서 뗐다 — 동작 변경 없음). 사용자·부재 탭이
+ * 같은 목록을 본다. 페이지·검색어는 허브가 소유한다(페이지는 URL 에 싣는다).
+ *
+ * <p>이 파일에 둔다 — 페이지당 건수 census 는 표에 onPageSizeChange 를 넘기는 파일이 그 크기를 조회 키(queryKey)에 넣는지
+ * 같은 파일에서 본다.
+ */
+function useUserOrgUsers({ activeTab, searchKeyword, userPage, userPageSize, initialUsers }: {
+  activeTab: UserOrgTab;
+  searchKeyword: string;
+  userPage: number;
+  userPageSize: number;
+  initialUsers: Awaited<UserOrgPrefetch['usersPromise']>;
+}) {
   // [2026-09-26 DIP B5 F4] 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건. 부재 탭은 전체 사용자를 그대로 본다.
   const [userFilters, setUserFilters] = useState<UserListFilters>(EMPTY_USER_FILTERS);
   const appliedUserFilters = activeTab === 'USERS' ? userFilters : EMPTY_USER_FILTERS;
   const hasUserFilter = Boolean(appliedUserFilters.userSttsCd || appliedUserFilters.ognzId || appliedUserFilters.lckYn);
-  const userFilterId = useId();
-  // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
-  const applyUserFilter = (patch: Partial<UserListFilters>) => {
-    setUserFilters((prev) => ({ ...prev, ...patch }));
-    if (userPage !== 1) goToPage(1);
-  };
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', searchKeyword, userPage, userPageSize, appliedUserFilters],
     // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
@@ -378,49 +202,71 @@ export default function UserOrgHubClient({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
 
-  /** 페이지당 건수를 바꾸면 현재 페이지 번호가 의미를 잃으므로 1페이지로 되돌린다. */
-  const handlePageSizeChange = useCallback((size: number) => {
-    setUserPageSize(size);
-    goToPage(1);
-  }, [goToPage]);
+  return { userFilters, setUserFilters, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users };
+}
 
-  /*
-    [2026-09-07] 부재(자리비움) 배선. 종전에는 이 탭이 전체 사용자를 그린 뒤 "부재 정보는 아직
-    연동되지 않았습니다" 라고 고지만 했다(operation-consumer-census 의 unwired 부채).
+/**
+ * 쓰기 잠금 — 폼 제출과 상세·일괄 동작이 한 번에 하나만 진행한다. 동기 ref(actionRequestRef)로 같은 tick 의 연속 클릭을 막고,
+ * 화면 표시는 activeWriteOperation(무엇이 진행 중인가)으로 한다.
+ */
+function useUserOrgWriteLock() {
+  const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
+  const actionRequestRef = useRef<UserOrgWriteOperation | null>(null);
+  const isSaving = activeWriteOperation !== null;
 
-    ⚠ 조인 축은 esntlId 다 — tb_user_absn.user_id 는 이름과 달리 로그인 ID 가 아니라 사용자 PK 이고
-      FK 도 tb_user_info(esntl_id) 를 가리킨다(V2_14). 반면 이 허브의 selectedItemId 는 userId(로그인 ID)라
-      두 키가 다르므로, 부재 상태는 반드시 사용자 행의 esntlId 로 찾는다.
-
-    ⚠ 서버는 '기록이 있는 사용자' 만 돌려준다 — 목록에 없는 사용자는 부재가 아니며, 복귀한 사용자는
-      userAbsnYn='N' 행으로 남는다. 그래서 '없음 = 정상' 과 'N = 정상' 을 같게 다룬다.
-  */
-  const {
-    data: absenceRecords,
-    isLoading: isAbsencesLoading,
-    isError: isAbsencesError,
-    error: absencesError,
-    refetch: refetchAbsences,
-  } = useQuery({
-    queryKey: ['admin-user-absences'],
-    queryFn: () => userAbsenceAdminService.getAbsences(),
-    enabled: activeTab === 'ABSENCES',
-  });
-
-  const absenceByEsntlId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const record of absenceRecords ?? []) {
-      if (record?.userId) map.set(record.userId, record.userAbsnYn ?? PRESENT);
-    }
-    return map;
-  }, [absenceRecords]);
-
-  /** 조회가 실패했으면 '전원 정상' 이라고 말하지 않는다 — 모르는 것과 정상인 것은 다르다. */
-  const absenceOf = (user: UserManage): string | null => {
-    if (isAbsencesError) return null;
-    if (!user?.esntlId) return null;
-    return absenceByEsntlId.get(user.esntlId) === ABSENT ? ABSENT : PRESENT;
+  const beginNonFormAction = (operation: UserOrgWriteOperation) => {
+    if (actionRequestRef.current) return false;
+    actionRequestRef.current = operation;
+    setActiveWriteOperation(operation);
+    return true;
   };
+
+  const finishNonFormAction = (operation: UserOrgWriteOperation) => {
+    if (actionRequestRef.current !== operation) return;
+    actionRequestRef.current = null;
+    setActiveWriteOperation(null);
+  };
+
+  return { activeWriteOperation, actionRequestRef, isSaving, beginNonFormAction, finishNonFormAction };
+}
+
+/**
+ * 상세·일괄 쓰기 동작 — 부재·복귀, 계정 잠금 해제, 사용자·부서 삭제, 일괄 삭제·상태 변경·부서 이동, 조직 계층 저장. 모두 위의
+ * 쓰기 잠금을 지난다. 실패는 서버 문구로 알리고 화면 상태를 지운다(토스트 하나).
+ */
+function useUserOrgWriteActions({
+  lock,
+  selectedItemId,
+  setSelectedItemId,
+  selectedItem,
+  selectedDept,
+  absenceOf,
+  refetchUsers,
+  refetchDepts,
+  dialogs,
+  dept,
+  permissions,
+}: {
+  lock: ReturnType<typeof useUserOrgWriteLock>;
+  selectedItemId: string | number | null;
+  setSelectedItemId: (value: string | number | null) => void;
+  selectedItem: UserManage | Department | null;
+  selectedDept: Department | undefined;
+  absenceOf: (user: UserManage) => string | null;
+  refetchUsers: () => unknown;
+  refetchDepts: () => unknown;
+  dialogs: ReturnType<typeof useUserOrgDialogs>;
+  dept: Pick<ReturnType<typeof useDeptTree>, 'hasDeptChanges' | 'flattenedDepts' | 'baselineDepts' | 'markDeptChangesSaved'>;
+  permissions: { canChangeUserStatus: boolean; canMoveUserDept: boolean; canDeleteUser: boolean };
+}) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const router = useRouter();
+  const { beginNonFormAction, finishNonFormAction, isSaving, activeWriteOperation } = lock;
+  const { canChangeUserStatus, canMoveUserDept, canDeleteUser } = permissions;
+  const { selectedBulkItems, targetStatus, targetDeptId, setIsBulkStatusModalOpen, setIsBulkMoveModalOpen, isDeptModalOpen } = dialogs;
+  const { hasDeptChanges, flattenedDepts, baselineDepts, markDeptChangesSaved } = dept;
 
   const [absencePendingId, setAbsencePendingId] = useState<string | null>(null);
   const absencePendingRef = useRef(false);
@@ -448,87 +294,6 @@ export default function UserOrgHubClient({
     } finally {
       absencePendingRef.current = false;
       setAbsencePendingId(null);
-    }
-  };
-
-  /**
-   * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
-   * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
-   */
-  const deptKeyword = activeTab === 'DEPTS' ? searchKeyword : '';
-  const {
-    isDeptsLoading,
-    isDeptsPlaceholder,
-    isDeptsError,
-    deptsError,
-    refetchDepts,
-    departments,
-    deptTotal,
-    flattenedDepts,
-    activeDeptId,
-    hasDeptChanges,
-    baselineDepts,
-    deptListChangedWhileEditing,
-    discardDeptChanges,
-    markDeptChangesSaved,
-    previewDepts,
-    sensors,
-    dragHandlers: deptDragHandlers,
-    moveDeptToParent,
-    shiftDept,
-  } = useDeptTree({
-    deptKeyword,
-    initialDepts,
-    // [2026-09-26 DIP V9] 사용자를 고르면 상세의 소속을 이름으로 보이도록 부서 목록도 읽는다(캐시 공유).
-    // [2026-09-26 DIP B5 F4] 사용자 탭은 목록의 부서 열과 '소속 부서' 조건도 이름으로 보이므로 늘 읽는다.
-    //   서버 프리페치(전량)가 있으면 그것이 initialData 라 추가 요청이 없다.
-    enabled: activeTab === 'DEPTS' || activeTab === 'USERS' || isBulkMoveModalOpen || isUserModalOpen,
-    onDragSelect: setSelectedItemId,
-  });
-
-  const onUserSubmit = async (values: UserFormValues) => {
-    const operation = 'user-form' as const;
-    if (!beginNonFormAction(operation)) return;
-    try {
-      if (formMode === 'create') {
-        await userAdminService.createUser(values as UserManage);
-        toast('사용자가 성공적으로 등록되었습니다.', 'success');
-      } else {
-        await userAdminService.updateUser(selectedItemId as string, values as UserManage);
-        toast('사용자 정보가 수정되었습니다.', 'success');
-      }
-      refetchUsers();
-      queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
-      setIsUserModalOpen(false);
-    } catch (error) {
-      if (extractFieldErrors(error)) throw error;
-      // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
-      // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
-      const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');
-      toast(message, 'error');
-    } finally {
-      finishNonFormAction(operation);
-    }
-  };
-
-  const onDeptSubmit = async (values: DeptFormValues) => {
-    const operation = 'dept-form' as const;
-    if (!beginNonFormAction(operation)) return;
-    try {
-      if (formMode === 'create') {
-        await deptAdminService.createDept(values as Department);
-        toast('부서가 성공적으로 등록되었습니다.', 'success');
-      } else {
-        await deptAdminService.updateDept(selectedItemId as string, values as Department);
-        toast('부서 정보가 수정되었습니다.', 'success');
-      }
-      refetchDepts();
-      setIsDeptModalOpen(false);
-    } catch (error) {
-      if (extractFieldErrors(error)) throw error;
-      toast('부서 저장 중 오류가 발생했습니다.', 'error');
-    } finally {
-      finishNonFormAction(operation);
     }
   };
 
@@ -678,89 +443,6 @@ export default function UserOrgHubClient({
     }
   };
 
-
-
-  // 권한이 있는 일괄 작업만 싣는다. 하나도 없으면 표의 선택 체크박스도 걷는다(아래 enableSelection).
-  const userBulkActions = [
-    ...(canChangeUserStatus ? [{
-      label: '상태 변경',
-      icon: <Activity size={16} />,
-      disabled: isSaving,
-      onClick: (items: (UserManage | Department)[]) => {
-        if (actionRequestRef.current) return;
-        setSelectedBulkItems(items as UserManage[]);
-        setIsBulkStatusModalOpen(true);
-      }
-    }] : []),
-    ...(canMoveUserDept ? [{
-      label: '부서 이동',
-      icon: <Network size={16} />,
-      disabled: isSaving,
-      onClick: (items: (UserManage | Department)[]) => {
-        if (actionRequestRef.current) return;
-        setSelectedBulkItems(items as UserManage[]);
-        setIsBulkMoveModalOpen(true);
-      }
-    }] : []),
-    ...(canDeleteUser ? [{
-      label: '일괄 삭제',
-      icon: <UserMinus size={16} />,
-      variant: 'destructive' as const,
-      disabled: isSaving,
-      ariaBusy: activeWriteOperation === 'bulk-delete',
-      pendingLabel: '일괄 삭제 처리 중…',
-      onClick: handleBulkDelete
-    }] : []),
-  ];
-
-  // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
-  // 사라지는 토스트만으로는 "데이터 없음"과 구분되지 않는다(감사 P1-1).
-
-  // 탭 분기를 memo 안에 두면 분기마다 계산이 달라 컴파일러가 단일 메모 스코프로 보존하지 못한다
-  // (react-hooks/preserve-manual-memoization → 컴포넌트 전체 최적화 스킵).
-  // 조회는 컬렉션별로 선형 memo 로 분리하고, 탭 선택은 할당 없는 삼항으로 밖에서 처리한다.
-  // 부수 효과로 activeTab 만 바뀔 때 find() 를 다시 돌지 않는다.
-  const selectedUser = useMemo(
-    () => (selectedItemId ? (users || []).find(u => u?.userId === selectedItemId) : undefined),
-    [selectedItemId, users]
-  );
-  // [2026-09-26 DIP B5 F4] 부서 상세의 소속 인원 — 직속 소속만, 이름은 앞 DEPT_MEMBER_PREVIEW 명까지 보인다.
-  const deptMembersQuery = useQuery({
-    queryKey: ['admin-dept-members', activeTab === 'DEPTS' ? selectedItemId : null],
-    queryFn: () => userAdminService.getUserList({ page: 0, size: DEPT_MEMBER_PREVIEW, ognzId: String(selectedItemId) }),
-    enabled: activeTab === 'DEPTS' && Boolean(selectedItemId),
-  });
-  const deptMembersLabel = formatDeptMembersLabel(deptMembersQuery);
-
-  const selectedDept = useMemo(
-    () => (selectedItemId ? (departments || []).find(d => d?.ognzId === selectedItemId) : undefined),
-    [selectedItemId, departments]
-  );
-  /** 조직도의 선택 부서 — 저장 전 옮긴 자리까지 담는다(드래그·키보드 대안 공통). */
-  const selectedFlatDept = selectedItemId ? flattenedDepts.find((d) => d.ognzId === selectedItemId) : undefined;
-  const selectedDeptParentId = selectedFlatDept
-    ? (selectedFlatDept.parentId ?? selectedFlatDept.unloadedParentId ?? null)
-    : (selectedDept?.upOgnzId ?? null);
-  const selectedItem =
-    !selectedItemId ? null
-      : activeTab === 'DEPTS' ? (selectedDept ?? null)
-        : (activeTab === 'USERS' || activeTab === 'ABSENCES') ? (selectedUser ?? null)
-          : null;
-
-  /**
-   * 목록 API projection(UserDto 10필드)에는 ognzId·userSttsCd 가 없다. 목록 행만으로 상세 패널을
-   * 그리면 소속이 전원 '미지정'으로 보이고, 수정 폼이 ognzId='' 를 왕복시켜 부분수정 계약
-   * ("" = 지움, UserService.updateUser 참조)에 따라 실제 소속 부서를 지워버린다.
-   * 실존 상세 API(GET /admin/system/users/{userId})로 전체 레코드를 가져와 패널·수정 폼에 쓴다.
-   */
-  const { data: selectedUserDetail } = useQuery({
-    queryKey: ['admin-user-detail', selectedItemId],
-    queryFn: () => userAdminService.getUser(selectedItemId as string),
-    enabled: Boolean(selectedUser) && activeTab !== 'DEPTS',
-  });
-  const displayedUser: UserManage | undefined =
-    activeTab !== 'DEPTS' ? ((selectedUserDetail as UserManage | undefined) ?? selectedUser) : undefined;
-
   const handleSaveDeptHierarchy = async () => {
     const operation = 'dept-hierarchy' as const;
     // A2 계약: 선택한 마스터 항목이 없거나 실제 변경이 없으면 저장하지 않는다.
@@ -783,10 +465,113 @@ export default function UserOrgHubClient({
     }
   };
 
-  const userColumns: Column<UserManage>[] = [
-    ...COMMON_USER_COLUMNS,
-    // 부재 탭은 부재 여부·조치가 주 관심사이므로 연락 정보 대신 그 두 열을 붙인다(G9 — 열 과밀 금지).
-    ...(activeTab === 'ABSENCES' ? ([
+  // 권한이 있는 일괄 작업만 싣는다. 하나도 없으면 표의 선택 체크박스도 걷는다(아래 enableSelection).
+  const userBulkActions = [
+    ...(canChangeUserStatus ? [{
+      label: '상태 변경',
+      icon: <Activity size={16} />,
+      disabled: isSaving,
+      onClick: (items: (UserManage | Department)[]) => dialogs.openBulkStatus(items as UserManage[]),
+    }] : []),
+    ...(canMoveUserDept ? [{
+      label: '부서 이동',
+      icon: <Network size={16} />,
+      disabled: isSaving,
+      onClick: (items: (UserManage | Department)[]) => dialogs.openBulkMove(items as UserManage[]),
+    }] : []),
+    ...(canDeleteUser ? [{
+      label: '일괄 삭제',
+      icon: <UserMinus size={16} />,
+      variant: 'destructive' as const,
+      disabled: isSaving,
+      ariaBusy: activeWriteOperation === 'bulk-delete',
+      pendingLabel: '일괄 삭제 처리 중…',
+      onClick: handleBulkDelete
+    }] : []),
+  ];
+
+  return {
+    userBulkActions,
+    absencePendingId,
+    handleToggleAbsence,
+    handleUnlockUser,
+    handleDeleteUser,
+    handleDeleteDept,
+    handleBulkDelete,
+    handleBulkStatusUpdate,
+    handleBulkDeptMove,
+    handleSaveDeptHierarchy,
+  };
+}
+
+/**
+ * 탭(=라우트)과 사용자 목록 페이지. 페이지는 URL 에 싣고(허용 키만 남긴다), 탭은 그 라우트로 이동한다. URL 을 바꾸는 코드는 이
+ * 파일에 둔다(URL 상태 census 가 파일 단위로 센다).
+ */
+function useUserOrgNavigation({ defaultTab, setSelectedItemId }: {
+  defaultTab: UserOrgTab;
+  setSelectedItemId: (value: string | number | null) => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [activeTab, setActiveTab] = useState<UserOrgTab>(defaultTab);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  /** 페이지 번호는 URL 에 반영한다 — 새로고침·공유·뒤로가기가 복원된다(감사 P1-7). */
+  const [userPage, setUserPage] = useState(() => {
+    const raw = Number(searchParams.get('page'));
+    return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+  });
+  /**
+   * 페이지당 건수(A1 필수). URL 에는 싣지 않는다 — PD-UX-002 의 census 승인 경계 밖에서
+   * 새 URL producer 를 만들지 않는다는 기존 결정(DEC-OPS-033)을 그대로 따른다.
+   */
+  const [userPageSize, setUserPageSize] = useState(10);
+
+  /** 라우트(=탭) 이동 시 서버가 내려준 defaultTab 으로 동기화한다. */
+  const [prevDefaultTab, setPrevDefaultTab] = useState(defaultTab);
+  if (defaultTab !== prevDefaultTab) {
+    setPrevDefaultTab(defaultTab);
+    setActiveTab(defaultTab);
+  }
+
+  const goToPage = useCallback((page: number) => {
+    setUserPage(page);
+    const next = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
+    if (page <= 1) next.delete('page');
+    else next.set('page', String(page));
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  /** 탭 = 라우트. 현재 라우트가 가리키는 탭이면 이동하지 않는다(로그인정책/개인정보정책 공용 탭). */
+  const handleTabChange = useCallback((tab: UserOrgTab) => {
+    startTransition(() => {
+      setActiveTab(tab);
+      setSelectedItemId(null);
+    });
+    if (tab !== defaultTab) {
+      router.push(TAB_ROUTE_MAP[tab]);
+    }
+  }, [defaultTab, router, startTransition, setSelectedItemId]);
+
+  /** 페이지당 건수를 바꾸면 현재 페이지 번호가 의미를 잃으므로 1페이지로 되돌린다. */
+  const handlePageSizeChange = useCallback((size: number) => {
+    setUserPageSize(size);
+    goToPage(1);
+  }, [goToPage]);
+
+  return { isPending, activeTab, router, userPage, userPageSize, goToPage, handleTabChange, handlePageSizeChange };
+}
+
+/** 부재 탭의 열 — 직함·부재 여부와, 부재를 바꿀 권한(ABSENCE_UPDATE)이 있으면 조치(부재·복귀 처리). */
+function absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleToggleAbsence }: {
+  absenceOf: (user: UserManage) => string | null;
+  canUpdateAbsence: boolean;
+  absencePendingId: string | null;
+  handleToggleAbsence: (user: UserManage) => Promise<void>;
+}): Column<UserManage>[] {
+  return [
       {
         header: '직함',
         className: 'w-32',
@@ -847,156 +632,73 @@ export default function UserOrgHubClient({
           );
         },
       }] : []),
-    ] satisfies Column<UserManage>[]) : buildStandardUserColumns(departments)),
-  ];
+  ] satisfies Column<UserManage>[];
+}
 
-  const meta = TAB_META[activeTab];
-  const isPolicies = activeTab === 'POLICIES';
-  const isDeptTab = activeTab === 'DEPTS';
-  /** 조회가 실패했으면 총 건수를 0 으로 말하지 않는다 — 모르는 것과 0건은 다르다. */
-  const toolbarTotalCount = isPolicies
-    ? undefined
-    : isDeptTab
-      // ⚠ flattenedDepts.length 를 쓰면 안 된다 — effect 파생이라 SSR·첫 렌더와 재조회 중에
-      //   0 이 되어 데이터가 있는데도 '총 0건' 이라고 말한다(useDeptTree.deptTotal 주석 참조).
-      ? (isDeptsError ? undefined : deptTotal)
-      : (isUsersError ? undefined : usersData?.total);
-
-  /** 현재 페이지가 보여주는 구간. 총 건수가 0 이거나 모르면 말하지 않는다. */
-  const userRowRange = (!isPolicies && !isDeptTab && !isUsersError && usersData?.total)
-    ? {
-        from: (userPage - 1) * userPageSize + 1,
-        to: Math.min(userPage * userPageSize, usersData.total),
-      }
-    : null;
-
-  const detailActions = isDeptTab ? (
-    <>
-      {canUpdateDept && (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-label="정보 수정"
-        disabled={isSaving}
-        onClick={handleOpenDeptEdit}
-        className="gap-1.5"
-      >
-        <Pencil size={14} aria-hidden="true" /> 정보 수정
-      </Button>
-      )}
-      {canDeleteDept && (
-      <Button
-        type="button"
-        variant="destructive"
-        size="sm"
-        onClick={handleDeleteDept}
-        disabled={isSaving}
-        aria-busy={activeWriteOperation === 'delete-dept' || undefined}
-        className="gap-1.5"
-      >
-        <Trash2 size={14} aria-hidden="true" />
-        {activeWriteOperation === 'delete-dept' ? '부서 삭제 중…' : '부서 삭제'}
-      </Button>
-      )}
-    </>
-  ) : (
-    <>
-      {/* 종전에는 같은 `handleOpenUserEdit` 를 부르는 버튼이 패널 우상단(아이콘)과 하단(CTA)에
-          두 벌 있었다 — 같은 명령을 두 곳에 두면 어느 쪽이 무엇을 하는지 판정 비용만 는다(G10). */}
-      {/* [2026-10-18] 상세 레코드가 오기 전에는 수정할 수 없다 — 목록 행은 휴대전화·이메일을 가려서 싣는다. 목록 값으로
-          폼을 채우면 가린 값('010****5678')이 그대로 저장돼 원문을 덮는다. */}
-      {canUpdateUser && (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        aria-label="정보 수정"
-        disabled={isSaving || !selectedUserDetail}
-        onClick={handleOpenUserEdit}
-        className="gap-1.5"
-      >
-        <Pencil size={14} aria-hidden="true" /> 정보 수정
-      </Button>
-      )}
-      {canResetPassword && (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={handleOpenPasswordReset}
-        disabled={isSaving}
-        className="gap-1.5"
-      >
-        <KeyRound size={14} aria-hidden="true" /> 비밀번호 초기화
-      </Button>
-      )}
-      {displayedUser?.lckYn === 'Y' && canChangeUserStatus && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => void handleUnlockUser()}
-          disabled={isSaving}
-          aria-busy={activeWriteOperation === 'unlock-user' || undefined}
-          className="gap-1.5"
-        >
-          <LockOpen size={14} aria-hidden="true" /> 잠금 해제
-        </Button>
-      )}
-      {canDeleteUser && (
-      <Button
-        type="button"
-        variant="destructive"
-        size="sm"
-        onClick={handleDeleteUser}
-        disabled={isSaving}
-        aria-busy={activeWriteOperation === 'delete-user' || undefined}
-        className="gap-1.5"
-      >
-        <Trash2 size={14} aria-hidden="true" />
-        {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
-        {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
-      </Button>
-      )}
-    </>
-  );
-
+/**
+ * 사용자 상세가 권한 배정·권한 변경 이력·로그인 이력·인증앱 복구 화면으로 가는 길(탭 세션 인계). 넘길 대상이 없거나 갈 수 있는 길이
+ * 하나도 없으면 null 이다.
+ */
+function userAccessControlLinks({ displayedUser, router, canAssignAuthority, canAuditAuthority, canOpenLoginLog, canRecoverMfa }: {
+  displayedUser: UserManage | undefined;
+  router: ReturnType<typeof useRouter>;
+  canAssignAuthority: boolean;
+  canAuditAuthority: boolean;
+  canOpenLoginLog: boolean;
+  canRecoverMfa: boolean;
+}) {
   /** 사용자 상세가 권한 배정·권한 변경 이력·로그인 이력·인증앱 복구 화면으로 넘기는 대상(탭 세션 인계). */
   const handOffUser = displayedUser?.esntlId
     ? { id: displayedUser.esntlId, loginId: displayedUser.userId ?? '', name: displayedUser.userNm ?? displayedUser.userId ?? '' }
     : null;
+  return handOffUser && (canAssignAuthority || canAuditAuthority || canOpenLoginLog || (canRecoverMfa && displayedUser?.mfaEnabled))
+    ? {
+        onOpen: canAssignAuthority ? () => { handOffTarget('authority-user', handOffUser); router.push('/admin/security/authority'); } : undefined,
+        onOpenHistory: canAuditAuthority && handOffUser.loginId ? () => { handOffTarget('authority-history-user', handOffUser); router.push('/admin/security/authority'); } : undefined,
+        onOpenLoginLog: canOpenLoginLog && handOffUser.loginId ? () => { handOffTarget('login-log-user', handOffUser); router.push('/admin/system/logs/login'); } : undefined,
+        onRecoverMfa: canRecoverMfa && displayedUser?.mfaEnabled ? () => { handOffTarget('mfa-recover-user', handOffUser); requestAccountMfa(); } : undefined,
+      }
+    : null;
+}
 
+/** 탭(=라우트) 전환 줄. 탭을 누르면 그 라우트로 간다(handleTabChange). */
+function UserOrgTabNav({ activeTab, onTabChange }: { activeTab: UserOrgTab; onTabChange: (tab: UserOrgTab) => void }) {
   return (
-    <WorkListPage
-      title={meta.title}
-      description={meta.description}
-      breadcrumbItems={isDeptTab
-        ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
-        : [{ label: '사용자 관리' }, { label: meta.title }]}
-      filterStateKey="user-org-hub"
-      totalCount={toolbarTotalCount}
-      actions={isDeptTab ? (canCreateDept ? (
-        <Button type="button" onClick={handleOpenDeptCreate} disabled={isSaving} className="gap-2">
-          <LayoutGrid size={16} aria-hidden="true" /> 부서 등록
-        </Button>
-      ) : undefined) : activeTab === 'USERS' && canCreateUser ? (
-        <Button type="button" onClick={handleOpenUserCreate} disabled={isSaving} className="gap-2">
-          <UserPlus size={16} aria-hidden="true" /> 사용자 등록
-        </Button>
-      ) : undefined}
-      navigation={(
         <nav
           aria-label="사용자 및 조직 관리 화면 전환"
           className="flex w-fit max-w-full flex-wrap rounded-md border border-border bg-muted/50 p-0.5"
         >
-          <NavButton icon={<Users size={14} />} label="사용자" active={activeTab === 'USERS'} onClick={() => handleTabChange('USERS')} />
-          <NavButton icon={<Network size={14} />} label="부서 관리" active={isDeptTab} onClick={() => handleTabChange('DEPTS')} />
-          <NavButton icon={<UserMinus size={14} />} label="부재 상태 관리" active={activeTab === 'ABSENCES'} onClick={() => handleTabChange('ABSENCES')} />
-          <NavButton icon={<ShieldCheck size={14} />} label="조직 정책" active={isPolicies} onClick={() => handleTabChange('POLICIES')} />
+          <NavButton icon={<Users size={14} />} label="사용자" active={activeTab === 'USERS'} onClick={() => onTabChange('USERS')} />
+          <NavButton icon={<Network size={14} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => onTabChange('DEPTS')} />
+          <NavButton icon={<UserMinus size={14} />} label="부재 상태 관리" active={activeTab === 'ABSENCES'} onClick={() => onTabChange('ABSENCES')} />
+          <NavButton icon={<ShieldCheck size={14} />} label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => onTabChange('POLICIES')} />
         </nav>
-      )}
-      filter={isPolicies ? undefined : (
+  );
+}
+
+/** 조회조건 — 검색어(부서 탭은 부서 검색)와 사용자 탭의 계정 상태·소속 부서·로그인 잠금 조건, 부서 탭의 검색 안내. */
+function UserOrgFilterBar({
+  isDeptTab,
+  showUserFilters,
+  searchKeyword,
+  onSearch,
+  onReset,
+  userFilterId,
+  userFilters,
+  departments,
+  onChangeFilter,
+}: {
+  isDeptTab: boolean;
+  showUserFilters: boolean;
+  searchKeyword: string;
+  onSearch: (next: string) => void;
+  onReset: () => void;
+  userFilterId: string;
+  userFilters: UserListFilters;
+  departments: Department[];
+  onChangeFilter: (patch: Partial<UserListFilters>) => void;
+}) {
+  return (
         <div className="flex flex-wrap items-end gap-2">
           {/* ⚠ min-width 는 sm 이상에서만 건다 — 320px 뷰포트에서 14rem(224px) 하한이 flex-shrink 를
               무력화해 조회조건 영역이 가로로 넘친다(ui-ux-task-flow-optimization 가이드의 320px 무넘침
@@ -1009,26 +711,17 @@ export default function UserOrgHubClient({
               label={isDeptTab ? '부서 검색' : '사용자 검색'}
               placeholder="검색어를 입력하세요..."
               value={searchKeyword}
-              onSearch={(next) => {
-                setSearchKeyword(next);
-                if (isDeptTab) setSelectedItemId(null);
-                if (userPage !== 1) goToPage(1);
-              }}
-              onReset={() => {
-                setSearchKeyword('');
-                if (isDeptTab) setSelectedItemId(null);
-                else setUserFilters(EMPTY_USER_FILTERS);
-                if (userPage !== 1) goToPage(1);
-              }}
+              onSearch={onSearch}
+              onReset={onReset}
             >
               {/* [2026-09-26 DIP B5 F4] 사용자 탭만 계정 상태·소속 부서·로그인 잠금으로 좁힌다.
                   부재 탭은 부재를 판정하려고 전체 사용자를 보므로 조건을 두지 않는다. 부서는 직속 소속만 본다. */}
-              {activeTab === 'USERS' && (
+              {showUserFilters && (
                 <UserListFilterFields
                   userFilterId={userFilterId}
                   userFilters={userFilters}
                   departments={departments}
-                  onChangeFilter={applyUserFilter}
+                  onChangeFilter={onChangeFilter}
                 />
               )}
             </KeywordFilter>
@@ -1054,33 +747,228 @@ export default function UserOrgHubClient({
             </p>
           )}
         </div>
+  );
+}
+
+export default function UserOrgHubClient({
+  defaultTab = 'USERS',
+  usersPromise,
+  deptsPromise
+}: UserOrgPrefetch & {
+  defaultTab?: UserOrgTab;
+}) {
+  const initialUsers = use(usersPromise);
+  const initialDepts = use(deptsPromise);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const {
+    canOpenLoginLog, canAssignAuthority, canAuditAuthority, canRecoverMfa,
+    canCreateUser, canUpdateUser, canResetPassword, canChangeUserStatus, canMoveUserDept, canDeleteUser,
+    canCreateDept, canUpdateDept, canDeleteDept, canUpdateAbsence,
+  } = useUserOrgPermissions();
+  const lock = useUserOrgWriteLock();
+  const { activeWriteOperation, actionRequestRef, isSaving, beginNonFormAction, finishNonFormAction } = lock;
+  /**
+   * [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 300ms 디바운스해 조회했고,
+   * 그래서 `조회` 버튼이 죽은 컨트롤이 될까 봐 두지 않았다(G10). 이제 조회 버튼이 조건을 적용하는 유일한 경로다.
+   * 부서 탭에서는 입력 중 재조회가 사라져, 저장하지 않은 드래그 중에 트리가 바뀌는 경로도 줄어든다.
+   */
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
+  const {
+    isPending, activeTab, router, userPage, userPageSize, goToPage, handleTabChange, handlePageSizeChange,
+  } = useUserOrgNavigation({ defaultTab, setSelectedItemId });
+
+  const dialogs = useUserOrgDialogs(actionRequestRef, selectedItemId);
+  const { isUserModalOpen, setIsUserModalOpen, isPasswordModalOpen, setIsPasswordModalOpen, isDeptModalOpen, setIsDeptModalOpen, formMode } = dialogs;
+
+  /** 서버 호출 실패는 그대로 throw 한다 — 폼이 필드 오류 매핑·입력 보존·안내를 소유한다. */
+  const onPasswordResetSubmit = async (newPassword: string) => {
+    const operation = 'password-reset' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
+    try {
+      await userAdminService.updatePassword(selectedItemId as string, { newPassword });
+      const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
+      toast(`'${targetName}' 사용자의 비밀번호를 초기화했습니다. 새 비밀번호를 사용자에게 직접 전달해 주세요.`, 'success');
+      setIsPasswordModalOpen(false);
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  const { userFilters, setUserFilters, hasUserFilter, usersData, isUsersLoading, isUsersError, usersError, refetchUsers, users } = useUserOrgUsers({
+    activeTab, searchKeyword, userPage, userPageSize, initialUsers,
+  });
+  const userFilterId = useId();
+  // 조건이 바뀌면 1페이지로 돌아간다 — 검색어와 같은 규칙(감사 P1-8).
+  const applyUserFilter = (patch: Partial<UserListFilters>) => {
+    setUserFilters((prev) => ({ ...prev, ...patch }));
+    if (userPage !== 1) goToPage(1);
+  };
+
+  const { isAbsencesLoading, isAbsencesError, absencesError, refetchAbsences, absenceOf } = useUserOrgAbsences(activeTab === 'ABSENCES');
+
+  /**
+   * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
+   * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
+   */
+  const deptKeyword = activeTab === 'DEPTS' ? searchKeyword : '';
+  const deptTree = useDeptTree({
+    deptKeyword,
+    initialDepts,
+    // [2026-09-26 DIP V9] 사용자를 고르면 상세의 소속을 이름으로 보이도록 부서 목록도 읽는다(캐시 공유).
+    // [2026-09-26 DIP B5 F4] 사용자 탭은 목록의 부서 열과 '소속 부서' 조건도 이름으로 보이므로 늘 읽는다.
+    //   서버 프리페치(전량)가 있으면 그것이 initialData 라 추가 요청이 없다.
+    enabled: activeTab === 'DEPTS' || activeTab === 'USERS' || dialogs.isBulkMoveModalOpen || isUserModalOpen,
+    onDragSelect: setSelectedItemId,
+  });
+  const { isDeptsLoading, isDeptsError, refetchDepts, departments, deptTotal, flattenedDepts, hasDeptChanges } = deptTree;
+
+  const onUserSubmit = async (values: UserFormValues) => {
+    const operation = 'user-form' as const;
+    if (!beginNonFormAction(operation)) return;
+    try {
+      if (formMode === 'create') {
+        await userAdminService.createUser(values as UserManage);
+        toast('사용자가 성공적으로 등록되었습니다.', 'success');
+      } else {
+        await userAdminService.updateUser(selectedItemId as string, values as UserManage);
+        toast('사용자 정보가 수정되었습니다.', 'success');
+      }
+      refetchUsers();
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
+      setIsUserModalOpen(false);
+    } catch (error) {
+      if (extractFieldErrors(error)) throw error;
+      // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
+      // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
+      const message = failureMessage(error, '사용자 저장 중 오류가 발생했습니다.');
+      toast(message, 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  const onDeptSubmit = async (values: DeptFormValues) => {
+    const operation = 'dept-form' as const;
+    if (!beginNonFormAction(operation)) return;
+    try {
+      if (formMode === 'create') {
+        await deptAdminService.createDept(values as Department);
+        toast('부서가 성공적으로 등록되었습니다.', 'success');
+      } else {
+        await deptAdminService.updateDept(selectedItemId as string, values as Department);
+        toast('부서 정보가 수정되었습니다.', 'success');
+      }
+      refetchDepts();
+      setIsDeptModalOpen(false);
+    } catch (error) {
+      if (extractFieldErrors(error)) throw error;
+      toast('부서 저장 중 오류가 발생했습니다.', 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
+  // 사라지는 토스트만으로는 "데이터 없음"과 구분되지 않는다(감사 P1-1).
+
+  const {
+    deptMembersLabel, selectedDept, selectedFlatDept, selectedDeptParentId, selectedItem, selectedUserDetail, displayedUser,
+  } = useUserOrgSelection({ activeTab, selectedItemId, users, departments, flattenedDepts });
+
+  const {
+    absencePendingId, handleToggleAbsence, handleUnlockUser, handleDeleteUser, handleDeleteDept,
+    handleBulkStatusUpdate, handleBulkDeptMove, handleSaveDeptHierarchy, userBulkActions,
+  } = useUserOrgWriteActions({
+    lock, selectedItemId, setSelectedItemId, selectedItem, selectedDept, absenceOf, refetchUsers, refetchDepts, dialogs, dept: deptTree,
+    permissions: { canChangeUserStatus, canMoveUserDept, canDeleteUser },
+  });
+
+  const userColumns: Column<UserManage>[] = [
+    ...COMMON_USER_COLUMNS,
+    // 부재 탭은 부재 여부·조치가 주 관심사이므로 연락 정보 대신 그 두 열을 붙인다(G9 — 열 과밀 금지).
+    ...(activeTab === 'ABSENCES'
+      ? absenceColumns({ absenceOf, canUpdateAbsence, absencePendingId, handleToggleAbsence })
+      : buildStandardUserColumns(departments)),
+  ];
+
+  const meta = TAB_META[activeTab];
+  const isPolicies = activeTab === 'POLICIES';
+  const isDeptTab = activeTab === 'DEPTS';
+  const { toolbarTotalCount, userRowRange } = userOrgToolbarCounts({
+    activeTab, isDeptsError, deptTotal, isUsersError, usersTotal: usersData?.total, userPage, userPageSize,
+  });
+
+  const detailActions = isDeptTab ? (
+    <DeptDetailActions
+      canUpdateDept={canUpdateDept}
+      canDeleteDept={canDeleteDept}
+      locked={isSaving}
+      deleteBusy={activeWriteOperation === 'delete-dept'}
+      onOpenEdit={dialogs.handleOpenDeptEdit}
+      handleDeleteDept={handleDeleteDept}
+    />
+  ) : (
+    <UserDetailActions
+      canUpdateUser={canUpdateUser}
+      canResetPassword={canResetPassword}
+      canUnlock={displayedUser?.lckYn === 'Y' && canChangeUserStatus}
+      canDeleteUser={canDeleteUser}
+      locked={isSaving}
+      detailLoaded={Boolean(selectedUserDetail)}
+      unlockBusy={activeWriteOperation === 'unlock-user'}
+      deleteBusy={activeWriteOperation === 'delete-user'}
+      onOpenEdit={dialogs.handleOpenUserEdit}
+      onOpenPasswordReset={dialogs.handleOpenPasswordReset}
+      onUnlock={() => void handleUnlockUser()}
+      handleDeleteUser={handleDeleteUser}
+    />
+  );
+
+  return (
+    <WorkListPage
+      title={meta.title}
+      description={meta.description}
+      breadcrumbItems={isDeptTab
+        ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
+        : [{ label: '사용자 관리' }, { label: meta.title }]}
+      filterStateKey="user-org-hub"
+      totalCount={toolbarTotalCount}
+      actions={isDeptTab ? (canCreateDept ? (
+        <Button type="button" onClick={dialogs.handleOpenDeptCreate} disabled={isSaving} className="gap-2">
+          <LayoutGrid size={16} aria-hidden="true" /> 부서 등록
+        </Button>
+      ) : undefined) : activeTab === 'USERS' && canCreateUser ? (
+        <Button type="button" onClick={dialogs.handleOpenUserCreate} disabled={isSaving} className="gap-2">
+          <UserPlus size={16} aria-hidden="true" /> 사용자 등록
+        </Button>
+      ) : undefined}
+      navigation={<UserOrgTabNav activeTab={activeTab} onTabChange={handleTabChange} />}
+      filter={isPolicies ? undefined : (
+        <UserOrgFilterBar
+          isDeptTab={isDeptTab}
+          showUserFilters={activeTab === 'USERS'}
+          searchKeyword={searchKeyword}
+          onSearch={(next) => {
+            setSearchKeyword(next);
+            if (isDeptTab) setSelectedItemId(null);
+            if (userPage !== 1) goToPage(1);
+          }}
+          onReset={() => {
+            setSearchKeyword('');
+            if (isDeptTab) setSelectedItemId(null);
+            else setUserFilters(EMPTY_USER_FILTERS);
+            if (userPage !== 1) goToPage(1);
+          }}
+          userFilterId={userFilterId}
+          userFilters={userFilters}
+          departments={departments}
+          onChangeFilter={applyUserFilter}
+        />
       )}
       toolbarActions={isPolicies ? undefined : (
-        <>
-        {/* 표 하단의 'N–M번째' 는 StandardDataTable 이 pagination.totalCount 를 받을 때만 그리는데,
-            총 건수는 셸 툴바가 단독 소유해야 해서(이중 표기 금지) 표에 넘기지 않는다. 그 결과 사라지는
-            "지금 몇 번째를 보고 있는가" 를 여기서 직접 말한다. */}
-        {userRowRange && (
-          <span className="text-[length:var(--font-size-body)] text-muted-foreground tabular-nums">
-            {userRowRange.from.toLocaleString()}–{userRowRange.to.toLocaleString()}번째
-          </span>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          // 무인자 invalidateQueries() 는 메뉴·알림 등 이 화면과 무관한 캐시까지
-          // 전부 재요청시킨다 — 이 화면이 쓰는 두 키로 좁힌다(감사 P2).
-          onClick={() => {
-            queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
-          }}
-          className="gap-1.5"
-        >
-          <RefreshCcw size={14} aria-hidden="true" className={cn((isUsersLoading || isDeptsLoading) && 'animate-spin')} />
-          새로고침
-        </Button>
-        </>
+        <UserOrgToolbarActions rowRange={userRowRange} refreshing={isUsersLoading || isDeptsLoading} />
       )}
     >
       {isPolicies ? (
@@ -1116,105 +1004,18 @@ export default function UserOrgHubClient({
             )}
 
             {isDeptTab ? (
-              <UserOrgMasterSection
-                title="조직 구조"
-                description={canUpdateDept ? '끌어서 순서를 바꾸고 오른쪽으로 밀어 하위 부서로 만듭니다. 키보드로는 부서를 고른 뒤 상세의 부서 자리 바꾸기를 씁니다.' : '부서를 선택하면 오른쪽에 상세가 열립니다.'}
-                icon={Network}
-                tools={canUpdateDept ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleSaveDeptHierarchy}
-                    disabled={!hasDeptChanges || !selectedDept || isSaving || isDeptModalOpen}
-                    aria-busy={activeWriteOperation === 'dept-hierarchy' || undefined}
-                    className="gap-1.5"
-                  >
-                    {activeWriteOperation === 'dept-hierarchy'
-                      ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" />
-                      : <Save size={14} aria-hidden="true" />}
-                    {activeWriteOperation === 'dept-hierarchy' ? '조직 계층 저장 중…' : '조직 계층 저장'}
-                  </Button>
-                ) : undefined}
-              >
-                {deptListChangedWhileEditing && (
-                  <div role="status" className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-                    <span>저장하지 않은 순서 변경이 있는 동안 부서 목록이 다시 조회됐습니다. 저장하면 지금 화면의 순서로 반영되고, 취소하면 최신 목록으로 돌아갑니다.</span>
-                    <Button type="button" size="sm" variant="outline" onClick={discardDeptChanges} disabled={isSaving}>변경 취소</Button>
-                  </div>
-                )}
-                {/* ⚠ 이 스크롤 영역은 DEPTS 전용이다 — USERS·ABSENCES 는 표가 자기 스크롤을 소유하므로
-                    여기에 탭 분기를 두면 도달할 수 없는 가지가 된다. A2 census 는 이 라벨을
-                    부서 마스터 스크롤 영역의 이름으로 고정한다. */}
-                <div
-                  role="region"
-                  aria-label="부서 조직 구조"
-                  tabIndex={0}
-                  className="max-h-[60vh] min-h-0 flex-1 overflow-y-auto pr-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                >
-                  {/* 조직도는 테이블이 아니라 D&D 트리다. 실패를 토스트로만 알리면 화면은
-                      '부서 0건'으로 남아 조회 실패와 구분되지 않는다(감사 P1-1). */}
-                  {isDeptsError ? (
-                    <ErrorStateDisplay error={deptsError} onRetry={() => refetchDepts()} />
-                  ) : (
-                    <>
-                      <DndContext
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-                          accessibility={{
-                            announcements: treeDndAnnouncements('부서', (id) => flattenedDepts.find((d) => d.ognzId === String(id))?.ognzNm ?? undefined),
-                            screenReaderInstructions: treeDndInstructions('부서', '상세의 부서 자리 바꾸기'),
-                          }}
-                          {...deptDragHandlers}
-                      >
-                          <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
-                              <div className="space-y-0.5">
-                                  {previewDepts.map((node, index) => (
-                                      <SortableDeptNode
-                                          key={node.ognzId}
-                                          node={node}
-                                          isSelected={selectedItemId === node.ognzId}
-                                          isTabStop={selectedItemId === node.ognzId || (selectedItemId === null && index === 0)}
-                                          onClick={() => setSelectedItemId(node.ognzId || null)}
-                                          reorderable={canUpdateDept}
-                                      />
-                                  ))}
-                              </div>
-                          </SortableContext>
-
-                          {typeof document !== 'undefined' && createPortal(
-                              <DragOverlay dropAnimation={dropAnimation}>
-                                  {activeDeptId ? (
-                                      <SortableDeptNode
-                                          node={flattenedDepts.find(n => n.ognzId === activeDeptId)!}
-                                          isSelected={false}
-                                          isTabStop={false}
-                                          onClick={() => {}}
-                                          isOverlay
-                                      />
-                                  ) : null}
-                              </DragOverlay>,
-                              document.body
-                          )}
-                      </DndContext>
-                      {/* 이전 검색어가 0건이었으면 새 검색어의 응답이 오기 전에도 행이 비어 있다 — 그때 새 검색어에 대해
-                          '없습니다' 라고 말하지 않고 조회 중임을 알린다(G15, DEC-OPS-195 ③의 갱신 중 상태 문장). */}
-                      {flattenedDepts.length === 0 && !isDeptsLoading && (
-                          <p
-                            className="py-10 text-center text-[length:var(--font-size-body)] text-muted-foreground"
-                            {...(isDeptsPlaceholder ? { role: 'status' } : {})}
-                          >
-                            {isDeptsPlaceholder
-                              ? '부서를 불러오는 중…'
-                              : deptKeyword
-                                ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.`
-                                : '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'}
-                          </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </UserOrgMasterSection>
+              <UserOrgDeptMaster
+                canUpdateDept={canUpdateDept}
+                locked={isSaving}
+                saveBusy={activeWriteOperation === 'dept-hierarchy'}
+                hasSelectedDept={Boolean(selectedDept)}
+                isDeptModalOpen={isDeptModalOpen}
+                handleSaveDeptHierarchy={handleSaveDeptHierarchy}
+                deptTree={deptTree}
+                deptKeyword={deptKeyword}
+                selectedItemId={selectedItemId}
+                onSelectDept={setSelectedItemId}
+              />
             ) : (
               <StandardDataTable<UserManage>
                   columns={userColumns as Column<UserManage>[]}
@@ -1265,18 +1066,11 @@ export default function UserOrgHubClient({
               flattenedDepts={flattenedDepts}
               isSaving={isSaving}
               isDeptModalOpen={isDeptModalOpen}
-              onMoveDeptToParent={moveDeptToParent}
-              onShiftDept={shiftDept}
-              accessControlLinks={
-                !isDeptTab && handOffUser && (canAssignAuthority || canAuditAuthority || canOpenLoginLog || (canRecoverMfa && displayedUser?.mfaEnabled))
-                  ? {
-                      onOpen: canAssignAuthority ? () => { handOffTarget('authority-user', handOffUser); router.push('/admin/security/authority'); } : undefined,
-                      onOpenHistory: canAuditAuthority && handOffUser.loginId ? () => { handOffTarget('authority-history-user', handOffUser); router.push('/admin/security/authority'); } : undefined,
-                      onOpenLoginLog: canOpenLoginLog && handOffUser.loginId ? () => { handOffTarget('login-log-user', handOffUser); router.push('/admin/system/logs/login'); } : undefined,
-                      onRecoverMfa: canRecoverMfa && displayedUser?.mfaEnabled ? () => { handOffTarget('mfa-recover-user', handOffUser); requestAccountMfa(); } : undefined,
-                    }
-                  : null
-              }
+              onMoveDeptToParent={deptTree.moveDeptToParent}
+              onShiftDept={deptTree.shiftDept}
+              accessControlLinks={isDeptTab ? null : userAccessControlLinks({
+                displayedUser, router, canAssignAuthority, canAuditAuthority, canOpenLoginLog, canRecoverMfa,
+              })}
             />
           </div>
         </MasterDetailLayout>
@@ -1284,7 +1078,7 @@ export default function UserOrgHubClient({
 
       <StandardModal
         isOpen={isUserModalOpen}
-        onClose={handleCloseUserModal}
+        onClose={dialogs.handleCloseUserModal}
         title={formMode === 'create' ? '신규 사용자 등록' : '사용자 정보 수정'}
         maxWidth="2xl"
       >
@@ -1297,7 +1091,7 @@ export default function UserOrgHubClient({
           initialData={formMode === 'edit' ? (selectedUserDetail as UserManage | undefined) : undefined}
           departments={departments}
           onSubmit={onUserSubmit}
-          onCancel={handleCloseUserModal}
+          onCancel={dialogs.handleCloseUserModal}
           isPending={activeWriteOperation === 'user-form'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'user-form'}
         />
@@ -1305,7 +1099,7 @@ export default function UserOrgHubClient({
 
       <StandardModal
         isOpen={isPasswordModalOpen}
-        onClose={handleClosePasswordModal}
+        onClose={dialogs.handleClosePasswordModal}
         title="비밀번호 초기화"
         maxWidth="md"
       >
@@ -1314,7 +1108,7 @@ export default function UserOrgHubClient({
           key={`password-reset-${String(selectedItemId ?? '')}`}
           targetLabel={`${(selectedItem as UserManage)?.userNm ?? ''}${selectedItemId ? `(${String(selectedItemId)})` : ''}`.trim() || String(selectedItemId ?? '')}
           onSubmit={onPasswordResetSubmit}
-          onCancel={handleClosePasswordModal}
+          onCancel={dialogs.handleClosePasswordModal}
           isPending={activeWriteOperation === 'password-reset'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'password-reset'}
         />
@@ -1322,7 +1116,7 @@ export default function UserOrgHubClient({
 
       <StandardModal
         isOpen={isDeptModalOpen}
-        onClose={handleCloseDeptModal}
+        onClose={dialogs.handleCloseDeptModal}
         title={formMode === 'create' ? '신규 부서 등록' : '부서 정보 수정'}
         maxWidth="lg"
       >
@@ -1331,65 +1125,35 @@ export default function UserOrgHubClient({
           initialData={formMode === 'edit' ? (selectedItem as Department) : undefined}
           parentOptions={flattenedDepts
             .filter((dept) => dept.ognzId)
-            .map((dept) => ({ ognzId: dept.ognzId as string, label: `${'\u3000'.repeat(dept.depth)}${dept.ognzNm ?? dept.ognzId}` }))}
+            .map((dept) => ({ ognzId: dept.ognzId as string, label: `${'　'.repeat(dept.depth)}${dept.ognzNm ?? dept.ognzId}` }))}
           onSubmit={onDeptSubmit}
-          onCancel={handleCloseDeptModal}
+          onCancel={dialogs.handleCloseDeptModal}
           isPending={activeWriteOperation === 'dept-form'}
           externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'dept-form'}
         />
       </StandardModal>
 
-      <BulkUserStatusDialog
-        isOpen={isBulkStatusModalOpen}
-        users={selectedBulkItems}
-        isSaving={isSaving}
-        onClose={handleCloseBulkStatusModal}
-        status={targetStatus}
-        onStatusChange={setTargetStatus}
-        footer={
-          <div className="flex justify-end gap-2 border-t border-border pt-3">
-            <Button type="button" variant="outline" disabled={isSaving} onClick={handleCloseBulkStatusModal}>
-              취소
-            </Button>
-            <Button
-              onClick={() => void handleBulkStatusUpdate()}
-              disabled={isSaving}
-              aria-busy={activeWriteOperation === 'bulk-status' || undefined}
-              className="gap-1.5"
-            >
-              {activeWriteOperation === 'bulk-status' ? (
-                <><RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> 상태 일괄 적용 중…</>
-              ) : '상태 일괄 적용'}
-            </Button>
-          </div>
-        }
+      <UserOrgBulkStatusDialog
+        isOpen={dialogs.isBulkStatusModalOpen}
+        users={dialogs.selectedBulkItems}
+        locked={isSaving}
+        applyBusy={activeWriteOperation === 'bulk-status'}
+        onClose={dialogs.handleCloseBulkStatusModal}
+        status={dialogs.targetStatus}
+        onStatusChange={dialogs.setTargetStatus}
+        handleBulkStatusUpdate={handleBulkStatusUpdate}
       />
-      <BulkUserDepartmentDialog
-        isOpen={isBulkMoveModalOpen}
-        users={selectedBulkItems}
-        isSaving={isSaving}
-        onClose={handleCloseBulkMoveModal}
+      <UserOrgBulkMoveDialog
+        isOpen={dialogs.isBulkMoveModalOpen}
+        users={dialogs.selectedBulkItems}
+        locked={isSaving}
+        moveBusy={activeWriteOperation === 'bulk-move'}
+        onClose={dialogs.handleCloseBulkMoveModal}
         departments={flattenedDepts}
         isLoading={isDeptsLoading}
-        departmentId={targetDeptId}
-        onDepartmentChange={setTargetDeptId}
-        footer={
-          <div className="flex justify-end gap-2 border-t border-border pt-3">
-            <Button type="button" variant="outline" disabled={isSaving} onClick={handleCloseBulkMoveModal}>
-              취소
-            </Button>
-            <Button
-              onClick={() => void handleBulkDeptMove()}
-              disabled={isSaving}
-              aria-busy={activeWriteOperation === 'bulk-move' || undefined}
-              className="gap-1.5"
-            >
-              {activeWriteOperation === 'bulk-move' ? (
-                <><RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> 부서 이동 실행 중…</>
-              ) : '부서 이동 실행'}
-            </Button>
-          </div>
-        }
+        departmentId={dialogs.targetDeptId}
+        onDepartmentChange={dialogs.setTargetDeptId}
+        handleBulkDeptMove={handleBulkDeptMove}
       />
     </WorkListPage>
   );

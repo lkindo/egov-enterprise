@@ -187,6 +187,7 @@ class BannerServiceTest {
                 .bnrNm("Old Banner")
                 .sortOrdr(1L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existingBanner, "version", 0);
         given(bannerRepository.findById(1L)).willReturn(Optional.of(existingBanner));
 
         BannerDto updateDto = BannerDto.builder()
@@ -195,6 +196,7 @@ class BannerServiceTest {
                 .linkUrl("http://updated.com")
                 .sortOrdr(2L)
                 .rfltYn("N")
+                .version(0)
                 .build();
 
         // when
@@ -217,11 +219,13 @@ class BannerServiceTest {
                 .linkUrl("https://old.example")
                 .atchFileSn(100L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         BannerDto request = BannerDto.builder()
                 .bnrSn(1L)
                 .bnrNm("New Banner")
                 .linkUrl("https://new.example")
                 .atchFileSn(101L)
+                .version(0)
                 .build();
         given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
         org.mockito.Mockito.doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
@@ -245,12 +249,13 @@ class BannerServiceTest {
                 .bnrNm("Old Banner")
                 .atchFileSn(100L)
                 .build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
         given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
 
         bannerService.updateBanner(BannerDto.builder()
-                .bnrSn(1L).bnrNm("Same").atchFileSn(100L).build());
+                .bnrSn(1L).bnrNm("Same").atchFileSn(100L).version(0).build());
         bannerService.updateBanner(BannerDto.builder()
-                .bnrSn(1L).bnrNm("Omitted").atchFileSn(null).build());
+                .bnrSn(1L).bnrNm("Omitted").atchFileSn(null).version(0).build());
 
         org.mockito.Mockito.verifyNoInteractions(attachmentAssignmentPolicy);
         assertThat(existing.getAtchFileSn()).isEqualTo(100L);
@@ -276,12 +281,44 @@ class BannerServiceTest {
         authenticate("BANNER_DELETE");
         // given
         Long bnrSn = 1L;
+        Banner existing = Banner.builder().bnrSn(bnrSn).bnrNm("Delete me").build();
+        given(bannerRepository.findById(bnrSn)).willReturn(Optional.of(existing));
 
         // when
         bannerService.deleteBanner(bnrSn);
 
         // then
-        verify(bannerRepository, times(1)).deleteById(bnrSn);
+        verify(bannerRepository, times(1)).delete(existing);
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 배너 삭제 - 없는 배너는 404 다(종전 deleteById 는 조용히 200 이었다)")
+    void deleteBanner_Fail_NotFound() {
+        authenticate("BANNER_DELETE");
+        given(bannerRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bannerService.deleteBanner(99L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        verify(bannerRepository, org.mockito.Mockito.never()).delete(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("[2026-10-18] 배너 수정 - 읽은 버전이 다르면 409 이고 덮어쓰지 않는다, 버전이 없으면 400 이다")
+    void updateBanner_rejectsStaleOrMissingVersion() {
+        authenticate("BANNER_UPDATE");
+        Banner existing = Banner.builder().bnrSn(1L).bnrNm("Current").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 5);
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> bannerService.updateBanner(BannerDto.builder().bnrSn(1L).bnrNm("Stale").version(4).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> bannerService.updateBanner(BannerDto.builder().bnrSn(1L).bnrNm("No version").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(existing.getBnrNm()).isEqualTo("Current");
+        verifyNoInteractions(attachmentAssignmentPolicy);
     }
 
     @Test
@@ -325,7 +362,8 @@ class BannerServiceTest {
     void foreignCreatorIsManageableOnlyWithTheExactUpdateOrDeleteGrant() {
         Banner existing = Banner.builder().bnrSn(1L).bnrNm("Original").build();
         existing.setFrstRgtrId("foreign-creator");
-        BannerDto request = BannerDto.builder().bnrSn(1L).bnrNm("Changed").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        BannerDto request = BannerDto.builder().bnrSn(1L).bnrNm("Changed").version(0).build();
 
         authenticate();
         assertDenied(() -> bannerService.updateBanner(request));
@@ -341,7 +379,7 @@ class BannerServiceTest {
 
         authenticate("BANNER_DELETE");
         bannerService.deleteBanner(existing.getBnrSn());
-        verify(bannerRepository).deleteById(1L);
+        verify(bannerRepository).delete(existing);
     }
 
     private static Stream<Arguments> deniedWrites() {

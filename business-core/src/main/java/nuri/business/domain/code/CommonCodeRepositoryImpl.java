@@ -37,7 +37,8 @@ public class CommonCodeRepositoryImpl implements CommonCodeRepositoryCustom {
                         commonCode.dtlCd,
                         commonCode.dtlCdNm,
                         commonCode.dtlCdExpln,
-                        commonCode.useYn))
+                        commonCode.useYn,
+                        commonCode.version))
                 .from(commonCode)
                 .join(commonCodeGroup).on(commonCode.cdId.eq(commonCodeGroup.cdId))
                 .where(

@@ -454,6 +454,13 @@ refresh_triggers:
 | DEC-OPS-355 | accepted | 주소록 구 사용자 검색을 걷고, 사용자 목록의 휴대전화·이메일을 가리며, 개인정보 조회 기록에 정보주체를 남긴다(V2_131). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-355) | 2026-10-19 | 구 search-users 계약을 외부 소비자 확인 전까지 유지하던 판단(evidence-first-policy-decisions-2026-09-27.md) |
 | DEC-OPS-356 | accepted | 로그아웃하면 그 사용자의 액세스 토큰을 끊는다(V2_131 last_lgt_dt). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-356) | 2026-10-19 | - |
 | DEC-OPS-357 | accepted | 감사 원장 세 표의 수정과 임의 삭제를 DB 트리거로 막는다(V2_132). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-357) | 2026-10-19 | - |
+| DEC-OPS-358 | accepted | 기록이 로그인 ID 로 소유를 판정하는 표에 남은 ID 는 새 계정에 다시 주지 않는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-358) | 2026-10-19 | - |
+| DEC-OPS-359 | accepted | 업무보고·일정·부서 업무·포상·배너·팝업·설문·공통코드 3종의 동시 수정을 버전으로 막고, 비관적 잠금 대기를 5초로 제한한다(V2_133). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-359) | 2026-10-19 | - |
+| DEC-OPS-360 | accepted | 화면에서만 하던 입력 검사와 조용한 성공을 서버가 맡는다(팝업 기간·포상·공통코드·배너·일정). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-360) | 2026-10-19 | - |
+| DEC-OPS-361 | accepted | 탭은 접근 가능한 공용 원천 하나로 그리고, 초점 표시를 지키며, 대형 화면 넷을 동작 변경 없이 나누고, 후속 작업 시각을 한국 시각으로 보인다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-361) | 2026-10-19 | - |
+| DEC-OPS-362 | accepted | 쓰지 않는 백엔드 의존성 7종(Spring Batch·eGov batch·Quartz·commons-net·jdom2·commons-dbcp2·scribejava)을 걷는다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-362) | 2026-10-19 | - |
+| DEC-OPS-363 | accepted | V2_131·V2_132 를 공유 OCI DB 에 적용한다(2026-10-19 사용자 승인 — 로그아웃 시각·정보주체 컬럼과 감사 원장 트리거, PR #936 병합 뒤). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-363) | 2026-10-19 | - |
+| DEC-OPS-364 | accepted | 운영 계약 비용을 실측하고, 문서 전용 푸시의 계약 범위를 줄이지 않는다(투영 시험이 문서 트리를 입력으로 쓴다). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-364) | 2026-10-19 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

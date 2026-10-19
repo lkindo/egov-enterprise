@@ -133,3 +133,36 @@ export function toDisplayDateTime(value: Date | number | null | undefined, fallb
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
     + ` ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
+
+/** 끝에 시간대 표기(`Z`·`+09:00`·`+0900`)가 붙은 ISO 일시. */
+const ZONE_DESIGNATOR = /(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+const SEOUL_DATE_TIME_PARTS = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/**
+ * UTC 로 기록한 서버 일시 → 한국 시각 표시 'yyyy-MM-dd HH:mm:ss'.
+ *
+ * [2026-10-18] 후속 작업 원장(`tb_sys_job`)은 시각을 `LocalDateTime.now(ZoneOffset.UTC)` 로 쓴다(DurableWorkDispatcher).
+ * 그 값은 시간대 표기 없이 오므로 그대로 자르면 UTC 를 한국 시각처럼 보이게 된다(9시간 이르다). 그래서 표기가 없는
+ * 값은 **UTC 로 읽는다** — 표기가 없는 값을 한국 시각으로 내려 주는 API(결재 등)에는 이 함수를 쓰지 않는다. 표기가
+ * 있으면 그 표기를 따른다. 브라우저 시간대와 무관하게 Asia/Seoul 로 쓴다. 비었거나 해석할 수 없으면 `fallback` 이다.
+ */
+export function utcToSeoulDisplayDateTime(value: string | null | undefined, fallback = '-'): string {
+  const raw = value?.trim();
+  if (!raw) return fallback;
+  const iso = raw.replace(' ', 'T');
+  const date = new Date(ZONE_DESIGNATOR.test(iso) ? iso : `${iso}Z`);
+  if (Number.isNaN(date.getTime())) return fallback;
+  const parts = new Map(SEOUL_DATE_TIME_PARTS.formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.get('year')}-${parts.get('month')}-${parts.get('day')}`
+    + ` ${parts.get('hour')}:${parts.get('minute')}:${parts.get('second')}`;
+}

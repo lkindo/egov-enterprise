@@ -145,10 +145,13 @@ class InputContractMirrorLinterTest {
     // [2026-10-02 관리 콘솔 UX 2단계] 78 → 92(원장 실측과 같게) — CopyGroup 3, MenuGroupGrantChange 5, MenuCreation 3, MenuProperties 3.
     // [2026-10-04 프로그램 목록 퇴역] 92 → 91. 걷은 ProgramDto 의 등록 그룹 파일명 필수 1건이 대상과 함께 사라졌다.
     // [2026-10-16 결재 동선 개선 D2] 91 → 93. 나의 결재선 요청의 이름(NotBlank)·결재 단계 목록(NotNull).
-    private static final int MIN_REQUIRED_FIELDS = 93;
+    // [2026-10-18 서버 검증 공백] 93 → 95(원장 실측). 포상 수상자·포상 코드(NotBlank — 물리 컬럼 NOT NULL). 일정 시작일의
+    //   필수 판정은 DTO 가 아니라 ScheduleService 가 한다 — ScheduleDto 는 응답에도 쓰여 NotBlank 가 응답 계약을 바꾼다.
+    private static final int MIN_REQUIRED_FIELDS = 95;
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
-    private static final int MIN_CALENDAR_DATE_FIELDS = 12;
+    // [2026-10-18 서버 검증 공백] 12 → 13(원장 실측). 포상 일자(rwardDe)가 길이만 보던 것을 yyyyMMdd 달력 계약으로 맞췄다.
+    private static final int MIN_CALENDAR_DATE_FIELDS = 13;
 
     private static final java.util.regex.Pattern TYPE_NAME = java.util.regex.Pattern.compile(
             "[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*\\.[A-Z][A-Za-z0-9_]*(?:\\$[A-Z][A-Za-z0-9_]*)*");

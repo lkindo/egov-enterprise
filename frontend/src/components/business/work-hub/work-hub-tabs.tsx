@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 import { shellLinks } from '@/extensions/generated-shell-links';
 import type { ShellLink } from '@/extensions/slots';
 import { useSlotEntries } from '@/extensions/use-slot-entries';
@@ -46,14 +47,13 @@ export function useWorkHubTabStrip(activeHref: string): WorkHubTabStrip {
     const tabs = [CORE_TAB, ...contributed.map(({ id, href, label }) => ({ id, href, label }))];
     const activeId = (tabs.find(tab => tab.href === activeHref) ?? CORE_TAB).id;
     const strip = (
-      <div role="tablist" aria-label="업무 영역 선택" className="flex rounded-md border border-border p-0.5">
+      // 탭을 고르면 다른 페이지로 간다 — 방향키는 포커스만 옮기고 Enter·Space 로 고른다(manual).
+      <TabList activation="manual" aria-label="업무 영역 선택" className="flex rounded-md border border-border p-0.5">
         {tabs.map(tab => (
-          <button
+          <Tab
             key={tab.id}
-            type="button"
-            role="tab"
             id={tabDomId(tab.id)}
-            aria-selected={tab.id === activeId}
+            selected={tab.id === activeId}
             aria-controls={TABPANEL_ID}
             onClick={() => router.push(tab.href, { scroll: false })}
             className={cn(
@@ -62,14 +62,14 @@ export function useWorkHubTabStrip(activeHref: string): WorkHubTabStrip {
             )}
           >
             {tab.label}
-          </button>
+          </Tab>
         ))}
-      </div>
+      </TabList>
     );
     const panel = (children: React.ReactNode) => (
-      <div role="tabpanel" id={TABPANEL_ID} aria-labelledby={tabDomId(activeId)}>
+      <TabPanel id={TABPANEL_ID} aria-labelledby={tabDomId(activeId)}>
         {children}
-      </div>
+      </TabPanel>
     );
     return { strip, panel };
   }, [contributed, activeHref, router]);

@@ -141,7 +141,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
       .toHaveAttribute('href', '/reports?tab=list#results');
     expect(screen.getByRole('link', { name: '보고 상세 업무 > 팀 업무 > 보고 목록 모듈' }))
       .toHaveAttribute('href', '/reports/detail?view=summary#content');
-    expect(screen.getByRole('button', { name: '메뉴 바로가기 2건' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '메뉴 바로가기 2건' })).toBeInTheDocument();
     expect(screen.queryByText('위험 보고')).toBeNull();
     expect(screen.queryByText('중지 보고')).toBeNull();
     expect(mocks.getHeadMenus).toHaveBeenCalledOnce();
@@ -168,15 +168,15 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
     expect(await screen.findByText(boardAxisInProjection ? '독립 게시글 결과' : '홍길 업무 안내')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('임직원 검색 결과를 불러오지 못했습니다');
-    expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '임직원 0건' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: '임직원 0건' })).not.toBeInTheDocument();
     if (boardAxisInProjection) expect(mocks.searchPosts).toHaveBeenCalledWith('홍길');
     expect(mocks.getHeadMenus).toHaveBeenCalled();
     expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
     expect(screen.queryByText('private upstream detail')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: boardAxisInProjection ? /게시글/ : /메뉴 바로가기/ }));
-    expect(screen.getByRole('button', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: boardAxisInProjection ? /게시글/ : /메뉴 바로가기/ }));
+    expect(screen.getByRole('tab', { name: '임직원 (조회 실패)' })).toBeInTheDocument();
   });
 
   it('빈 검색어에서는 사용자 API를 호출하지 않는다', async () => {
@@ -226,8 +226,8 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('게시글 검색 결과를 불러오지 못했습니다');
-    expect(screen.getByRole('button', { name: '게시글 (조회 실패)' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '게시글 0건' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '게시글 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: '게시글 0건' })).not.toBeInTheDocument();
     expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
   });
 
@@ -242,8 +242,8 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
     if (boardAxisInProjection) expect(screen.getByText('메뉴와 무관한 게시글')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('메뉴 바로가기 검색 결과를 불러오지 못했습니다');
-    expect(screen.getByRole('button', { name: '메뉴 바로가기 (조회 실패)' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '메뉴 바로가기 0건' })).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '메뉴 바로가기 (조회 실패)' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: '메뉴 바로가기 0건' })).not.toBeInTheDocument();
     expect(screen.queryByText('menu endpoint down')).not.toBeInTheDocument();
   });
 
@@ -257,8 +257,12 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
     render(<SearchResultsContent initialResults={emptyResults} query="게시글" />);
 
     expect(await screen.findByText('게시글만 존재')).toBeInTheDocument();
-    const emptyUsersTab = screen.getByRole('button', { name: '임직원 0건' });
+    const emptyUsersTab = screen.getByRole('tab', { name: '임직원 0건' });
     fireEvent.click(emptyUsersTab);
+    expect(emptyUsersTab).toHaveAttribute('aria-selected', 'true');
+    // 탭이 고르는 패널은 결과 영역 하나이고, 고른 탭이 그 패널의 이름이다.
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', emptyUsersTab.id);
+    expect(emptyUsersTab).toHaveAttribute('aria-controls', screen.getByRole('tabpanel').id);
     expect(screen.getByText('일치하는 결과가 없습니다.')).toBeInTheDocument();
     expect(screen.queryByText('게시글만 존재')).not.toBeInTheDocument();
   });

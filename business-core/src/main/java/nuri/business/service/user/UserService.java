@@ -76,6 +76,7 @@ public class UserService extends BaseAbstractService {
         private final nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration;
         private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
         private final nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials;
+        private final LoginIdReuseGuard loginIdReuseGuard;
 
         public UserService(UserRepository userRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
@@ -88,7 +89,8 @@ public class UserService extends BaseAbstractService {
                         nuri.business.security.authorization.AuthorizationSnapshotService authorizationSnapshots,
                         nuri.business.service.auth.AuthorizationAdministrationService authorizationAdministration,
                         nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit,
-                        nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials) {
+                        nuri.business.domain.auth.mfa.MfaCredentialRepository mfaCredentials,
+                        LoginIdReuseGuard loginIdReuseGuard) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.refreshTokenRepository = required(refreshTokenRepository,
                                 "RefreshTokenRepository 는 null 일 수 없습니다");
@@ -106,6 +108,7 @@ public class UserService extends BaseAbstractService {
                 this.authorizationAdministration = required(authorizationAdministration);
                 this.sensitiveAudit = required(sensitiveAudit);
                 this.mfaCredentials = required(mfaCredentials);
+                this.loginIdReuseGuard = required(loginIdReuseGuard);
         }
 
         /**
@@ -394,9 +397,14 @@ public class UserService extends BaseAbstractService {
          * 토큰이 새 계정으로 해석된다 — 권한·감사 귀속이 다른 사람으로 바뀐다. 관리자 등록 규칙
          * (영문·숫자·밑줄 4~20자)은 초기 관리자 식별자 {@code USRCNFRM_00000000001} 같은 값을 통과시킨다.
          * 사용자에게는 일반 중복과 같은 오류로 답해 내부 식별자의 존재를 드러내지 않는다.
+         *
+         * <p>[2026-10-18] <b>지워진 계정의 기록이 아직 그 로그인 ID 를 들고 있으면</b> 같은 오류로 거부한다. 사용자는 물리
+         * 삭제되지만 업무 보고·일정·메모 보고·부서 업무·첨부 등은 주인을 로그인 ID 로 판정하므로, 다시 만든 계정이 옛
+         * 기록을 제 것으로 물려받았다({@link LoginIdReuseGuard}). 어느 기록이 남았는지는 응답으로 드러내지 않는다.
          */
         private void assertLoginIdAvailable(String userId) {
-                if (userRepository.findByUserId(userId).isPresent() || userRepository.existsById(userId)) {
+                if (userRepository.findByUserId(userId).isPresent() || userRepository.existsById(userId)
+                                || loginIdReuseGuard.isStillReferenced(userId)) {
                         throw new BusinessException(UserErrorCode.DUPLICATE_USER_ID);
                 }
         }

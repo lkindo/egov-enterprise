@@ -257,4 +257,32 @@ describe('promotionActions', () => {
       });
     });
   });
+
+  // [2026-10-18] 낙관적 잠금(V2_133) — 화면이 읽은 버전을 그대로 보내고, 다른 사람이 먼저 고쳤으면(409) 화면이
+  //   목록을 다시 읽을 수 있게 conflict 를 알린다. 409 가 아닌 실패에는 conflict 를 붙이지 않는다.
+  describe('동시 수정(409)', () => {
+    const conflict = { response: { status: 409, data: { message: '다른 사용자가 먼저 수정했습니다.' } } };
+
+    it('배너 수정은 읽은 버전을 본문에 싣고, 409 면 서버 사유와 conflict 를 돌려주며 재검증하지 않는다', async () => {
+      vi.mocked(client.requestRaw).mockRejectedValueOnce(conflict);
+
+      const result = await saveBannerAction(null, { mode: 'edit', data: { ...BANNER, version: 3 }, id: 7 });
+
+      expect(client.requestRaw).toHaveBeenCalledWith(expect.objectContaining({
+        url: 'admin/system/banners/7', method: 'put', data: expect.objectContaining({ version: 3 }),
+      }));
+      expect(result).toEqual({ success: false, message: '다른 사용자가 먼저 수정했습니다.', conflict: true });
+      expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('팝업 수정의 409 도 conflict 를 돌려주고, 다른 실패에는 붙이지 않는다', async () => {
+      vi.mocked(client.requestRaw).mockRejectedValueOnce(conflict);
+      const stale = await savePopupAction(null, { mode: 'edit', data: { ...POPUP, version: 2 }, id: 1 });
+      expect(stale).toMatchObject({ success: false, conflict: true });
+
+      vi.mocked(client.requestRaw).mockRejectedValueOnce({ response: { status: 400, data: { message: '기간이 잘못되었습니다.' } } });
+      const invalid = await savePopupAction(null, { mode: 'edit', data: { ...POPUP, version: 2 }, id: 1 });
+      expect(invalid).not.toHaveProperty('conflict');
+    });
+  });
 });

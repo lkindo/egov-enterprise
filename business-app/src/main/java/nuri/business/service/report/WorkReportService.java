@@ -9,6 +9,7 @@ import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.util.EntityVersions;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,6 +59,8 @@ public class WorkReportService extends BaseAbstractService {
 
         // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "WORK_RPT_UPDATE_ALL");
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
+        EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
 
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
@@ -177,6 +180,7 @@ public class WorkReportService extends BaseAbstractService {
                 .userId(entity.getUserId())
                 .userNm(authorName)
                 .atchFileSn(entity.getAtchFileSn())
+                .version(entity.getVersion())
                 .build();
     }
 

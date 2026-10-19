@@ -400,7 +400,7 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
   defer(async () => { await safeDelete(api, `${SURVEYS}/templates/${template.srvyTmpltSn}`); });
   const title = `Lab Survey ${suffix}`; const year = new Date().getUTCFullYear();
   await created(api, SURVEYS, { srvyTtl: title, srvyTmpltSn: template.srvyTmpltSn, srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231` });
-  const surveys = await read<{ list: { srvySn: number; srvyTtl: string }[] }>(api, `${SURVEYS}?keyword=${encodeURIComponent(title)}&page=0&size=10`);
+  const surveys = await read<{ list: { srvySn: number; srvyTtl: string; version: number }[] }>(api, `${SURVEYS}?keyword=${encodeURIComponent(title)}&page=0&size=10`);
   const survey = surveys.list.find(row => row.srvyTtl === title)!; expect(survey).toBeTruthy();
   defer(async () => { await safeDelete(api, `${SURVEYS}/${survey.srvySn}`); });
   const choices: { question: number; item: number; label: string }[] = [];
@@ -414,8 +414,9 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
     const populated = (await read<typeof questions>(api, `${SURVEYS}/${survey.srvySn}/questions`)).find(row => row.srvyQstnSn === question.srvyQstnSn)!;
     choices.push({ question: question.srvyQstnSn, item: populated.items.find(row => row.artclCn === label)!.srvyArtclSn, label });
   }
+  // [2026-10-18 V2_133] 공개 전환도 설문 머리 수정이라 읽은 버전을 함께 보낸다. 문항·선택 항목 추가는 머리 버전을 바꾸지 않는다.
   const released = await api.put(`${SURVEYS}/${survey.srvySn}`, { data: { srvyTtl: title, srvyTmpltSn: template.srvyTmpltSn,
-    srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231`, rlsYn: 'Y' } }); expect(released.status()).toBe(200);
+    srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231`, rlsYn: 'Y', version: survey.version } }); expect(released.status()).toBe(200);
   const ownedResponses = async () => {
     const rows = (await read<{ list: { srvyRspnsSn: number; srvySn: number; srvyQstnSn: number; srvyArtclSn: number; rspdntAnsCn: string }[] }>(api, `${RESPONSES}?page=0&size=100`)).list;
     return rows.filter(row => row.srvySn === survey.srvySn);

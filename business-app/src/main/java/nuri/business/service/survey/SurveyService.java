@@ -162,6 +162,8 @@ public class SurveyService {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
         SurveyInfo entity = lockSurvey(dto.getSrvySn());
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다(제목·기간·공개 전환 모두) — 덮지 않고 409.
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
         if (!Objects.equals(entity.getSrvyTmpltSn(), dto.getSrvyTmpltSn())
                 && (qesitmRepository.existsBySrvySn(entity.getSrvySn())
                         || rspdntRepository.existsBySrvySn(entity.getSrvySn()))) {

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
  * 협업 허브의 core 틀(허브 분해 H1). 제목·경로 표시·조회 조건 저장 키·탭 패널은 틀이 소유하고, 탭 목록과 허브 머리 링크는 셸이
@@ -55,9 +56,9 @@ export function CollaborationHubFrame({
       toolbarActions={toolbarActions}
     >
       {activeTabId ? (
-        <div role="tabpanel" id="collab-tabpanel" aria-labelledby={`collab-tab-${activeTabId}`}>
+        <TabPanel id="collab-tabpanel" aria-labelledby={`collab-tab-${activeTabId}`}>
           {children}
-        </div>
+        </TabPanel>
       ) : children}
     </WorkListPage>
   );

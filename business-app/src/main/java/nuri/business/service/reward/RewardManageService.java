@@ -70,12 +70,16 @@ public class RewardManageService {
     public RewardManageDto updateReward(Long rwrdSn, RewardManageDto dto) {
         SecurityUtil.assertPermission("REWARD_UPDATE");
         RewardManage reward = findRequired(rwrdSn);
+        // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
+        nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), reward.getVersion());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(reward.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
         reward.update(dto.getRwardwnrId(), dto.getRwardCode(), dto.getRwardDe(), dto.getRwardNm(), dto.getPblenCn(),
                 atchFileSn != null ? atchFileSn : reward.getAtchFileSn());
+        // 올라간 버전을 응답에 싣는다 — @Version 은 flush 때 오르므로 먼저 내보낸다(결재 임시저장 선례).
+        rewardManageRepository.flush();
         return convertToDto(reward);
     }
 
@@ -109,6 +113,7 @@ public class RewardManageService {
                 .crtDt(reward.getCrtDt())
                 .lastMdfrId(reward.getLastMdfrId())
                 .mdfcnDt(reward.getMdfcnDt())
+                .version(reward.getVersion())
                 .build();
     }
 }

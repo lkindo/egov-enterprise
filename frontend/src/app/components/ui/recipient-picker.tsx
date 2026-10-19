@@ -17,6 +17,7 @@ import type {
   RecipientDepartmentMember,
   RecipientDepartmentSource,
 } from '@/app/components/ui/recipient-department-source';
+import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
 /**
  * 행 선택은 네이티브 checkbox 다(일정 등록 폼과 같은 패턴). Radix `Checkbox`(components/ui/checkbox)를 쓰지 않는 이유는
@@ -298,18 +299,16 @@ export function RecipientPicker({
       )}
     >
       {/*
-        탭은 의존성 없는 수동 구현이다 — Radix Tabs 는 jsdom 에서 role=tab 도 비활성 패널 숨김도 만들지 않아
+        탭은 의존성 없는 탭 원천(standard-tabs)이다 — Radix Tabs 는 jsdom 에서 role=tab 도 비활성 패널 숨김도 만들지 않아
         계약 테스트가 두 패널을 동시에 보게 된다. 활성 패널만 렌더하므로 비활성 탭의 DOM 이 남지 않는다.
       */}
       <div className="space-y-4">
-        <div role="tablist" aria-label="수신자 출처" className="inline-flex rounded-lg bg-muted p-1 gap-1">
+        <TabList aria-label="수신자 출처" className="inline-flex rounded-lg bg-muted p-1 gap-1">
           {sourceTabs.map((item) => (
-            <button
+            <Tab
               key={item.value}
-              type="button"
-              role="tab"
               id={`recipient-tab-${item.value}`}
-              aria-selected={tab === item.value}
+              selected={tab === item.value}
               aria-controls={`recipient-panel-${item.value}`}
               onClick={() => handleTabChange(item.value)}
               className={`h-[var(--control-h)] px-4 rounded-md text-sm font-bold flex items-center gap-2 transition-colors ${
@@ -317,12 +316,12 @@ export function RecipientPicker({
               }`}
             >
               {item.icon} {item.label}
-            </button>
+            </Tab>
           ))}
-        </div>
+        </TabList>
 
         {tab === 'users' && (
-        <div role="tabpanel" id="recipient-panel-users" aria-labelledby="recipient-tab-users" className="space-y-3">
+        <TabPanel id="recipient-panel-users" aria-labelledby="recipient-tab-users" className="space-y-3">
           {/* 검색 축은 성명 하나다(UserRepositoryImpl.searchAssignableUsers) — 로그인 ID 매칭은 계정 열거 방어로 배제돼 있다. */}
           <form onSubmit={handleSearch} className="relative" role="search" aria-label="사용자 검색">
             <Search className="absolute left-3 top-2.5 text-muted-foreground" size={18} aria-hidden="true" />
@@ -389,11 +388,11 @@ export function RecipientPicker({
               </ul>
             )}
           </div>
-        </div>
+        </TabPanel>
         )}
 
         {tab === 'department' && departmentTabAvailable && (
-        <div role="tabpanel" id="recipient-panel-department" aria-labelledby="recipient-tab-department" className="space-y-3">
+        <TabPanel id="recipient-panel-department" aria-labelledby="recipient-tab-department" className="space-y-3">
           <label htmlFor="recipient-department" className="block text-xs font-bold text-muted-foreground">부서 선택</label>
           {departmentsState === 'loading' ? (
             <div className="text-sm text-muted-foreground animate-pulse" role="status">부서를 불러오는 중…</div>
@@ -480,11 +479,11 @@ export function RecipientPicker({
               </ul>
             )}
           </div>
-        </div>
+        </TabPanel>
         )}
 
         {tab === 'addressbook' && addressBookTabAvailable && (
-        <div role="tabpanel" id="recipient-panel-addressbook" aria-labelledby="recipient-tab-addressbook" className="space-y-3">
+        <TabPanel id="recipient-panel-addressbook" aria-labelledby="recipient-tab-addressbook" className="space-y-3">
           <label htmlFor="recipient-address-book" className="block text-xs font-bold text-muted-foreground">주소록 선택</label>
           {booksState === 'loading' ? (
             <div className="text-sm text-muted-foreground animate-pulse" role="status">주소록을 불러오는 중…</div>
@@ -553,7 +552,7 @@ export function RecipientPicker({
               </ul>
             )}
           </div>
-        </div>
+        </TabPanel>
         )}
       </div>
     </StandardModal>
