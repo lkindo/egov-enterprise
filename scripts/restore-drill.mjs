@@ -18,7 +18,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { createReadStream, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, constants as fsConstants, createReadStream, existsSync, fstatSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { closedEnvironment } from './run-isolated-e2e.mjs';
@@ -375,21 +375,60 @@ function sha256File(file) {
   });
 }
 
+/*
+ * 백업 세트 파일은 경로로 확인한 뒤 경로로 다시 읽지 않는다(확인과 사용 사이에 바뀔 수 있다). 먼저 열고, 연 기술자로
+ * 일반 파일인지 보며, 경로가 심볼릭 링크가 아니고 같은 파일(dev·ino)을 가리키는지 대조한 뒤 그 기술자로만 읽는다.
+ */
+function openRegularFile(file) {
+  let fd;
+  try {
+    fd = openSync(file, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'ELOOP') return null;
+    throw error;
+  }
+  const stat = fstatSync(fd);
+  const link = lstatSync(file, { throwIfNoEntry: false });
+  if (!stat.isFile() || !link || link.isSymbolicLink() || link.dev !== stat.dev || link.ino !== stat.ino) {
+    closeSync(fd);
+    return null;
+  }
+  return { fd, stat };
+}
+
+function readOpenedText(opened) {
+  try {
+    return readFileSync(opened.fd, 'utf8');
+  } finally {
+    closeSync(opened.fd);
+  }
+}
+
+function sha256Opened(opened) {
+  return new Promise((resolve, reject) => {
+    const hash = createHash('sha256');
+    createReadStream(null, { fd: opened.fd, autoClose: true })
+      .on('error', reject).on('data', chunk => hash.update(chunk)).on('end', () => resolve(hash.digest('hex')));
+  });
+}
+
 async function checkBackupSet(context) {
   const directory = context.backupDir;
   const info = lstatSync(directory, { throwIfNoEntry: false });
   if (!info?.isDirectory() || info.isSymbolicLink()) throw fail('--backup-dir 가 디렉터리가 아니다');
-  const checksumPath = path.join(directory, CHECKSUM_FILE);
-  if (!lstatSync(checksumPath, { throwIfNoEntry: false })?.isFile()) throw fail('sha256.txt 가 없다');
-  const checksums = parseChecksums(readFileSync(checksumPath, 'utf8'));
+  const checksumFile = openRegularFile(path.join(directory, CHECKSUM_FILE));
+  if (!checksumFile) throw fail('sha256.txt 가 없다');
+  const checksums = parseChecksums(readOpenedText(checksumFile));
   const bytes = {};
   for (const file of BACKUP_SET_FILES) {
-    const target = path.join(directory, file);
-    const stat = lstatSync(target, { throwIfNoEntry: false });
-    if (!stat?.isFile() || stat.isSymbolicLink()) throw fail(`${file} 이 일반 파일이 아니다`);
-    if (stat.size === 0) throw fail(`${file} 이 비어 있다`);
-    if (await sha256File(target) !== checksums.get(file)) throw fail(`${file} 의 SHA-256 이 sha256.txt 와 다르다`);
-    bytes[file] = stat.size;
+    const opened = openRegularFile(path.join(directory, file));
+    if (!opened) throw fail(`${file} 이 일반 파일이 아니다`);
+    if (opened.stat.size === 0) {
+      closeSync(opened.fd);
+      throw fail(`${file} 이 비어 있다`);
+    }
+    if (await sha256Opened(opened) !== checksums.get(file)) throw fail(`${file} 의 SHA-256 이 sha256.txt 와 다르다`);
+    bytes[file] = opened.stat.size;
   }
   const manifest = parseManifest(readFileSync(path.join(directory, 'manifest.txt'), 'utf8'));
   const schemaVersion = readFileSync(path.join(directory, 'schema-version.txt'), 'utf8').trim();

@@ -17,7 +17,7 @@ test.describe('Admin System (Core Management)', () => {
                 endDate: '2026-05-03'
             });
             const createResponse = await created;
-            expect(createResponse.status()).toBe(200);
+            expect(createResponse.status()).toBe(201);
             const eventId = (await createResponse.json() as { data: number }).data;
             const detail = await adminRequest.get(`${events}/${eventId}`);
             expect(detail.status()).toBe(200);
