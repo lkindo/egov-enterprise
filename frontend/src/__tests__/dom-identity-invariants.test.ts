@@ -53,12 +53,18 @@ describe('DOM 정체성 불변식', () => {
       'page-transition.tsx 에 exit 애니메이션이 되살아났습니다 — 위와 같은 이중 마운트를 만듭니다.',
     ).not.toMatch(/\bexit=\{/);
 
-    // 진입 애니메이션은 유지돼야 한다. 이 단언이 없으면 "컴포넌트를 통째로 비우는" 것도 통과한다.
+    // pathname remount 경계와 본문은 남아야 한다. 이 단언이 없으면 "컴포넌트를 통째로 비우는" 것도 통과한다.
+    // [2026-10-19] 종전 단언은 진입 애니메이션(initial/animate)이었다. 2026-10-02 LCP 지연 때문에 진입 상태를
+    //   `initial={false}` 로 걷은 뒤로 그 motion.div 는 움직이지 않았고, 단언은 움직임 없는 래퍼로도 통과했다.
+    //   지금은 애니메이션 라이브러리 없는 div 이므로 실제로 남는 계약(경계·본문)을 본다.
     expect(
       source,
-      '진입 애니메이션(initial/animate)이 사라졌습니다 — 이 계약은 exit 제거를 요구하는 것이지 ' +
-        '전환 효과 제거를 요구하지 않습니다.',
-    ).toMatch(/initial=\{[\s\S]*?animate=\{/);
+      'pathname remount 경계(key={pathname})가 사라졌습니다 — 라우트마다 본문을 새로 마운트하는 경계는 유지합니다.',
+    ).toMatch(/key=\{pathname\}/);
+    expect(
+      source,
+      'PageTransition 이 본문({children})을 그리지 않습니다 — 경계만 남기고 본문을 비우면 모든 화면이 빈다.',
+    ).toMatch(/\{children\}/);
   });
 
   it('StandardDataTable 은 display 전환에도 표 시맨틱이 남도록 명시 role 을 유지한다', () => {

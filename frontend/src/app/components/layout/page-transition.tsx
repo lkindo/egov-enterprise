@@ -1,11 +1,10 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 
 /**
- * 라우트 전환 진입 애니메이션.
+ * 라우트 전환 경계. pathname 이 바뀌면 본문 subtree 를 새로 마운트한다.
  *
  * 🚨 `AnimatePresence` + `exit` 를 다시 넣지 마라 — 이 위치에서는 구조적으로 깨진다.
  *
@@ -21,25 +20,19 @@ import { usePathname } from 'next/navigation';
  * 통과하던 false-green 이었다.
  *
  * SSR 본문은 처음부터 보인다. opacity:0 진입 상태는 내려온 업무 화면을 JS 수신·하이드레이션까지 숨겨
- * 제한된 네트워크의 인증 과업에서 LCP가 지연됐다. pathname remount 경계는 그대로 유지한다.
+ * 제한된 네트워크의 인증 과업에서 LCP가 지연됐다(2026-10-02 진입 상태를 걷었다). pathname remount 경계는 그대로 유지한다.
  * `mode="wait"` 는 동시 마운트는 없애지만 라우트마다 지연이 붙고 "exit subtree 가 새 라우트를
  * 렌더한다"는 성질 자체는 남으므로 채택하지 않는다.
+ *
+ * [2026-10-19] 애니메이션 라이브러리 없이 평범한 div 로 둔다. 진입 상태를 걷은 뒤 이 자리의 `motion.div` 는
+ * 처음부터 목표 값으로 그려져 움직임이 없었는데도, 루트 레이아웃이 모든 라우트에 애니메이션 라이브러리를 싣게 했다.
  */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <motion.div
-      key={pathname}
-      initial={false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.15,
-        ease: [0.23, 1, 0.32, 1]
-      }}
-      className="w-full"
-    >
+    <div key={pathname} className="w-full">
       {children}
-    </motion.div>
+    </div>
   );
 }

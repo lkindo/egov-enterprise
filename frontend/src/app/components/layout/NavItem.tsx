@@ -22,7 +22,6 @@ import {
   Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import { useLayout } from '@/contexts/LayoutContext';
 import { MenuInfo } from '@/types/foundation/menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
@@ -57,6 +56,14 @@ const ICON_MAP: Record<string, ElementType> = {
   '조직도 및 부서 관리': Building2,
   '기본': CircleDot
 };
+
+/**
+ * 하위 메뉴 셰브론의 회전(0.2초). [2026-10-19] 사이드바는 모든 라우트에 실리므로 애니메이션 라이브러리 대신 CSS 전환으로 돌린다.
+ * 동작 줄이기를 고르면 globals.css 의 reduced-motion 규칙이 전환을 즉시 끝낸다(종전 MotionConfig reducedMotion="user" 와 같다).
+ */
+function chevronRotation(isOpen: boolean | undefined): string {
+  return cn('transition-transform duration-200', isOpen && 'rotate-180');
+}
 
 // Users 아이콘이 이미 임포트되어 있으므로 UserCheck를 명시적으로 대응합니다.
 function UserCheckIcon(props: ComponentProps<typeof Users>) {
@@ -176,9 +183,9 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
             (링크는 이동, 버튼은 펼침으로 역할이 갈리므로 그때는 중첩이 아니다). */}
       {hasChildren && isNonNavigable && (
         <span aria-hidden="true" className="p-1">
-          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <div className={chevronRotation(isOpen)}>
             <ChevronDown size={14} className="opacity-60" />
-          </motion.div>
+          </div>
         </span>
       )}
     </div>
@@ -217,12 +224,9 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
             className="absolute right-2 top-1/2 flex min-h-7 min-w-7 -translate-y-1/2 items-center justify-center rounded-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             onClick={() => setIsOpen(!isOpen)}
           >
-            <motion.div
-              animate={{ rotate: isOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div className={chevronRotation(isOpen)}>
               <ChevronDown size={14} className="opacity-60" />
-            </motion.div>
+            </div>
           </button>
           )}
         </>
