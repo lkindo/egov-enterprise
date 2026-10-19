@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   getPollList: vi.fn(),
   getPollItemList: vi.fn(),
   participatePoll: vi.fn(),
+  // 공용 확인 대화상자(useConfirm). 기본은 '투표 제출' 을 누른 것으로 답한다 — 아래 확인 시험이 취소를 따로 본다.
+  confirm: vi.fn(async (_options: { title?: string; message?: string; confirmText?: string }) => true),
 }));
 
 vi.mock('@/services/business/user/poll/PollUserService', () => ({
@@ -21,6 +23,7 @@ vi.mock('@/services/business/user/poll/PollUserService', () => ({
   },
 }));
 vi.mock('@/lib/hooks/use-today-ymd', () => ({ useTodayStorageYmd: () => '20260926' }));
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 // 실제 useToast 처럼 렌더 사이에 같은 객체를 돌려준다 — 새 객체면 목록 조회 effect 가 렌더마다 다시 돈다.
 vi.mock('@/app/components/ui/toast', () => {
   const stable = { toast: vi.fn(), success: vi.fn(), error: vi.fn() };
@@ -253,5 +256,62 @@ describe('투표 참여 화면의 참여 여부 (DIP V7)', () => {
       expect(mocks.participatePoll).toHaveBeenCalledTimes(1);
       view.unmount();
     }
+  });
+});
+
+/**
+ * [2026-10-19] 투표는 한 사람당 한 번이고 바꾸거나 취소하는 경로가 없다. 제출 전에 공용 확인 대화상자로 고른 항목을 밝히고
+ * 되돌릴 수 없다는 사실을 말한다. 취소하면 아무것도 보내지 않고 선택을 그대로 둔다.
+ */
+describe('투표 제출 확인', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.confirm.mockImplementation(async () => true);
+    mocks.getPollList.mockResolvedValue({ list: [{ ...activePoll, pollSn: 1, pollNm: '점심 메뉴', hasVoted: false }] });
+    mocks.getPollItemList.mockResolvedValue([
+      { pollSn: 1, pollArtclSn: 11, pollArtclNm: '찬성', pollIemCo: null },
+      { pollSn: 1, pollArtclSn: 12, pollArtclNm: '반대', pollIemCo: null },
+    ]);
+    mocks.participatePoll.mockResolvedValue(undefined);
+  });
+
+  async function chooseOpposition() {
+    render(<OnlinePollParticipateClient />);
+    fireEvent.click(await screen.findByRole('button', { name: /점심 메뉴/ }));
+    fireEvent.click(await screen.findByRole('button', { name: '반대' }));
+  }
+
+  it('고른 항목과 되돌릴 수 없다는 사실을 묻고, 취소하면 보내지 않고 선택을 그대로 둔다', async () => {
+    mocks.confirm.mockImplementation(async () => false);
+    await chooseOpposition();
+
+    fireEvent.click(screen.getByRole('button', { name: /투표 제출하기/ }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    expect(mocks.confirm).toHaveBeenCalledWith({
+      title: '투표 제출',
+      message: "'반대'에 투표합니다. 제출한 투표는 바꾸거나 취소할 수 없습니다. 제출하시겠습니까?",
+      confirmText: '투표 제출',
+    });
+    expect(mocks.participatePoll).not.toHaveBeenCalled();
+    expect(screen.getByText('항목을 선택하세요')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /투표 제출하기/ })).toBeEnabled();
+  });
+
+  it('확인하면 고른 항목으로 한 번만 제출한다 — 확인 전 연속 클릭도 확인을 한 번만 연다', async () => {
+    const answer = deferred<boolean>();
+    mocks.confirm.mockImplementation(() => answer.promise);
+    await chooseOpposition();
+
+    fireEvent.click(screen.getByRole('button', { name: /투표 제출하기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /투표 제출하기/ }));
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+    expect(mocks.participatePoll).not.toHaveBeenCalled();
+
+    await act(async () => { answer.resolve(true); });
+
+    await waitFor(() => expect(mocks.participatePoll).toHaveBeenCalledTimes(1));
+    expect(mocks.participatePoll).toHaveBeenCalledWith({ pollSn: 1, pollArtclSn: 12 });
+    expect(await screen.findByText('집계 결과')).toBeInTheDocument();
   });
 });
