@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-17
-verified_against: 55a4539569494036788db468296f7ca1eea38d45
+verified_at: 2026-10-19
+verified_against: 6a719b389ad99bcd04b8921766fe5834e0df98d9
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
@@ -89,7 +89,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-018 | 재사용 생성물은 시작 구성과 직접 선택 모두 기능 소유(`config/modules`)와 해석된 구성에서 하네스·UI 원장 모집단을 도출하고(pack 축 없음, DEC-OPS-289~291) snapshot·소스·승계 selector·lock 무결성을 검사한다. 권한 정의·바인딩·묶음·화면 목록과 API 계약 사슬도 구성으로 다시 만든다(DEC-OPS-286·287). 공용 메모리의 원본 운영 사실은 upstream 이력으로 보존하며 현재 기관 사실로 승격하지 않는다. 온라인·이관 승인은 각각 새 pending으로 시작한다. | [생성 가이드](../../docs/03-guides/reusable-base-guide.md), [원장 투영](../../scripts/reusable-governance-projection.mjs), [산출물 무결성](../../scripts/reusable-governance-integrity.mjs), [적용범위 계약](../../config/governance/reusable-review-scopes.json), [기능 선언](../../config/modules/) | 2026-10-13 |
 | CTX-019 | `npm run project:ui`는 별도 loopback 3100 생성기를 실행한다. Foundation/Core에 22개 업무 기능을 선택하고 PostgreSQL·멀티모듈/단일모듈 독립 소스를 구성한다. 기능 선언 정본은 `config/modules`이고 시작 구성(`presets.json`)은 이름 붙은 기능 목록이라 같은 목록의 직접 선택과 결과가 같다(ADR-0028). UI/CLI는 같은 엔진을 쓰며, 생성에는 원본 frontend 의존성이 필요하고 각 산출물은 전체 기술 검증 후 완료된다. | [생성기 가이드](../../docs/03-guides/project-composer-guide.md), [공통 엔진](../../scripts/project-composer.mjs), [기능 선언](../../config/modules/) | 2026-10-13 |
 | CTX-020 | 로컬 E2E의 공식 진입점은 `npm run test:e2e:isolated`다. 새 일회용 DB와 소유한 앱 프로세스를 만들고 인증·fixture·cleanup 전에 owner attestation을 검사한다. 개발 `.env`나 공유 DB를 재사용하지 않는다. | [runner](../../scripts/run-isolated-e2e.mjs), [격리 검사](../../scripts/e2e-isolation.mjs), [실행 가이드](../../docs/03-guides/e2e-test-guide.md) | 2026-09-21 |
-| CTX-021 | PR·main은 같은 영향 분류로 build/PIT와 시작 구성을 고르고 공용·미지·빈 비교는 전수다. 시작 구성은 바뀐 파일의 소유 기능을 담은 것만 고른다(소유 미상은 전수). PR은 `ci.pr` 레이아웃(null이면 제외), main·수동은 두 레이아웃이다(ADR-0027·0030). 생성기·도구 경로(Atlas 도구·소비 원장 포함, DEC-OPS-336)만 바꾸면 이관·PIT·frontend를 건너뛴다. backend/schema·frontend build/coverage·재사용 profile/custom·제품 PIT·이관 PIT(2슬롯, ADR-0032)는 병렬이고 secret-scan·custom은 분류 직후, profile은 frontend 뒤다. 커버리지 하한은 85/70이다. | [ADR-0030](../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md), [ADR-0026](../../docs/02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md), [분류기](../../scripts/ci-change-scope.mjs) | 2026-10-17 |
+| CTX-021 | PR·main은 같은 영향 분류로 build/PIT와 시작 구성을 고르고 공용·미지·빈 비교는 전수다. 시작 구성은 바뀐 파일의 소유 기능을 담은 것만 고른다(소유 미상은 전수). PR은 `ci.pr` 레이아웃(null이면 제외), main·수동은 두 레이아웃이다(ADR-0027·0030). 생성기·도구 경로(Atlas 도구·소비 원장 포함, DEC-OPS-336)만 바꾸면 이관·PIT·frontend를 건너뛴다. backend/schema·frontend build/coverage·재사용 profile/custom·제품 PIT·이관 PIT(2슬롯, ADR-0032)는 병렬이고 secret-scan·custom은 분류 직후, profile은 frontend 뒤다. 커버리지 하한은 [게이트 원장](../../config/governance/gates.json)이 정본이다. | [ADR-0030](../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md), [ADR-0026](../../docs/02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md), [분류기](../../scripts/ci-change-scope.mjs) | 2026-10-19 |
 | CTX-022 | 템플릿 생성은 INSERT 전용, 회원 승인·반려·탈퇴는 행 잠금 후 상태를 판정한다. 첨부 실물 삭제는 DB 커밋 뒤 수행하며 잔여 고아 후보는 무결성 점검 대상이다. 메모 수정·삭제 힌트, 통계 날짜 경계, 대시보드 게시글 수의 날짜 의미와 두 집계의 가용 여부는 도메인 회귀로 검증한다. 대시보드 오늘 게시글 수는 같은 한국 날짜에서 기간 COUNT를 30초 재사용하고 V2_105 작성일 인덱스가 받친다(DEC-OPS-131·132). | [정합성·검증 경계](../../docs/04-operations/readiness-followups.md#도메인-정합성-보강-2026-09-25), [V2_105](../../api-server/src/main/resources/db/migration/V2_105__index_board_post_created_date.sql) | 2026-09-25 |
 | CTX-023 | ADR-0025로 로컬 TOTP MFA는 선택 등록이고 보호계정 강제(`MFA_REQUIRE_PROTECTED`)는 기본 false다. 키가 없으면 등록할 수 없다. 후속 처리는 `tb_sys_job` 내구 원장(최대 8회, 실패 조회 DWORK_READ, payload가 남은 실패분 재처리 DWORK_RETRY), 민감 조회·다운로드는 응답 전 `tb_sys_adt_log` 기록을 둔다. NOTICE_EDIT·FAQ_EDIT·DWORK_*·MFA_RECOVER·ADT_LOG_READ는 기본 그룹이 없어 자동 배정되지 않는다. 공유 OCI는 ROLE_ADMIN에만 NOTICE_EDIT·FAQ_EDIT가 있다(DEC-OPS-181, 적용 버전은 CTX-016의 적용 로그). | [ADR-0025](../../docs/02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md), [MFA 운영](../../docs/04-operations/mfa-operations.md), [후속 작업 재처리](../../docs/04-operations/durable-work-recovery.md), [권한 원장](../../config/governance/permission-catalog.json) | 2026-10-19 |
 
@@ -103,11 +103,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 
 ## 공유 워킹트리와 에이전트 인수인계
 
-- Gemini, Claude Code, Codex를 포함한 모든 에이전트가 같은 디스크와 Git index를 공유할 수 있다. 변경 전 현재 상태를 읽고 자기 경로만 커밋한다.
-- 프로젝트 공통 규칙은 `AGENTS.md` 한 곳에 두고, 저장소 `GEMINI.md`·`CLAUDE.md`는 이를 연결하는 얇은 어댑터로만 유지한다. 각 도구의 사용자 홈 글로벌 규칙이나 개인 세션 저장소는 다른 에이전트가 자동 상속하지 못한다.
-- 사용자 글로벌 규칙은 저장소 밖의 도구별 네이티브 경로에 별도로 프로비저닝한다. 특정 PC의 파일 동기화 방식은 프로젝트 필수 설정이나 CI 계약이 아니며 저장소 clone에 자동 전파되지 않는다.
-- 도구별 세션 저널은 저장소에 두지 않는다. Claude/Codex/Gemini의 원시 세션·내부 DB, 로컬 설정과 scratch도 공용 메모리로 일괄 복사하지 않으며, 현재 코드로 재검증된 항목만 승격한다.
-- 이 메모리는 실시간 작업 claim이나 lock이 아니다. 동시에 편집 중인 파일의 소유권은 `git status`, diff, 에이전트 조정 채널로 확인한다.
+여러 에이전트가 같은 디스크·Git index를 공유할 때의 커밋 범위, 도구별 진입점과 글로벌 규칙의 경계, 원시 세션·세션 저널을 공용 메모리로 옮기지 않는 규칙, 이 메모리가 실시간 claim·lock이 아니라는 경계는 [AGENTS.md](../../AGENTS.md#공유-워킹트리와-git)의 「공유 워킹트리와 Git」·「Documentation and memory」·「도구별 진입점」이 정본이다. 사용자 글로벌 규칙은 저장소 밖의 도구별 진입점에서 따로 로드되므로 clone이나 다른 PC에 자동 전파되지 않는다.
 
 ## 재검증 트리거
 

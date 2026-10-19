@@ -476,7 +476,7 @@ E2E runner는 외부 DB·공유 개발 서버를 대상으로 받지 않는다. 
 open build/reports/jacoco/aggregated/index.html
 ```
 
-임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [커버리지 워크플로](../../.agent/workflows/coverage.md)를 따른다.
+임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [테스트 가이드의 JaCoCo 절](testing-guide.md#jacoco-커버리지)을 따른다.
 
 ### Playwright 실행 결과
 

@@ -5,8 +5,8 @@ status: active
 authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-17
-verified_against: 55a4539569494036788db468296f7ca1eea38d45
+verified_at: 2026-10-19
+verified_against: 6a719b389ad99bcd04b8921766fe5834e0df98d9
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
   - ../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md
@@ -76,7 +76,6 @@ refresh_triggers:
 - `GAP-ETL-001`: 앞서 커밋한 chunk는 남아 전체 되돌리기는 승인된 백업 복원이다. 이후 도입된 원장 승인 예외 격리와 쓰기 오류 중단을 구분한다([현행 ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md), [복구 런북](../../docs/04-operations/migration-recovery-runbook.md)).
 - `GAP-BOARD-002`: 2026-10-16 확인한 시드·라이브 게시판 4개의 유형 코드·템플릿 불일치는 보정하지 않았다. 화면은 코드 그대로 표시하며 데이터 수정은 별도 승인 대상이다([남은 데이터 경계](../../docs/archived/operational-decisions-history.md#gap-board-002)).
 - `GAP-DOMAIN-001`: 추천 이력이 없던 기존 `like_cnt` 값은 유지한다. `GAP-BOARD-001`: 쓰지 않는 게시글 비밀번호 컬럼의 제거는 별도 스키마 승인이다([기존 집계](../../docs/archived/operational-decisions-history.md#gap-domain-001), [컬럼 경계](../../docs/archived/operational-decisions-history.md#gap-board-001)).
-- `GAP-DIP-001`: 재현 가능한 위험이 아니라 2026-09 DIP 가 범위 밖으로 둔 기능 목록이라 2026-10-17 [결정 대기 레지스트리](../../docs/04-operations/pending-decisions.md)의 PD-DIP-001 로 옮겼다. 마이그레이션 V2_122·V2_123 주석의 옛 ID 는 적용된 파일이라 그대로 둔다.
 - `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../../docs/archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](../../docs/04-operations/readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
 - `GAP-POLL-001`·`GAP-POLICY-001`: 다른 도입 환경의 기존 NULL 분포는 기관이 읽기 집계로 확인한다. `GAP-API-001`: 내부 확장 Map과 추가 JSON 필드 호환성은 남으며 binary/stream 전송까지 타입화한 결과가 아니다([기존 데이터](../../docs/archived/operational-decisions-history.md#gap-poll-001), [타입 경계](../../docs/archived/operational-decisions-history.md#gap-api-001)).
 

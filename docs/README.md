@@ -18,7 +18,7 @@
 
 > **규범의 SSOT 는 `docs/` 가 아니다.** 프로젝트 공통 규칙은 [AGENTS.md](../AGENTS.md), 코드 규범은 3대 헌법([백엔드](../.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 18조 · [프론트엔드](../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 17조 · [DB](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 10조)이 우선하며, `docs/` 는 이를 실무에 적용하는 가이드다.
 
-> **에이전트 규칙 로드 경계**: 저장소의 `GEMINI.md`·`CLAUDE.md`는 `AGENTS.md`와 공용 메모리를 연결하는 얇은 어댑터이고 Codex 등 AGENTS 지원 도구는 `AGENTS.md`를 직접 읽는다. 사용자 글로벌 규칙은 저장소 밖의 도구별 네이티브 진입점에서 독립적으로 로드된다. 한 환경에서 내용이 같더라도 도구 간 런타임 import/자동 상속을 뜻하지 않으며, 다른 PC나 사용자는 각 진입점을 별도로 프로비저닝·검증해야 한다.
+> **에이전트 규칙 로드 경계**: 도구별 진입점과 글로벌 규칙의 로드 경계는 [AGENTS.md](../AGENTS.md#도구별-진입점)가 정본이다.
 
 ---
 
@@ -45,8 +45,6 @@
 | [work-screen-grammar-catalog.md](02-architecture/work-screen-grammar-catalog.md) | 포털형→업무형 전환의 화면 문법 SSOT — 공통 규칙 G1~G15·archetype 8종·밀도 계약(globals.css 결속) |
 | [url-state-approval-overlay-design.md](02-architecture/url-state-approval-overlay-design.md) | 비규범 `class-governed` URL-state 부류 컨테이너의 설계·운영 계약 — 4개 부류의 독립 승인 기록을 관리하며 `search-input`만 ADR-0009에 결속 |
 | [authorization-simplification-design.md](02-architecture/authorization-simplification-design.md) | 인가 핵심 3개·감사 1개, 복수 그룹·명시 기능·API·전환 전 소스 및 OCI 조사 범위 |
-| [authorization-source-inventory.json](02-architecture/authorization-source-inventory.json) | 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개; 현재 변경 파일 수가 아님 |
-| [authorization-db-evidence.json](02-architecture/authorization-db-evidence.json) | 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [testing-process-redesign.md](02-architecture/testing-process-redesign.md) | 테스트 책임·격리 설계와 이행 근거; 현재 명령·CI 설정은 테스트·E2E·CI 가이드 참조 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
@@ -54,7 +52,6 @@
 | [user-reference-key-policy.md](02-architecture/user-reference-key-policy.md) | 사용자 참조 키 규약 |
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
 | [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
-| [legacy-standardization-migration-design.md](02-architecture/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13), 표준용어 식별 방법론·용어 매핑 원장·도구 보강안([ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)로 채택, 진단·방법론 정본) |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest Mutation Testing 연동 설계(스코프별 전체 재계산) |
 
 ### 02-architecture 참조 보존 tombstone
@@ -139,7 +136,6 @@
 | 문서 | 내용 |
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
-| [evidence-first-policy-decisions-2026-09-27.md](04-operations/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정해 기록으로 보존(비정본, ADR-0025 본문이 링크하므로 경로 유지) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
@@ -161,7 +157,6 @@
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [readiness-followups.md](04-operations/readiness-followups.md) | 운영 후속 실측 기록 — 날짜 입력·화면 연결·첨부 점검·혼합 부하, 이관 vendor 리허설(Oracle·MySQL·MariaDB·SQL Server·CUBRID·표준화), IP 신뢰 경계, Spring Boot 4 실측, ZAP 경고 분류, 도메인 정합성, 프록시 연결 경합 |
-| [standard-length-alignment-runbook.md](04-operations/standard-length-alignment-runbook.md) | 표준 길이의 단계별 스키마·애플리케이션 전환과 실패·복구 검증 |
 | [standard-metadata-disposition.md](04-operations/standard-metadata-disposition.md) | 표준 용어가 없거나 도메인과 물리 타입이 다른 컬럼마다 등록·정정·예외 처분 후보와 승인 단위(GAP-STD-001, 승인 전 검토 자료) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 | [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
@@ -184,6 +179,11 @@
 | [dual-operator-coordination.md](archived/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 | [evidence-first-improvement-loop-prompt.md](archived/evidence-first-improvement-loop-prompt.md) | 분야·도메인 재평가의 결함을 승인 범위·부정 검증·종료 조건에 따라 개선하는 실행 프롬프트 |
 | [adversarial-reassessment-2026-09-27.md](archived/adversarial-reassessment-2026-09-27.md) | 0ef8af32f 기준 Claude 평가의 수용·반박, 11개 분야·33개 도메인 잠정 평가와 개선 배치 |
+| [evidence-first-policy-decisions-2026-09-27.md](archived/evidence-first-policy-decisions-2026-09-27.md) | 개선 루프 R4 권한·공개 범위와 R6 삭제 단위의 당시 선택지 — ADR-0025가 결정한 **결정 입력물** |
+| [authorization-source-inventory.json](archived/authorization-source-inventory.json) | 인가 전환 전 권한 관련 소스 검색·참조 확장 스냅샷 887개(2026-09-10); 현재 파일 목록이 아님 |
+| [authorization-db-evidence.json](archived/authorization-db-evidence.json) | 인가 전환 설계의 2026-09-10 OCI 읽기 전용 스키마·행 수·표준 메타 증거; 전환 실행 증거가 아님 |
+| [standard-length-alignment-runbook.md](archived/standard-length-alignment-runbook.md) | ADR-0013·0014 표준 길이 정합의 단계별 전환·실패·복구 검증 기록(적용 완료) |
+| [legacy-standardization-migration-design.md](archived/legacy-standardization-migration-design.md) | 레거시 표준화 이관의 채택 전 진단(2026-10-13)과 표준용어 식별 방법론 — [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md)·0031로 채택, 현행 동작은 이관 도구 설계 |
 
 ### 운영 결정 원문 보존
 

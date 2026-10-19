@@ -231,7 +231,7 @@ class FlywaySchemaOwnershipLinterTest {
     private static List<Path> launchSurfaces(Path root) throws IOException {
         List<Path> files = new ArrayList<>();
         for (String name : List.of("build.gradle", "settings.gradle", "Makefile", "package.json",
-                "start-dev.ps1", "run-e2e-pipeline.ps1")) {
+                "start-dev.ps1")) {
             Path candidate = root.resolve(name);
             if (Files.isRegularFile(candidate)) {
                 files.add(candidate);

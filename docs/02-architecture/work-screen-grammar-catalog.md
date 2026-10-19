@@ -184,7 +184,7 @@
 2. **메뉴 SSOT 리프인가** — `tb_menu_info`에 그 라우트를 가리키는 활성 메뉴 행이 있으면 **목록의 자식 폼이 아니라 1급 목적지**다. 잃을 목록 맥락이 애초에 없고, 모달 전환은 프런트 리팩터가 아니라 Flyway·IA 변경이 된다([ADR-0017](decisions/ADR-0017-task-oriented-menu-navigation.md)). 이 경우 **판정에서 제외**한다.
 3. **맥락 손실을 실측한다** — 목록 화면의 조회 상태가 `useState`인가 URL인가. URL에 실려 복원된다면 페이지 이동 비용이 낮아 위반이 아니다.
 4. **그릇을 고른다** — 위 우선순위와 조건표.
-5. **pack 소유권을 확인한다** — 목록과 폼이 서로 다른 pack에 걸쳐 [cascade 제거](../../scripts/generate-reusable-base-source.mjs)가 갈리면, 파생 프로필에서 한쪽만 사라진다. 이 경우 형태 통일보다 소유권 정리가 선행이다([GAP-PACK-001](../../.agent/memory/known-gaps.md)).
+5. **기능 소유를 확인한다** — 목록과 폼을 서로 다른 기능([`config/modules`](../../config/modules/)의 기능 파일)이 소유해 [연쇄 제거](../../scripts/generate-reusable-base-source.mjs)가 갈리면, 그 기능 하나를 뺀 생성물에서 한쪽만 사라진다. 이 경우 형태 통일보다 소유권 정리가 선행이다([GAP-PACK-001](../../.agent/memory/known-gaps.md)).
 
 **집행 게이트** — 이 규칙은 [A3-1 폼 그릇 census](../../config/governance/a3-1-form-container-census.json)가
 집행한다. `frontend/src/app` 아래에서 **모달도 목록도 없이 폼만 렌더하는 라우트**를 전부 찾아

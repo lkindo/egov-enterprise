@@ -22,8 +22,9 @@
 | `users-500` | 2분 / 5분 / 2분 | 500 |
 | `users-1000` | 5분 / 10분 / 5분 | 1000 |
 
-통합 threshold는 `http_req_duration: p(95)<1000ms`, `http_req_failed: rate<1%`, `checks: rate==1`이다. 개별 요청 check도
-스크립트에 있으며 로그인 500ms, 대시보드 800ms, 사용자 목록 600ms, 게시글 생성 1000ms 기준을 사용한다.
+통합 threshold는 `http_req_duration: p(95)<1000ms`, `http_req_failed: rate<1%`, `checks: rate==1`이다. `check()`는 상태와
+응답 계약만 본다. 요청 종류별 지연은 요청 하나가 아니라 태그별 `http_req_duration{endpoint:…}` p95 임계로 판정하며
+로그인 500ms, 대시보드 800ms, 사용자 목록 600ms, 게시글 생성 1000ms 기준을 사용한다.
 수치를 바꾸면 스크립트와 이 표를 같은 변경에서 갱신하고, 왜 바꾸는지 기준선 자료를 남긴다.
 
 사용자 목록은 실제 `ApiResponse.data`의 `PageResponse(list,total,page,size,totalPage)`를 검증한다.
@@ -137,11 +138,12 @@ DB pause/unpause를 실행하고 같은 토큰의 복구를 확인한다. 운영
 
 ## 현재 한계
 
-- 공식 주간 실행은 `load-levels.js` 하나다. `dashboard-test.js`·`users-list-test.js`·`mixed-workload.js`는
-  같은 응답 계약(`response-contracts.mjs`)을 쓰는 수동 시나리오이고, 주간 workflow의 증적이 아니다.
+- 공식 주간 실행은 `load-levels.js` 하나다. `users-list-test.js`·`mixed-workload.js`는
+  같은 응답 계약(`response-contracts.mjs`)과 `checks: rate==1`을 쓰는 수동 시나리오이고, 주간 workflow의 증적이 아니다.
   2026-10-07 현재 API와 맞지 않던 legacy 시나리오(`/login`·`body.token`·`/version` 등 이전 경로를 쓰던
   `login-test.js`·`simple-login-test.js`·`post-create-test.js`·`create-test-user.js`·`scripts/basic-test.js`·`k6.config.js`)는
-  거짓 green 을 낼 수 있어 걷었다.
+  거짓 green 을 낼 수 있어 걷었다. 2026-10-19 에는 `checks` 임계가 없어 check 가 실패해도 통과하던 수동
+  `dashboard-test.js`도 걷었다 — 대시보드 조회는 `load-levels.js`의 `endpoint:dashboard` 태그가 본다.
 - 통합 시나리오는 고정된 혼합 비율과 테스트 게시판 ID를 사용한다. 다른 workload를 대표한다고 가정하지 않는다.
 - k6는 브라우저 렌더링 성능을 재지 않는다. 프론트 런타임은 [Lighthouse workflow](../../.github/workflows/lighthouse.yml)를 본다.
 

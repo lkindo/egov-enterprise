@@ -585,7 +585,7 @@ Commit은 같은 load 계약에서 `--mode=commit`을 명시한다. 보관 선�
 
 스키마 자체의 Expand-and-Contract 절차는 [zero-downtime-migration.md](zero-downtime-migration.md)의 영역이며, 데이터 cutover와 같은 것으로 간주하지 않는다.
 
-표준화 단계(레거시 컬럼의 의미 식별·표준용어 매핑)의 방법론과 2026-10-13 채택 전 공백 진단은 [레거시 표준화 이관 설계](legacy-standardization-migration-design.md)에 둔다. 이 문서의 현행 구현 계약과 [활성 이관 gap](../../.agent/memory/known-gaps.md)을 현재 상태 판단에 사용한다.
+표준화 단계(레거시 컬럼의 의미 식별·표준용어 매핑)의 방법론과 2026-10-13 채택 전 공백 진단은 [레거시 표준화 이관 설계](../archived/legacy-standardization-migration-design.md)에 둔다. 이 문서의 현행 구현 계약과 [활성 이관 gap](../../.agent/memory/known-gaps.md)을 현재 상태 판단에 사용한다.
 
 ## 검증 증거와 한계
 

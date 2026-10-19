@@ -1,5 +1,7 @@
 # 표준 길이 24개 및 후속 6개 정합 전환 런북
 
+> **보관(2026-10-19):** ADR-0013·0014의 전환이 끝나 `docs/04-operations/`에서 옮긴 이행 기록이다. 현재 스키마 판단은 live metadata와 DB 헌법을 따른다.
+
 최초 24개 대상과 선택은 [ADR-0013](../02-architecture/decisions/ADR-0013-standard-text-length-alignment.md), 보류 6개의 후속 설계는 [ADR-0014](../02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md)가 정본이다. 아래 최초 이행 기록은 당시 상태를 보존한다. 보류 6개도 후속 승인과 검증을 거쳐 적용했으며, 최신 OCI 상태는 마지막 절에 기록한다.
 
 ## 대상 컬럼

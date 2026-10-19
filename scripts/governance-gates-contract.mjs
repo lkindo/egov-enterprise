@@ -445,7 +445,7 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snap
 /**
  * 소비자 파일의 주석 문법에 맞는 실행 내용 추출기.
  *
- * <p>[2026-09-01 신설 — GAP-HARNESS-002] 종전에는 파일 종류와 무관하게
+ * <p>[2026-09-01 신설 — 커밋 d6097b9f2 ① — 이 수정으로 닫은 하네스 gap] 종전에는 파일 종류와 무관하게
  * {@link executableContent}(= Java 블록/줄 주석 제거 후 hash 주석 제거)를 적용했다. 그런데
  * YAML·셸에는 `/* *\/` 주석이 없다. 그래서 그런 파일에 `/*` 시퀀스가 등장하면 — 경로 glob,
  * 정규식, URL 무엇이든 — 그 지점부터 다음 닫는 기호까지, 없으면 파일 끝까지가 통째로
@@ -644,7 +644,7 @@ function workflowStepContaining(jobBlock, fragment) {
 }
 
 /**
- * [2026-09-01 신설 — GAP-HARNESS-001] 실행 문맥 검증.
+ * [2026-09-01 신설 — 커밋 d6097b9f2 ② — 이 수정으로 닫은 하네스 gap] 실행 문맥 검증.
  *
  * <p>종전 binding 검증은 "그 trim 라인이 파일 어딘가에 있는가" 만 봤다. 어느 job 인지, 조건부
  * step 뒤인지는 구조적으로 볼 수 없었고, 그래서 tier 선언이 실행 실체와 어긋나도 green 이었다.

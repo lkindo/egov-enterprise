@@ -224,7 +224,7 @@ Docker를 사용할 수 없으면 H2 green으로 대체 완료 선언을 하지 
 
 ### 설정 (`build.gradle`)
 
-루트 `jacocoRootCoverageVerification`이 집계 대상과 LINE/BRANCH 래칫을 소유한다. 현재 임계값은 `build.gradle` 원본에서 확인한다. 분모 제외나 하한 완화로 green을 만들지 않고, 소스가 늘면 영향 테스트를 함께 보강한다. 실행·결과 해석의 정본은 [커버리지 워크플로](../../.agent/workflows/coverage.md)다.
+루트 `jacocoRootCoverageVerification`이 집계 대상과 LINE/BRANCH 래칫을 소유한다. 현재 임계값은 `build.gradle` 원본에서 확인한다. 분모 제외나 하한 완화로 green을 만들지 않고, 소스가 늘면 영향 테스트를 함께 보강한다. `jacocoRootReport`는 Docker가 필요한 `schemaValidationTest`를 빼고 집계하며, XML 리포트는 `build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml`에 생긴다.
 
 ### 실행 및 확인
 
@@ -356,7 +356,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 ### JaCoCo 리포트에 실행 데이터가 없음
 
-[커버리지 워크플로](../../.agent/workflows/coverage.md)의 순서대로 실패 테스트, 집계 대상, 같은 실행에서 생성된 `.exec` 파일을 확인한 뒤 `./gradlew jacocoRootReport`를 다시 실행한다. 태스크 `SKIPPED`나 입력 0개 상태를 성공으로 간주하지 않고, `clean`은 입력 불일치가 확인된 경우에만 사용한다.
+실패 테스트, 집계 대상, 같은 실행에서 생성된 `.exec` 파일을 확인한 뒤 `./gradlew jacocoRootReport`를 다시 실행한다. 태스크 `SKIPPED`나 입력 0개 상태를 성공으로 간주하지 않고, `clean`은 입력 불일치가 확인된 경우에만 사용한다.
 
 ## 중앙 하네스 레지스트리와 실행 분리
 

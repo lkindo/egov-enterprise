@@ -61,7 +61,7 @@ ADR-0003과 프론트엔드 헌법은 개인정보 또는 민감 검색어를 UR
 - 새 검색 route 또는 key를 추가할 때 allowlist·데이터 분류·인가 경계를 함께 검토해야 한다.
 - 승인된 검색 route 밖의 기존 query 일괄 복사 경로는 제거된 것으로 간주하지 않으며, 후속 `opaque` 분류·정규화 대상이다.
 - 일반 자유 입력을 내용 기반 DLP로 완전 분류하거나 차단한다는 보장은 없다. 고위험 검색이 실제 업무 요구라면 이 ADR의 allowlist를 재사용하지 않고 별도 입력·전송·보존 계약을 먼저 결정한다.
-- 프런트엔드 검색 상태 밖에는 만족도 삭제 비밀번호를 query로 받는 기존 API가 남아 있다. 이는 이 ADR이 승인한 검색어가 아니며 [`GAP-SEC-002`](../../../.agent/memory/known-gaps.md)에서 별도 이전 대상으로 추적한다.
+- 프런트엔드 검색 상태 밖에는 만족도 삭제 비밀번호를 query로 받는 기존 API가 남아 있다. 이는 이 ADR이 승인한 검색어가 아니며 [`GAP-SEC-002`](ADR-0011-retire-anonymous-satisfaction-password-proof.md)에서 별도 이전 대상으로 추적한다.
 
 ## Non-goals
 

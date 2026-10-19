@@ -52,37 +52,3 @@ export function createHtmlReport(data, options = {}) {
 export function textSummary(data, options = {}) {
   return k6TextSummary(data, options);
 }
-
-/**
- * handleSummary 헬퍼 함수
- *
- * 이 함수를 k6 스크립트에 export 하면 자동으로 HTML 리포트가 생성됩니다.
- *
- * @param {string} outputDir - 리포트 저장 디렉토리 (기본값: 'test/load-tests/results')
- * @param {ReportOptions} [options] - 리포트 옵션
- * @returns {Function} handleSummary 함수
- *
- * @example
- * ```javascript
- * import { createHandleSummary } from '../utils/report.js';
- *
- * export const handleSummary = createHandleSummary('results', { title: 'My Test' });
- * ```
- */
-export function createHandleSummary(outputDir = 'test/load-tests/results', options = {}) {
-  return function (data) {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const reportFilename = `${outputDir}/report-${timestamp}.html`;
-
-    return {
-      [reportFilename]: createHtmlReport(data, options),
-      stdout: textSummary(data, { indent: ' ', enableColors: true }),
-    };
-  };
-}
-
-export default {
-  createHtmlReport,
-  textSummary,
-  createHandleSummary,
-};

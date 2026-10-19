@@ -60,6 +60,11 @@ CustomUserDetails.getLoginId()  →  loginId  (getUserId의 가독성 별칭)
 | `getCurrentLoginId()` | `Optional<String>` — loginId | 감사 컬럼 비교, 소유권 검증, 투표 식별 | **비즈니스 로직 기본값** |
 | ~~`getCurrentUserId()`~~ | ~~esntlId~~ | ~~사용 금지~~ | `@Deprecated` — 하위 호환 시그니처일 뿐이며 신규 호출은 `IdentityAxisLinterTest`가 차단한다. 의도를 드러내는 두 메서드 중 하나를 선택한다. |
 | `assertOwnerOrPermission(ownerLoginId, overridePermission)` | void (예외 발생) | IDOR 방어 가드 | 대리 권한이 없으면 `getCurrentLoginId()` 기반 비교. esntlId 축은 `assertOwnerOrPermissionByEsntlId` |
+| `assertOwnerOrPermissionByEsntlId(ownerEsntlId, overridePermission)` | void (예외 발생) | esntlId 축 도메인 소유자 또는 대행 권한 보유자 | 지정한 기능 권한이 있을 때만 타인 자원을 다룬다 |
+| `assertOwnerByEsntlId(ownerEsntlId)` | void (예외 발생) | 결재·신청 등 본인 행위 | 대행 불가 — 관리자도 우회하지 못한다 |
+| `assertPermission(permission)` | void (예외 발생) | 특정 기능 권한 필수 | 소유권·관계 검사는 별도로 한다 |
+
+결재자·수신자·참여자 본인처럼 대행할 수 없는 관계 검사는 그대로 둔다. 그룹 이름이나 관리자 역할로 권한을 추론하지 않으며, 도메인별 수기 가드를 표준 헬퍼로 기계 치환하기 전에 의미와 기존 네거티브 테스트를 먼저 확인한다(AGENTS.md H3·H4).
 
 ---
 
