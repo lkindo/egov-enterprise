@@ -132,12 +132,13 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
             org.assertj.core.api.Assertions.assertThat(id).matches("[1-9][0-9]*");
         }
         String path = surface.path() + "/" + id;
-        assertStoredName(surface, path, "RBAC initial");
+        var stored = assertStoredName(surface, path, "RBAC initial");
 
+        // [2026-10-19 DEC-OPS-359] 버전을 둔 표면은 읽은 버전을 수정 요청에 함께 보낸다 — 없으면 400, 다르면 409 다.
         mockMvc.perform(put(path)
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_editor", List.of("CONTENT_OPERATORS"),
                                 List.of(surface.prefix() + "_UPDATE"))))
-                        .contentType(MediaType.APPLICATION_JSON).content(surface.body("RBAC updated")))
+                        .contentType(MediaType.APPLICATION_JSON).content(updateBody(surface, stored)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         assertStoredName(surface, path, "RBAC updated");
 
@@ -155,16 +156,27 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
         }
     }
 
-    private void assertStoredName(ManagedSurface surface, String path, String name) throws Exception {
+    /** 저장된 이름을 확인하고 그 행(JSON)을 돌려준다 — 수정 요청이 그 행의 버전을 싣는다. */
+    private tools.jackson.databind.JsonNode assertStoredName(ManagedSurface surface, String path, String name)
+            throws Exception {
         var reader = RbacAuthorizationMatrixTest.explicit(List.of("CONTENT_READERS"), List.of(surface.readPermission()));
         if (surface.prefix().equals("REWARD")) {
-            mockMvc.perform(get(surface.path()).param("name", name).with(user(reader)))
+            var result = mockMvc.perform(get(surface.path()).param("name", name).with(user(reader)))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.data.total").value(1))
-                    .andExpect(jsonPath("$.data.list[0]." + surface.nameField()).value(name));
-        } else {
-            mockMvc.perform(get(path).with(user(reader)))
-                    .andExpect(status().isOk()).andExpect(jsonPath("$.data." + surface.nameField()).value(name));
+                    .andExpect(jsonPath("$.data.list[0]." + surface.nameField()).value(name)).andReturn();
+            return objectMapper.readTree(result.getResponse().getContentAsString()).at("/data/list/0");
         }
+        var result = mockMvc.perform(get(path).with(user(reader)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data." + surface.nameField()).value(name)).andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).at("/data");
+    }
+
+    private String updateBody(ManagedSurface surface, tools.jackson.databind.JsonNode stored) throws Exception {
+        var body = (tools.jackson.databind.node.ObjectNode) objectMapper.readTree(surface.body("RBAC updated"));
+        if (stored.hasNonNull("version")) {
+            body.put("version", stored.get("version").asInt());
+        }
+        return objectMapper.writeValueAsString(body);
     }
 
     static Stream<ManagedSurface> managementSurfaces() {
