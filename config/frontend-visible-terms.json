@@ -313,6 +313,14 @@
           "status": "remediated-local",
           "owner": "dashboard-domain-owner",
           "reviewBy": "2026-12-15"
+        },
+        {
+          "kind": "instance-local-count-without-scope",
+          "evidence": "실시간 연결 세션 수는 각 서버 인스턴스의 메모리 값이고 단순 브로커가 화면이 연결된 서버의 값만 보낸다. 카드가 '현재' 배지로 시점만 말해 여러 서버로 운영하면 전체 접속자 수로 읽혔다. 배지와 설명이 범위(이 화면이 연결된 서버)와 아닌 것(전체 접속자·고유 사용자 수)을 말한다. 공유 저장소는 들이지 않는다(2026-10-19, formatRules.number.scopeQualifierRequired).",
+          "removedSourceEvidence": ["trend=\"현재\""],
+          "status": "remediated-local",
+          "owner": "dashboard-domain-owner",
+          "reviewBy": "2026-12-15"
         }
       ]
     },
