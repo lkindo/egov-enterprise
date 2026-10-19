@@ -65,44 +65,7 @@
 
 ### 02-architecture/decisions — ADR
 
-| 문서 | 내용 |
-|---|---|
-| [decisions/README.md](02-architecture/decisions/README.md) | ADR 목록·작성 규약 |
-| [ADR-0001](02-architecture/decisions/ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 |
-| [ADR-0002](02-architecture/decisions/ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 |
-| [ADR-0003](02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 |
-| [ADR-0004](02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 |
-| [ADR-0005](02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 |
-| [ADR-0006](02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 |
-| [ADR-0007](02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 증거 요건은 채택 시점 재검증으로 이전 |
-| [ADR-0008](02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md) | 다중 소스 DB를 PostgreSQL 표준 스키마로 옮기는 승인형 오프라인 마이그레이션 워크플로 |
-| [ADR-0009](02-architecture/decisions/ADR-0009-controlled-url-search-state.md) | 화면별 exact 계약 아래 일반 개인정보가 포함될 수 있는 업무 검색어의 URL 사용을 허용 |
-| [ADR-0010](02-architecture/decisions/ADR-0010-frontend-session-cookie-secure-policy.md) | 프론트엔드 세션 쿠키의 Secure 예외를 명시적 평문 loopback으로 제한 |
-| [ADR-0011](02-architecture/decisions/ADR-0011-retire-anonymous-satisfaction-password-proof.md) | 익명 만족도·비밀번호 소유 증명을 퇴역하고 자격증명 query를 제거 |
-| [ADR-0012](02-architecture/decisions/ADR-0012-retire-blog-domain.md) | 비사용 블로그 도메인·게시판 귀속 계약·물리 스키마를 제거하고 과거 Flyway 이력은 보존 |
-| [ADR-0013](02-architecture/decisions/ADR-0013-standard-text-length-alignment.md) | 표준 길이 24개와 SMS 수신번호 정규화를 단계별 배포·데이터 보존 검증에 연결 |
-| [ADR-0014](02-architecture/decisions/ADR-0014-deferred-standard-design-alignment.md) | 보류 6개의 프로그램 키·메뉴 FK·HHmmss·암호화 표준 정합 결정 |
-| [ADR-0015](02-architecture/decisions/ADR-0015-secure-coding-ci.md) | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결 |
-| [ADR-0016](02-architecture/decisions/ADR-0016-explicit-permissions-and-multiple-groups.md) | 복수 그룹·명시 기능 권한 및 수동 Contract 전환 |
-| [ADR-0017](02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md) | 과업 중심 메뉴 재편·중복 통합·권한 보존 |
-| [ADR-0018](02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md) | 기술 계약·정기 검토·기관 승인 분리와 프로필별 근거 투영·산출물 검증 |
-| [ADR-0019](02-architecture/decisions/ADR-0019-client-ip-trust-boundary.md) | 운영 앞단 프록시로 클라이언트 IP 신뢰 경계 수립과 요청 제한 한도 설정화 |
-| [ADR-0020](02-architecture/decisions/ADR-0020-selectable-reusable-backend-layouts.md) | 원본 모듈 구조 유지와 재사용 백엔드 출력 형태 선택 |
-| [ADR-0021](02-architecture/decisions/ADR-0021-isolated-layered-testing-process.md) | 책임별 테스트 재편·격리 실행·전체 회귀와 영향 shadow |
-| [ADR-0022](02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md) | PR·통합 push의 독립 모듈 영향 분류, 커버리지·required 보존과 Gradle 캐시 |
-| [ADR-0023](02-architecture/decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR의 검증된 E2E spec 선별, main 전수와 Gradle 단일 캐시 writer |
-| [ADR-0024](02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환과 조용히 바뀌는 동작의 고정 |
-| [ADR-0025](02-architecture/decisions/ADR-0025-enterprise-completeness-and-durable-operations.md) | 승인된 D01~D15 A·F01~F08의 제품 계약, 내구성 및 운영 적용 경계 |
-| [ADR-0026](02-architecture/decisions/ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 |
-| [ADR-0027](02-architecture/decisions/ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) |
-| [ADR-0028](02-architecture/decisions/ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 |
-| [ADR-0029](02-architecture/decisions/ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 흐름, 용어 매핑 원장·민감 컬럼 호환 암호화·외부 LLM 가드와 L1~L4 단계 |
-| [ADR-0030](02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 |
-| [ADR-0031](02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건·chunk 실패 처리와 단계 경계 |
-| [ADR-0032](02-architecture/decisions/ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 |
-| [ADR-0033](02-architecture/decisions/ADR-0033-encrypted-mail-delivery-snapshot.md) | 메일 자동 복구용 수신주소의 암호화 보관과 완료 후 정리 |
-| [ADR-0034](02-architecture/decisions/ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 |
-| [ADR-0035](02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하 |
+ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 같은 집합으로 색인하며 계약이 둘을 대조한다.
 
 ## 03-guides — 개발 지침
 

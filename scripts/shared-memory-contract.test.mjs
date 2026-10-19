@@ -375,31 +375,15 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
   }
 });
 
-function assertDocumentationAdrIndexMatches(index, ids) {
-  const section = index.split('### 02-architecture/decisions — ADR')[1]?.split('## 03-guides')[0] ?? '';
-  const linkedIds = [...section.matchAll(/^\| \[(ADR-\d{4})\]\(/gm)].map((match) => match[1]);
-  assert.equal(linkedIds.length, new Set(linkedIds).size, '문서 ADR 인덱스에 중복 ID가 있습니다.');
-  assertExactAdrSet(ids, linkedIds);
-}
-
-test('the documentation index links every Accepted ADR in its ADR section', () => {
-  assertDocumentationAdrIndexMatches(
-    readRepoFile('docs/README.md'),
-    acceptedAdrIds(readRepoFile('docs/02-architecture/decisions/README.md')),
-  );
-});
-
-test('the documentation ADR index rejects missing, misplaced, duplicate and ghost entries', () => {
-  const ids = acceptedAdrIds(readRepoFile('docs/02-architecture/decisions/README.md'));
-  const index = readRepoFile('docs/README.md');
-  const row = index.split(/\r?\n/).find((line) => line.startsWith(`| [${ids[0]}](`));
-  assert.ok(row);
-  const missing = index.replace(row, '');
-  assert.throws(() => assertDocumentationAdrIndexMatches(missing, ids), /missing=\[ADR-/u);
-  assert.throws(() => assertDocumentationAdrIndexMatches(`${missing}\n${row}`, ids), /missing=\[ADR-/u);
-  assert.throws(() => assertDocumentationAdrIndexMatches(index.replace(row, `${row}\n${row}`), ids), /중복 ID/u);
-  const ghost = index.replace(row, `${row}\n| [ADR-9999](synthetic.md) | synthetic |`);
-  assert.throws(() => assertDocumentationAdrIndexMatches(ghost, ids), /ghost=\[ADR-9999\]/u);
+/*
+ * ADR 목록은 ADR 색인(docs/02-architecture/decisions/README.md) 하나가 정본이고, 공용 결정 인덱스는 그 Accepted 집합을
+ * 그대로 색인한다(아래 'decision memory exactly indexes …'). 문서 인덱스(docs/README.md)는 ADR 색인에 링크만 하므로
+ * 세 번째 사본과의 exact 대조는 두지 않는다 — ADR 하나를 더할 때 고칠 목록이 셋에서 둘로 준다(적용 범위는 줄지 않는다).
+ */
+test('the documentation index points to the ADR registry instead of copying it', () => {
+  const section = readRepoFile('docs/README.md').split('### 02-architecture/decisions — ADR')[1]?.split('## 03-guides')[0] ?? '';
+  assert.match(section, /\]\(02-architecture\/decisions\/README\.md\)/u, 'docs/README.md: ADR 색인 링크가 없습니다.');
+  assert.doesNotMatch(section, /^\| \[ADR-\d{4}\]\(/mu, 'docs/README.md: ADR 목록을 다시 복제하지 말고 ADR 색인에 링크하십시오.');
 });
 
 test('shared memory files have a stable schema and valid canonical sources', () => {
