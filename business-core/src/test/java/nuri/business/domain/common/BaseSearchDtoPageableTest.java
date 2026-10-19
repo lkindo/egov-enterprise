@@ -38,22 +38,22 @@ class BaseSearchDtoPageableTest {
     class ValidationConstraints {
 
         @Test
-        @DisplayName("pageIndex 는 1-based 양수만 허용한다")
+        @DisplayName("page(HTTP 이름) 는 1-based 양수만 허용한다")
         void rejectsNonPositivePageIndex() {
             assertThat(validator.validate(dto(0, 10)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageIndex");
+                    .contains("page");
         }
 
         @Test
-        @DisplayName("pageUnit 은 1 이상 안전 상한 이하여야 한다")
+        @DisplayName("size(HTTP 이름) 는 1 이상 안전 상한 이하여야 한다")
         void rejectsPageUnitOutsideSafeRange() {
             assertThat(validator.validate(dto(1, 0)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageUnit");
+                    .contains("size");
             assertThat(validator.validate(dto(1, BaseSearchDto.MAX_PAGE_UNIT + 1)))
                     .extracting(violation -> violation.getPropertyPath().toString())
-                    .contains("pageUnit");
+                    .contains("size");
         }
 
         @Test
